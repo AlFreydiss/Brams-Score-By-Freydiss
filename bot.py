@@ -191,29 +191,55 @@ def load_data():
     conn.close()
     return {row[0]: row[1] for row in rows}
 
-def save_data(data):
-    conn = get_db()
-    cur = conn.cursor()
-    for uid, udata in data.items():
-        cur.execute("""
-            INSERT INTO users (uid, data) VALUES (%s, %s)
-            ON CONFLICT (uid) DO UPDATE SET data = EXCLUDED.data
-        """, (uid, json.dumps(udata)))
-    conn.commit()
-    cur.close()
-    conn.close()
-
-
 def save_user(uid, udata):
-    conn = get_db()
-    cur = conn.cursor()
-    cur.execute("""
-        INSERT INTO users (uid, data) VALUES (%s, %s)
-        ON CONFLICT (uid) DO UPDATE SET data = EXCLUDED.data
-    """, (uid, json.dumps(udata)))
-    conn.commit()
-    cur.close()
-    conn.close()
+    for attempt in range(3):
+        try:
+            conn = psycopg2.connect(SUPABASE_URL)
+            conn.autocommit = False
+            cur = conn.cursor()
+            cur.execute("SET LOCAL statement_timeout = '30000'")
+            cur.execute("""
+                INSERT INTO users (uid, data) VALUES (%s, %s)
+                ON CONFLICT (uid) DO UPDATE SET data = EXCLUDED.data
+            """, (uid, json.dumps(udata)))
+            conn.commit()
+            cur.close()
+            conn.close()
+            return
+        except psycopg2.errors.QueryCanceled as e:
+            print(f"⚠️ Timeout save_user {uid} (essai {attempt+1}/3): {e}")
+            if attempt == 2:
+                raise
+            time.sleep(1)
+        except Exception as e:
+            print(f"❌ Erreur save_user {uid}: {e}")
+            raise
+
+
+def save_data(data):
+    for attempt in range(3):
+        try:
+            conn = psycopg2.connect(SUPABASE_URL)
+            conn.autocommit = False
+            cur = conn.cursor()
+            cur.execute("SET LOCAL statement_timeout = '30000'")
+            for uid, udata in data.items():
+                cur.execute("""
+                    INSERT INTO users (uid, data) VALUES (%s, %s)
+                    ON CONFLICT (uid) DO UPDATE SET data = EXCLUDED.data
+                """, (uid, json.dumps(udata)))
+            conn.commit()
+            cur.close()
+            conn.close()
+            return
+        except psycopg2.errors.QueryCanceled as e:
+            print(f"⚠️ Timeout save_data (essai {attempt+1}/3): {e}")
+            if attempt == 2:
+                raise
+            time.sleep(1)
+        except Exception as e:
+            print(f"❌ Erreur save_data: {e}")
+            raise
 
 
 async def save_data_async(data):
@@ -923,18 +949,23 @@ async def check_ranks_loop():
             uid = str(member.id)
             user = get_user(data, uid)
             old_last_rank = user.get("last_rank")
+            clean_old_data(user)
+            jt = user.get("join_time")
+            seconds_7d = seconds_in_period(user["vocal_sessions"], 7, join_time=jt)
+            hours_7d = seconds_7d / 3600
+
+            # FAST PATH : membre inactif sans rank → skip
+            if hours_7d == 0 and old_last_rank is None:
+                continue
+
             try:
-                clean_old_data(user)
-                jt = user.get("join_time")
-                seconds_7d = seconds_in_period(user["vocal_sessions"], 7, join_time=jt)
-                hours_7d = seconds_7d / 3600
                 await update_rank(member, hours_7d, announce=False, data=data)
                 await check_alert(member, hours_7d, data=data)
                 if user.get("last_rank") != old_last_rank:
                     modified_uids.add(uid)
             except Exception as e:
-                print(f"⚠️ Erreur traitement {member.display_name}: {e}")
-            await asyncio.sleep(0.05)
+                print(f"⚠️ Erreur {member.display_name}: {e}")
+            await asyncio.sleep(0.01)
 
     if modified_uids:
         print(f"💾 Sauvegarde async de {len(modified_uids)} users modifiés...")
@@ -976,7 +1007,14 @@ def build_vocal_by_day(user):
 
 @bot.tree.command(name="stats", description="Tes stats vocales et messages avec graphique")
 async def stats(interaction: discord.Interaction):
-    await interaction.response.defer(ephemeral=False)
+    try:
+        await interaction.response.defer(ephemeral=False)
+    except discord.NotFound:
+        print("⚠️ /stats : interaction expirée avant defer")
+        return
+    except Exception as e:
+        print(f"❌ /stats defer failed: {e}")
+        return
     data = await load_data_async()
     uid = str(interaction.user.id)
     user = get_user(data, uid)
@@ -1043,7 +1081,12 @@ async def stats(interaction: discord.Interaction):
     embed.set_image(url="attachment://graph.png")
     embed.set_footer(text=f"⚓ BRAMS SCORE BY FREYDISS • {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')} UTC")
 
-    await interaction.followup.send(embed=embed, file=discord.File(graph_buf, "graph.png"))
+    try:
+        await interaction.followup.send(embed=embed, file=discord.File(graph_buf, "graph.png"))
+    except discord.NotFound:
+        print("⚠️ /stats : token expiré, impossible d'envoyer")
+    except Exception as e:
+        print(f"❌ /stats followup failed: {e}")
 
 
 @bot.tree.command(name="top", description="Classement vocal et messages")
@@ -1055,7 +1098,14 @@ async def stats(interaction: discord.Interaction):
     app_commands.Choice(name="🏴‍☠️ All Time", value="all"),
 ])
 async def top(interaction: discord.Interaction, periode: app_commands.Choice[str]):
-    await interaction.response.defer()
+    try:
+        await interaction.response.defer()
+    except discord.NotFound:
+        print("⚠️ /top : interaction expirée avant defer")
+        return
+    except Exception as e:
+        print(f"❌ /top defer failed: {e}")
+        return
     data = await load_data_async()
     guild = interaction.guild
     all_time = periode.value == "all"
@@ -1119,12 +1169,24 @@ async def top(interaction: discord.Interaction, periode: app_commands.Choice[str
 
     embed.set_footer(text=f"⚓ BRAMS SCORE BY FREYDISS • {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')} UTC")
 
-    await interaction.followup.send(embed=embed)
+    try:
+        await interaction.followup.send(embed=embed)
+    except discord.NotFound:
+        print("⚠️ /top : token expiré, impossible d'envoyer")
+    except Exception as e:
+        print(f"❌ /top followup failed: {e}")
 
 
 @bot.tree.command(name="serveur", description="Stats globales du serveur")
 async def serveur(interaction: discord.Interaction):
-    await interaction.response.defer()
+    try:
+        await interaction.response.defer()
+    except discord.NotFound:
+        print("⚠️ /serveur : interaction expirée avant defer")
+        return
+    except Exception as e:
+        print(f"❌ /serveur defer failed: {e}")
+        return
     data = await load_data_async()
     guild = interaction.guild
 
@@ -1231,15 +1293,27 @@ async def serveur(interaction: discord.Interaction):
     embed2.set_image(url="attachment://peaks.png")
     embed2.set_footer(text=f"⚓ BRAMS SCORE BY FREYDISS • {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')} UTC")
 
-    await interaction.followup.send(
-        embeds=[embed1, embed2],
-        file=discord.File(graph_buf, "peaks.png")
-    )
+    try:
+        await interaction.followup.send(
+            embeds=[embed1, embed2],
+            file=discord.File(graph_buf, "peaks.png")
+        )
+    except discord.NotFound:
+        print("⚠️ /serveur : token expiré, impossible d'envoyer")
+    except Exception as e:
+        print(f"❌ /serveur followup failed: {e}")
 
 
 @bot.tree.command(name="tout", description="Tout voir : tes stats + serveur + classement")
 async def tout(interaction: discord.Interaction):
-    await interaction.response.defer()
+    try:
+        await interaction.response.defer()
+    except discord.NotFound:
+        print("⚠️ /tout : interaction expirée avant defer")
+        return
+    except Exception as e:
+        print(f"❌ /tout defer failed: {e}")
+        return
     data = await load_data_async()
     guild = interaction.guild
     uid = str(interaction.user.id)
@@ -1361,16 +1435,28 @@ async def tout(interaction: discord.Interaction):
     embed3.set_image(url="attachment://graph.png")
     embed3.set_footer(text=f"⚓ BRAMS SCORE BY FREYDISS • {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')} UTC")
 
-    await interaction.followup.send(
-        embeds=[embed1, embed2, embed3],
-        file=discord.File(graph_buf, "graph.png")
-    )
+    try:
+        await interaction.followup.send(
+            embeds=[embed1, embed2, embed3],
+            file=discord.File(graph_buf, "graph.png")
+        )
+    except discord.NotFound:
+        print("⚠️ /tout : token expiré, impossible d'envoyer")
+    except Exception as e:
+        print(f"❌ /tout followup failed: {e}")
 
 
 @bot.tree.command(name="chercher", description="Voir toutes les stats d'un membre")
 @app_commands.describe(membre="Le membre à inspecter")
 async def chercher(interaction: discord.Interaction, membre: discord.Member):
-    await interaction.response.defer()
+    try:
+        await interaction.response.defer()
+    except discord.NotFound:
+        print("⚠️ /chercher : interaction expirée avant defer")
+        return
+    except Exception as e:
+        print(f"❌ /chercher defer failed: {e}")
+        return
     data = await load_data_async()
     uid = str(membre.id)
     user = get_user(data, uid)
@@ -1442,7 +1528,12 @@ async def chercher(interaction: discord.Interaction, membre: discord.Member):
     embed.set_image(url="attachment://graph.png")
     embed.set_footer(text=f"⚓ BRAMS SCORE BY FREYDISS • {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')} UTC")
 
-    await interaction.followup.send(embed=embed, file=discord.File(graph_buf, "graph.png"))
+    try:
+        await interaction.followup.send(embed=embed, file=discord.File(graph_buf, "graph.png"))
+    except discord.NotFound:
+        print("⚠️ /chercher : token expiré, impossible d'envoyer")
+    except Exception as e:
+        print(f"❌ /chercher followup failed: {e}")
 
 
 # @bot.tree.command(name="prime", description="Génère une vraie fiche WANTED One Piece")
@@ -1484,7 +1575,14 @@ CITATION_HISTORY = []
 @bot.tree.command(name="citation", description="Affiche une citation One Piece")
 @app_commands.describe(perso="Nom du personnage (optionnel, sinon aléatoire)")
 async def citation(interaction: discord.Interaction, perso: str = None):
-    await interaction.response.defer()
+    try:
+        await interaction.response.defer()
+    except discord.NotFound:
+        print("⚠️ /citation : interaction expirée avant defer")
+        return
+    except Exception as e:
+        print(f"❌ /citation defer failed: {e}")
+        return
 
     if perso:
         matches = [c for c in CITATIONS if perso.lower() in c["nom"].lower()]
@@ -1515,18 +1613,30 @@ async def citation(interaction: discord.Interaction, perso: str = None):
     embed.set_footer(text="ONE PIECE • Brams Score")
 
     img_bytes = await get_char_image(data["nom"])
-    if img_bytes:
-        file = discord.File(io.BytesIO(img_bytes), filename="char.jpg")
-        embed.set_thumbnail(url="attachment://char.jpg")
-        await interaction.followup.send(embed=embed, file=file)
-    else:
-        await interaction.followup.send(embed=embed)
+    try:
+        if img_bytes:
+            file = discord.File(io.BytesIO(img_bytes), filename="char.jpg")
+            embed.set_thumbnail(url="attachment://char.jpg")
+            await interaction.followup.send(embed=embed, file=file)
+        else:
+            await interaction.followup.send(embed=embed)
+    except discord.NotFound:
+        print("⚠️ /citation : token expiré, impossible d'envoyer")
+    except Exception as e:
+        print(f"❌ /citation followup failed: {e}")
 
 
 @bot.tree.command(name="addheures", description="[ADMIN] Ajouter des heures vocales à un membre")
 @app_commands.checks.has_permissions(administrator=True)
 async def addheures(interaction: discord.Interaction, membre: discord.Member, heures: float):
-    await interaction.response.defer(ephemeral=True)
+    try:
+        await interaction.response.defer(ephemeral=True)
+    except discord.NotFound:
+        print("⚠️ /addheures : interaction expirée avant defer")
+        return
+    except Exception as e:
+        print(f"❌ /addheures defer failed: {e}")
+        return
     data = await load_data_async()
     uid = str(membre.id)
     user = get_user(data, uid)
@@ -1537,24 +1647,41 @@ async def addheures(interaction: discord.Interaction, membre: discord.Member, he
     seconds_7d = seconds_in_period(user["vocal_sessions"], 7)
     hours_7d = seconds_7d / 3600
     await update_rank(membre, hours_7d, announce=False)
-    await interaction.followup.send(
-        f"✅ +{heures}h ajoutées à {membre.mention} → {hours_7d:.1f}h sur 7j", ephemeral=True
-    )
+    try:
+        await interaction.followup.send(
+            f"✅ +{heures}h ajoutées à {membre.mention} → {hours_7d:.1f}h sur 7j", ephemeral=True
+        )
+    except discord.NotFound:
+        print("⚠️ /addheures : token expiré, impossible d'envoyer")
+    except Exception as e:
+        print(f"❌ /addheures followup failed: {e}")
 
 
 @bot.tree.command(name="forcerank", description="[ADMIN] Recalculer le rank d'un membre")
 @app_commands.checks.has_permissions(administrator=True)
 async def forcerank(interaction: discord.Interaction, membre: discord.Member):
-    await interaction.response.defer(ephemeral=True)
+    try:
+        await interaction.response.defer(ephemeral=True)
+    except discord.NotFound:
+        print("⚠️ /forcerank : interaction expirée avant defer")
+        return
+    except Exception as e:
+        print(f"❌ /forcerank defer failed: {e}")
+        return
     data = await load_data_async()
     uid = str(membre.id)
     user = get_user(data, uid)
     seconds_7d = seconds_in_period(user.get("vocal_sessions", []), 7)
     hours_7d = seconds_7d / 3600
     await update_rank(membre, hours_7d, announce=False)
-    await interaction.followup.send(
-        f"✅ Rank recalculé pour {membre.mention} ({hours_7d:.1f}h/7j)", ephemeral=True
-    )
+    try:
+        await interaction.followup.send(
+            f"✅ Rank recalculé pour {membre.mention} ({hours_7d:.1f}h/7j)", ephemeral=True
+        )
+    except discord.NotFound:
+        print("⚠️ /forcerank : token expiré, impossible d'envoyer")
+    except Exception as e:
+        print(f"❌ /forcerank followup failed: {e}")
 
 @bot.tree.command(name="testrank", description="[ADMIN] Tester l'image d'annonce de rank")
 @app_commands.checks.has_permissions(administrator=True)
@@ -1566,7 +1693,14 @@ async def forcerank(interaction: discord.Interaction, membre: discord.Member):
     app_commands.Choice(name="Yonkou", value="Yonkou"),
 ])
 async def testrank(interaction: discord.Interaction, membre: discord.Member = None, rang: str = "Shichibukai"):
-    await interaction.response.defer(ephemeral=True)
+    try:
+        await interaction.response.defer(ephemeral=True)
+    except discord.NotFound:
+        print("⚠️ /testrank : interaction expirée avant defer")
+        return
+    except Exception as e:
+        print(f"❌ /testrank defer failed: {e}")
+        return
     target = membre or interaction.user
     channel = bot.get_channel(ANNOUNCE_CHANNEL_ID)
     if channel is None:
@@ -1585,12 +1719,24 @@ async def testrank(interaction: discord.Interaction, membre: discord.Member = No
         content=f"Bravo à {target.mention} qui a débloqué le rank **{rang}** {emoji}",
         file=discord.File(img_buf, fname)
     )
-    await interaction.followup.send(f"✅ Annonce envoyée pour {target.mention} ({rang})", ephemeral=True)
+    try:
+        await interaction.followup.send(f"✅ Annonce envoyée pour {target.mention} ({rang})", ephemeral=True)
+    except discord.NotFound:
+        print("⚠️ /testrank : token expiré, impossible d'envoyer")
+    except Exception as e:
+        print(f"❌ /testrank followup failed: {e}")
 
 @bot.tree.command(name="recalcul", description="[ADMIN] Recalculer les ranks (tous ou un membre)")
 @app_commands.checks.has_permissions(administrator=True)
 async def recalcul(interaction: discord.Interaction, membre: discord.Member = None):
-    await interaction.response.defer(ephemeral=True)
+    try:
+        await interaction.response.defer(ephemeral=True)
+    except discord.NotFound:
+        print("⚠️ /recalcul : interaction expirée avant defer")
+        return
+    except Exception as e:
+        print(f"❌ /recalcul defer failed: {e}")
+        return
     data = await load_data_async()
     if membre:
         uid = str(membre.id)
@@ -1599,7 +1745,12 @@ async def recalcul(interaction: discord.Interaction, membre: discord.Member = No
         hours_7d = seconds_7d / 3600
         await update_rank(membre, hours_7d, announce=False, data=data)
         await save_data_async(data)
-        await interaction.followup.send(f"✅ Rank recalculé pour {membre.mention} ({hours_7d:.1f}h/7j)", ephemeral=True)
+        try:
+            await interaction.followup.send(f"✅ Rank recalculé pour {membre.mention} ({hours_7d:.1f}h/7j)", ephemeral=True)
+        except discord.NotFound:
+            print("⚠️ /recalcul : token expiré, impossible d'envoyer")
+        except Exception as e:
+            print(f"❌ /recalcul followup failed: {e}")
     else:
         guild = interaction.guild
         count = 0
@@ -1614,12 +1765,24 @@ async def recalcul(interaction: discord.Interaction, membre: discord.Member = No
             count += 1
             await asyncio.sleep(0.5)
         await save_data_async(data)
-        await interaction.followup.send(f"✅ Ranks recalculés pour {count} membres.", ephemeral=True)
+        try:
+            await interaction.followup.send(f"✅ Ranks recalculés pour {count} membres.", ephemeral=True)
+        except discord.NotFound:
+            print("⚠️ /recalcul : token expiré, impossible d'envoyer")
+        except Exception as e:
+            print(f"❌ /recalcul followup failed: {e}")
 
 @bot.tree.command(name="exportheures", description="[ADMIN] Exporter les ID et heures vocales de tous les membres")
 @app_commands.checks.has_permissions(administrator=True)
 async def exportheures(interaction: discord.Interaction):
-    await interaction.response.defer(ephemeral=True)
+    try:
+        await interaction.response.defer(ephemeral=True)
+    except discord.NotFound:
+        print("⚠️ /exportheures : interaction expirée avant defer")
+        return
+    except Exception as e:
+        print(f"❌ /exportheures defer failed: {e}")
+        return
     data = await load_data_async()
     guild = interaction.guild
     lines = ["# ID_DISCORD (NOM) HEURES"]
@@ -1637,17 +1800,29 @@ async def exportheures(interaction: discord.Interaction):
     content = "\n".join(lines)
     buf = io.BytesIO(content.encode("utf-8"))
     buf.seek(0)
-    await interaction.followup.send(
-        f"📋 **{len(lines) - 1}** membres exportés",
-        file=discord.File(buf, filename="heures_export.txt"),
-        ephemeral=True
-    )
+    try:
+        await interaction.followup.send(
+            f"📋 **{len(lines) - 1}** membres exportés",
+            file=discord.File(buf, filename="heures_export.txt"),
+            ephemeral=True
+        )
+    except discord.NotFound:
+        print("⚠️ /exportheures : token expiré, impossible d'envoyer")
+    except Exception as e:
+        print(f"❌ /exportheures followup failed: {e}")
 
 @bot.tree.command(name="importheures", description="[ADMIN] Importer des heures vocales en masse via fichier .txt")
 @app_commands.checks.has_permissions(administrator=True)
 @app_commands.describe(fichier="Fichier .txt avec une ligne par membre : ID_DISCORD HEURES")
 async def importheures(interaction: discord.Interaction, fichier: discord.Attachment):
-    await interaction.response.defer(ephemeral=True)
+    try:
+        await interaction.response.defer(ephemeral=True)
+    except discord.NotFound:
+        print("⚠️ /importheures : interaction expirée avant defer")
+        return
+    except Exception as e:
+        print(f"❌ /importheures defer failed: {e}")
+        return
 
     if not fichier.filename.endswith((".txt", ".csv")):
         await interaction.followup.send("Le fichier doit être un `.txt` ou `.csv`.", ephemeral=True)
@@ -1703,6 +1878,11 @@ async def importheures(interaction: discord.Interaction, fichier: discord.Attach
         if len(errors) > 10:
             result += f"\n... et {len(errors) - 10} autres"
 
-    await interaction.followup.send(result, ephemeral=True)
+    try:
+        await interaction.followup.send(result, ephemeral=True)
+    except discord.NotFound:
+        print("⚠️ /importheures : token expiré, impossible d'envoyer")
+    except Exception as e:
+        print(f"❌ /importheures followup failed: {e}")
 
 bot.run(TOKEN)
