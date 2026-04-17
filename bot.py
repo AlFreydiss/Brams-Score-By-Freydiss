@@ -75,6 +75,7 @@ def add_background(fig, alpha=0.18):
 # ─────────────────────────────────────────
 TOKEN = os.environ.get("DISCORD_TOKEN")
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
+print(f"[DEBUG] SUPABASE_URL starts with: {SUPABASE_URL[:45] if SUPABASE_URL else 'NONE'}")
 
 def get_db():
     return psycopg2.connect(SUPABASE_URL)
