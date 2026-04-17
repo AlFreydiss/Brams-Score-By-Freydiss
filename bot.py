@@ -430,11 +430,11 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True):
         save_user(uid, user)
 
 async def make_rank_image(member: discord.Member, rank_name: str, hours_7d: float):
-    CARD_W = 900
-    CARD_H = 500
+    CARD_W = 1100
+    CARD_H = 650
     GOLD = (212, 175, 55)
     WHITE = (255, 255, 255)
-    AVATAR_SIZE = 160
+    AVATAR_SIZE = 220
     BG_OPACITY = 0.45
 
     bg_path = RANK_BG_PATHS.get(rank_name, RANK_BG_DEFAULT)
@@ -481,10 +481,10 @@ async def make_rank_image(member: discord.Member, rank_name: str, hours_7d: floa
     ]
     komika_path = next((p for p in KOMIKA_CANDIDATES if os.path.exists(p)), None)
     if komika_path:
-        font_felicit   = ImageFont.truetype(komika_path, 36)
-        font_grade     = ImageFont.truetype(komika_path, 64)
-        font_pseudo    = ImageFont.truetype(komika_path, 38)
-        font_community = ImageFont.truetype(komika_path, 20)
+        font_felicit   = ImageFont.truetype(komika_path, 48)
+        font_grade     = ImageFont.truetype(komika_path, 96)
+        font_pseudo    = ImageFont.truetype(komika_path, 52)
+        font_community = ImageFont.truetype(komika_path, 28)
     else:
         print("⚠️ [make_rank_image] Aucune police Komika trouvée, fallback défaut")
         font_felicit   = ImageFont.load_default()
@@ -548,7 +548,7 @@ async def make_rank_image(member: discord.Member, rank_name: str, hours_7d: floa
 
         if avatar_circle is not None:
             ax = (CARD_W - AVATAR_SIZE) // 2
-            ay = 200
+            ay = 260
             draw.ellipse(
                 [ax - 4, ay - 4, ax + AVATAR_SIZE + 4, ay + AVATAR_SIZE + 4],
                 outline=GOLD, width=3
@@ -559,7 +559,7 @@ async def make_rank_image(member: discord.Member, rank_name: str, hours_7d: floa
             pseudo_y = 280
 
         draw_text_centered(draw, pseudo, font_pseudo, pseudo_y, (*WHITE, 255))
-        draw_text_centered(draw, "BRAMS COMMUNITY", font_community, pseudo_y + 56, (*GOLD, 230))
+        draw_text_centered(draw, "BRAMS COMMUNITY", font_community, pseudo_y + 80, (*GOLD, 230))
 
         return card
 
