@@ -28,6 +28,7 @@ import io
 import math
 import random
 import re
+import time
 import aiohttp
 import matplotlib
 matplotlib.use("Agg")
@@ -372,9 +373,11 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 # ─────────────────────────────────────────
 #  RANK UPDATE + ANNONCES
 # ─────────────────────────────────────────
-async def update_rank(member: discord.Member, hours_7d: float, announce=True):
+async def update_rank(member: discord.Member, hours_7d: float, announce=True, data=None):
     guild = member.guild
-    data = load_data()
+    _local_data = data is None
+    if _local_data:
+        data = load_data()
     uid = str(member.id)
     user = get_user(data, uid)
 
@@ -428,7 +431,8 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True):
 
     if new_rank != old_rank:
         user["last_rank"] = new_rank
-        save_user(uid, user)
+        if _local_data:
+            save_user(uid, user)
 
     print(f"[RANK] {member.display_name} : {old_rank} → {new_rank} (announce={announce}, sent={will_announce})")
 
@@ -613,8 +617,10 @@ async def make_rank_image(member: discord.Member, rank_name: str, hours_7d: floa
     buf.seek(0)
     return buf, is_gif
 
-async def check_alert(member: discord.Member, hours_7d: float):
-    data = load_data()
+async def check_alert(member: discord.Member, hours_7d: float, data=None):
+    _local_data = data is None
+    if _local_data:
+        data = load_data()
     uid = str(member.id)
     user = get_user(data, uid)
 
@@ -622,7 +628,8 @@ async def check_alert(member: discord.Member, hours_7d: float):
     if current_rank is None:
         if user.get("alerted"):
             user["alerted"] = False
-            save_user(uid, user)
+            if _local_data:
+                save_user(uid, user)
         return
 
     cutoff_7d = now_ts() - 7 * 86400
@@ -641,7 +648,8 @@ async def check_alert(member: discord.Member, hours_7d: float):
 
     if will_lose_rank and not already_alerted:
         user["alerted"] = True
-        save_user(uid, user)
+        if _local_data:
+            save_user(uid, user)
         try:
             embed = discord.Embed(
                 title="⚠️ Tu vas perdre ton rank !",
@@ -658,7 +666,8 @@ async def check_alert(member: discord.Member, hours_7d: float):
             pass
     elif not will_lose_rank and already_alerted:
         user["alerted"] = False
-        save_user(uid, user)
+        if _local_data:
+            save_user(uid, user)
 
 # ─────────────────────────────────────────
 #  GRAPHIQUES
@@ -1015,8 +1024,14 @@ async def on_voice_state_update(member, before, after):
 # ─────────────────────────────────────────
 @tasks.loop(hours=1)
 async def check_ranks_loop():
+    start_time = time.time()
     data = load_data()
     for guild in bot.guilds:
+        if not guild.chunked:
+            try:
+                await guild.chunk()
+            except Exception as e:
+                print(f"⚠️ Erreur chunk guild {guild.name}: {e}")
         for member in guild.members:
             if member.bot:
                 continue
@@ -1026,10 +1041,12 @@ async def check_ranks_loop():
             jt = user.get("join_time")
             seconds_7d = seconds_in_period(user["vocal_sessions"], 7, join_time=jt)
             hours_7d = seconds_7d / 3600
-            await update_rank(member, hours_7d, announce=False)
-            await check_alert(member, hours_7d)
-            await asyncio.sleep(2)
-    print("🔄 Vérification horaire des ranks effectuée.")
+            await update_rank(member, hours_7d, announce=False, data=data)
+            await check_alert(member, hours_7d, data=data)
+            await asyncio.sleep(0.1)
+    save_data(data)
+    elapsed = time.time() - start_time
+    print(f"🔄 check_ranks_loop terminé en {elapsed:.1f}s - {len(data)} users synchronisés")
 
 # ─────────────────────────────────────────
 #  COMMANDES SLASH
