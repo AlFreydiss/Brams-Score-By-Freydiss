@@ -404,30 +404,33 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True):
                 except Exception as e:
                     print(f"⚠️ Erreur add_roles {member.display_name}: {e}")
 
-    if announce and new_rank != old_rank and new_rank is not None and old_rank is not None:
-        rank_order = {r: i for i, (_, r) in enumerate(reversed(RANKS))}
-        old_order = rank_order.get(old_rank, -1)
-        new_order = rank_order.get(new_rank, -1)
-        if new_order > old_order:
-            channel = bot.get_channel(ANNOUNCE_CHANNEL_ID)
-            if channel:
-                img_buf, is_gif = await make_rank_image(member, new_rank, hours_7d)
-                fname = "rank_up.gif" if is_gif else "rank_up.png"
-                rank_emojis = {
-                    "Pirate": "🏴‍☠️",
-                    "Shichibukai": "<:5505zorohappy:1132289837056151622>",
-                    "Amiral": "🪖",
-                    "Yonkou": "⚜️",
-                }
-                emoji = rank_emojis.get(new_rank, "")
-                await channel.send(
-                    content=f"Bravo à {member.mention} qui a débloqué le rank **{new_rank}** {emoji}",
-                    file=discord.File(img_buf, fname)
-                )
+    rank_order = {r: i for i, (_, r) in enumerate(reversed(RANKS))}
+    old_order = rank_order.get(old_rank, -1)
+    new_order = rank_order.get(new_rank, -1)
+    will_announce = announce and new_rank is not None and new_order > old_order
 
-    if user.get("last_rank") != new_rank:
+    if will_announce:
+        channel = bot.get_channel(ANNOUNCE_CHANNEL_ID)
+        if channel:
+            img_buf, is_gif = await make_rank_image(member, new_rank, hours_7d)
+            fname = "rank_up.gif" if is_gif else "rank_up.png"
+            rank_emojis = {
+                "Pirate": "🏴‍☠️",
+                "Shichibukai": "<:5505zorohappy:1132289837056151622>",
+                "Amiral": "🪖",
+                "Yonkou": "⚜️",
+            }
+            emoji = rank_emojis.get(new_rank, "")
+            await channel.send(
+                content=f"Bravo à {member.mention} qui a débloqué le rank **{new_rank}** {emoji}",
+                file=discord.File(img_buf, fname)
+            )
+
+    if new_rank != old_rank:
         user["last_rank"] = new_rank
         save_user(uid, user)
+
+    print(f"[RANK] {member.display_name} : {old_rank} → {new_rank} (announce={announce}, sent={will_announce})")
 
 async def make_rank_image(member: discord.Member, rank_name: str, hours_7d: float):
     CARD_W = 1100
@@ -1615,7 +1618,7 @@ async def addheures(interaction: discord.Interaction, membre: discord.Member, he
     save_user(uid, user)
     seconds_7d = seconds_in_period(user["vocal_sessions"], 7)
     hours_7d = seconds_7d / 3600
-    await update_rank(membre, hours_7d)
+    await update_rank(membre, hours_7d, announce=False)
     await interaction.response.send_message(
         f"✅ +{heures}h ajoutées à {membre.mention} → {hours_7d:.1f}h sur 7j", ephemeral=True
     )
@@ -1629,7 +1632,7 @@ async def forcerank(interaction: discord.Interaction, membre: discord.Member):
     user = get_user(data, uid)
     seconds_7d = seconds_in_period(user.get("vocal_sessions", []), 7)
     hours_7d = seconds_7d / 3600
-    await update_rank(membre, hours_7d)
+    await update_rank(membre, hours_7d, announce=False)
     await interaction.response.send_message(
         f"✅ Rank recalculé pour {membre.mention} ({hours_7d:.1f}h/7j)", ephemeral=True
     )
