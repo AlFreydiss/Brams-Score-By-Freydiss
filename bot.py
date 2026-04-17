@@ -3,6 +3,7 @@ from threading import Thread
 import os
 import asyncio
 import psycopg2
+from concurrent.futures import ThreadPoolExecutor
 
 app = Flask('')
 
@@ -215,6 +216,15 @@ def save_user(uid, udata):
     conn.close()
 
 
+async def save_data_async(data):
+    loop = asyncio.get_event_loop()
+    await loop.run_in_executor(db_executor, save_data, data)
+
+async def save_user_async(uid, udata):
+    loop = asyncio.get_event_loop()
+    await loop.run_in_executor(db_executor, save_user, uid, udata)
+
+
 def get_user(data, uid: str):
     if uid not in data:
         data[uid] = {
@@ -368,6 +378,7 @@ intents.message_content = True
 intents.messages = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
+db_executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="db_worker")
 
 # ─────────────────────────────────────────
 #  RANK UPDATE + ANNONCES
@@ -431,7 +442,7 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True, da
     if new_rank != old_rank:
         user["last_rank"] = new_rank
         if _local_data:
-            save_user(uid, user)
+            await save_user_async(uid, user)
 
     print(f"[RANK] {member.display_name} : {old_rank} → {new_rank} (announce={announce}, sent={will_announce})")
 
@@ -635,7 +646,7 @@ async def check_alert(member: discord.Member, hours_7d: float, data=None):
         if user.get("alerted"):
             user["alerted"] = False
             if _local_data:
-                save_user(uid, user)
+                await save_user_async(uid, user)
         return
 
     cutoff_7d = now_ts() - 7 * 86400
@@ -655,7 +666,7 @@ async def check_alert(member: discord.Member, hours_7d: float, data=None):
     if will_lose_rank and not already_alerted:
         user["alerted"] = True
         if _local_data:
-            save_user(uid, user)
+            await save_user_async(uid, user)
         try:
             embed = discord.Embed(
                 title="⚠️ Tu vas perdre ton rank !",
@@ -673,7 +684,7 @@ async def check_alert(member: discord.Member, hours_7d: float, data=None):
     elif not will_lose_rank and already_alerted:
         user["alerted"] = False
         if _local_data:
-            save_user(uid, user)
+            await save_user_async(uid, user)
 
 # ─────────────────────────────────────────
 #  GRAPHIQUES
@@ -820,7 +831,7 @@ async def on_ready():
                     user["join_time"] = now_ts()
                     recovered += 1
     if recovered > 0:
-        save_data(data)
+        await save_data_async(data)
         print(f"🔄 {recovered} membres en vocal récupérés au démarrage")
     print("✅ Bot prêt !")
 
@@ -833,7 +844,7 @@ async def on_message(message):
     user = get_user(data, uid)
     user["messages"].append(now_ts())
     clean_old_data(user)
-    save_user(uid, user)
+    await save_user_async(uid, user)
     await bot.process_commands(message)
 
 @bot.event
@@ -847,7 +858,7 @@ async def on_voice_state_update(member, before, after):
 
     if before.channel is None and after.channel is not None:
         user["join_time"] = now_ts()
-        save_user(uid, user)
+        await save_user_async(uid, user)
 
     elif before.channel is not None and after.channel is None:
         if user["join_time"]:
@@ -860,7 +871,7 @@ async def on_voice_state_update(member, before, after):
             })
             user["join_time"] = None
             clean_old_data(user)
-            save_user(uid, user)
+            await save_user_async(uid, user)
 
             seconds_7d = seconds_in_period(user["vocal_sessions"], 7)
             hours_7d = seconds_7d / 3600
@@ -877,36 +888,51 @@ async def on_voice_state_update(member, before, after):
             })
         user["join_time"] = now_ts()
         clean_old_data(user)
-        save_user(uid, user)
+        await save_user_async(uid, user)
 
 # ─────────────────────────────────────────
 #  LOOP HORAIRE
 # ─────────────────────────────────────────
 @tasks.loop(hours=1)
 async def check_ranks_loop():
-    start_time = time.time()
+    start = time.time()
+    print("🔄 check_ranks_loop démarré...")
     data = load_data()
+    modified_uids = set()
+    total_members = 0
+
     for guild in bot.guilds:
         if not guild.chunked:
             try:
                 await guild.chunk()
+                print(f"✅ Chunked {guild.name} ({len(guild.members)} membres)")
             except Exception as e:
-                print(f"⚠️ Erreur chunk guild {guild.name}: {e}")
+                print(f"⚠️ Chunk error {guild.name}: {e}")
         for member in guild.members:
             if member.bot:
                 continue
+            total_members += 1
             uid = str(member.id)
             user = get_user(data, uid)
+            old_last_rank = user.get("last_rank")
             clean_old_data(user)
             jt = user.get("join_time")
             seconds_7d = seconds_in_period(user["vocal_sessions"], 7, join_time=jt)
             hours_7d = seconds_7d / 3600
             await update_rank(member, hours_7d, announce=False, data=data)
             await check_alert(member, hours_7d, data=data)
-            await asyncio.sleep(0.1)
-    save_data(data)
-    elapsed = time.time() - start_time
-    print(f"🔄 check_ranks_loop terminé en {elapsed:.1f}s - {len(data)} users synchronisés")
+            if user.get("last_rank") != old_last_rank:
+                modified_uids.add(uid)
+            await asyncio.sleep(0.05)
+
+    if modified_uids:
+        print(f"💾 Sauvegarde async de {len(modified_uids)} users modifiés...")
+        for uid in modified_uids:
+            if uid in data:
+                await save_user_async(uid, data[uid])
+
+    elapsed = time.time() - start
+    print(f"🔄 check_ranks_loop terminé en {elapsed:.1f}s - {total_members} membres, {len(modified_uids)} sauvés")
 
 # ─────────────────────────────────────────
 #  COMMANDES SLASH
@@ -1493,7 +1519,7 @@ async def addheures(interaction: discord.Interaction, membre: discord.Member, he
     now = now_ts()
     user["vocal_sessions"].append({"start": now - heures * 3600, "end": now, "channel": None})
     clean_old_data(user)
-    save_user(uid, user)
+    await save_user_async(uid, user)
     seconds_7d = seconds_in_period(user["vocal_sessions"], 7)
     hours_7d = seconds_7d / 3600
     await update_rank(membre, hours_7d, announce=False)
@@ -1558,7 +1584,7 @@ async def recalcul(interaction: discord.Interaction, membre: discord.Member = No
         seconds_7d = seconds_in_period(user.get("vocal_sessions", []), 7)
         hours_7d = seconds_7d / 3600
         await update_rank(membre, hours_7d, announce=False, data=data)
-        save_data(data)
+        await save_data_async(data)
         await interaction.followup.send(f"✅ Rank recalculé pour {membre.mention} ({hours_7d:.1f}h/7j)", ephemeral=True)
     else:
         guild = interaction.guild
@@ -1573,7 +1599,7 @@ async def recalcul(interaction: discord.Interaction, membre: discord.Member = No
             await update_rank(m, hours_7d, announce=False, data=data)
             count += 1
             await asyncio.sleep(0.5)
-        save_data(data)
+        await save_data_async(data)
         await interaction.followup.send(f"✅ Ranks recalculés pour {count} membres.", ephemeral=True)
 
 @bot.tree.command(name="exportheures", description="[ADMIN] Exporter les ID et heures vocales de tous les membres")
@@ -1655,7 +1681,7 @@ async def importheures(interaction: discord.Interaction, fichier: discord.Attach
             await update_rank(member, hours_7d, announce=False)
             await asyncio.sleep(0.3)
 
-    save_data(data)
+    await save_data_async(data)
 
     result = f"✅ **{imported}** membres importés avec succès !"
     if errors:
