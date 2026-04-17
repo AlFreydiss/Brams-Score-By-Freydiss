@@ -27,6 +27,7 @@ import json
 import io
 import math
 import random
+import re
 import aiohttp
 import matplotlib
 matplotlib.use("Agg")
@@ -495,6 +496,13 @@ async def make_rank_image(member: discord.Member, rank_name: str, hours_7d: floa
                    "Amiral": "AMIRAL", "Yonkou": "YONKOU"}
     grade_text = rank_labels.get(rank_name, rank_name.upper())
     pseudo = member.display_name
+    pseudo_clean = re.sub(r'[^\w\s\-\.]', '', pseudo, flags=re.UNICODE).strip()
+    pseudo_clean = ''.join(c for c in pseudo_clean if ord(c) < 128).strip()
+    if not pseudo_clean:
+        pseudo_clean = "MEMBRE"
+    if len(pseudo_clean) > 16:
+        pseudo_clean = pseudo_clean[:16]
+    print(f"[RANK IMAGE] Pseudo original: {pseudo!r}, nettoyé: {pseudo_clean!r}")
 
     avatar_img = None
     try:
@@ -534,12 +542,10 @@ async def make_rank_image(member: discord.Member, rank_name: str, hours_7d: floa
 
     def compose_frame(bg_frame):
         photo = cover_resize(bg_frame.convert("RGBA"), CARD_W, CARD_H)
-        r, g, b, a = photo.split()
-        a = a.point(lambda x: int(x * BG_OPACITY))
-        photo = Image.merge("RGBA", (r, g, b, a))
+        card = photo.copy()
 
-        card = Image.new("RGBA", (CARD_W, CARD_H), (15, 15, 22, 255))
-        card = Image.alpha_composite(card, photo)
+        overlay = Image.new("RGBA", (CARD_W, CARD_H), (10, 10, 15, 140))
+        card = Image.alpha_composite(card, overlay)
         draw = ImageDraw.Draw(card, "RGBA")
 
         draw_text_centered(draw, f"FELICITATIONS POUR LE RANK", font_felicit, 30, (*GOLD, 255))
@@ -557,7 +563,7 @@ async def make_rank_image(member: discord.Member, rank_name: str, hours_7d: floa
         else:
             pseudo_y = 280
 
-        draw_text_centered(draw, pseudo, font_pseudo, pseudo_y, (*WHITE, 255))
+        draw_text_centered(draw, pseudo_clean, font_pseudo, pseudo_y, (*WHITE, 255))
         draw_text_centered(draw, "BRAMS COMMUNITY", font_community, pseudo_y + 80, (*GOLD, 230))
 
         return card
