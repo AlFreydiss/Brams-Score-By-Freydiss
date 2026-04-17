@@ -72,6 +72,10 @@ def add_background(fig, alpha=0.18):
 #  CONFIG
 # ─────────────────────────────────────────
 TOKEN = os.environ.get("DISCORD_TOKEN")
+MONGO_URL = os.environ.get("MONGODB_URL")
+mongo_client = MongoClient(MONGO_URL)
+db = mongo_client["bramscore"]
+collection = db["users"]
 DATA_FILE = "data.json"
 ANNOUNCE_CHANNEL_ID = 1494342996848672828
 ALERT_HOURS_THRESHOLD = 5.0
@@ -164,32 +168,19 @@ def now_ts():
     return datetime.now(timezone.utc).timestamp()
 
 def load_data():
-    if not os.path.exists(DATA_FILE):
-        return {}
-    try:
-        with open(DATA_FILE, "r") as f:
-            return json.load(f)
-    except (json.JSONDecodeError, ValueError):
-        try:
-            with open(DATA_FILE, "r") as f:
-                lines = f.readlines()
-            for i in range(len(lines)-1, -1, -1):
-                if lines[i].strip() == '},':
-                    lines[i] = lines[i].replace('},', '}')
-                    lines = lines[:i+1]
-                    lines.append('}\n')
-                    break
-            data = json.loads(''.join(lines))
-            save_data(data)
-            return data
-        except:
-            return {}
+    data = {}
+    for doc in collection.find():
+        uid = doc["_id"]
+        data[uid] = {k: v for k, v in doc.items() if k != "_id"}
+    return data
 
 def save_data(data):
-    tmp = DATA_FILE + ".tmp"
-    with open(tmp, "w") as f:
-        json.dump(data, f, indent=2)
-    os.replace(tmp, DATA_FILE)
+    for uid, udata in data.items():
+        collection.update_one(
+            {"_id": uid},
+            {"$set": udata},
+            upsert=True
+        )
 
 def get_user(data, uid: str):
     if uid not in data:
