@@ -767,7 +767,7 @@ def make_activity_graph(vocal_by_day, msg_by_day, title="Activité des 7 dernier
 
     plt.tight_layout(rect=[0, 0, 1, 0.93])
     buf = io.BytesIO()
-    plt.savefig(buf, format="png", bbox_inches="tight", dpi=150)
+    plt.savefig(buf, format="png", dpi=150)
     buf.seek(0)
     plt.close()
     return buf
@@ -811,7 +811,7 @@ def make_peak_hours_graph(hour_counts):
 
     plt.tight_layout()
     buf = io.BytesIO()
-    plt.savefig(buf, format="png", bbox_inches="tight", dpi=150)
+    plt.savefig(buf, format="png", dpi=150)
     buf.seek(0)
     plt.close()
     return buf
