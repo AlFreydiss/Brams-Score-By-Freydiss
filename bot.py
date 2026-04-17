@@ -203,6 +203,19 @@ def save_data(data):
     cur.close()
     conn.close()
 
+
+def save_user(uid, udata):
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("""
+        INSERT INTO users (uid, data) VALUES (%s, %s)
+        ON CONFLICT (uid) DO UPDATE SET data = EXCLUDED.data
+    """, (uid, json.dumps(udata)))
+    conn.commit()
+    cur.close()
+    conn.close()
+
+
 def get_user(data, uid: str):
     if uid not in data:
         data[uid] = {
