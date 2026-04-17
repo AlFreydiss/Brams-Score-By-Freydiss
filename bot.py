@@ -74,11 +74,23 @@ def add_background(fig, alpha=0.18):
 #  CONFIG
 # ─────────────────────────────────────────
 TOKEN = os.environ.get("DISCORD_TOKEN")
-MONGO_URL = os.environ.get("MONGODB_URL")
-mongo_client = MongoClient(MONGO_URL, tlsAllowInvalidCertificates=True)
-db = mongo_client["bramscore"]
-collection = db["users"]
-DATA_FILE = "data.json"
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
+
+def get_db():
+    return psycopg2.connect(SUPABASE_URL)
+
+def init_db():
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            uid TEXT PRIMARY KEY,
+            data JSONB
+        )
+    """)
+    conn.commit()
+    cur.close()
+    conn.close()
 ANNOUNCE_CHANNEL_ID = 1494342996848672828
 ALERT_HOURS_THRESHOLD = 5.0
 GUILD_IDS = [924346730194014220]
