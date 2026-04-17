@@ -1077,22 +1077,36 @@ async def stats(interaction: discord.Interaction):
 
     if next_rank:
         bar = make_progress_bar(hours_7d, next_thresh, 12)
-        rank_value = f"{r_emoji} **{rank_actuel}** — `{bar}` **{hours_7d:.1f}h**/{next_thresh}h → {next_rank}"
+        rank_section = (
+            f"━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"**RANK ACTUEL**\n"
+            f"{r_emoji} **{rank_actuel}**\n"
+            f"`{bar}` {hours_7d:.1f}h / {next_thresh}h  →  {next_rank}"
+        )
     else:
-        rank_value = f"{r_emoji} **{rank_actuel}** — `▰▰▰▰▰▰▰▰▰▰▰▰` 👑 Rang maximum !"
+        rank_section = (
+            f"━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"**RANK ACTUEL**\n"
+            f"{r_emoji} **{rank_actuel}**\n"
+            f"`▰▰▰▰▰▰▰▰▰▰▰▰`  👑 Rang maximum"
+        )
 
     embed = discord.Embed(
-        title=f"⚓ {me.display_name.upper()}{live_tag}",
+        title=f"{r_emoji} {me.display_name.upper()}{live_tag}",
         description=(
-            f"{rank_value}\n"
-            f"💰 Prime : **{format_prime(prime_val)}**\n"
-            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-            f"**🎙️ Vocal**\n"
-            f"> Aujourd'hui `{format_duration(s1d)}` · 7j `{format_duration(s7d)}` · 14j `{format_duration(s14d)}`\n"
-            f"> Total : **{format_duration(s_tot)}**\n\n"
-            f"**💬 Messages**\n"
-            f"> Aujourd'hui `{m1d}` · 7j `{m7d}` · 14j `{m14d}`\n"
-            f"> Total : **{m_tot}**"
+            f"{rank_section}\n\n"
+            f"**💰 PRIME**\n"
+            f"**{format_prime(prime_val)}**\n\n"
+            f"**🎙️ TEMPS VOCAL**\n"
+            f"📅 Aujourd'hui  `{format_duration(s1d)}`\n"
+            f"📆 7 jours       `{format_duration(s7d)}`\n"
+            f"📆 14 jours      `{format_duration(s14d)}`\n"
+            f"⭐ Total         `{format_duration(s_tot)}`\n\n"
+            f"**💬 MESSAGES**\n"
+            f"📅 Aujourd'hui  `{m1d} msg`\n"
+            f"📆 7 jours       `{m7d} msg`\n"
+            f"📆 14 jours      `{m14d} msg`\n"
+            f"⭐ Total         `{m_tot} msg`"
         ),
         color=discord.Color.from_rgb(212, 175, 55)
     )
