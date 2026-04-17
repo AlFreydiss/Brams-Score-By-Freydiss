@@ -3,7 +3,6 @@ from threading import Thread
 import os
 import asyncio
 import psycopg2
-import json
 
 app = Flask('')
 
@@ -51,7 +50,7 @@ RANK_BG_PATHS = {
     "Amiral": "fujitoraaaa.gif",
     "Yonkou": "yonkou_bg.gif",
 }
-RANK_BG_DEFAULT = "attached_assets/3731-boa-hancock_1776349698684.png"
+RANK_BG_DEFAULT = "background.jpeg"
 
 if os.path.exists(GRAPH_FONT_PATH):
     fm.fontManager.addfont(GRAPH_FONT_PATH)
@@ -94,7 +93,7 @@ def init_db():
     conn.close()
 ANNOUNCE_CHANNEL_ID = 1494342996848672828
 ALERT_HOURS_THRESHOLD = 5.0
-GUILD_IDS = [924346730194014220]
+GUILD_IDS = [924346730194014220, 1478937064031518892]
 
 RANK_ROLES = {
     "Pirate": 1486554682263343284,
@@ -775,152 +774,6 @@ def make_peak_hours_graph(hour_counts):
 # ─────────────────────────────────────────
 TEMPLATE_PATH = "template.png"
 
-async def generate_wanted_image(membre, bounty_str, rank, vocal_7d, vocal_14d, msg_7d, msg_14d, next_rank_str):
-    img = Image.open(TEMPLATE_PATH).convert("RGB")
-    W, H = img.size
-    BLACK = (30, 25, 15)
-    BG = (218, 187, 142)
-
-    def try_font(path, size):
-        try:
-            return ImageFont.truetype(path, size)
-        except Exception:
-            return ImageFont.load_default()
-
-    use_bangers = os.path.exists(FONT_PATH)
-    bp = FONT_PATH if use_bangers else "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
-
-    font_name        = try_font(bp, 55)
-    font_doa         = try_font(bp, 48)
-    font_prime       = try_font(bp, 70)
-    font_grade_label = try_font(bp, 32)
-    font_grade       = try_font(bp, 26)
-
-    av_x, av_y, av_w, av_h = 140, 240, 780, 445
-
-    try:
-        av_url = str(membre.display_avatar.replace(size=512, format="png"))
-        async with aiohttp.ClientSession() as session:
-            async with session.get(av_url) as resp:
-                av_bytes = await resp.read()
-        av_img = Image.open(io.BytesIO(av_bytes)).convert("RGBA")
-        av_img = av_img.resize((av_w, av_h), Image.LANCZOS)
-        av_rgb = av_img.convert("RGB")
-        av_rgb = ImageEnhance.Color(av_rgb).enhance(0.7)
-        av_rgb = ImageEnhance.Contrast(av_rgb).enhance(1.1)
-        sepia = Image.new("RGB", (av_w, av_h), (40, 30, 15))
-        av_rgb = Image.blend(av_rgb, sepia, 0.06)
-        img.paste(av_rgb, (av_x, av_y))
-    except Exception as e:
-        print(f"[WANTED] Erreur avatar: {e}")
-
-    draw = ImageDraw.Draw(img)
-
-    name_txt = membre.display_name.upper()
-    if len(name_txt) > 20:
-        name_txt = name_txt[:19] + "."
-    draw.text((W//2, 720), name_txt, font=font_name, fill=BLACK, anchor="mm")
-
-    draw.rectangle([50, 770, 1005, 1210], fill=BG)
-    draw.text((W//2, 820), "DEAD OR ALIVE", font=font_doa, fill=BLACK, anchor="mm")
-    draw.text((W//2, 920), bounty_str + " -", font=font_prime, fill=BLACK, anchor="mm")
-    draw.line([(120, 975), (940, 975)], fill=BLACK, width=4)
-    draw.line([(120, 983), (940, 983)], fill=BLACK, width=3)
-
-    draw.rectangle([140, 1010, 920, 1130], outline=BLACK, width=3)
-    draw.text((W//2, 1045), "GRADE :", font=font_grade_label, fill=BLACK, anchor="mm")
-
-    grades = ["PIRATE", "AMIRAL", "SHICHIBUKAI", "YONKOU"]
-    gx_positions = [220, 400, 600, 800]
-    for i, g in enumerate(grades):
-        gx = gx_positions[i]
-        gy = 1095
-        checked = g.lower() == rank.lower()
-        draw.rectangle([gx - 13, gy - 13, gx + 13, gy + 13], outline=BLACK, width=2)
-        if checked:
-            draw.rectangle([gx - 9, gy - 9, gx + 9, gy + 9], fill=BLACK)
-        draw.text((gx + 20, gy), g, font=font_grade, fill=BLACK, anchor="lm")
-
-    buf = io.BytesIO()
-    img.save(buf, format="PNG", quality=95)
-    buf.seek(0)
-    return buf
-
-# ─────────────────────────────────────────
-#  GÉNÉRATEUR WANTED CUSTOM (prefix !wanted)
-# ─────────────────────────────────────────
-async def generate_wanted_custom(name, bounty, grade, avatar_url=None):
-    img = Image.open(TEMPLATE_PATH).convert("RGB")
-    W, H = img.size
-    BLACK = (30, 25, 15)
-    BG = (218, 187, 142)
-
-    def try_font(path, size):
-        try:
-            return ImageFont.truetype(path, size)
-        except Exception:
-            return ImageFont.load_default()
-
-    use_bangers = os.path.exists(FONT_PATH)
-    bp = FONT_PATH if use_bangers else "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
-
-    font_name        = try_font(bp, 55)
-    font_doa         = try_font(bp, 48)
-    font_prime       = try_font(bp, 70)
-    font_grade_label = try_font(bp, 32)
-    font_grade       = try_font(bp, 26)
-
-    av_x, av_y, av_w, av_h = 140, 240, 780, 445
-
-    if avatar_url:
-        try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(avatar_url) as resp:
-                    av_bytes = await resp.read()
-            av_img = Image.open(io.BytesIO(av_bytes)).convert("RGB")
-            av_img = av_img.resize((av_w, av_h), Image.LANCZOS)
-            av_img = ImageEnhance.Color(av_img).enhance(0.7)
-            av_img = ImageEnhance.Contrast(av_img).enhance(1.1)
-            sepia = Image.new("RGB", (av_w, av_h), (40, 30, 15))
-            av_img = Image.blend(av_img, sepia, 0.06)
-            img.paste(av_img, (av_x, av_y))
-        except Exception as e:
-            print(f"[WANTED CUSTOM] Erreur avatar: {e}")
-
-    draw = ImageDraw.Draw(img)
-
-    name_txt = name.upper()
-    if len(name_txt) > 20:
-        name_txt = name_txt[:19] + "."
-    draw.text((W//2, 720), name_txt, font=font_name, fill=BLACK, anchor="mm")
-
-    draw.rectangle([50, 770, 1005, 1210], fill=BG)
-    draw.text((W//2, 820), "DEAD OR ALIVE", font=font_doa, fill=BLACK, anchor="mm")
-    draw.text((W//2, 920), f"{bounty} -", font=font_prime, fill=BLACK, anchor="mm")
-    draw.line([(120, 975), (940, 975)], fill=BLACK, width=4)
-    draw.line([(120, 983), (940, 983)], fill=BLACK, width=3)
-
-    draw.rectangle([140, 1010, 920, 1130], outline=BLACK, width=3)
-    draw.text((W//2, 1045), "GRADE :", font=font_grade_label, fill=BLACK, anchor="mm")
-
-    grades_list = ["PIRATE", "AMIRAL", "SHICHIBUKAI", "YONKOU"]
-    gx_positions = [220, 400, 600, 800]
-    for i, g in enumerate(grades_list):
-        gx = gx_positions[i]
-        gy = 1095
-        checked = g.lower() == grade.lower()
-        draw.rectangle([gx - 13, gy - 13, gx + 13, gy + 13], outline=BLACK, width=2)
-        if checked:
-            draw.rectangle([gx - 9, gy - 9, gx + 9, gy + 9], fill=BLACK)
-        draw.text((gx + 20, gy), g, font=font_grade, fill=BLACK, anchor="lm")
-
-    buf = io.BytesIO()
-    img.save(buf, format="PNG", quality=95)
-    buf.seek(0)
-    return buf
-
-
-
 # ─────────────────────────────────────────
 #  EVENTS
 # ─────────────────────────────────────────
@@ -930,7 +783,7 @@ async def on_ready():
     init_db()
     if not check_ranks_loop.is_running():
         check_ranks_loop.start()
-    for gid in [924346730194014220, 1478937064031518892]:
+    for gid in GUILD_IDS:
         guild = discord.Object(id=gid)
         try:
             bot.tree.copy_global_to(guild=guild)
@@ -1695,7 +1548,8 @@ async def recalcul(interaction: discord.Interaction, membre: discord.Member = No
         user = get_user(data, uid)
         seconds_7d = seconds_in_period(user.get("vocal_sessions", []), 7)
         hours_7d = seconds_7d / 3600
-        await update_rank(membre, hours_7d, announce=False)
+        await update_rank(membre, hours_7d, announce=False, data=data)
+        save_data(data)
         await interaction.followup.send(f"✅ Rank recalculé pour {membre.mention} ({hours_7d:.1f}h/7j)", ephemeral=True)
     else:
         guild = interaction.guild
@@ -1707,9 +1561,10 @@ async def recalcul(interaction: discord.Interaction, membre: discord.Member = No
             user = get_user(data, uid)
             seconds_7d = seconds_in_period(user.get("vocal_sessions", []), 7)
             hours_7d = seconds_7d / 3600
-            await update_rank(m, hours_7d, announce=False)
+            await update_rank(m, hours_7d, announce=False, data=data)
             count += 1
             await asyncio.sleep(0.5)
+        save_data(data)
         await interaction.followup.send(f"✅ Ranks recalculés pour {count} membres.", ephemeral=True)
 
 @bot.tree.command(name="exportheures", description="[ADMIN] Exporter les ID et heures vocales de tous les membres")
@@ -1800,68 +1655,5 @@ async def importheures(interaction: discord.Interaction, fichier: discord.Attach
             result += f"\n... et {len(errors) - 10} autres"
 
     await interaction.followup.send(result, ephemeral=True)
-
-@bot.tree.command(name="bonjour", description="Un salut dans 20 langues avec style !")
-async def bonjour(interaction: discord.Interaction):
-    await interaction.response.defer()
-    saluts = [
-        ("Francais", "Bonjour"),
-        ("Anglais", "Hello"),
-        ("Espagnol", "Hola"),
-        ("Japonais", "Konnichiwa"),
-        ("Arabe", "Salam"),
-        ("Portugais", "Ola"),
-        ("Allemand", "Hallo"),
-        ("Italien", "Ciao"),
-        ("Russe", "Privet"),
-        ("Chinois", "Ni hao"),
-        ("Coreen", "Annyeong"),
-        ("Turc", "Merhaba"),
-        ("Hindi", "Namaste"),
-        ("Neerlandais", "Hallo"),
-        ("Suedois", "Hej"),
-        ("Polonais", "Czesc"),
-        ("Grec", "Geia sou"),
-        ("Roumain", "Salut"),
-        ("Swahili", "Jambo"),
-        ("Hebreu", "Shalom"),
-    ]
-    width, height = 750, 540
-    img = Image.new("RGB", (width, height), (24, 24, 32))
-    draw = ImageDraw.Draw(img)
-    try:
-        title_font = ImageFont.truetype(GRAPH_FONT_PATH, 32)
-        lang_font = ImageFont.truetype(GRAPH_FONT_PATH, 16)
-        word_font = ImageFont.truetype(GRAPH_FONT_PATH, 18)
-    except:
-        title_font = ImageFont.load_default()
-        lang_font = ImageFont.load_default()
-        word_font = ImageFont.load_default()
-    title_text = "Salut le Monde"
-    bbox = draw.textbbox((0, 0), title_text, font=title_font)
-    tw = bbox[2] - bbox[0]
-    draw.text(((width - tw) // 2, 22), title_text, font=title_font, fill=(255, 255, 255))
-    draw.line([(60, 65), (width - 60, 65)], fill=(60, 60, 80), width=1)
-    col1_x = 55
-    col2_x = width // 2 + 15
-    start_y = 85
-    row_h = 40
-    for i, (langue, mot) in enumerate(saluts):
-        col = 0 if i < 10 else 1
-        row = i if i < 10 else i - 10
-        x = col1_x if col == 0 else col2_x
-        y = start_y + row * row_h
-        draw.rounded_rectangle([(x, y), (x + 320, y + 32)], radius=6, fill=(34, 34, 46), outline=(50, 50, 65))
-        draw.text((x + 12, y + 7), langue, font=lang_font, fill=(140, 140, 170))
-        draw.text((x + 150, y + 6), mot, font=word_font, fill=(255, 255, 255))
-    draw.line([(60, height - 40), (width - 60, height - 40)], fill=(60, 60, 80), width=1)
-    footer = f"{interaction.user.display_name}"
-    bbox2 = draw.textbbox((0, 0), footer, font=lang_font)
-    fw = bbox2[2] - bbox2[0]
-    draw.text(((width - fw) // 2, height - 30), footer, font=lang_font, fill=(100, 100, 130))
-    buf = io.BytesIO()
-    img.save(buf, format="PNG")
-    buf.seek(0)
-    await interaction.followup.send(file=discord.File(buf, filename="bonjour.png"))
 
 bot.run(TOKEN)
