@@ -74,7 +74,7 @@ def add_background(fig, alpha=0.18):
 # ─────────────────────────────────────────
 TOKEN = os.environ.get("DISCORD_TOKEN")
 MONGO_URL = os.environ.get("MONGODB_URL")
-mongo_client = MongoClient(MONGO_URL)
+mongo_client = MongoClient(MONGO_URL, tlsAllowInvalidCertificates=True)
 db = mongo_client["bramscore"]
 collection = db["users"]
 DATA_FILE = "data.json"
