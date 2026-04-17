@@ -471,7 +471,7 @@ async def make_rank_image(member: discord.Member, rank_name: str, hours_7d: floa
     except Exception as e:
         print(f"⚠️ [make_rank_image] Impossible d'ouvrir l'image finale ({resolved_path}): {e}")
         src_img = Image.new("RGBA", (900, 500), (15, 15, 22, 255))
-    is_gif = getattr(src_img, "is_animated", False)
+    is_gif = resolved_path.lower().endswith(".gif") or getattr(src_img, "is_animated", False)
 
     KOMIKA_CANDIDATES = [
         "KOMIKAX_.ttf",
@@ -571,14 +571,25 @@ async def make_rank_image(member: discord.Member, rank_name: str, hours_7d: floa
             n_frames = src_img.n_frames
         except Exception:
             n_frames = 1
+        if n_frames == 0:
+            n_frames = 1
         max_frames = 60
         step = max(1, n_frames // max_frames)
         for i in range(0, n_frames, step):
-            src_img.seek(i)
-            frames.append(compose_frame(src_img.copy()))
-            src_img.seek(i)
-            dur = src_img.info.get("duration", 80)
-            durations.append(max(40, dur * step))
+            try:
+                src_img.seek(i)
+                frames.append(compose_frame(src_img.copy()))
+                src_img.seek(i)
+                dur = src_img.info.get("duration", 80)
+                durations.append(max(40, dur * step))
+            except Exception as e:
+                print(f"⚠️ [make_rank_image] Erreur frame {i}: {e}")
+                continue
+        if not frames:
+            img = compose_frame(src_img)
+            img.convert("RGB").save(buf, format="PNG", optimize=True)
+            buf.seek(0)
+            return buf, False
         pal_frames = []
         for f in frames:
             rgb = f.convert("RGB")
