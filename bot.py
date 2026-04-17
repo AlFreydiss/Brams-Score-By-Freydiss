@@ -2,7 +2,8 @@ from flask import Flask
 from threading import Thread
 import os
 import asyncio
-from pymongo import MongoClient
+import psycopg2
+import json
 
 app = Flask('')
 
