@@ -5,7 +5,7 @@ import asyncio
 import psycopg2
 import json
 
-app = Flask('')
+app = Flask('') 
 
 @app.route('/')
 def home():
