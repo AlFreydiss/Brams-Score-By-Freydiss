@@ -45,10 +45,10 @@ BG_IMAGE_PATH = "background.jpeg"
 FONT_PATH = "PirataOne-Regular.ttf"
 GRAPH_FONT_PATH = "Righteous-Regular.ttf"
 RANK_BG_PATHS = {
-    "Pirate": "Ace.gif",
-    "Shichibukai": "jinbei shishibukai.gif",
+    "Pirate": "pirate_bg.gif",
+    "Shichibukai": "shichibukai_bg.gif",
     "Amiral": "fujitoraaaa.gif",
-    "Yonkou": "BAERBBBBBBBBE_NOIR.gif",
+    "Yonkou": "yonkou_bg.gif",
 }
 RANK_BG_DEFAULT = "attached_assets/3731-boa-hancock_1776349698684.png"
 
