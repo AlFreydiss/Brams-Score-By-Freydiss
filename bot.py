@@ -76,6 +76,13 @@ ANNOUNCE_CHANNEL_ID = 1494342996848672828
 ALERT_HOURS_THRESHOLD = 5.0
 GUILD_IDS = [924346730194014220]
 
+RANK_ROLES = {
+    "Pirate": 1486554682263343284,
+    "Shichibukai": 1486554770306236596,
+    "Amiral": 1486554823573766164,
+    "Yonkou": 1486554858075984043,
+}
+
 RANKS = [
     (70, "Yonkou"),
     (40, "Amiral"),
@@ -350,14 +357,14 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True):
     old_rank = user.get("last_rank")
     rank_names = [r for _, r in RANKS]
 
-    roles_to_remove = [r for r in member.roles if r.name in rank_names]
-    if roles_to_remove:
-        await member.remove_roles(*roles_to_remove)
+   roles_to_remove = [r for r in member.roles if r.id in RANK_ROLES.values()]
+if roles_to_remove:
+    await member.remove_roles(*roles_to_remove)
 
-    if new_rank:
-        role = discord.utils.get(guild.roles, name=new_rank)
-        if role:
-            await member.add_roles(role)
+if new_rank:
+    role = guild.get_role(RANK_ROLES[new_rank])
+    if role:
+        await member.add_roles(role)
 
     if announce and new_rank != old_rank and new_rank is not None:
         rank_order = {r: i for i, (_, r) in enumerate(reversed(RANKS))}
