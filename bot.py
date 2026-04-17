@@ -416,7 +416,7 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True):
                 rank_emojis = {
                     "Pirate": "🏴‍☠️",
                     "Shichibukai": "<:5505zorohappy:1132289837056151622>",
-                    "Amiral": "<:Winner:997169279336206398>",
+                    "Amiral": "🪖",
                     "Yonkou": "⚜️",
                 }
                 emoji = rank_emojis.get(new_rank, "")
@@ -438,18 +438,58 @@ async def make_rank_image(member: discord.Member, rank_name: str, hours_7d: floa
     BG_OPACITY = 0.45
 
     bg_path = RANK_BG_PATHS.get(rank_name, RANK_BG_DEFAULT)
-    src_img = Image.open(bg_path)
+
+    def resolve_image_path(path):
+        if os.path.exists(path):
+            try:
+                Image.open(path).verify()
+                return path
+            except Exception:
+                print(f"⚠️ [make_rank_image] Image corrompue : {path}")
+        filename = os.path.basename(path)
+        alt1 = os.path.join("attached_assets", filename)
+        if os.path.exists(alt1):
+            try:
+                Image.open(alt1).verify()
+                print(f"⚠️ [make_rank_image] Fallback attached_assets/ pour : {path}")
+                return alt1
+            except Exception:
+                print(f"⚠️ [make_rank_image] Image corrompue dans attached_assets/ : {alt1}")
+        if os.path.exists(filename):
+            try:
+                Image.open(filename).verify()
+                print(f"⚠️ [make_rank_image] Fallback racine pour : {path}")
+                return filename
+            except Exception:
+                print(f"⚠️ [make_rank_image] Image corrompue à la racine : {filename}")
+        print(f"⚠️ [make_rank_image] Image introuvable, fallback sur RANK_BG_DEFAULT : {path}")
+        return RANK_BG_DEFAULT
+
+    resolved_path = resolve_image_path(bg_path)
+    try:
+        src_img = Image.open(resolved_path)
+    except Exception as e:
+        print(f"⚠️ [make_rank_image] Impossible d'ouvrir l'image finale ({resolved_path}): {e}")
+        src_img = Image.new("RGBA", (900, 500), (15, 15, 22, 255))
     is_gif = getattr(src_img, "is_animated", False)
 
-    try:
-        font_felicit = ImageFont.truetype("attached_assets/KomikaAxis.ttf", 36)
-        font_grade = ImageFont.truetype("attached_assets/KomikaAxis.ttf", 64)
-        font_pseudo = ImageFont.truetype("attached_assets/KomikaAxis.ttf", 38)
-        font_community = ImageFont.truetype("attached_assets/KomikaAxis.ttf", 20)
-    except Exception:
-        font_felicit = ImageFont.load_default()
-        font_grade = font_felicit
-        font_pseudo = font_felicit
+    KOMIKA_CANDIDATES = [
+        "KOMIKAX_.ttf",
+        "KomikaAxis.ttf",
+        "attached_assets/KOMIKAX_.ttf",
+        "attached_assets/KomikaAxis.ttf",
+    ]
+    komika_path = next((p for p in KOMIKA_CANDIDATES if os.path.exists(p)), None)
+    if komika_path:
+        font_felicit   = ImageFont.truetype(komika_path, 36)
+        font_grade     = ImageFont.truetype(komika_path, 64)
+        font_pseudo    = ImageFont.truetype(komika_path, 38)
+        font_community = ImageFont.truetype(komika_path, 20)
+    else:
+        print("⚠️ [make_rank_image] Aucune police Komika trouvée, fallback défaut")
+        font_felicit   = ImageFont.load_default()
+        font_grade     = font_felicit
+        font_pseudo    = font_felicit
         font_community = font_felicit
 
     rank_labels = {"Pirate": "PIRATE", "Shichibukai": "SHICHIBUKAI",
@@ -1579,7 +1619,7 @@ async def testrank(interaction: discord.Interaction, membre: discord.Member = No
     rank_emojis = {
         "Pirate": "🏴‍☠️",
         "Shichibukai": "<:5505zorohappy:1132289837056151622>",
-        "Amiral": "<:Winner:997169279336206398>",
+        "Amiral": "🪖",
         "Yonkou": "⚜️",
     }
     emoji = rank_emojis.get(rang, "")
