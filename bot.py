@@ -1486,6 +1486,7 @@ async def citation(interaction: discord.Interaction, perso: str = None):
 @bot.tree.command(name="addheures", description="[ADMIN] Ajouter des heures vocales à un membre")
 @app_commands.checks.has_permissions(administrator=True)
 async def addheures(interaction: discord.Interaction, membre: discord.Member, heures: float):
+    await interaction.response.defer(ephemeral=True)
     data = load_data()
     uid = str(membre.id)
     user = get_user(data, uid)
@@ -1496,7 +1497,7 @@ async def addheures(interaction: discord.Interaction, membre: discord.Member, he
     seconds_7d = seconds_in_period(user["vocal_sessions"], 7)
     hours_7d = seconds_7d / 3600
     await update_rank(membre, hours_7d, announce=False)
-    await interaction.response.send_message(
+    await interaction.followup.send(
         f"✅ +{heures}h ajoutées à {membre.mention} → {hours_7d:.1f}h sur 7j", ephemeral=True
     )
 
@@ -1504,13 +1505,14 @@ async def addheures(interaction: discord.Interaction, membre: discord.Member, he
 @bot.tree.command(name="forcerank", description="[ADMIN] Recalculer le rank d'un membre")
 @app_commands.checks.has_permissions(administrator=True)
 async def forcerank(interaction: discord.Interaction, membre: discord.Member):
+    await interaction.response.defer(ephemeral=True)
     data = load_data()
     uid = str(membre.id)
     user = get_user(data, uid)
     seconds_7d = seconds_in_period(user.get("vocal_sessions", []), 7)
     hours_7d = seconds_7d / 3600
     await update_rank(membre, hours_7d, announce=False)
-    await interaction.response.send_message(
+    await interaction.followup.send(
         f"✅ Rank recalculé pour {membre.mention} ({hours_7d:.1f}h/7j)", ephemeral=True
     )
 
