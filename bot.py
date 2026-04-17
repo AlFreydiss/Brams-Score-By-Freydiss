@@ -831,6 +831,7 @@ async def generate_wanted_custom(name, bounty, grade, avatar_url=None):
 @bot.event
 async def on_ready():
     print(f"✅ Bot connecté : {bot.user}")
+    init_db()
     if not check_ranks_loop.is_running():
         check_ranks_loop.start()
     for gid in [924346730194014220, 1478937064031518892]:
