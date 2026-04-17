@@ -45,8 +45,9 @@ GRAPH_FONT_PATH = "Righteous-Regular.ttf"
 RANK_BG_PATHS = {
     "Pirate": "attached_assets/ace_gif_1776357473293.gif",
     "Shichibukai": "attached_assets/jinbei_shishibukai_1776355951654.gif",
-    "Amiral": "attached_assets/3731-boa-hancock_1776349698684.png",
-    "Yonkou": "attached_assets/3731-boa-hancock_1776349698684.png",
+    "Amiral": "fujitoraaaa.gif",
+    "Yonkou": "BAERBBBBBBBBE_NOIR.gif",
+    
 }
 RANK_BG_DEFAULT = "attached_assets/3731-boa-hancock_1776349698684.png"
 
