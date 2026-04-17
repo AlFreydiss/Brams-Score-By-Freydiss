@@ -182,19 +182,25 @@ def now_ts():
     return datetime.now(timezone.utc).timestamp()
 
 def load_data():
-    data = {}
-    for doc in collection.find():
-        uid = doc["_id"]
-        data[uid] = {k: v for k, v in doc.items() if k != "_id"}
-    return data
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("SELECT uid, data FROM users")
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+    return {row[0]: row[1] for row in rows}
 
 def save_data(data):
+    conn = get_db()
+    cur = conn.cursor()
     for uid, udata in data.items():
-        collection.update_one(
-            {"_id": uid},
-            {"$set": udata},
-            upsert=True
-        )
+        cur.execute("""
+            INSERT INTO users (uid, data) VALUES (%s, %s)
+            ON CONFLICT (uid) DO UPDATE SET data = EXCLUDED.data
+        """, (uid, json.dumps(udata)))
+    conn.commit()
+    cur.close()
+    conn.close()
 
 def get_user(data, uid: str):
     if uid not in data:
