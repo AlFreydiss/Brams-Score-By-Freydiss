@@ -1083,22 +1083,30 @@ async def stats(interaction: discord.Interaction):
     if next_rank:
         hours_restantes = next_thresh - hours_7d
         rank_section = (
-            f"🎖️ **Rank** : {r_emoji} **{rank_actuel}**\n"
-            f"⬆️ **Prochain** : {next_rank} dans `{hours_restantes:.1f}h`"
+            f"━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"{r_emoji} **Rank** : **{rank_actuel}**\n"
+            f"**Prochain** : {next_rank} dans `{hours_restantes:.1f}h`"
         )
     else:
-        rank_section = f"🎖️ **Rank** : {r_emoji} **{rank_actuel}**\n👑 **Rang maximum atteint !**"
+        rank_section = (
+            f"━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"{r_emoji} **Rank** : **{rank_actuel}**\n"
+            f"👑 **Rang maximum atteint !**"
+        )
 
     embed = discord.Embed(
-        title=f"{r_emoji} **{me.display_name.upper()}**{live_tag}",
+        title=f"{r_emoji} {me.display_name.upper()}{live_tag}",
         description=(
-            f"{rank_section}\n"
+            f"{rank_section}\n\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━\n"
             f"💰 **Prime** : **{format_prime(prime_val)}**\n\n"
-            f"🎙️ **VOCAL**\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"🎙️ **TEMPS VOCAL**\n"
             f"> Aujourd'hui : `{format_duration(s1d)}`\n"
             f"> 7 jours : `{format_duration(s7d)}`\n"
             f"> 14 jours : `{format_duration(s14d)}`\n"
             f"> Total : `{format_duration(s_tot)}`\n\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━\n"
             f"💬 **MESSAGES**\n"
             f"> Aujourd'hui : `{m1d}`\n"
             f"> 7 jours : `{m7d}`\n"
@@ -1151,7 +1159,7 @@ async def top(interaction: discord.Interaction, periode: app_commands.Choice[str
 
     vocal_list.sort(key=lambda x: x[2], reverse=True)
     msg_list.sort(key=lambda x: x[2], reverse=True)
-    medals = ["🥇", "🥈", "🥉", "4.", "5."]
+    medals = ["🥇", "🥈", "🥉", "`4.`", "`5.`"]
 
     vocal_now = {str(m.id) for g in bot.guilds for vc in g.voice_channels for m in vc.members}
 
@@ -1175,10 +1183,13 @@ async def top(interaction: discord.Interaction, periode: app_commands.Choice[str
     embed = discord.Embed(
         title=f"🏆 CLASSEMENT — {periode.name.upper()}",
         description=(
+            f"━━━━━━━━━━━━━━━━━━━━━━\n"
             f"🎙️ **TOP VOCAL**\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━\n"
             f"{vocal_str}\n\n"
-            f"─────────────────────\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━\n"
             f"💬 **TOP MESSAGES**\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━\n"
             f"{msg_str}"
         ),
         color=discord.Color.from_rgb(212, 175, 55)
