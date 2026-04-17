@@ -1177,6 +1177,7 @@ async def top(interaction: discord.Interaction, periode: app_commands.Choice[str
         description=(
             f"🎙️ **TOP VOCAL**\n"
             f"{vocal_str}\n\n"
+            f"─────────────────────\n"
             f"💬 **TOP MESSAGES**\n"
             f"{msg_str}"
         ),
