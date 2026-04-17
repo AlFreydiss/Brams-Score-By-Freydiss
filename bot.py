@@ -224,6 +224,10 @@ async def save_user_async(uid, udata):
     loop = asyncio.get_event_loop()
     await loop.run_in_executor(db_executor, save_user, uid, udata)
 
+async def load_data_async():
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(db_executor, load_data)
+
 
 def get_user(data, uid: str):
     if uid not in data:
@@ -387,7 +391,7 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True, da
     guild = member.guild
     _local_data = data is None
     if _local_data:
-        data = load_data()
+        data = await load_data_async()
     uid = str(member.id)
     user = get_user(data, uid)
 
@@ -637,7 +641,7 @@ async def make_rank_image(member: discord.Member, rank_name: str, hours_7d: floa
 async def check_alert(member: discord.Member, hours_7d: float, data=None):
     _local_data = data is None
     if _local_data:
-        data = load_data()
+        data = await load_data_async()
     uid = str(member.id)
     user = get_user(data, uid)
 
@@ -809,7 +813,7 @@ async def on_ready():
             print(f"📡 {len(synced)} commandes sync sur {gid}")
         except Exception as e:
             print(f"⚠️ Erreur sync {gid}: {e}")
-    data = load_data()
+    data = await load_data_async()
     recovered = 0
     for guild in bot.guilds:
         for vc in guild.voice_channels:
@@ -839,7 +843,7 @@ async def on_ready():
 async def on_message(message):
     if message.author.bot:
         return
-    data = load_data()
+    data = await load_data_async()
     uid = str(message.author.id)
     user = get_user(data, uid)
     user["messages"].append(now_ts())
@@ -852,7 +856,7 @@ async def on_voice_state_update(member, before, after):
     if member.bot:
         return
 
-    data = load_data()
+    data = await load_data_async()
     uid = str(member.id)
     user = get_user(data, uid)
 
@@ -897,7 +901,11 @@ async def on_voice_state_update(member, before, after):
 async def check_ranks_loop():
     start = time.time()
     print("🔄 check_ranks_loop démarré...")
-    data = load_data()
+    try:
+        data = await load_data_async()
+    except Exception as e:
+        print(f"❌ Erreur load_data_async : {e}")
+        return
     modified_uids = set()
     total_members = 0
 
@@ -915,21 +923,27 @@ async def check_ranks_loop():
             uid = str(member.id)
             user = get_user(data, uid)
             old_last_rank = user.get("last_rank")
-            clean_old_data(user)
-            jt = user.get("join_time")
-            seconds_7d = seconds_in_period(user["vocal_sessions"], 7, join_time=jt)
-            hours_7d = seconds_7d / 3600
-            await update_rank(member, hours_7d, announce=False, data=data)
-            await check_alert(member, hours_7d, data=data)
-            if user.get("last_rank") != old_last_rank:
-                modified_uids.add(uid)
+            try:
+                clean_old_data(user)
+                jt = user.get("join_time")
+                seconds_7d = seconds_in_period(user["vocal_sessions"], 7, join_time=jt)
+                hours_7d = seconds_7d / 3600
+                await update_rank(member, hours_7d, announce=False, data=data)
+                await check_alert(member, hours_7d, data=data)
+                if user.get("last_rank") != old_last_rank:
+                    modified_uids.add(uid)
+            except Exception as e:
+                print(f"⚠️ Erreur traitement {member.display_name}: {e}")
             await asyncio.sleep(0.05)
 
     if modified_uids:
         print(f"💾 Sauvegarde async de {len(modified_uids)} users modifiés...")
         for uid in modified_uids:
             if uid in data:
-                await save_user_async(uid, data[uid])
+                try:
+                    await save_user_async(uid, data[uid])
+                except Exception as e:
+                    print(f"❌ Erreur save {uid}: {e}")
 
     elapsed = time.time() - start
     print(f"🔄 check_ranks_loop terminé en {elapsed:.1f}s - {total_members} membres, {len(modified_uids)} sauvés")
@@ -963,7 +977,7 @@ def build_vocal_by_day(user):
 @bot.tree.command(name="stats", description="Tes stats vocales et messages avec graphique")
 async def stats(interaction: discord.Interaction):
     await interaction.response.defer(ephemeral=False)
-    data = load_data()
+    data = await load_data_async()
     uid = str(interaction.user.id)
     user = get_user(data, uid)
     me = interaction.user
@@ -1042,7 +1056,7 @@ async def stats(interaction: discord.Interaction):
 ])
 async def top(interaction: discord.Interaction, periode: app_commands.Choice[str]):
     await interaction.response.defer()
-    data = load_data()
+    data = await load_data_async()
     guild = interaction.guild
     all_time = periode.value == "all"
     days = 0 if all_time else int(periode.value)
@@ -1111,7 +1125,7 @@ async def top(interaction: discord.Interaction, periode: app_commands.Choice[str
 @bot.tree.command(name="serveur", description="Stats globales du serveur")
 async def serveur(interaction: discord.Interaction):
     await interaction.response.defer()
-    data = load_data()
+    data = await load_data_async()
     guild = interaction.guild
 
     total_vocal_7d = 0
@@ -1226,7 +1240,7 @@ async def serveur(interaction: discord.Interaction):
 @bot.tree.command(name="tout", description="Tout voir : tes stats + serveur + classement")
 async def tout(interaction: discord.Interaction):
     await interaction.response.defer()
-    data = load_data()
+    data = await load_data_async()
     guild = interaction.guild
     uid = str(interaction.user.id)
     user = get_user(data, uid)
@@ -1357,7 +1371,7 @@ async def tout(interaction: discord.Interaction):
 @app_commands.describe(membre="Le membre à inspecter")
 async def chercher(interaction: discord.Interaction, membre: discord.Member):
     await interaction.response.defer()
-    data = load_data()
+    data = await load_data_async()
     uid = str(membre.id)
     user = get_user(data, uid)
 
@@ -1513,7 +1527,7 @@ async def citation(interaction: discord.Interaction, perso: str = None):
 @app_commands.checks.has_permissions(administrator=True)
 async def addheures(interaction: discord.Interaction, membre: discord.Member, heures: float):
     await interaction.response.defer(ephemeral=True)
-    data = load_data()
+    data = await load_data_async()
     uid = str(membre.id)
     user = get_user(data, uid)
     now = now_ts()
@@ -1532,7 +1546,7 @@ async def addheures(interaction: discord.Interaction, membre: discord.Member, he
 @app_commands.checks.has_permissions(administrator=True)
 async def forcerank(interaction: discord.Interaction, membre: discord.Member):
     await interaction.response.defer(ephemeral=True)
-    data = load_data()
+    data = await load_data_async()
     uid = str(membre.id)
     user = get_user(data, uid)
     seconds_7d = seconds_in_period(user.get("vocal_sessions", []), 7)
@@ -1577,7 +1591,7 @@ async def testrank(interaction: discord.Interaction, membre: discord.Member = No
 @app_commands.checks.has_permissions(administrator=True)
 async def recalcul(interaction: discord.Interaction, membre: discord.Member = None):
     await interaction.response.defer(ephemeral=True)
-    data = load_data()
+    data = await load_data_async()
     if membre:
         uid = str(membre.id)
         user = get_user(data, uid)
@@ -1606,7 +1620,7 @@ async def recalcul(interaction: discord.Interaction, membre: discord.Member = No
 @app_commands.checks.has_permissions(administrator=True)
 async def exportheures(interaction: discord.Interaction):
     await interaction.response.defer(ephemeral=True)
-    data = load_data()
+    data = await load_data_async()
     guild = interaction.guild
     lines = ["# ID_DISCORD (NOM) HEURES"]
     for member in guild.members:
@@ -1642,7 +1656,7 @@ async def importheures(interaction: discord.Interaction, fichier: discord.Attach
     content = (await fichier.read()).decode("utf-8", errors="ignore")
     lines = [l.strip() for l in content.strip().splitlines() if l.strip() and not l.strip().startswith("#")]
 
-    data = load_data()
+    data = await load_data_async()
     guild = interaction.guild
     imported = 0
     errors = []
