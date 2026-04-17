@@ -44,11 +44,10 @@ BG_IMAGE_PATH = "background.jpeg"
 FONT_PATH = "PirataOne-Regular.ttf"
 GRAPH_FONT_PATH = "Righteous-Regular.ttf"
 RANK_BG_PATHS = {
-    "Pirate": "attached_assets/ace_gif_1776357473293.gif",
-    "Shichibukai": "attached_assets/jinbei_shishibukai_1776355951654.gif",
+    "Pirate": "Ace.gif",
+    "Shichibukai": "jinbei shishibukai.gif",
     "Amiral": "fujitoraaaa.gif",
     "Yonkou": "BAERBBBBBBBBE_NOIR.gif",
-    
 }
 RANK_BG_DEFAULT = "attached_assets/3731-boa-hancock_1776349698684.png"
 
@@ -385,8 +384,8 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True):
     expected_role_id = RANK_ROLES.get(new_rank) if new_rank else None
 
     needs_role_update = (
-        (expected_role_id is None and current_rank_role_ids) or
-        (expected_role_id is not None and current_rank_role_ids != [expected_role_id])
+        (expected_role_id is None and bool(current_rank_role_ids)) or
+        (expected_role_id is not None and set(current_rank_role_ids) != {expected_role_id})
     )
 
     if needs_role_update:
@@ -1076,37 +1075,29 @@ async def stats(interaction: discord.Interaction):
     live_tag = "  🔴 EN VOCAL" if jt else ""
 
     if next_rank:
-        bar = make_progress_bar(hours_7d, next_thresh, 12)
+        hours_restantes = next_thresh - hours_7d
         rank_section = (
-            f"━━━━━━━━━━━━━━━━━━━━━━\n"
-            f"**RANK ACTUEL**\n"
-            f"{r_emoji} **{rank_actuel}**\n"
-            f"`{bar}` {hours_7d:.1f}h / {next_thresh}h  →  {next_rank}"
+            f"🎖️ **Rank** : {r_emoji} **{rank_actuel}**\n"
+            f"⬆️ **Prochain** : {next_rank} dans `{hours_restantes:.1f}h`"
         )
     else:
-        rank_section = (
-            f"━━━━━━━━━━━━━━━━━━━━━━\n"
-            f"**RANK ACTUEL**\n"
-            f"{r_emoji} **{rank_actuel}**\n"
-            f"`▰▰▰▰▰▰▰▰▰▰▰▰`  👑 Rang maximum"
-        )
+        rank_section = f"🎖️ **Rank** : {r_emoji} **{rank_actuel}**\n👑 **Rang maximum atteint !**"
 
     embed = discord.Embed(
-        title=f"{r_emoji} {me.display_name.upper()}{live_tag}",
+        title=f"{r_emoji} **{me.display_name.upper()}**{live_tag}",
         description=(
-            f"{rank_section}\n\n"
-            f"**💰 PRIME**\n"
-            f"**{format_prime(prime_val)}**\n\n"
-            f"**🎙️ TEMPS VOCAL**\n"
-            f"📅 Aujourd'hui  `{format_duration(s1d)}`\n"
-            f"📆 7 jours       `{format_duration(s7d)}`\n"
-            f"📆 14 jours      `{format_duration(s14d)}`\n"
-            f"⭐ Total         `{format_duration(s_tot)}`\n\n"
-            f"**💬 MESSAGES**\n"
-            f"📅 Aujourd'hui  `{m1d} msg`\n"
-            f"📆 7 jours       `{m7d} msg`\n"
-            f"📆 14 jours      `{m14d} msg`\n"
-            f"⭐ Total         `{m_tot} msg`"
+            f"{rank_section}\n"
+            f"💰 **Prime** : **{format_prime(prime_val)}**\n\n"
+            f"🎙️ **VOCAL**\n"
+            f"> 📅 Aujourd'hui : `{format_duration(s1d)}`\n"
+            f"> 📆 7 jours : `{format_duration(s7d)}`\n"
+            f"> 📆 14 jours : `{format_duration(s14d)}`\n"
+            f"> ⭐ Total : `{format_duration(s_tot)}`\n\n"
+            f"💬 **MESSAGES**\n"
+            f"> 📅 Aujourd'hui : `{m1d}`\n"
+            f"> 📆 7 jours : `{m7d}`\n"
+            f"> 📆 14 jours : `{m14d}`\n"
+            f"> ⭐ Total : `{m_tot}`"
         ),
         color=discord.Color.from_rgb(212, 175, 55)
     )
@@ -1116,7 +1107,7 @@ async def stats(interaction: discord.Interaction):
     graph_buf = make_activity_graph(vocal_by_day, msg_by_day, f"Activite de {me.display_name}")
 
     embed.set_image(url="attachment://graph.png")
-    embed.set_footer(text=f"Brams Score  •  {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')} UTC")
+    embed.set_footer(text=f"⚓ BRAMS SCORE BY FREYDISS • {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')} UTC")
 
     await interaction.followup.send(embed=embed, file=discord.File(graph_buf, "graph.png"))
 
@@ -1149,24 +1140,28 @@ async def top(interaction: discord.Interaction, periode: app_commands.Choice[str
         else:
             sec = seconds_in_period(udata.get("vocal_sessions", []), days, join_time=ujt)
             msgs = messages_in_period(udata.get("messages", []), days)
-        vocal_list.append((member.display_name, sec))
-        msg_list.append((member.display_name, msgs))
+        vocal_list.append((uid, member.display_name, sec))
+        msg_list.append((uid, member.display_name, msgs))
 
-    vocal_list.sort(key=lambda x: x[1], reverse=True)
-    msg_list.sort(key=lambda x: x[1], reverse=True)
+    vocal_list.sort(key=lambda x: x[2], reverse=True)
+    msg_list.sort(key=lambda x: x[2], reverse=True)
     medals = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"]
 
+    vocal_now = {str(m.id) for g in bot.guilds for vc in g.voice_channels for m in vc.members}
+
     vocal_lines = []
-    for i, (n, v) in enumerate(vocal_list[:5]):
+    for i, (uid_n, n, v) in enumerate(vocal_list[:5]):
         if v <= 0:
             break
-        vocal_lines.append(f"{medals[i]} **{n}**  `{format_duration(v)}`")
+        live = " 🔴" if uid_n in vocal_now else ""
+        vocal_lines.append(f"{medals[i]} **{n}**{live} • `{format_duration(v)}`")
 
     msg_lines = []
-    for i, (n, v) in enumerate(msg_list[:5]):
+    for i, (uid_n, n, v) in enumerate(msg_list[:5]):
         if v <= 0:
             break
-        msg_lines.append(f"{medals[i]} **{n}**  `{v} msg`")
+        live = " 🔴" if uid_n in vocal_now else ""
+        msg_lines.append(f"{medals[i]} **{n}**{live} • `{v} messages`")
 
     vocal_str = "\n".join(vocal_lines) if vocal_lines else "*Aucune donnée*"
     msg_str = "\n".join(msg_lines) if msg_lines else "*Aucune donnée*"
@@ -1174,10 +1169,11 @@ async def top(interaction: discord.Interaction, periode: app_commands.Choice[str
     embed = discord.Embed(
         title=f"🏆 CLASSEMENT — {periode.name.upper()}",
         description=(
-            f"━━━━━━━━━━━━━━━━━━━━━━\n"
-            f"**🎙️ TOP VOCAL**\n"
+            f"🎙️ **TOP VOCAL**\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
             f"{vocal_str}\n\n"
-            f"**💬 TOP MESSAGES**\n"
+            f"💬 **TOP MESSAGES**\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
             f"{msg_str}"
         ),
         color=discord.Color.from_rgb(212, 175, 55)
@@ -1185,7 +1181,7 @@ async def top(interaction: discord.Interaction, periode: app_commands.Choice[str
     if guild.icon:
         embed.set_thumbnail(url=guild.icon.url)
 
-    embed.set_footer(text=f"Brams Score  •  {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')} UTC")
+    embed.set_footer(text=f"⚓ BRAMS SCORE BY FREYDISS • {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')} UTC")
 
     await interaction.followup.send(embed=embed)
 
@@ -1297,7 +1293,7 @@ async def serveur(interaction: discord.Interaction):
 
     embed2 = discord.Embed(color=discord.Color.from_rgb(85, 50, 18))
     embed2.set_image(url="attachment://peaks.png")
-    embed2.set_footer(text=f"Brams Score • {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')} UTC")
+    embed2.set_footer(text=f"⚓ BRAMS SCORE BY FREYDISS • {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')} UTC")
 
     await interaction.followup.send(
         embeds=[embed1, embed2],
@@ -1427,7 +1423,7 @@ async def tout(interaction: discord.Interaction):
 
     embed3 = discord.Embed(color=discord.Color.from_rgb(85, 50, 18))
     embed3.set_image(url="attachment://graph.png")
-    embed3.set_footer(text=f"Brams Score • {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')} UTC")
+    embed3.set_footer(text=f"⚓ BRAMS SCORE BY FREYDISS • {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')} UTC")
 
     await interaction.followup.send(
         embeds=[embed1, embed2, embed3],
@@ -1508,7 +1504,7 @@ async def chercher(interaction: discord.Interaction, membre: discord.Member):
     graph_buf = make_activity_graph(vocal_by_day, msg_by_day, f"Activite de {membre.display_name}")
 
     embed.set_image(url="attachment://graph.png")
-    embed.set_footer(text=f"Brams Score • {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')} UTC")
+    embed.set_footer(text=f"⚓ BRAMS SCORE BY FREYDISS • {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')} UTC")
 
     await interaction.followup.send(embed=embed, file=discord.File(graph_buf, "graph.png"))
 
