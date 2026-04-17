@@ -1160,33 +1160,32 @@ async def top(interaction: discord.Interaction, periode: app_commands.Choice[str
     for i, (n, v) in enumerate(vocal_list[:5]):
         if v <= 0:
             break
-        vocal_lines.append(f"{medals[i]} **{n}** — {format_duration(v)}")
+        vocal_lines.append(f"{medals[i]} **{n}**  `{format_duration(v)}`")
 
     msg_lines = []
     for i, (n, v) in enumerate(msg_list[:5]):
         if v <= 0:
             break
-        msg_lines.append(f"{medals[i]} **{n}** — {v} msg")
+        msg_lines.append(f"{medals[i]} **{n}**  `{v} msg`")
+
+    vocal_str = "\n".join(vocal_lines) if vocal_lines else "*Aucune donnée*"
+    msg_str = "\n".join(msg_lines) if msg_lines else "*Aucune donnée*"
 
     embed = discord.Embed(
         title=f"🏆 CLASSEMENT — {periode.name.upper()}",
+        description=(
+            f"━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"**🎙️ TOP VOCAL**\n"
+            f"{vocal_str}\n\n"
+            f"**💬 TOP MESSAGES**\n"
+            f"{msg_str}"
+        ),
         color=discord.Color.from_rgb(212, 175, 55)
     )
     if guild.icon:
         embed.set_thumbnail(url=guild.icon.url)
 
-    embed.add_field(
-        name="🎙️ Top Vocal",
-        value="\n".join(vocal_lines) if vocal_lines else "*Aucune donnée*",
-        inline=False
-    )
-    embed.add_field(
-        name="💬 Top Messages",
-        value="\n".join(msg_lines) if msg_lines else "*Aucune donnée*",
-        inline=False
-    )
-
-    embed.set_footer(text=f"Brams Score • {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')} UTC")
+    embed.set_footer(text=f"Brams Score  •  {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')} UTC")
 
     await interaction.followup.send(embed=embed)
 
