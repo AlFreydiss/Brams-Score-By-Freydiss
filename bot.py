@@ -357,14 +357,14 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True):
     old_rank = user.get("last_rank")
     rank_names = [r for _, r in RANKS]
 
-   roles_to_remove = [r for r in member.roles if r.id in RANK_ROLES.values()]
-if roles_to_remove:
-    await member.remove_roles(*roles_to_remove)
+    roles_to_remove = [r for r in member.roles if r.id in RANK_ROLES.values()]
+    if roles_to_remove:
+        await member.remove_roles(*roles_to_remove)
 
-if new_rank:
-    role = guild.get_role(RANK_ROLES[new_rank])
-    if role:
-        await member.add_roles(role)
+    if new_rank:
+        role = guild.get_role(RANK_ROLES[new_rank])
+        if role:
+            await member.add_roles(role)
 
     if announce and new_rank != old_rank and new_rank is not None:
         rank_order = {r: i for i, (_, r) in enumerate(reversed(RANKS))}
@@ -929,7 +929,6 @@ async def check_ranks_loop():
             await update_rank(member, hours_7d, announce=True)
             await check_alert(member, hours_7d)
             await asyncio.sleep(1)
-    save_data(data)
     print("🔄 Vérification horaire des ranks effectuée.")
 
 # ─────────────────────────────────────────
