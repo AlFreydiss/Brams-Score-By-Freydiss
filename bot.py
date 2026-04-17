@@ -1095,15 +1095,15 @@ async def stats(interaction: discord.Interaction):
             f"{rank_section}\n"
             f"💰 **Prime** : **{format_prime(prime_val)}**\n\n"
             f"🎙️ **VOCAL**\n"
-            f"> 📅 Aujourd'hui : `{format_duration(s1d)}`\n"
-            f"> 📆 7 jours : `{format_duration(s7d)}`\n"
-            f"> 📆 14 jours : `{format_duration(s14d)}`\n"
-            f"> ⭐ Total : `{format_duration(s_tot)}`\n\n"
+            f"> Aujourd'hui : `{format_duration(s1d)}`\n"
+            f"> 7 jours : `{format_duration(s7d)}`\n"
+            f"> 14 jours : `{format_duration(s14d)}`\n"
+            f"> Total : `{format_duration(s_tot)}`\n\n"
             f"💬 **MESSAGES**\n"
-            f"> 📅 Aujourd'hui : `{m1d}`\n"
-            f"> 📆 7 jours : `{m7d}`\n"
-            f"> 📆 14 jours : `{m14d}`\n"
-            f"> ⭐ Total : `{m_tot}`"
+            f"> Aujourd'hui : `{m1d}`\n"
+            f"> 7 jours : `{m7d}`\n"
+            f"> 14 jours : `{m14d}`\n"
+            f"> Total : `{m_tot}`"
         ),
         color=discord.Color.from_rgb(212, 175, 55)
     )
@@ -1151,7 +1151,7 @@ async def top(interaction: discord.Interaction, periode: app_commands.Choice[str
 
     vocal_list.sort(key=lambda x: x[2], reverse=True)
     msg_list.sort(key=lambda x: x[2], reverse=True)
-    medals = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"]
+    medals = ["🥇", "🥈", "🥉", "4.", "5."]
 
     vocal_now = {str(m.id) for g in bot.guilds for vc in g.voice_channels for m in vc.members}
 
@@ -1160,14 +1160,14 @@ async def top(interaction: discord.Interaction, periode: app_commands.Choice[str
         if v <= 0:
             break
         live = " 🔴" if uid_n in vocal_now else ""
-        vocal_lines.append(f"{medals[i]} **{n}**{live} • `{format_duration(v)}`")
+        vocal_lines.append(f"{medals[i]} **{n}**{live} — `{format_duration(v)}`")
 
     msg_lines = []
     for i, (uid_n, n, v) in enumerate(msg_list[:5]):
         if v <= 0:
             break
         live = " 🔴" if uid_n in vocal_now else ""
-        msg_lines.append(f"{medals[i]} **{n}**{live} • `{v} messages`")
+        msg_lines.append(f"{medals[i]} **{n}**{live} — `{v} messages`")
 
     vocal_str = "\n".join(vocal_lines) if vocal_lines else "*Aucune donnée*"
     msg_str = "\n".join(msg_lines) if msg_lines else "*Aucune donnée*"
@@ -1176,10 +1176,8 @@ async def top(interaction: discord.Interaction, periode: app_commands.Choice[str
         title=f"🏆 CLASSEMENT — {periode.name.upper()}",
         description=(
             f"🎙️ **TOP VOCAL**\n"
-            f"━━━━━━━━━━━━━━━━━━━━\n"
             f"{vocal_str}\n\n"
             f"💬 **TOP MESSAGES**\n"
-            f"━━━━━━━━━━━━━━━━━━━━\n"
             f"{msg_str}"
         ),
         color=discord.Color.from_rgb(212, 175, 55)
