@@ -442,6 +442,13 @@ async def make_rank_image(member: discord.Member, rank_name: str, hours_7d: floa
     WHITE = (255, 255, 255)
     AVATAR_SIZE = 220
     BG_OPACITY = 0.45
+    RANK_COLORS = {
+        "Pirate":      (46, 204, 113),
+        "Shichibukai": (22, 96, 45),
+        "Amiral":      (241, 196, 15),
+        "Yonkou":      (155, 89, 182),
+    }
+    grade_color = RANK_COLORS.get(rank_name, WHITE)
 
     bg_path = RANK_BG_PATHS.get(rank_name, RANK_BG_DEFAULT)
 
@@ -555,7 +562,7 @@ async def make_rank_image(member: discord.Member, rank_name: str, hours_7d: floa
         draw = ImageDraw.Draw(card, "RGBA")
 
         draw_text_centered(draw, f"FELICITATIONS POUR LE RANK", font_felicit, 30, (*GOLD, 255))
-        draw_text_centered(draw, grade_text, font_grade, 78, (*WHITE, 255))
+        draw_text_centered(draw, grade_text, font_grade, 78, (*grade_color, 255))
 
         if avatar_circle is not None:
             ax = (CARD_W - AVATAR_SIZE) // 2
