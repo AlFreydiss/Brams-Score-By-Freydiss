@@ -671,48 +671,46 @@ async def check_alert(member: discord.Member, hours_7d: float, data=None):
     uid = str(member.id)
     user = get_user(data, uid)
 
-    threshold, current_rank = get_current_rank_threshold(hours_7d)
+    current_rank = user.get("last_rank")
     if current_rank is None:
-        if user.get("alerted"):
-            user["alerted"] = False
-            if _local_data:
-                await save_user_async(uid, user)
         return
 
-    cutoff_7d = now_ts() - 7 * 86400
-    sessions = user.get("vocal_sessions", [])
+    rank_threshold = {"Pirate": 10, "Shichibukai": 25, "Amiral": 40, "Yonkou": 70}
+    threshold = rank_threshold.get(current_rank)
+    if threshold is None:
+        return
 
-    expiring_soon = 0
-    for s in sessions:
-        if cutoff_7d <= s["end"] <= cutoff_7d + 86400:
-            expiring_soon += s["end"] - max(s["start"], cutoff_7d)
+    already_alerted = user.get("alerted") == current_rank
+    in_danger_zone = (threshold - 5) <= hours_7d < threshold
 
-    hours_expiring = expiring_soon / 3600
-    future_hours = hours_7d - hours_expiring
-
-    will_lose_rank = future_hours < threshold
-    already_alerted = user.get("alerted", False)
-
-    if will_lose_rank and not already_alerted:
-        user["alerted"] = True
-        if _local_data:
-            await save_user_async(uid, user)
+    if in_danger_zone and not already_alerted:
         try:
-            embed = discord.Embed(
-                title="⚠️ Tu vas perdre ton rank !",
-                description=(
-                    f"Attention **{member.display_name}** !\n\n"
-                    f"Tu risques de perdre ton rang **{current_rank}** dans les prochaines 24h.\n"
-                    f"Il te faut encore **{hours_expiring:.1f}h** de vocal pour le garder !\n\n"
-                    f"Connecte-toi vite sur le serveur 🎙️"
-                ),
-                color=discord.Color.red()
+            heures_manquantes = round(threshold - hours_7d, 1)
+            rank_emoji = RANK_EMOJIS.get(current_rank, "🏴")
+            dm_text = (
+                f"⚠️ **Attention, tu risques de perdre ton rank !**\n\n"
+                f"Salut {member.display_name} ! Tu es actuellement **{rank_emoji} {current_rank}** "
+                f"sur le serveur **{member.guild.name}**.\n\n"
+                f"Tes heures vocales sur les 7 derniers jours sont descendues à `{round(hours_7d, 1)}h`, "
+                f"et il te faut au minimum `{threshold}h` pour garder ton rank.\n\n"
+                f"Il te manque environ `{heures_manquantes}h` de vocal dans les prochains jours "
+                f"pour éviter de rétrograder 🚨\n\n"
+                f"Passe en vocal dès que possible pour sauver ton grade !\n\n"
+                f"━━━━━━━━━━━━━━━━━━━━\n"
+                f"*BRAMS SCORE  |  by Freydiss*"
             )
-            await member.send(embed=embed)
+            await member.send(dm_text)
+            user["alerted"] = current_rank
+            print(f"📨 Alerte DM envoyée à {member.display_name} ({current_rank} : {hours_7d:.1f}h/{threshold}h)")
+            if _local_data:
+                await save_user_async(uid, user)
         except discord.Forbidden:
-            pass
-    elif not will_lose_rank and already_alerted:
-        user["alerted"] = False
+            print(f"🔒 DM fermés pour {member.display_name}, alerte impossible")
+        except Exception as e:
+            print(f"❌ Erreur DM alerte à {member.display_name}: {e}")
+
+    if hours_7d >= threshold and already_alerted:
+        user["alerted"] = None
         if _local_data:
             await save_user_async(uid, user)
 
@@ -1089,6 +1087,10 @@ async def stats(interaction: discord.Interaction):
         print(f"❌ /stats followup failed: {e}")
 
 
+def clean_name(name: str) -> str:
+    return name.encode("ascii", "ignore").decode("ascii").strip() or name
+
+
 @bot.tree.command(name="top", description="Classement vocal et messages")
 @app_commands.describe(periode="Période")
 @app_commands.choices(periode=[
@@ -1133,41 +1135,42 @@ async def top(interaction: discord.Interaction, periode: app_commands.Choice[str
 
     vocal_now = {str(m.id) for g in bot.guilds for vc in g.voice_channels for m in vc.members}
 
-    vocal_lines = []
+    vocal_parts = []
     for i, (uid_n, n, v) in enumerate(vocal_list[:5]):
         if v <= 0:
             break
         live = " 🔴" if uid_n in vocal_now else ""
-        vocal_lines.append(f"{medals[i]} **{n}**{live} — `{format_duration(v)}`")
+        vocal_parts.append(f"{medals[i]}  **{clean_name(n)}**{live}\n     `{format_duration(v)}`")
+    vocal_str = "\n\n".join(vocal_parts) if vocal_parts else "*Aucune donnée*"
 
-    msg_lines = []
+    msg_parts = []
     for i, (uid_n, n, v) in enumerate(msg_list[:5]):
         if v <= 0:
             break
         live = " 🔴" if uid_n in vocal_now else ""
-        msg_lines.append(f"{medals[i]} **{n}**{live} — `{v} messages`")
+        msg_parts.append(f"{medals[i]}  **{clean_name(n)}**{live}\n     `{v} messages`")
+    msg_str = "\n\n".join(msg_parts) if msg_parts else "*Aucune donnée*"
 
-    vocal_str = "\n".join(vocal_lines) if vocal_lines else "*Aucune donnée*"
-    msg_str = "\n".join(msg_lines) if msg_lines else "*Aucune donnée*"
-
+    sep = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     embed = discord.Embed(
-        title=f"🏆 CLASSEMENT — {periode.name.upper()}",
+        title=f"🏆 CLASSEMENT  —  {periode.name.upper()}",
         description=(
-            f"━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"{sep}\n\n"
             f"🎙️ **TOP VOCAL**\n"
-            f"━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"{sep}\n"
             f"{vocal_str}\n\n"
-            f"━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"{sep}\n\n"
             f"💬 **TOP MESSAGES**\n"
-            f"━━━━━━━━━━━━━━━━━━━━━━\n"
-            f"{msg_str}"
+            f"{sep}\n"
+            f"{msg_str}\n\n"
+            f"{sep}"
         ),
-        color=discord.Color.from_rgb(212, 175, 55)
+        color=discord.Color(0xD4AF37)
     )
     if guild.icon:
         embed.set_thumbnail(url=guild.icon.url)
 
-    embed.set_footer(text=f"⚓ BRAMS SCORE BY FREYDISS • {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')} UTC")
+    embed.set_footer(text=f"BRAMS SCORE  |  by Freydiss  •  {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')} UTC")
 
     try:
         await interaction.followup.send(embed=embed)
