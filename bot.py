@@ -121,6 +121,15 @@ RANKS = [
     (10,  "Pirate"),
 ]
 
+# Couleurs RGB par rang — utilisées dans les images ET les embeds d'annonce
+RANK_COLORS = {
+    "Pirate":          (46,  204, 113),
+    "Shichibukai":     (22,  96,  45),
+    "Amiral":          (241, 196, 15),
+    "Yonkou":          (155, 89,  182),
+    "Roi des pirates": (255, 215, 0),
+}
+
 # ─────────────────────────────────────────
 #  CITATIONS ONE PIECE
 # ─────────────────────────────────────────
@@ -572,26 +581,61 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True, da
     rank_order = {r: i for i, (_, r) in enumerate(reversed(RANKS))}
 
     if announce:
-        # Annonces de montée de rang (du plus bas au plus haut)
-        for rank_name in sorted(ranks_to_add, key=lambda r: rank_order.get(r, -1)):
-            channel = bot.get_channel(ANNOUNCE_CHANNEL_ID)
-            if channel:
-                img_buf, is_gif = await make_rank_image(member, rank_name, hours_7d)
-                fname = "rank_up.gif" if is_gif else "rank_up.png"
-                emoji = _ANNOUNCE_RANK_EMOJIS.get(rank_name, "")
-                await channel.send(
-                    content=f"Bravo à {member.mention} qui a débloqué le rank **{rank_name}** {emoji}",
-                    file=discord.File(img_buf, fname)
-                )
+        channel = bot.get_channel(ANNOUNCE_CHANNEL_ID)
+        if not channel and (ranks_to_add or ranks_to_remove):
+            print(f"[RANK] Canal d'annonce introuvable (ID={ANNOUNCE_CHANNEL_ID})")
 
-        # Annonces de derank
-        for rank_name in ranks_to_remove:
-            channel = bot.get_channel(ANNOUNCE_CHANNEL_ID)
-            if channel:
-                emoji = _ANNOUNCE_RANK_EMOJIS.get(rank_name, "")
-                await channel.send(
-                    content=f"⬇️ {member.mention} a perdu le rang **{rank_name}** {emoji} ({hours_7d:.1f}h / 7j)"
+        # ── Annonces de montée de rang (du plus bas au plus haut) ──
+        for rank_name in sorted(ranks_to_add, key=lambda r: rank_order.get(r, -1)):
+            if not channel:
+                break
+            try:
+                img_buf, is_gif = await make_rank_image(member, rank_name, hours_7d)
+                fname   = "rank_up.gif" if is_gif else "rank_up.png"
+                emoji   = _ANNOUNCE_RANK_EMOJIS.get(rank_name, "")
+                r, g, b = RANK_COLORS.get(rank_name, (212, 175, 55))
+
+                embed = discord.Embed(
+                    title="🎉 Nouveau rang débloqué !",
+                    description=(
+                        f"{member.mention} vient de rejoindre les\n"
+                        f"# {emoji} {rank_name.upper()}\n\n"
+                        f"┌ **Heures vocales (7j)** : `{hours_7d:.1f}h`\n"
+                        f"└ **Serveur** : {member.guild.name}"
+                    ),
+                    color=discord.Color.from_rgb(r, g, b),
                 )
+                embed.set_image(url=f"attachment://{fname}")
+                embed.set_footer(text="⚓ BRAMS SCORE  |  by Freydiss")
+
+                await channel.send(
+                    content=f"⬆️ Félicitations {member.mention} !",
+                    embed=embed,
+                    file=discord.File(img_buf, fname),
+                )
+                print(f"[RANK] Annonce envoyee : {member.display_name} -> {rank_name}")
+            except Exception as e:
+                print(f"[RANK] Erreur annonce rank-up {member.display_name} ({rank_name}): {e}")
+
+        # ── Annonces de derank ──
+        for rank_name in ranks_to_remove:
+            if not channel:
+                break
+            try:
+                emoji   = _ANNOUNCE_RANK_EMOJIS.get(rank_name, "")
+                r, g, b = RANK_COLORS.get(rank_name, (150, 150, 150))
+                embed = discord.Embed(
+                    description=(
+                        f"⬇️ {member.mention} a perdu le rang **{rank_name}** {emoji}\n"
+                        f"`{hours_7d:.1f}h` vocales sur 7j — seuil non maintenu."
+                    ),
+                    color=discord.Color.from_rgb(r, g, b),
+                )
+                embed.set_footer(text="⚓ BRAMS SCORE  |  by Freydiss")
+                await channel.send(embed=embed)
+                print(f"[RANK] Derank annonce : {member.display_name} -> -{rank_name}")
+            except Exception as e:
+                print(f"[RANK] Erreur annonce derank {member.display_name} ({rank_name}): {e}")
 
     new_highest_rank = get_rank_for_hours(hours_7d)
     old_rank = user.get("last_rank")
@@ -610,13 +654,6 @@ async def make_rank_image(member: discord.Member, rank_name: str, hours_7d: floa
     WHITE = (255, 255, 255)
     AVATAR_SIZE = 220
     BG_OPACITY = 0.45
-    RANK_COLORS = {
-        "Pirate":          (46, 204, 113),
-        "Shichibukai":     (22, 96, 45),
-        "Amiral":          (241, 196, 15),
-        "Yonkou":          (155, 89, 182),
-        "Roi des pirates": (255, 215, 0),
-    }
     grade_color = RANK_COLORS.get(rank_name, WHITE)
 
     bg_path = RANK_BG_PATHS.get(rank_name, RANK_BG_DEFAULT)
@@ -1080,7 +1117,7 @@ async def check_ranks_loop():
                 continue
 
             try:
-                await update_rank(member, hours_7d, announce=False, data=data)
+                await update_rank(member, hours_7d, announce=True, data=data)
                 await check_alert(member, hours_7d, data=data)
                 if user.get("last_rank") != old_last_rank:
                     modified_uids.add(uid)
