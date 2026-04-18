@@ -885,7 +885,7 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True, da
         print(f"[RANK] {member.display_name} : +{ranks_to_add} -{ranks_to_remove} | highest={new_highest_rank}")
 
 async def make_citation_image(quote_data: dict) -> io.BytesIO:
-    """Génère une carte cinématique composite 1200x675 avec portrait du personnage."""
+    """Génère une carte cinématique composite 1200x675 — style immersif avec portrait."""
     W, H = 1200, 675
 
     # ── Couleur accent ──
@@ -894,111 +894,92 @@ async def make_citation_image(quote_data: dict) -> io.BytesIO:
         accent = tuple(int(hex_c[i:i+2], 16) for i in (0, 2, 4))
     except Exception:
         accent = (212, 175, 55)
-    brightness = 0.299 * accent[0] + 0.587 * accent[1] + 0.114 * accent[2]
-    accent = accent if brightness > 40 else (212, 175, 55)
+    if 0.299 * accent[0] + 0.587 * accent[1] + 0.114 * accent[2] < 40:
+        accent = (212, 175, 55)
 
-    # ── Téléchargement image personnage (avec cache) ──
     char_bytes = await _fetch_char_image_bytes(quote_data["character"])
 
-    # ── CANVAS DE BASE (fond très sombre) ──
-    canvas = Image.new("RGBA", (W, H), (8, 8, 12, 255))
+    # ── CANVAS SOMBRE ──
+    canvas = Image.new("RGBA", (W, H), (6, 6, 10, 255))
 
-    # ── IMAGE PERSONNAGE — côté droit, avec fondu ──
+    # ── PORTRAIT PERSONNAGE (côté droit, fondu ease-in-out) ──
     if char_bytes:
         try:
-            char_img = Image.open(io.BytesIO(char_bytes)).convert("RGBA")
-            aspect = char_img.width / char_img.height
-            ch_h = H
-            ch_w = int(ch_h * aspect)
-            char_img = char_img.resize((ch_w, ch_h), Image.LANCZOS)
-
-            r, g, b, a = char_img.split()
-            rgb = Image.merge("RGB", (r, g, b))
-            rgb = ImageEnhance.Brightness(rgb).enhance(0.65)
-            rgb = ImageEnhance.Color(rgb).enhance(0.80)
-            char_img = Image.merge("RGBA", (*rgb.split(), a))
-
-            # Masque de fondu gauche-droite (ease-in-out)
-            fade_w = min(420, ch_w // 2)
-            mask = Image.new("L", (ch_w, ch_h), 255)
-            md = ImageDraw.Draw(mask)
-            for x in range(fade_w):
-                t = x / fade_w
-                alpha = int(255 * (t * t * (3 - 2 * t)))
-                md.line([(x, 0), (x, ch_h)], fill=alpha)
-
-            char_img.putalpha(mask)
-            x_pos = max(0, W - min(ch_w, 720))
-            canvas.paste(char_img, (x_pos, 0), char_img)
+            ci = Image.open(io.BytesIO(char_bytes)).convert("RGBA")
+            ch_w = int(H * ci.width / ci.height)
+            ci = ci.resize((ch_w, H), Image.LANCZOS)
+            r2, g2, b2, a2 = ci.split()
+            rgb2 = ImageEnhance.Brightness(Image.merge("RGB", (r2, g2, b2))).enhance(0.72)
+            rgb2 = ImageEnhance.Color(rgb2).enhance(0.85)
+            ci = Image.merge("RGBA", (*rgb2.split(), a2))
+            fade = min(460, ch_w // 2)
+            msk = Image.new("L", (ch_w, H), 255)
+            md  = ImageDraw.Draw(msk)
+            for x in range(fade):
+                t = x / fade
+                md.line([(x, 0), (x, H)], fill=int(255 * t * t * (3 - 2 * t)))
+            ci.putalpha(msk)
+            canvas.paste(ci, (max(0, W - min(ch_w, 740)), 0), ci)
         except Exception as e:
-            print(f"[CITATION] Erreur PIL image personnage: {e}")
+            print(f"[CITATION] PIL image: {e}")
 
-    # ── OVERLAY GAUCHE (assure lisibilité du texte) ──
-    left_ov = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    ld = ImageDraw.Draw(left_ov)
+    # ── OVERLAY GAUCHE opaque → transparent ──
+    lov = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    ld  = ImageDraw.Draw(lov)
     for x in range(W):
-        if x < 560:
-            a = 165
-        elif x < 820:
-            t = (x - 560) / 260
-            a = int(165 * (1 - t * t))
+        if x < 580:
+            a = 195
+        elif x < 860:
+            t = (x - 580) / 280
+            a = int(195 * (1 - t * t * t))
         else:
             a = 0
         ld.line([(x, 0), (x, H)], fill=(0, 0, 0, a))
-    canvas = Image.alpha_composite(canvas, left_ov)
+    canvas = Image.alpha_composite(canvas, lov)
 
     # ── VIGNETTE HAUT/BAS ──
     vig = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    vd = ImageDraw.Draw(vig)
-    for y in range(100):
-        vd.line([(0, y), (W, y)], fill=(0, 0, 0, int(110 * (1 - y / 100))))
-    for y in range(H - 80, H):
-        vd.line([(0, y), (W, y)], fill=(0, 0, 0, int(90 * (y - (H - 80)) / 80)))
+    vd  = ImageDraw.Draw(vig)
+    for y in range(90):
+        vd.line([(0, y), (W, y)], fill=(0, 0, 0, int(130 * (1 - y / 90))))
+    for y in range(H - 70, H):
+        vd.line([(0, y), (W, y)], fill=(0, 0, 0, int(100 * (y - (H - 70)) / 70)))
     canvas = Image.alpha_composite(canvas, vig)
 
-    draw = ImageDraw.Draw(canvas)
-
+    # ── UTILITAIRES POLICES ──
     def _font(path, size):
         try:
             return ImageFont.truetype(path, size)
         except Exception:
             return ImageFont.load_default()
 
-    def shadow_text(d, pos, text, font, fill, offset=3, shadow_a=160):
-        d.text((pos[0] + offset, pos[1] + offset), text, font=font, fill=(0, 0, 0, shadow_a))
+    font_deco    = _font("KOMIKAX_.ttf",        280)
+    font_char    = _font("PirataOne-Regular.ttf", 72)
+    font_anime   = _font("Righteous-Regular.ttf", 36)
+    font_quote   = _font("Righteous-Regular.ttf", 46)
+    font_quote_s = _font("Righteous-Regular.ttf", 34)
+    font_footer  = _font("Righteous-Regular.ttf", 13)
+
+    TX = 56   # marge gauche
+    TW = 640  # largeur max du bloc texte
+
+    # ── GUILLEMET DÉCORATIF GRAND ──
+    deco_l = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    ImageDraw.Draw(deco_l).text((TX - 14, 30), "\u201c", font=font_deco, fill=(*accent, 22))
+    canvas = Image.alpha_composite(canvas, deco_l)
+    draw   = ImageDraw.Draw(canvas)
+
+    # ── stroke_text : contour noir + texte coloré (lisibilité maximale) ──
+    def stroke_text(d, pos, text, font, fill, sw=2):
+        x, y = pos
+        for dx in range(-sw, sw + 1):
+            for dy in range(-sw, sw + 1):
+                if dx or dy:
+                    d.text((x + dx, y + dy), text, font=font, fill=(0, 0, 0, 230))
         d.text(pos, text, font=font, fill=fill)
 
-    font_deco   = _font("KOMIKAX_.ttf", 220)
-    font_quote  = _font("Righteous-Regular.ttf", 38)
-    font_quote_s= _font("Righteous-Regular.ttf", 28)
-    font_char   = _font("PirataOne-Regular.ttf", 48)
-    font_anime  = _font("Righteous-Regular.ttf", 28)
-    font_footer = _font("Righteous-Regular.ttf", 12)
-
-    TX  = 58        # X départ texte
-    TW  = 620       # Largeur max du bloc texte
-
-    # ── GUILLEMET DÉCORATIF ──
-    deco_l = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    ImageDraw.Draw(deco_l).text((TX - 12, 50), "\u201c", font=font_deco, fill=(*accent, 16))
-    canvas = Image.alpha_composite(canvas, deco_l)
-    draw = ImageDraw.Draw(canvas)
-
-    # ── NOM DU PERSONNAGE ──
-    name_text = quote_data["character"].upper()
-    shadow_text(draw, (TX, 28), name_text, font_char, fill=(*accent, 255), offset=2)
-    name_w = draw.textbbox((TX, 28), name_text, font=font_char)[2] - TX
-    draw.rectangle([(TX, 82), (TX + name_w, 84)], fill=(*accent, 180))
-
-    # ── ANIME ──
-    draw.text((TX, 90), quote_data["anime"], font=font_anime, fill=(185, 185, 185, 220))
-
-    # ── CITATION — word-wrap auto avec réduction si trop long ──
-    raw_quote = f'\u201c{quote_data["quote"]}\u201d'
-
     def wrap_text(text, font, max_w):
-        words = text.split()
-        lines, cur = [], ""
+        words, lines, cur = text.split(), [], ""
         for w in words:
             test = (cur + " " + w).strip()
             if draw.textbbox((0, 0), test, font=font)[2] <= max_w:
@@ -1011,26 +992,42 @@ async def make_citation_image(quote_data: dict) -> io.BytesIO:
             lines.append(cur)
         return lines
 
+    # ── NOM DU PERSONNAGE ──
+    name_text = quote_data["character"].upper()
+    stroke_text(draw, (TX, 26), name_text, font_char, fill=(*accent, 255), sw=2)
+    name_w = draw.textbbox((TX, 26), name_text, font=font_char)[2] - TX
+
+    # Ligne accent sous le nom
+    name_h = draw.textbbox((TX, 26), name_text, font=font_char)[3]
+    draw.rectangle([(TX, name_h + 4), (TX + name_w, name_h + 8)], fill=(*accent, 210))
+
+    # ── ANIME ──
+    anime_y = name_h + 14
+    stroke_text(draw, (TX, anime_y), quote_data["anime"], font_anime, fill=(200, 200, 200, 255), sw=1)
+
+    # ── CITATION ──
+    raw_quote = f'\u201c{quote_data["quote"]}\u201d'
     lines = wrap_text(raw_quote, font_quote, TW)
-    fq, lh = font_quote, 56
+    fq, lh = font_quote, 64
     if len(lines) > 6:
         lines = wrap_text(raw_quote, font_quote_s, TW)
-        fq, lh = font_quote_s, 44
+        fq, lh = font_quote_s, 50
 
-    zone_top, zone_bot = 135, H - 88
-    block_h = len(lines) * lh
-    start_y = max(zone_top, zone_top + (zone_bot - zone_top - block_h) // 2)
+    zone_top = anime_y + 60
+    zone_bot = H - 72
+    block_h  = len(lines) * lh
+    start_y  = max(zone_top, zone_top + (zone_bot - zone_top - block_h) // 2)
 
     for i, line in enumerate(lines):
-        shadow_text(draw, (TX, start_y + i * lh), line, fq, fill=(238, 238, 238, 255), offset=3, shadow_a=170)
+        stroke_text(draw, (TX, start_y + i * lh), line, fq, fill=(245, 245, 245, 255), sw=2)
 
-    # ── SÉPARATEUR + CRÉDITS ──
-    sep_y = H - 54
-    draw.rectangle([(TX, sep_y), (TX + TW, sep_y + 2)], fill=(*accent, 140))
+    # ── LIGNE ACCENT BAS + CRÉDIT ──
+    sep_y = H - 44
+    draw.rectangle([(TX, sep_y), (TX + TW, sep_y + 4)], fill=(*accent, 200))
 
     footer = "by Freydiss"
     fw = draw.textbbox((0, 0), footer, font=font_footer)[2]
-    draw.text((W - fw - 16, H - 18), footer, font=font_footer, fill=(70, 70, 70, 180))
+    draw.text((W - fw - 18, H - 20), footer, font=font_footer, fill=(65, 65, 65, 200))
 
     buf = io.BytesIO()
     canvas.convert("RGB").save(buf, format="PNG", optimize=True)
