@@ -2038,6 +2038,29 @@ async def chercher(interaction: discord.Interaction, membre: discord.Member):
 
 CITATION_HISTORY: list[str] = []
 
+# Cache en mémoire : nom du personnage → URL image (None si introuvable)
+_CHAR_IMAGE_CACHE: dict[str, str | None] = {}
+
+async def _get_char_image_url(name: str) -> str | None:
+    """Récupère l'URL de l'image du personnage via Jikan API (MAL). Résultat mis en cache."""
+    if name in _CHAR_IMAGE_CACHE:
+        return _CHAR_IMAGE_CACHE[name]
+    try:
+        from urllib.parse import quote as _uq
+        url = f"https://api.jikan.moe/v4/characters?q={_uq(name)}&limit=1"
+        async with aiohttp.ClientSession() as sess:
+            async with sess.get(url, timeout=aiohttp.ClientTimeout(total=4)) as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    chars = data.get("data", [])
+                    img = chars[0]["images"]["jpg"]["image_url"] if chars else None
+                    _CHAR_IMAGE_CACHE[name] = img
+                    return img
+    except Exception:
+        pass
+    _CHAR_IMAGE_CACHE[name] = None
+    return None
+
 async def _citation_handler(interaction: discord.Interaction, perso: str = None):
     """Logique commune à /citation et /quote."""
     try:
@@ -2062,7 +2085,7 @@ async def _citation_handler(interaction: discord.Interaction, perso: str = None)
     else:
         pool = QUOTES_DB
 
-    # Anti-répétition simple : évite les citations déjà vues
+    # Anti-répétition : évite les citations déjà vues, reset si pool épuisé
     fresh = [q for q in pool if q["quote"] not in CITATION_HISTORY]
     if not fresh:
         CITATION_HISTORY.clear()
@@ -2070,14 +2093,20 @@ async def _citation_handler(interaction: discord.Interaction, perso: str = None)
     chosen = random.choice(fresh)
     CITATION_HISTORY.append(chosen["quote"])
 
-    # Génération de l'image
+    # Génération carte + image personnage en parallèle
+    img_task  = asyncio.create_task(make_citation_image(chosen))
+    char_task = asyncio.create_task(_get_char_image_url(chosen["character"]))
+    img_buf, char_img_url = None, None
     try:
-        img_buf = await make_citation_image(chosen)
+        img_buf = await img_task
     except Exception as e:
         print(f"❌ make_citation_image: {e}")
-        img_buf = None
+    try:
+        char_img_url = await char_task
+    except Exception:
+        pass
 
-    # Couleur embed (parse hex)
+    # Couleur embed
     try:
         hex_c = chosen["color"].lstrip("#")
         r, g, b = int(hex_c[0:2], 16), int(hex_c[2:4], 16), int(hex_c[4:6], 16)
@@ -2091,6 +2120,8 @@ async def _citation_handler(interaction: discord.Interaction, perso: str = None)
     )
     embed.set_author(name=f'{chosen["character"].upper()}  •  {chosen["anime"]}')
     embed.set_footer(text="⚓ BRAMS SCORE  |  by Freydiss")
+    if char_img_url:
+        embed.set_thumbnail(url=char_img_url)
 
     try:
         if img_buf:
@@ -2293,7 +2324,25 @@ async def test_event(interaction: discord.Interaction, evenement: app_commands.C
 QUIZ_SESSIONS: dict = {}
 _GROQ_MODEL         = "groq/llama-3.3-70b-versatile"
 
-# System prompt strict : objet JSON racine obligatoire (imposé par response_format json_object)
+# Historique par utilisateur : dernières questions vues (évite les répétitions)
+QUIZ_USER_HISTORY: dict[int, list[str]] = {}
+_QUIZ_HISTORY_MAX = 60
+
+# Catégories disponibles : valeur → description injectée dans le prompt
+_QUIZ_CATEGORIES: dict[str, str] = {
+    "general":   "tous les animés populaires mélangés (Naruto, One Piece, DBZ, Bleach, Death Note, AoT, HxH, FMA, Fairy Tail, JoJo, SAO, Demon Slayer, My Hero Academia)",
+    "one_piece": "One Piece UNIQUEMENT (personnages, Fruits du Démon, arcs, Marines, Yonkou, technique des personnages, histoire)",
+    "naruto":    "Naruto / Naruto Shippuden / Boruto UNIQUEMENT (chakra, jutsu, clans, arcs, Jinchuriki, Akatsuki)",
+    "sao":       "Sword Art Online UNIQUEMENT (Kirito, Asuna, mondes virtuels, guildes, arcs, boss, compétences)",
+    "bleach":    "Bleach UNIQUEMENT (Zanpakuto, Shinigami, Bankai, Hollows, Espada, arcs Soul Society et Hueco Mundo)",
+    "deathnote": "Death Note UNIQUEMENT (règles du Death Note, Kira, L, Near, Mello, Ryuk, stratégies)",
+    "aot":       "Attack on Titan UNIQUEMENT (Titans, Survey Corps, Shifters, arcs, noms de personnages, capacités)",
+    "dbz":       "Dragon Ball Z / Super UNIQUEMENT (transformations Saiyan, techniques, arcs, personnages, films)",
+    "hxh":       "Hunter x Hunter UNIQUEMENT (Nen, types, Gon, Killua, arcs Yorknew/Chimera Ant, personnages)",
+    "jojo":      "JoJo's Bizarre Adventure UNIQUEMENT (Stands, parties, personnages, pouvoirs, antagonistes)",
+}
+
+# System prompt strict
 _QUIZ_SYSTEM = (
     "Tu es un expert des animés japonais. "
     "Tu réponds UNIQUEMENT avec un JSON valide contenant exactement cette structure : "
@@ -2302,19 +2351,19 @@ _QUIZ_SYSTEM = (
     "Aucun texte avant ou après le JSON. Aucun commentaire. Aucune explication."
 )
 
-# User prompt : nombre de questions + diversité
+# User prompt : catégorie + seed pour forcer la variété
 _QUIZ_USER = (
-    "Génère exactement {n} questions de quiz sur les animés. "
-    "Varie les animés : Naruto, One Piece, Dragon Ball Z, Bleach, Death Note, "
-    "Attack on Titan, Hunter x Hunter, Fullmetal Alchemist, JoJo's Bizarre Adventure, Fairy Tail. "
-    "Varie les thèmes (personnages, pouvoirs, arcs narratifs, auteurs) et les difficultés."
+    "Génère exactement {n} questions de quiz sur : {categorie}. "
+    "Questions INÉDITES et surprenantes — évite les questions trop classiques. "
+    "Varie les thèmes : personnages secondaires, pouvoirs précis, arcs narratifs, scènes cultes, détails de l'univers, auteurs/studios. "
+    "Varie les difficultés (30%% facile, 50%% moyen, 20%% difficile). "
+    "Seed de variété : {seed}."
 )
 
 
-async def _generate_quiz_questions(n: int) -> tuple:
+async def _generate_quiz_questions(n: int, category: str = "general") -> tuple:
     """
     Génère n questions via Groq llama-3.3-70b-versatile (litellm).
-    Utilise response_format json_object pour garantir un JSON valide.
     Retourne (questions: list, erreur: str).
     """
     api_key = os.environ.get("GROQ_API_KEY", "")
@@ -2323,20 +2372,23 @@ async def _generate_quiz_questions(n: int) -> tuple:
         print(f"[QUIZ] ERREUR : {msg}")
         return [], msg
 
+    categorie_desc = _QUIZ_CATEGORIES.get(category, _QUIZ_CATEGORIES["general"])
+    seed = random.randint(1000, 9999)
+
     last_error = ""
     for attempt in range(3):
         raw = ""
         try:
-            print(f"[QUIZ] Appel Groq attempt {attempt + 1}/3 — {n} questions...")
+            print(f"[QUIZ] Appel Groq attempt {attempt + 1}/3 — {n} questions — catégorie={category} seed={seed}")
             response = await litellm.acompletion(
                 model=_GROQ_MODEL,
                 api_key=api_key,
                 max_tokens=3000,
-                temperature=0.7,
-                response_format={"type": "json_object"},   # JSON garanti valide
+                temperature=0.9,
+                response_format={"type": "json_object"},
                 messages=[
                     {"role": "system", "content": _QUIZ_SYSTEM},
-                    {"role": "user",   "content": _QUIZ_USER.format(n=n)},
+                    {"role": "user",   "content": _QUIZ_USER.format(n=n, categorie=categorie_desc, seed=seed)},
                 ],
             )
             raw = response.choices[0].message.content.strip()
@@ -2527,20 +2579,16 @@ class _ReplayView(discord.ui.View):
         await _start_quiz_session(inter, self.n)
 
 class _QuizSelect(discord.ui.Select):
-    """Select Menu : choix du nombre de questions pour le quiz."""
-    def __init__(self, user_id: int):
+    """Select Menu : choix du nombre de questions."""
+    def __init__(self, user_id: int, category: str = "general"):
         self.user_id = user_id
+        self.category = category
         options = [
             discord.SelectOption(label="5 questions",  value="5",  emoji="🎯", description="Quiz rapide"),
             discord.SelectOption(label="10 questions", value="10", emoji="⚡", description="Quiz standard"),
             discord.SelectOption(label="15 questions", value="15", emoji="🔥", description="Quiz marathon"),
         ]
-        super().__init__(
-            placeholder="Choisis le nombre de questions...",
-            min_values=1,
-            max_values=1,
-            options=options,
-        )
+        super().__init__(placeholder="Choisis le nombre de questions...", min_values=1, max_values=1, options=options)
 
     async def callback(self, inter: discord.Interaction):
         if inter.user.id != self.user_id:
@@ -2549,29 +2597,75 @@ class _QuizSelect(discord.ui.Select):
         self.view.stop()
         n = int(self.values[0])
         await inter.response.defer()
-        await _start_quiz_session(inter, n)
+        await _start_quiz_session(inter, n, self.category)
 
 
 class _DurationView(discord.ui.View):
-    """Vue contenant le Select Menu de sélection du nombre de questions."""
+    def __init__(self, user_id: int, category: str = "general"):
+        super().__init__(timeout=60)
+        self.add_item(_QuizSelect(user_id, category))
+
+
+class _QuizCategorySelect(discord.ui.Select):
+    """Select Menu : choix de la catégorie de quiz."""
+    def __init__(self, user_id: int):
+        self.user_id = user_id
+        _LABELS = {
+            "general":   ("🎌 Anime général",        "Tous les animés mélangés"),
+            "one_piece": ("🌊 One Piece",             "Fruits du Démon, arcs, personnages"),
+            "naruto":    ("🍥 Naruto",                "Jutsu, clans, Akatsuki, arcs"),
+            "sao":       ("⚔️ Sword Art Online",      "Kirito, Asuna, mondes virtuels"),
+            "bleach":    ("🗡️ Bleach",                "Bankai, Shinigami, Espada"),
+            "deathnote": ("💀 Death Note",            "Kira, L, règles du Death Note"),
+            "aot":       ("🔥 Attack on Titan",       "Titans, Survey Corps, Shifters"),
+            "dbz":       ("🏋️ Dragon Ball Z",         "Saiyans, transformations, arcs"),
+            "hxh":       ("🎯 Hunter x Hunter",       "Nen, Gon, Killua, arcs"),
+            "jojo":      ("✨ JoJo's Bizarre Adv.",   "Stands, parties, antagonistes"),
+        }
+        options = [
+            discord.SelectOption(label=label, value=val, description=desc, emoji=None)
+            for val, (label, desc) in _LABELS.items()
+        ]
+        super().__init__(placeholder="Choisis une catégorie...", min_values=1, max_values=1, options=options)
+
+    async def callback(self, inter: discord.Interaction):
+        if inter.user.id != self.user_id:
+            await inter.response.send_message("Ce quiz ne t'appartient pas.", ephemeral=True)
+            return
+        self.view.stop()
+        category = self.values[0]
+        await inter.response.edit_message(
+            embed=discord.Embed(
+                title="Quiz Animé 🎌",
+                description="Combien de questions veux-tu ?",
+                color=discord.Color.from_rgb(100, 50, 200),
+            ),
+            view=_DurationView(self.user_id, category),
+        )
+
+
+class _CategoryView(discord.ui.View):
     def __init__(self, user_id: int):
         super().__init__(timeout=60)
-        self.add_item(_QuizSelect(user_id))
+        self.add_item(_QuizCategorySelect(user_id))
 
-async def _start_quiz_session(inter: discord.Interaction, n: int):
+
+async def _start_quiz_session(inter: discord.Interaction, n: int, category: str = "general"):
     """Lance une session quiz : loading → génération → première question."""
     uid = inter.user.id
     if uid in QUIZ_SESSIONS:
         await inter.followup.send("❗ Tu as déjà un quiz en cours !", ephemeral=True)
         return
 
-    # Loading embed (remplace le deferred invisible par un message visible)
+    cat_labels = {
+        "general": "tous les animés", "one_piece": "One Piece", "naruto": "Naruto",
+        "sao": "SAO", "bleach": "Bleach", "deathnote": "Death Note",
+        "aot": "AoT", "dbz": "Dragon Ball Z", "hxh": "HxH", "jojo": "JoJo",
+    }
+    cat_display = cat_labels.get(category, "anime")
     loading_embed = discord.Embed(
         title="🎌 Génération du quiz...",
-        description=(
-            f"L'IA prépare **{n} questions** sur les animés ⏳\n"
-            f"*Naruto, One Piece, DBZ, AOT... que le meilleur gagne !*"
-        ),
+        description=f"L'IA prépare **{n} questions** sur **{cat_display}** ⏳\n*Que le meilleur gagne !*",
         color=discord.Color.from_rgb(100, 50, 200)
     )
     loading_msg = None
@@ -2580,10 +2674,15 @@ async def _start_quiz_session(inter: discord.Interaction, n: int):
     except Exception as e:
         print(f"⚠️ Quiz loading send failed: {e}")
 
-    questions, err = await _generate_quiz_questions(n)
+    questions, err = await _generate_quiz_questions(n, category)
+
+    # Filtre anti-répétition : retire les questions déjà vues par cet utilisateur
+    user_seen = set(QUIZ_USER_HISTORY.get(uid, []))
+    fresh = [q for q in questions if q["question"] not in user_seen]
+    if len(fresh) >= max(1, n // 2):
+        questions = fresh[:n]
 
     if not questions:
-        # Afficher le vrai message d'erreur
         err_display = f"\n\n```{err[:300]}```" if err else ""
         error_embed = discord.Embed(
             title="❌ Génération impossible",
@@ -2592,13 +2691,11 @@ async def _start_quiz_session(inter: discord.Interaction, n: int):
                 f"**Causes possibles :**\n"
                 f"• Clé `GROQ_API_KEY` absente ou invalide dans Railway\n"
                 f"• Rate limit Groq atteint (réessaie dans 1 min)\n"
-                f"• Problème réseau temporaire\n\n"
-                f"*Réessaie dans quelques secondes.*"
+                f"• Problème réseau temporaire"
             ),
             color=discord.Color.red()
         )
         try:
-            # Éditer le message de loading pour afficher l'erreur
             if loading_msg:
                 await loading_msg.edit(embed=error_embed)
             else:
@@ -2610,17 +2707,22 @@ async def _start_quiz_session(inter: discord.Interaction, n: int):
     session = _QuizSession(questions, uid, inter)
     QUIZ_SESSIONS[uid] = session
 
-    # Supprimer le message de loading puis envoyer la première question
+    # Mémorise les questions de cette session
+    history = QUIZ_USER_HISTORY.setdefault(uid, [])
+    history.extend(q["question"] for q in questions)
+    if len(history) > _QUIZ_HISTORY_MAX:
+        QUIZ_USER_HISTORY[uid] = history[-_QUIZ_HISTORY_MAX:]
+
     if loading_msg:
         try:
             await loading_msg.delete()
         except Exception:
             pass
 
-    # On réutilise _send_next_question (chemin unique, pas de duplication)
     await _send_next_question(inter, session)
 
-async def _quiz_entry(interaction: discord.Interaction):
+
+async def _quiz_entry(interaction: discord.Interaction, category: str = ""):
     """Point d'entrée commun pour /quiz et /quizz."""
     try:
         await interaction.response.defer(ephemeral=False)
@@ -2629,12 +2731,25 @@ async def _quiz_entry(interaction: discord.Interaction):
     except Exception as e:
         print(f"❌ quiz defer: {e}")
         return
-    embed = discord.Embed(
-        title="Quiz Animé",
-        description="Combien de questions veux-tu ?",
-        color=discord.Color.from_rgb(100, 50, 200)
-    )
-    view = _DurationView(interaction.user.id)
+
+    uid = interaction.user.id
+    if category:
+        # Catégorie fournie en paramètre → passe directement au choix du nombre
+        embed = discord.Embed(
+            title="Quiz Animé 🎌",
+            description="Combien de questions veux-tu ?",
+            color=discord.Color.from_rgb(100, 50, 200)
+        )
+        view = _DurationView(uid, category)
+    else:
+        # Pas de catégorie → affiche le select de catégorie d'abord
+        embed = discord.Embed(
+            title="Quiz Animé 🎌",
+            description="Choisis une catégorie pour commencer !",
+            color=discord.Color.from_rgb(100, 50, 200)
+        )
+        view = _CategoryView(uid)
+
     try:
         await interaction.followup.send(embed=embed, view=view)
     except discord.NotFound:
@@ -2644,8 +2759,21 @@ async def _quiz_entry(interaction: discord.Interaction):
 
 
 @bot.tree.command(name="quizz", description="Quiz animé — teste tes connaissances sur les animés !")
-async def quizz(interaction: discord.Interaction):
-    await _quiz_entry(interaction)
+@app_commands.describe(categorie="Catégorie (optionnel — laisse vide pour choisir)")
+@app_commands.choices(categorie=[
+    app_commands.Choice(name="🎌 Anime général",       value="general"),
+    app_commands.Choice(name="🌊 One Piece",            value="one_piece"),
+    app_commands.Choice(name="🍥 Naruto",               value="naruto"),
+    app_commands.Choice(name="⚔️ Sword Art Online",    value="sao"),
+    app_commands.Choice(name="🗡️ Bleach",              value="bleach"),
+    app_commands.Choice(name="💀 Death Note",           value="deathnote"),
+    app_commands.Choice(name="🔥 Attack on Titan",      value="aot"),
+    app_commands.Choice(name="🏋️ Dragon Ball Z",       value="dbz"),
+    app_commands.Choice(name="🎯 Hunter x Hunter",      value="hxh"),
+    app_commands.Choice(name="✨ JoJo's Bizarre Adv.", value="jojo"),
+])
+async def quizz(interaction: discord.Interaction, categorie: str = ""):
+    await _quiz_entry(interaction, categorie)
 
 
 @bot.tree.command(name="sync", description="[OWNER] Sync commandes slash")
