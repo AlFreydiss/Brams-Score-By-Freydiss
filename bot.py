@@ -23,6 +23,7 @@ keep_alive()
 import discord
 from discord.ext import commands, tasks
 from discord import app_commands
+import anthropic
 import json
 import io
 import math
@@ -46,10 +47,11 @@ BG_IMAGE_PATH = "background.jpeg"
 FONT_PATH = "PirataOne-Regular.ttf"
 GRAPH_FONT_PATH = "Righteous-Regular.ttf"
 RANK_BG_PATHS = {
-    "Pirate": "pirate_bg.gif",
-    "Shichibukai": "shichibukai_bg.gif",
-    "Amiral": "fujitoraaaa.gif",
-    "Yonkou": "yonkou_bg.gif",
+    "Pirate":          "pirate_bg.gif",
+    "Shichibukai":     "shichibukai_bg.gif",
+    "Amiral":          "fujitoraaaa.gif",
+    "Yonkou":          "yonkou_bg.gif",
+    "Roi des pirates": "roi_des_pirates_bg.gif",
 }
 RANK_BG_DEFAULT = "background.jpeg"
 
@@ -59,12 +61,18 @@ if os.path.exists(GRAPH_FONT_PATH):
 else:
     CUSTOM_FONT = None
 
+# Fallback fonts pour couvrir les glyphs manquants (emojis, pseudos non-ASCII)
+_mpl_families = [CUSTOM_FONT] if CUSTOM_FONT else []
+_mpl_families.extend(["DejaVu Sans", "Noto Sans", "Liberation Sans", "sans-serif"])
+matplotlib.rcParams["font.family"] = _mpl_families
+
 def add_background(fig, alpha=0.18):
     if not os.path.exists(BG_IMAGE_PATH):
         return
     try:
         img = mpimg.imread(BG_IMAGE_PATH)
         bg_ax = fig.add_axes([0, 0, 1, 1], zorder=0)
+        bg_ax.set_in_layout(False)
         bg_ax.imshow(img, aspect="auto", extent=[0, 1, 0, 1],
                      transform=bg_ax.transAxes, alpha=alpha)
         bg_ax.axis("off")
@@ -94,26 +102,30 @@ def init_db():
     conn.close()
 ANNOUNCE_CHANNEL_ID = 1494342996848672828
 ALERT_HOURS_THRESHOLD = 5.0
+DERANK_WARNING_THRESHOLD = 5.0  # heures avant le seuil de derank pour l'avertissement MP
 GUILD_IDS = [924346730194014220, 1478937064031518892]
 
 RANK_ROLES = {
-    "Pirate": 1486554682263343284,
-    "Shichibukai": 1486554770306236596,
-    "Amiral": 1486554823573766164,
-    "Yonkou": 1486554858075984043,
+    "Pirate":          1486554682263343284,
+    "Shichibukai":     1486554770306236596,
+    "Amiral":          1486554823573766164,
+    "Yonkou":          1486554858075984043,
+    "Roi des pirates": 1494656848622518412,
 }
 
 RANKS = [
-    (70, "Yonkou"),
-    (40, "Amiral"),
-    (25, "Shichibukai"),
-    (10, "Pirate"),
+    (150, "Roi des pirates"),
+    (70,  "Yonkou"),
+    (40,  "Amiral"),
+    (25,  "Shichibukai"),
+    (10,  "Pirate"),
 ]
 
 # ─────────────────────────────────────────
 #  CITATIONS ONE PIECE
 # ─────────────────────────────────────────
 CHAR_JIKAN_IDS = {
+    # One Piece
     "Monkey D. Luffy": 40,
     "Roronoa Zoro": 62,
     "Trafalgar Law": 13767,
@@ -125,6 +137,30 @@ CHAR_JIKAN_IDS = {
     "Shanks": 727,
     "Akainu": 22687,
     "Sanji": 305,
+    # Naruto
+    "Naruto Uzumaki": 17,
+    "Sasuke Uchiha": 13,
+    "Kakashi Hatake": 85,
+    "Itachi Uchiha": 25,
+    # Bleach
+    "Ichigo Kurosaki": 5,
+    "Byakuya Kuchiki": 8,
+    # FMA
+    "Edward Elric": 11,
+    "Alphonse Elric": 12,
+    "Roy Mustang": 15,
+    # HxH
+    "Gon Freecss": 30,
+    "Killua Zoldyck": 32,
+    "Hisoka Morow": 33,
+    # JoJo
+    "Jotaro Kujo": 38,
+    # SNK
+    "Levi Ackerman": 845,
+    "Eren Yeager": 849,
+    "Mikasa Ackerman": 847,
+    # Death Note
+    "Light Yagami": 80,
 }
 CHAR_IMAGE_CACHE = {}
 
@@ -132,48 +168,112 @@ async def get_char_image(name):
     if name in CHAR_IMAGE_CACHE:
         return CHAR_IMAGE_CACHE[name]
     jikan_id = CHAR_JIKAN_IDS.get(name)
-    if not jikan_id:
-        return None
     try:
         async with aiohttp.ClientSession() as session:
-            async with session.get(f"https://api.jikan.moe/v4/characters/{jikan_id}") as resp:
-                if resp.status == 200:
-                    data = await resp.json()
-                    img_url = data.get("data", {}).get("images", {}).get("jpg", {}).get("image_url")
-                    if img_url:
-                        async with session.get(img_url) as img_resp:
-                            img_bytes = await img_resp.read()
-                        CHAR_IMAGE_CACHE[name] = img_bytes
-                        return img_bytes
+            if jikan_id:
+                url = f"https://api.jikan.moe/v4/characters/{jikan_id}"
+                async with session.get(url) as resp:
+                    if resp.status == 200:
+                        data = await resp.json()
+                        img_url = data.get("data", {}).get("images", {}).get("jpg", {}).get("image_url")
+                    else:
+                        img_url = None
+            else:
+                # Recherche par nom pour les personnages sans ID connu
+                from urllib.parse import quote as _url_quote
+                search_url = f"https://api.jikan.moe/v4/characters?q={_url_quote(name)}&limit=1"
+                async with session.get(search_url) as resp:
+                    if resp.status == 200:
+                        data = await resp.json()
+                        chars = data.get("data", [])
+                        img_url = chars[0].get("images", {}).get("jpg", {}).get("image_url") if chars else None
+                    else:
+                        img_url = None
+            if img_url:
+                async with session.get(img_url) as img_resp:
+                    img_bytes = await img_resp.read()
+                CHAR_IMAGE_CACHE[name] = img_bytes
+                return img_bytes
     except Exception:
         pass
     return None
 
 CITATIONS = [
-    {"nom": "Monkey D. Luffy", "citation": "Je vais devenir le Roi des Pirates !", "couleur": 0xf97316, "emoji": "🍖"},
-    {"nom": "Monkey D. Luffy", "citation": "Un homme qui abandonne ses rêves n'est pas digne d'être pirate !", "couleur": 0xf97316, "emoji": "🍖"},
-    {"nom": "Monkey D. Luffy", "citation": "Je serai le roi des pirates !", "couleur": 0xf97316, "emoji": "🍖"},
-    {"nom": "Monkey D. Luffy", "citation": "La vie, c'est une aventure !", "couleur": 0xf97316, "emoji": "🍖"},
-    {"nom": "Monkey D. Luffy", "citation": "Peu importe le danger, je n'abandonnerai jamais mes amis !", "couleur": 0xf97316, "emoji": "🍖"},
-    {"nom": "Roronoa Zoro", "citation": "Je vais devenir le meilleur épéiste du monde, sinon je mourrai à la tâche.", "couleur": 0x22c55e, "emoji": "⚔️"},
-    {"nom": "Roronoa Zoro", "citation": "Si tu n'essaies pas, tu as déjà perdu.", "couleur": 0x22c55e, "emoji": "⚔️"},
-    {"nom": "Roronoa Zoro", "citation": "Je n'ai pas besoin d'un bras si je peux tenir mon sabre.", "couleur": 0x22c55e, "emoji": "⚔️"},
-    {"nom": "Roronoa Zoro", "citation": "Il n'y a pas de honte à tomber. La honte c'est de ne pas se relever.", "couleur": 0x22c55e, "emoji": "⚔️"},
-    {"nom": "Roronoa Zoro", "citation": "Les monstres ne pleurent pas.", "couleur": 0x22c55e, "emoji": "⚔️"},
-    {"nom": "Roronoa Zoro", "citation": "Je ne me bats pas pour ma gloire. Je me bats pour ceux qui croient en moi.", "couleur": 0x22c55e, "emoji": "⚔️"},
-    {"nom": "Trafalgar Law", "citation": "Je ne suis pas un héros. Je suis un chirurgien du destin.", "couleur": 0x3b82f6, "emoji": "🔵"},
-    {"nom": "Trafalgar Law", "citation": "Rien ne se passe comme prévu dans ce monde. C'est pour ça que c'est amusant.", "couleur": 0x3b82f6, "emoji": "🔵"},
-    {"nom": "Portgas D. Ace", "citation": "Même si je dois en mourir, je ne fuirai jamais.", "couleur": 0xef4444, "emoji": "🔥"},
-    {"nom": "Portgas D. Ace", "citation": "Je préfère mourir que d'abandonner ce en quoi je crois.", "couleur": 0xef4444, "emoji": "🔥"},
-    {"nom": "Portgas D. Ace", "citation": "Je vis, donc je combats !", "couleur": 0xef4444, "emoji": "🔥"},
-    {"nom": "Nami", "citation": "Mes rêves valent bien quelques mensonges.", "couleur": 0xeab308, "emoji": "🗺️"},
-    {"nom": "Nico Robin", "citation": "Un rêve ne se réalise jamais par hasard.", "couleur": 0xa855f7, "emoji": "📖"},
-    {"nom": "Usopp", "citation": "Seuls ceux qui ont connu la vraie faiblesse peuvent devenir vraiment forts.", "couleur": 0xeab308, "emoji": "🎯"},
-    {"nom": "Barbe Blanche", "citation": "Vis bien. Meurs bien. Et si tu dois mourir, assure-toi d'y croire jusqu'à la fin.", "couleur": 0x94a3b8, "emoji": "⚓"},
-    {"nom": "Barbe Blanche", "citation": "Un homme vit pour protéger ce qui lui est cher.", "couleur": 0x94a3b8, "emoji": "⚓"},
-    {"nom": "Shanks", "citation": "Le vrai pouvoir ne vient pas de la force, mais de la volonté.", "couleur": 0xef4444, "emoji": "🍶"},
-    {"nom": "Akainu", "citation": "La marine protège le monde. Nous sommes la justice absolue.", "couleur": 0xb91c1c, "emoji": "🌋"},
-    {"nom": "Sanji", "citation": "Un vrai homme ne frappe jamais une femme, quoi qu'il arrive.", "couleur": 0xfbbf24, "emoji": "🍳"},
+    # ── ONE PIECE ──
+    {"nom": "Monkey D. Luffy", "anime": "One Piece", "citation": "Je vais devenir le Roi des Pirates !", "couleur": 0xf97316, "emoji": ""},
+    {"nom": "Monkey D. Luffy", "anime": "One Piece", "citation": "Un homme qui abandonne ses rêves n'est pas digne d'être pirate !", "couleur": 0xf97316, "emoji": ""},
+    {"nom": "Monkey D. Luffy", "anime": "One Piece", "citation": "Peu importe le danger, je n'abandonnerai jamais mes amis !", "couleur": 0xf97316, "emoji": ""},
+    {"nom": "Roronoa Zoro", "anime": "One Piece", "citation": "Je vais devenir le meilleur épéiste du monde, sinon je mourrai à la tâche.", "couleur": 0x22c55e, "emoji": ""},
+    {"nom": "Roronoa Zoro", "anime": "One Piece", "citation": "Il n'y a pas de honte à tomber. La honte, c'est de ne pas se relever.", "couleur": 0x22c55e, "emoji": ""},
+    {"nom": "Roronoa Zoro", "anime": "One Piece", "citation": "Je ne me bats pas pour ma gloire. Je me bats pour ceux qui croient en moi.", "couleur": 0x22c55e, "emoji": ""},
+    {"nom": "Trafalgar Law", "anime": "One Piece", "citation": "Je ne suis pas un héros. Je suis un chirurgien du destin.", "couleur": 0x3b82f6, "emoji": ""},
+    {"nom": "Portgas D. Ace", "anime": "One Piece", "citation": "Même si je dois en mourir, je ne fuirai jamais.", "couleur": 0xef4444, "emoji": ""},
+    {"nom": "Portgas D. Ace", "anime": "One Piece", "citation": "Je préfère mourir que d'abandonner ce en quoi je crois.", "couleur": 0xef4444, "emoji": ""},
+    {"nom": "Barbe Blanche", "anime": "One Piece", "citation": "Un homme vit pour protéger ce qui lui est cher.", "couleur": 0x94a3b8, "emoji": ""},
+    {"nom": "Shanks", "anime": "One Piece", "citation": "Le vrai pouvoir ne vient pas de la force, mais de la volonté.", "couleur": 0xef4444, "emoji": ""},
+    {"nom": "Sanji", "anime": "One Piece", "citation": "Un vrai homme ne frappe jamais une femme, quoi qu'il arrive.", "couleur": 0xfbbf24, "emoji": ""},
+    # ── NARUTO ──
+    {"nom": "Naruto Uzumaki", "anime": "Naruto", "citation": "Je ne recule jamais et je ne mens jamais — c'est ma voie du ninja !", "couleur": 0xf97316, "emoji": ""},
+    {"nom": "Naruto Uzumaki", "anime": "Naruto", "citation": "Je deviendrai Hokage, quoi qu'il arrive !", "couleur": 0xf97316, "emoji": ""},
+    {"nom": "Naruto Uzumaki", "anime": "Naruto", "citation": "Si tu abandonnes, c'est la fin. Si tu continues, il reste toujours une chance.", "couleur": 0xf97316, "emoji": ""},
+    {"nom": "Sasuke Uchiha", "anime": "Naruto", "citation": "Mon pouvoir n'a qu'un seul objectif : la vengeance.", "couleur": 0x1e1b4b, "emoji": ""},
+    {"nom": "Sasuke Uchiha", "anime": "Naruto", "citation": "Je n'ai besoin de personne pour accomplir ce que je dois accomplir.", "couleur": 0x1e1b4b, "emoji": ""},
+    {"nom": "Kakashi Hatake", "anime": "Naruto", "citation": "Ceux qui abandonnent leurs camarades sont pires que des rebuts.", "couleur": 0x6b7280, "emoji": ""},
+    {"nom": "Itachi Uchiha", "anime": "Naruto", "citation": "Pardonne-moi, Sasuke... C'est la dernière fois.", "couleur": 0x4c1d95, "emoji": ""},
+    {"nom": "Itachi Uchiha", "anime": "Naruto", "citation": "Il vaut mieux mourir pour quelque chose que de vivre pour rien.", "couleur": 0x4c1d95, "emoji": ""},
+    # ── ATTACK ON TITAN ──
+    {"nom": "Levi Ackerman", "anime": "Attack on Titan", "citation": "Personne ne sait ce qui va se passer. Décide simplement de ce que tu ne regretteras pas.", "couleur": 0x1f2937, "emoji": ""},
+    {"nom": "Levi Ackerman", "anime": "Attack on Titan", "citation": "Les choix que nous faisons sur le champ de bataille sont absolus.", "couleur": 0x1f2937, "emoji": ""},
+    {"nom": "Eren Yeager", "anime": "Attack on Titan", "citation": "Je continuerai à avancer jusqu'à ce que je les aie tous exterminés.", "couleur": 0x065f46, "emoji": ""},
+    {"nom": "Eren Yeager", "anime": "Attack on Titan", "citation": "Si nous ne nous battons pas, nous ne pouvons pas gagner. Si nous nous battons, nous pouvons gagner.", "couleur": 0x065f46, "emoji": ""},
+    {"nom": "Mikasa Ackerman", "anime": "Attack on Titan", "citation": "Ce monde est cruel. Mais il est aussi beau.", "couleur": 0x374151, "emoji": ""},
+    {"nom": "Armin Arlert", "anime": "Attack on Titan", "citation": "Ceux qui sont incapables de renoncer à quelque chose ne peuvent jamais rien changer.", "couleur": 0x78716c, "emoji": ""},
+    # ── DRAGON BALL Z ──
+    {"nom": "Son Goku", "anime": "Dragon Ball Z", "citation": "Je suis un Saiyan elevé sur Terre, et je me bats pour protéger mes amis !", "couleur": 0xf97316, "emoji": ""},
+    {"nom": "Son Goku", "anime": "Dragon Ball Z", "citation": "Je ne cherche pas à être le plus fort. Je veux juste protéger ceux qui me sont chers.", "couleur": 0xf97316, "emoji": ""},
+    {"nom": "Vegeta", "anime": "Dragon Ball Z", "citation": "Je suis le Prince de tous les Saiyans ! Il n'y a pas un seul être dans cet univers plus fier que moi !", "couleur": 0x1e3a5f, "emoji": ""},
+    {"nom": "Vegeta", "anime": "Dragon Ball Z", "citation": "Kakarot... tu es le seul guerrier qui me donne envie de me surpasser.", "couleur": 0x1e3a5f, "emoji": ""},
+    # ── DEATH NOTE ──
+    {"nom": "Light Yagami", "anime": "Death Note", "citation": "Je vais créer un nouveau monde. Un monde sans crime. Je serai son Dieu.", "couleur": 0x7f1d1d, "emoji": ""},
+    {"nom": "Light Yagami", "anime": "Death Note", "citation": "Celui qui gagne, c'est moi. Et le monde sera purifié.", "couleur": 0x7f1d1d, "emoji": ""},
+    {"nom": "Light Yagami", "anime": "Death Note", "citation": "Les humains ne font jamais ce qu'on leur dit — mais si facilement ce qu'on leur impose.", "couleur": 0x7f1d1d, "emoji": ""},
+    {"nom": "L", "anime": "Death Note", "citation": "Un homme qui ne ment jamais n'a pas besoin d'une bonne mémoire.", "couleur": 0x1c1917, "emoji": ""},
+    {"nom": "L", "anime": "Death Note", "citation": "Il y a une probabilité non nulle que je me trompe. Mais elle est très faible.", "couleur": 0x1c1917, "emoji": ""},
+    {"nom": "Ryuk", "anime": "Death Note", "citation": "Les humains sont vraiment... intéressants.", "couleur": 0x292524, "emoji": ""},
+    # ── BLEACH ──
+    {"nom": "Ichigo Kurosaki", "anime": "Bleach", "citation": "Je ne suis pas un héros ni un dieu. Quand on m'attaque, je contre-attaque. C'est tout.", "couleur": 0xea580c, "emoji": ""},
+    {"nom": "Ichigo Kurosaki", "anime": "Bleach", "citation": "Peu importe la raison — je veux juste avoir la force de protéger ceux que j'aime.", "couleur": 0xea580c, "emoji": ""},
+    {"nom": "Byakuya Kuchiki", "anime": "Bleach", "citation": "La fierté n'est pas quelque chose que l'on gagne. C'est quelque chose que l'on maintient.", "couleur": 0x1e293b, "emoji": ""},
+    {"nom": "Byakuya Kuchiki", "anime": "Bleach", "citation": "Les règles existent pour être suivies. Même au prix de sa vie.", "couleur": 0x1e293b, "emoji": ""},
+    # ── FAIRY TAIL ──
+    {"nom": "Natsu Dragneel", "anime": "Fairy Tail", "citation": "Je ne serai jamais seul — mes amis sont toujours dans mon coeur !", "couleur": 0xdc2626, "emoji": ""},
+    {"nom": "Natsu Dragneel", "anime": "Fairy Tail", "citation": "Peu importe combien de fois je tombe, je me relèverai toujours !", "couleur": 0xdc2626, "emoji": ""},
+    {"nom": "Erza Scarlet", "anime": "Fairy Tail", "citation": "Les larmes ne sont pas une faiblesse. Ce sont la preuve que tu ressens quelque chose.", "couleur": 0x9f1239, "emoji": ""},
+    {"nom": "Erza Scarlet", "anime": "Fairy Tail", "citation": "Avance, meme si c'est dur. La route se tracera sous tes pieds.", "couleur": 0x9f1239, "emoji": ""},
+    {"nom": "Makarov Dreyar", "anime": "Fairy Tail", "citation": "La Fairy Tail, c'est une famille. Et une famille, ca ne s'abandonne pas.", "couleur": 0x78350f, "emoji": ""},
+    # ── HUNTER x HUNTER ──
+    {"nom": "Gon Freecss", "anime": "Hunter x Hunter", "citation": "Si tu abandonnes, c'est deja la fin. Si tu continues, il reste toujours une chance.", "couleur": 0x16a34a, "emoji": ""},
+    {"nom": "Gon Freecss", "anime": "Hunter x Hunter", "citation": "Je veux voir ce que voit mon père — ce qui vaut autant que moi a ses yeux.", "couleur": 0x16a34a, "emoji": ""},
+    {"nom": "Killua Zoldyck", "anime": "Hunter x Hunter", "citation": "On m'a appris a avancer, toujours. Je ne connais pas le mot renoncer.", "couleur": 0x94a3b8, "emoji": ""},
+    {"nom": "Killua Zoldyck", "anime": "Hunter x Hunter", "citation": "La force, c'est ne pas avoir a prouver qu'on est fort.", "couleur": 0x94a3b8, "emoji": ""},
+    {"nom": "Hisoka Morow", "anime": "Hunter x Hunter", "citation": "Les perles rares méritent d'être soignées jusqu'a maturité.", "couleur": 0xdc2626, "emoji": ""},
+    # ── FULLMETAL ALCHEMIST ──
+    {"nom": "Edward Elric", "anime": "Fullmetal Alchemist", "citation": "Une vie humaine n'a pas de prix. Et c'est exactement pour ca que l'alchimie ne peut pas la recréer.", "couleur": 0xd97706, "emoji": ""},
+    {"nom": "Edward Elric", "anime": "Fullmetal Alchemist", "citation": "Rien n'est parfait dans ce monde. C'est justement pour ca que c'est beau.", "couleur": 0xd97706, "emoji": ""},
+    {"nom": "Roy Mustang", "anime": "Fullmetal Alchemist", "citation": "Ceux qui utilisent le feu doivent être prêts a se brûler.", "couleur": 0x1e40af, "emoji": ""},
+    {"nom": "Roy Mustang", "anime": "Fullmetal Alchemist", "citation": "Le rang ne fait pas l'homme. Ce sont ses actes.", "couleur": 0x1e40af, "emoji": ""},
+    {"nom": "Alphonse Elric", "anime": "Fullmetal Alchemist", "citation": "On ne peut pas tout obtenir dans ce monde. Mais on peut choisir ce qui vaut la peine d'essayer.", "couleur": 0xe2e8f0, "emoji": ""},
+    # ── JOJO'S BIZARRE ADVENTURE ──
+    {"nom": "Dio Brando", "anime": "JoJo's Bizarre Adventure", "citation": "Ce monde appartient a DIO !", "couleur": 0x6d28d9, "emoji": ""},
+    {"nom": "Dio Brando", "anime": "JoJo's Bizarre Adventure", "citation": "Nul ne peut résister a mon pouvoir. Pas meme le temps.", "couleur": 0x6d28d9, "emoji": ""},
+    {"nom": "Jotaro Kujo", "anime": "JoJo's Bizarre Adventure", "citation": "Je n'ai pas besoin de grands discours. Mes poings parlent pour moi.", "couleur": 0x0c4a6e, "emoji": ""},
+    {"nom": "Giorno Giovanna", "anime": "JoJo's Bizarre Adventure", "citation": "J'ai un reve. Et ce reve ne mourra jamais.", "couleur": 0xf472b6, "emoji": ""},
+    {"nom": "Giorno Giovanna", "anime": "JoJo's Bizarre Adventure", "citation": "Meme dans l'obscurité, la lumière d'un reve ne s'éteint pas.", "couleur": 0xf472b6, "emoji": ""},
+    # ── VIOLET EVERGARDEN ──
+    {"nom": "Violet Evergarden", "anime": "Violet Evergarden", "citation": "Je veux comprendre ce que signifient ces mots : 'je t'aime'.", "couleur": 0x7c3aed, "emoji": ""},
+    {"nom": "Violet Evergarden", "anime": "Violet Evergarden", "citation": "Je ne suis qu'une arme. Mais une arme qui souhaite comprendre les coeurs humains.", "couleur": 0x7c3aed, "emoji": ""},
+    {"nom": "Violet Evergarden", "anime": "Violet Evergarden", "citation": "Chaque lettre est une ame qui voyage la ou les mots ne peuvent suffire.", "couleur": 0x7c3aed, "emoji": ""},
+    {"nom": "Claudia Hodgins", "anime": "Violet Evergarden", "citation": "Les lettres voyagent la ou les gens ne peuvent aller. Et restent la ou les gens ne peuvent demeurer.", "couleur": 0x1e40af, "emoji": ""},
 ]
 
 # ─────────────────────────────────────────
@@ -309,6 +409,17 @@ def get_rank_for_hours(hours):
             return role_name
     return None
 
+def get_all_ranks_for_hours(hours):
+    """Retourne TOUS les rangs mérités (du plus haut au plus bas)."""
+    return [role_name for threshold, role_name in RANKS if hours >= threshold]
+
+def format_all_ranks_display(hours_7d):
+    """Formate l'affichage cumulatif des rangs pour les embeds."""
+    all_ranks = get_all_ranks_for_hours(hours_7d)
+    if not all_ranks:
+        return "Aucun rang"
+    return "  ·  ".join(f"{RANK_EMOJIS.get(r, '🎖️')} {r}" for r in all_ranks)
+
 def get_next_rank(hours):
     for threshold, role_name in reversed(RANKS):
         if hours < threshold:
@@ -413,7 +524,16 @@ db_executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="db_worker")
 # ─────────────────────────────────────────
 #  RANK UPDATE + ANNONCES
 # ─────────────────────────────────────────
+_ANNOUNCE_RANK_EMOJIS = {
+    "Pirate":          "🏴‍☠️",
+    "Shichibukai":     "<:5505zorohappy:1132289837056151622>",
+    "Amiral":          "🪖",
+    "Yonkou":          "⚜️",
+    "Roi des pirates": "👑",
+}
+
 async def update_rank(member: discord.Member, hours_7d: float, announce=True, data=None):
+    """Rangs cumulatifs : ajoute les rôles mérités, retire ceux perdus, annonce montée ET derank."""
     guild = member.guild
     _local_data = data is None
     if _local_data:
@@ -421,60 +541,67 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True, da
     uid = str(member.id)
     user = get_user(data, uid)
 
-    new_rank = get_rank_for_hours(hours_7d)
-    old_rank = user.get("last_rank")
+    # Tous les rangs mérités selon les heures actuelles
+    deserved_ranks = set(get_all_ranks_for_hours(hours_7d))
 
-    current_rank_role_ids = [r.id for r in member.roles if r.id in RANK_ROLES.values()]
-    expected_role_id = RANK_ROLES.get(new_rank) if new_rank else None
+    # Rangs que le membre possède déjà en tant que rôles Discord
+    rank_id_to_name = {v: k for k, v in RANK_ROLES.items()}
+    current_rank_names = {rank_id_to_name[r.id] for r in member.roles if r.id in RANK_ROLES.values()}
 
-    needs_role_update = (
-        (expected_role_id is None and bool(current_rank_role_ids)) or
-        (expected_role_id is not None and set(current_rank_role_ids) != {expected_role_id})
-    )
+    ranks_to_add = deserved_ranks - current_rank_names
+    ranks_to_remove = current_rank_names - deserved_ranks
 
-    if needs_role_update:
-        roles_to_remove = [r for r in member.roles if r.id in RANK_ROLES.values()]
-        if roles_to_remove:
+    # Ajouter les rôles manquants
+    for rank_name in ranks_to_add:
+        role = guild.get_role(RANK_ROLES[rank_name])
+        if role:
             try:
-                await member.remove_roles(*roles_to_remove)
+                await member.add_roles(role)
             except Exception as e:
-                print(f"⚠️ Erreur remove_roles {member.display_name}: {e}")
-        if new_rank and expected_role_id:
-            role = guild.get_role(expected_role_id)
-            if role:
-                try:
-                    await member.add_roles(role)
-                except Exception as e:
-                    print(f"⚠️ Erreur add_roles {member.display_name}: {e}")
+                print(f"⚠️ add_roles {member.display_name} ({rank_name}): {e}")
+
+    # Retirer les rôles non mérités (derank)
+    for rank_name in ranks_to_remove:
+        role = guild.get_role(RANK_ROLES[rank_name])
+        if role:
+            try:
+                await member.remove_roles(role)
+            except Exception as e:
+                print(f"⚠️ remove_roles {member.display_name} ({rank_name}): {e}")
 
     rank_order = {r: i for i, (_, r) in enumerate(reversed(RANKS))}
-    old_order = rank_order.get(old_rank, -1)
-    new_order = rank_order.get(new_rank, -1)
-    will_announce = announce and new_rank is not None and new_order > old_order
 
-    if will_announce:
-        channel = bot.get_channel(ANNOUNCE_CHANNEL_ID)
-        if channel:
-            img_buf, is_gif = await make_rank_image(member, new_rank, hours_7d)
-            fname = "rank_up.gif" if is_gif else "rank_up.png"
-            rank_emojis = {
-                "Pirate": "🏴‍☠️",
-                "Shichibukai": "<:5505zorohappy:1132289837056151622>",
-                "Amiral": "🪖",
-                "Yonkou": "⚜️",
-            }
-            emoji = rank_emojis.get(new_rank, "")
-            await channel.send(
-                content=f"Bravo à {member.mention} qui a débloqué le rank **{new_rank}** {emoji}",
-                file=discord.File(img_buf, fname)
-            )
+    if announce:
+        # Annonces de montée de rang (du plus bas au plus haut)
+        for rank_name in sorted(ranks_to_add, key=lambda r: rank_order.get(r, -1)):
+            channel = bot.get_channel(ANNOUNCE_CHANNEL_ID)
+            if channel:
+                img_buf, is_gif = await make_rank_image(member, rank_name, hours_7d)
+                fname = "rank_up.gif" if is_gif else "rank_up.png"
+                emoji = _ANNOUNCE_RANK_EMOJIS.get(rank_name, "")
+                await channel.send(
+                    content=f"Bravo à {member.mention} qui a débloqué le rank **{rank_name}** {emoji}",
+                    file=discord.File(img_buf, fname)
+                )
 
-    if new_rank != old_rank:
-        user["last_rank"] = new_rank
+        # Annonces de derank
+        for rank_name in ranks_to_remove:
+            channel = bot.get_channel(ANNOUNCE_CHANNEL_ID)
+            if channel:
+                emoji = _ANNOUNCE_RANK_EMOJIS.get(rank_name, "")
+                await channel.send(
+                    content=f"⬇️ {member.mention} a perdu le rang **{rank_name}** {emoji} ({hours_7d:.1f}h / 7j)"
+                )
+
+    new_highest_rank = get_rank_for_hours(hours_7d)
+    old_rank = user.get("last_rank")
+    if new_highest_rank != old_rank:
+        user["last_rank"] = new_highest_rank
         if _local_data:
             await save_user_async(uid, user)
 
-    print(f"[RANK] {member.display_name} : {old_rank} → {new_rank} (announce={announce}, sent={will_announce})")
+    if ranks_to_add or ranks_to_remove:
+        print(f"[RANK] {member.display_name} : +{ranks_to_add} -{ranks_to_remove} | highest={new_highest_rank}")
 
 async def make_rank_image(member: discord.Member, rank_name: str, hours_7d: float):
     CARD_W = 1100
@@ -484,38 +611,28 @@ async def make_rank_image(member: discord.Member, rank_name: str, hours_7d: floa
     AVATAR_SIZE = 220
     BG_OPACITY = 0.45
     RANK_COLORS = {
-        "Pirate":      (46, 204, 113),
-        "Shichibukai": (22, 96, 45),
-        "Amiral":      (241, 196, 15),
-        "Yonkou":      (155, 89, 182),
+        "Pirate":          (46, 204, 113),
+        "Shichibukai":     (22, 96, 45),
+        "Amiral":          (241, 196, 15),
+        "Yonkou":          (155, 89, 182),
+        "Roi des pirates": (255, 215, 0),
     }
     grade_color = RANK_COLORS.get(rank_name, WHITE)
 
     bg_path = RANK_BG_PATHS.get(rank_name, RANK_BG_DEFAULT)
 
     def resolve_image_path(path):
+        # Ne pas utiliser Image.verify() : il invalide les GIFs animés après appel
         if os.path.exists(path):
-            try:
-                Image.open(path).verify()
-                return path
-            except Exception:
-                print(f"⚠️ [make_rank_image] Image corrompue : {path}")
+            return path
         filename = os.path.basename(path)
         alt1 = os.path.join("attached_assets", filename)
         if os.path.exists(alt1):
-            try:
-                Image.open(alt1).verify()
-                print(f"⚠️ [make_rank_image] Fallback attached_assets/ pour : {path}")
-                return alt1
-            except Exception:
-                print(f"⚠️ [make_rank_image] Image corrompue dans attached_assets/ : {alt1}")
+            print(f"⚠️ [make_rank_image] Fallback attached_assets/ pour : {path}")
+            return alt1
         if os.path.exists(filename):
-            try:
-                Image.open(filename).verify()
-                print(f"⚠️ [make_rank_image] Fallback racine pour : {path}")
-                return filename
-            except Exception:
-                print(f"⚠️ [make_rank_image] Image corrompue à la racine : {filename}")
+            print(f"⚠️ [make_rank_image] Fallback racine pour : {path}")
+            return filename
         print(f"⚠️ [make_rank_image] Image introuvable, fallback sur RANK_BG_DEFAULT : {path}")
         return RANK_BG_DEFAULT
 
@@ -546,8 +663,13 @@ async def make_rank_image(member: discord.Member, rank_name: str, hours_7d: floa
         font_pseudo    = font_felicit
         font_community = font_felicit
 
-    rank_labels = {"Pirate": "PIRATE", "Shichibukai": "SHICHIBUKAI",
-                   "Amiral": "AMIRAL", "Yonkou": "YONKOU"}
+    rank_labels = {
+        "Pirate":          "PIRATE",
+        "Shichibukai":     "SHICHIBUKAI",
+        "Amiral":          "AMIRAL",
+        "Yonkou":          "YONKOU",
+        "Roi des pirates": "ROI DES PIRATES",
+    }
     grade_text = rank_labels.get(rank_name, rank_name.upper())
     pseudo = member.display_name
     pseudo_clean = re.sub(r'[^\w\s\-\.]', '', pseudo, flags=re.UNICODE).strip()
@@ -602,7 +724,7 @@ async def make_rank_image(member: discord.Member, rank_name: str, hours_7d: floa
         card = Image.alpha_composite(card, overlay)
         draw = ImageDraw.Draw(card, "RGBA")
 
-        draw_text_centered(draw, f"FELICITATIONS POUR LE RANK", font_felicit, 30, (*GOLD, 255))
+        draw_text_centered(draw, f"FELICITATIONS POUR LE RANK", font_felicit, 30, (*grade_color, 255))
         draw_text_centered(draw, grade_text, font_grade, 78, (*grade_color, 255))
 
         if avatar_circle is not None:
@@ -610,7 +732,7 @@ async def make_rank_image(member: discord.Member, rank_name: str, hours_7d: floa
             ay = 260
             draw.ellipse(
                 [ax - 4, ay - 4, ax + AVATAR_SIZE + 4, ay + AVATAR_SIZE + 4],
-                outline=GOLD, width=3
+                outline=grade_color, width=3
             )
             card.paste(avatar_circle, (ax, ay), avatar_circle)
             pseudo_y = ay + AVATAR_SIZE + 24
@@ -618,7 +740,7 @@ async def make_rank_image(member: discord.Member, rank_name: str, hours_7d: floa
             pseudo_y = 280
 
         draw_text_centered(draw, pseudo_clean, font_pseudo, pseudo_y, (*WHITE, 255))
-        draw_text_centered(draw, "BRAMS COMMUNITY", font_community, pseudo_y + 80, (*GOLD, 230))
+        draw_text_centered(draw, "BRAMS COMMUNITY", font_community, pseudo_y + 80, (*grade_color, 230))
 
         return card
 
@@ -675,13 +797,13 @@ async def check_alert(member: discord.Member, hours_7d: float, data=None):
     if current_rank is None:
         return
 
-    rank_threshold = {"Pirate": 10, "Shichibukai": 25, "Amiral": 40, "Yonkou": 70}
+    rank_threshold = {"Pirate": 10, "Shichibukai": 25, "Amiral": 40, "Yonkou": 70, "Roi des pirates": 150}
     threshold = rank_threshold.get(current_rank)
     if threshold is None:
         return
 
     already_alerted = user.get("alerted") == current_rank
-    in_danger_zone = (threshold - 5) <= hours_7d < threshold
+    in_danger_zone = (threshold - DERANK_WARNING_THRESHOLD) <= hours_7d < threshold
 
     if in_danger_zone and not already_alerted:
         try:
@@ -717,12 +839,13 @@ async def check_alert(member: discord.Member, hours_7d: float, data=None):
 # ─────────────────────────────────────────
 #  GRAPHIQUES
 # ─────────────────────────────────────────
-def make_activity_graph(vocal_by_day, msg_by_day, title="Activité des 7 derniers jours"):
+def make_activity_graph(vocal_by_day, msg_by_day, title="Activite des 7 derniers jours"):
+    # Sanitiser le titre pour éviter les warnings "Glyph missing"
+    title = re.sub(r'[^\x00-\x7F\u00C0-\u024F]', '', title).strip() or "Activite"
     font_kw = {"fontfamily": CUSTOM_FONT} if CUSTOM_FONT else {}
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5), facecolor="#1a1a2e")
     fig.suptitle(title, color="#e0e0e0", fontsize=18, fontweight="bold", y=0.98, **font_kw)
-    add_background(fig, alpha=0.12)
 
     days = []
     for i in range(6, -1, -1):
@@ -764,6 +887,7 @@ def make_activity_graph(vocal_by_day, msg_by_day, title="Activité des 7 dernier
     ax2.grid(axis="y", color="#333", alpha=0.5, linestyle="--")
 
     plt.tight_layout(rect=[0, 0, 1, 0.93])
+    add_background(fig, alpha=0.12)
     buf = io.BytesIO()
     plt.savefig(buf, format="png", dpi=150)
     buf.seek(0)
@@ -771,12 +895,10 @@ def make_activity_graph(vocal_by_day, msg_by_day, title="Activité des 7 dernier
     return buf
 
 def make_peak_hours_graph(hour_counts):
-    import numpy as np
     font_kw = {"fontfamily": CUSTOM_FONT} if CUSTOM_FONT else {}
 
     fig, ax = plt.subplots(figsize=(14, 5), facecolor="#1a1a2e")
     ax.set_facecolor("#16213e")
-    add_background(fig, alpha=0.12)
 
     hours = list(range(24))
     values = [hour_counts.get(h, 0) for h in hours]
@@ -795,7 +917,7 @@ def make_peak_hours_graph(hour_counts):
 
     ax.set_xticks(hours)
     ax.set_xticklabels([f"{h}h" for h in hours], color="#aaa", fontsize=9, **font_kw)
-    ax.set_title("🕐 Heures de pointe (7 jours)", color="#e0e0e0", fontsize=16, fontweight="bold", pad=15, **font_kw)
+    ax.set_title("Heures de pointe (7 jours)", color="#e0e0e0", fontsize=16, fontweight="bold", pad=15, **font_kw)
     ax.tick_params(colors="#666", labelsize=9)
     ax.set_ylim(bottom=0)
     for spine in ax.spines.values():
@@ -808,6 +930,7 @@ def make_peak_hours_graph(hour_counts):
                     color="#ffd700", fontsize=12, fontweight="bold", **font_kw)
 
     plt.tight_layout()
+    add_background(fig, alpha=0.12)
     buf = io.BytesIO()
     plt.savefig(buf, format="png", dpi=150)
     buf.seek(0)
@@ -986,7 +1109,7 @@ def make_progress_bar(current, target, length=10):
     empty = length - filled
     return "▰" * filled + "▱" * empty
 
-RANK_EMOJIS = {"Pirate": "🏴‍☠️", "Shichibukai": "⚔️", "Amiral": "🪖", "Yonkou": "👑"}
+RANK_EMOJIS = {"Pirate": "🏴‍☠️", "Shichibukai": "⚔️", "Amiral": "🪖", "Yonkou": "👑", "Roi des pirates": "🤴"}
 
 def build_vocal_by_day(user):
     vocal_by_day = defaultdict(float)
@@ -1031,43 +1154,46 @@ async def stats(interaction: discord.Interaction):
     hours_7d = s7d / 3600
     rank_actuel = get_rank_for_hours(hours_7d) or "Aucun"
     r_emoji = RANK_EMOJIS.get(rank_actuel, "💀")
+    ranks_display = format_all_ranks_display(hours_7d)
     next_thresh, next_rank = get_next_rank(hours_7d)
     prime_val = calculate_prime(s_tot / 3600, m_tot)
 
-    live_tag = "  🔴 EN VOCAL" if jt else ""
+    # Indicateur EN VOCAL dans la description (plus petit que le titre)
+    live_line = "\u3000🎙️ *— en vocal actuellement*\n" if jt else ""
 
     if next_rank:
         hours_restantes = next_thresh - hours_7d
         rank_section = (
             f"━━━━━━━━━━━━━━━━━━━━━━\n"
-            f"{r_emoji} **Rank** : **{rank_actuel}**\n"
+            f"**Rangs** : {ranks_display}\n"
             f"**Prochain** : {next_rank} dans `{hours_restantes:.1f}h`"
         )
     else:
         rank_section = (
             f"━━━━━━━━━━━━━━━━━━━━━━\n"
-            f"{r_emoji} **Rank** : **{rank_actuel}**\n"
+            f"**Rangs** : {ranks_display}\n"
             f"👑 **Rang maximum atteint !**"
         )
 
     embed = discord.Embed(
-        title=f"{r_emoji} {me.display_name.upper()}{live_tag}",
+        title=f"{r_emoji} {me.display_name.upper()}",
         description=(
+            f"{live_line}"
             f"{rank_section}\n\n"
             f"━━━━━━━━━━━━━━━━━━━━━━\n"
             f"💰 **Prime** : **{format_prime(prime_val)}**\n\n"
             f"━━━━━━━━━━━━━━━━━━━━━━\n"
             f"🎙️ **TEMPS VOCAL**\n"
-            f"> Aujourd'hui : `{format_duration(s1d)}`\n"
-            f"> 7 jours : `{format_duration(s7d)}`\n"
-            f"> 14 jours : `{format_duration(s14d)}`\n"
-            f"> Total : `{format_duration(s_tot)}`\n\n"
+            f"**Aujourd'hui** : `{format_duration(s1d)}`\n"
+            f"7 jours : `{format_duration(s7d)}`\n"
+            f"14 jours : `{format_duration(s14d)}`\n"
+            f"Total : `{format_duration(s_tot)}`\n\n"
             f"━━━━━━━━━━━━━━━━━━━━━━\n"
             f"💬 **MESSAGES**\n"
-            f"> Aujourd'hui : `{m1d}`\n"
-            f"> 7 jours : `{m7d}`\n"
-            f"> 14 jours : `{m14d}`\n"
-            f"> Total : `{m_tot}`"
+            f"**Aujourd'hui** : `{m1d}`\n"
+            f"7 jours : `{m7d}`\n"
+            f"14 jours : `{m14d}`\n"
+            f"Total : `{m_tot}`"
         ),
         color=discord.Color.from_rgb(212, 175, 55)
     )
@@ -1131,24 +1257,26 @@ async def top(interaction: discord.Interaction, periode: app_commands.Choice[str
 
     vocal_list.sort(key=lambda x: x[2], reverse=True)
     msg_list.sort(key=lambda x: x[2], reverse=True)
-    medals = ["🥇", "🥈", "🥉", "`4.`", "`5.`"]
+    medals = ["🥇", "🥈", "🥉", "4.", "5.", "6.", "7.", "8.", "9.", "10."]
 
     vocal_now = {str(m.id) for g in bot.guilds for vc in g.voice_channels for m in vc.members}
 
     vocal_parts = []
-    for i, (uid_n, n, v) in enumerate(vocal_list[:5]):
+    for i, (uid_n, n, v) in enumerate(vocal_list[:10]):
         if v <= 0:
             break
-        live = " 🔴" if uid_n in vocal_now else ""
-        vocal_parts.append(f"{medals[i]}  **{clean_name(n)}**{live}\n     `{format_duration(v)}`")
+        live = "  🎙️" if uid_n in vocal_now else ""
+        medal = medals[i] if i < len(medals) else f"{i+1}."
+        vocal_parts.append(f"{medal}  **{clean_name(n)}**{live}\n     `{format_duration(v)}`")
     vocal_str = "\n\n".join(vocal_parts) if vocal_parts else "*Aucune donnée*"
 
     msg_parts = []
-    for i, (uid_n, n, v) in enumerate(msg_list[:5]):
+    for i, (uid_n, n, v) in enumerate(msg_list[:10]):
         if v <= 0:
             break
-        live = " 🔴" if uid_n in vocal_now else ""
-        msg_parts.append(f"{medals[i]}  **{clean_name(n)}**{live}\n     `{v} messages`")
+        live = "  🎙️" if uid_n in vocal_now else ""
+        medal = medals[i] if i < len(medals) else f"{i+1}."
+        msg_parts.append(f"{medal}  **{clean_name(n)}**{live}\n     `{v} messages`")
     msg_str = "\n\n".join(msg_parts) if msg_parts else "*Aucune donnée*"
 
     sep = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -1265,7 +1393,7 @@ async def serveur(interaction: discord.Interaction):
         embed1.set_thumbnail(url=guild.icon.url)
 
     embed1.add_field(name="👥 Membres actifs (7j)", value=f"**{membres_actifs}**", inline=True)
-    embed1.add_field(name="🔴 En vocal maintenant", value=f"**{en_vocal_now}**", inline=True)
+    embed1.add_field(name="🎙️ En vocal maintenant", value=f"**{en_vocal_now}**", inline=True)
     embed1.add_field(name="🕐 Heure de pointe", value=f"**{peak_hour}h — {peak_hour+1}h UTC**", inline=True)
 
     embed1.add_field(
@@ -1338,7 +1466,7 @@ async def tout(interaction: discord.Interaction):
     r_emoji = RANK_EMOJIS.get(rank_actuel, "💀")
     prime_val = calculate_prime(hours_tot, m_tot)
     next_thresh, next_rank = get_next_rank(hours_7d)
-    live_indicator = " 🔴 *EN VOCAL*" if jt else ""
+    live_indicator = "  　🎙️ *EN VOCAL*" if jt else ""
 
     if next_rank:
         bar = make_progress_bar(hours_7d, next_thresh)
@@ -1414,7 +1542,7 @@ async def tout(interaction: discord.Interaction):
 
     embed2 = discord.Embed(
         title="🌐 CLASSEMENT SERVEUR (7 jours)",
-        color=discord.Color.from_rgb(185, 22, 22)
+        color=discord.Color.from_rgb(20, 30, 60)
     )
     embed2.add_field(name="👥 Actifs", value=f"**{membres_actifs}**", inline=True)
     embed2.add_field(name="🎙️ Vocal total", value=f"**{format_duration(total_vocal_srv)}**", inline=True)
@@ -1478,15 +1606,16 @@ async def chercher(interaction: discord.Interaction, membre: discord.Member):
     hours_tot = s_tot / 3600
     rank_actuel = get_rank_for_hours(hours_7d) or "Aucun"
     r_emoji = RANK_EMOJIS.get(rank_actuel, "💀")
+    ranks_display = format_all_ranks_display(hours_7d)
     prime_val = calculate_prime(hours_tot, m_tot)
     next_thresh, next_rank = get_next_rank(hours_7d)
-    live_indicator = " 🔴 *EN VOCAL*" if jt else ""
+    live_indicator = "  　🎙️ *EN VOCAL*" if jt else ""
 
     if next_rank:
         bar = make_progress_bar(hours_7d, next_thresh)
-        progress_str = f"`{bar}` {hours_7d:.1f}h / {next_thresh}h\nProchain : **{next_rank}**"
+        progress_str = f"{ranks_display}\n`{bar}` {hours_7d:.1f}h / {next_thresh}h\nProchain : **{next_rank}**"
     else:
-        progress_str = "`▰▰▰▰▰▰▰▰▰▰` 👑 **Rang maximum !**"
+        progress_str = f"{ranks_display}\n`▰▰▰▰▰▰▰▰▰▰` 👑 **Rang maximum !**"
 
     embed = discord.Embed(
         title=f"🔍 {membre.display_name.upper()}{live_indicator}",
@@ -1495,7 +1624,7 @@ async def chercher(interaction: discord.Interaction, membre: discord.Member):
     embed.set_thumbnail(url=membre.display_avatar.url)
 
     embed.add_field(
-        name=f"{r_emoji} Rang — **{rank_actuel}**",
+        name="Rangs",
         value=progress_str,
         inline=False
     )
@@ -1575,7 +1704,7 @@ async def chercher(interaction: discord.Interaction, membre: discord.Member):
 
 CITATION_HISTORY = []
 
-@bot.tree.command(name="citation", description="Affiche une citation One Piece")
+@bot.tree.command(name="citation", description="Affiche une citation d'anime aléatoire")
 @app_commands.describe(perso="Nom du personnage (optionnel, sinon aléatoire)")
 async def citation(interaction: discord.Interaction, perso: str = None):
     try:
@@ -1609,11 +1738,14 @@ async def citation(interaction: discord.Interaction, perso: str = None):
     CITATION_HISTORY.append(data["citation"])
 
     embed = discord.Embed(
-        description=f'> *" {data["citation"]} "*',
+        description=f'*« {data["citation"]} »*',
         color=data["couleur"]
     )
-    embed.set_author(name=f'{data["emoji"]}  {data["nom"].upper()}')
-    embed.set_footer(text="ONE PIECE • Brams Score")
+    author_name = data["nom"].upper()
+    if data.get("emoji"):
+        author_name = f'{data["emoji"]}  {author_name}'
+    embed.set_author(name=author_name)
+    embed.set_footer(text=f'{data.get("anime", "Animé")} • Brams Score')
 
     img_bytes = await get_char_image(data["nom"])
     try:
@@ -1630,6 +1762,7 @@ async def citation(interaction: discord.Interaction, perso: str = None):
 
 
 @bot.tree.command(name="addheures", description="[ADMIN] Ajouter des heures vocales à un membre")
+@app_commands.default_member_permissions(discord.Permissions(administrator=True))
 @app_commands.checks.has_permissions(administrator=True)
 async def addheures(interaction: discord.Interaction, membre: discord.Member, heures: float):
     try:
@@ -1661,6 +1794,7 @@ async def addheures(interaction: discord.Interaction, membre: discord.Member, he
 
 
 @bot.tree.command(name="forcerank", description="[ADMIN] Recalculer le rank d'un membre")
+@app_commands.default_member_permissions(discord.Permissions(administrator=True))
 @app_commands.checks.has_permissions(administrator=True)
 async def forcerank(interaction: discord.Interaction, membre: discord.Member):
     try:
@@ -1687,13 +1821,15 @@ async def forcerank(interaction: discord.Interaction, membre: discord.Member):
         print(f"❌ /forcerank followup failed: {e}")
 
 @bot.tree.command(name="testrank", description="[ADMIN] Tester l'image d'annonce de rank")
+@app_commands.default_member_permissions(discord.Permissions(administrator=True))
 @app_commands.checks.has_permissions(administrator=True)
 @app_commands.describe(rang="Rang a tester")
 @app_commands.choices(rang=[
-    app_commands.Choice(name="Pirate", value="Pirate"),
-    app_commands.Choice(name="Shichibukai", value="Shichibukai"),
-    app_commands.Choice(name="Amiral", value="Amiral"),
-    app_commands.Choice(name="Yonkou", value="Yonkou"),
+    app_commands.Choice(name="Pirate",          value="Pirate"),
+    app_commands.Choice(name="Shichibukai",     value="Shichibukai"),
+    app_commands.Choice(name="Amiral",          value="Amiral"),
+    app_commands.Choice(name="Yonkou",          value="Yonkou"),
+    app_commands.Choice(name="Roi des pirates", value="Roi des pirates"),
 ])
 async def testrank(interaction: discord.Interaction, membre: discord.Member = None, rang: str = "Shichibukai"):
     try:
@@ -1730,6 +1866,7 @@ async def testrank(interaction: discord.Interaction, membre: discord.Member = No
         print(f"❌ /testrank followup failed: {e}")
 
 @bot.tree.command(name="recalcul", description="[ADMIN] Recalculer les ranks (tous ou un membre)")
+@app_commands.default_member_permissions(discord.Permissions(administrator=True))
 @app_commands.checks.has_permissions(administrator=True)
 async def recalcul(interaction: discord.Interaction, membre: discord.Member = None):
     try:
@@ -1774,5 +1911,411 @@ async def recalcul(interaction: discord.Interaction, membre: discord.Member = No
             print("⚠️ /recalcul : token expiré, impossible d'envoyer")
         except Exception as e:
             print(f"❌ /recalcul followup failed: {e}")
+
+# ─────────────────────────────────────────
+#  /test  (ADMIN — simulation d'événements)
+# ─────────────────────────────────────────
+@bot.tree.command(name="test", description="[ADMIN] Simuler un événement sans affecter les données réelles")
+@app_commands.default_member_permissions(discord.Permissions(administrator=True))
+@app_commands.checks.has_permissions(administrator=True)
+@app_commands.describe(evenement="Type d'événement à simuler", membre="Membre cible (optionnel, défaut : toi)")
+@app_commands.choices(evenement=[
+    app_commands.Choice(name="Montée de rang", value="rankup"),
+    app_commands.Choice(name="Perte de rang (derank)", value="derank"),
+    app_commands.Choice(name="Avertissement MP derank", value="warning"),
+])
+async def test_event(interaction: discord.Interaction, evenement: app_commands.Choice[str], membre: discord.Member = None):
+    try:
+        await interaction.response.defer(ephemeral=True)
+    except discord.NotFound:
+        return
+    target = membre or interaction.user
+
+    if evenement.value == "rankup":
+        rank_name = "Shichibukai"
+        channel = bot.get_channel(ANNOUNCE_CHANNEL_ID)
+        if channel is None:
+            await interaction.followup.send("❌ Channel d'annonce introuvable.", ephemeral=True)
+            return
+        img_buf, is_gif = await make_rank_image(target, rank_name, 25.0)
+        fname = "rank_up.gif" if is_gif else "rank_up.png"
+        await channel.send(
+            content=f"[TEST] Bravo à {target.mention} qui a débloqué le rank **{rank_name}** ⚔️",
+            file=discord.File(img_buf, fname)
+        )
+        await interaction.followup.send(f"✅ Simulation rankup envoyée pour {target.mention}", ephemeral=True)
+
+    elif evenement.value == "derank":
+        rank_name = "Amiral"
+        channel = bot.get_channel(ANNOUNCE_CHANNEL_ID)
+        if channel is None:
+            await interaction.followup.send("❌ Channel d'annonce introuvable.", ephemeral=True)
+            return
+        await channel.send(
+            content=f"[TEST] ⬇️ {target.mention} a perdu le rang **{rank_name}** 🪖 (simulation)"
+        )
+        await interaction.followup.send(f"✅ Simulation derank envoyée pour {target.mention}", ephemeral=True)
+
+    elif evenement.value == "warning":
+        rank_name = "Shichibukai"
+        threshold = 25
+        hours_7d = 22.5
+        heures_manquantes = round(threshold - hours_7d, 1)
+        dm_text = (
+            f"⚠️ **[TEST] Attention, tu risques de perdre ton rank !**\n\n"
+            f"Salut {target.display_name} ! Tu es actuellement **⚔️ {rank_name}** "
+            f"sur le serveur **{interaction.guild.name}**.\n\n"
+            f"Tes heures vocales sur les 7 derniers jours sont descendues à `{hours_7d}h`, "
+            f"et il te faut au minimum `{threshold}h` pour garder ton rank.\n\n"
+            f"Il te manque environ `{heures_manquantes}h` — passe en vocal dès que possible ! 🚨\n\n"
+            f"*(Ceci est un message de test — tes données ne sont pas affectées)*\n\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"*BRAMS SCORE  |  by Freydiss*"
+        )
+        try:
+            await target.send(dm_text)
+            await interaction.followup.send(f"✅ MP de test envoyé à {target.mention}", ephemeral=True)
+        except discord.Forbidden:
+            await interaction.followup.send(f"❌ DM fermés pour {target.mention}", ephemeral=True)
+        except Exception as e:
+            await interaction.followup.send(f"❌ Erreur : {e}", ephemeral=True)
+
+
+# ─────────────────────────────────────────
+#  /quiz  (Quiz animé généré par IA)
+# ─────────────────────────────────────────
+_claude_client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
+QUIZ_SESSIONS: dict = {}
+
+_QUIZ_PROMPT = """Génère {n} questions de quiz sur les animés.
+Réponds UNIQUEMENT en JSON valide, sans texte avant ou après, avec ce format exact :
+[
+  {{
+    "question": "La question ici ?",
+    "bonne_reponse": "La bonne réponse",
+    "mauvaises_reponses": ["Fausse 1", "Fausse 2", "Fausse 3"],
+    "anime": "Nom de l'anime concerné",
+    "difficulte": "facile/moyen/difficile"
+  }}
+]
+Varie les animés (Naruto, DBZ, One Piece, Bleach, Death Note, AOT, HxH, FMA, JoJo, Fairy Tail...), \
+les thèmes (personnages, pouvoirs, arcs, auteurs) et les niveaux de difficulté."""
+
+async def _generate_quiz_questions(n: int) -> list:
+    for attempt in range(3):
+        try:
+            def _call():
+                return _claude_client.messages.create(
+                    model="claude-haiku-4-5-20251001",
+                    max_tokens=2048,
+                    messages=[{"role": "user", "content": _QUIZ_PROMPT.format(n=n)}]
+                )
+            response = await asyncio.to_thread(_call)
+            raw = response.content[0].text.strip()
+            # Extraire le JSON (robuste si Claude ajoute du texte autour)
+            match = re.search(r'\[.*\]', raw, re.DOTALL)
+            if match:
+                questions = json.loads(match.group())
+                if isinstance(questions, list) and len(questions) > 0:
+                    return questions
+        except Exception as e:
+            print(f"⚠️ Quiz génération attempt {attempt+1}/3 : {e}")
+        await asyncio.sleep(1)
+    return []
+
+class _QuizSession:
+    __slots__ = ("questions", "idx", "score", "best_combo", "combo", "user_id", "interaction")
+    def __init__(self, questions, user_id, interaction):
+        self.questions = questions
+        self.idx = 0
+        self.score = 0
+        self.best_combo = 0
+        self.combo = 0
+        self.user_id = user_id
+        self.interaction = interaction
+
+def _quiz_score_message(score, total):
+    pct = score / total if total > 0 else 0
+    if pct == 1.0:
+        return "PARFAIT ! Tu es une légende de l'animé 🏆"
+    elif pct >= 0.7:
+        return "Impressionnant, tu es un vrai otaku 🎌"
+    elif pct >= 0.4:
+        return "Pas mal, tu connais tes classiques 👍"
+    else:
+        return "Tu débutes, continue à regarder des animés 👀"
+
+async def _send_next_question(inter: discord.Interaction, sess: _QuizSession, feedback: str = ""):
+    total = len(sess.questions)
+    if sess.idx >= total:
+        QUIZ_SESSIONS.pop(sess.user_id, None)
+        result_msg = _quiz_score_message(sess.score, total)
+        embed = discord.Embed(
+            title="Quiz terminé !",
+            description=(
+                f"{feedback}\n\n"
+                f"━━━━━━━━━━━━━━━━━━━━\n"
+                f"**Score final** : {sess.score} / {total}\n"
+                f"**Meilleur combo** : x{sess.best_combo}\n\n"
+                f"*{result_msg}*"
+            ),
+            color=discord.Color.from_rgb(212, 175, 55)
+        )
+        replay_view = _ReplayView(sess.user_id, total)
+        try:
+            await inter.followup.send(embed=embed, view=replay_view)
+        except Exception:
+            pass
+        return
+
+    q = sess.questions[sess.idx]
+    choices_next = [q["bonne_reponse"]] + q["mauvaises_reponses"][:3]
+    random.shuffle(choices_next)
+    next_view = _QuizAnswerView(sess, choices_next, q["bonne_reponse"])
+    title = f"Question {sess.idx + 1} / {total}  —  {q.get('anime','?')} [{q.get('difficulte','?')}]"
+    desc = f"**{q['question']}**"
+    if feedback:
+        desc = f"{feedback}\n\n{desc}"
+    embed = discord.Embed(title=title, description=desc, color=discord.Color.from_rgb(100, 50, 200))
+    embed.set_footer(text="Tu as 60 secondes pour répondre")
+    try:
+        msg = await inter.followup.send(embed=embed, view=next_view)
+        next_view.message = msg
+    except Exception:
+        pass
+
+
+class _AnswerButton(discord.ui.Button):
+    def __init__(self, label_text: str, choice_text: str, is_correct: bool, session: _QuizSession):
+        super().__init__(label=label_text[:80], style=discord.ButtonStyle.secondary)
+        self._choice = choice_text
+        self._is_correct = is_correct
+        self._session = session
+
+    async def callback(self, inter: discord.Interaction):
+        sess = self._session
+        if inter.user.id != sess.user_id:
+            await inter.response.send_message("Ce quiz ne t'appartient pas.", ephemeral=True)
+            return
+        view: _QuizAnswerView = self.view
+        # Colorer + désactiver tous les boutons
+        for btn in view.children:
+            if isinstance(btn, _AnswerButton):
+                btn.disabled = True
+                if btn._is_correct:
+                    btn.style = discord.ButtonStyle.success
+                elif btn._choice == self._choice and not self._is_correct:
+                    btn.style = discord.ButtonStyle.danger
+        view.stop()
+        await inter.response.edit_message(view=view)
+
+        if self._is_correct:
+            sess.score += 1
+            sess.combo += 1
+            if sess.combo > sess.best_combo:
+                sess.best_combo = sess.combo
+            if sess.combo >= 5:
+                feedback = f"✅ Bonne réponse !\n🔥 **COMBO x{sess.combo} ! {'Tu es en feu !' if sess.combo == 5 else 'Incroyable !'}**"
+            else:
+                feedback = "✅ Bonne réponse !"
+        else:
+            sess.combo = 0
+            feedback = f"❌ Mauvais choix ! La bonne réponse était : **{view.correct}**\nCourage, tu feras mieux la prochaine fois ! 💪"
+
+        sess.idx += 1
+        await _send_next_question(inter, sess, feedback)
+
+
+class _QuizAnswerView(discord.ui.View):
+    def __init__(self, session: _QuizSession, choices: list, correct: str):
+        super().__init__(timeout=60)
+        self.session = session
+        self.correct = correct
+        labels = ["A", "B", "C", "D"]
+        for i, choice in enumerate(choices[:4]):
+            is_correct = (choice == correct)
+            btn = _AnswerButton(f"{labels[i]}. {choice}", choice, is_correct, session)
+            self.add_item(btn)
+
+    async def on_timeout(self):
+        QUIZ_SESSIONS.pop(self.session.user_id, None)
+        for item in self.children:
+            item.disabled = True
+        if hasattr(self, "message") and self.message:
+            try:
+                await self.message.edit(content="⏰ Temps écoulé ! La session a expiré.", view=self)
+            except Exception:
+                pass
+
+class _ReplayView(discord.ui.View):
+    def __init__(self, user_id: int, n: int):
+        super().__init__(timeout=120)
+        self.user_id = user_id
+        self.n = n
+
+    @discord.ui.button(label="Rejouer", style=discord.ButtonStyle.primary, emoji="🔄")
+    async def rejouer(self, inter: discord.Interaction, button: discord.ui.Button):
+        if inter.user.id != self.user_id:
+            await inter.response.send_message("Ce bouton ne t'appartient pas.", ephemeral=True)
+            return
+        button.disabled = True
+        await inter.response.edit_message(view=self)
+        await _start_quiz_session(inter, self.n)
+
+class _DurationModal(discord.ui.Modal, title="Nombre de questions"):
+    nb = discord.ui.TextInput(label="Nombre (1 à 50)", placeholder="Ex: 15", min_length=1, max_length=2)
+
+    def __init__(self, user_id):
+        super().__init__()
+        self.user_id = user_id
+
+    async def on_submit(self, inter: discord.Interaction):
+        try:
+            n = int(self.nb.value)
+            if not 1 <= n <= 50:
+                raise ValueError
+        except ValueError:
+            await inter.response.send_message("Nombre invalide (1-50).", ephemeral=True)
+            return
+        await inter.response.defer()
+        await _start_quiz_session(inter, n)
+
+class _DurationView(discord.ui.View):
+    def __init__(self, user_id):
+        super().__init__(timeout=60)
+        self.user_id = user_id
+
+    async def _check(self, inter):
+        if inter.user.id != self.user_id:
+            await inter.response.send_message("Ce quiz ne t'appartient pas.", ephemeral=True)
+            return False
+        return True
+
+    @discord.ui.button(label="5 questions", style=discord.ButtonStyle.secondary)
+    async def btn5(self, inter: discord.Interaction, button: discord.ui.Button):
+        if not await self._check(inter): return
+        self.stop()
+        await inter.response.defer()
+        await _start_quiz_session(inter, 5)
+
+    @discord.ui.button(label="10 questions", style=discord.ButtonStyle.secondary)
+    async def btn10(self, inter: discord.Interaction, button: discord.ui.Button):
+        if not await self._check(inter): return
+        self.stop()
+        await inter.response.defer()
+        await _start_quiz_session(inter, 10)
+
+    @discord.ui.button(label="15 questions", style=discord.ButtonStyle.secondary)
+    async def btn15(self, inter: discord.Interaction, button: discord.ui.Button):
+        if not await self._check(inter): return
+        self.stop()
+        await inter.response.defer()
+        await _start_quiz_session(inter, 15)
+
+    @discord.ui.button(label="Personnalisé", style=discord.ButtonStyle.primary)
+    async def btn_custom(self, inter: discord.Interaction, button: discord.ui.Button):
+        if not await self._check(inter): return
+        self.stop()
+        await inter.response.send_modal(_DurationModal(self.user_id))
+
+async def _start_quiz_session(inter: discord.Interaction, n: int):
+    uid = inter.user.id
+    if uid in QUIZ_SESSIONS:
+        try:
+            await inter.followup.send("Tu as déjà un quiz en cours !", ephemeral=True)
+        except Exception:
+            pass
+        return
+
+    loading_embed = discord.Embed(
+        description=f"Génération de **{n} questions** par l'IA... ⏳",
+        color=discord.Color.from_rgb(100, 50, 200)
+    )
+    try:
+        await inter.followup.send(embed=loading_embed)
+    except Exception:
+        pass
+
+    questions = await _generate_quiz_questions(n)
+    if not questions:
+        try:
+            await inter.followup.send("❌ Impossible de générer les questions. Réessaie dans un instant.", ephemeral=True)
+        except Exception:
+            pass
+        return
+
+    session = _QuizSession(questions, uid, inter)
+    QUIZ_SESSIONS[uid] = session
+
+    q = questions[0]
+    choices = [q["bonne_reponse"]] + q["mauvaises_reponses"][:3]
+    random.shuffle(choices)
+    view = _QuizAnswerView(session, choices, q["bonne_reponse"])
+    embed = discord.Embed(
+        title=f"Question 1 / {len(questions)}  —  {q.get('anime','?')} [{q.get('difficulte','?')}]",
+        description=f"**{q['question']}**",
+        color=discord.Color.from_rgb(100, 50, 200)
+    )
+    embed.set_footer(text="Tu as 60 secondes pour répondre")
+    try:
+        msg = await inter.followup.send(embed=embed, view=view)
+        view.message = msg
+    except Exception:
+        pass
+
+async def _quiz_entry(interaction: discord.Interaction):
+    """Point d'entrée commun pour /quiz et /quizz."""
+    try:
+        await interaction.response.defer(ephemeral=False)
+    except discord.NotFound:
+        return
+    except Exception as e:
+        print(f"❌ quiz defer: {e}")
+        return
+    embed = discord.Embed(
+        title="Quiz Animé",
+        description="Combien de questions veux-tu ?",
+        color=discord.Color.from_rgb(100, 50, 200)
+    )
+    view = _DurationView(interaction.user.id)
+    try:
+        await interaction.followup.send(embed=embed, view=view)
+    except discord.NotFound:
+        pass
+    except Exception as e:
+        print(f"❌ quiz followup: {e}")
+
+
+@bot.tree.command(name="quiz", description="Quiz animé généré par IA — teste tes connaissances !")
+async def quiz(interaction: discord.Interaction):
+    await _quiz_entry(interaction)
+
+
+@bot.tree.command(name="quizz", description="Quiz animé — teste tes connaissances sur les animés !")
+async def quizz(interaction: discord.Interaction):
+    await _quiz_entry(interaction)
+
+
+# ─────────────────────────────────────────
+#  /sync  (OWNER ONLY — forcer la sync des commandes)
+# ─────────────────────────────────────────
+@bot.tree.command(name="sync", description="[OWNER] Synchroniser les commandes slash")
+@app_commands.default_member_permissions(discord.Permissions(administrator=True))
+async def sync_commands(interaction: discord.Interaction):
+    if not await bot.is_owner(interaction.user):
+        await interaction.response.send_message("Réservé au propriétaire du bot.", ephemeral=True)
+        return
+    await interaction.response.defer(ephemeral=True)
+    results = []
+    for gid in GUILD_IDS:
+        guild = discord.Object(id=gid)
+        try:
+            bot.tree.copy_global_to(guild=guild)
+            synced = await bot.tree.sync(guild=guild)
+            results.append(f"✅ Guild `{gid}` — {len(synced)} commandes")
+        except Exception as e:
+            results.append(f"❌ Guild `{gid}` — {e}")
+    await interaction.followup.send("\n".join(results), ephemeral=True)
+
 
 bot.run(TOKEN)
