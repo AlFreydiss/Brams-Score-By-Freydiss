@@ -830,27 +830,15 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True, da
             _rank_announce_cooldown[cooldown_key] = now_ts()
             try:
                 img_buf, is_gif = await make_rank_image(member, rank_name, hours_7d)
-                fname   = "rank_up.gif" if is_gif else "rank_up.png"
-                # Emoji custom uniquement si dispo, sinon unicode safe
-                raw_emoji = _ANNOUNCE_RANK_EMOJIS.get(rank_name, "")
-                emoji = raw_emoji if not raw_emoji.startswith("<:") else ""
+                fname = "rank_up.gif" if is_gif else "rank_up.png"
                 r, g, b = RANK_COLORS.get(rank_name, (212, 175, 55))
 
-                embed = discord.Embed(
-                    title="🎉 Nouveau rang débloqué !",
-                    description=(
-                        f"{member.mention} vient de rejoindre les\n"
-                        f"# {rank_name.upper()} {emoji}\n\n"
-                        f"┌ **Heures vocales (7j)** : `{hours_7d:.1f}h`\n"
-                        f"└ **Serveur** : {member.guild.name}"
-                    ),
-                    color=discord.Color.from_rgb(r, g, b),
-                )
+                embed = discord.Embed(color=discord.Color.from_rgb(r, g, b))
                 embed.set_image(url=f"attachment://{fname}")
                 embed.set_footer(text="⚓ BRAMS SCORE  |  by Freydiss")
 
                 await channel.send(
-                    content=f"⬆️ Félicitations {member.mention} !",
+                    content=f"Bravo a {member.mention} qui a debloque le rank **{rank_name.upper()}** ✨",
                     embed=embed,
                     file=discord.File(img_buf, fname),
                 )
