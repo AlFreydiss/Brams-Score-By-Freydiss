@@ -140,6 +140,7 @@ _RANK_ANNOUNCE_COOLDOWN_SECONDS = 300  # 5 minutes
 CHAR_JIKAN_IDS = {
     # One Piece
     "Monkey D. Luffy": 40,
+    "Luffy": 40,
     "Roronoa Zoro": 62,
     "Trafalgar Law": 13767,
     "Portgas D. Ace": 2072,
@@ -147,14 +148,24 @@ CHAR_JIKAN_IDS = {
     "Nico Robin": 61,
     "Usopp": 724,
     "Barbe Blanche": 2751,
+    "Whitebeard": 2751,
     "Shanks": 727,
     "Akainu": 22687,
     "Sanji": 305,
+    "Brook": 1498,
+    "Jinbei": 39645,
     # Naruto
     "Naruto Uzumaki": 17,
     "Sasuke Uchiha": 13,
     "Kakashi Hatake": 85,
     "Itachi Uchiha": 25,
+    "Hinata Hyuga": 87,
+    "Rock Lee": 73,
+    "Gaara": 84,
+    "Jiraiya": 52,
+    "Minato Namikaze": 53,
+    "Obito Uchiha": 167,
+    "Pain": 50,
     # Bleach
     "Ichigo Kurosaki": 5,
     "Byakuya Kuchiki": 8,
@@ -162,18 +173,64 @@ CHAR_JIKAN_IDS = {
     "Edward Elric": 11,
     "Alphonse Elric": 12,
     "Roy Mustang": 15,
+    "Winry Rockbell": 13,
     # HxH
     "Gon Freecss": 30,
     "Killua Zoldyck": 32,
     "Hisoka Morow": 33,
+    "Kurapika": 29,
     # JoJo
     "Jotaro Kujo": 38,
+    "Giorno Giovanna": 62,
+    "Dio Brando": 36,
+    # Fairy Tail
+    "Natsu Dragneel": 9745,
+    "Erza Scarlet": 9747,
+    "Gray Fullbuster": 9748,
     # SNK
     "Levi Ackerman": 845,
     "Eren Yeager": 849,
     "Mikasa Ackerman": 847,
+    "Armin Arlert": 846,
+    "Erwin Smith": 843,
     # Death Note
     "Light Yagami": 80,
+    # Dragon Ball
+    "Son Goku": 246,
+    "Goku": 246,
+    "Vegeta": 913,
+    "Piccolo": 915,
+    # Demon Slayer
+    "Tanjiro Kamado": 146156,
+    "Zenitsu Agatsuma": 146310,
+    "Inosuke Hashibira": 146158,
+    "Rengoku Kyojuro": 146153,
+    "Muzan Kibutsuji": 146318,
+    # Jujutsu Kaisen
+    "Yuji Itadori": 160111,
+    "Gojo Satoru": 160112,
+    "Ryomen Sukuna": 160116,
+    "Megumi Fushiguro": 160113,
+    # Tokyo Ghoul
+    "Ken Kaneki": 2037,
+    # Code Geass
+    "Lelouch vi Britannia": 417,
+    # One Punch Man
+    "Saitama": 45820,
+    # Cowboy Bebop
+    "Spike Spiegel": 1,
+    # Berserk
+    "Guts": 23,
+    # Black Clover
+    "Asta": 100176,
+    # Re:Zero
+    "Rem": 136159,
+    "Subaru Natsuki": 136160,
+    # SAO
+    "Kirito": 36828,
+    "Asuna Yuuki": 36829,
+    # Violet Evergarden
+    "Violet Evergarden": 150351,
 }
 CHAR_IMAGE_CACHE = {}
 
@@ -1366,7 +1423,23 @@ async def check_ranks_loop():
             old_last_rank = user.get("last_rank")
             clean_old_data(user)
             jt = user.get("join_time")
-            seconds_7d = seconds_in_period(user["vocal_sessions"], 7, join_time=jt)
+
+            # Membre actuellement en vocal : on skip le rank-up pour éviter de l'assigner
+            # silencieusement (announce=False) avant que on_voice_state_update ne puisse l'annoncer.
+            # On calcule quand même les heures réelles pour check_alert.
+            if jt:
+                hours_7d_real = seconds_in_period(user["vocal_sessions"], 7, join_time=jt) / 3600
+                if hours_7d_real == 0 and old_last_rank is None:
+                    await asyncio.sleep(0.01)
+                    continue
+                try:
+                    await check_alert(member, hours_7d_real, data=data)
+                except Exception as e:
+                    print(f"⚠️ Erreur check_alert {member.display_name}: {e}")
+                await asyncio.sleep(0.01)
+                continue
+
+            seconds_7d = seconds_in_period(user["vocal_sessions"], 7)
             hours_7d = seconds_7d / 3600
 
             # FAST PATH : membre inactif sans rank → skip
