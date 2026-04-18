@@ -553,15 +553,15 @@ def save_data(data):
 
 
 async def save_data_async(data):
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     await loop.run_in_executor(db_executor, save_data, data)
 
 async def save_user_async(uid, udata):
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     await loop.run_in_executor(db_executor, save_user, uid, udata)
 
 async def load_data_async():
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     return await loop.run_in_executor(db_executor, load_data)
 
 
@@ -596,8 +596,12 @@ def messages_in_period(messages, days):
     cutoff = now_ts() - days * 86400
     return sum(1 for ts in messages if ts >= cutoff)
 
+_CLEAN_CUTOFF_DAYS = 8
+
 def clean_old_data(user):
-    pass
+    cutoff = now_ts() - _CLEAN_CUTOFF_DAYS * 86400
+    user["vocal_sessions"] = [s for s in user["vocal_sessions"] if s["end"] >= cutoff]
+    user["messages"]       = [ts for ts in user["messages"] if ts >= cutoff]
 
 def total_seconds(sessions, join_time=None):
     total = sum(s["end"] - s["start"] for s in sessions)
@@ -742,6 +746,19 @@ _ANNOUNCE_RANK_EMOJIS = {
     "Roi des pirates": "👑",
 }
 
+_RANK_ROLE_IDS   = set(RANK_ROLES.values())
+_RANK_ID_TO_NAME = {v: k for k, v in RANK_ROLES.items()}
+
+async def _get_announce_channel():
+    """Récupère le canal d'annonce depuis le cache, sinon via fetch (après restart)."""
+    ch = bot.get_channel(ANNOUNCE_CHANNEL_ID)
+    if ch is None:
+        try:
+            ch = await bot.fetch_channel(ANNOUNCE_CHANNEL_ID)
+        except Exception as e:
+            print(f"[RANK] Impossible de fetch le canal {ANNOUNCE_CHANNEL_ID}: {e}")
+    return ch
+
 async def update_rank(member: discord.Member, hours_7d: float, announce=True, data=None):
     """Rangs cumulatifs : ajoute les rôles mérités, retire ceux perdus, annonce montée ET derank."""
     guild = member.guild
@@ -751,14 +768,10 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True, da
     uid = str(member.id)
     user = get_user(data, uid)
 
-    # Tous les rangs mérités selon les heures actuelles
-    deserved_ranks = set(get_all_ranks_for_hours(hours_7d))
+    deserved_ranks   = set(get_all_ranks_for_hours(hours_7d))
+    current_rank_names = {_RANK_ID_TO_NAME[r.id] for r in member.roles if r.id in _RANK_ROLE_IDS}
 
-    # Rangs que le membre possède déjà en tant que rôles Discord
-    rank_id_to_name = {v: k for k, v in RANK_ROLES.items()}
-    current_rank_names = {rank_id_to_name[r.id] for r in member.roles if r.id in RANK_ROLES.values()}
-
-    ranks_to_add = deserved_ranks - current_rank_names
+    ranks_to_add    = deserved_ranks - current_rank_names
     ranks_to_remove = current_rank_names - deserved_ranks
 
     # Ajouter les rôles manquants
@@ -782,9 +795,11 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True, da
     rank_order = {r: i for i, (_, r) in enumerate(reversed(RANKS))}
 
     if announce:
-        channel = bot.get_channel(ANNOUNCE_CHANNEL_ID)
-        if not channel and (ranks_to_add or ranks_to_remove):
-            print(f"[RANK] Canal d'annonce introuvable (ID={ANNOUNCE_CHANNEL_ID})")
+        channel = None
+        if ranks_to_add or ranks_to_remove:
+            channel = await _get_announce_channel()
+            if channel is None:
+                print(f"[RANK] Canal d'annonce introuvable (ID={ANNOUNCE_CHANNEL_ID})")
 
         # ── Annonces de montée de rang (du plus bas au plus haut) ──
         for rank_name in sorted(ranks_to_add, key=lambda r: rank_order.get(r, -1)):
@@ -799,14 +814,16 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True, da
             try:
                 img_buf, is_gif = await make_rank_image(member, rank_name, hours_7d)
                 fname   = "rank_up.gif" if is_gif else "rank_up.png"
-                emoji   = _ANNOUNCE_RANK_EMOJIS.get(rank_name, "")
+                # Emoji custom uniquement si dispo, sinon unicode safe
+                raw_emoji = _ANNOUNCE_RANK_EMOJIS.get(rank_name, "")
+                emoji = raw_emoji if not raw_emoji.startswith("<:") else ""
                 r, g, b = RANK_COLORS.get(rank_name, (212, 175, 55))
 
                 embed = discord.Embed(
                     title="🎉 Nouveau rang débloqué !",
                     description=(
                         f"{member.mention} vient de rejoindre les\n"
-                        f"# {emoji} {rank_name.upper()}\n\n"
+                        f"# {rank_name.upper()} {emoji}\n\n"
                         f"┌ **Heures vocales (7j)** : `{hours_7d:.1f}h`\n"
                         f"└ **Serveur** : {member.guild.name}"
                     ),
