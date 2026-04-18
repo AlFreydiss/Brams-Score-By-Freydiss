@@ -24,7 +24,7 @@ git push
 Langage : Python (discord.py + app_commands)  
 Base de données : PostgreSQL via psycopg2 (Supabase)  
 IA : Anthropic Claude (quiz animé)  
-Hébergement : Replit (keep-alive Flask)
+Hébergement : Railway (le keep-alive Flask sur port 5000 est conservé pour compatibilité, mais Railway gère le uptime nativement)
 
 ### Fichiers principaux
 - `bot.py` — code principal du bot
