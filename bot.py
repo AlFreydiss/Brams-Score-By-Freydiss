@@ -23,7 +23,7 @@ keep_alive()
 import discord
 from discord.ext import commands, tasks
 from discord import app_commands
-import anthropic
+import litellm
 import json
 import io
 import math
@@ -1982,10 +1982,12 @@ async def test_event(interaction: discord.Interaction, evenement: app_commands.C
 
 
 # ─────────────────────────────────────────
-#  /quiz  (Quiz animé généré par IA)
+#  /quiz  (Quiz animé généré par IA — Groq)
 # ─────────────────────────────────────────
-_claude_client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
+litellm.suppress_debug_info = True   # pas de logs verbeux litellm
 QUIZ_SESSIONS: dict = {}
+_GROQ_MODEL   = "groq/llama-3.3-70b-versatile"
+_GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 
 _QUIZ_PROMPT = """Génère {n} questions de quiz sur les animés.
 Réponds UNIQUEMENT en JSON valide, sans texte avant ou après, avec ce format exact :
@@ -2002,31 +2004,37 @@ Varie les animés (Naruto, DBZ, One Piece, Bleach, Death Note, AOT, HxH, FMA, Jo
 les thèmes (personnages, pouvoirs, arcs, auteurs) et les niveaux de difficulté."""
 
 async def _generate_quiz_questions(n: int) -> tuple:
-    """Génère n questions via Claude. Retourne (questions: list, erreur: str)."""
+    """Génère n questions via Groq (litellm). Retourne (questions: list, erreur: str)."""
+    if not _GROQ_API_KEY:
+        msg = "GROQ_API_KEY manquante — configure-la dans Railway Variables"
+        print(f"❌ [QUIZ] {msg}")
+        return [], msg
+
     last_error = ""
     for attempt in range(3):
         try:
-            def _call():
-                return _claude_client.messages.create(
-                    model="claude-haiku-4-5-20251001",
-                    max_tokens=2048,
-                    messages=[{"role": "user", "content": _QUIZ_PROMPT.format(n=n)}]
-                )
-            response = await asyncio.to_thread(_call)
-            raw = response.content[0].text.strip()
-            print(f"[QUIZ] Réponse brute (attempt {attempt+1}) : {raw[:300]}")
+            response = await litellm.acompletion(
+                model=_GROQ_MODEL,
+                api_key=_GROQ_API_KEY,
+                max_tokens=2048,
+                temperature=0.8,
+                messages=[{"role": "user", "content": _QUIZ_PROMPT.format(n=n)}],
+            )
+            raw = response.choices[0].message.content.strip()
+            print(f"[QUIZ] Réponse brute Groq (attempt {attempt+1}) : {raw[:300]}")
             match = re.search(r'\[.*\]', raw, re.DOTALL)
             if match:
                 questions = json.loads(match.group())
                 if isinstance(questions, list) and len(questions) > 0:
-                    print(f"[QUIZ] ✅ {len(questions)} questions générées avec succès")
+                    print(f"[QUIZ] OK — {len(questions)} questions generees")
                     return questions, ""
-            last_error = "Réponse non parseable (JSON vide ou malformé)"
+            last_error = "JSON vide ou malformé dans la réponse Groq"
         except Exception as e:
             last_error = f"{type(e).__name__}: {e}"
-            print(f"⚠️ Quiz génération attempt {attempt+1}/3 : {last_error}")
-        await asyncio.sleep(1.5)
-    print(f"❌ Quiz échec total après 3 tentatives. Dernière erreur : {last_error}")
+            print(f"[QUIZ] Echec attempt {attempt+1}/3 : {last_error}")
+        await asyncio.sleep(1)
+
+    print(f"[QUIZ] Echec total. Derniere erreur : {last_error}")
     return [], last_error
 
 class _QuizSession:
@@ -2237,10 +2245,10 @@ async def _start_quiz_session(inter: discord.Interaction, n: int):
         error_embed = discord.Embed(
             title="❌ Génération impossible",
             description=(
-                f"L'IA n'a pas pu créer les questions.{err_display}\n\n"
+                f"Groq n'a pas pu créer les questions.{err_display}\n\n"
                 f"**Causes possibles :**\n"
-                f"• Clé API `ANTHROPIC_API_KEY` absente ou invalide\n"
-                f"• Limite de requêtes atteinte (rate limit)\n"
+                f"• Clé `GROQ_API_KEY` absente ou invalide dans Railway\n"
+                f"• Rate limit Groq atteint (réessaie dans 1 min)\n"
                 f"• Problème réseau temporaire\n\n"
                 f"*Réessaie dans quelques secondes.*"
             ),

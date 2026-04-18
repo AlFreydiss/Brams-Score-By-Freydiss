@@ -5,4 +5,4 @@ pillow
 matplotlib
 aiohttp
 psycopg2-binary
-anthropic
+litellm
