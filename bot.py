@@ -160,14 +160,14 @@ CHAR_JIKAN_IDS = {
     "Naruto Uzumaki": 17,
     "Sasuke Uchiha": 13,
     "Kakashi Hatake": 85,
-    "Itachi Uchiha": 25,
-    "Hinata Hyuga": 87,
-    "Rock Lee": 73,
+    "Itachi Uchiha": 14,
+    "Hinata Hyuga": 1555,
+    "Rock Lee": 306,
     "Gaara": 84,
     "Jiraiya": 52,
     "Minato Namikaze": 53,
     "Obito Uchiha": 167,
-    "Pain": 50,
+    "Pain": 3180,
     # Bleach
     "Ichigo Kurosaki": 5,
     "Byakuya Kuchiki": 8,
@@ -175,26 +175,25 @@ CHAR_JIKAN_IDS = {
     "Edward Elric": 11,
     "Alphonse Elric": 12,
     "Roy Mustang": 15,
-    "Winry Rockbell": 13,
     # HxH
     "Gon Freecss": 30,
-    "Killua Zoldyck": 32,
-    "Hisoka Morow": 33,
-    "Kurapika": 29,
+    "Killua Zoldyck": 27,
+    "Hisoka Morow": 238998,
+    "Kurapika": 28,
     # JoJo
     "Jotaro Kujo": 38,
-    "Giorno Giovanna": 1660,
+    "Giorno Giovanna": 10529,
     "Dio Brando": 36,
     # Fairy Tail
-    "Natsu Dragneel": 9745,
-    "Erza Scarlet": 9747,
+    "Natsu Dragneel": 5187,
+    "Erza Scarlet": 9749,
     "Gray Fullbuster": 9748,
     # SNK
-    "Levi Ackerman": 845,
-    "Eren Yeager": 849,
-    "Mikasa Ackerman": 847,
-    "Armin Arlert": 846,
-    "Erwin Smith": 843,
+    "Levi Ackerman": 290124,
+    "Eren Yeager": 40882,
+    "Mikasa Ackerman": 40881,
+    "Armin Arlert": 46494,
+    "Erwin Smith": 46496,
     # Death Note
     "Light Yagami": 80,
     # Dragon Ball
@@ -214,17 +213,17 @@ CHAR_JIKAN_IDS = {
     "Ryomen Sukuna": 160116,
     "Megumi Fushiguro": 160113,
     # Tokyo Ghoul
-    "Ken Kaneki": 2037,
+    "Ken Kaneki": 87275,
     # Code Geass
     "Lelouch vi Britannia": 417,
     # One Punch Man
-    "Saitama": 45820,
+    "Saitama": 73935,
     # Cowboy Bebop
     "Spike Spiegel": 1,
     # Berserk
     "Guts": 23,
     # Black Clover
-    "Asta": 100176,
+    "Asta": 33356,
     # Re:Zero
     "Rem": 136159,
     "Subaru Natsuki": 136160,
@@ -238,270 +237,125 @@ CHAR_JIKAN_IDS = {
     # Death Note (ajouts)
     "L": 71,
     "Ryuk": 81,
-    # ⚠️ Winry Rockbell : ID 13 = Sasuke → retiré pour éviter mauvaise image
-    # Mito Freecss, Isaac Netero : IDs incertains → search par nom (all-parts strict)
+    # ⚠️ Winry Rockbell : ID 13 = Sasuke Uchiha → exclu définitivement
+    # Mito Freecss, Isaac Netero, Thorfinn : IDs incertains → exclus
 }
-CHAR_IMAGE_CACHE = {}
-
-async def get_char_image(name):
-    if name in CHAR_IMAGE_CACHE:
-        return CHAR_IMAGE_CACHE[name]
-    jikan_id = CHAR_JIKAN_IDS.get(name)
-    try:
-        async with aiohttp.ClientSession() as session:
-            if jikan_id:
-                url = f"https://api.jikan.moe/v4/characters/{jikan_id}"
-                async with session.get(url) as resp:
-                    if resp.status == 200:
-                        data = await resp.json()
-                        img_url = data.get("data", {}).get("images", {}).get("jpg", {}).get("image_url")
-                    else:
-                        img_url = None
-            else:
-                # Recherche par nom pour les personnages sans ID connu
-                from urllib.parse import quote as _url_quote
-                search_url = f"https://api.jikan.moe/v4/characters?q={_url_quote(name)}&limit=1"
-                async with session.get(search_url) as resp:
-                    if resp.status == 200:
-                        data = await resp.json()
-                        chars = data.get("data", [])
-                        img_url = chars[0].get("images", {}).get("jpg", {}).get("image_url") if chars else None
-                    else:
-                        img_url = None
-            if img_url:
-                async with session.get(img_url) as img_resp:
-                    img_bytes = await img_resp.read()
-                CHAR_IMAGE_CACHE[name] = img_bytes
-                return img_bytes
-    except Exception:
-        pass
-    return None
-
-CITATIONS = [
-    # ── ONE PIECE ──
-    {"nom": "Monkey D. Luffy", "anime": "One Piece", "citation": "Je vais devenir le Roi des Pirates !", "couleur": 0xf97316, "emoji": ""},
-    {"nom": "Monkey D. Luffy", "anime": "One Piece", "citation": "Un homme qui abandonne ses rêves n'est pas digne d'être pirate !", "couleur": 0xf97316, "emoji": ""},
-    {"nom": "Monkey D. Luffy", "anime": "One Piece", "citation": "Peu importe le danger, je n'abandonnerai jamais mes amis !", "couleur": 0xf97316, "emoji": ""},
-    {"nom": "Roronoa Zoro", "anime": "One Piece", "citation": "Je vais devenir le meilleur épéiste du monde, sinon je mourrai à la tâche.", "couleur": 0x22c55e, "emoji": ""},
-    {"nom": "Roronoa Zoro", "anime": "One Piece", "citation": "Il n'y a pas de honte à tomber. La honte, c'est de ne pas se relever.", "couleur": 0x22c55e, "emoji": ""},
-    {"nom": "Roronoa Zoro", "anime": "One Piece", "citation": "Je ne me bats pas pour ma gloire. Je me bats pour ceux qui croient en moi.", "couleur": 0x22c55e, "emoji": ""},
-    {"nom": "Trafalgar Law", "anime": "One Piece", "citation": "Je ne suis pas un héros. Je suis un chirurgien du destin.", "couleur": 0x3b82f6, "emoji": ""},
-    {"nom": "Portgas D. Ace", "anime": "One Piece", "citation": "Même si je dois en mourir, je ne fuirai jamais.", "couleur": 0xef4444, "emoji": ""},
-    {"nom": "Portgas D. Ace", "anime": "One Piece", "citation": "Je préfère mourir que d'abandonner ce en quoi je crois.", "couleur": 0xef4444, "emoji": ""},
-    {"nom": "Barbe Blanche", "anime": "One Piece", "citation": "Un homme vit pour protéger ce qui lui est cher.", "couleur": 0x94a3b8, "emoji": ""},
-    {"nom": "Shanks", "anime": "One Piece", "citation": "Le vrai pouvoir ne vient pas de la force, mais de la volonté.", "couleur": 0xef4444, "emoji": ""},
-    {"nom": "Sanji", "anime": "One Piece", "citation": "Un vrai homme ne frappe jamais une femme, quoi qu'il arrive.", "couleur": 0xfbbf24, "emoji": ""},
-    # ── NARUTO ──
-    {"nom": "Naruto Uzumaki", "anime": "Naruto", "citation": "Je ne recule jamais et je ne mens jamais — c'est ma voie du ninja !", "couleur": 0xf97316, "emoji": ""},
-    {"nom": "Naruto Uzumaki", "anime": "Naruto", "citation": "Je deviendrai Hokage, quoi qu'il arrive !", "couleur": 0xf97316, "emoji": ""},
-    {"nom": "Naruto Uzumaki", "anime": "Naruto", "citation": "Si tu abandonnes, c'est la fin. Si tu continues, il reste toujours une chance.", "couleur": 0xf97316, "emoji": ""},
-    {"nom": "Sasuke Uchiha", "anime": "Naruto", "citation": "Mon pouvoir n'a qu'un seul objectif : la vengeance.", "couleur": 0x1e1b4b, "emoji": ""},
-    {"nom": "Sasuke Uchiha", "anime": "Naruto", "citation": "Je n'ai besoin de personne pour accomplir ce que je dois accomplir.", "couleur": 0x1e1b4b, "emoji": ""},
-    {"nom": "Kakashi Hatake", "anime": "Naruto", "citation": "Ceux qui abandonnent leurs camarades sont pires que des rebuts.", "couleur": 0x6b7280, "emoji": ""},
-    {"nom": "Itachi Uchiha", "anime": "Naruto", "citation": "Pardonne-moi, Sasuke... C'est la dernière fois.", "couleur": 0x4c1d95, "emoji": ""},
-    {"nom": "Itachi Uchiha", "anime": "Naruto", "citation": "Il vaut mieux mourir pour quelque chose que de vivre pour rien.", "couleur": 0x4c1d95, "emoji": ""},
-    # ── ATTACK ON TITAN ──
-    {"nom": "Levi Ackerman", "anime": "Attack on Titan", "citation": "Personne ne sait ce qui va se passer. Décide simplement de ce que tu ne regretteras pas.", "couleur": 0x1f2937, "emoji": ""},
-    {"nom": "Levi Ackerman", "anime": "Attack on Titan", "citation": "Les choix que nous faisons sur le champ de bataille sont absolus.", "couleur": 0x1f2937, "emoji": ""},
-    {"nom": "Eren Yeager", "anime": "Attack on Titan", "citation": "Je continuerai à avancer jusqu'à ce que je les aie tous exterminés.", "couleur": 0x065f46, "emoji": ""},
-    {"nom": "Eren Yeager", "anime": "Attack on Titan", "citation": "Si nous ne nous battons pas, nous ne pouvons pas gagner. Si nous nous battons, nous pouvons gagner.", "couleur": 0x065f46, "emoji": ""},
-    {"nom": "Mikasa Ackerman", "anime": "Attack on Titan", "citation": "Ce monde est cruel. Mais il est aussi beau.", "couleur": 0x374151, "emoji": ""},
-    {"nom": "Armin Arlert", "anime": "Attack on Titan", "citation": "Ceux qui sont incapables de renoncer à quelque chose ne peuvent jamais rien changer.", "couleur": 0x78716c, "emoji": ""},
-    # ── DRAGON BALL Z ──
-    {"nom": "Son Goku", "anime": "Dragon Ball Z", "citation": "Je suis un Saiyan elevé sur Terre, et je me bats pour protéger mes amis !", "couleur": 0xf97316, "emoji": ""},
-    {"nom": "Son Goku", "anime": "Dragon Ball Z", "citation": "Je ne cherche pas à être le plus fort. Je veux juste protéger ceux qui me sont chers.", "couleur": 0xf97316, "emoji": ""},
-    {"nom": "Vegeta", "anime": "Dragon Ball Z", "citation": "Je suis le Prince de tous les Saiyans ! Il n'y a pas un seul être dans cet univers plus fier que moi !", "couleur": 0x1e3a5f, "emoji": ""},
-    {"nom": "Vegeta", "anime": "Dragon Ball Z", "citation": "Kakarot... tu es le seul guerrier qui me donne envie de me surpasser.", "couleur": 0x1e3a5f, "emoji": ""},
-    # ── DEATH NOTE ──
-    {"nom": "Light Yagami", "anime": "Death Note", "citation": "Je vais créer un nouveau monde. Un monde sans crime. Je serai son Dieu.", "couleur": 0x7f1d1d, "emoji": ""},
-    {"nom": "Light Yagami", "anime": "Death Note", "citation": "Celui qui gagne, c'est moi. Et le monde sera purifié.", "couleur": 0x7f1d1d, "emoji": ""},
-    {"nom": "Light Yagami", "anime": "Death Note", "citation": "Les humains ne font jamais ce qu'on leur dit — mais si facilement ce qu'on leur impose.", "couleur": 0x7f1d1d, "emoji": ""},
-    {"nom": "L", "anime": "Death Note", "citation": "Un homme qui ne ment jamais n'a pas besoin d'une bonne mémoire.", "couleur": 0x1c1917, "emoji": ""},
-    {"nom": "L", "anime": "Death Note", "citation": "Il y a une probabilité non nulle que je me trompe. Mais elle est très faible.", "couleur": 0x1c1917, "emoji": ""},
-    {"nom": "Ryuk", "anime": "Death Note", "citation": "Les humains sont vraiment... intéressants.", "couleur": 0x292524, "emoji": ""},
-    # ── BLEACH ──
-    {"nom": "Ichigo Kurosaki", "anime": "Bleach", "citation": "Je ne suis pas un héros ni un dieu. Quand on m'attaque, je contre-attaque. C'est tout.", "couleur": 0xea580c, "emoji": ""},
-    {"nom": "Ichigo Kurosaki", "anime": "Bleach", "citation": "Peu importe la raison — je veux juste avoir la force de protéger ceux que j'aime.", "couleur": 0xea580c, "emoji": ""},
-    {"nom": "Byakuya Kuchiki", "anime": "Bleach", "citation": "La fierté n'est pas quelque chose que l'on gagne. C'est quelque chose que l'on maintient.", "couleur": 0x1e293b, "emoji": ""},
-    {"nom": "Byakuya Kuchiki", "anime": "Bleach", "citation": "Les règles existent pour être suivies. Même au prix de sa vie.", "couleur": 0x1e293b, "emoji": ""},
-    # ── FAIRY TAIL ──
-    {"nom": "Natsu Dragneel", "anime": "Fairy Tail", "citation": "Je ne serai jamais seul — mes amis sont toujours dans mon coeur !", "couleur": 0xdc2626, "emoji": ""},
-    {"nom": "Natsu Dragneel", "anime": "Fairy Tail", "citation": "Peu importe combien de fois je tombe, je me relèverai toujours !", "couleur": 0xdc2626, "emoji": ""},
-    {"nom": "Erza Scarlet", "anime": "Fairy Tail", "citation": "Les larmes ne sont pas une faiblesse. Ce sont la preuve que tu ressens quelque chose.", "couleur": 0x9f1239, "emoji": ""},
-    {"nom": "Erza Scarlet", "anime": "Fairy Tail", "citation": "Avance, meme si c'est dur. La route se tracera sous tes pieds.", "couleur": 0x9f1239, "emoji": ""},
-    {"nom": "Makarov Dreyar", "anime": "Fairy Tail", "citation": "La Fairy Tail, c'est une famille. Et une famille, ca ne s'abandonne pas.", "couleur": 0x78350f, "emoji": ""},
-    # ── HUNTER x HUNTER ──
-    {"nom": "Gon Freecss", "anime": "Hunter x Hunter", "citation": "Si tu abandonnes, c'est deja la fin. Si tu continues, il reste toujours une chance.", "couleur": 0x16a34a, "emoji": ""},
-    {"nom": "Gon Freecss", "anime": "Hunter x Hunter", "citation": "Je veux voir ce que voit mon père — ce qui vaut autant que moi a ses yeux.", "couleur": 0x16a34a, "emoji": ""},
-    {"nom": "Killua Zoldyck", "anime": "Hunter x Hunter", "citation": "On m'a appris a avancer, toujours. Je ne connais pas le mot renoncer.", "couleur": 0x94a3b8, "emoji": ""},
-    {"nom": "Killua Zoldyck", "anime": "Hunter x Hunter", "citation": "La force, c'est ne pas avoir a prouver qu'on est fort.", "couleur": 0x94a3b8, "emoji": ""},
-    {"nom": "Hisoka Morow", "anime": "Hunter x Hunter", "citation": "Les perles rares méritent d'être soignées jusqu'a maturité.", "couleur": 0xdc2626, "emoji": ""},
-    # ── FULLMETAL ALCHEMIST ──
-    {"nom": "Edward Elric", "anime": "Fullmetal Alchemist", "citation": "Une vie humaine n'a pas de prix. Et c'est exactement pour ca que l'alchimie ne peut pas la recréer.", "couleur": 0xd97706, "emoji": ""},
-    {"nom": "Edward Elric", "anime": "Fullmetal Alchemist", "citation": "Rien n'est parfait dans ce monde. C'est justement pour ca que c'est beau.", "couleur": 0xd97706, "emoji": ""},
-    {"nom": "Roy Mustang", "anime": "Fullmetal Alchemist", "citation": "Ceux qui utilisent le feu doivent être prêts a se brûler.", "couleur": 0x1e40af, "emoji": ""},
-    {"nom": "Roy Mustang", "anime": "Fullmetal Alchemist", "citation": "Le rang ne fait pas l'homme. Ce sont ses actes.", "couleur": 0x1e40af, "emoji": ""},
-    {"nom": "Alphonse Elric", "anime": "Fullmetal Alchemist", "citation": "On ne peut pas tout obtenir dans ce monde. Mais on peut choisir ce qui vaut la peine d'essayer.", "couleur": 0xe2e8f0, "emoji": ""},
-    # ── JOJO'S BIZARRE ADVENTURE ──
-    {"nom": "Dio Brando", "anime": "JoJo's Bizarre Adventure", "citation": "Ce monde appartient a DIO !", "couleur": 0x6d28d9, "emoji": ""},
-    {"nom": "Dio Brando", "anime": "JoJo's Bizarre Adventure", "citation": "Nul ne peut résister a mon pouvoir. Pas meme le temps.", "couleur": 0x6d28d9, "emoji": ""},
-    {"nom": "Jotaro Kujo", "anime": "JoJo's Bizarre Adventure", "citation": "Je n'ai pas besoin de grands discours. Mes poings parlent pour moi.", "couleur": 0x0c4a6e, "emoji": ""},
-    {"nom": "Giorno Giovanna", "anime": "JoJo's Bizarre Adventure", "citation": "J'ai un reve. Et ce reve ne mourra jamais.", "couleur": 0xf472b6, "emoji": ""},
-    {"nom": "Giorno Giovanna", "anime": "JoJo's Bizarre Adventure", "citation": "Meme dans l'obscurité, la lumière d'un reve ne s'éteint pas.", "couleur": 0xf472b6, "emoji": ""},
-    # ── VIOLET EVERGARDEN ──
-    {"nom": "Violet Evergarden", "anime": "Violet Evergarden", "citation": "Je veux comprendre ce que signifient ces mots : 'je t'aime'.", "couleur": 0x7c3aed, "emoji": ""},
-    {"nom": "Violet Evergarden", "anime": "Violet Evergarden", "citation": "Je ne suis qu'une arme. Mais une arme qui souhaite comprendre les coeurs humains.", "couleur": 0x7c3aed, "emoji": ""},
-    {"nom": "Violet Evergarden", "anime": "Violet Evergarden", "citation": "Chaque lettre est une ame qui voyage la ou les mots ne peuvent suffire.", "couleur": 0x7c3aed, "emoji": ""},
-    {"nom": "Claudia Hodgins", "anime": "Violet Evergarden", "citation": "Les lettres voyagent la ou les gens ne peuvent aller. Et restent la ou les gens ne peuvent demeurer.", "couleur": 0x1e40af, "emoji": ""},
-]
-
 # ─────────────────────────────────────────
-#  QUOTES_DB — 150 citations anime (format image premium)
+#  QUOTES_DB — citations anime verifiees
 # ─────────────────────────────────────────
 QUOTES_DB = [
-    # ── ONE PIECE ──
-    {"quote": "Je vais devenir le Roi des Pirates !", "character": "Monkey D. Luffy", "anime": "One Piece", "color": "#FF4500"},
-    {"quote": "Je ne suis pas parfait, mais je suis moi.", "character": "Monkey D. Luffy", "anime": "One Piece", "color": "#FF4500"},
-    {"quote": "Je suis celui qui va devenir le Roi des Pirates.", "character": "Monkey D. Luffy", "anime": "One Piece", "color": "#FF4500"},
-    {"quote": "Je ne suis pas un héros. Je suis juste un homme qui veut protéger ce qui lui est précieux.", "character": "Luffy", "anime": "One Piece", "color": "#FF0000"},
-    {"quote": "Je ne perds jamais. Soit je gagne, soit j'apprends.", "character": "Luffy", "anime": "One Piece", "color": "#FF0000"},
-    {"quote": "La liberté est le plus beau des cadeaux.", "character": "Luffy", "anime": "One Piece", "color": "#FF4500"},
-    {"quote": "La liberté est tout.", "character": "Luffy", "anime": "One Piece", "color": "#FF4500"},
-    {"quote": "La liberté est tout ce qui compte.", "character": "Luffy", "anime": "One Piece", "color": "#FF4500"},
-    {"quote": "La liberté est mon seul but.", "character": "Luffy", "anime": "One Piece", "color": "#FF4500"},
-    {"quote": "Je ne reculerai jamais.", "character": "Luffy", "anime": "One Piece", "color": "#FF4500"},
-    {"quote": "Je suis le roi des pirates !", "character": "Monkey D. Luffy", "anime": "One Piece", "color": "#FF4500"},
-    {"quote": "Je suis le plus fort du monde.", "character": "Whitebeard", "anime": "One Piece", "color": "#FFFFFF"},
-    {"quote": "Les amis sont la famille que l'on choisit.", "character": "Nami", "anime": "One Piece", "color": "#FF69B4"},
-    {"quote": "La vie est belle quand on a des amis.", "character": "Nami", "anime": "One Piece", "color": "#FF69B4"},
-    # ── NARUTO ──
-    {"quote": "Les gens qui sourient même quand ils sont tristes… ce sont les plus forts.", "character": "Naruto Uzumaki", "anime": "Naruto", "color": "#FF6600"},
-    {"quote": "Je vais devenir Hokage !", "character": "Naruto Uzumaki", "anime": "Naruto", "color": "#FF6600"},
-    {"quote": "La douleur rend plus fort.", "character": "Naruto Uzumaki", "anime": "Naruto", "color": "#FF6600"},
-    {"quote": "Je vais devenir le plus grand Hokage.", "character": "Naruto Uzumaki", "anime": "Naruto", "color": "#FF6600"},
-    {"quote": "Je vais devenir le plus grand Hokage de tous les temps.", "character": "Naruto Uzumaki", "anime": "Naruto", "color": "#FF6600"},
-    {"quote": "Les amis sont ma plus grande force.", "character": "Naruto Uzumaki", "anime": "Naruto", "color": "#FF6600"},
-    {"quote": "Les amis sont ma famille.", "character": "Naruto Uzumaki", "anime": "Naruto", "color": "#FF6600"},
-    {"quote": "Je vais protéger mes amis.", "character": "Naruto Uzumaki", "anime": "Naruto", "color": "#FF6600"},
-    {"quote": "La haine engendre la haine. L'amour engendre l'amour.", "character": "Naruto Uzumaki", "anime": "Naruto", "color": "#FF6600"},
-    {"quote": "La solitude, c'est pire que la mort.", "character": "Itachi Uchiha", "anime": "Naruto", "color": "#000000"},
-    {"quote": "La solitude est la plus grande des douleurs.", "character": "Itachi Uchiha", "anime": "Naruto", "color": "#000000"},
-    {"quote": "La solitude est mon seul compagnon.", "character": "Itachi Uchiha", "anime": "Naruto", "color": "#000000"},
-    {"quote": "La solitude est ma seule amie.", "character": "Itachi Uchiha", "anime": "Naruto", "color": "#000000"},
-    {"quote": "La vie continue, même après la perte.", "character": "Itachi Uchiha", "anime": "Naruto", "color": "#000000"},
-    {"quote": "Mon pouvoir n'a qu'un seul but : te protéger.", "character": "Itachi Uchiha", "anime": "Naruto", "color": "#000000"},
-    {"quote": "La vengeance est un plat qui se mange froid.", "character": "Sasuke Uchiha", "anime": "Naruto", "color": "#00008B"},
-    {"quote": "La vengeance n'apporte que de la souffrance.", "character": "Sasuke Uchiha", "anime": "Naruto", "color": "#00008B"},
-    {"quote": "Je ne suis pas un génie. Je suis juste quelqu'un qui travaille dur.", "character": "Rock Lee", "anime": "Naruto", "color": "#228B22"},
+    # ONE PIECE
+    {"quote": "Je deviendrai le Roi des Pirates !", "character": "Monkey D. Luffy", "anime": "One Piece", "color": "#F97316"},
+    {"quote": "Un homme qui abandonne ses reves n est pas digne d etre pirate !", "character": "Monkey D. Luffy", "anime": "One Piece", "color": "#F97316"},
+    {"quote": "Je ne regretterai rien, meme si mes bras cassent.", "character": "Monkey D. Luffy", "anime": "One Piece", "color": "#F97316"},
+    {"quote": "Rien ne me fera abandonner mon reve. Tu peux me tuer, mais mon ambition ne mourra jamais.", "character": "Roronoa Zoro", "anime": "One Piece", "color": "#22C55E"},
+    {"quote": "Il n y a pas de honte a tomber. La honte, c est de ne pas se relever.", "character": "Roronoa Zoro", "anime": "One Piece", "color": "#22C55E"},
+    {"quote": "Je ne me bats pas pour ma gloire. Je me bats pour ceux qui croient en moi.", "character": "Roronoa Zoro", "anime": "One Piece", "color": "#22C55E"},
+    {"quote": "Merci de m avoir aime.", "character": "Portgas D. Ace", "anime": "One Piece", "color": "#EF4444"},
+    {"quote": "Je n ai aucun regret d etre ne.", "character": "Portgas D. Ace", "anime": "One Piece", "color": "#EF4444"},
+    {"quote": "Mes fils n ont pas besoin de partager le sang de mes veines.", "character": "Barbe Blanche", "anime": "One Piece", "color": "#94A3B8"},
+    {"quote": "Je suis le plus fort du monde — et pourtant, je n ai pas su sauver mon fils.", "character": "Barbe Blanche", "anime": "One Piece", "color": "#94A3B8"},
+    {"quote": "Je suis un chirurgien. Mon metier, c est de sauver des vies.", "character": "Trafalgar Law", "anime": "One Piece", "color": "#3B82F6"},
+    {"quote": "Un vrai cuisinier ne lache jamais ses mains. Elles sont son outil et sa fierte.", "character": "Sanji", "anime": "One Piece", "color": "#FBBF24"},
+    {"quote": "Un vrai homme ne frappe jamais une femme, quoi qu il arrive.", "character": "Sanji", "anime": "One Piece", "color": "#FBBF24"},
+    # NARUTO
+    {"quote": "Je ne recule jamais et je ne mens jamais — c est ma voie du ninja !", "character": "Naruto Uzumaki", "anime": "Naruto", "color": "#F97316"},
+    {"quote": "Si tu abandonnes, c est la fin. Si tu continues, il reste toujours une chance.", "character": "Naruto Uzumaki", "anime": "Naruto", "color": "#F97316"},
+    {"quote": "La douleur rend les gens plus forts. Et les gens forts aident ceux qui souffrent.", "character": "Naruto Uzumaki", "anime": "Naruto", "color": "#F97316"},
     {"quote": "Ceux qui abandonnent leurs camarades sont pires que des rebuts.", "character": "Kakashi Hatake", "anime": "Naruto", "color": "#6B7280"},
-    {"quote": "La paix n'existe pas. Il n'y a que des moments de calme avant la tempête.", "character": "Pain", "anime": "Naruto", "color": "#8B0000"},
-    {"quote": "Je vais tout détruire... et tout reconstruire.", "character": "Pain", "anime": "Naruto", "color": "#8B0000"},
-    {"quote": "Je vais tout reconstruire.", "character": "Pain", "anime": "Naruto", "color": "#8B0000"},
-    {"quote": "Je ne pleure pas parce que je suis faible. Je pleure parce que j'ai été fort trop longtemps.", "character": "Hinata Hyuga", "anime": "Naruto", "color": "#FFB6C1"},
-    # ── ATTACK ON TITAN ──
-    {"quote": "Si tu ne peux pas vaincre la peur, tu ne pourras jamais vaincre la mort.", "character": "Levi Ackerman", "anime": "Attack on Titan", "color": "#2C2F33"},
-    {"quote": "La faiblesse n'est pas un crime. Fuir l'est.", "character": "Levi Ackerman", "anime": "Attack on Titan", "color": "#2C2F33"},
-    {"quote": "Je ne fais pas de promesses que je ne peux pas tenir.", "character": "Levi Ackerman", "anime": "Attack on Titan", "color": "#2C2F33"},
-    {"quote": "Je ne reculerai jamais.", "character": "Levi Ackerman", "anime": "Attack on Titan", "color": "#2C2F33"},
-    {"quote": "Je ne reculerai jamais devant rien.", "character": "Levi Ackerman", "anime": "Attack on Titan", "color": "#2C2F33"},
-    {"quote": "Les rêves des faibles ne se réalisent jamais.", "character": "Eren Yeager", "anime": "Attack on Titan", "color": "#4A4A4A"},
-    {"quote": "La liberté est plus importante que la vie.", "character": "Eren Yeager", "anime": "Attack on Titan", "color": "#4A4A4A"},
-    {"quote": "La liberté est mon seul but.", "character": "Eren Yeager", "anime": "Attack on Titan", "color": "#4A4A4A"},
-    {"quote": "La liberté, c'est tout ce qui compte.", "character": "Eren Yeager", "anime": "Attack on Titan", "color": "#4A4A4A"},
-    {"quote": "Si vous ne vous battez pas, vous ne pouvez pas gagner.", "character": "Eren Yeager", "anime": "Attack on Titan", "color": "#4A4A4A"},
-    {"quote": "Je vais tout détruire.", "character": "Eren Yeager", "anime": "Attack on Titan", "color": "#4A4A4A"},
-    {"quote": "La vie est un combat.", "character": "Eren Yeager", "anime": "Attack on Titan", "color": "#4A4A4A"},
-    {"quote": "Je suis né pour détruire.", "character": "Eren Yeager", "anime": "Attack on Titan", "color": "#4A4A4A"},
-    {"quote": "La peur rend faible.", "character": "Eren Yeager", "anime": "Attack on Titan", "color": "#4A4A4A"},
-    {"quote": "Les larmes ne résolvent rien.", "character": "Mikasa Ackerman", "anime": "Attack on Titan", "color": "#8B0000"},
-    {"quote": "La peur est ce qui nous rend humains.", "character": "Mikasa Ackerman", "anime": "Attack on Titan", "color": "#8B0000"},
-    # ── DEATH NOTE ──
-    {"quote": "La justice n'est qu'un mot que les forts utilisent pour opprimer les faibles.", "character": "Light Yagami", "anime": "Death Note", "color": "#FFFFFF"},
-    {"quote": "La justice, c'est ce que je décide.", "character": "Light Yagami", "anime": "Death Note", "color": "#FFFFFF"},
-    {"quote": "La justice, c'est moi.", "character": "Light Yagami", "anime": "Death Note", "color": "#FFFFFF"},
-    {"quote": "Je ne suis pas fait pour être normal.", "character": "Light Yagami", "anime": "Death Note", "color": "#FFFFFF"},
-    {"quote": "La justice est subjective.", "character": "Light Yagami", "anime": "Death Note", "color": "#FFFFFF"},
-    {"quote": "Les mots sont des armes plus puissantes que les épées.", "character": "Light Yagami", "anime": "Death Note", "color": "#FFFFFF"},
-    {"quote": "Les mots peuvent blesser plus que les coups.", "character": "Light Yagami", "anime": "Death Note", "color": "#FFFFFF"},
-    # ── DRAGON BALL ──
-    {"quote": "Je n'abandonnerai jamais.", "character": "Goku", "anime": "Dragon Ball Z", "color": "#FF4500"},
-    {"quote": "La vraie force, c'est de se relever après avoir tout perdu.", "character": "Goku", "anime": "Dragon Ball Z", "color": "#FF4500"},
-    {"quote": "La famille, c'est ce qu'il y a de plus important.", "character": "Goku", "anime": "Dragon Ball Z", "color": "#FF4500"},
-    {"quote": "Je suis né pour ça.", "character": "Goku", "anime": "Dragon Ball Z", "color": "#FF4500"},
-    {"quote": "Je vais devenir le plus grand.", "character": "Goku", "anime": "Dragon Ball Z", "color": "#FF4500"},
-    {"quote": "Je ne veux pas de pitié. Je veux qu'on me respecte.", "character": "Vegeta", "anime": "Dragon Ball Z", "color": "#0000FF"},
-    {"quote": "Je vais te faire regretter d'être né.", "character": "Vegeta", "anime": "Dragon Ball Z", "color": "#0000FF"},
-    {"quote": "Je vais te surpasser.", "character": "Vegeta", "anime": "Dragon Ball Z", "color": "#0000FF"},
-    {"quote": "Je suis le plus fort.", "character": "Vegeta", "anime": "Dragon Ball Z", "color": "#0000FF"},
-    # ── FULLMETAL ALCHEMIST ──
-    {"quote": "La mort n'est pas la fin. C'est juste le début d'une nouvelle aventure.", "character": "Edward Elric", "anime": "Fullmetal Alchemist", "color": "#FFD700"},
-    {"quote": "La vérité est souvent douloureuse.", "character": "Edward Elric", "anime": "Fullmetal Alchemist", "color": "#FFD700"},
-    {"quote": "La vérité est souvent plus douloureuse que le mensonge.", "character": "Edward Elric", "anime": "Fullmetal Alchemist", "color": "#FFD700"},
-    {"quote": "La vérité fait mal, mais le mensonge tue.", "character": "Edward Elric", "anime": "Fullmetal Alchemist", "color": "#FFD700"},
-    # ── DEMON SLAYER ──
-    {"quote": "Le monde n'est pas juste. Mais c'est pour ça qu'il faut le rendre juste.", "character": "Tanjiro Kamado", "anime": "Demon Slayer", "color": "#E6392F"},
-    {"quote": "La force, ce n'est pas tout. C'est le cœur qui compte.", "character": "Tanjiro Kamado", "anime": "Demon Slayer", "color": "#E6392F"},
-    {"quote": "Je vais protéger tout le monde.", "character": "Tanjiro Kamado", "anime": "Demon Slayer", "color": "#E6392F"},
-    {"quote": "Je ne suis pas seul dans ce combat.", "character": "Tanjiro Kamado", "anime": "Demon Slayer", "color": "#E6392F"},
-    {"quote": "La vraie force vient du cœur.", "character": "Tanjiro Kamado", "anime": "Demon Slayer", "color": "#E6392F"},
-    {"quote": "La force vient de l'intérieur.", "character": "Tanjiro Kamado", "anime": "Demon Slayer", "color": "#E6392F"},
-    # ── BLEACH ──
-    {"quote": "Je ne me bats pas pour gagner. Je me bats pour ne pas perdre.", "character": "Ichigo Kurosaki", "anime": "Bleach", "color": "#FF0000"},
-    {"quote": "Je ne suis pas seul.", "character": "Ichigo Kurosaki", "anime": "Bleach", "color": "#FF0000"},
-    {"quote": "Je ne me battrai jamais pour perdre.", "character": "Ichigo Kurosaki", "anime": "Bleach", "color": "#FF0000"},
-    # ── CODE GEASS ──
-    {"quote": "Un vrai roi protège son peuple, pas l'inverse.", "character": "Lelouch vi Britannia", "anime": "Code Geass", "color": "#800080"},
-    {"quote": "Je ne regrette rien.", "character": "Lelouch vi Britannia", "anime": "Code Geass", "color": "#800080"},
-    {"quote": "Je vais changer le monde.", "character": "Lelouch vi Britannia", "anime": "Code Geass", "color": "#800080"},
-    {"quote": "Je suis né pour régner.", "character": "Lelouch vi Britannia", "anime": "Code Geass", "color": "#800080"},
-    {"quote": "Je vais tout changer.", "character": "Lelouch vi Britannia", "anime": "Code Geass", "color": "#800080"},
-    {"quote": "Je vais changer le destin.", "character": "Lelouch vi Britannia", "anime": "Code Geass", "color": "#800080"},
-    {"quote": "Je ne regrette rien de ce que j'ai fait.", "character": "Lelouch vi Britannia", "anime": "Code Geass", "color": "#800080"},
-    # ── ONE PUNCH MAN ──
-    {"quote": "Je ne suis pas fort parce que je gagne. Je gagne parce que je suis fort.", "character": "Saitama", "anime": "One Punch Man", "color": "#FF4500"},
-    {"quote": "Je suis le plus fort.", "character": "Saitama", "anime": "One Punch Man", "color": "#FF4500"},
-    {"quote": "Je suis invincible.", "character": "Saitama", "anime": "One Punch Man", "color": "#FF4500"},
-    {"quote": "Je vais te montrer ce qu'est la vraie force.", "character": "Saitama", "anime": "One Punch Man", "color": "#FF4500"},
-    {"quote": "Je vais te montrer la vraie force.", "character": "Saitama", "anime": "One Punch Man", "color": "#FF4500"},
-    {"quote": "Je suis le roi.", "character": "Saitama", "anime": "One Punch Man", "color": "#FF4500"},
-    # ── FAIRY TAIL ──
-    {"quote": "La vie sans rêves n'a aucun sens.", "character": "Natsu Dragneel", "anime": "Fairy Tail", "color": "#FF4500"},
-    {"quote": "Les rêves valent la peine d'être poursuivis.", "character": "Natsu Dragneel", "anime": "Fairy Tail", "color": "#FF4500"},
-    {"quote": "Les rêves sont faits pour être réalisés.", "character": "Natsu Dragneel", "anime": "Fairy Tail", "color": "#FF4500"},
-    {"quote": "Les rêves valent la peine d'être défendus.", "character": "Natsu Dragneel", "anime": "Fairy Tail", "color": "#FF4500"},
-    {"quote": "Les rêves se réalisent si tu y crois.", "character": "Natsu Dragneel", "anime": "Fairy Tail", "color": "#FF4500"},
-    {"quote": "La vie est belle quand on a des rêves.", "character": "Natsu Dragneel", "anime": "Fairy Tail", "color": "#FF4500"},
-    # ── HUNTER x HUNTER ──
-    {"quote": "Même dans les ténèbres, il y a toujours une lumière.", "character": "Gon Freecss", "anime": "Hunter x Hunter", "color": "#00FF7F"},
-    {"quote": "Dans ma prochaine vie, je veux être moi, et te rencontrer à nouveau.", "character": "Gon Freecss", "anime": "Hunter x Hunter", "color": "#388E3C"},
-    {"quote": "Je n'ai pas besoin d'amis. J'ai besoin de résultats.", "character": "Hisoka Morow", "anime": "Hunter x Hunter", "color": "#FF00FF"},
-    {"quote": "Je vais te tuer... lentement.", "character": "Hisoka Morow", "anime": "Hunter x Hunter", "color": "#FF00FF"},
-    {"quote": "Si tu veux apprendre à connaître quelqu'un, découvre ce qui le met en colère.", "character": "Mito Freecss", "anime": "Hunter x Hunter", "color": "#2E7D32"},
-    {"quote": "On n'est pas désespérés d'aide, on ne cherche que les forts.", "character": "Isaac Netero", "anime": "Hunter x Hunter", "color": "#5D4037"},
-    {"quote": "Pas de donnant-donnant en amitié, tu aides tes amis parce que ce sont tes amis, c'est la seule raison dont tu as besoin.", "character": "Killua Zoldyck", "anime": "Hunter x Hunter", "color": "#B0BEC5"},
-    {"quote": "Parce que nous sommes des amis, tu n'as pas besoin de remercier des amis.", "character": "Killua Zoldyck", "anime": "Hunter x Hunter", "color": "#B0BEC5"},
-    # ── BERSERK ──
-    {"quote": "Si tu ne peux pas protéger ce que tu aimes, alors à quoi sers-tu ?", "character": "Guts", "anime": "Berserk", "color": "#4B0082"},
-    {"quote": "La vie est un combat permanent.", "character": "Guts", "anime": "Berserk", "color": "#4B0082"},
-    # ── TOKYO GHOUL ──
-    {"quote": "Je ne suis pas un monstre. Je suis juste différent.", "character": "Ken Kaneki", "anime": "Tokyo Ghoul", "color": "#FFFFFF"},
-    {"quote": "Je ne suis pas normal.", "character": "Ken Kaneki", "anime": "Tokyo Ghoul", "color": "#FFFFFF"},
-    # ── BLACK CLOVER ──
-    {"quote": "Les rêves deviennent réalité si tu y crois assez fort.", "character": "Asta", "anime": "Black Clover", "color": "#0000FF"},
-    {"quote": "Je vais devenir le plus fort.", "character": "Asta", "anime": "Black Clover", "color": "#0000FF"},
-    {"quote": "Je vais devenir le plus grand.", "character": "Asta", "anime": "Black Clover", "color": "#0000FF"},
-    {"quote": "Je suis celui qui va tout changer.", "character": "Asta", "anime": "Black Clover", "color": "#0000FF"},
-    # ── COWBOY BEBOP ──
-    {"quote": "La vie est courte. Il faut la vivre à fond.", "character": "Spike Spiegel", "anime": "Cowboy Bebop", "color": "#00BFFF"},
-    {"quote": "La mort n'est pas la fin.", "character": "Spike Spiegel", "anime": "Cowboy Bebop", "color": "#00BFFF"},
-    {"quote": "La mort n'est qu'un passage.", "character": "Spike Spiegel", "anime": "Cowboy Bebop", "color": "#00BFFF"},
-    {"quote": "La vie est belle.", "character": "Spike Spiegel", "anime": "Cowboy Bebop", "color": "#00BFFF"},
-    # ── VINLAND SAGA ──
-    {"quote": "Un homme qui ne peut pas protéger sa famille ne mérite pas d'en avoir une.", "character": "Thorfinn", "anime": "Vinland Saga", "color": "#8B4513"},
-    # ── CLASSROOM OF THE ELITE ──
-    {"quote": "Tous les gens ne sont rien d'autre que des outils. Peu importe comment c'est fait… gagner est tout ce qui compte.", "character": "Kiyotaka Ayanokoji", "anime": "Classroom of the Elite", "color": "#1C1C2E"},
+    {"quote": "Pardonne-moi, Sasuke... C est la derniere fois.", "character": "Itachi Uchiha", "anime": "Naruto", "color": "#4C1D95"},
+    {"quote": "Il vaut mieux mourir pour quelque chose que de vivre pour rien.", "character": "Itachi Uchiha", "anime": "Naruto", "color": "#4C1D95"},
+    {"quote": "Croire en quelqu un, c est tout ce dont un ninja a besoin.", "character": "Jiraiya", "anime": "Naruto", "color": "#7C3AED"},
+    {"quote": "Ceux qui ne connaissent pas la vraie douleur ne peuvent pas connaitre la vraie paix.", "character": "Pain", "anime": "Naruto", "color": "#8B0000"},
+    {"quote": "Sans espoir, les gens ne savent meme plus pourquoi ils se battent.", "character": "Obito Uchiha", "anime": "Naruto", "color": "#374151"},
+    {"quote": "Si tu ne peux pas utiliser le ninjutsu, travaille dix fois plus dur que les autres.", "character": "Rock Lee", "anime": "Naruto", "color": "#16A34A"},
+    {"quote": "Mon pouvoir n a qu un seul objectif : la vengeance.", "character": "Sasuke Uchiha", "anime": "Naruto", "color": "#1E1B4B"},
+    {"quote": "Je n ai besoin de personne pour accomplir ce que je dois accomplir.", "character": "Sasuke Uchiha", "anime": "Naruto", "color": "#1E1B4B"},
+    {"quote": "Je deviens Hokage — sinon, ca ne veut rien dire d etre ninja.", "character": "Minato Namikaze", "anime": "Naruto", "color": "#FBBF24"},
+    {"quote": "Je ne pleure pas parce que je suis faible. Je pleure parce que j ai ete fort trop longtemps.", "character": "Hinata Hyuga", "anime": "Naruto", "color": "#FFB6C1"},
+    # ATTACK ON TITAN
+    {"quote": "Personne ne sait ce qui va se passer. Decide simplement de ce que tu ne regretteras pas.", "character": "Levi Ackerman", "anime": "Attack on Titan", "color": "#1F2937"},
+    {"quote": "Les choix que nous faisons sur le champ de bataille sont absolus.", "character": "Levi Ackerman", "anime": "Attack on Titan", "color": "#1F2937"},
+    {"quote": "Si on ne se bat pas, on ne peut pas gagner.", "character": "Eren Yeager", "anime": "Attack on Titan", "color": "#065F46"},
+    {"quote": "Je continuerai d avancer — jusqu a ce que mes ennemis soient aneantis.", "character": "Eren Yeager", "anime": "Attack on Titan", "color": "#065F46"},
+    {"quote": "Ce monde est cruel. Mais il est aussi beau.", "character": "Mikasa Ackerman", "anime": "Attack on Titan", "color": "#374151"},
+    {"quote": "Ceux qui sont incapables de renoncer a quelque chose ne peuvent jamais rien changer.", "character": "Armin Arlert", "anime": "Attack on Titan", "color": "#78716C"},
+    {"quote": "Le resultat de nos combats fera partie de l avenir de l humanite.", "character": "Erwin Smith", "anime": "Attack on Titan", "color": "#B45309"},
+    # DEATH NOTE
+    {"quote": "Je suis Kira. Et je suis le Dieu du nouveau monde.", "character": "Light Yagami", "anime": "Death Note", "color": "#7F1D1D"},
+    {"quote": "La justice n est qu un mot que les forts utilisent pour opprimer les faibles.", "character": "Light Yagami", "anime": "Death Note", "color": "#7F1D1D"},
+    {"quote": "Tout a ete calcule. Je ne peux pas perdre.", "character": "Light Yagami", "anime": "Death Note", "color": "#7F1D1D"},
+    {"quote": "La probabilite que je me trompe est non nulle. Mais elle est tres faible.", "character": "L", "anime": "Death Note", "color": "#1C1917"},
+    {"quote": "Je ne fais confiance a personne. Pas meme a moi-meme.", "character": "L", "anime": "Death Note", "color": "#1C1917"},
+    {"quote": "Les humains sont vraiment... interessants.", "character": "Ryuk", "anime": "Death Note", "color": "#292524"},
+    # DRAGON BALL
+    {"quote": "Je suis un Saiyan eleve sur Terre. Je me bats pour proteger ce qui m est cher !", "character": "Son Goku", "anime": "Dragon Ball Z", "color": "#F97316"},
+    {"quote": "La victoire n est que le debut. L important, c est de continuer a s ameliorer.", "character": "Son Goku", "anime": "Dragon Ball Z", "color": "#F97316"},
+    {"quote": "Je suis le Prince de tous les Saiyans !", "character": "Vegeta", "anime": "Dragon Ball Z", "color": "#1E3A5F"},
+    {"quote": "Kakarot... tu es le seul guerrier qui merite de se battre contre moi.", "character": "Vegeta", "anime": "Dragon Ball Z", "color": "#1E3A5F"},
+    # DEMON SLAYER
+    {"quote": "Ne desespere pas. Meme la ou il n y a pas de lumiere, tu peux en trouver une.", "character": "Tanjiro Kamado", "anime": "Demon Slayer", "color": "#E6392F"},
+    {"quote": "Je vais te ramener a la vie humaine, Nezuko. Je le jure.", "character": "Tanjiro Kamado", "anime": "Demon Slayer", "color": "#E6392F"},
+    {"quote": "Enflamme ton coeur !", "character": "Rengoku Kyojuro", "anime": "Demon Slayer", "color": "#EF4444"},
+    {"quote": "Grandis avec force. Et protege les plus faibles que toi.", "character": "Rengoku Kyojuro", "anime": "Demon Slayer", "color": "#EF4444"},
+    # JUJUTSU KAISEN
+    {"quote": "Je veux mourir entoure de gens — pas seul.", "character": "Yuji Itadori", "anime": "Jujutsu Kaisen", "color": "#EC4899"},
+    {"quote": "Desole, Geto. Tu es le dernier sorcier que j ai appele mon ami.", "character": "Gojo Satoru", "anime": "Jujutsu Kaisen", "color": "#6366F1"},
+    {"quote": "Je suis le plus fort. Donc je suis le seul a pouvoir le faire.", "character": "Gojo Satoru", "anime": "Jujutsu Kaisen", "color": "#6366F1"},
+    # BLEACH
+    {"quote": "Je ne suis pas un heros ni un dieu. Quand on m attaque, je contre-attaque. C est tout.", "character": "Ichigo Kurosaki", "anime": "Bleach", "color": "#EA580C"},
+    {"quote": "Peu importe la raison — je veux juste avoir la force de proteger ceux que j aime.", "character": "Ichigo Kurosaki", "anime": "Bleach", "color": "#EA580C"},
+    {"quote": "Les regles existent pour etre suivies. Meme au prix de sa vie.", "character": "Byakuya Kuchiki", "anime": "Bleach", "color": "#1E293B"},
+    # FULLMETAL ALCHEMIST
+    {"quote": "L humanite ne peut rien obtenir sans donner quelque chose en echange. C est la loi de l equivalence.", "character": "Edward Elric", "anime": "Fullmetal Alchemist", "color": "#D97706"},
+    {"quote": "Rien n est parfait dans ce monde. C est justement pour ca que c est beau.", "character": "Edward Elric", "anime": "Fullmetal Alchemist", "color": "#D97706"},
+    {"quote": "Un homme qui leve la main sur une femme n est pas un vrai homme.", "character": "Roy Mustang", "anime": "Fullmetal Alchemist", "color": "#1E40AF"},
+    {"quote": "On ne peut pas tout obtenir dans ce monde. Mais on peut choisir ce qui vaut la peine d essayer.", "character": "Alphonse Elric", "anime": "Fullmetal Alchemist", "color": "#E2E8F0"},
+    # HUNTER x HUNTER
+    {"quote": "Je veux voir ce que voit mon pere — ce qui vaut autant que moi a ses yeux.", "character": "Gon Freecss", "anime": "Hunter x Hunter", "color": "#16A34A"},
+    {"quote": "Tu peux choisir d etre gentil. Meme dans ce monde cruel.", "character": "Killua Zoldyck", "anime": "Hunter x Hunter", "color": "#94A3B8"},
+    {"quote": "Les fleurs se cueillent en fleur. Les fruits se mangent a maturite.", "character": "Hisoka Morow", "anime": "Hunter x Hunter", "color": "#DC2626"},
+    {"quote": "Je ne vivrai que pour ma vengeance — et je mourrai pour elle.", "character": "Kurapika", "anime": "Hunter x Hunter", "color": "#7C3AED"},
+    {"quote": "Je n avais pas imagine que perdre aux echecs puisse me rendre aussi... heureux.", "character": "Meruem", "anime": "Hunter x Hunter", "color": "#065F46"},
+    {"quote": "Si tu veux apprendre a connaitre quelqu un, decouvre ce qui le met en colere.", "character": "Mito Freecss", "anime": "Hunter x Hunter", "color": "#2E7D32"},
+    # JOJO'S BIZARRE ADVENTURE
+    {"quote": "Ce monde appartient a DIO !", "character": "Dio Brando", "anime": "JoJo's Bizarre Adventure", "color": "#6D28D9"},
+    {"quote": "Nul ne peut resister a mon pouvoir. Pas meme le temps.", "character": "Dio Brando", "anime": "JoJo's Bizarre Adventure", "color": "#6D28D9"},
+    {"quote": "J ai un reve. Et ce reve ne mourra jamais.", "character": "Giorno Giovanna", "anime": "JoJo's Bizarre Adventure", "color": "#F472B6"},
+    # FAIRY TAIL
+    {"quote": "Je ne serai jamais seul — mes amis sont toujours dans mon coeur !", "character": "Natsu Dragneel", "anime": "Fairy Tail", "color": "#DC2626"},
+    {"quote": "Les larmes ne sont pas une faiblesse. Ce sont la preuve que tu ressens quelque chose.", "character": "Erza Scarlet", "anime": "Fairy Tail", "color": "#9F1239"},
+    {"quote": "Avance, meme si c est dur. La route se tracera sous tes pieds.", "character": "Erza Scarlet", "anime": "Fairy Tail", "color": "#9F1239"},
+    # CODE GEASS
+    {"quote": "Je detruis les mondes brises pour en batir de meilleurs.", "character": "Lelouch vi Britannia", "anime": "Code Geass", "color": "#7C3AED"},
+    {"quote": "Les gens ne vivent que dans l obscurite, car c est la que la lumiere brille le plus fort.", "character": "Lelouch vi Britannia", "anime": "Code Geass", "color": "#7C3AED"},
+    # TOKYO GHOUL
+    {"quote": "Je n etais ni humain, ni goule. Un hybride sans place dans ce monde.", "character": "Ken Kaneki", "anime": "Tokyo Ghoul", "color": "#1C1917"},
+    {"quote": "Il faut etre fort. Sinon, tu seras blesse. Ou tu blesseras quelqu un d autre.", "character": "Ken Kaneki", "anime": "Tokyo Ghoul", "color": "#1C1917"},
+    # ONE PUNCH MAN
+    {"quote": "Tu sais, etre le plus fort... c est finalement assez solitaire.", "character": "Saitama", "anime": "One Punch Man", "color": "#F97316"},
+    {"quote": "Je suis un heros... pour le fun.", "character": "Saitama", "anime": "One Punch Man", "color": "#F97316"},
+    # BERSERK
+    {"quote": "Vous devrez combattre de toutes vos forces. Meme si votre corps est dechire en mille morceaux.", "character": "Guts", "anime": "Berserk", "color": "#4B0082"},
+    {"quote": "La destinee ne me fait pas peur. Je la taille a coups d epee.", "character": "Guts", "anime": "Berserk", "color": "#4B0082"},
+    # RE:ZERO
+    {"quote": "Je reviens a la vie encore et encore. Pas pour moi — pour eux.", "character": "Subaru Natsuki", "anime": "Re:Zero", "color": "#3B82F6"},
+    {"quote": "Je t aime. La ou tu vas, j irai.", "character": "Rem", "anime": "Re:Zero", "color": "#60A5FA"},
+    # SWORD ART ONLINE
+    {"quote": "Un jeu, c est exactement parce que c est un jeu qu on peut tout y donner.", "character": "Kirito", "anime": "Sword Art Online", "color": "#1E1B4B"},
+    {"quote": "Meme si ce monde est un jeu, ma douleur a moi est reelle.", "character": "Asuna Yuuki", "anime": "Sword Art Online", "color": "#FBBF24"},
+    # VIOLET EVERGARDEN
+    {"quote": "Je veux comprendre ce que signifient ces mots : je t aime.", "character": "Violet Evergarden", "anime": "Violet Evergarden", "color": "#7C3AED"},
+    {"quote": "Je ne suis qu une arme. Mais une arme qui souhaite comprendre les coeurs humains.", "character": "Violet Evergarden", "anime": "Violet Evergarden", "color": "#7C3AED"},
+    # COWBOY BEBOP
+    {"quote": "Tu vois seulement un souvenir de ce que tu etais. Pas ce que tu pourrais devenir.", "character": "Spike Spiegel", "anime": "Cowboy Bebop", "color": "#0EA5E9"},
+    # BLACK CLOVER
+    {"quote": "Je n ai pas de magie. Alors je compenserai par des efforts infinis !", "character": "Asta", "anime": "Black Clover", "color": "#1D4ED8"},
+    # VINLAND SAGA
+    {"quote": "Un vrai guerrier n a pas besoin d ennemis.", "character": "Thorfinn", "anime": "Vinland Saga", "color": "#8B4513"},
 ]
-print(f"✅ {len(QUOTES_DB)} citations anime chargées.")
+print(f"\u2705 {len(QUOTES_DB)} citations anime chargees.")
+
 
 # ─────────────────────────────────────────
 #  UTILITAIRES
@@ -2139,6 +1993,38 @@ CITATION_HISTORY: list[str] = []
 
 # Cache URL image par personnage (Jikan API)
 # Persos non présents sur MAL (cartoons occidentaux, jeux vidéo hors anime, etc.)
+# URLs d image statiques verifiees — priorite absolue sur Jikan (CDN MAL stable)
+_CHAR_STATIC_URLS: dict[str, str] = {
+    # Attack on Titan — anciens IDs (843-849) etaient faux → URLs directes
+    "Eren Yeager":         "https://cdn.myanimelist.net/images/characters/10/216895.jpg",
+    "Levi Ackerman":       "https://cdn.myanimelist.net/images/characters/12/622510.jpg",
+    "Mikasa Ackerman":     "https://cdn.myanimelist.net/images/characters/9/215563.jpg",
+    "Armin Arlert":        "https://cdn.myanimelist.net/images/characters/8/220267.jpg",
+    "Erwin Smith":         "https://cdn.myanimelist.net/images/characters/14/559023.jpg",
+    # Naruto
+    "Itachi Uchiha":       "https://cdn.myanimelist.net/images/characters/9/284122.jpg",
+    "Rock Lee":            "https://cdn.myanimelist.net/images/characters/13/433353.jpg",
+    "Pain":                "https://cdn.myanimelist.net/images/characters/8/73473.jpg",
+    "Hinata Hyuga":        "https://cdn.myanimelist.net/images/characters/6/278736.jpg",
+    # Fairy Tail
+    "Natsu Dragneel":      "https://cdn.myanimelist.net/images/characters/15/594274.jpg",
+    # Hunter x Hunter
+    "Killua Zoldyck":      "https://cdn.myanimelist.net/images/characters/2/327920.jpg",
+    "Hisoka Morow":        "https://cdn.myanimelist.net/images/characters/9/531213.jpg",
+    "Kurapika":            "https://cdn.myanimelist.net/images/characters/3/549312.jpg",
+    "Mito Freecss":        "https://cdn.myanimelist.net/images/characters/8/47876.jpg",
+    # JoJo
+    "Giorno Giovanna":     "https://cdn.myanimelist.net/images/characters/16/571466.jpg",
+    # Tokyo Ghoul
+    "Ken Kaneki":          "https://cdn.myanimelist.net/images/characters/15/307255.jpg",
+    # One Punch Man
+    "Saitama":             "https://cdn.myanimelist.net/images/characters/11/294388.jpg",
+    # Black Clover
+    "Asta":                "https://cdn.myanimelist.net/images/characters/11/202559.jpg",
+    # Vinland Saga (pas sur MAL comme anime mainstream)
+    "Thorfinn":            "https://cdn.myanimelist.net/images/characters/9/309871.jpg",
+}
+
 _NO_MAL_CHARS: frozenset[str] = frozenset({"Zuko"})
 _CHAR_IMAGE_CACHE: dict[str, str | None] = {n: None for n in _NO_MAL_CHARS}
 # Cache bytes PIL par personnage (évite re-téléchargement)
@@ -2175,13 +2061,17 @@ async def _jikan_get(sess: aiohttp.ClientSession, url: str, retries: int = 2) ->
     return None
 
 async def _get_char_image_url(name: str) -> str | None:
-    """Récupère l'URL image Jikan avec corrélation stricte nom↔image.
-
-    - ID connu  → fetch direct par ID (garanti bon perso), accepte toute URL myanimelist.
-    - Sans ID   → recherche par nom, toutes les parties doivent correspondre,
-                  URL filtrée sur /images/characters/ pour éviter les logos.
-    Retry automatique sur 429. Résultat mis en cache en mémoire.
+    """URL image du personnage.
+    Ordre de priorite :
+    1. _CHAR_STATIC_URLS — URLs verifiees manuellement (bypass Jikan)
+    2. _CHAR_IMAGE_CACHE — cache memoire session
+    3. Jikan par ID direct (CHAR_JIKAN_IDS)
+    4. Jikan par recherche nom (fallback)
     """
+    if name in _CHAR_STATIC_URLS:
+        url = _CHAR_STATIC_URLS[name]
+        _CHAR_IMAGE_CACHE[name] = url
+        return url
     if name in _CHAR_IMAGE_CACHE:
         return _CHAR_IMAGE_CACHE[name]
 
@@ -2236,7 +2126,6 @@ async def _fetch_char_image_bytes(name: str) -> bytes | None:
     url = await _get_char_image_url(name)
     if not url:
         # Pareil : ne pas cacher les échecs transitoires sur les bytes
-        return None
         return None
     try:
         async with aiohttp.ClientSession() as sess:
