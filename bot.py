@@ -130,6 +130,10 @@ RANK_COLORS = {
     "Roi des pirates": (255, 215, 0),
 }
 
+# Cooldown anti-spam : (uid, rank_name) → timestamp dernière annonce
+_rank_announce_cooldown: dict = {}
+_RANK_ANNOUNCE_COOLDOWN_SECONDS = 300  # 5 minutes
+
 # ─────────────────────────────────────────
 #  CITATIONS ONE PIECE
 # ─────────────────────────────────────────
@@ -589,6 +593,12 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True, da
         for rank_name in sorted(ranks_to_add, key=lambda r: rank_order.get(r, -1)):
             if not channel:
                 break
+            cooldown_key = (uid, rank_name)
+            last_announced = _rank_announce_cooldown.get(cooldown_key, 0)
+            if now_ts() - last_announced < _RANK_ANNOUNCE_COOLDOWN_SECONDS:
+                print(f"[RANK] Cooldown actif — annonce skippée : {member.display_name} -> {rank_name}")
+                continue
+            _rank_announce_cooldown[cooldown_key] = now_ts()
             try:
                 img_buf, is_gif = await make_rank_image(member, rank_name, hours_7d)
                 fname   = "rank_up.gif" if is_gif else "rank_up.png"
@@ -621,6 +631,12 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True, da
         for rank_name in ranks_to_remove:
             if not channel:
                 break
+            cooldown_key = (uid, f"derank_{rank_name}")
+            last_announced = _rank_announce_cooldown.get(cooldown_key, 0)
+            if now_ts() - last_announced < _RANK_ANNOUNCE_COOLDOWN_SECONDS:
+                print(f"[RANK] Cooldown actif — derank skippé : {member.display_name} -> -{rank_name}")
+                continue
+            _rank_announce_cooldown[cooldown_key] = now_ts()
             try:
                 emoji   = _ANNOUNCE_RANK_EMOJIS.get(rank_name, "")
                 r, g, b = RANK_COLORS.get(rank_name, (150, 150, 150))
@@ -1117,7 +1133,7 @@ async def check_ranks_loop():
                 continue
 
             try:
-                await update_rank(member, hours_7d, announce=True, data=data)
+                await update_rank(member, hours_7d, announce=False, data=data)
                 await check_alert(member, hours_7d, data=data)
                 if user.get("last_rank") != old_last_rank:
                     modified_uids.add(uid)
