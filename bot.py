@@ -2021,74 +2021,90 @@ async def test_event(interaction: discord.Interaction, evenement: app_commands.C
 # ─────────────────────────────────────────
 #  /quiz  (Quiz animé généré par IA — Groq)
 # ─────────────────────────────────────────
-# litellm.set_verbose appelé uniquement si l'attribut existe (évite crash au démarrage)
-try:
-    litellm.set_verbose = False
-except Exception:
-    pass
+QUIZ_SESSIONS: dict = {}
+_GROQ_MODEL         = "groq/llama-3.3-70b-versatile"
 
-QUIZ_SESSIONS: dict  = {}
-_GROQ_MODEL          = "groq/llama-3.3-70b-versatile"
+# System prompt strict : objet JSON racine obligatoire (imposé par response_format json_object)
+_QUIZ_SYSTEM = (
+    "Tu es un expert des animés japonais. "
+    "Tu réponds UNIQUEMENT avec un JSON valide contenant exactement cette structure : "
+    '{"questions": [{"question": "...", "bonne_reponse": "...", '
+    '"mauvaises_reponses": ["...", "...", "..."], "anime": "...", "difficulte": "facile|moyen|difficile"}]}. '
+    "Aucun texte avant ou après le JSON. Aucun commentaire. Aucune explication."
+)
 
-_QUIZ_PROMPT = """Génère {n} questions de quiz sur les animés.
-Réponds UNIQUEMENT en JSON valide, sans texte avant ou après, avec ce format exact :
-[
-  {{
-    "question": "La question ici ?",
-    "bonne_reponse": "La bonne réponse",
-    "mauvaises_reponses": ["Fausse 1", "Fausse 2", "Fausse 3"],
-    "anime": "Nom de l'anime concerné",
-    "difficulte": "facile/moyen/difficile"
-  }}
-]
-Varie les animés (Naruto, DBZ, One Piece, Bleach, Death Note, AOT, HxH, FMA, JoJo, Fairy Tail...), \
-les thèmes (personnages, pouvoirs, arcs, auteurs) et les niveaux de difficulté."""
+# User prompt : nombre de questions + diversité
+_QUIZ_USER = (
+    "Génère exactement {n} questions de quiz sur les animés. "
+    "Varie les animés : Naruto, One Piece, Dragon Ball Z, Bleach, Death Note, "
+    "Attack on Titan, Hunter x Hunter, Fullmetal Alchemist, JoJo's Bizarre Adventure, Fairy Tail. "
+    "Varie les thèmes (personnages, pouvoirs, arcs narratifs, auteurs) et les difficultés."
+)
+
 
 async def _generate_quiz_questions(n: int) -> tuple:
     """
-    Génère n questions via Groq llama-3.3-70b (litellm).
+    Génère n questions via Groq llama-3.3-70b-versatile (litellm).
+    Utilise response_format json_object pour garantir un JSON valide.
     Retourne (questions: list, erreur: str).
-    La clé est lue à chaque appel depuis l'env pour capter les rechargements Railway.
     """
     api_key = os.environ.get("GROQ_API_KEY", "")
     if not api_key:
-        msg = "GROQ_API_KEY manquante — ajoute-la dans Railway > Variables"
+        msg = "GROQ_API_KEY manquante — configure-la dans Railway > Variables"
         print(f"[QUIZ] ERREUR : {msg}")
         return [], msg
 
     last_error = ""
     for attempt in range(3):
+        raw = ""
         try:
-            print(f"[QUIZ] Appel Groq attempt {attempt + 1}/3 ({n} questions)...")
+            print(f"[QUIZ] Appel Groq attempt {attempt + 1}/3 — {n} questions...")
             response = await litellm.acompletion(
                 model=_GROQ_MODEL,
                 api_key=api_key,
-                max_tokens=2048,
-                temperature=0.8,
-                messages=[{"role": "user", "content": _QUIZ_PROMPT.format(n=n)}],
+                max_tokens=3000,
+                temperature=0.7,
+                response_format={"type": "json_object"},   # JSON garanti valide
+                messages=[
+                    {"role": "system", "content": _QUIZ_SYSTEM},
+                    {"role": "user",   "content": _QUIZ_USER.format(n=n)},
+                ],
             )
             raw = response.choices[0].message.content.strip()
-            print(f"[QUIZ] Reponse brute ({len(raw)} chars) : {raw[:200]}")
+            print(f"[QUIZ] Raw ({len(raw)} chars) : {raw[:300]}")
 
-            # Extraction robuste du JSON même si le modèle ajoute du texte autour
-            match = re.search(r'\[.*?\]', raw, re.DOTALL)
-            if not match:
-                match = re.search(r'\[.*\]', raw, re.DOTALL)
-            if match:
-                questions = json.loads(match.group())
-                if isinstance(questions, list) and len(questions) > 0:
-                    print(f"[QUIZ] OK — {len(questions)} questions generees")
-                    return questions, ""
-                last_error = "Liste JSON vide dans la reponse"
+            data = json.loads(raw)
+
+            # Le modèle renvoie {"questions": [...]}
+            questions = data.get("questions") or data.get("quiz") or []
+
+            # Fallback : si la racine est déjà une liste
+            if not questions and isinstance(data, list):
+                questions = data
+
+            if isinstance(questions, list) and len(questions) >= 1:
+                # Valider que chaque question a les champs requis
+                valid = [
+                    q for q in questions
+                    if isinstance(q, dict)
+                    and q.get("question")
+                    and q.get("bonne_reponse")
+                    and isinstance(q.get("mauvaises_reponses"), list)
+                ]
+                if valid:
+                    print(f"[QUIZ] OK — {len(valid)} questions valides")
+                    return valid, ""
+                last_error = "Questions malformees (champs manquants)"
             else:
-                last_error = "Aucun tableau JSON trouve dans la reponse"
+                last_error = f"Cle 'questions' absente ou vide. Cles trouvees : {list(data.keys()) if isinstance(data, dict) else type(data)}"
 
         except json.JSONDecodeError as e:
-            last_error = f"JSON invalide : {e}"
+            last_error = f"JSONDecodeError : {e}"
             print(f"[QUIZ] JSONDecodeError attempt {attempt + 1} : {e}")
+            print(f"[QUIZ] Raw complet pour debug :\n{raw}")
         except Exception as e:
             last_error = f"{type(e).__name__}: {e}"
-            print(f"[QUIZ] Echec attempt {attempt + 1}/3 : {last_error}")
+            print(f"[QUIZ] Exception attempt {attempt + 1}/3 : {last_error}")
 
         await asyncio.sleep(1)
 
