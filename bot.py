@@ -831,15 +831,9 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True, da
             try:
                 img_buf, is_gif = await make_rank_image(member, rank_name, hours_7d)
                 fname = "rank_up.gif" if is_gif else "rank_up.png"
-                r, g, b = RANK_COLORS.get(rank_name, (212, 175, 55))
-
-                embed = discord.Embed(color=discord.Color.from_rgb(r, g, b))
-                embed.set_image(url=f"attachment://{fname}")
-                embed.set_footer(text="⚓ BRAMS SCORE  |  by Freydiss")
 
                 await channel.send(
                     content=f"Bravo a {member.mention} qui a debloque le rank **{rank_name.upper()}** ✨",
-                    embed=embed,
                     file=discord.File(img_buf, fname),
                 )
                 print(f"[RANK] Annonce envoyee : {member.display_name} -> {rank_name}")
@@ -1092,6 +1086,12 @@ async def make_rank_image(member: discord.Member, rank_name: str, hours_7d: floa
         "attached_assets/KomikaAxis.ttf",
     ]
     komika_path = next((p for p in KOMIKA_CANDIDATES if os.path.exists(p)), None)
+    def _tf(path, size):
+        try:
+            return ImageFont.truetype(path, size)
+        except Exception:
+            return ImageFont.load_default()
+
     if komika_path:
         font_felicit   = ImageFont.truetype(komika_path, 48)
         font_grade     = ImageFont.truetype(komika_path, 96)
@@ -1103,6 +1103,7 @@ async def make_rank_image(member: discord.Member, rank_name: str, hours_7d: floa
         font_grade     = font_felicit
         font_pseudo    = font_felicit
         font_community = font_felicit
+    font_credit = _tf("Righteous-Regular.ttf", 20)
 
     rank_labels = {
         "Pirate":          "PIRATE",
@@ -1182,6 +1183,12 @@ async def make_rank_image(member: discord.Member, rank_name: str, hours_7d: floa
 
         draw_text_centered(draw, pseudo_clean, font_pseudo, pseudo_y, (*WHITE, 255))
         draw_text_centered(draw, "BRAMS COMMUNITY", font_community, pseudo_y + 80, (*grade_color, 230))
+
+        # "by Freydiss" — discret, coin bas-droit
+        credit = "by Freydiss"
+        cb = draw.textbbox((0, 0), credit, font=font_credit)
+        cw = cb[2] - cb[0]
+        draw.text((CARD_W - cw - 16, CARD_H - 28), credit, font=font_credit, fill=(200, 200, 200, 160))
 
         return card
 
