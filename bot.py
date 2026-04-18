@@ -2131,7 +2131,7 @@ async def addheures(interaction: discord.Interaction, membre: discord.Member, he
     await save_user_async(uid, user)
     seconds_7d = seconds_in_period(user["vocal_sessions"], 7)
     hours_7d = seconds_7d / 3600
-    await update_rank(membre, hours_7d, announce=False)
+    await update_rank(membre, hours_7d, announce=True)
     try:
         await interaction.followup.send(
             f"✅ +{heures}h ajoutées à {membre.mention} → {hours_7d:.1f}h sur 7j", ephemeral=True
