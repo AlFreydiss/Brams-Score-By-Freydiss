@@ -1387,49 +1387,52 @@ async def check_ranks_loop():
             total_members += 1
             uid = str(member.id)
             user = get_user(data, uid)
-            old_last_rank = user.get("last_rank")
+            # Snapshot des champs mutables (last_rank + alerted) pour détecter tout changement
+            old_snapshot = (user.get("last_rank"), user.get("alerted"))
             clean_old_data(user)
             jt = user.get("join_time")
 
-            # Membre actuellement en vocal : on skip le rank-up pour éviter de l'assigner
-            # silencieusement (announce=False) avant que on_voice_state_update ne puisse l'annoncer.
-            # On calcule quand même les heures réelles pour check_alert.
+            # Membre en vocal : skip rank-up, check alert uniquement
             if jt:
                 hours_7d_real = seconds_in_period(user["vocal_sessions"], 7, join_time=jt) / 3600
-                if hours_7d_real == 0 and old_last_rank is None:
-                    await asyncio.sleep(0.01)
+                if hours_7d_real == 0 and old_snapshot[0] is None:
+                    if total_members % 100 == 0:
+                        await asyncio.sleep(0)
                     continue
                 try:
                     await check_alert(member, hours_7d_real, data=data)
                 except Exception as e:
                     print(f"⚠️ Erreur check_alert {member.display_name}: {e}")
-                await asyncio.sleep(0.01)
-                continue
+            else:
+                seconds_7d = seconds_in_period(user["vocal_sessions"], 7)
+                hours_7d = seconds_7d / 3600
 
-            seconds_7d = seconds_in_period(user["vocal_sessions"], 7)
-            hours_7d = seconds_7d / 3600
+                # FAST PATH : membre inactif sans rank → skip
+                if hours_7d == 0 and old_snapshot[0] is None:
+                    if total_members % 100 == 0:
+                        await asyncio.sleep(0)
+                    continue
 
-            # FAST PATH : membre inactif sans rank → skip
-            if hours_7d == 0 and old_last_rank is None:
-                continue
+                try:
+                    await update_rank(member, hours_7d, announce=False, data=data)
+                    await check_alert(member, hours_7d, data=data)
+                except Exception as e:
+                    print(f"⚠️ Erreur {member.display_name}: {e}")
 
-            try:
-                await update_rank(member, hours_7d, announce=False, data=data)
-                await check_alert(member, hours_7d, data=data)
-                if user.get("last_rank") != old_last_rank:
-                    modified_uids.add(uid)
-            except Exception as e:
-                print(f"⚠️ Erreur {member.display_name}: {e}")
-            await asyncio.sleep(0.01)
+            # Marquer modifié si last_rank OU alerted a changé
+            if (user.get("last_rank"), user.get("alerted")) != old_snapshot:
+                modified_uids.add(uid)
+
+            # Yield tous les 100 membres pour ne pas bloquer la gateway Discord
+            if total_members % 100 == 0:
+                await asyncio.sleep(0)
 
     if modified_uids:
-        print(f"💾 Sauvegarde async de {len(modified_uids)} users modifiés...")
-        for uid in modified_uids:
-            if uid in data:
-                try:
-                    await save_user_async(uid, data[uid])
-                except Exception as e:
-                    print(f"❌ Erreur save {uid}: {e}")
+        print(f"💾 Sauvegarde batch de {len(modified_uids)} users modifiés...")
+        try:
+            await save_data_async({uid: data[uid] for uid in modified_uids if uid in data})
+        except Exception as e:
+            print(f"❌ Erreur save batch: {e}")
 
     elapsed = time.time() - start
     print(f"🔄 check_ranks_loop terminé en {elapsed:.1f}s - {total_members} membres, {len(modified_uids)} sauvés")
