@@ -483,6 +483,13 @@ QUOTES_DB = [
     {"quote": "La liberté est mon seul but.", "character": "Eren Yeager", "anime": "Attack on Titan", "color": "#4A4A4A"},
     {"quote": "Je vais devenir le Roi des Pirates.", "character": "Monkey D. Luffy", "anime": "One Piece", "color": "#FF4500"},
     {"quote": "Je ne reculerai jamais.", "character": "Levi Ackerman", "anime": "Attack on Titan", "color": "#2C2F33"},
+    {"quote": "Si vous ne vous battez pas, vous ne pouvez pas gagner.", "character": "Eren Yeager", "anime": "Attack on Titan", "color": "#4A4A4A"},
+    {"quote": "Tous les gens ne sont rien d'autre que des outils. Peu importe comment c'est fait… gagner est tout ce qui compte.", "character": "Kiyotaka Ayanokoji", "anime": "Classroom of the Elite", "color": "#1C1C2E"},
+    {"quote": "Si tu veux apprendre à connaître quelqu'un, découvre ce qui le met en colère.", "character": "Mito Freecss", "anime": "Hunter x Hunter", "color": "#2E7D32"},
+    {"quote": "On n'est pas désespérés d'aide, on ne cherche que les forts.", "character": "Isaac Netero", "anime": "Hunter x Hunter", "color": "#5D4037"},
+    {"quote": "Dans ma prochaine vie, je veux être moi, et te rencontrer à nouveau.", "character": "Gon Freecss", "anime": "Hunter x Hunter", "color": "#388E3C"},
+    {"quote": "Pas de donnant-donnant en amitié, tu aides tes amis parce que ce sont tes amis, c'est la seule raison dont tu as besoin.", "character": "Killua Zoldyck", "anime": "Hunter x Hunter", "color": "#B0BEC5"},
+    {"quote": "Parce que nous sommes des amis, tu n'as pas besoin de remercier des amis.", "character": "Killua Zoldyck", "anime": "Hunter x Hunter", "color": "#B0BEC5"},
 ]
 print(f"✅ {len(QUOTES_DB)} citations anime chargées.")
 
