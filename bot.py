@@ -2491,18 +2491,31 @@ _GROQ_MODEL         = "groq/llama-3.3-70b-versatile"
 QUIZ_USER_HISTORY: dict[int, list[str]] = {}
 _QUIZ_HISTORY_MAX = 60
 
+_DIFF_POINTS: dict[str, int] = {"facile": 1, "moyen": 2, "difficile": 3, "expert": 5}
+_DIFF_COLORS: dict[str, int] = {"facile": 0x2ecc71, "moyen": 0xf1c40f, "difficile": 0xe67e22, "expert": 0xe74c3c}
+_DIFF_EMOJI:  dict[str, str] = {"facile": "🟢", "moyen": "🟡", "difficile": "🟠", "expert": "🔴"}
+_TYPE_EMOJI:  dict[str, str] = {
+    "personnage": "👤", "technique": "⚡", "lieu": "🗺️", "arc": "📖",
+    "pouvoir": "💥", "objet": "🎁", "studio": "🎬", "auteur": "✒️",
+}
+
 # Catégories disponibles : valeur → description injectée dans le prompt
 _QUIZ_CATEGORIES: dict[str, str] = {
-    "general":   "tous les animés populaires mélangés (Naruto, One Piece, DBZ, Bleach, Death Note, AoT, HxH, FMA, Fairy Tail, JoJo, SAO, Demon Slayer, My Hero Academia)",
-    "one_piece": "One Piece UNIQUEMENT (personnages, Fruits du Démon, arcs, Marines, Yonkou, technique des personnages, histoire)",
-    "naruto":    "Naruto / Naruto Shippuden / Boruto UNIQUEMENT (chakra, jutsu, clans, arcs, Jinchuriki, Akatsuki)",
-    "sao":       "Sword Art Online UNIQUEMENT (Kirito, Asuna, mondes virtuels, guildes, arcs, boss, compétences)",
-    "bleach":    "Bleach UNIQUEMENT (Zanpakuto, Shinigami, Bankai, Hollows, Espada, arcs Soul Society et Hueco Mundo)",
-    "deathnote": "Death Note UNIQUEMENT (règles du Death Note, Kira, L, Near, Mello, Ryuk, stratégies)",
-    "aot":       "Attack on Titan UNIQUEMENT (Titans, Survey Corps, Shifters, arcs, noms de personnages, capacités)",
-    "dbz":       "Dragon Ball Z / Super UNIQUEMENT (transformations Saiyan, techniques, arcs, personnages, films)",
-    "hxh":       "Hunter x Hunter UNIQUEMENT (Nen, types, Gon, Killua, arcs Yorknew/Chimera Ant, personnages)",
-    "jojo":      "JoJo's Bizarre Adventure UNIQUEMENT (Stands, parties, personnages, pouvoirs, antagonistes)",
+    "general":      "tous les animés populaires mélangés (Naruto, One Piece, DBZ, Bleach, Death Note, AoT, HxH, FMA, Fairy Tail, JoJo, Demon Slayer, MHA, JJK)",
+    "one_piece":    "One Piece UNIQUEMENT (personnages, Fruits du Démon, arcs, Marines, Yonkou, techniques)",
+    "naruto":       "Naruto / Naruto Shippuden / Boruto UNIQUEMENT (chakra, jutsu, clans, arcs, Jinchuriki, Akatsuki)",
+    "bleach":       "Bleach UNIQUEMENT (Zanpakuto, Shinigami, Bankai, Hollows, Espada, arcs Soul Society et Hueco Mundo)",
+    "deathnote":    "Death Note UNIQUEMENT (règles du Death Note, Kira, L, Near, Mello, Ryuk, stratégies)",
+    "aot":          "Attack on Titan UNIQUEMENT (Titans, Survey Corps, Shifters, arcs, capacités, noms)",
+    "dbz":          "Dragon Ball Z / Super UNIQUEMENT (transformations Saiyan, techniques, arcs, personnages)",
+    "hxh":          "Hunter x Hunter UNIQUEMENT (Nen, types, Gon, Killua, arcs Yorknew/Chimera Ant)",
+    "jojo":         "JoJo's Bizarre Adventure UNIQUEMENT (Stands, parties, personnages, antagonistes)",
+    "demon_slayer": "Demon Slayer / Kimetsu no Yaiba UNIQUEMENT (respirations, démons, Piliers, arcs, personnages)",
+    "mha":          "My Hero Academia UNIQUEMENT (Alter, U.A., League of Villains, arcs, personnages, combats)",
+    "jjk":          "Jujutsu Kaisen UNIQUEMENT (techniques maudites, Fléaux, grades, arcs, personnages)",
+    "fma":          "Fullmetal Alchemist Brotherhood UNIQUEMENT (alchimie, Homoncules, arcs, personnages)",
+    "chainsaw":     "Chainsaw Man UNIQUEMENT (Diables, contrats, Chasseurs, arcs, personnages)",
+    "black_clover": "Black Clover UNIQUEMENT (magie, grimoires, Chevaliers Magiques, arcs, personnages)",
 }
 
 # System prompt strict
@@ -2510,25 +2523,31 @@ _QUIZ_SYSTEM = (
     "Tu es un expert des animés japonais. "
     "Tu réponds UNIQUEMENT avec un JSON valide contenant exactement cette structure : "
     '{"questions": [{"question": "...", "bonne_reponse": "...", '
-    '"mauvaises_reponses": ["...", "...", "..."], "anime": "...", "difficulte": "facile|moyen|difficile"}]}. '
-    "Aucun texte avant ou après le JSON. Aucun commentaire. Aucune explication."
+    '"mauvaises_reponses": ["...", "...", "..."], "anime": "...", "difficulte": "facile|moyen|difficile|expert", '
+    '"type": "personnage|technique|lieu|arc|pouvoir|objet|studio|auteur", "explication": "..."}]}. '
+    "Règles strictes : "
+    "1. Toutes les réponses (correcte ET fausses) doivent être crédibles — jamais de mauvaise réponse ridicule ou évidente. "
+    "2. Les mauvaises réponses doivent appartenir au MÊME univers ou genre que la bonne. "
+    "3. Varie les types de questions : pas plus de 3 questions 'personnage' d'affilée. "
+    "4. Pour difficulte='expert' : questions ultra-précises sur des détails rares (épisode exact, technique complète, chapitre). "
+    "5. L'explication (1-2 phrases) explique POURQUOI c'est la bonne réponse, avec un détail de lore. "
+    "6. Orthographe et grammaire françaises parfaites. Aucune faute. "
+    "Aucun texte avant ou après le JSON. Aucun commentaire."
 )
 
-# User prompt : catégorie + seed pour forcer la variété
+# User prompt : catégorie + seed + anti-répétition
 _QUIZ_USER = (
     "Génère exactement {n} questions de quiz sur : {categorie}. "
-    "Questions INÉDITES et surprenantes — évite les questions trop classiques. "
-    "Varie les thèmes : personnages secondaires, pouvoirs précis, arcs narratifs, scènes cultes, détails de l'univers, auteurs/studios. "
-    "Varie les difficultés (30%% facile, 50%% moyen, 20%% difficile). "
+    "Questions INÉDITES et surprenantes — évite les questions trop classiques comme 'Qui est le capitaine de...' ou 'Quel est le pouvoir de...'. "
+    "Préfère : détails d'arcs précis, techniques secondaires, lieux rares, citations cultes, auteurs/studios, scènes emblématiques. "
+    "Répartition des difficultés : 20%% facile, 45%% moyen, 25%% difficile, 10%% expert. "
+    "{avoid_hint}"
     "Seed de variété : {seed}."
 )
 
 
-async def _generate_quiz_questions(n: int, category: str = "general") -> tuple:
-    """
-    Génère n questions via Groq llama-3.3-70b-versatile (litellm).
-    Retourne (questions: list, erreur: str).
-    """
+async def _generate_quiz_questions(n: int, category: str = "general", seen_questions: list[str] | None = None) -> tuple:
+    """Génère n questions via Groq. Retourne (questions: list, erreur: str)."""
     api_key = os.environ.get("GROQ_API_KEY", "")
     if not api_key:
         msg = "GROQ_API_KEY manquante — configure-la dans Railway > Variables"
@@ -2551,7 +2570,13 @@ async def _generate_quiz_questions(n: int, category: str = "general") -> tuple:
                 response_format={"type": "json_object"},
                 messages=[
                     {"role": "system", "content": _QUIZ_SYSTEM},
-                    {"role": "user",   "content": _QUIZ_USER.format(n=n, categorie=categorie_desc, seed=seed)},
+                    {"role": "user",   "content": _QUIZ_USER.format(
+                        n=n, categorie=categorie_desc, seed=seed,
+                        avoid_hint=(
+                            f"Évite ABSOLUMENT ces questions déjà posées récemment : {seen_questions[:20]}. "
+                            if seen_questions else ""
+                        ),
+                    )},
                 ],
             )
             raw = response.choices[0].message.content.strip()
@@ -2596,15 +2621,17 @@ async def _generate_quiz_questions(n: int, category: str = "general") -> tuple:
     return [], last_error
 
 class _QuizSession:
-    __slots__ = ("questions", "idx", "score", "best_combo", "combo", "user_id", "interaction")
-    def __init__(self, questions, user_id, interaction):
+    __slots__ = ("questions", "idx", "score", "points", "best_combo", "combo", "user_id", "interaction", "category")
+    def __init__(self, questions, user_id, interaction, category: str = "general"):
         self.questions = questions
         self.idx = 0
         self.score = 0
+        self.points = 0
         self.best_combo = 0
         self.combo = 0
         self.user_id = user_id
         self.interaction = interaction
+        self.category = category
 
 def _quiz_score_message(score, total):
     pct = score / total if total > 0 else 0
@@ -2628,12 +2655,13 @@ async def _send_next_question(inter: discord.Interaction, sess: _QuizSession, fe
                 f"{feedback}\n\n"
                 f"━━━━━━━━━━━━━━━━━━━━\n"
                 f"**Score final** : {sess.score} / {total}\n"
+                f"**Points totaux** : {sess.points} pts\n"
                 f"**Meilleur combo** : x{sess.best_combo}\n\n"
                 f"*{result_msg}*"
             ),
             color=discord.Color.from_rgb(212, 175, 55)
         )
-        replay_view = _ReplayView(sess.user_id, total)
+        replay_view = _ReplayView(sess.user_id, total, sess.category)
         try:
             await inter.followup.send(embed=embed, view=replay_view)
         except Exception:
@@ -2645,18 +2673,23 @@ async def _send_next_question(inter: discord.Interaction, sess: _QuizSession, fe
     random.shuffle(choices_next)
     next_view = _QuizAnswerView(sess, choices_next, q["bonne_reponse"])
 
-    diff = q.get("difficulte", "?").lower()
-    diff_emoji = {"facile": "🟢", "moyen": "🟡", "difficile": "🔴"}.get(diff, "⚪")
-    desc = f"{diff_emoji} *{diff.capitalize()}* — {q.get('anime', '?')}\n\n**{q['question']}**"
+    diff = q.get("difficulte", "moyen").lower()
+    q_type = q.get("type", "")
+    diff_emoji = _DIFF_EMOJI.get(diff, "⚪")
+    type_emoji = _TYPE_EMOJI.get(q_type, "")
+    pts = _DIFF_POINTS.get(diff, 1)
+    type_str = f" {type_emoji}" if type_emoji else ""
+    desc = f"{diff_emoji} *{diff.capitalize()}*{type_str} — {q.get('anime', '?')} • **+{pts} pt{'s' if pts > 1 else ''}**\n\n**{q['question']}**"
     if feedback:
         desc = f"{feedback}\n\n━━━━━━━━━━━━━━━━━━━━\n{desc}"
 
+    color = _DIFF_COLORS.get(diff, 0x6432c8)
     embed = discord.Embed(
         title=f"❓ Question {sess.idx + 1} / {total}",
         description=desc,
-        color=discord.Color.from_rgb(100, 50, 200)
+        color=color,
     )
-    embed.set_footer(text=f"⏱️ 60 secondes • Score : {sess.score}/{sess.idx} • Combo : x{sess.combo}")
+    embed.set_footer(text=f"⏱️ 30 secondes • Score : {sess.score}/{sess.idx} • Points : {sess.points} • Combo : x{sess.combo}")
     try:
         msg = await inter.followup.send(embed=embed, view=next_view)
         next_view.message = msg
@@ -2688,18 +2721,26 @@ class _AnswerButton(discord.ui.Button):
         view.stop()
         await inter.response.edit_message(view=view)
 
+        q = sess.questions[sess.idx]
+        diff = q.get("difficulte", "moyen").lower()
+        pts = _DIFF_POINTS.get(diff, 1)
+        explication = q.get("explication", "")
         if self._is_correct:
             sess.score += 1
+            sess.points += pts
             sess.combo += 1
             if sess.combo > sess.best_combo:
                 sess.best_combo = sess.combo
-            if sess.combo >= 5:
-                feedback = f"✅ Bonne réponse !\n🔥 **COMBO x{sess.combo} ! {'Tu es en feu !' if sess.combo == 5 else 'Incroyable !'}**"
-            else:
-                feedback = "✅ Bonne réponse !"
+            combo_str = f"\n🔥 **COMBO x{sess.combo} ! {'Tu es en feu !' if sess.combo == 5 else 'Incroyable !'}**" if sess.combo >= 5 else ""
+            feedback = f"✅ Bonne réponse ! **+{pts} pt{'s' if pts > 1 else ''}**{combo_str}"
+            if explication:
+                feedback += f"\n📚 *{explication}*"
         else:
             sess.combo = 0
-            feedback = f"❌ Mauvais choix ! La bonne réponse était : **{view.correct}**\nCourage, tu feras mieux la prochaine fois ! 💪"
+            feedback = f"❌ Mauvais choix ! La bonne réponse était : **{view.correct}**"
+            if explication:
+                feedback += f"\n📚 *{explication}*"
+            feedback += "\nCourage, tu feras mieux la prochaine fois ! 💪"
 
         sess.idx += 1
         await _send_next_question(inter, sess, feedback)
@@ -2707,7 +2748,7 @@ class _AnswerButton(discord.ui.Button):
 
 class _QuizAnswerView(discord.ui.View):
     def __init__(self, session: _QuizSession, choices: list, correct: str):
-        super().__init__(timeout=60)
+        super().__init__(timeout=30)
         self.session = session
         self.correct = correct
         labels = ["A", "B", "C", "D"]
@@ -2727,19 +2768,20 @@ class _QuizAnswerView(discord.ui.View):
                 pass
 
 class _ReplayView(discord.ui.View):
-    def __init__(self, user_id: int, n: int):
+    def __init__(self, user_id: int, n: int, category: str = "general"):
         super().__init__(timeout=120)
         self.user_id = user_id
         self.n = n
+        self.category = category
 
-    @discord.ui.button(label="Rejouer", style=discord.ButtonStyle.primary, emoji="🔄")
+    @discord.ui.button(label="Rejouer (même catégorie)", style=discord.ButtonStyle.primary, emoji="🔄")
     async def rejouer(self, inter: discord.Interaction, button: discord.ui.Button):
         if inter.user.id != self.user_id:
             await inter.response.send_message("Ce bouton ne t'appartient pas.", ephemeral=True)
             return
         button.disabled = True
         await inter.response.edit_message(view=self)
-        await _start_quiz_session(inter, self.n)
+        await _start_quiz_session(inter, self.n, self.category)
 
 class _QuizSelect(discord.ui.Select):
     """Select Menu : choix du nombre de questions."""
@@ -2773,21 +2815,26 @@ class _QuizCategorySelect(discord.ui.Select):
     """Select Menu : choix de la catégorie de quiz."""
     def __init__(self, user_id: int):
         self.user_id = user_id
-        _LABELS = {
-            "general":   ("🎌 Anime général",        "Tous les animés mélangés"),
-            "one_piece": ("🌊 One Piece",             "Fruits du Démon, arcs, personnages"),
-            "naruto":    ("🍥 Naruto",                "Jutsu, clans, Akatsuki, arcs"),
-            "sao":       ("⚔️ Sword Art Online",      "Kirito, Asuna, mondes virtuels"),
-            "bleach":    ("🗡️ Bleach",                "Bankai, Shinigami, Espada"),
-            "deathnote": ("💀 Death Note",            "Kira, L, règles du Death Note"),
-            "aot":       ("🔥 Attack on Titan",       "Titans, Survey Corps, Shifters"),
-            "dbz":       ("🏋️ Dragon Ball Z",         "Saiyans, transformations, arcs"),
-            "hxh":       ("🎯 Hunter x Hunter",       "Nen, Gon, Killua, arcs"),
-            "jojo":      ("✨ JoJo's Bizarre Adv.",   "Stands, parties, antagonistes"),
-        }
+        _LABELS = [
+            ("general",      "🎌 Anime général",        "Tous les animés mélangés"),
+            ("one_piece",    "🌊 One Piece",             "Fruits du Démon, arcs, personnages"),
+            ("naruto",       "🍥 Naruto",                "Jutsu, clans, Akatsuki, arcs"),
+            ("bleach",       "🗡️ Bleach",               "Bankai, Shinigami, Espada"),
+            ("deathnote",    "💀 Death Note",            "Kira, L, règles du Death Note"),
+            ("aot",          "🔥 Attack on Titan",       "Titans, Survey Corps, Shifters"),
+            ("dbz",          "🏋️ Dragon Ball Z",        "Saiyans, transformations, arcs"),
+            ("hxh",          "🎯 Hunter x Hunter",       "Nen, Gon, Killua, arcs"),
+            ("jojo",         "✨ JoJo's Bizarre Adv.",   "Stands, parties, antagonistes"),
+            ("demon_slayer", "🔥 Demon Slayer",          "Respirations, Piliers, démons"),
+            ("mha",          "💪 My Hero Academia",      "Alter, U.A., League of Villains"),
+            ("jjk",          "👁️ Jujutsu Kaisen",       "Techniques maudites, Fléaux, grades"),
+            ("fma",          "⚗️ Fullmetal Alchemist",  "Alchimie, Homoncules, arcs"),
+            ("chainsaw",     "🪚 Chainsaw Man",          "Diables, contrats, Chasseurs"),
+            ("black_clover", "🍀 Black Clover",          "Magie, grimoires, Chevaliers"),
+        ]
         options = [
-            discord.SelectOption(label=label, value=val, description=desc, emoji=None)
-            for val, (label, desc) in _LABELS.items()
+            discord.SelectOption(label=label, value=val, description=desc)
+            for val, label, desc in _LABELS
         ]
         super().__init__(placeholder="Choisis une catégorie...", min_values=1, max_values=1, options=options)
 
@@ -2822,8 +2869,11 @@ async def _start_quiz_session(inter: discord.Interaction, n: int, category: str 
 
     cat_labels = {
         "general": "tous les animés", "one_piece": "One Piece", "naruto": "Naruto",
-        "sao": "SAO", "bleach": "Bleach", "deathnote": "Death Note",
-        "aot": "AoT", "dbz": "Dragon Ball Z", "hxh": "HxH", "jojo": "JoJo",
+        "bleach": "Bleach", "deathnote": "Death Note", "aot": "AoT",
+        "dbz": "Dragon Ball Z", "hxh": "HxH", "jojo": "JoJo",
+        "demon_slayer": "Demon Slayer", "mha": "My Hero Academia",
+        "jjk": "Jujutsu Kaisen", "fma": "Fullmetal Alchemist",
+        "chainsaw": "Chainsaw Man", "black_clover": "Black Clover",
     }
     cat_display = cat_labels.get(category, "anime")
     loading_embed = discord.Embed(
@@ -2837,7 +2887,7 @@ async def _start_quiz_session(inter: discord.Interaction, n: int, category: str 
     except Exception as e:
         print(f"⚠️ Quiz loading send failed: {e}")
 
-    questions, err = await _generate_quiz_questions(n, category)
+    questions, err = await _generate_quiz_questions(n, category, seen_questions=QUIZ_USER_HISTORY.get(uid))
 
     # Filtre anti-répétition : retire les questions déjà vues par cet utilisateur
     user_seen = set(QUIZ_USER_HISTORY.get(uid, []))
@@ -2867,7 +2917,7 @@ async def _start_quiz_session(inter: discord.Interaction, n: int, category: str 
             print(f"❌ Quiz error embed failed: {e}")
         return
 
-    session = _QuizSession(questions, uid, inter)
+    session = _QuizSession(questions, uid, inter, category)
     QUIZ_SESSIONS[uid] = session
 
     # Mémorise les questions de cette session
@@ -2924,16 +2974,21 @@ async def _quiz_entry(interaction: discord.Interaction, category: str = ""):
 @bot.tree.command(name="quizz", description="Quiz animé — teste tes connaissances sur les animés !")
 @app_commands.describe(categorie="Catégorie (optionnel — laisse vide pour choisir)")
 @app_commands.choices(categorie=[
-    app_commands.Choice(name="🎌 Anime général",       value="general"),
-    app_commands.Choice(name="🌊 One Piece",            value="one_piece"),
-    app_commands.Choice(name="🍥 Naruto",               value="naruto"),
-    app_commands.Choice(name="⚔️ Sword Art Online",    value="sao"),
-    app_commands.Choice(name="🗡️ Bleach",              value="bleach"),
-    app_commands.Choice(name="💀 Death Note",           value="deathnote"),
-    app_commands.Choice(name="🔥 Attack on Titan",      value="aot"),
-    app_commands.Choice(name="🏋️ Dragon Ball Z",       value="dbz"),
-    app_commands.Choice(name="🎯 Hunter x Hunter",      value="hxh"),
-    app_commands.Choice(name="✨ JoJo's Bizarre Adv.", value="jojo"),
+    app_commands.Choice(name="🎌 Anime général",        value="general"),
+    app_commands.Choice(name="🌊 One Piece",             value="one_piece"),
+    app_commands.Choice(name="🍥 Naruto",                value="naruto"),
+    app_commands.Choice(name="🗡️ Bleach",               value="bleach"),
+    app_commands.Choice(name="💀 Death Note",            value="deathnote"),
+    app_commands.Choice(name="🔥 Attack on Titan",       value="aot"),
+    app_commands.Choice(name="🏋️ Dragon Ball Z",        value="dbz"),
+    app_commands.Choice(name="🎯 Hunter x Hunter",       value="hxh"),
+    app_commands.Choice(name="✨ JoJo's Bizarre Adv.",  value="jojo"),
+    app_commands.Choice(name="🔥 Demon Slayer",          value="demon_slayer"),
+    app_commands.Choice(name="💪 My Hero Academia",      value="mha"),
+    app_commands.Choice(name="👁️ Jujutsu Kaisen",      value="jjk"),
+    app_commands.Choice(name="⚗️ Fullmetal Alchemist",  value="fma"),
+    app_commands.Choice(name="🪚 Chainsaw Man",          value="chainsaw"),
+    app_commands.Choice(name="🍀 Black Clover",          value="black_clover"),
 ])
 async def quizz(interaction: discord.Interaction, categorie: str = ""):
     await _quiz_entry(interaction, categorie)
