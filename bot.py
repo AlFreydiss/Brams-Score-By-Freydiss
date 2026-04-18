@@ -1762,7 +1762,7 @@ async def citation(interaction: discord.Interaction, perso: str = None):
 
 
 @bot.tree.command(name="addheures", description="[ADMIN] Ajouter des heures vocales à un membre")
-@app_commands.default_member_permissions(discord.Permissions(administrator=True))
+@app_commands.default_permissions(administrator=True)
 @app_commands.checks.has_permissions(administrator=True)
 async def addheures(interaction: discord.Interaction, membre: discord.Member, heures: float):
     try:
@@ -1794,7 +1794,7 @@ async def addheures(interaction: discord.Interaction, membre: discord.Member, he
 
 
 @bot.tree.command(name="forcerank", description="[ADMIN] Recalculer le rank d'un membre")
-@app_commands.default_member_permissions(discord.Permissions(administrator=True))
+@app_commands.default_permissions(administrator=True)
 @app_commands.checks.has_permissions(administrator=True)
 async def forcerank(interaction: discord.Interaction, membre: discord.Member):
     try:
@@ -1821,7 +1821,7 @@ async def forcerank(interaction: discord.Interaction, membre: discord.Member):
         print(f"❌ /forcerank followup failed: {e}")
 
 @bot.tree.command(name="testrank", description="[ADMIN] Tester l'image d'annonce de rank")
-@app_commands.default_member_permissions(discord.Permissions(administrator=True))
+@app_commands.default_permissions(administrator=True)
 @app_commands.checks.has_permissions(administrator=True)
 @app_commands.describe(rang="Rang a tester")
 @app_commands.choices(rang=[
@@ -1866,7 +1866,7 @@ async def testrank(interaction: discord.Interaction, membre: discord.Member = No
         print(f"❌ /testrank followup failed: {e}")
 
 @bot.tree.command(name="recalcul", description="[ADMIN] Recalculer les ranks (tous ou un membre)")
-@app_commands.default_member_permissions(discord.Permissions(administrator=True))
+@app_commands.default_permissions(administrator=True)
 @app_commands.checks.has_permissions(administrator=True)
 async def recalcul(interaction: discord.Interaction, membre: discord.Member = None):
     try:
@@ -1916,7 +1916,7 @@ async def recalcul(interaction: discord.Interaction, membre: discord.Member = No
 #  /test  (ADMIN — simulation d'événements)
 # ─────────────────────────────────────────
 @bot.tree.command(name="test", description="[ADMIN] Simuler un événement sans affecter les données réelles")
-@app_commands.default_member_permissions(discord.Permissions(administrator=True))
+@app_commands.default_permissions(administrator=True)
 @app_commands.checks.has_permissions(administrator=True)
 @app_commands.describe(evenement="Type d'événement à simuler", membre="Membre cible (optionnel, défaut : toi)")
 @app_commands.choices(evenement=[
@@ -2162,61 +2162,37 @@ class _ReplayView(discord.ui.View):
         await inter.response.edit_message(view=self)
         await _start_quiz_session(inter, self.n)
 
-class _DurationModal(discord.ui.Modal, title="Nombre de questions"):
-    nb = discord.ui.TextInput(label="Nombre (1 à 50)", placeholder="Ex: 15", min_length=1, max_length=2)
-
-    def __init__(self, user_id):
-        super().__init__()
+class _QuizSelect(discord.ui.Select):
+    """Select Menu : choix du nombre de questions pour le quiz."""
+    def __init__(self, user_id: int):
         self.user_id = user_id
+        options = [
+            discord.SelectOption(label="5 questions",  value="5",  emoji="🎯", description="Quiz rapide"),
+            discord.SelectOption(label="10 questions", value="10", emoji="⚡", description="Quiz standard"),
+            discord.SelectOption(label="15 questions", value="15", emoji="🔥", description="Quiz marathon"),
+        ]
+        super().__init__(
+            placeholder="Choisis le nombre de questions...",
+            min_values=1,
+            max_values=1,
+            options=options,
+        )
 
-    async def on_submit(self, inter: discord.Interaction):
-        try:
-            n = int(self.nb.value)
-            if not 1 <= n <= 50:
-                raise ValueError
-        except ValueError:
-            await inter.response.send_message("Nombre invalide (1-50).", ephemeral=True)
+    async def callback(self, inter: discord.Interaction):
+        if inter.user.id != self.user_id:
+            await inter.response.send_message("Ce quiz ne t'appartient pas.", ephemeral=True)
             return
+        self.view.stop()
+        n = int(self.values[0])
         await inter.response.defer()
         await _start_quiz_session(inter, n)
 
+
 class _DurationView(discord.ui.View):
-    def __init__(self, user_id):
+    """Vue contenant le Select Menu de sélection du nombre de questions."""
+    def __init__(self, user_id: int):
         super().__init__(timeout=60)
-        self.user_id = user_id
-
-    async def _check(self, inter):
-        if inter.user.id != self.user_id:
-            await inter.response.send_message("Ce quiz ne t'appartient pas.", ephemeral=True)
-            return False
-        return True
-
-    @discord.ui.button(label="5 questions", style=discord.ButtonStyle.secondary)
-    async def btn5(self, inter: discord.Interaction, button: discord.ui.Button):
-        if not await self._check(inter): return
-        self.stop()
-        await inter.response.defer()
-        await _start_quiz_session(inter, 5)
-
-    @discord.ui.button(label="10 questions", style=discord.ButtonStyle.secondary)
-    async def btn10(self, inter: discord.Interaction, button: discord.ui.Button):
-        if not await self._check(inter): return
-        self.stop()
-        await inter.response.defer()
-        await _start_quiz_session(inter, 10)
-
-    @discord.ui.button(label="15 questions", style=discord.ButtonStyle.secondary)
-    async def btn15(self, inter: discord.Interaction, button: discord.ui.Button):
-        if not await self._check(inter): return
-        self.stop()
-        await inter.response.defer()
-        await _start_quiz_session(inter, 15)
-
-    @discord.ui.button(label="Personnalisé", style=discord.ButtonStyle.primary)
-    async def btn_custom(self, inter: discord.Interaction, button: discord.ui.Button):
-        if not await self._check(inter): return
-        self.stop()
-        await inter.response.send_modal(_DurationModal(self.user_id))
+        self.add_item(_QuizSelect(user_id))
 
 async def _start_quiz_session(inter: discord.Interaction, n: int):
     uid = inter.user.id
@@ -2300,7 +2276,7 @@ async def quizz(interaction: discord.Interaction):
 #  /sync  (OWNER ONLY — forcer la sync des commandes)
 # ─────────────────────────────────────────
 @bot.tree.command(name="sync", description="[OWNER] Synchroniser les commandes slash")
-@app_commands.default_member_permissions(discord.Permissions(administrator=True))
+@app_commands.default_permissions(administrator=True)
 async def sync_commands(interaction: discord.Interaction):
     if not await bot.is_owner(interaction.user):
         await interaction.response.send_message("Réservé au propriétaire du bot.", ephemeral=True)
