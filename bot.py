@@ -945,9 +945,9 @@ async def make_citation_image(quote_data: dict) -> io.BytesIO:
     font_deco   = _font("KOMIKAX_.ttf", 220)
     font_quote  = _font("Righteous-Regular.ttf", 38)
     font_quote_s= _font("Righteous-Regular.ttf", 28)
-    font_char   = _font("PirataOne-Regular.ttf", 34)
-    font_anime  = _font("Righteous-Regular.ttf", 20)
-    font_footer = _font("Righteous-Regular.ttf", 14)
+    font_char   = _font("PirataOne-Regular.ttf", 48)
+    font_anime  = _font("Righteous-Regular.ttf", 28)
+    font_footer = _font("Righteous-Regular.ttf", 12)
 
     TX  = 58        # X départ texte
     TW  = 620       # Largeur max du bloc texte
@@ -960,12 +960,12 @@ async def make_citation_image(quote_data: dict) -> io.BytesIO:
 
     # ── NOM DU PERSONNAGE ──
     name_text = quote_data["character"].upper()
-    shadow_text(draw, (TX, 32), name_text, font_char, fill=(*accent, 255), offset=2)
-    name_w = draw.textbbox((TX, 32), name_text, font=font_char)[2] - TX
-    draw.rectangle([(TX, 72), (TX + name_w, 74)], fill=(*accent, 180))
+    shadow_text(draw, (TX, 28), name_text, font_char, fill=(*accent, 255), offset=2)
+    name_w = draw.textbbox((TX, 28), name_text, font=font_char)[2] - TX
+    draw.rectangle([(TX, 82), (TX + name_w, 84)], fill=(*accent, 180))
 
     # ── ANIME ──
-    draw.text((TX, 80), quote_data["anime"], font=font_anime, fill=(165, 165, 165, 220))
+    draw.text((TX, 90), quote_data["anime"], font=font_anime, fill=(185, 185, 185, 220))
 
     # ── CITATION — word-wrap auto avec réduction si trop long ──
     raw_quote = f'\u201c{quote_data["quote"]}\u201d'
@@ -991,7 +991,7 @@ async def make_citation_image(quote_data: dict) -> io.BytesIO:
         lines = wrap_text(raw_quote, font_quote_s, TW)
         fq, lh = font_quote_s, 44
 
-    zone_top, zone_bot = 125, H - 88
+    zone_top, zone_bot = 135, H - 88
     block_h = len(lines) * lh
     start_y = max(zone_top, zone_top + (zone_bot - zone_top - block_h) // 2)
 
@@ -1002,9 +1002,9 @@ async def make_citation_image(quote_data: dict) -> io.BytesIO:
     sep_y = H - 54
     draw.rectangle([(TX, sep_y), (TX + TW, sep_y + 2)], fill=(*accent, 140))
 
-    footer = "⚓ BRAMS SCORE  |  by Freydiss"
+    footer = "by Freydiss"
     fw = draw.textbbox((0, 0), footer, font=font_footer)[2]
-    draw.text((W - fw - 22, H - 26), footer, font=font_footer, fill=(72, 72, 72, 200))
+    draw.text((W - fw - 16, H - 18), footer, font=font_footer, fill=(70, 70, 70, 180))
 
     buf = io.BytesIO()
     canvas.convert("RGB").save(buf, format="PNG", optimize=True)
