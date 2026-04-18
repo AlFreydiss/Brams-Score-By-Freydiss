@@ -2142,6 +2142,37 @@ async def addheures(interaction: discord.Interaction, membre: discord.Member, he
         print(f"❌ /addheures followup failed: {e}")
 
 
+@bot.tree.command(name="resetheures", description="[ADMIN] Réinitialiser les heures vocales d'un membre")
+@app_commands.default_permissions(administrator=True)
+@app_commands.checks.has_permissions(administrator=True)
+async def resetheures(interaction: discord.Interaction, membre: discord.Member):
+    try:
+        await interaction.response.defer(ephemeral=True)
+    except discord.NotFound:
+        print("⚠️ /resetheures : interaction expirée avant defer")
+        return
+    except Exception as e:
+        print(f"❌ /resetheures defer failed: {e}")
+        return
+    data = await load_data_async()
+    uid = str(membre.id)
+    user = get_user(data, uid)
+    user["vocal_sessions"] = []
+    user["join_time"] = None
+    user["last_rank"] = None
+    user["alerted"] = False
+    await save_user_async(uid, user)
+    await update_rank(membre, 0.0, announce=False)
+    try:
+        await interaction.followup.send(
+            f"✅ Heures vocales de {membre.mention} réinitialisées (0h, tous les rangs retirés).", ephemeral=True
+        )
+    except discord.NotFound:
+        print("⚠️ /resetheures : token expiré")
+    except Exception as e:
+        print(f"❌ /resetheures followup failed: {e}")
+
+
 @bot.tree.command(name="testrank", description="[ADMIN] Tester l'image d'annonce de rank")
 @app_commands.default_permissions(administrator=True)
 @app_commands.checks.has_permissions(administrator=True)
