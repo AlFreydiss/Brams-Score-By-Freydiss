@@ -186,7 +186,7 @@ CHAR_JIKAN_IDS = {
     "Dio Brando": 36,
     # Fairy Tail
     "Natsu Dragneel": 5187,
-    "Erza Scarlet": 9749,
+    "Erza Scarlet": 5189,
     "Gray Fullbuster": 9748,
     # SNK
     "Levi Ackerman": 290124,
@@ -730,6 +730,20 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True, da
     if ranks_to_add or ranks_to_remove:
         print(f"[RANK] {member.display_name} : +{ranks_to_add} -{ranks_to_remove} | highest={new_highest_rank}")
 
+def _load_font(path: str, size: int):
+    try:
+        return ImageFont.truetype(path, size)
+    except Exception:
+        return ImageFont.load_default()
+
+_CITE_FONT_DECO    = _load_font("KOMIKAX_.ttf",          300)
+_CITE_FONT_CHAR    = _load_font("PirataOne-Regular.ttf",   76)
+_CITE_FONT_ANIME   = _load_font("Righteous-Regular.ttf",   36)
+_CITE_FONT_QUOTE   = _load_font("Righteous-Regular.ttf",   46)
+_CITE_FONT_QUOTE_S = _load_font("Righteous-Regular.ttf",   33)
+_CITE_FONT_FOOTER  = _load_font("Righteous-Regular.ttf",   13)
+
+
 async def make_citation_image(quote_data: dict) -> io.BytesIO:
     """Génère une carte cinématique 1200x675 — style Whitebeard : fond sombre, portrait droit, texte blanc."""
     W, H = 1200, 675
@@ -839,12 +853,12 @@ async def make_citation_image(quote_data: dict) -> io.BytesIO:
             lines.append(cur)
         return lines
 
-    font_deco    = _font("KOMIKAX_.ttf",         300)
-    font_char    = _font("PirataOne-Regular.ttf",  76)
-    font_anime   = _font("Righteous-Regular.ttf",  36)
-    font_quote   = _font("Righteous-Regular.ttf",  46)
-    font_quote_s = _font("Righteous-Regular.ttf",  33)
-    font_footer  = _font("Righteous-Regular.ttf",  13)
+    font_deco    = _CITE_FONT_DECO
+    font_char    = _CITE_FONT_CHAR
+    font_anime   = _CITE_FONT_ANIME
+    font_quote   = _CITE_FONT_QUOTE
+    font_quote_s = _CITE_FONT_QUOTE_S
+    font_footer  = _CITE_FONT_FOOTER
 
     TX = 56   # marge gauche
     TW = 640  # largeur max zone texte
@@ -2008,6 +2022,7 @@ _CHAR_STATIC_URLS: dict[str, str] = {
     "Hinata Hyuga":        "https://cdn.myanimelist.net/images/characters/6/278736.jpg",
     # Fairy Tail
     "Natsu Dragneel":      "https://cdn.myanimelist.net/images/characters/15/594274.jpg",
+    "Erza Scarlet":        "https://cdn.myanimelist.net/images/characters/12/492254.jpg",
     # Hunter x Hunter
     "Killua Zoldyck":      "https://cdn.myanimelist.net/images/characters/2/327920.jpg",
     "Hisoka Morow":        "https://cdn.myanimelist.net/images/characters/9/531213.jpg",
@@ -2134,10 +2149,11 @@ async def _fetch_char_image_bytes(name: str) -> bytes | None:
                     raw = await resp.read()
                     _CHAR_IMG_BYTES_CACHE[name] = raw
                     return raw
+                if resp.status == 404:
+                    _CHAR_IMG_BYTES_CACHE[name] = None
                 print(f"[CITATION] DL image HTTP {resp.status} pour '{name}'")
     except Exception as e:
         print(f"[CITATION] DL image erreur '{name}': {e}")
-    _CHAR_IMG_BYTES_CACHE[name] = None
     return None
 
 async def _citation_handler(interaction: discord.Interaction, perso: str = None):
@@ -2405,6 +2421,7 @@ _QUIZ_CATEGORIES: dict[str, str] = {
     "fma":          "Fullmetal Alchemist Brotherhood UNIQUEMENT (alchimie, Homoncules, arcs, personnages)",
     "chainsaw":     "Chainsaw Man UNIQUEMENT (Diables, contrats, Chasseurs, arcs, personnages)",
     "black_clover": "Black Clover UNIQUEMENT (magie, grimoires, Chevaliers Magiques, arcs, personnages)",
+    "citation":     "citations célèbres d'animés — mode spécial (généré depuis QUOTES_DB)",
 }
 
 # System prompt strict
@@ -2454,7 +2471,7 @@ async def _generate_quiz_questions(n: int, category: str = "general", seen_quest
             response = await litellm.acompletion(
                 model=_GROQ_MODEL,
                 api_key=api_key,
-                max_tokens=3000,
+                max_tokens=4096,
                 temperature=0.9,
                 response_format={"type": "json_object"},
                 messages=[
@@ -2508,6 +2525,43 @@ async def _generate_quiz_questions(n: int, category: str = "general", seen_quest
 
     print(f"[QUIZ] Echec total apres 3 tentatives. Derniere erreur : {last_error}")
     return [], last_error
+
+
+def _generate_citation_quiz(n: int, seen_questions: list[str] | None = None) -> tuple:
+    """Génère n questions 'Qui a dit cette citation ?' depuis QUOTES_DB."""
+    if len(QUOTES_DB) < 4:
+        return [], "QUOTES_DB trop petite pour générer un quiz de citations."
+
+    seen_set = set(seen_questions or [])
+    # Pool : toutes les citations sauf celles déjà vues
+    pool = [q for q in QUOTES_DB if q["quote"] not in seen_set]
+    if len(pool) < max(1, n):
+        pool = list(QUOTES_DB)  # reset si épuisé
+
+    picked = random.sample(pool, min(n, len(pool)))
+    questions = []
+    for item in picked:
+        correct = item["character"]
+        # Mauvaises réponses : autres personnages du même anime en priorité, sinon n'importe
+        same_anime = list({q["character"] for q in QUOTES_DB if q["anime"] == item["anime"] and q["character"] != correct})
+        others     = list({q["character"] for q in QUOTES_DB if q["character"] != correct})
+        wrong_pool = same_anime if len(same_anime) >= 3 else others
+        wrongs = random.sample(wrong_pool, min(3, len(wrong_pool)))
+        if len(wrongs) < 3:
+            # Complète si pas assez de mauvaises réponses
+            extra = [q["character"] for q in QUOTES_DB if q["character"] != correct and q["character"] not in wrongs]
+            wrongs += random.sample(extra, min(3 - len(wrongs), len(extra)))
+        questions.append({
+            "question":          f"💬 Qui a dit : *\"{item['quote']}\"*",
+            "bonne_reponse":     correct,
+            "mauvaises_reponses": wrongs[:3],
+            "anime":             item["anime"],
+            "difficulte":        "moyen",
+            "type":              "personnage",
+            "explication":       f"Cette réplique emblématique est de **{correct}** dans *{item['anime']}*.",
+        })
+    return questions, ""
+
 
 class _QuizSession:
     __slots__ = ("questions", "idx", "score", "points", "best_combo", "combo", "user_id", "interaction", "category")
@@ -2714,12 +2768,13 @@ class _QuizCategorySelect(discord.ui.Select):
             ("dbz",          "🏋️ Dragon Ball Z",        "Saiyans, transformations, arcs"),
             ("hxh",          "🎯 Hunter x Hunter",       "Nen, Gon, Killua, arcs"),
             ("jojo",         "✨ JoJo's Bizarre Adv.",   "Stands, parties, antagonistes"),
-            ("demon_slayer", "🔥 Demon Slayer",          "Respirations, Piliers, démons"),
+            ("demon_slayer", "⚔️ Demon Slayer",          "Respirations, Piliers, démons"),
             ("mha",          "💪 My Hero Academia",      "Alter, U.A., League of Villains"),
             ("jjk",          "👁️ Jujutsu Kaisen",       "Techniques maudites, Fléaux, grades"),
             ("fma",          "⚗️ Fullmetal Alchemist",  "Alchimie, Homoncules, arcs"),
             ("chainsaw",     "🪚 Chainsaw Man",          "Diables, contrats, Chasseurs"),
             ("black_clover", "🍀 Black Clover",          "Magie, grimoires, Chevaliers"),
+            ("citation",     "💬 Devine la Citation",    "Qui a dit cette réplique ?"),
         ]
         options = [
             discord.SelectOption(label=label, value=val, description=desc)
@@ -2763,6 +2818,7 @@ async def _start_quiz_session(inter: discord.Interaction, n: int, category: str 
         "demon_slayer": "Demon Slayer", "mha": "My Hero Academia",
         "jjk": "Jujutsu Kaisen", "fma": "Fullmetal Alchemist",
         "chainsaw": "Chainsaw Man", "black_clover": "Black Clover",
+        "citation": "Devine la Citation",
     }
     cat_display = cat_labels.get(category, "anime")
     loading_embed = discord.Embed(
@@ -2776,7 +2832,10 @@ async def _start_quiz_session(inter: discord.Interaction, n: int, category: str 
     except Exception as e:
         print(f"⚠️ Quiz loading send failed: {e}")
 
-    questions, err = await _generate_quiz_questions(n, category, seen_questions=QUIZ_USER_HISTORY.get(uid))
+    if category == "citation":
+        questions, err = _generate_citation_quiz(n, seen_questions=QUIZ_USER_HISTORY.get(uid))
+    else:
+        questions, err = await _generate_quiz_questions(n, category, seen_questions=QUIZ_USER_HISTORY.get(uid))
 
     # Filtre anti-répétition : retire les questions déjà vues par cet utilisateur
     user_seen = set(QUIZ_USER_HISTORY.get(uid, []))
@@ -2872,12 +2931,13 @@ async def _quiz_entry(interaction: discord.Interaction, category: str = ""):
     app_commands.Choice(name="🏋️ Dragon Ball Z",        value="dbz"),
     app_commands.Choice(name="🎯 Hunter x Hunter",       value="hxh"),
     app_commands.Choice(name="✨ JoJo's Bizarre Adv.",  value="jojo"),
-    app_commands.Choice(name="🔥 Demon Slayer",          value="demon_slayer"),
+    app_commands.Choice(name="⚔️ Demon Slayer",          value="demon_slayer"),
     app_commands.Choice(name="💪 My Hero Academia",      value="mha"),
     app_commands.Choice(name="👁️ Jujutsu Kaisen",      value="jjk"),
     app_commands.Choice(name="⚗️ Fullmetal Alchemist",  value="fma"),
     app_commands.Choice(name="🪚 Chainsaw Man",          value="chainsaw"),
     app_commands.Choice(name="🍀 Black Clover",          value="black_clover"),
+    app_commands.Choice(name="💬 Devine la Citation",    value="citation"),
 ])
 async def quizz(interaction: discord.Interaction, categorie: str = ""):
     await _quiz_entry(interaction, categorie)
