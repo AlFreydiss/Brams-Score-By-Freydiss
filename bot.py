@@ -2001,7 +2001,9 @@ Réponds UNIQUEMENT en JSON valide, sans texte avant ou après, avec ce format e
 Varie les animés (Naruto, DBZ, One Piece, Bleach, Death Note, AOT, HxH, FMA, JoJo, Fairy Tail...), \
 les thèmes (personnages, pouvoirs, arcs, auteurs) et les niveaux de difficulté."""
 
-async def _generate_quiz_questions(n: int) -> list:
+async def _generate_quiz_questions(n: int) -> tuple:
+    """Génère n questions via Claude. Retourne (questions: list, erreur: str)."""
+    last_error = ""
     for attempt in range(3):
         try:
             def _call():
@@ -2012,16 +2014,20 @@ async def _generate_quiz_questions(n: int) -> list:
                 )
             response = await asyncio.to_thread(_call)
             raw = response.content[0].text.strip()
-            # Extraire le JSON (robuste si Claude ajoute du texte autour)
+            print(f"[QUIZ] Réponse brute (attempt {attempt+1}) : {raw[:300]}")
             match = re.search(r'\[.*\]', raw, re.DOTALL)
             if match:
                 questions = json.loads(match.group())
                 if isinstance(questions, list) and len(questions) > 0:
-                    return questions
+                    print(f"[QUIZ] ✅ {len(questions)} questions générées avec succès")
+                    return questions, ""
+            last_error = "Réponse non parseable (JSON vide ou malformé)"
         except Exception as e:
-            print(f"⚠️ Quiz génération attempt {attempt+1}/3 : {e}")
-        await asyncio.sleep(1)
-    return []
+            last_error = f"{type(e).__name__}: {e}"
+            print(f"⚠️ Quiz génération attempt {attempt+1}/3 : {last_error}")
+        await asyncio.sleep(1.5)
+    print(f"❌ Quiz échec total après 3 tentatives. Dernière erreur : {last_error}")
+    return [], last_error
 
 class _QuizSession:
     __slots__ = ("questions", "idx", "score", "best_combo", "combo", "user_id", "interaction")
@@ -2072,17 +2078,24 @@ async def _send_next_question(inter: discord.Interaction, sess: _QuizSession, fe
     choices_next = [q["bonne_reponse"]] + q["mauvaises_reponses"][:3]
     random.shuffle(choices_next)
     next_view = _QuizAnswerView(sess, choices_next, q["bonne_reponse"])
-    title = f"Question {sess.idx + 1} / {total}  —  {q.get('anime','?')} [{q.get('difficulte','?')}]"
-    desc = f"**{q['question']}**"
+
+    diff = q.get("difficulte", "?").lower()
+    diff_emoji = {"facile": "🟢", "moyen": "🟡", "difficile": "🔴"}.get(diff, "⚪")
+    desc = f"{diff_emoji} *{diff.capitalize()}* — {q.get('anime', '?')}\n\n**{q['question']}**"
     if feedback:
-        desc = f"{feedback}\n\n{desc}"
-    embed = discord.Embed(title=title, description=desc, color=discord.Color.from_rgb(100, 50, 200))
-    embed.set_footer(text="Tu as 60 secondes pour répondre")
+        desc = f"{feedback}\n\n━━━━━━━━━━━━━━━━━━━━\n{desc}"
+
+    embed = discord.Embed(
+        title=f"❓ Question {sess.idx + 1} / {total}",
+        description=desc,
+        color=discord.Color.from_rgb(100, 50, 200)
+    )
+    embed.set_footer(text=f"⏱️ 60 secondes • Score : {sess.score}/{sess.idx} • Combo : x{sess.combo}")
     try:
         msg = await inter.followup.send(embed=embed, view=next_view)
         next_view.message = msg
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"❌ _send_next_question followup failed: {e}")
 
 
 class _AnswerButton(discord.ui.Button):
@@ -2195,49 +2208,66 @@ class _DurationView(discord.ui.View):
         self.add_item(_QuizSelect(user_id))
 
 async def _start_quiz_session(inter: discord.Interaction, n: int):
+    """Lance une session quiz : loading → génération → première question."""
     uid = inter.user.id
     if uid in QUIZ_SESSIONS:
-        try:
-            await inter.followup.send("Tu as déjà un quiz en cours !", ephemeral=True)
-        except Exception:
-            pass
+        await inter.followup.send("❗ Tu as déjà un quiz en cours !", ephemeral=True)
         return
 
+    # Loading embed (remplace le deferred invisible par un message visible)
     loading_embed = discord.Embed(
-        description=f"Génération de **{n} questions** par l'IA... ⏳",
+        title="🎌 Génération du quiz...",
+        description=(
+            f"L'IA prépare **{n} questions** sur les animés ⏳\n"
+            f"*Naruto, One Piece, DBZ, AOT... que le meilleur gagne !*"
+        ),
         color=discord.Color.from_rgb(100, 50, 200)
     )
+    loading_msg = None
     try:
-        await inter.followup.send(embed=loading_embed)
-    except Exception:
-        pass
+        loading_msg = await inter.followup.send(embed=loading_embed)
+    except Exception as e:
+        print(f"⚠️ Quiz loading send failed: {e}")
 
-    questions = await _generate_quiz_questions(n)
+    questions, err = await _generate_quiz_questions(n)
+
     if not questions:
+        # Afficher le vrai message d'erreur
+        err_display = f"\n\n```{err[:300]}```" if err else ""
+        error_embed = discord.Embed(
+            title="❌ Génération impossible",
+            description=(
+                f"L'IA n'a pas pu créer les questions.{err_display}\n\n"
+                f"**Causes possibles :**\n"
+                f"• Clé API `ANTHROPIC_API_KEY` absente ou invalide\n"
+                f"• Limite de requêtes atteinte (rate limit)\n"
+                f"• Problème réseau temporaire\n\n"
+                f"*Réessaie dans quelques secondes.*"
+            ),
+            color=discord.Color.red()
+        )
         try:
-            await inter.followup.send("❌ Impossible de générer les questions. Réessaie dans un instant.", ephemeral=True)
-        except Exception:
-            pass
+            # Éditer le message de loading pour afficher l'erreur
+            if loading_msg:
+                await loading_msg.edit(embed=error_embed)
+            else:
+                await inter.followup.send(embed=error_embed)
+        except Exception as e:
+            print(f"❌ Quiz error embed failed: {e}")
         return
 
     session = _QuizSession(questions, uid, inter)
     QUIZ_SESSIONS[uid] = session
 
-    q = questions[0]
-    choices = [q["bonne_reponse"]] + q["mauvaises_reponses"][:3]
-    random.shuffle(choices)
-    view = _QuizAnswerView(session, choices, q["bonne_reponse"])
-    embed = discord.Embed(
-        title=f"Question 1 / {len(questions)}  —  {q.get('anime','?')} [{q.get('difficulte','?')}]",
-        description=f"**{q['question']}**",
-        color=discord.Color.from_rgb(100, 50, 200)
-    )
-    embed.set_footer(text="Tu as 60 secondes pour répondre")
-    try:
-        msg = await inter.followup.send(embed=embed, view=view)
-        view.message = msg
-    except Exception:
-        pass
+    # Supprimer le message de loading puis envoyer la première question
+    if loading_msg:
+        try:
+            await loading_msg.delete()
+        except Exception:
+            pass
+
+    # On réutilise _send_next_question (chemin unique, pas de duplication)
+    await _send_next_question(inter, session)
 
 async def _quiz_entry(interaction: discord.Interaction):
     """Point d'entrée commun pour /quiz et /quizz."""
