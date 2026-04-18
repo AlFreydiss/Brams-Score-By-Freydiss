@@ -2150,19 +2150,40 @@ _CHAR_IMG_BYTES_CACHE: dict[str, bytes | None] = {}
 _CHAR_IMG_URL = "cdn.myanimelist.net/images/characters"
 
 def _name_matches(searched: str, returned: str) -> bool:
-    """Vérifie que le nom retourné par l'API correspond bien au nom cherché.
-    Toutes les parties significatives (>2 chars) du nom cherché doivent apparaître
-    dans le nom retourné (insensible à la casse). Évite les faux positifs.
-    """
+    """Toutes les parties significatives (>2 chars) du nom cherché
+    doivent apparaître dans le nom retourné — évite les faux positifs."""
     parts = [p.lower() for p in searched.split() if len(p) > 2]
     r = returned.lower()
     return bool(parts) and all(p in r for p in parts)
 
+async def _jikan_get(sess: aiohttp.ClientSession, url: str, retries: int = 2) -> dict | None:
+    """GET Jikan avec retry automatique sur 429 (rate-limit)."""
+    for attempt in range(retries + 1):
+        try:
+            async with sess.get(url, timeout=aiohttp.ClientTimeout(total=8)) as resp:
+                if resp.status == 200:
+                    return await resp.json()
+                if resp.status == 429:
+                    wait = 1.5 * (attempt + 1)
+                    print(f"[CITATION] 429 rate-limit, retry dans {wait}s ({url})")
+                    await asyncio.sleep(wait)
+                    continue
+                print(f"[CITATION] HTTP {resp.status} pour {url}")
+                return None
+        except asyncio.TimeoutError:
+            print(f"[CITATION] timeout {url} (tentative {attempt+1})")
+        except Exception as e:
+            print(f"[CITATION] erreur {url}: {e}")
+            return None
+    return None
+
 async def _get_char_image_url(name: str) -> str | None:
-    """Récupère l'URL image du personnage via Jikan API avec corrélation stricte nom↔image.
-    - ID connu → fetch direct + validation URL pattern.
-    - Pas d'ID → search, toutes les parties du nom doivent correspondre.
-    Rejette tout ce qui n'est pas cdn.myanimelist.net/images/characters/...
+    """Récupère l'URL image Jikan avec corrélation stricte nom↔image.
+
+    - ID connu  → fetch direct par ID (garanti bon perso), accepte toute URL myanimelist.
+    - Sans ID   → recherche par nom, toutes les parties doivent correspondre,
+                  URL filtrée sur /images/characters/ pour éviter les logos.
+    Retry automatique sur 429. Résultat mis en cache en mémoire.
     """
     if name in _CHAR_IMAGE_CACHE:
         return _CHAR_IMAGE_CACHE[name]
@@ -2174,44 +2195,42 @@ async def _get_char_image_url(name: str) -> str | None:
     try:
         async with aiohttp.ClientSession() as sess:
             if jikan_id:
-                api_url = f"https://api.jikan.moe/v4/characters/{jikan_id}"
-                async with sess.get(api_url, timeout=aiohttp.ClientTimeout(total=6)) as resp:
-                    if resp.status == 200:
-                        data = (await resp.json()).get("data", {})
-                        returned_name = data.get("name", "")
-                        candidate = data.get("images", {}).get("jpg", {}).get("image_url", "")
-                        if _CHAR_IMG_URL in candidate:
-                            img_url = candidate
-                            print(f"[CITATION] ✅ ID {jikan_id} → '{returned_name}' (cherché: '{name}')")
-                        else:
-                            print(f"[CITATION] ⚠️ ID {jikan_id} → URL hors pattern: {candidate}")
+                # ID connu → fetch direct, on fait confiance à l'ID
+                data_root = await _jikan_get(sess, f"https://api.jikan.moe/v4/characters/{jikan_id}")
+                if data_root:
+                    data = data_root.get("data", {})
+                    returned_name = data.get("name", "")
+                    candidate = data.get("images", {}).get("jpg", {}).get("image_url", "")
+                    # Accepte toute URL myanimelist (pas juste /characters/)
+                    if candidate and "myanimelist.net" in candidate:
+                        img_url = candidate
+                        print(f"[CITATION] OK id={jikan_id} '{returned_name}' → '{name}'")
+                    else:
+                        print(f"[CITATION] id={jikan_id} URL inattendue: {candidate!r}")
             else:
-                search_url = f"https://api.jikan.moe/v4/characters?q={_uq(name)}&limit=8"
-                async with sess.get(search_url, timeout=aiohttp.ClientTimeout(total=6)) as resp:
-                    if resp.status == 200:
-                        chars = (await resp.json()).get("data", [])
-                        for char in chars:
-                            returned_name = char.get("name", "")
-                            if not _name_matches(name, returned_name):
-                                print(f"[CITATION] ✗ search skip '{returned_name}' (cherché: '{name}')")
-                                continue
-                            candidate = char.get("images", {}).get("jpg", {}).get("image_url", "")
-                            if _CHAR_IMG_URL in candidate:
-                                img_url = candidate
-                                print(f"[CITATION] ✅ search '{returned_name}' → image OK (cherché: '{name}')")
-                                break
-                            print(f"[CITATION] ✗ search '{returned_name}' URL hors pattern: {candidate}")
-                        else:
-                            if not img_url:
-                                print(f"[CITATION] ✗ aucun match search pour '{name}'")
+                # Pas d'ID → recherche par nom avec validation stricte
+                data_root = await _jikan_get(sess, f"https://api.jikan.moe/v4/characters?q={_uq(name)}&limit=8")
+                if data_root:
+                    for char in data_root.get("data", []):
+                        returned_name = char.get("name", "")
+                        if not _name_matches(name, returned_name):
+                            continue
+                        candidate = char.get("images", {}).get("jpg", {}).get("image_url", "")
+                        # Filtre logos MAL : doit être une image de personnage
+                        if candidate and _CHAR_IMG_URL in candidate:
+                            img_url = candidate
+                            print(f"[CITATION] OK search '{returned_name}' → '{name}'")
+                            break
+                    if not img_url:
+                        print(f"[CITATION] aucun match search pour '{name}'")
     except Exception as e:
-        print(f"[CITATION] Jikan erreur '{name}': {e}")
+        print(f"[CITATION] exception '{name}': {e}")
 
     _CHAR_IMAGE_CACHE[name] = img_url
     return img_url
 
 async def _fetch_char_image_bytes(name: str) -> bytes | None:
-    """Télécharge et cache les bytes de l'image du personnage."""
+    """Télécharge et met en cache les bytes PIL de l'image du personnage."""
     if name in _CHAR_IMG_BYTES_CACHE:
         return _CHAR_IMG_BYTES_CACHE[name]
     url = await _get_char_image_url(name)
@@ -2220,13 +2239,14 @@ async def _fetch_char_image_bytes(name: str) -> bytes | None:
         return None
     try:
         async with aiohttp.ClientSession() as sess:
-            async with sess.get(url, timeout=aiohttp.ClientTimeout(total=8)) as resp:
+            async with sess.get(url, timeout=aiohttp.ClientTimeout(total=10)) as resp:
                 if resp.status == 200:
-                    data = await resp.read()
-                    _CHAR_IMG_BYTES_CACHE[name] = data
-                    return data
+                    raw = await resp.read()
+                    _CHAR_IMG_BYTES_CACHE[name] = raw
+                    return raw
+                print(f"[CITATION] DL image HTTP {resp.status} pour '{name}'")
     except Exception as e:
-        print(f"[CITATION] Erreur DL image {name}: {e}")
+        print(f"[CITATION] DL image erreur '{name}': {e}")
     _CHAR_IMG_BYTES_CACHE[name] = None
     return None
 
