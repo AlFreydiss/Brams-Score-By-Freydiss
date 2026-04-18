@@ -290,6 +290,144 @@ CITATIONS = [
 ]
 
 # ─────────────────────────────────────────
+#  QUOTES_DB — 150 citations anime (format image premium)
+# ─────────────────────────────────────────
+QUOTES_DB = [
+    {"quote": "Si tu ne peux pas vaincre la peur, tu ne pourras jamais vaincre la mort.", "character": "Levi Ackerman", "anime": "Attack on Titan", "color": "#2C2F33"},
+    {"quote": "Les gens qui sourient même quand ils sont tristes… ce sont les plus forts.", "character": "Naruto Uzumaki", "anime": "Naruto", "color": "#FF6600"},
+    {"quote": "La justice n'est qu'un mot que les forts utilisent pour opprimer les faibles.", "character": "Light Yagami", "anime": "Death Note", "color": "#FFFFFF"},
+    {"quote": "Je vais devenir le Roi des Pirates !", "character": "Monkey D. Luffy", "anime": "One Piece", "color": "#FF4500"},
+    {"quote": "La solitude, c'est pire que la mort.", "character": "Itachi Uchiha", "anime": "Naruto", "color": "#000000"},
+    {"quote": "Le monde n'est pas juste. Mais c'est pour ça qu'il faut le rendre juste.", "character": "Tanjiro Kamado", "anime": "Demon Slayer", "color": "#E6392F"},
+    {"quote": "Les rêves des faibles ne se réalisent jamais.", "character": "Eren Yeager", "anime": "Attack on Titan", "color": "#4A4A4A"},
+    {"quote": "Je ne suis pas un héros. Je suis juste un homme qui veut protéger ce qui lui est précieux.", "character": "Luffy", "anime": "One Piece", "color": "#FF0000"},
+    {"quote": "La haine engendre la haine. L'amour engendre l'amour.", "character": "Hinata Hyuga", "anime": "Naruto", "color": "#FFB6C1"},
+    {"quote": "Les gens meurent quand on les tue.", "character": "Kyoko Kirigiri", "anime": "Danganronpa", "color": "#8A2BE2"},
+    {"quote": "Je ne perds jamais. Soit je gagne, soit j'apprends.", "character": "Luffy", "anime": "One Piece", "color": "#FF0000"},
+    {"quote": "La faiblesse n'est pas un crime. Fuir l'est.", "character": "Levi Ackerman", "anime": "Attack on Titan", "color": "#2C2F33"},
+    {"quote": "Je vais devenir Hokage !", "character": "Naruto Uzumaki", "anime": "Naruto", "color": "#FF6600"},
+    {"quote": "La mort n'est pas la fin. C'est juste le début d'une nouvelle aventure.", "character": "Edward Elric", "anime": "Fullmetal Alchemist", "color": "#FFD700"},
+    {"quote": "Si tu ne peux pas protéger ce que tu aimes, alors à quoi sers-tu ?", "character": "Guts", "anime": "Berserk", "color": "#4B0082"},
+    {"quote": "Je ne suis pas fort parce que je gagne. Je gagne parce que je suis fort.", "character": "Saitama", "anime": "One Punch Man", "color": "#FF4500"},
+    {"quote": "La peur est une prison. Le courage est la clé.", "character": "Eren Yeager", "anime": "Attack on Titan", "color": "#4A4A4A"},
+    {"quote": "Un homme qui ne peut pas protéger sa famille ne mérite pas d'en avoir une.", "character": "Thorfinn", "anime": "Vinland Saga", "color": "#8B4513"},
+    {"quote": "Je ne veux pas de pitié. Je veux qu'on me respecte.", "character": "Vegeta", "anime": "Dragon Ball Z", "color": "#0000FF"},
+    {"quote": "La vie est courte. Il faut la vivre à fond.", "character": "Spike Spiegel", "anime": "Cowboy Bebop", "color": "#00BFFF"},
+    {"quote": "Même dans les ténèbres, il y a toujours une lumière.", "character": "Gon Freecss", "anime": "Hunter x Hunter", "color": "#00FF7F"},
+    {"quote": "Je n'ai pas besoin d'amis. J'ai besoin de résultats.", "character": "Hisoka Morow", "anime": "Hunter x Hunter", "color": "#FF00FF"},
+    {"quote": "Le passé ne définit pas qui tu es. Ce sont tes choix qui le font.", "character": "Zuko", "anime": "Avatar: The Last Airbender", "color": "#FF4500"},
+    {"quote": "Je vais tout détruire... et tout reconstruire.", "character": "Pain", "anime": "Naruto", "color": "#8B0000"},
+    {"quote": "La liberté, c'est tout ce qui compte.", "character": "Eren Yeager", "anime": "Attack on Titan", "color": "#4A4A4A"},
+    {"quote": "Un vrai roi protège son peuple, pas l'inverse.", "character": "Lelouch vi Britannia", "anime": "Code Geass", "color": "#800080"},
+    {"quote": "Je ne pleure pas parce que je suis faible. Je pleure parce que j'ai été fort trop longtemps.", "character": "Hinata Hyuga", "anime": "Naruto", "color": "#FFB6C1"},
+    {"quote": "La vengeance est un plat qui se mange froid.", "character": "Sasuke Uchiha", "anime": "Naruto", "color": "#00008B"},
+    {"quote": "Je ne suis pas parfait, mais je suis moi.", "character": "Monkey D. Luffy", "anime": "One Piece", "color": "#FF4500"},
+    {"quote": "Les mots sont des armes plus puissantes que les épées.", "character": "Light Yagami", "anime": "Death Note", "color": "#FFFFFF"},
+    {"quote": "Je ne me bats pas pour gagner. Je me bats pour ne pas perdre.", "character": "Ichigo Kurosaki", "anime": "Bleach", "color": "#FF0000"},
+    {"quote": "La solitude est la plus grande des douleurs.", "character": "Itachi Uchiha", "anime": "Naruto", "color": "#000000"},
+    {"quote": "Je suis le roi des pirates !", "character": "Monkey D. Luffy", "anime": "One Piece", "color": "#FF4500"},
+    {"quote": "La vie sans rêves n'a aucun sens.", "character": "Natsu Dragneel", "anime": "Fairy Tail", "color": "#FF4500"},
+    {"quote": "Je vais te tuer... lentement.", "character": "Hisoka Morow", "anime": "Hunter x Hunter", "color": "#FF00FF"},
+    {"quote": "La force, ce n'est pas tout. C'est le cœur qui compte.", "character": "Tanjiro Kamado", "anime": "Demon Slayer", "color": "#E6392F"},
+    {"quote": "Je ne suis pas un monstre. Je suis juste différent.", "character": "Ken Kaneki", "anime": "Tokyo Ghoul", "color": "#FFFFFF"},
+    {"quote": "Les rêves deviennent réalité si tu y crois assez fort.", "character": "Asta", "anime": "Black Clover", "color": "#0000FF"},
+    {"quote": "Je ne regrette rien.", "character": "Lelouch vi Britannia", "anime": "Code Geass", "color": "#800080"},
+    {"quote": "La vérité est souvent douloureuse.", "character": "Edward Elric", "anime": "Fullmetal Alchemist", "color": "#FFD700"},
+    {"quote": "Je suis né pour détruire.", "character": "Eren Yeager", "anime": "Attack on Titan", "color": "#4A4A4A"},
+    {"quote": "La paix n'existe pas. Il n'y a que des moments de calme avant la tempête.", "character": "Pain", "anime": "Naruto", "color": "#8B0000"},
+    {"quote": "Je vais te faire regretter d'être né.", "character": "Vegeta", "anime": "Dragon Ball Z", "color": "#0000FF"},
+    {"quote": "La vie est un jeu. Et je suis le joueur ultime.", "character": "Joker", "anime": "Persona 5", "color": "#FF00FF"},
+    {"quote": "Je n'abandonnerai jamais.", "character": "Goku", "anime": "Dragon Ball Z", "color": "#FF4500"},
+    {"quote": "Les amis sont la famille que l'on choisit.", "character": "Nami", "anime": "One Piece", "color": "#FF69B4"},
+    {"quote": "Je suis le plus fort.", "character": "Saitama", "anime": "One Punch Man", "color": "#FF4500"},
+    {"quote": "La peur est ce qui nous rend humains.", "character": "Mikasa Ackerman", "anime": "Attack on Titan", "color": "#8B0000"},
+    {"quote": "Je vais changer le monde.", "character": "Lelouch vi Britannia", "anime": "Code Geass", "color": "#800080"},
+    {"quote": "La justice, c'est ce que je décide.", "character": "Light Yagami", "anime": "Death Note", "color": "#FFFFFF"},
+    {"quote": "Je ne suis pas seul.", "character": "Ichigo Kurosaki", "anime": "Bleach", "color": "#FF0000"},
+    {"quote": "La liberté est le plus beau des cadeaux.", "character": "Luffy", "anime": "One Piece", "color": "#FF4500"},
+    {"quote": "Je vais devenir le plus fort.", "character": "Asta", "anime": "Black Clover", "color": "#0000FF"},
+    {"quote": "La mort n'est pas la fin.", "character": "Spike Spiegel", "anime": "Cowboy Bebop", "color": "#00BFFF"},
+    {"quote": "Je suis invincible.", "character": "Saitama", "anime": "One Punch Man", "color": "#FF4500"},
+    {"quote": "Les rêves valent la peine d'être poursuivis.", "character": "Natsu Dragneel", "anime": "Fairy Tail", "color": "#FF4500"},
+    {"quote": "Je ne suis pas fait pour être normal.", "character": "Light Yagami", "anime": "Death Note", "color": "#FFFFFF"},
+    {"quote": "La vraie force, c'est de se relever après avoir tout perdu.", "character": "Goku", "anime": "Dragon Ball Z", "color": "#FF4500"},
+    {"quote": "Je vais te surpasser.", "character": "Vegeta", "anime": "Dragon Ball Z", "color": "#0000FF"},
+    {"quote": "La vie est belle quand on a des amis.", "character": "Nami", "anime": "One Piece", "color": "#FF69B4"},
+    {"quote": "Je ne fais pas de promesses que je ne peux pas tenir.", "character": "Levi Ackerman", "anime": "Attack on Titan", "color": "#2C2F33"},
+    {"quote": "Je suis celui qui va devenir le Roi des Pirates.", "character": "Monkey D. Luffy", "anime": "One Piece", "color": "#FF4500"},
+    {"quote": "La douleur rend plus fort.", "character": "Naruto Uzumaki", "anime": "Naruto", "color": "#FF6600"},
+    {"quote": "Je ne suis pas un génie. Je suis juste quelqu'un qui travaille dur.", "character": "Rock Lee", "anime": "Naruto", "color": "#228B22"},
+    {"quote": "La vengeance n'apporte que de la souffrance.", "character": "Sasuke Uchiha", "anime": "Naruto", "color": "#00008B"},
+    {"quote": "Je vais protéger tout le monde.", "character": "Tanjiro Kamado", "anime": "Demon Slayer", "color": "#E6392F"},
+    {"quote": "La liberté est plus importante que la vie.", "character": "Eren Yeager", "anime": "Attack on Titan", "color": "#4A4A4A"},
+    {"quote": "Je suis le plus fort du monde.", "character": "Whitebeard", "anime": "One Piece", "color": "#FFFFFF"},
+    {"quote": "Les larmes ne résolvent rien.", "character": "Mikasa Ackerman", "anime": "Attack on Titan", "color": "#8B0000"},
+    {"quote": "Je vais tout changer.", "character": "Lelouch vi Britannia", "anime": "Code Geass", "color": "#800080"},
+    {"quote": "La vérité est souvent plus douloureuse que le mensonge.", "character": "Edward Elric", "anime": "Fullmetal Alchemist", "color": "#FFD700"},
+    {"quote": "Je ne me battrai jamais pour perdre.", "character": "Ichigo Kurosaki", "anime": "Bleach", "color": "#FF0000"},
+    {"quote": "La famille, c'est ce qu'il y a de plus important.", "character": "Goku", "anime": "Dragon Ball Z", "color": "#FF4500"},
+    {"quote": "Je suis né pour régner.", "character": "Lelouch vi Britannia", "anime": "Code Geass", "color": "#800080"},
+    {"quote": "La peur rend faible.", "character": "Eren Yeager", "anime": "Attack on Titan", "color": "#4A4A4A"},
+    {"quote": "Je vais devenir le plus grand Hokage.", "character": "Naruto Uzumaki", "anime": "Naruto", "color": "#FF6600"},
+    {"quote": "Les mots peuvent blesser plus que les coups.", "character": "Light Yagami", "anime": "Death Note", "color": "#FFFFFF"},
+    {"quote": "Je ne suis pas seul dans ce combat.", "character": "Tanjiro Kamado", "anime": "Demon Slayer", "color": "#E6392F"},
+    {"quote": "La vie continue, même après la perte.", "character": "Itachi Uchiha", "anime": "Naruto", "color": "#000000"},
+    {"quote": "Je vais te montrer ce qu'est la vraie force.", "character": "Saitama", "anime": "One Punch Man", "color": "#FF4500"},
+    {"quote": "La justice est subjective.", "character": "Light Yagami", "anime": "Death Note", "color": "#FFFFFF"},
+    {"quote": "Je ne reculerai jamais.", "character": "Luffy", "anime": "One Piece", "color": "#FF4500"},
+    {"quote": "Les rêves sont faits pour être réalisés.", "character": "Natsu Dragneel", "anime": "Fairy Tail", "color": "#FF4500"},
+    {"quote": "Je suis le roi.", "character": "Saitama", "anime": "One Punch Man", "color": "#FF4500"},
+    {"quote": "La vraie force vient du cœur.", "character": "Tanjiro Kamado", "anime": "Demon Slayer", "color": "#E6392F"},
+    {"quote": "Je vais changer le destin.", "character": "Lelouch vi Britannia", "anime": "Code Geass", "color": "#800080"},
+    {"quote": "La solitude est mon seul compagnon.", "character": "Itachi Uchiha", "anime": "Naruto", "color": "#000000"},
+    {"quote": "La vie est un combat.", "character": "Eren Yeager", "anime": "Attack on Titan", "color": "#4A4A4A"},
+    {"quote": "Les amis sont ma plus grande force.", "character": "Naruto Uzumaki", "anime": "Naruto", "color": "#FF6600"},
+    {"quote": "Je ne suis pas normal.", "character": "Ken Kaneki", "anime": "Tokyo Ghoul", "color": "#FFFFFF"},
+    {"quote": "La liberté est tout.", "character": "Luffy", "anime": "One Piece", "color": "#FF4500"},
+    {"quote": "Je vais devenir le plus grand.", "character": "Asta", "anime": "Black Clover", "color": "#0000FF"},
+    {"quote": "La mort n'est qu'un passage.", "character": "Spike Spiegel", "anime": "Cowboy Bebop", "color": "#00BFFF"},
+    {"quote": "Je ne regrette rien de ce que j'ai fait.", "character": "Lelouch vi Britannia", "anime": "Code Geass", "color": "#800080"},
+    {"quote": "La vérité fait mal, mais le mensonge tue.", "character": "Edward Elric", "anime": "Fullmetal Alchemist", "color": "#FFD700"},
+    {"quote": "Je vais tout détruire.", "character": "Eren Yeager", "anime": "Attack on Titan", "color": "#4A4A4A"},
+    {"quote": "Je suis né pour ça.", "character": "Goku", "anime": "Dragon Ball Z", "color": "#FF4500"},
+    {"quote": "Les rêves valent la peine d'être défendus.", "character": "Natsu Dragneel", "anime": "Fairy Tail", "color": "#FF4500"},
+    {"quote": "Je ne suis pas un monstre.", "character": "Ken Kaneki", "anime": "Tokyo Ghoul", "color": "#FFFFFF"},
+    {"quote": "La justice, c'est moi.", "character": "Light Yagami", "anime": "Death Note", "color": "#FFFFFF"},
+    {"quote": "Je vais protéger mes amis.", "character": "Naruto Uzumaki", "anime": "Naruto", "color": "#FF6600"},
+    {"quote": "La force vient de l'intérieur.", "character": "Tanjiro Kamado", "anime": "Demon Slayer", "color": "#E6392F"},
+    {"quote": "Je ne reculerai jamais.", "character": "Levi Ackerman", "anime": "Attack on Titan", "color": "#2C2F33"},
+    {"quote": "La vie est belle.", "character": "Spike Spiegel", "anime": "Cowboy Bebop", "color": "#00BFFF"},
+    {"quote": "Je suis invincible.", "character": "Saitama", "anime": "One Punch Man", "color": "#FF4500"},
+    {"quote": "La peur est pour les faibles.", "character": "Eren Yeager", "anime": "Attack on Titan", "color": "#4A4A4A"},
+    {"quote": "Je vais devenir le plus grand Hokage de tous les temps.", "character": "Naruto Uzumaki", "anime": "Naruto", "color": "#FF6600"},
+    {"quote": "La liberté est mon seul but.", "character": "Luffy", "anime": "One Piece", "color": "#FF4500"},
+    {"quote": "Je suis celui qui va tout changer.", "character": "Asta", "anime": "Black Clover", "color": "#0000FF"},
+    {"quote": "La solitude est ma seule amie.", "character": "Itachi Uchiha", "anime": "Naruto", "color": "#000000"},
+    {"quote": "Je suis le plus fort.", "character": "Vegeta", "anime": "Dragon Ball Z", "color": "#0000FF"},
+    {"quote": "Les rêves se réalisent si tu y crois.", "character": "Natsu Dragneel", "anime": "Fairy Tail", "color": "#FF4500"},
+    {"quote": "La justice est ce que je décide.", "character": "Light Yagami", "anime": "Death Note", "color": "#FFFFFF"},
+    {"quote": "Je vais te montrer la vraie force.", "character": "Saitama", "anime": "One Punch Man", "color": "#FF4500"},
+    {"quote": "La vie est un combat permanent.", "character": "Guts", "anime": "Berserk", "color": "#4B0082"},
+    {"quote": "Je vais tout reconstruire.", "character": "Pain", "anime": "Naruto", "color": "#8B0000"},
+    {"quote": "La vraie force vient du cœur.", "character": "Tanjiro Kamado", "anime": "Demon Slayer", "color": "#E6392F"},
+    {"quote": "Je ne reculerai jamais devant rien.", "character": "Levi Ackerman", "anime": "Attack on Titan", "color": "#2C2F33"},
+    {"quote": "Les amis sont ma famille.", "character": "Naruto Uzumaki", "anime": "Naruto", "color": "#FF6600"},
+    {"quote": "Je vais devenir le plus grand.", "character": "Goku", "anime": "Dragon Ball Z", "color": "#FF4500"},
+    {"quote": "La liberté est tout ce qui compte.", "character": "Luffy", "anime": "One Piece", "color": "#FF4500"},
+    {"quote": "La douleur rend plus fort.", "character": "Naruto Uzumaki", "anime": "Naruto", "color": "#FF6600"},
+    {"quote": "Je ne suis pas parfait, mais je suis moi.", "character": "Luffy", "anime": "One Piece", "color": "#FF4500"},
+    {"quote": "Je vais protéger tout le monde.", "character": "Tanjiro Kamado", "anime": "Demon Slayer", "color": "#E6392F"},
+    {"quote": "La solitude est ma seule compagne.", "character": "Itachi Uchiha", "anime": "Naruto", "color": "#000000"},
+    {"quote": "Je suis le plus fort du monde.", "character": "Whitebeard", "anime": "One Piece", "color": "#FFFFFF"},
+    {"quote": "La vie est belle quand on a des rêves.", "character": "Natsu Dragneel", "anime": "Fairy Tail", "color": "#FF4500"},
+    {"quote": "Je ne suis pas seul.", "character": "Ichigo Kurosaki", "anime": "Bleach", "color": "#FF0000"},
+    {"quote": "La liberté est mon seul but.", "character": "Eren Yeager", "anime": "Attack on Titan", "color": "#4A4A4A"},
+    {"quote": "Je vais devenir le Roi des Pirates.", "character": "Monkey D. Luffy", "anime": "One Piece", "color": "#FF4500"},
+    {"quote": "Je ne reculerai jamais.", "character": "Levi Ackerman", "anime": "Attack on Titan", "color": "#2C2F33"},
+]
+print(f"✅ {len(QUOTES_DB)} citations anime chargées.")
+
+# ─────────────────────────────────────────
 #  UTILITAIRES
 # ─────────────────────────────────────────
 def now_ts():
@@ -662,6 +800,109 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True, da
 
     if ranks_to_add or ranks_to_remove:
         print(f"[RANK] {member.display_name} : +{ranks_to_add} -{ranks_to_remove} | highest={new_highest_rank}")
+
+async def make_citation_image(quote_data: dict) -> io.BytesIO:
+    """Génère une carte premium 900x420 pour une citation anime."""
+    W, H = 900, 420
+
+    hex_c = quote_data["color"].lstrip("#")
+    # Ensure full 6-char hex (handles short values)
+    if len(hex_c) < 6:
+        hex_c = hex_c.ljust(6, "0")
+    accent = tuple(int(hex_c[i:i+2], 16) for i in (0, 2, 4))
+
+    # Garde une couleur d'accent lisible sur fond sombre
+    brightness = 0.299 * accent[0] + 0.587 * accent[1] + 0.114 * accent[2]
+    display_accent = accent if brightness > 30 else (180, 180, 180)
+
+    # Canvas RGBA fond sombre
+    bg = Image.new("RGBA", (W, H), (13, 15, 20, 255))
+
+    # Léger dégradé vertical (haut plus clair)
+    grad = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    gd = ImageDraw.Draw(grad)
+    for y in range(H):
+        a = int(12 * (1 - y / H))
+        gd.line([(0, y), (W, y)], fill=(255, 255, 255, a))
+    bg = Image.alpha_composite(bg, grad)
+
+    # Barre verticale accent gauche
+    bar_layer = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    ImageDraw.Draw(bar_layer).rectangle([(0, 0), (6, H)], fill=(*display_accent, 255))
+    bg = Image.alpha_composite(bg, bar_layer)
+
+    # Bordure fine accent
+    border_layer = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    ImageDraw.Draw(border_layer).rectangle([(7, 0), (W - 1, H - 1)], outline=(*display_accent, 55), width=1)
+    bg = Image.alpha_composite(bg, border_layer)
+
+    # Grand guillemet décoratif en transparence
+    deco_layer = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    try:
+        deco_font = ImageFont.truetype("KOMIKAX_.ttf", 210)
+    except Exception:
+        deco_font = ImageFont.load_default()
+    ImageDraw.Draw(deco_layer).text((18, -55), "\u201c", font=deco_font, fill=(*display_accent, 28))
+    bg = Image.alpha_composite(bg, deco_layer)
+
+    draw = ImageDraw.Draw(bg)
+
+    def _font(path, size):
+        try:
+            return ImageFont.truetype(path, size)
+        except Exception:
+            return ImageFont.load_default()
+
+    font_quote  = _font("Righteous-Regular.ttf", 23)
+    font_char   = _font("KOMIKAX_.ttf", 17)
+    font_anime  = _font("Righteous-Regular.ttf", 13)
+    font_footer = _font("Righteous-Regular.ttf", 11)
+
+    # Retour à la ligne automatique de la citation
+    raw_text = f'\u201c{quote_data["quote"]}\u201d'
+    max_w = W - 7 - 80
+    x0 = 46
+    words = raw_text.split()
+    lines, cur = [], ""
+    for word in words:
+        test = (cur + " " + word).strip()
+        if draw.textbbox((0, 0), test, font=font_quote)[2] <= max_w:
+            cur = test
+        else:
+            if cur:
+                lines.append(cur)
+            cur = word
+    if cur:
+        lines.append(cur)
+
+    line_h = 34
+    bottom_h = 95
+    block_h = len(lines) * line_h
+    start_y = max(28, (H - bottom_h - block_h) // 2)
+
+    for i, line in enumerate(lines):
+        draw.text((x0, start_y + i * line_h), line, font=font_quote, fill=(232, 232, 232))
+
+    # Séparateur
+    sep_y = H - bottom_h
+    draw.line([(x0, sep_y), (W - 40, sep_y)], fill=display_accent, width=1)
+
+    # Nom du personnage
+    draw.text((x0, sep_y + 12), f"— {quote_data['character']}", font=font_char, fill=display_accent)
+
+    # Anime
+    draw.text((x0, sep_y + 40), quote_data["anime"], font=font_anime, fill=(155, 155, 155))
+
+    # Watermark droite
+    footer = "⚓ BRAMS SCORE  |  by Freydiss"
+    fw = draw.textbbox((0, 0), footer, font=font_footer)[2]
+    draw.text((W - fw - 18, sep_y + 46), footer, font=font_footer, fill=(75, 75, 75))
+
+    buf = io.BytesIO()
+    bg.convert("RGB").save(buf, format="PNG", optimize=True)
+    buf.seek(0)
+    return buf
+
 
 async def make_rank_image(member: discord.Member, rank_name: str, hours_7d: float):
     CARD_W = 1100
@@ -1755,11 +1996,10 @@ async def chercher(interaction: discord.Interaction, membre: discord.Member):
 #     await interaction.followup.send(file=discord.File(img_buf, filename="wanted.png"))
 
 
-CITATION_HISTORY = []
+CITATION_HISTORY: list[str] = []
 
-@bot.tree.command(name="citation", description="Affiche une citation d'anime aléatoire")
-@app_commands.describe(perso="Nom du personnage (optionnel, sinon aléatoire)")
-async def citation(interaction: discord.Interaction, perso: str = None):
+async def _citation_handler(interaction: discord.Interaction, perso: str = None):
+    """Logique commune à /citation et /quote."""
     try:
         await interaction.response.defer()
     except discord.NotFound:
@@ -1769,49 +2009,71 @@ async def citation(interaction: discord.Interaction, perso: str = None):
         print(f"❌ /citation defer failed: {e}")
         return
 
+    # Filtrage par personnage si demandé
     if perso:
-        matches = [c for c in CITATIONS if perso.lower() in c["nom"].lower()]
-        if not matches:
-            noms = list(set(c["nom"] for c in CITATIONS))
+        pool = [q for q in QUOTES_DB if perso.lower() in q["character"].lower()]
+        if not pool:
+            chars = sorted(set(q["character"] for q in QUOTES_DB))
             await interaction.followup.send(
-                f"Personnage introuvable. Dispo : {', '.join(sorted(noms))}"
+                f"❌ Personnage introuvable.\n**Disponibles :** {', '.join(chars[:30])}{'…' if len(chars) > 30 else ''}",
+                ephemeral=True,
             )
             return
-        available = [c for c in matches if c["citation"] not in CITATION_HISTORY]
-        if not available:
-            CITATION_HISTORY.clear()
-            available = matches
-        data = random.choice(available)
     else:
-        available = [c for c in CITATIONS if c["citation"] not in CITATION_HISTORY]
-        if not available:
-            CITATION_HISTORY.clear()
-            available = list(CITATIONS)
-        data = random.choice(available)
-    CITATION_HISTORY.append(data["citation"])
+        pool = QUOTES_DB
+
+    # Anti-répétition simple : évite les citations déjà vues
+    fresh = [q for q in pool if q["quote"] not in CITATION_HISTORY]
+    if not fresh:
+        CITATION_HISTORY.clear()
+        fresh = pool
+    chosen = random.choice(fresh)
+    CITATION_HISTORY.append(chosen["quote"])
+
+    # Génération de l'image
+    try:
+        img_buf = await make_citation_image(chosen)
+    except Exception as e:
+        print(f"❌ make_citation_image: {e}")
+        img_buf = None
+
+    # Couleur embed (parse hex)
+    try:
+        hex_c = chosen["color"].lstrip("#")
+        r, g, b = int(hex_c[0:2], 16), int(hex_c[2:4], 16), int(hex_c[4:6], 16)
+        embed_color = discord.Color.from_rgb(r, g, b)
+    except Exception:
+        embed_color = discord.Color.dark_grey()
 
     embed = discord.Embed(
-        description=f'*« {data["citation"]} »*',
-        color=data["couleur"]
+        description=f'*\u00ab {chosen["quote"]} \u00bb*',
+        color=embed_color,
     )
-    author_name = data["nom"].upper()
-    if data.get("emoji"):
-        author_name = f'{data["emoji"]}  {author_name}'
-    embed.set_author(name=author_name)
-    embed.set_footer(text=f'{data.get("anime", "Animé")} • Brams Score')
+    embed.set_author(name=f'{chosen["character"].upper()}  •  {chosen["anime"]}')
+    embed.set_footer(text="⚓ BRAMS SCORE  |  by Freydiss")
 
-    img_bytes = await get_char_image(data["nom"])
     try:
-        if img_bytes:
-            file = discord.File(io.BytesIO(img_bytes), filename="char.jpg")
-            embed.set_thumbnail(url="attachment://char.jpg")
-            await interaction.followup.send(embed=embed, file=file)
+        if img_buf:
+            embed.set_image(url="attachment://citation.png")
+            await interaction.followup.send(embed=embed, file=discord.File(img_buf, "citation.png"))
         else:
             await interaction.followup.send(embed=embed)
     except discord.NotFound:
         print("⚠️ /citation : token expiré, impossible d'envoyer")
     except Exception as e:
         print(f"❌ /citation followup failed: {e}")
+
+
+@bot.tree.command(name="citation", description="Affiche une citation anime avec carte premium")
+@app_commands.describe(perso="Filtrer par personnage (optionnel)")
+async def citation(interaction: discord.Interaction, perso: str = None):
+    await _citation_handler(interaction, perso)
+
+
+@bot.tree.command(name="quote", description="Random anime quote with premium card")
+@app_commands.describe(perso="Filter by character name (optional)")
+async def quote(interaction: discord.Interaction, perso: str = None):
+    await _citation_handler(interaction, perso)
 
 
 @bot.tree.command(name="addheures", description="[ADMIN] Ajouter des heures vocales à un membre")
