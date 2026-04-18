@@ -2064,13 +2064,13 @@ async def _citation_handler(interaction: discord.Interaction, perso: str = None)
         print(f"❌ /citation followup failed: {e}")
 
 
-@bot.tree.command(name="citation", description="Affiche une citation anime avec carte premium")
+@bot.tree.command(name="citation", description="Citation aléatoire d'un personnage anime")
 @app_commands.describe(perso="Filtrer par personnage (optionnel)")
 async def citation(interaction: discord.Interaction, perso: str = None):
     await _citation_handler(interaction, perso)
 
 
-@bot.tree.command(name="quote", description="Random anime quote with premium card")
+@bot.tree.command(name="quote", description="Random quote from an anime character")
 @app_commands.describe(perso="Filter by character name (optional)")
 async def quote(interaction: discord.Interaction, perso: str = None):
     await _citation_handler(interaction, perso)
