@@ -183,7 +183,7 @@ CHAR_JIKAN_IDS = {
     "Kurapika": 29,
     # JoJo
     "Jotaro Kujo": 38,
-    "Giorno Giovanna": 62,
+    "Giorno Giovanna": 1660,
     "Dio Brando": 36,
     # Fairy Tail
     "Natsu Dragneel": 9745,
@@ -233,6 +233,16 @@ CHAR_JIKAN_IDS = {
     "Asuna Yuuki": 36829,
     # Violet Evergarden
     "Violet Evergarden": 150351,
+    # HxH (ajouts)
+    "Mito Freecss": 31,
+    "Isaac Netero": 34,
+    "Meruem": 37,
+    # Death Note (ajouts)
+    "L": 71,
+    "Ryuk": 81,
+    # One Piece (ajouts)
+    "Makarov Dreyar": 9746,
+    "Claudia Hodgins": 150352,
 }
 CHAR_IMAGE_CACHE = {}
 
@@ -2136,25 +2146,53 @@ _CHAR_IMAGE_CACHE: dict[str, str | None] = {}
 # Cache bytes PIL par personnage (évite re-téléchargement)
 _CHAR_IMG_BYTES_CACHE: dict[str, bytes | None] = {}
 
+_CHAR_IMG_URL = "cdn.myanimelist.net/images/characters"
+
 async def _get_char_image_url(name: str) -> str | None:
-    """Récupère l'URL image du personnage via Jikan API (MAL). Résultat mis en cache."""
+    """
+    Récupère l'URL image du personnage via Jikan API.
+    - Si l'ID est connu dans CHAR_JIKAN_IDS → fetch direct par ID (toujours le bon perso).
+    - Sinon → recherche par nom avec vérification du nom retourné.
+    Filtre les URLs qui ne sont pas des images de personnages MAL.
+    """
     if name in _CHAR_IMAGE_CACHE:
         return _CHAR_IMAGE_CACHE[name]
+
+    from urllib.parse import quote as _uq
+    img_url = None
+    jikan_id = CHAR_JIKAN_IDS.get(name)
+
     try:
-        from urllib.parse import quote as _uq
-        url = f"https://api.jikan.moe/v4/characters?q={_uq(name)}&limit=1"
         async with aiohttp.ClientSession() as sess:
-            async with sess.get(url, timeout=aiohttp.ClientTimeout(total=4)) as resp:
-                if resp.status == 200:
-                    data = await resp.json()
-                    chars = data.get("data", [])
-                    img = chars[0]["images"]["jpg"]["image_url"] if chars else None
-                    _CHAR_IMAGE_CACHE[name] = img
-                    return img
-    except Exception:
-        pass
-    _CHAR_IMAGE_CACHE[name] = None
-    return None
+            if jikan_id:
+                # ── Fetch direct par ID → image garantie du bon personnage ──
+                api_url = f"https://api.jikan.moe/v4/characters/{jikan_id}"
+                async with sess.get(api_url, timeout=aiohttp.ClientTimeout(total=5)) as resp:
+                    if resp.status == 200:
+                        data = await resp.json()
+                        img_url = data.get("data", {}).get("images", {}).get("jpg", {}).get("image_url")
+            else:
+                # ── Recherche par nom : vérifie correspondance + filtre logos ──
+                search_url = f"https://api.jikan.moe/v4/characters?q={_uq(name)}&limit=5"
+                async with sess.get(search_url, timeout=aiohttp.ClientTimeout(total=5)) as resp:
+                    if resp.status == 200:
+                        chars = (await resp.json()).get("data", [])
+                        name_parts = [p.lower() for p in name.split() if len(p) > 2]
+                        for char in chars:
+                            returned_name = char.get("name", "").lower()
+                            # Le nom retourné doit contenir au moins un mot-clé du nom cherché
+                            if not any(part in returned_name for part in name_parts):
+                                continue
+                            candidate = char.get("images", {}).get("jpg", {}).get("image_url", "")
+                            # Filtre : accepte uniquement les vraies images de personnages MAL
+                            if _CHAR_IMG_URL in candidate:
+                                img_url = candidate
+                                break
+    except Exception as e:
+        print(f"[CITATION] Jikan {name}: {e}")
+
+    _CHAR_IMAGE_CACHE[name] = img_url
+    return img_url
 
 async def _fetch_char_image_bytes(name: str) -> bytes | None:
     """Télécharge et cache les bytes de l'image du personnage."""
