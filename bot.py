@@ -1962,39 +1962,6 @@ async def chercher(interaction: discord.Interaction, membre: discord.Member):
         print(f"❌ /chercher followup failed: {e}")
 
 
-# @bot.tree.command(name="prime", description="Génère une vraie fiche WANTED One Piece")
-# @app_commands.describe(membre="Le membre à mettre sur la fiche wanted")
-# async def wanted(interaction: discord.Interaction, membre: discord.Member = None):
-#     if membre is None:
-#         membre = interaction.user
-#     await interaction.response.defer()
-#     data = load_data()
-#     uid = str(membre.id)
-#     user = get_user(data, uid)
-#     s7d  = seconds_in_period(user["vocal_sessions"], 7)
-#     s14d = seconds_in_period(user["vocal_sessions"], 14)
-#     m7d  = messages_in_period(user["messages"], 7)
-#     m14d = messages_in_period(user["messages"], 14)
-#     s_total = total_seconds(user["vocal_sessions"])
-#     m_total = total_messages(user["messages"])
-#     hours_7d  = s7d / 3600
-#     hours_total = s_total / 3600
-#     bounty    = calculate_prime(hours_total, m_total)
-#     rank_actuel = get_rank_for_hours(hours_7d) or "Sans rang"
-#     next_thresh, next_rank = get_next_rank(hours_7d)
-#     next_str = f"{next_rank} ({next_thresh - hours_7d:.1f}h)" if next_rank else "MAX"
-#     img_buf = await generate_wanted_image(
-#         membre        = membre,
-#         bounty_str    = format_prime(bounty),
-#         rank          = rank_actuel,
-#         vocal_7d      = format_duration(s7d),
-#         vocal_14d     = format_duration(s14d),
-#         msg_7d        = str(m7d),
-#         msg_14d       = str(m14d),
-#         next_rank_str = next_str,
-#     )
-#     await interaction.followup.send(file=discord.File(img_buf, filename="wanted.png"))
-
 
 CITATION_HISTORY: list[str] = []
 
@@ -2070,12 +2037,6 @@ async def citation(interaction: discord.Interaction, perso: str = None):
     await _citation_handler(interaction, perso)
 
 
-@bot.tree.command(name="quote", description="Random quote from an anime character")
-@app_commands.describe(perso="Filter by character name (optional)")
-async def quote(interaction: discord.Interaction, perso: str = None):
-    await _citation_handler(interaction, perso)
-
-
 @bot.tree.command(name="addheures", description="[ADMIN] Ajouter des heures vocales à un membre")
 @app_commands.default_permissions(administrator=True)
 @app_commands.checks.has_permissions(administrator=True)
@@ -2107,33 +2068,6 @@ async def addheures(interaction: discord.Interaction, membre: discord.Member, he
     except Exception as e:
         print(f"❌ /addheures followup failed: {e}")
 
-
-@bot.tree.command(name="forcerank", description="[ADMIN] Recalculer le rank d'un membre")
-@app_commands.default_permissions(administrator=True)
-@app_commands.checks.has_permissions(administrator=True)
-async def forcerank(interaction: discord.Interaction, membre: discord.Member):
-    try:
-        await interaction.response.defer(ephemeral=True)
-    except discord.NotFound:
-        print("⚠️ /forcerank : interaction expirée avant defer")
-        return
-    except Exception as e:
-        print(f"❌ /forcerank defer failed: {e}")
-        return
-    data = await load_data_async()
-    uid = str(membre.id)
-    user = get_user(data, uid)
-    seconds_7d = seconds_in_period(user.get("vocal_sessions", []), 7)
-    hours_7d = seconds_7d / 3600
-    await update_rank(membre, hours_7d, announce=False)
-    try:
-        await interaction.followup.send(
-            f"✅ Rank recalculé pour {membre.mention} ({hours_7d:.1f}h/7j)", ephemeral=True
-        )
-    except discord.NotFound:
-        print("⚠️ /forcerank : token expiré, impossible d'envoyer")
-    except Exception as e:
-        print(f"❌ /forcerank followup failed: {e}")
 
 @bot.tree.command(name="testrank", description="[ADMIN] Tester l'image d'annonce de rank")
 @app_commands.default_permissions(administrator=True)
@@ -2179,53 +2113,6 @@ async def testrank(interaction: discord.Interaction, membre: discord.Member = No
         print("⚠️ /testrank : token expiré, impossible d'envoyer")
     except Exception as e:
         print(f"❌ /testrank followup failed: {e}")
-
-@bot.tree.command(name="recalcul", description="[ADMIN] Recalculer les ranks (tous ou un membre)")
-@app_commands.default_permissions(administrator=True)
-@app_commands.checks.has_permissions(administrator=True)
-async def recalcul(interaction: discord.Interaction, membre: discord.Member = None):
-    try:
-        await interaction.response.defer(ephemeral=True)
-    except discord.NotFound:
-        print("⚠️ /recalcul : interaction expirée avant defer")
-        return
-    except Exception as e:
-        print(f"❌ /recalcul defer failed: {e}")
-        return
-    data = await load_data_async()
-    if membre:
-        uid = str(membre.id)
-        user = get_user(data, uid)
-        seconds_7d = seconds_in_period(user.get("vocal_sessions", []), 7)
-        hours_7d = seconds_7d / 3600
-        await update_rank(membre, hours_7d, announce=False, data=data)
-        await save_data_async(data)
-        try:
-            await interaction.followup.send(f"✅ Rank recalculé pour {membre.mention} ({hours_7d:.1f}h/7j)", ephemeral=True)
-        except discord.NotFound:
-            print("⚠️ /recalcul : token expiré, impossible d'envoyer")
-        except Exception as e:
-            print(f"❌ /recalcul followup failed: {e}")
-    else:
-        guild = interaction.guild
-        count = 0
-        for m in guild.members:
-            if m.bot:
-                continue
-            uid = str(m.id)
-            user = get_user(data, uid)
-            seconds_7d = seconds_in_period(user.get("vocal_sessions", []), 7)
-            hours_7d = seconds_7d / 3600
-            await update_rank(m, hours_7d, announce=False, data=data)
-            count += 1
-            await asyncio.sleep(0.5)
-        await save_data_async(data)
-        try:
-            await interaction.followup.send(f"✅ Ranks recalculés pour {count} membres.", ephemeral=True)
-        except discord.NotFound:
-            print("⚠️ /recalcul : token expiré, impossible d'envoyer")
-        except Exception as e:
-            print(f"❌ /recalcul followup failed: {e}")
 
 # ─────────────────────────────────────────
 #  /test  (ADMIN — simulation d'événements)
@@ -2652,36 +2539,28 @@ async def _quiz_entry(interaction: discord.Interaction):
         print(f"❌ quiz followup: {e}")
 
 
-@bot.tree.command(name="quiz", description="Quiz animé généré par IA — teste tes connaissances !")
-async def quiz(interaction: discord.Interaction):
-    await _quiz_entry(interaction)
-
-
 @bot.tree.command(name="quizz", description="Quiz animé — teste tes connaissances sur les animés !")
 async def quizz(interaction: discord.Interaction):
     await _quiz_entry(interaction)
 
 
-# ─────────────────────────────────────────
-#  /sync  (OWNER ONLY — forcer la sync des commandes)
-# ─────────────────────────────────────────
-@bot.tree.command(name="sync", description="[OWNER] Synchroniser les commandes slash")
+@bot.tree.command(name="sync", description="[OWNER] Sync commandes slash")
 @app_commands.default_permissions(administrator=True)
 async def sync_commands(interaction: discord.Interaction):
     if not await bot.is_owner(interaction.user):
-        await interaction.response.send_message("Réservé au propriétaire du bot.", ephemeral=True)
+        await interaction.response.send_message("⛔ Réservé au propriétaire.", ephemeral=True)
         return
     await interaction.response.defer(ephemeral=True)
-    results = []
+    ok, fail = 0, 0
     for gid in GUILD_IDS:
-        guild = discord.Object(id=gid)
         try:
-            bot.tree.copy_global_to(guild=guild)
-            synced = await bot.tree.sync(guild=guild)
-            results.append(f"✅ Guild `{gid}` — {len(synced)} commandes")
-        except Exception as e:
-            results.append(f"❌ Guild `{gid}` — {e}")
-    await interaction.followup.send("\n".join(results), ephemeral=True)
+            bot.tree.copy_global_to(guild=discord.Object(id=gid))
+            synced = await bot.tree.sync(guild=discord.Object(id=gid))
+            ok += len(synced)
+        except Exception:
+            fail += 1
+    status = "✅" if not fail else "⚠️"
+    await interaction.followup.send(f"{status} Sync terminée — {ok} commandes ({fail} erreur(s))", ephemeral=True)
 
 
 bot.run(TOKEN)
