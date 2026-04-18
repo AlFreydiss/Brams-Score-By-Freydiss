@@ -405,7 +405,7 @@ QUOTES_DB = [
     {"quote": "Je suis né pour détruire.", "character": "Eren Yeager", "anime": "Attack on Titan", "color": "#4A4A4A"},
     {"quote": "La paix n'existe pas. Il n'y a que des moments de calme avant la tempête.", "character": "Pain", "anime": "Naruto", "color": "#8B0000"},
     {"quote": "Je vais te faire regretter d'être né.", "character": "Vegeta", "anime": "Dragon Ball Z", "color": "#0000FF"},
-    {"quote": "La vie est un jeu. Et je suis le joueur ultime.", "character": "Joker", "anime": "Persona 5", "color": "#FF00FF"},
+    {"quote": "La vie est un jeu. Et je suis le joueur ultime.", "character": "Ren Amamiya", "anime": "Persona 5", "color": "#FF00FF"},
     {"quote": "Je n'abandonnerai jamais.", "character": "Goku", "anime": "Dragon Ball Z", "color": "#FF4500"},
     {"quote": "Les amis sont la famille que l'on choisit.", "character": "Nami", "anime": "One Piece", "color": "#FF69B4"},
     {"quote": "Je suis le plus fort.", "character": "Saitama", "anime": "One Punch Man", "color": "#FF4500"},
@@ -1049,8 +1049,7 @@ async def make_citation_image(quote_data: dict) -> io.BytesIO:
     for i, line in enumerate(lines):
         stroke_text(draw, (TX, start_y + i * lh), line, fq, fill=(245, 245, 245, 255), sw=2)
 
-    # ── LIGNE BLANCHE PLEINE LARGEUR en bas ──
-    draw.rectangle([(0, H - 4), (W, H)], fill=(255, 255, 255, 60))
+    # ── LIGNE ACCENT sous la zone texte uniquement ──
     draw.rectangle([(TX, H - 8), (TX + TW, H - 5)], fill=(*accent, 190))
 
     # ── CRÉDIT discret ──
@@ -2142,18 +2141,28 @@ async def chercher(interaction: discord.Interaction, membre: discord.Member):
 CITATION_HISTORY: list[str] = []
 
 # Cache URL image par personnage (Jikan API)
-_CHAR_IMAGE_CACHE: dict[str, str | None] = {}
+# Persos non présents sur MAL (cartoons occidentaux, jeux vidéo hors anime, etc.)
+_NO_MAL_CHARS: frozenset[str] = frozenset({"Zuko"})
+_CHAR_IMAGE_CACHE: dict[str, str | None] = {n: None for n in _NO_MAL_CHARS}
 # Cache bytes PIL par personnage (évite re-téléchargement)
 _CHAR_IMG_BYTES_CACHE: dict[str, bytes | None] = {}
 
 _CHAR_IMG_URL = "cdn.myanimelist.net/images/characters"
 
-async def _get_char_image_url(name: str) -> str | None:
+def _name_matches(searched: str, returned: str) -> bool:
+    """Vérifie que le nom retourné par l'API correspond bien au nom cherché.
+    Toutes les parties significatives (>2 chars) du nom cherché doivent apparaître
+    dans le nom retourné (insensible à la casse). Évite les faux positifs.
     """
-    Récupère l'URL image du personnage via Jikan API.
-    - Si l'ID est connu dans CHAR_JIKAN_IDS → fetch direct par ID (toujours le bon perso).
-    - Sinon → recherche par nom avec vérification du nom retourné.
-    Filtre les URLs qui ne sont pas des images de personnages MAL.
+    parts = [p.lower() for p in searched.split() if len(p) > 2]
+    r = returned.lower()
+    return bool(parts) and all(p in r for p in parts)
+
+async def _get_char_image_url(name: str) -> str | None:
+    """Récupère l'URL image du personnage via Jikan API avec corrélation stricte nom↔image.
+    - ID connu → fetch direct + validation URL pattern.
+    - Pas d'ID → search, toutes les parties du nom doivent correspondre.
+    Rejette tout ce qui n'est pas cdn.myanimelist.net/images/characters/...
     """
     if name in _CHAR_IMAGE_CACHE:
         return _CHAR_IMAGE_CACHE[name]
@@ -2165,31 +2174,38 @@ async def _get_char_image_url(name: str) -> str | None:
     try:
         async with aiohttp.ClientSession() as sess:
             if jikan_id:
-                # ── Fetch direct par ID → image garantie du bon personnage ──
                 api_url = f"https://api.jikan.moe/v4/characters/{jikan_id}"
-                async with sess.get(api_url, timeout=aiohttp.ClientTimeout(total=5)) as resp:
+                async with sess.get(api_url, timeout=aiohttp.ClientTimeout(total=6)) as resp:
                     if resp.status == 200:
-                        data = await resp.json()
-                        img_url = data.get("data", {}).get("images", {}).get("jpg", {}).get("image_url")
+                        data = (await resp.json()).get("data", {})
+                        returned_name = data.get("name", "")
+                        candidate = data.get("images", {}).get("jpg", {}).get("image_url", "")
+                        if _CHAR_IMG_URL in candidate:
+                            img_url = candidate
+                            print(f"[CITATION] ✅ ID {jikan_id} → '{returned_name}' (cherché: '{name}')")
+                        else:
+                            print(f"[CITATION] ⚠️ ID {jikan_id} → URL hors pattern: {candidate}")
             else:
-                # ── Recherche par nom : vérifie correspondance + filtre logos ──
-                search_url = f"https://api.jikan.moe/v4/characters?q={_uq(name)}&limit=5"
-                async with sess.get(search_url, timeout=aiohttp.ClientTimeout(total=5)) as resp:
+                search_url = f"https://api.jikan.moe/v4/characters?q={_uq(name)}&limit=8"
+                async with sess.get(search_url, timeout=aiohttp.ClientTimeout(total=6)) as resp:
                     if resp.status == 200:
                         chars = (await resp.json()).get("data", [])
-                        name_parts = [p.lower() for p in name.split() if len(p) > 2]
                         for char in chars:
-                            returned_name = char.get("name", "").lower()
-                            # Le nom retourné doit contenir au moins un mot-clé du nom cherché
-                            if not any(part in returned_name for part in name_parts):
+                            returned_name = char.get("name", "")
+                            if not _name_matches(name, returned_name):
+                                print(f"[CITATION] ✗ search skip '{returned_name}' (cherché: '{name}')")
                                 continue
                             candidate = char.get("images", {}).get("jpg", {}).get("image_url", "")
-                            # Filtre : accepte uniquement les vraies images de personnages MAL
                             if _CHAR_IMG_URL in candidate:
                                 img_url = candidate
+                                print(f"[CITATION] ✅ search '{returned_name}' → image OK (cherché: '{name}')")
                                 break
+                            print(f"[CITATION] ✗ search '{returned_name}' URL hors pattern: {candidate}")
+                        else:
+                            if not img_url:
+                                print(f"[CITATION] ✗ aucun match search pour '{name}'")
     except Exception as e:
-        print(f"[CITATION] Jikan {name}: {e}")
+        print(f"[CITATION] Jikan erreur '{name}': {e}")
 
     _CHAR_IMAGE_CACHE[name] = img_url
     return img_url
