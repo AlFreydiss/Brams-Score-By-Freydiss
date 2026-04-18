@@ -1984,10 +1984,14 @@ async def test_event(interaction: discord.Interaction, evenement: app_commands.C
 # ─────────────────────────────────────────
 #  /quiz  (Quiz animé généré par IA — Groq)
 # ─────────────────────────────────────────
-litellm.suppress_debug_info = True   # pas de logs verbeux litellm
-QUIZ_SESSIONS: dict = {}
-_GROQ_MODEL   = "groq/llama-3.3-70b-versatile"
-_GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
+# litellm.set_verbose appelé uniquement si l'attribut existe (évite crash au démarrage)
+try:
+    litellm.set_verbose = False
+except Exception:
+    pass
+
+QUIZ_SESSIONS: dict  = {}
+_GROQ_MODEL          = "groq/llama-3.3-70b-versatile"
 
 _QUIZ_PROMPT = """Génère {n} questions de quiz sur les animés.
 Réponds UNIQUEMENT en JSON valide, sans texte avant ou après, avec ce format exact :
@@ -2004,37 +2008,54 @@ Varie les animés (Naruto, DBZ, One Piece, Bleach, Death Note, AOT, HxH, FMA, Jo
 les thèmes (personnages, pouvoirs, arcs, auteurs) et les niveaux de difficulté."""
 
 async def _generate_quiz_questions(n: int) -> tuple:
-    """Génère n questions via Groq (litellm). Retourne (questions: list, erreur: str)."""
-    if not _GROQ_API_KEY:
-        msg = "GROQ_API_KEY manquante — configure-la dans Railway Variables"
-        print(f"❌ [QUIZ] {msg}")
+    """
+    Génère n questions via Groq llama-3.3-70b (litellm).
+    Retourne (questions: list, erreur: str).
+    La clé est lue à chaque appel depuis l'env pour capter les rechargements Railway.
+    """
+    api_key = os.environ.get("GROQ_API_KEY", "")
+    if not api_key:
+        msg = "GROQ_API_KEY manquante — ajoute-la dans Railway > Variables"
+        print(f"[QUIZ] ERREUR : {msg}")
         return [], msg
 
     last_error = ""
     for attempt in range(3):
         try:
+            print(f"[QUIZ] Appel Groq attempt {attempt + 1}/3 ({n} questions)...")
             response = await litellm.acompletion(
                 model=_GROQ_MODEL,
-                api_key=_GROQ_API_KEY,
+                api_key=api_key,
                 max_tokens=2048,
                 temperature=0.8,
                 messages=[{"role": "user", "content": _QUIZ_PROMPT.format(n=n)}],
             )
             raw = response.choices[0].message.content.strip()
-            print(f"[QUIZ] Réponse brute Groq (attempt {attempt+1}) : {raw[:300]}")
-            match = re.search(r'\[.*\]', raw, re.DOTALL)
+            print(f"[QUIZ] Reponse brute ({len(raw)} chars) : {raw[:200]}")
+
+            # Extraction robuste du JSON même si le modèle ajoute du texte autour
+            match = re.search(r'\[.*?\]', raw, re.DOTALL)
+            if not match:
+                match = re.search(r'\[.*\]', raw, re.DOTALL)
             if match:
                 questions = json.loads(match.group())
                 if isinstance(questions, list) and len(questions) > 0:
                     print(f"[QUIZ] OK — {len(questions)} questions generees")
                     return questions, ""
-            last_error = "JSON vide ou malformé dans la réponse Groq"
+                last_error = "Liste JSON vide dans la reponse"
+            else:
+                last_error = "Aucun tableau JSON trouve dans la reponse"
+
+        except json.JSONDecodeError as e:
+            last_error = f"JSON invalide : {e}"
+            print(f"[QUIZ] JSONDecodeError attempt {attempt + 1} : {e}")
         except Exception as e:
             last_error = f"{type(e).__name__}: {e}"
-            print(f"[QUIZ] Echec attempt {attempt+1}/3 : {last_error}")
+            print(f"[QUIZ] Echec attempt {attempt + 1}/3 : {last_error}")
+
         await asyncio.sleep(1)
 
-    print(f"[QUIZ] Echec total. Derniere erreur : {last_error}")
+    print(f"[QUIZ] Echec total apres 3 tentatives. Derniere erreur : {last_error}")
     return [], last_error
 
 class _QuizSession:
