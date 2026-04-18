@@ -833,7 +833,7 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True, da
                 fname = "rank_up.gif" if is_gif else "rank_up.png"
 
                 await channel.send(
-                    content=f"Bravo a {member.mention} qui a debloque le rank **{rank_name.upper()}** ✨",
+                    content=f"🏴‍☠️ Bravo a {member.mention} qui a debloque le rank **{rank_name.upper()}** ✨",
                     file=discord.File(img_buf, fname),
                 )
                 print(f"[RANK] Annonce envoyee : {member.display_name} -> {rank_name}")
@@ -2221,7 +2221,10 @@ async def _get_char_image_url(name: str) -> str | None:
     except Exception as e:
         print(f"[CITATION] exception '{name}': {e}")
 
-    _CHAR_IMAGE_CACHE[name] = img_url
+    # Ne cacher que les succès : un None transitoire (429, timeout) ne doit pas bloquer
+    # les prochains appels. Seuls les None définitifs (_NO_MAL_CHARS) sont pré-cachés.
+    if img_url is not None:
+        _CHAR_IMAGE_CACHE[name] = img_url
     return img_url
 
 async def _fetch_char_image_bytes(name: str) -> bytes | None:
@@ -2230,7 +2233,8 @@ async def _fetch_char_image_bytes(name: str) -> bytes | None:
         return _CHAR_IMG_BYTES_CACHE[name]
     url = await _get_char_image_url(name)
     if not url:
-        _CHAR_IMG_BYTES_CACHE[name] = None
+        # Pareil : ne pas cacher les échecs transitoires sur les bytes
+        return None
         return None
     try:
         async with aiohttp.ClientSession() as sess:
