@@ -1396,7 +1396,7 @@ async def check_ranks_loop():
                         await asyncio.sleep(0)
                     continue
                 try:
-                    await update_rank(member, hours_7d_real, announce=True, data=data)
+                    await update_rank(member, hours_7d_real, announce=False, data=data)
                     await check_alert(member, hours_7d_real, data=data)
                 except Exception as e:
                     print(f"⚠️ Erreur {member.display_name}: {e}")
