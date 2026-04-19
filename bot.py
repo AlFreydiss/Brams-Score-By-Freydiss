@@ -234,7 +234,7 @@ CHAR_JIKAN_IDS = {
     "Kirito": 245235,        # vérifié Jikan : "Kirito" / SAO (36828 = Asuna!)
     "Asuna Yuuki": 36828,    # vérifié Jikan : "Asuna Yuuki" / SAO
     # Violet Evergarden
-    "Violet Evergarden": 150351,
+    "Violet Evergarden": 141354, # vérifié Jikan : "Violet Evergarden"
 }
 # ─────────────────────────────────────────
 #  QUOTES_DB — citations anime verifiees
@@ -2058,6 +2058,8 @@ _CHAR_STATIC_URLS: dict[str, str] = {
     # ── Sword Art Online ──
     "Kirito":              "https://s4.anilist.co/file/anilistcdn/character/large/b36765-BnLbXg0Tzzh9.png",
     "Asuna Yuuki":         "https://s4.anilist.co/file/anilistcdn/character/large/b36828-j5ib0adAzGMx.png",
+    # ── Violet Evergarden ──
+    "Violet Evergarden":   "https://s4.anilist.co/file/anilistcdn/character/large/b90169-4wr1Zehnsac8.png",
     # ── Vinland Saga ──
     "Thorfinn":            "https://cdn.myanimelist.net/images/characters/9/309871.jpg",
 }
