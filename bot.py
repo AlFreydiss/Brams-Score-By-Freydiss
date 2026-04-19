@@ -164,9 +164,9 @@ CHAR_JIKAN_IDS = {
     "Hinata Hyuga": 1555,
     "Rock Lee": 306,
     "Gaara": 84,
-    "Jiraiya": 52,
-    "Minato Namikaze": 53,
-    "Obito Uchiha": 167,
+    "Jiraiya": 2423,         # vérifié Jikan : "Jiraiya" / Naruto
+    "Minato Namikaze": 2535, # vérifié Jikan : "Minato Namikaze" / Naruto
+    "Obito Uchiha": 2910,    # vérifié Jikan : "Obito Uchiha" / Naruto
     "Pain": 3180,
     # Bleach
     "Ichigo Kurosaki": 5,
@@ -174,16 +174,17 @@ CHAR_JIKAN_IDS = {
     # FMA
     "Edward Elric": 11,
     "Alphonse Elric": 12,
-    "Roy Mustang": 15,
+    "Roy Mustang": 68,       # vérifié Jikan : "Roy Mustang" / FMA
     # HxH
     "Gon Freecss": 30,
     "Killua Zoldyck": 27,
     "Hisoka Morow": 238998,
     "Kurapika": 28,
+    "Meruem": 23277,         # vérifié Jikan : "Meruem" / HxH 2011
     # JoJo
     "Jotaro Kujo": 38,
     "Giorno Giovanna": 10529,
-    "Dio Brando": 36,
+    "Dio Brando": 4004,      # vérifié Jikan : "Dio Brando" / JoJo
     # Fairy Tail
     "Natsu Dragneel": 5187,
     "Erza Scarlet": 5189,
@@ -196,6 +197,8 @@ CHAR_JIKAN_IDS = {
     "Erwin Smith": 46496,
     # Death Note
     "Light Yagami": 80,
+    "L": 71,
+    "Ryuk": 75,              # vérifié Jikan : "Ryuk" / Death Note
     # Dragon Ball
     "Son Goku": 246,
     "Goku": 246,
@@ -205,11 +208,11 @@ CHAR_JIKAN_IDS = {
     "Tanjiro Kamado": 146156,
     "Zenitsu Agatsuma": 146310,
     "Inosuke Hashibira": 146158,
-    "Rengoku Kyojuro": 146153,
+    "Rengoku Kyojuro": 151143, # vérifié Jikan : "Kyoujurou Rengoku" / Demon Slayer
     "Muzan Kibutsuji": 146318,
     # Jujutsu Kaisen
-    "Yuji Itadori": 160111,
-    "Gojo Satoru": 160112,
+    "Yuji Itadori": 163847,  # vérifié Jikan : "Yuuji Itadori" / JJK
+    "Gojo Satoru": 164471,   # vérifié Jikan : "Satoru Gojou" / JJK
     "Ryomen Sukuna": 160116,
     "Megumi Fushiguro": 160113,
     # Tokyo Ghoul
@@ -221,24 +224,17 @@ CHAR_JIKAN_IDS = {
     # Cowboy Bebop
     "Spike Spiegel": 1,
     # Berserk
-    "Guts": 23,
+    "Guts": 422,             # vérifié Jikan : "Guts" / Berserk
     # Black Clover
     "Asta": 33356,
     # Re:Zero
-    "Rem": 136159,
-    "Subaru Natsuki": 136160,
+    "Rem": 118763,           # vérifié via anime Re:Zero ID=31240
+    "Subaru Natsuki": 118735, # vérifié Jikan : "Subaru Natsuki" / Re:Zero
     # SAO
-    "Kirito": 36828,
-    "Asuna Yuuki": 36829,
+    "Kirito": 245235,        # vérifié Jikan : "Kirito" / SAO (36828 = Asuna!)
+    "Asuna Yuuki": 36828,    # vérifié Jikan : "Asuna Yuuki" / SAO
     # Violet Evergarden
     "Violet Evergarden": 150351,
-    # HxH (ajouts — IDs vérifiés uniquement)
-    "Meruem": 37,
-    # Death Note (ajouts)
-    "L": 71,
-    "Ryuk": 81,
-    # ⚠️ Winry Rockbell : ID 13 = Sasuke Uchiha → exclu définitivement
-    # Mito Freecss, Isaac Netero, Thorfinn : IDs incertains → exclus
 }
 # ─────────────────────────────────────────
 #  QUOTES_DB — citations anime verifiees
@@ -259,7 +255,8 @@ QUOTES_DB = [
     {"quote": "Un vrai cuisinier ne lache jamais ses mains. Elles sont son outil et sa fierte.", "character": "Sanji", "anime": "One Piece", "color": "#FBBF24"},
     {"quote": "Un vrai homme ne frappe jamais une femme, quoi qu il arrive.", "character": "Sanji", "anime": "One Piece", "color": "#FBBF24"},
     # NARUTO
-    {"quote": "Je ne recule jamais et je ne mens jamais — c est ma voie du ninja !", "character": "Naruto Uzumaki", "anime": "Naruto", "color": "#F97316"},
+    {"quote": "Je ne recule jamais, je ne mens jamais — c est la voie du ninja !", "character": "Naruto Uzumaki", "anime": "Naruto", "color": "#F97316"},
+    {"quote": "C est ca, pour moi, etre un ninja !", "character": "Naruto Uzumaki", "anime": "Naruto", "color": "#F97316"},
     {"quote": "Si tu abandonnes, c est la fin. Si tu continues, il reste toujours une chance.", "character": "Naruto Uzumaki", "anime": "Naruto", "color": "#F97316"},
     {"quote": "La douleur rend les gens plus forts. Et les gens forts aident ceux qui souffrent.", "character": "Naruto Uzumaki", "anime": "Naruto", "color": "#F97316"},
     {"quote": "Ceux qui abandonnent leurs camarades sont pires que des rebuts.", "character": "Kakashi Hatake", "anime": "Naruto", "color": "#6B7280"},
@@ -2012,34 +2009,56 @@ CITATION_HISTORY: list[str] = []
 # Persos non présents sur MAL (cartoons occidentaux, jeux vidéo hors anime, etc.)
 # URLs d image statiques verifiees — priorite absolue sur Jikan (CDN MAL stable)
 _CHAR_STATIC_URLS: dict[str, str] = {
-    # Attack on Titan — anciens IDs (843-849) etaient faux → URLs directes
+    # ── Attack on Titan ──
     "Eren Yeager":         "https://cdn.myanimelist.net/images/characters/10/216895.jpg",
     "Levi Ackerman":       "https://cdn.myanimelist.net/images/characters/12/622510.jpg",
     "Mikasa Ackerman":     "https://cdn.myanimelist.net/images/characters/9/215563.jpg",
     "Armin Arlert":        "https://cdn.myanimelist.net/images/characters/8/220267.jpg",
     "Erwin Smith":         "https://cdn.myanimelist.net/images/characters/14/559023.jpg",
-    # Naruto
+    # ── Naruto ──
     "Itachi Uchiha":       "https://cdn.myanimelist.net/images/characters/9/284122.jpg",
     "Rock Lee":            "https://cdn.myanimelist.net/images/characters/13/433353.jpg",
     "Pain":                "https://cdn.myanimelist.net/images/characters/8/73473.jpg",
     "Hinata Hyuga":        "https://cdn.myanimelist.net/images/characters/6/278736.jpg",
-    # Fairy Tail
-    "Natsu Dragneel":      "https://cdn.myanimelist.net/images/characters/15/594274.jpg",
-    "Erza Scarlet":        "https://cdn.myanimelist.net/images/characters/12/492254.jpg",
-    # Hunter x Hunter
+    "Obito Uchiha":        "https://cdn.myanimelist.net/images/characters/8/70596.jpg",
+    "Minato Namikaze":     "https://s4.anilist.co/file/anilistcdn/character/large/b2535-Xq9WKNPJQEt3.png",
+    "Jiraiya":             "https://s4.anilist.co/file/anilistcdn/character/large/b2423-RO5MyoXSA9OL.png",
+    # ── FMA ──
+    "Roy Mustang":         "https://s4.anilist.co/file/anilistcdn/character/large/b68-moBLY2WO2am3.png",
+    # ── Hunter x Hunter ──
     "Killua Zoldyck":      "https://cdn.myanimelist.net/images/characters/2/327920.jpg",
-    "Hisoka Morow":        "https://cdn.myanimelist.net/images/characters/9/531213.jpg",
+    "Hisoka Morow":        "https://s4.anilist.co/file/anilistcdn/character/large/b31-FZckOuu7L1un.png",
     "Kurapika":            "https://cdn.myanimelist.net/images/characters/3/549312.jpg",
     "Mito Freecss":        "https://cdn.myanimelist.net/images/characters/8/47876.jpg",
-    # JoJo
+    "Meruem":              "https://s4.anilist.co/file/anilistcdn/character/large/b23277-EYmIxzL64Mji.png",
+    # ── JoJo's Bizarre Adventure ──
     "Giorno Giovanna":     "https://cdn.myanimelist.net/images/characters/16/571466.jpg",
-    # Tokyo Ghoul
+    "Dio Brando":          "https://s4.anilist.co/file/anilistcdn/character/large/b4004-w0OtWuvjhftG.png",
+    # ── Fairy Tail ──
+    "Natsu Dragneel":      "https://cdn.myanimelist.net/images/characters/15/594274.jpg",
+    "Erza Scarlet":        "https://cdn.myanimelist.net/images/characters/12/492254.jpg",
+    # ── Tokyo Ghoul ──
     "Ken Kaneki":          "https://cdn.myanimelist.net/images/characters/15/307255.jpg",
-    # One Punch Man
+    # ── One Punch Man ──
     "Saitama":             "https://cdn.myanimelist.net/images/characters/11/294388.jpg",
-    # Black Clover
-    "Asta":                "https://cdn.myanimelist.net/images/characters/11/202559.jpg",
-    # Vinland Saga (pas sur MAL comme anime mainstream)
+    # ── Black Clover ──
+    "Asta":                "https://s4.anilist.co/file/anilistcdn/character/large/b123285-tKijiuQErDS0.png",
+    # ── Berserk ──
+    "Guts":                "https://s4.anilist.co/file/anilistcdn/character/large/b422-XTaiTuvRohsV.png",
+    # ── Death Note ──
+    "Ryuk":                "https://s4.anilist.co/file/anilistcdn/character/large/b75-IkEpzO21LgFy.jpg",
+    # ── Jujutsu Kaisen ──
+    "Gojo Satoru":         "https://s4.anilist.co/file/anilistcdn/character/large/b127691-9zqh1xpIubn7.png",
+    "Yuji Itadori":        "https://cdn.myanimelist.net/images/characters/6/467646.jpg",
+    # ── Demon Slayer ──
+    "Rengoku Kyojuro":     "https://cdn.myanimelist.net/images/characters/10/423443.jpg",
+    # ── Re:Zero ──
+    "Rem":                 "https://s4.anilist.co/file/anilistcdn/character/large/b88575-Ayu8UPDA8NS6.png",
+    "Subaru Natsuki":      "https://s4.anilist.co/file/anilistcdn/character/large/b88573-F8yMTK9GhnTA.png",
+    # ── Sword Art Online ──
+    "Kirito":              "https://s4.anilist.co/file/anilistcdn/character/large/b36765-BnLbXg0Tzzh9.png",
+    "Asuna Yuuki":         "https://s4.anilist.co/file/anilistcdn/character/large/b36828-j5ib0adAzGMx.png",
+    # ── Vinland Saga ──
     "Thorfinn":            "https://cdn.myanimelist.net/images/characters/9/309871.jpg",
 }
 
