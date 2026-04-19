@@ -1389,7 +1389,6 @@ async def check_ranks_loop():
             clean_old_data(user)
             jt = user.get("join_time")
 
-            # Membre en vocal : skip rank-up, check alert uniquement
             if jt:
                 hours_7d_real = seconds_in_period(user["vocal_sessions"], 7, join_time=jt) / 3600
                 if hours_7d_real == 0 and old_snapshot[0] is None:
@@ -1397,9 +1396,10 @@ async def check_ranks_loop():
                         await asyncio.sleep(0)
                     continue
                 try:
+                    await update_rank(member, hours_7d_real, announce=True, data=data)
                     await check_alert(member, hours_7d_real, data=data)
                 except Exception as e:
-                    print(f"⚠️ Erreur check_alert {member.display_name}: {e}")
+                    print(f"⚠️ Erreur {member.display_name}: {e}")
             else:
                 seconds_7d = seconds_in_period(user["vocal_sessions"], 7)
                 hours_7d = seconds_7d / 3600
