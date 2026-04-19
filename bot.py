@@ -866,9 +866,9 @@ async def make_citation_image(quote_data: dict) -> io.BytesIO:
     canvas = Image.alpha_composite(canvas, deco_l)
     draw   = ImageDraw.Draw(canvas)
 
-    # ── NOM DU PERSONNAGE — blanc, gros, uppercase ──
+    # ── NOM DU PERSONNAGE — couleur du perso, gros, uppercase ──
     name_text = quote_data["character"].upper()
-    stroke_text(draw, (TX, 22), name_text, font_char, fill=(255, 255, 255, 255), sw=2)
+    stroke_text(draw, (TX, 22), name_text, font_char, fill=(*accent, 255), sw=2)
     bb_name = draw.textbbox((TX, 22), name_text, font=font_char)
     name_w, name_h = bb_name[2] - TX, bb_name[3]
 
