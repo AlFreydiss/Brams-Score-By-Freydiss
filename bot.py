@@ -87,21 +87,47 @@ def add_background(fig, alpha=0.18):
 TOKEN = os.environ.get("DISCORD_TOKEN")
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 
+from psycopg2 import pool as _pgpool
+
+# ── Connection pool (évite un TCP handshake à chaque save) ────────
+_db_pool: _pgpool.ThreadedConnectionPool | None = None
+
+def _get_pool() -> _pgpool.ThreadedConnectionPool:
+    global _db_pool
+    if _db_pool is None:
+        _db_pool = _pgpool.ThreadedConnectionPool(1, 4, dsn=SUPABASE_URL)
+    return _db_pool
+
 def get_db():
-    return psycopg2.connect(SUPABASE_URL)
+    return _get_pool().getconn()
+
+def release_db(conn):
+    try:
+        _get_pool().putconn(conn)
+    except Exception:
+        pass
+
+# ── Cache mémoire global ──────────────────────────────────────────
+# Chargé une seule fois au démarrage ; toutes les lectures se font
+# depuis cette dict en mémoire (O(1), ~0ms).
+_CACHE: dict = {}
+_DIRTY: set  = set()   # UIDs modifiés depuis le dernier flush
+_CACHE_READY = False   # True dès que le cache est chargé
 
 def init_db():
     conn = get_db()
-    cur = conn.cursor()
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS users (
-            uid TEXT PRIMARY KEY,
-            data JSONB
-        )
-    """)
-    conn.commit()
-    cur.close()
-    conn.close()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                uid TEXT PRIMARY KEY,
+                data JSONB
+            )
+        """)
+        conn.commit()
+        cur.close()
+    finally:
+        release_db(conn)
 ANNOUNCE_CHANNEL_ID = 1494342996848672828
 ALERT_HOURS_THRESHOLD = 5.0
 DERANK_WARNING_THRESHOLD = 5.0  # heures avant le seuil de derank pour l'avertissement MP
@@ -360,77 +386,83 @@ print(f"\u2705 {len(QUOTES_DB)} citations anime chargees.")
 def now_ts():
     return datetime.now(timezone.utc).timestamp()
 
-def load_data():
+def _load_all_from_db() -> dict:
+    """Charge toute la table users depuis la DB (appelé UNE SEULE FOIS)."""
     conn = get_db()
-    cur = conn.cursor()
-    cur.execute("SELECT uid, data FROM users")
-    rows = cur.fetchall()
-    cur.close()
-    conn.close()
-    return {row[0]: row[1] for row in rows}
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT uid, data FROM users")
+        rows = cur.fetchall()
+        cur.close()
+        return {row[0]: row[1] for row in rows}
+    finally:
+        release_db(conn)
 
-def save_user(uid, udata):
-    for attempt in range(3):
-        try:
-            conn = psycopg2.connect(SUPABASE_URL)
-            conn.autocommit = False
-            cur = conn.cursor()
-            cur.execute("SET LOCAL statement_timeout = '30000'")
+
+def _flush_uids_to_db(uids: set) -> None:
+    """Sauvegarde uniquement les UIDs marqués dirty (batch UPSERT)."""
+    if not uids:
+        return
+    conn = get_db()
+    try:
+        conn.autocommit = False
+        cur = conn.cursor()
+        cur.execute("SET LOCAL statement_timeout = '30000'")
+        for uid in uids:
+            udata = _CACHE.get(uid)
+            if udata is None:
+                continue
             cur.execute("""
                 INSERT INTO users (uid, data) VALUES (%s, %s)
                 ON CONFLICT (uid) DO UPDATE SET data = EXCLUDED.data
             """, (uid, json.dumps(udata)))
-            conn.commit()
-            cur.close()
-            conn.close()
-            return
-        except psycopg2.errors.QueryCanceled as e:
-            print(f"⚠️ Timeout save_user {uid} (essai {attempt+1}/3): {e}")
-            if attempt == 2:
-                raise
-            time.sleep(1)
-        except Exception as e:
-            print(f"❌ Erreur save_user {uid}: {e}")
-            raise
-
-
-def save_data(data):
-    for attempt in range(3):
+        conn.commit()
+        cur.close()
+    except Exception as e:
+        print(f"❌ flush_uids_to_db: {e}")
         try:
-            conn = psycopg2.connect(SUPABASE_URL)
-            conn.autocommit = False
-            cur = conn.cursor()
-            cur.execute("SET LOCAL statement_timeout = '30000'")
-            for uid, udata in data.items():
-                cur.execute("""
-                    INSERT INTO users (uid, data) VALUES (%s, %s)
-                    ON CONFLICT (uid) DO UPDATE SET data = EXCLUDED.data
-                """, (uid, json.dumps(udata)))
-            conn.commit()
-            cur.close()
-            conn.close()
-            return
-        except psycopg2.errors.QueryCanceled as e:
-            print(f"⚠️ Timeout save_data (essai {attempt+1}/3): {e}")
-            if attempt == 2:
-                raise
-            time.sleep(1)
-        except Exception as e:
-            print(f"❌ Erreur save_data: {e}")
-            raise
+            conn.rollback()
+        except Exception:
+            pass
+    finally:
+        release_db(conn)
 
 
-async def save_data_async(data):
-    loop = asyncio.get_running_loop()
-    await loop.run_in_executor(db_executor, save_data, data)
+# ── API publique (remplace les anciennes fonctions) ───────────────
 
-async def save_user_async(uid, udata):
-    loop = asyncio.get_running_loop()
-    await loop.run_in_executor(db_executor, save_user, uid, udata)
+async def load_data_async() -> dict:
+    """Retourne le cache mémoire — lecture instantanée (0 réseau)."""
+    global _CACHE, _CACHE_READY
+    if not _CACHE_READY:
+        # Chargement initial (une seule fois)
+        loop = asyncio.get_running_loop()
+        _CACHE = await loop.run_in_executor(db_executor, _load_all_from_db)
+        _CACHE_READY = True
+        print(f"[CACHE] {len(_CACHE)} utilisateurs chargés en mémoire")
+    return _CACHE
 
-async def load_data_async():
-    loop = asyncio.get_running_loop()
-    return await loop.run_in_executor(db_executor, load_data)
+
+async def save_user_async(uid: str, udata: dict) -> None:
+    """Écrit en mémoire + marque dirty (flush vers DB toutes les 30s)."""
+    _CACHE[uid] = udata
+    _DIRTY.add(uid)
+
+
+async def save_data_async(data: dict) -> None:
+    """Met à jour le cache pour chaque UID et marque dirty."""
+    for uid, udata in data.items():
+        _CACHE[uid] = udata
+        _DIRTY.add(uid)
+
+
+def _sync_flush_dirty() -> int:
+    """Flush synchrone des UIDs dirty — appelé depuis le thread executor."""
+    if not _DIRTY:
+        return 0
+    to_flush = set(_DIRTY)
+    _DIRTY.clear()
+    _flush_uids_to_db(to_flush)
+    return len(to_flush)
 
 
 def get_user(data, uid: str):
@@ -603,6 +635,25 @@ intents.messages = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 db_executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="db_worker")
 
+
+# ── Flush dirty vers DB toutes les 30s ───────────────────────────
+@tasks.loop(seconds=30)
+async def flush_dirty_loop():
+    if not _DIRTY:
+        return
+    loop = asyncio.get_running_loop()
+    n = await loop.run_in_executor(db_executor, _sync_flush_dirty)
+    if n:
+        print(f"[CACHE] Flush {n} users dirty → DB")
+
+@flush_dirty_loop.before_loop
+async def _before_flush():
+    await bot.wait_until_ready()
+
+@flush_dirty_loop.error
+async def _flush_error(err):
+    print(f"[CACHE] flush_dirty_loop erreur : {err}")
+
 # ─────────────────────────────────────────
 #  RANK UPDATE + ANNONCES
 # ─────────────────────────────────────────
@@ -630,9 +681,9 @@ async def _get_announce_channel():
 async def update_rank(member: discord.Member, hours_7d: float, announce=True, data=None):
     """Rangs cumulatifs : ajoute les rôles mérités, retire ceux perdus, annonce montée ET derank."""
     guild = member.guild
-    _local_data = data is None
-    if _local_data:
-        data = await load_data_async()
+    # Toujours utiliser le cache mémoire (data passé en argument ou _CACHE global)
+    if data is None:
+        data = _CACHE
     uid = str(member.id)
     user = get_user(data, uid)
 
@@ -721,8 +772,7 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True, da
     old_rank = user.get("last_rank")
     if new_highest_rank != old_rank:
         user["last_rank"] = new_highest_rank
-        if _local_data:
-            await save_user_async(uid, user)
+        _DIRTY.add(uid)
 
     if ranks_to_add or ranks_to_remove:
         print(f"[RANK] {member.display_name} : +{ranks_to_add} -{ranks_to_remove} | highest={new_highest_rank}")
@@ -1102,9 +1152,8 @@ async def make_rank_image(member: discord.Member, rank_name: str, hours_7d: floa
     return buf, is_gif
 
 async def check_alert(member: discord.Member, hours_7d: float, data=None):
-    _local_data = data is None
-    if _local_data:
-        data = await load_data_async()
+    if data is None:
+        data = _CACHE
     uid = str(member.id)
     user = get_user(data, uid)
 
@@ -1138,9 +1187,8 @@ async def check_alert(member: discord.Member, hours_7d: float, data=None):
             )
             await member.send(dm_text)
             user["alerted"] = current_rank
+            _DIRTY.add(uid)
             print(f"📨 Alerte DM envoyée à {member.display_name} ({current_rank} : {hours_7d:.1f}h/{threshold}h)")
-            if _local_data:
-                await save_user_async(uid, user)
         except discord.Forbidden:
             print(f"🔒 DM fermés pour {member.display_name}, alerte impossible")
         except Exception as e:
@@ -1148,8 +1196,7 @@ async def check_alert(member: discord.Member, hours_7d: float, data=None):
 
     if hours_7d >= threshold and already_alerted:
         user["alerted"] = None
-        if _local_data:
-            await save_user_async(uid, user)
+        _DIRTY.add(uid)
 
 # ─────────────────────────────────────────
 #  GRAPHIQUES
@@ -1263,19 +1310,20 @@ TEMPLATE_PATH = "template.png"
 # ─────────────────────────────────────────
 @bot.event
 async def on_ready():
-    print(f"✅ Bot connecté : {bot.user}")
+    print(f"[BOT] Connecte : {bot.user}")
     init_db()
+
+    # Charge le cache mémoire UNE SEULE FOIS
+    await load_data_async()
+
+    # Démarre les boucles de fond
     if not check_ranks_loop.is_running():
         check_ranks_loop.start()
-    for gid in GUILD_IDS:
-        guild = discord.Object(id=gid)
-        try:
-            bot.tree.copy_global_to(guild=guild)
-            synced = await bot.tree.sync(guild=guild)
-            print(f"📡 {len(synced)} commandes sync sur {gid}")
-        except Exception as e:
-            print(f"⚠️ Erreur sync {gid}: {e}")
-    data = await load_data_async()
+    if not flush_dirty_loop.is_running():
+        flush_dirty_loop.start()
+
+    # Récupère les join_times des membres déjà en vocal
+    data = _CACHE
     recovered = 0
     for guild in bot.guilds:
         for vc in guild.voice_channels:
@@ -1286,6 +1334,7 @@ async def on_ready():
                 user = get_user(data, uid)
                 if not user["join_time"]:
                     user["join_time"] = now_ts()
+                    _DIRTY.add(uid)
                     recovered += 1
         for sc in guild.stage_channels:
             for member in sc.members:
@@ -1295,22 +1344,22 @@ async def on_ready():
                 user = get_user(data, uid)
                 if not user["join_time"]:
                     user["join_time"] = now_ts()
+                    _DIRTY.add(uid)
                     recovered += 1
-    if recovered > 0:
-        await save_data_async(data)
-        print(f"🔄 {recovered} membres en vocal récupérés au démarrage")
-    print("✅ Bot prêt !")
+    if recovered:
+        print(f"[BOT] {recovered} membres en vocal recuperes au demarrage")
+    print("[BOT] Pret !")
 
 @bot.event
 async def on_message(message):
     if message.author.bot:
         return
-    data = await load_data_async()
-    uid = str(message.author.id)
-    user = get_user(data, uid)
+    uid  = str(message.author.id)
+    # Lecture et écriture directement dans le cache mémoire — 0 réseau
+    user = get_user(_CACHE, uid)
     user["messages"].append(now_ts())
     clean_old_data(user)
-    await save_user_async(uid, user)
+    _DIRTY.add(uid)   # sera flushed vers DB dans les 30s
     await bot.process_commands(message)
 
 @bot.event
@@ -1318,13 +1367,13 @@ async def on_voice_state_update(member, before, after):
     if member.bot:
         return
 
-    data = await load_data_async()
-    uid = str(member.id)
-    user = get_user(data, uid)
+    # Lecture/écriture directement dans le cache — 0 réseau
+    uid  = str(member.id)
+    user = get_user(_CACHE, uid)
 
     if before.channel is None and after.channel is not None:
         user["join_time"] = now_ts()
-        await save_user_async(uid, user)
+        _DIRTY.add(uid)
 
     elif before.channel is not None and after.channel is None:
         if user["join_time"]:
@@ -1337,7 +1386,7 @@ async def on_voice_state_update(member, before, after):
             })
             user["join_time"] = None
             clean_old_data(user)
-            await save_user_async(uid, user)
+            _DIRTY.add(uid)
 
             seconds_7d = seconds_in_period(user["vocal_sessions"], 7)
             hours_7d = seconds_7d / 3600
@@ -1354,85 +1403,58 @@ async def on_voice_state_update(member, before, after):
             })
         user["join_time"] = now_ts()
         clean_old_data(user)
-        await save_user_async(uid, user)
+        _DIRTY.add(uid)
 
 # ─────────────────────────────────────────
 #  LOOP HORAIRE
 # ─────────────────────────────────────────
 @tasks.loop(hours=1)
 async def check_ranks_loop():
-    start = time.time()
-    print("🔄 check_ranks_loop démarré...")
-    try:
-        data = await load_data_async()
-    except Exception as e:
-        print(f"❌ Erreur load_data_async : {e}")
-        return
-    modified_uids = set()
+    tick = time.time()
     total_members = 0
 
     for guild in bot.guilds:
         if not guild.chunked:
             try:
                 await guild.chunk()
-                print(f"✅ Chunked {guild.name} ({len(guild.members)} membres)")
             except Exception as e:
-                print(f"⚠️ Chunk error {guild.name}: {e}")
+                print(f"[RANKS] Chunk error {guild.name}: {e}")
         for member in guild.members:
             if member.bot:
                 continue
             total_members += 1
-            uid = str(member.id)
-            user = get_user(data, uid)
-            # Snapshot des champs mutables (last_rank + alerted) pour détecter tout changement
+            uid  = str(member.id)
+            # Lecture directe depuis le cache — 0 réseau
+            user = get_user(_CACHE, uid)
             old_snapshot = (user.get("last_rank"), user.get("alerted"))
             clean_old_data(user)
             jt = user.get("join_time")
 
             if jt:
-                hours_7d_real = seconds_in_period(user["vocal_sessions"], 7, join_time=jt) / 3600
-                if hours_7d_real == 0 and old_snapshot[0] is None:
-                    if total_members % 100 == 0:
-                        await asyncio.sleep(0)
-                    continue
-                try:
-                    await update_rank(member, hours_7d_real, announce=False, data=data)
-                    await check_alert(member, hours_7d_real, data=data)
-                except Exception as e:
-                    print(f"⚠️ Erreur {member.display_name}: {e}")
+                hours_7d = seconds_in_period(user["vocal_sessions"], 7, join_time=jt) / 3600
             else:
-                seconds_7d = seconds_in_period(user["vocal_sessions"], 7)
-                hours_7d = seconds_7d / 3600
+                hours_7d = seconds_in_period(user["vocal_sessions"], 7) / 3600
 
-                # FAST PATH : membre inactif sans rank → skip
-                if hours_7d == 0 and old_snapshot[0] is None:
-                    if total_members % 100 == 0:
-                        await asyncio.sleep(0)
-                    continue
+            if hours_7d == 0 and old_snapshot[0] is None:
+                if total_members % 100 == 0:
+                    await asyncio.sleep(0)
+                continue
 
-                try:
-                    await update_rank(member, hours_7d, announce=False, data=data)
-                    await check_alert(member, hours_7d, data=data)
-                except Exception as e:
-                    print(f"⚠️ Erreur {member.display_name}: {e}")
+            try:
+                await update_rank(member, hours_7d, announce=False, data=_CACHE)
+                await check_alert(member, hours_7d, data=_CACHE)
+            except Exception as e:
+                print(f"[RANKS] Erreur {member.display_name}: {e}")
 
-            # Marquer modifié si last_rank OU alerted a changé
+            # Marquer dirty si un champ a changé (le flush_dirty_loop s'en charge)
             if (user.get("last_rank"), user.get("alerted")) != old_snapshot:
-                modified_uids.add(uid)
+                _DIRTY.add(uid)
 
-            # Yield tous les 100 membres pour ne pas bloquer la gateway Discord
             if total_members % 100 == 0:
                 await asyncio.sleep(0)
 
-    if modified_uids:
-        print(f"💾 Sauvegarde batch de {len(modified_uids)} users modifiés...")
-        try:
-            await save_data_async({uid: data[uid] for uid in modified_uids if uid in data})
-        except Exception as e:
-            print(f"❌ Erreur save batch: {e}")
-
-    elapsed = time.time() - start
-    print(f"🔄 check_ranks_loop terminé en {elapsed:.1f}s - {total_members} membres, {len(modified_uids)} sauvés")
+    elapsed = time.time() - tick
+    print(f"[RANKS] check_ranks_loop : {total_members} membres en {elapsed:.1f}s")
 
 # ─────────────────────────────────────────
 #  COMMANDES SLASH
@@ -1470,7 +1492,7 @@ async def stats(interaction: discord.Interaction):
     except Exception as e:
         print(f"❌ /stats defer failed: {e}")
         return
-    data = await load_data_async()
+    data = _CACHE
     uid = str(interaction.user.id)
     user = get_user(data, uid)
     me = interaction.user
@@ -1568,7 +1590,7 @@ async def top(interaction: discord.Interaction, periode: app_commands.Choice[str
     except Exception as e:
         print(f"❌ /top defer failed: {e}")
         return
-    data = await load_data_async()
+    data = _CACHE
     guild = interaction.guild
     all_time = periode.value == "all"
     days = 0 if all_time else int(periode.value)
@@ -1652,7 +1674,7 @@ async def serveur(interaction: discord.Interaction):
     except Exception as e:
         print(f"❌ /serveur defer failed: {e}")
         return
-    data = await load_data_async()
+    data = _CACHE
     guild = interaction.guild
 
     total_vocal_7d = 0
@@ -1779,7 +1801,7 @@ async def tout(interaction: discord.Interaction):
     except Exception as e:
         print(f"❌ /tout defer failed: {e}")
         return
-    data = await load_data_async()
+    data = _CACHE
     guild = interaction.guild
     uid = str(interaction.user.id)
     user = get_user(data, uid)
@@ -1922,7 +1944,7 @@ async def chercher(interaction: discord.Interaction, membre: discord.Member):
     except Exception as e:
         print(f"❌ /chercher defer failed: {e}")
         return
-    data = await load_data_async()
+    data = _CACHE
     uid = str(membre.id)
     user = get_user(data, uid)
 
@@ -2245,13 +2267,13 @@ async def addheures(interaction: discord.Interaction, membre: discord.Member, he
     except Exception as e:
         print(f"❌ /addheures defer failed: {e}")
         return
-    data = await load_data_async()
+    data = _CACHE
     uid = str(membre.id)
     user = get_user(data, uid)
     now = now_ts()
     user["vocal_sessions"].append({"start": now - heures * 3600, "end": now, "channel": None})
     clean_old_data(user)
-    await save_user_async(uid, user)
+    _DIRTY.add(uid)
     seconds_7d = seconds_in_period(user["vocal_sessions"], 7)
     hours_7d = seconds_7d / 3600
     await update_rank(membre, hours_7d, announce=True)
@@ -2277,14 +2299,14 @@ async def resetheures(interaction: discord.Interaction, membre: discord.Member):
     except Exception as e:
         print(f"❌ /resetheures defer failed: {e}")
         return
-    data = await load_data_async()
+    data = _CACHE
     uid = str(membre.id)
     user = get_user(data, uid)
     user["vocal_sessions"] = []
     user["join_time"] = None
     user["last_rank"] = None
     user["alerted"] = False
-    await save_user_async(uid, user)
+    _DIRTY.add(uid)
     await update_rank(membre, 0.0, announce=False)
     try:
         await interaction.followup.send(
@@ -2984,6 +3006,27 @@ async def sync_commands(interaction: discord.Interaction):
             fail += 1
     status = "✅" if not fail else "⚠️"
     await interaction.followup.send(f"{status} Sync terminée — {ok} commandes ({fail} erreur(s))", ephemeral=True)
+
+
+# ── Sync des commandes une seule fois au démarrage ───────────────
+# setup_hook est appelé AVANT on_ready, et UNE SEULE FOIS (pas à chaque reconnect).
+# C'est là qu'on sync les slash commands pour éviter le délai dans on_ready.
+_COMMANDS_SYNCED = False
+
+@bot.event
+async def setup_hook():
+    global _COMMANDS_SYNCED
+    if _COMMANDS_SYNCED:
+        return
+    _COMMANDS_SYNCED = True
+    for gid in GUILD_IDS:
+        obj = discord.Object(id=gid)
+        try:
+            bot.tree.copy_global_to(guild=obj)
+            synced = await bot.tree.sync(guild=obj)
+            print(f"[SYNC] {len(synced)} commandes sync sur {gid}")
+        except Exception as e:
+            print(f"[SYNC] Erreur sync {gid}: {e}")
 
 
 bot.run(TOKEN)
