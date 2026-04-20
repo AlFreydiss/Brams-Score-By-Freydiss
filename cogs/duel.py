@@ -1,8 +1,8 @@
 """
 Cog — /duel  ⚔️  Duel Épique Anime
 ====================================
-• PIL génère la carte VS (texte/barres) — ZERO téléchargement externe dans PIL
-• Les GIFs des persos sont affichés via embed Discord (Giphy API ou fallback)
+• PIL génère la carte VS combat (Bangers + KOMIKAX, zéro téléchargement externe)
+• GIFs via embeds Discord (Giphy API)
 • Sondage réactions 🔴 / 🔵
 """
 
@@ -11,6 +11,7 @@ from __future__ import annotations
 import asyncio
 import io
 import logging
+import math
 import os
 import random
 import re
@@ -26,7 +27,7 @@ log = logging.getLogger(__name__)
 
 # ══════════════════════════════════════════════════════════════════
 #  GIPHY  — clé gratuite sur https://developers.giphy.com
-#  Ajouter GIPHY_API_KEY dans les variables d'environnement Railway
+#  Ajouter GIPHY_API_KEY dans les variables Railway
 # ══════════════════════════════════════════════════════════════════
 GIPHY_KEY  = os.getenv("GIPHY_API_KEY", "")
 _gif_cache: dict[str, str] = {}
@@ -34,8 +35,9 @@ _gif_cache: dict[str, str] = {}
 # ══════════════════════════════════════════════════════════════════
 #  POLICES
 # ══════════════════════════════════════════════════════════════════
-_FK = "KOMIKAX_.ttf"
-_FR = "Righteous-Regular.ttf"
+_FB = "Bangers-Regular.ttf"     # VS, verdict
+_FK = "KOMIKAX_.ttf"             # noms personnages
+_FR = "Righteous-Regular.ttf"   # titres, univers, petits textes
 
 def _f(path: str, size: int) -> ImageFont.FreeTypeFont:
     try:
@@ -240,17 +242,13 @@ _DRAW = [
 # ══════════════════════════════════════════════════════════════════
 
 async def _search_gif(query: str) -> str:
-    """Retourne l'URL du premier GIF Giphy. Retourne '' si pas de clé/erreur."""
     if query in _gif_cache:
         return _gif_cache[query]
     if not GIPHY_KEY:
         return ""
     params = urllib.parse.urlencode({
-        "api_key": GIPHY_KEY,
-        "q":       query,
-        "limit":   "3",
-        "rating":  "g",
-        "lang":    "en",
+        "api_key": GIPHY_KEY, "q": query,
+        "limit": "3", "rating": "g", "lang": "en",
     })
     try:
         async with aiohttp.ClientSession() as sess:
@@ -272,7 +270,7 @@ async def _search_gif(query: str) -> str:
         return ""
 
 # ══════════════════════════════════════════════════════════════════
-#  CARTE PIL  —  ZERO téléchargement externe, génération 100% locale
+#  HELPERS PIL
 # ══════════════════════════════════════════════════════════════════
 
 _EMOJI_RE = re.compile("[\U0001F300-\U0001FAFF\u2600-\u27BF]+", flags=re.UNICODE)
@@ -281,156 +279,327 @@ def _clean(t: str) -> str:
     return _EMOJI_RE.sub("", t).strip()
 
 
-def _rr(draw: ImageDraw.ImageDraw, xy, r: int, fill) -> None:
+def _rr(draw: ImageDraw.ImageDraw, xy, r: int, fill=None, outline=None, width: int = 1) -> None:
     try:
-        draw.rounded_rectangle(xy, radius=r, fill=fill)
+        draw.rounded_rectangle(xy, radius=r, fill=fill, outline=outline, width=width)
     except (AttributeError, TypeError):
-        draw.rectangle(xy, fill=fill)
+        draw.rectangle(xy, fill=fill, outline=outline)
 
+
+def _stroke_text(draw: ImageDraw.ImageDraw, pos, text: str, font,
+                 fill, stroke_color=(0, 0, 0), stroke_w: int = 3,
+                 anchor: str = "mm") -> None:
+    try:
+        # Pillow 8.0+ — stroke natif
+        draw.text(pos, text, font=font, fill=fill,
+                  stroke_width=stroke_w, stroke_fill=stroke_color, anchor=anchor)
+    except TypeError:
+        x, y = pos
+        for dx in range(-stroke_w, stroke_w + 1):
+            for dy in range(-stroke_w, stroke_w + 1):
+                if dx or dy:
+                    draw.text((x + dx, y + dy), text, font=font,
+                               fill=stroke_color, anchor=anchor)
+        draw.text(pos, text, font=font, fill=fill, anchor=anchor)
+
+
+def _text_w(draw: ImageDraw.ImageDraw, text: str, font) -> int:
+    try:
+        bbox = draw.textbbox((0, 0), text, font=font)
+        return bbox[2] - bbox[0]
+    except Exception:
+        return len(text) * (font.size if hasattr(font, "size") else 8)
+
+
+def _radial_glow(canvas: Image.Image, cx: int, cy: int,
+                 color: tuple, max_r: int, max_alpha: int = 65) -> None:
+    """Glow radial doux composité sur canvas RGBA."""
+    ov = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
+    d  = ImageDraw.Draw(ov)
+    r, g, b = color
+    step = 10
+    for rad in range(max_r, 0, -step):
+        a = int(max_alpha * (1 - rad / max_r) ** 1.6)
+        d.ellipse([cx - rad, cy - rad, cx + rad, cy + rad], fill=(r, g, b, a))
+    canvas.alpha_composite(ov)
+
+
+# ══════════════════════════════════════════════════════════════════
+#  MODULES DE DESSIN
+# ══════════════════════════════════════════════════════════════════
+
+def _draw_background(canvas: Image.Image) -> None:
+    """Fond noir charbon avec légère profondeur centrale."""
+    W, H = canvas.size
+    draw = ImageDraw.Draw(canvas)
+    for y in range(H):
+        t = max(0.0, 1.0 - abs(y / H - 0.42) * 1.7)
+        draw.line([(0, y), (W, y)], fill=(int(38 * t * t), int(5 * t), int(9 * t), 255))
+
+
+def _draw_speed_lines(canvas: Image.Image, cx: int, cy: int,
+                      side: str, color: tuple) -> None:
+    """Lignes de vitesse manga rayonnant depuis le centre du personnage."""
+    ov   = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
+    d    = ImageDraw.Draw(ov)
+    r, g, b = color
+    n    = 11
+    # Angles : côté gauche → vers la gauche, côté droit → vers la droite
+    a_start = math.radians(115) if side == "left" else math.radians(-65)
+    a_end   = math.radians(245) if side == "left" else math.radians(65)
+    for i in range(n):
+        angle  = a_start + (a_end - a_start) * i / max(n - 1, 1)
+        length = random.randint(170, 310)
+        x2 = cx + int(math.cos(angle) * length)
+        y2 = cy + int(math.sin(angle) * length)
+        alpha = random.randint(20, 55)
+        w     = random.choice([1, 1, 2])
+        d.line([(cx, cy), (x2, y2)], fill=(r // 3, g // 3, b // 3, alpha), width=w)
+    canvas.alpha_composite(ov)
+
+
+def _draw_diagonal_split(canvas: Image.Image) -> None:
+    """Séparateur diagonal lumineux au centre — l'âme visuelle de la carte."""
+    W, H  = canvas.size
+    MID   = W // 2
+    LEAN  = 16   # décalage horizontal bas vs haut
+
+    ov = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
+    d  = ImageDraw.Draw(ov)
+
+    # Couches de la plus large à la plus fine
+    layers = [
+        (32,  (0,   0,   0,   200)),   # ombre profonde
+        (16,  (140, 55,  0,   180)),   # halo brun-rouge
+        (7,   (255, 120, 20,  220)),   # halo orange vif
+        (2,   (255, 235, 180, 255)),   # filet blanc chaud
+    ]
+    for hw, fill in layers:
+        pts = [
+            (MID - LEAN - hw, 0),
+            (MID - LEAN + hw, 0),
+            (MID + LEAN + hw, H),
+            (MID + LEAN - hw, H),
+        ]
+        d.polygon(pts, fill=fill)
+    canvas.alpha_composite(ov)
+
+
+def _draw_vs_badge(canvas: Image.Image, cy_center: int) -> None:
+    """Badge VS hexagonal avec glow rouge et étincelles."""
+    W   = canvas.size[0]
+    cx  = W // 2
+    cy  = cy_center
+
+    ov = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
+    d  = ImageDraw.Draw(ov)
+
+    # Halo rouge rayonné derrière le badge
+    for rad in range(70, 0, -6):
+        a = int(130 * (1 - rad / 70) ** 1.4)
+        d.ellipse([cx - rad, cy - rad, cx + rad, cy + rad], fill=(210, 10, 10, a))
+
+    # Hexagone de fond
+    R  = 50
+    pts_hex = [
+        (cx + int(R * math.cos(math.radians(60 * i - 30))),
+         cy + int(R * math.sin(math.radians(60 * i - 30))))
+        for i in range(6)
+    ]
+    d.polygon(pts_hex, fill=(12, 8, 14, 245))
+
+    # Bordure hexagone rouge sang
+    R_border = R + 1
+    for i in range(6):
+        p1 = (cx + int(R_border * math.cos(math.radians(60 * i - 30))),
+              cy + int(R_border * math.sin(math.radians(60 * i - 30))))
+        p2 = (cx + int(R_border * math.cos(math.radians(60 * (i + 1) - 30))),
+              cy + int(R_border * math.sin(math.radians(60 * (i + 1) - 30))))
+        d.line([p1, p2], fill=(210, 20, 20, 255), width=2)
+
+    # Étincelles rayonnantes (8 directions)
+    for i in range(8):
+        angle  = math.radians(i * 45)
+        r_in   = R + 5
+        r_out  = R + random.randint(14, 26)
+        x1 = cx + int(r_in  * math.cos(angle))
+        y1 = cy + int(r_in  * math.sin(angle))
+        x2 = cx + int(r_out * math.cos(angle))
+        y2 = cy + int(r_out * math.sin(angle))
+        d.line([(x1, y1), (x2, y2)], fill=(255, 180, 0, 220), width=2)
+
+    canvas.alpha_composite(ov)
+
+    # Texte VS (sur canvas directement)
+    draw  = ImageDraw.Draw(canvas)
+    f_vs  = _f(_FB, 54)
+    _stroke_text(draw, (cx, cy), "VS", f_vs,
+                 fill=(250, 248, 248), stroke_color=(130, 0, 0), stroke_w=3)
+
+
+def _draw_character_side(canvas: Image.Image, side: str,
+                         d: dict, BTM_Y: int, TOP_H: int) -> None:
+    """Dessine un côté complet : aura + speed lines + initiale + nom + titre + badge."""
+    W, H = canvas.size
+    cx   = W // 4 if side == "left" else 3 * W // 4
+    cy   = TOP_H + (BTM_Y - TOP_H) // 2   # centre vertical de la zone personnage
+
+    color = d["color"]
+    r, g, b = color
+
+    # Aura radiale
+    _radial_glow(canvas, cx, cy, color, max_r=200, max_alpha=55)
+
+    # Speed lines
+    _draw_speed_lines(canvas, cx, cy, side, color)
+
+    draw = ImageDraw.Draw(canvas)
+
+    # Initiale fantôme (très discrète — simple fond)
+    f_init = _f(_FK, 200)
+    letter = _clean(d["display"])[0].upper()
+    draw.text((cx, cy - 20), letter,
+              fill=(r // 6, g // 6, b // 6), font=f_init, anchor="mm")
+
+    # ── Nom (GROS, stroke manga) ──────────────────────────────────
+    f_name = _f(_FK, 44)
+    name   = _clean(d["display"]).upper()
+    _stroke_text(draw, (cx, BTM_Y - 92), name, f_name,
+                 fill=(248, 248, 252), stroke_color=(0, 0, 0), stroke_w=3)
+
+    # ── Titre ─────────────────────────────────────────────────────
+    f_titre = _f(_FR, 15)
+    draw.text((cx, BTM_Y - 64), _clean(d["titre"]),
+              fill=(180, 180, 195), font=f_titre, anchor="mm")
+
+    # ── Badge univers arrondi ──────────────────────────────────────
+    f_univ     = _f(_FR, 12)
+    univ_text  = _clean(d["univers"]).upper()
+    tw         = _text_w(draw, univ_text, f_univ)
+    badge_w, badge_h = tw + 22, 20
+    bx = cx - badge_w // 2
+    by = BTM_Y - 48
+    _rr(draw, [bx, by, bx + badge_w, by + badge_h],
+        r=5, fill=(12, 12, 18), outline=color, width=1)
+    draw.text((cx, by + badge_h // 2), univ_text,
+              fill=color, font=f_univ, anchor="mm")
+
+
+def _draw_top_banner(canvas: Image.Image, rivalry: str, TOP_H: int) -> None:
+    """Bannière sombre en haut avec phrase de rivalité."""
+    W  = canvas.size[0]
+    ov = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
+    d  = ImageDraw.Draw(ov)
+    d.rectangle([0, 0, W, TOP_H], fill=(4, 4, 8, 215))
+    d.line([(0, TOP_H), (W, TOP_H)], fill=(170, 45, 0, 200), width=1)
+    canvas.alpha_composite(ov)
+
+    draw = ImageDraw.Draw(canvas)
+    f    = _f(_FR, 13)
+    draw.text((W // 2, TOP_H // 2), _clean(rivalry),
+              fill=(185, 180, 150), font=f, anchor="mm")
+
+
+def _draw_bottom_bar(canvas: Image.Image,
+                     d1: dict, pct1: int,
+                     d2: dict, pct2: int,
+                     result: str, BTM_Y: int) -> None:
+    """Bande inférieure : barres de force miroir + verdict doré."""
+    W, H = canvas.size
+    MID  = W // 2
+    PAD  = 22
+    BW   = MID - PAD * 2 - 25   # largeur barre
+
+    # Fond bande
+    ov = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
+    d  = ImageDraw.Draw(ov)
+    d.rectangle([0, BTM_Y, W, H], fill=(4, 4, 8, 228))
+    d.line([(0, BTM_Y), (W, BTM_Y)], fill=(170, 45, 0, 210), width=2)
+    d.line([(MID, BTM_Y + 4), (MID, H - 4)], fill=(35, 35, 48, 180), width=1)
+    canvas.alpha_composite(ov)
+
+    draw = ImageDraw.Draw(canvas)
+
+    BY    = BTM_Y + 16   # y de départ des barres
+    BH    = 15
+
+    def _bar(bx: int, pct: int, color: tuple, rtl: bool = False) -> None:
+        # Fond
+        _rr(draw, [bx, BY, bx + BW, BY + BH], r=6, fill=(18, 18, 26))
+        fw = int(BW * pct / 100)
+        if fw < 4:
+            return
+        if rtl:
+            x0, x1 = bx + BW - fw, bx + BW
+        else:
+            x0, x1 = bx, bx + fw
+        # Remplissage couleur
+        _rr(draw, [x0, BY, x1, BY + BH], r=6, fill=color)
+        # Shine (rectangle légèrement plus clair en haut)
+        r, g, b = color
+        shine = (min(255, r + 70), min(255, g + 70), min(255, b + 70))
+        _rr(draw, [x0 + 2, BY + 2, x1 - 2, BY + BH // 2], r=4, fill=shine)
+
+    # Barre gauche (perso 1, gauche → droite)
+    _bar(PAD, pct1, d1["color"], rtl=False)
+    # Barre droite (perso 2, droite → gauche / mirroir)
+    _bar(MID + PAD + 24, pct2, d2["color"], rtl=True)
+
+    f_pct  = _f(_FR, 12)
+    f_name = _f(_FR, 13)
+
+    # Pourcentages
+    draw.text((PAD + BW + 7,       BY + BH // 2), f"{pct1}%",
+              fill=(215, 215, 215), font=f_pct, anchor="lm")
+    draw.text((MID + PAD + 24 - 7, BY + BH // 2), f"{pct2}%",
+              fill=(215, 215, 215), font=f_pct, anchor="rm")
+
+    # Noms sous les barres
+    draw.text((PAD,             BY + BH + 8), _clean(d1["display"]),
+              fill=d1["color"], font=f_name, anchor="lm")
+    draw.text((W - PAD,         BY + BH + 8), _clean(d2["display"]),
+              fill=d2["color"], font=f_name, anchor="rm")
+
+    # Séparateur avant le verdict
+    sep_y = BTM_Y + 56
+    draw.line([(PAD, sep_y), (W - PAD, sep_y)], fill=(35, 35, 50), width=1)
+
+    # Verdict
+    f_res = _f(_FB, 26)
+    _stroke_text(draw, (MID, BTM_Y + 82), _clean(result), f_res,
+                 fill=(255, 210, 55), stroke_color=(70, 35, 0), stroke_w=2)
+
+    # Footer
+    draw.text((MID, H - 9), "BRAMS SCORE  •  DUEL ARENA",
+              fill=(50, 50, 62), font=_f(_FR, 10), anchor="mm")
+
+
+# ══════════════════════════════════════════════════════════════════
+#  FONCTION PRINCIPALE
+# ══════════════════════════════════════════════════════════════════
 
 def _build_card(
     d1: dict, pct1: int,
     d2: dict, pct2: int,
     rivalry: str, result: str,
 ) -> io.BytesIO:
-    """Carte battle 100% PIL — aucune image externe."""
-    W, H = 900, 420
-    MID  = W // 2
+    W, H   = 960, 500
+    TOP_H  = 36    # hauteur bannière du haut
+    BTM_H  = 130   # hauteur bande du bas
+    BTM_Y  = H - BTM_H
 
-    canvas = Image.new("RGB", (W, H), (6, 6, 10))
-    draw   = ImageDraw.Draw(canvas)
+    canvas = Image.new("RGBA", (W, H), (8, 8, 12, 255))
 
-    # ── Fond dégradé ─────────────────────────────────────────────
-    for y in range(H):
-        t = max(0.0, 1.0 - abs(y / H - 0.38) * 1.9)
-        draw.line([(0, y), (W, y)], fill=(int(55*t*t), int(8*t), int(12*t)))
-
-    # ── Tints colorés gauche/droite ───────────────────────────────
-    for x in range(MID):
-        fade = max(0.0, 1.0 - abs(x / MID - 0.5) * 2)
-        a1   = int(60 * fade)
-        a2   = int(60 * fade)
-        r1, g1, b1 = d1["color"]
-        r2, g2, b2 = d2["color"]
-        # Blend manuel (pas d'alpha sur Image.new "RGB")
-        for yy in [0]:  # on dessine des lignes verticales
-            pass
-        draw.line([(x,       0), (x,       H)],
-                  fill=(int(r1*a1/255 + 6*(255-a1)/255),
-                        int(g1*a1/255 + 6*(255-a1)/255),
-                        int(b1*a1/255 + 10*(255-a1)/255)))
-        draw.line([(MID + x, 0), (MID + x, H)],
-                  fill=(int(r2*a2/255 + 6*(255-a2)/255),
-                        int(g2*a2/255 + 6*(255-a2)/255),
-                        int(b2*a2/255 + 10*(255-a2)/255)))
-
-    # ── Séparateur central ────────────────────────────────────────
-    for xi in range(-3, 4):
-        a = int(220 * (1 - abs(xi) / 4))
-        draw.line([(MID + xi, 0), (MID + xi, H)],
-                  fill=(int(255 * a / 255), int(140 * a / 255), 0))
-
-    # ── Panneaux personnages ──────────────────────────────────────
-    PNL_Y, PNL_H = 30, H - 160
-    PNL_W        = MID - 30
-
-    def _panel(x: int, color: tuple) -> None:
-        r, g, b = color
-        _rr(draw, [x, PNL_Y, x + PNL_W, PNL_Y + PNL_H], 12,
-            (max(0, r - 180), max(0, g - 180), max(0, b - 180)))
-        # Bordure colorée
-        for i in range(3):
-            draw.rounded_rectangle(
-                [x + i, PNL_Y + i, x + PNL_W - i, PNL_Y + PNL_H - i],
-                radius=12 - i,
-                outline=(*color,),
-                width=1,
-            ) if hasattr(draw, "rounded_rectangle") else None
-
-    _panel(15,        d1["color"])
-    _panel(MID + 15,  d2["color"])
-
-    # ── Initiale géante dans chaque panneau ───────────────────────
-    f_init = _f(_FK, 160)
-    cx1    = 15 + PNL_W // 2
-    cx2    = MID + 15 + PNL_W // 2
-    cy_init = PNL_Y + PNL_H // 2 - 10
-
-    def _initial(cx: int, name: str, color: tuple) -> None:
-        letter = _clean(name)[0].upper()
-        r, g, b = color
-        # Ombre
-        draw.text((cx + 4, cy_init + 4), letter,
-                  fill=(max(0, r - 150), max(0, g - 150), max(0, b - 150)),
-                  font=f_init, anchor="mm")
-        draw.text((cx, cy_init), letter,
-                  fill=color, font=f_init, anchor="mm")
-
-    _initial(cx1, d1["display"], d1["color"])
-    _initial(cx2, d2["display"], d2["color"])
-
-    # ── Noms et titres dans les panneaux ─────────────────────────
-    f_name = _f(_FK, 22)
-    f_sub  = _f(_FR, 14)
-
-    draw.text((cx1, PNL_Y + PNL_H - 38), _clean(d1["display"]),
-              fill=d1["color"], font=f_name, anchor="mm")
-    draw.text((cx1, PNL_Y + PNL_H - 18), _clean(d1["titre"]),
-              fill=(180, 180, 180), font=f_sub, anchor="mm")
-    draw.text((cx2, PNL_Y + PNL_H - 38), _clean(d2["display"]),
-              fill=d2["color"], font=f_name, anchor="mm")
-    draw.text((cx2, PNL_Y + PNL_H - 18), _clean(d2["titre"]),
-              fill=(180, 180, 180), font=f_sub, anchor="mm")
-
-    # ── VS central ────────────────────────────────────────────────
-    f_vs = _f(_FK, 72)
-    draw.text((MID + 3, H // 2 - 80 + 3), "VS",
-              fill=(60, 0, 0), font=f_vs, anchor="mm")
-    draw.text((MID, H // 2 - 80), "VS",
-              fill=(255, 215, 0), font=f_vs, anchor="mm")
-
-    # ── Phrase rivalité (haut) ────────────────────────────────────
-    f_riv = _f(_FR, 13)
-    draw.text((MID, 10), _clean(rivalry),
-              fill=(180, 175, 150), font=f_riv, anchor="mt")
-
-    # ── Bande inférieure ──────────────────────────────────────────
-    BTM_Y = H - 128
-    _rr(draw, [0, BTM_Y, W, H], 0, (4, 4, 8))
-    draw.line([(0, BTM_Y), (W, BTM_Y)], fill=(200, 55, 0), width=2)
-    draw.line([(MID, BTM_Y), (MID, H)], fill=(55, 55, 65), width=1)
-
-    f_tiny = _f(_FR, 12)
-    f_res  = _f(_FR, 17)
-
-    draw.text((cx1, BTM_Y + 18), _clean(d1["univers"]),
-              fill=(130, 130, 140), font=f_tiny, anchor="mm")
-    draw.text((cx2, BTM_Y + 18), _clean(d2["univers"]),
-              fill=(130, 130, 140), font=f_tiny, anchor="mm")
-
-    # Barres de puissance
-    BY, BH, BW = BTM_Y + 35, 13, MID - 55
-    BX1, BX2   = 15, MID + 15
-
-    for bx, pct, color in [(BX1, pct1, d1["color"]), (BX2, pct2, d2["color"])]:
-        _rr(draw, [bx, BY, bx + BW, BY + BH], 5, (22, 22, 30))
-        fw = int(BW * pct / 100)
-        if fw:
-            _rr(draw, [bx, BY, bx + fw, BY + BH], 5, color)
-        draw.text((bx + BW + 6, BY + BH // 2),
-                  f"{pct}%", fill=(220, 220, 220), font=f_tiny, anchor="lm")
-
-    # Résultat
-    draw.text((MID, BTM_Y + 72), f">> {_clean(result)} <<",
-              fill=(255, 230, 70), font=f_res, anchor="mm")
-
-    # Footer
-    f_ft = _f(_FR, 11)
-    draw.text((MID, H - 12), "Brams Score • Duel Arena",
-              fill=(80, 80, 90), font=f_ft, anchor="mm")
+    _draw_background(canvas)
+    _draw_character_side(canvas, "left",  d1, BTM_Y, TOP_H)
+    _draw_character_side(canvas, "right", d2, BTM_Y, TOP_H)
+    _draw_diagonal_split(canvas)
+    _draw_vs_badge(canvas, cy_center=TOP_H + (BTM_Y - TOP_H) // 2 - 20)
+    _draw_top_banner(canvas, rivalry, TOP_H)
+    _draw_bottom_bar(canvas, d1, pct1, d2, pct2, result, BTM_Y)
 
     buf = io.BytesIO()
-    canvas.save(buf, "PNG", optimize=True)
+    canvas.convert("RGB").save(buf, "PNG", optimize=True)
     buf.seek(0)
     return buf
 
@@ -450,11 +619,9 @@ class DuelCog(commands.Cog):
         await interaction.response.defer()
 
         try:
-            # Tirage aléatoire
             k1, k2 = random.sample(list(CHARS.keys()), 2)
             d1, d2  = CHARS[k1], CHARS[k2]
 
-            # Résultat
             outcome = random.choices(["p1", "p2", "draw"], weights=[40, 40, 20])[0]
             if outcome == "p1":
                 pct1 = random.randint(56, 88); pct2 = 100 - pct1
@@ -468,20 +635,17 @@ class DuelCog(commands.Cog):
 
             rivalry = random.choice(_RIVALRIES)
 
-            # Génération PIL en thread (local, pas d'internet)
             loop = asyncio.get_running_loop()
             buf  = await loop.run_in_executor(
                 None,
                 lambda: _build_card(d1, pct1, d2, pct2, rivalry, result),
             )
 
-            # Recherche GIFs Giphy en parallèle (peut échouer sans impact)
             url1, url2 = await asyncio.gather(
                 _search_gif(d1["query"]),
                 _search_gif(d2["query"]),
             )
 
-            # ── Embed principal (carte PIL) ────────────────────────
             main = discord.Embed(
                 title="⚔️  D U E L   É P I Q U E  ⚔️",
                 color=0xE63939,
@@ -494,14 +658,11 @@ class DuelCog(commands.Cog):
             main.set_footer(text="⚔️ Brams Score • Duel Arena  |  /duel pour rejouer !")
             main.timestamp = discord.utils.utcnow()
 
-            # ── Embeds GIF personnages (si Giphy disponible) ───────
             embeds = [main]
-
             if url1:
                 e1 = discord.Embed(title=f"🔴  {d1['display']}", color=0xFF4500)
                 e1.set_image(url=url1)
                 embeds.append(e1)
-
             if url2:
                 e2 = discord.Embed(title=f"🔵  {d2['display']}", color=0x1E90FF)
                 e2.set_image(url=url2)
@@ -512,7 +673,6 @@ class DuelCog(commands.Cog):
                 embeds=embeds,
             )
 
-            # ── Sondage réactions ──────────────────────────────────
             poll = discord.Embed(
                 title="🗳️  QUI VA GAGNER ?  Votez !",
                 description=(
