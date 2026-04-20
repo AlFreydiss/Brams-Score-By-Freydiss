@@ -1,11 +1,9 @@
 """
 Cog — /duel  ⚔️  Duel Épique Anime
 ====================================
-• Sélection 100% aléatoire
-• Carte PIL composite : les deux persos côte à côte
-• GIFs via Giphy Search API (GIPHY_API_KEY dans les variables Railway)
-• Fallback couleur si API indisponible
-• Sondage réactions après la carte
+• PIL génère la carte VS (texte/barres) — ZERO téléchargement externe dans PIL
+• Les GIFs des persos sont affichés via embed Discord (Giphy API ou fallback)
+• Sondage réactions 🔴 / 🔵
 """
 
 from __future__ import annotations
@@ -27,11 +25,11 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont
 log = logging.getLogger(__name__)
 
 # ══════════════════════════════════════════════════════════════════
-#  GIPHY API  —  clé gratuite sur https://developers.giphy.com
-#  Ajouter GIPHY_API_KEY dans les variables Railway
+#  GIPHY  — clé gratuite sur https://developers.giphy.com
+#  Ajouter GIPHY_API_KEY dans les variables d'environnement Railway
 # ══════════════════════════════════════════════════════════════════
 GIPHY_KEY  = os.getenv("GIPHY_API_KEY", "")
-_gif_cache: dict[str, str] = {}   # cache mémoire pour éviter les appels répétés
+_gif_cache: dict[str, str] = {}
 
 # ══════════════════════════════════════════════════════════════════
 #  POLICES
@@ -47,8 +45,6 @@ def _f(path: str, size: int) -> ImageFont.FreeTypeFont:
 
 # ══════════════════════════════════════════════════════════════════
 #  PERSONNAGES
-#  query = termes de recherche Giphy (en anglais pour de meilleurs résultats)
-#  color = couleur RGB
 # ══════════════════════════════════════════════════════════════════
 CHARS: dict[str, dict] = {
     "luffy": {
@@ -83,12 +79,12 @@ CHARS: dict[str, dict] = {
         "display": "Sasuke Uchiha",
         "query":   "sasuke uchiha sharingan",
         "univers": "Naruto",
-        "titre":   "Ninja de l'Ombre",
+        "titre":   "Ninja de l Ombre",
         "color":   (130, 0, 220),
     },
     "kakashi": {
         "display": "Kakashi Hatake",
-        "query":   "kakashi hatake chidori lightning",
+        "query":   "kakashi hatake chidori",
         "univers": "Naruto",
         "titre":   "Copieur de Mille Jutsu",
         "color":   (140, 190, 255),
@@ -102,7 +98,7 @@ CHARS: dict[str, dict] = {
     },
     "vegeta": {
         "display": "Vegeta",
-        "query":   "vegeta dragon ball prince saiyan",
+        "query":   "vegeta dragon ball saiyan",
         "univers": "Dragon Ball",
         "titre":   "Prince des Saiyans",
         "color":   (180, 0, 255),
@@ -181,7 +177,7 @@ CHARS: dict[str, dict] = {
         "display": "Meliodas",
         "query":   "meliodas seven deadly sins",
         "univers": "Nanatsu no Taizai",
-        "titre":   "Dragon's Sin of Wrath",
+        "titre":   "Dragon Sin of Wrath",
         "color":   (255, 80, 80),
     },
     "natsu": {
@@ -195,7 +191,7 @@ CHARS: dict[str, dict] = {
         "display": "Edward Elric",
         "query":   "edward elric fullmetal alchemist",
         "univers": "Fullmetal Alchemist",
-        "titre":   "Alchimiste d'Acier",
+        "titre":   "Alchimiste Acier",
         "color":   (220, 180, 0),
     },
     "gintoki": {
@@ -207,8 +203,8 @@ CHARS: dict[str, dict] = {
     },
     "giorno": {
         "display": "Giorno Giovanna",
-        "query":   "giorno giovanna jojo bizarre",
-        "univers": "JoJo's Bizarre Adventure",
+        "query":   "giorno giovanna jojo bizarre adventure",
+        "univers": "JoJo Bizarre Adventure",
         "titre":   "Capo di Passione",
         "color":   (255, 180, 200),
     },
@@ -244,7 +240,7 @@ _DRAW = [
 # ══════════════════════════════════════════════════════════════════
 
 async def _search_gif(query: str) -> str:
-    """Retourne l'URL du premier GIF Giphy correspondant à la query."""
+    """Retourne l'URL du premier GIF Giphy. Retourne '' si pas de clé/erreur."""
     if query in _gif_cache:
         return _gif_cache[query]
     if not GIPHY_KEY:
@@ -256,26 +252,27 @@ async def _search_gif(query: str) -> str:
         "rating":  "g",
         "lang":    "en",
     })
-    api_url = f"https://api.giphy.com/v1/gifs/search?{params}"
     try:
         async with aiohttp.ClientSession() as sess:
-            async with sess.get(api_url, timeout=aiohttp.ClientTimeout(total=8)) as r:
+            async with sess.get(
+                f"https://api.giphy.com/v1/gifs/search?{params}",
+                timeout=aiohttp.ClientTimeout(total=8),
+            ) as r:
                 if r.status != 200:
-                    raise ValueError(f"Giphy HTTP {r.status}")
+                    return ""
                 data = await r.json()
         items = data.get("data", [])
         if not items:
             return ""
-        gif_url = items[0]["images"]["original"]["url"]
-        _gif_cache[query] = gif_url
-        log.info("[DuelCog] Giphy cache %s → OK", query)
-        return gif_url
+        url = items[0]["images"]["original"]["url"]
+        _gif_cache[query] = url
+        return url
     except Exception as exc:
-        log.warning("[DuelCog] Giphy search(%s) → %s", query, exc)
+        log.warning("[DuelCog] Giphy(%s): %s", query, exc)
         return ""
 
 # ══════════════════════════════════════════════════════════════════
-#  FETCH IMAGE
+#  CARTE PIL  —  ZERO téléchargement externe, génération 100% locale
 # ══════════════════════════════════════════════════════════════════
 
 _EMOJI_RE = re.compile("[\U0001F300-\U0001FAFF\u2600-\u27BF]+", flags=re.UNICODE)
@@ -284,58 +281,7 @@ def _clean(t: str) -> str:
     return _EMOJI_RE.sub("", t).strip()
 
 
-def _placeholder(color: tuple, name: str, w: int = 320, h: int = 400) -> Image.Image:
-    """Panneau coloré affiché quand aucune image n'est disponible."""
-    img = Image.new("RGBA", (w, h), (10, 10, 15, 255))
-    d   = ImageDraw.Draw(img)
-    for y in range(h):
-        t = y / h
-        r = int(color[0] * (1 - t) * 0.5)
-        g = int(color[1] * (1 - t) * 0.5)
-        b = int(color[2] * (1 - t) * 0.5)
-        d.line([(0, y), (w, y)], fill=(r, g, b, 255))
-    # Initiale du nom en grand
-    initial = _clean(name)[0].upper() if name else "?"
-    d.text((w // 2, h // 2), initial, fill=(*color, 200),
-           font=_f(_FK, 140), anchor="mm")
-    return img
-
-
-async def _fetch(url: str, color: tuple, name: str) -> Image.Image:
-    """Télécharge l'URL et retourne une frame RGBA, ou un placeholder."""
-    if not url:
-        return _placeholder(color, name)
-    ua = (
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/124.0.0.0 Safari/537.36"
-    )
-    try:
-        async with aiohttp.ClientSession(headers={"User-Agent": ua}) as sess:
-            async with sess.get(url, timeout=aiohttp.ClientTimeout(total=12)) as r:
-                if r.status != 200:
-                    raise ValueError(f"HTTP {r.status}")
-                data = await r.read()
-        img = Image.open(io.BytesIO(data))
-        if getattr(img, "n_frames", 1) > 1:
-            try:
-                img.seek(img.n_frames // 4)
-            except EOFError:
-                img.seek(0)
-        return img.convert("RGBA")
-    except Exception as exc:
-        log.warning("[DuelCog] fetch(%s) → %s — placeholder", url[:60], exc)
-        return _placeholder(color, name)
-
-# ══════════════════════════════════════════════════════════════════
-#  GÉNÉRATION CARTE PIL
-# ══════════════════════════════════════════════════════════════════
-
-def _f_safe(path: str, size: int) -> ImageFont.FreeTypeFont:
-    return _f(path, size)
-
-
-def _rounded_rect(draw: ImageDraw.ImageDraw, xy, r: int, fill) -> None:
+def _rr(draw: ImageDraw.ImageDraw, xy, r: int, fill) -> None:
     try:
         draw.rounded_rectangle(xy, radius=r, fill=fill)
     except (AttributeError, TypeError):
@@ -343,113 +289,148 @@ def _rounded_rect(draw: ImageDraw.ImageDraw, xy, r: int, fill) -> None:
 
 
 def _build_card(
-    img1: Image.Image, d1: dict, pct1: int,
-    img2: Image.Image, d2: dict, pct2: int,
+    d1: dict, pct1: int,
+    d2: dict, pct2: int,
     rivalry: str, result: str,
 ) -> io.BytesIO:
-    W, H = 960, 540
+    """Carte battle 100% PIL — aucune image externe."""
+    W, H = 900, 420
     MID  = W // 2
-    PAD  = 18
-    COL  = MID - PAD
 
-    canvas = Image.new("RGBA", (W, H), (6, 6, 10, 255))
+    canvas = Image.new("RGB", (W, H), (6, 6, 10))
     draw   = ImageDraw.Draw(canvas)
 
-    # Fond dégradé vertical sombre
+    # ── Fond dégradé ─────────────────────────────────────────────
     for y in range(H):
-        t = max(0.0, 1.0 - abs(y / H - 0.40) * 1.9)
-        draw.line([(0, y), (W, y)], fill=(int(52*t*t), int(7*t), int(10*t), 255))
+        t = max(0.0, 1.0 - abs(y / H - 0.38) * 1.9)
+        draw.line([(0, y), (W, y)], fill=(int(55*t*t), int(8*t), int(12*t)))
 
-    # Tints colorés gauche / droite (via draw.line — rapide)
-    for x in range(COL + PAD):
-        fade = max(0.0, 1.0 - abs(x / (COL + PAD) - 0.5) * 2)
-        a = int(42 * fade)
-        draw.line([(x,       0), (x,       H)], fill=(*d1["color"], a))
-        draw.line([(MID + x, 0), (MID + x, H)], fill=(*d2["color"], a))
+    # ── Tints colorés gauche/droite ───────────────────────────────
+    for x in range(MID):
+        fade = max(0.0, 1.0 - abs(x / MID - 0.5) * 2)
+        a1   = int(60 * fade)
+        a2   = int(60 * fade)
+        r1, g1, b1 = d1["color"]
+        r2, g2, b2 = d2["color"]
+        # Blend manuel (pas d'alpha sur Image.new "RGB")
+        for yy in [0]:  # on dessine des lignes verticales
+            pass
+        draw.line([(x,       0), (x,       H)],
+                  fill=(int(r1*a1/255 + 6*(255-a1)/255),
+                        int(g1*a1/255 + 6*(255-a1)/255),
+                        int(b1*a1/255 + 10*(255-a1)/255)))
+        draw.line([(MID + x, 0), (MID + x, H)],
+                  fill=(int(r2*a2/255 + 6*(255-a2)/255),
+                        int(g2*a2/255 + 6*(255-a2)/255),
+                        int(b2*a2/255 + 10*(255-a2)/255)))
 
-    # Séparateur central lumineux
-    for xi in range(-4, 5):
-        a = int(230 * (1 - abs(xi) / 5))
-        draw.line([(MID + xi, 0), (MID + xi, H)], fill=(255, 140, 0, a))
+    # ── Séparateur central ────────────────────────────────────────
+    for xi in range(-3, 4):
+        a = int(220 * (1 - abs(xi) / 4))
+        draw.line([(MID + xi, 0), (MID + xi, H)],
+                  fill=(int(255 * a / 255), int(140 * a / 255), 0))
 
-    # ── Images personnages ─────────────────────────────────────────
-    MAX_W, MAX_H = COL - 20, H - 128
+    # ── Panneaux personnages ──────────────────────────────────────
+    PNL_Y, PNL_H = 30, H - 160
+    PNL_W        = MID - 30
 
-    def _paste(img: Image.Image, px_left: int) -> None:
-        img = img.copy()
-        img.thumbnail((MAX_W, MAX_H), Image.LANCZOS)
-        glow = img.filter(ImageFilter.GaussianBlur(18))
-        px = px_left + (COL - img.width)  // 2
-        py = max(PAD, (MAX_H - img.height) // 2)
-        canvas.alpha_composite(glow, (px, py))
-        canvas.alpha_composite(img,  (px, py))
+    def _panel(x: int, color: tuple) -> None:
+        r, g, b = color
+        _rr(draw, [x, PNL_Y, x + PNL_W, PNL_Y + PNL_H], 12,
+            (max(0, r - 180), max(0, g - 180), max(0, b - 180)))
+        # Bordure colorée
+        for i in range(3):
+            draw.rounded_rectangle(
+                [x + i, PNL_Y + i, x + PNL_W - i, PNL_Y + PNL_H - i],
+                radius=12 - i,
+                outline=(*color,),
+                width=1,
+            ) if hasattr(draw, "rounded_rectangle") else None
 
-    _paste(img1, PAD)
-    _paste(img2, MID + PAD)
+    _panel(15,        d1["color"])
+    _panel(MID + 15,  d2["color"])
 
-    # ── Halo + VS central ─────────────────────────────────────────
-    halo = Image.new("RGBA", (180, 180), (0, 0, 0, 0))
-    hd   = ImageDraw.Draw(halo)
-    for rad in range(90, 0, -5):
-        a = int(150 * (1 - rad / 90) ** 1.5)
-        hd.ellipse([90-rad, 90-rad, 90+rad, 90+rad], fill=(255, 80, 0, a))
-    halo = halo.filter(ImageFilter.GaussianBlur(10))
-    canvas.alpha_composite(halo, (MID - 90, H // 2 - 145))
+    # ── Initiale géante dans chaque panneau ───────────────────────
+    f_init = _f(_FK, 160)
+    cx1    = 15 + PNL_W // 2
+    cx2    = MID + 15 + PNL_W // 2
+    cy_init = PNL_Y + PNL_H // 2 - 10
 
-    dv   = ImageDraw.Draw(canvas)
-    f_vs = _f_safe(_FK, 80)
-    dv.text((MID + 3, H // 2 - 82 + 3), "VS", fill=(60, 0, 0, 200), font=f_vs, anchor="mm")
-    dv.text((MID,     H // 2 - 82),      "VS", fill=(255, 215, 0, 255), font=f_vs, anchor="mm")
+    def _initial(cx: int, name: str, color: tuple) -> None:
+        letter = _clean(name)[0].upper()
+        r, g, b = color
+        # Ombre
+        draw.text((cx + 4, cy_init + 4), letter,
+                  fill=(max(0, r - 150), max(0, g - 150), max(0, b - 150)),
+                  font=f_init, anchor="mm")
+        draw.text((cx, cy_init), letter,
+                  fill=color, font=f_init, anchor="mm")
+
+    _initial(cx1, d1["display"], d1["color"])
+    _initial(cx2, d2["display"], d2["color"])
+
+    # ── Noms et titres dans les panneaux ─────────────────────────
+    f_name = _f(_FK, 22)
+    f_sub  = _f(_FR, 14)
+
+    draw.text((cx1, PNL_Y + PNL_H - 38), _clean(d1["display"]),
+              fill=d1["color"], font=f_name, anchor="mm")
+    draw.text((cx1, PNL_Y + PNL_H - 18), _clean(d1["titre"]),
+              fill=(180, 180, 180), font=f_sub, anchor="mm")
+    draw.text((cx2, PNL_Y + PNL_H - 38), _clean(d2["display"]),
+              fill=d2["color"], font=f_name, anchor="mm")
+    draw.text((cx2, PNL_Y + PNL_H - 18), _clean(d2["titre"]),
+              fill=(180, 180, 180), font=f_sub, anchor="mm")
+
+    # ── VS central ────────────────────────────────────────────────
+    f_vs = _f(_FK, 72)
+    draw.text((MID + 3, H // 2 - 80 + 3), "VS",
+              fill=(60, 0, 0), font=f_vs, anchor="mm")
+    draw.text((MID, H // 2 - 80), "VS",
+              fill=(255, 215, 0), font=f_vs, anchor="mm")
+
+    # ── Phrase rivalité (haut) ────────────────────────────────────
+    f_riv = _f(_FR, 13)
+    draw.text((MID, 10), _clean(rivalry),
+              fill=(180, 175, 150), font=f_riv, anchor="mt")
 
     # ── Bande inférieure ──────────────────────────────────────────
-    BTM_H = 148
-    BTM_Y = H - BTM_H
-    btm   = Image.new("RGBA", (W, BTM_H), (4, 4, 8, 218))
-    canvas.alpha_composite(btm, (0, BTM_Y))
+    BTM_Y = H - 128
+    _rr(draw, [0, BTM_Y, W, H], 0, (4, 4, 8))
+    draw.line([(0, BTM_Y), (W, BTM_Y)], fill=(200, 55, 0), width=2)
+    draw.line([(MID, BTM_Y), (MID, H)], fill=(55, 55, 65), width=1)
 
-    db = ImageDraw.Draw(canvas)
-    db.line([(0,   BTM_Y), (W,   BTM_Y)], fill=(200, 55, 0, 200), width=2)
-    db.line([(MID, BTM_Y), (MID, H)],     fill=(55, 55, 65, 160), width=1)
+    f_tiny = _f(_FR, 12)
+    f_res  = _f(_FR, 17)
 
-    f_name = _f_safe(_FK, 24)
-    f_sub  = _f_safe(_FR, 15)
-    f_tiny = _f_safe(_FR, 12)
-    f_res  = _f_safe(_FR, 17)
-    f_riv  = _f_safe(_FR, 13)
-
-    cx1 = PAD + COL // 2
-    cx2 = MID + PAD + COL // 2
-
-    # Noms, titres, univers
-    db.text((cx1, BTM_Y + 16), _clean(d1["display"]), fill=(*d1["color"], 255), font=f_name, anchor="mm")
-    db.text((cx2, BTM_Y + 16), _clean(d2["display"]), fill=(*d2["color"], 255), font=f_name, anchor="mm")
-    db.text((cx1, BTM_Y + 37), _clean(d1["titre"]),   fill=(200, 200, 200, 220), font=f_sub,  anchor="mm")
-    db.text((cx2, BTM_Y + 37), _clean(d2["titre"]),   fill=(200, 200, 200, 220), font=f_sub,  anchor="mm")
-    db.text((cx1, BTM_Y + 53), _clean(d1["univers"]), fill=(130, 130, 140, 200), font=f_tiny, anchor="mm")
-    db.text((cx2, BTM_Y + 53), _clean(d2["univers"]), fill=(130, 130, 140, 200), font=f_tiny, anchor="mm")
+    draw.text((cx1, BTM_Y + 18), _clean(d1["univers"]),
+              fill=(130, 130, 140), font=f_tiny, anchor="mm")
+    draw.text((cx2, BTM_Y + 18), _clean(d2["univers"]),
+              fill=(130, 130, 140), font=f_tiny, anchor="mm")
 
     # Barres de puissance
-    BY, BH = BTM_Y + 70, 13
-    BW     = COL - 50
-    BX1, BX2 = PAD + 8, MID + PAD + 8
+    BY, BH, BW = BTM_Y + 35, 13, MID - 55
+    BX1, BX2   = 15, MID + 15
 
     for bx, pct, color in [(BX1, pct1, d1["color"]), (BX2, pct2, d2["color"])]:
-        _rounded_rect(db, [bx, BY, bx + BW, BY + BH], 5, (22, 22, 30))
+        _rr(draw, [bx, BY, bx + BW, BY + BH], 5, (22, 22, 30))
         fw = int(BW * pct / 100)
         if fw:
-            _rounded_rect(db, [bx, BY, bx + fw, BY + BH], 5, color)
-        db.text((bx + BW + 6, BY + BH // 2), f"{pct}%", fill=(220, 220, 220), font=f_tiny, anchor="lm")
+            _rr(draw, [bx, BY, bx + fw, BY + BH], 5, color)
+        draw.text((bx + BW + 6, BY + BH // 2),
+                  f"{pct}%", fill=(220, 220, 220), font=f_tiny, anchor="lm")
 
     # Résultat
-    db.text((MID, BTM_Y + 108), f">> {_clean(result)} <<",
-            fill=(255, 230, 70, 255), font=f_res, anchor="mm")
+    draw.text((MID, BTM_Y + 72), f">> {_clean(result)} <<",
+              fill=(255, 230, 70), font=f_res, anchor="mm")
 
-    # Phrase de rivalité en haut
-    db.text((MID, 9), _clean(rivalry),
-            fill=(185, 180, 155, 200), font=f_riv, anchor="mt")
+    # Footer
+    f_ft = _f(_FR, 11)
+    draw.text((MID, H - 12), "Brams Score • Duel Arena",
+              fill=(80, 80, 90), font=f_ft, anchor="mm")
 
     buf = io.BytesIO()
-    canvas.convert("RGB").save(buf, "PNG", optimize=True)
+    canvas.save(buf, "PNG", optimize=True)
     buf.seek(0)
     return buf
 
@@ -468,76 +449,93 @@ class DuelCog(commands.Cog):
     async def duel(self, interaction: discord.Interaction) -> None:
         await interaction.response.defer()
 
-        # Tirage aléatoire
-        k1, k2 = random.sample(list(CHARS.keys()), 2)
-        d1, d2  = CHARS[k1], CHARS[k2]
+        try:
+            # Tirage aléatoire
+            k1, k2 = random.sample(list(CHARS.keys()), 2)
+            d1, d2  = CHARS[k1], CHARS[k2]
 
-        # Résultat
-        outcome = random.choices(["p1", "p2", "draw"], weights=[40, 40, 20])[0]
-        if outcome == "p1":
-            pct1 = random.randint(56, 88); pct2 = 100 - pct1
-            result = random.choice(_WIN).format(w=d1["display"])
-        elif outcome == "p2":
-            pct2 = random.randint(56, 88); pct1 = 100 - pct2
-            result = random.choice(_WIN).format(w=d2["display"])
-        else:
-            pct1 = pct2 = 50
-            result = random.choice(_DRAW)
+            # Résultat
+            outcome = random.choices(["p1", "p2", "draw"], weights=[40, 40, 20])[0]
+            if outcome == "p1":
+                pct1 = random.randint(56, 88); pct2 = 100 - pct1
+                result = random.choice(_WIN).format(w=d1["display"])
+            elif outcome == "p2":
+                pct2 = random.randint(56, 88); pct1 = 100 - pct2
+                result = random.choice(_WIN).format(w=d2["display"])
+            else:
+                pct1 = pct2 = 50
+                result = random.choice(_DRAW)
 
-        rivalry = random.choice(_RIVALRIES)
+            rivalry = random.choice(_RIVALRIES)
 
-        # Recherche GIFs sur Giphy + téléchargement en parallèle
-        url1, url2 = await asyncio.gather(
-            _search_gif(d1["query"]),
-            _search_gif(d2["query"]),
-        )
-        img1, img2 = await asyncio.gather(
-            _fetch(url1, d1["color"], d1["display"]),
-            _fetch(url2, d2["color"], d2["display"]),
-        )
+            # Génération PIL en thread (local, pas d'internet)
+            loop = asyncio.get_running_loop()
+            buf  = await loop.run_in_executor(
+                None,
+                lambda: _build_card(d1, pct1, d2, pct2, rivalry, result),
+            )
 
-        # Génération PIL dans un thread
-        loop = asyncio.get_running_loop()
-        buf  = await loop.run_in_executor(
-            None,
-            lambda: _build_card(img1, d1, pct1, img2, d2, pct2, rivalry, result),
-        )
+            # Recherche GIFs Giphy en parallèle (peut échouer sans impact)
+            url1, url2 = await asyncio.gather(
+                _search_gif(d1["query"]),
+                _search_gif(d2["query"]),
+            )
 
-        # Embed principal
-        embed = discord.Embed(
-            title="⚔️  D U E L   É P I Q U E  ⚔️",
-            color=0xE63939,
-        )
-        embed.description = (
-            f"### {d1['display']}  `VS`  {d2['display']}\n"
-            f"*{rivalry}*"
-        )
-        embed.set_image(url="attachment://duel.png")
-        embed.set_footer(text="⚔️ Brams Score • Duel Arena  |  /duel pour rejouer !")
-        embed.timestamp = discord.utils.utcnow()
+            # ── Embed principal (carte PIL) ────────────────────────
+            main = discord.Embed(
+                title="⚔️  D U E L   É P I Q U E  ⚔️",
+                color=0xE63939,
+            )
+            main.description = (
+                f"### {d1['display']}  `VS`  {d2['display']}\n"
+                f"*{rivalry}*"
+            )
+            main.set_image(url="attachment://duel.png")
+            main.set_footer(text="⚔️ Brams Score • Duel Arena  |  /duel pour rejouer !")
+            main.timestamp = discord.utils.utcnow()
 
-        await interaction.followup.send(
-            file=discord.File(buf, filename="duel.png"),
-            embed=embed,
-        )
+            # ── Embeds GIF personnages (si Giphy disponible) ───────
+            embeds = [main]
 
-        # Sondage réactions
-        poll_embed = discord.Embed(
-            title="🗳️  QUI VA GAGNER ?  Votez !",
-            description=(
-                f"🔴  **{d1['display']}**  *({d1['univers']})*\n"
-                f"🔵  **{d2['display']}**  *({d2['univers']})*\n\n"
-                f"**Cliquez sur une réaction ci-dessus pour voter !**"
-            ),
-            color=0x2B2D31,
-        )
-        poll_embed.set_footer(text="⚔️ Le vote est ouvert — que le meilleur gagne !")
-        poll_msg = await interaction.channel.send(embed=poll_embed)
-        await poll_msg.add_reaction("🔴")
-        await poll_msg.add_reaction("🔵")
+            if url1:
+                e1 = discord.Embed(title=f"🔴  {d1['display']}", color=0xFF4500)
+                e1.set_image(url=url1)
+                embeds.append(e1)
 
-        log.info("[DuelCog] %s vs %s → %d%%/%d%%", d1["display"], d2["display"], pct1, pct2)
+            if url2:
+                e2 = discord.Embed(title=f"🔵  {d2['display']}", color=0x1E90FF)
+                e2.set_image(url=url2)
+                embeds.append(e2)
 
+            await interaction.followup.send(
+                file=discord.File(buf, filename="duel.png"),
+                embeds=embeds,
+            )
+
+            # ── Sondage réactions ──────────────────────────────────
+            poll = discord.Embed(
+                title="🗳️  QUI VA GAGNER ?  Votez !",
+                description=(
+                    f"🔴  **{d1['display']}**  *({d1['univers']})*\n"
+                    f"🔵  **{d2['display']}**  *({d2['univers']})*\n\n"
+                    f"**Cliquez sur une réaction pour voter !**"
+                ),
+                color=0x2B2D31,
+            )
+            poll.set_footer(text="⚔️ Le vote est ouvert — que le meilleur gagne !")
+            poll_msg = await interaction.channel.send(embed=poll)
+            await poll_msg.add_reaction("🔴")
+            await poll_msg.add_reaction("🔵")
+
+            log.info("[DuelCog] %s vs %s → %d%%/%d%%",
+                     d1["display"], d2["display"], pct1, pct2)
+
+        except Exception as exc:
+            log.exception("[DuelCog] Erreur /duel : %s", exc)
+            await interaction.followup.send(
+                "❌ Erreur lors du duel. Réessaie dans quelques secondes.",
+                ephemeral=True,
+            )
 
 # ══════════════════════════════════════════════════════════════════
 #  SETUP
