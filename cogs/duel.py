@@ -1,441 +1,541 @@
 """
-Cog — /duel  ⚔️  Duel Épique Anime/Shonen
-==========================================
-• Deux personnages s'affrontent dans un embed battle dynamique
-• Base de données GIFs pour les personnages populaires
-• Autocomplete sur les deux paramètres
-• Résultat aléatoire avec barres de puissance
-• Gestion des personnages inconnus (GIF placeholder)
+Cog — /duel  ⚔️  Duel Épique Anime
+====================================
+• Sélection 100% aléatoire des deux combattants
+• Carte PIL composite : les deux images côte à côte sur un fond battle
+• Résultat aléatoire avec barres de puissance style fighting game
+• Aucun paramètre requis
 """
 
 from __future__ import annotations
 
+import asyncio
+import io
 import logging
 import random
-from typing import Optional
+import re
 
+import aiohttp
 import discord
 from discord import app_commands
 from discord.ext import commands
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 log = logging.getLogger(__name__)
 
-# ═══════════════════════════════════════════════════════════════════
-#  ██████╗  █████╗ ███████╗███████╗     ██████╗ ███████╗
-#  ██╔══██╗██╔══██╗██╔════╝██╔════╝    ██╔════╝ ██╔════╝
-#  ██████╔╝███████║███████╗█████╗      ██║  ███╗█████╗
-#  ██╔══██╗██╔══██║╚════██║██╔══╝      ██║   ██║██╔══╝
-#  ██████╔╝██║  ██║███████║███████╗    ╚██████╔╝██║
-#  ╚═════╝ ╚═╝  ╚═╝╚══════╝╚══════╝    ╚═════╝ ╚═╝
-#  GIFs  |  Modifier ici pour ajouter ou corriger des liens
-# ═══════════════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════════════════
+#  POLICES  (mêmes fichiers que le bot principal)
+# ══════════════════════════════════════════════════════════════════
+_FONT_KOMIKAX = "KOMIKAX_.ttf"
+_FONT_PIRATA  = "PirataOne-Regular.ttf"
+_FONT_RIGHT   = "Righteous-Regular.ttf"
 
-# Chaque entrée : clé minuscule = alias de recherche
-# gif : lien direct vers un GIF animé (Giphy CDN ou Tenor)
+def _font(path: str, size: int) -> ImageFont.FreeTypeFont:
+    try:
+        return ImageFont.truetype(path, size)
+    except Exception:
+        return ImageFont.load_default()
+
+# ══════════════════════════════════════════════════════════════════
+#  BASE PERSONNAGES — gif = lien direct image/GIF animé
+#  Remplacer les URLs si un lien meurt (Tenor CDN est plus stable)
+# ══════════════════════════════════════════════════════════════════
 CHARS: dict[str, dict] = {
     "luffy": {
         "display": "Monkey D. Luffy",
-        "gif":     "https://media.giphy.com/media/Z3l3guhVcMQPu/giphy.gif",
+        "gif":     "https://media.tenor.com/pTRBdL0Ypl8AAAAC/luffy-one-piece.gif",
         "univers": "One Piece",
         "titre":   "Futur Roi des Pirates",
-        "emoji":   "🍖",
+        "color":   (255, 140, 0),
     },
     "zoro": {
         "display": "Roronoa Zoro",
-        "gif":     "https://media.giphy.com/media/ekXUPaggtv2lg/giphy.gif",
+        "gif":     "https://media.tenor.com/HsWKSMEOFJMAAAAC/zoro-roronoa-zoro.gif",
         "univers": "One Piece",
         "titre":   "Premier Épéiste du Monde",
-        "emoji":   "⚔️",
+        "color":   (50, 200, 80),
     },
     "sanji": {
         "display": "Sanji",
-        "gif":     "https://media.giphy.com/media/3o6Zt8AhLPCbbPjgJO/giphy.gif",
+        "gif":     "https://media.tenor.com/RLv0o-YjEKQAAAAC/sanji-one-piece.gif",
         "univers": "One Piece",
         "titre":   "Le Cuisinier du Diable",
-        "emoji":   "🦵",
+        "color":   (220, 220, 0),
     },
     "naruto": {
         "display": "Naruto Uzumaki",
-        "gif":     "https://media.giphy.com/media/nygKRHCxJMVLi/giphy.gif",
+        "gif":     "https://media.tenor.com/kxxSVhaCU6UAAAAC/naruto-run.gif",
         "univers": "Naruto",
-        "titre":   "Septième Hokage",
-        "emoji":   "🌀",
+        "titre":   "Septieme Hokage",
+        "color":   (255, 120, 0),
     },
     "sasuke": {
         "display": "Sasuke Uchiha",
-        "gif":     "https://media.giphy.com/media/3ohzdWsUjM3EWL4FXq/giphy.gif",
+        "gif":     "https://media.tenor.com/jkk9lRJEMKIAAAAC/sasuke-uchiha-anime.gif",
         "univers": "Naruto",
         "titre":   "Ninja de l'Ombre",
-        "emoji":   "👁️",
+        "color":   (100, 0, 200),
     },
     "kakashi": {
         "display": "Kakashi Hatake",
-        "gif":     "https://media.giphy.com/media/3o7btXJrSd8SkUsrLO/giphy.gif",
+        "gif":     "https://media.tenor.com/8Cg-P9TT3UYAAAAC/kakashi-lightning.gif",
         "univers": "Naruto",
-        "titre":   "Copieur de Mille Techniques",
-        "emoji":   "📖",
+        "titre":   "Copieur de Mille Jutsu",
+        "color":   (150, 200, 255),
     },
     "goku": {
         "display": "Son Goku",
-        "gif":     "https://media.giphy.com/media/2t9sDPrlvFpdK/giphy.gif",
+        "gif":     "https://media.tenor.com/xLNvHVNXaXYAAAAC/goku-ssj.gif",
         "univers": "Dragon Ball",
-        "titre":   "Super Saiyan Légendaire",
-        "emoji":   "⚡",
+        "titre":   "Super Saiyan Legendaire",
+        "color":   (255, 220, 0),
     },
     "vegeta": {
         "display": "Vegeta",
-        "gif":     "https://media.giphy.com/media/l0ExuyMmmgK4qX6ZG/giphy.gif",
+        "gif":     "https://media.tenor.com/Ei0L3xpqO6YAAAAC/vegeta-dragon-ball.gif",
         "univers": "Dragon Ball",
         "titre":   "Prince des Saiyans",
-        "emoji":   "👑",
-    },
-    "gohan": {
-        "display": "Son Gohan",
-        "gif":     "https://media.giphy.com/media/26FLdmIp6wJr91JAI/giphy.gif",
-        "univers": "Dragon Ball",
-        "titre":   "La Bête Ultime",
-        "emoji":   "🔥",
+        "color":   (180, 0, 255),
     },
     "ichigo": {
         "display": "Ichigo Kurosaki",
-        "gif":     "https://media.giphy.com/media/5zkZRNNpKDYxG/giphy.gif",
+        "gif":     "https://media.tenor.com/C2sHBiI9pxcAAAAC/ichigo-kurosaki-bleach.gif",
         "univers": "Bleach",
         "titre":   "Substitut Shinigami",
-        "emoji":   "🌙",
+        "color":   (255, 80, 80),
     },
     "aizen": {
         "display": "Sosuke Aizen",
-        "gif":     "https://media.giphy.com/media/3o6ZtoLRSzN0rF8ZnO/giphy.gif",
+        "gif":     "https://media.tenor.com/XfkMRVH48XEAAAAC/aizen-bleach.gif",
         "univers": "Bleach",
         "titre":   "Seigneur des Arrancar",
-        "emoji":   "🕊️",
+        "color":   (200, 180, 255),
     },
     "saitama": {
         "display": "Saitama",
-        "gif":     "https://media.giphy.com/media/3oEdv6osBU5bAGGQOA/giphy.gif",
+        "gif":     "https://media.tenor.com/VOTGiEPMoRoAAAAC/saitama-one-punch.gif",
         "univers": "One Punch Man",
-        "titre":   "Héros par Loisir",
-        "emoji":   "👊",
-    },
-    "genos": {
-        "display": "Genos",
-        "gif":     "https://media.giphy.com/media/l0HlFZfztZXlmHHgk/giphy.gif",
-        "univers": "One Punch Man",
-        "titre":   "Cyborg Démon",
-        "emoji":   "🤖",
+        "titre":   "Heros par Loisir",
+        "color":   (255, 240, 100),
     },
     "mob": {
-        "display": "Shigeo Kageyama (Mob)",
-        "gif":     "https://media.giphy.com/media/WpP7KSqI3OqHkn5KMT/giphy.gif",
+        "display": "Shigeo Kageyama",
+        "gif":     "https://media.tenor.com/KDZmyv8BmvgAAAAC/mob-psycho-100.gif",
         "univers": "Mob Psycho 100",
         "titre":   "100% Psychique",
-        "emoji":   "💫",
+        "color":   (180, 180, 255),
     },
     "tanjiro": {
         "display": "Tanjiro Kamado",
-        "gif":     "https://media.giphy.com/media/dXFKDUolyLLi8gq6Cl/giphy.gif",
+        "gif":     "https://media.tenor.com/7Qk2VnGQWm4AAAAC/tanjiro-demon-slayer.gif",
         "univers": "Demon Slayer",
-        "titre":   "Pourfendeur de Démons",
-        "emoji":   "💧",
+        "titre":   "Pourfendeur de Demons",
+        "color":   (0, 180, 220),
     },
     "rengoku": {
         "display": "Kyojuro Rengoku",
-        "gif":     "https://media.giphy.com/media/3oriNPdqSCrm0aSJkA/giphy.gif",
+        "gif":     "https://media.tenor.com/DUO3_6vbZgEAAAAC/rengoku-flame.gif",
         "univers": "Demon Slayer",
         "titre":   "Pilier de la Flamme",
-        "emoji":   "🔥",
+        "color":   (255, 100, 0),
     },
     "eren": {
         "display": "Eren Yeager",
-        "gif":     "https://media.giphy.com/media/3oriNOmRKpvL6lJi1i/giphy.gif",
-        "univers": "L'Attaque des Titans",
+        "gif":     "https://media.tenor.com/JnKTkh8bY0AAAAAC/eren-yeager-attack-on-titan.gif",
+        "univers": "Attaque des Titans",
         "titre":   "Le Titan Fondateur",
-        "emoji":   "🗡️",
+        "color":   (180, 100, 0),
     },
     "levi": {
         "display": "Levi Ackerman",
-        "gif":     "https://media.giphy.com/media/SqflD2OBqzAFi/giphy.gif",
-        "univers": "L'Attaque des Titans",
-        "titre":   "Soldat le Plus Fort de l'Humanité",
-        "emoji":   "💎",
+        "gif":     "https://media.tenor.com/PJYV7WaJEpQAAAAC/levi-ackerman-attack-on-titan.gif",
+        "univers": "Attaque des Titans",
+        "titre":   "Le Soldat le Plus Fort",
+        "color":   (150, 200, 200),
     },
     "gojo": {
         "display": "Satoru Gojo",
-        "gif":     "https://media.giphy.com/media/vHizpBFNFrHMzrHGhH/giphy.gif",
+        "gif":     "https://media.tenor.com/lKHxJTuJhYAAAAAC/gojo-satoru-jujutsu-kaisen.gif",
         "univers": "Jujutsu Kaisen",
         "titre":   "Le Plus Fort du Monde",
-        "emoji":   "♾️",
+        "color":   (100, 200, 255),
     },
     "sukuna": {
         "display": "Ryomen Sukuna",
-        "gif":     "https://media.giphy.com/media/RLf0yKIylzHYYe8YwT/giphy.gif",
+        "gif":     "https://media.tenor.com/A9A7HDzIZoAAAAAC/sukuna-jujutsu-kaisen.gif",
         "univers": "Jujutsu Kaisen",
-        "titre":   "Roi des Fléaux",
-        "emoji":   "👹",
+        "titre":   "Roi des Fleaux",
+        "color":   (220, 0, 50),
     },
     "meliodas": {
         "display": "Meliodas",
-        "gif":     "https://media.giphy.com/media/9oIPCsv0vXq3EFE8dK/giphy.gif",
+        "gif":     "https://media.tenor.com/Dq9j4HcNoBkAAAAC/meliodas-seven-deadly-sins.gif",
         "univers": "Nanatsu no Taizai",
         "titre":   "Dragon's Sin of Wrath",
-        "emoji":   "🐉",
+        "color":   (255, 80, 80),
     },
     "escanor": {
         "display": "Escanor",
-        "gif":     "https://media.giphy.com/media/l4pTjOu0NsrLApt0c/giphy.gif",
+        "gif":     "https://media.tenor.com/bUJd9GHaT4UAAAAC/escanor-seven-deadly-sins.gif",
         "univers": "Nanatsu no Taizai",
         "titre":   "Lion's Sin of Pride",
-        "emoji":   "☀️",
+        "color":   (255, 200, 0),
     },
     "natsu": {
         "display": "Natsu Dragneel",
-        "gif":     "https://media.giphy.com/media/l0HlFv9iFljcFVr0k/giphy.gif",
+        "gif":     "https://media.tenor.com/kE7zb2bxbdoAAAAC/natsu-fairy-tail.gif",
         "univers": "Fairy Tail",
         "titre":   "Dragon Slayer du Feu",
-        "emoji":   "🔥",
+        "color":   (255, 80, 0),
     },
     "edward": {
         "display": "Edward Elric",
-        "gif":     "https://media.giphy.com/media/3o6Zt4GX0XKYW7IHIc/giphy.gif",
+        "gif":     "https://media.tenor.com/5EpNvT8ORVQAAAAC/edward-elric-fma.gif",
         "univers": "Fullmetal Alchemist",
         "titre":   "Alchimiste d'Acier",
-        "emoji":   "⚙️",
-    },
-    "giorno": {
-        "display": "Giorno Giovanna",
-        "gif":     "https://media.giphy.com/media/9J7tdYltWyXIqeMeSJ/giphy.gif",
-        "univers": "JoJo's Bizarre Adventure",
-        "titre":   "Capo de Passione",
-        "emoji":   "🌸",
-    },
-    "jotaro": {
-        "display": "Jotaro Kujo",
-        "gif":     "https://media.giphy.com/media/3ov9jNziFTMfzSumAw/giphy.gif",
-        "univers": "JoJo's Bizarre Adventure",
-        "titre":   "Star Platinum",
-        "emoji":   "⭐",
+        "color":   (220, 180, 0),
     },
     "gintoki": {
         "display": "Gintoki Sakata",
-        "gif":     "https://media.giphy.com/media/3o7btSzQqLMfvPyPgk/giphy.gif",
+        "gif":     "https://media.tenor.com/ZT5bGF3xWXMAAAAC/gintoki-gintama.gif",
         "univers": "Gintama",
-        "titre":   "Le Samouraï du Ciel",
-        "emoji":   "🍭",
+        "titre":   "Le Samourai du Ciel",
+        "color":   (200, 200, 255),
     },
-    "yusuke": {
-        "display": "Yusuke Urameshi",
-        "gif":     "https://media.giphy.com/media/QZ3qJZ5qAw3fRRHDtO/giphy.gif",
-        "univers": "Yu Yu Hakusho",
-        "titre":   "Détective des Enfers",
-        "emoji":   "🔫",
+    "giorno": {
+        "display": "Giorno Giovanna",
+        "gif":     "https://media.tenor.com/wTbq8yJ5VQYAAAAC/giorno-giovanna-jojo.gif",
+        "univers": "JoJo's Bizarre Adventure",
+        "titre":   "Capo di Passione",
+        "color":   (255, 180, 200),
+    },
+    "jotaro": {
+        "display": "Jotaro Kujo",
+        "gif":     "https://media.tenor.com/oLyBFGHp_OEAAAAC/jotaro-kujo-jojo.gif",
+        "univers": "JoJo's Bizarre Adventure",
+        "titre":   "Star Platinum",
+        "color":   (80, 200, 255),
     },
 }
 
-# GIF affiché quand le personnage est introuvable dans la base
-GIF_PLACEHOLDER = "https://media.giphy.com/media/26FLd2NBRqrVIbgzC/giphy.gif"
-
-# ── Textes aléatoires ──────────────────────────────────────────────
-
-RIVALRY_PHRASES = [
-    "Le destin du monde se joue dans ce combat légendaire ! 🌍",
-    "Deux titans s'affrontent dans un choc qui fera trembler les cieux ! ⛈️",
-    "L'univers retient son souffle… qui va dominer ? 🌌",
-    "Leurs auras s'affrontent avant même le premier coup ! 💥",
-    "Cette rivalité est inscrite dans les étoiles depuis la nuit des temps ! ✨",
-    "Le sol tremble, les nuages se déchirent — la bataille commence ! 🔥",
-    "Les légendes ne meurent pas, elles se battent ! ⚡",
-    "Un seul peut rester debout. Lequel sera le dernier ? 🏆",
-    "La puissance de ces deux guerriers fait plier la réalité ! 🌀",
-    "Ceux qui ont vu ce combat en parleront pour l'éternité… 📜",
-    "Même les dieux observent avec crainte ce choc ultime ! 👁️",
-    "Ce n'est pas juste un combat — c'est une catastrophe naturelle ! 🌋",
+# ── Textes battle ──────────────────────────────────────────────────
+_RIVALRIES = [
+    "Le destin du monde se joue dans ce combat legendaire !",
+    "Deux titans s'affrontent — les cieux vont trembler.",
+    "L'univers retient son souffle... qui va dominer ?",
+    "Leurs auras se heurtent avant meme le premier coup.",
+    "Cette rivalite est inscrite dans les etoiles depuis toujours.",
+    "Le sol tremble, les nuages se dechirent — ca commence !",
+    "Les legendes ne meurent pas, elles se battent.",
+    "Meme les dieux observent avec crainte ce choc ultime.",
+    "Ce n'est pas un combat — c'est une catastrophe naturelle.",
+    "Un seul peut rester debout. Lequel sera le dernier ?",
 ]
 
-WIN_MSGS = [
-    "**{winner}** explose son adversaire en un seul coup ! 💢",
-    "**{winner}** domine d'une puissance absolument écrasante ! 👑",
-    "**{winner}** remporte ce round sans même transpirer ! 😤",
-    "**{winner}** sort vainqueur de ce duel apocalyptique ! 🔥",
-    "Personne ne peut arrêter **{winner}** aujourd'hui ! ⚡",
-    "**{winner}** transcende ses limites et s'impose ! 🌟",
-    "**{winner}** délivre le coup de grâce avec une brutalité absolue ! 💥",
+_WIN = [
+    "{w} explose son adversaire d'un seul coup !",
+    "{w} domine avec une puissance absolument ecrasante !",
+    "{w} remporte ce round sans meme transpirer.",
+    "{w} sort vainqueur de ce duel apocalyptique !",
+    "{w} transcende ses limites et s'impose !",
+    "{w} delivre le coup de grace avec une brutalite absolue.",
 ]
 
-DRAW_MSGS = [
-    "Match nul explosif — les deux combattants s'effondrent simultanément ! 💥",
-    "Égalité absolue ! Leurs forces se neutralisent parfaitement. ⚖️",
-    "Nul ! La Terre elle-même ne peut départager ces deux monstres. 🌍",
-    "Les deux tombent en même temps dans un dernier éclat de puissance ! ✨",
+_DRAW = [
+    "Match nul ! Les deux combattants s'effondrent ensemble.",
+    "Egalite absolue — leurs forces se neutralisent.",
+    "Nul ! La Terre ne peut pas les departager.",
 ]
 
 
-# ═══════════════════════════════════════════════════════════════════
-#  HELPERS
-# ═══════════════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════════════════
+#  HELPERS IMAGE
+# ══════════════════════════════════════════════════════════════════
 
-def _get_char(name: str) -> Optional[dict]:
-    """Recherche un personnage par alias ou nom d'affichage (insensible à la casse)."""
-    key = name.strip().lower()
-    if key in CHARS:
-        return CHARS[key]
-    # Correspondance partielle sur le display name ou l'univers
-    for char in CHARS.values():
-        if key in char["display"].lower():
-            return char
-    return None
-
-
-def _power_bar(pct: int) -> str:
-    filled = round(pct / 10)
-    return "█" * filled + "░" * (10 - filled)
+_EMOJI_RE = re.compile(
+    "["
+    "\U0001F600-\U0001F64F"
+    "\U0001F300-\U0001F5FF"
+    "\U0001F680-\U0001F9FF"
+    "\U00002702-\U000027B0"
+    "\u2600-\u26FF"
+    "\u2700-\u27BF"
+    "]+",
+    flags=re.UNICODE,
+)
 
 
-def _roll_result(p1: str, p2: str) -> tuple[str, int, int]:
-    """Retourne (message_résultat, pct_p1, pct_p2)."""
-    outcome = random.choices(["p1", "p2", "draw"], weights=[40, 40, 20])[0]
-    if outcome == "p1":
-        pct1 = random.randint(55, 88)
-        msg = random.choice(WIN_MSGS).format(winner=p1)
-        return msg, pct1, 100 - pct1
-    if outcome == "p2":
-        pct2 = random.randint(55, 88)
-        msg = random.choice(WIN_MSGS).format(winner=p2)
-        return msg, 100 - pct2, pct2
-    return random.choice(DRAW_MSGS), 50, 50
+def _clean(text: str) -> str:
+    return _EMOJI_RE.sub("", text).strip()
 
 
-# ═══════════════════════════════════════════════════════════════════
+async def _fetch_frame(url: str) -> Image.Image:
+    """Télécharge l'URL et retourne une frame RGBA utilisable."""
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/120.0.0.0 Safari/537.36"
+        )
+    }
+    try:
+        async with aiohttp.ClientSession() as sess:
+            async with sess.get(
+                url, headers=headers, timeout=aiohttp.ClientTimeout(total=12)
+            ) as r:
+                if r.status != 200:
+                    raise ValueError(f"HTTP {r.status}")
+                data = await r.read()
+        img = Image.open(io.BytesIO(data))
+        # Frame du tiers initial — généralement la meilleure pose
+        if hasattr(img, "n_frames") and img.n_frames > 1:
+            try:
+                img.seek(img.n_frames // 4)
+            except EOFError:
+                img.seek(0)
+        return img.convert("RGBA")
+    except Exception as exc:
+        log.warning("[DuelCog] fetch_frame(%s) → %s", url, exc)
+        ph = Image.new("RGBA", (300, 360), (20, 20, 30, 255))
+        d  = ImageDraw.Draw(ph)
+        f  = _font(_FONT_KOMIKAX, 48)
+        d.text((150, 180), "?", fill=(100, 100, 120, 200), font=f, anchor="mm")
+        return ph
+
+
+def _rounded_rect(draw: ImageDraw.ImageDraw, xy, radius: int, fill) -> None:
+    try:
+        draw.rounded_rectangle(xy, radius=radius, fill=fill)
+    except (AttributeError, TypeError):
+        draw.rectangle(xy, fill=fill)
+
+
+def _draw_power_bar(
+    draw: ImageDraw.ImageDraw,
+    x: int, y: int, w: int, h: int,
+    pct: int, color: tuple, rtl: bool = False,
+    font: ImageFont.FreeTypeFont = None,
+) -> None:
+    """Barre de puissance style fighting game."""
+    fill_w = int(w * pct / 100)
+    _rounded_rect(draw, [x, y, x + w, y + h], 5, (25, 25, 35))
+    if fill_w > 0:
+        if rtl:
+            _rounded_rect(draw, [x + w - fill_w, y, x + w, y + h], 5, color)
+        else:
+            _rounded_rect(draw, [x, y, x + fill_w, y + h], 5, color)
+    if font:
+        label = f"{pct}%"
+        if rtl:
+            draw.text((x - 6, y + h // 2), label, fill=(230, 230, 230), font=font, anchor="rm")
+        else:
+            draw.text((x + w + 6, y + h // 2), label, fill=(230, 230, 230), font=font, anchor="lm")
+
+
+def _build_card(
+    img1: Image.Image, d1: dict, pct1: int,
+    img2: Image.Image, d2: dict, pct2: int,
+    rivalry: str, result: str,
+) -> io.BytesIO:
+    W, H   = 960, 540
+    PAD    = 20
+    CENTER = W // 2
+    COL_W  = (W - PAD * 3) // 2   # ~455px chacun
+
+    canvas = Image.new("RGBA", (W, H), (0, 0, 0, 255))
+    draw   = ImageDraw.Draw(canvas)
+
+    # ── Fond gradient vertical sombre ─────────────────────────────
+    for y in range(H):
+        t = 1.0 - abs(y / H - 0.4)
+        t = max(0.0, t)
+        r = int(55 * t * t)
+        g = int(8  * t)
+        b = int(12 * t)
+        draw.line([(0, y), (W, y)], fill=(r, g, b, 255))
+
+    # ── Panneaux colorés gauche / droite ──────────────────────────
+    def _tinted_panel(color: tuple, size: tuple) -> Image.Image:
+        p = Image.new("RGBA", size, (*color, 0))
+        for x in range(size[0]):
+            alpha = int(55 * (1 - abs(x / size[0] - 0.5) * 2))
+            for y2 in range(size[1]):
+                p.putpixel((x, y2), (*color, alpha))
+        return p
+
+    pnl1 = _tinted_panel(d1["color"], (COL_W + PAD, H))
+    pnl2 = _tinted_panel(d2["color"], (COL_W + PAD, H))
+    canvas.alpha_composite(pnl1, (0, 0))
+    canvas.alpha_composite(pnl2, (CENTER, 0))
+
+    # ── Ligne de séparation centrale lumineuse ────────────────────
+    glow_line = Image.new("RGBA", (6, H), (0, 0, 0, 0))
+    for xi in range(6):
+        alpha = int(200 * (1 - abs(xi - 2.5) / 3))
+        for yi in range(H):
+            glow_line.putpixel((xi, yi), (255, 160, 0, alpha))
+    canvas.alpha_composite(glow_line, (CENTER - 3, 0))
+
+    # ── Images personnages ─────────────────────────────────────────
+    CHAR_MAX_H = H - 140
+    CHAR_MAX_W = COL_W - 20
+
+    def _place(img: Image.Image, panel_x: int) -> None:
+        img = img.copy()
+        img.thumbnail((CHAR_MAX_W, CHAR_MAX_H), Image.LANCZOS)
+        # Légère lueur derrière le perso
+        glow = img.filter(ImageFilter.GaussianBlur(18))
+        gx = panel_x + (COL_W - img.width)  // 2
+        gy = max(PAD, (CHAR_MAX_H - img.height) // 2)
+        canvas.alpha_composite(glow, (gx, gy))
+        canvas.alpha_composite(img,  (gx, gy))
+
+    _place(img1, PAD)
+    _place(img2, CENTER + PAD)
+
+    # ── VS central ────────────────────────────────────────────────
+    vs_glow = Image.new("RGBA", (160, 160), (0, 0, 0, 0))
+    gd = ImageDraw.Draw(vs_glow)
+    for rad in range(80, 0, -4):
+        a = int(180 * (1 - rad / 80) ** 2)
+        gd.ellipse([80 - rad, 80 - rad, 80 + rad, 80 + rad], fill=(255, 80, 0, a))
+    vs_glow = vs_glow.filter(ImageFilter.GaussianBlur(10))
+    canvas.alpha_composite(vs_glow, (CENTER - 80, H // 2 - 130))
+
+    f_vs   = _font(_FONT_KOMIKAX, 76)
+    draw2  = ImageDraw.Draw(canvas)
+    # Ombre du VS
+    draw2.text((CENTER + 3, H // 2 - 70 + 3), "VS", fill=(80, 0, 0, 180), font=f_vs, anchor="mm")
+    draw2.text((CENTER,     H // 2 - 70),      "VS", fill=(255, 210, 0,  255), font=f_vs, anchor="mm")
+
+    # ── Bande du bas semi-transparente ────────────────────────────
+    BTM_H = 145
+    BTM_Y = H - BTM_H
+    btm   = Image.new("RGBA", (W, BTM_H), (5, 5, 10, 215))
+    canvas.alpha_composite(btm, (0, BTM_Y))
+
+    # Ligne de séparation haut de la bande
+    draw3 = ImageDraw.Draw(canvas)
+    draw3.line([(0, BTM_Y), (W, BTM_Y)], fill=(200, 60, 0, 220), width=2)
+    # Ligne VS séparation dans la bande
+    draw3.line([(CENTER, BTM_Y), (CENTER, H)], fill=(80, 80, 90, 180), width=1)
+
+    # Polices
+    f_name = _font(_FONT_KOMIKAX, 26)
+    f_sub  = _font(_FONT_RIGHT,   16)
+    f_tiny = _font(_FONT_RIGHT,   13)
+    f_res  = _font(_FONT_RIGHT,   18)
+
+    # Nom + titre + univers perso 1
+    cx1 = COL_W // 2 + PAD
+    draw3.text((cx1, BTM_Y + 18), _clean(d1["display"]), fill=d1["color"],  font=f_name, anchor="mm")
+    draw3.text((cx1, BTM_Y + 40), _clean(d1["titre"]),   fill=(200, 200, 200), font=f_sub,  anchor="mm")
+    draw3.text((cx1, BTM_Y + 56), _clean(d1["univers"]), fill=(140, 140, 150), font=f_tiny, anchor="mm")
+
+    # Nom + titre + univers perso 2
+    cx2 = CENTER + COL_W // 2 + PAD
+    draw3.text((cx2, BTM_Y + 18), _clean(d2["display"]), fill=d2["color"],  font=f_name, anchor="mm")
+    draw3.text((cx2, BTM_Y + 40), _clean(d2["titre"]),   fill=(200, 200, 200), font=f_sub,  anchor="mm")
+    draw3.text((cx2, BTM_Y + 56), _clean(d2["univers"]), fill=(140, 140, 150), font=f_tiny, anchor="mm")
+
+    # Barres de puissance
+    BAR_Y  = BTM_Y + 72
+    BAR_H  = 14
+    BAR_W  = COL_W - 60
+
+    _draw_power_bar(draw3, PAD + 10,          BAR_Y, BAR_W, BAR_H, pct1, d1["color"], rtl=False, font=f_tiny)
+    _draw_power_bar(draw3, CENTER + PAD + 10, BAR_Y, BAR_W, BAR_H, pct2, d2["color"], rtl=False, font=f_tiny)
+
+    # Résultat
+    clean_res = _clean(result)
+    draw3.text((CENTER, BTM_Y + 108), f">> {clean_res} <<",
+               fill=(255, 230, 80), font=f_res, anchor="mm")
+
+    # Phrase de rivalité (petite, en haut)
+    f_riv = _font(_FONT_RIGHT, 14)
+    draw3.text((CENTER, PAD + 8), _clean(rivalry),
+               fill=(200, 200, 180, 200), font=f_riv, anchor="mt")
+
+    # ── Export PNG ────────────────────────────────────────────────
+    buf = io.BytesIO()
+    canvas.convert("RGB").save(buf, "PNG", optimize=True)
+    buf.seek(0)
+    return buf
+
+
+# ══════════════════════════════════════════════════════════════════
 #  COG
-# ═══════════════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════════════════
 
 class DuelCog(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
 
-    # ── Autocomplete partagé ─────────────────────────────────────────
-    async def _autocomplete(
-        self, interaction: discord.Interaction, current: str
-    ) -> list[app_commands.Choice[str]]:
-        curr = current.lower()
-        choices: list[app_commands.Choice[str]] = []
-        for key, data in CHARS.items():
-            if curr in data["display"].lower() or curr in key or curr in data["univers"].lower():
-                label = f"{data['emoji']} {data['display']}  —  {data['univers']}"
-                choices.append(app_commands.Choice(name=label[:100], value=data["display"]))
-        return choices[:25]
-
-    # ── Commande /duel ───────────────────────────────────────────────
     @app_commands.command(
         name="duel",
-        description="⚔️ Lance un duel épique entre deux personnages anime/shonen !",
+        description="⚔️ Lance un duel epique entre deux personnages anime tires au sort !",
     )
-    @app_commands.describe(
-        personnage1="1er combattant  (ex : Luffy, Naruto, Goku…)",
-        personnage2="2ème combattant (ex : Zoro, Sasuke, Ichigo…)",
-    )
-    @app_commands.autocomplete(personnage1=_autocomplete, personnage2=_autocomplete)
-    async def duel(
-        self,
-        interaction: discord.Interaction,
-        personnage1: str,
-        personnage2: str,
-    ) -> None:
+    async def duel(self, interaction: discord.Interaction) -> None:
         await interaction.response.defer()
 
-        # ── Résolution des données personnages ───────────────────────
-        d1 = _get_char(personnage1)
-        d2 = _get_char(personnage2)
+        # Tirage aléatoire — deux personnages différents
+        keys = random.sample(list(CHARS.keys()), 2)
+        d1, d2 = CHARS[keys[0]], CHARS[keys[1]]
 
-        p1_name  = d1["display"] if d1 else personnage1.strip().title()
-        p2_name  = d2["display"] if d2 else personnage2.strip().title()
-        p1_gif   = d1["gif"]    if d1 else GIF_PLACEHOLDER
-        p2_gif   = d2["gif"]    if d2 else GIF_PLACEHOLDER
-        p1_titre = d1["titre"]  if d1 else "Combattant mystérieux"
-        p2_titre = d2["titre"]  if d2 else "Combattant mystérieux"
-        p1_univ  = d1["univers"] if d1 else "Univers inconnu"
-        p2_univ  = d2["univers"] if d2 else "Univers inconnu"
-        p1_emoji = d1["emoji"]  if d1 else "⚡"
-        p2_emoji = d2["emoji"]  if d2 else "⚡"
+        # Résultat
+        outcome = random.choices(["p1", "p2", "draw"], weights=[40, 40, 20])[0]
+        if outcome == "p1":
+            pct1    = random.randint(56, 88)
+            pct2    = 100 - pct1
+            result  = random.choice(_WIN).format(w=d1["display"])
+        elif outcome == "p2":
+            pct2    = random.randint(56, 88)
+            pct1    = 100 - pct2
+            result  = random.choice(_WIN).format(w=d2["display"])
+        else:
+            pct1 = pct2 = 50
+            result = random.choice(_DRAW)
 
-        rivalry = random.choice(RIVALRY_PHRASES)
-        result_msg, pct1, pct2 = _roll_result(p1_name, p2_name)
+        rivalry = random.choice(_RIVALRIES)
 
-        # ── Embed principal — Battle Card ────────────────────────────
-        main = discord.Embed(color=0xE63939)
-        main.title = "⚔️  D U E L   É P I Q U E  ⚔️"
-        main.description = (
-            f"# {p1_emoji} **{p1_name}**  `VS`  **{p2_name}** {p2_emoji}\n"
-            f"┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\n"
-            f"*{rivalry}*\n"
-            f"┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄"
+        # Téléchargement des frames en parallèle
+        img1, img2 = await asyncio.gather(
+            _fetch_frame(d1["gif"]),
+            _fetch_frame(d2["gif"]),
         )
 
-        # Fiche combattant 1
-        main.add_field(
-            name=f"{p1_emoji} {p1_name}",
-            value=(
-                f"*{p1_titre}*\n"
-                f"🌊 **{p1_univ}**\n"
-                f"💪 `{_power_bar(pct1)}` **{pct1}%**"
-            ),
-            inline=True,
+        # Génération de la carte PIL
+        buf = await asyncio.get_event_loop().run_in_executor(
+            None,
+            _build_card,
+            img1, d1, pct1,
+            img2, d2, pct2,
+            rivalry, result,
         )
 
-        # Séparateur central (champ vide avec symbole)
-        main.add_field(name="\u200b", value="```\n ⚔️ \n```", inline=True)
-
-        # Fiche combattant 2
-        main.add_field(
-            name=f"{p2_emoji} {p2_name}",
-            value=(
-                f"*{p2_titre}*\n"
-                f"🌊 **{p2_univ}**\n"
-                f"💪 `{_power_bar(pct2)}` **{pct2}%**"
-            ),
-            inline=True,
+        # Embed wrapper Discord
+        embed = discord.Embed(
+            title="⚔️  D U E L   É P I Q U E  ⚔️",
+            color=0xE63939,
         )
-
-        # Résultat final
-        main.add_field(
-            name="┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄",
-            value=f"🏆 **RÉSULTAT** ➜  {result_msg}",
-            inline=False,
+        embed.description = (
+            f"### {d1['display']}  `VS`  {d2['display']}\n"
+            f"*{rivalry}*"
         )
+        embed.set_image(url="attachment://duel.png")
+        embed.set_footer(text="⚔️ Brams Score • Duel Arena  |  /duel pour rejouer !")
+        embed.timestamp = discord.utils.utcnow()
 
-        # Avertissement si un personnage est inconnu
-        notes: list[str] = []
-        if not d1:
-            notes.append(f"⚠️ **{p1_name}** non reconnu — GIF générique utilisé")
-        if not d2:
-            notes.append(f"⚠️ **{p2_name}** non reconnu — GIF générique utilisé")
-        if notes:
-            main.add_field(name="\u200b", value="\n".join(notes), inline=False)
-
-        main.set_footer(text="⚔️ Brams Score • Duel Arena  |  Que le plus fort gagne !")
-        main.timestamp = discord.utils.utcnow()
-
-        # ── Embed GIF — personnage 1 ─────────────────────────────────
-        gif1 = discord.Embed(
-            title=f"🔴 {p1_name}",
-            color=0xFF4500,
+        await interaction.followup.send(
+            file=discord.File(buf, filename="duel.png"),
+            embed=embed,
         )
-        gif1.set_image(url=p1_gif)
-
-        # ── Embed GIF — personnage 2 ─────────────────────────────────
-        gif2 = discord.Embed(
-            title=f"🔵 {p2_name}",
-            color=0x1E90FF,
-        )
-        gif2.set_image(url=p2_gif)
-
-        # Discord affiche les 3 embeds dans la même bulle de message
-        await interaction.followup.send(embeds=[main, gif1, gif2])
-        log.info("[DuelCog] /duel  %s vs %s  → %s%% / %s%%", p1_name, p2_name, pct1, pct2)
+        log.info("[DuelCog] %s vs %s → %s%%/%s%%", d1["display"], d2["display"], pct1, pct2)
 
 
-# ═══════════════════════════════════════════════════════════════════
-#  SETUP — appelé par bot.load_extension("cogs.duel")
-# ═══════════════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════════════════
+#  SETUP
+# ══════════════════════════════════════════════════════════════════
 
 async def setup(bot: commands.Bot) -> None:
     await bot.add_cog(DuelCog(bot))
