@@ -456,10 +456,28 @@ class DuelCog(commands.Cog):
         embed.set_footer(text="⚔️ Brams Score • Duel Arena  |  /duel pour rejouer !")
         embed.timestamp = discord.utils.utcnow()
 
+        # Carte principale
         await interaction.followup.send(
             file=discord.File(buf, filename="duel.png"),
             embed=embed,
         )
+
+        # ── Sondage Discord (réactions) ───────────────────────────
+        poll_embed = discord.Embed(
+            title="🗳️  QUI VA GAGNER ?  Votez !",
+            description=(
+                f"🔴  **{d1['display']}**  *({d1['univers']})*\n"
+                f"🔵  **{d2['display']}**  *({d2['univers']})*\n\n"
+                f"**Cliquez sur une réaction pour voter !**"
+            ),
+            color=0x2B2D31,
+        )
+        poll_embed.set_footer(text="⚔️ Le vote est ouvert — que le meilleur gagne !")
+
+        poll_msg = await interaction.channel.send(embed=poll_embed)
+        await poll_msg.add_reaction("🔴")
+        await poll_msg.add_reaction("🔵")
+
         log.info("[DuelCog] %s vs %s → %d%%/%d%%", d1["display"], d2["display"], pct1, pct2)
 
 
