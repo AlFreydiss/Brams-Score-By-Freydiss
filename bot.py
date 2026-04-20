@@ -3019,6 +3019,13 @@ async def setup_hook():
     if _COMMANDS_SYNCED:
         return
     _COMMANDS_SYNCED = True
+    # Chargement des cogs
+    for ext in ("cogs.rank_vocal", "cogs.duel"):
+        try:
+            await bot.load_extension(ext)
+            print(f"[COG] {ext} chargé ✅")
+        except Exception as e:
+            print(f"[COG] Erreur chargement {ext}: {e}")
     for gid in GUILD_IDS:
         obj = discord.Object(id=gid)
         try:
