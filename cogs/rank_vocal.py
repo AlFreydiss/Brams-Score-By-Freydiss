@@ -298,7 +298,7 @@ class RankVocal(commands.Cog):
 
     async def _get_hours(self, user_id: int) -> float:
         sessions = await self._get_sessions(user_id)
-        jt = self._join_times.get(user_id) or None
+        jt = self._join_times.get(user_id)
         return _hours_in_window(sessions, jt)
 
     def _can_announce(self, user_id: int, rank: str, direction: str) -> bool:
@@ -576,6 +576,12 @@ class RankVocal(commands.Cog):
                     # Yield régulier pour ne pas bloquer la gateway Discord
                     if checked % 30 == 0:
                         await asyncio.sleep(0)
+
+        # Purge des cooldowns expirés (anti memory-leak)
+        cutoff = _now() - ANNOUNCE_COOLDOWN * 4
+        expired = [k for k, ts in self._cooldowns.items() if ts < cutoff]
+        for k in expired:
+            del self._cooldowns[k]
 
         elapsed = time.time() - tick_start
         if checked:

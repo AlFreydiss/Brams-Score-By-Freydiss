@@ -3,6 +3,7 @@ from threading import Thread
 import os
 import asyncio
 import psycopg2
+from psycopg2.extras import execute_values as _pg_execute_values
 from concurrent.futures import ThreadPoolExecutor
 
 app = Flask('')
@@ -400,22 +401,21 @@ def _load_all_from_db() -> dict:
 
 
 def _flush_uids_to_db(uids: set) -> None:
-    """Sauvegarde uniquement les UIDs marqués dirty (batch UPSERT)."""
-    if not uids:
+    """Sauvegarde les UIDs dirty en un seul batch UPSERT (O(1) aller-retour DB)."""
+    values = [(uid, json.dumps(_CACHE[uid])) for uid in uids if _CACHE.get(uid) is not None]
+    if not values:
         return
     conn = get_db()
     try:
         conn.autocommit = False
         cur = conn.cursor()
-        cur.execute("SET LOCAL statement_timeout = '30000'")
-        for uid in uids:
-            udata = _CACHE.get(uid)
-            if udata is None:
-                continue
-            cur.execute("""
-                INSERT INTO users (uid, data) VALUES (%s, %s)
-                ON CONFLICT (uid) DO UPDATE SET data = EXCLUDED.data
-            """, (uid, json.dumps(udata)))
+        cur.execute("SET LOCAL statement_timeout = '60000'")
+        _pg_execute_values(
+            cur,
+            "INSERT INTO users (uid, data) VALUES %s "
+            "ON CONFLICT (uid) DO UPDATE SET data = EXCLUDED.data",
+            values,
+        )
         conn.commit()
         cur.close()
     except Exception as e:
@@ -474,14 +474,9 @@ def get_user(data, uid: str):
             "last_rank": None,
             "alerted": False,
         }
-    for key in ["last_rank", "alerted", "known_ranks"]:
+    for key, default in [("last_rank", None), ("alerted", False), ("known_ranks", [])]:
         if key not in data[uid]:
-            if key == "last_rank":
-                data[uid][key] = None
-            elif key == "alerted":
-                data[uid][key] = False
-            else:
-                data[uid][key] = []
+            data[uid][key] = default
     return data[uid]
 
 def seconds_in_period(sessions, days, join_time=None):
@@ -694,111 +689,59 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True, da
 
     deserved_ranks     = set(get_all_ranks_for_hours(hours_7d))
     current_rank_names = {_RANK_ID_TO_NAME[r.id] for r in member.roles if r.id in _RANK_ROLE_IDS}
-    known_ranks = set(user.get("known_ranks", []))
-
-    # Premier run pour ce membre : on initialise known_ranks depuis les rôles existants
-    # pour éviter de ré-annoncer tous les rangs déjà obtenus avant ce déploiement.
-    if not known_ranks and deserved_ranks:
-        # Premier run : on considère tous les rangs déjà mérités comme connus
-        # pour ne pas re-annoncer des rangs obtenus avant ce système
-        known_ranks = set(deserved_ranks)
-        user["known_ranks"] = list(known_ranks)
-        _DIRTY.add(uid)
 
     ranks_to_add    = deserved_ranks - current_rank_names
     ranks_to_remove = current_rank_names - deserved_ranks
-    # Seuls les rangs jamais annoncés déclenchent une annonce
-    truly_new_ranks = ranks_to_add - known_ranks
 
-    # Ajouter les rôles manquants
     for rank_name in ranks_to_add:
         role = guild.get_role(RANK_ROLES[rank_name])
         if role:
             try:
                 await member.add_roles(role)
-            except Exception as e:
+            except discord.Forbidden:
+                print(f"⚠️ Permission refusée add_roles {member.display_name} ({rank_name})")
+            except discord.HTTPException as e:
                 print(f"⚠️ add_roles {member.display_name} ({rank_name}): {e}")
 
-    # Mettre à jour known_ranks seulement si ça change
-    new_known = (known_ranks | ranks_to_add) - ranks_to_remove
-    if new_known != known_ranks:
-        user["known_ranks"] = list(new_known)
-        _DIRTY.add(uid)
-
-    # Retirer les rôles non mérités (derank)
     for rank_name in ranks_to_remove:
         role = guild.get_role(RANK_ROLES[rank_name])
         if role:
             try:
                 await member.remove_roles(role)
-            except Exception as e:
+            except discord.Forbidden:
+                print(f"⚠️ Permission refusée remove_roles {member.display_name} ({rank_name})")
+            except discord.HTTPException as e:
                 print(f"⚠️ remove_roles {member.display_name} ({rank_name}): {e}")
 
-    rank_order = {r: i for i, (_, r) in enumerate(reversed(RANKS))}
-
-    if announce:
-        channel = None
-        if truly_new_ranks or ranks_to_remove:
-            channel = await _get_announce_channel()
-            if channel is None:
-                print(f"[RANK] Canal d'annonce introuvable (ID={ANNOUNCE_CHANNEL_ID})")
-
-        # ── Annonces de montée de rang — uniquement les vrais nouveaux ──
-        for rank_name in sorted(truly_new_ranks, key=lambda r: rank_order.get(r, -1)):
-            if not channel:
-                break
-            cooldown_key = (uid, rank_name)
-            last_announced = _rank_announce_cooldown.get(cooldown_key, 0)
-            if now_ts() - last_announced < _RANK_ANNOUNCE_COOLDOWN_SECONDS:
-                print(f"[RANK] Cooldown actif — annonce skippée : {member.display_name} -> {rank_name}")
-                continue
-            _rank_announce_cooldown[cooldown_key] = now_ts()
-            try:
-                img_buf, is_gif = await make_rank_image(member, rank_name, hours_7d)
-                fname = "rank_up.gif" if is_gif else "rank_up.png"
-
-                await channel.send(
-                    content=f"🏴‍☠️ Bravo a {member.mention} qui a debloque le rank **{rank_name.upper()}** ✨",
-                    file=discord.File(img_buf, fname),
-                )
-                print(f"[RANK] Annonce envoyee : {member.display_name} -> {rank_name}")
-            except Exception as e:
-                print(f"[RANK] Erreur annonce rank-up {member.display_name} ({rank_name}): {e}")
-
-        # ── Annonces de derank ──
-        for rank_name in ranks_to_remove:
-            if not channel:
-                break
-            cooldown_key = (uid, f"derank_{rank_name}")
-            last_announced = _rank_announce_cooldown.get(cooldown_key, 0)
-            if now_ts() - last_announced < _RANK_ANNOUNCE_COOLDOWN_SECONDS:
-                print(f"[RANK] Cooldown actif — derank skippé : {member.display_name} -> -{rank_name}")
-                continue
-            _rank_announce_cooldown[cooldown_key] = now_ts()
-            try:
-                emoji   = _ANNOUNCE_RANK_EMOJIS.get(rank_name, "")
-                r, g, b = RANK_COLORS.get(rank_name, (150, 150, 150))
-                embed = discord.Embed(
-                    description=(
-                        f"⬇️ {member.mention} a perdu le rang **{rank_name}** {emoji}\n"
-                        f"`{hours_7d:.1f}h` vocales sur 7j — seuil non maintenu."
-                    ),
-                    color=discord.Color.from_rgb(r, g, b),
-                )
-                embed.set_footer(text="⚓ BRAMS SCORE  |  by Freydiss")
-                await channel.send(embed=embed)
-                print(f"[RANK] Derank annonce : {member.display_name} -> -{rank_name}")
-            except Exception as e:
-                print(f"[RANK] Erreur annonce derank {member.display_name} ({rank_name}): {e}")
+    # Les annonces sont gérées exclusivement par rank_vocal.py (cooldowns propres).
+    # announce=True est réservé aux commandes admin (/forcerank) pour éviter le double-annonce.
+    if announce and (ranks_to_add or ranks_to_remove):
+        rank_order = {r: i for i, (_, r) in enumerate(reversed(RANKS))}
+        channel = await _get_announce_channel()
+        if channel:
+            for rank_name in sorted(ranks_to_add, key=lambda r: rank_order.get(r, -1)):
+                cooldown_key = (uid, rank_name)
+                if now_ts() - _rank_announce_cooldown.get(cooldown_key, 0) < _RANK_ANNOUNCE_COOLDOWN_SECONDS:
+                    continue
+                _rank_announce_cooldown[cooldown_key] = now_ts()
+                try:
+                    img_buf, is_gif = await make_rank_image(member, rank_name, hours_7d)
+                    fname = "rank_up.gif" if is_gif else "rank_up.png"
+                    await channel.send(
+                        content=f"🏴‍☠️ Bravo a {member.mention} qui a debloque le rank **{rank_name.upper()}** ✨",
+                        file=discord.File(img_buf, fname),
+                    )
+                    print(f"[RANK] Annonce : {member.display_name} -> {rank_name}")
+                except Exception as e:
+                    print(f"[RANK] Erreur annonce {member.display_name} ({rank_name}): {e}")
 
     new_highest_rank = get_rank_for_hours(hours_7d)
-    old_rank = user.get("last_rank")
-    if new_highest_rank != old_rank:
+    if new_highest_rank != user.get("last_rank"):
         user["last_rank"] = new_highest_rank
         _DIRTY.add(uid)
 
     if ranks_to_add or ranks_to_remove:
-        print(f"[RANK] {member.display_name} : +{ranks_to_add} -{ranks_to_remove} | highest={new_highest_rank}")
+        print(f"[RANK] {member.display_name} : +{ranks_to_add} -{ranks_to_remove} | {hours_7d:.1f}h")
 
 def _load_font(path: str, size: int):
     try:
@@ -1218,7 +1161,7 @@ async def check_alert(member: discord.Member, hours_7d: float, data=None):
             print(f"❌ Erreur DM alerte à {member.display_name}: {e}")
 
     if hours_7d >= threshold and already_alerted:
-        user["alerted"] = None
+        user["alerted"] = False
         _DIRTY.add(uid)
 
 # ─────────────────────────────────────────
@@ -1413,7 +1356,7 @@ async def on_voice_state_update(member, before, after):
 
             seconds_7d = seconds_in_period(user["vocal_sessions"], 7)
             hours_7d = seconds_7d / 3600
-            await update_rank(member, hours_7d)
+            await update_rank(member, hours_7d, announce=False)
 
     elif before.channel is not None and after.channel is not None and before.channel != after.channel:
         if user["join_time"]:
@@ -1464,7 +1407,7 @@ async def check_ranks_loop():
                 continue
 
             try:
-                await update_rank(member, hours_7d, announce=True, data=_CACHE)
+                await update_rank(member, hours_7d, announce=False, data=_CACHE)
                 await check_alert(member, hours_7d, data=_CACHE)
             except Exception as e:
                 print(f"[RANKS] Erreur {member.display_name}: {e}")
@@ -1475,6 +1418,12 @@ async def check_ranks_loop():
 
             if total_members % 100 == 0:
                 await asyncio.sleep(0)
+
+    # Purge des entrées cooldown expirées (anti memory-leak)
+    cutoff_cd = now_ts() - _RANK_ANNOUNCE_COOLDOWN_SECONDS * 4
+    expired = [k for k, ts in _rank_announce_cooldown.items() if ts < cutoff_cd]
+    for k in expired:
+        del _rank_announce_cooldown[k]
 
     elapsed = time.time() - tick
     print(f"[RANKS] check_ranks_loop : {total_members} membres en {elapsed:.1f}s")

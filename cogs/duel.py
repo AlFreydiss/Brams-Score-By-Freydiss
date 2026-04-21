@@ -23,9 +23,10 @@ from PIL import Image, ImageDraw, ImageFont
 
 log = logging.getLogger(__name__)
 
-GIPHY_KEY     = os.getenv("GIPHY_API_KEY", "")
-_gif_cache:   dict[str, str]   = {}
-_still_cache: dict[str, bytes] = {}
+GIPHY_KEY      = os.getenv("GIPHY_API_KEY", "")
+_gif_cache:   dict[str, str]   = {}   # max ~50 entrées (23 persos * 2 guilds)
+_still_cache: dict[str, bytes] = {}   # max ~50 entrées, ~2MB total
+_CACHE_MAX = 60  # purge au-delà pour éviter le memory-leak
 
 _FB = "Bangers-Regular.ttf"
 _FK = "KOMIKAX_.ttf"
@@ -130,9 +131,13 @@ async def _fetch_char_assets(
                 async with session.get(still_url, timeout=aiohttp.ClientTimeout(total=6)) as r2:
                     if r2.status == 200:
                         still_b = await r2.read()
+                        if len(_still_cache) >= _CACHE_MAX:
+                            _still_cache.pop(next(iter(_still_cache)))
                         _still_cache[query] = still_b
             except Exception as e:
                 log.warning("[DuelCog] still(%s): %s", query, e)
+        if len(_gif_cache) >= _CACHE_MAX:
+            _gif_cache.pop(next(iter(_gif_cache)))
         return gif_url, still_b
     except Exception as exc:
         log.warning("[DuelCog] Giphy(%s): %s", query, exc)
@@ -242,15 +247,14 @@ def _apply_char_image(canvas: Image.Image, still_b: bytes | None,
     ImageDraw.Draw(ov).rectangle([x0, y0, x1, y1], fill=(r, g, b, 26))
     canvas.alpha_composite(ov)
 
-    # ── Vignette bord extérieur ───────────────────────────────────
+    # ── Vignette bord extérieur (rectangle dégradé) ──────────────
     vig = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     vd  = ImageDraw.Draw(vig)
-    for i in range(60):
-        a = int(130 * (i / 60) ** 1.8)
-        if side == "left":
-            vd.line([(x0 + i, y0), (x0 + i, y1)], fill=(0, 0, 0, a))
-        else:
-            vd.line([(x1 - i - 1, y0), (x1 - i - 1, y1)], fill=(0, 0, 0, a))
+    steps = 60
+    for i in range(steps):
+        a = int(130 * (i / steps) ** 1.8)
+        stripe = [x0 + i, y0, x0 + i + 1, y1] if side == "left" else [x1 - i - 1, y0, x1 - i, y1]
+        vd.rectangle(stripe, fill=(0, 0, 0, a))
     canvas.alpha_composite(vig)
 
     # ── Fondu haut / bas ─────────────────────────────────────────
@@ -259,8 +263,8 @@ def _apply_char_image(canvas: Image.Image, still_b: bytes | None,
     fh   = 50
     for i in range(fh):
         a = int(200 * ((1 - i / fh) ** 2))
-        fd.line([(x0, y0 + i),     (x1, y0 + i)],     fill=(0, 0, 0, a))
-        fd.line([(x0, y1 - i - 1), (x1, y1 - i - 1)], fill=(0, 0, 0, a))
+        fd.rectangle([x0, y0 + i, x1, y0 + i + 1], fill=(0, 0, 0, a))
+        fd.rectangle([x0, y1 - i - 1, x1, y1 - i], fill=(0, 0, 0, a))
     canvas.alpha_composite(fade)
 
 
@@ -499,10 +503,13 @@ class DuelCog(commands.Cog):
             verdict = random.choice(_VERDICTS)
 
             async with aiohttp.ClientSession() as sess:
-                (url1, still1), (url2, still2) = await asyncio.gather(
+                results = await asyncio.gather(
                     _fetch_char_assets(sess, d1["query"]),
                     _fetch_char_assets(sess, d2["query"]),
+                    return_exceptions=True,
                 )
+            url1, still1 = results[0] if not isinstance(results[0], Exception) else ("", None)
+            url2, still2 = results[1] if not isinstance(results[1], Exception) else ("", None)
 
             loop = asyncio.get_running_loop()
             buf  = await loop.run_in_executor(
