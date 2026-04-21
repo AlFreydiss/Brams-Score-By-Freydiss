@@ -1441,7 +1441,7 @@ async def check_ranks_loop():
                 continue
 
             try:
-                await update_rank(member, hours_7d, announce=False, data=_CACHE)
+                await update_rank(member, hours_7d, announce=True, data=_CACHE)
                 await check_alert(member, hours_7d, data=_CACHE)
             except Exception as e:
                 print(f"[RANKS] Erreur {member.display_name}: {e}")
