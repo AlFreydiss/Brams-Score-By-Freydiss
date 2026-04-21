@@ -474,9 +474,14 @@ def get_user(data, uid: str):
             "last_rank": None,
             "alerted": False,
         }
-    for key in ["last_rank", "alerted"]:
+    for key in ["last_rank", "alerted", "known_ranks"]:
         if key not in data[uid]:
-            data[uid][key] = None if key == "last_rank" else False
+            if key == "last_rank":
+                data[uid][key] = None
+            elif key == "alerted":
+                data[uid][key] = False
+            else:
+                data[uid][key] = []
     return data[uid]
 
 def seconds_in_period(sessions, days, join_time=None):
@@ -687,11 +692,14 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True, da
     uid = str(member.id)
     user = get_user(data, uid)
 
-    deserved_ranks   = set(get_all_ranks_for_hours(hours_7d))
+    deserved_ranks     = set(get_all_ranks_for_hours(hours_7d))
     current_rank_names = {_RANK_ID_TO_NAME[r.id] for r in member.roles if r.id in _RANK_ROLE_IDS}
+    known_ranks        = set(user.get("known_ranks", []))
 
     ranks_to_add    = deserved_ranks - current_rank_names
     ranks_to_remove = current_rank_names - deserved_ranks
+    # Seuls les rangs jamais annoncés déclenchent une annonce
+    truly_new_ranks = ranks_to_add - known_ranks
 
     # Ajouter les rôles manquants
     for rank_name in ranks_to_add:
@@ -701,6 +709,11 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True, da
                 await member.add_roles(role)
             except Exception as e:
                 print(f"⚠️ add_roles {member.display_name} ({rank_name}): {e}")
+
+    # Mettre à jour known_ranks : ajouter les nouveaux, retirer les perdus
+    known_ranks = (known_ranks | ranks_to_add) - ranks_to_remove
+    user["known_ranks"] = list(known_ranks)
+    _DIRTY.add(uid)
 
     # Retirer les rôles non mérités (derank)
     for rank_name in ranks_to_remove:
@@ -715,13 +728,13 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True, da
 
     if announce:
         channel = None
-        if ranks_to_add or ranks_to_remove:
+        if truly_new_ranks or ranks_to_remove:
             channel = await _get_announce_channel()
             if channel is None:
                 print(f"[RANK] Canal d'annonce introuvable (ID={ANNOUNCE_CHANNEL_ID})")
 
-        # ── Annonces de montée de rang (du plus bas au plus haut) ──
-        for rank_name in sorted(ranks_to_add, key=lambda r: rank_order.get(r, -1)):
+        # ── Annonces de montée de rang — uniquement les vrais nouveaux ──
+        for rank_name in sorted(truly_new_ranks, key=lambda r: rank_order.get(r, -1)):
             if not channel:
                 break
             cooldown_key = (uid, rank_name)
