@@ -181,12 +181,16 @@ def _tw(draw, text, font) -> int:
 # ══════════════════════════════════════════════════════════════════
 
 def _apply_char_image(canvas: Image.Image, still_b: bytes | None,
-                      side: str, color: tuple) -> None:
+                      side: str, color: tuple, display: str = "") -> None:
     x0 = 0    if side == "left" else HALF
     x1 = HALF if side == "left" else W
     y0, y1   = TOP_H, BTM_Y
     zw, zh   = x1 - x0, y1 - y0
+    cx       = (x0 + x1) // 2
+    cy       = (y0 + y1) // 2
+    r, g, b  = color
 
+    img_ok = False
     # ── Image personnage en fond ──────────────────────────────────
     if still_b:
         try:
@@ -195,16 +199,42 @@ def _apply_char_image(canvas: Image.Image, still_b: bytes | None,
             scale   = max(zw / iw, zh / ih)
             nw, nh  = int(iw * scale), int(ih * scale)
             img     = img.resize((nw, nh), Image.LANCZOS)
-            # Crop : favorise le haut (visage / buste)
             left = (nw - zw) // 2
             top  = int((nh - zh) * 0.15)
             img  = img.crop((left, top, left + zw, top + zh))
-            # Assombrir (c'est un fond)
             dark = Image.new("RGBA", (zw, zh), (0, 0, 0, 145))
             img.alpha_composite(dark)
             canvas.paste(img, (x0, y0), img)
+            img_ok = True
         except Exception as e:
             log.warning("[DuelCog] img composite(%s): %s", side, e)
+
+    # ── Fallback visuel si pas d'image ────────────────────────────
+    if not img_ok:
+        # Aura radiale colorée
+        ov = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+        od = ImageDraw.Draw(ov)
+        for rad in range(220, 0, -14):
+            a = int(72 * (1 - rad / 220) ** 1.6)
+            od.ellipse([cx-rad, cy-rad, cx+rad, cy+rad], fill=(r, g, b, a))
+        canvas.alpha_composite(ov)
+        # Lettre fantôme
+        letter = _clean(display)[0].upper() if display else "?"
+        draw = ImageDraw.Draw(canvas)
+        draw.text((cx, cy - 10), letter,
+                  fill=(r // 6, g // 6, b // 6), font=_f(_FK, 230), anchor="mm")
+        # Speed lines
+        sl = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+        sd = ImageDraw.Draw(sl)
+        for _ in range(14):
+            angle  = random.uniform(0, 2 * math.pi)
+            length = random.randint(160, 300)
+            x2 = cx + int(math.cos(angle) * length)
+            y2 = cy + int(math.sin(angle) * length)
+            sd.line([(cx, cy), (x2, y2)],
+                    fill=(r // 3, g // 3, b // 3, random.randint(18, 50)),
+                    width=random.choice([1, 1, 2]))
+        canvas.alpha_composite(sl)
 
     # ── Overlay couleur atmosphérique ────────────────────────────
     r, g, b = color
@@ -426,8 +456,8 @@ def _build_card(
         t = max(0.0, 1.0 - abs(y / H - 0.44) * 2.1)
         draw.line([(0, y), (W, y)], fill=(int(28*t), int(4*t), int(7*t), 255))
 
-    _apply_char_image(canvas, still1, "left",  d1["color"])
-    _apply_char_image(canvas, still2, "right", d2["color"])
+    _apply_char_image(canvas, still1, "left",  d1["color"], d1["display"])
+    _apply_char_image(canvas, still2, "right", d2["color"], d2["display"])
     _draw_diagonal_split(canvas)
     _draw_vs_badge(canvas)
     _draw_char_text(canvas, "left",  d1)

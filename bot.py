@@ -698,8 +698,10 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True, da
 
     # Premier run pour ce membre : on initialise known_ranks depuis les rôles existants
     # pour éviter de ré-annoncer tous les rangs déjà obtenus avant ce déploiement.
-    if not known_ranks and current_rank_names:
-        known_ranks = set(current_rank_names)
+    if not known_ranks and deserved_ranks:
+        # Premier run : on considère tous les rangs déjà mérités comme connus
+        # pour ne pas re-annoncer des rangs obtenus avant ce système
+        known_ranks = set(deserved_ranks)
         user["known_ranks"] = list(known_ranks)
         _DIRTY.add(uid)
 
