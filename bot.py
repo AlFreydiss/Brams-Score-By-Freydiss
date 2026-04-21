@@ -694,7 +694,14 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True, da
 
     deserved_ranks     = set(get_all_ranks_for_hours(hours_7d))
     current_rank_names = {_RANK_ID_TO_NAME[r.id] for r in member.roles if r.id in _RANK_ROLE_IDS}
-    known_ranks        = set(user.get("known_ranks", []))
+    known_ranks = set(user.get("known_ranks", []))
+
+    # Premier run pour ce membre : on initialise known_ranks depuis les rôles existants
+    # pour éviter de ré-annoncer tous les rangs déjà obtenus avant ce déploiement.
+    if not known_ranks and current_rank_names:
+        known_ranks = set(current_rank_names)
+        user["known_ranks"] = list(known_ranks)
+        _DIRTY.add(uid)
 
     ranks_to_add    = deserved_ranks - current_rank_names
     ranks_to_remove = current_rank_names - deserved_ranks
@@ -710,10 +717,11 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True, da
             except Exception as e:
                 print(f"⚠️ add_roles {member.display_name} ({rank_name}): {e}")
 
-    # Mettre à jour known_ranks : ajouter les nouveaux, retirer les perdus
-    known_ranks = (known_ranks | ranks_to_add) - ranks_to_remove
-    user["known_ranks"] = list(known_ranks)
-    _DIRTY.add(uid)
+    # Mettre à jour known_ranks seulement si ça change
+    new_known = (known_ranks | ranks_to_add) - ranks_to_remove
+    if new_known != known_ranks:
+        user["known_ranks"] = list(new_known)
+        _DIRTY.add(uid)
 
     # Retirer les rôles non mérités (derank)
     for rank_name in ranks_to_remove:
