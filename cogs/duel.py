@@ -14,30 +14,178 @@ from discord.ext import commands
 
 log = logging.getLogger(__name__)
 
+# IDs Jikan directs pour les persos connus — évite les mauvais matchs de recherche
+_CHAR_IDS: dict[str, int] = {
+    # One Piece
+    "luffy": 40, "monkey d. luffy": 40,
+    "zoro": 62, "roronoa zoro": 62,
+    "nami": 723,
+    "usopp": 724,
+    "sanji": 305,
+    "robin": 61, "nico robin": 61,
+    "chopper": 726, "tony tony chopper": 726,
+    "franky": 725,
+    "brook": 1498,
+    "jinbei": 39645,
+    "ace": 2072, "portgas d. ace": 2072,
+    "shanks": 727,
+    "barbe blanche": 2751, "whitebeard": 2751,
+    "trafalgar law": 13767, "law": 13767,
+    "akainu": 22687,
+    "hancock": 13765, "boa hancock": 13765,
+    "crocodile": 13668,
+    "doflamingo": 37384,
+    "kaido": 60957,
+    "big mom": 37262,
+    # Naruto
+    "naruto": 17, "naruto uzumaki": 17,
+    "sasuke": 13, "sasuke uchiha": 13,
+    "kakashi": 85, "kakashi hatake": 85,
+    "itachi": 14, "itachi uchiha": 14,
+    "sakura": 15, "sakura haruno": 15,
+    "hinata": 1555, "hinata hyuga": 1555,
+    "gaara": 84,
+    "rock lee": 306,
+    "jiraiya": 2423,
+    "minato": 2535, "minato namikaze": 2535,
+    "obito": 2910, "obito uchiha": 2910,
+    "pain": 3180,
+    # Bleach
+    "ichigo": 5, "ichigo kurosaki": 5,
+    "byakuya": 8, "byakuya kuchiki": 8,
+    "aizen": 7, "sosuke aizen": 7,
+    "rukia": 6, "rukia kuchiki": 6,
+    # FMA
+    "edward elric": 11, "edward": 11,
+    "alphonse elric": 12, "alphonse": 12,
+    "roy mustang": 68,
+    # HxH
+    "gon": 30, "gon freecss": 30,
+    "killua": 27, "killua zoldyck": 27,
+    "hisoka": 238998, "hisoka morow": 238998,
+    "kurapika": 28,
+    "meruem": 23277,
+    # JoJo
+    "jotaro": 38, "jotaro kujo": 38,
+    "giorno": 10529, "giorno giovanna": 10529,
+    "dio": 4004, "dio brando": 4004,
+    # Attack on Titan
+    "levi": 290124, "levi ackerman": 290124,
+    "eren": 40882, "eren yeager": 40882,
+    "mikasa": 40881, "mikasa ackerman": 40881,
+    "armin": 46494, "armin arlert": 46494,
+    "erwin": 46496, "erwin smith": 46496,
+    # Death Note
+    "light yagami": 80, "light": 80,
+    "l": 71,
+    "ryuk": 75,
+    # Dragon Ball
+    "goku": 246, "son goku": 246,
+    "vegeta": 913,
+    "piccolo": 915,
+    "gohan": 912,
+    # Demon Slayer
+    "tanjiro": 146156, "tanjiro kamado": 146156,
+    "zenitsu": 146310, "zenitsu agatsuma": 146310,
+    "inosuke": 146158, "inosuke hashibira": 146158,
+    "rengoku": 151143, "rengoku kyojuro": 151143,
+    "muzan": 146318, "muzan kibutsuji": 146318,
+    # Jujutsu Kaisen
+    "itadori": 163847, "yuji itadori": 163847,
+    "gojo": 164471, "gojo satoru": 164471,
+    "sukuna": 160116, "ryomen sukuna": 160116,
+    "megumi": 160113, "megumi fushiguro": 160113,
+    # Tokyo Ghoul
+    "kaneki": 87275, "ken kaneki": 87275,
+    # Code Geass
+    "lelouch": 417, "lelouch vi britannia": 417,
+    # One Punch Man
+    "saitama": 73935,
+    "genos": 73936,
+    # Fairy Tail
+    "natsu": 5187, "natsu dragneel": 5187,
+    "erza": 5189, "erza scarlet": 5189,
+    "gray": 9748, "gray fullbuster": 9748,
+    # Mob Psycho
+    "mob": 137723, "shigeo kageyama": 137723,
+    # SAO
+    "kirito": 245235,
+    "asuna": 36828, "asuna yuuki": 36828,
+    # Re:Zero
+    "rem": 118763,
+    "subaru": 118735, "subaru natsuki": 118735,
+    # Berserk
+    "guts": 422,
+    # Black Clover
+    "asta": 33356,
+    # Nanatsu no Taizai
+    "meliodas": 67067,
+    # Gintama
+    "gintoki": 567, "gintoki sakata": 567,
+    # Cowboy Bebop
+    "spike": 1, "spike spiegel": 1,
+    # Violet Evergarden
+    "violet evergarden": 141354,
+}
+
 _IMG_CACHE: dict[str, str | None] = {}
 
 
+async def _fetch_by_id(char_id: int, session: aiohttp.ClientSession) -> str | None:
+    """Récupère l'image d'un perso Jikan via son ID exact."""
+    async with session.get(
+        f"https://api.jikan.moe/v4/characters/{char_id}",
+        timeout=aiohttp.ClientTimeout(total=10),
+    ) as r:
+        if r.status == 200:
+            data = await r.json()
+            return data.get("data", {}).get("images", {}).get("jpg", {}).get("image_url")
+    return None
+
+
+async def _fetch_by_search(nom: str, session: aiohttp.ClientSession) -> str | None:
+    """Cherche un perso par nom et prend le résultat dont le nom correspond le mieux."""
+    async with session.get(
+        f"https://api.jikan.moe/v4/characters?q={_uq(nom)}&limit=5",
+        timeout=aiohttp.ClientTimeout(total=10),
+    ) as r:
+        if r.status != 200:
+            return None
+        data = await r.json()
+        chars = data.get("data", [])
+        if not chars:
+            return None
+        # Cherche le meilleur match par nom
+        nom_lower = nom.lower()
+        for char in chars:
+            char_name = char.get("name", "").lower()
+            char_name_kanji = (char.get("name_kanji") or "").lower()
+            if nom_lower in char_name or nom_lower in char_name_kanji:
+                img = char.get("images", {}).get("jpg", {}).get("image_url")
+                if img:
+                    return img
+        # Fallback : premier résultat
+        return chars[0].get("images", {}).get("jpg", {}).get("image_url")
+
+
 async def chercher_image(nom: str) -> str | None:
-    """Cherche l'image d'un personnage via Jikan (MAL) — aucune clé API requise."""
-    if nom in _IMG_CACHE:
-        return _IMG_CACHE[nom]
+    cache_key = nom.lower().strip()
+    if cache_key in _IMG_CACHE:
+        return _IMG_CACHE[cache_key]
+
+    result = None
     try:
         async with aiohttp.ClientSession() as sess:
-            async with sess.get(
-                f"https://api.jikan.moe/v4/characters?q={_uq(nom)}&limit=5",
-                timeout=aiohttp.ClientTimeout(total=10),
-            ) as r:
-                if r.status == 200:
-                    data = await r.json()
-                    chars = data.get("data", [])
-                    if chars:
-                        img = chars[0].get("images", {}).get("jpg", {}).get("image_url")
-                        _IMG_CACHE[nom] = img
-                        return img
+            char_id = _CHAR_IDS.get(cache_key)
+            if char_id:
+                result = await _fetch_by_id(char_id, sess)
+            if not result:
+                result = await _fetch_by_search(nom, sess)
     except Exception as e:
-        log.warning("[Duel] Jikan(%s): %s", nom, e)
-    _IMG_CACHE[nom] = None
-    return None
+        log.warning("[Duel] chercher_image(%s): %s", nom, e)
+
+    _IMG_CACHE[cache_key] = result
+    return result
 
 
 class DuelCog(commands.Cog):
