@@ -1123,15 +1123,26 @@ async def check_alert(member: discord.Member, hours_7d: float, data=None):
     uid = str(member.id)
     user = get_user(data, uid)
 
-    current_rank = user.get("last_rank")
+    rank_threshold = {"Pirate": 10, "Shichibukai": 25, "Amiral": 40, "Yonkou": 70, "Roi des pirates": 150}
+
+    # Rangs que le membre possède RÉELLEMENT sur Discord (pas last_rank qui change avant check_alert)
+    member_ranks = {_RANK_ID_TO_NAME[r.id] for r in member.roles if r.id in _RANK_ROLE_IDS}
+
+    # Reset alerted si le rang alerté n'est plus possédé
+    alerted_rank = user.get("alerted")
+    if alerted_rank and isinstance(alerted_rank, str) and alerted_rank not in member_ranks:
+        user["alerted"] = False
+        _DIRTY.add(uid)
+
+    if not member_ranks:
+        return
+
+    # Rang le plus élevé possédé
+    current_rank = next((name for _, name in RANKS if name in member_ranks), None)
     if current_rank is None:
         return
 
-    rank_threshold = {"Pirate": 10, "Shichibukai": 25, "Amiral": 40, "Yonkou": 70, "Roi des pirates": 150}
-    threshold = rank_threshold.get(current_rank)
-    if threshold is None:
-        return
-
+    threshold = rank_threshold[current_rank]
     already_alerted = user.get("alerted") == current_rank
     in_danger_zone = (threshold - DERANK_WARNING_THRESHOLD) <= hours_7d < threshold
 
@@ -1370,11 +1381,14 @@ async def on_voice_state_update(member, before, after):
         user["join_time"] = now_ts()
         clean_old_data(user)
         _DIRTY.add(uid)
+        seconds_7d = seconds_in_period(user["vocal_sessions"], 7, join_time=user["join_time"])
+        hours_7d = seconds_7d / 3600
+        await update_rank(member, hours_7d, announce=False)
 
 # ─────────────────────────────────────────
 #  LOOP HORAIRE
 # ─────────────────────────────────────────
-@tasks.loop(hours=1)
+@tasks.loop(minutes=20)
 async def check_ranks_loop():
     tick = time.time()
     total_members = 0
@@ -1407,8 +1421,8 @@ async def check_ranks_loop():
                 continue
 
             try:
-                await update_rank(member, hours_7d, announce=False, data=_CACHE)
                 await check_alert(member, hours_7d, data=_CACHE)
+                await update_rank(member, hours_7d, announce=False, data=_CACHE)
             except Exception as e:
                 print(f"[RANKS] Erreur {member.display_name}: {e}")
 
