@@ -3134,7 +3134,7 @@ def _build_profile_embed(member: discord.Member, profile: dict, hours_7d: float)
     if profile.get("bio"):
         embed.add_field(name="📝 Bio", value=profile["bio"][:300], inline=False)
 
-    embed.set_footer(text="Brams Community • One Piece")
+    embed.set_footer(text="Brams Community • Anime & Manga")
     return embed
 
 
@@ -3239,10 +3239,10 @@ async def on_member_join(member: discord.Member):
     ])
 
     embed = discord.Embed(
-        title=f"Bienvenue sur Brams Community, {member.display_name} ! 🏴‍☠️",
+        title=f"Bienvenue sur Brams Community, {member.display_name} !",
         description=(
             f"Heureux de t'accueillir, {member.mention} !\n\n"
-            "Ce serveur est dédié à **One Piece** et à la communauté Brams. "
+            "Ce serveur est dédié aux **animés et mangas** et à la communauté Brams. "
             "Plus tu passes de temps en vocal, plus tu gravis les rangs !\n\n"
             f"**Système de rangs (heures vocales / 7 jours) :**\n{ranks_desc}\n\n"
             "**Commandes utiles :**\n"
@@ -3254,7 +3254,7 @@ async def on_member_join(member: discord.Member):
         color=discord.Color.from_rgb(255, 215, 0),
     )
     embed.set_thumbnail(url=member.display_avatar.url)
-    embed.set_footer(text="Brams Community • One Piece")
+    embed.set_footer(text="Brams Community • Anime & Manga")
 
     try:
         await channel.send(embed=embed)
