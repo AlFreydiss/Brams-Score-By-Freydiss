@@ -220,7 +220,7 @@ async def _build_profile_embed(
         )
 
     icon = guild.icon.url if guild.icon else None
-    embed.set_footer(text=f"Brams Community • Anime & Manga  •  ID : {member.id}", icon_url=icon)
+    embed.set_footer(text="Brams Community • Anime & Manga", icon_url=icon)
     return embed
 
 
