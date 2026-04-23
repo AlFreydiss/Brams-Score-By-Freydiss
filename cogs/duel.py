@@ -1,8 +1,6 @@
 """
 Cog — /duel  ⚔️
-• Carte PNG avec image personnage en fond sur chaque côté (Giphy still)
-• Balance serrée 45–55 % — force le vrai débat communautaire
-• Sondage réactions pour que la communauté tranche
+Images personnages via MAL (Jikan) — même système que /citation dans bot.py
 """
 from __future__ import annotations
 
@@ -10,10 +8,9 @@ import asyncio
 import io
 import logging
 import math
-import os
 import random
 import re
-import urllib.parse
+import sys
 
 import aiohttp
 import discord
@@ -23,50 +20,45 @@ from PIL import Image, ImageDraw, ImageFont
 
 log = logging.getLogger(__name__)
 
-GIPHY_KEY      = os.getenv("GIPHY_API_KEY", "")
-_gif_cache:   dict[str, str]   = {}   # max ~50 entrées (23 persos * 2 guilds)
-_still_cache: dict[str, bytes] = {}   # max ~50 entrées, ~2MB total
-_CACHE_MAX = 60  # purge au-delà pour éviter le memory-leak
-
 _FB = "Bangers-Regular.ttf"
 _FK = "KOMIKAX_.ttf"
 _FR = "Righteous-Regular.ttf"
 
-# ── Canvas constants ──────────────────────────────────────────────
-W, H   = 960, 520
-HALF   = W // 2
-TOP_H  = 44
-BTM_H  = 128
-BTM_Y  = H - BTM_H   # 392
+W, H  = 960, 540
+HALF  = W // 2
+TOP_H = 48
+BTM_H = 130
+BTM_Y = H - BTM_H   # 410
 
 
 # ══════════════════════════════════════════════════════════════════
 #  PERSONNAGES
 # ══════════════════════════════════════════════════════════════════
+
 CHARS: dict[str, dict] = {
-    "luffy":    {"display": "Monkey D. Luffy",   "query": "luffy gear fifth one piece",          "univers": "One Piece",              "titre": "Roi des Pirates",           "color": (255, 130,   0)},
-    "zoro":     {"display": "Roronoa Zoro",       "query": "zoro one piece three swords",         "univers": "One Piece",              "titre": "Premier Épéiste du Monde",  "color": ( 40, 190,  70)},
-    "sanji":    {"display": "Sanji",              "query": "sanji ifrit jambe one piece",         "univers": "One Piece",              "titre": "Cuisinier du Diable",       "color": (210, 210,   0)},
-    "naruto":   {"display": "Naruto Uzumaki",     "query": "naruto baryon mode fight",             "univers": "Naruto",                 "titre": "Septieme Hokage",           "color": (255, 100,   0)},
-    "sasuke":   {"display": "Sasuke Uchiha",      "query": "sasuke rinnegan sharingan fight",      "univers": "Naruto",                 "titre": "Ninja de l Ombre",          "color": (120,   0, 220)},
-    "kakashi":  {"display": "Kakashi Hatake",     "query": "kakashi lightning blade fight",        "univers": "Naruto",                 "titre": "Copieur de Mille Jutsu",    "color": (130, 180, 255)},
-    "goku":     {"display": "Son Goku",           "query": "goku ultra instinct dragon ball",      "univers": "Dragon Ball",            "titre": "Ultra Instinct Maitrise",   "color": (255, 215,   0)},
-    "vegeta":   {"display": "Vegeta",             "query": "vegeta ultra ego dragon ball",         "univers": "Dragon Ball",            "titre": "Prince des Saiyans",        "color": (170,   0, 255)},
-    "ichigo":   {"display": "Ichigo Kurosaki",    "query": "ichigo bleach final form bankai",      "univers": "Bleach",                 "titre": "Substitute Shinigami",      "color": (255,  60,  60)},
-    "aizen":    {"display": "Sosuke Aizen",       "query": "aizen bleach final form",              "univers": "Bleach",                 "titre": "Seigneur des Arrancar",     "color": (190, 160, 255)},
-    "saitama":  {"display": "Saitama",            "query": "saitama serious punch hero",           "univers": "One Punch Man",          "titre": "Heros par Loisir",          "color": (255, 230,  80)},
-    "mob":      {"display": "Shigeo Kageyama",    "query": "mob psycho 100 percent power",         "univers": "Mob Psycho 100",         "titre": "100% Psychique",            "color": (170, 170, 255)},
-    "tanjiro":  {"display": "Tanjiro Kamado",     "query": "tanjiro sun breathing demon slayer",   "univers": "Demon Slayer",           "titre": "Danse du Dieu du Feu",      "color": (  0, 170, 220)},
-    "rengoku":  {"display": "Kyojuro Rengoku",    "query": "rengoku flame hashira demon slayer",   "univers": "Demon Slayer",           "titre": "Pilier de la Flamme",       "color": (255,  90,   0)},
-    "eren":     {"display": "Eren Yeager",        "query": "eren founding titan attack on titan",  "univers": "Attaque des Titans",     "titre": "Le Titan Fondateur",        "color": (160,  90,   0)},
-    "levi":     {"display": "Levi Ackerman",      "query": "levi ackerman titan fight",            "univers": "Attaque des Titans",     "titre": "Le Soldat le Plus Fort",    "color": (140, 195, 200)},
-    "gojo":     {"display": "Satoru Gojo",        "query": "gojo satoru hollow purple",            "univers": "Jujutsu Kaisen",         "titre": "Le Plus Fort du Monde",     "color": ( 80, 190, 255)},
-    "sukuna":   {"display": "Ryomen Sukuna",      "query": "sukuna malevolent shrine jujutsu",     "univers": "Jujutsu Kaisen",         "titre": "Roi des Fleaux",            "color": (210,   0,  40)},
-    "meliodas": {"display": "Meliodas",           "query": "meliodas assault mode deadly sins",    "univers": "Nanatsu no Taizai",      "titre": "Dragon Sin of Wrath",       "color": (255,  70,  70)},
-    "natsu":    {"display": "Natsu Dragneel",     "query": "natsu dragneel fire dragon slayer",    "univers": "Fairy Tail",             "titre": "Dragon Slayer du Feu",      "color": (255,  70,   0)},
-    "edward":   {"display": "Edward Elric",       "query": "edward elric alchemy fight",           "univers": "Fullmetal Alchemist",    "titre": "Alchimiste de Metal",       "color": (210, 170,   0)},
-    "gintoki":  {"display": "Gintoki Sakata",     "query": "gintoki white demon gintama",          "univers": "Gintama",                "titre": "Samourai du Ciel",          "color": (200, 200, 255)},
-    "giorno":   {"display": "Giorno Giovanna",    "query": "giorno gold experience requiem jojo",  "univers": "JoJo Bizarre Adventure", "titre": "Capo di Passione",          "color": (255, 170, 190)},
+    "luffy":    {"display": "Monkey D. Luffy",   "jikan_name": "Monkey D. Luffy",   "jikan_id": 40,     "univers": "One Piece",              "titre": "Roi des Pirates",           "color": (255, 130,   0)},
+    "zoro":     {"display": "Roronoa Zoro",       "jikan_name": "Roronoa Zoro",       "jikan_id": 62,     "univers": "One Piece",              "titre": "Premier Epéiste du Monde",  "color": ( 34, 180,  60)},
+    "sanji":    {"display": "Sanji",              "jikan_name": "Sanji",              "jikan_id": 305,    "univers": "One Piece",              "titre": "Cuisinier du Diable",       "color": (210, 200,   0)},
+    "naruto":   {"display": "Naruto Uzumaki",     "jikan_name": "Naruto Uzumaki",     "jikan_id": 17,     "univers": "Naruto",                 "titre": "Septieme Hokage",           "color": (255, 100,   0)},
+    "sasuke":   {"display": "Sasuke Uchiha",      "jikan_name": "Sasuke Uchiha",      "jikan_id": 13,     "univers": "Naruto",                 "titre": "Ninja de l Ombre",          "color": (110,   0, 200)},
+    "kakashi":  {"display": "Kakashi Hatake",     "jikan_name": "Kakashi Hatake",     "jikan_id": 85,     "univers": "Naruto",                 "titre": "Copieur de Mille Jutsu",    "color": (130, 180, 255)},
+    "goku":     {"display": "Son Goku",           "jikan_name": "Son Goku",           "jikan_id": 246,    "univers": "Dragon Ball",            "titre": "Ultra Instinct",            "color": (255, 215,   0)},
+    "vegeta":   {"display": "Vegeta",             "jikan_name": "Vegeta",             "jikan_id": 913,    "univers": "Dragon Ball",            "titre": "Prince des Saiyans",        "color": (160,   0, 240)},
+    "ichigo":   {"display": "Ichigo Kurosaki",    "jikan_name": "Ichigo Kurosaki",    "jikan_id": 5,      "univers": "Bleach",                 "titre": "Substitute Shinigami",      "color": (255,  55,  55)},
+    "aizen":    {"display": "Sosuke Aizen",       "jikan_name": "Sosuke Aizen",       "jikan_id": 7,      "univers": "Bleach",                 "titre": "Seigneur des Arrancar",     "color": (185, 150, 255)},
+    "saitama":  {"display": "Saitama",            "jikan_name": "Saitama",            "jikan_id": 73935,  "univers": "One Punch Man",          "titre": "Héros par Loisir",          "color": (255, 230,  70)},
+    "mob":      {"display": "Shigeo Kageyama",    "jikan_name": "Shigeo Kageyama",    "jikan_id": None,   "univers": "Mob Psycho 100",         "titre": "100% Psychique",            "color": (170, 170, 255)},
+    "tanjiro":  {"display": "Tanjiro Kamado",     "jikan_name": "Tanjiro Kamado",     "jikan_id": 146156, "univers": "Demon Slayer",           "titre": "Danse du Dieu du Feu",      "color": (  0, 165, 215)},
+    "rengoku":  {"display": "Kyojuro Rengoku",    "jikan_name": "Rengoku Kyojuro",    "jikan_id": 151143, "univers": "Demon Slayer",           "titre": "Pilier de la Flamme",       "color": (255,  85,   0)},
+    "eren":     {"display": "Eren Yeager",        "jikan_name": "Eren Yeager",        "jikan_id": 40882,  "univers": "Attaque des Titans",     "titre": "Le Titan Fondateur",        "color": (150,  85,   0)},
+    "levi":     {"display": "Levi Ackerman",      "jikan_name": "Levi Ackerman",      "jikan_id": 290124, "univers": "Attaque des Titans",     "titre": "Le Soldat le Plus Fort",    "color": (130, 190, 200)},
+    "gojo":     {"display": "Satoru Gojo",        "jikan_name": "Gojo Satoru",        "jikan_id": 164471, "univers": "Jujutsu Kaisen",         "titre": "Le Plus Fort du Monde",     "color": ( 70, 185, 255)},
+    "sukuna":   {"display": "Ryomen Sukuna",      "jikan_name": "Ryomen Sukuna",      "jikan_id": 160116, "univers": "Jujutsu Kaisen",         "titre": "Roi des Fléaux",            "color": (200,   0,  35)},
+    "meliodas": {"display": "Meliodas",           "jikan_name": "Meliodas",           "jikan_id": None,   "univers": "Nanatsu no Taizai",      "titre": "Dragon Sin of Wrath",       "color": (255,  65,  65)},
+    "natsu":    {"display": "Natsu Dragneel",     "jikan_name": "Natsu Dragneel",     "jikan_id": 5187,   "univers": "Fairy Tail",             "titre": "Dragon Slayer du Feu",      "color": (255,  65,   0)},
+    "edward":   {"display": "Edward Elric",       "jikan_name": "Edward Elric",       "jikan_id": 11,     "univers": "Fullmetal Alchemist",    "titre": "Alchimiste de Métal",       "color": (210, 165,   0)},
+    "gintoki":  {"display": "Gintoki Sakata",     "jikan_name": "Gintoki Sakata",     "jikan_id": None,   "univers": "Gintama",                "titre": "Samourai du Ciel",          "color": (200, 200, 255)},
+    "giorno":   {"display": "Giorno Giovanna",    "jikan_name": "Giorno Giovanna",    "jikan_id": 10529,  "univers": "JoJo Bizarre Adventure", "titre": "Capo di Passione",          "color": (255, 165, 185)},
 }
 
 _RIVALRIES = [
@@ -93,62 +85,40 @@ _VERDICTS = [
     "VOUS DECIDEZ !",
 ]
 
+# Cache image bytes par jikan_name (évite re-téléchargement dans la session)
+_IMG_CACHE: dict[str, bytes | None] = {}
+
 
 # ══════════════════════════════════════════════════════════════════
-#  GIPHY — GIF URL + still PNG bytes
+#  IMAGE — récupération via bot.py (Jikan + static URLs)
 # ══════════════════════════════════════════════════════════════════
 
-async def _fetch_char_assets(
-    session: aiohttp.ClientSession, query: str
-) -> tuple[str, bytes | None]:
-    if query in _gif_cache:
-        return _gif_cache[query], _still_cache.get(query)
-    if not GIPHY_KEY:
-        return "", None
-    params = urllib.parse.urlencode({"api_key": GIPHY_KEY, "q": query,
-                                     "limit": "5", "rating": "g", "lang": "en"})
-    try:
-        async with session.get(f"https://api.giphy.com/v1/gifs/search?{params}",
-                               timeout=aiohttp.ClientTimeout(total=8)) as r:
-            if r.status != 200:
-                return "", None
-            data = await r.json()
-        items = data.get("data", [])
-        if not items:
-            return "", None
-        item    = random.choice(items[:3])
-        gif_url = item["images"]["original"]["url"]
-        _gif_cache[query] = gif_url
+async def _fetch_image(jikan_name: str, jikan_id: int | None) -> bytes | None:
+    """Récupère les bytes image via le système bot.py (Jikan/MAL)."""
+    if jikan_name in _IMG_CACHE:
+        return _IMG_CACHE[jikan_name]
 
-        still_url = (
-            (item["images"].get("original_still") or
-             item["images"].get("fixed_height_still") or
-             item["images"].get("downsized_still") or {}).get("url", "")
-        )
-        still_b = None
-        if still_url:
-            try:
-                async with session.get(still_url, timeout=aiohttp.ClientTimeout(total=6)) as r2:
-                    if r2.status == 200:
-                        still_b = await r2.read()
-                        if len(_still_cache) >= _CACHE_MAX:
-                            _still_cache.pop(next(iter(_still_cache)))
-                        _still_cache[query] = still_b
-            except Exception as e:
-                log.warning("[DuelCog] still(%s): %s", query, e)
-        if len(_gif_cache) >= _CACHE_MAX:
-            _gif_cache.pop(next(iter(_gif_cache)))
-        return gif_url, still_b
-    except Exception as exc:
-        log.warning("[DuelCog] Giphy(%s): %s", query, exc)
-        return "", None
+    bot_mod = sys.modules.get("bot")
+    if bot_mod:
+        # Injecte l'ID dans CHAR_JIKAN_IDS si pas encore présent
+        if jikan_id is not None and jikan_name not in getattr(bot_mod, "CHAR_JIKAN_IDS", {}):
+            bot_mod.CHAR_JIKAN_IDS[jikan_name] = jikan_id
+        try:
+            raw = await bot_mod._fetch_char_image_bytes(jikan_name)
+            _IMG_CACHE[jikan_name] = raw
+            return raw
+        except Exception as e:
+            log.warning("[Duel] _fetch_char_image_bytes(%s): %s", jikan_name, e)
+
+    _IMG_CACHE[jikan_name] = None
+    return None
 
 
 # ══════════════════════════════════════════════════════════════════
 #  PIL HELPERS
 # ══════════════════════════════════════════════════════════════════
 
-_EMOJI_RE = re.compile(r"[\U0001F300-\U0001FAFF\u2600-\u27BF]+", flags=re.UNICODE)
+_EMOJI_RE = re.compile(r"[\U0001F300-\U0001FAFF☀-➿]+", flags=re.UNICODE)
 
 def _clean(t: str) -> str:
     return _EMOJI_RE.sub("", t).strip()
@@ -185,84 +155,69 @@ def _tw(draw, text, font) -> int:
 #  DESSIN — FOND PERSONNAGE
 # ══════════════════════════════════════════════════════════════════
 
-def _apply_char_image(canvas: Image.Image, still_b: bytes | None,
+def _apply_char_image(canvas: Image.Image, img_b: bytes | None,
                       side: str, color: tuple, display: str = "") -> None:
     x0 = 0    if side == "left" else HALF
     x1 = HALF if side == "left" else W
-    y0, y1   = TOP_H, BTM_Y
-    zw, zh   = x1 - x0, y1 - y0
-    cx       = (x0 + x1) // 2
-    cy       = (y0 + y1) // 2
-    r, g, b  = color
+    y0, y1 = TOP_H, BTM_Y
+    zw, zh  = x1 - x0, y1 - y0
+    cx = (x0 + x1) // 2
+    cy = (y0 + y1) // 2
+    r, g, b = color
 
     img_ok = False
-    # ── Image personnage en fond ──────────────────────────────────
-    if still_b:
+    if img_b:
         try:
-            img = Image.open(io.BytesIO(still_b)).convert("RGBA")
-            iw, ih  = img.size
-            scale   = max(zw / iw, zh / ih)
-            nw, nh  = int(iw * scale), int(ih * scale)
-            img     = img.resize((nw, nh), Image.LANCZOS)
-            left = (nw - zw) // 2
-            top  = int((nh - zh) * 0.15)
+            img = Image.open(io.BytesIO(img_b)).convert("RGBA")
+            iw, ih = img.size
+            scale  = max(zw / iw, zh / ih)
+            nw, nh = int(iw * scale), int(ih * scale)
+            img    = img.resize((nw, nh), Image.LANCZOS)
+            # Portrait MAL : aligner en haut pour garder le visage
+            left = max(0, (nw - zw) // 2)
+            top  = 0
             img  = img.crop((left, top, left + zw, top + zh))
-            dark = Image.new("RGBA", (zw, zh), (0, 0, 0, 145))
+            # Assombrissement modéré pour lisibilité du texte
+            dark = Image.new("RGBA", (zw, zh), (0, 0, 0, 110))
             img.alpha_composite(dark)
             canvas.paste(img, (x0, y0), img)
             img_ok = True
         except Exception as e:
-            log.warning("[DuelCog] img composite(%s): %s", side, e)
+            log.warning("[Duel] img composite(%s): %s", side, e)
 
-    # ── Fallback visuel si pas d'image ────────────────────────────
     if not img_ok:
-        # Aura radiale colorée
         ov = Image.new("RGBA", (W, H), (0, 0, 0, 0))
         od = ImageDraw.Draw(ov)
         for rad in range(220, 0, -14):
-            a = int(72 * (1 - rad / 220) ** 1.6)
+            a = int(80 * (1 - rad / 220) ** 1.6)
             od.ellipse([cx-rad, cy-rad, cx+rad, cy+rad], fill=(r, g, b, a))
         canvas.alpha_composite(ov)
-        # Lettre fantôme
         letter = _clean(display)[0].upper() if display else "?"
         draw = ImageDraw.Draw(canvas)
         draw.text((cx, cy - 10), letter,
                   fill=(r // 6, g // 6, b // 6), font=_f(_FK, 230), anchor="mm")
-        # Speed lines
-        sl = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-        sd = ImageDraw.Draw(sl)
-        for _ in range(14):
-            angle  = random.uniform(0, 2 * math.pi)
-            length = random.randint(160, 300)
-            x2 = cx + int(math.cos(angle) * length)
-            y2 = cy + int(math.sin(angle) * length)
-            sd.line([(cx, cy), (x2, y2)],
-                    fill=(r // 3, g // 3, b // 3, random.randint(18, 50)),
-                    width=random.choice([1, 1, 2]))
-        canvas.alpha_composite(sl)
 
-    # ── Overlay couleur atmosphérique ────────────────────────────
-    r, g, b = color
+    # Overlay couleur atmosphérique léger
     ov = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    ImageDraw.Draw(ov).rectangle([x0, y0, x1, y1], fill=(r, g, b, 26))
+    ImageDraw.Draw(ov).rectangle([x0, y0, x1, y1], fill=(r, g, b, 22))
     canvas.alpha_composite(ov)
 
-    # ── Vignette bord extérieur (rectangle dégradé) ──────────────
+    # Vignette bord extérieur
     vig = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     vd  = ImageDraw.Draw(vig)
-    steps = 60
+    steps = 70
     for i in range(steps):
-        a = int(130 * (i / steps) ** 1.8)
+        a = int(140 * (i / steps) ** 1.8)
         stripe = [x0 + i, y0, x0 + i + 1, y1] if side == "left" else [x1 - i - 1, y0, x1 - i, y1]
         vd.rectangle(stripe, fill=(0, 0, 0, a))
     canvas.alpha_composite(vig)
 
-    # ── Fondu haut / bas ─────────────────────────────────────────
+    # Fondu haut / bas
     fade = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     fd   = ImageDraw.Draw(fade)
-    fh   = 50
+    fh   = 55
     for i in range(fh):
-        a = int(200 * ((1 - i / fh) ** 2))
+        a = int(210 * ((1 - i / fh) ** 2))
         fd.rectangle([x0, y0 + i, x1, y0 + i + 1], fill=(0, 0, 0, a))
         fd.rectangle([x0, y1 - i - 1, x1, y1 - i], fill=(0, 0, 0, a))
     canvas.alpha_composite(fade)
@@ -277,33 +232,29 @@ def _draw_char_text(canvas: Image.Image, side: str, d: dict) -> None:
     x1 = HALF if side == "left" else W
     cx = (x0 + x1) // 2
 
-    # Gradient sombre derrière le texte
     grad = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     gd   = ImageDraw.Draw(grad)
-    for i in range(110):
-        a = int(215 * (i / 110) ** 0.65)
-        gd.line([(x0, BTM_Y - 110 + i), (x1, BTM_Y - 110 + i)], fill=(0, 0, 0, a))
+    for i in range(120):
+        a = int(230 * (i / 120) ** 0.6)
+        gd.line([(x0, BTM_Y - 120 + i), (x1, BTM_Y - 120 + i)], fill=(0, 0, 0, a))
     canvas.alpha_composite(grad)
 
     draw = ImageDraw.Draw(canvas)
 
-    # Nom (grand, stroke épais)
-    _stroke(draw, (cx, BTM_Y - 74), _clean(d["display"]).upper(),
-            _f(_FK, 42), fill=(255, 255, 255), sc=(0, 0, 0), sw=4)
+    _stroke(draw, (cx, BTM_Y - 76), _clean(d["display"]).upper(),
+            _f(_FK, 44), fill=(255, 255, 255), sc=(0, 0, 0), sw=4)
 
-    # Titre
     draw.text((cx, BTM_Y - 44), _clean(d["titre"]),
-              fill=(200, 200, 200), font=_f(_FR, 14), anchor="mm")
+              fill=(205, 205, 205), font=_f(_FR, 14), anchor="mm")
 
-    # Badge univers
     f_univ = _f(_FR, 11)
     utext  = _clean(d["univers"]).upper()
     tw     = _tw(draw, utext, f_univ)
-    bw, bh = tw + 22, 18
+    bw, bh = tw + 24, 19
     bx     = cx - bw // 2
     by     = BTM_Y - 28
     _rr(draw, [bx, by, bx + bw, by + bh], r=4,
-        fill=(8, 8, 14, 210), outline=d["color"], width=1)
+        fill=(8, 8, 14, 215), outline=d["color"], width=1)
     draw.text((cx, by + bh // 2), utext, fill=d["color"], font=f_univ, anchor="mm")
 
 
@@ -312,14 +263,14 @@ def _draw_char_text(canvas: Image.Image, side: str, d: dict) -> None:
 # ══════════════════════════════════════════════════════════════════
 
 def _draw_diagonal_split(canvas: Image.Image) -> None:
-    LEAN = 18
+    LEAN = 20
     ov = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     d  = ImageDraw.Draw(ov)
     for hw, fill in [
-        (38, (0,   0,   0,   225)),
-        (18, (80,  28,  0,   195)),
-        ( 8, (230, 100,  8,  235)),
-        ( 2, (255, 228, 155, 255)),
+        (40, (0,   0,   0,   230)),
+        (20, (80,  28,  0,   200)),
+        ( 8, (230, 100,  8,  240)),
+        ( 2, (255, 230, 160, 255)),
     ]:
         d.polygon([
             (HALF - LEAN - hw, TOP_H), (HALF - LEAN + hw, TOP_H),
@@ -335,37 +286,32 @@ def _draw_vs_badge(canvas: Image.Image) -> None:
     ov = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     d  = ImageDraw.Draw(ov)
 
-    # Halo rouge
-    for rad in range(85, 0, -8):
-        a = int(160 * (1 - rad / 85) ** 1.5)
+    for rad in range(90, 0, -8):
+        a = int(165 * (1 - rad / 90) ** 1.5)
         d.ellipse([cx-rad, cy-rad, cx+rad, cy+rad], fill=(195, 8, 8, a))
 
-    # Hexagone fond
-    R = 54
+    R = 56
     pts = [(cx + int(R * math.cos(math.radians(60*i - 30))),
             cy + int(R * math.sin(math.radians(60*i - 30)))) for i in range(6)]
     d.polygon(pts, fill=(10, 6, 14, 252))
 
-    # Bordure hex rouge vif
     for i in range(6):
         p1 = (cx + int((R+3)*math.cos(math.radians(60*i - 30))),
               cy + int((R+3)*math.sin(math.radians(60*i - 30))))
         p2 = (cx + int((R+3)*math.cos(math.radians(60*(i+1) - 30))),
               cy + int((R+3)*math.sin(math.radians(60*(i+1) - 30))))
-        d.line([p1, p2], fill=(220, 18, 18, 255), width=3)
+        d.line([p1, p2], fill=(225, 18, 18, 255), width=3)
 
-    # Étincelles dorées
     for i in range(8):
         angle = math.radians(i * 45 + 22.5)
         r1 = R + 7
-        r2 = R + random.randint(18, 30)
+        r2 = R + 20 + (i % 3) * 6
         d.line([(cx + int(r1*math.cos(angle)), cy + int(r1*math.sin(angle))),
                 (cx + int(r2*math.cos(angle)), cy + int(r2*math.sin(angle)))],
-               fill=(255, 195, 0, 235), width=2)
+               fill=(255, 200, 0, 235), width=2)
 
     canvas.alpha_composite(ov)
-
-    _stroke(ImageDraw.Draw(canvas), (cx, cy), "VS", _f(_FB, 58),
+    _stroke(ImageDraw.Draw(canvas), (cx, cy), "VS", _f(_FB, 60),
             fill=(255, 252, 250), sc=(120, 0, 0), sw=4)
 
 
@@ -376,29 +322,28 @@ def _draw_vs_badge(canvas: Image.Image) -> None:
 def _draw_top_banner(canvas: Image.Image, rivalry: str) -> None:
     ov = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     d  = ImageDraw.Draw(ov)
-    d.rectangle([0, 0, W, TOP_H], fill=(4, 3, 8, 235))
-    d.line([(0, TOP_H), (W, TOP_H)], fill=(160, 38, 0, 210), width=1)
+    d.rectangle([0, 0, W, TOP_H], fill=(4, 3, 8, 240))
+    d.line([(0, TOP_H), (W, TOP_H)], fill=(165, 38, 0, 215), width=1)
     canvas.alpha_composite(ov)
     ImageDraw.Draw(canvas).text((HALF, TOP_H // 2), _clean(rivalry),
-                                fill=(175, 170, 140), font=_f(_FR, 13), anchor="mm")
+                                fill=(180, 172, 140), font=_f(_FR, 13), anchor="mm")
 
 
 def _draw_bottom_bar(canvas: Image.Image,
                      d1: dict, pct1: int,
                      d2: dict, pct2: int,
                      verdict: str) -> None:
-    # Fond barre basse
     ov = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     d  = ImageDraw.Draw(ov)
-    d.rectangle([0, BTM_Y, W, H], fill=(4, 3, 8, 238))
-    d.line([(0, BTM_Y), (W, BTM_Y)], fill=(160, 38, 0, 215), width=2)
+    d.rectangle([0, BTM_Y, W, H], fill=(4, 3, 8, 242))
+    d.line([(0, BTM_Y), (W, BTM_Y)], fill=(165, 38, 0, 220), width=2)
     canvas.alpha_composite(ov)
 
     draw  = ImageDraw.Draw(canvas)
     BAR_H = 14
-    BAR_Y = BTM_Y + 18
-    PAD   = 28
-    bar_w = HALF - PAD - 14
+    BAR_Y = BTM_Y + 20
+    PAD   = 30
+    bar_w = HALF - PAD - 18
 
     def _bar(side: str, pct: int, color: tuple) -> None:
         if side == "left":
@@ -409,18 +354,18 @@ def _draw_bottom_bar(canvas: Image.Image,
                 _rr(draw, [bx0, BAR_Y, bx0 + fw, BAR_Y + BAR_H], r=5, fill=color)
                 r, g, b = color
                 _rr(draw, [bx0+2, BAR_Y+2, bx0+fw-2, BAR_Y+BAR_H//2], r=3,
-                    fill=(min(255,r+70), min(255,g+70), min(255,b+70)))
+                    fill=(min(255,r+60), min(255,g+60), min(255,b+60)))
             draw.text((bx1 + 8, BAR_Y + BAR_H//2), f"{pct}%",
                       fill=(215,215,215), font=_f(_FR,12), anchor="lm")
         else:
-            bx0, bx1 = HALF + 14 + PAD, W - PAD
+            bx0, bx1 = HALF + 18 + PAD, W - PAD
             _rr(draw, [bx0, BAR_Y, bx1, BAR_Y + BAR_H], r=5, fill=(18, 18, 26))
             fw = int(bar_w * pct / 100)
             if fw > 4:
                 _rr(draw, [bx1 - fw, BAR_Y, bx1, BAR_Y + BAR_H], r=5, fill=color)
                 r, g, b = color
                 _rr(draw, [bx1-fw+2, BAR_Y+2, bx1-2, BAR_Y+BAR_H//2], r=3,
-                    fill=(min(255,r+70), min(255,g+70), min(255,b+70)))
+                    fill=(min(255,r+60), min(255,g+60), min(255,b+60)))
             draw.text((bx0 - 8, BAR_Y + BAR_H//2), f"{pct}%",
                       fill=(215,215,215), font=_f(_FR,12), anchor="rm")
 
@@ -428,19 +373,19 @@ def _draw_bottom_bar(canvas: Image.Image,
     _bar("right", pct2, d2["color"])
 
     f_nm = _f(_FR, 13)
-    draw.text((PAD,    BAR_Y + BAR_H + 9), _clean(d1["display"]),
+    draw.text((PAD,   BAR_Y + BAR_H + 10), _clean(d1["display"]),
               fill=d1["color"], font=f_nm, anchor="lm")
-    draw.text((W-PAD,  BAR_Y + BAR_H + 9), _clean(d2["display"]),
+    draw.text((W-PAD, BAR_Y + BAR_H + 10), _clean(d2["display"]),
               fill=d2["color"], font=f_nm, anchor="rm")
 
-    sep_y = BTM_Y + 60
-    draw.line([(PAD, sep_y), (W - PAD, sep_y)], fill=(32, 32, 46), width=1)
+    sep_y = BTM_Y + 64
+    draw.line([(PAD, sep_y), (W - PAD, sep_y)], fill=(30, 30, 46), width=1)
 
-    _stroke(draw, (HALF, BTM_Y + 86), _clean(verdict), _f(_FB, 26),
-            fill=(255, 215, 50), sc=(55, 28, 0), sw=2)
+    _stroke(draw, (HALF, BTM_Y + 92), _clean(verdict), _f(_FB, 28),
+            fill=(255, 218, 50), sc=(55, 28, 0), sw=2)
 
-    draw.text((HALF, H - 9), "BRAMS SCORE  •  DUEL ARENA",
-              fill=(46, 46, 58), font=_f(_FR, 10), anchor="mm")
+    draw.text((HALF, H - 10), "BRAMS SCORE  •  DUEL ARENA",
+              fill=(44, 44, 56), font=_f(_FR, 10), anchor="mm")
 
 
 # ══════════════════════════════════════════════════════════════════
@@ -448,20 +393,19 @@ def _draw_bottom_bar(canvas: Image.Image,
 # ══════════════════════════════════════════════════════════════════
 
 def _build_card(
-    d1: dict, still1: bytes | None, pct1: int,
-    d2: dict, still2: bytes | None, pct2: int,
+    d1: dict, img1: bytes | None, pct1: int,
+    d2: dict, img2: bytes | None, pct2: int,
     rivalry: str, verdict: str,
 ) -> io.BytesIO:
     canvas = Image.new("RGBA", (W, H), (6, 5, 10, 255))
 
-    # Fond sombre avec légère profondeur centrale
     draw = ImageDraw.Draw(canvas)
     for y in range(H):
-        t = max(0.0, 1.0 - abs(y / H - 0.44) * 2.1)
-        draw.line([(0, y), (W, y)], fill=(int(28*t), int(4*t), int(7*t), 255))
+        t = max(0.0, 1.0 - abs(y / H - 0.42) * 2.0)
+        draw.line([(0, y), (W, y)], fill=(int(30*t), int(5*t), int(8*t), 255))
 
-    _apply_char_image(canvas, still1, "left",  d1["color"], d1["display"])
-    _apply_char_image(canvas, still2, "right", d2["color"], d2["display"])
+    _apply_char_image(canvas, img1, "left",  d1["color"], d1["display"])
+    _apply_char_image(canvas, img2, "right", d2["color"], d2["display"])
     _draw_diagonal_split(canvas)
     _draw_vs_badge(canvas)
     _draw_char_text(canvas, "left",  d1)
@@ -491,54 +435,45 @@ class DuelCog(commands.Cog):
         await interaction.response.defer()
         try:
             k1, k2 = random.sample(list(CHARS.keys()), 2)
-            d1, d2  = CHARS[k1], CHARS[k2]
+            d1, d2 = CHARS[k1], CHARS[k2]
 
-            # Balance ultra-serrée — vrai débat
-            raw  = random.choices([50, 51, 52, 53, 54, 55],
-                                   weights=[25, 22, 20, 16, 11, 6])[0]
+            raw = random.choices([50, 51, 52, 53, 54, 55],
+                                  weights=[25, 22, 20, 16, 11, 6])[0]
             pct1 = raw if random.random() > 0.5 else 100 - raw
             pct2 = 100 - pct1
 
             rivalry = random.choice(_RIVALRIES)
             verdict = random.choice(_VERDICTS)
 
-            async with aiohttp.ClientSession() as sess:
-                results = await asyncio.gather(
-                    _fetch_char_assets(sess, d1["query"]),
-                    _fetch_char_assets(sess, d2["query"]),
-                    return_exceptions=True,
-                )
-            url1, still1 = results[0] if not isinstance(results[0], Exception) else ("", None)
-            url2, still2 = results[1] if not isinstance(results[1], Exception) else ("", None)
+            img1, img2 = await asyncio.gather(
+                _fetch_image(d1["jikan_name"], d1["jikan_id"]),
+                _fetch_image(d2["jikan_name"], d2["jikan_id"]),
+                return_exceptions=True,
+            )
+            if isinstance(img1, Exception): img1 = None
+            if isinstance(img2, Exception): img2 = None
 
             loop = asyncio.get_running_loop()
             buf  = await loop.run_in_executor(
                 None,
-                lambda: _build_card(d1, still1, pct1, d2, still2, pct2, rivalry, verdict),
+                lambda: _build_card(d1, img1, pct1, d2, img2, pct2, rivalry, verdict),
             )
 
-            main = discord.Embed(title="⚔️  D U E L   É P I Q U E  ⚔️", color=0xE63939)
-            main.description = (
+            embed = discord.Embed(
+                title="⚔️  D U E L   É P I Q U E  ⚔️",
+                color=0xE63939,
+            )
+            embed.description = (
                 f"### {d1['display']}  `VS`  {d2['display']}\n"
                 f"*{rivalry}*"
             )
-            main.set_image(url="attachment://duel.png")
-            main.set_footer(text="⚔️ Brams Score • Duel Arena  |  /duel pour rejouer !")
-            main.timestamp = discord.utils.utcnow()
-
-            embeds = [main]
-            if url1:
-                e1 = discord.Embed(title=f"🔴  {d1['display']}", color=0xFF4500)
-                e1.set_image(url=url1)
-                embeds.append(e1)
-            if url2:
-                e2 = discord.Embed(title=f"🔵  {d2['display']}", color=0x1E90FF)
-                e2.set_image(url=url2)
-                embeds.append(e2)
+            embed.set_image(url="attachment://duel.png")
+            embed.set_footer(text="⚔️ Brams Score • Duel Arena  |  /duel pour rejouer !")
+            embed.timestamp = discord.utils.utcnow()
 
             await interaction.followup.send(
                 file=discord.File(buf, filename="duel.png"),
-                embeds=embeds,
+                embed=embed,
             )
 
             poll = discord.Embed(
@@ -546,7 +481,7 @@ class DuelCog(commands.Cog):
                 description=(
                     f"🔴  **{d1['display']}**  *({d1['univers']})*\n"
                     f"🔵  **{d2['display']}**  *({d2['univers']})*\n\n"
-                    f"**Votez ci-dessous — le debat est ouvert !**"
+                    f"**Votez ci-dessous — le débat est ouvert !**"
                 ),
                 color=0x2B2D31,
             )

@@ -245,6 +245,14 @@ CHAR_JIKAN_IDS = {
     "Lelouch vi Britannia": 417,
     # One Punch Man
     "Saitama": 73935,
+    # Bleach
+    "Sosuke Aizen": 7,
+    # Mob Psycho 100
+    "Shigeo Kageyama": 137723,
+    # Nanatsu no Taizai
+    "Meliodas": 67067,
+    # Gintama
+    "Gintoki Sakata": 567,
     # Cowboy Bebop
     "Spike Spiegel": 1,
     # Berserk
