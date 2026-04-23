@@ -159,9 +159,6 @@ RANK_COLORS = {
     "Roi des pirates": (255, 215, 0),
 }
 
-# Cooldown anti-spam : (uid, rank_name) → timestamp dernière annonce
-_rank_announce_cooldown: dict = {}
-_RANK_ANNOUNCE_COOLDOWN_SECONDS = 300  # 5 minutes
 
 # ─────────────────────────────────────────
 #  CITATIONS ONE PIECE
@@ -713,17 +710,17 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True, da
             except discord.HTTPException as e:
                 print(f"⚠️ remove_roles {member.display_name} ({rank_name}): {e}")
 
-    # Les annonces sont gérées exclusivement par rank_vocal.py (cooldowns propres).
-    # announce=True est réservé aux commandes admin (/forcerank) pour éviter le double-annonce.
     if announce and (ranks_to_add or ranks_to_remove):
         rank_order = {r: i for i, (_, r) in enumerate(reversed(RANKS))}
+        known = set(user.get("known_ranks", []))
+        # Retire les rangs perdus du known pour qu'ils puissent être ré-annoncés si regagnés
+        for rn in ranks_to_remove:
+            known.discard(rn)
         channel = await _get_announce_channel()
         if channel:
             for rank_name in sorted(ranks_to_add, key=lambda r: rank_order.get(r, -1)):
-                cooldown_key = (uid, rank_name)
-                if now_ts() - _rank_announce_cooldown.get(cooldown_key, 0) < _RANK_ANNOUNCE_COOLDOWN_SECONDS:
+                if rank_name in known:
                     continue
-                _rank_announce_cooldown[cooldown_key] = now_ts()
                 try:
                     img_buf, is_gif = await make_rank_image(member, rank_name, hours_7d)
                     fname = "rank_up.gif" if is_gif else "rank_up.png"
@@ -732,9 +729,12 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True, da
                         content=f"🏴‍☠️ Bravo a {member.mention} qui a debloque le rank **{rank_name.upper()}** {rank_emoji}",
                         file=discord.File(img_buf, fname),
                     )
+                    known.add(rank_name)
                     print(f"[RANK] Annonce : {member.display_name} -> {rank_name}")
                 except Exception as e:
                     print(f"[RANK] Erreur annonce {member.display_name} ({rank_name}): {e}")
+        user["known_ranks"] = list(known)
+        _DIRTY.add(uid)
 
     new_highest_rank = get_rank_for_hours(hours_7d)
     if new_highest_rank != user.get("last_rank"):
@@ -1455,12 +1455,6 @@ async def check_ranks_loop():
 
             if total_members % 100 == 0:
                 await asyncio.sleep(0)
-
-    # Purge des entrées cooldown expirées (anti memory-leak)
-    cutoff_cd = now_ts() - _RANK_ANNOUNCE_COOLDOWN_SECONDS * 4
-    expired = [k for k, ts in _rank_announce_cooldown.items() if ts < cutoff_cd]
-    for k in expired:
-        del _rank_announce_cooldown[k]
 
     elapsed = time.time() - tick
     print(f"[RANKS] check_ranks_loop : {total_members} membres en {elapsed:.1f}s")
@@ -2354,15 +2348,9 @@ async def testrank(interaction: discord.Interaction, membre: discord.Member = No
         return
     img_buf, is_gif = await make_rank_image(target, rang, 25.3)
     fname = "rank_up.gif" if is_gif else "rank_up.png"
-    rank_emojis = {
-        "Pirate": "🏴‍☠️",
-        "Shichibukai": "<:5505zorohappy:1132289837056151622>",
-        "Amiral": "🪖",
-        "Yonkou": "⚜️",
-    }
-    emoji = rank_emojis.get(rang, "")
+    emoji = _ANNOUNCE_RANK_EMOJIS.get(rang, "✨")
     await channel.send(
-        content=f"Bravo à {target.mention} qui a débloqué le rank **{rang}** {emoji}",
+        content=f"🏴‍☠️ Bravo à {target.mention} qui a débloqué le rank **{rang.upper()}** {emoji}",
         file=discord.File(img_buf, fname)
     )
     try:
