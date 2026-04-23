@@ -196,22 +196,39 @@ class Profile(commands.Cog):
 
     @app_commands.command(name="monprofil", description="Afficher ton profil")
     async def monprofil(self, i: discord.Interaction):
-        embed = await _build_profile_embed(i.user, self.get_db, self.release_db, i.guild, public=False)
-        await i.response.send_message(embed=embed, ephemeral=True)
+        await i.response.defer(ephemeral=True)
+        try:
+            embed = await _build_profile_embed(i.user, self.get_db, self.release_db, i.guild, public=False)
+            await i.followup.send(embed=embed, ephemeral=True)
+        except Exception as e:
+            print(f"[PROFIL] /monprofil erreur : {e}")
+            await i.followup.send("❌ Erreur lors du chargement du profil.", ephemeral=True)
 
     @app_commands.command(name="info", description="Voir le profil d'un membre")
     @app_commands.describe(membre="Le membre à afficher")
     async def info(self, i: discord.Interaction, membre: discord.Member):
-        embed = await _build_profile_embed(membre, self.get_db, self.release_db, i.guild, public=True)
-        await i.response.send_message(embed=embed)
+        await i.response.defer()
+        try:
+            embed = await _build_profile_embed(membre, self.get_db, self.release_db, i.guild, public=True)
+            await i.followup.send(embed=embed)
+        except Exception as e:
+            print(f"[PROFIL] /info erreur : {e}")
+            await i.followup.send("❌ Erreur lors du chargement du profil.", ephemeral=True)
 
     @app_commands.command(name="modifprofil", description="Modifier ton profil")
     async def modifprofil(self, i: discord.Interaction):
-        loop = asyncio.get_running_loop()
-        existing = await loop.run_in_executor(
-            _executor, _db_get, self.get_db, self.release_db, str(i.user.id)
-        )
-        await i.response.send_modal(ModifModal(self.get_db, self.release_db, existing))
+        try:
+            loop = asyncio.get_running_loop()
+            existing = await loop.run_in_executor(
+                _executor, _db_get, self.get_db, self.release_db, str(i.user.id)
+            )
+            await i.response.send_modal(ModifModal(self.get_db, self.release_db, existing))
+        except Exception as e:
+            print(f"[PROFIL] /modifprofil erreur : {e}")
+            try:
+                await i.response.send_message("❌ Erreur lors de l'ouverture du formulaire.", ephemeral=True)
+            except Exception:
+                pass
 
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
