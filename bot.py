@@ -125,6 +125,15 @@ def init_db():
                 data JSONB
             )
         """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS profiles (
+                uid TEXT PRIMARY KEY,
+                pays TEXT DEFAULT '',
+                top_anime TEXT DEFAULT '',
+                waifu_husbando TEXT DEFAULT '',
+                bio TEXT DEFAULT ''
+            )
+        """)
         conn.commit()
         cur.close()
     finally:
@@ -3056,6 +3065,201 @@ async def setup_hook():
             print(f"[SYNC] {len(synced)} commandes sync sur {gid}")
         except Exception as e:
             print(f"[SYNC] Erreur sync {gid}: {e}")
+
+
+# ─────────────────────────────────────────
+#  PROFILS MEMBRES
+# ─────────────────────────────────────────
+
+def _db_get_profile(uid: str) -> dict:
+    conn = get_db()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT pays, top_anime, waifu_husbando, bio FROM profiles WHERE uid = %s", (uid,))
+        row = cur.fetchone()
+        cur.close()
+        if row:
+            return {"pays": row[0] or "", "top_anime": row[1] or "", "waifu_husbando": row[2] or "", "bio": row[3] or ""}
+        return {"pays": "", "top_anime": "", "waifu_husbando": "", "bio": ""}
+    finally:
+        release_db(conn)
+
+
+def _db_save_profile(uid: str, pays: str, top_anime: str, waifu_husbando: str, bio: str) -> None:
+    conn = get_db()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO profiles (uid, pays, top_anime, waifu_husbando, bio)
+            VALUES (%s, %s, %s, %s, %s)
+            ON CONFLICT (uid) DO UPDATE SET
+                pays = EXCLUDED.pays,
+                top_anime = EXCLUDED.top_anime,
+                waifu_husbando = EXCLUDED.waifu_husbando,
+                bio = EXCLUDED.bio
+        """, (uid, pays, top_anime, waifu_husbando, bio))
+        conn.commit()
+        cur.close()
+    finally:
+        release_db(conn)
+
+
+def _build_profile_embed(member: discord.Member, profile: dict, hours_7d: float) -> discord.Embed:
+    all_ranks = get_all_ranks_for_hours(hours_7d)
+    highest_rank = all_ranks[0] if all_ranks else None
+    color_rgb = RANK_COLORS.get(highest_rank, (99, 102, 241)) if highest_rank else (99, 102, 241)
+    color = discord.Color.from_rgb(*color_rgb)
+
+    rank_display = "  ·  ".join(f"{RANK_EMOJIS.get(r, '🎖️')} {r}" for r in all_ranks) if all_ranks else "Aucun rang"
+    next_thresh, next_rank = get_next_rank(hours_7d)
+    progress = ""
+    if next_rank and next_thresh:
+        cur_thresh = get_current_rank_threshold(hours_7d)[0] or 0
+        bar = make_progress_bar(hours_7d - cur_thresh, next_thresh - cur_thresh, length=10)
+        progress = f"\n`{bar}` → **{next_rank}** ({next_thresh - hours_7d:.1f}h restantes)"
+
+    embed = discord.Embed(color=color)
+    embed.set_author(name=member.display_name, icon_url=member.display_avatar.url)
+    embed.set_thumbnail(url=member.display_avatar.url)
+
+    embed.add_field(name="⚔️ Rang", value=rank_display + progress, inline=False)
+    embed.add_field(name="🎙️ Vocal (7j)", value=f"{hours_7d:.1f}h", inline=True)
+
+    if profile.get("pays"):
+        embed.add_field(name="🌍 Pays", value=profile["pays"], inline=True)
+    if profile.get("top_anime"):
+        embed.add_field(name="🎌 Top Anime", value=profile["top_anime"], inline=True)
+    if profile.get("waifu_husbando"):
+        embed.add_field(name="💖 Waifu / Husbando", value=profile["waifu_husbando"], inline=True)
+    if profile.get("bio"):
+        embed.add_field(name="📝 Bio", value=profile["bio"][:300], inline=False)
+
+    embed.set_footer(text="Brams Community • One Piece")
+    return embed
+
+
+class ProfileModal(discord.ui.Modal, title="Modifier mon profil"):
+    pays = discord.ui.TextInput(
+        label="Pays",
+        placeholder="ex: France, Maroc, Belgique...",
+        required=False,
+        max_length=50,
+    )
+    top_anime = discord.ui.TextInput(
+        label="Top Anime",
+        placeholder="ex: One Piece, Naruto, Bleach...",
+        required=False,
+        max_length=100,
+    )
+    waifu_husbando = discord.ui.TextInput(
+        label="Waifu / Husbando",
+        placeholder="ex: Nami, Zoro, Robin...",
+        required=False,
+        max_length=100,
+    )
+    bio = discord.ui.TextInput(
+        label="Bio",
+        placeholder="Présente-toi en quelques mots...",
+        required=False,
+        max_length=300,
+        style=discord.TextStyle.paragraph,
+    )
+
+    def __init__(self, existing: dict):
+        super().__init__()
+        self.pays.default = existing.get("pays", "")
+        self.top_anime.default = existing.get("top_anime", "")
+        self.waifu_husbando.default = existing.get("waifu_husbando", "")
+        self.bio.default = existing.get("bio", "")
+
+    async def on_submit(self, interaction: discord.Interaction):
+        uid = str(interaction.user.id)
+        loop = asyncio.get_running_loop()
+        await loop.run_in_executor(
+            db_executor,
+            _db_save_profile,
+            uid,
+            self.pays.value.strip(),
+            self.top_anime.value.strip(),
+            self.waifu_husbando.value.strip(),
+            self.bio.value.strip(),
+        )
+        await interaction.response.send_message("✅ Profil mis à jour !", ephemeral=True)
+
+
+@bot.tree.command(name="monprofil", description="Affiche ton profil Brams Community")
+async def monprofil(interaction: discord.Interaction):
+    await interaction.response.defer(ephemeral=False)
+    uid = str(interaction.user.id)
+    loop = asyncio.get_running_loop()
+    profile = await loop.run_in_executor(db_executor, _db_get_profile, uid)
+    user = get_user(_CACHE, uid)
+    jt = user.get("join_time")
+    hours_7d = seconds_in_period(user["vocal_sessions"], 7, join_time=jt) / 3600
+    embed = _build_profile_embed(interaction.user, profile, hours_7d)
+    await interaction.followup.send(embed=embed)
+
+
+@bot.tree.command(name="modifprofil", description="Modifie ton profil (pays, top anime, waifu/husbando, bio)")
+async def modifprofil(interaction: discord.Interaction):
+    uid = str(interaction.user.id)
+    loop = asyncio.get_running_loop()
+    existing = await loop.run_in_executor(db_executor, _db_get_profile, uid)
+    await interaction.response.send_modal(ProfileModal(existing))
+
+
+@bot.tree.command(name="info", description="Affiche le profil d'un autre membre")
+@app_commands.describe(membre="Le membre dont tu veux voir le profil")
+async def info(interaction: discord.Interaction, membre: discord.Member):
+    await interaction.response.defer(ephemeral=False)
+    uid = str(membre.id)
+    loop = asyncio.get_running_loop()
+    profile = await loop.run_in_executor(db_executor, _db_get_profile, uid)
+    user = get_user(_CACHE, uid)
+    jt = user.get("join_time")
+    hours_7d = seconds_in_period(user["vocal_sessions"], 7, join_time=jt) / 3600
+    embed = _build_profile_embed(membre, profile, hours_7d)
+    await interaction.followup.send(embed=embed)
+
+
+@bot.event
+async def on_member_join(member: discord.Member):
+    if member.bot:
+        return
+    channel = member.guild.system_channel
+    if channel is None:
+        return
+
+    ranks_desc = "\n".join([
+        "🏴‍☠️ **Pirate** — 10h vocales / semaine",
+        "⚔️ **Shichibukai** — 25h vocales / semaine",
+        "🪖 **Amiral** — 40h vocales / semaine",
+        "👑 **Yonkou** — 70h vocales / semaine",
+        "🤴 **Roi des pirates** — 150h vocales / semaine",
+    ])
+
+    embed = discord.Embed(
+        title=f"Bienvenue sur Brams Community, {member.display_name} ! 🏴‍☠️",
+        description=(
+            f"Heureux de t'accueillir, {member.mention} !\n\n"
+            "Ce serveur est dédié à **One Piece** et à la communauté Brams. "
+            "Plus tu passes de temps en vocal, plus tu gravis les rangs !\n\n"
+            f"**Système de rangs (heures vocales / 7 jours) :**\n{ranks_desc}\n\n"
+            "**Commandes utiles :**\n"
+            "`/monprofil` — Voir ton profil\n"
+            "`/modifprofil` — Personnaliser ton profil\n"
+            "`/stats` — Tes statistiques vocales\n"
+            "`/quizz` — Quiz animé"
+        ),
+        color=discord.Color.from_rgb(255, 215, 0),
+    )
+    embed.set_thumbnail(url=member.display_avatar.url)
+    embed.set_footer(text="Brams Community • One Piece")
+
+    try:
+        await channel.send(embed=embed)
+    except discord.Forbidden:
+        pass
 
 
 bot.run(TOKEN)
