@@ -85,32 +85,54 @@ _VERDICTS = [
     "VOUS DECIDEZ !",
 ]
 
-# Cache image bytes par jikan_name (évite re-téléchargement dans la session)
-_IMG_CACHE: dict[str, bytes | None] = {}
+# Cache URL par jikan_name
+_URL_CACHE: dict[str, str | None] = {}
+# Cache bytes PIL par jikan_name
+_BYTES_CACHE: dict[str, bytes | None] = {}
 
 
 # ══════════════════════════════════════════════════════════════════
-#  IMAGE — récupération via bot.py (Jikan + static URLs)
+#  IMAGE — URL via bot.py, bytes téléchargés séparément
 # ══════════════════════════════════════════════════════════════════
 
-async def _fetch_image(jikan_name: str, jikan_id: int | None) -> bytes | None:
-    """Récupère les bytes image via le système bot.py (Jikan/MAL)."""
-    if jikan_name in _IMG_CACHE:
-        return _IMG_CACHE[jikan_name]
-
+def _inject_jikan_id(jikan_name: str, jikan_id: int | None) -> None:
     bot_mod = sys.modules.get("bot")
-    if bot_mod:
-        # Injecte l'ID dans CHAR_JIKAN_IDS si pas encore présent
-        if jikan_id is not None and jikan_name not in getattr(bot_mod, "CHAR_JIKAN_IDS", {}):
-            bot_mod.CHAR_JIKAN_IDS[jikan_name] = jikan_id
-        try:
-            raw = await bot_mod._fetch_char_image_bytes(jikan_name)
-            _IMG_CACHE[jikan_name] = raw
-            return raw
-        except Exception as e:
-            log.warning("[Duel] _fetch_char_image_bytes(%s): %s", jikan_name, e)
+    if bot_mod and jikan_id is not None:
+        jids = getattr(bot_mod, "CHAR_JIKAN_IDS", {})
+        if jikan_name not in jids:
+            jids[jikan_name] = jikan_id
 
-    _IMG_CACHE[jikan_name] = None
+
+async def _get_image_url(jikan_name: str, jikan_id: int | None) -> str | None:
+    """Retourne l'URL MAL du personnage (pas de download, juste l'URL)."""
+    if jikan_name in _URL_CACHE:
+        return _URL_CACHE[jikan_name]
+    _inject_jikan_id(jikan_name, jikan_id)
+    bot_mod = sys.modules.get("bot")
+    url = None
+    if bot_mod:
+        try:
+            url = await bot_mod._get_char_image_url(jikan_name)
+        except Exception as e:
+            log.warning("[Duel] _get_char_image_url(%s): %s", jikan_name, e)
+    _URL_CACHE[jikan_name] = url
+    return url
+
+
+async def _download_bytes(url: str) -> bytes | None:
+    """Télécharge les bytes d'une image depuis son URL (pour PIL card)."""
+    if url in _BYTES_CACHE:
+        return _BYTES_CACHE[url]
+    try:
+        async with aiohttp.ClientSession() as sess:
+            async with sess.get(url, timeout=aiohttp.ClientTimeout(total=7)) as r:
+                if r.status == 200:
+                    raw = await r.read()
+                    _BYTES_CACHE[url] = raw
+                    return raw
+    except Exception as e:
+        log.warning("[Duel] download_bytes(%s): %s", url, e)
+    _BYTES_CACHE[url] = None
     return None
 
 
@@ -445,9 +467,18 @@ class DuelCog(commands.Cog):
             rivalry = random.choice(_RIVALRIES)
             verdict = random.choice(_VERDICTS)
 
+            # Récupère les URLs ET les bytes en parallèle
+            url1, url2 = await asyncio.gather(
+                _get_image_url(d1["jikan_name"], d1["jikan_id"]),
+                _get_image_url(d2["jikan_name"], d2["jikan_id"]),
+                return_exceptions=True,
+            )
+            if isinstance(url1, Exception): url1 = None
+            if isinstance(url2, Exception): url2 = None
+
             img1, img2 = await asyncio.gather(
-                _fetch_image(d1["jikan_name"], d1["jikan_id"]),
-                _fetch_image(d2["jikan_name"], d2["jikan_id"]),
+                _download_bytes(url1) if url1 else asyncio.sleep(0, result=None),
+                _download_bytes(url2) if url2 else asyncio.sleep(0, result=None),
                 return_exceptions=True,
             )
             if isinstance(img1, Exception): img1 = None
@@ -459,21 +490,42 @@ class DuelCog(commands.Cog):
                 lambda: _build_card(d1, img1, pct1, d2, img2, pct2, rivalry, verdict),
             )
 
-            embed = discord.Embed(
+            # Embed principal — carte VS
+            main = discord.Embed(
                 title="⚔️  D U E L   É P I Q U E  ⚔️",
                 color=0xE63939,
             )
-            embed.description = (
+            main.description = (
                 f"### {d1['display']}  `VS`  {d2['display']}\n"
                 f"*{rivalry}*"
             )
-            embed.set_image(url="attachment://duel.png")
-            embed.set_footer(text="⚔️ Brams Score • Duel Arena  |  /duel pour rejouer !")
-            embed.timestamp = discord.utils.utcnow()
+            main.set_image(url="attachment://duel.png")
+            main.set_footer(text="⚔️ Brams Score • Duel Arena  |  /duel pour rejouer !")
+            main.timestamp = discord.utils.utcnow()
+
+            embeds = [main]
+
+            # Embeds personnages — Discord charge l'URL directement (toujours fiable)
+            if url1:
+                e1 = discord.Embed(
+                    title=f"🔴  {d1['display']}",
+                    description=f"*{d1['titre']}*  ·  {d1['univers']}",
+                    color=discord.Color.from_rgb(*d1["color"]),
+                )
+                e1.set_image(url=url1)
+                embeds.append(e1)
+            if url2:
+                e2 = discord.Embed(
+                    title=f"🔵  {d2['display']}",
+                    description=f"*{d2['titre']}*  ·  {d2['univers']}",
+                    color=discord.Color.from_rgb(*d2["color"]),
+                )
+                e2.set_image(url=url2)
+                embeds.append(e2)
 
             await interaction.followup.send(
                 file=discord.File(buf, filename="duel.png"),
-                embed=embed,
+                embeds=embeds,
             )
 
             poll = discord.Embed(
@@ -490,8 +542,9 @@ class DuelCog(commands.Cog):
             await poll_msg.add_reaction("🔴")
             await poll_msg.add_reaction("🔵")
 
-            log.info("[DuelCog] %s vs %s → %d%%/%d%%",
-                     d1["display"], d2["display"], pct1, pct2)
+            log.info("[DuelCog] %s vs %s → %d%%/%d%% | url1=%s url2=%s",
+                     d1["display"], d2["display"], pct1, pct2,
+                     bool(url1), bool(url2))
 
         except Exception as exc:
             log.exception("[DuelCog] Erreur /duel : %s", exc)
