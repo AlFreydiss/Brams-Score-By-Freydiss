@@ -1297,6 +1297,8 @@ async def on_ready():
     # Démarre les boucles de fond
     if not check_ranks_loop.is_running():
         check_ranks_loop.start()
+    if not vocal_rank_loop.is_running():
+        vocal_rank_loop.start()
     if not flush_dirty_loop.is_running():
         flush_dirty_loop.start()
 
@@ -1368,7 +1370,7 @@ async def on_voice_state_update(member, before, after):
 
             seconds_7d = seconds_in_period(user["vocal_sessions"], 7)
             hours_7d = seconds_7d / 3600
-            await update_rank(member, hours_7d, announce=False)
+            await update_rank(member, hours_7d, announce=True)
 
     elif before.channel is not None and after.channel is not None and before.channel != after.channel:
         if user["join_time"]:
@@ -1384,10 +1386,30 @@ async def on_voice_state_update(member, before, after):
         _DIRTY.add(uid)
         seconds_7d = seconds_in_period(user["vocal_sessions"], 7, join_time=user["join_time"])
         hours_7d = seconds_7d / 3600
-        await update_rank(member, hours_7d, announce=False)
+        await update_rank(member, hours_7d, announce=True)
 
 # ─────────────────────────────────────────
-#  LOOP HORAIRE
+#  LOOP VOCALE RAPIDE (membres en vocal seulement)
+# ─────────────────────────────────────────
+@tasks.loop(minutes=2)
+async def vocal_rank_loop():
+    for guild in bot.guilds:
+        for vc in list(guild.voice_channels) + list(guild.stage_channels):
+            for member in vc.members:
+                if member.bot:
+                    continue
+                uid = str(member.id)
+                user = get_user(_CACHE, uid)
+                jt = user.get("join_time")
+                hours_7d = seconds_in_period(user["vocal_sessions"], 7, join_time=jt) / 3600
+                try:
+                    await update_rank(member, hours_7d, announce=True, data=_CACHE)
+                except Exception as e:
+                    print(f"[VOCAL_RANK] Erreur {member.display_name}: {e}")
+                await asyncio.sleep(0)
+
+# ─────────────────────────────────────────
+#  LOOP COMPLÈTE (tous membres, alertes, deranks)
 # ─────────────────────────────────────────
 @tasks.loop(minutes=10)
 async def check_ranks_loop():
@@ -1423,7 +1445,7 @@ async def check_ranks_loop():
 
             try:
                 await check_alert(member, hours_7d, data=_CACHE)
-                await update_rank(member, hours_7d, announce=False, data=_CACHE)
+                await update_rank(member, hours_7d, announce=True, data=_CACHE)
             except Exception as e:
                 print(f"[RANKS] Erreur {member.display_name}: {e}")
 
