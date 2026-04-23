@@ -14,6 +14,13 @@ FLAGS = {
     "France": "🇫🇷", "Belgique": "🇧🇪", "Suisse": "🇨🇭", "Canada": "🇨🇦",
     "Maroc": "🇲🇦", "Algérie": "🇩🇿", "Tunisie": "🇹🇳", "USA": "🇺🇸", "Autre": "🌍",
 }
+_RANK_IDS = {
+    1494656848622518412: "Roi des pirates",
+    1486554858075984043: "Yonkou",
+    1486554823573766164: "Amiral",
+    1486554770306236596: "Shichibukai",
+    1486554682263343284: "Pirate",
+}
 _RANK_ORDER  = ["Roi des pirates", "Yonkou", "Amiral", "Shichibukai", "Pirate"]
 _RANK_EMOJIS = {
     "Pirate": "🏴‍☠️", "Shichibukai": "⚔️", "Amiral": "🪖",
@@ -136,9 +143,10 @@ async def _build_profile_embed(
     row = await loop.run_in_executor(_executor, _db_get, get_db, release_db, str(member.id))
 
     rank = None
-    for r in _RANK_ORDER:
-        if any(role.name == r for role in member.roles):
-            rank = r
+    member_role_ids = {role.id for role in member.roles}
+    for role_id, rank_name in _RANK_IDS.items():
+        if role_id in member_role_ids:
+            rank = rank_name
             break
     emoji = _RANK_EMOJIS.get(rank, "🏴‍☠️") if rank else "🏴‍☠️"
     rank_label = rank or "Aucun rang"
