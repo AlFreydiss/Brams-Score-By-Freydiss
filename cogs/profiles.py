@@ -142,53 +142,85 @@ async def _build_profile_embed(
     loop = asyncio.get_running_loop()
     row = await loop.run_in_executor(_executor, _db_get, get_db, release_db, str(member.id))
 
+    # ── Rang ──────────────────────────────────────────────────────
     rank = None
     member_role_ids = {role.id for role in member.roles}
     for role_id, rank_name in _RANK_IDS.items():
         if role_id in member_role_ids:
             rank = rank_name
             break
-    emoji = _RANK_EMOJIS.get(rank, "🏴‍☠️") if rank else "🏴‍☠️"
+    emoji      = _RANK_EMOJIS.get(rank, "⚫") if rank else "⚫"
     rank_label = rank or "Aucun rang"
 
-    embed = discord.Embed(title=f"{emoji}  {member.display_name}", color=COLOR_MAIN)
+    # ── Couleur selon rang ─────────────────────────────────────────
+    rank_colors = {
+        "Roi des pirates": 0xFFD700,
+        "Yonkou":          0x9B59B6,
+        "Amiral":          0xF1C40F,
+        "Shichibukai":     0x166024,
+        "Pirate":          0x2ECC71,
+    }
+    color = rank_colors.get(rank, COLOR_MAIN)
 
+    joined   = member.joined_at.strftime("%d %B %Y") if member.joined_at else "?"
+    mentions = f"<@{member.id}>"
+
+    embed = discord.Embed(
+        title=f"{emoji}  {member.display_name}",
+        description=f"{mentions}\n`{member.name}`",
+        color=color,
+    )
+
+    # Avatar toujours en thumbnail, image custom en bas si dispo
+    embed.set_thumbnail(url=member.display_avatar.url)
     if row and row["custom_image"]:
-        embed.set_thumbnail(url=row["custom_image"])
-    else:
-        embed.set_thumbnail(url=member.display_avatar.url)
+        embed.set_image(url=row["custom_image"])
 
-    joined = member.joined_at.strftime("%d/%m/%Y") if member.joined_at else "?"
-    embed.add_field(name="⚓ Rang",          value=f"{emoji} **{rank_label}**", inline=True)
-    embed.add_field(name="📅 Membre depuis", value=joined,                      inline=True)
+    # ── Section : Identité ────────────────────────────────────────
+    embed.add_field(name="​", value="**━━━━━━  IDENTITÉ  ━━━━━━**", inline=False)
 
-    if row:
-        if row["pays"]:
-            flag = FLAGS.get(row["pays"].strip(), "🌍")
-            embed.add_field(name="🌍 Pays", value=f"{flag} {row['pays']}", inline=True)
-        if row["top_anime"]:
-            animes = [a.strip() for a in row["top_anime"].split(",") if a.strip()]
-            embed.add_field(name="🎌 Top Anime",
-                            value="\n".join(f"• {a}" for a in animes), inline=False)
-        if row["waifu_husbando"]:
-            embed.add_field(name="❤️ Waifu / Husbando", value=row["waifu_husbando"], inline=True)
-        if row["bio"]:
-            embed.add_field(name="📝 Bio", value=f"*{row['bio']}*", inline=False)
-        if not public and not row["top_anime"] and not row["bio"]:
-            embed.add_field(
-                name="📋 Profil incomplet",
-                value="Utilise `/modifprofil` pour compléter ton profil !",
-                inline=False,
-            )
+    embed.add_field(name="⚓ Rang",            value=f"{emoji} **{rank_label}**", inline=True)
+    embed.add_field(name="📅 Membre depuis",   value=joined,                      inline=True)
+
+    if row and row["pays"]:
+        flag = FLAGS.get(row["pays"].strip(), "🌍")
+        embed.add_field(name="🌍 Origine",     value=f"{flag} {row['pays']}",     inline=True)
     else:
+        embed.add_field(name="​", value="​", inline=True)
+
+    # ── Section : Univers Anime ───────────────────────────────────
+    embed.add_field(name="​", value="**━━━━━  UNIVERS ANIME  ━━━━━**", inline=False)
+
+    if row and row["top_anime"]:
+        animes = [a.strip() for a in row["top_anime"].split(",") if a.strip()]
+        anime_str = "\n".join(f"`{i+1}.` {a}" for i, a in enumerate(animes))
+        embed.add_field(name="🎌 Top Anime", value=anime_str, inline=True)
+    else:
+        embed.add_field(name="🎌 Top Anime", value="*Non renseigné*", inline=True)
+
+    if row and row["waifu_husbando"]:
+        embed.add_field(name="❤️ Waifu / Husbando", value=f"*{row['waifu_husbando']}*", inline=True)
+    else:
+        embed.add_field(name="❤️ Waifu / Husbando", value="*Non renseigné*", inline=True)
+
+    # ── Section : À propos ────────────────────────────────────────
+    embed.add_field(name="​", value="**━━━━━━  À PROPOS  ━━━━━━**", inline=False)
+
+    if row and row["bio"]:
+        embed.add_field(name="📝 Bio", value=f">>> {row['bio']}", inline=False)
+    else:
+        bio_hint = "Utilise `/modifprofil` pour remplir ta bio !" if not public else "*Aucune bio renseignée.*"
+        embed.add_field(name="📝 Bio", value=f"*{bio_hint}*", inline=False)
+
+    if not public and (not row or (not row.get("top_anime") and not row.get("bio") and not row.get("pays"))):
         embed.add_field(
-            name="📋 Profil vide",
-            value="Utilise `/modifprofil` pour remplir ton profil !",
+            name="​",
+            value="💡 *Ton profil est vide — utilise `/modifprofil` pour le compléter !*",
             inline=False,
         )
 
     icon = guild.icon.url if guild.icon else None
-    embed.set_footer(text="Brams Community • Anime & Manga", icon_url=icon)
+    embed.set_footer(text=f"Brams Community • Anime & Manga  •  ID : {member.id}", icon_url=icon)
     return embed
 
 
