@@ -1,12 +1,11 @@
 """
 Cog — /duel  ⚔️
-Duel entre deux persos au choix — GIFs Giphy + vote réactions
+Duel entre deux persos au choix — images Jikan/MAL (aucune clé requise) + vote réactions
 """
 from __future__ import annotations
 
-import os
-import random
 import logging
+from urllib.parse import quote as _uq
 
 import aiohttp
 import discord
@@ -15,35 +14,30 @@ from discord.ext import commands
 
 log = logging.getLogger(__name__)
 
-GIPHY_KEY = os.getenv("GIPHY_API_KEY", "")
+_IMG_CACHE: dict[str, str | None] = {}
 
 
-async def chercher_gif(query: str) -> str | None:
-    if not GIPHY_KEY:
-        return None
-    params = {
-        "api_key": GIPHY_KEY,
-        "q": query,
-        "limit": 10,
-        "rating": "pg-13",
-    }
+async def chercher_image(nom: str) -> str | None:
+    """Cherche l'image d'un personnage via Jikan (MAL) — aucune clé API requise."""
+    if nom in _IMG_CACHE:
+        return _IMG_CACHE[nom]
     try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(
-                "https://api.giphy.com/v1/gifs/search",
-                params=params,
-                timeout=aiohttp.ClientTimeout(total=8),
-            ) as resp:
-                if resp.status != 200:
-                    return None
-                data = await resp.json()
-                if not data.get("data"):
-                    return None
-                gif = random.choice(data["data"])
-                return gif["images"]["original"]["url"]
+        async with aiohttp.ClientSession() as sess:
+            async with sess.get(
+                f"https://api.jikan.moe/v4/characters?q={_uq(nom)}&limit=5",
+                timeout=aiohttp.ClientTimeout(total=10),
+            ) as r:
+                if r.status == 200:
+                    data = await r.json()
+                    chars = data.get("data", [])
+                    if chars:
+                        img = chars[0].get("images", {}).get("jpg", {}).get("image_url")
+                        _IMG_CACHE[nom] = img
+                        return img
     except Exception as e:
-        log.warning("[Duel] Giphy(%s): %s", query, e)
-        return None
+        log.warning("[Duel] Jikan(%s): %s", nom, e)
+    _IMG_CACHE[nom] = None
+    return None
 
 
 class DuelCog(commands.Cog):
@@ -67,13 +61,13 @@ class DuelCog(commands.Cog):
         import asyncio
         await interaction.response.defer()
 
-        gif1, gif2 = await asyncio.gather(
-            chercher_gif(f"{perso1} anime"),
-            chercher_gif(f"{perso2} anime"),
+        img1, img2 = await asyncio.gather(
+            chercher_image(perso1),
+            chercher_image(perso2),
             return_exceptions=True,
         )
-        if isinstance(gif1, Exception): gif1 = None
-        if isinstance(gif2, Exception): gif2 = None
+        if isinstance(img1, Exception): img1 = None
+        if isinstance(img2, Exception): img2 = None
 
         embed1 = discord.Embed(
             title="⚔️  DUEL ÉPIQUE  ⚔️",
@@ -83,21 +77,21 @@ class DuelCog(commands.Cog):
             ),
             color=discord.Color.red(),
         )
-        if gif1:
-            embed1.set_image(url=gif1)
+        if img1:
+            embed1.set_image(url=img1)
         embed1.set_footer(text=f"🔴 {perso1}  •  Brams Score — Duel Arena")
 
         embed2 = discord.Embed(color=discord.Color.blue())
-        if gif2:
-            embed2.set_image(url=gif2)
+        if img2:
+            embed2.set_image(url=img2)
         embed2.set_footer(text=f"🔵 {perso2}")
 
         message = await interaction.followup.send(embeds=[embed1, embed2])
         await message.add_reaction("🔴")
         await message.add_reaction("🔵")
 
-        log.info("[Duel] %s vs %s | gif1=%s gif2=%s",
-                 perso1, perso2, bool(gif1), bool(gif2))
+        log.info("[Duel] %s vs %s | img1=%s img2=%s",
+                 perso1, perso2, bool(img1), bool(img2))
 
 
 async def setup(bot: commands.Bot) -> None:
