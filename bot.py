@@ -733,27 +733,33 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True, da
         for rn in ranks_to_remove:
             known.discard(rn)
 
-        channel = await _get_announce_channel()
+        # Mise à jour known_ranks AVANT tout await pour éviter la race condition :
+        # si deux appels update_rank s'exécutent en parallèle (vocal_loop + on_voice_state),
+        # le second voit déjà le rang dans known_ranks et ne réannonce pas.
+        to_announce = []
         for rank_name in sorted(ranks_to_add, key=lambda r: rank_order.get(r, -1)):
             already_known = rank_name in known
-            known.add(rank_name)  # Toujours persister, même sans annonce
-            # N'annoncer que si c'est un rang vraiment nouveau (supérieur au max actuel)
-            if already_known or rank_threshold_map.get(rank_name, 0) <= highest_current:
-                continue
-            if channel:
-                try:
-                    img_buf, is_gif = await make_rank_image(member, rank_name, hours_7d)
-                    fname = "rank_up.gif" if is_gif else "rank_up.png"
-                    rank_emoji = _ANNOUNCE_RANK_EMOJIS.get(rank_name, "✨")
-                    await channel.send(
-                        content=f"🏴‍☠️ Bravo a {member.mention} qui a debloque le rank **{rank_name.upper()}** {rank_emoji}",
-                        file=discord.File(img_buf, fname),
-                    )
-                    print(f"[RANK] Annonce : {member.display_name} -> {rank_name}")
-                except Exception as e:
-                    print(f"[RANK] Erreur annonce {member.display_name} ({rank_name}): {e}")
-        user["known_ranks"] = list(known)
+            known.add(rank_name)
+            if not already_known and rank_threshold_map.get(rank_name, 0) > highest_current:
+                to_announce.append(rank_name)
+        user["known_ranks"] = list(known)  # visible aux autres coroutines dès maintenant
         _DIRTY.add(uid)
+
+        if to_announce:
+            channel = await _get_announce_channel()
+            if channel:
+                for rank_name in to_announce:
+                    try:
+                        img_buf, is_gif = await make_rank_image(member, rank_name, hours_7d)
+                        fname = "rank_up.gif" if is_gif else "rank_up.png"
+                        rank_emoji = _ANNOUNCE_RANK_EMOJIS.get(rank_name, "✨")
+                        await channel.send(
+                            content=f"🏴‍☠️ Bravo a {member.mention} qui a debloque le rank **{rank_name.upper()}** {rank_emoji}",
+                            file=discord.File(img_buf, fname),
+                        )
+                        print(f"[RANK] Annonce : {member.display_name} -> {rank_name}")
+                    except Exception as e:
+                        print(f"[RANK] Erreur annonce {member.display_name} ({rank_name}): {e}")
 
     new_highest_rank = get_rank_for_hours(hours_7d)
     if new_highest_rank != user.get("last_rank"):
