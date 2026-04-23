@@ -711,16 +711,28 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True, da
                 print(f"⚠️ remove_roles {member.display_name} ({rank_name}): {e}")
 
     if announce and (ranks_to_add or ranks_to_remove):
+        rank_threshold_map = {name: threshold for threshold, name in RANKS}
         rank_order = {r: i for i, (_, r) in enumerate(reversed(RANKS))}
         known = set(user.get("known_ranks", []))
+
+        # Rang le plus haut que le membre AVAIT déjà sur Discord avant les ajouts
+        highest_current = max(
+            (rank_threshold_map.get(r, 0) for r in current_rank_names),
+            default=0
+        )
+
         # Retire les rangs perdus du known pour qu'ils puissent être ré-annoncés si regagnés
         for rn in ranks_to_remove:
             known.discard(rn)
+
         channel = await _get_announce_channel()
-        if channel:
-            for rank_name in sorted(ranks_to_add, key=lambda r: rank_order.get(r, -1)):
-                if rank_name in known:
-                    continue
+        for rank_name in sorted(ranks_to_add, key=lambda r: rank_order.get(r, -1)):
+            already_known = rank_name in known
+            known.add(rank_name)  # Toujours persister, même sans annonce
+            # N'annoncer que si c'est un rang vraiment nouveau (supérieur au max actuel)
+            if already_known or rank_threshold_map.get(rank_name, 0) <= highest_current:
+                continue
+            if channel:
                 try:
                     img_buf, is_gif = await make_rank_image(member, rank_name, hours_7d)
                     fname = "rank_up.gif" if is_gif else "rank_up.png"
@@ -729,7 +741,6 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True, da
                         content=f"🏴‍☠️ Bravo a {member.mention} qui a debloque le rank **{rank_name.upper()}** {rank_emoji}",
                         file=discord.File(img_buf, fname),
                     )
-                    known.add(rank_name)
                     print(f"[RANK] Annonce : {member.display_name} -> {rank_name}")
                 except Exception as e:
                     print(f"[RANK] Erreur annonce {member.display_name} ({rank_name}): {e}")
