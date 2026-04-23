@@ -648,6 +648,8 @@ intents.message_content = True
 intents.messages = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
+bot.get_db     = get_db
+bot.release_db = release_db
 db_executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="db_worker")
 
 
@@ -3051,10 +3053,6 @@ async def setup_hook():
     if _COMMANDS_SYNCED:
         return
     _COMMANDS_SYNCED = True
-    # Pool asyncpg pour les cogs (profils)
-    import asyncpg
-    bot.pg_pool = await asyncpg.create_pool(dsn=SUPABASE_URL, min_size=1, max_size=4)
-    print("[DB] Pool asyncpg créé ✅")
     # Chargement des cogs
     for ext in ("cogs.rank_vocal", "cogs.duel", "cogs.profiles"):
         try:

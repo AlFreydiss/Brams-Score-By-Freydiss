@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
+
 import discord
 from discord.ext import commands
 from discord import app_commands
@@ -17,6 +20,46 @@ _RANK_EMOJIS = {
     "Yonkou": "👑", "Roi des pirates": "🤴",
 }
 
+_executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="profiles_db")
+
+
+# ── DB helpers (sync, exécutés dans l'executor) ───────────────────
+
+def _db_get(get_db, release_db, uid: str) -> dict | None:
+    conn = get_db()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT pays, top_anime, waifu_husbando, bio, custom_image FROM profiles WHERE user_id = %s", (uid,))
+        row = cur.fetchone()
+        cur.close()
+        if row:
+            return {"pays": row[0] or "", "top_anime": row[1] or "",
+                    "waifu_husbando": row[2] or "", "bio": row[3] or "",
+                    "custom_image": row[4] or ""}
+        return None
+    finally:
+        release_db(conn)
+
+
+def _db_upsert(get_db, release_db, uid: str, pays, top_anime, waifu, bio, image) -> None:
+    conn = get_db()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO profiles (user_id, pays, top_anime, waifu_husbando, bio, custom_image)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            ON CONFLICT (user_id) DO UPDATE SET
+                pays           = EXCLUDED.pays,
+                top_anime      = EXCLUDED.top_anime,
+                waifu_husbando = EXCLUDED.waifu_husbando,
+                bio            = EXCLUDED.bio,
+                custom_image   = EXCLUDED.custom_image
+        """, (uid, pays or None, top_anime or None, waifu or None, bio or None, image or None))
+        conn.commit()
+        cur.close()
+    finally:
+        release_db(conn)
+
 
 # ══════════════════════════════════════════════════════════════════
 #  MODAL UNIQUE — /modifprofil
@@ -26,65 +69,57 @@ class ModifModal(discord.ui.Modal, title="✏️ Mon profil"):
     pays = discord.ui.TextInput(
         label="🌍 Pays / Région",
         placeholder="France, Maroc, Belgique...",
-        required=False,
-        max_length=60,
+        required=False, max_length=60,
     )
     top_anime = discord.ui.TextInput(
         label="🎌 Top Anime (séparés par virgule)",
         placeholder="One Piece, Naruto, Demon Slayer...",
-        required=False,
-        max_length=120,
+        required=False, max_length=120,
     )
     waifu_husbando = discord.ui.TextInput(
         label="❤️ Waifu / Husbando",
         placeholder="Nami, Zoro...",
-        required=False,
-        max_length=80,
+        required=False, max_length=80,
     )
     bio = discord.ui.TextInput(
         label="📝 Bio",
         placeholder="Présente-toi en quelques mots...",
-        required=False,
-        max_length=200,
+        required=False, max_length=200,
         style=discord.TextStyle.paragraph,
     )
     custom_image = discord.ui.TextInput(
         label="🖼️ Image perso (URL ou laisse vide)",
         placeholder="https://exemple.com/image.png",
-        required=False,
-        max_length=300,
+        required=False, max_length=300,
     )
 
-    def __init__(self, pool, existing):
+    def __init__(self, get_db, release_db, existing: dict | None):
         super().__init__()
-        self.pool = pool
+        self.get_db     = get_db
+        self.release_db = release_db
         if existing:
-            self.pays.default          = existing["pays"]          or ""
-            self.top_anime.default     = existing["top_anime"]     or ""
-            self.waifu_husbando.default= existing["waifu_husbando"]or ""
-            self.bio.default           = existing["bio"]           or ""
-            self.custom_image.default  = existing["custom_image"]  or ""
+            self.pays.default          = existing["pays"]
+            self.top_anime.default     = existing["top_anime"]
+            self.waifu_husbando.default= existing["waifu_husbando"]
+            self.bio.default           = existing["bio"]
+            self.custom_image.default  = existing["custom_image"]
 
     async def on_submit(self, i: discord.Interaction):
-        img = self.custom_image.value.strip() or None
-        async with self.pool.acquire() as c:
-            await c.execute(
-                """INSERT INTO profiles (user_id, pays, top_anime, waifu_husbando, bio, custom_image)
-                   VALUES ($1,$2,$3,$4,$5,$6)
-                   ON CONFLICT (user_id) DO UPDATE SET
-                       pays           = EXCLUDED.pays,
-                       top_anime      = EXCLUDED.top_anime,
-                       waifu_husbando = EXCLUDED.waifu_husbando,
-                       bio            = EXCLUDED.bio,
-                       custom_image   = EXCLUDED.custom_image""",
-                str(i.user.id),
-                self.pays.value.strip() or None,
-                self.top_anime.value.strip() or None,
-                self.waifu_husbando.value.strip() or None,
-                self.bio.value.strip() or None,
-                img,
-            )
-        await i.response.send_message("✅ Profil mis à jour ! Utilise `/monprofil` pour voir le résultat.", ephemeral=True)
+        loop = asyncio.get_running_loop()
+        await loop.run_in_executor(
+            _executor, _db_upsert,
+            self.get_db, self.release_db,
+            str(i.user.id),
+            self.pays.value.strip(),
+            self.top_anime.value.strip(),
+            self.waifu_husbando.value.strip(),
+            self.bio.value.strip(),
+            self.custom_image.value.strip(),
+        )
+        await i.response.send_message(
+            "✅ Profil mis à jour ! Utilise `/monprofil` pour voir le résultat.",
+            ephemeral=True,
+        )
 
 
 # ══════════════════════════════════════════════════════════════════
@@ -93,12 +128,12 @@ class ModifModal(discord.ui.Modal, title="✏️ Mon profil"):
 
 async def _build_profile_embed(
     member: discord.Member,
-    pool,
+    get_db, release_db,
     guild: discord.Guild,
     public: bool = False,
 ) -> discord.Embed:
-    async with pool.acquire() as c:
-        row = await c.fetchrow("SELECT * FROM profiles WHERE user_id=$1", str(member.id))
+    loop = asyncio.get_running_loop()
+    row = await loop.run_in_executor(_executor, _db_get, get_db, release_db, str(member.id))
 
     rank = None
     for r in _RANK_ORDER:
@@ -123,18 +158,14 @@ async def _build_profile_embed(
         if row["pays"]:
             flag = FLAGS.get(row["pays"].strip(), "🌍")
             embed.add_field(name="🌍 Pays", value=f"{flag} {row['pays']}", inline=True)
-
         if row["top_anime"]:
             animes = [a.strip() for a in row["top_anime"].split(",") if a.strip()]
             embed.add_field(name="🎌 Top Anime",
                             value="\n".join(f"• {a}" for a in animes), inline=False)
-
         if row["waifu_husbando"]:
             embed.add_field(name="❤️ Waifu / Husbando", value=row["waifu_husbando"], inline=True)
-
         if row["bio"]:
             embed.add_field(name="📝 Bio", value=f"*{row['bio']}*", inline=False)
-
         if not public and not row["top_anime"] and not row["bio"]:
             embed.add_field(
                 name="📋 Profil incomplet",
@@ -159,27 +190,28 @@ async def _build_profile_embed(
 
 class Profile(commands.Cog):
     def __init__(self, bot: commands.Bot):
-        self.bot  = bot
-        self.pool = bot.pg_pool
+        self.bot        = bot
+        self.get_db     = bot.get_db
+        self.release_db = bot.release_db
 
     @app_commands.command(name="monprofil", description="Afficher ton profil")
     async def monprofil(self, i: discord.Interaction):
-        embed = await _build_profile_embed(i.user, self.pool, i.guild, public=False)
+        embed = await _build_profile_embed(i.user, self.get_db, self.release_db, i.guild, public=False)
         await i.response.send_message(embed=embed, ephemeral=True)
 
     @app_commands.command(name="info", description="Voir le profil d'un membre")
     @app_commands.describe(membre="Le membre à afficher")
     async def info(self, i: discord.Interaction, membre: discord.Member):
-        embed = await _build_profile_embed(membre, self.pool, i.guild, public=True)
+        embed = await _build_profile_embed(membre, self.get_db, self.release_db, i.guild, public=True)
         await i.response.send_message(embed=embed)
 
     @app_commands.command(name="modifprofil", description="Modifier ton profil")
     async def modifprofil(self, i: discord.Interaction):
-        async with self.pool.acquire() as c:
-            existing = await c.fetchrow(
-                "SELECT * FROM profiles WHERE user_id=$1", str(i.user.id)
-            )
-        await i.response.send_modal(ModifModal(self.pool, existing))
+        loop = asyncio.get_running_loop()
+        existing = await loop.run_in_executor(
+            _executor, _db_get, self.get_db, self.release_db, str(i.user.id)
+        )
+        await i.response.send_modal(ModifModal(self.get_db, self.release_db, existing))
 
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
