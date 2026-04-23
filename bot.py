@@ -727,8 +727,9 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True, da
                 try:
                     img_buf, is_gif = await make_rank_image(member, rank_name, hours_7d)
                     fname = "rank_up.gif" if is_gif else "rank_up.png"
+                    rank_emoji = _ANNOUNCE_RANK_EMOJIS.get(rank_name, "✨")
                     await channel.send(
-                        content=f"🏴‍☠️ Bravo a {member.mention} qui a debloque le rank **{rank_name.upper()}** ✨",
+                        content=f"🏴‍☠️ Bravo a {member.mention} qui a debloque le rank **{rank_name.upper()}** {rank_emoji}",
                         file=discord.File(img_buf, fname),
                     )
                     print(f"[RANK] Annonce : {member.display_name} -> {rank_name}")
@@ -1388,7 +1389,7 @@ async def on_voice_state_update(member, before, after):
 # ─────────────────────────────────────────
 #  LOOP HORAIRE
 # ─────────────────────────────────────────
-@tasks.loop(minutes=20)
+@tasks.loop(minutes=10)
 async def check_ranks_loop():
     tick = time.time()
     total_members = 0
