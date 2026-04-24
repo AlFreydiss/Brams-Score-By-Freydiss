@@ -4,15 +4,74 @@ Duel entre deux persos au choix — images Jikan/MAL (aucune clé requise) + vot
 """
 from __future__ import annotations
 
+import asyncio
+import io
 import logging
 from urllib.parse import quote as _uq
 
 import aiohttp
 import discord
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
 from discord import app_commands
 from discord.ext import commands
 
 log = logging.getLogger(__name__)
+
+DUEL_TIMEOUT = 60  # secondes avant affichage des résultats
+
+
+def _make_duel_graph(nom1: str, nom2: str, votes1: int, votes2: int) -> io.BytesIO:
+    total = votes1 + votes2 or 1
+    pct1 = round(votes1 / total * 100)
+    pct2 = round(votes2 / total * 100)
+
+    fig, ax = plt.subplots(figsize=(9, 3), facecolor="#1a1a2e")
+    ax.set_facecolor("#1a1a2e")
+
+    noms  = [nom2[:24], nom1[:24]]
+    pcts  = [pct2, pct1]
+    votes = [votes2, votes1]
+    colors = ["#5865F2", "#ED4245"]
+
+    bars = ax.barh(noms, pcts, color=colors, height=0.5, edgecolor="none")
+
+    for bar, pct, v in zip(bars, pcts, votes):
+        ax.text(
+            min(pct + 2, 102), bar.get_y() + bar.get_height() / 2,
+            f"{pct}%  ({v} vote{'s' if v != 1 else ''})",
+            va="center", color="white", fontsize=12, fontweight="bold",
+        )
+
+    winner = nom1 if votes1 >= votes2 else nom2
+    titre = f"🏆 {winner} remporte le duel !" if votes1 != votes2 else "⚖️ Égalité !"
+
+    ax.set_xlim(0, 130)
+    ax.set_title(titre, color="white", fontsize=13, pad=10, fontweight="bold")
+    ax.tick_params(colors="white", labelsize=11)
+    for spine in ax.spines.values():
+        spine.set_color("#444")
+    ax.set_xlabel("% des votes", color="#aaa", fontsize=9)
+
+    buf = io.BytesIO()
+    plt.savefig(buf, format="png", bbox_inches="tight", facecolor=fig.get_facecolor(), dpi=130)
+    plt.close(fig)
+    buf.seek(0)
+    return buf
+
+
+async def _send_duel_results(message: discord.Message, nom1: str, nom2: str) -> None:
+    await asyncio.sleep(DUEL_TIMEOUT)
+    try:
+        msg = await message.channel.fetch_message(message.id)
+        votes1 = next((r.count - 1 for r in msg.reactions if str(r.emoji) == "🔴"), 0)
+        votes2 = next((r.count - 1 for r in msg.reactions if str(r.emoji) == "🔵"), 0)
+        loop = asyncio.get_running_loop()
+        buf = await loop.run_in_executor(None, _make_duel_graph, nom1, nom2, votes1, votes2)
+        await msg.reply(file=discord.File(buf, "duel_results.png"))
+    except Exception as e:
+        log.warning("[Duel] Erreur résultats graphique: %s", e)
 
 # IDs Jikan directs pour les persos connus — évite les mauvais matchs de recherche
 _CHAR_IDS: dict[str, int] = {
@@ -227,17 +286,17 @@ class DuelCog(commands.Cog):
         )
         if img1:
             embed1.set_image(url=img1)
-        embed1.set_footer(text=f"🔴 {perso1}  •  Brams Score — Duel Arena")
+        embed1.set_footer(text=f"🔴 {perso1}  •  Brams Score — Duel Arena  •  Résultats dans {DUEL_TIMEOUT}s")
 
         embed2 = discord.Embed(color=discord.Color.blue())
         if img2:
             embed2.set_image(url=img2)
         embed2.set_footer(text=f"🔵 {perso2}")
-
         message = await interaction.followup.send(embeds=[embed1, embed2])
         await message.add_reaction("🔴")
         await message.add_reaction("🔵")
 
+        asyncio.create_task(_send_duel_results(message, perso1, perso2))
         log.info("[Duel] %s vs %s | img1=%s img2=%s",
                  perso1, perso2, bool(img1), bool(img2))
 
