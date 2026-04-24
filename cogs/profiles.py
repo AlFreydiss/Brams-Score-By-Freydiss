@@ -236,10 +236,10 @@ class Profile(commands.Cog):
 
     @app_commands.command(name="monprofil", description="Afficher ton profil")
     async def monprofil(self, i: discord.Interaction):
-        await i.response.defer(ephemeral=True)
+        await i.response.defer()
         try:
             embed = await _build_profile_embed(i.user, self.get_db, self.release_db, i.guild, public=False)
-            await i.followup.send(embed=embed, ephemeral=True)
+            await i.followup.send(embed=embed)
         except Exception as e:
             print(f"[PROFIL] /monprofil erreur : {e}")
             await i.followup.send("❌ Erreur lors du chargement du profil.", ephemeral=True)
