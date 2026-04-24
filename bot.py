@@ -744,12 +744,13 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True, da
         try:
             await member.send(dm_text)
         except discord.Forbidden:
-            rappel_ch = bot.get_channel(1495083283816644658)
+            rappel_ch = discord.utils.find(
+                lambda c: "rappel" in c.name.lower(),
+                guild.text_channels
+            )
             if rappel_ch:
                 try:
-                    await rappel_ch.send(
-                        f"{member.mention}\n{dm_text}"
-                    )
+                    await rappel_ch.send(f"{member.mention}\n{dm_text}")
                 except Exception:
                     pass
 
