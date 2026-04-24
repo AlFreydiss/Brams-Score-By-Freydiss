@@ -42,7 +42,7 @@ _CHAR_IDS: dict[str, int] = {
     "sasuke": 13, "sasuke uchiha": 13,
     "kakashi": 85, "kakashi hatake": 85,
     "itachi": 14, "itachi uchiha": 14,
-    "sakura": 15, "sakura haruno": 15,
+    "sakura": 16847, "sakura haruno": 16847,
     "hinata": 1555, "hinata hyuga": 1555,
     "gaara": 84,
     "rock lee": 306,
