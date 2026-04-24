@@ -2524,11 +2524,21 @@ async def test_event(interaction: discord.Interaction, evenement: app_commands.C
             f"*BRAMS SCORE  |  by Freydiss*\n"
             f"*(Envoie `1` si tu ne veux plus recevoir ces DMs)*"
         )
-        try:
-            await target.send(dm_text)
-            await interaction.followup.send(f"✅ DM de test derank envoyé à {target.mention}", ephemeral=True)
-        except discord.Forbidden:
-            await interaction.followup.send(f"❌ DM fermés pour {target.mention}", ephemeral=True)
+        target_user = get_user(_CACHE, str(target.id))
+        if target_user.get("dm_optout", False):
+            rappel_ch = discord.utils.find(lambda c: "rappel" in c.name.lower(), interaction.guild.text_channels)
+            if rappel_ch:
+                await rappel_ch.send(f"{target.mention}\n{dm_text}")
+            await interaction.followup.send(f"📵 DMs désactivés — message envoyé dans #rappel pour {target.mention}", ephemeral=True)
+        else:
+            try:
+                await target.send(dm_text)
+                await interaction.followup.send(f"✅ DM de test derank envoyé à {target.mention}", ephemeral=True)
+            except discord.Forbidden:
+                rappel_ch = discord.utils.find(lambda c: "rappel" in c.name.lower(), interaction.guild.text_channels)
+                if rappel_ch:
+                    await rappel_ch.send(f"{target.mention}\n{dm_text}")
+                await interaction.followup.send(f"❌ DM fermés — message envoyé dans #rappel pour {target.mention}", ephemeral=True)
 
     elif evenement.value == "warning":
         rank_name = "Shichibukai"
@@ -2547,13 +2557,21 @@ async def test_event(interaction: discord.Interaction, evenement: app_commands.C
             f"*BRAMS SCORE  |  by Freydiss*\n"
             f"*(Envoie `1` si tu ne veux plus recevoir ces DMs)*"
         )
-        try:
-            await target.send(dm_text)
-            await interaction.followup.send(f"✅ MP de test envoyé à {target.mention}", ephemeral=True)
-        except discord.Forbidden:
-            await interaction.followup.send(f"❌ DM fermés pour {target.mention}", ephemeral=True)
-        except Exception as e:
-            await interaction.followup.send(f"❌ Erreur : {e}", ephemeral=True)
+        target_user = get_user(_CACHE, str(target.id))
+        if target_user.get("dm_optout", False):
+            rappel_ch = discord.utils.find(lambda c: "rappel" in c.name.lower(), interaction.guild.text_channels)
+            if rappel_ch:
+                await rappel_ch.send(f"{target.mention}\n{dm_text}")
+            await interaction.followup.send(f"📵 DMs désactivés — message envoyé dans #rappel pour {target.mention}", ephemeral=True)
+        else:
+            try:
+                await target.send(dm_text)
+                await interaction.followup.send(f"✅ MP de test envoyé à {target.mention}", ephemeral=True)
+            except discord.Forbidden:
+                rappel_ch = discord.utils.find(lambda c: "rappel" in c.name.lower(), interaction.guild.text_channels)
+                if rappel_ch:
+                    await rappel_ch.send(f"{target.mention}\n{dm_text}")
+                await interaction.followup.send(f"❌ DM fermés — message envoyé dans #rappel pour {target.mention}", ephemeral=True)
 
     elif evenement.value == "rankup_dm":
         rank_name = "Shichibukai"
@@ -2570,13 +2588,21 @@ async def test_event(interaction: discord.Interaction, evenement: app_commands.C
             f"*BRAMS SCORE  |  by Freydiss*\n"
             f"*(Envoie `1` si tu ne veux plus recevoir ces DMs)*"
         )
-        try:
-            await target.send(dm_text)
-            await interaction.followup.send(f"✅ DM passage de rang envoyé à {target.mention}", ephemeral=True)
-        except discord.Forbidden:
-            await interaction.followup.send(f"❌ DM fermés pour {target.mention}", ephemeral=True)
-        except Exception as e:
-            await interaction.followup.send(f"❌ Erreur : {e}", ephemeral=True)
+        target_user = get_user(_CACHE, str(target.id))
+        if target_user.get("dm_optout", False):
+            rappel_ch = discord.utils.find(lambda c: "rappel" in c.name.lower(), interaction.guild.text_channels)
+            if rappel_ch:
+                await rappel_ch.send(f"{target.mention}\n{dm_text}")
+            await interaction.followup.send(f"📵 DMs désactivés — message envoyé dans #rappel pour {target.mention}", ephemeral=True)
+        else:
+            try:
+                await target.send(dm_text)
+                await interaction.followup.send(f"✅ DM passage de rang envoyé à {target.mention}", ephemeral=True)
+            except discord.Forbidden:
+                rappel_ch = discord.utils.find(lambda c: "rappel" in c.name.lower(), interaction.guild.text_channels)
+                if rappel_ch:
+                    await rappel_ch.send(f"{target.mention}\n{dm_text}")
+                await interaction.followup.send(f"❌ DM fermés — message envoyé dans #rappel pour {target.mention}", ephemeral=True)
 
 
 # ─────────────────────────────────────────
