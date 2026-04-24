@@ -489,7 +489,7 @@ def get_user(data, uid: str):
             "last_rank": None,
             "alerted": False,
         }
-    for key, default in [("last_rank", None), ("alerted", False), ("known_ranks", [])]:
+    for key, default in [("last_rank", None), ("alerted", False), ("known_ranks", []), ("dm_optout", False)]:
         if key not in data[uid]:
             data[uid][key] = default
     return data[uid]
@@ -731,6 +731,8 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True, da
                 print(f"⚠️ remove_roles {member.display_name} ({rank_name}): {e}")
         rank_emoji = _ANNOUNCE_RANK_EMOJIS.get(rank_name, "🎖️")
         rank_threshold = next((t for t, n in RANKS if n == rank_name), 0)
+        if user.get("dm_optout", False):
+            continue
         dm_text = (
             f"⬇️ **Tu as perdu ton rank !**\n\n"
             f"Salut {member.display_name} ! Tu viens de perdre le rang **{rank_emoji} {rank_name}** "
@@ -739,7 +741,8 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True, da
             f"alors qu'il te faut au minimum `{rank_threshold}h` pour garder ce rang.\n\n"
             f"Reviens en vocal pour le récupérer ! 🎙️\n\n"
             f"━━━━━━━━━━━━━━━━━━━━\n"
-            f"*BRAMS SCORE  |  by Freydiss*"
+            f"*BRAMS SCORE  |  by Freydiss*\n"
+            f"*Envoie `1` ici pour ne plus recevoir ces annonces en DM.*"
         )
         try:
             await member.send(dm_text)
@@ -794,28 +797,29 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True, da
                             file=discord.File(img_buf, fname),
                         )
                         print(f"[RANK] Annonce : {member.display_name} -> {rank_name}")
-                        rank_threshold = next((t for t, n in RANKS if n == rank_name), 0)
-                        dm_text = (
-                            f"🎉 **Tu as monté de rang !**\n\n"
-                            f"Félicitations {member.display_name} ! Tu viens de débloquer le rang "
-                            f"**{rank_emoji} {rank_name}** sur le serveur **{guild.name}** !\n\n"
-                            f"Tu as accumulé `{hours_7d:.1f}h` de vocal sur les 7 derniers jours. "
-                            f"Continue comme ça ! 💪\n\n"
-                            f"━━━━━━━━━━━━━━━━━━━━\n"
-                            f"*BRAMS SCORE  |  by Freydiss*"
-                        )
-                        try:
-                            await member.send(dm_text)
-                        except discord.Forbidden:
-                            rappel_ch = discord.utils.find(
-                                lambda c: "rappel" in c.name.lower(),
-                                guild.text_channels
+                        if not user.get("dm_optout", False):
+                            dm_rankup = (
+                                f"🎉 **Tu as monté de rang !**\n\n"
+                                f"Félicitations {member.display_name} ! Tu viens de débloquer le rang "
+                                f"**{rank_emoji} {rank_name}** sur le serveur **{guild.name}** !\n\n"
+                                f"Tu as accumulé `{hours_7d:.1f}h` de vocal sur les 7 derniers jours. "
+                                f"Continue comme ça ! 💪\n\n"
+                                f"━━━━━━━━━━━━━━━━━━━━\n"
+                                f"*BRAMS SCORE  |  by Freydiss*\n"
+                                f"*Envoie `1` ici pour ne plus recevoir ces annonces en DM.*"
                             )
-                            if rappel_ch:
-                                try:
-                                    await rappel_ch.send(f"{member.mention}\n{dm_text}")
-                                except Exception:
-                                    pass
+                            try:
+                                await member.send(dm_rankup)
+                            except discord.Forbidden:
+                                rappel_ch = discord.utils.find(
+                                    lambda c: "rappel" in c.name.lower(),
+                                    guild.text_channels
+                                )
+                                if rappel_ch:
+                                    try:
+                                        await rappel_ch.send(f"{member.mention}\n{dm_rankup}")
+                                    except Exception:
+                                        pass
                     except Exception as e:
                         print(f"[RANK] Erreur annonce {member.display_name} ({rank_name}): {e}")
 
@@ -1231,6 +1235,10 @@ async def check_alert(member: discord.Member, hours_7d: float, data=None):
     in_danger_zone = (threshold - DERANK_WARNING_THRESHOLD) <= hours_7d < threshold
 
     if in_danger_zone and not already_alerted:
+        if user.get("dm_optout", False):
+            user["alerted"] = current_rank
+            _DIRTY.add(uid)
+            return
         try:
             heures_manquantes = round(threshold - hours_7d, 1)
             rank_emoji = RANK_EMOJIS.get(current_rank, "🏴")
@@ -1244,7 +1252,8 @@ async def check_alert(member: discord.Member, hours_7d: float, data=None):
                 f"pour éviter de rétrograder 🚨\n\n"
                 f"Passe en vocal dès que possible pour sauver ton grade !\n\n"
                 f"━━━━━━━━━━━━━━━━━━━━\n"
-                f"*BRAMS SCORE  |  by Freydiss*"
+                f"*BRAMS SCORE  |  by Freydiss*\n"
+                f"*Envoie `1` ici pour ne plus recevoir ces annonces en DM.*"
             )
             await member.send(dm_text)
             user["alerted"] = current_rank
@@ -1426,6 +1435,17 @@ async def on_ready():
 @bot.event
 async def on_message(message):
     if message.author.bot:
+        return
+    if isinstance(message.channel, discord.DMChannel):
+        if message.content.strip() == "1":
+            uid = str(message.author.id)
+            user = get_user(_CACHE, uid)
+            user["dm_optout"] = True
+            _DIRTY.add(uid)
+            try:
+                await message.channel.send("✅ Tu ne recevras plus d'annonces en DM de ma part.")
+            except Exception:
+                pass
         return
     uid  = str(message.author.id)
     # Lecture et écriture directement dans le cache mémoire — 0 réseau
