@@ -730,11 +730,17 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True, da
             except discord.HTTPException as e:
                 print(f"⚠️ remove_roles {member.display_name} ({rank_name}): {e}")
         rank_emoji = _ANNOUNCE_RANK_EMOJIS.get(rank_name, "🎖️")
+        rank_threshold = next((t for t, n in RANKS if n == rank_name), 0)
         try:
             await member.send(
-                f"⬇️ Tu as perdu le rang **{rank_name}** {rank_emoji} sur **{guild.name}**.\n"
-                f"Tu n'as pas maintenu les heures vocales requises cette semaine. "
-                f"Reviens en vocal pour le récupérer !"
+                f"⬇️ **Tu as perdu ton rank !**\n\n"
+                f"Salut {member.display_name} ! Tu viens de perdre le rang **{rank_emoji} {rank_name}** "
+                f"sur le serveur **{guild.name}**.\n\n"
+                f"Tes heures vocales sur les 7 derniers jours sont descendues à `{hours_7d:.1f}h`, "
+                f"alors qu'il te faut au minimum `{rank_threshold}h` pour garder ce rang.\n\n"
+                f"Reviens en vocal pour le récupérer ! 🎙️\n\n"
+                f"━━━━━━━━━━━━━━━━━━━━\n"
+                f"*BRAMS SCORE  |  by Freydiss*"
             )
         except discord.Forbidden:
             pass
