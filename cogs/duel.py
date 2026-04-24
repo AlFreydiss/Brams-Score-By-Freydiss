@@ -61,9 +61,20 @@ def _make_duel_graph(nom1: str, nom2: str, votes1: int, votes2: int) -> io.Bytes
     return buf
 
 
-async def _send_duel_results(message: discord.Message, nom1: str, nom2: str) -> None:
-    await asyncio.sleep(DUEL_TIMEOUT)
+async def _send_duel_results(
+    message: discord.Message, nom1: str, nom2: str,
+    embed1: discord.Embed, embed2: discord.Embed,
+) -> None:
+    for remaining in range(DUEL_TIMEOUT, 0, -1):
+        try:
+            embed1.set_footer(text=f"🔴 {nom1}  •  Brams Score — Duel Arena  •  ⏳ {remaining}s")
+            await message.edit(embeds=[embed1, embed2])
+        except Exception:
+            pass
+        await asyncio.sleep(1)
     try:
+        embed1.set_footer(text=f"🔴 {nom1}  •  Brams Score — Duel Arena  •  🔒 Votes fermés")
+        await message.edit(embeds=[embed1, embed2])
         msg = await message.channel.fetch_message(message.id)
         votes1 = next((r.count - 1 for r in msg.reactions if str(r.emoji) == "🔴"), 0)
         votes2 = next((r.count - 1 for r in msg.reactions if str(r.emoji) == "🔵"), 0)
@@ -296,7 +307,7 @@ class DuelCog(commands.Cog):
         await message.add_reaction("🔴")
         await message.add_reaction("🔵")
 
-        asyncio.create_task(_send_duel_results(message, perso1, perso2))
+        asyncio.create_task(_send_duel_results(message, perso1, perso2, embed1, embed2))
         log.info("[Duel] %s vs %s | img1=%s img2=%s",
                  perso1, perso2, bool(img1), bool(img2))
 
