@@ -220,7 +220,7 @@ async def _build_profile_embed(
         )
 
     icon = guild.icon.url if guild.icon else None
-    embed.set_footer(text="Brams Community • Anime & Manga", icon_url=icon)
+    embed.set_footer(text="Brams Community • Anime & Manga  •  by Freydiss", icon_url=icon)
     return embed
 
 
@@ -303,7 +303,7 @@ class Profile(commands.Cog):
         )
         embed.set_thumbnail(url=member.display_avatar.url)
         icon = member.guild.icon.url if member.guild.icon else None
-        embed.set_footer(text="Brams Community • Anime & Manga", icon_url=icon)
+        embed.set_footer(text="Brams Community • Anime & Manga  •  by Freydiss", icon_url=icon)
 
         try:
             await channel.send(embed=embed)
