@@ -10,6 +10,10 @@ from discord import app_commands
 COLOR_MAIN = 0xFFD700
 COLOR_OK   = 0x1D9E75
 
+RULES_CHANNEL_NAME = "règlement"
+VERIFIED_ROLE_NAME = "Membre"
+RULES_EMOJI        = "✅"
+
 FLAGS = {
     "France": "🇫🇷", "Belgique": "🇧🇪", "Suisse": "🇨🇭", "Canada": "🇨🇦",
     "Maroc": "🇲🇦", "Algérie": "🇩🇿", "Tunisie": "🇹🇳", "USA": "🇺🇸", "Autre": "🌍",
@@ -269,6 +273,51 @@ class Profile(commands.Cog):
                 await i.response.send_message("❌ Erreur lors de l'ouverture du formulaire.", ephemeral=True)
             except Exception:
                 pass
+
+    @commands.Cog.listener()
+    async def on_ready(self):
+        for guild in self.bot.guilds:
+            ch = discord.utils.find(
+                lambda c: RULES_CHANNEL_NAME in c.name.lower(),
+                guild.text_channels
+            )
+            if ch is None:
+                continue
+            try:
+                msgs = [m async for m in ch.history(limit=1, oldest_first=True)]
+                if msgs:
+                    await msgs[0].add_reaction(RULES_EMOJI)
+            except Exception:
+                pass
+
+    @commands.Cog.listener()
+    async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
+        if payload.member is None or payload.member.bot:
+            return
+        if str(payload.emoji) != RULES_EMOJI:
+            return
+        guild = self.bot.get_guild(payload.guild_id)
+        if guild is None:
+            return
+        ch = discord.utils.find(
+            lambda c: RULES_CHANNEL_NAME in c.name.lower(),
+            guild.text_channels
+        )
+        if ch is None or payload.channel_id != ch.id:
+            return
+        try:
+            msgs = [m async for m in ch.history(limit=1, oldest_first=True)]
+            if not msgs or payload.message_id != msgs[0].id:
+                return
+        except Exception:
+            return
+        role = discord.utils.get(guild.roles, name=VERIFIED_ROLE_NAME)
+        if role is None:
+            return
+        try:
+            await payload.member.add_roles(role, reason="Règlement accepté")
+        except discord.Forbidden:
+            pass
 
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
