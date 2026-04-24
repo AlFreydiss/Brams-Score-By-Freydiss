@@ -23,20 +23,20 @@ _CHAR_IDS: dict[str, int] = {
     "usopp": 724,
     "sanji": 305,
     "robin": 61, "nico robin": 61,
-    "chopper": 726, "tony tony chopper": 726,
-    "franky": 725,
-    "brook": 1498,
-    "jinbei": 39645,
+    "chopper": 309, "tony tony chopper": 309,
+    "franky": 64,
+    "brook": 5627,
+    "jinbei": 18938,
     "ace": 2072, "portgas d. ace": 2072,
     "shanks": 727,
     "barbe blanche": 2751, "whitebeard": 2751,
     "trafalgar law": 13767, "law": 13767,
     "akainu": 22687,
-    "hancock": 13765, "boa hancock": 13765,
-    "crocodile": 13668,
-    "doflamingo": 37384,
-    "kaido": 60957,
-    "big mom": 37262,
+    "hancock": 16342, "boa hancock": 16342,
+    "crocodile": 2749,
+    "doflamingo": 2754,
+    "kaido": 278670,
+    "big mom": 54495,
     # Naruto
     "naruto": 17, "naruto uzumaki": 17,
     "sasuke": 13, "sasuke uchiha": 13,
@@ -44,7 +44,7 @@ _CHAR_IDS: dict[str, int] = {
     "itachi": 14, "itachi uchiha": 14,
     "sakura": 16847, "sakura haruno": 16847,
     "hinata": 1555, "hinata hyuga": 1555,
-    "gaara": 84,
+    "gaara": 1662,
     "rock lee": 306,
     "jiraiya": 2423,
     "minato": 2535, "minato namikaze": 2535,
@@ -52,8 +52,8 @@ _CHAR_IDS: dict[str, int] = {
     "pain": 3180,
     # Bleach
     "ichigo": 5, "ichigo kurosaki": 5,
-    "byakuya": 8, "byakuya kuchiki": 8,
-    "aizen": 7, "sosuke aizen": 7,
+    "byakuya": 907, "byakuya kuchiki": 907,
+    "aizen": 1086, "sosuke aizen": 1086,
     "rukia": 6, "rukia kuchiki": 6,
     # FMA
     "edward elric": 11, "edward": 11,
@@ -66,7 +66,7 @@ _CHAR_IDS: dict[str, int] = {
     "kurapika": 28,
     "meruem": 23277,
     # JoJo
-    "jotaro": 38, "jotaro kujo": 38,
+    "jotaro": 4003, "jotaro kujo": 4003,
     "giorno": 10529, "giorno giovanna": 10529,
     "dio": 4004, "dio brando": 4004,
     # Attack on Titan
@@ -82,32 +82,32 @@ _CHAR_IDS: dict[str, int] = {
     # Dragon Ball
     "goku": 246, "son goku": 246,
     "vegeta": 913,
-    "piccolo": 915,
-    "gohan": 912,
+    "piccolo": 914,
+    "gohan": 2093,
     # Demon Slayer
     "tanjiro": 146156, "tanjiro kamado": 146156,
-    "zenitsu": 146310, "zenitsu agatsuma": 146310,
-    "inosuke": 146158, "inosuke hashibira": 146158,
+    "zenitsu": 146158, "zenitsu agatsuma": 146158,
+    "inosuke": 146159, "inosuke hashibira": 146159,
     "rengoku": 151143, "rengoku kyojuro": 151143,
-    "muzan": 146318, "muzan kibutsuji": 146318,
+    "muzan": 151156, "muzan kibutsuji": 151156,
     # Jujutsu Kaisen
     "itadori": 163847, "yuji itadori": 163847,
     "gojo": 164471, "gojo satoru": 164471,
-    "sukuna": 160116, "ryomen sukuna": 160116,
-    "megumi": 160113, "megumi fushiguro": 160113,
+    "sukuna": 175198, "ryomen sukuna": 175198,
+    "megumi": 164470, "megumi fushiguro": 164470,
     # Tokyo Ghoul
     "kaneki": 87275, "ken kaneki": 87275,
     # Code Geass
     "lelouch": 417, "lelouch vi britannia": 417,
     # One Punch Man
     "saitama": 73935,
-    "genos": 73936,
+    "genos": 73979,
     # Fairy Tail
     "natsu": 5187, "natsu dragneel": 5187,
     "erza": 5189, "erza scarlet": 5189,
-    "gray": 9748, "gray fullbuster": 9748,
+    "gray": 4839, "gray fullbuster": 4839,
     # Mob Psycho
-    "mob": 137723, "shigeo kageyama": 137723,
+    "mob": 109929, "shigeo kageyama": 109929,
     # SAO
     "kirito": 245235,
     "asuna": 36828, "asuna yuuki": 36828,
@@ -119,9 +119,9 @@ _CHAR_IDS: dict[str, int] = {
     # Black Clover
     "asta": 33356,
     # Nanatsu no Taizai
-    "meliodas": 67067,
+    "meliodas": 72921,
     # Gintama
-    "gintoki": 567, "gintoki sakata": 567,
+    "gintoki": 672, "gintoki sakata": 672,
     # Cowboy Bebop
     "spike": 1, "spike spiegel": 1,
     # Violet Evergarden
