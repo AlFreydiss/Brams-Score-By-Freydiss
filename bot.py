@@ -794,6 +794,28 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True, da
                             file=discord.File(img_buf, fname),
                         )
                         print(f"[RANK] Annonce : {member.display_name} -> {rank_name}")
+                        rank_threshold = next((t for t, n in RANKS if n == rank_name), 0)
+                        dm_text = (
+                            f"🎉 **Tu as monté de rang !**\n\n"
+                            f"Félicitations {member.display_name} ! Tu viens de débloquer le rang "
+                            f"**{rank_emoji} {rank_name}** sur le serveur **{guild.name}** !\n\n"
+                            f"Tu as accumulé `{hours_7d:.1f}h` de vocal sur les 7 derniers jours. "
+                            f"Continue comme ça ! 💪\n\n"
+                            f"━━━━━━━━━━━━━━━━━━━━\n"
+                            f"*BRAMS SCORE  |  by Freydiss*"
+                        )
+                        try:
+                            await member.send(dm_text)
+                        except discord.Forbidden:
+                            rappel_ch = discord.utils.find(
+                                lambda c: "rappel" in c.name.lower(),
+                                guild.text_channels
+                            )
+                            if rappel_ch:
+                                try:
+                                    await rappel_ch.send(f"{member.mention}\n{dm_text}")
+                                except Exception:
+                                    pass
                     except Exception as e:
                         print(f"[RANK] Erreur annonce {member.display_name} ({rank_name}): {e}")
 
@@ -2442,6 +2464,7 @@ async def testrank(interaction: discord.Interaction, membre: discord.Member = No
     app_commands.Choice(name="Montée de rang", value="rankup"),
     app_commands.Choice(name="Perte de rang (derank)", value="derank"),
     app_commands.Choice(name="Avertissement MP derank", value="warning"),
+    app_commands.Choice(name="DM passage de rang", value="rankup_dm"),
 ])
 async def test_event(interaction: discord.Interaction, evenement: app_commands.Choice[str], membre: discord.Member = None):
     try:
@@ -2505,6 +2528,28 @@ async def test_event(interaction: discord.Interaction, evenement: app_commands.C
         try:
             await target.send(dm_text)
             await interaction.followup.send(f"✅ MP de test envoyé à {target.mention}", ephemeral=True)
+        except discord.Forbidden:
+            await interaction.followup.send(f"❌ DM fermés pour {target.mention}", ephemeral=True)
+        except Exception as e:
+            await interaction.followup.send(f"❌ Erreur : {e}", ephemeral=True)
+
+    elif evenement.value == "rankup_dm":
+        rank_name = "Shichibukai"
+        rank_emoji = _ANNOUNCE_RANK_EMOJIS.get(rank_name, "✨")
+        hours_7d = 27.5
+        dm_text = (
+            f"🎉 **[TEST] Tu as monté de rang !**\n\n"
+            f"Félicitations {target.display_name} ! Tu viens de débloquer le rang "
+            f"**{rank_emoji} {rank_name}** sur le serveur **{interaction.guild.name}** !\n\n"
+            f"Tu as accumulé `{hours_7d}h` de vocal sur les 7 derniers jours. "
+            f"Continue comme ça ! 💪\n\n"
+            f"*(Ceci est un message de test — tes données ne sont pas affectées)*\n\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"*BRAMS SCORE  |  by Freydiss*"
+        )
+        try:
+            await target.send(dm_text)
+            await interaction.followup.send(f"✅ DM passage de rang envoyé à {target.mention}", ephemeral=True)
         except discord.Forbidden:
             await interaction.followup.send(f"❌ DM fermés pour {target.mention}", ephemeral=True)
         except Exception as e:
