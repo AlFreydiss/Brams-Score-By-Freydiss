@@ -729,6 +729,15 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True, da
                 print(f"⚠️ Permission refusée remove_roles {member.display_name} ({rank_name})")
             except discord.HTTPException as e:
                 print(f"⚠️ remove_roles {member.display_name} ({rank_name}): {e}")
+        rank_emoji = _ANNOUNCE_RANK_EMOJIS.get(rank_name, "🎖️")
+        try:
+            await member.send(
+                f"⬇️ Tu as perdu le rang **{rank_name}** {rank_emoji} sur **{guild.name}**.\n"
+                f"Tu n'as pas maintenu les heures vocales requises cette semaine. "
+                f"Reviens en vocal pour le récupérer !"
+            )
+        except discord.Forbidden:
+            pass
 
     if announce and (ranks_to_add or ranks_to_remove):
         rank_threshold_map = {name: threshold for threshold, name in RANKS}
