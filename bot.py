@@ -2447,14 +2447,25 @@ async def test_event(interaction: discord.Interaction, evenement: app_commands.C
 
     elif evenement.value == "derank":
         rank_name = "Amiral"
-        channel = bot.get_channel(ANNOUNCE_CHANNEL_ID)
-        if channel is None:
-            await interaction.followup.send("❌ Channel d'annonce introuvable.", ephemeral=True)
-            return
-        await channel.send(
-            content=f"[TEST] ⬇️ {target.mention} a perdu le rang **{rank_name}** 🪖 (simulation)"
+        rank_emoji = _ANNOUNCE_RANK_EMOJIS.get(rank_name, "🎖️")
+        rank_threshold = next((t for t, n in RANKS if n == rank_name), 0)
+        hours_7d = 35.0
+        dm_text = (
+            f"⬇️ **[TEST] Tu as perdu ton rank !**\n\n"
+            f"Salut {target.display_name} ! Tu viens de perdre le rang **{rank_emoji} {rank_name}** "
+            f"sur le serveur **{interaction.guild.name}**.\n\n"
+            f"Tes heures vocales sur les 7 derniers jours sont descendues à `{hours_7d}h`, "
+            f"alors qu'il te faut au minimum `{rank_threshold}h` pour garder ce rang.\n\n"
+            f"Reviens en vocal pour le récupérer ! 🎙️\n\n"
+            f"*(Ceci est un message de test — tes données ne sont pas affectées)*\n\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"*BRAMS SCORE  |  by Freydiss*"
         )
-        await interaction.followup.send(f"✅ Simulation derank envoyée pour {target.mention}", ephemeral=True)
+        try:
+            await target.send(dm_text)
+            await interaction.followup.send(f"✅ DM de test derank envoyé à {target.mention}", ephemeral=True)
+        except discord.Forbidden:
+            await interaction.followup.send(f"❌ DM fermés pour {target.mention}", ephemeral=True)
 
     elif evenement.value == "warning":
         rank_name = "Shichibukai"
