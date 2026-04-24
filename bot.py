@@ -742,7 +742,7 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True, da
             f"Reviens en vocal pour le récupérer ! 🎙️\n\n"
             f"━━━━━━━━━━━━━━━━━━━━\n"
             f"*BRAMS SCORE  |  by Freydiss*\n"
-            f"*Envoie `1` ici pour ne plus recevoir ces annonces en DM.*"
+            f"*(Envoie `1` si tu ne veux plus recevoir ces DMs)*"
         )
         try:
             await member.send(dm_text)
@@ -806,7 +806,7 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True, da
                                 f"Continue comme ça ! 💪\n\n"
                                 f"━━━━━━━━━━━━━━━━━━━━\n"
                                 f"*BRAMS SCORE  |  by Freydiss*\n"
-                                f"*Envoie `1` ici pour ne plus recevoir ces annonces en DM.*"
+                                f"*(Envoie `1` si tu ne veux plus recevoir ces DMs)*"
                             )
                             try:
                                 await member.send(dm_rankup)
@@ -1253,7 +1253,7 @@ async def check_alert(member: discord.Member, hours_7d: float, data=None):
                 f"Passe en vocal dès que possible pour sauver ton grade !\n\n"
                 f"━━━━━━━━━━━━━━━━━━━━\n"
                 f"*BRAMS SCORE  |  by Freydiss*\n"
-                f"*Envoie `1` ici pour ne plus recevoir ces annonces en DM.*"
+                f"*(Envoie `1` si tu ne veux plus recevoir ces DMs)*"
             )
             await member.send(dm_text)
             user["alerted"] = current_rank
