@@ -274,7 +274,10 @@ class Profile(commands.Cog):
     async def on_member_join(self, member: discord.Member):
         if member.bot:
             return
-        channel = member.guild.system_channel
+        channel = discord.utils.find(
+            lambda c: "bienvenue" in c.name.lower(),
+            member.guild.text_channels
+        ) or member.guild.system_channel
         if channel is None:
             return
 
