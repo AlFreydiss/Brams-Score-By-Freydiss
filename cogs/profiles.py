@@ -274,13 +274,6 @@ class Profile(commands.Cog):
     async def on_member_join(self, member: discord.Member):
         if member.bot:
             return
-        channel = discord.utils.find(
-            lambda c: "bienvenue" in c.name.lower(),
-            member.guild.text_channels
-        ) or member.guild.system_channel
-        if channel is None:
-            return
-
         ranks_desc = "\n".join([
             "🏴‍☠️ **Pirate** — 10h vocales / semaine",
             "⚔️ **Shichibukai** — 25h vocales / semaine",
@@ -290,9 +283,9 @@ class Profile(commands.Cog):
         ])
 
         embed = discord.Embed(
-            title=f"Bienvenue sur Brams Community, {member.display_name} !",
+            title=f"Bienvenue sur {member.guild.name}, {member.display_name} !",
             description=(
-                f"Heureux de t'accueillir, {member.mention} !\n\n"
+                f"Heureux de t'accueillir !\n\n"
                 "Ce serveur est dédié aux **animés et mangas** et à la communauté Brams. "
                 "Plus tu passes de temps en vocal, plus tu gravis les rangs !\n\n"
                 f"**Système de rangs (heures vocales / 7 jours) :**\n{ranks_desc}\n\n"
@@ -309,7 +302,7 @@ class Profile(commands.Cog):
         embed.set_footer(text="Brams Community • Anime & Manga  •  by Freydiss", icon_url=icon)
 
         try:
-            await channel.send(embed=embed)
+            await member.send(embed=embed)
         except discord.Forbidden:
             pass
 
