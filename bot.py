@@ -742,7 +742,7 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True, da
             f"Reviens en vocal pour le récupérer ! 🎙️\n\n"
             f"━━━━━━━━━━━━━━━━━━━━\n"
             f"*BRAMS SCORE  |  by Freydiss*\n\n"
-            f"*(Fais `/stopdm` sur le serveur si tu ne veux plus recevoir ces DMs)*"
+            f"*(Envoie `1` ici si tu ne veux plus recevoir ces DMs)*"
         )
         try:
             await member.send(dm_text)
@@ -806,7 +806,7 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True, da
                                 f"Continue comme ça ! 💪\n\n"
                                 f"━━━━━━━━━━━━━━━━━━━━\n"
                                 f"*BRAMS SCORE  |  by Freydiss*\n"
-                                f"*(Fais `/stopdm` sur le serveur si tu ne veux plus recevoir ces DMs)*"
+                                f"*(Envoie `1` ici si tu ne veux plus recevoir ces DMs)*"
                             )
                             try:
                                 await member.send(dm_rankup)
@@ -1253,7 +1253,7 @@ async def check_alert(member: discord.Member, hours_7d: float, data=None):
                 f"Passe en vocal dès que possible pour sauver ton grade !\n\n"
                 f"━━━━━━━━━━━━━━━━━━━━\n"
                 f"*BRAMS SCORE  |  by Freydiss*\n"
-                f"*(Fais `/stopdm` sur le serveur si tu ne veux plus recevoir ces DMs)*"
+                f"*(Envoie `1` ici si tu ne veux plus recevoir ces DMs)*"
             )
             await member.send(dm_text)
             user["alerted"] = current_rank
@@ -1442,6 +1442,9 @@ async def on_message(message):
             user = get_user(_CACHE, uid)
             user["dm_optout"] = True
             _DIRTY.add(uid)
+            loop = asyncio.get_running_loop()
+            await loop.run_in_executor(db_executor, _sync_flush_dirty)
+            print(f"[OPT-OUT] {message.author} ({uid}) a désactivé les DMs")
             try:
                 await message.channel.send("✅ Tu ne recevras plus d'annonces en DM de ma part.")
             except Exception:
@@ -2530,7 +2533,7 @@ async def test_event(interaction: discord.Interaction, evenement: app_commands.C
             f"*(Ceci est un message de test — tes données ne sont pas affectées)*\n\n"
             f"━━━━━━━━━━━━━━━━━━━━\n"
             f"*BRAMS SCORE  |  by Freydiss*\n\n"
-            f"*(Fais `/stopdm` sur le serveur si tu ne veux plus recevoir ces DMs)*"
+            f"*(Envoie `1` ici si tu ne veux plus recevoir ces DMs)*"
         )
         target_user = get_user(_CACHE, str(target.id))
         if target_user.get("dm_optout", False):
@@ -2563,7 +2566,7 @@ async def test_event(interaction: discord.Interaction, evenement: app_commands.C
             f"*(Ceci est un message de test — tes données ne sont pas affectées)*\n\n"
             f"━━━━━━━━━━━━━━━━━━━━\n"
             f"*BRAMS SCORE  |  by Freydiss*\n\n"
-            f"*(Fais `/stopdm` sur le serveur si tu ne veux plus recevoir ces DMs)*"
+            f"*(Envoie `1` ici si tu ne veux plus recevoir ces DMs)*"
         )
         target_user = get_user(_CACHE, str(target.id))
         if target_user.get("dm_optout", False):
@@ -2594,7 +2597,7 @@ async def test_event(interaction: discord.Interaction, evenement: app_commands.C
             f"*(Ceci est un message de test — tes données ne sont pas affectées)*\n\n"
             f"━━━━━━━━━━━━━━━━━━━━\n"
             f"*BRAMS SCORE  |  by Freydiss*\n\n"
-            f"*(Fais `/stopdm` sur le serveur si tu ne veux plus recevoir ces DMs)*"
+            f"*(Envoie `1` ici si tu ne veux plus recevoir ces DMs)*"
         )
         target_user = get_user(_CACHE, str(target.id))
         if target_user.get("dm_optout", False):
