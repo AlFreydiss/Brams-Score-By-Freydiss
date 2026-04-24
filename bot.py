@@ -2368,13 +2368,6 @@ async def _citation_handler(interaction: discord.Interaction, perso: str = None)
         print(f"❌ /citation followup failed: {e}")
 
 
-@bot.tree.command(name="stopdm", description="Ne plus recevoir les annonces de rang en DM")
-async def stopdm(interaction: discord.Interaction):
-    uid = str(interaction.user.id)
-    user = get_user(_CACHE, uid)
-    user["dm_optout"] = True
-    _DIRTY.add(uid)
-    await interaction.response.send_message("✅ Tu ne recevras plus d'annonces en DM.", ephemeral=True)
 
 @bot.tree.command(name="citation", description="Citation aléatoire d'un personnage anime")
 @app_commands.describe(perso="Filtrer par personnage (optionnel)")
