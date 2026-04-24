@@ -741,7 +741,7 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True, da
             f"alors qu'il te faut au minimum `{rank_threshold}h` pour garder ce rang.\n\n"
             f"Reviens en vocal pour le récupérer ! 🎙️\n\n"
             f"━━━━━━━━━━━━━━━━━━━━\n"
-            f"*BRAMS SCORE  |  by Freydiss*\n"
+            f"*BRAMS SCORE  |  by Freydiss*\n\n"
             f"*(Envoie `1` si tu ne veux plus recevoir ces DMs)*"
         )
         try:
@@ -2521,7 +2521,7 @@ async def test_event(interaction: discord.Interaction, evenement: app_commands.C
             f"Reviens en vocal pour le récupérer ! 🎙️\n\n"
             f"*(Ceci est un message de test — tes données ne sont pas affectées)*\n\n"
             f"━━━━━━━━━━━━━━━━━━━━\n"
-            f"*BRAMS SCORE  |  by Freydiss*\n"
+            f"*BRAMS SCORE  |  by Freydiss*\n\n"
             f"*(Envoie `1` si tu ne veux plus recevoir ces DMs)*"
         )
         target_user = get_user(_CACHE, str(target.id))
@@ -2554,7 +2554,7 @@ async def test_event(interaction: discord.Interaction, evenement: app_commands.C
             f"Il te manque environ `{heures_manquantes}h` — passe en vocal dès que possible ! 🚨\n\n"
             f"*(Ceci est un message de test — tes données ne sont pas affectées)*\n\n"
             f"━━━━━━━━━━━━━━━━━━━━\n"
-            f"*BRAMS SCORE  |  by Freydiss*\n"
+            f"*BRAMS SCORE  |  by Freydiss*\n\n"
             f"*(Envoie `1` si tu ne veux plus recevoir ces DMs)*"
         )
         target_user = get_user(_CACHE, str(target.id))
@@ -2585,7 +2585,7 @@ async def test_event(interaction: discord.Interaction, evenement: app_commands.C
             f"Continue comme ça ! 💪\n\n"
             f"*(Ceci est un message de test — tes données ne sont pas affectées)*\n\n"
             f"━━━━━━━━━━━━━━━━━━━━\n"
-            f"*BRAMS SCORE  |  by Freydiss*\n"
+            f"*BRAMS SCORE  |  by Freydiss*\n\n"
             f"*(Envoie `1` si tu ne veux plus recevoir ces DMs)*"
         )
         target_user = get_user(_CACHE, str(target.id))
