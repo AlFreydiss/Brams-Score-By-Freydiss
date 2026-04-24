@@ -1229,7 +1229,17 @@ async def check_alert(member: discord.Member, hours_7d: float, data=None):
             _DIRTY.add(uid)
             print(f"📨 Alerte DM envoyée à {member.display_name} ({current_rank} : {hours_7d:.1f}h/{threshold}h)")
         except discord.Forbidden:
-            print(f"🔒 DM fermés pour {member.display_name}, alerte impossible")
+            rappel_ch = discord.utils.find(
+                lambda c: "rappel" in c.name.lower(),
+                member.guild.text_channels
+            )
+            if rappel_ch:
+                try:
+                    await rappel_ch.send(f"{member.mention}\n{dm_text}")
+                except Exception:
+                    pass
+            user["alerted"] = current_rank
+            _DIRTY.add(uid)
         except Exception as e:
             print(f"❌ Erreur DM alerte à {member.display_name}: {e}")
 
