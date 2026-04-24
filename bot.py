@@ -731,19 +731,27 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True, da
                 print(f"⚠️ remove_roles {member.display_name} ({rank_name}): {e}")
         rank_emoji = _ANNOUNCE_RANK_EMOJIS.get(rank_name, "🎖️")
         rank_threshold = next((t for t, n in RANKS if n == rank_name), 0)
+        dm_text = (
+            f"⬇️ **Tu as perdu ton rank !**\n\n"
+            f"Salut {member.display_name} ! Tu viens de perdre le rang **{rank_emoji} {rank_name}** "
+            f"sur le serveur **{guild.name}**.\n\n"
+            f"Tes heures vocales sur les 7 derniers jours sont descendues à `{hours_7d:.1f}h`, "
+            f"alors qu'il te faut au minimum `{rank_threshold}h` pour garder ce rang.\n\n"
+            f"Reviens en vocal pour le récupérer ! 🎙️\n\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"*BRAMS SCORE  |  by Freydiss*"
+        )
         try:
-            await member.send(
-                f"⬇️ **Tu as perdu ton rank !**\n\n"
-                f"Salut {member.display_name} ! Tu viens de perdre le rang **{rank_emoji} {rank_name}** "
-                f"sur le serveur **{guild.name}**.\n\n"
-                f"Tes heures vocales sur les 7 derniers jours sont descendues à `{hours_7d:.1f}h`, "
-                f"alors qu'il te faut au minimum `{rank_threshold}h` pour garder ce rang.\n\n"
-                f"Reviens en vocal pour le récupérer ! 🎙️\n\n"
-                f"━━━━━━━━━━━━━━━━━━━━\n"
-                f"*BRAMS SCORE  |  by Freydiss*"
-            )
+            await member.send(dm_text)
         except discord.Forbidden:
-            pass
+            rappel_ch = bot.get_channel(1495083283816644658)
+            if rappel_ch:
+                try:
+                    await rappel_ch.send(
+                        f"{member.mention}\n{dm_text}"
+                    )
+                except Exception:
+                    pass
 
     if announce and (ranks_to_add or ranks_to_remove):
         rank_threshold_map = {name: threshold for threshold, name in RANKS}
