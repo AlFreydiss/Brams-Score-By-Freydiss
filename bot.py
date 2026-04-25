@@ -747,15 +747,7 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True, da
         try:
             await member.send(dm_text)
         except discord.Forbidden:
-            rappel_ch = discord.utils.find(
-                lambda c: "rappel" in c.name.lower(),
-                guild.text_channels
-            )
-            if rappel_ch:
-                try:
-                    await rappel_ch.send(f"{member.mention}\n{dm_text}")
-                except Exception:
-                    pass
+            pass
 
     if announce and (ranks_to_add or ranks_to_remove):
         rank_threshold_map = {name: threshold for threshold, name in RANKS}
@@ -811,15 +803,7 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True, da
                             try:
                                 await member.send(dm_rankup)
                             except discord.Forbidden:
-                                rappel_ch = discord.utils.find(
-                                    lambda c: "rappel" in c.name.lower(),
-                                    guild.text_channels
-                                )
-                                if rappel_ch:
-                                    try:
-                                        await rappel_ch.send(f"{member.mention}\n{dm_rankup}")
-                                    except Exception:
-                                        pass
+                                pass
                     except Exception as e:
                         print(f"[RANK] Erreur annonce {member.display_name} ({rank_name}): {e}")
 
@@ -1260,15 +1244,6 @@ async def check_alert(member: discord.Member, hours_7d: float, data=None):
             _DIRTY.add(uid)
             print(f"📨 Alerte DM envoyée à {member.display_name} ({current_rank} : {hours_7d:.1f}h/{threshold}h)")
         except discord.Forbidden:
-            rappel_ch = discord.utils.find(
-                lambda c: "rappel" in c.name.lower(),
-                member.guild.text_channels
-            )
-            if rappel_ch:
-                try:
-                    await rappel_ch.send(f"{member.mention}\n{dm_text}")
-                except Exception:
-                    pass
             user["alerted"] = current_rank
             _DIRTY.add(uid)
         except Exception as e:
