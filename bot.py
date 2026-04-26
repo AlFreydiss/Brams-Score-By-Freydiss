@@ -518,11 +518,11 @@ def clean_old_data(user):
     user["vocal_sessions"] = [s for s in user["vocal_sessions"] if s["end"] >= cutoff]
     user["messages"]       = [ts for ts in user["messages"] if ts >= cutoff]
 
-def total_seconds(sessions, join_time=None):
+def total_seconds(sessions, join_time=None, extra=0):
     total = sum(s["end"] - s["start"] for s in sessions)
     if join_time:
         total += now_ts() - join_time
-    return total
+    return total + extra
 
 def total_messages(messages):
     return len(messages)
@@ -1595,7 +1595,7 @@ async def stats(interaction: discord.Interaction):
     s1d  = seconds_in_period(user["vocal_sessions"], 1, join_time=jt)
     s7d  = seconds_in_period(user["vocal_sessions"], 7, join_time=jt)
     s14d = seconds_in_period(user["vocal_sessions"], 14, join_time=jt)
-    s_tot = total_seconds(user["vocal_sessions"], join_time=jt)
+    s_tot = total_seconds(user["vocal_sessions"], join_time=jt, extra=user.get("extra_seconds", 0))
     m1d  = messages_in_period(user["messages"], 1)
     m7d  = messages_in_period(user["messages"], 7)
     m14d = messages_in_period(user["messages"], 14)
@@ -1697,7 +1697,7 @@ async def top(interaction: discord.Interaction, periode: app_commands.Choice[str
             continue
         ujt = udata.get("join_time")
         if all_time:
-            sec = total_seconds(udata.get("vocal_sessions", []), join_time=ujt)
+            sec = total_seconds(udata.get("vocal_sessions", []), join_time=ujt, extra=udata.get("extra_seconds", 0))
             msgs = total_messages(udata.get("messages", []))
         else:
             sec = seconds_in_period(udata.get("vocal_sessions", []), days, join_time=ujt)
@@ -1790,7 +1790,7 @@ async def serveur(interaction: discord.Interaction):
             en_vocal_now += 1
         sec  = seconds_in_period(udata.get("vocal_sessions", []), 7, join_time=ujt)
         msgs = messages_in_period(udata.get("messages", []), 7)
-        sec_all = total_seconds(udata.get("vocal_sessions", []), join_time=ujt)
+        sec_all = total_seconds(udata.get("vocal_sessions", []), join_time=ujt, extra=udata.get("extra_seconds", 0))
         msgs_all = total_messages(udata.get("messages", []))
         total_vocal_7d += sec
         total_msg_7d   += msgs
@@ -1905,7 +1905,7 @@ async def tout(interaction: discord.Interaction):
     s1d  = seconds_in_period(user["vocal_sessions"], 1, join_time=jt)
     s7d  = seconds_in_period(user["vocal_sessions"], 7, join_time=jt)
     s14d = seconds_in_period(user["vocal_sessions"], 14, join_time=jt)
-    s_tot = total_seconds(user["vocal_sessions"], join_time=jt)
+    s_tot = total_seconds(user["vocal_sessions"], join_time=jt, extra=user.get("extra_seconds", 0))
     m1d  = messages_in_period(user["messages"], 1)
     m7d  = messages_in_period(user["messages"], 7)
     m14d = messages_in_period(user["messages"], 14)
@@ -2046,7 +2046,7 @@ async def chercher(interaction: discord.Interaction, membre: discord.Member):
     s1d  = seconds_in_period(user["vocal_sessions"], 1, join_time=jt)
     s7d  = seconds_in_period(user["vocal_sessions"], 7, join_time=jt)
     s14d = seconds_in_period(user["vocal_sessions"], 14, join_time=jt)
-    s_tot = total_seconds(user["vocal_sessions"], join_time=jt)
+    s_tot = total_seconds(user["vocal_sessions"], join_time=jt, extra=user.get("extra_seconds", 0))
     m1d  = messages_in_period(user["messages"], 1)
     m7d  = messages_in_period(user["messages"], 7)
     m14d = messages_in_period(user["messages"], 14)
@@ -2380,6 +2380,37 @@ async def addheures(interaction: discord.Interaction, membre: discord.Member, he
         print("⚠️ /addheures : token expiré, impossible d'envoyer")
     except Exception as e:
         print(f"❌ /addheures followup failed: {e}")
+
+
+@bot.tree.command(name="addheuresalltime", description="[ADMIN] Ajouter des heures au compteur all-time uniquement (permanent, ne diminue jamais)")
+@app_commands.default_permissions(administrator=True)
+@app_commands.checks.has_permissions(administrator=True)
+async def addheuresalltime(interaction: discord.Interaction, membre: discord.Member, heures: float):
+    try:
+        await interaction.response.defer(ephemeral=True)
+    except discord.NotFound:
+        print("⚠️ /addheuresalltime : interaction expirée avant defer")
+        return
+    except Exception as e:
+        print(f"❌ /addheuresalltime defer failed: {e}")
+        return
+
+    uid = str(membre.id)
+    user = get_user(_CACHE, uid)
+    extra_before = user.get("extra_seconds", 0)
+    user["extra_seconds"] = extra_before + heures * 3600
+    _DIRTY.add(uid)
+
+    s_tot = total_seconds(user["vocal_sessions"], join_time=user.get("join_time"), extra=user["extra_seconds"])
+    try:
+        await interaction.followup.send(
+            f"✅ +{heures}h ajoutées au all-time de {membre.mention} → {s_tot / 3600:.1f}h all-time total",
+            ephemeral=True
+        )
+    except discord.NotFound:
+        print("⚠️ /addheuresalltime : token expiré, impossible d'envoyer")
+    except Exception as e:
+        print(f"❌ /addheuresalltime followup failed: {e}")
 
 
 @bot.tree.command(name="resetheures", description="[ADMIN] Réinitialiser les heures vocales d'un membre")
