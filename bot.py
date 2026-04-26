@@ -515,6 +515,10 @@ _CLEAN_CUTOFF_DAYS = 8
 
 def clean_old_data(user):
     cutoff = now_ts() - _CLEAN_CUTOFF_DAYS * 86400
+    # Preserve duration of purged sessions in extra_seconds so all-time hours are never lost
+    for s in user["vocal_sessions"]:
+        if s["end"] < cutoff:
+            user["extra_seconds"] = user.get("extra_seconds", 0) + (s["end"] - s["start"])
     user["vocal_sessions"] = [s for s in user["vocal_sessions"] if s["end"] >= cutoff]
     user["messages"]       = [ts for ts in user["messages"] if ts >= cutoff]
 
