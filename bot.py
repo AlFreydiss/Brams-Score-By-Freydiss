@@ -3162,7 +3162,7 @@ async def _start_quiz_session(inter: discord.Interaction, n: int, category: str 
     cat_display = cat_labels.get(category, "anime")
     loading_embed = discord.Embed(
         title="🎌 Génération du quiz...",
-        description=f"L'IA prépare **{n} questions** sur **{cat_display}** ⏳\n*Que le meilleur gagne !*",
+        description=f"**{n} questions** sur **{cat_display}** en cours de génération ⏳\n*Que le meilleur gagne !*",
         color=discord.Color.from_rgb(100, 50, 200)
     )
     loading_msg = None
