@@ -3110,34 +3110,69 @@ class _ReplayView(discord.ui.View):
         await inter.response.edit_message(view=self)
         await _start_quiz_session(inter, self.n, self.category)
 
+_CAT_LABELS_MAP = {
+    "general": "🎌 Anime général", "one_piece": "🌊 One Piece", "naruto": "🍥 Naruto",
+    "bleach": "🗡️ Bleach", "deathnote": "💀 Death Note", "aot": "🔥 Attack on Titan",
+    "dbz": "🏋️ Dragon Ball Z", "hxh": "🎯 Hunter x Hunter", "jojo": "✨ JoJo's Bizarre Adv.",
+    "demon_slayer": "⚔️ Demon Slayer", "mha": "💪 My Hero Academia",
+    "jjk": "👁️ Jujutsu Kaisen", "fma": "⚗️ Fullmetal Alchemist",
+    "chainsaw": "🪚 Chainsaw Man", "black_clover": "🍀 Black Clover", "citation": "💬 Devine la Citation",
+}
+
+
 class _NbQuestionsButton(discord.ui.Button):
-    def __init__(self, label: str, n: int, style: discord.ButtonStyle, emoji: str, user_id: int, category: str):
+    def __init__(self, label: str, n: int, style: discord.ButtonStyle, emoji: str,
+                 user_id: int, category: str, challenged_id: int | None = None):
         super().__init__(label=label, style=style, emoji=emoji)
-        self._n        = n
-        self._user_id  = user_id
-        self._category = category
+        self._n             = n
+        self._user_id       = user_id
+        self._category      = category
+        self._challenged_id = challenged_id
 
     async def callback(self, inter: discord.Interaction):
         if inter.user.id != self._user_id:
             await inter.response.send_message("Ce quiz ne t'appartient pas.", ephemeral=True)
             return
         self.view.stop()
-        await inter.response.defer()
-        await _start_quiz_session(inter, self._n, self._category)
+
+        if self._challenged_id:
+            # ── Mode duel : afficher le challenge directement ──────────────
+            challenged = inter.guild.get_member(self._challenged_id) if inter.guild else None
+            cname = challenged.display_name if challenged else str(self._challenged_id)
+            cmention = challenged.mention if challenged else str(self._challenged_id)
+            sep = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            embed = discord.Embed(
+                title="⚔️  Défi Quiz !",
+                description=(
+                    f"{sep}\n"
+                    f"**{inter.user.display_name}** défie **{cname}** !\n\n"
+                    f"Catégorie : {_CAT_LABELS_MAP.get(self._category, self._category)}\n"
+                    f"Questions : **{self._n}**\n"
+                    f"{sep}\n"
+                    f"{cmention}, tu as **60 secondes** pour accepter."
+                ),
+                color=discord.Color.orange()
+            )
+            view = _DuelChallengeView(self._user_id, self._challenged_id, self._category, self._n)
+            await inter.response.edit_message(embed=embed, view=view)
+        else:
+            # ── Mode solo ──────────────────────────────────────────────────
+            await inter.response.defer()
+            await _start_quiz_session(inter, self._n, self._category)
 
 
 class _DurationView(discord.ui.View):
-    def __init__(self, user_id: int, category: str = "general"):
+    def __init__(self, user_id: int, category: str = "general", challenged_id: int | None = None):
         super().__init__(timeout=60)
-        self.add_item(_NbQuestionsButton("5 questions",  5,  discord.ButtonStyle.success, "🎯", user_id, category))
-        self.add_item(_NbQuestionsButton("10 questions", 10, discord.ButtonStyle.primary,  "⚡", user_id, category))
-        self.add_item(_NbQuestionsButton("15 questions", 15, discord.ButtonStyle.danger,   "🔥", user_id, category))
+        self.add_item(_NbQuestionsButton("5 questions",  5,  discord.ButtonStyle.success, "🎯", user_id, category, challenged_id))
+        self.add_item(_NbQuestionsButton("10 questions", 10, discord.ButtonStyle.primary,  "⚡", user_id, category, challenged_id))
+        self.add_item(_NbQuestionsButton("15 questions", 15, discord.ButtonStyle.danger,   "🔥", user_id, category, challenged_id))
 
 
 class _QuizCategorySelect(discord.ui.Select):
-    """Select Menu : choix de la catégorie de quiz."""
-    def __init__(self, user_id: int):
-        self.user_id = user_id
+    def __init__(self, user_id: int, challenged_id: int | None = None):
+        self.user_id       = user_id
+        self.challenged_id = challenged_id
         _LABELS = [
             ("general",      "🎌 Anime général",        "Tous les animés mélangés"),
             ("one_piece",    "🌊 One Piece",             "Fruits du Démon, arcs, personnages"),
@@ -3156,29 +3191,22 @@ class _QuizCategorySelect(discord.ui.Select):
             ("black_clover", "🍀 Black Clover",          "Magie, grimoires, Chevaliers"),
             ("citation",     "💬 Devine la Citation",    "Qui a dit cette réplique ?"),
         ]
-        options = [
-            discord.SelectOption(label=label, value=val, description=desc)
-            for val, label, desc in _LABELS
-        ]
-        super().__init__(placeholder="Choisis une catégorie...", min_values=1, max_values=1, options=options)
+        super().__init__(
+            placeholder="Choisis une catégorie...", min_values=1, max_values=1,
+            options=[discord.SelectOption(label=l, value=v, description=d) for v, l, d in _LABELS]
+        )
 
     async def callback(self, inter: discord.Interaction):
         if inter.user.id != self.user_id:
             await inter.response.send_message("Ce quiz ne t'appartient pas.", ephemeral=True)
             return
         self.view.stop()
-        category = self.values[0]
-        cat_label = dict(v for v in [(v, l) for v, l, _ in [
-            ("general","🎌 Anime général"), ("one_piece","🌊 One Piece"), ("naruto","🍥 Naruto"),
-            ("bleach","🗡️ Bleach"), ("deathnote","💀 Death Note"), ("aot","🔥 Attack on Titan"),
-            ("dbz","🏋️ Dragon Ball Z"), ("hxh","🎯 Hunter x Hunter"), ("jojo","✨ JoJo's Bizarre Adv."),
-            ("demon_slayer","⚔️ Demon Slayer"), ("mha","💪 My Hero Academia"),
-            ("jjk","👁️ Jujutsu Kaisen"), ("fma","⚗️ Fullmetal Alchemist"),
-            ("chainsaw","🪚 Chainsaw Man"), ("black_clover","🍀 Black Clover"), ("citation","💬 Devine la Citation"),
-        ]]).get(category, category)
+        category  = self.values[0]
+        cat_label = _CAT_LABELS_MAP.get(category, category)
         sep = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        title = "⚔️  Duel — Combien de questions ?" if self.challenged_id else "🎯  Combien de questions ?"
         embed = discord.Embed(
-            title="🎯  Combien de questions ?",
+            title=title,
             description=(
                 f"Catégorie : **{cat_label}**\n\n"
                 f"{sep}\n"
@@ -3189,13 +3217,13 @@ class _QuizCategorySelect(discord.ui.Select):
             ),
             color=discord.Color.from_rgb(100, 50, 200),
         )
-        await inter.response.edit_message(embed=embed, view=_DurationView(self.user_id, category))
+        await inter.response.edit_message(embed=embed, view=_DurationView(self.user_id, category, self.challenged_id))
 
 
 class _CategoryView(discord.ui.View):
-    def __init__(self, user_id: int):
+    def __init__(self, user_id: int, challenged_id: int | None = None):
         super().__init__(timeout=60)
-        self.add_item(_QuizCategorySelect(user_id))
+        self.add_item(_QuizCategorySelect(user_id, challenged_id))
 
 
 async def _start_quiz_session(inter: discord.Interaction, n: int, category: str = "general"):
@@ -3276,8 +3304,7 @@ async def _start_quiz_session(inter: discord.Interaction, n: int, category: str 
     await _send_next_question(inter, session)
 
 
-async def _quiz_entry(interaction: discord.Interaction, category: str = ""):
-    """Point d'entrée commun pour /quiz et /quizz."""
+async def _quiz_entry(interaction: discord.Interaction, category: str = "", challenged_id: int | None = None):
     try:
         await interaction.response.defer(ephemeral=False)
     except discord.NotFound:
@@ -3287,22 +3314,30 @@ async def _quiz_entry(interaction: discord.Interaction, category: str = ""):
         return
 
     uid = interaction.user.id
+    is_duel = challenged_id is not None
+    sep = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
     if category:
-        # Catégorie fournie en paramètre → passe directement au choix du nombre
+        cat_label = _CAT_LABELS_MAP.get(category, category)
+        title = "⚔️  Duel — Combien de questions ?" if is_duel else "🎯  Combien de questions ?"
         embed = discord.Embed(
-            title="Quiz Animé 🎌",
-            description="Combien de questions veux-tu ?",
+            title=title,
+            description=(
+                f"Catégorie : **{cat_label}**\n\n"
+                f"{sep}\n"
+                f"🎯  **5 questions**  —  Quiz express\n"
+                f"⚡  **10 questions**  —  Session standard\n"
+                f"🔥  **15 questions**  —  Pour les vrais\n"
+                f"{sep}"
+            ),
             color=discord.Color.from_rgb(100, 50, 200)
         )
-        view = _DurationView(uid, category)
+        view = _DurationView(uid, category, challenged_id)
     else:
-        # Pas de catégorie → affiche le select de catégorie d'abord
-        embed = discord.Embed(
-            title="Quiz Animé 🎌",
-            description="Choisis une catégorie pour commencer !",
-            color=discord.Color.from_rgb(100, 50, 200)
-        )
-        view = _CategoryView(uid)
+        title = "⚔️  Duel Quiz — Choisis une catégorie" if is_duel else "🎌  Quiz Animé"
+        desc  = "Choisis la catégorie pour le duel !" if is_duel else "Choisis une catégorie pour commencer !"
+        embed = discord.Embed(title=title, description=desc, color=discord.Color.from_rgb(100, 50, 200))
+        view  = _CategoryView(uid, challenged_id)
 
     try:
         await interaction.followup.send(embed=embed, view=view)
@@ -3312,8 +3347,12 @@ async def _quiz_entry(interaction: discord.Interaction, category: str = ""):
         print(f"❌ quiz followup: {e}")
 
 
-@bot.tree.command(name="quizz", description="Quiz animé — teste tes connaissances sur les animés !")
-@app_commands.describe(categorie="Catégorie (optionnel — laisse vide pour choisir)")
+@bot.tree.command(name="quizz", description="Quiz animé solo ou duel — teste tes connaissances !")
+@app_commands.guilds(*GUILD_IDS)
+@app_commands.describe(
+    categorie="Catégorie (optionnel)",
+    membre="Membre à défier en duel (optionnel)"
+)
 @app_commands.choices(categorie=[
     app_commands.Choice(name="🎌 Anime général",        value="general"),
     app_commands.Choice(name="🌊 One Piece",             value="one_piece"),
@@ -3332,8 +3371,19 @@ async def _quiz_entry(interaction: discord.Interaction, category: str = ""):
     app_commands.Choice(name="🍀 Black Clover",          value="black_clover"),
     app_commands.Choice(name="💬 Devine la Citation",    value="citation"),
 ])
-async def quizz(interaction: discord.Interaction, categorie: str = ""):
-    await _quiz_entry(interaction, categorie)
+async def quizz(interaction: discord.Interaction, categorie: str = "", membre: discord.Member | None = None):
+    if membre:
+        if membre.bot or membre.id == interaction.user.id:
+            await interaction.response.send_message(
+                "Tu ne peux pas te défier toi-même ni un bot.", ephemeral=True
+            )
+            return
+        if interaction.user.id in QUIZ_SESSIONS or membre.id in QUIZ_SESSIONS:
+            await interaction.response.send_message(
+                "L'un des joueurs a déjà un quiz en cours.", ephemeral=True
+            )
+            return
+    await _quiz_entry(interaction, categorie, challenged_id=membre.id if membre else None)
 
 
 async def _send_duel_result(duel: _DuelState, inter: discord.Interaction):
