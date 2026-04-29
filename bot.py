@@ -2884,7 +2884,8 @@ async def _send_next_question(inter: discord.Interaction, sess: _QuizSession):
     # ── Écran de fin ──────────────────────────────────────────────────────────
     if sess.idx >= total:
         QUIZ_SESSIONS.pop(sess.user_id, None)
-        pct = sess.score / total if total else 0
+        max_pts = sum(_DIFF_POINTS.get(q.get("difficulte", "moyen").lower(), 1) + 2 for q in sess.questions)
+        pct = sess.points / max_pts if max_pts else 0
         rank_emoji, rank_label = _quiz_rank(pct)
 
         embed = discord.Embed(
@@ -3147,12 +3148,78 @@ class _NbQuestionsButton(discord.ui.Button):
             await _start_quiz_session(inter, self._n, self._category)
 
 
+class _CustomNbModal(discord.ui.Modal, title="Nombre de questions personnalisé"):
+    nb = discord.ui.TextInput(
+        label="Nombre de questions (1 à 30)",
+        placeholder="Ex : 7",
+        min_length=1,
+        max_length=2,
+        required=True,
+    )
+
+    def __init__(self, user_id: int, category: str, challenged_id: int | None = None):
+        super().__init__()
+        self._user_id       = user_id
+        self._category      = category
+        self._challenged_id = challenged_id
+
+    async def on_submit(self, inter: discord.Interaction):
+        try:
+            n = int(self.nb.value.strip())
+        except ValueError:
+            await inter.response.send_message("Entre un nombre valide (ex: 7).", ephemeral=True)
+            return
+        if not 1 <= n <= 30:
+            await inter.response.send_message("Le nombre doit être entre 1 et 30.", ephemeral=True)
+            return
+
+        if self._challenged_id:
+            guild = inter.guild
+            challenged = guild.get_member(self._challenged_id) if guild else None
+            cname    = challenged.display_name if challenged else str(self._challenged_id)
+            cmention = challenged.mention       if challenged else str(self._challenged_id)
+            sep = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            embed = discord.Embed(
+                title="⚔️  Défi Quiz !",
+                description=(
+                    f"{sep}\n"
+                    f"**{inter.user.display_name}** défie **{cname}** !\n\n"
+                    f"Catégorie : {_CAT_LABELS_MAP.get(self._category, self._category)}\n"
+                    f"Questions : **{n}**\n"
+                    f"{sep}\n"
+                    f"{cmention}, tu as **60 secondes** pour accepter."
+                ),
+                color=discord.Color.orange()
+            )
+            view = _DuelChallengeView(self._user_id, self._challenged_id, self._category, n)
+            await inter.response.send_message(embed=embed, view=view)
+        else:
+            await inter.response.defer()
+            await _start_quiz_session(inter, n, self._category)
+
+
+class _CustomNbButton(discord.ui.Button):
+    def __init__(self, user_id: int, category: str, challenged_id: int | None = None):
+        super().__init__(label="Personnalisé", style=discord.ButtonStyle.secondary, emoji="✏️")
+        self._user_id       = user_id
+        self._category      = category
+        self._challenged_id = challenged_id
+
+    async def callback(self, inter: discord.Interaction):
+        if inter.user.id != self._user_id:
+            await inter.response.send_message("Ce quiz ne t'appartient pas.", ephemeral=True)
+            return
+        self.view.stop()
+        await inter.response.send_modal(_CustomNbModal(self._user_id, self._category, self._challenged_id))
+
+
 class _DurationView(discord.ui.View):
     def __init__(self, user_id: int, category: str = "general", challenged_id: int | None = None):
         super().__init__(timeout=60)
         self.add_item(_NbQuestionsButton("5 questions",  5,  discord.ButtonStyle.success, "🎯", user_id, category, challenged_id))
         self.add_item(_NbQuestionsButton("10 questions", 10, discord.ButtonStyle.primary,  "⚡", user_id, category, challenged_id))
         self.add_item(_NbQuestionsButton("15 questions", 15, discord.ButtonStyle.danger,   "🔥", user_id, category, challenged_id))
+        self.add_item(_CustomNbButton(user_id, category, challenged_id))
 
 
 class _QuizCategorySelect(discord.ui.Select):
@@ -3199,6 +3266,7 @@ class _QuizCategorySelect(discord.ui.Select):
                 f"🎯  **5 questions**  —  Quiz express\n"
                 f"⚡  **10 questions**  —  Session standard\n"
                 f"🔥  **15 questions**  —  Pour les vrais\n"
+                f"✏️  **Personnalisé**  —  Ton propre nombre (1-30)\n"
                 f"{sep}"
             ),
             color=discord.Color.from_rgb(100, 50, 200),
@@ -3314,6 +3382,7 @@ async def _quiz_entry(interaction: discord.Interaction, category: str = "", chal
                 f"🎯  **5 questions**  —  Quiz express\n"
                 f"⚡  **10 questions**  —  Session standard\n"
                 f"🔥  **15 questions**  —  Pour les vrais\n"
+                f"✏️  **Personnalisé**  —  Ton propre nombre (1-30)\n"
                 f"{sep}"
             ),
             color=discord.Color.from_rgb(100, 50, 200)
