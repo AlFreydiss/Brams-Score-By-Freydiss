@@ -3334,58 +3334,28 @@ class _CustomQuestionsModal(discord.ui.Modal, title="Nombre de questions"):
             await _start_quiz_session(inter, n, self._category)
 
 
-class _CustomPointsModal(discord.ui.Modal, title="Score à atteindre"):
-    nb = discord.ui.TextInput(
-        label="Score cible en points (5 à 200)",
-        placeholder="Ex : 50",
-        min_length=1, max_length=3, required=True,
-    )
+class _ScoreTargetButton(discord.ui.Button):
+    def __init__(self, pts: int, user_id: int, category: str):
+        super().__init__(label=f"{pts} pts", style=discord.ButtonStyle.primary, emoji="✨")
+        self._pts      = pts
+        self._user_id  = user_id
+        self._category = category
 
-    def __init__(self, user_id: int, category: str):
-        super().__init__()
-        self._user_id   = user_id
-        self._category  = category
-
-    async def on_submit(self, inter: discord.Interaction):
-        try:
-            target = int(self.nb.value.strip())
-        except ValueError:
-            await inter.response.send_message("Entre un nombre valide (ex: 50).", ephemeral=True)
+    async def callback(self, inter: discord.Interaction):
+        if inter.user.id != self._user_id:
+            await inter.response.send_message("Ce quiz ne t'appartient pas.", ephemeral=True)
             return
-        if not 5 <= target <= 200:
-            await inter.response.send_message("Le score doit être entre 5 et 200.", ephemeral=True)
-            return
-        # Génère assez de questions pour (probablement) atteindre l'objectif
-        n = min(30, max(5, round(target / 2) + 3))
+        self.view.stop()
         await inter.response.defer()
-        await _start_quiz_session(inter, n, self._category, target_points=target)
+        n = min(30, max(5, round(self._pts / 2) + 3))
+        await _start_quiz_session(inter, n, self._category, target_points=self._pts)
 
 
-class _PersonnaliseeTypeView(discord.ui.View):
-    def __init__(self, user_id: int, category: str, challenged_id: int | None = None):
+class _ScoreTargetView(discord.ui.View):
+    def __init__(self, user_id: int, category: str):
         super().__init__(timeout=60)
-        self._user_id       = user_id
-        self._category      = category
-        self._challenged_id = challenged_id
-
-    @discord.ui.button(label="Par questions", style=discord.ButtonStyle.primary, emoji="🎯")
-    async def par_questions(self, inter: discord.Interaction, button: discord.ui.Button):
-        if inter.user.id != self._user_id:
-            await inter.response.send_message("Ce quiz ne t'appartient pas.", ephemeral=True)
-            return
-        self.stop()
-        await inter.response.send_modal(_CustomQuestionsModal(self._user_id, self._category, self._challenged_id))
-
-    @discord.ui.button(label="Par score", style=discord.ButtonStyle.success, emoji="✨")
-    async def par_score(self, inter: discord.Interaction, button: discord.ui.Button):
-        if inter.user.id != self._user_id:
-            await inter.response.send_message("Ce quiz ne t'appartient pas.", ephemeral=True)
-            return
-        if self._challenged_id:
-            await inter.response.send_message("Le mode Par score n'est pas disponible en duel.", ephemeral=True)
-            return
-        self.stop()
-        await inter.response.send_modal(_CustomPointsModal(self._user_id, self._category))
+        for pts in (20, 50, 100, 200):
+            self.add_item(_ScoreTargetButton(pts, user_id, category))
 
 
 class _CustomNbButton(discord.ui.Button):
@@ -3400,21 +3370,7 @@ class _CustomNbButton(discord.ui.Button):
             await inter.response.send_message("Ce quiz ne t'appartient pas.", ephemeral=True)
             return
         self.view.stop()
-        sep = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-        embed = discord.Embed(
-            title="✏️  Personnalisé — Mode de jeu",
-            description=(
-                f"{sep}\n"
-                f"🎯  **Par questions**  —  Joue un nombre fixe de questions\n"
-                f"✨  **Par score**  —  Joue jusqu'à atteindre un score cible\n"
-                f"{sep}"
-            ),
-            color=discord.Color.from_rgb(100, 50, 200)
-        )
-        await inter.response.edit_message(
-            embed=embed,
-            view=_PersonnaliseeTypeView(self._user_id, self._category, self._challenged_id)
-        )
+        await inter.response.send_modal(_CustomQuestionsModal(self._user_id, self._category, self._challenged_id))
 
 
 class _DurationView(discord.ui.View):
@@ -3427,9 +3383,10 @@ class _DurationView(discord.ui.View):
 
 
 class _QuizCategorySelect(discord.ui.Select):
-    def __init__(self, user_id: int, challenged_id: int | None = None):
+    def __init__(self, user_id: int, challenged_id: int | None = None, score_mode: bool = False):
         self.user_id       = user_id
         self.challenged_id = challenged_id
+        self.score_mode    = score_mode
         _LABELS = [
             ("citation",     "💬 Devine la Citation",    "Qui a dit cette réplique ?"),
             ("general",      "🎌 Anime général",        "Tous les animés mélangés"),
@@ -3461,27 +3418,42 @@ class _QuizCategorySelect(discord.ui.Select):
         category  = self.values[0]
         cat_label = _CAT_LABELS_MAP.get(category, category)
         sep = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-        title = "⚔️  Duel — Combien de questions ?" if self.challenged_id else "🎯  Combien de questions ?"
-        embed = discord.Embed(
-            title=title,
-            description=(
-                f"Catégorie : **{cat_label}**\n\n"
-                f"{sep}\n"
-                f"🎯  **5 questions**  —  Quiz express\n"
-                f"⚡  **10 questions**  —  Session standard\n"
-                f"🔥  **15 questions**  —  Pour les vrais\n"
-                f"✏️  **Personnalisé**  —  Ton propre nombre (1-30)\n"
-                f"{sep}"
-            ),
-            color=discord.Color.from_rgb(100, 50, 200),
-        )
-        await inter.response.edit_message(embed=embed, view=_DurationView(self.user_id, category, self.challenged_id))
+
+        if self.score_mode:
+            embed = discord.Embed(
+                title="✨  Score à atteindre",
+                description=(
+                    f"Catégorie : **{cat_label}**\n\n"
+                    f"{sep}\n"
+                    f"Le quiz s'arrête dès que tu atteins l'objectif de points !\n"
+                    f"✨  **20 pts**  ·  ✨  **50 pts**  ·  ✨  **100 pts**  ·  ✨  **200 pts**\n"
+                    f"{sep}"
+                ),
+                color=discord.Color.from_rgb(50, 180, 120),
+            )
+            await inter.response.edit_message(embed=embed, view=_ScoreTargetView(self.user_id, category))
+        else:
+            title = "⚔️  Duel — Combien de questions ?" if self.challenged_id else "🎯  Combien de questions ?"
+            embed = discord.Embed(
+                title=title,
+                description=(
+                    f"Catégorie : **{cat_label}**\n\n"
+                    f"{sep}\n"
+                    f"🎯  **5 questions**  —  Quiz express\n"
+                    f"⚡  **10 questions**  —  Session standard\n"
+                    f"🔥  **15 questions**  —  Pour les vrais\n"
+                    f"✏️  **Personnalisé**  —  Ton propre nombre (1–30)\n"
+                    f"{sep}"
+                ),
+                color=discord.Color.from_rgb(100, 50, 200),
+            )
+            await inter.response.edit_message(embed=embed, view=_DurationView(self.user_id, category, self.challenged_id))
 
 
 class _CategoryView(discord.ui.View):
-    def __init__(self, user_id: int, challenged_id: int | None = None):
+    def __init__(self, user_id: int, challenged_id: int | None = None, score_mode: bool = False):
         super().__init__(timeout=60)
-        self.add_item(_QuizCategorySelect(user_id, challenged_id))
+        self.add_item(_QuizCategorySelect(user_id, challenged_id, score_mode))
 
 
 class _OpponentSelect(discord.ui.UserSelect):
@@ -3505,10 +3477,15 @@ class _OpponentSelect(discord.ui.UserSelect):
             await inter.response.send_message("L'un des joueurs a déjà un quiz en cours.", ephemeral=True)
             return
         self.view.stop()
+        sep = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
         embed = discord.Embed(
-            title="⚔️  Duel Quiz — Choisis une catégorie",
-            description="Choisis la catégorie pour le duel !",
-            color=discord.Color.from_rgb(100, 50, 200)
+            title="⚔️  Duel — Quelle catégorie ?",
+            description=(
+                f"{sep}\n"
+                f"Sélectionne une catégorie dans le menu ci-dessous.\n"
+                f"{sep}"
+            ),
+            color=discord.Color.orange(),
         )
         await inter.response.edit_message(embed=embed, view=_CategoryView(self._challenger_id, challenged_id=opponent.id))
 
@@ -3517,6 +3494,48 @@ class _OpponentSelectView(discord.ui.View):
     def __init__(self, challenger_id: int):
         super().__init__(timeout=60)
         self.add_item(_OpponentSelect(challenger_id))
+
+
+class _QuizTypeView(discord.ui.View):
+    def __init__(self, user_id: int):
+        super().__init__(timeout=60)
+        self._user_id = user_id
+
+    @discord.ui.button(label="Par questions", style=discord.ButtonStyle.primary, emoji="🎯")
+    async def par_questions(self, inter: discord.Interaction, button: discord.ui.Button):
+        if inter.user.id != self._user_id:
+            await inter.response.send_message("Ce n'est pas ton quiz.", ephemeral=True)
+            return
+        self.stop()
+        sep = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        embed = discord.Embed(
+            title="🎌  Quelle catégorie ?",
+            description=(
+                f"{sep}\n"
+                f"Sélectionne une catégorie dans le menu ci-dessous.\n"
+                f"{sep}"
+            ),
+            color=discord.Color.from_rgb(100, 50, 200),
+        )
+        await inter.response.edit_message(embed=embed, view=_CategoryView(self._user_id, score_mode=False))
+
+    @discord.ui.button(label="Par score", style=discord.ButtonStyle.success, emoji="✨")
+    async def par_score(self, inter: discord.Interaction, button: discord.ui.Button):
+        if inter.user.id != self._user_id:
+            await inter.response.send_message("Ce n'est pas ton quiz.", ephemeral=True)
+            return
+        self.stop()
+        sep = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        embed = discord.Embed(
+            title="🎌  Quelle catégorie ?",
+            description=(
+                f"{sep}\n"
+                f"Sélectionne une catégorie dans le menu ci-dessous.\n"
+                f"{sep}"
+            ),
+            color=discord.Color.from_rgb(50, 180, 120),
+        )
+        await inter.response.edit_message(embed=embed, view=_CategoryView(self._user_id, score_mode=True))
 
 
 class _ModeView(discord.ui.View):
@@ -3530,12 +3549,18 @@ class _ModeView(discord.ui.View):
             await inter.response.send_message("Ce n'est pas ton quiz.", ephemeral=True)
             return
         self.stop()
+        sep = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
         embed = discord.Embed(
-            title="🎌  Quiz Animé",
-            description="Choisis une catégorie pour commencer !",
-            color=discord.Color.from_rgb(100, 50, 200)
+            title="🎮  Solo — Mode de jeu",
+            description=(
+                f"{sep}\n"
+                f"🎯  **Par questions**  —  Nombre fixe de questions\n"
+                f"✨  **Par score**  —  Joue jusqu'à un objectif de points\n"
+                f"{sep}"
+            ),
+            color=discord.Color.from_rgb(100, 50, 200),
         )
-        await inter.response.edit_message(embed=embed, view=_CategoryView(self._user_id))
+        await inter.response.edit_message(embed=embed, view=_QuizTypeView(self._user_id))
 
     @discord.ui.button(label="Duel", style=discord.ButtonStyle.danger, emoji="⚔️")
     async def duel(self, inter: discord.Interaction, button: discord.ui.Button):
@@ -3546,10 +3571,15 @@ class _ModeView(discord.ui.View):
             await inter.response.send_message("Tu as déjà un quiz en cours.", ephemeral=True)
             return
         self.stop()
+        sep = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
         embed = discord.Embed(
-            title="⚔️  Duel Quiz — Choisis ton adversaire",
-            description="Sélectionne le membre que tu veux défier.",
-            color=discord.Color.orange()
+            title="⚔️  Duel — Choisis ton adversaire",
+            description=(
+                f"{sep}\n"
+                f"Sélectionne le membre que tu veux défier dans le menu ci-dessous.\n"
+                f"{sep}"
+            ),
+            color=discord.Color.orange(),
         )
         await inter.response.edit_message(embed=embed, view=_OpponentSelectView(self._user_id))
 
@@ -3642,10 +3672,16 @@ async def _quiz_entry(interaction: discord.Interaction):
         print(f"❌ quiz defer: {e}")
         return
 
+    sep = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     embed = discord.Embed(
         title="🎌  Quiz Animé",
-        description="Choisis ton mode de jeu !",
-        color=discord.Color.from_rgb(100, 50, 200)
+        description=(
+            f"{sep}\n"
+            f"🎮  **Solo**  —  Joue à ton rythme\n"
+            f"⚔️  **Duel**  —  Affronte un autre membre\n"
+            f"{sep}"
+        ),
+        color=discord.Color.from_rgb(100, 50, 200),
     )
     try:
         await interaction.followup.send(embed=embed, view=_ModeView(interaction.user.id))
