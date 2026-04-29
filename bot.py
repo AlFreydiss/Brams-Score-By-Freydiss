@@ -1718,7 +1718,7 @@ async def top(interaction: discord.Interaction, periode: app_commands.Choice[str
 
     vocal_now = {str(m.id) for g in bot.guilds for vc in g.voice_channels for m in vc.members}
 
-    def build_inline(lst, formatter, limit=5):
+    def build_inline(lst, formatter, limit=10):
         parts = []
         for i, (uid_n, n, v) in enumerate(lst[:limit]):
             if v <= 0:
@@ -1738,7 +1738,7 @@ async def top(interaction: discord.Interaction, periode: app_commands.Choice[str
     )
     embed.add_field(name="🎙️ TOP VOCAL",           value=vocal_str, inline=True)
     embed.add_field(name="💬 TOP MESSAGES",          value=msg_str,   inline=True)
-    embed.add_field(name="💰 TOP 5 PRIMES EN BERRY", value=prime_str, inline=True)
+    embed.add_field(name="💰 TOP 10 PRIMES EN BERRY", value=prime_str, inline=True)
     if guild.icon:
         embed.set_thumbnail(url=guild.icon.url)
 
