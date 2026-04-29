@@ -2706,10 +2706,15 @@ _QUIZ_CATEGORIES: dict[str, str] = {
 # System prompt strict
 _QUIZ_SYSTEM = (
     "Tu es un expert des animés japonais qui crée des questions de quiz. "
-    "Tu réponds UNIQUEMENT avec un JSON valide, structure exacte : "
-    '{"questions": [{"question": "...", "bonne_reponse": "...", '
-    '"mauvaises_reponses": ["...", "...", "..."], "anime": "...", "difficulte": "facile|moyen|difficile|expert", '
-    '"type": "personnage|technique|lieu|arc|pouvoir|objet|studio|auteur", "explication": "..."}]}. '
+    "Tu réponds UNIQUEMENT avec un JSON valide. "
+    "DEUX formats possibles dans le même tableau 'questions' : "
+    "1) Standard (1 bonne réponse) : "
+    '{"question":"...","bonne_reponse":"...","bonnes_reponses":null,"mauvaises_reponses":["...","...","..."],'
+    '"anime":"...","difficulte":"facile|moyen|difficile|expert","type":"personnage|technique|lieu|arc|pouvoir|objet|studio|auteur","explication":"..."}. '
+    "2) QCM multi-réponses (25%% des questions, 2 ou 3 bonnes réponses) : "
+    '{"question":"...","bonne_reponse":null,"bonnes_reponses":["...","..."],"mauvaises_reponses":["...","...","...","..."],'
+    '"anime":"...","difficulte":"moyen|difficile|expert","type":"...","explication":"..."}. '
+    "Formulations QCM obligatoirement plurielles : 'Lesquels de ces personnages...?', 'Quelles techniques...?', 'Parmi les suivants, lesquels...?'. "
     "LANGUE : 100%% français correct. "
     "TRADUCTIONS OBLIGATOIRES — utilise toujours le nom français suivant : "
     "Blackbeard → Barbe Noire, Whitebeard → Barbe Blanche, Shanks the Red → Shanks le Roux, "
@@ -2721,13 +2726,6 @@ _QUIZ_SYSTEM = (
     "Sage Mode → Mode Sage, Tailed Beast → Bête à Queue, Jinchuriki → Jinchûriki. "
     "Les noms propres de personnages (Luffy, Zoro, Naruto, Goku...) restent tels quels. "
     "STYLE : questions claires et directes, ni trop formelles ni trop familières. "
-    "VARIÉTÉ : formulations différentes à chaque question. Exemples acceptables : "
-    "'Quel fruit du Démon Trafalgar Law a-t-il mangé ?', "
-    "'Dans quel arc découvre-t-on l'origine de...', "
-    "'Combien de membres compte le groupe...', "
-    "'Quel est le vrai nom de...', "
-    "'Qui a tué... dans l'arc...', "
-    "'Quelle est la capacité principale de...'. "
     "RÉPONSES : toutes crédibles et du même univers, jamais ridicules ni évidentes. "
     "EXPLICATION : 1-2 phrases en français clair, avec un détail de lore précis. "
     "Aucun texte avant ou après le JSON."
@@ -2793,8 +2791,11 @@ async def _generate_quiz_questions(n: int, category: str = "general", seen_quest
                     q for q in questions
                     if isinstance(q, dict)
                     and q.get("question")
-                    and q.get("bonne_reponse")
                     and isinstance(q.get("mauvaises_reponses"), list)
+                    and (
+                        q.get("bonne_reponse")
+                        or (isinstance(q.get("bonnes_reponses"), list) and len(q.get("bonnes_reponses", [])) >= 2)
+                    )
                 ]
                 if valid:
                     print(f"[QUIZ] OK — {len(valid)} questions valides")
@@ -2916,8 +2917,14 @@ async def _send_next_question(inter: discord.Interaction, sess: _QuizSession):
         return
 
     # ── Question suivante ──────────────────────────────────────────────────────
-    q          = sess.questions[sess.idx]
-    choices    = [q["bonne_reponse"]] + q["mauvaises_reponses"][:3]
+    q              = sess.questions[sess.idx]
+    bonnes_rep     = q.get("bonnes_reponses")
+    is_qcm         = isinstance(bonnes_rep, list) and len(bonnes_rep) >= 2
+
+    if is_qcm:
+        choices = list(bonnes_rep) + q.get("mauvaises_reponses", [])[:4]
+    else:
+        choices = [q["bonne_reponse"]] + q["mauvaises_reponses"][:3]
     random.shuffle(choices)
 
     diff       = q.get("difficulte", "moyen").lower()
@@ -2928,17 +2935,20 @@ async def _send_next_question(inter: discord.Interaction, sess: _QuizSession):
     anime      = q.get("anime", "?").upper()
     deadline   = int(time.time()) + 30
 
-    tags = f"📺 **{anime}**  ·  {diff_emoji} {diff.capitalize()}  ·  ✨ +{pts} pt{'s' if pts > 1 else ''}"
+    qcm_tag = "  ·  📋 **QCM**" if is_qcm else ""
+    tags = f"📺 **{anime}**  ·  {diff_emoji} {diff.capitalize()}  ·  ✨ +{pts} pt{'s' if pts > 1 else ''}{qcm_tag}"
     if type_emoji:
         tags += f"  ·  {type_emoji} {q_type.capitalize()}"
 
     sep = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    qcm_hint = "\n*📋 Plusieurs bonnes réponses — sélectionne-les toutes puis valide.*" if is_qcm else ""
     desc = (
         f"{tags}\n"
         f"⏱️  Expire <t:{deadline}:R>\n\n"
         f"{sep}\n"
         f"**{q['question']}**\n"
         f"{sep}"
+        f"{qcm_hint}"
     )
 
     embed = discord.Embed(
@@ -2948,7 +2958,7 @@ async def _send_next_question(inter: discord.Interaction, sess: _QuizSession):
     )
     embed.set_footer(text=f"🎯 {sess.score}/{sess.idx} bonnes  ·  ✨ {sess.points} pts  ·  🔥 Combo x{sess.combo}")
 
-    view = _QuizAnswerView(sess, choices, q["bonne_reponse"])
+    view = _MultiAnswerView(sess, choices, bonnes_rep) if is_qcm else _QuizAnswerView(sess, choices, q["bonne_reponse"])
     try:
         if sess.current_message:
             await sess.current_message.edit(embed=embed, view=view)
@@ -3051,6 +3061,124 @@ class _AnswerButton(discord.ui.Button):
         sess.idx += 1
         await asyncio.sleep(1.2)
         await _send_next_question(inter, sess)
+
+
+class _MultiAnswerButton(discord.ui.Button):
+    def __init__(self, label_text: str, choice_text: str, is_correct: bool, session: _QuizSession):
+        super().__init__(label=label_text[:80], style=discord.ButtonStyle.secondary)
+        self._choice     = choice_text
+        self._is_correct = is_correct
+        self._session    = session
+        self._selected   = False
+
+    async def callback(self, inter: discord.Interaction):
+        if inter.user.id != self._session.user_id:
+            await inter.response.send_message("Ce quiz ne t'appartient pas.", ephemeral=True)
+            return
+        self._selected = not self._selected
+        self.style = discord.ButtonStyle.primary if self._selected else discord.ButtonStyle.secondary
+        await inter.response.edit_message(view=self.view)
+
+
+class _ValidateQCMButton(discord.ui.Button):
+    def __init__(self, session: _QuizSession, correct_set: set):
+        super().__init__(label="Valider ✅", style=discord.ButtonStyle.success, row=1)
+        self._session     = session
+        self._correct_set = correct_set
+
+    async def callback(self, inter: discord.Interaction):
+        sess = self._session
+        if inter.user.id != sess.user_id:
+            await inter.response.send_message("Ce quiz ne t'appartient pas.", ephemeral=True)
+            return
+        view: _MultiAnswerView = self.view
+        view.stop()
+
+        selected = {btn._choice for btn in view.children if isinstance(btn, _MultiAnswerButton) and btn._selected}
+        correct  = self._correct_set
+
+        for btn in view.children:
+            btn.disabled = True
+            if isinstance(btn, _MultiAnswerButton):
+                if btn._is_correct:
+                    btn.style = discord.ButtonStyle.success
+                elif btn._selected:
+                    btn.style = discord.ButtonStyle.danger
+
+        q           = sess.questions[sess.idx]
+        diff        = q.get("difficulte", "moyen").lower()
+        pts         = _DIFF_POINTS.get(diff, 1)
+        explication = q.get("explication", "")
+
+        wrong_selected   = selected - correct
+        correct_selected = selected & correct
+
+        if selected == correct:
+            sess.score  += 1
+            sess.points += pts
+            sess.combo  += 1
+            if sess.combo > sess.best_combo:
+                sess.best_combo = sess.combo
+            lines = [f"✅  **Toutes les bonnes réponses !**  `+{pts} pt{'s' if pts > 1 else ''}`"]
+            if sess.combo >= 3:
+                lines.append(f"🔥  Combo x{sess.combo}")
+            color = discord.Color.green()
+        elif correct_selected and not wrong_selected:
+            half = max(1, pts // 2)
+            sess.points += half
+            sess.combo   = 0
+            missed = correct - selected
+            lines = [
+                f"⚠️  **Partiel**  `+{half} pt{'s' if half > 1 else ''}`",
+                f"Réponses manquées : **{', '.join(missed)}**",
+            ]
+            color = discord.Color.yellow()
+        else:
+            sess.combo = 0
+            lines = [
+                f"❌  **Mauvaise sélection**",
+                f"Bonnes réponses : **{', '.join(correct)}**",
+            ]
+            color = discord.Color.red()
+
+        if explication:
+            lines.append(f"> 📚 *{explication}*")
+
+        feedback_embed = discord.Embed(description="\n".join(lines), color=color)
+        feedback_embed.set_footer(
+            text=f"🎯 {sess.score}/{sess.idx + 1} bonnes  ·  ✨ {sess.points} pts  ·  🔥 Combo x{sess.combo}"
+        )
+        await inter.response.edit_message(embed=feedback_embed, view=view)
+        sess.idx += 1
+        await asyncio.sleep(1.2)
+        await _send_next_question(inter, sess)
+
+
+class _MultiAnswerView(discord.ui.View):
+    def __init__(self, session: _QuizSession, choices: list, correct_answers: list):
+        super().__init__(timeout=30)
+        self.session = session
+        self.message = None
+        self._correct = set(correct_answers)
+        labels = ["A", "B", "C", "D", "E", "F"]
+        for i, choice in enumerate(choices[:6]):
+            self.add_item(_MultiAnswerButton(f"{labels[i]}.  {choice}", choice, choice in self._correct, session))
+        self.add_item(_ValidateQCMButton(session, self._correct))
+
+    async def on_timeout(self):
+        QUIZ_SESSIONS.pop(self.session.user_id, None)
+        for btn in self.children:
+            btn.disabled = True
+            if isinstance(btn, _MultiAnswerButton) and btn._is_correct:
+                btn.style = discord.ButtonStyle.success
+        if self.message:
+            try:
+                await self.message.edit(
+                    content="⏰  **Temps écoulé !**  Les bonnes réponses sont en vert.",
+                    view=self
+                )
+            except Exception:
+                pass
 
 
 class _QuizAnswerView(discord.ui.View):
