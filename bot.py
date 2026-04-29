@@ -2715,7 +2715,7 @@ _QUIZ_SYSTEM = (
     '{"question":"...","bonne_reponse":null,"bonnes_reponses":["...","..."],"mauvaises_reponses":["...","...","...","..."],'
     '"anime":"...","difficulte":"moyen|difficile|expert","type":"...","explication":"..."}. '
     "Formulations QCM obligatoirement plurielles : 'Lesquels de ces personnages...?', 'Quelles techniques...?', 'Parmi les suivants, lesquels...?'. "
-    "LANGUE : 100%% français correct. "
+    "LANGUE : 100%% français correct avec apostrophes correctes (l', d', c', j', n', qu', s') — jamais de mot contracté sans apostrophe. "
     "TRADUCTIONS OBLIGATOIRES — utilise toujours le nom français suivant : "
     "Blackbeard → Barbe Noire, Whitebeard → Barbe Blanche, Shanks the Red → Shanks le Roux, "
     "Devil Fruit → Fruit du Démon, Straw Hat → Chapeau de Paille, Four Emperors → Quatre Empereurs, "
@@ -2843,13 +2843,13 @@ def _generate_citation_quiz(n: int, seen_questions: list[str] | None = None) -> 
             extra = [q["character"] for q in QUOTES_DB if q["character"] != correct and q["character"] not in wrongs]
             wrongs += random.sample(extra, min(3 - len(wrongs), len(extra)))
         questions.append({
-            "question":          f"💬 Qui a dit : *\"{item['quote']}\"*",
+            "question":          f"💬 Qui a dit : *«{item['quote']}»*",
             "bonne_reponse":     correct,
             "mauvaises_reponses": wrongs[:3],
             "anime":             item["anime"],
             "difficulte":        "moyen",
             "type":              "personnage",
-            "explication":       f"Cette réplique emblématique est de **{correct}** dans *{item['anime']}*.",
+            "explication":       f"Cette réplique est de **{correct}**.",
         })
     return questions, ""
 
@@ -2936,9 +2936,12 @@ async def _send_next_question(inter: discord.Interaction, sess: _QuizSession):
     deadline   = int(time.time()) + 30
 
     qcm_tag = "  ·  📋 **QCM**" if is_qcm else ""
-    tags = f"📺 **{anime}**  ·  {diff_emoji} {diff.capitalize()}  ·  ✨ +{pts} pt{'s' if pts > 1 else ''}{qcm_tag}"
-    if type_emoji:
-        tags += f"  ·  {type_emoji} {q_type.capitalize()}"
+    if sess.category == "citation":
+        tags = f"💬 **Devine la Citation**  ·  {diff_emoji} {diff.capitalize()}  ·  ✨ +{pts} pt{'s' if pts > 1 else ''}"
+    else:
+        tags = f"📺 **{anime}**  ·  {diff_emoji} {diff.capitalize()}  ·  ✨ +{pts} pt{'s' if pts > 1 else ''}{qcm_tag}"
+        if type_emoji:
+            tags += f"  ·  {type_emoji} {q_type.capitalize()}"
 
     sep = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     qcm_hint = "\n*📋 Plusieurs bonnes réponses — sélectionne-les toutes puis valide.*" if is_qcm else ""
