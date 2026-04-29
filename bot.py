@@ -2854,19 +2854,20 @@ def _generate_citation_quiz(n: int, seen_questions: list[str] | None = None) -> 
 
 
 class _QuizSession:
-    __slots__ = ("questions", "idx", "score", "points", "best_combo", "combo", "user_id", "interaction", "category", "joker_used", "speed_bonuses")
+    __slots__ = ("questions", "idx", "score", "points", "best_combo", "combo", "user_id", "interaction", "category", "joker_used", "speed_bonuses", "current_message")
     def __init__(self, questions, user_id, interaction, category: str = "general"):
-        self.questions    = questions
-        self.idx          = 0
-        self.score        = 0
-        self.points       = 0
-        self.best_combo   = 0
-        self.combo        = 0
-        self.user_id      = user_id
-        self.interaction  = interaction
-        self.category     = category
-        self.joker_used   = False
-        self.speed_bonuses = 0
+        self.questions      = questions
+        self.idx            = 0
+        self.score          = 0
+        self.points         = 0
+        self.best_combo     = 0
+        self.combo          = 0
+        self.user_id        = user_id
+        self.interaction    = interaction
+        self.category       = category
+        self.joker_used     = False
+        self.speed_bonuses  = 0
+        self.current_message = None
 
 def _quiz_rank(pct: float) -> tuple[str, str]:
     if pct == 1.0: return "👑", "Score parfait — Légende vivante de l'animé"
@@ -2877,7 +2878,7 @@ def _quiz_rank(pct: float) -> tuple[str, str]:
     return               "💀", "À revoir... Lance quelque chose et rattrape ton retard"
 
 
-async def _send_next_question(inter: discord.Interaction, sess: _QuizSession, feedback: str = ""):
+async def _send_next_question(inter: discord.Interaction, sess: _QuizSession):
     total = len(sess.questions)
 
     # ── Écran de fin ──────────────────────────────────────────────────────────
@@ -2886,15 +2887,11 @@ async def _send_next_question(inter: discord.Interaction, sess: _QuizSession, fe
         pct = sess.score / total if total else 0
         rank_emoji, rank_label = _quiz_rank(pct)
 
-        # ── Mode solo ─────────────────────────────────────────────────────────
         embed = discord.Embed(
             title=f"{rank_emoji}  Quiz terminé",
             description=f"*{rank_label}*",
             color=discord.Color.from_rgb(212, 175, 55)
         )
-        if feedback:
-            embed.description = f"{feedback}\n\n*{rank_label}*"
-
         embed.add_field(name="🎯  Score",          value=f"**{sess.score} / {total}**", inline=True)
         embed.add_field(name="✨  Points",          value=f"**{sess.points} pts**",      inline=True)
         embed.add_field(name="🔥  Meilleur combo",  value=f"**x{sess.best_combo}**",     inline=True)
@@ -2907,8 +2904,12 @@ async def _send_next_question(inter: discord.Interaction, sess: _QuizSession, fe
         if extras:
             embed.add_field(name="📊  Bonus", value="\n".join(extras), inline=False)
 
+        replay_view = _ReplayView(sess.user_id, total, sess.category)
         try:
-            await inter.followup.send(embed=embed, view=_ReplayView(sess.user_id, total, sess.category))
+            if sess.current_message:
+                await sess.current_message.edit(embed=embed, view=replay_view)
+            else:
+                await inter.followup.send(embed=embed, view=replay_view)
         except Exception:
             pass
         return
@@ -2931,14 +2932,13 @@ async def _send_next_question(inter: discord.Interaction, sess: _QuizSession, fe
         tags += f"  ·  {type_emoji} {q_type.capitalize()}"
 
     sep = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    question_block = (
+    desc = (
         f"{tags}\n"
         f"⏱️  Expire <t:{deadline}:R>\n\n"
         f"{sep}\n"
         f"**{q['question']}**\n"
         f"{sep}"
     )
-    desc = f"{feedback}\n\n{question_block}" if feedback else question_block
 
     embed = discord.Embed(
         title=f"❓  Question {sess.idx + 1} / {total}",
@@ -2949,10 +2949,15 @@ async def _send_next_question(inter: discord.Interaction, sess: _QuizSession, fe
 
     view = _QuizAnswerView(sess, choices, q["bonne_reponse"])
     try:
-        msg = await inter.followup.send(embed=embed, view=view)
-        view.message = msg
+        if sess.current_message:
+            await sess.current_message.edit(embed=embed, view=view)
+            view.message = sess.current_message
+        else:
+            msg = await inter.followup.send(embed=embed, view=view)
+            view.message = msg
+            sess.current_message = msg
     except Exception as e:
-        print(f"❌ _send_next_question followup failed: {e}")
+        print(f"❌ _send_next_question failed: {e}")
 
 
 class _JokerButton(discord.ui.Button):
@@ -2997,7 +3002,6 @@ class _AnswerButton(discord.ui.Button):
             elif isinstance(btn, _JokerButton):
                 btn.disabled = True
         view.stop()
-        await inter.response.edit_message(view=view)
 
         q           = sess.questions[sess.idx]
         diff        = q.get("difficulte", "moyen").lower()
@@ -3027,7 +3031,7 @@ class _AnswerButton(discord.ui.Button):
 
             if explication:
                 lines.append(f"> 📚 *{explication}*")
-            feedback = "\n".join(lines)
+            color = discord.Color.green()
         else:
             sess.combo = 0
             lines = [
@@ -3036,10 +3040,16 @@ class _AnswerButton(discord.ui.Button):
             ]
             if explication:
                 lines.append(f"> 📚 *{explication}*")
-            feedback = "\n".join(lines)
+            color = discord.Color.red()
 
+        feedback_embed = discord.Embed(description="\n".join(lines), color=color)
+        feedback_embed.set_footer(
+            text=f"🎯 {sess.score}/{sess.idx + 1} bonnes  ·  ✨ {sess.points} pts  ·  🔥 Combo x{sess.combo}"
+        )
+        await inter.response.edit_message(embed=feedback_embed, view=view)
         sess.idx += 1
-        await _send_next_question(inter, sess, feedback)
+        await asyncio.sleep(1.2)
+        await _send_next_question(inter, sess)
 
 
 class _QuizAnswerView(discord.ui.View):
