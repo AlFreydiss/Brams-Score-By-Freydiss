@@ -3052,32 +3052,28 @@ class _ReplayView(discord.ui.View):
         await inter.response.edit_message(view=self)
         await _start_quiz_session(inter, self.n, self.category)
 
-class _QuizSelect(discord.ui.Select):
-    """Select Menu : choix du nombre de questions."""
-    def __init__(self, user_id: int, category: str = "general"):
-        self.user_id = user_id
-        self.category = category
-        options = [
-            discord.SelectOption(label="5 questions",  value="5",  emoji="🎯", description="Quiz rapide"),
-            discord.SelectOption(label="10 questions", value="10", emoji="⚡", description="Quiz standard"),
-            discord.SelectOption(label="15 questions", value="15", emoji="🔥", description="Quiz marathon"),
-        ]
-        super().__init__(placeholder="Choisis le nombre de questions...", min_values=1, max_values=1, options=options)
+class _NbQuestionsButton(discord.ui.Button):
+    def __init__(self, label: str, n: int, style: discord.ButtonStyle, emoji: str, user_id: int, category: str):
+        super().__init__(label=label, style=style, emoji=emoji)
+        self._n        = n
+        self._user_id  = user_id
+        self._category = category
 
     async def callback(self, inter: discord.Interaction):
-        if inter.user.id != self.user_id:
+        if inter.user.id != self._user_id:
             await inter.response.send_message("Ce quiz ne t'appartient pas.", ephemeral=True)
             return
         self.view.stop()
-        n = int(self.values[0])
         await inter.response.defer()
-        await _start_quiz_session(inter, n, self.category)
+        await _start_quiz_session(inter, self._n, self._category)
 
 
 class _DurationView(discord.ui.View):
     def __init__(self, user_id: int, category: str = "general"):
         super().__init__(timeout=60)
-        self.add_item(_QuizSelect(user_id, category))
+        self.add_item(_NbQuestionsButton("5 questions",  5,  discord.ButtonStyle.success, "🎯", user_id, category))
+        self.add_item(_NbQuestionsButton("10 questions", 10, discord.ButtonStyle.primary,  "⚡", user_id, category))
+        self.add_item(_NbQuestionsButton("15 questions", 15, discord.ButtonStyle.danger,   "🔥", user_id, category))
 
 
 class _QuizCategorySelect(discord.ui.Select):
@@ -3114,14 +3110,28 @@ class _QuizCategorySelect(discord.ui.Select):
             return
         self.view.stop()
         category = self.values[0]
-        await inter.response.edit_message(
-            embed=discord.Embed(
-                title="Quiz Animé 🎌",
-                description="Combien de questions veux-tu ?",
-                color=discord.Color.from_rgb(100, 50, 200),
+        cat_label = dict(v for v in [(v, l) for v, l, _ in [
+            ("general","🎌 Anime général"), ("one_piece","🌊 One Piece"), ("naruto","🍥 Naruto"),
+            ("bleach","🗡️ Bleach"), ("deathnote","💀 Death Note"), ("aot","🔥 Attack on Titan"),
+            ("dbz","🏋️ Dragon Ball Z"), ("hxh","🎯 Hunter x Hunter"), ("jojo","✨ JoJo's Bizarre Adv."),
+            ("demon_slayer","⚔️ Demon Slayer"), ("mha","💪 My Hero Academia"),
+            ("jjk","👁️ Jujutsu Kaisen"), ("fma","⚗️ Fullmetal Alchemist"),
+            ("chainsaw","🪚 Chainsaw Man"), ("black_clover","🍀 Black Clover"), ("citation","💬 Devine la Citation"),
+        ]]).get(category, category)
+        sep = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        embed = discord.Embed(
+            title="🎯  Combien de questions ?",
+            description=(
+                f"Catégorie : **{cat_label}**\n\n"
+                f"{sep}\n"
+                f"🎯  **5 questions**  —  Quiz express\n"
+                f"⚡  **10 questions**  —  Session standard\n"
+                f"🔥  **15 questions**  —  Pour les vrais\n"
+                f"{sep}"
             ),
-            view=_DurationView(self.user_id, category),
+            color=discord.Color.from_rgb(100, 50, 200),
         )
+        await inter.response.edit_message(embed=embed, view=_DurationView(self.user_id, category))
 
 
 class _CategoryView(discord.ui.View):
