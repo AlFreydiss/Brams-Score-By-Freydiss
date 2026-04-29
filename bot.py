@@ -1718,27 +1718,53 @@ async def top(interaction: discord.Interaction, periode: app_commands.Choice[str
 
     vocal_now = {str(m.id) for g in bot.guilds for vc in g.voice_channels for m in vc.members}
 
-    def build_inline(lst, formatter, limit=10):
-        parts = []
-        for i, (uid_n, n, v) in enumerate(lst[:limit]):
-            if v <= 0:
-                break
-            live = " 🎙️" if uid_n in vocal_now else ""
-            medal = medals[i] if i < len(medals) else f"{i+1}."
-            parts.append(f"{medal} **{clean_name(n)}**{live}\n`{formatter(v)}`")
-        return "\n".join(parts) if parts else "*Aucune donnée*"
+    vocal_parts = []
+    for i, (uid_n, n, v) in enumerate(vocal_list[:10]):
+        if v <= 0:
+            break
+        live = "  🎙️" if uid_n in vocal_now else ""
+        medal = medals[i] if i < len(medals) else f"{i+1}."
+        vocal_parts.append(f"{medal}  **{clean_name(n)}**{live}\n     `{format_duration(v)}`")
+    vocal_str = "\n\n".join(vocal_parts) if vocal_parts else "*Aucune donnée*"
 
-    vocal_str = build_inline(vocal_list, format_duration, limit=10)
-    msg_str   = build_inline(msg_list, lambda v: f"{v} msg", limit=5)
-    prime_str = build_inline(prime_list, lambda p: f"฿ {format_prime(p)}", limit=5)
+    msg_parts = []
+    for i, (uid_n, n, v) in enumerate(msg_list[:10]):
+        if v <= 0:
+            break
+        live = "  🎙️" if uid_n in vocal_now else ""
+        medal = medals[i] if i < len(medals) else f"{i+1}."
+        msg_parts.append(f"{medal}  **{clean_name(n)}**{live}\n     `{v} messages`")
+    msg_str = "\n\n".join(msg_parts) if msg_parts else "*Aucune donnée*"
 
+    prime_parts = []
+    for i, (uid_n, n, p) in enumerate(prime_list[:5]):
+        if p <= 0:
+            break
+        live = "  🎙️" if uid_n in vocal_now else ""
+        medal = medals[i] if i < len(medals) else f"{i+1}."
+        prime_parts.append(f"{medal}  **{clean_name(n)}**{live}\n     `฿ {format_prime(p)}`")
+    prime_str = "\n\n".join(prime_parts) if prime_parts else "*Aucune donnée*"
+
+    sep = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     embed = discord.Embed(
         title=f"🏆 CLASSEMENT  —  {periode.name.upper()}",
+        description=(
+            f"{sep}\n\n"
+            f"🎙️ **TOP 10 VOCAL**\n"
+            f"{sep}\n"
+            f"{vocal_str}\n\n"
+            f"{sep}\n\n"
+            f"💬 **TOP 10 MESSAGES**\n"
+            f"{sep}\n"
+            f"{msg_str}\n\n"
+            f"{sep}\n\n"
+            f"💰 **TOP 5 PRIMES EN BERRY**\n"
+            f"{sep}\n"
+            f"{prime_str}\n\n"
+            f"{sep}"
+        ),
         color=discord.Color(0xD4AF37)
     )
-    embed.add_field(name="🎙️ TOP 10 VOCAL",          value=vocal_str, inline=True)
-    embed.add_field(name="💬 TOP 5 MESSAGES",          value=msg_str,   inline=True)
-    embed.add_field(name="💰 TOP 5 PRIMES EN BERRY",   value=prime_str, inline=False)
     if guild.icon:
         embed.set_thumbnail(url=guild.icon.url)
 
