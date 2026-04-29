@@ -2813,41 +2813,52 @@ def _generate_citation_quiz(n: int, seen_questions: list[str] | None = None) -> 
 
 
 class _QuizSession:
-    __slots__ = ("questions", "idx", "score", "points", "best_combo", "combo", "user_id", "interaction", "category")
+    __slots__ = ("questions", "idx", "score", "points", "best_combo", "combo", "user_id", "interaction", "category", "joker_used", "speed_bonuses")
     def __init__(self, questions, user_id, interaction, category: str = "general"):
-        self.questions = questions
-        self.idx = 0
-        self.score = 0
-        self.points = 0
-        self.best_combo = 0
-        self.combo = 0
-        self.user_id = user_id
-        self.interaction = interaction
-        self.category = category
+        self.questions    = questions
+        self.idx          = 0
+        self.score        = 0
+        self.points       = 0
+        self.best_combo   = 0
+        self.combo        = 0
+        self.user_id      = user_id
+        self.interaction  = interaction
+        self.category     = category
+        self.joker_used   = False
+        self.speed_bonuses = 0
 
 def _quiz_score_message(score, total):
     pct = score / total if total > 0 else 0
     if pct == 1.0:
-        return "PARFAIT ! Tu es une légende de l'animé 🏆"
-    elif pct >= 0.7:
-        return "Impressionnant, tu es un vrai otaku 🎌"
+        return "PARFAIT ! Tu es une légende vivante de l'animé 👑"
+    elif pct >= 0.8:
+        return "Excellent ! T'as clairement regardé trop d'animés — c'est un compliment 🎌"
+    elif pct >= 0.6:
+        return "Très bon ! Tu maîtrises bien le sujet 💪"
     elif pct >= 0.4:
         return "Pas mal, tu connais tes classiques 👍"
+    elif pct >= 0.2:
+        return "Tu débutes — continue à regarder des animés 👀"
     else:
-        return "Tu débutes, continue à regarder des animés 👀"
+        return "C'est un début... T'as besoin de rattraper ton retard 😅"
 
 async def _send_next_question(inter: discord.Interaction, sess: _QuizSession, feedback: str = ""):
     total = len(sess.questions)
     if sess.idx >= total:
         QUIZ_SESSIONS.pop(sess.user_id, None)
         result_msg = _quiz_score_message(sess.score, total)
+        pct = sess.score / total if total > 0 else 0
+        rank_emoji = "👑" if pct == 1.0 else ("🥇" if pct >= 0.8 else ("🥈" if pct >= 0.6 else ("🥉" if pct >= 0.4 else "📜")))
+        speed_line = f"\n⚡ **Bonus vitesse** : {sess.speed_bonuses} pts gagnés en répondant vite !" if sess.speed_bonuses else ""
+        joker_line = "\n🃏 **Joker utilisé** : 50/50 activé une fois" if sess.joker_used else ""
         embed = discord.Embed(
-            title="Quiz terminé !",
+            title=f"{rank_emoji} Quiz terminé !",
             description=(
                 f"{feedback}\n\n"
                 f"━━━━━━━━━━━━━━━━━━━━\n"
                 f"**Score final** : {sess.score} / {total}\n"
-                f"**Points totaux** : {sess.points} pts\n"
+                f"**Points totaux** : {sess.points} pts"
+                f"{speed_line}{joker_line}\n"
                 f"**Meilleur combo** : x{sess.best_combo}\n\n"
                 f"*{result_msg}*"
             ),
@@ -2863,13 +2874,12 @@ async def _send_next_question(inter: discord.Interaction, sess: _QuizSession, fe
     q = sess.questions[sess.idx]
     choices_next = [q["bonne_reponse"]] + q["mauvaises_reponses"][:3]
     random.shuffle(choices_next)
-    next_view = _QuizAnswerView(sess, choices_next, q["bonne_reponse"])
 
-    diff = q.get("difficulte", "moyen").lower()
-    q_type = q.get("type", "")
+    diff    = q.get("difficulte", "moyen").lower()
+    q_type  = q.get("type", "")
     diff_emoji = _DIFF_EMOJI.get(diff, "⚪")
     type_emoji = _TYPE_EMOJI.get(q_type, "")
-    pts = _DIFF_POINTS.get(diff, 1)
+    pts     = _DIFF_POINTS.get(diff, 1)
     type_str = f" {type_emoji}" if type_emoji else ""
     desc = f"{diff_emoji} *{diff.capitalize()}*{type_str} — {q.get('anime', '?')} • **+{pts} pt{'s' if pts > 1 else ''}**\n\n**{q['question']}**"
     if feedback:
@@ -2881,19 +2891,21 @@ async def _send_next_question(inter: discord.Interaction, sess: _QuizSession, fe
         description=desc,
         color=color,
     )
-    embed.set_footer(text=f"⏱️ 30 secondes • Score : {sess.score}/{sess.idx} • Points : {sess.points} • Combo : x{sess.combo}")
+    embed.set_footer(text=f"🟢 30s • Score : {sess.score}/{sess.idx} • Points : {sess.points} • Combo : x{sess.combo}")
+
+    next_view = _QuizAnswerView(sess, choices_next, q["bonne_reponse"], embed)
     try:
         msg = await inter.followup.send(embed=embed, view=next_view)
         next_view.message = msg
+        next_view.start_timer()
     except Exception as e:
         print(f"❌ _send_next_question followup failed: {e}")
 
 
-class _AnswerButton(discord.ui.Button):
-    def __init__(self, label_text: str, choice_text: str, is_correct: bool, session: _QuizSession):
-        super().__init__(label=label_text[:80], style=discord.ButtonStyle.secondary)
-        self._choice = choice_text
-        self._is_correct = is_correct
+class _JokerButton(discord.ui.Button):
+    """Bouton 50/50 : désactive 2 mauvaises réponses. Usage unique par quiz."""
+    def __init__(self, session: _QuizSession):
+        super().__init__(label="🃏 Joker 50/50", style=discord.ButtonStyle.secondary, row=1)
         self._session = session
 
     async def callback(self, inter: discord.Interaction):
@@ -2901,8 +2913,30 @@ class _AnswerButton(discord.ui.Button):
         if inter.user.id != sess.user_id:
             await inter.response.send_message("Ce quiz ne t'appartient pas.", ephemeral=True)
             return
+        sess.joker_used = True
+        self.disabled = True
+        wrong_btns = [b for b in self.view.children if isinstance(b, _AnswerButton) and not b._is_correct and not b.disabled]
+        for btn in random.sample(wrong_btns, min(2, len(wrong_btns))):
+            btn.disabled = True
+        await inter.response.edit_message(view=self.view)
+
+
+class _AnswerButton(discord.ui.Button):
+    def __init__(self, label_text: str, choice_text: str, is_correct: bool, session: _QuizSession):
+        super().__init__(label=label_text[:80], style=discord.ButtonStyle.secondary)
+        self._choice     = choice_text
+        self._is_correct = is_correct
+        self._session    = session
+
+    async def callback(self, inter: discord.Interaction):
+        sess = self._session
+        if inter.user.id != sess.user_id:
+            await inter.response.send_message("Ce quiz ne t'appartient pas.", ephemeral=True)
+            return
         view: _QuizAnswerView = self.view
-        # Colorer + désactiver tous les boutons
+        view.cancel_timer()
+        elapsed = time.time() - view._start
+
         for btn in view.children:
             if isinstance(btn, _AnswerButton):
                 btn.disabled = True
@@ -2910,21 +2944,45 @@ class _AnswerButton(discord.ui.Button):
                     btn.style = discord.ButtonStyle.success
                 elif btn._choice == self._choice and not self._is_correct:
                     btn.style = discord.ButtonStyle.danger
+            elif isinstance(btn, _JokerButton):
+                btn.disabled = True
         view.stop()
         await inter.response.edit_message(view=view)
 
         q = sess.questions[sess.idx]
-        diff = q.get("difficulte", "moyen").lower()
-        pts = _DIFF_POINTS.get(diff, 1)
+        diff       = q.get("difficulte", "moyen").lower()
+        pts        = _DIFF_POINTS.get(diff, 1)
         explication = q.get("explication", "")
+
         if self._is_correct:
             sess.score += 1
-            sess.points += pts
+            speed_bonus = 2 if elapsed < 5 else (1 if elapsed < 10 else 0)
+            sess.points += pts + speed_bonus
+            sess.speed_bonuses += speed_bonus
             sess.combo += 1
             if sess.combo > sess.best_combo:
                 sess.best_combo = sess.combo
-            combo_str = f"\n🔥 **COMBO x{sess.combo} ! {'Tu es en feu !' if sess.combo == 5 else 'Incroyable !'}**" if sess.combo >= 5 else ""
-            feedback = f"✅ Bonne réponse ! **+{pts} pt{'s' if pts > 1 else ''}**{combo_str}"
+
+            speed_str = ""
+            if speed_bonus == 2:
+                speed_str = f"\n⚡ **RÉPONSE ÉCLAIR** en {elapsed:.1f}s ! +{speed_bonus} bonus"
+            elif speed_bonus == 1:
+                speed_str = f"\n⚡ Rapide ({elapsed:.1f}s) ! +{speed_bonus} bonus"
+
+            if sess.combo >= 10:
+                combo_str = f"\n💥 **COMBO x{sess.combo} !! LÉGENDAIRE !!**"
+            elif sess.combo >= 7:
+                combo_str = f"\n💥 **COMBO x{sess.combo} ! INARRÊTABLE !!**"
+            elif sess.combo == 5:
+                combo_str = f"\n🔥🔥 **COMBO x{sess.combo} ! Tu es en FEU !**"
+            elif sess.combo == 3:
+                combo_str = f"\n🔥 **COMBO x{sess.combo} ! C'est chaud !**"
+            elif sess.combo > 1:
+                combo_str = f"\n🔥 Combo x{sess.combo}"
+            else:
+                combo_str = ""
+
+            feedback = f"✅ Bonne réponse ! **+{pts} pt{'s' if pts > 1 else ''}**{speed_str}{combo_str}"
             if explication:
                 feedback += f"\n📚 *{explication}*"
         else:
@@ -2939,23 +2997,54 @@ class _AnswerButton(discord.ui.Button):
 
 
 class _QuizAnswerView(discord.ui.View):
-    def __init__(self, session: _QuizSession, choices: list, correct: str):
+    def __init__(self, session: _QuizSession, choices: list, correct: str, base_embed: discord.Embed):
         super().__init__(timeout=30)
-        self.session = session
-        self.correct = correct
+        self.session     = session
+        self.correct     = correct
+        self.message     = None
+        self._base_embed = base_embed
+        self._start      = time.time()
+        self._timer_task = None
         labels = ["A", "B", "C", "D"]
         for i, choice in enumerate(choices[:4]):
-            is_correct = (choice == correct)
-            btn = _AnswerButton(f"{labels[i]}. {choice}", choice, is_correct, session)
-            self.add_item(btn)
+            self.add_item(_AnswerButton(f"{labels[i]}. {choice}", choice, choice == correct, session))
+        if not session.joker_used:
+            self.add_item(_JokerButton(session))
+
+    def start_timer(self):
+        self._timer_task = asyncio.create_task(self._tick())
+
+    async def _tick(self):
+        try:
+            for left in [25, 20, 15, 10, 5]:
+                await asyncio.sleep(5)
+                if self.is_finished() or not self.message:
+                    return
+                sess = self.session
+                icon = "🟢" if left > 15 else ("🟡" if left > 8 else "🔴")
+                embed = self._base_embed.copy()
+                embed.set_footer(text=f"{icon} {left}s • Score : {sess.score}/{sess.idx} • Points : {sess.points} • Combo : x{sess.combo}")
+                try:
+                    await self.message.edit(embed=embed)
+                except Exception:
+                    return
+        except asyncio.CancelledError:
+            pass
+
+    def cancel_timer(self):
+        if self._timer_task and not self._timer_task.done():
+            self._timer_task.cancel()
 
     async def on_timeout(self):
+        self.cancel_timer()
         QUIZ_SESSIONS.pop(self.session.user_id, None)
-        for item in self.children:
-            item.disabled = True
-        if hasattr(self, "message") and self.message:
+        for btn in self.children:
+            btn.disabled = True
+            if isinstance(btn, _AnswerButton) and btn._is_correct:
+                btn.style = discord.ButtonStyle.success
+        if self.message:
             try:
-                await self.message.edit(content="⏰ Temps écoulé ! La session a expiré.", view=self)
+                await self.message.edit(content="⏰ **Temps écoulé !** La bonne réponse est surlignée en vert.", view=self)
             except Exception:
                 pass
 
