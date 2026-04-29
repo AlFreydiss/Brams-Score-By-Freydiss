@@ -2680,7 +2680,16 @@ _QUIZ_SYSTEM = (
     '{"questions": [{"question": "...", "bonne_reponse": "...", '
     '"mauvaises_reponses": ["...", "...", "..."], "anime": "...", "difficulte": "facile|moyen|difficile|expert", '
     '"type": "personnage|technique|lieu|arc|pouvoir|objet|studio|auteur", "explication": "..."}]}. '
-    "LANGUE : 100%% français correct. Aucun mot anglais sauf les noms propres (noms de personnages, de techniques, de lieux) qui restent dans leur langue d'origine. "
+    "LANGUE : 100%% français correct. "
+    "TRADUCTIONS OBLIGATOIRES — utilise toujours le nom français suivant : "
+    "Blackbeard → Barbe Noire, Whitebeard → Barbe Blanche, Shanks the Red → Shanks le Roux, "
+    "Devil Fruit → Fruit du Démon, Straw Hat → Chapeau de Paille, Four Emperors → Quatre Empereurs, "
+    "Seven Warlords → Shichibukai, World Government → Gouvernement Mondial, Celestial Dragons → Nobles Mondiaux, "
+    "Marines → Marines, Grand Line → Grand Line, New World → Nouveau Monde, "
+    "Survey Corps → Bataillon d'Exploration, Titans → Titans, Shifters → Porteurs, "
+    "Nen → Nen, Soul Society → Soul Society, Zanpakuto → Zanpakutô, "
+    "Sage Mode → Mode Sage, Tailed Beast → Bête à Queue, Jinchuriki → Jinchûriki. "
+    "Les noms propres de personnages (Luffy, Zoro, Naruto, Goku...) restent tels quels. "
     "STYLE : questions claires et directes, ni trop formelles ni trop familières. "
     "VARIÉTÉ : formulations différentes à chaque question. Exemples acceptables : "
     "'Quel fruit du Démon Trafalgar Law a-t-il mangé ?', "
