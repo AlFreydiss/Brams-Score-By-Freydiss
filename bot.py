@@ -2639,11 +2639,27 @@ async def test_event(interaction: discord.Interaction, evenement: app_commands.C
 #  /quiz  (Quiz animé généré par IA — Groq)
 # ─────────────────────────────────────────
 QUIZ_SESSIONS: dict = {}
-_GROQ_MODEL         = "groq/llama-3.3-70b-versatile"
+QUIZ_DUEL_RESULTS: dict[int, "_DuelState"] = {}  # uid → duel partagé
+_GROQ_MODEL       = "groq/llama-3.3-70b-versatile"
 
 # Historique par utilisateur : dernières questions vues (évite les répétitions)
 QUIZ_USER_HISTORY: dict[int, list[str]] = {}
 _QUIZ_HISTORY_MAX = 60
+
+
+class _DuelState:
+    def __init__(self, uid1: int, uid2: int, name1: str, name2: str, n: int):
+        self.uid1, self.uid2 = uid1, uid2
+        self.name1, self.name2 = name1, name2
+        self.n = n
+        self._done: dict[int, dict] = {}
+
+    def record(self, uid: int, score: int, points: int, best_combo: int) -> bool:
+        self._done[uid] = {"score": score, "points": points, "combo": best_combo}
+        return len(self._done) == 2
+
+    def result(self, uid: int) -> dict:
+        return self._done.get(uid, {})
 
 _DIFF_POINTS: dict[str, int] = {"facile": 1, "moyen": 2, "difficile": 3, "expert": 5}
 _DIFF_COLORS: dict[str, int] = {"facile": 0x2ecc71, "moyen": 0xf1c40f, "difficile": 0xe67e22, "expert": 0xe74c3c}
@@ -2856,6 +2872,30 @@ async def _send_next_question(inter: discord.Interaction, sess: _QuizSession, fe
         pct = sess.score / total if total else 0
         rank_emoji, rank_label = _quiz_rank(pct)
 
+        # ── Mode duel ─────────────────────────────────────────────────────────
+        duel = QUIZ_DUEL_RESULTS.get(sess.user_id)
+        if duel is not None:
+            all_done = duel.record(sess.user_id, sess.score, sess.points, sess.best_combo)
+            waiting_desc = (f"{feedback}\n\n" if feedback else "") + (
+                f"**{sess.score} / {total}** bonnes réponses  ·  **{sess.points} pts**\n"
+                f"{'⏳ En attente de l\'adversaire...' if not all_done else '✅ Les deux joueurs ont terminé !'}"
+            )
+            embed = discord.Embed(
+                title=f"{rank_emoji}  Ta partie est terminée !",
+                description=waiting_desc,
+                color=discord.Color.from_rgb(100, 50, 200)
+            )
+            try:
+                await inter.followup.send(embed=embed)
+            except Exception:
+                pass
+            if all_done:
+                QUIZ_DUEL_RESULTS.pop(duel.uid1, None)
+                QUIZ_DUEL_RESULTS.pop(duel.uid2, None)
+                await _send_duel_result(duel, inter)
+            return
+
+        # ── Mode solo ─────────────────────────────────────────────────────────
         embed = discord.Embed(
             title=f"{rank_emoji}  Quiz terminé",
             description=f"*{rank_label}*",
@@ -3162,7 +3202,7 @@ async def _start_quiz_session(inter: discord.Interaction, n: int, category: str 
     cat_display = cat_labels.get(category, "anime")
     loading_embed = discord.Embed(
         title="🎌 Génération du quiz...",
-        description=f"**{n} questions** sur **{cat_display}** en cours de génération ⏳\n*Que le meilleur gagne !*",
+        description=f"**{n} questions** sur **{cat_display}** en cours de génération ⏳",
         color=discord.Color.from_rgb(100, 50, 200)
     )
     loading_msg = None
@@ -3280,6 +3320,236 @@ async def _quiz_entry(interaction: discord.Interaction, category: str = ""):
 ])
 async def quizz(interaction: discord.Interaction, categorie: str = ""):
     await _quiz_entry(interaction, categorie)
+
+
+async def _send_duel_result(duel: _DuelState, inter: discord.Interaction):
+    r1 = duel.result(duel.uid1)
+    r2 = duel.result(duel.uid2)
+    s1, p1, c1 = r1["score"], r1["points"], r1["combo"]
+    s2, p2, c2 = r2["score"], r2["points"], r2["combo"]
+    n = duel.n
+
+    if p1 > p2:
+        titre = f"🏆  **{duel.name1}** remporte le duel !"
+        color = discord.Color.gold()
+    elif p2 > p1:
+        titre = f"🏆  **{duel.name2}** remporte le duel !"
+        color = discord.Color.gold()
+    else:
+        titre = "⚖️  Égalité parfaite !"
+        color = discord.Color.blurple()
+
+    sep = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    embed = discord.Embed(
+        title="⚔️  Résultat du Duel Quiz",
+        description=(
+            f"{titre}\n\n"
+            f"{sep}\n"
+            f"**{duel.name1}**\n"
+            f"> 🎯 {s1} / {n}  ·  ✨ {p1} pts  ·  🔥 Combo x{c1}\n\n"
+            f"**{duel.name2}**\n"
+            f"> 🎯 {s2} / {n}  ·  ✨ {p2} pts  ·  🔥 Combo x{c2}\n"
+            f"{sep}"
+        ),
+        color=color,
+    )
+    try:
+        await inter.followup.send(embed=embed)
+    except Exception:
+        pass
+
+
+async def _start_quiz_duel(inter: discord.Interaction, uid1: int, uid2: int, category: str, n: int):
+    if uid1 in QUIZ_SESSIONS or uid2 in QUIZ_SESSIONS:
+        try:
+            await inter.followup.send("❗ L'un des joueurs a déjà un quiz en cours.", ephemeral=True)
+        except Exception:
+            pass
+        return
+
+    questions, err = (
+        _generate_citation_quiz(n)
+        if category == "citation"
+        else await _generate_quiz_questions(n, category)
+    )
+    if err or not questions:
+        embed = discord.Embed(
+            title="❌ Erreur de génération",
+            description=f"Impossible de générer les questions : {err}",
+            color=discord.Color.red()
+        )
+        try:
+            await inter.followup.send(embed=embed)
+        except Exception:
+            pass
+        return
+
+    guild = inter.guild
+    m1 = guild.get_member(uid1)
+    m2 = guild.get_member(uid2)
+    name1 = m1.display_name if m1 else str(uid1)
+    name2 = m2.display_name if m2 else str(uid2)
+
+    duel = _DuelState(uid1, uid2, name1, name2, n)
+    QUIZ_DUEL_RESULTS[uid1] = duel
+    QUIZ_DUEL_RESULTS[uid2] = duel
+
+    import copy
+    sess1 = _QuizSession(copy.deepcopy(questions), uid1, inter, category)
+    sess2 = _QuizSession(copy.deepcopy(questions), uid2, inter, category)
+    QUIZ_SESSIONS[uid1] = sess1
+    QUIZ_SESSIONS[uid2] = sess2
+
+    sep = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    cat_labels = {
+        "general": "🎌 Anime général", "one_piece": "🌊 One Piece", "naruto": "🍥 Naruto",
+        "bleach": "🗡️ Bleach", "deathnote": "💀 Death Note", "aot": "🔥 Attack on Titan",
+        "dbz": "🏋️ Dragon Ball Z", "hxh": "🎯 Hunter x Hunter", "jojo": "✨ JoJo's Bizarre Adv.",
+        "demon_slayer": "⚔️ Demon Slayer", "mha": "💪 My Hero Academia",
+        "jjk": "👁️ Jujutsu Kaisen", "fma": "⚗️ Fullmetal Alchemist",
+        "chainsaw": "🪚 Chainsaw Man", "black_clover": "🍀 Black Clover", "citation": "💬 Citations",
+    }
+    start_embed = discord.Embed(
+        title="⚔️  Duel lancé !",
+        description=(
+            f"{sep}\n"
+            f"**{name1}** vs **{name2}**\n"
+            f"Catégorie : {cat_labels.get(category, category)}  ·  {n} questions\n"
+            f"{sep}\n"
+            f"Les questions arrivent pour les deux joueurs — bonne chance !"
+        ),
+        color=discord.Color.gold()
+    )
+    try:
+        await inter.followup.send(embed=start_embed)
+    except Exception:
+        pass
+
+    await _send_next_question(inter, sess1)
+    await _send_next_question(inter, sess2)
+
+
+class _DuelChallengeView(discord.ui.View):
+    def __init__(self, challenger_id: int, challenged_id: int, category: str, n: int):
+        super().__init__(timeout=60)
+        self._challenger_id = challenger_id
+        self._challenged_id = challenged_id
+        self._category      = category
+        self._n             = n
+
+    @discord.ui.button(label="Accepter", style=discord.ButtonStyle.success, emoji="✅")
+    async def accept(self, inter: discord.Interaction, button: discord.ui.Button):
+        if inter.user.id != self._challenged_id:
+            await inter.response.send_message("Ce défi ne te concerne pas.", ephemeral=True)
+            return
+        for item in self.children:
+            item.disabled = True
+        self.stop()
+        sep = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        embed = discord.Embed(
+            title="⚔️  Défi accepté !",
+            description=f"{sep}\n**{self._n} questions** en cours de génération ⏳\n{sep}",
+            color=discord.Color.gold()
+        )
+        await inter.response.edit_message(embed=embed, view=self)
+        await _start_quiz_duel(inter, self._challenger_id, self._challenged_id, self._category, self._n)
+
+    @discord.ui.button(label="Refuser", style=discord.ButtonStyle.danger, emoji="❌")
+    async def decline(self, inter: discord.Interaction, button: discord.ui.Button):
+        if inter.user.id != self._challenged_id:
+            await inter.response.send_message("Ce défi ne te concerne pas.", ephemeral=True)
+            return
+        for item in self.children:
+            item.disabled = True
+        self.stop()
+        embed = discord.Embed(
+            title="❌  Défi refusé",
+            description=f"**{inter.user.display_name}** a refusé le défi.",
+            color=discord.Color.red()
+        )
+        await inter.response.edit_message(embed=embed, view=self)
+
+    async def on_timeout(self):
+        for item in self.children:
+            item.disabled = True
+
+
+@bot.tree.command(name="quizzduel", description="Défie un membre en duel Quiz animé !")
+@app_commands.guilds(*GUILD_IDS)
+@app_commands.describe(
+    membre="Le membre à défier",
+    categorie="Catégorie de questions",
+    questions="Nombre de questions (5, 10 ou 15)"
+)
+@app_commands.choices(
+    categorie=[
+        app_commands.Choice(name="🎌 Anime général",       value="general"),
+        app_commands.Choice(name="🌊 One Piece",            value="one_piece"),
+        app_commands.Choice(name="🍥 Naruto",               value="naruto"),
+        app_commands.Choice(name="🗡️ Bleach",              value="bleach"),
+        app_commands.Choice(name="💀 Death Note",           value="deathnote"),
+        app_commands.Choice(name="🔥 Attack on Titan",      value="aot"),
+        app_commands.Choice(name="🏋️ Dragon Ball Z",       value="dbz"),
+        app_commands.Choice(name="🎯 Hunter x Hunter",      value="hxh"),
+        app_commands.Choice(name="⚔️ Demon Slayer",         value="demon_slayer"),
+        app_commands.Choice(name="💪 My Hero Academia",     value="mha"),
+        app_commands.Choice(name="👁️ Jujutsu Kaisen",     value="jjk"),
+        app_commands.Choice(name="⚗️ Fullmetal Alchemist", value="fma"),
+        app_commands.Choice(name="🪚 Chainsaw Man",         value="chainsaw"),
+        app_commands.Choice(name="💬 Devine la Citation",   value="citation"),
+    ],
+    questions=[
+        app_commands.Choice(name="5 questions",  value=5),
+        app_commands.Choice(name="10 questions", value=10),
+        app_commands.Choice(name="15 questions", value=15),
+    ]
+)
+async def quizzduel(
+    interaction: discord.Interaction,
+    membre: discord.Member,
+    categorie: str = "general",
+    questions: int = 10,
+):
+    try:
+        await interaction.response.defer()
+    except Exception:
+        return
+
+    if membre.bot:
+        await interaction.followup.send("Tu ne peux pas défier un bot.", ephemeral=True)
+        return
+    if membre.id == interaction.user.id:
+        await interaction.followup.send("Tu ne peux pas te défier toi-même.", ephemeral=True)
+        return
+    if interaction.user.id in QUIZ_SESSIONS or membre.id in QUIZ_SESSIONS:
+        await interaction.followup.send("L'un des joueurs a déjà un quiz en cours.", ephemeral=True)
+        return
+
+    cat_labels = {
+        "general": "🎌 Anime général", "one_piece": "🌊 One Piece", "naruto": "🍥 Naruto",
+        "bleach": "🗡️ Bleach", "deathnote": "💀 Death Note", "aot": "🔥 Attack on Titan",
+        "dbz": "🏋️ Dragon Ball Z", "hxh": "🎯 Hunter x Hunter", "demon_slayer": "⚔️ Demon Slayer",
+        "mha": "💪 My Hero Academia", "jjk": "👁️ Jujutsu Kaisen", "fma": "⚗️ Fullmetal Alchemist",
+        "chainsaw": "🪚 Chainsaw Man", "citation": "💬 Citations",
+    }
+    sep = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    embed = discord.Embed(
+        title="⚔️  Défi Quiz !",
+        description=(
+            f"{sep}\n"
+            f"**{interaction.user.display_name}** défie **{membre.display_name}** !\n\n"
+            f"Catégorie : {cat_labels.get(categorie, categorie)}\n"
+            f"Questions : **{questions}**\n"
+            f"{sep}\n"
+            f"{membre.mention}, tu as **60 secondes** pour accepter."
+        ),
+        color=discord.Color.orange()
+    )
+    view = _DuelChallengeView(interaction.user.id, membre.id, categorie, questions)
+    try:
+        await interaction.followup.send(embed=embed, view=view)
+    except Exception as e:
+        print(f"❌ quizzduel followup: {e}")
 
 
 @bot.tree.command(name="sync", description="[OWNER] Sync commandes slash")
