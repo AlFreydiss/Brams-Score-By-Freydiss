@@ -2675,29 +2675,37 @@ _QUIZ_CATEGORIES: dict[str, str] = {
 
 # System prompt strict
 _QUIZ_SYSTEM = (
-    "Tu es un expert des animés japonais. "
-    "Tu réponds UNIQUEMENT avec un JSON valide contenant exactement cette structure : "
+    "Tu es un pote fan d'animés qui fait un quiz oral à ses amis. "
+    "Tu réponds UNIQUEMENT avec un JSON valide, structure exacte : "
     '{"questions": [{"question": "...", "bonne_reponse": "...", '
     '"mauvaises_reponses": ["...", "...", "..."], "anime": "...", "difficulte": "facile|moyen|difficile|expert", '
     '"type": "personnage|technique|lieu|arc|pouvoir|objet|studio|auteur", "explication": "..."}]}. '
-    "Règles strictes : "
-    "1. Toutes les réponses (correcte ET fausses) doivent être crédibles — jamais de mauvaise réponse ridicule ou évidente. "
-    "2. Les mauvaises réponses doivent appartenir au MÊME univers ou genre que la bonne. "
-    "3. Varie les types de questions : pas plus de 3 questions 'personnage' d'affilée. "
-    "4. Pour difficulte='expert' : questions ultra-précises sur des détails rares (épisode exact, technique complète, chapitre). "
-    "5. L'explication (1-2 phrases) explique POURQUOI c'est la bonne réponse, avec un détail de lore. "
-    "6. Orthographe et grammaire françaises parfaites. Aucune faute. "
-    "Aucun texte avant ou après le JSON. Aucun commentaire."
+    "LANGUE : 100%% français courant et naturel. Pas de phrases à moitié anglaises. "
+    "Les noms propres (personnages, techniques, lieux) restent dans leur langue d'origine mais la phrase autour est en français naturel. "
+    "STYLE des questions : direct, familier, comme si tu parlais à un ami. "
+    "INTERDIT absolument : 'Quel est le nom de', 'Qui est le personnage qui', 'Lequel des éléments suivants', 'Quelle est la technique qui'. "
+    "OBLIGATOIRE : varier les formulations — exemples valides : "
+    "'C'est quoi le vrai nom du fruit de Law ?', "
+    "'Dans quel arc est-ce qu'on apprend que...', "
+    "'T'as vu le moment où Zoro...', "
+    "'Combien de membres compte...', "
+    "'Pourquoi est-ce que Itachi a...', "
+    "'C'était quoi le plan de Light quand...', "
+    "'Dans One Piece, qui a dit...'. "
+    "RÉPONSES : toutes crédibles, jamais ridicules, du même univers. "
+    "EXPLICATION : 1-2 phrases max, en français naturel, avec un détail de lore concret. Pas de blabla. "
+    "Aucun texte avant ou après le JSON."
 )
 
 # User prompt : catégorie + seed + anti-répétition
 _QUIZ_USER = (
     "Génère exactement {n} questions de quiz sur : {categorie}. "
-    "Questions INÉDITES et surprenantes — évite les questions trop classiques comme 'Qui est le capitaine de...' ou 'Quel est le pouvoir de...'. "
-    "Préfère : détails d'arcs précis, techniques secondaires, lieux rares, citations cultes, auteurs/studios, scènes emblématiques. "
+    "Évite les questions bateau du genre 'Quel est le pouvoir de X' ou 'Qui est le capitaine de Y'. "
+    "Préfère des questions sur : des moments précis d'arcs, des techniques secondaires, des lieux, des citations, des détails de lore, des relations entre personnages. "
     "Répartition des difficultés : 20%% facile, 45%% moyen, 25%% difficile, 10%% expert. "
+    "Chaque question doit sonner comme si un fan passionné la posait à l'oral à ses amis. "
     "{avoid_hint}"
-    "Seed de variété : {seed}."
+    "Seed : {seed}."
 )
 
 
