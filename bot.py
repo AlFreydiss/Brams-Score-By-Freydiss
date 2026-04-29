@@ -1728,17 +1728,17 @@ async def top(interaction: discord.Interaction, periode: app_commands.Choice[str
             parts.append(f"{medal} **{clean_name(n)}**{live}\n`{formatter(v)}`")
         return "\n".join(parts) if parts else "*Aucune donnée*"
 
-    vocal_str = build_inline(vocal_list, format_duration)
-    msg_str   = build_inline(msg_list, lambda v: f"{v} msg")
-    prime_str = build_inline(prime_list, lambda p: f"฿ {format_prime(p)}")
+    vocal_str = build_inline(vocal_list, format_duration, limit=10)
+    msg_str   = build_inline(msg_list, lambda v: f"{v} msg", limit=5)
+    prime_str = build_inline(prime_list, lambda p: f"฿ {format_prime(p)}", limit=5)
 
     embed = discord.Embed(
         title=f"🏆 CLASSEMENT  —  {periode.name.upper()}",
         color=discord.Color(0xD4AF37)
     )
-    embed.add_field(name="🎙️ TOP VOCAL",           value=vocal_str, inline=True)
-    embed.add_field(name="💬 TOP MESSAGES",          value=msg_str,   inline=True)
-    embed.add_field(name="💰 TOP 10 PRIMES EN BERRY", value=prime_str, inline=True)
+    embed.add_field(name="🎙️ TOP 10 VOCAL",          value=vocal_str, inline=True)
+    embed.add_field(name="💬 TOP 5 MESSAGES",          value=msg_str,   inline=True)
+    embed.add_field(name="💰 TOP 5 PRIMES EN BERRY",   value=prime_str, inline=False)
     if guild.icon:
         embed.set_thumbnail(url=guild.icon.url)
 
