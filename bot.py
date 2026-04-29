@@ -3227,6 +3227,7 @@ class _QuizCategorySelect(discord.ui.Select):
         self.user_id       = user_id
         self.challenged_id = challenged_id
         _LABELS = [
+            ("citation",     "💬 Devine la Citation",    "Qui a dit cette réplique ?"),
             ("general",      "🎌 Anime général",        "Tous les animés mélangés"),
             ("one_piece",    "🌊 One Piece",             "Fruits du Démon, arcs, personnages"),
             ("naruto",       "🍥 Naruto",                "Jutsu, clans, Akatsuki, arcs"),
@@ -3242,7 +3243,6 @@ class _QuizCategorySelect(discord.ui.Select):
             ("fma",          "⚗️ Fullmetal Alchemist",  "Alchimie, Homoncules, arcs"),
             ("chainsaw",     "🪚 Chainsaw Man",          "Diables, contrats, Chasseurs"),
             ("black_clover", "🍀 Black Clover",          "Magie, grimoires, Chevaliers"),
-            ("citation",     "💬 Devine la Citation",    "Qui a dit cette réplique ?"),
         ]
         super().__init__(
             placeholder="Choisis une catégorie...", min_values=1, max_values=1,
@@ -3409,6 +3409,7 @@ async def _quiz_entry(interaction: discord.Interaction, category: str = "", chal
     membre="Membre à défier en duel (optionnel)"
 )
 @app_commands.choices(categorie=[
+    app_commands.Choice(name="💬 Devine la Citation",    value="citation"),
     app_commands.Choice(name="🎌 Anime général",        value="general"),
     app_commands.Choice(name="🌊 One Piece",             value="one_piece"),
     app_commands.Choice(name="🍥 Naruto",                value="naruto"),
@@ -3424,7 +3425,6 @@ async def _quiz_entry(interaction: discord.Interaction, category: str = "", chal
     app_commands.Choice(name="⚗️ Fullmetal Alchemist",  value="fma"),
     app_commands.Choice(name="🪚 Chainsaw Man",          value="chainsaw"),
     app_commands.Choice(name="🍀 Black Clover",          value="black_clover"),
-    app_commands.Choice(name="💬 Devine la Citation",    value="citation"),
 ])
 async def quizz(interaction: discord.Interaction, categorie: str = "", membre: discord.Member | None = None):
     if membre:
