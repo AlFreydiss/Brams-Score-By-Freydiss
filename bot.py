@@ -2876,9 +2876,9 @@ async def _send_next_question(inter: discord.Interaction, sess: _QuizSession, fe
         duel = QUIZ_DUEL_RESULTS.get(sess.user_id)
         if duel is not None:
             all_done = duel.record(sess.user_id, sess.score, sess.points, sess.best_combo)
+            wait_line = "✅ Les deux joueurs ont terminé !" if all_done else "⏳ En attente de l'adversaire..."
             waiting_desc = (f"{feedback}\n\n" if feedback else "") + (
-                f"**{sess.score} / {total}** bonnes réponses  ·  **{sess.points} pts**\n"
-                f"{'⏳ En attente de l\'adversaire...' if not all_done else '✅ Les deux joueurs ont terminé !'}"
+                f"**{sess.score} / {total}** bonnes réponses  ·  **{sess.points} pts**\n{wait_line}"
             )
             embed = discord.Embed(
                 title=f"{rank_emoji}  Ta partie est terminée !",
