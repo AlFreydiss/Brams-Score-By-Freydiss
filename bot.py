@@ -1693,7 +1693,7 @@ async def top(interaction: discord.Interaction, periode: app_commands.Choice[str
     all_time = periode.value == "all"
     days = 0 if all_time else int(periode.value)
 
-    vocal_list, msg_list = [], []
+    vocal_list, msg_list, prime_list = [], [], []
 
     for uid, udata in data.items():
         member = guild.get_member(int(uid))
@@ -1706,11 +1706,14 @@ async def top(interaction: discord.Interaction, periode: app_commands.Choice[str
         else:
             sec = seconds_in_period(udata.get("vocal_sessions", []), days, join_time=ujt)
             msgs = messages_in_period(udata.get("messages", []), days)
+        prime_val = calculate_prime(sec / 3600, msgs)
         vocal_list.append((uid, member.display_name, sec))
         msg_list.append((uid, member.display_name, msgs))
+        prime_list.append((uid, member.display_name, prime_val))
 
     vocal_list.sort(key=lambda x: x[2], reverse=True)
     msg_list.sort(key=lambda x: x[2], reverse=True)
+    prime_list.sort(key=lambda x: x[2], reverse=True)
     medals = ["🥇", "🥈", "🥉", "4.", "5.", "6.", "7.", "8.", "9.", "10."]
 
     vocal_now = {str(m.id) for g in bot.guilds for vc in g.voice_channels for m in vc.members}
@@ -1733,6 +1736,15 @@ async def top(interaction: discord.Interaction, periode: app_commands.Choice[str
         msg_parts.append(f"{medal}  **{clean_name(n)}**{live}\n     `{v} messages`")
     msg_str = "\n\n".join(msg_parts) if msg_parts else "*Aucune donnée*"
 
+    prime_parts = []
+    for i, (uid_n, n, p) in enumerate(prime_list[:5]):
+        if p <= 0:
+            break
+        live = "  🎙️" if uid_n in vocal_now else ""
+        medal = medals[i] if i < len(medals) else f"{i+1}."
+        prime_parts.append(f"{medal}  **{clean_name(n)}**{live}\n     `฿ {format_prime(p)}`")
+    prime_str = "\n\n".join(prime_parts) if prime_parts else "*Aucune donnée*"
+
     sep = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     embed = discord.Embed(
         title=f"🏆 CLASSEMENT  —  {periode.name.upper()}",
@@ -1745,6 +1757,10 @@ async def top(interaction: discord.Interaction, periode: app_commands.Choice[str
             f"💬 **TOP MESSAGES**\n"
             f"{sep}\n"
             f"{msg_str}\n\n"
+            f"{sep}\n\n"
+            f"💰 **TOP 5 PRIMES EN BERRY**\n"
+            f"{sep}\n"
+            f"{prime_str}\n\n"
             f"{sep}"
         ),
         color=discord.Color(0xD4AF37)
