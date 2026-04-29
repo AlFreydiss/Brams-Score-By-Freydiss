@@ -569,7 +569,7 @@ def get_current_rank_threshold(hours):
 
 def calculate_prime(total_hours, total_msgs):
     base = total_hours * 100_000
-    bonus_msg = total_msgs * 5_000
+    bonus_msg = total_msgs * 1_000
     return max(int(base + bonus_msg), 0)
 
 def format_prime(berries):
@@ -2654,7 +2654,7 @@ async def test_event(interaction: discord.Interaction, evenement: app_commands.C
 #  /quiz  (Quiz animé généré par IA — Groq)
 # ─────────────────────────────────────────
 QUIZ_SESSIONS: dict = {}
-QUIZ_DUEL_RESULTS: dict[int, "_DuelState"] = {}  # uid → duel partagé
+LIVE_DUELS: dict[int, "_LiveDuelSession"] = {}  # uid → duel live partagé
 _GROQ_MODEL       = "groq/llama-3.3-70b-versatile"
 
 # Historique par utilisateur : dernières questions vues (évite les répétitions)
@@ -2662,19 +2662,18 @@ QUIZ_USER_HISTORY: dict[int, list[str]] = {}
 _QUIZ_HISTORY_MAX = 60
 
 
-class _DuelState:
-    def __init__(self, uid1: int, uid2: int, name1: str, name2: str, n: int):
-        self.uid1, self.uid2 = uid1, uid2
-        self.name1, self.name2 = name1, name2
-        self.n = n
-        self._done: dict[int, dict] = {}
-
-    def record(self, uid: int, score: int, points: int, best_combo: int) -> bool:
-        self._done[uid] = {"score": score, "points": points, "combo": best_combo}
-        return len(self._done) == 2
-
-    def result(self, uid: int) -> dict:
-        return self._done.get(uid, {})
+class _LiveDuelSession:
+    __slots__ = ("uid1", "uid2", "name1", "name2", "questions", "idx",
+                 "score1", "score2", "pts1", "pts2", "interaction")
+    def __init__(self, uid1: int, uid2: int, name1: str, name2: str,
+                 questions: list, interaction: discord.Interaction):
+        self.uid1, self.uid2      = uid1, uid2
+        self.name1, self.name2    = name1, name2
+        self.questions            = questions
+        self.idx                  = 0
+        self.score1 = self.score2 = 0
+        self.pts1   = self.pts2   = 0
+        self.interaction          = interaction
 
 _DIFF_POINTS: dict[str, int] = {"facile": 1, "moyen": 2, "difficile": 3, "expert": 5}
 _DIFF_COLORS: dict[str, int] = {"facile": 0x2ecc71, "moyen": 0xf1c40f, "difficile": 0xe67e22, "expert": 0xe74c3c}
@@ -2886,29 +2885,6 @@ async def _send_next_question(inter: discord.Interaction, sess: _QuizSession, fe
         QUIZ_SESSIONS.pop(sess.user_id, None)
         pct = sess.score / total if total else 0
         rank_emoji, rank_label = _quiz_rank(pct)
-
-        # ── Mode duel ─────────────────────────────────────────────────────────
-        duel = QUIZ_DUEL_RESULTS.get(sess.user_id)
-        if duel is not None:
-            all_done = duel.record(sess.user_id, sess.score, sess.points, sess.best_combo)
-            wait_line = "✅ Les deux joueurs ont terminé !" if all_done else "⏳ En attente de l'adversaire..."
-            waiting_desc = (f"{feedback}\n\n" if feedback else "") + (
-                f"**{sess.score} / {total}** bonnes réponses  ·  **{sess.points} pts**\n{wait_line}"
-            )
-            embed = discord.Embed(
-                title=f"{rank_emoji}  Ta partie est terminée !",
-                description=waiting_desc,
-                color=discord.Color.from_rgb(100, 50, 200)
-            )
-            try:
-                await inter.followup.send(embed=embed)
-            except Exception:
-                pass
-            if all_done:
-                QUIZ_DUEL_RESULTS.pop(duel.uid1, None)
-                QUIZ_DUEL_RESULTS.pop(duel.uid2, None)
-                await _send_duel_result(duel, inter)
-            return
 
         # ── Mode solo ─────────────────────────────────────────────────────────
         embed = discord.Embed(
@@ -3378,25 +3354,161 @@ async def quizz(interaction: discord.Interaction, categorie: str = "", membre: d
                 "Tu ne peux pas te défier toi-même ni un bot.", ephemeral=True
             )
             return
-        if interaction.user.id in QUIZ_SESSIONS or membre.id in QUIZ_SESSIONS:
+        if (interaction.user.id in QUIZ_SESSIONS or membre.id in QUIZ_SESSIONS or
+                interaction.user.id in LIVE_DUELS or membre.id in LIVE_DUELS):
             await interaction.response.send_message(
-                "L'un des joueurs a déjà un quiz en cours.", ephemeral=True
+                "L'un des joueurs a déjà un quiz ou duel en cours.", ephemeral=True
             )
             return
     await _quiz_entry(interaction, categorie, challenged_id=membre.id if membre else None)
 
 
-async def _send_duel_result(duel: _DuelState, inter: discord.Interaction):
-    r1 = duel.result(duel.uid1)
-    r2 = duel.result(duel.uid2)
-    s1, p1, c1 = r1["score"], r1["points"], r1["combo"]
-    s2, p2, c2 = r2["score"], r2["points"], r2["combo"]
-    n = duel.n
+class _DuelAnswerButton(discord.ui.Button):
+    def __init__(self, label_text: str, choice_text: str, is_correct: bool,
+                 duel: "_LiveDuelSession", q: dict):
+        super().__init__(label=label_text[:80], style=discord.ButtonStyle.secondary)
+        self._choice     = choice_text
+        self._is_correct = is_correct
+        self._duel       = duel
+        self._q          = q
 
-    if p1 > p2:
+    async def callback(self, inter: discord.Interaction):
+        duel = self._duel
+        if inter.user.id not in (duel.uid1, duel.uid2):
+            await inter.response.send_message("Tu ne fais pas partie de ce duel.", ephemeral=True)
+            return
+        view: _DuelQuestionView = self.view
+        if view._answered:
+            await inter.response.send_message("Quelqu'un a déjà répondu à cette question.", ephemeral=True)
+            return
+        view._answered = True
+        view.stop()
+
+        for btn in view.children:
+            btn.disabled = True
+            if isinstance(btn, _DuelAnswerButton):
+                if btn._is_correct:
+                    btn.style = discord.ButtonStyle.success
+                elif btn._choice == self._choice and not self._is_correct:
+                    btn.style = discord.ButtonStyle.danger
+        await inter.response.edit_message(view=view)
+
+        q    = self._q
+        diff = q.get("difficulte", "moyen").lower()
+        pts  = _DIFF_POINTS.get(diff, 1)
+        explication = q.get("explication", "")
+
+        if self._is_correct:
+            if inter.user.id == duel.uid1:
+                duel.score1 += 1
+                duel.pts1   += pts
+            else:
+                duel.score2 += 1
+                duel.pts2   += pts
+            winner_name = duel.name1 if inter.user.id == duel.uid1 else duel.name2
+            feedback = f"✅  **{winner_name}** répond le premier — `+{pts} pt{'s' if pts > 1 else ''}`"
+        else:
+            loser_name = duel.name1 if inter.user.id == duel.uid1 else duel.name2
+            feedback = f"❌  **{loser_name}** s'est trompé — bonne réponse : **{view.correct}**"
+        if explication:
+            feedback += f"\n> 📚 *{explication}*"
+
+        await asyncio.sleep(3)
+        await _send_duel_question(duel, inter, feedback)
+
+
+class _DuelQuestionView(discord.ui.View):
+    def __init__(self, duel: "_LiveDuelSession", choices: list, correct: str, q: dict):
+        super().__init__(timeout=10)
+        self.correct   = correct
+        self.message   = None
+        self._duel     = duel
+        self._q        = q
+        self._answered = False
+        labels = ["A", "B", "C", "D"]
+        for i, choice in enumerate(choices[:4]):
+            self.add_item(_DuelAnswerButton(f"{labels[i]}.  {choice}", choice, choice == correct, duel, q))
+
+    async def on_timeout(self):
+        if self._answered:
+            return
+        self._answered = True
+        for btn in self.children:
+            btn.disabled = True
+            if isinstance(btn, _DuelAnswerButton) and btn._is_correct:
+                btn.style = discord.ButtonStyle.success
+        if self.message:
+            try:
+                await self.message.edit(
+                    content="⏰  **Temps écoulé !** Personne n'a répondu.",
+                    view=self
+                )
+            except Exception:
+                pass
+        await asyncio.sleep(3)
+        await _send_duel_question(self._duel, self._duel.interaction, "⏰ Temps écoulé — aucun point attribué.")
+
+
+async def _send_duel_question(duel: "_LiveDuelSession", inter: discord.Interaction, feedback: str = ""):
+    n = len(duel.questions)
+    if duel.idx >= n:
+        LIVE_DUELS.pop(duel.uid1, None)
+        LIVE_DUELS.pop(duel.uid2, None)
+        await _send_live_duel_result(duel, inter)
+        return
+
+    q        = duel.questions[duel.idx]
+    duel.idx += 1
+    choices  = [q["bonne_reponse"]] + q["mauvaises_reponses"][:3]
+    random.shuffle(choices)
+
+    diff       = q.get("difficulte", "moyen").lower()
+    q_type     = q.get("type", "")
+    diff_emoji = _DIFF_EMOJI.get(diff, "⚪")
+    type_emoji = _TYPE_EMOJI.get(q_type, "")
+    pts        = _DIFF_POINTS.get(diff, 1)
+    anime      = q.get("anime", "?").upper()
+    deadline   = int(time.time()) + 10
+
+    tags = f"📺 **{anime}**  ·  {diff_emoji} {diff.capitalize()}  ·  ✨ +{pts} pt{'s' if pts > 1 else ''}"
+    if type_emoji:
+        tags += f"  ·  {type_emoji} {q_type.capitalize()}"
+
+    sep = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    question_block = (
+        f"{tags}\n"
+        f"⏱️  Expire <t:{deadline}:R>\n\n"
+        f"{sep}\n"
+        f"**{q['question']}**\n"
+        f"{sep}"
+    )
+    desc = f"{feedback}\n\n{question_block}" if feedback else question_block
+
+    embed = discord.Embed(
+        title=f"⚔️  Question {duel.idx} / {n}",
+        description=desc,
+        color=_DIFF_COLORS.get(diff, 0x6432c8),
+    )
+    embed.set_footer(text=(
+        f"🔴 {duel.name1} : {duel.pts1} pts  ·  "
+        f"🔵 {duel.name2} : {duel.pts2} pts  ·  "
+        f"⚡ Premier à répondre gagne !"
+    ))
+
+    view = _DuelQuestionView(duel, choices, q["bonne_reponse"], q)
+    try:
+        msg = await inter.followup.send(embed=embed, view=view)
+        view.message = msg
+    except Exception as e:
+        print(f"❌ _send_duel_question failed: {e}")
+
+
+async def _send_live_duel_result(duel: "_LiveDuelSession", inter: discord.Interaction):
+    n = len(duel.questions)
+    if duel.pts1 > duel.pts2:
         titre = f"🏆  **{duel.name1}** remporte le duel !"
         color = discord.Color.gold()
-    elif p2 > p1:
+    elif duel.pts2 > duel.pts1:
         titre = f"🏆  **{duel.name2}** remporte le duel !"
         color = discord.Color.gold()
     else:
@@ -3409,10 +3521,10 @@ async def _send_duel_result(duel: _DuelState, inter: discord.Interaction):
         description=(
             f"{titre}\n\n"
             f"{sep}\n"
-            f"**{duel.name1}**\n"
-            f"> 🎯 {s1} / {n}  ·  ✨ {p1} pts  ·  🔥 Combo x{c1}\n\n"
-            f"**{duel.name2}**\n"
-            f"> 🎯 {s2} / {n}  ·  ✨ {p2} pts  ·  🔥 Combo x{c2}\n"
+            f"🔴 **{duel.name1}**\n"
+            f"> 🎯 {duel.score1} / {n}  ·  ✨ {duel.pts1} pts\n\n"
+            f"🔵 **{duel.name2}**\n"
+            f"> 🎯 {duel.score2} / {n}  ·  ✨ {duel.pts2} pts\n"
             f"{sep}"
         ),
         color=color,
@@ -3423,10 +3535,10 @@ async def _send_duel_result(duel: _DuelState, inter: discord.Interaction):
         pass
 
 
-async def _start_quiz_duel(inter: discord.Interaction, uid1: int, uid2: int, category: str, n: int):
-    if uid1 in QUIZ_SESSIONS or uid2 in QUIZ_SESSIONS:
+async def _start_live_duel(inter: discord.Interaction, uid1: int, uid2: int, category: str, n: int):
+    if uid1 in LIVE_DUELS or uid2 in LIVE_DUELS:
         try:
-            await inter.followup.send("❗ L'un des joueurs a déjà un quiz en cours.", ephemeral=True)
+            await inter.followup.send("❗ L'un des joueurs est déjà en duel.", ephemeral=True)
         except Exception:
             pass
         return
@@ -3449,38 +3561,24 @@ async def _start_quiz_duel(inter: discord.Interaction, uid1: int, uid2: int, cat
         return
 
     guild = inter.guild
-    m1 = guild.get_member(uid1)
-    m2 = guild.get_member(uid2)
+    m1    = guild.get_member(uid1) if guild else None
+    m2    = guild.get_member(uid2) if guild else None
     name1 = m1.display_name if m1 else str(uid1)
     name2 = m2.display_name if m2 else str(uid2)
 
-    duel = _DuelState(uid1, uid2, name1, name2, n)
-    QUIZ_DUEL_RESULTS[uid1] = duel
-    QUIZ_DUEL_RESULTS[uid2] = duel
-
-    import copy
-    sess1 = _QuizSession(copy.deepcopy(questions), uid1, inter, category)
-    sess2 = _QuizSession(copy.deepcopy(questions), uid2, inter, category)
-    QUIZ_SESSIONS[uid1] = sess1
-    QUIZ_SESSIONS[uid2] = sess2
+    duel = _LiveDuelSession(uid1, uid2, name1, name2, questions, inter)
+    LIVE_DUELS[uid1] = duel
+    LIVE_DUELS[uid2] = duel
 
     sep = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    cat_labels = {
-        "general": "🎌 Anime général", "one_piece": "🌊 One Piece", "naruto": "🍥 Naruto",
-        "bleach": "🗡️ Bleach", "deathnote": "💀 Death Note", "aot": "🔥 Attack on Titan",
-        "dbz": "🏋️ Dragon Ball Z", "hxh": "🎯 Hunter x Hunter", "jojo": "✨ JoJo's Bizarre Adv.",
-        "demon_slayer": "⚔️ Demon Slayer", "mha": "💪 My Hero Academia",
-        "jjk": "👁️ Jujutsu Kaisen", "fma": "⚗️ Fullmetal Alchemist",
-        "chainsaw": "🪚 Chainsaw Man", "black_clover": "🍀 Black Clover", "citation": "💬 Citations",
-    }
     start_embed = discord.Embed(
         title="⚔️  Duel lancé !",
         description=(
             f"{sep}\n"
-            f"**{name1}** vs **{name2}**\n"
-            f"Catégorie : {cat_labels.get(category, category)}  ·  {n} questions\n"
+            f"🔴 **{name1}**  vs  🔵 **{name2}**\n"
+            f"Catégorie : {_CAT_LABELS_MAP.get(category, category)}  ·  {n} questions  ·  ⏱️ 10s par question\n"
             f"{sep}\n"
-            f"Les questions arrivent pour les deux joueurs — bonne chance !"
+            f"Le premier à cliquer la bonne réponse gagne le point !"
         ),
         color=discord.Color.gold()
     )
@@ -3489,8 +3587,7 @@ async def _start_quiz_duel(inter: discord.Interaction, uid1: int, uid2: int, cat
     except Exception:
         pass
 
-    await _send_next_question(inter, sess1)
-    await _send_next_question(inter, sess2)
+    await _send_duel_question(duel, inter)
 
 
 class _DuelChallengeView(discord.ui.View):
@@ -3516,7 +3613,7 @@ class _DuelChallengeView(discord.ui.View):
             color=discord.Color.gold()
         )
         await inter.response.edit_message(embed=embed, view=self)
-        await _start_quiz_duel(inter, self._challenger_id, self._challenged_id, self._category, self._n)
+        await _start_live_duel(inter, self._challenger_id, self._challenged_id, self._category, self._n)
 
     @discord.ui.button(label="Refuser", style=discord.ButtonStyle.danger, emoji="❌")
     async def decline(self, inter: discord.Interaction, button: discord.ui.Button):
