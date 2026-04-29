@@ -57,6 +57,7 @@ RANK_BG_PATHS = {
     "Roi des pirates": "roi_des_pirates_bg.gif",
 }
 RANK_BG_DEFAULT = "background.jpeg"
+_RANK_FONTS: dict = {}  # cache fonts PIL pour make_rank_image
 
 if os.path.exists(GRAPH_FONT_PATH):
     fm.fontManager.addfont(GRAPH_FONT_PATH)
@@ -114,6 +115,7 @@ def release_db(conn):
 _CACHE: dict = {}
 _DIRTY: set  = set()   # UIDs modifiés depuis le dernier flush
 _CACHE_READY = False   # True dès que le cache est chargé
+_HTTP: aiohttp.ClientSession | None = None  # session aiohttp globale réutilisée
 
 def init_db():
     conn = get_db()
@@ -494,27 +496,27 @@ def get_user(data, uid: str):
             data[uid][key] = default
     return data[uid]
 
-def seconds_in_period(sessions, days, join_time=None):
-    cutoff = now_ts() - days * 86400
+def seconds_in_period(sessions, days, join_time=None, _now=None):
+    _now = _now or now_ts()
+    cutoff = _now - days * 86400
     total = 0
     for s in sessions:
-        start = max(s["start"], cutoff)
         end = s["end"]
         if end < cutoff:
             continue
-        total += end - start
+        total += end - max(s["start"], cutoff)
     if join_time and join_time > cutoff:
-        total += now_ts() - max(join_time, cutoff)
+        total += _now - max(join_time, cutoff)
     return total
 
-def messages_in_period(messages, days):
-    cutoff = now_ts() - days * 86400
+def messages_in_period(messages, days, _now=None):
+    cutoff = (_now or now_ts()) - days * 86400
     return sum(1 for ts in messages if ts >= cutoff)
 
 _CLEAN_CUTOFF_DAYS = 8
 
-def clean_old_data(user):
-    cutoff = now_ts() - _CLEAN_CUTOFF_DAYS * 86400
+def clean_old_data(user, _now=None):
+    cutoff = (_now or now_ts()) - _CLEAN_CUTOFF_DAYS * 86400
     # Preserve duration of purged sessions in extra_seconds so all-time hours are never lost
     for s in user["vocal_sessions"]:
         if s["end"] < cutoff:
@@ -522,10 +524,10 @@ def clean_old_data(user):
     user["vocal_sessions"] = [s for s in user["vocal_sessions"] if s["end"] >= cutoff]
     user["messages"]       = [ts for ts in user["messages"] if ts >= cutoff]
 
-def total_seconds(sessions, join_time=None, extra=0):
+def total_seconds(sessions, join_time=None, extra=0, _now=None):
     total = sum(s["end"] - s["start"] for s in sessions)
     if join_time:
-        total += now_ts() - join_time
+        total += (_now or now_ts()) - join_time
     return total + extra
 
 def total_messages(messages):
@@ -1036,33 +1038,32 @@ async def make_rank_image(member: discord.Member, rank_name: str, hours_7d: floa
         src_img = Image.new("RGBA", (900, 500), (15, 15, 22, 255))
     is_gif = resolved_path.lower().endswith(".gif") or getattr(src_img, "is_animated", False)
 
-    KOMIKA_CANDIDATES = [
-        "KOMIKAX_.ttf",
-        "KomikaAxis.ttf",
-        "attached_assets/KOMIKAX_.ttf",
-        "attached_assets/KomikaAxis.ttf",
-    ]
-    komika_path = next((p for p in KOMIKA_CANDIDATES if os.path.exists(p)), None)
-    def _tf(path, size):
-        try:
-            return ImageFont.truetype(path, size)
-        except Exception:
-            return ImageFont.load_default()
-
-    if komika_path:
-        font_felicit   = ImageFont.truetype(komika_path, 46)
-        font_grade     = ImageFont.truetype(komika_path, 100)
-        font_grade_s   = ImageFont.truetype(komika_path, 70)   # fallback si rank trop long
-        font_pseudo    = ImageFont.truetype(komika_path, 50)
-        font_community = ImageFont.truetype(komika_path, 30)
-    else:
-        print("⚠️ [make_rank_image] Aucune police Komika trouvée, fallback défaut")
-        font_felicit   = ImageFont.load_default()
-        font_grade     = font_felicit
-        font_grade_s   = font_felicit
-        font_pseudo    = font_felicit
-        font_community = font_felicit
-    font_credit = _tf("Righteous-Regular.ttf", 18)
+    if not _RANK_FONTS:
+        _komika = next((p for p in [
+            "KOMIKAX_.ttf", "KomikaAxis.ttf",
+            "attached_assets/KOMIKAX_.ttf", "attached_assets/KomikaAxis.ttf",
+        ] if os.path.exists(p)), None)
+        def _tf(path, size):
+            try:    return ImageFont.truetype(path, size)
+            except: return ImageFont.load_default()
+        if _komika:
+            _RANK_FONTS.update({
+                "felicit":   ImageFont.truetype(_komika, 46),
+                "grade":     ImageFont.truetype(_komika, 100),
+                "grade_s":   ImageFont.truetype(_komika, 70),
+                "pseudo":    ImageFont.truetype(_komika, 50),
+                "community": ImageFont.truetype(_komika, 30),
+            })
+        else:
+            _d = ImageFont.load_default()
+            _RANK_FONTS.update({"felicit": _d, "grade": _d, "grade_s": _d, "pseudo": _d, "community": _d})
+        _RANK_FONTS["credit"] = _tf("Righteous-Regular.ttf", 18)
+    font_felicit   = _RANK_FONTS["felicit"]
+    font_grade     = _RANK_FONTS["grade"]
+    font_grade_s   = _RANK_FONTS["grade_s"]
+    font_pseudo    = _RANK_FONTS["pseudo"]
+    font_community = _RANK_FONTS["community"]
+    font_credit    = _RANK_FONTS["credit"]
 
     rank_labels = {
         "Pirate":          "PIRATE",
@@ -1369,8 +1370,11 @@ TEMPLATE_PATH = "template.png"
 # ─────────────────────────────────────────
 @bot.event
 async def on_ready():
+    global _HTTP
     print(f"[BOT] Connecte : {bot.user}")
     init_db()
+    if _HTTP is None or _HTTP.closed:
+        _HTTP = aiohttp.ClientSession()
 
     # Charge le cache mémoire UNE SEULE FOIS
     await load_data_async()
@@ -1694,18 +1698,21 @@ async def top(interaction: discord.Interaction, periode: app_commands.Choice[str
     days = 0 if all_time else int(periode.value)
 
     vocal_list, msg_list, prime_list = [], [], []
+    _now = now_ts()
 
     for uid, udata in data.items():
         member = guild.get_member(int(uid))
         if not member or member.bot:
             continue
-        ujt = udata.get("join_time")
+        ujt      = udata.get("join_time")
+        sessions = udata.get("vocal_sessions", [])
+        messages = udata.get("messages", [])
         if all_time:
-            sec = total_seconds(udata.get("vocal_sessions", []), join_time=ujt, extra=udata.get("extra_seconds", 0))
-            msgs = total_messages(udata.get("messages", []))
+            sec  = total_seconds(sessions, join_time=ujt, extra=udata.get("extra_seconds", 0), _now=_now)
+            msgs = total_messages(messages)
         else:
-            sec = seconds_in_period(udata.get("vocal_sessions", []), days, join_time=ujt)
-            msgs = messages_in_period(udata.get("messages", []), days)
+            sec  = seconds_in_period(sessions, days, join_time=ujt, _now=_now)
+            msgs = messages_in_period(messages, days, _now=_now)
         prime_val = calculate_prime(sec / 3600, msgs)
         vocal_list.append((uid, member.display_name, sec))
         msg_list.append((uid, member.display_name, msgs))
@@ -1800,6 +1807,8 @@ async def serveur(interaction: discord.Interaction):
     channel_usage  = defaultdict(float)
     hour_usage     = defaultdict(float)
     rank_counts    = defaultdict(int)
+    _now    = now_ts()
+    cutoff7 = _now - 7 * 86400
 
     for uid, udata in data.items():
         member = guild.get_member(int(uid))
@@ -1808,10 +1817,12 @@ async def serveur(interaction: discord.Interaction):
         ujt = udata.get("join_time")
         if ujt:
             en_vocal_now += 1
-        sec  = seconds_in_period(udata.get("vocal_sessions", []), 7, join_time=ujt)
-        msgs = messages_in_period(udata.get("messages", []), 7)
-        sec_all = total_seconds(udata.get("vocal_sessions", []), join_time=ujt, extra=udata.get("extra_seconds", 0))
-        msgs_all = total_messages(udata.get("messages", []))
+        sessions = udata.get("vocal_sessions", [])
+        messages = udata.get("messages", [])
+        sec  = seconds_in_period(sessions, 7, join_time=ujt, _now=_now)
+        msgs = messages_in_period(messages, 7, _now=_now)
+        sec_all = total_seconds(sessions, join_time=ujt, extra=udata.get("extra_seconds", 0), _now=_now)
+        msgs_all = total_messages(messages)
         total_vocal_7d += sec
         total_msg_7d   += msgs
         total_vocal_all += sec_all
@@ -1822,16 +1833,15 @@ async def serveur(interaction: discord.Interaction):
         if r:
             rank_counts[r] += 1
 
-        for s in udata.get("vocal_sessions", []):
-            cutoff = now_ts() - 7 * 86400
-            if s["end"] < cutoff:
+        for s in sessions:
+            if s["end"] < cutoff7:
                 continue
-            duration = s["end"] - max(s["start"], cutoff)
+            duration = s["end"] - max(s["start"], cutoff7)
             ch_id = s.get("channel")
             if ch_id:
                 channel_usage[ch_id] += duration
 
-            start_dt = datetime.fromtimestamp(max(s["start"], cutoff), tz=timezone.utc)
+            start_dt = datetime.fromtimestamp(max(s["start"], cutoff7), tz=timezone.utc)
             end_dt   = datetime.fromtimestamp(s["end"], tz=timezone.utc)
             current  = start_dt
             while current < end_dt:
@@ -2202,8 +2212,13 @@ _CHAR_STATIC_URLS: dict[str, str] = {
 
 _NO_MAL_CHARS: frozenset[str] = frozenset({"Zuko"})
 _CHAR_IMAGE_CACHE: dict[str, str | None] = {n: None for n in _NO_MAL_CHARS}
-# Cache bytes PIL par personnage (évite re-téléchargement)
 _CHAR_IMG_BYTES_CACHE: dict[str, bytes | None] = {}
+_CHAR_IMG_BYTES_MAX = 200  # entrées max — évite la fuite mémoire
+
+def _img_bytes_set(key: str, val: bytes | None):
+    if len(_CHAR_IMG_BYTES_CACHE) >= _CHAR_IMG_BYTES_MAX:
+        _CHAR_IMG_BYTES_CACHE.pop(next(iter(_CHAR_IMG_BYTES_CACHE)))
+    _CHAR_IMG_BYTES_CACHE[key] = val
 
 _CHAR_IMG_URL = "cdn.myanimelist.net/images/characters"
 
@@ -2303,15 +2318,15 @@ async def _fetch_char_image_bytes(name: str) -> bytes | None:
         # Pareil : ne pas cacher les échecs transitoires sur les bytes
         return None
     try:
-        async with aiohttp.ClientSession() as sess:
-            async with sess.get(url, timeout=aiohttp.ClientTimeout(total=10)) as resp:
-                if resp.status == 200:
-                    raw = await resp.read()
-                    _CHAR_IMG_BYTES_CACHE[name] = raw
-                    return raw
-                if resp.status == 404:
-                    _CHAR_IMG_BYTES_CACHE[name] = None
-                print(f"[CITATION] DL image HTTP {resp.status} pour '{name}'")
+        sess = _HTTP or aiohttp.ClientSession()
+        async with sess.get(url, timeout=aiohttp.ClientTimeout(total=10)) as resp:
+            if resp.status == 200:
+                raw = await resp.read()
+                _img_bytes_set(name, raw)
+                return raw
+            if resp.status == 404:
+                _img_bytes_set(name, None)
+            print(f"[CITATION] DL image HTTP {resp.status} pour '{name}'")
     except Exception as e:
         print(f"[CITATION] DL image erreur '{name}': {e}")
     return None
@@ -3247,11 +3262,10 @@ async def _start_quiz_session(inter: discord.Interaction, n: int, category: str 
     session = _QuizSession(questions, uid, inter, category)
     QUIZ_SESSIONS[uid] = session
 
-    # Mémorise les questions de cette session
-    history = QUIZ_USER_HISTORY.setdefault(uid, [])
-    history.extend(q["question"] for q in questions)
-    if len(history) > _QUIZ_HISTORY_MAX:
-        QUIZ_USER_HISTORY[uid] = history[-_QUIZ_HISTORY_MAX:]
+    # Mémorise les questions de cette session (tronqué immédiatement)
+    history = QUIZ_USER_HISTORY.get(uid, [])
+    history = (history + [q["question"] for q in questions])[-_QUIZ_HISTORY_MAX:]
+    QUIZ_USER_HISTORY[uid] = history
 
     if loading_msg:
         try:
