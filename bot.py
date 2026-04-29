@@ -3417,36 +3417,36 @@ class _QuizCategorySelect(discord.ui.Select):
         self.view.stop()
         category  = self.values[0]
         cat_label = _CAT_LABELS_MAP.get(category, category)
-        sep = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
         if self.score_mode:
             embed = discord.Embed(
                 title="✨  Score à atteindre",
-                description=(
-                    f"Catégorie : **{cat_label}**\n\n"
-                    f"{sep}\n"
-                    f"Le quiz s'arrête dès que tu atteins l'objectif de points !\n"
-                    f"✨  **20 pts**  ·  ✨  **50 pts**  ·  ✨  **100 pts**  ·  ✨  **200 pts**\n"
-                    f"{sep}"
-                ),
+                description=f"Catégorie choisie : **{cat_label}**",
                 color=discord.Color.from_rgb(50, 180, 120),
             )
+            embed.set_thumbnail(url=inter.user.display_avatar.url)
+            embed.add_field(name="​", value="**━━━━━━  OBJECTIF  ━━━━━━**", inline=False)
+            embed.add_field(name="✨  20 pts",  value="*Échauffement*",    inline=True)
+            embed.add_field(name="✨  50 pts",  value="*Session standard*", inline=True)
+            embed.add_field(name="✨  100 pts", value="*Pour les fans*",    inline=True)
+            embed.add_field(name="✨  200 pts", value="*Champion absolu*",  inline=True)
+            embed.add_field(name="​", value="*Le quiz s'arrête dès que tu atteins l'objectif !*", inline=False)
+            embed.set_footer(text="Brams Community  •  by Freydiss")
             await inter.response.edit_message(embed=embed, view=_ScoreTargetView(self.user_id, category))
         else:
-            title = "⚔️  Duel — Combien de questions ?" if self.challenged_id else "🎯  Combien de questions ?"
+            title = "⚔️  Duel — Nombre de questions" if self.challenged_id else "🎯  Nombre de questions"
             embed = discord.Embed(
                 title=title,
-                description=(
-                    f"Catégorie : **{cat_label}**\n\n"
-                    f"{sep}\n"
-                    f"🎯  **5 questions**  —  Quiz express\n"
-                    f"⚡  **10 questions**  —  Session standard\n"
-                    f"🔥  **15 questions**  —  Pour les vrais\n"
-                    f"✏️  **Personnalisé**  —  Ton propre nombre (1–30)\n"
-                    f"{sep}"
-                ),
+                description=f"Catégorie choisie : **{cat_label}**",
                 color=discord.Color.from_rgb(100, 50, 200),
             )
+            embed.set_thumbnail(url=inter.user.display_avatar.url)
+            embed.add_field(name="​", value="**━━━━━━  DURÉE  ━━━━━━**", inline=False)
+            embed.add_field(name="🎯  5 questions",  value="*Quiz express*",      inline=True)
+            embed.add_field(name="⚡  10 questions", value="*Session standard*",  inline=True)
+            embed.add_field(name="🔥  15 questions", value="*Pour les vrais*",    inline=True)
+            embed.add_field(name="✏️  Personnalisé", value="*1 à 30 questions*",  inline=True)
+            embed.set_footer(text="Brams Community  •  by Freydiss")
             await inter.response.edit_message(embed=embed, view=_DurationView(self.user_id, category, self.challenged_id))
 
 
@@ -3477,16 +3477,15 @@ class _OpponentSelect(discord.ui.UserSelect):
             await inter.response.send_message("L'un des joueurs a déjà un quiz en cours.", ephemeral=True)
             return
         self.view.stop()
-        sep = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
         embed = discord.Embed(
-            title="⚔️  Duel — Quelle catégorie ?",
-            description=(
-                f"{sep}\n"
-                f"Sélectionne une catégorie dans le menu ci-dessous.\n"
-                f"{sep}"
-            ),
+            title="⚔️  Duel — Catégorie",
+            description=f"**{inter.user.display_name}** vs **{opponent.display_name}** — Choisis la catégorie !",
             color=discord.Color.orange(),
         )
+        embed.set_thumbnail(url=inter.user.display_avatar.url)
+        embed.add_field(name="​", value="**━━━━━━  CATÉGORIE  ━━━━━━**", inline=False)
+        embed.add_field(name="​", value="*Sélectionne une catégorie dans le menu ci-dessous*", inline=False)
+        embed.set_footer(text="Brams Community  •  by Freydiss")
         await inter.response.edit_message(embed=embed, view=_CategoryView(self._challenger_id, challenged_id=opponent.id))
 
 
@@ -3507,16 +3506,15 @@ class _QuizTypeView(discord.ui.View):
             await inter.response.send_message("Ce n'est pas ton quiz.", ephemeral=True)
             return
         self.stop()
-        sep = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
         embed = discord.Embed(
-            title="🎌  Quelle catégorie ?",
-            description=(
-                f"{sep}\n"
-                f"Sélectionne une catégorie dans le menu ci-dessous.\n"
-                f"{sep}"
-            ),
+            title="🎌  Catégorie",
+            description="Sur quoi veux-tu être testé ?",
             color=discord.Color.from_rgb(100, 50, 200),
         )
+        embed.set_thumbnail(url=inter.user.display_avatar.url)
+        embed.add_field(name="​", value="**━━━━━━  CATÉGORIE  ━━━━━━**", inline=False)
+        embed.add_field(name="​", value="*Sélectionne une catégorie dans le menu ci-dessous*", inline=False)
+        embed.set_footer(text="Brams Community  •  by Freydiss")
         await inter.response.edit_message(embed=embed, view=_CategoryView(self._user_id, score_mode=False))
 
     @discord.ui.button(label="Par score", style=discord.ButtonStyle.success, emoji="✨")
@@ -3525,16 +3523,15 @@ class _QuizTypeView(discord.ui.View):
             await inter.response.send_message("Ce n'est pas ton quiz.", ephemeral=True)
             return
         self.stop()
-        sep = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
         embed = discord.Embed(
-            title="🎌  Quelle catégorie ?",
-            description=(
-                f"{sep}\n"
-                f"Sélectionne une catégorie dans le menu ci-dessous.\n"
-                f"{sep}"
-            ),
+            title="🎌  Catégorie",
+            description="Sur quoi veux-tu être testé ?",
             color=discord.Color.from_rgb(50, 180, 120),
         )
+        embed.set_thumbnail(url=inter.user.display_avatar.url)
+        embed.add_field(name="​", value="**━━━━━━  CATÉGORIE  ━━━━━━**", inline=False)
+        embed.add_field(name="​", value="*Sélectionne une catégorie dans le menu ci-dessous*", inline=False)
+        embed.set_footer(text="Brams Community  •  by Freydiss")
         await inter.response.edit_message(embed=embed, view=_CategoryView(self._user_id, score_mode=True))
 
 
@@ -3549,17 +3546,17 @@ class _ModeView(discord.ui.View):
             await inter.response.send_message("Ce n'est pas ton quiz.", ephemeral=True)
             return
         self.stop()
-        sep = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
         embed = discord.Embed(
-            title="🎮  Solo — Mode de jeu",
-            description=(
-                f"{sep}\n"
-                f"🎯  **Par questions**  —  Nombre fixe de questions\n"
-                f"✨  **Par score**  —  Joue jusqu'à un objectif de points\n"
-                f"{sep}"
-            ),
+            title="🎮  Solo",
+            description="Comment veux-tu jouer ?",
             color=discord.Color.from_rgb(100, 50, 200),
         )
+        embed.set_thumbnail(url=inter.user.display_avatar.url)
+        embed.add_field(name="​", value="**━━━━━━  MODE DE JEU  ━━━━━━**", inline=False)
+        embed.add_field(name="🎯  Par questions", value="*Nombre fixe de questions*",    inline=True)
+        embed.add_field(name="✨  Par score",      value="*Joue jusqu'à un objectif*",    inline=True)
+        embed.add_field(name="​",                  value="​",                               inline=True)
+        embed.set_footer(text="Brams Community  •  by Freydiss")
         await inter.response.edit_message(embed=embed, view=_QuizTypeView(self._user_id))
 
     @discord.ui.button(label="Duel", style=discord.ButtonStyle.danger, emoji="⚔️")
@@ -3571,16 +3568,15 @@ class _ModeView(discord.ui.View):
             await inter.response.send_message("Tu as déjà un quiz en cours.", ephemeral=True)
             return
         self.stop()
-        sep = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
         embed = discord.Embed(
-            title="⚔️  Duel — Choisis ton adversaire",
-            description=(
-                f"{sep}\n"
-                f"Sélectionne le membre que tu veux défier dans le menu ci-dessous.\n"
-                f"{sep}"
-            ),
+            title="⚔️  Duel Quiz",
+            description="Qui oses-tu défier ?",
             color=discord.Color.orange(),
         )
+        embed.set_thumbnail(url=inter.user.display_avatar.url)
+        embed.add_field(name="​", value="**━━━━━━  ADVERSAIRE  ━━━━━━**", inline=False)
+        embed.add_field(name="​", value="*Sélectionne un membre dans le menu ci-dessous*", inline=False)
+        embed.set_footer(text="Brams Community  •  by Freydiss")
         await inter.response.edit_message(embed=embed, view=_OpponentSelectView(self._user_id))
 
 
@@ -3672,17 +3668,17 @@ async def _quiz_entry(interaction: discord.Interaction):
         print(f"❌ quiz defer: {e}")
         return
 
-    sep = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     embed = discord.Embed(
         title="🎌  Quiz Animé",
-        description=(
-            f"{sep}\n"
-            f"🎮  **Solo**  —  Joue à ton rythme\n"
-            f"⚔️  **Duel**  —  Affronte un autre membre\n"
-            f"{sep}"
-        ),
+        description=f"Bienvenue **{interaction.user.display_name}** — teste tes connaissances !",
         color=discord.Color.from_rgb(100, 50, 200),
     )
+    embed.set_thumbnail(url=interaction.user.display_avatar.url)
+    embed.add_field(name="​", value="**━━━━━━  MODE DE JEU  ━━━━━━**", inline=False)
+    embed.add_field(name="🎮  Solo",   value="*Joue à ton rythme*",        inline=True)
+    embed.add_field(name="⚔️  Duel",  value="*Affronte un autre membre*",  inline=True)
+    embed.add_field(name="​",          value="​",                            inline=True)
+    embed.set_footer(text="Brams Community  •  by Freydiss")
     try:
         await interaction.followup.send(embed=embed, view=_ModeView(interaction.user.id))
     except Exception as e:
