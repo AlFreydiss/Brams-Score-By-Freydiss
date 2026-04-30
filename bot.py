@@ -60,7 +60,52 @@ RANK_BG_DEFAULT = "background.jpeg"
 _RANK_FONTS: dict = {}  # cache fonts PIL pour make_rank_image
 
 LOCAL_CHAR_GIFS = {
-    "Monkey D. Luffy": "luffy gif.gif",
+    # One Piece
+    "Monkey D. Luffy":    "luffy citation.gif",
+    "Roronoa Zoro":       "zoro citation.gif",
+    "Portgas D. Ace":     "ace citation.gif",
+    "Barbe Blanche":      "barbe blanche citation.gif",
+    "Trafalgar Law":      "tarfalgar law citation.gif",
+    "Sanji":              "sanji citation.gif",
+    # Naruto
+    "Naruto Uzumaki":     "naruto citation.gif",
+    "Kakashi Hatake":     "kakashi citation.gif",
+    "Itachi Uchiha":      "itachi citation.gif",
+    "Jiraiya":            "jiraiya citation.gif",
+    "Pain":               "pain citation.gif",
+    "Obito Uchiha":       "obito citation.gif",
+    "Rock Lee":           "Rock lee citation.gif",
+    "Sasuke Uchiha":      "sasuke citation.gif",
+    "Minato Namikaze":    "minato gif.gif",
+    "Hinata Hyuga":       "hinata citation.gif",
+    # Attack on Titan
+    "Levi Ackerman":      "livai ackerman citation.gif",
+    "Eren Yeager":        "eren yeager citation.gif",
+    "Mikasa Ackerman":    "mikasa citation.gif",
+    "Armin Arlert":       "armin arlet citation.gif",
+    "Erwin Smith":        "erwin smith citation.gif",
+    # Death Note
+    "Light Yagami":       "light yagami citation.gif",
+    "L":                  "L citation.gif",
+    "Ryuk":               "ryuk citation.gif",
+    # Dragon Ball Z
+    "Son Goku":           "san goku citation.gif",
+    "Vegeta":             "vegeta citation.gif",
+    # Demon Slayer
+    "Tanjiro Kamado":     "tanjiro kamado citation.gif",
+    "Rengoku Kyojuro":    "kyojuro rengoku citation.gif",
+    # Jujutsu Kaisen
+    "Yuji Itadori":       "yuji itadori citation.gif",
+    "Gojo Satoru":        "gojo satoru citation.gif",
+    # Bleach
+    "Ichigo Kurosaki":    "ichigo citation.gif",
+    "Byakuya Kuchiki":    "byakuya kuchiki citation.gif",
+    # Fairy Tail
+    "Erza Scarlet":       "erza scarlett citation.gif",
+    # Vinland Saga
+    "Thorfinn":           "thorfinnn citation.gif",
+    # Violet Evergarden
+    "Violet Evergarden":  "violet evergarden citation.gif",
 }
 
 
