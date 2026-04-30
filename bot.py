@@ -59,6 +59,10 @@ RANK_BG_PATHS = {
 RANK_BG_DEFAULT = "background.jpeg"
 _RANK_FONTS: dict = {}  # cache fonts PIL pour make_rank_image
 
+LOCAL_CHAR_GIFS = {
+    "Monkey D. Luffy": "luffy gif.gif",
+}
+
 
 if os.path.exists(GRAPH_FONT_PATH):
     fm.fontManager.addfont(GRAPH_FONT_PATH)
@@ -1004,6 +1008,13 @@ async def make_citation_image(quote_data: dict) -> tuple:
         except Exception as e:
             print(f"[CITATION] {label} compose failed: {e}")
         return None
+
+    # Cas 0 : GIF local dédié au personnage (priorité maximale)
+    local_gif_path = LOCAL_CHAR_GIFS.get(quote_data["character"])
+    if local_gif_path and os.path.exists(local_gif_path):
+        result = _render_animated_gif(local_gif_path, f"local:{local_gif_path}")
+        if result:
+            return result
 
     # Cas 1 : GIF Giphy du personnage
     if char_gif_bytes:
