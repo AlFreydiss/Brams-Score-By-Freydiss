@@ -917,75 +917,82 @@ async def make_citation_image(quote_data: dict) -> tuple:
     if 0.299 * accent[0] + 0.587 * accent[1] + 0.114 * accent[2] < 40:
         accent = (212, 175, 55)
 
-    # ── FOREGROUND : overlays + texte ──
+    # ── FOREGROUND : overlays ──
     fg = Image.new("RGBA", (W, H), (0, 0, 0, 0))
 
-    # Panneau gauche semi-transparent
+    # Gradient latéral gauche — opacité réduite (GIF visible)
     panel = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     pd = ImageDraw.Draw(panel)
-    SOLID_END, FADE_END = 660, 940
     for x in range(W):
-        if x < SOLID_END:
-            a = 168
-        elif x < FADE_END:
-            t = (x - SOLID_END) / (FADE_END - SOLID_END)
-            a = int(168 * (1 - t * t * t))
+        if x < 560:
+            a = 105
+        elif x < 860:
+            t = (x - 560) / (860 - 560)
+            a = int(105 * (1 - t * t * t))
         else:
             a = 0
         pd.line([(x, 0), (x, H)], fill=(0, 0, 0, a))
     fg = Image.alpha_composite(fg, panel)
 
-    # Vignette basse douce
+    # Vignette basse (ancre le texte)
     vig = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     vd = ImageDraw.Draw(vig)
-    for y in range(H - 90, H):
-        a = int(90 * (y - (H - 90)) / 90)
-        vd.line([(0, y), (W, y)], fill=(0, 0, 0, a))
+    for y in range(H - 200, H):
+        t = (y - (H - 200)) / 200
+        vd.line([(0, y), (W, y)], fill=(0, 0, 0, int(150 * t * t)))
     fg = Image.alpha_composite(fg, vig)
 
-    # Scanlines cinématiques (1 ligne sur 4)
+    # Lueur accent coin bas-gauche (effet couleur du perso)
+    glow = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    gd = ImageDraw.Draw(glow)
+    for r in range(320, 0, -1):
+        a = int(22 * (1 - r / 320))
+        gd.ellipse([(0 - r, H - r), (r, H + r)], fill=(*accent, a))
+    fg = Image.alpha_composite(fg, glow)
+
+    # Scanlines cinéma
     scan = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     sd = ImageDraw.Draw(scan)
     for y in range(0, H, 4):
-        sd.line([(0, y), (W, y)], fill=(0, 0, 0, 16))
+        sd.line([(0, y), (W, y)], fill=(0, 0, 0, 10))
     fg = Image.alpha_composite(fg, scan)
 
-    # Traînée lumineuse diagonale (côté droit, effet énergie)
+    # Traînée lumineuse diagonale (droite)
     streak = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     sk = ImageDraw.Draw(streak)
-    for i in range(-40, 41, 2):
-        alpha = max(0, 18 - abs(i) // 2)
+    for i in range(-35, 36, 2):
+        a = max(0, 14 - abs(i) // 2)
         x0 = W * 3 // 4 + i - H // 2
         x1 = W * 3 // 4 + i + H // 2
-        sk.line([(x0, 0), (x1, H)], fill=(255, 255, 255, alpha), width=1)
+        sk.line([(x0, 0), (x1, H)], fill=(255, 255, 255, a), width=1)
     fg = Image.alpha_composite(fg, streak)
 
     draw = ImageDraw.Draw(fg)
 
     # Barre accent verticale gauche
-    draw.rectangle([(0, 0), (6, H)], fill=(*accent, 255))
+    draw.rectangle([(0, 0), (4, H)], fill=(*accent, 255))
     # Lignes accent haut et bas
-    draw.rectangle([(0, 0), (W, 4)], fill=(*accent, 200))
-    draw.rectangle([(0, H - 4), (W, H)], fill=(*accent, 160))
+    draw.rectangle([(0, 0), (W, 3)], fill=(*accent, 190))
+    draw.rectangle([(0, H - 3), (W, H)], fill=(*accent, 140))
 
-    # Bordure intérieure subtile (relie les brackets)
-    IB = 20
-    draw.rectangle([(IB, IB), (W - IB, IB + 1)], fill=(*accent, 50))
-    draw.rectangle([(IB, H - IB - 1), (W - IB, H - IB)], fill=(*accent, 50))
-    draw.rectangle([(IB, IB), (IB + 1, H - IB)], fill=(*accent, 50))
-    draw.rectangle([(W - IB - 1, IB), (W - IB, H - IB)], fill=(*accent, 50))
+    # Bordure intérieure
+    IB = 18
+    draw.rectangle([(IB, IB), (W - IB, IB + 1)],         fill=(*accent, 38))
+    draw.rectangle([(IB, H - IB - 1), (W - IB, H - IB)], fill=(*accent, 38))
+    draw.rectangle([(IB, IB), (IB + 1, H - IB)],         fill=(*accent, 38))
+    draw.rectangle([(W - IB - 1, IB), (W - IB, H - IB)], fill=(*accent, 38))
 
-    # Brackets décoratifs aux 4 coins
-    BK, BT = 30, 2
-    C = (*accent, 180)
-    draw.rectangle([(16, 14), (16 + BK, 14 + BT)], fill=C)
-    draw.rectangle([(16, 14), (16 + BT, 14 + BK)], fill=C)
-    draw.rectangle([(W - 16 - BK, 14), (W - 16, 14 + BT)], fill=C)
-    draw.rectangle([(W - 16 - BT, 14), (W - 16, 14 + BK)], fill=C)
-    draw.rectangle([(16, H - 14 - BT), (16 + BK, H - 14)], fill=C)
-    draw.rectangle([(16, H - 14 - BK), (16 + BT, H - 14)], fill=C)
-    draw.rectangle([(W - 16 - BK, H - 14 - BT), (W - 16, H - 14)], fill=C)
-    draw.rectangle([(W - 16 - BT, H - 14 - BK), (W - 16, H - 14)], fill=C)
+    # Brackets aux 4 coins
+    BK, BT = 28, 2
+    C = (*accent, 170)
+    draw.rectangle([(14, 12), (14 + BK, 12 + BT)], fill=C)
+    draw.rectangle([(14, 12), (14 + BT, 12 + BK)], fill=C)
+    draw.rectangle([(W - 14 - BK, 12), (W - 14, 12 + BT)], fill=C)
+    draw.rectangle([(W - 14 - BT, 12), (W - 14, 12 + BK)], fill=C)
+    draw.rectangle([(14, H - 12 - BT), (14 + BK, H - 12)], fill=C)
+    draw.rectangle([(14, H - 12 - BK), (14 + BT, H - 12)], fill=C)
+    draw.rectangle([(W - 14 - BK, H - 12 - BT), (W - 14, H - 12)], fill=C)
+    draw.rectangle([(W - 14 - BT, H - 12 - BK), (W - 14, H - 12)], fill=C)
 
     TX = 50
     TW = 670
