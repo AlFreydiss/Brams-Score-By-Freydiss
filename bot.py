@@ -970,45 +970,58 @@ async def make_citation_image(quote_data: dict) -> tuple:
 
     buf = io.BytesIO()
 
-    # Cas 1 : GIF Giphy du personnage
-    if char_gif_bytes:
+    def _render_animated_gif(src, label="GIF") -> tuple | None:
+        """Compose src (bytes ou chemin fichier) en GIF animé. Retourne (BytesIO, True) ou None."""
         try:
-            bg_src = Image.open(io.BytesIO(char_gif_bytes))
+            bg_src = Image.open(io.BytesIO(src) if isinstance(src, (bytes, bytearray)) else src)
             try:
                 n_frames = bg_src.n_frames
             except Exception:
                 n_frames = 1
-            if n_frames > 1:
-                max_frames = 50
-                step = max(1, n_frames // max_frames)
-                gif_frames = []
-                durations  = []
-                for i in range(0, n_frames, step):
-                    try:
-                        bg_src.seek(i)
-                        gif_frames.append(compose_on_bg(bg_src.copy()))
-                        durations.append(max(40, bg_src.info.get("duration", 80) * step))
-                    except Exception as e:
-                        print(f"[CITATION] Giphy frame {i}: {e}")
-                if gif_frames:
-                    pal_frames = []
-                    for f in gif_frames:
-                        pal = f.convert("RGB").quantize(colors=256, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE)
-                        pal_frames.append(pal)
-                    pal_frames[0].save(buf, format="GIF", save_all=True, append_images=pal_frames[1:],
-                                       duration=durations, loop=0, disposal=2, optimize=False)
-                    buf.seek(0)
-                    return buf, True
-            # GIF à frame unique → PNG
-            bg_src.seek(0)
-            result = compose_on_bg(bg_src)
-            result.convert("RGB").save(buf, format="PNG", optimize=True)
-            buf.seek(0)
-            return buf, False
+            if n_frames <= 1:
+                return None
+            max_frames = 40
+            step = max(1, n_frames // max_frames)
+            gif_frames, durations = [], []
+            for i in range(0, n_frames, step):
+                try:
+                    bg_src.seek(i)
+                    gif_frames.append(compose_on_bg(bg_src.copy()))
+                    durations.append(max(40, bg_src.info.get("duration", 80) * step))
+                except Exception as e:
+                    print(f"[CITATION] {label} frame {i}: {e}")
+            if not gif_frames:
+                return None
+            pal_frames = [
+                f.convert("RGB").quantize(colors=256, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE)
+                for f in gif_frames
+            ]
+            b = io.BytesIO()
+            pal_frames[0].save(b, format="GIF", save_all=True, append_images=pal_frames[1:],
+                               duration=durations, loop=0, disposal=2, optimize=False)
+            b.seek(0)
+            return b, True
         except Exception as e:
-            print(f"[CITATION] Giphy compose failed: {e}")
+            print(f"[CITATION] {label} compose failed: {e}")
+        return None
 
-    # Cas 2 : image statique du personnage en fond
+    # Cas 1 : GIF Giphy du personnage
+    if char_gif_bytes:
+        result = _render_animated_gif(char_gif_bytes, "Giphy")
+        if result:
+            return result
+
+    # Cas 2 : GIF local animé (fallback fiable — sans clé API)
+    _LOCAL_GIFS = ["pirate_bg.gif", "shichibukai_bg.gif", "fujitoraaaa.gif", "yonkou_bg.gif", "roi_des_pirates_bg.gif"]
+    random.shuffle(_LOCAL_GIFS)
+    for gif_path in _LOCAL_GIFS:
+        if os.path.exists(gif_path):
+            result = _render_animated_gif(gif_path, f"local:{gif_path}")
+            if result:
+                return result
+            break
+
+    # Cas 3 : image statique du personnage en fond
     if char_static_bytes:
         try:
             result = compose_on_bg(Image.open(io.BytesIO(char_static_bytes)))
@@ -1018,7 +1031,7 @@ async def make_citation_image(quote_data: dict) -> tuple:
         except Exception as e:
             print(f"[CITATION] static bg failed: {e}")
 
-    # Cas 3 : fond sombre pur (aucun visuel dispo)
+    # Cas 4 : fond sombre pur (aucun visuel dispo)
     canvas = Image.new("RGBA", (W, H), (6, 6, 10, 255))
     result = Image.alpha_composite(canvas, fg)
     result.convert("RGB").save(buf, format="PNG", optimize=True)
