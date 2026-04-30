@@ -214,7 +214,7 @@ RANKS = [
     (10,  "Pirate"),
 ]
 
-# Couleurs RGB par rang — utilisées dans les images ET les embeds d'annonce
+# Couleurs RGB par rang - utilisées dans les images ET les embeds d'annonce
 RANK_COLORS = {
     "Pirate":          (46,  204, 113),
     "Shichibukai":     (22,  96,  45),
@@ -333,7 +333,7 @@ CHAR_JIKAN_IDS = {
     "Violet Evergarden": 141354, # vérifié Jikan : "Violet Evergarden"
 }
 # ─────────────────────────────────────────
-#  QUOTES_DB — citations anime verifiees
+#  QUOTES_DB - citations anime verifiees
 # ─────────────────────────────────────────
 QUOTES_DB = [
     # ONE PIECE
@@ -346,12 +346,12 @@ QUOTES_DB = [
     {"quote": "Merci de m avoir aime.", "character": "Portgas D. Ace", "anime": "One Piece", "color": "#EF4444"},
     {"quote": "Je n ai aucun regret d etre ne.", "character": "Portgas D. Ace", "anime": "One Piece", "color": "#EF4444"},
     {"quote": "Mes fils n ont pas besoin de partager le sang de mes veines.", "character": "Barbe Blanche", "anime": "One Piece", "color": "#94A3B8"},
-    {"quote": "Je suis le plus fort du monde — et pourtant, je n ai pas su sauver mon fils.", "character": "Barbe Blanche", "anime": "One Piece", "color": "#94A3B8"},
+    {"quote": "Je suis le plus fort du monde - et pourtant, je n ai pas su sauver mon fils.", "character": "Barbe Blanche", "anime": "One Piece", "color": "#94A3B8"},
     {"quote": "Je suis un chirurgien. Mon metier, c est de sauver des vies.", "character": "Trafalgar Law", "anime": "One Piece", "color": "#3B82F6"},
     {"quote": "Un vrai cuisinier ne lache jamais ses mains. Elles sont son outil et sa fierte.", "character": "Sanji", "anime": "One Piece", "color": "#FBBF24"},
     {"quote": "Un vrai homme ne frappe jamais une femme, quoi qu il arrive.", "character": "Sanji", "anime": "One Piece", "color": "#FBBF24"},
     # NARUTO
-    {"quote": "Je ne recule jamais, je ne mens jamais — c est la voie du ninja !", "character": "Naruto Uzumaki", "anime": "Naruto", "color": "#F97316"},
+    {"quote": "Je ne recule jamais, je ne mens jamais - c est la voie du ninja !", "character": "Naruto Uzumaki", "anime": "Naruto", "color": "#F97316"},
     {"quote": "C est ca, pour moi, etre un ninja !", "character": "Naruto Uzumaki", "anime": "Naruto", "color": "#F97316"},
     {"quote": "Si tu abandonnes, c est la fin. Si tu continues, il reste toujours une chance.", "character": "Naruto Uzumaki", "anime": "Naruto", "color": "#F97316"},
     {"quote": "La douleur rend les gens plus forts. Et les gens forts aident ceux qui souffrent.", "character": "Naruto Uzumaki", "anime": "Naruto", "color": "#F97316"},
@@ -364,13 +364,13 @@ QUOTES_DB = [
     {"quote": "Si tu ne peux pas utiliser le ninjutsu, travaille dix fois plus dur que les autres.", "character": "Rock Lee", "anime": "Naruto", "color": "#16A34A"},
     {"quote": "Mon pouvoir n a qu un seul objectif : la vengeance.", "character": "Sasuke Uchiha", "anime": "Naruto", "color": "#1E1B4B"},
     {"quote": "Je n ai besoin de personne pour accomplir ce que je dois accomplir.", "character": "Sasuke Uchiha", "anime": "Naruto", "color": "#1E1B4B"},
-    {"quote": "Je deviens Hokage — sinon, ca ne veut rien dire d etre ninja.", "character": "Minato Namikaze", "anime": "Naruto", "color": "#FBBF24"},
+    {"quote": "Je deviens Hokage - sinon, ca ne veut rien dire d etre ninja.", "character": "Minato Namikaze", "anime": "Naruto", "color": "#FBBF24"},
     {"quote": "Je ne pleure pas parce que je suis faible. Je pleure parce que j ai ete fort trop longtemps.", "character": "Hinata Hyuga", "anime": "Naruto", "color": "#FFB6C1"},
     # ATTACK ON TITAN
     {"quote": "Personne ne sait ce qui va se passer. Decide simplement de ce que tu ne regretteras pas.", "character": "Levi Ackerman", "anime": "Attack on Titan", "color": "#1F2937"},
     {"quote": "Les choix que nous faisons sur le champ de bataille sont absolus.", "character": "Levi Ackerman", "anime": "Attack on Titan", "color": "#1F2937"},
     {"quote": "Si on ne se bat pas, on ne peut pas gagner.", "character": "Eren Yeager", "anime": "Attack on Titan", "color": "#065F46"},
-    {"quote": "Je continuerai d avancer — jusqu a ce que mes ennemis soient aneantis.", "character": "Eren Yeager", "anime": "Attack on Titan", "color": "#065F46"},
+    {"quote": "Je continuerai d avancer - jusqu a ce que mes ennemis soient aneantis.", "character": "Eren Yeager", "anime": "Attack on Titan", "color": "#065F46"},
     {"quote": "Ce monde est cruel. Mais il est aussi beau.", "character": "Mikasa Ackerman", "anime": "Attack on Titan", "color": "#374151"},
     {"quote": "Ceux qui sont incapables de renoncer a quelque chose ne peuvent jamais rien changer.", "character": "Armin Arlert", "anime": "Attack on Titan", "color": "#78716C"},
     {"quote": "Le resultat de nos combats fera partie de l avenir de l humanite.", "character": "Erwin Smith", "anime": "Attack on Titan", "color": "#B45309"},
@@ -392,12 +392,12 @@ QUOTES_DB = [
     {"quote": "Enflamme ton coeur !", "character": "Rengoku Kyojuro", "anime": "Demon Slayer", "color": "#EF4444"},
     {"quote": "Grandis avec force. Et protege les plus faibles que toi.", "character": "Rengoku Kyojuro", "anime": "Demon Slayer", "color": "#EF4444"},
     # JUJUTSU KAISEN
-    {"quote": "Je veux mourir entoure de gens — pas seul.", "character": "Yuji Itadori", "anime": "Jujutsu Kaisen", "color": "#EC4899"},
+    {"quote": "Je veux mourir entoure de gens - pas seul.", "character": "Yuji Itadori", "anime": "Jujutsu Kaisen", "color": "#EC4899"},
     {"quote": "Desole, Geto. Tu es le dernier sorcier que j ai appele mon ami.", "character": "Gojo Satoru", "anime": "Jujutsu Kaisen", "color": "#6366F1"},
     {"quote": "Je suis le plus fort. Donc je suis le seul a pouvoir le faire.", "character": "Gojo Satoru", "anime": "Jujutsu Kaisen", "color": "#6366F1"},
     # BLEACH
     {"quote": "Je ne suis pas un heros ni un dieu. Quand on m attaque, je contre-attaque. C est tout.", "character": "Ichigo Kurosaki", "anime": "Bleach", "color": "#EA580C"},
-    {"quote": "Peu importe la raison — je veux juste avoir la force de proteger ceux que j aime.", "character": "Ichigo Kurosaki", "anime": "Bleach", "color": "#EA580C"},
+    {"quote": "Peu importe la raison - je veux juste avoir la force de proteger ceux que j aime.", "character": "Ichigo Kurosaki", "anime": "Bleach", "color": "#EA580C"},
     {"quote": "Les regles existent pour etre suivies. Meme au prix de sa vie.", "character": "Byakuya Kuchiki", "anime": "Bleach", "color": "#1E293B"},
     # FULLMETAL ALCHEMIST
     {"quote": "L humanite ne peut rien obtenir sans donner quelque chose en echange. C est la loi de l equivalence.", "character": "Edward Elric", "anime": "Fullmetal Alchemist", "color": "#D97706"},
@@ -405,10 +405,10 @@ QUOTES_DB = [
     {"quote": "Un homme qui leve la main sur une femme n est pas un vrai homme.", "character": "Roy Mustang", "anime": "Fullmetal Alchemist", "color": "#1E40AF"},
     {"quote": "On ne peut pas tout obtenir dans ce monde. Mais on peut choisir ce qui vaut la peine d essayer.", "character": "Alphonse Elric", "anime": "Fullmetal Alchemist", "color": "#E2E8F0"},
     # HUNTER x HUNTER
-    {"quote": "Je veux voir ce que voit mon pere — ce qui vaut autant que moi a ses yeux.", "character": "Gon Freecss", "anime": "Hunter x Hunter", "color": "#16A34A"},
+    {"quote": "Je veux voir ce que voit mon pere - ce qui vaut autant que moi a ses yeux.", "character": "Gon Freecss", "anime": "Hunter x Hunter", "color": "#16A34A"},
     {"quote": "Tu peux choisir d etre gentil. Meme dans ce monde cruel.", "character": "Killua Zoldyck", "anime": "Hunter x Hunter", "color": "#94A3B8"},
     {"quote": "Les fleurs se cueillent en fleur. Les fruits se mangent a maturite.", "character": "Hisoka Morow", "anime": "Hunter x Hunter", "color": "#DC2626"},
-    {"quote": "Je ne vivrai que pour ma vengeance — et je mourrai pour elle.", "character": "Kurapika", "anime": "Hunter x Hunter", "color": "#7C3AED"},
+    {"quote": "Je ne vivrai que pour ma vengeance - et je mourrai pour elle.", "character": "Kurapika", "anime": "Hunter x Hunter", "color": "#7C3AED"},
     {"quote": "Je n avais pas imagine que perdre aux echecs puisse me rendre aussi... heureux.", "character": "Meruem", "anime": "Hunter x Hunter", "color": "#065F46"},
     {"quote": "Si tu veux apprendre a connaitre quelqu un, decouvre ce qui le met en colere.", "character": "Mito Freecss", "anime": "Hunter x Hunter", "color": "#2E7D32"},
     # JOJO'S BIZARRE ADVENTURE
@@ -416,7 +416,7 @@ QUOTES_DB = [
     {"quote": "Nul ne peut resister a mon pouvoir. Pas meme le temps.", "character": "Dio Brando", "anime": "JoJo's Bizarre Adventure", "color": "#6D28D9"},
     {"quote": "J ai un reve. Et ce reve ne mourra jamais.", "character": "Giorno Giovanna", "anime": "JoJo's Bizarre Adventure", "color": "#F472B6"},
     # FAIRY TAIL
-    {"quote": "Je ne serai jamais seul — mes amis sont toujours dans mon coeur !", "character": "Natsu Dragneel", "anime": "Fairy Tail", "color": "#DC2626"},
+    {"quote": "Je ne serai jamais seul - mes amis sont toujours dans mon coeur !", "character": "Natsu Dragneel", "anime": "Fairy Tail", "color": "#DC2626"},
     {"quote": "Les larmes ne sont pas une faiblesse. Ce sont la preuve que tu ressens quelque chose.", "character": "Erza Scarlet", "anime": "Fairy Tail", "color": "#9F1239"},
     {"quote": "Avance, meme si c est dur. La route se tracera sous tes pieds.", "character": "Erza Scarlet", "anime": "Fairy Tail", "color": "#9F1239"},
     # CODE GEASS
@@ -432,7 +432,7 @@ QUOTES_DB = [
     {"quote": "Vous devrez combattre de toutes vos forces. Meme si votre corps est dechire en mille morceaux.", "character": "Guts", "anime": "Berserk", "color": "#4B0082"},
     {"quote": "La destinee ne me fait pas peur. Je la taille a coups d epee.", "character": "Guts", "anime": "Berserk", "color": "#4B0082"},
     # RE:ZERO
-    {"quote": "Je reviens a la vie encore et encore. Pas pour moi — pour eux.", "character": "Subaru Natsuki", "anime": "Re:Zero", "color": "#3B82F6"},
+    {"quote": "Je reviens a la vie encore et encore. Pas pour moi - pour eux.", "character": "Subaru Natsuki", "anime": "Re:Zero", "color": "#3B82F6"},
     {"quote": "Je t aime. La ou tu vas, j irai.", "character": "Rem", "anime": "Re:Zero", "color": "#60A5FA"},
     # SWORD ART ONLINE
     {"quote": "Un jeu, c est exactement parce que c est un jeu qu on peut tout y donner.", "character": "Kirito", "anime": "Sword Art Online", "color": "#1E1B4B"},
@@ -501,7 +501,7 @@ def _flush_uids_to_db(uids: set) -> None:
 # ── API publique (remplace les anciennes fonctions) ───────────────
 
 async def load_data_async() -> dict:
-    """Retourne le cache mémoire — lecture instantanée (0 réseau)."""
+    """Retourne le cache mémoire - lecture instantanée (0 réseau)."""
     global _CACHE, _CACHE_READY
     if not _CACHE_READY:
         # Chargement initial (une seule fois)
@@ -526,7 +526,7 @@ async def save_data_async(data: dict) -> None:
 
 
 def _sync_flush_dirty() -> int:
-    """Flush synchrone des UIDs dirty — appelé depuis le thread executor."""
+    """Flush synchrone des UIDs dirty - appelé depuis le thread executor."""
     if not _DIRTY:
         return 0
     to_flush = set(_DIRTY)
@@ -874,16 +874,16 @@ def _load_font(path: str, size: int):
     except Exception:
         return ImageFont.load_default()
 
-_CITE_FONT_DECO    = _load_font("KOMIKAX_.ttf",          300)
-_CITE_FONT_CHAR    = _load_font("PirataOne-Regular.ttf",   76)
-_CITE_FONT_ANIME   = _load_font("Righteous-Regular.ttf",   36)
-_CITE_FONT_QUOTE   = _load_font("Righteous-Regular.ttf",   46)
-_CITE_FONT_QUOTE_S = _load_font("Righteous-Regular.ttf",   33)
-_CITE_FONT_FOOTER  = _load_font("Righteous-Regular.ttf",   13)
+_CITE_FONT_QMARK   = _load_font("PirataOne-Regular.ttf",  130)
+_CITE_FONT_CHAR    = _load_font("PirataOne-Regular.ttf",   68)
+_CITE_FONT_ANIME   = _load_font("Righteous-Regular.ttf",   28)
+_CITE_FONT_QUOTE   = _load_font("Righteous-Regular.ttf",   48)
+_CITE_FONT_QUOTE_S = _load_font("Righteous-Regular.ttf",   36)
+_CITE_FONT_FOOTER  = _load_font("Righteous-Regular.ttf",   14)
 
 
 async def make_citation_image(quote_data: dict) -> tuple:
-    """Génère une carte 1200x675 — GIF local du perso en fond, texte par-dessus."""
+    """Génère une carte 1200x675 - GIF local du perso en fond, texte par-dessus."""
     W, H = 1200, 675
 
     # ── Couleur accent ──
@@ -895,56 +895,58 @@ async def make_citation_image(quote_data: dict) -> tuple:
     if 0.299 * accent[0] + 0.587 * accent[1] + 0.114 * accent[2] < 40:
         accent = (212, 175, 55)
 
-    # ── FOREGROUND : overlays + texte (se pose sur n'importe quel fond) ──
+    # ── FOREGROUND : overlays + texte ──
     fg = Image.new("RGBA", (W, H), (0, 0, 0, 0))
 
-    # Teinte accent côté droit
-    tint = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    td   = ImageDraw.Draw(tint)
-    for x in range(W // 2, W):
-        t = (x - W // 2) / (W // 2)
-        td.line([(x, 0), (x, H)], fill=(*accent, int(30 * t)))
-    fg = Image.alpha_composite(fg, tint)
+    # Panneau gauche semi-transparent (plein jusqu'à x=660, fondu cubique jusqu'à x=940)
+    panel = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    pd = ImageDraw.Draw(panel)
+    SOLID_END, FADE_END = 660, 940
+    for x in range(W):
+        if x < SOLID_END:
+            a = 168
+        elif x < FADE_END:
+            t = (x - SOLID_END) / (FADE_END - SOLID_END)
+            a = int(168 * (1 - t * t * t))
+        else:
+            a = 0
+        pd.line([(x, 0), (x, H)], fill=(0, 0, 0, a))
+    fg = Image.alpha_composite(fg, panel)
 
-    # Overlay sombre vertical (haut opaque → bas transparent)
-    lov = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    ld  = ImageDraw.Draw(lov)
-    for y in range(H):
-        t = y / H
-        a = int(200 * (1 - t * t))
-        ld.line([(0, y), (W, y)], fill=(0, 0, 0, a))
-    fg = Image.alpha_composite(fg, lov)
-
-    # Vignette haut/bas
+    # Vignette basse douce
     vig = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    vd  = ImageDraw.Draw(vig)
-    for y in range(80):
-        vd.line([(0, y), (W, y)], fill=(0, 0, 0, int(140 * (1 - y / 80))))
-    for y in range(H - 60, H):
-        vd.line([(0, y), (W, y)], fill=(0, 0, 0, int(120 * (y - (H - 60)) / 60)))
+    vd = ImageDraw.Draw(vig)
+    for y in range(H - 90, H):
+        a = int(90 * (y - (H - 90)) / 90)
+        vd.line([(0, y), (W, y)], fill=(0, 0, 0, a))
     fg = Image.alpha_composite(fg, vig)
+
+    draw = ImageDraw.Draw(fg)
+
+    # Barre accent verticale gauche
+    draw.rectangle([(0, 0), (6, H)], fill=(*accent, 255))
+    # Ligne accent horizontale haut
+    draw.rectangle([(0, 0), (W, 4)], fill=(*accent, 200))
+    # Ligne accent horizontale bas
+    draw.rectangle([(0, H - 4), (W, H)], fill=(*accent, 160))
+
+    TX = 50
+    TW = 670
+
+    font_qmark   = _CITE_FONT_QMARK
+    font_char    = _CITE_FONT_CHAR
+    font_anime   = _CITE_FONT_ANIME
+    font_quote   = _CITE_FONT_QUOTE
+    font_quote_s = _CITE_FONT_QUOTE_S
+    font_footer  = _CITE_FONT_FOOTER
 
     def stroke_text(d, pos, text, font, fill, sw=2):
         x, y = pos
         for dx in range(-sw, sw + 1):
             for dy in range(-sw, sw + 1):
                 if dx or dy:
-                    d.text((x + dx, y + dy), text, font=font, fill=(0, 0, 0, 220))
+                    d.text((x + dx, y + dy), text, font=font, fill=(0, 0, 0, 200))
         d.text(pos, text, font=font, fill=fill)
-
-    font_deco    = _CITE_FONT_DECO
-    font_char    = _CITE_FONT_CHAR
-    font_anime   = _CITE_FONT_ANIME
-    font_quote   = _CITE_FONT_QUOTE
-    font_quote_s = _CITE_FONT_QUOTE_S
-    font_footer  = _CITE_FONT_FOOTER
-    TX = 56
-    TW = 640
-
-    deco_l = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    ImageDraw.Draw(deco_l).text((TX - 18, 20), "“", font=font_deco, fill=(255, 255, 255, 18))
-    fg   = Image.alpha_composite(fg, deco_l)
-    draw = ImageDraw.Draw(fg)
 
     def wrap_text(text, font, max_w):
         words, wlines, cur = text.split(), [], ""
@@ -960,34 +962,41 @@ async def make_citation_image(quote_data: dict) -> tuple:
             wlines.append(cur)
         return wlines
 
+    # Guillemet décoratif en accent (grand, semi-transparent)
+    draw.text((TX - 4, 8), '“', font=font_qmark, fill=(*accent, 55))
+
+    # Zone inférieure : nom perso + anime (signature)
+    SIG_TOP = 500
+    sep_y   = SIG_TOP - 12
+    draw.rectangle([(TX, sep_y), (TX + 280, sep_y + 2)], fill=(*accent, 180))
+
     name_text = quote_data["character"].upper()
-    stroke_text(draw, (TX, 22), name_text, font_char, fill=(*accent, 255), sw=2)
-    bb_name = draw.textbbox((TX, 22), name_text, font=font_char)
-    name_w, name_h = bb_name[2] - TX, bb_name[3]
-    draw.rectangle([(TX, name_h + 5), (TX + name_w, name_h + 9)], fill=(*accent, 220))
+    stroke_text(draw, (TX, SIG_TOP), name_text, font_char, fill=(*accent, 255), sw=2)
+    name_bb = draw.textbbox((TX, SIG_TOP), name_text, font=font_char)
+    name_bottom = name_bb[3]
 
-    anime_y = name_h + 17
-    stroke_text(draw, (TX, anime_y), quote_data["anime"], font_anime, fill=(195, 195, 195, 255), sw=1)
-    anime_h = draw.textbbox((TX, anime_y), quote_data["anime"], font=font_anime)[3]
+    anime_y = name_bottom + 6
+    stroke_text(draw, (TX, anime_y), quote_data["anime"], font_anime, fill=(200, 200, 200, 230), sw=1)
 
-    raw_quote = f'“{quote_data["quote"]}”'
+    # Citation - centrée verticalement dans la zone au-dessus de la signature
+    raw_quote = f'"{quote_data["quote"]}"'
     lines = wrap_text(raw_quote, font_quote, TW)
-    fq, lh = font_quote, 64
-    if len(lines) > 6:
+    fq, lh = font_quote, 66
+    if len(lines) > 5:
         lines = wrap_text(raw_quote, font_quote_s, TW)
-        fq, lh = font_quote_s, 50
+        fq, lh = font_quote_s, 52
 
-    zone_top = anime_h + 52
-    zone_bot = H - 60
-    block_h  = len(lines) * lh
-    start_y  = max(zone_top, zone_top + (zone_bot - zone_top - block_h) // 2)
+    QUOTE_TOP = 80
+    QUOTE_BOT = SIG_TOP - 40
+    block_h   = len(lines) * lh
+    start_y   = QUOTE_TOP + max(0, (QUOTE_BOT - QUOTE_TOP - block_h) // 2)
     for i, line in enumerate(lines):
-        stroke_text(draw, (TX, start_y + i * lh), line, fq, fill=(245, 245, 245, 255), sw=2)
+        stroke_text(draw, (TX, start_y + i * lh), line, fq, fill=(248, 248, 248, 255), sw=2)
 
-    draw.rectangle([(TX, H - 8), (TX + TW, H - 5)], fill=(*accent, 190))
-    footer = "by Freydiss"
+    # Footer
+    footer = "- Freydiss"
     fw = draw.textbbox((0, 0), footer, font=font_footer)[2]
-    draw.text((W - fw - 18, H - 22), footer, font=font_footer, fill=(60, 60, 60, 200))
+    draw.text((W - fw - 20, H - 24), footer, font=font_footer, fill=(180, 180, 180, 180))
 
     # ── Composition : GIF du perso en fond plein ──
     def cover_resize_cite(img, tw, th):
@@ -1213,7 +1222,7 @@ async def make_rank_image(member: discord.Member, rank_name: str, hours_7d: floa
         draw_text_centered(draw, pseudo_clean, font_pseudo, pseudo_y, (*WHITE, 255))
         draw_text_centered(draw, "BRAMS COMMUNITY", font_community, pseudo_y + 80, (*grade_color, 230))
 
-        # "by Freydiss" — discret, coin bas-droit
+        # "by Freydiss" - discret, coin bas-droit
         credit = "by Freydiss"
         cb = draw.textbbox((0, 0), credit, font=font_credit)
         cw = cb[2] - cb[0]
@@ -1503,7 +1512,7 @@ async def on_message(message):
                 pass
         return
     uid  = str(message.author.id)
-    # Lecture et écriture directement dans le cache mémoire — 0 réseau
+    # Lecture et écriture directement dans le cache mémoire - 0 réseau
     user = get_user(_CACHE, uid)
     user["messages"].append(now_ts())
     clean_old_data(user)
@@ -1515,7 +1524,7 @@ async def on_voice_state_update(member, before, after):
     if member.bot:
         return
 
-    # Lecture/écriture directement dans le cache — 0 réseau
+    # Lecture/écriture directement dans le cache - 0 réseau
     uid  = str(member.id)
     user = get_user(_CACHE, uid)
 
@@ -1595,7 +1604,7 @@ async def check_ranks_loop():
                 continue
             total_members += 1
             uid  = str(member.id)
-            # Lecture directe depuis le cache — 0 réseau
+            # Lecture directe depuis le cache - 0 réseau
             user = get_user(_CACHE, uid)
             old_snapshot = (user.get("last_rank"), user.get("alerted"))
             clean_old_data(user)
@@ -1686,7 +1695,7 @@ async def stats(interaction: discord.Interaction):
     prime_val = calculate_prime(s_tot / 3600, m_tot)
 
     # Indicateur EN VOCAL dans la description (plus petit que le titre)
-    live_line = "\u3000🎙️ *— en vocal actuellement*\n" if jt else ""
+    live_line = "\u3000🎙️ *- en vocal actuellement*\n" if jt else ""
 
     if next_rank:
         hours_restantes = next_thresh - hours_7d
@@ -1814,7 +1823,7 @@ async def top(interaction: discord.Interaction, periode: app_commands.Choice[str
 
         rank_range = f"#{start+1}–#{start+10}"
         embed = discord.Embed(
-            title=f"🏆 CLASSEMENT  —  {periode.name.upper()}  —  {rank_range}",
+            title=f"🏆 CLASSEMENT  -  {periode.name.upper()}  -  {rank_range}",
             description=(
                 f"{sep}\n\n"
                 f"🎙️ **TOP VOCAL  {rank_range}**\n"
@@ -1945,7 +1954,7 @@ async def serveur(interaction: discord.Interaction):
     for i, (ch_id, secs) in enumerate(top_channels):
         ch = guild.get_channel(int(ch_id))
         name = ch.name if ch else "Salon supprimé"
-        salon_lines.append(f"{medals[i]} **{name}** — {format_duration(secs)}")
+        salon_lines.append(f"{medals[i]} **{name}** - {format_duration(secs)}")
 
     peak_hour = max(hour_usage, key=hour_usage.get) if hour_usage else 0
 
@@ -1963,7 +1972,7 @@ async def serveur(interaction: discord.Interaction):
 
     embed1.add_field(name="👥 Membres actifs (7j)", value=f"**{membres_actifs}**", inline=True)
     embed1.add_field(name="🎙️ En vocal maintenant", value=f"**{en_vocal_now}**", inline=True)
-    embed1.add_field(name="🕐 Heure de pointe", value=f"**{peak_hour}h — {peak_hour+1}h UTC**", inline=True)
+    embed1.add_field(name="🕐 Heure de pointe", value=f"**{peak_hour}h - {peak_hour+1}h UTC**", inline=True)
 
     embed1.add_field(
         name="🎙️ Vocal",
@@ -2050,7 +2059,7 @@ async def tout(interaction: discord.Interaction):
     embed1.set_thumbnail(url=me.display_avatar.url)
 
     embed1.add_field(
-        name=f"{r_emoji} Rang — **{rank_actuel}**",
+        name=f"{r_emoji} Rang - **{rank_actuel}**",
         value=progress_str,
         inline=False
     )
@@ -2106,7 +2115,7 @@ async def tout(interaction: discord.Interaction):
         for i, (n, v) in enumerate(lst[:5]):
             if v <= 0:
                 break
-            lines.append(f"{medals[i]} **{n}** — {formatter(v)}")
+            lines.append(f"{medals[i]} **{n}** - {formatter(v)}")
         return "\n".join(lines) or "*Aucune donnée*"
 
     embed2 = discord.Embed(
@@ -2242,7 +2251,7 @@ CITATION_HISTORY: deque[str] = deque(maxlen=len(QUOTES_DB) - 1)
 
 # Cache URL image par personnage (Jikan API)
 # Persos non présents sur MAL (cartoons occidentaux, jeux vidéo hors anime, etc.)
-# URLs d image statiques verifiees — priorite absolue sur Jikan (CDN MAL stable)
+# URLs d image statiques verifiees - priorite absolue sur Jikan (CDN MAL stable)
 _CHAR_STATIC_URLS: dict[str, str] = {
     # ── Attack on Titan ──
     "Eren Yeager":         "https://cdn.myanimelist.net/images/characters/10/216895.jpg",
@@ -2302,7 +2311,7 @@ _CHAR_STATIC_URLS: dict[str, str] = {
 _NO_MAL_CHARS: frozenset[str] = frozenset({"Zuko"})
 _CHAR_IMAGE_CACHE: dict[str, str | None] = {n: None for n in _NO_MAL_CHARS}
 _CHAR_IMG_BYTES_CACHE: dict[str, bytes | None] = {}
-_CHAR_IMG_BYTES_MAX = 200  # entrées max — évite la fuite mémoire
+_CHAR_IMG_BYTES_MAX = 200  # entrées max - évite la fuite mémoire
 _CHAR_GIF_CACHE: dict[str, bytes | None] = {}
 GIPHY_API_KEY = os.environ.get("GIPHY_API_KEY", "")
 
@@ -2315,7 +2324,7 @@ _CHAR_IMG_URL = "cdn.myanimelist.net/images/characters"
 
 def _name_matches(searched: str, returned: str) -> bool:
     """Toutes les parties significatives (>2 chars) du nom cherché
-    doivent apparaître dans le nom retourné — évite les faux positifs."""
+    doivent apparaître dans le nom retourné - évite les faux positifs."""
     parts = [p.lower() for p in searched.split() if len(p) > 2]
     r = returned.lower()
     return bool(parts) and all(p in r for p in parts)
@@ -2344,8 +2353,8 @@ async def _jikan_get(sess: aiohttp.ClientSession, url: str, retries: int = 2) ->
 async def _get_char_image_url(name: str) -> str | None:
     """URL image du personnage.
     Ordre de priorite :
-    1. _CHAR_STATIC_URLS — URLs verifiees manuellement (bypass Jikan)
-    2. _CHAR_IMAGE_CACHE — cache memoire session
+    1. _CHAR_STATIC_URLS - URLs verifiees manuellement (bypass Jikan)
+    2. _CHAR_IMAGE_CACHE - cache memoire session
     3. Jikan par ID direct (CHAR_JIKAN_IDS)
     4. Jikan par recherche nom (fallback)
     """
@@ -2658,7 +2667,7 @@ async def testrank(interaction: discord.Interaction, membre: discord.Member = No
         print(f"❌ /testrank followup failed: {e}")
 
 # ─────────────────────────────────────────
-#  /test  (ADMIN — simulation d'événements)
+#  /test  (ADMIN - simulation d'événements)
 # ─────────────────────────────────────────
 @bot.tree.command(name="test", description="[ADMIN] Simuler un événement sans affecter les données réelles")
 @app_commands.default_permissions(administrator=True)
@@ -2703,7 +2712,7 @@ async def test_event(interaction: discord.Interaction, evenement: app_commands.C
             f"Tes heures vocales sur les 7 derniers jours sont descendues à `{hours_7d}h`, "
             f"alors qu'il te faut au minimum `{rank_threshold}h` pour garder ce rang.\n\n"
             f"Reviens en vocal pour le récupérer ! 🎙️\n\n"
-            f"*(Ceci est un message de test — tes données ne sont pas affectées)*\n\n"
+            f"*(Ceci est un message de test - tes données ne sont pas affectées)*\n\n"
             f"━━━━━━━━━━━━━━━━━━━━\n"
             f"*BRAMS SCORE  |  by Freydiss*\n\n"
             f"*(Envoie `1` ici si tu ne veux plus recevoir ces DMs)*"
@@ -2713,7 +2722,7 @@ async def test_event(interaction: discord.Interaction, evenement: app_commands.C
             rappel_ch = discord.utils.find(lambda c: "rappel" in c.name.lower(), interaction.guild.text_channels)
             if rappel_ch:
                 await rappel_ch.send(f"{target.mention}\n{dm_text}")
-            await interaction.followup.send(f"📵 DMs désactivés — message envoyé dans #rappel pour {target.mention}", ephemeral=True)
+            await interaction.followup.send(f"📵 DMs désactivés - message envoyé dans #rappel pour {target.mention}", ephemeral=True)
         else:
             try:
                 await target.send(dm_text)
@@ -2722,7 +2731,7 @@ async def test_event(interaction: discord.Interaction, evenement: app_commands.C
                 rappel_ch = discord.utils.find(lambda c: "rappel" in c.name.lower(), interaction.guild.text_channels)
                 if rappel_ch:
                     await rappel_ch.send(f"{target.mention}\n{dm_text}")
-                await interaction.followup.send(f"❌ DM fermés — message envoyé dans #rappel pour {target.mention}", ephemeral=True)
+                await interaction.followup.send(f"❌ DM fermés - message envoyé dans #rappel pour {target.mention}", ephemeral=True)
 
     elif evenement.value == "warning":
         rank_name = "Shichibukai"
@@ -2735,8 +2744,8 @@ async def test_event(interaction: discord.Interaction, evenement: app_commands.C
             f"sur le serveur **{interaction.guild.name}**.\n\n"
             f"Tes heures vocales sur les 7 derniers jours sont descendues à `{hours_7d}h`, "
             f"et il te faut au minimum `{threshold}h` pour garder ton rank.\n\n"
-            f"Il te manque environ `{heures_manquantes}h` — passe en vocal dès que possible ! 🚨\n\n"
-            f"*(Ceci est un message de test — tes données ne sont pas affectées)*\n\n"
+            f"Il te manque environ `{heures_manquantes}h` - passe en vocal dès que possible ! 🚨\n\n"
+            f"*(Ceci est un message de test - tes données ne sont pas affectées)*\n\n"
             f"━━━━━━━━━━━━━━━━━━━━\n"
             f"*BRAMS SCORE  |  by Freydiss*\n\n"
             f"*(Envoie `1` ici si tu ne veux plus recevoir ces DMs)*"
@@ -2746,7 +2755,7 @@ async def test_event(interaction: discord.Interaction, evenement: app_commands.C
             rappel_ch = discord.utils.find(lambda c: "rappel" in c.name.lower(), interaction.guild.text_channels)
             if rappel_ch:
                 await rappel_ch.send(f"{target.mention}\n{dm_text}")
-            await interaction.followup.send(f"📵 DMs désactivés — message envoyé dans #rappel pour {target.mention}", ephemeral=True)
+            await interaction.followup.send(f"📵 DMs désactivés - message envoyé dans #rappel pour {target.mention}", ephemeral=True)
         else:
             try:
                 await target.send(dm_text)
@@ -2755,7 +2764,7 @@ async def test_event(interaction: discord.Interaction, evenement: app_commands.C
                 rappel_ch = discord.utils.find(lambda c: "rappel" in c.name.lower(), interaction.guild.text_channels)
                 if rappel_ch:
                     await rappel_ch.send(f"{target.mention}\n{dm_text}")
-                await interaction.followup.send(f"❌ DM fermés — message envoyé dans #rappel pour {target.mention}", ephemeral=True)
+                await interaction.followup.send(f"❌ DM fermés - message envoyé dans #rappel pour {target.mention}", ephemeral=True)
 
     elif evenement.value == "rankup_dm":
         rank_name = "Shichibukai"
@@ -2767,7 +2776,7 @@ async def test_event(interaction: discord.Interaction, evenement: app_commands.C
             f"**{rank_emoji} {rank_name}** sur le serveur **{interaction.guild.name}** !\n\n"
             f"Tu as accumulé `{hours_7d}h` de vocal sur les 7 derniers jours. "
             f"Continue comme ça ! 💪\n\n"
-            f"*(Ceci est un message de test — tes données ne sont pas affectées)*\n\n"
+            f"*(Ceci est un message de test - tes données ne sont pas affectées)*\n\n"
             f"━━━━━━━━━━━━━━━━━━━━\n"
             f"*BRAMS SCORE  |  by Freydiss*\n\n"
             f"*(Envoie `1` ici si tu ne veux plus recevoir ces DMs)*"
@@ -2777,7 +2786,7 @@ async def test_event(interaction: discord.Interaction, evenement: app_commands.C
             rappel_ch = discord.utils.find(lambda c: "rappel" in c.name.lower(), interaction.guild.text_channels)
             if rappel_ch:
                 await rappel_ch.send(f"{target.mention}\n{dm_text}")
-            await interaction.followup.send(f"📵 DMs désactivés — message envoyé dans #rappel pour {target.mention}", ephemeral=True)
+            await interaction.followup.send(f"📵 DMs désactivés - message envoyé dans #rappel pour {target.mention}", ephemeral=True)
         else:
             try:
                 await target.send(dm_text)
@@ -2786,11 +2795,11 @@ async def test_event(interaction: discord.Interaction, evenement: app_commands.C
                 rappel_ch = discord.utils.find(lambda c: "rappel" in c.name.lower(), interaction.guild.text_channels)
                 if rappel_ch:
                     await rappel_ch.send(f"{target.mention}\n{dm_text}")
-                await interaction.followup.send(f"❌ DM fermés — message envoyé dans #rappel pour {target.mention}", ephemeral=True)
+                await interaction.followup.send(f"❌ DM fermés - message envoyé dans #rappel pour {target.mention}", ephemeral=True)
 
 
 # ─────────────────────────────────────────
-#  /quiz  (Quiz animé généré par IA — Groq)
+#  /quiz  (Quiz animé généré par IA - Groq)
 # ─────────────────────────────────────────
 QUIZ_SESSIONS: dict = {}
 LIVE_DUELS: dict[int, "_LiveDuelSession"] = {}  # uid → duel live partagé
@@ -2839,7 +2848,7 @@ _QUIZ_CATEGORIES: dict[str, str] = {
     "fma":          "Fullmetal Alchemist Brotherhood UNIQUEMENT (alchimie, Homoncules, arcs, personnages)",
     "chainsaw":     "Chainsaw Man UNIQUEMENT (Diables, contrats, Chasseurs, arcs, personnages)",
     "black_clover": "Black Clover UNIQUEMENT (magie, grimoires, Chevaliers Magiques, arcs, personnages)",
-    "citation":     "citations célèbres d'animés — mode spécial (généré depuis QUOTES_DB)",
+    "citation":     "citations célèbres d'animés - mode spécial (généré depuis QUOTES_DB)",
 }
 
 # System prompt strict
@@ -2854,8 +2863,8 @@ _QUIZ_SYSTEM = (
     '{"question":"...","bonne_reponse":null,"bonnes_reponses":["...","..."],"mauvaises_reponses":["...","...","...","..."],'
     '"anime":"...","difficulte":"moyen|difficile|expert","type":"...","explication":"..."}. '
     "Formulations QCM obligatoirement plurielles : 'Lesquels de ces personnages...?', 'Quelles techniques...?', 'Parmi les suivants, lesquels...?'. "
-    "LANGUE : 100%% français correct avec apostrophes correctes (l', d', c', j', n', qu', s') — jamais de mot contracté sans apostrophe. "
-    "TRADUCTIONS OBLIGATOIRES — utilise toujours le nom français suivant : "
+    "LANGUE : 100%% français correct avec apostrophes correctes (l', d', c', j', n', qu', s') - jamais de mot contracté sans apostrophe. "
+    "TRADUCTIONS OBLIGATOIRES - utilise toujours le nom français suivant : "
     "Blackbeard → Barbe Noire, Whitebeard → Barbe Blanche, Shanks the Red → Shanks le Roux, "
     "Devil Fruit → Fruit du Démon, Straw Hat → Chapeau de Paille, Four Emperors → Quatre Empereurs, "
     "Seven Warlords → Shichibukai, World Government → Gouvernement Mondial, Celestial Dragons → Nobles Mondiaux, "
@@ -2883,7 +2892,7 @@ async def _generate_quiz_questions(n: int, category: str = "general", seen_quest
     """Génère n questions via Groq. Retourne (questions: list, erreur: str)."""
     api_key = os.environ.get("GROQ_API_KEY", "")
     if not api_key:
-        msg = "GROQ_API_KEY manquante — configure-la dans Railway > Variables"
+        msg = "GROQ_API_KEY manquante - configure-la dans Railway > Variables"
         print(f"[QUIZ] ERREUR : {msg}")
         return [], msg
 
@@ -2894,7 +2903,7 @@ async def _generate_quiz_questions(n: int, category: str = "general", seen_quest
     for attempt in range(3):
         raw = ""
         try:
-            print(f"[QUIZ] Appel Groq attempt {attempt + 1}/3 — {n} questions — catégorie={category} seed={seed}")
+            print(f"[QUIZ] Appel Groq attempt {attempt + 1}/3 - {n} questions - catégorie={category} seed={seed}")
             response = await litellm.acompletion(
                 model=_GROQ_MODEL,
                 api_key=api_key,
@@ -2937,7 +2946,7 @@ async def _generate_quiz_questions(n: int, category: str = "general", seen_quest
                     )
                 ]
                 if valid:
-                    print(f"[QUIZ] OK — {len(valid)} questions valides")
+                    print(f"[QUIZ] OK - {len(valid)} questions valides")
                     return valid, ""
                 last_error = "Questions malformees (champs manquants)"
             else:
@@ -3011,11 +3020,11 @@ class _QuizSession:
         self.target_points   = None
 
 def _quiz_rank(pct: float) -> tuple[str, str]:
-    if pct == 1.0: return "👑", "Score parfait — Légende vivante de l'animé"
-    if pct >= 0.8: return "🥇", "Excellent — T'as clairement trop regardé d'animés"
-    if pct >= 0.6: return "🥈", "Très bon — Tu maîtrises le sujet"
-    if pct >= 0.4: return "🥉", "Correct — Tu connais tes classiques"
-    if pct >= 0.2: return "📜", "Débutant — Continue à regarder des animés"
+    if pct == 1.0: return "👑", "Score parfait - Légende vivante de l'animé"
+    if pct >= 0.8: return "🥇", "Excellent - T'as clairement trop regardé d'animés"
+    if pct >= 0.6: return "🥈", "Très bon - Tu maîtrises le sujet"
+    if pct >= 0.4: return "🥉", "Correct - Tu connais tes classiques"
+    if pct >= 0.2: return "📜", "Débutant - Continue à regarder des animés"
     return               "💀", "À revoir... Lance quelque chose et rattrape ton retard"
 
 
@@ -3091,7 +3100,7 @@ async def _send_next_question(inter: discord.Interaction, sess: _QuizSession):
             tags += f"  ·  {type_emoji} {q_type.capitalize()}"
 
     sep = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    qcm_hint = "\n*📋 Plusieurs bonnes réponses — sélectionne-les toutes puis valide.*" if is_qcm else ""
+    qcm_hint = "\n*📋 Plusieurs bonnes réponses - sélectionne-les toutes puis valide.*" if is_qcm else ""
     desc = (
         f"{tags}\n"
         f"⏱️  Expire <t:{deadline}:R>\n\n"
@@ -3180,14 +3189,14 @@ class _AnswerButton(discord.ui.Button):
 
             lines = [f"✅  **Bonne réponse !**   `+{pts} pt{'s' if pts > 1 else ''}`"]
             if speed_bonus == 2:
-                lines.append(f"⚡  Répondu en **{elapsed:.1f}s**  —  `+2 pts bonus vitesse`")
+                lines.append(f"⚡  Répondu en **{elapsed:.1f}s**  -  `+2 pts bonus vitesse`")
             elif speed_bonus == 1:
-                lines.append(f"⚡  Répondu en **{elapsed:.1f}s**  —  `+1 pt bonus vitesse`")
+                lines.append(f"⚡  Répondu en **{elapsed:.1f}s**  -  `+1 pt bonus vitesse`")
 
-            if   sess.combo >= 10: lines.append(f"💥  **COMBO x{sess.combo}  —  LÉGENDAIRE !!**")
-            elif sess.combo >= 7:  lines.append(f"💥  **COMBO x{sess.combo}  —  Inarrêtable !!**")
-            elif sess.combo == 5:  lines.append(f"🔥  **COMBO x{sess.combo}  —  Tu es en FEU !**")
-            elif sess.combo == 3:  lines.append(f"🔥  **Combo x{sess.combo}  —  C'est chaud !**")
+            if   sess.combo >= 10: lines.append(f"💥  **COMBO x{sess.combo}  -  LÉGENDAIRE !!**")
+            elif sess.combo >= 7:  lines.append(f"💥  **COMBO x{sess.combo}  -  Inarrêtable !!**")
+            elif sess.combo == 5:  lines.append(f"🔥  **COMBO x{sess.combo}  -  Tu es en FEU !**")
+            elif sess.combo == 3:  lines.append(f"🔥  **Combo x{sess.combo}  -  C'est chaud !**")
             elif sess.combo > 1:   lines.append(f"🔥  Combo x{sess.combo}")
 
             if explication:
@@ -3573,7 +3582,7 @@ class _QuizCategorySelect(discord.ui.Select):
             embed.set_footer(text="Brams Community  •  by Freydiss")
             await inter.response.edit_message(embed=embed, view=_ScoreTargetView(self.user_id, category))
         else:
-            title = "⚔️  Duel — Nombre de questions" if self.challenged_id else "🎯  Nombre de questions"
+            title = "⚔️  Duel - Nombre de questions" if self.challenged_id else "🎯  Nombre de questions"
             embed = discord.Embed(
                 title=title,
                 description=f"Catégorie choisie : **{cat_label}**",
@@ -3617,8 +3626,8 @@ class _OpponentSelect(discord.ui.UserSelect):
             return
         self.view.stop()
         embed = discord.Embed(
-            title="⚔️  Duel — Catégorie",
-            description=f"**{inter.user.display_name}** vs **{opponent.display_name}** — Choisis la catégorie !",
+            title="⚔️  Duel - Catégorie",
+            description=f"**{inter.user.display_name}** vs **{opponent.display_name}** - Choisis la catégorie !",
             color=discord.Color.orange(),
         )
         embed.set_thumbnail(url=inter.user.display_avatar.url)
@@ -3809,7 +3818,7 @@ async def _quiz_entry(interaction: discord.Interaction):
 
     embed = discord.Embed(
         title="🎌  Quiz Animé",
-        description=f"Bienvenue **{interaction.user.display_name}** — teste tes connaissances !",
+        description=f"Bienvenue **{interaction.user.display_name}** - teste tes connaissances !",
         color=discord.Color.from_rgb(100, 50, 200),
     )
     embed.set_thumbnail(url=interaction.user.display_avatar.url)
@@ -3824,7 +3833,7 @@ async def _quiz_entry(interaction: discord.Interaction):
         print(f"❌ quiz followup: {e}")
 
 
-@bot.tree.command(name="quizz", description="Quiz animé solo ou duel — teste tes connaissances !")
+@bot.tree.command(name="quizz", description="Quiz animé solo ou duel - teste tes connaissances !")
 @app_commands.guilds(*GUILD_IDS)
 async def quizz(interaction: discord.Interaction):
     await _quiz_entry(interaction)
@@ -3873,10 +3882,10 @@ class _DuelAnswerButton(discord.ui.Button):
                 duel.score2 += 1
                 duel.pts2   += pts
             winner_name = duel.name1 if inter.user.id == duel.uid1 else duel.name2
-            feedback = f"✅  **{winner_name}** répond le premier — `+{pts} pt{'s' if pts > 1 else ''}`"
+            feedback = f"✅  **{winner_name}** répond le premier - `+{pts} pt{'s' if pts > 1 else ''}`"
         else:
             loser_name = duel.name1 if inter.user.id == duel.uid1 else duel.name2
-            feedback = f"❌  **{loser_name}** s'est trompé — bonne réponse : **{view.correct}**"
+            feedback = f"❌  **{loser_name}** s'est trompé - bonne réponse : **{view.correct}**"
         if explication:
             feedback += f"\n> 📚 *{explication}*"
 
@@ -3913,7 +3922,7 @@ class _DuelQuestionView(discord.ui.View):
             except Exception:
                 pass
         await asyncio.sleep(3)
-        await _send_duel_question(self._duel, self._duel.interaction, "⏰ Temps écoulé — aucun point attribué.")
+        await _send_duel_question(self._duel, self._duel.interaction, "⏰ Temps écoulé - aucun point attribué.")
 
 
 async def _send_duel_question(duel: "_LiveDuelSession", inter: discord.Interaction, feedback: str = ""):
@@ -4119,7 +4128,7 @@ async def sync_commands(interaction: discord.Interaction):
         except Exception:
             fail += 1
     status = "✅" if not fail else "⚠️"
-    await interaction.followup.send(f"{status} Sync terminée — {ok} commandes ({fail} erreur(s))", ephemeral=True)
+    await interaction.followup.send(f"{status} Sync terminée - {ok} commandes ({fail} erreur(s))", ephemeral=True)
 
 
 # ── Sync des commandes une seule fois au démarrage ───────────────
