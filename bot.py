@@ -39,7 +39,7 @@ logging.getLogger("matplotlib.font_manager").setLevel(logging.ERROR)
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import matplotlib.font_manager as fm
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageFilter
 from datetime import datetime, timedelta, timezone
 from collections import defaultdict, deque
 from urllib.parse import quote as _url_quote
@@ -113,8 +113,8 @@ LOCAL_CHAR_GIFS = {
     # One Piece
     "Donquixote Doflamingo": "doflamingo citation 1.gif",
     # Chainsaw Man
-    "Makima":             "Makima citations 1.gif",
-    "Reze":               "reze-chainsaw-man citations.gif",
+    "Makima": ["Makima citations 1.gif", "makima 2 ciation.gif", "makima 3 citation.gif", "makima 4 citation.gif"],
+    "Reze":   ["reze-chainsaw-man citations.gif", "reze chazinsaw man citation 2.gif"],
 }
 
 
@@ -1027,31 +1027,35 @@ async def make_citation_image(quote_data: dict) -> tuple:
         return wlines
 
     # Guillemet décoratif d'ouverture
-    draw.text((TX - 8, 2), '“', font=font_qmark, fill=(*accent, 32))
+    draw.text((TX - 8, 2), '”', font=font_qmark, fill=(*accent, 28))
 
     # ── Zone signature (bas) ──
-    SIG_TOP = 508
+    SIG_TOP = 510
     CX = TX + TW // 2
 
-    # Séparateur : ligne centrée + diamant au centre
-    sep_y = SIG_TOP - 18
-    SEP_W = 340
-    draw.rectangle([(TX, sep_y), (TX + SEP_W, sep_y + 1)], fill=(*accent, 120))
-    dcx = TX + SEP_W // 2
-    draw.polygon([(dcx, sep_y - 5), (dcx + 5, sep_y), (dcx, sep_y + 5), (dcx - 5, sep_y)], fill=(*accent, 190))
+    # Séparateur : double diamants aux extrémités + ligne
+    sep_y = SIG_TOP - 20
+    SEP_W = 320
+    draw.rectangle([(TX + 14, sep_y), (TX + SEP_W - 14, sep_y + 1)], fill=(*accent, 105))
+    for dcx in (TX + 6, TX + SEP_W - 6):
+        draw.polygon([(dcx, sep_y - 5), (dcx + 5, sep_y), (dcx, sep_y + 5), (dcx - 5, sep_y)], fill=(*accent, 195))
 
-    # Nom du personnage — ombre douce + blanc
+    # Nom du personnage — ombres en couches + blanc
     name_text = quote_data["character"].upper()
-    draw.text((TX + 2, SIG_TOP + 2), name_text, font=font_char, fill=(0, 0, 0, 150))
-    draw.text((TX, SIG_TOP), name_text, font=font_char, fill=(255, 255, 255, 240))
-    name_bottom = draw.textbbox((TX, SIG_TOP), name_text, font=font_char)[3]
+    for ox, oy, oa in [(3, 3, 65), (2, 2, 105), (1, 1, 140)]:
+        draw.text((TX + ox, SIG_TOP + oy), name_text, font=font_char, fill=(0, 0, 0, oa))
+    draw.text((TX, SIG_TOP), name_text, font=font_char, fill=(255, 255, 255, 245))
+    nb = draw.textbbox((TX, SIG_TOP), name_text, font=font_char)
+    name_bottom, name_right = nb[3], nb[2]
+    # Filet accent fin sous le nom
+    draw.rectangle([(TX, name_bottom + 3), (name_right, name_bottom + 4)], fill=(*accent, 145))
 
-    # Anime — gris doux sous le nom
-    anime_y = name_bottom + 5
-    draw.text((TX + 1, anime_y + 1), quote_data["anime"], font=font_anime, fill=(0, 0, 0, 100))
-    draw.text((TX, anime_y), quote_data["anime"], font=font_anime, fill=(190, 190, 190, 215))
+    # Anime — gris clair
+    anime_y = name_bottom + 10
+    draw.text((TX + 1, anime_y + 1), quote_data["anime"], font=font_anime, fill=(0, 0, 0, 85))
+    draw.text((TX, anime_y), quote_data["anime"], font=font_anime, fill=(182, 182, 182, 218))
 
-    # ── Citation centrée horizontalement et verticalement ──
+    # ── Citation centrée ──
     raw_quote = quote_data["quote"]
     lines = wrap_text(raw_quote, font_quote, TW)
     fq, lh = font_quote, 62
@@ -1060,21 +1064,22 @@ async def make_citation_image(quote_data: dict) -> tuple:
         fq, lh = font_quote_s, 50
 
     QUOTE_TOP = 75
-    QUOTE_BOT = SIG_TOP - 42
+    QUOTE_BOT = SIG_TOP - 44
     block_h   = len(lines) * lh
     start_y   = QUOTE_TOP + max(0, (QUOTE_BOT - QUOTE_TOP - block_h) // 2)
 
     for i, line in enumerate(lines):
-        lw  = draw.textbbox((0, 0), line, font=fq)[2]
-        lx  = CX - lw // 2
-        ly  = start_y + i * lh
-        draw.text((lx + 2, ly + 2), line, font=fq, fill=(0, 0, 0, 130))
+        lw = draw.textbbox((0, 0), line, font=fq)[2]
+        lx = CX - lw // 2
+        ly = start_y + i * lh
+        for ox, oy, oa in [(3, 3, 55), (2, 2, 85), (1, 1, 115)]:
+            draw.text((lx + ox, ly + oy), line, font=fq, fill=(0, 0, 0, oa))
         draw.text((lx, ly), line, font=fq, fill=(252, 252, 252, 255))
 
     # Footer
     footer = "- Freydiss"
     fw = draw.textbbox((0, 0), footer, font=font_footer)[2]
-    draw.text((W - fw - 20, H - 22), footer, font=font_footer, fill=(150, 150, 150, 150))
+    draw.text((W - fw - 20, H - 22), footer, font=font_footer, fill=(140, 140, 140, 140))
 
     # ── Composition : GIF du perso en fond plein ──
     def cover_resize_cite(img, tw, th):
@@ -1088,7 +1093,21 @@ async def make_citation_image(quote_data: dict) -> tuple:
 
     def compose_on_bg(bg_frame):
         base = cover_resize_cite(bg_frame.convert("RGBA"), W, H)
-        return Image.alpha_composite(base, fg)
+        # Frosted glass : zone texte floutée pour plus de classe
+        blurred = base.filter(ImageFilter.GaussianBlur(radius=10))
+        mask = Image.new("L", (W, H), 0)
+        md = ImageDraw.Draw(mask)
+        for x in range(W):
+            if x < 560:
+                a = 150
+            elif x < 860:
+                t = (x - 560) / 300
+                a = int(150 * (1 - t * t))
+            else:
+                a = 0
+            md.line([(x, 0), (x, H)], fill=a)
+        frosted = Image.composite(blurred, base, mask)
+        return Image.alpha_composite(frosted, fg)
 
     buf = io.BytesIO()
 
@@ -1128,7 +1147,12 @@ async def make_citation_image(quote_data: dict) -> tuple:
         return None
 
     # Cas 0 : GIF local dédié au personnage (priorité maximale)
-    local_gif_path = LOCAL_CHAR_GIFS.get(quote_data["character"])
+    _gif_entry = LOCAL_CHAR_GIFS.get(quote_data["character"])
+    if isinstance(_gif_entry, list):
+        _avail = [p for p in _gif_entry if os.path.exists(p)]
+        local_gif_path = random.choice(_avail) if _avail else None
+    else:
+        local_gif_path = _gif_entry
     if local_gif_path and os.path.exists(local_gif_path):
         result = _render_animated_gif(local_gif_path, f"local:{local_gif_path}")
         if result:
