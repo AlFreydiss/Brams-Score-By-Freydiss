@@ -58,6 +58,13 @@ RANK_BG_PATHS = {
 }
 RANK_BG_DEFAULT = "background.jpeg"
 _RANK_FONTS: dict = {}  # cache fonts PIL pour make_rank_image
+CITATION_BG_GIFS = [
+    "pirate_bg.gif",
+    "shichibukai_bg.gif",
+    "fujitoraaaa.gif",
+    "yonkou_bg.gif",
+    "roi_des_pirates_bg.gif",
+]
 
 if os.path.exists(GRAPH_FONT_PATH):
     fm.fontManager.addfont(GRAPH_FONT_PATH)
@@ -835,8 +842,8 @@ _CITE_FONT_QUOTE_S = _load_font("Righteous-Regular.ttf",   33)
 _CITE_FONT_FOOTER  = _load_font("Righteous-Regular.ttf",   13)
 
 
-async def make_citation_image(quote_data: dict) -> io.BytesIO:
-    """Génère une carte cinématique 1200x675 — style Whitebeard : fond sombre, portrait droit, texte blanc."""
+async def make_citation_image(quote_data: dict) -> tuple:
+    """Génère une carte cinématique 1200x675 avec fond GIF animé aléatoire."""
     W, H = 1200, 675
 
     # ── Couleur accent ──
@@ -850,26 +857,20 @@ async def make_citation_image(quote_data: dict) -> io.BytesIO:
 
     char_bytes = await _fetch_char_image_bytes(quote_data["character"])
 
-    # ── CANVAS SOMBRE ──
-    canvas = Image.new("RGBA", (W, H), (6, 6, 10, 255))
+    # ── FOREGROUND (couche transparente : portrait + overlays + texte) ──
+    fg = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    char_x = W
 
-    # ── PORTRAIT PERSONNAGE — remplit toute la partie droite ──
-    char_x = W  # fallback si pas d'image
     if char_bytes:
         try:
             ci = Image.open(io.BytesIO(char_bytes)).convert("RGBA")
-            # Redimensionner pour remplir toute la hauteur
             ch_w = int(H * ci.width / ci.height)
-            # Garantir une largeur minimale visible (portrait étroit → on agrandit)
             ch_w = max(ch_w, 560)
             ci = ci.resize((ch_w, H), Image.LANCZOS)
-
             r2, g2, b2, a2 = ci.split()
             rgb2 = ImageEnhance.Brightness(Image.merge("RGB", (r2, g2, b2))).enhance(0.78)
             rgb2 = ImageEnhance.Color(rgb2).enhance(0.90)
             ci = Image.merge("RGBA", (*rgb2.split(), a2))
-
-            # Fondu gauche smooth (ease-in-out)
             fade = min(500, ch_w // 2)
             msk = Image.new("L", (ch_w, H), 255)
             md  = ImageDraw.Draw(msk)
@@ -877,50 +878,39 @@ async def make_citation_image(quote_data: dict) -> io.BytesIO:
                 t = x / fade
                 md.line([(x, 0), (x, H)], fill=int(255 * t * t * (3 - 2 * t)))
             ci.putalpha(msk)
-
-            char_x = max(W // 2 - 60, W - ch_w)  # colle à droite, jamais avant le milieu
-            canvas.paste(ci, (char_x, 0), ci)
+            char_x = max(W // 2 - 60, W - ch_w)
+            fg.paste(ci, (char_x, 0), ci)
         except Exception as e:
             print(f"[CITATION] PIL image: {e}")
 
-    # ── TEINTE ACCENT sur la zone droite (glow subtil derrière le personnage) ──
     tint = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     td   = ImageDraw.Draw(tint)
     for x in range(char_x, W):
         t = (x - char_x) / max(W - char_x, 1)
-        a = int(35 * t)   # très doux, juste une teinte
+        a = int(35 * t)
         td.line([(x, 0), (x, H)], fill=(*accent, a))
-    canvas = Image.alpha_composite(canvas, tint)
+    fg = Image.alpha_composite(fg, tint)
 
-    # ── OVERLAY GAUCHE : zone texte totalement noire ──
     lov = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     ld  = ImageDraw.Draw(lov)
     for x in range(W):
         if x < 560:
             a = 210
         elif x < 880:
-            t = (x - 560) / 320
-            a = int(210 * (1 - t * t * t))
+            tc = (x - 560) / 320
+            a = int(210 * (1 - tc * tc * tc))
         else:
             a = 0
         ld.line([(x, 0), (x, H)], fill=(0, 0, 0, a))
-    canvas = Image.alpha_composite(canvas, lov)
+    fg = Image.alpha_composite(fg, lov)
 
-    # ── VIGNETTE HAUT/BAS ──
     vig = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     vd  = ImageDraw.Draw(vig)
     for y in range(80):
         vd.line([(0, y), (W, y)], fill=(0, 0, 0, int(140 * (1 - y / 80))))
     for y in range(H - 60, H):
         vd.line([(0, y), (W, y)], fill=(0, 0, 0, int(120 * (y - (H - 60)) / 60)))
-    canvas = Image.alpha_composite(canvas, vig)
-
-    # ── UTILITAIRES ──
-    def _font(path, size):
-        try:
-            return ImageFont.truetype(path, size)
-        except Exception:
-            return ImageFont.load_default()
+    fg = Image.alpha_composite(fg, vig)
 
     def stroke_text(d, pos, text, font, fill, sw=2):
         x, y = pos
@@ -930,20 +920,6 @@ async def make_citation_image(quote_data: dict) -> io.BytesIO:
                     d.text((x + dx, y + dy), text, font=font, fill=(0, 0, 0, 220))
         d.text(pos, text, font=font, fill=fill)
 
-    def wrap_text(text, font, max_w):
-        words, lines, cur = text.split(), [], ""
-        for w in words:
-            test = (cur + " " + w).strip()
-            if draw.textbbox((0, 0), test, font=font)[2] <= max_w:
-                cur = test
-            else:
-                if cur:
-                    lines.append(cur)
-                cur = w
-        if cur:
-            lines.append(cur)
-        return lines
-
     font_deco    = _CITE_FONT_DECO
     font_char    = _CITE_FONT_CHAR
     font_anime   = _CITE_FONT_ANIME
@@ -951,31 +927,39 @@ async def make_citation_image(quote_data: dict) -> io.BytesIO:
     font_quote_s = _CITE_FONT_QUOTE_S
     font_footer  = _CITE_FONT_FOOTER
 
-    TX = 56   # marge gauche
-    TW = 640  # largeur max zone texte
+    TX = 56
+    TW = 640
 
-    # ── GUILLEMET DÉCORATIF (très grand, très transparent) ──
     deco_l = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    ImageDraw.Draw(deco_l).text((TX - 18, 20), "\u201c", font=font_deco, fill=(255, 255, 255, 18))
-    canvas = Image.alpha_composite(canvas, deco_l)
-    draw   = ImageDraw.Draw(canvas)
+    ImageDraw.Draw(deco_l).text((TX - 18, 20), "“", font=font_deco, fill=(255, 255, 255, 18))
+    fg   = Image.alpha_composite(fg, deco_l)
+    draw = ImageDraw.Draw(fg)
 
-    # ── NOM DU PERSONNAGE — couleur du perso, gros, uppercase ──
+    def wrap_text(text, font, max_w):
+        words, wlines, cur = text.split(), [], ""
+        for w in words:
+            test = (cur + " " + w).strip()
+            if draw.textbbox((0, 0), test, font=font)[2] <= max_w:
+                cur = test
+            else:
+                if cur:
+                    wlines.append(cur)
+                cur = w
+        if cur:
+            wlines.append(cur)
+        return wlines
+
     name_text = quote_data["character"].upper()
     stroke_text(draw, (TX, 22), name_text, font_char, fill=(*accent, 255), sw=2)
     bb_name = draw.textbbox((TX, 22), name_text, font=font_char)
     name_w, name_h = bb_name[2] - TX, bb_name[3]
-
-    # Ligne accent fine sous le nom
     draw.rectangle([(TX, name_h + 5), (TX + name_w, name_h + 9)], fill=(*accent, 220))
 
-    # ── ANIME — gris clair ──
     anime_y = name_h + 17
     stroke_text(draw, (TX, anime_y), quote_data["anime"], font_anime, fill=(195, 195, 195, 255), sw=1)
     anime_h = draw.textbbox((TX, anime_y), quote_data["anime"], font=font_anime)[3]
 
-    # ── CITATION ──
-    raw_quote = f'\u201c{quote_data["quote"]}\u201d'
+    raw_quote = f'“{quote_data["quote"]}”'
     lines = wrap_text(raw_quote, font_quote, TW)
     fq, lh = font_quote, 64
     if len(lines) > 6:
@@ -986,22 +970,75 @@ async def make_citation_image(quote_data: dict) -> io.BytesIO:
     zone_bot = H - 60
     block_h  = len(lines) * lh
     start_y  = max(zone_top, zone_top + (zone_bot - zone_top - block_h) // 2)
-
     for i, line in enumerate(lines):
         stroke_text(draw, (TX, start_y + i * lh), line, fq, fill=(245, 245, 245, 255), sw=2)
 
-    # ── LIGNE ACCENT sous la zone texte uniquement ──
     draw.rectangle([(TX, H - 8), (TX + TW, H - 5)], fill=(*accent, 190))
-
-    # ── CRÉDIT discret ──
     footer = "by Freydiss"
     fw = draw.textbbox((0, 0), footer, font=font_footer)[2]
     draw.text((W - fw - 18, H - 22), footer, font=font_footer, fill=(60, 60, 60, 200))
 
+    # ── Fond GIF aléatoire ──
+    gif_path = random.choice(CITATION_BG_GIFS)
+
+    def cover_resize_cite(img, tw, th):
+        sw2, sh2 = img.size
+        scale = max(tw / sw2, th / sh2)
+        nw2, nh2 = int(sw2 * scale), int(sh2 * scale)
+        img = img.resize((nw2, nh2), Image.LANCZOS)
+        left = (nw2 - tw) // 2
+        top2 = (nh2 - th) // 2
+        return img.crop((left, top2, left + tw, top2 + th))
+
+    def compose_on_bg(bg_frame):
+        base = cover_resize_cite(bg_frame.convert("RGBA"), W, H)
+        dark = Image.new("RGBA", (W, H), (6, 6, 10, 180))
+        base = Image.alpha_composite(base, dark)
+        return Image.alpha_composite(base, fg)
+
     buf = io.BytesIO()
-    canvas.convert("RGB").save(buf, format="PNG", optimize=True)
-    buf.seek(0)
-    return buf
+    try:
+        bg_src = Image.open(gif_path)
+        try:
+            n_frames = bg_src.n_frames
+        except Exception:
+            n_frames = 1
+        if n_frames > 1:
+            max_frames = 50
+            step = max(1, n_frames // max_frames)
+            gif_frames = []
+            durations = []
+            for i in range(0, n_frames, step):
+                try:
+                    bg_src.seek(i)
+                    gif_frames.append(compose_on_bg(bg_src.copy()))
+                    dur = bg_src.info.get("duration", 80)
+                    durations.append(max(40, dur * step))
+                except Exception as e:
+                    print(f"[CITATION] GIF frame {i}: {e}")
+                    continue
+            if gif_frames:
+                pal_frames = []
+                for f in gif_frames:
+                    rgb = f.convert("RGB")
+                    pal = rgb.quantize(colors=256, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE)
+                    pal_frames.append(pal)
+                pal_frames[0].save(buf, format="GIF", save_all=True, append_images=pal_frames[1:],
+                                   duration=durations, loop=0, disposal=2, optimize=False)
+                buf.seek(0)
+                return buf, True
+        bg_src.seek(0)
+        result = compose_on_bg(bg_src)
+        result.convert("RGB").save(buf, format="PNG", optimize=True)
+        buf.seek(0)
+        return buf, False
+    except Exception as e:
+        print(f"[CITATION] GIF load failed ({gif_path}): {e}")
+        canvas = Image.new("RGBA", (W, H), (6, 6, 10, 255))
+        result = Image.alpha_composite(canvas, fg)
+        result.convert("RGB").save(buf, format="PNG", optimize=True)
+        buf.seek(0)
+        return buf, False
 
 
 async def make_rank_image(member: discord.Member, rank_name: str, hours_7d: float):
@@ -1738,7 +1775,7 @@ async def top(interaction: discord.Interaction, periode: app_commands.Choice[str
     for i, (uid_n, n, v) in enumerate(msg_list[:10]):
         if v <= 0:
             break
-        live = "  🎙️" if uid_n in vocal_now else ""
+        live = "  ✉️" if uid_n in vocal_now else ""
         medal = medals[i] if i < len(medals) else f"{i+1}."
         msg_parts.append(f"{medal}  **{clean_name(n)}**{live}\n     `{v} messages`")
     msg_str = "\n\n".join(msg_parts) if msg_parts else "*Aucune donnée*"
@@ -1747,7 +1784,7 @@ async def top(interaction: discord.Interaction, periode: app_commands.Choice[str
     for i, (uid_n, n, p) in enumerate(prime_list[:5]):
         if p <= 0:
             break
-        live = "  🎙️" if uid_n in vocal_now else ""
+        live = "  💰" if uid_n in vocal_now else ""
         medal = medals[i] if i < len(medals) else f"{i+1}."
         prime_parts.append(f"{medal}  **{clean_name(n)}**{live}\n     `฿ {format_prime(p)}`")
     prime_str = "\n\n".join(prime_parts) if prime_parts else "*Aucune donnée*"
@@ -2364,14 +2401,15 @@ async def _citation_handler(interaction: discord.Interaction, perso: str = None)
     CITATION_HISTORY.append(chosen["quote"])
 
     try:
-        img_buf = await make_citation_image(chosen)
+        img_buf, is_gif = await make_citation_image(chosen)
     except Exception as e:
         print(f"❌ make_citation_image: {e}")
         await interaction.followup.send("❌ Erreur lors de la génération de la carte.", ephemeral=True)
         return
 
+    fname = "citation.gif" if is_gif else "citation.png"
     try:
-        await interaction.followup.send(file=discord.File(img_buf, "citation.png"))
+        await interaction.followup.send(file=discord.File(img_buf, fname))
     except discord.NotFound:
         print("⚠️ /citation : token expiré, impossible d'envoyer")
     except Exception as e:
