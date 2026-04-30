@@ -837,7 +837,7 @@ _CITE_FONT_FOOTER  = _load_font("Righteous-Regular.ttf",   13)
 
 
 async def make_citation_image(quote_data: dict) -> tuple:
-    """Génère une carte cinématique 1200x675 avec GIF animé du personnage (Tenor)."""
+    """Génère une carte cinématique 1200x675 avec GIF animé du personnage (Giphy)."""
     W, H = 1200, 675
 
     # ── Couleur accent ──
@@ -849,7 +849,7 @@ async def make_citation_image(quote_data: dict) -> tuple:
     if 0.299 * accent[0] + 0.587 * accent[1] + 0.114 * accent[2] < 40:
         accent = (212, 175, 55)
 
-    # ── Portrait : GIF Tenor si dispo, sinon image statique ──
+    # ── Portrait : GIF Giphy si dispo, sinon image statique ──
     char_gif_bytes = await _fetch_char_gif_bytes(quote_data["character"], quote_data["anime"])
     char_static_bytes = None
     if not char_gif_bytes:
@@ -2262,7 +2262,7 @@ _CHAR_IMAGE_CACHE: dict[str, str | None] = {n: None for n in _NO_MAL_CHARS}
 _CHAR_IMG_BYTES_CACHE: dict[str, bytes | None] = {}
 _CHAR_IMG_BYTES_MAX = 200  # entrées max — évite la fuite mémoire
 _CHAR_GIF_CACHE: dict[str, bytes | None] = {}
-TENOR_API_KEY = os.environ.get("TENOR_API_KEY", "")
+GIPHY_API_KEY = os.environ.get("GIPHY_API_KEY", "")
 
 def _img_bytes_set(key: str, val: bytes | None):
     if len(_CHAR_IMG_BYTES_CACHE) >= _CHAR_IMG_BYTES_MAX:
@@ -2381,31 +2381,31 @@ async def _fetch_char_image_bytes(name: str) -> bytes | None:
     return None
 
 async def _fetch_char_gif_bytes(name: str, anime: str) -> bytes | None:
-    """Cherche un GIF du personnage sur Tenor. Retourne None si TENOR_API_KEY absent."""
-    if not TENOR_API_KEY:
+    """Cherche un GIF du personnage sur Giphy. Retourne None si GIPHY_API_KEY absent."""
+    if not GIPHY_API_KEY:
         return None
     from urllib.parse import quote as _uq2
     cache_key = f"{name}|{anime}"
     if cache_key in _CHAR_GIF_CACHE:
         return _CHAR_GIF_CACHE[cache_key]
     query = _uq2(f"{name} {anime} anime")
-    url = f"https://tenor.googleapis.com/v2/search?q={query}&key={TENOR_API_KEY}&limit=8&media_filter=gif&contentfilter=medium"
+    url = f"https://api.giphy.com/v1/gifs/search?q={query}&api_key={GIPHY_API_KEY}&limit=10&rating=pg-13&lang=en"
     try:
         sess = _HTTP or aiohttp.ClientSession()
         async with sess.get(url, timeout=aiohttp.ClientTimeout(total=8)) as resp:
             if resp.status == 200:
                 data = await resp.json()
-                results = data.get("results", [])
+                results = data.get("data", [])
                 if results:
                     r = random.choice(results[:min(5, len(results))])
-                    gif_url = r["media_formats"]["gif"]["url"]
+                    gif_url = r["images"]["downsized_large"]["url"]
                     async with sess.get(gif_url, timeout=aiohttp.ClientTimeout(total=20)) as gresp:
                         if gresp.status == 200:
                             raw = await gresp.read()
                             _CHAR_GIF_CACHE[cache_key] = raw
                             return raw
     except Exception as e:
-        print(f"[CITATION] Tenor error '{name}': {e}")
+        print(f"[CITATION] Giphy error '{name}': {e}")
     _CHAR_GIF_CACHE[cache_key] = None
     return None
 
