@@ -58,13 +58,7 @@ RANK_BG_PATHS = {
 }
 RANK_BG_DEFAULT = "background.jpeg"
 _RANK_FONTS: dict = {}  # cache fonts PIL pour make_rank_image
-CITATION_BG_GIFS = [
-    "pirate_bg.gif",
-    "shichibukai_bg.gif",
-    "fujitoraaaa.gif",
-    "yonkou_bg.gif",
-    "roi_des_pirates_bg.gif",
-]
+
 
 if os.path.exists(GRAPH_FONT_PATH):
     fm.fontManager.addfont(GRAPH_FONT_PATH)
@@ -843,7 +837,7 @@ _CITE_FONT_FOOTER  = _load_font("Righteous-Regular.ttf",   13)
 
 
 async def make_citation_image(quote_data: dict) -> tuple:
-    """Génère une carte cinématique 1200x675 avec fond GIF animé aléatoire."""
+    """Génère une carte cinématique 1200x675 avec GIF animé du personnage (Tenor)."""
     W, H = 1200, 675
 
     # ── Couleur accent ──
@@ -855,40 +849,73 @@ async def make_citation_image(quote_data: dict) -> tuple:
     if 0.299 * accent[0] + 0.587 * accent[1] + 0.114 * accent[2] < 40:
         accent = (212, 175, 55)
 
-    char_bytes = await _fetch_char_image_bytes(quote_data["character"])
+    # ── Portrait : GIF Tenor si dispo, sinon image statique ──
+    char_gif_bytes = await _fetch_char_gif_bytes(quote_data["character"], quote_data["anime"])
+    char_static_bytes = None
+    if not char_gif_bytes:
+        char_static_bytes = await _fetch_char_image_bytes(quote_data["character"])
 
-    # ── FOREGROUND (couche transparente : portrait + overlays + texte) ──
-    fg = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    def _process_portrait(frame_img):
+        ci = frame_img.convert("RGBA")
+        ch_w = int(H * ci.width / ci.height)
+        ch_w = max(ch_w, 560)
+        ci = ci.resize((ch_w, H), Image.LANCZOS)
+        r2, g2, b2, a2 = ci.split()
+        rgb2 = ImageEnhance.Brightness(Image.merge("RGB", (r2, g2, b2))).enhance(0.78)
+        rgb2 = ImageEnhance.Color(rgb2).enhance(0.90)
+        ci = Image.merge("RGBA", (*rgb2.split(), a2))
+        fade = min(500, ch_w // 2)
+        msk = Image.new("L", (ch_w, H), 255)
+        md = ImageDraw.Draw(msk)
+        for x in range(fade):
+            t = x / fade
+            md.line([(x, 0), (x, H)], fill=int(255 * t * t * (3 - 2 * t)))
+        ci.putalpha(msk)
+        cx = max(W // 2 - 60, W - ch_w)
+        return ci, cx
+
+    char_frames = []
+    char_durations = []
     char_x = W
 
-    if char_bytes:
+    if char_gif_bytes:
         try:
-            ci = Image.open(io.BytesIO(char_bytes)).convert("RGBA")
-            ch_w = int(H * ci.width / ci.height)
-            ch_w = max(ch_w, 560)
-            ci = ci.resize((ch_w, H), Image.LANCZOS)
-            r2, g2, b2, a2 = ci.split()
-            rgb2 = ImageEnhance.Brightness(Image.merge("RGB", (r2, g2, b2))).enhance(0.78)
-            rgb2 = ImageEnhance.Color(rgb2).enhance(0.90)
-            ci = Image.merge("RGBA", (*rgb2.split(), a2))
-            fade = min(500, ch_w // 2)
-            msk = Image.new("L", (ch_w, H), 255)
-            md  = ImageDraw.Draw(msk)
-            for x in range(fade):
-                t = x / fade
-                md.line([(x, 0), (x, H)], fill=int(255 * t * t * (3 - 2 * t)))
-            ci.putalpha(msk)
-            char_x = max(W // 2 - 60, W - ch_w)
-            fg.paste(ci, (char_x, 0), ci)
+            src = Image.open(io.BytesIO(char_gif_bytes))
+            try:
+                n_frames = src.n_frames
+            except Exception:
+                n_frames = 1
+            step = max(1, n_frames // 40)
+            for i in range(0, n_frames, step):
+                try:
+                    src.seek(i)
+                    f, cx = _process_portrait(src.copy())
+                    char_frames.append((f, cx))
+                    char_durations.append(max(40, src.info.get("duration", 80) * step))
+                except Exception as e:
+                    print(f"[CITATION] GIF frame {i}: {e}")
+            if char_frames:
+                char_x = char_frames[0][1]
         except Exception as e:
-            print(f"[CITATION] PIL image: {e}")
+            print(f"[CITATION] GIF portrait error: {e}")
+
+    if not char_frames and char_static_bytes:
+        try:
+            f, cx = _process_portrait(Image.open(io.BytesIO(char_static_bytes)))
+            char_frames = [(f, cx)]
+            char_durations = [80]
+            char_x = cx
+        except Exception as e:
+            print(f"[CITATION] static portrait error: {e}")
+
+    # ── FOREGROUND : overlays + texte (portrait ajouté par frame) ──
+    fg = Image.new("RGBA", (W, H), (0, 0, 0, 0))
 
     tint = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     td   = ImageDraw.Draw(tint)
     for x in range(char_x, W):
         t = (x - char_x) / max(W - char_x, 1)
-        a = int(35 * t)
-        td.line([(x, 0), (x, H)], fill=(*accent, a))
+        td.line([(x, 0), (x, H)], fill=(*accent, int(35 * t)))
     fg = Image.alpha_composite(fg, tint)
 
     lov = Image.new("RGBA", (W, H), (0, 0, 0, 0))
@@ -978,65 +1005,28 @@ async def make_citation_image(quote_data: dict) -> tuple:
     fw = draw.textbbox((0, 0), footer, font=font_footer)[2]
     draw.text((W - fw - 18, H - 22), footer, font=font_footer, fill=(60, 60, 60, 200))
 
-    # ── Fond GIF aléatoire ──
-    gif_path = random.choice(CITATION_BG_GIFS)
-
-    def cover_resize_cite(img, tw, th):
-        sw2, sh2 = img.size
-        scale = max(tw / sw2, th / sh2)
-        nw2, nh2 = int(sw2 * scale), int(sh2 * scale)
-        img = img.resize((nw2, nh2), Image.LANCZOS)
-        left = (nw2 - tw) // 2
-        top2 = (nh2 - th) // 2
-        return img.crop((left, top2, left + tw, top2 + th))
-
-    def compose_on_bg(bg_frame):
-        base = cover_resize_cite(bg_frame.convert("RGBA"), W, H)
-        dark = Image.new("RGBA", (W, H), (6, 6, 10, 180))
-        base = Image.alpha_composite(base, dark)
-        return Image.alpha_composite(base, fg)
+    # ── Composition finale ──
+    def compose_frame(portrait=None, cx=W):
+        canvas = Image.new("RGBA", (W, H), (6, 6, 10, 255))
+        if portrait is not None:
+            canvas.paste(portrait, (cx, 0), portrait)
+        return Image.alpha_composite(canvas, fg)
 
     buf = io.BytesIO()
-    try:
-        bg_src = Image.open(gif_path)
-        try:
-            n_frames = bg_src.n_frames
-        except Exception:
-            n_frames = 1
-        if n_frames > 1:
-            max_frames = 50
-            step = max(1, n_frames // max_frames)
-            gif_frames = []
-            durations = []
-            for i in range(0, n_frames, step):
-                try:
-                    bg_src.seek(i)
-                    gif_frames.append(compose_on_bg(bg_src.copy()))
-                    dur = bg_src.info.get("duration", 80)
-                    durations.append(max(40, dur * step))
-                except Exception as e:
-                    print(f"[CITATION] GIF frame {i}: {e}")
-                    continue
-            if gif_frames:
-                pal_frames = []
-                for f in gif_frames:
-                    rgb = f.convert("RGB")
-                    pal = rgb.quantize(colors=256, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE)
-                    pal_frames.append(pal)
-                pal_frames[0].save(buf, format="GIF", save_all=True, append_images=pal_frames[1:],
-                                   duration=durations, loop=0, disposal=2, optimize=False)
-                buf.seek(0)
-                return buf, True
-        bg_src.seek(0)
-        result = compose_on_bg(bg_src)
-        result.convert("RGB").save(buf, format="PNG", optimize=True)
+    if len(char_frames) > 1:
+        pal_frames = []
+        for (portrait, cx), _dur in zip(char_frames, char_durations):
+            composed = compose_frame(portrait, cx)
+            pal = composed.convert("RGB").quantize(colors=256, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE)
+            pal_frames.append(pal)
+        pal_frames[0].save(buf, format="GIF", save_all=True, append_images=pal_frames[1:],
+                           duration=char_durations, loop=0, disposal=2, optimize=False)
         buf.seek(0)
-        return buf, False
-    except Exception as e:
-        print(f"[CITATION] GIF load failed ({gif_path}): {e}")
-        canvas = Image.new("RGBA", (W, H), (6, 6, 10, 255))
-        result = Image.alpha_composite(canvas, fg)
-        result.convert("RGB").save(buf, format="PNG", optimize=True)
+        return buf, True
+    else:
+        portrait, cx = char_frames[0] if char_frames else (None, W)
+        composed = compose_frame(portrait, cx)
+        composed.convert("RGB").save(buf, format="PNG", optimize=True)
         buf.seek(0)
         return buf, False
 
@@ -1758,64 +1748,84 @@ async def top(interaction: discord.Interaction, periode: app_commands.Choice[str
     vocal_list.sort(key=lambda x: x[2], reverse=True)
     msg_list.sort(key=lambda x: x[2], reverse=True)
     prime_list.sort(key=lambda x: x[2], reverse=True)
-    medals = ["🥇", "🥈", "🥉", "4.", "5.", "6.", "7.", "8.", "9.", "10."]
 
     vocal_now = {str(m.id) for g in bot.guilds for vc in g.voice_channels for m in vc.members}
+    _medals_all = ["🥇", "🥈", "🥉"] + [f"{i}." for i in range(4, 21)]
 
-    vocal_parts = []
-    for i, (uid_n, n, v) in enumerate(vocal_list[:10]):
-        if v <= 0:
-            break
-        live = "  🎙️" if uid_n in vocal_now else ""
-        medal = medals[i] if i < len(medals) else f"{i+1}."
-        vocal_parts.append(f"{medal}  **{clean_name(n)}**{live}\n     `{format_duration(v)}`")
-    vocal_str = "\n\n".join(vocal_parts) if vocal_parts else "*Aucune donnée*"
+    def _build_top_embed(page: int) -> discord.Embed:
+        start = (page - 1) * 10
+        sep = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-    msg_parts = []
-    for i, (uid_n, n, v) in enumerate(msg_list[:10]):
-        if v <= 0:
-            break
-        live = "  ✉️" if uid_n in vocal_now else ""
-        medal = medals[i] if i < len(medals) else f"{i+1}."
-        msg_parts.append(f"{medal}  **{clean_name(n)}**{live}\n     `{v} messages`")
-    msg_str = "\n\n".join(msg_parts) if msg_parts else "*Aucune donnée*"
+        def _section(lst, live_emoji, formatter):
+            parts = []
+            for abs_i, (uid_n, n, v) in enumerate(lst[start:start+10], start=start):
+                if v <= 0:
+                    break
+                live = f"  {live_emoji}" if uid_n in vocal_now else ""
+                medal = _medals_all[abs_i] if abs_i < len(_medals_all) else f"{abs_i+1}."
+                parts.append(f"{medal}  **{clean_name(n)}**{live}\n     `{formatter(v)}`")
+            return "\n\n".join(parts) if parts else "*Aucune donnée*"
 
-    prime_parts = []
-    for i, (uid_n, n, p) in enumerate(prime_list[:5]):
-        if p <= 0:
-            break
-        live = "  💰" if uid_n in vocal_now else ""
-        medal = medals[i] if i < len(medals) else f"{i+1}."
-        prime_parts.append(f"{medal}  **{clean_name(n)}**{live}\n     `฿ {format_prime(p)}`")
-    prime_str = "\n\n".join(prime_parts) if prime_parts else "*Aucune donnée*"
+        vocal_str = _section(vocal_list, "🎙️", format_duration)
+        msg_str   = _section(msg_list,   "✉️",  lambda v: f"{v} messages")
+        prime_str = _section(prime_list, "💰",  lambda p: f"฿ {format_prime(p)}")
 
-    sep = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    embed = discord.Embed(
-        title=f"🏆 CLASSEMENT  —  {periode.name.upper()}",
-        description=(
-            f"{sep}\n\n"
-            f"🎙️ **TOP 10 VOCAL**\n"
-            f"{sep}\n"
-            f"{vocal_str}\n\n"
-            f"{sep}\n\n"
-            f"💬 **TOP 10 MESSAGES**\n"
-            f"{sep}\n"
-            f"{msg_str}\n\n"
-            f"{sep}\n\n"
-            f"💰 **TOP 5 PRIMES EN BERRY**\n"
-            f"{sep}\n"
-            f"{prime_str}\n\n"
-            f"{sep}"
-        ),
-        color=discord.Color(0xD4AF37)
-    )
-    if guild.icon:
-        embed.set_thumbnail(url=guild.icon.url)
+        rank_range = f"#{start+1}–#{start+10}"
+        embed = discord.Embed(
+            title=f"🏆 CLASSEMENT  —  {periode.name.upper()}  —  {rank_range}",
+            description=(
+                f"{sep}\n\n"
+                f"🎙️ **TOP VOCAL  {rank_range}**\n"
+                f"{sep}\n"
+                f"{vocal_str}\n\n"
+                f"{sep}\n\n"
+                f"💬 **TOP MESSAGES  {rank_range}**\n"
+                f"{sep}\n"
+                f"{msg_str}\n\n"
+                f"{sep}\n\n"
+                f"💰 **TOP PRIMES EN BERRY  {rank_range}**\n"
+                f"{sep}\n"
+                f"{prime_str}\n\n"
+                f"{sep}"
+            ),
+            color=discord.Color(0xD4AF37)
+        )
+        if guild.icon:
+            embed.set_thumbnail(url=guild.icon.url)
+        embed.set_footer(text=f"BRAMS SCORE  |  by Freydiss  •  {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')} UTC  •  Page {page}/2")
+        return embed
 
-    embed.set_footer(text=f"BRAMS SCORE  |  by Freydiss  •  {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')} UTC")
+    class TopView(discord.ui.View):
+        def __init__(self, page=1):
+            super().__init__(timeout=180)
+            self.page = page
+            self._refresh()
+
+        def _refresh(self):
+            self.prev_btn.disabled = (self.page == 1)
+            self.next_btn.disabled = (self.page == 2)
+
+        @discord.ui.button(label="◀  Top 1–10", style=discord.ButtonStyle.secondary)
+        async def prev_btn(self, itx: discord.Interaction, button: discord.ui.Button):
+            self.page = 1
+            self._refresh()
+            await itx.response.edit_message(embed=_build_top_embed(1), view=self)
+
+        @discord.ui.button(label="Top 11–20  ▶", style=discord.ButtonStyle.secondary)
+        async def next_btn(self, itx: discord.Interaction, button: discord.ui.Button):
+            self.page = 2
+            self._refresh()
+            await itx.response.edit_message(embed=_build_top_embed(2), view=self)
+
+        async def on_timeout(self):
+            for item in self.children:
+                item.disabled = True
+
+    view = TopView(page=1)
+    embed = _build_top_embed(1)
 
     try:
-        await interaction.followup.send(embed=embed)
+        await interaction.followup.send(embed=embed, view=view)
     except discord.NotFound:
         print("⚠️ /top : token expiré, impossible d'envoyer")
     except Exception as e:
@@ -2251,6 +2261,8 @@ _NO_MAL_CHARS: frozenset[str] = frozenset({"Zuko"})
 _CHAR_IMAGE_CACHE: dict[str, str | None] = {n: None for n in _NO_MAL_CHARS}
 _CHAR_IMG_BYTES_CACHE: dict[str, bytes | None] = {}
 _CHAR_IMG_BYTES_MAX = 200  # entrées max — évite la fuite mémoire
+_CHAR_GIF_CACHE: dict[str, bytes | None] = {}
+TENOR_API_KEY = os.environ.get("TENOR_API_KEY", "")
 
 def _img_bytes_set(key: str, val: bytes | None):
     if len(_CHAR_IMG_BYTES_CACHE) >= _CHAR_IMG_BYTES_MAX:
@@ -2367,6 +2379,36 @@ async def _fetch_char_image_bytes(name: str) -> bytes | None:
     except Exception as e:
         print(f"[CITATION] DL image erreur '{name}': {e}")
     return None
+
+async def _fetch_char_gif_bytes(name: str, anime: str) -> bytes | None:
+    """Cherche un GIF du personnage sur Tenor. Retourne None si TENOR_API_KEY absent."""
+    if not TENOR_API_KEY:
+        return None
+    from urllib.parse import quote as _uq2
+    cache_key = f"{name}|{anime}"
+    if cache_key in _CHAR_GIF_CACHE:
+        return _CHAR_GIF_CACHE[cache_key]
+    query = _uq2(f"{name} {anime} anime")
+    url = f"https://tenor.googleapis.com/v2/search?q={query}&key={TENOR_API_KEY}&limit=8&media_filter=gif&contentfilter=medium"
+    try:
+        sess = _HTTP or aiohttp.ClientSession()
+        async with sess.get(url, timeout=aiohttp.ClientTimeout(total=8)) as resp:
+            if resp.status == 200:
+                data = await resp.json()
+                results = data.get("results", [])
+                if results:
+                    r = random.choice(results[:min(5, len(results))])
+                    gif_url = r["media_formats"]["gif"]["url"]
+                    async with sess.get(gif_url, timeout=aiohttp.ClientTimeout(total=20)) as gresp:
+                        if gresp.status == 200:
+                            raw = await gresp.read()
+                            _CHAR_GIF_CACHE[cache_key] = raw
+                            return raw
+    except Exception as e:
+        print(f"[CITATION] Tenor error '{name}': {e}")
+    _CHAR_GIF_CACHE[cache_key] = None
+    return None
+
 
 async def _citation_handler(interaction: discord.Interaction, perso: str = None):
     """Logique commune à /citation et /quote."""
