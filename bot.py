@@ -976,8 +976,8 @@ async def make_citation_image(quote_data: dict) -> tuple:
     draw.rectangle([(W - IB - 1, IB), (W - IB, H - IB)], fill=(*accent, 50))
 
     # Brackets décoratifs aux 4 coins
-    BK, BT = 42, 3
-    C = (*accent, 210)
+    BK, BT = 30, 2
+    C = (*accent, 180)
     draw.rectangle([(16, 14), (16 + BK, 14 + BT)], fill=C)
     draw.rectangle([(16, 14), (16 + BT, 14 + BK)], fill=C)
     draw.rectangle([(W - 16 - BK, 14), (W - 16, 14 + BT)], fill=C)
@@ -1019,83 +1019,55 @@ async def make_citation_image(quote_data: dict) -> tuple:
             wlines.append(cur)
         return wlines
 
-    # Filigrane : initiale géante du personnage (texture de profondeur)
-    _wm = quote_data["character"][0].upper()
-    _wb = draw.textbbox((0, 0), _wm, font=_CITE_FONT_WATERMARK)
-    _wx = TX + TW // 2 - (_wb[2] - _wb[0]) // 2
-    _wy = H // 2 - (_wb[3] - _wb[1]) // 2
-    draw.text((_wx, _wy), _wm, font=_CITE_FONT_WATERMARK, fill=(*accent, 20))
-
-    # Grand guillemet décoratif semi-transparent
-    draw.text((TX - 4, 8), '“', font=font_qmark, fill=(*accent, 55))
+    # Guillemet décoratif d'ouverture
+    draw.text((TX - 8, 2), '“', font=font_qmark, fill=(*accent, 32))
 
     # ── Zone signature (bas) ──
-    SIG_TOP = 498
+    SIG_TOP = 508
+    CX = TX + TW // 2
 
-    # Séparateur avec diamant accent
-    sep_y = SIG_TOP - 16
-    draw.rectangle([(TX + 16, sep_y + 1), (TX + 320, sep_y + 2)], fill=(*accent, 180))
-    d_cx, d_cy = TX + 7, sep_y + 2
-    draw.polygon([(d_cx, d_cy - 6), (d_cx + 6, d_cy), (d_cx, d_cy + 6), (d_cx - 6, d_cy)], fill=(*accent, 230))
+    # Séparateur : ligne centrée + diamant au centre
+    sep_y = SIG_TOP - 18
+    SEP_W = 340
+    draw.rectangle([(TX, sep_y), (TX + SEP_W, sep_y + 1)], fill=(*accent, 120))
+    dcx = TX + SEP_W // 2
+    draw.polygon([(dcx, sep_y - 5), (dcx + 5, sep_y), (dcx, sep_y + 5), (dcx - 5, sep_y)], fill=(*accent, 190))
 
-    # Nom du personnage — KOMIKAX avec halo accent
+    # Nom du personnage — ombre douce + blanc
     name_text = quote_data["character"].upper()
-    for offset, alpha in [(8, 18), (5, 30), (3, 45)]:
-        for dx, dy in [(-offset, 0), (offset, 0), (0, -offset), (0, offset),
-                       (-offset, -offset), (offset, offset)]:
-            draw.text((TX + dx, SIG_TOP + dy), name_text, font=font_char, fill=(*accent, alpha))
-    stroke_text(draw, (TX, SIG_TOP), name_text, font_char, fill=(*accent, 255), sw=2)
+    draw.text((TX + 2, SIG_TOP + 2), name_text, font=font_char, fill=(0, 0, 0, 150))
+    draw.text((TX, SIG_TOP), name_text, font=font_char, fill=(255, 255, 255, 240))
     name_bottom = draw.textbbox((TX, SIG_TOP), name_text, font=font_char)[3]
 
-    # Anime — couleur accent + préfixe ◆
+    # Anime — gris doux sous le nom
     anime_y = name_bottom + 5
-    prefix = "◆  "
-    pw = draw.textbbox((0, 0), prefix, font=font_anime)[2]
-    stroke_text(draw, (TX, anime_y), prefix, font=font_anime, fill=(*accent, 200), sw=1)
-    stroke_text(draw, (TX + pw, anime_y), quote_data["anime"], font=font_anime, fill=(*accent, 240), sw=1)
+    draw.text((TX + 1, anime_y + 1), quote_data["anime"], font=font_anime, fill=(0, 0, 0, 100))
+    draw.text((TX, anime_y), quote_data["anime"], font=font_anime, fill=(190, 190, 190, 215))
 
-    # ── Citation centrée verticalement ──
-    raw_quote = f'"{quote_data["quote"]}"'
+    # ── Citation centrée horizontalement et verticalement ──
+    raw_quote = quote_data["quote"]
     lines = wrap_text(raw_quote, font_quote, TW)
-    fq, lh = font_quote, 66
+    fq, lh = font_quote, 62
     if len(lines) > 5:
         lines = wrap_text(raw_quote, font_quote_s, TW)
-        fq, lh = font_quote_s, 52
+        fq, lh = font_quote_s, 50
 
-    QUOTE_TOP = 80
-    QUOTE_BOT = SIG_TOP - 44
+    QUOTE_TOP = 75
+    QUOTE_BOT = SIG_TOP - 42
     block_h   = len(lines) * lh
     start_y   = QUOTE_TOP + max(0, (QUOTE_BOT - QUOTE_TOP - block_h) // 2)
 
-    # Barre verticale accent gauche du bloc citation
-    draw.rectangle([(TX - 14, start_y + 4), (TX - 11, start_y + block_h - 4)], fill=(*accent, 160))
-
-    # Etincelles accent dans la zone texte (derriere la citation)
-    _sp = random.Random(sum(ord(c) for c in quote_data["character"]))
-    for _ in range(14):
-        sx = _sp.randint(TX + 10, TX + TW - 10)
-        sy = _sp.randint(70, SIG_TOP - 50)
-        sa = _sp.randint(35, 75)
-        ss = _sp.randint(3, 6)
-        draw.line([(sx - ss, sy), (sx + ss, sy)], fill=(*accent, sa), width=1)
-        draw.line([(sx, sy - ss), (sx, sy + ss)], fill=(*accent, sa), width=1)
-        _d = max(1, ss // 2)
-        draw.line([(sx - _d, sy - _d), (sx + _d, sy + _d)], fill=(*accent, sa // 2), width=1)
-        draw.line([(sx + _d, sy - _d), (sx - _d, sy + _d)], fill=(*accent, sa // 2), width=1)
-
-    # Halo accent derriere le texte citation
     for i, line in enumerate(lines):
-        lx, ly = TX, start_y + i * lh
-        for dx, dy in [(-6, 0), (6, 0), (0, -6), (0, 6), (-4, -4), (4, -4), (-4, 4), (4, 4)]:
-            draw.text((lx + dx, ly + dy), line, font=fq, fill=(*accent, 22))
-
-    for i, line in enumerate(lines):
-        stroke_text(draw, (TX, start_y + i * lh), line, fq, fill=(248, 248, 248, 255), sw=2)
+        lw  = draw.textbbox((0, 0), line, font=fq)[2]
+        lx  = CX - lw // 2
+        ly  = start_y + i * lh
+        draw.text((lx + 2, ly + 2), line, font=fq, fill=(0, 0, 0, 130))
+        draw.text((lx, ly), line, font=fq, fill=(252, 252, 252, 255))
 
     # Footer
     footer = "- Freydiss"
     fw = draw.textbbox((0, 0), footer, font=font_footer)[2]
-    draw.text((W - fw - 20, H - 24), footer, font=font_footer, fill=(180, 180, 180, 180))
+    draw.text((W - fw - 20, H - 22), footer, font=font_footer, fill=(150, 150, 150, 150))
 
     # ── Composition : GIF du perso en fond plein ──
     def cover_resize_cite(img, tw, th):
