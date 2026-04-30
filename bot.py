@@ -887,7 +887,7 @@ _CITE_FONT_FOOTER  = _load_font("Righteous-Regular.ttf",   13)
 
 
 async def make_citation_image(quote_data: dict) -> tuple:
-    """Génère une carte 1200x675 — GIF local du perso en fond, texte par-dessus."""
+    """Génère une carte 1200x675 — GIF du personnage (Giphy) en fond plein, texte par-dessus."""
     W, H = 1200, 675
 
     # ── Couleur accent ──
@@ -898,6 +898,12 @@ async def make_citation_image(quote_data: dict) -> tuple:
         accent = (212, 175, 55)
     if 0.299 * accent[0] + 0.587 * accent[1] + 0.114 * accent[2] < 40:
         accent = (212, 175, 55)
+
+    # ── Source image : GIF Giphy ou image statique en fallback ──
+    char_gif_bytes  = await _fetch_char_gif_bytes(quote_data["character"], quote_data["anime"])
+    char_static_bytes = None
+    if not char_gif_bytes:
+        char_static_bytes = await _fetch_char_image_bytes(quote_data["character"])
 
     # ── FOREGROUND : overlays + texte (se pose sur n'importe quel fond) ──
     fg = Image.new("RGBA", (W, H), (0, 0, 0, 0))
@@ -998,7 +1004,7 @@ async def make_citation_image(quote_data: dict) -> tuple:
     fw = draw.textbbox((0, 0), footer, font=font_footer)[2]
     draw.text((W - fw - 18, H - 22), footer, font=font_footer, fill=(60, 60, 60, 200))
 
-    # ── Composition ──
+    # ── Composition : GIF du perso en fond plein ──
     def cover_resize_cite(img, tw, th):
         sw2, sh2 = img.size
         scale = max(tw / sw2, th / sh2)
@@ -1014,61 +1020,84 @@ async def make_citation_image(quote_data: dict) -> tuple:
 
     buf = io.BytesIO()
 
-    def _render_file(path) -> tuple | None:
-        """Rend un fichier local (GIF animé ou image statique) en fond. Retourne (BytesIO, is_gif) ou None."""
+    def _render_animated_gif(src, label="GIF") -> tuple | None:
+        """Compose src (bytes ou chemin fichier) en GIF animé. Retourne (BytesIO, True) ou None."""
         try:
-            src = Image.open(path)
+            bg_src = Image.open(io.BytesIO(src) if isinstance(src, (bytes, bytearray)) else src)
             try:
-                n_frames = src.n_frames
+                n_frames = bg_src.n_frames
             except Exception:
                 n_frames = 1
+            if n_frames <= 1:
+                return None
+            max_frames = 40
+            step = max(1, n_frames // max_frames)
+            gif_frames, durations = [], []
+            for i in range(0, n_frames, step):
+                try:
+                    bg_src.seek(i)
+                    gif_frames.append(compose_on_bg(bg_src.copy()))
+                    durations.append(max(40, bg_src.info.get("duration", 80) * step))
+                except Exception as e:
+                    print(f"[CITATION] {label} frame {i}: {e}")
+            if not gif_frames:
+                return None
+            pal_frames = [
+                f.convert("RGB").quantize(colors=256, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE)
+                for f in gif_frames
+            ]
+            b = io.BytesIO()
+            pal_frames[0].save(b, format="GIF", save_all=True, append_images=pal_frames[1:],
+                               duration=durations, loop=0, disposal=2, optimize=False)
+            b.seek(0)
+            return b, True
+        except Exception as e:
+            print(f"[CITATION] {label} compose failed: {e}")
+        return None
 
-            if n_frames > 1:
-                max_frames = 40
-                step = max(1, n_frames // max_frames)
-                gif_frames, durations = [], []
-                for i in range(0, n_frames, step):
-                    try:
-                        src.seek(i)
-                        gif_frames.append(compose_on_bg(src.copy()))
-                        durations.append(max(40, src.info.get("duration", 80) * step))
-                    except Exception as e:
-                        print(f"[CITATION] {path} frame {i}: {e}")
-                if gif_frames:
-                    pal = [f.convert("RGB").quantize(colors=256, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE) for f in gif_frames]
-                    b = io.BytesIO()
-                    pal[0].save(b, format="GIF", save_all=True, append_images=pal[1:],
-                                duration=durations, loop=0, disposal=2, optimize=False)
-                    b.seek(0)
-                    return b, True
-
-            out = compose_on_bg(src.convert("RGBA"))
+    # Cas 0 : GIF local dédié au personnage (priorité maximale)
+    local_gif_path = LOCAL_CHAR_GIFS.get(quote_data["character"])
+    if local_gif_path and os.path.exists(local_gif_path):
+        result = _render_animated_gif(local_gif_path, f"local:{local_gif_path}")
+        if result:
+            return result
+        # Fallback statique si le fichier local n'est pas animé
+        try:
+            out = compose_on_bg(Image.open(local_gif_path).convert("RGBA"))
             b = io.BytesIO()
             out.convert("RGB").save(b, format="PNG", optimize=True)
             b.seek(0)
             return b, False
         except Exception as e:
-            print(f"[CITATION] render '{path}' failed: {e}")
-        return None
+            print(f"[CITATION] local static fallback '{local_gif_path}': {e}")
 
-    # 1. GIF local du personnage
-    local_path = LOCAL_CHAR_GIFS.get(quote_data["character"])
-    if local_path and os.path.exists(local_path):
-        result = _render_file(local_path)
+    # Cas 1 : GIF Giphy du personnage
+    if char_gif_bytes:
+        result = _render_animated_gif(char_gif_bytes, "Giphy")
         if result:
             return result
 
-    # 2. GIF de rang aléatoire (fallback pour persos sans GIF dédié)
-    rank_gifs = ["pirate_bg.gif", "shichibukai_bg.gif", "fujitoraaaa.gif", "yonkou_bg.gif", "roi_des_pirates_bg.gif"]
-    random.shuffle(rank_gifs)
-    for gif_path in rank_gifs:
+    # Cas 2 : GIF local animé (fallback fiable — sans clé API)
+    _LOCAL_GIFS = ["pirate_bg.gif", "shichibukai_bg.gif", "fujitoraaaa.gif", "yonkou_bg.gif", "roi_des_pirates_bg.gif"]
+    random.shuffle(_LOCAL_GIFS)
+    for gif_path in _LOCAL_GIFS:
         if os.path.exists(gif_path):
-            result = _render_file(gif_path)
+            result = _render_animated_gif(gif_path, f"local:{gif_path}")
             if result:
                 return result
             break
 
-    # 3. Fond sombre pur
+    # Cas 3 : image statique du personnage en fond
+    if char_static_bytes:
+        try:
+            result = compose_on_bg(Image.open(io.BytesIO(char_static_bytes)))
+            result.convert("RGB").save(buf, format="PNG", optimize=True)
+            buf.seek(0)
+            return buf, False
+        except Exception as e:
+            print(f"[CITATION] static bg failed: {e}")
+
+    # Cas 4 : fond sombre pur (aucun visuel dispo)
     canvas = Image.new("RGBA", (W, H), (6, 6, 10, 255))
     result = Image.alpha_composite(canvas, fg)
     result.convert("RGB").save(buf, format="PNG", optimize=True)
