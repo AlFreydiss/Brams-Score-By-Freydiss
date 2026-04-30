@@ -901,7 +901,9 @@ _CITE_FONT_ANIME   = _load_font("Righteous-Regular.ttf",   28)
 _CITE_FONT_QUOTE   = _load_font("Righteous-Regular.ttf",   48)
 _CITE_FONT_QUOTE_S = _load_font("Righteous-Regular.ttf",   36)
 _CITE_FONT_FOOTER  = _load_font("Righteous-Regular.ttf",   14)
-_CITE_FONT_WATERMARK = _load_font("KOMIKAX_.ttf",            300)
+_CITE_FONT_WATERMARK    = _load_font("KOMIKAX_.ttf",            300)
+_CITE_FONT_ANIME_PIRATE = _load_font("PirataOne-Regular.ttf",  26)
+_CITE_FONT_ANIME_COMIC  = _load_font("KOMIKAX_.ttf",            22)
 
 
 async def make_citation_image(quote_data: dict) -> tuple:
@@ -920,27 +922,28 @@ async def make_citation_image(quote_data: dict) -> tuple:
     # ── FOREGROUND : overlays ──
     fg = Image.new("RGBA", (W, H), (0, 0, 0, 0))
 
-    # Gradient latéral gauche — opacité réduite (GIF visible)
+    # Gradient horizontal gauche (lisibilité texte)
     panel = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     pd = ImageDraw.Draw(panel)
     for x in range(W):
-        if x < 560:
-            a = 105
-        elif x < 860:
-            t = (x - 560) / (860 - 560)
-            a = int(105 * (1 - t * t * t))
+        if x < 580:
+            a = 68
+        elif x < 880:
+            t = (x - 580) / 300
+            a = int(68 * (1 - t * t * t))
         else:
             a = 0
         pd.line([(x, 0), (x, H)], fill=(0, 0, 0, a))
     fg = Image.alpha_composite(fg, panel)
 
-    # Vignette basse (ancre le texte)
-    vig = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    vd = ImageDraw.Draw(vig)
-    for y in range(H - 200, H):
-        t = (y - (H - 200)) / 200
-        vd.line([(0, y), (W, y)], fill=(0, 0, 0, int(150 * t * t)))
-    fg = Image.alpha_composite(fg, vig)
+    # Gradient vertical foncé bas → transparent haut
+    vgrad = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    vd = ImageDraw.Draw(vgrad)
+    for y in range(H):
+        t = y / H
+        a = int(72 * t * t)
+        vd.line([(0, y), (min(940, W), y)], fill=(0, 0, 0, a))
+    fg = Image.alpha_composite(fg, vgrad)
 
     # Lueur accent coin bas-gauche (effet couleur du perso)
     glow = Image.new("RGBA", (W, H), (0, 0, 0, 0))
@@ -1040,20 +1043,36 @@ async def make_citation_image(quote_data: dict) -> tuple:
     for dcx in (TX + 6, TX + SEP_W - 6):
         draw.polygon([(dcx, sep_y - 5), (dcx + 5, sep_y), (dcx, sep_y + 5), (dcx - 5, sep_y)], fill=(*accent, 195))
 
-    # Nom du personnage — ombres en couches + blanc
+    # Police anime adaptée au style
+    _pirate_set = {"One Piece", "Vinland Saga", "Berserk", "Cowboy Bebop"}
+    _comic_set  = {"Naruto", "Attack on Titan", "Demon Slayer", "Dragon Ball Z",
+                   "Jujutsu Kaisen", "Bleach", "Chainsaw Man", "Fairy Tail",
+                   "Hunter x Hunter", "One Punch Man", "Black Clover", "Tokyo Ghoul"}
+    _cur_anime = quote_data["anime"]
+    if _cur_anime in _pirate_set:
+        font_anime_sel = _CITE_FONT_ANIME_PIRATE
+    elif _cur_anime in _comic_set:
+        font_anime_sel = _CITE_FONT_ANIME_COMIC
+    else:
+        font_anime_sel = font_anime
+
+    # Couleur accent boostée pour lisibilité nom
+    _nc = tuple(min(255, int(c * 1.25)) for c in accent)
+
+    # Nom du personnage — ombres en couches + couleur accent
     name_text = quote_data["character"].upper()
     for ox, oy, oa in [(3, 3, 65), (2, 2, 105), (1, 1, 140)]:
         draw.text((TX + ox, SIG_TOP + oy), name_text, font=font_char, fill=(0, 0, 0, oa))
-    draw.text((TX, SIG_TOP), name_text, font=font_char, fill=(255, 255, 255, 245))
+    draw.text((TX, SIG_TOP), name_text, font=font_char, fill=(*_nc, 245))
     nb = draw.textbbox((TX, SIG_TOP), name_text, font=font_char)
     name_bottom, name_right = nb[3], nb[2]
-    # Filet accent fin sous le nom
+    # Filet accent sous le nom
     draw.rectangle([(TX, name_bottom + 3), (name_right, name_bottom + 4)], fill=(*accent, 145))
 
-    # Anime — gris clair
+    # Anime — couleur accent, police adaptée
     anime_y = name_bottom + 10
-    draw.text((TX + 1, anime_y + 1), quote_data["anime"], font=font_anime, fill=(0, 0, 0, 85))
-    draw.text((TX, anime_y), quote_data["anime"], font=font_anime, fill=(182, 182, 182, 218))
+    draw.text((TX + 1, anime_y + 1), quote_data["anime"], font=font_anime_sel, fill=(0, 0, 0, 85))
+    draw.text((TX, anime_y), quote_data["anime"], font=font_anime_sel, fill=(*accent, 210))
 
     # ── Citation centrée ──
     raw_quote = quote_data["quote"]
