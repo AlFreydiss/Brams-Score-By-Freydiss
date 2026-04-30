@@ -2429,7 +2429,7 @@ async def _fetch_char_gif_bytes(name: str, anime: str) -> bytes | None:
     return None
 
 
-async def _citation_handler(interaction: discord.Interaction, perso: str = None):
+async def _citation_handler(interaction: discord.Interaction, categorie: str = None):
     """Logique commune à /citation et /quote."""
     try:
         await interaction.response.defer()
@@ -2440,15 +2440,11 @@ async def _citation_handler(interaction: discord.Interaction, perso: str = None)
         print(f"❌ /citation defer failed: {e}")
         return
 
-    # Filtrage par personnage si demandé
-    if perso:
-        pool = [q for q in QUOTES_DB if perso.lower() in q["character"].lower()]
+    # Filtrage par anime si demandé
+    if categorie:
+        pool = [q for q in QUOTES_DB if q["anime"].lower() == categorie.lower()]
         if not pool:
-            chars = sorted(set(q["character"] for q in QUOTES_DB))
-            await interaction.followup.send(
-                f"❌ Personnage introuvable.\n**Disponibles :** {', '.join(chars[:30])}{'…' if len(chars) > 30 else ''}",
-                ephemeral=True,
-            )
+            await interaction.followup.send("❌ Catégorie introuvable.", ephemeral=True)
             return
     else:
         pool = QUOTES_DB
@@ -2479,9 +2475,33 @@ async def _citation_handler(interaction: discord.Interaction, perso: str = None)
 
 
 @bot.tree.command(name="citation", description="Citation aléatoire d'un personnage anime")
-@app_commands.describe(perso="Filtrer par personnage (optionnel)")
-async def citation(interaction: discord.Interaction, perso: str = None):
-    await _citation_handler(interaction, perso)
+@app_commands.describe(categorie="Filtrer par anime (optionnel)")
+@app_commands.choices(categorie=[
+    app_commands.Choice(name="One Piece",              value="One Piece"),
+    app_commands.Choice(name="Naruto",                 value="Naruto"),
+    app_commands.Choice(name="Attack on Titan",        value="Attack on Titan"),
+    app_commands.Choice(name="Death Note",             value="Death Note"),
+    app_commands.Choice(name="Dragon Ball Z",          value="Dragon Ball Z"),
+    app_commands.Choice(name="Demon Slayer",           value="Demon Slayer"),
+    app_commands.Choice(name="Jujutsu Kaisen",         value="Jujutsu Kaisen"),
+    app_commands.Choice(name="Bleach",                 value="Bleach"),
+    app_commands.Choice(name="Fullmetal Alchemist",    value="Fullmetal Alchemist"),
+    app_commands.Choice(name="Hunter x Hunter",        value="Hunter x Hunter"),
+    app_commands.Choice(name="JoJo's Bizarre Adventure", value="JoJo's Bizarre Adventure"),
+    app_commands.Choice(name="Fairy Tail",             value="Fairy Tail"),
+    app_commands.Choice(name="Code Geass",             value="Code Geass"),
+    app_commands.Choice(name="Tokyo Ghoul",            value="Tokyo Ghoul"),
+    app_commands.Choice(name="One Punch Man",          value="One Punch Man"),
+    app_commands.Choice(name="Berserk",                value="Berserk"),
+    app_commands.Choice(name="Re:Zero",                value="Re:Zero"),
+    app_commands.Choice(name="Sword Art Online",       value="Sword Art Online"),
+    app_commands.Choice(name="Violet Evergarden",      value="Violet Evergarden"),
+    app_commands.Choice(name="Cowboy Bebop",           value="Cowboy Bebop"),
+    app_commands.Choice(name="Black Clover",           value="Black Clover"),
+    app_commands.Choice(name="Vinland Saga",           value="Vinland Saga"),
+])
+async def citation(interaction: discord.Interaction, categorie: app_commands.Choice[str] = None):
+    await _citation_handler(interaction, categorie.value if categorie else None)
 
 
 @bot.tree.command(name="addheures", description="[ADMIN] Ajouter des heures vocales à un membre")
