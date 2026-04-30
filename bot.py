@@ -880,6 +880,7 @@ _CITE_FONT_ANIME   = _load_font("Righteous-Regular.ttf",   28)
 _CITE_FONT_QUOTE   = _load_font("Righteous-Regular.ttf",   48)
 _CITE_FONT_QUOTE_S = _load_font("Righteous-Regular.ttf",   36)
 _CITE_FONT_FOOTER  = _load_font("Righteous-Regular.ttf",   14)
+_CITE_FONT_WATERMARK = _load_font("KOMIKAX_.ttf",            300)
 
 
 async def make_citation_image(quote_data: dict) -> tuple:
@@ -898,7 +899,7 @@ async def make_citation_image(quote_data: dict) -> tuple:
     # ── FOREGROUND : overlays + texte ──
     fg = Image.new("RGBA", (W, H), (0, 0, 0, 0))
 
-    # Panneau gauche semi-transparent (plein jusqu'à x=660, fondu cubique jusqu'à x=940)
+    # Panneau gauche semi-transparent
     panel = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     pd = ImageDraw.Draw(panel)
     SOLID_END, FADE_END = 660, 940
@@ -921,6 +922,23 @@ async def make_citation_image(quote_data: dict) -> tuple:
         vd.line([(0, y), (W, y)], fill=(0, 0, 0, a))
     fg = Image.alpha_composite(fg, vig)
 
+    # Scanlines cinématiques (1 ligne sur 4)
+    scan = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    sd = ImageDraw.Draw(scan)
+    for y in range(0, H, 4):
+        sd.line([(0, y), (W, y)], fill=(0, 0, 0, 16))
+    fg = Image.alpha_composite(fg, scan)
+
+    # Traînée lumineuse diagonale (côté droit, effet énergie)
+    streak = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    sk = ImageDraw.Draw(streak)
+    for i in range(-40, 41, 2):
+        alpha = max(0, 18 - abs(i) // 2)
+        x0 = W * 3 // 4 + i - H // 2
+        x1 = W * 3 // 4 + i + H // 2
+        sk.line([(x0, 0), (x1, H)], fill=(255, 255, 255, alpha), width=1)
+    fg = Image.alpha_composite(fg, streak)
+
     draw = ImageDraw.Draw(fg)
 
     # Barre accent verticale gauche
@@ -928,6 +946,13 @@ async def make_citation_image(quote_data: dict) -> tuple:
     # Lignes accent haut et bas
     draw.rectangle([(0, 0), (W, 4)], fill=(*accent, 200))
     draw.rectangle([(0, H - 4), (W, H)], fill=(*accent, 160))
+
+    # Bordure intérieure subtile (relie les brackets)
+    IB = 20
+    draw.rectangle([(IB, IB), (W - IB, IB + 1)], fill=(*accent, 50))
+    draw.rectangle([(IB, H - IB - 1), (W - IB, H - IB)], fill=(*accent, 50))
+    draw.rectangle([(IB, IB), (IB + 1, H - IB)], fill=(*accent, 50))
+    draw.rectangle([(W - IB - 1, IB), (W - IB, H - IB)], fill=(*accent, 50))
 
     # Brackets décoratifs aux 4 coins
     BK, BT = 42, 3
@@ -973,6 +998,13 @@ async def make_citation_image(quote_data: dict) -> tuple:
             wlines.append(cur)
         return wlines
 
+    # Filigrane : initiale géante du personnage (texture de profondeur)
+    _wm = quote_data["character"][0].upper()
+    _wb = draw.textbbox((0, 0), _wm, font=_CITE_FONT_WATERMARK)
+    _wx = TX + TW // 2 - (_wb[2] - _wb[0]) // 2
+    _wy = H // 2 - (_wb[3] - _wb[1]) // 2
+    draw.text((_wx, _wy), _wm, font=_CITE_FONT_WATERMARK, fill=(*accent, 20))
+
     # Grand guillemet décoratif semi-transparent
     draw.text((TX - 4, 8), '“', font=font_qmark, fill=(*accent, 55))
 
@@ -1016,6 +1048,25 @@ async def make_citation_image(quote_data: dict) -> tuple:
 
     # Barre verticale accent gauche du bloc citation
     draw.rectangle([(TX - 14, start_y + 4), (TX - 11, start_y + block_h - 4)], fill=(*accent, 160))
+
+    # Etincelles accent dans la zone texte (derriere la citation)
+    _sp = random.Random(sum(ord(c) for c in quote_data["character"]))
+    for _ in range(14):
+        sx = _sp.randint(TX + 10, TX + TW - 10)
+        sy = _sp.randint(70, SIG_TOP - 50)
+        sa = _sp.randint(35, 75)
+        ss = _sp.randint(3, 6)
+        draw.line([(sx - ss, sy), (sx + ss, sy)], fill=(*accent, sa), width=1)
+        draw.line([(sx, sy - ss), (sx, sy + ss)], fill=(*accent, sa), width=1)
+        _d = max(1, ss // 2)
+        draw.line([(sx - _d, sy - _d), (sx + _d, sy + _d)], fill=(*accent, sa // 2), width=1)
+        draw.line([(sx + _d, sy - _d), (sx - _d, sy + _d)], fill=(*accent, sa // 2), width=1)
+
+    # Halo accent derriere le texte citation
+    for i, line in enumerate(lines):
+        lx, ly = TX, start_y + i * lh
+        for dx, dy in [(-6, 0), (6, 0), (0, -6), (0, 6), (-4, -4), (4, -4), (-4, 4), (4, 4)]:
+            draw.text((lx + dx, ly + dy), line, font=fq, fill=(*accent, 22))
 
     for i, line in enumerate(lines):
         stroke_text(draw, (TX, start_y + i * lh), line, fq, fill=(248, 248, 248, 255), sw=2)
