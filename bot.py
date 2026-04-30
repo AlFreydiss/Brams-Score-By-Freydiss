@@ -875,7 +875,7 @@ def _load_font(path: str, size: int):
         return ImageFont.load_default()
 
 _CITE_FONT_QMARK   = _load_font("PirataOne-Regular.ttf",  130)
-_CITE_FONT_CHAR    = _load_font("PirataOne-Regular.ttf",   68)
+_CITE_FONT_CHAR    = _load_font("KOMIKAX_.ttf",            50)
 _CITE_FONT_ANIME   = _load_font("Righteous-Regular.ttf",   28)
 _CITE_FONT_QUOTE   = _load_font("Righteous-Regular.ttf",   48)
 _CITE_FONT_QUOTE_S = _load_font("Righteous-Regular.ttf",   36)
@@ -925,10 +925,21 @@ async def make_citation_image(quote_data: dict) -> tuple:
 
     # Barre accent verticale gauche
     draw.rectangle([(0, 0), (6, H)], fill=(*accent, 255))
-    # Ligne accent horizontale haut
+    # Lignes accent haut et bas
     draw.rectangle([(0, 0), (W, 4)], fill=(*accent, 200))
-    # Ligne accent horizontale bas
     draw.rectangle([(0, H - 4), (W, H)], fill=(*accent, 160))
+
+    # Brackets décoratifs aux 4 coins
+    BK, BT = 42, 3
+    C = (*accent, 210)
+    draw.rectangle([(16, 14), (16 + BK, 14 + BT)], fill=C)
+    draw.rectangle([(16, 14), (16 + BT, 14 + BK)], fill=C)
+    draw.rectangle([(W - 16 - BK, 14), (W - 16, 14 + BT)], fill=C)
+    draw.rectangle([(W - 16 - BT, 14), (W - 16, 14 + BK)], fill=C)
+    draw.rectangle([(16, H - 14 - BT), (16 + BK, H - 14)], fill=C)
+    draw.rectangle([(16, H - 14 - BK), (16 + BT, H - 14)], fill=C)
+    draw.rectangle([(W - 16 - BK, H - 14 - BT), (W - 16, H - 14)], fill=C)
+    draw.rectangle([(W - 16 - BT, H - 14 - BK), (W - 16, H - 14)], fill=C)
 
     TX = 50
     TW = 670
@@ -962,23 +973,35 @@ async def make_citation_image(quote_data: dict) -> tuple:
             wlines.append(cur)
         return wlines
 
-    # Guillemet décoratif en accent (grand, semi-transparent)
+    # Grand guillemet décoratif semi-transparent
     draw.text((TX - 4, 8), '“', font=font_qmark, fill=(*accent, 55))
 
-    # Zone inférieure : nom perso + anime (signature)
-    SIG_TOP = 500
-    sep_y   = SIG_TOP - 12
-    draw.rectangle([(TX, sep_y), (TX + 280, sep_y + 2)], fill=(*accent, 180))
+    # ── Zone signature (bas) ──
+    SIG_TOP = 498
 
+    # Séparateur avec diamant accent
+    sep_y = SIG_TOP - 16
+    draw.rectangle([(TX + 16, sep_y + 1), (TX + 320, sep_y + 2)], fill=(*accent, 180))
+    d_cx, d_cy = TX + 7, sep_y + 2
+    draw.polygon([(d_cx, d_cy - 6), (d_cx + 6, d_cy), (d_cx, d_cy + 6), (d_cx - 6, d_cy)], fill=(*accent, 230))
+
+    # Nom du personnage — KOMIKAX avec halo accent
     name_text = quote_data["character"].upper()
+    for offset, alpha in [(8, 18), (5, 30), (3, 45)]:
+        for dx, dy in [(-offset, 0), (offset, 0), (0, -offset), (0, offset),
+                       (-offset, -offset), (offset, offset)]:
+            draw.text((TX + dx, SIG_TOP + dy), name_text, font=font_char, fill=(*accent, alpha))
     stroke_text(draw, (TX, SIG_TOP), name_text, font_char, fill=(*accent, 255), sw=2)
-    name_bb = draw.textbbox((TX, SIG_TOP), name_text, font=font_char)
-    name_bottom = name_bb[3]
+    name_bottom = draw.textbbox((TX, SIG_TOP), name_text, font=font_char)[3]
 
-    anime_y = name_bottom + 6
-    stroke_text(draw, (TX, anime_y), quote_data["anime"], font_anime, fill=(200, 200, 200, 230), sw=1)
+    # Anime — couleur accent + préfixe ◆
+    anime_y = name_bottom + 5
+    prefix = "◆  "
+    pw = draw.textbbox((0, 0), prefix, font=font_anime)[2]
+    stroke_text(draw, (TX, anime_y), prefix, font=font_anime, fill=(*accent, 200), sw=1)
+    stroke_text(draw, (TX + pw, anime_y), quote_data["anime"], font=font_anime, fill=(*accent, 240), sw=1)
 
-    # Citation - centrée verticalement dans la zone au-dessus de la signature
+    # ── Citation centrée verticalement ──
     raw_quote = f'"{quote_data["quote"]}"'
     lines = wrap_text(raw_quote, font_quote, TW)
     fq, lh = font_quote, 66
@@ -987,9 +1010,13 @@ async def make_citation_image(quote_data: dict) -> tuple:
         fq, lh = font_quote_s, 52
 
     QUOTE_TOP = 80
-    QUOTE_BOT = SIG_TOP - 40
+    QUOTE_BOT = SIG_TOP - 44
     block_h   = len(lines) * lh
     start_y   = QUOTE_TOP + max(0, (QUOTE_BOT - QUOTE_TOP - block_h) // 2)
+
+    # Barre verticale accent gauche du bloc citation
+    draw.rectangle([(TX - 14, start_y + 4), (TX - 11, start_y + block_h - 4)], fill=(*accent, 160))
+
     for i, line in enumerate(lines):
         stroke_text(draw, (TX, start_y + i * lh), line, fq, fill=(248, 248, 248, 255), sw=2)
 
