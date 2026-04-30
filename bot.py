@@ -887,7 +887,7 @@ _CITE_FONT_FOOTER  = _load_font("Righteous-Regular.ttf",   13)
 
 
 async def make_citation_image(quote_data: dict) -> tuple:
-    """Génère une carte 1200x675 — GIF du personnage (Giphy) en fond plein, texte par-dessus."""
+    """Génère une carte 1200x675 — GIF local du perso en fond, texte par-dessus."""
     W, H = 1200, 675
 
     # ── Couleur accent ──
@@ -898,12 +898,6 @@ async def make_citation_image(quote_data: dict) -> tuple:
         accent = (212, 175, 55)
     if 0.299 * accent[0] + 0.587 * accent[1] + 0.114 * accent[2] < 40:
         accent = (212, 175, 55)
-
-    # ── Source image : GIF Giphy ou image statique en fallback ──
-    char_gif_bytes  = await _fetch_char_gif_bytes(quote_data["character"], quote_data["anime"])
-    char_static_bytes = None
-    if not char_gif_bytes:
-        char_static_bytes = await _fetch_char_image_bytes(quote_data["character"])
 
     # ── FOREGROUND : overlays + texte (se pose sur n'importe quel fond) ──
     fg = Image.new("RGBA", (W, H), (0, 0, 0, 0))
@@ -1071,13 +1065,7 @@ async def make_citation_image(quote_data: dict) -> tuple:
         except Exception as e:
             print(f"[CITATION] local static fallback '{local_gif_path}': {e}")
 
-    # Cas 1 : GIF Giphy du personnage
-    if char_gif_bytes:
-        result = _render_animated_gif(char_gif_bytes, "Giphy")
-        if result:
-            return result
-
-    # Cas 2 : GIF local animé (fallback fiable — sans clé API)
+    # Cas 2 : GIF local animé (fallback — sans clé API)
     _LOCAL_GIFS = ["pirate_bg.gif", "shichibukai_bg.gif", "fujitoraaaa.gif", "yonkou_bg.gif", "roi_des_pirates_bg.gif"]
     random.shuffle(_LOCAL_GIFS)
     for gif_path in _LOCAL_GIFS:
@@ -1087,17 +1075,7 @@ async def make_citation_image(quote_data: dict) -> tuple:
                 return result
             break
 
-    # Cas 3 : image statique du personnage en fond
-    if char_static_bytes:
-        try:
-            result = compose_on_bg(Image.open(io.BytesIO(char_static_bytes)))
-            result.convert("RGB").save(buf, format="PNG", optimize=True)
-            buf.seek(0)
-            return buf, False
-        except Exception as e:
-            print(f"[CITATION] static bg failed: {e}")
-
-    # Cas 4 : fond sombre pur (aucun visuel dispo)
+    # Cas 3 : fond sombre pur (aucun visuel dispo)
     canvas = Image.new("RGBA", (W, H), (6, 6, 10, 255))
     result = Image.alpha_composite(canvas, fg)
     result.convert("RGB").save(buf, format="PNG", optimize=True)
