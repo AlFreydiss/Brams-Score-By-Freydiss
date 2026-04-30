@@ -837,7 +837,7 @@ _CITE_FONT_FOOTER  = _load_font("Righteous-Regular.ttf",   13)
 
 
 async def make_citation_image(quote_data: dict) -> tuple:
-    """Génère une carte cinématique 1200x675 avec GIF animé du personnage (Giphy)."""
+    """Génère une carte cinématique 1200x675 — fond GIF animé + portrait statique du personnage."""
     W, H = 1200, 675
 
     # ── Couleur accent ──
@@ -849,66 +849,34 @@ async def make_citation_image(quote_data: dict) -> tuple:
     if 0.299 * accent[0] + 0.587 * accent[1] + 0.114 * accent[2] < 40:
         accent = (212, 175, 55)
 
-    # ── Portrait : GIF Giphy si dispo, sinon image statique ──
-    char_gif_bytes = await _fetch_char_gif_bytes(quote_data["character"], quote_data["anime"])
-    char_static_bytes = None
-    if not char_gif_bytes:
-        char_static_bytes = await _fetch_char_image_bytes(quote_data["character"])
-
-    def _process_portrait(frame_img):
-        ci = frame_img.convert("RGBA")
-        ch_w = int(H * ci.width / ci.height)
-        ch_w = max(ch_w, 560)
-        ci = ci.resize((ch_w, H), Image.LANCZOS)
-        r2, g2, b2, a2 = ci.split()
-        rgb2 = ImageEnhance.Brightness(Image.merge("RGB", (r2, g2, b2))).enhance(0.78)
-        rgb2 = ImageEnhance.Color(rgb2).enhance(0.90)
-        ci = Image.merge("RGBA", (*rgb2.split(), a2))
-        fade = min(500, ch_w // 2)
-        msk = Image.new("L", (ch_w, H), 255)
-        md = ImageDraw.Draw(msk)
-        for x in range(fade):
-            t = x / fade
-            md.line([(x, 0), (x, H)], fill=int(255 * t * t * (3 - 2 * t)))
-        ci.putalpha(msk)
-        cx = max(W // 2 - 60, W - ch_w)
-        return ci, cx
-
-    char_frames = []
-    char_durations = []
+    # ── Portrait statique du personnage ──
+    char_bytes = await _fetch_char_image_bytes(quote_data["character"])
+    portrait = None
     char_x = W
 
-    if char_gif_bytes:
+    if char_bytes:
         try:
-            src = Image.open(io.BytesIO(char_gif_bytes))
-            try:
-                n_frames = src.n_frames
-            except Exception:
-                n_frames = 1
-            step = max(1, n_frames // 40)
-            for i in range(0, n_frames, step):
-                try:
-                    src.seek(i)
-                    f, cx = _process_portrait(src.copy())
-                    char_frames.append((f, cx))
-                    char_durations.append(max(40, src.info.get("duration", 80) * step))
-                except Exception as e:
-                    print(f"[CITATION] GIF frame {i}: {e}")
-            if char_frames:
-                char_x = char_frames[0][1]
+            ci = Image.open(io.BytesIO(char_bytes)).convert("RGBA")
+            ch_w = int(H * ci.width / ci.height)
+            ch_w = max(ch_w, 560)
+            ci = ci.resize((ch_w, H), Image.LANCZOS)
+            r2, g2, b2, a2 = ci.split()
+            rgb2 = ImageEnhance.Brightness(Image.merge("RGB", (r2, g2, b2))).enhance(0.78)
+            rgb2 = ImageEnhance.Color(rgb2).enhance(0.90)
+            ci = Image.merge("RGBA", (*rgb2.split(), a2))
+            fade = min(500, ch_w // 2)
+            msk = Image.new("L", (ch_w, H), 255)
+            md  = ImageDraw.Draw(msk)
+            for x in range(fade):
+                t = x / fade
+                md.line([(x, 0), (x, H)], fill=int(255 * t * t * (3 - 2 * t)))
+            ci.putalpha(msk)
+            char_x = max(W // 2 - 60, W - ch_w)
+            portrait = ci
         except Exception as e:
-            print(f"[CITATION] GIF portrait error: {e}")
+            print(f"[CITATION] portrait error: {e}")
 
-    if not char_frames and char_static_bytes:
-        try:
-            f, cx = _process_portrait(Image.open(io.BytesIO(char_static_bytes)))
-            char_frames = [(f, cx)]
-            char_durations = [80]
-            char_x = cx
-        except Exception as e:
-            print(f"[CITATION] static portrait error: {e}")
-
-    # ── FOREGROUND : overlays + texte (portrait ajouté par frame) ──
+    # ── FOREGROUND : overlays + texte (sans fond, sans portrait) ──
     fg = Image.new("RGBA", (W, H), (0, 0, 0, 0))
 
     tint = Image.new("RGBA", (W, H), (0, 0, 0, 0))
@@ -986,7 +954,7 @@ async def make_citation_image(quote_data: dict) -> tuple:
     stroke_text(draw, (TX, anime_y), quote_data["anime"], font_anime, fill=(195, 195, 195, 255), sw=1)
     anime_h = draw.textbbox((TX, anime_y), quote_data["anime"], font=font_anime)[3]
 
-    raw_quote = f'“{quote_data["quote"]}”'
+    raw_quote = f'"{quote_data["quote"]}"'
     lines = wrap_text(raw_quote, font_quote, TW)
     fq, lh = font_quote, 64
     if len(lines) > 6:
@@ -1005,28 +973,70 @@ async def make_citation_image(quote_data: dict) -> tuple:
     fw = draw.textbbox((0, 0), footer, font=font_footer)[2]
     draw.text((W - fw - 18, H - 22), footer, font=font_footer, fill=(60, 60, 60, 200))
 
-    # ── Composition finale ──
-    def compose_frame(portrait=None, cx=W):
-        canvas = Image.new("RGBA", (W, H), (6, 6, 10, 255))
+    # ── Fond GIF aléatoire (local) ──
+    CITATION_BG_GIFS = [
+        "pirate_bg.gif", "shichibukai_bg.gif", "fujitoraaaa.gif",
+        "yonkou_bg.gif", "roi_des_pirates_bg.gif",
+    ]
+    gif_path = random.choice(CITATION_BG_GIFS)
+
+    def cover_resize_cite(img, tw, th):
+        sw2, sh2 = img.size
+        scale = max(tw / sw2, th / sh2)
+        nw2, nh2 = int(sw2 * scale), int(sh2 * scale)
+        img = img.resize((nw2, nh2), Image.LANCZOS)
+        left = (nw2 - tw) // 2
+        top2 = (nh2 - th) // 2
+        return img.crop((left, top2, left + tw, top2 + th))
+
+    def compose_on_bg(bg_frame):
+        base = cover_resize_cite(bg_frame.convert("RGBA"), W, H)
+        dark = Image.new("RGBA", (W, H), (6, 6, 10, 190))
+        base = Image.alpha_composite(base, dark)
         if portrait is not None:
-            canvas.paste(portrait, (cx, 0), portrait)
-        return Image.alpha_composite(canvas, fg)
+            base.paste(portrait, (char_x, 0), portrait)
+        return Image.alpha_composite(base, fg)
 
     buf = io.BytesIO()
-    if len(char_frames) > 1:
-        pal_frames = []
-        for (portrait, cx), _dur in zip(char_frames, char_durations):
-            composed = compose_frame(portrait, cx)
-            pal = composed.convert("RGB").quantize(colors=256, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE)
-            pal_frames.append(pal)
-        pal_frames[0].save(buf, format="GIF", save_all=True, append_images=pal_frames[1:],
-                           duration=char_durations, loop=0, disposal=2, optimize=False)
+    try:
+        bg_src = Image.open(gif_path)
+        try:
+            n_frames = bg_src.n_frames
+        except Exception:
+            n_frames = 1
+        if n_frames > 1:
+            max_frames = 50
+            step = max(1, n_frames // max_frames)
+            gif_frames = []
+            durations = []
+            for i in range(0, n_frames, step):
+                try:
+                    bg_src.seek(i)
+                    gif_frames.append(compose_on_bg(bg_src.copy()))
+                    durations.append(max(40, bg_src.info.get("duration", 80) * step))
+                except Exception as e:
+                    print(f"[CITATION] bg frame {i}: {e}")
+            if gif_frames:
+                pal_frames = []
+                for f in gif_frames:
+                    pal = f.convert("RGB").quantize(colors=256, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE)
+                    pal_frames.append(pal)
+                pal_frames[0].save(buf, format="GIF", save_all=True, append_images=pal_frames[1:],
+                                   duration=durations, loop=0, disposal=2, optimize=False)
+                buf.seek(0)
+                return buf, True
+        bg_src.seek(0)
+        result = compose_on_bg(bg_src)
+        result.convert("RGB").save(buf, format="PNG", optimize=True)
         buf.seek(0)
-        return buf, True
-    else:
-        portrait, cx = char_frames[0] if char_frames else (None, W)
-        composed = compose_frame(portrait, cx)
-        composed.convert("RGB").save(buf, format="PNG", optimize=True)
+        return buf, False
+    except Exception as e:
+        print(f"[CITATION] bg GIF failed ({gif_path}): {e}")
+        canvas = Image.new("RGBA", (W, H), (6, 6, 10, 255))
+        if portrait is not None:
+            canvas.paste(portrait, (char_x, 0), portrait)
+        result = Image.alpha_composite(canvas, fg)
+        result.convert("RGB").save(buf, format="PNG", optimize=True)
         buf.seek(0)
         return buf, False
 
