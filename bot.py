@@ -39,9 +39,10 @@ logging.getLogger("matplotlib.font_manager").setLevel(logging.ERROR)
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import matplotlib.font_manager as fm
-from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageEnhance
+from PIL import Image, ImageDraw, ImageFont
 from datetime import datetime, timedelta, timezone
-from collections import defaultdict
+from collections import defaultdict, deque
+from urllib.parse import quote as _url_quote
 
 # ─────────────────────────────────────────
 #  BACKGROUND + POLICE
@@ -58,6 +59,7 @@ RANK_BG_PATHS = {
 }
 RANK_BG_DEFAULT = "background.jpeg"
 _RANK_FONTS: dict = {}  # cache fonts PIL pour make_rank_image
+_FALLBACK_RANK_GIFS = ["pirate_bg.gif", "shichibukai_bg.gif", "fujitoraaaa.gif", "yonkou_bg.gif", "roi_des_pirates_bg.gif"]
 
 LOCAL_CHAR_GIFS = {
     # One Piece
@@ -612,12 +614,6 @@ def get_next_rank(hours):
             return threshold, role_name
     return None, None
 
-def get_current_rank_threshold(hours):
-    for threshold, role_name in RANKS:
-        if hours >= threshold:
-            return threshold, role_name
-    return None, None
-
 def calculate_prime(total_hours, total_msgs):
     base = total_hours * 100_000
     bonus_msg = total_msgs * 1_000
@@ -1065,10 +1061,10 @@ async def make_citation_image(quote_data: dict) -> tuple:
         except Exception as e:
             print(f"[CITATION] local static fallback '{local_gif_path}': {e}")
 
-    # Cas 2 : GIF local animé (fallback — sans clé API)
-    _LOCAL_GIFS = ["pirate_bg.gif", "shichibukai_bg.gif", "fujitoraaaa.gif", "yonkou_bg.gif", "roi_des_pirates_bg.gif"]
-    random.shuffle(_LOCAL_GIFS)
-    for gif_path in _LOCAL_GIFS:
+    # Cas 2 : GIF de rang aléatoire (fallback)
+    fallback = list(_FALLBACK_RANK_GIFS)
+    random.shuffle(fallback)
+    for gif_path in fallback:
         if os.path.exists(gif_path):
             result = _render_animated_gif(gif_path, f"local:{gif_path}")
             if result:
@@ -1164,8 +1160,7 @@ async def make_rank_image(member: discord.Member, rank_name: str, hours_7d: floa
     avatar_img = None
     try:
         avatar_url = member.display_avatar.replace(size=256, format="png").url
-        async with aiohttp.ClientSession() as session:
-            async with session.get(str(avatar_url)) as resp:
+        async with _HTTP.get(str(avatar_url)) as resp:
                 if resp.status == 200:
                     avatar_bytes = await resp.read()
                     avatar_img = Image.open(io.BytesIO(avatar_bytes)).convert("RGBA")
@@ -2248,7 +2243,7 @@ async def chercher(interaction: discord.Interaction, membre: discord.Member):
 
 
 
-CITATION_HISTORY: list[str] = []
+CITATION_HISTORY: deque[str] = deque(maxlen=len(QUOTES_DB) - 1)
 
 # Cache URL image par personnage (Jikan API)
 # Persos non présents sur MAL (cartoons occidentaux, jeux vidéo hors anime, etc.)
@@ -2366,41 +2361,39 @@ async def _get_char_image_url(name: str) -> str | None:
     if name in _CHAR_IMAGE_CACHE:
         return _CHAR_IMAGE_CACHE[name]
 
-    from urllib.parse import quote as _uq
     img_url = None
     jikan_id = CHAR_JIKAN_IDS.get(name)
 
     try:
-        async with aiohttp.ClientSession() as sess:
-            if jikan_id:
-                # ID connu → fetch direct, on fait confiance à l'ID
-                data_root = await _jikan_get(sess, f"https://api.jikan.moe/v4/characters/{jikan_id}")
-                if data_root:
-                    data = data_root.get("data", {})
-                    returned_name = data.get("name", "")
-                    candidate = data.get("images", {}).get("jpg", {}).get("image_url", "")
-                    # Accepte toute URL myanimelist (pas juste /characters/)
-                    if candidate and "myanimelist.net" in candidate:
+        sess = _HTTP
+        if jikan_id:
+            # ID connu → fetch direct, on fait confiance à l'ID
+            data_root = await _jikan_get(sess, f"https://api.jikan.moe/v4/characters/{jikan_id}")
+            if data_root:
+                data = data_root.get("data", {})
+                returned_name = data.get("name", "")
+                candidate = data.get("images", {}).get("jpg", {}).get("image_url", "")
+                # Accepte toute URL myanimelist (pas juste /characters/)
+                if candidate and "myanimelist.net" in candidate:
+                    img_url = candidate
+                    print(f"[CITATION] OK id={jikan_id} '{returned_name}' → '{name}'")
+                else:
+                    print(f"[CITATION] id={jikan_id} URL inattendue: {candidate!r}")
+        else:
+            # Pas d'ID → recherche par nom avec validation stricte
+            data_root = await _jikan_get(sess, f"https://api.jikan.moe/v4/characters?q={_url_quote(name)}&limit=8")
+            if data_root:
+                for char in data_root.get("data", []):
+                    returned_name = char.get("name", "")
+                    if not _name_matches(name, returned_name):
+                        continue
+                    candidate = char.get("images", {}).get("jpg", {}).get("image_url", "")
+                    if candidate and _CHAR_IMG_URL in candidate:
                         img_url = candidate
-                        print(f"[CITATION] OK id={jikan_id} '{returned_name}' → '{name}'")
-                    else:
-                        print(f"[CITATION] id={jikan_id} URL inattendue: {candidate!r}")
-            else:
-                # Pas d'ID → recherche par nom avec validation stricte
-                data_root = await _jikan_get(sess, f"https://api.jikan.moe/v4/characters?q={_uq(name)}&limit=8")
-                if data_root:
-                    for char in data_root.get("data", []):
-                        returned_name = char.get("name", "")
-                        if not _name_matches(name, returned_name):
-                            continue
-                        candidate = char.get("images", {}).get("jpg", {}).get("image_url", "")
-                        # Filtre logos MAL : doit être une image de personnage
-                        if candidate and _CHAR_IMG_URL in candidate:
-                            img_url = candidate
-                            print(f"[CITATION] OK search '{returned_name}' → '{name}'")
-                            break
-                    if not img_url:
-                        print(f"[CITATION] aucun match search pour '{name}'")
+                        print(f"[CITATION] OK search '{returned_name}' → '{name}'")
+                        break
+                if not img_url:
+                    print(f"[CITATION] aucun match search pour '{name}'")
     except Exception as e:
         print(f"[CITATION] exception '{name}': {e}")
 
@@ -2436,11 +2429,10 @@ async def _fetch_char_gif_bytes(name: str, anime: str) -> bytes | None:
     """Cherche un GIF du personnage sur Giphy. Retourne None si GIPHY_API_KEY absent."""
     if not GIPHY_API_KEY:
         return None
-    from urllib.parse import quote as _uq2
     cache_key = f"{name}|{anime}"
     if cache_key in _CHAR_GIF_CACHE:
         return _CHAR_GIF_CACHE[cache_key]
-    query = _uq2(f"{name} {anime}")
+    query = _url_quote(f"{name} {anime}")
     url = f"https://api.giphy.com/v1/gifs/search?q={query}&api_key={GIPHY_API_KEY}&limit=5&rating=pg-13&lang=en"
     try:
         sess = _HTTP or aiohttp.ClientSession()
