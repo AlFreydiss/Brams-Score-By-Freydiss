@@ -444,6 +444,7 @@ QUOTES_DB = [
     {"quote": "Je n ai pas de magie. Alors je compenserai par des efforts infinis !", "character": "Asta", "anime": "Black Clover", "color": "#1D4ED8"},
     # VINLAND SAGA
     {"quote": "Un vrai guerrier n a pas besoin d ennemis.", "character": "Thorfinn", "anime": "Vinland Saga", "color": "#8B4513"},
+    {"quote": "Tu n as pas d ennemi.", "character": "Thorfinn", "anime": "Vinland Saga", "color": "#8B4513"},
 ]
 print(f"\u2705 {len(QUOTES_DB)} citations anime chargees.")
 
