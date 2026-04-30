@@ -1061,6 +1061,15 @@ async def make_citation_image(quote_data: dict) -> tuple:
         result = _render_animated_gif(local_gif_path, f"local:{local_gif_path}")
         if result:
             return result
+        # Fallback statique si le fichier local n'est pas animé
+        try:
+            out = compose_on_bg(Image.open(local_gif_path).convert("RGBA"))
+            b = io.BytesIO()
+            out.convert("RGB").save(b, format="PNG", optimize=True)
+            b.seek(0)
+            return b, False
+        except Exception as e:
+            print(f"[CITATION] local static fallback '{local_gif_path}': {e}")
 
     # Cas 1 : GIF Giphy du personnage
     if char_gif_bytes:
