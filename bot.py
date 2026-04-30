@@ -837,7 +837,7 @@ _CITE_FONT_FOOTER  = _load_font("Righteous-Regular.ttf",   13)
 
 
 async def make_citation_image(quote_data: dict) -> tuple:
-    """Génère une carte cinématique 1200x675 — fond GIF animé + portrait statique du personnage."""
+    """Génère une carte 1200x675 — GIF du personnage (Giphy) en fond plein, texte par-dessus."""
     W, H = 1200, 675
 
     # ── Couleur accent ──
@@ -849,56 +849,38 @@ async def make_citation_image(quote_data: dict) -> tuple:
     if 0.299 * accent[0] + 0.587 * accent[1] + 0.114 * accent[2] < 40:
         accent = (212, 175, 55)
 
-    # ── Portrait statique du personnage ──
-    char_bytes = await _fetch_char_image_bytes(quote_data["character"])
-    portrait = None
-    char_x = W
+    # ── Source image : GIF Giphy ou image statique en fallback ──
+    char_gif_bytes  = await _fetch_char_gif_bytes(quote_data["character"], quote_data["anime"])
+    char_static_bytes = None
+    if not char_gif_bytes:
+        char_static_bytes = await _fetch_char_image_bytes(quote_data["character"])
 
-    if char_bytes:
-        try:
-            ci = Image.open(io.BytesIO(char_bytes)).convert("RGBA")
-            ch_w = int(H * ci.width / ci.height)
-            ch_w = max(ch_w, 560)
-            ci = ci.resize((ch_w, H), Image.LANCZOS)
-            r2, g2, b2, a2 = ci.split()
-            rgb2 = ImageEnhance.Brightness(Image.merge("RGB", (r2, g2, b2))).enhance(0.78)
-            rgb2 = ImageEnhance.Color(rgb2).enhance(0.90)
-            ci = Image.merge("RGBA", (*rgb2.split(), a2))
-            fade = min(500, ch_w // 2)
-            msk = Image.new("L", (ch_w, H), 255)
-            md  = ImageDraw.Draw(msk)
-            for x in range(fade):
-                t = x / fade
-                md.line([(x, 0), (x, H)], fill=int(255 * t * t * (3 - 2 * t)))
-            ci.putalpha(msk)
-            char_x = max(W // 2 - 60, W - ch_w)
-            portrait = ci
-        except Exception as e:
-            print(f"[CITATION] portrait error: {e}")
-
-    # ── FOREGROUND : overlays + texte (sans fond, sans portrait) ──
+    # ── FOREGROUND : overlays + texte (se pose sur n'importe quel fond) ──
     fg = Image.new("RGBA", (W, H), (0, 0, 0, 0))
 
+    # Teinte accent côté droit
     tint = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     td   = ImageDraw.Draw(tint)
-    for x in range(char_x, W):
-        t = (x - char_x) / max(W - char_x, 1)
-        td.line([(x, 0), (x, H)], fill=(*accent, int(35 * t)))
+    for x in range(W // 2, W):
+        t = (x - W // 2) / (W // 2)
+        td.line([(x, 0), (x, H)], fill=(*accent, int(30 * t)))
     fg = Image.alpha_composite(fg, tint)
 
+    # Overlay sombre côté gauche (zone texte lisible)
     lov = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     ld  = ImageDraw.Draw(lov)
     for x in range(W):
         if x < 560:
-            a = 210
-        elif x < 880:
-            tc = (x - 560) / 320
-            a = int(210 * (1 - tc * tc * tc))
+            a = 200
+        elif x < 900:
+            tc = (x - 560) / 340
+            a = int(200 * (1 - tc * tc * tc))
         else:
             a = 0
         ld.line([(x, 0), (x, H)], fill=(0, 0, 0, a))
     fg = Image.alpha_composite(fg, lov)
 
+    # Vignette haut/bas
     vig = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     vd  = ImageDraw.Draw(vig)
     for y in range(80):
@@ -921,7 +903,6 @@ async def make_citation_image(quote_data: dict) -> tuple:
     font_quote   = _CITE_FONT_QUOTE
     font_quote_s = _CITE_FONT_QUOTE_S
     font_footer  = _CITE_FONT_FOOTER
-
     TX = 56
     TW = 640
 
@@ -954,7 +935,7 @@ async def make_citation_image(quote_data: dict) -> tuple:
     stroke_text(draw, (TX, anime_y), quote_data["anime"], font_anime, fill=(195, 195, 195, 255), sw=1)
     anime_h = draw.textbbox((TX, anime_y), quote_data["anime"], font=font_anime)[3]
 
-    raw_quote = f'"{quote_data["quote"]}"'
+    raw_quote = f'“{quote_data["quote"]}”'
     lines = wrap_text(raw_quote, font_quote, TW)
     fq, lh = font_quote, 64
     if len(lines) > 6:
@@ -973,13 +954,7 @@ async def make_citation_image(quote_data: dict) -> tuple:
     fw = draw.textbbox((0, 0), footer, font=font_footer)[2]
     draw.text((W - fw - 18, H - 22), footer, font=font_footer, fill=(60, 60, 60, 200))
 
-    # ── Fond GIF aléatoire (local) ──
-    CITATION_BG_GIFS = [
-        "pirate_bg.gif", "shichibukai_bg.gif", "fujitoraaaa.gif",
-        "yonkou_bg.gif", "roi_des_pirates_bg.gif",
-    ]
-    gif_path = random.choice(CITATION_BG_GIFS)
-
+    # ── Composition : GIF du perso en fond plein ──
     def cover_resize_cite(img, tw, th):
         sw2, sh2 = img.size
         scale = max(tw / sw2, th / sh2)
@@ -991,54 +966,64 @@ async def make_citation_image(quote_data: dict) -> tuple:
 
     def compose_on_bg(bg_frame):
         base = cover_resize_cite(bg_frame.convert("RGBA"), W, H)
-        dark = Image.new("RGBA", (W, H), (6, 6, 10, 190))
-        base = Image.alpha_composite(base, dark)
-        if portrait is not None:
-            base.paste(portrait, (char_x, 0), portrait)
         return Image.alpha_composite(base, fg)
 
     buf = io.BytesIO()
-    try:
-        bg_src = Image.open(gif_path)
+
+    # Cas 1 : GIF Giphy du personnage
+    if char_gif_bytes:
         try:
-            n_frames = bg_src.n_frames
-        except Exception:
-            n_frames = 1
-        if n_frames > 1:
-            max_frames = 50
-            step = max(1, n_frames // max_frames)
-            gif_frames = []
-            durations = []
-            for i in range(0, n_frames, step):
-                try:
-                    bg_src.seek(i)
-                    gif_frames.append(compose_on_bg(bg_src.copy()))
-                    durations.append(max(40, bg_src.info.get("duration", 80) * step))
-                except Exception as e:
-                    print(f"[CITATION] bg frame {i}: {e}")
-            if gif_frames:
-                pal_frames = []
-                for f in gif_frames:
-                    pal = f.convert("RGB").quantize(colors=256, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE)
-                    pal_frames.append(pal)
-                pal_frames[0].save(buf, format="GIF", save_all=True, append_images=pal_frames[1:],
-                                   duration=durations, loop=0, disposal=2, optimize=False)
-                buf.seek(0)
-                return buf, True
-        bg_src.seek(0)
-        result = compose_on_bg(bg_src)
-        result.convert("RGB").save(buf, format="PNG", optimize=True)
-        buf.seek(0)
-        return buf, False
-    except Exception as e:
-        print(f"[CITATION] bg GIF failed ({gif_path}): {e}")
-        canvas = Image.new("RGBA", (W, H), (6, 6, 10, 255))
-        if portrait is not None:
-            canvas.paste(portrait, (char_x, 0), portrait)
-        result = Image.alpha_composite(canvas, fg)
-        result.convert("RGB").save(buf, format="PNG", optimize=True)
-        buf.seek(0)
-        return buf, False
+            bg_src = Image.open(io.BytesIO(char_gif_bytes))
+            try:
+                n_frames = bg_src.n_frames
+            except Exception:
+                n_frames = 1
+            if n_frames > 1:
+                max_frames = 50
+                step = max(1, n_frames // max_frames)
+                gif_frames = []
+                durations  = []
+                for i in range(0, n_frames, step):
+                    try:
+                        bg_src.seek(i)
+                        gif_frames.append(compose_on_bg(bg_src.copy()))
+                        durations.append(max(40, bg_src.info.get("duration", 80) * step))
+                    except Exception as e:
+                        print(f"[CITATION] Giphy frame {i}: {e}")
+                if gif_frames:
+                    pal_frames = []
+                    for f in gif_frames:
+                        pal = f.convert("RGB").quantize(colors=256, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE)
+                        pal_frames.append(pal)
+                    pal_frames[0].save(buf, format="GIF", save_all=True, append_images=pal_frames[1:],
+                                       duration=durations, loop=0, disposal=2, optimize=False)
+                    buf.seek(0)
+                    return buf, True
+            # GIF à frame unique → PNG
+            bg_src.seek(0)
+            result = compose_on_bg(bg_src)
+            result.convert("RGB").save(buf, format="PNG", optimize=True)
+            buf.seek(0)
+            return buf, False
+        except Exception as e:
+            print(f"[CITATION] Giphy compose failed: {e}")
+
+    # Cas 2 : image statique du personnage en fond
+    if char_static_bytes:
+        try:
+            result = compose_on_bg(Image.open(io.BytesIO(char_static_bytes)))
+            result.convert("RGB").save(buf, format="PNG", optimize=True)
+            buf.seek(0)
+            return buf, False
+        except Exception as e:
+            print(f"[CITATION] static bg failed: {e}")
+
+    # Cas 3 : fond sombre pur (aucun visuel dispo)
+    canvas = Image.new("RGBA", (W, H), (6, 6, 10, 255))
+    result = Image.alpha_composite(canvas, fg)
+    result.convert("RGB").save(buf, format="PNG", optimize=True)
+    buf.seek(0)
+    return buf, False
 
 
 async def make_rank_image(member: discord.Member, rank_name: str, hours_7d: float):
