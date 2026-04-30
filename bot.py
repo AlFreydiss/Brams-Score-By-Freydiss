@@ -2388,8 +2388,8 @@ async def _fetch_char_gif_bytes(name: str, anime: str) -> bytes | None:
     cache_key = f"{name}|{anime}"
     if cache_key in _CHAR_GIF_CACHE:
         return _CHAR_GIF_CACHE[cache_key]
-    query = _uq2(f"{name} {anime} anime")
-    url = f"https://api.giphy.com/v1/gifs/search?q={query}&api_key={GIPHY_API_KEY}&limit=10&rating=pg-13&lang=en"
+    query = _uq2(f"{name} {anime}")
+    url = f"https://api.giphy.com/v1/gifs/search?q={query}&api_key={GIPHY_API_KEY}&limit=5&rating=pg-13&lang=en"
     try:
         sess = _HTTP or aiohttp.ClientSession()
         async with sess.get(url, timeout=aiohttp.ClientTimeout(total=8)) as resp:
@@ -2397,7 +2397,7 @@ async def _fetch_char_gif_bytes(name: str, anime: str) -> bytes | None:
                 data = await resp.json()
                 results = data.get("data", [])
                 if results:
-                    r = random.choice(results[:min(5, len(results))])
+                    r = results[0]
                     gif_url = r["images"]["downsized_large"]["url"]
                     async with sess.get(gif_url, timeout=aiohttp.ClientTimeout(total=20)) as gresp:
                         if gresp.status == 200:
