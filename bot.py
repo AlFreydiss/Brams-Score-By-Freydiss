@@ -906,18 +906,13 @@ async def make_citation_image(quote_data: dict) -> tuple:
         td.line([(x, 0), (x, H)], fill=(*accent, int(30 * t)))
     fg = Image.alpha_composite(fg, tint)
 
-    # Overlay sombre côté gauche (zone texte lisible)
+    # Overlay sombre vertical (haut opaque → bas transparent)
     lov = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     ld  = ImageDraw.Draw(lov)
-    for x in range(W):
-        if x < 560:
-            a = 200
-        elif x < 900:
-            tc = (x - 560) / 340
-            a = int(200 * (1 - tc * tc * tc))
-        else:
-            a = 0
-        ld.line([(x, 0), (x, H)], fill=(0, 0, 0, a))
+    for y in range(H):
+        t = y / H
+        a = int(200 * (1 - t * t))
+        ld.line([(0, y), (W, y)], fill=(0, 0, 0, a))
     fg = Image.alpha_composite(fg, lov)
 
     # Vignette haut/bas
