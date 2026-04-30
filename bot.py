@@ -110,6 +110,11 @@ LOCAL_CHAR_GIFS = {
     "Thorfinn":           "thorfinnn citation.gif",
     # Violet Evergarden
     "Violet Evergarden":  "violet evergarden citation.gif",
+    # One Piece
+    "Donquixote Doflamingo": "doflamingo citation 1.gif",
+    # Chainsaw Man
+    "Makima":             "Makima citations 1.gif",
+    "Reze":               "reze-chainsaw-man citations.gif",
 }
 
 
@@ -352,6 +357,7 @@ QUOTES_DB = [
     {"quote": "Je suis un chirurgien. Mon métier, c'est de sauver des vies.", "character": "Trafalgar Law", "anime": "One Piece", "color": "#3B82F6"},
     {"quote": "Un vrai cuisinier ne lâche jamais ses mains. Elles sont son outil et sa fierté.", "character": "Sanji", "anime": "One Piece", "color": "#FBBF24"},
     {"quote": "Un vrai homme ne frappe jamais une femme, quoi qu'il arrive.", "character": "Sanji", "anime": "One Piece", "color": "#FBBF24"},
+    {"quote": "Les pirates, ce serait le mal ? La Marine, la justice ? Ces notions ont changé tellement de fois ! Il y a des gens qui n'ont jamais connu la paix… et d'autres qui n'ont jamais connu la guerre. Comment veux-tu qu'ils aient les mêmes valeurs ? Ce sont ceux qui se tiennent au sommet qui définissent le bien et le mal.", "character": "Donquixote Doflamingo", "anime": "One Piece", "color": "#EC4899"},
     # NARUTO
     {"quote": "Je ne recule jamais, je ne mens jamais - c'est la voie du ninja !", "character": "Naruto Uzumaki", "anime": "Naruto", "color": "#F97316"},
     {"quote": "C'est ça, pour moi, être un ninja !", "character": "Naruto Uzumaki", "anime": "Naruto", "color": "#F97316"},
@@ -449,6 +455,19 @@ QUOTES_DB = [
     # VINLAND SAGA
     {"quote": "Un vrai guerrier n'a pas besoin d'ennemis.", "character": "Thorfinn", "anime": "Vinland Saga", "color": "#8B4513"},
     {"quote": "Tu n'as pas d'ennemi.", "character": "Thors", "anime": "Vinland Saga", "color": "#5C4033"},
+    # CHAINSAW MAN
+    {"quote": "Le mal nécessaire est toujours nécessaire.", "character": "Makima", "anime": "Chainsaw Man", "color": "#B91C1C"},
+    {"quote": "J'aime les humains, de la même façon que les humains aiment les chiens.", "character": "Makima", "anime": "Chainsaw Man", "color": "#B91C1C"},
+    {"quote": "Tout le monde a quelque chose qu'il ne peut pas refuser.", "character": "Makima", "anime": "Chainsaw Man", "color": "#B91C1C"},
+    {"quote": "Tu crois avoir le choix, mais ce n'est qu'une illusion.", "character": "Makima", "anime": "Chainsaw Man", "color": "#B91C1C"},
+    {"quote": "Les humains sont faciles à comprendre… ils ont tous un point faible.", "character": "Makima", "anime": "Chainsaw Man", "color": "#B91C1C"},
+    {"quote": "Je n'ai pas besoin de te convaincre. Tu vas accepter de toi-même.", "character": "Makima", "anime": "Chainsaw Man", "color": "#B91C1C"},
+    {"quote": "La peur est quelque chose de très pratique.", "character": "Makima", "anime": "Chainsaw Man", "color": "#B91C1C"},
+    {"quote": "Je voulais juste vivre une vie normale.", "character": "Reze", "anime": "Chainsaw Man", "color": "#60A5FA"},
+    {"quote": "Tu es la première personne avec qui je me sens vraiment moi-même.", "character": "Reze", "anime": "Chainsaw Man", "color": "#60A5FA"},
+    {"quote": "Tout ce que je fais… c'est pour survivre.", "character": "Reze", "anime": "Chainsaw Man", "color": "#60A5FA"},
+    {"quote": "Je ne sais pas si c'est de l'amour… mais je ne veux pas te perdre.", "character": "Reze", "anime": "Chainsaw Man", "color": "#60A5FA"},
+    {"quote": "Même si je mens, certaines choses en moi sont vraies.", "character": "Reze", "anime": "Chainsaw Man", "color": "#60A5FA"},
 ]
 print(f"\u2705 {len(QUOTES_DB)} citations anime chargees.")
 
@@ -2608,6 +2627,7 @@ async def _citation_handler(interaction: discord.Interaction, categorie: str = N
     app_commands.Choice(name="Cowboy Bebop",           value="Cowboy Bebop"),
     app_commands.Choice(name="Black Clover",           value="Black Clover"),
     app_commands.Choice(name="Vinland Saga",           value="Vinland Saga"),
+    app_commands.Choice(name="Chainsaw Man",           value="Chainsaw Man"),
 ])
 async def citation(interaction: discord.Interaction, categorie: app_commands.Choice[str] = None):
     await _citation_handler(interaction, categorie.value if categorie else None)
