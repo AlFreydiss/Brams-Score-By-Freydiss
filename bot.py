@@ -1745,7 +1745,7 @@ async def top(interaction: discord.Interaction, periode: app_commands.Choice[str
     prime_list.sort(key=lambda x: x[2], reverse=True)
 
     vocal_now = {str(m.id) for g in bot.guilds for vc in g.voice_channels for m in vc.members}
-    _medals_all = ["🥇", "🥈", "🥉"] + [f"{i}." for i in range(4, 31)]
+    _medals_all = ["🥇", "🥈", "🥉"] + [f"{i}." for i in range(4, 101)]
 
     def _build_top_embed(page: int) -> discord.Embed:
         start = (page - 1) * 10
@@ -1787,7 +1787,7 @@ async def top(interaction: discord.Interaction, periode: app_commands.Choice[str
         )
         if guild.icon:
             embed.set_thumbnail(url=guild.icon.url)
-        embed.set_footer(text=f"BRAMS SCORE  |  by Freydiss  •  {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')} UTC  •  Page {page}/3")
+        embed.set_footer(text=f"BRAMS SCORE  |  by Freydiss  •  {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')} UTC  •  Page {page}/10")
         return embed
 
     class TopView(discord.ui.View):
@@ -1798,7 +1798,7 @@ async def top(interaction: discord.Interaction, periode: app_commands.Choice[str
 
         def _refresh(self):
             self.prev_btn.disabled = (self.page == 1)
-            self.next_btn.disabled = (self.page == 3)
+            self.next_btn.disabled = (self.page == 10)
 
         @discord.ui.button(label="◀  Précédent", style=discord.ButtonStyle.secondary)
         async def prev_btn(self, itx: discord.Interaction, button: discord.ui.Button):
@@ -1808,7 +1808,7 @@ async def top(interaction: discord.Interaction, periode: app_commands.Choice[str
 
         @discord.ui.button(label="Suivant  ▶", style=discord.ButtonStyle.secondary)
         async def next_btn(self, itx: discord.Interaction, button: discord.ui.Button):
-            self.page = min(3, self.page + 1)
+            self.page = min(10, self.page + 1)
             self._refresh()
             await itx.response.edit_message(embed=_build_top_embed(self.page), view=self)
 
