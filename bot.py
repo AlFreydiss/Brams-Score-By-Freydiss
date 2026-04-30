@@ -102,6 +102,8 @@ LOCAL_CHAR_GIFS = {
     # Bleach
     "Ichigo Kurosaki":    "ichigo citation.gif",
     "Byakuya Kuchiki":    "byakuya kuchiki citation.gif",
+    # Tokyo Ghoul
+    "Ken Kaneki":         "keneki ken citation.gif",
     # Fairy Tail
     "Erza Scarlet":       "erza scarlett citation.gif",
     # Vinland Saga
