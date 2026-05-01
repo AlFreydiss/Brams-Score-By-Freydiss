@@ -139,7 +139,7 @@ LOCAL_CHAR_GIFS = {
     "Asta":                  "asta black clover ct.gif",
     # Vinland Saga
     "Thorfinn":              "thorfinnn citation.gif",
-    "Thors":                 "thors vinland.webp",
+    "Thors":                 "thors gif.gif",
     # Violet Evergarden
     "Violet Evergarden":     "violet evergarden citation.gif",
     # One Piece
