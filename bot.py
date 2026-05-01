@@ -935,12 +935,12 @@ _CITE_FONT_FOOTER  = _load_font("Righteous-Regular.ttf", 13)
 
 
 async def make_citation_image(quote_data: dict) -> tuple:
-    “””Génère une carte 800x450 — GIF perso en fond, overlay sombre, texte centré.”””
+    """Génère une carte 800x450 — GIF perso en fond, overlay sombre, texte centré."""
     W, H = 800, 450
 
     # Couleur accent
     try:
-        hex_c = quote_data[“color”].lstrip(“#”).ljust(6, “0”)
+        hex_c = quote_data["color"].lstrip("#").ljust(6, "0")
         accent = tuple(int(hex_c[i:i+2], 16) for i in (0, 2, 4))
     except Exception:
         accent = (212, 175, 55)
@@ -949,8 +949,8 @@ async def make_citation_image(quote_data: dict) -> tuple:
     accent_bright = tuple(min(255, int(c * 1.3)) for c in accent)
 
     # Overlay : base semi-transparente + dégradé bas
-    fg = Image.new(“RGBA”, (W, H), (0, 0, 0, 102))  # ~40%
-    vgrad = Image.new(“RGBA”, (W, H), (0, 0, 0, 0))
+    fg = Image.new("RGBA", (W, H), (0, 0, 0, 102))  # ~40%
+    vgrad = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     vd = ImageDraw.Draw(vgrad)
     for y in range(H):
         t = y / H
@@ -970,9 +970,9 @@ async def make_citation_image(quote_data: dict) -> tuple:
     font_footer  = _CITE_FONT_FOOTER
 
     def wrap_text(text, font, max_w):
-        words, wlines, cur = text.split(), [], “”
+        words, wlines, cur = text.split(), [], ""
         for w in words:
-            test = (cur + “ “ + w).strip()
+            test = (cur + " " + w).strip()
             if draw.textbbox((0, 0), test, font=font)[2] <= max_w:
                 cur = test
             else:
@@ -992,7 +992,7 @@ async def make_citation_image(quote_data: dict) -> tuple:
         d.text(pos, text, font=font, fill=fill)
 
     MAX_W = W - 80
-    raw_quote = quote_data[“quote”]
+    raw_quote = quote_data["quote"]
 
     # Choix taille police selon longueur
     lines = wrap_text(raw_quote, font_quote, MAX_W)
@@ -1005,15 +1005,15 @@ async def make_citation_image(quote_data: dict) -> tuple:
         fq, lh = font_quote_xs, 44
     if len(lines) > 4:
         lines = lines[:4]
-        lines[-1] = lines[-1].rstrip() + “…”
+        lines[-1] = lines[-1].rstrip() + "…"
 
     # Guillemets typographiques
     if lines:
-        lines[0]  = ““” + lines[0]
-        lines[-1] = lines[-1] + “””
+        lines[0]  = "\u201c" + lines[0]
+        lines[-1] = lines[-1] + "\u201d"
 
     # Calcul position verticale centrée (citation + nom)
-    name_text = f”— {quote_data['character']}”
+    name_text = f"— {quote_data['character']}"
     name_bb   = draw.textbbox((0, 0), name_text, font=font_name)
     name_h    = name_bb[3] - name_bb[1]
     block_h   = len(lines) * lh + 20 + name_h
@@ -1034,7 +1034,7 @@ async def make_citation_image(quote_data: dict) -> tuple:
     stroke_text(draw, (nx, name_y), name_text, font_name, (*accent_bright, 240), sw=2)
 
     # Watermark
-    wm = “Freydiss”
+    wm = "Freydiss"
     wm_w = draw.textbbox((0, 0), wm, font=font_footer)[2]
     draw.text((W - wm_w - 14, H - 20), wm, font=font_footer, fill=(200, 200, 200, 100))
 
@@ -1049,7 +1049,7 @@ async def make_citation_image(quote_data: dict) -> tuple:
         return img.crop((left, top2, left + tw, top2 + th))
 
     def compose_on_bg(bg_frame):
-        base = cover_resize_cite(bg_frame.convert(“RGBA”), W, H)
+        base = cover_resize_cite(bg_frame.convert("RGBA"), W, H)
         return Image.alpha_composite(base, fg)
 
     buf = io.BytesIO()
