@@ -945,8 +945,8 @@ def _make_char_full_bleed_mask(w: int, h: int) -> Image.Image:
     """Masque L: perso plein format — visible en haut, fondu vers le bas (zone texte)."""
     mask = Image.new("L", (w, h), 255)
     d    = ImageDraw.Draw(mask)
-    FADE_S = int(h * 0.40)
-    FADE_E = int(h * 0.72)
+    FADE_S = int(h * 0.55)
+    FADE_E = int(h * 0.82)
     for y in range(FADE_S, h):
         if y < FADE_E:
             t = (y - FADE_S) / (FADE_E - FADE_S)
@@ -964,7 +964,7 @@ def _build_citation_overlay(W: int, H: int, citation: str, perso: str, serie: st
     GOLD = (215, 175, 58)
 
     # Gradient bas : zone texte sombre
-    GRAD_S = int(H * 0.38)
+    GRAD_S = int(H * 0.52)
     for y in range(GRAD_S, H):
         t = (y - GRAD_S) / (H - GRAD_S)
         a = int(248 * min(1.0, t ** 0.62))
@@ -988,7 +988,7 @@ def _build_citation_overlay(W: int, H: int, citation: str, perso: str, serie: st
     d.text((W - (wm_bb[2] - wm_bb[0]) - 20, 16), WM, font=_CF_WM, fill=(255, 255, 255, 28))
 
     # Grand guillemet fantome derriere le texte
-    TEXT_ZONE_Y = int(H * 0.42)
+    TEXT_ZONE_Y = int(H * 0.52)
     gm_bb = d.textbbox((0, 0), "“", font=_CF_QMARK)
     gm_x  = (W - (gm_bb[2] - gm_bb[0])) // 2 - 40
     d.text((gm_x, TEXT_ZONE_Y - 26), "“", font=_CF_QMARK, fill=(*GOLD, 18))
@@ -1005,14 +1005,14 @@ def _build_citation_overlay(W: int, H: int, citation: str, perso: str, serie: st
             if cur:
                 lines.append(cur)
             cur = word
-        if len(lines) == 4:
+        if len(lines) == 3:
             cur = ""
             break
-    if cur and len(lines) < 4:
+    if cur and len(lines) < 3:
         lines.append(cur)
     if not lines:
         lines = [citation[:50]]
-    if len(lines) == 4:
+    if len(lines) == 3:
         last = lines[-1]
         while last:
             bb = d.textbbox((0, 0), last + " …", font=_CF_QUOTE)
@@ -1021,8 +1021,8 @@ def _build_citation_overlay(W: int, H: int, citation: str, perso: str, serie: st
             last = last.rsplit(" ", 1)[0]
         lines[-1] = last + " …"
 
-    LINE_H  = 48
-    BOT_RSV = 104
+    LINE_H  = 44
+    BOT_RSV = 100
     total_h = len(lines) * LINE_H
     AVAIL_H = H - BOT_RSV - TEXT_ZONE_Y
     quote_y = TEXT_ZONE_Y + max(6, (AVAIL_H - total_h) // 2)
