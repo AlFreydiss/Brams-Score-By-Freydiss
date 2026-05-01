@@ -410,7 +410,7 @@ QUOTES_DB = [
     {"quote": "Peu importe la raison - je veux juste avoir la force de protéger ceux que j'aime.", "character": "Ichigo Kurosaki", "anime": "Bleach", "color": "#EA580C"},
     {"quote": "Les règles existent pour être suivies. Même au prix de sa vie.", "character": "Byakuya Kuchiki", "anime": "Bleach", "color": "#1E293B"},
     # FULLMETAL ALCHEMIST
-    {"quote": "L'humanité ne peut rien obtenir sans donner quelque chose en échange. C'est la loi de l'équivalence.", "character": "Edward Elric", "anime": "Fullmetal Alchemist", "color": "#D97706"},
+    {"quote": "L'humanité ne peut rien obtenir sans donner quelque chose en retour. Pour obtenir chaque chose, quelque chose de valeur égale doit être perdu. C'est ce qu'on appel en Alchimie la loi de l'échange équivalent.", "character": "Edward Elric", "anime": "Fullmetal Alchemist", "color": "#D97706"},
     {"quote": "Rien n'est parfait dans ce monde. C'est justement pour ça que c'est beau.", "character": "Edward Elric", "anime": "Fullmetal Alchemist", "color": "#D97706"},
     {"quote": "Un homme qui lève la main sur une femme n'est pas un vrai homme.", "character": "Roy Mustang", "anime": "Fullmetal Alchemist", "color": "#1E40AF"},
     {"quote": "On ne peut pas tout obtenir dans ce monde. Mais on peut choisir ce qui vaut la peine d'essayer.", "character": "Alphonse Elric", "anime": "Fullmetal Alchemist", "color": "#E2E8F0"},
