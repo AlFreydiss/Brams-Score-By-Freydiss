@@ -6,3 +6,4 @@ matplotlib
 aiohttp
 psycopg2-binary
 litellm
+playwright

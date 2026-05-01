@@ -927,206 +927,96 @@ def _load_font(path: str, size: int):
     except Exception:
         return ImageFont.load_default()
 
-_CITE_FONT_QUOTE   = _load_font("Michland Script.otf", 58)
-_CITE_FONT_QUOTE_S = _load_font("Michland Script.otf", 44)
-_CITE_FONT_QUOTE_XS = _load_font("Michland Script.otf", 34)
-_CITE_FONT_NAME    = _load_font("Righteous-Regular.ttf", 24)
-_CITE_FONT_FOOTER  = _load_font("Righteous-Regular.ttf", 13)
+# ── Playwright browser singleton ──────────────────────────────────
+_PW_INSTANCE = None
+_PW_BROWSER  = None
+
+async def _ensure_pw_browser():
+    global _PW_INSTANCE, _PW_BROWSER
+    if _PW_BROWSER is not None and _PW_BROWSER.is_connected():
+        return _PW_BROWSER
+    if _PW_INSTANCE is not None:
+        try:
+            await _PW_INSTANCE.stop()
+        except Exception:
+            pass
+    from playwright.async_api import async_playwright
+    _PW_INSTANCE = await async_playwright().start()
+    _PW_BROWSER  = await _PW_INSTANCE.chromium.launch(
+        headless=True,
+        args=["--no-sandbox", "--disable-setuid-sandbox",
+              "--disable-dev-shm-usage", "--disable-gpu", "--single-process"],
+    )
+    return _PW_BROWSER
 
 
 async def make_citation_image(quote_data: dict) -> tuple:
-    """Génère une carte 800x450 — GIF perso en fond, overlay sombre, texte centré."""
-    W, H = 800, 450
+    """Génère une carte 1200x675 via Playwright (screenshot citation_card.html)."""
 
-    # Couleur accent
-    try:
-        hex_c = quote_data["color"].lstrip("#").ljust(6, "0")
-        accent = tuple(int(hex_c[i:i+2], 16) for i in (0, 2, 4))
-    except Exception:
-        accent = (212, 175, 55)
-    if 0.299 * accent[0] + 0.587 * accent[1] + 0.114 * accent[2] < 40:
-        accent = (212, 175, 55)
-    accent_bright = tuple(min(255, int(c * 1.3)) for c in accent)
-
-    # Overlay : base semi-transparente + dégradé bas
-    fg = Image.new("RGBA", (W, H), (0, 0, 0, 102))  # ~40%
-    vgrad = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    vd = ImageDraw.Draw(vgrad)
-    for y in range(H):
-        t = y / H
-        vd.line([(0, y), (W, y)], fill=(0, 0, 0, int(120 * t * t)))
-    fg = Image.alpha_composite(fg, vgrad)
-
-    draw = ImageDraw.Draw(fg)
-
-    # Bordure intérieure colorée (accent, 3-4px)
-    IB = 8
-    draw.rectangle([(IB, IB), (W - IB, H - IB)], outline=(*accent, 200), width=3)
-
-    font_quote   = _CITE_FONT_QUOTE
-    font_quote_s = _CITE_FONT_QUOTE_S
-    font_quote_xs = _CITE_FONT_QUOTE_XS
-    font_name    = _CITE_FONT_NAME
-    font_footer  = _CITE_FONT_FOOTER
-
-    def wrap_text(text, font, max_w):
-        words, wlines, cur = text.split(), [], ""
-        for w in words:
-            test = (cur + " " + w).strip()
-            if draw.textbbox((0, 0), test, font=font)[2] <= max_w:
-                cur = test
-            else:
-                if cur:
-                    wlines.append(cur)
-                cur = w
-        if cur:
-            wlines.append(cur)
-        return wlines
-
-    def stroke_text(d, pos, text, font, fill, sw=3):
-        x, y = pos
-        for dx in range(-sw, sw + 1):
-            for dy in range(-sw, sw + 1):
-                if dx or dy:
-                    d.text((x + dx, y + dy), text, font=font, fill=(0, 0, 0, 215))
-        d.text(pos, text, font=font, fill=fill)
-
-    MAX_W = W - 80
-    raw_quote = quote_data["quote"]
-
-    # Choix taille police selon longueur
-    lines = wrap_text(raw_quote, font_quote, MAX_W)
-    fq, lh = font_quote, 72
-    if len(lines) > 3:
-        lines = wrap_text(raw_quote, font_quote_s, MAX_W)
-        fq, lh = font_quote_s, 56
-    if len(lines) > 3:
-        lines = wrap_text(raw_quote, font_quote_xs, MAX_W)
-        fq, lh = font_quote_xs, 44
-    if len(lines) > 4:
-        lines = lines[:4]
-        lines[-1] = lines[-1].rstrip() + "…"
-
-    # Guillemets typographiques
-    if lines:
-        lines[0]  = "\u201c" + lines[0]
-        lines[-1] = lines[-1] + "\u201d"
-
-    # Calcul position verticale centrée (citation + nom)
-    name_text = f"— {quote_data['character']}"
-    name_bb   = draw.textbbox((0, 0), name_text, font=font_name)
-    name_h    = name_bb[3] - name_bb[1]
-    block_h   = len(lines) * lh + 20 + name_h
-    start_y   = (H - block_h) // 2
-
-    # Citation
-    for i, line in enumerate(lines):
-        bb = draw.textbbox((0, 0), line, font=fq)
-        lw = bb[2] - bb[0]
-        lx = (W - lw) // 2
-        ly = start_y + i * lh
-        stroke_text(draw, (lx, ly), line, fq, (255, 255, 255, 255), sw=3)
-
-    # Nom du personnage
-    name_y = start_y + len(lines) * lh + 20
-    nw = draw.textbbox((0, 0), name_text, font=font_name)[2]
-    nx = (W - nw) // 2
-    stroke_text(draw, (nx, name_y), name_text, font_name, (*accent_bright, 240), sw=2)
-
-    # Watermark
-    wm = "Freydiss"
-    wm_w = draw.textbbox((0, 0), wm, font=font_footer)[2]
-    draw.text((W - wm_w - 14, H - 20), wm, font=font_footer, fill=(200, 200, 200, 100))
-
-    # Composition GIF/image de fond
-    def cover_resize_cite(img, tw, th):
-        sw2, sh2 = img.size
-        scale = max(tw / sw2, th / sh2)
-        nw2, nh2 = int(sw2 * scale), int(sh2 * scale)
-        img = img.resize((nw2, nh2), Image.LANCZOS)
-        left = (nw2 - tw) // 2
-        top2 = (nh2 - th) // 2
-        return img.crop((left, top2, left + tw, top2 + th))
-
-    def compose_on_bg(bg_frame):
-        base = cover_resize_cite(bg_frame.convert("RGBA"), W, H)
-        return Image.alpha_composite(base, fg)
-
-    buf = io.BytesIO()
-
-    def _render_animated_gif(src, label="GIF") -> tuple | None:
-        """Compose src (bytes ou chemin fichier) en GIF animé. Retourne (BytesIO, True) ou None."""
-        try:
-            bg_src = Image.open(io.BytesIO(src) if isinstance(src, (bytes, bytearray)) else src)
-            try:
-                n_frames = bg_src.n_frames
-            except Exception:
-                n_frames = 1
-            if n_frames <= 1:
-                return None
-            max_frames = 40
-            step = max(1, n_frames // max_frames)
-            gif_frames, durations = [], []
-            for i in range(0, n_frames, step):
-                try:
-                    bg_src.seek(i)
-                    gif_frames.append(compose_on_bg(bg_src.copy()))
-                    durations.append(max(40, bg_src.info.get("duration", 80) * step))
-                except Exception as e:
-                    print(f"[CITATION] {label} frame {i}: {e}")
-            if not gif_frames:
-                return None
-            pal_frames = [
-                f.convert("RGB").quantize(colors=256, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE)
-                for f in gif_frames
-            ]
-            b = io.BytesIO()
-            pal_frames[0].save(b, format="GIF", save_all=True, append_images=pal_frames[1:],
-                               duration=durations, loop=0, disposal=2, optimize=False)
-            b.seek(0)
-            return b, True
-        except Exception as e:
-            print(f"[CITATION] {label} compose failed: {e}")
-        return None
-
-    # Cas 0 : GIF local dédié au personnage (priorité maximale)
+    # Image de fond : première frame du GIF encodée en base64
     _gif_entry = LOCAL_CHAR_GIFS.get(quote_data["character"])
     if isinstance(_gif_entry, list):
         _avail = [p for p in _gif_entry if os.path.exists(p)]
-        local_gif_path = random.choice(_avail) if _avail else None
+        bg_path = random.choice(_avail) if _avail else None
+    elif _gif_entry and os.path.exists(str(_gif_entry)):
+        bg_path = _gif_entry
     else:
-        local_gif_path = _gif_entry
-    if local_gif_path and os.path.exists(local_gif_path):
-        result = _render_animated_gif(local_gif_path, f"local:{local_gif_path}")
-        if result:
-            return result
-        # Fallback statique si le fichier local n'est pas animé
+        bg_path = next((p for p in _FALLBACK_RANK_GIFS if os.path.exists(p)), None)
+
+    image_data_uri = ""
+    if bg_path:
         try:
-            out = compose_on_bg(Image.open(local_gif_path).convert("RGBA"))
-            b = io.BytesIO()
-            out.convert("RGB").save(b, format="PNG", optimize=True)
-            b.seek(0)
-            return b, False
+            img = Image.open(bg_path)
+            img.seek(0)
+            frame = img.convert("RGB")
+            _buf_img = io.BytesIO()
+            frame.save(_buf_img, format="JPEG", quality=88, optimize=True)
+            import base64 as _b64
+            image_data_uri = "data:image/jpeg;base64," + _b64.b64encode(_buf_img.getvalue()).decode()
         except Exception as e:
-            print(f"[CITATION] local static fallback '{local_gif_path}': {e}")
+            print(f"[CITATION] image encode: {e}")
 
-    # Cas 2 : GIF de rang aléatoire (fallback)
-    fallback = list(_FALLBACK_RANK_GIFS)
-    random.shuffle(fallback)
-    for gif_path in fallback:
-        if os.path.exists(gif_path):
-            result = _render_animated_gif(gif_path, f"local:{gif_path}")
-            if result:
-                return result
-            break
+    html_path = os.path.abspath("citation_card.html").replace("\\", "/")
 
-    # Cas 3 : fond sombre pur (aucun visuel dispo)
-    canvas = Image.new("RGBA", (W, H), (6, 6, 10, 255))
-    result = Image.alpha_composite(canvas, fg)
-    result.convert("RGB").save(buf, format="PNG", optimize=True)
-    buf.seek(0)
-    return buf, False
+    try:
+        browser = await _ensure_pw_browser()
+        context = await browser.new_context(
+            viewport={"width": 1200, "height": 675},
+            device_scale_factor=1,
+        )
+        page = await context.new_page()
+        await page.goto(f"file:///{html_path}", wait_until="domcontentloaded")
 
+        await page.evaluate(
+            """([quote, character, anime, image, color]) => {
+                setCitation({ quote, character, anime, image, color });
+            }""",
+            [
+                quote_data["quote"],
+                quote_data["character"],
+                quote_data["anime"],
+                image_data_uri,
+                quote_data.get("color", "#ff3b3b"),
+            ],
+        )
+
+        await page.wait_for_timeout(150)
+
+        card_el = await page.query_selector(".card")
+        screenshot = await card_el.screenshot(type="png")
+        await context.close()
+
+        buf = io.BytesIO(screenshot)
+        buf.seek(0)
+        return buf, False
+
+    except Exception as e:
+        print(f"[CITATION] Playwright error: {e}")
+        canvas = Image.new("RGB", (1200, 675), (11, 11, 11))
+        buf = io.BytesIO()
+        canvas.save(buf, format="PNG")
+        buf.seek(0)
+        return buf, False
 
 async def make_rank_image(member: discord.Member, rank_name: str, hours_7d: float):
     CARD_W = 1100
