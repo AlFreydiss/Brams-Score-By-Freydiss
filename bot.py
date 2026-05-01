@@ -935,8 +935,8 @@ def _cit_font(name, size):
     return ImageFont.load_default()
 
 _CF_QUOTE  = _cit_font("BebasNeue-Regular.ttf",        52)
-_CF_NAME   = _cit_font("CormorantGaramond-Bold.ttf",   34)
-_CF_SERIE  = _cit_font("Rajdhani-SemiBold.ttf",        20)
+_CF_NAME   = _cit_font("CormorantGaramond-Bold.ttf",   40)
+_CF_SERIE  = _cit_font("Rajdhani-SemiBold.ttf",        22)
 _CF_WM     = _cit_font("Rajdhani-SemiBold.ttf",        14)
 _CF_QMARK  = _cit_font("CormorantGaramond-Bold.ttf",  160)
 
@@ -983,7 +983,7 @@ def _build_citation_overlay(W: int, H: int, citation: str, perso: str, serie: st
 
     d.text((MARGIN - 14, int(H * 0.35)), "\u201c", font=_CF_QMARK, fill=(*GOLD, 16))
 
-    MAX_W = int(W * 0.58)
+    MAX_W = int(W * 0.46)
     words, lines, cur = citation.split(), [], ""
     for word in words:
         test = (cur + " " + word).strip()
@@ -1011,7 +1011,7 @@ def _build_citation_overlay(W: int, H: int, citation: str, perso: str, serie: st
         lines[-1] = last + " ..."
 
     LINE_H  = 56
-    BOT_RSV = 95
+    BOT_RSV = 108
     quote_y = int(H * 0.53)
 
     for i, line in enumerate(lines):
@@ -1027,7 +1027,7 @@ def _build_citation_overlay(W: int, H: int, citation: str, perso: str, serie: st
     NAME_Y = SEP_Y + 10
     d.text((MARGIN + 1, NAME_Y + 1), perso, font=_CF_NAME, fill=(0, 0, 0, 120))
     d.text((MARGIN,     NAME_Y),     perso, font=_CF_NAME, fill=(255, 255, 255, 255))
-    d.text((MARGIN, NAME_Y + 34), f"\u2014 {serie.upper()}", font=_CF_SERIE, fill=(*GOLD, 200))
+    d.text((MARGIN, NAME_Y + 42), f"\u2014 {serie.upper()}", font=_CF_SERIE, fill=(*GOLD, 200))
 
     return overlay
 
