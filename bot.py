@@ -927,130 +927,52 @@ def _load_font(path: str, size: int):
     except Exception:
         return ImageFont.load_default()
 
-_CITE_FONT_QMARK   = _load_font("PirataOne-Regular.ttf",  130)
-_CITE_FONT_CHAR    = _load_font("KOMIKAX_.ttf",            50)
-_CITE_FONT_ANIME   = _load_font("Righteous-Regular.ttf",   28)
-_CITE_FONT_QUOTE   = _load_font("Righteous-Regular.ttf",   48)
-_CITE_FONT_QUOTE_S = _load_font("Righteous-Regular.ttf",   36)
-_CITE_FONT_FOOTER  = _load_font("Righteous-Regular.ttf",   14)
-_CITE_FONT_WATERMARK    = _load_font("KOMIKAX_.ttf",            300)
-_CITE_FONT_ANIME_PIRATE = _load_font("PirataOne-Regular.ttf",  26)
-_CITE_FONT_ANIME_COMIC  = _load_font("KOMIKAX_.ttf",            22)
+_CITE_FONT_QUOTE   = _load_font("Michland Script.otf", 58)
+_CITE_FONT_QUOTE_S = _load_font("Michland Script.otf", 44)
+_CITE_FONT_QUOTE_XS = _load_font("Michland Script.otf", 34)
+_CITE_FONT_NAME    = _load_font("Righteous-Regular.ttf", 24)
+_CITE_FONT_FOOTER  = _load_font("Righteous-Regular.ttf", 13)
 
 
 async def make_citation_image(quote_data: dict) -> tuple:
-    """Génère une carte 1200x675 - GIF local du perso en fond, texte par-dessus."""
-    W, H = 1200, 675
+    “””Génère une carte 800x450 — GIF perso en fond, overlay sombre, texte centré.”””
+    W, H = 800, 450
 
-    # ── Couleur accent ──
+    # Couleur accent
     try:
-        hex_c = quote_data["color"].lstrip("#").ljust(6, "0")
+        hex_c = quote_data[“color”].lstrip(“#”).ljust(6, “0”)
         accent = tuple(int(hex_c[i:i+2], 16) for i in (0, 2, 4))
     except Exception:
         accent = (212, 175, 55)
     if 0.299 * accent[0] + 0.587 * accent[1] + 0.114 * accent[2] < 40:
         accent = (212, 175, 55)
+    accent_bright = tuple(min(255, int(c * 1.3)) for c in accent)
 
-    # ── FOREGROUND : overlays ──
-    fg = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-
-    # Gradient horizontal gauche (lisibilité texte)
-    panel = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    pd = ImageDraw.Draw(panel)
-    for x in range(W):
-        if x < 580:
-            a = 68
-        elif x < 880:
-            t = (x - 580) / 300
-            a = int(68 * (1 - t * t * t))
-        else:
-            a = 0
-        pd.line([(x, 0), (x, H)], fill=(0, 0, 0, a))
-    fg = Image.alpha_composite(fg, panel)
-
-    # Gradient vertical foncé bas → transparent haut
-    vgrad = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    # Overlay : base semi-transparente + dégradé bas
+    fg = Image.new(“RGBA”, (W, H), (0, 0, 0, 102))  # ~40%
+    vgrad = Image.new(“RGBA”, (W, H), (0, 0, 0, 0))
     vd = ImageDraw.Draw(vgrad)
     for y in range(H):
         t = y / H
-        a = int(72 * t * t)
-        vd.line([(0, y), (min(940, W), y)], fill=(0, 0, 0, a))
+        vd.line([(0, y), (W, y)], fill=(0, 0, 0, int(120 * t * t)))
     fg = Image.alpha_composite(fg, vgrad)
-
-    # Lueur accent coin bas-gauche (effet couleur du perso)
-    glow = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    gd = ImageDraw.Draw(glow)
-    for r in range(320, 0, -1):
-        a = int(22 * (1 - r / 320))
-        gd.ellipse([(0 - r, H - r), (r, H + r)], fill=(*accent, a))
-    fg = Image.alpha_composite(fg, glow)
-
-    # Scanlines cinéma
-    scan = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    sd = ImageDraw.Draw(scan)
-    for y in range(0, H, 4):
-        sd.line([(0, y), (W, y)], fill=(0, 0, 0, 10))
-    fg = Image.alpha_composite(fg, scan)
-
-    # Traînée lumineuse diagonale (droite)
-    streak = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    sk = ImageDraw.Draw(streak)
-    for i in range(-35, 36, 2):
-        a = max(0, 14 - abs(i) // 2)
-        x0 = W * 3 // 4 + i - H // 2
-        x1 = W * 3 // 4 + i + H // 2
-        sk.line([(x0, 0), (x1, H)], fill=(255, 255, 255, a), width=1)
-    fg = Image.alpha_composite(fg, streak)
 
     draw = ImageDraw.Draw(fg)
 
-    # Barre accent verticale gauche
-    draw.rectangle([(0, 0), (4, H)], fill=(*accent, 255))
-    # Lignes accent haut et bas
-    draw.rectangle([(0, 0), (W, 3)], fill=(*accent, 190))
-    draw.rectangle([(0, H - 3), (W, H)], fill=(*accent, 140))
+    # Bordure intérieure colorée (accent, 3-4px)
+    IB = 8
+    draw.rectangle([(IB, IB), (W - IB, H - IB)], outline=(*accent, 200), width=3)
 
-    # Bordure intérieure
-    IB = 18
-    draw.rectangle([(IB, IB), (W - IB, IB + 1)],         fill=(*accent, 38))
-    draw.rectangle([(IB, H - IB - 1), (W - IB, H - IB)], fill=(*accent, 38))
-    draw.rectangle([(IB, IB), (IB + 1, H - IB)],         fill=(*accent, 38))
-    draw.rectangle([(W - IB - 1, IB), (W - IB, H - IB)], fill=(*accent, 38))
-
-    # Brackets aux 4 coins
-    BK, BT = 28, 2
-    C = (*accent, 170)
-    draw.rectangle([(14, 12), (14 + BK, 12 + BT)], fill=C)
-    draw.rectangle([(14, 12), (14 + BT, 12 + BK)], fill=C)
-    draw.rectangle([(W - 14 - BK, 12), (W - 14, 12 + BT)], fill=C)
-    draw.rectangle([(W - 14 - BT, 12), (W - 14, 12 + BK)], fill=C)
-    draw.rectangle([(14, H - 12 - BT), (14 + BK, H - 12)], fill=C)
-    draw.rectangle([(14, H - 12 - BK), (14 + BT, H - 12)], fill=C)
-    draw.rectangle([(W - 14 - BK, H - 12 - BT), (W - 14, H - 12)], fill=C)
-    draw.rectangle([(W - 14 - BT, H - 12 - BK), (W - 14, H - 12)], fill=C)
-
-    TX = 50
-    TW = 670
-
-    font_qmark   = _CITE_FONT_QMARK
-    font_char    = _CITE_FONT_CHAR
-    font_anime   = _CITE_FONT_ANIME
     font_quote   = _CITE_FONT_QUOTE
     font_quote_s = _CITE_FONT_QUOTE_S
+    font_quote_xs = _CITE_FONT_QUOTE_XS
+    font_name    = _CITE_FONT_NAME
     font_footer  = _CITE_FONT_FOOTER
 
-    def stroke_text(d, pos, text, font, fill, sw=2):
-        x, y = pos
-        for dx in range(-sw, sw + 1):
-            for dy in range(-sw, sw + 1):
-                if dx or dy:
-                    d.text((x + dx, y + dy), text, font=font, fill=(0, 0, 0, 200))
-        d.text(pos, text, font=font, fill=fill)
-
     def wrap_text(text, font, max_w):
-        words, wlines, cur = text.split(), [], ""
+        words, wlines, cur = text.split(), [], “”
         for w in words:
-            test = (cur + " " + w).strip()
+            test = (cur + “ “ + w).strip()
             if draw.textbbox((0, 0), test, font=font)[2] <= max_w:
                 cur = test
             else:
@@ -1061,78 +983,62 @@ async def make_citation_image(quote_data: dict) -> tuple:
             wlines.append(cur)
         return wlines
 
-    # Guillemet décoratif d'ouverture
-    draw.text((TX - 8, 2), '”', font=font_qmark, fill=(*accent, 28))
+    def stroke_text(d, pos, text, font, fill, sw=3):
+        x, y = pos
+        for dx in range(-sw, sw + 1):
+            for dy in range(-sw, sw + 1):
+                if dx or dy:
+                    d.text((x + dx, y + dy), text, font=font, fill=(0, 0, 0, 215))
+        d.text(pos, text, font=font, fill=fill)
 
-    # ── Zone signature (bas) ──
-    SIG_TOP = 510
-    CX = TX + TW // 2
+    MAX_W = W - 80
+    raw_quote = quote_data[“quote”]
 
-    # Séparateur : double diamants aux extrémités + ligne
-    sep_y = SIG_TOP - 20
-    SEP_W = 320
-    draw.rectangle([(TX + 14, sep_y), (TX + SEP_W - 14, sep_y + 1)], fill=(*accent, 105))
-    for dcx in (TX + 6, TX + SEP_W - 6):
-        draw.polygon([(dcx, sep_y - 5), (dcx + 5, sep_y), (dcx, sep_y + 5), (dcx - 5, sep_y)], fill=(*accent, 195))
+    # Choix taille police selon longueur
+    lines = wrap_text(raw_quote, font_quote, MAX_W)
+    fq, lh = font_quote, 72
+    if len(lines) > 3:
+        lines = wrap_text(raw_quote, font_quote_s, MAX_W)
+        fq, lh = font_quote_s, 56
+    if len(lines) > 3:
+        lines = wrap_text(raw_quote, font_quote_xs, MAX_W)
+        fq, lh = font_quote_xs, 44
+    if len(lines) > 4:
+        lines = lines[:4]
+        lines[-1] = lines[-1].rstrip() + “…”
 
-    # Police anime adaptée au style
-    _pirate_set = {"One Piece", "Vinland Saga", "Berserk", "Cowboy Bebop"}
-    _comic_set  = {"Naruto", "Attack on Titan", "Demon Slayer", "Dragon Ball Z",
-                   "Jujutsu Kaisen", "Bleach", "Chainsaw Man", "Fairy Tail",
-                   "Hunter x Hunter", "One Punch Man", "Black Clover", "Tokyo Ghoul"}
-    _cur_anime = quote_data["anime"]
-    if _cur_anime in _pirate_set:
-        font_anime_sel = _CITE_FONT_ANIME_PIRATE
-    elif _cur_anime in _comic_set:
-        font_anime_sel = _CITE_FONT_ANIME_COMIC
-    else:
-        font_anime_sel = font_anime
+    # Guillemets typographiques
+    if lines:
+        lines[0]  = ““” + lines[0]
+        lines[-1] = lines[-1] + “””
 
-    # Couleur accent boostée pour lisibilité nom
-    _nc = tuple(min(255, int(c * 1.25)) for c in accent)
+    # Calcul position verticale centrée (citation + nom)
+    name_text = f”— {quote_data['character']}”
+    name_bb   = draw.textbbox((0, 0), name_text, font=font_name)
+    name_h    = name_bb[3] - name_bb[1]
+    block_h   = len(lines) * lh + 20 + name_h
+    start_y   = (H - block_h) // 2
 
-    # Nom du personnage — ombres en couches + couleur accent
-    name_text = quote_data["character"].upper()
-    for ox, oy, oa in [(3, 3, 65), (2, 2, 105), (1, 1, 140)]:
-        draw.text((TX + ox, SIG_TOP + oy), name_text, font=font_char, fill=(0, 0, 0, oa))
-    draw.text((TX, SIG_TOP), name_text, font=font_char, fill=(*_nc, 245))
-    nb = draw.textbbox((TX, SIG_TOP), name_text, font=font_char)
-    name_bottom, name_right = nb[3], nb[2]
-    # Filet accent sous le nom
-    draw.rectangle([(TX, name_bottom + 3), (name_right, name_bottom + 4)], fill=(*accent, 145))
-
-    # Anime — couleur accent, police adaptée
-    anime_y = name_bottom + 10
-    draw.text((TX + 1, anime_y + 1), quote_data["anime"], font=font_anime_sel, fill=(0, 0, 0, 85))
-    draw.text((TX, anime_y), quote_data["anime"], font=font_anime_sel, fill=(*accent, 210))
-
-    # ── Citation centrée ──
-    raw_quote = quote_data["quote"]
-    lines = wrap_text(raw_quote, font_quote, TW)
-    fq, lh = font_quote, 62
-    if len(lines) > 5:
-        lines = wrap_text(raw_quote, font_quote_s, TW)
-        fq, lh = font_quote_s, 50
-
-    QUOTE_TOP = 75
-    QUOTE_BOT = SIG_TOP - 44
-    block_h   = len(lines) * lh
-    start_y   = QUOTE_TOP + max(0, (QUOTE_BOT - QUOTE_TOP - block_h) // 2)
-
+    # Citation
     for i, line in enumerate(lines):
-        lw = draw.textbbox((0, 0), line, font=fq)[2]
-        lx = CX - lw // 2
+        bb = draw.textbbox((0, 0), line, font=fq)
+        lw = bb[2] - bb[0]
+        lx = (W - lw) // 2
         ly = start_y + i * lh
-        for ox, oy, oa in [(3, 3, 55), (2, 2, 85), (1, 1, 115)]:
-            draw.text((lx + ox, ly + oy), line, font=fq, fill=(0, 0, 0, oa))
-        draw.text((lx, ly), line, font=fq, fill=(252, 252, 252, 255))
+        stroke_text(draw, (lx, ly), line, fq, (255, 255, 255, 255), sw=3)
 
-    # Footer
-    footer = "- Freydiss"
-    fw = draw.textbbox((0, 0), footer, font=font_footer)[2]
-    draw.text((W - fw - 20, H - 22), footer, font=font_footer, fill=(140, 140, 140, 140))
+    # Nom du personnage
+    name_y = start_y + len(lines) * lh + 20
+    nw = draw.textbbox((0, 0), name_text, font=font_name)[2]
+    nx = (W - nw) // 2
+    stroke_text(draw, (nx, name_y), name_text, font_name, (*accent_bright, 240), sw=2)
 
-    # ── Composition : GIF du perso en fond plein ──
+    # Watermark
+    wm = “Freydiss”
+    wm_w = draw.textbbox((0, 0), wm, font=font_footer)[2]
+    draw.text((W - wm_w - 14, H - 20), wm, font=font_footer, fill=(200, 200, 200, 100))
+
+    # Composition GIF/image de fond
     def cover_resize_cite(img, tw, th):
         sw2, sh2 = img.size
         scale = max(tw / sw2, th / sh2)
@@ -1143,22 +1049,8 @@ async def make_citation_image(quote_data: dict) -> tuple:
         return img.crop((left, top2, left + tw, top2 + th))
 
     def compose_on_bg(bg_frame):
-        base = cover_resize_cite(bg_frame.convert("RGBA"), W, H)
-        # Frosted glass : zone texte floutée pour plus de classe
-        blurred = base.filter(ImageFilter.GaussianBlur(radius=10))
-        mask = Image.new("L", (W, H), 0)
-        md = ImageDraw.Draw(mask)
-        for x in range(W):
-            if x < 560:
-                a = 150
-            elif x < 860:
-                t = (x - 560) / 300
-                a = int(150 * (1 - t * t))
-            else:
-                a = 0
-            md.line([(x, 0), (x, H)], fill=a)
-        frosted = Image.composite(blurred, base, mask)
-        return Image.alpha_composite(frosted, fg)
+        base = cover_resize_cite(bg_frame.convert(“RGBA”), W, H)
+        return Image.alpha_composite(base, fg)
 
     buf = io.BytesIO()
 
