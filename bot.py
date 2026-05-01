@@ -934,7 +934,7 @@ def _cit_font(name, size):
             return ImageFont.truetype(p, size)
     return ImageFont.load_default()
 
-_CF_QUOTE  = _cit_font("CormorantGaramond-Bold.ttf",   38)
+_CF_QUOTE  = _cit_font("KOMIKAX_.ttf",                 28)
 _CF_NAME   = _cit_font("CormorantGaramond-Bold.ttf",   34)
 _CF_SERIE  = _cit_font("Rajdhani-SemiBold.ttf",        20)
 _CF_WM     = _cit_font("Rajdhani-SemiBold.ttf",        14)
@@ -967,14 +967,14 @@ def _build_citation_overlay(W: int, H: int, citation: str, perso: str, serie: st
     GRAD_S = int(H * 0.52)
     for y in range(GRAD_S, H):
         t = (y - GRAD_S) / (H - GRAD_S)
-        a = int(248 * min(1.0, t ** 0.62))
-        d.line([(0, y), (W, y)], fill=(4, 4, 12, a))
+        a = int(190 * min(1.0, t ** 0.80))
+        d.line([(0, y), (W, y)], fill=(4, 6, 20, a))
 
     # Vignette bords haut + cotes
     VIGN = 55
     for i in range(VIGN):
         t = ((VIGN - i) / VIGN) ** 2
-        a = int(115 * t)
+        a = int(80 * t)
         d.line([(0, i), (W, i)], fill=(0, 0, 0, a))
         d.line([(i, 0), (i, H // 2)], fill=(0, 0, 0, a))
         d.line([(W - 1 - i, 0), (W - 1 - i, H // 2)], fill=(0, 0, 0, a))
@@ -1032,8 +1032,8 @@ def _build_citation_overlay(W: int, H: int, citation: str, perso: str, serie: st
         bb = d.textbbox((0, 0), line, font=_CF_QUOTE)
         lw = bb[2] - bb[0]
         x  = (W - lw) // 2
-        d.text((x + 1, y + 2), line, font=_CF_QUOTE, fill=(0, 0, 0, 82))
-        d.text((x,     y),     line, font=_CF_QUOTE, fill=(245, 241, 232, 255))
+        d.text((x + 2, y + 3), line, font=_CF_QUOTE, fill=(0, 0, 0, 160))
+        d.text((x,     y),     line, font=_CF_QUOTE, fill=(255, 255, 255, 255))
 
     # Separateur centre
     SEP_Y    = H - BOT_RSV + 6
