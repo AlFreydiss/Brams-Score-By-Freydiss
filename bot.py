@@ -104,16 +104,45 @@ LOCAL_CHAR_GIFS = {
     "Byakuya Kuchiki":    "byakuya kuchiki citation.gif",
     # Tokyo Ghoul
     "Ken Kaneki":         "keneki ken citation.gif",
+    # Fullmetal Alchemist
+    "Edward Elric":          "edward elric citation.gif",
+    "Roy Mustang":           "Roy mustang citation.gif",
+    "Alphonse Elric":        "alphonse elric ciitation.gif",
+    # Hunter x Hunter
+    "Gon Freecss":           "gon.gif",
+    "Killua Zoldyck":        "killua gif citation.gif",
+    "Hisoka Morow":          "hisoka gif citation.gif",
+    "Kurapika":              "kurapika gif citation.gif",
+    "Meruem":                "meruem gif citation.gif",
+    "Mito Freecss":          "mito freecs citation.gif",
+    # JoJo's Bizarre Adventure
+    "Dio Brando":            "dio brando gif.gif",
+    "Giorno Giovanna":       "giorno giovanna gif.gif",
     # Fairy Tail
-    "Erza Scarlet":       "erza scarlett citation.gif",
+    "Natsu Dragneel":        "natsu ft.gif",
+    "Erza Scarlet":          "erza scarlett citation.gif",
+    # Code Geass
+    "Lelouch vi Britannia":  "lelouch gif citation.gif",
+    # One Punch Man
+    "Saitama":               "saitama gif.gif",
+    # Berserk
+    "Guts":                  "guts citations.gif",
+    # Re:Zero
+    "Subaru Natsuki":        "subaru natsuki citation.gif",
+    "Rem":                   "rem re zero gif.gif",
+    # Sword Art Online
+    "Kirito":                "kirito citation.gif",
+    "Asuna Yuuki":           "asuna gif ciattion.gif",
+    # Cowboy Bebop
+    "Spike Spiegel":         "spike cb citaztion.gif",
+    # Black Clover
+    "Asta":                  "asta black clover ct.gif",
     # Vinland Saga
-    "Thorfinn":           "thorfinnn citation.gif",
+    "Thorfinn":              "thorfinnn citation.gif",
     # Violet Evergarden
-    "Violet Evergarden":  "violet evergarden citation.gif",
+    "Violet Evergarden":     "violet evergarden citation.gif",
     # One Piece
     "Donquixote Doflamingo": "doflamingo citation 1.gif",
-    # Re:Zero
-    "Subaru Natsuki": "subaru natsuki citation.gif",
     # Chainsaw Man
     "Makima": ["Makima citations 1.gif", "makima 2 ciation.gif", "makima 3 citation.gif", "makima 4 citation.gif"],
     "Reze":   ["reze-chainsaw-man citations.gif", "reze chazinsaw man citation 2.gif"],
