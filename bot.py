@@ -112,6 +112,8 @@ LOCAL_CHAR_GIFS = {
     "Violet Evergarden":  "violet evergarden citation.gif",
     # One Piece
     "Donquixote Doflamingo": "doflamingo citation 1.gif",
+    # Re:Zero
+    "Subaru Natsuki": "subaru natsuki citation.gif",
     # Chainsaw Man
     "Makima": ["Makima citations 1.gif", "makima 2 ciation.gif", "makima 3 citation.gif", "makima 4 citation.gif"],
     "Reze":   ["reze-chainsaw-man citations.gif", "reze chazinsaw man citation 2.gif"],
