@@ -934,76 +934,70 @@ def _cit_font(name, size):
             return ImageFont.truetype(p, size)
     return ImageFont.load_default()
 
-_CF_QUOTE  = _cit_font(“CormorantGaramond-Italic.ttf”, 38)
-_CF_NAME   = _cit_font(“CormorantGaramond-Bold.ttf”,   34)
-_CF_SERIE  = _cit_font(“Rajdhani-SemiBold.ttf”,        20)
-_CF_WM     = _cit_font(“Rajdhani-SemiBold.ttf”,        14)
-_CF_QMARK  = _cit_font(“CormorantGaramond-Bold.ttf”,  160)
+_CF_QUOTE  = _cit_font("CormorantGaramond-Italic.ttf", 38)
+_CF_NAME   = _cit_font("CormorantGaramond-Bold.ttf",   34)
+_CF_SERIE  = _cit_font("Rajdhani-SemiBold.ttf",        20)
+_CF_WM     = _cit_font("Rajdhani-SemiBold.ttf",        14)
+_CF_QMARK  = _cit_font("CormorantGaramond-Bold.ttf",  160)
 
 
-def _make_char_fade_mask(w: int, h: int) -> Image.Image:
-    “””Masque L: noir (gauche) → blanc (droite) — le perso apparaît sur la moitié droite.”””
-    mask = Image.new(“L”, (w, h), 0)
-    md   = ImageDraw.Draw(mask)
-    FADE_S = int(w * 0.36)
-    FADE_E = int(w * 0.66)
-    for x in range(FADE_S, w):
-        if x < FADE_E:
-            t = (x - FADE_S) / (FADE_E - FADE_S)
-            v = int(t * t * 255)        # ease-in pour fondu naturel
+def _make_char_full_bleed_mask(w: int, h: int) -> Image.Image:
+    """Masque L: perso plein format — visible en haut, fondu vers le bas (zone texte)."""
+    mask = Image.new("L", (w, h), 255)
+    d    = ImageDraw.Draw(mask)
+    FADE_S = int(h * 0.40)
+    FADE_E = int(h * 0.72)
+    for y in range(FADE_S, h):
+        if y < FADE_E:
+            t = (y - FADE_S) / (FADE_E - FADE_S)
+            v = int(255 * (1 - t * t))
         else:
-            v = 255
-        md.line([(x, 0), (x, h)], fill=v)
+            v = 0
+        d.line([(0, y), (w, y)], fill=v)
     return mask
 
 
 def _build_citation_overlay(W: int, H: int, citation: str, perso: str, serie: str) -> Image.Image:
-    “””Overlay RGBA cinématographique — texte à gauche, perso GIF à droite.”””
-    overlay = Image.new(“RGBA”, (W, H), (0, 0, 0, 0))
+    """Overlay RGBA — perso plein format, texte centre en bas sur zone sombre."""
+    overlay = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     d = ImageDraw.Draw(overlay)
-
-    # Fond sombre zone texte (gauche → centre, fondu quadratique)
-    TZ_END = int(W * 0.50)
-    FD_END = int(W * 0.74)
-    for x in range(W):
-        if x < TZ_END:
-            a = 218
-        elif x < FD_END:
-            t = (x - TZ_END) / (FD_END - TZ_END)
-            a = int(218 * (1.0 - t * t))
-        else:
-            a = 0
-        if a > 0:
-            d.line([(x, 0), (x, H)], fill=(5, 5, 12, a))
-
-    # Assombrissement bas (lisibilité nom + série)
-    BOT_START = int(H * 0.70)
-    for y in range(BOT_START, H):
-        t = (y - BOT_START) / (H - BOT_START)
-        d.line([(0, y), (W, y)], fill=(0, 0, 0, int(t * 175)))
-
-    # Barre accent dorée (bord gauche) + halo
     GOLD = (215, 175, 58)
-    d.rectangle([(0, 0), (4, H)], fill=(*GOLD, 235))
-    for gx in range(1, 22):
-        d.line([(4 + gx, 0), (4 + gx, H)], fill=(*GOLD, int(50 * (1 - gx / 22))))
 
-    # Grand guillemet fantôme (arrière-plan décoratif)
-    MARGIN_L = 40
-    d.text((MARGIN_L - 8, int(H * 0.06)), ““”,
-           font=_CF_QMARK, fill=(*GOLD, 16))
+    # Gradient bas : zone texte sombre
+    GRAD_S = int(H * 0.38)
+    for y in range(GRAD_S, H):
+        t = (y - GRAD_S) / (H - GRAD_S)
+        a = int(248 * min(1.0, t ** 0.62))
+        d.line([(0, y), (W, y)], fill=(4, 4, 12, a))
+
+    # Vignette bords haut + cotes
+    VIGN = 55
+    for i in range(VIGN):
+        t = ((VIGN - i) / VIGN) ** 2
+        a = int(115 * t)
+        d.line([(0, i), (W, i)], fill=(0, 0, 0, a))
+        d.line([(i, 0), (i, H // 2)], fill=(0, 0, 0, a))
+        d.line([(W - 1 - i, 0), (W - 1 - i, H // 2)], fill=(0, 0, 0, a))
+
+    # Filet dore discret a la limite zone sombre
+    d.line([(0, GRAD_S), (W, GRAD_S)], fill=(*GOLD, 38), width=1)
 
     # Watermark discret coin haut droit
-    WM    = “BRAMS COMMUNITY”
+    WM    = "BRAMS COMMUNITY"
     wm_bb = d.textbbox((0, 0), WM, font=_CF_WM)
-    d.text((W - (wm_bb[2] - wm_bb[0]) - 22, 18), WM,
-           font=_CF_WM, fill=(255, 255, 255, 36))
+    d.text((W - (wm_bb[2] - wm_bb[0]) - 20, 16), WM, font=_CF_WM, fill=(255, 255, 255, 28))
 
-    # ── Wrap citation par mesure pixel précise ──
-    MAX_W = int(W * 0.47) - MARGIN_L - 10
-    words, lines, cur = citation.split(), [], “”
+    # Grand guillemet fantome derriere le texte
+    TEXT_ZONE_Y = int(H * 0.42)
+    gm_bb = d.textbbox((0, 0), "“", font=_CF_QMARK)
+    gm_x  = (W - (gm_bb[2] - gm_bb[0])) // 2 - 40
+    d.text((gm_x, TEXT_ZONE_Y - 26), "“", font=_CF_QMARK, fill=(*GOLD, 18))
+
+    # Wrap citation par mesure pixel
+    MAX_W = int(W * 0.76)
+    words, lines, cur = citation.split(), [], ""
     for word in words:
-        test = (cur + “ “ + word).strip()
+        test = (cur + " " + word).strip()
         bb   = d.textbbox((0, 0), test, font=_CF_QUOTE)
         if bb[2] - bb[0] <= MAX_W:
             cur = test
@@ -1011,62 +1005,67 @@ def _build_citation_overlay(W: int, H: int, citation: str, perso: str, serie: st
             if cur:
                 lines.append(cur)
             cur = word
-        if len(lines) == 5:
-            cur = “”
+        if len(lines) == 4:
+            cur = ""
             break
-    if cur and len(lines) < 5:
+    if cur and len(lines) < 4:
         lines.append(cur)
     if not lines:
-        lines = [citation[:40]]
-
-    # Tronquer la dernière ligne si citation trop longue
-    if len(lines) == 5:
-        last   = lines[-1]
+        lines = [citation[:50]]
+    if len(lines) == 4:
+        last = lines[-1]
         while last:
-            bb = d.textbbox((0, 0), last + “ …”, font=_CF_QUOTE)
+            bb = d.textbbox((0, 0), last + " …", font=_CF_QUOTE)
             if bb[2] - bb[0] <= MAX_W:
                 break
-            last = last.rsplit(“ “, 1)[0]
-        lines[-1] = last + “ …”
+            last = last.rsplit(" ", 1)[0]
+        lines[-1] = last + " …"
 
-    LINE_H  = 52
-    BOT_RSV = 118          # espace réservé en bas pour sep + nom + série
+    LINE_H  = 48
+    BOT_RSV = 104
     total_h = len(lines) * LINE_H
-    quote_y = max(int(H * 0.22), (H - BOT_RSV - total_h) // 2)
+    AVAIL_H = H - BOT_RSV - TEXT_ZONE_Y
+    quote_y = TEXT_ZONE_Y + max(6, (AVAIL_H - total_h) // 2)
 
     for i, line in enumerate(lines):
-        y = quote_y + i * LINE_H
-        d.text((MARGIN_L + 2, y + 2), line, font=_CF_QUOTE, fill=(0, 0, 0, 100))
-        d.text((MARGIN_L,     y),     line, font=_CF_QUOTE, fill=(245, 241, 232, 255))
+        y  = quote_y + i * LINE_H
+        bb = d.textbbox((0, 0), line, font=_CF_QUOTE)
+        lw = bb[2] - bb[0]
+        x  = (W - lw) // 2
+        d.text((x + 1, y + 2), line, font=_CF_QUOTE, fill=(0, 0, 0, 82))
+        d.text((x,     y),     line, font=_CF_QUOTE, fill=(245, 241, 232, 255))
 
-    # Séparateur doré + losange
-    SEP_Y = H - BOT_RSV + 8
-    SEP_W = 210
-    d.line([(MARGIN_L, SEP_Y), (MARGIN_L + SEP_W, SEP_Y)],
-           fill=(*GOLD, 170), width=2)
-    MX = MARGIN_L + SEP_W + 9
-    d.polygon([(MX, SEP_Y), (MX + 7, SEP_Y - 5),
-               (MX + 14, SEP_Y), (MX + 7, SEP_Y + 5)],
-              fill=(*GOLD, 150))
+    # Separateur centre
+    SEP_Y    = H - BOT_RSV + 6
+    SEP_HALF = 90
+    DX       = W // 2 - 7
+    d.line([(DX - SEP_HALF - 10, SEP_Y), (DX - 10, SEP_Y)], fill=(*GOLD, 148), width=1)
+    d.polygon([(DX, SEP_Y), (DX + 7, SEP_Y - 5),
+               (DX + 14, SEP_Y), (DX + 7, SEP_Y + 5)], fill=(*GOLD, 135))
+    d.line([(DX + 24, SEP_Y), (DX + 24 + SEP_HALF, SEP_Y)], fill=(*GOLD, 148), width=1)
 
-    # Nom du personnage
-    NAME_Y = H - BOT_RSV + 18
-    d.text((MARGIN_L + 2, NAME_Y + 2), perso, font=_CF_NAME, fill=(0, 0, 0, 115))
-    d.text((MARGIN_L,     NAME_Y),     perso, font=_CF_NAME, fill=(255, 255, 255, 255))
+    # Nom personnage centre
+    NAME_Y  = SEP_Y + 12
+    name_bb = d.textbbox((0, 0), perso, font=_CF_NAME)
+    nx      = (W - (name_bb[2] - name_bb[0])) // 2
+    d.text((nx + 1, NAME_Y + 2), perso, font=_CF_NAME, fill=(0, 0, 0, 100))
+    d.text((nx,     NAME_Y),     perso, font=_CF_NAME, fill=(255, 255, 255, 255))
 
-    # Série en or
-    SERIE_Y = NAME_Y + 38
-    d.text((MARGIN_L, SERIE_Y), f”— {serie.upper()}”,
-           font=_CF_SERIE, fill=(*GOLD, 215))
+    # Serie doree centree
+    SERIE_Y   = NAME_Y + 38
+    serie_txt = f"— {serie.upper()} —"
+    sb        = d.textbbox((0, 0), serie_txt, font=_CF_SERIE)
+    sx        = (W - (sb[2] - sb[0])) // 2
+    d.text((sx, SERIE_Y), serie_txt, font=_CF_SERIE, fill=(*GOLD, 205))
 
     return overlay
 
 
 async def make_citation_image(quote_data: dict) -> tuple:
-    “””Génère une carte 900x500 — GIF perso fondu à droite, texte propre à gauche.”””
-    W, H = 900, 500
+    """Genere une carte 1024x512 — perso plein format fondu vers le bas, texte centre en bas."""
+    W, H = 1024, 512
 
-    _entry = LOCAL_CHAR_GIFS.get(quote_data[“character”])
+    _entry = LOCAL_CHAR_GIFS.get(quote_data["character"])
     if isinstance(_entry, list):
         _avail = [p for p in _entry if os.path.exists(p)]
         gif_path = random.choice(_avail) if _avail else None
@@ -1075,31 +1074,29 @@ async def make_citation_image(quote_data: dict) -> tuple:
     else:
         gif_path = next((p for p in _FALLBACK_RANK_GIFS if os.path.exists(p)), None)
 
-    citation = quote_data[“quote”]
-    perso    = quote_data[“character”]
-    serie    = quote_data[“anime”]
+    citation = quote_data["quote"]
+    perso    = quote_data["character"]
+    serie    = quote_data["anime"]
 
     def _render() -> tuple:
         overlay   = _build_citation_overlay(W, H, citation, perso, serie)
-        fade_mask = _make_char_fade_mask(W, H)
+        char_mask = _make_char_full_bleed_mask(W, H)
         BG        = (5, 5, 12, 255)
 
         def _composite(src_frame: Image.Image) -> Image.Image:
-            base = Image.new(“RGBA”, (W, H), BG)
-            # Composer la frame GIF sur fond sombre (gère la transparence GIF)
-            char_rgba = src_frame.convert(“RGBA”).resize((W, H), Image.LANCZOS)
-            char_flat = Image.alpha_composite(Image.new(“RGBA”, (W, H), BG), char_rgba)
-            # Appliquer le masque de fondu gauche→droite
-            char_flat.putalpha(fade_mask)
+            base      = Image.new("RGBA", (W, H), BG)
+            char_rgba = src_frame.convert("RGBA").resize((W, H), Image.LANCZOS)
+            char_flat = Image.alpha_composite(Image.new("RGBA", (W, H), BG), char_rgba)
+            char_flat.putalpha(char_mask)
             base = Image.alpha_composite(base, char_flat)
             base = Image.alpha_composite(base, overlay)
-            return base.convert(“RGB”)
+            return base.convert("RGB")
 
         if not gif_path or not os.path.exists(gif_path):
-            canvas = Image.new(“RGBA”, (W, H), BG)
-            result = Image.alpha_composite(canvas, overlay).convert(“RGB”)
+            canvas = Image.new("RGBA", (W, H), BG)
+            result = Image.alpha_composite(canvas, overlay).convert("RGB")
             buf    = io.BytesIO()
-            result.save(buf, format=”PNG”)
+            result.save(buf, format="PNG")
             buf.seek(0)
             return buf, False
 
@@ -1113,7 +1110,7 @@ async def make_citation_image(quote_data: dict) -> tuple:
             src.seek(0)
             out = _composite(src.copy())
             buf = io.BytesIO()
-            out.save(buf, format=”PNG”)
+            out.save(buf, format="PNG")
             buf.seek(0)
             return buf, False
 
@@ -1124,20 +1121,20 @@ async def make_citation_image(quote_data: dict) -> tuple:
             try:
                 src.seek(i)
                 frames.append(_composite(src.copy()))
-                durations.append(max(55, src.info.get(“duration”, 80) * step))
+                durations.append(max(55, src.info.get("duration", 80) * step))
             except Exception:
                 pass
 
         if not frames:
             buf = io.BytesIO()
-            Image.new(“RGB”, (W, H), (5, 5, 12)).save(buf, format=”PNG”)
+            Image.new("RGB", (W, H), (5, 5, 12)).save(buf, format="PNG")
             buf.seek(0)
             return buf, False
 
         pal = [f.quantize(colors=256, method=Image.Quantize.MEDIANCUT,
                           dither=Image.Dither.NONE) for f in frames]
         buf = io.BytesIO()
-        pal[0].save(buf, format=”GIF”, save_all=True, append_images=pal[1:],
+        pal[0].save(buf, format="GIF", save_all=True, append_images=pal[1:],
                     duration=durations, loop=0, disposal=2, optimize=False)
         buf.seek(0)
         return buf, True
