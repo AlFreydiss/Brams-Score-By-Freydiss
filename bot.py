@@ -934,11 +934,11 @@ def _cit_font(name, size):
             return ImageFont.truetype(p, size)
     return ImageFont.load_default()
 
-_CF_QUOTE  = _cit_font("BebasNeue-Regular.ttf",        50)
-_CF_NAME   = _cit_font("CormorantGaramond-Bold.ttf",   38)
-_CF_SERIE  = _cit_font("Rajdhani-SemiBold.ttf",        19)
+_CF_QUOTE  = _cit_font("BebasNeue-Regular.ttf",        56)
+_CF_NAME   = _cit_font("CormorantGaramond-Bold.ttf",   44)
+_CF_SERIE  = _cit_font("Rajdhani-SemiBold.ttf",        21)
 _CF_WM     = _cit_font("Rajdhani-SemiBold.ttf",        14)
-_CF_QMARK  = _cit_font("CormorantGaramond-Bold.ttf",   65)
+_CF_QMARK  = _cit_font("CormorantGaramond-Bold.ttf",   80)
 
 
 def _make_char_full_bleed_mask(w: int, h: int) -> Image.Image:
@@ -956,18 +956,24 @@ def _build_citation_overlay(W: int, H: int, citation: str, perso: str, serie: st
     overlay = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     d = ImageDraw.Draw(overlay)
     GOLD   = (215, 175, 58)
-    MARGIN = 52
+    MARGIN = 48
 
-    # Degrade doux bas
-    GRAD_S = int(H * 0.42)
+    # Teinte sombre sur toute l'image (tue la paleur du perso)
+    for y in range(H):
+        t = y / H
+        a = int(60 * (1 - t) + 30 * t)
+        d.line([(0, y), (W, y)], fill=(0, 0, 8, a))
+
+    # Degrade bas fort et dense
+    GRAD_S = int(H * 0.38)
     for y in range(GRAD_S, H):
         t = (y - GRAD_S) / (H - GRAD_S)
-        d.line([(0, y), (W, y)], fill=(3, 4, 16, int(170 * (t ** 0.68))))
+        d.line([(0, y), (W, y)], fill=(2, 3, 12, int(210 * (t ** 0.58))))
 
     # Vignette bords
-    for i in range(55):
-        t = ((55 - i) / 55) ** 2
-        a = int(80 * t)
+    for i in range(70):
+        t = ((70 - i) / 70) ** 2
+        a = int(100 * t)
         d.line([(0, i), (W, i)], fill=(0, 0, 0, a))
         d.line([(i, 0), (i, H // 2)], fill=(0, 0, 0, a))
         d.line([(W - 1 - i, 0), (W - 1 - i, H // 2)], fill=(0, 0, 0, a))
@@ -975,10 +981,10 @@ def _build_citation_overlay(W: int, H: int, citation: str, perso: str, serie: st
     # Watermark
     WM    = "BRAMS COMMUNITY"
     wm_bb = d.textbbox((0, 0), WM, font=_CF_WM)
-    d.text((W - (wm_bb[2] - wm_bb[0]) - 18, 14), WM, font=_CF_WM, fill=(255, 255, 255, 22))
+    d.text((W - (wm_bb[2] - wm_bb[0]) - 20, 16), WM, font=_CF_WM, fill=(255, 255, 255, 30))
 
-    # Wrap citation
-    MAX_W = int(W * 0.46)
+    # Wrap citation — zone large pour remplir la carte
+    MAX_W = int(W * 0.72)
     words, lines, cur = citation.split(), [], ""
     for word in words:
         test = (cur + " " + word).strip()
@@ -995,7 +1001,7 @@ def _build_citation_overlay(W: int, H: int, citation: str, perso: str, serie: st
     if cur and len(lines) < 3:
         lines.append(cur)
     if not lines:
-        lines = [citation[:45]]
+        lines = [citation[:50]]
     if len(lines) == 3:
         last = lines[-1]
         while last:
@@ -1006,44 +1012,49 @@ def _build_citation_overlay(W: int, H: int, citation: str, perso: str, serie: st
         lines[-1] = last + " ..."
 
     # Layout calcule depuis le bas
-    LINE_H  = 48
+    LINE_H  = 60
     n       = len(lines)
-    NAME_H  = 42
-    GAP_BOT = 14
-    GAP_NS  = 10
-    GAP_SN  = 16
-    GAP_TS  = 20
-    total   = n * LINE_H + GAP_TS + GAP_SN + NAME_H + GAP_NS + 22 + GAP_BOT
+    NAME_H  = 48
+    GAP_BOT = 16
+    GAP_NS  = 12
+    GAP_SN  = 20
+    GAP_TS  = 24
+    total   = n * LINE_H + GAP_TS + GAP_SN + NAME_H + GAP_NS + 24 + GAP_BOT
     quote_y = H - total
 
-    # Guillemet dore + ligne fine au-dessus
-    d.line([(MARGIN, quote_y - 16), (MARGIN + 55, quote_y - 16)], fill=(*GOLD, 160), width=1)
-    d.text((MARGIN - 3, quote_y - 14), "\u201c", font=_CF_QMARK, fill=(*GOLD, 210))
+    # Barre doree verticale gauche (haute)
+    BAR_TOP = quote_y - 20
+    d.rectangle([(MARGIN - 16, BAR_TOP), (MARGIN - 12, H - GAP_BOT)], fill=(*GOLD, 230))
 
-    # Texte citation
+    # Guillemet dore visible au-dessus
+    d.text((MARGIN - 4, quote_y - 22), "\u201c", font=_CF_QMARK, fill=(*GOLD, 220))
+
+    # Texte citation — ombre epaisse pour lisibilite
     for i, line in enumerate(lines):
         y = quote_y + i * LINE_H
-        d.text((MARGIN + 2, y + 2), line, font=_CF_QUOTE, fill=(0, 0, 0, 170))
-        d.text((MARGIN,     y),     line, font=_CF_QUOTE, fill=(255, 255, 255, 255))
+        # Ombre forte
+        for ox, oy in [(2, 2), (3, 3), (-1, 2)]:
+            d.text((MARGIN + ox, y + oy), line, font=_CF_QUOTE, fill=(0, 0, 0, 200))
+        d.text((MARGIN, y), line, font=_CF_QUOTE, fill=(255, 255, 255, 255))
 
-    # Separateur ──── ◆ ────
+    # Separateur large et visible
     SEP_Y  = quote_y + n * LINE_H + GAP_TS
-    SEP_MX = MARGIN + MAX_W // 2
     SEP_R  = MARGIN + MAX_W
-    d.line([(MARGIN, SEP_Y), (SEP_MX - 10, SEP_Y)], fill=(*GOLD, 165), width=1)
-    d.polygon([(SEP_MX - 7, SEP_Y), (SEP_MX, SEP_Y - 5),
-               (SEP_MX + 7, SEP_Y), (SEP_MX, SEP_Y + 5)], fill=(*GOLD, 200))
-    d.line([(SEP_MX + 10, SEP_Y), (SEP_R, SEP_Y)], fill=(*GOLD, 165), width=1)
+    SEP_MX = MARGIN + MAX_W // 2
+    d.line([(MARGIN, SEP_Y), (SEP_MX - 14, SEP_Y)], fill=(*GOLD, 200), width=2)
+    d.polygon([(SEP_MX - 9, SEP_Y), (SEP_MX, SEP_Y - 7),
+               (SEP_MX + 9, SEP_Y), (SEP_MX, SEP_Y + 7)], fill=(*GOLD, 240))
+    d.line([(SEP_MX + 14, SEP_Y), (SEP_R, SEP_Y)], fill=(*GOLD, 200), width=2)
 
-    # Nom perso en or
+    # Nom perso en or, grand
     NAME_Y = SEP_Y + GAP_SN
-    d.text((MARGIN + 1, NAME_Y + 1), perso, font=_CF_NAME, fill=(0, 0, 0, 130))
+    d.text((MARGIN + 2, NAME_Y + 2), perso, font=_CF_NAME, fill=(0, 0, 0, 160))
     d.text((MARGIN,     NAME_Y),     perso, font=_CF_NAME, fill=(*GOLD, 255))
 
-    # Serie espacee
-    SERIE_Y  = NAME_Y + NAME_H + GAP_NS
+    # Serie en dessous, espacee
+    SERIE_Y   = NAME_Y + NAME_H + GAP_NS
     serie_str = "  ".join(serie.upper())
-    d.text((MARGIN, SERIE_Y), serie_str, font=_CF_SERIE, fill=(*GOLD, 160))
+    d.text((MARGIN, SERIE_Y), serie_str, font=_CF_SERIE, fill=(*GOLD, 180))
 
     return overlay
 
