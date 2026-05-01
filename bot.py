@@ -934,7 +934,7 @@ def _cit_font(name, size):
             return ImageFont.truetype(p, size)
     return ImageFont.load_default()
 
-_CF_QUOTE  = _cit_font("Sephora & Hayden.ttf",         46)
+_CF_QUOTE  = _cit_font("BebasNeue-Regular.ttf",        52)
 _CF_NAME   = _cit_font("CormorantGaramond-Bold.ttf",   34)
 _CF_SERIE  = _cit_font("Rajdhani-SemiBold.ttf",        20)
 _CF_WM     = _cit_font("Rajdhani-SemiBold.ttf",        14)
@@ -958,43 +958,32 @@ def _make_char_full_bleed_mask(w: int, h: int) -> Image.Image:
 
 
 def _build_citation_overlay(W: int, H: int, citation: str, perso: str, serie: str) -> Image.Image:
-    """Overlay RGBA — perso plein format, texte centre en bas sur zone sombre."""
     overlay = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     d = ImageDraw.Draw(overlay)
-    GOLD = (215, 175, 58)
+    GOLD   = (215, 175, 58)
+    MARGIN = 48
 
-    # Gradient bas : zone texte sombre
-    GRAD_S = int(H * 0.44)
+    GRAD_S = int(H * 0.38)
     for y in range(GRAD_S, H):
         t = (y - GRAD_S) / (H - GRAD_S)
-        a = int(155 * min(1.0, t))
-        d.line([(0, y), (W, y)], fill=(4, 6, 20, a))
+        d.line([(0, y), (W, y)], fill=(3, 4, 14, int(230 * (t ** 0.55))))
 
-    # Vignette bords haut + cotes
-    VIGN = 55
-    for i in range(VIGN):
-        t = ((VIGN - i) / VIGN) ** 2
-        a = int(80 * t)
+    for i in range(60):
+        t = ((60 - i) / 60) ** 2
+        a = int(90 * t)
         d.line([(0, i), (W, i)], fill=(0, 0, 0, a))
         d.line([(i, 0), (i, H // 2)], fill=(0, 0, 0, a))
         d.line([(W - 1 - i, 0), (W - 1 - i, H // 2)], fill=(0, 0, 0, a))
 
-    # Filet dore discret a la limite zone sombre
-    d.line([(0, GRAD_S), (W, GRAD_S)], fill=(*GOLD, 38), width=1)
+    d.rectangle([(MARGIN - 18, int(H * 0.52)), (MARGIN - 14, H - 90)], fill=(*GOLD, 220))
 
-    # Watermark discret coin haut droit
     WM    = "BRAMS COMMUNITY"
     wm_bb = d.textbbox((0, 0), WM, font=_CF_WM)
-    d.text((W - (wm_bb[2] - wm_bb[0]) - 20, 16), WM, font=_CF_WM, fill=(255, 255, 255, 28))
+    d.text((W - (wm_bb[2] - wm_bb[0]) - 18, 14), WM, font=_CF_WM, fill=(255, 255, 255, 25))
 
-    # Grand guillemet fantome derriere le texte
-    TEXT_ZONE_Y = int(H * 0.52)
-    gm_bb = d.textbbox((0, 0), "“", font=_CF_QMARK)
-    gm_x  = (W - (gm_bb[2] - gm_bb[0])) // 2 - 40
-    d.text((gm_x, TEXT_ZONE_Y - 26), "“", font=_CF_QMARK, fill=(*GOLD, 18))
+    d.text((MARGIN - 14, int(H * 0.35)), "\u201c", font=_CF_QMARK, fill=(*GOLD, 16))
 
-    # Wrap citation par mesure pixel
-    MAX_W = int(W * 0.76)
+    MAX_W = int(W * 0.58)
     words, lines, cur = citation.split(), [], ""
     for word in words:
         test = (cur + " " + word).strip()
@@ -1011,58 +1000,39 @@ def _build_citation_overlay(W: int, H: int, citation: str, perso: str, serie: st
     if cur and len(lines) < 3:
         lines.append(cur)
     if not lines:
-        lines = [citation[:50]]
+        lines = [citation[:45]]
     if len(lines) == 3:
         last = lines[-1]
         while last:
-            bb = d.textbbox((0, 0), last + " …", font=_CF_QUOTE)
+            bb = d.textbbox((0, 0), last + " ...", font=_CF_QUOTE)
             if bb[2] - bb[0] <= MAX_W:
                 break
             last = last.rsplit(" ", 1)[0]
-        lines[-1] = last + " …"
+        lines[-1] = last + " ..."
 
-    LINE_H  = 44
-    BOT_RSV = 100
-    total_h = len(lines) * LINE_H
-    AVAIL_H = H - BOT_RSV - TEXT_ZONE_Y
-    quote_y = TEXT_ZONE_Y + max(6, (AVAIL_H - total_h) // 2)
+    LINE_H  = 56
+    BOT_RSV = 95
+    quote_y = int(H * 0.53)
 
     for i, line in enumerate(lines):
-        y  = quote_y + i * LINE_H
-        bb = d.textbbox((0, 0), line, font=_CF_QUOTE)
-        lw = bb[2] - bb[0]
-        x  = (W - lw) // 2
-        d.text((x + 2, y + 3), line, font=_CF_QUOTE, fill=(0, 0, 0, 160))
-        d.text((x,     y),     line, font=_CF_QUOTE, fill=(255, 255, 255, 255))
+        y = quote_y + i * LINE_H
+        d.text((MARGIN + 2, y + 2), line, font=_CF_QUOTE, fill=(0, 0, 0, 180))
+        d.text((MARGIN,     y),     line, font=_CF_QUOTE, fill=(255, 255, 255, 255))
 
-    # Separateur centre
-    SEP_Y    = H - BOT_RSV + 6
-    SEP_HALF = 90
-    DX       = W // 2 - 7
-    d.line([(DX - SEP_HALF - 10, SEP_Y), (DX - 10, SEP_Y)], fill=(*GOLD, 148), width=1)
-    d.polygon([(DX, SEP_Y), (DX + 7, SEP_Y - 5),
-               (DX + 14, SEP_Y), (DX + 7, SEP_Y + 5)], fill=(*GOLD, 135))
-    d.line([(DX + 24, SEP_Y), (DX + 24 + SEP_HALF, SEP_Y)], fill=(*GOLD, 148), width=1)
+    SEP_Y = H - BOT_RSV + 2
+    d.line([(MARGIN, SEP_Y), (MARGIN + 140, SEP_Y)], fill=(*GOLD, 160), width=1)
+    DX = MARGIN + 148
+    d.polygon([(DX, SEP_Y), (DX + 6, SEP_Y - 4), (DX + 12, SEP_Y), (DX + 6, SEP_Y + 4)], fill=(*GOLD, 140))
 
-    # Nom personnage centre
-    NAME_Y  = SEP_Y + 12
-    name_bb = d.textbbox((0, 0), perso, font=_CF_NAME)
-    nx      = (W - (name_bb[2] - name_bb[0])) // 2
-    d.text((nx + 1, NAME_Y + 2), perso, font=_CF_NAME, fill=(0, 0, 0, 100))
-    d.text((nx,     NAME_Y),     perso, font=_CF_NAME, fill=(255, 255, 255, 255))
-
-    # Serie doree centree
-    SERIE_Y   = NAME_Y + 38
-    serie_txt = f"— {serie.upper()} —"
-    sb        = d.textbbox((0, 0), serie_txt, font=_CF_SERIE)
-    sx        = (W - (sb[2] - sb[0])) // 2
-    d.text((sx, SERIE_Y), serie_txt, font=_CF_SERIE, fill=(*GOLD, 205))
+    NAME_Y = SEP_Y + 10
+    d.text((MARGIN + 1, NAME_Y + 1), perso, font=_CF_NAME, fill=(0, 0, 0, 120))
+    d.text((MARGIN,     NAME_Y),     perso, font=_CF_NAME, fill=(255, 255, 255, 255))
+    d.text((MARGIN, NAME_Y + 34), f"\u2014 {serie.upper()}", font=_CF_SERIE, fill=(*GOLD, 200))
 
     return overlay
 
 
 async def make_citation_image(quote_data: dict) -> tuple:
-    """Genere une carte 1024x512 — perso plein format fondu vers le bas, texte centre en bas."""
     W, H = 1024, 512
 
     _entry = LOCAL_CHAR_GIFS.get(quote_data["character"])
