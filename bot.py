@@ -934,7 +934,7 @@ def _cit_font(name, size):
             return ImageFont.truetype(p, size)
     return ImageFont.load_default()
 
-_CF_QUOTE  = _cit_font("CormorantGaramond-Italic.ttf", 38)
+_CF_QUOTE  = _cit_font("CormorantGaramond-Bold.ttf",   38)
 _CF_NAME   = _cit_font("CormorantGaramond-Bold.ttf",   34)
 _CF_SERIE  = _cit_font("Rajdhani-SemiBold.ttf",        20)
 _CF_WM     = _cit_font("Rajdhani-SemiBold.ttf",        14)
