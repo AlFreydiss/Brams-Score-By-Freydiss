@@ -1032,9 +1032,7 @@ def _build_citation_overlay(W: int, H: int, citation: str, perso: str, serie: st
     # Texte citation — ombre epaisse pour lisibilite
     for i, line in enumerate(lines):
         y = quote_y + i * LINE_H
-        # Ombre forte
-        for ox, oy in [(2, 2), (3, 3), (-1, 2)]:
-            d.text((MARGIN + ox, y + oy), line, font=_CF_QUOTE, fill=(0, 0, 0, 200))
+        d.text((MARGIN + 2, y + 2), line, font=_CF_QUOTE, fill=(0, 0, 0, 180))
         d.text((MARGIN, y), line, font=_CF_QUOTE, fill=(255, 255, 255, 255))
 
     # Separateur large et visible
