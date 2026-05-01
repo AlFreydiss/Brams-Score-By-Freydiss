@@ -964,10 +964,10 @@ def _build_citation_overlay(W: int, H: int, citation: str, perso: str, serie: st
     GOLD = (215, 175, 58)
 
     # Gradient bas : zone texte sombre
-    GRAD_S = int(H * 0.52)
+    GRAD_S = int(H * 0.44)
     for y in range(GRAD_S, H):
         t = (y - GRAD_S) / (H - GRAD_S)
-        a = int(190 * min(1.0, t ** 0.80))
+        a = int(155 * min(1.0, t))
         d.line([(0, y), (W, y)], fill=(4, 6, 20, a))
 
     # Vignette bords haut + cotes
