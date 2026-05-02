@@ -953,7 +953,7 @@ def _make_char_full_bleed_mask(w: int, h: int) -> Image.Image:
 
 
 def _build_citation_overlay(W: int, H: int, citation: str, perso: str, serie: str) -> Image.Image:
-    overlay = Image.new(“RGBA”, (W, H), (0, 0, 0, 0))
+    overlay = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     d = ImageDraw.Draw(overlay)
     GOLD   = (212, 175, 55)
     IVORY  = (248, 243, 230)
@@ -973,7 +973,7 @@ def _build_citation_overlay(W: int, H: int, citation: str, perso: str, serie: st
         )
 
     # Watermark
-    WM    = “BRAMS COMMUNITY”
+    WM    = "BRAMS COMMUNITY"
     wm_bb = d.textbbox((0, 0), WM, font=_CF_WM)
     d.text((W - (wm_bb[2] - wm_bb[0]) - 20, 16), WM, font=_CF_WM, fill=(255, 255, 255, 22))
 
@@ -981,9 +981,9 @@ def _build_citation_overlay(W: int, H: int, citation: str, perso: str, serie: st
     TEXT_ZONE_W = int(W * 0.48)
 
     # Wrap citation
-    words, lines, cur = citation.split(), [], “”
+    words, lines, cur = citation.split(), [], ""
     for word in words:
-        test = (cur + “ “ + word).strip()
+        test = (cur + " " + word).strip()
         bb   = d.textbbox((0, 0), test, font=_CF_QUOTE)
         if bb[2] - bb[0] <= TEXT_ZONE_W:
             cur = test
@@ -992,7 +992,7 @@ def _build_citation_overlay(W: int, H: int, citation: str, perso: str, serie: st
                 lines.append(cur)
             cur = word
         if len(lines) == 4:
-            cur = “”
+            cur = ""
             break
     if cur and len(lines) < 4:
         lines.append(cur)
@@ -1001,14 +1001,14 @@ def _build_citation_overlay(W: int, H: int, citation: str, perso: str, serie: st
     if len(lines) == 4:
         last = lines[-1]
         while last:
-            bb = d.textbbox((0, 0), last + “…”, font=_CF_QUOTE)
+            bb = d.textbbox((0, 0), last + "…", font=_CF_QUOTE)
             if bb[2] - bb[0] <= TEXT_ZONE_W:
                 break
-            last = last.rsplit(“ “, 1)[0]
-        lines[-1] = last + “…”
+            last = last.rsplit(" ", 1)[0]
+        lines[-1] = last + "…"
 
     # Hauteurs mesurées proprement (évite le chevauchement)
-    qm_bb    = d.textbbox((0, 0), ““”, font=_CF_QMARK)
+    qm_bb    = d.textbbox((0, 0), """, font=_CF_QMARK)
     qm_h     = qm_bb[3] - qm_bb[1]
     # BebasNeue : utiliser une hauteur fixe basée sur la taille pour éviter les bbox aberrants
     name_h   = 46
@@ -1030,7 +1030,7 @@ def _build_citation_overlay(W: int, H: int, citation: str, perso: str, serie: st
     d.rectangle([(MARGIN - 10, cur_y + 6), (MARGIN - 7, block_y + total_h)], fill=(*GOLD, 180))
 
     # Guillemet ouvrant
-    d.text((MARGIN, cur_y), ““”, font=_CF_QMARK, fill=(*GOLD, 235))
+    d.text((MARGIN, cur_y), """, font=_CF_QMARK, fill=(*GOLD, 235))
     cur_y += qm_h + GAP_QM_TEXT
 
     # Texte citation
@@ -1050,7 +1050,7 @@ def _build_citation_overlay(W: int, H: int, citation: str, perso: str, serie: st
     cur_y += name_h + GAP_NAME_SER
 
     # Serie
-    serie_str = “  “.join(serie.upper())
+    serie_str = "  ".join(serie.upper())
     d.text((MARGIN, cur_y), serie_str, font=_CF_SERIE, fill=(*GOLD, 160))
 
     return overlay
