@@ -7,18 +7,17 @@ def _cit_font(name, size):
         return ImageFont.truetype(name, size)
     return ImageFont.load_default()
 
-_CF_QUOTE  = _cit_font("CormorantGaramond-Italic.ttf", 44)
-_CF_NAME   = _cit_font("CormorantGaramond-Bold.ttf",   46)
-_CF_SERIE  = _cit_font("Rajdhani-Light.ttf",           15)
-_CF_WM     = _cit_font("Rajdhani-SemiBold.ttf",        14)
-_CF_QMARK  = _cit_font("CormorantGaramond-Italic.ttf", 120)
+_CF_QUOTE  = _cit_font("Righteous-Regular.ttf",        32)
+_CF_NAME   = _cit_font("BebasNeue-Regular.ttf",        54)
+_CF_SERIE  = _cit_font("Rajdhani-SemiBold.ttf",        16)
+_CF_WM     = _cit_font("Rajdhani-SemiBold.ttf",        13)
+_CF_QMARK  = _cit_font("CormorantGaramond-Bold.ttf",   96)
 
 GOLD   = (212, 175, 55)
 IVORY  = (248, 243, 230)
 MARGIN = 52
 W, H   = 1024, 512
 
-# Charger le GIF de Thorfinn (première frame)
 gif = Image.open("thorfinnn citation.gif")
 gif.seek(0)
 frame = gif.convert("RGBA").resize((W, H))
@@ -37,19 +36,18 @@ bg.paste(frame, mask=mask)
 overlay = Image.new("RGBA", (W, H), (0, 0, 0, 0))
 d = ImageDraw.Draw(overlay)
 
-# Gradient horizontal
-GRAD_W = int(W * 0.62)
-for x in range(GRAD_W):
-    t = 1 - (x / GRAD_W) ** 1.6
-    d.line([(x, 0), (x, H)], fill=(4, 4, 12, int(205 * t)))
+SOLID_X = int(W * 0.32)
+FADE_X  = int(W * 0.60)
+d.rectangle([(0, 0), (SOLID_X, H)], fill=(4, 4, 12, 210))
+STEPS = 40
+for i in range(STEPS):
+    x = SOLID_X + int(i * (FADE_X - SOLID_X) / STEPS)
+    t = 1 - (i / STEPS) ** 0.9
+    d.rectangle(
+        [(x, 0), (x + max(1, (FADE_X - SOLID_X) // STEPS), H)],
+        fill=(4, 4, 12, int(210 * t))
+    )
 
-# Vignettes haut/bas
-for i in range(40):
-    t = ((40 - i) / 40) ** 2
-    d.line([(0, i), (W, i)], fill=(0, 0, 0, int(70 * t)))
-    d.line([(0, H - 1 - i), (W, H - 1 - i)], fill=(0, 0, 0, int(90 * t)))
-
-# Watermark
 WM = "BRAMS COMMUNITY"
 wm_bb = d.textbbox((0, 0), WM, font=_CF_WM)
 d.text((W - (wm_bb[2] - wm_bb[0]) - 20, 16), WM, font=_CF_WM, fill=(255, 255, 255, 22))
@@ -58,7 +56,7 @@ citation = "Un vrai guerrier n'a pas besoin d'ennemis."
 perso    = "Thorfinn"
 serie    = "Vinland Saga"
 
-TEXT_ZONE_W = int(W * 0.50)
+TEXT_ZONE_W = int(W * 0.48)
 words, lines, cur = citation.split(), [], ""
 for word in words:
     test = (cur + " " + word).strip()
@@ -72,40 +70,37 @@ for word in words:
         cur = ""; break
 if cur and len(lines) < 4: lines.append(cur)
 
-qm_bb    = d.textbbox((0, 0), "“", font=_CF_QMARK)
-qm_h     = qm_bb[3] - qm_bb[1]
-name_bb  = d.textbbox((0, 0), perso, font=_CF_NAME)
-name_h   = name_bb[3] - name_bb[1]
-serie_bb = d.textbbox((0, 0), "  ".join(serie.upper()), font=_CF_SERIE)
-serie_h  = serie_bb[3] - serie_bb[1]
+qm_bb  = d.textbbox((0, 0), "“", font=_CF_QMARK)
+qm_h   = qm_bb[3] - qm_bb[1]
+name_h  = 46
+serie_h = 18
 
-LINE_H = 56; n = len(lines)
-GAP_QM_TEXT = 4; GAP_TEXT_SEP = 22; GAP_SEP_NAME = 14; GAP_NAME_SER = 10
+LINE_H = 44; n = len(lines)
+GAP_QM_TEXT = 6; GAP_TEXT_SEP = 20; GAP_SEP_NAME = 12; GAP_NAME_SER = 14
 
-total_h = qm_h + GAP_QM_TEXT + n * LINE_H + GAP_TEXT_SEP + 2 + GAP_SEP_NAME + name_h + GAP_NAME_SER + serie_h
-block_y = max(28, (H - total_h) // 2)
+total_h = qm_h + GAP_QM_TEXT + n * LINE_H + GAP_TEXT_SEP + 3 + GAP_SEP_NAME + name_h + GAP_NAME_SER + serie_h
+block_y = max(24, (H - total_h) // 2)
 cur_y = block_y
 
-d.rectangle([(MARGIN - 8, cur_y + 10), (MARGIN - 6, block_y + total_h)], fill=(*GOLD, 70))
+d.rectangle([(MARGIN - 10, cur_y + 6), (MARGIN - 7, block_y + total_h)], fill=(*GOLD, 180))
 
-d.text((MARGIN, cur_y), "“", font=_CF_QMARK, fill=(*GOLD, 230))
+d.text((MARGIN, cur_y), "“", font=_CF_QMARK, fill=(*GOLD, 235))
 cur_y += qm_h + GAP_QM_TEXT
 
 for i, line in enumerate(lines):
     y = cur_y + i * LINE_H
-    d.text((MARGIN + 2, y + 2), line, font=_CF_QUOTE, fill=(0, 0, 0, 110))
-    d.text((MARGIN, y), line, font=_CF_QUOTE, fill=(*IVORY, 245))
+    d.text((MARGIN + 2, y + 2), line, font=_CF_QUOTE, fill=(0, 0, 0, 120))
+    d.text((MARGIN, y), line, font=_CF_QUOTE, fill=(*IVORY, 248))
 cur_y += n * LINE_H + GAP_TEXT_SEP
 
-d.line([(MARGIN, cur_y),     (MARGIN + 70, cur_y)],     fill=(*GOLD, 210), width=1)
-d.line([(MARGIN, cur_y + 4), (MARGIN + 35, cur_y + 4)], fill=(*GOLD, 100), width=1)
-cur_y += 2 + GAP_SEP_NAME
+d.rectangle([(MARGIN, cur_y), (MARGIN + 60, cur_y + 2)], fill=(*GOLD, 220))
+cur_y += 3 + GAP_SEP_NAME
 
 d.text((MARGIN + 2, cur_y + 2), perso, font=_CF_NAME, fill=(0, 0, 0, 100))
 d.text((MARGIN, cur_y), perso, font=_CF_NAME, fill=(*GOLD, 255))
 cur_y += name_h + GAP_NAME_SER
 
-d.text((MARGIN, cur_y), "  ".join(serie.upper()), font=_CF_SERIE, fill=(*GOLD, 145))
+d.text((MARGIN, cur_y), "  ".join(serie.upper()), font=_CF_SERIE, fill=(*GOLD, 160))
 
 bg.paste(overlay, mask=overlay)
 bg.save("preview_citation.png")
