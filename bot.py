@@ -1675,10 +1675,7 @@ async def check_ranks_loop():
             clean_old_data(user)
             jt = user.get("join_time")
 
-            if jt:
-                hours_7d = seconds_in_period(user["vocal_sessions"], 7, join_time=jt) / 3600
-            else:
-                hours_7d = seconds_in_period(user["vocal_sessions"], 7) / 3600
+            hours_7d = seconds_in_period(user["vocal_sessions"], 7, join_time=jt) / 3600
 
             if hours_7d == 0 and old_snapshot[0] is None:
                 if total_members % 100 == 0:
@@ -2018,6 +2015,21 @@ async def serveur(interaction: discord.Interaction):
 
             start_dt = datetime.fromtimestamp(max(s["start"], cutoff7), tz=timezone.utc)
             end_dt   = datetime.fromtimestamp(s["end"], tz=timezone.utc)
+            current  = start_dt
+            while current < end_dt:
+                next_hour = current.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+                chunk = min(next_hour, end_dt) - current
+                hour_usage[current.hour] += chunk.total_seconds() / 60
+                current = next_hour
+
+        # Session vocale en cours : incluse dans le graphe heures de pointe et top salons
+        if ujt:
+            seg_start = max(ujt, cutoff7)
+            seg_end   = _now
+            if member and member.voice and member.voice.channel:
+                channel_usage[str(member.voice.channel.id)] += seg_end - seg_start
+            start_dt = datetime.fromtimestamp(seg_start, tz=timezone.utc)
+            end_dt   = datetime.fromtimestamp(seg_end,   tz=timezone.utc)
             current  = start_dt
             while current < end_dt:
                 next_hour = current.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
@@ -2630,7 +2642,7 @@ async def addheures(interaction: discord.Interaction, membre: discord.Member, he
     user["vocal_sessions"].append({"start": now - heures * 3600, "end": now, "channel": None})
     clean_old_data(user)
     _DIRTY.add(uid)
-    seconds_7d = seconds_in_period(user["vocal_sessions"], 7)
+    seconds_7d = seconds_in_period(user["vocal_sessions"], 7, join_time=user.get("join_time"))
     hours_7d = seconds_7d / 3600
     await update_rank(membre, hours_7d, announce=True)
     try:
