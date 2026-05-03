@@ -929,10 +929,27 @@ def _load_font(path: str, size: int):
         return ImageFont.load_default()
 
 # ── Fonts citation (chargées une seule fois) ──────────────────────
+_CIT_FONT_FALLBACKS = [
+    "Righteous-Regular.ttf",
+    "PirataOne-Regular.ttf",
+    "KOMIKAX_.ttf",
+]
+
 def _cit_font(name, size):
-    for p in [name, os.path.join(os.path.dirname(__file__), name)]:
+    candidates = [name, os.path.join(os.path.dirname(__file__), name)]
+    for p in candidates:
         if os.path.exists(p):
-            return ImageFont.truetype(p, size)
+            try:
+                return ImageFont.truetype(p, size)
+            except Exception:
+                pass
+    for fb in _CIT_FONT_FALLBACKS:
+        for p in [fb, os.path.join(os.path.dirname(__file__), fb)]:
+            if os.path.exists(p):
+                try:
+                    return ImageFont.truetype(p, size)
+                except Exception:
+                    pass
     return ImageFont.load_default()
 
 _CF_QUOTE  = _cit_font("Righteous-Regular.ttf",        32)
