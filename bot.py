@@ -33,6 +33,7 @@ import re
 import time
 import aiohttp
 import logging
+import traceback
 import matplotlib
 matplotlib.use("Agg")
 logging.getLogger("matplotlib.font_manager").setLevel(logging.ERROR)
@@ -1073,9 +1074,25 @@ async def make_citation_image(quote_data: dict) -> tuple:
     serie    = quote_data["anime"]
 
     def _render() -> tuple:
-        overlay   = _build_citation_overlay(W, H, citation, perso, serie)
-        char_mask = _make_char_full_bleed_mask(W, H)
-        BG        = (5, 5, 12, 255)
+        BG = (5, 5, 12, 255)
+
+        def _fallback_png(overlay_img=None) -> tuple:
+            canvas = Image.new("RGBA", (W, H), BG)
+            if overlay_img is not None:
+                result = Image.alpha_composite(canvas, overlay_img).convert("RGB")
+            else:
+                result = canvas.convert("RGB")
+            buf = io.BytesIO()
+            result.save(buf, format="PNG")
+            buf.seek(0)
+            return buf, False
+
+        try:
+            overlay   = _build_citation_overlay(W, H, citation, perso, serie)
+            char_mask = _make_char_full_bleed_mask(W, H)
+        except Exception:
+            print(f"❌ [citation] _build_citation_overlay crash:\n{traceback.format_exc()}")
+            return _fallback_png()
 
         def _composite(src_frame: Image.Image) -> Image.Image:
             base      = Image.new("RGBA", (W, H), BG)
@@ -1087,26 +1104,30 @@ async def make_citation_image(quote_data: dict) -> tuple:
             return base.convert("RGB")
 
         if not gif_path or not os.path.exists(gif_path):
-            canvas = Image.new("RGBA", (W, H), BG)
-            result = Image.alpha_composite(canvas, overlay).convert("RGB")
-            buf    = io.BytesIO()
-            result.save(buf, format="PNG")
-            buf.seek(0)
-            return buf, False
+            return _fallback_png(overlay)
 
-        src = Image.open(gif_path)
+        try:
+            src = Image.open(gif_path)
+        except Exception as e:
+            print(f"❌ [citation] Image.open({gif_path}): {e}")
+            return _fallback_png(overlay)
+
         try:
             n_frames = src.n_frames
         except Exception:
             n_frames = 1
 
         if n_frames <= 1:
-            src.seek(0)
-            out = _composite(src.copy())
-            buf = io.BytesIO()
-            out.save(buf, format="PNG")
-            buf.seek(0)
-            return buf, False
+            try:
+                src.seek(0)
+                out = _composite(src.copy())
+                buf = io.BytesIO()
+                out.save(buf, format="PNG")
+                buf.seek(0)
+                return buf, False
+            except Exception:
+                print(f"❌ [citation] composite static frame:\n{traceback.format_exc()}")
+                return _fallback_png(overlay)
 
         max_frames = 28
         step       = max(1, n_frames // max_frames)
@@ -1120,20 +1141,37 @@ async def make_citation_image(quote_data: dict) -> tuple:
                 pass
 
         if not frames:
+            return _fallback_png(overlay)
+
+        pal = []
+        for f in frames:
+            try:
+                pal.append(f.quantize(colors=256, method=Image.Quantize.MEDIANCUT,
+                                      dither=Image.Dither.NONE))
+            except Exception:
+                try:
+                    pal.append(f.quantize(colors=256))
+                except Exception:
+                    pass
+
+        if not pal:
+            print("❌ [citation] quantize a échoué sur toutes les frames — fallback PNG")
+            return _fallback_png(overlay)
+
+        try:
             buf = io.BytesIO()
-            Image.new("RGB", (W, H), (5, 5, 12)).save(buf, format="PNG")
+            pal[0].save(buf, format="GIF", save_all=True, append_images=pal[1:],
+                        duration=durations, loop=0, disposal=2, optimize=False)
+            buf.seek(0)
+            return buf, True
+        except Exception:
+            print(f"❌ [citation] sauvegarde GIF:\n{traceback.format_exc()}")
+            buf = io.BytesIO()
+            frames[0].save(buf, format="PNG")
             buf.seek(0)
             return buf, False
 
-        pal = [f.quantize(colors=256, method=Image.Quantize.MEDIANCUT,
-                          dither=Image.Dither.NONE) for f in frames]
-        buf = io.BytesIO()
-        pal[0].save(buf, format="GIF", save_all=True, append_images=pal[1:],
-                    duration=durations, loop=0, disposal=2, optimize=False)
-        buf.seek(0)
-        return buf, True
-
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     return await loop.run_in_executor(None, _render)
 
 
