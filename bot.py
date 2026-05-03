@@ -611,7 +611,7 @@ def seconds_in_period(sessions, days, join_time=None, _now=None):
         if end < cutoff:
             continue
         total += end - max(s["start"], cutoff)
-    if join_time and join_time > cutoff:
+    if join_time:
         total += _now - max(join_time, cutoff)
     return total
 
@@ -1715,13 +1715,25 @@ RANK_EMOJIS = {"Pirate": "🏴‍☠️", "Shichibukai": "⚔️", "Amiral": "�
 def build_vocal_by_day(user):
     vocal_by_day = defaultdict(float)
     msg_by_day = defaultdict(int)
+    _now_val = now_ts()
+
+    # Fenêtres glissantes de 24h pour les 7 derniers jours
+    day_windows = []
+    for i in range(7):
+        label = datetime.fromtimestamp(_now_val - i * 86400, tz=timezone.utc).strftime("%d/%m")
+        day_windows.append((label, _now_val - (i + 1) * 86400, _now_val - i * 86400))
+
+    def _distribute(start, end):
+        for label, win_start, win_end in day_windows:
+            overlap = min(end, win_end) - max(start, win_start)
+            if overlap > 0:
+                vocal_by_day[label] += overlap
+
     jt = user.get("join_time")
     if jt:
-        today = datetime.fromtimestamp(now_ts(), tz=timezone.utc).strftime("%d/%m")
-        vocal_by_day[today] += now_ts() - jt
+        _distribute(jt, _now_val)
     for s in user["vocal_sessions"]:
-        day = datetime.fromtimestamp(s["end"], tz=timezone.utc).strftime("%d/%m")
-        vocal_by_day[day] += s["end"] - s["start"]
+        _distribute(s["start"], s["end"])
     for ts in user["messages"]:
         day = datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%d/%m")
         msg_by_day[day] += 1
