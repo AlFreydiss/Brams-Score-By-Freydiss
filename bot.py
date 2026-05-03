@@ -960,34 +960,42 @@ _CF_QMARK  = _cit_font("CormorantGaramond-Bold.ttf",   96)
 
 
 def _make_char_full_bleed_mask(w: int, h: int) -> Image.Image:
-    mask = Image.new("L", (w, h), 255)
-    d    = ImageDraw.Draw(mask)
-    FADE_S = int(h * 0.42)
-    FADE_E = int(h * 0.80)
-    for y in range(FADE_S, h):
-        t = (y - FADE_S) / (FADE_E - FADE_S) if y < FADE_E else 1
-        d.line([(0, y), (w, y)], fill=max(0, int(255 * (1 - t * t))))
+    # Fondu horizontal : personnage transparent à gauche (zone texte), pleinement visible à droite
+    mask   = Image.new("L", (w, h), 255)
+    d      = ImageDraw.Draw(mask)
+    FADE_S = int(w * 0.28)
+    FADE_E = int(w * 0.60)
+    for x in range(0, FADE_E):
+        if x < FADE_S:
+            alpha = 0
+        else:
+            t = (x - FADE_S) / (FADE_E - FADE_S)
+            alpha = int(255 * (t ** 1.4))
+        d.line([(x, 0), (x, h)], fill=alpha)
     return mask
 
 
 def _build_citation_overlay(W: int, H: int, citation: str, perso: str, serie: str) -> Image.Image:
     overlay = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     d = ImageDraw.Draw(overlay)
-    GOLD   = (212, 175, 55)
-    IVORY  = (248, 243, 230)
+    GOLD  = (212, 175, 55)
+    IVORY = (248, 243, 230)
     MARGIN = 52
 
-    # Fond gauche : zone solide puis fondu propre vers la droite
-    SOLID_X = int(W * 0.32)
-    FADE_X  = int(W * 0.60)
-    d.rectangle([(0, 0), (SOLID_X, H)], fill=(4, 4, 12, 210))
+    # Assombrissement global (opacite sombre sur tout le fond)
+    d.rectangle([(0, 0), (W, H)], fill=(0, 0, 0, 145))
+
+    # Zone texte gauche encore plus sombre
+    SOLID_X = int(W * 0.38)
+    FADE_X  = int(W * 0.64)
+    d.rectangle([(0, 0), (SOLID_X, H)], fill=(4, 4, 12, 195))
     STEPS = 40
     for i in range(STEPS):
         x = SOLID_X + int(i * (FADE_X - SOLID_X) / STEPS)
-        t = 1 - (i / STEPS) ** 0.9
+        t = 1.0 - (i / STEPS) ** 0.85
         d.rectangle(
             [(x, 0), (x + max(1, (FADE_X - SOLID_X) // STEPS), H)],
-            fill=(4, 4, 12, int(210 * t))
+            fill=(4, 4, 12, int(195 * t))
         )
 
     # Watermark
@@ -995,8 +1003,7 @@ def _build_citation_overlay(W: int, H: int, citation: str, perso: str, serie: st
     wm_bb = d.textbbox((0, 0), WM, font=_CF_WM)
     d.text((W - (wm_bb[2] - wm_bb[0]) - 20, 16), WM, font=_CF_WM, fill=(255, 255, 255, 22))
 
-    # Zone texte : 48% gauche
-    TEXT_ZONE_W = int(W * 0.48)
+    TEXT_ZONE_W = int(W * 0.50)
 
     # Wrap citation
     words, lines, cur = citation.split(), [], ""
@@ -1018,38 +1025,34 @@ def _build_citation_overlay(W: int, H: int, citation: str, perso: str, serie: st
         lines = [citation[:60]]
     if len(lines) == 4:
         last = lines[-1]
-        while last:
-            bb = d.textbbox((0, 0), last + "…", font=_CF_QUOTE)
+        while last and len(last) > 1:
+            bb = d.textbbox((0, 0), last + "...", font=_CF_QUOTE)
             if bb[2] - bb[0] <= TEXT_ZONE_W:
                 break
             last = last.rsplit(" ", 1)[0]
-        lines[-1] = last + "…"
+        lines[-1] = last + "..."
 
-    # Hauteurs mesurées proprement (évite le chevauchement)
-    qm_bb    = d.textbbox((0, 0), """, font=_CF_QMARK)
-    qm_h     = qm_bb[3] - qm_bb[1]
-    # BebasNeue : utiliser une hauteur fixe basée sur la taille pour éviter les bbox aberrants
-    name_h   = 46
-    serie_h  = 18
-
+    # Hauteurs FIXES — evite les bugs de textbbox avec les fonts de fallback
+    QM_H         = 62
     LINE_H       = 44
+    NAME_H       = 52
+    SERIE_H      = 20
     GAP_QM_TEXT  = 6
     GAP_TEXT_SEP = 20
     GAP_SEP_NAME = 12
     GAP_NAME_SER = 14
     n = len(lines)
 
-    total_h = qm_h + GAP_QM_TEXT + n * LINE_H + GAP_TEXT_SEP + 3 + GAP_SEP_NAME + name_h + GAP_NAME_SER + serie_h
+    total_h = QM_H + GAP_QM_TEXT + n * LINE_H + GAP_TEXT_SEP + 3 + GAP_SEP_NAME + NAME_H + GAP_NAME_SER + SERIE_H
     block_y = max(24, (H - total_h) // 2)
+    cur_y   = block_y
 
-    cur_y = block_y
+    # Filet vertical or
+    d.rectangle([(MARGIN - 10, cur_y + 4), (MARGIN - 7, cur_y + total_h)], fill=(*GOLD, 190))
 
-    # Filet vertical or — 3px, bien visible
-    d.rectangle([(MARGIN - 10, cur_y + 6), (MARGIN - 7, block_y + total_h)], fill=(*GOLD, 180))
-
-    # Guillemet ouvrant
-    d.text((MARGIN, cur_y), """, font=_CF_QMARK, fill=(*GOLD, 235))
-    cur_y += qm_h + GAP_QM_TEXT
+    # Guillemet ASCII " — present dans tous les fonts (pas de U+201C)
+    d.text((MARGIN, cur_y), '"', font=_CF_QMARK, fill=(*GOLD, 215))
+    cur_y += QM_H + GAP_QM_TEXT
 
     # Texte citation
     for i, line in enumerate(lines):
@@ -1058,14 +1061,14 @@ def _build_citation_overlay(W: int, H: int, citation: str, perso: str, serie: st
         d.text((MARGIN, y), line, font=_CF_QUOTE, fill=(*IVORY, 248))
     cur_y += n * LINE_H + GAP_TEXT_SEP
 
-    # Separateur — tiret or
-    d.rectangle([(MARGIN, cur_y), (MARGIN + 60, cur_y + 2)], fill=(*GOLD, 220))
+    # Separateur or
+    d.rectangle([(MARGIN, cur_y), (MARGIN + 60, cur_y + 3)], fill=(*GOLD, 220))
     cur_y += 3 + GAP_SEP_NAME
 
     # Nom personnage
-    d.text((MARGIN + 2, cur_y + 2), perso, font=_CF_NAME, fill=(0, 0, 0, 100))
+    d.text((MARGIN + 2, cur_y + 2), perso, font=_CF_NAME, fill=(0, 0, 0, 110))
     d.text((MARGIN, cur_y), perso, font=_CF_NAME, fill=(*GOLD, 255))
-    cur_y += name_h + GAP_NAME_SER
+    cur_y += NAME_H + GAP_NAME_SER
 
     # Serie
     serie_str = "  ".join(serie.upper())
