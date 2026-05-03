@@ -1521,10 +1521,28 @@ async def on_ready():
 
     # Récupère les join_times des membres déjà en vocal
     data = _CACHE
+
+    # Détermine quels membres sont actuellement en vocal
+    in_voice_uids: set[str] = set()
+    for guild in bot.guilds:
+        for channel in list(guild.voice_channels) + list(guild.stage_channels):
+            for member in channel.members:
+                if not member.bot:
+                    in_voice_uids.add(str(member.id))
+
+    # Efface les join_times fantômes (membres hors vocal au redémarrage)
+    stale_cleared = 0
+    for uid, udata in data.items():
+        if uid not in in_voice_uids and udata.get("join_time"):
+            udata["join_time"] = None
+            _DIRTY.add(uid)
+            stale_cleared += 1
+
+    # Initialise le join_time des membres en vocal qui n'en ont pas
     recovered = 0
     for guild in bot.guilds:
-        for vc in guild.voice_channels:
-            for member in vc.members:
+        for channel in list(guild.voice_channels) + list(guild.stage_channels):
+            for member in channel.members:
                 if member.bot:
                     continue
                 uid = str(member.id)
@@ -1533,16 +1551,9 @@ async def on_ready():
                     user["join_time"] = now_ts()
                     _DIRTY.add(uid)
                     recovered += 1
-        for sc in guild.stage_channels:
-            for member in sc.members:
-                if member.bot:
-                    continue
-                uid = str(member.id)
-                user = get_user(data, uid)
-                if not user["join_time"]:
-                    user["join_time"] = now_ts()
-                    _DIRTY.add(uid)
-                    recovered += 1
+
+    if stale_cleared:
+        print(f"[BOT] {stale_cleared} join_times fantomes effacés au démarrage")
     if recovered:
         print(f"[BOT] {recovered} membres en vocal recuperes au demarrage")
     print("[BOT] Pret !")
