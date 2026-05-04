@@ -4540,35 +4540,6 @@ class _AkinatorGuessView(discord.ui.View):
         _AKI_SESSIONS.pop(self._session.user_id, None)
 
 
-@bot.tree.command(name="akinator", description="Pense à un personnage d'anime/manga — je vais le deviner !")
-@app_commands.guilds(*GUILD_IDS)
-async def akinator_cmd(interaction: discord.Interaction):
-    uid = interaction.user.id
-    if uid in _AKI_SESSIONS:
-        await interaction.response.send_message(
-            "❌ Tu as déjà une partie en cours ! Réponds à la question affichée.", ephemeral=True
-        )
-        return
-    try:
-        await interaction.response.defer()
-    except Exception:
-        return
-
-    session = _AkinatorSession(uid)
-    _AKI_SESSIONS[uid] = session
-
-    action = await _aki_next_action(session)
-    if action.get("action") != "question":
-        _AKI_SESSIONS.pop(uid, None)
-        await interaction.followup.send("❌ Erreur de démarrage. Réessaie dans quelques instants.", ephemeral=True)
-        return
-
-    q = action.get("text", "Ton personnage est-il dans un shōnen ?")
-    session.nb_questions = 1
-    session.qa_history.append((q, ""))
-    await interaction.followup.send(embed=_aki_question_embed(session, q), view=_AkinatorAnswerView(session))
-
-
 # ─────────────────────────────────────────
 #  AKINATOR ONE PIECE — PAYANT
 # ─────────────────────────────────────────
@@ -4925,7 +4896,7 @@ class _AkinatorOPModeView(discord.ui.View):
             if mode_key == "duel":
                 # demander le membre à défier via modal ou message
                 await interaction.response.send_message(
-                    "Pour lancer un duel, utilise `/akinator_op_duel @membre`.", ephemeral=True
+                    "Pour lancer un duel, utilise `/akinator_duel @membre`.", ephemeral=True
                 )
                 return
 
@@ -4958,7 +4929,7 @@ class _AkinatorOPModeView(discord.ui.View):
         return cb
 
 
-@bot.tree.command(name="akinator_op", description="Akinator One Piece payant — devine ton perso !")
+@bot.tree.command(name="akinator", description="Akinator One Piece — pense à un perso, je le devine !")
 @app_commands.guilds(*GUILD_IDS)
 async def akinator_op_cmd(interaction: discord.Interaction):
     uid = interaction.user.id
@@ -4986,7 +4957,7 @@ async def akinator_op_cmd(interaction: discord.Interaction):
     await interaction.followup.send(embed=embed, view=_AkinatorOPModeView(uid))
 
 
-@bot.tree.command(name="akinator_op_duel", description="Défi 1v1 Akinator One Piece — mise aléatoire !")
+@bot.tree.command(name="akinator_duel", description="Défi 1v1 Akinator One Piece — mise aléatoire !")
 @app_commands.describe(adversaire="Le membre à défier")
 @app_commands.guilds(*GUILD_IDS)
 async def akinator_op_duel_cmd(interaction: discord.Interaction, adversaire: discord.Member):
@@ -5301,7 +5272,7 @@ class _QuizRankedChallengeView(discord.ui.View):
 #  /SOLDE
 # ─────────────────────────────────────────
 
-@bot.tree.command(name="solde", description="Consulter ton solde de Berrys 🍊")
+@bot.tree.command(name="berry", description="Consulter ton solde de Berrys 🍊")
 @app_commands.guilds(*GUILD_IDS)
 async def solde_cmd(interaction: discord.Interaction):
     uid  = str(interaction.user.id)
@@ -5312,7 +5283,7 @@ async def solde_cmd(interaction: discord.Interaction):
         color=discord.Color.gold(),
     )
     embed.set_thumbnail(url=interaction.user.display_avatar.url)
-    embed.set_footer(text="Gagne des Berrys avec /akinator_op et /quizz_prime !")
+    embed.set_footer(text="Gagne des Berrys avec /akinator et /quizz_prime !")
     await interaction.response.send_message(embed=embed)
 
 
