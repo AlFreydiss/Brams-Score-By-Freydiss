@@ -4355,15 +4355,96 @@ async def _conclude_giveaway(
     await channel.send(f"🎊 Félicitations {mentions} ! Vous avez gagné **{lot}** !")
 
 
+@bot.tree.command(name="gagnant", description="Tirer au sort un ou plusieurs gagnants depuis le salon vocal")
+@app_commands.describe(
+    nombre="Nombre de gagnants à tirer (défaut: 1)",
+    image="Image du lot à afficher (PNG ou JPEG)",
+    exclure_bots="Exclure les bots du tirage (défaut: oui)",
+)
+async def gagnant_cmd(
+    interaction: discord.Interaction,
+    nombre: int = 1,
+    image: discord.Attachment | None = None,
+    exclure_bots: bool = True,
+):
+    try:
+        await interaction.response.defer()
+    except Exception:
+        return
+
+    if not 1 <= nombre <= 20:
+        await interaction.followup.send("❌ Le nombre de gagnants doit être entre 1 et 20.", ephemeral=True)
+        return
+
+    if image is not None and not image.content_type.startswith("image/"):
+        await interaction.followup.send("❌ Le fichier doit être une image (PNG ou JPEG).", ephemeral=True)
+        return
+
+    voice_state = interaction.user.voice
+    if voice_state is None or voice_state.channel is None:
+        await interaction.followup.send("❌ Tu dois être dans un salon vocal pour utiliser cette commande.", ephemeral=True)
+        return
+
+    channel = voice_state.channel
+    members = [m for m in channel.members if not (exclure_bots and m.bot)]
+
+    if not members:
+        await interaction.followup.send(f"❌ Aucun membre éligible dans **{channel.name}**.", ephemeral=True)
+        return
+
+    nb = min(nombre, len(members))
+    winners = random.sample(members, nb)
+
+    sep = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    if nb == 1:
+        w = winners[0]
+        embed = discord.Embed(
+            title="🎲  Tirage au sort  🎲",
+            description=(
+                f"{sep}\n"
+                f"**Salon :** {channel.name} ({len(members)} participant(s))\n\n"
+                f"🏆  **Gagnant : {w.mention}**\n"
+                f"{sep}"
+            ),
+            color=discord.Color.gold(),
+        )
+        embed.set_thumbnail(url=w.display_avatar.url)
+    else:
+        lines = "\n".join(f"🏆 {m.mention}" for m in winners)
+        embed = discord.Embed(
+            title="🎲  Tirage au sort  🎲",
+            description=(
+                f"{sep}\n"
+                f"**Salon :** {channel.name} ({len(members)} participant(s))\n\n"
+                f"**{nb} gagnants :**\n{lines}\n"
+                f"{sep}"
+            ),
+            color=discord.Color.gold(),
+        )
+
+    if image is not None:
+        embed.set_image(url=image.url)
+
+    embed.set_footer(text=f"Tirage par {interaction.user.display_name}")
+    await interaction.followup.send(embed=embed)
+
+
 @bot.tree.command(name="giveaway", description="[ADMIN] Lancer un giveaway")
 @app_commands.describe(
     lot="Ce qui est mis en jeu",
     duree="Durée (ex: 30m, 1h, 2h30m, 1d)",
     gagnants="Nombre de gagnants (défaut: 1)",
+    image="Image du lot à afficher (PNG ou JPEG)",
 )
 @app_commands.default_permissions(administrator=True)
 @app_commands.checks.has_permissions(administrator=True)
-async def giveaway_cmd(interaction: discord.Interaction, lot: str, duree: str, gagnants: int = 1):
+async def giveaway_cmd(
+    interaction: discord.Interaction,
+    lot: str,
+    duree: str,
+    gagnants: int = 1,
+    image: discord.Attachment | None = None,
+):
     try:
         await interaction.response.defer()
     except Exception:
@@ -4377,6 +4458,9 @@ async def giveaway_cmd(interaction: discord.Interaction, lot: str, duree: str, g
         return
     if not 1 <= gagnants <= 20:
         await interaction.followup.send("❌ Le nombre de gagnants doit être entre 1 et 20.", ephemeral=True)
+        return
+    if image is not None and not image.content_type.startswith("image/"):
+        await interaction.followup.send("❌ Le fichier doit être une image (PNG ou JPEG).", ephemeral=True)
         return
 
     end_ts = int(time.time()) + seconds
@@ -4394,6 +4478,8 @@ async def giveaway_cmd(interaction: discord.Interaction, lot: str, duree: str, g
         color=discord.Color.gold(),
     )
     embed.set_footer(text=f"Durée : {_fmt_duree(seconds)}")
+    if image is not None:
+        embed.set_image(url=image.url)
 
     msg = await interaction.followup.send(embed=embed, view=view)
 
