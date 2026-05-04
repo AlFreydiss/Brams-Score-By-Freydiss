@@ -1906,7 +1906,7 @@ async def stats(interaction: discord.Interaction):
     r_emoji = RANK_EMOJIS.get(rank_actuel, "💀")
     ranks_display = format_all_ranks_display(hours_7d)
     next_thresh, next_rank = get_next_rank(hours_7d)
-    prime_val = calculate_prime(s_tot / 3600, m_tot)
+    prime_val = get_berrys(uid)
 
     # Indicateur EN VOCAL dans la description (plus petit que le titre)
     live_line = "\u3000🎙️ *- en vocal actuellement*\n" if jt else ""
@@ -2271,7 +2271,7 @@ async def tout(interaction: discord.Interaction):
     hours_tot = s_tot / 3600
     rank_actuel = get_rank_for_hours(hours_7d) or "Aucun"
     r_emoji = RANK_EMOJIS.get(rank_actuel, "💀")
-    prime_val = calculate_prime(hours_tot, m_tot)
+    prime_val = get_berrys(uid)
     next_thresh, next_rank = get_next_rank(hours_7d)
     live_indicator = "  　🎙️ *EN VOCAL*" if jt else ""
 
@@ -2414,7 +2414,7 @@ async def chercher(interaction: discord.Interaction, membre: discord.Member):
     rank_actuel = get_rank_for_hours(hours_7d) or "Aucun"
     r_emoji = RANK_EMOJIS.get(rank_actuel, "💀")
     ranks_display = format_all_ranks_display(hours_7d)
-    prime_val = calculate_prime(hours_tot, m_tot)
+    prime_val = get_berrys(uid)
     next_thresh, next_rank = get_next_rank(hours_7d)
     live_indicator = "  　🎙️ *EN VOCAL*" if jt else ""
 
@@ -5447,7 +5447,7 @@ async def shop_cmd(interaction: discord.Interaction):
 ])
 @app_commands.guilds(*GUILD_IDS)
 async def ticket_pseudo_cmd(interaction: discord.Interaction, membre: discord.Member,
-                             nouveau_pseudo: str, duree: str = "ticket_60"):
+                             nouveau_pseudo: str, duree: str):
     uid       = str(interaction.user.id)
     user_data = get_user(_CACHE, uid)
     tier      = _TICKET_BY_ID[duree]
