@@ -609,18 +609,26 @@ BERRY_EMOJI = "🍊"
 def get_berrys(uid: str) -> int:
     return get_user(_CACHE, uid).get("berrys", 0)
 
-def add_berrys(uid: str, amount: int) -> int:
+def _track_berry(user: dict, key: str, amount: int):
+    stats = user.setdefault("berry_stats", {"earned": 0, "lost": 0, "spent": 0})
+    stats[key] = stats.get(key, 0) + amount
+
+def add_berrys(uid: str, amount: int, track: str = "earned") -> int:
     user = get_user(_CACHE, uid)
     user["berrys"] = max(0, user.get("berrys", 0) + amount)
+    if track:
+        _track_berry(user, track, amount)
     _DIRTY.add(uid)
     return user["berrys"]
 
-def spend_berrys(uid: str, amount: int) -> bool:
+def spend_berrys(uid: str, amount: int, track: str = "spent") -> bool:
     user = get_user(_CACHE, uid)
     bal = user.get("berrys", 0)
     if bal < amount:
         return False
     user["berrys"] = bal - amount
+    if track:
+        _track_berry(user, track, amount)
     _DIRTY.add(uid)
     return True
 
@@ -4895,7 +4903,7 @@ class _AkinatorOPGuessView(discord.ui.View):
             _aki_op_duel_record(session, gave_up=False)
             desc += "*Résultat enregistré — attends la fin du duel.*"
         else:
-            new_bal = spend_berrys(uid, _AKI_PENALTY)
+            spend_berrys(uid, _AKI_PENALTY, track="lost")
             bal_after = get_berrys(uid)
             if session.op_mode == "ranked":
                 _u = get_user(_CACHE, uid)
@@ -5078,11 +5086,11 @@ class _AkinatorOPDuelChallengeView(discord.ui.View):
         await interaction.response.defer()
 
         # Vérifier et déduire les mises
-        if not spend_berrys(str(self._uid1), self._bet1):
+        if not spend_berrys(str(self._uid1), self._bet1, track="lost"):
             await interaction.edit_original_response(content=f"❌ {self._name1} n'a plus assez de 🍊.", embed=None, view=None)
             return
-        if not spend_berrys(str(self._uid2), self._bet2):
-            add_berrys(str(self._uid1), self._bet1)  # remboursement
+        if not spend_berrys(str(self._uid2), self._bet2, track="lost"):
+            add_berrys(str(self._uid1), self._bet1, track=None)  # remboursement
             await interaction.edit_original_response(content=f"❌ {self._name2} n'a plus assez de 🍊.", embed=None, view=None)
             return
 
@@ -5280,11 +5288,11 @@ class _QuizRankedChallengeView(discord.ui.View):
             return
         self.stop()
         # Déduire les mises
-        if not spend_berrys(str(self._uid1), self._bet):
+        if not spend_berrys(str(self._uid1), self._bet, track="lost"):
             await interaction.response.edit_message(content="❌ Le challenger n'a plus assez de 🍊.", embed=None, view=None)
             return
-        if not spend_berrys(str(self._uid2), self._bet):
-            add_berrys(str(self._uid1), self._bet)
+        if not spend_berrys(str(self._uid2), self._bet, track="lost"):
+            add_berrys(str(self._uid1), self._bet, track=None)
             await interaction.response.edit_message(content="❌ Tu n'as plus assez de 🍊.", embed=None, view=None)
             return
         await interaction.response.defer()
@@ -5596,6 +5604,77 @@ async def ticket_pseudo_cmd(interaction: discord.Interaction, membre: discord.Me
             color=discord.Color.purple(),
         )
     )
+
+
+# ─────────────────────────────────────────
+#  BANQUE
+# ─────────────────────────────────────────
+
+@bot.tree.command(name="banque", description="Tes stats de Berry + classement du serveur", guilds=GUILD_OBJECTS)
+async def banque(interaction: discord.Interaction):
+    await interaction.response.defer()
+
+    uid = str(interaction.user.id)
+    me  = get_user(_CACHE, uid)
+    my_stats = me.get("berry_stats", {})
+    my_bal   = me.get("berrys", 0)
+
+    # ── Embed personnel ──────────────────────────────────────────────
+    embed_perso = discord.Embed(
+        title="🏦 Ta Banque Berry",
+        color=discord.Color.gold(),
+    )
+    embed_perso.set_thumbnail(url=interaction.user.display_avatar.url)
+    embed_perso.add_field(name="💰 Solde actuel",    value=f"`{my_bal:,}` 🍒".replace(",", " "), inline=False)
+    embed_perso.add_field(name="📈 Total gagné",     value=f"`{my_stats.get('earned', 0):,}` 🍒".replace(",", " "), inline=True)
+    embed_perso.add_field(name="📉 Total perdu",     value=f"`{my_stats.get('lost', 0):,}` 🍒".replace(",", " "),   inline=True)
+    embed_perso.add_field(name="🛒 Total dépensé",   value=f"`{my_stats.get('spent', 0):,}` 🍒".replace(",", " "),  inline=True)
+
+    # ── Classement serveur ───────────────────────────────────────────
+    guild_member_ids = {str(m.id) for m in interaction.guild.members}
+
+    rows = []
+    for cuid, cdata in _CACHE.items():
+        if cuid not in guild_member_ids:
+            continue
+        bal     = cdata.get("berrys", 0)
+        stats   = cdata.get("berry_stats", {})
+        earned  = stats.get("earned", 0)
+        spent   = stats.get("spent", 0)
+        rows.append({"uid": cuid, "bal": bal, "earned": earned, "spent": spent})
+
+    top_earned  = sorted(rows, key=lambda r: r["earned"],  reverse=True)[:5]
+    top_spenders = sorted(rows, key=lambda r: r["spent"],  reverse=True)[:5]
+    top_rich     = sorted(rows, key=lambda r: r["bal"],    reverse=True)[:5]
+
+    def fmt_row(rank: int, r: dict, key: str) -> str:
+        member = interaction.guild.get_member(int(r["uid"]))
+        name   = member.display_name if member else f"<@{r['uid']}>"
+        val    = f"{r[key]:,}".replace(",", " ")
+        medals = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"]
+        return f"{medals[rank]} **{name}** — `{val}` 🍒"
+
+    embed_rank = discord.Embed(
+        title="🏆 Classement Berry du serveur",
+        color=discord.Color.blurple(),
+    )
+    embed_rank.add_field(
+        name="💰 Les plus riches",
+        value="\n".join(fmt_row(i, r, "bal") for i, r in enumerate(top_rich)) or "—",
+        inline=False,
+    )
+    embed_rank.add_field(
+        name="📈 Plus grands gagnants",
+        value="\n".join(fmt_row(i, r, "earned") for i, r in enumerate(top_earned)) or "—",
+        inline=False,
+    )
+    embed_rank.add_field(
+        name="🛒 Plus grands dépensiers",
+        value="\n".join(fmt_row(i, r, "spent") for i, r in enumerate(top_spenders)) or "—",
+        inline=False,
+    )
+
+    await interaction.followup.send(embeds=[embed_perso, embed_rank])
 
 
 # ─────────────────────────────────────────
