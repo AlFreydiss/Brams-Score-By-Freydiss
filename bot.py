@@ -4261,6 +4261,247 @@ class _DuelChallengeView(discord.ui.View):
 
 
 # ─────────────────────────────────────────
+#  AKINATOR
+# ─────────────────────────────────────────
+
+_AKI_SESSIONS: dict[int, "_AkinatorSession"] = {}
+_AKI_MAX_QUESTIONS   = 25
+_AKI_MAX_BAD_GUESSES = 3
+
+_AKI_SYSTEM = (
+    "Tu es Akinator, un génie mystérieux qui devine des personnages (anime, manga, film, série, jeu vidéo, "
+    "célébrité, personnage historique, etc.).\n"
+    "Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte autour :\n"
+    '- Question  : {"action":"question","text":"Ta question ?"}\n'
+    '- Supposition : {"action":"guess","character":"Nom exact","reason":"Justification courte"}\n'
+    '- Abandon   : {"action":"give_up"}\n\n'
+    "Stratégie :\n"
+    "1. Commence large : fictif/réel, humain/non-humain, univers (anime/film/jeu/…)\n"
+    "2. Affine : genre, rôle, époque, apparence, pouvoirs, série précise\n"
+    "3. Devine dès que tu es à ~70% de confiance\n"
+    "4. Après une mauvaise supposition, continue avec de nouvelles questions\n"
+    "5. Ne repose JAMAIS une question déjà dans l'historique\n"
+    "6. Abandonne après 3 mauvaises suppositions ou 25 questions sans succès"
+)
+
+
+class _AkinatorSession:
+    def __init__(self, user_id: int):
+        self.user_id      = user_id
+        self.qa_history: list[tuple[str, str]] = []
+        self.wrong_guesses: list[str] = []
+        self.nb_questions = 0
+        self.ended        = False
+
+    def build_messages(self) -> list[dict]:
+        msgs = [{"role": "system", "content": _AKI_SYSTEM}]
+        if not self.qa_history:
+            msgs.append({"role": "user", "content": "Le joueur pense à un personnage. Pose ta première question (commence par : fictif ou réel ?)."})
+        else:
+            lines = ["Historique Q&A :"]
+            for i, (q, a) in enumerate(self.qa_history, 1):
+                lines.append(f"  {i}. {q} → {a}")
+            if self.wrong_guesses:
+                lines.append(f"\nSuppositions incorrectes : {', '.join(self.wrong_guesses)}")
+            lines.append(f"\nQuestions posées : {self.nb_questions}/{_AKI_MAX_QUESTIONS}")
+            lines.append(f"Mauvaises suppositions : {len(self.wrong_guesses)}/{_AKI_MAX_BAD_GUESSES}")
+            lines.append("\nQue fais-tu ? (question ou supposition)")
+            msgs.append({"role": "user", "content": "\n".join(lines)})
+        return msgs
+
+
+async def _aki_next_action(session: _AkinatorSession) -> dict:
+    api_key = os.environ.get("GROQ_API_KEY", "")
+    for attempt in range(3):
+        try:
+            resp = await litellm.acompletion(
+                model=_GROQ_MODEL,
+                api_key=api_key,
+                max_tokens=256,
+                temperature=0.7,
+                response_format={"type": "json_object"},
+                messages=session.build_messages(),
+            )
+            data = json.loads(resp.choices[0].message.content.strip())
+            if data.get("action") in ("question", "guess", "give_up"):
+                return data
+        except Exception as e:
+            print(f"[AKINATOR] attempt {attempt+1}: {e}")
+    return {"action": "give_up"}
+
+
+def _aki_question_embed(session: _AkinatorSession, question: str) -> discord.Embed:
+    filled = min(session.nb_questions, _AKI_MAX_QUESTIONS)
+    bar    = "▓" * filled + "░" * (_AKI_MAX_QUESTIONS - filled)
+    desc   = f"**Question {session.nb_questions} / {_AKI_MAX_QUESTIONS}**\n`{bar}`\n\n💬  **{question}**"
+    embed  = discord.Embed(title="🎩  Akinator  🎩", description=desc, color=discord.Color.blurple())
+    if session.wrong_guesses:
+        embed.add_field(name="Mauvaises suppos.", value="\n".join(f"❌ {g}" for g in session.wrong_guesses), inline=False)
+    embed.set_footer(text="Réponds honnêtement — je vais trouver !")
+    return embed
+
+
+def _aki_guess_embed(session: _AkinatorSession, character: str, reason: str) -> discord.Embed:
+    embed = discord.Embed(
+        title="🎩  Akinator — Ma supposition !  🎩",
+        description=(
+            f"Après **{session.nb_questions}** question(s)…\n\n"
+            f"🔮  **Je pense que tu penses à :**\n# {character}\n\n*{reason}*"
+        ),
+        color=discord.Color.gold(),
+    )
+    embed.set_footer(text="Est-ce que j'ai raison ?")
+    return embed
+
+
+async def _aki_dispatch(interaction: discord.Interaction, session: _AkinatorSession, action: dict):
+    if action["action"] == "question":
+        q = action.get("text", "Ton personnage est-il fictif ?")
+        session.nb_questions += 1
+        session.qa_history.append((q, ""))
+        await interaction.edit_original_response(embed=_aki_question_embed(session, q), view=_AkinatorAnswerView(session))
+
+    elif action["action"] == "guess":
+        character = action.get("character", "???")
+        reason    = action.get("reason", "")
+        await interaction.edit_original_response(embed=_aki_guess_embed(session, character, reason), view=_AkinatorGuessView(session, character))
+
+    else:
+        session.ended = True
+        _AKI_SESSIONS.pop(session.user_id, None)
+        embed = discord.Embed(
+            title="🎩  Akinator — Défaite  🎩",
+            description=f"😤  Tu m'as eu !\n\n{session.nb_questions} questions, et je n'ai pas trouvé.\nC'était qui ?",
+            color=discord.Color.red(),
+        )
+        await interaction.edit_original_response(embed=embed, view=None)
+
+
+class _AkinatorAnswerView(discord.ui.View):
+    _CHOICES = [
+        ("Oui",              "✅", discord.ButtonStyle.success),
+        ("Non",              "❌", discord.ButtonStyle.danger),
+        ("Je ne sais pas",   "🤷", discord.ButtonStyle.secondary),
+        ("Probablement",     "🟡", discord.ButtonStyle.primary),
+        ("Probablement pas", "🔴", discord.ButtonStyle.secondary),
+    ]
+
+    def __init__(self, session: _AkinatorSession):
+        super().__init__(timeout=120)
+        self._session = session
+        for label, emoji, style in self._CHOICES:
+            btn = discord.ui.Button(label=label, emoji=emoji, style=style)
+            btn.callback = self._make_cb(label)
+            self.add_item(btn)
+
+    def _make_cb(self, answer: str):
+        async def cb(interaction: discord.Interaction):
+            if interaction.user.id != self._session.user_id:
+                await interaction.response.send_message("Ce n'est pas ton Akinator !", ephemeral=True)
+                return
+            if self._session.ended:
+                await interaction.response.send_message("❌ Cette partie a expiré.", ephemeral=True)
+                return
+            self.stop()
+            await interaction.response.defer()
+            # Enregistre la réponse sur la dernière question
+            if self._session.qa_history and self._session.qa_history[-1][1] == "":
+                self._session.qa_history[-1] = (self._session.qa_history[-1][0], answer)
+            if (self._session.nb_questions >= _AKI_MAX_QUESTIONS
+                    or len(self._session.wrong_guesses) >= _AKI_MAX_BAD_GUESSES):
+                action = {"action": "give_up"}
+            else:
+                action = await _aki_next_action(self._session)
+            await _aki_dispatch(interaction, self._session, action)
+        return cb
+
+    async def on_timeout(self):
+        self._session.ended = True
+        _AKI_SESSIONS.pop(self._session.user_id, None)
+
+
+class _AkinatorGuessView(discord.ui.View):
+    def __init__(self, session: _AkinatorSession, character: str):
+        super().__init__(timeout=120)
+        self._session   = session
+        self._character = character
+
+    @discord.ui.button(label="Oui, c'est ça !", emoji="✅", style=discord.ButtonStyle.success)
+    async def correct(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user.id != self._session.user_id:
+            await interaction.response.send_message("Ce n'est pas ton Akinator !", ephemeral=True)
+            return
+        self.stop()
+        self._session.ended = True
+        _AKI_SESSIONS.pop(self._session.user_id, None)
+        embed = discord.Embed(
+            title="🎩  Akinator — Victoire !  🎩",
+            description=(
+                f"🏆  **J'ai trouvé !**\n\n"
+                f"Tu pensais à **{self._character}** !\n\n"
+                f"Questions : **{self._session.nb_questions}** • Mauvaises suppositions : **{len(self._session.wrong_guesses)}**"
+            ),
+            color=discord.Color.green(),
+        )
+        await interaction.response.edit_message(embed=embed, view=None)
+
+    @discord.ui.button(label="Non, ce n'est pas ça", emoji="❌", style=discord.ButtonStyle.danger)
+    async def wrong(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user.id != self._session.user_id:
+            await interaction.response.send_message("Ce n'est pas ton Akinator !", ephemeral=True)
+            return
+        self.stop()
+        await interaction.response.defer()
+        session = self._session
+        session.wrong_guesses.append(self._character)
+        if len(session.wrong_guesses) >= _AKI_MAX_BAD_GUESSES:
+            session.ended = True
+            _AKI_SESSIONS.pop(session.user_id, None)
+            embed = discord.Embed(
+                title="🎩  Akinator — Défaite  🎩",
+                description=f"😤  Tu m'as eu !\n\n{session.nb_questions} questions posées, {len(session.wrong_guesses)} suppositions.\nC'était qui ?",
+                color=discord.Color.red(),
+            )
+            await interaction.edit_original_response(embed=embed, view=None)
+            return
+        action = await _aki_next_action(session)
+        await _aki_dispatch(interaction, session, action)
+
+    async def on_timeout(self):
+        self._session.ended = True
+        _AKI_SESSIONS.pop(self._session.user_id, None)
+
+
+@bot.tree.command(name="akinator", description="Pense à un personnage — je vais le deviner !")
+@app_commands.guilds(*GUILD_IDS)
+async def akinator_cmd(interaction: discord.Interaction):
+    uid = interaction.user.id
+    if uid in _AKI_SESSIONS:
+        await interaction.response.send_message(
+            "❌ Tu as déjà une partie en cours ! Réponds à la question affichée.", ephemeral=True
+        )
+        return
+    try:
+        await interaction.response.defer()
+    except Exception:
+        return
+
+    session = _AkinatorSession(uid)
+    _AKI_SESSIONS[uid] = session
+
+    action = await _aki_next_action(session)
+    if action.get("action") != "question":
+        _AKI_SESSIONS.pop(uid, None)
+        await interaction.followup.send("❌ Erreur de démarrage. Réessaie dans quelques instants.", ephemeral=True)
+        return
+
+    q = action.get("text", "Ton personnage est-il fictif ?")
+    session.nb_questions = 1
+    session.qa_history.append((q, ""))
+    await interaction.followup.send(embed=_aki_question_embed(session, q), view=_AkinatorAnswerView(session))
+
+
+# ─────────────────────────────────────────
 #  GIVEAWAY
 # ─────────────────────────────────────────
 
