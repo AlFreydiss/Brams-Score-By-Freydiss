@@ -1761,24 +1761,37 @@ async def nick_restore_loop():
     _now = now_ts()
     for uid, udata in list(_CACHE.items()):
         restore = udata.get("nick_restore")
-        if not restore or _now < restore["expires"]:
+        if not restore:
             continue
+        expires = restore.get("expires", 0)
+        if _now < expires:
+            continue
+        print(f"[RESTORE] Restauration pseudo UID={uid} nick={restore.get('nick')!r} (expiré)")
         udata.pop("nick_restore")
         _DIRTY.add(uid)
         guild = bot.get_guild(int(restore["guild"]))
         if not guild:
+            print(f"[RESTORE] Guild {restore['guild']} introuvable")
             continue
         member = guild.get_member(int(uid))
         if not member:
+            print(f"[RESTORE] Membre {uid} introuvable dans la guild")
             continue
         try:
-            await member.edit(nick=restore["nick"])
-        except Exception:
-            pass
+            await member.edit(nick=restore.get("nick"))
+            print(f"[RESTORE] ✅ Pseudo restauré pour {member.display_name} ({uid})")
+        except discord.Forbidden:
+            print(f"[RESTORE] ❌ Forbidden — bot sans permission pour {uid}")
+        except Exception as e:
+            print(f"[RESTORE] ❌ Erreur inattendue pour {uid}: {e}")
 
 @nick_restore_loop.before_loop
 async def _before_nick_restore():
     await bot.wait_until_ready()
+
+@nick_restore_loop.error
+async def _nick_restore_error(err):
+    print(f"[RESTORE] ❌ Loop crashée : {err}")
 
 
 @tasks.loop(minutes=2)
@@ -5565,7 +5578,8 @@ async def ticket_pseudo_cmd(interaction: discord.Interaction, membre: discord.Me
         )
         return
 
-    ancien_pseudo = membre.display_name
+    ancien_nick = membre.nick  # surnom serveur (None si aucun)
+    ancien_display = membre.display_name
     try:
         await membre.edit(nick=nouveau_pseudo)
     except discord.Forbidden:
@@ -5582,9 +5596,8 @@ async def ticket_pseudo_cmd(interaction: discord.Interaction, membre: discord.Me
     # Persiste le restore en cache pour survivre aux redémarrages
     minutes     = tier["minutes"]
     expires_at  = now_ts() + minutes * 60
-    target_data = get_user(_CACHE, str(membre.id))
     target_data["nick_restore"] = {
-        "nick":    ancien_pseudo if ancien_pseudo != membre.name else None,
+        "nick":    ancien_nick,  # None = pas de surnom serveur → edit(nick=None) efface
         "expires": expires_at,
         "guild":   str(interaction.guild_id),
         "minutes": minutes,
@@ -5597,7 +5610,7 @@ async def ticket_pseudo_cmd(interaction: discord.Interaction, membre: discord.Me
         embed=discord.Embed(
             title="🎭 Pseudo changé !",
             description=(
-                f"**{ancien_pseudo}** s'appelle maintenant **{nouveau_pseudo}** pendant **{minutes} min** !\n\n"
+                f"**{ancien_display}** s'appelle maintenant **{nouveau_pseudo}** pendant **{minutes} min** !\n\n"
                 f"Il reprendra son pseudo original dans {minutes} minutes.\n"
                 f"Stock {tier['emoji']} : **{tickets[duree]}** · Utilisations restantes aujourd'hui : **{restants_jour}/2**"
             ),
