@@ -5142,8 +5142,11 @@ class _QuizPrimeModeView(discord.ui.View):
         return cb
 
 
-@bot.tree.command(name="quizz", description="Quiz animé payant — Berrys en jeu !")
-@app_commands.describe(categorie="Catégorie de questions (défaut : général)")
+@bot.tree.command(name="quizz", description="Quiz animé — gratuit en solo/duel, ou Ranked 1v1 avec mise Berry !")
+@app_commands.describe(
+    adversaire="Mentionne un membre pour un Ranked 1v1 payant (200 🍊 chacun)",
+    categorie="Catégorie de questions",
+)
 @app_commands.choices(categorie=[
     app_commands.Choice(name="Général",         value="general"),
     app_commands.Choice(name="One Piece",       value="one_piece"),
@@ -5155,43 +5158,22 @@ class _QuizPrimeModeView(discord.ui.View):
     app_commands.Choice(name="Death Note",      value="deathnote"),
 ])
 @app_commands.guilds(*GUILD_IDS)
-async def quizz_prime_cmd(interaction: discord.Interaction, categorie: str = "general"):
-    if interaction.user.id in QUIZ_SESSIONS:
-        await interaction.response.send_message("❌ Tu as déjà un quiz en cours !", ephemeral=True)
+async def quizz_cmd(interaction: discord.Interaction,
+                    adversaire: discord.Member = None,
+                    categorie: str = "general"):
+    uid1 = interaction.user.id
+
+    # ── Mode gratuit (pas d'adversaire) ──────────────────────────
+    if adversaire is None:
+        if uid1 in QUIZ_SESSIONS or uid1 in LIVE_DUELS:
+            await interaction.response.send_message("❌ Tu as déjà une session en cours !", ephemeral=True)
+            return
+        await _quiz_entry(interaction)
         return
-    try:
-        await interaction.response.defer()
-    except Exception:
-        return
 
-    uid = str(interaction.user.id)
-    sep = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    lines = [f"{cfg['emoji']} **{cfg['label']}** — {cfg['desc']}" for cfg in _QUIZ_PRIME_MODES.values()]
-    embed = discord.Embed(
-        title="🎌  Quiz Prime  🎌",
-        description=(
-            f"**Quiz animé — Berrys en jeu !**\n\n"
-            f"{sep}\n" + "\n".join(lines) + f"\n{sep}\n\n"
-            f"Catégorie choisie : **{categorie}**\n"
-            f"Ton solde : **{get_berrys(uid)} 🍊**"
-        ),
-        color=discord.Color.from_rgb(212, 175, 55),
-    )
-    await interaction.followup.send(embed=embed, view=_QuizPrimeModeView(interaction.user.id, categorie))
-
-
-@bot.tree.command(name="quizz_ranked", description="Quiz Ranked 1v1 — 200 🍊 chacun, tout au gagnant !")
-@app_commands.describe(adversaire="Le membre à défier", categorie="Catégorie de questions")
-@app_commands.choices(categorie=[
-    app_commands.Choice(name="Général",         value="general"),
-    app_commands.Choice(name="One Piece",       value="one_piece"),
-    app_commands.Choice(name="Naruto",          value="naruto"),
-    app_commands.Choice(name="Dragon Ball Z",   value="dbz"),
-])
-@app_commands.guilds(*GUILD_IDS)
-async def quizz_ranked_cmd(interaction: discord.Interaction, adversaire: discord.Member, categorie: str = "general"):
-    uid1, uid2 = interaction.user.id, adversaire.id
-    BET = 200
+    # ── Mode Ranked 1v1 (avec adversaire) ────────────────────────
+    uid2 = adversaire.id
+    BET  = 200
 
     if uid1 == uid2:
         await interaction.response.send_message("Tu ne peux pas te défier toi-même.", ephemeral=True)
