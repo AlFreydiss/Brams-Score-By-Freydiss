@@ -1688,6 +1688,7 @@ async def on_voice_state_update(member, before, after):
         if user["join_time"]:
             start = user["join_time"]
             end = now_ts()
+            session_seconds = end - start
             user["vocal_sessions"].append({
                 "start": start,
                 "end": end,
@@ -1695,6 +1696,12 @@ async def on_voice_state_update(member, before, after):
             })
             user["join_time"] = None
             clean_old_data(user)
+
+            # Berry gagnés : même taux que la prime (100 000 / heure)
+            earned = int(session_seconds / 3600 * 100_000)
+            if earned > 0:
+                add_berrys(uid, earned)
+
             _DIRTY.add(uid)
 
             seconds_7d = seconds_in_period(user["vocal_sessions"], 7)
