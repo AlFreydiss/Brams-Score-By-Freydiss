@@ -5417,6 +5417,17 @@ async def ticket_pseudo_cmd(interaction: discord.Interaction, membre: discord.Me
             "❌ Tu n'as pas de ticket pseudo. Achète-en un dans `/shop` !", ephemeral=True
         )
         return
+
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    daily = user_data.get("ticket_daily", {"date": "", "count": 0})
+    if daily.get("date") != today:
+        daily = {"date": today, "count": 0}
+    if daily["count"] >= 2:
+        await interaction.response.send_message(
+            "❌ Tu as déjà utilisé **2 tickets** aujourd'hui. Reviens demain !", ephemeral=True
+        )
+        return
+
     if membre.bot:
         await interaction.response.send_message("❌ Impossible de changer le pseudo d'un bot.", ephemeral=True)
         return
@@ -5434,15 +5445,18 @@ async def ticket_pseudo_cmd(interaction: discord.Interaction, membre: discord.Me
         return
 
     user_data["pseudo_tickets"] = tickets - 1
+    daily["count"] += 1
+    user_data["ticket_daily"] = daily
     _DIRTY.add(uid)
 
+    restants_jour = 2 - daily["count"]
     await interaction.response.send_message(
         embed=discord.Embed(
             title="🎭 Pseudo changé !",
             description=(
                 f"**{ancien_pseudo}** s'appelle maintenant **{nouveau_pseudo}** pendant **1 heure** !\n\n"
                 f"Il reprendra son pseudo original dans 60 minutes.\n"
-                f"Tickets restants : **{tickets - 1}**"
+                f"Tickets restants : **{tickets - 1}** · Utilisations restantes aujourd'hui : **{restants_jour}/2**"
             ),
             color=discord.Color.purple(),
         )
