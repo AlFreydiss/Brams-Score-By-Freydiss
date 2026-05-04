@@ -1605,6 +1605,8 @@ async def on_ready():
         vocal_rank_loop.start()
     if not flush_dirty_loop.is_running():
         flush_dirty_loop.start()
+    if not nick_restore_loop.is_running():
+        nick_restore_loop.start()
 
     # Récupère les join_times des membres déjà en vocal
     data = _CACHE
@@ -1746,6 +1748,31 @@ async def on_voice_state_update(member, before, after):
 # ─────────────────────────────────────────
 #  LOOP VOCALE RAPIDE (membres en vocal seulement)
 # ─────────────────────────────────────────
+@tasks.loop(minutes=1)
+async def nick_restore_loop():
+    _now = now_ts()
+    for uid, udata in list(_CACHE.items()):
+        restore = udata.get("nick_restore")
+        if not restore or _now < restore["expires"]:
+            continue
+        udata.pop("nick_restore")
+        _DIRTY.add(uid)
+        guild = bot.get_guild(int(restore["guild"]))
+        if not guild:
+            continue
+        member = guild.get_member(int(uid))
+        if not member:
+            continue
+        try:
+            await member.edit(nick=restore["nick"])
+        except Exception:
+            pass
+
+@nick_restore_loop.before_loop
+async def _before_nick_restore():
+    await bot.wait_until_ready()
+
+
 @tasks.loop(minutes=2)
 async def vocal_rank_loop():
     for guild in bot.guilds:
@@ -5468,10 +5495,20 @@ async def ticket_pseudo_cmd(interaction: discord.Interaction, membre: discord.Me
     user_data["pseudo_tickets"] = tickets
     daily["count"] += 1
     user_data["ticket_daily"] = daily
+
+    # Persiste le restore en cache pour survivre aux redémarrages
+    minutes     = tier["minutes"]
+    expires_at  = now_ts() + minutes * 60
+    target_data = get_user(_CACHE, str(membre.id))
+    target_data["nick_restore"] = {
+        "nick":    ancien_pseudo if ancien_pseudo != membre.name else None,
+        "expires": expires_at,
+        "guild":   str(interaction.guild_id),
+    }
     _DIRTY.add(uid)
+    _DIRTY.add(str(membre.id))
 
     restants_jour = 2 - daily["count"]
-    minutes       = tier["minutes"]
     await interaction.response.send_message(
         embed=discord.Embed(
             title="🎭 Pseudo changé !",
@@ -5483,15 +5520,6 @@ async def ticket_pseudo_cmd(interaction: discord.Interaction, membre: discord.Me
             color=discord.Color.purple(),
         )
     )
-
-    async def _restore():
-        await asyncio.sleep(minutes * 60)
-        try:
-            await membre.edit(nick=ancien_pseudo if ancien_pseudo != membre.name else None)
-        except Exception:
-            pass
-
-    asyncio.create_task(_restore())
 
 
 # ─────────────────────────────────────────
