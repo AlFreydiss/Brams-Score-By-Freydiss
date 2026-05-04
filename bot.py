@@ -5310,16 +5310,7 @@ _TICKET_TIERS = [
 ]
 _TICKET_BY_ID = {t["id"]: t for t in _TICKET_TIERS}
 
-_SHOP_ITEMS = _TICKET_TIERS + [
-    {
-        "id":    "jackpot",
-        "emoji": "🎲",
-        "name":  "Jackpot",
-        "desc":  "Mise **200 🍊** — 50% de chance de **doubler** ou de tout perdre.",
-        "price": 200,
-        "style": discord.ButtonStyle.danger,
-    },
-]
+_SHOP_ITEMS = _TICKET_TIERS
 
 def _fmt_berry(n: int) -> str:
     return f"{n:,}".replace(",", " ")
@@ -5343,9 +5334,6 @@ def _shop_embed(uid: str) -> discord.Embed:
             f"{t['emoji']} **{t['name']}** — {_fmt_berry(t['price'])} 🍊\n"
             f"> Change un pseudo pendant **{t['minutes']} min** · Stock : **{stock}**"
         )
-    lines.append(
-        "🎲 **Jackpot** — 200 🍊\n> 50% de chance de **doubler** ou de tout perdre."
-    )
     embed = discord.Embed(
         title="🏪  Bram's Shop  🏪",
         description=f"{sep}\n\n" + f"\n\n{sep}\n\n".join(lines) + f"\n\n{sep}\n\nTon solde : **{_fmt_berry(bal)} 🍊**",
@@ -5385,20 +5373,7 @@ class _ShopView(discord.ui.View):
 
             self.stop()
 
-            if item["id"] == "jackpot":
-                win = random.random() < 0.5
-                if win:
-                    new_bal = add_berrys(uid, item["price"] * 2)
-                    msg, color = f"🎉 **Jackpot !** Tu remportes **{item['price'] * 2} 🍊** !\nSolde : **{new_bal} 🍊**", discord.Color.gold()
-                else:
-                    new_bal = get_berrys(uid)
-                    msg, color = f"💸 **Perdu !** Tu perds **{item['price']} 🍊**.\nSolde : **{new_bal} 🍊**", discord.Color.red()
-                await interaction.response.edit_message(
-                    embed=discord.Embed(title="🎲 Jackpot", description=msg, color=color), view=None
-                )
-                return
-
-            # Achat ticket
+# Achat ticket
             user_data = get_user(_CACHE, uid)
             tickets   = _get_tickets(user_data)
             tickets[item["id"]] = tickets.get(item["id"], 0) + 1
