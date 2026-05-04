@@ -1978,7 +1978,7 @@ async def top(interaction: discord.Interaction, periode: app_commands.Choice[str
         else:
             sec  = seconds_in_period(sessions, days, join_time=ujt, _now=_now)
             msgs = messages_in_period(messages, days, _now=_now)
-        prime_val = calculate_prime(sec / 3600, msgs)
+        prime_val = get_berrys(uid)
         vocal_list.append((uid, member.display_name, sec))
         msg_list.append((uid, member.display_name, msgs))
         prime_list.append((uid, member.display_name, prime_val))
