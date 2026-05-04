@@ -4034,10 +4034,6 @@ async def _quiz_entry(interaction: discord.Interaction):
         print(f"❌ quiz followup: {e}")
 
 
-@bot.tree.command(name="quizz", description="Quiz animé solo ou duel - teste tes connaissances !")
-@app_commands.guilds(*GUILD_IDS)
-async def quizz(interaction: discord.Interaction):
-    await _quiz_entry(interaction)
 
 
 class _DuelAnswerButton(discord.ui.Button):
@@ -5146,7 +5142,7 @@ class _QuizPrimeModeView(discord.ui.View):
         return cb
 
 
-@bot.tree.command(name="quizz_prime", description="Quiz animé payant — Berrys en jeu !")
+@bot.tree.command(name="quizz", description="Quiz animé payant — Berrys en jeu !")
 @app_commands.describe(categorie="Catégorie de questions (défaut : général)")
 @app_commands.choices(categorie=[
     app_commands.Choice(name="Général",         value="general"),
@@ -5285,6 +5281,132 @@ async def solde_cmd(interaction: discord.Interaction):
     embed.set_thumbnail(url=interaction.user.display_avatar.url)
     embed.set_footer(text="Gagne des Berrys avec /akinator et /quizz_prime !")
     await interaction.response.send_message(embed=embed)
+
+
+# ─────────────────────────────────────────
+#  SHOP
+# ─────────────────────────────────────────
+
+_SHOP_ITEMS = [
+    {
+        "id":    "heure_1",
+        "emoji": "🎙️",
+        "name":  "1h Vocale",
+        "desc":  "Ajoute **1 heure** à ton total vocal all-time. Peut déclencher une montée de rang !",
+        "price": 400,
+        "extra_seconds": 3600,
+    },
+    {
+        "id":    "heure_3",
+        "emoji": "🌊",
+        "name":  "Fruit du Démon",
+        "desc":  "Ajoute **3 heures** d'un coup à ton total vocal all-time.",
+        "price": 1000,
+        "extra_seconds": 10800,
+    },
+    {
+        "id":    "jackpot",
+        "emoji": "🎲",
+        "name":  "Jackpot",
+        "desc":  "Mise **200 🍊** — 50% de chance de **doubler** ou de tout perdre.",
+        "price": 200,
+        "extra_seconds": 0,
+    },
+]
+
+
+def _shop_embed(uid: str) -> discord.Embed:
+    bal = get_berrys(uid)
+    sep = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    lines = []
+    for item in _SHOP_ITEMS:
+        lines.append(f"{item['emoji']} **{item['name']}** — {item['price']} 🍊\n> {item['desc']}")
+    embed = discord.Embed(
+        title="🏪  Bram's Shop  🏪",
+        description=f"{sep}\n\n" + f"\n\n{sep}\n\n".join(lines) + f"\n\n{sep}\n\nTon solde : **{bal} 🍊**",
+        color=discord.Color.from_rgb(212, 175, 55),
+    )
+    embed.set_footer(text="Clique sur un article pour l'acheter.")
+    return embed
+
+
+class _ShopView(discord.ui.View):
+    def __init__(self, user_id: int):
+        super().__init__(timeout=60)
+        self._user_id = user_id
+        for item in _SHOP_ITEMS:
+            btn = discord.ui.Button(
+                label=f"{item['name']} ({item['price']} 🍊)",
+                emoji=item["emoji"],
+                style=discord.ButtonStyle.primary if item["id"] != "jackpot" else discord.ButtonStyle.danger,
+            )
+            btn.callback = self._make_cb(item)
+            self.add_item(btn)
+
+    def _make_cb(self, item: dict):
+        async def cb(interaction: discord.Interaction):
+            if interaction.user.id != self._user_id:
+                await interaction.response.send_message("Ce shop ne t'appartient pas !", ephemeral=True)
+                return
+            uid = str(interaction.user.id)
+
+            if not spend_berrys(uid, item["price"]):
+                bal = get_berrys(uid)
+                await interaction.response.send_message(
+                    f"❌ Solde insuffisant. Tu as **{bal} 🍊**, il te faut **{item['price']} 🍊**.", ephemeral=True
+                )
+                return
+
+            self.stop()
+
+            if item["id"] == "jackpot":
+                win = random.random() < 0.5
+                if win:
+                    new_bal = add_berrys(uid, item["price"] * 2)
+                    msg = f"🎉 **Jackpot !** Tu remportes **{item['price'] * 2} 🍊** !\nSolde : **{new_bal} 🍊**"
+                    color = discord.Color.gold()
+                else:
+                    new_bal = get_berrys(uid)
+                    msg = f"💸 **Perdu !** Tu perds **{item['price']} 🍊**.\nSolde : **{new_bal} 🍊**"
+                    color = discord.Color.red()
+                embed = discord.Embed(title="🎲 Jackpot", description=msg, color=color)
+                await interaction.response.edit_message(embed=embed, view=None)
+                return
+
+            # Achat heure vocale
+            user = get_user(_CACHE, uid)
+            user["extra_seconds"] = user.get("extra_seconds", 0) + item["extra_seconds"]
+            _DIRTY.add(uid)
+            new_bal = get_berrys(uid)
+
+            member = interaction.guild.get_member(interaction.user.id)
+            if member:
+                jt = user.get("join_time")
+                hours_7d = seconds_in_period(user["vocal_sessions"], 7, join_time=jt) / 3600
+                await update_rank(member, hours_7d, announce=True)
+
+            h = item["extra_seconds"] // 3600
+            embed = discord.Embed(
+                title=f"{item['emoji']} Achat confirmé — {item['name']}",
+                description=(
+                    f"**+{h}h** ajoutée(s) à ton total vocal all-time !\n"
+                    f"Solde restant : **{new_bal} 🍊**"
+                ),
+                color=discord.Color.green(),
+            )
+            await interaction.response.edit_message(embed=embed, view=None)
+        return cb
+
+
+@bot.tree.command(name="shop", description="Dépense tes Berrys 🍊 — heures vocales, jackpot…")
+@app_commands.guilds(*GUILD_IDS)
+async def shop_cmd(interaction: discord.Interaction):
+    uid = str(interaction.user.id)
+    try:
+        await interaction.response.defer()
+    except Exception:
+        return
+    await interaction.followup.send(embed=_shop_embed(uid), view=_ShopView(interaction.user.id))
 
 
 # ─────────────────────────────────────────
