@@ -4593,11 +4593,12 @@ class _AkinatorGuessView(discord.ui.View):
 #  AKINATOR ONE PIECE — PAYANT
 # ─────────────────────────────────────────
 
+_AKI_PENALTY   = 50_000   # Berry perdus si le bot devine
 _AKI_OP_MODES: dict[str, dict] = {
-    "normal":   {"label": "Partie normale",  "emoji": "🎮", "cost": 50_000,  "reward": 150_000, "max_q": 20, "style": discord.ButtonStyle.primary,   "desc": "Persos connus · 20 questions · **50 000 🍊**"},
-    "expert":   {"label": "Mode Expert",     "emoji": "💀", "cost": 100_000, "reward": 275_000, "max_q": 25, "style": discord.ButtonStyle.danger,    "desc": "Persos secondaires/rares · 25 questions · **100 000 🍊**"},
-    "ranked":   {"label": "Mode Ranked",     "emoji": "🏆", "cost": 300_000, "reward": 750_000, "max_q": 25, "style": discord.ButtonStyle.success,   "desc": "Classement · 25 questions · **300 000 🍊**"},
-    "duel":     {"label": "Défi 1v1",        "emoji": "⚔️", "cost": None,   "reward": None,    "max_q": 25, "style": discord.ButtonStyle.secondary, "desc": "Mise aléatoire · Le gagnant empoche tout"},
+    "normal":   {"label": "Partie normale",  "emoji": "🎮", "cost": _AKI_PENALTY, "reward": 20_000,  "max_q": 20, "style": discord.ButtonStyle.primary,   "desc": "Persos connus · 20 questions · gain **20 000 🍊** / perte **50 000 🍊**"},
+    "expert":   {"label": "Mode Expert",     "emoji": "💀", "cost": _AKI_PENALTY, "reward": 40_000,  "max_q": 25, "style": discord.ButtonStyle.danger,    "desc": "Persos rares · 25 questions · gain **40 000 🍊** / perte **50 000 🍊**"},
+    "ranked":   {"label": "Mode Ranked",     "emoji": "🏆", "cost": _AKI_PENALTY, "reward": None,    "max_q": 25, "style": discord.ButtonStyle.success,   "desc": "Classement · 25 questions · gain **75 000–100 000 🍊** / perte **50 000 🍊**"},
+    "duel":     {"label": "Défi 1v1",        "emoji": "⚔️", "cost": None,         "reward": None,    "max_q": 25, "style": discord.ButtonStyle.secondary, "desc": "Mise aléatoire · Le gagnant empoche tout"},
 }
 
 _AKI_OP_SYSTEM_NORMAL = (
@@ -4745,19 +4746,21 @@ async def _aki_op_dispatch(interaction: discord.Interaction, session: _AkinatorO
             embed = discord.Embed(title="🧞 Akinator OP — Tu m'as eu !", description=desc, color=discord.Color.green())
             await interaction.edit_original_response(embed=embed, view=None)
         elif session.op_mode == "ranked":
+            reward  = random.randint(75_000, 100_000)
+            new_bal = add_berrys(uid, reward)
             _u = get_user(_CACHE, uid)
             rk = _u.get("aki_ranked", {"wins": 0, "losses": 0, "score": 0})
-            rk["wins"] = rk.get("wins", 0) + 1
+            rk["wins"]  = rk.get("wins", 0) + 1
             rk["score"] = rk.get("score", 0) + 100
             _u["aki_ranked"] = rk
             _DIRTY.add(uid)
-            new_bal = add_berrys(uid, session.op_reward)
-            desc += f"**+{session.op_reward} 🍊** gagnés ! Solde : **{new_bal} 🍊**\n🏆 +100 pts ranked (score : {rk['score']})"
+            desc += f"**+{_fmt_berry(reward)} 🍊** gagnés ! Solde : **{_fmt_berry(new_bal)} 🍊**\n🏆 +100 pts ranked (score : {rk['score']})"
             embed = discord.Embed(title="🧞 Akinator OP — Tu m'as eu !", description=desc, color=discord.Color.green())
             await interaction.edit_original_response(embed=embed, view=None)
         else:
-            new_bal = add_berrys(uid, session.op_reward)
-            desc += f"**+{session.op_reward} 🍊** gagnés ! Solde : **{new_bal} 🍊**"
+            reward  = session.op_reward  # 20 000 normal / 40 000 expert
+            new_bal = add_berrys(uid, reward)
+            desc += f"**+{_fmt_berry(reward)} 🍊** gagnés ! Solde : **{_fmt_berry(new_bal)} 🍊**"
             embed = discord.Embed(title="🧞 Akinator OP — Tu m'as eu !", description=desc, color=discord.Color.green())
             await interaction.edit_original_response(embed=embed, view=None)
 
@@ -4891,16 +4894,19 @@ class _AkinatorOPGuessView(discord.ui.View):
         if session.duel_ref:
             _aki_op_duel_record(session, gave_up=False)
             desc += "*Résultat enregistré — attends la fin du duel.*"
-        elif session.op_mode == "ranked":
-            _u = get_user(_CACHE, uid)
-            rk = _u.get("aki_ranked", {"wins": 0, "losses": 0, "score": 0})
-            rk["losses"] = rk.get("losses", 0) + 1
-            rk["score"]  = max(0, rk.get("score", 0) - 50)
-            _u["aki_ranked"] = rk
-            _DIRTY.add(uid)
-            desc += f"💸 Tu perds ta mise de **{session.op_cost} 🍊** (-50 pts ranked, score : {rk['score']})"
         else:
-            desc += f"💸 Tu perds ta mise de **{session.op_cost} 🍊**."
+            new_bal = spend_berrys(uid, _AKI_PENALTY)
+            bal_after = get_berrys(uid)
+            if session.op_mode == "ranked":
+                _u = get_user(_CACHE, uid)
+                rk = _u.get("aki_ranked", {"wins": 0, "losses": 0, "score": 0})
+                rk["losses"] = rk.get("losses", 0) + 1
+                rk["score"]  = max(0, rk.get("score", 0) - 50)
+                _u["aki_ranked"] = rk
+                _DIRTY.add(uid)
+                desc += f"💸 **-{_fmt_berry(_AKI_PENALTY)} 🍊** · Solde : **{_fmt_berry(bal_after)} 🍊** · -50 pts ranked (score : {rk['score']})"
+            else:
+                desc += f"💸 **-{_fmt_berry(_AKI_PENALTY)} 🍊** · Solde : **{_fmt_berry(bal_after)} 🍊**"
 
         embed = discord.Embed(title="🧞 Akinator OP — Trouvé !", description=desc, color=discord.Color.red())
         await interaction.response.edit_message(embed=embed, view=None)
@@ -4949,12 +4955,11 @@ class _AkinatorOPModeView(discord.ui.View):
                 )
                 return
 
-            cost = cfg["cost"]
             uid  = str(interaction.user.id)
-            if not spend_berrys(uid, cost):
-                bal = get_berrys(uid)
+            # Vérifie que le joueur peut couvrir la pénalité si le bot devine
+            if get_berrys(uid) < _AKI_PENALTY:
                 await interaction.response.send_message(
-                    f"❌ Solde insuffisant. Tu as **{bal} 🍊**, il te faut **{cost} 🍊**.", ephemeral=True
+                    f"❌ Il te faut au moins **{_fmt_berry(_AKI_PENALTY)} 🍊** pour jouer (pénalité si le bot devine).", ephemeral=True
                 )
                 return
 
@@ -4965,8 +4970,7 @@ class _AkinatorOPModeView(discord.ui.View):
             action = await _aki_op_next_action(session)
             if action.get("action") != "question":
                 _AKI_OP_SESSIONS.pop(interaction.user.id, None)
-                add_berrys(uid, cost)  # remboursement
-                await interaction.edit_original_response(content="❌ Erreur IA. Berrys remboursés.", embed=None, view=None)
+                await interaction.edit_original_response(content="❌ Erreur IA. Réessaie dans quelques instants.", embed=None, view=None)
                 return
 
             q = action.get("text", "Ce personnage est-il un pirate ?")
