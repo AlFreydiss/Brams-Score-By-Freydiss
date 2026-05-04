@@ -5274,7 +5274,7 @@ _SHOP_ITEMS = [
         "id":    "ticket_pseudo",
         "emoji": "🎭",
         "name":  "Ticket Pseudo",
-        "desc":  "Change le pseudo d'un membre pendant **1 heure**. Utilise ensuite `/ticket_pseudo @membre nouveau_pseudo`.",
+        "desc":  "Change le pseudo d'un membre pendant **1 heure**. Utilise ensuite `/ticket @membre nouveau_pseudo`.",
         "price": 1_000_000,
         "style": discord.ButtonStyle.primary,
     },
@@ -5357,7 +5357,7 @@ class _ShopView(discord.ui.View):
                         title="🎭 Ticket Pseudo acheté !",
                         description=(
                             f"Tu possèdes maintenant **{tickets} ticket(s)** 🎭\n\n"
-                            f"Utilise `/ticket_pseudo @membre nouveau_pseudo` pour changer le pseudo d'un membre pendant 1h.\n\n"
+                            f"Utilise `/ticket @membre nouveau_pseudo` pour changer le pseudo d'un membre pendant 1h.\n\n"
                             f"Solde restant : **{new_bal:,} 🍊**".replace(",", " ")
                         ),
                         color=discord.Color.purple(),
@@ -5378,7 +5378,7 @@ async def shop_cmd(interaction: discord.Interaction):
     await interaction.followup.send(embed=_shop_embed(uid), view=_ShopView(interaction.user.id))
 
 
-@bot.tree.command(name="ticket_pseudo", description="Utilise un ticket pour changer le pseudo d'un membre pendant 1h !")
+@bot.tree.command(name="ticket", description="Utilise un ticket pour changer le pseudo d'un membre pendant 1h !")
 @app_commands.describe(membre="Le membre dont tu veux changer le pseudo", nouveau_pseudo="Le nouveau pseudo (max 32 caractères)")
 @app_commands.guilds(*GUILD_IDS)
 async def ticket_pseudo_cmd(interaction: discord.Interaction, membre: discord.Member, nouveau_pseudo: str):
