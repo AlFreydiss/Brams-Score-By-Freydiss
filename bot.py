@@ -4260,6 +4260,151 @@ class _DuelChallengeView(discord.ui.View):
 
 
 
+# ─────────────────────────────────────────
+#  GIVEAWAY
+# ─────────────────────────────────────────
+
+def _parse_duree(s: str) -> int | None:
+    """Convertit '1h30m', '2h', '30m', '1d' en secondes. None si invalide."""
+    total = 0
+    for val, unit in re.findall(r'(\d+)\s*([dhm])', s.strip().lower()):
+        v = int(val)
+        if unit == 'd':   total += v * 86400
+        elif unit == 'h': total += v * 3600
+        elif unit == 'm': total += v * 60
+    return total if total > 0 else None
+
+
+def _fmt_duree(seconds: int) -> str:
+    d, rem = divmod(seconds, 86400)
+    h, m   = divmod(rem, 3600)
+    m //= 60
+    parts = []
+    if d: parts.append(f"{d}j")
+    if h: parts.append(f"{h}h")
+    if m: parts.append(f"{m}min")
+    return " ".join(parts) or "0min"
+
+
+class GiveawayView(discord.ui.View):
+    def __init__(self, host_id: int):
+        super().__init__(timeout=None)
+        self.participants: set[int] = set()
+        self.host_id = host_id
+
+    @discord.ui.button(label="Participer 🎉", style=discord.ButtonStyle.success, custom_id="giveaway_join")
+    async def join(self, interaction: discord.Interaction, button: discord.ui.Button):
+        uid = interaction.user.id
+        if uid == self.host_id:
+            await interaction.response.send_message("L'organisateur ne peut pas participer.", ephemeral=True)
+            return
+        if uid in self.participants:
+            self.participants.discard(uid)
+            total = len(self.participants)
+            await interaction.response.send_message(
+                f"❌ Tu t'es retiré du giveaway. ({total} participant(s))", ephemeral=True
+            )
+        else:
+            self.participants.add(uid)
+            total = len(self.participants)
+            await interaction.response.send_message(
+                f"✅ Tu es inscrit au giveaway ! ({total} participant(s))", ephemeral=True
+            )
+
+
+async def _conclude_giveaway(
+    channel: discord.TextChannel,
+    message_id: int,
+    lot: str,
+    nb_gagnants: int,
+    host_id: int,
+    view: GiveawayView,
+):
+    view.stop()
+    try:
+        msg = await channel.fetch_message(message_id)
+    except Exception:
+        return
+
+    participants = list(view.participants)
+    if not participants:
+        embed = discord.Embed(
+            title="🎉  GIVEAWAY TERMINÉ  🎉",
+            description=f"**Lot :** {lot}\n\n❌ Personne n'a participé...",
+            color=discord.Color.red(),
+        )
+        embed.set_footer(text="Aucun gagnant")
+        await msg.edit(embed=embed, view=None)
+        return
+
+    nb = min(nb_gagnants, len(participants))
+    winners = random.sample(participants, nb)
+    mentions = ", ".join(f"<@{w}>" for w in winners)
+
+    embed = discord.Embed(
+        title="🎉  GIVEAWAY TERMINÉ  🎉",
+        description=(
+            f"**Lot :** {lot}\n\n"
+            f"🏆 **Gagnant(s) :** {mentions}\n\n"
+            f"Contactez <@{host_id}> pour récupérer votre lot."
+        ),
+        color=discord.Color.gold(),
+    )
+    embed.set_footer(text=f"{len(participants)} participant(s) • {nb} gagnant(s)")
+    await msg.edit(embed=embed, view=None)
+    await channel.send(f"🎊 Félicitations {mentions} ! Vous avez gagné **{lot}** !")
+
+
+@bot.tree.command(name="giveaway", description="[ADMIN] Lancer un giveaway")
+@app_commands.describe(
+    lot="Ce qui est mis en jeu",
+    duree="Durée (ex: 30m, 1h, 2h30m, 1d)",
+    gagnants="Nombre de gagnants (défaut: 1)",
+)
+@app_commands.default_permissions(administrator=True)
+@app_commands.checks.has_permissions(administrator=True)
+async def giveaway_cmd(interaction: discord.Interaction, lot: str, duree: str, gagnants: int = 1):
+    try:
+        await interaction.response.defer()
+    except Exception:
+        return
+
+    seconds = _parse_duree(duree)
+    if seconds is None:
+        await interaction.followup.send(
+            "❌ Durée invalide. Exemples : `30m`, `1h`, `2h30m`, `1d`", ephemeral=True
+        )
+        return
+    if not 1 <= gagnants <= 20:
+        await interaction.followup.send("❌ Le nombre de gagnants doit être entre 1 et 20.", ephemeral=True)
+        return
+
+    end_ts = int(time.time()) + seconds
+    view = GiveawayView(host_id=interaction.user.id)
+
+    embed = discord.Embed(
+        title="🎉  GIVEAWAY  🎉",
+        description=(
+            f"**Lot :** {lot}\n\n"
+            f"Clique sur le bouton ci-dessous pour participer !\n\n"
+            f"**Fin :** <t:{end_ts}:R> (<t:{end_ts}:f>)\n"
+            f"**Gagnants :** {gagnants}\n"
+            f"**Organisateur :** {interaction.user.mention}"
+        ),
+        color=discord.Color.gold(),
+    )
+    embed.set_footer(text=f"Durée : {_fmt_duree(seconds)}")
+
+    msg = await interaction.followup.send(embed=embed, view=view)
+
+    async def _wait_and_conclude():
+        await asyncio.sleep(seconds)
+        channel = interaction.channel
+        await _conclude_giveaway(channel, msg.id, lot, gagnants, interaction.user.id, view)
+
+    asyncio.create_task(_wait_and_conclude())
+
+
 @bot.tree.command(name="sync", description="[OWNER] Sync commandes slash")
 @app_commands.default_permissions(administrator=True)
 async def sync_commands(interaction: discord.Interaction):
