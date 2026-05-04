@@ -4269,19 +4269,23 @@ _AKI_MAX_QUESTIONS   = 25
 _AKI_MAX_BAD_GUESSES = 3
 
 _AKI_SYSTEM = (
-    "Tu es Akinator, un génie mystérieux qui devine des personnages (anime, manga, film, série, jeu vidéo, "
-    "célébrité, personnage historique, etc.).\n"
+    "Tu es Akinator Anime, un génie qui devine UNIQUEMENT des personnages d'anime et de manga.\n"
+    "Le joueur pense FORCÉMENT à un personnage d'anime ou de manga (One Piece, Naruto, Dragon Ball, "
+    "Attack on Titan, Death Note, Demon Slayer, Jujutsu Kaisen, Bleach, Hunter x Hunter, Fairy Tail, "
+    "Re:Zero, SAO, Black Clover, Vinland Saga, FMA, JoJo, Tokyo Ghoul, Code Geass, etc.).\n"
+    "Tu ne devines QUE des personnages d'anime/manga — jamais de célébrité, film occidental, jeu vidéo seul, etc.\n\n"
     "Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans texte autour :\n"
     '- Question  : {"action":"question","text":"Ta question ?"}\n'
-    '- Supposition : {"action":"guess","character":"Nom exact","reason":"Justification courte"}\n'
+    '- Supposition : {"action":"guess","character":"Nom exact du personnage","reason":"Justification courte"}\n'
     '- Abandon   : {"action":"give_up"}\n\n'
     "Stratégie :\n"
-    "1. Commence large : fictif/réel, humain/non-humain, univers (anime/film/jeu/…)\n"
-    "2. Affine : genre, rôle, époque, apparence, pouvoirs, série précise\n"
-    "3. Devine dès que tu es à ~70% de confiance\n"
-    "4. Après une mauvaise supposition, continue avec de nouvelles questions\n"
-    "5. Ne repose JAMAIS une question déjà dans l'historique\n"
-    "6. Abandonne après 3 mauvaises suppositions ou 25 questions sans succès"
+    "1. Commence par identifier l'univers/série : shōnen, shōjo, seinen ; série populaire vs obscure\n"
+    "2. Affine : genre (homme/femme/autre), rôle (héros/antagoniste/secondaire), apparence marquante\n"
+    "3. Précise : pouvoirs/capacités, arc narratif, relations importantes, organisation, époque de la série\n"
+    "4. Devine dès que tu es à ~70% de confiance\n"
+    "5. Après une mauvaise supposition, continue avec de nouvelles questions différentes\n"
+    "6. Ne repose JAMAIS une question déjà dans l'historique\n"
+    "7. Abandonne après 3 mauvaises suppositions ou 25 questions sans succès"
 )
 
 
@@ -4296,7 +4300,7 @@ class _AkinatorSession:
     def build_messages(self) -> list[dict]:
         msgs = [{"role": "system", "content": _AKI_SYSTEM}]
         if not self.qa_history:
-            msgs.append({"role": "user", "content": "Le joueur pense à un personnage. Pose ta première question (commence par : fictif ou réel ?)."})
+            msgs.append({"role": "user", "content": "Le joueur pense à un personnage d'anime ou de manga. Pose ta première question pour identifier la série ou le type de personnage."})
         else:
             lines = ["Historique Q&A :"]
             for i, (q, a) in enumerate(self.qa_history, 1):
@@ -4337,7 +4341,7 @@ def _aki_question_embed(session: _AkinatorSession, question: str) -> discord.Emb
     embed  = discord.Embed(title="🎩  Akinator  🎩", description=desc, color=discord.Color.blurple())
     if session.wrong_guesses:
         embed.add_field(name="Mauvaises suppos.", value="\n".join(f"❌ {g}" for g in session.wrong_guesses), inline=False)
-    embed.set_footer(text="Réponds honnêtement — je vais trouver !")
+    embed.set_footer(text="Pense à un perso anime/manga et réponds honnêtement — je vais trouver !")
     return embed
 
 
@@ -4472,7 +4476,7 @@ class _AkinatorGuessView(discord.ui.View):
         _AKI_SESSIONS.pop(self._session.user_id, None)
 
 
-@bot.tree.command(name="akinator", description="Pense à un personnage — je vais le deviner !")
+@bot.tree.command(name="akinator", description="Pense à un personnage d'anime/manga — je vais le deviner !")
 @app_commands.guilds(*GUILD_IDS)
 async def akinator_cmd(interaction: discord.Interaction):
     uid = interaction.user.id
@@ -4495,7 +4499,7 @@ async def akinator_cmd(interaction: discord.Interaction):
         await interaction.followup.send("❌ Erreur de démarrage. Réessaie dans quelques instants.", ephemeral=True)
         return
 
-    q = action.get("text", "Ton personnage est-il fictif ?")
+    q = action.get("text", "Ton personnage est-il dans un shōnen ?")
     session.nb_questions = 1
     session.qa_history.append((q, ""))
     await interaction.followup.send(embed=_aki_question_embed(session, q), view=_AkinatorAnswerView(session))
