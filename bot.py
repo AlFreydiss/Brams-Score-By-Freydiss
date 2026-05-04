@@ -5519,9 +5519,21 @@ async def ticket_pseudo_cmd(interaction: discord.Interaction, membre: discord.Me
         )
         return
 
+    # Vérifie si la cible a déjà un pseudo actif avec un ticket de durée supérieure
+    target_data    = get_user(_CACHE, str(membre.id))
+    active_restore = target_data.get("nick_restore")
+    if active_restore and now_ts() < active_restore.get("expires", 0):
+        active_minutes = active_restore.get("minutes", 0)
+        if tier["minutes"] < active_minutes:
+            await interaction.response.send_message(
+                f"❌ Le pseudo de **{membre.display_name}** est déjà verrouillé par un ticket **{active_minutes} min**. "
+                f"Ton ticket **{tier['minutes']} min** ne peut pas l'écraser.",
+                ephemeral=True,
+            )
+            return
+
     # Vérifie si la cible a un bouclier actif
-    target_data = get_user(_CACHE, str(membre.id))
-    shields     = target_data.get("nick_shields", 0)
+    shields = target_data.get("nick_shields", 0)
     if shields > 0:
         target_data["nick_shields"] = shields - 1
         _DIRTY.add(str(membre.id))
@@ -5567,6 +5579,7 @@ async def ticket_pseudo_cmd(interaction: discord.Interaction, membre: discord.Me
         "nick":    ancien_pseudo if ancien_pseudo != membre.name else None,
         "expires": expires_at,
         "guild":   str(interaction.guild_id),
+        "minutes": minutes,
     }
     _DIRTY.add(uid)
     _DIRTY.add(str(membre.id))
