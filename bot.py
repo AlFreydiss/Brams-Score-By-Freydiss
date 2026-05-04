@@ -5610,7 +5610,8 @@ async def ticket_pseudo_cmd(interaction: discord.Interaction, membre: discord.Me
 #  BANQUE
 # ─────────────────────────────────────────
 
-@bot.tree.command(name="banque", description="Tes stats de Berry + classement du serveur", guilds=GUILD_OBJECTS)
+@bot.tree.command(name="banque", description="Tes stats de Berry + classement du serveur")
+@app_commands.guilds(*GUILD_IDS)
 async def banque(interaction: discord.Interaction):
     await interaction.response.defer()
 
