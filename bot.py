@@ -5337,7 +5337,15 @@ _TICKET_TIERS = [
 ]
 _TICKET_BY_ID = {t["id"]: t for t in _TICKET_TIERS}
 
-_SHOP_ITEMS = _TICKET_TIERS
+_SHIELD_ITEM = {
+    "id":    "nick_shield",
+    "emoji": "🛡️",
+    "name":  "Bouclier Pseudo",
+    "price": 500_000,
+    "style": discord.ButtonStyle.success,
+}
+
+_SHOP_ITEMS = _TICKET_TIERS + [_SHIELD_ITEM]
 
 def _fmt_berry(n: int) -> str:
     return f"{n:,}".replace(",", " ")
@@ -5361,6 +5369,11 @@ def _shop_embed(uid: str) -> discord.Embed:
             f"{t['emoji']} **{t['name']}** — {_fmt_berry(t['price'])} 🍊\n"
             f"> Change un pseudo pendant **{t['minutes']} min** · Stock : **{stock}**"
         )
+    shields = user_data.get("nick_shields", 0)
+    lines.append(
+        f"🛡️ **Bouclier Pseudo** — {_fmt_berry(_SHIELD_ITEM['price'])} 🍊\n"
+        f"> Bloque **1 tentative** de changement de pseudo · annule le ticket de l'attaquant · Stock : **{shields}**"
+    )
     embed = discord.Embed(
         title="🏪  Bram's Shop  🏪",
         description=f"{sep}\n\n" + f"\n\n{sep}\n\n".join(lines) + f"\n\n{sep}\n\nTon solde : **{_fmt_berry(bal)} 🍊**",
@@ -5399,9 +5412,29 @@ class _ShopView(discord.ui.View):
                 return
 
             self.stop()
-
-# Achat ticket
             user_data = get_user(_CACHE, uid)
+
+            if item["id"] == "nick_shield":
+                user_data["nick_shields"] = user_data.get("nick_shields", 0) + 1
+                _DIRTY.add(uid)
+                new_bal = get_berrys(uid)
+                shields = user_data["nick_shields"]
+                await interaction.response.edit_message(
+                    embed=discord.Embed(
+                        title="🛡️ Bouclier Pseudo acheté !",
+                        description=(
+                            f"Tu possèdes **{shields} bouclier(s)** 🛡️\n\n"
+                            f"Si quelqu'un essaie de changer ton pseudo avec un ticket, "
+                            f"son ticket sera **perdu** et ton pseudo restera intact.\n\n"
+                            f"Solde restant : **{_fmt_berry(new_bal)} 🍊**"
+                        ),
+                        color=discord.Color.green(),
+                    ),
+                    view=None,
+                )
+                return
+
+            # Achat ticket
             tickets   = _get_tickets(user_data)
             tickets[item["id"]] = tickets.get(item["id"], 0) + 1
             user_data["pseudo_tickets"] = tickets
@@ -5479,6 +5512,32 @@ async def ticket_pseudo_cmd(interaction: discord.Interaction, membre: discord.Me
     if not _pseudo_is_clean(nouveau_pseudo):
         await interaction.response.send_message(
             "❌ Ce pseudo contient un mot interdit. Choisis un autre pseudo.", ephemeral=True
+        )
+        return
+
+    # Vérifie si la cible a un bouclier actif
+    target_data = get_user(_CACHE, str(membre.id))
+    shields     = target_data.get("nick_shields", 0)
+    if shields > 0:
+        target_data["nick_shields"] = shields - 1
+        _DIRTY.add(str(membre.id))
+        # Consume quand même le ticket de l'attaquant
+        tickets[duree] = stock - 1
+        user_data["pseudo_tickets"] = tickets
+        daily["count"] += 1
+        user_data["ticket_daily"] = daily
+        _DIRTY.add(uid)
+        await interaction.response.send_message(
+            embed=discord.Embed(
+                title="🛡️ Bouclier activé !",
+                description=(
+                    f"**{membre.display_name}** était protégé par un **Bouclier Pseudo** !\n\n"
+                    f"Ton ticket **{tier['emoji']} {tier['name']}** a été **perdu**.\n"
+                    f"Le pseudo de {membre.mention} n'a pas changé.\n\n"
+                    f"Boucliers restants sur la cible : **{shields - 1}**"
+                ),
+                color=discord.Color.blue(),
+            )
         )
         return
 
