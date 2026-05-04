@@ -1643,6 +1643,25 @@ async def on_ready():
         print(f"[BOT] {stale_cleared} join_times fantomes effacés au démarrage")
     if recovered:
         print(f"[BOT] {recovered} membres en vocal recuperes au demarrage")
+
+    # Sync rétroactif des Berry vocaux (une seule fois par utilisateur)
+    synced = 0
+    _now = now_ts()
+    for uid, udata in data.items():
+        if udata.get("vocal_berry_synced"):
+            continue
+        sessions = udata.get("vocal_sessions", [])
+        jt       = udata.get("join_time")
+        extra    = udata.get("extra_seconds", 0)
+        total_sec = total_seconds(sessions, join_time=jt, extra=extra, _now=_now)
+        earned = int(total_sec / 3600 * 100_000)
+        if earned > 0:
+            add_berrys(uid, earned)
+        udata["vocal_berry_synced"] = True
+        _DIRTY.add(uid)
+        synced += 1
+    if synced:
+        print(f"[BOT] Sync Berry vocal retro : {synced} utilisateurs credites")
     print("[BOT] Pret !")
 
 @bot.event
