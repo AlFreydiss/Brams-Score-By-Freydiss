@@ -4594,10 +4594,10 @@ class _AkinatorGuessView(discord.ui.View):
 # ─────────────────────────────────────────
 
 _AKI_OP_MODES: dict[str, dict] = {
-    "normal":   {"label": "Partie normale",  "emoji": "🎮", "cost": 30,  "reward": 90,   "max_q": 20, "style": discord.ButtonStyle.primary,   "desc": "Persos connus · 20 questions · **30 🍊**"},
-    "expert":   {"label": "Mode Expert",     "emoji": "💀", "cost": 80,  "reward": 220,  "max_q": 25, "style": discord.ButtonStyle.danger,    "desc": "Persos secondaires/rares · 25 questions · **80 🍊**"},
-    "ranked":   {"label": "Mode Ranked",     "emoji": "🏆", "cost": 150, "reward": 380,  "max_q": 25, "style": discord.ButtonStyle.success,   "desc": "Classement · 25 questions · **150 🍊**"},
-    "duel":     {"label": "Défi 1v1",        "emoji": "⚔️", "cost": None,"reward": None, "max_q": 25, "style": discord.ButtonStyle.secondary, "desc": "Mise aléatoire · Le gagnant empoche tout"},
+    "normal":   {"label": "Partie normale",  "emoji": "🎮", "cost": 50_000,  "reward": 150_000, "max_q": 20, "style": discord.ButtonStyle.primary,   "desc": "Persos connus · 20 questions · **50 000 🍊**"},
+    "expert":   {"label": "Mode Expert",     "emoji": "💀", "cost": 100_000, "reward": 275_000, "max_q": 25, "style": discord.ButtonStyle.danger,    "desc": "Persos secondaires/rares · 25 questions · **100 000 🍊**"},
+    "ranked":   {"label": "Mode Ranked",     "emoji": "🏆", "cost": 300_000, "reward": 750_000, "max_q": 25, "style": discord.ButtonStyle.success,   "desc": "Classement · 25 questions · **300 000 🍊**"},
+    "duel":     {"label": "Défi 1v1",        "emoji": "⚔️", "cost": None,   "reward": None,    "max_q": 25, "style": discord.ButtonStyle.secondary, "desc": "Mise aléatoire · Le gagnant empoche tout"},
 }
 
 _AKI_OP_SYSTEM_NORMAL = (
