@@ -5271,20 +5271,12 @@ async def solde_cmd(interaction: discord.Interaction):
 
 _SHOP_ITEMS = [
     {
-        "id":    "heure_1",
-        "emoji": "🎙️",
-        "name":  "1h Vocale",
-        "desc":  "Ajoute **1 heure** à ton total vocal all-time. Peut déclencher une montée de rang !",
-        "price": 400,
-        "extra_seconds": 3600,
-    },
-    {
-        "id":    "heure_3",
-        "emoji": "🌊",
-        "name":  "Fruit du Démon",
-        "desc":  "Ajoute **3 heures** d'un coup à ton total vocal all-time.",
-        "price": 1000,
-        "extra_seconds": 10800,
+        "id":    "ticket_pseudo",
+        "emoji": "🎭",
+        "name":  "Ticket Pseudo",
+        "desc":  "Change le pseudo d'un membre pendant **1 heure**. Utilise ensuite `/ticket_pseudo @membre nouveau_pseudo`.",
+        "price": 1_000_000,
+        "style": discord.ButtonStyle.primary,
     },
     {
         "id":    "jackpot",
@@ -5292,7 +5284,7 @@ _SHOP_ITEMS = [
         "name":  "Jackpot",
         "desc":  "Mise **200 🍊** — 50% de chance de **doubler** ou de tout perdre.",
         "price": 200,
-        "extra_seconds": 0,
+        "style": discord.ButtonStyle.danger,
     },
 ]
 
@@ -5300,12 +5292,11 @@ _SHOP_ITEMS = [
 def _shop_embed(uid: str) -> discord.Embed:
     bal = get_berrys(uid)
     sep = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    lines = []
-    for item in _SHOP_ITEMS:
-        lines.append(f"{item['emoji']} **{item['name']}** — {item['price']} 🍊\n> {item['desc']}")
+    lines = [f"{item['emoji']} **{item['name']}** — {item['price']:,} 🍊\n> {item['desc']}".replace(",", " ")
+             for item in _SHOP_ITEMS]
     embed = discord.Embed(
         title="🏪  Bram's Shop  🏪",
-        description=f"{sep}\n\n" + f"\n\n{sep}\n\n".join(lines) + f"\n\n{sep}\n\nTon solde : **{bal} 🍊**",
+        description=f"{sep}\n\n" + f"\n\n{sep}\n\n".join(lines) + f"\n\n{sep}\n\nTon solde : **{bal:,} 🍊**".replace(",", " "),
         color=discord.Color.from_rgb(212, 175, 55),
     )
     embed.set_footer(text="Clique sur un article pour l'acheter.")
@@ -5317,11 +5308,8 @@ class _ShopView(discord.ui.View):
         super().__init__(timeout=60)
         self._user_id = user_id
         for item in _SHOP_ITEMS:
-            btn = discord.ui.Button(
-                label=f"{item['name']} ({item['price']} 🍊)",
-                emoji=item["emoji"],
-                style=discord.ButtonStyle.primary if item["id"] != "jackpot" else discord.ButtonStyle.danger,
-            )
+            price_str = f"{item['price']:,}".replace(",", " ")
+            btn = discord.ui.Button(label=f"{item['name']} ({price_str} 🍊)", emoji=item["emoji"], style=item["style"])
             btn.callback = self._make_cb(item)
             self.add_item(btn)
 
@@ -5334,8 +5322,10 @@ class _ShopView(discord.ui.View):
 
             if not spend_berrys(uid, item["price"]):
                 bal = get_berrys(uid)
+                price_str = f"{item['price']:,}".replace(",", " ")
+                bal_str   = f"{bal:,}".replace(",", " ")
                 await interaction.response.send_message(
-                    f"❌ Solde insuffisant. Tu as **{bal} 🍊**, il te faut **{item['price']} 🍊**.", ephemeral=True
+                    f"❌ Solde insuffisant. Tu as **{bal_str} 🍊**, il te faut **{price_str} 🍊**.", ephemeral=True
                 )
                 return
 
@@ -5345,42 +5335,39 @@ class _ShopView(discord.ui.View):
                 win = random.random() < 0.5
                 if win:
                     new_bal = add_berrys(uid, item["price"] * 2)
-                    msg = f"🎉 **Jackpot !** Tu remportes **{item['price'] * 2} 🍊** !\nSolde : **{new_bal} 🍊**"
+                    msg   = f"🎉 **Jackpot !** Tu remportes **{item['price'] * 2} 🍊** !\nSolde : **{new_bal} 🍊**"
                     color = discord.Color.gold()
                 else:
                     new_bal = get_berrys(uid)
-                    msg = f"💸 **Perdu !** Tu perds **{item['price']} 🍊**.\nSolde : **{new_bal} 🍊**"
+                    msg   = f"💸 **Perdu !** Tu perds **{item['price']} 🍊**.\nSolde : **{new_bal} 🍊**"
                     color = discord.Color.red()
-                embed = discord.Embed(title="🎲 Jackpot", description=msg, color=color)
-                await interaction.response.edit_message(embed=embed, view=None)
+                await interaction.response.edit_message(
+                    embed=discord.Embed(title="🎲 Jackpot", description=msg, color=color), view=None
+                )
                 return
 
-            # Achat heure vocale
-            user = get_user(_CACHE, uid)
-            user["extra_seconds"] = user.get("extra_seconds", 0) + item["extra_seconds"]
-            _DIRTY.add(uid)
-            new_bal = get_berrys(uid)
-
-            member = interaction.guild.get_member(interaction.user.id)
-            if member:
-                jt = user.get("join_time")
-                hours_7d = seconds_in_period(user["vocal_sessions"], 7, join_time=jt) / 3600
-                await update_rank(member, hours_7d, announce=True)
-
-            h = item["extra_seconds"] // 3600
-            embed = discord.Embed(
-                title=f"{item['emoji']} Achat confirmé — {item['name']}",
-                description=(
-                    f"**+{h}h** ajoutée(s) à ton total vocal all-time !\n"
-                    f"Solde restant : **{new_bal} 🍊**"
-                ),
-                color=discord.Color.green(),
-            )
-            await interaction.response.edit_message(embed=embed, view=None)
+            if item["id"] == "ticket_pseudo":
+                user_data = get_user(_CACHE, uid)
+                user_data["pseudo_tickets"] = user_data.get("pseudo_tickets", 0) + 1
+                _DIRTY.add(uid)
+                new_bal   = get_berrys(uid)
+                tickets   = user_data["pseudo_tickets"]
+                await interaction.response.edit_message(
+                    embed=discord.Embed(
+                        title="🎭 Ticket Pseudo acheté !",
+                        description=(
+                            f"Tu possèdes maintenant **{tickets} ticket(s)** 🎭\n\n"
+                            f"Utilise `/ticket_pseudo @membre nouveau_pseudo` pour changer le pseudo d'un membre pendant 1h.\n\n"
+                            f"Solde restant : **{new_bal:,} 🍊**".replace(",", " ")
+                        ),
+                        color=discord.Color.purple(),
+                    ),
+                    view=None,
+                )
         return cb
 
 
-@bot.tree.command(name="shop", description="Dépense tes Berrys 🍊 — heures vocales, jackpot…")
+@bot.tree.command(name="shop", description="Dépense tes Berrys 🍊 dans le shop !")
 @app_commands.guilds(*GUILD_IDS)
 async def shop_cmd(interaction: discord.Interaction):
     uid = str(interaction.user.id)
@@ -5389,6 +5376,60 @@ async def shop_cmd(interaction: discord.Interaction):
     except Exception:
         return
     await interaction.followup.send(embed=_shop_embed(uid), view=_ShopView(interaction.user.id))
+
+
+@bot.tree.command(name="ticket_pseudo", description="Utilise un ticket pour changer le pseudo d'un membre pendant 1h !")
+@app_commands.describe(membre="Le membre dont tu veux changer le pseudo", nouveau_pseudo="Le nouveau pseudo (max 32 caractères)")
+@app_commands.guilds(*GUILD_IDS)
+async def ticket_pseudo_cmd(interaction: discord.Interaction, membre: discord.Member, nouveau_pseudo: str):
+    uid = str(interaction.user.id)
+    user_data = get_user(_CACHE, uid)
+    tickets   = user_data.get("pseudo_tickets", 0)
+
+    if tickets <= 0:
+        await interaction.response.send_message(
+            "❌ Tu n'as pas de ticket pseudo. Achète-en un dans `/shop` !", ephemeral=True
+        )
+        return
+    if membre.bot:
+        await interaction.response.send_message("❌ Impossible de changer le pseudo d'un bot.", ephemeral=True)
+        return
+    if len(nouveau_pseudo) > 32:
+        await interaction.response.send_message("❌ Le pseudo ne peut pas dépasser 32 caractères.", ephemeral=True)
+        return
+
+    ancien_pseudo = membre.display_name
+    try:
+        await membre.edit(nick=nouveau_pseudo)
+    except discord.Forbidden:
+        await interaction.response.send_message(
+            "❌ Je n'ai pas la permission de changer ce pseudo (rôle trop élevé ?).", ephemeral=True
+        )
+        return
+
+    user_data["pseudo_tickets"] = tickets - 1
+    _DIRTY.add(uid)
+
+    await interaction.response.send_message(
+        embed=discord.Embed(
+            title="🎭 Pseudo changé !",
+            description=(
+                f"**{ancien_pseudo}** s'appelle maintenant **{nouveau_pseudo}** pendant **1 heure** !\n\n"
+                f"Il reprendra son pseudo original dans 60 minutes.\n"
+                f"Tickets restants : **{tickets - 1}**"
+            ),
+            color=discord.Color.purple(),
+        )
+    )
+
+    async def _restore():
+        await asyncio.sleep(3600)
+        try:
+            await membre.edit(nick=ancien_pseudo if ancien_pseudo != membre.name else None)
+        except Exception:
+            pass
+
+    asyncio.create_task(_restore())
 
 
 # ─────────────────────────────────────────
