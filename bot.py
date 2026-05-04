@@ -5295,15 +5295,22 @@ async def solde_cmd(interaction: discord.Interaction):
 #  SHOP
 # ─────────────────────────────────────────
 
-_SHOP_ITEMS = [
-    {
-        "id":    "ticket_pseudo",
-        "emoji": "🎭",
-        "name":  "Ticket Pseudo",
-        "desc":  "Change le pseudo d'un membre pendant **1 heure**. Utilise ensuite `/ticket @membre nouveau_pseudo`.",
-        "price": 1_000_000,
-        "style": discord.ButtonStyle.primary,
-    },
+_PSEUDO_BANNED = [
+    "pute", "suceur", "suceuse", "israel", "juif", "chienne", "soumise", "chien",
+]
+
+def _pseudo_is_clean(pseudo: str) -> bool:
+    low = pseudo.lower()
+    return not any(w in low for w in _PSEUDO_BANNED)
+
+_TICKET_TIERS = [
+    {"id": "ticket_30",  "emoji": "⏱️", "name": "Ticket 30 min", "minutes": 30,  "price": 1_000_000, "style": discord.ButtonStyle.secondary},
+    {"id": "ticket_60",  "emoji": "🎭", "name": "Ticket 1h",     "minutes": 60,  "price": 2_000_000, "style": discord.ButtonStyle.primary},
+    {"id": "ticket_120", "emoji": "👑", "name": "Ticket 2h",     "minutes": 120, "price": 4_000_000, "style": discord.ButtonStyle.danger},
+]
+_TICKET_BY_ID = {t["id"]: t for t in _TICKET_TIERS}
+
+_SHOP_ITEMS = _TICKET_TIERS + [
     {
         "id":    "jackpot",
         "emoji": "🎲",
@@ -5314,18 +5321,37 @@ _SHOP_ITEMS = [
     },
 ]
 
+def _fmt_berry(n: int) -> str:
+    return f"{n:,}".replace(",", " ")
+
+def _get_tickets(user_data: dict) -> dict:
+    raw = user_data.get("pseudo_tickets", {})
+    if isinstance(raw, int):
+        raw = {"ticket_60": raw}
+        user_data["pseudo_tickets"] = raw
+    return raw
 
 def _shop_embed(uid: str) -> discord.Embed:
-    bal = get_berrys(uid)
+    bal       = get_berrys(uid)
+    user_data = get_user(_CACHE, uid)
+    tickets   = _get_tickets(user_data)
     sep = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    lines = [f"{item['emoji']} **{item['name']}** — {item['price']:,} 🍊\n> {item['desc']}".replace(",", " ")
-             for item in _SHOP_ITEMS]
+    lines = []
+    for t in _TICKET_TIERS:
+        stock = tickets.get(t["id"], 0)
+        lines.append(
+            f"{t['emoji']} **{t['name']}** — {_fmt_berry(t['price'])} 🍊\n"
+            f"> Change un pseudo pendant **{t['minutes']} min** · Stock : **{stock}**"
+        )
+    lines.append(
+        "🎲 **Jackpot** — 200 🍊\n> 50% de chance de **doubler** ou de tout perdre."
+    )
     embed = discord.Embed(
         title="🏪  Bram's Shop  🏪",
-        description=f"{sep}\n\n" + f"\n\n{sep}\n\n".join(lines) + f"\n\n{sep}\n\nTon solde : **{bal:,} 🍊**".replace(",", " "),
+        description=f"{sep}\n\n" + f"\n\n{sep}\n\n".join(lines) + f"\n\n{sep}\n\nTon solde : **{_fmt_berry(bal)} 🍊**",
         color=discord.Color.from_rgb(212, 175, 55),
     )
-    embed.set_footer(text="Clique sur un article pour l'acheter.")
+    embed.set_footer(text="Clique sur un article pour l'acheter · Max 2 utilisations /ticket par jour")
     return embed
 
 
@@ -5334,8 +5360,11 @@ class _ShopView(discord.ui.View):
         super().__init__(timeout=60)
         self._user_id = user_id
         for item in _SHOP_ITEMS:
-            price_str = f"{item['price']:,}".replace(",", " ")
-            btn = discord.ui.Button(label=f"{item['name']} ({price_str} 🍊)", emoji=item["emoji"], style=item["style"])
+            btn = discord.ui.Button(
+                label=f"{item['name']} ({_fmt_berry(item['price'])} 🍊)",
+                emoji=item["emoji"],
+                style=item["style"],
+            )
             btn.callback = self._make_cb(item)
             self.add_item(btn)
 
@@ -5348,10 +5377,9 @@ class _ShopView(discord.ui.View):
 
             if not spend_berrys(uid, item["price"]):
                 bal = get_berrys(uid)
-                price_str = f"{item['price']:,}".replace(",", " ")
-                bal_str   = f"{bal:,}".replace(",", " ")
                 await interaction.response.send_message(
-                    f"❌ Solde insuffisant. Tu as **{bal_str} 🍊**, il te faut **{price_str} 🍊**.", ephemeral=True
+                    f"❌ Solde insuffisant. Tu as **{_fmt_berry(bal)} 🍊**, il te faut **{_fmt_berry(item['price'])} 🍊**.",
+                    ephemeral=True,
                 )
                 return
 
@@ -5361,35 +5389,35 @@ class _ShopView(discord.ui.View):
                 win = random.random() < 0.5
                 if win:
                     new_bal = add_berrys(uid, item["price"] * 2)
-                    msg   = f"🎉 **Jackpot !** Tu remportes **{item['price'] * 2} 🍊** !\nSolde : **{new_bal} 🍊**"
-                    color = discord.Color.gold()
+                    msg, color = f"🎉 **Jackpot !** Tu remportes **{item['price'] * 2} 🍊** !\nSolde : **{new_bal} 🍊**", discord.Color.gold()
                 else:
                     new_bal = get_berrys(uid)
-                    msg   = f"💸 **Perdu !** Tu perds **{item['price']} 🍊**.\nSolde : **{new_bal} 🍊**"
-                    color = discord.Color.red()
+                    msg, color = f"💸 **Perdu !** Tu perds **{item['price']} 🍊**.\nSolde : **{new_bal} 🍊**", discord.Color.red()
                 await interaction.response.edit_message(
                     embed=discord.Embed(title="🎲 Jackpot", description=msg, color=color), view=None
                 )
                 return
 
-            if item["id"] == "ticket_pseudo":
-                user_data = get_user(_CACHE, uid)
-                user_data["pseudo_tickets"] = user_data.get("pseudo_tickets", 0) + 1
-                _DIRTY.add(uid)
-                new_bal   = get_berrys(uid)
-                tickets   = user_data["pseudo_tickets"]
-                await interaction.response.edit_message(
-                    embed=discord.Embed(
-                        title="🎭 Ticket Pseudo acheté !",
-                        description=(
-                            f"Tu possèdes maintenant **{tickets} ticket(s)** 🎭\n\n"
-                            f"Utilise `/ticket @membre nouveau_pseudo` pour changer le pseudo d'un membre pendant 1h.\n\n"
-                            f"Solde restant : **{new_bal:,} 🍊**".replace(",", " ")
-                        ),
-                        color=discord.Color.purple(),
+            # Achat ticket
+            user_data = get_user(_CACHE, uid)
+            tickets   = _get_tickets(user_data)
+            tickets[item["id"]] = tickets.get(item["id"], 0) + 1
+            user_data["pseudo_tickets"] = tickets
+            _DIRTY.add(uid)
+            new_bal = get_berrys(uid)
+            stock   = tickets[item["id"]]
+            await interaction.response.edit_message(
+                embed=discord.Embed(
+                    title=f"{item['emoji']} {item['name']} acheté !",
+                    description=(
+                        f"Tu possèdes **{stock} ticket(s)** {item['emoji']}\n\n"
+                        f"Utilise `/ticket @membre nouveau_pseudo` et choisis la durée **{item['minutes']} min**.\n\n"
+                        f"Solde restant : **{_fmt_berry(new_bal)} 🍊**"
                     ),
-                    view=None,
-                )
+                    color=discord.Color.purple(),
+                ),
+                view=None,
+            )
         return cb
 
 
@@ -5404,17 +5432,29 @@ async def shop_cmd(interaction: discord.Interaction):
     await interaction.followup.send(embed=_shop_embed(uid), view=_ShopView(interaction.user.id))
 
 
-@bot.tree.command(name="ticket", description="Utilise un ticket pour changer le pseudo d'un membre pendant 1h !")
-@app_commands.describe(membre="Le membre dont tu veux changer le pseudo", nouveau_pseudo="Le nouveau pseudo (max 32 caractères)")
+@bot.tree.command(name="ticket", description="Utilise un ticket pour changer le pseudo d'un membre !")
+@app_commands.describe(
+    membre="Le membre dont tu veux changer le pseudo",
+    nouveau_pseudo="Le nouveau pseudo (max 32 caractères)",
+    duree="Durée du changement (selon le ticket que tu possèdes)",
+)
+@app_commands.choices(duree=[
+    app_commands.Choice(name="30 minutes  (Ticket ⏱️)", value="ticket_30"),
+    app_commands.Choice(name="1 heure     (Ticket 🎭)", value="ticket_60"),
+    app_commands.Choice(name="2 heures    (Ticket 👑)", value="ticket_120"),
+])
 @app_commands.guilds(*GUILD_IDS)
-async def ticket_pseudo_cmd(interaction: discord.Interaction, membre: discord.Member, nouveau_pseudo: str):
-    uid = str(interaction.user.id)
+async def ticket_pseudo_cmd(interaction: discord.Interaction, membre: discord.Member,
+                             nouveau_pseudo: str, duree: str = "ticket_60"):
+    uid       = str(interaction.user.id)
     user_data = get_user(_CACHE, uid)
-    tickets   = user_data.get("pseudo_tickets", 0)
+    tier      = _TICKET_BY_ID[duree]
+    tickets   = _get_tickets(user_data)
+    stock     = tickets.get(duree, 0)
 
-    if tickets <= 0:
+    if stock <= 0:
         await interaction.response.send_message(
-            "❌ Tu n'as pas de ticket pseudo. Achète-en un dans `/shop` !", ephemeral=True
+            f"❌ Tu n'as pas de **{tier['name']}**. Achète-en un dans `/shop` !", ephemeral=True
         )
         return
 
@@ -5434,6 +5474,11 @@ async def ticket_pseudo_cmd(interaction: discord.Interaction, membre: discord.Me
     if len(nouveau_pseudo) > 32:
         await interaction.response.send_message("❌ Le pseudo ne peut pas dépasser 32 caractères.", ephemeral=True)
         return
+    if not _pseudo_is_clean(nouveau_pseudo):
+        await interaction.response.send_message(
+            "❌ Ce pseudo contient un mot interdit. Choisis un autre pseudo.", ephemeral=True
+        )
+        return
 
     ancien_pseudo = membre.display_name
     try:
@@ -5444,26 +5489,28 @@ async def ticket_pseudo_cmd(interaction: discord.Interaction, membre: discord.Me
         )
         return
 
-    user_data["pseudo_tickets"] = tickets - 1
+    tickets[duree] = stock - 1
+    user_data["pseudo_tickets"] = tickets
     daily["count"] += 1
     user_data["ticket_daily"] = daily
     _DIRTY.add(uid)
 
     restants_jour = 2 - daily["count"]
+    minutes       = tier["minutes"]
     await interaction.response.send_message(
         embed=discord.Embed(
             title="🎭 Pseudo changé !",
             description=(
-                f"**{ancien_pseudo}** s'appelle maintenant **{nouveau_pseudo}** pendant **1 heure** !\n\n"
-                f"Il reprendra son pseudo original dans 60 minutes.\n"
-                f"Tickets restants : **{tickets - 1}** · Utilisations restantes aujourd'hui : **{restants_jour}/2**"
+                f"**{ancien_pseudo}** s'appelle maintenant **{nouveau_pseudo}** pendant **{minutes} min** !\n\n"
+                f"Il reprendra son pseudo original dans {minutes} minutes.\n"
+                f"Stock {tier['emoji']} : **{tickets[duree]}** · Utilisations restantes aujourd'hui : **{restants_jour}/2**"
             ),
             color=discord.Color.purple(),
         )
     )
 
     async def _restore():
-        await asyncio.sleep(3600)
+        await asyncio.sleep(minutes * 60)
         try:
             await membre.edit(nick=ancien_pseudo if ancien_pseudo != membre.name else None)
         except Exception:
