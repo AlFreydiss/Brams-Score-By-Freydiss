@@ -603,6 +603,35 @@ def get_user(data, uid: str):
             data[uid][key] = default
     return data[uid]
 
+# ── Berry Wallet ──────────────────────────────────────────────────
+BERRY_EMOJI = "🍊"
+
+def get_berrys(uid: str) -> int:
+    return get_user(_CACHE, uid).get("berrys", 0)
+
+def add_berrys(uid: str, amount: int) -> int:
+    user = get_user(_CACHE, uid)
+    user["berrys"] = max(0, user.get("berrys", 0) + amount)
+    _DIRTY.add(uid)
+    return user["berrys"]
+
+def spend_berrys(uid: str, amount: int) -> bool:
+    user = get_user(_CACHE, uid)
+    bal = user.get("berrys", 0)
+    if bal < amount:
+        return False
+    user["berrys"] = bal - amount
+    _DIRTY.add(uid)
+    return True
+
+def _proportional_bet(uid: str) -> int:
+    """Mise 10–25% du solde, arrondie à 10, min 30, max 5 000."""
+    bal = get_berrys(uid)
+    if bal < 30:
+        return 0
+    bet = round(bal * random.uniform(0.10, 0.25) / 10) * 10
+    return max(30, min(5000, bet))
+
 def seconds_in_period(sessions, days, join_time=None, _now=None):
     _now = _now or now_ts()
     cutoff = _now - days * 86400
@@ -2960,7 +2989,7 @@ _QUIZ_HISTORY_MAX = 60
 
 class _LiveDuelSession:
     __slots__ = ("uid1", "uid2", "name1", "name2", "questions", "idx",
-                 "score1", "score2", "pts1", "pts2", "interaction")
+                 "score1", "score2", "pts1", "pts2", "interaction", "berry_bet")
     def __init__(self, uid1: int, uid2: int, name1: str, name2: str,
                  questions: list, interaction: discord.Interaction):
         self.uid1, self.uid2      = uid1, uid2
@@ -2970,6 +2999,7 @@ class _LiveDuelSession:
         self.score1 = self.score2 = 0
         self.pts1   = self.pts2   = 0
         self.interaction          = interaction
+        self.berry_bet            = 0
 
 _DIFF_POINTS: dict[str, int] = {"facile": 1, "moyen": 2, "difficile": 3, "expert": 5}
 _DIFF_COLORS: dict[str, int] = {"facile": 0x2ecc71, "moyen": 0xf1c40f, "difficile": 0xe67e22, "expert": 0xe74c3c}
@@ -3151,7 +3181,7 @@ def _generate_citation_quiz(n: int, seen_questions: list[str] | None = None) -> 
 
 
 class _QuizSession:
-    __slots__ = ("questions", "idx", "score", "points", "best_combo", "combo", "user_id", "interaction", "category", "joker_used", "speed_bonuses", "current_message", "target_points")
+    __slots__ = ("questions", "idx", "score", "points", "best_combo", "combo", "user_id", "interaction", "category", "joker_used", "speed_bonuses", "current_message", "target_points", "paid_mode", "entry_cost", "quiz_reward", "quiz_all_correct")
     def __init__(self, questions, user_id, interaction, category: str = "general"):
         self.questions       = questions
         self.idx             = 0
@@ -3166,6 +3196,10 @@ class _QuizSession:
         self.speed_bonuses   = 0
         self.current_message = None
         self.target_points   = None
+        self.paid_mode       = None   # "enrichi" | "survie" | "legendaire" | None
+        self.entry_cost      = 0
+        self.quiz_reward     = 0
+        self.quiz_all_correct = True
 
 def _quiz_rank(pct: float) -> tuple[str, str]:
     if pct == 1.0: return "👑", "Score parfait - Légende vivante de l'animé"
@@ -3209,6 +3243,22 @@ async def _send_next_question(inter: discord.Interaction, sess: _QuizSession):
             extras.append("🃏 Joker 50/50 utilisé")
         if extras:
             embed.add_field(name="📊  Bonus", value="\n".join(extras), inline=False)
+
+        # ── Payout Berry (modes payants) ────────────────────────────────────
+        _pm = sess.paid_mode
+        if _pm == "survie":
+            _earned = sess.score * 50
+            if _earned > 0:
+                _bal = add_berrys(str(sess.user_id), _earned)
+                embed.add_field(name="💰 Gain Survie", value=f"**+{_earned} 🍊** ({sess.score} × 50)\nSolde : **{_bal} 🍊**", inline=False)
+            else:
+                embed.add_field(name="💸 Pas de gain", value="Aucune bonne réponse.", inline=False)
+        elif _pm in ("enrichi", "legendaire"):
+            if sess.quiz_all_correct and sess.score == total:
+                _bal = add_berrys(str(sess.user_id), sess.quiz_reward)
+                embed.add_field(name="💰 Récompense", value=f"**+{sess.quiz_reward} 🍊** — Score parfait !\nSolde : **{_bal} 🍊**", inline=False)
+            else:
+                embed.add_field(name="💸 Pas de récompense", value=f"Il fallait tout juste ({total}/{total}) pour gagner les Berrys.", inline=False)
 
         replay_view = _ReplayView(sess.user_id, total, sess.category)
         try:
@@ -3352,6 +3402,9 @@ class _AnswerButton(discord.ui.Button):
             color = discord.Color.green()
         else:
             sess.combo = 0
+            sess.quiz_all_correct = False
+            if sess.paid_mode == "survie":
+                sess.idx = len(sess.questions)  # stoppe la survie dès la 1ère erreur
             lines = [
                 f"❌  **Mauvaise réponse**",
                 f"La bonne réponse était  :  **{view.correct}**",
@@ -4078,7 +4131,7 @@ async def _send_duel_question(duel: "_LiveDuelSession", inter: discord.Interacti
     if duel.idx >= n:
         LIVE_DUELS.pop(duel.uid1, None)
         LIVE_DUELS.pop(duel.uid2, None)
-        await _send_live_duel_result(duel, inter)
+        await _send_live_duel_result(duel, inter, berry_bet=duel.berry_bet)
         return
 
     q        = duel.questions[duel.idx]
@@ -4127,23 +4180,34 @@ async def _send_duel_question(duel: "_LiveDuelSession", inter: discord.Interacti
         print(f"❌ _send_duel_question failed: {e}")
 
 
-async def _send_live_duel_result(duel: "_LiveDuelSession", inter: discord.Interaction):
+async def _send_live_duel_result(duel: "_LiveDuelSession", inter: discord.Interaction, berry_bet: int = 0):
     n = len(duel.questions)
+    berry_line = ""
     if duel.pts1 > duel.pts2:
         titre = f"🏆  **{duel.name1}** remporte le duel !"
         color = discord.Color.gold()
+        if berry_bet:
+            gained = add_berrys(str(duel.uid1), berry_bet * 2)
+            berry_line = f"\n💰 **{duel.name1}** remporte **{berry_bet * 2} 🍊** ! (Solde : {gained} 🍊)"
     elif duel.pts2 > duel.pts1:
         titre = f"🏆  **{duel.name2}** remporte le duel !"
         color = discord.Color.gold()
+        if berry_bet:
+            gained = add_berrys(str(duel.uid2), berry_bet * 2)
+            berry_line = f"\n💰 **{duel.name2}** remporte **{berry_bet * 2} 🍊** ! (Solde : {gained} 🍊)"
     else:
         titre = "⚖️  Égalité parfaite !"
         color = discord.Color.blurple()
+        if berry_bet:
+            add_berrys(str(duel.uid1), berry_bet)
+            add_berrys(str(duel.uid2), berry_bet)
+            berry_line = f"\n⚖️ Remboursement : **{berry_bet} 🍊** chacun."
 
     sep = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     embed = discord.Embed(
         title="⚔️  Résultat du Duel Quiz",
         description=(
-            f"{titre}\n\n"
+            f"{titre}{berry_line}\n\n"
             f"{sep}\n"
             f"🔴 **{duel.name1}**\n"
             f"> 🎯 {duel.score1} / {n}  ·  ✨ {duel.pts1} pts\n\n"
@@ -4503,6 +4567,753 @@ async def akinator_cmd(interaction: discord.Interaction):
     session.nb_questions = 1
     session.qa_history.append((q, ""))
     await interaction.followup.send(embed=_aki_question_embed(session, q), view=_AkinatorAnswerView(session))
+
+
+# ─────────────────────────────────────────
+#  AKINATOR ONE PIECE — PAYANT
+# ─────────────────────────────────────────
+
+_AKI_OP_MODES: dict[str, dict] = {
+    "normal":   {"label": "Partie normale",  "emoji": "🎮", "cost": 30,  "reward": 90,   "max_q": 20, "style": discord.ButtonStyle.primary,   "desc": "Persos connus · 20 questions · **30 🍊**"},
+    "expert":   {"label": "Mode Expert",     "emoji": "💀", "cost": 80,  "reward": 220,  "max_q": 25, "style": discord.ButtonStyle.danger,    "desc": "Persos secondaires/rares · 25 questions · **80 🍊**"},
+    "ranked":   {"label": "Mode Ranked",     "emoji": "🏆", "cost": 150, "reward": 380,  "max_q": 25, "style": discord.ButtonStyle.success,   "desc": "Classement · 25 questions · **150 🍊**"},
+    "duel":     {"label": "Défi 1v1",        "emoji": "⚔️", "cost": None,"reward": None, "max_q": 25, "style": discord.ButtonStyle.secondary, "desc": "Mise aléatoire · Le gagnant empoche tout"},
+}
+
+_AKI_OP_SYSTEM_NORMAL = (
+    "Tu es Akinator spécialisé One Piece. Tu dois deviner un personnage CONNU et PRINCIPAL de One Piece "
+    "(Luffy, Zoro, Nami, Sanji, Ace, Whitebeard, Law, Doflamingo, Shanks, Big Mom, Kaido, Mihawk, etc.).\n"
+    "Réponds UNIQUEMENT en JSON valide :\n"
+    '- Question : {"action":"question","text":"Ta question ?"}\n'
+    '- Supposition : {"action":"guess","character":"Nom exact","reason":"Justification courte"}\n'
+    '- Abandon : {"action":"give_up"}\n\n'
+    "Stratégie : identifie d'abord l'arc/équipage/faction, puis affine avec genre, fruit du démon, rôle. "
+    "Devine dès que tu es à ~70% de confiance. Pas de double question."
+)
+
+_AKI_OP_SYSTEM_EXPERT = (
+    "Tu es Akinator spécialisé One Piece en MODE EXPERT. Tu dois deviner un personnage SECONDAIRE ou RARE de One Piece "
+    "(officiers de rang inférieur, habitants d'île, antagonistes mineurs, personnages apparus dans un seul arc).\n"
+    "Réponds UNIQUEMENT en JSON valide :\n"
+    '- Question : {"action":"question","text":"Ta question ?"}\n'
+    '- Supposition : {"action":"guess","character":"Nom exact","reason":"Justification courte"}\n'
+    '- Abandon : {"action":"give_up"}\n\n'
+    "Stratégie : commence par l'arc où le perso apparaît, son camp, son importance narrative. "
+    "Sois précis et variés dans tes questions. Pas de double question."
+)
+
+_AKI_OP_SYSTEM_RANKED = _AKI_OP_SYSTEM_NORMAL  # même niveau, mais compétitif
+
+_AKI_OP_SYSTEMS = {
+    "normal": _AKI_OP_SYSTEM_NORMAL,
+    "expert": _AKI_OP_SYSTEM_EXPERT,
+    "ranked": _AKI_OP_SYSTEM_RANKED,
+    "duel":   _AKI_OP_SYSTEM_NORMAL,
+}
+
+_AKI_OP_SESSIONS: dict[int, "_AkinatorOPSession"] = {}
+_AKI_OP_DUELS:    dict[str, "_AkinatorOPDuel"]    = {}
+
+
+class _AkinatorOPSession(_AkinatorSession):
+    def __init__(self, user_id: int, mode: str):
+        super().__init__(user_id)
+        self.op_mode   = mode
+        self.op_cost   = _AKI_OP_MODES[mode]["cost"] or 0
+        self.op_reward = _AKI_OP_MODES[mode]["reward"] or 0
+        self.op_max_q  = _AKI_OP_MODES[mode]["max_q"]
+        self.duel_ref: "_AkinatorOPDuel | None" = None
+
+    def build_messages(self) -> list[dict]:
+        msgs = [{"role": "system", "content": _AKI_OP_SYSTEMS[self.op_mode]}]
+        if not self.qa_history:
+            msgs.append({"role": "user", "content": "Le joueur pense à un personnage de One Piece. Pose ta première question."})
+        else:
+            lines = ["Historique Q&A :"]
+            for i, (q, a) in enumerate(self.qa_history, 1):
+                lines.append(f"  {i}. {q} → {a}")
+            if self.wrong_guesses:
+                lines.append(f"Suppositions incorrectes : {', '.join(self.wrong_guesses)}")
+            lines.append(f"\nQuestions : {self.nb_questions}/{self.op_max_q} | Mauvaises suppositions : {len(self.wrong_guesses)}/{_AKI_MAX_BAD_GUESSES}")
+            lines.append("Que fais-tu ? (question ou supposition)")
+            msgs.append({"role": "user", "content": "\n".join(lines)})
+        return msgs
+
+
+class _AkinatorOPDuel:
+    def __init__(self, duel_id: str, uid1: int, uid2: int, name1: str, name2: str,
+                 bet1: int, bet2: int, channel: discord.TextChannel):
+        self.duel_id = duel_id
+        self.uid1, self.uid2       = uid1, uid2
+        self.name1, self.name2     = name1, name2
+        self.bet1, self.bet2       = bet1, bet2
+        self.channel               = channel
+        self.result1: int | None   = None   # nb questions pour deviner (None = pas fini)
+        self.result2: int | None   = None
+        self.gave_up1: bool        = False  # bot a abandonné sur le perso de uid1
+        self.gave_up2: bool        = False
+
+
+async def _aki_op_next_action(session: _AkinatorOPSession) -> dict:
+    api_key = os.environ.get("GROQ_API_KEY", "")
+    for attempt in range(3):
+        try:
+            resp = await litellm.acompletion(
+                model=_GROQ_MODEL, api_key=api_key, max_tokens=256, temperature=0.7,
+                response_format={"type": "json_object"}, messages=session.build_messages(),
+            )
+            data = json.loads(resp.choices[0].message.content.strip())
+            if data.get("action") in ("question", "guess", "give_up"):
+                return data
+        except Exception as e:
+            print(f"[AKI_OP] attempt {attempt+1}: {e}")
+    return {"action": "give_up"}
+
+
+def _aki_op_question_embed(session: _AkinatorOPSession, question: str) -> discord.Embed:
+    max_q = session.op_max_q
+    bar   = "▓" * min(session.nb_questions, max_q) + "░" * max(0, max_q - session.nb_questions)
+    embed = discord.Embed(
+        title="🧞 Akinator One Piece 🧞",
+        description=f"**Question {session.nb_questions}/{max_q}**\n`{bar}`\n\n💬  **{question}**",
+        color=discord.Color.from_rgb(220, 50, 50),
+    )
+    mode_cfg = _AKI_OP_MODES[session.op_mode]
+    embed.set_footer(text=f"Mode : {mode_cfg['emoji']} {mode_cfg['label']} • Réponds honnêtement !")
+    if session.wrong_guesses:
+        embed.add_field(name="❌ Mauvaises suppositions", value="\n".join(f"• {g}" for g in session.wrong_guesses), inline=False)
+    return embed
+
+
+def _aki_op_guess_embed(session: _AkinatorOPSession, character: str, reason: str) -> discord.Embed:
+    return discord.Embed(
+        title="🧞 Akinator One Piece — Ma supposition ! 🧞",
+        description=(
+            f"Après **{session.nb_questions}** question(s)…\n\n"
+            f"🔮  **Je pense que tu penses à :**\n# {character}\n\n*{reason}*"
+        ),
+        color=discord.Color.gold(),
+    ).set_footer(text="Est-ce que j'ai raison ?")
+
+
+async def _aki_op_dispatch(interaction: discord.Interaction, session: _AkinatorOPSession, action: dict):
+    uid = str(session.user_id)
+
+    if action["action"] == "question":
+        q = action.get("text", "Ce personnage est-il un pirate ?")
+        session.nb_questions += 1
+        session.qa_history.append((q, ""))
+        await interaction.edit_original_response(
+            embed=_aki_op_question_embed(session, q), view=_AkinatorOPAnswerView(session)
+        )
+
+    elif action["action"] == "guess":
+        character = action.get("character", "???")
+        reason    = action.get("reason", "")
+        await interaction.edit_original_response(
+            embed=_aki_op_guess_embed(session, character, reason), view=_AkinatorOPGuessView(session, character)
+        )
+
+    else:  # give_up → joueur GAGNE
+        session.ended = True
+        _AKI_OP_SESSIONS.pop(session.user_id, None)
+
+        desc = f"😤  **Je n'ai pas trouvé ton personnage !**\n{session.nb_questions} questions posées.\n\n"
+        if session.duel_ref:
+            _aki_op_duel_record(session, gave_up=True)
+            desc += "*Résultat enregistré — attends la fin du duel.*"
+            embed = discord.Embed(title="🧞 Akinator OP — Tu m'as eu !", description=desc, color=discord.Color.green())
+            await interaction.edit_original_response(embed=embed, view=None)
+        elif session.op_mode == "ranked":
+            _u = get_user(_CACHE, uid)
+            rk = _u.get("aki_ranked", {"wins": 0, "losses": 0, "score": 0})
+            rk["wins"] = rk.get("wins", 0) + 1
+            rk["score"] = rk.get("score", 0) + 100
+            _u["aki_ranked"] = rk
+            _DIRTY.add(uid)
+            new_bal = add_berrys(uid, session.op_reward)
+            desc += f"**+{session.op_reward} 🍊** gagnés ! Solde : **{new_bal} 🍊**\n🏆 +100 pts ranked (score : {rk['score']})"
+            embed = discord.Embed(title="🧞 Akinator OP — Tu m'as eu !", description=desc, color=discord.Color.green())
+            await interaction.edit_original_response(embed=embed, view=None)
+        else:
+            new_bal = add_berrys(uid, session.op_reward)
+            desc += f"**+{session.op_reward} 🍊** gagnés ! Solde : **{new_bal} 🍊**"
+            embed = discord.Embed(title="🧞 Akinator OP — Tu m'as eu !", description=desc, color=discord.Color.green())
+            await interaction.edit_original_response(embed=embed, view=None)
+
+
+def _aki_op_duel_record(session: _AkinatorOPSession, gave_up: bool = False):
+    duel = session.duel_ref
+    if duel is None:
+        return
+    score = session.nb_questions
+    if session.user_id == duel.uid1:
+        duel.result1  = score
+        duel.gave_up1 = gave_up
+    else:
+        duel.result2  = score
+        duel.gave_up2 = gave_up
+
+    if duel.result1 is not None and duel.result2 is not None:
+        asyncio.create_task(_aki_op_duel_conclude(duel))
+
+
+async def _aki_op_duel_conclude(duel: _AkinatorOPDuel):
+    _AKI_OP_DUELS.pop(duel.duel_id, None)
+    r1, r2 = duel.result1, duel.result2
+    gup1, gup2 = duel.gave_up1, duel.gave_up2
+
+    # bot a abandonné = personnage très dur = score max
+    s1 = (999 if gup1 else r1)
+    s2 = (999 if gup2 else r2)
+
+    total_pot = duel.bet1 + duel.bet2
+    sep = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+    if s1 > s2:
+        winner_uid, winner_name = duel.uid1, duel.name1
+        loser_name  = duel.name2
+    elif s2 > s1:
+        winner_uid, winner_name = duel.uid2, duel.name2
+        loser_name  = duel.name1
+    else:
+        winner_uid = None
+        winner_name = loser_name = ""
+
+    if winner_uid:
+        new_bal = add_berrys(str(winner_uid), total_pot)
+        desc = (
+            f"🏆 **{winner_name}** a choisi le perso le plus difficile !\n\n"
+            f"{sep}\n"
+            f"🔴 **{duel.name1}** → bot a {'abandonné' if gup1 else f'deviné en {r1} question(s)'}\n"
+            f"🔵 **{duel.name2}** → bot a {'abandonné' if gup2 else f'deviné en {r2} question(s)'}\n"
+            f"{sep}\n\n"
+            f"💰 **{winner_name}** remporte **{total_pot} 🍊** ! (Solde : {new_bal} 🍊)"
+        )
+    else:
+        add_berrys(str(duel.uid1), duel.bet1)
+        add_berrys(str(duel.uid2), duel.bet2)
+        desc = (
+            f"⚖️ **Égalité parfaite !**\n\n"
+            f"{sep}\n"
+            f"🔴 **{duel.name1}** → {'bot abandonné' if gup1 else f'{r1} question(s)'}\n"
+            f"🔵 **{duel.name2}** → {'bot abandonné' if gup2 else f'{r2} question(s)'}\n"
+            f"{sep}\n\nRemboursement des mises."
+        )
+
+    embed = discord.Embed(title="⚔️  Résultat Duel Akinator OP  ⚔️", description=desc, color=discord.Color.gold())
+    try:
+        await duel.channel.send(embed=embed)
+    except Exception as e:
+        print(f"[AKI_OP DUEL] conclude send failed: {e}")
+
+
+class _AkinatorOPAnswerView(discord.ui.View):
+    _CHOICES = [
+        ("Oui",              "✅", discord.ButtonStyle.success),
+        ("Non",              "❌", discord.ButtonStyle.danger),
+        ("Je ne sais pas",   "🤷", discord.ButtonStyle.secondary),
+        ("Probablement",     "🟡", discord.ButtonStyle.primary),
+        ("Probablement pas", "🔴", discord.ButtonStyle.secondary),
+    ]
+
+    def __init__(self, session: _AkinatorOPSession):
+        super().__init__(timeout=120)
+        self._session = session
+        for label, emoji, style in self._CHOICES:
+            btn = discord.ui.Button(label=label, emoji=emoji, style=style)
+            btn.callback = self._make_cb(label)
+            self.add_item(btn)
+
+    def _make_cb(self, answer: str):
+        async def cb(interaction: discord.Interaction):
+            if interaction.user.id != self._session.user_id:
+                await interaction.response.send_message("Ce n'est pas ton Akinator !", ephemeral=True)
+                return
+            if self._session.ended:
+                await interaction.response.send_message("Cette partie est terminée.", ephemeral=True)
+                return
+            self.stop()
+            await interaction.response.defer()
+            if self._session.qa_history and self._session.qa_history[-1][1] == "":
+                self._session.qa_history[-1] = (self._session.qa_history[-1][0], answer)
+            if (self._session.nb_questions >= self._session.op_max_q
+                    or len(self._session.wrong_guesses) >= _AKI_MAX_BAD_GUESSES):
+                action = {"action": "give_up"}
+            else:
+                action = await _aki_op_next_action(self._session)
+            await _aki_op_dispatch(interaction, self._session, action)
+        return cb
+
+    async def on_timeout(self):
+        self._session.ended = True
+        _AKI_OP_SESSIONS.pop(self._session.user_id, None)
+
+
+class _AkinatorOPGuessView(discord.ui.View):
+    def __init__(self, session: _AkinatorOPSession, character: str):
+        super().__init__(timeout=120)
+        self._session   = session
+        self._character = character
+
+    @discord.ui.button(label="Oui, c'est ça !", emoji="✅", style=discord.ButtonStyle.success)
+    async def correct(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user.id != self._session.user_id:
+            await interaction.response.send_message("Ce n'est pas ton Akinator !", ephemeral=True)
+            return
+        self.stop()
+        session = self._session
+        session.ended = True
+        _AKI_OP_SESSIONS.pop(session.user_id, None)
+        uid = str(session.user_id)
+
+        desc = f"🔮 **J'ai trouvé !** Tu pensais à **{self._character}** !\nQuestions posées : **{session.nb_questions}**\n\n"
+        if session.duel_ref:
+            _aki_op_duel_record(session, gave_up=False)
+            desc += "*Résultat enregistré — attends la fin du duel.*"
+        elif session.op_mode == "ranked":
+            _u = get_user(_CACHE, uid)
+            rk = _u.get("aki_ranked", {"wins": 0, "losses": 0, "score": 0})
+            rk["losses"] = rk.get("losses", 0) + 1
+            rk["score"]  = max(0, rk.get("score", 0) - 50)
+            _u["aki_ranked"] = rk
+            _DIRTY.add(uid)
+            desc += f"💸 Tu perds ta mise de **{session.op_cost} 🍊** (-50 pts ranked, score : {rk['score']})"
+        else:
+            desc += f"💸 Tu perds ta mise de **{session.op_cost} 🍊**."
+
+        embed = discord.Embed(title="🧞 Akinator OP — Trouvé !", description=desc, color=discord.Color.red())
+        await interaction.response.edit_message(embed=embed, view=None)
+
+    @discord.ui.button(label="Non, ce n'est pas ça", emoji="❌", style=discord.ButtonStyle.danger)
+    async def wrong(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user.id != self._session.user_id:
+            await interaction.response.send_message("Ce n'est pas ton Akinator !", ephemeral=True)
+            return
+        self.stop()
+        await interaction.response.defer()
+        session = self._session
+        session.wrong_guesses.append(self._character)
+        if len(session.wrong_guesses) >= _AKI_MAX_BAD_GUESSES:
+            await _aki_op_dispatch(interaction, session, {"action": "give_up"})
+            return
+        action = await _aki_op_next_action(session)
+        await _aki_op_dispatch(interaction, session, action)
+
+    async def on_timeout(self):
+        self._session.ended = True
+        _AKI_OP_SESSIONS.pop(self._session.user_id, None)
+
+
+class _AkinatorOPModeView(discord.ui.View):
+    def __init__(self, user_id: int):
+        super().__init__(timeout=60)
+        self._user_id = user_id
+        for mode_key, cfg in _AKI_OP_MODES.items():
+            btn = discord.ui.Button(label=cfg["label"], emoji=cfg["emoji"], style=cfg["style"])
+            btn.callback = self._make_cb(mode_key)
+            self.add_item(btn)
+
+    def _make_cb(self, mode_key: str):
+        async def cb(interaction: discord.Interaction):
+            if interaction.user.id != self._user_id:
+                await interaction.response.send_message("Ce n'est pas ton menu !", ephemeral=True)
+                return
+            self.stop()
+            cfg = _AKI_OP_MODES[mode_key]
+
+            if mode_key == "duel":
+                # demander le membre à défier via modal ou message
+                await interaction.response.send_message(
+                    "Pour lancer un duel, utilise `/akinator_op_duel @membre`.", ephemeral=True
+                )
+                return
+
+            cost = cfg["cost"]
+            uid  = str(interaction.user.id)
+            if not spend_berrys(uid, cost):
+                bal = get_berrys(uid)
+                await interaction.response.send_message(
+                    f"❌ Solde insuffisant. Tu as **{bal} 🍊**, il te faut **{cost} 🍊**.", ephemeral=True
+                )
+                return
+
+            session = _AkinatorOPSession(interaction.user.id, mode_key)
+            _AKI_OP_SESSIONS[interaction.user.id] = session
+
+            await interaction.response.defer()
+            action = await _aki_op_next_action(session)
+            if action.get("action") != "question":
+                _AKI_OP_SESSIONS.pop(interaction.user.id, None)
+                add_berrys(uid, cost)  # remboursement
+                await interaction.edit_original_response(content="❌ Erreur IA. Berrys remboursés.", embed=None, view=None)
+                return
+
+            q = action.get("text", "Ce personnage est-il un pirate ?")
+            session.nb_questions = 1
+            session.qa_history.append((q, ""))
+            await interaction.edit_original_response(
+                embed=_aki_op_question_embed(session, q), view=_AkinatorOPAnswerView(session)
+            )
+        return cb
+
+
+@bot.tree.command(name="akinator_op", description="Akinator One Piece payant — devine ton perso !")
+@app_commands.guilds(*GUILD_IDS)
+async def akinator_op_cmd(interaction: discord.Interaction):
+    uid = interaction.user.id
+    if uid in _AKI_OP_SESSIONS:
+        await interaction.response.send_message("❌ Tu as déjà une partie en cours !", ephemeral=True)
+        return
+    try:
+        await interaction.response.defer()
+    except Exception:
+        return
+
+    sep = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    lines = [f"{cfg['emoji']} **{cfg['label']}** — {cfg['desc']}" for cfg in _AKI_OP_MODES.values()]
+    embed = discord.Embed(
+        title="🧞 Akinator One Piece 🧞",
+        description=(
+            f"**Pense à un personnage de One Piece — je vais le deviner !**\n\n"
+            f"{sep}\n" + "\n".join(lines) + f"\n{sep}\n\n"
+            f"Ton solde : **{get_berrys(str(uid))} 🍊**\n"
+            f"*Gagner = le bot abandonne → tu reçois ta récompense.*\n"
+            f"*Perdre = le bot devine → tu perds ta mise.*"
+        ),
+        color=discord.Color.from_rgb(220, 50, 50),
+    )
+    await interaction.followup.send(embed=embed, view=_AkinatorOPModeView(uid))
+
+
+@bot.tree.command(name="akinator_op_duel", description="Défi 1v1 Akinator One Piece — mise aléatoire !")
+@app_commands.describe(adversaire="Le membre à défier")
+@app_commands.guilds(*GUILD_IDS)
+async def akinator_op_duel_cmd(interaction: discord.Interaction, adversaire: discord.Member):
+    uid1 = interaction.user.id
+    uid2 = adversaire.id
+
+    if uid1 == uid2:
+        await interaction.response.send_message("Tu ne peux pas te défier toi-même !", ephemeral=True)
+        return
+    if uid1 in _AKI_OP_SESSIONS or uid2 in _AKI_OP_SESSIONS:
+        await interaction.response.send_message("L'un des joueurs est déjà en partie.", ephemeral=True)
+        return
+
+    bet1 = _proportional_bet(str(uid1))
+    bet2 = _proportional_bet(str(uid2))
+
+    if bet1 == 0:
+        await interaction.response.send_message(f"❌ Tu n'as pas assez de 🍊 (min 30). Joue d'abord en solo !", ephemeral=True)
+        return
+    if bet2 == 0:
+        await interaction.response.send_message(f"❌ {adversaire.mention} n'a pas assez de 🍊 (min 30).", ephemeral=True)
+        return
+
+    try:
+        await interaction.response.defer()
+    except Exception:
+        return
+
+    import uuid
+    duel_id = str(uuid.uuid4())[:8]
+
+    embed = discord.Embed(
+        title="⚔️  Défi Akinator One Piece !  ⚔️",
+        description=(
+            f"**{interaction.user.mention}** défie **{adversaire.mention}** !\n\n"
+            f"🔴 Mise de {interaction.user.display_name} : **{bet1} 🍊**\n"
+            f"🔵 Mise de {adversaire.display_name} : **{bet2} 🍊**\n\n"
+            f"Chacun pense à un perso One Piece. Le bot essaie de deviner.\n"
+            f"**Le plus dur à deviner gagne le pot total.**\n\n"
+            f"{adversaire.mention}, tu as **60 secondes** pour accepter."
+        ),
+        color=discord.Color.gold(),
+    )
+    msg = await interaction.followup.send(embed=embed, view=_AkinatorOPDuelChallengeView(
+        uid1, uid2, bet1, bet2, duel_id, interaction.user.display_name, adversaire.display_name, interaction
+    ))
+
+
+class _AkinatorOPDuelChallengeView(discord.ui.View):
+    def __init__(self, uid1: int, uid2: int, bet1: int, bet2: int, duel_id: str,
+                 name1: str, name2: str, orig_inter: discord.Interaction):
+        super().__init__(timeout=60)
+        self._uid1, self._uid2   = uid1, uid2
+        self._bet1, self._bet2   = bet1, bet2
+        self._duel_id            = duel_id
+        self._name1, self._name2 = name1, name2
+        self._orig_inter         = orig_inter
+
+    @discord.ui.button(label="Accepter ✅", style=discord.ButtonStyle.success)
+    async def accept(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user.id != self._uid2:
+            await interaction.response.send_message("Ce défi ne te concerne pas.", ephemeral=True)
+            return
+        self.stop()
+        await interaction.response.defer()
+
+        # Vérifier et déduire les mises
+        if not spend_berrys(str(self._uid1), self._bet1):
+            await interaction.edit_original_response(content=f"❌ {self._name1} n'a plus assez de 🍊.", embed=None, view=None)
+            return
+        if not spend_berrys(str(self._uid2), self._bet2):
+            add_berrys(str(self._uid1), self._bet1)  # remboursement
+            await interaction.edit_original_response(content=f"❌ {self._name2} n'a plus assez de 🍊.", embed=None, view=None)
+            return
+
+        duel = _AkinatorOPDuel(self._duel_id, self._uid1, self._uid2,
+                               self._name1, self._name2, self._bet1, self._bet2,
+                               interaction.channel)
+        _AKI_OP_DUELS[self._duel_id] = duel
+
+        sess1 = _AkinatorOPSession(self._uid1, "duel")
+        sess1.duel_ref = duel
+        _AKI_OP_SESSIONS[self._uid1] = sess1
+
+        sess2 = _AkinatorOPSession(self._uid2, "duel")
+        sess2.duel_ref = duel
+        _AKI_OP_SESSIONS[self._uid2] = sess2
+
+        await interaction.edit_original_response(
+            content=f"✅ Duel lancé ! Chacun reçoit ses questions.", embed=None, view=None
+        )
+
+        async def _start_session(uid: int, sess: _AkinatorOPSession, name: str):
+            action = await _aki_op_next_action(sess)
+            if action.get("action") != "question":
+                _AKI_OP_SESSIONS.pop(uid, None)
+                add_berrys(str(uid), sess.op_cost)
+                await interaction.channel.send(f"❌ Erreur IA pour {name}. Mise remboursée.")
+                return
+            q = action.get("text", "Ce personnage est-il un pirate ?")
+            sess.nb_questions = 1
+            sess.qa_history.append((q, ""))
+            msg = await interaction.channel.send(
+                content=f"**Session de <@{uid}>**",
+                embed=_aki_op_question_embed(sess, q),
+                view=_AkinatorOPAnswerView(sess),
+            )
+
+        await asyncio.gather(
+            _start_session(self._uid1, sess1, self._name1),
+            _start_session(self._uid2, sess2, self._name2),
+        )
+
+    @discord.ui.button(label="Refuser ❌", style=discord.ButtonStyle.danger)
+    async def decline(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user.id not in (self._uid1, self._uid2):
+            await interaction.response.send_message("Ce défi ne te concerne pas.", ephemeral=True)
+            return
+        self.stop()
+        await interaction.response.edit_message(content="❌ Défi refusé.", embed=None, view=None)
+
+
+# ─────────────────────────────────────────
+#  QUIZ PRIME — PAYANT
+# ─────────────────────────────────────────
+
+_QUIZ_PRIME_MODES: dict[str, dict] = {
+    "enrichi":    {"label": "Solo Enrichi",   "emoji": "💰", "cost": 50,  "reward": 150,  "n": 10, "style": discord.ButtonStyle.primary,   "desc": "10 questions · **50 🍊** → **150 🍊** si tout juste"},
+    "survie":     {"label": "Survie",         "emoji": "❤️", "cost": 100, "reward": None, "n": 20, "style": discord.ButtonStyle.danger,    "desc": "Stop à 1ère erreur · **100 🍊** → **50 🍊/question** correcte"},
+    "legendaire": {"label": "Légendaire",     "emoji": "👑", "cost": 500, "reward": 2000, "n": 10, "style": discord.ButtonStyle.secondary, "desc": "10 questions · **500 🍊** → **2 000 🍊** si parfait"},
+    "ranked_1v1": {"label": "Ranked 1v1",    "emoji": "⚔️", "cost": 200, "reward": None, "n": 10, "style": discord.ButtonStyle.success,   "desc": "200 🍊 chacun · **Tout au gagnant**"},
+}
+
+
+class _QuizPrimeModeView(discord.ui.View):
+    def __init__(self, user_id: int, category: str):
+        super().__init__(timeout=60)
+        self._user_id  = user_id
+        self._category = category
+        for mode_key, cfg in _QUIZ_PRIME_MODES.items():
+            btn = discord.ui.Button(label=cfg["label"], emoji=cfg["emoji"], style=cfg["style"])
+            btn.callback = self._make_cb(mode_key)
+            self.add_item(btn)
+
+    def _make_cb(self, mode_key: str):
+        async def cb(interaction: discord.Interaction):
+            if interaction.user.id != self._user_id:
+                await interaction.response.send_message("Ce menu n'est pas pour toi.", ephemeral=True)
+                return
+            self.stop()
+            cfg  = _QUIZ_PRIME_MODES[mode_key]
+            cost = cfg["cost"]
+            uid  = str(interaction.user.id)
+
+            if mode_key == "ranked_1v1":
+                await interaction.response.send_message(
+                    "Pour un Ranked 1v1, utilise `/quizz_ranked @adversaire`.", ephemeral=True
+                )
+                return
+
+            if not spend_berrys(uid, cost):
+                bal = get_berrys(uid)
+                await interaction.response.send_message(
+                    f"❌ Solde insuffisant. Tu as **{bal} 🍊**, il te faut **{cost} 🍊**.", ephemeral=True
+                )
+                return
+
+            await interaction.response.defer()
+            questions, err = await _generate_quiz_questions(cfg["n"], self._category)
+            if not questions:
+                add_berrys(uid, cost)
+                await interaction.edit_original_response(
+                    content=f"❌ Erreur de génération. Berrys remboursés. ({err[:100]})", embed=None, view=None
+                )
+                return
+
+            sess = _QuizSession(questions, interaction.user.id, interaction, self._category)
+            sess.paid_mode       = mode_key
+            sess.entry_cost      = cost
+            sess.quiz_reward     = cfg.get("reward") or 0
+            sess.quiz_all_correct = True
+            QUIZ_SESSIONS[interaction.user.id] = sess
+
+            await interaction.edit_original_response(content=None, embed=None, view=None)
+            await _send_next_question(interaction, sess)
+        return cb
+
+
+@bot.tree.command(name="quizz_prime", description="Quiz animé payant — Berrys en jeu !")
+@app_commands.describe(categorie="Catégorie de questions (défaut : général)")
+@app_commands.choices(categorie=[
+    app_commands.Choice(name="Général",         value="general"),
+    app_commands.Choice(name="One Piece",       value="one_piece"),
+    app_commands.Choice(name="Naruto",          value="naruto"),
+    app_commands.Choice(name="Dragon Ball Z",   value="dbz"),
+    app_commands.Choice(name="Demon Slayer",    value="demon_slayer"),
+    app_commands.Choice(name="Jujutsu Kaisen",  value="jjk"),
+    app_commands.Choice(name="Attack on Titan", value="aot"),
+    app_commands.Choice(name="Death Note",      value="deathnote"),
+])
+@app_commands.guilds(*GUILD_IDS)
+async def quizz_prime_cmd(interaction: discord.Interaction, categorie: str = "general"):
+    if interaction.user.id in QUIZ_SESSIONS:
+        await interaction.response.send_message("❌ Tu as déjà un quiz en cours !", ephemeral=True)
+        return
+    try:
+        await interaction.response.defer()
+    except Exception:
+        return
+
+    uid = str(interaction.user.id)
+    sep = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    lines = [f"{cfg['emoji']} **{cfg['label']}** — {cfg['desc']}" for cfg in _QUIZ_PRIME_MODES.values()]
+    embed = discord.Embed(
+        title="🎌  Quiz Prime  🎌",
+        description=(
+            f"**Quiz animé — Berrys en jeu !**\n\n"
+            f"{sep}\n" + "\n".join(lines) + f"\n{sep}\n\n"
+            f"Catégorie choisie : **{categorie}**\n"
+            f"Ton solde : **{get_berrys(uid)} 🍊**"
+        ),
+        color=discord.Color.from_rgb(212, 175, 55),
+    )
+    await interaction.followup.send(embed=embed, view=_QuizPrimeModeView(interaction.user.id, categorie))
+
+
+@bot.tree.command(name="quizz_ranked", description="Quiz Ranked 1v1 — 200 🍊 chacun, tout au gagnant !")
+@app_commands.describe(adversaire="Le membre à défier", categorie="Catégorie de questions")
+@app_commands.choices(categorie=[
+    app_commands.Choice(name="Général",         value="general"),
+    app_commands.Choice(name="One Piece",       value="one_piece"),
+    app_commands.Choice(name="Naruto",          value="naruto"),
+    app_commands.Choice(name="Dragon Ball Z",   value="dbz"),
+])
+@app_commands.guilds(*GUILD_IDS)
+async def quizz_ranked_cmd(interaction: discord.Interaction, adversaire: discord.Member, categorie: str = "general"):
+    uid1, uid2 = interaction.user.id, adversaire.id
+    BET = 200
+
+    if uid1 == uid2:
+        await interaction.response.send_message("Tu ne peux pas te défier toi-même.", ephemeral=True)
+        return
+    if uid1 in QUIZ_SESSIONS or uid2 in QUIZ_SESSIONS or uid1 in LIVE_DUELS or uid2 in LIVE_DUELS:
+        await interaction.response.send_message("L'un des joueurs est déjà en session.", ephemeral=True)
+        return
+
+    bal1, bal2 = get_berrys(str(uid1)), get_berrys(str(uid2))
+    if bal1 < BET:
+        await interaction.response.send_message(f"❌ Tu n'as pas assez de 🍊 ({bal1}/{BET}).", ephemeral=True)
+        return
+    if bal2 < BET:
+        await interaction.response.send_message(f"❌ {adversaire.mention} n'a pas assez de 🍊 ({bal2}/{BET}).", ephemeral=True)
+        return
+
+    try:
+        await interaction.response.defer()
+    except Exception:
+        return
+
+    embed = discord.Embed(
+        title="⚔️  Quiz Ranked 1v1  ⚔️",
+        description=(
+            f"**{interaction.user.mention}** défie **{adversaire.mention}** !\n\n"
+            f"💰 Mise : **{BET} 🍊 chacun** → **{BET*2} 🍊** au gagnant\n"
+            f"Catégorie : **{categorie}** · 10 questions\n\n"
+            f"{adversaire.mention}, tu as **60 secondes** pour accepter."
+        ),
+        color=discord.Color.gold(),
+    )
+    await interaction.followup.send(embed=embed, view=_QuizRankedChallengeView(uid1, uid2, BET, categorie, interaction))
+
+
+class _QuizRankedChallengeView(discord.ui.View):
+    def __init__(self, uid1: int, uid2: int, bet: int, category: str, orig_inter: discord.Interaction):
+        super().__init__(timeout=60)
+        self._uid1, self._uid2 = uid1, uid2
+        self._bet              = bet
+        self._category         = category
+        self._orig_inter       = orig_inter
+
+    @discord.ui.button(label="Accepter ✅", style=discord.ButtonStyle.success)
+    async def accept(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user.id != self._uid2:
+            await interaction.response.send_message("Ce défi ne te concerne pas.", ephemeral=True)
+            return
+        self.stop()
+        # Déduire les mises
+        if not spend_berrys(str(self._uid1), self._bet):
+            await interaction.response.edit_message(content="❌ Le challenger n'a plus assez de 🍊.", embed=None, view=None)
+            return
+        if not spend_berrys(str(self._uid2), self._bet):
+            add_berrys(str(self._uid1), self._bet)
+            await interaction.response.edit_message(content="❌ Tu n'as plus assez de 🍊.", embed=None, view=None)
+            return
+        await interaction.response.defer()
+        await _start_live_duel(self._orig_inter, self._uid1, self._uid2, self._category, 10)
+        # Enregistre la mise sur le duel créé
+        duel = LIVE_DUELS.get(self._uid1)
+        if duel:
+            duel.berry_bet = self._bet
+
+    @discord.ui.button(label="Refuser ❌", style=discord.ButtonStyle.danger)
+    async def decline(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user.id not in (self._uid1, self._uid2):
+            await interaction.response.send_message("Ce défi ne te concerne pas.", ephemeral=True)
+            return
+        self.stop()
+        await interaction.response.edit_message(content="❌ Défi refusé.", embed=None, view=None)
+
+
+# ─────────────────────────────────────────
+#  /SOLDE
+# ─────────────────────────────────────────
+
+@bot.tree.command(name="solde", description="Consulter ton solde de Berrys 🍊")
+@app_commands.guilds(*GUILD_IDS)
+async def solde_cmd(interaction: discord.Interaction):
+    uid  = str(interaction.user.id)
+    bal  = get_berrys(uid)
+    embed = discord.Embed(
+        title="💰 Solde Berry",
+        description=f"{interaction.user.mention}\n\n**{format_prime(bal)}**\n`{bal} 🍊`",
+        color=discord.Color.gold(),
+    )
+    embed.set_thumbnail(url=interaction.user.display_avatar.url)
+    embed.set_footer(text="Gagne des Berrys avec /akinator_op et /quizz_prime !")
+    await interaction.response.send_message(embed=embed)
 
 
 # ─────────────────────────────────────────
