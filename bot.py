@@ -234,6 +234,8 @@ def init_db():
     finally:
         release_db(conn)
 ANNOUNCE_CHANNEL_ID = 1494342996848672828
+_raw_log = os.environ.get("LOG_CHANNEL_ID", "")
+LOG_MOD_CHANNEL_ID = int(_raw_log) if _raw_log.isdigit() else None
 ALERT_HOURS_THRESHOLD = 5.0
 DERANK_WARNING_THRESHOLD = 5.0  # heures avant le seuil de derank pour l'avertissement MP
 GUILD_IDS = [924346730194014220, 1478937064031518892]
@@ -838,6 +840,20 @@ async def _get_announce_channel():
         except Exception as e:
             print(f"[RANK] Impossible de fetch le canal {ANNOUNCE_CHANNEL_ID}: {e}")
     return ch
+
+async def _send_mod_log(embed: discord.Embed) -> None:
+    if not LOG_MOD_CHANNEL_ID:
+        return
+    ch = bot.get_channel(LOG_MOD_CHANNEL_ID)
+    if ch is None:
+        try:
+            ch = await bot.fetch_channel(LOG_MOD_CHANNEL_ID)
+        except Exception:
+            return
+    try:
+        await ch.send(embed=embed)
+    except Exception as e:
+        print(f"[MOD LOG] Impossible d'envoyer le log : {e}")
 
 async def update_rank(member: discord.Member, hours_7d: float, announce=True, data=None):
     """Rangs cumulatifs : ajoute les rôles mérités, retire ceux perdus, annonce montée ET derank."""
@@ -6064,6 +6080,193 @@ async def reset_pseudos(interaction: discord.Interaction):
         ),
         ephemeral=True,
     )
+
+
+# ─────────────────────────────────────────
+#  RESET PSEUDO — modération
+# ─────────────────────────────────────────
+
+@bot.tree.command(name="reset_pseudo", description="[MOD] Réinitialise le surnom serveur d'un membre")
+@app_commands.describe(
+    membre="Le membre dont on réinitialise le pseudo",
+    raison="Raison optionnelle (apparaît dans l'audit log Discord)",
+)
+@app_commands.guilds(*GUILD_IDS)
+@app_commands.default_permissions(manage_nicknames=True)
+async def reset_pseudo_cmd(interaction: discord.Interaction, membre: discord.Member, raison: str = None):
+    if not interaction.user.guild_permissions.manage_nicknames:
+        await interaction.response.send_message(
+            "❌ Tu n'as pas la permission **Gérer les pseudos**.", ephemeral=True
+        )
+        return
+
+    if membre.id == interaction.guild.owner_id:
+        await interaction.response.send_message(
+            "❌ Impossible de modifier le pseudo du propriétaire du serveur.", ephemeral=True
+        )
+        return
+
+    if interaction.guild.me.top_role <= membre.top_role:
+        await interaction.response.send_message(
+            "❌ Mon rôle est trop bas dans la hiérarchie pour modifier ce membre.", ephemeral=True
+        )
+        return
+
+    ancien_nick = membre.nick or "Aucun"
+    raison_log  = raison or f"Reset par {interaction.user}"
+
+    try:
+        await membre.edit(nick=None, reason=raison_log)
+    except discord.Forbidden:
+        await interaction.response.send_message(
+            "❌ Je n'ai pas les permissions nécessaires pour modifier ce membre.", ephemeral=True
+        )
+        return
+    except discord.HTTPException:
+        await interaction.response.send_message(
+            "❌ Erreur Discord lors de la modification.", ephemeral=True
+        )
+        return
+
+    # Nettoyer le nick_restore lié aux tickets si présent
+    cache_cible = _CACHE.get(str(membre.id))
+    if cache_cible and cache_cible.get("nick_restore"):
+        cache_cible.pop("nick_restore")
+        _DIRTY.add(str(membre.id))
+        await asyncio.get_running_loop().run_in_executor(db_executor, _sync_flush_dirty)
+
+    embed = discord.Embed(title="✅ Pseudo réinitialisé", color=0x2ECC71, timestamp=datetime.now(timezone.utc))
+    embed.add_field(name="Membre",                value=f"{membre.mention} (`{membre}`)", inline=False)
+    embed.add_field(name="Ancien surnom serveur", value=ancien_nick,                      inline=True)
+    embed.add_field(name="Pseudo affiché",        value=membre.display_name,              inline=True)
+    embed.add_field(name="Modérateur",            value=interaction.user.mention,         inline=False)
+    embed.add_field(name="Raison",                value=raison or "Aucune raison fournie", inline=False)
+    await interaction.response.send_message(embed=embed)
+
+    log_embed = discord.Embed(title="🔧 Reset pseudo — membre unique", color=0x3498DB, timestamp=datetime.now(timezone.utc))
+    log_embed.add_field(name="Modérateur", value=f"{interaction.user} (`{interaction.user.id}`)", inline=False)
+    log_embed.add_field(name="Cible",      value=f"{membre} (`{membre.id}`)",                    inline=False)
+    log_embed.add_field(name="Ancien surnom", value=ancien_nick,         inline=True)
+    log_embed.add_field(name="Raison",        value=raison or "Aucune", inline=True)
+    await _send_mod_log(log_embed)
+
+
+class _ConfirmResetAllView(discord.ui.View):
+    def __init__(self, author_id: int, membres: list):
+        super().__init__(timeout=60)
+        self.author_id = author_id
+        self.membres   = membres
+        self.done      = False
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        if interaction.user.id != self.author_id:
+            await interaction.response.send_message(
+                "❌ Seul le modérateur qui a lancé la commande peut confirmer.", ephemeral=True
+            )
+            return False
+        return True
+
+    @discord.ui.button(label="✅ Confirmer", style=discord.ButtonStyle.danger)
+    async def confirmer(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.done = True
+        self.stop()
+        await interaction.response.defer()
+        await interaction.followup.send("⏳ Reset en cours…", ephemeral=True)
+
+        debut   = datetime.now(timezone.utc)
+        success = 0
+        failed  = 0
+
+        for membre in self.membres:
+            try:
+                await membre.edit(nick=None, reason=f"Reset massif par {interaction.user}")
+                cache_cible = _CACHE.get(str(membre.id))
+                if cache_cible and cache_cible.get("nick_restore"):
+                    cache_cible.pop("nick_restore")
+                    _DIRTY.add(str(membre.id))
+                success += 1
+            except discord.Forbidden:
+                failed += 1
+            except discord.HTTPException as e:
+                if e.status == 429:
+                    await asyncio.sleep(5)
+                    try:
+                        await membre.edit(nick=None, reason=f"Reset massif par {interaction.user}")
+                        success += 1
+                    except Exception:
+                        failed += 1
+                else:
+                    failed += 1
+            except Exception:
+                failed += 1
+            await asyncio.sleep(1)
+
+        await asyncio.get_running_loop().run_in_executor(db_executor, _sync_flush_dirty)
+
+        duree = int((datetime.now(timezone.utc) - debut).total_seconds())
+        result = discord.Embed(
+            title="✅ Reset massif terminé",
+            color=0x2ECC71 if failed == 0 else discord.Color.orange(),
+            timestamp=datetime.now(timezone.utc),
+        )
+        result.add_field(name="Réussis",          value=f"**{success}** membres", inline=True)
+        result.add_field(name="Échoués",          value=f"**{failed}** membres",  inline=True)
+        result.add_field(name="Durée",            value=f"{duree}s",              inline=True)
+        if failed:
+            result.add_field(name="Raison des échecs", value="Hiérarchie / permissions / propriétaire", inline=False)
+        await interaction.followup.send(embed=result)
+
+        log_embed = discord.Embed(title="🔧 Reset pseudo — tous les membres", color=0x3498DB, timestamp=datetime.now(timezone.utc))
+        log_embed.add_field(name="Modérateur", value=f"{interaction.user} (`{interaction.user.id}`)", inline=False)
+        log_embed.add_field(name="Réussis",    value=str(success), inline=True)
+        log_embed.add_field(name="Échoués",    value=str(failed),  inline=True)
+        log_embed.add_field(name="Durée",      value=f"{duree}s",  inline=True)
+        await _send_mod_log(log_embed)
+
+    @discord.ui.button(label="❌ Annuler", style=discord.ButtonStyle.secondary)
+    async def annuler(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.done = True
+        self.stop()
+        await interaction.response.send_message(
+            embed=discord.Embed(title="❌ Annulé", description="Le reset massif a été annulé.", color=discord.Color.red()),
+            ephemeral=True,
+        )
+
+    async def on_timeout(self):
+        self.done = True
+
+
+@bot.tree.command(name="reset_pseudo_all", description="[ADMIN] Réinitialise le surnom serveur de TOUS les membres")
+@app_commands.guilds(*GUILD_IDS)
+@app_commands.default_permissions(administrator=True)
+async def reset_pseudo_all_cmd(interaction: discord.Interaction):
+    if not interaction.user.guild_permissions.administrator:
+        await interaction.response.send_message(
+            "❌ Cette commande est réservée aux administrateurs.", ephemeral=True
+        )
+        return
+
+    membres_avec_nick = [m for m in interaction.guild.members if m.nick and not m.bot]
+    count = len(membres_avec_nick)
+
+    if count == 0:
+        await interaction.response.send_message(
+            embed=discord.Embed(
+                title="ℹ️ Rien à faire",
+                description="Aucun membre n'a de surnom serveur actif.",
+                color=discord.Color.blue(),
+            ),
+            ephemeral=True,
+        )
+        return
+
+    confirm_embed = discord.Embed(
+        title="⚠️ Confirmation requise",
+        description=f"Tu vas réinitialiser le pseudo de **{count} membres**.\nCette action est irréversible.",
+        color=discord.Color.orange(),
+    )
+    view = _ConfirmResetAllView(interaction.user.id, membres_avec_nick)
+    await interaction.response.send_message(embed=confirm_embed, view=view, ephemeral=True)
 
 
 @bot.tree.command(name="debug_nicks", description="[ADMIN] Affiche les nick_restore actifs en cache et en DB")
