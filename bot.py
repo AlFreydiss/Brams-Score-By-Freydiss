@@ -5589,11 +5589,7 @@ async def ticket_pseudo_cmd(interaction: discord.Interaction, membre: discord.Me
         )
         return
 
-    # Si un ticket plus prioritaire écrase un ticket actif, on conserve le nick ORIGINAL (pas le faux)
-    if active_restore and now_ts() < active_restore.get("expires", 0):
-        ancien_nick = active_restore.get("nick")
-    else:
-        ancien_nick = membre.nick  # surnom serveur avant ce ticket (None = aucun surnom)
+    ancien_nick = membre.nick  # surnom serveur juste avant ce ticket (le précédent immédiat)
     ancien_display = membre.display_name
     try:
         await membre.edit(nick=nouveau_pseudo)
