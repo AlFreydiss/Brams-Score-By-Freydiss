@@ -4685,9 +4685,10 @@ class _ShopView(discord.ui.View):
             if interaction.user.id != self._user_id:
                 await interaction.response.send_message("Ce shop ne t'appartient pas !", ephemeral=True)
                 return
-            uid = str(interaction.user.id)
+            uid      = str(interaction.user.id)
+            is_admin = interaction.user.guild_permissions.administrator
 
-            if not spend_berrys(uid, item["price"]):
+            if not is_admin and not spend_berrys(uid, item["price"]):
                 bal = get_berrys(uid)
                 await interaction.response.send_message(
                     f"❌ Solde insuffisant. Tu as **{_fmt_berry(bal)} 🍊**, il te faut **{_fmt_berry(item['price'])} 🍊**.",
