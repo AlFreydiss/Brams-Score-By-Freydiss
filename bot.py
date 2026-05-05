@@ -5608,17 +5608,18 @@ async def ticket_pseudo_cmd(interaction: discord.Interaction, membre: discord.Me
     daily["count"] += 1
     user_data["ticket_daily"] = daily
 
-    # Persiste le restore en cache pour survivre aux redémarrages
-    minutes     = tier["minutes"]
-    expires_at  = now_ts() + minutes * 60
+    # Persiste le restore en cache + flush DB immédiat (pas d'attente des 30s)
+    minutes    = tier["minutes"]
+    expires_at = now_ts() + minutes * 60
     target_data["nick_restore"] = {
-        "nick":    ancien_nick,  # None = pas de surnom serveur → edit(nick=None) efface
+        "nick":    ancien_nick,
         "expires": expires_at,
         "guild":   str(interaction.guild_id),
         "minutes": minutes,
     }
     _DIRTY.add(uid)
     _DIRTY.add(str(membre.id))
+    await asyncio.get_running_loop().run_in_executor(db_executor, _sync_flush_dirty)
 
     restants_jour = 2 - daily["count"]
     await interaction.response.send_message(
