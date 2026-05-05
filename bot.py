@@ -5985,10 +5985,32 @@ async def banque(interaction: discord.Interaction, membre: discord.Member = None
 async def reset_pseudos(interaction: discord.Interaction):
     await interaction.response.defer(ephemeral=True)
 
-    restored = 0
-    errors   = 0
+    # Synchronise la DB vers le cache pour ne rien rater après un redémarrage
+    def _load_nick_restores():
+        conn = get_db()
+        try:
+            cur = conn.cursor()
+            cur.execute("SELECT uid, data FROM users WHERE data ? 'nick_restore'")
+            rows = cur.fetchall()
+            cur.close()
+            return rows
+        except Exception as e:
+            print(f"[RESET] Erreur lecture DB : {e}")
+            return []
+        finally:
+            release_db(conn)
+
+    db_rows = await asyncio.get_running_loop().run_in_executor(db_executor, _load_nick_restores)
+    for uid, udata in db_rows:
+        if uid not in _CACHE:
+            _CACHE[uid] = udata
+        elif not _CACHE[uid].get("nick_restore") and udata.get("nick_restore"):
+            _CACHE[uid]["nick_restore"] = udata["nick_restore"]
+
+    restored  = 0
+    errors    = 0
     not_found = 0
-    found    = 0
+    found     = 0
 
     for uid, udata in list(_CACHE.items()):
         restore = udata.get("nick_restore")
@@ -6005,6 +6027,8 @@ async def reset_pseudos(interaction: discord.Interaction):
         except discord.NotFound:
             print(f"[RESET] Membre {uid} introuvable (quitté le serveur)")
             not_found += 1
+            udata.pop("nick_restore")
+            _DIRTY.add(uid)
             continue
         except Exception as e:
             print(f"[RESET] fetch_member erreur {uid}: {e}")
@@ -6025,12 +6049,14 @@ async def reset_pseudos(interaction: discord.Interaction):
             errors += 1
             print(f"[RESET] ❌ Erreur {uid}: {e}")
 
+    await asyncio.get_running_loop().run_in_executor(db_executor, _sync_flush_dirty)
+
     await interaction.followup.send(
         embed=discord.Embed(
             title="🔄 Reset des pseudos",
             description=(
-                f"Entrées nick_restore trouvées en cache : **{found}**\n"
-                f"Pseudos restaurés : **{restored}**\n"
+                f"Entrées nick_restore trouvées : **{found}**\n"
+                f"Pseudos réinitialisés : **{restored}**\n"
                 f"Erreurs (permission/API) : **{errors}**\n"
                 f"Membres introuvables : **{not_found}**"
             ),
