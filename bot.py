@@ -5776,6 +5776,240 @@ async def giveaway_cmd(
     asyncio.create_task(_wait_and_conclude())
 
 
+# ─────────────────────────────────────────
+#  AKINATOR
+# ─────────────────────────────────────────
+
+_AKI_ENTRY  = 2_000
+_AKI_REWARD = 4_000
+_AKI_MAX_Q  = 20
+_AKI_MAX_BAD = 3
+
+_AKI_SYSTEM = (
+    "Tu es Akinator spécialisé One Piece. Devine le personnage auquel le joueur pense.\n"
+    "Réponds UNIQUEMENT en JSON valide, sans markdown :\n"
+    '- Question : {"action":"question","text":"Ta question ?"}\n'
+    '- Supposition : {"action":"guess","character":"Nom exact","reason":"Justification courte"}\n'
+    '- Abandon : {"action":"give_up"}\n\n'
+    "Stratégie : identifie d'abord l'arc/faction/équipage, puis affine avec genre, fruit du démon, rôle. "
+    "Devine dès que tu es à ~70% de confiance. Ne repose jamais une question déjà posée."
+)
+
+_AKI_SESSIONS: dict[int, "_AkiSession"] = {}
+
+
+class _AkiSession:
+    def __init__(self, user_id: int):
+        self.user_id = user_id
+        self.history: list[tuple[str, str]] = []
+        self.wrong: list[str] = []
+        self.nb_q = 0
+        self.ended = False
+
+    def build_messages(self) -> list[dict]:
+        msgs = [{"role": "system", "content": _AKI_SYSTEM}]
+        if not self.history:
+            msgs.append({"role": "user", "content": "Le joueur pense à un personnage de One Piece. Pose ta première question."})
+        else:
+            lines = ["Historique Q&A :"]
+            for i, (q, a) in enumerate(self.history, 1):
+                lines.append(f"  {i}. {q} → {a}")
+            if self.wrong:
+                lines.append(f"Suppositions incorrectes : {', '.join(self.wrong)}")
+            lines.append(f"\nQuestions : {self.nb_q}/{_AKI_MAX_Q} | Mauvaises suppositions : {len(self.wrong)}/{_AKI_MAX_BAD}")
+            lines.append("Que fais-tu ?")
+            msgs.append({"role": "user", "content": "\n".join(lines)})
+        return msgs
+
+
+async def _aki_call(session: "_AkiSession") -> dict:
+    api_key = os.environ.get("GROQ_API_KEY", "")
+    for attempt in range(3):
+        try:
+            resp = await litellm.acompletion(
+                model=_GROQ_MODEL, api_key=api_key, max_tokens=200, temperature=0.7,
+                response_format={"type": "json_object"}, messages=session.build_messages(),
+            )
+            data = json.loads(resp.choices[0].message.content.strip())
+            if data.get("action") in ("question", "guess", "give_up"):
+                return data
+        except Exception as e:
+            print(f"[AKINATOR] attempt {attempt+1}: {e}")
+    return {"action": "give_up"}
+
+
+def _aki_q_embed(session: "_AkiSession", question: str) -> discord.Embed:
+    bar = "▓" * min(session.nb_q, _AKI_MAX_Q) + "░" * max(0, _AKI_MAX_Q - session.nb_q)
+    embed = discord.Embed(
+        title="🎩 Akinator One Piece 🎩",
+        description=f"**Question {session.nb_q}/{_AKI_MAX_Q}**\n`{bar}`\n\n💬 **{question}**",
+        color=discord.Color.blurple(),
+    )
+    if session.wrong:
+        embed.add_field(name="❌ Mauvaises suppositions", value="\n".join(f"• {g}" for g in session.wrong), inline=False)
+    embed.set_footer(text="Réponds honnêtement !")
+    return embed
+
+
+def _aki_guess_embed(session: "_AkiSession", character: str, reason: str) -> discord.Embed:
+    return discord.Embed(
+        title="🎩 Akinator — Ma supposition ! 🎩",
+        description=(
+            f"Après **{session.nb_q}** question(s)…\n\n"
+            f"🔮 **Je pense que tu penses à :**\n# {character}\n\n*{reason}*"
+        ),
+        color=discord.Color.gold(),
+    ).set_footer(text="Est-ce que j'ai raison ?")
+
+
+async def _aki_dispatch(interaction: discord.Interaction, session: "_AkiSession", action: dict):
+    uid = str(session.user_id)
+
+    if action["action"] == "question":
+        q = action.get("text", "Ce personnage est-il un pirate ?")
+        session.nb_q += 1
+        session.history.append((q, ""))
+        await interaction.edit_original_response(embed=_aki_q_embed(session, q), view=_AkiAnswerView(session))
+
+    elif action["action"] == "guess":
+        character = action.get("character", "???")
+        reason = action.get("reason", "")
+        await interaction.edit_original_response(embed=_aki_guess_embed(session, character, reason), view=_AkiGuessView(session, character))
+
+    else:  # give_up — joueur gagne
+        session.ended = True
+        _AKI_SESSIONS.pop(session.user_id, None)
+        new_bal = add_berrys(uid, _AKI_REWARD)
+        embed = discord.Embed(
+            title="🎩 Akinator — Tu m'as eu ! 🎩",
+            description=(
+                f"😤 Je n'ai pas trouvé ton personnage en {session.nb_q} questions !\n\n"
+                f"**+{_fmt_berry(_AKI_REWARD)} 🍊** gagnés ! Solde : **{_fmt_berry(new_bal)} 🍊**"
+            ),
+            color=discord.Color.green(),
+        )
+        await interaction.edit_original_response(embed=embed, view=None)
+
+
+class _AkiAnswerView(discord.ui.View):
+    _CHOICES = [
+        ("Oui",              "✅", discord.ButtonStyle.success),
+        ("Non",              "❌", discord.ButtonStyle.danger),
+        ("Je ne sais pas",   "🤷", discord.ButtonStyle.secondary),
+        ("Probablement",     "🟡", discord.ButtonStyle.primary),
+        ("Probablement pas", "🔴", discord.ButtonStyle.secondary),
+    ]
+
+    def __init__(self, session: "_AkiSession"):
+        super().__init__(timeout=120)
+        self._session = session
+        for label, emoji, style in self._CHOICES:
+            btn = discord.ui.Button(label=label, emoji=emoji, style=style)
+            btn.callback = self._make_cb(label)
+            self.add_item(btn)
+
+    def _make_cb(self, answer: str):
+        async def cb(interaction: discord.Interaction):
+            if interaction.user.id != self._session.user_id:
+                await interaction.response.send_message("Ce n'est pas ton Akinator !", ephemeral=True)
+                return
+            if self._session.ended:
+                await interaction.response.send_message("Cette partie est terminée.", ephemeral=True)
+                return
+            self.stop()
+            await interaction.response.defer()
+            if self._session.history and self._session.history[-1][1] == "":
+                self._session.history[-1] = (self._session.history[-1][0], answer)
+            if self._session.nb_q >= _AKI_MAX_Q or len(self._session.wrong) >= _AKI_MAX_BAD:
+                action = {"action": "give_up"}
+            else:
+                action = await _aki_call(self._session)
+            await _aki_dispatch(interaction, self._session, action)
+        return cb
+
+    async def on_timeout(self):
+        self._session.ended = True
+        _AKI_SESSIONS.pop(self._session.user_id, None)
+
+
+class _AkiGuessView(discord.ui.View):
+    def __init__(self, session: "_AkiSession", character: str):
+        super().__init__(timeout=120)
+        self._session = session
+        self._character = character
+
+    @discord.ui.button(label="Oui, c'est ça !", emoji="✅", style=discord.ButtonStyle.success)
+    async def correct(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user.id != self._session.user_id:
+            await interaction.response.send_message("Ce n'est pas ton Akinator !", ephemeral=True)
+            return
+        self.stop()
+        self._session.ended = True
+        _AKI_SESSIONS.pop(self._session.user_id, None)
+        embed = discord.Embed(
+            title="🎩 Akinator — Trouvé ! 🎩",
+            description=(
+                f"🔮 **J'ai trouvé !** Tu pensais à **{self._character}** !\n"
+                f"Questions posées : **{self._session.nb_q}**\n\n"
+                f"💸 **-{_fmt_berry(_AKI_ENTRY)} 🍊** (mise d'entrée perdue)"
+            ),
+            color=discord.Color.red(),
+        )
+        await interaction.response.edit_message(embed=embed, view=None)
+
+    @discord.ui.button(label="Non, ce n'est pas ça", emoji="❌", style=discord.ButtonStyle.danger)
+    async def wrong(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user.id != self._session.user_id:
+            await interaction.response.send_message("Ce n'est pas ton Akinator !", ephemeral=True)
+            return
+        self.stop()
+        await interaction.response.defer()
+        self._session.wrong.append(self._character)
+        if len(self._session.wrong) >= _AKI_MAX_BAD:
+            await _aki_dispatch(interaction, self._session, {"action": "give_up"})
+            return
+        action = await _aki_call(self._session)
+        await _aki_dispatch(interaction, self._session, action)
+
+    async def on_timeout(self):
+        self._session.ended = True
+        _AKI_SESSIONS.pop(self._session.user_id, None)
+
+
+@bot.tree.command(name="akinator", description="Akinator One Piece — 2 000 Berry d'entree, gagne 4 000 si le bot abandonne !")
+@app_commands.guilds(*GUILD_IDS)
+async def akinator_cmd(interaction: discord.Interaction):
+    uid = interaction.user.id
+    if uid in _AKI_SESSIONS:
+        await interaction.response.send_message("Tu as deja une partie en cours !", ephemeral=True)
+        return
+    if not spend_berrys(str(uid), _AKI_ENTRY):
+        bal = get_berrys(str(uid))
+        await interaction.response.send_message(
+            f"Solde insuffisant. Tu as **{_fmt_berry(bal)} Berry**, il te faut **{_fmt_berry(_AKI_ENTRY)} Berry**.", ephemeral=True
+        )
+        return
+    try:
+        await interaction.response.defer()
+    except Exception:
+        return
+
+    session = _AkiSession(uid)
+    _AKI_SESSIONS[uid] = session
+
+    action = await _aki_call(session)
+    if action.get("action") != "question":
+        _AKI_SESSIONS.pop(uid, None)
+        add_berrys(str(uid), _AKI_ENTRY)
+        await interaction.edit_original_response(content="Erreur IA. Ta mise a ete remboursee.", embed=None, view=None)
+        return
+
+    q = action.get("text", "Ce personnage est-il un pirate ?")
+    session.nb_q = 1
+    session.history.append((q, ""))
+    await interaction.edit_original_response(embed=_aki_q_embed(session, q), view=_AkiAnswerView(session))
+
+
 @bot.tree.command(name="sync", description="[OWNER] Sync commandes slash")
 @app_commands.default_permissions(administrator=True)
 async def sync_commands(interaction: discord.Interaction):
