@@ -4663,7 +4663,7 @@ def _shop_embed(uid: str) -> discord.Embed:
         description=f"{sep}\n\n" + f"\n\n{sep}\n\n".join(lines) + f"\n\n{sep}\n\nTon solde : **{_fmt_berry(bal)} 🍊**",
         color=discord.Color.from_rgb(212, 175, 55),
     )
-    embed.set_footer(text="Clique sur un article pour l'acheter · Max 2 utilisations /ticket par jour")
+    embed.set_footer(text="Clique sur un article pour l'acheter · Max 2 utilisations /ticket par jour (illimité pour les admins)")
     return embed
 
 
@@ -4777,11 +4777,12 @@ async def ticket_pseudo_cmd(interaction: discord.Interaction, membre: discord.Me
         )
         return
 
+    is_admin = interaction.user.guild_permissions.administrator
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     daily = user_data.get("ticket_daily", {"date": "", "count": 0})
     if daily.get("date") != today:
         daily = {"date": today, "count": 0}
-    if daily["count"] >= 2:
+    if not is_admin and daily["count"] >= 2:
         await interaction.response.send_message(
             "❌ Tu as déjà utilisé **2 tickets** aujourd'hui. Reviens demain !", ephemeral=True
         )
@@ -4863,14 +4864,14 @@ async def ticket_pseudo_cmd(interaction: discord.Interaction, membre: discord.Me
     _DIRTY.add(str(membre.id))
     await asyncio.get_running_loop().run_in_executor(db_executor, _sync_flush_dirty)
 
-    restants_jour = 2 - daily["count"]
+    restants_jour = "∞" if is_admin else f"{2 - daily['count']}/2"
     await interaction.response.send_message(
         embed=discord.Embed(
             title="🎭 Pseudo changé !",
             description=(
                 f"**{ancien_display}** s'appelle maintenant **{nouveau_pseudo}** pendant **{minutes} min** !\n\n"
                 f"Il reprendra son pseudo original dans {minutes} minutes.\n"
-                f"Stock {tier['emoji']} : **{tickets[duree]}** · Utilisations restantes aujourd'hui : **{restants_jour}/2**"
+                f"Stock {tier['emoji']} : **{tickets[duree]}** · Utilisations restantes aujourd'hui : **{restants_jour}**"
             ),
             color=discord.Color.purple(),
         )
