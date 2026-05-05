@@ -233,7 +233,8 @@ def init_db():
         cur.close()
     finally:
         release_db(conn)
-ANNOUNCE_CHANNEL_ID = 1494342996848672828
+ANNOUNCE_CHANNEL_ID   = 1494342996848672828
+VIREMENT_CHANNEL_ID   = 960229347854278736
 _raw_log = os.environ.get("LOG_CHANNEL_ID", "")
 LOG_MOD_CHANNEL_ID = int(_raw_log) if _raw_log.isdigit() else None
 ALERT_HOURS_THRESHOLD = 5.0
@@ -4880,16 +4881,18 @@ class _VirementView(discord.ui.View):
             ),
             view=None,
         )
-        await interaction.followup.send(
-            embed=discord.Embed(
-                title="💸 Virement Berry",
-                description=(
-                    f"{interaction.user.mention} a viré **{_fmt_berry(self._montant)} 🍊** "
-                    f"à <@{self._receiver_id}> !"
-                ),
-                color=discord.Color.from_rgb(212, 175, 55),
+        ch = bot.get_channel(VIREMENT_CHANNEL_ID)
+        if ch:
+            await ch.send(
+                embed=discord.Embed(
+                    title="💸 Virement Berry",
+                    description=(
+                        f"{interaction.user.mention} a envoyé **{_fmt_berry(self._montant)} 🍊** "
+                        f"à <@{self._receiver_id}> !"
+                    ),
+                    color=discord.Color.from_rgb(212, 175, 55),
+                )
             )
-        )
 
     @discord.ui.button(label="Annuler ❌", style=discord.ButtonStyle.danger)
     async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
