@@ -1786,10 +1786,9 @@ async def nick_restore_loop():
             print(f"[RESTORE] fetch_member erreur {uid}: {e}")
             continue
 
-        original_nick = restore.get("nick")
-        print(f"[RESTORE] Restauration {member.display_name} → {original_nick!r}")
+        print(f"[RESTORE] Expiry ticket — suppression pseudo de {member.display_name} → nom Discord de base")
         try:
-            await member.edit(nick=original_nick)
+            await member.edit(nick=None)
             print(f"[RESTORE] ✅ OK pour {member.display_name} ({uid})")
         except discord.Forbidden:
             print(f"[RESTORE] ❌ Forbidden — rôle du membre supérieur au bot pour {uid}")
@@ -5589,7 +5588,6 @@ async def ticket_pseudo_cmd(interaction: discord.Interaction, membre: discord.Me
         )
         return
 
-    ancien_nick = membre.nick  # surnom serveur juste avant ce ticket (le précédent immédiat)
     ancien_display = membre.display_name
     try:
         await membre.edit(nick=nouveau_pseudo)
@@ -5608,7 +5606,6 @@ async def ticket_pseudo_cmd(interaction: discord.Interaction, membre: discord.Me
     minutes    = tier["minutes"]
     expires_at = now_ts() + minutes * 60
     target_data["nick_restore"] = {
-        "nick":    ancien_nick,
         "expires": expires_at,
         "guild":   str(interaction.guild_id),
         "minutes": minutes,
