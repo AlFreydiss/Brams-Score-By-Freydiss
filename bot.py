@@ -4631,6 +4631,7 @@ _SHIELD_ITEM = {
 }
 
 _SHOP_ITEMS = _TICKET_TIERS + [_SHIELD_ITEM]
+_ITEM_BY_ID = {item["id"]: item for item in _SHOP_ITEMS}
 
 def _fmt_berry(n: int) -> str:
     return f"{n:,}".replace(",", " ")
@@ -4641,6 +4642,31 @@ def _get_tickets(user_data: dict) -> dict:
         raw = {"ticket_60": raw}
         user_data["pseudo_tickets"] = raw
     return raw
+
+def _get_item_stock(user_data: dict, item_id: str) -> int:
+    if item_id == "nick_shield":
+        return user_data.get("nick_shields", 0)
+    return _get_tickets(user_data).get(item_id, 0)
+
+def _add_item_stock(user_data: dict, item_id: str, qty: int):
+    if item_id == "nick_shield":
+        user_data["nick_shields"] = user_data.get("nick_shields", 0) + qty
+    else:
+        tickets = _get_tickets(user_data)
+        tickets[item_id] = tickets.get(item_id, 0) + qty
+        user_data["pseudo_tickets"] = tickets
+
+def _remove_item_stock(user_data: dict, item_id: str, qty: int) -> bool:
+    stock = _get_item_stock(user_data, item_id)
+    if stock < qty:
+        return False
+    if item_id == "nick_shield":
+        user_data["nick_shields"] = stock - qty
+    else:
+        tickets = _get_tickets(user_data)
+        tickets[item_id] = stock - qty
+        user_data["pseudo_tickets"] = tickets
+    return True
 
 def _shop_embed(uid: str) -> discord.Embed:
     bal       = get_berrys(uid)
@@ -4950,8 +4976,176 @@ async def virement_cmd(interaction: discord.Interaction, membre: discord.Member,
 
 
 # ─────────────────────────────────────────
-#  VENTE DE TICKETS
+#  VENTE D'ARTICLES (/vendre)
 # ─────────────────────────────────────────
+
+class _VenteView(discord.ui.View):
+    def __init__(self, seller_id: str, buyer_id: str, item_id: str, qty: int, prix: int,
+                 source_interaction: discord.Interaction):
+        super().__init__(timeout=120)
+        self._seller_id         = seller_id
+        self._buyer_id          = buyer_id
+        self._item_id           = item_id
+        self._qty               = qty
+        self._prix              = prix
+        self._source_interaction = source_interaction
+
+    def _restituer_vendeur(self):
+        seller_data = get_user(_CACHE, self._seller_id)
+        _add_item_stock(seller_data, self._item_id, self._qty)
+        _DIRTY.add(self._seller_id)
+
+    async def on_timeout(self):
+        self._restituer_vendeur()
+        try:
+            await self._source_interaction.edit_original_response(
+                embed=discord.Embed(
+                    title="⌛ Offre expirée",
+                    description=f"L'acheteur n'a pas répondu à temps. Tes articles ont été restitués.",
+                    color=discord.Color.dark_grey(),
+                ),
+                view=None,
+            )
+        except Exception:
+            pass
+
+    @discord.ui.button(label="Acheter ✅", style=discord.ButtonStyle.success)
+    async def acheter(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if str(interaction.user.id) != self._buyer_id:
+            await interaction.response.send_message("Cette offre ne te concerne pas.", ephemeral=True)
+            return
+        self.stop()
+        item = _ITEM_BY_ID[self._item_id]
+        if not spend_berrys(self._buyer_id, self._prix, track=None):
+            bal = get_berrys(self._buyer_id)
+            self._restituer_vendeur()
+            await interaction.response.edit_message(
+                embed=discord.Embed(
+                    title="❌ Achat impossible",
+                    description=(
+                        f"Solde insuffisant. Tu as **{_fmt_berry(bal)} 🍊**, "
+                        f"il te faut **{_fmt_berry(self._prix)} 🍊**."
+                    ),
+                    color=discord.Color.red(),
+                ),
+                view=None,
+            )
+            return
+        add_berrys(self._seller_id, self._prix, track=None)
+        buyer_data = get_user(_CACHE, self._buyer_id)
+        _add_item_stock(buyer_data, self._item_id, self._qty)
+        _DIRTY.add(self._buyer_id)
+        qty_label = f"{self._qty}x " if self._qty > 1 else ""
+        await interaction.response.edit_message(
+            embed=discord.Embed(
+                title=f"{item['emoji']} Achat confirmé !",
+                description=(
+                    f"Tu as acheté **{qty_label}{item['name']}** {item['emoji']} "
+                    f"pour **{_fmt_berry(self._prix)} 🍊** !\n\n"
+                    f"<@{self._seller_id}> a reçu **{_fmt_berry(self._prix)} 🍊**.\n"
+                    f"Ton nouveau solde : **{_fmt_berry(get_berrys(self._buyer_id))} 🍊**"
+                ),
+                color=discord.Color.green(),
+            ),
+            view=None,
+        )
+
+    @discord.ui.button(label="Refuser ❌", style=discord.ButtonStyle.danger)
+    async def refuser(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if str(interaction.user.id) != self._buyer_id:
+            await interaction.response.send_message("Cette offre ne te concerne pas.", ephemeral=True)
+            return
+        self.stop()
+        self._restituer_vendeur()
+        item = _ITEM_BY_ID[self._item_id]
+        await interaction.response.edit_message(
+            embed=discord.Embed(
+                title="❌ Offre refusée",
+                description=f"<@{self._buyer_id}> a refusé l'offre. Tes articles ont été restitués.",
+                color=discord.Color.red(),
+            ),
+            view=None,
+        )
+
+
+@bot.tree.command(name="vendre", description="Vends un article à un autre membre contre des Berrys !")
+@app_commands.describe(
+    membre="Le membre acheteur",
+    article="L'article à vendre",
+    quantite="Nombre d'articles (défaut : 1)",
+    prix="Prix total en Berrys",
+)
+@app_commands.choices(article=[
+    app_commands.Choice(name="Ticket 30 min ⏱️",   value="ticket_30"),
+    app_commands.Choice(name="Ticket 1h 🎭",        value="ticket_60"),
+    app_commands.Choice(name="Ticket 2h 👑",        value="ticket_120"),
+    app_commands.Choice(name="Bouclier Pseudo 🛡️",  value="nick_shield"),
+])
+@app_commands.guilds(*GUILD_IDS)
+async def vendre_cmd(interaction: discord.Interaction, membre: discord.Member,
+                     article: str, prix: int, quantite: int = 1):
+    uid  = str(interaction.user.id)
+    tid  = str(membre.id)
+    item = _ITEM_BY_ID[article]
+
+    if membre.id == interaction.user.id:
+        await interaction.response.send_message("❌ Tu ne peux pas te vendre un article à toi-même.", ephemeral=True)
+        return
+    if membre.bot:
+        await interaction.response.send_message("❌ Tu ne peux pas vendre à un bot.", ephemeral=True)
+        return
+    if quantite < 1:
+        await interaction.response.send_message("❌ La quantité doit être d'au moins **1**.", ephemeral=True)
+        return
+    if prix < 1:
+        await interaction.response.send_message("❌ Le prix doit être supérieur à **0 🍊**.", ephemeral=True)
+        return
+
+    user_data = get_user(_CACHE, uid)
+    stock     = _get_item_stock(user_data, article)
+    if stock < quantite:
+        await interaction.response.send_message(
+            f"❌ Stock insuffisant. Tu possèdes **{stock}x {item['name']}** {item['emoji']}, "
+            f"tu en veux vendre **{quantite}**.",
+            ephemeral=True,
+        )
+        return
+
+    # Escrow : retirer les articles du vendeur immédiatement
+    _remove_item_stock(user_data, article, quantite)
+    _DIRTY.add(uid)
+
+    qty_label = f"{quantite}x " if quantite > 1 else ""
+    view = _VenteView(uid, tid, article, quantite, prix, interaction)
+    await interaction.response.send_message(
+        embed=discord.Embed(
+            title=f"{item['emoji']} Offre de vente",
+            description=(
+                f"{interaction.user.mention} propose **{qty_label}{item['name']}** {item['emoji']} "
+                f"à {membre.mention} pour **{_fmt_berry(prix)} 🍊**.\n\n"
+                f"{membre.mention}, tu as **2 minutes** pour accepter ou refuser."
+            ),
+            color=discord.Color.orange(),
+        ),
+        view=view,
+    )
+    try:
+        await membre.send(
+            embed=discord.Embed(
+                title=f"{item['emoji']} Offre reçue !",
+                description=(
+                    f"**{interaction.user.display_name}** te propose **{qty_label}{item['name']}** {item['emoji']} "
+                    f"pour **{_fmt_berry(prix)} 🍊**.\n\nRéponds dans le serveur !"
+                ),
+                color=discord.Color.from_rgb(212, 175, 55),
+            )
+        )
+    except discord.Forbidden:
+        pass
+
+
+# ─────────────────────────────────────────
+#  VENTE DE TICKETS
 
 class _VenteTicketView(discord.ui.View):
     def __init__(self, seller_id: str, buyer_id: str, ticket_id: str, prix: int,
