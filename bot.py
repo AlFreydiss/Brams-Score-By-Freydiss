@@ -4753,11 +4753,21 @@ class _QuantityModal(discord.ui.Modal, title="Quantité à acheter"):
 
 
 class _AdminPayView(discord.ui.View):
-    def __init__(self, item: dict, shop_view: "_ShopView", shop_message: discord.Message):
-        super().__init__(timeout=30)
-        self._item         = item
-        self._shop_view    = shop_view
-        self._shop_message = shop_message
+    def __init__(self, item: dict, shop_view: "_ShopView", shop_message: discord.Message, source_interaction: discord.Interaction):
+        super().__init__(timeout=300)
+        self._item               = item
+        self._shop_view          = shop_view
+        self._shop_message       = shop_message
+        self._source_interaction = source_interaction
+
+    async def on_timeout(self):
+        try:
+            await self._source_interaction.edit_original_response(
+                content="⌛ Session expirée. Relance `/shop` pour acheter.",
+                view=None,
+            )
+        except Exception:
+            pass
 
     @discord.ui.button(label="Payer en Berrys 🍊", style=discord.ButtonStyle.primary)
     async def pay_berries(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -4776,7 +4786,7 @@ class _AdminPayView(discord.ui.View):
 
 class _ShopView(discord.ui.View):
     def __init__(self, user_id: int):
-        super().__init__(timeout=60)
+        super().__init__(timeout=300)
         self._user_id = user_id
         for item in _SHOP_ITEMS:
             btn = discord.ui.Button(
@@ -4795,7 +4805,7 @@ class _ShopView(discord.ui.View):
             if interaction.permissions.administrator:
                 await interaction.response.send_message(
                     f"**{item['emoji']} {item['name']}** — Comment veux-tu payer ?",
-                    view=_AdminPayView(item, self, interaction.message),
+                    view=_AdminPayView(item, self, interaction.message, interaction),
                     ephemeral=True,
                 )
             else:
