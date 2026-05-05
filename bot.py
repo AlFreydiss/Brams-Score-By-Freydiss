@@ -4675,11 +4675,12 @@ class _QuantityModal(discord.ui.Modal, title="Quantité à acheter"):
         max_length=3,
     )
 
-    def __init__(self, item: dict, shop_view: "_ShopView", original_message: discord.Message):
+    def __init__(self, item: dict, shop_view: "_ShopView", original_message: discord.Message, free: bool = False):
         super().__init__()
         self._item             = item
         self._shop_view        = shop_view
         self._original_message = original_message
+        self._free             = free
 
     async def on_submit(self, interaction: discord.Interaction):
         try:
@@ -4692,12 +4693,11 @@ class _QuantityModal(discord.ui.Modal, title="Quantité à acheter"):
             )
             return
 
-        uid      = str(interaction.user.id)
-        is_admin = interaction.permissions.administrator
-        item     = self._item
-        total    = item["price"] * qty
+        uid   = str(interaction.user.id)
+        item  = self._item
+        total = item["price"] * qty
 
-        if not is_admin and not spend_berrys(uid, total):
+        if not self._free and not spend_berrys(uid, total):
             bal = get_berrys(uid)
             await interaction.response.send_message(
                 f"❌ Solde insuffisant. Tu as **{_fmt_berry(bal)} 🍊**, "
@@ -4709,6 +4709,8 @@ class _QuantityModal(discord.ui.Modal, title="Quantité à acheter"):
         await interaction.response.defer()
         self._shop_view.stop()
         user_data = get_user(_CACHE, uid)
+        new_bal   = get_berrys(uid)
+        gratuit_tag = " *(admin — gratuit)*" if self._free else ""
 
         if item["id"] == "nick_shield":
             user_data["nick_shields"] = user_data.get("nick_shields", 0) + qty
@@ -4719,7 +4721,7 @@ class _QuantityModal(discord.ui.Modal, title="Quantité à acheter"):
                 embed=discord.Embed(
                     title="🛡️ Bouclier Pseudo acheté !",
                     description=(
-                        f"**{qty}x** bouclier(s) achetés. Tu en possèdes **{shields}** 🛡️\n\n"
+                        f"**{qty}x** bouclier(s) achetés{gratuit_tag}. Tu en possèdes **{shields}** 🛡️\n\n"
                         f"Si quelqu'un essaie de changer ton pseudo avec un ticket, "
                         f"son ticket sera **perdu** et ton pseudo restera intact.\n\n"
                         f"Solde restant : **{_fmt_berry(new_bal)} 🍊**"
@@ -4740,13 +4742,35 @@ class _QuantityModal(discord.ui.Modal, title="Quantité à acheter"):
             embed=discord.Embed(
                 title=f"{item['emoji']} {item['name']} acheté !",
                 description=(
-                    f"**{qty}x** achetés. Tu possèdes **{stock} ticket(s)** {item['emoji']}\n\n"
+                    f"**{qty}x** achetés{gratuit_tag}. Tu possèdes **{stock} ticket(s)** {item['emoji']}\n\n"
                     f"Utilise `/ticket @membre nouveau_pseudo` et choisis la durée **{item['minutes']} min**.\n\n"
                     f"Solde restant : **{_fmt_berry(new_bal)} 🍊**"
                 ),
                 color=discord.Color.purple(),
             ),
             view=None,
+        )
+
+
+class _AdminPayView(discord.ui.View):
+    def __init__(self, item: dict, shop_view: "_ShopView", shop_message: discord.Message):
+        super().__init__(timeout=30)
+        self._item         = item
+        self._shop_view    = shop_view
+        self._shop_message = shop_message
+
+    @discord.ui.button(label="Payer en Berrys 🍊", style=discord.ButtonStyle.primary)
+    async def pay_berries(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.stop()
+        await interaction.response.send_modal(
+            _QuantityModal(self._item, self._shop_view, self._shop_message, free=False)
+        )
+
+    @discord.ui.button(label="Gratuit 👑 (Admin)", style=discord.ButtonStyle.success)
+    async def pay_free(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.stop()
+        await interaction.response.send_modal(
+            _QuantityModal(self._item, self._shop_view, self._shop_message, free=True)
         )
 
 
@@ -4768,9 +4792,16 @@ class _ShopView(discord.ui.View):
             if interaction.user.id != self._user_id:
                 await interaction.response.send_message("Ce shop ne t'appartient pas !", ephemeral=True)
                 return
-            await interaction.response.send_modal(
-                _QuantityModal(item, self, interaction.message)
-            )
+            if interaction.permissions.administrator:
+                await interaction.response.send_message(
+                    f"**{item['emoji']} {item['name']}** — Comment veux-tu payer ?",
+                    view=_AdminPayView(item, self, interaction.message),
+                    ephemeral=True,
+                )
+            else:
+                await interaction.response.send_modal(
+                    _QuantityModal(item, self, interaction.message, free=False)
+                )
         return cb
 
 
