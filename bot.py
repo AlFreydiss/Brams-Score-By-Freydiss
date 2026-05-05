@@ -1766,22 +1766,33 @@ async def nick_restore_loop():
         expires = restore.get("expires", 0)
         if _now < expires:
             continue
-        print(f"[RESTORE] Restauration pseudo UID={uid} nick={restore.get('nick')!r} (expiré)")
+
+        # Expiré — on retire de la DB dès maintenant pour éviter les doublons
         udata.pop("nick_restore")
         _DIRTY.add(uid)
+
         guild = bot.get_guild(int(restore["guild"]))
         if not guild:
             print(f"[RESTORE] Guild {restore['guild']} introuvable")
             continue
-        member = guild.get_member(int(uid))
-        if not member:
-            print(f"[RESTORE] Membre {uid} introuvable dans la guild")
-            continue
+
+        # fetch_member() fait un appel API garanti — évite le None si membre non-caché
         try:
-            await member.edit(nick=restore.get("nick"))
-            print(f"[RESTORE] ✅ Pseudo restauré pour {member.display_name} ({uid})")
+            member = await guild.fetch_member(int(uid))
+        except discord.NotFound:
+            print(f"[RESTORE] Membre {uid} a quitté le serveur")
+            continue
+        except Exception as e:
+            print(f"[RESTORE] fetch_member erreur {uid}: {e}")
+            continue
+
+        original_nick = restore.get("nick")
+        print(f"[RESTORE] Restauration {member.display_name} → {original_nick!r}")
+        try:
+            await member.edit(nick=original_nick)
+            print(f"[RESTORE] ✅ OK pour {member.display_name} ({uid})")
         except discord.Forbidden:
-            print(f"[RESTORE] ❌ Forbidden — bot sans permission pour {uid}")
+            print(f"[RESTORE] ❌ Forbidden — rôle du membre supérieur au bot pour {uid}")
         except Exception as e:
             print(f"[RESTORE] ❌ Erreur inattendue pour {uid}: {e}")
 
@@ -5578,7 +5589,11 @@ async def ticket_pseudo_cmd(interaction: discord.Interaction, membre: discord.Me
         )
         return
 
-    ancien_nick = membre.nick  # surnom serveur (None si aucun)
+    # Si un ticket plus prioritaire écrase un ticket actif, on conserve le nick ORIGINAL (pas le faux)
+    if active_restore and now_ts() < active_restore.get("expires", 0):
+        ancien_nick = active_restore.get("nick")
+    else:
+        ancien_nick = membre.nick  # surnom serveur avant ce ticket (None = aucun surnom)
     ancien_display = membre.display_name
     try:
         await membre.edit(nick=nouveau_pseudo)
@@ -5620,75 +5635,403 @@ async def ticket_pseudo_cmd(interaction: discord.Interaction, membre: discord.Me
 
 
 # ─────────────────────────────────────────
-#  BANQUE
+#  BANQUE — helpers
 # ─────────────────────────────────────────
 
-@bot.tree.command(name="banque", description="Tes stats de Berry + classement du serveur")
+def _fmt_n(n: int) -> str:
+    """1 250 000 au lieu de 1250000."""
+    return f"{n:,}".replace(",", " ")
+
+
+def _fmt_relative(dt_utc) -> str:
+    """Date relative en français à partir d'un datetime UTC aware."""
+    delta = datetime.now(timezone.utc) - dt_utc
+    s = int(delta.total_seconds())
+    if s < 60:    return "à l'instant"
+    if s < 3600:  return f"il y a {s // 60} min"
+    if s < 86400: return f"il y a {s // 3600}h"
+    if s < 172800: return "hier"
+    return f"il y a {s // 86400} jours"
+
+
+_CAT_FR = {
+    "vocal": "Vocal", "quiz": "Quiz",
+    "casino_gain": "Casino", "casino_perte": "Casino",
+    "vol_recu": "Vol", "vol_perdu": "Vol",
+    "achat_boutique": "Boutique",
+    "transfert_envoye": "Transfert", "transfert_recu": "Transfert",
+    "akinator": "Akinator", "duel_gagne": "Duel", "duel_perdu": "Duel",
+    "daily": "Daily", "autre": "Autre",
+}
+
+
+def _sync_banque_stats(uid: str) -> dict:
+    """Toutes les stats DB pour /banque — un seul aller-retour."""
+    out = {
+        "week_gain": 0, "week_dep": 0,
+        "prev_gain": 0, "prev_dep": 0,
+        "top_gains": [], "top_deps": [],
+        "recent": [], "history30": [],
+    }
+    conn = get_db()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT type, SUM(montant) FROM transactions
+            WHERE user_id=%s AND created_at >= NOW()-INTERVAL '7 days'
+            GROUP BY type
+        """, (uid,))
+        for t, v in cur.fetchall():
+            if t == "gain": out["week_gain"] = v or 0
+            else:           out["week_dep"]  = v or 0
+
+        cur.execute("""
+            SELECT type, SUM(montant) FROM transactions
+            WHERE user_id=%s
+              AND created_at >= NOW()-INTERVAL '14 days'
+              AND created_at <  NOW()-INTERVAL '7 days'
+            GROUP BY type
+        """, (uid,))
+        for t, v in cur.fetchall():
+            if t == "gain": out["prev_gain"] = v or 0
+            else:           out["prev_dep"]  = v or 0
+
+        cur.execute("""
+            SELECT categorie, SUM(montant) FROM transactions
+            WHERE user_id=%s AND type='gain'
+            GROUP BY categorie ORDER BY 2 DESC LIMIT 3
+        """, (uid,))
+        out["top_gains"] = cur.fetchall()
+
+        cur.execute("""
+            SELECT categorie, SUM(montant) FROM transactions
+            WHERE user_id=%s AND type='depense'
+            GROUP BY categorie ORDER BY 2 DESC LIMIT 3
+        """, (uid,))
+        out["top_deps"] = cur.fetchall()
+
+        cur.execute("""
+            SELECT type, montant, description, created_at FROM transactions
+            WHERE user_id=%s ORDER BY created_at DESC LIMIT 5
+        """, (uid,))
+        out["recent"] = cur.fetchall()
+
+        cur.execute("""
+            SELECT DATE(created_at AT TIME ZONE 'UTC'), MAX(solde_apres)
+            FROM transactions
+            WHERE user_id=%s AND created_at >= NOW()-INTERVAL '30 days'
+            GROUP BY 1 ORDER BY 1
+        """, (uid,))
+        out["history30"] = cur.fetchall()
+
+        cur.close()
+    except Exception as e:
+        print(f"[BANQUE] stats DB: {e}")
+    finally:
+        release_db(conn)
+    return out
+
+
+def _sync_full_history(uid: str) -> list:
+    conn = get_db()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT type, montant, description, created_at FROM transactions
+            WHERE user_id=%s ORDER BY created_at DESC LIMIT 50
+        """, (uid,))
+        rows = cur.fetchall()
+        cur.close()
+        return rows
+    except Exception as e:
+        print(f"[BANQUE] historique DB: {e}")
+        return []
+    finally:
+        release_db(conn)
+
+
+async def _chart_url(history: list) -> str | None:
+    """Génère un lien graphique quickchart.io (POST → short URL)."""
+    if len(history) < 2:
+        return None
+    import json
+    labels = [str(r[0]) for r in history]
+    data   = [r[1] for r in history]
+    spec = {
+        "type": "line",
+        "data": {
+            "labels": labels,
+            "datasets": [{
+                "label": "Solde", "data": data,
+                "fill": True, "tension": 0.3,
+                "borderColor": "#FFD700",
+                "backgroundColor": "rgba(255,215,0,0.12)",
+                "pointRadius": 3,
+            }]
+        },
+        "options": {
+            "plugins": {"legend": {"display": False}},
+            "scales": {
+                "x": {"ticks": {"maxTicksLimit": 7}},
+                "y": {"beginAtZero": False},
+            }
+        }
+    }
+    try:
+        async with _HTTP.post(
+            "https://quickchart.io/chart/create",
+            json={"chart": spec, "width": 500, "height": 200, "backgroundColor": "#1a1a2e"},
+            timeout=aiohttp.ClientTimeout(total=6),
+        ) as r:
+            if r.status == 200:
+                return (await r.json()).get("url")
+    except Exception:
+        pass
+    return None
+
+
+class BanqueView(discord.ui.View):
+    def __init__(self, uid: str, target: discord.Member, stats: dict):
+        super().__init__(timeout=120)
+        self.uid    = uid
+        self.target = target
+        self.stats  = stats
+
+    @discord.ui.button(label="Graphique 30j", emoji="📈", style=discord.ButtonStyle.secondary)
+    async def btn_graph(self, interaction: discord.Interaction, _: discord.ui.Button):
+        await interaction.response.defer(ephemeral=True)
+        url = await _chart_url(self.stats.get("history30", []))
+        if not url:
+            await interaction.followup.send(
+                "Pas assez de données pour générer un graphique.", ephemeral=True)
+            return
+        e = discord.Embed(title="📈 Évolution du solde — 30 derniers jours", color=0xFFD700)
+        e.set_image(url=url)
+        await interaction.followup.send(embed=e, ephemeral=True)
+
+    @discord.ui.button(label="Historique", emoji="📜", style=discord.ButtonStyle.secondary)
+    async def btn_history(self, interaction: discord.Interaction, _: discord.ui.Button):
+        await interaction.response.defer(ephemeral=True)
+        rows = await asyncio.get_running_loop().run_in_executor(
+            db_executor, _sync_full_history, self.uid)
+        if not rows:
+            await interaction.followup.send("Aucune transaction enregistrée.", ephemeral=True)
+            return
+        lines = []
+        for type_, montant, desc, created_at in rows:
+            sign = "▲" if type_ == "gain" else "▼"
+            pm   = "+" if type_ == "gain" else "-"
+            lines.append(f"{sign} {pm}{_fmt_n(montant)} Berrys — {desc or 'N/A'} *({_fmt_relative(created_at)})*")
+        pages = [lines[i:i+10] for i in range(0, len(lines), 10)]
+        e = discord.Embed(
+            title=f"📜 Historique de {self.target.display_name} — Page 1/{len(pages)}",
+            description="\n".join(pages[0]),
+            color=0xFFD700,
+        )
+        await interaction.followup.send(embed=e, ephemeral=True)
+
+    @discord.ui.button(label="Classement", emoji="🏆", style=discord.ButtonStyle.secondary)
+    async def btn_rank(self, interaction: discord.Interaction, _: discord.ui.Button):
+        await interaction.response.defer(ephemeral=True)
+        gids = {str(m.id) for m in interaction.guild.members}
+        top = sorted(
+            [(uid, d.get("berrys", 0)) for uid, d in _CACHE.items() if uid in gids],
+            key=lambda x: x[1], reverse=True
+        )[:10]
+        medals = ["🥇", "🥈", "🥉"] + [f"{i}." for i in range(4, 11)]
+        lines = []
+        for i, (uid, bal) in enumerate(top):
+            m = interaction.guild.get_member(int(uid))
+            name = m.display_name if m else f"<@{uid}>"
+            lines.append(f"{medals[i]} **{name}** — `{_fmt_n(bal)}` Berrys")
+        e = discord.Embed(
+            title="🏆 Top 10 des plus riches",
+            description="\n".join(lines) or "Aucune donnée",
+            color=0xFFD700,
+        )
+        await interaction.followup.send(embed=e, ephemeral=True)
+
+
+# ─────────────────────────────────────────
+#  BANQUE — commande
+# ─────────────────────────────────────────
+
+@bot.tree.command(name="banque", description="Relevé de compte complet — dashboard financier Berry")
 @app_commands.guilds(*GUILD_IDS)
-async def banque(interaction: discord.Interaction):
+@app_commands.describe(membre="Membre à consulter (toi par défaut)")
+async def banque(interaction: discord.Interaction, membre: discord.Member = None):
     await interaction.response.defer()
 
-    uid = str(interaction.user.id)
-    me  = get_user(_CACHE, uid)
-    my_stats = me.get("berry_stats", {})
-    my_bal   = me.get("berrys", 0)
+    target = membre or interaction.user
+    uid    = str(target.id)
+    udata  = get_user(_CACHE, uid)
+    bal    = udata.get("berrys", 0)
+    bst    = udata.get("berry_stats", {})
+    earned = bst.get("earned", 0)
+    lost   = bst.get("lost",   0)
+    spent  = bst.get("spent",  0)
+    total_out = spent + lost
+    bilan     = earned - total_out
 
-    # ── Embed personnel ──────────────────────────────────────────────
-    embed_perso = discord.Embed(
-        title="🏦 Ta Banque Berry",
-        color=discord.Color.gold(),
+    # Classement richesse dans le serveur
+    gids     = {str(m.id) for m in interaction.guild.members}
+    all_bals = sorted(
+        (d.get("berrys", 0) for cuid, d in _CACHE.items() if cuid in gids),
+        reverse=True,
     )
-    embed_perso.set_thumbnail(url=interaction.user.display_avatar.url)
-    embed_perso.add_field(name="💰 Solde actuel",    value=f"`{my_bal:,}` 🍒".replace(",", " "), inline=False)
-    embed_perso.add_field(name="📈 Total gagné",     value=f"`{my_stats.get('earned', 0):,}` 🍒".replace(",", " "), inline=True)
-    embed_perso.add_field(name="📉 Total perdu",     value=f"`{my_stats.get('lost', 0):,}` 🍒".replace(",", " "),   inline=True)
-    embed_perso.add_field(name="🛒 Total dépensé",   value=f"`{my_stats.get('spent', 0):,}` 🍒".replace(",", " "),  inline=True)
+    rank   = next((i + 1 for i, b in enumerate(all_bals) if b <= bal), len(all_bals))
+    total_m = len(all_bals)
 
-    # ── Classement serveur ───────────────────────────────────────────
-    guild_member_ids = {str(m.id) for m in interaction.guild.members}
+    # Stats depuis la table transactions
+    db_stats = await asyncio.get_running_loop().run_in_executor(
+        db_executor, _sync_banque_stats, uid)
 
-    rows = []
-    for cuid, cdata in _CACHE.items():
-        if cuid not in guild_member_ids:
+    wgain  = db_stats["week_gain"]
+    wdep   = db_stats["week_dep"]
+    wbilan = wgain - wdep
+    pgain  = db_stats["prev_gain"]
+    pdep   = db_stats["prev_dep"]
+    pbilan = pgain - pdep
+    evol_str = (
+        f"{'+' if (wbilan - pbilan) >= 0 else ''}{int((wbilan - pbilan) / abs(pbilan) * 100)}%"
+        if pbilan != 0 else "N/A"
+    )
+
+    bilan_icon = "📈" if bilan >= 0 else "📉"
+    wicon      = "📈" if wbilan >= 0 else "📉"
+
+    medals = ["🥇", "🥈", "🥉"]
+
+    def fmt_cats(rows: list) -> str:
+        if not rows:
+            return "*Aucune donnée*"
+        total = sum(v for _, v in rows)
+        lines = []
+        for i, (cat, v) in enumerate(rows):
+            pct   = int(v / total * 100) if total else 0
+            label = _CAT_FR.get(cat, cat.capitalize())
+            lines.append(f"{medals[i]} {label} : `{_fmt_n(v)}` Berrys ({pct}%)")
+        return "\n".join(lines)
+
+    def fmt_recent(rows: list) -> str:
+        if not rows:
+            return "*Aucune transaction enregistrée*"
+        lines = []
+        for type_, montant, desc, created_at in rows:
+            sign = "▲" if type_ == "gain" else "▼"
+            pm   = "+" if type_ == "gain" else "-"
+            lines.append(
+                f"{sign} {pm}{_fmt_n(montant)} Berrys — {desc or 'N/A'} *({_fmt_relative(created_at)})*"
+            )
+        return "\n".join(lines)
+
+    now_str = datetime.now(timezone.utc).strftime("%H:%M UTC")
+
+    embed = discord.Embed(title="🏦 Banque Mondiale des Pirates", color=0xFFD700)
+    embed.set_author(name=target.display_name, icon_url=target.display_avatar.url)
+    embed.set_thumbnail(url="https://em-content.zobj.net/source/twitter/376/bank_1f3e6.png")
+
+    embed.add_field(
+        name="💰 Solde actuel",
+        value=(
+            f"Sur soi : `{_fmt_n(bal)}` Berrys\n"
+            f"Classement richesse : **#{rank}** sur {total_m} membres"
+        ),
+        inline=False,
+    )
+    embed.add_field(
+        name="📊 Statistiques globales",
+        value=(
+            f"Total gagné : `{_fmt_n(earned)}` Berrys\n"
+            f"Total dépensé : `{_fmt_n(total_out)}` Berrys\n"
+            f"Bilan net : {bilan_icon} `{'+' if bilan >= 0 else ''}{_fmt_n(bilan)}` Berrys"
+        ),
+        inline=False,
+    )
+    embed.add_field(
+        name="📅 Cette semaine",
+        value=(
+            f"Gagné : `{_fmt_n(wgain)}` Berrys\n"
+            f"Dépensé : `{_fmt_n(wdep)}` Berrys\n"
+            f"Bilan : {wicon} `{'+' if wbilan >= 0 else ''}{_fmt_n(wbilan)}` Berrys\n"
+            f"Évolution vs semaine dernière : **{evol_str}**"
+        ) if (wgain or wdep) else "*Aucune transaction cette semaine*",
+        inline=False,
+    )
+    embed.add_field(
+        name="💵 Sources de revenus",
+        value=fmt_cats(db_stats["top_gains"]),
+        inline=False,
+    )
+    embed.add_field(
+        name="💸 Postes de dépenses",
+        value=fmt_cats(db_stats["top_deps"]),
+        inline=False,
+    )
+    embed.add_field(
+        name="📜 Dernières opérations",
+        value=fmt_recent(db_stats["recent"]),
+        inline=False,
+    )
+    embed.set_footer(
+        text=f"Banque Mondiale • Compte n°{uid[-6:]} • Mis à jour à {now_str}",
+        icon_url=interaction.client.user.display_avatar.url,
+    )
+
+    await interaction.followup.send(embed=embed, view=BanqueView(uid, target, db_stats))
+
+
+# ─────────────────────────────────────────
+#  RESET PSEUDOS (admin)
+# ─────────────────────────────────────────
+
+@bot.tree.command(name="reset_pseudos", description="[ADMIN] Restaure immédiatement tous les pseudos modifiés par ticket")
+@app_commands.guilds(*GUILD_IDS)
+@app_commands.default_permissions(administrator=True)
+async def reset_pseudos(interaction: discord.Interaction):
+    await interaction.response.defer(ephemeral=True)
+
+    restored = 0
+    errors   = 0
+    skipped  = 0
+
+    for uid, udata in list(_CACHE.items()):
+        restore = udata.get("nick_restore")
+        if not restore:
             continue
-        bal     = cdata.get("berrys", 0)
-        stats   = cdata.get("berry_stats", {})
-        earned  = stats.get("earned", 0)
-        spent   = stats.get("spent", 0)
-        rows.append({"uid": cuid, "bal": bal, "earned": earned, "spent": spent})
+        guild = bot.get_guild(int(restore.get("guild", 0)))
+        if not guild:
+            skipped += 1
+            continue
+        member = guild.get_member(int(uid))
+        if not member:
+            skipped += 1
+            continue
+        try:
+            await member.edit(nick=restore.get("nick"))
+            udata.pop("nick_restore")
+            _DIRTY.add(uid)
+            restored += 1
+            print(f"[RESET] Pseudo restauré : {member} → {restore.get('nick')!r}")
+        except discord.Forbidden:
+            errors += 1
+            print(f"[RESET] Forbidden pour {uid}")
+        except Exception as e:
+            errors += 1
+            print(f"[RESET] Erreur {uid}: {e}")
 
-    top_earned  = sorted(rows, key=lambda r: r["earned"],  reverse=True)[:5]
-    top_spenders = sorted(rows, key=lambda r: r["spent"],  reverse=True)[:5]
-    top_rich     = sorted(rows, key=lambda r: r["bal"],    reverse=True)[:5]
-
-    def fmt_row(rank: int, r: dict, key: str) -> str:
-        member = interaction.guild.get_member(int(r["uid"]))
-        name   = member.display_name if member else f"<@{r['uid']}>"
-        val    = f"{r[key]:,}".replace(",", " ")
-        medals = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"]
-        return f"{medals[rank]} **{name}** — `{val}` 🍒"
-
-    embed_rank = discord.Embed(
-        title="🏆 Classement Berry du serveur",
-        color=discord.Color.blurple(),
+    await interaction.followup.send(
+        embed=discord.Embed(
+            title="✅ Reset des pseudos terminé",
+            description=(
+                f"Pseudos restaurés : **{restored}**\n"
+                f"Erreurs (permission) : **{errors}**\n"
+                f"Ignorés (membre hors-ligne) : **{skipped}**"
+            ),
+            color=discord.Color.green(),
+        ),
+        ephemeral=True,
     )
-    embed_rank.add_field(
-        name="💰 Les plus riches",
-        value="\n".join(fmt_row(i, r, "bal") for i, r in enumerate(top_rich)) or "—",
-        inline=False,
-    )
-    embed_rank.add_field(
-        name="📈 Plus grands gagnants",
-        value="\n".join(fmt_row(i, r, "earned") for i, r in enumerate(top_earned)) or "—",
-        inline=False,
-    )
-    embed_rank.add_field(
-        name="🛒 Plus grands dépensiers",
-        value="\n".join(fmt_row(i, r, "spent") for i, r in enumerate(top_spenders)) or "—",
-        inline=False,
-    )
-
-    await interaction.followup.send(embeds=[embed_perso, embed_rank])
 
 
 # ─────────────────────────────────────────
