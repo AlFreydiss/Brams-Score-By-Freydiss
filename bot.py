@@ -2,6 +2,7 @@ from flask import Flask
 from threading import Thread
 import os
 import asyncio
+import yt_dlp
 import psycopg2
 from psycopg2.extras import execute_values as _pg_execute_values
 from concurrent.futures import ThreadPoolExecutor
@@ -1711,6 +1712,61 @@ async def on_message(message):
     _DIRTY.add(uid)   # sera flushed vers DB dans les 30s
     await bot.process_commands(message)
 
+# ─────────────────────────────────────────
+#  ENTRY SOUND
+# ─────────────────────────────────────────
+
+_ENTRY_SOUND_LOCKS: dict[int, asyncio.Lock] = {}
+
+_YTDL_OPTS = {
+    "format": "bestaudio/best",
+    "noplaylist": True,
+    "quiet": True,
+    "no_warnings": True,
+    "source_address": "0.0.0.0",
+}
+_FFMPEG_OPTS = {
+    "before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5",
+    "options": "-vn -t 15",  # max 15 secondes
+}
+
+async def _play_entry_sound(member: discord.Member, channel: discord.VoiceChannel, url: str):
+    guild_id = channel.guild.id
+    if guild_id not in _ENTRY_SOUND_LOCKS:
+        _ENTRY_SOUND_LOCKS[guild_id] = asyncio.Lock()
+    lock = _ENTRY_SOUND_LOCKS[guild_id]
+    if lock.locked():
+        return
+    async with lock:
+        if member not in channel.members:
+            return
+        vc = None
+        try:
+            existing = channel.guild.voice_client
+            if existing:
+                await existing.disconnect(force=True)
+            loop = asyncio.get_running_loop()
+            with yt_dlp.YoutubeDL(_YTDL_OPTS) as ydl:
+                data = await loop.run_in_executor(None, lambda: ydl.extract_info(url, download=False))
+            if "entries" in data:
+                data = data["entries"][0]
+            stream_url = data["url"]
+            vc = await channel.connect(timeout=10)
+            done = asyncio.Event()
+            def _after(err):
+                loop.call_soon_threadsafe(done.set)
+            source = discord.PCMVolumeTransformer(
+                discord.FFmpegPCMAudio(stream_url, **_FFMPEG_OPTS), volume=0.5
+            )
+            vc.play(source, after=_after)
+            await asyncio.wait_for(done.wait(), timeout=20)
+        except Exception as e:
+            print(f"[ENTRY SOUND] {member.display_name}: {e}")
+        finally:
+            if vc and vc.is_connected():
+                await vc.disconnect()
+
+
 @bot.event
 async def on_voice_state_update(member, before, after):
     if member.bot:
@@ -1723,6 +1779,11 @@ async def on_voice_state_update(member, before, after):
     if before.channel is None and after.channel is not None:
         user["join_time"] = now_ts()
         _DIRTY.add(uid)
+        entry_url = user.get("entry_sound")
+        if entry_url:
+            afk = getattr(after.channel.guild, "afk_channel", None)
+            if after.channel != afk:
+                asyncio.create_task(_play_entry_sound(member, after.channel, entry_url))
 
     elif before.channel is not None and after.channel is None:
         if user["join_time"]:
@@ -4840,6 +4901,45 @@ class _ShopView(discord.ui.View):
                     _QuantityModal(item, self, interaction.message, free=False)
                 )
         return cb
+
+
+@bot.tree.command(name="set_entry_sound", description="Définis ton son d'entrée en vocal 🎵 (lien YouTube ou audio direct)")
+@app_commands.describe(url="Lien YouTube ou URL audio directe (max 15s joué)")
+@app_commands.guilds(*GUILD_IDS)
+async def set_entry_sound_cmd(interaction: discord.Interaction, url: str):
+    uid       = str(interaction.user.id)
+    user_data = get_user(_CACHE, uid)
+    user_data["entry_sound"] = url
+    _DIRTY.add(uid)
+    await interaction.response.send_message(
+        embed=discord.Embed(
+            title="🎵 Son d'entrée configuré !",
+            description=(
+                f"Ton son d'entrée a été mis à jour.\n\n"
+                f"Le bot le jouera dès que tu rejoins un salon vocal.\n"
+                f"*(limité aux 15 premières secondes)*"
+            ),
+            color=discord.Color.green(),
+        ),
+        ephemeral=True,
+    )
+
+
+@bot.tree.command(name="remove_entry_sound", description="Supprime ton son d'entrée en vocal")
+@app_commands.guilds(*GUILD_IDS)
+async def remove_entry_sound_cmd(interaction: discord.Interaction):
+    uid       = str(interaction.user.id)
+    user_data = get_user(_CACHE, uid)
+    user_data.pop("entry_sound", None)
+    _DIRTY.add(uid)
+    await interaction.response.send_message(
+        embed=discord.Embed(
+            title="🔇 Son d'entrée supprimé",
+            description="Tu n'as plus de son d'entrée en vocal.",
+            color=discord.Color.red(),
+        ),
+        ephemeral=True,
+    )
 
 
 @bot.tree.command(name="shop", description="Dépense tes Berrys 🍊 dans le shop !")
