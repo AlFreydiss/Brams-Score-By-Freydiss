@@ -4667,6 +4667,89 @@ def _shop_embed(uid: str) -> discord.Embed:
     return embed
 
 
+class _QuantityModal(discord.ui.Modal, title="Quantité à acheter"):
+    quantite = discord.ui.TextInput(
+        label="Combien voulez-vous en acheter ?",
+        placeholder="1",
+        min_length=1,
+        max_length=3,
+    )
+
+    def __init__(self, item: dict, shop_view: "_ShopView", original_message: discord.Message):
+        super().__init__()
+        self._item             = item
+        self._shop_view        = shop_view
+        self._original_message = original_message
+
+    async def on_submit(self, interaction: discord.Interaction):
+        try:
+            qty = int(self.quantite.value.strip())
+            if qty < 1 or qty > 99:
+                raise ValueError
+        except ValueError:
+            await interaction.response.send_message(
+                "❌ Quantité invalide. Entre un nombre entre **1** et **99**.", ephemeral=True
+            )
+            return
+
+        uid      = str(interaction.user.id)
+        is_admin = interaction.permissions.administrator
+        item     = self._item
+        total    = item["price"] * qty
+
+        if not is_admin and not spend_berrys(uid, total):
+            bal = get_berrys(uid)
+            await interaction.response.send_message(
+                f"❌ Solde insuffisant. Tu as **{_fmt_berry(bal)} 🍊**, "
+                f"il te faut **{_fmt_berry(total)} 🍊** ({qty}× {_fmt_berry(item['price'])}).",
+                ephemeral=True,
+            )
+            return
+
+        await interaction.response.defer()
+        self._shop_view.stop()
+        user_data = get_user(_CACHE, uid)
+
+        if item["id"] == "nick_shield":
+            user_data["nick_shields"] = user_data.get("nick_shields", 0) + qty
+            _DIRTY.add(uid)
+            new_bal = get_berrys(uid)
+            shields = user_data["nick_shields"]
+            await self._original_message.edit(
+                embed=discord.Embed(
+                    title="🛡️ Bouclier Pseudo acheté !",
+                    description=(
+                        f"**{qty}x** bouclier(s) achetés. Tu en possèdes **{shields}** 🛡️\n\n"
+                        f"Si quelqu'un essaie de changer ton pseudo avec un ticket, "
+                        f"son ticket sera **perdu** et ton pseudo restera intact.\n\n"
+                        f"Solde restant : **{_fmt_berry(new_bal)} 🍊**"
+                    ),
+                    color=discord.Color.green(),
+                ),
+                view=None,
+            )
+            return
+
+        tickets = _get_tickets(user_data)
+        tickets[item["id"]] = tickets.get(item["id"], 0) + qty
+        user_data["pseudo_tickets"] = tickets
+        _DIRTY.add(uid)
+        new_bal = get_berrys(uid)
+        stock   = tickets[item["id"]]
+        await self._original_message.edit(
+            embed=discord.Embed(
+                title=f"{item['emoji']} {item['name']} acheté !",
+                description=(
+                    f"**{qty}x** achetés. Tu possèdes **{stock} ticket(s)** {item['emoji']}\n\n"
+                    f"Utilise `/ticket @membre nouveau_pseudo` et choisis la durée **{item['minutes']} min**.\n\n"
+                    f"Solde restant : **{_fmt_berry(new_bal)} 🍊**"
+                ),
+                color=discord.Color.purple(),
+            ),
+            view=None,
+        )
+
+
 class _ShopView(discord.ui.View):
     def __init__(self, user_id: int):
         super().__init__(timeout=60)
@@ -4685,58 +4768,8 @@ class _ShopView(discord.ui.View):
             if interaction.user.id != self._user_id:
                 await interaction.response.send_message("Ce shop ne t'appartient pas !", ephemeral=True)
                 return
-            uid      = str(interaction.user.id)
-            is_admin = interaction.permissions.administrator
-
-            if not is_admin and not spend_berrys(uid, item["price"]):
-                bal = get_berrys(uid)
-                await interaction.response.send_message(
-                    f"❌ Solde insuffisant. Tu as **{_fmt_berry(bal)} 🍊**, il te faut **{_fmt_berry(item['price'])} 🍊**.",
-                    ephemeral=True,
-                )
-                return
-
-            self.stop()
-            user_data = get_user(_CACHE, uid)
-
-            if item["id"] == "nick_shield":
-                user_data["nick_shields"] = user_data.get("nick_shields", 0) + 1
-                _DIRTY.add(uid)
-                new_bal = get_berrys(uid)
-                shields = user_data["nick_shields"]
-                await interaction.response.edit_message(
-                    embed=discord.Embed(
-                        title="🛡️ Bouclier Pseudo acheté !",
-                        description=(
-                            f"Tu possèdes **{shields} bouclier(s)** 🛡️\n\n"
-                            f"Si quelqu'un essaie de changer ton pseudo avec un ticket, "
-                            f"son ticket sera **perdu** et ton pseudo restera intact.\n\n"
-                            f"Solde restant : **{_fmt_berry(new_bal)} 🍊**"
-                        ),
-                        color=discord.Color.green(),
-                    ),
-                    view=None,
-                )
-                return
-
-            # Achat ticket
-            tickets   = _get_tickets(user_data)
-            tickets[item["id"]] = tickets.get(item["id"], 0) + 1
-            user_data["pseudo_tickets"] = tickets
-            _DIRTY.add(uid)
-            new_bal = get_berrys(uid)
-            stock   = tickets[item["id"]]
-            await interaction.response.edit_message(
-                embed=discord.Embed(
-                    title=f"{item['emoji']} {item['name']} acheté !",
-                    description=(
-                        f"Tu possèdes **{stock} ticket(s)** {item['emoji']}\n\n"
-                        f"Utilise `/ticket @membre nouveau_pseudo` et choisis la durée **{item['minutes']} min**.\n\n"
-                        f"Solde restant : **{_fmt_berry(new_bal)} 🍊**"
-                    ),
-                    color=discord.Color.purple(),
-                ),
-                view=None,
+            await interaction.response.send_modal(
+                _QuantityModal(item, self, interaction.message)
             )
         return cb
 
