@@ -790,9 +790,14 @@ intents.message_content = True
 intents.messages = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
-bot.get_db     = get_db
-bot.release_db = release_db
+bot.get_db      = get_db
+bot.release_db  = release_db
 db_executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="db_worker")
+
+# Fonctions berry exposées au cog marketplace
+bot.get_berrys   = lambda uid: get_berrys(uid)
+bot.spend_berrys = lambda uid, amount: spend_berrys(uid, amount)
+bot.add_berrys   = lambda uid, amount: add_berrys(uid, amount)
 
 
 # ── Flush dirty vers DB toutes les 30s ───────────────────────────
@@ -1612,6 +1617,14 @@ async def on_ready():
     global _HTTP
     print(f"[BOT] Connecte : {bot.user}")
     init_db()
+
+    # Charge le cog marketplace (idempotent)
+    if not bot.cogs.get("MarketplaceCog"):
+        try:
+            await bot.load_extension("cogs.marketplace.marketplace")
+            print("[BOT] Cog marketplace chargé")
+        except Exception as e:
+            print(f"[BOT] Erreur chargement marketplace: {e}")
     if _HTTP is None or _HTTP.closed:
         _HTTP = aiohttp.ClientSession()
 
