@@ -5994,45 +5994,101 @@ async def reset_pseudos(interaction: discord.Interaction):
 
     restored = 0
     errors   = 0
-    skipped  = 0
+    not_found = 0
+    found    = 0
 
     for uid, udata in list(_CACHE.items()):
         restore = udata.get("nick_restore")
         if not restore:
             continue
+        found += 1
         guild = bot.get_guild(int(restore.get("guild", 0)))
         if not guild:
-            skipped += 1
-            continue
-        member = guild.get_member(int(uid))
-        if not member:
-            skipped += 1
+            print(f"[RESET] Guild introuvable pour {uid}")
+            not_found += 1
             continue
         try:
-            await member.edit(nick=restore.get("nick"))
+            member = await guild.fetch_member(int(uid))
+        except discord.NotFound:
+            print(f"[RESET] Membre {uid} introuvable (quitté le serveur)")
+            not_found += 1
+            continue
+        except Exception as e:
+            print(f"[RESET] fetch_member erreur {uid}: {e}")
+            errors += 1
+            continue
+
+        original = restore.get("nick")
+        print(f"[RESET] Tentative restore {member.display_name!r} → {original!r}")
+        try:
+            await member.edit(nick=original)
             udata.pop("nick_restore")
             _DIRTY.add(uid)
             restored += 1
-            print(f"[RESET] Pseudo restauré : {member} → {restore.get('nick')!r}")
+            print(f"[RESET] ✅ OK {member}")
         except discord.Forbidden:
             errors += 1
-            print(f"[RESET] Forbidden pour {uid}")
+            print(f"[RESET] ❌ Forbidden pour {uid} (rôle supérieur au bot ?)")
         except Exception as e:
             errors += 1
-            print(f"[RESET] Erreur {uid}: {e}")
+            print(f"[RESET] ❌ Erreur {uid}: {e}")
 
     await interaction.followup.send(
         embed=discord.Embed(
-            title="✅ Reset des pseudos terminé",
+            title="🔄 Reset des pseudos",
             description=(
+                f"Entrées nick_restore trouvées en cache : **{found}**\n"
                 f"Pseudos restaurés : **{restored}**\n"
-                f"Erreurs (permission) : **{errors}**\n"
-                f"Ignorés (membre hors-ligne) : **{skipped}**"
+                f"Erreurs (permission/API) : **{errors}**\n"
+                f"Membres introuvables : **{not_found}**"
             ),
-            color=discord.Color.green(),
+            color=discord.Color.green() if errors == 0 else discord.Color.orange(),
         ),
         ephemeral=True,
     )
+
+
+@bot.tree.command(name="debug_nicks", description="[ADMIN] Affiche les nick_restore actifs en cache et en DB")
+@app_commands.guilds(*GUILD_IDS)
+@app_commands.default_permissions(administrator=True)
+async def debug_nicks(interaction: discord.Interaction):
+    await interaction.response.defer(ephemeral=True)
+
+    _now = now_ts()
+    lines = []
+
+    # Cache
+    cache_entries = [(uid, d["nick_restore"]) for uid, d in _CACHE.items() if d.get("nick_restore")]
+    if not cache_entries:
+        lines.append("**Cache : aucune entrée nick_restore**")
+    else:
+        lines.append(f"**Cache : {len(cache_entries)} entrée(s)**")
+        for uid, r in cache_entries:
+            remaining = int(r.get("expires", 0) - _now)
+            m = interaction.guild.get_member(int(uid))
+            name = m.display_name if m else f"UID {uid}"
+            status = f"expire dans {remaining}s" if remaining > 0 else f"**EXPIRÉ** depuis {-remaining}s"
+            lines.append(f"• {name} → nick={r.get('nick')!r} ({status})")
+
+    # DB directe
+    def _db_check():
+        conn = get_db()
+        try:
+            cur = conn.cursor()
+            cur.execute("SELECT uid, data->>'nick_restore' FROM users WHERE data ? 'nick_restore'")
+            return cur.fetchall()
+        except Exception as e:
+            return [("ERREUR", str(e))]
+        finally:
+            release_db(conn)
+
+    db_rows = await asyncio.get_running_loop().run_in_executor(db_executor, _db_check)
+    lines.append(f"\n**DB : {len(db_rows)} entrée(s) avec nick_restore**")
+    for uid, raw in db_rows:
+        lines.append(f"• UID {uid} : `{raw[:80]}`")
+
+    embed = discord.Embed(title="🔍 Debug nick_restore", description="\n".join(lines), color=0xFFD700)
+    await interaction.followup.send(embed=embed, ephemeral=True)
 
 
 # ─────────────────────────────────────────
