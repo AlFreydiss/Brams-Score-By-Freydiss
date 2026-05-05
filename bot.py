@@ -6014,10 +6014,9 @@ async def reset_pseudos(interaction: discord.Interaction):
             errors += 1
             continue
 
-        original = restore.get("nick")
-        print(f"[RESET] Tentative restore {member.display_name!r} → {original!r}")
+        print(f"[RESET] Suppression pseudo ticket de {member.display_name!r} → nom Discord de base")
         try:
-            await member.edit(nick=original)
+            await member.edit(nick=None)
             udata.pop("nick_restore")
             _DIRTY.add(uid)
             restored += 1
