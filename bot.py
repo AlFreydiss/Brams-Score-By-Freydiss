@@ -4686,7 +4686,7 @@ class _ShopView(discord.ui.View):
                 await interaction.response.send_message("Ce shop ne t'appartient pas !", ephemeral=True)
                 return
             uid      = str(interaction.user.id)
-            is_admin = interaction.user.guild_permissions.administrator
+            is_admin = interaction.permissions.administrator
 
             if not is_admin and not spend_berrys(uid, item["price"]):
                 bal = get_berrys(uid)
@@ -4778,7 +4778,7 @@ async def ticket_pseudo_cmd(interaction: discord.Interaction, membre: discord.Me
         )
         return
 
-    is_admin = interaction.user.guild_permissions.administrator
+    is_admin = interaction.permissions.administrator
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     daily = user_data.get("ticket_daily", {"date": "", "count": 0})
     if daily.get("date") != today:
