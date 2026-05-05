@@ -4826,6 +4826,295 @@ async def shop_cmd(interaction: discord.Interaction):
     await interaction.followup.send(embed=_shop_embed(uid), view=_ShopView(interaction.user.id))
 
 
+# ─────────────────────────────────────────
+#  VIREMENT
+# ─────────────────────────────────────────
+
+class _VirementView(discord.ui.View):
+    def __init__(self, sender_id: str, receiver_id: str, montant: int,
+                 receiver_name: str, source_interaction: discord.Interaction):
+        super().__init__(timeout=60)
+        self._sender_id         = sender_id
+        self._receiver_id       = receiver_id
+        self._montant           = montant
+        self._receiver_name     = receiver_name
+        self._source_interaction = source_interaction
+
+    async def on_timeout(self):
+        try:
+            await self._source_interaction.edit_original_response(
+                embed=discord.Embed(
+                    title="⌛ Virement expiré",
+                    description="Tu n'as pas confirmé à temps. Relance `/virement` pour réessayer.",
+                    color=discord.Color.dark_grey(),
+                ),
+                view=None,
+            )
+        except Exception:
+            pass
+
+    @discord.ui.button(label="Confirmer ✅", style=discord.ButtonStyle.success)
+    async def confirm(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.stop()
+        if not spend_berrys(self._sender_id, self._montant, track=None):
+            bal = get_berrys(self._sender_id)
+            await interaction.response.edit_message(
+                embed=discord.Embed(
+                    title="❌ Virement annulé",
+                    description=f"Solde insuffisant au moment de la confirmation. Tu as **{_fmt_berry(bal)} 🍊**.",
+                    color=discord.Color.red(),
+                ),
+                view=None,
+            )
+            return
+        add_berrys(self._receiver_id, self._montant, track=None)
+        new_bal = get_berrys(self._sender_id)
+        await interaction.response.edit_message(
+            embed=discord.Embed(
+                title="✅ Virement effectué !",
+                description=(
+                    f"**{_fmt_berry(self._montant)} 🍊** envoyés à **{self._receiver_name}** !\n\n"
+                    f"Ton nouveau solde : **{_fmt_berry(new_bal)} 🍊**"
+                ),
+                color=discord.Color.green(),
+            ),
+            view=None,
+        )
+        await interaction.followup.send(
+            embed=discord.Embed(
+                title="💸 Virement Berry",
+                description=(
+                    f"{interaction.user.mention} a viré **{_fmt_berry(self._montant)} 🍊** "
+                    f"à <@{self._receiver_id}> !"
+                ),
+                color=discord.Color.from_rgb(212, 175, 55),
+            )
+        )
+
+    @discord.ui.button(label="Annuler ❌", style=discord.ButtonStyle.danger)
+    async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.stop()
+        await interaction.response.edit_message(
+            embed=discord.Embed(
+                title="❌ Virement annulé",
+                description="Le virement a été annulé.",
+                color=discord.Color.red(),
+            ),
+            view=None,
+        )
+
+
+@bot.tree.command(name="virement", description="Vire des Berrys 🍊 à un autre membre !")
+@app_commands.describe(
+    membre="Le membre qui recevra les Berrys",
+    montant="Nombre de Berrys à virer (min 100)",
+)
+@app_commands.guilds(*GUILD_IDS)
+async def virement_cmd(interaction: discord.Interaction, membre: discord.Member, montant: int):
+    uid = str(interaction.user.id)
+    tid = str(membre.id)
+
+    if membre.id == interaction.user.id:
+        await interaction.response.send_message("❌ Tu ne peux pas te virer des Berrys à toi-même.", ephemeral=True)
+        return
+    if membre.bot:
+        await interaction.response.send_message("❌ Tu ne peux pas virer des Berrys à un bot.", ephemeral=True)
+        return
+    if montant < 100:
+        await interaction.response.send_message("❌ Le montant minimum est de **100 🍊**.", ephemeral=True)
+        return
+
+    bal = get_berrys(uid)
+    if bal < montant:
+        await interaction.response.send_message(
+            f"❌ Solde insuffisant. Tu as **{_fmt_berry(bal)} 🍊**, il te faut **{_fmt_berry(montant)} 🍊**.",
+            ephemeral=True,
+        )
+        return
+
+    await interaction.response.send_message(
+        embed=discord.Embed(
+            title="💸 Confirmer le virement",
+            description=(
+                f"Tu t'apprêtes à envoyer **{_fmt_berry(montant)} 🍊** à {membre.mention}.\n\n"
+                f"Ton solde après virement : **{_fmt_berry(bal - montant)} 🍊**"
+            ),
+            color=discord.Color.orange(),
+        ),
+        view=_VirementView(uid, tid, montant, membre.display_name, interaction),
+        ephemeral=True,
+    )
+
+
+# ─────────────────────────────────────────
+#  VENTE DE TICKETS
+# ─────────────────────────────────────────
+
+class _VenteTicketView(discord.ui.View):
+    def __init__(self, seller_id: str, buyer_id: str, ticket_id: str, prix: int,
+                 ticket_name: str, ticket_emoji: str, source_interaction: discord.Interaction):
+        super().__init__(timeout=120)
+        self._seller_id         = seller_id
+        self._buyer_id          = buyer_id
+        self._ticket_id         = ticket_id
+        self._prix              = prix
+        self._ticket_name       = ticket_name
+        self._ticket_emoji      = ticket_emoji
+        self._source_interaction = source_interaction
+
+    async def on_timeout(self):
+        try:
+            await self._source_interaction.edit_original_response(
+                embed=discord.Embed(
+                    title="⌛ Offre expirée",
+                    description="L'acheteur n'a pas répondu à temps. Ton ticket t'a été restitué.",
+                    color=discord.Color.dark_grey(),
+                ),
+                view=None,
+            )
+        except Exception:
+            pass
+        # Restituer le ticket au vendeur
+        seller_data = get_user(_CACHE, self._seller_id)
+        tickets = _get_tickets(seller_data)
+        tickets[self._ticket_id] = tickets.get(self._ticket_id, 0) + 1
+        seller_data["pseudo_tickets"] = tickets
+        _DIRTY.add(self._seller_id)
+
+    @discord.ui.button(label="Acheter ✅", style=discord.ButtonStyle.success)
+    async def acheter(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if str(interaction.user.id) != self._buyer_id:
+            await interaction.response.send_message("Cette offre ne te concerne pas.", ephemeral=True)
+            return
+        self.stop()
+        if not spend_berrys(self._buyer_id, self._prix, track=None):
+            bal = get_berrys(self._buyer_id)
+            # Restituer le ticket au vendeur
+            seller_data = get_user(_CACHE, self._seller_id)
+            tickets = _get_tickets(seller_data)
+            tickets[self._ticket_id] = tickets.get(self._ticket_id, 0) + 1
+            seller_data["pseudo_tickets"] = tickets
+            _DIRTY.add(self._seller_id)
+            await interaction.response.edit_message(
+                embed=discord.Embed(
+                    title="❌ Achat impossible",
+                    description=f"Solde insuffisant. Tu as **{_fmt_berry(bal)} 🍊**, il te faut **{_fmt_berry(self._prix)} 🍊**.",
+                    color=discord.Color.red(),
+                ),
+                view=None,
+            )
+            return
+        add_berrys(self._seller_id, self._prix, track=None)
+        buyer_data = get_user(_CACHE, self._buyer_id)
+        b_tickets  = _get_tickets(buyer_data)
+        b_tickets[self._ticket_id] = b_tickets.get(self._ticket_id, 0) + 1
+        buyer_data["pseudo_tickets"] = b_tickets
+        _DIRTY.add(self._buyer_id)
+        await interaction.response.edit_message(
+            embed=discord.Embed(
+                title=f"{self._ticket_emoji} Ticket acheté !",
+                description=(
+                    f"Tu possèdes maintenant **1 {self._ticket_name}** {self._ticket_emoji}\n\n"
+                    f"<@{self._seller_id}> a reçu **{_fmt_berry(self._prix)} 🍊**.\n"
+                    f"Ton nouveau solde : **{_fmt_berry(get_berrys(self._buyer_id))} 🍊**"
+                ),
+                color=discord.Color.green(),
+            ),
+            view=None,
+        )
+
+    @discord.ui.button(label="Refuser ❌", style=discord.ButtonStyle.danger)
+    async def refuser(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if str(interaction.user.id) != self._buyer_id:
+            await interaction.response.send_message("Cette offre ne te concerne pas.", ephemeral=True)
+            return
+        self.stop()
+        # Restituer le ticket au vendeur
+        seller_data = get_user(_CACHE, self._seller_id)
+        tickets = _get_tickets(seller_data)
+        tickets[self._ticket_id] = tickets.get(self._ticket_id, 0) + 1
+        seller_data["pseudo_tickets"] = tickets
+        _DIRTY.add(self._seller_id)
+        await interaction.response.edit_message(
+            embed=discord.Embed(
+                title="❌ Offre refusée",
+                description=f"<@{self._buyer_id}> a refusé l'offre. Ton ticket t'a été restitué.",
+                color=discord.Color.red(),
+            ),
+            view=None,
+        )
+
+
+@bot.tree.command(name="vendre_ticket", description="Vends un de tes tickets à un autre membre !")
+@app_commands.describe(
+    membre="Le membre à qui vendre le ticket",
+    ticket="Le ticket à vendre",
+    prix="Prix de vente en Berrys",
+)
+@app_commands.choices(ticket=[
+    app_commands.Choice(name="Ticket 30 min ⏱️",  value="ticket_30"),
+    app_commands.Choice(name="Ticket 1h 🎭",       value="ticket_60"),
+    app_commands.Choice(name="Ticket 2h 👑",       value="ticket_120"),
+])
+@app_commands.guilds(*GUILD_IDS)
+async def vendre_ticket_cmd(interaction: discord.Interaction, membre: discord.Member,
+                            ticket: str, prix: int):
+    uid  = str(interaction.user.id)
+    tid  = str(membre.id)
+    tier = _TICKET_BY_ID[ticket]
+
+    if membre.id == interaction.user.id:
+        await interaction.response.send_message("❌ Tu ne peux pas te vendre un ticket à toi-même.", ephemeral=True)
+        return
+    if membre.bot:
+        await interaction.response.send_message("❌ Tu ne peux pas vendre un ticket à un bot.", ephemeral=True)
+        return
+    if prix < 1:
+        await interaction.response.send_message("❌ Le prix doit être supérieur à **0 🍊**.", ephemeral=True)
+        return
+
+    user_data = get_user(_CACHE, uid)
+    tickets   = _get_tickets(user_data)
+    stock     = tickets.get(ticket, 0)
+    if stock <= 0:
+        await interaction.response.send_message(
+            f"❌ Tu ne possèdes aucun **{tier['name']}** {tier['emoji']} à vendre.", ephemeral=True
+        )
+        return
+
+    # Retirer le ticket du vendeur immédiatement (escrow)
+    tickets[ticket] = stock - 1
+    user_data["pseudo_tickets"] = tickets
+    _DIRTY.add(uid)
+
+    view = _VenteTicketView(uid, tid, ticket, prix, tier["name"], tier["emoji"], interaction)
+    await interaction.response.send_message(
+        embed=discord.Embed(
+            title=f"{tier['emoji']} Offre de ticket envoyée !",
+            description=(
+                f"{interaction.user.mention} propose son **{tier['name']}** {tier['emoji']} à {membre.mention} "
+                f"pour **{_fmt_berry(prix)} 🍊**.\n\n"
+                f"{membre.mention}, tu as **2 minutes** pour accepter ou refuser."
+            ),
+            color=discord.Color.orange(),
+        ),
+        view=view,
+    )
+    try:
+        await membre.send(
+            embed=discord.Embed(
+                title=f"{tier['emoji']} Offre de ticket reçue !",
+                description=(
+                    f"**{interaction.user.display_name}** te propose un **{tier['name']}** {tier['emoji']} "
+                    f"pour **{_fmt_berry(prix)} 🍊**.\n\nRéponds dans le serveur !"
+                ),
+                color=discord.Color.from_rgb(212, 175, 55),
+            )
+        )
+    except discord.Forbidden:
+        pass
+
+
 @bot.tree.command(name="ticket", description="Utilise un ticket pour changer le pseudo d'un membre !")
 @app_commands.describe(
     membre="Le membre dont tu veux changer le pseudo",
