@@ -1748,38 +1748,49 @@ async def _play_entry_sound(member: discord.Member, channel: discord.VoiceChanne
     if guild_id not in _ENTRY_SOUND_LOCKS:
         _ENTRY_SOUND_LOCKS[guild_id] = asyncio.Lock()
     lock = _ENTRY_SOUND_LOCKS[guild_id]
+    print(f"[ENTRY SOUND] {member.display_name} | url={url} | lock={'busy' if lock.locked() else 'free'}")
     if lock.locked():
+        print(f"[ENTRY SOUND] Skip — lock occupé pour guild {guild_id}")
         return
     async with lock:
         if member not in channel.members:
+            print(f"[ENTRY SOUND] Skip — {member.display_name} plus dans le salon")
             return
         vc = None
         try:
             existing = channel.guild.voice_client
             if existing:
+                print(f"[ENTRY SOUND] Déconnexion voice client existant")
                 await existing.disconnect(force=True)
             loop = asyncio.get_running_loop()
             if url.startswith("local:"):
                 stream_url = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sounds", url[6:])
                 ffmpeg_opts = {"options": "-vn -t 15"}
+                print(f"[ENTRY SOUND] Fichier local : {stream_url} | existe={os.path.exists(stream_url)}")
             else:
+                print(f"[ENTRY SOUND] Extraction yt-dlp...")
                 with yt_dlp.YoutubeDL(_YTDL_OPTS) as ydl:
                     data = await loop.run_in_executor(None, lambda: ydl.extract_info(url, download=False))
                 if "entries" in data:
                     data = data["entries"][0]
                 stream_url = data["url"]
                 ffmpeg_opts = _FFMPEG_OPTS
+            print(f"[ENTRY SOUND] Connexion au salon vocal {channel.name}...")
             vc = await channel.connect(timeout=10)
+            print(f"[ENTRY SOUND] Connecté. Lecture en cours...")
             done = asyncio.Event()
             def _after(err):
+                if err:
+                    print(f"[ENTRY SOUND] Erreur playback : {err}")
                 loop.call_soon_threadsafe(done.set)
             source = discord.PCMVolumeTransformer(
                 discord.FFmpegPCMAudio(stream_url, **ffmpeg_opts), volume=0.5
             )
             vc.play(source, after=_after)
             await asyncio.wait_for(done.wait(), timeout=20)
+            print(f"[ENTRY SOUND] Lecture terminée pour {member.display_name}")
         except Exception as e:
-            print(f"[ENTRY SOUND] {member.display_name}: {e}")
+            print(f"[ENTRY SOUND] ERREUR {member.display_name}: {type(e).__name__}: {e}")
         finally:
             if vc and vc.is_connected():
                 await vc.disconnect()
