@@ -4618,7 +4618,8 @@ _SHIELD_ITEM = {
 _SOUND_ITEMS: list[dict] = [
     # Exemple :
     {"id": "sound_shinobu", "emoji": "🌸", "name": "Shinobu — Moshi Moshi", "price": 1_500_000, "file": "shinobu_moshi_moshi.mp3", "type": "entry_sound", "style": discord.ButtonStyle.primary},
-    {"id": "sound_indian",  "emoji": "🪘", "name": "Indian Song",           "price": 1_500_000, "file": "indian_song.mp3",           "type": "entry_sound", "style": discord.ButtonStyle.primary},
+    {"id": "sound_indian",  "emoji": "🪘", "name": "L Thème",    "price": 1_500_000, "file": "indian_song.mp3",   "type": "entry_sound", "style": discord.ButtonStyle.primary},
+    {"id": "sound_spies",   "emoji": "🍃", "name": "Naruto OST", "price": 1_500_000, "file": "totaly_spies.mp3",  "type": "entry_sound", "style": discord.ButtonStyle.primary},
 ]
 
 _SHOP_ITEMS = _TICKET_TIERS + [_SHIELD_ITEM] + _SOUND_ITEMS
