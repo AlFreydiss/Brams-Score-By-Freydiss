@@ -4663,9 +4663,11 @@ def _boost_remaining(user_data: dict) -> float:
     return max(0.0, user_data.get("voice_boost_expires", 0) - time.time())
 
 async def _apply_boost_role(member: discord.Member, add: bool):
-    if not VOICE_BOOST_ROLE_ID:
-        return
-    role = member.guild.get_role(VOICE_BOOST_ROLE_ID)
+    role = (
+        member.guild.get_role(VOICE_BOOST_ROLE_ID)
+        if VOICE_BOOST_ROLE_ID
+        else discord.utils.get(member.guild.roles, name="Boost Voix")
+    )
     if not role:
         return
     try:
