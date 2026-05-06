@@ -39,7 +39,7 @@ PARENT_CAT  = int(os.environ.get("CREWS_CATEGORY_PARENT_ID", "0")) or None
 
 
 class CrewCog(CrewTasks, commands.Cog):
-    crew     = app_commands.Group(name="crew",     description="🏴‍☠️ Système d'équipages", guild_ids=GUILD_IDS)
+    crew     = app_commands.Group(name="equipage", description="🏴‍☠️ Système d'équipages", guild_ids=GUILD_IDS)
     alliance = app_commands.Group(name="alliance", description="🤝 Alliances", parent=crew)
     war      = app_commands.Group(name="war",      description="⚔️ Guerres",    parent=crew)
 
