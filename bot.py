@@ -4810,53 +4810,6 @@ class _AdminPayView(discord.ui.View):
         )
 
 
-class _SoundConfirmView(discord.ui.View):
-    def __init__(self, item: dict, shop_view: "_ShopView", shop_message: discord.Message, free: bool = False):
-        super().__init__(timeout=60)
-        self._item         = item
-        self._shop_view    = shop_view
-        self._shop_message = shop_message
-        self._free         = free
-
-    @discord.ui.button(label="✅ Confirmer", style=discord.ButtonStyle.success)
-    async def confirm(self, interaction: discord.Interaction, button: discord.ui.Button):
-        uid  = str(interaction.user.id)
-        item = self._item
-        if not self._free and not spend_berrys(uid, item["price"]):
-            bal = get_berrys(uid)
-            await interaction.response.send_message(
-                f"❌ Solde insuffisant. Tu as **{_fmt_berry(bal)} 🍊**, "
-                f"il te faut **{_fmt_berry(item['price'])} 🍊**.",
-                ephemeral=True,
-            )
-            return
-        user_data = get_user(_CACHE, uid)
-        user_data["entry_sound"] = f"local:{item['file']}"
-        _DIRTY.add(uid)
-        new_bal     = get_berrys(uid)
-        gratuit_tag = " *(admin — gratuit)*" if self._free else ""
-        self._shop_view.stop()
-        self.stop()
-        await self._shop_message.edit(
-            embed=discord.Embed(
-                title=f"{item['emoji']} {item['name']} acheté !",
-                description=(
-                    f"Ton son d'entrée vocal a été mis à jour{gratuit_tag} !\n\n"
-                    f"Il jouera dès que tu rejoins un salon vocal.\n\n"
-                    f"Solde restant : **{_fmt_berry(new_bal)} 🍊**"
-                ),
-                color=discord.Color.green(),
-            ),
-            view=None,
-        )
-        await interaction.response.defer()
-
-    @discord.ui.button(label="❌ Annuler", style=discord.ButtonStyle.secondary)
-    async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.defer()
-        self.stop()
-
-
 class _ShopView(discord.ui.View):
     def __init__(self, user_id: int):
         super().__init__(timeout=300)
@@ -4877,15 +4830,33 @@ class _ShopView(discord.ui.View):
                 return
             if item.get("type") == "entry_sound":
                 free = interaction.permissions.administrator
-                await interaction.response.send_message(
+                uid  = str(interaction.user.id)
+                if not free and not spend_berrys(uid, item["price"]):
+                    bal = get_berrys(uid)
+                    await interaction.response.send_message(
+                        f"❌ Solde insuffisant. Tu as **{_fmt_berry(bal)} 🍊**, il te faut **{_fmt_berry(item['price'])} 🍊**.",
+                        ephemeral=True,
+                    )
+                    return
+                user_data = get_user(_CACHE, uid)
+                user_data["entry_sound"] = f"local:{item['file']}"
+                _DIRTY.add(uid)
+                new_bal     = get_berrys(uid)
+                gratuit_tag = " *(admin — gratuit)*" if free else ""
+                self.stop()
+                await interaction.message.edit(
                     embed=discord.Embed(
-                        title=f"{item['emoji']} {item['name']}",
-                        description=f"Acheter ce son d'entrée pour **{_fmt_berry(item['price'])} 🍊** ?",
-                        color=discord.Color.blurple(),
+                        title=f"{item['emoji']} {item['name']} acheté !",
+                        description=(
+                            f"Ton son d'entrée vocal a été mis à jour{gratuit_tag} !\n\n"
+                            f"Il jouera dès que tu rejoins un salon vocal.\n\n"
+                            f"Solde restant : **{_fmt_berry(new_bal)} 🍊**"
+                        ),
+                        color=discord.Color.green(),
                     ),
-                    view=_SoundConfirmView(item, self, interaction.message, free=free),
-                    ephemeral=True,
+                    view=None,
                 )
+                await interaction.response.defer()
             elif interaction.permissions.administrator:
                 await interaction.response.send_message(
                     f"**{item['emoji']} {item['name']}** — Comment veux-tu payer ?",
