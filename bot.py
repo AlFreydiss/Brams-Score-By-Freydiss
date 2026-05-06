@@ -1740,7 +1740,7 @@ _YTDL_OPTS = {
 }
 _FFMPEG_OPTS = {
     "before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5",
-    "options": "-vn -t 15",  # max 15 secondes
+    "options": "-vn -t 5",  # max 15 secondes
 }
 
 def _log(msg: str):
@@ -1767,7 +1767,7 @@ async def _play_entry_sound(member: discord.Member, channel: discord.VoiceChanne
             loop = asyncio.get_running_loop()
             if url.startswith("local:"):
                 stream_url = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sounds", url[6:])
-                ffmpeg_opts = {"options": "-vn -t 15"}
+                ffmpeg_opts = {"options": "-vn -t 5"}
                 _log(f"[ENTRY SOUND] Fichier local : {stream_url} | existe={os.path.exists(stream_url)}")
                 if not os.path.exists(stream_url):
                     _log("[ENTRY SOUND] ABORT — fichier introuvable")
