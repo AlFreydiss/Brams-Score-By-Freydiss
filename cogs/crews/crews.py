@@ -18,7 +18,7 @@ from .constants import (
 from .utils import (
     has_perm, can_feature, fmt_berries, random_role_color,
     award_xp, create_crew_channels, delete_crew_channels,
-    assign_role, remove_role,
+    assign_role, remove_role, get_level_data,
 )
 from .embeds import (
     crew_info_embed, crew_level_embed, treasury_embed,
