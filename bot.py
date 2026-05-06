@@ -1759,11 +1759,14 @@ async def _play_entry_sound(member: discord.Member, channel: discord.VoiceChanne
             if existing:
                 await existing.disconnect(force=True)
             loop = asyncio.get_running_loop()
-            with yt_dlp.YoutubeDL(_YTDL_OPTS) as ydl:
-                data = await loop.run_in_executor(None, lambda: ydl.extract_info(url, download=False))
-            if "entries" in data:
-                data = data["entries"][0]
-            stream_url = data["url"]
+            if url.startswith("local:"):
+                stream_url = os.path.join("sounds", url[6:])
+            else:
+                with yt_dlp.YoutubeDL(_YTDL_OPTS) as ydl:
+                    data = await loop.run_in_executor(None, lambda: ydl.extract_info(url, download=False))
+                if "entries" in data:
+                    data = data["entries"][0]
+                stream_url = data["url"]
             vc = await channel.connect(timeout=10)
             done = asyncio.Event()
             def _after(err):
@@ -4704,7 +4707,13 @@ _SHIELD_ITEM = {
     "style": discord.ButtonStyle.success,
 }
 
-_SHOP_ITEMS = _TICKET_TIERS + [_SHIELD_ITEM]
+# Sons d'entrée — mets tes fichiers MP3/WAV dans le dossier sounds/ puis ajoute une entrée ici
+_SOUND_ITEMS: list[dict] = [
+    # Exemple :
+    # {"id": "sound_gear5", "emoji": "😂", "name": "Gear 5 - Rire", "price": 2_000_000, "file": "gear5.mp3", "type": "entry_sound", "style": discord.ButtonStyle.primary},
+]
+
+_SHOP_ITEMS = _TICKET_TIERS + [_SHIELD_ITEM] + _SOUND_ITEMS
 _ITEM_BY_ID = {item["id"]: item for item in _SHOP_ITEMS}
 
 def _fmt_berry(n: int) -> str:
@@ -4746,6 +4755,7 @@ def _shop_embed(uid: str) -> discord.Embed:
     bal       = get_berrys(uid)
     user_data = get_user(_CACHE, uid)
     tickets   = _get_tickets(user_data)
+    current_sound = user_data.get("entry_sound", "")
     sep = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     lines = []
     for t in _TICKET_TIERS:
@@ -4759,6 +4769,12 @@ def _shop_embed(uid: str) -> discord.Embed:
         f"🛡️ **Bouclier Pseudo** — {_fmt_berry(_SHIELD_ITEM['price'])} 🍊\n"
         f"> Bloque **1 tentative** de changement de pseudo · annule le ticket de l'attaquant · Stock : **{shields}**"
     )
+    for s in _SOUND_ITEMS:
+        actif = " ✅ **(actif)**" if current_sound == f"local:{s['file']}" else ""
+        lines.append(
+            f"{s['emoji']} **{s['name']}** — {_fmt_berry(s['price'])} 🍊{actif}\n"
+            f"> Son d'entrée vocal · remplace ton son actuel"
+        )
     embed = discord.Embed(
         title="🏪  Bram's Shop  🏪",
         description=f"{sep}\n\n" + f"\n\n{sep}\n\n".join(lines) + f"\n\n{sep}\n\nTon solde : **{_fmt_berry(bal)} 🍊**",
@@ -4885,6 +4901,53 @@ class _AdminPayView(discord.ui.View):
         )
 
 
+class _SoundConfirmView(discord.ui.View):
+    def __init__(self, item: dict, shop_view: "_ShopView", shop_message: discord.Message, free: bool = False):
+        super().__init__(timeout=60)
+        self._item         = item
+        self._shop_view    = shop_view
+        self._shop_message = shop_message
+        self._free         = free
+
+    @discord.ui.button(label="✅ Confirmer", style=discord.ButtonStyle.success)
+    async def confirm(self, interaction: discord.Interaction, button: discord.ui.Button):
+        uid  = str(interaction.user.id)
+        item = self._item
+        if not self._free and not spend_berrys(uid, item["price"]):
+            bal = get_berrys(uid)
+            await interaction.response.send_message(
+                f"❌ Solde insuffisant. Tu as **{_fmt_berry(bal)} 🍊**, "
+                f"il te faut **{_fmt_berry(item['price'])} 🍊**.",
+                ephemeral=True,
+            )
+            return
+        user_data = get_user(_CACHE, uid)
+        user_data["entry_sound"] = f"local:{item['file']}"
+        _DIRTY.add(uid)
+        new_bal     = get_berrys(uid)
+        gratuit_tag = " *(admin — gratuit)*" if self._free else ""
+        self._shop_view.stop()
+        self.stop()
+        await self._shop_message.edit(
+            embed=discord.Embed(
+                title=f"{item['emoji']} {item['name']} acheté !",
+                description=(
+                    f"Ton son d'entrée vocal a été mis à jour{gratuit_tag} !\n\n"
+                    f"Il jouera dès que tu rejoins un salon vocal.\n\n"
+                    f"Solde restant : **{_fmt_berry(new_bal)} 🍊**"
+                ),
+                color=discord.Color.green(),
+            ),
+            view=None,
+        )
+        await interaction.response.defer()
+
+    @discord.ui.button(label="❌ Annuler", style=discord.ButtonStyle.secondary)
+    async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer()
+        self.stop()
+
+
 class _ShopView(discord.ui.View):
     def __init__(self, user_id: int):
         super().__init__(timeout=300)
@@ -4903,7 +4966,18 @@ class _ShopView(discord.ui.View):
             if interaction.user.id != self._user_id:
                 await interaction.response.send_message("Ce shop ne t'appartient pas !", ephemeral=True)
                 return
-            if interaction.permissions.administrator:
+            if item.get("type") == "entry_sound":
+                free = interaction.permissions.administrator
+                await interaction.response.send_message(
+                    embed=discord.Embed(
+                        title=f"{item['emoji']} {item['name']}",
+                        description=f"Acheter ce son d'entrée pour **{_fmt_berry(item['price'])} 🍊** ?",
+                        color=discord.Color.blurple(),
+                    ),
+                    view=_SoundConfirmView(item, self, interaction.message, free=free),
+                    ephemeral=True,
+                )
+            elif interaction.permissions.administrator:
                 await interaction.response.send_message(
                     f"**{item['emoji']} {item['name']}** — Comment veux-tu payer ?",
                     view=_AdminPayView(item, self, interaction.message, interaction),
