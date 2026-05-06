@@ -241,6 +241,7 @@ LOG_MOD_CHANNEL_ID = int(_raw_log) if _raw_log.isdigit() else None
 ALERT_HOURS_THRESHOLD = 5.0
 DERANK_WARNING_THRESHOLD = 5.0  # heures avant le seuil de derank pour l'avertissement MP
 GUILD_IDS = [924346730194014220, 1478937064031518892]
+VOICE_BOOST_ROLE_ID = int(os.environ.get("VOICE_BOOST_ROLE_ID", "0"))
 
 RANK_ROLES = {
     "Pirate":          1486554682263343284,
@@ -1829,6 +1830,8 @@ async def on_voice_state_update(member, before, after):
             afk = getattr(after.channel.guild, "afk_channel", None)
             if after.channel != afk:
                 asyncio.create_task(_play_entry_sound(member, after.channel, entry_url))
+        if _is_boost_active(user):
+            asyncio.create_task(_apply_boost_role(member, True))
 
     elif before.channel is not None and after.channel is None:
         if user["join_time"]:
@@ -1853,6 +1856,7 @@ async def on_voice_state_update(member, before, after):
             seconds_7d = seconds_in_period(user["vocal_sessions"], 7)
             hours_7d = seconds_7d / 3600
             await update_rank(member, hours_7d, announce=True)
+        asyncio.create_task(_apply_boost_role(member, False))
 
     elif before.channel is not None and after.channel is not None and before.channel != after.channel:
         if user["join_time"]:
@@ -1936,6 +1940,11 @@ async def vocal_rank_loop():
                     await update_rank(member, hours_7d, announce=True, data=_CACHE)
                 except Exception as e:
                     print(f"[VOCAL_RANK] Erreur {member.display_name}: {e}")
+                # Boost expiré pendant que l'utilisateur est toujours en vocal
+                if user.get("voice_boost_expires", 0) and not _is_boost_active(user):
+                    user["voice_boost_expires"] = 0
+                    _DIRTY.add(uid)
+                    asyncio.create_task(_apply_boost_role(member, False))
                 await asyncio.sleep(0)
 
 # ─────────────────────────────────────────
@@ -4633,8 +4642,40 @@ _SOUND_ITEMS: list[dict] = [
     {"id": "sound_spies",   "emoji": "🍃", "name": "Naruto OST", "price": 1_500_000, "file": "totaly_spies.mp3",  "type": "entry_sound", "style": discord.ButtonStyle.primary},
 ]
 
-_SHOP_ITEMS = _TICKET_TIERS + [_SHIELD_ITEM] + _SOUND_ITEMS
+_BOOST_ITEMS = [
+    {"id": "boost_1h",  "emoji": "📢", "name": "Boost Vocal 1h",  "hours": 1,  "price": 800_000,   "type": "voice_boost", "style": discord.ButtonStyle.primary},
+    {"id": "boost_4h",  "emoji": "📣", "name": "Boost Vocal 4h",  "hours": 4,  "price": 2_500_000, "type": "voice_boost", "style": discord.ButtonStyle.primary},
+    {"id": "boost_24h", "emoji": "🔊", "name": "Boost Vocal 24h", "hours": 24, "price": 6_000_000, "type": "voice_boost", "style": discord.ButtonStyle.danger},
+]
+
+_SHOP_ITEMS = _TICKET_TIERS + [_SHIELD_ITEM] + _SOUND_ITEMS + _BOOST_ITEMS
 _ITEM_BY_ID = {item["id"]: item for item in _SHOP_ITEMS}
+
+def _is_boost_active(user_data: dict) -> bool:
+    return user_data.get("voice_boost_expires", 0) > time.time()
+
+def _add_boost(user_data: dict, hours: int, qty: int = 1):
+    exp  = user_data.get("voice_boost_expires", 0)
+    base = max(exp, time.time())
+    user_data["voice_boost_expires"] = base + hours * 3600 * qty
+
+def _boost_remaining(user_data: dict) -> float:
+    return max(0.0, user_data.get("voice_boost_expires", 0) - time.time())
+
+async def _apply_boost_role(member: discord.Member, add: bool):
+    if not VOICE_BOOST_ROLE_ID:
+        return
+    role = member.guild.get_role(VOICE_BOOST_ROLE_ID)
+    if not role:
+        return
+    try:
+        if add and role not in member.roles:
+            await member.add_roles(role, reason="Boost Vocal actif")
+        elif not add and role in member.roles:
+            await member.remove_roles(role, reason="Boost Vocal expiré")
+    except Exception as e:
+        print(f"[BOOST] Erreur rôle {member}: {e}")
+
 
 def _fmt_berry(n: int) -> str:
     return f"{n:,}".replace(",", " ")
@@ -4671,9 +4712,14 @@ def _remove_item_stock(user_data: dict, item_id: str, qty: int) -> bool:
         user_data["pseudo_tickets"] = tickets
     return True
 
+# Remplace par tes URLs (laisser "" = pas d'image, aucune erreur)
+_SHOP_BANNER = ""  # artwork OP horizontal, ex: "https://i.imgur.com/xxx.jpg"
+_SHOP_THUMB  = ""  # icône berry/pièce,    ex: "https://i.imgur.com/yyy.png"
+
+
 def _stock_icon(n: int) -> str:
-    if n > 5:   return "🟢"
-    if n > 0:   return "🟡"
+    if n > 5: return "🟢"
+    if n > 0: return "🟡"
     return "🔴"
 
 
@@ -4746,6 +4792,22 @@ def _shop_embed(uid: str) -> discord.Embed:
             inline=True,
         )
 
+    # ── Boost Vocal ─────────────────────────────────────────────────
+    remaining = _boost_remaining(user_data)
+    if remaining > 0:
+        h, m = divmod(int(remaining), 3600)
+        m //= 60
+        boost_status = f"🟢 **Actif** — encore `{h}h {m:02d}min`"
+    else:
+        boost_status = "🔴 *Inactif*"
+    e.add_field(name="▰▰▰▰▰  🔊 BOOST VOCAL  ▰▰▰▰▰", value=boost_status, inline=False)
+    for b in _BOOST_ITEMS:
+        e.add_field(
+            name=f"{b['emoji']}  {b['name']}",
+            value=f"`💰 {_fmt_berry(b['price'])} 🍊`\n`⏱️ +{b['hours']}h — empilable`",
+            inline=True,
+        )
+
     e.set_footer(text="By Freydiss  •  Max 2 /ticket par jour  •  Admins illimité")
     return e
 
@@ -4810,6 +4872,29 @@ class _QuantityModal(discord.ui.Modal, title="Quantité à acheter"):
                         f"Solde restant : **{_fmt_berry(new_bal)} 🍊**"
                     ),
                     color=discord.Color.green(),
+                ),
+                view=None,
+            )
+            return
+
+        if item.get("type") == "voice_boost":
+            _add_boost(user_data, item["hours"], qty)
+            _DIRTY.add(uid)
+            new_bal = get_berrys(uid)
+            remaining = _boost_remaining(user_data)
+            h, m = divmod(int(remaining), 3600)
+            m //= 60
+            await self._original_message.edit(
+                embed=discord.Embed(
+                    title=f"{item['emoji']} Boost Vocal activé !",
+                    description=(
+                        f"**{qty}×{item['hours']}h** de boost ajoutées{gratuit_tag}.\n\n"
+                        f"Ton boost expire dans **{h}h {m:02d}min**.\n"
+                        f"Tu seras entendu en **priorité** dans les vocaux : "
+                        f"le volume des autres membres est atténué quand tu parles.\n\n"
+                        f"Solde restant : **{_fmt_berry(new_bal)} 🍊**"
+                    ),
+                    color=discord.Color.from_rgb(255, 100, 0),
                 ),
                 view=None,
             )
@@ -4899,6 +4984,14 @@ class _ShopView(discord.ui.View):
             style = discord.ButtonStyle.success if is_active else s["style"]
             btn = discord.ui.Button(label=s["name"], emoji=s["emoji"], style=style, row=2)
             btn.callback = self._make_cb(s)
+            self.add_item(btn)
+
+        # Row 3 — Boost Vocal
+        boost_active = _is_boost_active(user_data)
+        for b in _BOOST_ITEMS:
+            style = discord.ButtonStyle.success if boost_active else b["style"]
+            btn   = discord.ui.Button(label=b["name"], emoji=b["emoji"], style=style, row=3)
+            btn.callback = self._make_cb(b)
             self.add_item(btn)
 
     async def _do_refresh(self, interaction: discord.Interaction):
