@@ -4672,36 +4672,56 @@ def _remove_item_stock(user_data: dict, item_id: str, qty: int) -> bool:
     return True
 
 def _shop_embed(uid: str) -> discord.Embed:
-    bal       = get_berrys(uid)
-    user_data = get_user(_CACHE, uid)
-    tickets   = _get_tickets(user_data)
+    bal           = get_berrys(uid)
+    user_data     = get_user(_CACHE, uid)
+    tickets       = _get_tickets(user_data)
     current_sound = user_data.get("entry_sound", "")
-    sep = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    lines = []
-    for t in _TICKET_TIERS:
-        stock = tickets.get(t["id"], 0)
-        lines.append(
-            f"{t['emoji']} **{t['name']}** — {_fmt_berry(t['price'])} 🍊\n"
-            f"> Change un pseudo pendant **{t['minutes']} min** · Stock : **{stock}**"
-        )
-    shields = user_data.get("nick_shields", 0)
-    lines.append(
-        f"🛡️ **Bouclier Pseudo** — {_fmt_berry(_SHIELD_ITEM['price'])} 🍊\n"
-        f"> Bloque **1 tentative** de changement de pseudo · annule le ticket de l'attaquant · Stock : **{shields}**"
-    )
-    for s in _SOUND_ITEMS:
-        actif = " ✅ **(actif)**" if current_sound == f"local:{s['file']}" else ""
-        lines.append(
-            f"{s['emoji']} **{s['name']}** — {_fmt_berry(s['price'])} 🍊{actif}\n"
-            f"> Son d'entrée vocal · remplace ton son actuel"
-        )
-    embed = discord.Embed(
-        title="🏪  Bram's Shop  🏪",
-        description=f"{sep}\n\n" + f"\n\n{sep}\n\n".join(lines) + f"\n\n{sep}\n\nTon solde : **{_fmt_berry(bal)} 🍊**",
+    sound_uses    = user_data.get("entry_sound_uses", 0)
+    shields       = user_data.get("nick_shields", 0)
+
+    e = discord.Embed(
+        title="🏪  Bram's Shop",
+        description=f"**Solde :** {_fmt_berry(bal)} 🍊",
         color=discord.Color.from_rgb(212, 175, 55),
     )
-    embed.set_footer(text="Clique sur un article pour l'acheter · Max 2 utilisations /ticket par jour (illimité pour les admins)")
-    return embed
+
+    # ── Tickets Pseudo ──────────────────────────────────────────────
+    e.add_field(name="🎭  ─────  Tickets Pseudo  ─────", value="​", inline=False)
+    for t in _TICKET_TIERS:
+        stock = tickets.get(t["id"], 0)
+        stock_line = f"📦 {stock} en stock" if stock else "📦 *vide*"
+        e.add_field(
+            name=f"{t['emoji']}  {t['name']}",
+            value=f"**{_fmt_berry(t['price'])}** 🍊\n{stock_line}\n*{t['minutes']} min*",
+            inline=True,
+        )
+
+    # ── Bouclier ────────────────────────────────────────────────────
+    e.add_field(name="🛡️  ─────  Protection  ─────", value="​", inline=False)
+    shield_line = f"📦 {shields} en stock" if shields else "📦 *vide*"
+    e.add_field(
+        name="🛡️  Bouclier Pseudo",
+        value=f"**{_fmt_berry(_SHIELD_ITEM['price'])}** 🍊\n{shield_line}\n*Bloque 1 tentative*",
+        inline=True,
+    )
+    e.add_field(name="​", value="​", inline=True)
+    e.add_field(name="​", value="​", inline=True)
+
+    # ── Sons d'entrée ───────────────────────────────────────────────
+    e.add_field(name="🎵  ─────  Sons d'Entrée Vocal  ─────", value="​", inline=False)
+    for s in _SOUND_ITEMS:
+        if current_sound == f"local:{s['file']}":
+            status = f"✅ **Actif** · {sound_uses} util. restantes"
+        else:
+            status = "*3 utilisations*"
+        e.add_field(
+            name=f"{s['emoji']}  {s['name']}",
+            value=f"**{_fmt_berry(s['price'])}** 🍊\n{status}",
+            inline=True,
+        )
+
+    e.set_footer(text="Clique sur un bouton pour acheter  ·  Tickets : max 2 /ticket par jour  ·  Admins : illimité")
+    return e
 
 
 class _QuantityModal(discord.ui.Modal, title="Quantité à acheter"):
@@ -4827,7 +4847,7 @@ class _ShopView(discord.ui.View):
         self._user_id = user_id
         for item in _SHOP_ITEMS:
             btn = discord.ui.Button(
-                label=f"{item['name']} ({_fmt_berry(item['price'])} 🍊)",
+                label=item["name"],
                 emoji=item["emoji"],
                 style=item["style"],
             )
