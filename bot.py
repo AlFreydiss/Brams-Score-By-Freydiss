@@ -1760,19 +1760,21 @@ async def _play_entry_sound(member: discord.Member, channel: discord.VoiceChanne
                 await existing.disconnect(force=True)
             loop = asyncio.get_running_loop()
             if url.startswith("local:"):
-                stream_url = os.path.join("sounds", url[6:])
+                stream_url = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sounds", url[6:])
+                ffmpeg_opts = {"options": "-vn -t 15"}
             else:
                 with yt_dlp.YoutubeDL(_YTDL_OPTS) as ydl:
                     data = await loop.run_in_executor(None, lambda: ydl.extract_info(url, download=False))
                 if "entries" in data:
                     data = data["entries"][0]
                 stream_url = data["url"]
+                ffmpeg_opts = _FFMPEG_OPTS
             vc = await channel.connect(timeout=10)
             done = asyncio.Event()
             def _after(err):
                 loop.call_soon_threadsafe(done.set)
             source = discord.PCMVolumeTransformer(
-                discord.FFmpegPCMAudio(stream_url, **_FFMPEG_OPTS), volume=0.5
+                discord.FFmpegPCMAudio(stream_url, **ffmpeg_opts), volume=0.5
             )
             vc.play(source, after=_after)
             await asyncio.wait_for(done.wait(), timeout=20)
