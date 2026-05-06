@@ -1794,6 +1794,17 @@ async def _play_entry_sound(member: discord.Member, channel: discord.VoiceChanne
             vc.play(source, after=_after)
             await asyncio.wait_for(done.wait(), timeout=20)
             _log(f"[ENTRY SOUND] Lecture terminée pour {member.display_name}")
+            uid2 = str(member.id)
+            u2   = get_user(_CACHE, uid2)
+            uses = u2.get("entry_sound_uses", 0) - 1
+            if uses <= 0:
+                u2.pop("entry_sound", None)
+                u2.pop("entry_sound_uses", None)
+                _log(f"[ENTRY SOUND] {member.display_name} — 0 écoute restante, son retiré")
+            else:
+                u2["entry_sound_uses"] = uses
+                _log(f"[ENTRY SOUND] {member.display_name} — {uses} écoute(s) restante(s)")
+            _DIRTY.add(uid2)
         except Exception as e:
             _log(f"[ENTRY SOUND] ERREUR {member.display_name}: {type(e).__name__}: {e}")
         finally:
@@ -4839,7 +4850,8 @@ class _ShopView(discord.ui.View):
                     )
                     return
                 user_data = get_user(_CACHE, uid)
-                user_data["entry_sound"] = f"local:{item['file']}"
+                user_data["entry_sound"]       = f"local:{item['file']}"
+                user_data["entry_sound_uses"]  = 3
                 _DIRTY.add(uid)
                 new_bal     = get_berrys(uid)
                 gratuit_tag = " *(admin — gratuit)*" if free else ""
