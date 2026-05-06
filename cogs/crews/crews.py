@@ -60,12 +60,7 @@ class CrewCog(CrewTasks, commands.Cog):
     # ── Helpers ───────────────────────────────────────────────────
 
     async def _get_user_crew(self, user_id: int):
-        """Retourne (member_row, crew_row) ou (None, None)."""
-        m = await db.get_member(user_id)
-        if not m:
-            return None, None
-        c = await db.get_crew(m['crew_id'])
-        return m, c
+        return await db.get_member_and_crew(user_id)
 
     async def _log_staff(self, title: str, description: str, color: int = CREW_COLOR):
         ch = self.bot.get_channel(LOGS_CH)
@@ -752,12 +747,11 @@ class CrewCog(CrewTasks, commands.Cog):
             await interaction.response.send_message("❌ Tu n'es dans aucun équipage.", ephemeral=True)
             return
         alliances = await db.get_active_alliances(crew['id'])
-        ally_crews = []
-        for a in alliances:
-            other_id = a['crew_b_id'] if a['crew_a_id'] == crew['id'] else a['crew_a_id']
-            other    = await db.get_crew(other_id)
-            if other:
-                ally_crews.append(other)
+        other_ids = [
+            a['crew_b_id'] if a['crew_a_id'] == crew['id'] else a['crew_a_id']
+            for a in alliances
+        ]
+        ally_crews = await db.get_crews_by_ids(other_ids)
         await interaction.response.send_message(embed=alliances_embed(crew, alliances, ally_crews))
 
     # ── /crew war declarer ────────────────────────────────────────
@@ -891,8 +885,10 @@ class CrewCog(CrewTasks, commands.Cog):
         if war_updated:
             att = war_updated['attacker_score']
             dfs = war_updated['defender_score']
-            att_crew = await db.get_crew(war_updated['attacker_id'])
-            def_crew = await db.get_crew(war_updated['defender_id'])
+            att_crew, def_crew = await asyncio.gather(
+                db.get_crew(war_updated['attacker_id']),
+                db.get_crew(war_updated['defender_id']),
+            )
             embed.add_field(
                 name="Score actuel",
                 value=f"{att_crew['name'] if att_crew else '?'}: **{att}** | {def_crew['name'] if def_crew else '?'}: **{dfs}**",
@@ -913,9 +909,11 @@ class CrewCog(CrewTasks, commands.Cog):
         if not war:
             await interaction.response.send_message("❌ Aucune guerre en cours.", ephemeral=True)
             return
-        crew_a   = await db.get_crew(war['attacker_id'])
-        crew_b   = await db.get_crew(war['defender_id'])
-        top      = await db.get_war_top_contributors(war['id'])
+        crew_a, crew_b, top = await asyncio.gather(
+            db.get_crew(war['attacker_id']),
+            db.get_crew(war['defender_id']),
+            db.get_war_top_contributors(war['id']),
+        )
         await interaction.response.send_message(embed=war_status_embed(war, crew_a, crew_b, top))
 
 
