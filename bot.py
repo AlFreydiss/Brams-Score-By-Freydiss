@@ -4710,7 +4710,7 @@ _SHIELD_ITEM = {
 # Sons d'entrée — mets tes fichiers MP3/WAV dans le dossier sounds/ puis ajoute une entrée ici
 _SOUND_ITEMS: list[dict] = [
     # Exemple :
-    # {"id": "sound_gear5", "emoji": "😂", "name": "Gear 5 - Rire", "price": 2_000_000, "file": "gear5.mp3", "type": "entry_sound", "style": discord.ButtonStyle.primary},
+    {"id": "sound_shinobu", "emoji": "🌸", "name": "Shinobu — Moshi Moshi", "price": 1_500_000, "file": "shinobu_moshi_moshi.mp3", "type": "entry_sound", "style": discord.ButtonStyle.primary},
 ]
 
 _SHOP_ITEMS = _TICKET_TIERS + [_SHIELD_ITEM] + _SOUND_ITEMS
