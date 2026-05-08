@@ -6131,6 +6131,66 @@ async def reset_pseudos(interaction: discord.Interaction):
 
 
 # ─────────────────────────────────────────
+#  SYNC BERRIES (admin)
+# ─────────────────────────────────────────
+
+@bot.tree.command(
+    name="sync_berries",
+    description="[ADMIN] Recalcule les Berrys dus (heures × 100 000) et complète les soldes insuffisants",
+)
+@app_commands.guilds(*GUILD_IDS)
+@app_commands.default_permissions(administrator=True)
+@app_commands.checks.has_permissions(administrator=True)
+async def sync_berries_cmd(interaction: discord.Interaction):
+    await interaction.response.defer(ephemeral=True)
+
+    _now    = now_ts()
+    fixed   = 0
+    skipped = 0
+    total_added = 0
+    lines   = []
+
+    for uid, udata in list(_CACHE.items()):
+        sessions = udata.get("vocal_sessions", [])
+        jt       = udata.get("join_time")
+        extra    = udata.get("extra_seconds", 0)
+        total_sec   = total_seconds(sessions, join_time=jt, extra=extra, _now=_now)
+        total_hours = total_sec / 3600
+        expected    = int(total_hours * 100_000)
+        current     = get_berrys(uid)
+        deficit     = expected - current
+
+        if deficit <= 0:
+            skipped += 1
+            continue
+
+        add_berrys(uid, deficit)
+        total_added += deficit
+        fixed += 1
+        if len(lines) < 20:
+            lines.append(f"<@{uid}> +**{deficit:,} 🍊** ({total_hours:.1f}h)".replace(",", " "))
+
+    await asyncio.get_running_loop().run_in_executor(db_executor, _sync_flush_dirty)
+
+    desc = (
+        f"✅ **{fixed}** membre(s) recalibré(s)\n"
+        f"⏭️ **{skipped}** membre(s) déjà à jour\n"
+        f"💰 Total distribué : **{total_added:,} 🍊**\n".replace(",", " ")
+    )
+    if lines:
+        desc += "\n**Détail (20 premiers) :**\n" + "\n".join(lines)
+
+    await interaction.followup.send(
+        embed=discord.Embed(
+            title="🔄 Sync Berrys — Heures × 100 000",
+            description=desc,
+            color=discord.Color.green(),
+        ),
+        ephemeral=True,
+    )
+
+
+# ─────────────────────────────────────────
 #  GIVEAWAY
 # ─────────────────────────────────────────
 
