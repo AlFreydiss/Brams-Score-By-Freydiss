@@ -39,7 +39,8 @@ PARENT_CAT  = int(os.environ.get("CREWS_CATEGORY_PARENT_ID", "0")) or None
 
 
 class CrewCog(CrewTasks, commands.Cog):
-    crew = app_commands.Group(name="equipage", description="🏴‍☠️ Système d'équipages", guild_ids=GUILD_IDS)
+    crew = app_commands.Group(name="equipage", description="🏴‍☠️ Système d'équipages", guild_ids=GUILD_IDS,
+                              default_permissions=discord.Permissions(administrator=True))
 
     def __init__(self, bot: commands.Bot):
         self.bot = bot
