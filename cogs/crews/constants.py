@@ -29,7 +29,7 @@ CREW_LEVELS = {
     10: {'xp_required': 2_500_000,'max_members': 50, 'features': ['basic', 'custom_role_color', 'alliances', 'wars', 'shop_discount_10%', 'custom_crew_emoji', 'voice_xp_boost_10%', 'custom_voice_channel', 'yonko_status']},
 }
 
-COST_CREATE          = 50_000
+COST_CREATE          = 30_000_000
 COST_RENAME          = 20_000
 MIN_WAR_BET          = 10_000
 RENAME_COOLDOWN_DAYS = 30

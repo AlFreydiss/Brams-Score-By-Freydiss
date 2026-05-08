@@ -262,7 +262,7 @@ class CrewCog(CrewTasks, commands.Cog):
     # /equipage gestion ...
     # ══════════════════════════════════════════════════════════════
 
-    @gestion.command(name="creer", description="Créer un nouvel équipage (50 000 🍊)")
+    @gestion.command(name="creer", description="Créer un nouvel équipage (30 000 000 🍊)")
     async def gestion_creer(self, interaction: discord.Interaction):
         uid = interaction.user.id
         existing_m = await db.get_member(uid)
