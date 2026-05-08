@@ -4,7 +4,7 @@ import psycopg2
 import psycopg2.extras
 from concurrent.futures import ThreadPoolExecutor
 
-_executor    = ThreadPoolExecutor(max_workers=3, thread_name_prefix="mp_db")
+_executor     = ThreadPoolExecutor(max_workers=3, thread_name_prefix="mp_db")
 _SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
 
 
@@ -20,7 +20,7 @@ async def _run(fn):
 # ── Listings ──────────────────────────────────────────────────────
 
 async def create_listing(seller_id: int, title: str, description: str,
-                          price: int, category: str, image_url) -> int:
+                          price: int, category: str, image_url) -> str:
     def _do():
         conn = _conn()
         try:
@@ -31,13 +31,13 @@ async def create_listing(seller_id: int, title: str, description: str,
                        VALUES (%s,%s,%s,%s,%s,%s) RETURNING id""",
                     (seller_id, title, description, price, category, image_url),
                 )
-                return cur.fetchone()[0]
+                return str(cur.fetchone()[0])
         finally:
             conn.close()
     return await _run(_do)
 
 
-async def set_listing_message_id(listing_id: int, message_id: int):
+async def set_listing_message_id(listing_id: str, message_id: int):
     def _do():
         conn = _conn()
         try:
@@ -51,27 +51,31 @@ async def set_listing_message_id(listing_id: int, message_id: int):
     await _run(_do)
 
 
-async def get_listing(listing_id: int):
+async def get_listing(listing_id: str):
     def _do():
         conn = _conn()
         try:
             cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-            cur.execute("SELECT * FROM listings WHERE id=%s", (listing_id,))
+            cur.execute("SELECT * FROM listings WHERE id=%s::uuid", (listing_id,))
             row = cur.fetchone()
-            return dict(row) if row else None
+            if row:
+                r = dict(row)
+                r["id"] = str(r["id"])
+                return r
+            return None
         finally:
             conn.close()
     return await _run(_do)
 
 
-async def update_listing_status(listing_id: int, status: str):
+async def update_listing_status(listing_id: str, status: str):
     def _do():
         conn = _conn()
         try:
             with conn:
                 extra = ", sold_at=NOW()" if status == "sold" else ""
                 conn.cursor().execute(
-                    f"UPDATE listings SET status=%s{extra} WHERE id=%s",
+                    f"UPDATE listings SET status=%s{extra} WHERE id=%s::uuid",
                     (status, listing_id),
                 )
         finally:
@@ -79,14 +83,14 @@ async def update_listing_status(listing_id: int, status: str):
     await _run(_do)
 
 
-async def update_listing(listing_id: int, title: str, description: str,
+async def update_listing(listing_id: str, title: str, description: str,
                           price: int, category: str, image_url):
     def _do():
         conn = _conn()
         try:
             with conn:
                 conn.cursor().execute(
-                    "UPDATE listings SET title=%s,description=%s,price=%s,category=%s,image_url=%s WHERE id=%s",
+                    "UPDATE listings SET title=%s,description=%s,price=%s,category=%s,image_url=%s WHERE id=%s::uuid",
                     (title, description, price, category, image_url, listing_id),
                 )
         finally:
@@ -116,7 +120,12 @@ async def get_listings(category=None, max_price=None, search=None,
                 f"SELECT * FROM listings WHERE {where} ORDER BY created_at DESC LIMIT %s OFFSET %s",
                 params + [limit, offset],
             )
-            return [dict(r) for r in cur.fetchall()], int(total)
+            rows = []
+            for r in cur.fetchall():
+                d = dict(r)
+                d["id"] = str(d["id"])
+                rows.append(d)
+            return rows, int(total)
         finally:
             conn.close()
     return await _run(_do)
@@ -131,7 +140,12 @@ async def get_user_listings(seller_id: int):
                 "SELECT * FROM listings WHERE seller_id=%s ORDER BY created_at DESC",
                 (seller_id,),
             )
-            return [dict(r) for r in cur.fetchall()]
+            rows = []
+            for r in cur.fetchall():
+                d = dict(r)
+                d["id"] = str(d["id"])
+                rows.append(d)
+            return rows
         finally:
             conn.close()
     return await _run(_do)
@@ -167,13 +181,13 @@ async def count_listings_today(seller_id: int) -> int:
     return await _run(_do)
 
 
-async def increment_views(listing_id: int):
+async def increment_views(listing_id: str):
     def _do():
         conn = _conn()
         try:
             with conn:
                 conn.cursor().execute(
-                    "UPDATE listings SET views=views+1 WHERE id=%s", (listing_id,)
+                    "UPDATE listings SET views=views+1 WHERE id=%s::uuid", (listing_id,)
                 )
         finally:
             conn.close()
@@ -182,59 +196,69 @@ async def increment_views(listing_id: int):
 
 # ── Transactions ──────────────────────────────────────────────────
 
-async def create_transaction(listing_id: int, buyer_id: int,
-                              seller_id: int, price: int) -> int:
+async def create_transaction(listing_id: str, buyer_id: int,
+                              seller_id: int, price: int) -> str:
     def _do():
         conn = _conn()
         try:
             with conn:
                 cur = conn.cursor()
                 cur.execute(
-                    "INSERT INTO transactions (listing_id,buyer_id,seller_id,price) VALUES (%s,%s,%s,%s) RETURNING id",
+                    "INSERT INTO transactions (listing_id,buyer_id,seller_id,price) VALUES (%s::uuid,%s,%s,%s) RETURNING id",
                     (listing_id, buyer_id, seller_id, price),
                 )
-                return cur.fetchone()[0]
+                return str(cur.fetchone()[0])
         finally:
             conn.close()
     return await _run(_do)
 
 
-async def get_transaction(transaction_id: int):
+async def get_transaction(transaction_id: str):
     def _do():
         conn = _conn()
         try:
             cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-            cur.execute("SELECT * FROM transactions WHERE id=%s", (transaction_id,))
+            cur.execute("SELECT * FROM transactions WHERE id=%s::uuid", (transaction_id,))
             row = cur.fetchone()
-            return dict(row) if row else None
+            if row:
+                r = dict(row)
+                r["id"]         = str(r["id"])
+                r["listing_id"] = str(r["listing_id"])
+                return r
+            return None
         finally:
             conn.close()
     return await _run(_do)
 
 
-async def get_pending_transaction(listing_id: int):
+async def get_pending_transaction(listing_id: str):
     def _do():
         conn = _conn()
         try:
             cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
             cur.execute(
-                "SELECT * FROM transactions WHERE listing_id=%s AND status='pending'",
+                "SELECT * FROM transactions WHERE listing_id=%s::uuid AND status='pending'",
                 (listing_id,),
             )
             row = cur.fetchone()
-            return dict(row) if row else None
+            if row:
+                r = dict(row)
+                r["id"]         = str(r["id"])
+                r["listing_id"] = str(r["listing_id"])
+                return r
+            return None
         finally:
             conn.close()
     return await _run(_do)
 
 
-async def confirm_transaction(transaction_id: int):
+async def confirm_transaction(transaction_id: str):
     def _do():
         conn = _conn()
         try:
             with conn:
                 conn.cursor().execute(
-                    "UPDATE transactions SET status='confirmed',confirmed_at=NOW() WHERE id=%s",
+                    "UPDATE transactions SET status='confirmed',confirmed_at=NOW() WHERE id=%s::uuid",
                     (transaction_id,),
                 )
         finally:
@@ -242,13 +266,13 @@ async def confirm_transaction(transaction_id: int):
     await _run(_do)
 
 
-async def cancel_transaction(transaction_id: int):
+async def cancel_transaction(transaction_id: str):
     def _do():
         conn = _conn()
         try:
             with conn:
                 conn.cursor().execute(
-                    "UPDATE transactions SET status='cancelled' WHERE id=%s",
+                    "UPDATE transactions SET status='cancelled' WHERE id=%s::uuid",
                     (transaction_id,),
                 )
         finally:
@@ -264,7 +288,13 @@ async def get_expired_transactions():
             cur.execute(
                 "SELECT * FROM transactions WHERE status='pending' AND created_at<NOW()-INTERVAL '48 hours'"
             )
-            return [dict(r) for r in cur.fetchall()]
+            rows = []
+            for r in cur.fetchall():
+                d = dict(r)
+                d["id"]         = str(d["id"])
+                d["listing_id"] = str(d["listing_id"])
+                rows.append(d)
+            return rows
         finally:
             conn.close()
     return await _run(_do)
@@ -272,7 +302,7 @@ async def get_expired_transactions():
 
 # ── Ratings ───────────────────────────────────────────────────────
 
-async def create_rating(transaction_id: int, rater_id: int,
+async def create_rating(transaction_id: str, rater_id: int,
                          rated_id: int, score: int, comment):
     def _do():
         conn = _conn()
@@ -280,7 +310,7 @@ async def create_rating(transaction_id: int, rater_id: int,
             with conn:
                 conn.cursor().execute(
                     """INSERT INTO ratings (transaction_id,rater_id,rated_id,score,comment)
-                       VALUES (%s,%s,%s,%s,%s) ON CONFLICT (transaction_id) DO NOTHING""",
+                       VALUES (%s::uuid,%s,%s,%s,%s) ON CONFLICT (transaction_id, rater_id) DO NOTHING""",
                     (transaction_id, rater_id, rated_id, score, comment),
                 )
         finally:
@@ -288,13 +318,13 @@ async def create_rating(transaction_id: int, rater_id: int,
     await _run(_do)
 
 
-async def has_rated(transaction_id: int, rater_id: int) -> bool:
+async def has_rated(transaction_id: str, rater_id: int) -> bool:
     def _do():
         conn = _conn()
         try:
             cur = conn.cursor()
             cur.execute(
-                "SELECT 1 FROM ratings WHERE transaction_id=%s AND rater_id=%s",
+                "SELECT 1 FROM ratings WHERE transaction_id=%s::uuid AND rater_id=%s",
                 (transaction_id, rater_id),
             )
             return cur.fetchone() is not None
@@ -317,8 +347,8 @@ async def get_seller_stats(seller_id: int) -> dict:
                 "SELECT AVG(score)::numeric(3,1) as avg, COUNT(*) as cnt FROM ratings WHERE rated_id=%s",
                 (seller_id,),
             )
-            r = cur.fetchone()
-            avg   = float(r["avg"])  if r["avg"]  else None
+            r     = cur.fetchone()
+            avg   = float(r["avg"]) if r["avg"] else None
             count = int(r["cnt"])
             cur.execute(
                 """SELECT score, comment, created_at FROM ratings
@@ -332,10 +362,10 @@ async def get_seller_stats(seller_id: int) -> dict:
             )
             active = cur.fetchone()["n"]
             return {
-                "total_sales":    total_sales,
-                "avg_score":      avg,
-                "rating_count":   count,
-                "comments":       comments,
+                "total_sales":     total_sales,
+                "avg_score":       avg,
+                "rating_count":    count,
+                "comments":        comments,
                 "active_listings": active,
             }
         finally:
@@ -345,25 +375,24 @@ async def get_seller_stats(seller_id: int) -> dict:
 
 # ── Favorites ─────────────────────────────────────────────────────
 
-async def toggle_favorite(user_id: int, listing_id: int) -> bool:
-    """True = ajouté, False = retiré."""
+async def toggle_favorite(user_id: int, listing_id: str) -> bool:
     def _do():
         conn = _conn()
         try:
             with conn:
                 cur = conn.cursor()
                 cur.execute(
-                    "SELECT 1 FROM favorites WHERE user_id=%s AND listing_id=%s",
+                    "SELECT 1 FROM favorites WHERE user_id=%s AND listing_id=%s::uuid",
                     (user_id, listing_id),
                 )
                 if cur.fetchone():
                     cur.execute(
-                        "DELETE FROM favorites WHERE user_id=%s AND listing_id=%s",
+                        "DELETE FROM favorites WHERE user_id=%s AND listing_id=%s::uuid",
                         (user_id, listing_id),
                     )
                     return False
                 cur.execute(
-                    "INSERT INTO favorites (user_id,listing_id) VALUES (%s,%s)",
+                    "INSERT INTO favorites (user_id,listing_id) VALUES (%s,%s::uuid)",
                     (user_id, listing_id),
                 )
                 return True
@@ -391,7 +420,12 @@ async def get_favorites(user_id: int, offset: int = 0, limit: int = 5):
                    ORDER BY f.created_at DESC LIMIT %s OFFSET %s""",
                 (user_id, limit, offset),
             )
-            return [dict(r) for r in cur.fetchall()], int(total)
+            rows = []
+            for r in cur.fetchall():
+                d = dict(r)
+                d["id"] = str(d["id"])
+                rows.append(d)
+            return rows, int(total)
         finally:
             conn.close()
     return await _run(_do)
@@ -399,13 +433,13 @@ async def get_favorites(user_id: int, offset: int = 0, limit: int = 5):
 
 # ── Reports ───────────────────────────────────────────────────────
 
-async def create_report(listing_id: int, reporter_id: int, reason: str):
+async def create_report(listing_id: str, reporter_id: int, reason: str):
     def _do():
         conn = _conn()
         try:
             with conn:
                 conn.cursor().execute(
-                    "INSERT INTO reports (listing_id,reporter_id,reason) VALUES (%s,%s,%s)",
+                    "INSERT INTO reports (listing_id,reporter_id,reason) VALUES (%s::uuid,%s,%s)",
                     (listing_id, reporter_id, reason),
                 )
         finally:
