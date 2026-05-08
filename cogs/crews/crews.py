@@ -44,7 +44,7 @@ class CrewCog(CrewTasks, commands.Cog):
     equipe   = app_commands.Group(name="equipe",    description="👥 Gérer les membres",     parent=crew)
     tresor   = app_commands.Group(name="tresor",    description="🏦 Trésor de l'équipage",  parent=crew)
     alliance = app_commands.Group(name="alliance",  description="🤝 Alliances",             parent=crew)
-    war      = app_commands.Group(name="war",       description="⚔️ Guerres",               parent=crew)
+    war      = app_commands.Group(name="guerre",     description="⚔️ Guerres",               parent=crew)
 
     def __init__(self, bot: commands.Bot):
         self.bot = bot
