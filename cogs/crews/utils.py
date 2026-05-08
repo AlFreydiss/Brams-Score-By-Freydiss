@@ -32,25 +32,9 @@ def random_role_color() -> discord.Color:
 
 
 async def award_xp(bot, crew_id: int, xp: int) -> tuple[int, bool]:
-    """Ajoute xp au crew. Retourne (new_xp, leveled_up)."""
+    """Ajoute xp au crew (1 transaction DB). Retourne (new_xp, leveled_up)."""
     from . import database as db
-    crew = await db.get_crew(crew_id)
-    if not crew:
-        return 0, False
-    new_xp   = crew['xp'] + xp
-    level    = crew['level']
-    leveled  = False
-    while level < 10:
-        needed = CREW_LEVELS[level + 1]['xp_required']
-        if new_xp >= needed:
-            level  += 1
-            leveled = True
-        else:
-            break
-    updates = {'xp': new_xp}
-    if leveled:
-        updates['level'] = level
-    await db.update_crew(crew_id, **updates)
+    new_xp, _, leveled = await db.award_xp_and_level(crew_id, xp)
     return new_xp, leveled
 
 

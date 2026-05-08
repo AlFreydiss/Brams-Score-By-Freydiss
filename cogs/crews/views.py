@@ -146,15 +146,19 @@ class ApplicationsView(discord.ui.View):
             self.add_item(nxt)
 
     async def _decide(self, interaction: discord.Interaction, app: dict, status: str):
+        import asyncio
         from . import database as db
         from .utils import assign_role
         await interaction.response.defer()
-        await db.update_application(app['id'], status, interaction.user.id)
         if status == 'accepted':
-            await db.add_member(app['user_id'], app['crew_id'])
-            await db.add_history(app['crew_id'], app['user_id'], 'joined', 'via candidature')
+            coros = [
+                db.update_application(app['id'], status, interaction.user.id),
+                db.add_member(app['user_id'], app['crew_id']),
+                db.add_history(app['crew_id'], app['user_id'], 'joined', 'via candidature'),
+            ]
             if self._crew.get('role_id'):
-                await assign_role(interaction.guild, app['user_id'], self._crew['role_id'])
+                coros.append(assign_role(interaction.guild, app['user_id'], self._crew['role_id']))
+            await asyncio.gather(*coros)
             u = self._bot.get_user(app['user_id'])
             if u:
                 try:
@@ -162,6 +166,7 @@ class ApplicationsView(discord.ui.View):
                 except discord.Forbidden:
                     pass
         else:
+            await db.update_application(app['id'], status, interaction.user.id)
             u = self._bot.get_user(app['user_id'])
             if u:
                 try:
@@ -247,13 +252,16 @@ class AllianceResponseView(discord.ui.View):
         if interaction.user.id != self._captain_id:
             await interaction.response.send_message("Seul le capitaine peut décider.", ephemeral=True)
             return
+        import asyncio
         from . import database as db
         from .utils import award_xp
         from .constants import XP_ALLIANCE
-        await db.accept_alliance(self._proposer_id, self._crew_id)
-        await award_xp(self._bot, self._crew_id, XP_ALLIANCE)
-        await award_xp(self._bot, self._proposer_id, XP_ALLIANCE)
-        await db.add_history(self._crew_id, interaction.user.id, 'joined', f'Alliance avec crew #{self._proposer_id} acceptée')
+        await asyncio.gather(
+            db.accept_alliance(self._proposer_id, self._crew_id),
+            award_xp(self._bot, self._crew_id, XP_ALLIANCE),
+            award_xp(self._bot, self._proposer_id, XP_ALLIANCE),
+            db.add_history(self._crew_id, interaction.user.id, 'joined', f'Alliance avec crew #{self._proposer_id} acceptée'),
+        )
         self.stop()
         await interaction.response.edit_message(
             content="✅ Alliance acceptée ! Les deux équipages sont maintenant alliés.", view=None
@@ -292,12 +300,19 @@ class WarResponseView(discord.ui.View):
         if interaction.user.id != self._captain_id:
             await interaction.response.send_message("Seul le capitaine peut répondre.", ephemeral=True)
             return
+        import asyncio
         from . import database as db
         war = await db.get_war(self._war_id)
         if war:
-            await db.cancel_war(self._war_id)
-            att_crew = await db.get_crew(war['attacker_id'])
+            att_crew, _ = await asyncio.gather(
+                db.get_crew(war['attacker_id']),
+                db.cancel_war(self._war_id),
+            )
             att_size = (war['prize_pool'] // 2) if war.get('prize_pool') else 0
-            self._bot.add_berrys(str(war['attacker_id']), att_size)
+            if att_crew and att_size > 0:
+                await asyncio.gather(
+                    db.update_crew(war['attacker_id'], treasury=att_crew['treasury'] + att_size),
+                    db.add_treasury_log(war['attacker_id'], 0, att_size, 'war_refund', 'Guerre refusée'),
+                )
         self.stop()
         await interaction.response.edit_message(content="🏳️ Guerre refusée. Forfait enregistré.", view=None)

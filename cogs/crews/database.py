@@ -700,3 +700,97 @@ async def get_history(crew_id: int, limit: int = 15) -> list[dict]:
             )
             return [dict(r) for r in cur.fetchall()]
     return await _run(_do)
+
+
+async def award_xp_and_level(crew_id: int, xp: int) -> tuple[int, int, bool]:
+    """Atomic XP + level-up in one transaction. Returns (new_xp, new_level, leveled_up)."""
+    from .constants import CREW_LEVELS
+    def _do():
+        with _conn() as conn:
+            with conn:
+                cur = conn.cursor(cursor_factory=_DC)
+                cur.execute(
+                    "SELECT xp, level FROM crews WHERE id=%s AND disbanded_at IS NULL FOR UPDATE",
+                    (crew_id,),
+                )
+                row = cur.fetchone()
+                if not row:
+                    return 0, 1, False
+                new_xp  = row['xp'] + xp
+                level   = row['level']
+                leveled = False
+                while level < 10:
+                    if new_xp >= CREW_LEVELS[level + 1]['xp_required']:
+                        level  += 1
+                        leveled = True
+                    else:
+                        break
+                cur.execute(
+                    "UPDATE crews SET xp=%s, level=%s WHERE id=%s",
+                    (new_xp, level, crew_id),
+                )
+                return new_xp, level, leveled
+    return await _run(_do)
+
+
+async def check_name_and_tag(name: str, tag: str) -> tuple[bool, bool]:
+    """Single EXISTS query: returns (name_taken, tag_taken)."""
+    def _do():
+        with _conn() as conn:
+            cur = conn.cursor(cursor_factory=_DC)
+            cur.execute("""
+                SELECT
+                    EXISTS(SELECT 1 FROM crews
+                           WHERE LOWER(name)=LOWER(%s) AND disbanded_at IS NULL) AS name_taken,
+                    EXISTS(SELECT 1 FROM crews
+                           WHERE UPPER(tag)=UPPER(%s)  AND disbanded_at IS NULL) AS tag_taken
+            """, (name, tag))
+            r = cur.fetchone()
+            return r['name_taken'], r['tag_taken']
+    return await _run(_do)
+
+
+async def get_active_war_with_crews(crew_id: int) -> tuple[dict | None, dict | None, dict | None]:
+    """JOIN query: returns (war, attacker_crew, defender_crew) or (None, None, None)."""
+    def _do():
+        with _conn() as conn:
+            cur = conn.cursor(cursor_factory=_DC)
+            cur.execute("""
+                SELECT
+                    w.id, w.attacker_id, w.defender_id, w.prize_pool,
+                    w.attacker_score, w.defender_score, w.status,
+                    w.duration_hours, w.declared_at, w.started_at, w.ends_at,
+                    ca.id AS ca_id, ca.name AS ca_name, ca.tag AS ca_tag,
+                    ca.level AS ca_level, ca.treasury AS ca_treasury,
+                    ca.total_bounty AS ca_total_bounty,
+                    ca.wars_won AS ca_wars_won, ca.wars_lost AS ca_wars_lost,
+                    cd.id AS cd_id, cd.name AS cd_name, cd.tag AS cd_tag,
+                    cd.level AS cd_level, cd.treasury AS cd_treasury,
+                    cd.total_bounty AS cd_total_bounty,
+                    cd.wars_won AS cd_wars_won, cd.wars_lost AS cd_wars_lost
+                FROM crew_wars w
+                JOIN crews ca ON ca.id = w.attacker_id
+                JOIN crews cd ON cd.id = w.defender_id
+                WHERE (w.attacker_id=%s OR w.defender_id=%s)
+                  AND w.status IN ('pending','active')
+                ORDER BY w.declared_at DESC LIMIT 1
+            """, (crew_id, crew_id))
+            row = cur.fetchone()
+            if not row:
+                return None, None, None
+            row = dict(row)
+            war = {k: v for k, v in row.items() if not k.startswith(('ca_', 'cd_'))}
+            crew_a = {
+                'id': row['ca_id'], 'name': row['ca_name'], 'tag': row['ca_tag'],
+                'level': row['ca_level'], 'treasury': row['ca_treasury'],
+                'total_bounty': row['ca_total_bounty'],
+                'wars_won': row['ca_wars_won'], 'wars_lost': row['ca_wars_lost'],
+            }
+            crew_b = {
+                'id': row['cd_id'], 'name': row['cd_name'], 'tag': row['cd_tag'],
+                'level': row['cd_level'], 'treasury': row['cd_treasury'],
+                'total_bounty': row['cd_total_bounty'],
+                'wars_won': row['cd_wars_won'], 'wars_lost': row['cd_wars_lost'],
+            }
+            return war, crew_a, crew_b
+    return await _run(_do)

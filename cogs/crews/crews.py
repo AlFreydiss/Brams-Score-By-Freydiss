@@ -88,8 +88,10 @@ class CrewCog(CrewTasks, commands.Cog):
         if not crew:
             await interaction.followup.send("❌ Équipage introuvable.", ephemeral=True)
             return
-        members   = await db.get_crew_members(crew['id'])
-        alliances = await db.get_active_alliances(crew['id'])
+        members, alliances = await asyncio.gather(
+            db.get_crew_members(crew['id']),
+            db.get_active_alliances(crew['id']),
+        )
         await interaction.followup.send(embed=crew_info_embed(crew, members, alliances, interaction.guild))
 
     @crew.command(name="liste", description="Liste tous les équipages")
@@ -283,10 +285,11 @@ class CrewCog(CrewTasks, commands.Cog):
                     f"❌ Tag invalide. {MIN_TAG_LEN}-{MAX_TAG_LEN} caractères alphanumériques majuscules.", ephemeral=True
                 )
                 return
-            if await db.get_crew_by_name(name):
+            name_taken, tag_taken = await db.check_name_and_tag(name, tag)
+            if name_taken:
                 await inter.response.send_message("❌ Ce nom d'équipage est déjà pris.", ephemeral=True)
                 return
-            if await db.get_crew_by_tag(tag):
+            if tag_taken:
                 await inter.response.send_message("❌ Ce tag est déjà pris.", ephemeral=True)
                 return
             if not self.bot.spend_berrys(str(uid), COST_CREATE):
@@ -589,11 +592,12 @@ class CrewCog(CrewTasks, commands.Cog):
             await interaction.response.send_message("❌ Solde insuffisant.", ephemeral=True)
             return
         new_treasury = crew['treasury'] + montant
-        await db.update_crew(crew['id'], treasury=new_treasury)
-        await db.add_contribution(interaction.user.id, montant)
-        await db.add_treasury_log(crew['id'], interaction.user.id, montant, 'deposit')
-        xp = montant // 100
-        await award_xp(self.bot, crew['id'], xp)
+        await asyncio.gather(
+            db.update_crew(crew['id'], treasury=new_treasury),
+            db.add_contribution(interaction.user.id, montant),
+            db.add_treasury_log(crew['id'], interaction.user.id, montant, 'deposit'),
+        )
+        await award_xp(self.bot, crew['id'], montant // 100)
         await interaction.response.send_message(
             embed=discord.Embed(
                 title="🏦 Dépôt effectué",
@@ -830,7 +834,10 @@ class CrewCog(CrewTasks, commands.Cog):
     @war.command(name="attaquer", description="Défier un ennemi en duel pendant la guerre (cooldown 30 min)")
     @app_commands.describe(ennemi="Membre ennemi à défier")
     async def war_attaquer(self, interaction: discord.Interaction, ennemi: discord.Member):
-        m, crew = await self._get_user_crew(interaction.user.id)
+        (m, crew), (em, ecrew) = await asyncio.gather(
+            self._get_user_crew(interaction.user.id),
+            self._get_user_crew(ennemi.id),
+        )
         if not crew:
             await interaction.response.send_message("❌ Tu n'es dans aucun équipage.", ephemeral=True)
             return
@@ -838,7 +845,6 @@ class CrewCog(CrewTasks, commands.Cog):
         if not war or war['status'] != 'active':
             await interaction.response.send_message("❌ Ton équipage n'est pas en guerre.", ephemeral=True)
             return
-        em, ecrew = await self._get_user_crew(ennemi.id)
         if not ecrew:
             await interaction.response.send_message("❌ Cet ennemi n'est dans aucun équipage.", ephemeral=True)
             return
@@ -863,11 +869,12 @@ class CrewCog(CrewTasks, commands.Cog):
         won    = random.random() < 0.5
         result = 'won' if won else 'lost'
         pts    = 10 if won else 0
-        await db.add_battle(war['id'], interaction.user.id, crew['id'], ennemi.id, result, pts)
+        coros  = [db.add_battle(war['id'], interaction.user.id, crew['id'], ennemi.id, result, pts)]
         if pts:
-            await db.update_war_score(war['id'], crew['id'], pts)
+            coros.append(db.update_war_score(war['id'], crew['id'], pts))
         if won:
-            await award_xp(self.bot, crew['id'], XP_DUEL_WIN)
+            coros.append(award_xp(self.bot, crew['id'], XP_DUEL_WIN))
+        await asyncio.gather(*coros)
         outcome = "✅ Victoire" if won else "❌ Défaite"
         war_updated = await db.get_war(war['id'])
         embed = discord.Embed(
@@ -895,15 +902,11 @@ class CrewCog(CrewTasks, commands.Cog):
         if not crew:
             await interaction.response.send_message("❌ Tu n'es dans aucun équipage.", ephemeral=True)
             return
-        war = await db.get_active_war(crew['id'])
+        war, crew_a, crew_b = await db.get_active_war_with_crews(crew['id'])
         if not war:
             await interaction.response.send_message("❌ Aucune guerre en cours.", ephemeral=True)
             return
-        crew_a, crew_b, top = await asyncio.gather(
-            db.get_crew(war['attacker_id']),
-            db.get_crew(war['defender_id']),
-            db.get_war_top_contributors(war['id']),
-        )
+        top = await db.get_war_top_contributors(war['id'])
         await interaction.response.send_message(embed=war_status_embed(war, crew_a, crew_b, top))
 
 
