@@ -39,9 +39,12 @@ PARENT_CAT  = int(os.environ.get("CREWS_CATEGORY_PARENT_ID", "0")) or None
 
 
 class CrewCog(CrewTasks, commands.Cog):
-    crew     = app_commands.Group(name="equipage", description="🏴‍☠️ Système d'équipages", guild_ids=GUILD_IDS)
-    alliance = app_commands.Group(name="alliance", description="🤝 Alliances", parent=crew)
-    war      = app_commands.Group(name="war",      description="⚔️ Guerres",    parent=crew)
+    crew     = app_commands.Group(name="equipage",  description="🏴‍☠️ Système d'équipages", guild_ids=GUILD_IDS)
+    gestion  = app_commands.Group(name="gestion",   description="⚙️ Gérer l'équipage",     parent=crew)
+    equipe   = app_commands.Group(name="equipe",    description="👥 Gérer les membres",     parent=crew)
+    tresor   = app_commands.Group(name="tresor",    description="🏦 Trésor de l'équipage",  parent=crew)
+    alliance = app_commands.Group(name="alliance",  description="🤝 Alliances",             parent=crew)
+    war      = app_commands.Group(name="war",       description="⚔️ Guerres",               parent=crew)
 
     def __init__(self, bot: commands.Bot):
         self.bot = bot
@@ -70,11 +73,152 @@ class CrewCog(CrewTasks, commands.Cog):
             except Exception:
                 pass
 
-    # ── /crew creer ───────────────────────────────────────────────
+    # ══════════════════════════════════════════════════════════════
+    # COMMANDES PUBLIQUES  (/equipage ...)
+    # ══════════════════════════════════════════════════════════════
 
-    @crew.command(name="creer", description="Créer un nouvel équipage (50 000 🍊)")
+    @crew.command(name="info", description="Informations sur un équipage")
+    @app_commands.describe(nom="Nom de l'équipage (vide = le tien)")
+    async def crew_info(self, interaction: discord.Interaction, nom: str = None):
+        await interaction.response.defer()
+        if nom:
+            crew = await db.get_crew_by_name(nom)
+        else:
+            m, crew = await self._get_user_crew(interaction.user.id)
+        if not crew:
+            await interaction.followup.send("❌ Équipage introuvable.", ephemeral=True)
+            return
+        members   = await db.get_crew_members(crew['id'])
+        alliances = await db.get_active_alliances(crew['id'])
+        await interaction.followup.send(embed=crew_info_embed(crew, members, alliances, interaction.guild))
 
-    async def crew_creer(self, interaction: discord.Interaction):
+    @crew.command(name="liste", description="Liste tous les équipages")
+    @app_commands.describe(recrutement="Afficher uniquement ceux qui recrutent")
+    async def crew_liste(self, interaction: discord.Interaction, recrutement: bool = False):
+        await interaction.response.defer()
+        crews, total = await db.list_crews(recrutement, 0, 10)
+        embed = leaderboard_embed(crews)
+        embed.title = "🏴‍☠️ Liste des Équipages"
+        if recrutement:
+            embed.title += " (recrutement ouvert)"
+        view = CrewListView(crews, total, recruiting_only=recrutement)
+        await interaction.followup.send(embed=embed, view=view)
+
+    @crew.command(name="leaderboard", description="Top 20 équipages par prime cumulée")
+    async def crew_leaderboard(self, interaction: discord.Interaction):
+        await interaction.response.defer()
+        crews = await db.leaderboard_crews(20)
+        from .leaderboard import generate_leaderboard_image
+        f = generate_leaderboard_image(crews)
+        embed = leaderboard_embed(crews)
+        await interaction.followup.send(embed=embed, file=f)
+
+    @crew.command(name="niveau", description="Progression XP et niveau de ton équipage")
+    async def crew_niveau(self, interaction: discord.Interaction):
+        _, crew = await self._get_user_crew(interaction.user.id)
+        if not crew:
+            await interaction.response.send_message("❌ Tu n'es dans aucun équipage.", ephemeral=True)
+            return
+        await interaction.response.send_message(embed=crew_level_embed(crew))
+
+    @crew.command(name="historique", description="Derniers événements de ton équipage")
+    async def crew_historique(self, interaction: discord.Interaction):
+        _, crew = await self._get_user_crew(interaction.user.id)
+        if not crew:
+            await interaction.response.send_message("❌ Tu n'es dans aucun équipage.", ephemeral=True)
+            return
+        events = await db.get_history(crew['id'])
+        await interaction.response.send_message(embed=history_embed(crew, events))
+
+    @crew.command(name="stats", description="Contribution d'un membre")
+    @app_commands.describe(membre="Le membre à afficher")
+    async def crew_stats(self, interaction: discord.Interaction, membre: discord.Member = None):
+        target = membre or interaction.user
+        mem    = await db.get_member(target.id)
+        if not mem:
+            await interaction.response.send_message(f"❌ <@{target.id}> n'est dans aucun équipage.", ephemeral=True)
+            return
+        crew = await db.get_crew(mem['crew_id'])
+        pos  = mem['position']
+        embed = discord.Embed(title=f"📊 Stats — {target.display_name}", color=CREW_COLOR)
+        embed.set_thumbnail(url=target.display_avatar.url)
+        embed.add_field(name="Équipage",      value=crew['name'] if crew else "?", inline=True)
+        embed.add_field(name="Poste",         value=f"{POSITIONS[pos]['emoji']} {pos}", inline=True)
+        embed.add_field(name="Contribution",  value=f"**{fmt_berries(mem['contribution'])} 🍊**", inline=True)
+        embed.add_field(name="Membre depuis", value=f"<t:{int(mem['joined_at'].timestamp())}:D>", inline=True)
+        await interaction.response.send_message(embed=embed)
+
+    @crew.command(name="candidater", description="Candidater à rejoindre un équipage")
+    @app_commands.describe(crew_name="Nom de l'équipage")
+    async def crew_candidater(self, interaction: discord.Interaction, crew_name: str):
+        if await db.get_member(interaction.user.id):
+            await interaction.response.send_message("❌ Tu es déjà dans un équipage.", ephemeral=True)
+            return
+        target_crew = await db.get_crew_by_name(crew_name)
+        if not target_crew:
+            await interaction.response.send_message("❌ Équipage introuvable.", ephemeral=True)
+            return
+        if not target_crew['is_recruiting']:
+            await interaction.response.send_message("❌ Cet équipage ne recrute pas.", ephemeral=True)
+            return
+        existing = await db.get_user_pending_application(interaction.user.id, target_crew['id'])
+        if existing:
+            await interaction.response.send_message("❌ Tu as déjà une candidature en attente.", ephemeral=True)
+            return
+
+        async def _submit(inter, message):
+            await inter.response.defer(ephemeral=True)
+            await db.create_application(target_crew['id'], interaction.user.id, message)
+            cap = interaction.guild.get_member(target_crew['captain_id'])
+            if cap:
+                try:
+                    await cap.send(
+                        embed=discord.Embed(
+                            title=f"📋 Nouvelle candidature — {target_crew['name']}",
+                            description=f"<@{interaction.user.id}> souhaite rejoindre ton équipage.\n\n*{message or 'Aucun message.'}*",
+                            color=CREW_COLOR,
+                        )
+                    )
+                except discord.Forbidden:
+                    pass
+            await inter.followup.send(f"✅ Ta candidature à **{target_crew['name']}** a été envoyée !", ephemeral=True)
+
+        await interaction.response.send_modal(CandidatureModal(_submit))
+
+    @crew.command(name="quitter", description="Quitter ton équipage")
+    async def crew_quitter(self, interaction: discord.Interaction):
+        m, crew = await self._get_user_crew(interaction.user.id)
+        if not crew:
+            await interaction.response.send_message("❌ Tu n'es dans aucun équipage.", ephemeral=True)
+            return
+        if crew['captain_id'] == interaction.user.id:
+            await interaction.response.send_message(
+                "❌ Tu es capitaine. Transfère d'abord le commandement avec `/equipage equipe transfert` "
+                "ou dissous l'équipage avec `/equipage gestion dissoudre`.",
+                ephemeral=True,
+            )
+            return
+        view = ConfirmView(interaction.user.id, "🚪 Quitter")
+        await interaction.response.send_message(
+            f"Tu vas quitter **{crew['name']}**. Confirmer ?", view=view, ephemeral=True
+        )
+        await view.wait()
+        if not view.confirmed:
+            return
+        await db.remove_member(interaction.user.id)
+        await db.add_history(crew['id'], interaction.user.id, 'left')
+        if crew.get('role_id'):
+            await remove_role(interaction.guild, interaction.user.id, crew['role_id'])
+        await interaction.edit_original_response(
+            content=f"✅ Tu as quitté **{crew['name']}**.", view=None
+        )
+
+    # ══════════════════════════════════════════════════════════════
+    # /equipage gestion ...
+    # ══════════════════════════════════════════════════════════════
+
+    @gestion.command(name="creer", description="Créer un nouvel équipage (50 000 🍊)")
+    async def gestion_creer(self, interaction: discord.Interaction):
         uid = interaction.user.id
         existing_m = await db.get_member(uid)
         if existing_m:
@@ -134,79 +278,8 @@ class CrewCog(CrewTasks, commands.Cog):
 
         await interaction.response.send_modal(CreerCrewModal(_submit))
 
-    # ── /crew info ────────────────────────────────────────────────
-
-    @crew.command(name="info", description="Informations sur un équipage")
-    @app_commands.describe(nom="Nom de l'équipage (vide = le tien)")
-
-    async def crew_info(self, interaction: discord.Interaction, nom: str = None):
-        await interaction.response.defer()
-        if nom:
-            crew = await db.get_crew_by_name(nom)
-        else:
-            m, crew = await self._get_user_crew(interaction.user.id)
-        if not crew:
-            await interaction.followup.send("❌ Équipage introuvable.", ephemeral=True)
-            return
-        members   = await db.get_crew_members(crew['id'])
-        alliances = await db.get_active_alliances(crew['id'])
-        await interaction.followup.send(embed=crew_info_embed(crew, members, alliances, interaction.guild))
-
-    # ── /crew liste ───────────────────────────────────────────────
-
-    @crew.command(name="liste", description="Liste tous les équipages")
-    @app_commands.describe(recrutement="Afficher uniquement ceux qui recrutent")
-
-    async def crew_liste(self, interaction: discord.Interaction, recrutement: bool = False):
-        await interaction.response.defer()
-        crews, total = await db.list_crews(recrutement, 0, 10)
-        embed = leaderboard_embed(crews)
-        embed.title = "🏴‍☠️ Liste des Équipages"
-        if recrutement:
-            embed.title += " (recrutement ouvert)"
-        view = CrewListView(crews, total, recruiting_only=recrutement)
-        await interaction.followup.send(embed=embed, view=view)
-
-    # ── /crew leaderboard ─────────────────────────────────────────
-
-    @crew.command(name="leaderboard", description="Top 20 équipages par prime cumulée")
-
-    async def crew_leaderboard(self, interaction: discord.Interaction):
-        await interaction.response.defer()
-        crews = await db.leaderboard_crews(20)
-        from .leaderboard import generate_leaderboard_image
-        f = generate_leaderboard_image(crews)
-        embed = leaderboard_embed(crews)
-        await interaction.followup.send(embed=embed, file=f)
-
-    # ── /crew niveau ──────────────────────────────────────────────
-
-    @crew.command(name="niveau", description="Progression XP et niveau de ton équipage")
-
-    async def crew_niveau(self, interaction: discord.Interaction):
-        _, crew = await self._get_user_crew(interaction.user.id)
-        if not crew:
-            await interaction.response.send_message("❌ Tu n'es dans aucun équipage.", ephemeral=True)
-            return
-        await interaction.response.send_message(embed=crew_level_embed(crew))
-
-    # ── /crew historique ──────────────────────────────────────────
-
-    @crew.command(name="historique", description="Derniers événements de ton équipage")
-
-    async def crew_historique(self, interaction: discord.Interaction):
-        _, crew = await self._get_user_crew(interaction.user.id)
-        if not crew:
-            await interaction.response.send_message("❌ Tu n'es dans aucun équipage.", ephemeral=True)
-            return
-        events = await db.get_history(crew['id'])
-        await interaction.response.send_message(embed=history_embed(crew, events))
-
-    # ── /crew dissoudre ───────────────────────────────────────────
-
-    @crew.command(name="dissoudre", description="Dissoudre ton équipage (capitaine seulement)")
-
-    async def crew_dissoudre(self, interaction: discord.Interaction):
+    @gestion.command(name="dissoudre", description="Dissoudre ton équipage (capitaine seulement)")
+    async def gestion_dissoudre(self, interaction: discord.Interaction):
         m, crew = await self._get_user_crew(interaction.user.id)
         if not crew:
             await interaction.response.send_message("❌ Tu n'es dans aucun équipage.", ephemeral=True)
@@ -250,33 +323,8 @@ class CrewCog(CrewTasks, commands.Cog):
             view=None,
         )
 
-    # ── /crew drapeau ─────────────────────────────────────────────
-
-    @crew.command(name="drapeau", description="Définir le drapeau de l'équipage (lien image)")
-    @app_commands.describe(url="URL de l'image (PNG/JPG/GIF, max 5MB)")
-
-    async def crew_drapeau(self, interaction: discord.Interaction, url: str):
-        m, crew = await self._get_user_crew(interaction.user.id)
-        if not crew:
-            await interaction.response.send_message("❌ Tu n'es dans aucun équipage.", ephemeral=True)
-            return
-        if not has_perm(m['position'], 'manage_all'):
-            await interaction.response.send_message("❌ Seul le capitaine peut changer le drapeau.", ephemeral=True)
-            return
-        if not url.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.webp')):
-            await interaction.response.send_message("❌ Format non supporté (PNG, JPG, GIF, WEBP).", ephemeral=True)
-            return
-        await db.update_crew(crew['id'], flag_url=url)
-        await interaction.response.send_message(
-            embed=discord.Embed(title="🏴‍☠️ Drapeau mis à jour !", color=0x2ECC71).set_image(url=url),
-            ephemeral=True,
-        )
-
-    # ── /crew renommer ────────────────────────────────────────────
-
-    @crew.command(name="renommer", description="Renommer l'équipage (20 000 🍊, cooldown 30j)")
-
-    async def crew_renommer(self, interaction: discord.Interaction):
+    @gestion.command(name="renommer", description="Renommer l'équipage (20 000 🍊, cooldown 30j)")
+    async def gestion_renommer(self, interaction: discord.Interaction):
         m, crew = await self._get_user_crew(interaction.user.id)
         if not crew:
             await interaction.response.send_message("❌ Tu n'es dans aucun équipage.", ephemeral=True)
@@ -301,12 +349,28 @@ class CrewCog(CrewTasks, commands.Cog):
 
         await interaction.response.send_modal(RenommerModal(_submit))
 
-    # ── /crew recrutement ─────────────────────────────────────────
+    @gestion.command(name="drapeau", description="Définir le drapeau de l'équipage (lien image)")
+    @app_commands.describe(url="URL de l'image (PNG/JPG/GIF, max 5MB)")
+    async def gestion_drapeau(self, interaction: discord.Interaction, url: str):
+        m, crew = await self._get_user_crew(interaction.user.id)
+        if not crew:
+            await interaction.response.send_message("❌ Tu n'es dans aucun équipage.", ephemeral=True)
+            return
+        if not has_perm(m['position'], 'manage_all'):
+            await interaction.response.send_message("❌ Seul le capitaine peut changer le drapeau.", ephemeral=True)
+            return
+        if not url.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.webp')):
+            await interaction.response.send_message("❌ Format non supporté (PNG, JPG, GIF, WEBP).", ephemeral=True)
+            return
+        await db.update_crew(crew['id'], flag_url=url)
+        await interaction.response.send_message(
+            embed=discord.Embed(title="🏴‍☠️ Drapeau mis à jour !", color=0x2ECC71).set_image(url=url),
+            ephemeral=True,
+        )
 
-    @crew.command(name="recrutement", description="Activer ou désactiver le recrutement")
+    @gestion.command(name="recrutement", description="Activer ou désactiver le recrutement")
     @app_commands.describe(actif="True = ouvert, False = fermé")
-
-    async def crew_recrutement(self, interaction: discord.Interaction, actif: bool):
+    async def gestion_recrutement(self, interaction: discord.Interaction, actif: bool):
         m, crew = await self._get_user_crew(interaction.user.id)
         if not crew:
             await interaction.response.send_message("❌ Tu n'es dans aucun équipage.", ephemeral=True)
@@ -318,11 +382,12 @@ class CrewCog(CrewTasks, commands.Cog):
         status = "✅ Ouvert" if actif else "🔒 Fermé"
         await interaction.response.send_message(f"Recrutement : **{status}**", ephemeral=True)
 
-    # ── /crew membres ─────────────────────────────────────────────
+    # ══════════════════════════════════════════════════════════════
+    # /equipage equipe ...
+    # ══════════════════════════════════════════════════════════════
 
-    @crew.command(name="membres", description="Liste des membres et leurs postes")
-
-    async def crew_membres(self, interaction: discord.Interaction):
+    @equipe.command(name="membres", description="Liste des membres et leurs postes")
+    async def equipe_membres(self, interaction: discord.Interaction):
         _, crew = await self._get_user_crew(interaction.user.id)
         if not crew:
             await interaction.response.send_message("❌ Tu n'es dans aucun équipage.", ephemeral=True)
@@ -342,34 +407,10 @@ class CrewCog(CrewTasks, commands.Cog):
         )
         await interaction.response.send_message(embed=embed)
 
-    # ── /crew stats ───────────────────────────────────────────────
-
-    @crew.command(name="stats", description="Contribution d'un membre")
-    @app_commands.describe(membre="Le membre à afficher")
-
-    async def crew_stats(self, interaction: discord.Interaction, membre: discord.Member = None):
-        target = membre or interaction.user
-        mem    = await db.get_member(target.id)
-        if not mem:
-            await interaction.response.send_message(f"❌ <@{target.id}> n'est dans aucun équipage.", ephemeral=True)
-            return
-        crew = await db.get_crew(mem['crew_id'])
-        pos  = mem['position']
-        embed = discord.Embed(title=f"📊 Stats — {target.display_name}", color=CREW_COLOR)
-        embed.set_thumbnail(url=target.display_avatar.url)
-        embed.add_field(name="Équipage",     value=crew['name'] if crew else "?", inline=True)
-        embed.add_field(name="Poste",        value=f"{POSITIONS[pos]['emoji']} {pos}", inline=True)
-        embed.add_field(name="Contribution", value=f"**{fmt_berries(mem['contribution'])} 🍊**", inline=True)
-        embed.add_field(name="Membre depuis", value=f"<t:{int(mem['joined_at'].timestamp())}:D>", inline=True)
-        await interaction.response.send_message(embed=embed)
-
-    # ── /crew kick ────────────────────────────────────────────────
-
-    @crew.command(name="kick", description="Expulser un membre de l'équipage")
+    @equipe.command(name="kick", description="Expulser un membre de l'équipage")
     @app_commands.describe(membre="Le membre à expulser", raison="Raison (optionnel)")
-
-    async def crew_kick(self, interaction: discord.Interaction,
-                         membre: discord.Member, raison: str = None):
+    async def equipe_kick(self, interaction: discord.Interaction,
+                          membre: discord.Member, raison: str = None):
         m, crew = await self._get_user_crew(interaction.user.id)
         if not crew:
             await interaction.response.send_message("❌ Tu n'es dans aucun équipage.", ephemeral=True)
@@ -399,44 +440,11 @@ class CrewCog(CrewTasks, commands.Cog):
             f"✅ <@{membre.id}> a été expulsé de **{crew['name']}**.", ephemeral=True
         )
 
-    # ── /crew quitter ─────────────────────────────────────────────
-
-    @crew.command(name="quitter", description="Quitter ton équipage")
-
-    async def crew_quitter(self, interaction: discord.Interaction):
-        m, crew = await self._get_user_crew(interaction.user.id)
-        if not crew:
-            await interaction.response.send_message("❌ Tu n'es dans aucun équipage.", ephemeral=True)
-            return
-        if crew['captain_id'] == interaction.user.id:
-            await interaction.response.send_message(
-                "❌ Tu es capitaine. Transfère d'abord le commandement avec `/crew transfert` ou dissous l'équipage avec `/crew dissoudre`.",
-                ephemeral=True,
-            )
-            return
-        view = ConfirmView(interaction.user.id, "🚪 Quitter")
-        await interaction.response.send_message(
-            f"Tu vas quitter **{crew['name']}**. Confirmer ?", view=view, ephemeral=True
-        )
-        await view.wait()
-        if not view.confirmed:
-            return
-        await db.remove_member(interaction.user.id)
-        await db.add_history(crew['id'], interaction.user.id, 'left')
-        if crew.get('role_id'):
-            await remove_role(interaction.guild, interaction.user.id, crew['role_id'])
-        await interaction.edit_original_response(
-            content=f"✅ Tu as quitté **{crew['name']}**.", view=None
-        )
-
-    # ── /crew promouvoir ──────────────────────────────────────────
-
-    @crew.command(name="promouvoir", description="Attribuer un poste à un membre")
+    @equipe.command(name="promouvoir", description="Attribuer un poste à un membre")
     @app_commands.describe(membre="Le membre", poste="Le poste à attribuer")
     @app_commands.choices(poste=POSITION_CHOICES)
-
-    async def crew_promouvoir(self, interaction: discord.Interaction,
-                               membre: discord.Member, poste: str):
+    async def equipe_promouvoir(self, interaction: discord.Interaction,
+                                membre: discord.Member, poste: str):
         m, crew = await self._get_user_crew(interaction.user.id)
         if not crew:
             await interaction.response.send_message("❌ Tu n'es dans aucun équipage.", ephemeral=True)
@@ -463,12 +471,9 @@ class CrewCog(CrewTasks, commands.Cog):
             f"✅ <@{membre.id}> est maintenant **{emoji} {poste}** !", ephemeral=True
         )
 
-    # ── /crew transfert ───────────────────────────────────────────
-
-    @crew.command(name="transfert", description="Transférer le commandement à un autre membre")
+    @equipe.command(name="transfert", description="Transférer le commandement à un autre membre")
     @app_commands.describe(membre="Le nouveau capitaine")
-
-    async def crew_transfert(self, interaction: discord.Interaction, membre: discord.Member):
+    async def equipe_transfert(self, interaction: discord.Interaction, membre: discord.Member):
         m, crew = await self._get_user_crew(interaction.user.id)
         if not crew:
             await interaction.response.send_message("❌ Tu n'es dans aucun équipage.", ephemeral=True)
@@ -494,51 +499,8 @@ class CrewCog(CrewTasks, commands.Cog):
         await db.add_history(crew['id'], membre.id, 'promoted', 'nouveau capitaine')
         await interaction.edit_original_response(content=f"✅ <@{membre.id}> est le nouveau capitaine !", view=None)
 
-    # ── /crew candidater ──────────────────────────────────────────
-
-    @crew.command(name="candidater", description="Candidater à rejoindre un équipage")
-    @app_commands.describe(crew_name="Nom de l'équipage")
-
-    async def crew_candidater(self, interaction: discord.Interaction, crew_name: str):
-        if await db.get_member(interaction.user.id):
-            await interaction.response.send_message("❌ Tu es déjà dans un équipage.", ephemeral=True)
-            return
-        target_crew = await db.get_crew_by_name(crew_name)
-        if not target_crew:
-            await interaction.response.send_message("❌ Équipage introuvable.", ephemeral=True)
-            return
-        if not target_crew['is_recruiting']:
-            await interaction.response.send_message("❌ Cet équipage ne recrute pas.", ephemeral=True)
-            return
-        existing = await db.get_user_pending_application(interaction.user.id, target_crew['id'])
-        if existing:
-            await interaction.response.send_message("❌ Tu as déjà une candidature en attente.", ephemeral=True)
-            return
-
-        async def _submit(inter, message):
-            await inter.response.defer(ephemeral=True)
-            await db.create_application(target_crew['id'], interaction.user.id, message)
-            cap = interaction.guild.get_member(target_crew['captain_id'])
-            if cap:
-                try:
-                    await cap.send(
-                        embed=discord.Embed(
-                            title=f"📋 Nouvelle candidature — {target_crew['name']}",
-                            description=f"<@{interaction.user.id}> souhaite rejoindre ton équipage.\n\n*{message or 'Aucun message.'}*",
-                            color=CREW_COLOR,
-                        )
-                    )
-                except discord.Forbidden:
-                    pass
-            await inter.followup.send(f"✅ Ta candidature à **{target_crew['name']}** a été envoyée !", ephemeral=True)
-
-        await interaction.response.send_modal(CandidatureModal(_submit))
-
-    # ── /crew candidatures ────────────────────────────────────────
-
-    @crew.command(name="candidatures", description="Gérer les candidatures de l'équipage")
-
-    async def crew_candidatures(self, interaction: discord.Interaction):
+    @equipe.command(name="candidatures", description="Gérer les candidatures de l'équipage")
+    async def equipe_candidatures(self, interaction: discord.Interaction):
         m, crew = await self._get_user_crew(interaction.user.id)
         if not crew:
             await interaction.response.send_message("❌ Tu n'es dans aucun équipage.", ephemeral=True)
@@ -554,12 +516,22 @@ class CrewCog(CrewTasks, commands.Cog):
         view  = ApplicationsView(apps, crew, self.bot)
         await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
-    # ── /crew depot ───────────────────────────────────────────────
+    # ══════════════════════════════════════════════════════════════
+    # /equipage tresor ...
+    # ══════════════════════════════════════════════════════════════
 
-    @crew.command(name="depot", description="Déposer des Berrys dans le trésor de l'équipage")
+    @tresor.command(name="voir", description="Solde et mouvements du trésor")
+    async def tresor_voir(self, interaction: discord.Interaction):
+        _, crew = await self._get_user_crew(interaction.user.id)
+        if not crew:
+            await interaction.response.send_message("❌ Tu n'es dans aucun équipage.", ephemeral=True)
+            return
+        logs = await db.get_treasury_logs(crew['id'])
+        await interaction.response.send_message(embed=treasury_embed(crew, logs))
+
+    @tresor.command(name="depot", description="Déposer des Berrys dans le trésor de l'équipage")
     @app_commands.describe(montant="Montant à déposer")
-
-    async def crew_depot(self, interaction: discord.Interaction, montant: int):
+    async def tresor_depot(self, interaction: discord.Interaction, montant: int):
         m, crew = await self._get_user_crew(interaction.user.id)
         if not crew:
             await interaction.response.send_message("❌ Tu n'es dans aucun équipage.", ephemeral=True)
@@ -585,11 +557,8 @@ class CrewCog(CrewTasks, commands.Cog):
             ephemeral=True,
         )
 
-    # ── /crew retrait ─────────────────────────────────────────────
-
-    @crew.command(name="retrait", description="Retirer des Berrys du trésor (capitaine/second)")
-
-    async def crew_retrait(self, interaction: discord.Interaction):
+    @tresor.command(name="retrait", description="Retirer des Berrys du trésor (capitaine/second)")
+    async def tresor_retrait(self, interaction: discord.Interaction):
         m, crew = await self._get_user_crew(interaction.user.id)
         if not crew:
             await interaction.response.send_message("❌ Tu n'es dans aucun équipage.", ephemeral=True)
@@ -612,25 +581,10 @@ class CrewCog(CrewTasks, commands.Cog):
 
         await interaction.response.send_modal(RetraitModal(_submit))
 
-    # ── /crew tresor ──────────────────────────────────────────────
-
-    @crew.command(name="tresor", description="Solde et mouvements du trésor")
-
-    async def crew_tresor(self, interaction: discord.Interaction):
-        _, crew = await self._get_user_crew(interaction.user.id)
-        if not crew:
-            await interaction.response.send_message("❌ Tu n'es dans aucun équipage.", ephemeral=True)
-            return
-        logs = await db.get_treasury_logs(crew['id'])
-        await interaction.response.send_message(embed=treasury_embed(crew, logs))
-
-    # ── /crew don ─────────────────────────────────────────────────
-
-    @crew.command(name="don", description="Distribuer du trésor à un membre (capitaine/second)")
+    @tresor.command(name="don", description="Distribuer du trésor à un membre (capitaine/second)")
     @app_commands.describe(membre="Bénéficiaire", montant="Montant en Berrys")
-
-    async def crew_don(self, interaction: discord.Interaction,
-                        membre: discord.Member, montant: int):
+    async def tresor_don(self, interaction: discord.Interaction,
+                         membre: discord.Member, montant: int):
         m, crew = await self._get_user_crew(interaction.user.id)
         if not crew:
             await interaction.response.send_message("❌ Tu n'es dans aucun équipage.", ephemeral=True)
@@ -652,11 +606,12 @@ class CrewCog(CrewTasks, commands.Cog):
             f"✅ **{fmt_berries(montant)} 🍊** envoyés à <@{membre.id}> depuis le trésor.", ephemeral=True
         )
 
-    # ── /crew alliance proposer ───────────────────────────────────
+    # ══════════════════════════════════════════════════════════════
+    # /equipage alliance ...
+    # ══════════════════════════════════════════════════════════════
 
     @alliance.command(name="proposer", description="Proposer une alliance à un équipage")
     @app_commands.describe(crew_name="Nom de l'équipage cible")
-
     async def alliance_proposer(self, interaction: discord.Interaction, crew_name: str):
         m, crew = await self._get_user_crew(interaction.user.id)
         if not crew:
@@ -695,11 +650,8 @@ class CrewCog(CrewTasks, commands.Cog):
             f"✅ Proposition d'alliance envoyée à **{target['name']}**.", ephemeral=True
         )
 
-    # ── /crew alliance rompre ─────────────────────────────────────
-
     @alliance.command(name="rompre", description="Rompre une alliance (compte comme trahison)")
     @app_commands.describe(crew_name="Nom de l'équipage allié")
-
     async def alliance_rompre(self, interaction: discord.Interaction, crew_name: str):
         m, crew = await self._get_user_crew(interaction.user.id)
         if not crew:
@@ -737,10 +689,7 @@ class CrewCog(CrewTasks, commands.Cog):
             content=f"Alliance avec **{target['name']}** rompue.", view=None
         )
 
-    # ── /crew alliances ───────────────────────────────────────────
-
     @alliance.command(name="liste", description="Alliances actives de ton équipage")
-
     async def alliance_liste(self, interaction: discord.Interaction):
         _, crew = await self._get_user_crew(interaction.user.id)
         if not crew:
@@ -754,7 +703,9 @@ class CrewCog(CrewTasks, commands.Cog):
         ally_crews = await db.get_crews_by_ids(other_ids)
         await interaction.response.send_message(embed=alliances_embed(crew, alliances, ally_crews))
 
-    # ── /crew war declarer ────────────────────────────────────────
+    # ══════════════════════════════════════════════════════════════
+    # /equipage war ...
+    # ══════════════════════════════════════════════════════════════
 
     @war.command(name="declarer", description="Déclarer la guerre à un équipage")
     @app_commands.describe(
@@ -762,9 +713,8 @@ class CrewCog(CrewTasks, commands.Cog):
         mise="Mise de guerre (min 10 000 🍊)",
         duree_h="Durée en heures (12-48)",
     )
-
     async def war_declarer(self, interaction: discord.Interaction,
-                            crew_name: str, mise: int, duree_h: int):
+                           crew_name: str, mise: int, duree_h: int):
         m, crew = await self._get_user_crew(interaction.user.id)
         if not crew:
             await interaction.response.send_message("❌ Tu n'es dans aucun équipage.", ephemeral=True)
@@ -831,11 +781,8 @@ class CrewCog(CrewTasks, commands.Cog):
             f"⚔️ Guerre déclarée à **{target['name']}** ! Mise bloquée : **{fmt_berries(mise)} 🍊**.", ephemeral=True
         )
 
-    # ── /crew war attaquer ────────────────────────────────────────
-
     @war.command(name="attaquer", description="Défier un ennemi en duel pendant la guerre (cooldown 30 min)")
     @app_commands.describe(ennemi="Membre ennemi à défier")
-
     async def war_attaquer(self, interaction: discord.Interaction, ennemi: discord.Member):
         m, crew = await self._get_user_crew(interaction.user.id)
         if not crew:
@@ -896,10 +843,7 @@ class CrewCog(CrewTasks, commands.Cog):
             )
         await interaction.response.send_message(embed=embed)
 
-    # ── /crew war stats ───────────────────────────────────────────
-
     @war.command(name="stats", description="Score live de la guerre en cours")
-
     async def war_stats(self, interaction: discord.Interaction):
         _, crew = await self._get_user_crew(interaction.user.id)
         if not crew:
