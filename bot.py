@@ -4635,18 +4635,16 @@ _SHIELD_ITEM = {
     "style": discord.ButtonStyle.success,
 }
 
-# Sons d'entrée — mets tes fichiers MP3/WAV dans le dossier sounds/ puis ajoute une entrée ici
 _SOUND_ITEMS: list[dict] = [
-    # Exemple :
     {"id": "sound_shinobu", "emoji": "🌸", "name": "Shinobu — Moshi Moshi", "price": 1_500_000, "file": "shinobu_moshi_moshi.mp3", "type": "entry_sound", "style": discord.ButtonStyle.primary},
-    {"id": "sound_indian",  "emoji": "🪘", "name": "L Thème",    "price": 1_500_000, "file": "indian_song.mp3",   "type": "entry_sound", "style": discord.ButtonStyle.primary},
-    {"id": "sound_spies",   "emoji": "🍃", "name": "Naruto OST", "price": 1_500_000, "file": "totaly_spies.mp3",  "type": "entry_sound", "style": discord.ButtonStyle.primary},
+    {"id": "sound_indian",  "emoji": "🪘", "name": "L Thème",               "price": 1_500_000, "file": "indian_song.mp3",         "type": "entry_sound", "style": discord.ButtonStyle.primary},
+    {"id": "sound_spies",   "emoji": "🍃", "name": "Naruto OST",             "price": 1_500_000, "file": "totaly_spies.mp3",        "type": "entry_sound", "style": discord.ButtonStyle.primary},
 ]
 
 _BOOST_ITEMS = [
-    {"id": "boost_1h",  "emoji": "📢", "name": "Boost Vocal 1h",  "hours": 1,  "price": 800_000,   "type": "voice_boost", "style": discord.ButtonStyle.primary},
-    {"id": "boost_4h",  "emoji": "📣", "name": "Boost Vocal 4h",  "hours": 4,  "price": 2_500_000, "type": "voice_boost", "style": discord.ButtonStyle.primary},
-    {"id": "boost_24h", "emoji": "🔊", "name": "Boost Vocal 24h", "hours": 24, "price": 6_000_000, "type": "voice_boost", "style": discord.ButtonStyle.danger},
+    {"id": "boost_1h",  "emoji": "📢", "name": "Boost 1h",  "hours": 1,  "price": 800_000,   "type": "voice_boost", "style": discord.ButtonStyle.primary},
+    {"id": "boost_4h",  "emoji": "📣", "name": "Boost 4h",  "hours": 4,  "price": 2_500_000, "type": "voice_boost", "style": discord.ButtonStyle.primary},
+    {"id": "boost_24h", "emoji": "🔊", "name": "Boost 24h", "hours": 24, "price": 6_000_000, "type": "voice_boost", "style": discord.ButtonStyle.danger},
 ]
 
 _SHOP_ITEMS = _TICKET_TIERS + [_SHIELD_ITEM] + _SOUND_ITEMS + _BOOST_ITEMS
@@ -4715,82 +4713,94 @@ def _remove_item_stock(user_data: dict, item_id: str, qty: int) -> bool:
         user_data["pseudo_tickets"] = tickets
     return True
 
-# Remplace par tes URLs (laisser "" = pas d'image, aucune erreur)
-_SHOP_BANNER = ""  # artwork OP horizontal, ex: "https://i.imgur.com/xxx.jpg"
-_SHOP_THUMB  = ""  # icône berry/pièce,    ex: "https://i.imgur.com/yyy.png"
-
 
 def _shop_embed(uid: str) -> discord.Embed:
     bal           = get_berrys(uid)
     user_data     = get_user(_CACHE, uid)
     tickets       = _get_tickets(user_data)
-    current_sound = user_data.get("entry_sound", "")
-    sound_uses    = user_data.get("entry_sound_uses", 0)
     shields       = user_data.get("nick_shields", 0)
     today         = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     daily         = user_data.get("ticket_daily", {"date": "", "count": 0})
     daily_used    = daily.get("count", 0) if daily.get("date") == today else 0
+    current_sound = user_data.get("entry_sound", "")
+    sound_uses    = user_data.get("entry_sound_uses", 0)
+
+    def _badge(n): return f"**×{n}**" if n > 0 else "*épuisé*"
 
     e = discord.Embed(
-        title="Bram's Marketplace",
-        description="Solde : **" + _fmt_berry(bal) + " Berrys**",
+        title="🏴‍☠️  Bram's Shop",
+        description=f"💰 Solde : **{_fmt_berry(bal)} 🍊**",
         color=discord.Color.from_rgb(255, 184, 0),
     )
 
-    sep = "\n"
-    lines = ["Utilisés aujourd'hui : **" + str(daily_used) + "/2**", ""]
+    ticket_lines = []
     for t in _TICKET_TIERS:
         stock = tickets.get(t["id"], 0)
-        stock_str = str(stock) + " en stock" if stock else "rupture"
-        lines.append(t["emoji"] + " **" + t["name"] + "** — " + _fmt_berry(t["price"]) + " B · " + str(t["minutes"]) + " min · " + stock_str)
-    e.add_field(name="Tickets Pseudo", value=sep.join(lines), inline=False)
+        ticket_lines.append(f"{t['emoji']} **{t['name']}** — {_fmt_berry(t['price'])} 🍊  ·  {_badge(stock)}")
+    ticket_lines.append(f"\n> Utilisés aujourd'hui : **{daily_used} / 2**")
+    e.add_field(name="🎫  Tickets Pseudo", value="\n".join(ticket_lines), inline=False)
 
-    stock_str = str(shields) + " en stock" if shields else "rupture"
     e.add_field(
-        name="Protection",
-        value="🛡️ **Bouclier Pseudo** — " + _fmt_berry(_SHIELD_ITEM["price"]) + " B · Bloque 1 tentative · " + stock_str,
+        name="🛡️  Protection",
+        value=(
+            f"🛡️ **Bouclier Pseudo** — {_fmt_berry(_SHIELD_ITEM['price'])} 🍊  ·  {_badge(shields)}\n"
+            f"> Bloque 1 changement forcé de pseudo (ticket attaquant consommé)"
+        ),
         inline=False,
     )
 
     if _SOUND_ITEMS:
-        lines = []
+        sound_lines = []
         for s in _SOUND_ITEMS:
-            status = "actif — " + str(sound_uses) + " util. restantes" if current_sound == "local:" + s["file"] else "3 utilisations"
-            lines.append(s["emoji"] + " **" + s["name"] + "** — " + _fmt_berry(s["price"]) + " B · " + status)
-        e.add_field(name="Sons d'entrée vocal", value=sep.join(lines), inline=False)
+            if current_sound == f"local:{s['file']}":
+                status = f"✅ actif — **{sound_uses}** util. restantes"
+            else:
+                status = "3 util. à l'achat"
+            sound_lines.append(f"{s['emoji']} **{s['name']}** — {_fmt_berry(s['price'])} 🍊  ·  {status}")
+        e.add_field(name="🎵  Sons d'Entrée Vocal", value="\n".join(sound_lines), inline=False)
 
     remaining = _boost_remaining(user_data)
     if remaining > 0:
         h, m = divmod(int(remaining), 3600)
         m //= 60
-        boost_hdr = "Actif — encore " + str(h) + "h " + str(m).zfill(2) + "min"
+        boost_status = f"✅ Actif — encore **{h}h {str(m).zfill(2)}min**"
     else:
-        boost_hdr = "Inactif"
-    lines = [boost_hdr, ""]
+        boost_status = "❌ Inactif"
+    boost_lines = [f"> {boost_status}", ""]
     for b in _BOOST_ITEMS:
-        lines.append(b["emoji"] + " **" + b["name"] + "** — " + _fmt_berry(b["price"]) + " B · +" + str(b["hours"]) + "h, empilable")
-    e.add_field(name="Boost Vocal", value=sep.join(lines), inline=False)
+        boost_lines.append(f"{b['emoji']} **{b['name']}** — {_fmt_berry(b['price'])} 🍊  ·  +{b['hours']}h")
+    e.add_field(name="📢  Boost Vocal  *(empilable)*", value="\n".join(boost_lines), inline=False)
 
-    e.set_footer(text="Bram's Score · Max 2 tickets/jour · Admins illimité")
+    e.set_footer(text="Bram's Score · Max 2 tickets/jour · Admins : accès illimité")
     return e
 
 
+class _BackToShopView(discord.ui.View):
+    """Bouton affiché après un achat pour revenir au shop sans retaper la commande."""
+    def __init__(self, user_id: int):
+        super().__init__(timeout=120)
+        self._uid = user_id
+
+    @discord.ui.button(label="🏠 Retour au Shop", style=discord.ButtonStyle.secondary)
+    async def back(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user.id != self._uid:
+            await interaction.response.send_message("Ce n'est pas ton shop.", ephemeral=True)
+            return
+        await interaction.response.edit_message(
+            embed=_shop_embed(str(self._uid)),
+            view=_ShopView(self._uid),
+        )
 
 
 class _QuantityModal(discord.ui.Modal, title="Acheter"):
-    quantite = discord.ui.TextInput(
-        label="Quantité",
-        placeholder="1",
-        min_length=1,
-        max_length=3,
-    )
+    quantite = discord.ui.TextInput(label="Quantité", placeholder="1", min_length=1, max_length=3)
 
-    def __init__(self, item: dict, shop_view: "_ShopView", original_message: discord.Message, free: bool = False):
+    def __init__(self, item: dict, user_id: int, original_message: discord.Message, free: bool = False):
         super().__init__()
-        self._item             = item
-        self._shop_view        = shop_view
-        self._original_message = original_message
-        self._free             = free
+        self._item    = item
+        self._uid     = user_id
+        self._msg     = original_message
+        self._free    = free
 
     async def on_submit(self, interaction: discord.Interaction):
         try:
@@ -4799,87 +4809,67 @@ class _QuantityModal(discord.ui.Modal, title="Acheter"):
                 raise ValueError
         except ValueError:
             await interaction.response.send_message(
-                "Quantité invalide — entre un nombre entre **1** et **99**.", ephemeral=True
+                "❌ Quantité invalide — entre **1** et **99**.", ephemeral=True
             )
             return
 
         uid   = str(interaction.user.id)
         item  = self._item
         total = item["price"] * qty
+        tag   = " *(admin)*" if self._free else ""
 
         if not self._free and not spend_berrys(uid, total):
             bal = get_berrys(uid)
             await interaction.response.send_message(
-                "Solde insuffisant — tu as **" + _fmt_berry(bal) + " Berrys**, il te faut **" + _fmt_berry(total) + " Berrys**.",
+                f"❌ Solde insuffisant — **{_fmt_berry(bal)} 🍊** disponibles, **{_fmt_berry(total)} 🍊** requis.",
                 ephemeral=True,
             )
             return
 
         await interaction.response.defer()
-        self._shop_view.stop()
         user_data = get_user(_CACHE, uid)
-        new_bal   = get_berrys(uid)
-        tag       = " *(admin)*" if self._free else ""
-
-        if item["id"] == "nick_shield":
-            user_data["nick_shields"] = user_data.get("nick_shields", 0) + qty
-            _DIRTY.add(uid)
-            new_bal = get_berrys(uid)
-            shields = user_data["nick_shields"]
-            await self._original_message.edit(
-                embed=discord.Embed(
-                    title="Achat confirmé",
-                    description=(
-                        "**" + str(qty) + "×** Bouclier Pseudo" + tag + ". Tu en possèdes **" + str(shields) + "**.\n\n"
-                        "Toute tentative de changement de pseudo par ticket sera bloquée, "
-                        "le ticket de l'attaquant sera consommé.\n\n"
-                        "Solde : **" + _fmt_berry(new_bal) + " Berrys**"
-                    ),
-                    color=discord.Color.green(),
-                ),
-                view=None,
-            )
-            return
 
         if item.get("type") == "voice_boost":
             _add_boost(user_data, item["hours"], qty)
             _DIRTY.add(uid)
-            new_bal   = get_berrys(uid)
             remaining = _boost_remaining(user_data)
             h, m = divmod(int(remaining), 3600)
             m //= 60
-            await self._original_message.edit(
-                embed=discord.Embed(
-                    title="Achat confirmé",
-                    description=(
-                        "**" + str(qty) + "×" + str(item["hours"]) + "h** de Boost Vocal ajoutées" + tag + ".\n"
-                        "Expire dans **" + str(h) + "h " + str(m).zfill(2) + "min** — priorité de parole active dans les vocaux.\n\n"
-                        "Solde : **" + _fmt_berry(new_bal) + " Berrys**"
-                    ),
-                    color=discord.Color.from_rgb(255, 140, 0),
-                ),
-                view=None,
-            )
-            return
-
-        tickets = _get_tickets(user_data)
-        tickets[item["id"]] = tickets.get(item["id"], 0) + qty
-        user_data["pseudo_tickets"] = tickets
-        _DIRTY.add(uid)
-        new_bal = get_berrys(uid)
-        stock   = tickets[item["id"]]
-        await self._original_message.edit(
-            embed=discord.Embed(
-                title="Achat confirmé",
+            embed = discord.Embed(
+                title=f"✅  {item['emoji']} Boost Vocal acheté !",
                 description=(
-                    "**" + str(qty) + "×** " + item["name"] + tag + ". Tu en possèdes **" + str(stock) + "**.\n\n"
-                    "Utilise `/ticket @membre pseudo` et sélectionne **" + str(item["minutes"]) + " min**.\n\n"
-                    "Solde : **" + _fmt_berry(new_bal) + " Berrys**"
+                    f"**{qty}×{item['hours']}h** ajoutées{tag}.\n"
+                    f"Expire dans **{h}h {str(m).zfill(2)}min** — priorité de parole active dans les vocaux.\n\n"
+                    f"Solde : **{_fmt_berry(get_berrys(uid))} 🍊**"
                 ),
-                color=discord.Color.blurple(),
-            ),
-            view=None,
-        )
+                color=discord.Color.from_rgb(255, 140, 0),
+            )
+        else:
+            _add_item_stock(user_data, item["id"], qty)
+            _DIRTY.add(uid)
+            stock = _get_item_stock(user_data, item["id"])
+            if item["id"] == "nick_shield":
+                embed = discord.Embed(
+                    title="✅  🛡️ Bouclier acheté !",
+                    description=(
+                        f"**{qty}×** Bouclier Pseudo{tag}. Tu en possèdes maintenant **{stock}**.\n\n"
+                        f"Toute tentative de changement de pseudo sera bloquée — le ticket de l'attaquant est consommé.\n\n"
+                        f"Solde : **{_fmt_berry(get_berrys(uid))} 🍊**"
+                    ),
+                    color=discord.Color.green(),
+                )
+            else:
+                embed = discord.Embed(
+                    title=f"✅  {item['emoji']} {item['name']} acheté !",
+                    description=(
+                        f"**{qty}×** {item['name']}{tag}. Tu en possèdes maintenant **{stock}**.\n\n"
+                        f"Utilise `/ticket @membre pseudo` et sélectionne **{item['minutes']} min**.\n\n"
+                        f"Solde : **{_fmt_berry(get_berrys(uid))} 🍊**"
+                    ),
+                    color=discord.Color.blurple(),
+                )
+
+        await self._msg.edit(embed=embed, view=_BackToShopView(interaction.user.id))
 
 
 class _ShopView(discord.ui.View):
@@ -4896,11 +4886,8 @@ class _ShopView(discord.ui.View):
             btn.callback = self._make_cb(t)
             self.add_item(btn)
 
-        # Row 1 — Protection + Refresh
-        shield_btn = discord.ui.Button(
-            label="Bouclier Pseudo", emoji="🛡️",
-            style=discord.ButtonStyle.success, row=1,
-        )
+        # Row 1 — Protection + Actualiser
+        shield_btn = discord.ui.Button(label="Bouclier Pseudo", emoji="🛡️", style=discord.ButtonStyle.success, row=1)
         shield_btn.callback = self._make_cb(_SHIELD_ITEM)
         self.add_item(shield_btn)
 
@@ -4911,16 +4898,22 @@ class _ShopView(discord.ui.View):
         # Row 2 — Sons d'entrée
         for s in _SOUND_ITEMS:
             is_active = current_sound == f"local:{s['file']}"
-            style = discord.ButtonStyle.success if is_active else s["style"]
-            btn = discord.ui.Button(label=s["name"], emoji=s["emoji"], style=style, row=2)
-            btn.callback = self._make_cb(s)
+            btn = discord.ui.Button(
+                label=s["name"], emoji=s["emoji"],
+                style=discord.ButtonStyle.success if is_active else s["style"],
+                row=2,
+            )
+            btn.callback = self._make_sound_cb(s)
             self.add_item(btn)
 
         # Row 3 — Boost Vocal
         boost_active = _is_boost_active(user_data)
         for b in _BOOST_ITEMS:
-            style = discord.ButtonStyle.success if boost_active else b["style"]
-            btn   = discord.ui.Button(label=b["name"], emoji=b["emoji"], style=style, row=3)
+            btn = discord.ui.Button(
+                label=b["name"], emoji=b["emoji"],
+                style=discord.ButtonStyle.success if boost_active else b["style"],
+                row=3,
+            )
             btn.callback = self._make_cb(b)
             self.add_item(btn)
 
@@ -4928,51 +4921,57 @@ class _ShopView(discord.ui.View):
         if interaction.user.id != self._user_id:
             await interaction.response.send_message("Ce n'est pas ton shop !", ephemeral=True)
             return
-        view = _ShopView(self._user_id)
-        await interaction.response.edit_message(embed=_shop_embed(self._uid), view=view)
+        await interaction.response.edit_message(embed=_shop_embed(self._uid), view=_ShopView(self._user_id))
+
+    def _make_sound_cb(self, item: dict):
+        async def cb(interaction: discord.Interaction):
+            if interaction.user.id != self._user_id:
+                await interaction.response.send_message("Ce shop ne t'appartient pas.", ephemeral=True)
+                return
+            free      = interaction.permissions.administrator
+            uid       = str(interaction.user.id)
+            user_data = get_user(_CACHE, uid)
+            already   = user_data.get("entry_sound") == f"local:{item['file']}"
+            cur_uses  = user_data.get("entry_sound_uses", 0)
+
+            if not free and not spend_berrys(uid, item["price"]):
+                bal = get_berrys(uid)
+                await interaction.response.send_message(
+                    f"❌ Solde insuffisant — **{_fmt_berry(bal)} 🍊** / **{_fmt_berry(item['price'])} 🍊** requis.",
+                    ephemeral=True,
+                )
+                return
+
+            user_data["entry_sound"]      = f"local:{item['file']}"
+            user_data["entry_sound_uses"] = (cur_uses + 3) if already else 3
+            _DIRTY.add(uid)
+            new_uses = user_data["entry_sound_uses"]
+            tag      = " *(admin)*" if free else ""
+            action   = "rechargé (+3 utilisations)" if already else "activé"
+
+            self.stop()
+            embed = discord.Embed(
+                title=f"✅  {item['emoji']} Son d'entrée {action} !",
+                description=(
+                    f"**{item['name']}**{tag} — **{new_uses}** utilisation(s) restantes.\n\n"
+                    f"Le son jouera automatiquement à chaque fois que tu rejoins un vocal.\n\n"
+                    f"Solde : **{_fmt_berry(get_berrys(uid))} 🍊**"
+                ),
+                color=discord.Color.green(),
+            )
+            await interaction.response.edit_message(embed=embed, view=_BackToShopView(interaction.user.id))
+        return cb
 
     def _make_cb(self, item: dict):
         async def cb(interaction: discord.Interaction):
             if interaction.user.id != self._user_id:
                 await interaction.response.send_message("Ce shop ne t'appartient pas.", ephemeral=True)
                 return
-            if item.get("type") == "entry_sound":
-                free = interaction.permissions.administrator
-                uid  = str(interaction.user.id)
-                if not free and not spend_berrys(uid, item["price"]):
-                    bal = get_berrys(uid)
-                    await interaction.response.send_message(
-                        "Solde insuffisant — tu as **" + _fmt_berry(bal) + " Berrys**, il te faut **" + _fmt_berry(item["price"]) + " Berrys**.",
-                        ephemeral=True,
-                    )
-                    return
-                user_data = get_user(_CACHE, uid)
-                user_data["entry_sound"]      = "local:" + item["file"]
-                user_data["entry_sound_uses"] = 3
-                _DIRTY.add(uid)
-                new_bal = get_berrys(uid)
-                tag     = " *(admin)*" if free else ""
-                self.stop()
-                await interaction.message.edit(
-                    embed=discord.Embed(
-                        title="Achat confirmé",
-                        description=(
-                            "**" + item["name"] + "** activé" + tag + ".\n\n"
-                            "Le son jouera dès que tu rejoins un salon vocal.\n\n"
-                            "Solde : **" + _fmt_berry(new_bal) + " Berrys**"
-                        ),
-                        color=discord.Color.green(),
-                    ),
-                    view=None,
-                )
-                await interaction.response.defer()
-            else:
-                free = interaction.permissions.administrator
-                await interaction.response.send_modal(
-                    _QuantityModal(item, self, interaction.message, free=free)
-                )
+            free = interaction.permissions.administrator
+            await interaction.response.send_modal(
+                _QuantityModal(item, self._user_id, interaction.message, free=free)
+            )
         return cb
-
 
 
 @bot.tree.command(name="shop", description="Dépense tes Berrys 🍊 dans le shop !")
