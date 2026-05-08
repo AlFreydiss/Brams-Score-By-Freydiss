@@ -72,7 +72,7 @@ class CrewCog(CrewTasks, commands.Cog):
     # COMMANDES PUBLIQUES
     # ══════════════════════════════════════════════════════════════
 
-    @crew.command(name="info", description="Informations sur un équipage")
+    @crew.command(name="info", description="Tableau de bord complet de l'équipage")
     @app_commands.describe(nom="Nom de l'équipage (vide = le tien)")
     async def crew_info(self, interaction: discord.Interaction, nom: str = None):
         await interaction.response.defer()
@@ -83,11 +83,16 @@ class CrewCog(CrewTasks, commands.Cog):
         if not crew:
             await interaction.followup.send("❌ Équipage introuvable.", ephemeral=True)
             return
-        members, alliances = await asyncio.gather(
+        members, alliances, war_data = await asyncio.gather(
             db.get_crew_members(crew['id']),
             db.get_active_alliances(crew['id']),
+            db.get_active_war_with_crews(crew['id']),
         )
-        await interaction.followup.send(embed=crew_info_embed(crew, members, alliances, interaction.guild))
+        war, crew_a, crew_b = war_data
+        await interaction.followup.send(embed=crew_info_embed(
+            crew, members, alliances, interaction.guild,
+            war=war, war_crew_a=crew_a, war_crew_b=crew_b,
+        ))
 
     @crew.command(name="leaderboard", description="Classement des équipages")
     @app_commands.describe(recrutement="Afficher uniquement ceux qui recrutent")

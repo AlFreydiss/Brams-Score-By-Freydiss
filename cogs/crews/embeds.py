@@ -35,11 +35,16 @@ def _dt(value) -> datetime | None:
 
 
 def crew_info_embed(crew: dict, members: list[dict], alliances: list[dict],
-                    guild: discord.Guild | None = None) -> discord.Embed:
+                    guild: discord.Guild | None = None,
+                    war: dict | None = None,
+                    war_crew_a: dict | None = None,
+                    war_crew_b: dict | None = None) -> discord.Embed:
     lvl     = crew['level']
     data    = get_level_data(lvl)
     xp      = crew['xp']
     next_xp = xp_for_next(lvl)
+
+    recr = "✅ Recrutement ouvert" if crew['is_recruiting'] else "🔒 Recrutement fermé"
 
     e = discord.Embed(
         title=f"🏴‍☠️  {crew['name']}  [{crew['tag']}]",
@@ -50,73 +55,79 @@ def crew_info_embed(crew: dict, members: list[dict], alliances: list[dict],
         e.set_thumbnail(url=crew['flag_url'])
 
     # ── Infos de base ────────────────────────────────────────────────
-    e.add_field(name="👑 Capitaine",  value=f"<@{crew['captain_id']}>",                          inline=True)
-    e.add_field(name="⚔️ Niveau",     value=f"**{lvl}** / 10",                                   inline=True)
-    e.add_field(name="👥 Membres",    value=f"**{len(members)}** / {data['max_members']}",        inline=True)
-
     total_wars = crew['wars_won'] + crew['wars_lost']
     win_rate   = f"{int(crew['wars_won'] / total_wars * 100)}%" if total_wars else "—"
-    e.add_field(name="💰 Prime cumulée", value=f"**{fmt_berries(crew['total_bounty'])} 🍊**",     inline=True)
-    e.add_field(name="🏦 Trésor",        value=f"**{fmt_berries(crew['treasury'])} 🍊**",         inline=True)
-    e.add_field(name="⚔️ Guerres",       value=f"✅ {crew['wars_won']}V / ❌ {crew['wars_lost']}D · **{win_rate}**", inline=True)
+    e.add_field(name="👑 Capitaine",     value=f"<@{crew['captain_id']}>",                                        inline=True)
+    e.add_field(name="📊 Niveau",        value=f"**{lvl}** / 10  ·  {recr}",                                     inline=True)
+    e.add_field(name="👥 Membres",       value=f"**{len(members)}** / {data['max_members']}",                     inline=True)
+    e.add_field(name="💰 Prime cumulée", value=f"**{fmt_berries(crew['total_bounty'])} 🍊**",                     inline=True)
+    e.add_field(name="🏦 Trésor",        value=f"**{fmt_berries(crew['treasury'])} 🍊**",                         inline=True)
+    e.add_field(name="⚔️ Guerres",       value=f"✅ {crew['wars_won']}V / ❌ {crew['wars_lost']}D · {win_rate}",  inline=True)
 
     # ── Barre XP ────────────────────────────────────────────────────
     if next_xp:
         pct = min(100, int(xp / next_xp * 100))
         e.add_field(
-            name=f"📈 XP — Niveau {lvl} → {lvl + 1}  ({pct}%)",
+            name=f"📈 XP — Niv.{lvl} → Niv.{lvl + 1}  ({pct}%)",
             value=f"`{_xp_bar(xp, next_xp)}`  {fmt_berries(xp)} / {fmt_berries(next_xp)} XP",
             inline=False,
         )
     else:
         e.add_field(name="📈 XP", value=f"**{fmt_berries(xp)} XP** · 🏆 Niveau maximum atteint !", inline=False)
 
-    # ── Fonctionnalités débloquées ───────────────────────────────────
+    # ── Roster complet ───────────────────────────────────────────────
+    total_contrib = sum(m['contribution'] for m in members)
+    roster = []
+    for m in sorted(members, key=lambda x: x['contribution'], reverse=True):
+        pos   = m['position']
+        emoji = POSITIONS.get(pos, {}).get('emoji', '👤')
+        pct   = int(m['contribution'] / total_contrib * 100) if total_contrib else 0
+        roster.append(f"{emoji} <@{m['user_id']}> · *{pos}* · **{fmt_berries(m['contribution'])} 🍊** ({pct}%)")
+    if roster:
+        e.add_field(name=f"📋 Équipage ({len(members)}/{data['max_members']})", value="\n".join(roster[:15]), inline=False)
+
+    # ── Alliances ────────────────────────────────────────────────────
+    if alliances:
+        ally_lines = []
+        for a in alliances:
+            other_id = a['crew_b_id'] if a['crew_a_id'] == crew['id'] else a['crew_a_id']
+            since    = _dt(a.get('accepted_at'))
+            since_str = f" · depuis <t:{int(since.timestamp())}:D>" if since else ""
+            ally_lines.append(f"🤝 <@&{other_id}>{since_str}" if guild else f"🤝 Crew #{other_id}{since_str}")
+        e.add_field(name=f"🤝 Alliances ({len(alliances)})", value="\n".join(ally_lines), inline=False)
+
+    # ── Guerre en cours ──────────────────────────────────────────────
+    if war and war_crew_a and war_crew_b:
+        attacker = war_crew_a if war['attacker_id'] == war_crew_a['id'] else war_crew_b
+        defender = war_crew_b if war['attacker_id'] == war_crew_a['id'] else war_crew_a
+        att_s, def_s = war['attacker_score'], war['defender_score']
+        total_pts = att_s + def_s
+        att_pct   = int(att_s / total_pts * 100) if total_pts else 50
+        def_pct   = 100 - att_pct
+        w = 8
+        att_bar = "█" * int(att_pct / 100 * w) + "░" * (w - int(att_pct / 100 * w))
+        def_bar = "█" * int(def_pct / 100 * w) + "░" * (w - int(def_pct / 100 * w))
+        ends = f" · fin <t:{int(war['ends_at'].timestamp())}:R>" if war.get('ends_at') else ""
+        war_val = (
+            f"🔴 **{attacker['name']}** `{att_bar}` {att_s}pts  vs  {def_s}pts `{def_bar}` **{defender['name']}**\n"
+            f"💰 Prize pool : **{fmt_berries(war['prize_pool'])} 🍊**{ends}"
+        )
+        e.add_field(name="⚔️ Guerre en cours", value=war_val, inline=False)
+
+    # ── Fonctionnalités ──────────────────────────────────────────────
     feats = [f for f in data.get('features', []) if f != 'basic']
     if feats:
         e.add_field(
-            name="✨ Fonctionnalités débloquées",
+            name="✨ Fonctionnalités",
             value="  ".join(f"`{FEATURE_LABELS.get(f, f)}`" for f in feats),
             inline=False,
         )
 
-    # ── Top contributeurs ────────────────────────────────────────────
-    top3 = sorted(members, key=lambda m: m['contribution'], reverse=True)[:3]
-    total_contrib = sum(m['contribution'] for m in members)
-    if top3 and total_contrib > 0:
-        medals = ["🥇", "🥈", "🥉"]
-        lines = []
-        for i, m in enumerate(top3):
-            pct = int(m['contribution'] / total_contrib * 100)
-            lines.append(f"{medals[i]} <@{m['user_id']}> — **{fmt_berries(m['contribution'])} 🍊** ({pct}%)")
-        e.add_field(name="🏆 Top Contributeurs", value="\n".join(lines), inline=True)
-
-    # ── Alliances ────────────────────────────────────────────────────
-    if alliances:
-        ally_names = []
-        for a in alliances:
-            other_id = a['crew_b_id'] if a['crew_a_id'] == crew['id'] else a['crew_a_id']
-            ally_names.append(f"<@&{other_id}>" if guild else f"Crew #{other_id}")
-        e.add_field(name="🤝 Alliances", value="\n".join(ally_names), inline=True)
-
-    # ── Roster ───────────────────────────────────────────────────────
-    roster = []
-    for m in members:
-        pos   = m['position']
-        emoji = POSITIONS.get(pos, {}).get('emoji', '👤')
-        contrib_str = fmt_berries(m['contribution'])
-        roster.append(f"{emoji} <@{m['user_id']}> *{pos}* · {contrib_str} 🍊")
-    if roster:
-        e.add_field(name=f"📋 Membres ({len(members)})", value="\n".join(roster[:12]), inline=False)
-
     # ── Footer ───────────────────────────────────────────────────────
-    recr    = "✅ Recrutement ouvert" if crew['is_recruiting'] else "🔒 Recrutement fermé"
     created = _dt(crew.get('created_at'))
     if created:
-        e.set_footer(text=f"{recr} · Fondé le")
+        e.set_footer(text="Fondé le")
         e.timestamp = created
-    else:
-        e.set_footer(text=recr)
     return e
 
 
