@@ -133,19 +133,62 @@ class CrewCog(CrewTasks, commands.Cog):
     @crew.command(name="stats", description="Contribution d'un membre")
     @app_commands.describe(membre="Le membre à afficher")
     async def crew_stats(self, interaction: discord.Interaction, membre: discord.Member = None):
-        target = membre or interaction.user
-        mem    = await db.get_member(target.id)
+        target  = membre or interaction.user
+        mem     = await db.get_member(target.id)
         if not mem:
             await interaction.response.send_message(f"❌ <@{target.id}> n'est dans aucun équipage.", ephemeral=True)
             return
-        crew = await db.get_crew(mem['crew_id'])
-        pos  = mem['position']
+        crew, members = await asyncio.gather(
+            db.get_crew(mem['crew_id']),
+            db.get_crew_members(mem['crew_id']),
+        )
+        pos       = mem['position']
+        pos_emoji = POSITIONS.get(pos, {}).get('emoji', '👤')
+
+        sorted_m     = sorted(members, key=lambda m: m['contribution'], reverse=True)
+        contrib_rank = next((i + 1 for i, m in enumerate(sorted_m) if m['user_id'] == target.id), len(members))
+        total_contrib = sum(m['contribution'] for m in members)
+        contrib_pct   = int(mem['contribution'] / total_contrib * 100) if total_contrib else 0
+
+        joined_at = mem['joined_at']
+        if joined_at and isinstance(joined_at, str):
+            joined_at = datetime.fromisoformat(joined_at.replace("Z", "+00:00"))
+        if joined_at:
+            if not joined_at.tzinfo:
+                joined_at = joined_at.replace(tzinfo=timezone.utc)
+            days = (datetime.now(timezone.utc) - joined_at).days
+        else:
+            days = 0
+
         embed = discord.Embed(title=f"📊 Stats — {target.display_name}", color=CREW_COLOR)
         embed.set_thumbnail(url=target.display_avatar.url)
-        embed.add_field(name="Équipage",      value=crew['name'] if crew else "?", inline=True)
-        embed.add_field(name="Poste",         value=f"{POSITIONS[pos]['emoji']} {pos}", inline=True)
-        embed.add_field(name="Contribution",  value=f"**{fmt_berries(mem['contribution'])} 🍊**", inline=True)
-        embed.add_field(name="Membre depuis", value=f"<t:{int(mem['joined_at'].timestamp())}:D>", inline=True)
+        embed.add_field(name="🏴‍☠️ Équipage",   value=crew['name'] if crew else "?",              inline=True)
+        embed.add_field(name="⚔️ Poste",         value=f"{pos_emoji} **{pos}**",                   inline=True)
+        embed.add_field(name="📅 Membre depuis", value=f"<t:{int(joined_at.timestamp())}:D> (**{days}j**)", inline=True)
+        embed.add_field(name="💰 Contribution",  value=f"**{fmt_berries(mem['contribution'])} 🍊**", inline=True)
+        embed.add_field(name="🏆 Rang contrib.", value=f"**#{contrib_rank}** / {len(members)}",     inline=True)
+        embed.add_field(name="📊 Part équipage", value=f"**{contrib_pct}%** du total",              inline=True)
+
+        if total_contrib > 0:
+            bar_f = int(contrib_pct / 10)
+            bar   = "█" * bar_f + "░" * (10 - bar_f)
+            embed.add_field(
+                name="📈 Contribution relative",
+                value=f"`{bar}` **{contrib_pct}%** — {fmt_berries(mem['contribution'])} / {fmt_berries(total_contrib)} 🍊",
+                inline=False,
+            )
+
+        # Rang global de contribution dans le classement
+        if crew:
+            embed.add_field(
+                name="🏴‍☠️ Infos équipage",
+                value=(
+                    f"Niveau **{crew['level']}** · "
+                    f"Trésor **{fmt_berries(crew['treasury'])} 🍊** · "
+                    f"Guerres ✅{crew['wars_won']} / ❌{crew['wars_lost']}"
+                ),
+                inline=False,
+            )
         await interaction.response.send_message(embed=embed)
 
     @crew.command(name="candidater", description="Candidater à rejoindre un équipage")
@@ -526,8 +569,11 @@ class CrewCog(CrewTasks, commands.Cog):
         if not crew:
             await interaction.response.send_message("❌ Tu n'es dans aucun équipage.", ephemeral=True)
             return
-        logs = await db.get_treasury_logs(crew['id'])
-        await interaction.response.send_message(embed=treasury_embed(crew, logs))
+        logs, members = await asyncio.gather(
+            db.get_treasury_logs(crew['id']),
+            db.get_crew_members(crew['id']),
+        )
+        await interaction.response.send_message(embed=treasury_embed(crew, logs, members))
 
     @tresor.command(name="depot", description="Déposer des Berrys dans le trésor de l'équipage")
     @app_commands.describe(montant="Montant à déposer")
