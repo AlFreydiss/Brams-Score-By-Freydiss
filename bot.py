@@ -602,6 +602,7 @@ def get_user(data, uid: str):
             "messages": [],
             "last_rank": None,
             "alerted": False,
+            "vocal_berry_synced": True,  # nouveaux users → pas de rétro-sync (ils gagnent en temps réel)
         }
     for key, default in [("last_rank", None), ("alerted", False), ("known_ranks", []), ("dm_optout", False)]:
         if key not in data[uid]:
@@ -1687,9 +1688,9 @@ async def on_ready():
         if udata.get("vocal_berry_synced"):
             continue
         sessions = udata.get("vocal_sessions", [])
-        jt       = udata.get("join_time")
         extra    = udata.get("extra_seconds", 0)
-        total_sec = total_seconds(sessions, join_time=jt, extra=extra, _now=_now)
+        # Ne pas inclure join_time : la session en cours sera créditée au départ vocal
+        total_sec = total_seconds(sessions, join_time=None, extra=extra, _now=_now)
         earned = int(total_sec / 3600 * 100_000)
         if earned > 0:
             add_berrys(uid, earned)
