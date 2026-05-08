@@ -3,7 +3,32 @@
     "allow": [
       "Bash(python -c ' *)",
       "Bash(git add *)",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "Bash(python *)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(python3 -c ' *)",
+      "WebFetch(domain:api.jikan.moe)",
+      "Bash(python3 _fix_all.py)",
+      "Bash(python3 -m py_compile bot.py)",
+      "Bash(python3 *)",
+      "Bash(pip show *)",
+      "Bash(git rm *)",
+      "Bash(uv lock *)",
+      "Bash(git revert *)",
+      "Bash(xargs -I{} basename \"{}\")",
+      "Bash(unzip -o michland.zip -d michland_tmp)",
+      "Bash(xxd \"kirito citation.gif\")",
+      "Bash(python.exe -c \"import PIL; print\\(PIL.__file__\\)\")",
+      "WebFetch(domain:fonts.google.com)",
+      "Bash(curl -L \"https://fonts.google.com/download?family=Bebas+Neue\" -o BebasNeue.zip --max-time 30)",
+      "Bash(tar -xf BebasNeue.zip0)",
+      "Bash(rm -rf BebasNeue.zip BebasNeue_extracted)",
+      "Bash(curl -L \"https://github.com/google/fonts/raw/main/ofl/bebasneuepro/BebasNeuePro-Regular.ttf\" -o \"BebasNeue-Regular.ttf\" --max-time 30)",
+      "WebSearch",
+      "Bash(curl -L \"https://github.com/dharmatype/Bebas-Neue/raw/master/fonts/BebasNeue\\(2018\\)ByDhamraType/ttf/BebasNeue-Regular.ttf\" -o \"BebasNeue-Regular.ttf\" --max-time 30)",
+      "PowerShell(\\(Get-Content \"C:\\\\Users\\\\Feydi\\\\.claude\\\\projects\\\\C--Users-Feydi-Desktop-Brams-Score-By-Freydiss\\\\8eb9f221-ddcf-49cf-84e1-f6aedf48f637\\\\tool-results\\\\bj6v49761.txt\" | Measure-Object -Line\\).Lines)",
+      "Bash(del _fix_shop.py _shop_embed_new.txt _quantity_modal_new.txt _make_cb_new.txt)"
     ]
   }
 }
