@@ -610,7 +610,7 @@ def get_user(data, uid: str):
     return data[uid]
 
 # ── Berry Wallet ──────────────────────────────────────────────────
-BERRY_EMOJI = "🍊"
+BERRY_EMOJI = "💰"
 
 def get_berrys(uid: str) -> int:
     return get_user(_CACHE, uid).get("berrys", 0)
@@ -3368,13 +3368,13 @@ async def _send_next_question(inter: discord.Interaction, sess: _QuizSession):
             _earned = sess.score * 50
             if _earned > 0:
                 _bal = add_berrys(str(sess.user_id), _earned)
-                embed.add_field(name="💰 Gain Survie", value=f"**+{_earned} 🍊** ({sess.score} × 50)\nSolde : **{_bal} 🍊**", inline=False)
+                embed.add_field(name="💰 Gain Survie", value=f"**+{_earned} 💰** ({sess.score} × 50)\nSolde : **{_bal} 💰**", inline=False)
             else:
                 embed.add_field(name="💸 Pas de gain", value="Aucune bonne réponse.", inline=False)
         elif _pm in ("enrichi", "legendaire"):
             if sess.quiz_all_correct and sess.score == total:
                 _bal = add_berrys(str(sess.user_id), sess.quiz_reward)
-                embed.add_field(name="💰 Récompense", value=f"**+{sess.quiz_reward} 🍊** — Score parfait !\nSolde : **{_bal} 🍊**", inline=False)
+                embed.add_field(name="💰 Récompense", value=f"**+{sess.quiz_reward} 💰** — Score parfait !\nSolde : **{_bal} 💰**", inline=False)
             else:
                 embed.add_field(name="💸 Pas de récompense", value=f"Il fallait tout juste ({total}/{total}) pour gagner les Berrys.", inline=False)
 
@@ -4302,20 +4302,20 @@ async def _send_live_duel_result(duel: "_LiveDuelSession", inter: discord.Intera
         color = discord.Color.gold()
         if berry_bet:
             gained = add_berrys(str(duel.uid1), berry_bet * 2)
-            berry_line = f"\n💰 **{duel.name1}** remporte **{berry_bet * 2} 🍊** ! (Solde : {gained} 🍊)"
+            berry_line = f"\n💰 **{duel.name1}** remporte **{berry_bet * 2} 💰** ! (Solde : {gained} 💰)"
     elif duel.pts2 > duel.pts1:
         titre = f"🏆  **{duel.name2}** remporte le duel !"
         color = discord.Color.gold()
         if berry_bet:
             gained = add_berrys(str(duel.uid2), berry_bet * 2)
-            berry_line = f"\n💰 **{duel.name2}** remporte **{berry_bet * 2} 🍊** ! (Solde : {gained} 🍊)"
+            berry_line = f"\n💰 **{duel.name2}** remporte **{berry_bet * 2} 💰** ! (Solde : {gained} 💰)"
     else:
         titre = "⚖️  Égalité parfaite !"
         color = discord.Color.blurple()
         if berry_bet:
             add_berrys(str(duel.uid1), berry_bet)
             add_berrys(str(duel.uid2), berry_bet)
-            berry_line = f"\n⚖️ Remboursement : **{berry_bet} 🍊** chacun."
+            berry_line = f"\n⚖️ Remboursement : **{berry_bet} 💰** chacun."
 
     sep = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     embed = discord.Embed(
@@ -4442,10 +4442,10 @@ class _DuelChallengeView(discord.ui.View):
 # ─────────────────────────────────────────
 
 _QUIZ_PRIME_MODES: dict[str, dict] = {
-    "enrichi":    {"label": "Solo Enrichi",   "emoji": "💰", "cost": 50,  "reward": 150,  "n": 10, "style": discord.ButtonStyle.primary,   "desc": "10 questions · **50 🍊** → **150 🍊** si tout juste"},
-    "survie":     {"label": "Survie",         "emoji": "❤️", "cost": 100, "reward": None, "n": 20, "style": discord.ButtonStyle.danger,    "desc": "Stop à 1ère erreur · **100 🍊** → **50 🍊/question** correcte"},
-    "legendaire": {"label": "Légendaire",     "emoji": "👑", "cost": 500, "reward": 2000, "n": 10, "style": discord.ButtonStyle.secondary, "desc": "10 questions · **500 🍊** → **2 000 🍊** si parfait"},
-    "ranked_1v1": {"label": "Ranked 1v1",    "emoji": "⚔️", "cost": 200, "reward": None, "n": 10, "style": discord.ButtonStyle.success,   "desc": "200 🍊 chacun · **Tout au gagnant**"},
+    "enrichi":    {"label": "Solo Enrichi",   "emoji": "💰", "cost": 50,  "reward": 150,  "n": 10, "style": discord.ButtonStyle.primary,   "desc": "10 questions · **50 💰** → **150 💰** si tout juste"},
+    "survie":     {"label": "Survie",         "emoji": "❤️", "cost": 100, "reward": None, "n": 20, "style": discord.ButtonStyle.danger,    "desc": "Stop à 1ère erreur · **100 💰** → **50 💰/question** correcte"},
+    "legendaire": {"label": "Légendaire",     "emoji": "👑", "cost": 500, "reward": 2000, "n": 10, "style": discord.ButtonStyle.secondary, "desc": "10 questions · **500 💰** → **2 000 💰** si parfait"},
+    "ranked_1v1": {"label": "Ranked 1v1",    "emoji": "⚔️", "cost": 200, "reward": None, "n": 10, "style": discord.ButtonStyle.success,   "desc": "200 💰 chacun · **Tout au gagnant**"},
 }
 
 
@@ -4478,7 +4478,7 @@ class _QuizPrimeModeView(discord.ui.View):
             if not spend_berrys(uid, cost):
                 bal = get_berrys(uid)
                 await interaction.response.send_message(
-                    f"❌ Solde insuffisant. Tu as **{bal} 🍊**, il te faut **{cost} 🍊**.", ephemeral=True
+                    f"❌ Solde insuffisant. Tu as **{bal} 💰**, il te faut **{cost} 💰**.", ephemeral=True
                 )
                 return
 
@@ -4505,7 +4505,7 @@ class _QuizPrimeModeView(discord.ui.View):
 
 @bot.tree.command(name="quizz", description="Quiz animé — gratuit en solo/duel, ou Ranked 1v1 avec mise Berry !")
 @app_commands.describe(
-    adversaire="Mentionne un membre pour un Ranked 1v1 payant (200 🍊 chacun)",
+    adversaire="Mentionne un membre pour un Ranked 1v1 payant (200 💰 chacun)",
     categorie="Catégorie de questions",
 )
 @app_commands.choices(categorie=[
@@ -4545,10 +4545,10 @@ async def quizz_cmd(interaction: discord.Interaction,
 
     bal1, bal2 = get_berrys(str(uid1)), get_berrys(str(uid2))
     if bal1 < BET:
-        await interaction.response.send_message(f"❌ Tu n'as pas assez de 🍊 ({bal1}/{BET}).", ephemeral=True)
+        await interaction.response.send_message(f"❌ Tu n'as pas assez de 💰 ({bal1}/{BET}).", ephemeral=True)
         return
     if bal2 < BET:
-        await interaction.response.send_message(f"❌ {adversaire.mention} n'a pas assez de 🍊 ({bal2}/{BET}).", ephemeral=True)
+        await interaction.response.send_message(f"❌ {adversaire.mention} n'a pas assez de 💰 ({bal2}/{BET}).", ephemeral=True)
         return
 
     try:
@@ -4560,7 +4560,7 @@ async def quizz_cmd(interaction: discord.Interaction,
         title="⚔️  Quiz Ranked 1v1  ⚔️",
         description=(
             f"**{interaction.user.mention}** défie **{adversaire.mention}** !\n\n"
-            f"💰 Mise : **{BET} 🍊 chacun** → **{BET*2} 🍊** au gagnant\n"
+            f"💰 Mise : **{BET} 💰 chacun** → **{BET*2} 💰** au gagnant\n"
             f"Catégorie : **{categorie}** · 10 questions\n\n"
             f"{adversaire.mention}, tu as **60 secondes** pour accepter."
         ),
@@ -4585,11 +4585,11 @@ class _QuizRankedChallengeView(discord.ui.View):
         self.stop()
         # Déduire les mises
         if not spend_berrys(str(self._uid1), self._bet, track="lost"):
-            await interaction.response.edit_message(content="❌ Le challenger n'a plus assez de 🍊.", embed=None, view=None)
+            await interaction.response.edit_message(content="❌ Le challenger n'a plus assez de 💰.", embed=None, view=None)
             return
         if not spend_berrys(str(self._uid2), self._bet, track="lost"):
             add_berrys(str(self._uid1), self._bet, track=None)
-            await interaction.response.edit_message(content="❌ Tu n'as plus assez de 🍊.", embed=None, view=None)
+            await interaction.response.edit_message(content="❌ Tu n'as plus assez de 💰.", embed=None, view=None)
             return
         await interaction.response.defer()
         await _start_live_duel(self._orig_inter, self._uid1, self._uid2, self._category, 10)
@@ -4748,7 +4748,7 @@ def _embed_welcome(uid: str, display_name: str) -> discord.Embed:
         description=(
             f"Bienvenue **{display_name}** !\n"
             f"Dépense les Berrys que tu as gagnés en vocal.\n\n"
-            f"💰  Solde : **{_fmt_berry(bal)} 🍊**"
+            f"💰  Solde : **{_fmt_berry(bal)} 💰**"
         ),
         color=discord.Color.from_rgb(255, 184, 0),
     )
@@ -4784,14 +4784,14 @@ def _embed_tickets(uid: str) -> discord.Embed:
         description=(
             "Impose un pseudo à n'importe quel membre du serveur\n"
             "pour une durée limitée. **Max 2 utilisations / jour.**\n\n"
-            f"💰  Solde : **{_fmt_berry(bal)} 🍊**"
+            f"💰  Solde : **{_fmt_berry(bal)} 💰**"
         ),
         color=discord.Color.blurple(),
     )
     lines = [_SEP]
     for t in _TICKET_TIERS:
         stock = tickets.get(t["id"], 0)
-        lines.append(f"{t['emoji']}  **{t['name']}**  —  {_fmt_berry(t['price'])} 🍊  ·  {_badge(stock)}")
+        lines.append(f"{t['emoji']}  **{t['name']}**  —  {_fmt_berry(t['price'])} 💰  ·  {_badge(stock)}")
     lines.append(f"\n> Tickets utilisés aujourd'hui : **{daily_used} / 2**")
     e.add_field(name="​", value="\n".join(lines), inline=False)
     e.set_footer(text="Utilisation : /ticket @membre nouveau_pseudo")
@@ -4810,12 +4810,12 @@ def _embed_protection(uid: str) -> discord.Embed:
             "Protège-toi contre les tickets adverses.\n"
             "Chaque bouclier **absorbe 1 tentative** et consomme\n"
             "le ticket de l'attaquant sans modifier ton pseudo.\n\n"
-            f"💰  Solde : **{_fmt_berry(bal)} 🍊**"
+            f"💰  Solde : **{_fmt_berry(bal)} 💰**"
         ),
         color=discord.Color.green(),
     )
     e.add_field(name=_SEP, value=(
-        f"🛡️  **Bouclier Pseudo**  —  {_fmt_berry(500_000)} 🍊\n\n"
+        f"🛡️  **Bouclier Pseudo**  —  {_fmt_berry(500_000)} 💰\n\n"
         f"> {stock_str}"
     ), inline=False)
     e.set_footer(text="Les boucliers s'empilent — achetable en plusieurs exemplaires")
@@ -4834,7 +4834,7 @@ def _embed_sounds(uid: str) -> discord.Embed:
             "Un son joue automatiquement chaque fois que tu rejoins\n"
             "un salon vocal. Chaque achat = **3 utilisations**.\n"
             "Racheter le son actif ajoute **+3 util.**\n\n"
-            f"💰  Solde : **{_fmt_berry(bal)} 🍊**"
+            f"💰  Solde : **{_fmt_berry(bal)} 💰**"
         ),
         color=discord.Color.from_rgb(255, 105, 180),
     )
@@ -4844,7 +4844,7 @@ def _embed_sounds(uid: str) -> discord.Embed:
             status = f"✅ **actif** — {sound_uses} util. restantes"
         else:
             status = "inactif"
-        lines.append(f"{s['emoji']}  **{s['name']}**  —  {_fmt_berry(s['price'])} 🍊\n╰ {status}")
+        lines.append(f"{s['emoji']}  **{s['name']}**  —  {_fmt_berry(s['price'])} 💰\n╰ {status}")
     e.add_field(name="​", value="\n\n".join(lines), inline=False)
     e.set_footer(text="Un seul son actif à la fois")
     return e
@@ -4866,13 +4866,13 @@ def _embed_boost(uid: str) -> discord.Embed:
         description=(
             "Obtiens la priorité de parole dans tous les salons vocaux.\n"
             "Les durées **s'accumulent** — achetable plusieurs fois.\n\n"
-            f"💰  Solde : **{_fmt_berry(bal)} 🍊**"
+            f"💰  Solde : **{_fmt_berry(bal)} 💰**"
         ),
         color=discord.Color.from_rgb(255, 140, 0),
     )
     lines = [_SEP, f"> Statut : {status}", ""]
     for b in _BOOST_ITEMS:
-        lines.append(f"{b['emoji']}  **{b['name']}**  —  {_fmt_berry(b['price'])} 🍊  ·  +{b['hours']}h")
+        lines.append(f"{b['emoji']}  **{b['name']}**  —  {_fmt_berry(b['price'])} 💰  ·  +{b['hours']}h")
     e.add_field(name="​", value="\n".join(lines), inline=False)
     e.set_footer(text="Durées empilables à l'infini")
     return e
@@ -4938,7 +4938,7 @@ class _QuantityModal(discord.ui.Modal, title="Acheter"):
         if not self._free and not spend_berrys(uid, total):
             bal = get_berrys(uid)
             await interaction.response.send_message(
-                f"❌ Solde insuffisant — **{_fmt_berry(bal)} 🍊** dispo, **{_fmt_berry(total)} 🍊** requis.",
+                f"❌ Solde insuffisant — **{_fmt_berry(bal)} 💰** dispo, **{_fmt_berry(total)} 💰** requis.",
                 ephemeral=True,
             )
             return
@@ -4956,7 +4956,7 @@ class _QuantityModal(discord.ui.Modal, title="Acheter"):
                 description=(
                     f"**{qty}×{item['hours']}h** ajoutées{tag}.\n"
                     f"Expire dans **{h}h {str(m).zfill(2)}min**.\n\n"
-                    f"Solde : **{_fmt_berry(get_berrys(uid))} 🍊**"
+                    f"Solde : **{_fmt_berry(get_berrys(uid))} 💰**"
                 ),
                 color=discord.Color.from_rgb(255, 140, 0),
             )
@@ -4969,7 +4969,7 @@ class _QuantityModal(discord.ui.Modal, title="Acheter"):
                     title="✅  🛡️ Bouclier acheté !",
                     description=(
                         f"**{qty}×** Bouclier Pseudo{tag}. Tu en possèdes **{stock}**.\n\n"
-                        f"Solde : **{_fmt_berry(get_berrys(uid))} 🍊**"
+                        f"Solde : **{_fmt_berry(get_berrys(uid))} 💰**"
                     ),
                     color=discord.Color.green(),
                 )
@@ -4979,7 +4979,7 @@ class _QuantityModal(discord.ui.Modal, title="Acheter"):
                     description=(
                         f"**{qty}×** {item['name']}{tag}. Tu en possèdes **{stock}**.\n"
                         f"Utilise `/ticket @membre pseudo` → **{item['minutes']} min**.\n\n"
-                        f"Solde : **{_fmt_berry(get_berrys(uid))} 🍊**"
+                        f"Solde : **{_fmt_berry(get_berrys(uid))} 💰**"
                     ),
                     color=discord.Color.blurple(),
                 )
@@ -5094,7 +5094,7 @@ class _ShopCategoryView(discord.ui.View):
             if not free and not spend_berrys(uid, item["price"]):
                 bal = get_berrys(uid)
                 await interaction.response.send_message(
-                    f"❌ Solde insuffisant — **{_fmt_berry(bal)} 🍊** / **{_fmt_berry(item['price'])} 🍊** requis.",
+                    f"❌ Solde insuffisant — **{_fmt_berry(bal)} 💰** / **{_fmt_berry(item['price'])} 💰** requis.",
                     ephemeral=True,
                 )
                 return
@@ -5111,7 +5111,7 @@ class _ShopCategoryView(discord.ui.View):
                 title=f"✅  {item['emoji']} Son d'entrée {action} !",
                 description=(
                     f"**{item['name']}**{tag} — **{new_uses}** utilisation(s) restantes.\n\n"
-                    f"Solde : **{_fmt_berry(get_berrys(uid))} 🍊**"
+                    f"Solde : **{_fmt_berry(get_berrys(uid))} 💰**"
                 ),
                 color=discord.Color.from_rgb(255, 105, 180),
             )
@@ -5159,7 +5159,7 @@ class _ShopWelcomeView(discord.ui.View):
         return cb
 
 
-@bot.tree.command(name="shop", description="Dépense tes Berrys 🍊 dans le shop !")
+@bot.tree.command(name="shop", description="Dépense tes Berrys 💰 dans le shop !")
 @app_commands.guilds(*GUILD_IDS)
 async def shop_cmd(interaction: discord.Interaction):
     uid  = str(interaction.user.id)
@@ -5209,7 +5209,7 @@ class _VirementView(discord.ui.View):
             await interaction.response.edit_message(
                 embed=discord.Embed(
                     title="❌ Virement annulé",
-                    description=f"Solde insuffisant au moment de la confirmation. Tu as **{_fmt_berry(bal)} 🍊**.",
+                    description=f"Solde insuffisant au moment de la confirmation. Tu as **{_fmt_berry(bal)} 💰**.",
                     color=discord.Color.red(),
                 ),
                 view=None,
@@ -5221,8 +5221,8 @@ class _VirementView(discord.ui.View):
             embed=discord.Embed(
                 title="✅ Virement effectué !",
                 description=(
-                    f"**{_fmt_berry(self._montant)} 🍊** envoyés à **{self._receiver_name}** !\n\n"
-                    f"Ton nouveau solde : **{_fmt_berry(new_bal)} 🍊**"
+                    f"**{_fmt_berry(self._montant)} 💰** envoyés à **{self._receiver_name}** !\n\n"
+                    f"Ton nouveau solde : **{_fmt_berry(new_bal)} 💰**"
                 ),
                 color=discord.Color.green(),
             ),
@@ -5234,7 +5234,7 @@ class _VirementView(discord.ui.View):
                 embed=discord.Embed(
                     title="💸 Virement Berry",
                     description=(
-                        f"{interaction.user.mention} a envoyé **{_fmt_berry(self._montant)} 🍊** "
+                        f"{interaction.user.mention} a envoyé **{_fmt_berry(self._montant)} 💰** "
                         f"à <@{self._receiver_id}> !"
                     ),
                     color=discord.Color.from_rgb(212, 175, 55),
@@ -5254,7 +5254,7 @@ class _VirementView(discord.ui.View):
         )
 
 
-@bot.tree.command(name="virement", description="Vire des Berrys 🍊 à un autre membre !")
+@bot.tree.command(name="virement", description="Vire des Berrys 💰 à un autre membre !")
 @app_commands.describe(
     membre="Le membre qui recevra les Berrys",
     montant="Nombre de Berrys à virer (min 100)",
@@ -5271,13 +5271,13 @@ async def virement_cmd(interaction: discord.Interaction, membre: discord.Member,
         await interaction.response.send_message("❌ Tu ne peux pas virer des Berrys à un bot.", ephemeral=True)
         return
     if montant < 100:
-        await interaction.response.send_message("❌ Le montant minimum est de **100 🍊**.", ephemeral=True)
+        await interaction.response.send_message("❌ Le montant minimum est de **100 💰**.", ephemeral=True)
         return
 
     bal = get_berrys(uid)
     if bal < montant:
         await interaction.response.send_message(
-            f"❌ Solde insuffisant. Tu as **{_fmt_berry(bal)} 🍊**, il te faut **{_fmt_berry(montant)} 🍊**.",
+            f"❌ Solde insuffisant. Tu as **{_fmt_berry(bal)} 💰**, il te faut **{_fmt_berry(montant)} 💰**.",
             ephemeral=True,
         )
         return
@@ -5286,8 +5286,8 @@ async def virement_cmd(interaction: discord.Interaction, membre: discord.Member,
         embed=discord.Embed(
             title="💸 Confirmer le virement",
             description=(
-                f"Tu t'apprêtes à envoyer **{_fmt_berry(montant)} 🍊** à {membre.mention}.\n\n"
-                f"Ton solde après virement : **{_fmt_berry(bal - montant)} 🍊**"
+                f"Tu t'apprêtes à envoyer **{_fmt_berry(montant)} 💰** à {membre.mention}.\n\n"
+                f"Ton solde après virement : **{_fmt_berry(bal - montant)} 💰**"
             ),
             color=discord.Color.orange(),
         ),
@@ -5344,8 +5344,8 @@ class _VenteView(discord.ui.View):
                 embed=discord.Embed(
                     title="❌ Achat impossible",
                     description=(
-                        f"Solde insuffisant. Tu as **{_fmt_berry(bal)} 🍊**, "
-                        f"il te faut **{_fmt_berry(self._prix)} 🍊**."
+                        f"Solde insuffisant. Tu as **{_fmt_berry(bal)} 💰**, "
+                        f"il te faut **{_fmt_berry(self._prix)} 💰**."
                     ),
                     color=discord.Color.red(),
                 ),
@@ -5362,9 +5362,9 @@ class _VenteView(discord.ui.View):
                 title=f"{item['emoji']} Achat confirmé !",
                 description=(
                     f"Tu as acheté **{qty_label}{item['name']}** {item['emoji']} "
-                    f"pour **{_fmt_berry(self._prix)} 🍊** !\n\n"
-                    f"<@{self._seller_id}> a reçu **{_fmt_berry(self._prix)} 🍊**.\n"
-                    f"Ton nouveau solde : **{_fmt_berry(get_berrys(self._buyer_id))} 🍊**"
+                    f"pour **{_fmt_berry(self._prix)} 💰** !\n\n"
+                    f"<@{self._seller_id}> a reçu **{_fmt_berry(self._prix)} 💰**.\n"
+                    f"Ton nouveau solde : **{_fmt_berry(get_berrys(self._buyer_id))} 💰**"
                 ),
                 color=discord.Color.green(),
             ),
@@ -5419,7 +5419,7 @@ async def vendre_cmd(interaction: discord.Interaction, membre: discord.Member,
         await interaction.response.send_message("❌ La quantité doit être d'au moins **1**.", ephemeral=True)
         return
     if prix < 1:
-        await interaction.response.send_message("❌ Le prix doit être supérieur à **0 🍊**.", ephemeral=True)
+        await interaction.response.send_message("❌ Le prix doit être supérieur à **0 💰**.", ephemeral=True)
         return
 
     user_data = get_user(_CACHE, uid)
@@ -5443,7 +5443,7 @@ async def vendre_cmd(interaction: discord.Interaction, membre: discord.Member,
             title=f"{item['emoji']} Offre de vente",
             description=(
                 f"{interaction.user.mention} propose **{qty_label}{item['name']}** {item['emoji']} "
-                f"à {membre.mention} pour **{_fmt_berry(prix)} 🍊**.\n\n"
+                f"à {membre.mention} pour **{_fmt_berry(prix)} 💰**.\n\n"
                 f"{membre.mention}, tu as **2 minutes** pour accepter ou refuser."
             ),
             color=discord.Color.orange(),
@@ -5456,7 +5456,7 @@ async def vendre_cmd(interaction: discord.Interaction, membre: discord.Member,
                 title=f"{item['emoji']} Offre reçue !",
                 description=(
                     f"**{interaction.user.display_name}** te propose **{qty_label}{item['name']}** {item['emoji']} "
-                    f"pour **{_fmt_berry(prix)} 🍊**.\n\nRéponds dans le serveur !"
+                    f"pour **{_fmt_berry(prix)} 💰**.\n\nRéponds dans le serveur !"
                 ),
                 color=discord.Color.from_rgb(212, 175, 55),
             )
@@ -5516,7 +5516,7 @@ class _VenteTicketView(discord.ui.View):
             await interaction.response.edit_message(
                 embed=discord.Embed(
                     title="❌ Achat impossible",
-                    description=f"Solde insuffisant. Tu as **{_fmt_berry(bal)} 🍊**, il te faut **{_fmt_berry(self._prix)} 🍊**.",
+                    description=f"Solde insuffisant. Tu as **{_fmt_berry(bal)} 💰**, il te faut **{_fmt_berry(self._prix)} 💰**.",
                     color=discord.Color.red(),
                 ),
                 view=None,
@@ -5533,8 +5533,8 @@ class _VenteTicketView(discord.ui.View):
                 title=f"{self._ticket_emoji} Ticket acheté !",
                 description=(
                     f"Tu possèdes maintenant **1 {self._ticket_name}** {self._ticket_emoji}\n\n"
-                    f"<@{self._seller_id}> a reçu **{_fmt_berry(self._prix)} 🍊**.\n"
-                    f"Ton nouveau solde : **{_fmt_berry(get_berrys(self._buyer_id))} 🍊**"
+                    f"<@{self._seller_id}> a reçu **{_fmt_berry(self._prix)} 💰**.\n"
+                    f"Ton nouveau solde : **{_fmt_berry(get_berrys(self._buyer_id))} 💰**"
                 ),
                 color=discord.Color.green(),
             ),
@@ -6168,14 +6168,14 @@ async def sync_berries_cmd(interaction: discord.Interaction):
         total_added += deficit
         fixed += 1
         if len(lines) < 20:
-            lines.append(f"<@{uid}> +**{deficit:,} 🍊** ({total_hours:.1f}h)".replace(",", " "))
+            lines.append(f"<@{uid}> +**{deficit:,} 💰** ({total_hours:.1f}h)".replace(",", " "))
 
     await asyncio.get_running_loop().run_in_executor(db_executor, _sync_flush_dirty)
 
     desc = (
         f"✅ **{fixed}** membre(s) recalibré(s)\n"
         f"⏭️ **{skipped}** membre(s) déjà à jour\n"
-        f"💰 Total distribué : **{total_added:,} 🍊**\n".replace(",", " ")
+        f"💰 Total distribué : **{total_added:,} 💰**\n".replace(",", " ")
     )
     if lines:
         desc += "\n**Détail (20 premiers) :**\n" + "\n".join(lines)
@@ -6529,7 +6529,7 @@ async def _aki_dispatch(interaction: discord.Interaction, session: "_AkiSession"
             title="🎩 Akinator — Tu m'as eu ! 🎩",
             description=(
                 f"😤 Je n'ai pas trouvé ton personnage en {session.nb_q} questions !\n\n"
-                f"**+{_fmt_berry(_AKI_REWARD)} 🍊** gagnés ! Solde : **{_fmt_berry(new_bal)} 🍊**"
+                f"**+{_fmt_berry(_AKI_REWARD)} 💰** gagnés ! Solde : **{_fmt_berry(new_bal)} 💰**"
             ),
             color=discord.Color.green(),
         )
@@ -6596,7 +6596,7 @@ class _AkiGuessView(discord.ui.View):
             description=(
                 f"🔮 **J'ai trouvé !** Tu pensais à **{self._character}** !\n"
                 f"Questions posées : **{self._session.nb_q}**\n\n"
-                f"💸 **-{_fmt_berry(_AKI_ENTRY)} 🍊** (mise d'entrée perdue)"
+                f"💸 **-{_fmt_berry(_AKI_ENTRY)} 💰** (mise d'entrée perdue)"
             ),
             color=discord.Color.red(),
         )
