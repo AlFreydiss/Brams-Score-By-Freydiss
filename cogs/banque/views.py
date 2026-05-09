@@ -26,6 +26,14 @@ if TYPE_CHECKING:
 
 SEP = "━━━━━━━━━━━━━━━━━━━━━━"
 
+def _calc_transfer_taxes(amount: int) -> dict:
+    tva     = int(amount * 0.20)   # TVA Nouveau Monde
+    csg     = int(amount * 0.092)  # CSG/CRDS Marine
+    contrib = int(amount * 0.02)   # Contribution Marine
+    timbre  = 1_000                # Timbre fiscal (fixe)
+    total   = tva + csg + contrib + timbre
+    return {"tva": tva, "csg": csg, "contrib": contrib, "timbre": timbre, "total": total}
+
 # Roulette — numéros rouges/noirs
 _ROUGE = frozenset({1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36})
 _NOIR  = frozenset({2,4,6,8,10,11,13,15,17,20,22,24,26,28,29,31,33,35})
@@ -143,8 +151,8 @@ async def _resolve_member(interaction: discord.Interaction, raw: str) -> discord
     )
 
 
-async def _execute_transfer(interaction, uid, target, amount, fee):
-    total = amount + fee
+async def _execute_transfer(interaction, uid, target, amount, taxes: dict):
+    total = amount + taxes["total"]
     ok = interaction.client.spend_berrys(uid, total)
     if not ok:
         await interaction.followup.send("❌ Solde insuffisant.", ephemeral=True)
@@ -177,10 +185,18 @@ async def _execute_transfer(interaction, uid, target, amount, fee):
             title="✅ Virement effectué",
             description=(
                 f"{SEP}\n"
-                f"Envoyé **`{fmt(amount)}` ฿** à {target.mention}\n"
-                f"Frais Marines : `{fmt(fee)}` ฿\n"
+                f"💸 Envoyé à {target.mention} : **`{fmt(amount)}` ฿**\n"
                 f"{SEP}\n"
-                f"💰 Ton solde : `{fmt(wallet_from)}` ฿"
+                f"**📋 Détail des taxes :**\n"
+                f"> 🇫🇷 TVA Nouveau Monde (20%) · `{fmt(taxes['tva'])}` ฿\n"
+                f"> 🏛️ CSG/CRDS Marine (9.2%) · `{fmt(taxes['csg'])}` ฿\n"
+                f"> ⚓ Contribution Marine (2%) · `{fmt(taxes['contrib'])}` ฿\n"
+                f"> 🪙 Timbre fiscal · `{fmt(taxes['timbre'])}` ฿\n"
+                f"{SEP}\n"
+                f"💰 Total taxes : **`{fmt(taxes['total'])}` ฿** *(soit {taxes['total']/max(1,amount)*100:.1f}% du virement)*\n"
+                f"🔻 Total débité : **`{fmt(total)}` ฿**\n"
+                f"{SEP}\n"
+                f"💼 Ton solde : `{fmt(wallet_from)}` ฿"
             ),
             color=COLOR_GAIN,
         ),
@@ -482,11 +498,11 @@ class TransfertModal(discord.ui.Modal, title="🔁 Virement de Berries"):
         if target.bot:
             await interaction.followup.send("❌ Les bots n'ont pas de compte.", ephemeral=True); return
 
-        fee   = max(1, int(amount * TRANSFER_FEE_RATE))
-        total = amount + fee
+        taxes = _calc_transfer_taxes(amount)
+        total = amount + taxes["total"]
         if wallet < total:
             await interaction.followup.send(
-                f"❌ Solde insuffisant (besoin de `{fmt(total)}` ฿ avec frais `{fmt(fee)}` ฿).",
+                f"❌ Solde insuffisant (besoin de `{fmt(total)}` ฿ dont `{fmt(taxes['total'])}` ฿ de taxes).",
                 ephemeral=True,
             ); return
 
@@ -499,38 +515,43 @@ class TransfertModal(discord.ui.Modal, title="🔁 Virement de Berries"):
 
         settings = await db.get_bank_settings(self.uid)
         if settings.get("confirm_large_transfers", True) and amount >= TRANSFER_CONFIRM_THRESHOLD:
-            view = ConfirmTransfertView(self.uid, target, amount, fee)
+            view = ConfirmTransfertView(self.uid, target, amount, taxes)
             embed = discord.Embed(
                 title="⚠️ Confirmation requise",
                 description=(
-                    f"Tu t'apprêtes à envoyer **`{fmt(amount)}` ฿** à {target.mention}.\n"
-                    f"Frais Marines : **`{fmt(fee)}` ฿** (2%)\n"
-                    f"**Total débité : `{fmt(total)}` ฿**"
+                    f"Tu t'apprêtes à envoyer **`{fmt(amount)}` ฿** à {target.mention}.\n\n"
+                    f"**📋 Taxes :**\n"
+                    f"> 🇫🇷 TVA Nouveau Monde (20%) · `{fmt(taxes['tva'])}` ฿\n"
+                    f"> 🏛️ CSG/CRDS Marine (9.2%) · `{fmt(taxes['csg'])}` ฿\n"
+                    f"> ⚓ Contribution Marine (2%) · `{fmt(taxes['contrib'])}` ฿\n"
+                    f"> 🪙 Timbre fiscal · `{fmt(taxes['timbre'])}` ฿\n\n"
+                    f"💰 Total taxes : **`{fmt(taxes['total'])}` ฿**\n"
+                    f"🔻 **Total débité : `{fmt(total)}` ฿**"
                 ),
                 color=0xFFA500,
             )
             msg = await interaction.followup.send(embed=embed, view=view, ephemeral=True)
             view.message = msg
         else:
-            await _execute_transfer(interaction, self.uid, target, amount, fee)
+            await _execute_transfer(interaction, self.uid, target, amount, taxes)
 
 
 class ConfirmTransfertView(discord.ui.View):
     message: discord.Message | None = None
 
-    def __init__(self, uid, target, amount, fee):
+    def __init__(self, uid, target, amount, taxes: dict):
         super().__init__(timeout=60)
         self.uid    = uid
         self.target = target
         self.amount = amount
-        self.fee    = fee
+        self.taxes  = taxes
 
     @discord.ui.button(label="Confirmer", emoji="✅", style=discord.ButtonStyle.success)
     async def btn_confirm(self, interaction: discord.Interaction, _: discord.ui.Button):
         if not _owner_check(self.uid, interaction):
             await _deny(interaction); return
         await interaction.response.defer(ephemeral=True)
-        await _execute_transfer(interaction, self.uid, self.target, self.amount, self.fee)
+        await _execute_transfer(interaction, self.uid, self.target, self.amount, self.taxes)
         self.stop()
 
     @discord.ui.button(label="Annuler", emoji="❌", style=discord.ButtonStyle.danger)
