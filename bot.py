@@ -5847,6 +5847,49 @@ async def _chart_url(history: list) -> str | None:
     return None
 
 
+class ServerBankView(discord.ui.View):
+    PER_PAGE = 15
+
+    def __init__(self, entries: list, page: int = 0):
+        super().__init__(timeout=180)
+        self.entries  = entries
+        self.page     = page
+        self.max_page = max(0, (len(entries) - 1) // self.PER_PAGE)
+        self._refresh_buttons()
+
+    def _refresh_buttons(self):
+        self.btn_prev.disabled = self.page == 0
+        self.btn_next.disabled = self.page >= self.max_page
+
+    def _build_embed(self) -> discord.Embed:
+        start  = self.page * self.PER_PAGE
+        chunk  = self.entries[start:start + self.PER_PAGE]
+        medals = ["🥇", "🥈", "🥉"] + [f"{i}." for i in range(4, len(self.entries) + 1)]
+        lines  = [
+            f"{medals[start + i]} **{name}** — `{_fmt_n(bal)}` Berrys"
+            for i, (name, bal) in enumerate(chunk)
+        ]
+        e = discord.Embed(
+            title=f"🏦 Freydiss Bank — Classement complet ({len(self.entries)} membres)",
+            description="\n".join(lines) or "Aucune donnée",
+            color=0xFFD700,
+        )
+        e.set_footer(text=f"Page {self.page + 1}/{self.max_page + 1}")
+        return e
+
+    @discord.ui.button(label="◀", style=discord.ButtonStyle.secondary)
+    async def btn_prev(self, interaction: discord.Interaction, _: discord.ui.Button):
+        self.page -= 1
+        self._refresh_buttons()
+        await interaction.response.edit_message(embed=self._build_embed(), view=self)
+
+    @discord.ui.button(label="▶", style=discord.ButtonStyle.secondary)
+    async def btn_next(self, interaction: discord.Interaction, _: discord.ui.Button):
+        self.page += 1
+        self._refresh_buttons()
+        await interaction.response.edit_message(embed=self._build_embed(), view=self)
+
+
 class BanqueView(discord.ui.View):
     def __init__(self, uid: str, target: discord.Member, stats: dict):
         super().__init__(timeout=120)
@@ -5907,6 +5950,24 @@ class BanqueView(discord.ui.View):
             color=0xFFD700,
         )
         await interaction.followup.send(embed=e, ephemeral=True)
+
+    @discord.ui.button(label="Tout le serveur", emoji="🌍", style=discord.ButtonStyle.primary)
+    async def btn_server(self, interaction: discord.Interaction, _: discord.ui.Button):
+        await interaction.response.defer(ephemeral=True)
+        gids  = {str(m.id) for m in interaction.guild.members}
+        named = sorted(
+            [
+                (
+                    (interaction.guild.get_member(int(uid))).display_name
+                    if interaction.guild.get_member(int(uid)) else f"<@{uid}>",
+                    d.get("berrys", 0),
+                )
+                for uid, d in _CACHE.items() if uid in gids
+            ],
+            key=lambda x: x[1], reverse=True,
+        )
+        view = ServerBankView(named)
+        await interaction.followup.send(embed=view._build_embed(), view=view, ephemeral=True)
 
 
 # ─────────────────────────────────────────
@@ -5984,7 +6045,7 @@ async def banque(interaction: discord.Interaction, membre: discord.Member = None
 
     now_str = datetime.now(timezone.utc).strftime("%H:%M UTC")
 
-    embed = discord.Embed(title="🏦 Banque Mondiale des Pirates", color=0xFFD700)
+    embed = discord.Embed(title="🏦 Freydiss Bank", color=0xFFD700)
     embed.set_author(name=target.display_name, icon_url=target.display_avatar.url)
     embed.set_thumbnail(url="https://em-content.zobj.net/source/twitter/376/bank_1f3e6.png")
 
@@ -6031,7 +6092,7 @@ async def banque(interaction: discord.Interaction, membre: discord.Member = None
         inline=False,
     )
     embed.set_footer(
-        text=f"Banque Mondiale • Compte n°{uid[-6:]} • Mis à jour à {now_str}",
+        text=f"Freydiss Bank • Compte n°{uid[-6:]} • Mis à jour à {now_str}",
         icon_url=interaction.client.user.display_avatar.url,
     )
 
