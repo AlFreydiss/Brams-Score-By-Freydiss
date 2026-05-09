@@ -1701,6 +1701,25 @@ async def on_ready():
         print(f"[BOT] Sync Berry vocal retro : {synced} utilisateurs credites")
     print("[BOT] Pret !")
 
+class _ContesterView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=300)
+
+    @discord.ui.button(label="Contester", emoji="📋", style=discord.ButtonStyle.danger)
+    async def btn_contester(self, interaction: discord.Interaction, _: discord.ui.Button):
+        _AMIRAUX = ["BenActief", "Brams", "Berat", "Freydiss"]
+        choix = random.sample(_AMIRAUX, random.randint(1, len(_AMIRAUX)))
+        noms = f"l'Amiral {choix[0]}" if len(choix) == 1 else "les Amiraux " + ", ".join(choix[:-1]) + f" et {choix[-1]}"
+        await interaction.response.send_message(
+            embed=discord.Embed(
+                title="📋 Réponse de la Marine",
+                description=f"Votre contestation a été examinée et **rejetée** par {noms}. 💀",
+                color=0xb71c1c,
+            ).set_footer(text="Marine Headquarters • Justice"),
+            ephemeral=True,
+        )
+
+
 @bot.event
 async def on_message(message):
     if message.author.bot:
@@ -1754,6 +1773,7 @@ async def on_message(message):
         solde_apres = get_berrys(uid)
         pct = (_MARINE_TAX / max(1, solde_avant)) * 100
         motif = random.choice(_MARINE_MOTIFS)
+        suspect = message.content[:120] + ("…" if len(message.content) > 120 else "")
         try:
             await message.channel.send(
                 content=message.author.mention,
@@ -1762,17 +1782,18 @@ async def on_message(message):
                     description=(
                         f"Suite à une détection automatique, la Marine a émis un avis de prélèvement fiscal "
                         f"sur le compte de {message.author.mention}.\n\n"
-                        f"**Motif :** *{motif}*\n\n"
+                        f"**Motif :** *{motif}*\n"
+                        f"**Activité détectée :** *« {suspect} »*\n\n"
                         f"━━━━━━━━━━━━━━━━━━━━━━\n"
                         f"💸 **Montant prélevé :** `{_MARINE_TAX:,} ฿`\n"
                         f"📊 **Représente :** `{pct:.1f}%` de ta fortune\n"
                         f"💰 **Solde avant :** `{solde_avant:,} ฿`\n"
                         f"🔻 **Solde après :** `{solde_apres:,} ฿`\n"
-                        f"━━━━━━━━━━━━━━━━━━━━━━\n"
-                        f"*Pour contester, utilise `/contester`.*"
+                        f"━━━━━━━━━━━━━━━━━━━━━━"
                     ),
                     color=0x1a237e,
                 ).set_footer(text="Marine Headquarters • Justice — Prélèvement automatique"),
+                view=_ContesterView(),
             )
         except Exception:
             pass
