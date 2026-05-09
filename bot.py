@@ -5684,6 +5684,18 @@ async def ticket_pseudo_cmd(interaction: discord.Interaction, membre: discord.Me
     if membre.bot:
         await interaction.response.send_message("❌ Impossible de changer le pseudo d'un bot.", ephemeral=True)
         return
+    if membre.guild_permissions.administrator and not is_admin:
+        await interaction.response.send_message(
+            embed=discord.Embed(
+                title="🚫 Cible protégée",
+                description=(
+                    f"{membre.mention} est **administrateur** — impossible de cibler un admin avec un ticket pseudo."
+                ),
+                color=discord.Color.red(),
+            ),
+            ephemeral=True,
+        )
+        return
     if len(nouveau_pseudo) > 32:
         await interaction.response.send_message("❌ Le pseudo ne peut pas dépasser 32 caractères.", ephemeral=True)
         return
