@@ -12,10 +12,11 @@ GUILD_IDS = [
     for x in os.environ.get("GUILD_IDS", "924346730194014220,1478937064031518892").split(",")
 ]
 
-_MODEL           = "groq/llama-3.3-70b-versatile"
+_MODEL_GEMINI    = "gemini/gemini-2.0-flash"          # gratuit — 1M tokens/jour
+_MODEL_GROQ      = "groq/llama-3.3-70b-versatile"    # fallback si Gemini absent
 _SESSION_TIMEOUT = 600
-_MAX_HISTORY     = 14        # 7 échanges max — réduit les tokens envoyés
-_MEMORY_EVERY    = 5         # mise à jour mémoire tous les N échanges
+_MAX_HISTORY     = 14
+_MEMORY_EVERY    = 5
 
 _SYSTEM_BASE = (
     "Tu es le bot du serveur Discord 'Brams Community' (One Piece, francophone). "
@@ -69,11 +70,20 @@ def _trim_history(session: dict):
         session["history"] = session["history"][-_MAX_HISTORY:]
 
 
+def _pick_model() -> tuple[str, str]:
+    """Retourne (model, api_key) — Gemini en priorité, Groq en fallback."""
+    key = os.environ.get("GEMINI_API_KEY", "")
+    if key:
+        return _MODEL_GEMINI, key
+    return _MODEL_GROQ, os.environ.get("GROQ_API_KEY", "")
+
+
 async def _call_ai(system: str, history: list[dict]) -> str:
+    model, api_key = _pick_model()
     resp = await asyncio.wait_for(
         litellm.acompletion(
-            model=_MODEL,
-            api_key=os.environ.get("GROQ_API_KEY", ""),
+            model=model,
+            api_key=api_key,
             max_tokens=450,
             temperature=0.4,
             request_timeout=25,
@@ -86,6 +96,7 @@ async def _call_ai(system: str, history: list[dict]) -> str:
 
 async def _update_memory_task(bot, uid: int, current_memory: str, history: list[dict]):
     try:
+        model, api_key = _pick_model()
         last = history[-4:] if len(history) >= 4 else history
         exchange_text = "\n".join(
             f"{'User' if m['role'] == 'user' else 'Bot'}: {m['content'][:300]}"
@@ -94,8 +105,8 @@ async def _update_memory_task(bot, uid: int, current_memory: str, history: list[
         prompt = f"Fiche actuelle :\n{current_memory or '(vide)'}\n\nÉchange récent :\n{exchange_text}"
         resp = await asyncio.wait_for(
             litellm.acompletion(
-                model=_MODEL,
-                api_key=os.environ.get("GROQ_API_KEY", ""),
+                model=model,
+                api_key=api_key,
                 max_tokens=180,
                 temperature=0.1,
                 request_timeout=15,
@@ -175,7 +186,7 @@ class InfoCog(commands.Cog):
     async def question(self, interaction: discord.Interaction, question: str):
         await interaction.response.defer()
 
-        if not os.environ.get("GROQ_API_KEY"):
+        if not os.environ.get("GEMINI_API_KEY") and not os.environ.get("GROQ_API_KEY"):
             await interaction.followup.send("❌ Clé API manquante — contacte un admin.", ephemeral=True)
             return
 
