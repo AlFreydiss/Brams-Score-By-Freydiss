@@ -1,3 +1,4 @@
+import asyncio
 import os
 import re
 import time
@@ -54,12 +55,16 @@ def _get_or_create_session(uid: int, channel_id: int) -> dict:
 
 async def _call_ai(history: list[dict]) -> str:
     api_key = os.environ.get("GROQ_API_KEY", "")
-    resp = await litellm.acompletion(
-        model=_MODEL,
-        api_key=api_key,
-        max_tokens=700,
-        temperature=0.4,
-        messages=[{"role": "system", "content": _SYSTEM}] + history,
+    resp = await asyncio.wait_for(
+        litellm.acompletion(
+            model=_MODEL,
+            api_key=api_key,
+            max_tokens=700,
+            temperature=0.4,
+            request_timeout=25,
+            messages=[{"role": "system", "content": _SYSTEM}] + history,
+        ),
+        timeout=30,
     )
     return resp.choices[0].message.content.strip()
 
@@ -107,6 +112,12 @@ class InfoCog(commands.Cog):
 
         try:
             answer = await _call_ai(session["history"])
+        except asyncio.TimeoutError:
+            await interaction.followup.send(
+                "⏱️ La réponse a pris trop de temps — réessaie dans quelques secondes.", ephemeral=True
+            )
+            session["history"].pop()
+            return
         except Exception as e:
             await interaction.followup.send(f"❌ Erreur : `{e}`", ephemeral=True)
             session["history"].pop()
@@ -166,8 +177,12 @@ class InfoCog(commands.Cog):
         try:
             async with message.channel.typing():
                 answer = await _call_ai(session["history"])
+        except asyncio.TimeoutError:
+            await message.reply("⏱️ Trop long à répondre — réessaie !", mention_author=False)
+            session["history"].pop()
+            return
         except Exception as e:
-            await message.reply(f"❌ Erreur : `{e}`")
+            await message.reply(f"❌ Erreur : `{e}`", mention_author=False)
             session["history"].pop()
             return
 
