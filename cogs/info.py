@@ -49,10 +49,25 @@ def _strip_mention(content: str, bot_id: int) -> str:
 
 
 def _strip_markdown(text: str) -> str:
-    text = re.sub(r"\*{1,3}(.+?)\*{1,3}", r"\1", text)   # **bold** *italic***
-    text = re.sub(r"_{1,2}(.+?)_{1,2}", r"\1", text)      # __underline__ _italic_
-    text = re.sub(r"`{1,3}[^`]*`{1,3}", lambda m: m.group(0).strip("`"), text)  # `code`
-    text = re.sub(r"^#{1,6}\s+", "", text, flags=re.MULTILINE)  # # titres
+    # Titres ## / ### etc.
+    text = re.sub(r"^#{1,6}\s+", "", text, flags=re.MULTILINE)
+    # Gras/italique **text** *text* ***text***
+    text = re.sub(r"\*{1,3}(.+?)\*{1,3}", r"\1", text, flags=re.DOTALL)
+    # Souligné __text__ _text_
+    text = re.sub(r"_{1,2}(.+?)_{1,2}", r"\1", text, flags=re.DOTALL)
+    # Code inline/bloc
+    text = re.sub(r"```[\s\S]*?```", lambda m: m.group(0).replace("```", ""), text)
+    text = re.sub(r"`(.+?)`", r"\1", text)
+    # Listes à puces (- item / • item)
+    text = re.sub(r"^[\-\•\–]\s+", "", text, flags=re.MULTILINE)
+    # Listes numérotées (1. item)
+    text = re.sub(r"^\d+\.\s+", "", text, flags=re.MULTILINE)
+    # Liens [texte](url)
+    text = re.sub(r"\[(.+?)\]\(.+?\)", r"\1", text)
+    # Astérisques/underscores résiduels isolés
+    text = re.sub(r"(?<!\w)[*_]{1,3}(?!\w)", "", text)
+    # Lignes vides multiples → une seule
+    text = re.sub(r"\n{3,}", "\n\n", text)
     return text.strip()
 
 
