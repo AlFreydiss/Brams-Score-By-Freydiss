@@ -1847,8 +1847,10 @@ async def on_voice_state_update(member, before, after):
             user["join_time"] = None
             clean_old_data(user)
 
-            # Berry gagnés : même taux que la prime (100 000 / heure)
-            earned = int(session_seconds / 3600 * 100_000)
+            # Berry reliquat depuis le dernier tick (loop paie toutes les 2 min)
+            last_ts = user.pop("last_berry_ts", start)
+            remaining_sec = max(0, end - last_ts)
+            earned = int(remaining_sec / 3600 * 100_000)
             if earned > 0:
                 add_berrys(uid, earned)
 
@@ -1863,6 +1865,11 @@ async def on_voice_state_update(member, before, after):
         if user["join_time"]:
             start = user["join_time"]
             end = now_ts()
+            last_ts = user.pop("last_berry_ts", start)
+            remaining_sec = max(0, end - last_ts)
+            earned = int(remaining_sec / 3600 * 100_000)
+            if earned > 0:
+                add_berrys(uid, earned)
             user["vocal_sessions"].append({
                 "start": start,
                 "end": end,
@@ -1941,6 +1948,15 @@ async def vocal_rank_loop():
                     await update_rank(member, hours_7d, announce=False, data=_CACHE)
                 except Exception as e:
                     print(f"[VOCAL_RANK] Erreur {member.display_name}: {e}")
+                # Berry temps réel — toutes les 2 min pour les membres en vocal
+                now = now_ts()
+                last_ts = user.get("last_berry_ts") or jt or now
+                delta = max(0, now - last_ts)
+                berry_tick = int(delta / 3600 * 100_000)
+                if berry_tick > 0:
+                    add_berrys(uid, berry_tick)
+                    user["last_berry_ts"] = now
+                    _DIRTY.add(uid)
                 # Boost expiré pendant que l'utilisateur est toujours en vocal
                 if user.get("voice_boost_expires", 0) and not _is_boost_active(user):
                     user["voice_boost_expires"] = 0
