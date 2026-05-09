@@ -1323,14 +1323,14 @@ class ParamsView(discord.ui.View):
         super().__init__(timeout=120)
         self.uid = uid; self.settings = settings
 
-    @discord.ui.button(label="Toggle Notifs DM", emoji="📬", style=discord.ButtonStyle.secondary)
+    @discord.ui.button(label="Notifs DM", emoji="🔔", style=discord.ButtonStyle.secondary)
     async def btn_dm(self, interaction: discord.Interaction, _: discord.ui.Button):
         if not _owner_check(self.uid, interaction): await _deny(interaction); return
         await interaction.response.defer()
         self.settings["dm_notifications"] = await db.toggle_setting(self.uid, "dm_notifications")
         await interaction.edit_original_response(embed=_build_params_embed(self.settings), view=self)
 
-    @discord.ui.button(label="Toggle Confirmation", emoji="⚠️", style=discord.ButtonStyle.secondary)
+    @discord.ui.button(label="Confirmation", emoji="⚠️", style=discord.ButtonStyle.secondary)
     async def btn_confirm(self, interaction: discord.Interaction, _: discord.ui.Button):
         if not _owner_check(self.uid, interaction): await _deny(interaction); return
         await interaction.response.defer()
