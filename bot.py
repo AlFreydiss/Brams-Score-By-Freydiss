@@ -5684,7 +5684,7 @@ async def ticket_pseudo_cmd(interaction: discord.Interaction, membre: discord.Me
     if membre.bot:
         await interaction.response.send_message("❌ Impossible de changer le pseudo d'un bot.", ephemeral=True)
         return
-    if membre.guild_permissions.administrator and not is_admin:
+    if membre.guild_permissions.administrator:
         await interaction.response.send_message(
             embed=discord.Embed(
                 title="🚫 Cible protégée",
