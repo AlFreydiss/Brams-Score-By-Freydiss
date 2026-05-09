@@ -602,6 +602,55 @@ async def get_expired_wars() -> list[dict]:
     return await _run(_do)
 
 
+async def get_recent_war_between(crew_a: int, crew_b: int, cooldown_days: int) -> bool:
+    """True si une guerre entre ces deux équipages s'est terminée dans le cooldown."""
+    def _do():
+        with _conn() as conn:
+            cur = conn.cursor()
+            cur.execute("""
+                SELECT 1 FROM crew_wars
+                WHERE (attacker_id=%s AND defender_id=%s)
+                   OR (attacker_id=%s AND defender_id=%s)
+                AND status IN ('finished','cancelled')
+                AND ended_at > NOW() - (%s || ' days')::interval
+                LIMIT 1
+            """, (crew_a, crew_b, crew_b, crew_a, cooldown_days))
+            return cur.fetchone() is not None
+    return await _run(_do)
+
+
+async def subtract_war_score(war_id: int, crew_id: int, points: int):
+    """Retire des points au score d'un équipage (plancher à 0)."""
+    def _do():
+        with _conn() as conn:
+            with conn:
+                conn.cursor().execute("""
+                    UPDATE crew_wars SET
+                      attacker_score = CASE WHEN attacker_id=%s
+                                       THEN GREATEST(0, attacker_score - %s)
+                                       ELSE attacker_score END,
+                      defender_score = CASE WHEN defender_id=%s
+                                       THEN GREATEST(0, defender_score - %s)
+                                       ELSE defender_score END
+                    WHERE id=%s
+                """, (crew_id, points, crew_id, points, war_id))
+    await _run(_do)
+
+
+async def get_war_sabotages_today(war_id: int, user_id: int) -> int:
+    """Nombre de sabotages effectués par cet utilisateur dans cette guerre aujourd'hui."""
+    def _do():
+        with _conn() as conn:
+            cur = conn.cursor()
+            cur.execute("""
+                SELECT COUNT(*) FROM war_battles
+                WHERE war_id=%s AND user_id=%s AND result='sabotage'
+                AND created_at > NOW() - INTERVAL '24 hours'
+            """, (war_id, user_id))
+            return cur.fetchone()[0]
+    return await _run(_do)
+
+
 # ── War Battles ───────────────────────────────────────────────────
 
 async def add_battle(war_id: int, user_id: int, crew_id: int,

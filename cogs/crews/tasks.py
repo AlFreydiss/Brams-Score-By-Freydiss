@@ -57,10 +57,16 @@ class CrewTasks:
                     treasury=max(0, loser_crew['treasury'] - theft),
                     wars_lost=loser_crew['wars_lost'] + 1),
             )
+            score_w = att_score if winner_id == war['attacker_id'] else def_score
+            score_l = def_score if winner_id == war['attacker_id'] else att_score
             await asyncio.gather(
-                db.add_treasury_log(winner_id, 0,      total_prize, 'war_prize', f"Victoire vs {loser_crew['name']}"),
-                db.add_treasury_log(loser_id,  0,     -theft,       'war_loss',  f"Défaite vs {winner_crew['name']}"),
+                db.add_treasury_log(winner_id, 0,  total_prize, 'war_prize', f"Victoire vs {loser_crew['name']}"),
+                db.add_treasury_log(loser_id,  0, -theft,       'war_loss',  f"Défaite vs {winner_crew['name']}"),
                 award_xp(self.bot, winner_id, XP_WAR_WIN),
+                db.add_history(winner_id, winner_crew['captain_id'], 'war_won',
+                               f"vs {loser_crew['name']} ({score_w}-{score_l}) · +{total_prize:,} 🍊".replace(',', ' ')),
+                db.add_history(loser_id,  loser_crew['captain_id'],  'war_lost',
+                               f"vs {winner_crew['name']} ({score_l}-{score_w}) · -{theft:,} 🍊".replace(',', ' ')),
             )
 
             ch = self.bot.get_channel(ANNOUNCE_CH)

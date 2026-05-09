@@ -288,11 +288,39 @@ class WarResponseView(discord.ui.View):
         if interaction.user.id != self._captain_id:
             await interaction.response.send_message("Seul le capitaine peut répondre.", ephemeral=True)
             return
+        import asyncio
         from . import database as db
-        await db.accept_war(self._war_id)
+        from .utils import fmt_berries
+        war = await db.get_war(self._war_id)
+        if not war or war['status'] != 'pending':
+            await interaction.response.edit_message(content="❌ Cette guerre n'est plus en attente.", view=None)
+            return
+        mise = war['prize_pool'] // 2
+        defender_crew = await db.get_crew(war['defender_id'])
+        if not defender_crew or defender_crew['treasury'] < mise:
+            await interaction.response.edit_message(
+                content=f"❌ Trésor insuffisant pour couvrir la mise (**{fmt_berries(mise)} 🍊** requis). Guerre annulée.",
+                view=None,
+            )
+            # Rembourser l'attaquant
+            att_crew = await db.get_crew(war['attacker_id'])
+            if att_crew:
+                await asyncio.gather(
+                    db.cancel_war(self._war_id),
+                    db.update_crew(war['attacker_id'], treasury=att_crew['treasury'] + mise),
+                    db.add_treasury_log(war['attacker_id'], 0, mise, 'war_refund', 'Défenseur trésor insuffisant'),
+                )
+            return
+        await asyncio.gather(
+            db.accept_war(self._war_id),
+            db.update_crew(war['defender_id'], treasury=defender_crew['treasury'] - mise),
+            db.add_treasury_log(war['defender_id'], interaction.user.id, -mise, 'war_bet',
+                                f"Mise de guerre vs crew #{war['attacker_id']}"),
+        )
         self.stop()
         await interaction.response.edit_message(
-            content=f"⚔️ La guerre a commencé ! Utilisez `/crew war attaquer` pour combattre.", view=None
+            content="⚔️ La guerre a commencé ! Mise bloquée des deux côtés. Utilisez `/equipage guerre attaquer`.",
+            view=None,
         )
 
     @discord.ui.button(label="🏳️ Refuser (forfait)", style=discord.ButtonStyle.secondary)

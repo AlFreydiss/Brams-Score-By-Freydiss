@@ -13,8 +13,9 @@ from .constants import (
     POSITIONS, CREW_LEVELS, COST_CREATE, COST_RENAME, MIN_WAR_BET,
     RENAME_COOLDOWN_DAYS, CREATE_COOLDOWN_DAYS,
     MIN_TAG_LEN, MAX_TAG_LEN, MIN_NAME_LEN, MAX_NAME_LEN,
-    MIN_WAR_HOURS, MAX_WAR_HOURS, XP_DUEL_WIN, DISSOLVE_REFUND,
-    CREW_COLOR,
+    MIN_WAR_HOURS, MAX_WAR_HOURS, XP_DUEL_WIN, XP_DUEL_LOSS, DISSOLVE_REFUND,
+    CREW_COLOR, WAR_COOLDOWN_DAYS, SABOTAGE_COST, SABOTAGE_POINTS_STOLEN,
+    XP_SABOTAGE, CONTRIBUTION_DUEL_WIN, POSITION_WAR_BONUS,
 )
 from .utils import (
     has_perm, can_feature, fmt_berries, random_role_color,
@@ -53,6 +54,7 @@ GERER_CHOICES = [
 GUERRE_CHOICES = [
     app_commands.Choice(name="⚔️ Déclarer la guerre",          value="declarer"),
     app_commands.Choice(name="🗡️ Attaquer (duel en guerre)",   value="attaquer"),
+    app_commands.Choice(name="💣 Saboter l'équipage ennemi",   value="saboter"),
     app_commands.Choice(name="🤝 Proposer une alliance",        value="allier"),
     app_commands.Choice(name="🗡️ Rompre une alliance",         value="trahir"),
     app_commands.Choice(name="📊 Stats de la guerre en cours", value="stats"),
@@ -816,13 +818,10 @@ class CrewCog(CrewTasks, commands.Cog):
             if not ennemi:
                 await interaction.response.send_message("❌ Précise l'ennemi à attaquer (param `ennemi`).", ephemeral=True)
                 return
-            (_, my_crew), (_, en_crew) = await asyncio.gather(
-                self._get_user_crew(interaction.user.id),
-                self._get_user_crew(ennemi.id),
-            )
+            _, en_crew = await self._get_user_crew(ennemi.id)
             war = await db.get_active_war(crew_obj['id'])
             if not war or war['status'] != 'active':
-                await interaction.response.send_message("❌ Ton équipage n'est pas en guerre.", ephemeral=True)
+                await interaction.response.send_message("❌ Ton équipage n'est pas en guerre active.", ephemeral=True)
                 return
             if not en_crew or en_crew['id'] not in (war['attacker_id'], war['defender_id']):
                 await interaction.response.send_message("❌ Cet ennemi n'est pas dans la guerre en cours.", ephemeral=True)
@@ -830,28 +829,51 @@ class CrewCog(CrewTasks, commands.Cog):
             if en_crew['id'] == crew_obj['id']:
                 await interaction.response.send_message("❌ Tu ne peux pas attaquer un coéquipier.", ephemeral=True)
                 return
+            if ennemi.id == interaction.user.id:
+                await interaction.response.send_message("❌ Tu ne peux pas t'attaquer toi-même.", ephemeral=True)
+                return
             last = await db.get_last_battle_time(war['id'], interaction.user.id)
             if last:
-                dt = datetime.fromisoformat(last.replace("Z", "+00:00"))
+                dt      = datetime.fromisoformat(last.replace("Z", "+00:00"))
                 elapsed = (datetime.now(timezone.utc) - dt).total_seconds()
                 if elapsed < 1800:
                     rem = int(1800 - elapsed)
                     await interaction.response.send_message(
-                        f"⏳ Cooldown : **{rem // 60}min {rem % 60}s** restant.", ephemeral=True
+                        f"⏳ Cooldown : **{rem // 60}min {rem % 60}s** avant le prochain duel.", ephemeral=True
                     )
                     return
-            won   = random.random() < 0.5
-            pts   = 10 if won else 0
-            coros = [db.add_battle(war['id'], interaction.user.id, crew_obj['id'], ennemi.id, 'won' if won else 'lost', pts)]
-            if pts:
-                coros.append(db.update_war_score(war['id'], crew_obj['id'], pts))
+
+            # Probabilité basée sur le poste + différence de niveau
+            pos_bonus   = POSITION_WAR_BONUS.get(m['position'], 0.0)
+            level_bonus = min(0.15, max(-0.15, (crew_obj['level'] - en_crew['level']) * 0.025))
+            win_prob    = min(0.80, max(0.20, 0.50 + pos_bonus + level_bonus))
+            won         = random.random() < win_prob
+            pts         = 10 if won else 0
+
+            coros = [
+                db.add_battle(war['id'], interaction.user.id, crew_obj['id'],
+                              ennemi.id, 'won' if won else 'lost', pts),
+            ]
             if won:
-                coros.append(award_xp(self.bot, crew_obj['id'], XP_DUEL_WIN))
+                coros += [
+                    db.update_war_score(war['id'], crew_obj['id'], pts),
+                    award_xp(self.bot, crew_obj['id'], XP_DUEL_WIN),
+                    db.add_contribution(interaction.user.id, CONTRIBUTION_DUEL_WIN),
+                ]
+            else:
+                coros.append(award_xp(self.bot, crew_obj['id'], XP_DUEL_LOSS))
             await asyncio.gather(*coros)
+
             war_upd = await db.get_war(war['id'])
+            pos_emoji = POSITIONS.get(m['position'], {}).get('emoji', '👤')
             embed = discord.Embed(
-                title=f"⚔️ Duel — {'✅ Victoire' if won else '❌ Défaite'}",
-                description=f"<@{interaction.user.id}> vs <@{ennemi.id}>\n+**{pts}** pts pour ton équipage",
+                title=f"⚔️ Duel — {'✅ Victoire !' if won else '❌ Défaite'}",
+                description=(
+                    f"{pos_emoji} <@{interaction.user.id}> (*{m['position']}*, {int(win_prob * 100)}% chance)"
+                    f" vs <@{ennemi.id}>\n"
+                    f"{'🟢' if won else '🔴'} **{'+10 pts' if won else '+0 pts'}** · "
+                    f"XP : +**{XP_DUEL_WIN if won else XP_DUEL_LOSS}**"
+                ),
                 color=0x2ECC71 if won else 0xFF4444,
             )
             if war_upd:
@@ -859,12 +881,73 @@ class CrewCog(CrewTasks, commands.Cog):
                     db.get_crew(war_upd['attacker_id']),
                     db.get_crew(war_upd['defender_id']),
                 )
+                att_name = att_c['name'] if att_c else '?'
+                def_name = def_c['name'] if def_c else '?'
+                att_s    = war_upd['attacker_score']
+                def_s    = war_upd['defender_score']
+                leader   = att_name if att_s >= def_s else def_name
                 embed.add_field(
-                    name="Score",
-                    value=f"{att_c['name'] if att_c else '?'}: **{war_upd['attacker_score']}** | {def_c['name'] if def_c else '?'}: **{war_upd['defender_score']}**",
+                    name="📊 Score actuel",
+                    value=f"🏴‍☠️ **{att_name}** : **{att_s}** pts  ·  🏴‍☠️ **{def_name}** : **{def_s}** pts\n🏆 En tête : **{leader}**",
                     inline=False,
                 )
+                if war_upd.get('ends_at'):
+                    embed.set_footer(text=f"⏰ Fin de la guerre")
+                    embed.timestamp = war_upd['ends_at']
             await interaction.response.send_message(embed=embed)
+            return
+
+        # ── saboter ───────────────────────────────────────────────
+        if action == "saboter":
+            war = await db.get_active_war(crew_obj['id'])
+            if not war or war['status'] != 'active':
+                await interaction.response.send_message("❌ Ton équipage n'est pas en guerre active.", ephemeral=True)
+                return
+            count = await db.get_war_sabotages_today(war['id'], interaction.user.id)
+            if count >= 1:
+                await interaction.response.send_message(
+                    "❌ Tu as déjà saboté aujourd'hui. Reviens dans **24h** !", ephemeral=True
+                )
+                return
+            wallet = self.bot.get_berrys(str(interaction.user.id))
+            if wallet < SABOTAGE_COST:
+                await interaction.response.send_message(
+                    f"❌ Il te faut **{fmt_berries(SABOTAGE_COST)} 🍊** en poche pour saboter.", ephemeral=True
+                )
+                return
+            enemy_crew_id = war['defender_id'] if war['attacker_id'] == crew_obj['id'] else war['attacker_id']
+            self.bot.spend_berrys(str(interaction.user.id), SABOTAGE_COST)
+            await asyncio.gather(
+                db.subtract_war_score(war['id'], enemy_crew_id, SABOTAGE_POINTS_STOLEN),
+                db.add_battle(war['id'], interaction.user.id, crew_obj['id'], 0, 'sabotage', 0),
+                award_xp(self.bot, crew_obj['id'], XP_SABOTAGE),
+            )
+            war_upd = await db.get_war(war['id'])
+            enemy_crew = await db.get_crew(enemy_crew_id)
+            embed = discord.Embed(
+                title="💣 Sabotage réussi !",
+                description=(
+                    f"<@{interaction.user.id}> a dépensé **{fmt_berries(SABOTAGE_COST)} 🍊** pour saboter "
+                    f"**{enemy_crew['name'] if enemy_crew else 'l\'ennemi'}** !\n\n"
+                    f"💥 **-{SABOTAGE_POINTS_STOLEN} points** retirés de leur score.\n"
+                    f"⏰ Prochain sabotage disponible dans **24h**."
+                ),
+                color=0xFF6600,
+            )
+            if war_upd:
+                att_s = war_upd['attacker_score']
+                def_s = war_upd['defender_score']
+                att_c = await db.get_crew(war_upd['attacker_id'])
+                def_c = await db.get_crew(war_upd['defender_id'])
+                embed.add_field(
+                    name="📊 Score après sabotage",
+                    value=(
+                        f"🏴‍☠️ **{att_c['name'] if att_c else '?'}** : **{att_s}** pts  ·  "
+                        f"🏴‍☠️ **{def_c['name'] if def_c else '?'}** : **{def_s}** pts"
+                    ),
+                    inline=False,
+                )
+            await interaction.response.send_message(embed=embed, ephemeral=True)
             return
 
         # ── déclarer ──────────────────────────────────────────────
@@ -898,6 +981,12 @@ class CrewCog(CrewTasks, commands.Cog):
                     return
                 if target['treasury'] < mise:
                     await inter.response.send_message(f"❌ {target['name']} n'a pas assez dans son trésor.", ephemeral=True)
+                    return
+                if await db.get_recent_war_between(crew_obj['id'], target['id'], WAR_COOLDOWN_DAYS):
+                    await inter.response.send_message(
+                        f"❌ Cooldown actif — tu dois attendre **{WAR_COOLDOWN_DAYS} jours** après une guerre contre cet équipage.",
+                        ephemeral=True,
+                    )
                     return
                 await db.update_crew(crew_obj['id'], treasury=crew_obj['treasury'] - mise)
                 war_id = await db.declare_war(crew_obj['id'], target['id'], mise * 2, duree_h)

@@ -48,13 +48,36 @@ XP_MESSAGE_CAP       = 50
 XP_VOCAL_PER_MIN     = 5
 XP_VOCAL_CAP         = 500
 XP_DUEL_WIN          = 50
+XP_DUEL_LOSS         = 10
 XP_PER_100_BERRIES   = 1
 XP_QUIZ_WIN          = 200
 XP_WAR_WIN           = 5_000
 XP_ALLIANCE          = 1_000
+XP_SABOTAGE          = 30
 
-CREW_COLOR   = 0xFFD700
+CREW_COLOR      = 0xFFD700
 DISSOLVE_REFUND = 0.5
+
+WAR_COOLDOWN_DAYS      = 3      # jours avant de pouvoir re-déclarer aux mêmes
+SABOTAGE_COST          = 50_000 # berries dépensés par le saboteur (wallet perso)
+SABOTAGE_POINTS_STOLEN = 15     # points retirés au score ennemi
+CONTRIBUTION_DUEL_WIN  = 500    # contribution ajoutée au membre gagnant un duel
+
+# Bonus de victoire en duel selon le poste du membre (s'ajoute à 50% de base)
+POSITION_WAR_BONUS: dict[str, float] = {
+    'capitaine':   0.25,
+    'second':      0.18,
+    'bretteur':    0.18,
+    'sniper':      0.12,
+    'navigateur':  0.08,
+    'timonier':    0.06,
+    'cuisinier':   0.04,
+    'medecin':     0.04,
+    'charpentier': 0.02,
+    'archeologue': 0.02,
+    'musicien':    0.00,
+    'mousse':      0.00,
+}
 
 POSITION_CHOICES = [
     app_commands.Choice(name="Second ⚔️",       value="second"),
