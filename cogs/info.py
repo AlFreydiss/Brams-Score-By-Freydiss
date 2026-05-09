@@ -12,11 +12,39 @@ GUILD_IDS = [
     for x in os.environ.get("GUILD_IDS", "924346730194014220,1478937064031518892").split(",")
 ]
 
-_MODEL_GEMINI    = "gemini/gemini-2.0-flash"          # gratuit — 1M tokens/jour
-_MODEL_GROQ      = "groq/llama-3.3-70b-versatile"    # fallback si Gemini absent
+_MODEL_GEMINI    = "gemini/gemini-2.0-flash"
+_MODEL_GROQ      = "groq/llama-3.3-70b-versatile"
 _SESSION_TIMEOUT = 600
 _MAX_HISTORY     = 14
 _MEMORY_EVERY    = 5
+
+_gemini_key_index = 0  # rotation round-robin
+
+
+def _get_gemini_keys() -> list[str]:
+    """Lit toutes les clés GEMINI_API_KEY, GEMINI_API_KEY_1, GEMINI_API_KEY_2… depuis l'env."""
+    keys = []
+    base = os.environ.get("GEMINI_API_KEY", "")
+    if base:
+        keys.append(base)
+    i = 1
+    while True:
+        k = os.environ.get(f"GEMINI_API_KEY_{i}", "")
+        if not k:
+            break
+        keys.append(k)
+        i += 1
+    return keys
+
+
+def _next_gemini_key() -> str | None:
+    global _gemini_key_index
+    keys = _get_gemini_keys()
+    if not keys:
+        return None
+    key = keys[_gemini_key_index % len(keys)]
+    _gemini_key_index = (_gemini_key_index + 1) % len(keys)
+    return key
 
 _SYSTEM_BASE = (
     "Tu es le bot du serveur Discord 'Brams Community' (One Piece, francophone). "
@@ -95,21 +123,21 @@ def _trim_history(session: dict):
 
 
 async def _call_ai(system: str, history: list[dict]) -> str:
-    messages = [{"role": "user", "content": system + "\n\n---\n" + history[0]["content"]}] + history[1:] \
-        if history else [{"role": "user", "content": system}]
+    msgs = [{"role": "system", "content": system}] + history
 
-    # Essai Gemini
-    gemini_key = os.environ.get("GEMINI_API_KEY", "")
-    if gemini_key:
+    # Essai toutes les clés Gemini en rotation
+    gemini_keys = _get_gemini_keys()
+    for _ in range(len(gemini_keys)):
+        key = _next_gemini_key()
         try:
             resp = await asyncio.wait_for(
                 litellm.acompletion(
                     model=_MODEL_GEMINI,
-                    api_key=gemini_key,
+                    api_key=key,
                     max_tokens=450,
                     temperature=0.4,
                     request_timeout=25,
-                    messages=[{"role": "system", "content": system}] + history,
+                    messages=msgs,
                 ),
                 timeout=30,
             )
@@ -117,7 +145,7 @@ async def _call_ai(system: str, history: list[dict]) -> str:
         except asyncio.TimeoutError:
             raise
         except Exception:
-            pass  # bascule sur Groq
+            continue  # essaie la clé suivante
 
     # Fallback Groq
     groq_key = os.environ.get("GROQ_API_KEY", "")
@@ -128,7 +156,7 @@ async def _call_ai(system: str, history: list[dict]) -> str:
             max_tokens=450,
             temperature=0.4,
             request_timeout=25,
-            messages=[{"role": "system", "content": system}] + history,
+            messages=msgs,
         ),
         timeout=30,
     )
@@ -137,9 +165,10 @@ async def _call_ai(system: str, history: list[dict]) -> str:
 
 async def _update_memory_task(bot, uid: int, current_memory: str, history: list[dict]):
     try:
-        gemini_key = os.environ.get("GEMINI_API_KEY", "")
-        model    = _MODEL_GEMINI if gemini_key else _MODEL_GROQ
-        api_key  = gemini_key or os.environ.get("GROQ_API_KEY", "")
+        gemini_keys = _get_gemini_keys()
+        model   = _MODEL_GEMINI if gemini_keys else _MODEL_GROQ
+        api_key = (gemini_keys[_gemini_key_index % len(gemini_keys)] if gemini_keys
+                   else os.environ.get("GROQ_API_KEY", ""))
         last = history[-4:] if len(history) >= 4 else history
         exchange_text = "\n".join(
             f"{'User' if m['role'] == 'user' else 'Bot'}: {m['content'][:300]}"
@@ -229,7 +258,7 @@ class InfoCog(commands.Cog):
     async def question(self, interaction: discord.Interaction, question: str):
         await interaction.response.defer()
 
-        if not os.environ.get("GEMINI_API_KEY") and not os.environ.get("GROQ_API_KEY"):
+        if not _get_gemini_keys() and not os.environ.get("GROQ_API_KEY"):
             await interaction.followup.send("❌ Aucune clé API configurée — contacte un admin.", ephemeral=True)
             return
 
