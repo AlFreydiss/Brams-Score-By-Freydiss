@@ -5919,11 +5919,7 @@ async def contester(interaction: discord.Interaction):
     await interaction.response.send_message(
         embed=discord.Embed(
             title="📋 Réponse de la Marine",
-            description=(
-                "Votre contestation a été examinée et **rejetée** par l'Amiral Akainu. 💀\n\n"
-                "*« La justice est absolue. Votre réclamation a été brûlée. »*\n"
-                "— **Sakazuki, Amiral de la Flotte**"
-            ),
+            description="Votre contestation a été examinée et **rejetée** par l'Amiral Freydiss. 💀",
             color=0xb71c1c,
         ).set_footer(text="Marine Headquarters • Justice"),
         ephemeral=True,
