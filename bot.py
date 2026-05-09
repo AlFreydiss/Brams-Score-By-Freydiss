@@ -5916,10 +5916,16 @@ async def reset_pseudos(interaction: discord.Interaction):
 @bot.tree.command(name="contester", description="Contester une taxe de la Marine")
 @app_commands.guilds(*GUILD_IDS)
 async def contester(interaction: discord.Interaction):
+    _AMIRAUX = ["BenActief", "Brams", "Berat", "Freydiss"]
+    choix = random.sample(_AMIRAUX, random.randint(1, len(_AMIRAUX)))
+    if len(choix) == 1:
+        noms = f"l'Amiral {choix[0]}"
+    else:
+        noms = "les Amiraux " + ", ".join(choix[:-1]) + f" et {choix[-1]}"
     await interaction.response.send_message(
         embed=discord.Embed(
             title="📋 Réponse de la Marine",
-            description="Votre contestation a été examinée et **rejetée** par les Amiraux BenActief, Brams, Berat et Freydiss. 💀",
+            description=f"Votre contestation a été examinée et **rejetée** par {noms}. 💀",
             color=0xb71c1c,
         ).set_footer(text="Marine Headquarters • Justice"),
         ephemeral=True,
