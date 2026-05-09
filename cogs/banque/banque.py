@@ -85,13 +85,12 @@ class BankCog(commands.Cog):
 
             wallet = self.bot.get_berrys(uid)
 
-            # Appels DB en parallèle : compte + vaults + stats hebdo
+            # Appels DB en parallèle : compte + vaults
             try:
-                account, vaults, (week_gain, week_dep) = await asyncio.wait_for(
+                account, vaults = await asyncio.wait_for(
                     asyncio.gather(
                         db.ensure_and_get_account(uid, guild_id),
                         db.get_vaults_for_guild(guild_id, gids),
-                        db.get_week_stats(uid),
                     ),
                     timeout=14.0,
                 )
@@ -99,6 +98,7 @@ class BankCog(commands.Cog):
                 print("[BANQUE] Timeout DB après 14s", flush=True)
                 await interaction.followup.send("❌ La base de données met trop de temps à répondre.", ephemeral=True)
                 return
+            week_gain = week_dep = 0
 
             vault   = account.get("vault") or 0
             total   = wallet + vault
