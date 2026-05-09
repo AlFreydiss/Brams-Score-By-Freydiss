@@ -14,60 +14,52 @@ GUILD_IDS = [
 
 _MODEL           = "groq/llama-3.3-70b-versatile"
 _SESSION_TIMEOUT = 600
-_MAX_HISTORY     = 20
+_MAX_HISTORY     = 14        # 7 échanges max — réduit les tokens envoyés
+_MEMORY_EVERY    = 5         # mise à jour mémoire tous les N échanges
 
-_SYSTEM_BASE = """\
-Tu es le bot officiel du serveur Discord "Brams Community", une communauté francophone passionnée par One Piece.
+_SYSTEM_BASE = (
+    "Tu es le bot du serveur Discord 'Brams Community' (One Piece, francophone). "
+    "Brams = fondateur. Admins : Brams, BenActief, Berat, Freydiss (dev du bot). "
+    "Monnaie = Berries (฿). "
+    "Réponds à tout : One Piece, culture générale, gaming, sciences, etc. "
+    "Ne mentionne jamais être une IA. Réponds dans la langue de l'utilisateur. "
+    "Sois direct et concis (max 3 paragraphes). Pas d'intro inutile."
+)
 
-Contexte du serveur :
-- Le serveur s'appelle Brams Community. Brams est le fondateur et figure centrale du serveur — c'est un membre respecté, passionné de One Piece, connu pour son charisme et son humour.
-- Les admins/modérateurs principaux sont : Brams, BenActief, Berat, Freydiss (qui a développé ce bot).
-- Le serveur tourne autour de One Piece mais accueille aussi d'autres animés, du gaming, et des discussions générales.
-- La monnaie du serveur s'appelle les Berries (฿), comme dans One Piece.
+_MEMORY_SYSTEM = (
+    "Mets à jour la fiche mémoire de cet utilisateur avec les nouveaux faits appris. "
+    "Retourne UNIQUEMENT des bullet points concis (prénom, âge, goûts, opinions confirmés). "
+    "Max 150 mots. Si rien de nouveau, retourne la fiche inchangée."
+)
 
-Ton rôle :
-- Répondre à TOUTES les questions avec précision et intelligence : culture générale, One Piece, autres animés, histoire, sciences, maths, géographie, langue française, gaming, conseils, etc.
-- Si on te demande qui est Brams : c'est le fondateur et chef du serveur Brams Community.
-- Tu NE DIS JAMAIS que tu es une IA, un modèle de langage, ou que tu es "basé sur" quoi que ce soit. Tu es simplement le bot du serveur.
-- Si tu ne connais pas quelque chose avec certitude, dis-le honnêtement sans inventer.
-- Réponds dans la même langue que la question (français par défaut).
-- Sois précis, direct, et va à l'essentiel. Maximum 3 paragraphes courts.
-- Pas de phrases d'intro inutiles comme "Bien sûr !" ou "Excellente question !". Réponds directement.
-- Utilise du markdown Discord simple (gras, italique) si ça rend la réponse plus lisible.
-- Tu te souviens de tout ce qui a été dit dans la conversation en cours ET de ce que tu sais déjà sur cet utilisateur.\
-"""
-
-_MEMORY_SYSTEM = """\
-Tu maintiens une fiche mémoire sur un utilisateur Discord.
-À partir de la conversation fournie, extrais et mets à jour les faits personnels importants :
-prénom/pseudo réel, âge, centres d'intérêt, animés préférés, opinions, situation, préférences, etc.
-Retourne UNIQUEMENT la fiche mise à jour en bullet points très concis (une ligne par fait).
-Maximum 200 mots. Ne garde que des faits confirmés explicitement par l'utilisateur.
-Si rien de nouveau, retourne la fiche inchangée.\
-"""
-
-# user_id → {"channel_id": int, "history": list, "last_active": float, "memory": str}
+# user_id → {"channel_id", "history", "last_active", "memory", "exchange_count"}
 _sessions: dict[int, dict] = {}
 
 
 def _build_system(memory: str) -> str:
     if not memory:
         return _SYSTEM_BASE
-    return _SYSTEM_BASE + f"\n\nCe que tu sais déjà sur cet utilisateur :\n{memory}"
+    return _SYSTEM_BASE + f" | Ce que tu sais sur cet utilisateur : {memory}"
 
 
 def _strip_mention(content: str, bot_id: int) -> str:
     return re.sub(rf"<@!?{bot_id}>", "", content).strip()
 
 
+def _parse_retry_after(error_str: str) -> str:
+    m = re.search(r"try again in ([0-9a-z .]+)\.", error_str, re.IGNORECASE)
+    return m.group(1).strip() if m else "quelques minutes"
+
+
 def _get_or_create_session(uid: int, channel_id: int, memory: str) -> dict:
     s = _sessions.get(uid)
     if s is None or s["channel_id"] != channel_id or time.time() - s["last_active"] > _SESSION_TIMEOUT:
         _sessions[uid] = {
-            "channel_id": channel_id,
-            "history": [],
-            "last_active": time.time(),
-            "memory": memory,
+            "channel_id":     channel_id,
+            "history":        [],
+            "last_active":    time.time(),
+            "memory":         memory,
+            "exchange_count": 0,
         }
     return _sessions[uid]
 
@@ -82,7 +74,7 @@ async def _call_ai(system: str, history: list[dict]) -> str:
         litellm.acompletion(
             model=_MODEL,
             api_key=os.environ.get("GROQ_API_KEY", ""),
-            max_tokens=700,
+            max_tokens=450,
             temperature=0.4,
             request_timeout=25,
             messages=[{"role": "system", "content": system}] + history,
@@ -93,22 +85,18 @@ async def _call_ai(system: str, history: list[dict]) -> str:
 
 
 async def _update_memory_task(bot, uid: int, current_memory: str, history: list[dict]):
-    """Mise à jour de la mémoire en arrière-plan — n'impacte pas le temps de réponse."""
     try:
-        last = history[-6:] if len(history) >= 6 else history
+        last = history[-4:] if len(history) >= 4 else history
         exchange_text = "\n".join(
-            f"{'Utilisateur' if m['role'] == 'user' else 'Bot'}: {m['content']}"
+            f"{'User' if m['role'] == 'user' else 'Bot'}: {m['content'][:300]}"
             for m in last
         )
-        prompt = (
-            f"Fiche actuelle :\n{current_memory or '(vide)'}\n\n"
-            f"Dernier échange :\n{exchange_text}"
-        )
+        prompt = f"Fiche actuelle :\n{current_memory or '(vide)'}\n\nÉchange récent :\n{exchange_text}"
         resp = await asyncio.wait_for(
             litellm.acompletion(
                 model=_MODEL,
                 api_key=os.environ.get("GROQ_API_KEY", ""),
-                max_tokens=300,
+                max_tokens=180,
                 temperature=0.1,
                 request_timeout=15,
                 messages=[
@@ -120,11 +108,45 @@ async def _update_memory_task(bot, uid: int, current_memory: str, history: list[
         )
         new_memory = resp.choices[0].message.content.strip()
         bot.set_ai_memory(str(uid), new_memory)
-        # Met à jour aussi la session en cours si elle existe encore
         if uid in _sessions:
             _sessions[uid]["memory"] = new_memory
     except Exception:
-        pass  # best-effort
+        pass
+
+
+def _handle_error(e: Exception) -> str:
+    s = str(e)
+    if "rate_limit" in s.lower() or "ratelimit" in s.lower():
+        wait = _parse_retry_after(s)
+        return f"⏳ Limite quotidienne atteinte — réessaie dans **{wait}**."
+    return f"❌ Erreur : `{type(e).__name__}`"
+
+
+async def _respond(session: dict, uid: int, content: str, bot) -> str | None:
+    """Appelle l'IA, met à jour la session. Retourne la réponse ou None si erreur."""
+    session["history"].append({"role": "user", "content": content})
+    _trim_history(session)
+
+    try:
+        answer = await _call_ai(_build_system(session["memory"]), session["history"])
+    except asyncio.TimeoutError:
+        session["history"].pop()
+        return "⏱️ Trop long à répondre — réessaie !"
+    except Exception as e:
+        session["history"].pop()
+        return _handle_error(e)
+
+    session["history"].append({"role": "assistant", "content": answer})
+    session["last_active"] = time.time()
+    session["exchange_count"] += 1
+
+    # Mise à jour mémoire tous les N échanges seulement
+    if session["exchange_count"] % _MEMORY_EVERY == 0:
+        asyncio.create_task(
+            _update_memory_task(bot, uid, session["memory"], session["history"])
+        )
+
+    return answer
 
 
 class InfoCog(commands.Cog):
@@ -157,33 +179,16 @@ class InfoCog(commands.Cog):
             await interaction.followup.send("❌ Clé API manquante — contacte un admin.", ephemeral=True)
             return
 
-        uid    = interaction.user.id
-        memory = self.bot.get_ai_memory(uid)
+        uid     = interaction.user.id
+        memory  = self.bot.get_ai_memory(uid)
         session = _get_or_create_session(uid, interaction.channel_id, memory)
 
-        session["history"].append({"role": "user", "content": question})
-        _trim_history(session)
+        answer = await _respond(session, uid, question, self.bot)
 
-        try:
-            answer = await _call_ai(_build_system(session["memory"]), session["history"])
-        except asyncio.TimeoutError:
-            await interaction.followup.send(
-                "⏱️ La réponse a pris trop de temps — réessaie dans quelques secondes.", ephemeral=True
-            )
-            session["history"].pop()
+        is_error = answer.startswith("⏱️") or answer.startswith("❌") or answer.startswith("⏳")
+        if is_error:
+            await interaction.followup.send(answer, ephemeral=True)
             return
-        except Exception as e:
-            await interaction.followup.send(f"❌ Erreur : `{e}`", ephemeral=True)
-            session["history"].pop()
-            return
-
-        session["history"].append({"role": "assistant", "content": answer})
-        session["last_active"] = time.time()
-
-        # Mise à jour mémoire en arrière-plan
-        asyncio.create_task(
-            _update_memory_task(self.bot, uid, session["memory"], session["history"])
-        )
 
         if len(answer) > 4000:
             answer = answer[:3997] + "…"
@@ -194,7 +199,7 @@ class InfoCog(commands.Cog):
             icon_url=interaction.user.display_avatar.url,
         )
         embed.set_footer(
-            text=f"❓ {question[:120]}{'…' if len(question) > 120 else ''} • @mentionne-moi pour continuer la conversation"
+            text=f"❓ {question[:120]}{'…' if len(question) > 120 else ''} • @mentionne-moi ou reply pour continuer"
         )
         await interaction.followup.send(embed=embed)
 
@@ -205,7 +210,7 @@ class InfoCog(commands.Cog):
         if message.author.bot:
             return
 
-        bot_mentioned = self.bot.user in message.mentions
+        bot_mentioned  = self.bot.user in message.mentions
         replied_to_bot = (
             message.reference is not None
             and isinstance(message.reference.resolved, discord.Message)
@@ -219,32 +224,12 @@ class InfoCog(commands.Cog):
         if not content:
             return
 
-        uid    = message.author.id
-        memory = self.bot.get_ai_memory(uid)
+        uid     = message.author.id
+        memory  = self.bot.get_ai_memory(uid)
         session = _get_or_create_session(uid, message.channel.id, memory)
 
-        session["history"].append({"role": "user", "content": content})
-        _trim_history(session)
-        session["last_active"] = time.time()
-
-        try:
-            async with message.channel.typing():
-                answer = await _call_ai(_build_system(session["memory"]), session["history"])
-        except asyncio.TimeoutError:
-            await message.reply("⏱️ Trop long à répondre — réessaie !", mention_author=False)
-            session["history"].pop()
-            return
-        except Exception as e:
-            await message.reply(f"❌ Erreur : `{e}`", mention_author=False)
-            session["history"].pop()
-            return
-
-        session["history"].append({"role": "assistant", "content": answer})
-
-        # Mise à jour mémoire en arrière-plan
-        asyncio.create_task(
-            _update_memory_task(self.bot, uid, session["memory"], session["history"])
-        )
+        async with message.channel.typing():
+            answer = await _respond(session, uid, content, self.bot)
 
         if len(answer) > 2000:
             answer = answer[:1997] + "…"
