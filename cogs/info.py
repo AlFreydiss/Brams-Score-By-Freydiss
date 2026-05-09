@@ -1,4 +1,5 @@
 import os
+import re
 import time
 import discord
 import litellm
@@ -39,6 +40,18 @@ Ton rôle :
 _sessions: dict[int, dict] = {}
 
 
+def _strip_mention(content: str, bot_id: int) -> str:
+    """Retire la mention du bot en début de message."""
+    return re.sub(rf"<@!?{bot_id}>", "", content).strip()
+
+
+def _get_or_create_session(uid: int, channel_id: int) -> dict:
+    s = _sessions.get(uid)
+    if s is None or s["channel_id"] != channel_id or time.time() - s["last_active"] > _SESSION_TIMEOUT:
+        _sessions[uid] = {"channel_id": channel_id, "history": [], "last_active": time.time()}
+    return _sessions[uid]
+
+
 async def _call_ai(history: list[dict]) -> str:
     api_key = os.environ.get("GROQ_API_KEY", "")
     resp = await litellm.acompletion(
@@ -49,6 +62,11 @@ async def _call_ai(history: list[dict]) -> str:
         messages=[{"role": "system", "content": _SYSTEM}] + history,
     )
     return resp.choices[0].message.content.strip()
+
+
+def _trim_history(session: dict):
+    if len(session["history"]) > _MAX_HISTORY:
+        session["history"] = session["history"][-_MAX_HISTORY:]
 
 
 class InfoCog(commands.Cog):
@@ -81,13 +99,9 @@ class InfoCog(commands.Cog):
             await interaction.followup.send("❌ Clé API manquante — contacte un admin.", ephemeral=True)
             return
 
-        uid = interaction.user.id
+        uid     = interaction.user.id
+        session = _get_or_create_session(uid, interaction.channel_id)
 
-        # Ouvre ou continue la session dans ce salon
-        if uid not in _sessions or _sessions[uid]["channel_id"] != interaction.channel_id:
-            _sessions[uid] = {"channel_id": interaction.channel_id, "history": [], "last_active": time.time()}
-
-        session = _sessions[uid]
         session["history"].append({"role": "user", "content": question})
         _trim_history(session)
 
@@ -109,7 +123,9 @@ class InfoCog(commands.Cog):
             name=f"{interaction.user.display_name} demande :",
             icon_url=interaction.user.display_avatar.url,
         )
-        embed.set_footer(text=f"❓ {question[:120]}{'…' if len(question) > 120 else ''} • Réponds dans le chat pour continuer")
+        embed.set_footer(
+            text=f"❓ {question[:120]}{'…' if len(question) > 120 else ''} • Réponds ou @mentionne-moi pour continuer"
+        )
         await interaction.followup.send(embed=embed)
 
     # ── Listener messages ──────────────────────────────────────────────
@@ -121,17 +137,29 @@ class InfoCog(commands.Cog):
         if message.content.startswith("/"):
             return
 
-        uid     = message.author.id
-        session = _sessions.get(uid)
-        if not session:
-            return
-        if message.channel.id != session["channel_id"]:
-            return
-        if time.time() - session["last_active"] > _SESSION_TIMEOUT:
-            del _sessions[uid]
+        uid          = message.author.id
+        bot_mentioned = self.bot.user in message.mentions
+
+        # Contenu nettoyé (retire la mention du bot si présente)
+        content = _strip_mention(message.content, self.bot.user.id) if bot_mentioned else message.content
+        if not content:
             return
 
-        session["history"].append({"role": "user", "content": message.content})
+        session = _sessions.get(uid)
+        has_active_session = (
+            session is not None
+            and message.channel.id == session["channel_id"]
+            and time.time() - session["last_active"] <= _SESSION_TIMEOUT
+        )
+
+        # Répond si : session active dans ce salon, OU bot mentionné directement
+        if not has_active_session and not bot_mentioned:
+            return
+
+        # Mention sans session → ouvre une nouvelle session
+        session = _get_or_create_session(uid, message.channel.id)
+
+        session["history"].append({"role": "user", "content": content})
         _trim_history(session)
         session["last_active"] = time.time()
 
@@ -149,11 +177,6 @@ class InfoCog(commands.Cog):
             answer = answer[:1997] + "…"
 
         await message.reply(answer, mention_author=False)
-
-
-def _trim_history(session: dict):
-    if len(session["history"]) > _MAX_HISTORY:
-        session["history"] = session["history"][-_MAX_HISTORY:]
 
 
 async def setup(bot: commands.Bot):
