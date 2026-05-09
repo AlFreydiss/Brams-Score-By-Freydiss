@@ -1724,7 +1724,7 @@ async def on_message(message):
     user = get_user(_CACHE, uid)
     user["messages"].append(now_ts())
     clean_old_data(user)
-    add_berrys(uid, 100)
+    add_berrys(uid, 1_000)
     _DIRTY.add(uid)   # sera flushed vers DB dans les 30s
 
     # Sticker auto-réaction ☠️
