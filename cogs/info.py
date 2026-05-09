@@ -194,7 +194,7 @@ class InfoCog(commands.Cog):
             icon_url=interaction.user.display_avatar.url,
         )
         embed.set_footer(
-            text=f"❓ {question[:120]}{'…' if len(question) > 120 else ''} • Réponds ou @mentionne-moi pour continuer"
+            text=f"❓ {question[:120]}{'…' if len(question) > 120 else ''} • @mentionne-moi pour continuer la conversation"
         )
         await interaction.followup.send(embed=embed)
 
@@ -204,27 +204,15 @@ class InfoCog(commands.Cog):
     async def on_message(self, message: discord.Message):
         if message.author.bot:
             return
-        if message.content.startswith("/"):
+        if self.bot.user not in message.mentions:
             return
 
-        uid           = message.author.id
-        bot_mentioned = self.bot.user in message.mentions
-
-        content = _strip_mention(message.content, self.bot.user.id) if bot_mentioned else message.content
+        content = _strip_mention(message.content, self.bot.user.id)
         if not content:
             return
 
-        session = _sessions.get(uid)
-        has_active_session = (
-            session is not None
-            and message.channel.id == session["channel_id"]
-            and time.time() - session["last_active"] <= _SESSION_TIMEOUT
-        )
-
-        if not has_active_session and not bot_mentioned:
-            return
-
-        memory  = self.bot.get_ai_memory(uid)
+        uid    = message.author.id
+        memory = self.bot.get_ai_memory(uid)
         session = _get_or_create_session(uid, message.channel.id, memory)
 
         session["history"].append({"role": "user", "content": content})
