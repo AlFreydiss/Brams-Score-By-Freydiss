@@ -38,7 +38,7 @@ def _sync_log(user_id: str, type_: str, categorie: str,
         cur = conn.cursor()
         cur.execute(
             """
-            INSERT INTO transactions (user_id, type, categorie, montant, description, solde_apres)
+            INSERT INTO bank_transactions (user_id, type, categorie, montant, description, solde_apres)
             VALUES (%s, %s, %s, %s, %s, %s)
             """,
             (user_id, type_, categorie, montant, description, solde_apres),

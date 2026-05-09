@@ -13,6 +13,18 @@ CREATE TABLE IF NOT EXISTS bank_accounts (
     PRIMARY KEY (user_id, guild_id)
 );
 
+CREATE TABLE IF NOT EXISTS bank_transactions (
+    id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id     TEXT        NOT NULL,
+    type        TEXT        NOT NULL,
+    categorie   TEXT        NOT NULL,
+    montant     BIGINT      NOT NULL,
+    description TEXT,
+    solde_apres BIGINT      DEFAULT 0,
+    target_user_id TEXT,
+    created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS bank_achievements (
     user_id        TEXT        NOT NULL,
     achievement_id TEXT        NOT NULL,
@@ -26,14 +38,10 @@ CREATE TABLE IF NOT EXISTS bank_settings (
     confirm_large_transfers BOOL    DEFAULT TRUE
 );
 
--- Ajout colonne target_user_id à la table transactions existante
-ALTER TABLE transactions ADD COLUMN IF NOT EXISTS target_user_id TEXT;
-
--- Index pour performances
-CREATE INDEX IF NOT EXISTS idx_transactions_user_created
-    ON transactions(user_id, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_transactions_categorie
-    ON transactions(categorie);
+CREATE INDEX IF NOT EXISTS idx_bank_transactions_user_created
+    ON bank_transactions(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_bank_transactions_categorie
+    ON bank_transactions(categorie);
 CREATE INDEX IF NOT EXISTS idx_bank_achievements_user
     ON bank_achievements(user_id);
 CREATE INDEX IF NOT EXISTS idx_bank_accounts_guild

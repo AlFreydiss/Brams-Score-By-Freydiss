@@ -119,7 +119,7 @@ async def get_week_stats(uid: str) -> tuple[int, int]:
             # Tente avec le nom de colonne réel — fallback silencieux si absent
             try:
                 cur.execute(
-                    """SELECT "type", COALESCE(SUM(montant),0) FROM transactions
+                    """SELECT "type", COALESCE(SUM(montant),0) FROM bank_transactions
                        WHERE user_id=%s AND created_at >= NOW()-INTERVAL '7 days'
                        GROUP BY "type" """,
                     (uid,),
@@ -343,13 +343,13 @@ async def get_history(uid: str, filtre: str, page: int, per_page: int = 10) -> t
                 conds.append("categorie IN ('casino_gain','casino_perte')")
 
             where = " AND ".join(conds)
-            cur.execute(f"SELECT COUNT(*) FROM transactions WHERE {where}", params)
+            cur.execute(f"SELECT COUNT(*) FROM bank_transactions WHERE {where}", params)
             total      = cur.fetchone()[0]
             total_pages = max(1, (total + per_page - 1) // per_page)
 
             cur.execute(
                 f"""SELECT type, montant, description, created_at, categorie
-                    FROM transactions WHERE {where}
+                    FROM bank_transactions WHERE {where}
                     ORDER BY created_at DESC LIMIT %s OFFSET %s""",
                 params + [per_page, page * per_page],
             )
@@ -365,7 +365,7 @@ async def get_transfer_total_today(uid: str) -> int:
         try:
             cur = conn.cursor()
             cur.execute(
-                """SELECT COALESCE(SUM(montant),0) FROM transactions
+                """SELECT COALESCE(SUM(montant),0) FROM bank_transactions
                    WHERE user_id=%s AND categorie='transfert_envoye'
                    AND created_at >= NOW() - INTERVAL '24 hours'""",
                 (uid,),
@@ -382,7 +382,7 @@ async def get_casino_lost_today(uid: str) -> int:
         try:
             cur = conn.cursor()
             cur.execute(
-                """SELECT COALESCE(SUM(montant),0) FROM transactions
+                """SELECT COALESCE(SUM(montant),0) FROM bank_transactions
                    WHERE user_id=%s AND categorie='casino_perte'
                    AND created_at >= NOW() - INTERVAL '24 hours'""",
                 (uid,),
