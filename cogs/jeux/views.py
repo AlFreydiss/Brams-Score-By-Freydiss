@@ -9,6 +9,8 @@ from .constants import (
     MIN_PLAYERS, MAX_PLAYERS,
     GAME_NAMES, GAME_DESCS, PIRATES,
     COLOR_LOBBY, COLOR_WIN, COLOR_LOSS, COLOR_WAIT,
+    ALPHABET_LETTERS, ALPHABET_CATEGORIES, ANSWER_TIMEOUT,
+    PASSE_PENALTY, PASSE_REWARD, VOTE_TIMEOUT, DEFIS,
 )
 
 
@@ -196,10 +198,12 @@ class LobbyView(discord.ui.View):
         net   = pot - house
 
         dispatch = {
-            "jackpot":   _run_jackpot,
-            "course":    _run_course,
-            "tournoi":   _run_tournoi,
-            "devinette": _run_devinette,
+            "jackpot":    _run_jackpot,
+            "course":     _run_course,
+            "tournoi":    _run_tournoi,
+            "devinette":  _run_devinette,
+            "alphabet":   _run_alphabet,
+            "passeoupas": _run_passe_ou_pas,
         }
         await dispatch[self.game_type](self.message, self.players, self.mise, net, self.bot)
 
@@ -507,4 +511,395 @@ async def _run_devinette(msg: discord.Message, players: list[discord.Member],
         title=f"🎯 Le nombre secret était… **{secret}** !",
         description="\n".join(lines) + f"\n\n{win_str}",
         color=COLOR_WIN,
+    ), view=None)
+
+
+# ══════════════════════════════════════════════════════════════════════
+# JEU DE L'ALPHABET
+# ══════════════════════════════════════════════════════════════════════
+
+class _AlphabetModal(discord.ui.Modal, title="🔤 Donne ton mot !"):
+    word = discord.ui.TextInput(
+        label="Ton mot",
+        placeholder="Ex: Ananas",
+        max_length=50,
+    )
+
+    def __init__(self, parent_view: "_AlphabetTurnView"):
+        super().__init__()
+        self._parent = parent_view
+
+    async def on_submit(self, interaction: discord.Interaction):
+        w = self.word.value.strip()
+        await interaction.response.send_message(f"✅ **{w}** envoyé !", ephemeral=True)
+        self._parent.answer = w
+        self._parent.answered.set()
+
+
+class _AlphabetTurnView(discord.ui.View):
+    def __init__(self, current_player: discord.Member):
+        super().__init__(timeout=ANSWER_TIMEOUT)
+        self.current_player = current_player
+        self.answer: str | None = None
+        self.answered = asyncio.Event()
+
+    @discord.ui.button(label="Répondre ✍️", style=discord.ButtonStyle.primary)
+    async def btn_answer(self, interaction: discord.Interaction, _: discord.ui.Button):
+        if interaction.user != self.current_player:
+            await interaction.response.send_message("❌ Ce n'est pas ton tour !", ephemeral=True)
+            return
+        await interaction.response.send_modal(_AlphabetModal(self))
+
+    async def on_timeout(self):
+        self.answered.set()
+
+
+async def _run_alphabet(msg: discord.Message, players: list[discord.Member],
+                        mise: int, pot: int, bot):
+    cat_emoji, category = random.choice(ALPHABET_CATEGORIES)
+    alive = list(players)
+    random.shuffle(alive)
+    turn_idx   = 0
+    letter_idx = 0
+    letters    = list(ALPHABET_LETTERS)
+
+    await msg.edit(embed=discord.Embed(
+        title="🔤 Jeu de l'Alphabet",
+        description=(
+            f"Catégorie : **{cat_emoji} {category}**\n"
+            f"Chaque joueur donne un mot commençant par la lettre du tour.\n"
+            f"Rate ou temps écoulé → éliminé. Dernier debout gagne.\n\n"
+            f"💰 Cagnotte : **{fmt(pot)}** ฿\n\nC'est parti dans **3 secondes** !"
+        ),
+        color=COLOR_WAIT,
+    ), view=None)
+    await asyncio.sleep(3)
+
+    while len(alive) > 1 and letter_idx < len(letters):
+        letter  = letters[letter_idx]
+        current = alive[turn_idx % len(alive)]
+
+        players_list = "\n".join(
+            f"{'▶️' if p == current else '  '} {p.mention}" for p in alive
+        )
+        view = _AlphabetTurnView(current)
+        await msg.edit(embed=discord.Embed(
+            title=f"🔤 Lettre **{letter}** — {cat_emoji} {category}",
+            description=(
+                f"{current.mention} c'est **ton tour** !\n"
+                f"Donne un mot commençant par **{letter}** dans **{cat_emoji} {category}**\n"
+                f"⏳ **{ANSWER_TIMEOUT}s** pour répondre !\n\n"
+                f"**Joueurs restants ({len(alive)}) :**\n{players_list}"
+            ),
+            color=COLOR_WAIT,
+        ), view=view)
+
+        try:
+            await asyncio.wait_for(view.answered.wait(), timeout=ANSWER_TIMEOUT + 2)
+        except asyncio.TimeoutError:
+            pass
+
+        view.stop()
+        for item in view.children:
+            item.disabled = True
+
+        valid = (
+            view.answer is not None
+            and len(view.answer.strip()) > 0
+            and view.answer.strip().upper()[0] == letter
+        )
+
+        if valid:
+            await msg.edit(embed=discord.Embed(
+                title=f"🔤 ✅ Bonne réponse !",
+                description=(
+                    f"{current.mention} répond **{view.answer}** — lettre **{letter}** validée ! 🎉\n\n"
+                    f"Prochain dans **2s**…"
+                ),
+                color=COLOR_WIN,
+            ), view=None)
+            await asyncio.sleep(2)
+            turn_idx += 1
+        else:
+            reason = (
+                f"**{view.answer}** ne commence pas par **{letter}**"
+                if view.answer
+                else "temps écoulé"
+            )
+            alive.remove(current)
+            await msg.edit(embed=discord.Embed(
+                title=f"🔤 ❌ {current.display_name} éliminé !",
+                description=(
+                    f"{current.mention} est éliminé — {reason} !\n\n"
+                    f"**Survivants ({len(alive)}) :**\n"
+                    + ("\n".join(p.mention for p in alive) if alive else "*aucun*")
+                ),
+                color=COLOR_LOSS,
+            ), view=None)
+            await asyncio.sleep(3)
+
+        letter_idx += 1
+
+    if len(alive) == 1:
+        winner = alive[0]
+        bot.add_berrys(str(winner.id), pot, track="earned")
+        await msg.edit(embed=discord.Embed(
+            title=f"🔤 CHAMPION — {winner.display_name.upper()} !",
+            description=(
+                f"👑 {winner.mention} est le dernier survivant !\n"
+                f"💰 **+{fmt(pot)}** ฿ remportés !"
+            ),
+            color=COLOR_WIN,
+        ), view=None)
+    elif alive:
+        gain = pot // len(alive)
+        for p in alive:
+            bot.add_berrys(str(p.id), gain, track="earned")
+        await msg.edit(embed=discord.Embed(
+            title="🔤 Toutes les lettres jouées !",
+            description=(
+                f"**Survivants :** {' '.join(p.mention for p in alive)}\n"
+                f"💰 Chacun reçoit **+{fmt(gain)}** ฿ !"
+            ),
+            color=COLOR_WIN,
+        ), view=None)
+    else:
+        await msg.edit(embed=discord.Embed(
+            title="🔤 Tout le monde éliminé !",
+            description="💸 La cagnotte est perdue.",
+            color=COLOR_LOSS,
+        ), view=None)
+
+
+# ══════════════════════════════════════════════════════════════════════
+# PASSE OU PAS
+# ══════════════════════════════════════════════════════════════════════
+
+class _PasseChoiceView(discord.ui.View):
+    """Shown to the current player — Passe or accept the challenge."""
+
+    def __init__(self, current_player: discord.Member):
+        super().__init__(timeout=20)
+        self.current_player = current_player
+        self.choice: str | None = None
+        self._event = asyncio.Event()
+
+    @discord.ui.button(label="Passe 🚫", style=discord.ButtonStyle.danger)
+    async def btn_passe(self, interaction: discord.Interaction, _: discord.ui.Button):
+        if interaction.user != self.current_player:
+            await interaction.response.send_message("❌ Ce n'est pas ton tour !", ephemeral=True)
+            return
+        self.choice = "passe"
+        await interaction.response.defer()
+        self._event.set()
+        self.stop()
+
+    @discord.ui.button(label="Je le fais ✅", style=discord.ButtonStyle.success)
+    async def btn_joue(self, interaction: discord.Interaction, _: discord.ui.Button):
+        if interaction.user != self.current_player:
+            await interaction.response.send_message("❌ Ce n'est pas ton tour !", ephemeral=True)
+            return
+        self.choice = "joue"
+        await interaction.response.defer()
+        self._event.set()
+        self.stop()
+
+    async def on_timeout(self):
+        if not self.choice:
+            self.choice = "passe"
+        self._event.set()
+
+
+class _VoteView(discord.ui.View):
+    """Other players vote on whether the challenged player succeeded."""
+
+    def __init__(self, voters: list[discord.Member]):
+        super().__init__(timeout=VOTE_TIMEOUT)
+        self.voters = voters
+        self.votes: dict[int, bool] = {}
+        self._event = asyncio.Event()
+
+    def _register(self, uid: int, value: bool):
+        self.votes[uid] = value
+        if len(self.votes) >= len(self.voters):
+            self._event.set()
+
+    @discord.ui.button(label="👍 Oui", style=discord.ButtonStyle.success)
+    async def btn_oui(self, interaction: discord.Interaction, _: discord.ui.Button):
+        if interaction.user not in self.voters:
+            await interaction.response.send_message("❌ Tu ne votes pas ici.", ephemeral=True)
+            return
+        self._register(interaction.user.id, True)
+        await interaction.response.send_message("✅ Vote **Oui** enregistré !", ephemeral=True)
+
+    @discord.ui.button(label="👎 Non", style=discord.ButtonStyle.danger)
+    async def btn_non(self, interaction: discord.Interaction, _: discord.ui.Button):
+        if interaction.user not in self.voters:
+            await interaction.response.send_message("❌ Tu ne votes pas ici.", ephemeral=True)
+            return
+        self._register(interaction.user.id, False)
+        await interaction.response.send_message("✅ Vote **Non** enregistré !", ephemeral=True)
+
+    async def on_timeout(self):
+        self._event.set()
+
+
+async def _run_passe_ou_pas(msg: discord.Message, players: list[discord.Member],
+                             mise: int, pot: int, bot):
+    base_order  = list(players)
+    random.shuffle(base_order)
+    n_rounds    = len(players) * 2
+    turn_order  = (base_order * 2)[:n_rounds]
+    passe_cost  = max(1_000, int(mise * PASSE_PENALTY))
+    reward      = max(1_000, int(mise * PASSE_REWARD))
+    successes   = {p.id: 0 for p in players}
+    pot_current = pot
+
+    await msg.edit(embed=discord.Embed(
+        title="🃏 Passe ou Pas — C'est parti !",
+        description=(
+            f"**{n_rounds} rounds** · défis en vocal !\n\n"
+            f"🚫 **Passe** → `-{fmt(passe_cost)}` ฿ de ta poche au pot\n"
+            f"✅ **Je le fais** → le groupe vote pendant **{VOTE_TIMEOUT}s**\n"
+            f"   • Majorité **Oui** → **+{fmt(reward)}** ฿ du pot\n"
+            f"   • Majorité **Non** ou égalité → `-{fmt(passe_cost)}` ฿ au pot\n\n"
+            f"💰 Cagnotte de départ : **{fmt(pot_current)}** ฿\n\n"
+            "Début dans **3 secondes** !"
+        ),
+        color=COLOR_WAIT,
+    ), view=None)
+    await asyncio.sleep(3)
+
+    for rnd, current in enumerate(turn_order, 1):
+        defi   = random.choice(DEFIS)
+        voters = [p for p in players if p != current]
+
+        choice_view = _PasseChoiceView(current)
+        await msg.edit(embed=discord.Embed(
+            title=f"🃏 Round {rnd}/{n_rounds} — {current.display_name}",
+            description=(
+                f"**Défi de {current.mention} :**\n"
+                f">>> {defi}\n\n"
+                f"💰 Cagnotte : **{fmt(pot_current)}** ฿\n"
+                f"⏳ **20s** pour décider !"
+            ),
+            color=COLOR_WAIT,
+        ), view=choice_view)
+
+        try:
+            await asyncio.wait_for(choice_view._event.wait(), timeout=22)
+        except asyncio.TimeoutError:
+            choice_view.choice = "passe"
+
+        choice_view.stop()
+        for item in choice_view.children:
+            item.disabled = True
+
+        if choice_view.choice != "joue":
+            wallet   = bot.get_berrys(str(current.id))
+            deducted = min(passe_cost, wallet)
+            if deducted > 0:
+                bot.spend_berrys(str(current.id), deducted)
+                pot_current += deducted
+            await msg.edit(embed=discord.Embed(
+                title=f"🃏 Round {rnd}/{n_rounds} — Passe 🚫",
+                description=(
+                    f"{current.mention} **passe** le défi.\n"
+                    f"💸 `-{fmt(deducted)}` ฿ → pot\n\n"
+                    f"💰 Cagnotte : **{fmt(pot_current)}** ฿"
+                ),
+                color=COLOR_LOSS,
+            ), view=None)
+            await asyncio.sleep(2)
+            continue
+
+        # Défi accepté → vote des autres
+        vote_view = _VoteView(voters)
+        await msg.edit(embed=discord.Embed(
+            title=f"🃏 Round {rnd}/{n_rounds} — Vote ! 🗳️",
+            description=(
+                f"{current.mention} **tente le défi** 💪\n\n"
+                f"**{defi}**\n\n"
+                f"**{current.display_name}** a-t-il réussi ? Votez !\n"
+                f"⏳ **{VOTE_TIMEOUT}s** — "
+                + " ".join(p.mention for p in voters)
+            ),
+            color=0x9B59B6,
+        ), view=vote_view)
+
+        try:
+            await asyncio.wait_for(vote_view._event.wait(), timeout=VOTE_TIMEOUT + 2)
+        except asyncio.TimeoutError:
+            pass
+
+        vote_view.stop()
+        for item in vote_view.children:
+            item.disabled = True
+
+        oui = sum(1 for v in vote_view.votes.values() if v)
+        non = sum(1 for v in vote_view.votes.values() if not v)
+
+        if oui > non:
+            actual_reward = min(reward, pot_current)
+            pot_current  -= actual_reward
+            bot.add_berrys(str(current.id), actual_reward, track="earned")
+            successes[current.id] += 1
+            await msg.edit(embed=discord.Embed(
+                title=f"🃏 Round {rnd}/{n_rounds} — Réussi ! 🎉",
+                description=(
+                    f"👍 **OUI !** ({oui}✅ vs {non}❌)\n"
+                    f"{current.mention} remporte **+{fmt(actual_reward)}** ฿ du pot !\n\n"
+                    f"💰 Cagnotte : **{fmt(pot_current)}** ฿"
+                ),
+                color=COLOR_WIN,
+            ), view=None)
+        else:
+            wallet   = bot.get_berrys(str(current.id))
+            deducted = min(passe_cost, wallet)
+            if deducted > 0:
+                bot.spend_berrys(str(current.id), deducted)
+                pot_current += deducted
+            label = "👎 **NON !**" if non > oui else "🤝 **Égalité**"
+            await msg.edit(embed=discord.Embed(
+                title=f"🃏 Round {rnd}/{n_rounds} — Échec",
+                description=(
+                    f"{label} ({oui}✅ vs {non}❌)\n"
+                    f"{current.mention} paie **-{fmt(deducted)}** ฿ au pot.\n\n"
+                    f"💰 Cagnotte : **{fmt(pot_current)}** ฿"
+                ),
+                color=COLOR_LOSS,
+            ), view=None)
+        await asyncio.sleep(3)
+
+    # Classement final — meilleur score remporte la cagnotte restante
+    sorted_players = sorted(players, key=lambda p: -successes[p.id])
+    max_s   = successes[sorted_players[0].id]
+    winners = [p for p in players if successes[p.id] == max_s]
+
+    score_lines = "\n".join(
+        f"{'🏆' if p in winners else '  '} {p.mention} — **{successes[p.id]}** réussite{'s' if successes[p.id] != 1 else ''}"
+        for p in sorted_players
+    )
+
+    if pot_current > 0 and max_s > 0:
+        gain = pot_current // len(winners)
+        for w in winners:
+            bot.add_berrys(str(w.id), gain, track="earned")
+        end_desc = score_lines + f"\n\n💰 Cagnotte **{fmt(pot_current)}** ฿ → **+{fmt(gain)}** ฿ par gagnant !"
+    else:
+        end_desc = score_lines + (
+            "\n\n💸 Personne n'a réussi de défi — cagnotte perdue."
+            if max_s == 0 else
+            "\n\n💰 Cagnotte vide !"
+        )
+
+    title = (
+        f"🃏 FIN — {winners[0].display_name.upper()} GAGNE !"
+        if len(winners) == 1
+        else "🃏 FIN — ÉGALITÉ !"
+    )
+    await msg.edit(embed=discord.Embed(
+        title=title,
+        description=end_desc,
+        color=COLOR_WIN if max_s > 0 else COLOR_LOSS,
     ), view=None)
