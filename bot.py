@@ -1769,6 +1769,8 @@ async def on_message(message):
     if random.randint(1, 50) == 1 and get_berrys(uid) >= _MARINE_TAX:
         solde_avant = get_berrys(uid)
         spend_berrys(uid, _MARINE_TAX)
+        user["marine_levy_total"] = user.get("marine_levy_total", 0) + _MARINE_TAX
+        user["marine_levy_count"] = user.get("marine_levy_count", 0) + 1
         _DIRTY.add(uid)
         solde_apres = get_berrys(uid)
         pct = (_MARINE_TAX / max(1, solde_avant)) * 100
@@ -4715,6 +4717,7 @@ class _QuizRankedChallengeView(discord.ui.View):
 
 _PSEUDO_BANNED = [
     "pute", "suceur", "suceuse", "israel", "juif", "chienne", "soumise", "chien",
+    "taxe",
 ]
 
 def _pseudo_is_clean(pseudo: str) -> bool:
@@ -5938,10 +5941,10 @@ async def reset_pseudos(interaction: discord.Interaction):
 
 
 # ─────────────────────────────────────────
-#  /contester (taxe Marine)
+#  /contester — réponse de la Marine
 # ─────────────────────────────────────────
 
-@bot.tree.command(name="contester", description="Contester une taxe de la Marine")
+@bot.tree.command(name="contester", description="Contester un prélèvement de la Marine")
 @app_commands.guilds(*GUILD_IDS)
 async def contester(interaction: discord.Interaction):
     _AMIRAUX = ["BenActief", "Brams", "Berat", "Freydiss"]
@@ -5955,6 +5958,58 @@ async def contester(interaction: discord.Interaction):
             title="📋 Réponse de la Marine",
             description=f"Votre contestation a été examinée et **rejetée** par {noms}. 💀",
             color=0xb71c1c,
+        ).set_footer(text="Marine Headquarters • Justice"),
+        ephemeral=True,
+    )
+
+
+# ─────────────────────────────────────────
+#  /prelevement — historique Marine
+# ─────────────────────────────────────────
+
+@bot.tree.command(name="prelevement", description="📋 Consulter tes prélèvements de la Marine")
+@app_commands.guilds(*GUILD_IDS)
+async def prelevement(interaction: discord.Interaction):
+    await interaction.response.defer(ephemeral=True)
+    uid = str(interaction.user.id)
+
+    def _fetch():
+        conn = get_db()
+        try:
+            cur = conn.cursor()
+            cur.execute("""
+                SELECT data->>'marine_levy_total' AS total,
+                       data->>'marine_levy_count' AS count
+                FROM users WHERE uid = %s
+            """, (uid,))
+            row = cur.fetchone()
+            cur.close()
+            return row
+        except Exception:
+            return None
+        finally:
+            conn.close()
+
+    _MARINE_TAX = 100_000
+    wallet = get_berrys(uid)
+    user   = get_user(_CACHE, uid)
+    total  = user.get("marine_levy_total", 0)
+    count  = user.get("marine_levy_count", 0)
+
+    desc = (
+        f"━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"📋 **Prélèvements subis :** {count} fois\n"
+        f"💸 **Total prélevé :** `{total:,} ฿`\n"
+        f"💰 **Solde actuel :** `{wallet:,} ฿`\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"*Pour contester, utilise `/contester`.*\n"
+        f"*Résultat garanti : rejeté. 💀*"
+    )
+    await interaction.followup.send(
+        embed=discord.Embed(
+            title="📋 Dossier Marine — Prélèvements fiscaux",
+            description=desc,
+            color=0x1a237e,
         ).set_footer(text="Marine Headquarters • Justice"),
         ephemeral=True,
     )
