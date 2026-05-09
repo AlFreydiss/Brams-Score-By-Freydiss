@@ -24,7 +24,7 @@ class InfoCog(commands.Cog):
         self.bot = bot
 
     @app_commands.command(
-        name="info",
+        name="question",
         description="🤖 Pose une question à l'IA — elle répond à tout !",
     )
     @app_commands.guilds(*[discord.Object(id=gid) for gid in GUILD_IDS])
