@@ -801,6 +801,13 @@ bot.get_berrys   = lambda uid: get_berrys(uid)
 bot.spend_berrys = lambda uid, amount: spend_berrys(uid, amount)
 bot.add_berrys   = lambda uid, amount: add_berrys(uid, amount)
 
+# Mémoire IA persistante par utilisateur
+bot.get_ai_memory = lambda uid: get_user(_CACHE, str(uid)).get("ai_memory", "")
+def _set_ai_memory(uid: str, memory: str):
+    get_user(_CACHE, str(uid))["ai_memory"] = memory
+    _DIRTY.add(str(uid))
+bot.set_ai_memory = _set_ai_memory
+
 
 # ── Flush dirty vers DB toutes les 30s ───────────────────────────
 @tasks.loop(seconds=30)
