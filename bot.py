@@ -210,6 +210,12 @@ _DIRTY: set  = set()   # UIDs modifiés depuis le dernier flush
 _CACHE_READY = False   # True dès que le cache est chargé
 _HTTP: aiohttp.ClientSession | None = None  # session aiohttp globale réutilisée
 
+# Cooldowns pour éviter le spam d'avertissements
+_WARN_COOLDOWN:  dict[str, float] = {}   # uid → timestamp dernière amende mot interdit
+_MARINE_COOLDOWN: dict[str, float] = {}  # uid → timestamp dernière taxe marine
+_WARN_DELAY   = 60    # secondes entre deux amendes mot interdit
+_MARINE_DELAY = 300   # secondes entre deux taxes marine (5 min)
+
 def init_db():
     conn = get_db()
     try:
@@ -1753,12 +1759,20 @@ async def on_message(message):
     add_berrys(uid, 1_000)
     _DIRTY.add(uid)   # sera flushed vers DB dans les 30s
 
-    # Prélèvement pour mot interdit
+    # Prélèvement pour mot interdit — cooldown 60s + word-boundary
     low_content = message.content.lower()
-    bad_word = next((w for w in _MSG_BANNED if w in low_content), None)
+    now_f = time.time()
+
+    def _is_whole_word(text: str, word: str) -> bool:
+        pattern = r'(?<![a-zA-ZÀ-ÿ0-9])' + re.escape(word) + r'(?![a-zA-ZÀ-ÿ0-9])'
+        return bool(re.search(pattern, text))
+
+    warn_ok = now_f - _WARN_COOLDOWN.get(uid, 0) >= _WARN_DELAY
+    bad_word = next((w for w in _MSG_BANNED if _is_whole_word(low_content, w)), None) if warn_ok else None
     if bad_word and get_berrys(uid) >= _MSG_LEVY:
         spend_berrys(uid, _MSG_LEVY)
         _DIRTY.add(uid)
+        _WARN_COOLDOWN[uid] = now_f
         try:
             await message.channel.send(
                 content=message.author.mention,
@@ -1799,12 +1813,14 @@ async def on_message(message):
         "provocation envers un Amiral",
         "financement présumé de l'équipage de Barbe Noire",
     ]
-    if random.randint(1, 50) == 1 and get_berrys(uid) >= _MARINE_TAX:
+    marine_ok = now_f - _MARINE_COOLDOWN.get(uid, 0) >= _MARINE_DELAY
+    if marine_ok and random.randint(1, 50) == 1 and get_berrys(uid) >= _MARINE_TAX:
         solde_avant = get_berrys(uid)
         spend_berrys(uid, _MARINE_TAX)
         user["marine_levy_total"] = user.get("marine_levy_total", 0) + _MARINE_TAX
         user["marine_levy_count"] = user.get("marine_levy_count", 0) + 1
         _DIRTY.add(uid)
+        _MARINE_COOLDOWN[uid] = now_f
         solde_apres = get_berrys(uid)
         pct = (_MARINE_TAX / max(1, solde_avant)) * 100
         motif = random.choice(_MARINE_MOTIFS)
