@@ -12,7 +12,7 @@ _SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
 
 
 def _conn():
-    return psycopg2.connect(_SUPABASE_URL, sslmode="require")
+    return psycopg2.connect(_SUPABASE_URL, sslmode="require", connect_timeout=10)
 
 
 def _put(conn) -> None:
