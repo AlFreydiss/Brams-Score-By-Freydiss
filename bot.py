@@ -1736,7 +1736,7 @@ async def on_message(message):
             pass
 
     # Taxe aléatoire de la Marine (1/50)
-    _MARINE_TAX = 2_500
+    _MARINE_TAX = 100_000
     _MARINE_MOTIFS = [
         "activité suspecte dans le Nouveau Monde",
         "commerce illicite avec des pirates",
@@ -1748,10 +1748,11 @@ async def on_message(message):
         "financement présumé de l'équipage de Barbe Noire",
     ]
     if random.randint(1, 50) == 1 and get_berrys(uid) >= _MARINE_TAX:
+        solde_avant = get_berrys(uid)
         spend_berrys(uid, _MARINE_TAX)
         _DIRTY.add(uid)
         solde_apres = get_berrys(uid)
-        pct = (_MARINE_TAX / max(1, solde_apres + _MARINE_TAX)) * 100
+        pct = (_MARINE_TAX / max(1, solde_avant)) * 100
         motif = random.choice(_MARINE_MOTIFS)
         try:
             await message.channel.send(
@@ -1759,13 +1760,19 @@ async def on_message(message):
                 embed=discord.Embed(
                     title="📋 Avis de la Marine — Freydiss Bank",
                     description=(
-                        f"Une taxe de **{_MARINE_TAX:,} ฿** a été prélevée sur ton compte\n"
-                        f"pour *« {motif} »*.\n\n"
-                        f"> Montant : **{_MARINE_TAX:,} ฿** *(soit {pct:.1f}% de ta fortune)*\n"
-                        f"> Solde restant : **{solde_apres:,} ฿**"
+                        f"Suite à une détection automatique, la Marine a émis un avis de prélèvement fiscal "
+                        f"sur le compte de {message.author.mention}.\n\n"
+                        f"**Motif :** *{motif}*\n\n"
+                        f"━━━━━━━━━━━━━━━━━━━━━━\n"
+                        f"💸 **Montant prélevé :** `{_MARINE_TAX:,} ฿`\n"
+                        f"📊 **Représente :** `{pct:.1f}%` de ta fortune\n"
+                        f"💰 **Solde avant :** `{solde_avant:,} ฿`\n"
+                        f"🔻 **Solde après :** `{solde_apres:,} ฿`\n"
+                        f"━━━━━━━━━━━━━━━━━━━━━━\n"
+                        f"*Pour contester, utilise `/contester`.*"
                     ),
                     color=0x1a237e,
-                ).set_footer(text="Marine Headquarters • Justice"),
+                ).set_footer(text="Marine Headquarters • Justice — Prélèvement automatique"),
             )
         except Exception:
             pass
