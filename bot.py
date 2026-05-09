@@ -1976,7 +1976,19 @@ async def check_ranks_loop():
             hours_7d = seconds_in_period(user["vocal_sessions"], 7, join_time=jt) / 3600
 
             if hours_7d == 0 and old_snapshot[0] is None:
-                if total_members % 100 == 0:
+                if total_members % 50 == 0:
+                    await asyncio.sleep(0)
+                continue
+
+            # Pré-check : rôles Discord déjà corrects ET pas d'alerte à vérifier → skip
+            deserved = set(get_all_ranks_for_hours(hours_7d))
+            current_roles = {_RANK_ID_TO_NAME[r.id] for r in member.roles if r.id in _RANK_ROLE_IDS}
+            alerted = user.get("alerted")
+            threshold_map = {"Pirate": 10, "Shichibukai": 25, "Amiral": 40, "Yonkou": 70, "Roi des pirates": 150}
+            highest_rank = next((name for _, name in RANKS if name in current_roles), None)
+            in_danger = highest_rank and (threshold_map[highest_rank] - DERANK_WARNING_THRESHOLD) <= hours_7d < threshold_map[highest_rank]
+            if deserved == current_roles and not in_danger and alerted != highest_rank:
+                if total_members % 50 == 0:
                     await asyncio.sleep(0)
                 continue
 
@@ -1990,7 +2002,7 @@ async def check_ranks_loop():
             if (user.get("last_rank"), user.get("alerted")) != old_snapshot:
                 _DIRTY.add(uid)
 
-            if total_members % 100 == 0:
+            if total_members % 50 == 0:
                 await asyncio.sleep(0)
 
     elapsed = time.time() - tick
