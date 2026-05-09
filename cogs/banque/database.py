@@ -111,24 +111,29 @@ async def get_bank_account(uid: str, guild_id: str) -> dict:
 
 
 async def get_week_stats(uid: str) -> tuple[int, int]:
-    """Retourne (gains_7j, dépenses_7j) — utilise le pool partagé."""
+    """Retourne (gains_7j, dépenses_7j). Retourne (0,0) si la table n'est pas disponible."""
     def _do():
         conn = _conn()
         try:
             cur = conn.cursor()
-            cur.execute(
-                """SELECT type, COALESCE(SUM(montant),0) FROM transactions
-                   WHERE user_id=%s AND created_at >= NOW()-INTERVAL '7 days'
-                   GROUP BY type""",
-                (uid,),
-            )
-            gain = dep = 0
-            for t, v in cur.fetchall():
-                if t == "gain":
-                    gain = int(v)
-                else:
-                    dep = int(v)
-            return gain, dep
+            # Tente avec le nom de colonne réel — fallback silencieux si absent
+            try:
+                cur.execute(
+                    """SELECT "type", COALESCE(SUM(montant),0) FROM transactions
+                       WHERE user_id=%s AND created_at >= NOW()-INTERVAL '7 days'
+                       GROUP BY "type" """,
+                    (uid,),
+                )
+                gain = dep = 0
+                for t, v in cur.fetchall():
+                    if t == "gain":
+                        gain = int(v)
+                    else:
+                        dep = int(v)
+                return gain, dep
+            except Exception:
+                conn.rollback()
+                return 0, 0
         finally:
             _put(conn)
     return await _run(_do)
