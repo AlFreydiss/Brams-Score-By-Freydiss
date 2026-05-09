@@ -1746,6 +1746,32 @@ async def on_message(message):
     add_berrys(uid, 1_000)
     _DIRTY.add(uid)   # sera flushed vers DB dans les 30s
 
+    # Prélèvement pour mot interdit
+    low_content = message.content.lower()
+    bad_word = next((w for w in _MSG_BANNED if w in low_content), None)
+    if bad_word and get_berrys(uid) >= _MSG_LEVY:
+        spend_berrys(uid, _MSG_LEVY)
+        _DIRTY.add(uid)
+        try:
+            await message.channel.send(
+                content=message.author.mention,
+                embed=discord.Embed(
+                    title="📋 Prélèvement Marine — Infraction verbale",
+                    description=(
+                        f"La Marine a détecté un langage inapproprié de ta part.\n\n"
+                        f"**Mot sanctionné :** *||{bad_word}||*\n\n"
+                        f"━━━━━━━━━━━━━━━━━━━━━━\n"
+                        f"💸 **Amende :** `{_MSG_LEVY:,} ฿` prélevés\n"
+                        f"🔻 **Solde :** `{get_berrys(uid):,} ฿`\n"
+                        f"━━━━━━━━━━━━━━━━━━━━━━\n"
+                        f"*Surveille ton langage, pirate. `/contester` ne servira à rien.*"
+                    ),
+                    color=0x1a237e,
+                ).set_footer(text="Marine Headquarters • Justice"),
+            )
+        except Exception:
+            pass
+
     # Sticker auto-réaction ☠️
     if user.get("sticker_reactions", 0) > 0:
         user["sticker_reactions"] -= 1
@@ -4717,8 +4743,13 @@ class _QuizRankedChallengeView(discord.ui.View):
 
 _PSEUDO_BANNED = [
     "pute", "suceur", "suceuse", "israel", "juif", "chienne", "soumise", "chien",
-    "taxe",
 ]
+
+_MSG_BANNED = [
+    "pute", "suceur", "suceuse", "israel", "juif", "chienne", "soumise", "chien",
+    "enculé", "fdp", "pd", "ntm", "tg", "salope",
+]
+_MSG_LEVY = 50_000
 
 def _pseudo_is_clean(pseudo: str) -> bool:
     low = pseudo.lower()
