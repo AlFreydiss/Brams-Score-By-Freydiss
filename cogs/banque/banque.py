@@ -15,17 +15,20 @@ from .views import BanqueView, fmt, _send_leaderboard
 GUILD_IDS   = [int(x) for x in os.environ.get("GUILD_IDS", "924346730194014220,1478937064031518892").split(",")]
 _img_exec   = ThreadPoolExecutor(max_workers=2, thread_name_prefix="bank_img")
 
-# Cache image : {uid: (timestamp, bytes)}
 _IMG_CACHE: dict[str, tuple[float, bytes]] = {}
-_IMG_CACHE_TTL = 30.0  # secondes
+_IMG_CACHE_TTL = 30.0
+
+_aio_session: aiohttp.ClientSession | None = None
 
 
 async def _get_avatar_bytes(url: str) -> bytes | None:
+    global _aio_session
+    if _aio_session is None or _aio_session.closed:
+        _aio_session = aiohttp.ClientSession()
     try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url, timeout=aiohttp.ClientTimeout(total=5)) as r:
-                if r.status == 200:
-                    return await r.read()
+        async with _aio_session.get(url, timeout=aiohttp.ClientTimeout(total=5)) as r:
+            if r.status == 200:
+                return await r.read()
     except Exception:
         return None
 
@@ -77,18 +80,21 @@ class BankCog(commands.Cog):
         target    = membre or interaction.user
         uid       = str(target.id)
         guild_id  = str(interaction.guild_id)
+        gids      = [str(m.id) for m in interaction.guild.members if not m.bot]
 
-        # Crée le compte si absent
-        await db.ensure_account(uid, guild_id)
+        wallet = self.bot.get_berrys(uid)
 
-        wallet  = self.bot.get_berrys(uid)
-        account = await db.get_bank_account(uid, guild_id)
+        # Appels DB en parallèle : compte + vaults + stats hebdo
+        account, vaults, (week_gain, week_dep) = await asyncio.gather(
+            db.ensure_and_get_account(uid, guild_id),
+            db.get_vaults_for_guild(guild_id, gids),
+            db.get_week_stats(uid),
+        )
+
         vault   = account.get("vault") or 0
         total   = wallet + vault
 
         # Classement richesse dans le guild
-        gids     = [str(m.id) for m in interaction.guild.members if not m.bot]
-        vaults   = await db.get_vaults_for_guild(guild_id, gids)
         all_totals = sorted(
             [self.bot.get_berrys(mid) + vaults.get(mid, 0) for mid in gids],
             reverse=True,
@@ -101,19 +107,14 @@ class BankCog(commands.Cog):
         old_rank  = account.get("bank_rank", "Mousse")
         if rank["nom"] != old_rank:
             await db.update_bank_rank_db(uid, guild_id, rank["nom"])
-            # Annonce rank-up
             await _announce_rank_up(interaction, target, old_rank, rank)
 
         # Prochain rang
-        next_rank   = db.get_next_rank(total)
-        next_str    = (
+        next_rank = db.get_next_rank(total)
+        next_str  = (
             f"`{fmt(next_rank['seuil'] - total)}` ฿ pour {next_rank['emoji']} **{next_rank['nom']}**"
             if next_rank else "🐉 Rang maximum atteint !"
         )
-
-        # Stats hebdo depuis la table transactions
-        from .database import _conn, _run as _db_run
-        week_gain, week_dep = await _week_stats(uid)
 
         # Embed principal
         now_str   = datetime.now(timezone.utc).strftime("%H:%M UTC")
@@ -190,33 +191,6 @@ class BankCog(commands.Cog):
 
         view.message = msg
 
-
-async def _week_stats(uid: str) -> tuple[int, int]:
-    import psycopg2
-    import os
-    from concurrent.futures import ThreadPoolExecutor
-
-    url = os.environ.get("SUPABASE_URL", "")
-    def _do():
-        conn = psycopg2.connect(url, sslmode="require")
-        try:
-            cur = conn.cursor()
-            cur.execute(
-                """SELECT type, COALESCE(SUM(montant),0) FROM transactions
-                   WHERE user_id=%s AND created_at >= NOW()-INTERVAL '7 days'
-                   GROUP BY type""",
-                (uid,),
-            )
-            gain = dep = 0
-            for t, v in cur.fetchall():
-                if t == "gain":
-                    gain = int(v)
-                else:
-                    dep = int(v)
-            return gain, dep
-        finally:
-            conn.close()
-    return await asyncio.get_running_loop().run_in_executor(_img_exec, _do)
 
 
 async def _announce_rank_up(

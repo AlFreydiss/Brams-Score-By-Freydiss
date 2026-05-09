@@ -2,6 +2,7 @@ import os
 import asyncio
 import psycopg2
 import psycopg2.extras
+import psycopg2.pool
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone, timedelta
 
@@ -10,9 +11,26 @@ from .constants import BANK_RANKS, VAULT_INTEREST_BASE, VAULT_LOCK_RATES, VAULT_
 _executor     = ThreadPoolExecutor(max_workers=4, thread_name_prefix="bank_db")
 _SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
 
+_pool: psycopg2.pool.ThreadedConnectionPool | None = None
+
+
+def _get_pool() -> psycopg2.pool.ThreadedConnectionPool:
+    global _pool
+    if _pool is None:
+        _pool = psycopg2.pool.ThreadedConnectionPool(1, 6, _SUPABASE_URL, sslmode="require")
+    return _pool
+
 
 def _conn():
-    return psycopg2.connect(_SUPABASE_URL, sslmode="require")
+    return _get_pool().getconn()
+
+
+def _put(conn) -> None:
+    try:
+        conn.rollback()
+    except Exception:
+        pass
+    _get_pool().putconn(conn)
 
 
 async def _run(fn):
@@ -50,8 +68,36 @@ async def ensure_account(uid: str, guild_id: str) -> None:
                     (uid, guild_id),
                 )
         finally:
-            conn.close()
+            _put(conn)
     await _run(_do)
+
+
+async def ensure_and_get_account(uid: str, guild_id: str) -> dict:
+    """Crée le compte si absent et retourne les données — 1 seule connexion."""
+    _default = {
+        "user_id": uid, "guild_id": guild_id,
+        "vault": 0, "vault_locked_until": None,
+        "vault_lock_days": 0, "last_daily": None,
+        "streak": 0, "bank_rank": "Mousse",
+    }
+    def _do():
+        conn = _conn()
+        try:
+            cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+            cur.execute(
+                "INSERT INTO bank_accounts (user_id, guild_id) VALUES (%s,%s) ON CONFLICT DO NOTHING",
+                (uid, guild_id),
+            )
+            conn.commit()
+            cur.execute(
+                "SELECT * FROM bank_accounts WHERE user_id=%s AND guild_id=%s",
+                (uid, guild_id),
+            )
+            row = cur.fetchone()
+            return dict(row) if row else _default
+        finally:
+            _put(conn)
+    return await _run(_do)
 
 
 async def get_bank_account(uid: str, guild_id: str) -> dict:
@@ -71,7 +117,31 @@ async def get_bank_account(uid: str, guild_id: str) -> dict:
                 "streak": 0, "bank_rank": "Mousse",
             }
         finally:
-            conn.close()
+            _put(conn)
+    return await _run(_do)
+
+
+async def get_week_stats(uid: str) -> tuple[int, int]:
+    """Retourne (gains_7j, dépenses_7j) — utilise le pool partagé."""
+    def _do():
+        conn = _conn()
+        try:
+            cur = conn.cursor()
+            cur.execute(
+                """SELECT type, COALESCE(SUM(montant),0) FROM transactions
+                   WHERE user_id=%s AND created_at >= NOW()-INTERVAL '7 days'
+                   GROUP BY type""",
+                (uid,),
+            )
+            gain = dep = 0
+            for t, v in cur.fetchall():
+                if t == "gain":
+                    gain = int(v)
+                else:
+                    dep = int(v)
+            return gain, dep
+        finally:
+            _put(conn)
     return await _run(_do)
 
 
@@ -86,7 +156,7 @@ async def update_bank_rank_db(uid: str, guild_id: str, new_rank: str) -> None:
                     (uid, guild_id, new_rank, new_rank),
                 )
         finally:
-            conn.close()
+            _put(conn)
     await _run(_do)
 
 
@@ -118,7 +188,7 @@ async def deposit_vault(uid: str, guild_id: str, amount: int, lock_days: int = 0
                         (uid, guild_id, amount, amount),
                     )
         finally:
-            conn.close()
+            _put(conn)
     await _run(_do)
 
 
@@ -152,7 +222,7 @@ async def withdraw_vault(uid: str, guild_id: str, amount: int) -> tuple[bool, st
                 )
             return True, ""
         finally:
-            conn.close()
+            _put(conn)
     return await _run(_do)
 
 
@@ -183,7 +253,7 @@ async def apply_vault_interests(guild_id: str) -> list[tuple[str, int]]:
         except Exception as e:
             print(f"[BANK] Intérêts coffre erreur: {e}")
         finally:
-            conn.close()
+            _put(conn)
         return results
     return await _run(_do)
 
@@ -236,7 +306,7 @@ async def claim_daily(uid: str, guild_id: str) -> tuple[int, int, bool]:
                 )
             return amount, streak, False
         finally:
-            conn.close()
+            _put(conn)
     return await _run(_do)
 
 
@@ -256,7 +326,7 @@ async def get_vaults_for_guild(guild_id: str, member_ids: list[str]) -> dict[str
             )
             return {row[0]: row[1] for row in cur.fetchall()}
         finally:
-            conn.close()
+            _put(conn)
     return await _run(_do)
 
 
@@ -291,7 +361,7 @@ async def get_history(uid: str, filtre: str, page: int, per_page: int = 10) -> t
             )
             return cur.fetchall(), total_pages
         finally:
-            conn.close()
+            _put(conn)
     return await _run(_do)
 
 
@@ -308,7 +378,7 @@ async def get_transfer_total_today(uid: str) -> int:
             )
             return int(cur.fetchone()[0])
         finally:
-            conn.close()
+            _put(conn)
     return await _run(_do)
 
 
@@ -325,7 +395,7 @@ async def get_casino_lost_today(uid: str) -> int:
             )
             return int(cur.fetchone()[0])
         finally:
-            conn.close()
+            _put(conn)
     return await _run(_do)
 
 
@@ -344,7 +414,7 @@ async def unlock_achievement(uid: str, achievement_id: str) -> bool:
                 )
                 return cur.rowcount > 0
         finally:
-            conn.close()
+            _put(conn)
     return await _run(_do)
 
 
@@ -356,7 +426,7 @@ async def get_achievements(uid: str) -> list[str]:
             cur.execute("SELECT achievement_id FROM bank_achievements WHERE user_id=%s", (uid,))
             return [r[0] for r in cur.fetchall()]
         finally:
-            conn.close()
+            _put(conn)
     return await _run(_do)
 
 
@@ -373,7 +443,7 @@ async def get_bank_settings(uid: str) -> dict:
                 "user_id": uid, "dm_notifications": False, "confirm_large_transfers": True
             }
         finally:
-            conn.close()
+            _put(conn)
     return await _run(_do)
 
 
@@ -394,5 +464,5 @@ async def toggle_setting(uid: str, field: str) -> bool:
                 row = cur.fetchone()
                 return row[0] if row else True
         finally:
-            conn.close()
+            _put(conn)
     return await _run(_do)
