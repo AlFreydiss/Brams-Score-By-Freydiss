@@ -4756,8 +4756,8 @@ _PSEUDO_BANNED = [
     "fumier", "ordure", "salopard", "raclure", "vermine", "déchet",
     "sous-merde", "rebut", "poubelle",
     # Discriminatoire
-    "israel", "juif", "juive", "negro", "nègre", "negre", "neger",
-    "arabe", "youpin", "bicot", "bougnoule", "raton",
+    "israel", "negro", "nègre", "negre", "neger",
+    "youpin", "bicot", "bougnoule", "raton",
     # Handicap / validisme
     "attardé", "attardée", "gogol", "trisomique",
     "mongolien", "mongoloïde", "autiste", "débile", "abruti", "crétin", "idiot",
@@ -4780,8 +4780,8 @@ _MSG_BANNED = [
     "fumier", "ordure", "salopard", "raclure", "vermine", "déchet",
     "sous-merde", "rebut", "poubelle",
     # Discriminatoire
-    "israel", "juif", "juive", "negro", "nègre", "negre", "neger",
-    "arabe", "youpin", "bicot", "bougnoule", "raton",
+    "israel", "negro", "nègre", "negre", "neger",
+    "youpin", "bicot", "bougnoule", "raton",
     # Handicap / validisme
     "attardé", "attardée", "gogol", "trisomique",
     "mongolien", "mongoloïde", "autiste", "débile", "abruti", "crétin", "idiot",
