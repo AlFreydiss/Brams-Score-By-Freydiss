@@ -5861,8 +5861,10 @@ async def ticket_pseudo_cmd(interaction: discord.Interaction, membre: discord.Me
             return
 
     # Vérifie si la cible a un bouclier actif
+    # Si l'utilisateur se cible lui-même, le bouclier n'est PAS brûlé
+    self_target = membre.id == interaction.user.id
     shields = target_data.get("nick_shields", 0)
-    if shields > 0:
+    if shields > 0 and not self_target:
         target_data["nick_shields"] = shields - 1
         _DIRTY.add(str(membre.id))
         # Consume quand même le ticket de l'attaquant
