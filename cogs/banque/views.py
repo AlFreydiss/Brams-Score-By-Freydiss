@@ -545,25 +545,34 @@ class ConfirmTransfertView(discord.ui.View):
 
 def _build_minijeux_embed(wallet: int, cap: int, lost: int) -> discord.Embed:
     dispo = max(0, cap - lost)
-    return discord.Embed(
-        title="🎮 Mini-Jeux — Freydiss Bank",
-        description=(
-            f"{SEP}\n"
-            f"💰 **En poche :** `{fmt(wallet)}` ฿\n"
-            f"🎲 **Cap casino/jour :** `{fmt(cap)}` ฿  ·  dispo : `{fmt(dispo)}` ฿\n"
-            f"{SEP}\n"
-            f"🎲 **Dés** — Parie > 7, mise x2\n"
-            f"🎰 **Slots** — Aligne 3 symboles One Piece\n"
-            f"🃏 **Blackjack** — Bats le croupier à 21\n"
-            f"🪙 **Pile ou Face** — 50/50, mise x2\n"
-            f"🪨 **Pierre-Papier-Ciseaux** — vs le bot, mise x2\n"
-            f"🎡 **Roulette** — Rouge/Noir x2 · Numéro x36\n"
-            f"🏴‍☠️ **Course Pirates** — 4 pirates, le tien gagne x4 ?\n"
-            f"🔢 **Devinette** — Devine 1-10, mise x8\n"
-            f"{SEP}"
-        ),
-        color=COLOR_NEUTRAL,
+    embed = discord.Embed(
+        title="🏴‍☠️  Mini-Jeux — Freydiss Bank",
+        description="*Tente ta chance, marin. Que le meilleur pirate gagne.*",
+        color=0xFFD700,
     )
+    embed.add_field(name="💰 En poche", value=f"**{fmt(wallet)}** ฿", inline=True)
+    embed.add_field(
+        name="📊 Limite / jour",
+        value=f"**{fmt(dispo)}** ฿\n*sur {fmt(cap)} ฿*",
+        inline=True,
+    )
+    embed.add_field(name="​", value="​", inline=True)
+    embed.add_field(
+        name="🎮  Jeux disponibles",
+        value=(
+            "🎲  **Dés** — Parie > 7 · `×2`\n"
+            "🎰  **Slots** — Aligne 3 symboles One Piece\n"
+            "🃏  **Blackjack** — Bats le croupier à 21\n"
+            "🪙  **Pile ou Face** — 50/50 · `×2`\n"
+            "✊  **Chifoumi** — vs le bot · `×2`\n"
+            "🎡  **Roulette** — Rouge/Noir `×2` · Numéro `×36`\n"
+            "☠️  **Course Pirates** — 4 pirates, le tien gagne · `×4`\n"
+            "🔢  **Devinette** — Devine 1-10 · `×8`"
+        ),
+        inline=False,
+    )
+    embed.set_footer(text="Brams Community • Freydiss Bank")
+    return embed
 
 
 class MiniJeuxView(discord.ui.View):
@@ -601,7 +610,7 @@ class MiniJeuxView(discord.ui.View):
         if not _owner_check(self.uid, interaction): await _deny(interaction); return
         await interaction.response.send_modal(PofBetModal(self.uid, self.guild_id, self._rem()))
 
-    @discord.ui.button(label="Pierre-Papier-Ciseaux", emoji="🪨", style=discord.ButtonStyle.secondary, row=1)
+    @discord.ui.button(label="Chifoumi", emoji="✊", style=discord.ButtonStyle.secondary, row=1)
     async def btn_ppc(self, interaction: discord.Interaction, _: discord.ui.Button):
         if not _owner_check(self.uid, interaction): await _deny(interaction); return
         await interaction.response.send_modal(PpcBetModal(self.uid, self.guild_id, self._rem()))
@@ -612,12 +621,12 @@ class MiniJeuxView(discord.ui.View):
         await interaction.response.send_modal(RouletteBetModal(self.uid, self.guild_id, self._rem()))
 
     # ── Row 2 : Course + Devinette + Fermer ───────────────────────
-    @discord.ui.button(label="Course Pirates", emoji="🏴‍☠️", style=discord.ButtonStyle.danger, row=2)
+    @discord.ui.button(label="Course Pirates", emoji="☠️", style=discord.ButtonStyle.danger, row=2)
     async def btn_course(self, interaction: discord.Interaction, _: discord.ui.Button):
         if not _owner_check(self.uid, interaction): await _deny(interaction); return
         await interaction.response.send_modal(CoursesBetModal(self.uid, self.guild_id, self._rem()))
 
-    @discord.ui.button(label="Devinette", emoji="🔢", style=discord.ButtonStyle.danger, row=2)
+    @discord.ui.button(label="Devinette", emoji="🔢", style=discord.ButtonStyle.success, row=2)
     async def btn_devinette(self, interaction: discord.Interaction, _: discord.ui.Button):
         if not _owner_check(self.uid, interaction): await _deny(interaction); return
         await interaction.response.send_modal(DevBetModal(self.uid, self.guild_id, self._rem()))
