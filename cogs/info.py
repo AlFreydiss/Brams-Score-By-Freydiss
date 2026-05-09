@@ -1,15 +1,18 @@
 import os
+import time
 import discord
 import litellm
 from discord import app_commands
-from discord.ext import commands
+from discord.ext import commands, tasks
 
 GUILD_IDS = [
     int(x)
     for x in os.environ.get("GUILD_IDS", "924346730194014220,1478937064031518892").split(",")
 ]
 
-_MODEL = "groq/llama-3.3-70b-versatile"
+_MODEL           = "groq/llama-3.3-70b-versatile"
+_SESSION_TIMEOUT = 600   # secondes d'inactivité avant fermeture de session
+_MAX_HISTORY     = 20    # messages max dans l'historique (10 échanges)
 
 _SYSTEM = """\
 Tu es le bot officiel du serveur Discord "Brams Community", une communauté francophone passionnée par One Piece.
@@ -28,13 +31,42 @@ Ton rôle :
 - Réponds dans la même langue que la question (français par défaut).
 - Sois précis, direct, et va à l'essentiel. Maximum 3 paragraphes courts.
 - Pas de phrases d'intro inutiles comme "Bien sûr !" ou "Excellente question !". Réponds directement.
-- Utilise du markdown Discord simple (gras, italique) si ça rend la réponse plus lisible.\
+- Utilise du markdown Discord simple (gras, italique) si ça rend la réponse plus lisible.
+- Tu te souviens de tout ce qui a été dit dans la conversation en cours.\
 """
+
+# user_id → {"channel_id": int, "history": list, "last_active": float}
+_sessions: dict[int, dict] = {}
+
+
+async def _call_ai(history: list[dict]) -> str:
+    api_key = os.environ.get("GROQ_API_KEY", "")
+    resp = await litellm.acompletion(
+        model=_MODEL,
+        api_key=api_key,
+        max_tokens=700,
+        temperature=0.4,
+        messages=[{"role": "system", "content": _SYSTEM}] + history,
+    )
+    return resp.choices[0].message.content.strip()
 
 
 class InfoCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
+        self._cleanup_sessions.start()
+
+    def cog_unload(self):
+        self._cleanup_sessions.cancel()
+
+    @tasks.loop(minutes=5)
+    async def _cleanup_sessions(self):
+        now  = time.time()
+        dead = [uid for uid, s in _sessions.items() if now - s["last_active"] > _SESSION_TIMEOUT]
+        for uid in dead:
+            del _sessions[uid]
+
+    # ── /question ─────────────────────────────────────────────────────
 
     @app_commands.command(
         name="question",
@@ -45,45 +77,83 @@ class InfoCog(commands.Cog):
     async def question(self, interaction: discord.Interaction, question: str):
         await interaction.response.defer()
 
-        api_key = os.environ.get("GROQ_API_KEY", "")
-        if not api_key:
-            await interaction.followup.send(
-                "❌ Clé API manquante — contacte un admin.", ephemeral=True
-            )
+        if not os.environ.get("GROQ_API_KEY"):
+            await interaction.followup.send("❌ Clé API manquante — contacte un admin.", ephemeral=True)
             return
 
+        uid = interaction.user.id
+
+        # Ouvre ou continue la session dans ce salon
+        if uid not in _sessions or _sessions[uid]["channel_id"] != interaction.channel_id:
+            _sessions[uid] = {"channel_id": interaction.channel_id, "history": [], "last_active": time.time()}
+
+        session = _sessions[uid]
+        session["history"].append({"role": "user", "content": question})
+        _trim_history(session)
+
         try:
-            resp = await litellm.acompletion(
-                model=_MODEL,
-                api_key=api_key,
-                max_tokens=700,
-                temperature=0.4,
-                messages=[
-                    {"role": "system", "content": _SYSTEM},
-                    {"role": "user",   "content": question},
-                ],
-            )
-            answer = resp.choices[0].message.content.strip()
+            answer = await _call_ai(session["history"])
         except Exception as e:
-            await interaction.followup.send(
-                f"❌ Erreur : `{e}`", ephemeral=True
-            )
+            await interaction.followup.send(f"❌ Erreur : `{e}`", ephemeral=True)
+            session["history"].pop()
             return
+
+        session["history"].append({"role": "assistant", "content": answer})
+        session["last_active"] = time.time()
 
         if len(answer) > 4000:
             answer = answer[:3997] + "…"
 
-        embed = discord.Embed(
-            description=answer,
-            color=0x5865F2,
-        )
+        embed = discord.Embed(description=answer, color=0x5865F2)
         embed.set_author(
             name=f"{interaction.user.display_name} demande :",
             icon_url=interaction.user.display_avatar.url,
         )
-        embed.set_footer(text=f"❓ {question[:120]}{'…' if len(question) > 120 else ''}")
-
+        embed.set_footer(text=f"❓ {question[:120]}{'…' if len(question) > 120 else ''} • Réponds dans le chat pour continuer")
         await interaction.followup.send(embed=embed)
+
+    # ── Listener messages ──────────────────────────────────────────────
+
+    @commands.Cog.listener()
+    async def on_message(self, message: discord.Message):
+        if message.author.bot:
+            return
+        if message.content.startswith("/"):
+            return
+
+        uid     = message.author.id
+        session = _sessions.get(uid)
+        if not session:
+            return
+        if message.channel.id != session["channel_id"]:
+            return
+        if time.time() - session["last_active"] > _SESSION_TIMEOUT:
+            del _sessions[uid]
+            return
+
+        session["history"].append({"role": "user", "content": message.content})
+        _trim_history(session)
+        session["last_active"] = time.time()
+
+        try:
+            async with message.channel.typing():
+                answer = await _call_ai(session["history"])
+        except Exception as e:
+            await message.reply(f"❌ Erreur : `{e}`")
+            session["history"].pop()
+            return
+
+        session["history"].append({"role": "assistant", "content": answer})
+
+        if len(answer) > 2000:
+            answer = answer[:1997] + "…"
+
+        await message.reply(answer, mention_author=False)
+
+
+def _trim_history(session: dict):
+    if len(session["history"]) > _MAX_HISTORY:
+        session["history"] = session["history"][-_MAX_HISTORY:]
 
 
 async def setup(bot: commands.Bot):
