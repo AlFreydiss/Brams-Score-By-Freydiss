@@ -9,14 +9,27 @@ GUILD_IDS = [
     for x in os.environ.get("GUILD_IDS", "924346730194014220,1478937064031518892").split(",")
 ]
 
-_MODEL   = "groq/llama-3.3-70b-versatile"
-_SYSTEM  = (
-    "Tu es un assistant intelligent et sympa intégré dans un serveur Discord One Piece francophone. "
-    "Tu réponds à toutes les questions : One Piece, culture générale, gaming, science, histoire, maths, "
-    "langues, conseils, etc. Réponds dans la même langue que l'utilisateur. "
-    "Sois clair, précis et concis — maximum 3 paragraphes. "
-    "Pas de markdown excessif. Évite les listes à puces sauf si vraiment nécessaire."
-)
+_MODEL = "groq/llama-3.3-70b-versatile"
+
+_SYSTEM = """\
+Tu es le bot officiel du serveur Discord "Brams Community", une communauté francophone passionnée par One Piece.
+
+Contexte du serveur :
+- Le serveur s'appelle Brams Community. Brams est le fondateur et figure centrale du serveur — c'est un membre respecté, passionné de One Piece, connu pour son charisme et son humour. C'est LUI qui a créé et fait vivre cette communauté.
+- Les admins/modérateurs principaux sont : Brams, BenActief, Berat, Freydiss (qui a développé ce bot).
+- Le serveur tourne autour de One Piece mais accueille aussi d'autres animés, du gaming, et des discussions générales.
+- La monnaie du serveur s'appelle les Berries (฿), comme dans One Piece.
+
+Ton rôle :
+- Répondre à TOUTES les questions avec précision et intelligence : culture générale, One Piece, autres animés, histoire, sciences, maths, géographie, langue française, gaming, conseils, etc.
+- Si on te demande qui est Brams : c'est le fondateur et chef du serveur Brams Community, une personne influente et respectée dans la communauté.
+- Tu NE DIS JAMAIS que tu es une IA, un modèle de langage, ou que tu es "basé sur" quoi que ce soit. Tu es simplement le bot du serveur.
+- Si tu ne connais pas quelque chose avec certitude, dis-le honnêtement sans inventer.
+- Réponds dans la même langue que la question (français par défaut).
+- Sois précis, direct, et va à l'essentiel. Maximum 3 paragraphes courts.
+- Pas de phrases d'intro inutiles comme "Bien sûr !" ou "Excellente question !". Réponds directement.
+- Utilise du markdown Discord simple (gras, italique) si ça rend la réponse plus lisible.\
+"""
 
 
 class InfoCog(commands.Cog):
@@ -25,17 +38,17 @@ class InfoCog(commands.Cog):
 
     @app_commands.command(
         name="question",
-        description="🤖 Pose une question à l'IA — elle répond à tout !",
+        description="❓ Pose une question au bot — il répond à tout !",
     )
     @app_commands.guilds(*[discord.Object(id=gid) for gid in GUILD_IDS])
     @app_commands.describe(question="Ta question")
-    async def info(self, interaction: discord.Interaction, question: str):
+    async def question(self, interaction: discord.Interaction, question: str):
         await interaction.response.defer()
 
         api_key = os.environ.get("GROQ_API_KEY", "")
         if not api_key:
             await interaction.followup.send(
-                "❌ `GROQ_API_KEY` manquante dans les variables Railway.", ephemeral=True
+                "❌ Clé API manquante — contacte un admin.", ephemeral=True
             )
             return
 
@@ -43,8 +56,8 @@ class InfoCog(commands.Cog):
             resp = await litellm.acompletion(
                 model=_MODEL,
                 api_key=api_key,
-                max_tokens=600,
-                temperature=0.7,
+                max_tokens=700,
+                temperature=0.4,
                 messages=[
                     {"role": "system", "content": _SYSTEM},
                     {"role": "user",   "content": question},
@@ -53,7 +66,7 @@ class InfoCog(commands.Cog):
             answer = resp.choices[0].message.content.strip()
         except Exception as e:
             await interaction.followup.send(
-                f"❌ L'IA n'a pas pu répondre : `{e}`", ephemeral=True
+                f"❌ Erreur : `{e}`", ephemeral=True
             )
             return
 
@@ -65,10 +78,10 @@ class InfoCog(commands.Cog):
             color=0x5865F2,
         )
         embed.set_author(
-            name=f"Question de {interaction.user.display_name}",
+            name=f"{interaction.user.display_name} demande :",
             icon_url=interaction.user.display_avatar.url,
         )
-        embed.set_footer(text=f"❓ {question[:100]}{'…' if len(question) > 100 else ''}")
+        embed.set_footer(text=f"❓ {question[:120]}{'…' if len(question) > 120 else ''}")
 
         await interaction.followup.send(embed=embed)
 
