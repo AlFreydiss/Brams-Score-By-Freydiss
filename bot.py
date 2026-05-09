@@ -1724,7 +1724,17 @@ async def on_message(message):
     user = get_user(_CACHE, uid)
     user["messages"].append(now_ts())
     clean_old_data(user)
+    add_berrys(uid, 100)
     _DIRTY.add(uid)   # sera flushed vers DB dans les 30s
+
+    # Sticker auto-réaction ☠️
+    if user.get("sticker_reactions", 0) > 0:
+        user["sticker_reactions"] -= 1
+        try:
+            await message.add_reaction("☠️")
+        except Exception:
+            pass
+
     await bot.process_commands(message)
 
 # ─────────────────────────────────────────
@@ -4663,6 +4673,14 @@ _SHIELD_ITEM = {
     "style": discord.ButtonStyle.success,
 }
 
+_STICKER_ITEM = {
+    "id":    "nick_sticker",
+    "emoji": "☠️",
+    "name":  "Sticker Auto-Réaction",
+    "price": 5_000,
+    "style": discord.ButtonStyle.secondary,
+}
+
 _SOUND_ITEMS: list[dict] = [
     {"id": "sound_shinobu", "emoji": "🌸", "name": "Shinobu — Moshi Moshi", "price": 1_500_000, "file": "shinobu_moshi_moshi.mp3", "type": "entry_sound", "style": discord.ButtonStyle.primary},
     {"id": "sound_indian",  "emoji": "🪘", "name": "L Thème",               "price": 1_500_000, "file": "indian_song.mp3",         "type": "entry_sound", "style": discord.ButtonStyle.primary},
@@ -4675,7 +4693,7 @@ _BOOST_ITEMS = [
     {"id": "boost_24h", "emoji": "🔊", "name": "Boost 24h", "hours": 24, "price": 6_000_000, "type": "voice_boost", "style": discord.ButtonStyle.danger},
 ]
 
-_SHOP_ITEMS = _TICKET_TIERS + [_SHIELD_ITEM] + _SOUND_ITEMS + _BOOST_ITEMS
+_SHOP_ITEMS = _TICKET_TIERS + [_SHIELD_ITEM, _STICKER_ITEM] + _SOUND_ITEMS + _BOOST_ITEMS
 _ITEM_BY_ID = {item["id"]: item for item in _SHOP_ITEMS}
 
 _SHOP_CATS  = ["tickets", "protection", "sons", "boost"]
@@ -4727,11 +4745,15 @@ def _get_tickets(user_data: dict) -> dict:
 def _get_item_stock(user_data: dict, item_id: str) -> int:
     if item_id == "nick_shield":
         return user_data.get("nick_shields", 0)
+    if item_id == "nick_sticker":
+        return user_data.get("sticker_reactions", 0)
     return _get_tickets(user_data).get(item_id, 0)
 
 def _add_item_stock(user_data: dict, item_id: str, qty: int):
     if item_id == "nick_shield":
         user_data["nick_shields"] = user_data.get("nick_shields", 0) + qty
+    elif item_id == "nick_sticker":
+        user_data["sticker_reactions"] = user_data.get("sticker_reactions", 0) + qty
     else:
         tickets = _get_tickets(user_data)
         tickets[item_id] = tickets.get(item_id, 0) + qty
@@ -4743,6 +4765,8 @@ def _remove_item_stock(user_data: dict, item_id: str, qty: int) -> bool:
         return False
     if item_id == "nick_shield":
         user_data["nick_shields"] = stock - qty
+    elif item_id == "nick_sticker":
+        user_data["sticker_reactions"] = stock - qty
     else:
         tickets = _get_tickets(user_data)
         tickets[item_id] = stock - qty
@@ -4830,23 +4854,26 @@ def _embed_protection(uid: str) -> discord.Embed:
     bal       = get_berrys(uid)
     user_data = get_user(_CACHE, uid)
     shields   = user_data.get("nick_shields", 0)
-    stock_str = f"**×{shields}** bouclier(s) en stock" if shields else "**Aucun** bouclier en stock"
+    stickers  = user_data.get("sticker_reactions", 0)
+    shield_str  = f"**×{shields}/5** en stock" if shields else "**Aucun** en stock"
+    sticker_str = f"**×{stickers}** réactions restantes" if stickers else "**Aucune** réaction"
 
     e = discord.Embed(
-        title="🛡️  Bouclier Pseudo",
+        title="🛡️  Protection & Stickers",
         description=(
-            "Protège-toi contre les tickets adverses.\n"
-            "Chaque bouclier **absorbe 1 tentative** et consomme\n"
-            "le ticket de l'attaquant sans modifier ton pseudo.\n\n"
             f"💰  Solde : **{_fmt_berry(bal)} 💰**"
         ),
         color=discord.Color.green(),
     )
     e.add_field(name=_SEP, value=(
-        f"🛡️  **Bouclier Pseudo**  —  {_fmt_berry(500_000)} 💰\n\n"
-        f"> {stock_str}"
+        f"🛡️  **Bouclier Pseudo**  —  {_fmt_berry(500_000)} 💰\n"
+        f"╰ Absorbe 1 ticket adverse (max 5 en stock)\n"
+        f"> {shield_str}\n\n"
+        f"☠️  **Sticker Auto-Réaction**  —  {_fmt_berry(5_000)} 💰 / réaction\n"
+        f"╰ Le bot réagit ☠️ à chacun de tes messages\n"
+        f"> {sticker_str}"
     ), inline=False)
-    e.set_footer(text="Les boucliers s'empilent — achetable en plusieurs exemplaires")
+    e.set_footer(text="Boucliers : max 5 — Stickers : s'empilent sans limite")
     return e
 
 
@@ -4963,6 +4990,21 @@ class _QuantityModal(discord.ui.Modal, title="Acheter"):
         total = item["price"] * qty
         tag   = " *(admin)*" if self._free else ""
 
+        if item["id"] == "nick_shield":
+            current_shields = get_user(_CACHE, uid).get("nick_shields", 0)
+            max_buy = 5 - current_shields
+            if max_buy <= 0:
+                await interaction.response.send_message(
+                    "❌ Tu as déjà **5/5 boucliers** — maximum atteint.", ephemeral=True
+                )
+                return
+            if qty > max_buy:
+                await interaction.response.send_message(
+                    f"❌ Tu ne peux acheter que **{max_buy}** bouclier(s) supplémentaire(s) (max 5 en stock).",
+                    ephemeral=True,
+                )
+                return
+
         if not self._free and not spend_berrys(uid, total):
             bal = get_berrys(uid)
             await interaction.response.send_message(
@@ -4996,10 +5038,20 @@ class _QuantityModal(discord.ui.Modal, title="Acheter"):
                 embed = discord.Embed(
                     title="✅  🛡️ Bouclier acheté !",
                     description=(
-                        f"**{qty}×** Bouclier Pseudo{tag}. Tu en possèdes **{stock}**.\n\n"
+                        f"**{qty}×** Bouclier Pseudo{tag}. Tu en possèdes **{stock}/5**.\n\n"
                         f"Solde : **{_fmt_berry(get_berrys(uid))} 💰**"
                     ),
                     color=discord.Color.green(),
+                )
+            elif item["id"] == "nick_sticker":
+                embed = discord.Embed(
+                    title="✅  ☠️ Sticker acheté !",
+                    description=(
+                        f"**{qty}×** réaction auto{tag}. Il te reste **{stock}** réaction(s).\n"
+                        f"Le bot réagira ☠️ à tes **{stock}** prochain(s) message(s).\n\n"
+                        f"Solde : **{_fmt_berry(get_berrys(uid))} 💰**"
+                    ),
+                    color=discord.Color.dark_grey(),
                 )
             else:
                 embed = discord.Embed(
