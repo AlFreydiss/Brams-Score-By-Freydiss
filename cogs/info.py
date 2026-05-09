@@ -24,7 +24,8 @@ _SYSTEM_BASE = (
     "Monnaie = Berries (฿). "
     "Réponds à tout : One Piece, culture générale, gaming, sciences, etc. "
     "Ne mentionne jamais être une IA. Réponds dans la langue de l'utilisateur. "
-    "Sois direct et concis (max 3 paragraphes). Pas d'intro inutile."
+    "Sois direct et concis (max 2 paragraphes courts). Pas d'intro inutile. "
+    "INTERDIT : ne jamais utiliser ** * __ # ``` ni aucun markdown. Texte brut uniquement."
 )
 
 _MEMORY_SYSTEM = (
@@ -45,6 +46,14 @@ def _build_system(memory: str) -> str:
 
 def _strip_mention(content: str, bot_id: int) -> str:
     return re.sub(rf"<@!?{bot_id}>", "", content).strip()
+
+
+def _strip_markdown(text: str) -> str:
+    text = re.sub(r"\*{1,3}(.+?)\*{1,3}", r"\1", text)   # **bold** *italic***
+    text = re.sub(r"_{1,2}(.+?)_{1,2}", r"\1", text)      # __underline__ _italic_
+    text = re.sub(r"`{1,3}[^`]*`{1,3}", lambda m: m.group(0).strip("`"), text)  # `code`
+    text = re.sub(r"^#{1,6}\s+", "", text, flags=re.MULTILINE)  # # titres
+    return text.strip()
 
 
 def _parse_retry_after(error_str: str) -> str:
@@ -201,6 +210,7 @@ class InfoCog(commands.Cog):
             await interaction.followup.send(answer, ephemeral=True)
             return
 
+        answer = _strip_markdown(answer)
         if len(answer) > 4000:
             answer = answer[:3997] + "…"
 
@@ -242,6 +252,7 @@ class InfoCog(commands.Cog):
         async with message.channel.typing():
             answer = await _respond(session, uid, content, self.bot)
 
+        answer = _strip_markdown(answer)
         if len(answer) > 2000:
             answer = answer[:1997] + "…"
 
