@@ -1735,6 +1735,41 @@ async def on_message(message):
         except Exception:
             pass
 
+    # Taxe aléatoire de la Marine (1/50)
+    _MARINE_TAX = 2_500
+    _MARINE_MOTIFS = [
+        "activité suspecte dans le Nouveau Monde",
+        "commerce illicite avec des pirates",
+        "outrage à un officier de la Marine",
+        "non-paiement de la taxe d'ancrage",
+        "détention de fruit du démon non déclaré",
+        "présence dans les eaux de Marijoa sans autorisation",
+        "provocation envers un Amiral",
+        "financement présumé de l'équipage de Barbe Noire",
+    ]
+    if random.randint(1, 50) == 1 and get_berrys(uid) >= _MARINE_TAX:
+        spend_berrys(uid, _MARINE_TAX)
+        _DIRTY.add(uid)
+        solde_apres = get_berrys(uid)
+        pct = (_MARINE_TAX / max(1, solde_apres + _MARINE_TAX)) * 100
+        motif = random.choice(_MARINE_MOTIFS)
+        try:
+            await message.channel.send(
+                content=message.author.mention,
+                embed=discord.Embed(
+                    title="📋 Avis de la Marine — Freydiss Bank",
+                    description=(
+                        f"Une taxe de **{_MARINE_TAX:,} ฿** a été prélevée sur ton compte\n"
+                        f"pour *« {motif} »*.\n\n"
+                        f"> Montant : **{_MARINE_TAX:,} ฿** *(soit {pct:.1f}% de ta fortune)*\n"
+                        f"> Solde restant : **{solde_apres:,} ฿**"
+                    ),
+                    color=0x1a237e,
+                ).set_footer(text="Marine Headquarters • Justice"),
+            )
+        except Exception:
+            pass
+
     await bot.process_commands(message)
 
 # ─────────────────────────────────────────
@@ -5873,6 +5908,26 @@ async def reset_pseudos(interaction: discord.Interaction):
         ephemeral=True,
     )
 
+
+# ─────────────────────────────────────────
+#  /contester (taxe Marine)
+# ─────────────────────────────────────────
+
+@bot.tree.command(name="contester", description="Contester une taxe de la Marine")
+@app_commands.guilds(*GUILD_IDS)
+async def contester(interaction: discord.Interaction):
+    await interaction.response.send_message(
+        embed=discord.Embed(
+            title="📋 Réponse de la Marine",
+            description=(
+                "Votre contestation a été examinée et **rejetée** par l'Amiral Akainu. 💀\n\n"
+                "*« La justice est absolue. Votre réclamation a été brûlée. »*\n"
+                "— **Sakazuki, Amiral de la Flotte**"
+            ),
+            color=0xb71c1c,
+        ).set_footer(text="Marine Headquarters • Justice"),
+        ephemeral=True,
+    )
 
 
 # ─────────────────────────────────────────
