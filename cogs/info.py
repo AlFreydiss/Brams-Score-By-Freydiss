@@ -204,7 +204,15 @@ class InfoCog(commands.Cog):
     async def on_message(self, message: discord.Message):
         if message.author.bot:
             return
-        if self.bot.user not in message.mentions:
+
+        bot_mentioned = self.bot.user in message.mentions
+        replied_to_bot = (
+            message.reference is not None
+            and isinstance(message.reference.resolved, discord.Message)
+            and message.reference.resolved.author == self.bot.user
+        )
+
+        if not bot_mentioned and not replied_to_bot:
             return
 
         content = _strip_mention(message.content, self.bot.user.id)
