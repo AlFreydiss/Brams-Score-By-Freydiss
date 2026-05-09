@@ -4742,12 +4742,57 @@ class _QuizRankedChallengeView(discord.ui.View):
 # ─────────────────────────────────────────
 
 _PSEUDO_BANNED = [
-    "pute", "suceur", "suceuse", "israel", "juif", "chienne", "soumise", "chien",
+    # Sexuel
+    "pute", "putes", "putain", "salope", "salopes", "suceur", "suceuse",
+    "chienne", "soumise", "connasse", "connasses", "pd", "pédé",
+    "bite", "bites", "couille", "couilles", "cul", "niquer", "nique",
+    # Famille
+    "fdp", "fils de pute", "ntm", "nique ta mère", "tamère",
+    "bâtard", "batard", "bâtarde", "batarde",
+    # Violence verbale
+    "enculé", "enculée", "enculés", "encule",
+    "connard", "connards", "con", "conne",
+    "tg", "ta gueule", "ferme ta gueule",
+    "fumier", "ordure", "salopard", "raclure", "vermine", "déchet",
+    "sous-merde", "rebut", "poubelle",
+    # Discriminatoire
+    "israel", "juif", "juive", "negro", "nègre", "negre", "neger",
+    "arabe", "youpin", "bicot", "bougnoule", "raton",
+    # Handicap / validisme
+    "attardé", "attardée", "gogol", "trisomique",
+    "mongolien", "mongoloïde", "autiste", "débile", "abruti", "crétin", "idiot",
+    # Verlan / jeunes
+    "bouffon", "bouffons", "gueux",
 ]
 
 _MSG_BANNED = [
-    "pute", "suceur", "suceuse", "israel", "juif", "chienne", "soumise", "chien",
-    "enculé", "fdp", "pd", "ntm", "tg", "salope",
+    # Sexuel
+    "pute", "putes", "putain", "salope", "salopes", "suceur", "suceuse",
+    "chienne", "soumise", "connasse", "connasses", "pd", "pédé",
+    "bite", "bites", "couille", "couilles", "cul", "niquer", "nique",
+    # Famille
+    "fdp", "fils de pute", "ntm", "nique ta mère", "tamère",
+    "bâtard", "batard", "bâtarde", "batarde",
+    # Violence verbale
+    "enculé", "enculée", "enculés", "encule",
+    "connard", "connards", "con", "conne",
+    "tg", "ta gueule", "ferme ta gueule",
+    "fumier", "ordure", "salopard", "raclure", "vermine", "déchet",
+    "sous-merde", "rebut", "poubelle",
+    # Discriminatoire
+    "israel", "juif", "juive", "negro", "nègre", "negre", "neger",
+    "arabe", "youpin", "bicot", "bougnoule", "raton",
+    # Handicap / validisme
+    "attardé", "attardée", "gogol", "trisomique",
+    "mongolien", "mongoloïde", "autiste", "débile", "abruti", "crétin", "idiot",
+    # Verlan / jeunes
+    "bouffon", "bouffons", "gueux",
+    # Supplémentaires messages uniquement
+    "va te faire", "va te faire foutre", "vtff", "va te faire enculer",
+    "ferme ta", "ta race", "race de", "fils de", "mère de",
+    "mange ta", "mort à", "suicide toi", "tue toi",
+    "chier", "chiotte", "chiottes",
+    "imbécile", "imcile", "tarée", "taré",
 ]
 _MSG_LEVY = 50_000
 
