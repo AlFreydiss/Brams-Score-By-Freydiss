@@ -1,5 +1,6 @@
 import os
 import asyncio
+import threading
 import psycopg2
 import psycopg2.extras
 import psycopg2.pool
@@ -12,17 +13,24 @@ _executor     = ThreadPoolExecutor(max_workers=4, thread_name_prefix="bank_db")
 _SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
 
 _pool: psycopg2.pool.ThreadedConnectionPool | None = None
+_pool_lock = threading.Lock()
 
 
 def _get_pool() -> psycopg2.pool.ThreadedConnectionPool:
     global _pool
     if _pool is None:
-        _pool = psycopg2.pool.ThreadedConnectionPool(1, 6, _SUPABASE_URL, sslmode="require")
+        with _pool_lock:
+            if _pool is None:
+                _pool = psycopg2.pool.ThreadedConnectionPool(1, 6, _SUPABASE_URL, sslmode="require")
     return _pool
 
 
 def _conn():
-    return _get_pool().getconn()
+    try:
+        return _get_pool().getconn()
+    except Exception:
+        # Fallback connexion directe si le pool est épuisé ou non initialisé
+        return psycopg2.connect(_SUPABASE_URL, sslmode="require")
 
 
 def _put(conn) -> None:
@@ -30,7 +38,13 @@ def _put(conn) -> None:
         conn.rollback()
     except Exception:
         pass
-    _get_pool().putconn(conn)
+    try:
+        _get_pool().putconn(conn)
+    except Exception:
+        try:
+            conn.close()
+        except Exception:
+            pass
 
 
 async def _run(fn):

@@ -77,119 +77,101 @@ class BankCog(commands.Cog):
     async def banque(self, interaction: discord.Interaction, membre: discord.Member | None = None):
         await interaction.response.defer()
 
-        target    = membre or interaction.user
-        uid       = str(target.id)
-        guild_id  = str(interaction.guild_id)
-        gids      = [str(m.id) for m in interaction.guild.members if not m.bot]
+        try:
+            target    = membre or interaction.user
+            uid       = str(target.id)
+            guild_id  = str(interaction.guild_id)
+            gids      = [str(m.id) for m in interaction.guild.members if not m.bot]
 
-        wallet = self.bot.get_berrys(uid)
+            wallet = self.bot.get_berrys(uid)
 
-        # Appels DB en parallèle : compte + vaults + stats hebdo
-        account, vaults, (week_gain, week_dep) = await asyncio.gather(
-            db.ensure_and_get_account(uid, guild_id),
-            db.get_vaults_for_guild(guild_id, gids),
-            db.get_week_stats(uid),
-        )
-
-        vault   = account.get("vault") or 0
-        total   = wallet + vault
-
-        # Classement richesse dans le guild
-        all_totals = sorted(
-            [self.bot.get_berrys(mid) + vaults.get(mid, 0) for mid in gids],
-            reverse=True,
-        )
-        position = next((i + 1 for i, t in enumerate(all_totals) if t <= total), len(all_totals))
-        total_m  = len(all_totals)
-
-        # Rang bancaire + vérification rank-up
-        rank      = db.get_bank_rank(total)
-        old_rank  = account.get("bank_rank", "Mousse")
-        if rank["nom"] != old_rank:
-            await db.update_bank_rank_db(uid, guild_id, rank["nom"])
-            await _announce_rank_up(interaction, target, old_rank, rank)
-
-        # Prochain rang
-        next_rank = db.get_next_rank(total)
-        next_str  = (
-            f"`{fmt(next_rank['seuil'] - total)}` ฿ pour {next_rank['emoji']} **{next_rank['nom']}**"
-            if next_rank else "🐉 Rang maximum atteint !"
-        )
-
-        # Embed principal
-        now_str   = datetime.now(timezone.utc).strftime("%H:%M UTC")
-        embed = discord.Embed(
-            title=f"🏴‍☠️ Freydiss Bank — {interaction.guild.name}",
-            color=rank["couleur"],
-        )
-        embed.set_author(name=target.display_name, icon_url=target.display_avatar.url)
-        embed.set_thumbnail(url=target.display_avatar.url)
-
-        embed.add_field(
-            name="💰 Berries en poche",
-            value=f"`{fmt(wallet)}` ฿",
-            inline=True,
-        )
-        embed.add_field(
-            name="🔒 Coffre-fort",
-            value=f"`{fmt(vault)}` ฿",
-            inline=True,
-        )
-        embed.add_field(
-            name="💎 Total",
-            value=f"`{fmt(total)}` ฿",
-            inline=True,
-        )
-        embed.add_field(
-            name="🏆 Rang bancaire",
-            value=f"{rank['emoji']} **{rank['nom']}**",
-            inline=True,
-        )
-        embed.add_field(
-            name="📊 Classement",
-            value=f"**#{position}** sur {total_m} membres",
-            inline=True,
-        )
-        embed.add_field(
-            name="📅 Streak quotidien",
-            value=f"**{account.get('streak') or 0}** jour(s) 🔗",
-            inline=True,
-        )
-        embed.add_field(
-            name="🎯 Prochain palier",
-            value=next_str,
-            inline=False,
-        )
-        if week_gain or week_dep:
-            bilan  = week_gain - week_dep
-            b_icon = "📈" if bilan >= 0 else "📉"
-            embed.add_field(
-                name="📅 Cette semaine",
-                value=(
-                    f"Gagné : `{fmt(week_gain)}` ฿\n"
-                    f"Dépensé : `{fmt(week_dep)}` ฿\n"
-                    f"Bilan : {b_icon} `{'+' if bilan >= 0 else ''}{fmt(bilan)}` ฿"
-                ),
-                inline=False,
+            # Appels DB en parallèle : compte + vaults + stats hebdo
+            account, vaults, (week_gain, week_dep) = await asyncio.gather(
+                db.ensure_and_get_account(uid, guild_id),
+                db.get_vaults_for_guild(guild_id, gids),
+                db.get_week_stats(uid),
             )
 
-        embed.set_footer(
-            text=f"Freydiss Bank • Compte n°{uid[-6:]} • {now_str}",
-            icon_url=interaction.client.user.display_avatar.url,
-        )
+            vault   = account.get("vault") or 0
+            total   = wallet + vault
 
-        # Image carnet bancaire
-        view = BanqueView(uid, target, account)
-        card = await _generate_card(uid, target, account, wallet, position, total_m)
+            # Classement richesse dans le guild
+            all_totals = sorted(
+                [self.bot.get_berrys(mid) + vaults.get(mid, 0) for mid in gids],
+                reverse=True,
+            )
+            position = next((i + 1 for i, t in enumerate(all_totals) if t <= total), len(all_totals))
+            total_m  = len(all_totals)
 
-        if card:
-            file   = discord.File(fp=__import__("io").BytesIO(card), filename="carnet.png")
-            embed.set_image(url="attachment://carnet.png")
-            msg = await interaction.followup.send(embed=embed, file=file, view=view)
-        else:
-            msg = await interaction.followup.send(embed=embed, view=view)
+            # Rang bancaire + vérification rank-up
+            rank      = db.get_bank_rank(total)
+            old_rank  = account.get("bank_rank", "Mousse")
+            if rank["nom"] != old_rank:
+                await db.update_bank_rank_db(uid, guild_id, rank["nom"])
+                await _announce_rank_up(interaction, target, old_rank, rank)
 
-        view.message = msg
+            # Prochain rang
+            next_rank = db.get_next_rank(total)
+            next_str  = (
+                f"`{fmt(next_rank['seuil'] - total)}` ฿ pour {next_rank['emoji']} **{next_rank['nom']}**"
+                if next_rank else "🐉 Rang maximum atteint !"
+            )
+
+            # Embed principal
+            now_str   = datetime.now(timezone.utc).strftime("%H:%M UTC")
+            embed = discord.Embed(
+                title=f"🏴‍☠️ Freydiss Bank — {interaction.guild.name}",
+                color=rank["couleur"],
+            )
+            embed.set_author(name=target.display_name, icon_url=target.display_avatar.url)
+            embed.set_thumbnail(url=target.display_avatar.url)
+
+            embed.add_field(name="💰 Berries en poche", value=f"`{fmt(wallet)}` ฿", inline=True)
+            embed.add_field(name="🔒 Coffre-fort", value=f"`{fmt(vault)}` ฿", inline=True)
+            embed.add_field(name="💎 Total", value=f"`{fmt(total)}` ฿", inline=True)
+            embed.add_field(name="🏆 Rang bancaire", value=f"{rank['emoji']} **{rank['nom']}**", inline=True)
+            embed.add_field(name="📊 Classement", value=f"**#{position}** sur {total_m} membres", inline=True)
+            embed.add_field(name="📅 Streak quotidien", value=f"**{account.get('streak') or 0}** jour(s) 🔗", inline=True)
+            embed.add_field(name="🎯 Prochain palier", value=next_str, inline=False)
+
+            if week_gain or week_dep:
+                bilan  = week_gain - week_dep
+                b_icon = "📈" if bilan >= 0 else "📉"
+                embed.add_field(
+                    name="📅 Cette semaine",
+                    value=(
+                        f"Gagné : `{fmt(week_gain)}` ฿\n"
+                        f"Dépensé : `{fmt(week_dep)}` ฿\n"
+                        f"Bilan : {b_icon} `{'+' if bilan >= 0 else ''}{fmt(bilan)}` ฿"
+                    ),
+                    inline=False,
+                )
+
+            embed.set_footer(
+                text=f"Freydiss Bank • Compte n°{uid[-6:]} • {now_str}",
+                icon_url=interaction.client.user.display_avatar.url,
+            )
+
+            view = BanqueView(uid, target, account)
+            card = await _generate_card(uid, target, account, wallet, position, total_m)
+
+            if card:
+                file = discord.File(fp=__import__("io").BytesIO(card), filename="carnet.png")
+                embed.set_image(url="attachment://carnet.png")
+                msg = await interaction.followup.send(embed=embed, file=file, view=view)
+            else:
+                msg = await interaction.followup.send(embed=embed, view=view)
+
+            view.message = msg
+
+        except Exception as e:
+            print(f"[BANQUE] Erreur: {e}")
+            try:
+                await interaction.followup.send(
+                    "❌ Une erreur est survenue. Réessaie dans quelques secondes.", ephemeral=True
+                )
+            except Exception:
+                pass
 
 
 
