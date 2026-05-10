@@ -893,6 +893,10 @@ async def flush_dirty_loop():
         expired = [k for k, v in d.items() if _now_f - v > delay * 2]
         for k in expired:
             del d[k]
+    # Nettoyage cache contexte insultes
+    expired_ic = [k for k, (_, ts) in _INSULT_CACHE.items() if _now_f - ts > _INSULT_CACHE_TTL * 2]
+    for k in expired_ic:
+        del _INSULT_CACHE[k]
 
     if not _DIRTY:
         return
@@ -2122,8 +2126,41 @@ class _ContesterView(discord.ui.View):
             await interaction.followup.send("✅ Verdict rendu.", ephemeral=True)
 
 
+# Pré-compilés module-level — évite recompilation à chaque on_message
+_RE_NEUTRAL_CTX = re.compile(
+    r"\b(je\s+suis|j[''']suis|t[''']es|tu\s+es|il\s+est|elle\s+est|"
+    r"on\s+est|nous\s+sommes|c[''']est\s+une?\s+|je\s+me\s+sens|suis\s+un)\b",
+    re.IGNORECASE,
+)
+_RE_INSULT_CTX = re.compile(
+    r"\b(sale|gros|grosse|esp[eè]ce\s+de|putain\s+de|pauvre|"
+    r"vieux|vieille|p[''']tit|sacr[eé]|maudit|satan[eé])\b",
+    re.IGNORECASE,
+)
+_RE_HTTP = re.compile(r"https?://")
+_INSULT_CACHE: dict[str, tuple[bool, float]] = {}
+_INSULT_CACHE_TTL = 120  # 2 min
+
 async def _is_insult_context(content: str, bad_word: str) -> bool:
-    """Retourne True seulement si le mot banni est utilisé comme une insulte envers quelqu'un."""
+    # Phrase multi-mots (ex: "sale arabe") → toujours une insulte, pas besoin de LLM
+    if " " in bad_word:
+        return True
+
+    low = content.lower()
+    idx = low.find(bad_word.lower())
+    if idx >= 0:
+        window = low[max(0, idx - 60):idx]
+        if _RE_NEUTRAL_CTX.search(window):
+            return False   # autodescription → pas une insulte
+        if _RE_INSULT_CTX.search(window):
+            return True    # adjectif péjoratif → insulte directe
+
+    # Cache pour éviter des appels LLM identiques
+    cache_key = f"{bad_word}|{content[:100]}"
+    hit = _INSULT_CACHE.get(cache_key)
+    if hit and time.time() - hit[1] < _INSULT_CACHE_TTL:
+        return hit[0]
+
     api_key = os.environ.get("GROQ_API_KEY", "")
     if not api_key:
         return True
@@ -2137,19 +2174,19 @@ async def _is_insult_context(content: str, bad_word: str) -> bool:
                 {"role": "system", "content": (
                     "Tu analyses si un mot est utilisé comme insulte dans un message. "
                     "Réponds UNIQUEMENT par 'oui' ou 'non'. "
-                    "'oui' = le mot est dirigé contre quelqu'un comme une insulte. "
-                    "'non' = le mot est utilisé de façon neutre (autodescription, contexte médical, citation, etc.)."
+                    "'oui' = le mot est dirigé contre quelqu'un. "
+                    "'non' = usage neutre (autodescription, médical, citation)."
                 )},
                 {"role": "user", "content": (
-                    f"Dans ce message, le mot '{bad_word}' est-il une insulte envers quelqu'un ?\n"
-                    f"Message : {content}"
+                    f"Le mot '{bad_word}' est-il une insulte ici ?\nMessage : {content}"
                 )},
             ],
         )
-        answer = resp.choices[0].message.content.strip().lower()
-        return "oui" in answer
+        result = "oui" in resp.choices[0].message.content.strip().lower()
+        _INSULT_CACHE[cache_key] = (result, time.time())
+        return result
     except Exception:
-        return True  # fallback : on sanctionne en cas d'erreur LLM
+        return True
 
 
 @bot.event
@@ -2232,13 +2269,18 @@ async def on_message(message):
     )
     if marine_eligible and now_f - _MARINE_COOLDOWN.get(uid, 0) >= _MARINE_DELAY:
         prob = _MARINE_BASE_PROB
-        # Bonus probabilité : MAJUSCULES > 60%, 3+ mentions, ou lien externe
-        alpha = sum(1 for c in content if c.isalpha())
-        if alpha > 0 and sum(1 for c in content if c.isupper()) / alpha > 0.60:
+        # Bonus probabilité : single-pass MAJUSCULES, mentions, lien
+        alpha = upper = 0
+        for c in content:
+            if c.isalpha():
+                alpha += 1
+                if c.isupper():
+                    upper += 1
+        if alpha > 0 and upper / alpha > 0.60:
             prob += 2.0
         if len(message.mentions) > 3:
             prob += 2.0
-        if re.search(r"https?://", content):
+        if _RE_HTTP.search(content):
             prob += 2.0
 
         if random.random() * 100 < prob:
@@ -2250,7 +2292,7 @@ async def on_message(message):
                 user["marine_levy_count"] = user.get("marine_levy_count", 0) + 1
                 _DIRTY.add(uid)
                 _MARINE_COOLDOWN[uid] = now_f
-                solde_apres = get_berrys(uid)
+                solde_apres = solde_avant - taxe
                 pct    = (taxe / max(1, solde_avant)) * 100
                 motif  = random.choice(_MARINE_MOTIFS)
                 issued = time.time()
