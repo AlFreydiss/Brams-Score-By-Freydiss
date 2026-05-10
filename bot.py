@@ -1051,20 +1051,20 @@ def _build_citation_overlay(W: int, H: int, citation: str, perso: str, serie: st
     IVORY = (248, 243, 230)
     MARGIN = 52
 
-    # Assombrissement global (opacite sombre sur tout le fond)
-    d.rectangle([(0, 0), (W, H)], fill=(0, 0, 0, 145))
+    # Assombrissement global
+    d.rectangle([(0, 0), (W, H)], fill=(0, 0, 0, 190))
 
-    # Zone texte gauche encore plus sombre
+    # Zone texte gauche — très sombre pour lisibilité maximale
     SOLID_X = int(W * 0.38)
-    FADE_X  = int(W * 0.64)
-    d.rectangle([(0, 0), (SOLID_X, H)], fill=(4, 4, 12, 195))
+    FADE_X  = int(W * 0.68)
+    d.rectangle([(0, 0), (SOLID_X, H)], fill=(4, 4, 12, 235))
     STEPS = 40
     for i in range(STEPS):
         x = SOLID_X + int(i * (FADE_X - SOLID_X) / STEPS)
         t = 1.0 - (i / STEPS) ** 0.85
         d.rectangle(
             [(x, 0), (x + max(1, (FADE_X - SOLID_X) // STEPS), H)],
-            fill=(4, 4, 12, int(195 * t))
+            fill=(4, 4, 12, int(235 * t))
         )
 
     # Watermark
