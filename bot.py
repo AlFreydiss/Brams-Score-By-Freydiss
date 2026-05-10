@@ -212,15 +212,16 @@ _HTTP: aiohttp.ClientSession | None = None  # session aiohttp globale réutilis�
 
 # Cooldowns pour éviter le spam d'avertissements
 _WARN_COOLDOWN:  dict[str, float] = {}   # uid → timestamp dernière amende mot interdit
-_MARINE_COOLDOWN: dict[str, float] = {}  # uid → timestamp dernière taxe marine
+_MARINE_COOLDOWN: dict[str, float] = {}  # uid → timestamp dernière taxe marine (cache local)
 _WRONG_CHAN_COOLDOWN: dict[str, float] = {}  # uid → timestamp dernière taxe mauvais salon
-_WARN_DELAY   = 60    # secondes entre deux amendes mot interdit
-_MARINE_DELAY = 300   # secondes entre deux taxes marine (5 min)
-_WRONG_CHAN_DELAY = 30   # secondes entre deux taxes mauvais salon
-_WRONG_CHAN_TAX   = 25_000  # Berrys prélevés pour commande hors salon autorisé
+_WARN_DELAY       = 60        # secondes entre deux amendes mot interdit
+_MARINE_DELAY     = 43_200   # 12h entre deux taxes marine (authoritative = DB)
+_WRONG_CHAN_DELAY = 30        # secondes entre deux taxes mauvais salon
+_WRONG_CHAN_TAX   = 25_000   # Berrys prélevés pour commande hors salon autorisé
+_MARINE_BASE_PROB = 1.5      # % de chance de base par message éligible
+_MARINE_MIN_CHARS = 15       # longueur minimale du message pour être éligible
 
-# Marine : constantes module-level (évite re-création à chaque on_message)
-_MARINE_TAX = 100_000
+# Marine : constantes module-level
 _MARINE_MOTIFS = [
     "activité suspecte dans le Nouveau Monde",
     "commerce illicite avec des pirates",
@@ -250,6 +251,22 @@ def init_db():
                 waifu_husbando TEXT DEFAULT '',
                 bio TEXT DEFAULT '',
                 custom_image TEXT
+            )
+        """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS marine_cooldowns (
+                user_id TEXT PRIMARY KEY,
+                last_tax_at TIMESTAMPTZ NOT NULL
+            )
+        """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS marine_appeals (
+                id SERIAL PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                original_amount INT NOT NULL,
+                outcome TEXT NOT NULL,
+                delta INT NOT NULL,
+                created_at TIMESTAMPTZ DEFAULT NOW()
             )
         """)
         conn.commit()
@@ -1773,23 +1790,137 @@ async def on_ready():
         print(f"[BOT] Sync Berry vocal retro : {synced} utilisateurs credites")
     print("[BOT] Pret !")
 
-class _ContesterView(discord.ui.View):
-    def __init__(self):
-        super().__init__(timeout=300)
+async def _marine_check_and_set_cooldown(uid: str) -> bool:
+    """Retourne True si l'user peut être taxé (cooldown 12h expiré) et inscrit le nouveau cooldown en DB."""
+    loop = asyncio.get_running_loop()
 
-    @discord.ui.button(label="Contester", emoji="📋", style=discord.ButtonStyle.danger)
-    async def btn_contester(self, interaction: discord.Interaction, _: discord.ui.Button):
-        _AMIRAUX = ["BenActief", "Brams", "Berat", "Freydiss"]
-        choix = random.sample(_AMIRAUX, random.randint(1, len(_AMIRAUX)))
-        noms = f"l'Amiral {choix[0]}" if len(choix) == 1 else "les Amiraux " + ", ".join(choix[:-1]) + f" et {choix[-1]}"
-        await interaction.response.send_message(
-            embed=discord.Embed(
-                title="📋 Réponse de la Marine",
-                description=f"Votre contestation a été examinée et **rejetée** par {noms}. 💀",
-                color=0xb71c1c,
-            ).set_footer(text="Marine Headquarters • Justice"),
-            ephemeral=True,
-        )
+    def _db_op():
+        conn = get_db()
+        try:
+            cur = conn.cursor()
+            cur.execute("SELECT last_tax_at FROM marine_cooldowns WHERE user_id = %s", (uid,))
+            row = cur.fetchone()
+            if row:
+                last_tax = row[0]
+                if last_tax.tzinfo is None:
+                    last_tax = last_tax.replace(tzinfo=timezone.utc)
+                if datetime.now(timezone.utc) - last_tax < timedelta(hours=12):
+                    cur.close()
+                    return False
+            cur.execute("""
+                INSERT INTO marine_cooldowns (user_id, last_tax_at)
+                VALUES (%s, NOW())
+                ON CONFLICT (user_id) DO UPDATE SET last_tax_at = NOW()
+            """, (uid,))
+            conn.commit()
+            cur.close()
+            return True
+        except Exception as e:
+            print(f"[MARINE] Erreur cooldown DB: {e}")
+            return False
+        finally:
+            release_db(conn)
+
+    return await loop.run_in_executor(db_executor, _db_op)
+
+
+class _ContesterView(discord.ui.View):
+    def __init__(self, user_id: str, amount: int, issued_at: float):
+        super().__init__(timeout=300)
+        self._user_id  = user_id
+        self._amount   = amount
+        self._issued_at = issued_at
+        self._used     = False
+
+    @discord.ui.button(label="⚖️ Contester", style=discord.ButtonStyle.danger)
+    async def btn_contester(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if str(interaction.user.id) != self._user_id:
+            await interaction.response.send_message("❌ Ce n'est pas ton avis de la Marine.", ephemeral=True)
+            return
+
+        if self._used:
+            await interaction.response.send_message("⚠️ Tu as déjà contesté cet avis.", ephemeral=True)
+            return
+
+        self._used = True
+        button.disabled = True
+        await interaction.response.defer(ephemeral=True)
+
+        try:
+            await interaction.message.edit(view=self)
+        except Exception:
+            pass
+
+        if time.time() - self._issued_at > 300:
+            await interaction.followup.send(
+                embed=discord.Embed(
+                    title="⏰ Délai dépassé",
+                    description="La fenêtre de contestation de 5 minutes est écoulée. L'avis est définitif.",
+                    color=0x7f8c8d,
+                ).set_footer(text="Marine Headquarters • Justice"),
+                ephemeral=True,
+            )
+            return
+
+        roll = random.random()
+        uid = self._user_id
+
+        if roll < 0.60:
+            add_berrys(uid, self._amount, track="earned")
+            outcome, delta = "won", self._amount
+            embed = discord.Embed(
+                title="⚖️ Procès gagné !",
+                description=(
+                    f"Le tribunal a statué en ta faveur.\n\n"
+                    f"💰 La Marine te rembourse **{self._amount:,} ฿**."
+                ),
+                color=0x2ecc71,
+            )
+        elif roll < 0.90:
+            outcome, delta = "lost", 0
+            embed = discord.Embed(
+                title="❌ Procès perdu",
+                description="Le tribunal a maintenu la décision de la Marine. L'avis est définitif.",
+                color=0xe74c3c,
+            )
+        else:
+            extra = self._amount // 2
+            spend_berrys(uid, extra, track="lost")
+            outcome, delta = "counter", -extra
+            embed = discord.Embed(
+                title="🚨 Outrage à magistrat !",
+                description=(
+                    f"Pour avoir osé contester, la Marine te condamne à une amende supplémentaire.\n\n"
+                    f"💸 **Amende additionnelle : {extra:,} ฿**"
+                ),
+                color=0x6c3483,
+            )
+
+        embed.set_footer(text="Marine Headquarters • Justice")
+
+        loop = asyncio.get_running_loop()
+
+        def _log():
+            conn = get_db()
+            try:
+                cur = conn.cursor()
+                cur.execute("""
+                    INSERT INTO marine_appeals (user_id, original_amount, outcome, delta)
+                    VALUES (%s, %s, %s, %s)
+                """, (uid, self._amount, outcome, delta))
+                conn.commit()
+                cur.close()
+            except Exception as e:
+                print(f"[MARINE] Erreur log appeal: {e}")
+            finally:
+                release_db(conn)
+
+        try:
+            await loop.run_in_executor(db_executor, _log)
+        except Exception as e:
+            print(f"[MARINE] appeal executor error: {e}")
+
+        await interaction.followup.send(embed=embed, ephemeral=True)
 
 
 @bot.event
@@ -1856,42 +1987,62 @@ async def on_message(message):
         except Exception:
             pass
 
-    # Taxe aléatoire de la Marine (1/50)
-    marine_ok = now_f - _MARINE_COOLDOWN.get(uid, 0) >= _MARINE_DELAY
-    if marine_ok and random.randint(1, 50) == 1 and get_berrys(uid) >= _MARINE_TAX:
-        solde_avant = get_berrys(uid)
-        spend_berrys(uid, _MARINE_TAX)
-        user["marine_levy_total"] = user.get("marine_levy_total", 0) + _MARINE_TAX
-        user["marine_levy_count"] = user.get("marine_levy_count", 0) + 1
-        _DIRTY.add(uid)
-        _MARINE_COOLDOWN[uid] = now_f
-        solde_apres = get_berrys(uid)
-        pct = (_MARINE_TAX / max(1, solde_avant)) * 100
-        motif = random.choice(_MARINE_MOTIFS)
-        suspect = message.content[:120] + ("…" if len(message.content) > 120 else "")
-        try:
-            await message.channel.send(
-                content=message.author.mention,
-                embed=discord.Embed(
-                    title="📋 Avis de la Marine — Freydiss Bank",
-                    description=(
-                        f"Suite à une détection automatique, la Marine a émis un avis de prélèvement fiscal "
-                        f"sur le compte de {message.author.mention}.\n\n"
-                        f"**Motif :** *{motif}*\n"
-                        f"**Activité détectée :** *« {suspect} »*\n\n"
-                        f"━━━━━━━━━━━━━━━━━━━━━━\n"
-                        f"💸 **Montant prélevé :** `{_MARINE_TAX:,} ฿`\n"
-                        f"📊 **Représente :** `{pct:.1f}%` de ta fortune\n"
-                        f"💰 **Solde avant :** `{solde_avant:,} ฿`\n"
-                        f"🔻 **Solde après :** `{solde_apres:,} ฿`\n"
-                        f"━━━━━━━━━━━━━━━━━━━━━━"
-                    ),
-                    color=0x1a237e,
-                ).set_footer(text="Marine Headquarters • Justice — Prélèvement automatique"),
-                view=_ContesterView(),
-            )
-        except Exception:
-            pass
+    # ── Taxe aléatoire de la Marine ─────────────────────────────────
+    content = message.content
+    marine_eligible = (
+        len(content) >= _MARINE_MIN_CHARS
+        and not content.startswith("/")
+        and not content.startswith("!")
+    )
+    if marine_eligible and now_f - _MARINE_COOLDOWN.get(uid, 0) >= _MARINE_DELAY:
+        prob = _MARINE_BASE_PROB
+        # Bonus probabilité : MAJUSCULES > 60%, 3+ mentions, ou lien externe
+        alpha = sum(1 for c in content if c.isalpha())
+        if alpha > 0 and sum(1 for c in content if c.isupper()) / alpha > 0.60:
+            prob += 2.0
+        if len(message.mentions) > 3:
+            prob += 2.0
+        if re.search(r"https?://", content):
+            prob += 2.0
+
+        if random.random() * 100 < prob:
+            solde_avant = get_berrys(uid)
+            taxe = max(50, min(int(solde_avant * 0.001), 500_000))
+            if solde_avant >= 50 and await _marine_check_and_set_cooldown(uid):
+                spend_berrys(uid, taxe)
+                user["marine_levy_total"] = user.get("marine_levy_total", 0) + taxe
+                user["marine_levy_count"] = user.get("marine_levy_count", 0) + 1
+                _DIRTY.add(uid)
+                _MARINE_COOLDOWN[uid] = now_f
+                solde_apres = get_berrys(uid)
+                pct    = (taxe / max(1, solde_avant)) * 100
+                motif  = random.choice(_MARINE_MOTIFS)
+                issued = time.time()
+                suspect = content[:120] + ("…" if len(content) > 120 else "")
+                try:
+                    await message.channel.send(
+                        content=message.author.mention,
+                        embed=discord.Embed(
+                            title="📋 Avis de la Marine — Freydiss Bank",
+                            description=(
+                                f"Suite à une détection automatique, la Marine a émis un avis de prélèvement fiscal "
+                                f"sur le compte de {message.author.mention}.\n\n"
+                                f"**Motif :** *{motif}*\n"
+                                f"**Activité détectée :** *« {suspect} »*\n\n"
+                                f"━━━━━━━━━━━━━━━━━━━━━━\n"
+                                f"💸 **Montant prélevé :** `{taxe:,} ฿`\n"
+                                f"📊 **Représente :** `{pct:.1f}%` de ta fortune\n"
+                                f"💰 **Solde avant :** `{solde_avant:,} ฿`\n"
+                                f"🔻 **Solde après :** `{solde_apres:,} ฿`\n"
+                                f"━━━━━━━━━━━━━━━━━━━━━━\n"
+                                f"*Tu as 5 minutes pour contester via le bouton ci-dessous.*"
+                            ),
+                            color=0x1a237e,
+                        ).set_footer(text="Marine Headquarters • Justice — Prélèvement automatique"),
+                        view=_ContesterView(uid, taxe, issued),
+                    )
+                except Exception:
+                    pass
 
     await bot.process_commands(message)
 
@@ -6100,17 +6251,15 @@ async def reset_pseudos(interaction: discord.Interaction):
 @bot.tree.command(name="contester", description="Contester un prélèvement de la Marine")
 @app_commands.guilds(*GUILD_IDS)
 async def contester(interaction: discord.Interaction):
-    _AMIRAUX = ["BenActief", "Brams", "Berat", "Freydiss"]
-    choix = random.sample(_AMIRAUX, random.randint(1, len(_AMIRAUX)))
-    if len(choix) == 1:
-        noms = f"l'Amiral {choix[0]}"
-    else:
-        noms = "les Amiraux " + ", ".join(choix[:-1]) + f" et {choix[-1]}"
     await interaction.response.send_message(
         embed=discord.Embed(
-            title="📋 Réponse de la Marine",
-            description=f"Votre contestation a été examinée et **rejetée** par {noms}. 💀",
-            color=0xb71c1c,
+            title="📋 Contester un prélèvement",
+            description=(
+                "Pour contester un prélèvement de la Marine, utilise le bouton **⚖️ Contester** "
+                "directement sous l'avis de prélèvement envoyé dans le salon.\n\n"
+                "⏰ La fenêtre de contestation est de **5 minutes** après le prélèvement."
+            ),
+            color=0x1a237e,
         ).set_footer(text="Marine Headquarters • Justice"),
         ephemeral=True,
     )
