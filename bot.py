@@ -297,6 +297,7 @@ RANKS = [
     (25,  "Shichibukai"),
     (10,  "Pirate"),
 ]
+_RANK_THRESHOLD_MAP: dict[str, int] = {name: threshold for threshold, name in RANKS}
 
 # Couleurs RGB par rang - utilisées dans les images ET les embeds d'annonce
 RANK_COLORS = {
@@ -1541,8 +1542,6 @@ async def check_alert(member: discord.Member, hours_7d: float, data=None):
     uid = str(member.id)
     user = get_user(data, uid)
 
-    rank_threshold = {"Pirate": 10, "Shichibukai": 25, "Amiral": 40, "Yonkou": 70, "Roi des pirates": 150}
-
     # Rangs que le membre possède RÉELLEMENT sur Discord (pas last_rank qui change avant check_alert)
     member_ranks = {_RANK_ID_TO_NAME[r.id] for r in member.roles if r.id in _RANK_ROLE_IDS}
 
@@ -1560,9 +1559,15 @@ async def check_alert(member: discord.Member, hours_7d: float, data=None):
     if current_rank is None:
         return
 
-    threshold = rank_threshold[current_rank]
+    threshold = _RANK_THRESHOLD_MAP[current_rank]
     already_alerted = user.get("alerted") == current_rank
     in_danger_zone = (threshold - DERANK_WARNING_THRESHOLD) <= hours_7d < threshold
+
+    # Reset alerte si le membre a récupéré ses heures (peu importe le chemin)
+    if hours_7d >= threshold and already_alerted:
+        user["alerted"] = False
+        _DIRTY.add(uid)
+        return
 
     if in_danger_zone and not already_alerted:
         if user.get("dm_optout", False):
@@ -1594,10 +1599,6 @@ async def check_alert(member: discord.Member, hours_7d: float, data=None):
             _DIRTY.add(uid)
         except Exception as e:
             print(f"❌ Erreur DM alerte à {member.display_name}: {e}")
-
-    if hours_7d >= threshold and already_alerted:
-        user["alerted"] = False
-        _DIRTY.add(uid)
 
 # ─────────────────────────────────────────
 #  GRAPHIQUES
@@ -2543,7 +2544,11 @@ async def vocal_rank_loop():
                 user = get_user(_CACHE, uid)
                 jt = user.get("join_time")
                 hours_7d = seconds_in_period(user["vocal_sessions"], 7, join_time=jt) / 3600
-                rank_coros.append(update_rank(member, hours_7d, announce=False, data=_CACHE))
+                # Pré-check synchrone : ne lancer update_rank que si les rôles ne sont pas déjà corrects
+                _deserved = set(get_all_ranks_for_hours(hours_7d))
+                _current  = {_RANK_ID_TO_NAME[r.id] for r in member.roles if r.id in _RANK_ROLE_IDS}
+                if _deserved != _current:
+                    rank_coros.append(update_rank(member, hours_7d, announce=True, data=_CACHE))
                 # Berry temps réel — toutes les 2 min pour les membres en vocal
                 last_ts = user.get("last_berry_ts") or jt or now
                 delta = max(0, now - last_ts)
@@ -2599,9 +2604,8 @@ async def check_ranks_loop():
             deserved = set(get_all_ranks_for_hours(hours_7d))
             current_roles = {_RANK_ID_TO_NAME[r.id] for r in member.roles if r.id in _RANK_ROLE_IDS}
             alerted = user.get("alerted")
-            threshold_map = {"Pirate": 10, "Shichibukai": 25, "Amiral": 40, "Yonkou": 70, "Roi des pirates": 150}
             highest_rank = next((name for _, name in RANKS if name in current_roles), None)
-            in_danger = highest_rank and (threshold_map[highest_rank] - DERANK_WARNING_THRESHOLD) <= hours_7d < threshold_map[highest_rank]
+            in_danger = highest_rank and (_RANK_THRESHOLD_MAP[highest_rank] - DERANK_WARNING_THRESHOLD) <= hours_7d < _RANK_THRESHOLD_MAP[highest_rank]
             if deserved == current_roles and not in_danger and alerted != highest_rank:
                 if total_members % 50 == 0:
                     await asyncio.sleep(0)
