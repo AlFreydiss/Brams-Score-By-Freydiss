@@ -127,7 +127,7 @@ def _trim_history(session: dict):
 async def _call_ai(system: str, history: list[dict]) -> str:
     msgs = [{"role": "system", "content": system}] + history
 
-    # Essai toutes les clés Gemini en rotation
+    # Essai toutes les clés Gemini en rotation (skip sur rate-limit aussi)
     gemini_keys = _get_gemini_keys()
     for _ in range(len(gemini_keys)):
         key = _next_gemini_key()
@@ -147,10 +147,12 @@ async def _call_ai(system: str, history: list[dict]) -> str:
         except asyncio.TimeoutError:
             raise
         except Exception:
-            continue  # essaie la clé suivante
+            continue  # rate-limit ou autre → clé suivante
 
     # Fallback Groq
     groq_key = os.environ.get("GROQ_API_KEY", "")
+    if not groq_key:
+        raise RuntimeError("no_keys")
     resp = await asyncio.wait_for(
         litellm.acompletion(
             model=_MODEL_GROQ,
@@ -316,6 +318,19 @@ class InfoCog(commands.Cog):
 
         async with message.channel.typing():
             answer = await _respond(session, uid, content, self.bot)
+
+        if not answer:
+            return
+
+        # Erreurs : message casual au lieu du message technique
+        if answer.startswith("⏳"):
+            try:
+                await message.reply("je peux pas répondre là, réessaie dans quelques minutes", mention_author=False)
+            except Exception:
+                pass
+            return
+        if answer.startswith(("⏱️", "❌")):
+            return  # autres erreurs → silence
 
         answer = _strip_markdown(answer)
         if len(answer) > 2000:

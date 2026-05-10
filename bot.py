@@ -2172,6 +2172,11 @@ async def on_message(message):
         return
     uid  = str(message.author.id)
 
+    # Si le bot est mentionné, info.py gère la réponse — on skip ici pour éviter le double message
+    if bot.user in message.mentions:
+        await bot.process_commands(message)
+        return
+
     # Lecture et écriture directement dans le cache mémoire - 0 réseau
     user = get_user(_CACHE, uid)
     user["messages"].append(now_ts())
