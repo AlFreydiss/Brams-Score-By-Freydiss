@@ -211,13 +211,31 @@ _CACHE_READY = False   # True dès que le cache est chargé
 _HTTP: aiohttp.ClientSession | None = None  # session aiohttp globale réutilisée
 
 # Cooldowns pour éviter le spam d'avertissements
-_WARN_COOLDOWN:  dict[str, float] = {}   # uid → timestamp dernière amende mot interdit
-_MARINE_COOLDOWN: dict[str, float] = {}  # uid → timestamp dernière taxe marine (cache local)
-_WRONG_CHAN_COOLDOWN: dict[str, float] = {}  # uid → timestamp dernière taxe mauvais salon
-_WARN_DELAY       = 60        # secondes entre deux amendes mot interdit
-_MARINE_DELAY     = 43_200   # 12h entre deux taxes marine (authoritative = DB)
-_WRONG_CHAN_DELAY = 30        # secondes entre deux taxes mauvais salon
-_WRONG_CHAN_TAX   = 25_000   # Berrys prélevés pour commande hors salon autorisé
+_WARN_COOLDOWN:       dict[str, float] = {}
+_MARINE_COOLDOWN:     dict[str, float] = {}
+_WRONG_CHAN_COOLDOWN: dict[str, float] = {}
+_CITE_COOLDOWN:       dict[str, float] = {}   # uid → timestamp dernière réponse mention
+_WARN_DELAY       = 60
+_MARINE_DELAY     = 43_200
+_WRONG_CHAN_DELAY = 30
+_CITE_DELAY       = 8        # secondes min entre deux réponses mention
+_WRONG_CHAN_TAX   = 25_000
+
+# ── Personnalité "gars de cité avec ego" ─────────────────────────
+_CITE_SYSTEM = (
+    "T'es Brams Score, le bot Discord le plus ouf du Nouveau Monde. "
+    "T'as un ego de malade, tu te prends pour le Roi des Pirates, "
+    "et tu parles exactement comme un vrai gars de cité français : "
+    "argot, verlan, fautes assumées, abréviations. "
+    "Tu utilises : wsh, frr, sah, wallah, bah ouais, mdrr, ouf, c'est chaud, "
+    "jsp, tkt, nn, genre, tu vois, en vrai, j'suis, t'es, y'a, c'est, ça s'fait pas. "
+    "T'es condescendant et plein de toi-même — les autres sont des rookies devant toi. "
+    "Tu fais des refs One Piece quand c'est pertinent (ta prime, ton rang, le Nouveau Monde). "
+    "Règles strictes : réponse COURTE (2-4 phrases max), "
+    "jamais poli, jamais serviable au sens classique — tu réponds mais avec arrogance, "
+    "tu te vantes, tu minimises ce que l'autre dit. "
+    "Écris exactement comme dans un vrai message SMS de cité, pas de ponctuation parfaite."
+)
 _MARINE_BASE_PROB = 1.5      # % de chance de base par message éligible
 _MARINE_MIN_CHARS = 15       # longueur minimale du message pour être éligible
 
@@ -889,7 +907,7 @@ bot.set_ai_memory = _set_ai_memory
 async def flush_dirty_loop():
     # Nettoyage des cooldowns expirés (prévient la fuite mémoire)
     _now_f = time.time()
-    for d, delay in ((_WARN_COOLDOWN, _WARN_DELAY), (_MARINE_COOLDOWN, _MARINE_DELAY), (_WRONG_CHAN_COOLDOWN, _WRONG_CHAN_DELAY)):
+    for d, delay in ((_WARN_COOLDOWN, _WARN_DELAY), (_MARINE_COOLDOWN, _MARINE_DELAY), (_WRONG_CHAN_COOLDOWN, _WRONG_CHAN_DELAY), (_CITE_COOLDOWN, _CITE_DELAY)):
         expired = [k for k, v in d.items() if _now_f - v > delay * 2]
         for k in expired:
             del d[k]
@@ -2119,6 +2137,27 @@ class _ContesterView(discord.ui.View):
             await interaction.followup.send("✅ Verdict rendu.", ephemeral=True)
 
 
+async def _cite_reply(username: str, user_msg: str) -> str:
+    api_key = os.environ.get("GROQ_API_KEY", "")
+    if not api_key:
+        return "wsh frr j'suis en panne là tkt sah"
+    try:
+        resp = await litellm.acompletion(
+            model=_GROQ_MODEL,
+            api_key=api_key,
+            max_tokens=120,
+            temperature=1.0,
+            messages=[
+                {"role": "system", "content": _CITE_SYSTEM},
+                {"role": "user",   "content": f"{username} te dit : {user_msg}"},
+            ],
+        )
+        return resp.choices[0].message.content.strip()
+    except Exception as e:
+        print(f"[CITE] Erreur LLM: {e}")
+        return "wsh j'peux pas répondre là frr, t'inquiète c'est chaud de mon côté sah"
+
+
 @bot.event
 async def on_message(message):
     if message.author.bot:
@@ -2138,6 +2177,25 @@ async def on_message(message):
                 pass
         return
     uid  = str(message.author.id)
+
+    # ── Réponse "gars de cité" si le bot est mentionné ──────────────
+    if bot.user in message.mentions:
+        now_cite = time.time()
+        if now_cite - _CITE_COOLDOWN.get(uid, 0) >= _CITE_DELAY:
+            _CITE_COOLDOWN[uid] = now_cite
+            text = message.content
+            for pid in (bot.user.id,):
+                text = text.replace(f"<@{pid}>", "").replace(f"<@!{pid}>", "")
+            text = text.strip() or "wsh"
+            async with message.channel.typing():
+                reply = await _cite_reply(message.author.display_name, text)
+            try:
+                await message.reply(reply, mention_author=False)
+            except Exception:
+                pass
+        await bot.process_commands(message)
+        return
+
     # Lecture et écriture directement dans le cache mémoire - 0 réseau
     user = get_user(_CACHE, uid)
     user["messages"].append(now_ts())
