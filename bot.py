@@ -807,13 +807,49 @@ def generate_sakura_background(W, H, opacity=0.30):
 # ─────────────────────────────────────────
 #  BOT
 # ─────────────────────────────────────────
+
+class _BotTree(app_commands.CommandTree):
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        if interaction.guild is None:
+            return True
+        if interaction.channel_id == VIREMENT_CHANNEL_ID:
+            return True
+        if interaction.permissions.administrator:
+            return True
+
+        uid = str(interaction.user.id)
+        channel_mention = f"<#{VIREMENT_CHANNEL_ID}>"
+        now = time.time()
+        taxe = 0
+        if _CACHE_READY and now - _WRONG_CHAN_COOLDOWN.get(uid, 0) > _WRONG_CHAN_DELAY:
+            _WRONG_CHAN_COOLDOWN[uid] = now
+            taxe = min(_WRONG_CHAN_TAX, get_berrys(uid))
+            if taxe > 0:
+                spend_berrys(uid, taxe, track="lost")
+
+        desc = (
+            f"⚓ **Mauvais salon, pirate !**\n\n"
+            f"Les commandes du bot ne sont autorisées que dans {channel_mention}.\n"
+            f"Utilise tes commandes là-bas pour ne pas attirer l'attention de la Marine.\n\n"
+        )
+        if taxe > 0:
+            desc += f"🚔 **La Marine t'a prélevé {taxe:,} 💰** pour usage d'une commande hors zone réglementée."
+        else:
+            desc += "⚠️ Retourne dans le bon salon avant que la Marine ne s'en mêle !"
+
+        embed = discord.Embed(title="🚨 Zone interdite !", description=desc, color=0xe74c3c)
+        embed.set_footer(text=f"Commandes autorisées uniquement dans le bon salon.")
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+        return False
+
+
 intents = discord.Intents.default()
 intents.voice_states = True
 intents.members = True
 intents.message_content = True
 intents.messages = True
 
-bot = commands.Bot(command_prefix="!", intents=intents)
+bot = commands.Bot(command_prefix="!", intents=intents, tree_cls=_BotTree)
 bot.get_db      = get_db
 bot.release_db  = release_db
 db_executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="db_worker")
@@ -829,45 +865,6 @@ def _set_ai_memory(uid: str, memory: str):
     get_user(_CACHE, str(uid))["ai_memory"] = memory
     _DIRTY.add(str(uid))
 bot.set_ai_memory = _set_ai_memory
-
-
-# ── Restriction salon bot ─────────────────────────────────────────
-@bot.tree.interaction_check
-async def _global_channel_check(interaction: discord.Interaction) -> bool:
-    """Bloque toute commande slash hors VIREMENT_CHANNEL_ID (sauf admins et DMs)."""
-    if interaction.guild is None:
-        return True
-    if interaction.channel_id == VIREMENT_CHANNEL_ID:
-        return True
-    if interaction.permissions.administrator:
-        return True
-
-    uid = str(interaction.user.id)
-    channel_mention = f"<#{VIREMENT_CHANNEL_ID}>"
-
-    now = time.time()
-    last = _WRONG_CHAN_COOLDOWN.get(uid, 0)
-    taxe = 0
-    if _CACHE_READY and now - last > _WRONG_CHAN_DELAY:
-        _WRONG_CHAN_COOLDOWN[uid] = now
-        taxe = min(_WRONG_CHAN_TAX, get_berrys(uid))
-        if taxe > 0:
-            spend_berrys(uid, taxe, track="lost")
-
-    desc = (
-        f"⚓ **Mauvais salon, pirate !**\n\n"
-        f"Les commandes du bot ne sont autorisées que dans {channel_mention}.\n"
-        f"Utilise tes commandes là-bas pour ne pas attirer l'attention de la Marine.\n\n"
-    )
-    if taxe > 0:
-        desc += f"🚔 **La Marine t'a prélevé {taxe:,} 💰** pour usage d'une commande hors zone réglementée."
-    else:
-        desc += "⚠️ Retourne dans le bon salon avant que la Marine ne s'en mêle !"
-
-    embed = discord.Embed(title="🚨 Zone interdite !", description=desc, color=0xe74c3c)
-    embed.set_footer(text=f"Commandes autorisées uniquement dans #{channel_mention.strip('<#>')}.")
-    await interaction.response.send_message(embed=embed, ephemeral=True)
-    return False
 
 
 # ── Flush dirty vers DB toutes les 30s ───────────────────────────
