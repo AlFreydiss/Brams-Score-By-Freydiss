@@ -1840,23 +1840,68 @@ def _marine_log_appeal(uid: str, amount: int, outcome: str, delta: int):
         release_db(conn)
 
 
+_JURY_RANK_IDS = {
+    RANK_ROLES["Amiral"],
+    RANK_ROLES["Yonkou"],
+    RANK_ROLES["Roi des pirates"],
+}
+
+
 class _JuryVoteView(discord.ui.View):
     def __init__(self, accused_id: str, accused_mention: str, amount: int,
-                 judge_ids: list, channel: discord.TextChannel):
+                 judge_ids: list, channel: discord.TextChannel, mentions_str: str):
         super().__init__(timeout=60)
         self._accused_id      = accused_id
         self._accused_mention = accused_mention
         self._amount          = amount
         self._judge_ids       = set(judge_ids)
         self._channel         = channel
-        self._votes: dict     = {}   # judge_id (int) → "acquitte" | "coupable"
+        self._mentions_str    = mentions_str
+        self._votes: dict     = {}
         self._finished        = False
-        self.msg              = None  # assigné après send
+        self._countdown_task  = None
+        self.msg              = None
+
+    def _build_embed(self, seconds_left: int) -> discord.Embed:
+        filled = round(seconds_left / 60 * 10)
+        bar    = "█" * filled + "░" * (10 - filled)
+        if seconds_left > 30:
+            indicator = "🟩"
+        elif seconds_left > 15:
+            indicator = "🟨"
+        else:
+            indicator = "🟥"
+        return discord.Embed(
+            title="⚖️ Tribunal de la Marine — Vote du Jury",
+            description=(
+                f"{self._accused_mention} conteste son prélèvement de **{self._amount:,} ฿**.\n\n"
+                f"**Juges convoqués :** {self._mentions_str}\n\n"
+                f"⏱️ **Temps restant : {seconds_left}s** {indicator}\n"
+                f"`{bar}`\n\n"
+                f"Majorité des votes = verdict final."
+            ),
+            color=0x1a237e,
+        ).set_footer(text="Marine Headquarters • Justice")
+
+    def start_countdown(self):
+        self._countdown_task = asyncio.get_event_loop().create_task(self._run_countdown())
+
+    async def _run_countdown(self):
+        for remaining in (45, 30, 15):
+            await asyncio.sleep(15)
+            if self._finished or not self.msg:
+                return
+            try:
+                await self.msg.edit(embed=self._build_embed(remaining))
+            except Exception:
+                pass
 
     async def _finalize(self):
         if self._finished:
             return
         self._finished = True
+        if self._countdown_task:
+            self._countdown_task.cancel()
         for child in self.children:
             child.disabled = True
         if self.msg:
@@ -1988,37 +2033,38 @@ class _ContesterView(discord.ui.View):
 
         uid = self._user_id
 
-        # Cherche des juges connectés en vocal (hors bot et hors accusé)
-        candidates = [
-            m for vc in interaction.guild.voice_channels
-            for m in vc.members
-            if not m.bot and str(m.id) != uid
-        ]
-        random.shuffle(candidates)
-        judges = candidates[:5]
+        def _voice_members():
+            return [
+                m for vc in interaction.guild.voice_channels
+                for m in vc.members
+                if not m.bot and str(m.id) != uid
+            ]
+
+        # 1ère tentative : Amiral / Yonkou / Roi des pirates connectés
+        all_connected = _voice_members()
+        ranked = [m for m in all_connected if any(r.id in _JURY_RANK_IDS for r in m.roles)]
+        random.shuffle(ranked)
+        judges = ranked[:5]
+
+        # 2ème tentative : tous les connectés si pas assez de haut-gradés
+        if len(judges) < 2:
+            random.shuffle(all_connected)
+            judges = all_connected[:5]
 
         if len(judges) >= 2:
             # ── Procès avec jury ──────────────────────────────────────
+            mentions = " ".join(m.mention for m in judges)
             jury_view = _JuryVoteView(
                 uid, interaction.user.mention, self._amount,
-                [m.id for m in judges], interaction.channel,
+                [m.id for m in judges], interaction.channel, mentions,
             )
-            mentions = " ".join(m.mention for m in judges)
             jury_msg = await interaction.channel.send(
                 content=mentions,
-                embed=discord.Embed(
-                    title="⚖️ Tribunal de la Marine — Vote du Jury",
-                    description=(
-                        f"{interaction.user.mention} conteste son prélèvement de **{self._amount:,} ฿**.\n\n"
-                        f"**Juges convoqués :** {mentions}\n\n"
-                        f"Vous avez **60 secondes** pour voter.\n"
-                        f"Majorité des votes = verdict final."
-                    ),
-                    color=0x1a237e,
-                ).set_footer(text="Marine Headquarters • Justice"),
+                embed=jury_view._build_embed(60),
                 view=jury_view,
             )
             jury_view.msg = jury_msg
+            jury_view.start_countdown()
             await interaction.followup.send(
                 embed=discord.Embed(
                     title="⚖️ Jury convoqué !",
@@ -2028,15 +2074,15 @@ class _ContesterView(discord.ui.View):
                 ephemeral=True,
             )
         else:
-            # ── Fallback aléatoire (pas assez de juges connectés) ────
+            # ── Aucun connecté : le bot tranche ─────────────────────
             roll = random.random()
             if roll < 0.60:
                 add_berrys(uid, self._amount, track="earned")
                 outcome, delta = "won", self._amount
                 embed = discord.Embed(
-                    title="⚖️ Procès gagné !",
+                    title="⚖️ Procès — ACQUITTÉ",
                     description=(
-                        f"Aucun juge disponible — verdict rendu par tirage au sort.\n\n"
+                        f"Aucun juge disponible. Le bot a tranché en ta faveur.\n\n"
                         f"💰 La Marine rembourse **{self._amount:,} ฿** à {interaction.user.mention}."
                     ),
                     color=0x2ecc71,
@@ -2044,9 +2090,9 @@ class _ContesterView(discord.ui.View):
             elif roll < 0.90:
                 outcome, delta = "lost", 0
                 embed = discord.Embed(
-                    title="❌ Procès perdu",
+                    title="❌ Procès — COUPABLE",
                     description=(
-                        f"Aucun juge disponible — verdict rendu par tirage au sort.\n\n"
+                        f"Aucun juge disponible. Le bot a tranché contre toi.\n\n"
                         f"L'avis de la Marine est maintenu."
                     ),
                     color=0xe74c3c,
@@ -2058,12 +2104,12 @@ class _ContesterView(discord.ui.View):
                 embed = discord.Embed(
                     title="🚨 Outrage à magistrat !",
                     description=(
-                        f"Aucun juge disponible — verdict rendu par tirage au sort.\n\n"
+                        f"Aucun juge disponible. Le bot a statué.\n\n"
                         f"💸 **Amende additionnelle : {extra:,} ฿** pour outrage."
                     ),
                     color=0x6c3483,
                 )
-            embed.set_footer(text="Marine Headquarters • Justice")
+            embed.set_footer(text="Marine Headquarters • Justice — Verdict automatique")
             await interaction.channel.send(content=interaction.user.mention, embed=embed)
             loop = asyncio.get_running_loop()
             try:
