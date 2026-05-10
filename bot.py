@@ -1905,8 +1905,8 @@ class _JuryVoteView(discord.ui.View):
         self._countdown_task = asyncio.get_event_loop().create_task(self._run_countdown())
 
     async def _run_countdown(self):
-        for remaining in (45, 30, 15):
-            await asyncio.sleep(15)
+        for remaining in range(55, 0, -5):  # 55 → 50 → … → 5, toutes les 5s
+            await asyncio.sleep(5)
             if self._finished or not self.msg:
                 return
             try:
