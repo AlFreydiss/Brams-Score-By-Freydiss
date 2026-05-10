@@ -216,6 +216,19 @@ _MARINE_COOLDOWN: dict[str, float] = {}  # uid → timestamp dernière taxe mari
 _WARN_DELAY   = 60    # secondes entre deux amendes mot interdit
 _MARINE_DELAY = 300   # secondes entre deux taxes marine (5 min)
 
+# Marine : constantes module-level (évite re-création à chaque on_message)
+_MARINE_TAX = 100_000
+_MARINE_MOTIFS = [
+    "activité suspecte dans le Nouveau Monde",
+    "commerce illicite avec des pirates",
+    "outrage à un officier de la Marine",
+    "non-paiement de la taxe d'ancrage",
+    "détention de fruit du démon non déclaré",
+    "présence dans les eaux de Marijoa sans autorisation",
+    "provocation envers un Amiral",
+    "financement présumé de l'équipage de Barbe Noire",
+]
+
 def init_db():
     conn = get_db()
     try:
@@ -818,6 +831,13 @@ bot.set_ai_memory = _set_ai_memory
 # ── Flush dirty vers DB toutes les 30s ───────────────────────────
 @tasks.loop(seconds=30)
 async def flush_dirty_loop():
+    # Nettoyage des cooldowns expirés (prévient la fuite mémoire)
+    _now_f = time.time()
+    for d, delay in ((_WARN_COOLDOWN, _WARN_DELAY), (_MARINE_COOLDOWN, _MARINE_DELAY)):
+        expired = [k for k, v in d.items() if _now_f - v > delay * 2]
+        for k in expired:
+            del d[k]
+
     if not _DIRTY:
         return
     loop = asyncio.get_running_loop()
@@ -1759,16 +1779,12 @@ async def on_message(message):
     add_berrys(uid, 1_000)
     _DIRTY.add(uid)   # sera flushed vers DB dans les 30s
 
-    # Prélèvement pour mot interdit — cooldown 60s + word-boundary
+    # Prélèvement pour mot interdit — cooldown 60s + word-boundary (patterns pré-compilés)
     low_content = message.content.lower()
     now_f = time.time()
 
-    def _is_whole_word(text: str, word: str) -> bool:
-        pattern = r'(?<![a-zA-ZÀ-ÿ0-9])' + re.escape(word) + r'(?![a-zA-ZÀ-ÿ0-9])'
-        return bool(re.search(pattern, text))
-
     warn_ok = now_f - _WARN_COOLDOWN.get(uid, 0) >= _WARN_DELAY
-    bad_word = next((w for w in _MSG_BANNED if _is_whole_word(low_content, w)), None) if warn_ok else None
+    bad_word = next((w for w, pat in _MSG_BANNED_PATTERNS if pat.search(low_content)), None) if warn_ok else None
     if bad_word and get_berrys(uid) >= _MSG_LEVY:
         spend_berrys(uid, _MSG_LEVY)
         _DIRTY.add(uid)
@@ -1802,17 +1818,6 @@ async def on_message(message):
             pass
 
     # Taxe aléatoire de la Marine (1/50)
-    _MARINE_TAX = 100_000
-    _MARINE_MOTIFS = [
-        "activité suspecte dans le Nouveau Monde",
-        "commerce illicite avec des pirates",
-        "outrage à un officier de la Marine",
-        "non-paiement de la taxe d'ancrage",
-        "détention de fruit du démon non déclaré",
-        "présence dans les eaux de Marijoa sans autorisation",
-        "provocation envers un Amiral",
-        "financement présumé de l'équipage de Barbe Noire",
-    ]
     marine_ok = now_f - _MARINE_COOLDOWN.get(uid, 0) >= _MARINE_DELAY
     if marine_ok and random.randint(1, 50) == 1 and get_berrys(uid) >= _MARINE_TAX:
         solde_avant = get_berrys(uid)
@@ -2059,6 +2064,8 @@ async def _nick_restore_error(err):
 
 @tasks.loop(minutes=2)
 async def vocal_rank_loop():
+    rank_coros = []
+    now = now_ts()
     for guild in bot.guilds:
         for vc in list(guild.voice_channels) + list(guild.stage_channels):
             for member in vc.members:
@@ -2068,12 +2075,8 @@ async def vocal_rank_loop():
                 user = get_user(_CACHE, uid)
                 jt = user.get("join_time")
                 hours_7d = seconds_in_period(user["vocal_sessions"], 7, join_time=jt) / 3600
-                try:
-                    await update_rank(member, hours_7d, announce=False, data=_CACHE)
-                except Exception as e:
-                    print(f"[VOCAL_RANK] Erreur {member.display_name}: {e}")
+                rank_coros.append(update_rank(member, hours_7d, announce=False, data=_CACHE))
                 # Berry temps réel — toutes les 2 min pour les membres en vocal
-                now = now_ts()
                 last_ts = user.get("last_berry_ts") or jt or now
                 delta = max(0, now - last_ts)
                 berry_tick = int(delta / 3600 * 100_000)
@@ -2086,7 +2089,11 @@ async def vocal_rank_loop():
                     user["voice_boost_expires"] = 0
                     _DIRTY.add(uid)
                     asyncio.create_task(_apply_boost_role(member, False))
-                await asyncio.sleep(0)
+    if rank_coros:
+        results = await asyncio.gather(*rank_coros, return_exceptions=True)
+        for r in results:
+            if isinstance(r, Exception):
+                print(f"[VOCAL_RANK] Erreur: {r}")
 
 # ─────────────────────────────────────────
 #  LOOP COMPLÈTE (tous membres, alertes, deranks)
@@ -2158,6 +2165,7 @@ def make_progress_bar(current, target, length=10):
     return "▰" * filled + "▱" * empty
 
 RANK_EMOJIS = {"Pirate": "🏴‍☠️", "Shichibukai": "⚔️", "Amiral": "🪖", "Yonkou": "👑", "Roi des pirates": "🤴"}
+_MEDALS_ALL = ["🥇", "🥈", "🥉"] + [f"{i}." for i in range(4, 101)]
 
 def build_vocal_by_day(user):
     vocal_by_day = defaultdict(float)
@@ -2325,7 +2333,6 @@ async def top(interaction: discord.Interaction, periode: app_commands.Choice[str
     prime_list.sort(key=lambda x: x[2], reverse=True)
 
     vocal_now = {str(m.id) for g in bot.guilds for vc in g.voice_channels for m in vc.members}
-    _medals_all = ["🥇", "🥈", "🥉"] + [f"{i}." for i in range(4, 101)]
 
     def _build_top_embed(page: int) -> discord.Embed:
         start = (page - 1) * 10
@@ -2337,7 +2344,7 @@ async def top(interaction: discord.Interaction, periode: app_commands.Choice[str
                 if v <= 0:
                     break
                 live = f"  {live_emoji}" if uid_n in vocal_now else ""
-                medal = _medals_all[abs_i] if abs_i < len(_medals_all) else f"{abs_i+1}."
+                medal = _MEDALS_ALL[abs_i] if abs_i < len(_MEDALS_ALL) else f"{abs_i+1}."
                 parts.append(f"{medal}  **{clean_name(n)}**{live}\n     `{formatter(v)}`")
             return "\n\n".join(parts) if parts else "*Aucune donnée*"
 
@@ -2372,7 +2379,7 @@ async def top(interaction: discord.Interaction, periode: app_commands.Choice[str
 
     class TopView(discord.ui.View):
         def __init__(self, page=1):
-            super().__init__(timeout=180)
+            super().__init__(timeout=60)
             self.page = page
             self._refresh()
 
@@ -4819,6 +4826,12 @@ _MSG_BANNED = [
 ]
 _MSG_LEVY = 50_000
 
+# Patterns pré-compilés — évite de recompiler à chaque on_message (appelé sur CHAQUE message)
+_MSG_BANNED_PATTERNS = [
+    (w, re.compile(r'(?<![a-zA-ZÀ-ÿ0-9])' + re.escape(w) + r'(?![a-zA-ZÀ-ÿ0-9])'))
+    for w in _MSG_BANNED
+]
+
 def _pseudo_is_clean(pseudo: str) -> bool:
     low = pseudo.lower()
     return not any(w in low for w in _PSEUDO_BANNED)
@@ -6091,7 +6104,6 @@ async def prelevement(interaction: discord.Interaction):
         finally:
             conn.close()
 
-    _MARINE_TAX = 100_000
     wallet = get_berrys(uid)
     user   = get_user(_CACHE, uid)
     total  = user.get("marine_levy_total", 0)
