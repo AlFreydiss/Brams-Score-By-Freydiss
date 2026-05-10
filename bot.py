@@ -700,12 +700,16 @@ _CLEAN_CUTOFF_DAYS = 8
 
 def clean_old_data(user, _now=None):
     cutoff = (_now or now_ts()) - _CLEAN_CUTOFF_DAYS * 86400
-    # Preserve duration of purged sessions in extra_seconds so all-time hours are never lost
+    kept, extra = [], user.get("extra_seconds", 0)
     for s in user["vocal_sessions"]:
         if s["end"] < cutoff:
-            user["extra_seconds"] = user.get("extra_seconds", 0) + (s["end"] - s["start"])
-    user["vocal_sessions"] = [s for s in user["vocal_sessions"] if s["end"] >= cutoff]
-    user["messages"]       = [ts for ts in user["messages"] if ts >= cutoff]
+            extra += s["end"] - s["start"]
+        else:
+            kept.append(s)
+    user["vocal_sessions"] = kept
+    if extra != user.get("extra_seconds", 0):
+        user["extra_seconds"] = extra
+    user["messages"] = [ts for ts in user["messages"] if ts >= cutoff]
 
 def total_seconds(sessions, join_time=None, extra=0, _now=None):
     total = sum(s["end"] - s["start"] for s in sessions)
@@ -1507,9 +1511,7 @@ async def make_rank_image(member: discord.Member, rank_name: str, hours_7d: floa
             try:
                 src_img.seek(i)
                 frames.append(compose_frame(src_img.copy()))
-                src_img.seek(i)
-                dur = src_img.info.get("duration", 80)
-                durations.append(max(40, dur * step))
+                durations.append(max(40, src_img.info.get("duration", 80) * step))
             except Exception as e:
                 print(f"⚠️ [make_rank_image] Erreur frame {i}: {e}")
                 continue
@@ -1608,10 +1610,8 @@ def make_activity_graph(vocal_by_day, msg_by_day, title="Activite des 7 derniers
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5), facecolor="#1a1a2e")
     fig.suptitle(title, color="#e0e0e0", fontsize=18, fontweight="bold", y=0.98, **font_kw)
 
-    days = []
-    for i in range(6, -1, -1):
-        d = datetime.now(timezone.utc) - timedelta(days=i)
-        days.append(d.strftime("%d/%m"))
+    _now_dt = datetime.now(timezone.utc)
+    days = [(_now_dt - timedelta(days=i)).strftime("%d/%m") for i in range(6, -1, -1)]
 
     vocal_hours = [vocal_by_day.get(d, 0) / 3600 for d in days]
     msg_counts  = [msg_by_day.get(d, 0) for d in days]
@@ -1888,7 +1888,7 @@ class _JuryVoteView(discord.ui.View):
         ).set_footer(text="Marine Headquarters • Justice")
 
     def start_countdown(self):
-        self._countdown_task = asyncio.get_event_loop().create_task(self._run_countdown())
+        self._countdown_task = asyncio.get_running_loop().create_task(self._run_countdown())
 
     async def _run_countdown(self):
         for remaining in range(59, 0, -1):
