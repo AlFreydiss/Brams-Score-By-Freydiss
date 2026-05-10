@@ -5287,8 +5287,8 @@ _MSG_BANNED = [
     # Handicap / validisme
     "attardé", "attardée", "gogol", "trisomique",
     "mongolien", "mongoloïde", "autiste", "débile", "abruti", "crétin", "idiot",
-    # Verlan / jeunes
-    "bouffon", "bouffons", "gueux",
+    # Verlan / jeunes / gaming
+    "bouffon", "bouffons", "gueux", "f2p",
     # Supplémentaires messages uniquement
     "va te faire", "va te faire foutre", "vtff", "va te faire enculer",
     "ferme ta", "ta race", "race de", "fils de", "mère de",
