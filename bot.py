@@ -1905,12 +1905,15 @@ class _JuryVoteView(discord.ui.View):
         self._countdown_task = asyncio.get_event_loop().create_task(self._run_countdown())
 
     async def _run_countdown(self):
-        for remaining in range(55, 0, -5):  # 55 → 50 → … → 5, toutes les 5s
-            await asyncio.sleep(5)
+        for remaining in range(59, 0, -1):
+            await asyncio.sleep(1)
             if self._finished or not self.msg:
                 return
             try:
                 await self.msg.edit(embed=self._build_embed(remaining))
+            except discord.HTTPException as e:
+                if e.status == 429:          # rate limited → on attend le retry_after
+                    await asyncio.sleep(e.retry_after if hasattr(e, "retry_after") else 2)
             except Exception:
                 pass
 
