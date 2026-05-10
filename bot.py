@@ -7128,6 +7128,52 @@ async def akinator_cmd(interaction: discord.Interaction):
 
 
 
+# ─────────────────────────────────────────
+#  /addberries  (ADMIN)
+# ─────────────────────────────────────────
+@bot.tree.command(name="addberries", description="[ADMIN] Ajouter des Berries à un membre")
+@app_commands.default_permissions(administrator=True)
+@app_commands.checks.has_permissions(administrator=True)
+@app_commands.describe(
+    membre="Membre qui reçoit les Berries",
+    montant="Montant à ajouter (entier positif)",
+    raison="Raison (optionnel, affiché dans l'historique)",
+)
+async def addberries_cmd(
+    interaction: discord.Interaction,
+    membre: discord.Member,
+    montant: int,
+    raison: str = "Don admin",
+):
+    await interaction.response.defer(ephemeral=True)
+
+    if membre.bot:
+        await interaction.followup.send("❌ Les bots n'ont pas de compte Berry.", ephemeral=True)
+        return
+    if montant <= 0:
+        await interaction.followup.send("❌ Le montant doit être un entier positif.", ephemeral=True)
+        return
+
+    uid = str(membre.id)
+    new_balance = add_berrys(uid, montant, track="earned")
+
+    from utils.transactions import log_transaction
+    await log_transaction(uid, "gain", "autre", montant, raison, new_balance)
+
+    await interaction.followup.send(
+        embed=discord.Embed(
+            title="✅ Berries ajoutés",
+            description=(
+                f"💰 **+`{montant:,}` ฿** ajoutés à {membre.mention}\n"
+                f"📋 Raison : *{raison}*\n"
+                f"💼 Nouveau solde : `{new_balance:,}` ฿"
+            ),
+            color=0x2ECC71,
+        ).set_footer(text=f"Admin : {interaction.user.display_name}"),
+        ephemeral=True,
+    )
+
+
 # ── Sync des commandes une seule fois au démarrage ───────────────
 # setup_hook est appelé AVANT on_ready, et UNE SEULE FOIS (pas à chaque reconnect).
 # C'est là qu'on sync les slash commands pour éviter le délai dans on_ready.
