@@ -804,8 +804,8 @@ db_executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="db_worker")
 
 # Fonctions berry exposées au cog marketplace
 bot.get_berrys   = lambda uid: get_berrys(uid)
-bot.spend_berrys = lambda uid, amount: spend_berrys(uid, amount)
-bot.add_berrys   = lambda uid, amount: add_berrys(uid, amount)
+bot.spend_berrys = lambda uid, amount, track="spent": spend_berrys(uid, amount, track)
+bot.add_berrys   = lambda uid, amount, track="earned": add_berrys(uid, amount, track)
 
 # Mémoire IA persistante par utilisateur
 bot.get_ai_memory = lambda uid: get_user(_CACHE, str(uid)).get("ai_memory", "")
