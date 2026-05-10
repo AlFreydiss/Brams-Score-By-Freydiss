@@ -12,6 +12,7 @@ BANK_RANKS: list[dict] = [
 VAULT_INTEREST_BASE = 0.005       # 0.5%/jour
 VAULT_LOCK_RATES    = {7: 0.01, 30: 0.02}  # taux bonus si verrouillé
 VAULT_DAILY_CAP     = 50_000      # intérêts max/jour en berries
+VAULT_MAX           = 500_000_000  # plafond max du coffre-fort
 
 TRANSFER_FEE_RATE          = 0.02
 TRANSFER_CONFIRM_THRESHOLD = 1_000_000

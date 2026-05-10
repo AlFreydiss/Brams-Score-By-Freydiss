@@ -18,6 +18,7 @@ from .constants import (
     SLOTS_EMOJIS, SLOTS_WEIGHTS, SLOTS_MULT,
     ACHIEVEMENTS, COLOR_GAIN, COLOR_LOSS, COLOR_NEUTRAL, COLOR_INFO,
     DAILY_MIN, DAILY_MAX, STREAK_BONUS, STREAK_MAX,
+    VAULT_MAX,
 )
 from utils.transactions import log_transaction
 
@@ -236,12 +237,14 @@ class BanqueView(discord.ui.View):
         await interaction.response.defer(ephemeral=True)
         wallet = interaction.client.get_berrys(self.uid)
         vault  = self.account.get("vault") or 0
+        place  = max(0, VAULT_MAX - vault)
         embed  = discord.Embed(
             title="🔒 Coffre-Fort",
             description=(
                 f"{SEP}\n"
                 f"💰 **En poche :** `{fmt(wallet)}` ฿\n"
-                f"🔒 **Coffre :** `{fmt(vault)}` ฿\n"
+                f"🔒 **Coffre :** `{fmt(vault)}` ฿ / `{fmt(VAULT_MAX)}` ฿\n"
+                f"📦 **Place restante :** `{fmt(place)}` ฿\n"
                 f"{SEP}\n"
                 f"📈 Intérêts : **0.5%/j** (libre) · **1%/j** (7j) · **2%/j** (30j)\n"
                 f"Dépose pour faire fructifier tes Berries !"
@@ -397,6 +400,18 @@ class DepotModal(discord.ui.Modal, title="💰 Dépôt au coffre-fort"):
             await interaction.followup.send("❌ Montant invalide.", ephemeral=True); return
         if wallet < amount:
             await interaction.followup.send(f"❌ Pas assez en poche (`{fmt(wallet)}` ฿).", ephemeral=True); return
+
+        current_vault = self.account.get("vault") or 0
+        if current_vault >= VAULT_MAX:
+            await interaction.followup.send(
+                f"❌ Coffre plein ! Plafond : `{fmt(VAULT_MAX)}` ฿.", ephemeral=True
+            ); return
+        if current_vault + amount > VAULT_MAX:
+            restant = VAULT_MAX - current_vault
+            await interaction.followup.send(
+                f"❌ Dépôt trop élevé — il reste `{fmt(restant)}` ฿ de place (plafond : `{fmt(VAULT_MAX)}` ฿).",
+                ephemeral=True,
+            ); return
 
         raw_lock = (self.verrouillage.value or "0").strip()
         lock_days = int(raw_lock) if raw_lock.isdigit() and int(raw_lock) in (0, 7, 30) else 0
