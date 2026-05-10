@@ -2121,10 +2121,11 @@ async def on_message(message):
                         f"💸 **Amende :** `{_MSG_LEVY:,} ฿` prélevés\n"
                         f"🔻 **Solde :** `{get_berrys(uid):,} ฿`\n"
                         f"━━━━━━━━━━━━━━━━━━━━━━\n"
-                        f"*Surveille ton langage, pirate. `/contester` ne servira à rien.*"
+                        f"*Tu as 5 minutes pour contester via le bouton ci-dessous.*"
                     ),
                     color=0x1a237e,
                 ).set_footer(text="Marine Headquarters • Justice"),
+                view=_ContesterView(uid, _MSG_LEVY, now_f),
             )
         except Exception:
             pass
