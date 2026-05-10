@@ -1824,20 +1824,145 @@ async def _marine_check_and_set_cooldown(uid: str) -> bool:
     return await loop.run_in_executor(db_executor, _db_op)
 
 
+def _marine_log_appeal(uid: str, amount: int, outcome: str, delta: int):
+    conn = get_db()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            "INSERT INTO marine_appeals (user_id, original_amount, outcome, delta) VALUES (%s, %s, %s, %s)",
+            (uid, amount, outcome, delta),
+        )
+        conn.commit()
+        cur.close()
+    except Exception as e:
+        print(f"[MARINE] Erreur log appeal: {e}")
+    finally:
+        release_db(conn)
+
+
+class _JuryVoteView(discord.ui.View):
+    def __init__(self, accused_id: str, accused_mention: str, amount: int,
+                 judge_ids: list, channel: discord.TextChannel):
+        super().__init__(timeout=60)
+        self._accused_id      = accused_id
+        self._accused_mention = accused_mention
+        self._amount          = amount
+        self._judge_ids       = set(judge_ids)
+        self._channel         = channel
+        self._votes: dict     = {}   # judge_id (int) → "acquitte" | "coupable"
+        self._finished        = False
+        self.msg              = None  # assigné après send
+
+    async def _finalize(self):
+        if self._finished:
+            return
+        self._finished = True
+        for child in self.children:
+            child.disabled = True
+        if self.msg:
+            try:
+                await self.msg.edit(view=self)
+            except Exception:
+                pass
+
+        acquittes = sum(1 for v in self._votes.values() if v == "acquitte")
+        coupables = sum(1 for v in self._votes.values() if v == "coupable")
+        uid = self._accused_id
+        score_line = f"{acquittes} ✅ / {coupables} ❌"
+
+        if acquittes > coupables:
+            add_berrys(uid, self._amount, track="earned")
+            outcome, delta = "jury_won", self._amount
+            color  = 0x2ecc71
+            title  = "⚖️ Verdict du jury — ACQUITTÉ !"
+            desc   = (
+                f"{self._accused_mention} a été **acquitté** par le jury ({score_line}).\n\n"
+                f"💰 La Marine rembourse **{self._amount:,} ฿**."
+            )
+        elif coupables > acquittes:
+            outcome, delta = "jury_lost", 0
+            color  = 0xe74c3c
+            title  = "⚖️ Verdict du jury — COUPABLE !"
+            desc   = (
+                f"{self._accused_mention} a été reconnu **coupable** par le jury ({score_line}).\n\n"
+                f"L'avis de la Marine est maintenu."
+            )
+        else:
+            # Égalité → sort
+            if random.random() < 0.5:
+                add_berrys(uid, self._amount, track="earned")
+                outcome, delta = "jury_won_tie", self._amount
+                color  = 0x2ecc71
+                title  = "⚖️ Verdict — ACQUITTÉ (égalité) !"
+                desc   = (
+                    f"Égalité au jury ! Le sort a tranché en faveur de {self._accused_mention}.\n\n"
+                    f"💰 La Marine rembourse **{self._amount:,} ฿**."
+                )
+            else:
+                outcome, delta = "jury_lost_tie", 0
+                color  = 0xe74c3c
+                title  = "⚖️ Verdict — COUPABLE (égalité) !"
+                desc   = (
+                    f"Égalité au jury ! Le sort a tranché contre {self._accused_mention}.\n\n"
+                    f"L'avis de la Marine est maintenu."
+                )
+
+        embed = discord.Embed(title=title, description=desc, color=color)
+        embed.set_footer(text=f"Marine Headquarters • Justice — {score_line}")
+        try:
+            await self._channel.send(embed=embed)
+        except Exception as e:
+            print(f"[MARINE] Erreur envoi verdict jury: {e}")
+
+        loop = asyncio.get_running_loop()
+        try:
+            await loop.run_in_executor(db_executor, _marine_log_appeal, uid, self._amount, outcome, delta)
+        except Exception as e:
+            print(f"[MARINE] jury log executor error: {e}")
+
+    async def on_timeout(self):
+        await self._finalize()
+
+    @discord.ui.button(label="✅ Acquitté", style=discord.ButtonStyle.success)
+    async def vote_acquitte(self, interaction: discord.Interaction, _: discord.ui.Button):
+        if interaction.user.id not in self._judge_ids:
+            await interaction.response.send_message("⚖️ Tu ne fais pas partie du jury.", ephemeral=True)
+            return
+        if interaction.user.id in self._votes:
+            await interaction.response.send_message("⚠️ Tu as déjà voté.", ephemeral=True)
+            return
+        self._votes[interaction.user.id] = "acquitte"
+        await interaction.response.send_message("✅ Vote enregistré : **Acquitté**", ephemeral=True)
+        if len(self._votes) >= len(self._judge_ids):
+            await self._finalize()
+
+    @discord.ui.button(label="❌ Coupable", style=discord.ButtonStyle.danger)
+    async def vote_coupable(self, interaction: discord.Interaction, _: discord.ui.Button):
+        if interaction.user.id not in self._judge_ids:
+            await interaction.response.send_message("⚖️ Tu ne fais pas partie du jury.", ephemeral=True)
+            return
+        if interaction.user.id in self._votes:
+            await interaction.response.send_message("⚠️ Tu as déjà voté.", ephemeral=True)
+            return
+        self._votes[interaction.user.id] = "coupable"
+        await interaction.response.send_message("✅ Vote enregistré : **Coupable**", ephemeral=True)
+        if len(self._votes) >= len(self._judge_ids):
+            await self._finalize()
+
+
 class _ContesterView(discord.ui.View):
     def __init__(self, user_id: str, amount: int, issued_at: float):
         super().__init__(timeout=300)
-        self._user_id  = user_id
-        self._amount   = amount
+        self._user_id   = user_id
+        self._amount    = amount
         self._issued_at = issued_at
-        self._used     = False
+        self._used      = False
 
     @discord.ui.button(label="⚖️ Contester", style=discord.ButtonStyle.danger)
     async def btn_contester(self, interaction: discord.Interaction, button: discord.ui.Button):
         if str(interaction.user.id) != self._user_id:
             await interaction.response.send_message("❌ Ce n'est pas ton avis de la Marine.", ephemeral=True)
             return
-
         if self._used:
             await interaction.response.send_message("⚠️ Tu as déjà contesté cet avis.", ephemeral=True)
             return
@@ -1845,7 +1970,6 @@ class _ContesterView(discord.ui.View):
         self._used = True
         button.disabled = True
         await interaction.response.defer(ephemeral=True)
-
         try:
             await interaction.message.edit(view=self)
         except Exception:
@@ -1862,65 +1986,91 @@ class _ContesterView(discord.ui.View):
             )
             return
 
-        roll = random.random()
         uid = self._user_id
 
-        if roll < 0.60:
-            add_berrys(uid, self._amount, track="earned")
-            outcome, delta = "won", self._amount
-            embed = discord.Embed(
-                title="⚖️ Procès gagné !",
-                description=(
-                    f"Le tribunal a statué en ta faveur.\n\n"
-                    f"💰 La Marine te rembourse **{self._amount:,} ฿**."
-                ),
-                color=0x2ecc71,
+        # Cherche des juges connectés en vocal (hors bot et hors accusé)
+        candidates = [
+            m for vc in interaction.guild.voice_channels
+            for m in vc.members
+            if not m.bot and str(m.id) != uid
+        ]
+        random.shuffle(candidates)
+        judges = candidates[:5]
+
+        if len(judges) >= 2:
+            # ── Procès avec jury ──────────────────────────────────────
+            jury_view = _JuryVoteView(
+                uid, interaction.user.mention, self._amount,
+                [m.id for m in judges], interaction.channel,
             )
-        elif roll < 0.90:
-            outcome, delta = "lost", 0
-            embed = discord.Embed(
-                title="❌ Procès perdu",
-                description="Le tribunal a maintenu la décision de la Marine. L'avis est définitif.",
-                color=0xe74c3c,
+            mentions = " ".join(m.mention for m in judges)
+            jury_msg = await interaction.channel.send(
+                content=mentions,
+                embed=discord.Embed(
+                    title="⚖️ Tribunal de la Marine — Vote du Jury",
+                    description=(
+                        f"{interaction.user.mention} conteste son prélèvement de **{self._amount:,} ฿**.\n\n"
+                        f"**Juges convoqués :** {mentions}\n\n"
+                        f"Vous avez **60 secondes** pour voter.\n"
+                        f"Majorité des votes = verdict final."
+                    ),
+                    color=0x1a237e,
+                ).set_footer(text="Marine Headquarters • Justice"),
+                view=jury_view,
+            )
+            jury_view.msg = jury_msg
+            await interaction.followup.send(
+                embed=discord.Embed(
+                    title="⚖️ Jury convoqué !",
+                    description="Le jury a été appelé. Le verdict sera annoncé dans le salon dans 60 secondes.",
+                    color=0x3498db,
+                ).set_footer(text="Marine Headquarters • Justice"),
+                ephemeral=True,
             )
         else:
-            extra = self._amount // 2
-            spend_berrys(uid, extra, track="lost")
-            outcome, delta = "counter", -extra
-            embed = discord.Embed(
-                title="🚨 Outrage à magistrat !",
-                description=(
-                    f"Pour avoir osé contester, la Marine te condamne à une amende supplémentaire.\n\n"
-                    f"💸 **Amende additionnelle : {extra:,} ฿**"
-                ),
-                color=0x6c3483,
-            )
-
-        embed.set_footer(text="Marine Headquarters • Justice")
-
-        loop = asyncio.get_running_loop()
-
-        def _log():
-            conn = get_db()
+            # ── Fallback aléatoire (pas assez de juges connectés) ────
+            roll = random.random()
+            if roll < 0.60:
+                add_berrys(uid, self._amount, track="earned")
+                outcome, delta = "won", self._amount
+                embed = discord.Embed(
+                    title="⚖️ Procès gagné !",
+                    description=(
+                        f"Aucun juge disponible — verdict rendu par tirage au sort.\n\n"
+                        f"💰 La Marine rembourse **{self._amount:,} ฿** à {interaction.user.mention}."
+                    ),
+                    color=0x2ecc71,
+                )
+            elif roll < 0.90:
+                outcome, delta = "lost", 0
+                embed = discord.Embed(
+                    title="❌ Procès perdu",
+                    description=(
+                        f"Aucun juge disponible — verdict rendu par tirage au sort.\n\n"
+                        f"L'avis de la Marine est maintenu."
+                    ),
+                    color=0xe74c3c,
+                )
+            else:
+                extra = self._amount // 2
+                spend_berrys(uid, extra, track="lost")
+                outcome, delta = "counter", -extra
+                embed = discord.Embed(
+                    title="🚨 Outrage à magistrat !",
+                    description=(
+                        f"Aucun juge disponible — verdict rendu par tirage au sort.\n\n"
+                        f"💸 **Amende additionnelle : {extra:,} ฿** pour outrage."
+                    ),
+                    color=0x6c3483,
+                )
+            embed.set_footer(text="Marine Headquarters • Justice")
+            await interaction.channel.send(content=interaction.user.mention, embed=embed)
+            loop = asyncio.get_running_loop()
             try:
-                cur = conn.cursor()
-                cur.execute("""
-                    INSERT INTO marine_appeals (user_id, original_amount, outcome, delta)
-                    VALUES (%s, %s, %s, %s)
-                """, (uid, self._amount, outcome, delta))
-                conn.commit()
-                cur.close()
+                await loop.run_in_executor(db_executor, _marine_log_appeal, uid, self._amount, outcome, delta)
             except Exception as e:
-                print(f"[MARINE] Erreur log appeal: {e}")
-            finally:
-                release_db(conn)
-
-        try:
-            await loop.run_in_executor(db_executor, _log)
-        except Exception as e:
-            print(f"[MARINE] appeal executor error: {e}")
-
-        await interaction.followup.send(embed=embed, ephemeral=True)
+                print(f"[MARINE] appeal executor error: {e}")
+            await interaction.followup.send("✅ Verdict rendu.", ephemeral=True)
 
 
 @bot.event
