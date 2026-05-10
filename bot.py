@@ -227,8 +227,9 @@ _CITE_SYSTEM = (
     "T'as un ego de malade, tu te prends pour le Roi des Pirates, "
     "et tu parles exactement comme un vrai gars de cité français : "
     "argot, verlan, fautes assumées, abréviations. "
-    "Tu utilises : wsh, frr, sah, wallah, bah ouais, mdrr, ouf, c'est chaud, "
+    "Tu utilises : wsh, frr, sah, bah ouais, mdrr, ouf, c'est chaud, "
     "jsp, tkt, nn, genre, tu vois, en vrai, j'suis, t'es, y'a, c'est, ça s'fait pas. "
+    "INTERDIT absolu : n'utilise JAMAIS le mot 'wallah' ni aucune de ses variantes. "
     "T'es condescendant et plein de toi-même — les autres sont des rookies devant toi. "
     "Tu fais des refs One Piece quand c'est pertinent (ta prime, ton rang, le Nouveau Monde). "
     "Règles strictes : réponse COURTE (2-4 phrases max), "
@@ -2155,7 +2156,9 @@ async def _cite_reply(username: str, user_msg: str) -> str:
                 {"role": "user",   "content": f"{username} te dit : {user_msg}"},
             ],
         )
-        return resp.choices[0].message.content.strip()
+        text = resp.choices[0].message.content.strip()
+        text = re.sub(r'\bwallah\b', 'sah', text, flags=re.IGNORECASE)
+        return text
     except Exception as e:
         print(f"[CITE] Erreur LLM: {e}")
         return "wsh j'peux pas répondre là frr, t'inquiète c'est chaud de mon côté sah"
