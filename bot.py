@@ -5225,7 +5225,7 @@ _MSG_BANNED = [
     # Sexuel
     "pute", "putes", "putain", "salope", "salopes", "suceur", "suceuse",
     "chienne", "soumise", "connasse", "connasses", "pd", "pédé",
-    "bite", "bites", "couille", "couilles", "cul", "niquer", "nique",
+    "bite", "bites", "couille", "couilles", "cul", "niquer", "nique", "jbz",
     # Famille
     "fdp", "fils de pute", "ntm", "nique ta mère", "tamère",
     "bâtard", "batard", "bâtarde", "batarde",
@@ -5235,9 +5235,13 @@ _MSG_BANNED = [
     "tg", "ta gueule", "ferme ta gueule",
     "fumier", "ordure", "salopard", "raclure", "vermine", "déchet",
     "sous-merde", "rebut", "poubelle",
-    # Discriminatoire
-    "israel", "negro", "nègre", "negre", "neger",
+    # Discriminatoire — slurs directs
+    "negro", "nègre", "negre", "neger",
     "youpin", "bicot", "bougnoule", "raton",
+    # Phrases racistes "sale [ethnie]"
+    "sale arabe", "sale noir", "sale black", "sale juif", "sale feuj",
+    "sale goy", "sale blanc", "sale chinois", "sale asiat",
+    "sale africain", "sale français", "sale renoi",
     # Handicap / validisme
     "attardé", "attardée", "gogol", "trisomique",
     "mongolien", "mongoloïde", "autiste", "débile", "abruti", "crétin", "idiot",
