@@ -35,8 +35,12 @@ CREATE TABLE IF NOT EXISTS bank_achievements (
 CREATE TABLE IF NOT EXISTS bank_settings (
     user_id                 TEXT    PRIMARY KEY,
     dm_notifications        BOOL    DEFAULT FALSE,
-    confirm_large_transfers BOOL    DEFAULT TRUE
+    confirm_large_transfers BOOL    DEFAULT TRUE,
+    thumbnail_url           TEXT    DEFAULT NULL
 );
+
+-- Migration pour les installations existantes :
+-- ALTER TABLE bank_settings ADD COLUMN IF NOT EXISTS thumbnail_url TEXT DEFAULT NULL;
 
 CREATE INDEX IF NOT EXISTS idx_bank_transactions_user_created
     ON bank_transactions(user_id, created_at DESC);

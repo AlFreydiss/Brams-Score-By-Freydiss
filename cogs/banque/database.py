@@ -434,11 +434,27 @@ async def get_bank_settings(uid: str) -> dict:
             cur.execute("SELECT * FROM bank_settings WHERE user_id=%s", (uid,))
             row = cur.fetchone()
             return dict(row) if row else {
-                "user_id": uid, "dm_notifications": False, "confirm_large_transfers": True
+                "user_id": uid, "dm_notifications": False,
+                "confirm_large_transfers": True, "thumbnail_url": None,
             }
         finally:
             _put(conn)
     return await _run(_do)
+
+
+async def set_thumbnail_url(uid: str, url: str | None) -> None:
+    def _do():
+        conn = _conn()
+        try:
+            with conn:
+                conn.cursor().execute(
+                    """INSERT INTO bank_settings (user_id, thumbnail_url) VALUES (%s, %s)
+                       ON CONFLICT (user_id) DO UPDATE SET thumbnail_url = %s""",
+                    (uid, url, url),
+                )
+        finally:
+            _put(conn)
+    await _run(_do)
 
 
 async def toggle_setting(uid: str, field: str) -> bool:

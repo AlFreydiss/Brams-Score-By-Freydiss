@@ -1328,18 +1328,51 @@ def _build_succes_embed(unlocked: list[str]) -> discord.Embed:
 # ── Paramètres ────────────────────────────────────────────────────
 
 def _build_params_embed(settings: dict) -> discord.Embed:
-    dm  = "✅ Activées" if settings.get("dm_notifications") else "❌ Désactivées"
-    cfm = "✅ Activée"  if settings.get("confirm_large_transfers", True) else "❌ Désactivée"
+    dm    = "✅ Activées" if settings.get("dm_notifications") else "❌ Désactivées"
+    cfm   = "✅ Activée"  if settings.get("confirm_large_transfers", True) else "❌ Désactivée"
+    thumb = settings.get("thumbnail_url") or "❌ Non définie"
     return discord.Embed(
         title="⚙️ Paramètres Freydiss Bank",
         description=(
             f"**📬 Notifications DM :** {dm}\n"
             f"> Recevoir un DM lors d'un virement ou d'un rang up.\n\n"
             f"**⚠️ Confirmation gros virements :** {cfm}\n"
-            f"> Confirmation pour tout virement ≥ 1 000 000 ฿."
+            f"> Confirmation pour tout virement ≥ 1 000 000 ฿.\n\n"
+            f"**🖼️ Image de profil bancaire :** {thumb}\n"
+            f"> Visible dans ton `/banque` — laisse vide pour supprimer."
         ),
         color=COLOR_INFO,
     )
+
+
+class ThumbnailModal(discord.ui.Modal, title="🖼️ Image de profil bancaire"):
+    url = discord.ui.TextInput(
+        label="URL de l'image",
+        placeholder="https://... — laisse vide pour supprimer",
+        required=False,
+        max_length=500,
+    )
+
+    def __init__(self, uid: str, parent_view: "ParamsView"):
+        super().__init__()
+        self.uid         = uid
+        self.parent_view = parent_view
+
+    async def on_submit(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
+        raw = self.url.value.strip()
+        new_url = raw if raw.startswith("http") else None
+        await db.set_thumbnail_url(self.uid, new_url)
+        self.parent_view.settings["thumbnail_url"] = new_url
+        msg = "✅ Image mise à jour !" if new_url else "✅ Image supprimée."
+        await interaction.followup.send(msg, ephemeral=True)
+        try:
+            await self.parent_view.message.edit(
+                embed=_build_params_embed(self.parent_view.settings),
+                view=self.parent_view,
+            )
+        except Exception:
+            pass
 
 
 class ParamsView(discord.ui.View):
@@ -1362,6 +1395,11 @@ class ParamsView(discord.ui.View):
         await interaction.response.defer()
         self.settings["confirm_large_transfers"] = await db.toggle_setting(self.uid, "confirm_large_transfers")
         await interaction.edit_original_response(embed=_build_params_embed(self.settings), view=self)
+
+    @discord.ui.button(label="Mon image", emoji="🖼️", style=discord.ButtonStyle.primary)
+    async def btn_thumbnail(self, interaction: discord.Interaction, _: discord.ui.Button):
+        if not _owner_check(self.uid, interaction): await _deny(interaction); return
+        await interaction.response.send_modal(ThumbnailModal(self.uid, self))
 
 
 # ── Leaderboard ───────────────────────────────────────────────────

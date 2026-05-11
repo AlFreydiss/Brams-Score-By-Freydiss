@@ -69,10 +69,11 @@ class BankCog(commands.Cog):
             wallet = self.bot.get_berrys(uid)
 
             try:
-                account, vaults = await asyncio.wait_for(
+                account, vaults, settings = await asyncio.wait_for(
                     asyncio.gather(
                         db.ensure_and_get_account(uid, guild_id),
                         db.get_vaults_for_guild(guild_id, gids),
+                        db.get_bank_settings(uid),
                     ),
                     timeout=14.0,
                 )
@@ -114,7 +115,7 @@ class BankCog(commands.Cog):
             now_str     = datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M")
             streak_val  = account.get("streak") or 0
             streak_unit = "jour" if streak_val <= 1 else "jours"
-            thumb_url   = get_rank_thumbnail(position)
+            thumb_url   = settings.get("thumbnail_url") or get_rank_thumbnail(position)
 
             embed = discord.Embed(
                 title="🏴‍☠️  Freydiss Bank",
