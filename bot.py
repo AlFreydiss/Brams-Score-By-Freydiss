@@ -862,7 +862,7 @@ class _BotTree(app_commands.CommandTree):
 
         embed = discord.Embed(title="🚨 Zone interdite !", description=desc, color=0xe74c3c)
         embed.set_footer(text=f"Commandes autorisées uniquement dans le bon salon.")
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+        await interaction.response.send_message(embed=embed)
         return False
 
 
