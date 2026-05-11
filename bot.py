@@ -233,6 +233,23 @@ _MARINE_MOTIFS = [
     "financement présumé de l'équipage de Barbe Noire",
 ]
 
+# ── Questions farfelues ───────────────────────────────────────────
+_FARFELU_COOLDOWN: dict[str, float] = {}
+_FARFELU_DELAY = 45  # secondes mini entre deux réponses pour le même user
+_FARFELU_PROB  = 0.20  # 20 % de chance sur une question éligible
+_FARFELU_REPLIES = [
+    "au secours Freydiss il dit n'importe quoi mdrr 💀",
+    "FREYDISS AU SECOURS y'en a un qui rigole pas 😭",
+    "attend t'as vraiment posé cette question là ?? 💀",
+    "quelqu'un appelle un médecin svp 😭😭",
+    "mdrr j'ai même pas de réponse à ça je suis désolé 💀",
+    "bro sort un peu 💀",
+    "cette question mérite un prix mdr on ira loin ensemble",
+    "LMAOOO t'es sérieux là ?? 😭💀",
+    "Freydiss viens voir ce que ce gars vient de demander 😭",
+    "non mais t'inquiète ça va aller 🙏 peut-être",
+]
+
 def init_db():
     conn = get_db()
     try:
@@ -2325,6 +2342,22 @@ async def on_message(message):
                     )
                 except Exception:
                     pass
+
+    # ── Réaction aux questions farfelues ────────────────────────────
+    msg_stripped = message.content.strip()
+    if (
+        msg_stripped.endswith("?")
+        and len(msg_stripped) > 10
+        and not msg_stripped.startswith("/")
+        and not msg_stripped.startswith("!")
+        and now_f - _FARFELU_COOLDOWN.get(uid, 0) >= _FARFELU_DELAY
+        and random.random() < _FARFELU_PROB
+    ):
+        _FARFELU_COOLDOWN[uid] = now_f
+        try:
+            await message.reply(random.choice(_FARFELU_REPLIES))
+        except Exception:
+            pass
 
     await bot.process_commands(message)
 
