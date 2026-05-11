@@ -8,7 +8,7 @@ from discord.ext import commands
 
 from . import database as db
 from .constants import BANK_RANKS
-from .views import BanqueView, fmt, _send_leaderboard
+from .views import MainBanqueView, fmt, _send_leaderboard
 from utils.embed_helpers import get_spacer_file
 
 GUILD_IDS = [int(x) for x in os.environ.get("GUILD_IDS", "924346730194014220,1478937064031518892").split(",")]
@@ -143,7 +143,7 @@ class BankCog(commands.Cog):
             )
             embed.set_image(url="attachment://spacer.png")
 
-            view = BanqueView(uid, target, account, str(interaction.guild_id))
+            view = MainBanqueView(uid, target, account, str(interaction.guild_id), embed, settings)
             msg  = await interaction.followup.send(embed=embed, view=view, file=get_spacer_file())
             view.message = msg
 

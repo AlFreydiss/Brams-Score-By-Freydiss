@@ -205,17 +205,20 @@ async def _execute_transfer(interaction, uid, target, amount, taxes: dict):
     )
 
 
-# ── Vue principale ────────────────────────────────────────────────
+# ── View principale (navigation par catégories) ───────────────────
 
-class BanqueView(discord.ui.View):
+class MainBanqueView(discord.ui.View):
     message: discord.Message | None = None
 
-    def __init__(self, uid: str, target: discord.Member, account: dict, guild_id: str):
-        super().__init__(timeout=300)
+    def __init__(self, uid: str, target: discord.Member, account: dict, guild_id: str,
+                 embed: discord.Embed, settings: dict):
+        super().__init__(timeout=180)
         self.uid      = uid
         self.target   = target
         self.account  = account
         self.guild_id = guild_id
+        self.embed    = embed
+        self.settings = settings
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         if not _owner_check(self.uid, interaction):
@@ -231,17 +234,84 @@ class BanqueView(discord.ui.View):
         except Exception:
             pass
 
-    # ── Row 0 : Finances ──────────────────────────────────────────
+    @discord.ui.button(label="Banque", emoji="💰", style=discord.ButtonStyle.primary, row=0)
+    async def btn_banque(self, interaction: discord.Interaction, _: discord.ui.Button):
+        await interaction.response.defer()
+        sub = BanqueSubView(self)
+        sub.message = self.message
+        await interaction.edit_original_response(view=sub)
+
+    @discord.ui.button(label="Jeux", emoji="🎮", style=discord.ButtonStyle.success, row=0)
+    async def btn_jeux(self, interaction: discord.Interaction, _: discord.ui.Button):
+        await interaction.response.defer()
+        sub = JeuxSubView(self)
+        sub.message = self.message
+        await interaction.edit_original_response(view=sub)
+
+    @discord.ui.button(label="Profil", emoji="🏆", style=discord.ButtonStyle.secondary, row=0)
+    async def btn_profil(self, interaction: discord.Interaction, _: discord.ui.Button):
+        await interaction.response.defer()
+        sub = ProfilSubView(self)
+        sub.message = self.message
+        await interaction.edit_original_response(view=sub)
+
+    @discord.ui.button(label="Paramètres", emoji="⚙️", style=discord.ButtonStyle.secondary, row=0)
+    async def btn_params(self, interaction: discord.Interaction, _: discord.ui.Button):
+        await interaction.response.defer()
+        sub = ParametresSubView(self)
+        sub.message = self.message
+        await interaction.edit_original_response(embed=_build_params_embed(self.settings), view=sub)
+
+    @discord.ui.button(label="Fermer", emoji="❌", style=discord.ButtonStyle.danger, row=0)
+    async def btn_fermer(self, interaction: discord.Interaction, _: discord.ui.Button):
+        await interaction.response.defer()
+        await interaction.delete_original_response()
+
+
+# ── Sous-view helper ──────────────────────────────────────────────
+
+def _make_main(parent: MainBanqueView, message) -> MainBanqueView:
+    v = MainBanqueView(
+        parent.uid, parent.target, parent.account,
+        parent.guild_id, parent.embed, parent.settings,
+    )
+    v.message = message
+    return v
+
+
+# ── Banque sub-view ───────────────────────────────────────────────
+
+class BanqueSubView(discord.ui.View):
+    message: discord.Message | None = None
+
+    def __init__(self, parent: MainBanqueView):
+        super().__init__(timeout=180)
+        self.parent   = parent
+        self.uid      = parent.uid
+        self.account  = parent.account
+        self.guild_id = parent.guild_id
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        if not _owner_check(self.uid, interaction):
+            await _deny(interaction)
+            return False
+        return True
+
+    async def on_timeout(self) -> None:
+        for item in self.children:
+            item.disabled = True
+        try:
+            await self.message.edit(view=self)
+        except Exception:
+            pass
+
     @discord.ui.button(label="Coffre-Fort", emoji="🔒", style=discord.ButtonStyle.primary, row=0)
     async def btn_coffre(self, interaction: discord.Interaction, _: discord.ui.Button):
         await interaction.response.defer(ephemeral=True)
         wallet = interaction.client.get_berrys(self.uid)
         vault  = self.account.get("vault") or 0
         place  = max(0, VAULT_MAX - vault)
-        embed  = discord.Embed(
-            title="🔒 Coffre-Fort",
-            color=COLOR_INFO,
-        )
+        embed  = discord.Embed(title="🔒 Coffre-Fort", color=COLOR_INFO)
         embed.add_field(name="💰 En poche",       value=f"`{fmt(wallet)}` ฿", inline=True)
         embed.add_field(name="🔒 Coffre",         value=f"`{fmt(vault)}` / `{fmt(VAULT_MAX)}` ฿", inline=True)
         embed.add_field(name="📦 Place restante", value=f"`{fmt(place)}` ฿", inline=True)
@@ -267,24 +337,49 @@ class BanqueView(discord.ui.View):
         msg   = await interaction.followup.send(embed=embed, view=view, ephemeral=True)
         view.message = msg
 
-    @discord.ui.button(label="Classement", emoji="🏆", style=discord.ButtonStyle.secondary, row=0)
-    async def btn_classement(self, interaction: discord.Interaction, _: discord.ui.Button):
-        await interaction.response.defer(ephemeral=True)
-        await _send_leaderboard(interaction, self.uid)
+    @discord.ui.button(label="⬅ Retour", style=discord.ButtonStyle.secondary, row=1)
+    async def btn_back(self, interaction: discord.Interaction, _: discord.ui.Button):
+        await interaction.response.defer()
+        await interaction.edit_original_response(view=_make_main(self.parent, self.message))
 
-    # ── Row 1 : Jeux & Récompenses ────────────────────────────────
-    @discord.ui.button(label="Casino", emoji="🎰", style=discord.ButtonStyle.danger, row=1)
-    async def btn_jeux(self, interaction: discord.Interaction, _: discord.ui.Button):
+
+# ── Jeux sub-view ─────────────────────────────────────────────────
+
+class JeuxSubView(discord.ui.View):
+    message: discord.Message | None = None
+
+    def __init__(self, parent: MainBanqueView):
+        super().__init__(timeout=180)
+        self.parent   = parent
+        self.uid      = parent.uid
+        self.guild_id = parent.guild_id
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        if not _owner_check(self.uid, interaction):
+            await _deny(interaction)
+            return False
+        return True
+
+    async def on_timeout(self) -> None:
+        for item in self.children:
+            item.disabled = True
+        try:
+            await self.message.edit(view=self)
+        except Exception:
+            pass
+
+    @discord.ui.button(label="Casino", emoji="🎰", style=discord.ButtonStyle.danger, row=0)
+    async def btn_casino(self, interaction: discord.Interaction, _: discord.ui.Button):
         await interaction.response.defer(ephemeral=True)
-        wallet  = interaction.client.get_berrys(self.uid)
-        lost    = await db.get_casino_lost_today(self.uid)
-        cap     = int(wallet * CASINO_DAILY_CAP_RATIO)
-        embed   = _build_minijeux_embed(wallet, cap, lost)
-        view    = MiniJeuxView(self.uid, self.guild_id, cap, lost)
-        msg     = await interaction.followup.send(embed=embed, view=view, ephemeral=True)
+        wallet = interaction.client.get_berrys(self.uid)
+        lost   = await db.get_casino_lost_today(self.uid)
+        cap    = int(wallet * CASINO_DAILY_CAP_RATIO)
+        embed  = _build_minijeux_embed(wallet, cap, lost)
+        view   = MiniJeuxView(self.uid, self.guild_id, cap, lost)
+        msg    = await interaction.followup.send(embed=embed, view=view, ephemeral=True)
         view.message = msg
 
-    @discord.ui.button(label="Daily", emoji="🎁", style=discord.ButtonStyle.success, row=1)
+    @discord.ui.button(label="Daily", emoji="🎁", style=discord.ButtonStyle.success, row=0)
     async def btn_daily(self, interaction: discord.Interaction, _: discord.ui.Button):
         await interaction.response.defer(ephemeral=True)
         montant, streak, already = await db.claim_daily(self.uid, self.guild_id)
@@ -305,37 +400,114 @@ class BanqueView(discord.ui.View):
                                         interaction.client.get_berrys(self.uid), interaction.guild)
         if streak >= 14:
             await db.unlock_achievement(self.uid, "streaker")
-        mult = min(1.0 + max(0, streak - 1) * STREAK_BONUS, STREAK_MAX)
+        mult  = min(1.0 + max(0, streak - 1) * STREAK_BONUS, STREAK_MAX)
         embed = discord.Embed(title="🎁 Daily réclamé !", color=COLOR_GAIN)
-        embed.add_field(name="🎉 Gain",    value=f"`+{fmt(montant)}` ฿",                 inline=True)
-        embed.add_field(name="🔗 Streak",  value=f"**{streak}j** × **{mult:.1f}**",       inline=True)
-        embed.add_field(name="💰 Solde",   value=f"`{fmt(interaction.client.get_berrys(self.uid))}` ฿", inline=True)
+        embed.add_field(name="🎉 Gain",   value=f"`+{fmt(montant)}` ฿",                               inline=True)
+        embed.add_field(name="🔗 Streak", value=f"**{streak}j** × **{mult:.1f}**",                    inline=True)
+        embed.add_field(name="💰 Solde",  value=f"`{fmt(interaction.client.get_berrys(self.uid))}` ฿", inline=True)
         await interaction.followup.send(embed=embed, ephemeral=True)
         if new:
             ach_e = _achievement_embed(new)
             if ach_e:
                 await interaction.followup.send(embed=ach_e, ephemeral=True)
 
-    @discord.ui.button(label="Succès", emoji="🏅", style=discord.ButtonStyle.secondary, row=1)
+    @discord.ui.button(label="⬅ Retour", style=discord.ButtonStyle.secondary, row=1)
+    async def btn_back(self, interaction: discord.Interaction, _: discord.ui.Button):
+        await interaction.response.defer()
+        await interaction.edit_original_response(view=_make_main(self.parent, self.message))
+
+
+# ── Profil sub-view ───────────────────────────────────────────────
+
+class ProfilSubView(discord.ui.View):
+    message: discord.Message | None = None
+
+    def __init__(self, parent: MainBanqueView):
+        super().__init__(timeout=180)
+        self.parent   = parent
+        self.uid      = parent.uid
+        self.guild_id = parent.guild_id
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        if not _owner_check(self.uid, interaction):
+            await _deny(interaction)
+            return False
+        return True
+
+    async def on_timeout(self) -> None:
+        for item in self.children:
+            item.disabled = True
+        try:
+            await self.message.edit(view=self)
+        except Exception:
+            pass
+
+    @discord.ui.button(label="Classement", emoji="🏆", style=discord.ButtonStyle.secondary, row=0)
+    async def btn_classement(self, interaction: discord.Interaction, _: discord.ui.Button):
+        await interaction.response.defer(ephemeral=True)
+        await _send_leaderboard(interaction, self.uid)
+
+    @discord.ui.button(label="Succès", emoji="🏅", style=discord.ButtonStyle.secondary, row=0)
     async def btn_succes(self, interaction: discord.Interaction, _: discord.ui.Button):
         await interaction.response.defer(ephemeral=True)
         achs  = await db.get_achievements(self.uid)
         embed = _build_succes_embed(achs)
         await interaction.followup.send(embed=embed, ephemeral=True)
 
-    @discord.ui.button(label="Paramètres", emoji="⚙️", style=discord.ButtonStyle.secondary, row=1)
-    async def btn_params(self, interaction: discord.Interaction, _: discord.ui.Button):
-        await interaction.response.defer(ephemeral=True)
-        settings = await db.get_bank_settings(self.uid)
-        view     = ParamsView(self.uid, settings)
-        embed    = _build_params_embed(settings)
-        msg      = await interaction.followup.send(embed=embed, view=view, ephemeral=True)
-        view.message = msg
-
-    @discord.ui.button(label="Fermer", emoji="✖️", style=discord.ButtonStyle.danger, row=1)
-    async def btn_fermer(self, interaction: discord.Interaction, _: discord.ui.Button):
+    @discord.ui.button(label="⬅ Retour", style=discord.ButtonStyle.secondary, row=1)
+    async def btn_back(self, interaction: discord.Interaction, _: discord.ui.Button):
         await interaction.response.defer()
-        await interaction.delete_original_response()
+        await interaction.edit_original_response(view=_make_main(self.parent, self.message))
+
+
+# ── Paramètres sub-view ───────────────────────────────────────────
+
+class ParametresSubView(discord.ui.View):
+    message: discord.Message | None = None
+
+    def __init__(self, parent: MainBanqueView):
+        super().__init__(timeout=180)
+        self.parent   = parent
+        self.uid      = parent.uid
+        self.settings = parent.settings  # référence partagée — mutations visibles immédiatement
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        if not _owner_check(self.uid, interaction):
+            await _deny(interaction)
+            return False
+        return True
+
+    async def on_timeout(self) -> None:
+        for item in self.children:
+            item.disabled = True
+        try:
+            await self.message.edit(view=self)
+        except Exception:
+            pass
+
+    @discord.ui.button(label="Notifs DM", emoji="🔔", style=discord.ButtonStyle.secondary, row=0)
+    async def btn_dm(self, interaction: discord.Interaction, _: discord.ui.Button):
+        await interaction.response.defer()
+        self.settings["dm_notifications"] = await db.toggle_setting(self.uid, "dm_notifications")
+        await interaction.edit_original_response(embed=_build_params_embed(self.settings), view=self)
+
+    @discord.ui.button(label="Confirmation", emoji="⚠️", style=discord.ButtonStyle.secondary, row=0)
+    async def btn_confirm(self, interaction: discord.Interaction, _: discord.ui.Button):
+        await interaction.response.defer()
+        self.settings["confirm_large_transfers"] = await db.toggle_setting(self.uid, "confirm_large_transfers")
+        await interaction.edit_original_response(embed=_build_params_embed(self.settings), view=self)
+
+    @discord.ui.button(label="Mon image", emoji="🖼️", style=discord.ButtonStyle.primary, row=0)
+    async def btn_thumbnail(self, interaction: discord.Interaction, _: discord.ui.Button):
+        await interaction.response.send_modal(ThumbnailModal(self.uid, self))
+
+    @discord.ui.button(label="⬅ Retour", style=discord.ButtonStyle.secondary, row=1)
+    async def btn_back(self, interaction: discord.Interaction, _: discord.ui.Button):
+        await interaction.response.defer()
+        await interaction.edit_original_response(
+            embed=self.parent.embed,
+            view=_make_main(self.parent, self.message),
+        )
 
 
 # ── Coffre sub-view ───────────────────────────────────────────────
@@ -1352,7 +1524,7 @@ class ThumbnailModal(discord.ui.Modal, title="🖼️ Image de profil bancaire")
         max_length=500,
     )
 
-    def __init__(self, uid: str, parent_view: "ParamsView"):
+    def __init__(self, uid: str, parent_view: discord.ui.View):
         super().__init__()
         self.uid         = uid
         self.parent_view = parent_view
@@ -1372,33 +1544,6 @@ class ThumbnailModal(discord.ui.Modal, title="🖼️ Image de profil bancaire")
             )
         except Exception:
             pass
-
-
-class ParamsView(discord.ui.View):
-    message: discord.Message | None = None
-
-    def __init__(self, uid, settings):
-        super().__init__(timeout=120)
-        self.uid = uid; self.settings = settings
-
-    @discord.ui.button(label="Notifs DM", emoji="🔔", style=discord.ButtonStyle.secondary)
-    async def btn_dm(self, interaction: discord.Interaction, _: discord.ui.Button):
-        if not _owner_check(self.uid, interaction): await _deny(interaction); return
-        await interaction.response.defer()
-        self.settings["dm_notifications"] = await db.toggle_setting(self.uid, "dm_notifications")
-        await interaction.edit_original_response(embed=_build_params_embed(self.settings), view=self)
-
-    @discord.ui.button(label="Confirmation", emoji="⚠️", style=discord.ButtonStyle.secondary)
-    async def btn_confirm(self, interaction: discord.Interaction, _: discord.ui.Button):
-        if not _owner_check(self.uid, interaction): await _deny(interaction); return
-        await interaction.response.defer()
-        self.settings["confirm_large_transfers"] = await db.toggle_setting(self.uid, "confirm_large_transfers")
-        await interaction.edit_original_response(embed=_build_params_embed(self.settings), view=self)
-
-    @discord.ui.button(label="Mon image", emoji="🖼️", style=discord.ButtonStyle.primary)
-    async def btn_thumbnail(self, interaction: discord.Interaction, _: discord.ui.Button):
-        if not _owner_check(self.uid, interaction): await _deny(interaction); return
-        await interaction.response.send_modal(ThumbnailModal(self.uid, self))
 
 
 # ── Leaderboard ───────────────────────────────────────────────────
