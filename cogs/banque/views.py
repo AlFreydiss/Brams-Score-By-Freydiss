@@ -232,7 +232,7 @@ class BanqueView(discord.ui.View):
             pass
 
     # ── Row 0 : Finances ──────────────────────────────────────────
-    @discord.ui.button(label="Coffre", emoji="🔒", style=discord.ButtonStyle.primary, row=0)
+    @discord.ui.button(label="Coffre-Fort", emoji="🔒", style=discord.ButtonStyle.primary, row=0)
     async def btn_coffre(self, interaction: discord.Interaction, _: discord.ui.Button):
         await interaction.response.defer(ephemeral=True)
         wallet = interaction.client.get_berrys(self.uid)
@@ -240,16 +240,15 @@ class BanqueView(discord.ui.View):
         place  = max(0, VAULT_MAX - vault)
         embed  = discord.Embed(
             title="🔒 Coffre-Fort",
-            description=(
-                f"{SEP}\n"
-                f"💰 **En poche :** `{fmt(wallet)}` ฿\n"
-                f"🔒 **Coffre :** `{fmt(vault)}` ฿ / `{fmt(VAULT_MAX)}` ฿\n"
-                f"📦 **Place restante :** `{fmt(place)}` ฿\n"
-                f"{SEP}\n"
-                f"📈 Intérêts : **0.5%/j** (libre) · **1%/j** (7j) · **2%/j** (30j)\n"
-                f"Dépose pour faire fructifier tes Berries !"
-            ),
             color=COLOR_INFO,
+        )
+        embed.add_field(name="💰 En poche",       value=f"`{fmt(wallet)}` ฿", inline=True)
+        embed.add_field(name="🔒 Coffre",         value=f"`{fmt(vault)}` / `{fmt(VAULT_MAX)}` ฿", inline=True)
+        embed.add_field(name="📦 Place restante", value=f"`{fmt(place)}` ฿", inline=True)
+        embed.add_field(
+            name="📈 Intérêts",
+            value="**0.5%/j** libre  ·  **1%/j** verrouillé 7j  ·  **2%/j** verrouillé 30j",
+            inline=False,
         )
         view = CoffreView(self.uid, self.account)
         msg  = await interaction.followup.send(embed=embed, view=view, ephemeral=True)
@@ -268,8 +267,13 @@ class BanqueView(discord.ui.View):
         msg   = await interaction.followup.send(embed=embed, view=view, ephemeral=True)
         view.message = msg
 
+    @discord.ui.button(label="Classement", emoji="🏆", style=discord.ButtonStyle.secondary, row=0)
+    async def btn_classement(self, interaction: discord.Interaction, _: discord.ui.Button):
+        await interaction.response.defer(ephemeral=True)
+        await _send_leaderboard(interaction, self.uid)
+
     # ── Row 1 : Jeux & Récompenses ────────────────────────────────
-    @discord.ui.button(label="Mini-Jeux", emoji="🎮", style=discord.ButtonStyle.danger, row=1)
+    @discord.ui.button(label="Casino", emoji="🎰", style=discord.ButtonStyle.danger, row=1)
     async def btn_jeux(self, interaction: discord.Interaction, _: discord.ui.Button):
         await interaction.response.defer(ephemeral=True)
         wallet  = interaction.client.get_berrys(self.uid)
@@ -280,7 +284,7 @@ class BanqueView(discord.ui.View):
         msg     = await interaction.followup.send(embed=embed, view=view, ephemeral=True)
         view.message = msg
 
-    @discord.ui.button(label="Daily 🎁", emoji="🎁", style=discord.ButtonStyle.success, row=1)
+    @discord.ui.button(label="Daily", emoji="🎁", style=discord.ButtonStyle.success, row=1)
     async def btn_daily(self, interaction: discord.Interaction, _: discord.ui.Button):
         await interaction.response.defer(ephemeral=True)
         montant, streak, already = await db.claim_daily(self.uid, self.guild_id)
@@ -302,39 +306,24 @@ class BanqueView(discord.ui.View):
         if streak >= 14:
             await db.unlock_achievement(self.uid, "streaker")
         mult = min(1.0 + max(0, streak - 1) * STREAK_BONUS, STREAK_MAX)
-        await interaction.followup.send(
-            embed=discord.Embed(
-                title="🎁 Daily réclamé !",
-                description=(
-                    f"{SEP}\n"
-                    f"🎉 **+`{fmt(montant)}` ฿** reçus !\n"
-                    f"🔗 Streak : **{streak} jour(s)** × **{mult:.1f}**\n"
-                    f"💰 Solde : `{fmt(interaction.client.get_berrys(self.uid))}` ฿\n"
-                    f"{SEP}"
-                ),
-                color=COLOR_GAIN,
-            ),
-            ephemeral=True,
-        )
+        embed = discord.Embed(title="🎁 Daily réclamé !", color=COLOR_GAIN)
+        embed.add_field(name="🎉 Gain",    value=f"`+{fmt(montant)}` ฿",                 inline=True)
+        embed.add_field(name="🔗 Streak",  value=f"**{streak}j** × **{mult:.1f}**",       inline=True)
+        embed.add_field(name="💰 Solde",   value=f"`{fmt(interaction.client.get_berrys(self.uid))}` ฿", inline=True)
+        await interaction.followup.send(embed=embed, ephemeral=True)
         if new:
             ach_e = _achievement_embed(new)
             if ach_e:
                 await interaction.followup.send(embed=ach_e, ephemeral=True)
 
-    @discord.ui.button(label="Classement", emoji="📊", style=discord.ButtonStyle.secondary, row=1)
-    async def btn_classement(self, interaction: discord.Interaction, _: discord.ui.Button):
-        await interaction.response.defer(ephemeral=True)
-        await _send_leaderboard(interaction, self.uid)
-
-    # ── Row 2 : Succès, Paramètres, Fermer ────────────────────────
-    @discord.ui.button(label="Succès", emoji="🏅", style=discord.ButtonStyle.secondary, row=2)
+    @discord.ui.button(label="Succès", emoji="🏅", style=discord.ButtonStyle.secondary, row=1)
     async def btn_succes(self, interaction: discord.Interaction, _: discord.ui.Button):
         await interaction.response.defer(ephemeral=True)
         achs  = await db.get_achievements(self.uid)
         embed = _build_succes_embed(achs)
         await interaction.followup.send(embed=embed, ephemeral=True)
 
-    @discord.ui.button(label="Paramètres", emoji="⚙️", style=discord.ButtonStyle.secondary, row=2)
+    @discord.ui.button(label="Paramètres", emoji="⚙️", style=discord.ButtonStyle.secondary, row=1)
     async def btn_params(self, interaction: discord.Interaction, _: discord.ui.Button):
         await interaction.response.defer(ephemeral=True)
         settings = await db.get_bank_settings(self.uid)
@@ -343,7 +332,8 @@ class BanqueView(discord.ui.View):
         msg      = await interaction.followup.send(embed=embed, view=view, ephemeral=True)
         view.message = msg
 
-    @discord.ui.button(label="Fermer", emoji="❌", style=discord.ButtonStyle.danger, row=2)
+    # ── Row 2 : Fermer ────────────────────────────────────────────
+    @discord.ui.button(label="Fermer", emoji="✖️", style=discord.ButtonStyle.danger, row=2)
     async def btn_fermer(self, interaction: discord.Interaction, _: discord.ui.Button):
         await interaction.response.defer()
         await interaction.delete_original_response()

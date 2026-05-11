@@ -2516,9 +2516,10 @@ async def nick_restore_loop():
             print(f"[RESTORE] fetch_member erreur {uid}: {e}")
             continue
 
-        print(f"[RESTORE] Expiry ticket — suppression pseudo de {member.display_name} → nom Discord de base")
+        original_nick = restore.get("original")
+        print(f"[RESTORE] Expiry ticket — {member.display_name} → {'(aucun nick)' if original_nick is None else original_nick!r}")
         try:
-            await member.edit(nick=None)
+            await member.edit(nick=original_nick)
             print(f"[RESTORE] ✅ OK pour {member.display_name} ({uid})")
         except discord.Forbidden:
             print(f"[RESTORE] ❌ Forbidden — rôle du membre supérieur au bot pour {uid}")
@@ -6403,6 +6404,7 @@ async def ticket_pseudo_cmd(interaction: discord.Interaction, membre: discord.Me
         return
 
     ancien_display = membre.display_name
+    ancien_nick    = membre.nick  # pseudo serveur actuel (None = pas de nick custom)
     try:
         await membre.edit(nick=nouveau_pseudo)
     except discord.Forbidden:
@@ -6420,9 +6422,10 @@ async def ticket_pseudo_cmd(interaction: discord.Interaction, membre: discord.Me
     minutes    = tier["minutes"]
     expires_at = now_ts() + minutes * 60
     target_data["nick_restore"] = {
-        "expires": expires_at,
-        "guild":   str(interaction.guild_id),
-        "minutes": minutes,
+        "expires":  expires_at,
+        "guild":    str(interaction.guild_id),
+        "minutes":  minutes,
+        "original": ancien_nick,  # nick à restaurer (None = retour au nom Discord)
     }
     _DIRTY.add(uid)
     _DIRTY.add(str(membre.id))
@@ -6502,9 +6505,10 @@ async def reset_pseudos(interaction: discord.Interaction):
             errors += 1
             continue
 
-        print(f"[RESET] Suppression pseudo ticket de {member.display_name!r} → nom Discord de base")
+        original_nick = restore.get("original")
+        print(f"[RESET] Restore pseudo de {member.display_name!r} → {'(aucun nick)' if original_nick is None else original_nick!r}")
         try:
-            await member.edit(nick=None)
+            await member.edit(nick=original_nick)
             udata.pop("nick_restore")
             _DIRTY.add(uid)
             restored += 1

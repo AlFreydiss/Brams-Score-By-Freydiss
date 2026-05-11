@@ -79,26 +79,30 @@ class BankCog(commands.Cog):
             now_str = datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M")
 
             embed = discord.Embed(
-                title="🏴‍☠️  FREYDISS BANK",
+                title="🏴‍☠️  Freydiss Bank",
                 description=(
-                    f"{_SEP}\n"
-                    f"💰 **En poche** · `{fmt(wallet)}` ฿\n"
-                    f"🔒 **Coffre-fort** · `{fmt(vault)}` ฿\n"
-                    f"💎 **Fortune totale** · `{fmt(total)}` ฿\n"
-                    f"{_SEP}\n"
-                    f"{rank['emoji']} **{rank['nom']}** · Rang **#{position}** / {total_m}\n"
-                    f"{prog_str}\n"
-                    f"🎯 {next_str}\n"
-                    f"{_SEP}\n"
-                    f"🔗 Streak · **{account.get('streak') or 0}** jour(s)"
+                    f"{rank['emoji']} **{rank['nom']}**  ·  Rang **#{position}** / {total_m}\n"
+                    f"`{prog_bar}` {int(prog_ratio * 100)}%  ·  🎯 {next_str}"
                 ),
                 color=rank["couleur"],
             )
             embed.set_author(
-                name=f"{target.display_name}  ·  Compte #{uid[-6:]}",
+                name=f"{target.display_name}  ·  #{uid[-6:]}",
                 icon_url=target.display_avatar.url,
             )
             embed.set_thumbnail(url=target.display_avatar.url)
+
+            # Patrimoine
+            embed.add_field(name="💰 En poche",       value=f"```{fmt(wallet)} ฿```", inline=True)
+            embed.add_field(name="🔒 Coffre-fort",    value=f"```{fmt(vault)} ฿```",  inline=True)
+            embed.add_field(name="💎 Fortune totale", value=f"```{fmt(total)} ฿```",  inline=True)
+
+            # Streak + padding
+            streak_val = account.get('streak') or 0
+            embed.add_field(name="🔗 Streak",     value=f"**{streak_val}** jr",  inline=True)
+            embed.add_field(name="​", value="​", inline=True)
+            embed.add_field(name="​", value="​", inline=True)
+
             embed.set_footer(
                 text=f"⚓ Freydiss Bank  ·  {now_str} UTC",
                 icon_url=interaction.client.user.display_avatar.url,
