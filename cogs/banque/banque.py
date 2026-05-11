@@ -9,7 +9,7 @@ from discord.ext import commands
 from . import database as db
 from .constants import BANK_RANKS
 from .views import MainBanqueView, fmt, _send_leaderboard
-from utils.embed_helpers import get_spacer_file
+from utils.embed_helpers import build_banner
 
 GUILD_IDS = [int(x) for x in os.environ.get("GUILD_IDS", "924346730194014220,1478937064031518892").split(",")]
 
@@ -117,6 +117,7 @@ class BankCog(commands.Cog):
             streak_val  = account.get("streak") or 0
             streak_unit = "jour" if streak_val <= 1 else "jours"
             thumb_url   = settings.get("thumbnail_url") or get_rank_thumbnail(position)
+            banner_file = await build_banner(thumb_url or None)
 
             embed = discord.Embed(
                 title="🏴‍☠️  Freydiss Bank",
@@ -127,9 +128,6 @@ class BankCog(commands.Cog):
                 name=target.display_name,
                 icon_url=target.display_avatar.url,
             )
-            if thumb_url:
-                embed.set_thumbnail(url=thumb_url)
-
             embed.add_field(name="💰 En poche",    value=f"`{fmt(wallet)}` ฿", inline=True)
             embed.add_field(name="🔒 Coffre-fort", value=f"`{fmt(vault)}` ฿",  inline=True)
             embed.add_field(name="⚓ Progression", value=progress_val,          inline=False)
@@ -141,10 +139,10 @@ class BankCog(commands.Cog):
                 text=footer_text,
                 icon_url=interaction.client.user.display_avatar.url,
             )
-            embed.set_image(url="attachment://spacer.png")
+            embed.set_image(url="attachment://banner.png")
 
             view = MainBanqueView(uid, target, account, str(interaction.guild_id), embed, settings)
-            msg  = await interaction.followup.send(embed=embed, view=view, file=get_spacer_file())
+            msg  = await interaction.followup.send(embed=embed, view=view, file=banner_file)
             view.message = msg
 
         except Exception as e:
