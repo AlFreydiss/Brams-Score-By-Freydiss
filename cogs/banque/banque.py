@@ -9,11 +9,16 @@ from discord.ext import commands
 from . import database as db
 from .constants import BANK_RANKS
 from .views import MainBanqueView, fmt, _send_leaderboard
-from utils.embed_helpers import build_banner
+from utils.embed_helpers import build_banque_banner
 
 GUILD_IDS = [int(x) for x in os.environ.get("GUILD_IDS", "924346730194014220,1478937064031518892").split(",")]
 
-# Remplace les chaînes vides par tes URLs Supabase (basé sur la position dans le classement)
+# ── Version de l'embed banque ─────────────────────────────────────────────────
+# "A" : fortune uniquement dans la bannière — fields compacts (En poche + Coffre + Progression)
+# "B" : bannière + description fortune totale + tous les fields (comportement original enrichi)
+BANNER_VERSION = "A"
+
+# Remplace les chaînes vides par les URLs Supabase de tes images de rang
 RANK_THUMBNAILS: list[tuple[int, str]] = [
     (100,  ""),   # Mousse    — position 1-100
     (500,  ""),   # Pirate    — position 101-500
@@ -22,7 +27,6 @@ RANK_THUMBNAILS: list[tuple[int, str]] = [
     (9999, ""),   # Yonko     — position 1501+
 ]
 
-# Gradient or → rouge → violet selon le tier de rang bancaire (index 0=Mousse … 7=Roi)
 _RANK_COLORS: list[int] = [
     0x8B7355,  # Mousse
     0x4A90D9,  # Matelot
@@ -100,9 +104,12 @@ class BankCog(commands.Cog):
             rank_idx  = next(i for i, r in enumerate(BANK_RANKS) if r["nom"] == rank["nom"])
             next_rank = db.get_next_rank(total)
 
+            prog_ratio = 0.0
+            prog_next  = ""
             if next_rank:
                 prev_seuil = rank["seuil"]
                 prog_ratio = min((total - prev_seuil) / max(1, next_rank["seuil"] - prev_seuil), 1.0)
+                prog_next  = next_rank["nom"]
                 bar = build_progress_bar(prog_ratio)
                 pct = int(prog_ratio * 100)
                 progress_val = (
@@ -117,20 +124,39 @@ class BankCog(commands.Cog):
             streak_val  = account.get("streak") or 0
             streak_unit = "jour" if streak_val <= 1 else "jours"
             thumb_url   = settings.get("thumbnail_url") or get_rank_thumbnail(position)
-            banner_file = await build_banner(thumb_url or None)
+            rang_label  = f"Rang #{position}  ·  {rank['emoji']} {rank['nom']}"
 
-            embed = discord.Embed(
-                title="🏴‍☠️  Freydiss Bank",
-                description=f"**💎 Fortune Totale**\n### {fmt(total)} ฿",
-                color=get_rank_color(rank_idx),
+            banner_file = await build_banque_banner(
+                user_name=target.display_name,
+                rang_label=rang_label,
+                fortune=total,
+                char_url=thumb_url or None,
+                prog_ratio=prog_ratio,
+                prog_next=prog_next,
             )
-            embed.set_author(
-                name=target.display_name,
-                icon_url=target.display_avatar.url,
-            )
-            embed.add_field(name="💰 En poche",    value=f"`{fmt(wallet)}` ฿", inline=True)
-            embed.add_field(name="🔒 Coffre-fort", value=f"`{fmt(vault)}` ฿",  inline=True)
-            embed.add_field(name="⚓ Progression", value=progress_val,          inline=False)
+
+            # ── Version A : fortune dans la bannière, fields compacts ─────────
+            # ── Version B : bannière + fortune en description + tous les fields ─
+            # Changer BANNER_VERSION en haut du fichier pour switcher.
+            if BANNER_VERSION == "A":
+                embed = discord.Embed(
+                    title="🏴‍☠️  Freydiss Bank",
+                    color=get_rank_color(rank_idx),
+                )
+                embed.set_author(name=target.display_name, icon_url=target.display_avatar.url)
+                embed.add_field(name="💰 En poche",    value=f"`{fmt(wallet)}` ฿", inline=True)
+                embed.add_field(name="🔒 Coffre-fort", value=f"`{fmt(vault)}` ฿",  inline=True)
+                embed.add_field(name="⚓ Progression", value=progress_val,          inline=False)
+            else:
+                embed = discord.Embed(
+                    title="🏴‍☠️  Freydiss Bank",
+                    description=f"**💎 Fortune Totale**\n### {fmt(total)} ฿",
+                    color=get_rank_color(rank_idx),
+                )
+                embed.set_author(name=target.display_name, icon_url=target.display_avatar.url)
+                embed.add_field(name="💰 En poche",    value=f"`{fmt(wallet)}` ฿", inline=True)
+                embed.add_field(name="🔒 Coffre-fort", value=f"`{fmt(vault)}` ฿",  inline=True)
+                embed.add_field(name="⚓ Progression", value=progress_val,          inline=False)
 
             footer_text = f"🔥 Streak : {streak_val} {streak_unit}  •  {now_str} UTC"
             if not settings.get("thumbnail_url"):
@@ -151,6 +177,72 @@ class BankCog(commands.Cog):
             traceback.print_exc()
             try:
                 await interaction.followup.send("❌ Une erreur est survenue.", ephemeral=True)
+            except Exception:
+                pass
+
+    @app_commands.command(name="banque_preview", description="🎨 Aperçu de la bannière banque (test rapide — éphémère)")
+    @app_commands.guilds(*[discord.Object(id=gid) for gid in GUILD_IDS])
+    async def banque_preview(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
+
+        try:
+            target   = interaction.user
+            uid      = str(target.id)
+            guild_id = str(interaction.guild_id)
+            gids     = [str(m.id) for m in interaction.guild.members if not m.bot]
+
+            wallet = self.bot.get_berrys(uid)
+
+            try:
+                account, vaults, settings = await asyncio.wait_for(
+                    asyncio.gather(
+                        db.ensure_and_get_account(uid, guild_id),
+                        db.get_vaults_for_guild(guild_id, gids),
+                        db.get_bank_settings(uid),
+                    ),
+                    timeout=14.0,
+                )
+            except asyncio.TimeoutError:
+                await interaction.followup.send("❌ Timeout DB.", ephemeral=True)
+                return
+
+            vault = account.get("vault") or 0
+            total = wallet + vault
+
+            all_totals = sorted(
+                [self.bot.get_berrys(mid) + vaults.get(mid, 0) for mid in gids],
+                reverse=True,
+            )
+            position = next((i + 1 for i, t in enumerate(all_totals) if t <= total), len(all_totals))
+
+            rank      = db.get_bank_rank(total)
+            next_rank = db.get_next_rank(total)
+
+            prog_ratio = 0.0
+            prog_next  = ""
+            if next_rank:
+                prev_seuil = rank["seuil"]
+                prog_ratio = min((total - prev_seuil) / max(1, next_rank["seuil"] - prev_seuil), 1.0)
+                prog_next  = next_rank["nom"]
+
+            thumb_url  = settings.get("thumbnail_url") or get_rank_thumbnail(position)
+            rang_label = f"Rang #{position}  ·  {rank['emoji']} {rank['nom']}"
+
+            banner_file = await build_banque_banner(
+                user_name=target.display_name,
+                rang_label=rang_label,
+                fortune=total,
+                char_url=thumb_url or None,
+                prog_ratio=prog_ratio,
+                prog_next=prog_next,
+            )
+            await interaction.followup.send(file=banner_file, ephemeral=True)
+
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            try:
+                await interaction.followup.send(f"❌ Erreur preview : {e}", ephemeral=True)
             except Exception:
                 pass
 
