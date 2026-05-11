@@ -281,6 +281,7 @@ ALERT_HOURS_THRESHOLD = 5.0
 DERANK_WARNING_THRESHOLD = 5.0  # heures avant le seuil de derank pour l'avertissement MP
 GUILD_IDS = [924346730194014220, 1478937064031518892]
 VOICE_BOOST_ROLE_ID = int(os.environ.get("VOICE_BOOST_ROLE_ID", "0"))
+RANK_EXCLUDED_IDS = {523567699004227609}  # utilisateurs exclus du système de rangs
 
 RANK_ROLES = {
     "Pirate":          1486554682263343284,
@@ -958,6 +959,8 @@ async def _send_mod_log(embed: discord.Embed) -> None:
 
 async def update_rank(member: discord.Member, hours_7d: float, announce=True, data=None):
     """Rangs cumulatifs : ajoute les rôles mérités, retire ceux perdus, annonce montée ET derank."""
+    if member.id in RANK_EXCLUDED_IDS:
+        return
     guild = member.guild
     # Toujours utiliser le cache mémoire (data passé en argument ou _CACHE global)
     if data is None:
