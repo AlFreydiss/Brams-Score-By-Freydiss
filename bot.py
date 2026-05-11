@@ -45,6 +45,7 @@ from PIL import Image, ImageDraw, ImageFont, ImageFilter
 from datetime import datetime, timedelta, timezone
 from collections import defaultdict, deque
 from urllib.parse import quote as _url_quote
+from utils.memory import save_alias_pair, save_fact, get_knowledge_for_name, get_all_knowledge as _mem_get_all
 
 # ─────────────────────────────────────────
 #  BACKGROUND + POLICE
@@ -2184,6 +2185,11 @@ _RE_MEM_RECALL = [
     re.compile(rf"tu\s+sais\s+qui\s+(?:est|c[''']?est)\s+{_NAME}\s*\??", re.IGNORECASE),
     re.compile(rf"{_NAME}\s+c[''']?est\s+qui\s*\??", re.IGNORECASE),
 ]
+# Pré-filtre : un seul test rapide avant de lancer les 10+ patterns
+_RE_MEM_QUICK = re.compile(
+    r"\bet\b.*m[eê]me|sache\s+que|retiens\s+que|oublie\s+pas|rappelle.toi|qui\s+est\s+\w|c[''']?est\s+qui\s+\w|\w+\s+c[''']?est\s+qui",
+    re.IGNORECASE,
+)
 
 # Pré-compilés module-level — évite recompilation à chaque on_message
 _RE_NEUTRAL_CTX = re.compile(
@@ -7373,6 +7379,90 @@ async def addberries_cmd(
         ).set_footer(text=f"Admin : {interaction.user.display_name}"),
         ephemeral=True,
     )
+
+
+# ─────────────────────────────────────────
+#  /rangs — Membres par rang One Piece
+# ─────────────────────────────────────────
+_RANK_EMOJIS_DISPLAY = {
+    "Pirate":          "🏴‍☠️",
+    "Shichibukai":     "⚔️",
+    "Amiral":          "🪖",
+    "Yonkou":          "⚜️",
+    "Roi des pirates": "👑",
+}
+_RANK_EMBED_COLORS = {
+    "Pirate":          discord.Color.from_rgb(46,  204, 113),
+    "Shichibukai":     discord.Color.from_rgb(22,  96,  45),
+    "Amiral":          discord.Color.from_rgb(241, 196, 15),
+    "Yonkou":          discord.Color.from_rgb(155, 89,  182),
+    "Roi des pirates": discord.Color.from_rgb(255, 215, 0),
+}
+
+
+@bot.tree.command(name="rangs", description="📊 Liste tous les membres par rang One Piece")
+async def rangs_cmd(interaction: discord.Interaction):
+    await interaction.response.defer()
+    guild = interaction.guild
+
+    embed = discord.Embed(
+        title="🏴‍☠️ Répartition des Rangs — Brams Community",
+        color=discord.Color.from_rgb(255, 215, 0),
+    )
+
+    unique_ids: set[int] = set()
+
+    for threshold, rank_name in RANKS:   # RANKS trié highest → lowest
+        role_id = RANK_ROLES.get(rank_name)
+        emoji   = _RANK_EMOJIS_DISPLAY.get(rank_name, "🎖️")
+        seuil   = f"{threshold}h vocales / 7j"
+
+        if not role_id:
+            continue
+
+        role = guild.get_role(role_id)
+        if role is None:
+            embed.add_field(
+                name=f"{emoji} {rank_name}",
+                value="*Rôle introuvable sur ce serveur*",
+                inline=False,
+            )
+            continue
+
+        members = sorted(
+            [m for m in role.members if not m.bot],
+            key=lambda m: m.display_name.lower(),
+        )
+        for m in members:
+            unique_ids.add(m.id)
+
+        count = len(members)
+
+        if not members:
+            value = "*Aucun membre pour l'instant*"
+        else:
+            lines = [f"• {m.display_name}" for m in members]
+            value = "\n".join(lines)
+            if len(value) > 1020:
+                shown, length = [], 0
+                for line in lines:
+                    if length + len(line) + 1 > 960:
+                        break
+                    shown.append(line)
+                    length += len(line) + 1
+                value = "\n".join(shown) + f"\n*… et {count - len(shown)} autres*"
+
+        plural = "s" if count > 1 else ""
+        embed.add_field(
+            name=f"{emoji} {rank_name} — **{count}** membre{plural}  ·  `≥ {seuil}`",
+            value=value,
+            inline=False,
+        )
+
+    embed.set_footer(
+        text=f"Brams Score · One Piece  •  {len(unique_ids)} membres rankés au total"
+    )
+    await interaction.followup.send(embed=embed)
 
 
 # ── Sync des commandes une seule fois au démarrage ───────────────
