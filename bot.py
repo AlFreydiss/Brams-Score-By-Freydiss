@@ -2490,41 +2490,47 @@ async def on_voice_state_update(member, before, after):
 async def nick_restore_loop():
     _now = now_ts()
     for uid, udata in list(_CACHE.items()):
-        restore = udata.get("nick_restore")
-        if not restore:
-            continue
-        expires = restore.get("expires", 0)
-        if _now < expires:
-            continue
-
-        # Expiré — on retire de la DB dès maintenant pour éviter les doublons
-        udata.pop("nick_restore")
-        _DIRTY.add(uid)
-
-        guild = bot.get_guild(int(restore["guild"]))
-        if not guild:
-            print(f"[RESTORE] Guild {restore['guild']} introuvable")
-            continue
-
-        # fetch_member() fait un appel API garanti — évite le None si membre non-caché
         try:
-            member = await guild.fetch_member(int(uid))
-        except discord.NotFound:
-            print(f"[RESTORE] Membre {uid} a quitté le serveur")
-            continue
-        except Exception as e:
-            print(f"[RESTORE] fetch_member erreur {uid}: {e}")
-            continue
+            restore = udata.get("nick_restore")
+            if not restore or not isinstance(restore, dict):
+                continue
+            expires = restore.get("expires", 0)
+            if _now < expires:
+                continue
 
-        original_nick = restore.get("original")
-        print(f"[RESTORE] Expiry ticket — {member.display_name} → {'(aucun nick)' if original_nick is None else original_nick!r}")
-        try:
-            await member.edit(nick=original_nick)
-            print(f"[RESTORE] ✅ OK pour {member.display_name} ({uid})")
-        except discord.Forbidden:
-            print(f"[RESTORE] ❌ Forbidden — rôle du membre supérieur au bot pour {uid}")
+            # Expiré — on retire du cache immédiatement pour éviter les doublons
+            udata.pop("nick_restore")
+            _DIRTY.add(uid)
+
+            guild_id = restore.get("guild")
+            if not guild_id:
+                continue
+            guild = bot.get_guild(int(guild_id))
+            if not guild:
+                print(f"[RESTORE] Guild {guild_id} introuvable")
+                continue
+
+            try:
+                member = await guild.fetch_member(int(uid))
+            except discord.NotFound:
+                print(f"[RESTORE] Membre {uid} a quitté le serveur")
+                continue
+            except Exception as e:
+                print(f"[RESTORE] fetch_member erreur {uid}: {e}")
+                continue
+
+            original_nick = restore.get("original")
+            print(f"[RESTORE] Expiry — {member.display_name} → {'(global name)' if original_nick is None else original_nick!r}")
+            try:
+                await member.edit(nick=original_nick)
+                print(f"[RESTORE] ✅ OK {member} ({uid})")
+            except discord.Forbidden:
+                print(f"[RESTORE] ❌ Forbidden pour {uid} (rôle supérieur au bot ?)")
+            except Exception as e:
+                print(f"[RESTORE] ❌ Erreur edit nick pour {uid}: {e}")
+
         except Exception as e:
-            print(f"[RESTORE] ❌ Erreur inattendue pour {uid}: {e}")
+            print(f"[RESTORE] ❌ Erreur inattendue uid={uid}: {e}")
 
 @nick_restore_loop.before_loop
 async def _before_nick_restore():
@@ -2532,7 +2538,12 @@ async def _before_nick_restore():
 
 @nick_restore_loop.error
 async def _nick_restore_error(err):
+    import traceback
     print(f"[RESTORE] ❌ Loop crashée : {err}")
+    traceback.print_exc()
+    # Redémarre la loop après un crash pour ne pas bloquer tous les restores
+    if not nick_restore_loop.is_running():
+        nick_restore_loop.start()
 
 
 @tasks.loop(minutes=2)
@@ -6404,7 +6415,15 @@ async def ticket_pseudo_cmd(interaction: discord.Interaction, membre: discord.Me
         return
 
     ancien_display = membre.display_name
-    ancien_nick    = membre.nick  # pseudo serveur actuel (None = pas de nick custom)
+
+    # Si un ticket est déjà actif, on récupère l'original du PREMIER ticket
+    # pour ne pas sauvegarder le pseudo-ticket comme "original" lors d'un empilement
+    existing_restore = target_data.get("nick_restore")
+    if existing_restore and isinstance(existing_restore, dict) and now_ts() < existing_restore.get("expires", 0):
+        ancien_nick = existing_restore.get("original")  # vrai pseudo d'avant tout ticket
+    else:
+        ancien_nick = membre.nick  # pseudo serveur réel (None = pas de nick custom)
+
     try:
         await membre.edit(nick=nouveau_pseudo)
     except discord.Forbidden:
