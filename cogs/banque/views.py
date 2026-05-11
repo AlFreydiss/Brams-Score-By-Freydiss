@@ -332,8 +332,7 @@ class BanqueView(discord.ui.View):
         msg      = await interaction.followup.send(embed=embed, view=view, ephemeral=True)
         view.message = msg
 
-    # ── Row 2 : Fermer ────────────────────────────────────────────
-    @discord.ui.button(label="Fermer", emoji="✖️", style=discord.ButtonStyle.danger, row=2)
+    @discord.ui.button(label="Fermer", emoji="✖️", style=discord.ButtonStyle.danger, row=1)
     async def btn_fermer(self, interaction: discord.Interaction, _: discord.ui.Button):
         await interaction.response.defer()
         await interaction.delete_original_response()

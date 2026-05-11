@@ -9,6 +9,7 @@ from discord.ext import commands
 from . import database as db
 from .constants import BANK_RANKS
 from .views import BanqueView, fmt, _send_leaderboard
+from utils.embed_helpers import get_spacer_file
 
 GUILD_IDS = [int(x) for x in os.environ.get("GUILD_IDS", "924346730194014220,1478937064031518892").split(",")]
 
@@ -133,13 +134,17 @@ class BankCog(commands.Cog):
             embed.add_field(name="🔒 Coffre-fort", value=f"`{fmt(vault)}` ฿",  inline=True)
             embed.add_field(name="⚓ Progression", value=progress_val,          inline=False)
 
+            footer_text = f"🔥 Streak : {streak_val} {streak_unit}  •  {now_str} UTC"
+            if not settings.get("thumbnail_url"):
+                footer_text += "\n💡 Personnalise ton image via ⚙️ Paramètres"
             embed.set_footer(
-                text=f"🔥 Streak : {streak_val} {streak_unit}  •  {now_str} UTC",
+                text=footer_text,
                 icon_url=interaction.client.user.display_avatar.url,
             )
+            embed.set_image(url="attachment://spacer.png")
 
             view = BanqueView(uid, target, account, str(interaction.guild_id))
-            msg  = await interaction.followup.send(embed=embed, view=view)
+            msg  = await interaction.followup.send(embed=embed, view=view, file=get_spacer_file())
             view.message = msg
 
         except Exception as e:
