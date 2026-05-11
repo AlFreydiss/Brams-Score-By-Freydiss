@@ -7,12 +7,47 @@ from discord import app_commands
 from discord.ext import commands
 
 from . import database as db
-from .constants import COLOR_NEUTRAL, BANK_RANKS
+from .constants import BANK_RANKS
 from .views import BanqueView, fmt, _send_leaderboard
 
 GUILD_IDS = [int(x) for x in os.environ.get("GUILD_IDS", "924346730194014220,1478937064031518892").split(",")]
 
-_SEP = "━━━━━━━━━━━━━━━━━━━━━━"
+# Remplace les chaînes vides par tes URLs Supabase (basé sur la position dans le classement)
+RANK_THUMBNAILS: list[tuple[int, str]] = [
+    (100,  ""),   # Mousse    — position 1-100
+    (500,  ""),   # Pirate    — position 101-500
+    (1000, ""),   # Capitaine — position 501-1000
+    (1500, ""),   # Supernova — position 1001-1500
+    (9999, ""),   # Yonko     — position 1501+
+]
+
+# Gradient or → rouge → violet selon le tier de rang bancaire (index 0=Mousse … 7=Roi)
+_RANK_COLORS: list[int] = [
+    0x8B7355,  # Mousse
+    0x4A90D9,  # Matelot
+    0xFF69B4,  # Pirate
+    0xCC3333,  # Capitaine
+    0xFF8C00,  # Supernova
+    0x00CED1,  # Shichibukai
+    0xFF4500,  # Yonkou
+    0xAA00FF,  # Roi des Pirates
+]
+
+
+def get_rank_thumbnail(position: int) -> str:
+    for threshold, url in RANK_THUMBNAILS:
+        if position <= threshold:
+            return url
+    return RANK_THUMBNAILS[-1][1]
+
+
+def build_progress_bar(percentage: float, length: int = 10) -> str:
+    filled = round(percentage * length)
+    return "▰" * filled + "▱" * (length - filled)
+
+
+def get_rank_color(rank_idx: int) -> int:
+    return _RANK_COLORS[min(rank_idx, len(_RANK_COLORS) - 1)]
 
 
 class BankCog(commands.Cog):
@@ -53,7 +88,6 @@ class BankCog(commands.Cog):
                 reverse=True,
             )
             position = next((i + 1 for i, t in enumerate(all_totals) if t <= total), len(all_totals))
-            total_m  = len(all_totals)
 
             rank     = db.get_bank_rank(total)
             old_rank = account.get("bank_rank", "Mousse")
@@ -61,50 +95,45 @@ class BankCog(commands.Cog):
                 await db.update_bank_rank_db(uid, guild_id, rank["nom"])
                 await _announce_rank_up(interaction, target, old_rank, rank)
 
+            rank_idx  = next(i for i, r in enumerate(BANK_RANKS) if r["nom"] == rank["nom"])
             next_rank = db.get_next_rank(total)
-            next_str  = (
-                f"`{fmt(next_rank['seuil'] - total)}` ฿ pour {next_rank['emoji']} **{next_rank['nom']}**"
-                if next_rank else "🐉 Rang maximum atteint !"
-            )
 
             if next_rank:
                 prev_seuil = rank["seuil"]
                 prog_ratio = min((total - prev_seuil) / max(1, next_rank["seuil"] - prev_seuil), 1.0)
-                filled = int(prog_ratio * 12)
-                prog_bar = "█" * filled + "░" * (12 - filled)
-                prog_str = f"`{prog_bar}` {int(prog_ratio * 100)}%"
+                bar = build_progress_bar(prog_ratio)
+                pct = int(prog_ratio * 100)
+                progress_val = (
+                    f"Rang **#{position}** → {rank['emoji']} **{next_rank['nom']}**\n"
+                    f"{bar} **{pct}%**\n"
+                    f"Encore `{fmt(next_rank['seuil'] - total)}` ฿"
+                )
             else:
-                prog_str = "`████████████` MAX"
+                progress_val = f"Rang **#{position}**\n{'▰' * 10} **MAX**\n🐉 Rang maximum atteint !"
 
-            now_str = datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M")
+            now_str     = datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M")
+            streak_val  = account.get("streak") or 0
+            streak_unit = "jour" if streak_val <= 1 else "jours"
+            thumb_url   = get_rank_thumbnail(position)
 
             embed = discord.Embed(
                 title="🏴‍☠️  Freydiss Bank",
-                description=(
-                    f"{rank['emoji']} **{rank['nom']}**  ·  Rang **#{position}** / {total_m}\n"
-                    f"`{prog_bar}` {int(prog_ratio * 100)}%  ·  🎯 {next_str}"
-                ),
-                color=rank["couleur"],
+                description=f"**💎 Fortune Totale**\n### {fmt(total)} ฿",
+                color=get_rank_color(rank_idx),
             )
             embed.set_author(
-                name=f"{target.display_name}  ·  #{uid[-6:]}",
+                name=target.display_name,
                 icon_url=target.display_avatar.url,
             )
-            embed.set_thumbnail(url=target.display_avatar.url)
+            if thumb_url:
+                embed.set_thumbnail(url=thumb_url)
 
-            # Patrimoine
-            embed.add_field(name="💰 En poche",       value=f"```{fmt(wallet)} ฿```", inline=True)
-            embed.add_field(name="🔒 Coffre-fort",    value=f"```{fmt(vault)} ฿```",  inline=True)
-            embed.add_field(name="💎 Fortune totale", value=f"```{fmt(total)} ฿```",  inline=True)
-
-            # Streak + padding
-            streak_val = account.get('streak') or 0
-            embed.add_field(name="🔗 Streak",     value=f"**{streak_val}** jr",  inline=True)
-            embed.add_field(name="​", value="​", inline=True)
-            embed.add_field(name="​", value="​", inline=True)
+            embed.add_field(name="💰 En poche",    value=f"`{fmt(wallet)}` ฿", inline=True)
+            embed.add_field(name="🔒 Coffre-fort", value=f"`{fmt(vault)}` ฿",  inline=True)
+            embed.add_field(name="⚓ Progression", value=progress_val,          inline=False)
 
             embed.set_footer(
-                text=f"⚓ Freydiss Bank  ·  {now_str} UTC",
+                text=f"🔥 Streak : {streak_val} {streak_unit}  •  {now_str} UTC",
                 icon_url=interaction.client.user.display_avatar.url,
             )
 
