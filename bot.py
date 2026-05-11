@@ -7403,66 +7403,76 @@ _RANK_EMBED_COLORS = {
 @bot.tree.command(name="rangs", description="📊 Liste tous les membres par rang One Piece")
 async def rangs_cmd(interaction: discord.Interaction):
     await interaction.response.defer()
-    guild = interaction.guild
+    try:
+        guild = interaction.guild
+        if guild is None:
+            await interaction.followup.send("❌ Commande disponible uniquement sur un serveur.", ephemeral=True)
+            return
 
-    embed = discord.Embed(
-        title="🏴‍☠️ Répartition des Rangs — Brams Community",
-        color=discord.Color.from_rgb(255, 215, 0),
-    )
+        embed = discord.Embed(
+            title="🏴‍☠️ Répartition des Rangs — Brams Community",
+            color=discord.Color.from_rgb(255, 215, 0),
+        )
 
-    unique_ids: set[int] = set()
+        unique_ids: set[int] = set()
 
-    for threshold, rank_name in RANKS:   # RANKS trié highest → lowest
-        role_id = RANK_ROLES.get(rank_name)
-        emoji   = _RANK_EMOJIS_DISPLAY.get(rank_name, "🎖️")
-        seuil   = f"{threshold}h vocales / 7j"
+        for threshold, rank_name in RANKS:   # RANKS trié highest → lowest
+            role_id = RANK_ROLES.get(rank_name)
+            emoji   = _RANK_EMOJIS_DISPLAY.get(rank_name, "🎖️")
+            seuil   = f"{threshold}h vocales / 7j"
 
-        if not role_id:
-            continue
+            if not role_id:
+                continue
 
-        role = guild.get_role(role_id)
-        if role is None:
+            role = guild.get_role(role_id)
+            if role is None:
+                embed.add_field(
+                    name=f"{emoji} {rank_name}",
+                    value="*Rôle introuvable sur ce serveur*",
+                    inline=False,
+                )
+                continue
+
+            members = sorted(
+                [m for m in role.members if not m.bot],
+                key=lambda m: m.display_name.lower(),
+            )
+            for m in members:
+                unique_ids.add(m.id)
+
+            count = len(members)
+
+            if not members:
+                value = "*Aucun membre pour l'instant*"
+            else:
+                lines = [f"• {m.display_name}" for m in members]
+                value = "\n".join(lines)
+                if len(value) > 1020:
+                    shown, length = [], 0
+                    for line in lines:
+                        if length + len(line) + 1 > 960:
+                            break
+                        shown.append(line)
+                        length += len(line) + 1
+                    value = "\n".join(shown) + f"\n*… et {count - len(shown)} autres*"
+
+            plural = "s" if count > 1 else ""
             embed.add_field(
-                name=f"{emoji} {rank_name}",
-                value="*Rôle introuvable sur ce serveur*",
+                name=f"{emoji} {rank_name} — **{count}** membre{plural}  ·  `≥ {seuil}`",
+                value=value,
                 inline=False,
             )
-            continue
 
-        members = sorted(
-            [m for m in role.members if not m.bot],
-            key=lambda m: m.display_name.lower(),
+        embed.set_footer(
+            text=f"Brams Score · One Piece  •  {len(unique_ids)} membres rankés au total"
         )
-        for m in members:
-            unique_ids.add(m.id)
-
-        count = len(members)
-
-        if not members:
-            value = "*Aucun membre pour l'instant*"
-        else:
-            lines = [f"• {m.display_name}" for m in members]
-            value = "\n".join(lines)
-            if len(value) > 1020:
-                shown, length = [], 0
-                for line in lines:
-                    if length + len(line) + 1 > 960:
-                        break
-                    shown.append(line)
-                    length += len(line) + 1
-                value = "\n".join(shown) + f"\n*… et {count - len(shown)} autres*"
-
-        plural = "s" if count > 1 else ""
-        embed.add_field(
-            name=f"{emoji} {rank_name} — **{count}** membre{plural}  ·  `≥ {seuil}`",
-            value=value,
-            inline=False,
-        )
-
-    embed.set_footer(
-        text=f"Brams Score · One Piece  •  {len(unique_ids)} membres rankés au total"
-    )
-    await interaction.followup.send(embed=embed)
+        await interaction.followup.send(embed=embed)
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        try:
+            await interaction.followup.send("❌ Erreur lors de la récupération des rangs.", ephemeral=True)
+        except Exception:
+            pass
 
 
 # ── Sync des commandes une seule fois au démarrage ───────────────
