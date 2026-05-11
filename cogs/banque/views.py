@@ -7,7 +7,10 @@ from __future__ import annotations
 import asyncio
 import random
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import TYPE_CHECKING
+
+_STONK_PATH = Path(__file__).parent.parent / "stonk.jpg"
 
 import discord
 
@@ -181,26 +184,29 @@ async def _execute_transfer(interaction, uid, target, amount, taxes: dict):
         except discord.Forbidden:
             pass
 
-    await interaction.followup.send(
-        embed=discord.Embed(
-            title="✅ Virement effectué",
-            description=(
-                f"{SEP}\n"
-                f"💸 Envoyé à {target.mention} : **`{fmt(amount)}` ฿**\n"
-                f"{SEP}\n"
-                f"**📋 Détail des taxes :**\n"
-                f"> 🇫🇷 TVA Nouveau Monde (20%) · `{fmt(taxes['tva'])}` ฿\n"
-                f"> 🏛️ CSG/CRDS Marine (9.2%) · `{fmt(taxes['csg'])}` ฿\n"
-                f"> ⚓ Contribution Marine (2%) · `{fmt(taxes['contrib'])}` ฿\n"
-                f"> 🪙 Timbre fiscal · `{fmt(taxes['timbre'])}` ฿\n"
-                f"{SEP}\n"
-                f"💰 Total taxes : **`{fmt(taxes['total'])}` ฿** *(soit {taxes['total']/max(1,amount)*100:.1f}% du virement)*\n"
-                f"🔻 Total débité : **`{fmt(total)}` ฿**\n"
-                f"{SEP}\n"
-                f"💼 Ton solde : `{fmt(wallet_from)}` ฿"
-            ),
-            color=COLOR_GAIN,
+    virement_embed = discord.Embed(
+        title="✅ Virement effectué",
+        description=(
+            f"{SEP}\n"
+            f"💸 Envoyé à {target.mention} : **`{fmt(amount)}` ฿**\n"
+            f"{SEP}\n"
+            f"**📋 Détail des taxes :**\n"
+            f"> 🇫🇷 TVA Nouveau Monde (20%) · `{fmt(taxes['tva'])}` ฿\n"
+            f"> 🏛️ CSG/CRDS Marine (9.2%) · `{fmt(taxes['csg'])}` ฿\n"
+            f"> ⚓ Contribution Marine (2%) · `{fmt(taxes['contrib'])}` ฿\n"
+            f"> 🪙 Timbre fiscal · `{fmt(taxes['timbre'])}` ฿\n"
+            f"{SEP}\n"
+            f"💰 Total taxes : **`{fmt(taxes['total'])}` ฿** *(soit {taxes['total']/max(1,amount)*100:.1f}% du virement)*\n"
+            f"🔻 Total débité : **`{fmt(total)}` ฿**\n"
+            f"{SEP}\n"
+            f"💼 Ton solde : `{fmt(wallet_from)}` ฿"
         ),
+        color=COLOR_GAIN,
+    )
+    virement_embed.set_image(url="attachment://stonk.jpg")
+    await interaction.followup.send(
+        embed=virement_embed,
+        file=discord.File(_STONK_PATH, filename="stonk.jpg"),
         ephemeral=True,
     )
 
