@@ -235,19 +235,34 @@ _MARINE_MOTIFS = [
 
 # ── Questions farfelues ───────────────────────────────────────────
 _FARFELU_COOLDOWN: dict[str, float] = {}
-_FARFELU_DELAY = 45  # secondes mini entre deux réponses pour le même user
-_FARFELU_PROB  = 0.20  # 20 % de chance sur une question éligible
+_FARFELU_DELAY = 45
+_FARFELU_PROB  = 0.20
 _FARFELU_REPLIES = [
-    "au secours Freydiss il dit n'importe quoi mdrr 💀",
-    "FREYDISS AU SECOURS y'en a un qui rigole pas 😭",
-    "Trkl bb wAllah 💀",
-    "attend t'as vraiment posé cette question là ?? 💀",
+    "attends t'as vraiment dit ça 💀",
+    "personne peut t'aider là 😭",
+    "bro sort un peu sérieusement 💀",
+    "je réponds même pas 😭",
+    "trkl bb wAllah 💀",
     "je suis pas gay je suis pas trans ect 😭",
-    "quelqu'un appelle un médecin svp 😭😭",
-    "mdrr j'ai même pas de réponse à ça je suis désolé 💀",
-    "bro sort un peu 💀",
-    "LMAOOO t'es sérieux là ?? 😭💀",
-    "Freydiss viens voir ce que ce gars vient de demander 😭",
+    "on fait quoi avec ça...",
+    "quelqu'un ? non ? ok 💀",
+    "même pas de réponse à ça 😭",
+    "t'es sûr ça va toi ? 💀",
+]
+
+# ── Culte Freydiss ────────────────────────────────────────────────
+_FREYDISS_ID          = 523567699004227609
+_FREYDISS_HYPE_CD: dict[str, float] = {}  # cooldown par salon
+_FREYDISS_HYPE_DELAY  = 60
+_FREYDISS_HYPE_PROB   = 0.55
+_FREYDISS_HYPE = [
+    "👑 **FREYDISS** — le créateur, rien à ajouter 🐐",
+    "**FREYDISS** a tout build ce serveur from scratch 🫡",
+    "on parle du boss là 🔥",
+    "**FREYDISS** ?? respect au fondateur 👑",
+    "le GOAT du serveur 🐐",
+    "🫡 wAllah y'a pas photo c'est **FREYDISS**",
+    "trkl bb, c'est le chef 💅",
 ]
 
 def init_db():
@@ -2342,6 +2357,19 @@ async def on_message(message):
                     )
                 except Exception:
                     pass
+
+    # ── Culte Freydiss ───────────────────────────────────────────────
+    if (
+        message.author.id != _FREYDISS_ID
+        and "freydiss" in message.content.lower()
+        and now_f - _FREYDISS_HYPE_CD.get(str(message.channel.id), 0) >= _FREYDISS_HYPE_DELAY
+        and random.random() < _FREYDISS_HYPE_PROB
+    ):
+        _FREYDISS_HYPE_CD[str(message.channel.id)] = now_f
+        try:
+            await message.channel.send(random.choice(_FREYDISS_HYPE))
+        except Exception:
+            pass
 
     # ── Réaction aux questions farfelues ────────────────────────────
     msg_stripped = message.content.strip()
