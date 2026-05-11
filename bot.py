@@ -2402,8 +2402,7 @@ async def on_message(message):
 
     # ── Mémoire intelligente ────────────────────────────────────────
     if message.guild:
-        from utils.memory import save_knowledge, get_alias, get_all_aliases, get_facts
-        gid = str(message.guild.id)
+        gid     = str(message.guild.id)
         content = message.content
 
         # Apprentissage d'alias (même personne)
@@ -2413,8 +2412,7 @@ async def on_message(message):
             if m:
                 name1, name2 = m.group(1).strip(), m.group(2).strip()
                 try:
-                    await save_knowledge(gid, "alias", name1.lower(), name2, uid)
-                    await save_knowledge(gid, "alias", name2.lower(), name1, uid)
+                    await save_alias_pair(gid, name1, name2, uid)
                     await message.reply(f"✅ Noté — **{name1}** et **{name2}** c'est la même personne.")
                 except Exception:
                     pass
@@ -2430,7 +2428,7 @@ async def on_message(message):
                     if len(fact) >= 5:
                         key = fact.split()[0].lower()
                         try:
-                            await save_knowledge(gid, "fact", key, fact, uid)
+                            await save_fact(gid, key, fact, uid)
                             await message.reply(f"✅ Noté : *{fact}*")
                         except Exception:
                             pass
@@ -2443,8 +2441,7 @@ async def on_message(message):
                 if m:
                     name = m.group(1).strip()
                     try:
-                        aliases = await get_all_aliases(gid, name)
-                        facts   = await get_facts(gid, name)
+                        aliases, facts = await get_knowledge_for_name(gid, name)
                         parts   = []
                         if aliases:
                             parts.append(f"**{name}** c'est aussi **{'**, **'.join(aliases)}**")

@@ -2,119 +2,133 @@ import os
 import asyncio
 import psycopg2
 import psycopg2.extras
+import psycopg2.pool
 from concurrent.futures import ThreadPoolExecutor
 
-_executor    = ThreadPoolExecutor(max_workers=2, thread_name_prefix="memory_db")
 _SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
+_executor     = ThreadPoolExecutor(max_workers=2, thread_name_prefix="memory_db")
+_pool: psycopg2.pool.ThreadedConnectionPool | None = None
 
 
-def _conn():
-    return psycopg2.connect(_SUPABASE_URL, sslmode="require", connect_timeout=10)
+def _get_pool() -> psycopg2.pool.ThreadedConnectionPool:
+    global _pool
+    if _pool is None:
+        _pool = psycopg2.pool.ThreadedConnectionPool(
+            1, 3, dsn=_SUPABASE_URL, sslmode="require", connect_timeout=10
+        )
+    return _pool
+
+
+def _get():
+    return _get_pool().getconn()
+
+
+def _put(conn) -> None:
+    try:
+        _get_pool().putconn(conn)
+    except Exception:
+        try:
+            conn.close()
+        except Exception:
+            pass
 
 
 async def _run(fn):
     return await asyncio.get_running_loop().run_in_executor(_executor, fn)
 
 
-async def save_knowledge(guild_id: str, type_: str, key: str, value: str, added_by: str) -> None:
+# ── Écriture ──────────────────────────────────────────────────────
+
+async def save_alias_pair(guild_id: str, name1: str, name2: str, added_by: str) -> None:
+    """Sauvegarde les deux sens de l'alias en une seule transaction."""
     def _do():
-        conn = _conn()
+        conn = _get()
+        try:
+            with conn:
+                cur = conn.cursor()
+                cur.executemany(
+                    """INSERT INTO bot_knowledge (guild_id, type, key, value, added_by)
+                       VALUES (%s, 'alias', %s, %s, %s)
+                       ON CONFLICT (guild_id, type, key)
+                       DO UPDATE SET value = EXCLUDED.value, added_by = EXCLUDED.added_by""",
+                    [
+                        (guild_id, name1.lower(), name2, added_by),
+                        (guild_id, name2.lower(), name1, added_by),
+                    ],
+                )
+        finally:
+            _put(conn)
+    await _run(_do)
+
+
+async def save_fact(guild_id: str, key: str, value: str, added_by: str) -> None:
+    def _do():
+        conn = _get()
         try:
             with conn:
                 conn.cursor().execute(
                     """INSERT INTO bot_knowledge (guild_id, type, key, value, added_by)
-                       VALUES (%s, %s, %s, %s, %s)
+                       VALUES (%s, 'fact', %s, %s, %s)
                        ON CONFLICT (guild_id, type, key)
                        DO UPDATE SET value = EXCLUDED.value, added_by = EXCLUDED.added_by""",
-                    (guild_id, type_, key.lower(), value, added_by),
+                    (guild_id, key.lower(), value, added_by),
                 )
         finally:
-            conn.close()
+            _put(conn)
     await _run(_do)
 
 
-async def get_alias(guild_id: str, name: str) -> str | None:
-    """Retourne le vrai nom lié à cet alias, ou None."""
+# ── Lecture ───────────────────────────────────────────────────────
+
+async def get_knowledge_for_name(guild_id: str, name: str) -> tuple[list[str], list[str]]:
+    """Retourne (aliases, facts) en une seule connexion."""
+    name_lower = name.lower()
     def _do():
-        conn = _conn()
+        conn = _get()
         try:
             cur = conn.cursor()
             cur.execute(
-                "SELECT value FROM bot_knowledge WHERE guild_id=%s AND type='alias' AND key=%s",
-                (guild_id, name.lower()),
+                """SELECT type, key, value FROM bot_knowledge
+                   WHERE guild_id = %s
+                     AND (
+                       (type = 'alias' AND (key = %s OR value ILIKE %s))
+                       OR (type = 'fact' AND (key ILIKE %s OR value ILIKE %s))
+                     )
+                   ORDER BY created_at DESC LIMIT 10""",
+                (guild_id, name_lower, name, f"%{name}%", f"%{name}%"),
             )
-            row = cur.fetchone()
-            return row[0] if row else None
-        finally:
-            conn.close()
-    return await _run(_do)
-
-
-async def get_all_aliases(guild_id: str, name: str) -> list[str]:
-    """Retourne tous les alias connus pour un nom (dans les deux sens)."""
-    def _do():
-        conn = _conn()
-        try:
-            cur = conn.cursor()
-            cur.execute(
-                """SELECT key, value FROM bot_knowledge
-                   WHERE guild_id=%s AND type='alias'
-                   AND (key=%s OR value ILIKE %s)""",
-                (guild_id, name.lower(), name),
-            )
-            results = []
-            for k, v in cur.fetchall():
-                if k.lower() == name.lower():
-                    results.append(v)
+            aliases, facts = [], []
+            for type_, key, value in cur.fetchall():
+                if type_ == "alias":
+                    aliases.append(value if key == name_lower else key)
                 else:
-                    results.append(k)
-            return list(set(results))
+                    facts.append(value)
+            return list(set(aliases)), facts
         finally:
-            conn.close()
-    return await _run(_do)
-
-
-async def get_facts(guild_id: str, keyword: str) -> list[str]:
-    """Retourne les faits dont la clé ou la valeur contient le mot-clé."""
-    def _do():
-        conn = _conn()
-        try:
-            cur = conn.cursor()
-            cur.execute(
-                """SELECT value FROM bot_knowledge
-                   WHERE guild_id=%s AND type='fact'
-                   AND (key ILIKE %s OR value ILIKE %s)
-                   ORDER BY created_at DESC LIMIT 5""",
-                (guild_id, f"%{keyword}%", f"%{keyword}%"),
-            )
-            return [r[0] for r in cur.fetchall()]
-        finally:
-            conn.close()
+            _put(conn)
     return await _run(_do)
 
 
 async def get_all_knowledge(guild_id: str) -> list[dict]:
-    """Retourne toute la mémoire du bot pour ce guild."""
     def _do():
-        conn = _conn()
+        conn = _get()
         try:
             cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
             cur.execute(
                 """SELECT type, key, value, created_at
-                   FROM bot_knowledge WHERE guild_id=%s
+                   FROM bot_knowledge WHERE guild_id = %s
                    ORDER BY created_at DESC LIMIT 100""",
                 (guild_id,),
             )
             return [dict(r) for r in cur.fetchall()]
         finally:
-            conn.close()
+            _put(conn)
     return await _run(_do)
 
 
 async def delete_knowledge(guild_id: str, type_: str, key: str) -> bool:
-    """Supprime un fait/alias. Retourne True si supprimé."""
     def _do():
-        conn = _conn()
+        conn = _get()
         try:
             with conn:
                 cur = conn.cursor()
@@ -124,5 +138,5 @@ async def delete_knowledge(guild_id: str, type_: str, key: str) -> bool:
                 )
                 return cur.rowcount > 0
         finally:
-            conn.close()
+            _put(conn)
     return await _run(_do)
