@@ -2,6 +2,7 @@ import os
 import asyncio
 import psycopg2
 import psycopg2.extras
+import psycopg2.pool
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone, timedelta
 
@@ -9,17 +10,30 @@ from .constants import BANK_RANKS, VAULT_INTEREST_BASE, VAULT_LOCK_RATES, VAULT_
 
 _executor     = ThreadPoolExecutor(max_workers=6, thread_name_prefix="bank_db")
 _SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
+_pool: psycopg2.pool.ThreadedConnectionPool | None = None
+
+
+def _get_pool() -> psycopg2.pool.ThreadedConnectionPool:
+    global _pool
+    if _pool is None:
+        _pool = psycopg2.pool.ThreadedConnectionPool(
+            2, 8, dsn=_SUPABASE_URL, sslmode="require", connect_timeout=10
+        )
+    return _pool
 
 
 def _conn():
-    return psycopg2.connect(_SUPABASE_URL, sslmode="require", connect_timeout=10)
+    return _get_pool().getconn()
 
 
 def _put(conn) -> None:
     try:
-        conn.close()
+        _get_pool().putconn(conn)
     except Exception:
-        pass
+        try:
+            conn.close()
+        except Exception:
+            pass
 
 
 async def _run(fn):
@@ -232,18 +246,21 @@ async def apply_vault_interests(guild_id: str) -> list[tuple[str, int]]:
                 (guild_id,),
             )
             rows = cur.fetchall()
+            updates = []
             for row in rows:
                 lock_days = row["vault_lock_days"] or 0
                 rate = VAULT_LOCK_RATES.get(lock_days, VAULT_INTEREST_BASE)
                 gain = min(int(row["vault"] * rate), VAULT_DAILY_CAP)
                 if gain <= 0:
                     continue
-                with conn:
-                    conn.cursor().execute(
-                        "UPDATE bank_accounts SET vault = vault + %s WHERE user_id=%s AND guild_id=%s",
-                        (gain, row["user_id"], guild_id),
-                    )
+                updates.append((gain, row["user_id"], guild_id))
                 results.append((row["user_id"], gain))
+            if updates:
+                with conn:
+                    conn.cursor().executemany(
+                        "UPDATE bank_accounts SET vault = vault + %s WHERE user_id=%s AND guild_id=%s",
+                        updates,
+                    )
         except Exception as e:
             print(f"[BANK] Intérêts coffre erreur: {e}")
         finally:

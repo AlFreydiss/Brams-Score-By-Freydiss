@@ -68,12 +68,10 @@ async def build_banner(image_url: Optional[str] = None) -> discord.File:
     char_bytes: Optional[bytes] = None
     if image_url:
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(
-                    image_url, timeout=aiohttp.ClientTimeout(total=8)
-                ) as resp:
-                    if resp.status == 200:
-                        char_bytes = await resp.read()
+            session = await _get_http_session()
+            async with session.get(image_url, timeout=aiohttp.ClientTimeout(total=8)) as resp:
+                if resp.status == 200:
+                    char_bytes = await resp.read()
         except Exception:
             pass
 
@@ -366,9 +364,22 @@ def _build_banque_banner_gif_sync(
     return buf.getvalue()
 
 
+# ── Session HTTP globale (réutilisée, pas recréée à chaque requête) ──────────
+
+_http_session: aiohttp.ClientSession | None = None
+
+
+async def _get_http_session() -> aiohttp.ClientSession:
+    global _http_session
+    if _http_session is None or _http_session.closed:
+        _http_session = aiohttp.ClientSession()
+    return _http_session
+
+
 # ── Cache image distante (24 h) ───────────────────────────────────────────────
 
 async def _fetch_with_cache(url: str) -> Optional[bytes]:
+    loop = asyncio.get_running_loop()
     try:
         CACHE_DIR.mkdir(parents=True, exist_ok=True)
     except Exception:
@@ -379,20 +390,20 @@ async def _fetch_with_cache(url: str) -> Optional[bytes]:
 
     if cache_file.exists() and time.time() - cache_file.stat().st_mtime < CACHE_TTL:
         try:
-            return cache_file.read_bytes()
+            return await loop.run_in_executor(None, cache_file.read_bytes)
         except Exception:
             pass
 
     try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url, timeout=aiohttp.ClientTimeout(total=8)) as resp:
-                if resp.status == 200:
-                    data = await resp.read()
-                    try:
-                        cache_file.write_bytes(data)
-                    except Exception:
-                        pass
-                    return data
+        session = await _get_http_session()
+        async with session.get(url, timeout=aiohttp.ClientTimeout(total=8)) as resp:
+            if resp.status == 200:
+                data = await resp.read()
+                try:
+                    await loop.run_in_executor(None, cache_file.write_bytes, data)
+                except Exception:
+                    pass
+                return data
     except Exception:
         pass
     return None

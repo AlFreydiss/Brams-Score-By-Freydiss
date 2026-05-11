@@ -1385,38 +1385,35 @@ async def make_citation_image(quote_data: dict) -> tuple:
     return await loop.run_in_executor(None, _render)
 
 
-async def make_rank_image(member: discord.Member, rank_name: str, hours_7d: float):
+def _resolve_rank_bg_path(path: str) -> str:
+    if os.path.exists(path):
+        return path
+    for candidate in [
+        os.path.join("attached_assets", os.path.basename(path)),
+        os.path.basename(path),
+    ]:
+        if os.path.exists(candidate):
+            return candidate
+    return RANK_BG_DEFAULT
+
+
+def _make_rank_image_sync(
+    bg_path: str,
+    avatar_bytes: Optional[bytes],
+    rank_name: str,
+    display_name: str,
+    grade_color: tuple,
+) -> tuple:
     CARD_W = 1100
     CARD_H = 650
-    GOLD = (212, 175, 55)
-    WHITE = (255, 255, 255)
+    WHITE  = (255, 255, 255)
     AVATAR_SIZE = 220
-    BG_OPACITY = 0.45
-    grade_color = RANK_COLORS.get(rank_name, WHITE)
 
-    bg_path = RANK_BG_PATHS.get(rank_name, RANK_BG_DEFAULT)
-
-    def resolve_image_path(path):
-        # Ne pas utiliser Image.verify() : il invalide les GIFs animés après appel
-        if os.path.exists(path):
-            return path
-        filename = os.path.basename(path)
-        alt1 = os.path.join("attached_assets", filename)
-        if os.path.exists(alt1):
-            print(f"⚠️ [make_rank_image] Fallback attached_assets/ pour : {path}")
-            return alt1
-        if os.path.exists(filename):
-            print(f"⚠️ [make_rank_image] Fallback racine pour : {path}")
-            return filename
-        print(f"⚠️ [make_rank_image] Image introuvable, fallback sur RANK_BG_DEFAULT : {path}")
-        return RANK_BG_DEFAULT
-
-    resolved_path = resolve_image_path(bg_path)
+    resolved_path = _resolve_rank_bg_path(bg_path)
     try:
         src_img = Image.open(resolved_path)
-    except Exception as e:
-        print(f"⚠️ [make_rank_image] Impossible d'ouvrir l'image finale ({resolved_path}): {e}")
-        src_img = Image.new("RGBA", (900, 500), (15, 15, 22, 255))
+    except Exception:
+        src_img = Image.new("RGBA", (CARD_W, CARD_H), (15, 15, 22, 255))
     is_gif = resolved_path.lower().endswith(".gif") or getattr(src_img, "is_animated", False)
 
     if not _RANK_FONTS:
@@ -1441,136 +1438,120 @@ async def make_rank_image(member: discord.Member, rank_name: str, hours_7d: floa
         _RANK_FONTS["credit"] = _tf("Righteous-Regular.ttf", 18)
     font_felicit   = _RANK_FONTS["felicit"]
     font_grade     = _RANK_FONTS["grade"]
-    font_grade_s   = _RANK_FONTS["grade_s"]
     font_pseudo    = _RANK_FONTS["pseudo"]
     font_community = _RANK_FONTS["community"]
     font_credit    = _RANK_FONTS["credit"]
 
     rank_labels = {
-        "Pirate":          "PIRATE",
-        "Shichibukai":     "SHICHIBUKAI",
-        "Amiral":          "AMIRAL",
-        "Yonkou":          "YONKOU",
-        "Roi des pirates": "ROI DES PIRATES",
+        "Pirate": "PIRATE", "Shichibukai": "SHICHIBUKAI", "Amiral": "AMIRAL",
+        "Yonkou": "YONKOU", "Roi des pirates": "ROI DES PIRATES",
     }
-    grade_text = rank_labels.get(rank_name, rank_name.upper())
-    pseudo = member.display_name
-    pseudo_clean = re.sub(r'[^\w\s\-\.]', '', pseudo, flags=re.UNICODE).strip()
-    pseudo_clean = ''.join(c for c in pseudo_clean if ord(c) < 128).strip()
-    if not pseudo_clean:
-        pseudo_clean = "MEMBRE"
-    if len(pseudo_clean) > 16:
-        pseudo_clean = pseudo_clean[:16]
-    print(f"[RANK IMAGE] Pseudo original: {pseudo!r}, nettoyé: {pseudo_clean!r}")
-
-    avatar_img = None
-    try:
-        avatar_url = member.display_avatar.replace(size=256, format="png").url
-        async with _HTTP.get(str(avatar_url)) as resp:
-                if resp.status == 200:
-                    avatar_bytes = await resp.read()
-                    avatar_img = Image.open(io.BytesIO(avatar_bytes)).convert("RGBA")
-    except Exception:
-        avatar_img = None
+    grade_text  = rank_labels.get(rank_name, rank_name.upper())
+    pseudo_clean = re.sub(r'[^\w\s\-\.]', '', display_name, flags=re.UNICODE).strip()
+    pseudo_clean = ''.join(c for c in pseudo_clean if ord(c) < 128).strip() or "MEMBRE"
+    pseudo_clean = pseudo_clean[:16]
+    print(f"[RANK IMAGE] Pseudo nettoyé: {pseudo_clean!r}", flush=True)
 
     avatar_circle = None
-    if avatar_img is not None:
-        av = avatar_img.resize((AVATAR_SIZE, AVATAR_SIZE), Image.LANCZOS)
-        mask = Image.new("L", (AVATAR_SIZE, AVATAR_SIZE), 0)
-        ImageDraw.Draw(mask).ellipse((0, 0, AVATAR_SIZE, AVATAR_SIZE), fill=255)
-        avatar_circle = Image.new("RGBA", (AVATAR_SIZE, AVATAR_SIZE), (0, 0, 0, 0))
-        avatar_circle.paste(av, (0, 0), mask)
+    if avatar_bytes:
+        try:
+            av = Image.open(io.BytesIO(avatar_bytes)).convert("RGBA").resize(
+                (AVATAR_SIZE, AVATAR_SIZE), Image.LANCZOS
+            )
+            mask = Image.new("L", (AVATAR_SIZE, AVATAR_SIZE), 0)
+            ImageDraw.Draw(mask).ellipse((0, 0, AVATAR_SIZE, AVATAR_SIZE), fill=255)
+            avatar_circle = Image.new("RGBA", (AVATAR_SIZE, AVATAR_SIZE), (0, 0, 0, 0))
+            avatar_circle.paste(av, (0, 0), mask)
+        except Exception:
+            pass
 
     def cover_resize(img, tw, th):
         sw, sh = img.size
-        scale = max(tw / sw, th / sh)
+        scale  = max(tw / sw, th / sh)
         nw, nh = int(sw * scale), int(sh * scale)
-        img = img.resize((nw, nh), Image.LANCZOS)
-        left = (nw - tw) // 2
-        top = (nh - th) // 2
-        return img.crop((left, top, left + tw, top + th))
+        img    = img.resize((nw, nh), Image.LANCZOS)
+        return img.crop(((nw - tw) // 2, (nh - th) // 2,
+                          (nw - tw) // 2 + tw, (nh - th) // 2 + th))
 
-    def draw_text_centered(draw, text, font, y, fill, shadow=True):
+    def draw_centered(draw, text, font, y, fill, shadow=True):
         bb = draw.textbbox((0, 0), text, font=font)
-        w = bb[2] - bb[0]
-        x = (CARD_W - w) // 2
+        x  = (CARD_W - (bb[2] - bb[0])) // 2
         if shadow:
             draw.text((x + 2, y + 2), text, font=font, fill=(0, 0, 0, 220))
         draw.text((x, y), text, font=font, fill=fill)
 
     def compose_frame(bg_frame):
-        photo = cover_resize(bg_frame.convert("RGBA"), CARD_W, CARD_H)
-        card = photo.copy()
-
-        overlay = Image.new("RGBA", (CARD_W, CARD_H), (10, 10, 15, 140))
-        card = Image.alpha_composite(card, overlay)
+        card = Image.alpha_composite(
+            cover_resize(bg_frame.convert("RGBA"), CARD_W, CARD_H),
+            Image.new("RGBA", (CARD_W, CARD_H), (10, 10, 15, 140)),
+        )
         draw = ImageDraw.Draw(card, "RGBA")
-
-        draw_text_centered(draw, f"FELICITATIONS POUR LE RANK", font_felicit, 30, (*grade_color, 255))
-        draw_text_centered(draw, grade_text, font_grade, 78, (*grade_color, 255))
-
+        draw_centered(draw, "FELICITATIONS POUR LE RANK", font_felicit, 30,  (*grade_color, 255))
+        draw_centered(draw, grade_text,                   font_grade,   78,  (*grade_color, 255))
         if avatar_circle is not None:
-            ax = (CARD_W - AVATAR_SIZE) // 2
-            ay = 260
-            draw.ellipse(
-                [ax - 4, ay - 4, ax + AVATAR_SIZE + 4, ay + AVATAR_SIZE + 4],
-                outline=grade_color, width=3
-            )
+            ax, ay = (CARD_W - AVATAR_SIZE) // 2, 260
+            draw.ellipse([ax-4, ay-4, ax+AVATAR_SIZE+4, ay+AVATAR_SIZE+4], outline=grade_color, width=3)
             card.paste(avatar_circle, (ax, ay), avatar_circle)
             pseudo_y = ay + AVATAR_SIZE + 24
         else:
             pseudo_y = 280
-
-        draw_text_centered(draw, pseudo_clean, font_pseudo, pseudo_y, (*WHITE, 255))
-        draw_text_centered(draw, "BRAMS COMMUNITY", font_community, pseudo_y + 80, (*grade_color, 230))
-
-        # "by Freydiss" - discret, coin bas-droit
-        credit = "by Freydiss"
-        cb = draw.textbbox((0, 0), credit, font=font_credit)
-        cw = cb[2] - cb[0]
-        draw.text((CARD_W - cw - 16, CARD_H - 28), credit, font=font_credit, fill=(200, 200, 200, 160))
-
+        draw_centered(draw, pseudo_clean,      font_pseudo,    pseudo_y,      (*WHITE, 255))
+        draw_centered(draw, "BRAMS COMMUNITY", font_community, pseudo_y + 80, (*grade_color, 230))
+        cb = draw.textbbox((0, 0), "by Freydiss", font=font_credit)
+        draw.text((CARD_W - (cb[2]-cb[0]) - 16, CARD_H - 28), "by Freydiss",
+                  font=font_credit, fill=(200, 200, 200, 160))
         return card
 
     buf = io.BytesIO()
     if is_gif:
-        frames = []
-        durations = []
         try:
             n_frames = src_img.n_frames
         except Exception:
             n_frames = 1
-        if n_frames == 0:
-            n_frames = 1
-        max_frames = 60
-        step = max(1, n_frames // max_frames)
+        n_frames = max(n_frames, 1)
+        step  = max(1, n_frames // 60)
+        frames, durations = [], []
         for i in range(0, n_frames, step):
             try:
                 src_img.seek(i)
                 frames.append(compose_frame(src_img.copy()))
                 durations.append(max(40, src_img.info.get("duration", 80) * step))
             except Exception as e:
-                print(f"⚠️ [make_rank_image] Erreur frame {i}: {e}")
-                continue
+                print(f"⚠️ [make_rank_image] frame {i}: {e}", flush=True)
         if not frames:
-            img = compose_frame(src_img)
-            img.convert("RGB").save(buf, format="PNG", optimize=True)
+            compose_frame(src_img).convert("RGB").save(buf, format="PNG", optimize=True)
             buf.seek(0)
             return buf, False
-        pal_frames = []
-        for f in frames:
-            rgb = f.convert("RGB")
-            pal = rgb.quantize(colors=256, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE)
-            pal_frames.append(pal)
-        pal_frames[0].save(
-            buf, format="GIF", save_all=True, append_images=pal_frames[1:],
-            duration=durations, loop=0, disposal=2, optimize=False
-        )
+        pal_frames = [
+            f.convert("RGB").quantize(colors=256, method=Image.Quantize.MEDIANCUT,
+                                      dither=Image.Dither.NONE)
+            for f in frames
+        ]
+        pal_frames[0].save(buf, format="GIF", save_all=True, append_images=pal_frames[1:],
+                           duration=durations, loop=0, disposal=2, optimize=False)
     else:
-        img = compose_frame(src_img)
-        img.convert("RGB").save(buf, format="PNG", optimize=True)
+        compose_frame(src_img).convert("RGB").save(buf, format="PNG", optimize=True)
     buf.seek(0)
     return buf, is_gif
+
+
+async def make_rank_image(member: discord.Member, rank_name: str, hours_7d: float):
+    avatar_bytes: Optional[bytes] = None
+    try:
+        avatar_url = member.display_avatar.replace(size=256, format="png").url
+        async with _HTTP.get(str(avatar_url)) as resp:
+            if resp.status == 200:
+                avatar_bytes = await resp.read()
+    except Exception:
+        pass
+
+    bg_path     = RANK_BG_PATHS.get(rank_name, RANK_BG_DEFAULT)
+    grade_color = RANK_COLORS.get(rank_name, (255, 255, 255))
+    loop        = asyncio.get_running_loop()
+    return await loop.run_in_executor(
+        None, _make_rank_image_sync,
+        bg_path, avatar_bytes, rank_name, member.display_name, grade_color,
+    )
 
 async def check_alert(member: discord.Member, hours_7d: float, data=None):
     if data is None:

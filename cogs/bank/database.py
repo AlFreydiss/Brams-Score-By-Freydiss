@@ -1,14 +1,34 @@
 import os, json, asyncio, random as _rnd
-import psycopg2, psycopg2.extras
+import psycopg2, psycopg2.extras, psycopg2.pool
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone, timedelta
 
 _executor = ThreadPoolExecutor(max_workers=4, thread_name_prefix="bank2_db")
-_URL = os.environ.get("SUPABASE_URL", "")
+_URL  = os.environ.get("SUPABASE_URL", "")
+_pool: psycopg2.pool.ThreadedConnectionPool | None = None
+
+
+def _get_pool() -> psycopg2.pool.ThreadedConnectionPool:
+    global _pool
+    if _pool is None:
+        _pool = psycopg2.pool.ThreadedConnectionPool(
+            2, 8, dsn=_URL, sslmode="require", connect_timeout=10
+        )
+    return _pool
 
 
 def _conn():
-    return psycopg2.connect(_URL, sslmode="require", connect_timeout=10)
+    return _get_pool().getconn()
+
+
+def _put(conn) -> None:
+    try:
+        _get_pool().putconn(conn)
+    except Exception:
+        try:
+            _put(conn)
+        except Exception:
+            pass
 
 
 async def _run(fn):
@@ -64,7 +84,7 @@ async def init_tables():
             conn.commit()
             cur.close()
         finally:
-            conn.close()
+            _put(conn)
     await _run(_do)
 
 
@@ -85,7 +105,7 @@ async def get_or_create(uid: str, guild_id: str) -> dict:
             cur.close()
             return dict(row) if row else {}
         finally:
-            conn.close()
+            _put(conn)
     return await _run(_do)
 
 
@@ -99,7 +119,7 @@ async def get_profile(uid: str) -> dict:
             cur.close()
             return dict(row) if row else {}
         finally:
-            conn.close()
+            _put(conn)
     return await _run(_do)
 
 
@@ -127,7 +147,7 @@ async def log_tx(uid: str, guild_id: str, type_: str, amount: int, desc: str = "
             conn.commit()
             cur.close()
         finally:
-            conn.close()
+            _put(conn)
     await _run(_do)
 
 
@@ -147,7 +167,7 @@ async def get_day_stats(uid: str, guild_id: str) -> dict:
             cur.close()
             return dict(row) if row else {"earned": 0, "lost": 0}
         finally:
-            conn.close()
+            _put(conn)
     return await _run(_do)
 
 
@@ -170,7 +190,7 @@ async def get_game_stats(uid: str) -> dict:
             cur.close()
             return {r["type"]: dict(r) for r in rows}
         finally:
-            conn.close()
+            _put(conn)
     return await _run(_do)
 
 
@@ -188,7 +208,7 @@ async def update_invest(uid: str, invested: int, last_collect: datetime):
             conn.commit()
             cur.close()
         finally:
-            conn.close()
+            _put(conn)
     await _run(_do)
 
 
@@ -202,7 +222,7 @@ async def get_all_investors() -> list[dict]:
             cur.close()
             return [dict(r) for r in rows]
         finally:
-            conn.close()
+            _put(conn)
     return await _run(_do)
 
 
@@ -221,7 +241,7 @@ async def get_effect(uid: str, effect_type: str) -> dict | None:
             cur.close()
             return dict(row) if row else None
         finally:
-            conn.close()
+            _put(conn)
     return await _run(_do)
 
 
@@ -238,7 +258,7 @@ async def add_effect(uid: str, guild_id: str, effect_type: str, duration_h: int)
             conn.commit()
             cur.close()
         finally:
-            conn.close()
+            _put(conn)
     await _run(_do)
 
 
@@ -253,7 +273,7 @@ async def set_pillage_cooldown(uid: str):
             conn.commit()
             cur.close()
         finally:
-            conn.close()
+            _put(conn)
     await _run(_do)
 
 
@@ -267,7 +287,7 @@ async def ensure_lottery(guild_id: str) -> dict:
             cur.execute("SELECT * FROM bank_lottery WHERE guild_id=%s AND active=TRUE ORDER BY id DESC LIMIT 1", (guild_id,))
             row = cur.fetchone()
             if row:
-                conn.close()
+                _put(conn)
                 return dict(row)
             cur.execute("INSERT INTO bank_lottery (guild_id) VALUES (%s) RETURNING *", (guild_id,))
             row = cur.fetchone()
@@ -275,7 +295,7 @@ async def ensure_lottery(guild_id: str) -> dict:
             cur.close()
             return dict(row)
         finally:
-            conn.close()
+            _put(conn)
     return await _run(_do)
 
 
@@ -293,7 +313,7 @@ async def add_ticket(lottery_id: int, uid: str, ticket_price: int) -> dict:
             cur.close()
             return dict(row)
         finally:
-            conn.close()
+            _put(conn)
     return await _run(_do)
 
 
@@ -307,7 +327,7 @@ async def draw_lottery(guild_id: str) -> dict | None:
             cur.close()
             return dict(row) if row else None
         finally:
-            conn.close()
+            _put(conn)
     lotto = await _run(_get)
     if not lotto:
         return None
@@ -326,7 +346,7 @@ async def draw_lottery(guild_id: str) -> dict | None:
             conn.commit()
             cur.close()
         finally:
-            conn.close()
+            _put(conn)
     await _run(_do)
     return {"winner_id": winner, "pot": lotto["pot"], "tickets": len(holders)}
 
@@ -346,5 +366,5 @@ async def get_leaderboard(guild_id: str, member_ids: list[str]) -> list[dict]:
             cur.close()
             return [dict(r) for r in rows]
         finally:
-            conn.close()
+            _put(conn)
     return await _run(_do)

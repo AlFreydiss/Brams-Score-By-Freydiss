@@ -2,14 +2,35 @@ import os
 import asyncio
 import psycopg2
 import psycopg2.extras
+import psycopg2.pool
 from concurrent.futures import ThreadPoolExecutor
 
 _executor     = ThreadPoolExecutor(max_workers=3, thread_name_prefix="mp_db")
 _SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
+_pool: psycopg2.pool.ThreadedConnectionPool | None = None
+
+
+def _get_pool() -> psycopg2.pool.ThreadedConnectionPool:
+    global _pool
+    if _pool is None:
+        _pool = psycopg2.pool.ThreadedConnectionPool(
+            2, 6, dsn=_SUPABASE_URL, sslmode="require", connect_timeout=10
+        )
+    return _pool
 
 
 def _conn():
-    return psycopg2.connect(_SUPABASE_URL, sslmode="require")
+    return _get_pool().getconn()
+
+
+def _put(conn) -> None:
+    try:
+        _get_pool().putconn(conn)
+    except Exception:
+        try:
+            _put(conn)
+        except Exception:
+            pass
 
 
 async def _run(fn):
@@ -33,7 +54,7 @@ async def create_listing(seller_id: int, title: str, description: str,
                 )
                 return str(cur.fetchone()[0])
         finally:
-            conn.close()
+            _put(conn)
     return await _run(_do)
 
 
@@ -47,7 +68,7 @@ async def set_listing_message_id(listing_id: str, message_id: int):
                     (message_id, listing_id),
                 )
         finally:
-            conn.close()
+            _put(conn)
     await _run(_do)
 
 
@@ -64,7 +85,7 @@ async def get_listing(listing_id: str):
                 return r
             return None
         finally:
-            conn.close()
+            _put(conn)
     return await _run(_do)
 
 
@@ -79,7 +100,7 @@ async def update_listing_status(listing_id: str, status: str):
                     (status, listing_id),
                 )
         finally:
-            conn.close()
+            _put(conn)
     await _run(_do)
 
 
@@ -94,7 +115,7 @@ async def update_listing(listing_id: str, title: str, description: str,
                     (title, description, price, category, image_url, listing_id),
                 )
         finally:
-            conn.close()
+            _put(conn)
     await _run(_do)
 
 
@@ -127,7 +148,7 @@ async def get_listings(category=None, max_price=None, search=None,
                 rows.append(d)
             return rows, int(total)
         finally:
-            conn.close()
+            _put(conn)
     return await _run(_do)
 
 
@@ -147,7 +168,7 @@ async def get_user_listings(seller_id: int):
                 rows.append(d)
             return rows
         finally:
-            conn.close()
+            _put(conn)
     return await _run(_do)
 
 
@@ -162,7 +183,7 @@ async def count_active_listings(seller_id: int) -> int:
             )
             return cur.fetchone()[0]
         finally:
-            conn.close()
+            _put(conn)
     return await _run(_do)
 
 
@@ -177,7 +198,7 @@ async def count_listings_today(seller_id: int) -> int:
             )
             return cur.fetchone()[0]
         finally:
-            conn.close()
+            _put(conn)
     return await _run(_do)
 
 
@@ -190,7 +211,7 @@ async def increment_views(listing_id: str):
                     "UPDATE listings SET views=views+1 WHERE id=%s::uuid", (listing_id,)
                 )
         finally:
-            conn.close()
+            _put(conn)
     await _run(_do)
 
 
@@ -209,7 +230,7 @@ async def create_transaction(listing_id: str, buyer_id: int,
                 )
                 return str(cur.fetchone()[0])
         finally:
-            conn.close()
+            _put(conn)
     return await _run(_do)
 
 
@@ -227,7 +248,7 @@ async def get_transaction(transaction_id: str):
                 return r
             return None
         finally:
-            conn.close()
+            _put(conn)
     return await _run(_do)
 
 
@@ -248,7 +269,7 @@ async def get_pending_transaction(listing_id: str):
                 return r
             return None
         finally:
-            conn.close()
+            _put(conn)
     return await _run(_do)
 
 
@@ -262,7 +283,7 @@ async def confirm_transaction(transaction_id: str):
                     (transaction_id,),
                 )
         finally:
-            conn.close()
+            _put(conn)
     await _run(_do)
 
 
@@ -276,7 +297,7 @@ async def cancel_transaction(transaction_id: str):
                     (transaction_id,),
                 )
         finally:
-            conn.close()
+            _put(conn)
     await _run(_do)
 
 
@@ -296,7 +317,7 @@ async def get_expired_transactions():
                 rows.append(d)
             return rows
         finally:
-            conn.close()
+            _put(conn)
     return await _run(_do)
 
 
@@ -314,7 +335,7 @@ async def create_rating(transaction_id: str, rater_id: int,
                     (transaction_id, rater_id, rated_id, score, comment),
                 )
         finally:
-            conn.close()
+            _put(conn)
     await _run(_do)
 
 
@@ -329,7 +350,7 @@ async def has_rated(transaction_id: str, rater_id: int) -> bool:
             )
             return cur.fetchone() is not None
         finally:
-            conn.close()
+            _put(conn)
     return await _run(_do)
 
 
@@ -369,7 +390,7 @@ async def get_seller_stats(seller_id: int) -> dict:
                 "active_listings": active,
             }
         finally:
-            conn.close()
+            _put(conn)
     return await _run(_do)
 
 
@@ -397,7 +418,7 @@ async def toggle_favorite(user_id: int, listing_id: str) -> bool:
                 )
                 return True
         finally:
-            conn.close()
+            _put(conn)
     return await _run(_do)
 
 
@@ -427,7 +448,7 @@ async def get_favorites(user_id: int, offset: int = 0, limit: int = 5):
                 rows.append(d)
             return rows, int(total)
         finally:
-            conn.close()
+            _put(conn)
     return await _run(_do)
 
 
@@ -443,5 +464,5 @@ async def create_report(listing_id: str, reporter_id: int, reason: str):
                     (listing_id, reporter_id, reason),
                 )
         finally:
-            conn.close()
+            _put(conn)
     await _run(_do)
