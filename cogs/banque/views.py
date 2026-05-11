@@ -507,6 +507,10 @@ class ParametresSubView(discord.ui.View):
     async def btn_thumbnail(self, interaction: discord.Interaction, _: discord.ui.Button):
         await interaction.response.send_modal(ThumbnailModal(self.uid, self))
 
+    @discord.ui.button(label="Fond GIF", emoji="🎬", style=discord.ButtonStyle.primary, row=0)
+    async def btn_gif(self, interaction: discord.Interaction, _: discord.ui.Button):
+        await interaction.response.send_modal(BgGifModal(self.uid, self))
+
     @discord.ui.button(label="⬅ Retour", style=discord.ButtonStyle.secondary, row=1)
     async def btn_back(self, interaction: discord.Interaction, _: discord.ui.Button):
         await interaction.response.defer()
@@ -1508,6 +1512,7 @@ def _build_params_embed(settings: dict) -> discord.Embed:
     dm    = "✅ Activées" if settings.get("dm_notifications") else "❌ Désactivées"
     cfm   = "✅ Activée"  if settings.get("confirm_large_transfers", True) else "❌ Désactivée"
     thumb = settings.get("thumbnail_url") or "❌ Non définie"
+    gif   = settings.get("background_gif_url") or "❌ Non défini"
     return discord.Embed(
         title="⚙️ Paramètres Freydiss Bank",
         description=(
@@ -1516,7 +1521,9 @@ def _build_params_embed(settings: dict) -> discord.Embed:
             f"**⚠️ Confirmation gros virements :** {cfm}\n"
             f"> Confirmation pour tout virement ≥ 1 000 000 ฿.\n\n"
             f"**🖼️ Image de profil bancaire :** {thumb}\n"
-            f"> Visible dans ton `/banque` — laisse vide pour supprimer."
+            f"> Visible dans ton `/banque` — laisse vide pour supprimer.\n\n"
+            f"**🎬 Fond animé (GIF) :** {gif}\n"
+            f"> GIF affiché en fond de ta bannière `/banque` — laisse vide pour supprimer."
         ),
         color=COLOR_INFO,
     )
@@ -1542,6 +1549,45 @@ class ThumbnailModal(discord.ui.Modal, title="🖼️ Image de profil bancaire")
         await db.set_thumbnail_url(self.uid, new_url)
         self.parent_view.settings["thumbnail_url"] = new_url
         msg = "✅ Image mise à jour !" if new_url else "✅ Image supprimée."
+        await interaction.followup.send(msg, ephemeral=True)
+        try:
+            await self.parent_view.message.edit(
+                embed=_build_params_embed(self.parent_view.settings),
+                view=self.parent_view,
+            )
+        except Exception:
+            pass
+
+
+class BgGifModal(discord.ui.Modal, title="🎬 Fond animé de la bannière"):
+    url = discord.ui.TextInput(
+        label="URL du GIF de fond",
+        placeholder="https://... — laisse vide pour supprimer",
+        required=False,
+        max_length=500,
+    )
+
+    def __init__(self, uid: str, parent_view: discord.ui.View):
+        super().__init__()
+        self.uid         = uid
+        self.parent_view = parent_view
+
+    async def on_submit(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
+        from utils.embed_helpers import _is_safe_url
+        raw = self.url.value.strip()
+        if raw and not raw.startswith("http"):
+            await interaction.followup.send(
+                "❌ URL invalide — doit commencer par `http://` ou `https://`.", ephemeral=True
+            )
+            return
+        if raw and not _is_safe_url(raw):
+            await interaction.followup.send("❌ URL non autorisée.", ephemeral=True)
+            return
+        new_url = raw or None
+        await db.set_background_gif_url(self.uid, new_url)
+        self.parent_view.settings["background_gif_url"] = new_url
+        msg = "✅ Fond GIF mis à jour ! Il sera visible au prochain `/banque`." if new_url else "✅ Fond GIF supprimé."
         await interaction.followup.send(msg, ephemeral=True)
         try:
             await self.parent_view.message.edit(

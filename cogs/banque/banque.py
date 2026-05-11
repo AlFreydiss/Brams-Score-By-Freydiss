@@ -133,6 +133,7 @@ class BankCog(commands.Cog):
                 char_url=thumb_url or None,
                 prog_ratio=prog_ratio,
                 prog_next=prog_next,
+                bg_gif_url=settings.get("background_gif_url"),
             )
 
             # ── Version A : fortune dans la bannière, fields compacts ─────────
@@ -165,7 +166,7 @@ class BankCog(commands.Cog):
                 text=footer_text,
                 icon_url=interaction.client.user.display_avatar.url,
             )
-            embed.set_image(url="attachment://banner.png")
+            embed.set_image(url=f"attachment://{banner_file.filename}")
 
             view = MainBanqueView(uid, target, account, str(interaction.guild_id), embed, settings)
             msg  = await interaction.followup.send(embed=embed, view=view, file=banner_file)
@@ -235,6 +236,7 @@ class BankCog(commands.Cog):
                 char_url=thumb_url or None,
                 prog_ratio=prog_ratio,
                 prog_next=prog_next,
+                bg_gif_url=settings.get("background_gif_url"),
             )
             await interaction.followup.send(file=banner_file, ephemeral=True)
 

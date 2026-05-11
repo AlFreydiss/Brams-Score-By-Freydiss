@@ -436,6 +436,7 @@ async def get_bank_settings(uid: str) -> dict:
             return dict(row) if row else {
                 "user_id": uid, "dm_notifications": False,
                 "confirm_large_transfers": True, "thumbnail_url": None,
+                "background_gif_url": None,
             }
         finally:
             _put(conn)
@@ -452,6 +453,37 @@ async def set_thumbnail_url(uid: str, url: str | None) -> None:
                        ON CONFLICT (user_id) DO UPDATE SET thumbnail_url = %s""",
                     (uid, url, url),
                 )
+        finally:
+            _put(conn)
+    await _run(_do)
+
+
+async def set_background_gif_url(uid: str, url: str | None) -> None:
+    def _do():
+        conn = _conn()
+        try:
+            try:
+                with conn:
+                    conn.cursor().execute(
+                        """INSERT INTO bank_settings (user_id, background_gif_url) VALUES (%s, %s)
+                           ON CONFLICT (user_id) DO UPDATE SET background_gif_url = %s""",
+                        (uid, url, url),
+                    )
+            except Exception:
+                conn.rollback()
+                try:
+                    with conn:
+                        conn.cursor().execute(
+                            "ALTER TABLE bank_settings ADD COLUMN IF NOT EXISTS background_gif_url TEXT"
+                        )
+                    with conn:
+                        conn.cursor().execute(
+                            """INSERT INTO bank_settings (user_id, background_gif_url) VALUES (%s, %s)
+                               ON CONFLICT (user_id) DO UPDATE SET background_gif_url = %s""",
+                            (uid, url, url),
+                        )
+                except Exception as e:
+                    print(f"[BANK] set_background_gif_url erreur: {e}", flush=True)
         finally:
             _put(conn)
     await _run(_do)
