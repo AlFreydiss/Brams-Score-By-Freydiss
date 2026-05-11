@@ -2162,6 +2162,29 @@ class _ContesterView(discord.ui.View):
             await interaction.followup.send("✅ Verdict rendu.", ephemeral=True)
 
 
+# ── Mémoire intelligente ─────────────────────────────────────────────
+_NAME = r"([A-Za-z0-9_À-ÿ]{2,30})"
+_RE_MEM_ALIAS = [
+    re.compile(rf"{_NAME}\s+et\s+{_NAME}\s+c[''']?est\s+la\s+m[eê]me\s+personne", re.IGNORECASE),
+    re.compile(rf"{_NAME}\s+et\s+{_NAME}\s+c[''']?est\s+le\s+m[eê]me", re.IGNORECASE),
+    re.compile(rf"{_NAME}\s+et\s+{_NAME}\s+m[eê]me\s+(?:personne|gars|mec|keum|gros)", re.IGNORECASE),
+    re.compile(rf"{_NAME}\s+s[''']?appelle\s+aussi\s+{_NAME}", re.IGNORECASE),
+    re.compile(rf"{_NAME}\s+et\s+{_NAME}\s+c[''']?est\s+le\s+m[eê]me\s+gars", re.IGNORECASE),
+]
+_RE_MEM_FACT = [
+    re.compile(r"sache\s+que\s+(.{5,200})", re.IGNORECASE),
+    re.compile(r"retiens\s+que\s+(.{5,200})", re.IGNORECASE),
+    re.compile(r"n[''']?oublie\s+pas\s+que\s+(.{5,200})", re.IGNORECASE),
+    re.compile(r"rappelle[-\s]toi\s+que\s+(.{5,200})", re.IGNORECASE),
+    re.compile(r"note\s+que\s+(.{5,200})", re.IGNORECASE),
+]
+_RE_MEM_RECALL = [
+    re.compile(rf"c[''']?est\s+qui\s+{_NAME}\s*\??", re.IGNORECASE),
+    re.compile(rf"qui\s+est\s+{_NAME}\s*\??", re.IGNORECASE),
+    re.compile(rf"tu\s+sais\s+qui\s+(?:est|c[''']?est)\s+{_NAME}\s*\??", re.IGNORECASE),
+    re.compile(rf"{_NAME}\s+c[''']?est\s+qui\s*\??", re.IGNORECASE),
+]
+
 # Pré-compilés module-level — évite recompilation à chaque on_message
 _RE_NEUTRAL_CTX = re.compile(
     r"\b(je\s+suis|j[''']suis|t[''']es|tu\s+es|il\s+est|elle\s+est|"
@@ -2370,6 +2393,62 @@ async def on_message(message):
             await message.channel.send(random.choice(_FREYDISS_HYPE))
         except Exception:
             pass
+
+    # ── Mémoire intelligente ────────────────────────────────────────
+    if message.guild:
+        from utils.memory import save_knowledge, get_alias, get_all_aliases, get_facts
+        gid = str(message.guild.id)
+        content = message.content
+
+        # Apprentissage d'alias (même personne)
+        _alias_learned = False
+        for pat in _RE_MEM_ALIAS:
+            m = pat.search(content)
+            if m:
+                name1, name2 = m.group(1).strip(), m.group(2).strip()
+                try:
+                    await save_knowledge(gid, "alias", name1.lower(), name2, uid)
+                    await save_knowledge(gid, "alias", name2.lower(), name1, uid)
+                    await message.reply(f"✅ Noté — **{name1}** et **{name2}** c'est la même personne.")
+                except Exception:
+                    pass
+                _alias_learned = True
+                break
+
+        # Apprentissage de faits
+        if not _alias_learned:
+            for pat in _RE_MEM_FACT:
+                m = pat.search(content)
+                if m:
+                    fact = m.group(1).strip().rstrip(".!?")
+                    if len(fact) >= 5:
+                        key = fact.split()[0].lower()
+                        try:
+                            await save_knowledge(gid, "fact", key, fact, uid)
+                            await message.reply(f"✅ Noté : *{fact}*")
+                        except Exception:
+                            pass
+                    break
+
+        # Rappel (qui est X ?)
+        if not _alias_learned:
+            for pat in _RE_MEM_RECALL:
+                m = pat.search(content)
+                if m:
+                    name = m.group(1).strip()
+                    try:
+                        aliases = await get_all_aliases(gid, name)
+                        facts   = await get_facts(gid, name)
+                        parts   = []
+                        if aliases:
+                            parts.append(f"**{name}** c'est aussi **{'**, **'.join(aliases)}**")
+                        if facts:
+                            parts.append("\n".join(f"• {f}" for f in facts))
+                        if parts:
+                            await message.reply("\n".join(parts))
+                    except Exception:
+                        pass
+                    break
 
     # ── Réaction aux questions farfelues ────────────────────────────
     msg_stripped = message.content.strip()
@@ -7213,6 +7292,41 @@ async def akinator_cmd(interaction: discord.Interaction):
     session.history.append((q, ""))
     await interaction.edit_original_response(embed=_aki_q_embed(session, q), view=_AkiAnswerView(session))
 
+
+
+# ─────────────────────────────────────────
+#  /memoire
+# ─────────────────────────────────────────
+@bot.tree.command(name="memoire", description="Ce que je sais sur ce serveur (alias et faits)")
+async def memoire(interaction: discord.Interaction):
+    await interaction.response.defer(ephemeral=True)
+    from utils.memory import get_all_knowledge
+    gid = str(interaction.guild_id)
+    try:
+        rows = await get_all_knowledge(gid)
+    except Exception:
+        await interaction.followup.send("❌ Impossible de lire la mémoire.", ephemeral=True)
+        return
+
+    if not rows:
+        await interaction.followup.send("Je ne sais encore rien sur ce serveur. Parle-moi 👁️", ephemeral=True)
+        return
+
+    aliases = [r for r in rows if r["type"] == "alias"]
+    facts   = [r for r in rows if r["type"] == "fact"]
+
+    embed = discord.Embed(title="🧠 Ma mémoire", color=0x5865F2)
+
+    if aliases:
+        alias_lines = [f"**{r['key']}** → {r['value']}" for r in aliases[:20]]
+        embed.add_field(name=f"👥 Alias ({len(aliases)})", value="\n".join(alias_lines), inline=False)
+
+    if facts:
+        fact_lines = [f"• {r['value'][:80]}" for r in facts[:15]]
+        embed.add_field(name=f"📝 Faits ({len(facts)})", value="\n".join(fact_lines), inline=False)
+
+    embed.set_footer(text="Appris via les messages du serveur")
+    await interaction.followup.send(embed=embed, ephemeral=True)
 
 
 # ─────────────────────────────────────────

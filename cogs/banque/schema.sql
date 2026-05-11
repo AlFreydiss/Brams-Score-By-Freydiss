@@ -42,6 +42,20 @@ CREATE TABLE IF NOT EXISTS bank_settings (
 -- Migration pour les installations existantes :
 -- ALTER TABLE bank_settings ADD COLUMN IF NOT EXISTS thumbnail_url TEXT DEFAULT NULL;
 
+-- Mémoire intelligente du bot
+CREATE TABLE IF NOT EXISTS bot_knowledge (
+    id         SERIAL      PRIMARY KEY,
+    guild_id   TEXT        NOT NULL,
+    type       TEXT        NOT NULL,  -- 'alias' | 'fact'
+    key        TEXT        NOT NULL,
+    value      TEXT        NOT NULL,
+    added_by   TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(guild_id, type, key)
+);
+CREATE INDEX IF NOT EXISTS idx_bot_knowledge_guild_type ON bot_knowledge(guild_id, type);
+-- Migration : CREATE TABLE IF NOT EXISTS bot_knowledge (...) (voir ci-dessus)
+
 CREATE INDEX IF NOT EXISTS idx_bank_transactions_user_created
     ON bank_transactions(user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_bank_transactions_categorie
