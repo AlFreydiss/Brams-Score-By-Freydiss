@@ -206,10 +206,18 @@ async def withdraw_vault(uid: str, guild_id: str, amount: int) -> tuple[bool, st
         conn = _conn()
         try:
             cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-            cur.execute(
-                "SELECT vault, vault_locked_until, last_vault_withdrawal FROM bank_accounts WHERE user_id=%s AND guild_id=%s",
-                (uid, guild_id),
-            )
+            # Essaie avec last_vault_withdrawal, fallback sans si la colonne n'existe pas encore
+            try:
+                cur.execute(
+                    "SELECT vault, vault_locked_until, last_vault_withdrawal FROM bank_accounts WHERE user_id=%s AND guild_id=%s",
+                    (uid, guild_id),
+                )
+            except Exception:
+                conn.rollback()
+                cur.execute(
+                    "SELECT vault, vault_locked_until FROM bank_accounts WHERE user_id=%s AND guild_id=%s",
+                    (uid, guild_id),
+                )
             row = cur.fetchone()
             if not row:
                 return False, "Compte introuvable."
@@ -235,14 +243,30 @@ async def withdraw_vault(uid: str, guild_id: str, amount: int) -> tuple[bool, st
                     hours = delta.seconds // 3600
                     reste = f"**{days}j {hours}h**" if days > 0 else f"**{hours}h**"
                     return False, f"Tu as déjà retiré cette semaine. Prochain retrait dans {reste}."
-            with conn:
-                conn.cursor().execute(
-                    """UPDATE bank_accounts
-                       SET vault = vault - %s, last_vault_withdrawal = NOW()
-                       WHERE user_id=%s AND guild_id=%s""",
-                    (amount, uid, guild_id),
-                )
+            try:
+                with conn:
+                    conn.cursor().execute(
+                        """UPDATE bank_accounts
+                           SET vault = vault - %s, last_vault_withdrawal = NOW()
+                           WHERE user_id=%s AND guild_id=%s""",
+                        (amount, uid, guild_id),
+                    )
+            except Exception:
+                conn.rollback()
+                # Fallback : UPDATE sans last_vault_withdrawal si la colonne est absente
+                with conn:
+                    conn.cursor().execute(
+                        "UPDATE bank_accounts SET vault = vault - %s WHERE user_id=%s AND guild_id=%s",
+                        (amount, uid, guild_id),
+                    )
             return True, ""
+        except Exception as e:
+            print(f"[BANK] withdraw_vault erreur: {e}", flush=True)
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+            return False, "Erreur interne lors du retrait."
         finally:
             _put(conn)
     return await _run(_do)

@@ -632,7 +632,9 @@ class RetraitModal(discord.ui.Modal, title="💸 Retrait du coffre-fort"):
 
     async def on_submit(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
-        vault  = self.account.get("vault") or 0
+        # Re-fetch depuis la DB pour avoir la valeur réelle du coffre
+        fresh = await db.get_bank_account(self.uid, str(interaction.guild_id))
+        vault  = fresh.get("vault") or 0
         amount = _parse_amount(self.montant.value.strip().lower(), vault)
         if amount is None or amount <= 0:
             await interaction.followup.send("❌ Montant invalide.", ephemeral=True); return
