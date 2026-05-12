@@ -2992,22 +2992,22 @@ async def top(interaction: discord.Interaction, periode: app_commands.Choice[str
         def __init__(self, page=1):
             super().__init__(timeout=60)
             self.page = page
-            self._refresh()
+            self._update_buttons()
 
-        def _refresh(self):
+        def _update_buttons(self):
             self.prev_btn.disabled = (self.page == 1)
             self.next_btn.disabled = (self.page == 10)
 
         @discord.ui.button(label="◀  Précédent", style=discord.ButtonStyle.secondary)
         async def prev_btn(self, itx: discord.Interaction, button: discord.ui.Button):
             self.page = max(1, self.page - 1)
-            self._refresh()
+            self._update_buttons()
             await itx.response.edit_message(embed=_build_top_embed(self.page), view=self)
 
         @discord.ui.button(label="Suivant  ▶", style=discord.ButtonStyle.secondary)
         async def next_btn(self, itx: discord.Interaction, button: discord.ui.Button):
             self.page = min(10, self.page + 1)
-            self._refresh()
+            self._update_buttons()
             await itx.response.edit_message(embed=_build_top_embed(self.page), view=self)
 
         async def on_timeout(self):

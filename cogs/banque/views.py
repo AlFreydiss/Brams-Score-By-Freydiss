@@ -1400,9 +1400,9 @@ class HistoriqueView(discord.ui.View):
     def __init__(self, uid, filtre, page, total_pages):
         super().__init__(timeout=180)
         self.uid = uid; self.filtre = filtre; self.page = page; self.total_pages = total_pages
-        self._refresh()
+        self._update_buttons()
 
-    def _refresh(self):
+    def _update_buttons(self):
         self.btn_prev.disabled = self.page == 0
         self.btn_next.disabled = self.page >= self.total_pages - 1
 
@@ -1429,7 +1429,7 @@ class HistoriqueView(discord.ui.View):
         await interaction.response.defer()
         self.filtre = sel.values[0]; self.page = 0
         rows, self.total_pages = await db.get_history(self.uid, self.filtre, self.page)
-        self._refresh()
+        self._update_buttons()
         await interaction.edit_original_response(embed=self.build_embed(rows), view=self)
 
     @discord.ui.button(label="◀", style=discord.ButtonStyle.secondary, row=1)
@@ -1438,7 +1438,7 @@ class HistoriqueView(discord.ui.View):
         await interaction.response.defer()
         self.page -= 1
         rows, _ = await db.get_history(self.uid, self.filtre, self.page)
-        self._refresh()
+        self._update_buttons()
         await interaction.edit_original_response(embed=self.build_embed(rows), view=self)
 
     @discord.ui.button(label="▶", style=discord.ButtonStyle.secondary, row=1)
@@ -1447,7 +1447,7 @@ class HistoriqueView(discord.ui.View):
         await interaction.response.defer()
         self.page += 1
         rows, _ = await db.get_history(self.uid, self.filtre, self.page)
-        self._refresh()
+        self._update_buttons()
         await interaction.edit_original_response(embed=self.build_embed(rows), view=self)
 
 
@@ -1462,9 +1462,9 @@ class ClassementView(discord.ui.View):
         super().__init__(timeout=180)
         self.entries  = entries; self.uid = uid; self.page = page
         self.max_page = max(0, (len(entries) - 1) // self.PER_PAGE)
-        self._refresh()
+        self._update_buttons()
 
-    def _refresh(self):
+    def _update_buttons(self):
         self.btn_prev.disabled = self.page == 0
         self.btn_next.disabled = self.page >= self.max_page
 
@@ -1482,13 +1482,13 @@ class ClassementView(discord.ui.View):
     @discord.ui.button(label="◀", style=discord.ButtonStyle.secondary)
     async def btn_prev(self, interaction: discord.Interaction, _: discord.ui.Button):
         await interaction.response.defer()
-        self.page -= 1; self._refresh()
+        self.page -= 1; self._update_buttons()
         await interaction.edit_original_response(embed=self.build_embed(), view=self)
 
     @discord.ui.button(label="▶", style=discord.ButtonStyle.secondary)
     async def btn_next(self, interaction: discord.Interaction, _: discord.ui.Button):
         await interaction.response.defer()
-        self.page += 1; self._refresh()
+        self.page += 1; self._update_buttons()
         await interaction.edit_original_response(embed=self.build_embed(), view=self)
 
 
