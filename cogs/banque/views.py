@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-_STONK_PATH = Path(__file__).parent.parent / "stonk.jpg"
+_STONK_PATH = Path(__file__).parent.parent.parent / "stonk.jpg"
 
 import discord
 
