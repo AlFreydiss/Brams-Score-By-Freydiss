@@ -9,10 +9,19 @@ BANK_RANKS: list[dict] = [
     {"nom": "Roi des Pirates", "emoji": "🐉",  "seuil": 5_000_000_000,  "couleur": 0xFFD700},
 ]
 
-VAULT_INTEREST_BASE = 0.005       # 0.5%/jour
-VAULT_LOCK_RATES    = {7: 0.01, 30: 0.02}  # taux bonus si verrouillé
+VAULT_INTEREST_BASE = 0.005   # 0.5%/jour
+VAULT_LOCK_RATES    = {7: 0.01}   # +1%/j si verrouillé 7 jours
 VAULT_DAILY_CAP     = 50_000      # intérêts max/jour en berries
 VAULT_MAX           = 500_000_000  # plafond max du coffre-fort
+
+# Plafond de retrait hebdomadaire par tranche de coffre : (seuil_exclusif, plafond)
+VAULT_WITHDRAW_CAPS: list[tuple] = [
+    (1_000_000,    200_000),
+    (5_000_000,  1_000_000),
+    (20_000_000, 4_000_000),
+    (100_000_000, 20_000_000),
+    (float("inf"), 50_000_000),
+]
 
 TRANSFER_FEE_RATE          = 0.02
 TRANSFER_CONFIRM_THRESHOLD = 1_000_000

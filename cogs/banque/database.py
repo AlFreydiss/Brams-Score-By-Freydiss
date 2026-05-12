@@ -6,7 +6,7 @@ import psycopg2.pool
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone, timedelta
 
-from .constants import BANK_RANKS, VAULT_INTEREST_BASE, VAULT_LOCK_RATES, VAULT_DAILY_CAP
+from .constants import BANK_RANKS, VAULT_INTEREST_BASE, VAULT_LOCK_RATES, VAULT_DAILY_CAP, VAULT_WITHDRAW_CAPS
 
 _executor     = ThreadPoolExecutor(max_workers=6, thread_name_prefix="bank_db")
 _SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
@@ -170,6 +170,13 @@ async def update_bank_rank_db(uid: str, guild_id: str, new_rank: str) -> None:
 
 # ── Coffre-fort ───────────────────────────────────────────────────
 
+def vault_weekly_cap(vault: int) -> int:
+    for threshold, cap in VAULT_WITHDRAW_CAPS:
+        if vault < threshold:
+            return cap
+    return VAULT_WITHDRAW_CAPS[-1][1]
+
+
 async def deposit_vault(uid: str, guild_id: str, amount: int, lock_days: int = 0) -> None:
     def _do():
         conn = _conn()
@@ -224,6 +231,9 @@ async def withdraw_vault(uid: str, guild_id: str, amount: int) -> tuple[bool, st
             vault = row["vault"] or 0
             if vault < amount:
                 return False, f"Solde coffre insuffisant (`{vault:,}` ฿ disponible).".replace(",", " ")
+            cap = vault_weekly_cap(vault)
+            if amount > cap:
+                return False, f"Plafond dépassé — retrait max `{cap:,}` ฿/semaine pour ton coffre.".replace(",", " ")
             locked = row["vault_locked_until"]
             if locked:
                 if locked.tzinfo is None:

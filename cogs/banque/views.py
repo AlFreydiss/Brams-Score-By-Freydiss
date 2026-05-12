@@ -322,9 +322,15 @@ class BanqueSubView(discord.ui.View):
         embed.add_field(name="💰 En poche",       value=f"`{fmt(wallet)}` ฿", inline=True)
         embed.add_field(name="🔒 Coffre",         value=f"`{fmt(vault)}` / `{fmt(VAULT_MAX)}` ฿", inline=True)
         embed.add_field(name="📦 Place restante", value=f"`{fmt(place)}` ฿", inline=True)
+        cap = db.vault_weekly_cap(vault)
         embed.add_field(
             name="📈 Intérêts",
-            value="**0.5%/j** libre  ·  **1%/j** verrouillé 7j  ·  **2%/j** verrouillé 30j",
+            value="**0.5%/j** libre  ·  **1%/j** verrouillé 7j",
+            inline=False,
+        )
+        embed.add_field(
+            name="🏧 Plafond retrait/semaine",
+            value=f"`{fmt(cap)}` ฿",
             inline=False,
         )
         view = CoffreView(self.uid, self.account)
@@ -561,9 +567,9 @@ class DepotModal(discord.ui.Modal, title="💰 Dépôt au coffre-fort"):
     )
     verrouillage = discord.ui.TextInput(
         label="Verrouillage (optionnel)",
-        placeholder="0 = libre  |  7 = 7 jours (+1%/j)  |  30 = 30 jours (+2%/j)",
+        placeholder="0 = libre  |  7 = 7 jours (+1%/j)",
         required=False,
-        max_length=2,
+        max_length=1,
     )
 
     def __init__(self, uid: str, account: dict):
@@ -593,7 +599,7 @@ class DepotModal(discord.ui.Modal, title="💰 Dépôt au coffre-fort"):
             ); return
 
         raw_lock = (self.verrouillage.value or "0").strip()
-        lock_days = int(raw_lock) if raw_lock.isdigit() and int(raw_lock) in (0, 7, 30) else 0
+        lock_days = 7 if raw_lock == "7" else 0
 
         if not interaction.client.spend_berrys(self.uid, amount):
             await interaction.followup.send("❌ Solde insuffisant.", ephemeral=True); return
@@ -606,8 +612,7 @@ class DepotModal(discord.ui.Modal, title="💰 Dépôt au coffre-fort"):
 
         desc = f"✅ `{fmt(amount)}` ฿ déposés au coffre."
         if lock_days:
-            taux = 1 if lock_days == 7 else 2
-            desc += f"\n🔒 Verrouillé **{lock_days} jours** (+{taux}%/j)."
+            desc += f"\n🔒 Verrouillé **7 jours** (+1%/j)."
         desc += f"\n\n💰 Poche : `{fmt(interaction.client.get_berrys(self.uid))}` ฿\n🔒 Coffre : `{fmt(new_vault)}` ฿"
 
         await interaction.followup.send(
