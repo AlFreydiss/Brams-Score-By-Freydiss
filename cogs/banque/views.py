@@ -332,6 +332,9 @@ class BanqueSubView(discord.ui.View):
 
     @discord.ui.button(label="Virement", emoji="🔁", style=discord.ButtonStyle.secondary, row=0)
     async def btn_virement(self, interaction: discord.Interaction, _: discord.ui.Button):
+        if not interaction.user.guild_permissions.administrator:
+            await interaction.response.send_message("❌ Seuls les administrateurs peuvent effectuer un virement.", ephemeral=True)
+            return
         await interaction.response.send_modal(TransfertModal(self.uid))
 
     @discord.ui.button(label="Historique", emoji="📜", style=discord.ButtonStyle.secondary, row=0)

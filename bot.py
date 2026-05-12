@@ -6133,6 +6133,7 @@ class _VirementView(discord.ui.View):
     montant="Nombre de Berrys à virer (min 100)",
 )
 @app_commands.guilds(*GUILD_IDS)
+@app_commands.default_permissions(administrator=True)
 async def virement_cmd(interaction: discord.Interaction, membre: discord.Member, montant: int):
     uid = str(interaction.user.id)
     tid = str(membre.id)
