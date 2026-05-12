@@ -46,6 +46,7 @@ from datetime import datetime, timedelta, timezone
 from collections import defaultdict, deque
 from urllib.parse import quote as _url_quote
 from utils.memory import save_alias_pair, save_fact, get_knowledge_for_name, get_all_knowledge as _mem_get_all
+from utils.virement_state import is_open as _virements_open, set_open as _virements_set_open, close as _virements_close, remaining_seconds as _virements_remaining
 
 # ─────────────────────────────────────────
 #  BACKGROUND + POLICE
@@ -6133,8 +6134,15 @@ class _VirementView(discord.ui.View):
     montant="Nombre de Berrys à virer (min 100)",
 )
 @app_commands.guilds(*GUILD_IDS)
-@app_commands.default_permissions(administrator=True)
 async def virement_cmd(interaction: discord.Interaction, membre: discord.Member, montant: int):
+    is_admin = interaction.user.guild_permissions.administrator if interaction.guild else False
+    if not is_admin and not _virements_open():
+        await interaction.response.send_message(
+            "🔒 Les virements sont actuellement désactivés. Réessaie plus tard !",
+            ephemeral=True,
+        )
+        return
+
     uid = str(interaction.user.id)
     tid = str(membre.id)
 
@@ -6172,6 +6180,31 @@ async def virement_cmd(interaction: discord.Interaction, membre: discord.Member,
 
 # ─────────────────────────────────────────
 #  VENTE D'ARTICLES (/vendre)
+# ─────────────────────────────────────────
+#  TOGGLE VIREMENTS (admin)
+# ─────────────────────────────────────────
+
+@bot.tree.command(name="virements", description="[Admin] Active ou désactive les virements pour tout le monde.")
+@app_commands.describe(minutes="Durée d'ouverture en minutes (0 = fermer immédiatement)")
+@app_commands.guilds(*GUILD_IDS)
+@app_commands.default_permissions(administrator=True)
+async def virements_toggle_cmd(interaction: discord.Interaction, minutes: int = 60):
+    if minutes <= 0:
+        _virements_close()
+        await interaction.response.send_message("🔒 Virements **fermés** immédiatement.", ephemeral=True)
+        return
+
+    _virements_set_open(minutes * 60)
+    import math
+    h = math.floor(minutes / 60)
+    m = minutes % 60
+    duree = f"{h}h{m:02d}" if h else f"{m}min"
+    await interaction.response.send_message(
+        f"✅ Virements **ouverts à tous** pendant **{duree}** !",
+        ephemeral=True,
+    )
+
+
 # ─────────────────────────────────────────
 
 class _VenteView(discord.ui.View):

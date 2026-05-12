@@ -49,12 +49,11 @@ PAVILLON_QUOTES = {
 }
 
 # Paliers de rang (ajuste selon ton vrai système /rank)
-RANKS = """🥉 Mousse              0h
-🥈 Pirate              5h
-🥇 Lieutenant         25h
-🏴 Capitaine         100h
-☠️  Supernova          500h
-👑 Yonko             1000h+"""
+RANKS = """🥈 Pirate              10h
+🥇 Shichibukai         25h
+🏴 Amiral              40h
+☠️  Yonko               70h
+👑 Roi des Pirates    150h+"""
 
 
 def get_pavillon(member: discord.Member) -> tuple[str, str, str]:

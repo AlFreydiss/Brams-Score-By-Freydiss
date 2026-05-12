@@ -201,13 +201,13 @@ async def deposit_vault(uid: str, guild_id: str, amount: int, lock_days: int = 0
 
 
 async def withdraw_vault(uid: str, guild_id: str, amount: int) -> tuple[bool, str]:
-    """Retourne (succès, message_erreur)."""
+    """Retourne (succès, message_erreur). Limité à 1 retrait par semaine (7 jours glissants)."""
     def _do():
         conn = _conn()
         try:
             cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
             cur.execute(
-                "SELECT vault, vault_locked_until FROM bank_accounts WHERE user_id=%s AND guild_id=%s",
+                "SELECT vault, vault_locked_until, last_vault_withdrawal FROM bank_accounts WHERE user_id=%s AND guild_id=%s",
                 (uid, guild_id),
             )
             row = cur.fetchone()
@@ -223,15 +223,45 @@ async def withdraw_vault(uid: str, guild_id: str, amount: int) -> tuple[bool, st
                 if locked > datetime.now(timezone.utc):
                     jours = (locked - datetime.now(timezone.utc)).days + 1
                     return False, f"Coffre verrouillé — encore **{jours}** jour(s)."
+            last_w = row.get("last_vault_withdrawal")
+            if last_w:
+                if last_w.tzinfo is None:
+                    last_w = last_w.replace(tzinfo=timezone.utc)
+                next_w = last_w + timedelta(days=7)
+                now = datetime.now(timezone.utc)
+                if now < next_w:
+                    delta = next_w - now
+                    days = delta.days
+                    hours = delta.seconds // 3600
+                    reste = f"**{days}j {hours}h**" if days > 0 else f"**{hours}h**"
+                    return False, f"Tu as déjà retiré cette semaine. Prochain retrait dans {reste}."
             with conn:
                 conn.cursor().execute(
-                    "UPDATE bank_accounts SET vault = vault - %s WHERE user_id=%s AND guild_id=%s",
+                    """UPDATE bank_accounts
+                       SET vault = vault - %s, last_vault_withdrawal = NOW()
+                       WHERE user_id=%s AND guild_id=%s""",
                     (amount, uid, guild_id),
                 )
             return True, ""
         finally:
             _put(conn)
     return await _run(_do)
+
+
+async def migrate_vault_weekly_limit() -> None:
+    """Ajoute la colonne last_vault_withdrawal si elle n'existe pas encore."""
+    def _do():
+        conn = _conn()
+        try:
+            with conn:
+                conn.cursor().execute(
+                    "ALTER TABLE bank_accounts ADD COLUMN IF NOT EXISTS last_vault_withdrawal TIMESTAMPTZ DEFAULT NULL"
+                )
+        except Exception as e:
+            print(f"[BANK] migrate_vault_weekly_limit: {e}", flush=True)
+        finally:
+            _put(conn)
+    await _run(_do)
 
 
 async def apply_vault_interests(guild_id: str) -> list[tuple[str, int]]:

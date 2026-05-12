@@ -24,6 +24,7 @@ from .constants import (
     VAULT_MAX,
 )
 from utils.transactions import log_transaction
+from utils.virement_state import is_open as _virements_open
 
 if TYPE_CHECKING:
     import discord
@@ -332,8 +333,12 @@ class BanqueSubView(discord.ui.View):
 
     @discord.ui.button(label="Virement", emoji="🔁", style=discord.ButtonStyle.secondary, row=0)
     async def btn_virement(self, interaction: discord.Interaction, _: discord.ui.Button):
-        if not interaction.user.guild_permissions.administrator:
-            await interaction.response.send_message("❌ Seuls les administrateurs peuvent effectuer un virement.", ephemeral=True)
+        is_admin = interaction.user.guild_permissions.administrator
+        if not is_admin and not _virements_open():
+            await interaction.response.send_message(
+                "🔒 Les virements sont actuellement désactivés. Réessaie plus tard !",
+                ephemeral=True,
+            )
             return
         await interaction.response.send_modal(TransfertModal(self.uid))
 

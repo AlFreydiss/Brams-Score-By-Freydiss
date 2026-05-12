@@ -2,16 +2,19 @@
 -- À exécuter une fois dans Supabase
 
 CREATE TABLE IF NOT EXISTS bank_accounts (
-    user_id            TEXT        NOT NULL,
-    guild_id           TEXT        NOT NULL,
-    vault              BIGINT      DEFAULT 0,
-    vault_locked_until TIMESTAMPTZ,
-    vault_lock_days    INT         DEFAULT 0,
-    last_daily         TIMESTAMPTZ,
-    streak             INT         DEFAULT 0,
-    bank_rank          TEXT        DEFAULT 'Mousse',
+    user_id                TEXT        NOT NULL,
+    guild_id               TEXT        NOT NULL,
+    vault                  BIGINT      DEFAULT 0,
+    vault_locked_until     TIMESTAMPTZ,
+    vault_lock_days        INT         DEFAULT 0,
+    last_daily             TIMESTAMPTZ,
+    streak                 INT         DEFAULT 0,
+    bank_rank              TEXT        DEFAULT 'Mousse',
+    last_vault_withdrawal  TIMESTAMPTZ DEFAULT NULL,
     PRIMARY KEY (user_id, guild_id)
 );
+-- Migration installations existantes :
+-- ALTER TABLE bank_accounts ADD COLUMN IF NOT EXISTS last_vault_withdrawal TIMESTAMPTZ DEFAULT NULL;
 
 CREATE TABLE IF NOT EXISTS bank_transactions (
     id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
