@@ -1399,7 +1399,7 @@ def _resolve_rank_bg_path(path: str) -> str:
 
 def _make_rank_image_sync(
     bg_path: str,
-    avatar_bytes: Optional[bytes],
+    avatar_bytes: bytes | None,
     rank_name: str,
     display_name: str,
     grade_color: tuple,
