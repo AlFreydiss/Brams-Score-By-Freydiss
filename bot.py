@@ -4055,8 +4055,9 @@ _QUIZ_CATEGORIES: dict[str, str] = {
     "jjk":          "Jujutsu Kaisen UNIQUEMENT (techniques maudites, Fléaux, grades, arcs, personnages)",
     "fma":          "Fullmetal Alchemist Brotherhood UNIQUEMENT (alchimie, Homoncules, arcs, personnages)",
     "chainsaw":     "Chainsaw Man UNIQUEMENT (Diables, contrats, Chasseurs, arcs, personnages)",
-    "black_clover": "Black Clover UNIQUEMENT (magie, grimoires, Chevaliers Magiques, arcs, personnages)",
-    "citation":     "citations célèbres d'animés - mode spécial (généré depuis QUOTES_DB)",
+    "black_clover":   "Black Clover UNIQUEMENT (magie, grimoires, Chevaliers Magiques, arcs, personnages)",
+    "one_punch_man":  "One Punch Man UNIQUEMENT (Saitama, Association des Héros, classes S/A/B/C, monstres, arcs, techniques, Metal Bat, Genos, Garou, Bang, King, Tatsumaki, Fubuki)",
+    "citation":       "citations célèbres d'animés - mode spécial (généré depuis QUOTES_DB)",
 }
 
 # System prompt strict
@@ -4621,7 +4622,8 @@ _CAT_LABELS_MAP = {
     "dbz": "🏋️ Dragon Ball Z", "hxh": "🎯 Hunter x Hunter", "jojo": "✨ JoJo's Bizarre Adv.",
     "demon_slayer": "⚔️ Demon Slayer", "mha": "💪 My Hero Academia",
     "jjk": "👁️ Jujutsu Kaisen", "fma": "⚗️ Fullmetal Alchemist",
-    "chainsaw": "🪚 Chainsaw Man", "black_clover": "🍀 Black Clover", "citation": "💬 Devine la Citation",
+    "chainsaw": "🪚 Chainsaw Man", "black_clover": "🍀 Black Clover",
+    "one_punch_man": "👊 One Punch Man", "citation": "💬 Devine la Citation",
 }
 
 
@@ -4782,7 +4784,8 @@ class _QuizCategorySelect(discord.ui.Select):
             ("jjk",          "👁️ Jujutsu Kaisen",       "Techniques maudites, Fléaux, grades"),
             ("fma",          "⚗️ Fullmetal Alchemist",  "Alchimie, Homoncules, arcs"),
             ("chainsaw",     "🪚 Chainsaw Man",          "Diables, contrats, Chasseurs"),
-            ("black_clover", "🍀 Black Clover",          "Magie, grimoires, Chevaliers"),
+            ("black_clover",  "🍀 Black Clover",          "Magie, grimoires, Chevaliers"),
+            ("one_punch_man", "👊 One Punch Man",         "Saitama, héros, monstres, classes"),
         ]
         super().__init__(
             placeholder="Choisis une catégorie...", min_values=1, max_values=1,
