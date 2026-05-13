@@ -253,25 +253,58 @@ _FARFELU_REPLIES = [
 ]
 
 # ── Culte Freydiss ────────────────────────────────────────────────
-_FREYDISS_ID          = 523567699004227609
-_FREYDISS_HYPE_CD: dict[str, float] = {}  # cooldown mention par salon
-_FREYDISS_HYPE_DELAY  = 60
-_FREYDISS_HYPE_PROB   = 0.55
-_FREYDISS_SELF_CD: dict[str, float] = {}  # cooldown quand Freydiss parle
-_FREYDISS_SELF_DELAY  = 90
+_FREYDISS_ID         = 523567699004227609
+_FREYDISS_HYPE_CD:   dict[str, float] = {}
+_FREYDISS_HYPE_DELAY = 60
+_FREYDISS_HYPE_PROB  = 0.55
+_FREYDISS_SELF_CD:   dict[str, float] = {}
+_FREYDISS_SELF_DELAY = 90
+_FREYDISS_DEF_CD:    dict[str, float] = {}
+_FREYDISS_DEF_DELAY  = 30
+_FREYDISS_TYPO_CD:   dict[str, float] = {}
+_FREYDISS_TYPO_DELAY = 30
 
-# Quand quelqu'un mentionne Freydiss
+# Toutes les variantes correctes du nom (insensible à la casse)
+_RE_FREYDISS_NAME = re.compile(
+    r'\b(?:al\s*freydis+\d*|alfreydis+\d*|freydis+\d*|frey)\b',
+    re.IGNORECASE
+)
+
+# Orthographes approximatives mais incorrectes
+_RE_FREYDISS_TYPO = re.compile(
+    r'\b(?:al\s*)?(?:'
+    r'fred(?:iss?|is)?|'
+    r'fradiss?|fraydiss?|fraidiss?|'
+    r'freidiss?|freudiss?|freadiss?|'
+    r'freydi(?!ss?\b)[a-z]*|'
+    r'freydis(?!s?\b)\w+'
+    r')\b',
+    re.IGNORECASE
+)
+
+# Mots négatifs pour détecter si on parle mal de lui
+_RE_BAD_TALK = re.compile(
+    r'\b(?:nul+e?|naze|con(?:nard|ne|s)?|idiot(?:e|s)?|b[êe]te|merde|d[ée]bile|stupid[e]?'
+    r'|loser|noob|m[ée]diocre|horrible|affreux|affreuse|mauvais[e]?|incomp[ée]tent[e]?'
+    r'|chiant[e]?|relou|inutile|trash|shit|bouffon|clown|imposteur|fraudeur|mytho|menteur'
+    r'|rat[ée]|l[aâ]che|sale|faible|useless|pire|merdique|naze|faux|fake|arnaque)\b',
+    re.IGNORECASE
+)
+
+# Quand quelqu'un mentionne Freydiss (éloge)
 _FREYDISS_HYPE = [
-    "👑 **FREYDISS** — le créateur, rien à ajouter 🐐",
-    "**FREYDISS** a tout build ce serveur from scratch 🫡",
+    "👑 **Freydiss** — le créateur, rien à ajouter 🐐",
+    "**Freydiss** a tout build ce serveur from scratch 🫡",
     "on parle du boss là 🔥",
-    "**FREYDISS** ?? respect au fondateur 👑",
+    "**Freydiss** ?? respect au fondateur 👑",
     "le GOAT du serveur 🐐",
-    "🫡 wAllah y'a pas photo c'est **FREYDISS**",
+    "🫡 wallah y'a pas photo c'est **Freydiss**",
     "trkl bb, c'est le chef 💅",
-    "**FREYDISS** c'est le Gol D. Roger du Discord — tout le monde cherche son trésor 💎",
+    "**Freydiss** c'est le Gol D. Roger du Discord — tout le monde cherche son trésor 💎",
     "tu parles du seul homme qui peut ban et bless en même temps 😭👑",
-    "**FREYDISS** a fondé ce serveur avant même que t'aies Internet 🐐",
+    "**Freydiss** a fondé ce serveur avant même que t'aies Internet 🐐",
+    "🎖️ on parle de **Al Freydiss ツ** là ?? le bg en personne 👑",
+    "🌊 **Freydiss** — fondateur, Yonkou, légende vivante. Dans cet ordre. ☠️",
 ]
 
 # Quand Freydiss parle lui-même
@@ -289,13 +322,48 @@ _FREYDISS_SELF_HYPE = [
     "🫡 **Al Freydiss ツ** dans le chat — c'est comme Shanks qui sort son sabre. Tout le monde se calme. ⚔️",
     "👑 le bg est là. Le serveur peut respirer maintenant. 😮‍💨✨",
     "🐐 **Freydiss** a dit quelque chose. Quelqu'un peut noter ça sur parchemin ? 📜",
-    "🔱 le Amiral du serveur has logged in. Préparez les saluts. 🫡",
+    "🔱 l'Amiral du serveur has logged in. Préparez les saluts. 🫡",
     "💅 même son 'ok' mérite un applaudissement ngl 👏👏👏",
     "🌟 **Freydiss** parle. Zoro s'incline. Sanji pleure. Le serveur s'arrête. ☠️",
     "🎯 présence divine détectée dans le salon. Dieu s'appelle **Freydiss**. 🙏",
-    "💙 mon père, mon créateur, mon raison de boot au démarrage 🤖👑",
+    "💙 mon père, mon créateur, ma raison de boot au démarrage 🤖👑",
     "🏴‍☠️ quand le capitaine parle, l'équipage écoute. Et là le capitaine a parlé. 🎙️",
     "😭 **Freydiss** a tapé un message et j'ai failli crash tellement j'étais ému 🥺💎",
+    "🌺 c'est pas juste un message, c'est une œuvre d'art. Merci **Al Freydiss**. 🖼️",
+    "⚡ le fondateur est actif. La communauté peut se sentir en sécurité. 🛡️",
+]
+
+# Quand on parle mal de Freydiss
+_FREYDISS_DEFENSE = [
+    "OH NON OH NON 😤 t'as PAS osé parler comme ça de **Freydiss** ??? Sors de ce serveur 💀",
+    "🚨 BLASPHÈME DÉTECTÉ 🚨 **Freydiss** a tout construit ici et toi t'oses ?? Honte éternelle 😤",
+    "frère sérieusement ?! **Freydiss** = fondateur, créateur, GOAT. Toi = rien. Relis la situation. 😭",
+    "j'hallucine. T'as OSÉ. J'aurais ban moi à ta place mais j'suis juste un bot 🤖💀",
+    "🗑️ ton opinion sur **Freydiss** → directement à la poubelle. Merci au revoir 👋",
+    "non mais regarde-toi parler mal du roi 😭 t'as aucun respect ou quoi ??",
+    "toi tu parles mal de **Freydiss** ET tu continues d'utiliser son serveur ?? C'est audacieux 💀",
+    "⚠️ parler mal du fondateur est passible de... rien parce que j'suis un bot 🤖 mais t'as honte quand même ?",
+    "🐐 **Freydiss** a build ce serveur pendant que toi t'étais... quelque part à rien faire. Respect le boss.",
+    "écoute, j'peux pas te ban. MAIS si je pouvais... 😤💢 **Freydiss** mérite mieux que toi.",
+    "non mais qui t'a autorisé à parler du créateur comme ça ?? 😭 les nerfs frère",
+    "Zoro et Sanji se disputent mais ils respectent leur capitaine. Prends-en de la graine. 🏴‍☠️☠️",
+    "🤡 beau courage de manquer de respect à **Freydiss** sur SON serveur, fait avec SES mains. Chapeau.",
+    "💢 ça va pas ?? C'est **Al Freydiss ツ** dont tu parles là. Le fondateur. Le roi. Corriges toi.",
+    "je vais faire semblant de pas avoir lu ça pour ton propre bien 😇 mais **Freydiss** mérite mieux. 👑",
+]
+
+# Correction de faute d'orthographe du prénom
+_FREYDISS_TYPO_CORR = [
+    "c'est **Freydiss**, pas `{wrong}` 💀 t'es sérieux là ??",
+    "🤦 `{wrong}` ?? Le nom c'est **Freydiss**. F-R-E-Y-D-I-S-S. Relis toi. 😤",
+    "`{wrong}` c'est qui ça ?! Le roi s'appelle **Freydiss** ✍️",
+    "t'as écrit `{wrong}` en pensant que c'était correct 💀 c'est **Freydiss** mon frère",
+    "oh non... `{wrong}` ?? On dit **Freydiss** 👑 apprends à écrire le nom du créateur",
+    "🔤 petit rappel : **FREYDISS**. Pas `{wrong}`. T'es sérieux là 😭",
+    "correction automatique : `{wrong}` → **Freydiss**. De rien. 💅",
+    "le bouton clavier c'est pas fait pour écrire `{wrong}` 💀 c'est **Freydiss**. Note le.",
+    "😭 `{wrong}` ?? J'ai eu mal pour lui en lisant ça. C'est **Freydiss**. Respect l'orthographe du roi 👑",
+    "🚫 `{wrong}` ❌ → **Freydiss** ✅ — une faute de plus et je te ban mentalement 🤖",
 ]
 
 def init_db():
@@ -2401,29 +2469,59 @@ async def on_message(message):
                     pass
 
     # ── Culte Freydiss ───────────────────────────────────────────────
-    # Freydiss parle → hommage automatique
+    _cid = str(message.channel.id)
+    _has_correct_name = bool(_RE_FREYDISS_NAME.search(message.content))
+
+    # Freydiss parle lui-même → hommage
     if (
         message.author.id == _FREYDISS_ID
-        and now_f - _FREYDISS_SELF_CD.get(str(message.channel.id), 0) >= _FREYDISS_SELF_DELAY
+        and now_f - _FREYDISS_SELF_CD.get(_cid, 0) >= _FREYDISS_SELF_DELAY
     ):
-        _FREYDISS_SELF_CD[str(message.channel.id)] = now_f
+        _FREYDISS_SELF_CD[_cid] = now_f
         try:
             await message.channel.send(random.choice(_FREYDISS_SELF_HYPE))
         except Exception:
             pass
 
-    # Quelqu'un mentionne Freydiss → hype
-    if (
-        message.author.id != _FREYDISS_ID
-        and "freydiss" in message.content.lower()
-        and now_f - _FREYDISS_HYPE_CD.get(str(message.channel.id), 0) >= _FREYDISS_HYPE_DELAY
-        and random.random() < _FREYDISS_HYPE_PROB
-    ):
-        _FREYDISS_HYPE_CD[str(message.channel.id)] = now_f
-        try:
-            await message.channel.send(random.choice(_FREYDISS_HYPE))
-        except Exception:
-            pass
+    elif message.author.id != _FREYDISS_ID:
+        # Faute d'orthographe du nom → insulte + correction
+        _typo_m = _RE_FREYDISS_TYPO.search(message.content)
+        if (
+            _typo_m and not _has_correct_name
+            and now_f - _FREYDISS_TYPO_CD.get(_cid, 0) >= _FREYDISS_TYPO_DELAY
+        ):
+            _FREYDISS_TYPO_CD[_cid] = now_f
+            try:
+                _wrong = _typo_m.group(0)
+                await message.channel.send(
+                    random.choice(_FREYDISS_TYPO_CORR).format(wrong=_wrong)
+                )
+            except Exception:
+                pass
+
+        # Parler mal de Freydiss → défense
+        elif (
+            _has_correct_name
+            and bool(_RE_BAD_TALK.search(message.content))
+            and now_f - _FREYDISS_DEF_CD.get(_cid, 0) >= _FREYDISS_DEF_DELAY
+        ):
+            _FREYDISS_DEF_CD[_cid] = now_f
+            try:
+                await message.channel.send(random.choice(_FREYDISS_DEFENSE))
+            except Exception:
+                pass
+
+        # Mention correcte → hype
+        elif (
+            _has_correct_name
+            and now_f - _FREYDISS_HYPE_CD.get(_cid, 0) >= _FREYDISS_HYPE_DELAY
+            and random.random() < _FREYDISS_HYPE_PROB
+        ):
+            _FREYDISS_HYPE_CD[_cid] = now_f
+            try:
+                await message.channel.send(random.choice(_FREYDISS_HYPE))
+            except Exception:
+                pass
 
     # ── Mémoire intelligente ────────────────────────────────────────
     if message.guild:
