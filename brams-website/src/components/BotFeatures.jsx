@@ -1,102 +1,59 @@
+import { useInView } from '../hooks/useInView.js'
+
 const FEATURES = [
-  {
-    emoji: '💰', title: 'Économie Berry',
-    desc: 'Gagne des Berrys en étant actif en vocal. Dépose-les en banque, fais des virements, joue en bourse.',
-    commands: ['/banque', '/virement', '/retrait'],
-    color: '#FFD700',
-  },
-  {
-    emoji: '🃏', title: 'Carte Wanted',
-    desc: 'Génère ta fiche d\'avis de recherche personnalisée avec ta prime, ton rang et ton portrait.',
-    commands: ['/wanted', '/monprofil'],
-    color: '#E0524A',
-  },
-  {
-    emoji: '🎯', title: 'Quiz Animé',
-    desc: 'Des questions sur One Piece, Naruto, Dragon Ball et des dizaines d\'autres animes. Teste ta culture.',
-    commands: ['/quizz'],
-    color: '#34D399',
-  },
-  {
-    emoji: '⚔️', title: 'Duels',
-    desc: 'Défie un membre et mise des Berrys. Le vainqueur remporte la mise. Combats en 1v1.',
-    commands: ['/duel'],
-    color: '#9B59B6',
-  },
-  {
-    emoji: '🏦', title: 'Banque & Coffre',
-    desc: 'Gère ton coffre, surveille tes revenus passifs et ta fortune accumulée semaine après semaine.',
-    commands: ['/banque', '/coffre'],
-    color: '#3B82F6',
-  },
-  {
-    emoji: '📊', title: 'Stats vocales',
-    desc: 'Suis tes heures vocales en temps réel. Vois combien il te reste pour atteindre le rang suivant.',
-    commands: ['/stats', '/classement'],
-    color: '#F97316',
-  },
+  { emoji:'💰', title:'Économie Berry',    color:'#FFD700', desc:'Gagne des Berrys en étant actif en vocal. Dépose-les en banque, surveille ta fortune.',              cmds:['/banque','/retrait','/depot'] },
+  { emoji:'📊', title:'Stats vocales',     color:'#3B82F6', desc:'Suis tes heures vocales en temps réel. Vois combien il te reste pour atteindre le rang suivant.',       cmds:['/stats'] },
+  { emoji:'🏆', title:'Classement',        color:'#E0524A', desc:'Qui domine le serveur cette semaine ? Consulte le top vocal et le top Berry en direct.',                cmds:['/top'] },
+  { emoji:'🎯', title:'Quiz Animé',        color:'#34D399', desc:'Des questions sur One Piece, Naruto, Dragon Ball et des dizaines d\'autres animes. Teste ta culture.',  cmds:['/question'] },
+  { emoji:'🏦', title:'Banque & Coffre',   color:'#9B59B6', desc:'Gère ton coffre, surveille tes revenus passifs et ta fortune accumulée semaine après semaine.',          cmds:['/banque','/coffre','/virement'] },
+  { emoji:'👤', title:'Profil & Wanted',   color:'#F97316', desc:'Personnalise ton profil, génère ta fiche d\'avis de recherche et affiche ta prime aux autres membres.', cmds:['/monprofil','/modifprofil'] },
 ]
 
 export default function BotFeatures() {
+  const [ref, inView] = useInView()
+
   return (
-    <section id="bot-buster">
-      <div className="container">
-        <div style={{ marginBottom: 56 }}>
-          <div className="section-label">Bot Buster</div>
-          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
-            <div>
-              <h2 className="section-title">Tout ce que Buster peut faire</h2>
-              <p className="section-sub">Un bot custom développé pour Brams Community. Économie, duels, quiz, profils — tout est là.</p>
-            </div>
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 8,
-              background: 'rgba(52,211,153,0.1)', border: '1px solid rgba(52,211,153,0.2)',
-              borderRadius: 10, padding: '8px 16px',
-            }}>
-              <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--success)', boxShadow: '0 0 8px #34d399' }} />
-              <span style={{ fontSize: 13, color: 'var(--success)', fontWeight: 600 }}>Buster en ligne</span>
+    <section id="bot-buster" style={{ position:'relative' }}>
+      <div className="orb" style={{ width:500, height:500, top:'20%', right:'-10%', background:'rgba(224,82,74,.06)', pointerEvents:'none' }} />
+
+      <div className="container" ref={ref}>
+        <div style={{ marginBottom:64 }}>
+          <div className={`reveal ${inView?'visible':''}`}>
+            <div className="label">Bot Brams Score</div>
+            <div style={{ display:'flex', alignItems:'flex-end', justifyContent:'space-between', flexWrap:'wrap', gap:16 }}>
+              <div>
+                <h2 className="h2">Tout ce que Brams Score peut faire</h2>
+                <p className="sub">Un bot 100% custom. Économie, classements, quiz, profils — tout est pensé pour la communauté.</p>
+              </div>
+              <div style={{
+                display:'flex', alignItems:'center', gap:8,
+                background:'rgba(52,211,153,.08)', border:'1px solid rgba(52,211,153,.2)',
+                borderRadius:10, padding:'9px 18px',
+              }}>
+                <span style={{ width:8, height:8, borderRadius:'50%', background:'var(--success)', boxShadow:'0 0 8px #34d399', animation:'pulse 2s infinite' }} />
+                <span style={{ fontSize:13, color:'var(--success)', fontWeight:600 }}>Brams Score en ligne</span>
+              </div>
             </div>
           </div>
         </div>
 
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-          gap: 16,
-        }}>
-          {FEATURES.map(f => (
-            <div key={f.title} style={{
-              background: 'var(--card)', borderRadius: 'var(--radius)',
-              border: '1px solid var(--border)',
-              padding: '24px',
-              transition: 'border-color 0.2s, transform 0.2s',
-            }}
-              onMouseEnter={e => {
-                e.currentTarget.style.borderColor = `${f.color}44`
-                e.currentTarget.style.transform = 'translateY(-3px)'
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.borderColor = 'var(--border)'
-                e.currentTarget.style.transform = 'translateY(0)'
-              }}
-            >
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(320px,1fr))', gap:14 }}>
+          {FEATURES.map((f, i) => (
+            <div key={f.title} className={`card reveal reveal-${(i%4)+1} ${inView?'visible':''}`}
+              style={{ padding:26 }}>
               <div style={{
-                width: 46, height: 46, borderRadius: 12,
-                background: `${f.color}15`, border: `1px solid ${f.color}30`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 22, marginBottom: 16,
+                width:48, height:48, borderRadius:12, marginBottom:18,
+                background:`${f.color}12`, border:`1px solid ${f.color}25`,
+                display:'flex', alignItems:'center', justifyContent:'center', fontSize:22,
               }}>{f.emoji}</div>
-
-              <h3 style={{ fontFamily: 'var(--display)', fontWeight: 700, fontSize: 17, color: '#fff', marginBottom: 8 }}>{f.title}</h3>
-              <p style={{ fontSize: 13.5, color: 'var(--muted)', lineHeight: 1.65, marginBottom: 16 }}>{f.desc}</p>
-
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                {f.commands.map(cmd => (
-                  <span key={cmd} style={{
-                    background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)',
-                    borderRadius: 6, padding: '3px 9px',
-                    fontSize: 12, color: 'var(--muted)', fontFamily: 'monospace',
-                  }}>{cmd}</span>
+              <h3 style={{ fontFamily:'var(--display)', fontWeight:700, fontSize:17, color:'#fff', marginBottom:10 }}>{f.title}</h3>
+              <p style={{ fontSize:13.5, color:'var(--muted)', lineHeight:1.7, marginBottom:18 }}>{f.desc}</p>
+              <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+                {f.cmds.map(c => (
+                  <span key={c} style={{
+                    background:'rgba(255,255,255,.04)', border:'1px solid var(--border)',
+                    borderRadius:6, padding:'3px 10px', fontSize:12, color:'var(--muted)', fontFamily:'monospace',
+                  }}>{c}</span>
                 ))}
               </div>
             </div>

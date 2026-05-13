@@ -2704,6 +2704,7 @@ async def on_voice_state_update(member, before, after):
     user = get_user(_CACHE, uid)
 
     if before.channel is None and after.channel is not None:
+        user["username"] = member.display_name
         user["join_time"] = now_ts()
         _DIRTY.add(uid)
         entry_url = user.get("entry_sound")
