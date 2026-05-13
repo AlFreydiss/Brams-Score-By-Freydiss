@@ -1,4 +1,4 @@
-const DISCORD_INVITE = 'https://discord.gg/brams'
+const DISCORD_INVITE = 'https://discord.gg/ez4dBTPE'
 const ONBOARDING_URL = '#'
 
 const STATS = [

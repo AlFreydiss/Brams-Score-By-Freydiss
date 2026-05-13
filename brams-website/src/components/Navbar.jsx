@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 
-const DISCORD_INVITE = 'https://discord.gg/brams'
+const DISCORD_INVITE = 'https://discord.gg/ez4dBTPE'
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
