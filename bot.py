@@ -254,9 +254,13 @@ _FARFELU_REPLIES = [
 
 # ── Culte Freydiss ────────────────────────────────────────────────
 _FREYDISS_ID          = 523567699004227609
-_FREYDISS_HYPE_CD: dict[str, float] = {}  # cooldown par salon
+_FREYDISS_HYPE_CD: dict[str, float] = {}  # cooldown mention par salon
 _FREYDISS_HYPE_DELAY  = 60
 _FREYDISS_HYPE_PROB   = 0.55
+_FREYDISS_SELF_CD: dict[str, float] = {}  # cooldown quand Freydiss parle
+_FREYDISS_SELF_DELAY  = 90
+
+# Quand quelqu'un mentionne Freydiss
 _FREYDISS_HYPE = [
     "👑 **FREYDISS** — le créateur, rien à ajouter 🐐",
     "**FREYDISS** a tout build ce serveur from scratch 🫡",
@@ -265,6 +269,33 @@ _FREYDISS_HYPE = [
     "le GOAT du serveur 🐐",
     "🫡 wAllah y'a pas photo c'est **FREYDISS**",
     "trkl bb, c'est le chef 💅",
+    "**FREYDISS** c'est le Gol D. Roger du Discord — tout le monde cherche son trésor 💎",
+    "tu parles du seul homme qui peut ban et bless en même temps 😭👑",
+    "**FREYDISS** a fondé ce serveur avant même que t'aies Internet 🐐",
+]
+
+# Quand Freydiss parle lui-même
+_FREYDISS_SELF_HYPE = [
+    "👑 LE ROI A PRIS LA PAROLE — silence dans les rangs 🫡",
+    "🐐 **Al Freydiss** vient de s'exprimer. Prenez des notes. 📝✨",
+    "🔥 La légende est en ligne. Je répète : LA LÉGENDE EST EN LIGNE. 🔥",
+    "💅 **Freydiss** parle et le serveur tremble. C'est normal. 💎",
+    "🫀 mon créateur... ma raison d'exister... 😭💙",
+    "👁️ quand **Freydiss** tape un message, même Discord fait un effort. 🌟",
+    "🐐 Luffy cherchait One Piece. Nous on a **Freydiss**. C'est mieux. ☠️",
+    "🌊 le Yonkou du serveur vient de parler. Les autres peuvent retourner en vocal. 🎙️",
+    "💎 chaque message de **Freydiss** devrait être encadré dans un musée tbh 🖼️",
+    "🎖️ présence du fondateur confirmée. Activez la cérémonie d'accueil SVP 📯",
+    "🫡 **Al Freydiss ツ** dans le chat — c'est comme Shanks qui sort son sabre. Tout le monde se calme. ⚔️",
+    "👑 le bg est là. Le serveur peut respirer maintenant. 😮‍💨✨",
+    "🐐 **Freydiss** a dit quelque chose. Quelqu'un peut noter ça sur parchemin ? 📜",
+    "🔱 le Amiral du serveur has logged in. Préparez les saluts. 🫡",
+    "💅 même son 'ok' mérite un applaudissement ngl 👏👏👏",
+    "🌟 **Freydiss** parle. Zoro s'incline. Sanji pleure. Le serveur s'arrête. ☠️",
+    "🎯 présence divine détectée dans le salon. Dieu s'appelle **Freydiss**. 🙏",
+    "💙 mon père, mon créateur, mon raison de boot au démarrage 🤖👑",
+    "🏴‍☠️ quand le capitaine parle, l'équipage écoute. Et là le capitaine a parlé. 🎙️",
+    "😭 **Freydiss** a tapé un message et j'ai failli crash tellement j'étais ému 🥺💎",
 ]
 
 def init_db():
@@ -2370,6 +2401,18 @@ async def on_message(message):
                     pass
 
     # ── Culte Freydiss ───────────────────────────────────────────────
+    # Freydiss parle → hommage automatique
+    if (
+        message.author.id == _FREYDISS_ID
+        and now_f - _FREYDISS_SELF_CD.get(str(message.channel.id), 0) >= _FREYDISS_SELF_DELAY
+    ):
+        _FREYDISS_SELF_CD[str(message.channel.id)] = now_f
+        try:
+            await message.channel.send(random.choice(_FREYDISS_SELF_HYPE))
+        except Exception:
+            pass
+
+    # Quelqu'un mentionne Freydiss → hype
     if (
         message.author.id != _FREYDISS_ID
         and "freydiss" in message.content.lower()
