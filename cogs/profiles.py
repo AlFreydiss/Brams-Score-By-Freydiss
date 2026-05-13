@@ -33,17 +33,34 @@ _executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="profiles_db")
 
 # ── DB helpers (sync, exécutés dans l'executor) ───────────────────
 
+_PASSION_ICONS = {
+    "anime": "🎌", "gaming": "🎮", "foot": "⚽", "musique": "🎵", "cine": "🎬", "tech": "💻",
+}
+_GAMING_ICONS = {
+    "pc": "🖥️", "playstation": "🎮", "xbox": "🟩", "nintendo": "🎯", "mobile": "📱", "none": None,
+}
+_GAMING_LABELS = {
+    "pc": "PC", "playstation": "PlayStation", "xbox": "Xbox", "nintendo": "Nintendo", "mobile": "Mobile",
+}
+_FOOT_ICONS = {
+    "ligue1": "🇫🇷", "etranger": "🌍", "international": "🏆", "none": None,
+}
+_FOOT_LABELS = {
+    "ligue1": "Ligue 1", "etranger": "Étranger", "international": "International",
+}
+
+
 def _db_get(get_db, release_db, uid: str) -> dict | None:
     conn = get_db()
     try:
         cur = conn.cursor()
-        cur.execute("SELECT pays, top_anime, waifu_husbando, bio, custom_image FROM profiles WHERE user_id = %s", (uid,))
+        cur.execute("SELECT pays, top_anime, waifu_husbando, bio, custom_image, onboarding_answers FROM profiles WHERE user_id = %s", (uid,))
         row = cur.fetchone()
         cur.close()
         if row:
             return {"pays": row[0] or "", "top_anime": row[1] or "",
                     "waifu_husbando": row[2] or "", "bio": row[3] or "",
-                    "custom_image": row[4] or ""}
+                    "custom_image": row[4] or "", "onboarding_answers": row[5] or {}}
         return None
     finally:
         release_db(conn)
@@ -203,6 +220,42 @@ async def _build_profile_embed(
         embed.add_field(name="❤️ Waifu / Husbando", value=f"*{row['waifu_husbando']}*", inline=True)
     else:
         embed.add_field(name="❤️ Waifu / Husbando", value="*Non renseigné*", inline=True)
+
+    # ── Section : Centres d'intérêt (onboarding) ─────────────────
+    oa = row.get("onboarding_answers") if row else None
+    if oa:
+        passions_raw = oa.get("passions", [])
+        if isinstance(passions_raw, str):
+            passions_raw = [passions_raw]
+        passions_str = " ".join(
+            f"{_PASSION_ICONS.get(p, '•')} {p.capitalize()}"
+            for p in passions_raw if p and p != "none"
+        )
+
+        gaming_raw = oa.get("gaming", [])
+        if isinstance(gaming_raw, str):
+            gaming_raw = [gaming_raw]
+        gaming_str = " ".join(
+            f"{_GAMING_ICONS.get(g, '🎮')} {_GAMING_LABELS.get(g, g.capitalize())}"
+            for g in gaming_raw if g and g != "none" and _GAMING_ICONS.get(g) is not None
+        )
+
+        foot_val = oa.get("foot")
+        if isinstance(foot_val, list):
+            foot_val = foot_val[0] if foot_val else None
+        foot_str = (
+            f"{_FOOT_ICONS.get(foot_val, '⚽')} {_FOOT_LABELS.get(foot_val, foot_val.capitalize())}"
+            if foot_val and foot_val != "none" else None
+        )
+
+        if passions_str or gaming_str or foot_str:
+            embed.add_field(name="​", value="**━━━━  CENTRES D'INTÉRÊT  ━━━━**", inline=False)
+            if passions_str:
+                embed.add_field(name="✨ Passions", value=passions_str, inline=False)
+            if gaming_str:
+                embed.add_field(name="🕹️ Plateformes", value=gaming_str, inline=True)
+            if foot_str:
+                embed.add_field(name="⚽ Foot", value=foot_str, inline=True)
 
     # ── Section : À propos ────────────────────────────────────────
     embed.add_field(name="​", value="**━━━━━━  À PROPOS  ━━━━━━**", inline=False)

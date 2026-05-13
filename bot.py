@@ -393,6 +393,9 @@ def init_db():
             )
         """)
         cur.execute("""
+            ALTER TABLE profiles ADD COLUMN IF NOT EXISTS onboarding_answers JSONB DEFAULT '{}'
+        """)
+        cur.execute("""
             CREATE TABLE IF NOT EXISTS marine_cooldowns (
                 user_id TEXT PRIMARY KEY,
                 last_tax_at TIMESTAMPTZ NOT NULL

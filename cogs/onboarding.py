@@ -174,6 +174,30 @@ class Onboarding(commands.Cog):
         except Exception as e:
             print(f"[onboarding] erreur add_roles: {e}")
 
+        import json as _json
+        import asyncio as _asyncio
+        from concurrent.futures import ThreadPoolExecutor as _TPE
+
+        def _save_answers():
+            conn = self.bot.get_db()
+            try:
+                cur = conn.cursor()
+                cur.execute("""
+                    INSERT INTO profiles (user_id, onboarding_answers)
+                    VALUES (%s, %s)
+                    ON CONFLICT (user_id) DO UPDATE SET onboarding_answers = EXCLUDED.onboarding_answers
+                """, (str(user_id), _json.dumps(answers)))
+                conn.commit()
+                cur.close()
+            finally:
+                self.bot.release_db(conn)
+
+        try:
+            loop = _asyncio.get_running_loop()
+            await loop.run_in_executor(None, _save_answers)
+        except Exception as e:
+            print(f"[onboarding] erreur save profiles: {e}")
+
         try:
             self.supa.table("onboarding_responses").update(
                 {"processed": True, "processed_at": "now()"}
