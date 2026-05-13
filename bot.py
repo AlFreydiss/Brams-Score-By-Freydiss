@@ -46,7 +46,13 @@ from datetime import datetime, timedelta, timezone
 from collections import defaultdict, deque
 from urllib.parse import quote as _url_quote
 from utils.memory import save_alias_pair, save_fact, get_knowledge_for_name, get_all_knowledge as _mem_get_all
-from utils.virement_state import is_open as _virements_open, set_open as _virements_set_open, close as _virements_close, remaining_seconds as _virements_remaining
+from utils.virement_state import (
+    is_open as _virements_open,
+    set_open as _virements_set_open,
+    set_permanent as _virements_set_permanent,
+    close as _virements_close,
+    remaining_seconds as _virements_remaining,
+)
 
 # ─────────────────────────────────────────
 #  BACKGROUND + POLICE
@@ -6332,23 +6338,91 @@ async def virement_cmd(interaction: discord.Interaction, membre: discord.Member,
 #  TOGGLE VIREMENTS (admin)
 # ─────────────────────────────────────────
 
-@bot.tree.command(name="virements", description="[Admin] Active ou désactive les virements pour tout le monde.")
-@app_commands.describe(minutes="Durée d'ouverture en minutes (0 = fermer immédiatement)")
+def _virements_status_embed() -> discord.Embed:
+    import math
+    if _virements_open():
+        rem = _virements_remaining()
+        if rem == float("inf"):
+            desc = "🟢 **Virements activés** — durée : **permanente**"
+        else:
+            total = int(rem)
+            h, m, s = total // 3600, (total % 3600) // 60, total % 60
+            duree = f"{h}h{m:02d}min{s:02d}s" if h else f"{m}min{s:02d}s"
+            desc = f"🟢 **Virements activés** — temps restant : **{duree}**"
+        color = discord.Color.green()
+    else:
+        desc = "🔴 **Virements désactivés**"
+        color = discord.Color.red()
+    return discord.Embed(title="⚙️ Gestion des virements", description=desc, color=color)
+
+
+class _VirementActiverModal(discord.ui.Modal, title="Activer les virements"):
+    duree = discord.ui.TextInput(
+        label="Durée en minutes (laisser vide = permanent)",
+        placeholder="ex : 60   — vide = permanent",
+        required=False,
+        max_length=6,
+    )
+
+    def __init__(self, view: "discord.ui.View"):
+        super().__init__()
+        self._parent_view = view
+
+    async def on_submit(self, interaction: discord.Interaction):
+        import math
+        val = self.duree.value.strip()
+        if val == "" or val == "0":
+            _virements_set_permanent()
+            label = "permanent"
+        else:
+            try:
+                minutes = int(val)
+            except ValueError:
+                await interaction.response.send_message(
+                    "❌ Durée invalide. Entre un nombre entier de minutes ou laisse vide.",
+                    ephemeral=True,
+                )
+                return
+            _virements_set_open(minutes * 60)
+            h = math.floor(minutes / 60)
+            m = minutes % 60
+            label = f"{h}h{m:02d}" if h else f"{m}min"
+
+        await interaction.response.edit_message(
+            embed=_virements_status_embed(),
+            view=self._parent_view,
+        )
+        await interaction.followup.send(
+            f"✅ Virements **activés** — durée : **{label}** !",
+            ephemeral=True,
+        )
+
+
+class _VirementToggleView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    @discord.ui.button(label="Activer", emoji="✅", style=discord.ButtonStyle.success)
+    async def btn_activer(self, interaction: discord.Interaction, _: discord.ui.Button):
+        await interaction.response.send_modal(_VirementActiverModal(self))
+
+    @discord.ui.button(label="Désactiver", emoji="🔒", style=discord.ButtonStyle.danger)
+    async def btn_desactiver(self, interaction: discord.Interaction, _: discord.ui.Button):
+        _virements_close()
+        await interaction.response.edit_message(
+            embed=_virements_status_embed(),
+            view=self,
+        )
+        await interaction.followup.send("🔒 Virements **désactivés** immédiatement.", ephemeral=True)
+
+
+@bot.tree.command(name="virements", description="[Admin] Active ou désactive les virements.")
 @app_commands.guilds(*GUILD_IDS)
 @app_commands.default_permissions(administrator=True)
-async def virements_toggle_cmd(interaction: discord.Interaction, minutes: int = 60):
-    if minutes <= 0:
-        _virements_close()
-        await interaction.response.send_message("🔒 Virements **fermés** immédiatement.", ephemeral=True)
-        return
-
-    _virements_set_open(minutes * 60)
-    import math
-    h = math.floor(minutes / 60)
-    m = minutes % 60
-    duree = f"{h}h{m:02d}" if h else f"{m}min"
+async def virements_toggle_cmd(interaction: discord.Interaction):
     await interaction.response.send_message(
-        f"✅ Virements **ouverts à tous** pendant **{duree}** !",
+        embed=_virements_status_embed(),
+        view=_VirementToggleView(),
         ephemeral=True,
     )
 

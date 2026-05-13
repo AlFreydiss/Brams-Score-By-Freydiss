@@ -1,14 +1,19 @@
 import time
 
-_state: dict[str, float] = {"open_until": time.time() + 3600}
+_state: dict[str, float] = {"open_until": 0.0}
 
 
 def is_open() -> bool:
-    return time.time() < _state["open_until"]
+    v = _state["open_until"]
+    return v == float("inf") or time.time() < v
 
 
 def set_open(seconds: float) -> None:
     _state["open_until"] = time.time() + seconds
+
+
+def set_permanent() -> None:
+    _state["open_until"] = float("inf")
 
 
 def close() -> None:
@@ -16,4 +21,7 @@ def close() -> None:
 
 
 def remaining_seconds() -> float:
-    return max(0.0, _state["open_until"] - time.time())
+    v = _state["open_until"]
+    if v == float("inf"):
+        return float("inf")
+    return max(0.0, v - time.time())
