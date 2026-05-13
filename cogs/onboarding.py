@@ -1,30 +1,3 @@
-"""
-cogs/onboarding.py
-==================
-
-À ajouter dans ton bot Buster (Discord).
-
-Dépendances déjà présentes : discord.py, supabase
-Variables d'env requises (Railway → Variables) :
-    SUPABASE_URL              -> ton URL Supabase
-    SUPABASE_SERVICE_KEY      -> ta service_role key (Project Settings → API)
-    ONBOARDING_URL            -> https://ton-site.netlify.app
-    ONBOARDING_ROLES_<GUILD>  -> JSON mapping clé/valeur → role_id (voir plus bas)
-
-Mapping rôles (ex. pour le guild 123456789) :
-    ONBOARDING_ROLES_123456789 = {
-      "passions.anime": 111111,
-      "passions.gaming": 222222,
-      "passions.foot": 333333,
-      "gaming.pc": 444444,
-      "gaming.playstation": 555555,
-      "foot.ligue1": 666666,
-      "notifs.events": 777777
-    }
-Les clés sont question_id + "." + option_value. Si une clé n'est pas mappée,
-le rôle n'est simplement pas attribué (zéro erreur).
-"""
-
 import os
 import json
 import asyncio
@@ -36,8 +9,8 @@ from discord.ext import commands, tasks
 from supabase import create_client, Client
 
 
-SUPABASE_URL = os.environ["SUPABASE_URL"]
-SUPABASE_SERVICE_KEY = os.environ["SUPABASE_SERVICE_KEY"]
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
+SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "")
 ONBOARDING_URL = os.environ.get("ONBOARDING_URL", "https://example.netlify.app")
 
 
@@ -54,60 +27,91 @@ def _load_role_map(guild_id: int) -> dict[str, int]:
 class Onboarding(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self.supa: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
-        self.poll_responses.start()
+        if SUPABASE_URL and SUPABASE_SERVICE_KEY:
+            self.supa: Client | None = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+            self.poll_responses.start()
+        else:
+            self.supa = None
+            print("[onboarding] SUPABASE_URL/SUPABASE_SERVICE_KEY manquants — cog désactivé")
 
     def cog_unload(self):
-        self.poll_responses.cancel()
+        if self.supa:
+            self.poll_responses.cancel()
 
     # ------------------------------------------------------------------
-    # /onboarding — DM l'utilisateur avec son lien perso
+    # Helper interne : génère un token et envoie le lien en DM
     # ------------------------------------------------------------------
-    @app_commands.command(
-        name="onboarding",
-        description="Reçoit ton lien d'embarquement personnel en DM.",
-    )
-    async def onboarding_cmd(self, interaction: discord.Interaction):
-        await interaction.response.defer(ephemeral=True, thinking=True)
-
+    async def _send_onboarding_dm(self, user: discord.User | discord.Member, guild_id: int) -> bool:
+        if not self.supa:
+            return False
         token = secrets.token_urlsafe(16)
         try:
-            self.supa.table("onboarding_tokens").insert(
-                {
-                    "token": token,
-                    "discord_user_id": str(interaction.user.id),
-                    "guild_id": str(interaction.guild_id),
-                }
-            ).execute()
+            self.supa.table("onboarding_tokens").insert({
+                "token": token,
+                "discord_user_id": str(user.id),
+                "guild_id": str(guild_id),
+            }).execute()
         except Exception as e:
-            await interaction.followup.send(
-                f"❌ Erreur en générant ton lien : `{e}`", ephemeral=True
-            )
-            return
+            print(f"[onboarding] erreur insert token: {e}")
+            return False
 
         link = f"{ONBOARDING_URL}/?token={token}"
-
         embed = discord.Embed(
-            title="👋 Bienvenue sur Brams Community !",
+            title="🏴‍☠️ Personnalise ton profil Brams !",
             description=(
-                "Avant qu'on t'ouvre tous les salons, on a besoin de quelques infos "
-                "pour te donner les bons rôles (anime, gaming, foot...).\n\n"
-                f"**[Clique ici pour commencer →]({link})**\n\n"
-                "Ce lien est personnel et expire dans 24h."
+                "Réponds à quelques questions pour qu'on te donne les bons rôles "
+                "(anime, gaming, foot...) et que ça s'affiche dans ton `/monprofil`.\n\n"
+                f"**[Commencer l'onboarding →]({link})**\n\n"
+                "Ce lien est personnel et expire dans **24h**."
             ),
             color=0xE0524A,
         )
-
         try:
-            await interaction.user.send(embed=embed)
-            await interaction.followup.send(
-                "✅ Je t'ai envoyé ton lien en DM !", ephemeral=True
-            )
+            await user.send(embed=embed)
+            return True
         except discord.Forbidden:
-            await interaction.followup.send(
-                f"⚠️ Tes DMs sont fermés. Voici quand même ton lien : {link}",
-                ephemeral=True,
+            return False
+
+    # ------------------------------------------------------------------
+    # Auto-onboarding au join
+    # ------------------------------------------------------------------
+    @commands.Cog.listener()
+    async def on_member_join(self, member: discord.Member):
+        if member.bot:
+            return
+        await self._send_onboarding_dm(member, member.guild.id)
+
+    # ------------------------------------------------------------------
+    # /modifier-onboarding — refaire l'onboarding à tout moment
+    # ------------------------------------------------------------------
+    @app_commands.command(
+        name="modifier-onboarding",
+        description="Modifie tes centres d'intérêt (reçois un nouveau lien en DM).",
+    )
+    async def modifier_onboarding_cmd(self, interaction: discord.Interaction):
+        if not self.supa:
+            await interaction.response.send_message(
+                "❌ L'onboarding n'est pas configuré sur ce bot.", ephemeral=True
             )
+            return
+        await interaction.response.defer(ephemeral=True, thinking=True)
+        sent = await self._send_onboarding_dm(interaction.user, interaction.guild_id)
+        if sent:
+            await interaction.followup.send("✅ Lien envoyé en DM !", ephemeral=True)
+        else:
+            token = secrets.token_urlsafe(16)
+            try:
+                self.supa.table("onboarding_tokens").insert({
+                    "token": token,
+                    "discord_user_id": str(interaction.user.id),
+                    "guild_id": str(interaction.guild_id),
+                }).execute()
+                link = f"{ONBOARDING_URL}/?token={token}"
+                await interaction.followup.send(
+                    f"⚠️ Tes DMs sont fermés. Voici ton lien : {link}", ephemeral=True
+                )
+            except Exception as e:
+                await interaction.followup.send(f"❌ Erreur : `{e}`", ephemeral=True)
 
     # ------------------------------------------------------------------
     # Polling — toutes les 10s, on traite les réponses non processées
@@ -174,10 +178,6 @@ class Onboarding(commands.Cog):
         except Exception as e:
             print(f"[onboarding] erreur add_roles: {e}")
 
-        import json as _json
-        import asyncio as _asyncio
-        from concurrent.futures import ThreadPoolExecutor as _TPE
-
         def _save_answers():
             conn = self.bot.get_db()
             try:
@@ -186,14 +186,14 @@ class Onboarding(commands.Cog):
                     INSERT INTO profiles (user_id, onboarding_answers)
                     VALUES (%s, %s)
                     ON CONFLICT (user_id) DO UPDATE SET onboarding_answers = EXCLUDED.onboarding_answers
-                """, (str(user_id), _json.dumps(answers)))
+                """, (str(user_id), json.dumps(answers)))
                 conn.commit()
                 cur.close()
             finally:
                 self.bot.release_db(conn)
 
         try:
-            loop = _asyncio.get_running_loop()
+            loop = asyncio.get_running_loop()
             await loop.run_in_executor(None, _save_answers)
         except Exception as e:
             print(f"[onboarding] erreur save profiles: {e}")
