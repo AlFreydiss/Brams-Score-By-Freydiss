@@ -33,20 +33,22 @@ _executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="profiles_db")
 
 # ── DB helpers (sync, exécutés dans l'executor) ───────────────────
 
-_PASSION_ICONS = {
-    "anime": "🎌", "gaming": "🎮", "foot": "⚽", "musique": "🎵", "cine": "🎬", "tech": "💻",
+_RAISON_ICONS = {
+    "anime": "🎌", "vocal": "🎙️", "buster": "🤖", "op": "🗺️", "observer": "👀",
 }
-_GAMING_ICONS = {
-    "pc": "🖥️", "playstation": "🎮", "xbox": "🟩", "nintendo": "🎯", "mobile": "📱", "none": None,
+_RAISON_LABELS = {
+    "anime": "Fans d'anime", "vocal": "Vocal & rangs", "buster": "Bot Buster",
+    "op": "One Piece", "observer": "Juste observer",
 }
-_GAMING_LABELS = {
-    "pc": "PC", "playstation": "PlayStation", "xbox": "Xbox", "nintendo": "Nintendo", "mobile": "Mobile",
+_EQUIPAGE_ICONS = {
+    "mugiwara": "🎩", "heart": "💛", "redhair": "🔴", "roger": "💀", "other": "🌊",
 }
-_FOOT_ICONS = {
-    "ligue1": "🇫🇷", "etranger": "🌍", "international": "🏆", "none": None,
+_EQUIPAGE_LABELS = {
+    "mugiwara": "Mugiwara", "heart": "Heart Pirates", "redhair": "Red Hair",
+    "roger": "Roger Pirates", "other": "Autre équipage",
 }
-_FOOT_LABELS = {
-    "ligue1": "Ligue 1", "etranger": "Étranger", "international": "International",
+_OBJECTIF_ICONS = {
+    "pirate": "🏴‍☠️", "shichibukai": "⚔️", "amiral": "🪖", "yonkou": "👑",
 }
 
 
@@ -224,38 +226,38 @@ async def _build_profile_embed(
     # ── Section : Centres d'intérêt (onboarding) ─────────────────
     oa = row.get("onboarding_answers") if row else None
     if oa:
-        passions_raw = oa.get("passions", [])
-        if isinstance(passions_raw, str):
-            passions_raw = [passions_raw]
-        passions_str = " ".join(
-            f"{_PASSION_ICONS.get(p, '•')} {p.capitalize()}"
-            for p in passions_raw if p and p != "none"
+        raison_raw = oa.get("raison", [])
+        if isinstance(raison_raw, str):
+            raison_raw = [raison_raw]
+        raison_str = "  ".join(
+            f"{_RAISON_ICONS.get(r, '•')} {_RAISON_LABELS.get(r, r.capitalize())}"
+            for r in raison_raw if r and r != "observer"
         )
 
-        gaming_raw = oa.get("gaming", [])
-        if isinstance(gaming_raw, str):
-            gaming_raw = [gaming_raw]
-        gaming_str = " ".join(
-            f"{_GAMING_ICONS.get(g, '🎮')} {_GAMING_LABELS.get(g, g.capitalize())}"
-            for g in gaming_raw if g and g != "none" and _GAMING_ICONS.get(g) is not None
+        equipage_val = oa.get("equipage")
+        if isinstance(equipage_val, list):
+            equipage_val = equipage_val[0] if equipage_val else None
+        equipage_str = (
+            f"{_EQUIPAGE_ICONS.get(equipage_val, '🌊')} {_EQUIPAGE_LABELS.get(equipage_val, equipage_val.capitalize())}"
+            if equipage_val else None
         )
 
-        foot_val = oa.get("foot")
-        if isinstance(foot_val, list):
-            foot_val = foot_val[0] if foot_val else None
-        foot_str = (
-            f"{_FOOT_ICONS.get(foot_val, '⚽')} {_FOOT_LABELS.get(foot_val, foot_val.capitalize())}"
-            if foot_val and foot_val != "none" else None
+        objectif_val = oa.get("objectif")
+        if isinstance(objectif_val, list):
+            objectif_val = objectif_val[0] if objectif_val else None
+        objectif_str = (
+            f"{_OBJECTIF_ICONS.get(objectif_val, '🏴‍☠️')} {objectif_val.capitalize()}"
+            if objectif_val else None
         )
 
-        if passions_str or gaming_str or foot_str:
+        if raison_str or equipage_str or objectif_str:
             embed.add_field(name="​", value="**━━━━  CENTRES D'INTÉRÊT  ━━━━**", inline=False)
-            if passions_str:
-                embed.add_field(name="✨ Passions", value=passions_str, inline=False)
-            if gaming_str:
-                embed.add_field(name="🕹️ Plateformes", value=gaming_str, inline=True)
-            if foot_str:
-                embed.add_field(name="⚽ Foot", value=foot_str, inline=True)
+            if raison_str:
+                embed.add_field(name="✨ Motivations", value=raison_str, inline=False)
+            if equipage_str:
+                embed.add_field(name="⚓ Équipage", value=equipage_str, inline=True)
+            if objectif_str:
+                embed.add_field(name="🎖️ Objectif", value=objectif_str, inline=True)
 
     # ── Section : À propos ────────────────────────────────────────
     embed.add_field(name="​", value="**━━━━━━  À PROPOS  ━━━━━━**", inline=False)
