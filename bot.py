@@ -2335,9 +2335,9 @@ async def _is_insult_context(content: str, bad_word: str) -> bool:
         return True
 
 
-@bot.event
 SILENT_CHANNELS = {924378497336631348}
 
+@bot.event
 async def on_message(message):
     if message.author.bot:
         return
