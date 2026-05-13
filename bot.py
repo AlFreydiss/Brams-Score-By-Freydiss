@@ -2336,8 +2336,12 @@ async def _is_insult_context(content: str, bad_word: str) -> bool:
 
 
 @bot.event
+SILENT_CHANNELS = {924378497336631348}
+
 async def on_message(message):
     if message.author.bot:
+        return
+    if message.channel.id in SILENT_CHANNELS:
         return
     if isinstance(message.channel, discord.DMChannel):
         if message.content.strip() == "1":
