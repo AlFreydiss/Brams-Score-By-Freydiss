@@ -29,17 +29,24 @@ export default function App() {
     <GearProvider>
       <GlobalStyles />
 
-      {/* Fond GIF Luffy */}
+      {/* Fond vidéo YouTube */}
+      <div style={{ position: 'fixed', inset: 0, zIndex: 0, overflow: 'hidden', pointerEvents: 'none' }}>
+        <iframe
+          src="https://www.youtube.com/embed/eBAiYv-OnrI?autoplay=1&mute=1&loop=1&playlist=eBAiYv-OnrI&controls=0&showinfo=0&rel=0&iv_load_policy=3&modestbranding=1&start=25"
+          style={{
+            position: 'absolute', top: '50%', left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: 'max(177.78vh, 100vw)',
+            height: 'max(56.25vw, 100vh)',
+            border: 'none', pointerEvents: 'none',
+          }}
+          allow="autoplay; encrypted-media"
+          title="bg"
+        />
+      </div>
       <div style={{
         position: 'fixed', inset: 0, zIndex: 0,
-        backgroundImage: 'url(/luffy-bg.gif)',
-        backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat',
-        opacity: 0.38,
-        pointerEvents: 'none',
-      }} />
-      <div style={{
-        position: 'fixed', inset: 0, zIndex: 0,
-        background: 'rgba(14,14,16,0.68)',
+        background: 'rgba(14,14,16,0.72)',
         pointerEvents: 'none',
       }} />
 
