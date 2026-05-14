@@ -8,7 +8,7 @@ function mkPages(num, count = 18) {
 
 const EMOJIS = ['🏴‍☠️','⚔️','📜','💥','🌊','🔥','👑','🌀','🛡️','⚡','🌋','🗡️','☀️','🔴','🏔️','🤝','💰','⛈️','🎯','🌸','💎','🌑','⚕️','💫','🌺','🦁','⚓']
 
-const CHAPTERS_FALLBACK = Array.from({ length: 1182 - 1126 + 1 }, (_, i) => {
+const CHAPTERS = Array.from({ length: 1182 - 1126 + 1 }, (_, i) => {
   const num = 1126 + i
   return { num, title: `Chapitre ${num}`, emoji: EMOJIS[i % EMOJIS.length], pages: mkPages(num) }
 })
@@ -78,18 +78,9 @@ function PaginationBar({ page, total, onChange }) {
 
 // ── Reader ────────────────────────────────────────────────────────────────────
 
-async function fetchMangaDexPages(chapterId) {
-  const r = await fetch(`https://api.mangadex.org/at-home/server/${chapterId}`, {
-    signal: AbortSignal.timeout(12_000),
-  })
-  if (!r.ok) throw new Error(`HTTP ${r.status}`)
-  const { baseUrl, chapter: { hash, dataSaver } } = await r.json()
-  return dataSaver.map(f => `${baseUrl}/data-saver/${hash}/${f}`)
-}
 
 function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextChapter, totalChapters, onFinish, isRead }) {
-  const [pages,      setPages]      = useState(chapter.pages || [])
-  const [fetchState, setFetchState] = useState(chapter.chapterId && !chapter.pages ? 'loading' : 'ok')
+  const pages = chapter.pages || []
   const [page,       setPage]       = useState(0)
   const [imgLoaded,  setImgLoaded]  = useState(false)
   const [imgError,   setImgError]   = useState(false)
@@ -101,38 +92,26 @@ function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextChapter, 
   const atStart = page === 0 && chapterIndex === 0
   const atEnd   = (doublePage ? page + 1 >= total - 1 : page === total - 1) && chapterIndex === totalChapters - 1
 
-  // ── Charge pages MangaDex @ Home ─────────────────────────────────────────────
-  useEffect(() => {
-    if (!chapter.chapterId || chapter.pages?.length) return
-    let cancelled = false
-    setFetchState('loading')
-    setPages([])
-    fetchMangaDexPages(chapter.chapterId)
-      .then(urls => { if (!cancelled) { setPages(urls); setFetchState('ok') } })
-      .catch(() => { if (!cancelled) setFetchState('error') })
-    return () => { cancelled = true }
-  }, [chapter.chapterId, chapter.pages])
 
-  // ── Restaure la page sauvegardée quand les pages sont prêtes ─────────────────
+  // ── Restaure la page sauvegardée à l'ouverture ───────────────────────────────
   useEffect(() => {
-    if (fetchState !== 'ok' || total === 0) return
+    if (total === 0) return
     try {
       const saved = parseInt(localStorage.getItem(`manga_page_${chapter.num}`) || '0')
       if (saved > 0 && saved < total) { setPage(saved); setImgLoaded(false); setImgError(false) }
     } catch {}
-  }, [fetchState, total, chapter.num])
+  }, [chapter.num, total])
 
   // ── Sauvegarde automatique de la page courante ────────────────────────────────
   useEffect(() => {
-    if (fetchState !== 'ok' || total === 0) return
+    if (total === 0) return
     try { localStorage.setItem(`manga_page_${chapter.num}`, String(page)) } catch {}
-  }, [page, chapter.num, fetchState, total])
+  }, [page, chapter.num, total])
 
   // ── Reset au changement de chapitre ──────────────────────────────────────────
   useEffect(() => {
     setPage(0); setImgLoaded(false); setImgError(false); setMarkedRead(isRead)
-    if (chapter.pages) { setPages(chapter.pages); setFetchState('ok') }
-  }, [chapter.num, chapter.pages, isRead])
+  }, [chapter.num, isRead])
 
   // ── Navigation ────────────────────────────────────────────────────────────────
   const changePage = useCallback((newPage) => {
@@ -180,8 +159,7 @@ function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextChapter, 
   }
 
   // ── Label page ────────────────────────────────────────────────────────────────
-  const pageLabel = fetchState === 'loading' ? 'Chargement…'
-    : total === 0 ? '?'
+  const pageLabel = total === 0 ? '?'
     : doublePage ? `Pages ${page + 1}–${Math.min(page + 2, total)} / ${total}`
     : `Page ${page + 1} / ${total}`
 
@@ -230,28 +208,8 @@ function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextChapter, 
       <div style={{ flex:1, overflow:'auto', display:'flex', alignItems:'flex-start', justifyContent:'center' }} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
         <div style={{ position:'relative', width:'100%', maxWidth: doublePage ? 1400 : 850, minHeight:'100%', display:'flex', alignItems:'center', justifyContent:'center' }}>
 
-          {fetchState === 'loading' && (
-            <div style={{ textAlign:'center', color:'rgba(255,255,255,0.5)' }}>
-              <div style={{ fontSize:48, marginBottom:16, animation:'pulse 1.2s infinite' }}>📡</div>
-              <div style={{ fontWeight:700, color:'#fff', marginBottom:6 }}>Chargement du chapitre…</div>
-              <div style={{ fontSize:13, color:'var(--muted)' }}>Connexion à MangaDex</div>
-            </div>
-          )}
-
-          {fetchState === 'error' && (
-            <div style={{ textAlign:'center', color:'rgba(255,255,255,0.4)', padding:40 }}>
-              <div style={{ fontSize:48, marginBottom:16 }}>⚠️</div>
-              <div style={{ fontWeight:700, marginBottom:8, color:'#fff' }}>Impossible de charger ce chapitre</div>
-              <div style={{ fontSize:13, color:'var(--muted)', marginBottom:16 }}>MangaDex temporairement indisponible</div>
-              <button onClick={() => { setFetchState('loading'); fetchMangaDexPages(chapter.chapterId).then(urls => { setPages(urls); setFetchState('ok') }).catch(() => setFetchState('error')) }}
-                style={{ padding:'10px 20px', borderRadius:10, background:'var(--accent)', border:'none', color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer' }}>
-                Réessayer
-              </button>
-            </div>
-          )}
-
           {/* Mode simple */}
-          {fetchState === 'ok' && !doublePage && (
+          {!doublePage && (
             <>
               {!imgLoaded && !imgError && (
                 <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center' }}>
@@ -282,7 +240,7 @@ function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextChapter, 
           )}
 
           {/* Mode double page */}
-          {fetchState === 'ok' && doublePage && (
+          {doublePage && (
             <div style={{ display:'flex', gap:4, width:'100%', alignItems:'flex-start' }}>
               {[page, page + 1].map((p, i) => (
                 pages[p] ? (
@@ -298,19 +256,19 @@ function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextChapter, 
 
       {/* ── Bottom bar ── */}
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 16px', background:'rgba(14,14,16,0.95)', borderTop:'1px solid rgba(255,255,255,0.08)', flexShrink:0, backdropFilter:'blur(12px)', gap:12 }}>
-        <button onClick={prev} disabled={atStart||fetchState!=='ok'} style={{ padding:'10px 20px', borderRadius:10, border:'none', cursor: atStart||fetchState!=='ok'?'default':'pointer', fontWeight:700, fontSize:14, background:atStart||fetchState!=='ok'?'rgba(255,255,255,0.06)':'rgba(255,255,255,0.1)', color:atStart||fetchState!=='ok'?'rgba(255,255,255,0.2)':'#fff' }}>← Préc.</button>
+        <button onClick={prev} disabled={atStart} style={{ padding:'10px 20px', borderRadius:10, border:'none', cursor: atStart?'default':'pointer', fontWeight:700, fontSize:14, background:atStart?'rgba(255,255,255,0.06)':'rgba(255,255,255,0.1)', color:atStart?'rgba(255,255,255,0.2)':'#fff' }}>← Préc.</button>
 
         {/* Barre de progression cliquable */}
-        <div style={{ flex:1, height:4, background:'rgba(255,255,255,0.1)', borderRadius:2, overflow:'hidden', cursor: fetchState==='ok'?'pointer':'default' }}
+        <div style={{ flex:1, height:4, background:'rgba(255,255,255,0.1)', borderRadius:2, overflow:'hidden', cursor:'pointer' }}
           onClick={e => {
-            if (fetchState !== 'ok' || !total) return
+            if (!total) return
             const r = e.currentTarget.getBoundingClientRect()
             changePage(Math.floor(((e.clientX - r.left) / r.width) * total))
           }}>
           <div style={{ height:'100%', background:'var(--accent)', borderRadius:2, width: total ? `${((page + (doublePage && pages[page+1] ? 2 : 1)) / total) * 100}%` : '0%', transition:'width 0.2s' }} />
         </div>
 
-        <button onClick={next} disabled={atEnd||fetchState!=='ok'} style={{ padding:'10px 20px', borderRadius:10, border:'none', cursor: atEnd||fetchState!=='ok'?'default':'pointer', fontWeight:700, fontSize:14, background:atEnd||fetchState!=='ok'?'rgba(255,255,255,0.06)':'var(--accent)', color:'#fff' }}>Suiv. →</button>
+        <button onClick={next} disabled={atEnd} style={{ padding:'10px 20px', borderRadius:10, border:'none', cursor: atEnd?'default':'pointer', fontWeight:700, fontSize:14, background:atEnd?'rgba(255,255,255,0.06)':'var(--accent)', color:'#fff' }}>Suiv. →</button>
       </div>
     </div>
   )
@@ -469,7 +427,6 @@ function ListRow({ ch, onOpen, status, highlight, cardRef }) {
 // ── Page principale ───────────────────────────────────────────────────────────
 
 export default function ScansPage({ onClose }) {
-  const [chapters,  setChapters]  = useState(CHAPTERS_FALLBACK)
   const [search,    setSearch]    = useState('')
   const [sort,      setSort]      = useState('asc')
   const [view,      setView]      = useState('grid')
@@ -482,20 +439,6 @@ export default function ScansPage({ onClose }) {
   const [sidebar,   setSidebar]   = useState(false)
   const [progress,  setProgress]  = useState(loadProgress)
 
-  // Charge les métadonnées depuis l'API MangaDex (via sync-chapters.js)
-  useEffect(() => {
-    fetch('/data/chapters.json')
-      .then(r => r.ok ? r.json() : null)
-      .then(data => {
-        if (!Array.isArray(data) || data.length === 0) return
-        setChapters(data.map((ch, i) => ({
-          ...ch,
-          emoji: EMOJIS[i % EMOJIS.length],
-          title: ch.titleFr || ch.titleEn || `Chapitre ${ch.num}`,
-        })))
-      })
-      .catch(() => {})
-  }, [])
 
   const searchRef  = useRef(null)
   const cardRefs   = useRef({})
@@ -512,29 +455,28 @@ export default function ScansPage({ onClose }) {
 
   // Ouvrir un chapitre
   const openChapter = useCallback((idx) => {
-    const ch = chapters[idx]
+    const ch = CHAPTERS[idx]
     if (!ch) return
-    // Toujours ouvrir le Reader intégré (MangaDex @ Home ou pages locales)
     setReading(idx)
     if (progress[ch.num] !== 'read') markProgress(ch.num, 'reading')
     try { localStorage.setItem('manga_last_read', String(ch.num)) } catch {}
-  }, [chapters, progress, markProgress])
+  }, [progress, markProgress])
 
   // Terminer un chapitre (dernière page)
   const finishChapter = useCallback(() => {
     if (reading === null) return
-    markProgress(chapters[reading].num, 'read')
-  }, [reading, chapters, markProgress])
+    markProgress(CHAPTERS[reading].num, 'read')
+  }, [reading, markProgress])
 
   // Chapitres filtrés + triés
   const filtered = useMemo(() => {
-    let result = chapters
+    let result = CHAPTERS
     if (search.trim()) {
       const q = search.trim().toLowerCase()
       result = result.filter(c => String(c.num).includes(q) || (c.title || '').toLowerCase().includes(q))
     }
     return sort === 'desc' ? [...result].reverse() : result
-  }, [chapters, search, sort])
+  }, [search, sort])
 
   // Pagination
   const totalPages = perPage === Infinity ? 1 : Math.max(1, Math.ceil(filtered.length / perPage))
@@ -548,12 +490,12 @@ export default function ScansPage({ onClose }) {
   // Groupes de range
   const rangeGroups = useMemo(() => {
     const groups = [], size = 20
-    for (let i = 0; i < chapters.length; i += size) {
-      const sl = chapters.slice(i, i + size)
+    for (let i = 0; i < CHAPTERS.length; i += size) {
+      const sl = CHAPTERS.slice(i, i + size)
       groups.push({ start: sl[0].num, end: sl[sl.length-1].num, idx: Math.floor(i/size) })
     }
     return groups
-  }, [chapters])
+  }, [])
 
   // Scroll vers un chapitre + highlight
   const scrollToChapter = useCallback((num) => {
@@ -577,16 +519,16 @@ export default function ScansPage({ onClose }) {
 
   // Jump arc
   const handleJumpArc = useCallback((arc) => {
-    const first = chapters.find(c => c.num >= arc.range[0])
+    const first = CHAPTERS.find(c => c.num >= arc.range[0])
     if (first) { setSearch(''); setSort('asc'); scrollToChapter(first.num) }
-  }, [chapters, scrollToChapter])
+  }, [scrollToChapter])
 
   // Reprendre lecture
   const handleResume = useCallback(() => {
     if (!lastRead) return
-    const idx = chapters.findIndex(c => c.num === lastRead)
+    const idx = CHAPTERS.findIndex(c => c.num === lastRead)
     if (idx !== -1) openChapter(idx)
-  }, [lastRead, chapters, openChapter])
+  }, [lastRead, openChapter])
 
   // Raccourcis clavier
   useEffect(() => {
@@ -617,7 +559,7 @@ export default function ScansPage({ onClose }) {
   }, [])
 
   const readCount = useMemo(() =>
-    chapters.filter(c => progress[c.num] === 'read').length, [chapters, progress])
+    CHAPTERS.filter(c => progress[c.num] === 'read').length, [progress])
 
   return (
     <>
@@ -631,7 +573,7 @@ export default function ScansPage({ onClose }) {
       <div style={{ position:'fixed', inset:0, zIndex:500, background:'var(--bg)', display:'flex', flexDirection:'column', animation:'fadeIn 0.18s ease-out' }}>
 
         {/* ── Sidebar ── */}
-        <Sidebar open={sidebar} onClose={() => setSidebar(false)} progress={progress} onJumpArc={handleJumpArc} chapters={chapters} />
+        <Sidebar open={sidebar} onClose={() => setSidebar(false)} progress={progress} onJumpArc={handleJumpArc} chapters={CHAPTERS} />
 
         {/* ── Header principal ── */}
         <div style={{ flexShrink:0, background:'rgba(17,18,20,0.97)', backdropFilter:'blur(20px)', borderBottom:'1px solid var(--border)', zIndex:10 }}>
@@ -651,7 +593,7 @@ export default function ScansPage({ onClose }) {
             <div style={{ flex:1, textAlign:'center' }}>
               <span style={{ fontFamily:'var(--display)', fontWeight:800, fontSize:16, color:'#fff' }}>📖 Arc Elbaf</span>
               <span style={{ fontSize:12, color:'var(--muted)', marginLeft:10 }}>Ch.1126–1182</span>
-              <span style={{ fontSize:12, color:'#34d399', marginLeft:10, fontWeight:700 }}>{readCount}/{chapters.length} lus</span>
+              <span style={{ fontSize:12, color:'#34d399', marginLeft:10, fontWeight:700 }}>{readCount}/{CHAPTERS.length} lus</span>
             </div>
 
             <span style={{ display:'inline-flex', alignItems:'center', gap:5, background:'rgba(52,211,153,0.1)', border:'1px solid rgba(52,211,153,0.3)', borderRadius:100, padding:'4px 12px', fontSize:11, fontWeight:700, color:'#34d399', flexShrink:0 }}>
@@ -735,7 +677,7 @@ export default function ScansPage({ onClose }) {
                 return (
                   <button key={g.start} onClick={() => {
                     setSearch(''); setSort('asc'); setPerPage(PER_PAGE)
-                    const pos = chapters.findIndex(c => c.num === g.start)
+                    const pos = CHAPTERS.findIndex(c => c.num === g.start)
                     setPage(Math.floor(pos / PER_PAGE) + 1)
                   }} style={{ flexShrink:0, height:28, padding:'0 12px', borderRadius:7, border:`1px solid ${active?'rgba(224,82,74,0.5)':'rgba(255,255,255,0.1)'}`, background:active?'rgba(224,82,74,0.12)':'transparent', color:active?'var(--accent)':'var(--muted)', fontSize:11, fontWeight:600, cursor:'pointer', transition:'all 0.15s' }}>
                     {g.start}–{g.end}
@@ -764,7 +706,7 @@ export default function ScansPage({ onClose }) {
                     ch={ch}
                     hovered={hovered === ch.num}
                     onHover={v => setHovered(v ? ch.num : null)}
-                    onOpen={() => { const idx = chapters.indexOf(ch); openChapter(idx) }}
+                    onOpen={() => { const idx = CHAPTERS.indexOf(ch); openChapter(idx) }}
                     status={progress[ch.num] || null}
                     highlight={highlight === ch.num}
                     cardRef={el => { cardRefs.current[ch.num] = el }}
@@ -777,7 +719,7 @@ export default function ScansPage({ onClose }) {
                   <ListRow
                     key={ch.num}
                     ch={ch}
-                    onOpen={() => { const idx = chapters.indexOf(ch); openChapter(idx) }}
+                    onOpen={() => { const idx = CHAPTERS.indexOf(ch); openChapter(idx) }}
                     status={progress[ch.num] || null}
                     highlight={highlight === ch.num}
                     cardRef={el => { cardRefs.current[ch.num] = el }}
@@ -810,16 +752,16 @@ export default function ScansPage({ onClose }) {
       </div>
 
       {/* ── Reader ── */}
-      {reading !== null && chapters[reading] && (
+      {reading !== null && CHAPTERS[reading] && (
         <Reader
-          chapter={chapters[reading]}
+          chapter={CHAPTERS[reading]}
           chapterIndex={reading}
-          totalChapters={chapters.length}
+          totalChapters={CHAPTERS.length}
           onClose={() => setReading(null)}
           onPrevChapter={() => setReading(i => Math.max(0, i - 1))}
-          onNextChapter={() => setReading(i => Math.min(chapters.length - 1, i + 1))}
+          onNextChapter={() => setReading(i => Math.min(CHAPTERS.length - 1, i + 1))}
           onFinish={finishChapter}
-          isRead={progress[chapters[reading]?.num] === 'read'}
+          isRead={progress[CHAPTERS[reading]?.num] === 'read'}
         />
       )}
     </>
