@@ -7,6 +7,7 @@ const NAV_LINKS = [
   { label: 'Quiz', href: '#quiz' },
   { label: 'Classement', href: '#classement' },
   { label: 'Map', href: '#map' },
+  { label: 'Contact', href: '#contact' },
 ]
 
 const DEV_CREDITS = [

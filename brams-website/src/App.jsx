@@ -14,7 +14,7 @@ import Quiz from './components/Quiz.jsx'
 import HallOfFame from './components/HallOfFame.jsx'
 import GrandLineMap from './components/GrandLineMap.jsx'
 import QuoteSection from './components/QuoteSection.jsx'
-import SupportTicket from './components/SupportTicket.jsx'
+import Contact from './components/Contact.jsx'
 
 export default function App() {
   return (
@@ -44,7 +44,7 @@ export default function App() {
         <GrandLineMap />
         <Quiz />
         <HallOfFame />
-        <SupportTicket />
+        <Contact />
         <Roadmap />
         <Leaderboard />
         <JoinCTA />
