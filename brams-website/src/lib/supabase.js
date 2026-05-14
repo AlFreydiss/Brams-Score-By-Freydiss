@@ -11,3 +11,10 @@ export async function fetchLeaderboard(limit = 10) {
   if (error) { console.error('[leaderboard]', error); return null }
   return data
 }
+
+export async function fetchMembersByRank(minH, maxH = 99999) {
+  if (!supabase) return null
+  const { data, error } = await supabase.rpc('members_by_rank', { p_min_h: minH, p_max_h: maxH })
+  if (error) { console.error('[members_by_rank]', error); return null }
+  return data
+}
