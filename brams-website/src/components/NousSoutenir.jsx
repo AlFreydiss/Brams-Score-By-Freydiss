@@ -1,7 +1,18 @@
 import { useState } from 'react'
 import { useSoundEffect } from '../hooks/useSoundEffect.js'
 
+const LEETCHI_URL = 'https://www.leetchi.com/fr/c/brams-score' // ← remplace par ton vrai lien Leetchi
+
 const SUPPORTS = [
+  {
+    icon: '💛',
+    title: 'Cagnotte Leetchi',
+    desc: 'Participe à la cagnotte officielle du Brams Score. Chaque contribution aide à couvrir les frais d\'hébergement et de développement du bot.',
+    cta: 'Contribuer sur Leetchi',
+    href: LEETCHI_URL,
+    color: '#f9a825',
+    badge: '💰 Cagnotte',
+  },
   {
     icon: '💜',
     title: 'Booster le serveur',
@@ -117,7 +128,7 @@ export default function NousSoutenir() {
             Merci à tous les nakamas
           </h3>
           <p style={{ fontSize: 14, color: 'var(--muted)', lineHeight: 1.8, marginBottom: 20 }}>
-            Ce serveur et ce bot sont développés bénévolement par <strong style={{ color: '#fff' }}>Brams</strong> et <strong style={{ color: '#00C2FF' }}>Freydiss</strong>.
+            Ce serveur et ce bot sont développés bénévolement par <strong style={{ color: '#00C2FF' }}>Freydiss</strong>.
             Chaque ounce de soutien — boost, sub, like — fait une vraie différence. Arigatou, nakama !
           </p>
           <a href="https://discord.gg/ez4dBTPE" target="_blank" rel="noopener noreferrer"

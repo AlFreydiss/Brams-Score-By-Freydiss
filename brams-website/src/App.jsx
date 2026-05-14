@@ -34,12 +34,12 @@ export default function App() {
         position: 'fixed', inset: 0, zIndex: 0,
         backgroundImage: 'url(/luffy-bg.gif)',
         backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat',
-        opacity: 0.22,
+        opacity: 0.38,
         pointerEvents: 'none',
       }} />
       <div style={{
         position: 'fixed', inset: 0, zIndex: 0,
-        background: 'rgba(14,14,16,0.80)',
+        background: 'rgba(14,14,16,0.68)',
         pointerEvents: 'none',
       }} />
 
