@@ -12,9 +12,9 @@ Garde tes réponses courtes et percutantes (max 3-4 phrases sauf si on te demand
 
 function getKeys() {
   const keys = []
-  // GEMINI_API_KEY, GEMINI_API_KEY_2, GEMINI_API_KEY_3, ... jusqu'à 10
+  // GEMINI_API_KEY, GEMINI_API_KEY_1, GEMINI_API_KEY_2, ... jusqu'à 10
   if (process.env.GEMINI_API_KEY) keys.push(process.env.GEMINI_API_KEY)
-  for (let i = 2; i <= 10; i++) {
+  for (let i = 1; i <= 10; i++) {
     const k = process.env[`GEMINI_API_KEY_${i}`]
     if (k) keys.push(k)
   }
