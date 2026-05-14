@@ -1,3 +1,11 @@
+@font-face {
+  font-family: 'OnePiece';
+  src: url('/onepiece.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
@@ -16,7 +24,7 @@
   --youtube:  #ff0000;
   --discord:  #5865f2;
   --display:  'Syne', sans-serif;
-  --pirate:   'Pirata One', cursive;
+  --pirate:   'OnePiece', 'Pirata One', cursive;
   --body:     'Inter', sans-serif;
   --r:        16px;
 }
