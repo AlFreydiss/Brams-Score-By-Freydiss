@@ -169,7 +169,6 @@ export default function Hero() {
               <StatBlock value="2 000+" label="Membres" />
               <StatBlock value="5" label="Rangs" />
               <StatBlock value="24/7" label="Bot actif" />
-              <StatBlock value="15" label="Citations" />
             </div>
           </div>
 
