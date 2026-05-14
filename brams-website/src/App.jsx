@@ -1,4 +1,6 @@
+import { lazy, Suspense } from 'react'
 import GlobalStyles from './components/GlobalStyles.jsx'
+import { GearProvider } from './contexts/GearContext.jsx'
 import Navbar from './components/Navbar.jsx'
 import Hero from './components/Hero.jsx'
 import Ranks from './components/Ranks.jsx'
@@ -16,10 +18,17 @@ import HallOfFame from './components/HallOfFame.jsx'
 import GrandLineMap from './components/GrandLineMap.jsx'
 import QuoteSection from './components/QuoteSection.jsx'
 import Contact from './components/Contact.jsx'
+import NousSoutenir from './components/NousSoutenir.jsx'
+import GearModeUI from './components/GearModeUI.jsx'
+import ComicMode from './components/ComicMode.jsx'
+import ConquerorsHaki from './components/ConquerorsHaki.jsx'
+import AkainuGame from './components/AkainuGame.jsx'
 
 export default function App() {
   return (
-    <>
+    <GearProvider>
+      <GlobalStyles />
+
       {/* Fond GIF Luffy */}
       <div style={{
         position: 'fixed', inset: 0, zIndex: 0,
@@ -28,14 +37,12 @@ export default function App() {
         opacity: 0.22,
         pointerEvents: 'none',
       }} />
-      {/* Overlay sombre */}
       <div style={{
         position: 'fixed', inset: 0, zIndex: 0,
         background: 'rgba(14,14,16,0.80)',
         pointerEvents: 'none',
       }} />
 
-      <GlobalStyles />
       <div style={{ position: 'relative', zIndex: 1 }}>
         <Navbar />
         <Hero />
@@ -46,15 +53,22 @@ export default function App() {
         <GrandLineMap />
         <Quiz />
         <HallOfFame />
-        <Contact />
+        <NousSoutenir />
         <Roadmap />
         <Leaderboard />
+        <Contact />
         <JoinCTA />
         <Footer />
-        <AIChatWidget />
-        <MusicPlayer />
-        <Gear5Easter />
       </div>
-    </>
+
+      {/* Overlays & outils globaux */}
+      <AIChatWidget />
+      <MusicPlayer />
+      <Gear5Easter />
+      <GearModeUI />
+      <ComicMode />
+      <ConquerorsHaki />
+      <AkainuGame />
+    </GearProvider>
   )
 }

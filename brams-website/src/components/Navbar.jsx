@@ -8,6 +8,7 @@ const NAV_LINKS = [
   { label: 'Classement', href: '#classement' },
   { label: 'Map', href: '#map' },
   { label: 'Contact', href: '#contact' },
+  { label: '❤️ Soutenir', href: '#soutenir' },
 ]
 
 const DEV_CREDITS = [

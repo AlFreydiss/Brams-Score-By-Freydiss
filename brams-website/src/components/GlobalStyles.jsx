@@ -132,6 +132,32 @@ const CSS = `
   @media (max-width: 768px) {
     .hide-mobile { display: none !important; }
   }
+
+  /* ── Gear 2 — tout va plus vite ── */
+  .gear-2 *, .gear-2 *::before, .gear-2 *::after {
+    transition-duration: 0.08s !important;
+    animation-duration: calc(var(--dur, 1s) * 0.5) !important;
+  }
+
+  /* ── Gear 3 — éléments grossissent au hover ── */
+  .gear-3 .card:hover,
+  .gear-3 .btn:hover,
+  .gear-3 a:hover { transform: scale(1.08) !important; }
+
+  /* ── Gear 4 — tout rebondit ── */
+  .gear-4 *, .gear-4 *::before, .gear-4 *::after {
+    transition-timing-function: cubic-bezier(0.34,1.56,0.64,1) !important;
+  }
+  .gear-4 .btn:hover { transform: scale(1.06) translateY(-3px) !important; }
+
+  /* ── Gear 5 — cartoon ── */
+  .gear-5 * { font-family: 'Comic Sans MS', cursive !important; }
+  .gear-5 img { filter: saturate(2) contrast(1.3) !important; }
+  .gear-5 .btn { border-radius: 999px !important; border: 3px solid #000 !important; }
+  .gear-5 h1, .gear-5 h2, .gear-5 .h2 {
+    text-shadow: 3px 3px 0 #ff0000, 6px 6px 0 rgba(0,0,0,0.2) !important;
+    color: #cc0000 !important;
+  }
 `
 
 export default function GlobalStyles() {
