@@ -45,7 +45,7 @@ export default function Leaderboard() {
         <div style={{ textAlign:'center', marginBottom:64 }}>
           <div className={`reveal ${inView?'visible':''}`}>
             <div className="label">Top membres</div>
-            <h2 className="h2" style={{ margin:'0 auto 16px', fontFamily:'var(--pirate)', fontWeight:400, letterSpacing:'.02em' }}>Classement vocal</h2>
+            <h2 className="h2" style={{ margin:'0 auto 16px' }}>Classement vocal</h2>
             <p className="sub" style={{ margin:'0 auto' }}>
               Les membres les plus actifs en vocal cette semaine · Top {rows.length || 100}
             </p>

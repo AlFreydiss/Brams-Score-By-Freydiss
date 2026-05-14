@@ -84,7 +84,7 @@ export default function AIChatWidget() {
         }}>
           <div style={{ width:36, height:36, borderRadius:10, background:'linear-gradient(135deg,#e0524a,#9b59b6)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:17 }}>🏴‍☠️</div>
           <div style={{ flex:1 }}>
-            <div style={{ fontWeight:700, fontSize:14, color:'#fff', fontFamily:'var(--pirate)', letterSpacing:'.02em' }}>Brams Score IA</div>
+            <div style={{ fontWeight:700, fontSize:14, color:'#fff' }}>Brams Score IA</div>
             <div style={{ fontSize:11, color:'var(--success)', display:'flex', alignItems:'center', gap:4 }}>
               <span style={{ width:5, height:5, borderRadius:'50%', background:'var(--success)', display:'inline-block', animation:'pulse 2s infinite' }} />
               En ligne

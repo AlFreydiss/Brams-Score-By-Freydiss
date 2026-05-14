@@ -76,7 +76,7 @@ export default function AIChat() {
         <div style={{ textAlign:'center', marginBottom:48 }}>
           <div className={`reveal ${inView?'visible':''}`}>
             <div className="label">Intelligence artificielle</div>
-            <h2 className="h2" style={{ margin:'0 auto 16px', fontFamily:'var(--pirate)', fontWeight:400 }}>
+            <h2 className="h2" style={{ margin:'0 auto 16px' }}>
               Brams Score IA
             </h2>
             <p className="sub" style={{ margin:'0 auto' }}>

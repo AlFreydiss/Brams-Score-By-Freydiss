@@ -9,6 +9,11 @@ const NAV_LINKS = [
   { label: 'Map', href: '#map' },
 ]
 
+const DEV_CREDITS = [
+  { name: 'Brams', role: 'Fondateur', emoji: '👑', color: '#FFD700' },
+  { name: 'Freydiss', role: 'Développeur', emoji: '⚙️', color: '#00C2FF' },
+]
+
 function TikTokIcon() {
   return <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.75a4.85 4.85 0 0 1-1.01-.06z"/></svg>
 }
@@ -27,6 +32,7 @@ const ICON_BTN = { display:'flex', alignItems:'center', justifyContent:'center',
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [about, setAbout] = useState(false)
+  const [showCredits, setShowCredits] = useState(false)
 
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 50)
@@ -64,6 +70,65 @@ export default function Navbar() {
                 onMouseLeave={e=>e.target.style.color='var(--muted)'}
               >{l.label}</a>
             ))}
+
+            {/* Bouton Brams Score + popup crédits */}
+            <div style={{ position:'relative' }}>
+              <button
+                onClick={() => setShowCredits(s => !s)}
+                style={{
+                  padding:'7px 14px', borderRadius:8, fontSize:14, fontWeight:500,
+                  color: showCredits ? '#fff' : 'var(--muted)',
+                  background: showCredits ? 'rgba(255,255,255,.06)' : 'transparent',
+                  border:'none', cursor:'pointer', fontFamily:'var(--body)',
+                  transition:'color .2s, background .2s',
+                  display:'flex', alignItems:'center', gap:6,
+                }}
+                onMouseEnter={e=>e.currentTarget.style.color='#fff'}
+                onMouseLeave={e=>{ if (!showCredits) e.currentTarget.style.color='var(--muted)' }}
+              >
+                🤖 Brams Score
+              </button>
+
+              {showCredits && (
+                <div
+                  style={{
+                    position:'absolute', top:'calc(100% + 10px)', left:'50%', transform:'translateX(-50%)',
+                    background:'rgba(17,18,20,0.97)', border:'1px solid rgba(255,255,255,.1)',
+                    borderRadius:14, padding:'18px 20px', minWidth:260,
+                    boxShadow:'0 20px 50px rgba(0,0,0,.7)',
+                    animation:'scaleIn .15s ease-out',
+                    zIndex:999,
+                  }}
+                  onMouseLeave={() => setShowCredits(false)}
+                >
+                  <div style={{ fontSize:11, fontWeight:700, letterSpacing:'.12em', textTransform:'uppercase', color:'var(--muted)', marginBottom:12 }}>
+                    Brams Score — développé par
+                  </div>
+                  {DEV_CREDITS.map(d => (
+                    <div key={d.name} style={{
+                      display:'flex', alignItems:'center', gap:10,
+                      padding:'10px 12px', borderRadius:10,
+                      background:`${d.color}0d`, border:`1px solid ${d.color}20`,
+                      marginBottom:8,
+                    }}>
+                      <div style={{
+                        width:34, height:34, borderRadius:8, flexShrink:0,
+                        background:`${d.color}18`, border:`1px solid ${d.color}30`,
+                        display:'flex', alignItems:'center', justifyContent:'center', fontSize:16,
+                      }}>{d.emoji}</div>
+                      <div>
+                        <div style={{ fontWeight:700, color:'#fff', fontSize:14 }}>{d.name}</div>
+                        <div style={{ fontSize:11, color:d.color, fontWeight:600 }}>{d.role}</div>
+                      </div>
+                    </div>
+                  ))}
+                  <div style={{ borderTop:'1px solid rgba(255,255,255,.06)', paddingTop:12, marginTop:4, fontSize:12, color:'var(--muted)', lineHeight:1.6 }}>
+                    Bot Discord One Piece · Python · PostgreSQL<br/>
+                    <span style={{ color:'rgba(255,255,255,.35)' }}>Hébergé sur Railway · DB Supabase</span>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           <div style={{ display:'flex', alignItems:'center', gap:8 }}>
