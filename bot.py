@@ -1901,6 +1901,21 @@ async def on_ready():
     if recovered:
         print(f"[BOT] {recovered} membres en vocal recuperes au demarrage")
 
+    # Sync des pseudos Discord pour le classement web
+    username_synced = 0
+    for guild in bot.guilds:
+        for member in guild.members:
+            if member.bot:
+                continue
+            uid = str(member.id)
+            user = get_user(data, uid)
+            if user.get("username") != member.display_name:
+                user["username"] = member.display_name
+                _DIRTY.add(uid)
+                username_synced += 1
+    if username_synced:
+        print(f"[BOT] {username_synced} pseudos synchronisés au démarrage")
+
     # Sync rétroactif des Berry vocaux (une seule fois par utilisateur)
     synced = 0
     _now = now_ts()
