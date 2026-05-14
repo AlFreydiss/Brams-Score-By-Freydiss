@@ -7,25 +7,30 @@ const LINKS = [
 
 export default function Footer() {
   return (
-    <footer style={{ borderTop:'1px solid var(--border)', padding:'36px 28px' }}>
-      <div style={{ maxWidth:1120, margin:'0 auto', display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:16 }}>
-        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-          <span style={{ fontSize:20 }}>🏴‍☠️</span>
-          <span style={{ fontFamily:'var(--display)', fontWeight:800, color:'#fff', fontSize:16 }}>Brams Community</span>
+    <footer style={{
+      borderTop:'1px solid rgba(255,255,255,.06)',
+      padding:'28px 28px',
+      background:'rgba(14,14,16,.6)',
+      backdropFilter:'blur(10px)',
+    }}>
+      <div style={{ maxWidth:1120, margin:'0 auto', display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:12 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+          <span style={{ fontSize:17 }}>🏴‍☠️</span>
+          <span style={{ fontFamily:'var(--pirate)', color:'#fff', fontSize:17, letterSpacing:'.02em' }}>Brams Community</span>
         </div>
 
-        <div style={{ display:'flex', gap:4 }}>
+        <div style={{ display:'flex', gap:2 }}>
           {LINKS.map(l => (
             <a key={l.label} href={l.href} target="_blank" rel="noopener noreferrer"
-              style={{ padding:'6px 12px', borderRadius:8, fontSize:13, color:'var(--muted)', transition:'color .15s' }}
-              onMouseEnter={e=>e.target.style.color='#fff'}
-              onMouseLeave={e=>e.target.style.color='var(--muted)'}
+              style={{ padding:'5px 11px', borderRadius:7, fontSize:12, color:'rgba(255,255,255,.35)', transition:'color .15s' }}
+              onMouseEnter={e=>e.target.style.color='rgba(255,255,255,.8)'}
+              onMouseLeave={e=>e.target.style.color='rgba(255,255,255,.35)'}
             >{l.label}</a>
           ))}
         </div>
 
-        <span style={{ fontSize:12, color:'var(--muted)' }}>
-          Made by <strong style={{ color:'#fff' }}>Freydiss</strong> · Bot Brams Score · © 2025
+        <span style={{ fontSize:11, color:'rgba(255,255,255,.2)', letterSpacing:'.04em' }}>
+          Made by <strong style={{ color:'rgba(255,255,255,.4)' }}>Freydiss</strong> · © 2025
         </span>
       </div>
     </footer>
