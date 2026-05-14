@@ -5,6 +5,7 @@ const PLAYER_DIV_ID = 'yt-music-player'
 export default function MusicPlayer() {
   const [muted, setMuted] = useState(true)
   const [ready, setReady] = useState(false)
+  const [volume, setVolume] = useState(35)
   const playerRef = useRef(null)
 
   useEffect(() => {
@@ -12,7 +13,6 @@ export default function MusicPlayer() {
 
     const init = () => {
       if (destroyed) return
-      // Vérifie que le div cible existe
       const target = document.getElementById(PLAYER_DIV_ID)
       if (!target) return
 
@@ -38,9 +38,7 @@ export default function MusicPlayer() {
             e.target.playVideo()
             setReady(true)
           },
-          onError: () => {
-            // Silencieux — la vidéo peut être bloquée par politiques YT
-          },
+          onError: () => {},
         },
       })
     }
@@ -48,14 +46,12 @@ export default function MusicPlayer() {
     if (window.YT && window.YT.Player) {
       init()
     } else {
-      // Évite de charger le script en double
       if (!document.getElementById('yt-iframe-script')) {
         const tag = document.createElement('script')
         tag.id = 'yt-iframe-script'
         tag.src = 'https://www.youtube.com/iframe_api'
         document.head.appendChild(tag)
       }
-      // Chaîne le callback si un autre composant l'a déjà défini
       const prev = window.onYouTubeIframeAPIReady
       window.onYouTubeIframeAPIReady = () => {
         if (prev) prev()
@@ -71,16 +67,30 @@ export default function MusicPlayer() {
     if (!p || typeof p.unMute !== 'function') return
     if (muted) {
       p.unMute()
-      p.setVolume(35)
+      p.setVolume(volume)
     } else {
       p.mute()
     }
     setMuted(m => !m)
   }
 
+  const handleVolume = (e) => {
+    const val = parseInt(e.target.value)
+    setVolume(val)
+    const p = playerRef.current
+    if (!p || typeof p.setVolume !== 'function') return
+    p.setVolume(val)
+    if (val === 0) {
+      p.mute()
+      setMuted(true)
+    } else if (muted) {
+      p.unMute()
+      setMuted(false)
+    }
+  }
+
   return (
     <>
-      {/* Div cible stable avec ID fixe — jamais démonté */}
       <div
         style={{ position: 'fixed', left: '-9999px', top: 0, width: 1, height: 1, overflow: 'hidden', pointerEvents: 'none' }}
         aria-hidden="true"
@@ -88,27 +98,48 @@ export default function MusicPlayer() {
         <div id={PLAYER_DIV_ID} />
       </div>
 
-      {/* Bouton mute discret */}
       {ready && (
-        <button
-          onClick={toggle}
-          title={muted ? 'Activer la musique' : 'Couper la musique'}
-          style={{
-            position: 'fixed', bottom: 90, left: 24, zIndex: 800,
-            width: 34, height: 34, borderRadius: 9,
-            background: 'rgba(255,255,255,.05)',
-            border: '1px solid rgba(255,255,255,.08)',
-            color: muted ? 'rgba(255,255,255,.25)' : 'rgba(255,255,255,.65)',
-            cursor: 'pointer', fontSize: 14,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            transition: 'all .2s',
-            animation: 'fadeIn .4s ease-out',
-          }}
-          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,.12)'; e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = 'rgba(255,255,255,.2)' }}
-          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,.05)'; e.currentTarget.style.color = muted ? 'rgba(255,255,255,.25)' : 'rgba(255,255,255,.65)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,.08)' }}
-        >
-          {muted ? '🔇' : '🔊'}
-        </button>
+        <div style={{
+          position: 'fixed', bottom: 90, left: 16, zIndex: 800,
+          display: 'flex', alignItems: 'center', gap: 8,
+          background: 'rgba(14,14,16,0.75)',
+          border: '1px solid rgba(255,255,255,.08)',
+          borderRadius: 12, padding: '6px 10px',
+          backdropFilter: 'blur(10px)',
+          animation: 'fadeIn .4s ease-out',
+        }}>
+          <button
+            onClick={toggle}
+            title={muted ? 'Activer la musique' : 'Couper la musique'}
+            style={{
+              width: 28, height: 28, borderRadius: 7, flexShrink: 0,
+              background: 'transparent', border: 'none',
+              color: muted ? 'rgba(255,255,255,.3)' : 'rgba(255,255,255,.75)',
+              cursor: 'pointer', fontSize: 14,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              transition: 'color .2s',
+            }}
+            onMouseEnter={e => e.currentTarget.style.color = '#fff'}
+            onMouseLeave={e => e.currentTarget.style.color = muted ? 'rgba(255,255,255,.3)' : 'rgba(255,255,255,.75)'}
+          >
+            {muted || volume === 0 ? '🔇' : volume < 40 ? '🔉' : '🔊'}
+          </button>
+
+          <input
+            type="range"
+            min="0"
+            max="100"
+            value={muted ? 0 : volume}
+            onChange={handleVolume}
+            style={{
+              width: 80, height: 4, cursor: 'pointer',
+              accentColor: '#e0524a',
+              background: `linear-gradient(to right, #e0524a ${muted ? 0 : volume}%, rgba(255,255,255,.15) ${muted ? 0 : volume}%)`,
+              borderRadius: 4, outline: 'none', border: 'none',
+              appearance: 'none', WebkitAppearance: 'none',
+            }}
+          />
+        </div>
       )}
     </>
   )
