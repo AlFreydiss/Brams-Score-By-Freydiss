@@ -6,18 +6,20 @@ import yt_dlp
 import psycopg2
 from psycopg2.extras import execute_values as _pg_execute_values
 from concurrent.futures import ThreadPoolExecutor
+from utils.security import add_security_headers, sanitize, sanitize_name, validate_amount, is_safe_url
 
 app = Flask('')
+app.after_request(add_security_headers)
 
 @app.route('/')
 def home():
-    return "Bot en ligne !"
+    return "Bot en ligne !", 200, {'Content-Type': 'text/plain; charset=utf-8'}
 
 def run():
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5000, threaded=True)
 
 def keep_alive():
-    t = Thread(target=run)
+    t = Thread(target=run, daemon=True)
     t.start()
 
 keep_alive()

@@ -48,13 +48,23 @@ export default function AIChatWidget() {
         method:'POST',
         headers:{ 'Content-Type':'application/json' },
         body: JSON.stringify({ message: msg, history }),
+        signal: AbortSignal.timeout(20_000),
       })
       const data = await res.json()
-      const reply = data.reply || data.error || 'Erreur.'
+      let reply
+      if (res.status === 429) {
+        reply = "🕐 Je reçois trop de messages en ce moment. Réessaie dans quelques secondes !"
+      } else if (res.status === 503) {
+        reply = "⚡ L'IA est temporairement occupée. Retente dans un instant !"
+      } else if (res.status === 400) {
+        reply = "❌ Message invalide."
+      } else {
+        reply = data.reply || "🤕 Quelque chose a raté, réessaie !"
+      }
       setHistory(h => [...h, { role:'model', text: reply }])
       if (!open) setUnread(u => u + 1)
     } catch {
-      setHistory(h => [...h, { role:'model', text:'Connexion impossible.' }])
+      setHistory(h => [...h, { role:'model', text:'📡 Connexion impossible, vérifie ta connexion.' }])
     } finally {
       setLoading(false)
     }
