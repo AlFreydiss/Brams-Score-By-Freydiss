@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
 
 const LEGENDS = [
-  { name: 'BouleDogg', pseudo: 'Le Fondateur', prime: '1 000 000 000', icon: '👑', color: '#ffd700', desc: 'Fondateur de Brams Community. Roi absolu, imbattu et invincible du Grand Line.' },
-  { name: 'Freydiss', pseudo: 'L\'Architecte', prime: '850 000 000', icon: '⚙️', color: '#9b59b6', desc: 'Développeur et admin du bot Brams Score. Bâtisseur de l\'empire technologique.' },
-  { name: 'Benactief', pseudo: 'Le Fantôme', prime: '720 000 000', icon: '👻', color: '#74b9ff', desc: 'Maître du serveur dans l\'ombre. Sa présence vocale fait trembler les Yonkous.' },
-  { name: 'Berat', pseudo: 'Le Stratège', prime: '680 000 000', icon: '🗺️', color: '#00cec9', desc: 'Gestionnaire des événements. Chaque tournoi, chaque combat — c\'est son oeuvre.' },
-  { name: '???', pseudo: 'Le Prochain Roi ?', prime: '???', icon: '❓', color: '#e0524a', desc: 'Le prochain Roi des Pirates est peut-être toi. Rejoins le Grand Line et prouve ta valeur.' },
+  { name: 'Brams', pseudo: 'Le Fondateur', icon: '👑', color: '#ffd700', desc: 'Fondateur de Brams Community. Créateur du serveur, à l\'origine de toute l\'aventure One Piece.' },
+  { name: 'Freydiss', pseudo: 'L\'Architecte', icon: '⚙️', color: '#9b59b6', desc: 'Développeur et admin du bot Brams Score. Bâtisseur de l\'empire technologique de la communauté.' },
+  { name: 'Benactief', pseudo: 'Le Fantôme', icon: '👻', color: '#74b9ff', desc: 'Maître du serveur dans l\'ombre. Sa présence vocale fait trembler les Yonkous.' },
+  { name: 'Berat', pseudo: 'Le Stratège', icon: '🗺️', color: '#00cec9', desc: 'Gestionnaire des événements. Chaque tournoi, chaque combat — c\'est son oeuvre.' },
+  { name: '???', pseudo: 'Le Prochain Roi ?', icon: '❓', color: '#e0524a', desc: 'Le prochain Roi des Pirates est peut-être toi. Rejoins le Grand Line et prouve ta valeur.' },
 ]
 
 export default function HallOfFame() {
@@ -81,12 +81,11 @@ export default function HallOfFame() {
             </p>
 
             <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: 10,
-              background: `rgba(255,215,0,0.08)`, border: '1px solid rgba(255,215,0,0.25)',
-              borderRadius: 40, padding: '10px 28px',
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              background: `${legend.color}12`, border: `1px solid ${legend.color}30`,
+              borderRadius: 40, padding: '8px 22px',
             }}>
-              <span style={{ fontSize: 12, color: 'rgba(255,215,0,0.7)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Prime</span>
-              <span style={{ fontSize: 20, fontWeight: 800, color: '#ffd700' }}>{legend.prime} Berrys</span>
+              <span style={{ fontSize: 13, color: legend.color, fontWeight: 700 }}>🏴‍☠️ {legend.pseudo}</span>
             </div>
           </div>
 
