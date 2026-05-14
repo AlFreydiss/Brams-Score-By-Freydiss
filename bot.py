@@ -7743,7 +7743,7 @@ async def setup_hook():
         return
     _COMMANDS_SYNCED = True
     # Chargement des cogs
-    for ext in ("cogs.duel", "cogs.profiles", "cogs.crews", "cogs.banque", "cogs.bank", "cogs.jeux", "cogs.info", "cogs.equipages", "cogs.onboarding_welcome", "cogs.onboarding"):
+    for ext in ("cogs.duel", "cogs.profiles", "cogs.crews", "cogs.banque", "cogs.bank", "cogs.jeux", "cogs.info", "cogs.equipages", "cogs.onboarding_welcome", "cogs.onboarding", "cogs.support.tickets"):
         try:
             await bot.load_extension(ext)
             print(f"[COG] {ext} chargé ✅")
