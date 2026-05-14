@@ -10,6 +10,21 @@ Tu peux parler de :
 Tu ne réinventes jamais des informations. Si tu ne sais pas, tu le dis avec humour.
 Garde tes réponses courtes et percutantes (max 3-4 phrases sauf si on te demande plus).`
 
+function getKeys() {
+  const keys = []
+  // GEMINI_API_KEY, GEMINI_API_KEY_2, GEMINI_API_KEY_3, ... jusqu'à 10
+  if (process.env.GEMINI_API_KEY) keys.push(process.env.GEMINI_API_KEY)
+  for (let i = 2; i <= 10; i++) {
+    const k = process.env[`GEMINI_API_KEY_${i}`]
+    if (k) keys.push(k)
+  }
+  return keys
+}
+
+function pickKey(keys) {
+  return keys[Math.floor(Math.random() * keys.length)]
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
@@ -20,30 +35,46 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Message invalide' })
   }
 
-  const apiKey = process.env.GEMINI_API_KEY
-  if (!apiKey) {
-    return res.status(500).json({ error: 'Clé API manquante' })
+  const keys = getKeys()
+  if (!keys.length) {
+    return res.status(500).json({ error: 'Aucune clé API configurée' })
   }
 
-  try {
-    const genAI = new GoogleGenerativeAI(apiKey)
-    const model = genAI.getGenerativeModel({
-      model: 'gemini-1.5-flash',
-      systemInstruction: SYSTEM,
-    })
+  // Essaie jusqu'à toutes les clés disponibles en cas de rate limit
+  const shuffled = [...keys].sort(() => Math.random() - 0.5)
+  let lastError = null
 
-    const chat = model.startChat({
-      history: history.slice(-10).map(m => ({
-        role: m.role,
-        parts: [{ text: m.text }],
-      })),
-    })
+  for (const apiKey of shuffled) {
+    try {
+      const genAI = new GoogleGenerativeAI(apiKey)
+      const model = genAI.getGenerativeModel({
+        model: 'gemini-1.5-flash',
+        systemInstruction: SYSTEM,
+      })
 
-    const result = await chat.sendMessage(message)
-    const reply = result.response.text()
-    res.status(200).json({ reply })
-  } catch (e) {
-    console.error('[chat]', e)
-    res.status(500).json({ error: 'Erreur IA' })
+      const chat = model.startChat({
+        history: history.slice(-10).map(m => ({
+          role: m.role,
+          parts: [{ text: m.text }],
+        })),
+      })
+
+      const result = await chat.sendMessage(message)
+      const reply = result.response.text()
+      return res.status(200).json({ reply })
+    } catch (e) {
+      // 429 = rate limit → on essaie la clé suivante
+      const isRateLimit = e?.status === 429 || e?.message?.includes('429') || e?.message?.includes('quota')
+      if (isRateLimit) {
+        lastError = e
+        continue
+      }
+      // Autre erreur → on arrête
+      console.error('[chat]', e)
+      return res.status(500).json({ error: 'Erreur IA' })
+    }
   }
+
+  console.error('[chat] Toutes les clés sont en rate limit', lastError)
+  return res.status(429).json({ error: 'Trop de requêtes, réessaie dans quelques secondes.' })
 }
