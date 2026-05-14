@@ -46,6 +46,7 @@ function FruitCard({ fruit, index }) {
       <div style={{
         position: 'relative', width: '100%', height: '100%',
         transformStyle: 'preserve-3d',
+        WebkitTransformStyle: 'preserve-3d',
         transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
         transition: 'transform 0.5s ease',
       }}>
@@ -57,6 +58,7 @@ function FruitCard({ fruit, index }) {
           borderRadius: 16,
           padding: '20px 18px',
           backfaceVisibility: 'hidden',
+          WebkitBackfaceVisibility: 'hidden',
           boxShadow: hovered ? `0 8px 32px ${safeColor}35, inset 0 1px 0 ${safeColor}20` : `0 2px 12px ${safeColor}15, inset 0 1px 0 ${safeColor}15`,
           transition: 'all 0.25s ease',
           display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
@@ -89,6 +91,7 @@ function FruitCard({ fruit, index }) {
           borderRadius: 16,
           padding: '18px 18px',
           backfaceVisibility: 'hidden',
+          WebkitBackfaceVisibility: 'hidden',
           transform: 'rotateY(180deg)',
           display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 10,
           boxShadow: `inset 0 1px 0 ${safeColor}25`,

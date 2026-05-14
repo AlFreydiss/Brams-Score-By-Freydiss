@@ -143,11 +143,7 @@ const CSS = `
     will-change: transform;
   }
 
-  /* Élimine les gaps créés par backface en 3D (flip cards) */
-  [style*="preserve-3d"] {
-    -webkit-backface-visibility: hidden;
-    backface-visibility: hidden;
-  }
+  /* Les flip cards gèrent backface-visibility directement via inline styles */
 
   /* Scrollbar */
   ::-webkit-scrollbar { width: 5px; }
