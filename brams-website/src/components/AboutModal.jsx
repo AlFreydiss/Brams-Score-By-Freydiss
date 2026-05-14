@@ -1,8 +1,8 @@
 const TEAM = [
   { name: 'Brams',    role: 'Fondateur & Monteur', emoji: '👑', color: '#FFD700', desc: 'Créateur du serveur, monteur vidéo. À l\'origine de tout le projet Brams Community.' },
   { name: 'Freydiss', role: 'Admin & Développeur', emoji: '⚙️', color: '#00C2FF', desc: 'Admin du serveur et créateur du bot Brams Score. Développeur du projet.' },
-  { name: 'Berat',    role: 'Admin',               emoji: '⚔️', color: '#E0524A', desc: 'Admin principal. Veille au bon fonctionnement du serveur au quotidien.' },
-  { name: 'Benactief',role: 'Admin',               emoji: '🛡️', color: '#9B59B6', desc: 'Admin du serveur. Gère la modération et l\'organisation des événements.' },
+  { name: 'Benactief',role: 'Admin',               emoji: '🛡️', color: '#9B59B6', desc: 'Admin du serveur. Gère la modération et l\'organisation des membres.' },
+  { name: 'Berat',    role: 'Admin',               emoji: '⚔️', color: '#E0524A', desc: 'Admin principal. Organise les événements avec Brams et Freydiss.' },
   { name: 'Esco',     role: 'Admin',               emoji: '🌊', color: '#3B82F6', desc: 'Admin du serveur. Support de la communauté et gestion des membres.' },
 ]
 
