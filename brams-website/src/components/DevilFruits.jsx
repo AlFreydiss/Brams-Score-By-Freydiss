@@ -93,6 +93,9 @@ function FruitCard({ fruit, index }) {
         }}>
           <div style={{ fontSize: 28 }}>{fruit.emoji}</div>
           <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.85)', lineHeight: 1.6 }}>{fruit.power}</p>
+          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginTop: 4 }}>
+            Utilisateur : <span style={{ color: fruit.color, fontWeight: 600 }}>{fruit.user}</span>
+          </div>
           <div style={{ fontSize: 11, color: fruit.color, fontWeight: 600 }}>← Retourner</div>
         </div>
       </div>

@@ -1,6 +1,6 @@
-import { lazy, Suspense } from 'react'
 import GlobalStyles from './components/GlobalStyles.jsx'
-import { GearProvider } from './contexts/GearContext.jsx'
+import { ThemeProvider } from './contexts/ThemeContext.jsx'
+import ThemeToggle from './components/ThemeToggle.jsx'
 import Navbar from './components/Navbar.jsx'
 import Hero from './components/Hero.jsx'
 import Ranks from './components/Ranks.jsx'
@@ -10,23 +10,18 @@ import MusicPlayer from './components/MusicPlayer.jsx'
 import Leaderboard from './components/Leaderboard.jsx'
 import JoinCTA from './components/JoinCTA.jsx'
 import Footer from './components/Footer.jsx'
-import Gear5Easter from './components/Gear5Easter.jsx'
 import DevilFruits from './components/DevilFruits.jsx'
 import Roadmap from './components/Roadmap.jsx'
 import Quiz from './components/Quiz.jsx'
 import HallOfFame from './components/HallOfFame.jsx'
-import GrandLineMap from './components/GrandLineMap.jsx'
 import QuoteSection from './components/QuoteSection.jsx'
 import Contact from './components/Contact.jsx'
 import NousSoutenir from './components/NousSoutenir.jsx'
-import GearModeUI from './components/GearModeUI.jsx'
-import ComicMode from './components/ComicMode.jsx'
-import ConquerorsHaki from './components/ConquerorsHaki.jsx'
 import AkainuGame from './components/AkainuGame.jsx'
 
 export default function App() {
   return (
-    <GearProvider>
+    <ThemeProvider>
       <GlobalStyles />
 
       {/* Fond vidéo YouTube */}
@@ -57,7 +52,6 @@ export default function App() {
         <Ranks />
         <BotFeatures />
         <DevilFruits />
-        <GrandLineMap />
         <Quiz />
         <HallOfFame />
         <NousSoutenir />
@@ -68,14 +62,10 @@ export default function App() {
         <Footer />
       </div>
 
-      {/* Overlays & outils globaux */}
       <AIChatWidget />
       <MusicPlayer />
-      <Gear5Easter />
-      <GearModeUI />
-      <ComicMode />
-      <ConquerorsHaki />
+      <ThemeToggle />
       <AkainuGame />
-    </GearProvider>
+    </ThemeProvider>
   )
 }

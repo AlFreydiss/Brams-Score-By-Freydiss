@@ -129,7 +129,7 @@ export default function NousSoutenir() {
           </h3>
           <p style={{ fontSize: 14, color: 'var(--muted)', lineHeight: 1.8, marginBottom: 20 }}>
             Ce serveur et ce bot sont développés bénévolement par <strong style={{ color: '#00C2FF' }}>Freydiss</strong>.
-            Chaque ounce de soutien — boost, sub, like — fait une vraie différence. Arigatou, nakama !
+            Chaque soutien — boost, sub, like — fait une vraie différence. Merci à tous !
           </p>
           <a href="https://discord.gg/ez4dBTPE" target="_blank" rel="noopener noreferrer"
             className="btn btn-primary" style={{ fontSize: 14 }}
