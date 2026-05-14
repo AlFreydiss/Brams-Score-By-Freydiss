@@ -172,7 +172,7 @@ export default function Hero() {
             </div>
 
             {/* Stats */}
-            <div className="fade-up-3" style={{ display:'flex', gap:32, flexWrap:'wrap', paddingTop:20, borderTop:'1px solid rgba(255,255,255,.05)' }}>
+            <div className="fade-up-3" style={{ display:'flex', gap:32, flexWrap:'wrap', paddingTop:20 }}>
               <StatBlock value="2 000+" label="Membres" />
               <StatBlock value="24/7" label="Bot actif" />
               <StatBlock value="100+" label="Top classement" />
