@@ -15,7 +15,7 @@ AS $$
       )
       FROM jsonb_array_elements(coalesce(u.data->'vocal_sessions', '[]'::jsonb)) s
       WHERE (s->>'end')::float8 > (extract(epoch from now()) - 604800)::float8
-    ), 0) / 3600, 1)::numeric AS vocal_h,
+    ), 0)::numeric / 3600, 1) AS vocal_h,
     coalesce((u.data->>'berrys')::bigint, 0) AS berrys
   FROM users u
   WHERE u.data IS NOT NULL
