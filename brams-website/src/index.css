@@ -73,10 +73,11 @@ a { color: inherit; text-decoration: none; }
 .container { max-width: 1120px; margin: 0 auto; padding: 0 28px; }
 section {
   padding: 110px 0;
-  margin: 0;
+  margin: 0 0 -1px 0;
   border: none;
-  outline: 1px solid transparent; /* évite les gaps subpixel entre sections */
+  outline: none;
   position: relative;
+  background: transparent;
 }
 
 /* ── Typography ── */

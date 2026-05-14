@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import GlobalStyles from './components/GlobalStyles.jsx'
 import { ThemeProvider } from './contexts/ThemeContext.jsx'
 import ThemeToggle from './components/ThemeToggle.jsx'
@@ -17,10 +18,18 @@ import HallOfFame from './components/HallOfFame.jsx'
 import QuoteSection from './components/QuoteSection.jsx'
 import Contact from './components/Contact.jsx'
 import NousSoutenir from './components/NousSoutenir.jsx'
-import Scans from './components/Scans.jsx'
+import ScansPage from './components/ScansPage.jsx'
 import AkainuGame from './components/AkainuGame.jsx'
 
 export default function App() {
+  const [scansOpen, setScansOpen] = useState(false)
+
+  useEffect(() => {
+    const fn = () => setScansOpen(true)
+    document.addEventListener('open-scans', fn)
+    return () => document.removeEventListener('open-scans', fn)
+  }, [])
+
   return (
     <ThemeProvider>
       <GlobalStyles />
@@ -63,7 +72,6 @@ export default function App() {
         <DevilFruits />
         <Quiz />
         <HallOfFame />
-        <Scans />
         <NousSoutenir />
         <Roadmap />
         <Leaderboard />
@@ -76,6 +84,8 @@ export default function App() {
       <MusicPlayer />
       <ThemeToggle />
       <AkainuGame />
+
+      {scansOpen && <ScansPage onClose={() => setScansOpen(false)} />}
     </ThemeProvider>
   )
 }
