@@ -28,6 +28,7 @@ function useInView(ref) {
 function FruitCard({ fruit, index }) {
   const [hovered, setHovered] = useState(false)
   const [flipped, setFlipped] = useState(false)
+  const safeColor = fruit.color === '#2d3436' ? '#636e72' : fruit.color
 
   return (
     <div
@@ -36,9 +37,9 @@ function FruitCard({ fruit, index }) {
       onMouseLeave={() => setHovered(false)}
       style={{
         position: 'relative',
-        height: 200,
+        height: 210,
         cursor: 'pointer',
-        perspective: 800,
+        perspective: 900,
         animation: `fadeUp 0.6s ${index * 0.05}s ease-out both`,
       }}
     >
@@ -51,52 +52,53 @@ function FruitCard({ fruit, index }) {
         {/* Front */}
         <div style={{
           position: 'absolute', inset: 0,
-          background: `linear-gradient(135deg, rgba(30,32,36,0.95), rgba(${hexToRgb(fruit.color)},0.15))`,
-          border: `1px solid ${hovered ? fruit.color + '60' : 'rgba(255,255,255,0.06)'}`,
+          background: `linear-gradient(145deg, ${safeColor}35 0%, ${safeColor}12 50%, rgba(14,14,16,0.85) 100%)`,
+          border: `1px solid ${hovered ? safeColor + '70' : safeColor + '35'}`,
           borderRadius: 16,
           padding: '20px 18px',
           backfaceVisibility: 'hidden',
-          boxShadow: hovered ? `0 0 30px ${fruit.color}30` : 'none',
+          boxShadow: hovered ? `0 8px 32px ${safeColor}35, inset 0 1px 0 ${safeColor}20` : `0 2px 12px ${safeColor}15, inset 0 1px 0 ${safeColor}15`,
           transition: 'all 0.25s ease',
           display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
         }}>
           <div>
-            <div style={{ fontSize: 36, marginBottom: 8 }}>{fruit.emoji}</div>
-            <div style={{ fontWeight: 700, fontSize: 15, color: '#fff', marginBottom: 4, lineHeight: 1.3 }}>{fruit.name}</div>
+            <div style={{ fontSize: 38, marginBottom: 10, filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.4))' }}>{fruit.emoji}</div>
+            <div style={{ fontWeight: 700, fontSize: 15, color: '#fff', marginBottom: 6, lineHeight: 1.3, textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>{fruit.name}</div>
             <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
               <span style={{
                 fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase',
                 padding: '2px 8px', borderRadius: 20,
-                background: fruit.type === 'Logia' ? 'rgba(253,203,110,0.15)' : fruit.type === 'Paramecia' ? 'rgba(116,185,255,0.15)' : 'rgba(255,118,117,0.15)',
+                background: fruit.type === 'Logia' ? 'rgba(253,203,110,0.2)' : fruit.type === 'Paramecia' ? 'rgba(116,185,255,0.2)' : 'rgba(255,118,117,0.2)',
                 color: fruit.type === 'Logia' ? '#fdcb6e' : fruit.type === 'Paramecia' ? '#74b9ff' : '#ff7675',
-                border: `1px solid ${fruit.type === 'Logia' ? 'rgba(253,203,110,0.3)' : fruit.type === 'Paramecia' ? 'rgba(116,185,255,0.3)' : 'rgba(255,118,117,0.3)'}`,
+                border: `1px solid ${fruit.type === 'Logia' ? 'rgba(253,203,110,0.4)' : fruit.type === 'Paramecia' ? 'rgba(116,185,255,0.4)' : 'rgba(255,118,117,0.4)'}`,
               }}>{fruit.type}</span>
-              {fruit.rare && <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 20, background: 'rgba(255,215,0,0.15)', color: '#ffd700', border: '1px solid rgba(255,215,0,0.3)', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Rare</span>}
+              {fruit.rare && <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 20, background: 'rgba(255,215,0,0.2)', color: '#ffd700', border: '1px solid rgba(255,215,0,0.4)', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Rare</span>}
             </div>
           </div>
-          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span>{fruit.user}</span>
-            <span style={{ fontSize: 11 }}>Cliquer pour info ↺</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)', fontWeight: 600 }}>{fruit.user}</span>
+            <span style={{ fontSize: 10, color: safeColor, fontWeight: 700, opacity: 0.85 }}>Info ↺</span>
           </div>
         </div>
 
         {/* Back */}
         <div style={{
           position: 'absolute', inset: 0,
-          background: `linear-gradient(135deg, ${fruit.color}20, ${fruit.color}08)`,
-          border: `1px solid ${fruit.color}50`,
+          background: `linear-gradient(145deg, ${safeColor}40 0%, ${safeColor}18 60%, rgba(14,14,16,0.9) 100%)`,
+          border: `1px solid ${safeColor}60`,
           borderRadius: 16,
-          padding: '20px 18px',
+          padding: '18px 18px',
           backfaceVisibility: 'hidden',
           transform: 'rotateY(180deg)',
-          display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 12,
+          display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 10,
+          boxShadow: `inset 0 1px 0 ${safeColor}25`,
         }}>
-          <div style={{ fontSize: 28 }}>{fruit.emoji}</div>
-          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.85)', lineHeight: 1.6 }}>{fruit.power}</p>
-          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginTop: 4 }}>
-            Utilisateur : <span style={{ color: fruit.color, fontWeight: 600 }}>{fruit.user}</span>
+          <div style={{ fontSize: 26 }}>{fruit.emoji}</div>
+          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.9)', lineHeight: 1.65, fontWeight: 500 }}>{fruit.power}</p>
+          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>
+            Utilisateur : <span style={{ color: safeColor, fontWeight: 700 }}>{fruit.user}</span>
           </div>
-          <div style={{ fontSize: 11, color: fruit.color, fontWeight: 600 }}>← Retourner</div>
+          <div style={{ fontSize: 11, color: safeColor, fontWeight: 700 }}>← Retourner</div>
         </div>
       </div>
     </div>
@@ -125,7 +127,7 @@ export default function DevilFruits() {
         <div style={{ textAlign: 'center', marginBottom: 56 }}>
           <div className="label">🍎 Encyclopédie</div>
           <h2 className="h2" style={{ textAlign: 'center' }}>Fruits du Démon</h2>
-          <p className="sub" style={{ textAlign: 'center', margin: '0 auto 32px' }}>Les pouvoirs légendaires de l'univers One Piece — clique sur une carte pour découvrir le pouvoir</p>
+          <p style={{ textAlign: 'center', margin: '0 auto 32px', fontSize: 15, color: 'rgba(255,255,255,0.7)', lineHeight: 1.7, maxWidth: 520 }}>Les pouvoirs légendaires de One Piece. Clique sur une carte pour voir le pouvoir.</p>
 
           <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
             {types.map(t => (
