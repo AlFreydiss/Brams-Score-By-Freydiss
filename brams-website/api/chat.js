@@ -18,6 +18,8 @@ function getKeys() {
   return keys
 }
 
+const MODELS = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-pro']
+
 async function callGemini(apiKey, message, history) {
   const contents = [
     ...history.slice(-10).map(m => ({
@@ -27,26 +29,30 @@ async function callGemini(apiKey, message, history) {
     { role: 'user', parts: [{ text: message }] },
   ]
 
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: SYSTEM }] },
-        contents,
-        generationConfig: { maxOutputTokens: 512, temperature: 0.8 },
-      }),
-    }
-  )
+  for (const model of MODELS) {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: SYSTEM }] },
+          contents,
+          generationConfig: { maxOutputTokens: 512, temperature: 0.8 },
+        }),
+      }
+    )
 
-  if (res.status === 429) throw Object.assign(new Error('rate_limit'), { rateLimit: true })
-  if (!res.ok) throw new Error(`gemini_${res.status}`)
+    if (res.status === 429) throw Object.assign(new Error('rate_limit'), { rateLimit: true })
+    if (res.status === 404) continue  // modèle pas dispo → essaie le suivant
+    if (!res.ok) throw new Error(`gemini_${res.status}`)
 
-  const data = await res.json()
-  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text
-  if (!text) throw new Error('empty_response')
-  return text
+    const data = await res.json()
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text
+    if (text) return text
+  }
+
+  throw new Error('no_model_available')
 }
 
 export default async function handler(req, res) {

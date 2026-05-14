@@ -21,6 +21,7 @@ export default function MusicPlayer() {
           rel: 0,
           modestbranding: 1,
           disablekb: 1,
+          origin: window.location.origin,
         },
         events: {
           onReady: (e) => {
