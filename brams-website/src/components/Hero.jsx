@@ -180,16 +180,16 @@ export default function Hero() {
           </div>
 
           {/* Rank cards — sans animation float */}
-          <div className="hide-mobile" style={{ display:'flex', flexDirection:'column', gap:6 }}>
+          <div className="hide-mobile" style={{ display:'flex', flexDirection:'column', gap:15 }}>
             {RANK_CARDS.map((r, i) => (
               <div key={r.rang}
                 style={{
                   position:'relative', overflow:'hidden',
                   background:`linear-gradient(100deg, ${r.color}14 0%, rgba(14,14,16,.85) 55%)`,
                   border:`1px solid ${r.color}28`,
-                  borderRadius:14, padding:'12px 18px',
-                  display:'flex', alignItems:'center', gap:14,
-                  minWidth:230,
+                  borderRadius:14, padding:'22px 28px',
+                  display:'flex', alignItems:'center', gap:16,
+                  minWidth:480,
                   backdropFilter:'blur(12px)',
                   transition:'transform .2s, box-shadow .2s, border-color .2s',
                   animationDelay:`${i * 0.08}s`,
@@ -198,18 +198,18 @@ export default function Hero() {
                 onMouseLeave={e=>{e.currentTarget.style.transform='translateX(0)';e.currentTarget.style.boxShadow='none';e.currentTarget.style.borderColor=`${r.color}28`}}
               >
                 {/* Glow spot */}
-                <div style={{ position:'absolute', right:-20, top:-20, width:70, height:70, borderRadius:'50%', background:`${r.color}12`, filter:'blur(16px)', pointerEvents:'none' }} />
+                <div style={{ position:'absolute', right:-20, top:-20, width:90, height:90, borderRadius:'50%', background:`${r.color}12`, filter:'blur(20px)', pointerEvents:'none' }} />
 
-                <div style={{ width:40, height:40, borderRadius:11, background:`${r.color}20`, border:`1px solid ${r.color}35`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:19, flexShrink:0, boxShadow:`0 0 16px ${r.color}20` }}>{r.emoji}</div>
+                <div style={{ width:56, height:56, borderRadius:14, background:`${r.color}20`, border:`1px solid ${r.color}35`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:28, flexShrink:0, boxShadow:`0 0 20px ${r.color}25` }}>{r.emoji}</div>
 
                 <div style={{ flex:1 }}>
-                  <div style={{ fontWeight:700, color:'#fff', fontSize:13, marginBottom:2 }}>{r.rang}</div>
-                  <div style={{ fontSize:11, color:'rgba(255,255,255,.35)' }}>{r.members}</div>
+                  <div style={{ fontWeight:600, color:'#fff', fontSize:20, marginBottom:3 }}>{r.rang}</div>
+                  <div style={{ fontSize:14, color:'rgba(255,255,255,.65)' }}>{r.members}</div>
                 </div>
 
                 <div style={{ textAlign:'right' }}>
-                  <div style={{ fontSize:13, fontWeight:800, color:r.color }}>{r.h}</div>
-                  <div style={{ fontSize:10, color:'rgba(255,255,255,.2)', marginTop:1 }}>/ sem.</div>
+                  <div style={{ fontSize:26, fontWeight:700, color:r.color }}>{r.h}</div>
+                  <div style={{ fontSize:13, color:'rgba(255,255,255,.5)', marginTop:2 }}>/ sem.</div>
                 </div>
               </div>
             ))}
