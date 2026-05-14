@@ -11,8 +11,8 @@ import MusicPlayer from './components/MusicPlayer.jsx'
 import Leaderboard from './components/Leaderboard.jsx'
 import JoinCTA from './components/JoinCTA.jsx'
 import Footer from './components/Footer.jsx'
-import DevilFruits from './components/DevilFruits.jsx'
 import Roadmap from './components/Roadmap.jsx'
+import EncyclopediePage from './components/EncyclopediePage.jsx'
 import Quiz from './components/Quiz.jsx'
 import HallOfFame from './components/HallOfFame.jsx'
 import QuoteSection from './components/QuoteSection.jsx'
@@ -22,12 +22,18 @@ import ScansPage from './components/ScansPage.jsx'
 import AkainuGame from './components/AkainuGame.jsx'
 
 export default function App() {
-  const [scansOpen, setScansOpen] = useState(false)
+  const [scansOpen, setScansOpen]         = useState(false)
+  const [encyclopedieOpen, setEncyclopedieOpen] = useState(false)
 
   useEffect(() => {
-    const fn = () => setScansOpen(true)
-    document.addEventListener('open-scans', fn)
-    return () => document.removeEventListener('open-scans', fn)
+    const fnScans = () => setScansOpen(true)
+    const fnEncy  = () => setEncyclopedieOpen(true)
+    document.addEventListener('open-scans', fnScans)
+    document.addEventListener('open-encyclopedie', fnEncy)
+    return () => {
+      document.removeEventListener('open-scans', fnScans)
+      document.removeEventListener('open-encyclopedie', fnEncy)
+    }
   }, [])
 
   return (
@@ -69,7 +75,6 @@ export default function App() {
         <QuoteSection />
         <Ranks />
         <BotFeatures />
-        <DevilFruits />
         <Quiz />
         <HallOfFame />
         <NousSoutenir />
@@ -85,7 +90,8 @@ export default function App() {
       <ThemeToggle />
       <AkainuGame />
 
-      {scansOpen && <ScansPage onClose={() => setScansOpen(false)} />}
+      {scansOpen        && <ScansPage        onClose={() => setScansOpen(false)} />}
+      {encyclopedieOpen && <EncyclopediePage onClose={() => setEncyclopedieOpen(false)} />}
     </ThemeProvider>
   )
 }

@@ -3,7 +3,6 @@ import AboutModal from './AboutModal.jsx'
 
 const NAV_LINKS = [
   { label: 'Rangs', href: '#rangs' },
-  { label: 'Fruits', href: '#fruits' },
   { label: 'Quiz', href: '#quiz' },
   { label: 'Classement', href: '#classement' },
   { label: 'Contact', href: '#contact' },
@@ -13,6 +12,11 @@ const NAV_LINKS = [
 function openScans(e) {
   e.preventDefault()
   document.dispatchEvent(new CustomEvent('open-scans'))
+}
+
+function openEncyclopedie(e) {
+  e.preventDefault()
+  document.dispatchEvent(new CustomEvent('open-encyclopedie'))
 }
 
 function TikTokIcon() {
@@ -71,15 +75,16 @@ export default function Navbar() {
               >{l.label}</a>
             ))}
 
-            <a href="#bot" style={{
-              padding:'7px 14px', borderRadius:8, fontSize:14, fontWeight:500,
-              color:'var(--muted)', transition:'color .2s',
+            <a href="#" onClick={openEncyclopedie} style={{
+              padding:'7px 14px', borderRadius:8, fontSize:14, fontWeight:600,
+              color:'#a29bfe', transition:'color .2s, background .2s',
               display:'flex', alignItems:'center', gap:6,
+              background:'rgba(162,155,254,0.08)', border:'1px solid rgba(162,155,254,0.22)',
             }}
-              onMouseEnter={e=>e.currentTarget.style.color='#fff'}
-              onMouseLeave={e=>e.currentTarget.style.color='var(--muted)'}
+              onMouseEnter={e=>{ e.currentTarget.style.background='rgba(162,155,254,0.18)'; e.currentTarget.style.borderColor='rgba(162,155,254,0.45)' }}
+              onMouseLeave={e=>{ e.currentTarget.style.background='rgba(162,155,254,0.08)'; e.currentTarget.style.borderColor='rgba(162,155,254,0.22)' }}
             >
-              🤖 Brams Score
+              📚 Encyclopédie
             </a>
 
             <a href="#" onClick={openScans} style={{
@@ -87,7 +92,6 @@ export default function Navbar() {
               color:'var(--accent)', transition:'color .2s, background .2s',
               display:'flex', alignItems:'center', gap:6,
               background:'rgba(224,82,74,0.08)', border:'1px solid rgba(224,82,74,0.25)',
-              borderRadius:8,
             }}
               onMouseEnter={e=>{ e.currentTarget.style.background='rgba(224,82,74,0.18)'; e.currentTarget.style.borderColor='rgba(224,82,74,0.5)' }}
               onMouseLeave={e=>{ e.currentTarget.style.background='rgba(224,82,74,0.08)'; e.currentTarget.style.borderColor='rgba(224,82,74,0.25)' }}
