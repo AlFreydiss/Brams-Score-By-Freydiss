@@ -29,9 +29,9 @@ const ANIMES = [
     genres: ['Thriller', 'Mystère', 'Shōnen'],
     description: "Emma, Norman et Ray vivent dans un orphelinat idyllique… jusqu'au jour où ils découvrent une vérité qui brise tout.",
     stats: [
-      { label: 'Chapitres', value: '0' },
+      { label: 'Chapitres', value: '184' },
       { label: 'Épisodes', value: '0' },
-      { label: 'Statut', value: 'Bientôt' },
+      { label: 'Statut', value: 'Disponible' },
     ],
     action: '🌿 Accéder',
     badge: 'NOUVEAU',
