@@ -216,8 +216,6 @@ export default function Hero() {
         </div>
       </div>
 
-      {/* Live ticker */}
-      <LiveTicker />
     </section>
   )
 }

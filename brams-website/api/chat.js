@@ -68,16 +68,20 @@ export default async function handler(req, res) {
 
   const shuffled = [...keys].sort(() => Math.random() - 0.5)
 
-  for (const key of shuffled) {
-    try {
-      const reply = await callGemini(key, message, history)
-      return res.status(200).json({ reply })
-    } catch (e) {
-      if (e.rateLimit) continue
-      console.error('[chat]', e.message)
-      return res.status(500).json({ error: 'Erreur IA' })
+  // 2 passes sur toutes les clés avec une petite pause entre les deux
+  for (let pass = 0; pass < 2; pass++) {
+    if (pass === 1) await new Promise(r => setTimeout(r, 2000))
+    for (const key of shuffled) {
+      try {
+        const reply = await callGemini(key, message, history)
+        return res.status(200).json({ reply })
+      } catch (e) {
+        if (e.rateLimit) continue
+        console.error('[chat]', e.message)
+        return res.status(500).json({ error: 'Erreur IA, réessaie.' })
+      }
     }
   }
 
-  return res.status(429).json({ error: 'Trop de requêtes, réessaie dans quelques secondes.' })
+  return res.status(429).json({ error: 'Toutes les clés sont saturées, réessaie dans 1 minute.' })
 }
