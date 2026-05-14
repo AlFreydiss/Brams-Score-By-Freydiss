@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useSoundEffect } from '../hooks/useSoundEffect.js'
 
-const LEETCHI_URL = 'https://www.leetchi.com/fr/c/brams-score' // ← remplace par ton vrai lien Leetchi
+const LEETCHI_URL = 'https://www.leetchi.com/fr/c/brams-score-by-freydiss-1073815?utm_source=copylink&utm_medium=social_sharing'
 
 const SUPPORTS = [
   {

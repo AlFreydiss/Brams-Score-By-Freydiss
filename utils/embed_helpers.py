@@ -200,6 +200,10 @@ def _build_foreground(
             nw        = int(char_img.width  * scale)
             nh        = int(char_img.height * scale)
             char_img  = char_img.resize((nw, nh), Image.LANCZOS)
+            # Pré-composition sur fond neutre opaque pour éviter le fringe blanc
+            clean = Image.new("RGBA", char_img.size, (0, 0, 0, 0))
+            clean.paste(char_img, (0, 0), char_img)
+            char_img = clean
             actual_fade              = min(BANNER_FADE_PX, nw // 2)
             fade_row                 = np.zeros(nw, dtype=np.uint8)
             fade_row[:actual_fade]   = np.linspace(0, 255, actual_fade, dtype=np.uint8)
@@ -298,6 +302,8 @@ def _build_banque_banner_sync(
 
     fg     = _build_foreground(user_name, rang_label, fortune, char_bytes, prog_ratio, prog_next)
     canvas = Image.alpha_composite(background, fg)
+    overlay = Image.new("RGBA", canvas.size, (10, 14, 39, 120))
+    canvas = Image.alpha_composite(canvas, overlay)
 
     buf = io.BytesIO()
     canvas.save(buf, format="PNG", optimize=True)
@@ -346,12 +352,14 @@ def _build_banque_banner_gif_sync(
 
     fg  = _build_foreground(user_name, rang_label, fortune, char_bytes, prog_ratio, prog_next)
     dim = Image.new("RGBA", (W, H), (0, 0, 0, BG_DIM_ALPHA))
+    overlay = Image.new("RGBA", (W, H), (10, 14, 39, 120))
 
     output: list[Image.Image] = []
     for frame in frames_raw:
         bg_frame = _cover_crop(frame, W, H)
         bg_frame = Image.alpha_composite(bg_frame, dim)
         composed = Image.alpha_composite(bg_frame, fg)
+        composed = Image.alpha_composite(composed, overlay)
         output.append(composed.convert("RGB"))
 
     buf = io.BytesIO()
