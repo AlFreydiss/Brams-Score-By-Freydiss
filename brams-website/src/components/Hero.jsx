@@ -36,10 +36,10 @@ export default function Hero() {
 
             <h1 className="fade-up-2" style={{
               fontFamily:'var(--display)', fontSize:'clamp(48px,7vw,80px)',
-              fontWeight:800, lineHeight:1.02, color:'#fff',
+              fontWeight:800, lineHeight:1.15, color:'#fff',
               marginBottom:24, letterSpacing:'-.03em',
             }}>
-              Rejoins le<br />
+              <span style={{ display:'block', fontSize:'clamp(28px,4vw,48px)', fontWeight:600, color:'rgba(255,255,255,.55)', letterSpacing:'-.01em', marginBottom:6 }}>Rejoins le</span>
               <span style={{
                 background:'linear-gradient(135deg, #e0524a, #ff8a80)',
                 WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent',
