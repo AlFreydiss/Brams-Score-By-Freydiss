@@ -85,11 +85,15 @@ function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextChapter, 
   const [imgError,   setImgError]   = useState(false)
   const [markedRead, setMarkedRead] = useState(isRead)
   const [barsVisible, setBarsVisible] = useState(true)
+  const [zoom, setZoom] = useState(1)
   const touchX    = useRef(null)
   const hideTimer = useRef(null)
+  const scrollRef = useRef(null)
   const total   = pages.length
   const atStart = page === 0 && chapterIndex === 0
   const atEnd   = page === total - 1 && chapterIndex === totalChapters - 1
+
+  const clampZoom = z => Math.round(Math.max(0.5, Math.min(3, z)) * 10) / 10
 
   // ── Auto-hide bars ────────────────────────────────────────────────────────────
   const showBars = useCallback(() => {
@@ -120,8 +124,21 @@ function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextChapter, 
 
   // ── Reset au changement de chapitre ──────────────────────────────────────────
   useEffect(() => {
-    setPage(0); setImgLoaded(false); setImgError(false); setMarkedRead(isRead)
+    setPage(0); setImgLoaded(false); setImgError(false); setMarkedRead(isRead); setZoom(1)
   }, [chapter.num, isRead])
+
+  // ── Zoom molette (non-passive pour preventDefault) ────────────────────────────
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el) return
+    const fn = e => {
+      if (!e.ctrlKey && e.deltaY === 0) return
+      e.preventDefault()
+      setZoom(z => clampZoom(z + (e.deltaY < 0 ? 0.1 : -0.1)))
+    }
+    el.addEventListener('wheel', fn, { passive: false })
+    return () => el.removeEventListener('wheel', fn)
+  }, [])
 
   // ── Navigation ────────────────────────────────────────────────────────────────
   const changePage = useCallback((newPage) => {
@@ -150,9 +167,14 @@ function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextChapter, 
   // ── Keyboard + swipe ──────────────────────────────────────────────────────────
   useEffect(() => {
     const fn = e => {
+      const tag = e.target.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return
       if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { next(); showBars() }
       if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   { prev(); showBars() }
       if (e.key === 'Escape') onClose()
+      if (e.key === '+' || e.key === '=') setZoom(z => clampZoom(z + 0.1))
+      if (e.key === '-') setZoom(z => clampZoom(z - 0.1))
+      if (e.key === '0') setZoom(1)
     }
     window.addEventListener('keydown', fn)
     return () => window.removeEventListener('keydown', fn)
@@ -185,7 +207,7 @@ function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextChapter, 
           <button onClick={onClose} style={{ background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.12)', borderRadius:8, color:'#fff', cursor:'pointer', padding:'6px 10px', fontSize:18, lineHeight:1 }}>✕</button>
           <div>
             <div style={{ fontWeight:700, color:'#fff', fontSize:14 }}>{chapter.emoji} Ch.{chapter.num}</div>
-            <div style={{ fontSize:11, color:'var(--muted)' }}>Page {page + 1} / {total || '?'}</div>
+            <div style={{ fontSize:11, color:'var(--muted)' }}>Page {page + 1} / {total || '?'}{zoom !== 1 ? ` · ${Math.round(zoom * 100)}%` : ''}</div>
           </div>
         </div>
 
@@ -207,8 +229,8 @@ function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextChapter, 
       </div>
 
       {/* ── Zone image ── */}
-      <div style={{ flex:1, overflow:'auto', display:'flex', alignItems:'flex-start', justifyContent:'center' }} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
-        <div style={{ position:'relative', width:'100%', maxWidth:850, minHeight:'100%', display:'flex', alignItems:'center', justifyContent:'center' }}>
+      <div ref={scrollRef} style={{ flex:1, overflow:'auto', display:'flex', alignItems:'flex-start', justifyContent:'center' }} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+        <div style={{ position:'relative', width:'100%', maxWidth: Math.round(850 * zoom), minHeight:'100%', display:'flex', alignItems:'center', justifyContent:'center', transition:'max-width 0.15s ease' }}>
           {!imgLoaded && !imgError && (
             <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center' }}>
               <div style={{ textAlign:'center', color:'rgba(255,255,255,0.3)' }}>
@@ -724,7 +746,7 @@ export default function ScansPage({ onClose }) {
 
         {/* ── Raccourcis clavier hint ── */}
         <div style={{ flexShrink:0, borderTop:'1px solid var(--border)', padding:'8px 20px', background:'rgba(17,18,20,0.9)', display:'flex', gap:20, justifyContent:'center', flexWrap:'wrap' }}>
-          {[['/', 'Rechercher'], ['←→', 'Pages'], ['Échap', 'Retour']].map(([k, label]) => (
+          {[['/', 'Rechercher'], ['←→', 'Pages'], ['+/-', 'Zoom'], ['0', 'Reset zoom'], ['Échap', 'Retour']].map(([k, label]) => (
             <span key={k} style={{ fontSize:11, color:'var(--muted)' }}>
               <kbd style={{ background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.12)', borderRadius:4, padding:'1px 6px', fontSize:10, fontFamily:'monospace', color:'rgba(255,255,255,0.6)', marginRight:5 }}>{k}</kbd>
               {label}
