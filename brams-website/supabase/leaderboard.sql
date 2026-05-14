@@ -2,12 +2,13 @@
 -- Permet au site d'afficher le vrai classement vocal en direct
 
 CREATE OR REPLACE FUNCTION public.top_classement(p_limit int DEFAULT 10)
-RETURNS TABLE(uid text, username text, vocal_h numeric, berrys bigint)
+RETURNS TABLE(uid text, username text, avatar_url text, vocal_h numeric, berrys bigint)
 LANGUAGE sql SECURITY DEFINER
 AS $$
   SELECT
     u.uid,
     coalesce(u.data->>'username', concat('Pirate #', right(u.uid, 5))) AS username,
+    u.data->>'avatar_url' AS avatar_url,
     round(coalesce((
       SELECT SUM(
         LEAST((s->>'end')::float8, extract(epoch from now())::float8)

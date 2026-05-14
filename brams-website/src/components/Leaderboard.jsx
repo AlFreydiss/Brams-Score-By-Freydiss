@@ -86,8 +86,14 @@ export default function Leaderboard() {
                     <div style={{
                       width:36, height:36, borderRadius:'50%', flexShrink:0,
                       background:`${rk.color}18`, border:`1px solid ${rk.color}30`,
+                      overflow:'hidden',
                       display:'flex', alignItems:'center', justifyContent:'center', fontSize:16,
-                    }}>{rk.emoji}</div>
+                    }}>
+                      {m.avatar_url
+                        ? <img src={m.avatar_url} alt="" width={36} height={36} style={{ objectFit:'cover', borderRadius:'50%' }} onError={e => { e.currentTarget.style.display='none'; e.currentTarget.nextSibling.style.display='flex' }} />
+                        : null}
+                      <span style={{ display: m.avatar_url ? 'none' : 'flex' }}>{rk.emoji}</span>
+                    </div>
                     <div>
                       <div style={{ fontWeight:600, fontSize:14, color:'#fff' }}>{m.username || `Pirate #${m.uid.slice(-5)}`}</div>
                       <div style={{ fontSize:11, color:rk.color }}>{rk.rang}</div>
