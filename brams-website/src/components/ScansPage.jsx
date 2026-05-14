@@ -78,12 +78,35 @@ function PaginationBar({ page, total, onChange }) {
 
 // ── Reader ────────────────────────────────────────────────────────────────────
 
+async function fetchMangaDexPages(chapterId) {
+  const r = await fetch(`https://api.mangadex.org/at-home/server/${chapterId}`, {
+    signal: AbortSignal.timeout(12_000),
+  })
+  if (!r.ok) throw new Error(`HTTP ${r.status}`)
+  const { baseUrl, chapter: { hash, dataSaver } } = await r.json()
+  return dataSaver.map(f => `${baseUrl}/data-saver/${hash}/${f}`)
+}
+
 function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextChapter, totalChapters, onFinish }) {
-  const [page, setPage] = useState(0)
-  const [imgLoaded, setImgLoaded] = useState(false)
-  const [imgError, setImgError] = useState(false)
+  const [pages,      setPages]      = useState(chapter.pages || [])
+  const [fetchState, setFetchState] = useState(chapter.chapterId && !chapter.pages ? 'loading' : 'ok')
+  const [page,       setPage]       = useState(0)
+  const [imgLoaded,  setImgLoaded]  = useState(false)
+  const [imgError,   setImgError]   = useState(false)
   const touchX = useRef(null)
-  const total   = chapter.pages.length
+  const total   = pages.length
+
+  // Charge les pages depuis MangaDex @ Home si nécessaire
+  useEffect(() => {
+    if (!chapter.chapterId || chapter.pages?.length) return
+    let cancelled = false
+    setFetchState('loading')
+    setPages([])
+    fetchMangaDexPages(chapter.chapterId)
+      .then(urls => { if (!cancelled) { setPages(urls); setFetchState('ok') } })
+      .catch(() => { if (!cancelled) setFetchState('error') })
+    return () => { cancelled = true }
+  }, [chapter.chapterId, chapter.pages])
 
   const prev = useCallback(() => {
     if (page > 0) { setPage(p => p - 1); setImgLoaded(false); setImgError(false) }
@@ -96,7 +119,7 @@ function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextChapter, 
     else { onFinish(); onClose() }
   }, [page, total, chapterIndex, totalChapters, onNextChapter, onFinish, onClose])
 
-  useEffect(() => { setPage(0); setImgLoaded(false); setImgError(false) }, [chapter.num])
+  useEffect(() => { setPage(0); setImgLoaded(false); setImgError(false); if (chapter.pages) { setPages(chapter.pages); setFetchState('ok') } }, [chapter.num, chapter.pages])
 
   useEffect(() => {
     const fn = e => {
@@ -124,7 +147,9 @@ function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextChapter, 
           <button onClick={onClose} style={{ background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.12)', borderRadius:8, color:'#fff', cursor:'pointer', padding:'6px 10px', fontSize:18, lineHeight:1 }}>✕</button>
           <div>
             <div style={{ fontWeight:700, color:'#fff', fontSize:14 }}>{chapter.emoji} Ch.{chapter.num}</div>
-            <div style={{ fontSize:11, color:'var(--muted)' }}>Page {page+1} / {total}</div>
+            <div style={{ fontSize:11, color:'var(--muted)' }}>
+              {fetchState === 'loading' ? 'Chargement…' : `Page ${page+1} / ${total || '?'}`}
+            </div>
           </div>
         </div>
         <div style={{ display:'flex', gap:8 }}>
@@ -135,42 +160,73 @@ function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextChapter, 
 
       {/* Image */}
       <div style={{ flex:1, overflow:'auto', display:'flex', alignItems:'flex-start', justifyContent:'center' }} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
-        <div style={{ position:'relative', width:'100%', maxWidth:800, minHeight:'100%', display:'flex', alignItems:'center', justifyContent:'center' }}>
-          {!imgLoaded && !imgError && (
+        <div style={{ position:'relative', width:'100%', maxWidth:850, minHeight:'100%', display:'flex', alignItems:'center', justifyContent:'center' }}>
+
+          {/* Loading MangaDex pages */}
+          {fetchState === 'loading' && (
+            <div style={{ textAlign:'center', color:'rgba(255,255,255,0.5)' }}>
+              <div style={{ fontSize:48, marginBottom:16, animation:'pulse 1.2s infinite' }}>📡</div>
+              <div style={{ fontWeight:700, color:'#fff', marginBottom:6 }}>Chargement du chapitre…</div>
+              <div style={{ fontSize:13, color:'var(--muted)' }}>Connexion à MangaDex</div>
+            </div>
+          )}
+
+          {fetchState === 'error' && (
+            <div style={{ textAlign:'center', color:'rgba(255,255,255,0.4)', padding:40 }}>
+              <div style={{ fontSize:48, marginBottom:16 }}>⚠️</div>
+              <div style={{ fontWeight:700, marginBottom:8, color:'#fff' }}>Impossible de charger ce chapitre</div>
+              <div style={{ fontSize:13, color:'var(--muted)', marginBottom:16 }}>MangaDex est peut-être temporairement indisponible</div>
+              <button onClick={() => { setFetchState('loading'); fetchMangaDexPages(chapter.chapterId).then(urls => { setPages(urls); setFetchState('ok') }).catch(() => setFetchState('error')) }}
+                style={{ padding:'10px 20px', borderRadius:10, background:'var(--accent)', border:'none', color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer' }}>
+                Réessayer
+              </button>
+            </div>
+          )}
+
+          {/* Spinner image en cours */}
+          {fetchState === 'ok' && !imgLoaded && !imgError && (
             <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center' }}>
               <div style={{ textAlign:'center', color:'rgba(255,255,255,0.3)' }}>
                 <div style={{ fontSize:40, marginBottom:12, animation:'pulse 1.5s infinite' }}>📖</div>
-                <div style={{ fontSize:13 }}>Chargement…</div>
+                <div style={{ fontSize:13 }}>Chargement page…</div>
               </div>
             </div>
           )}
-          {imgError && (
+
+          {fetchState === 'ok' && imgError && (
             <div style={{ textAlign:'center', color:'rgba(255,255,255,0.4)', padding:40 }}>
               <div style={{ fontSize:48, marginBottom:16 }}>📂</div>
-              <div style={{ fontWeight:700, marginBottom:8, color:'#fff' }}>Image non disponible</div>
-              <code style={{ background:'rgba(255,255,255,0.08)', padding:'2px 8px', borderRadius:4, fontSize:12 }}>/public/scans/ch{chapter.num}/{String(page+1).padStart(3,'0')}.jpg</code>
+              <div style={{ fontWeight:700, marginBottom:8, color:'#fff' }}>Image introuvable</div>
+              <button onClick={() => { setImgLoaded(false); setImgError(false) }}
+                style={{ padding:'8px 18px', borderRadius:9, background:'rgba(255,255,255,0.1)', border:'none', color:'#fff', fontSize:12, cursor:'pointer' }}>
+                Réessayer
+              </button>
             </div>
           )}
-          <img key={`${chapter.num}-${page}`} src={chapter.pages[page]} alt={`Ch.${chapter.num} p.${page+1}`}
-            onLoad={() => setImgLoaded(true)}
-            onError={() => { setImgLoaded(true); setImgError(true) }}
-            style={{ display:imgError?'none':'block', width:'100%', height:'auto', opacity:imgLoaded?1:0, transition:'opacity 0.2s' }}
-          />
+
+          {fetchState === 'ok' && pages[page] && (
+            <img key={`${chapter.num}-${page}`} src={pages[page]} alt={`Ch.${chapter.num} p.${page+1}`}
+              onLoad={() => setImgLoaded(true)}
+              onError={() => { setImgLoaded(true); setImgError(true) }}
+              style={{ display:imgError?'none':'block', width:'100%', height:'auto', opacity:imgLoaded?1:0, transition:'opacity 0.2s' }}
+            />
+          )}
         </div>
       </div>
 
       {/* Bottom bar */}
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 16px', background:'rgba(14,14,16,0.95)', borderTop:'1px solid rgba(255,255,255,0.08)', flexShrink:0, backdropFilter:'blur(12px)', gap:12 }}>
-        <button onClick={prev} disabled={page===0&&chapterIndex===0} style={{ padding:'10px 20px', borderRadius:10, border:'none', cursor:'pointer', fontWeight:700, fontSize:14, background:(page===0&&chapterIndex===0)?'rgba(255,255,255,0.06)':'rgba(255,255,255,0.1)', color:(page===0&&chapterIndex===0)?'rgba(255,255,255,0.2)':'#fff' }}>← Préc.</button>
-        <div style={{ flex:1, height:4, background:'rgba(255,255,255,0.1)', borderRadius:2, overflow:'hidden', cursor:'pointer' }}
+        <button onClick={prev} disabled={(page===0&&chapterIndex===0)||fetchState!=='ok'} style={{ padding:'10px 20px', borderRadius:10, border:'none', cursor:'pointer', fontWeight:700, fontSize:14, background:(page===0&&chapterIndex===0)||fetchState!=='ok'?'rgba(255,255,255,0.06)':'rgba(255,255,255,0.1)', color:(page===0&&chapterIndex===0)||fetchState!=='ok'?'rgba(255,255,255,0.2)':'#fff' }}>← Préc.</button>
+        <div style={{ flex:1, height:4, background:'rgba(255,255,255,0.1)', borderRadius:2, overflow:'hidden', cursor: fetchState==='ok'?'pointer':'default' }}
           onClick={e => {
+            if (fetchState !== 'ok' || !total) return
             const r = e.currentTarget.getBoundingClientRect()
             const p = Math.floor(((e.clientX - r.left) / r.width) * total)
             setPage(Math.max(0, Math.min(total-1, p))); setImgLoaded(false); setImgError(false)
           }}>
-          <div style={{ height:'100%', background:'var(--accent)', borderRadius:2, width:`${((page+1)/total)*100}%`, transition:'width 0.2s' }} />
+          <div style={{ height:'100%', background:'var(--accent)', borderRadius:2, width: total ? `${((page+1)/total)*100}%` : '0%', transition:'width 0.2s' }} />
         </div>
-        <button onClick={next} disabled={page===total-1&&chapterIndex===totalChapters-1} style={{ padding:'10px 20px', borderRadius:10, border:'none', cursor:'pointer', fontWeight:700, fontSize:14, background:(page===total-1&&chapterIndex===totalChapters-1)?'rgba(255,255,255,0.06)':'var(--accent)', color:'#fff' }}>Suiv. →</button>
+        <button onClick={next} disabled={(page===total-1&&chapterIndex===totalChapters-1)||fetchState!=='ok'} style={{ padding:'10px 20px', borderRadius:10, border:'none', cursor:'pointer', fontWeight:700, fontSize:14, background:(page===total-1&&chapterIndex===totalChapters-1)||fetchState!=='ok'?'rgba(255,255,255,0.06)':'var(--accent)', color:'#fff' }}>Suiv. →</button>
       </div>
     </div>
   )
@@ -279,7 +335,7 @@ function ChapterCard({ ch, hovered, onHover, onOpen, status, highlight, cardRef 
       <div style={{ fontSize:10, fontWeight:700, color:'var(--accent)', letterSpacing:'0.08em', marginBottom:4 }}>CHAPITRE {ch.num}</div>
       <div style={{ fontSize:13, fontWeight:700, color: isRead ? 'rgba(255,255,255,0.5)' : '#fff', lineHeight:1.35, marginBottom:10 }}>{ch.title}</div>
       <div style={{ display:'inline-flex', alignItems:'center', gap:5, fontSize:11, fontWeight:700, color: hovered ? 'var(--accent)' : 'rgba(255,255,255,0.3)', transition:'color 0.18s' }}>
-        {ch.readUrl && !ch.pages ? '🔗' : '📖'} {isRead ? 'Relire' : isReading ? 'Continuer' : 'Lire'}
+        📖 {isRead ? 'Relire' : isReading ? 'Continuer' : 'Lire'}
       </div>
     </button>
   )
@@ -320,7 +376,7 @@ function ListRow({ ch, onOpen, status, highlight, cardRef }) {
         onClick={e => { e.stopPropagation(); onOpen() }}
         style={{ flexShrink:0, padding:'5px 14px', borderRadius:8, border:'1px solid rgba(224,82,74,0.3)', background: hovered ? 'rgba(224,82,74,0.15)' : 'transparent', color:'var(--accent)', fontSize:12, fontWeight:700, cursor:'pointer', transition:'background 0.15s' }}
       >
-        {ch.readUrl && !ch.pages ? '🔗 ' : ''}{isRead ? 'Relire' : isReading ? 'Continuer' : 'Lire'}
+        {isRead ? 'Relire' : isReading ? 'Continuer' : 'Lire'}
       </button>
     </div>
   )
@@ -374,13 +430,7 @@ export default function ScansPage({ onClose }) {
   const openChapter = useCallback((idx) => {
     const ch = chapters[idx]
     if (!ch) return
-    if (ch.readUrl && !ch.pages) {
-      // Chapitre externe (MangaDex/MangaPlus) → nouvel onglet
-      window.open(ch.readUrl, '_blank', 'noopener,noreferrer')
-      if (progress[ch.num] !== 'read') markProgress(ch.num, 'reading')
-      try { localStorage.setItem('manga_last_read', String(ch.num)) } catch {}
-      return
-    }
+    // Toujours ouvrir le Reader intégré (MangaDex @ Home ou pages locales)
     setReading(idx)
     if (progress[ch.num] !== 'read') markProgress(ch.num, 'reading')
     try { localStorage.setItem('manga_last_read', String(ch.num)) } catch {}
@@ -676,7 +726,7 @@ export default function ScansPage({ onClose }) {
       </div>
 
       {/* ── Reader ── */}
-      {reading !== null && chapters[reading]?.pages && (
+      {reading !== null && chapters[reading] && (
         <Reader
           chapter={chapters[reading]}
           chapterIndex={reading}

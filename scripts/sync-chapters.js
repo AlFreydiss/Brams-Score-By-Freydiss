@@ -111,24 +111,24 @@ async function main() {
   for (const ch of enChs) {
     const fr = frByNum.get(ch.num)
     byNum.set(ch.num, {
-      num:     ch.num,
-      titleFr: fr?.title ?? null,
-      titleEn: ch.title  ?? null,
-      date:    ch.date   ?? fr?.date ?? null,
-      readUrl: ch.readUrl,
-      arc:     getArc(ch.num),
+      num:       ch.num,
+      chapterId: ch.id,          // UUID MangaDex → MangaDex @ Home API
+      titleFr:   fr?.title ?? null,
+      titleEn:   ch.title  ?? null,
+      date:      ch.date   ?? fr?.date ?? null,
+      arc:       getArc(ch.num),
     })
   }
   // Chapitres FR sans version EN
   for (const ch of frChs) {
     if (!byNum.has(ch.num)) {
       byNum.set(ch.num, {
-        num:     ch.num,
-        titleFr: ch.title ?? null,
-        titleEn: null,
-        date:    ch.date  ?? null,
-        readUrl: ch.readUrl,
-        arc:     getArc(ch.num),
+        num:       ch.num,
+        chapterId: ch.id,
+        titleFr:   ch.title ?? null,
+        titleEn:   null,
+        date:      ch.date  ?? null,
+        arc:       getArc(ch.num),
       })
     }
   }
