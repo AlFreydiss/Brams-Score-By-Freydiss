@@ -113,28 +113,40 @@ const CSS = `
   }
 
   /* ── Anti-artifact rendering ── */
-  /* Force GPU layer sur les éléments fixes pour éviter les lignes de séparation */
-  [style*="position: fixed"], [style*="position:fixed"] {
-    -webkit-transform: translateZ(0);
-    transform: translateZ(0);
+  /*
+   * Ne PAS mettre transform:translateZ(0) sur chaque section :
+   * ça crée des composite-layer boundaries visibles entre sections.
+   * On isole uniquement les éléments fixes (background video/overlay)
+   * et le wrapper principal via isolation:isolate dans App.jsx.
+   */
+
+  /* Empêche l'overflow horizontal parasite sur mobile */
+  html, body {
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+
+  /* Pas de gap subpixel sur les images/vidéos inline */
+  img, picture, video, canvas, iframe, svg {
+    display: block;
+    vertical-align: bottom;
+    border: 0;
+  }
+
+  /* Les cartes et éléments avec border-radius ne laissent pas de frange */
+  .card {
+    isolation: isolate;
+  }
+
+  /* Orb : pas de transform supplémentaire pour éviter les conflits de layer */
+  .orb {
     will-change: transform;
   }
-  /* Élimine les gaps créés par backface en 3D */
+
+  /* Élimine les gaps créés par backface en 3D (flip cards) */
   [style*="preserve-3d"] {
     -webkit-backface-visibility: hidden;
     backface-visibility: hidden;
-  }
-  /* Supprime les sous-pixels sur les orbes/blobs */
-  .orb {
-    transform: translateZ(0) translate(0, 0);
-    -webkit-transform: translateZ(0) translate(0, 0);
-    will-change: transform;
-    image-rendering: pixelated;
-  }
-  /* Évite overflow parasite */
-  canvas {
-    display: block;
-    image-rendering: auto;
   }
 
   /* Scrollbar */

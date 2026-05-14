@@ -2,38 +2,24 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useInView } from '../hooks/useInView.js'
 
 // ─── Données chapitres ──────────────────────────────────────────────────────
-// pages: tableau d'URLs des images. Mets tes scans dans /public/scans/ch[num]/
-// ex: '/scans/ch1127/001.jpg', '/scans/ch1127/002.jpg', ...
-const CHAPTERS = [
-  { num: 1127, title: 'L\'île des Géants', date: 'Jan 2025', emoji: '🏔️',
-    pages: Array.from({length: 18}, (_, i) => `/scans/ch1127/${String(i+1).padStart(3,'0')}.jpg`) },
-  { num: 1128, title: 'Elbaf', date: 'Jan 2025', emoji: '⚔️',
-    pages: Array.from({length: 17}, (_, i) => `/scans/ch1128/${String(i+1).padStart(3,'0')}.jpg`) },
-  { num: 1129, title: 'Les Guerriers d\'Elbaf', date: 'Fév 2025', emoji: '🗡️',
-    pages: Array.from({length: 18}, (_, i) => `/scans/ch1129/${String(i+1).padStart(3,'0')}.jpg`) },
-  { num: 1130, title: 'L\'Armée des Géants', date: 'Fév 2025', emoji: '🛡️',
-    pages: Array.from({length: 17}, (_, i) => `/scans/ch1130/${String(i+1).padStart(3,'0')}.jpg`) },
-  { num: 1131, title: 'Le Roi des Géants', date: 'Fév 2025', emoji: '👑',
-    pages: Array.from({length: 18}, (_, i) => `/scans/ch1131/${String(i+1).padStart(3,'0')}.jpg`) },
-  { num: 1132, title: 'Shanks', date: 'Mar 2025', emoji: '🔴',
-    pages: Array.from({length: 17}, (_, i) => `/scans/ch1132/${String(i+1).padStart(3,'0')}.jpg`) },
-  { num: 1133, title: 'La Mémoire du Monde', date: 'Mar 2025', emoji: '📜',
-    pages: Array.from({length: 18}, (_, i) => `/scans/ch1133/${String(i+1).padStart(3,'0')}.jpg`) },
-  { num: 1134, title: 'Confrontation', date: 'Mar 2025', emoji: '💥',
-    pages: Array.from({length: 17}, (_, i) => `/scans/ch1134/${String(i+1).padStart(3,'0')}.jpg`) },
-  { num: 1135, title: 'Le Pouvoir des Anciens', date: 'Avr 2025', emoji: '🌊',
-    pages: Array.from({length: 18}, (_, i) => `/scans/ch1135/${String(i+1).padStart(3,'0')}.jpg`) },
-  { num: 1136, title: 'Alliances', date: 'Avr 2025', emoji: '🤝',
-    pages: Array.from({length: 17}, (_, i) => `/scans/ch1136/${String(i+1).padStart(3,'0')}.jpg`) },
-  { num: 1137, title: 'La Tempête', date: 'Avr 2025', emoji: '⛈️',
-    pages: Array.from({length: 18}, (_, i) => `/scans/ch1137/${String(i+1).padStart(3,'0')}.jpg`) },
-  { num: 1138, title: 'Gear 5', date: 'Mai 2025', emoji: '☀️',
-    pages: Array.from({length: 17}, (_, i) => `/scans/ch1138/${String(i+1).padStart(3,'0')}.jpg`) },
-  { num: 1139, title: 'Le Dernier Poneglyph', date: 'Mai 2025', emoji: '🗺️',
-    pages: Array.from({length: 18}, (_, i) => `/scans/ch1139/${String(i+1).padStart(3,'0')}.jpg`) },
-  { num: 1140, title: 'Vers le bout du monde', date: 'Mai 2025', emoji: '🏴‍☠️',
-    pages: Array.from({length: 17}, (_, i) => `/scans/ch1140/${String(i+1).padStart(3,'0')}.jpg`) },
-]
+// pages: images dans /public/scans/ch[num]/001.jpg, 002.jpg, ...
+function mkPages(num, count = 18) {
+  return Array.from({ length: count }, (_, i) => `/scans/ch${num}/${String(i + 1).padStart(3, '0')}.jpg`)
+}
+
+const EMOJIS = ['🏴‍☠️','⚔️','📜','💥','🌊','🔥','👑','🌀','🛡️','⚡','🌋','🗡️','☀️','🔴','🏔️','🤝','💰','⛈️','🎯','🌸','💎','🌑','⚕️','💫','🌺','🦁','⚓']
+const LAST_AVAILABLE = 1182
+
+const CHAPTERS = Array.from({ length: LAST_AVAILABLE - 1126 + 1 }, (_, i) => {
+  const num = 1126 + i
+  return {
+    num,
+    title: `Chapitre ${num}`,
+    date: num <= 1140 ? '2025' : num <= 1160 ? '2025' : '2025',
+    emoji: EMOJIS[i % EMOJIS.length],
+    pages: mkPages(num),
+  }
+})
 
 // ─── Lecteur de manga ───────────────────────────────────────────────────────
 function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextChapter, totalChapters }) {
@@ -201,7 +187,12 @@ function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextChapter, 
 export default function Scans() {
   const [ref, inView] = useInView()
   const [hovered, setHovered] = useState(null)
-  const [reading, setReading] = useState(null) // index du chapitre ouvert
+  const [reading, setReading] = useState(null)
+  const [search, setSearch] = useState('')
+
+  const filtered = search
+    ? CHAPTERS.filter(c => String(c.num).includes(search.trim()))
+    : CHAPTERS
 
   const openChapter = (i) => setReading(i)
   const closeReader = () => setReading(null)
