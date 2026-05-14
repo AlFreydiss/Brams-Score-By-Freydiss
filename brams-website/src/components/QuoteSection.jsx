@@ -31,32 +31,24 @@ export default function QuoteSection() {
   return (
     <section style={{
       position: 'relative', overflow: 'hidden',
-      padding: '120px 0', textAlign: 'center',
+      padding: '100px 0', textAlign: 'center',
+      background: 'linear-gradient(180deg, transparent 0%, rgba(224,82,74,0.04) 50%, transparent 100%)',
+      borderTop: '1px solid rgba(255,255,255,0.04)',
+      borderBottom: '1px solid rgba(255,255,255,0.04)',
     }}>
-      {/* GIF en fond */}
-      <div style={{
-        position: 'absolute', inset: 0,
-        backgroundImage: 'url(/bg-anime.gif)',
-        backgroundSize: 'cover', backgroundPosition: 'center',
-        opacity: 0.18,
-        pointerEvents: 'none',
-      }} />
-      {/* Overlay gradient */}
-      <div style={{
-        position: 'absolute', inset: 0,
-        background: 'linear-gradient(to bottom, rgba(17,18,20,0.85) 0%, rgba(17,18,20,0.5) 50%, rgba(17,18,20,0.85) 100%)',
-        pointerEvents: 'none',
-      }} />
+      {/* Orbes déco */}
+      <div style={{ position: 'absolute', left: '10%', top: '20%', width: 300, height: 300, borderRadius: '50%', background: 'radial-gradient(circle, rgba(224,82,74,0.06) 0%, transparent 70%)', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', right: '10%', bottom: '10%', width: 250, height: 250, borderRadius: '50%', background: 'radial-gradient(circle, rgba(155,89,182,0.05) 0%, transparent 70%)', pointerEvents: 'none' }} />
       {/* Ligne déco gauche */}
       <div style={{
         position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)',
-        width: 4, height: '60%', minHeight: 120,
-        background: 'linear-gradient(to bottom, transparent, var(--accent), transparent)',
+        width: 3, height: '50%', minHeight: 100,
+        background: 'linear-gradient(to bottom, transparent, rgba(224,82,74,0.4), transparent)',
       }} />
       <div style={{
         position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)',
-        width: 4, height: '60%', minHeight: 120,
-        background: 'linear-gradient(to bottom, transparent, var(--accent), transparent)',
+        width: 3, height: '50%', minHeight: 100,
+        background: 'linear-gradient(to bottom, transparent, rgba(224,82,74,0.4), transparent)',
       }} />
 
       <div className="container" style={{ position: 'relative', zIndex: 1 }}>
