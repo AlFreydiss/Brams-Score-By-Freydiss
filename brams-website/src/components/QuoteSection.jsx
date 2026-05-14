@@ -33,8 +33,6 @@ export default function QuoteSection() {
       position: 'relative', overflow: 'hidden',
       padding: '100px 0', textAlign: 'center',
       background: 'linear-gradient(180deg, transparent 0%, rgba(224,82,74,0.04) 50%, transparent 100%)',
-      borderTop: '1px solid rgba(255,255,255,0.04)',
-      borderBottom: '1px solid rgba(255,255,255,0.04)',
     }}>
       {/* Orbes déco */}
       <div style={{ position: 'absolute', left: '10%', top: '20%', width: 300, height: 300, borderRadius: '50%', background: 'radial-gradient(circle, rgba(224,82,74,0.06) 0%, transparent 70%)', pointerEvents: 'none' }} />
