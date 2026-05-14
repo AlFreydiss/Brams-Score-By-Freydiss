@@ -34,17 +34,25 @@ async function sleep(ms) {
 }
 
 async function apiFetch(url) {
-  const res = await fetch(url, {
-    headers: { 'User-Agent': 'BramsScoreBot/1.0 (github.com/Freydiss)' },
-    signal: AbortSignal.timeout(15_000),
-  })
-  if (res.status === 429) {
-    console.warn('  ⚠ Rate limited, attente 10s…')
-    await sleep(10_000)
-    return apiFetch(url)
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), 15_000)
+  try {
+    const res = await fetch(url, {
+      headers: { 'User-Agent': 'BramsScoreBot/1.0 (github.com/Freydiss)' },
+      signal: controller.signal,
+    })
+    clearTimeout(timer)
+    if (res.status === 429) {
+      console.warn('  ⚠ Rate limited, attente 10s…')
+      await sleep(10_000)
+      return apiFetch(url)
+    }
+    if (!res.ok) throw new Error(`HTTP ${res.status} — ${url}`)
+    return res.json()
+  } catch (e) {
+    clearTimeout(timer)
+    throw e
   }
-  if (!res.ok) throw new Error(`HTTP ${res.status} — ${url}`)
-  return res.json()
 }
 
 // Récupère tous les chapitres d'une langue donnée (paginé par 100)
@@ -54,14 +62,14 @@ async function fetchByLang(lang) {
   const limit = 100
 
   while (true) {
-    const params = new URLSearchParams({
-      limit,
-      offset,
-      'translatedLanguage[]': lang,
-      'order[chapter]': 'asc',
-      'contentRating[]': ['safe', 'suggestive'],
-      includeExternalUrl: 1,
-    })
+    const params = new URLSearchParams()
+    params.append('limit', limit)
+    params.append('offset', offset)
+    params.append('translatedLanguage[]', lang)
+    params.append('order[chapter]', 'asc')
+    params.append('contentRating[]', 'safe')
+    params.append('contentRating[]', 'suggestive')
+    params.append('includeExternalUrl', '1')
     const url = `${BASE}/manga/${MANGA_ID}/feed?${params}`
 
     console.log(`  Fetching ${lang} offset=${offset}…`)
