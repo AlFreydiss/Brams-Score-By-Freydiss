@@ -87,16 +87,21 @@ async function fetchMangaDexPages(chapterId) {
   return dataSaver.map(f => `${baseUrl}/data-saver/${hash}/${f}`)
 }
 
-function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextChapter, totalChapters, onFinish }) {
+function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextChapter, totalChapters, onFinish, isRead }) {
   const [pages,      setPages]      = useState(chapter.pages || [])
   const [fetchState, setFetchState] = useState(chapter.chapterId && !chapter.pages ? 'loading' : 'ok')
   const [page,       setPage]       = useState(0)
   const [imgLoaded,  setImgLoaded]  = useState(false)
   const [imgError,   setImgError]   = useState(false)
+  const [doublePage, setDoublePage] = useState(false)
+  const [markedRead, setMarkedRead] = useState(isRead)
   const touchX = useRef(null)
   const total   = pages.length
+  const step    = doublePage ? 2 : 1
+  const atStart = page === 0 && chapterIndex === 0
+  const atEnd   = (doublePage ? page + 1 >= total - 1 : page === total - 1) && chapterIndex === totalChapters - 1
 
-  // Charge les pages depuis MangaDex @ Home si nécessaire
+  // ── Charge pages MangaDex @ Home ─────────────────────────────────────────────
   useEffect(() => {
     if (!chapter.chapterId || chapter.pages?.length) return
     let cancelled = false
@@ -108,24 +113,59 @@ function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextChapter, 
     return () => { cancelled = true }
   }, [chapter.chapterId, chapter.pages])
 
+  // ── Restaure la page sauvegardée quand les pages sont prêtes ─────────────────
+  useEffect(() => {
+    if (fetchState !== 'ok' || total === 0) return
+    try {
+      const saved = parseInt(localStorage.getItem(`manga_page_${chapter.num}`) || '0')
+      if (saved > 0 && saved < total) { setPage(saved); setImgLoaded(false); setImgError(false) }
+    } catch {}
+  }, [fetchState, total, chapter.num])
+
+  // ── Sauvegarde automatique de la page courante ────────────────────────────────
+  useEffect(() => {
+    if (fetchState !== 'ok' || total === 0) return
+    try { localStorage.setItem(`manga_page_${chapter.num}`, String(page)) } catch {}
+  }, [page, chapter.num, fetchState, total])
+
+  // ── Reset au changement de chapitre ──────────────────────────────────────────
+  useEffect(() => {
+    setPage(0); setImgLoaded(false); setImgError(false); setMarkedRead(isRead)
+    if (chapter.pages) { setPages(chapter.pages); setFetchState('ok') }
+  }, [chapter.num, chapter.pages, isRead])
+
+  // ── Navigation ────────────────────────────────────────────────────────────────
+  const changePage = useCallback((newPage) => {
+    setPage(Math.max(0, Math.min(total - 1, newPage)))
+    setImgLoaded(false); setImgError(false)
+  }, [total])
+
   const prev = useCallback(() => {
-    if (page > 0) { setPage(p => p - 1); setImgLoaded(false); setImgError(false) }
+    if (page > 0) changePage(page - step)
     else if (chapterIndex > 0) onPrevChapter()
-  }, [page, chapterIndex, onPrevChapter])
+  }, [page, step, chapterIndex, onPrevChapter, changePage])
 
   const next = useCallback(() => {
-    if (page < total - 1) { setPage(p => p + 1); setImgLoaded(false); setImgError(false) }
+    const endOfChapter = doublePage ? page + 1 >= total - 1 : page >= total - 1
+    if (!endOfChapter) changePage(page + step)
     else if (chapterIndex < totalChapters - 1) { onFinish(); onNextChapter() }
     else { onFinish(); onClose() }
-  }, [page, total, chapterIndex, totalChapters, onNextChapter, onFinish, onClose])
+  }, [page, step, total, doublePage, chapterIndex, totalChapters, onNextChapter, onFinish, onClose, changePage])
 
-  useEffect(() => { setPage(0); setImgLoaded(false); setImgError(false); if (chapter.pages) { setPages(chapter.pages); setFetchState('ok') } }, [chapter.num, chapter.pages])
+  // ── Marquer comme lu ──────────────────────────────────────────────────────────
+  const handleMarkRead = useCallback(() => {
+    onFinish()
+    setMarkedRead(true)
+    try { localStorage.removeItem(`manga_page_${chapter.num}`) } catch {}
+  }, [onFinish, chapter.num])
 
+  // ── Keyboard + swipe ──────────────────────────────────────────────────────────
   useEffect(() => {
     const fn = e => {
       if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next()
       if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   prev()
       if (e.key === 'Escape') onClose()
+      if (e.key === 'd' || e.key === 'D') setDoublePage(v => !v)
     }
     window.addEventListener('keydown', fn)
     return () => window.removeEventListener('keydown', fn)
@@ -139,30 +179,57 @@ function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextChapter, 
     touchX.current = null
   }
 
+  // ── Label page ────────────────────────────────────────────────────────────────
+  const pageLabel = fetchState === 'loading' ? 'Chargement…'
+    : total === 0 ? '?'
+    : doublePage ? `Pages ${page + 1}–${Math.min(page + 2, total)} / ${total}`
+    : `Page ${page + 1} / ${total}`
+
   return (
     <div style={{ position:'fixed', inset:0, zIndex:9999, background:'rgba(0,0,0,0.97)', display:'flex', flexDirection:'column' }}>
-      {/* Top bar */}
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 16px', borderBottom:'1px solid rgba(255,255,255,0.08)', background:'rgba(14,14,16,0.95)', flexShrink:0, backdropFilter:'blur(12px)' }}>
-        <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+
+      {/* ── Top bar ── */}
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 16px', borderBottom:'1px solid rgba(255,255,255,0.08)', background:'rgba(14,14,16,0.95)', flexShrink:0, backdropFilter:'blur(12px)', gap:8, flexWrap:'wrap' }}>
+
+        {/* Gauche : fermer + infos */}
+        <div style={{ display:'flex', alignItems:'center', gap:10, flexShrink:0 }}>
           <button onClick={onClose} style={{ background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.12)', borderRadius:8, color:'#fff', cursor:'pointer', padding:'6px 10px', fontSize:18, lineHeight:1 }}>✕</button>
           <div>
             <div style={{ fontWeight:700, color:'#fff', fontSize:14 }}>{chapter.emoji} Ch.{chapter.num}</div>
-            <div style={{ fontSize:11, color:'var(--muted)' }}>
-              {fetchState === 'loading' ? 'Chargement…' : `Page ${page+1} / ${total || '?'}`}
-            </div>
+            <div style={{ fontSize:11, color:'var(--muted)' }}>{pageLabel}</div>
           </div>
         </div>
-        <div style={{ display:'flex', gap:8 }}>
-          <button onClick={onPrevChapter} disabled={chapterIndex===0} style={{ padding:'6px 12px', borderRadius:8, fontSize:12, fontWeight:700, cursor:'pointer', background:chapterIndex===0?'rgba(255,255,255,0.04)':'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.1)', color:chapterIndex===0?'rgba(255,255,255,0.2)':'#fff' }}>← Préc.</button>
-          <button onClick={onNextChapter} disabled={chapterIndex===totalChapters-1} style={{ padding:'6px 12px', borderRadius:8, fontSize:12, fontWeight:700, cursor:'pointer', background:chapterIndex===totalChapters-1?'rgba(255,255,255,0.04)':'rgba(224,82,74,0.8)', border:'none', color:chapterIndex===totalChapters-1?'rgba(255,255,255,0.2)':'#fff' }}>Suiv. →</button>
+
+        {/* Centre : options */}
+        <div style={{ display:'flex', gap:6, flexShrink:0 }}>
+          {/* Double page */}
+          <button
+            onClick={() => setDoublePage(v => !v)}
+            title="Mode double page (D)"
+            style={{ padding:'6px 10px', borderRadius:8, fontSize:12, fontWeight:700, cursor:'pointer', border:`1px solid ${doublePage ? 'rgba(162,155,254,0.5)' : 'rgba(255,255,255,0.1)'}`, background: doublePage ? 'rgba(162,155,254,0.18)' : 'rgba(255,255,255,0.06)', color: doublePage ? '#a29bfe' : 'var(--muted)', transition:'all 0.15s' }}>
+            ⬛⬛
+          </button>
+
+          {/* Marquer comme lu */}
+          <button
+            onClick={handleMarkRead}
+            disabled={markedRead}
+            style={{ padding:'6px 14px', borderRadius:8, fontSize:12, fontWeight:700, cursor: markedRead ? 'default' : 'pointer', border:`1px solid ${markedRead ? 'rgba(52,211,153,0.4)' : 'rgba(52,211,153,0.25)'}`, background: markedRead ? 'rgba(52,211,153,0.2)' : 'rgba(52,211,153,0.08)', color: markedRead ? '#34d399' : 'rgba(52,211,153,0.7)', transition:'all 0.15s' }}>
+            {markedRead ? '✓ Lu' : '✓ Marquer comme lu'}
+          </button>
+        </div>
+
+        {/* Droite : nav chapitres */}
+        <div style={{ display:'flex', gap:8, flexShrink:0 }}>
+          <button onClick={onPrevChapter} disabled={chapterIndex===0} style={{ padding:'6px 12px', borderRadius:8, fontSize:12, fontWeight:700, cursor: chapterIndex===0 ? 'default' : 'pointer', background:chapterIndex===0?'rgba(255,255,255,0.04)':'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.1)', color:chapterIndex===0?'rgba(255,255,255,0.2)':'#fff' }}>← Préc.</button>
+          <button onClick={onNextChapter} disabled={chapterIndex===totalChapters-1} style={{ padding:'6px 12px', borderRadius:8, fontSize:12, fontWeight:700, cursor: chapterIndex===totalChapters-1 ? 'default' : 'pointer', background:chapterIndex===totalChapters-1?'rgba(255,255,255,0.04)':'rgba(224,82,74,0.8)', border:'none', color:chapterIndex===totalChapters-1?'rgba(255,255,255,0.2)':'#fff' }}>Suiv. →</button>
         </div>
       </div>
 
-      {/* Image */}
+      {/* ── Zone image ── */}
       <div style={{ flex:1, overflow:'auto', display:'flex', alignItems:'flex-start', justifyContent:'center' }} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
-        <div style={{ position:'relative', width:'100%', maxWidth:850, minHeight:'100%', display:'flex', alignItems:'center', justifyContent:'center' }}>
+        <div style={{ position:'relative', width:'100%', maxWidth: doublePage ? 1400 : 850, minHeight:'100%', display:'flex', alignItems:'center', justifyContent:'center' }}>
 
-          {/* Loading MangaDex pages */}
           {fetchState === 'loading' && (
             <div style={{ textAlign:'center', color:'rgba(255,255,255,0.5)' }}>
               <div style={{ fontSize:48, marginBottom:16, animation:'pulse 1.2s infinite' }}>📡</div>
@@ -175,7 +242,7 @@ function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextChapter, 
             <div style={{ textAlign:'center', color:'rgba(255,255,255,0.4)', padding:40 }}>
               <div style={{ fontSize:48, marginBottom:16 }}>⚠️</div>
               <div style={{ fontWeight:700, marginBottom:8, color:'#fff' }}>Impossible de charger ce chapitre</div>
-              <div style={{ fontSize:13, color:'var(--muted)', marginBottom:16 }}>MangaDex est peut-être temporairement indisponible</div>
+              <div style={{ fontSize:13, color:'var(--muted)', marginBottom:16 }}>MangaDex temporairement indisponible</div>
               <button onClick={() => { setFetchState('loading'); fetchMangaDexPages(chapter.chapterId).then(urls => { setPages(urls); setFetchState('ok') }).catch(() => setFetchState('error')) }}
                 style={{ padding:'10px 20px', borderRadius:10, background:'var(--accent)', border:'none', color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer' }}>
                 Réessayer
@@ -183,50 +250,67 @@ function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextChapter, 
             </div>
           )}
 
-          {/* Spinner image en cours */}
-          {fetchState === 'ok' && !imgLoaded && !imgError && (
-            <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center' }}>
-              <div style={{ textAlign:'center', color:'rgba(255,255,255,0.3)' }}>
-                <div style={{ fontSize:40, marginBottom:12, animation:'pulse 1.5s infinite' }}>📖</div>
-                <div style={{ fontSize:13 }}>Chargement page…</div>
-              </div>
-            </div>
+          {/* Mode simple */}
+          {fetchState === 'ok' && !doublePage && (
+            <>
+              {!imgLoaded && !imgError && (
+                <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                  <div style={{ textAlign:'center', color:'rgba(255,255,255,0.3)' }}>
+                    <div style={{ fontSize:40, marginBottom:12, animation:'pulse 1.5s infinite' }}>📖</div>
+                    <div style={{ fontSize:13 }}>Chargement page…</div>
+                  </div>
+                </div>
+              )}
+              {imgError && (
+                <div style={{ textAlign:'center', color:'rgba(255,255,255,0.4)', padding:40 }}>
+                  <div style={{ fontSize:48, marginBottom:16 }}>📂</div>
+                  <div style={{ fontWeight:700, marginBottom:8, color:'#fff' }}>Image introuvable</div>
+                  <button onClick={() => { setImgLoaded(false); setImgError(false) }}
+                    style={{ padding:'8px 18px', borderRadius:9, background:'rgba(255,255,255,0.1)', border:'none', color:'#fff', fontSize:12, cursor:'pointer' }}>
+                    Réessayer
+                  </button>
+                </div>
+              )}
+              {pages[page] && (
+                <img key={`${chapter.num}-${page}`} src={pages[page]} alt={`Ch.${chapter.num} p.${page+1}`}
+                  onLoad={() => setImgLoaded(true)}
+                  onError={() => { setImgLoaded(true); setImgError(true) }}
+                  style={{ display:imgError?'none':'block', width:'100%', height:'auto', opacity:imgLoaded?1:0, transition:'opacity 0.2s' }}
+                />
+              )}
+            </>
           )}
 
-          {fetchState === 'ok' && imgError && (
-            <div style={{ textAlign:'center', color:'rgba(255,255,255,0.4)', padding:40 }}>
-              <div style={{ fontSize:48, marginBottom:16 }}>📂</div>
-              <div style={{ fontWeight:700, marginBottom:8, color:'#fff' }}>Image introuvable</div>
-              <button onClick={() => { setImgLoaded(false); setImgError(false) }}
-                style={{ padding:'8px 18px', borderRadius:9, background:'rgba(255,255,255,0.1)', border:'none', color:'#fff', fontSize:12, cursor:'pointer' }}>
-                Réessayer
-              </button>
+          {/* Mode double page */}
+          {fetchState === 'ok' && doublePage && (
+            <div style={{ display:'flex', gap:4, width:'100%', alignItems:'flex-start' }}>
+              {[page, page + 1].map((p, i) => (
+                pages[p] ? (
+                  <img key={`${chapter.num}-${p}`} src={pages[p]} alt={`Ch.${chapter.num} p.${p+1}`}
+                    style={{ flex:1, width:'50%', height:'auto', display:'block' }}
+                  />
+                ) : null
+              ))}
             </div>
-          )}
-
-          {fetchState === 'ok' && pages[page] && (
-            <img key={`${chapter.num}-${page}`} src={pages[page]} alt={`Ch.${chapter.num} p.${page+1}`}
-              onLoad={() => setImgLoaded(true)}
-              onError={() => { setImgLoaded(true); setImgError(true) }}
-              style={{ display:imgError?'none':'block', width:'100%', height:'auto', opacity:imgLoaded?1:0, transition:'opacity 0.2s' }}
-            />
           )}
         </div>
       </div>
 
-      {/* Bottom bar */}
+      {/* ── Bottom bar ── */}
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 16px', background:'rgba(14,14,16,0.95)', borderTop:'1px solid rgba(255,255,255,0.08)', flexShrink:0, backdropFilter:'blur(12px)', gap:12 }}>
-        <button onClick={prev} disabled={(page===0&&chapterIndex===0)||fetchState!=='ok'} style={{ padding:'10px 20px', borderRadius:10, border:'none', cursor:'pointer', fontWeight:700, fontSize:14, background:(page===0&&chapterIndex===0)||fetchState!=='ok'?'rgba(255,255,255,0.06)':'rgba(255,255,255,0.1)', color:(page===0&&chapterIndex===0)||fetchState!=='ok'?'rgba(255,255,255,0.2)':'#fff' }}>← Préc.</button>
+        <button onClick={prev} disabled={atStart||fetchState!=='ok'} style={{ padding:'10px 20px', borderRadius:10, border:'none', cursor: atStart||fetchState!=='ok'?'default':'pointer', fontWeight:700, fontSize:14, background:atStart||fetchState!=='ok'?'rgba(255,255,255,0.06)':'rgba(255,255,255,0.1)', color:atStart||fetchState!=='ok'?'rgba(255,255,255,0.2)':'#fff' }}>← Préc.</button>
+
+        {/* Barre de progression cliquable */}
         <div style={{ flex:1, height:4, background:'rgba(255,255,255,0.1)', borderRadius:2, overflow:'hidden', cursor: fetchState==='ok'?'pointer':'default' }}
           onClick={e => {
             if (fetchState !== 'ok' || !total) return
             const r = e.currentTarget.getBoundingClientRect()
-            const p = Math.floor(((e.clientX - r.left) / r.width) * total)
-            setPage(Math.max(0, Math.min(total-1, p))); setImgLoaded(false); setImgError(false)
+            changePage(Math.floor(((e.clientX - r.left) / r.width) * total))
           }}>
-          <div style={{ height:'100%', background:'var(--accent)', borderRadius:2, width: total ? `${((page+1)/total)*100}%` : '0%', transition:'width 0.2s' }} />
+          <div style={{ height:'100%', background:'var(--accent)', borderRadius:2, width: total ? `${((page + (doublePage && pages[page+1] ? 2 : 1)) / total) * 100}%` : '0%', transition:'width 0.2s' }} />
         </div>
-        <button onClick={next} disabled={(page===total-1&&chapterIndex===totalChapters-1)||fetchState!=='ok'} style={{ padding:'10px 20px', borderRadius:10, border:'none', cursor:'pointer', fontWeight:700, fontSize:14, background:(page===total-1&&chapterIndex===totalChapters-1)||fetchState!=='ok'?'rgba(255,255,255,0.06)':'var(--accent)', color:'#fff' }}>Suiv. →</button>
+
+        <button onClick={next} disabled={atEnd||fetchState!=='ok'} style={{ padding:'10px 20px', borderRadius:10, border:'none', cursor: atEnd||fetchState!=='ok'?'default':'pointer', fontWeight:700, fontSize:14, background:atEnd||fetchState!=='ok'?'rgba(255,255,255,0.06)':'var(--accent)', color:'#fff' }}>Suiv. →</button>
       </div>
     </div>
   )
@@ -716,7 +800,7 @@ export default function ScansPage({ onClose }) {
 
         {/* ── Raccourcis clavier hint ── */}
         <div style={{ flexShrink:0, borderTop:'1px solid var(--border)', padding:'8px 20px', background:'rgba(17,18,20,0.9)', display:'flex', gap:20, justifyContent:'center', flexWrap:'wrap' }}>
-          {[['/', 'Rechercher'], ['←→', 'Pages'], ['Échap', 'Retour']].map(([k, label]) => (
+          {[['/', 'Rechercher'], ['←→', 'Pages'], ['D', 'Double page'], ['Échap', 'Retour']].map(([k, label]) => (
             <span key={k} style={{ fontSize:11, color:'var(--muted)' }}>
               <kbd style={{ background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.12)', borderRadius:4, padding:'1px 6px', fontSize:10, fontFamily:'monospace', color:'rgba(255,255,255,0.6)', marginRight:5 }}>{k}</kbd>
               {label}
@@ -735,6 +819,7 @@ export default function ScansPage({ onClose }) {
           onPrevChapter={() => setReading(i => Math.max(0, i - 1))}
           onNextChapter={() => setReading(i => Math.min(chapters.length - 1, i + 1))}
           onFinish={finishChapter}
+          isRead={progress[chapters[reading]?.num] === 'read'}
         />
       )}
     </>
