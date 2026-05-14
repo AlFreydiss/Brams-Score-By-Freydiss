@@ -83,14 +83,25 @@ function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextChapter, 
   const [page,       setPage]       = useState(0)
   const [imgLoaded,  setImgLoaded]  = useState(false)
   const [imgError,   setImgError]   = useState(false)
-  const [doublePage, setDoublePage] = useState(false)
   const [markedRead, setMarkedRead] = useState(isRead)
-  const touchX = useRef(null)
+  const [barsVisible, setBarsVisible] = useState(true)
+  const touchX    = useRef(null)
+  const hideTimer = useRef(null)
   const total   = pages.length
-  const step    = doublePage ? 2 : 1
   const atStart = page === 0 && chapterIndex === 0
-  const atEnd   = (doublePage ? page + 1 >= total - 1 : page === total - 1) && chapterIndex === totalChapters - 1
+  const atEnd   = page === total - 1 && chapterIndex === totalChapters - 1
 
+  // ── Auto-hide bars ────────────────────────────────────────────────────────────
+  const showBars = useCallback(() => {
+    setBarsVisible(true)
+    if (hideTimer.current) clearTimeout(hideTimer.current)
+    hideTimer.current = setTimeout(() => setBarsVisible(false), 2500)
+  }, [])
+
+  useEffect(() => {
+    showBars()
+    return () => { if (hideTimer.current) clearTimeout(hideTimer.current) }
+  }, [])
 
   // ── Restaure la page sauvegardée à l'ouverture ───────────────────────────────
   useEffect(() => {
@@ -119,16 +130,15 @@ function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextChapter, 
   }, [total])
 
   const prev = useCallback(() => {
-    if (page > 0) changePage(page - step)
+    if (page > 0) changePage(page - 1)
     else if (chapterIndex > 0) onPrevChapter()
-  }, [page, step, chapterIndex, onPrevChapter, changePage])
+  }, [page, chapterIndex, onPrevChapter, changePage])
 
   const next = useCallback(() => {
-    const endOfChapter = doublePage ? page + 1 >= total - 1 : page >= total - 1
-    if (!endOfChapter) changePage(page + step)
+    if (page < total - 1) changePage(page + 1)
     else if (chapterIndex < totalChapters - 1) { onFinish(); onNextChapter() }
     else { onFinish(); onClose() }
-  }, [page, step, total, doublePage, chapterIndex, totalChapters, onNextChapter, onFinish, onClose, changePage])
+  }, [page, total, chapterIndex, totalChapters, onNextChapter, onFinish, onClose, changePage])
 
   // ── Marquer comme lu ──────────────────────────────────────────────────────────
   const handleMarkRead = useCallback(() => {
@@ -140,16 +150,15 @@ function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextChapter, 
   // ── Keyboard + swipe ──────────────────────────────────────────────────────────
   useEffect(() => {
     const fn = e => {
-      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next()
-      if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   prev()
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { next(); showBars() }
+      if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   { prev(); showBars() }
       if (e.key === 'Escape') onClose()
-      if (e.key === 'd' || e.key === 'D') setDoublePage(v => !v)
     }
     window.addEventListener('keydown', fn)
     return () => window.removeEventListener('keydown', fn)
-  }, [next, prev, onClose])
+  }, [next, prev, onClose, showBars])
 
-  const onTouchStart = e => { touchX.current = e.touches[0].clientX }
+  const onTouchStart = e => { touchX.current = e.touches[0].clientX; showBars() }
   const onTouchEnd   = e => {
     if (touchX.current === null) return
     const dx = e.changedTouches[0].clientX - touchX.current
@@ -157,37 +166,31 @@ function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextChapter, 
     touchX.current = null
   }
 
-  // ── Label page ────────────────────────────────────────────────────────────────
-  const pageLabel = total === 0 ? '?'
-    : doublePage ? `Pages ${page + 1}–${Math.min(page + 2, total)} / ${total}`
-    : `Page ${page + 1} / ${total}`
+  const barStyle = {
+    transition: 'opacity 0.35s ease',
+    opacity: barsVisible ? 1 : 0,
+    pointerEvents: barsVisible ? 'auto' : 'none',
+  }
 
   return (
-    <div style={{ position:'fixed', inset:0, zIndex:9999, background:'rgba(0,0,0,0.97)', display:'flex', flexDirection:'column' }}>
-
+    <div
+      style={{ position:'fixed', inset:0, zIndex:9999, background:'rgba(0,0,0,0.97)', display:'flex', flexDirection:'column' }}
+      onMouseMove={showBars}
+    >
       {/* ── Top bar ── */}
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 16px', borderBottom:'1px solid rgba(255,255,255,0.08)', background:'rgba(14,14,16,0.95)', flexShrink:0, backdropFilter:'blur(12px)', gap:8, flexWrap:'wrap' }}>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 16px', borderBottom:'1px solid rgba(255,255,255,0.08)', background:'rgba(14,14,16,0.95)', flexShrink:0, backdropFilter:'blur(12px)', gap:8, flexWrap:'wrap', ...barStyle }}>
 
         {/* Gauche : fermer + infos */}
         <div style={{ display:'flex', alignItems:'center', gap:10, flexShrink:0 }}>
           <button onClick={onClose} style={{ background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.12)', borderRadius:8, color:'#fff', cursor:'pointer', padding:'6px 10px', fontSize:18, lineHeight:1 }}>✕</button>
           <div>
             <div style={{ fontWeight:700, color:'#fff', fontSize:14 }}>{chapter.emoji} Ch.{chapter.num}</div>
-            <div style={{ fontSize:11, color:'var(--muted)' }}>{pageLabel}</div>
+            <div style={{ fontSize:11, color:'var(--muted)' }}>Page {page + 1} / {total || '?'}</div>
           </div>
         </div>
 
-        {/* Centre : options */}
+        {/* Centre : marquer comme lu */}
         <div style={{ display:'flex', gap:6, flexShrink:0 }}>
-          {/* Double page */}
-          <button
-            onClick={() => setDoublePage(v => !v)}
-            title="Mode double page (D)"
-            style={{ padding:'6px 10px', borderRadius:8, fontSize:12, fontWeight:700, cursor:'pointer', border:`1px solid ${doublePage ? 'rgba(162,155,254,0.5)' : 'rgba(255,255,255,0.1)'}`, background: doublePage ? 'rgba(162,155,254,0.18)' : 'rgba(255,255,255,0.06)', color: doublePage ? '#a29bfe' : 'var(--muted)', transition:'all 0.15s' }}>
-            ⬛⬛
-          </button>
-
-          {/* Marquer comme lu */}
           <button
             onClick={handleMarkRead}
             disabled={markedRead}
@@ -205,66 +208,46 @@ function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextChapter, 
 
       {/* ── Zone image ── */}
       <div style={{ flex:1, overflow:'auto', display:'flex', alignItems:'flex-start', justifyContent:'center' }} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
-        <div style={{ position:'relative', width:'100%', maxWidth: doublePage ? 1400 : 850, minHeight:'100%', display:'flex', alignItems:'center', justifyContent:'center' }}>
-
-          {/* Mode simple */}
-          {!doublePage && (
-            <>
-              {!imgLoaded && !imgError && (
-                <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center' }}>
-                  <div style={{ textAlign:'center', color:'rgba(255,255,255,0.3)' }}>
-                    <div style={{ fontSize:40, marginBottom:12, animation:'pulse 1.5s infinite' }}>📖</div>
-                    <div style={{ fontSize:13 }}>Chargement page…</div>
-                  </div>
-                </div>
-              )}
-              {imgError && (
-                <div style={{ textAlign:'center', color:'rgba(255,255,255,0.4)', padding:40 }}>
-                  <div style={{ fontSize:48, marginBottom:16 }}>📂</div>
-                  <div style={{ fontWeight:700, marginBottom:8, color:'#fff' }}>Image introuvable</div>
-                  <button onClick={() => { setImgLoaded(false); setImgError(false) }}
-                    style={{ padding:'8px 18px', borderRadius:9, background:'rgba(255,255,255,0.1)', border:'none', color:'#fff', fontSize:12, cursor:'pointer' }}>
-                    Réessayer
-                  </button>
-                </div>
-              )}
-              {pages[page] && (
-                <img key={`${chapter.num}-${page}`} src={pages[page]} alt={`Ch.${chapter.num} p.${page+1}`}
-                  onLoad={() => setImgLoaded(true)}
-                  onError={() => { setImgLoaded(true); setImgError(true) }}
-                  style={{ display:imgError?'none':'block', width:'100%', height:'auto', opacity:imgLoaded?1:0, transition:'opacity 0.2s' }}
-                />
-              )}
-            </>
-          )}
-
-          {/* Mode double page */}
-          {doublePage && (
-            <div style={{ display:'flex', gap:4, width:'100%', alignItems:'flex-start' }}>
-              {[page, page + 1].map((p, i) => (
-                pages[p] ? (
-                  <img key={`${chapter.num}-${p}`} src={pages[p]} alt={`Ch.${chapter.num} p.${p+1}`}
-                    style={{ flex:1, width:'50%', height:'auto', display:'block' }}
-                  />
-                ) : null
-              ))}
+        <div style={{ position:'relative', width:'100%', maxWidth:850, minHeight:'100%', display:'flex', alignItems:'center', justifyContent:'center' }}>
+          {!imgLoaded && !imgError && (
+            <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center' }}>
+              <div style={{ textAlign:'center', color:'rgba(255,255,255,0.3)' }}>
+                <div style={{ fontSize:40, marginBottom:12, animation:'pulse 1.5s infinite' }}>📖</div>
+                <div style={{ fontSize:13 }}>Chargement page…</div>
+              </div>
             </div>
+          )}
+          {imgError && (
+            <div style={{ textAlign:'center', color:'rgba(255,255,255,0.4)', padding:40 }}>
+              <div style={{ fontSize:48, marginBottom:16 }}>📂</div>
+              <div style={{ fontWeight:700, marginBottom:8, color:'#fff' }}>Image introuvable</div>
+              <button onClick={() => { setImgLoaded(false); setImgError(false) }}
+                style={{ padding:'8px 18px', borderRadius:9, background:'rgba(255,255,255,0.1)', border:'none', color:'#fff', fontSize:12, cursor:'pointer' }}>
+                Réessayer
+              </button>
+            </div>
+          )}
+          {pages[page] && (
+            <img key={`${chapter.num}-${page}`} src={pages[page]} alt={`Ch.${chapter.num} p.${page+1}`}
+              onLoad={() => setImgLoaded(true)}
+              onError={() => { setImgLoaded(true); setImgError(true) }}
+              style={{ display:imgError?'none':'block', width:'100%', height:'auto', opacity:imgLoaded?1:0, transition:'opacity 0.2s' }}
+            />
           )}
         </div>
       </div>
 
       {/* ── Bottom bar ── */}
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 16px', background:'rgba(14,14,16,0.95)', borderTop:'1px solid rgba(255,255,255,0.08)', flexShrink:0, backdropFilter:'blur(12px)', gap:12 }}>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 16px', background:'rgba(14,14,16,0.95)', borderTop:'1px solid rgba(255,255,255,0.08)', flexShrink:0, backdropFilter:'blur(12px)', gap:12, ...barStyle }}>
         <button onClick={prev} disabled={atStart} style={{ padding:'10px 20px', borderRadius:10, border:'none', cursor: atStart?'default':'pointer', fontWeight:700, fontSize:14, background:atStart?'rgba(255,255,255,0.06)':'rgba(255,255,255,0.1)', color:atStart?'rgba(255,255,255,0.2)':'#fff' }}>← Préc.</button>
 
-        {/* Barre de progression cliquable */}
         <div style={{ flex:1, height:4, background:'rgba(255,255,255,0.1)', borderRadius:2, overflow:'hidden', cursor:'pointer' }}
           onClick={e => {
             if (!total) return
             const r = e.currentTarget.getBoundingClientRect()
             changePage(Math.floor(((e.clientX - r.left) / r.width) * total))
           }}>
-          <div style={{ height:'100%', background:'var(--accent)', borderRadius:2, width: total ? `${((page + (doublePage && pages[page+1] ? 2 : 1)) / total) * 100}%` : '0%', transition:'width 0.2s' }} />
+          <div style={{ height:'100%', background:'var(--accent)', borderRadius:2, width: total ? `${((page + 1) / total) * 100}%` : '0%', transition:'width 0.2s' }} />
         </div>
 
         <button onClick={next} disabled={atEnd} style={{ padding:'10px 20px', borderRadius:10, border:'none', cursor: atEnd?'default':'pointer', fontWeight:700, fontSize:14, background:atEnd?'rgba(255,255,255,0.06)':'var(--accent)', color:'#fff' }}>Suiv. →</button>
@@ -741,7 +724,7 @@ export default function ScansPage({ onClose }) {
 
         {/* ── Raccourcis clavier hint ── */}
         <div style={{ flexShrink:0, borderTop:'1px solid var(--border)', padding:'8px 20px', background:'rgba(17,18,20,0.9)', display:'flex', gap:20, justifyContent:'center', flexWrap:'wrap' }}>
-          {[['/', 'Rechercher'], ['←→', 'Pages'], ['D', 'Double page'], ['Échap', 'Retour']].map(([k, label]) => (
+          {[['/', 'Rechercher'], ['←→', 'Pages'], ['Échap', 'Retour']].map(([k, label]) => (
             <span key={k} style={{ fontSize:11, color:'var(--muted)' }}>
               <kbd style={{ background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.12)', borderRadius:4, padding:'1px 6px', fontSize:10, fontFamily:'monospace', color:'rgba(255,255,255,0.6)', marginRight:5 }}>{k}</kbd>
               {label}
