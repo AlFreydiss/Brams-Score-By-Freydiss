@@ -112,6 +112,31 @@ const CSS = `
     pointer-events: none;
   }
 
+  /* ── Anti-artifact rendering ── */
+  /* Force GPU layer sur les éléments fixes pour éviter les lignes de séparation */
+  [style*="position: fixed"], [style*="position:fixed"] {
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    will-change: transform;
+  }
+  /* Élimine les gaps créés par backface en 3D */
+  [style*="preserve-3d"] {
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+  }
+  /* Supprime les sous-pixels sur les orbes/blobs */
+  .orb {
+    transform: translateZ(0) translate(0, 0);
+    -webkit-transform: translateZ(0) translate(0, 0);
+    will-change: transform;
+    image-rendering: pixelated;
+  }
+  /* Évite overflow parasite */
+  canvas {
+    display: block;
+    image-rendering: auto;
+  }
+
   /* Scrollbar */
   ::-webkit-scrollbar { width: 5px; }
   ::-webkit-scrollbar-track { background: #111214; }
