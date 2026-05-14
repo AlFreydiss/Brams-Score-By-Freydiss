@@ -9,9 +9,9 @@ const NAV_LINKS = [
   { label: '❤️ Soutenir', href: '#soutenir' },
 ]
 
-function openScans(e) {
+function openAnimeHub(e) {
   e.preventDefault()
-  document.dispatchEvent(new CustomEvent('open-scans'))
+  document.dispatchEvent(new CustomEvent('open-anime-hub'))
 }
 
 function openEncyclopedie(e) {
@@ -87,7 +87,7 @@ export default function Navbar() {
               📚 Encyclopédie
             </a>
 
-            <a href="#" onClick={openScans} style={{
+            <a href="#" onClick={openAnimeHub} style={{
               padding:'7px 14px', borderRadius:8, fontSize:14, fontWeight:600,
               color:'var(--accent)', transition:'color .2s, background .2s',
               display:'flex', alignItems:'center', gap:6,
@@ -96,7 +96,7 @@ export default function Navbar() {
               onMouseEnter={e=>{ e.currentTarget.style.background='rgba(224,82,74,0.18)'; e.currentTarget.style.borderColor='rgba(224,82,74,0.5)' }}
               onMouseLeave={e=>{ e.currentTarget.style.background='rgba(224,82,74,0.08)'; e.currentTarget.style.borderColor='rgba(224,82,74,0.25)' }}
             >
-              📖 Scans
+              🎌 Animés
             </a>
           </div>
 

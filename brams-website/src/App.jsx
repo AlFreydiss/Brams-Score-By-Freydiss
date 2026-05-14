@@ -20,19 +20,29 @@ import NousSoutenir from './components/NousSoutenir.jsx'
 import ScansPage from './components/ScansPage.jsx'
 import AkainuGame from './components/AkainuGame.jsx'
 import MusicPlayer from './components/MusicPlayer.jsx'
+import AnimeHub from './components/AnimeHub.jsx'
+import TpnPage from './components/TpnPage.jsx'
 
 export default function App() {
-  const [scansOpen, setScansOpen]         = useState(false)
+  const [scansOpen,       setScansOpen]       = useState(false)
   const [encyclopedieOpen, setEncyclopedieOpen] = useState(false)
+  const [animeHubOpen,    setAnimeHubOpen]    = useState(false)
+  const [tpnOpen,         setTpnOpen]         = useState(false)
 
   useEffect(() => {
-    const fnScans = () => setScansOpen(true)
-    const fnEncy  = () => setEncyclopedieOpen(true)
-    document.addEventListener('open-scans', fnScans)
+    const fnScans    = () => setScansOpen(true)
+    const fnEncy     = () => setEncyclopedieOpen(true)
+    const fnAnimeHub = () => setAnimeHubOpen(true)
+    const fnTpn      = () => setTpnOpen(true)
+    document.addEventListener('open-scans',        fnScans)
     document.addEventListener('open-encyclopedie', fnEncy)
+    document.addEventListener('open-anime-hub',    fnAnimeHub)
+    document.addEventListener('open-tpn',          fnTpn)
     return () => {
-      document.removeEventListener('open-scans', fnScans)
+      document.removeEventListener('open-scans',        fnScans)
       document.removeEventListener('open-encyclopedie', fnEncy)
+      document.removeEventListener('open-anime-hub',    fnAnimeHub)
+      document.removeEventListener('open-tpn',          fnTpn)
     }
   }, [])
 
@@ -90,6 +100,14 @@ export default function App() {
       <ThemeToggle />
       <AkainuGame />
 
+      {animeHubOpen && (
+        <AnimeHub
+          onClose={() => setAnimeHubOpen(false)}
+          onOpenOnepiece={() => { setAnimeHubOpen(false); setScansOpen(true) }}
+          onOpenTpn={() => { setAnimeHubOpen(false); setTpnOpen(true) }}
+        />
+      )}
+      {tpnOpen          && <TpnPage         onClose={() => setTpnOpen(false)} />}
       {scansOpen        && <ScansPage        onClose={() => setScansOpen(false)} />}
       {encyclopedieOpen && <EncyclopediePage onClose={() => setEncyclopedieOpen(false)} />}
     </ThemeProvider>
