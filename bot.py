@@ -1016,7 +1016,12 @@ intents.members = True
 intents.message_content = True
 intents.messages = True
 
-bot = commands.Bot(command_prefix="!", intents=intents, tree_cls=_BotTree)
+bot = commands.Bot(
+    command_prefix="!",
+    intents=intents,
+    tree_cls=_BotTree,
+    allowed_mentions=discord.AllowedMentions(everyone=False, roles=False, users=True),
+)
 bot.get_db      = get_db
 bot.release_db  = release_db
 db_executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="db_worker")

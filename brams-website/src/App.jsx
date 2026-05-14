@@ -7,7 +7,6 @@ import Hero from './components/Hero.jsx'
 import Ranks from './components/Ranks.jsx'
 import BotFeatures from './components/BotFeatures.jsx'
 import AIChatWidget from './components/AIChatWidget.jsx'
-import MusicPlayer from './components/MusicPlayer.jsx'
 import Leaderboard from './components/Leaderboard.jsx'
 import JoinCTA from './components/JoinCTA.jsx'
 import Footer from './components/Footer.jsx'
@@ -47,7 +46,7 @@ export default function App() {
         transform: 'translateZ(0)', willChange: 'transform',
       }}>
         <iframe
-          src="https://www.youtube.com/embed/eBAiYv-OnrI?autoplay=1&mute=1&loop=1&playlist=eBAiYv-OnrI&controls=0&showinfo=0&rel=0&iv_load_policy=3&modestbranding=1&start=25"
+          src="https://www.youtube.com/embed/eBAiYv-OnrI?autoplay=1&mute=1&loop=1&playlist=eBAiYv-OnrI&controls=0&showinfo=0&rel=0&iv_load_policy=3&modestbranding=1&start=25&disablekb=1&fs=0&playsinline=1"
           style={{
             display: 'block',
             position: 'absolute', top: '50%', left: '50%',
@@ -86,7 +85,6 @@ export default function App() {
       </div>
 
       <AIChatWidget />
-      <MusicPlayer />
       <ThemeToggle />
       <AkainuGame />
 
