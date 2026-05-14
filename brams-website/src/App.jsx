@@ -1,3 +1,4 @@
+import GlobalStyles from './components/GlobalStyles.jsx'
 import Navbar from './components/Navbar.jsx'
 import Hero from './components/Hero.jsx'
 import Ranks from './components/Ranks.jsx'
@@ -34,6 +35,7 @@ export default function App() {
         pointerEvents: 'none',
       }} />
 
+      <GlobalStyles />
       <div style={{ position: 'relative', zIndex: 1 }}>
         <Navbar />
         <Hero />
