@@ -11,14 +11,16 @@ export default function App() {
   return (
     <>
       <div style={{
-        position: 'fixed', inset: 0, zIndex: -2,
+        position: 'fixed', inset: 0, zIndex: 0,
         backgroundImage: 'url(/luffy-bg.gif)',
         backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat',
-        opacity: 0.18,
+        opacity: 0.22,
+        pointerEvents: 'none',
       }} />
       <div style={{
-        position: 'fixed', inset: 0, zIndex: -1,
-        background: 'linear-gradient(to bottom, rgba(10,10,12,0.97) 0%, rgba(17,18,20,0.7) 40%, rgba(17,18,20,0.55) 100%)',
+        position: 'fixed', inset: 0, zIndex: 0,
+        background: 'rgba(14,14,16,0.78)',
+        pointerEvents: 'none',
       }} />
       <div style={{
         position:'relative', zIndex:300,
