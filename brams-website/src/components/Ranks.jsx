@@ -30,32 +30,32 @@ export default function Ranks() {
             </div>
           </div>
 
-          <div style={{ display:'flex', flexDirection:'column', gap:4, maxWidth:720, margin:'0 auto' }}>
+          <div style={{ display:'flex', flexDirection:'column', gap:10, maxWidth:800, margin:'0 auto' }}>
             {RANKS.map((r, i) => (
               <div key={r.name} className={`reveal reveal-${Math.min(i+1,4)} ${inView?'visible':''}`}
                 style={{
-                  display:'flex', alignItems:'center', gap:20,
-                  background:'rgba(17,18,20,0.6)', backdropFilter:'blur(8px)',
-                  borderRadius:14, padding:'20px 26px',
-                  border:`1px solid ${r.color}25`,
+                  display:'flex', alignItems:'center', gap:24,
+                  background:'rgba(17,18,20,0.65)', backdropFilter:'blur(10px)',
+                  borderRadius:18, padding:'26px 32px',
+                  border:`1px solid ${r.color}30`,
                   transition:'transform .2s, box-shadow .2s, border-color .2s',
                   cursor:'pointer',
                 }}
                 onClick={() => setSelectedRank(r)}
-                onMouseEnter={e=>{ e.currentTarget.style.transform='translateX(8px)'; e.currentTarget.style.boxShadow=`0 6px 28px ${r.color}25`; e.currentTarget.style.borderColor=`${r.color}50` }}
-                onMouseLeave={e=>{ e.currentTarget.style.transform='translateX(0)'; e.currentTarget.style.boxShadow='none'; e.currentTarget.style.borderColor=`${r.color}25` }}
+                onMouseEnter={e=>{ e.currentTarget.style.transform='translateX(10px)'; e.currentTarget.style.boxShadow=`0 8px 36px ${r.color}30`; e.currentTarget.style.borderColor=`${r.color}55` }}
+                onMouseLeave={e=>{ e.currentTarget.style.transform='translateX(0)'; e.currentTarget.style.boxShadow='none'; e.currentTarget.style.borderColor=`${r.color}30` }}
               >
-                <div style={{ width:52, height:52, borderRadius:14, background:`${r.color}14`, border:`1px solid ${r.color}28`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:26, flexShrink:0 }}>{r.emoji}</div>
+                <div style={{ width:64, height:64, borderRadius:16, background:`${r.color}18`, border:`1px solid ${r.color}35`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:32, flexShrink:0 }}>{r.emoji}</div>
                 <div style={{ flex:1 }}>
-                  <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:5 }}>
-                    <span style={{ fontFamily:'var(--display)', fontWeight:700, fontSize:17, color:'#fff' }}>{r.name}</span>
-                    <span style={{ background:`${r.color}18`, color:r.color, fontSize:11, fontWeight:700, padding:'2px 10px', borderRadius:100, border:`1px solid ${r.color}35` }}>{r.hours} / semaine</span>
+                  <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:7 }}>
+                    <span style={{ fontFamily:'var(--display)', fontWeight:800, fontSize:20, color:'#fff' }}>{r.name}</span>
+                    <span style={{ background:`${r.color}18`, color:r.color, fontSize:12, fontWeight:700, padding:'3px 12px', borderRadius:100, border:`1px solid ${r.color}40` }}>{r.hours} / semaine</span>
                   </div>
-                  <div style={{ fontSize:14, color:'var(--muted)', lineHeight:1.6 }}>{r.desc}</div>
+                  <div style={{ fontSize:15, color:'var(--muted)', lineHeight:1.65 }}>{r.desc}</div>
                 </div>
                 <div style={{ display:'flex', alignItems:'center', gap:10, flexShrink:0 }}>
-                  <span style={{ fontSize:12, color:r.color, fontWeight:600, opacity:.8 }}>Voir membres</span>
-                  <div style={{ width:10, height:10, borderRadius:'50%', background:r.color, boxShadow:`0 0 10px ${r.color}` }} />
+                  <span style={{ fontSize:13, color:r.color, fontWeight:700, opacity:.85 }}>Voir membres</span>
+                  <div style={{ width:11, height:11, borderRadius:'50%', background:r.color, boxShadow:`0 0 12px ${r.color}` }} />
                 </div>
               </div>
             ))}

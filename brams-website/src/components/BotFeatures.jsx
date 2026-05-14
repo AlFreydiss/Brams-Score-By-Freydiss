@@ -13,7 +13,7 @@ export default function BotFeatures() {
   const [ref, inView] = useInView()
 
   return (
-    <section id="bot-buster" style={{ position:'relative' }}>
+    <section id="bot" style={{ position:'relative' }}>
       <div className="orb" style={{ width:500, height:500, top:'20%', right:'-10%', background:'rgba(224,82,74,.06)', pointerEvents:'none' }} />
 
       <div className="container" ref={ref}>

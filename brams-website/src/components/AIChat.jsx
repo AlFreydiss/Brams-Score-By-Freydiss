@@ -80,7 +80,7 @@ export default function AIChat() {
               Brams Score IA
             </h2>
             <p className="sub" style={{ margin:'0 auto' }}>
-              Pose tes questions sur One Piece, les animes ou le serveur. Propulsé par Gemini.
+              Pose tes questions sur One Piece, les animes ou le serveur.
             </p>
           </div>
         </div>
@@ -108,7 +108,7 @@ export default function AIChat() {
                 <div style={{ fontWeight:700, fontSize:15, color:'#fff' }}>Brams Score IA</div>
                 <div style={{ fontSize:12, color:'var(--success)', display:'flex', alignItems:'center', gap:5 }}>
                   <span style={{ width:6, height:6, borderRadius:'50%', background:'var(--success)', display:'inline-block', animation:'pulse 2s infinite' }} />
-                  En ligne · Gemini
+                  En ligne
                 </div>
               </div>
             </div>

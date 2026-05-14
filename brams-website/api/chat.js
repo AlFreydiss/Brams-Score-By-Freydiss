@@ -1,5 +1,5 @@
 const SYSTEM = `Tu es Brams Score, l'assistant IA officiel de la communauté Discord Brams Community — un serveur One Piece français.
-Tu réponds en français, avec un ton décontracté et fun, comme un nakama (compagnon).
+Tu réponds en français, avec un ton décontracté et fun, comme un compagnon.
 Tu peux parler de :
 - One Piece (personnages, arcs, théories, combats, fruits du démon)
 - Animes en général (Naruto, Dragon Ball, Demon Slayer, etc.)
@@ -18,7 +18,7 @@ function getKeys() {
   return keys
 }
 
-const MODELS = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-pro']
+const MODELS = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-8b']
 
 async function callGemini(apiKey, message, history) {
   const contents = [
@@ -30,29 +30,34 @@ async function callGemini(apiKey, message, history) {
   ]
 
   for (const model of MODELS) {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          systemInstruction: { parts: [{ text: SYSTEM }] },
-          contents,
-          generationConfig: { maxOutputTokens: 512, temperature: 0.8 },
-        }),
-      }
-    )
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            systemInstruction: { parts: [{ text: SYSTEM }] },
+            contents,
+            generationConfig: { maxOutputTokens: 512, temperature: 0.8 },
+          }),
+        }
+      )
 
-    if (res.status === 429) throw Object.assign(new Error('rate_limit'), { rateLimit: true })
-    if (res.status === 404) continue  // modèle pas dispo → essaie le suivant
-    if (!res.ok) throw new Error(`gemini_${res.status}`)
+      if (res.status === 429) throw Object.assign(new Error('rate_limit'), { rateLimit: true })
+      if (res.status === 404) continue
+      if (!res.ok) continue
 
-    const data = await res.json()
-    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text
-    if (text) return text
+      const data = await res.json()
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text
+      if (text) return text
+    } catch (e) {
+      if (e.rateLimit) throw e
+      // erreur réseau ou modèle indispo → essaie le modèle suivant
+    }
   }
 
-  throw new Error('no_model_available')
+  throw Object.assign(new Error('rate_limit'), { rateLimit: true })
 }
 
 export default async function handler(req, res) {
@@ -64,13 +69,12 @@ export default async function handler(req, res) {
   }
 
   const keys = getKeys()
-  if (!keys.length) return res.status(500).json({ error: 'Clé API manquante' })
+  if (!keys.length) return res.status(500).json({ error: 'Service indisponible' })
 
   const shuffled = [...keys].sort(() => Math.random() - 0.5)
 
-  // 2 passes sur toutes les clés avec une petite pause entre les deux
   for (let pass = 0; pass < 2; pass++) {
-    if (pass === 1) await new Promise(r => setTimeout(r, 2000))
+    if (pass === 1) await new Promise(r => setTimeout(r, 1500))
     for (const key of shuffled) {
       try {
         const reply = await callGemini(key, message, history)
@@ -78,10 +82,10 @@ export default async function handler(req, res) {
       } catch (e) {
         if (e.rateLimit) continue
         console.error('[chat]', e.message)
-        return res.status(500).json({ error: 'Erreur IA, réessaie.' })
+        continue
       }
     }
   }
 
-  return res.status(429).json({ error: 'Toutes les clés sont saturées, réessaie dans 1 minute.' })
+  return res.status(429).json({ error: 'Trop de requêtes en ce moment, réessaie dans une minute.' })
 }

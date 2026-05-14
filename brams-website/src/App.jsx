@@ -17,6 +17,7 @@ import HallOfFame from './components/HallOfFame.jsx'
 import QuoteSection from './components/QuoteSection.jsx'
 import Contact from './components/Contact.jsx'
 import NousSoutenir from './components/NousSoutenir.jsx'
+import Scans from './components/Scans.jsx'
 import AkainuGame from './components/AkainuGame.jsx'
 
 export default function App() {
@@ -41,7 +42,7 @@ export default function App() {
       </div>
       <div style={{
         position: 'fixed', inset: 0, zIndex: 0,
-        background: 'rgba(14,14,16,0.72)',
+        background: 'var(--overlay-bg, rgba(14,14,16,0.72))',
         pointerEvents: 'none',
       }} />
 
@@ -54,6 +55,7 @@ export default function App() {
         <DevilFruits />
         <Quiz />
         <HallOfFame />
+        <Scans />
         <NousSoutenir />
         <Roadmap />
         <Leaderboard />
