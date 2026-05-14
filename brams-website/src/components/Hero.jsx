@@ -37,11 +37,11 @@ export default function Hero() {
             </div>
 
             <h1 className="fade-up-2" style={{
-              fontFamily:'var(--display)', fontSize:'clamp(48px,7vw,80px)',
-              fontWeight:800, lineHeight:1.02, color:'#fff',
-              marginBottom:24, letterSpacing:'-.03em',
+              fontFamily:'var(--pirate)', fontSize:'clamp(52px,7.5vw,88px)',
+              fontWeight:400, lineHeight:1.05, color:'#fff',
+              marginBottom:24, letterSpacing:'.01em',
             }}>
-              Rejoins le<br />
+              Rejoins la<br />
               <span style={{
                 background:'linear-gradient(135deg, #e0524a, #ff8a80)',
                 WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent',

@@ -39,20 +39,30 @@ export default function BotFeatures() {
 
         <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(320px,1fr))', gap:14 }}>
           {FEATURES.map((f, i) => (
-            <div key={f.title} className={`card reveal reveal-${(i%4)+1} ${inView?'visible':''}`}
-              style={{ padding:26 }}>
+            <div key={f.title} className={`reveal reveal-${(i%4)+1} ${inView?'visible':''}`}
+              style={{
+                padding:26, borderRadius:16, position:'relative', overflow:'hidden',
+                background:`linear-gradient(135deg, ${f.color}10 0%, rgba(17,18,20,0.9) 60%)`,
+                border:`1px solid ${f.color}35`,
+                transition:'transform .2s, box-shadow .2s',
+              }}
+              onMouseEnter={e=>{e.currentTarget.style.transform='translateY(-4px)';e.currentTarget.style.boxShadow=`0 16px 40px ${f.color}20`}}
+              onMouseLeave={e=>{e.currentTarget.style.transform='translateY(0)';e.currentTarget.style.boxShadow='none'}}
+            >
+              <div style={{ position:'absolute', top:-30, right:-30, width:100, height:100, borderRadius:'50%', background:`${f.color}08`, filter:'blur(20px)', pointerEvents:'none' }} />
               <div style={{
-                width:48, height:48, borderRadius:12, marginBottom:18,
-                background:`${f.color}12`, border:`1px solid ${f.color}25`,
-                display:'flex', alignItems:'center', justifyContent:'center', fontSize:22,
+                width:52, height:52, borderRadius:14, marginBottom:18,
+                background:`${f.color}20`, border:`1px solid ${f.color}40`,
+                display:'flex', alignItems:'center', justifyContent:'center', fontSize:24,
+                boxShadow:`0 4px 16px ${f.color}20`,
               }}>{f.emoji}</div>
               <h3 style={{ fontFamily:'var(--display)', fontWeight:700, fontSize:17, color:'#fff', marginBottom:10 }}>{f.title}</h3>
               <p style={{ fontSize:13.5, color:'var(--muted)', lineHeight:1.7, marginBottom:18 }}>{f.desc}</p>
               <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
                 {f.cmds.map(c => (
                   <span key={c} style={{
-                    background:'rgba(255,255,255,.04)', border:'1px solid var(--border)',
-                    borderRadius:6, padding:'3px 10px', fontSize:12, color:'var(--muted)', fontFamily:'monospace',
+                    background:`${f.color}12`, border:`1px solid ${f.color}30`,
+                    borderRadius:6, padding:'3px 10px', fontSize:12, color:f.color, fontFamily:'monospace',
                   }}>{c}</span>
                 ))}
               </div>
