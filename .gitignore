@@ -2,3 +2,6 @@
 .env
 .env.*
 *.env
+
+# Scans manga (fichiers locaux, non versionnés — trop volumineux pour git)
+brams-website/public/scans/

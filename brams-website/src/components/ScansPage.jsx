@@ -1,22 +1,21 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import CHAPTERS_DATA from '../data/chapters-data.json'
 
 // ── Données ───────────────────────────────────────────────────────────────────
 
-function mkPages(num, count = 18) {
-  return Array.from({ length: count }, (_, i) => `/scans/ch${num}/${String(i + 1).padStart(3, '0')}.jpg`)
-}
-
 const EMOJIS = ['🏴‍☠️','⚔️','📜','💥','🌊','🔥','👑','🌀','🛡️','⚡','🌋','🗡️','☀️','🔴','🏔️','🤝','💰','⛈️','🎯','🌸','💎','🌑','⚕️','💫','🌺','🦁','⚓']
 
-const CHAPTERS = Array.from({ length: 1182 - 1126 + 1 }, (_, i) => {
-  const num = 1126 + i
-  return { num, title: `Chapitre ${num}`, emoji: EMOJIS[i % EMOJIS.length], pages: mkPages(num) }
-})
+const CHAPTERS = CHAPTERS_DATA.map((ch, i) => ({
+  num:   ch.num,
+  title: ch.title || `Chapitre ${ch.num}`,
+  emoji: EMOJIS[i % EMOJIS.length],
+  pages: ch.pages,
+}))
 
 const ARCS = [
   { name: 'Wano',    range: [909,  1057], emoji: '⛩️', color: '#e17055' },
   { name: 'Egghead', range: [1058, 1125], emoji: '🤖', color: '#74b9ff' },
-  { name: 'Elbaf',   range: [1126, 1182], emoji: '⚔️', color: '#e0524a', current: true },
+  { name: 'Elbaf',   range: [1127, 1182], emoji: '⚔️', color: '#e0524a', current: true },
 ]
 
 const PER_PAGE = 40
@@ -592,7 +591,7 @@ export default function ScansPage({ onClose }) {
 
             <div style={{ flex:1, textAlign:'center' }}>
               <span style={{ fontFamily:'var(--display)', fontWeight:800, fontSize:16, color:'#fff' }}>📖 Arc Elbaf</span>
-              <span style={{ fontSize:12, color:'var(--muted)', marginLeft:10 }}>Ch.1126–1182</span>
+              <span style={{ fontSize:12, color:'var(--muted)', marginLeft:10 }}>Ch.1127–1182</span>
               <span style={{ fontSize:12, color:'#34d399', marginLeft:10, fontWeight:700 }}>{readCount}/{CHAPTERS.length} lus</span>
             </div>
 
