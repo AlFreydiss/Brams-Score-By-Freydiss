@@ -3,7 +3,10 @@ import AboutModal from './AboutModal.jsx'
 
 const NAV_LINKS = [
   { label: 'Rangs', href: '#rangs' },
+  { label: 'Fruits', href: '#fruits' },
+  { label: 'Quiz', href: '#quiz' },
   { label: 'Classement', href: '#classement' },
+  { label: 'Map', href: '#map' },
 ]
 
 function TikTokIcon() {

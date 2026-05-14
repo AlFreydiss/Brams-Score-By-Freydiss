@@ -7,6 +7,13 @@ import MusicPlayer from './components/MusicPlayer.jsx'
 import Leaderboard from './components/Leaderboard.jsx'
 import JoinCTA from './components/JoinCTA.jsx'
 import Footer from './components/Footer.jsx'
+import Gear5Easter from './components/Gear5Easter.jsx'
+import DevilFruits from './components/DevilFruits.jsx'
+import Roadmap from './components/Roadmap.jsx'
+import Quiz from './components/Quiz.jsx'
+import WantedGenerator from './components/WantedGenerator.jsx'
+import HallOfFame from './components/HallOfFame.jsx'
+import GrandLineMap from './components/GrandLineMap.jsx'
 
 export default function App() {
   return (
@@ -23,29 +30,22 @@ export default function App() {
         background: 'rgba(14,14,16,0.78)',
         pointerEvents: 'none',
       }} />
-      <div style={{
-        position:'relative', zIndex:300,
-        background:'linear-gradient(90deg, rgba(224,82,74,.15), rgba(155,89,182,.15), rgba(224,82,74,.15))',
-        borderBottom:'1px solid rgba(224,82,74,.2)',
-        padding:'8px 20px', textAlign:'center',
-        fontSize:13, color:'rgba(255,255,255,.8)', fontWeight:500,
-        backdropFilter:'blur(10px)',
-      }}>
-        🏴‍☠️ &nbsp; Rejoins la <strong style={{color:'#e0524a'}}>Brams Community</strong> — 2 000+ membres · Bot actif 24/7 &nbsp;
-        <a href="https://discord.gg/ez4dBTPE" target="_blank" rel="noopener noreferrer"
-          style={{ color:'var(--accent)', fontWeight:700, textDecoration:'underline', textUnderlineOffset:3 }}>
-          Rejoindre →
-        </a>
-      </div>
       <Navbar />
       <Hero />
       <Ranks />
       <BotFeatures />
+      <DevilFruits />
+      <GrandLineMap />
+      <Quiz />
+      <HallOfFame />
+      <WantedGenerator />
+      <Roadmap />
       <Leaderboard />
       <JoinCTA />
       <Footer />
       <AIChatWidget />
       <MusicPlayer />
+      <Gear5Easter />
     </>
   )
 }

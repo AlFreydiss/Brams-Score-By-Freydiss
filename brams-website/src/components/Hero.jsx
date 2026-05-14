@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import Particles from './Particles.jsx'
 
 const QUOTES = [
   { text: "Je vais devenir le Roi des Pirates !", author: "Monkey D. Luffy" },
@@ -126,6 +127,7 @@ export default function Hero() {
       <div className="orb" style={{ width:500, height:500, bottom:'-10%', right:'-10%', background:'rgba(155,89,182,.07)', animationDelay:'3s' }} />
       <div className="orb" style={{ width:350, height:350, top:'55%', left:'-8%', background:'rgba(255,215,0,.04)', animationDelay:'6s' }} />
       <div className="dot-bg" style={{ position:'absolute', inset:0, opacity:.4, pointerEvents:'none' }} />
+      <Particles />
 
       {['8%','22%','68%','82%','45%'].map((left,i) => (
         <div key={i} style={{ position:'absolute', left, top:`${15+i*15}%`, fontSize:14+i*4, opacity:0.03+i*0.01, pointerEvents:'none', userSelect:'none', animation:`float ${7+i*2}s ease-in-out ${i}s infinite` }}>🏴‍☠️</div>

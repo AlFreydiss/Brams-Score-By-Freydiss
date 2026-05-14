@@ -10,17 +10,18 @@ export default function MusicPlayer() {
     const init = () => {
       if (!containerRef.current) return
       playerRef.current = new window.YT.Player(containerRef.current, {
-        videoId: '2FJlbPqka3M',
+        videoId: 'eBAiYv-OnrI',
         playerVars: {
           autoplay: 1,
           mute: 1,
           loop: 1,
-          playlist: '2FJlbPqka3M',
+          playlist: 'eBAiYv-OnrI',
           controls: 0,
           showinfo: 0,
           rel: 0,
           modestbranding: 1,
           disablekb: 1,
+          start: 25,
           origin: window.location.origin,
         },
         events: {
