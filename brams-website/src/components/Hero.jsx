@@ -37,20 +37,20 @@ export default function Hero() {
             </div>
 
             <h1 className="fade-up-2" style={{
-              fontFamily:'var(--pirate)', fontSize:'clamp(52px,7.5vw,88px)',
-              fontWeight:400, lineHeight:1.05, color:'#fff',
-              marginBottom:24, letterSpacing:'.01em',
+              fontFamily:'var(--pirate)', fontSize:'clamp(56px,8vw,96px)',
+              fontWeight:400, lineHeight:1, color:'#fff',
+              marginBottom:28, letterSpacing:'.01em',
             }}>
-              Rejoins la<br />
+              <span style={{ display:'block', background:'linear-gradient(135deg, #fff 30%, rgba(255,255,255,.6))', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>Brams</span>
               <span style={{
-                background:'linear-gradient(135deg, #e0524a, #ff8a80)',
+                display:'block',
+                background:'linear-gradient(135deg, #e0524a, #ff8a80, #ffb347)',
                 WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent',
-              }}>Brams Community</span>
+              }}>Community</span>
             </h1>
 
-            <p className="fade-up-3" style={{ fontSize:17, color:'var(--muted)', marginBottom:40, maxWidth:500, lineHeight:1.8 }}>
-              Le serveur Discord animé par le bot <strong style={{ color:'#fff' }}>Brams Score</strong>.
-              Grimpe les rangs en vocal, gagne des Berrys et affronte la communauté.
+            <p className="fade-up-3" style={{ fontSize:17, color:'rgba(255,255,255,.65)', marginBottom:40, maxWidth:480, lineHeight:1.8, fontWeight:400 }}>
+              Un écosystème Discord complet — rangs vocaux, économie, quiz animé et bien plus. Construit pour la communauté, par la communauté.
             </p>
 
             <div className="fade-up-3" style={{ display:'flex', gap:12, flexWrap:'wrap', marginBottom:60 }}>

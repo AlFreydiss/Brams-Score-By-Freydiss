@@ -2,7 +2,7 @@ import Navbar from './components/Navbar.jsx'
 import Hero from './components/Hero.jsx'
 import Ranks from './components/Ranks.jsx'
 import BotFeatures from './components/BotFeatures.jsx'
-import AIChat from './components/AIChat.jsx'
+import AIChatWidget from './components/AIChatWidget.jsx'
 import Leaderboard from './components/Leaderboard.jsx'
 import JoinCTA from './components/JoinCTA.jsx'
 import Footer from './components/Footer.jsx'
@@ -12,7 +12,7 @@ export default function App() {
     <>
       <div style={{
         position: 'fixed', inset: 0, zIndex: -2,
-        backgroundImage: 'url(/bg-anime.gif)',
+        backgroundImage: 'url(/luffy-bg.gif)',
         backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat',
         opacity: 0.18,
       }} />
@@ -38,10 +38,10 @@ export default function App() {
       <Hero />
       <Ranks />
       <BotFeatures />
-      <AIChat />
       <Leaderboard />
       <JoinCTA />
       <Footer />
+      <AIChatWidget />
     </>
   )
 }
