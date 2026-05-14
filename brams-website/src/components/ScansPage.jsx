@@ -89,11 +89,14 @@ function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextChapter, 
   const touchX    = useRef(null)
   const hideTimer = useRef(null)
   const scrollRef = useRef(null)
+  const zoomRef   = useRef(1)
   const total   = pages.length
   const atStart = page === 0 && chapterIndex === 0
   const atEnd   = page === total - 1 && chapterIndex === totalChapters - 1
 
   const clampZoom = z => Math.round(Math.max(0.5, Math.min(3, z)) * 10) / 10
+
+  useEffect(() => { zoomRef.current = zoom }, [zoom])
 
   // ── Auto-hide bars ────────────────────────────────────────────────────────────
   const showBars = useCallback(() => {
@@ -127,14 +130,37 @@ function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextChapter, 
     setPage(0); setImgLoaded(false); setImgError(false); setMarkedRead(isRead); setZoom(1)
   }, [chapter.num, isRead])
 
-  // ── Zoom molette (non-passive pour preventDefault) ────────────────────────────
+  // ── Zoom molette centré sur le curseur ───────────────────────────────────────
   useEffect(() => {
     const el = scrollRef.current
     if (!el) return
     const fn = e => {
-      if (!e.ctrlKey && e.deltaY === 0) return
       e.preventDefault()
-      setZoom(z => clampZoom(z + (e.deltaY < 0 ? 0.1 : -0.1)))
+      const rect     = el.getBoundingClientRect()
+      const mouseX   = e.clientX - rect.left
+      const mouseY   = e.clientY - rect.top
+      const oldZoom  = zoomRef.current
+      const newZoom  = clampZoom(oldZoom + (e.deltaY < 0 ? 0.1 : -0.1))
+      if (newZoom === oldZoom) return
+
+      const containerW = rect.width
+      const oldImgW    = 850 * oldZoom
+      const newImgW    = 850 * newZoom
+      const oldOffset  = Math.max(0, (containerW - oldImgW) / 2)
+      const newOffset  = Math.max(0, (containerW - newImgW) / 2)
+
+      const xInContent = el.scrollLeft + mouseX - oldOffset
+      const newScrollL = xInContent * (newZoom / oldZoom) + newOffset - mouseX
+      const newScrollT = (el.scrollTop + mouseY) * (newZoom / oldZoom) - mouseY
+
+      zoomRef.current = newZoom
+      setZoom(newZoom)
+
+      requestAnimationFrame(() => {
+        if (!scrollRef.current) return
+        scrollRef.current.scrollLeft = Math.max(0, newScrollL)
+        scrollRef.current.scrollTop  = Math.max(0, newScrollT)
+      })
     }
     el.addEventListener('wheel', fn, { passive: false })
     return () => el.removeEventListener('wheel', fn)
