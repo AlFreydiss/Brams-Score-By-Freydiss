@@ -3,7 +3,6 @@ import AboutModal from './AboutModal.jsx'
 
 const NAV_LINKS = [
   { label: 'Rangs', href: '#rangs' },
-  { label: 'Bot Brams Score', href: '#bot-buster' },
   { label: 'Classement', href: '#classement' },
 ]
 
