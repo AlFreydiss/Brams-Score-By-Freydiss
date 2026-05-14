@@ -19,6 +19,7 @@ import Contact from './components/Contact.jsx'
 import NousSoutenir from './components/NousSoutenir.jsx'
 import ScansPage from './components/ScansPage.jsx'
 import AkainuGame from './components/AkainuGame.jsx'
+import MusicPlayer from './components/MusicPlayer.jsx'
 
 export default function App() {
   const [scansOpen, setScansOpen]         = useState(false)
@@ -85,6 +86,7 @@ export default function App() {
       </div>
 
       <AIChatWidget />
+      <MusicPlayer />
       <ThemeToggle />
       <AkainuGame />
 
