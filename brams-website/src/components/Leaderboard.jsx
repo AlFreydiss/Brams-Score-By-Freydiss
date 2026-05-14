@@ -101,12 +101,6 @@ export default function Leaderboard() {
             })}
           </div>
 
-          {!rows && !loading && (
-            <p style={{ textAlign:'center', marginTop:16, fontSize:12, color:'var(--muted)', opacity:.6 }}>
-              * Données d'exemple — connecte Supabase pour le classement en direct
-            </p>
-          )}
-
           <p style={{ textAlign:'center', marginTop:24, fontSize:12, color:'var(--muted)' }}>
             Mis à jour toutes les heures · Rejoins le serveur et parle en vocal pour apparaître ici
           </p>
