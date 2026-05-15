@@ -163,6 +163,7 @@ function VideoCard({ video, onPlay, color }) {
   )
 }
 
+
 function VideoPlayer({ videos, startIdx, onClose, color }) {
   const [idx, setIdx] = useState(startIdx)
   const video = videos[idx]
@@ -198,9 +199,13 @@ function VideoPlayer({ videos, startIdx, onClose, color }) {
       {/* Player */}
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#000', overflow: 'hidden' }}>
         {isLocal ? (
-          <video key={video.src} controls autoPlay style={{ maxWidth: '100%', maxHeight: '100%', width: '100%', height: '100%', outline: 'none' }}>
-            <source src={encodeURI(video.src)} />
-            Votre navigateur ne supporte pas la lecture vidéo.
+          <video
+            key={video.src}
+            controls
+            autoPlay
+            style={{ maxWidth: '100%', maxHeight: '100%', width: '100%', height: '100%', outline: 'none' }}
+          >
+            <source src={video.src.split('/').map((seg, i) => i === 0 ? seg : encodeURIComponent(seg)).join('/')} />
           </video>
         ) : (
           <iframe
