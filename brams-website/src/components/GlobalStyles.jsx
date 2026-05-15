@@ -256,6 +256,16 @@ const CSS = `
     .hide-mobile { display: none !important; }
   }
 
+  /* Right sidebar panel — only visible on very wide screens */
+  .right-panel {
+    display: none !important;
+  }
+  @media (min-width: 1480px) {
+    .right-panel {
+      display: flex !important;
+    }
+  }
+
   /* ── AI Chat bubble float animation ── */
   @keyframes floatAI {
     0%,100% { transform: translateY(0px); }

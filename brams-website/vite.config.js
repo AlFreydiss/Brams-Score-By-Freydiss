@@ -54,5 +54,5 @@ const animePlugin = {
 
 export default defineConfig({
   plugins: [react(), animePlugin],
-  build: { chunkSizeWarningLimit: 1000 },
+  build: { chunkSizeWarningLimit: 1500 },
 })
