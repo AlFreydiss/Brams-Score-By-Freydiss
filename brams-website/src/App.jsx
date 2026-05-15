@@ -26,6 +26,11 @@ import DrStonePage from './components/DrStonePage.jsx'
 import JjkPage from './components/JjkPage.jsx'
 import KingdomPage from './components/KingdomPage.jsx'
 import AotPage from './components/AotPage.jsx'
+import KnyPage from './components/KnyPage.jsx'
+import NntPage from './components/NntPage.jsx'
+import SlPage from './components/SlPage.jsx'
+import DbsPage from './components/DbsPage.jsx'
+import BcPage from './components/BcPage.jsx'
 import CalendarPage from './components/CalendarPage.jsx'
 
 export default function App() {
@@ -37,6 +42,11 @@ export default function App() {
   const [jjkOpen,         setJjkOpen]         = useState(false)
   const [kingdomOpen,     setKingdomOpen]     = useState(false)
   const [aotOpen,         setAotOpen]         = useState(false)
+  const [knyOpen,         setKnyOpen]         = useState(false)
+  const [nntOpen,         setNntOpen]         = useState(false)
+  const [slOpen,          setSlOpen]          = useState(false)
+  const [dbsOpen,         setDbsOpen]         = useState(false)
+  const [bcOpen,          setBcOpen]          = useState(false)
   const [calendarOpen,    setCalendarOpen]    = useState(false)
 
   useEffect(() => {
@@ -48,6 +58,11 @@ export default function App() {
     const fnJjk      = () => setJjkOpen(true)
     const fnKingdom  = () => setKingdomOpen(true)
     const fnAot      = () => setAotOpen(true)
+    const fnKny      = () => setKnyOpen(true)
+    const fnNnt      = () => setNntOpen(true)
+    const fnSl       = () => setSlOpen(true)
+    const fnDbs      = () => setDbsOpen(true)
+    const fnBc       = () => setBcOpen(true)
     const fnCalendar = () => setCalendarOpen(true)
     document.addEventListener('open-scans',        fnScans)
     document.addEventListener('open-encyclopedie', fnEncy)
@@ -57,6 +72,11 @@ export default function App() {
     document.addEventListener('open-jjk',          fnJjk)
     document.addEventListener('open-kingdom',      fnKingdom)
     document.addEventListener('open-aot',          fnAot)
+    document.addEventListener('open-kny',          fnKny)
+    document.addEventListener('open-nnt',          fnNnt)
+    document.addEventListener('open-sl',           fnSl)
+    document.addEventListener('open-dbs',          fnDbs)
+    document.addEventListener('open-bc',           fnBc)
     document.addEventListener('open-calendar',     fnCalendar)
     return () => {
       document.removeEventListener('open-scans',        fnScans)
@@ -67,6 +87,11 @@ export default function App() {
       document.removeEventListener('open-jjk',          fnJjk)
       document.removeEventListener('open-kingdom',      fnKingdom)
       document.removeEventListener('open-aot',          fnAot)
+      document.removeEventListener('open-kny',          fnKny)
+      document.removeEventListener('open-nnt',          fnNnt)
+      document.removeEventListener('open-sl',           fnSl)
+      document.removeEventListener('open-dbs',          fnDbs)
+      document.removeEventListener('open-bc',           fnBc)
       document.removeEventListener('open-calendar',     fnCalendar)
     }
   }, [])
@@ -134,6 +159,11 @@ export default function App() {
           onOpenJjk={() => { setAnimeHubOpen(false); setJjkOpen(true) }}
           onOpenKingdom={() => { setAnimeHubOpen(false); setKingdomOpen(true) }}
           onOpenAot={() => { setAnimeHubOpen(false); setAotOpen(true) }}
+          onOpenKny={() => { setAnimeHubOpen(false); setKnyOpen(true) }}
+          onOpenNnt={() => { setAnimeHubOpen(false); setNntOpen(true) }}
+          onOpenSl={() => { setAnimeHubOpen(false); setSlOpen(true) }}
+          onOpenDbs={() => { setAnimeHubOpen(false); setDbsOpen(true) }}
+          onOpenBc={() => { setAnimeHubOpen(false); setBcOpen(true) }}
         />
       )}
       {tpnOpen          && <TpnPage         onClose={() => setTpnOpen(false)} />}
@@ -141,6 +171,11 @@ export default function App() {
       {jjkOpen          && <JjkPage         onClose={() => setJjkOpen(false)} />}
       {kingdomOpen      && <KingdomPage     onClose={() => setKingdomOpen(false)} />}
       {aotOpen          && <AotPage         onClose={() => setAotOpen(false)} />}
+      {knyOpen          && <KnyPage         onClose={() => setKnyOpen(false)} />}
+      {nntOpen          && <NntPage         onClose={() => setNntOpen(false)} />}
+      {slOpen           && <SlPage          onClose={() => setSlOpen(false)} />}
+      {dbsOpen          && <DbsPage         onClose={() => setDbsOpen(false)} />}
+      {bcOpen           && <BcPage          onClose={() => setBcOpen(false)} />}
       {calendarOpen     && <CalendarPage    onClose={() => setCalendarOpen(false)} />}
       {scansOpen        && <ScansPage        onClose={() => setScansOpen(false)} />}
       {encyclopedieOpen && <EncyclopediePage onClose={() => setEncyclopedieOpen(false)} />}

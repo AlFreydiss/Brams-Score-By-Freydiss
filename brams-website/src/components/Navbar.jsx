@@ -92,21 +92,6 @@ export default function Navbar() {
               📚 Encyclopédie
             </a>
 
-            <a href="#" onClick={openAnimeHub} style={{
-              padding:'7px 14px', borderRadius:8, fontSize:14, fontWeight:600,
-              color:'var(--accent)', transition:'color .2s, background .2s',
-              display:'flex', alignItems:'center', gap:6,
-              background:'rgba(224,82,74,0.08)', border:'1px solid rgba(224,82,74,0.25)',
-            }}
-              onMouseEnter={e=>{ e.currentTarget.style.background='rgba(224,82,74,0.18)'; e.currentTarget.style.borderColor='rgba(224,82,74,0.5)' }}
-              onMouseLeave={e=>{ e.currentTarget.style.background='rgba(224,82,74,0.08)'; e.currentTarget.style.borderColor='rgba(224,82,74,0.25)' }}
-            >
-              🎌 Animés
-            </a>
-
-            <a href="#" onClick={openCalendar} className="cal-btn">
-              <span className="cal-icon">📅</span> Calendrier
-            </a>
           </div>
 
           <div style={{ display:'flex', alignItems:'center', gap:8 }}>

@@ -109,6 +109,96 @@ const ANIMES = [
     badge: 'NOUVEAU',
     badgeColor: '#546e7a',
   },
+  {
+    id: 'kny',
+    title: 'Kimetsu no Yaiba',
+    subtitle: 'Demon Slayer',
+    emoji: '🔥',
+    color: '#e85d27',
+    colorDark: '#6b1f05',
+    genres: ['Action', 'Surnaturel', 'Shōnen'],
+    description: "Tanjiro Kamado devient chasseur de démons après que sa famille est massacrée et sa sœur Nezuko transformée en démon.",
+    stats: [
+      { label: 'Chapitres', value: '206' },
+      { label: 'Épisodes', value: '0' },
+      { label: 'Statut', value: 'Disponible' },
+    ],
+    action: '🔥 Accéder',
+    badge: 'NOUVEAU',
+    badgeColor: '#e85d27',
+  },
+  {
+    id: 'nnt',
+    title: 'Nanatsu no Taizai',
+    subtitle: 'Les Sept Péchés Capitaux',
+    emoji: '🐗',
+    color: '#8e44ad',
+    colorDark: '#3d0f5a',
+    genres: ['Action', 'Fantasy', 'Shōnen'],
+    description: "La princesse Elizabeth part à la recherche des Sept Péchés Capitaux, des chevaliers légendaires bannis du royaume, pour sauver Britannia.",
+    stats: [
+      { label: 'Chapitres', value: '342' },
+      { label: 'Épisodes', value: '0' },
+      { label: 'Statut', value: 'Disponible' },
+    ],
+    action: '🐗 Accéder',
+    badge: 'NOUVEAU',
+    badgeColor: '#8e44ad',
+  },
+  {
+    id: 'sl',
+    title: 'Solo Leveling',
+    subtitle: 'Le plus faible monte de rang',
+    emoji: '💎',
+    color: '#1976d2',
+    colorDark: '#0a2e5c',
+    genres: ['Action', 'Fantasy', 'Manhwa'],
+    description: "Sung Jinwoo, le chasseur le plus faible du monde, se retrouve piégé dans un donjon mortel et reçoit un mystérieux système qui lui permet de monter de rang à l'infini.",
+    stats: [
+      { label: 'Chapitres', value: '202' },
+      { label: 'Épisodes', value: '0' },
+      { label: 'Statut', value: 'Disponible' },
+    ],
+    action: '💎 Accéder',
+    badge: 'NOUVEAU',
+    badgeColor: '#1976d2',
+  },
+  {
+    id: 'dbs',
+    title: 'Dragon Ball Super',
+    subtitle: 'Au-delà des limites',
+    emoji: '🐉',
+    color: '#f57f17',
+    colorDark: '#5c2e00',
+    genres: ['Action', 'Science-fiction', 'Shōnen'],
+    description: "Après la défaite de Majin Buu, Goku continue à repousser ses limites en affrontant des adversaires venus d'autres univers.",
+    stats: [
+      { label: 'Chapitres', value: '101' },
+      { label: 'Épisodes', value: '0' },
+      { label: 'Statut', value: 'Disponible' },
+    ],
+    action: '🐉 Accéder',
+    badge: 'NOUVEAU',
+    badgeColor: '#f57f17',
+  },
+  {
+    id: 'bc',
+    title: 'Black Clover',
+    subtitle: 'La magie du trèfle noir',
+    emoji: '🍀',
+    color: '#388e3c',
+    colorDark: '#0a3d0c',
+    genres: ['Action', 'Fantasy', 'Shōnen'],
+    description: "Asta, né sans magie dans un monde où tout le monde en a, rêve de devenir Sorcier Empereur grâce à sa ténacité et à son grimoire à cinq feuilles.",
+    stats: [
+      { label: 'Chapitres', value: '280' },
+      { label: 'Épisodes', value: '0' },
+      { label: 'Statut', value: 'Disponible' },
+    ],
+    action: '🍀 Accéder',
+    badge: 'NOUVEAU',
+    badgeColor: '#388e3c',
+  },
 ]
 
 function AnimeCard({ anime, onClick }) {
@@ -204,7 +294,7 @@ function ComingSoonCard() {
   )
 }
 
-export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrstone, onOpenJjk, onOpenKingdom, onOpenAot }) {
+export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrstone, onOpenJjk, onOpenKingdom, onOpenAot, onOpenKny, onOpenNnt, onOpenSl, onOpenDbs, onOpenBc }) {
   useEffect(() => {
     document.body.style.overflow = 'hidden'
     return () => { document.body.style.overflow = '' }
@@ -217,6 +307,11 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
     else if (id === 'jjk') onOpenJjk()
     else if (id === 'kingdom') onOpenKingdom()
     else if (id === 'aot') onOpenAot()
+    else if (id === 'kny') onOpenKny()
+    else if (id === 'nnt') onOpenNnt()
+    else if (id === 'sl') onOpenSl()
+    else if (id === 'dbs') onOpenDbs()
+    else if (id === 'bc') onOpenBc()
   }
 
   return (
