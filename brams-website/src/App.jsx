@@ -118,13 +118,13 @@ export default function App() {
         />
       </div>
       <div style={{
-        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 0,
-        background: 'var(--overlay-bg, rgba(14,14,16,0.72))',
+        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1,
+        background: 'var(--overlay-bg, rgba(14,14,16,0.82))',
         pointerEvents: 'none',
         transform: 'translateZ(0)', willChange: 'transform',
       }} />
 
-      <div style={{ position: 'relative', zIndex: 1, isolation: 'isolate' }}>
+      <div style={{ position: 'relative', zIndex: 2, isolation: 'isolate' }}>
         <Navbar />
         <Hero />
         <QuoteSection />
