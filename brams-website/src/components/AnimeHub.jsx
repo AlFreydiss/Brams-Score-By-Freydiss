@@ -37,6 +37,42 @@ const ANIMES = [
     badge: 'NOUVEAU',
     badgeColor: '#6c5ce7',
   },
+  {
+    id: 'drstone',
+    title: 'Dr. Stone',
+    subtitle: 'Science & Survie',
+    emoji: '⚗️',
+    color: '#00b894',
+    colorDark: '#005c45',
+    genres: ['Science-fiction', 'Aventure', 'Shōnen'],
+    description: "Toute l'humanité est pétrifiée. Des millénaires plus tard, le génie Senku se réveille et décide de reconstruire la civilisation grâce à la science.",
+    stats: [
+      { label: 'Chapitres', value: '174' },
+      { label: 'Épisodes', value: '0' },
+      { label: 'Statut', value: 'Disponible' },
+    ],
+    action: '⚗️ Accéder',
+    badge: 'NOUVEAU',
+    badgeColor: '#00b894',
+  },
+  {
+    id: 'jjk',
+    title: 'Jujutsu Kaisen',
+    subtitle: 'Maléfices & Combats',
+    emoji: '⚡',
+    color: '#c62828',
+    colorDark: '#5a0a0a',
+    genres: ['Action', 'Surnaturel', 'Shōnen'],
+    description: "Yuji Itadori avale un doigt de Ryomen Sukuna, le roi des Fléaux. Condamné à mort, il rejoint l'École de sorcellerie de Jujutsu pour trouver les doigts restants.",
+    stats: [
+      { label: 'Chapitres', value: '263' },
+      { label: 'Épisodes', value: '0' },
+      { label: 'Statut', value: 'Disponible' },
+    ],
+    action: '⚡ Accéder',
+    badge: 'NOUVEAU',
+    badgeColor: '#c62828',
+  },
 ]
 
 function AnimeCard({ anime, onClick }) {
@@ -132,7 +168,7 @@ function ComingSoonCard() {
   )
 }
 
-export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn }) {
+export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrstone, onOpenJjk }) {
   useEffect(() => {
     document.body.style.overflow = 'hidden'
     return () => { document.body.style.overflow = '' }
@@ -141,6 +177,8 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn }) {
   const handleClick = (id) => {
     if (id === 'onepiece') onOpenOnepiece()
     else if (id === 'tpn') onOpenTpn()
+    else if (id === 'drstone') onOpenDrstone()
+    else if (id === 'jjk') onOpenJjk()
   }
 
   return (

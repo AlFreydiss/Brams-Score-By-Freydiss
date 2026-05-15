@@ -14,6 +14,11 @@ function openAnimeHub(e) {
   document.dispatchEvent(new CustomEvent('open-anime-hub'))
 }
 
+function openCalendar(e) {
+  e.preventDefault()
+  document.dispatchEvent(new CustomEvent('open-calendar'))
+}
+
 function openEncyclopedie(e) {
   e.preventDefault()
   document.dispatchEvent(new CustomEvent('open-encyclopedie'))
@@ -97,6 +102,18 @@ export default function Navbar() {
               onMouseLeave={e=>{ e.currentTarget.style.background='rgba(224,82,74,0.08)'; e.currentTarget.style.borderColor='rgba(224,82,74,0.25)' }}
             >
               🎌 Animés
+            </a>
+
+            <a href="#" onClick={openCalendar} style={{
+              padding:'7px 14px', borderRadius:8, fontSize:14, fontWeight:600,
+              color:'#a29bfe', transition:'color .2s, background .2s',
+              display:'flex', alignItems:'center', gap:6,
+              background:'rgba(162,155,254,0.08)', border:'1px solid rgba(162,155,254,0.22)',
+            }}
+              onMouseEnter={e=>{ e.currentTarget.style.background='rgba(162,155,254,0.18)'; e.currentTarget.style.borderColor='rgba(162,155,254,0.45)' }}
+              onMouseLeave={e=>{ e.currentTarget.style.background='rgba(162,155,254,0.08)'; e.currentTarget.style.borderColor='rgba(162,155,254,0.22)' }}
+            >
+              📅 Calendrier
             </a>
           </div>
 

@@ -22,27 +22,42 @@ import AkainuGame from './components/AkainuGame.jsx'
 import MusicPlayer from './components/MusicPlayer.jsx'
 import AnimeHub from './components/AnimeHub.jsx'
 import TpnPage from './components/TpnPage.jsx'
+import DrStonePage from './components/DrStonePage.jsx'
+import JjkPage from './components/JjkPage.jsx'
+import CalendarPage from './components/CalendarPage.jsx'
 
 export default function App() {
   const [scansOpen,       setScansOpen]       = useState(false)
   const [encyclopedieOpen, setEncyclopedieOpen] = useState(false)
   const [animeHubOpen,    setAnimeHubOpen]    = useState(false)
   const [tpnOpen,         setTpnOpen]         = useState(false)
+  const [drstoneOpen,     setDrstoneOpen]     = useState(false)
+  const [jjkOpen,         setJjkOpen]         = useState(false)
+  const [calendarOpen,    setCalendarOpen]    = useState(false)
 
   useEffect(() => {
     const fnScans    = () => setScansOpen(true)
     const fnEncy     = () => setEncyclopedieOpen(true)
     const fnAnimeHub = () => setAnimeHubOpen(true)
     const fnTpn      = () => setTpnOpen(true)
+    const fnDrstone  = () => setDrstoneOpen(true)
+    const fnJjk      = () => setJjkOpen(true)
+    const fnCalendar = () => setCalendarOpen(true)
     document.addEventListener('open-scans',        fnScans)
     document.addEventListener('open-encyclopedie', fnEncy)
     document.addEventListener('open-anime-hub',    fnAnimeHub)
     document.addEventListener('open-tpn',          fnTpn)
+    document.addEventListener('open-drstone',      fnDrstone)
+    document.addEventListener('open-jjk',          fnJjk)
+    document.addEventListener('open-calendar',     fnCalendar)
     return () => {
       document.removeEventListener('open-scans',        fnScans)
       document.removeEventListener('open-encyclopedie', fnEncy)
       document.removeEventListener('open-anime-hub',    fnAnimeHub)
       document.removeEventListener('open-tpn',          fnTpn)
+      document.removeEventListener('open-drstone',      fnDrstone)
+      document.removeEventListener('open-jjk',          fnJjk)
+      document.removeEventListener('open-calendar',     fnCalendar)
     }
   }, [])
 
@@ -105,9 +120,14 @@ export default function App() {
           onClose={() => setAnimeHubOpen(false)}
           onOpenOnepiece={() => { setAnimeHubOpen(false); setScansOpen(true) }}
           onOpenTpn={() => { setAnimeHubOpen(false); setTpnOpen(true) }}
+          onOpenDrstone={() => { setAnimeHubOpen(false); setDrstoneOpen(true) }}
+          onOpenJjk={() => { setAnimeHubOpen(false); setJjkOpen(true) }}
         />
       )}
       {tpnOpen          && <TpnPage         onClose={() => setTpnOpen(false)} />}
+      {drstoneOpen      && <DrStonePage     onClose={() => setDrstoneOpen(false)} />}
+      {jjkOpen          && <JjkPage         onClose={() => setJjkOpen(false)} />}
+      {calendarOpen     && <CalendarPage    onClose={() => setCalendarOpen(false)} />}
       {scansOpen        && <ScansPage        onClose={() => setScansOpen(false)} />}
       {encyclopedieOpen && <EncyclopediePage onClose={() => setEncyclopedieOpen(false)} />}
     </ThemeProvider>
