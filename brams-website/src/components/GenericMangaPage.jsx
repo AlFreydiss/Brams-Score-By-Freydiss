@@ -204,7 +204,10 @@ function VideoPlayer({ videos, startIdx, onClose, color }) {
             controls
             style={{ maxWidth: '100%', maxHeight: '100%', width: '100%', height: '100%', outline: 'none' }}
           >
-            <source src={video.src.split('/').map((seg, i) => i === 0 ? seg : encodeURIComponent(seg)).join('/')} />
+            <source
+              src={video.src.split('/').map((seg, i) => i === 0 ? seg : encodeURIComponent(seg)).join('/')}
+              type={video.src.toLowerCase().endsWith('.mkv') ? 'video/x-matroska' : 'video/mp4'}
+            />
           </video>
         ) : (
           <iframe

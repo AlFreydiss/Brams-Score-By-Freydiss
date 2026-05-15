@@ -3,21 +3,21 @@ import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 // ── Données ───────────────────────────────────────────────────────────────────
 
 const FRUITS = [
-  { name: 'Gomu Gomu no Mi', type: 'Paramecia', user: 'Monkey D. Luffy', color: '#e0524a', emoji: '🌀', power: 'Corps élastique comme le caoutchouc. En Gear 5, transformation en Nika le Dieu Soleil.', rare: false },
-  { name: 'Mera Mera no Mi', type: 'Logia', user: 'Portgas D. Ace', color: '#ff6b35', emoji: '🔥', power: 'Contrôle total du feu. Génère et devient des flammes. Dégâts catastrophiques.', rare: false },
-  { name: 'Hie Hie no Mi', type: 'Logia', user: 'Aokiji', color: '#74b9ff', emoji: '❄️', power: "Congèle tout ce qu'il touche. Peut geler la mer entière. Contrecarre le feu.", rare: false },
-  { name: 'Yami Yami no Mi', type: 'Logia', user: 'Barbe Noire', color: '#636e72', emoji: '🌑', power: 'Fruit le plus sombre. Attire et nul les autres pouvoirs. Douleur amplifiée.', rare: true },
-  { name: 'Ope Ope no Mi', type: 'Paramecia', user: 'Trafalgar Law', color: '#00b894', emoji: '⚕️', power: "Crée un \"Room\" opératoire. Peut restructurer tout ce qui est à l'intérieur. Don de l'immortalité possible.", rare: true },
-  { name: 'Hana Hana no Mi', type: 'Paramecia', user: 'Nico Robin', color: '#fd79a8', emoji: '🌸', power: "Fait pousser des répliques de membres sur n'importe quelle surface. Parfait pour l'espionnage.", rare: false },
-  { name: 'Gura Gura no Mi', type: 'Paramecia', user: 'Barbe Blanche', color: '#a29bfe', emoji: '💥', power: 'Fruit le plus puissant des Paramecia. Génère des tremblements de terre. Peut détruire le monde.', rare: true },
-  { name: 'Pika Pika no Mi', type: 'Logia', user: 'Kizaru', color: '#fdcb6e', emoji: '⚡', power: 'Vitesse de la lumière. Coups de lasers dévastateurs. Quasi-invincible.', rare: true },
-  { name: 'Magu Magu no Mi', type: 'Logia', user: 'Akainu', color: '#d63031', emoji: '🌋', power: "Magma brûlant tout, même le feu. Température la plus haute parmi les Logia. Aucune pitié.", rare: true },
-  { name: 'Suke Suke no Mi', type: 'Paramecia', user: 'Absalom / Shiryu', color: '#81ecec', emoji: '👻', power: "Invisibilité totale de soi-même et de tout ce qu'on touche. Attaques surprises mortelles.", rare: false },
-  { name: 'Doku Doku no Mi', type: 'Paramecia', user: 'Magellan', color: '#6c5ce7', emoji: '☠️', power: 'Génère et contrôle tous types de poisons. Un seul contact est fatal sans antidote.', rare: false },
-  { name: 'Bari Bari no Mi', type: 'Paramecia', user: 'Bartolomeo', color: '#00cec9', emoji: '🛡️', power: "Barrières indestructibles. Peut bloquer n'importe quelle attaque, même des coups de Yonkou.", rare: false },
-  { name: 'Zoan Uo Uo no Mi', type: 'Zoan', user: 'Kaidou', color: '#8e44ad', emoji: '🐉', power: "Transformation en dragon oriental gigantesque. Maîtrise totale des éléments. Le plus fort être vivant.", rare: true },
-  { name: 'Tori Tori no Mi (Phénix)', type: 'Zoan', user: 'Marco', color: '#0984e3', emoji: '🔵', power: "Transformation en phénix légendaire. Flammes bleues de régénération. Résistance extrême.", rare: true },
-  { name: 'Niku Niku no Mi', type: 'Paramecia', user: 'Jewelry Bonney', color: '#e17055', emoji: '⌛', power: "Contrôle l'âge de toute cible touchée. Peut vieillir ou rajeunir instantanément.", rare: true },
+  { name: 'Gomu Gomu no Mi', type: 'Paramecia', user: 'Monkey D. Luffy', color: '#e0524a', emoji: '🌀', power: 'Corps élastique comme le caoutchouc. En Gear 5, transformation en Nika le Dieu Soleil.', rare: false, image: null },
+  { name: 'Mera Mera no Mi', type: 'Logia', user: 'Portgas D. Ace', color: '#ff6b35', emoji: '🔥', power: 'Contrôle total du feu. Génère et devient des flammes. Dégâts catastrophiques.', rare: false, image: null },
+  { name: 'Hie Hie no Mi', type: 'Logia', user: 'Aokiji', color: '#74b9ff', emoji: '❄️', power: "Congèle tout ce qu'il touche. Peut geler la mer entière. Contrecarre le feu.", rare: false, image: null },
+  { name: 'Yami Yami no Mi', type: 'Logia', user: 'Barbe Noire', color: '#636e72', emoji: '🌑', power: 'Fruit le plus sombre. Attire et nul les autres pouvoirs. Douleur amplifiée.', rare: true, image: null },
+  { name: 'Ope Ope no Mi', type: 'Paramecia', user: 'Trafalgar Law', color: '#00b894', emoji: '⚕️', power: "Crée un \"Room\" opératoire. Peut restructurer tout ce qui est à l'intérieur. Don de l'immortalité possible.", rare: true, image: null },
+  { name: 'Hana Hana no Mi', type: 'Paramecia', user: 'Nico Robin', color: '#fd79a8', emoji: '🌸', power: "Fait pousser des répliques de membres sur n'importe quelle surface. Parfait pour l'espionnage.", rare: false, image: null },
+  { name: 'Gura Gura no Mi', type: 'Paramecia', user: 'Barbe Blanche', color: '#a29bfe', emoji: '💥', power: 'Fruit le plus puissant des Paramecia. Génère des tremblements de terre. Peut détruire le monde.', rare: true, image: null },
+  { name: 'Pika Pika no Mi', type: 'Logia', user: 'Kizaru', color: '#fdcb6e', emoji: '⚡', power: 'Vitesse de la lumière. Coups de lasers dévastateurs. Quasi-invincible.', rare: true, image: null },
+  { name: 'Magu Magu no Mi', type: 'Logia', user: 'Akainu', color: '#d63031', emoji: '🌋', power: "Magma brûlant tout, même le feu. Température la plus haute parmi les Logia. Aucune pitié.", rare: true, image: null },
+  { name: 'Suke Suke no Mi', type: 'Paramecia', user: 'Absalom / Shiryu', color: '#81ecec', emoji: '👻', power: "Invisibilité totale de soi-même et de tout ce qu'on touche. Attaques surprises mortelles.", rare: false, image: null },
+  { name: 'Doku Doku no Mi', type: 'Paramecia', user: 'Magellan', color: '#6c5ce7', emoji: '☠️', power: 'Génère et contrôle tous types de poisons. Un seul contact est fatal sans antidote.', rare: false, image: null },
+  { name: 'Bari Bari no Mi', type: 'Paramecia', user: 'Bartolomeo', color: '#00cec9', emoji: '🛡️', power: "Barrières indestructibles. Peut bloquer n'importe quelle attaque, même des coups de Yonkou.", rare: false, image: null },
+  { name: 'Zoan Uo Uo no Mi', type: 'Zoan', user: 'Kaidou', color: '#8e44ad', emoji: '🐉', power: "Transformation en dragon oriental gigantesque. Maîtrise totale des éléments. Le plus fort être vivant.", rare: true, image: null },
+  { name: 'Tori Tori no Mi (Phénix)', type: 'Zoan', user: 'Marco', color: '#0984e3', emoji: '🔵', power: "Transformation en phénix légendaire. Flammes bleues de régénération. Résistance extrême.", rare: true, image: null },
+  { name: 'Niku Niku no Mi', type: 'Paramecia', user: 'Jewelry Bonney', color: '#e17055', emoji: '⌛', power: "Contrôle l'âge de toute cible touchée. Peut vieillir ou rajeunir instantanément.", rare: true, image: null },
 ]
 
 const TYPE_COLORS = {
@@ -65,8 +65,7 @@ function FruitCard({ fruit, index }) {
               {fruit.rare && <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 20, background: 'rgba(255,215,0,0.15)', color: '#ffd700', border: '1px solid rgba(255,215,0,0.35)', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Légendaire</span>}
             </div>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>{fruit.user}</span>
+          <div style={{ textAlign: 'right' }}>
             <span style={{ fontSize: 10, color: fruit.color, fontWeight: 700, opacity: 0.8 }}>Pouvoir ↺</span>
           </div>
         </div>
@@ -76,18 +75,36 @@ function FruitCard({ fruit, index }) {
           position: 'absolute', inset: 0,
           background: `linear-gradient(145deg, ${fruit.color}38 0%, ${fruit.color}16 60%, rgba(14,14,16,0.92) 100%)`,
           border: `1px solid ${fruit.color}55`,
-          borderRadius: 16, padding: '18px',
+          borderRadius: 16,
           backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden',
           transform: 'rotateY(180deg)',
-          display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 10,
+          overflow: 'hidden',
           boxShadow: `inset 0 1px 0 ${fruit.color}20`,
         }}>
-          <div style={{ fontSize: 24 }}>{fruit.emoji}</div>
-          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.92)', lineHeight: 1.7, fontWeight: 500, margin: 0 }}>{fruit.power}</p>
-          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)' }}>
-            Utilisateur : <span style={{ color: fruit.color, fontWeight: 700 }}>{fruit.user}</span>
+          {fruit.image && (
+            <img
+              src={fruit.image}
+              alt=""
+              style={{
+                position: 'absolute', inset: 0, width: '100%', height: '100%',
+                objectFit: 'cover', objectPosition: 'center top',
+                opacity: 0.14, pointerEvents: 'none', userSelect: 'none',
+              }}
+              onError={e => { e.currentTarget.style.display = 'none' }}
+            />
+          )}
+          <div style={{
+            position: 'relative', zIndex: 1,
+            padding: '18px', height: '100%', boxSizing: 'border-box',
+            display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 10,
+          }}>
+            <div style={{ fontSize: 24 }}>{fruit.emoji}</div>
+            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.92)', lineHeight: 1.7, fontWeight: 500, margin: 0 }}>{fruit.power}</p>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)' }}>
+              Utilisateur : <span style={{ color: fruit.color, fontWeight: 700 }}>{fruit.user}</span>
+            </div>
+            <div style={{ fontSize: 11, color: fruit.color, fontWeight: 700 }}>← Retourner</div>
           </div>
-          <div style={{ fontSize: 11, color: fruit.color, fontWeight: 700 }}>← Retourner</div>
         </div>
       </div>
     </div>
