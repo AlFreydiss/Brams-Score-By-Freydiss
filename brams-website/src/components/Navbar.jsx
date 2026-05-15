@@ -78,7 +78,8 @@ export default function Navbar() {
             <a href="#" onClick={openAnimeHub} style={{
               padding:'7px 14px', borderRadius:8, fontSize:14, fontWeight:600,
               color:'var(--accent)', transition:'color .2s, background .2s',
-              display:'flex', alignItems:'center', gap:6, whiteSpace:'nowrap',
+              display:'flex', alignItems:'center', justifyContent:'center', gap:6, whiteSpace:'nowrap',
+              minWidth:152,
               background:'rgba(224,82,74,0.08)', border:'1px solid rgba(224,82,74,0.25)',
             }}
               onMouseEnter={e=>{ e.currentTarget.style.background='rgba(224,82,74,0.18)'; e.currentTarget.style.borderColor='rgba(224,82,74,0.5)' }}
@@ -90,7 +91,8 @@ export default function Navbar() {
             <a href="#" onClick={openEncyclopedie} style={{
               padding:'7px 14px', borderRadius:8, fontSize:14, fontWeight:600,
               color:'#a29bfe', transition:'color .2s, background .2s',
-              display:'flex', alignItems:'center', gap:6,
+              display:'flex', alignItems:'center', justifyContent:'center', gap:6,
+              minWidth:152,
               background:'rgba(162,155,254,0.08)', border:'1px solid rgba(162,155,254,0.22)',
             }}
               onMouseEnter={e=>{ e.currentTarget.style.background='rgba(162,155,254,0.18)'; e.currentTarget.style.borderColor='rgba(162,155,254,0.45)' }}

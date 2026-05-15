@@ -260,7 +260,7 @@ const CSS = `
   .right-panel {
     display: none !important;
   }
-  @media (min-width: 1480px) {
+  @media (min-width: 1740px) {
     .right-panel {
       display: flex !important;
     }

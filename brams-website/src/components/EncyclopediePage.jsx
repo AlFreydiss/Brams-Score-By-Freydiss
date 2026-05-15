@@ -432,62 +432,77 @@ function TimelineSection() {
   const [active, setActive] = useState(null)
   return (
     <div style={{ padding: '48px 20px 60px' }}>
-      <div style={{ textAlign: 'center', marginBottom: 48 }}>
+      <div style={{ textAlign: 'center', marginBottom: 56 }}>
         <div style={{ fontSize: 10, letterSpacing: '0.3em', fontWeight: 800, color: '#74b9ff', marginBottom: 14, textTransform: 'uppercase' }}>One Piece • Histoire</div>
         <h2 style={{ fontFamily: 'var(--display)', fontWeight: 900, fontSize: 'clamp(32px, 6vw, 58px)', color: '#fff', margin: '0 0 12px', lineHeight: 1 }}>📅 Timeline</h2>
         <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.45)', maxWidth: 440, margin: '0 auto', lineHeight: 1.7 }}>La frise chronologique de l'univers One Piece — des 800 ans d'histoire à la Saga Finale.</p>
       </div>
 
-      {/* Ligne principale */}
-      <div style={{ overflowX: 'auto', paddingBottom: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center', minWidth: 'max-content', padding: '0 40px', gap: 0, position: 'relative' }}>
-          {/* Barre horizontale */}
-          <div style={{ position: 'absolute', top: '50%', left: 40, right: 40, height: 2, background: 'linear-gradient(90deg, #6c5ce7, #a29bfe, #74b9ff, #22b573, #ffd700)', transform: 'translateY(-50%)', zIndex: 0 }} />
+      <div style={{ maxWidth: 800, margin: '0 auto', position: 'relative' }}>
+        {/* Ligne centrale verticale */}
+        <div style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: 2, background: 'linear-gradient(180deg, #6c5ce7 0%, #a29bfe 25%, #74b9ff 50%, #22b573 75%, #ffd700 100%)', transform: 'translateX(-50%)', borderRadius: 2 }} />
 
-          {TIMELINE_EVENTS.map((ev, i) => {
-            const isActive = active === i
-            return (
-              <div key={i} onClick={() => setActive(isActive ? null : i)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative', zIndex: 1, cursor: 'pointer', marginRight: i < TIMELINE_EVENTS.length - 1 ? 60 : 0 }}>
-                {/* Point */}
-                <div style={{ width: ev.major ? 20 : 12, height: ev.major ? 20 : 12, borderRadius: '50%', background: ev.color, border: `2px solid ${ev.color}`, boxShadow: isActive ? `0 0 16px ${ev.color}80` : `0 0 6px ${ev.color}40`, transition: 'all 0.2s', transform: isActive ? 'scale(1.3)' : 'scale(1)', flexShrink: 0 }} />
+        {TIMELINE_EVENTS.map((ev, i) => {
+          const isLeft = i % 2 === 0
+          const isActive = active === i
+          const yearLabel = ev.year === 0 ? 'Présent' : `Il y a ${Math.abs(ev.year)} an${Math.abs(ev.year) > 1 ? 's' : ''}`
+          return (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', marginBottom: 28, position: 'relative', flexDirection: isLeft ? 'row' : 'row-reverse' }}>
 
-                {/* Étiquette */}
-                <div style={{ marginTop: 12, textAlign: 'center', maxWidth: 100 }}>
-                  <div style={{ fontSize: 10, fontWeight: 800, color: ev.color, whiteSpace: 'nowrap' }}>{ev.year === 0 ? 'Présent' : ev.year > 0 ? `+${ev.year}` : `${ev.year} ans`}</div>
-                  <div style={{ fontSize: 11, fontWeight: ev.major ? 700 : 500, color: isActive ? '#fff' : 'rgba(255,255,255,0.55)', marginTop: 4, lineHeight: 1.3, textAlign: 'center', maxWidth: 90 }}>{ev.label}</div>
+              {/* Carte */}
+              <div
+                onClick={() => setActive(isActive ? null : i)}
+                style={{
+                  width: 'calc(50% - 32px)',
+                  background: `linear-gradient(135deg, ${ev.color}14, rgba(14,14,16,0.95))`,
+                  border: `1px solid ${isActive ? ev.color + '55' : ev.color + '28'}`,
+                  borderRadius: 14,
+                  padding: '14px 18px',
+                  cursor: 'pointer',
+                  transition: 'border-color 0.2s, box-shadow 0.2s',
+                  boxShadow: isActive ? `0 4px 28px ${ev.color}22` : 'none',
+                  animation: `fadeUp 0.4s ${i * 0.055}s ease-out both`,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 6 }}>
+                  <span style={{ fontSize: 10, fontWeight: 800, color: ev.color }}>{yearLabel}</span>
+                  {ev.major && (
+                    <span style={{ fontSize: 9, fontWeight: 800, color: ev.color, background: `${ev.color}18`, padding: '2px 6px', borderRadius: 4, border: `1px solid ${ev.color}35` }}>MAJEUR</span>
+                  )}
                 </div>
-
-                {/* Popup */}
+                <div style={{ fontWeight: ev.major ? 800 : 700, fontSize: ev.major ? 14 : 13, color: '#fff', lineHeight: 1.35 }}>{ev.label}</div>
                 {isActive && (
-                  <div style={{ position: 'absolute', top: '100%', marginTop: 16, width: 240, background: `linear-gradient(135deg, ${ev.color}18, rgba(14,14,16,0.97))`, border: `1px solid ${ev.color}50`, borderRadius: 12, padding: '14px', zIndex: 100, boxShadow: `0 12px 40px rgba(0,0,0,0.6)` }}>
-                    <div style={{ fontSize: 12, fontWeight: 800, color: ev.color, marginBottom: 6 }}>{ev.label}</div>
-                    <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)', lineHeight: 1.65, margin: 0 }}>{ev.desc}</p>
-                  </div>
+                  <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.72)', lineHeight: 1.65, margin: '10px 0 0' }}>{ev.desc}</p>
                 )}
               </div>
-            )
-          })}
-        </div>
-      </div>
 
-      <div style={{ textAlign: 'center', marginTop: 20 }}>
-        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)' }}>Clique sur un point pour afficher les détails</span>
-      </div>
-
-      {/* Événements liste en dessous */}
-      <div style={{ maxWidth: 800, margin: '48px auto 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {TIMELINE_EVENTS.filter(e => e.major).map((ev, i) => (
-          <div key={i} style={{ display: 'flex', gap: 14, alignItems: 'flex-start', padding: '14px 18px', background: `${ev.color}0e`, border: `1px solid ${ev.color}25`, borderRadius: 12 }}>
-            <div style={{ width: 3, borderRadius: 3, background: ev.color, alignSelf: 'stretch', flexShrink: 0 }} />
-            <div>
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 4, flexWrap: 'wrap' }}>
-                <span style={{ fontSize: 12, fontWeight: 800, color: ev.color }}>{ev.year === 0 ? 'Présent' : ev.year > 0 ? `+${ev.year} an(s)` : `Il y a ${Math.abs(ev.year)} ans`}</span>
-                <span style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>{ev.label}</span>
+              {/* Connecteur + point */}
+              <div style={{ width: 64, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', zIndex: 1 }}>
+                <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: 1, background: `${ev.color}45`, transform: 'translateY(-50%)' }} />
+                <div style={{
+                  width: ev.major ? 15 : 10,
+                  height: ev.major ? 15 : 10,
+                  borderRadius: '50%',
+                  background: ev.color,
+                  border: '2px solid #0e0f11',
+                  outline: `2px solid ${ev.color}`,
+                  boxShadow: isActive ? `0 0 20px ${ev.color}` : `0 0 7px ${ev.color}60`,
+                  transition: 'transform 0.2s, box-shadow 0.2s',
+                  transform: isActive ? 'scale(1.35)' : 'scale(1)',
+                  position: 'relative',
+                  zIndex: 2,
+                }} />
               </div>
-              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.65)', lineHeight: 1.65, margin: 0 }}>{ev.desc}</p>
+
+              {/* Espace vide côté opposé */}
+              <div style={{ width: 'calc(50% - 32px)' }} />
             </div>
-          </div>
-        ))}
+          )
+        })}
+      </div>
+
+      <div style={{ textAlign: 'center', marginTop: 16 }}>
+        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.22)' }}>Clique sur une carte pour afficher les détails</span>
       </div>
     </div>
   )
