@@ -70,15 +70,13 @@ async function callGemini(apiKey, message, history) {
         }
       )
 
-      if (res.status === 429) throw Object.assign(new Error('rate_limit'), { rateLimit: true })
-      if (res.status === 404 || res.status === 400) continue
       if (!res.ok) continue
 
       const data = await res.json()
       const text = data?.candidates?.[0]?.content?.parts?.[0]?.text
       if (text) return text
-    } catch (e) {
-      if (e.rateLimit) throw e
+    } catch {
+      // timeout ou erreur réseau, essaie le modèle suivant
     }
   }
 
