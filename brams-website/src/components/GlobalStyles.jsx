@@ -82,6 +82,96 @@ const CSS = `
     100% { transform: translate(var(--dx,30px), var(--dy,-60px)) scale(0); opacity: 0; }
   }
 
+  /* ── Hero title ── */
+  @keyframes slideFromLeft {
+    from { opacity: 0; transform: translateX(-36px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes slideFromRight {
+    from { opacity: 0; transform: translateX(36px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes communityGradient {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  @keyframes communityGlow {
+    0%, 100% { filter: drop-shadow(0 0 18px rgba(224,82,74,0.30)); }
+    50%       { filter: drop-shadow(0 0 38px rgba(224,82,74,0.62)); }
+  }
+  .hero-brams {
+    display: block;
+    background: linear-gradient(135deg, #fff 40%, rgba(255,255,255,0.55));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: slideFromLeft 0.85s cubic-bezier(0.22,1,0.36,1) both;
+  }
+  .hero-community-glow {
+    display: block;
+    animation: communityGlow 3s 1s ease-in-out infinite;
+    will-change: filter;
+  }
+  .hero-community {
+    display: block;
+    background: linear-gradient(135deg, #e0524a 0%, #ff8a80 25%, #ffb347 55%, #ff6b35 78%, #e0524a 100%);
+    background-size: 300% 300%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation:
+      slideFromRight 0.85s 0.2s cubic-bezier(0.22,1,0.36,1) both,
+      communityGradient 4.5s 1s ease infinite;
+  }
+
+  /* ── Calendrier button ── */
+  @keyframes calShimmer {
+    0%   { left: -100%; opacity: 1; }
+    18%  { left: 150%;  opacity: 1; }
+    100% { left: 150%;  opacity: 0; }
+  }
+  .cal-btn {
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    background: linear-gradient(135deg, rgba(14,165,233,0.10) 0%, rgba(99,102,241,0.10) 100%);
+    border: 1px solid rgba(56,189,248,0.28);
+    color: #38bdf8;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.22s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.25s ease, background 0.22s ease, border-color 0.22s ease;
+  }
+  .cal-btn:hover {
+    transform: scale(1.05);
+    background: linear-gradient(135deg, rgba(14,165,233,0.20) 0%, rgba(99,102,241,0.20) 100%);
+    border-color: rgba(56,189,248,0.52);
+    box-shadow: 0 0 20px rgba(56,189,248,0.22), 0 4px 16px rgba(99,102,241,0.18);
+  }
+  .cal-btn::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 55%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(56,189,248,0.18), transparent);
+    animation: calShimmer 5.5s 2.5s ease-in-out infinite;
+    pointer-events: none;
+  }
+  .cal-icon {
+    display: inline-block;
+    transition: transform 0.28s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  .cal-btn:hover .cal-icon {
+    transform: rotate(-14deg) scale(1.22);
+  }
+
   /* Utilitaires animation */
   .fade-up   { animation: fadeUp  0.7s ease-out both; }
   .fade-up-2 { animation: fadeUp  0.7s 0.12s ease-out both; }

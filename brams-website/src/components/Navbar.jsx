@@ -104,16 +104,8 @@ export default function Navbar() {
               🎌 Animés
             </a>
 
-            <a href="#" onClick={openCalendar} style={{
-              padding:'7px 14px', borderRadius:8, fontSize:14, fontWeight:600,
-              color:'#a29bfe', transition:'color .2s, background .2s',
-              display:'flex', alignItems:'center', gap:6,
-              background:'rgba(162,155,254,0.08)', border:'1px solid rgba(162,155,254,0.22)',
-            }}
-              onMouseEnter={e=>{ e.currentTarget.style.background='rgba(162,155,254,0.18)'; e.currentTarget.style.borderColor='rgba(162,155,254,0.45)' }}
-              onMouseLeave={e=>{ e.currentTarget.style.background='rgba(162,155,254,0.08)'; e.currentTarget.style.borderColor='rgba(162,155,254,0.22)' }}
-            >
-              📅 Calendrier
+            <a href="#" onClick={openCalendar} className="cal-btn">
+              <span className="cal-icon">📅</span> Calendrier
             </a>
           </div>
 

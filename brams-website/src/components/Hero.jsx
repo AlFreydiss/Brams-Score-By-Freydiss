@@ -144,9 +144,11 @@ export default function Hero() {
             </div>
 
             {/* Title */}
-            <h1 className="fade-up-2" style={{ fontFamily:'var(--pirate)', fontSize:'clamp(58px,8.5vw,100px)', fontWeight:400, lineHeight:.95, color:'#fff', marginBottom:32, letterSpacing:'.01em' }}>
-              <span style={{ display:'block', background:'linear-gradient(135deg,#fff 40%,rgba(255,255,255,.55))', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>Brams</span>
-              <span style={{ display:'block', background:'linear-gradient(135deg,#e0524a 0%,#ff8a80 50%,#ffb347 100%)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', filter:'drop-shadow(0 0 40px rgba(224,82,74,.3))' }}>Community</span>
+            <h1 style={{ fontFamily:'var(--pirate)', fontSize:'clamp(58px,8.5vw,100px)', fontWeight:400, lineHeight:.95, color:'#fff', marginBottom:32, letterSpacing:'.01em' }}>
+              <span className="hero-brams">Brams</span>
+              <span className="hero-community-glow">
+                <span className="hero-community">Community</span>
+              </span>
             </h1>
 
             {/* Quote */}
