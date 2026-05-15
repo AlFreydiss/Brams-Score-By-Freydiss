@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import GlobalStyles from './components/GlobalStyles.jsx'
 import { ThemeProvider } from './contexts/ThemeContext.jsx'
 import Navbar from './components/Navbar.jsx'
@@ -34,11 +34,22 @@ import BcPage from './components/BcPage.jsx'
 
 function BgVideo() {
   const [visible, setVisible] = useState(false)
-  useEffect(() => { const t = setTimeout(() => setVisible(true), 500); return () => clearTimeout(t) }, [])
+  const vidRef = useRef(null)
+
+  useEffect(() => {
+    const vid = vidRef.current
+    if (!vid) return
+    const onMeta = () => { vid.currentTime = 25 }
+    vid.addEventListener('loadedmetadata', onMeta)
+    return () => vid.removeEventListener('loadedmetadata', onMeta)
+  }, [])
+
   return (
     <div style={{ position:'fixed', top:0, left:0, right:0, bottom:0, zIndex:0, overflow:'hidden', pointerEvents:'none', transform:'translateZ(0)' }}>
       <video
+        ref={vidRef}
         autoPlay muted loop playsInline
+        onCanPlay={() => setVisible(true)}
         style={{ display:'block', position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%) translateZ(0)', width:'max(177.78vh,100vw)', height:'max(56.25vw,100vh)', objectFit:'cover', pointerEvents:'none', backfaceVisibility:'hidden', opacity: visible ? 1 : 0, transition:'opacity 1.2s ease' }}
       >
         <source src="/bg-video.mp4" type="video/mp4" />
