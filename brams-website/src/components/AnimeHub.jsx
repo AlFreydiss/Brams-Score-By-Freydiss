@@ -73,6 +73,42 @@ const ANIMES = [
     badge: 'NOUVEAU',
     badgeColor: '#c62828',
   },
+  {
+    id: 'kingdom',
+    title: 'Kingdom',
+    subtitle: 'Chine Antique · Guerre',
+    emoji: '⚔️',
+    color: '#c9a227',
+    colorDark: '#4a3205',
+    genres: ['Action', 'Historique', 'Seinen'],
+    description: "Dans la Chine des Royaumes Combattants, Shin, un orphelin de guerre, rêve de devenir le plus grand général sous les cieux aux côtés du futur roi Ying Zheng.",
+    stats: [
+      { label: 'Chapitres', value: '874' },
+      { label: 'Épisodes', value: '0' },
+      { label: 'Statut', value: 'Disponible' },
+    ],
+    action: '⚔️ Accéder',
+    badge: 'NOUVEAU',
+    badgeColor: '#c9a227',
+  },
+  {
+    id: 'aot',
+    title: "L'Attaque des Titans",
+    subtitle: 'Titans & Liberté',
+    emoji: '🗡️',
+    color: '#546e7a',
+    colorDark: '#1c313a',
+    genres: ['Action', 'Drame', 'Shōnen'],
+    description: "Eren Yeager découvre que les murs qui protègent l'humanité cachent un secret bien plus sombre que les Titans eux-mêmes.",
+    stats: [
+      { label: 'Chapitres', value: '81' },
+      { label: 'Épisodes', value: '0' },
+      { label: 'Statut', value: 'Disponible' },
+    ],
+    action: '🗡️ Accéder',
+    badge: 'NOUVEAU',
+    badgeColor: '#546e7a',
+  },
 ]
 
 function AnimeCard({ anime, onClick }) {
@@ -168,7 +204,7 @@ function ComingSoonCard() {
   )
 }
 
-export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrstone, onOpenJjk }) {
+export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrstone, onOpenJjk, onOpenKingdom, onOpenAot }) {
   useEffect(() => {
     document.body.style.overflow = 'hidden'
     return () => { document.body.style.overflow = '' }
@@ -179,6 +215,8 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
     else if (id === 'tpn') onOpenTpn()
     else if (id === 'drstone') onOpenDrstone()
     else if (id === 'jjk') onOpenJjk()
+    else if (id === 'kingdom') onOpenKingdom()
+    else if (id === 'aot') onOpenAot()
   }
 
   return (
