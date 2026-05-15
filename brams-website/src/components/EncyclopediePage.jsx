@@ -430,79 +430,120 @@ function BountiesSection() {
 
 function TimelineSection() {
   const [active, setActive] = useState(null)
+
+  const CARD_H  = 148
+  const CONN_H  = 44
+  const DOT_BOX = 18
+  const COL_W   = 158
+  const COL_GAP = 14
+
+  const lineTop = 20 + CARD_H + CONN_H + DOT_BOX / 2
+
   return (
     <div style={{ padding: '48px 20px 60px' }}>
-      <div style={{ textAlign: 'center', marginBottom: 56 }}>
+      <div style={{ textAlign: 'center', marginBottom: 52 }}>
         <div style={{ fontSize: 10, letterSpacing: '0.3em', fontWeight: 800, color: '#74b9ff', marginBottom: 14, textTransform: 'uppercase' }}>One Piece • Histoire</div>
         <h2 style={{ fontFamily: 'var(--display)', fontWeight: 900, fontSize: 'clamp(32px, 6vw, 58px)', color: '#fff', margin: '0 0 12px', lineHeight: 1 }}>📅 Timeline</h2>
         <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.45)', maxWidth: 440, margin: '0 auto', lineHeight: 1.7 }}>La frise chronologique de l'univers One Piece — des 800 ans d'histoire à la Saga Finale.</p>
       </div>
 
-      <div style={{ maxWidth: 800, margin: '0 auto', position: 'relative' }}>
-        {/* Ligne centrale verticale */}
-        <div style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: 2, background: 'linear-gradient(180deg, #6c5ce7 0%, #a29bfe 25%, #74b9ff 50%, #22b573 75%, #ffd700 100%)', transform: 'translateX(-50%)', borderRadius: 2 }} />
+      <div style={{ overflowX: 'auto', overflowY: 'visible', paddingBottom: 12 }}>
+        <div style={{ display: 'flex', padding: '20px 60px', position: 'relative', gap: COL_GAP }}>
 
-        {TIMELINE_EVENTS.map((ev, i) => {
-          const isLeft = i % 2 === 0
-          const isActive = active === i
-          const yearLabel = ev.year === 0 ? 'Présent' : `Il y a ${Math.abs(ev.year)} an${Math.abs(ev.year) > 1 ? 's' : ''}`
-          return (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', marginBottom: 28, position: 'relative', flexDirection: isLeft ? 'row' : 'row-reverse' }}>
+          {/* Ligne horizontale */}
+          <div style={{
+            position: 'absolute',
+            top: lineTop,
+            left: 60, right: 60,
+            height: 2,
+            background: 'linear-gradient(90deg, #6c5ce7, #a29bfe, #74b9ff, #22b573, #ffd700)',
+            borderRadius: 2,
+            pointerEvents: 'none',
+          }} />
 
-              {/* Carte */}
+          {TIMELINE_EVENTS.map((ev, i) => {
+            const isAbove  = i % 2 === 0
+            const isActive = active === i
+            const yearLabel = ev.year === 0 ? 'Présent' : `Il y a ${Math.abs(ev.year)} ans`
+            const dotSize   = ev.major ? 16 : 10
+
+            const card = (
               <div
                 onClick={() => setActive(isActive ? null : i)}
                 style={{
-                  width: 'calc(50% - 32px)',
-                  background: `linear-gradient(135deg, ${ev.color}14, rgba(14,14,16,0.95))`,
-                  border: `1px solid ${isActive ? ev.color + '55' : ev.color + '28'}`,
-                  borderRadius: 14,
-                  padding: '14px 18px',
+                  width: '100%',
+                  background: `linear-gradient(135deg, ${ev.color}14, rgba(14,14,16,0.96))`,
+                  border: `1px solid ${isActive ? ev.color + '60' : ev.color + '2a'}`,
+                  borderRadius: 12,
+                  padding: '10px 12px',
                   cursor: 'pointer',
                   transition: 'border-color 0.2s, box-shadow 0.2s',
-                  boxShadow: isActive ? `0 4px 28px ${ev.color}22` : 'none',
-                  animation: `fadeUp 0.4s ${i * 0.055}s ease-out both`,
+                  boxShadow: isActive ? `0 6px 24px ${ev.color}28` : 'none',
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 6 }}>
-                  <span style={{ fontSize: 10, fontWeight: 800, color: ev.color }}>{yearLabel}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 5, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: 9, fontWeight: 800, color: ev.color }}>{yearLabel}</span>
                   {ev.major && (
-                    <span style={{ fontSize: 9, fontWeight: 800, color: ev.color, background: `${ev.color}18`, padding: '2px 6px', borderRadius: 4, border: `1px solid ${ev.color}35` }}>MAJEUR</span>
+                    <span style={{ fontSize: 8, fontWeight: 800, color: ev.color, background: `${ev.color}18`, padding: '1px 5px', borderRadius: 3, border: `1px solid ${ev.color}38` }}>MAJEUR</span>
                   )}
                 </div>
-                <div style={{ fontWeight: ev.major ? 800 : 700, fontSize: ev.major ? 14 : 13, color: '#fff', lineHeight: 1.35 }}>{ev.label}</div>
+                <div style={{ fontSize: 12, fontWeight: ev.major ? 800 : 600, color: '#fff', lineHeight: 1.35 }}>{ev.label}</div>
                 {isActive && (
-                  <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.72)', lineHeight: 1.65, margin: '10px 0 0' }}>{ev.desc}</p>
+                  <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', lineHeight: 1.65, margin: '8px 0 0' }}>{ev.desc}</p>
                 )}
               </div>
+            )
 
-              {/* Connecteur + point */}
-              <div style={{ width: 64, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', zIndex: 1 }}>
-                <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: 1, background: `${ev.color}45`, transform: 'translateY(-50%)' }} />
-                <div style={{
-                  width: ev.major ? 15 : 10,
-                  height: ev.major ? 15 : 10,
-                  borderRadius: '50%',
-                  background: ev.color,
-                  border: '2px solid #0e0f11',
-                  outline: `2px solid ${ev.color}`,
-                  boxShadow: isActive ? `0 0 20px ${ev.color}` : `0 0 7px ${ev.color}60`,
-                  transition: 'transform 0.2s, box-shadow 0.2s',
-                  transform: isActive ? 'scale(1.35)' : 'scale(1)',
-                  position: 'relative',
-                  zIndex: 2,
-                }} />
+            return (
+              <div key={i} style={{
+                width: COL_W,
+                flexShrink: 0,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                position: 'relative',
+                zIndex: 1,
+                animation: `fadeUp 0.4s ${i * 0.05}s ease-out both`,
+              }}>
+
+                {/* Zone carte haute */}
+                <div style={{ height: CARD_H, width: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', overflow: 'visible' }}>
+                  {isAbove && card}
+                </div>
+
+                {/* Connecteur haut */}
+                <div style={{ width: 1, height: CONN_H, background: isAbove ? `${ev.color}50` : 'transparent', flexShrink: 0 }} />
+
+                {/* Point */}
+                <div style={{ width: DOT_BOX, height: DOT_BOX, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{
+                    width: dotSize, height: dotSize,
+                    borderRadius: '50%',
+                    background: ev.color,
+                    border: '2px solid #0e0f11',
+                    outline: `2px solid ${ev.color}`,
+                    boxShadow: isActive ? `0 0 18px ${ev.color}` : `0 0 7px ${ev.color}60`,
+                    transition: 'transform 0.2s, box-shadow 0.2s',
+                    transform: isActive ? 'scale(1.4)' : 'scale(1)',
+                  }} />
+                </div>
+
+                {/* Connecteur bas */}
+                <div style={{ width: 1, height: CONN_H, background: !isAbove ? `${ev.color}50` : 'transparent', flexShrink: 0 }} />
+
+                {/* Zone carte basse */}
+                <div style={{ height: CARD_H, width: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', overflow: 'visible' }}>
+                  {!isAbove && card}
+                </div>
+
               </div>
-
-              {/* Espace vide côté opposé */}
-              <div style={{ width: 'calc(50% - 32px)' }} />
-            </div>
-          )
-        })}
+            )
+          })}
+        </div>
       </div>
 
-      <div style={{ textAlign: 'center', marginTop: 16 }}>
-        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.22)' }}>Clique sur une carte pour afficher les détails</span>
+      <div style={{ textAlign: 'center', marginTop: 4 }}>
+        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)' }}>← Scroll · Clique pour les détails →</span>
       </div>
     </div>
   )

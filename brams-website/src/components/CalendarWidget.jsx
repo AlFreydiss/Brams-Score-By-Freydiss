@@ -101,7 +101,7 @@ function useCountdown(dateStr) {
 
 // ─── MiniCalendar ─────────────────────────────────────────────────────────────
 
-const WEEKDAYS = ['L', 'M', 'M', 'J', 'V', 'S', 'D']
+const WEEKDAYS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
 
 const navBtnBase = {
   background: 'rgba(255,255,255,.06)',
@@ -154,7 +154,7 @@ function MiniCalendar({ events }) {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 1, marginBottom: 4 }}>
         {WEEKDAYS.map((w, i) => (
-          <div key={i} style={{ textAlign: 'center', fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,.22)', letterSpacing: '.06em' }}>{w}</div>
+          <div key={i} style={{ textAlign: 'center', fontSize: 8, fontWeight: 700, color: 'rgba(255,255,255,.30)', letterSpacing: '.02em' }}>{w}</div>
         ))}
       </div>
 
