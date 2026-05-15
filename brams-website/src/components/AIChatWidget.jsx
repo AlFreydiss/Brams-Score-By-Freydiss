@@ -16,14 +16,24 @@ function TypingDots() {
   )
 }
 
-export default function AIChatWidget() {
+export default function AIChatWidget({ hidden = false }) {
   const [open, setOpen] = useState(false)
   const [history, setHistory] = useState([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [unread, setUnread] = useState(0)
+  const [shaking, setShaking] = useState(false)
   const bottomRef = useRef(null)
   const inputRef = useRef(null)
+
+  useEffect(() => {
+    if (hidden || open) return
+    const id = setInterval(() => {
+      setShaking(true)
+      setTimeout(() => setShaking(false), 700)
+    }, 9000)
+    return () => clearInterval(id)
+  }, [hidden, open])
 
   useEffect(() => {
     if (open) {
@@ -70,6 +80,8 @@ export default function AIChatWidget() {
     }
   }
 
+  if (hidden) return null
+
   return (
     <>
       {/* Panel */}
@@ -95,8 +107,8 @@ export default function AIChatWidget() {
           <div style={{ width:36, height:36, borderRadius:10, background:'linear-gradient(135deg,#e0524a,#9b59b6)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:17 }}>🏴‍☠️</div>
           <div style={{ flex:1 }}>
             <div style={{ fontWeight:700, fontSize:14, color:'#fff' }}>Brams Score IA</div>
-            <div style={{ fontSize:11, color:'var(--success)', display:'flex', alignItems:'center', gap:4 }}>
-              <span style={{ width:5, height:5, borderRadius:'50%', background:'var(--success)', display:'inline-block', animation:'pulse 2s infinite' }} />
+            <div style={{ fontSize:11, color:'#22c55e', display:'flex', alignItems:'center', gap:4 }}>
+              <span style={{ width:6, height:6, borderRadius:'50%', background:'#22c55e', display:'inline-block', boxShadow:'0 0 6px #22c55e', animation:'pulse 2s infinite' }} />
               En ligne
             </div>
           </div>
@@ -178,13 +190,15 @@ export default function AIChatWidget() {
           position:'fixed', bottom:24, right:24, zIndex:901,
           width:58, height:58, borderRadius:'50%',
           background:'linear-gradient(135deg, #e0524a, #9b59b6)',
-          border:'none', cursor:'pointer',
+          border:'2px solid rgba(224,82,74,0.35)',
+          cursor:'pointer',
           display:'flex', alignItems:'center', justifyContent:'center', fontSize:26,
-          boxShadow:'0 8px 32px rgba(224,82,74,.45)',
-          transition:'transform .2s, box-shadow .2s',
+          boxShadow:'0 8px 32px rgba(224,82,74,.5), 0 0 0 0 rgba(224,82,74,0)',
+          animation: shaking ? 'shake 0.7s ease' : open ? 'none' : 'floatAI 3s ease-in-out infinite',
+          transition:'box-shadow .2s',
         }}
-        onMouseEnter={e=>{e.currentTarget.style.transform='scale(1.1)';e.currentTarget.style.boxShadow='0 12px 40px rgba(224,82,74,.6)'}}
-        onMouseLeave={e=>{e.currentTarget.style.transform='scale(1)';e.currentTarget.style.boxShadow='0 8px 32px rgba(224,82,74,.45)'}}
+        onMouseEnter={e=>{e.currentTarget.style.boxShadow='0 12px 40px rgba(224,82,74,.7), 0 0 24px rgba(224,82,74,.3)';e.currentTarget.style.transform='scale(1.1)'}}
+        onMouseLeave={e=>{e.currentTarget.style.boxShadow='0 8px 32px rgba(224,82,74,.5), 0 0 0 0 rgba(224,82,74,0)';e.currentTarget.style.transform='scale(1)'}}
       >
         {open ? '✕' : '🏴‍☠️'}
         {!open && unread > 0 && (

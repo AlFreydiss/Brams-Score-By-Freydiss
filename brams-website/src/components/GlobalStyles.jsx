@@ -256,23 +256,43 @@ const CSS = `
     .hide-mobile { display: none !important; }
   }
 
+  /* ── AI Chat bubble float animation ── */
+  @keyframes floatAI {
+    0%,100% { transform: translateY(0px); }
+    50%     { transform: translateY(-5px); }
+  }
+
+  /* ── Smooth theme transitions ── */
+  .theme-changing * {
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease !important;
+  }
+  .theme-changing img,
+  .theme-changing video,
+  .theme-changing iframe,
+  .theme-changing canvas {
+    transition: none !important;
+  }
+
   /* ── Thème clair ── */
-  body.theme-light .h2 { color: #111214 !important; }
-  body.theme-light .sub { color: rgba(0,0,0,0.58) !important; }
+  body.theme-light ::-webkit-scrollbar-track { background: #f5eedd; }
+  body.theme-light ::-webkit-scrollbar-thumb { background: #c4a882; border-radius: 3px; }
+  body.theme-light .h2 { color: #18203c !important; }
+  body.theme-light .sub { color: rgba(24,32,60,0.55) !important; }
   body.theme-light .label { color: var(--accent) !important; }
-  body.theme-light .btn-ghost { color: #111214 !important; }
-  body.theme-light ::-webkit-scrollbar-thumb { background: #ccc; }
+  body.theme-light .btn-ghost { color: #18203c !important; }
 
   /* ── Thème coloré ── */
+  body.theme-colorful ::-webkit-scrollbar-track { background: #020b12; }
+  body.theme-colorful ::-webkit-scrollbar-thumb { background: #1a5a58; border-radius: 3px; }
   body.theme-colorful .h2 {
-    background: linear-gradient(135deg, #ff6b9d, #a855f7);
+    background: linear-gradient(135deg, #00c8b0, #00f5e0);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
-  body.theme-colorful .label { color: #ff6b9d !important; }
-  body.theme-colorful .btn-primary { background: #ff6b9d; box-shadow: 0 4px 24px rgba(255,107,157,0.3); }
-  body.theme-colorful .btn-primary:hover { box-shadow: 0 6px 32px rgba(255,107,157,0.5); }
+  body.theme-colorful .label { color: #00c8b0 !important; }
+  body.theme-colorful .btn-primary { background: #00c8b0; box-shadow: 0 4px 24px rgba(0,200,175,0.3); }
+  body.theme-colorful .btn-primary:hover { box-shadow: 0 6px 32px rgba(0,200,175,0.5); }
 `
 
 export default function GlobalStyles() {

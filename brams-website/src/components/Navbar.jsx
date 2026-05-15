@@ -64,7 +64,7 @@ export default function Navbar() {
             <span style={{ fontFamily:'var(--display)', fontWeight:800, fontSize:18, color:'#fff', letterSpacing:'-.01em' }}>Brams</span>
           </button>
 
-          <div className="hide-mobile" style={{ display:'flex', alignItems:'center', gap:4 }}>
+          <div className="hide-mobile" style={{ display:'flex', alignItems:'center', gap:4, flex:1, justifyContent:'center' }}>
             {NAV_LINKS.map(l => (
               <a key={l.label} href={l.href} style={{
                 padding:'7px 14px', borderRadius:8, fontSize:14, fontWeight:500, color:'var(--muted)',
@@ -121,7 +121,10 @@ export default function Navbar() {
             ><TikTokIcon /></a>
 
             <a href="https://discord.gg/ez4dBTPE" target="_blank" rel="noopener noreferrer"
-              className="btn btn-primary hide-mobile" style={{ padding:'9px 20px', fontSize:14 }}>
+              className="hide-mobile"
+              style={{ padding:'9px 22px', fontSize:14, fontWeight:700, background:'var(--accent)', color:'#fff', borderRadius:10, border:'none', cursor:'pointer', display:'flex', alignItems:'center', gap:8, textDecoration:'none', transition:'filter .2s, transform .2s', flexShrink:0 }}
+              onMouseEnter={e=>{e.currentTarget.style.filter='brightness(1.15)';e.currentTarget.style.transform='translateY(-1px)'}}
+              onMouseLeave={e=>{e.currentTarget.style.filter='brightness(1)';e.currentTarget.style.transform='translateY(0)'}}>
               <DiscordIcon /> Rejoindre
             </a>
           </div>

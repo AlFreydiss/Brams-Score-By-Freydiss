@@ -12,6 +12,7 @@ export default function MusicPlayer() {
 
   useEffect(() => {
     let destroyed = false
+    let autoTimer = null
 
     const init = () => {
       if (destroyed || !document.getElementById(PLAYER_DIV_ID)) return
@@ -24,7 +25,17 @@ export default function MusicPlayer() {
           origin: window.location.origin,
         },
         events: {
-          onReady: e => { if (destroyed) return; e.target.playVideo(); setReady(true) },
+          onReady: e => {
+            if (destroyed) return
+            e.target.playVideo()
+            setReady(true)
+            autoTimer = setTimeout(() => {
+              if (destroyed) return
+              try { e.target.unMute(); e.target.setVolume(25) } catch {}
+              setMuted(false)
+              setVolume(25)
+            }, 2500)
+          },
           onError: () => {},
         },
       })
@@ -43,7 +54,7 @@ export default function MusicPlayer() {
       window.onYouTubeIframeAPIReady = () => { if (prev) prev(); init() }
     }
 
-    return () => { destroyed = true }
+    return () => { destroyed = true; clearTimeout(autoTimer) }
   }, [])
 
   const toggle = () => {

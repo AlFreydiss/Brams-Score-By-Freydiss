@@ -117,14 +117,14 @@ function VideoThumbnail({ src, episode, color }) {
     tried.current = true
     const v = document.createElement('video')
     v.preload = 'metadata'
-    v.src = src
+    v.src = encodeURI(src)
     const extract = () => {
       const c = document.createElement('canvas')
       c.width = 320; c.height = 180
       try { c.getContext('2d').drawImage(v, 0, 0, 320, 180); setThumb(c.toDataURL('image/jpeg', 0.8)) } catch {}
       v.src = ''
     }
-    v.addEventListener('loadedmetadata', () => { v.currentTime = 45 }, { once: true })
+    v.addEventListener('loadedmetadata', () => { v.currentTime = 1 }, { once: true })
     v.addEventListener('seeked', extract, { once: true })
     v.load()
   }, [src])
@@ -199,7 +199,7 @@ function VideoPlayer({ videos, startIdx, onClose, color }) {
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#000', overflow: 'hidden' }}>
         {isLocal ? (
           <video key={video.src} controls autoPlay style={{ maxWidth: '100%', maxHeight: '100%', width: '100%', height: '100%', outline: 'none' }}>
-            <source src={video.src} />
+            <source src={encodeURI(video.src)} />
             Votre navigateur ne supporte pas la lecture vidéo.
           </video>
         ) : (

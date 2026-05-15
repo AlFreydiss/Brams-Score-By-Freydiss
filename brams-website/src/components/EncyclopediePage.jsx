@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 
 // ── Données ───────────────────────────────────────────────────────────────────
 
@@ -94,6 +94,126 @@ function FruitCard({ fruit, index }) {
   )
 }
 
+// ── Hero ─────────────────────────────────────────────────────────────────────
+
+const LEGEND_COUNT = FRUITS.filter(f => f.rare).length
+
+function useCountUp(target, duration = 1600, delay = 500) {
+  const [val, setVal] = useState(0)
+  useEffect(() => {
+    let raf
+    const t = setTimeout(() => {
+      const start = performance.now()
+      const tick = now => {
+        const p = Math.min((now - start) / duration, 1)
+        const ease = 1 - Math.pow(1 - p, 3)
+        setVal(Math.round(ease * target))
+        if (p < 1) raf = requestAnimationFrame(tick)
+      }
+      raf = requestAnimationFrame(tick)
+    }, delay)
+    return () => { clearTimeout(t); cancelAnimationFrame(raf) }
+  }, [target, duration, delay])
+  return val
+}
+
+function StatPill({ value, label, color = 'var(--accent)' }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, minWidth: 90 }}>
+      <span style={{ fontFamily: 'var(--display)', fontWeight: 900, fontSize: 40, lineHeight: 1, color }}>{value}</span>
+      <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--muted)' }}>{label}</span>
+    </div>
+  )
+}
+
+function EncyclopediaHero({ search, setSearch, searchRef }) {
+  const fruits     = useCountUp(FRUITS.length, 1400, 300)
+  const types      = useCountUp(3,             1000, 500)
+  const legendaires = useCountUp(LEGEND_COUNT, 1600, 400)
+
+  return (
+    <div style={{
+      minHeight: '80vh', display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center',
+      position: 'relative', overflow: 'hidden',
+      padding: '60px 24px 48px',
+    }}>
+      {/* Orbes décoratifs */}
+      <div style={{ position: 'absolute', top: '10%', left: '8%', width: 340, height: 340, borderRadius: '50%', background: 'radial-gradient(circle, rgba(224,82,74,0.10) 0%, transparent 70%)', pointerEvents: 'none', animation: 'drift 18s ease-in-out infinite' }} />
+      <div style={{ position: 'absolute', bottom: '5%', right: '6%', width: 280, height: 280, borderRadius: '50%', background: 'radial-gradient(circle, rgba(162,155,254,0.08) 0%, transparent 70%)', pointerEvents: 'none', animation: 'drift 24s 4s ease-in-out infinite reverse' }} />
+      <div style={{ position: 'absolute', top: '45%', right: '15%', width: 180, height: 180, borderRadius: '50%', background: 'radial-gradient(circle, rgba(253,203,110,0.07) 0%, transparent 70%)', pointerEvents: 'none', animation: 'drift 14s 2s ease-in-out infinite' }} />
+
+      {/* Eyebrow */}
+      <div style={{ fontSize: 10, letterSpacing: '0.35em', fontWeight: 800, color: 'var(--accent)', marginBottom: 22, textTransform: 'uppercase', animation: 'fadeUp 0.6s ease both' }}>
+        One Piece • Univers Étendu
+      </div>
+
+      {/* Titre principal */}
+      <h1 style={{
+        fontFamily: 'var(--display)', fontWeight: 900, textAlign: 'center',
+        fontSize: 'clamp(56px, 11vw, 108px)',
+        lineHeight: 0.92, margin: '0 0 20px',
+        background: 'linear-gradient(140deg, #ffffff 0%, rgba(255,255,255,0.80) 45%, var(--accent) 100%)',
+        WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+        animation: 'fadeUp 0.75s 0.1s ease both',
+      }}>
+        📚<br />Encyclopédie
+      </h1>
+
+      {/* Sous-titre */}
+      <p style={{
+        fontSize: 17, color: 'var(--muted)', textAlign: 'center', maxWidth: 460, lineHeight: 1.65,
+        margin: '0 0 44px', animation: 'fadeUp 0.75s 0.2s ease both',
+      }}>
+        Explore les fruits du démon, personnages et pouvoirs de l'univers One Piece
+      </p>
+
+      {/* Stats count-up */}
+      <div style={{
+        display: 'flex', gap: 48, justifyContent: 'center', flexWrap: 'wrap',
+        marginBottom: 48, animation: 'fadeUp 0.75s 0.3s ease both',
+      }}>
+        <StatPill value={fruits}      label="Fruits du Démon" color="var(--accent)" />
+        <div style={{ width: 1, background: 'var(--border)', alignSelf: 'center', height: 40 }} />
+        <StatPill value={types}       label="Types"           color="#a29bfe" />
+        <div style={{ width: 1, background: 'var(--border)', alignSelf: 'center', height: 40 }} />
+        <StatPill value={legendaires} label="Légendaires"     color="#fdcb6e" />
+      </div>
+
+      {/* Barre de recherche héro */}
+      <div style={{
+        width: '100%', maxWidth: 560, position: 'relative',
+        animation: 'fadeUp 0.75s 0.4s ease both',
+      }}>
+        <span style={{ position: 'absolute', left: 18, top: '50%', transform: 'translateY(-50%)', fontSize: 18, color: 'var(--muted)', pointerEvents: 'none' }}>🔍</span>
+        <input
+          ref={searchRef}
+          type="text"
+          placeholder='Chercher un fruit, un utilisateur, un pouvoir…'
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          style={{
+            width: '100%', paddingLeft: 50, paddingRight: 20, height: 54,
+            background: 'rgba(255,255,255,0.06)', backdropFilter: 'blur(12px)',
+            border: '1px solid rgba(255,255,255,0.12)', borderRadius: 16,
+            color: 'var(--text)', fontSize: 15, outline: 'none',
+            fontFamily: 'var(--body)', boxSizing: 'border-box',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
+            transition: 'border-color 0.2s, box-shadow 0.2s',
+          }}
+          onFocus={e => { e.currentTarget.style.borderColor = 'rgba(224,82,74,0.5)'; e.currentTarget.style.boxShadow = '0 8px 32px rgba(224,82,74,0.15)' }}
+          onBlur={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'; e.currentTarget.style.boxShadow = '0 8px 32px rgba(0,0,0,0.2)' }}
+        />
+      </div>
+
+      {/* Scroll hint */}
+      <div style={{ marginTop: 40, fontSize: 12, color: 'var(--muted)', animation: 'float 2.5s ease-in-out infinite', letterSpacing: '0.05em' }}>
+        ↓ Découvrir la collection
+      </div>
+    </div>
+  )
+}
+
 // ── Page principale ───────────────────────────────────────────────────────────
 
 export default function EncyclopediePage({ onClose }) {
@@ -117,7 +237,6 @@ export default function EncyclopediePage({ onClose }) {
     return result
   }, [filter, search])
 
-  // Lock scroll + raccourcis
   useEffect(() => {
     document.body.style.overflow = 'hidden'
     const fn = e => {
@@ -128,7 +247,7 @@ export default function EncyclopediePage({ onClose }) {
     return () => { document.body.style.overflow = ''; window.removeEventListener('keydown', fn) }
   }, [onClose])
 
-  const counts = useMemo(() => {
+  const typeCounts = useMemo(() => {
     const c = {}
     types.forEach(t => { c[t] = t === 'Tous' ? FRUITS.length : FRUITS.filter(f => f.type === t).length })
     return c
@@ -136,77 +255,57 @@ export default function EncyclopediePage({ onClose }) {
 
   return (
     <>
-      <style>{`@keyframes fadeUp { from { opacity:0; transform:translateY(18px) } to { opacity:1; transform:translateY(0) } }`}</style>
+      <style>{`@keyframes fadeUp { from { opacity:0; transform:translateY(20px) } to { opacity:1; transform:translateY(0) } }`}</style>
 
       <div style={{ position: 'fixed', inset: 0, zIndex: 500, background: 'var(--bg)', display: 'flex', flexDirection: 'column', animation: 'fadeIn 0.18s ease-out' }}>
 
-        {/* ── Header ── */}
+        {/* ── Header compact ── */}
         <div style={{ flexShrink: 0, background: 'rgba(17,18,20,0.97)', backdropFilter: 'blur(20px)', borderBottom: '1px solid var(--border)', zIndex: 10 }}>
-
-          {/* Ligne titre */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '0 20px', height: 60 }}>
-            <button onClick={onClose} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border)', borderRadius: 9, color: '#fff', cursor: 'pointer', padding: '7px 14px', fontSize: 13, fontWeight: 700, flexShrink: 0, transition: 'background 0.15s' }}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '0 20px', height: 56 }}>
+            <button onClick={onClose} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border)', borderRadius: 9, color: 'var(--text)', cursor: 'pointer', padding: '7px 14px', fontSize: 13, fontWeight: 700, flexShrink: 0, transition: 'background 0.15s' }}
               onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.12)'}
               onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
             >← Retour</button>
 
-            <div style={{ flex: 1, textAlign: 'center' }}>
-              <span style={{ fontFamily: 'var(--display)', fontWeight: 800, fontSize: 16, color: '#fff' }}>📚 Encyclopédie One Piece</span>
-              <span style={{ fontSize: 12, color: 'var(--muted)', marginLeft: 10 }}>{filtered.length} résultat{filtered.length > 1 ? 's' : ''}</span>
-            </div>
+            <span style={{ fontFamily: 'var(--display)', fontWeight: 800, fontSize: 15, color: 'var(--text)', flex: 1, textAlign: 'center' }}>📚 Encyclopédie One Piece</span>
 
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(224,82,74,0.1)', border: '1px solid rgba(224,82,74,0.3)', borderRadius: 100, padding: '4px 12px', fontSize: 11, fontWeight: 700, color: 'var(--accent)', flexShrink: 0 }}>
-              🍎 Fruits du Démon
+            <span style={{ fontSize: 12, color: 'var(--muted)', flexShrink: 0 }}>
+              {filtered.length} résultat{filtered.length > 1 ? 's' : ''}
             </span>
-          </div>
-
-          {/* Ligne contrôles */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 20px 12px', flexWrap: 'wrap' }}>
-
-            {/* Recherche */}
-            <div style={{ position: 'relative', flex: 1, minWidth: 180 }}>
-              <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 14, color: 'var(--muted)', pointerEvents: 'none' }}>🔍</span>
-              <input
-                ref={searchRef}
-                type="text"
-                placeholder='Nom, utilisateur, pouvoir… ("/" pour focus)'
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                style={{ width: '100%', paddingLeft: 36, paddingRight: 12, height: 36, background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border)', borderRadius: 9, color: '#fff', fontSize: 13, outline: 'none', fontFamily: 'var(--body)', boxSizing: 'border-box' }}
-                onFocus={e => e.currentTarget.style.borderColor = 'rgba(224,82,74,0.5)'}
-                onBlur={e => e.currentTarget.style.borderColor = 'var(--border)'}
-              />
-            </div>
-
-            {/* Filtres type */}
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-              {types.map(t => {
-                const active = filter === t
-                const tc = TYPE_COLORS[t]
-                return (
-                  <button key={t} onClick={() => setFilter(t)} style={{
-                    height: 36, padding: '0 14px', borderRadius: 9, border: `1px solid ${active ? (tc?.border || 'rgba(224,82,74,0.5)') : 'rgba(255,255,255,0.1)'}`,
-                    background: active ? (tc?.bg || 'rgba(224,82,74,0.15)') : 'transparent',
-                    color: active ? (tc?.text || 'var(--accent)') : 'var(--muted)',
-                    fontSize: 12, fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap',
-                    display: 'flex', alignItems: 'center', gap: 5,
-                  }}>
-                    {t} <span style={{ fontSize: 10, opacity: 0.7 }}>({counts[t]})</span>
-                  </button>
-                )
-              })}
-            </div>
           </div>
         </div>
 
-        {/* ── Contenu ── */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '28px 20px' }}>
-          <div style={{ maxWidth: 1120, margin: '0 auto' }}>
+        {/* ── Contenu scrollable ── */}
+        <div style={{ flex: 1, overflowY: 'auto' }}>
 
+          {/* Hero */}
+          <EncyclopediaHero search={search} setSearch={setSearch} searchRef={searchRef} />
+
+          {/* Filtres type */}
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center', padding: '0 20px 28px' }}>
+            {types.map(t => {
+              const active = filter === t
+              const tc = TYPE_COLORS[t]
+              return (
+                <button key={t} onClick={() => setFilter(t)} style={{
+                  height: 36, padding: '0 18px', borderRadius: 100,
+                  border: `1px solid ${active ? (tc?.border || 'rgba(224,82,74,0.5)') : 'rgba(255,255,255,0.1)'}`,
+                  background: active ? (tc?.bg || 'rgba(224,82,74,0.15)') : 'transparent',
+                  color: active ? (tc?.text || 'var(--accent)') : 'var(--muted)',
+                  fontSize: 13, fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap',
+                }}>
+                  {t} <span style={{ fontSize: 11, opacity: 0.7 }}>({typeCounts[t]})</span>
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Grille cartes */}
+          <div style={{ maxWidth: 1120, margin: '0 auto', padding: '0 20px 40px' }}>
             {filtered.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '80px 0', color: 'var(--muted)' }}>
                 <div style={{ fontSize: 48, marginBottom: 16 }}>🔍</div>
-                <div style={{ fontWeight: 700, color: '#fff', marginBottom: 8 }}>Aucun résultat</div>
+                <div style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>Aucun résultat</div>
                 <div style={{ fontSize: 14 }}>Essaie un autre nom ou pouvoir</div>
               </div>
             ) : (
@@ -217,10 +316,9 @@ export default function EncyclopediePage({ onClose }) {
               </div>
             )}
 
-            {/* Bientôt */}
-            <div style={{ marginTop: 48, padding: '28px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, textAlign: 'center' }}>
+            <div style={{ marginTop: 52, padding: '28px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, textAlign: 'center' }}>
               <div style={{ fontSize: 28, marginBottom: 10 }}>⚡</div>
-              <div style={{ fontWeight: 700, color: '#fff', marginBottom: 6 }}>Bientôt : Haki & Personnages</div>
+              <div style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>Bientôt : Haki & Personnages</div>
               <div style={{ fontSize: 13, color: 'var(--muted)' }}>L'encyclopédie s'agrandit au fil des arcs</div>
             </div>
           </div>

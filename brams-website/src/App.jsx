@@ -19,6 +19,8 @@ import NousSoutenir from './components/NousSoutenir.jsx'
 import ScansPage from './components/ScansPage.jsx'
 import AkainuGame from './components/AkainuGame.jsx'
 import AnimeHub from './components/AnimeHub.jsx'
+import ThemeToggle from './components/ThemeToggle.jsx'
+import MusicPlayer from './components/MusicPlayer.jsx'
 import TpnPage from './components/TpnPage.jsx'
 import DrStonePage from './components/DrStonePage.jsx'
 import JjkPage from './components/JjkPage.jsx'
@@ -138,7 +140,9 @@ export default function App() {
         <Footer />
       </div>
 
-      <AIChatWidget />
+      <MusicPlayer />
+      <ThemeToggle />
+      <AIChatWidget hidden={scansOpen || encyclopedieOpen || tpnOpen || drstoneOpen || jjkOpen || kingdomOpen || aotOpen || knyOpen || nntOpen || slOpen || dbsOpen || bcOpen} />
       <AkainuGame />
 
       {animeHubOpen && (
