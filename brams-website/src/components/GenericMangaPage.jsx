@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Reader } from './MangaReader.jsx'
+import VideoPlayer from './VideoPlayer.jsx'
 
 function loadProgress(ns) {
   try { return JSON.parse(localStorage.getItem(`${ns}_progress`) || '{}') } catch { return {} }
@@ -163,76 +164,6 @@ function VideoCard({ video, onPlay, color }) {
   )
 }
 
-
-function VideoPlayer({ videos, startIdx, onClose, color }) {
-  const [idx, setIdx] = useState(startIdx)
-  const video = videos[idx]
-  const isLocal = Boolean(video.src)
-
-  useEffect(() => {
-    const fn = e => {
-      if (e.key === 'Escape') { onClose(); return }
-      if (e.key === 'ArrowLeft'  && idx > 0)               setIdx(i => i - 1)
-      if (e.key === 'ArrowRight' && idx < videos.length - 1) setIdx(i => i + 1)
-    }
-    window.addEventListener('keydown', fn)
-    return () => window.removeEventListener('keydown', fn)
-  }, [idx, videos.length, onClose])
-
-  return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 600, background: '#000', display: 'flex', flexDirection: 'column' }}>
-      {/* Header */}
-      <div style={{ flexShrink: 0, height: 56, display: 'flex', alignItems: 'center', gap: 12, padding: '0 16px', background: 'rgba(10,11,13,0.95)', borderBottom: `1px solid ${color}33`, zIndex: 10 }}>
-        <button onClick={onClose} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 9, color: '#fff', cursor: 'pointer', padding: '6px 14px', fontSize: 13, fontWeight: 700, flexShrink: 0, transition: 'background 0.15s' }}
-          onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.15)'}
-          onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
-        >✕ Fermer</button>
-        <div style={{ flex: 1, textAlign: 'center' }}>
-          <span style={{ fontWeight: 700, color: '#fff', fontSize: 14 }}>Épisode {video.episode}</span>
-          <span style={{ color: 'var(--muted)', fontSize: 13, marginLeft: 8 }}>{video.title}</span>
-        </div>
-        <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-          <button onClick={() => setIdx(i => i - 1)} disabled={idx === 0} style={{ padding: '6px 14px', borderRadius: 9, border: `1px solid ${color}44`, background: idx === 0 ? 'transparent' : `${color}18`, color: idx === 0 ? 'rgba(255,255,255,0.2)' : color, cursor: idx === 0 ? 'default' : 'pointer', fontSize: 12, fontWeight: 700, transition: 'background 0.15s' }}>← Préc.</button>
-          <button onClick={() => setIdx(i => i + 1)} disabled={idx === videos.length - 1} style={{ padding: '6px 14px', borderRadius: 9, border: `1px solid ${color}44`, background: idx === videos.length - 1 ? 'transparent' : `${color}18`, color: idx === videos.length - 1 ? 'rgba(255,255,255,0.2)' : color, cursor: idx === videos.length - 1 ? 'default' : 'pointer', fontSize: 12, fontWeight: 700, transition: 'background 0.15s' }}>Suiv. →</button>
-        </div>
-      </div>
-      {/* Player */}
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#000', overflow: 'hidden' }}>
-        {isLocal ? (
-          <video
-            key={video.src}
-            controls
-            style={{ maxWidth: '100%', maxHeight: '100%', width: '100%', height: '100%', outline: 'none' }}
-          >
-            <source
-              src={video.src.split('/').map((seg, i) => i === 0 ? seg : encodeURIComponent(seg)).join('/')}
-              type={video.src.toLowerCase().endsWith('.mkv') ? 'video/x-matroska' : 'video/mp4'}
-            />
-          </video>
-        ) : (
-          <iframe
-            key={video.id}
-            src={`https://www.youtube.com/embed/${video.id}?autoplay=1`}
-            style={{ width: '100%', height: '100%', border: 'none' }}
-            allow="autoplay; encrypted-media; fullscreen"
-            allowFullScreen
-            title={video.title}
-          />
-        )}
-      </div>
-      {/* Episode list strip */}
-      {videos.length > 1 && (
-        <div style={{ flexShrink: 0, display: 'flex', gap: 6, padding: '10px 16px', background: 'rgba(10,11,13,0.9)', borderTop: '1px solid rgba(255,255,255,0.06)', overflowX: 'auto' }}>
-          {videos.map((v, i) => (
-            <button key={i} onClick={() => setIdx(i)} style={{ flexShrink: 0, padding: '5px 14px', borderRadius: 7, border: `1px solid ${i === idx ? color + '80' : 'rgba(255,255,255,0.1)'}`, background: i === idx ? `${color}28` : 'transparent', color: i === idx ? color : 'var(--muted)', fontSize: 12, fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s' }}>
-              Ép.{v.episode}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
 
 export default function GenericMangaPage({ chaptersData, videosData, color, namespace, title, headerEmoji, emojiList, arcsData, onClose }) {
   const CHAPTERS = useMemo(() => chaptersData.map((ch, i) => ({
