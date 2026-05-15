@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Reader } from './MangaReader.jsx'
 
 function loadProgress(ns) {
@@ -45,6 +45,69 @@ function ChapterCard({ ch, status, onClick, color }) {
   )
 }
 
+function ArcHeader({ arc, color, readCount, total }) {
+  const pct = total > 0 ? Math.round((readCount / total) * 100) : 0
+  return (
+    <div style={{ marginBottom: 14, marginTop: 32 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
+        <div style={{ height: 2, flex: 1, background: `linear-gradient(90deg, ${color}60, transparent)` }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+          <span style={{ fontFamily: 'var(--display)', fontWeight: 800, fontSize: 15, color: '#fff', letterSpacing: '0.01em' }}>
+            {arc.name}
+          </span>
+          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', fontWeight: 600 }}>
+            ch.{arc.start}–{arc.end === 9999 ? '…' : arc.end}
+          </span>
+          {total > 0 && (
+            <span style={{ fontSize: 11, fontWeight: 700, background: pct === 100 ? 'rgba(52,211,153,0.15)' : `${color}18`, color: pct === 100 ? '#34d399' : color, border: `1px solid ${pct === 100 ? 'rgba(52,211,153,0.4)' : color + '44'}`, borderRadius: 100, padding: '2px 10px' }}>
+              {pct === 100 ? '✓ Terminé' : `${readCount}/${total}`}
+            </span>
+          )}
+        </div>
+        <div style={{ height: 2, flex: 1, background: `linear-gradient(90deg, transparent, ${color}60)` }} />
+      </div>
+      {total > 0 && pct > 0 && (
+        <div style={{ height: 2, borderRadius: 2, background: 'rgba(255,255,255,0.06)', overflow: 'hidden', margin: '0 0 4px 0' }}>
+          <div style={{ height: '100%', width: `${pct}%`, background: pct === 100 ? '#34d399' : color, borderRadius: 2, transition: 'width 0.6s ease' }} />
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ArcNav({ arcs, color, onJump }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+  useEffect(() => {
+    const fn = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', fn)
+    return () => document.removeEventListener('mousedown', fn)
+  }, [])
+  return (
+    <div ref={ref} style={{ position: 'relative', flexShrink: 0 }}>
+      <button onClick={() => setOpen(o => !o)} style={{ height: 36, padding: '0 14px', border: `1px solid ${color}44`, borderRadius: 9, background: `${color}14`, color, cursor: 'pointer', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6, transition: 'background 0.15s' }}
+        onMouseEnter={e => e.currentTarget.style.background = `${color}28`}
+        onMouseLeave={e => e.currentTarget.style.background = `${color}14`}
+      >
+        📑 Arcs {open ? '▲' : '▼'}
+      </button>
+      {open && (
+        <div style={{ position: 'absolute', top: 42, right: 0, zIndex: 50, background: 'rgba(17,18,20,0.98)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, minWidth: 240, padding: '6px 0', boxShadow: '0 16px 48px rgba(0,0,0,0.6)', backdropFilter: 'blur(20px)' }}>
+          {arcs.map(arc => (
+            <button key={arc.name} onClick={() => { onJump(arc.name); setOpen(false) }} style={{ width: '100%', padding: '9px 16px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', color: '#fff', fontSize: 13, fontWeight: 600, transition: 'background 0.12s', display: 'flex', alignItems: 'center', gap: 8 }}
+              onMouseEnter={e => e.currentTarget.style.background = `${color}18`}
+              onMouseLeave={e => e.currentTarget.style.background = 'none'}
+            >
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: color, flexShrink: 0 }} />
+              {arc.name}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function VideoCard({ video, isPlaying, onPlay, color }) {
   const [hovered, setHovered] = useState(false)
   return (
@@ -70,7 +133,7 @@ function VideoCard({ video, isPlaying, onPlay, color }) {
   )
 }
 
-export default function GenericMangaPage({ chaptersData, videosData, color, namespace, title, headerEmoji, emojiList, onClose }) {
+export default function GenericMangaPage({ chaptersData, videosData, color, namespace, title, headerEmoji, emojiList, arcsData, onClose }) {
   const CHAPTERS = useMemo(() => chaptersData.map((ch, i) => ({
     num:   ch.num,
     title: ch.title || `Chapitre ${ch.num}`,
@@ -84,6 +147,8 @@ export default function GenericMangaPage({ chaptersData, videosData, color, name
   const [reading,      setReading]      = useState(null)
   const [progress,     setProgress]     = useState(() => loadProgress(namespace))
   const [videoPlaying, setVideoPlaying] = useState(null)
+  const arcRefs = useRef({})
+  const scrollRef = useRef(null)
 
   useEffect(() => {
     document.body.style.overflow = 'hidden'
@@ -119,6 +184,42 @@ export default function GenericMangaPage({ chaptersData, videosData, color, name
   const readCount = useMemo(() =>
     CHAPTERS.filter(c => progress[c.num] === 'read').length, [CHAPTERS, progress])
 
+  // Group chapters by arc
+  const chaptersByArc = useMemo(() => {
+    if (!arcsData || arcsData.length === 0) return null
+    return arcsData.map(arc => ({
+      ...arc,
+      chapters: CHAPTERS.filter(ch => {
+        const n = parseFloat(ch.num)
+        return n >= arc.start && n <= arc.end
+      }),
+    })).filter(a => a.chapters.length > 0)
+  }, [CHAPTERS, arcsData])
+
+  const readCountForArc = useCallback((arc) =>
+    arc.chapters.filter(ch => progress[ch.num] === 'read').length
+  , [progress])
+
+  const jumpToArc = useCallback((arcName) => {
+    const el = arcRefs.current[arcName]
+    if (el && scrollRef.current) scrollRef.current.scrollTo({ top: el.offsetTop - 80, behavior: 'smooth' })
+  }, [])
+
+  // Map chapter num → global index for reader navigation
+  const chNumToIdx = useMemo(() => {
+    const m = {}
+    CHAPTERS.forEach((ch, i) => { m[ch.num] = i })
+    return m
+  }, [CHAPTERS])
+
+  const renderChapterGrid = (chapters) => (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: 10 }}>
+      {chapters.map(ch => (
+        <ChapterCard key={ch.num} ch={ch} color={color} status={progress[ch.num] || null} onClick={() => openChapter(chNumToIdx[ch.num])} />
+      ))}
+    </div>
+  )
+
   return (
     <>
       <div style={{ position: 'fixed', inset: 0, zIndex: 500, background: 'var(--bg)', display: 'flex', flexDirection: 'column', animation: 'fadeIn 0.18s ease-out' }}>
@@ -134,22 +235,32 @@ export default function GenericMangaPage({ chaptersData, videosData, color, name
               <div style={{ fontFamily: 'var(--display)', fontWeight: 800, fontSize: 16, color: '#fff' }}>{headerEmoji} {title}</div>
               {CHAPTERS.length > 0 && <div style={{ fontSize: 11, color: '#34d399', fontWeight: 700 }}>{readCount}/{CHAPTERS.length} chapitres lus</div>}
             </div>
-            <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: 10, overflow: 'hidden', border: '1px solid var(--border)', flexShrink: 0 }}>
-              {[['scans', '📖 Scans'], ['videos', '🎬 Épisodes']].map(([t, label]) => (
-                <button key={t} onClick={() => setTab(t)} style={{ height: 38, padding: '0 18px', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 700, background: tab === t ? `${color}28` : 'transparent', color: tab === t ? color : 'var(--muted)', borderRight: t === 'scans' ? '1px solid var(--border)' : 'none', transition: 'all 0.15s' }}>{label}</button>
-              ))}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+              {tab === 'scans' && chaptersByArc && chaptersByArc.length > 1 && (
+                <ArcNav arcs={chaptersByArc} color={color} onJump={jumpToArc} />
+              )}
+              <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: 10, overflow: 'hidden', border: '1px solid var(--border)' }}>
+                {[['scans', '📖 Scans'], ['videos', '🎬 Épisodes']].map(([t, label]) => (
+                  <button key={t} onClick={() => setTab(t)} style={{ height: 38, padding: '0 18px', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 700, background: tab === t ? `${color}28` : 'transparent', color: tab === t ? color : 'var(--muted)', borderRight: t === 'scans' ? '1px solid var(--border)' : 'none', transition: 'all 0.15s' }}>{label}</button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
 
-        <div style={{ flex: 1, overflowY: 'auto', padding: '28px 20px' }}>
+        <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '28px 20px' }}>
           <div style={{ maxWidth: 1120, margin: '0 auto' }}>
             {tab === 'scans' ? (
               CHAPTERS.length === 0
                 ? <EmptyState icon={headerEmoji} title="Scans bientôt disponibles" desc={`Les chapitres de ${title} seront ajoutés prochainement.`} />
-                : <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: 10 }}>
-                    {CHAPTERS.map((ch, idx) => <ChapterCard key={ch.num} ch={ch} color={color} status={progress[ch.num] || null} onClick={() => openChapter(idx)} />)}
-                  </div>
+                : chaptersByArc
+                  ? chaptersByArc.map(arc => (
+                      <div key={arc.name} ref={el => { if (el) arcRefs.current[arc.name] = el }}>
+                        <ArcHeader arc={arc} color={color} readCount={readCountForArc(arc)} total={arc.chapters.length} />
+                        {renderChapterGrid(arc.chapters)}
+                      </div>
+                    ))
+                  : renderChapterGrid(CHAPTERS)
             ) : (
               VIDEOS.length === 0
                 ? <EmptyState icon="🎬" title="Épisodes bientôt disponibles" desc="Les épisodes seront ajoutés prochainement." />

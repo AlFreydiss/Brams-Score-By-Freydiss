@@ -1,6 +1,7 @@
 import GenericMangaPage from './GenericMangaPage.jsx'
 import CHAPTERS from '../data/kny-chapters.json'
 import VIDEOS from '../data/kny-videos.json'
+import { MANGA_ARCS } from '../data/manga-arcs.js'
 
 const EMOJIS = ['🔥','💀','🌊','⚡','🌙','🗡️','🌸','🏔️','🌀','👁️','🩸','🌿','🔴','🌑','⛓️','💧','🦋','🌪️','🐍','🕷️','🌟','🎭','🔱','🦂','🌒','🧿','⚔️']
 
@@ -14,6 +15,7 @@ export default function KnyPage({ onClose }) {
       title="Kimetsu no Yaiba"
       headerEmoji="🔥"
       emojiList={EMOJIS}
+      arcsData={MANGA_ARCS.kny}
       onClose={onClose}
     />
   )

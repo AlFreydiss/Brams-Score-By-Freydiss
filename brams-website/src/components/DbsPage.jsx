@@ -1,6 +1,7 @@
 import GenericMangaPage from './GenericMangaPage.jsx'
 import CHAPTERS from '../data/dbs-chapters.json'
 import VIDEOS from '../data/dbs-videos.json'
+import { MANGA_ARCS } from '../data/manga-arcs.js'
 
 const EMOJIS = ['🐉','⚡','🌟','💥','👊','🌀','🔥','🌊','🌙','💀','🗡️','🔮','🏹','🦁','🌑','🧿','⚔️','🦂','💎','🌸','🌪️','🔱','🎭','💧','🌒','⛓️','🩸']
 
@@ -14,6 +15,7 @@ export default function DbsPage({ onClose }) {
       title="Dragon Ball Super"
       headerEmoji="🐉"
       emojiList={EMOJIS}
+      arcsData={MANGA_ARCS.dbs}
       onClose={onClose}
     />
   )
