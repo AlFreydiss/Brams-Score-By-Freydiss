@@ -108,27 +108,92 @@ function ArcNav({ arcs, color, onJump }) {
   )
 }
 
-function VideoCard({ video, isPlaying, onPlay, color }) {
+function VideoCard({ video, onPlay, color }) {
   const [hovered, setHovered] = useState(false)
+  const thumb = video.thumbnail || (video.id ? `https://img.youtube.com/vi/${video.id}/mqdefault.jpg` : null)
   return (
-    <div onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
-      style={{ borderRadius: 16, overflow: 'hidden', background: 'rgba(18,19,22,0.9)', border: `1px solid ${hovered ? color + '40' : 'rgba(255,255,255,0.07)'}`, transition: 'all 0.2s', transform: hovered ? 'translateY(-4px)' : 'translateY(0)' }}>
-      {isPlaying ? (
-        <div style={{ position: 'relative', paddingTop: '56.25%' }}>
-          <iframe src={`https://www.youtube.com/embed/${video.id}?autoplay=1`} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }} allow="autoplay; encrypted-media" allowFullScreen title={video.title} />
+    <div onClick={onPlay} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
+      style={{ borderRadius: 16, overflow: 'hidden', background: 'rgba(18,19,22,0.9)', border: `1px solid ${hovered ? color + '55' : 'rgba(255,255,255,0.07)'}`, transition: 'all 0.2s', transform: hovered ? 'translateY(-4px)' : 'translateY(0)', cursor: 'pointer', boxShadow: hovered ? `0 12px 36px ${color}18` : 'none' }}>
+      <div style={{ position: 'relative', paddingTop: '56.25%', background: '#0a0b0d', overflow: 'hidden' }}>
+        {thumb
+          ? <img src={thumb} alt={video.title} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: hovered ? 0.8 : 0.6, transition: 'opacity 0.2s' }} />
+          : <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(135deg, ${color}22 0%, rgba(0,0,0,0.8) 100%)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ fontFamily: 'var(--display)', fontWeight: 900, fontSize: 36, color: `${color}88` }}>EP{video.episode}</span>
+            </div>
+        }
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: hovered ? 'rgba(0,0,0,0.3)' : 'transparent', transition: 'background 0.2s' }}>
+          <div style={{ width: 58, height: 58, borderRadius: '50%', background: `${color}cc`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, backdropFilter: 'blur(4px)', transform: hovered ? 'scale(1.1)' : 'scale(1)', transition: 'transform 0.2s' }}>▶</div>
         </div>
-      ) : (
-        <div onClick={onPlay} style={{ position: 'relative', paddingTop: '56.25%', background: '#0a0b0d', cursor: 'pointer', overflow: 'hidden' }}>
-          {video.thumbnail && <img src={video.thumbnail} alt={video.title} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.65 }} />}
-          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ width: 58, height: 58, borderRadius: '50%', background: `${color}cc`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, backdropFilter: 'blur(4px)' }}>▶</div>
-          </div>
-        </div>
-      )}
+        {video.duration && <div style={{ position: 'absolute', bottom: 8, right: 10, fontSize: 11, fontWeight: 700, background: 'rgba(0,0,0,0.75)', borderRadius: 4, padding: '2px 7px', color: '#fff' }}>{video.duration}</div>}
+      </div>
       <div style={{ padding: '14px 16px' }}>
         <div style={{ fontSize: 10, fontWeight: 700, color, letterSpacing: '0.07em', marginBottom: 5 }}>ÉPISODE {video.episode}</div>
-        <div style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>{video.title}</div>
+        <div style={{ fontSize: 14, fontWeight: 700, color: '#fff', lineHeight: 1.3 }}>{video.title}</div>
       </div>
+    </div>
+  )
+}
+
+function VideoPlayer({ videos, startIdx, onClose, color }) {
+  const [idx, setIdx] = useState(startIdx)
+  const video = videos[idx]
+  const isLocal = Boolean(video.src)
+
+  useEffect(() => {
+    const fn = e => {
+      if (e.key === 'Escape') { onClose(); return }
+      if (e.key === 'ArrowLeft'  && idx > 0)               setIdx(i => i - 1)
+      if (e.key === 'ArrowRight' && idx < videos.length - 1) setIdx(i => i + 1)
+    }
+    window.addEventListener('keydown', fn)
+    return () => window.removeEventListener('keydown', fn)
+  }, [idx, videos.length, onClose])
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 600, background: '#000', display: 'flex', flexDirection: 'column' }}>
+      {/* Header */}
+      <div style={{ flexShrink: 0, height: 56, display: 'flex', alignItems: 'center', gap: 12, padding: '0 16px', background: 'rgba(10,11,13,0.95)', borderBottom: `1px solid ${color}33`, zIndex: 10 }}>
+        <button onClick={onClose} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 9, color: '#fff', cursor: 'pointer', padding: '6px 14px', fontSize: 13, fontWeight: 700, flexShrink: 0, transition: 'background 0.15s' }}
+          onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.15)'}
+          onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
+        >✕ Fermer</button>
+        <div style={{ flex: 1, textAlign: 'center' }}>
+          <span style={{ fontWeight: 700, color: '#fff', fontSize: 14 }}>Épisode {video.episode}</span>
+          <span style={{ color: 'var(--muted)', fontSize: 13, marginLeft: 8 }}>{video.title}</span>
+        </div>
+        <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+          <button onClick={() => setIdx(i => i - 1)} disabled={idx === 0} style={{ padding: '6px 14px', borderRadius: 9, border: `1px solid ${color}44`, background: idx === 0 ? 'transparent' : `${color}18`, color: idx === 0 ? 'rgba(255,255,255,0.2)' : color, cursor: idx === 0 ? 'default' : 'pointer', fontSize: 12, fontWeight: 700, transition: 'background 0.15s' }}>← Préc.</button>
+          <button onClick={() => setIdx(i => i + 1)} disabled={idx === videos.length - 1} style={{ padding: '6px 14px', borderRadius: 9, border: `1px solid ${color}44`, background: idx === videos.length - 1 ? 'transparent' : `${color}18`, color: idx === videos.length - 1 ? 'rgba(255,255,255,0.2)' : color, cursor: idx === videos.length - 1 ? 'default' : 'pointer', fontSize: 12, fontWeight: 700, transition: 'background 0.15s' }}>Suiv. →</button>
+        </div>
+      </div>
+      {/* Player */}
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#000', overflow: 'hidden' }}>
+        {isLocal ? (
+          <video key={video.src} controls autoPlay style={{ maxWidth: '100%', maxHeight: '100%', width: '100%', height: '100%', outline: 'none' }}>
+            <source src={video.src} />
+            Votre navigateur ne supporte pas la lecture vidéo.
+          </video>
+        ) : (
+          <iframe
+            key={video.id}
+            src={`https://www.youtube.com/embed/${video.id}?autoplay=1`}
+            style={{ width: '100%', height: '100%', border: 'none' }}
+            allow="autoplay; encrypted-media; fullscreen"
+            allowFullScreen
+            title={video.title}
+          />
+        )}
+      </div>
+      {/* Episode list strip */}
+      {videos.length > 1 && (
+        <div style={{ flexShrink: 0, display: 'flex', gap: 6, padding: '10px 16px', background: 'rgba(10,11,13,0.9)', borderTop: '1px solid rgba(255,255,255,0.06)', overflowX: 'auto' }}>
+          {videos.map((v, i) => (
+            <button key={i} onClick={() => setIdx(i)} style={{ flexShrink: 0, padding: '5px 14px', borderRadius: 7, border: `1px solid ${i === idx ? color + '80' : 'rgba(255,255,255,0.1)'}`, background: i === idx ? `${color}28` : 'transparent', color: i === idx ? color : 'var(--muted)', fontSize: 12, fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s' }}>
+              Ép.{v.episode}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -146,7 +211,7 @@ export default function GenericMangaPage({ chaptersData, videosData, color, name
   const [tab,          setTab]          = useState('scans')
   const [reading,      setReading]      = useState(null)
   const [progress,     setProgress]     = useState(() => loadProgress(namespace))
-  const [videoPlaying, setVideoPlaying] = useState(null)
+  const [playerIdx,    setPlayerIdx]    = useState(null)
   const arcRefs = useRef({})
   const scrollRef = useRef(null)
 
@@ -265,7 +330,7 @@ export default function GenericMangaPage({ chaptersData, videosData, color, name
               VIDEOS.length === 0
                 ? <EmptyState icon="🎬" title="Épisodes bientôt disponibles" desc="Les épisodes seront ajoutés prochainement." />
                 : <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 18 }}>
-                    {VIDEOS.map(v => <VideoCard key={v.id} video={v} color={color} isPlaying={videoPlaying === v.id} onPlay={() => setVideoPlaying(videoPlaying === v.id ? null : v.id)} />)}
+                    {VIDEOS.map((v, i) => <VideoCard key={i} video={v} color={color} onPlay={() => setPlayerIdx(i)} />)}
                   </div>
             )}
           </div>
@@ -293,6 +358,15 @@ export default function GenericMangaPage({ chaptersData, videosData, color, name
           isRead={progress[CHAPTERS[reading]?.num] === 'read'}
           namespace={namespace}
           themeColor={color}
+        />
+      )}
+
+      {playerIdx !== null && VIDEOS[playerIdx] && (
+        <VideoPlayer
+          videos={VIDEOS}
+          startIdx={playerIdx}
+          onClose={() => setPlayerIdx(null)}
+          color={color}
         />
       )}
     </>
