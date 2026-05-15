@@ -9,7 +9,10 @@ function serveAnimeFile(req, res, filePath) {
   const stat = fs.statSync(filePath)
   const fileSize = stat.size
   const ext = path.extname(filePath).toLowerCase()
-  const mime = ext === '.mkv' ? 'video/x-matroska' : 'application/octet-stream'
+  const mime = ext === '.mkv' ? 'video/x-matroska'
+    : ext === '.mp4' ? 'video/mp4'
+    : ext === '.vtt' ? 'text/vtt'
+    : 'application/octet-stream'
   const range = req.headers.range
 
   if (range) {
