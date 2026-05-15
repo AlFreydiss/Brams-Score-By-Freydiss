@@ -14,11 +14,6 @@ function openAnimeHub(e) {
   document.dispatchEvent(new CustomEvent('open-anime-hub'))
 }
 
-function openCalendar(e) {
-  e.preventDefault()
-  document.dispatchEvent(new CustomEvent('open-calendar'))
-}
-
 function openEncyclopedie(e) {
   e.preventDefault()
   document.dispatchEvent(new CustomEvent('open-encyclopedie'))
@@ -90,10 +85,6 @@ export default function Navbar() {
               onMouseLeave={e=>{ e.currentTarget.style.background='rgba(224,82,74,0.08)'; e.currentTarget.style.borderColor='rgba(224,82,74,0.25)' }}
             >
               🎌 Animés & Scans
-            </a>
-
-            <a href="#" onClick={openCalendar} className="cal-btn">
-              <span className="cal-icon">📅</span> Calendrier
             </a>
 
             <a href="#" onClick={openEncyclopedie} style={{

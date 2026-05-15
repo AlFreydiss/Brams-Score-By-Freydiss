@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import GlobalStyles from './components/GlobalStyles.jsx'
 import { ThemeProvider } from './contexts/ThemeContext.jsx'
-import ThemeToggle from './components/ThemeToggle.jsx'
 import Navbar from './components/Navbar.jsx'
 import Hero from './components/Hero.jsx'
 import Ranks from './components/Ranks.jsx'
@@ -19,7 +18,6 @@ import Contact from './components/Contact.jsx'
 import NousSoutenir from './components/NousSoutenir.jsx'
 import ScansPage from './components/ScansPage.jsx'
 import AkainuGame from './components/AkainuGame.jsx'
-import MusicPlayer from './components/MusicPlayer.jsx'
 import AnimeHub from './components/AnimeHub.jsx'
 import TpnPage from './components/TpnPage.jsx'
 import DrStonePage from './components/DrStonePage.jsx'
@@ -31,7 +29,6 @@ import NntPage from './components/NntPage.jsx'
 import SlPage from './components/SlPage.jsx'
 import DbsPage from './components/DbsPage.jsx'
 import BcPage from './components/BcPage.jsx'
-import CalendarPage from './components/CalendarPage.jsx'
 
 export default function App() {
   const [scansOpen,       setScansOpen]       = useState(false)
@@ -47,7 +44,6 @@ export default function App() {
   const [slOpen,          setSlOpen]          = useState(false)
   const [dbsOpen,         setDbsOpen]         = useState(false)
   const [bcOpen,          setBcOpen]          = useState(false)
-  const [calendarOpen,    setCalendarOpen]    = useState(false)
 
   useEffect(() => {
     const fnScans    = () => setScansOpen(true)
@@ -63,7 +59,6 @@ export default function App() {
     const fnSl       = () => setSlOpen(true)
     const fnDbs      = () => setDbsOpen(true)
     const fnBc       = () => setBcOpen(true)
-    const fnCalendar = () => setCalendarOpen(true)
     document.addEventListener('open-scans',        fnScans)
     document.addEventListener('open-encyclopedie', fnEncy)
     document.addEventListener('open-anime-hub',    fnAnimeHub)
@@ -77,7 +72,6 @@ export default function App() {
     document.addEventListener('open-sl',           fnSl)
     document.addEventListener('open-dbs',          fnDbs)
     document.addEventListener('open-bc',           fnBc)
-    document.addEventListener('open-calendar',     fnCalendar)
     return () => {
       document.removeEventListener('open-scans',        fnScans)
       document.removeEventListener('open-encyclopedie', fnEncy)
@@ -92,7 +86,6 @@ export default function App() {
       document.removeEventListener('open-sl',           fnSl)
       document.removeEventListener('open-dbs',          fnDbs)
       document.removeEventListener('open-bc',           fnBc)
-      document.removeEventListener('open-calendar',     fnCalendar)
     }
   }, [])
 
@@ -146,8 +139,6 @@ export default function App() {
       </div>
 
       <AIChatWidget />
-      <MusicPlayer />
-      <ThemeToggle />
       <AkainuGame />
 
       {animeHubOpen && (
@@ -176,7 +167,6 @@ export default function App() {
       {slOpen           && <SlPage          onClose={() => setSlOpen(false)} />}
       {dbsOpen          && <DbsPage         onClose={() => setDbsOpen(false)} />}
       {bcOpen           && <BcPage          onClose={() => setBcOpen(false)} />}
-      {calendarOpen     && <CalendarPage    onClose={() => setCalendarOpen(false)} />}
       {scansOpen        && <ScansPage        onClose={() => setScansOpen(false)} />}
       {encyclopedieOpen && <EncyclopediePage onClose={() => setEncyclopedieOpen(false)} />}
     </ThemeProvider>

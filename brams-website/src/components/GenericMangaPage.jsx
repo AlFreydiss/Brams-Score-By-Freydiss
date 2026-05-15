@@ -108,6 +108,36 @@ function ArcNav({ arcs, color, onJump }) {
   )
 }
 
+function VideoThumbnail({ src, episode, color }) {
+  const [thumb, setThumb] = useState(null)
+  const tried = useRef(false)
+
+  useEffect(() => {
+    if (!src || tried.current) return
+    tried.current = true
+    const v = document.createElement('video')
+    v.preload = 'metadata'
+    v.src = src
+    const extract = () => {
+      const c = document.createElement('canvas')
+      c.width = 320; c.height = 180
+      try { c.getContext('2d').drawImage(v, 0, 0, 320, 180); setThumb(c.toDataURL('image/jpeg', 0.8)) } catch {}
+      v.src = ''
+    }
+    v.addEventListener('loadedmetadata', () => { v.currentTime = 45 }, { once: true })
+    v.addEventListener('seeked', extract, { once: true })
+    v.load()
+  }, [src])
+
+  if (thumb) return <img src={thumb} alt={`Ép.${episode}`} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+  return (
+    <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(135deg, ${color}28 0%, rgba(0,0,0,0.88) 100%)`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+      <span style={{ fontFamily: 'var(--display)', fontWeight: 900, fontSize: 13, letterSpacing: '0.15em', color: `${color}77`, textTransform: 'uppercase' }}>Épisode</span>
+      <span style={{ fontFamily: 'var(--display)', fontWeight: 900, fontSize: 48, color: `${color}99`, lineHeight: 1 }}>{episode}</span>
+    </div>
+  )
+}
+
 function VideoCard({ video, onPlay, color }) {
   const [hovered, setHovered] = useState(false)
   const thumb = video.thumbnail || (video.id ? `https://img.youtube.com/vi/${video.id}/mqdefault.jpg` : null)
@@ -116,18 +146,17 @@ function VideoCard({ video, onPlay, color }) {
       style={{ borderRadius: 16, overflow: 'hidden', background: 'rgba(18,19,22,0.9)', border: `1px solid ${hovered ? color + '55' : 'rgba(255,255,255,0.07)'}`, transition: 'all 0.2s', transform: hovered ? 'translateY(-4px)' : 'translateY(0)', cursor: 'pointer', boxShadow: hovered ? `0 12px 36px ${color}18` : 'none' }}>
       <div style={{ position: 'relative', paddingTop: '56.25%', background: '#0a0b0d', overflow: 'hidden' }}>
         {thumb
-          ? <img src={thumb} alt={video.title} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: hovered ? 0.8 : 0.6, transition: 'opacity 0.2s' }} />
-          : <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(135deg, ${color}22 0%, rgba(0,0,0,0.8) 100%)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <span style={{ fontFamily: 'var(--display)', fontWeight: 900, fontSize: 36, color: `${color}88` }}>EP{video.episode}</span>
-            </div>
+          ? <img src={thumb} alt={video.title} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: hovered ? 0.85 : 0.65, transition: 'opacity 0.2s' }} />
+          : <VideoThumbnail src={video.src} episode={video.episode} color={color} />
         }
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: hovered ? 'rgba(0,0,0,0.3)' : 'transparent', transition: 'background 0.2s' }}>
-          <div style={{ width: 58, height: 58, borderRadius: '50%', background: `${color}cc`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, backdropFilter: 'blur(4px)', transform: hovered ? 'scale(1.1)' : 'scale(1)', transition: 'transform 0.2s' }}>▶</div>
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: hovered ? 'rgba(0,0,0,0.35)' : 'rgba(0,0,0,0.15)', transition: 'background 0.2s' }}>
+          <div style={{ width: 56, height: 56, borderRadius: '50%', background: `${color}cc`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, backdropFilter: 'blur(4px)', transform: hovered ? 'scale(1.12)' : 'scale(1)', transition: 'transform 0.2s', boxShadow: `0 4px 20px ${color}55` }}>▶</div>
         </div>
-        {video.duration && <div style={{ position: 'absolute', bottom: 8, right: 10, fontSize: 11, fontWeight: 700, background: 'rgba(0,0,0,0.75)', borderRadius: 4, padding: '2px 7px', color: '#fff' }}>{video.duration}</div>}
+        {video.duration && <div style={{ position: 'absolute', bottom: 8, right: 10, fontSize: 11, fontWeight: 700, background: 'rgba(0,0,0,0.8)', borderRadius: 4, padding: '2px 7px', color: '#fff' }}>{video.duration}</div>}
       </div>
-      <div style={{ padding: '14px 16px' }}>
-        <div style={{ fontSize: 10, fontWeight: 700, color, letterSpacing: '0.07em', marginBottom: 5 }}>ÉPISODE {video.episode}</div>
+      <div style={{ padding: '12px 16px' }}>
+        {video.arc && <div style={{ fontSize: 9, fontWeight: 700, color: `${color}bb`, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>⬥ {video.arc}</div>}
+        <div style={{ fontSize: 10, fontWeight: 700, color, letterSpacing: '0.07em', marginBottom: 4 }}>ÉPISODE {video.episode}</div>
         <div style={{ fontSize: 14, fontWeight: 700, color: '#fff', lineHeight: 1.3 }}>{video.title}</div>
       </div>
     </div>
@@ -208,7 +237,7 @@ export default function GenericMangaPage({ chaptersData, videosData, color, name
 
   const VIDEOS = videosData
 
-  const [tab,          setTab]          = useState('scans')
+  const [tab,          setTab]          = useState(() => videosData.length > 0 ? 'videos' : 'scans')
   const [reading,      setReading]      = useState(null)
   const [progress,     setProgress]     = useState(() => loadProgress(namespace))
   const [playerIdx,    setPlayerIdx]    = useState(null)

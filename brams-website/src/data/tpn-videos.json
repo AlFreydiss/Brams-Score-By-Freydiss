@@ -1,14 +1,14 @@
 [
-  { "episode": 1,  "title": "Grace Field House", "src": "/anime/Yakusoku no Neverland - MULTi BD 1080p x264 AAC -Fuceo/Yakusoku no Neverland - 01 MULTi BD 1080p x264 AAC -Fuceo.mkv" },
-  { "episode": 2,  "title": "131045",             "src": "/anime/Yakusoku no Neverland - MULTi BD 1080p x264 AAC -Fuceo/Yakusoku no Neverland - 02 MULTi BD 1080p x264 AAC -Fuceo.mkv" },
-  { "episode": 3,  "title": "Destroy",            "src": "/anime/Yakusoku no Neverland - MULTi BD 1080p x264 AAC -Fuceo/Yakusoku no Neverland - 03 MULTi BD 1080p x264 AAC -Fuceo.mkv" },
-  { "episode": 4,  "title": "291045",             "src": "/anime/Yakusoku no Neverland - MULTi BD 1080p x264 AAC -Fuceo/Yakusoku no Neverland - 04 MULTi BD 1080p x264 AAC -Fuceo.mkv" },
-  { "episode": 5,  "title": "301045",             "src": "/anime/Yakusoku no Neverland - MULTi BD 1080p x264 AAC -Fuceo/Yakusoku no Neverland - 05 MULTi BD 1080p x264 AAC -Fuceo.mkv" },
-  { "episode": 6,  "title": "311045",             "src": "/anime/Yakusoku no Neverland - MULTi BD 1080p x264 AAC -Fuceo/Yakusoku no Neverland - 06 MULTi BD 1080p x264 AAC -Fuceo.mkv" },
-  { "episode": 7,  "title": "321045",             "src": "/anime/Yakusoku no Neverland - MULTi BD 1080p x264 AAC -Fuceo/Yakusoku no Neverland - 07 MULTi BD 1080p x264 AAC -Fuceo.mkv" },
-  { "episode": 8,  "title": "021194",             "src": "/anime/Yakusoku no Neverland - MULTi BD 1080p x264 AAC -Fuceo/Yakusoku no Neverland - 08 MULTi BD 1080p x264 AAC -Fuceo.mkv" },
-  { "episode": 9,  "title": "Prompt",             "src": "/anime/Yakusoku no Neverland - MULTi BD 1080p x264 AAC -Fuceo/Yakusoku no Neverland - 09 MULTi BD 1080p x264 AAC -Fuceo.mkv" },
-  { "episode": 10, "title": "130146",             "src": "/anime/Yakusoku no Neverland - MULTi BD 1080p x264 AAC -Fuceo/Yakusoku no Neverland - 10 MULTi BD 1080p x264 AAC -Fuceo.mkv" },
-  { "episode": 11, "title": "200632",             "src": "/anime/Yakusoku no Neverland - MULTi BD 1080p x264 AAC -Fuceo/Yakusoku no Neverland - 11 MULTi BD 1080p x264 AAC -Fuceo.mkv" },
-  { "episode": 12, "title": "150147",             "src": "/anime/Yakusoku no Neverland - MULTi BD 1080p x264 AAC -Fuceo/Yakusoku no Neverland - 12 MULTi BD 1080p x264 AAC -Fuceo.mkv" }
+  { "episode": 1,  "title": "Grace Field House", "arc": "Orphelinat de Grace Field", "src": "/anime/Yakusoku no Neverland - MULTi BD 1080p x264 AAC -Fuceo/Yakusoku no Neverland - 01 MULTi BD 1080p x264 AAC -Fuceo.mkv" },
+  { "episode": 2,  "title": "131045",             "arc": "Orphelinat de Grace Field", "src": "/anime/Yakusoku no Neverland - MULTi BD 1080p x264 AAC -Fuceo/Yakusoku no Neverland - 02 MULTi BD 1080p x264 AAC -Fuceo.mkv" },
+  { "episode": 3,  "title": "Destroy",            "arc": "Orphelinat de Grace Field", "src": "/anime/Yakusoku no Neverland - MULTi BD 1080p x264 AAC -Fuceo/Yakusoku no Neverland - 03 MULTi BD 1080p x264 AAC -Fuceo.mkv" },
+  { "episode": 4,  "title": "291045",             "arc": "Orphelinat de Grace Field", "src": "/anime/Yakusoku no Neverland - MULTi BD 1080p x264 AAC -Fuceo/Yakusoku no Neverland - 04 MULTi BD 1080p x264 AAC -Fuceo.mkv" },
+  { "episode": 5,  "title": "301045",             "arc": "Orphelinat de Grace Field", "src": "/anime/Yakusoku no Neverland - MULTi BD 1080p x264 AAC -Fuceo/Yakusoku no Neverland - 05 MULTi BD 1080p x264 AAC -Fuceo.mkv" },
+  { "episode": 6,  "title": "311045",             "arc": "Évasion",                   "src": "/anime/Yakusoku no Neverland - MULTi BD 1080p x264 AAC -Fuceo/Yakusoku no Neverland - 06 MULTi BD 1080p x264 AAC -Fuceo.mkv" },
+  { "episode": 7,  "title": "321045",             "arc": "Évasion",                   "src": "/anime/Yakusoku no Neverland - MULTi BD 1080p x264 AAC -Fuceo/Yakusoku no Neverland - 07 MULTi BD 1080p x264 AAC -Fuceo.mkv" },
+  { "episode": 8,  "title": "021194",             "arc": "Évasion",                   "src": "/anime/Yakusoku no Neverland - MULTi BD 1080p x264 AAC -Fuceo/Yakusoku no Neverland - 08 MULTi BD 1080p x264 AAC -Fuceo.mkv" },
+  { "episode": 9,  "title": "Prompt",             "arc": "Évasion",                   "src": "/anime/Yakusoku no Neverland - MULTi BD 1080p x264 AAC -Fuceo/Yakusoku no Neverland - 09 MULTi BD 1080p x264 AAC -Fuceo.mkv" },
+  { "episode": 10, "title": "130146",             "arc": "Évasion",                   "src": "/anime/Yakusoku no Neverland - MULTi BD 1080p x264 AAC -Fuceo/Yakusoku no Neverland - 10 MULTi BD 1080p x264 AAC -Fuceo.mkv" },
+  { "episode": 11, "title": "200632",             "arc": "Évasion",                   "src": "/anime/Yakusoku no Neverland - MULTi BD 1080p x264 AAC -Fuceo/Yakusoku no Neverland - 11 MULTi BD 1080p x264 AAC -Fuceo.mkv" },
+  { "episode": 12, "title": "150147",             "arc": "Évasion",                   "src": "/anime/Yakusoku no Neverland - MULTi BD 1080p x264 AAC -Fuceo/Yakusoku no Neverland - 12 MULTi BD 1080p x264 AAC -Fuceo.mkv" }
 ]
