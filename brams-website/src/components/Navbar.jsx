@@ -49,10 +49,10 @@ export default function Navbar() {
       <nav style={{
         position:'fixed', top:0, left:0, right:0, zIndex:200,
         padding:'0 28px',
-        background: scrolled ? 'rgba(17,18,20,.9)' : 'transparent',
-        backdropFilter: scrolled ? 'blur(20px)' : 'none',
-        borderBottom: scrolled ? '1px solid var(--border)' : '1px solid transparent',
-        transition:'all .3s ease',
+        background: scrolled ? 'rgba(14,15,17,.95)' : 'rgba(14,15,17,.6)',
+        backdropFilter: 'blur(20px)',
+        borderBottom: '1px solid rgba(255,255,255,.08)',
+        transition:'background .3s ease',
       }}>
         <div style={{ maxWidth:1120, margin:'0 auto', display:'flex', alignItems:'center', justifyContent:'space-between', height:68 }}>
 
