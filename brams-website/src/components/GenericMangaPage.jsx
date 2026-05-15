@@ -202,7 +202,6 @@ function VideoPlayer({ videos, startIdx, onClose, color }) {
           <video
             key={video.src}
             controls
-            autoPlay
             style={{ maxWidth: '100%', maxHeight: '100%', width: '100%', height: '100%', outline: 'none' }}
           >
             <source src={video.src.split('/').map((seg, i) => i === 0 ? seg : encodeURIComponent(seg)).join('/')} />
