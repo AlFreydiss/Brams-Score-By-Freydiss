@@ -203,7 +203,7 @@ function EventCard({ event, delay }) {
   const countdown = useCountdown(event.date)
   const dt  = new Date(event.date)
   const day = dt.getDate()
-  const mon = dt.toLocaleDateString('fr-FR', { month: 'short' }).toUpperCase().replace('.', '')
+  const mon = dt.toLocaleDateString('fr-FR', { month: 'short' }).replace('.', '')
 
   return (
     <div className="evt-border" style={{ animationDelay: `${delay}s`, animation: `widgetSlide .55s ${delay}s ease-out both` }}>
@@ -282,7 +282,7 @@ export default function CalendarWidget() {
 
         {upcomingEvents.length > 0 && (
           <div>
-            <div style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,.28)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 7, paddingLeft: 2 }}>Prochains events</div>
+            <div style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,.28)', letterSpacing: '.12em', marginBottom: 7, paddingLeft: 2 }}>Prochains events</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
               {upcomingEvents.map((ev, i) => (
                 <EventCard key={ev.id} event={ev} delay={0.44 + i * 0.1} />
@@ -293,7 +293,7 @@ export default function CalendarWidget() {
 
         {latestAnn && (
           <div>
-            <div style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,.28)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 7, paddingLeft: 2 }}>Dernière annonce</div>
+            <div style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,.28)', letterSpacing: '.12em', marginBottom: 7, paddingLeft: 2 }}>Dernière annonce</div>
             <AnnouncementBlock ann={latestAnn} />
           </div>
         )}

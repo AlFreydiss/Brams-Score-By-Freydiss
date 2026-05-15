@@ -31,8 +31,6 @@ import NntPage from './components/NntPage.jsx'
 import SlPage from './components/SlPage.jsx'
 import DbsPage from './components/DbsPage.jsx'
 import BcPage from './components/BcPage.jsx'
-import DiscordFeed from './components/DiscordFeed.jsx'
-import WeeklySchedule from './components/WeeklySchedule.jsx'
 import BlobUploadPage from './components/BlobUploadPage.jsx'
 
 function BgVideo() {
@@ -156,15 +154,6 @@ export default function App() {
       <MusicPlayer />
       <ThemeToggle />
 
-      {/* Right sidebar: schedule + Discord feed — only on wide screens */}
-      <div style={{
-        position: 'fixed', top: '50%', right: 16, transform: 'translateY(-50%)',
-        zIndex: 190, width: 280, display: 'flex', flexDirection: 'column', gap: 10,
-        pointerEvents: 'none',
-      }} className="right-panel">
-        <div style={{ pointerEvents: 'all' }}><WeeklySchedule /></div>
-        <div style={{ pointerEvents: 'all' }}><DiscordFeed /></div>
-      </div>
       <AIChatWidget hidden={scansOpen || encyclopedieOpen || tpnOpen || drstoneOpen || jjkOpen || kingdomOpen || aotOpen || knyOpen || nntOpen || slOpen || dbsOpen || bcOpen} />
       <AkainuGame />
 

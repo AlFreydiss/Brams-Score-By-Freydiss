@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import Particles from './Particles.jsx'
-import CalendarWidget from './CalendarWidget.jsx'
+import UnifiedSidebar from './UnifiedSidebar.jsx'
 import { useMobile } from '../hooks/useMediaQuery.js'
 
 const QUOTES = [
@@ -115,8 +115,8 @@ export default function Hero() {
             </div>
           </div>
 
-          {/* ── Right column — CalendarWidget ── */}
-          <CalendarWidget />
+          {/* ── Right column — UnifiedSidebar ── */}
+          {!isMobile && <UnifiedSidebar />}
 
         </div>
       </div>

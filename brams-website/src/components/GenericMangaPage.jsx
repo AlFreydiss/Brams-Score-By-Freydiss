@@ -117,6 +117,7 @@ function VideoThumbnail({ src, episode, color }) {
     if (!src || tried.current) return
     tried.current = true
     const v = document.createElement('video')
+    v.crossOrigin = 'anonymous'
     v.preload = 'metadata'
     v.src = encodeURI(src)
     const extract = () => {

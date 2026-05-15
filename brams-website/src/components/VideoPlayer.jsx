@@ -269,7 +269,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
             >
               <source
                 src={encSrc(video.src)}
-                type={video.src.toLowerCase().endsWith('.mkv') ? 'video/x-matroska' : 'video/mp4'}
+                type="video/mp4"
               />
               {/* Pistes de sous-titres (lues via TextTrack API, mode hidden) */}
               {hasSubs && video.subtitles.map((sub, i) => (
