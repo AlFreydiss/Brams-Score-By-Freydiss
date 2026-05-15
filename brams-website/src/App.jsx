@@ -34,16 +34,15 @@ import BcPage from './components/BcPage.jsx'
 
 function BgVideo() {
   const [visible, setVisible] = useState(false)
-  useEffect(() => { const t = setTimeout(() => setVisible(true), 2000); return () => clearTimeout(t) }, [])
+  useEffect(() => { const t = setTimeout(() => setVisible(true), 500); return () => clearTimeout(t) }, [])
   return (
     <div style={{ position:'fixed', top:0, left:0, right:0, bottom:0, zIndex:0, overflow:'hidden', pointerEvents:'none', transform:'translateZ(0)' }}>
-      <iframe
-        src="https://www.youtube.com/embed/eBAiYv-OnrI?autoplay=1&mute=1&loop=1&playlist=eBAiYv-OnrI&controls=0&showinfo=0&rel=0&iv_load_policy=3&modestbranding=1&start=25&disablekb=1&fs=0&playsinline=1"
-        style={{ display:'block', position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%) translateZ(0)', width:'max(177.78vh,100vw)', height:'max(56.25vw,100vh)', border:'none', outline:'none', pointerEvents:'none', backfaceVisibility:'hidden', opacity: visible ? 1 : 0, transition:'opacity 1s ease' }}
-        allow="autoplay; encrypted-media"
-        title="bg"
-        frameBorder="0"
-      />
+      <video
+        autoPlay muted loop playsInline
+        style={{ display:'block', position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%) translateZ(0)', width:'max(177.78vh,100vw)', height:'max(56.25vw,100vh)', objectFit:'cover', pointerEvents:'none', backfaceVisibility:'hidden', opacity: visible ? 1 : 0, transition:'opacity 1.2s ease' }}
+      >
+        <source src="/bg-video.mp4" type="video/mp4" />
+      </video>
     </div>
   )
 }
@@ -111,7 +110,7 @@ export default function App() {
     <ThemeProvider>
       <GlobalStyles />
 
-      {/* Fond vidéo YouTube */}
+      {/* Fond vidéo local — One Piece Memories AMV */}
       <BgVideo />
       <div style={{
         position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1,

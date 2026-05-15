@@ -64,7 +64,7 @@ export default function Navbar() {
             <span style={{ fontFamily:'var(--display)', fontWeight:800, fontSize:18, color:'#fff', letterSpacing:'-.01em' }}>Brams</span>
           </button>
 
-          <div className="hide-mobile" style={{ display:'flex', alignItems:'center', gap:4, flex:1, justifyContent:'center' }}>
+          <div className="hide-mobile" style={{ display:'flex', alignItems:'center', gap:4, flex:1, justifyContent:'center', paddingLeft:48, paddingRight:64 }}>
             {NAV_LINKS.map(l => (
               <a key={l.label} href={l.href} style={{
                 padding:'7px 14px', borderRadius:8, fontSize:14, fontWeight:500, color:'var(--muted)',
