@@ -14,9 +14,19 @@ const CHAPTERS = CHAPTERS_DATA.map((ch, i) => ({
 }))
 
 const ARCS = [
-  { name: 'Wano',    range: [909,  1057], emoji: '⛩️', color: '#e17055' },
-  { name: 'Egghead', range: [1058, 1125], emoji: '🤖', color: '#74b9ff' },
-  { name: 'Elbaf',   range: [1127, 1182], emoji: '⚔️', color: '#e0524a', current: true },
+  { name: 'East Blue',              range: [1,    100],  emoji: '⚓', color: '#0984e3' },
+  { name: 'Alabasta',               range: [101,  217],  emoji: '🏜️', color: '#fdcb6e' },
+  { name: 'Skypiea',                range: [218,  302],  emoji: '☁️', color: '#81ecec' },
+  { name: 'Water Seven & Enies',    range: [303,  441],  emoji: '🌊', color: '#74b9ff' },
+  { name: 'Thriller Bark',          range: [442,  489],  emoji: '💀', color: '#6c5ce7' },
+  { name: 'Summit War',             range: [490,  597],  emoji: '🔥', color: '#e17055' },
+  { name: 'Fishman Island',         range: [598,  653],  emoji: '🐟', color: '#00b894' },
+  { name: 'Punk Hazard',            range: [654,  699],  emoji: '☣️', color: '#d63031' },
+  { name: 'Dressrosa',              range: [700,  801],  emoji: '🌹', color: '#e84393' },
+  { name: 'Zou & Whole Cake',       range: [802,  902],  emoji: '🎂', color: '#ff7675' },
+  { name: 'Wano',                   range: [903,  1057], emoji: '⛩️', color: '#e17055' },
+  { name: 'Egghead',                range: [1058, 1126], emoji: '🤖', color: '#74b9ff' },
+  { name: 'Elbaf',                  range: [1127, 9999], emoji: '⚔️', color: '#e0524a', current: true },
 ]
 
 const PER_PAGE = 40
@@ -393,8 +403,8 @@ export default function ScansPage({ onClose }) {
             >← Retour</button>
 
             <div style={{ flex:1, textAlign:'center' }}>
-              <span style={{ fontFamily:'var(--display)', fontWeight:800, fontSize:16, color:'#fff' }}>📖 Arc Elbaf</span>
-              <span style={{ fontSize:12, color:'var(--muted)', marginLeft:10 }}>Ch.1127–1182</span>
+              <span style={{ fontFamily:'var(--display)', fontWeight:800, fontSize:16, color:'#fff' }}>🏴‍☠️ One Piece</span>
+              <span style={{ fontSize:12, color:'var(--muted)', marginLeft:10 }}>Ch.1–{CHAPTERS[CHAPTERS.length - 1]?.num ?? '?'}</span>
               <span style={{ fontSize:12, color:'#34d399', marginLeft:10, fontWeight:700 }}>{readCount}/{CHAPTERS.length} lus</span>
             </div>
 
