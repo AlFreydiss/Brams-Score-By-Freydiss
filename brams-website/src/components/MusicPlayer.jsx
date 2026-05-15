@@ -12,8 +12,7 @@ export default function MusicPlayer() {
 
   useEffect(() => {
     let destroyed = false
-    let autoTimer = null
-
+  
     const init = () => {
       if (destroyed || !document.getElementById(PLAYER_DIV_ID)) return
       playerRef.current = new window.YT.Player(PLAYER_DIV_ID, {
@@ -29,12 +28,14 @@ export default function MusicPlayer() {
             if (destroyed) return
             e.target.playVideo()
             setReady(true)
-            autoTimer = setTimeout(() => {
-              if (destroyed) return
+          },
+          onStateChange: e => {
+            if (destroyed) return
+            if (e.data === 1) { // PLAYING
               try { e.target.unMute(); e.target.setVolume(25) } catch {}
               setMuted(false)
               setVolume(25)
-            }, 2500)
+            }
           },
           onError: () => {},
         },
