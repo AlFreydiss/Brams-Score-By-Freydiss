@@ -33,6 +33,7 @@ import DbsPage from './components/DbsPage.jsx'
 import BcPage from './components/BcPage.jsx'
 import DiscordFeed from './components/DiscordFeed.jsx'
 import WeeklySchedule from './components/WeeklySchedule.jsx'
+import BlobUploadPage from './components/BlobUploadPage.jsx'
 
 function BgVideo() {
   const [visible, setVisible] = useState(false)
@@ -74,6 +75,7 @@ export default function App() {
   const [slOpen,          setSlOpen]          = useState(false)
   const [dbsOpen,         setDbsOpen]         = useState(false)
   const [bcOpen,          setBcOpen]          = useState(false)
+  const [uploadOpen,      setUploadOpen]      = useState(false)
 
   useEffect(() => {
     const fnScans    = () => setScansOpen(true)
@@ -89,6 +91,7 @@ export default function App() {
     const fnSl       = () => setSlOpen(true)
     const fnDbs      = () => setDbsOpen(true)
     const fnBc       = () => setBcOpen(true)
+    const fnUpload   = () => setUploadOpen(true)
     document.addEventListener('open-scans',        fnScans)
     document.addEventListener('open-encyclopedie', fnEncy)
     document.addEventListener('open-anime-hub',    fnAnimeHub)
@@ -102,6 +105,7 @@ export default function App() {
     document.addEventListener('open-sl',           fnSl)
     document.addEventListener('open-dbs',          fnDbs)
     document.addEventListener('open-bc',           fnBc)
+    document.addEventListener('open-upload',       fnUpload)
     return () => {
       document.removeEventListener('open-scans',        fnScans)
       document.removeEventListener('open-encyclopedie', fnEncy)
@@ -116,6 +120,7 @@ export default function App() {
       document.removeEventListener('open-sl',           fnSl)
       document.removeEventListener('open-dbs',          fnDbs)
       document.removeEventListener('open-bc',           fnBc)
+      document.removeEventListener('open-upload',       fnUpload)
     }
   }, [])
 
@@ -191,6 +196,22 @@ export default function App() {
       {bcOpen           && <BcPage          onClose={() => setBcOpen(false)} />}
       {scansOpen        && <ScansPage        onClose={() => setScansOpen(false)} />}
       {encyclopedieOpen && <EncyclopediePage onClose={() => setEncyclopedieOpen(false)} />}
+      {uploadOpen       && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 9999,
+          background: '#0b0c0e', overflowY: 'auto',
+        }}>
+          <button
+            onClick={() => setUploadOpen(false)}
+            style={{
+              position: 'fixed', top: 16, right: 16, zIndex: 10000,
+              background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8,
+              color: '#fff', padding: '8px 16px', cursor: 'pointer', fontSize: 14,
+            }}
+          >✕ Fermer</button>
+          <BlobUploadPage />
+        </div>
+      )}
     </ThemeProvider>
   )
 }
