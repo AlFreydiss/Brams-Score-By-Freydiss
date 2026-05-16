@@ -39,16 +39,16 @@ const EVENTS = [
 
 // ─── Schedule data ────────────────────────────────────────────────────────────
 const DAYS = [
-  { day: 'Lun', name: 'undercover',    rank: 'Yonkou',      people: 10, time: '22h30', tag: 'select',  tagColor: '#e0524a' },
+  { day: 'Lun', name: 'Undercover',    rank: 'Yonkou',       people: 10, time: '22h30', tag: 'select',  tagColor: '#e0524a' },
   { day: 'Mar', name: 'quitte la voc', rank: 'Pirate',      people: 50, time: '22h30', tag: null,       tagColor: null      },
-  { day: 'Mer', name: 'passe ou pas',  rank: 'Hichiboukai', people: 15, time: '22h30', tag: null,       tagColor: null      },
+  { day: 'Mer', name: 'passe ou pas',  rank: 'Shichibukai', people: 15, time: '22h30', tag: null,       tagColor: null      },
   { day: 'Jeu', name: 'quitte la voc', rank: 'Pirate',      people: 50, time: '22h30', tag: null,       tagColor: null      },
-  { day: 'Ven', name: 'alphabets',     rank: 'Hichiboukai', people: 15, time: '22h30', tag: null,       tagColor: null      },
+  { day: 'Ven', name: 'alphabets',     rank: 'Shichibukai', people: 15, time: '22h30', tag: null,       tagColor: null      },
   { day: 'Sam', name: 'quitte la voc', rank: 'Pirate',      people: 50, time: '22h30', tag: 'stream',  tagColor: '#9147ff' },
   { day: 'Dim', name: 'quitte la voc', rank: 'Pirate',      people: 50, time: '22h30', tag: null,       tagColor: null      },
 ]
 
-const RANK_COLORS = { Yonkou: '#e0524a', Hichiboukai: '#a29bfe', Pirate: '#74b9ff' }
+const RANK_COLORS = { Yonkou: '#e0524a', Shichibukai: '#a29bfe', Pirate: '#74b9ff' }
 const TODAY_IDX = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1
 
 // ─── Utils ────────────────────────────────────────────────────────────────────
