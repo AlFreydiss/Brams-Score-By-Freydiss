@@ -18,3 +18,11 @@ export async function fetchMembersByRank(minH, maxH = 99999) {
   if (error) { console.error('[members_by_rank]', error); return null }
   return data
 }
+
+export async function fetchStats() {
+  if (!supabase) return null
+  const { data, error } = await supabase.rpc('top_classement', { p_limit: 200 })
+  if (error || !data) return null
+  const active = data.filter(m => (parseFloat(m.vocal_h) || 0) >= 1).length
+  return { membersTracked: data.length, activeVocal: active }
+}
