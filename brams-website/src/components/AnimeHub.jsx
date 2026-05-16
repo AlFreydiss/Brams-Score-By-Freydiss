@@ -8,6 +8,7 @@ const ANIMES = [
     emoji: '🏴‍☠️',
     color: '#e0524a',
     colorDark: '#7a1f1a',
+    coverImage: null,
     genres: ['Aventure', 'Action', 'Shōnen'],
     description: "Monkey D. Luffy et son équipage sillonnent les mers à la recherche du légendaire trésor « One Piece » pour devenir Roi des Pirates.",
     stats: [
@@ -26,14 +27,15 @@ const ANIMES = [
     emoji: '🌿',
     color: '#6c5ce7',
     colorDark: '#2d1b8e',
+    coverImage: 'https://a.storyblok.com/f/178900/678x960/b998a75a12/30b71f52a3fcad111ddf2f84aab4dad91631262181_main.jpg/m/filters:quality(95)format(webp)',
     genres: ['Thriller', 'Mystère', 'Shōnen'],
     description: "Emma, Norman et Ray vivent dans un orphelinat idyllique… jusqu'au jour où ils découvrent une vérité qui brise tout.",
     stats: [
       { label: 'Chapitres', value: '184' },
-      { label: 'Épisodes', value: '0' },
+      { label: 'Épisodes', value: '12' },
       { label: 'Statut', value: 'Disponible' },
     ],
-    action: '🌿 Accéder',
+    action: '▶ Accéder',
     badge: 'NOUVEAU',
     badgeColor: '#6c5ce7',
   },
@@ -44,14 +46,15 @@ const ANIMES = [
     emoji: '⚗️',
     color: '#00b894',
     colorDark: '#005c45',
+    coverImage: 'https://images.squarespace-cdn.com/content/v1/5e90e8679180dd053f86571c/1607648759877-XA0OOQUYTHR5DPVRJY0K/keyvisual_notext.jpg',
     genres: ['Science-fiction', 'Aventure', 'Shōnen'],
     description: "Toute l'humanité est pétrifiée. Des millénaires plus tard, le génie Senku se réveille et décide de reconstruire la civilisation grâce à la science.",
     stats: [
       { label: 'Chapitres', value: '174' },
-      { label: 'Épisodes', value: '0' },
+      { label: 'Épisodes', value: '35' },
       { label: 'Statut', value: 'Disponible' },
     ],
-    action: '⚗️ Accéder',
+    action: '▶ Accéder',
     badge: 'NOUVEAU',
     badgeColor: '#00b894',
   },
@@ -62,14 +65,15 @@ const ANIMES = [
     emoji: '⚡',
     color: '#c62828',
     colorDark: '#5a0a0a',
+    coverImage: 'https://d28hgpri8am2if.cloudfront.net/book_images/onix/cvr9781974740819/jujutsu-kaisen-the-official-anime-guide-season-1-9781974740819_lg.jpg',
     genres: ['Action', 'Surnaturel', 'Shōnen'],
     description: "Yuji Itadori avale un doigt de Ryomen Sukuna, le roi des Fléaux. Condamné à mort, il rejoint l'École de sorcellerie de Jujutsu pour trouver les doigts restants.",
     stats: [
       { label: 'Chapitres', value: '263' },
-      { label: 'Épisodes', value: '0' },
+      { label: 'Épisodes', value: '48' },
       { label: 'Statut', value: 'Disponible' },
     ],
-    action: '⚡ Accéder',
+    action: '▶ Accéder',
     badge: 'NOUVEAU',
     badgeColor: '#c62828',
   },
@@ -80,6 +84,7 @@ const ANIMES = [
     emoji: '⚔️',
     color: '#c9a227',
     colorDark: '#4a3205',
+    coverImage: 'https://www.manga-news.com/public/images/dvd/Kingdom-anime-saison-3-visual-1.webp',
     genres: ['Action', 'Historique', 'Seinen'],
     description: "Dans la Chine des Royaumes Combattants, Shin, un orphelin de guerre, rêve de devenir le plus grand général sous les cieux aux côtés du futur roi Ying Zheng.",
     stats: [
@@ -87,7 +92,7 @@ const ANIMES = [
       { label: 'Épisodes', value: '0' },
       { label: 'Statut', value: 'Disponible' },
     ],
-    action: '⚔️ Accéder',
+    action: '▶ Accéder',
     badge: 'NOUVEAU',
     badgeColor: '#c9a227',
   },
@@ -98,14 +103,15 @@ const ANIMES = [
     emoji: '🗡️',
     color: '#546e7a',
     colorDark: '#1c313a',
+    coverImage: 'https://www.manga-news.com/public/images/dvd/Attaque-des-Titans-s4-anime-visual.jpg',
     genres: ['Action', 'Drame', 'Shōnen'],
     description: "Eren Yeager découvre que les murs qui protègent l'humanité cachent un secret bien plus sombre que les Titans eux-mêmes.",
     stats: [
       { label: 'Chapitres', value: '81' },
-      { label: 'Épisodes', value: '0' },
+      { label: 'Épisodes', value: '87' },
       { label: 'Statut', value: 'Disponible' },
     ],
-    action: '🗡️ Accéder',
+    action: '▶ Accéder',
     badge: 'NOUVEAU',
     badgeColor: '#546e7a',
   },
@@ -116,14 +122,15 @@ const ANIMES = [
     emoji: '🔥',
     color: '#e85d27',
     colorDark: '#6b1f05',
+    coverImage: 'https://storage.ghost.io/c/2b/7f/2b7f69fc-a243-4d2f-ae8e-db8312c6653a/content/images/size/w1200/2025/10/Demon-Slayer-en-421-c-1.png',
     genres: ['Action', 'Surnaturel', 'Shōnen'],
     description: "Tanjiro Kamado devient chasseur de démons après que sa famille est massacrée et sa sœur Nezuko transformée en démon.",
     stats: [
       { label: 'Chapitres', value: '206' },
-      { label: 'Épisodes', value: '0' },
+      { label: 'Épisodes', value: '44' },
       { label: 'Statut', value: 'Disponible' },
     ],
-    action: '🔥 Accéder',
+    action: '▶ Accéder',
     badge: 'NOUVEAU',
     badgeColor: '#e85d27',
   },
@@ -134,14 +141,15 @@ const ANIMES = [
     emoji: '🐗',
     color: '#8e44ad',
     colorDark: '#3d0f5a',
+    coverImage: 'https://static.wikia.nocookie.net/nanatsu-no-taizai/images/2/25/Nanatsu_no_Taizai_Anime_Fourth_Season_Poster.png/revision/latest?cb=20200805045531',
     genres: ['Action', 'Fantasy', 'Shōnen'],
     description: "La princesse Elizabeth part à la recherche des Sept Péchés Capitaux, des chevaliers légendaires bannis du royaume, pour sauver Britannia.",
     stats: [
       { label: 'Chapitres', value: '342' },
-      { label: 'Épisodes', value: '0' },
+      { label: 'Épisodes', value: '100' },
       { label: 'Statut', value: 'Disponible' },
     ],
-    action: '🐗 Accéder',
+    action: '▶ Accéder',
     badge: 'NOUVEAU',
     badgeColor: '#8e44ad',
   },
@@ -152,14 +160,15 @@ const ANIMES = [
     emoji: '💎',
     color: '#1976d2',
     colorDark: '#0a2e5c',
+    coverImage: 'https://i.pinimg.com/736x/e3/9c/56/e39c564360a91e48edcd430355ee68ce.jpg',
     genres: ['Action', 'Fantasy', 'Manhwa'],
     description: "Sung Jinwoo, le chasseur le plus faible du monde, se retrouve piégé dans un donjon mortel et reçoit un mystérieux système qui lui permet de monter de rang à l'infini.",
     stats: [
       { label: 'Chapitres', value: '202' },
-      { label: 'Épisodes', value: '0' },
+      { label: 'Épisodes', value: '12' },
       { label: 'Statut', value: 'Disponible' },
     ],
-    action: '💎 Accéder',
+    action: '▶ Accéder',
     badge: 'NOUVEAU',
     badgeColor: '#1976d2',
   },
@@ -170,14 +179,15 @@ const ANIMES = [
     emoji: '🐉',
     color: '#f57f17',
     colorDark: '#5c2e00',
+    coverImage: null,
     genres: ['Action', 'Science-fiction', 'Shōnen'],
     description: "Après la défaite de Majin Buu, Goku continue à repousser ses limites en affrontant des adversaires venus d'autres univers.",
     stats: [
       { label: 'Chapitres', value: '101' },
-      { label: 'Épisodes', value: '0' },
+      { label: 'Épisodes', value: '131' },
       { label: 'Statut', value: 'Disponible' },
     ],
-    action: '🐉 Accéder',
+    action: '▶ Accéder',
     badge: 'NOUVEAU',
     badgeColor: '#f57f17',
   },
@@ -188,14 +198,15 @@ const ANIMES = [
     emoji: '🍀',
     color: '#388e3c',
     colorDark: '#0a3d0c',
+    coverImage: 'https://img2.hulu.com/user/v3/artwork/f6451467-97a8-4ddf-9ae8-e9e4cbb53fc8?base_image_bucket_name=image_manager&base_image=bc1a1c50-6786-4cf7-ae75-75de958b64e1&size=458x687&format=webp',
     genres: ['Action', 'Fantasy', 'Shōnen'],
     description: "Asta, né sans magie dans un monde où tout le monde en a, rêve de devenir Sorcier Empereur grâce à sa ténacité et à son grimoire à cinq feuilles.",
     stats: [
       { label: 'Chapitres', value: '280' },
-      { label: 'Épisodes', value: '0' },
+      { label: 'Épisodes', value: '170' },
       { label: 'Statut', value: 'Disponible' },
     ],
-    action: '🍀 Accéder',
+    action: '▶ Accéder',
     badge: 'NOUVEAU',
     badgeColor: '#388e3c',
   },
@@ -219,23 +230,44 @@ function AnimeCard({ anime, onClick }) {
         cursor: 'pointer',
       }}
     >
-      {/* Banner gradient */}
+      {/* Banner — cover art ou gradient fallback */}
       <div style={{
-        height: 210, position: 'relative', overflow: 'hidden',
+        height: 250, position: 'relative', overflow: 'hidden',
         background: `linear-gradient(135deg, ${anime.color}dd 0%, ${anime.colorDark} 100%)`,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>
-        <div style={{ position: 'absolute', top: -50, right: -50, width: 220, height: 220, borderRadius: '50%', background: `${anime.color}28`, pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', bottom: -40, left: -40, width: 160, height: 160, borderRadius: '50%', background: 'rgba(0,0,0,0.25)', pointerEvents: 'none' }} />
+        {anime.coverImage ? (
+          <img
+            src={anime.coverImage}
+            alt={anime.title}
+            style={{
+              position: 'absolute', inset: 0, width: '100%', height: '100%',
+              objectFit: 'cover', objectPosition: 'top center',
+              opacity: hovered ? 1 : 0.88,
+              transition: 'opacity 0.25s ease, transform 0.35s ease',
+              transform: hovered ? 'scale(1.04)' : 'scale(1)',
+            }}
+          />
+        ) : (
+          <div style={{ fontSize: 88, filter: 'drop-shadow(0 6px 16px rgba(0,0,0,0.5))', position: 'relative', zIndex: 1, transition: 'transform 0.25s ease', transform: hovered ? 'scale(1.08)' : 'scale(1)' }}>
+            {anime.emoji}
+          </div>
+        )}
+
+        {/* Gradient overlay bottom pour lisibilité */}
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.05) 40%, rgba(0,0,0,0.55) 100%)', pointerEvents: 'none', zIndex: 1 }} />
 
         {/* Badge */}
-        <div style={{ position: 'absolute', top: 16, right: 16, fontSize: 10, fontWeight: 800, letterSpacing: '0.1em', background: `${anime.badgeColor}22`, color: anime.badgeColor, border: `1px solid ${anime.badgeColor}44`, borderRadius: 100, padding: '3px 10px' }}>
+        <div style={{ position: 'absolute', top: 12, right: 12, fontSize: 10, fontWeight: 800, letterSpacing: '0.1em', background: `${anime.badgeColor}cc`, color: '#fff', borderRadius: 100, padding: '3px 10px', zIndex: 2, backdropFilter: 'blur(6px)' }}>
           {anime.badge}
         </div>
 
-        <div style={{ fontSize: 88, filter: 'drop-shadow(0 6px 16px rgba(0,0,0,0.5))', position: 'relative', zIndex: 1, transition: 'transform 0.25s ease', transform: hovered ? 'scale(1.08)' : 'scale(1)' }}>
-          {anime.emoji}
-        </div>
+        {/* Titre en bas du banner sur les covers */}
+        {anime.coverImage && (
+          <div style={{ position: 'absolute', bottom: 14, left: 16, zIndex: 2 }}>
+            <div style={{ fontSize: 11, fontWeight: 800, color: anime.color, letterSpacing: '0.06em', textShadow: '0 1px 8px rgba(0,0,0,0.9)' }}>{anime.subtitle}</div>
+          </div>
+        )}
       </div>
 
       {/* Info */}
