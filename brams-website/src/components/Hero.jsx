@@ -16,34 +16,61 @@ const QUOTES = [
   { text: "Je vis selon mes propres règles. C'est ça la vraie liberté.", author: "Eustass Kid" },
 ]
 
-function useCountUp(target, duration = 1400) {
-  const [val, setVal] = useState(0)
-  const started = useRef(false)
+function StatBlock({ value, label }) {
+  const ref = useRef(null)
+  const [active, setActive] = useState(false)
+  const [display, setDisplay] = useState('0')
+  const isStatic = value.includes('/')
+
   useEffect(() => {
-    if (started.current) return
-    started.current = true
-    const num = parseInt(target.replace(/\D/g, ''))
-    const suffix = target.replace(/[\d]/g, '')
-    if (isNaN(num)) { setVal(target); return }
-    const start = performance.now()
-    const tick = (now) => {
-      const p = Math.min((now - start) / duration, 1)
-      const ease = 1 - Math.pow(1 - p, 3)
-      setVal(Math.floor(ease * num) + suffix)
+    const el = ref.current
+    if (!el) return
+    const obs = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) { setActive(true); obs.disconnect() } },
+      { threshold: 0.4 }
+    )
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [])
+
+  useEffect(() => {
+    if (!active) return
+    if (isStatic) { setDisplay(value); return }
+    const num = parseInt(value.replace(/\D/g, ''))
+    const suffix = value.replace(/\d/g, '')
+    const duration = 1600
+    let startTs = null
+    const tick = (ts) => {
+      if (!startTs) startTs = ts
+      const p = Math.min((ts - startTs) / duration, 1)
+      const eased = 1 - Math.pow(1 - p, 3)
+      const cur = Math.floor(eased * num)
+      const fmt = cur >= 1000
+        ? Math.floor(cur / 1000) + ' ' + String(cur % 1000).padStart(3, '0')
+        : String(cur)
+      setDisplay(fmt + suffix)
       if (p < 1) requestAnimationFrame(tick)
-      else setVal(target)
+      else setDisplay(value)
     }
     requestAnimationFrame(tick)
-  }, [target, duration])
-  return val || target
-}
+  }, [active, value, isStatic])
 
-function StatBlock({ value, label }) {
-  const v = useCountUp(value)
   return (
-    <div style={{ textAlign: 'center' }}>
-      <div style={{ fontFamily: 'var(--pirate)', fontSize: 30, color: '#fff', lineHeight: 1, letterSpacing: '.02em' }}>{v}</div>
-      <div style={{ fontSize: 11, color: 'rgba(255,255,255,.35)', marginTop: 6, textTransform: 'uppercase', letterSpacing: '.12em' }}>{label}</div>
+    <div ref={ref} style={{ textAlign: 'center' }}>
+      <div style={{ position: 'relative', display: 'inline-block' }}>
+        <div style={{ fontFamily: 'var(--pirate)', fontSize: 32, color: '#fff', lineHeight: 1, letterSpacing: '.02em' }}>
+          {active ? display : value}
+        </div>
+        <div style={{
+          position: 'absolute', bottom: -5, left: 0, right: 0, height: 2,
+          background: 'linear-gradient(90deg, var(--accent), #ff8a80)',
+          borderRadius: 2,
+          transform: active ? 'scaleX(1)' : 'scaleX(0)',
+          transformOrigin: 'left',
+          transition: 'transform 0.9s 0.3s cubic-bezier(0.22,1,0.36,1)',
+        }} />
+      </div>
+      <div style={{ fontSize: 11, color: 'rgba(255,255,255,.35)', marginTop: 10, textTransform: 'uppercase', letterSpacing: '.12em' }}>{label}</div>
     </div>
   )
 }
@@ -78,8 +105,8 @@ export default function Hero() {
       <div className="dot-bg" style={{ position: 'absolute', inset: 0, opacity: .4, pointerEvents: 'none' }} />
       <Particles />
 
-      {['8%', '22%', '68%', '82%', '45%'].map((left, i) => (
-        <div key={i} style={{ position: 'absolute', left, top: `${15 + i * 15}%`, fontSize: 14 + i * 4, opacity: 0.03 + i * 0.01, pointerEvents: 'none', userSelect: 'none', animation: `float ${7 + i * 2}s ease-in-out ${i}s infinite` }}>🏴‍☠️</div>
+      {[['5%','55%'],['88%','48%'],['70%','72%'],['15%','80%'],['50%','88%']].map(([left, top], i) => (
+        <div key={i} style={{ position: 'absolute', left, top, fontSize: 14 + i * 4, opacity: 0.025, pointerEvents: 'none', userSelect: 'none', animation: `float ${8 + i * 2}s ease-in-out ${i}s infinite` }}>🏴‍☠️</div>
       ))}
 
       <div className="container" style={{ position: 'relative', zIndex: 1, width: '100%' }}>

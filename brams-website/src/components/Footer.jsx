@@ -30,7 +30,7 @@ export default function Footer() {
         </div>
 
         <span style={{ fontSize:11, color:'rgba(255,255,255,.2)', letterSpacing:'.04em' }}>
-          Made by <strong style={{ color:'rgba(255,255,255,.4)' }}>Freydiss</strong> · © 2025
+          Made by <strong style={{ color:'rgba(255,255,255,.4)' }}>Freydiss</strong> · © {new Date().getFullYear()}
         </span>
       </div>
     </footer>

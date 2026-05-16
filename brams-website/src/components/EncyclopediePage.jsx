@@ -583,12 +583,12 @@ function TheoriesSection() {
   )
 }
 
-function EncyclopediaHero({ search, setSearch, searchRef }) {
+function EncyclopediaHero({ search, setSearch, searchRef, onRandom }) {
   const fruits = useCountUp(FRUITS.length, 1400, 300)
   const arcs   = useCountUp(ARCS.length, 1200, 400)
   const chars  = useCountUp(Object.values(CHARACTERS).flat().length, 1600, 350)
   return (
-    <div style={{ minHeight: '75vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden', padding: '60px 24px 48px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden', padding: '36px 24px 36px' }}>
       <div style={{ position: 'absolute', top: '10%', left: '8%', width: 340, height: 340, borderRadius: '50%', background: 'radial-gradient(circle, rgba(224,82,74,0.10) 0%, transparent 70%)', pointerEvents: 'none', animation: 'drift 18s ease-in-out infinite' }} />
       <div style={{ position: 'absolute', bottom: '5%', right: '6%', width: 280, height: 280, borderRadius: '50%', background: 'radial-gradient(circle, rgba(162,155,254,0.08) 0%, transparent 70%)', pointerEvents: 'none', animation: 'drift 24s 4s ease-in-out infinite reverse' }} />
       <div style={{ fontSize: 10, letterSpacing: '0.35em', fontWeight: 800, color: '#e0524a', marginBottom: 22, textTransform: 'uppercase', animation: 'fadeUp 0.6s ease both' }}>One Piece • Univers Étendu</div>
@@ -605,15 +605,20 @@ function EncyclopediaHero({ search, setSearch, searchRef }) {
         <div style={{ width: 1, background: 'rgba(255,255,255,0.08)', alignSelf: 'center', height: 40 }} />
         <StatPill value={arcs} label="Arcs" color="#fdcb6e" />
       </div>
-      <div style={{ width: '100%', maxWidth: 560, position: 'relative', animation: 'fadeUp 0.75s 0.4s ease both' }}>
-        <span style={{ position: 'absolute', left: 18, top: '50%', transform: 'translateY(-50%)', fontSize: 18, color: 'rgba(255,255,255,0.3)', pointerEvents: 'none' }}>🔍</span>
-        <input ref={searchRef} type="text" placeholder="Chercher un fruit, un utilisateur, un pouvoir…" value={search} onChange={e => setSearch(e.target.value)}
-          style={{ width: '100%', paddingLeft: 50, paddingRight: 20, height: 54, background: 'rgba(255,255,255,0.06)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 16, color: '#fff', fontSize: 15, outline: 'none', fontFamily: 'var(--body)', boxSizing: 'border-box', boxShadow: '0 8px 32px rgba(0,0,0,0.2)', transition: 'border-color 0.2s, box-shadow 0.2s' }}
-          onFocus={e => { e.currentTarget.style.borderColor = 'rgba(224,82,74,0.5)'; e.currentTarget.style.boxShadow = '0 8px 32px rgba(224,82,74,0.15)' }}
-          onBlur={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'; e.currentTarget.style.boxShadow = '0 8px 32px rgba(0,0,0,0.2)' }}
-        />
+      <div style={{ width: '100%', maxWidth: 620, display: 'flex', gap: 10, animation: 'fadeUp 0.75s 0.4s ease both' }}>
+        <div style={{ flex: 1, position: 'relative' }}>
+          <span style={{ position: 'absolute', left: 18, top: '50%', transform: 'translateY(-50%)', fontSize: 18, color: 'rgba(255,255,255,0.3)', pointerEvents: 'none' }}>🔍</span>
+          <input ref={searchRef} type="text" placeholder="Chercher un fruit, un utilisateur, un pouvoir…" value={search} onChange={e => setSearch(e.target.value)}
+            style={{ width: '100%', paddingLeft: 50, paddingRight: 20, height: 50, background: 'rgba(255,255,255,0.06)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 14, color: '#fff', fontSize: 15, outline: 'none', fontFamily: 'var(--body)', boxSizing: 'border-box', boxShadow: '0 8px 32px rgba(0,0,0,0.2)', transition: 'border-color 0.2s, box-shadow 0.2s' }}
+            onFocus={e => { e.currentTarget.style.borderColor = 'rgba(224,82,74,0.5)'; e.currentTarget.style.boxShadow = '0 8px 32px rgba(224,82,74,0.15)' }}
+            onBlur={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'; e.currentTarget.style.boxShadow = '0 8px 32px rgba(0,0,0,0.2)' }}
+          />
+        </div>
+        <button onClick={onRandom} title="Découverte aléatoire" style={{ height: 50, padding: '0 18px', borderRadius: 14, border: '1px solid rgba(224,82,74,0.35)', background: 'rgba(224,82,74,0.12)', color: '#e0524a', fontSize: 20, cursor: 'pointer', flexShrink: 0, transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, fontSize: 13 }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(224,82,74,0.25)'; e.currentTarget.style.borderColor = 'rgba(224,82,74,0.6)' }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(224,82,74,0.12)'; e.currentTarget.style.borderColor = 'rgba(224,82,74,0.35)' }}
+        >🎲 Aléatoire</button>
       </div>
-      <div style={{ marginTop: 40, fontSize: 12, color: 'rgba(255,255,255,0.3)', animation: 'float 2.5s ease-in-out infinite', letterSpacing: '0.05em' }}>↓ Découvrir</div>
     </div>
   )
 }
@@ -643,6 +648,8 @@ const TABS = [
   { id: 'theories',     label: '💡 Théories',       count: THEORIES.length },
 ]
 
+const RANDOM_TABS = ['fruits', 'personnages', 'arcs', 'haki', 'mysteres', 'theories']
+
 export default function EncyclopediePage({ onClose }) {
   const [tab, setTab] = useState('fruits')
   const [filter, setFilter] = useState('Tous')
@@ -651,6 +658,13 @@ export default function EncyclopediePage({ onClose }) {
   const [arcSaga, setArcSaga] = useState('Tous')
   const searchRef = useRef(null)
   const types = ['Tous', 'Paramecia', 'Logia', 'Zoan']
+
+  const handleRandom = useCallback(() => {
+    const randomTab = RANDOM_TABS[Math.floor(Math.random() * RANDOM_TABS.length)]
+    setTab(randomTab)
+    setSearch('')
+    setFilter('Tous')
+  }, [])
 
   const filtered = useMemo(() => {
     let result = FRUITS
@@ -721,7 +735,7 @@ export default function EncyclopediePage({ onClose }) {
           {/* ── FRUITS ── */}
           {tab === 'fruits' && (
             <>
-              <EncyclopediaHero search={search} setSearch={setSearch} searchRef={searchRef} />
+              <EncyclopediaHero search={search} setSearch={setSearch} searchRef={searchRef} onRandom={handleRandom} />
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center', padding: '0 20px 28px' }}>
                 {types.map(t => {
                   const active = filter === t
