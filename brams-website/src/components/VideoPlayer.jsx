@@ -127,37 +127,40 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
 
   useEffect(() => { showControls() }, [playing])
 
-  // ── Sous-titres — lecture manuelle des TextTrack ──────────────────────────
+  // ── Sous-titres — polling RAF sur activeCues ────────────────────────────
   useEffect(() => {
     const v = videoRef.current
     if (!v || !hasSubs) { setCueText(''); return }
 
-    let cueCleanup = null
+    let rafId = null
+    let activeTrack = null
 
-    const attachTrack = () => {
-      cueCleanup?.()
-      cueCleanup = null
+    const setupTrack = () => {
       const tracks = v.textTracks
-      const wantTrack = !subsOff && subIdx < tracks.length
+      const want = !subsOff && subIdx < tracks.length
       for (let i = 0; i < tracks.length; i++) {
-        tracks[i].mode = wantTrack && i === subIdx ? 'hidden' : 'disabled'
+        tracks[i].mode = want && i === subIdx ? 'hidden' : 'disabled'
       }
-      if (!wantTrack) { setCueText(''); return }
-      const track = tracks[subIdx]
-      const onCue = () => {
-        const cues = track.activeCues
-        setCueText(cues && cues.length ? Array.from(cues).map(c => c.text).join('\n') : '')
-      }
-      track.addEventListener('cuechange', onCue)
-      cueCleanup = () => track.removeEventListener('cuechange', onCue)
+      activeTrack = want ? tracks[subIdx] : null
+      if (!want) setCueText('')
     }
 
-    attachTrack()
-    v.textTracks.addEventListener('addtrack', attachTrack)
+    const tick = () => {
+      if (activeTrack) {
+        const cues = activeTrack.activeCues
+        const text = cues && cues.length ? Array.from(cues).map(c => c.text).join('\n') : ''
+        setCueText(prev => prev === text ? prev : text)
+      }
+      rafId = requestAnimationFrame(tick)
+    }
+
+    setupTrack()
+    v.textTracks.addEventListener('addtrack', setupTrack)
+    rafId = requestAnimationFrame(tick)
 
     return () => {
-      v.textTracks.removeEventListener('addtrack', attachTrack)
-      cueCleanup?.()
+      cancelAnimationFrame(rafId)
+      v.textTracks.removeEventListener('addtrack', setupTrack)
       setCueText('')
     }
   }, [subIdx, subsOff, hasSubs, idx])
