@@ -132,21 +132,34 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
     const v = videoRef.current
     if (!v || !hasSubs) { setCueText(''); return }
 
-    const tracks = v.textTracks
-    // Désactiver toutes les pistes (on rend manuellement)
-    for (let i = 0; i < tracks.length; i++) tracks[i].mode = 'hidden'
+    let cueCleanup = null
 
-    if (subsOff || !tracks[subIdx]) { setCueText(''); return }
-
-    const track = tracks[subIdx]
-    track.mode = 'hidden'
-
-    const onCue = () => {
-      const cues = track.activeCues
-      setCueText(cues && cues.length ? Array.from(cues).map(c => c.text).join('\n') : '')
+    const attachTrack = () => {
+      cueCleanup?.()
+      cueCleanup = null
+      const tracks = v.textTracks
+      const wantTrack = !subsOff && subIdx < tracks.length
+      for (let i = 0; i < tracks.length; i++) {
+        tracks[i].mode = wantTrack && i === subIdx ? 'hidden' : 'disabled'
+      }
+      if (!wantTrack) { setCueText(''); return }
+      const track = tracks[subIdx]
+      const onCue = () => {
+        const cues = track.activeCues
+        setCueText(cues && cues.length ? Array.from(cues).map(c => c.text).join('\n') : '')
+      }
+      track.addEventListener('cuechange', onCue)
+      cueCleanup = () => track.removeEventListener('cuechange', onCue)
     }
-    track.addEventListener('cuechange', onCue)
-    return () => { track.removeEventListener('cuechange', onCue); setCueText('') }
+
+    attachTrack()
+    v.textTracks.addEventListener('addtrack', attachTrack)
+
+    return () => {
+      v.textTracks.removeEventListener('addtrack', attachTrack)
+      cueCleanup?.()
+      setCueText('')
+    }
   }, [subIdx, subsOff, hasSubs, idx])
 
   // ── Réinitialiser état au changement d'épisode ───────────────────────────
