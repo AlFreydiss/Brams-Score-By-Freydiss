@@ -179,7 +179,7 @@ const ANIMES = [
     emoji: '🐉',
     color: '#f57f17',
     colorDark: '#5c2e00',
-    coverImage: null,
+    coverImage: 'https://resizing.flixster.com/rkYW70Qo4tqbX8akxnoNX0Yf5z0=/ems.cHJkLWVtcy1hc3NldHMvbW92aWVzLzllY2IwZjMyLWVjYjMtNDAzMC1hYWViLTBjZjcxMmFmNDU1MC5wbmc=',
     genres: ['Action', 'Science-fiction', 'Shōnen'],
     description: "Après la défaite de Majin Buu, Goku continue à repousser ses limites en affrontant des adversaires venus d'autres univers.",
     stats: [

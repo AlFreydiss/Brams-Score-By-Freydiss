@@ -275,6 +275,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
             <video
               ref={videoRef}
               key={video.src}
+              crossOrigin="anonymous"
               style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
               onPlay={onPlay}
               onPause={onPause}
