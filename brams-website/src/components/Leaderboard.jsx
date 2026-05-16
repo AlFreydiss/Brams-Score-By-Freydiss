@@ -12,30 +12,37 @@ const RANK_MAP = [
   { min:0,   rang:'Moussaillon',     emoji:'⚓', color:'#7c7f8a' },
 ]
 
+const PERIODS    = ['Semaine', 'Mois', 'All-time']
+const RANG_OPTS  = ['Tous', ...RANK_MAP.map(r => r.rang)]
+
 function getRank(h) { return RANK_MAP.find(r => h >= r.min) ?? RANK_MAP[RANK_MAP.length-1] }
 function fmt(n) { return n >= 1000000 ? `${(n/1000000).toFixed(1)}M` : n >= 1000 ? `${(n/1000).toFixed(0)}k` : String(n) }
 
 const PER_PAGE = 10
 
 export default function Leaderboard() {
-  const [allRows, setAllRows] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [page, setPage] = useState(0)
+  const [allRows,    setAllRows]    = useState(null)
+  const [loading,    setLoading]    = useState(true)
+  const [page,       setPage]       = useState(0)
+  const [period,     setPeriod]     = useState(() => localStorage.getItem('lb_period') || 'All-time')
+  const [rangFilter, setRangFilter] = useState('Tous')
+  const [showRangs,  setShowRangs]  = useState(false)
   const [ref, inView] = useInView()
 
   useEffect(() => {
-    fetchLeaderboard(100).then(data => {
-      setAllRows(data)
-      setLoading(false)
-    })
+    fetchLeaderboard(100).then(data => { setAllRows(data); setLoading(false) })
   }, [])
 
-  const rows = allRows
+  const handlePeriod = (p) => { setPeriod(p); localStorage.setItem('lb_period', p); setPage(0) }
+
+  const rawRows = allRows
     ? allRows.map((r, i) => ({ ...r, pos: i+1, vocal_h: parseFloat(r.vocal_h||0), berrys: parseInt(r.berrys||0) }))
     : []
 
+  const rows = rangFilter === 'Tous' ? rawRows : rawRows.filter(r => getRank(r.vocal_h).rang === rangFilter)
+
   const totalPages = Math.max(1, Math.ceil(rows.length / PER_PAGE))
-  const display = rows.slice(page * PER_PAGE, page * PER_PAGE + PER_PAGE)
+  const display    = rows.slice(page * PER_PAGE, page * PER_PAGE + PER_PAGE)
 
   return (
     <section id="classement" style={{ background:'transparent', position:'relative' }}>
@@ -53,6 +60,62 @@ export default function Leaderboard() {
         </div>
 
         <div style={{ maxWidth:780, margin:'0 auto' }}>
+
+          {/* Controls */}
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:12, marginBottom:24 }}>
+
+            {/* Period toggle */}
+            <div style={{ display:'flex', gap:6 }}>
+              {PERIODS.map(p => (
+                <button key={p} onClick={() => handlePeriod(p)} style={{
+                  padding:'7px 16px', borderRadius:20, fontSize:12, fontWeight:700, letterSpacing:'.04em',
+                  border: p===period ? 'none' : '1px solid rgba(255,255,255,.12)',
+                  background: p===period ? 'var(--accent)' : 'transparent',
+                  color: p===period ? '#fff' : 'var(--muted)',
+                  cursor:'pointer', transition:'all .15s',
+                }}>
+                  {p}
+                </button>
+              ))}
+            </div>
+
+            {/* Rang filter dropdown */}
+            <div style={{ position:'relative' }}>
+              <button onClick={() => setShowRangs(v => !v)} style={{
+                display:'flex', alignItems:'center', gap:8,
+                padding:'7px 14px', borderRadius:20, fontSize:12, fontWeight:700, letterSpacing:'.04em',
+                border:'1px solid rgba(255,255,255,.12)', background:'rgba(255,255,255,.04)',
+                color:'#fff', cursor:'pointer', transition:'all .15s',
+              }}>
+                <span>{rangFilter === 'Tous' ? '⚔️ Filtrer par rang' : `${RANK_MAP.find(r=>r.rang===rangFilter)?.emoji??'⚓'} ${rangFilter}`}</span>
+                <span style={{ fontSize:10, opacity:.6 }}>{showRangs ? '▲' : '▼'}</span>
+              </button>
+              {showRangs && (
+                <div style={{
+                  position:'absolute', top:'calc(100% + 6px)', right:0, zIndex:20,
+                  background:'#1a1b1f', border:'1px solid rgba(255,255,255,.1)', borderRadius:12,
+                  padding:'6px', minWidth:200, boxShadow:'0 8px 32px rgba(0,0,0,.5)',
+                }}>
+                  {RANG_OPTS.map(opt => {
+                    const info = RANK_MAP.find(r => r.rang === opt)
+                    return (
+                      <button key={opt} onClick={() => { setRangFilter(opt); setShowRangs(false); setPage(0) }} style={{
+                        display:'flex', alignItems:'center', gap:8, width:'100%', padding:'8px 12px',
+                        borderRadius:8, border:'none', background: opt===rangFilter ? 'rgba(224,82,74,.15)' : 'transparent',
+                        color: opt===rangFilter ? 'var(--accent)' : '#fff', cursor:'pointer', fontSize:13, fontWeight:600,
+                        textAlign:'left', transition:'background .1s',
+                      }}>
+                        {info ? <span>{info.emoji}</span> : <span>🏴‍☠️</span>}
+                        {opt}
+                        {info && <span style={{ marginLeft:'auto', fontSize:10, color:info.color, opacity:.7 }}>{info.min}h+</span>}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Header */}
           <div style={{ display:'grid', gridTemplateColumns:'52px 1fr 110px 130px', padding:'0 20px 10px', fontSize:11, fontWeight:700, letterSpacing:'.1em', textTransform:'uppercase', color:'var(--muted)' }}>
             <span>#</span><span>Membre</span><span style={{ textAlign:'right' }}>Heures</span><span style={{ textAlign:'right' }}>Berrys</span>
@@ -67,8 +130,17 @@ export default function Leaderboard() {
               : display.map((m, i) => {
                   const rk = getRank(m.vocal_h)
                   const isTop3 = m.pos <= 3
+                  const showSep = m.pos === 4 && rangFilter === 'Tous'
                   return (
-                    <div key={m.uid} className={`reveal reveal-${Math.min(i+1,4)} ${inView?'visible':''}`}
+                    <div key={m.uid}>
+                    {showSep && (
+                      <div style={{ display:'flex', alignItems:'center', gap:12, margin:'12px 0 8px', padding:'0 4px' }}>
+                        <div style={{ flex:1, height:1, background:'rgba(255,255,255,.06)' }} />
+                        <span style={{ fontSize:11, fontWeight:700, letterSpacing:'.12em', textTransform:'uppercase', color:'var(--muted)', whiteSpace:'nowrap' }}>── Top 10 ──</span>
+                        <div style={{ flex:1, height:1, background:'rgba(255,255,255,.06)' }} />
+                      </div>
+                    )}
+                    <div className={`reveal reveal-${Math.min(i+1,4)} ${inView?'visible':''}`}
                       style={{
                         display:'grid', gridTemplateColumns:'52px 1fr 110px 130px',
                         alignItems:'center', borderRadius:12, padding:'14px 20px',
@@ -107,6 +179,7 @@ export default function Leaderboard() {
 
                       <div style={{ textAlign:'right', fontWeight:700, fontSize:15, color:rk.color }}>{m.vocal_h}h</div>
                       <div style={{ textAlign:'right', fontWeight:600, fontSize:14, color:'var(--gold)' }}>{fmt(m.berrys)} ฿</div>
+                    </div>
                     </div>
                   )
                 })

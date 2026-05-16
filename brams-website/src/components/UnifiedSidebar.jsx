@@ -274,8 +274,16 @@ function DiscordMessage({ msg }) {
   )
 }
 
+// ─── Tab definitions ──────────────────────────────────────────────────────────
+const TABS = [
+  { id: 'calendrier', label: 'Calendrier', icon: '📅' },
+  { id: 'programme',  label: 'Programme',  icon: '📋' },
+  { id: 'annonces',   label: 'Annonces',   icon: '📢' },
+]
+
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function UnifiedSidebar() {
+  const [tab,            setTab]            = useState('calendrier')
   const [msgs,           setMsgs]           = useState([])
   const [discordLoading, setDiscordLoading] = useState(true)
   const [discordError,   setDiscordError]   = useState(null)
@@ -322,6 +330,9 @@ export default function UnifiedSidebar() {
   return (
     <div style={{
       width: 320,
+      height: 500,
+      display: 'flex',
+      flexDirection: 'column',
       background: 'rgba(14,15,17,.68)',
       backdropFilter: 'blur(20px)',
       border: '1px solid rgba(255,255,255,.09)',
@@ -330,110 +341,131 @@ export default function UnifiedSidebar() {
       animation: 'sidebarIn .5s .2s ease-out both',
     }}>
 
-      {/* ── 1. Calendrier ─────────────────────────────────────────────────── */}
-      <div style={{ padding: '14px 14px 10px' }}>
-        <SectionLabel icon="📅" label="CALENDRIER" />
-        <MiniCalendar events={EVENTS} />
+      {/* ── Tab bar ───────────────────────────────────────────────────────── */}
+      <div style={{
+        display: 'flex', borderBottom: '1px solid rgba(255,255,255,.07)',
+        padding: '0 8px', flexShrink: 0,
+      }}>
+        {TABS.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)} style={{
+            flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+            padding: '11px 4px', border: 'none', background: 'transparent', cursor: 'pointer',
+            fontSize: 10.5, fontWeight: 700, letterSpacing: '.04em',
+            color: tab === t.id ? '#fff' : 'rgba(255,255,255,.35)',
+            borderBottom: tab === t.id ? '2px solid var(--accent)' : '2px solid transparent',
+            marginBottom: -1, transition: 'color .15s, border-color .15s',
+          }}>
+            <span>{t.icon}</span>
+            <span>{t.label}</span>
+          </button>
+        ))}
       </div>
 
-      {upcomingEvents.length > 0 && (
-        <div style={{ padding: '0 14px 14px' }}>
-          <SectionLabel label="PROCHAINS EVENTS" />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {upcomingEvents.map(ev => <EventCard key={ev.id} event={ev} />)}
-          </div>
-        </div>
-      )}
+      {/* ── Tab content (flex:1 + overflow) ───────────────────────────────── */}
+      <div style={{ flex: 1, overflowY: 'auto', scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.1) transparent' }}>
 
-      <Divider />
-
-      {/* ── 2. Programme de la semaine ────────────────────────────────────── */}
-      <div style={{ padding: '12px 14px 4px' }}>
-        <SectionLabel
-          icon="🗓"
-          label="PROGRAMME DE LA SEMAINE"
-          right={<span style={{ fontSize: 8.5, color: 'rgba(255,255,255,.22)', fontWeight: 600 }}>22h30 / soir</span>}
-        />
-      </div>
-      <div style={{ paddingBottom: 6 }}>
-        {DAYS.map((d, i) => {
-          const isToday   = i === TODAY_IDX
-          const rankColor = RANK_COLORS[d.rank] || '#aaa'
-          return (
-            <div key={d.day} style={{
-              display: 'flex', alignItems: 'center', gap: 10,
-              padding: '5px 14px',
-              background: isToday ? 'rgba(224,82,74,0.08)' : 'transparent',
-              borderLeft: isToday ? '3px solid var(--accent)' : '3px solid transparent',
-            }}>
-              <div style={{ width: 28, fontSize: 10, fontWeight: isToday ? 800 : 500, color: isToday ? 'var(--accent)' : 'rgba(255,255,255,0.38)', flexShrink: 0 }}>{d.day}</div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 11.5, fontWeight: 700, color: isToday ? '#fff' : 'rgba(255,255,255,0.82)', whiteSpace: 'nowrap' }}>
-                    {d.name}
-                  </span>
-                  {d.tag && (
-                    <span style={{ fontSize: 7.5, fontWeight: 800, letterSpacing: '.05em', color: d.tagColor, background: `${d.tagColor}22`, borderRadius: 4, padding: '1px 5px', border: `1px solid ${d.tagColor}44`, whiteSpace: 'nowrap' }}>
-                      {d.tag}
-                    </span>
-                  )}
+        {/* ── Calendrier ──────────────────────────────────────────────────── */}
+        {tab === 'calendrier' && (
+          <div style={{ padding: '14px 14px 10px', animation: 'sidebarIn .25s ease-out both' }}>
+            <MiniCalendar events={EVENTS} />
+            {upcomingEvents.length > 0 && (
+              <div style={{ marginTop: 14 }}>
+                <SectionLabel label="PROCHAINS EVENTS" />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {upcomingEvents.map(ev => <EventCard key={ev.id} event={ev} />)}
                 </div>
-                <div style={{ fontSize: 9.5, color: rankColor, fontWeight: 600, marginTop: 1 }}>{d.rank}</div>
               </div>
-              <div style={{ fontSize: 9.5, fontWeight: 600, color: 'rgba(255,255,255,0.28)', flexShrink: 0 }}>{d.time}</div>
+            )}
+          </div>
+        )}
+
+        {/* ── Programme ───────────────────────────────────────────────────── */}
+        {tab === 'programme' && (
+          <div style={{ animation: 'sidebarIn .25s ease-out both' }}>
+            <div style={{ padding: '12px 14px 6px' }}>
+              <SectionLabel
+                icon="🗓"
+                label="PROGRAMME DE LA SEMAINE"
+                right={<span style={{ fontSize: 8.5, color: 'rgba(255,255,255,.22)', fontWeight: 600 }}>22h30 / soir</span>}
+              />
             </div>
-          )
-        })}
-      </div>
-
-      <Divider />
-
-      {/* ── 3. Annonces Discord ───────────────────────────────────────────── */}
-      <div style={{ padding: '12px 14px 8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="#5865f2">
-            <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/>
-          </svg>
-          <span style={{ fontSize: 8.5, fontWeight: 700, color: 'rgba(255,255,255,.30)', letterSpacing: '.12em' }}>ANNONCES DISCORD</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-          {lastRefresh && (
-            <span style={{ fontSize: 8.5, color: 'rgba(255,255,255,0.22)' }}>
-              {lastRefresh.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-            </span>
-          )}
-          <button onClick={loadDiscord} title="Actualiser" style={{
-            background: 'none', border: 'none', cursor: 'pointer',
-            color: 'rgba(255,255,255,0.32)', fontSize: 13, padding: '1px 3px', lineHeight: 1,
-            transition: 'color .15s',
-          }}
-            onMouseEnter={e => e.currentTarget.style.color = '#fff'}
-            onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.32)'}
-          >↻</button>
-        </div>
-      </div>
-
-      <div style={{ maxHeight: 250, overflowY: 'auto', scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.1) transparent' }}>
-        {discordLoading && (
-          <div style={{ padding: '14px 12px', textAlign: 'center', color: 'rgba(255,255,255,0.28)', fontSize: 11.5 }}>
-            Chargement…
+            {DAYS.map((d, i) => {
+              const isToday   = i === TODAY_IDX
+              const rankColor = RANK_COLORS[d.rank] || '#aaa'
+              return (
+                <div key={d.day} style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '6px 14px',
+                  background: isToday ? 'rgba(224,82,74,0.08)' : 'transparent',
+                  borderLeft: isToday ? '3px solid var(--accent)' : '3px solid transparent',
+                }}>
+                  <div style={{ width: 28, fontSize: 10, fontWeight: isToday ? 800 : 500, color: isToday ? 'var(--accent)' : 'rgba(255,255,255,0.38)', flexShrink: 0 }}>{d.day}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: 11.5, fontWeight: 700, color: isToday ? '#fff' : 'rgba(255,255,255,0.82)', whiteSpace: 'nowrap' }}>{d.name}</span>
+                      {d.tag && (
+                        <span style={{ fontSize: 7.5, fontWeight: 800, letterSpacing: '.05em', color: d.tagColor, background: `${d.tagColor}22`, borderRadius: 4, padding: '1px 5px', border: `1px solid ${d.tagColor}44`, whiteSpace: 'nowrap' }}>
+                          {d.tag}
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ fontSize: 9.5, color: rankColor, fontWeight: 600, marginTop: 1 }}>{d.rank}</div>
+                  </div>
+                  <div style={{ fontSize: 9.5, fontWeight: 600, color: 'rgba(255,255,255,0.28)', flexShrink: 0 }}>{d.time}</div>
+                </div>
+              )
+            })}
           </div>
         )}
-        {!discordLoading && discordError && (
-          <div style={{ padding: '10px 12px', textAlign: 'center' }}>
-            <p style={{ color: 'rgba(255,100,100,0.75)', fontSize: 11.5, margin: '0 0 6px' }}>{discordError}</p>
-            <button onClick={loadDiscord} style={{ fontSize: 10.5, color: '#5865f2', background: 'none', border: '1px solid rgba(88,101,242,0.4)', borderRadius: 5, padding: '3px 10px', cursor: 'pointer' }}>Réessayer</button>
-          </div>
-        )}
-        {!discordLoading && !discordError && msgs.length === 0 && (
-          <div style={{ padding: '14px 12px', textAlign: 'center', color: 'rgba(255,255,255,0.28)', fontSize: 11.5 }}>
-            Aucune annonce
-          </div>
-        )}
-        {!discordLoading && !discordError && msgs.map(m => <DiscordMessage key={m.id} msg={m} />)}
-      </div>
 
-      <div style={{ height: 10 }} />
+        {/* ── Annonces ────────────────────────────────────────────────────── */}
+        {tab === 'annonces' && (
+          <div style={{ animation: 'sidebarIn .25s ease-out both' }}>
+            <div style={{ padding: '10px 14px 8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="#5865f2">
+                  <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/>
+                </svg>
+                <span style={{ fontSize: 8.5, fontWeight: 700, color: 'rgba(255,255,255,.30)', letterSpacing: '.12em' }}>ANNONCES DISCORD</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                {lastRefresh && (
+                  <span style={{ fontSize: 8.5, color: 'rgba(255,255,255,0.22)' }}>
+                    {lastRefresh.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                )}
+                <button onClick={loadDiscord} title="Actualiser" style={{
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  color: 'rgba(255,255,255,0.32)', fontSize: 13, padding: '1px 3px', lineHeight: 1,
+                  transition: 'color .15s',
+                }}
+                  onMouseEnter={e => e.currentTarget.style.color = '#fff'}
+                  onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.32)'}
+                >↻</button>
+              </div>
+            </div>
+
+            {discordLoading && (
+              <div style={{ padding: '14px 12px', textAlign: 'center', color: 'rgba(255,255,255,0.28)', fontSize: 11.5 }}>
+                Chargement…
+              </div>
+            )}
+            {!discordLoading && discordError && (
+              <div style={{ padding: '10px 12px', textAlign: 'center' }}>
+                <p style={{ color: 'rgba(255,100,100,0.75)', fontSize: 11.5, margin: '0 0 6px' }}>{discordError}</p>
+                <button onClick={loadDiscord} style={{ fontSize: 10.5, color: '#5865f2', background: 'none', border: '1px solid rgba(88,101,242,0.4)', borderRadius: 5, padding: '3px 10px', cursor: 'pointer' }}>Réessayer</button>
+              </div>
+            )}
+            {!discordLoading && !discordError && msgs.length === 0 && (
+              <div style={{ padding: '14px 12px', textAlign: 'center', color: 'rgba(255,255,255,0.28)', fontSize: 11.5 }}>
+                Aucune annonce
+              </div>
+            )}
+            {!discordLoading && !discordError && msgs.map(m => <DiscordMessage key={m.id} msg={m} />)}
+          </div>
+        )}
+
+      </div>
     </div>
   )
 }
