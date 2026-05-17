@@ -1,6 +1,6 @@
 import { useState, useRef, useMemo, useEffect, Suspense } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { OrbitControls, Text, Stars } from '@react-three/drei'
+import { OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
 import { CHARACTERS, RELATIONS, TREE_CONFIGS, LINK_COLORS, HAKI_COLORS } from '../data/tree-data.js'
 
@@ -222,19 +222,6 @@ function WantedNode({ char, position, onClick, selected, mangaMode }) {
         />
       </mesh>
 
-      {/* Name label */}
-      <Text
-        position={[0, 1.25, 0.08]}
-        fontSize={0.17}
-        color={mangaMode ? '#1a0800' : '#ffffff'}
-        anchorX="center"
-        anchorY="bottom"
-        outlineWidth={0.025}
-        outlineColor={mangaMode ? '#f0e4c0' : '#000000'}
-        maxWidth={2}
-      >
-        {char.name.split(' ').pop()}
-      </Text>
     </group>
   )
 }
@@ -361,12 +348,7 @@ function Scene({ cfg, selectedChar, onSelect, mangaMode, filterStatus, filterHak
       <pointLight position={[-14, 10, -10]} intensity={0.5} color={mangaMode ? '#ccddff' : '#4060ff'} />
       <pointLight position={[10, 4, 12]} intensity={0.35} color={mangaMode ? '#ffddcc' : '#ff6030'} />
 
-      {/* Background */}
-      {!mangaMode && <Stars radius={90} depth={50} count={2500} factor={4} saturation={0} fade />}
       <Ocean mangaMode={mangaMode} />
-
-      {/* Fog */}
-      {!mangaMode && <fog attach="fog" args={['#0a0e1a', 22, 85]} />}
 
       {/* Relation lines */}
       {rels.map(rel => {
@@ -565,12 +547,12 @@ export default function FamilyTree3D({ onClose }) {
         </div>
 
         {/* ── Canvas ── */}
-        <div style={{ flex: 1, position: 'relative' }}>
+        <div style={{ flex: 1, position: 'relative', minWidth: 0, minHeight: 0 }}>
           <Canvas
             camera={{ position: [0, 4, 14], fov: 58 }}
-            style={{ background: bg }}
+            style={{ background: bg, width: '100%', height: '100%', display: 'block' }}
             onPointerMissed={() => setSelectedChar(null)}
-            shadows
+            gl={{ antialias: true }}
           >
             <Suspense fallback={null}>
               <Scene
