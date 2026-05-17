@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import AboutModal from './AboutModal.jsx'
 import AuthModal from './AuthModal.jsx'
 import { useAuth } from '../contexts/AuthContext.jsx'
@@ -118,6 +118,8 @@ export default function Navbar() {
   const [authOpen, setAuthOpen] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const { isAuthenticated, signOut, displayName, avatarUrl } = useAuth()
+  const { pathname } = useLocation()
+  const navigate = useNavigate()
 
   useEffect(() => {
     const fn = () => setAuthOpen(true)
@@ -159,7 +161,7 @@ export default function Navbar() {
         <div style={{ maxWidth: 1120, margin: '0 auto', display: 'flex', alignItems: 'center', height: 68, gap: 0 }}>
 
           {/* Logo */}
-          <button onClick={() => setAbout(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+          <button onClick={() => pathname === '/' ? setAbout(true) : navigate('/')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
             <span style={{ fontSize: 22 }}>🏴‍☠️</span>
             <span style={{ fontFamily: 'var(--display)', fontWeight: 800, fontSize: 18, color: '#fff', letterSpacing: '-.01em' }}>Brams</span>
           </button>
