@@ -843,3 +843,472 @@ async def get_active_war_with_crews(crew_id: int) -> tuple[dict | None, dict | N
             }
             return war, crew_a, crew_b
     return await _run(_do)
+
+
+# ── Missions ──────────────────────────────────────────────────────────────────
+
+async def get_active_missions(crew_id: int) -> list[dict]:
+    def _do():
+        with _conn() as conn:
+            cur = conn.cursor(cursor_factory=_DC)
+            cur.execute(
+                "SELECT * FROM crew_missions"
+                " WHERE crew_id=%s AND expires_at > NOW()"
+                " ORDER BY created_at ASC",
+                (crew_id,),
+            )
+            return [dict(r) for r in cur.fetchall()]
+    return await _run(_do)
+
+
+async def create_mission(crew_id: int, type_: str, label: str, target: int,
+                          reward_xp: int, reward_gold: int, expires_at) -> int:
+    def _do():
+        with _conn() as conn:
+            with conn:
+                cur = conn.cursor()
+                cur.execute(
+                    "INSERT INTO crew_missions"
+                    " (crew_id, type, label, target, reward_xp, reward_gold, expires_at)"
+                    " VALUES (%s,%s,%s,%s,%s,%s,%s) RETURNING id",
+                    (crew_id, type_, label, target, reward_xp, reward_gold, expires_at),
+                )
+                return cur.fetchone()[0]
+    return await _run(_do)
+
+
+async def progress_mission(crew_id: int, type_: str, amount: int = 1) -> list[dict]:
+    """Incrémente la progression et retourne les missions nouvellement complétées."""
+    def _do():
+        with _conn() as conn:
+            with conn:
+                cur = conn.cursor(cursor_factory=_DC)
+                cur.execute("""
+                    UPDATE crew_missions
+                    SET progress = LEAST(target, progress + %s)
+                    WHERE crew_id=%s AND type=%s
+                      AND completed=FALSE AND expires_at > NOW()
+                    RETURNING *
+                """, (amount, crew_id, type_))
+                updated = [dict(r) for r in cur.fetchall()]
+                newly_done = []
+                for m in updated:
+                    if m['progress'] >= m['target']:
+                        cur.execute(
+                            "UPDATE crew_missions SET completed=TRUE WHERE id=%s RETURNING *",
+                            (m['id'],),
+                        )
+                        r = cur.fetchone()
+                        if r:
+                            newly_done.append(dict(r))
+                return newly_done
+    return await _run(_do)
+
+
+async def expire_old_missions():
+    def _do():
+        with _conn() as conn:
+            with conn:
+                conn.cursor().execute(
+                    "DELETE FROM crew_missions WHERE expires_at < NOW() - INTERVAL '7 days'"
+                )
+    await _run(_do)
+
+
+# ── Territoires ───────────────────────────────────────────────────────────────
+
+async def seed_territories(islands: dict):
+    """Insère les îles si elles n'existent pas encore."""
+    def _do():
+        with _conn() as conn:
+            with conn:
+                cur = conn.cursor()
+                for key, data in islands.items():
+                    cur.execute("""
+                        INSERT INTO crew_territories
+                          (zone_key, zone_name, zone_emoji, daily_xp_bonus, daily_gold_bonus)
+                        VALUES (%s,%s,%s,%s,%s)
+                        ON CONFLICT (zone_key) DO NOTHING
+                    """, (key, data['name'], data['emoji'], data['daily_xp'], data['daily_gold']))
+    await _run(_do)
+
+
+async def get_all_territories() -> list[dict]:
+    def _do():
+        with _conn() as conn:
+            cur = conn.cursor(cursor_factory=_DC)
+            cur.execute("SELECT * FROM crew_territories ORDER BY daily_xp_bonus ASC")
+            return [dict(r) for r in cur.fetchall()]
+    return await _run(_do)
+
+
+async def get_territory(zone_key: str) -> dict | None:
+    def _do():
+        with _conn() as conn:
+            cur = conn.cursor(cursor_factory=_DC)
+            cur.execute("SELECT * FROM crew_territories WHERE zone_key=%s", (zone_key,))
+            r = cur.fetchone()
+            return dict(r) if r else None
+    return await _run(_do)
+
+
+async def get_active_contest(zone_key: str) -> dict | None:
+    def _do():
+        with _conn() as conn:
+            cur = conn.cursor(cursor_factory=_DC)
+            cur.execute(
+                "SELECT * FROM territory_contests"
+                " WHERE zone_key=%s AND status='active' AND ends_at > NOW()"
+                " ORDER BY created_at DESC LIMIT 1",
+                (zone_key,),
+            )
+            r = cur.fetchone()
+            return dict(r) if r else None
+    return await _run(_do)
+
+
+async def create_contest(zone_key: str, attacker_id: int,
+                          defender_id: int | None, ends_at) -> int:
+    def _do():
+        with _conn() as conn:
+            with conn:
+                cur = conn.cursor()
+                cur.execute(
+                    "INSERT INTO territory_contests"
+                    " (zone_key, attacker_id, defender_id, ends_at)"
+                    " VALUES (%s,%s,%s,%s) RETURNING id",
+                    (zone_key, attacker_id, defender_id, ends_at),
+                )
+                return cur.fetchone()[0]
+    return await _run(_do)
+
+
+async def add_contest_vote(contest_id: int, user_id: int, crew_id: int) -> bool:
+    """Ajoute un vote. Retourne True si succès, False si déjà voté."""
+    def _do():
+        with _conn() as conn:
+            with conn:
+                try:
+                    conn.cursor().execute(
+                        "INSERT INTO territory_votes (contest_id, user_id, crew_id)"
+                        " VALUES (%s,%s,%s)",
+                        (contest_id, user_id, crew_id),
+                    )
+                    return True
+                except Exception:
+                    return False
+    return await _run(_do)
+
+
+async def tally_and_close_contest(contest_id: int) -> dict | None:
+    """Compte les votes, désigne le gagnant, met à jour le territoire. Retourne le contest."""
+    def _do():
+        with _conn() as conn:
+            with conn:
+                cur = conn.cursor(cursor_factory=_DC)
+                cur.execute("""
+                    SELECT crew_id, COUNT(*) as votes
+                    FROM territory_votes WHERE contest_id=%s
+                    GROUP BY crew_id
+                """, (contest_id,))
+                rows = cur.fetchall()
+                cur.execute("SELECT * FROM territory_contests WHERE id=%s", (contest_id,))
+                contest = cur.fetchone()
+                if not contest:
+                    return None
+                contest = dict(contest)
+                vote_map = {r['crew_id']: r['votes'] for r in rows}
+                att_v = vote_map.get(contest['attacker_id'], 0)
+                def_v = vote_map.get(contest['defender_id'], 0) if contest['defender_id'] else 0
+                winner_id = contest['attacker_id'] if att_v >= def_v else contest['defender_id']
+                cur.execute("""
+                    UPDATE territory_contests
+                    SET status='resolved', att_votes=%s, def_votes=%s, winner_id=%s
+                    WHERE id=%s
+                """, (att_v, def_v, winner_id, contest_id))
+                cur.execute("""
+                    UPDATE crew_territories
+                    SET owner_crew_id=%s, captured_at=NOW()
+                    WHERE zone_key=%s
+                """, (winner_id, contest['zone_key']))
+                contest['winner_id'] = winner_id
+                contest['att_votes'] = att_v
+                contest['def_votes'] = def_v
+                return contest
+    return await _run(_do)
+
+
+async def get_territories_owned_by(crew_id: int) -> list[dict]:
+    def _do():
+        with _conn() as conn:
+            cur = conn.cursor(cursor_factory=_DC)
+            cur.execute(
+                "SELECT * FROM crew_territories WHERE owner_crew_id=%s",
+                (crew_id,),
+            )
+            return [dict(r) for r in cur.fetchall()]
+    return await _run(_do)
+
+
+async def get_expired_contests() -> list[dict]:
+    def _do():
+        with _conn() as conn:
+            cur = conn.cursor(cursor_factory=_DC)
+            cur.execute(
+                "SELECT * FROM territory_contests WHERE status='active' AND ends_at < NOW()"
+            )
+            return [dict(r) for r in cur.fetchall()]
+    return await _run(_do)
+
+
+# ── Tournoi ───────────────────────────────────────────────────────────────────
+
+async def get_open_tournament() -> dict | None:
+    def _do():
+        with _conn() as conn:
+            cur = conn.cursor(cursor_factory=_DC)
+            cur.execute(
+                "SELECT * FROM crew_tournaments"
+                " WHERE status IN ('registration','active')"
+                " ORDER BY created_at DESC LIMIT 1"
+            )
+            r = cur.fetchone()
+            return dict(r) if r else None
+    return await _run(_do)
+
+
+async def create_tournament(entry_fee: int, max_slots: int) -> int:
+    def _do():
+        with _conn() as conn:
+            with conn:
+                cur = conn.cursor()
+                cur.execute(
+                    "INSERT INTO crew_tournaments (entry_fee, max_slots)"
+                    " VALUES (%s,%s) RETURNING id",
+                    (entry_fee, max_slots),
+                )
+                return cur.fetchone()[0]
+    return await _run(_do)
+
+
+async def register_tournament(tournament_id: int, crew_id: int) -> bool:
+    def _do():
+        with _conn() as conn:
+            with conn:
+                try:
+                    conn.cursor().execute(
+                        "INSERT INTO tournament_entries (tournament_id, crew_id) VALUES (%s,%s)",
+                        (tournament_id, crew_id),
+                    )
+                    return True
+                except Exception:
+                    return False
+    return await _run(_do)
+
+
+async def get_tournament_entries(tournament_id: int) -> list[dict]:
+    def _do():
+        with _conn() as conn:
+            cur = conn.cursor(cursor_factory=_DC)
+            cur.execute(
+                "SELECT te.*, c.name, c.tag, c.level, c.total_bounty"
+                " FROM tournament_entries te"
+                " JOIN crews c ON c.id = te.crew_id"
+                " WHERE te.tournament_id=%s ORDER BY te.registered_at ASC",
+                (tournament_id,),
+            )
+            return [dict(r) for r in cur.fetchall()]
+    return await _run(_do)
+
+
+async def start_tournament(tournament_id: int) -> list[dict]:
+    """Génère le bracket Round 1. Retourne les matchs créés."""
+    import random as _rnd
+    def _do():
+        with _conn() as conn:
+            with conn:
+                cur = conn.cursor(cursor_factory=_DC)
+                cur.execute(
+                    "SELECT crew_id FROM tournament_entries WHERE tournament_id=%s"
+                    " AND eliminated=FALSE ORDER BY registered_at",
+                    (tournament_id,),
+                )
+                crews = [r['crew_id'] for r in cur.fetchall()]
+                _rnd.shuffle(crews)
+                pairs = list(zip(crews[::2], crews[1::2]))
+                from datetime import datetime, timezone, timedelta
+                ends_at = datetime.now(timezone.utc) + timedelta(hours=24)
+                matches = []
+                for a, b in pairs:
+                    cur.execute(
+                        "INSERT INTO tournament_matches"
+                        " (tournament_id, round, crew_a_id, crew_b_id, ends_at)"
+                        " VALUES (%s,1,%s,%s,%s) RETURNING *",
+                        (tournament_id, a, b, ends_at),
+                    )
+                    matches.append(dict(cur.fetchone()))
+                cur.execute(
+                    "UPDATE crew_tournaments SET status='active', started_at=NOW() WHERE id=%s",
+                    (tournament_id,),
+                )
+                return matches
+    return await _run(_do)
+
+
+async def score_tournament_match(match_id: int, crew_id: int, points: int = 1):
+    def _do():
+        with _conn() as conn:
+            with conn:
+                conn.cursor().execute("""
+                    UPDATE tournament_matches SET
+                      score_a = CASE WHEN crew_a_id=%s THEN score_a+%s ELSE score_a END,
+                      score_b = CASE WHEN crew_b_id=%s THEN score_b+%s ELSE score_b END
+                    WHERE id=%s
+                """, (crew_id, points, crew_id, points, match_id))
+    await _run(_do)
+
+
+async def get_active_tournament_match(crew_id: int) -> dict | None:
+    def _do():
+        with _conn() as conn:
+            cur = conn.cursor(cursor_factory=_DC)
+            cur.execute("""
+                SELECT tm.* FROM tournament_matches tm
+                JOIN crew_tournaments t ON t.id = tm.tournament_id
+                WHERE (tm.crew_a_id=%s OR tm.crew_b_id=%s)
+                  AND tm.status='pending' AND t.status='active'
+                ORDER BY tm.created_at DESC LIMIT 1
+            """, (crew_id, crew_id))
+            r = cur.fetchone()
+            return dict(r) if r else None
+    return await _run(_do)
+
+
+async def close_tournament_match(match_id: int) -> dict | None:
+    def _do():
+        with _conn() as conn:
+            with conn:
+                cur = conn.cursor(cursor_factory=_DC)
+                cur.execute("SELECT * FROM tournament_matches WHERE id=%s", (match_id,))
+                m = cur.fetchone()
+                if not m:
+                    return None
+                m = dict(m)
+                winner = m['crew_a_id'] if m['score_a'] >= m['score_b'] else m['crew_b_id']
+                loser  = m['crew_b_id'] if winner == m['crew_a_id'] else m['crew_a_id']
+                cur.execute(
+                    "UPDATE tournament_matches SET status='done', winner_id=%s WHERE id=%s",
+                    (winner, match_id),
+                )
+                cur.execute(
+                    "UPDATE tournament_entries SET eliminated=TRUE"
+                    " WHERE tournament_id=%s AND crew_id=%s",
+                    (m['tournament_id'], loser),
+                )
+                m['winner_id'] = winner
+                return m
+    return await _run(_do)
+
+
+async def get_expired_tournament_matches() -> list[dict]:
+    def _do():
+        with _conn() as conn:
+            cur = conn.cursor(cursor_factory=_DC)
+            cur.execute("""
+                SELECT tm.* FROM tournament_matches tm
+                JOIN crew_tournaments t ON t.id = tm.tournament_id
+                WHERE tm.status='pending' AND t.status='active' AND tm.ends_at < NOW()
+            """)
+            return [dict(r) for r in cur.fetchall()]
+    return await _run(_do)
+
+
+# ── Duels vocaux arbitrés ─────────────────────────────────────────────────────
+
+async def create_vocal_duel(challenger_id: int, opponent_id: int,
+                             stake: int, accept_deadline, ends_at) -> int:
+    def _do():
+        with _conn() as conn:
+            with conn:
+                cur = conn.cursor()
+                cur.execute(
+                    "INSERT INTO crew_vocal_duels"
+                    " (challenger_id, opponent_id, stake, accept_deadline, ends_at)"
+                    " VALUES (%s,%s,%s,%s,%s) RETURNING id",
+                    (challenger_id, opponent_id, stake, accept_deadline, ends_at),
+                )
+                return cur.fetchone()[0]
+    return await _run(_do)
+
+
+async def accept_vocal_duel(duel_id: int, arbitre_id: int, voice_channel_id: int):
+    def _do():
+        with _conn() as conn:
+            with conn:
+                conn.cursor().execute(
+                    "UPDATE crew_vocal_duels SET status='active', arbitre_id=%s, voice_channel_id=%s WHERE id=%s",
+                    (arbitre_id, voice_channel_id, duel_id),
+                )
+    await _run(_do)
+
+
+async def resolve_vocal_duel(duel_id: int, winner_id: int | None):
+    def _do():
+        with _conn() as conn:
+            with conn:
+                conn.cursor().execute(
+                    "UPDATE crew_vocal_duels SET status='done', winner_id=%s WHERE id=%s",
+                    (winner_id, duel_id),
+                )
+    await _run(_do)
+
+
+async def cancel_vocal_duel(duel_id: int):
+    def _do():
+        with _conn() as conn:
+            with conn:
+                conn.cursor().execute(
+                    "UPDATE crew_vocal_duels SET status='cancelled' WHERE id=%s",
+                    (duel_id,),
+                )
+    await _run(_do)
+
+
+async def get_vocal_duel(duel_id: int) -> dict | None:
+    def _do():
+        with _conn() as conn:
+            cur = conn.cursor(cursor_factory=_DC)
+            cur.execute("SELECT * FROM crew_vocal_duels WHERE id=%s", (duel_id,))
+            r = cur.fetchone()
+            return dict(r) if r else None
+    return await _run(_do)
+
+
+async def get_active_vocal_duel_for_crew(crew_id: int) -> dict | None:
+    def _do():
+        with _conn() as conn:
+            cur = conn.cursor(cursor_factory=_DC)
+            cur.execute(
+                "SELECT * FROM crew_vocal_duels"
+                " WHERE (challenger_id=%s OR opponent_id=%s)"
+                "   AND status IN ('pending','active')"
+                " ORDER BY created_at DESC LIMIT 1",
+                (crew_id, crew_id),
+            )
+            r = cur.fetchone()
+            return dict(r) if r else None
+    return await _run(_do)
+
+
+async def get_expired_vocal_duels() -> list[dict]:
+    def _do():
+        with _conn() as conn:
+            cur = conn.cursor(cursor_factory=_DC)
+            cur.execute(
+                "SELECT * FROM crew_vocal_duels"
+                " WHERE status IN ('pending','active')"
+                "   AND ((status='pending' AND accept_deadline < NOW())"
+                "        OR (status='active' AND ends_at < NOW()))"
+            )
+            return [dict(r) for r in cur.fetchall()]
+    return await _run(_do)

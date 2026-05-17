@@ -19,6 +19,7 @@ import HallOfFame from './components/HallOfFame.jsx'
 import QuoteSection from './components/QuoteSection.jsx'
 import Contact from './components/Contact.jsx'
 import NousSoutenir from './components/NousSoutenir.jsx'
+import EquipageSection from './components/EquipageSection.jsx'
 import ScansPage from './components/ScansPage.jsx'
 import AkainuGame from './components/AkainuGame.jsx'
 import AnimeHub from './components/AnimeHub.jsx'
@@ -148,6 +149,7 @@ export default function App() {
         <BotFeatures />
         <Quiz />
         <HallOfFame />
+        <EquipageSection />
         <NousSoutenir />
         <Roadmap />
         <Leaderboard />

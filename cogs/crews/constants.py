@@ -92,3 +92,87 @@ POSITION_CHOICES = [
     app_commands.Choice(name="Timonier ⚓",      value="timonier"),
     app_commands.Choice(name="Mousse 👤",         value="mousse"),
 ]
+
+# ── Missions hebdomadaires ────────────────────────────────────────────────────
+MISSION_TEMPLATES = [
+    {
+        'type': 'messages',
+        'label': 'Envoyer {target} messages dans le salon d\'équipage',
+        'levels': [
+            {'target': 50,  'xp': 500,  'gold': 10_000},
+            {'target': 150, 'xp': 1_200, 'gold': 25_000},
+            {'target': 300, 'xp': 2_500, 'gold': 50_000},
+        ],
+    },
+    {
+        'type': 'duels',
+        'label': 'Remporter {target} duels de guerre',
+        'levels': [
+            {'target': 3,  'xp': 1_000, 'gold': 20_000},
+            {'target': 8,  'xp': 2_500, 'gold': 50_000},
+            {'target': 15, 'xp': 5_000, 'gold': 100_000},
+        ],
+    },
+    {
+        'type': 'treasury',
+        'label': 'Déposer {target} 🍊 dans le trésor collectif',
+        'levels': [
+            {'target': 50_000,  'xp': 800,  'gold': 0},
+            {'target': 200_000, 'xp': 2_000, 'gold': 0},
+            {'target': 500_000, 'xp': 4_000, 'gold': 0},
+        ],
+    },
+    {
+        'type': 'sabotages',
+        'label': 'Effectuer {target} sabotages ennemis',
+        'levels': [
+            {'target': 2,  'xp': 600,  'gold': 30_000},
+            {'target': 5,  'xp': 1_500, 'gold': 75_000},
+            {'target': 10, 'xp': 3_000, 'gold': 150_000},
+        ],
+    },
+]
+
+MISSION_DIFFICULTY_BY_LEVEL = {
+    range(1, 4):  0,  # diff. facile
+    range(4, 7):  1,  # diff. moyenne
+    range(7, 11): 2,  # diff. difficile
+}
+
+def mission_difficulty(crew_level: int) -> int:
+    for r, d in MISSION_DIFFICULTY_BY_LEVEL.items():
+        if crew_level in r:
+            return d
+    return 0
+
+MISSIONS_PER_CREW = 3  # missions générées par semaine
+
+# ── Territoires (îles One Piece) ──────────────────────────────────────────────
+ISLANDS = {
+    'east_blue':     {'name': 'East Blue',              'emoji': '⚓',  'daily_xp': 100,  'daily_gold': 20_000},
+    'alabasta':      {'name': 'Alabasta',               'emoji': '🏜️', 'daily_xp': 150,  'daily_gold': 30_000},
+    'skypiea':       {'name': 'Skypiea',                'emoji': '☁️',  'daily_xp': 200,  'daily_gold': 40_000},
+    'water_seven':   {'name': 'Water Seven',            'emoji': '🌊',  'daily_xp': 200,  'daily_gold': 40_000},
+    'thriller_bark': {'name': 'Thriller Bark',          'emoji': '💀',  'daily_xp': 250,  'daily_gold': 50_000},
+    'marineford':    {'name': 'Marineford',             'emoji': '⚔️',  'daily_xp': 400,  'daily_gold': 100_000},
+    'fishman':       {'name': 'Île des Hommes-Poissons','emoji': '🐟',  'daily_xp': 300,  'daily_gold': 60_000},
+    'dressrosa':     {'name': 'Dressrosa',              'emoji': '🌹',  'daily_xp': 350,  'daily_gold': 80_000},
+    'wano':          {'name': 'Wano',                   'emoji': '⛩️',  'daily_xp': 500,  'daily_gold': 150_000},
+    'egghead':       {'name': 'Egghead',                'emoji': '🤖',  'daily_xp': 600,  'daily_gold': 200_000},
+}
+CONTEST_DURATION_MINUTES = 120  # 2h pour contester un territoire
+CONTEST_VOTE_WINDOW = CONTEST_DURATION_MINUTES * 60  # en secondes
+
+# ── Tournoi ───────────────────────────────────────────────────────────────────
+TOURNAMENT_ENTRY_FEE  = 500_000  # berrys
+TOURNAMENT_MAX_SLOTS  = 8
+TOURNAMENT_MATCH_HOURS = 24
+XP_TOURNAMENT_WIN     = 2_000
+XP_TOURNAMENT_FINAL   = 10_000
+
+# ── Duel vocal arbitré ────────────────────────────────────────────────────────
+VOCAL_DUEL_ACCEPT_MINUTES   = 10    # fenêtre pour accepter/refuser le défi
+VOCAL_DUEL_DURATION_MINUTES = 30    # durée max du duel en vocal
+VOCAL_DUEL_STAKE_DEFAULT    = 100_000
+XP_VOCAL_DUEL_WIN           = 3_000
+XP_VOCAL_DUEL_LOSS          = 500

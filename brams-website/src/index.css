@@ -4,6 +4,9 @@
   font-weight: normal;
   font-style: normal;
   font-display: swap;
+  /* Restreint OnePiece à l'ASCII — les glyphes accentués (è, É, à…)
+     tombent directement sur Pirata One sans mélange de métriques */
+  unicode-range: U+0020-U+007E;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }

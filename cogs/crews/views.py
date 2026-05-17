@@ -51,23 +51,6 @@ class RenommerModal(discord.ui.Modal, title="Renommer l'équipage"):
         await self._cb(interaction, self.nouveau_nom.value.strip())
 
 
-class CandidatureModal(discord.ui.Modal, title="Candidature à l'équipage"):
-    message = discord.ui.TextInput(
-        label="Message de motivation",
-        placeholder="Parle-nous de toi et pourquoi tu veux rejoindre...",
-        max_length=300,
-        style=discord.TextStyle.paragraph,
-        required=False,
-    )
-
-    def __init__(self, callback):
-        super().__init__()
-        self._cb = callback
-
-    async def on_submit(self, interaction: discord.Interaction):
-        await self._cb(interaction, self.message.value.strip())
-
-
 class RetraitModal(discord.ui.Modal, title="Retrait du trésor"):
     montant = discord.ui.TextInput(label="Montant à retirer", placeholder="50000")
     raison  = discord.ui.TextInput(label="Raison", max_length=100, style=discord.TextStyle.short)
@@ -260,7 +243,7 @@ class AllianceResponseView(discord.ui.View):
             db.accept_alliance(self._proposer_id, self._crew_id),
             award_xp(self._bot, self._crew_id, XP_ALLIANCE),
             award_xp(self._bot, self._proposer_id, XP_ALLIANCE),
-            db.add_history(self._crew_id, interaction.user.id, 'joined', f'Alliance avec crew #{self._proposer_id} acceptée'),
+            db.add_history(self._crew_id, interaction.user.id, 'alliance', f'Alliance avec crew #{self._proposer_id} acceptée'),
         )
         self.stop()
         await interaction.response.edit_message(

@@ -354,3 +354,84 @@ def leaderboard_embed(crews: list[dict], page: int = 1) -> discord.Embed:
     e.description = "\n".join(lines) or "*Aucun équipage.*"
     e.set_footer(text=f"Page {page}")
     return e
+
+
+def missions_embed(crew: dict, missions: list[dict]) -> discord.Embed:
+    e = discord.Embed(
+        title=f"📋 Missions — {crew['name']}",
+        description="Missions hebdomadaires. Complète-les pour gagner XP et 🍊.",
+        color=0x9B59B6,
+    )
+    if not missions:
+        e.description = "*Aucune mission active. Reviens lundi !*"
+        return e
+
+    for m in missions:
+        pct     = min(100, int(m['progress'] / m['target'] * 100)) if m['target'] else 100
+        filled  = int(pct / 10)
+        bar     = "█" * filled + "░" * (10 - filled)
+        status  = "✅" if m['completed'] else f"`{bar}` {m['progress']}/{m['target']}"
+        expires = f"<t:{int(m['expires_at'].timestamp())}:R>" if m.get('expires_at') else ""
+        reward  = f"+**{fmt_berries(m['reward_xp'])} XP**"
+        if m['reward_gold']:
+            reward += f" · **{fmt_berries(m['reward_gold'])} 🍊**"
+        e.add_field(
+            name=f"{'~~' if m['completed'] else ''}{m['label']}{'~~' if m['completed'] else ''}",
+            value=f"{status}\n{reward} · expire {expires}",
+            inline=False,
+        )
+    return e
+
+
+def territories_embed(territories: list[dict], crews_map: dict) -> discord.Embed:
+    e = discord.Embed(
+        title="🗺️ Carte des Territoires",
+        description="Conquiers des îles pour recevoir des bonus quotidiens d'XP et de 🍊.",
+        color=0x00C8B0,
+    )
+    for t in territories:
+        owner_name = "libre" if not t.get('owner_crew_id') else \
+                     (crews_map.get(t['owner_crew_id'], {}).get('name', f"Crew #{t['owner_crew_id']}"))
+        captured   = (f" depuis <t:{int(t['captured_at'].timestamp())}:D>"
+                      if t.get('captured_at') else "")
+        e.add_field(
+            name=f"{t['zone_emoji']} {t['zone_name']}",
+            value=(
+                f"👑 {owner_name}{captured}\n"
+                f"Bonus : +**{t['daily_xp_bonus']} XP** · +**{fmt_berries(t['daily_gold_bonus'])} 🍊**/jour"
+            ),
+            inline=True,
+        )
+    return e
+
+
+def tournament_embed(tournament: dict, entries: list[dict], matches: list[dict] = None) -> discord.Embed:
+    status_map = {
+        'registration': '📋 Inscriptions ouvertes',
+        'active':       '⚔️ En cours',
+        'finished':     '🏆 Terminé',
+    }
+    e = discord.Embed(
+        title="🏆 Tournoi des Équipages",
+        description=status_map.get(tournament['status'], tournament['status']),
+        color=0xFFD700,
+    )
+    from .utils import fmt_berries as _fb
+    e.add_field(name="💰 Prize Pool",   value=f"**{_fb(tournament['prize_pool'])} 🍊**",   inline=True)
+    e.add_field(name="🎟️ Inscription", value=f"**{_fb(tournament['entry_fee'])} 🍊**",    inline=True)
+    e.add_field(name="👥 Places",       value=f"**{len(entries)}/{tournament['max_slots']}**", inline=True)
+
+    if entries:
+        lines = [f"{i+1}. **{en['name']}** [{en['tag']}] · Niv.**{en['level']}**"
+                 for i, en in enumerate(entries)]
+        e.add_field(name="📋 Participants", value="\n".join(lines[:10]), inline=False)
+
+    if matches:
+        lines = []
+        for m in matches:
+            status = "✅" if m['status'] == 'done' else "⏳"
+            lines.append(
+                f"{status} R{m['round']} : Crew#{m['crew_a_id']} **{m['score_a']}—{m['score_b']}** Crew#{m['crew_b_id']}"
+            )
+        e.add_field(name="⚔️ Matchs", value="\n".join(lines[:8]), inline=False)
+    return e

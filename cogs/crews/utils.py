@@ -32,16 +32,16 @@ def random_role_color() -> discord.Color:
 
 
 async def award_xp(bot, crew_id: int, xp: int) -> tuple[int, bool]:
-    """Ajoute xp au crew (1 transaction DB). Retourne (new_xp, leveled_up)."""
     from . import database as db
     new_xp, _, leveled = await db.award_xp_and_level(crew_id, xp)
     return new_xp, leveled
 
 
-async def create_crew_channels(guild: discord.Guild, name: str, tag: str,
-                                role: discord.Role, parent_id: int | None
-                                ) -> tuple[int, int, int]:
-    """Crée catégorie + salon texte. Retourne (category_id, channel_id, 0)."""
+async def create_crew_channels(
+    guild: discord.Guild, name: str, tag: str,
+    role: discord.Role, parent_id: int | None,
+) -> tuple[int, int, int]:
+    """Crée catégorie + salon texte. Retourne (category_id, text_channel_id, 0)."""
     overwrites = {
         guild.default_role: discord.PermissionOverwrite(view_channel=False),
         role:               discord.PermissionOverwrite(view_channel=True, send_messages=True, connect=True),
@@ -52,23 +52,39 @@ async def create_crew_channels(guild: discord.Guild, name: str, tag: str,
         f"🏴‍☠️ {name}",
         overwrites=overwrites,
         position=100,
+        reason=f"Crew {tag} créé",
     )
-    txt = await guild.create_text_channel("📜︱pont", category=cat, overwrites=overwrites)
+    txt = await guild.create_text_channel(
+        "📜︱pont", category=cat, overwrites=overwrites,
+        reason=f"Crew {tag} salon",
+    )
     return cat.id, txt.id, 0
 
 
-async def delete_crew_channels(guild: discord.Guild, category_id: int | None,
-                                channel_id: int | None, role_id: int | None):
+async def delete_crew_channels(
+    guild: discord.Guild,
+    category_id: int | None,
+    channel_id: int | None,
+    role_id: int | None,
+):
+    """Supprime catégorie (et tous ses salons), puis le rôle."""
     if category_id:
         cat = guild.get_channel(category_id)
-        if cat:
-            for ch in cat.channels:
+        if cat and isinstance(cat, discord.CategoryChannel):
+            for ch in list(cat.channels):
                 try:
                     await ch.delete(reason="Crew dissous")
                 except Exception:
                     pass
             try:
                 await cat.delete(reason="Crew dissous")
+            except Exception:
+                pass
+    elif channel_id:
+        ch = guild.get_channel(channel_id)
+        if ch:
+            try:
+                await ch.delete(reason="Crew dissous")
             except Exception:
                 pass
     if role_id:

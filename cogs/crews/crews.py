@@ -2,7 +2,7 @@ import os
 import re
 import asyncio
 import random
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 import discord
 from discord import app_commands
@@ -16,6 +16,10 @@ from .constants import (
     MIN_WAR_HOURS, MAX_WAR_HOURS, XP_DUEL_WIN, XP_DUEL_LOSS, DISSOLVE_REFUND,
     CREW_COLOR, WAR_COOLDOWN_DAYS, SABOTAGE_COST, SABOTAGE_POINTS_STOLEN,
     XP_SABOTAGE, CONTRIBUTION_DUEL_WIN, POSITION_WAR_BONUS,
+    ISLANDS, MISSION_TEMPLATES, MISSIONS_PER_CREW, mission_difficulty,
+    TOURNAMENT_ENTRY_FEE, TOURNAMENT_MAX_SLOTS,
+    VOCAL_DUEL_ACCEPT_MINUTES, VOCAL_DUEL_DURATION_MINUTES,
+    VOCAL_DUEL_STAKE_DEFAULT, XP_VOCAL_DUEL_WIN, XP_VOCAL_DUEL_LOSS,
 )
 from .utils import (
     has_perm, can_feature, fmt_berries, random_role_color,
@@ -25,9 +29,10 @@ from .utils import (
 from .embeds import (
     crew_info_embed, treasury_embed, applications_embed,
     war_status_embed, history_embed, leaderboard_embed,
+    missions_embed, territories_embed, tournament_embed,
 )
 from .views import (
-    CreerCrewModal, RenommerModal, CandidatureModal, RetraitModal,
+    CreerCrewModal, RenommerModal, RetraitModal,
     ConfirmView, ApplicationsView, CrewListView,
     AllianceResponseView, WarResponseView,
 )
@@ -59,6 +64,86 @@ GUERRE_CHOICES = [
     app_commands.Choice(name="🗡️ Rompre une alliance",         value="trahir"),
     app_commands.Choice(name="📊 Stats de la guerre en cours", value="stats"),
 ]
+
+
+# ══════════════════════════════════════════════════════════════════════
+# DUEL VOCAL — VIEWS
+# ══════════════════════════════════════════════════════════════════════
+
+class VocalDuelResponseView(discord.ui.View):
+    """Envoyée au capitaine adverse pour accepter/refuser le défi."""
+
+    def __init__(self, duel_id: int, challenger_crew, opponent_crew, cog):
+        super().__init__(timeout=VOCAL_DUEL_ACCEPT_MINUTES * 60)
+        self._duel_id  = duel_id
+        self._chall    = challenger_crew
+        self._opp      = opponent_crew
+        self._cog      = cog
+
+    @discord.ui.button(label="⚔️ Accepter le défi", style=discord.ButtonStyle.danger)
+    async def accept(self, interaction: discord.Interaction, _):
+        if interaction.user.id != self._opp['captain_id']:
+            await interaction.response.send_message("❌ Seul le capitaine adverse peut répondre.", ephemeral=True)
+            return
+        await interaction.response.defer()
+        await self._cog._start_vocal_duel(interaction, self._duel_id, self._chall, self._opp)
+        self.stop()
+
+    @discord.ui.button(label="🚫 Refuser", style=discord.ButtonStyle.secondary)
+    async def refuse(self, interaction: discord.Interaction, _):
+        if interaction.user.id != self._opp['captain_id']:
+            await interaction.response.send_message("❌ Seul le capitaine adverse peut répondre.", ephemeral=True)
+            return
+        await db.cancel_vocal_duel(self._duel_id)
+        await interaction.response.edit_message(
+            content=f"🚫 **{self._opp['name']}** a refusé le défi de **{self._chall['name']}**.",
+            embed=None, view=None,
+        )
+        self.stop()
+
+    async def on_timeout(self):
+        await db.cancel_vocal_duel(self._duel_id)
+
+
+class ArbitreView(discord.ui.View):
+    """Envoyée à l'arbitre pour déclarer le vainqueur."""
+
+    def __init__(self, duel_id: int, crew_a, crew_b, voice_channel_id: int, cog):
+        super().__init__(timeout=VOCAL_DUEL_DURATION_MINUTES * 60)
+        self._duel_id       = duel_id
+        self._crew_a        = crew_a
+        self._crew_b        = crew_b
+        self._vc_id         = voice_channel_id
+        self._cog           = cog
+
+        b_a = discord.ui.Button(label=f"🏆 {crew_a['name']}", style=discord.ButtonStyle.success)
+        b_b = discord.ui.Button(label=f"🏆 {crew_b['name']}", style=discord.ButtonStyle.success)
+        b_n = discord.ui.Button(label="🤝 Match nul",          style=discord.ButtonStyle.secondary)
+
+        b_a.callback = lambda i: self._declare(i, self._crew_a['id'])
+        b_b.callback = lambda i: self._declare(i, self._crew_b['id'])
+        b_n.callback = lambda i: self._declare(i, None)
+
+        self.add_item(b_a)
+        self.add_item(b_b)
+        self.add_item(b_n)
+
+    async def _declare(self, interaction: discord.Interaction, winner_id: int | None):
+        await interaction.response.defer()
+        await self._cog._resolve_vocal_duel(interaction, self._duel_id, winner_id,
+                                             self._crew_a, self._crew_b, self._vc_id)
+        self.stop()
+
+    async def on_timeout(self):
+        await db.cancel_vocal_duel(self._duel_id)
+        guild = self._cog.bot.guilds[0] if self._cog.bot.guilds else None
+        if guild and self._vc_id:
+            vc = guild.get_channel(self._vc_id)
+            if vc:
+                try:
+                    await vc.delete(reason="Duel vocal expiré sans verdict")
+                except Exception:
+                    pass
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -340,8 +425,8 @@ class EquipageDashboardView(discord.ui.View):
             await inter.response.defer(ephemeral=True)
             crew_id = await db.create_crew(name, tag, description, uid)
             role = await inter.guild.create_role(name=f"🏴‍☠️ {tag}", color=random_role_color())
-            _, ch_id, _ = await create_crew_channels(inter.guild, name, tag, role, PARENT_CAT)
-            await db.update_crew(crew_id, text_channel_id=ch_id, role_id=role.id)
+            cat_id, ch_id, _ = await create_crew_channels(inter.guild, name, tag, role, PARENT_CAT)
+            await db.update_crew(crew_id, category_channel_id=cat_id, text_channel_id=ch_id, role_id=role.id)
             await db.add_member(uid, crew_id, 'capitaine')
             await db.add_history(crew_id, uid, 'joined', 'Fondateur')
             await assign_role(inter.guild, uid, role.id)
@@ -421,7 +506,12 @@ class EquipageDashboardView(discord.ui.View):
             if self._crew.get('role_id'):
                 await remove_role(interaction.guild, mem['user_id'], self._crew['role_id'])
         await db.dissolve_crew(self._crew['id'])
-        await delete_crew_channels(interaction.guild, None, self._crew.get('text_channel_id'), self._crew.get('role_id'))
+        await delete_crew_channels(
+            interaction.guild,
+            self._crew.get('category_channel_id'),
+            self._crew.get('text_channel_id'),
+            self._crew.get('role_id'),
+        )
         await self._cog._log_staff("💀 Crew dissous", f"**{self._crew['name']}** par <@{self._uid}>", 0xFF0000)
         await interaction.edit_original_response(
             embed=discord.Embed(
@@ -430,6 +520,91 @@ class EquipageDashboardView(discord.ui.View):
                 color=discord.Color.red(),
             ),
             view=None,
+        )
+
+
+# ══════════════════════════════════════════════════════════════════════
+# CONTEST & TOURNAMENT VIEWS
+# ══════════════════════════════════════════════════════════════════════
+
+class ContestVoteView(discord.ui.View):
+    def __init__(self, contest_id: int, attacker_id: int, defender_id: int | None):
+        super().__init__(timeout=7200)
+        self._contest_id  = contest_id
+        self._attacker_id = attacker_id
+        self._defender_id = defender_id
+
+    @discord.ui.button(label="⚔️ Attaquant", style=discord.ButtonStyle.danger)
+    async def vote_att(self, interaction: discord.Interaction, button: discord.ui.Button):
+        m, crew = await db.get_member_and_crew(interaction.user.id)
+        if not crew or crew['id'] != self._attacker_id:
+            await interaction.response.send_message(
+                "❌ Tu dois être dans l'équipage attaquant pour voter ici.", ephemeral=True
+            )
+            return
+        ok = await db.add_contest_vote(self._contest_id, interaction.user.id, crew['id'])
+        if not ok:
+            await interaction.response.send_message("❌ Tu as déjà voté.", ephemeral=True)
+            return
+        await interaction.response.send_message("✅ Vote enregistré !", ephemeral=True)
+
+    @discord.ui.button(label="🛡️ Défenseur", style=discord.ButtonStyle.primary)
+    async def vote_def(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if not self._defender_id:
+            await interaction.response.send_message("❌ Pas de défenseur.", ephemeral=True)
+            return
+        m, crew = await db.get_member_and_crew(interaction.user.id)
+        if not crew or crew['id'] != self._defender_id:
+            await interaction.response.send_message(
+                "❌ Tu dois être dans l'équipage défenseur pour voter ici.", ephemeral=True
+            )
+            return
+        ok = await db.add_contest_vote(self._contest_id, interaction.user.id, crew['id'])
+        if not ok:
+            await interaction.response.send_message("❌ Tu as déjà voté.", ephemeral=True)
+            return
+        await interaction.response.send_message("✅ Vote enregistré !", ephemeral=True)
+
+
+class TournamentView(discord.ui.View):
+    def __init__(self, tournament: dict, entries: list[dict], cog):
+        super().__init__(timeout=300)
+        self._tournament = tournament
+        self._entries    = entries
+        self._cog        = cog
+
+    @discord.ui.button(label="🎟️ S'inscrire", style=discord.ButtonStyle.success)
+    async def register(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if self._tournament['status'] != 'registration':
+            await interaction.response.send_message("❌ Les inscriptions sont fermées.", ephemeral=True)
+            return
+        if len(self._entries) >= self._tournament['max_slots']:
+            await interaction.response.send_message("❌ Tournoi complet.", ephemeral=True)
+            return
+        m, crew = await db.get_member_and_crew(interaction.user.id)
+        if not crew or crew['captain_id'] != interaction.user.id:
+            await interaction.response.send_message("❌ Seul le capitaine peut inscrire l'équipage.", ephemeral=True)
+            return
+        if any(e['crew_id'] == crew['id'] for e in self._entries):
+            await interaction.response.send_message("❌ Ton équipage est déjà inscrit.", ephemeral=True)
+            return
+        fee = self._tournament['entry_fee']
+        if crew['treasury'] < fee:
+            await interaction.response.send_message(
+                f"❌ Trésor insuffisant. Il faut **{fmt_berries(fee)} 🍊**.", ephemeral=True
+            )
+            return
+        await db.update_crew(crew['id'], treasury=crew['treasury'] - fee)
+        await db.update_crew(self._tournament['id'], prize_pool=self._tournament['prize_pool'] + fee)
+        ok = await db.register_tournament(self._tournament['id'], crew['id'])
+        if not ok:
+            await interaction.response.send_message("❌ Inscription échouée.", ephemeral=True)
+            return
+        await db.add_treasury_log(crew['id'], interaction.user.id, -fee, 'tournament_fee',
+                                   f"Tournoi #{self._tournament['id']}")
+        await interaction.response.send_message(
+            f"✅ **{crew['name']}** inscrit au tournoi ! Fee : **{fmt_berries(fee)} 🍊** prélevé du trésor.",
+            ephemeral=True,
         )
 
 
@@ -452,12 +627,23 @@ class CrewCog(CrewTasks, commands.Cog):
         self._daily_bounty_recalc.start()
         self._war_expire_check.start()
         self._weekly_leaderboard.start()
+        self._daily_territory_bonus.start()
+        self._weekly_missions.start()
+        self._contest_expire_check.start()
+        self._tournament_match_expire.start()
+        self._vocal_duel_expire_check.start()
+        await db.seed_territories(ISLANDS)
         print("[CREWS] Cog chargé ✅")
 
     async def cog_unload(self):
         self._daily_bounty_recalc.cancel()
         self._war_expire_check.cancel()
         self._weekly_leaderboard.cancel()
+        self._daily_territory_bonus.cancel()
+        self._weekly_missions.cancel()
+        self._contest_expire_check.cancel()
+        self._tournament_match_expire.cancel()
+        self._vocal_duel_expire_check.cancel()
 
     async def _get_user_crew(self, user_id: int):
         return await db.get_member_and_crew(user_id)
@@ -546,8 +732,8 @@ class CrewCog(CrewTasks, commands.Cog):
             await inter.response.defer(ephemeral=True)
             crew_id = await db.create_crew(name, tag, description, uid)
             role = await inter.guild.create_role(name=f"🏴‍☠️ {tag}", color=random_role_color())
-            _, ch_id, _ = await create_crew_channels(inter.guild, name, tag, role, PARENT_CAT)
-            await db.update_crew(crew_id, text_channel_id=ch_id, role_id=role.id)
+            cat_id, ch_id, _ = await create_crew_channels(inter.guild, name, tag, role, PARENT_CAT)
+            await db.update_crew(crew_id, category_channel_id=cat_id, text_channel_id=ch_id, role_id=role.id)
             await db.add_member(uid, crew_id, 'capitaine')
             await db.add_history(crew_id, uid, 'joined', 'Fondateur')
             await assign_role(inter.guild, uid, role.id)
@@ -772,7 +958,12 @@ class CrewCog(CrewTasks, commands.Cog):
                 if crew_obj.get('role_id'):
                     await remove_role(interaction.guild, mem['user_id'], crew_obj['role_id'])
             await db.dissolve_crew(crew_obj['id'])
-            await delete_crew_channels(interaction.guild, None, crew_obj.get('text_channel_id'), crew_obj.get('role_id'))
+            await delete_crew_channels(
+                interaction.guild,
+                crew_obj.get('category_channel_id'),
+                crew_obj.get('text_channel_id'),
+                crew_obj.get('role_id'),
+            )
             await self._log_staff("💀 Crew dissous", f"**{crew_obj['name']}** par <@{interaction.user.id}>", 0xFF0000)
             await interaction.edit_original_response(
                 embed=discord.Embed(
@@ -1088,6 +1279,408 @@ class CrewCog(CrewTasks, commands.Cog):
             app_commands.Choice(name=c['name'], value=c['name'])
             for c in crews if current.lower() in c['name'].lower()
         ][:25]
+
+    # ══════════════════════════════════════════════════════════════
+    # 5. /equipage liste
+    # ══════════════════════════════════════════════════════════════
+
+    @crew.command(name="liste", description="Liste tous les équipages actifs")
+    @app_commands.describe(recrutement="Afficher uniquement les équipages qui recrutent")
+    async def liste(self, interaction: discord.Interaction, recrutement: bool = False):
+        await interaction.response.defer()
+        crews, total = await db.list_crews(recruiting_only=recrutement, limit=10)
+        if not crews:
+            await interaction.followup.send("Aucun équipage actif.", ephemeral=True)
+            return
+        from .leaderboard import generate_leaderboard_image
+        file  = generate_leaderboard_image(crews)
+        embed = leaderboard_embed(crews)
+        embed.title = "📋 Équipages Actifs" + (" (recrutement)" if recrutement else "")
+        embed.set_footer(text=f"{total} équipage(s) au total")
+        embed.set_image(url="attachment://leaderboard.png")
+        view = CrewListView(crews, total, recruiting_only=recrutement)
+        await interaction.followup.send(embed=embed, file=file, view=view)
+
+    # ══════════════════════════════════════════════════════════════
+    # 6. /equipage missions
+    # ══════════════════════════════════════════════════════════════
+
+    @crew.command(name="missions", description="Missions hebdomadaires de l'équipage")
+    async def missions(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
+        m, crew_obj = await self._get_user_crew(interaction.user.id)
+        if not crew_obj:
+            await interaction.followup.send("❌ Tu n'es dans aucun équipage.", ephemeral=True)
+            return
+        active_missions = await db.get_active_missions(crew_obj['id'])
+        if not active_missions:
+            # Génération à la demande si pas encore générées
+            import random
+            expires_at = datetime.now(timezone.utc) + timedelta(days=7)
+            diff = mission_difficulty(crew_obj['level'])
+            templates = random.sample(MISSION_TEMPLATES, min(MISSIONS_PER_CREW, len(MISSION_TEMPLATES)))
+            for tpl in templates:
+                lvl_data = tpl['levels'][diff]
+                label    = tpl['label'].format(target=lvl_data['target'])
+                await db.create_mission(
+                    crew_obj['id'], tpl['type'], label,
+                    lvl_data['target'], lvl_data['xp'], lvl_data['gold'],
+                    expires_at,
+                )
+            active_missions = await db.get_active_missions(crew_obj['id'])
+        await interaction.followup.send(
+            embed=missions_embed(crew_obj, active_missions), ephemeral=True
+        )
+
+    # ══════════════════════════════════════════════════════════════
+    # 7. /equipage territoires + /equipage attaquer-ile
+    # ══════════════════════════════════════════════════════════════
+
+    @crew.command(name="territoires", description="Carte des territoires — voir les îles et leurs propriétaires")
+    async def territoires(self, interaction: discord.Interaction):
+        await interaction.response.defer()
+        territories = await db.get_all_territories()
+        owner_ids   = {t['owner_crew_id'] for t in territories if t.get('owner_crew_id')}
+        crews_list  = await db.get_crews_by_ids(list(owner_ids))
+        crews_map   = {c['id']: c for c in crews_list}
+        await interaction.followup.send(embed=territories_embed(territories, crews_map))
+
+    @crew.command(name="attaquer-ile", description="Attaquer une île pour la conquérir (dure 2h)")
+    @app_commands.describe(ile="Clé de l'île (ex: wano, dressrosa, egghead…)")
+    async def attaquer_ile(self, interaction: discord.Interaction, ile: str):
+        await interaction.response.defer(ephemeral=True)
+        m, crew_obj = await self._get_user_crew(interaction.user.id)
+        if not crew_obj:
+            await interaction.followup.send("❌ Tu n'es dans aucun équipage.", ephemeral=True)
+            return
+        if crew_obj['captain_id'] != interaction.user.id:
+            await interaction.followup.send("❌ Seul le capitaine peut lancer une attaque.", ephemeral=True)
+            return
+
+        territory = await db.get_territory(ile.lower())
+        if not territory:
+            await interaction.followup.send(
+                f"❌ Île inconnue. Utilise `/equipage territoires` pour voir la liste.", ephemeral=True
+            )
+            return
+        if territory.get('owner_crew_id') == crew_obj['id']:
+            await interaction.followup.send("❌ Tu contrôles déjà cette île.", ephemeral=True)
+            return
+        existing = await db.get_active_contest(ile.lower())
+        if existing:
+            await interaction.followup.send("❌ Une contestation est déjà en cours sur cette île.", ephemeral=True)
+            return
+
+        ends_at     = datetime.now(timezone.utc) + timedelta(minutes=120)
+        defender_id = territory.get('owner_crew_id')
+        contest_id  = await db.create_contest(ile.lower(), crew_obj['id'], defender_id, ends_at)
+
+        ch = self.bot.get_channel(ANNOUNCE_CH)
+        if ch:
+            view = ContestVoteView(contest_id, crew_obj['id'], defender_id)
+            defender_name = ""
+            if defender_id:
+                def_crew = await db.get_crew(defender_id)
+                defender_name = f"Défenseur : **{def_crew['name'] if def_crew else '?'}**" if def_crew else ""
+            embed = discord.Embed(
+                title=f"⚔️ Attaque sur {territory['zone_emoji']} {territory['zone_name']} !",
+                description=(
+                    f"**{crew_obj['name']}** attaque l'île **{territory['zone_name']}** !\n"
+                    f"{defender_name if defender_name else 'Île libre — premier à voter gagne !'}\n\n"
+                    f"Votez pour soutenir votre camp. Fin : <t:{int(ends_at.timestamp())}:R>"
+                ),
+                color=0xFF6600,
+            )
+            await ch.send(embed=embed, view=view)
+
+        await interaction.followup.send(
+            f"⚔️ Attaque lancée sur **{territory['zone_name']}** ! La communauté a 2h pour voter.",
+            ephemeral=True,
+        )
+
+    # ══════════════════════════════════════════════════════════════
+    # 8. /equipage tournoi + /equipage tournoi-creer + /equipage tournoi-demarrer
+    # ══════════════════════════════════════════════════════════════
+
+    @crew.command(name="tournoi", description="Voir le tournoi en cours ou s'inscrire")
+    async def tournoi(self, interaction: discord.Interaction):
+        await interaction.response.defer()
+        tournament = await db.get_open_tournament()
+        if not tournament:
+            await interaction.followup.send(embed=discord.Embed(
+                title="🏆 Tournoi des Équipages",
+                description="*Aucun tournoi en cours.*\nUn admin peut en lancer un avec `/equipage tournoi-creer`.",
+                color=0xFFD700,
+            ))
+            return
+        entries = await db.get_tournament_entries(tournament['id'])
+        await interaction.followup.send(
+            embed=tournament_embed(tournament, entries),
+            view=TournamentView(tournament, entries, self),
+        )
+
+    @crew.command(name="tournoi-creer", description="[Admin] Créer un nouveau tournoi")
+    @app_commands.default_permissions(administrator=True)
+    @app_commands.describe(fee="Frais d'inscription (défaut 500 000 🍊)", slots="Nombre de places (4 ou 8)")
+    async def tournoi_creer(self, interaction: discord.Interaction,
+                             fee: int = 500_000, slots: int = 8):
+        await interaction.response.defer(ephemeral=True)
+        existing = await db.get_open_tournament()
+        if existing:
+            await interaction.followup.send("❌ Un tournoi est déjà ouvert.", ephemeral=True)
+            return
+        if slots not in (4, 8):
+            await interaction.followup.send("❌ slots doit être 4 ou 8.", ephemeral=True)
+            return
+        t_id = await db.create_tournament(fee, slots)
+        await interaction.followup.send(
+            f"✅ Tournoi #{t_id} créé ! Inscriptions ouvertes · Fee : **{fmt_berries(fee)} 🍊** · {slots} places.",
+            ephemeral=True,
+        )
+
+    @crew.command(name="tournoi-demarrer", description="[Admin] Démarrer le tournoi et générer le bracket")
+    @app_commands.default_permissions(administrator=True)
+    async def tournoi_demarrer(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
+        tournament = await db.get_open_tournament()
+        if not tournament or tournament['status'] != 'registration':
+            await interaction.followup.send("❌ Aucun tournoi en inscription.", ephemeral=True)
+            return
+        entries = await db.get_tournament_entries(tournament['id'])
+        if len(entries) < 2:
+            await interaction.followup.send("❌ Il faut au moins 2 équipages.", ephemeral=True)
+            return
+        matches = await db.start_tournament(tournament['id'])
+        ch = self.bot.get_channel(ANNOUNCE_CH)
+        if ch:
+            lines = []
+            for match in matches:
+                a = await db.get_crew(match['crew_a_id'])
+                b = await db.get_crew(match['crew_b_id'])
+                lines.append(f"⚔️ **{a['name'] if a else '?'}** vs **{b['name'] if b else '?'}**")
+            await ch.send(embed=discord.Embed(
+                title="🏆 Tournoi Lancé !",
+                description="\n".join(lines) + f"\n\nMatchs durent **24h** — utilisez `/equipage guerre attaquer` !",
+                color=0xFFD700,
+            ))
+        await interaction.followup.send(f"✅ Tournoi démarré ! {len(matches)} matchs générés.", ephemeral=True)
+
+
+    # ══════════════════════════════════════════════════════════════════
+    # 9. /equipage duel-vocal
+    # ══════════════════════════════════════════════════════════════════
+
+    @crew.command(name="duel-vocal", description="Défie un équipage en vocal avec un arbitre neutre")
+    @app_commands.describe(
+        cible="Nom de l'équipage à défier",
+        mise="Mise en Berrys (défaut 100 000 🍊)",
+    )
+    async def duel_vocal(self, interaction: discord.Interaction,
+                          cible: str, mise: int = VOCAL_DUEL_STAKE_DEFAULT):
+        await interaction.response.defer(ephemeral=True)
+        m, crew_obj = await self._get_user_crew(interaction.user.id)
+        if not crew_obj:
+            await interaction.followup.send("❌ Tu n'es dans aucun équipage.", ephemeral=True)
+            return
+        if crew_obj['captain_id'] != interaction.user.id:
+            await interaction.followup.send("❌ Seul le capitaine peut lancer un défi.", ephemeral=True)
+            return
+        if crew_obj['treasury'] < mise:
+            await interaction.followup.send(
+                f"❌ Trésor insuffisant ({fmt_berries(crew_obj['treasury'])} 🍊 < mise {fmt_berries(mise)} 🍊).",
+                ephemeral=True,
+            )
+            return
+
+        existing = await db.get_active_vocal_duel_for_crew(crew_obj['id'])
+        if existing:
+            await interaction.followup.send("❌ Un duel vocal est déjà en cours pour ton équipage.", ephemeral=True)
+            return
+
+        target = await db.get_crew_by_name(cible)
+        if not target or target['id'] == crew_obj['id']:
+            await interaction.followup.send("❌ Équipage introuvable.", ephemeral=True)
+            return
+        if target['treasury'] < mise:
+            await interaction.followup.send(
+                f"❌ **{target['name']}** n'a pas assez dans son trésor pour cette mise.",
+                ephemeral=True,
+            )
+            return
+
+        existing_opp = await db.get_active_vocal_duel_for_crew(target['id'])
+        if existing_opp:
+            await interaction.followup.send("❌ Cet équipage a déjà un duel vocal en cours.", ephemeral=True)
+            return
+
+        accept_deadline = datetime.now(timezone.utc) + timedelta(minutes=VOCAL_DUEL_ACCEPT_MINUTES)
+        ends_at         = datetime.now(timezone.utc) + timedelta(minutes=VOCAL_DUEL_ACCEPT_MINUTES + VOCAL_DUEL_DURATION_MINUTES)
+        duel_id = await db.create_vocal_duel(crew_obj['id'], target['id'], mise, accept_deadline, ends_at)
+
+        cap_opp = interaction.guild.get_member(target['captain_id'])
+        view    = VocalDuelResponseView(duel_id, crew_obj, target, self)
+
+        embed = discord.Embed(
+            title="🎙️ Défi en vocal !",
+            description=(
+                f"**{crew_obj['name']}** vous défie en duel vocal !\n\n"
+                f"💰 Mise : **{fmt_berries(mise)} 🍊** de chaque côté\n"
+                f"⏱️ Vous avez **{VOCAL_DUEL_ACCEPT_MINUTES} min** pour répondre."
+            ),
+            color=0x5865F2,
+        )
+
+        if cap_opp:
+            try:
+                await cap_opp.send(embed=embed, view=view)
+            except discord.Forbidden:
+                pass
+
+        ch = self.bot.get_channel(ANNOUNCE_CH)
+        if ch:
+            await ch.send(embed=discord.Embed(
+                title="🎙️ Défi en vocal lancé !",
+                description=f"**{crew_obj['name']}** défie **{target['name']}** en duel vocal ! Le capitaine adverse doit répondre.",
+                color=0x5865F2,
+            ))
+
+        await interaction.followup.send(
+            f"⚔️ Défi envoyé à **{target['name']}** ! En attente de réponse ({VOCAL_DUEL_ACCEPT_MINUTES} min).",
+            ephemeral=True,
+        )
+
+    async def _start_vocal_duel(self, interaction: discord.Interaction,
+                                  duel_id: int, chall_crew: dict, opp_crew: dict):
+        guild = interaction.guild
+
+        # Créer le salon vocal temporaire
+        cat = guild.get_channel(PARENT_CAT) if PARENT_CAT else None
+        try:
+            vc = await guild.create_voice_channel(
+                f"⚔️ Duel {chall_crew['tag']} vs {opp_crew['tag']}",
+                category=cat,
+                reason="Duel vocal arbitré",
+            )
+        except discord.Forbidden:
+            vc = None
+
+        # Trouver un arbitre neutre (membre du serveur hors des deux équipages)
+        chall_members = {m2['user_id'] for m2 in await db.get_crew_members(chall_crew['id'])}
+        opp_members   = {m2['user_id'] for m2 in await db.get_crew_members(opp_crew['id'])}
+        excluded      = chall_members | opp_members
+
+        candidates = [
+            mem for mem in guild.members
+            if not mem.bot and mem.id not in excluded
+        ]
+        import random as _rnd
+        arbitre = _rnd.choice(candidates) if candidates else None
+
+        arbitre_id = arbitre.id if arbitre else interaction.user.id
+        vc_id      = vc.id if vc else 0
+        await db.accept_vocal_duel(duel_id, arbitre_id, vc_id)
+
+        chall_cap = guild.get_member(chall_crew['captain_id'])
+        opp_cap   = guild.get_member(opp_crew['captain_id'])
+
+        vc_mention = vc.mention if vc else "*(pas de salon créé — rejoignez-vous en vocal)*"
+
+        notif_embed = discord.Embed(
+            title="🎙️ Duel Vocal — C'est parti !",
+            description=(
+                f"**{chall_crew['name']}** ⚔️ **{opp_crew['name']}**\n\n"
+                f"📢 Salon : {vc_mention}\n"
+                f"⚖️ Arbitre : <@{arbitre_id}>\n"
+                f"⏱️ Durée : **{VOCAL_DUEL_DURATION_MINUTES} min** max\n"
+                f"💰 Mise : **{fmt_berries(chall_crew.get('treasury', 0))} 🍊** → en jeu !"
+            ),
+            color=0x5865F2,
+        )
+
+        for cap in (chall_cap, opp_cap):
+            if cap:
+                try:
+                    await cap.send(embed=notif_embed)
+                except discord.Forbidden:
+                    pass
+
+        # DM arbitre avec les boutons de verdict
+        arbitre_view = ArbitreView(duel_id, chall_crew, opp_crew, vc_id, self)
+        if arbitre:
+            try:
+                await arbitre.send(
+                    embed=discord.Embed(
+                        title="⚖️ Tu es l'arbitre !",
+                        description=(
+                            f"Tu as été désigné arbitre du duel **{chall_crew['name']}** vs **{opp_crew['name']}**.\n\n"
+                            f"Rejoins {vc_mention}, observe le duel, puis déclare le vainqueur ci-dessous.\n"
+                            f"Tu as **{VOCAL_DUEL_DURATION_MINUTES} min**."
+                        ),
+                        color=0xFFD700,
+                    ),
+                    view=arbitre_view,
+                )
+            except discord.Forbidden:
+                pass
+
+        ch = self.bot.get_channel(ANNOUNCE_CH)
+        if ch:
+            await ch.send(embed=notif_embed)
+
+        await interaction.edit_original_response(
+            content=f"✅ Duel vocal lancé ! Arbitre : <@{arbitre_id}> · {vc_mention}",
+            embed=None, view=None,
+        )
+
+    async def _resolve_vocal_duel(self, interaction: discord.Interaction,
+                                    duel_id: int, winner_id: int | None,
+                                    crew_a: dict, crew_b: dict, vc_id: int):
+        await db.resolve_vocal_duel(duel_id, winner_id)
+
+        loser_id = None
+        if winner_id:
+            loser_id  = crew_b['id'] if winner_id == crew_a['id'] else crew_a['id']
+            winner    = await db.get_crew(winner_id)
+            loser     = await db.get_crew(loser_id)
+            duel_row  = await db.get_vocal_duel(duel_id)
+            stake     = duel_row['stake'] if duel_row else VOCAL_DUEL_STAKE_DEFAULT
+
+            await asyncio.gather(
+                award_xp(self.bot, winner_id, XP_VOCAL_DUEL_WIN),
+                award_xp(self.bot, loser_id,  XP_VOCAL_DUEL_LOSS),
+                db.update_crew(winner_id, treasury=winner['treasury'] + stake),
+                db.update_crew(loser_id,  treasury=max(0, loser['treasury'] - stake)),
+                db.add_treasury_log(winner_id, 0, stake,  'duel_win',  f"Duel vocal vs {loser['name']}"),
+                db.add_treasury_log(loser_id,  0, -stake, 'duel_loss', f"Duel vocal vs {winner['name']}"),
+                db.add_history(winner_id, winner['captain_id'], 'duel_vocal_win',  f"vs {loser['name']}"),
+                db.add_history(loser_id,  loser['captain_id'],  'duel_vocal_loss', f"vs {winner['name']}"),
+            )
+            result_txt = f"🏆 **{winner['name']}** remporte le duel et **{fmt_berries(stake)} 🍊** !"
+        else:
+            result_txt = "🤝 Match nul — aucune mise transférée."
+
+        guild = self.bot.get_guild(interaction.guild_id) if interaction.guild_id else (self.bot.guilds[0] if self.bot.guilds else None)
+        if guild and vc_id:
+            vc = guild.get_channel(vc_id)
+            if vc:
+                try:
+                    await vc.delete(reason="Duel vocal terminé")
+                except Exception:
+                    pass
+
+        ch = self.bot.get_channel(ANNOUNCE_CH)
+        if ch:
+            await ch.send(embed=discord.Embed(
+                title="🎙️ Fin du Duel Vocal !",
+                description=(
+                    f"**{crew_a['name']}** ⚔️ **{crew_b['name']}**\n\n{result_txt}"
+                ),
+                color=0xFFD700 if winner_id else 0x5865F2,
+            ))
+
+        await interaction.followup.send(
+            f"✅ Verdict enregistré ! {result_txt}", ephemeral=True
+        )
 
 
 async def setup(bot: commands.Bot):
