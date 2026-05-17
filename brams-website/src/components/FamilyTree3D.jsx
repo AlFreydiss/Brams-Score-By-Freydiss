@@ -32,7 +32,7 @@ function Ocean({ mangaMode }) {
     <mesh ref={meshRef} rotation={[-Math.PI / 2, 0, 0]} position={[0, -3.5, 0]}>
       <planeGeometry args={[120, 120, 40, 40]} />
       <meshStandardMaterial
-        color={mangaMode ? '#7aaac8' : '#041630'}
+        color={mangaMode ? '#7AAAC8' : '#03080E'}
         transparent
         opacity={0.88}
         side={THREE.DoubleSide}
@@ -51,31 +51,47 @@ function makePosterTexture(char, mangaMode) {
   cv.width = W; cv.height = H
   const ctx = cv.getContext('2d')
 
-  // Paper
+  // Parchment paper
   const grad = ctx.createLinearGradient(0, 0, 0, H)
-  grad.addColorStop(0, mangaMode ? '#f0e4c0' : '#c8aa78')
-  grad.addColorStop(1, mangaMode ? '#ddd0a0' : '#a88848')
+  grad.addColorStop(0,   '#FAF0DC')
+  grad.addColorStop(0.4, '#F2E4B8')
+  grad.addColorStop(0.8, '#E8D49E')
+  grad.addColorStop(1,   '#DEC882')
   ctx.fillStyle = grad
   ctx.fillRect(0, 0, W, H)
 
-  // Aged texture overlay
-  ctx.fillStyle = 'rgba(0,0,0,0.04)'
-  for (let i = 0; i < 40; i++) {
-    ctx.fillRect(Math.random() * W, Math.random() * H, Math.random() * 30 + 5, 1)
+  // Corner burns
+  const burnCorner = (x, y) => {
+    const b = ctx.createRadialGradient(x, y, 0, x, y, 60)
+    b.addColorStop(0, 'rgba(80,40,10,0.3)')
+    b.addColorStop(1, 'rgba(80,40,10,0)')
+    ctx.fillStyle = b
+    ctx.fillRect(0, 0, W, H)
+  }
+  burnCorner(0, 0); burnCorner(W, 0); burnCorner(0, H); burnCorner(W, H)
+
+  // Aged grain
+  ctx.fillStyle = 'rgba(80,40,10,0.035)'
+  for (let i = 0; i < 50; i++) {
+    ctx.fillRect(Math.random() * W, Math.random() * H, Math.random() * 28 + 3, 1)
   }
 
-  // Header band
-  ctx.fillStyle = char.color || '#8b0000'
+  // Header band (dark ink, subdued)
+  const headerColor = char.color || '#8b0000'
+  ctx.fillStyle = headerColor + 'cc'
   ctx.fillRect(0, 0, W, 82)
+  // Thin gold border under header
+  ctx.fillStyle = 'rgba(212,168,50,0.6)'
+  ctx.fillRect(0, 80, W, 2)
 
   // "WANTED" text
-  ctx.fillStyle = '#f8f0d8'
-  ctx.font = 'bold 40px Georgia, serif'
+  ctx.fillStyle = '#FAF0DC'
+  ctx.font = 'bold 38px Georgia, serif'
   ctx.textAlign = 'center'
-  ctx.shadowColor = 'rgba(0,0,0,0.6)'
-  ctx.shadowBlur = 6
+  ctx.shadowColor = 'rgba(0,0,0,0.7)'
+  ctx.shadowBlur = 5
   ctx.fillText('WANTED', W / 2, 50)
-  ctx.font = 'bold 13px Georgia, serif'
+  ctx.font = 'italic 12px Georgia, serif'
   ctx.fillText('DEAD OR ALIVE', W / 2, 72)
   ctx.shadowBlur = 0
 
@@ -104,45 +120,54 @@ function makePosterTexture(char, mangaMode) {
   }
 
   // Name
-  ctx.fillStyle = '#1a0800'
-  ctx.font = 'bold 16px Georgia, serif'
+  ctx.fillStyle = '#1A0800'
+  ctx.font = 'bold 15px Georgia, serif'
   ctx.textAlign = 'center'
   const name = char.name.length > 18 ? char.name.substring(0, 16) + '…' : char.name
-  ctx.fillText(name, W / 2, 294)
+  ctx.fillText(name, W / 2, 292)
+
+  // Divider line under name
+  ctx.strokeStyle = 'rgba(74,44,16,0.4)'
+  ctx.lineWidth = 1
+  ctx.beginPath(); ctx.moveTo(30, 300); ctx.lineTo(W - 30, 300); ctx.stroke()
 
   // Alias
   if (char.alias) {
     ctx.font = 'italic 11px Georgia, serif'
-    ctx.fillStyle = '#3a1800'
+    ctx.fillStyle = '#5C3A1A'
     const alias = char.alias.length > 22 ? char.alias.substring(0, 20) + '…' : char.alias
-    ctx.fillText(`"${alias}"`, W / 2, 312)
+    ctx.fillText(`"${alias}"`, W / 2, 316)
   }
 
   // Bounty
   if (char.bounty) {
-    ctx.fillStyle = '#1a0800'
-    ctx.font = 'bold 12px Georgia, serif'
-    ctx.fillText(char.bounty, W / 2, 334)
-    ctx.font = '10px Georgia, serif'
-    ctx.fillText('PRIME', W / 2, 348)
+    ctx.font = 'italic 9px Georgia, serif'
+    ctx.fillStyle = '#8A5A20'
+    ctx.fillText('— PRIME —', W / 2, 334)
+    ctx.fillStyle = '#1A0800'
+    ctx.font = 'bold 13px Georgia, serif'
+    ctx.fillText(char.bounty, W / 2, 350)
   }
 
   // Haki dots
   if (char.haki.length > 0) {
     char.haki.forEach((h, i) => {
       ctx.beginPath()
-      ctx.arc(18 + i * 14, H - 16, 5, 0, Math.PI * 2)
-      ctx.fillStyle = h === 'conqueror' ? '#d4a017' : h === 'armament' ? '#64748b' : '#60a5fa'
+      ctx.arc(18 + i * 15, H - 16, 5, 0, Math.PI * 2)
+      ctx.fillStyle = h === 'conqueror' ? '#D4A017' : h === 'armament' ? '#6B7280' : '#3B82F6'
       ctx.fill()
+      ctx.strokeStyle = 'rgba(0,0,0,0.3)'
+      ctx.lineWidth = 1
+      ctx.stroke()
     })
   }
 
-  // Outer border
-  ctx.strokeStyle = char.color || '#8b4513'
-  ctx.lineWidth = 7
+  // Outer border — ink
+  ctx.strokeStyle = 'rgba(60,30,8,0.7)'
+  ctx.lineWidth = 6
   ctx.strokeRect(4, 4, W - 8, H - 8)
-  ctx.strokeStyle = 'rgba(255,255,255,0.15)'
-  ctx.lineWidth = 2
+  ctx.strokeStyle = 'rgba(212,168,50,0.35)'
+  ctx.lineWidth = 1.5
   ctx.strokeRect(10, 10, W - 20, H - 20)
 
   const tex = new THREE.CanvasTexture(cv)
@@ -397,7 +422,7 @@ function CharDetail({ char, onClose, mangaMode }) {
     <div style={{ background: `${char.color}18`, border: `1px solid ${char.color}50`, borderRadius: 14, padding: '16px 18px' }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 }}>
         <div>
-          <div style={{ fontFamily: "'Pirata One', cursive", fontSize: 19, color: txt, lineHeight: 1.2 }}>
+          <div style={{ fontFamily: "'Cinzel', serif", fontSize: 14, fontWeight: 700, color: txt, lineHeight: 1.3, letterSpacing: '0.04em' }}>
             {char.emoji} {char.name}
           </div>
           {char.alias && <div style={{ fontSize: 12, color: char.color, fontStyle: 'italic', marginTop: 3 }}>"{char.alias}"</div>}
@@ -438,11 +463,11 @@ export default function FamilyTree3D({ onClose }) {
 
   const cfg = TREE_CONFIGS[activeTree]
 
-  const bg    = mangaMode ? '#f5f0e8' : '#080c18'
-  const panel = mangaMode ? 'rgba(245,240,232,0.97)' : 'rgba(8,12,24,0.94)'
-  const txt   = mangaMode ? '#1a0800' : '#ffffff'
-  const muted = mangaMode ? 'rgba(0,0,0,0.4)' : 'rgba(255,255,255,0.35)'
-  const border= mangaMode ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.07)'
+  const bg    = mangaMode ? '#F5F0E8' : '#0E0A06'
+  const panel = mangaMode ? 'rgba(250,244,228,0.98)' : 'rgba(18,11,4,0.97)'
+  const txt   = mangaMode ? '#1A0800' : 'rgba(230,200,140,0.92)'
+  const muted = mangaMode ? 'rgba(26,8,0,0.5)'  : 'rgba(195,155,70,0.5)'
+  const border= mangaMode ? 'rgba(26,8,0,0.12)' : 'rgba(140,100,40,0.22)'
 
   useEffect(() => {
     document.title = 'Arbre 3D — Brams'
@@ -460,8 +485,8 @@ export default function FamilyTree3D({ onClose }) {
         </button>
 
         <div style={{ flex: 1, textAlign: 'center' }}>
-          <span style={{ fontFamily: "'Pirata One', cursive", fontSize: 22, color: txt }}>🌊 Arbre des Personnages 3D</span>
-          <span style={{ fontSize: 11, color: muted, marginLeft: 10 }}>{cfg.emoji} {cfg.label}</span>
+          <span style={{ fontFamily: "'Cinzel', 'Trajan Pro', serif", fontSize: 18, fontWeight: 700, letterSpacing: '0.12em', color: txt }}>ARBRE DES PERSONNAGES</span>
+          <span style={{ fontFamily: "'IM Fell English', serif", fontStyle: 'italic', fontSize: 11, color: muted, marginLeft: 12 }}>{cfg.emoji} {cfg.label}</span>
         </div>
 
         <button onClick={() => setMangaMode(m => !m)} style={{ background: mangaMode ? '#1a0800' : 'rgba(212,160,23,0.15)', border: `1px solid ${mangaMode ? 'transparent' : 'rgba(212,160,23,0.35)'}`, borderRadius: 9, color: mangaMode ? '#fff' : '#d4a017', cursor: 'pointer', padding: '7px 14px', fontSize: 12, fontWeight: 700 }}>
@@ -481,7 +506,7 @@ export default function FamilyTree3D({ onClose }) {
 
             {/* Tree selector */}
             <div style={{ padding: '14px 14px 6px' }}>
-              <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.1em', color: muted, marginBottom: 8, textTransform: 'uppercase' }}>Arbres</div>
+              <div style={{ fontFamily: "'Cinzel', serif", fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', color: muted, marginBottom: 8, textTransform: 'uppercase' }}>Arbres</div>
               {Object.values(TREE_CONFIGS).map(c => (
                 <button key={c.id} onClick={() => { setActiveTree(c.id); setSelectedChar(null) }} style={{ width: '100%', textAlign: 'left', padding: '9px 12px', borderRadius: 10, border: `1px solid ${activeTree === c.id ? c.color + '55' : border}`, background: activeTree === c.id ? `${c.color}15` : 'transparent', color: activeTree === c.id ? c.color : muted, cursor: 'pointer', marginBottom: 5, fontSize: 13, fontWeight: activeTree === c.id ? 700 : 500, display: 'flex', alignItems: 'center', gap: 8, transition: 'all 0.15s' }}>
                   <span style={{ fontSize: 17 }}>{c.emoji}</span>
@@ -493,7 +518,7 @@ export default function FamilyTree3D({ onClose }) {
 
             {/* Filters */}
             <div style={{ padding: '12px 14px', borderTop: `1px solid ${border}` }}>
-              <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.1em', color: muted, marginBottom: 8, textTransform: 'uppercase' }}>Filtres</div>
+              <div style={{ fontFamily: "'Cinzel', serif", fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', color: muted, marginBottom: 8, textTransform: 'uppercase' }}>Filtres</div>
 
               <div style={{ fontSize: 11, color: muted, marginBottom: 5 }}>Statut</div>
               <div style={{ display: 'flex', gap: 5, marginBottom: 12 }}>
@@ -514,7 +539,7 @@ export default function FamilyTree3D({ onClose }) {
 
             {/* Legend */}
             <div style={{ padding: '12px 14px', borderTop: `1px solid ${border}` }}>
-              <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.1em', color: muted, marginBottom: 8, textTransform: 'uppercase' }}>Légende des liens</div>
+              <div style={{ fontFamily: "'Cinzel', serif", fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', color: muted, marginBottom: 8, textTransform: 'uppercase' }}>Légende des liens</div>
               {Object.entries(LINK_COLORS).map(([type, color]) => (
                 <div key={type} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
                   <div style={{ width: 22, height: 3, background: color, borderRadius: 2, flexShrink: 0 }} />
@@ -527,7 +552,7 @@ export default function FamilyTree3D({ onClose }) {
 
             {/* Haki legend */}
             <div style={{ padding: '12px 14px', borderTop: `1px solid ${border}` }}>
-              <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.1em', color: muted, marginBottom: 8, textTransform: 'uppercase' }}>Points Haki</div>
+              <div style={{ fontFamily: "'Cinzel', serif", fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', color: muted, marginBottom: 8, textTransform: 'uppercase' }}>Points Haki</div>
               {[['conqueror','⚡ Conquérant','#d4a017'],['armament','⚫ Armement','#64748b'],['observation','👁 Observation','#60a5fa']].map(([k, l, c]) => (
                 <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
                   <div style={{ width: 10, height: 10, borderRadius: '50%', background: c, flexShrink: 0 }} />
@@ -567,15 +592,15 @@ export default function FamilyTree3D({ onClose }) {
           </Canvas>
 
           {/* Controls hint */}
-          <div style={{ position: 'absolute', bottom: 16, right: 16, fontSize: 11, color: mangaMode ? 'rgba(0,0,0,0.25)' : 'rgba(255,255,255,0.2)', textAlign: 'right', pointerEvents: 'none', lineHeight: 1.7 }}>
-            🖱️ Glisser : tourner &nbsp;·&nbsp; Molette : zoomer &nbsp;·&nbsp; Clic droit : déplacer<br />
+          <div style={{ position: 'absolute', bottom: 16, right: 16, fontFamily: "'IM Fell English', serif", fontStyle: 'italic', fontSize: 11, color: mangaMode ? 'rgba(26,8,0,0.3)' : 'rgba(195,155,70,0.35)', textAlign: 'right', pointerEvents: 'none', lineHeight: 1.8 }}>
+            Glisser : tourner · Molette : zoomer · Clic droit : déplacer<br />
             Clic sur un poster : voir les détails
           </div>
 
           {/* Selected name badge */}
           {selectedChar && (
-            <div style={{ position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)', background: `${selectedChar.color}dd`, color: '#fff', borderRadius: 100, padding: '6px 18px', fontSize: 13, fontWeight: 800, pointerEvents: 'none', backdropFilter: 'blur(8px)', boxShadow: `0 4px 20px ${selectedChar.color}66` }}>
-              {selectedChar.emoji} {selectedChar.name}
+            <div style={{ position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)', background: `rgba(18,11,4,0.9)`, border: `1px solid ${selectedChar.color}99`, color: 'rgba(230,200,140,0.95)', borderRadius: 100, padding: '6px 20px', fontFamily: "'Cinzel', serif", fontSize: 12, fontWeight: 700, letterSpacing: '0.08em', pointerEvents: 'none', backdropFilter: 'blur(12px)', boxShadow: `0 4px 24px rgba(0,0,0,0.5), 0 0 20px ${selectedChar.color}44` }}>
+              {selectedChar.name}
             </div>
           )}
         </div>
