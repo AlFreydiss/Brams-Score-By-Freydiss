@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 
 const FEATURES = [
   {
@@ -191,7 +191,7 @@ export default function EquipageSection() {
           </p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
             <a
-              href="https://discord.gg/ez4dBTPE"
+              href="https://discord.gg/v3Ddhtbz"
               target="_blank"
               rel="noopener noreferrer"
               className="btn btn-discord"

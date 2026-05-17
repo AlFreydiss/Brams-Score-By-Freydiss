@@ -1,4 +1,4 @@
-const TEAM = [
+﻿const TEAM = [
   { name: 'Brams',    role: 'Fondateur & Monteur', emoji: '👑', color: '#FFD700', desc: 'Créateur du serveur, monteur vidéo. À l\'origine de tout le projet Brams Community.' },
   { name: 'Freydiss', role: 'Admin & Développeur', emoji: '⚙️', color: '#00C2FF', desc: 'Admin du serveur et créateur du bot Brams Score. Développeur du projet.' },
   { name: 'Benactief',role: 'Admin',               emoji: '🛡️', color: '#9B59B6', desc: 'Admin du serveur. Gère la modération et l\'organisation des membres.' },
@@ -55,7 +55,7 @@ export default function AboutModal({ onClose }) {
         </div>
 
         <div style={{ display: 'flex', gap: 8 }}>
-          <a href="https://discord.gg/ez4dBTPE" target="_blank" rel="noopener noreferrer"
+          <a href="https://discord.gg/v3Ddhtbz" target="_blank" rel="noopener noreferrer"
             className="btn btn-discord" style={{ flex: 1, justifyContent: 'center', padding: '11px 16px', fontSize: 14 }}>
             Rejoindre Discord
           </a>

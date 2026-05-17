@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 
 const CATEGORIES = [
   { id: 'bug', label: '🐛 Bug / Problème', desc: 'Le bot ne fonctionne pas correctement', color: '#e0524a' },
@@ -165,7 +165,7 @@ export default function SupportTicket() {
                   }}>
                     {loading ? '⏳ Envoi...' : '📨 Envoyer le ticket'}
                   </button>
-                  <a href="https://discord.gg/ez4dBTPE" target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: 13, padding: '13px 18px' }}>
+                  <a href="https://discord.gg/v3Ddhtbz" target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: 13, padding: '13px 18px' }}>
                     Discord direct
                   </a>
                 </div>
@@ -188,7 +188,7 @@ export default function SupportTicket() {
                 L'équipe Brams Community a reçu ton ticket. On te répond sur Discord dès que possible, nakama !
               </p>
               <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
-                <a href="https://discord.gg/ez4dBTPE" target="_blank" rel="noopener noreferrer" className="btn btn-discord" style={{ fontSize: 14 }}>
+                <a href="https://discord.gg/v3Ddhtbz" target="_blank" rel="noopener noreferrer" className="btn btn-discord" style={{ fontSize: 14 }}>
                   Rejoindre Discord
                 </a>
                 <button onClick={reset} className="btn btn-ghost" style={{ fontSize: 14 }}>

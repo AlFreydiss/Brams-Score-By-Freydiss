@@ -1,5 +1,5 @@
-const LINKS = [
-  { label:'Discord',  href:'https://discord.gg/ez4dBTPE' },
+﻿const LINKS = [
+  { label:'Discord',  href:'https://discord.gg/v3Ddhtbz' },
   { label:'Twitch',   href:'https://www.twitch.tv/bouledog_' },
   { label:'YouTube',  href:'https://www.youtube.com/@BouleDogg/featured' },
   { label:'TikTok',   href:'https://www.tiktok.com/@bouledogg' },

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { fetchMemberProfile } from '../lib/supabase.js'
 
@@ -325,7 +325,7 @@ export default function ProfilePage() {
                   <div style={{ fontSize: 13, fontWeight: 700, color: '#5865f2', fontFamily: 'monospace' }}>{member.uid}</div>
                 </div>
                 <a
-                  href="https://discord.gg/ez4dBTPE"
+                  href="https://discord.gg/v3Ddhtbz"
                   target="_blank" rel="noopener noreferrer"
                   style={{
                     marginLeft: 'auto',

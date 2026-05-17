@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+﻿import { useState, useEffect, useRef, useCallback } from 'react'
 import Particles from './Particles.jsx'
 import UnifiedSidebar from './UnifiedSidebar.jsx'
 import { useMobile } from '../hooks/useMediaQuery.js'
@@ -216,7 +216,7 @@ export default function Hero() {
             {/* CTA */}
             <div className="fade-up-3" style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 48 }}>
               <a
-                href="https://discord.gg/ez4dBTPE"
+                href="https://discord.gg/v3Ddhtbz"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn"
