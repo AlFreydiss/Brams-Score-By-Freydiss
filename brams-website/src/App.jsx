@@ -1,10 +1,9 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import GlobalStyles from './components/GlobalStyles.jsx'
 import { ThemeProvider } from './contexts/ThemeContext.jsx'
 import { useAuth } from './contexts/AuthContext.jsx'
 import WelcomeAnimation from './components/WelcomeAnimation.jsx'
-import ProfilePage from './components/ProfilePage.jsx'
 import AuthGuard from './components/AuthGuard.jsx'
 import Navbar from './components/Navbar.jsx'
 import Hero from './components/Hero.jsx'
@@ -15,39 +14,42 @@ import Leaderboard from './components/Leaderboard.jsx'
 import JoinCTA from './components/JoinCTA.jsx'
 import Footer from './components/Footer.jsx'
 import Roadmap from './components/Roadmap.jsx'
-import EncyclopediePage from './components/EncyclopediePage.jsx'
 import Quiz from './components/Quiz.jsx'
 import HallOfFame from './components/HallOfFame.jsx'
 import QuoteSection from './components/QuoteSection.jsx'
 import Contact from './components/Contact.jsx'
 import NousSoutenir from './components/NousSoutenir.jsx'
 import EquipageSection from './components/EquipageSection.jsx'
-import ScansPage from './components/ScansPage.jsx'
 import AkainuGame from './components/AkainuGame.jsx'
-import AnimeHub from './components/AnimeHub.jsx'
 import ThemeToggle from './components/ThemeToggle.jsx'
 import MusicPlayer from './components/MusicPlayer.jsx'
-import TpnPage from './components/TpnPage.jsx'
-import DrStonePage from './components/DrStonePage.jsx'
-import JjkPage from './components/JjkPage.jsx'
-import KingdomPage from './components/KingdomPage.jsx'
-import AotPage from './components/AotPage.jsx'
-import KnyPage from './components/KnyPage.jsx'
-import NntPage from './components/NntPage.jsx'
-import SlPage from './components/SlPage.jsx'
-import DbsPage from './components/DbsPage.jsx'
-import BcPage from './components/BcPage.jsx'
-import MhaPage from './components/MhaPage.jsx'
-import FireForcePage from './components/FireForcePage.jsx'
-import BlueLockPage from './components/BlueLockPage.jsx'
-import FamilyTree3D from './components/FamilyTree3D.jsx'
-import BlobUploadPage from './components/BlobUploadPage.jsx'
-import WikiHome from './components/WikiHome.jsx'
-import WikiArticle from './components/WikiArticle.jsx'
-import WikiEditor from './components/WikiEditor.jsx'
-import TheoriesHome from './components/TheoriesHome.jsx'
-import TheoryDetail from './components/TheoryDetail.jsx'
-import TheoryEditor from './components/TheoryEditor.jsx'
+
+// Lazy — chargés uniquement quand ouverts
+const ProfilePage     = lazy(() => import('./components/ProfilePage.jsx'))
+const EncyclopediePage= lazy(() => import('./components/EncyclopediePage.jsx'))
+const ScansPage       = lazy(() => import('./components/ScansPage.jsx'))
+const AnimeHub        = lazy(() => import('./components/AnimeHub.jsx'))
+const TpnPage         = lazy(() => import('./components/TpnPage.jsx'))
+const DrStonePage     = lazy(() => import('./components/DrStonePage.jsx'))
+const JjkPage         = lazy(() => import('./components/JjkPage.jsx'))
+const KingdomPage     = lazy(() => import('./components/KingdomPage.jsx'))
+const AotPage         = lazy(() => import('./components/AotPage.jsx'))
+const KnyPage         = lazy(() => import('./components/KnyPage.jsx'))
+const NntPage         = lazy(() => import('./components/NntPage.jsx'))
+const SlPage          = lazy(() => import('./components/SlPage.jsx'))
+const DbsPage         = lazy(() => import('./components/DbsPage.jsx'))
+const BcPage          = lazy(() => import('./components/BcPage.jsx'))
+const MhaPage         = lazy(() => import('./components/MhaPage.jsx'))
+const FireForcePage   = lazy(() => import('./components/FireForcePage.jsx'))
+const BlueLockPage    = lazy(() => import('./components/BlueLockPage.jsx'))
+const FamilyTree3D    = lazy(() => import('./components/FamilyTree3D.jsx'))
+const BlobUploadPage  = lazy(() => import('./components/BlobUploadPage.jsx'))
+const WikiHome        = lazy(() => import('./components/WikiHome.jsx'))
+const WikiArticle     = lazy(() => import('./components/WikiArticle.jsx'))
+const WikiEditor      = lazy(() => import('./components/WikiEditor.jsx'))
+const TheoriesHome    = lazy(() => import('./components/TheoriesHome.jsx'))
+const TheoryDetail    = lazy(() => import('./components/TheoryDetail.jsx'))
+const TheoryEditor    = lazy(() => import('./components/TheoryEditor.jsx'))
 
 function BgVideo() {
   const [visible, setVisible] = useState(false)
@@ -245,6 +247,7 @@ export default function App() {
   return (
     <ThemeProvider>
       <GlobalStyles />
+      <Suspense fallback={null}>
       <Routes>
         {/* Profil utilisateur */}
         <Route path="/u/:discordId" element={<ProfilePage />} />
@@ -263,6 +266,7 @@ export default function App() {
         {/* Homepage */}
         <Route path="/*" element={mainContent} />
       </Routes>
+      </Suspense>
     </ThemeProvider>
   )
 }

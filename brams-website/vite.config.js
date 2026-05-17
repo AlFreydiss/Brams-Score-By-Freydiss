@@ -57,5 +57,17 @@ const animePlugin = {
 
 export default defineConfig({
   plugins: [react(), animePlugin],
-  build: { chunkSizeWarningLimit: 1500 },
+  build: {
+    chunkSizeWarningLimit: 3000,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'three':    ['three'],
+          'r3f':      ['@react-three/fiber', '@react-three/drei'],
+          'vendor':   ['react', 'react-dom', 'react-router-dom'],
+          'supabase': ['@supabase/supabase-js'],
+        },
+      },
+    },
+  },
 })
