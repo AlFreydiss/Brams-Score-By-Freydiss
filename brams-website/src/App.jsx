@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
 import GlobalStyles from './components/GlobalStyles.jsx'
 import { ThemeProvider } from './contexts/ThemeContext.jsx'
+import { useAuth } from './contexts/AuthContext.jsx'
+import WelcomeAnimation from './components/WelcomeAnimation.jsx'
+import AuthGuard from './components/AuthGuard.jsx'
 import Navbar from './components/Navbar.jsx'
 import Hero from './components/Hero.jsx'
 import Ranks from './components/Ranks.jsx'
@@ -60,6 +63,7 @@ function BgVideo() {
 }
 
 export default function App() {
+  const { isAuthenticated } = useAuth()
   const [scansOpen,       setScansOpen]       = useState(false)
   const [encyclopedieOpen, setEncyclopedieOpen] = useState(false)
   const [animeHubOpen,    setAnimeHubOpen]    = useState(false)
@@ -124,6 +128,7 @@ export default function App() {
 
   return (
     <ThemeProvider>
+      <WelcomeAnimation />
       <GlobalStyles />
 
       {/* Fond vidéo local — One Piece Memories AMV */}
@@ -158,20 +163,24 @@ export default function App() {
       <AkainuGame />
 
       {animeHubOpen && (
-        <AnimeHub
-          onClose={() => setAnimeHubOpen(false)}
-          onOpenOnepiece={() => { setAnimeHubOpen(false); setScansOpen(true) }}
-          onOpenTpn={() => { setAnimeHubOpen(false); setTpnOpen(true) }}
-          onOpenDrstone={() => { setAnimeHubOpen(false); setDrstoneOpen(true) }}
-          onOpenJjk={() => { setAnimeHubOpen(false); setJjkOpen(true) }}
-          onOpenKingdom={() => { setAnimeHubOpen(false); setKingdomOpen(true) }}
-          onOpenAot={() => { setAnimeHubOpen(false); setAotOpen(true) }}
-          onOpenKny={() => { setAnimeHubOpen(false); setKnyOpen(true) }}
-          onOpenNnt={() => { setAnimeHubOpen(false); setNntOpen(true) }}
-          onOpenSl={() => { setAnimeHubOpen(false); setSlOpen(true) }}
-          onOpenDbs={() => { setAnimeHubOpen(false); setDbsOpen(true) }}
-          onOpenBc={() => { setAnimeHubOpen(false); setBcOpen(true) }}
-        />
+        isAuthenticated ? (
+          <AnimeHub
+            onClose={() => setAnimeHubOpen(false)}
+            onOpenOnepiece={() => { setAnimeHubOpen(false); setScansOpen(true) }}
+            onOpenTpn={() => { setAnimeHubOpen(false); setTpnOpen(true) }}
+            onOpenDrstone={() => { setAnimeHubOpen(false); setDrstoneOpen(true) }}
+            onOpenJjk={() => { setAnimeHubOpen(false); setJjkOpen(true) }}
+            onOpenKingdom={() => { setAnimeHubOpen(false); setKingdomOpen(true) }}
+            onOpenAot={() => { setAnimeHubOpen(false); setAotOpen(true) }}
+            onOpenKny={() => { setAnimeHubOpen(false); setKnyOpen(true) }}
+            onOpenNnt={() => { setAnimeHubOpen(false); setNntOpen(true) }}
+            onOpenSl={() => { setAnimeHubOpen(false); setSlOpen(true) }}
+            onOpenDbs={() => { setAnimeHubOpen(false); setDbsOpen(true) }}
+            onOpenBc={() => { setAnimeHubOpen(false); setBcOpen(true) }}
+          />
+        ) : (
+          <AuthGuard onClose={() => setAnimeHubOpen(false)} feature="les animés & scans" />
+        )
       )}
       {tpnOpen          && <TpnPage         onClose={() => setTpnOpen(false)} />}
       {drstoneOpen      && <DrStonePage     onClose={() => setDrstoneOpen(false)} />}
@@ -183,7 +192,13 @@ export default function App() {
       {slOpen           && <SlPage          onClose={() => setSlOpen(false)} />}
       {dbsOpen          && <DbsPage         onClose={() => setDbsOpen(false)} />}
       {bcOpen           && <BcPage          onClose={() => setBcOpen(false)} />}
-      {scansOpen        && <ScansPage        onClose={() => setScansOpen(false)} />}
+      {scansOpen && (
+        isAuthenticated ? (
+          <ScansPage onClose={() => setScansOpen(false)} />
+        ) : (
+          <AuthGuard onClose={() => setScansOpen(false)} feature="les scans One Piece" />
+        )
+      )}
       {encyclopedieOpen && <EncyclopediePage onClose={() => setEncyclopedieOpen(false)} />}
       {uploadOpen       && (
         <div style={{

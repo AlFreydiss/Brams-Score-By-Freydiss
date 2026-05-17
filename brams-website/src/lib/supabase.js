@@ -26,3 +26,27 @@ export async function fetchStats() {
   const active = data.filter(m => (parseFloat(m.vocal_h) || 0) >= 1).length
   return { membersTracked: data.length, activeVocal: active }
 }
+
+// ── Auth helpers ────────────────────────────────────────────────────────────
+
+export async function signInWithDiscord() {
+  if (!supabase) return
+  await supabase.auth.signInWithOAuth({
+    provider: 'discord',
+    options: {
+      redirectTo: window.location.origin,
+      scopes: 'identify email guilds',
+    },
+  })
+}
+
+export async function signOutUser() {
+  if (!supabase) return
+  await supabase.auth.signOut()
+}
+
+export async function getSession() {
+  if (!supabase) return null
+  const { data } = await supabase.auth.getSession()
+  return data.session
+}
