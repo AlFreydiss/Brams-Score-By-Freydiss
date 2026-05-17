@@ -204,14 +204,14 @@ export default function WelcomeAnimation() {
 
           {/* Texte bienvenue */}
           <div style={{
-            fontFamily: 'var(--pirate)', fontSize: 'clamp(22px, 4vw, 32px)',
+            fontFamily: "'Pirata One', cursive", fontSize: 'clamp(22px, 4vw, 32px)',
             color: '#fff', lineHeight: 1.2, marginBottom: 8,
             animation: 'subtitleAppear 0.5s 0.5s ease both',
           }}>
             Bienvenue à bord,
           </div>
           <div style={{
-            fontFamily: 'var(--pirate)', fontSize: 'clamp(28px, 5vw, 42px)',
+            fontFamily: "'Pirata One', cursive", fontSize: 'clamp(28px, 5vw, 42px)',
             background: 'linear-gradient(135deg, #FFD700, #ff8a50, #FFD700)',
             backgroundSize: '200% 200%',
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
