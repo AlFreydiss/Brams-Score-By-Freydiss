@@ -156,8 +156,8 @@ export default function WikiEditor() {
             <div>
               <label style={labelStyle}>Catégorie</label>
               <select value={categoryId} onChange={e => setCategoryId(e.target.value)} style={{ ...inputStyle, cursor: 'pointer' }} onFocus={focus} onBlur={blur}>
-                <option value="">— Choisir —</option>
-                {categories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
+                <option value="" style={{ background: '#1a1f2e', color: 'rgba(255,255,255,0.4)' }}>— Choisir —</option>
+                {categories.map(c => <option key={c.id} value={c.id} style={{ background: '#1a1f2e', color: '#fff' }}>{c.icon} {c.name}</option>)}
               </select>
             </div>
           </div>

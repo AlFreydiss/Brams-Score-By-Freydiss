@@ -122,8 +122,8 @@ export default function TheoryEditor() {
             <div>
               <label style={labelStyle}>Catégorie *</label>
               <select value={category} onChange={e => setCategory(e.target.value)} style={{ ...inputStyle, cursor: 'pointer' }} onFocus={focus} onBlur={blur}>
-                <option value="">— Choisir —</option>
-                {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                <option value="" style={{ background: '#1a1f2e', color: 'rgba(255,255,255,0.4)' }}>— Choisir —</option>
+                {CATEGORIES.map(c => <option key={c} value={c} style={{ background: '#1a1f2e', color: '#fff' }}>{c}</option>)}
               </select>
             </div>
             <div>
