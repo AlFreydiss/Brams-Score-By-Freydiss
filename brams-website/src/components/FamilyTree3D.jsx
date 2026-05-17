@@ -1,51 +1,43 @@
 import { useState, useRef, useMemo, useEffect, Suspense } from 'react'
-import { Canvas, useFrame, extend } from '@react-three/fiber'
-import { OrbitControls, Text, Stars, shaderMaterial, Line } from '@react-three/drei'
+import { Canvas, useFrame } from '@react-three/fiber'
+import { OrbitControls, Text, Stars } from '@react-three/drei'
 import * as THREE from 'three'
 import { CHARACTERS, RELATIONS, TREE_CONFIGS, LINK_COLORS, HAKI_COLORS } from '../data/tree-data.js'
 
-// ── Ocean shader ──────────────────────────────────────────────────────────────
-
-const OceanMat = shaderMaterial(
-  { uTime: 0, uDeep: new THREE.Color('#041630'), uShallow: new THREE.Color('#0a3a6a') },
-  /* vertex */`
-    uniform float uTime;
-    varying float vElev;
-    void main() {
-      vec4 mp = modelMatrix * vec4(position, 1.0);
-      float e = sin(mp.x * 0.45 + uTime * 0.65) * 0.45
-              + sin(mp.z * 0.35 + uTime * 0.48) * 0.32
-              + sin((mp.x + mp.z) * 0.18 + uTime * 0.55) * 0.22;
-      mp.y += e; vElev = e;
-      gl_Position = projectionMatrix * viewMatrix * mp;
-    }
-  `,
-  /* fragment */`
-    uniform vec3 uDeep; uniform vec3 uShallow; uniform float uTime;
-    varying float vElev;
-    void main() {
-      float m = clamp((vElev + 0.99) * 0.52, 0.0, 1.0);
-      vec3 c = mix(uDeep, uShallow, m);
-      gl_FragColor = vec4(c, 0.94);
-    }
-  `
-)
-extend({ OceanMat })
+// ── Ocean (simple animated plane — no custom shader) ──────────────────────────
 
 function Ocean({ mangaMode }) {
-  const matRef = useRef()
+  const meshRef = useRef()
+  const posRef  = useRef(null)
+
   useFrame(({ clock }) => {
-    if (matRef.current) matRef.current.uniforms.uTime.value = clock.getElapsedTime()
+    const mesh = meshRef.current
+    if (!mesh) return
+    const geo = mesh.geometry
+    if (!posRef.current) posRef.current = geo.attributes.position.array.slice()
+    const orig = posRef.current
+    const pos  = geo.attributes.position.array
+    const t    = clock.getElapsedTime()
+    for (let i = 0; i < pos.length; i += 3) {
+      const x = orig[i], z = orig[i + 2]
+      pos[i + 1] = Math.sin(x * 0.45 + t * 0.65) * 0.45
+                 + Math.sin(z * 0.35 + t * 0.48) * 0.32
+                 + Math.sin((x + z) * 0.18 + t * 0.55) * 0.22
+    }
+    geo.attributes.position.needsUpdate = true
+    geo.computeVertexNormals()
   })
+
   return (
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -3.5, 0]}>
-      <planeGeometry args={[120, 120, 90, 90]} />
-      <oceanMat
-        ref={matRef}
-        uDeep={new THREE.Color(mangaMode ? '#7aaac8' : '#041630')}
-        uShallow={new THREE.Color(mangaMode ? '#a8d4e8' : '#0a3a6a')}
+    <mesh ref={meshRef} rotation={[-Math.PI / 2, 0, 0]} position={[0, -3.5, 0]}>
+      <planeGeometry args={[120, 120, 40, 40]} />
+      <meshStandardMaterial
+        color={mangaMode ? '#7aaac8' : '#041630'}
         transparent
+        opacity={0.88}
         side={THREE.DoubleSide}
+        roughness={0.2}
+        metalness={0.1}
       />
     </mesh>
   )
@@ -252,26 +244,22 @@ function WantedNode({ char, position, onClick, selected, mangaMode }) {
 function RelLine({ from, to, type }) {
   const color = LINK_COLORS[type] || '#ffffff'
 
-  const pts = useMemo(() => {
+  const lineObj = useMemo(() => {
     const A = new THREE.Vector3(...from)
     const B = new THREE.Vector3(...to)
     const mid = new THREE.Vector3().lerpVectors(A, B, 0.5)
-    // Curve up for parent/hierarchy, down for enemy
     mid.y += type === 'enemy' ? -1.2 : type === 'crew' ? 0.8 : 0.5
-    return new THREE.CatmullRomCurve3([A, mid, B]).getPoints(28)
-  }, [from, to, type])
+    const pts = new THREE.CatmullRomCurve3([A, mid, B]).getPoints(28)
+    const geo  = new THREE.BufferGeometry().setFromPoints(pts)
+    const mat  = new THREE.LineBasicMaterial({
+      color: new THREE.Color(color),
+      transparent: true,
+      opacity: type === 'enemy' ? 0.85 : 0.65,
+    })
+    return new THREE.Line(geo, mat)
+  }, [from, to, type, color])
 
-  return (
-    <Line
-      points={pts}
-      color={color}
-      lineWidth={type === 'enemy' ? 2.5 : type === 'parent' ? 2 : 1.5}
-      transparent
-      opacity={type === 'enemy' ? 0.85 : 0.65}
-      dashed={type === 'rival'}
-      dashScale={type === 'rival' ? 4 : 1}
-    />
-  )
+  return <primitive object={lineObj} />
 }
 
 // ── Layout algorithms ─────────────────────────────────────────────────────────
