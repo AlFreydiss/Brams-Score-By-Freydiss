@@ -388,7 +388,9 @@ export default function ScansPage({ onClose }) {
         <Sidebar open={sidebar} onClose={() => setSidebar(false)} progress={progress} onJumpArc={handleJumpArc} chapters={CHAPTERS} />
 
         {/* ── Header principal ── */}
-        <div style={{ flexShrink:0, background:'rgba(17,18,20,0.97)', backdropFilter:'blur(20px)', borderBottom:'1px solid var(--border)', zIndex:10 }}>
+        <div style={{ flexShrink:0, background:'rgba(17,18,20,0.97)', backdropFilter:'blur(20px)', borderBottom:'1px solid var(--border)', zIndex:10, position:'relative', overflow:'hidden' }}>
+          {/* Banner image */}
+          <div style={{ position:'absolute', inset:0, backgroundImage:'url(https://www.dexerto.fr/cdn-image/wp-content/uploads/sites/2/2026/04/02/luffy-one-piece-erbaf-calendrier-sortie-episodes.jpg?width=1200&quality=60&format=auto)', backgroundSize:'cover', backgroundPosition:'center 30%', opacity:0.12, pointerEvents:'none' }} />
 
           {/* Ligne 1 : titre + back */}
           <div style={{ display:'flex', alignItems:'center', gap:12, padding:'0 20px', height:60 }}>

@@ -8,7 +8,7 @@ const ANIMES = [
     emoji: '🏴‍☠️',
     color: '#e0524a',
     colorDark: '#7a1f1a',
-    coverImage: null,
+    coverImage: 'https://www.dexerto.fr/cdn-image/wp-content/uploads/sites/2/2026/04/02/luffy-one-piece-erbaf-calendrier-sortie-episodes.jpg?width=1200&quality=60&format=auto',
     genres: ['Aventure', 'Action', 'Shōnen'],
     description: "Monkey D. Luffy et son équipage sillonnent les mers à la recherche du légendaire trésor « One Piece » pour devenir Roi des Pirates.",
     stats: [
