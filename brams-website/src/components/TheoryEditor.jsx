@@ -34,20 +34,12 @@ export default function TheoryEditor() {
   const [loading,    setLoading]    = useState(false)
   const [error,      setError]      = useState('')
   const [success,    setSuccess]    = useState(false)
-  const [failCount,  setFailCount]  = useState(0)
-  const [cooldown,   setCooldown]   = useState(0)
+  const [submitLock, setSubmitLock] = useState(false)
 
   useEffect(() => {
     document.title = 'Proposer une théorie — Brams'
     return () => { document.title = 'Brams Community' }
   }, [])
-
-  // Countdown timer for bruteforce cooldown
-  useEffect(() => {
-    if (cooldown <= 0) return
-    const timer = setTimeout(() => setCooldown(c => c - 1), 1000)
-    return () => clearTimeout(timer)
-  }, [cooldown])
 
   if (!isAuthenticated) return (
     <div style={{ minHeight: '100vh', paddingTop: 80, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16 }}>
@@ -78,18 +70,15 @@ export default function TheoryEditor() {
     e.preventDefault()
     if (!title.trim() || !content.trim() || !category) { setError('Titre, catégorie et contenu sont obligatoires.'); return }
     if (!rgpd) { setError("Tu dois accepter les conditions d'utilisation pour publier."); return }
-    if (cooldown > 0) { setError(`Attends encore ${cooldown} secondes.`); return }
+    if (submitLock) return
 
-    setLoading(true); setError('')
+    setLoading(true); setError(''); setSubmitLock(true)
     const tagList = tags.split(',').map(t => t.trim()).filter(Boolean)
 
     const { error } = await createTheory({ title: title.trim(), content, category, tags: tagList, author_id: user.id, author_name: displayName, cover_image: coverImage || null })
-    setLoading(false)
+    setLoading(false); setSubmitLock(false)
 
     if (error) {
-      const next = failCount + 1
-      setFailCount(next)
-      if (next >= 3) setCooldown(30)
       setError(error.message || 'Erreur lors de la soumission.')
       return
     }
@@ -163,21 +152,15 @@ export default function TheoryEditor() {
             </label>
           </div>
 
-          {cooldown > 0 && (
-            <div style={{ background: 'rgba(224,82,74,0.1)', border: '1px solid rgba(224,82,74,0.3)', borderRadius: 8, padding: '12px 16px', fontSize: 13, color: '#ff8a7a', marginBottom: 16 }}>
-              🛡️ Trop de tentatives consécutives. Attends encore {cooldown} secondes.
-            </div>
-          )}
-
-          {error && cooldown === 0 && (
+          {error && (
             <div style={{ background: 'rgba(224,82,74,0.1)', border: '1px solid rgba(224,82,74,0.3)', borderRadius: 8, padding: '12px 16px', fontSize: 13, color: '#ff8a7a', marginBottom: 16 }}>
               {error}
             </div>
           )}
 
           <div style={{ display: 'flex', gap: 12 }}>
-            <button type="submit" disabled={loading || cooldown > 0} style={{ padding: '12px 28px', borderRadius: 10, border: 'none', background: (loading || cooldown > 0) ? 'rgba(212,160,23,0.35)' : '#d4a017', color: '#1a1f2e', fontSize: 14, fontWeight: 800, cursor: (loading || cooldown > 0) ? 'not-allowed' : 'pointer' }}>
-              {loading ? 'Envoi...' : cooldown > 0 ? `Attends ${cooldown}s...` : 'Soumettre la théorie'}
+            <button type="submit" disabled={loading || submitLock} style={{ padding: '12px 28px', borderRadius: 10, border: 'none', background: (loading || submitLock) ? 'rgba(212,160,23,0.35)' : '#d4a017', color: '#1a1f2e', fontSize: 14, fontWeight: 800, cursor: (loading || submitLock) ? 'not-allowed' : 'pointer' }}>
+              {loading ? 'Envoi...' : 'Soumettre la théorie'}
             </button>
             <button type="button" onClick={() => navigate('/theories')} style={{ padding: '12px 20px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.12)', background: 'transparent', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontSize: 14, fontWeight: 600 }}>
               Annuler
