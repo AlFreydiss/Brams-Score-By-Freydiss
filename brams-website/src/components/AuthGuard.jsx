@@ -104,13 +104,14 @@ export default function AuthGuard({ onClose, feature = 'ce contenu' }) {
           </div>
 
           <h1 style={{
-            fontFamily: 'var(--pirate)',
+            fontFamily: "'Pirata One', cursive",
             fontSize: 'clamp(28px, 5vw, 52px)',
             color: '#fff', lineHeight: 1.1,
             marginBottom: 20,
           }}>
             Accès<br />
             <span style={{
+              fontFamily: "'Pirata One', cursive",
               background: 'linear-gradient(135deg, #E0524A, #ff8a50)',
               WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
             }}>
