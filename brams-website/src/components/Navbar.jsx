@@ -13,7 +13,6 @@ const NAV_LINKS = [
   { label: 'Wiki',           href: '/wiki',         action: null,          gated: false, isRoute: true  },
   { label: 'Théories',       href: '/theories',     action: null,          gated: false, isRoute: true  },
   { label: 'Animés & Scans', href: '#',             action: 'anime-hub',   gated: true,  isRoute: false },
-  { label: 'Arbre 3D',      href: '#',             action: 'tree',        gated: true,  isRoute: false },
 ]
 
 function openAnimeHub(e)    { e.preventDefault(); document.dispatchEvent(new CustomEvent('open-anime-hub')) }
@@ -95,8 +94,9 @@ function UserMenu({ displayName, avatarUrl, onSignOut }) {
           {[
             { icon: '📖', label: 'Wiki', path: '/wiki' },
             { icon: '💡', label: 'Théories', path: '/theories' },
+            { icon: '🌊', label: 'Arbre 3D', action: 'tree' },
           ].map(item => (
-            <button key={item.label} onClick={() => { setOpen(false); navigate(item.path) }} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '9px 10px', borderRadius: 8, border: 'none', background: 'transparent', cursor: 'pointer', color: 'rgba(255,255,255,0.65)', fontSize: 13, fontWeight: 600, textAlign: 'left', transition: 'background .1s' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+            <button key={item.label} onClick={() => { setOpen(false); item.action ? document.dispatchEvent(new CustomEvent(`open-${item.action}`)) : navigate(item.path) }} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '9px 10px', borderRadius: 8, border: 'none', background: 'transparent', cursor: 'pointer', color: 'rgba(255,255,255,0.65)', fontSize: 13, fontWeight: 600, textAlign: 'left', transition: 'background .1s' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
               <span>{item.icon}</span><span>{item.label}</span>
             </button>
           ))}
