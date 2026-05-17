@@ -59,13 +59,6 @@ const FEATURES = [
   },
 ]
 
-const LEVELS = [
-  { lvl: 1,  label: 'Débutant',  members: 5,  color: '#7c7f8a' },
-  { lvl: 3,  label: 'Alliances', members: 10, color: '#3b82f6' },
-  { lvl: 4,  label: 'Guerres',   members: 12, color: '#e0524a' },
-  { lvl: 7,  label: 'Boost XP',  members: 25, color: '#9b59b6' },
-  { lvl: 10, label: 'Yonkou',    members: 50, color: '#ffd700' },
-]
 
 export default function EquipageSection() {
   const [hovered, setHovered] = useState(null)
@@ -129,50 +122,6 @@ export default function EquipageSection() {
               <div style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.65, flex: 1 }}>{f.desc}</div>
             </div>
           ))}
-        </div>
-
-        {/* Progression de niveau */}
-        <div style={{
-          background: 'var(--card)', border: '1px solid rgba(255,255,255,0.06)',
-          borderRadius: 20, padding: '36px 40px', marginBottom: 48,
-        }}>
-          <div style={{ textAlign: 'center', marginBottom: 32 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.15em', textTransform: 'uppercase', color: 'var(--accent)', marginBottom: 10 }}>
-              Niveaux
-            </div>
-            <h3 style={{ fontFamily: 'var(--display)', fontWeight: 800, fontSize: 22, color: '#fff' }}>
-              10 niveaux — de Mousse à Yonkou
-            </h3>
-          </div>
-
-          {/* Barre de progression */}
-          <div style={{ position: 'relative', marginBottom: 16 }}>
-            <div style={{
-              height: 6, borderRadius: 3,
-              background: 'linear-gradient(90deg, #7c7f8a, #3b82f6, #e0524a, #9b59b6, #ffd700)',
-              boxShadow: '0 0 20px rgba(255,215,0,0.2)',
-            }} />
-            {LEVELS.map((l, i) => (
-              <div key={i} style={{
-                position: 'absolute', top: '50%',
-                left: `${(l.lvl - 1) / 9 * 100}%`,
-                transform: 'translate(-50%, -50%)',
-                width: 14, height: 14, borderRadius: '50%',
-                background: l.color, border: '2px solid var(--card)',
-                boxShadow: `0 0 8px ${l.color}80`,
-              }} />
-            ))}
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-            {LEVELS.map((l, i) => (
-              <div key={i} style={{ textAlign: 'center', minWidth: 60 }}>
-                <div style={{ fontSize: 11, fontWeight: 800, color: l.color, marginBottom: 2 }}>Niv.{l.lvl}</div>
-                <div style={{ fontSize: 10, color: 'var(--muted)' }}>{l.label}</div>
-                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>{l.members} mbr.</div>
-              </div>
-            ))}
-          </div>
         </div>
 
         {/* CTA bas */}
