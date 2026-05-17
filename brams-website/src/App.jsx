@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
+import { Routes, Route } from 'react-router-dom'
 import GlobalStyles from './components/GlobalStyles.jsx'
 import { ThemeProvider } from './contexts/ThemeContext.jsx'
 import { useAuth } from './contexts/AuthContext.jsx'
 import WelcomeAnimation from './components/WelcomeAnimation.jsx'
+import ProfilePage from './components/ProfilePage.jsx'
 import AuthGuard from './components/AuthGuard.jsx'
 import Navbar from './components/Navbar.jsx'
 import Hero from './components/Hero.jsx'
@@ -127,10 +129,9 @@ export default function App() {
     }
   }, [])
 
-  return (
-    <ThemeProvider>
+  const mainContent = (
+    <>
       <WelcomeAnimation />
-      <GlobalStyles />
 
       {/* Fond vidéo local — One Piece Memories AMV */}
       <BgVideo />
@@ -218,6 +219,16 @@ export default function App() {
           <BlobUploadPage />
         </div>
       )}
+    </>
+  )
+
+  return (
+    <ThemeProvider>
+      <GlobalStyles />
+      <Routes>
+        <Route path="/u/:discordId" element={<ProfilePage />} />
+        <Route path="/*" element={mainContent} />
+      </Routes>
     </ThemeProvider>
   )
 }

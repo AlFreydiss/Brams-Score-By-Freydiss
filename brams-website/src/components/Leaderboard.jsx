@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useInView } from '../hooks/useInView.js'
 import { fetchLeaderboard } from '../lib/supabase.js'
 
@@ -21,6 +22,7 @@ function fmt(n) { return n >= 1000000 ? `${(n/1000000).toFixed(1)}M` : n >= 1000
 const PER_PAGE = 10
 
 export default function Leaderboard() {
+  const navigate = useNavigate()
   const [allRows,    setAllRows]    = useState(null)
   const [loading,    setLoading]    = useState(true)
   const [page,       setPage]       = useState(0)
@@ -149,6 +151,7 @@ export default function Leaderboard() {
                       </div>
                     )}
                     <div className={`reveal reveal-${Math.min(i+1,4)} ${inView?'visible':''}`}
+                      onClick={() => navigate(`/u/${m.uid}`)}
                       style={{
                         display:'grid', gridTemplateColumns:'52px 1fr 110px 130px',
                         alignItems:'center', borderRadius:12, padding:'14px 20px',
@@ -157,6 +160,7 @@ export default function Leaderboard() {
                           : 'rgba(17,18,20,0.5)',
                         border: isTop3 ? `1px solid ${rk.color}35` : '1px solid rgba(255,255,255,0.06)',
                         backdropFilter:'blur(8px)',
+                        cursor:'pointer',
                         transition:'transform .15s, box-shadow .15s',
                       }}
                       onMouseEnter={e=>{e.currentTarget.style.transform='translateX(4px)';e.currentTarget.style.boxShadow=`0 4px 20px ${rk.color}15`}}

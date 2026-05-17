@@ -29,6 +29,20 @@ export async function fetchStats() {
 
 // ── Auth helpers ────────────────────────────────────────────────────────────
 
+export async function fetchMemberProfile(discordId) {
+  if (!supabase) return null
+  // Cherche dans le classement par UID Discord
+  const { data, error } = await supabase.rpc('top_classement', { p_limit: 500 })
+  if (error || !data) return null
+  const member = data.find(m => String(m.uid) === String(discordId))
+  if (!member) return null
+  return {
+    ...member,
+    rank: parseInt(data.indexOf(member)) + 1,
+    total: data.length,
+  }
+}
+
 export async function signInWithDiscord() {
   if (!supabase) return
   await supabase.auth.signInWithOAuth({
