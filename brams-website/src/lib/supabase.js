@@ -42,6 +42,18 @@ export async function fetchMemberProfile(discordId) {
   }
 }
 
+export async function signInWithDiscord() {
+  if (!supabase) return { error: { message: 'Client Supabase non initialisé' } }
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'discord',
+    options: {
+      redirectTo: window.location.origin,
+      scopes: 'identify email guilds',
+    },
+  })
+  return { data, error }
+}
+
 export async function signUpWithEmail(email, password, displayName) {
   if (!supabase) return { error: { message: 'Client Supabase non initialisé' } }
   const { data, error } = await supabase.auth.signUp({

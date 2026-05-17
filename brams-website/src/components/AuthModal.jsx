@@ -1,202 +1,160 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext.jsx'
 
-const ERR_MAP = {
-  'Invalid login credentials':                 'Email ou mot de passe incorrect.',
-  'User already registered':                   'Cet email est déjà utilisé.',
-  'Password should be at least 6 characters':  'Mot de passe trop court (min. 6 caractères).',
-  'Unable to validate email address':          'Adresse email invalide.',
-  'Email not confirmed':                       'Confirme ton email avant de te connecter.',
-  'email rate limit exceeded':                 'Trop de tentatives. Attends avant de réessayer.',
-}
+const DISCORD_BLUE = '#5865F2'
+const DISCORD_DARK = '#4752C4'
 
-function friendlyError(msg = '') {
-  for (const [key, val] of Object.entries(ERR_MAP)) {
-    if (msg.toLowerCase().includes(key.toLowerCase())) return val
-  }
-  return msg || 'Une erreur est survenue.'
-}
+export default function AuthModal({ onClose }) {
+  const { signInWithDiscord } = useAuth()
+  const [loading, setLoading] = useState(false)
+  const [error,   setError]   = useState('')
 
-function Input({ label, type = 'text', value, onChange, placeholder, autoComplete }) {
-  return (
-    <div style={{ marginBottom: 14 }}>
-      <label style={{ display: 'block', fontSize: 11, fontWeight: 700, letterSpacing: '.08em', color: 'rgba(255,255,255,0.45)', marginBottom: 6, textTransform: 'uppercase' }}>
-        {label}
-      </label>
-      <input
-        type={type} value={value} onChange={e => onChange(e.target.value)}
-        placeholder={placeholder} autoComplete={autoComplete}
-        style={{ width: '100%', boxSizing: 'border-box', padding: '11px 14px', borderRadius: 8, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', color: '#fff', fontSize: 14, outline: 'none', transition: 'border-color .15s', fontFamily: 'inherit' }}
-        onFocus={e => e.target.style.borderColor = 'rgba(212,160,23,0.6)'}
-        onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.12)'}
-      />
-    </div>
-  )
-}
-
-export default function AuthModal({ onClose, defaultTab = 'login' }) {
-  const { signIn, signUp } = useAuth()
-  const [tab,       setTab]       = useState(defaultTab)
-  const [pseudo,    setPseudo]    = useState('')
-  const [email,     setEmail]     = useState('')
-  const [pass,      setPass]      = useState('')
-  const [confirm,   setConfirm]   = useState('')
-  const [rgpd,      setRgpd]      = useState(false)
-  const [loading,   setLoading]   = useState(false)
-  const [error,     setError]     = useState('')
-  const [success,   setSuccess]   = useState('')
-  const [failCount, setFailCount] = useState(0)
-  const [cooldown,  setCooldown]  = useState(0)
-
-  // Countdown
-  useEffect(() => {
-    if (cooldown <= 0) return
-    const t = setTimeout(() => setCooldown(c => c - 1), 1000)
-    return () => clearTimeout(t)
-  }, [cooldown])
-
-  const reset = (t) => { setTab(t); setError(''); setSuccess(''); setLoading(false); setRgpd(false) }
-
-  async function handleLogin(e) {
-    e.preventDefault()
-    if (!email || !pass) { setError('Remplis tous les champs.'); return }
-    if (cooldown > 0) { setError(`Trop de tentatives. Attends ${cooldown}s.`); return }
-    setLoading(true); setError('')
-    const { error } = await signIn(email, pass)
-    setLoading(false)
+  async function handleDiscord() {
+    setLoading(true)
+    setError('')
+    const { error } = await signInWithDiscord()
     if (error) {
-      const next = failCount + 1
-      setFailCount(next)
-      if (next >= 5) setCooldown(30)
-      setError(friendlyError(error.message))
-      return
+      setError(error.message || 'Erreur lors de la connexion Discord.')
+      setLoading(false)
     }
-    onClose()
-  }
-
-  async function handleRegister(e) {
-    e.preventDefault()
-    if (!pseudo || !email || !pass || !confirm) { setError('Remplis tous les champs.'); return }
-    if (pass !== confirm) { setError('Les mots de passe ne correspondent pas.'); return }
-    if (pass.length < 6) { setError('Mot de passe trop court (min. 6 caractères).'); return }
-    if (!rgpd) { setError("Accepte les conditions d'utilisation pour créer un compte."); return }
-    if (cooldown > 0) { setError(`Trop de tentatives. Attends ${cooldown}s.`); return }
-    setLoading(true); setError('')
-    const { data, error } = await signUp(email, pass, pseudo)
-    setLoading(false)
-    if (error) {
-      const next = failCount + 1
-      setFailCount(next)
-      if (next >= 5) setCooldown(30)
-      setError(friendlyError(error.message))
-      return
-    }
-    if (data?.session) { onClose() }
-    else { setSuccess('Compte créé ! Vérifie ton email pour confirmer ton inscription.') }
+    // Pas de setLoading(false) si succès — l'utilisateur est redirigé vers Discord
   }
 
   return (
-    <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 9000, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px', animation: 'fadeIn 0.2s ease' }}>
-      <div onClick={e => e.stopPropagation()} style={{ position: 'relative', background: 'linear-gradient(145deg, #13151a, #1a1c22)', border: '1px solid rgba(255,215,0,0.2)', borderRadius: 18, padding: '36px 36px 32px', width: '100%', maxWidth: 420, boxShadow: '0 24px 80px rgba(0,0,0,0.7), 0 0 40px rgba(212,160,23,0.08)', animation: 'scaleIn 0.22s cubic-bezier(0.34,1.56,0.64,1)' }}>
-
-        {/* Bande dorée */}
-        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: 'linear-gradient(90deg, #E0524A, #d4a017, #E0524A)', borderRadius: '18px 18px 0 0' }} />
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 9000,
+        background: 'rgba(0,0,0,0.78)',
+        backdropFilter: 'blur(14px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: 16,
+        animation: 'fadeIn 0.2s ease',
+      }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          position: 'relative',
+          background: 'linear-gradient(145deg, #13151A, #1A1D26)',
+          border: '1px solid rgba(255,215,0,0.18)',
+          borderRadius: 20,
+          padding: '40px 36px 36px',
+          width: '100%', maxWidth: 420,
+          boxShadow: '0 28px 80px rgba(0,0,0,0.75), 0 0 50px rgba(88,101,242,0.08)',
+          animation: 'scaleIn 0.22s cubic-bezier(0.34,1.56,0.64,1)',
+          textAlign: 'center',
+        }}
+      >
+        {/* Bande top */}
+        <div style={{
+          position: 'absolute', top: 0, left: 0, right: 0, height: 3,
+          background: `linear-gradient(90deg, #E0524A, ${DISCORD_BLUE}, #E0524A)`,
+          borderRadius: '20px 20px 0 0',
+        }} />
 
         {/* Fermer */}
-        <button onClick={onClose} style={{ position: 'absolute', top: 14, right: 14, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 7, color: 'rgba(255,255,255,0.5)', cursor: 'pointer', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, transition: 'all .15s' }} onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.12)'; e.currentTarget.style.color = '#fff' }} onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = 'rgba(255,255,255,0.5)' }}>✕</button>
+        <button
+          onClick={onClose}
+          style={{
+            position: 'absolute', top: 14, right: 14,
+            background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)',
+            borderRadius: 8, color: 'rgba(255,255,255,0.45)', cursor: 'pointer',
+            width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 14, transition: 'all .15s',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.12)'; e.currentTarget.style.color = '#fff' }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = 'rgba(255,255,255,0.45)' }}
+        >
+          ✕
+        </button>
 
-        {/* Logo */}
-        <div style={{ textAlign: 'center', marginBottom: 24 }}>
-          <div style={{ fontSize: 34, marginBottom: 6 }}>🏴‍☠️</div>
-          <div style={{ fontFamily: 'var(--display)', fontWeight: 800, fontSize: 19, color: '#fff' }}>Brams Community</div>
+        {/* Logo + titre */}
+        <div style={{ marginBottom: 28 }}>
+          <div style={{ fontSize: 48, marginBottom: 10 }}>🏴‍☠️</div>
+          <div style={{ fontFamily: 'var(--display)', fontWeight: 800, fontSize: 20, color: '#fff', marginBottom: 4 }}>
+            Brams Community
+          </div>
+          <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.38)', lineHeight: 1.6 }}>
+            Connecte-toi pour accéder au Grand Line
+          </div>
         </div>
 
-        {/* Tabs */}
-        <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: 10, padding: 4, marginBottom: 24 }}>
-          {[['login', 'Connexion'], ['register', "S'inscrire"]].map(([t, label]) => (
-            <button key={t} onClick={() => reset(t)} style={{ flex: 1, padding: '9px 0', borderRadius: 7, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 700, transition: 'all .15s', background: tab === t ? 'rgba(212,160,23,0.18)' : 'transparent', color: tab === t ? '#d4a017' : 'rgba(255,255,255,0.4)', boxShadow: tab === t ? 'inset 0 0 0 1px rgba(212,160,23,0.35)' : 'none' }}>
-              {label}
-            </button>
-          ))}
+        {/* Séparateur décoratif */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10, marginBottom: 28,
+          color: 'rgba(255,215,0,0.2)',
+        }}>
+          <div style={{ flex: 1, height: 1, background: 'rgba(255,215,0,0.12)' }} />
+          <span style={{ fontFamily: 'var(--display)', fontSize: 10, letterSpacing: '0.14em', color: 'rgba(255,215,0,0.35)' }}>
+            CONNEXION VIA
+          </span>
+          <div style={{ flex: 1, height: 1, background: 'rgba(255,215,0,0.12)' }} />
         </div>
 
-        {/* Connexion */}
-        {tab === 'login' && (
-          <form onSubmit={handleLogin}>
-            <Input label="Email" type="email" value={email} onChange={setEmail} placeholder="ton@email.com" autoComplete="email" />
-            <Input label="Mot de passe" type="password" value={pass} onChange={setPass} placeholder="••••••••" autoComplete="current-password" />
+        {/* Bouton Discord */}
+        <button
+          onClick={handleDiscord}
+          disabled={loading}
+          style={{
+            width: '100%',
+            padding: '15px 20px',
+            borderRadius: 12,
+            border: 'none',
+            background: loading ? `${DISCORD_DARK}99` : DISCORD_BLUE,
+            color: '#fff',
+            fontSize: 15,
+            fontWeight: 700,
+            cursor: loading ? 'not-allowed' : 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
+            transition: 'all .2s',
+            boxShadow: loading ? 'none' : `0 4px 24px ${DISCORD_BLUE}55`,
+            letterSpacing: '0.02em',
+            fontFamily: 'var(--body)',
+          }}
+          onMouseEnter={e => { if (!loading) { e.currentTarget.style.background = DISCORD_DARK; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = `0 8px 32px ${DISCORD_BLUE}77` } }}
+          onMouseLeave={e => { if (!loading) { e.currentTarget.style.background = DISCORD_BLUE; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = `0 4px 24px ${DISCORD_BLUE}55` } }}
+        >
+          {/* Icône Discord SVG */}
+          {!loading && (
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="white" aria-hidden="true">
+              <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.032.054a19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z" />
+            </svg>
+          )}
+          {loading
+            ? <><span style={{ width: 18, height: 18, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.7s linear infinite' }} /> Connexion en cours…</>
+            : 'Se connecter avec Discord'
+          }
+        </button>
 
-            {cooldown > 0 && (
-              <div style={{ background: 'rgba(224,82,74,0.1)', border: '1px solid rgba(224,82,74,0.3)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: '#ff8a7a', marginBottom: 14 }}>
-                🛡️ Trop de tentatives. Attends {cooldown} secondes.
-              </div>
-            )}
-            {error && cooldown === 0 && (
-              <div style={{ background: 'rgba(224,82,74,0.1)', border: '1px solid rgba(224,82,74,0.3)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: '#ff8a7a', marginBottom: 14 }}>
-                {error}
-              </div>
-            )}
-
-            <button type="submit" disabled={loading || cooldown > 0} style={{ width: '100%', padding: '12px', borderRadius: 10, border: 'none', background: (loading || cooldown > 0) ? 'rgba(212,160,23,0.4)' : '#d4a017', color: '#1a1f2e', fontSize: 14, fontWeight: 800, cursor: (loading || cooldown > 0) ? 'not-allowed' : 'pointer', letterSpacing: '.03em', transition: 'all .15s' }} onMouseEnter={e => { if (!loading && cooldown === 0) e.currentTarget.style.background = '#e5b83a' }} onMouseLeave={e => { if (!loading && cooldown === 0) e.currentTarget.style.background = '#d4a017' }}>
-              {loading ? 'Connexion...' : cooldown > 0 ? `Attends ${cooldown}s` : 'Se connecter →'}
-            </button>
-
-            <p style={{ textAlign: 'center', marginTop: 14, fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>
-              Pas encore membre ?{' '}
-              <button type="button" onClick={() => reset('register')} style={{ background: 'none', border: 'none', color: '#d4a017', cursor: 'pointer', fontSize: 12, fontWeight: 700, padding: 0 }}>Créer un compte</button>
-            </p>
-          </form>
+        {/* Message d'erreur */}
+        {error && (
+          <div style={{
+            marginTop: 14,
+            background: 'rgba(224,82,74,0.1)',
+            border: '1px solid rgba(224,82,74,0.3)',
+            borderRadius: 8, padding: '10px 14px',
+            fontSize: 13, color: '#ff8a7a',
+          }}>
+            {error}
+          </div>
         )}
 
-        {/* Inscription */}
-        {tab === 'register' && (
-          <form onSubmit={handleRegister}>
-            {success ? (
-              <div style={{ background: 'rgba(46,204,113,0.12)', border: '1px solid rgba(46,204,113,0.3)', borderRadius: 10, padding: '20px 16px', textAlign: 'center' }}>
-                <div style={{ fontSize: 32, marginBottom: 10 }}>📬</div>
-                <div style={{ fontSize: 14, color: '#2ECC71', fontWeight: 700, marginBottom: 6 }}>Vérifie ton email !</div>
-                <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', lineHeight: 1.6 }}>{success}</div>
-                <button type="button" onClick={() => reset('login')} style={{ marginTop: 14, background: 'none', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, color: '#fff', cursor: 'pointer', padding: '8px 20px', fontSize: 13, fontWeight: 600 }}>Se connecter</button>
-              </div>
-            ) : (
-              <>
-                <Input label="Pseudo" value={pseudo} onChange={setPseudo} placeholder="TonPseudo" autoComplete="username" />
-                <Input label="Email" type="email" value={email} onChange={setEmail} placeholder="ton@email.com" autoComplete="email" />
-                <Input label="Mot de passe" type="password" value={pass} onChange={setPass} placeholder="Min. 6 caractères" autoComplete="new-password" />
-                <Input label="Confirmer" type="password" value={confirm} onChange={setConfirm} placeholder="••••••••" autoComplete="new-password" />
+        {/* Note légale */}
+        <p style={{
+          marginTop: 20, fontSize: 11,
+          color: 'rgba(255,255,255,0.2)',
+          letterSpacing: '0.03em', lineHeight: 1.6,
+        }}>
+          Tu seras redirigé vers Discord pour autoriser l'accès.
+          <br />Aucun mot de passe n'est stocké sur nos serveurs.
+        </p>
 
-                {/* RGPD */}
-                <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', marginBottom: 14, padding: '10px 12px', background: 'rgba(255,255,255,0.03)', borderRadius: 8, border: `1px solid ${!rgpd && error.includes('conditions') ? 'rgba(224,82,74,0.4)' : 'rgba(255,255,255,0.07)'}` }}>
-                  <input type="checkbox" checked={rgpd} onChange={e => setRgpd(e.target.checked)} style={{ width: 15, height: 15, marginTop: 2, accentColor: '#d4a017', flexShrink: 0 }} />
-                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', lineHeight: 1.6 }}>
-                    J'accepte les conditions d'utilisation et consens à ce que mes données soient traitées pour la gestion de mon compte.{' '}
-                    <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: 10 }}>(RGPD)</span>
-                  </span>
-                </label>
-
-                {cooldown > 0 && (
-                  <div style={{ background: 'rgba(224,82,74,0.1)', border: '1px solid rgba(224,82,74,0.3)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: '#ff8a7a', marginBottom: 14 }}>
-                    🛡️ Trop de tentatives. Attends {cooldown} secondes.
-                  </div>
-                )}
-                {error && cooldown === 0 && (
-                  <div style={{ background: 'rgba(224,82,74,0.1)', border: '1px solid rgba(224,82,74,0.3)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: '#ff8a7a', marginBottom: 14 }}>
-                    {error}
-                  </div>
-                )}
-
-                <button type="submit" disabled={loading || cooldown > 0} style={{ width: '100%', padding: '12px', borderRadius: 10, border: 'none', background: (loading || cooldown > 0) ? 'rgba(212,160,23,0.4)' : '#d4a017', color: '#1a1f2e', fontSize: 14, fontWeight: 800, cursor: (loading || cooldown > 0) ? 'not-allowed' : 'pointer', letterSpacing: '.03em', transition: 'all .15s' }} onMouseEnter={e => { if (!loading && cooldown === 0) e.currentTarget.style.background = '#e5b83a' }} onMouseLeave={e => { if (!loading && cooldown === 0) e.currentTarget.style.background = '#d4a017' }}>
-                  {loading ? 'Création...' : cooldown > 0 ? `Attends ${cooldown}s` : 'Créer mon compte →'}
-                </button>
-
-                <p style={{ textAlign: 'center', marginTop: 14, fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>
-                  Déjà membre ?{' '}
-                  <button type="button" onClick={() => reset('login')} style={{ background: 'none', border: 'none', color: '#d4a017', cursor: 'pointer', fontSize: 12, fontWeight: 700, padding: 0 }}>Se connecter</button>
-                </p>
-              </>
-            )}
-          </form>
-        )}
+        <style>{`
+          @keyframes spin { to { transform: rotate(360deg); } }
+          @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+          @keyframes scaleIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        `}</style>
       </div>
     </div>
   )

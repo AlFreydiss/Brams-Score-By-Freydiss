@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
-import { supabase, signUpWithEmail, signInWithEmail, signOutUser } from '../lib/supabase.js'
+import { supabase, signUpWithEmail, signInWithEmail, signOutUser, signInWithDiscord as discordOAuth } from '../lib/supabase.js'
 
 const AuthContext = createContext(null)
 
@@ -56,6 +56,11 @@ export function AuthProvider({ children }) {
     return () => { delete window.resetWelcome }
   }, [])
 
+  const signInWithDiscord = useCallback(async () => {
+    const { error } = await discordOAuth()
+    return { error }
+  }, [])
+
   const signIn = useCallback(async (email, password) => {
     const { error } = await signInWithEmail(email, password)
     return { error }
@@ -86,15 +91,18 @@ export function AuthProvider({ children }) {
     loading,
     showWelcome,
     dismissWelcome,
+    signInWithDiscord,
     signIn,
     signUp,
     signOut,
     isAuthenticated: !!user,
-    displayName: user?.user_metadata?.display_name
+    displayName: user?.user_metadata?.full_name
+      || user?.user_metadata?.display_name
+      || user?.user_metadata?.custom_claims?.global_name
       || user?.email?.split('@')[0]
       || 'Pirate',
     avatarUrl: user?.user_metadata?.avatar_url ?? null,
-    discordId: null,
+    discordId: user?.user_metadata?.provider_id ?? user?.user_metadata?.sub ?? null,
   }
 
   return (
