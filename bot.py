@@ -284,6 +284,8 @@ _RE_FREYDISS_NAME = re.compile(
 _RE_FREYDISS_TYPO = re.compile(
     r'\b(?:al\s*)?(?:'
     r'fred(?:iss?|is)?|'
+    r'frid(?:iss?|is)?|'
+    r'alfrid|'
     r'fradiss?|fraydiss?|fraidiss?|'
     r'freidiss?|freudiss?|freadiss?|'
     r'freydi(?!ss?\b)[a-z]*|'
@@ -2543,7 +2545,11 @@ async def on_message(message):
 
     elif message.author.id != _FREYDISS_ID:
         # @mention directe de Freydiss → soumise mode
-        _freydiss_pinged = any(m.id == _FREYDISS_ID for m in message.mentions)
+        _freydiss_pinged = (
+            any(m.id == _FREYDISS_ID for m in message.mentions)
+            or f"<@{_FREYDISS_ID}>" in message.content
+            or f"<@!{_FREYDISS_ID}>" in message.content
+        )
         if (
             _freydiss_pinged
             and now_f - _FREYDISS_PING_CD.get(_cid, 0) >= _FREYDISS_PING_DELAY
