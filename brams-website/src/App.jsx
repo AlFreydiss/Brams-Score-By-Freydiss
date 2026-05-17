@@ -47,9 +47,10 @@ const BlobUploadPage  = lazy(() => import('./components/BlobUploadPage.jsx'))
 const WikiHome        = lazy(() => import('./components/WikiHome.jsx'))
 const WikiArticle     = lazy(() => import('./components/WikiArticle.jsx'))
 const WikiEditor      = lazy(() => import('./components/WikiEditor.jsx'))
-const TheoriesHome    = lazy(() => import('./components/TheoriesHome.jsx'))
-const TheoryDetail    = lazy(() => import('./components/TheoryDetail.jsx'))
-const TheoryEditor    = lazy(() => import('./components/TheoryEditor.jsx'))
+const TheoriesHome       = lazy(() => import('./components/TheoriesHome.jsx'))
+const TheoryDetail       = lazy(() => import('./components/TheoryDetail.jsx'))
+const TheoryEditor       = lazy(() => import('./components/TheoryEditor.jsx'))
+const ConstellationPage  = lazy(() => import('./components/ConstellationPage.jsx'))
 
 function BgVideo() {
   const [visible, setVisible] = useState(false)
@@ -262,6 +263,9 @@ export default function App() {
         <Route path="/theories"       element={<PageLayout><TheoriesHome  /></PageLayout>} />
         <Route path="/theories/new"   element={<PageLayout><TheoryEditor  /></PageLayout>} />
         <Route path="/theories/:id"   element={<PageLayout><TheoryDetail  /></PageLayout>} />
+
+        {/* Constellation Équipages */}
+        <Route path="/equipage" element={<PageLayout><ConstellationPage /></PageLayout>} />
 
         {/* Homepage */}
         <Route path="/*" element={mainContent} />
