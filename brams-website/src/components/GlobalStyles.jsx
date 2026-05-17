@@ -115,6 +115,8 @@ const CSS = `
   }
   .hero-community {
     display: block;
+    /* Force Pirata One — OnePiece n'a pas tous les glyphes ASCII (i, t, y…) */
+    font-family: 'Pirata One', cursive;
     background: linear-gradient(135deg, #e0524a 0%, #ff8a80 25%, #ffb347 55%, #ff6b35 78%, #e0524a 100%);
     background-size: 300% 300%;
     -webkit-background-clip: text;
