@@ -1047,7 +1047,7 @@ bot = commands.Bot(
 )
 bot.get_db      = get_db
 bot.release_db  = release_db
-db_executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="db_worker")
+db_executor = ThreadPoolExecutor(max_workers=4, thread_name_prefix="db_worker")
 
 # Fonctions berry exposées au cog marketplace
 bot.get_berrys   = lambda uid: get_berrys(uid)
@@ -1075,6 +1075,17 @@ async def flush_dirty_loop():
     expired_ic = [k for k, (_, ts) in _INSULT_CACHE.items() if _now_f - ts > _INSULT_CACHE_TTL * 2]
     for k in expired_ic:
         del _INSULT_CACHE[k]
+    # Nettoyage cooldowns culte Freydiss
+    for cd_dict, cd_delay in (
+        (_FREYDISS_HYPE_CD, _FREYDISS_HYPE_DELAY),
+        (_FREYDISS_SELF_CD, _FREYDISS_SELF_DELAY),
+        (_FREYDISS_DEF_CD,  _FREYDISS_DEF_DELAY),
+        (_FREYDISS_TYPO_CD, _FREYDISS_TYPO_DELAY),
+        (_FREYDISS_PING_CD, _FREYDISS_PING_DELAY),
+    ):
+        expired_fr = [k for k, v in cd_dict.items() if _now_f - v > cd_delay * 3]
+        for k in expired_fr:
+            del cd_dict[k]
 
     if not _DIRTY:
         return

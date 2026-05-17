@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useInView } from '../hooks/useInView.js'
 import { fetchLeaderboard } from '../lib/supabase.js'
 
@@ -30,16 +30,24 @@ export default function Leaderboard() {
   const [ref, inView] = useInView()
 
   useEffect(() => {
-    fetchLeaderboard(100).then(data => { setAllRows(data); setLoading(false) })
+    fetchLeaderboard(100)
+      .then(data => { setAllRows(data); setLoading(false) })
+      .catch(() => setLoading(false))
   }, [])
 
   const handlePeriod = (p) => { setPeriod(p); localStorage.setItem('lb_period', p); setPage(0) }
 
-  const rawRows = allRows
-    ? allRows.map((r, i) => ({ ...r, pos: i+1, vocal_h: parseFloat(r.vocal_h||0), berrys: parseInt(r.berrys||0) }))
-    : []
+  const rawRows = useMemo(() =>
+    allRows
+      ? allRows.map((r, i) => ({ ...r, pos: i+1, vocal_h: parseFloat(r.vocal_h||0), berrys: parseInt(r.berrys||0) }))
+      : [],
+    [allRows]
+  )
 
-  const rows = rangFilter === 'Tous' ? rawRows : rawRows.filter(r => getRank(r.vocal_h).rang === rangFilter)
+  const rows = useMemo(() =>
+    rangFilter === 'Tous' ? rawRows : rawRows.filter(r => getRank(r.vocal_h).rang === rangFilter),
+    [rangFilter, rawRows]
+  )
 
   const totalPages = Math.max(1, Math.ceil(rows.length / PER_PAGE))
   const display    = rows.slice(page * PER_PAGE, page * PER_PAGE + PER_PAGE)
@@ -167,7 +175,7 @@ export default function Leaderboard() {
                           boxShadow: isTop3 ? `0 0 12px ${rk.color}40` : 'none',
                         }}>
                           {m.avatar_url
-                            ? <img src={m.avatar_url} alt="" width={36} height={36} style={{ objectFit:'cover', borderRadius:'50%' }} onError={e=>{e.currentTarget.style.display='none';e.currentTarget.nextSibling.style.display='flex'}} />
+                            ? <img src={m.avatar_url} alt="" width={36} height={36} loading="lazy" decoding="async" style={{ objectFit:'cover', borderRadius:'50%' }} onError={e=>{e.currentTarget.style.display='none';e.currentTarget.nextSibling.style.display='flex'}} />
                             : null}
                           <span style={{ display:m.avatar_url?'none':'flex' }}>{rk.emoji}</span>
                         </div>

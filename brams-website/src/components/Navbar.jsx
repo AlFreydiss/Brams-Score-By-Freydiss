@@ -188,9 +188,13 @@ export default function Navbar() {
   const { isAuthenticated, signIn, signOut, displayName, avatarUrl } = useAuth()
 
   useEffect(() => {
-    const fn = () => setScrolled(window.scrollY > 50)
-    window.addEventListener('scroll', fn)
-    return () => window.removeEventListener('scroll', fn)
+    let raf
+    const fn = () => {
+      cancelAnimationFrame(raf)
+      raf = requestAnimationFrame(() => setScrolled(window.scrollY > 50))
+    }
+    window.addEventListener('scroll', fn, { passive: true })
+    return () => { window.removeEventListener('scroll', fn); cancelAnimationFrame(raf) }
   }, [])
 
   return (
