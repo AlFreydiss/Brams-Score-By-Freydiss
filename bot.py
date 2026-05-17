@@ -275,7 +275,7 @@ _FREYDISS_PING_CD:   dict[str, float] = {}
 _FREYDISS_PING_DELAY = 45
 
 # ── VINN (soumise de Freydiss) ─────────────────────────────────────
-_VINN_ID         = 123388233485661402
+_VINN_ID         = 1233882334856614020
 _VINN_PING_CD:   dict[str, float] = {}
 _VINN_PING_DELAY = 45
 
