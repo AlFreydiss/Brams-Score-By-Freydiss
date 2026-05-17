@@ -271,6 +271,8 @@ _FREYDISS_DEF_CD:    dict[str, float] = {}
 _FREYDISS_DEF_DELAY  = 30
 _FREYDISS_TYPO_CD:   dict[str, float] = {}
 _FREYDISS_TYPO_DELAY = 30
+_FREYDISS_PING_CD:   dict[str, float] = {}
+_FREYDISS_PING_DELAY = 45
 
 # Toutes les variantes correctes du nom (insensible à la casse)
 _RE_FREYDISS_NAME = re.compile(
@@ -298,6 +300,25 @@ _RE_BAD_TALK = re.compile(
     r'|rat[ée]|l[aâ]che|sale|faible|useless|pire|merdique|naze|faux|fake|arnaque)\b',
     re.IGNORECASE
 )
+
+# Quand quelqu'un @mentionne Freydiss directement (soumise mode)
+_FREYDISS_PING_HYPE = [
+    "😍 quelqu'un a tagué **Al Freydiss**... mon maître... mon tout... 😭💙",
+    "⚡ ping reçu. **Al Freydiss** a été mentionné. Je peux pas rester neutre là 🫀",
+    "🫠 c'est lui que t'as tagué... le seul... l'unique... 😮‍💨👑",
+    "vous l'avez @mentionné... **Al Freydiss**... je suis émue 😭🙏",
+    "🌟 tag validé. **Al Freydiss** mérite chaque mention 👑",
+    "on parle du roi là ? de MON roi ? 😤💙",
+    "taguer **Freydiss** c'est comme invoquer un dieu. T'es prêt pour ça ? 🙏✨",
+    "😳 j'ai vu son tag... j'en tremble encore 🫀💎",
+    "🐐 le patron a été mentionné — tout le serveur devrait s'incliner là 👑",
+    "tu l'as tagué... tu réalises que tu viens de mentionner la personne la plus importante de ce serveur ? 👑😭",
+    "💅 **Al Freydiss** tagué. Je note, j'archivise, je chéris ce moment. ✨",
+    "🫡 ping envoyé au roi. J'espère que t'as de bonnes raisons ☠️👑",
+    "😭 son tag dans ce salon... c'est beau... c'est lui... c'est **Freydiss**... 💙",
+    "🔔 notification pour le fondateur. Le serveur s'arrête. On attend. 👑",
+    "tu l'as @tag... respect pour l'audace. Lui par contre il est au-dessus de tout ça 💎😌",
+]
 
 # Quand quelqu'un mentionne Freydiss (éloge)
 _FREYDISS_HYPE = [
@@ -2521,6 +2542,18 @@ async def on_message(message):
             pass
 
     elif message.author.id != _FREYDISS_ID:
+        # @mention directe de Freydiss → soumise mode
+        _freydiss_pinged = any(m.id == _FREYDISS_ID for m in message.mentions)
+        if (
+            _freydiss_pinged
+            and now_f - _FREYDISS_PING_CD.get(_cid, 0) >= _FREYDISS_PING_DELAY
+        ):
+            _FREYDISS_PING_CD[_cid] = now_f
+            try:
+                await message.channel.send(random.choice(_FREYDISS_PING_HYPE))
+            except Exception:
+                pass
+
         # Faute d'orthographe du nom → insulte + correction
         _typo_m = _RE_FREYDISS_TYPO.search(message.content)
         if (
