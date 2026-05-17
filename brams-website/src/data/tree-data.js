@@ -1,0 +1,456 @@
+// ── One Piece — Données Arbre de Personnages ─────────────────────────────────
+
+export const LINK_COLORS = {
+  parent:    '#d4a017',
+  sibling:   '#60a5fa',
+  crew:      '#34d399',
+  ally:      '#a78bfa',
+  enemy:     '#e05252',
+  hierarchy: '#94a3b8',
+  rival:     '#f97316',
+}
+
+export const HAKI_COLORS = {
+  conqueror:   '#d4a017',
+  armament:    '#64748b',
+  observation: '#60a5fa',
+}
+
+export const CHARACTERS = [
+  // ── Lignée D. ───────────────────────────────────────────────────────────────
+  {
+    id: 'rocks', name: 'Rocks D. Xebec', alias: 'Le plus grand pirate',
+    family: 'd_lineage', crew: 'rocks_pirates', org: null,
+    status: 'dead', haki: ['conqueror', 'armament'],
+    devilFruit: null, bounty: '∞',
+    color: '#4a0e0e', emoji: '⚡',
+  },
+  {
+    id: 'roger', name: 'Gol D. Roger', alias: 'Roi des Pirates',
+    family: 'd_lineage', crew: 'roger_pirates', org: null,
+    status: 'dead', haki: ['conqueror', 'armament', 'observation'],
+    devilFruit: null, bounty: '∞',
+    color: '#7a1a1a', emoji: '🏴‍☠️',
+  },
+  {
+    id: 'rouge', name: 'Portgas D. Rouge', alias: '',
+    family: 'd_lineage', crew: null, org: null,
+    status: 'dead', haki: [],
+    devilFruit: null, bounty: null,
+    color: '#7a3a2a', emoji: '💝',
+  },
+  {
+    id: 'ace', name: 'Portgas D. Ace', alias: 'Poing de Feu',
+    family: 'd_lineage', crew: 'whitebeard_pirates', org: null,
+    status: 'dead', haki: ['conqueror', 'armament'],
+    devilFruit: 'Mera Mera no Mi', bounty: '550 000 000 Berry',
+    color: '#8b2500', emoji: '🔥',
+  },
+  {
+    id: 'garp', name: 'Monkey D. Garp', alias: 'Poing de Fer',
+    family: 'd_lineage', crew: null, org: 'marines',
+    status: 'alive', haki: ['conqueror', 'armament'],
+    devilFruit: null, bounty: null,
+    color: '#1a3a6a', emoji: '👊',
+  },
+  {
+    id: 'dragon', name: 'Monkey D. Dragon', alias: 'Le Révolutionnaire',
+    family: 'd_lineage', crew: null, org: 'revolutionary',
+    status: 'alive', haki: ['conqueror'],
+    devilFruit: '?', bounty: '∞',
+    color: '#0a4a2a', emoji: '🌪️',
+  },
+  {
+    id: 'luffy', name: 'Monkey D. Luffy', alias: 'Joy Boy / Chapeau de Paille',
+    family: 'd_lineage', crew: 'straw_hats', org: null,
+    status: 'alive', haki: ['conqueror', 'armament', 'observation'],
+    devilFruit: 'Hito Hito no Mi: Nika', bounty: '3 000 000 000 Berry',
+    color: '#e0524a', emoji: '🍖',
+  },
+  {
+    id: 'law', name: 'Trafalgar D. Water Law', alias: 'Chirurgien de la Mort',
+    family: 'd_lineage', crew: 'heart_pirates', org: null,
+    status: 'alive', haki: ['armament', 'observation'],
+    devilFruit: 'Ope Ope no Mi', bounty: '3 000 000 000 Berry',
+    color: '#1a4a6a', emoji: '💉',
+  },
+  {
+    id: 'blackbeard', name: 'Marshall D. Teach', alias: 'Barbe Noire',
+    family: 'd_lineage', crew: 'blackbeard_pirates', org: null,
+    status: 'alive', haki: ['conqueror', 'armament'],
+    devilFruit: 'Yami Yami + Gura Gura', bounty: '3 996 000 000 Berry',
+    color: '#1a0a2a', emoji: '🌑',
+  },
+  {
+    id: 'saul', name: 'Jaguar D. Saul', alias: 'Géant des Marines',
+    family: 'd_lineage', crew: null, org: null,
+    status: 'alive', haki: ['armament'],
+    devilFruit: null, bounty: null,
+    color: '#2a4a3a', emoji: '🦁',
+  },
+
+  // ── Straw Hats ───────────────────────────────────────────────────────────────
+  {
+    id: 'zoro', name: 'Roronoa Zoro', alias: 'Premier Sabreur du Monde',
+    family: null, crew: 'straw_hats', org: null,
+    status: 'alive', haki: ['conqueror', 'armament', 'observation'],
+    devilFruit: null, bounty: '1 111 000 000 Berry',
+    color: '#1a5a1a', emoji: '⚔️',
+  },
+  {
+    id: 'nami', name: 'Nami', alias: 'Navigatrice',
+    family: null, crew: 'straw_hats', org: null,
+    status: 'alive', haki: [],
+    devilFruit: null, bounty: '366 000 000 Berry',
+    color: '#f97316', emoji: '🗺️',
+  },
+  {
+    id: 'usopp', name: 'Usopp', alias: 'Dieu Usopp',
+    family: null, crew: 'straw_hats', org: null,
+    status: 'alive', haki: ['observation'],
+    devilFruit: null, bounty: '500 000 000 Berry',
+    color: '#84531a', emoji: '🏹',
+  },
+  {
+    id: 'sanji', name: 'Vinsmoke Sanji', alias: 'Pattes Noires',
+    family: 'vinsmoke', crew: 'straw_hats', org: null,
+    status: 'alive', haki: ['conqueror', 'armament', 'observation'],
+    devilFruit: null, bounty: '1 032 000 000 Berry',
+    color: '#1a2a7a', emoji: '🦵',
+  },
+  {
+    id: 'chopper', name: 'Tony Tony Chopper', alias: 'Docteur',
+    family: null, crew: 'straw_hats', org: null,
+    status: 'alive', haki: [],
+    devilFruit: 'Hito Hito no Mi', bounty: '1 000 Berry',
+    color: '#e84393', emoji: '🦌',
+  },
+  {
+    id: 'robin', name: 'Nico Robin', alias: 'La Démone',
+    family: null, crew: 'straw_hats', org: null,
+    status: 'alive', haki: ['armament', 'observation'],
+    devilFruit: 'Hana Hana no Mi', bounty: '930 000 000 Berry',
+    color: '#2a1a5a', emoji: '🌸',
+  },
+  {
+    id: 'franky', name: 'Franky', alias: 'Cyborg',
+    family: null, crew: 'straw_hats', org: null,
+    status: 'alive', haki: [],
+    devilFruit: null, bounty: '394 000 000 Berry',
+    color: '#1a4a7a', emoji: '🤖',
+  },
+  {
+    id: 'brook', name: 'Brook', alias: 'Soul King',
+    family: null, crew: 'straw_hats', org: null,
+    status: 'alive', haki: ['armament'],
+    devilFruit: 'Yomi Yomi no Mi', bounty: '383 000 000 Berry',
+    color: '#2a2a2a', emoji: '💀',
+  },
+  {
+    id: 'jinbe', name: 'Jinbe', alias: 'Chevalier de la Mer',
+    family: null, crew: 'straw_hats', org: null,
+    status: 'alive', haki: ['armament', 'observation'],
+    devilFruit: null, bounty: '1 100 000 000 Berry',
+    color: '#1a3a6a', emoji: '🐳',
+  },
+
+  // ── Vinsmoke ─────────────────────────────────────────────────────────────────
+  {
+    id: 'judge', name: 'Vinsmoke Judge', alias: 'Garuda',
+    family: 'vinsmoke', crew: null, org: null,
+    status: 'alive', haki: [],
+    devilFruit: null, bounty: null,
+    color: '#4a0e6a', emoji: '⚡',
+  },
+  {
+    id: 'reiju', name: 'Vinsmoke Reiju', alias: 'Poison Pink',
+    family: 'vinsmoke', crew: null, org: null,
+    status: 'alive', haki: [],
+    devilFruit: null, bounty: null,
+    color: '#c2185b', emoji: '💜',
+  },
+  {
+    id: 'ichiji', name: 'Vinsmoke Ichiji', alias: 'Sparkling Red',
+    family: 'vinsmoke', crew: null, org: null,
+    status: 'alive', haki: [],
+    devilFruit: null, bounty: null,
+    color: '#e0524a', emoji: '🔴',
+  },
+  {
+    id: 'niji', name: 'Vinsmoke Niji', alias: 'Dengeki Blue',
+    family: 'vinsmoke', crew: null, org: null,
+    status: 'alive', haki: [],
+    devilFruit: null, bounty: null,
+    color: '#1976d2', emoji: '🔵',
+  },
+  {
+    id: 'yonji', name: 'Vinsmoke Yonji', alias: 'Winch Green',
+    family: 'vinsmoke', crew: null, org: null,
+    status: 'alive', haki: [],
+    devilFruit: null, bounty: null,
+    color: '#388e3c', emoji: '🟢',
+  },
+
+  // ── Charlotte ─────────────────────────────────────────────────────────────────
+  {
+    id: 'bigmom', name: 'Charlotte Linlin', alias: 'Big Mom',
+    family: 'charlotte', crew: 'big_mom_pirates', org: null,
+    status: 'alive', haki: ['conqueror', 'armament', 'observation'],
+    devilFruit: 'Soru Soru no Mi', bounty: '4 388 000 000 Berry',
+    color: '#e84393', emoji: '🍰',
+  },
+  {
+    id: 'katakuri', name: 'Charlotte Katakuri', alias: 'Big Trois',
+    family: 'charlotte', crew: 'big_mom_pirates', org: null,
+    status: 'alive', haki: ['conqueror', 'armament', 'observation'],
+    devilFruit: 'Mochi Mochi no Mi', bounty: '1 057 000 000 Berry',
+    color: '#c2185b', emoji: '🍡',
+  },
+  {
+    id: 'perospero', name: 'Charlotte Perospero', alias: 'Lick',
+    family: 'charlotte', crew: 'big_mom_pirates', org: null,
+    status: 'alive', haki: ['armament'],
+    devilFruit: 'Pero Pero no Mi', bounty: '700 000 000 Berry',
+    color: '#f06292', emoji: '🍭',
+  },
+  {
+    id: 'smoothie', name: 'Charlotte Smoothie', alias: 'Trèfle',
+    family: 'charlotte', crew: 'big_mom_pirates', org: null,
+    status: 'alive', haki: ['armament'],
+    devilFruit: 'Shibo Shibo no Mi', bounty: '932 000 000 Berry',
+    color: '#4caf50', emoji: '🥤',
+  },
+  {
+    id: 'cracker', name: 'Charlotte Cracker', alias: 'Cœur',
+    family: 'charlotte', crew: 'big_mom_pirates', org: null,
+    status: 'alive', haki: ['armament'],
+    devilFruit: 'Bisu Bisu no Mi', bounty: '860 000 000 Berry',
+    color: '#f9a825', emoji: '🍪',
+  },
+  {
+    id: 'pudding', name: 'Charlotte Pudding', alias: 'Carreau',
+    family: 'charlotte', crew: 'big_mom_pirates', org: null,
+    status: 'alive', haki: [],
+    devilFruit: 'Memo Memo no Mi', bounty: null,
+    color: '#f48fb1', emoji: '☕',
+  },
+
+  // ── Marines ───────────────────────────────────────────────────────────────────
+  {
+    id: 'sengoku', name: 'Sengoku', alias: 'Le Bouddha',
+    family: null, crew: null, org: 'marines',
+    status: 'alive', haki: ['conqueror', 'armament'],
+    devilFruit: 'Hito Hito no Mi: Daibutsu', bounty: null,
+    color: '#5d4037', emoji: '🏛️',
+  },
+  {
+    id: 'akainu', name: 'Sakazuki', alias: 'Akainu — Amiral en Chef',
+    family: null, crew: null, org: 'marines',
+    status: 'alive', haki: ['armament', 'observation'],
+    devilFruit: 'Magu Magu no Mi', bounty: null,
+    color: '#7a1a1a', emoji: '🌋',
+  },
+  {
+    id: 'kizaru', name: 'Borsalino', alias: 'Kizaru — Amiral',
+    family: null, crew: null, org: 'marines',
+    status: 'alive', haki: ['armament'],
+    devilFruit: 'Pika Pika no Mi', bounty: null,
+    color: '#f5c518', emoji: '💡',
+  },
+  {
+    id: 'fujitora', name: 'Issho', alias: 'Fujitora — Amiral',
+    family: null, crew: null, org: 'marines',
+    status: 'alive', haki: ['conqueror', 'armament', 'observation'],
+    devilFruit: 'Zushi Zushi no Mi', bounty: null,
+    color: '#7b1fa2', emoji: '🌀',
+  },
+  {
+    id: 'greenbull', name: 'Ryokugyu', alias: 'Greenbull — Amiral',
+    family: null, crew: null, org: 'marines',
+    status: 'alive', haki: ['armament'],
+    devilFruit: 'Mori Mori no Mi', bounty: null,
+    color: '#1b5e20', emoji: '🌿',
+  },
+
+  // ── Armée Révolutionnaire ────────────────────────────────────────────────────
+  {
+    id: 'sabo', name: 'Sabo', alias: 'Bras Brûlant — N°2',
+    family: null, crew: null, org: 'revolutionary',
+    status: 'alive', haki: ['conqueror', 'armament', 'observation'],
+    devilFruit: 'Mera Mera no Mi', bounty: '602 000 000 Berry',
+    color: '#f97316', emoji: '🔥',
+  },
+  {
+    id: 'ivankov', name: 'Emporio Ivankov', alias: 'Miracle Person',
+    family: null, crew: null, org: 'revolutionary',
+    status: 'alive', haki: [],
+    devilFruit: 'Horm Horm no Mi', bounty: null,
+    color: '#e91e63', emoji: '👑',
+  },
+  {
+    id: 'koala', name: 'Koala', alias: 'Officier Révolutionnaire',
+    family: null, crew: null, org: 'revolutionary',
+    status: 'alive', haki: ['armament'],
+    devilFruit: null, bounty: null,
+    color: '#ff7043', emoji: '🐠',
+  },
+
+  // ── Autres Puissances ─────────────────────────────────────────────────────────
+  {
+    id: 'shanks', name: 'Shanks', alias: 'Roux — Yonko',
+    family: null, crew: 'red_hair_pirates', org: null,
+    status: 'alive', haki: ['conqueror', 'armament', 'observation'],
+    devilFruit: null, bounty: '4 048 900 000 Berry',
+    color: '#c0392b', emoji: '🍶',
+  },
+  {
+    id: 'whitebeard', name: 'Edward Newgate', alias: "L'Homme le Plus Fort",
+    family: null, crew: 'whitebeard_pirates', org: null,
+    status: 'dead', haki: ['conqueror', 'armament', 'observation'],
+    devilFruit: 'Gura Gura no Mi', bounty: '5 046 000 000 Berry',
+    color: '#37474f', emoji: '🫁',
+  },
+  {
+    id: 'kaido', name: 'Kaido', alias: 'Roi des Bêtes',
+    family: null, crew: 'beast_pirates', org: null,
+    status: 'alive', haki: ['conqueror', 'armament', 'observation'],
+    devilFruit: 'Uo Uo no Mi: Seiryu', bounty: '4 611 100 000 Berry',
+    color: '#1a2a5a', emoji: '🐉',
+  },
+  {
+    id: 'yamato', name: 'Yamato', alias: 'Oden de Wano',
+    family: null, crew: 'beast_pirates', org: null,
+    status: 'alive', haki: ['conqueror', 'armament'],
+    devilFruit: 'Inu Inu no Mi: Okuchi no Makami', bounty: '9 000 Berry',
+    color: '#5c6bc0', emoji: '🐺',
+  },
+]
+
+export const RELATIONS = [
+  // Lignée D. — biologique
+  { id: 'r1', from: 'roger',   to: 'ace',      type: 'parent',    label: 'Père' },
+  { id: 'r2', from: 'rouge',   to: 'ace',      type: 'parent',    label: 'Mère' },
+  { id: 'r3', from: 'garp',    to: 'dragon',   type: 'parent',    label: 'Père' },
+  { id: 'r4', from: 'dragon',  to: 'luffy',    type: 'parent',    label: 'Père' },
+  { id: 'r5', from: 'garp',    to: 'ace',      type: 'hierarchy', label: 'Tuteur' },
+  { id: 'r6', from: 'rocks',   to: 'roger',    type: 'rival',     label: 'Rivaux' },
+  { id: 'r7', from: 'roger',   to: 'garp',     type: 'rival',     label: 'Rivaux' },
+  { id: 'r8', from: 'ace',     to: 'luffy',    type: 'sibling',   label: 'Frères' },
+  { id: 'r9', from: 'ace',     to: 'sabo',     type: 'sibling',   label: 'Frères' },
+  { id: 'r10', from: 'luffy',  to: 'sabo',     type: 'sibling',   label: 'Frères' },
+  { id: 'r11', from: 'luffy',  to: 'law',      type: 'ally',      label: 'Alliance' },
+  { id: 'r12', from: 'luffy',  to: 'blackbeard', type: 'enemy',   label: 'Ennemi juré' },
+  { id: 'r13', from: 'akainu', to: 'ace',      type: 'enemy',     label: 'Meurtrier' },
+
+  // Vinsmoke
+  { id: 'v1', from: 'judge',   to: 'reiju',    type: 'parent',    label: 'Père' },
+  { id: 'v2', from: 'judge',   to: 'ichiji',   type: 'parent',    label: 'Père' },
+  { id: 'v3', from: 'judge',   to: 'niji',     type: 'parent',    label: 'Père' },
+  { id: 'v4', from: 'judge',   to: 'sanji',    type: 'parent',    label: 'Père' },
+  { id: 'v5', from: 'judge',   to: 'yonji',    type: 'parent',    label: 'Père' },
+  { id: 'v6', from: 'reiju',   to: 'ichiji',   type: 'sibling',   label: 'Frères' },
+  { id: 'v7', from: 'ichiji',  to: 'niji',     type: 'sibling',   label: 'Frères' },
+  { id: 'v8', from: 'niji',    to: 'sanji',    type: 'sibling',   label: 'Frères' },
+  { id: 'v9', from: 'sanji',   to: 'yonji',    type: 'sibling',   label: 'Frères' },
+
+  // Charlotte
+  { id: 'c1', from: 'bigmom', to: 'perospero', type: 'parent',    label: 'Mère' },
+  { id: 'c2', from: 'bigmom', to: 'katakuri',  type: 'parent',    label: 'Mère' },
+  { id: 'c3', from: 'bigmom', to: 'smoothie',  type: 'parent',    label: 'Mère' },
+  { id: 'c4', from: 'bigmom', to: 'cracker',   type: 'parent',    label: 'Mère' },
+  { id: 'c5', from: 'bigmom', to: 'pudding',   type: 'parent',    label: 'Mère' },
+
+  // Straw Hats
+  { id: 's1', from: 'luffy', to: 'zoro',   type: 'crew', label: 'Équipage' },
+  { id: 's2', from: 'luffy', to: 'nami',   type: 'crew', label: 'Équipage' },
+  { id: 's3', from: 'luffy', to: 'usopp',  type: 'crew', label: 'Équipage' },
+  { id: 's4', from: 'luffy', to: 'sanji',  type: 'crew', label: 'Équipage' },
+  { id: 's5', from: 'luffy', to: 'chopper',type: 'crew', label: 'Équipage' },
+  { id: 's6', from: 'luffy', to: 'robin',  type: 'crew', label: 'Équipage' },
+  { id: 's7', from: 'luffy', to: 'franky', type: 'crew', label: 'Équipage' },
+  { id: 's8', from: 'luffy', to: 'brook',  type: 'crew', label: 'Équipage' },
+  { id: 's9', from: 'luffy', to: 'jinbe',  type: 'crew', label: 'Équipage' },
+
+  // Marines
+  { id: 'm1', from: 'sengoku', to: 'akainu',   type: 'hierarchy', label: 'Prédécesseur' },
+  { id: 'm2', from: 'sengoku', to: 'garp',     type: 'hierarchy', label: 'Collègues' },
+  { id: 'm3', from: 'akainu',  to: 'kizaru',   type: 'hierarchy', label: 'Supérieur' },
+  { id: 'm4', from: 'akainu',  to: 'fujitora', type: 'hierarchy', label: 'Supérieur' },
+  { id: 'm5', from: 'akainu',  to: 'greenbull',type: 'hierarchy', label: 'Supérieur' },
+
+  // Révolutionnaires
+  { id: 're1', from: 'dragon', to: 'sabo',     type: 'hierarchy', label: 'Chef' },
+  { id: 're2', from: 'dragon', to: 'ivankov',  type: 'hierarchy', label: 'Chef' },
+  { id: 're3', from: 'dragon', to: 'koala',    type: 'hierarchy', label: 'Chef' },
+
+  // Cross-groupe
+  { id: 'x1', from: 'shanks',     to: 'luffy',  type: 'ally',      label: 'Mentor' },
+  { id: 'x2', from: 'shanks',     to: 'roger',  type: 'hierarchy', label: 'Disciple' },
+  { id: 'x3', from: 'whitebeard', to: 'ace',    type: 'hierarchy', label: 'Père adoptif' },
+  { id: 'x4', from: 'kaido',      to: 'yamato', type: 'parent',    label: 'Père' },
+  { id: 'x5', from: 'saul',       to: 'robin',  type: 'ally',      label: 'Protégé' },
+  { id: 'x6', from: 'luffy',      to: 'shanks', type: 'ally',      label: 'Idole' },
+]
+
+export const TREE_CONFIGS = {
+  d_family: {
+    id: 'd_family',
+    label: 'Lignée D.',
+    emoji: '🌊',
+    color: '#e0524a',
+    charFilter: c => c.family === 'd_lineage',
+    relFilter:  r => ['parent','sibling','rival','hierarchy','ally','enemy'].includes(r.type),
+    root: 'rocks',
+    layout: 'tree',
+  },
+  vinsmoke: {
+    id: 'vinsmoke',
+    label: 'Vinsmoke',
+    emoji: '💠',
+    color: '#4fc3f7',
+    charFilter: c => c.family === 'vinsmoke',
+    relFilter:  r => ['parent','sibling'].includes(r.type),
+    root: 'judge',
+    layout: 'tree',
+  },
+  charlotte: {
+    id: 'charlotte',
+    label: 'Charlotte',
+    emoji: '🍭',
+    color: '#e84393',
+    charFilter: c => c.family === 'charlotte',
+    relFilter:  r => ['parent','sibling'].includes(r.type),
+    root: 'bigmom',
+    layout: 'tree',
+  },
+  straw_hats: {
+    id: 'straw_hats',
+    label: 'Straw Hats',
+    emoji: '🏴‍☠️',
+    color: '#e0524a',
+    charFilter: c => c.crew === 'straw_hats',
+    relFilter:  r => r.type === 'crew',
+    root: 'luffy',
+    layout: 'radial',
+  },
+  marines: {
+    id: 'marines',
+    label: 'Marines',
+    emoji: '⚓',
+    color: '#1976d2',
+    charFilter: c => c.org === 'marines',
+    relFilter:  r => r.type === 'hierarchy',
+    root: 'sengoku',
+    layout: 'tree',
+  },
+  revolutionary: {
+    id: 'revolutionary',
+    label: 'Révolutionnaires',
+    emoji: '✊',
+    color: '#388e3c',
+    charFilter: c => c.org === 'revolutionary',
+    relFilter:  r => r.type === 'hierarchy',
+    root: 'dragon',
+    layout: 'tree',
+  },
+}

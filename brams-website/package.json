@@ -12,11 +12,14 @@
     "@aws-sdk/client-s3": "^3.1047.0",
     "@aws-sdk/s3-request-presigner": "^3.1047.0",
     "@google/generative-ai": "^0.21.0",
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.6.1",
     "@supabase/supabase-js": "^2.45.0",
     "@vercel/blob": "^2.3.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^7.15.1"
+    "react-router-dom": "^7.15.1",
+    "three": "^0.184.0"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.1",

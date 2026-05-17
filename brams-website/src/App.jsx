@@ -40,6 +40,7 @@ import BcPage from './components/BcPage.jsx'
 import MhaPage from './components/MhaPage.jsx'
 import FireForcePage from './components/FireForcePage.jsx'
 import BlueLockPage from './components/BlueLockPage.jsx'
+import FamilyTree3D from './components/FamilyTree3D.jsx'
 import BlobUploadPage from './components/BlobUploadPage.jsx'
 import WikiHome from './components/WikiHome.jsx'
 import WikiArticle from './components/WikiArticle.jsx'
@@ -99,6 +100,7 @@ export default function App() {
   const [mhaOpen,          setMhaOpen]           = useState(false)
   const [fireforcOpen,     setFireforcOpen]      = useState(false)
   const [bluelockOpen,     setBluelockOpen]      = useState(false)
+  const [treeOpen,         setTreeOpen]          = useState(false)
   const [uploadOpen,       setUploadOpen]        = useState(false)
 
   useEffect(() => {
@@ -118,6 +120,7 @@ export default function App() {
     const fnMha        = () => setMhaOpen(true)
     const fnFireforce  = () => setFireforcOpen(true)
     const fnBluelock   = () => setBluelockOpen(true)
+    const fnTree       = () => setTreeOpen(true)
     const fnUpload     = () => setUploadOpen(true)
     document.addEventListener('open-scans',        fnScans)
     document.addEventListener('open-encyclopedie', fnEncy)
@@ -135,6 +138,7 @@ export default function App() {
     document.addEventListener('open-mha',          fnMha)
     document.addEventListener('open-fireforce',    fnFireforce)
     document.addEventListener('open-bluelock',     fnBluelock)
+    document.addEventListener('open-tree',         fnTree)
     document.addEventListener('open-upload',       fnUpload)
     return () => {
       document.removeEventListener('open-scans',        fnScans)
@@ -153,6 +157,7 @@ export default function App() {
       document.removeEventListener('open-mha',          fnMha)
       document.removeEventListener('open-fireforce',    fnFireforce)
       document.removeEventListener('open-bluelock',     fnBluelock)
+      document.removeEventListener('open-tree',         fnTree)
       document.removeEventListener('open-upload',       fnUpload)
     }
   }, [])
@@ -221,6 +226,7 @@ export default function App() {
       {mhaOpen       && <MhaPage       onClose={() => setMhaOpen(false)} />}
       {fireforcOpen  && <FireForcePage onClose={() => setFireforcOpen(false)} />}
       {bluelockOpen  && <BlueLockPage  onClose={() => setBluelockOpen(false)} />}
+      {treeOpen      && <FamilyTree3D  onClose={() => setTreeOpen(false)} />}
       {scansOpen && (
         isAuthenticated
           ? <ScansPage onClose={() => setScansOpen(false)} />
