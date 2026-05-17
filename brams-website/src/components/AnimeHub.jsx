@@ -210,6 +210,63 @@ const ANIMES = [
     badge: 'NOUVEAU',
     badgeColor: '#388e3c',
   },
+  {
+    id: 'mha',
+    title: 'My Hero Academia',
+    subtitle: 'Plus Ultra !',
+    emoji: '💪',
+    color: '#1e88e5',
+    colorDark: '#0a2a5c',
+    coverImage: 'https://upload.wikimedia.org/wikipedia/en/4/46/Boku_no_Hero_Academia_Vol.1.png',
+    genres: ['Action', 'Super-héros', 'Shōnen'],
+    description: "Dans un monde où 80% de la population a un Super Pouvoir, Izuku Midoriya naît sans capacité mais rêve de devenir le plus grand héros.",
+    stats: [
+      { label: 'Chapitres', value: '430+' },
+      { label: 'Épisodes', value: '138' },
+      { label: 'Statut', value: 'Terminé' },
+    ],
+    action: '▶ Accéder',
+    badge: 'NOUVEAU',
+    badgeColor: '#1e88e5',
+  },
+  {
+    id: 'fireforce',
+    title: 'Fire Force',
+    subtitle: 'Enen no Shouboutai',
+    emoji: '🔥',
+    color: '#f4511e',
+    colorDark: '#5c1208',
+    coverImage: 'https://upload.wikimedia.org/wikipedia/en/a/ab/Fire_Force_volume_1.jpg',
+    genres: ['Action', 'Surnaturel', 'Shōnen'],
+    description: "Dans un monde où des humains s'enflamment spontanément, Shinra Kusakabe intègre la 8ème Brigade pour comprendre les mystères de la combustion spontanée.",
+    stats: [
+      { label: 'Chapitres', value: '304' },
+      { label: 'Épisodes', value: '48' },
+      { label: 'Statut', value: 'Terminé' },
+    ],
+    action: '▶ Accéder',
+    badge: 'NOUVEAU',
+    badgeColor: '#f4511e',
+  },
+  {
+    id: 'bluelock',
+    title: 'Blue Lock',
+    subtitle: 'Projet égoïste',
+    emoji: '⚽',
+    color: '#1565c0',
+    colorDark: '#071b3a',
+    coverImage: 'https://upload.wikimedia.org/wikipedia/en/a/aa/Blue_Lock_Volume_1.jpg',
+    genres: ['Sport', 'Compétition', 'Shōnen'],
+    description: "La Fédération japonaise de football engage Ego Jinpachi pour former le meilleur attaquant du monde via un programme radical : Blue Lock.",
+    stats: [
+      { label: 'Chapitres', value: '280+' },
+      { label: 'Épisodes', value: '24' },
+      { label: 'Statut', value: 'En cours' },
+    ],
+    action: '▶ Accéder',
+    badge: 'NOUVEAU',
+    badgeColor: '#1565c0',
+  },
 ]
 
 function AnimeCard({ anime, onClick }) {
@@ -326,7 +383,7 @@ function ComingSoonCard() {
   )
 }
 
-export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrstone, onOpenJjk, onOpenKingdom, onOpenAot, onOpenKny, onOpenNnt, onOpenSl, onOpenDbs, onOpenBc }) {
+export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrstone, onOpenJjk, onOpenKingdom, onOpenAot, onOpenKny, onOpenNnt, onOpenSl, onOpenDbs, onOpenBc, onOpenMha, onOpenFireforce, onOpenBluelock }) {
   useEffect(() => {
     document.body.style.overflow = 'hidden'
     return () => { document.body.style.overflow = '' }
@@ -344,6 +401,9 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
     else if (id === 'sl') onOpenSl()
     else if (id === 'dbs') onOpenDbs()
     else if (id === 'bc') onOpenBc()
+    else if (id === 'mha') onOpenMha()
+    else if (id === 'fireforce') onOpenFireforce()
+    else if (id === 'bluelock') onOpenBluelock()
   }
 
   return (

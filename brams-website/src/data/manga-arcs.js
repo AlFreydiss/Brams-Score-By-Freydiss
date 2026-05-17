@@ -103,4 +103,31 @@ export const MANGA_ARCS = {
     { name: 'Raid du Pays de Pique',       start: 262, end: 331 },
     { name: 'Arc Final',                   start: 332, end: 389 },
   ],
+
+  mha: [
+    { name: 'Introduction & U.A.',             start: 1,   end: 57  },
+    { name: 'Camp & Sauvetage de Bakugo',      start: 58,  end: 120 },
+    { name: "Examens de Licence Pro",          start: 121, end: 162 },
+    { name: 'Overhaul & Fleurs du Mal',        start: 163, end: 214 },
+    { name: "Guerre de Libération Paranormale",start: 215, end: 296 },
+    { name: 'Nouveau Monde & Deku en Solo',    start: 297, end: 337 },
+    { name: 'Arc Final',                       start: 338, end: 9999 },
+  ],
+
+  fireforce: [
+    { name: '8ème Brigade — Débuts',           start: 1,   end: 18  },
+    { name: 'VS 1ère Brigade',                 start: 19,  end: 36  },
+    { name: 'Nether & Netherworld',            start: 37,  end: 75  },
+    { name: 'Asakusa & Benimaru',              start: 76,  end: 114 },
+    { name: 'Evangile de la Flamme',           start: 115, end: 152 },
+    { name: "Haijima & Compagnie d'Arthur",    start: 153, end: 196 },
+    { name: 'Arc du Désert & Final',           start: 197, end: 304 },
+  ],
+
+  bluelock: [
+    { name: 'Première Sélection',              start: 1,   end: 100 },
+    { name: 'Deuxième Sélection',              start: 101, end: 164 },
+    { name: 'Neo Egoist League',               start: 165, end: 250 },
+    { name: 'U-20 & Équipe Nationale',         start: 251, end: 9999 },
+  ],
 }

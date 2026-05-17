@@ -37,6 +37,9 @@ import NntPage from './components/NntPage.jsx'
 import SlPage from './components/SlPage.jsx'
 import DbsPage from './components/DbsPage.jsx'
 import BcPage from './components/BcPage.jsx'
+import MhaPage from './components/MhaPage.jsx'
+import FireForcePage from './components/FireForcePage.jsx'
+import BlueLockPage from './components/BlueLockPage.jsx'
 import BlobUploadPage from './components/BlobUploadPage.jsx'
 import WikiHome from './components/WikiHome.jsx'
 import WikiArticle from './components/WikiArticle.jsx'
@@ -93,6 +96,9 @@ export default function App() {
   const [slOpen,           setSlOpen]            = useState(false)
   const [dbsOpen,          setDbsOpen]           = useState(false)
   const [bcOpen,           setBcOpen]            = useState(false)
+  const [mhaOpen,          setMhaOpen]           = useState(false)
+  const [fireforcOpen,     setFireforcOpen]      = useState(false)
+  const [bluelockOpen,     setBluelockOpen]      = useState(false)
   const [uploadOpen,       setUploadOpen]        = useState(false)
 
   useEffect(() => {
@@ -108,8 +114,11 @@ export default function App() {
     const fnNnt      = () => setNntOpen(true)
     const fnSl       = () => setSlOpen(true)
     const fnDbs      = () => setDbsOpen(true)
-    const fnBc       = () => setBcOpen(true)
-    const fnUpload   = () => setUploadOpen(true)
+    const fnBc         = () => setBcOpen(true)
+    const fnMha        = () => setMhaOpen(true)
+    const fnFireforce  = () => setFireforcOpen(true)
+    const fnBluelock   = () => setBluelockOpen(true)
+    const fnUpload     = () => setUploadOpen(true)
     document.addEventListener('open-scans',        fnScans)
     document.addEventListener('open-encyclopedie', fnEncy)
     document.addEventListener('open-anime-hub',    fnAnimeHub)
@@ -123,6 +132,9 @@ export default function App() {
     document.addEventListener('open-sl',           fnSl)
     document.addEventListener('open-dbs',          fnDbs)
     document.addEventListener('open-bc',           fnBc)
+    document.addEventListener('open-mha',          fnMha)
+    document.addEventListener('open-fireforce',    fnFireforce)
+    document.addEventListener('open-bluelock',     fnBluelock)
     document.addEventListener('open-upload',       fnUpload)
     return () => {
       document.removeEventListener('open-scans',        fnScans)
@@ -138,6 +150,9 @@ export default function App() {
       document.removeEventListener('open-sl',           fnSl)
       document.removeEventListener('open-dbs',          fnDbs)
       document.removeEventListener('open-bc',           fnBc)
+      document.removeEventListener('open-mha',          fnMha)
+      document.removeEventListener('open-fireforce',    fnFireforce)
+      document.removeEventListener('open-bluelock',     fnBluelock)
       document.removeEventListener('open-upload',       fnUpload)
     }
   }, [])
@@ -167,7 +182,7 @@ export default function App() {
 
       <MusicPlayer />
       <ThemeToggle />
-      <AIChatWidget hidden={scansOpen || encyclopedieOpen || tpnOpen || drstoneOpen || jjkOpen || kingdomOpen || aotOpen || knyOpen || nntOpen || slOpen || dbsOpen || bcOpen} />
+      <AIChatWidget hidden={scansOpen || encyclopedieOpen || tpnOpen || drstoneOpen || jjkOpen || kingdomOpen || aotOpen || knyOpen || nntOpen || slOpen || dbsOpen || bcOpen || mhaOpen || fireforcOpen || bluelockOpen} />
       <AkainuGame />
 
       {animeHubOpen && (
@@ -185,6 +200,9 @@ export default function App() {
             onOpenSl={() => { setAnimeHubOpen(false); setSlOpen(true) }}
             onOpenDbs={() => { setAnimeHubOpen(false); setDbsOpen(true) }}
             onOpenBc={() => { setAnimeHubOpen(false); setBcOpen(true) }}
+            onOpenMha={() => { setAnimeHubOpen(false); setMhaOpen(true) }}
+            onOpenFireforce={() => { setAnimeHubOpen(false); setFireforcOpen(true) }}
+            onOpenBluelock={() => { setAnimeHubOpen(false); setBluelockOpen(true) }}
           />
         ) : (
           <AuthGuard onClose={() => setAnimeHubOpen(false)} feature="les animés & scans" />
@@ -199,7 +217,10 @@ export default function App() {
       {nntOpen     && <NntPage     onClose={() => setNntOpen(false)} />}
       {slOpen      && <SlPage      onClose={() => setSlOpen(false)} />}
       {dbsOpen     && <DbsPage     onClose={() => setDbsOpen(false)} />}
-      {bcOpen      && <BcPage      onClose={() => setBcOpen(false)} />}
+      {bcOpen        && <BcPage        onClose={() => setBcOpen(false)} />}
+      {mhaOpen       && <MhaPage       onClose={() => setMhaOpen(false)} />}
+      {fireforcOpen  && <FireForcePage onClose={() => setFireforcOpen(false)} />}
+      {bluelockOpen  && <BlueLockPage  onClose={() => setBluelockOpen(false)} />}
       {scansOpen && (
         isAuthenticated
           ? <ScansPage onClose={() => setScansOpen(false)} />
