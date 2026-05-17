@@ -38,6 +38,12 @@ import SlPage from './components/SlPage.jsx'
 import DbsPage from './components/DbsPage.jsx'
 import BcPage from './components/BcPage.jsx'
 import BlobUploadPage from './components/BlobUploadPage.jsx'
+import WikiHome from './components/WikiHome.jsx'
+import WikiArticle from './components/WikiArticle.jsx'
+import WikiEditor from './components/WikiEditor.jsx'
+import TheoriesHome from './components/TheoriesHome.jsx'
+import TheoryDetail from './components/TheoryDetail.jsx'
+import TheoryEditor from './components/TheoryEditor.jsx'
 
 function BgVideo() {
   const [visible, setVisible] = useState(false)
@@ -52,35 +58,42 @@ function BgVideo() {
   }, [])
 
   return (
-    <div style={{ position:'fixed', top:0, left:0, right:0, bottom:0, zIndex:0, overflow:'hidden', pointerEvents:'none', transform:'translateZ(0)' }}>
-      <video
-        ref={vidRef}
-        autoPlay muted loop playsInline
-        onCanPlay={() => setVisible(true)}
-        style={{ display:'block', position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%) translateZ(0)', width:'max(177.78vh,100vw)', height:'max(56.25vw,100vh)', objectFit:'cover', pointerEvents:'none', backfaceVisibility:'hidden', opacity: visible ? 1 : 0, transition:'opacity 1.2s ease' }}
-      >
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 0, overflow: 'hidden', pointerEvents: 'none', transform: 'translateZ(0)' }}>
+      <video ref={vidRef} autoPlay muted loop playsInline onCanPlay={() => setVisible(true)}
+        style={{ display: 'block', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%) translateZ(0)', width: 'max(177.78vh,100vw)', height: 'max(56.25vw,100vh)', objectFit: 'cover', pointerEvents: 'none', backfaceVisibility: 'hidden', opacity: visible ? 1 : 0, transition: 'opacity 1.2s ease' }}>
         <source src="/bg-video.mp4" type="video/mp4" />
       </video>
     </div>
   )
 }
 
+// Wrapper pour les pages Wiki/Théories (Navbar + fond sombre + WelcomeAnimation)
+function PageLayout({ children }) {
+  return (
+    <div style={{ minHeight: '100vh', background: '#0b0c0e', position: 'relative' }}>
+      <WelcomeAnimation />
+      <Navbar />
+      {children}
+    </div>
+  )
+}
+
 export default function App() {
   const { isAuthenticated } = useAuth()
-  const [scansOpen,       setScansOpen]       = useState(false)
-  const [encyclopedieOpen, setEncyclopedieOpen] = useState(false)
-  const [animeHubOpen,    setAnimeHubOpen]    = useState(false)
-  const [tpnOpen,         setTpnOpen]         = useState(false)
-  const [drstoneOpen,     setDrstoneOpen]     = useState(false)
-  const [jjkOpen,         setJjkOpen]         = useState(false)
-  const [kingdomOpen,     setKingdomOpen]     = useState(false)
-  const [aotOpen,         setAotOpen]         = useState(false)
-  const [knyOpen,         setKnyOpen]         = useState(false)
-  const [nntOpen,         setNntOpen]         = useState(false)
-  const [slOpen,          setSlOpen]          = useState(false)
-  const [dbsOpen,         setDbsOpen]         = useState(false)
-  const [bcOpen,          setBcOpen]          = useState(false)
-  const [uploadOpen,      setUploadOpen]      = useState(false)
+  const [scansOpen,        setScansOpen]        = useState(false)
+  const [encyclopedieOpen, setEncyclopedieOpen]  = useState(false)
+  const [animeHubOpen,     setAnimeHubOpen]      = useState(false)
+  const [tpnOpen,          setTpnOpen]           = useState(false)
+  const [drstoneOpen,      setDrstoneOpen]       = useState(false)
+  const [jjkOpen,          setJjkOpen]           = useState(false)
+  const [kingdomOpen,      setKingdomOpen]       = useState(false)
+  const [aotOpen,          setAotOpen]           = useState(false)
+  const [knyOpen,          setKnyOpen]           = useState(false)
+  const [nntOpen,          setNntOpen]           = useState(false)
+  const [slOpen,           setSlOpen]            = useState(false)
+  const [dbsOpen,          setDbsOpen]           = useState(false)
+  const [bcOpen,           setBcOpen]            = useState(false)
+  const [uploadOpen,       setUploadOpen]        = useState(false)
 
   useEffect(() => {
     const fnScans    = () => setScansOpen(true)
@@ -132,15 +145,8 @@ export default function App() {
   const mainContent = (
     <>
       <WelcomeAnimation />
-
-      {/* Fond vidéo local — One Piece Memories AMV */}
       <BgVideo />
-      <div style={{
-        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1,
-        background: 'var(--overlay-bg, rgba(14,14,16,0.82))',
-        pointerEvents: 'none',
-        transform: 'translateZ(0)', willChange: 'transform',
-      }} />
+      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1, background: 'var(--overlay-bg, rgba(14,14,16,0.82))', pointerEvents: 'none', transform: 'translateZ(0)', willChange: 'transform' }} />
 
       <div style={{ position: 'relative', zIndex: 2, isolation: 'isolate' }}>
         <Navbar />
@@ -161,7 +167,6 @@ export default function App() {
 
       <MusicPlayer />
       <ThemeToggle />
-
       <AIChatWidget hidden={scansOpen || encyclopedieOpen || tpnOpen || drstoneOpen || jjkOpen || kingdomOpen || aotOpen || knyOpen || nntOpen || slOpen || dbsOpen || bcOpen} />
       <AkainuGame />
 
@@ -185,37 +190,25 @@ export default function App() {
           <AuthGuard onClose={() => setAnimeHubOpen(false)} feature="les animés & scans" />
         )
       )}
-      {tpnOpen          && <TpnPage         onClose={() => setTpnOpen(false)} />}
-      {drstoneOpen      && <DrStonePage     onClose={() => setDrstoneOpen(false)} />}
-      {jjkOpen          && <JjkPage         onClose={() => setJjkOpen(false)} />}
-      {kingdomOpen      && <KingdomPage     onClose={() => setKingdomOpen(false)} />}
-      {aotOpen          && <AotPage         onClose={() => setAotOpen(false)} />}
-      {knyOpen          && <KnyPage         onClose={() => setKnyOpen(false)} />}
-      {nntOpen          && <NntPage         onClose={() => setNntOpen(false)} />}
-      {slOpen           && <SlPage          onClose={() => setSlOpen(false)} />}
-      {dbsOpen          && <DbsPage         onClose={() => setDbsOpen(false)} />}
-      {bcOpen           && <BcPage          onClose={() => setBcOpen(false)} />}
+      {tpnOpen     && <TpnPage     onClose={() => setTpnOpen(false)} />}
+      {drstoneOpen && <DrStonePage onClose={() => setDrstoneOpen(false)} />}
+      {jjkOpen     && <JjkPage     onClose={() => setJjkOpen(false)} />}
+      {kingdomOpen && <KingdomPage onClose={() => setKingdomOpen(false)} />}
+      {aotOpen     && <AotPage     onClose={() => setAotOpen(false)} />}
+      {knyOpen     && <KnyPage     onClose={() => setKnyOpen(false)} />}
+      {nntOpen     && <NntPage     onClose={() => setNntOpen(false)} />}
+      {slOpen      && <SlPage      onClose={() => setSlOpen(false)} />}
+      {dbsOpen     && <DbsPage     onClose={() => setDbsOpen(false)} />}
+      {bcOpen      && <BcPage      onClose={() => setBcOpen(false)} />}
       {scansOpen && (
-        isAuthenticated ? (
-          <ScansPage onClose={() => setScansOpen(false)} />
-        ) : (
-          <AuthGuard onClose={() => setScansOpen(false)} feature="les scans One Piece" />
-        )
+        isAuthenticated
+          ? <ScansPage onClose={() => setScansOpen(false)} />
+          : <AuthGuard onClose={() => setScansOpen(false)} feature="les scans One Piece" />
       )}
       {encyclopedieOpen && <EncyclopediePage onClose={() => setEncyclopedieOpen(false)} />}
-      {uploadOpen       && (
-        <div style={{
-          position: 'fixed', inset: 0, zIndex: 9999,
-          background: '#0b0c0e', overflowY: 'auto',
-        }}>
-          <button
-            onClick={() => setUploadOpen(false)}
-            style={{
-              position: 'fixed', top: 16, right: 16, zIndex: 10000,
-              background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8,
-              color: '#fff', padding: '8px 16px', cursor: 'pointer', fontSize: 14,
-            }}
-          >✕ Fermer</button>
+      {uploadOpen && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: '#0b0c0e', overflowY: 'auto' }}>
+          <button onClick={() => setUploadOpen(false)} style={{ position: 'fixed', top: 16, right: 16, zIndex: 10000, background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, color: '#fff', padding: '8px 16px', cursor: 'pointer', fontSize: 14 }}>✕ Fermer</button>
           <BlobUploadPage />
         </div>
       )}
@@ -226,7 +219,21 @@ export default function App() {
     <ThemeProvider>
       <GlobalStyles />
       <Routes>
+        {/* Profil utilisateur */}
         <Route path="/u/:discordId" element={<ProfilePage />} />
+
+        {/* Wiki Communautaire */}
+        <Route path="/wiki"           element={<PageLayout><WikiHome      /></PageLayout>} />
+        <Route path="/wiki/new"       element={<PageLayout><WikiEditor    /></PageLayout>} />
+        <Route path="/wiki/:slug/edit"element={<PageLayout><WikiEditor    /></PageLayout>} />
+        <Route path="/wiki/:slug"     element={<PageLayout><WikiArticle   /></PageLayout>} />
+
+        {/* Forum Théories */}
+        <Route path="/theories"       element={<PageLayout><TheoriesHome  /></PageLayout>} />
+        <Route path="/theories/new"   element={<PageLayout><TheoryEditor  /></PageLayout>} />
+        <Route path="/theories/:id"   element={<PageLayout><TheoryDetail  /></PageLayout>} />
+
+        {/* Homepage */}
         <Route path="/*" element={mainContent} />
       </Routes>
     </ThemeProvider>

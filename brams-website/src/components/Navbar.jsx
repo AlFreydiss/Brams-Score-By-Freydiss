@@ -1,15 +1,18 @@
 import { useState, useEffect, useRef } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import AboutModal from './AboutModal.jsx'
 import AuthModal from './AuthModal.jsx'
 import { useAuth } from '../contexts/AuthContext.jsx'
 
 // ── Liens centraux ───────────────────────────────────────────────────────────
 const NAV_LINKS = [
-  { label: 'Rangs',          href: '#rangs',       action: null,          gated: false },
-  { label: 'Quiz',           href: '#quiz',         action: null,          gated: false },
-  { label: 'Classement',     href: '#classement',   action: null,          gated: false },
-  { label: 'Encyclopédie',   href: '#',             action: 'encyclopedie',gated: false },
-  { label: 'Animés & Scans', href: '#',             action: 'anime-hub',   gated: true  },
+  { label: 'Rangs',          href: '#rangs',       action: null,          gated: false, isRoute: false },
+  { label: 'Quiz',           href: '#quiz',         action: null,          gated: false, isRoute: false },
+  { label: 'Classement',     href: '#classement',   action: null,          gated: false, isRoute: false },
+  { label: 'Encyclopédie',   href: '#',             action: 'encyclopedie',gated: false, isRoute: false },
+  { label: 'Wiki',           href: '/wiki',         action: null,          gated: false, isRoute: true  },
+  { label: 'Théories',       href: '/theories',     action: null,          gated: false, isRoute: true  },
+  { label: 'Animés & Scans', href: '#',             action: 'anime-hub',   gated: true,  isRoute: false },
 ]
 
 function openAnimeHub(e)    { e.preventDefault(); document.dispatchEvent(new CustomEvent('open-anime-hub')) }
@@ -30,51 +33,23 @@ const SOCIAL_BASE = {
 }
 
 const SOCIALS = [
-  {
-    href: 'https://www.twitch.tv/bouledog_',
-    icon: <TwitchIcon />,
-    hoverColor: '#9146FF',
-    hoverBg: 'rgba(145,71,255,.12)',
-    hoverBorder: 'rgba(145,71,255,.3)',
-  },
-  {
-    href: 'https://www.youtube.com/@BouleDogg/featured',
-    icon: <YouTubeIcon />,
-    hoverColor: '#FF0000',
-    hoverBg: 'rgba(255,0,0,.1)',
-    hoverBorder: 'rgba(255,0,0,.3)',
-  },
-  {
-    href: 'https://www.tiktok.com/@bouledogg',
-    icon: <TikTokIcon />,
-    hoverColor: '#fff',
-    hoverBg: 'rgba(255,255,255,.08)',
-    hoverBorder: 'rgba(255,255,255,.2)',
-  },
+  { href: 'https://www.twitch.tv/bouledog_',             icon: <TwitchIcon />,  hoverColor: '#9146FF', hoverBg: 'rgba(145,71,255,.12)', hoverBorder: 'rgba(145,71,255,.3)' },
+  { href: 'https://www.youtube.com/@BouleDogg/featured', icon: <YouTubeIcon />, hoverColor: '#FF0000', hoverBg: 'rgba(255,0,0,.1)',      hoverBorder: 'rgba(255,0,0,.3)'   },
+  { href: 'https://www.tiktok.com/@bouledogg',           icon: <TikTokIcon />,  hoverColor: '#fff',    hoverBg: 'rgba(255,255,255,.08)', hoverBorder: 'rgba(255,255,255,.2)'},
 ]
 
 // ── Bouton Se connecter ──────────────────────────────────────────────────────
 function LoginButton({ onClick }) {
   return (
-    <button
-      onClick={onClick}
-      style={{
-        display: 'inline-flex', alignItems: 'center',
-        padding: '8px 18px', fontSize: 13, fontWeight: 700,
-        letterSpacing: '.03em', cursor: 'pointer',
-        borderRadius: 8, border: 'none',
-        background: '#d4a017', color: '#1a1f2e',
-        transition: 'background .15s, transform .15s',
-        whiteSpace: 'nowrap',
-      }}
-      onMouseEnter={e => { e.currentTarget.style.background = '#e5b83a'; e.currentTarget.style.transform = 'translateY(-1px)' }}
-      onMouseLeave={e => { e.currentTarget.style.background = '#d4a017'; e.currentTarget.style.transform = 'translateY(0)' }}
-    >Se connecter</button>
+    <button onClick={onClick} style={{ display: 'inline-flex', alignItems: 'center', padding: '8px 18px', fontSize: 13, fontWeight: 700, letterSpacing: '.03em', cursor: 'pointer', borderRadius: 8, border: 'none', background: '#d4a017', color: '#1a1f2e', transition: 'background .15s, transform .15s', whiteSpace: 'nowrap' }} onMouseEnter={e => { e.currentTarget.style.background = '#e5b83a'; e.currentTarget.style.transform = 'translateY(-1px)' }} onMouseLeave={e => { e.currentTarget.style.background = '#d4a017'; e.currentTarget.style.transform = 'translateY(0)' }}>
+      Se connecter
+    </button>
   )
 }
 
 // ── Dropdown utilisateur connecté ────────────────────────────────────────────
 function UserMenu({ displayName, avatarUrl, onSignOut }) {
+  const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
 
@@ -88,18 +63,7 @@ function UserMenu({ displayName, avatarUrl, onSignOut }) {
 
   return (
     <div ref={ref} style={{ position: 'relative' }}>
-      <button
-        onClick={() => setOpen(v => !v)}
-        style={{
-          display: 'flex', alignItems: 'center', gap: 9,
-          background: open ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.06)',
-          border: `1px solid ${open ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.1)'}`,
-          borderRadius: 10, padding: '6px 12px 6px 6px',
-          cursor: 'pointer', transition: 'all .15s',
-        }}
-        onMouseEnter={e => { if (!open) { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.18)' } }}
-        onMouseLeave={e => { if (!open) { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)' } }}
-      >
+      <button onClick={() => setOpen(v => !v)} style={{ display: 'flex', alignItems: 'center', gap: 9, background: open ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.06)', border: `1px solid ${open ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.1)'}`, borderRadius: 10, padding: '6px 12px 6px 6px', cursor: 'pointer', transition: 'all .15s' }} onMouseEnter={e => { if (!open) { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.18)' } }} onMouseLeave={e => { if (!open) { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)' } }}>
         <div style={{ width: 30, height: 30, borderRadius: '50%', overflow: 'hidden', flexShrink: 0, border: '1.5px solid rgba(255,215,0,0.4)', background: 'linear-gradient(135deg, #d4a017, #e5b83a)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           {avatarUrl
             ? <img src={avatarUrl} alt={displayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -116,13 +80,7 @@ function UserMenu({ displayName, avatarUrl, onSignOut }) {
       </button>
 
       {open && (
-        <div style={{
-          position: 'absolute', top: 'calc(100% + 8px)', right: 0,
-          background: 'rgba(16,17,20,0.98)', border: '1px solid rgba(255,255,255,0.1)',
-          borderRadius: 12, padding: '8px', minWidth: 200,
-          boxShadow: '0 12px 40px rgba(0,0,0,0.6)', backdropFilter: 'blur(20px)',
-          animation: 'slideDown 0.15s ease-out', zIndex: 300,
-        }}>
+        <div style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, background: 'rgba(16,17,20,0.98)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: '8px', minWidth: 200, boxShadow: '0 12px 40px rgba(0,0,0,0.6)', backdropFilter: 'blur(20px)', animation: 'slideDown 0.15s ease-out', zIndex: 300 }}>
           <div style={{ padding: '8px 10px 12px', borderBottom: '1px solid rgba(255,255,255,0.06)', marginBottom: 6 }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>{displayName}</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 3 }}>
@@ -131,36 +89,18 @@ function UserMenu({ displayName, avatarUrl, onSignOut }) {
             </div>
           </div>
 
+          {/* Wiki + Théories links */}
           {[
-            { icon: '👤', label: 'Mon Profil', hint: 'Bientôt' },
-            { icon: '💰', label: 'Ma Banque',  hint: 'Bientôt' },
-            { icon: '📊', label: 'Mes Stats',  hint: 'Bientôt' },
+            { icon: '📖', label: 'Wiki', path: '/wiki' },
+            { icon: '💡', label: 'Théories', path: '/theories' },
           ].map(item => (
-            <button key={item.label} disabled style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, width: '100%',
-              padding: '9px 10px', borderRadius: 8, border: 'none',
-              background: 'transparent', cursor: 'default',
-              color: 'rgba(255,255,255,0.28)', fontSize: 13, fontWeight: 600, textAlign: 'left',
-            }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span>{item.icon}</span><span>{item.label}</span>
-              </span>
-              <span style={{ fontSize: 9, background: 'rgba(255,255,255,0.06)', borderRadius: 4, padding: '2px 6px', color: 'rgba(255,255,255,0.3)' }}>{item.hint}</span>
+            <button key={item.label} onClick={() => { setOpen(false); navigate(item.path) }} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '9px 10px', borderRadius: 8, border: 'none', background: 'transparent', cursor: 'pointer', color: 'rgba(255,255,255,0.65)', fontSize: 13, fontWeight: 600, textAlign: 'left', transition: 'background .1s' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+              <span>{item.icon}</span><span>{item.label}</span>
             </button>
           ))}
 
           <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '6px 0' }} />
-          <button
-            onClick={() => { setOpen(false); onSignOut() }}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 10, width: '100%',
-              padding: '9px 10px', borderRadius: 8, border: 'none',
-              background: 'transparent', cursor: 'pointer',
-              color: '#E0524A', fontSize: 13, fontWeight: 700, textAlign: 'left', transition: 'background .1s',
-            }}
-            onMouseEnter={e => e.currentTarget.style.background = 'rgba(224,82,74,0.1)'}
-            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-          >
+          <button onClick={() => { setOpen(false); onSignOut() }} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '9px 10px', borderRadius: 8, border: 'none', background: 'transparent', cursor: 'pointer', color: '#E0524A', fontSize: 13, fontWeight: 700, textAlign: 'left', transition: 'background .1s' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(224,82,74,0.1)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
             <span>🚪</span><span>Déconnexion</span>
           </button>
         </div>
@@ -171,20 +111,18 @@ function UserMenu({ displayName, avatarUrl, onSignOut }) {
 
 // ── Navbar principale ────────────────────────────────────────────────────────
 export default function Navbar() {
-  const [scrolled,  setScrolled]  = useState(false)
-  const [about,     setAbout]     = useState(false)
-  const [authOpen,  setAuthOpen]  = useState(false)
-  const [menuOpen,  setMenuOpen]  = useState(false)
+  const [scrolled, setScrolled] = useState(false)
+  const [about,    setAbout]    = useState(false)
+  const [authOpen, setAuthOpen] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
   const { isAuthenticated, signOut, displayName, avatarUrl } = useAuth()
 
-  // Écoute les events externes qui veulent ouvrir le modal auth
   useEffect(() => {
     const fn = () => setAuthOpen(true)
     document.addEventListener('open-auth-modal', fn)
     return () => document.removeEventListener('open-auth-modal', fn)
   }, [])
 
-  // Scroll listener
   useEffect(() => {
     let raf
     const fn = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(() => setScrolled(window.scrollY > 50)) }
@@ -192,7 +130,6 @@ export default function Navbar() {
     return () => { window.removeEventListener('scroll', fn); cancelAnimationFrame(raf) }
   }, [])
 
-  // Ferme le menu mobile au scroll
   useEffect(() => {
     if (!menuOpen) return
     const fn = () => setMenuOpen(false)
@@ -207,23 +144,15 @@ export default function Navbar() {
   }
 
   const linkBase = {
-    padding: '6px 11px', borderRadius: 6, fontSize: 14, fontWeight: 500,
+    padding: '6px 10px', borderRadius: 6, fontSize: 13, fontWeight: 500,
     color: 'rgba(203,213,225,0.72)', textDecoration: 'none',
     transition: 'color .15s', display: 'flex', alignItems: 'center', gap: 5,
-    whiteSpace: 'nowrap',
+    whiteSpace: 'nowrap', cursor: 'pointer', background: 'none', border: 'none', fontFamily: 'inherit',
   }
 
   return (
     <>
-      {/* ── Barre principale ── */}
-      <nav style={{
-        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 200,
-        padding: '0 28px',
-        background: scrolled ? 'rgba(14,15,17,.95)' : 'rgba(14,15,17,.6)',
-        backdropFilter: 'blur(20px)',
-        borderBottom: '1px solid rgba(255,255,255,.08)',
-        transition: 'background .3s ease',
-      }}>
+      <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 200, padding: '0 28px', background: scrolled ? 'rgba(14,15,17,.95)' : 'rgba(14,15,17,.6)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(255,255,255,.08)', transition: 'background .3s ease' }}>
         <div style={{ maxWidth: 1120, margin: '0 auto', display: 'flex', alignItems: 'center', height: 68, gap: 0 }}>
 
           {/* Logo */}
@@ -235,44 +164,31 @@ export default function Navbar() {
           {/* Liens centrés — desktop */}
           <div className="hide-mobile" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
             {NAV_LINKS.map(link => (
-              <a
-                key={link.label}
-                href={link.href}
-                onClick={link.action ? (e) => handleNavClick(link, e) : undefined}
-                style={linkBase}
-                onMouseEnter={e => e.currentTarget.style.color = '#fff'}
-                onMouseLeave={e => e.currentTarget.style.color = 'rgba(203,213,225,0.72)'}
-              >
-                {link.label}
-                {link.gated && !isAuthenticated && (
-                  <span style={{ fontSize: 9, opacity: 0.45, lineHeight: 1, marginLeft: 1 }}>🔒</span>
-                )}
-              </a>
+              link.isRoute ? (
+                <Link key={link.label} to={link.href} style={linkBase} onMouseEnter={e => e.currentTarget.style.color = '#fff'} onMouseLeave={e => e.currentTarget.style.color = 'rgba(203,213,225,0.72)'}>
+                  {link.label}
+                </Link>
+              ) : (
+                <a key={link.label} href={link.href} onClick={link.action ? (e) => handleNavClick(link, e) : undefined} style={linkBase} onMouseEnter={e => e.currentTarget.style.color = '#fff'} onMouseLeave={e => e.currentTarget.style.color = 'rgba(203,213,225,0.72)'}>
+                  {link.label}
+                  {link.gated && !isAuthenticated && <span style={{ fontSize: 9, opacity: 0.45 }}>🔒</span>}
+                </a>
+              )
             ))}
           </div>
 
-          {/* Droite : sociaux + séparateur + CTA */}
+          {/* Droite : sociaux + séparateur + auth */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0, marginLeft: 'auto' }}>
-
-            {/* Icônes sociales — gris → brand au hover */}
             <div className="hide-mobile" style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               {SOCIALS.map(s => (
-                <a
-                  key={s.href}
-                  href={s.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ ...SOCIAL_BASE }}
-                  onMouseEnter={e => { e.currentTarget.style.color = s.hoverColor; e.currentTarget.style.background = s.hoverBg; e.currentTarget.style.borderColor = s.hoverBorder }}
-                  onMouseLeave={e => { e.currentTarget.style.color = '#6b7280'; e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'transparent' }}
-                >{s.icon}</a>
+                <a key={s.href} href={s.href} target="_blank" rel="noopener noreferrer" style={{ ...SOCIAL_BASE }} onMouseEnter={e => { e.currentTarget.style.color = s.hoverColor; e.currentTarget.style.background = s.hoverBg; e.currentTarget.style.borderColor = s.hoverBorder }} onMouseLeave={e => { e.currentTarget.style.color = '#6b7280'; e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'transparent' }}>
+                  {s.icon}
+                </a>
               ))}
             </div>
 
-            {/* Séparateur vertical */}
             <div className="hide-mobile" style={{ width: 1, height: 22, background: 'rgba(255,255,255,0.1)', margin: '0 8px' }} />
 
-            {/* Auth — desktop */}
             <div className="hide-mobile">
               {isAuthenticated
                 ? <UserMenu displayName={displayName} avatarUrl={avatarUrl} onSignOut={signOut} />
@@ -280,19 +196,9 @@ export default function Navbar() {
               }
             </div>
 
-            {/* Burger — mobile */}
-            <button
-              className="show-mobile"
-              onClick={() => setMenuOpen(v => !v)}
-              aria-label="Menu"
-              style={{
-                background: menuOpen ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.06)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: 8, color: '#fff', cursor: 'pointer',
-                width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 17, transition: 'background .15s',
-              }}
-            >{menuOpen ? '✕' : '☰'}</button>
+            <button className="show-mobile" onClick={() => setMenuOpen(v => !v)} aria-label="Menu" style={{ background: menuOpen ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#fff', cursor: 'pointer', width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, transition: 'background .15s' }}>
+              {menuOpen ? '✕' : '☰'}
+            </button>
           </div>
         </div>
       </nav>
@@ -300,40 +206,26 @@ export default function Navbar() {
       {/* ── Drawer mobile ── */}
       {menuOpen && (
         <>
-          <div
-            onClick={() => setMenuOpen(false)}
-            style={{ position: 'fixed', inset: 0, zIndex: 190, background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)' }}
-          />
-          <div style={{
-            position: 'fixed', top: 68, left: 0, right: 0, zIndex: 195,
-            background: 'rgba(14,15,17,0.98)',
-            borderBottom: '1px solid rgba(255,255,255,0.08)',
-            padding: '16px 20px 24px',
-            animation: 'slideDown 0.18s ease',
-          }}>
+          <div onClick={() => setMenuOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 190, background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)' }} />
+          <div style={{ position: 'fixed', top: 68, left: 0, right: 0, zIndex: 195, background: 'rgba(14,15,17,0.98)', borderBottom: '1px solid rgba(255,255,255,0.08)', padding: '16px 20px 24px', animation: 'slideDown 0.18s ease' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginBottom: 16 }}>
               {NAV_LINKS.map(link => (
-                <a
-                  key={link.label}
-                  href={link.href}
-                  onClick={link.action ? (e) => handleNavClick(link, e) : () => setMenuOpen(false)}
-                  style={{ padding: '12px 14px', borderRadius: 10, fontSize: 15, fontWeight: 500, color: 'rgba(203,213,225,0.8)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8, transition: 'background .12s, color .12s' }}
-                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = '#fff' }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(203,213,225,0.8)' }}
-                >
-                  {link.label}
-                  {link.gated && !isAuthenticated && <span style={{ fontSize: 10, opacity: 0.5 }}>🔒</span>}
-                </a>
+                link.isRoute ? (
+                  <Link key={link.label} to={link.href} onClick={() => setMenuOpen(false)} style={{ padding: '12px 14px', borderRadius: 10, fontSize: 15, fontWeight: 500, color: 'rgba(203,213,225,0.8)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8, transition: 'background .12s, color .12s' }} onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = '#fff' }} onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(203,213,225,0.8)' }}>
+                    {link.label}
+                  </Link>
+                ) : (
+                  <a key={link.label} href={link.href} onClick={link.action ? (e) => handleNavClick(link, e) : () => setMenuOpen(false)} style={{ padding: '12px 14px', borderRadius: 10, fontSize: 15, fontWeight: 500, color: 'rgba(203,213,225,0.8)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8, transition: 'background .12s, color .12s' }} onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = '#fff' }} onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(203,213,225,0.8)' }}>
+                    {link.label}
+                    {link.gated && !isAuthenticated && <span style={{ fontSize: 10, opacity: 0.5 }}>🔒</span>}
+                  </a>
+                )
               ))}
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
               {SOCIALS.map(s => (
-                <a key={s.href} href={s.href} target="_blank" rel="noopener noreferrer"
-                  style={{ color: '#6b7280', transition: 'color .15s' }}
-                  onMouseEnter={e => e.currentTarget.style.color = s.hoverColor}
-                  onMouseLeave={e => e.currentTarget.style.color = '#6b7280'}
-                >{s.icon}</a>
+                <a key={s.href} href={s.href} target="_blank" rel="noopener noreferrer" style={{ color: '#6b7280', transition: 'color .15s' }} onMouseEnter={e => e.currentTarget.style.color = s.hoverColor} onMouseLeave={e => e.currentTarget.style.color = '#6b7280'}>{s.icon}</a>
               ))}
               <div style={{ flex: 1 }} />
               {isAuthenticated

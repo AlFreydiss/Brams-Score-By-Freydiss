@@ -311,6 +311,26 @@ const CSS = `
   body.theme-colorful .label { color: #00c8b0 !important; }
   body.theme-colorful .btn-primary { background: #00c8b0; box-shadow: 0 4px 24px rgba(0,200,175,0.3); }
   body.theme-colorful .btn-primary:hover { box-shadow: 0 6px 32px rgba(0,200,175,0.5); }
+
+  /* ── Wiki / Théories — rendu Markdown ── */
+  .wiki-content h2 { font-family: 'Pirata One', cursive; font-size: 26px; color: #fff; margin: 32px 0 14px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+  .wiki-content h3 { font-size: 19px; color: rgba(255,255,255,0.9); font-weight: 700; margin: 24px 0 10px; }
+  .wiki-content h4 { font-size: 15px; color: rgba(255,255,255,0.8); font-weight: 700; margin: 18px 0 8px; }
+  .wiki-content p  { font-size: 15px; color: rgba(255,255,255,0.72); line-height: 1.8; margin: 0 0 14px; }
+  .wiki-content ul, .wiki-content ol { padding-left: 24px; margin: 0 0 14px; color: rgba(255,255,255,0.7); font-size: 15px; line-height: 1.75; }
+  .wiki-content li { margin-bottom: 5px; }
+  .wiki-content code { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; padding: 1px 6px; font-family: monospace; font-size: 13px; color: #d4a017; }
+  .wiki-content pre { background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; overflow-x: auto; margin: 0 0 16px; }
+  .wiki-content pre code { background: none; border: none; padding: 0; color: rgba(255,255,255,0.85); font-size: 13px; }
+  .wiki-content hr { border: none; border-top: 1px solid rgba(255,255,255,0.08); margin: 26px 0; }
+  .wiki-content a  { color: #d4a017; text-decoration: none; }
+  .wiki-content a:hover { text-decoration: underline; }
+  .wiki-content strong { color: #fff; font-weight: 700; }
+  .wiki-content em { font-style: italic; }
+  @media (max-width: 768px) {
+    .wiki-content h2 { font-size: 22px; }
+    .wiki-content h3 { font-size: 17px; }
+  }
 `
 
 export default function GlobalStyles() {
