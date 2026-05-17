@@ -614,7 +614,7 @@ function EncyclopediaHero({ search, setSearch, searchRef, onRandom }) {
             onBlur={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'; e.currentTarget.style.boxShadow = '0 8px 32px rgba(0,0,0,0.2)' }}
           />
         </div>
-        <button onClick={onRandom} title="Découverte aléatoire" style={{ height: 50, padding: '0 18px', borderRadius: 14, border: '1px solid rgba(224,82,74,0.35)', background: 'rgba(224,82,74,0.12)', color: '#e0524a', fontSize: 20, cursor: 'pointer', flexShrink: 0, transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, fontSize: 13 }}
+        <button onClick={onRandom} title="Découverte aléatoire" style={{ height: 50, padding: '0 18px', borderRadius: 14, border: '1px solid rgba(224,82,74,0.35)', background: 'rgba(224,82,74,0.12)', color: '#e0524a', fontSize: 13, cursor: 'pointer', flexShrink: 0, transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700 }}
           onMouseEnter={e => { e.currentTarget.style.background = 'rgba(224,82,74,0.25)'; e.currentTarget.style.borderColor = 'rgba(224,82,74,0.6)' }}
           onMouseLeave={e => { e.currentTarget.style.background = 'rgba(224,82,74,0.12)'; e.currentTarget.style.borderColor = 'rgba(224,82,74,0.35)' }}
         >🎲 Aléatoire</button>
