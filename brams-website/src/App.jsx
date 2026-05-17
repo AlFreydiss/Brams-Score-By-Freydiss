@@ -51,6 +51,7 @@ const TheoriesHome       = lazy(() => import('./components/TheoriesHome.jsx'))
 const TheoryDetail       = lazy(() => import('./components/TheoryDetail.jsx'))
 const TheoryEditor       = lazy(() => import('./components/TheoryEditor.jsx'))
 const ConstellationPage  = lazy(() => import('./components/ConstellationPage.jsx'))
+const DevilFruitPage     = lazy(() => import('./components/devil-fruit/DevilFruitPage.jsx'))
 
 function BgVideo() {
   const [visible, setVisible] = useState(false)
@@ -266,6 +267,9 @@ export default function App() {
 
         {/* Constellation Équipages */}
         <Route path="/equipage" element={<PageLayout><ConstellationPage /></PageLayout>} />
+
+        {/* Encyclopédie Fruits du Démon */}
+        <Route path="/fruits-du-demon" element={<PageLayout><DevilFruitPage /></PageLayout>} />
 
         {/* Homepage */}
         <Route path="/*" element={mainContent} />
