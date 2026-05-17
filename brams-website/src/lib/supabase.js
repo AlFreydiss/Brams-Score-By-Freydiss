@@ -31,7 +31,6 @@ export async function fetchStats() {
 
 export async function fetchMemberProfile(discordId) {
   if (!supabase) return null
-  // Cherche dans le classement par UID Discord
   const { data, error } = await supabase.rpc('top_classement', { p_limit: 500 })
   if (error || !data) return null
   const member = data.find(m => String(m.uid) === String(discordId))
@@ -43,15 +42,20 @@ export async function fetchMemberProfile(discordId) {
   }
 }
 
-export async function signInWithDiscord() {
-  if (!supabase) return
-  await supabase.auth.signInWithOAuth({
-    provider: 'discord',
-    options: {
-      redirectTo: window.location.origin,
-      scopes: 'identify email guilds',
-    },
+export async function signUpWithEmail(email, password, displayName) {
+  if (!supabase) return { error: { message: 'Client Supabase non initialisé' } }
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: { data: { display_name: displayName } },
   })
+  return { data, error }
+}
+
+export async function signInWithEmail(email, password) {
+  if (!supabase) return { error: { message: 'Client Supabase non initialisé' } }
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+  return { data, error }
 }
 
 export async function signOutUser() {

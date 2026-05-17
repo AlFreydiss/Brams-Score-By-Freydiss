@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
-import { supabase, signInWithDiscord, signOutUser } from '../lib/supabase.js'
+import { supabase, signUpWithEmail, signInWithEmail, signOutUser } from '../lib/supabase.js'
 
 const AuthContext = createContext(null)
 
@@ -21,19 +21,23 @@ export function AuthProvider({ children }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session)
       setUser(session?.user ?? null)
-      if (event === 'SIGNED_IN') {
-        setShowWelcome(true)
-      }
-      if (event === 'SIGNED_OUT') {
-        setUser(null)
-        setSession(null)
-      }
+      if (event === 'SIGNED_IN') setShowWelcome(true)
+      if (event === 'SIGNED_OUT') { setUser(null); setSession(null) }
     })
 
     return () => subscription.unsubscribe()
   }, [])
 
-  const signIn  = useCallback(() => signInWithDiscord(), [])
+  const signIn = useCallback(async (email, password) => {
+    const { error } = await signInWithEmail(email, password)
+    return { error }
+  }, [])
+
+  const signUp = useCallback(async (email, password, displayName) => {
+    const { data, error } = await signUpWithEmail(email, password, displayName)
+    return { data, error }
+  }, [])
+
   const signOut = useCallback(async () => { await signOutUser() }, [])
   const dismissWelcome = useCallback(() => setShowWelcome(false), [])
 
@@ -44,15 +48,14 @@ export function AuthProvider({ children }) {
     showWelcome,
     dismissWelcome,
     signIn,
+    signUp,
     signOut,
     isAuthenticated: !!user,
-    displayName: user?.user_metadata?.full_name
-      || user?.user_metadata?.name
-      || user?.user_metadata?.global_name
+    displayName: user?.user_metadata?.display_name
       || user?.email?.split('@')[0]
       || 'Pirate',
     avatarUrl: user?.user_metadata?.avatar_url ?? null,
-    discordId: user?.user_metadata?.provider_id ?? null,
+    discordId: null,
   }
 
   return (

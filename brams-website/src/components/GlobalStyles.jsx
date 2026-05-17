@@ -258,6 +258,12 @@ const CSS = `
     .hide-mobile { display: none !important; }
   }
 
+  /* Show mobile only */
+  .show-mobile { display: none !important; }
+  @media (max-width: 768px) {
+    .show-mobile { display: flex !important; }
+  }
+
   /* Right sidebar panel — only visible on very wide screens */
   .right-panel {
     display: none !important;
