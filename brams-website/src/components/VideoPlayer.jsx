@@ -14,6 +14,15 @@ function encSrc(src) {
   return src.split('/').map((seg, i) => i === 0 ? seg : encodeURIComponent(seg)).join('/')
 }
 
+function sourceType(src = '') {
+  const clean = src.split('?')[0].toLowerCase()
+  if (clean.endsWith('.mp4')) return 'video/mp4'
+  if (clean.endsWith('.webm')) return 'video/webm'
+  if (clean.endsWith('.mkv')) return 'video/x-matroska'
+  if (clean.endsWith('.m3u8')) return 'application/x-mpegURL'
+  return 'video/mp4'
+}
+
 const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2]
 
 // ── Bouton icône ─────────────────────────────────────────────────────────────
@@ -242,10 +251,10 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   const subLabel = subsOff ? 'OFF' : hasSubs ? (video.subtitles[subIdx]?.label ?? 'CC') : 'N/A'
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 600, background: '#000', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 1200, background: '#000', display: 'flex', flexDirection: 'column' }}>
 
       {/* ── Barre haute ── */}
-      <div style={{ flexShrink: 0, height: 54, display: 'flex', alignItems: 'center', gap: 10, padding: '0 14px', background: 'rgba(8,9,11,0.96)', borderBottom: `1px solid ${color}33`, zIndex: 10 }}>
+      <div style={{ flexShrink: 0, height: 48, display: 'flex', alignItems: 'center', gap: 10, padding: '0 14px', background: 'rgba(8,9,11,0.84)', backdropFilter: 'blur(18px)', borderBottom: `1px solid ${color}22`, zIndex: 10 }}>
         <button onClick={onClose} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 9, color: '#fff', cursor: 'pointer', padding: '6px 13px', fontSize: 13, fontWeight: 700, flexShrink: 0, transition: 'background .15s' }}
           onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.13)'}
           onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.07)'}
@@ -286,7 +295,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
             >
               <source
                 src={encSrc(video.src)}
-                type="video/mp4"
+                type={sourceType(video.src)}
               />
               {/* Pistes de sous-titres (lues via TextTrack API, mode hidden) */}
               {hasSubs && video.subtitles.map((sub, i) => (
@@ -435,7 +444,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
               </div>
 
               {/* Légende raccourcis */}
-              <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 8, flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 8, flexWrap: 'wrap', opacity: 0.55 }}>
                 {[['Espace', 'Play/Pause'], ['←→', '±5s'], ['↑↓', 'Volume'], ['M', 'Muet'], ['F', 'Plein écran']].map(([k, v]) => (
                   <span key={k} style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)' }}>
                     <kbd style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 3, padding: '1px 5px', fontFamily: 'monospace', color: 'rgba(255,255,255,0.4)', marginRight: 4 }}>{k}</kbd>
@@ -460,7 +469,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
 
       {/* ── Bande épisodes ── */}
       {videos.length > 1 && (
-        <div style={{ flexShrink: 0, display: 'flex', gap: 6, padding: '8px 14px', background: 'rgba(8,9,11,0.95)', borderTop: '1px solid rgba(255,255,255,0.06)', overflowX: 'auto', scrollbarWidth: 'thin' }}>
+        <div style={{ flexShrink: 0, display: 'flex', gap: 6, padding: '7px 14px', background: 'rgba(8,9,11,0.82)', backdropFilter: 'blur(18px)', borderTop: '1px solid rgba(255,255,255,0.05)', overflowX: 'auto', scrollbarWidth: 'thin' }}>
           {videos.map((v, i) => (
             <button key={i} onClick={() => setIdx(i)}
               style={{ flexShrink: 0, padding: '5px 13px', borderRadius: 7, border: `1px solid ${i === idx ? color + '70' : 'rgba(255,255,255,0.09)'}`, background: i === idx ? `${color}25` : 'transparent', color: i === idx ? color : 'rgba(255,255,255,0.4)', fontSize: 12, fontWeight: 700, cursor: 'pointer', transition: 'all .15s', whiteSpace: 'nowrap' }}

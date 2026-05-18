@@ -1,610 +1,327 @@
-import { useState, useRef, useMemo, useEffect, Suspense } from 'react'
+import { Suspense, useMemo, useRef, useState, useEffect } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { OrbitControls } from '@react-three/drei'
+import { OrbitControls, Text, Stars, Sparkles, Line } from '@react-three/drei'
 import * as THREE from 'three'
-import { CHARACTERS, RELATIONS, TREE_CONFIGS, LINK_COLORS, HAKI_COLORS } from '../data/tree-data.js'
+import { CHARACTERS, RELATIONS, LINK_COLORS, HAKI_COLORS } from '../data/tree-data.js'
 
-// ── Ocean (simple animated plane — no custom shader) ──────────────────────────
+const ZONES = [
+  { id: 'mugiwara', label: 'Mugiwara', subtitle: 'Point de rupture du monde', color: '#e0524a', accent: '#ffd166', position: [0, 0, 0], radius: 2.9, filter: c => c.crew === 'straw_hats' || c.id === 'luffy', mood: 'flame' },
+  { id: 'wano', label: 'Wano', subtitle: 'Brume samourai', color: '#ff6b35', accent: '#ffcf99', position: [-8.8, -0.4, -3.2], radius: 2.25, filter: c => ['kaido', 'yamato', 'oden', 'zoro'].includes(c.id), mood: 'sakura' },
+  { id: 'marineford', label: 'Marineford', subtitle: 'Justice absolue', color: '#8ecaff', accent: '#ffffff', position: [8.7, -0.2, -2.8], radius: 2.35, filter: c => c.org === 'marines' || ['garp', 'akainu', 'aokiji', 'kizaru'].includes(c.id), mood: 'marine' },
+  { id: 'wholecake', label: 'Whole Cake', subtitle: 'Empire sucre malsain', color: '#f472b6', accent: '#c084fc', position: [-7.4, 0.2, 5.5], radius: 2.05, filter: c => c.crew === 'big_mom_pirates' || c.family === 'charlotte', mood: 'candy' },
+  { id: 'egghead', label: 'Egghead', subtitle: 'Laboratoire interdit', color: '#60f6ff', accent: '#a78bfa', position: [7.1, 0.25, 5.8], radius: 2.0, filter: c => ['vegapunk', 'kizaru', 'sentomaru', 'franky', 'robin'].includes(c.id), mood: 'tech' },
+  { id: 'revolution', label: 'Revolutionnaires', subtitle: 'Signal clandestin', color: '#34d399', accent: '#a7f3d0', position: [-1.6, 0.6, 9.4], radius: 2.05, filter: c => c.org === 'revolutionary' || ['dragon', 'sabo'].includes(c.id), mood: 'rebel' },
+  { id: 'yonko', label: 'Yonko', subtitle: 'Gravites imperiales', color: '#d4a017', accent: '#ff7455', position: [0.8, 0.3, -9.2], radius: 2.45, filter: c => ['shanks', 'blackbeard', 'bigmom', 'kaido', 'whitebeard', 'roger'].includes(c.id), mood: 'royal' },
+  { id: 'government', label: 'Gouvernement', subtitle: 'Carte secrete', color: '#d9e4ff', accent: '#7dd3fc', position: [11.6, 0.7, 2.2], radius: 1.9, filter: c => c.org === 'world_government' || ['imu', 'gorosei', 'cp0'].includes(c.id), mood: 'cipher' },
+  { id: 'dressrosa', label: 'Dressrosa', subtitle: 'Theatre royal brise', color: '#a78bfa', accent: '#f0abfc', position: [-11.5, 0.4, 1.8], radius: 1.85, filter: c => ['doflamingo', 'law', 'sabo', 'luffy'].includes(c.id), mood: 'royal' },
+  { id: 'impeldown', label: 'Impel Down', subtitle: 'Abysses de la Marine', color: '#818cf8', accent: '#ef4444', position: [3.6, -0.8, -13.6], radius: 1.8, filter: c => ['crocodile', 'buggy', 'jinbe', 'blackbeard'].includes(c.id), mood: 'prison' },
+  { id: 'elbaf', label: 'Elbaf', subtitle: 'Royaume des geants', color: '#fbbf24', accent: '#86efac', position: [-4.5, 0.3, -13.2], radius: 1.95, filter: c => ['saul', 'usopp', 'shanks'].includes(c.id), mood: 'ancient' },
+]
 
-function Ocean({ mangaMode }) {
-  const meshRef = useRef()
-  const posRef  = useRef(null)
+const FALLBACK_IDS = ['luffy', 'zoro', 'sanji', 'nami', 'robin', 'jinbe', 'law', 'ace', 'sabo', 'dragon', 'garp', 'roger', 'shanks', 'blackbeard', 'bigmom', 'kaido']
 
+function zoneMembers(zone) {
+  const members = CHARACTERS.filter(zone.filter)
+  if (members.length) return members.slice(0, zone.id === 'mugiwara' ? 11 : 7)
+  return CHARACTERS.filter(c => FALLBACK_IDS.includes(c.id)).slice(0, 4)
+}
+
+function SeaFloor() {
+  const mat = useRef()
   useFrame(({ clock }) => {
-    const mesh = meshRef.current
-    if (!mesh) return
-    const geo = mesh.geometry
-    if (!posRef.current) posRef.current = geo.attributes.position.array.slice()
-    const orig = posRef.current
-    const pos  = geo.attributes.position.array
-    const t    = clock.getElapsedTime()
-    for (let i = 0; i < pos.length; i += 3) {
-      const x = orig[i], z = orig[i + 2]
-      pos[i + 1] = Math.sin(x * 0.45 + t * 0.65) * 0.45
-                 + Math.sin(z * 0.35 + t * 0.48) * 0.32
-                 + Math.sin((x + z) * 0.18 + t * 0.55) * 0.22
-    }
-    geo.attributes.position.needsUpdate = true
-    geo.computeVertexNormals()
+    if (mat.current) mat.current.uniforms.uTime.value = clock.elapsedTime
   })
 
   return (
-    <mesh ref={meshRef} rotation={[-Math.PI / 2, 0, 0]} position={[0, -3.5, 0]}>
-      <planeGeometry args={[120, 120, 40, 40]} />
-      <meshStandardMaterial
-        color={mangaMode ? '#7AAAC8' : '#03080E'}
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.85, 0]}>
+      <planeGeometry args={[90, 90, 160, 160]} />
+      <shaderMaterial
+        ref={mat}
         transparent
-        opacity={0.88}
-        side={THREE.DoubleSide}
-        roughness={0.2}
-        metalness={0.1}
+        depthWrite={false}
+        uniforms={{ uTime: { value: 0 } }}
+        vertexShader={`
+          uniform float uTime;
+          varying vec2 vUv;
+          varying float vWave;
+          void main() {
+            vUv = uv;
+            vec3 p = position;
+            float w = sin(p.x * .22 + uTime * .42) + sin(p.y * .28 + uTime * .35);
+            p.z += w * .22;
+            vWave = w;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
+          }
+        `}
+        fragmentShader={`
+          varying vec2 vUv;
+          varying float vWave;
+          void main() {
+            float grid = smoothstep(.018, .0, abs(fract(vUv.x * 18.0) - .5)) + smoothstep(.018, .0, abs(fract(vUv.y * 18.0) - .5));
+            vec3 ocean = mix(vec3(.005,.025,.045), vec3(.035,.11,.14), vUv.y + vWave * .04);
+            vec3 mapInk = vec3(.82,.52,.25) * grid * .08;
+            gl_FragColor = vec4(ocean + mapInk, .72);
+          }
+        `}
       />
     </mesh>
   )
 }
 
-// ── Poster canvas texture ─────────────────────────────────────────────────────
-
-function makePosterTexture(char, mangaMode) {
-  const W = 256, H = 384
-  const cv = document.createElement('canvas')
-  cv.width = W; cv.height = H
-  const ctx = cv.getContext('2d')
-
-  // Parchment paper
-  const grad = ctx.createLinearGradient(0, 0, 0, H)
-  grad.addColorStop(0,   '#FAF0DC')
-  grad.addColorStop(0.4, '#F2E4B8')
-  grad.addColorStop(0.8, '#E8D49E')
-  grad.addColorStop(1,   '#DEC882')
-  ctx.fillStyle = grad
-  ctx.fillRect(0, 0, W, H)
-
-  // Corner burns
-  const burnCorner = (x, y) => {
-    const b = ctx.createRadialGradient(x, y, 0, x, y, 60)
-    b.addColorStop(0, 'rgba(80,40,10,0.3)')
-    b.addColorStop(1, 'rgba(80,40,10,0)')
-    ctx.fillStyle = b
-    ctx.fillRect(0, 0, W, H)
-  }
-  burnCorner(0, 0); burnCorner(W, 0); burnCorner(0, H); burnCorner(W, H)
-
-  // Aged grain
-  ctx.fillStyle = 'rgba(80,40,10,0.035)'
-  for (let i = 0; i < 50; i++) {
-    ctx.fillRect(Math.random() * W, Math.random() * H, Math.random() * 28 + 3, 1)
-  }
-
-  // Header band (dark ink, subdued)
-  const headerColor = char.color || '#8b0000'
-  ctx.fillStyle = headerColor + 'cc'
-  ctx.fillRect(0, 0, W, 82)
-  // Thin gold border under header
-  ctx.fillStyle = 'rgba(212,168,50,0.6)'
-  ctx.fillRect(0, 80, W, 2)
-
-  // "WANTED" text
-  ctx.fillStyle = '#FAF0DC'
-  ctx.font = 'bold 38px Georgia, serif'
-  ctx.textAlign = 'center'
-  ctx.shadowColor = 'rgba(0,0,0,0.7)'
-  ctx.shadowBlur = 5
-  ctx.fillText('WANTED', W / 2, 50)
-  ctx.font = 'italic 12px Georgia, serif'
-  ctx.fillText('DEAD OR ALIVE', W / 2, 72)
-  ctx.shadowBlur = 0
-
-  // Photo frame
-  ctx.strokeStyle = char.color || '#8b4513'
-  ctx.lineWidth = 4
-  ctx.strokeRect(18, 92, W - 36, 180)
-  ctx.fillStyle = 'rgba(0,0,0,0.18)'
-  ctx.fillRect(20, 94, W - 40, 176)
-
-  // Big emoji
-  ctx.font = '72px serif'
-  ctx.textAlign = 'center'
-  ctx.fillText(char.emoji || '?', W / 2, 200)
-
-  // Dead overlay
-  if (char.status === 'dead') {
-    ctx.save()
-    ctx.globalAlpha = 0.55
-    ctx.translate(W / 2, 182)
-    ctx.rotate(-0.25)
-    ctx.font = 'bold 30px Georgia, serif'
-    ctx.fillStyle = '#666'
-    ctx.fillText('DÉCÉDÉ', 0, 0)
-    ctx.restore()
-  }
-
-  // Name
-  ctx.fillStyle = '#1A0800'
-  ctx.font = 'bold 15px Georgia, serif'
-  ctx.textAlign = 'center'
-  const name = char.name.length > 18 ? char.name.substring(0, 16) + '…' : char.name
-  ctx.fillText(name, W / 2, 292)
-
-  // Divider line under name
-  ctx.strokeStyle = 'rgba(74,44,16,0.4)'
-  ctx.lineWidth = 1
-  ctx.beginPath(); ctx.moveTo(30, 300); ctx.lineTo(W - 30, 300); ctx.stroke()
-
-  // Alias
-  if (char.alias) {
-    ctx.font = 'italic 11px Georgia, serif'
-    ctx.fillStyle = '#5C3A1A'
-    const alias = char.alias.length > 22 ? char.alias.substring(0, 20) + '…' : char.alias
-    ctx.fillText(`"${alias}"`, W / 2, 316)
-  }
-
-  // Bounty
-  if (char.bounty) {
-    ctx.font = 'italic 9px Georgia, serif'
-    ctx.fillStyle = '#8A5A20'
-    ctx.fillText('— PRIME —', W / 2, 334)
-    ctx.fillStyle = '#1A0800'
-    ctx.font = 'bold 13px Georgia, serif'
-    ctx.fillText(char.bounty, W / 2, 350)
-  }
-
-  // Haki dots
-  if (char.haki.length > 0) {
-    char.haki.forEach((h, i) => {
-      ctx.beginPath()
-      ctx.arc(18 + i * 15, H - 16, 5, 0, Math.PI * 2)
-      ctx.fillStyle = h === 'conqueror' ? '#D4A017' : h === 'armament' ? '#6B7280' : '#3B82F6'
-      ctx.fill()
-      ctx.strokeStyle = 'rgba(0,0,0,0.3)'
-      ctx.lineWidth = 1
-      ctx.stroke()
-    })
-  }
-
-  // Outer border — ink
-  ctx.strokeStyle = 'rgba(60,30,8,0.7)'
-  ctx.lineWidth = 6
-  ctx.strokeRect(4, 4, W - 8, H - 8)
-  ctx.strokeStyle = 'rgba(212,168,50,0.35)'
-  ctx.lineWidth = 1.5
-  ctx.strokeRect(10, 10, W - 20, H - 20)
-
-  const tex = new THREE.CanvasTexture(cv)
-  return tex
-}
-
-// ── Wanted Poster Node ────────────────────────────────────────────────────────
-
-function WantedNode({ char, position, onClick, selected, mangaMode }) {
-  const groupRef = useRef()
-  const meshRef  = useRef()
-  const [hovered, setHovered] = useState(false)
-
-  const texture = useMemo(() => makePosterTexture(char, mangaMode), [char, mangaMode])
-
-  const emissiveMat = useMemo(() => ({
-    color: selected ? new THREE.Color(char.color).multiplyScalar(0.6) :
-           hovered  ? new THREE.Color('#ffffff').multiplyScalar(0.12) :
-                      new THREE.Color('#000000'),
-    intensity: selected ? 0.35 : hovered ? 0.12 : 0,
-  }), [selected, hovered, char.color])
+function Island({ zone, active, onHover }) {
+  const group = useRef()
+  const color = new THREE.Color(zone.color)
+  const accent = new THREE.Color(zone.accent)
 
   useFrame(({ clock }) => {
-    if (!groupRef.current) return
-    const t = clock.getElapsedTime()
-    const seed = position[0] * 0.31 + position[2] * 0.17
-
-    // Gentle floating oscillation (simulated physics)
-    groupRef.current.rotation.z = Math.sin(t * 0.7 + seed) * 0.06
-    groupRef.current.rotation.x = Math.cos(t * 0.5 + seed) * 0.03
-    groupRef.current.position.y = position[1] + Math.sin(t * 0.4 + seed) * 0.12
-
-    // Hover lift
-    const targetY = hovered ? position[1] + 0.4 : position[1]
-    groupRef.current.position.y += (targetY - groupRef.current.position.y) * 0.08
+    if (!group.current) return
+    const t = clock.elapsedTime
+    group.current.position.y = zone.position[1] + Math.sin(t * 0.42 + zone.position[0]) * 0.12
+    group.current.rotation.y += 0.0018
   })
 
   return (
-    <group ref={groupRef} position={position}>
-      {/* Drop shadow */}
-      <mesh position={[0.06, -0.06, -0.05]} rotation={[0, 0, 0.04]}>
-        <planeGeometry args={[1.45, 2.15]} />
-        <meshBasicMaterial color="#000000" transparent opacity={0.35} />
+    <group ref={group} position={zone.position} onPointerEnter={(e) => { e.stopPropagation(); onHover(zone) }} onPointerLeave={(e) => { e.stopPropagation(); onHover(null) }}>
+      <mesh position={[0, -0.42, 0]} scale={[zone.radius * 1.25, 0.48, zone.radius * 1.25]}>
+        <cylinderGeometry args={[1, 1.2, 1.2, 7]} />
+        <meshStandardMaterial color={color.clone().multiplyScalar(0.42)} roughness={0.74} metalness={0.08} emissive={color} emissiveIntensity={active ? 0.18 : 0.07} />
       </mesh>
-
-      {/* Conqueror Haki glow aura */}
-      {char.haki.includes('conqueror') && (
-        <mesh position={[0, 0, -0.04]}>
-          <planeGeometry args={[1.9, 2.6]} />
-          <meshBasicMaterial color="#d4a017" transparent opacity={selected ? 0.28 : 0.1} />
-        </mesh>
-      )}
-
-      {/* Selected ring */}
-      {selected && (
-        <mesh position={[0, 0, -0.03]}>
-          <ringGeometry args={[0.95, 1.08, 64]} />
-          <meshBasicMaterial color={char.color || '#d4a017'} transparent opacity={0.9} />
-        </mesh>
-      )}
-
-      {/* Main poster */}
-      <mesh
-        ref={meshRef}
-        onClick={e => { e.stopPropagation(); onClick(char) }}
-        onPointerEnter={e => { e.stopPropagation(); setHovered(true); document.body.style.cursor = 'pointer' }}
-        onPointerLeave={e => { e.stopPropagation(); setHovered(false); document.body.style.cursor = 'default' }}
-      >
-        <planeGeometry args={[1.4, 2.1]} />
-        <meshStandardMaterial
-          map={texture}
-          side={THREE.DoubleSide}
-          roughness={0.75}
-          metalness={0.05}
-          emissive={emissiveMat.color}
-          emissiveIntensity={emissiveMat.intensity}
-        />
+      <mesh position={[0, 0.18, 0]} scale={[zone.radius, 0.55, zone.radius]}>
+        <dodecahedronGeometry args={[1, 1]} />
+        <meshStandardMaterial color={color.clone().lerp(new THREE.Color('#0b0d14'), 0.35)} roughness={0.58} metalness={0.16} emissive={color} emissiveIntensity={active ? 0.34 : 0.13} />
       </mesh>
-
+      <mesh rotation={[Math.PI / 2, 0, 0]} scale={[zone.radius * 1.18, zone.radius * 1.18, 1]}>
+        <ringGeometry args={[0.92, 1, 128]} />
+        <meshBasicMaterial color={accent} transparent opacity={active ? 0.54 : 0.24} />
+      </mesh>
+      <Sparkles count={active ? 52 : 26} scale={zone.radius * 2.2} size={active ? 3.2 : 2.1} speed={0.18} color={zone.accent} opacity={active ? 0.85 : 0.45} />
+      <Text position={[0, 1.62, 0]} fontSize={0.34} anchorX="center" anchorY="middle" color="#fff" outlineWidth={0.018} outlineColor="#05070d">
+        {zone.label}
+      </Text>
+      <Text position={[0, 1.24, 0]} fontSize={0.12} anchorX="center" anchorY="middle" color={zone.accent}>
+        {zone.subtitle.toUpperCase()}
+      </Text>
     </group>
   )
 }
 
-// ── Relation Line ─────────────────────────────────────────────────────────────
+function CharacterNode({ character, zone, index, total, selected, hovered, onHover, onSelect }) {
+  const ref = useRef()
+  const aura = useRef()
+  const orbitRadius = zone.radius + 0.9 + (index % 3) * 0.34
+  const color = character.id === 'luffy' ? '#ffdf7e' : character.color || zone.accent
 
-function RelLine({ from, to, type }) {
+  useFrame(({ clock }) => {
+    if (!ref.current) return
+    const t = clock.elapsedTime
+    const base = (index / Math.max(total, 1)) * Math.PI * 2
+    const speed = character.id === 'luffy' ? 0.1 : 0.055 + (index % 4) * 0.01
+    const angle = base + t * speed
+    const y = zone.position[1] + 1.0 + Math.sin(t * 0.9 + index) * 0.18
+    ref.current.position.set(
+      zone.position[0] + Math.cos(angle) * orbitRadius,
+      y,
+      zone.position[2] + Math.sin(angle) * orbitRadius
+    )
+    ref.current.rotation.y += 0.018
+    const scale = character.id === 'luffy' ? 1.55 : selected || hovered ? 1.22 : 1
+    ref.current.scale.lerp(new THREE.Vector3(scale, scale, scale), 0.09)
+    if (aura.current) aura.current.rotation.z -= 0.01
+  })
+
+  return (
+    <group
+      ref={ref}
+      onPointerEnter={(e) => { e.stopPropagation(); onHover(character) }}
+      onPointerLeave={(e) => { e.stopPropagation(); onHover(null) }}
+      onClick={(e) => { e.stopPropagation(); onSelect(character) }}
+    >
+      <mesh ref={aura} scale={[1.45, 1.45, 1.45]}>
+        <torusGeometry args={[0.42, 0.012, 8, 64]} />
+        <meshBasicMaterial color={color} transparent opacity={selected || hovered ? 0.72 : 0.28} />
+      </mesh>
+      <mesh>
+        <sphereGeometry args={[character.id === 'luffy' ? 0.46 : 0.28, 32, 32]} />
+        <meshStandardMaterial color="#101521" emissive={color} emissiveIntensity={character.id === 'luffy' ? 0.8 : selected || hovered ? 0.52 : 0.26} roughness={0.18} metalness={0.48} />
+      </mesh>
+      <mesh scale={[0.78, 0.78, 0.78]}>
+        <sphereGeometry args={[character.id === 'luffy' ? 0.42 : 0.24, 32, 32]} />
+        <meshBasicMaterial color={color} transparent opacity={0.18} />
+      </mesh>
+      {(selected || hovered || character.id === 'luffy') && (
+        <Text position={[0, character.id === 'luffy' ? 0.82 : 0.56, 0]} fontSize={0.12} anchorX="center" color="#fff" outlineWidth={0.01} outlineColor="#03050a">
+          {character.name}
+        </Text>
+      )}
+    </group>
+  )
+}
+
+function EnergyLink({ from, to, type, active }) {
+  const pulse = useRef()
+  const curve = useMemo(() => {
+    const a = new THREE.Vector3(...from)
+    const b = new THREE.Vector3(...to)
+    const mid = a.clone().lerp(b, 0.5)
+    mid.y += 2.2 + a.distanceTo(b) * 0.05
+    return new THREE.CatmullRomCurve3([a, mid, b])
+  }, [from, to])
+  const points = useMemo(() => curve.getPoints(42), [curve])
   const color = LINK_COLORS[type] || '#ffffff'
 
-  const lineObj = useMemo(() => {
-    const A = new THREE.Vector3(...from)
-    const B = new THREE.Vector3(...to)
-    const mid = new THREE.Vector3().lerpVectors(A, B, 0.5)
-    mid.y += type === 'enemy' ? -1.2 : type === 'crew' ? 0.8 : 0.5
-    const pts = new THREE.CatmullRomCurve3([A, mid, B]).getPoints(28)
-    const geo  = new THREE.BufferGeometry().setFromPoints(pts)
-    const mat  = new THREE.LineBasicMaterial({
-      color: new THREE.Color(color),
-      transparent: true,
-      opacity: type === 'enemy' ? 0.85 : 0.65,
-    })
-    return new THREE.Line(geo, mat)
-  }, [from, to, type, color])
+  useFrame(({ clock }) => {
+    if (!pulse.current) return
+    const p = (clock.elapsedTime * (type === 'enemy' ? 0.28 : 0.18) + from[0] * 0.02) % 1
+    pulse.current.position.copy(curve.getPointAt(p))
+  })
 
-  return <primitive object={lineObj} />
+  return (
+    <group>
+      <Line points={points} color={color} transparent opacity={active ? 0.78 : 0.22} lineWidth={active ? 2.2 : 1.1} />
+      <mesh ref={pulse}>
+        <sphereGeometry args={[active ? 0.09 : 0.055, 12, 12]} />
+        <meshBasicMaterial color={color} transparent opacity={active ? 0.88 : 0.34} />
+      </mesh>
+    </group>
+  )
 }
 
-// ── Layout algorithms ─────────────────────────────────────────────────────────
-
-function computeTreeLayout(charIds, rels, rootId) {
-  const children = {}
-  charIds.forEach(id => { children[id] = [] })
-
-  rels
-    .filter(r => charIds.includes(r.from) && charIds.includes(r.to) && r.type === 'parent')
-    .forEach(r => { children[r.from].push(r.to) })
-
-  const levels = {}
-  const queue = [rootId]
-  levels[rootId] = 0
-  const visited = new Set([rootId])
-
-  while (queue.length) {
-    const id = queue.shift()
-    ;(children[id] || []).forEach(kid => {
-      if (!visited.has(kid)) {
-        visited.add(kid)
-        levels[kid] = (levels[id] || 0) + 1
-        queue.push(kid)
-      }
+function WorldScene({ selected, hovered, setHovered, setSelected, activeZone, setActiveZone }) {
+  const zoneData = useMemo(() => ZONES.map(zone => ({ ...zone, members: zoneMembers(zone) })), [])
+  const nodePositions = useMemo(() => {
+    const map = new Map()
+    zoneData.forEach(zone => {
+      zone.members.forEach((character, index) => {
+        const angle = (index / Math.max(zone.members.length, 1)) * Math.PI * 2
+        const radius = zone.radius + 1.25
+        map.set(character.id, [
+          zone.position[0] + Math.cos(angle) * radius,
+          zone.position[1] + 1.05,
+          zone.position[2] + Math.sin(angle) * radius,
+        ])
+      })
     })
-  }
+    map.set('luffy', [0, 1.25, 0])
+    return map
+  }, [zoneData])
 
-  // Orphaned nodes (no parent relation) → last level
-  const maxLevel = Math.max(...Object.values(levels), 0)
-  charIds.forEach(id => {
-    if (levels[id] === undefined) levels[id] = maxLevel + 1
-  })
-
-  const byLevel = {}
-  charIds.forEach(id => {
-    const lv = levels[id]
-    byLevel[lv] = byLevel[lv] || []
-    byLevel[lv].push(id)
-  })
-
-  const positions = {}
-  Object.entries(byLevel).forEach(([lv, ids]) => {
-    const totalW = (ids.length - 1) * 3.8
-    ids.forEach((id, i) => {
-      positions[id] = [i * 3.8 - totalW / 2, -parseInt(lv) * 3.6 + 4, 0]
-    })
-  })
-  return positions
-}
-
-function computeRadialLayout(charIds, rootId) {
-  const others = charIds.filter(id => id !== rootId)
-  const radius = Math.max(4, others.length * 0.85)
-  const positions = { [rootId]: [0, 0, 0] }
-  others.forEach((id, i) => {
-    const angle = (i / others.length) * Math.PI * 2
-    positions[id] = [Math.cos(angle) * radius, 0, Math.sin(angle) * radius]
-  })
-  return positions
-}
-
-// ── 3D Scene ──────────────────────────────────────────────────────────────────
-
-function Scene({ cfg, selectedChar, onSelect, mangaMode, filterStatus, filterHaki }) {
-  const chars = useMemo(() => {
-    let list = CHARACTERS.filter(cfg.charFilter)
-    if (filterStatus !== 'all') list = list.filter(c => c.status === filterStatus)
-    if (filterHaki) list = list.filter(c => c.haki.includes(filterHaki))
-    return list
-  }, [cfg, filterStatus, filterHaki])
-
-  const rels = useMemo(() =>
-    RELATIONS.filter(r =>
-      chars.find(c => c.id === r.from) &&
-      chars.find(c => c.id === r.to) &&
-      cfg.relFilter(r)
-    ), [chars, cfg])
-
-  const positions = useMemo(() => {
-    const ids = chars.map(c => c.id)
-    const root = ids.includes(cfg.root) ? cfg.root : ids[0]
-    if (!root) return {}
-    return cfg.layout === 'radial'
-      ? computeRadialLayout(ids, root)
-      : computeTreeLayout(ids, rels, root)
-  }, [chars, rels, cfg])
+  const relations = useMemo(() => RELATIONS
+    .filter(rel => nodePositions.has(rel.from) && nodePositions.has(rel.to))
+    .slice(0, 42), [nodePositions])
 
   return (
     <>
-      {/* Lighting */}
-      <ambientLight intensity={mangaMode ? 1.1 : 0.55} />
-      <directionalLight
-        position={[12, 18, 8]}
-        intensity={mangaMode ? 1.6 : 1.3}
-        color={mangaMode ? '#ffffff' : '#ffb060'}
-        castShadow
-      />
-      <pointLight position={[-14, 10, -10]} intensity={0.5} color={mangaMode ? '#ccddff' : '#4060ff'} />
-      <pointLight position={[10, 4, 12]} intensity={0.35} color={mangaMode ? '#ffddcc' : '#ff6030'} />
+      <color attach="background" args={['#03050a']} />
+      <fog attach="fog" args={['#03050a', 12, 46]} />
+      <ambientLight intensity={0.36} />
+      <directionalLight position={[8, 14, 10]} intensity={1.3} color="#ffd2a0" />
+      <pointLight position={[0, 6, 0]} intensity={2.3} color="#e0524a" distance={16} />
+      <pointLight position={[9, 5, 6]} intensity={1.5} color="#69e8ff" distance={18} />
+      <Stars radius={80} depth={34} count={1800} factor={4} saturation={0.4} fade speed={0.28} />
+      <Sparkles count={240} scale={[42, 16, 42]} size={1.5} speed={0.12} color="#ffb05f" opacity={0.34} />
+      <SeaFloor />
 
-      <Ocean mangaMode={mangaMode} />
+      {zoneData.map(zone => (
+        <Island key={zone.id} zone={zone} active={activeZone?.id === zone.id} onHover={setActiveZone} />
+      ))}
 
-      {/* Relation lines */}
-      {rels.map(rel => {
-        const fp = positions[rel.from]
-        const tp = positions[rel.to]
-        if (!fp || !tp) return null
-        return <RelLine key={rel.id} from={fp} to={tp} type={rel.type} />
-      })}
+      {relations.map(rel => (
+        <EnergyLink
+          key={rel.id}
+          from={nodePositions.get(rel.from)}
+          to={nodePositions.get(rel.to)}
+          type={rel.type}
+          active={selected?.id === rel.from || selected?.id === rel.to || hovered?.id === rel.from || hovered?.id === rel.to}
+        />
+      ))}
 
-      {/* Character nodes */}
-      {chars.map(char => {
-        const pos = positions[char.id]
-        if (!pos) return null
-        return (
-          <WantedNode
-            key={char.id}
-            char={char}
-            position={pos}
-            onClick={onSelect}
-            selected={selectedChar?.id === char.id}
-            mangaMode={mangaMode}
-          />
-        )
-      })}
+      {zoneData.map(zone => zone.members.map((character, index) => (
+        <CharacterNode
+          key={`${zone.id}-${character.id}`}
+          character={character}
+          zone={zone}
+          index={index}
+          total={zone.members.length}
+          selected={selected?.id === character.id}
+          hovered={hovered?.id === character.id}
+          onHover={setHovered}
+          onSelect={setSelected}
+        />
+      )))}
 
-      <OrbitControls
-        enableDamping
-        dampingFactor={0.06}
-        minDistance={4}
-        maxDistance={45}
-        maxPolarAngle={Math.PI / 1.75}
-        enablePan
-      />
+      <OrbitControls enableDamping dampingFactor={0.045} rotateSpeed={0.48} zoomSpeed={0.62} panSpeed={0.45} minDistance={8} maxDistance={36} maxPolarAngle={Math.PI / 2.05} />
     </>
   )
 }
 
-// ── UI Components ─────────────────────────────────────────────────────────────
-
-function CharDetail({ char, onClose, mangaMode }) {
-  if (!char) return null
-  const txt = mangaMode ? '#1a0800' : '#fff'
-  const sub = mangaMode ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.5)'
-
+function DetailPanel({ selected, hovered, activeZone, onClose }) {
+  const character = selected || hovered
   return (
-    <div style={{ background: `${char.color}18`, border: `1px solid ${char.color}50`, borderRadius: 14, padding: '16px 18px' }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 }}>
-        <div>
-          <div style={{ fontFamily: "'Cinzel', serif", fontSize: 14, fontWeight: 700, color: txt, lineHeight: 1.3, letterSpacing: '0.04em' }}>
-            {char.emoji} {char.name}
-          </div>
-          {char.alias && <div style={{ fontSize: 12, color: char.color, fontStyle: 'italic', marginTop: 3 }}>"{char.alias}"</div>}
+    <aside className="world-map-panel">
+      <div className="world-map-panel-top">
+        <span>Gouvernement Mondial</span>
+        <button onClick={onClose}>Fermer</button>
+      </div>
+      <h1>Carte secrete du monde</h1>
+      <p>Territoires vivants, liens d'energie, factions et gravites relationnelles de Grand Line.</p>
+      {activeZone && (
+        <div className="world-map-zone-card">
+          <strong>{activeZone.label}</strong>
+          <span>{activeZone.subtitle}</span>
         </div>
-        <button onClick={onClose} style={{ background: 'none', border: 'none', color: sub, cursor: 'pointer', fontSize: 16, padding: 2 }}>✕</button>
-      </div>
-
-      <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 10 }}>
-        {char.haki.map(h => (
-          <span key={h} style={{ fontSize: 10, fontWeight: 700, background: HAKI_COLORS[h] + '22', color: h === 'armament' ? '#94a3b8' : HAKI_COLORS[h], border: `1px solid ${HAKI_COLORS[h]}44`, borderRadius: 100, padding: '2px 9px' }}>
-            {h === 'conqueror' ? '⚡ Conquérant' : h === 'armament' ? '⚫ Armement' : '👁 Observation'}
-          </span>
-        ))}
-      </div>
-
-      {char.devilFruit && (
-        <div style={{ fontSize: 12, color: sub, marginBottom: 4 }}>🍎 <b style={{ color: txt }}>{char.devilFruit}</b></div>
       )}
-      {char.bounty && (
-        <div style={{ fontSize: 13, color: '#d4a017', fontWeight: 800, marginBottom: 4 }}>💰 {char.bounty}</div>
+      {character && (
+        <div className="world-map-character-card">
+          <div className="world-map-character-orb" style={{ background: character.color }} />
+          <div>
+            <strong>{character.name}</strong>
+            <span>{character.alias || 'Figure cle'}</span>
+            <small>{character.bounty || 'Prime inconnue'} · {character.status === 'alive' ? 'Vivant' : 'Legende'}</small>
+            <div className="world-map-haki-row">
+              {character.haki?.map(haki => <i key={haki} style={{ background: HAKI_COLORS[haki] }} title={haki} />)}
+            </div>
+          </div>
+        </div>
       )}
-      <div style={{ fontSize: 11, fontWeight: 700, color: char.status === 'alive' ? '#34d399' : '#9ca3af', marginTop: 4 }}>
-        {char.status === 'alive' ? '✅ Vivant' : '💀 Décédé'}
+      <div className="world-map-legend">
+        {Object.entries(LINK_COLORS).map(([type, color]) => <span key={type}><i style={{ background: color }} />{type}</span>)}
       </div>
-    </div>
+    </aside>
   )
 }
 
-// ── Main Export ───────────────────────────────────────────────────────────────
-
 export default function FamilyTree3D({ onClose }) {
-  const [activeTree,    setActiveTree]    = useState('straw_hats')
-  const [selectedChar,  setSelectedChar]  = useState(null)
-  const [mangaMode,     setMangaMode]     = useState(false)
-  const [filterStatus,  setFilterStatus]  = useState('all')
-  const [filterHaki,    setFilterHaki]    = useState(null)
-  const [panelOpen,     setPanelOpen]     = useState(true)
-
-  const cfg = TREE_CONFIGS[activeTree]
-
-  const bg    = mangaMode ? '#F5F0E8' : '#0E0A06'
-  const panel = mangaMode ? 'rgba(250,244,228,0.98)' : 'rgba(18,11,4,0.97)'
-  const txt   = mangaMode ? '#1A0800' : 'rgba(230,200,140,0.92)'
-  const muted = mangaMode ? 'rgba(26,8,0,0.5)'  : 'rgba(195,155,70,0.5)'
-  const border= mangaMode ? 'rgba(26,8,0,0.12)' : 'rgba(140,100,40,0.22)'
+  const [selected, setSelected] = useState(null)
+  const [hovered, setHovered] = useState(null)
+  const [activeZone, setActiveZone] = useState(null)
 
   useEffect(() => {
-    document.title = 'Arbre 3D — Brams'
+    document.title = 'Carte Monde 3D - Brams'
     document.body.style.overflow = 'hidden'
-    return () => { document.title = 'Brams Community'; document.body.style.overflow = '' }
+    return () => {
+      document.title = 'Brams Community'
+      document.body.style.overflow = ''
+      document.body.style.cursor = 'default'
+    }
   }, [])
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 600, background: bg, display: 'flex', flexDirection: 'column' }}>
-
-      {/* ── Header ── */}
-      <div style={{ flexShrink: 0, height: 58, display: 'flex', alignItems: 'center', gap: 12, padding: '0 18px', background: panel, backdropFilter: 'blur(22px)', borderBottom: `1px solid ${border}`, zIndex: 10 }}>
-        <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.07)', border: `1px solid ${border}`, borderRadius: 9, color: txt, cursor: 'pointer', padding: '7px 14px', fontSize: 13, fontWeight: 700 }}>
-          ← Retour
-        </button>
-
-        <div style={{ flex: 1, textAlign: 'center' }}>
-          <span style={{ fontFamily: "'Cinzel', 'Trajan Pro', serif", fontSize: 18, fontWeight: 700, letterSpacing: '0.12em', color: txt }}>ARBRE DES PERSONNAGES</span>
-          <span style={{ fontFamily: "'IM Fell English', serif", fontStyle: 'italic', fontSize: 11, color: muted, marginLeft: 12 }}>{cfg.emoji} {cfg.label}</span>
-        </div>
-
-        <button onClick={() => setMangaMode(m => !m)} style={{ background: mangaMode ? '#1a0800' : 'rgba(212,160,23,0.15)', border: `1px solid ${mangaMode ? 'transparent' : 'rgba(212,160,23,0.35)'}`, borderRadius: 9, color: mangaMode ? '#fff' : '#d4a017', cursor: 'pointer', padding: '7px 14px', fontSize: 12, fontWeight: 700 }}>
-          {mangaMode ? '🌙 Sombre' : '📖 Manga'}
-        </button>
-
-        <button onClick={() => setPanelOpen(p => !p)} style={{ background: 'rgba(255,255,255,0.07)', border: `1px solid ${border}`, borderRadius: 9, color: txt, cursor: 'pointer', padding: '7px 10px', fontSize: 15 }}>
-          {panelOpen ? '◀' : '▶'}
-        </button>
-      </div>
-
-      <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-
-        {/* ── Side Panel ── */}
-        <div style={{ width: panelOpen ? 270 : 0, overflow: 'hidden', transition: 'width 0.28s cubic-bezier(.4,0,.2,1)', flexShrink: 0, background: panel, backdropFilter: 'blur(22px)', borderRight: `1px solid ${border}`, display: 'flex', flexDirection: 'column' }}>
-          <div style={{ width: 270, flex: 1, overflowY: 'auto' }}>
-
-            {/* Tree selector */}
-            <div style={{ padding: '14px 14px 6px' }}>
-              <div style={{ fontFamily: "'Cinzel', serif", fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', color: muted, marginBottom: 8, textTransform: 'uppercase' }}>Arbres</div>
-              {Object.values(TREE_CONFIGS).map(c => (
-                <button key={c.id} onClick={() => { setActiveTree(c.id); setSelectedChar(null) }} style={{ width: '100%', textAlign: 'left', padding: '9px 12px', borderRadius: 10, border: `1px solid ${activeTree === c.id ? c.color + '55' : border}`, background: activeTree === c.id ? `${c.color}15` : 'transparent', color: activeTree === c.id ? c.color : muted, cursor: 'pointer', marginBottom: 5, fontSize: 13, fontWeight: activeTree === c.id ? 700 : 500, display: 'flex', alignItems: 'center', gap: 8, transition: 'all 0.15s' }}>
-                  <span style={{ fontSize: 17 }}>{c.emoji}</span>
-                  <span>{c.label}</span>
-                  {activeTree === c.id && <span style={{ marginLeft: 'auto', fontSize: 9, background: c.color, color: '#fff', borderRadius: 100, padding: '2px 7px', fontWeight: 800 }}>ACTIF</span>}
-                </button>
-              ))}
-            </div>
-
-            {/* Filters */}
-            <div style={{ padding: '12px 14px', borderTop: `1px solid ${border}` }}>
-              <div style={{ fontFamily: "'Cinzel', serif", fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', color: muted, marginBottom: 8, textTransform: 'uppercase' }}>Filtres</div>
-
-              <div style={{ fontSize: 11, color: muted, marginBottom: 5 }}>Statut</div>
-              <div style={{ display: 'flex', gap: 5, marginBottom: 12 }}>
-                {[['all','Tous'],['alive','✅ Vivant'],['dead','💀 Mort']].map(([v, l]) => (
-                  <button key={v} onClick={() => setFilterStatus(v)} style={{ flex: 1, padding: '6px 2px', borderRadius: 7, border: `1px solid ${filterStatus === v ? '#34d399' : border}`, background: filterStatus === v ? 'rgba(52,211,153,0.14)' : 'transparent', color: filterStatus === v ? '#34d399' : muted, cursor: 'pointer', fontSize: 10, fontWeight: 600 }}>
-                    {l}
-                  </button>
-                ))}
-              </div>
-
-              <div style={{ fontSize: 11, color: muted, marginBottom: 5 }}>Haki</div>
-              {[[null,'🌊 Tous'],['conqueror','⚡ Conquérant'],['armament','⚫ Armement'],['observation','👁 Observation']].map(([v, l]) => (
-                <button key={String(v)} onClick={() => setFilterHaki(v)} style={{ width: '100%', padding: '7px 10px', borderRadius: 7, border: `1px solid ${filterHaki === v ? '#d4a017' : border}`, background: filterHaki === v ? 'rgba(212,160,23,0.13)' : 'transparent', color: filterHaki === v ? '#d4a017' : muted, cursor: 'pointer', fontSize: 11, fontWeight: filterHaki === v ? 700 : 500, textAlign: 'left', marginBottom: 4 }}>
-                  {l}
-                </button>
-              ))}
-            </div>
-
-            {/* Legend */}
-            <div style={{ padding: '12px 14px', borderTop: `1px solid ${border}` }}>
-              <div style={{ fontFamily: "'Cinzel', serif", fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', color: muted, marginBottom: 8, textTransform: 'uppercase' }}>Légende des liens</div>
-              {Object.entries(LINK_COLORS).map(([type, color]) => (
-                <div key={type} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
-                  <div style={{ width: 22, height: 3, background: color, borderRadius: 2, flexShrink: 0 }} />
-                  <span style={{ fontSize: 11, color: muted }}>
-                    {({ parent:'Parent', sibling:'Frères', crew:'Équipage', ally:'Allié', enemy:'Ennemi', hierarchy:'Hiérarchie', rival:'Rival' })[type]}
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            {/* Haki legend */}
-            <div style={{ padding: '12px 14px', borderTop: `1px solid ${border}` }}>
-              <div style={{ fontFamily: "'Cinzel', serif", fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', color: muted, marginBottom: 8, textTransform: 'uppercase' }}>Points Haki</div>
-              {[['conqueror','⚡ Conquérant','#d4a017'],['armament','⚫ Armement','#64748b'],['observation','👁 Observation','#60a5fa']].map(([k, l, c]) => (
-                <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
-                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: c, flexShrink: 0 }} />
-                  <span style={{ fontSize: 11, color: muted }}>{l}</span>
-                </div>
-              ))}
-              <div style={{ fontSize: 10, color: muted, marginTop: 6, lineHeight: 1.5 }}>Aura dorée = Haki du Conquérant</div>
-            </div>
-
-            {/* Selected char */}
-            {selectedChar && (
-              <div style={{ padding: '12px 14px', borderTop: `1px solid ${border}` }}>
-                <CharDetail char={selectedChar} onClose={() => setSelectedChar(null)} mangaMode={mangaMode} />
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* ── Canvas ── */}
-        <div style={{ flex: 1, position: 'relative', minWidth: 0, minHeight: 0 }}>
-          <Canvas
-            camera={{ position: [0, 4, 14], fov: 58 }}
-            style={{ background: bg, width: '100%', height: '100%', display: 'block' }}
-            onPointerMissed={() => setSelectedChar(null)}
-            gl={{ antialias: true }}
-          >
-            <Suspense fallback={null}>
-              <Scene
-                cfg={cfg}
-                selectedChar={selectedChar}
-                onSelect={setSelectedChar}
-                mangaMode={mangaMode}
-                filterStatus={filterStatus}
-                filterHaki={filterHaki}
-              />
-            </Suspense>
-          </Canvas>
-
-          {/* Controls hint */}
-          <div style={{ position: 'absolute', bottom: 16, right: 16, fontFamily: "'IM Fell English', serif", fontStyle: 'italic', fontSize: 11, color: mangaMode ? 'rgba(26,8,0,0.3)' : 'rgba(195,155,70,0.35)', textAlign: 'right', pointerEvents: 'none', lineHeight: 1.8 }}>
-            Glisser : tourner · Molette : zoomer · Clic droit : déplacer<br />
-            Clic sur un poster : voir les détails
-          </div>
-
-          {/* Selected name badge */}
-          {selectedChar && (
-            <div style={{ position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)', background: `rgba(18,11,4,0.9)`, border: `1px solid ${selectedChar.color}99`, color: 'rgba(230,200,140,0.95)', borderRadius: 100, padding: '6px 20px', fontFamily: "'Cinzel', serif", fontSize: 12, fontWeight: 700, letterSpacing: '0.08em', pointerEvents: 'none', backdropFilter: 'blur(12px)', boxShadow: `0 4px 24px rgba(0,0,0,0.5), 0 0 20px ${selectedChar.color}44` }}>
-              {selectedChar.name}
-            </div>
-          )}
-        </div>
-      </div>
+    <div className="world-map-shell">
+      <Canvas camera={{ position: [0, 12, 22], fov: 52 }} gl={{ antialias: true, powerPreference: 'high-performance' }} dpr={[1, 1.75]} onPointerMissed={() => setSelected(null)}>
+        <Suspense fallback={null}>
+          <WorldScene
+            selected={selected}
+            hovered={hovered}
+            setHovered={setHovered}
+            setSelected={setSelected}
+            activeZone={activeZone}
+            setActiveZone={setActiveZone}
+          />
+        </Suspense>
+      </Canvas>
+      <div className="world-map-vignette" />
+      <DetailPanel selected={selected} hovered={hovered} activeZone={activeZone} onClose={onClose} />
+      <div className="world-map-controls">Glisser pour orbiter · Molette pour zoomer · Clic sur un node pour verrouiller</div>
     </div>
   )
 }

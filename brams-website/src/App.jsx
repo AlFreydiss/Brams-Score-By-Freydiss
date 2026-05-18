@@ -166,6 +166,9 @@ export default function App() {
     }
   }, [])
 
+  const mediaOverlayOpen = scansOpen || animeHubOpen || tpnOpen || drstoneOpen || jjkOpen || kingdomOpen || aotOpen || knyOpen || nntOpen || slOpen || dbsOpen || bcOpen || mhaOpen || fireforcOpen || bluelockOpen
+  const immersiveOverlayOpen = mediaOverlayOpen || encyclopedieOpen || treeOpen || uploadOpen
+
   const mainContent = (
     <>
       <WelcomeAnimation />
@@ -189,9 +192,9 @@ export default function App() {
         <Footer />
       </div>
 
-      <MusicPlayer />
+      {!immersiveOverlayOpen && <MusicPlayer />}
       <ThemeToggle />
-      <AIChatWidget hidden={scansOpen || encyclopedieOpen || tpnOpen || drstoneOpen || jjkOpen || kingdomOpen || aotOpen || knyOpen || nntOpen || slOpen || dbsOpen || bcOpen || mhaOpen || fireforcOpen || bluelockOpen} />
+      <AIChatWidget hidden={mediaOverlayOpen || encyclopedieOpen} />
       <AkainuGame />
 
       {animeHubOpen && (
