@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js'
+﻿import { createClient } from '@supabase/supabase-js'
 
 const url = import.meta.env.VITE_SUPABASE_URL || ''
 const key = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
@@ -8,7 +8,7 @@ export const supabase = url && key ? createClient(url, key, {
     detectSessionInUrl: true,
     persistSession:     true,
     autoRefreshToken:   true,
-    flowType:           'implicit',
+    flowType:           'pkce',
   },
 }) : null
 
@@ -34,7 +34,7 @@ export async function fetchStats() {
   return { membersTracked: data.length, activeVocal: active }
 }
 
-// ── Auth helpers ────────────────────────────────────────────────────────────
+// â”€â”€ Auth helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function fetchMemberProfile(discordId) {
   if (!supabase) return null
@@ -50,7 +50,7 @@ export async function fetchMemberProfile(discordId) {
 }
 
 export async function signInWithDiscord() {
-  if (!supabase) return { error: { message: 'Client Supabase non initialisé' } }
+  if (!supabase) return { error: { message: 'Client Supabase non initialisÃ©' } }
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'discord',
     options: {
@@ -62,7 +62,7 @@ export async function signInWithDiscord() {
 }
 
 export async function signUpWithEmail(email, password, displayName) {
-  if (!supabase) return { error: { message: 'Client Supabase non initialisé' } }
+  if (!supabase) return { error: { message: 'Client Supabase non initialisÃ©' } }
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -72,7 +72,7 @@ export async function signUpWithEmail(email, password, displayName) {
 }
 
 export async function signInWithEmail(email, password) {
-  if (!supabase) return { error: { message: 'Client Supabase non initialisé' } }
+  if (!supabase) return { error: { message: 'Client Supabase non initialisÃ©' } }
   const { data, error } = await supabase.auth.signInWithPassword({ email, password })
   return { data, error }
 }
@@ -87,3 +87,4 @@ export async function getSession() {
   const { data } = await supabase.auth.getSession()
   return data.session
 }
+

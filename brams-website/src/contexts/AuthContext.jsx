@@ -18,34 +18,77 @@ export function AuthProvider({ children }) {
   const [loading,     setLoading]     = useState(true)
   const [showWelcome, setShowWelcome] = useState(false)
 
-  // Ref pour accéder à user dans dismissWelcome sans recréer le callback
   const userRef = useRef(null)
 
   useEffect(() => {
-    if (!supabase) { setLoading(false); return }
+    if (!supabase) {
+      console.warn('[auth] supabase NULL — VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY manquants ?')
+      setLoading(false)
+      return
+    }
 
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session)
+    let mounted = true
+
+    const init = async () => {
+      const search = window.location.search
+      const hash   = window.location.hash
+      console.log('[auth] init — search:', search.slice(0, 80) || '(vide)', '| hash:', hash.slice(0, 80) || '(vide)')
+
+      // Code PKCE détecté dans l'URL → échange séquentiel (await obligatoire)
+      const code = new URLSearchParams(search).get('code')
+      if (code) {
+        console.log('[auth] code PKCE trouvé, échange...')
+        try {
+          const { data: exData, error: exErr } = await supabase.auth.exchangeCodeForSession(window.location.href)
+          if (exErr) {
+            console.error('[auth] échange PKCE erreur:', exErr.message, exErr)
+          } else {
+            console.log('[auth] échange PKCE OK — user:', exData?.session?.user?.id)
+          }
+        } catch (e) {
+          console.error('[auth] échange PKCE exception:', e)
+        }
+        if (mounted) window.history.replaceState({}, document.title, window.location.pathname)
+      }
+
+      // Lecture session APRÈS échange (ou directement si pas de code)
+      const { data, error } = await supabase.auth.getSession()
+      if (error) console.error('[auth] getSession erreur:', error.message)
+      console.log('[auth] getSession →', data?.session?.user?.id ?? 'null')
+
+      if (!mounted) return
+      setSession(data.session ?? null)
       setUser(data.session?.user ?? null)
       userRef.current = data.session?.user ?? null
       setLoading(false)
-    })
+    }
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setSession(session)
-      setUser(session?.user ?? null)
-      userRef.current = session?.user ?? null
+    init()
 
-      if (event === 'SIGNED_IN' && !hasSeenWelcome(session?.user)) {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, sess) => {
+      console.log('[auth] onAuthStateChange:', event, '| user:', sess?.user?.id ?? 'null')
+      if (!mounted) return
+      setSession(sess ?? null)
+      setUser(sess?.user ?? null)
+      userRef.current = sess?.user ?? null
+
+      if (event === 'SIGNED_IN' && !hasSeenWelcome(sess?.user)) {
         setShowWelcome(true)
       }
-      if (event === 'SIGNED_OUT') { setUser(null); setSession(null); userRef.current = null }
+      if (event === 'SIGNED_OUT') {
+        setUser(null)
+        setSession(null)
+        userRef.current = null
+      }
     })
 
-    return () => subscription.unsubscribe()
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+    }
   }, [])
 
-  // Helper dev : window.resetWelcome() pour retester
+  // Helper dev : window.resetWelcome()
   useEffect(() => {
     window.resetWelcome = () => {
       Object.keys(localStorage)
@@ -77,10 +120,7 @@ export function AuthProvider({ children }) {
     const u = userRef.current
     if (u?.id) {
       localStorage.setItem(welcomeKey(u.id), 'true')
-      // Persiste aussi dans user_metadata (survit aux vidages de localStorage)
-      if (supabase) {
-        supabase.auth.updateUser({ data: { first_login_completed: true } })
-      }
+      if (supabase) supabase.auth.updateUser({ data: { first_login_completed: true } })
     }
     setShowWelcome(false)
   }, [])
