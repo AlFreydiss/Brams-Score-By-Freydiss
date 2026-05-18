@@ -1,0 +1,32 @@
+[
+  {
+    "id": "op-1183",
+    "type": "scan",
+    "anime": "onepiece",
+    "label": "One Piece",
+    "title": "Chapitre 1183",
+    "date": "2026-05-18",
+    "note": "",
+    "confirmed": true
+  },
+  {
+    "id": "op-1184",
+    "type": "scan",
+    "anime": "onepiece",
+    "label": "One Piece",
+    "title": "Chapitre 1184",
+    "date": "2026-05-25",
+    "note": "",
+    "confirmed": false
+  },
+  {
+    "id": "op-1185",
+    "type": "scan",
+    "anime": "onepiece",
+    "label": "One Piece",
+    "title": "Chapitre 1185",
+    "date": "2026-06-01",
+    "note": "",
+    "confirmed": false
+  }
+]

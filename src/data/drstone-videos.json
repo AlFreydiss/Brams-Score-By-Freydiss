@@ -1,0 +1,93 @@
+[
+  {
+    "episode": 1,
+    "title": "Prologue",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/drs/Ep01.mkv",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/drs/Ep01-thumb.png",
+    "season": 1
+  },
+  {
+    "episode": 2,
+    "title": "Dr Stone, le commencement",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/drs/Ep02.mkv",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/drs/Ep02-thumb.png",
+    "season": 1
+  },
+  {
+    "episode": 3,
+    "title": "Nous brandirons la lumière de la science",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/drs/Ep03.mkv",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/drs/Ep03-thumb.png",
+    "season": 1
+  },
+  {
+    "episode": 4,
+    "title": "Sauvons Ruri !",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/drs/Ep04.mkv",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/drs/Ep04-thumb.png",
+    "season": 1
+  },
+  {
+    "episode": 5,
+    "title": "Les origines du village Ishigami",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/drs/Ep05.mkv",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/drs/Ep05-thumb.png",
+    "season": 1
+  },
+  {
+    "episode": 6,
+    "title": "Le téléphone portable",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/drs/Ep06.mkv",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/drs/Ep06-thumb.png",
+    "season": 1
+  },
+  {
+    "episode": 7,
+    "title": "Chrome le Scientifique",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/drs/Ep07.mkv",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/drs/Ep07-thumb.png",
+    "season": 1
+  },
+  {
+    "episode": 8,
+    "title": "Cryogénisation",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/drs/Ep08.mkv",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/drs/Ep08-thumb.png",
+    "season": 1
+  },
+  {
+    "episode": 9,
+    "title": "Pétrole, Montgolfière et Argent",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/drs/Ep09.mkv",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/drs/Ep09-thumb.png",
+    "season": 1
+  },
+  {
+    "episode": 10,
+    "title": "Objectif Perseus",
+    "src": "/anime/Dr.Stone/Dr.%20Stone%20Henshu/Saison%202/%5BMECHAPOULPE%5D%20Dr%20Stone%20Henshu%20-%2010%20-%20Objectif%20Perseus%20%5BSST%5D.mp4",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/drs/Ep10-thumb.png",
+    "season": 2
+  },
+  {
+    "episode": 11,
+    "title": "L'île aux trésors",
+    "src": "/anime/Dr.Stone/Dr.%20Stone%20Henshu/Saison%202/Dr.%20Stone%20S2%20-%2011%20%5BHARDSUB%5D.mkv",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/drs/Ep11-thumb.png",
+    "season": 2
+  },
+  {
+    "episode": 12,
+    "title": "Médusa",
+    "src": "/anime/Dr.Stone/Dr.%20Stone%20Henshu/Saison%202/%5BMECHAPOULPE%5D%20Dr%20Stone%20Henshu%20-%2012%20-%20M%C3%A9dusa%20%5BSST%5D.mp4",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/drs/Ep12-thumb.png",
+    "season": 2
+  },
+  {
+    "episode": 13,
+    "title": "Nouvel objectif",
+    "src": "/anime/Dr.Stone/Dr.%20Stone%20Henshu/Saison%202/%5BMECHAPOULPE%5D%20Dr%20Stone%20Henshu%20-%2013%20-%20Nouvel%20objectif%20%5BSST%5D.mp4",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/drs/Ep13-thumb.png",
+    "season": 2
+  }
+]

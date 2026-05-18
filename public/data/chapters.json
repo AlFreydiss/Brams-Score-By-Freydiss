@@ -1,0 +1,50 @@
+[
+  {
+    "num": 1,
+    "chapterId": "e9fb431b-5a4d-4bf8-9c4a-0510c5eca6d0",
+    "titleFr": "Romance Dawn - À l'aube d'une grande aventure",
+    "titleEn": "Romance Dawn",
+    "date": "2025-10-22",
+    "arc": "Autre"
+  },
+  {
+    "num": 2,
+    "chapterId": "0171a0c5-c867-4f6b-a82b-929c2fa88fac",
+    "titleFr": "Luffy, l'homme au chapeau de paille",
+    "titleEn": "They Call Him ‘Straw Hat Luffy’",
+    "date": "2025-10-22",
+    "arc": "Autre"
+  },
+  {
+    "num": 3,
+    "chapterId": "45abf28d-5997-4788-ad9f-e31e3ae0c509",
+    "titleFr": "Zoro le \"Chasseur de pirates\"",
+    "titleEn": "Enter Zolo: Pirate Hunter",
+    "date": "2025-10-22",
+    "arc": "Autre"
+  },
+  {
+    "num": 1180,
+    "chapterId": "e137b3a1-ac94-4e2c-a755-fec4b21fbeff",
+    "titleFr": "Présages",
+    "titleEn": "Omen",
+    "date": "2026-04-20",
+    "arc": "Elbaf"
+  },
+  {
+    "num": 1181,
+    "chapterId": "cc44f2bb-ffe7-4d37-8ed1-8c0ec1d24c03",
+    "titleFr": "Dieux et démons",
+    "titleEn": "God and Devil",
+    "date": "2026-04-26",
+    "arc": "Elbaf"
+  },
+  {
+    "num": 1182,
+    "chapterId": "fe45defe-7ebb-4d60-ad21-b362c981a665",
+    "titleFr": "Zaza",
+    "titleEn": "Zaza",
+    "date": "2026-05-10",
+    "arc": "Elbaf"
+  }
+]

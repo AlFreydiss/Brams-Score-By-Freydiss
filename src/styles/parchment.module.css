@@ -1,0 +1,598 @@
+/* ════════════════════════════════════════════════════════════════════════════
+   Parchment — Immersive Medieval Document CSS Module
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Page / scene ─────────────────────────────────────────────────────────── */
+
+.scene {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse at 20% 50%,  rgba(180, 120, 40, 0.12) 0%, transparent 55%),
+    radial-gradient(ellipse at 80% 30%,  rgba(200, 140, 50, 0.10) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 100%, rgba(80, 40, 10, 0.15)   0%, transparent 40%),
+    #0E0A06;
+  overflow: hidden;
+}
+
+/* ── Candle glow spots ────────────────────────────────────────────────────── */
+
+.candleLeft,
+.candleRight {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+  mix-blend-mode: screen;
+}
+
+.candleLeft {
+  width:  320px;
+  height: 420px;
+  top:    -60px;
+  left:   -40px;
+  background: radial-gradient(ellipse at 50% 80%, rgba(255, 200, 80, 0.18) 0%, rgba(220, 130, 30, 0.08) 40%, transparent 70%);
+  animation: flickerLeft 4.2s ease-in-out infinite;
+}
+
+.candleRight {
+  width:  280px;
+  height: 380px;
+  top:    -40px;
+  right:  -20px;
+  background: radial-gradient(ellipse at 50% 80%, rgba(255, 180, 60, 0.16) 0%, rgba(200, 100, 20, 0.06) 40%, transparent 70%);
+  animation: flickerRight 3.8s ease-in-out infinite;
+}
+
+@keyframes flickerLeft {
+  0%,100% { opacity: 1;    transform: scale(1)    translate(0, 0); }
+  15%      { opacity: 0.85; transform: scale(1.03) translate(2px,-2px); }
+  30%      { opacity: 0.95; transform: scale(0.98) translate(-1px,1px); }
+  50%      { opacity: 0.80; transform: scale(1.02) translate(1px,-1px); }
+  70%      { opacity: 0.90; transform: scale(1.01) translate(-2px,0); }
+}
+
+@keyframes flickerRight {
+  0%,100% { opacity: 0.9;  transform: scale(1)    translate(0, 0); }
+  20%      { opacity: 1;    transform: scale(1.04) translate(-1px,-2px); }
+  40%      { opacity: 0.82; transform: scale(0.97) translate(2px,1px); }
+  60%      { opacity: 0.95; transform: scale(1.01) translate(-1px,-1px); }
+  80%      { opacity: 0.87; transform: scale(1.02) translate(1px,0); }
+}
+
+/* ── Candle flame ─────────────────────────────────────────────────────────── */
+
+.candle {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.flame {
+  width:  14px;
+  height: 28px;
+  background: linear-gradient(180deg, rgba(255,255,200,0.95) 0%, rgba(255,200,50,0.9) 30%, rgba(255,120,20,0.8) 70%, rgba(180,60,10,0) 100%);
+  border-radius: 50% 50% 40% 40% / 60% 60% 40% 40%;
+  animation: flameBurn 1.8s ease-in-out infinite alternate;
+  filter: blur(1px);
+}
+
+.flameFill {
+  position: absolute;
+  width:  8px;
+  height: 18px;
+  background: rgba(255,255,255,0.4);
+  border-radius: 50% 50% 40% 40% / 60% 60% 40% 40%;
+  animation: flameBurn 1.2s ease-in-out infinite alternate;
+  top: 2px;
+}
+
+@keyframes flameBurn {
+  0%   { transform: scaleX(1)    scaleY(1)    skewX(0deg);  opacity: 1; }
+  33%  { transform: scaleX(0.85) scaleY(1.08) skewX(3deg);  opacity: 0.9; }
+  66%  { transform: scaleX(1.1)  scaleY(0.95) skewX(-2deg); opacity: 0.95; }
+  100% { transform: scaleX(0.9)  scaleY(1.05) skewX(2deg);  opacity: 0.88; }
+}
+
+.candleWick { width: 2px; height: 8px; background: #3D2010; }
+.candleBody {
+  width:  20px;
+  height: 80px;
+  background: linear-gradient(180deg, #F5E6C0 0%, #E8D09A 40%, #C8A85A 100%);
+  border-radius: 2px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+.candleBase {
+  width: 28px;
+  height: 8px;
+  background: linear-gradient(180deg, #C8A85A, #A08040);
+  border-radius: 2px 2px 4px 4px;
+}
+.candleGlow {
+  position: absolute;
+  top: -30px;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,200,80,0.4) 0%, transparent 70%);
+  animation: glowPulse 2.2s ease-in-out infinite;
+}
+
+@keyframes glowPulse {
+  0%,100% { transform: scale(1);    opacity: 0.8; }
+  50%      { transform: scale(1.15); opacity: 1; }
+}
+
+/* ── Dust particles ───────────────────────────────────────────────────────── */
+
+.dustParticle {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 220, 150, 0.35);
+  pointer-events: none;
+  animation: dustFloat var(--dur, 8s) ease-in-out infinite var(--delay, 0s);
+}
+
+@keyframes dustFloat {
+  0%   { transform: translate(0, 0) scale(1);        opacity: 0; }
+  15%  { opacity: var(--opacity, 0.4); }
+  50%  { transform: translate(var(--dx, 20px), var(--dy, -40px)) scale(1.2); }
+  85%  { opacity: var(--opacity, 0.4); }
+  100% { transform: translate(var(--dx2, 40px), var(--dy2, -80px)) scale(0.8); opacity: 0; }
+}
+
+/* ── Parchment main card ──────────────────────────────────────────────────── */
+
+.parchment {
+  position: relative;
+  background:
+    radial-gradient(ellipse at 5%   5%,   rgba(100,60,20,0.25)  0%, transparent 35%),
+    radial-gradient(ellipse at 95%  5%,   rgba(80,40,10,0.20)   0%, transparent 30%),
+    radial-gradient(ellipse at 5%   95%,  rgba(100,60,20,0.22)  0%, transparent 32%),
+    radial-gradient(ellipse at 95%  95%,  rgba(90,50,15,0.28)   0%, transparent 28%),
+    radial-gradient(ellipse at 30%  25%,  rgba(150,100,50,0.05) 0%, transparent 40%),
+    radial-gradient(ellipse at 70%  70%,  rgba(120,80,30,0.04)  0%, transparent 35%),
+    linear-gradient(
+      160deg,
+      #FAF0DC 0%,
+      #F5E4C0 15%,
+      #EEDDB0 35%,
+      #F2E5C4 55%,
+      #E8D49E 75%,
+      #F0DEB4 90%,
+      #ECD8A8 100%
+    );
+  border-radius: 3px;
+  box-shadow:
+    0 2px 4px   rgba(0,0,0,0.15),
+    0 8px 16px  rgba(0,0,0,0.20),
+    0 24px 48px rgba(0,0,0,0.18),
+    0 48px 96px rgba(0,0,0,0.12),
+    inset 0 0  80px rgba(150,100,40,0.07),
+    inset 0 0 200px rgba(100,60,20,0.04);
+  transform-style: preserve-3d;
+  will-change: transform;
+  cursor: default;
+}
+
+/* Noise grain overlay */
+.parchment::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='256' height='256' filter='url(%23n)' opacity='0.045'/%3E%3C/svg%3E");
+  background-size: 256px 256px;
+  opacity: 0.7;
+  mix-blend-mode: multiply;
+  z-index: 1;
+}
+
+/* Vein/fiber texture */
+.parchment::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    94deg,
+    transparent 0px,
+    transparent 28px,
+    rgba(140,90,30,0.022) 28px,
+    rgba(140,90,30,0.022) 30px
+  ),
+  repeating-linear-gradient(
+    178deg,
+    transparent 0px,
+    transparent 42px,
+    rgba(120,75,25,0.018) 42px,
+    rgba(120,75,25,0.018) 44px
+  );
+  z-index: 1;
+}
+
+/* ── Torn edges ───────────────────────────────────────────────────────────── */
+
+.tornEdge {
+  position: absolute;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.tornEdge.top {
+  top: -1px; left: 0; right: 0; height: 12px;
+  background:
+    radial-gradient(ellipse 6px 8px at 5%   100%, #0E0A06 50%, transparent 51%),
+    radial-gradient(ellipse 8px 6px at 12%  100%, #0E0A06 50%, transparent 51%),
+    radial-gradient(ellipse 5px 9px at 20%  100%, #0E0A06 50%, transparent 51%),
+    radial-gradient(ellipse 7px 7px at 28%  100%, #0E0A06 50%, transparent 51%),
+    radial-gradient(ellipse 9px 5px at 36%  100%, #0E0A06 50%, transparent 51%),
+    radial-gradient(ellipse 6px 8px at 44%  100%, #0E0A06 50%, transparent 51%),
+    radial-gradient(ellipse 8px 6px at 52%  100%, #0E0A06 50%, transparent 51%),
+    radial-gradient(ellipse 5px 9px at 60%  100%, #0E0A06 50%, transparent 51%),
+    radial-gradient(ellipse 7px 7px at 68%  100%, #0E0A06 50%, transparent 51%),
+    radial-gradient(ellipse 9px 5px at 76%  100%, #0E0A06 50%, transparent 51%),
+    radial-gradient(ellipse 6px 8px at 84%  100%, #0E0A06 50%, transparent 51%),
+    radial-gradient(ellipse 8px 6px at 92%  100%, #0E0A06 50%, transparent 51%);
+}
+
+.tornEdge.bottom {
+  bottom: -1px; left: 0; right: 0; height: 12px;
+  background:
+    radial-gradient(ellipse 7px 8px at 4%   0%, #0E0A06 50%, transparent 51%),
+    radial-gradient(ellipse 9px 6px at 11%  0%, #0E0A06 50%, transparent 51%),
+    radial-gradient(ellipse 6px 9px at 19%  0%, #0E0A06 50%, transparent 51%),
+    radial-gradient(ellipse 8px 7px at 27%  0%, #0E0A06 50%, transparent 51%),
+    radial-gradient(ellipse 5px 8px at 35%  0%, #0E0A06 50%, transparent 51%),
+    radial-gradient(ellipse 9px 6px at 43%  0%, #0E0A06 50%, transparent 51%),
+    radial-gradient(ellipse 7px 8px at 51%  0%, #0E0A06 50%, transparent 51%),
+    radial-gradient(ellipse 6px 9px at 59%  0%, #0E0A06 50%, transparent 51%),
+    radial-gradient(ellipse 8px 7px at 67%  0%, #0E0A06 50%, transparent 51%),
+    radial-gradient(ellipse 5px 8px at 75%  0%, #0E0A06 50%, transparent 51%),
+    radial-gradient(ellipse 9px 6px at 83%  0%, #0E0A06 50%, transparent 51%),
+    radial-gradient(ellipse 7px 8px at 91%  0%, #0E0A06 50%, transparent 51%);
+}
+
+/* ── Water stain overlays ─────────────────────────────────────────────────── */
+
+.waterStain {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 2;
+  mix-blend-mode: multiply;
+  background: radial-gradient(circle, rgba(140,90,30,0.1) 0%, rgba(120,75,25,0.06) 40%, transparent 70%);
+}
+
+/* ── Fold crease ──────────────────────────────────────────────────────────── */
+
+.foldLine {
+  position: absolute;
+  pointer-events: none;
+  z-index: 2;
+}
+.foldLine.h {
+  left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(120,75,25,0.1) 15%,
+    rgba(140,90,35,0.18) 40%,
+    rgba(130,82,30,0.14) 60%,
+    rgba(100,60,20,0.08) 85%,
+    transparent 100%
+  );
+  box-shadow: 0 1px 2px rgba(80,40,10,0.06);
+}
+
+/* ── Character portrait area ─────────────────────────────────────────────── */
+
+.portrait {
+  position: relative;
+  overflow: hidden;
+  border-radius: 2px;
+  box-shadow:
+    0 2px 8px  rgba(0,0,0,0.35),
+    0 4px 16px rgba(0,0,0,0.20),
+    inset 0 0 20px rgba(0,0,0,0.15);
+}
+
+.portrait::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    transparent 55%,
+    rgba(15,10,6,0.40) 80%,
+    rgba(15,10,6,0.72) 100%
+  );
+  pointer-events: none;
+}
+
+/* Sepia/aged photo filter */
+.portraitImg {
+  width:   100%;
+  height:  100%;
+  object-fit: cover;
+  object-position: top center;
+  display: block;
+  filter: sepia(0.12) contrast(1.04) brightness(0.97);
+  transition: filter 0.4s ease, transform 0.6s ease;
+}
+
+.portraitImg:hover {
+  filter: sepia(0.06) contrast(1.06) brightness(1);
+  transform: scale(1.03);
+}
+
+/* ── WANTED banner ────────────────────────────────────────────────────────── */
+
+.wantedBanner {
+  background: linear-gradient(180deg, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.4) 100%);
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  padding: 16px 16px 12px;
+  z-index: 5;
+}
+
+/* ── Ink text writing animation ───────────────────────────────────────────── */
+
+@keyframes inkWrite {
+  from {
+    clip-path: inset(0 100% 0 0);
+    opacity: 0.3;
+  }
+  to {
+    clip-path: inset(0 0% 0 0);
+    opacity: 1;
+  }
+}
+
+@keyframes inkFadeUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.inkReveal {
+  animation: inkWrite 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+
+.inkFadeUp {
+  animation: inkFadeUp 0.7s ease-out both;
+}
+
+/* ── Wax seal ─────────────────────────────────────────────────────────────── */
+
+.waxSeal {
+  position: relative;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform 0.2s ease, filter 0.2s ease;
+  box-shadow:
+    0 3px 6px rgba(0,0,0,0.4),
+    0 1px 3px rgba(0,0,0,0.3),
+    inset 0 1px 2px rgba(255,255,255,0.15),
+    inset 0 -1px 2px rgba(0,0,0,0.2);
+}
+
+.waxSeal:hover {
+  transform: scale(1.08) rotate(-3deg);
+  filter: drop-shadow(0 4px 8px rgba(180,20,20,0.5));
+}
+
+.waxSeal::after {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.25) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+/* ── Ink splash effect ────────────────────────────────────────────────────── */
+
+@keyframes inkSplash {
+  0%   { transform: scale(0) rotate(0deg);   opacity: 1; }
+  40%  { transform: scale(1.4) rotate(20deg); opacity: 0.8; }
+  100% { transform: scale(2) rotate(40deg);  opacity: 0; }
+}
+
+.inkSplash {
+  position: absolute;
+  border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+  background: rgba(15, 10, 6, 0.85);
+  pointer-events: none;
+  animation: inkSplash 0.6s ease-out forwards;
+  z-index: 100;
+}
+
+/* Stamp effect */
+@keyframes stampIn {
+  0%   { transform: scale(2.5) rotate(var(--rot, -8deg)); opacity: 0; }
+  50%  { transform: scale(0.95) rotate(var(--rot, -8deg)); opacity: 1; }
+  65%  { transform: scale(1.05) rotate(var(--rot, -8deg)); }
+  100% { transform: scale(1) rotate(var(--rot, -8deg)); opacity: 1; }
+}
+
+.stampAppear {
+  animation: stampIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  transform-origin: center;
+}
+
+/* ── Type badge ───────────────────────────────────────────────────────────── */
+
+.typeBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-family: "'Cinzel', serif";
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* ── Navigation arrows ────────────────────────────────────────────────────── */
+
+.navArrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width:  52px;
+  height: 52px;
+  border-radius: 50%;
+  background: rgba(232, 212, 160, 0.15);
+  border: 1px solid rgba(232, 212, 160, 0.3);
+  color: rgba(232, 212, 160, 0.8);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(8px);
+  z-index: 20;
+  user-select: none;
+}
+
+.navArrow:hover {
+  background: rgba(232, 212, 160, 0.25);
+  border-color: rgba(232, 212, 160, 0.6);
+  color: rgba(255, 235, 180, 1);
+  transform: translateY(-50%) scale(1.08);
+}
+
+.navArrow.left  { left:  clamp(8px, 3vw, 40px); }
+.navArrow.right { right: clamp(8px, 3vw, 40px); }
+
+/* ── Page counter ─────────────────────────────────────────────────────────── */
+
+.pageCounter {
+  font-family: "'IM Fell English', serif";
+  font-style: italic;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  color: rgba(220, 190, 120, 0.6);
+  text-align: center;
+  margin-top: 16px;
+}
+
+/* ── Flip hint ────────────────────────────────────────────────────────────── */
+
+@keyframes hintPulse {
+  0%,100% { opacity: 0.5; transform: translateY(0); }
+  50%      { opacity: 0.9; transform: translateY(-3px); }
+}
+
+.flipHint {
+  position: absolute;
+  bottom: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: "'IM Fell English', serif";
+  font-style: italic;
+  font-size: 11px;
+  color: rgba(220, 190, 120, 0.55);
+  letter-spacing: 0.08em;
+  animation: hintPulse 2.5s ease-in-out infinite;
+  white-space: nowrap;
+}
+
+/* ── Character dots (carousel indicator) ─────────────────────────────────── */
+
+.dot {
+  width:  6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(220, 190, 120, 0.25);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dot.active {
+  width:  20px;
+  border-radius: 3px;
+  background: rgba(220, 190, 120, 0.8);
+}
+
+/* ── Aged mode toggle ─────────────────────────────────────────────────────── */
+
+.agedOverlay {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 3;
+  background:
+    radial-gradient(ellipse 60% 40% at 20% 30%, rgba(80,40,10,0.12) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 60% at 75% 65%, rgba(90,50,15,0.10) 0%, transparent 55%),
+    radial-gradient(ellipse 30% 30% at 50% 80%, rgba(70,35,8,0.08)  0%, transparent 50%);
+}
+
+/* Extra cracks for aged mode */
+.agedCracks {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 3;
+  opacity: 0.5;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cpath d='M0 50 Q 50 45 100 55 Q 150 65 200 50 Q 250 35 300 48' stroke='rgba(100,60,20,0.15)' stroke-width='1' fill='none'/%3E%3Cpath d='M0 150 Q 60 145 120 158 Q 180 170 240 152 Q 270 143 300 150' stroke='rgba(90,50,15,0.12)' stroke-width='1' fill='none'/%3E%3Cpath d='M50 0 Q 45 60 58 120 Q 70 180 52 240 Q 38 270 48 300' stroke='rgba(110,65,22,0.12)' stroke-width='1' fill='none'/%3E%3Cpath d='M200 0 Q 205 70 192 140 Q 180 210 198 280 Q 205 290 202 300' stroke='rgba(95,55,18,0.10)' stroke-width='1' fill='none'/%3E%3C/svg%3E");
+  background-size: 300px 300px;
+  mix-blend-mode: multiply;
+}
+
+/* ── Framer perspective container ─────────────────────────────────────────── */
+
+.perspective {
+  perspective: 1200px;
+  perspective-origin: center;
+}
+
+/* ── Back face (devil fruit info) ─────────────────────────────────────────── */
+
+.backFace {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  overflow: hidden;
+  border-radius: 3px;
+}
+
+/* ── Title decorative divider ─────────────────────────────────────────────── */
+
+.ornDivider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 0;
+}
+
+.ornDivider::before,
+.ornDivider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, currentColor);
+}
+
+.ornDivider::after {
+  background: linear-gradient(90deg, currentColor, transparent);
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  .navArrow { width: 40px; height: 40px; font-size: 18px; }
+  .candleLeft, .candleRight { display: none; }
+}
