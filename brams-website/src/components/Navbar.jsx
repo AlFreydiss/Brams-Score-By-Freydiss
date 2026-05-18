@@ -12,7 +12,7 @@ const NAV_LINKS = [
   { label: 'Wiki', href: '/wiki', action: null, gated: false, isRoute: true },
   { label: 'Theories', href: '/theories', action: null, gated: false, isRoute: true },
   { label: 'Carte 3D', href: '#', action: 'tree', gated: false, isRoute: false },
-  { label: 'Animes & Scans', href: '#', action: 'anime-hub', gated: true, isRoute: false },
+  { label: 'Animes & Scans', href: '#', action: 'anime-hub', gated: true, isRoute: false, live: true },
 ]
 
 function openAnimeHub(event) {
@@ -141,6 +141,7 @@ function DesktopNavLink({ link, active, locked, onClick }) {
   const content = (
     <>
       <span>{link.label}</span>
+      {link.live && <span className="nav-live-inline"><i /> Live</span>}
       {locked && <span className="nav-lock"><LockIcon /></span>}
     </>
   )
@@ -221,7 +222,6 @@ export default function Navbar() {
           </div>
 
           <div className="nav-actions-premium">
-            <span className="nav-live-pill hide-mobile"><i /> Live</span>
             <div className="nav-socials-premium hide-mobile">
               {SOCIALS.map((social) => (
                 <a key={social.href} href={social.href} target="_blank" rel="noopener noreferrer" className="nav-social-premium">
@@ -236,6 +236,11 @@ export default function Navbar() {
                 : <LoginButton onClick={() => setAuthOpen(true)} />
               }
             </div>
+            {isAuthenticated && (
+              <div className="nav-mobile-account">
+                <UserMenu displayName={displayName} avatarUrl={avatarUrl} onSignOut={signOut} />
+              </div>
+            )}
             <button className={menuOpen ? 'nav-menu-button show-mobile open' : 'nav-menu-button show-mobile'} onClick={() => setMenuOpen((value) => !value)} aria-label="Menu">
               <span />
               <span />
@@ -252,12 +257,16 @@ export default function Navbar() {
               {NAV_LINKS.map((link) => (
                 link.isRoute ? (
                   <Link key={link.label} to={link.href} onClick={() => setMenuOpen(false)} className="nav-mobile-link">
-                    {link.label}
+                    <span>{link.label}</span>
+                    {link.live && <span className="nav-live-inline"><i /> Live</span>}
                   </Link>
                 ) : (
                   <a key={link.label} href={link.href} onClick={link.action ? (event) => handleNavClick(link, event) : () => setMenuOpen(false)} className="nav-mobile-link">
-                    {link.label}
-                    {link.gated && !isAuthenticated && <span className="nav-lock"><LockIcon /></span>}
+                    <span>{link.label}</span>
+                    <span className="nav-mobile-meta">
+                      {link.live && <span className="nav-live-inline"><i /> Live</span>}
+                      {link.gated && !isAuthenticated && <span className="nav-lock"><LockIcon /></span>}
+                    </span>
                   </a>
                 )
               ))}
