@@ -12,11 +12,34 @@ export default function ScrollBack({ character }) {
       <div className={`${s.tornEdge} ${s.top}`} />
       <div className={`${s.tornEdge} ${s.bottom}`} />
 
+      {/* Portrait fantôme en fond */}
+      <div style={{
+        position: 'absolute', inset: 0, zIndex: 1,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        pointerEvents: 'none', overflow: 'hidden',
+      }}>
+        <img
+          src={character.image}
+          alt=""
+          aria-hidden="true"
+          style={{
+            width: '90%', height: '90%',
+            objectFit: 'cover', objectPosition: 'top center',
+            filter: 'sepia(1) contrast(0.6) brightness(1.15)',
+            opacity: 0.13,
+            maskImage: 'radial-gradient(ellipse 80% 80% at 50% 40%, black 40%, transparent 80%)',
+            WebkitMaskImage: 'radial-gradient(ellipse 80% 80% at 50% 40%, black 40%, transparent 80%)',
+            userSelect: 'none',
+          }}
+          onError={e => { e.target.style.display = 'none' }}
+        />
+      </div>
+
       {/* Water stains */}
       <div className={s.waterStain} style={{ width: 110, height: 80, top: '25%', right: '-5%' }} />
       <div className={s.waterStain} style={{ width: 80, height: 65, bottom: '12%', left: '-4%' }} />
 
-      <div style={{ padding: '20px 22px 16px', flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div style={{ padding: '20px 22px 16px', flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative', zIndex: 2 }}>
 
         {/* Archive header */}
         <div style={{ textAlign: 'center', flexShrink: 0, marginBottom: 8 }}>
