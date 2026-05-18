@@ -87,12 +87,9 @@ function SocialLinks({ mobile = false }) {
 
 function BrandMark({ onClick }) {
   return (
-    <button onClick={onClick} className="nav-brand-premium" aria-label="Accueil Brams Community">
-      <span className="nav-brand-emblem">B</span>
-      <span className="nav-brand-copy">
-        <span className="nav-brand-title">Brams</span>
-        <span className="nav-brand-subtitle">Community</span>
-      </span>
+    <button onClick={onClick} className="nav-brand-premium" aria-label="Accueil Brams Community" style={{ gap: 0 }}>
+      <span style={{ fontSize: 22, marginRight: 8, opacity: 0.9 }}>☠</span>
+      <span className="nav-brand-title" style={{ fontSize: 18, letterSpacing: '.01em', fontWeight: 800 }}>Brams</span>
     </button>
   )
 }
