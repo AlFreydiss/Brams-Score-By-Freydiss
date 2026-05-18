@@ -249,7 +249,22 @@ export default function App() {
   return (
     <ThemeProvider>
       <GlobalStyles />
-      <Suspense fallback={null}>
+      <Suspense fallback={
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 9999,
+          background: '#0b0c0e',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <div style={{
+            width: 36, height: 36,
+            border: '3px solid rgba(212,160,23,0.2)',
+            borderTopColor: '#d4a017',
+            borderRadius: '50%',
+            animation: 'spin 0.75s linear infinite',
+          }} />
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        </div>
+      }>
       <Routes>
         {/* Profil utilisateur */}
         <Route path="/u/:discordId" element={<ProfilePage />} />

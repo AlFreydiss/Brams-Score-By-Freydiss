@@ -58,14 +58,26 @@ const animePlugin = {
 export default defineConfig({
   plugins: [react(), animePlugin],
   build: {
+    target:               'es2020',
     chunkSizeWarningLimit: 3000,
+    cssCodeSplit:         true,
     rollupOptions: {
       output: {
-        manualChunks: {
-          'three':    ['three'],
-          'r3f':      ['@react-three/fiber', '@react-three/drei'],
-          'vendor':   ['react', 'react-dom', 'react-router-dom'],
-          'supabase': ['@supabase/supabase-js'],
+        manualChunks(id) {
+          // Librairies Three.js — ne charger que pour FamilyTree3D
+          if (id.includes('node_modules/three/'))           return 'three'
+          if (id.includes('@react-three'))                  return 'r3f'
+          // Framer Motion — chunk séparé partagé lazy/eager
+          if (id.includes('node_modules/framer-motion'))    return 'motion'
+          // Supabase — chunk isolé
+          if (id.includes('node_modules/@supabase'))        return 'supabase'
+          // React core
+          if (id.includes('node_modules/react-dom'))        return 'vendor'
+          if (id.includes('node_modules/react/') ||
+              id.includes('node_modules/react-router'))     return 'vendor'
+          // Gesture / animation utils
+          if (id.includes('@use-gesture'))                  return 'motion'
+          if (id.includes('node_modules/scheduler'))        return 'vendor'
         },
       },
     },
