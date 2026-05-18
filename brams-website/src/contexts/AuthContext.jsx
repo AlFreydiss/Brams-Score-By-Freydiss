@@ -24,16 +24,6 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     if (!supabase) { setLoading(false); return }
 
-    // Échange du code PKCE après retour Discord OAuth
-    const params = new URLSearchParams(window.location.search)
-    const code   = params.get('code')
-    if (code) {
-      supabase.auth.exchangeCodeForSession(window.location.href).then(() => {
-        // Nettoie l'URL sans rechargement
-        window.history.replaceState({}, document.title, window.location.pathname)
-      })
-    }
-
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session)
       setUser(data.session?.user ?? null)

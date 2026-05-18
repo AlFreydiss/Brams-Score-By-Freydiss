@@ -8,7 +8,7 @@ export const supabase = url && key ? createClient(url, key, {
     detectSessionInUrl: true,
     persistSession:     true,
     autoRefreshToken:   true,
-    flowType:           'pkce',
+    flowType:           'implicit',
   },
 }) : null
 
