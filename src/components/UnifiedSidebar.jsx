@@ -329,7 +329,7 @@ export default function UnifiedSidebar() {
           {TABS.map(t => (
             <button key={t.id} onClick={() => setTab(t.id)} style={{
               flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:5,
-              padding:'8px 4px 9px', border:'none', background:'transparent', cursor:'pointer',
+              padding:'8px 4px 9px', border:'none', cursor:'pointer',
               fontSize:10, fontWeight:700, letterSpacing:'.04em',
               color: tab === t.id ? '#d4a017' : 'rgba(255,255,255,.32)',
               borderBottom: tab === t.id ? '2px solid #d4a017' : '2px solid transparent',
