@@ -1,705 +1,559 @@
-import { useState, useRef, useMemo, useEffect } from 'react'
-import { motion } from 'framer-motion'
-import { CHARACTERS, RELATIONS, TREE_CONFIGS, LINK_COLORS, HAKI_COLORS } from '../data/tree-data.js'
+import { Suspense, useMemo, useRef, useState, useEffect } from 'react'
+import { Canvas, useFrame, useThree } from '@react-three/fiber'
+import { Html, OrbitControls, Stars } from '@react-three/drei'
+import * as THREE from 'three'
+import { motion, AnimatePresence } from 'framer-motion'
+import { CHARACTERS, RELATIONS, LINK_COLORS, HAKI_COLORS } from '../data/tree-data.js'
 
-// ── Constants ─────────────────────────────────────────────────────────────────
+const ZONES = [
+  {
+    id: 'mugiwara',
+    name: 'Mugiwara',
+    subtitle: 'Noyau Nika',
+    position: [0, 0, 0],
+    color: '#e0524a',
+    accent: '#ffd27a',
+    scale: 1.35,
+    mood: 'foyer solaire, liberté, promesse',
+    filter: (c) => c.crew === 'straw_hats' || c.id === 'luffy',
+  },
+  {
+    id: 'wano',
+    name: 'Wano',
+    subtitle: 'Brume samouraï',
+    position: [-11, -0.8, -5],
+    color: '#c74235',
+    accent: '#ff9c5a',
+    scale: 1.05,
+    mood: 'cendres, sakura, volcan endormi',
+    filter: (c) => ['kaido', 'yamato', 'zoro'].includes(c.id),
+  },
+  {
+    id: 'marineford',
+    name: 'Marineford',
+    subtitle: 'Ordre absolu',
+    position: [10.5, -0.9, -4.5],
+    color: '#4fa3ff',
+    accent: '#d8ecff',
+    scale: 1.05,
+    mood: 'acier froid, lumière militaire',
+    filter: (c) => c.org === 'marines',
+  },
+  {
+    id: 'wholecake',
+    name: 'Whole Cake',
+    subtitle: 'Beauté toxique',
+    position: [7, -0.4, 7],
+    color: '#e84393',
+    accent: '#d5a6ff',
+    scale: 0.95,
+    mood: 'sucre, malaise, souveraineté',
+    filter: (c) => c.family === 'charlotte',
+  },
+  {
+    id: 'revolution',
+    name: 'Révolutionnaires',
+    subtitle: 'Signal clandestin',
+    position: [-8, -0.5, 7.5],
+    color: '#37b26c',
+    accent: '#c7ffd8',
+    scale: 0.98,
+    mood: 'fumée verte, réseau caché',
+    filter: (c) => c.org === 'revolutionary' || c.id === 'dragon',
+  },
+  {
+    id: 'egghead',
+    name: 'Egghead',
+    subtitle: 'Archives interdites',
+    position: [0, 0.2, 11],
+    color: '#86f7ff',
+    accent: '#ffffff',
+    scale: 0.9,
+    mood: 'science blanche, hologrammes',
+    filter: (c) => ['law', 'franky', 'robin'].includes(c.id),
+  },
+  {
+    id: 'yonko',
+    name: 'Yonko',
+    subtitle: 'Mer des empereurs',
+    position: [0, -0.7, -12],
+    color: '#9b5cff',
+    accent: '#ffd166',
+    scale: 1.15,
+    mood: 'rois pirates, tempête lointaine',
+    filter: (c) => ['shanks', 'whitebeard', 'blackbeard', 'bigmom', 'kaido'].includes(c.id),
+  },
+  {
+    id: 'worldgov',
+    name: 'Gouvernement Mondial',
+    subtitle: 'Carte classifiée',
+    position: [14, -0.2, 3],
+    color: '#b7c4d6',
+    accent: '#ffffff',
+    scale: 0.88,
+    mood: 'surveillance, protocole, silence',
+    filter: (c) => ['akainu', 'sengoku', 'garp', 'kizaru'].includes(c.id),
+  },
+]
 
-const CANVAS_W = 5000
-const CANVAS_H = 3000
-const POSTER_W = 168
-const POSTER_H = 252
-const ROOT_S   = 1.28
-const INNER_S  = 0.90
-const OUTER_S  = 0.74
-const H_SPACE  = 244
-const V_SPACE  = 355
-
-// ── Seeded tilt per poster ────────────────────────────────────────────────────
-
-function posterTilt(id) {
-  let h = 0
-  for (let i = 0; i < id.length; i++) h = (Math.imul(31, h) + id.charCodeAt(i)) | 0
-  const r = Math.abs(h * 1664525 + 1013904223) % 10000 / 10000
-  return r * 14 - 7   // -7° … +7°
+const RELATION_STYLE = {
+  parent: { color: '#d4a017', speed: 0.65, width: 1.6 },
+  sibling: { color: '#60a5fa', speed: 0.75, width: 1.4 },
+  crew: { color: '#34d399', speed: 0.95, width: 1.7 },
+  ally: { color: '#a78bfa', speed: 0.8, width: 1.35 },
+  enemy: { color: '#e05252', speed: 1.15, width: 1.9 },
+  hierarchy: { color: '#94a3b8', speed: 0.55, width: 1.3 },
+  rival: { color: '#f97316', speed: 1.0, width: 1.75 },
 }
 
-// ── 2D layout : tree ──────────────────────────────────────────────────────────
-
-function computeTreeLayout2D(charIds, rels, rootId) {
-  const children = {}
-  charIds.forEach(id => { children[id] = [] })
-  rels
-    .filter(r => charIds.includes(r.from) && charIds.includes(r.to) &&
-                 (r.type === 'parent' || r.type === 'hierarchy'))
-    .forEach(r => children[r.from].push(r.to))
-
-  const levels  = { [rootId]: 0 }
-  const queue   = [rootId]
-  const visited = new Set([rootId])
-  while (queue.length) {
-    const id = queue.shift()
-    ;(children[id] || []).forEach(kid => {
-      if (!visited.has(kid)) {
-        visited.add(kid); levels[kid] = levels[id] + 1; queue.push(kid)
-      }
-    })
-  }
-  const maxLv = Math.max(...Object.values(levels), 0)
-  charIds.forEach(id => { if (levels[id] === undefined) levels[id] = maxLv + 1 })
-
-  const byLevel = {}
-  charIds.forEach(id => {
-    const lv = levels[id]
-    ;(byLevel[lv] = byLevel[lv] || []).push(id)
-  })
-
-  const levelNums = Object.keys(byLevel).map(Number)
-  const totalH    = Math.max(...levelNums) * V_SPACE
-
-  const positions = {}
-  levelNums.forEach(lv => {
-    const ids    = byLevel[lv]
-    const totalW = (ids.length - 1) * H_SPACE
-    const sc     = lv === 0 ? ROOT_S : lv === 1 ? INNER_S : OUTER_S
-    ids.forEach((id, i) => {
-      positions[id] = {
-        x: CANVAS_W / 2 + i * H_SPACE - totalW / 2,
-        y: CANVAS_H / 2 - totalH / 2 + lv * V_SPACE,
-        scale: sc,
-      }
-    })
-  })
-  return positions
+function hashValue(id) {
+  let h = 2166136261
+  for (let i = 0; i < id.length; i++) h = Math.imul(h ^ id.charCodeAt(i), 16777619)
+  return Math.abs(h >>> 0) / 4294967295
 }
 
-// ── 2D layout : radial ────────────────────────────────────────────────────────
+function findZoneForChar(char) {
+  return ZONES.find((zone) => zone.filter(char)) || ZONES[0]
+}
 
-function computeRadialLayout2D(charIds, rels, rootId) {
-  const others = charIds.filter(id => id !== rootId)
-  if (!others.length) return { [rootId]: { x: CANVAS_W / 2, y: CANVAS_H / 2, scale: ROOT_S } }
+function orbitPosition(char, time = 0) {
+  const zone = findZoneForChar(char)
+  const base = new THREE.Vector3(...zone.position)
+  const seed = hashValue(char.id)
+  const radius = char.id === 'luffy' ? 2.15 : 1.65 + seed * 1.65
+  const speed = char.id === 'luffy' ? 0.22 : 0.12 + seed * 0.18
+  const angle = seed * Math.PI * 2 + time * speed
+  const y = 1.25 + Math.sin(time * (0.42 + seed * 0.3) + seed * 6) * 0.34
 
-  // BFS distances (undirected, all relations)
-  const adj = {}
-  charIds.forEach(id => { adj[id] = [] })
-  rels.forEach(r => {
-    if (charIds.includes(r.from) && charIds.includes(r.to)) {
-      adj[r.from].push(r.to); adj[r.to].push(r.from)
+  return base.add(new THREE.Vector3(
+    Math.cos(angle) * radius,
+    y,
+    Math.sin(angle) * radius * 0.72,
+  ))
+}
+
+function zoneCharacters(zone) {
+  return CHARACTERS.filter(zone.filter).slice(0, zone.id === 'mugiwara' ? 10 : 6)
+}
+
+function AtmosphereParticles() {
+  const points = useRef()
+  const { positions, colors } = useMemo(() => {
+    const count = 900
+    const pos = new Float32Array(count * 3)
+    const col = new Float32Array(count * 3)
+    const palette = ['#ffd27a', '#e0524a', '#86f7ff', '#37b26c', '#ffffff']
+
+    for (let i = 0; i < count; i++) {
+      const r = 9 + Math.random() * 22
+      const a = Math.random() * Math.PI * 2
+      pos[i * 3] = Math.cos(a) * r
+      pos[i * 3 + 1] = -1 + Math.random() * 8
+      pos[i * 3 + 2] = Math.sin(a) * r
+      const c = new THREE.Color(palette[Math.floor(Math.random() * palette.length)])
+      col[i * 3] = c.r
+      col[i * 3 + 1] = c.g
+      col[i * 3 + 2] = c.b
     }
+
+    return { positions: pos, colors: col }
+  }, [])
+
+  useFrame(({ clock }) => {
+    if (!points.current) return
+    points.current.rotation.y = clock.elapsedTime * 0.012
+    points.current.rotation.x = Math.sin(clock.elapsedTime * 0.08) * 0.025
   })
-  const dist    = { [rootId]: 0 }
-  const q       = [rootId]
-  const vis     = new Set([rootId])
-  while (q.length) {
-    const id = q.shift()
-    ;(adj[id] || []).forEach(nid => {
-      if (!vis.has(nid)) { vis.add(nid); dist[nid] = dist[id] + 1; q.push(nid) }
-    })
-  }
-  others.forEach(id => { if (dist[id] === undefined) dist[id] = 2 })
-
-  const byRing = {}
-  others.forEach(id => {
-    const d = Math.min(dist[id], 3)
-    ;(byRing[d] = byRing[d] || []).push(id)
-  })
-
-  const maxInRing = Math.max(...Object.values(byRing).map(a => a.length), 1)
-  const baseR     = Math.max(310, maxInRing * 50)
-  const RADII     = [0, baseR, baseR * 1.72, baseR * 2.35]
-  const SCALES    = [ROOT_S, INNER_S, OUTER_S, 0.60]
-
-  const positions = { [rootId]: { x: CANVAS_W / 2, y: CANVAS_H / 2, scale: ROOT_S } }
-  Object.entries(byRing).forEach(([ring, ids]) => {
-    const r      = parseInt(ring)
-    const radius = RADII[r] ?? RADII[3]
-    const sc     = SCALES[r] ?? 0.60
-    ids.forEach((id, i) => {
-      const angle = (i / ids.length) * Math.PI * 2 - Math.PI / 2
-      positions[id] = {
-        x: CANVAS_W / 2 + Math.cos(angle) * radius,
-        y: CANVAS_H / 2 + Math.sin(angle) * radius,
-        scale: sc,
-      }
-    })
-  })
-  return positions
-}
-
-// ── Poster visual ─────────────────────────────────────────────────────────────
-
-function PosterCard({ char, sc, selected, hovered }) {
-  const hc = char.color || '#8b0000'
-  const W  = POSTER_W * sc
-  const H  = POSTER_H * sc
 
   return (
-    <div style={{
-      width: W, height: H, position: 'relative',
-      background: 'linear-gradient(175deg,#FAF0DC 0%,#F2E4B8 38%,#E8D49E 72%,#DEC882 100%)',
-      borderRadius: 3 * sc,
-      border: selected
-        ? `${2 * sc}px solid ${hc}`
-        : `${1.5 * sc}px solid rgba(55,28,6,0.52)`,
-      boxShadow: selected
-        ? `0 0 0 ${2.5 * sc}px ${hc}44, ${6 * sc}px ${10 * sc}px ${22 * sc}px rgba(0,0,0,0.65)`
-        : hovered
-        ? `${5 * sc}px ${7 * sc}px ${18 * sc}px rgba(0,0,0,0.52)`
-        : `${3 * sc}px ${5 * sc}px ${11 * sc}px rgba(0,0,0,0.38)`,
-      overflow: 'hidden',
-      fontFamily: "'Georgia', serif",
-    }}>
+    <points ref={points}>
+      <bufferGeometry>
+        <bufferAttribute attach="attributes-position" count={positions.length / 3} array={positions} itemSize={3} />
+        <bufferAttribute attach="attributes-color" count={colors.length / 3} array={colors} itemSize={3} />
+      </bufferGeometry>
+      <pointsMaterial size={0.035} vertexColors transparent opacity={0.58} depthWrite={false} blending={THREE.AdditiveBlending} />
+    </points>
+  )
+}
 
-      {/* Conqueror haki glow */}
-      {char.haki.includes('conqueror') && (
-        <div style={{
-          position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 6,
-          boxShadow: `inset 0 0 ${14 * sc}px ${5 * sc}px rgba(212,160,23,${selected ? 0.24 : 0.09})`,
-          borderRadius: 3 * sc,
-        }} />
-      )}
+function HolographicOcean() {
+  const grid = useRef()
+  const ringA = useRef()
+  const ringB = useRef()
 
-      {/* Corner burns */}
-      {[[0, 0], [1, 0], [0, 1], [1, 1]].map(([cx, cy], i) => (
-        <div key={i} style={{
-          position: 'absolute',
-          [cy ? 'bottom' : 'top']: 0,
-          [cx ? 'right' : 'left']: 0,
-          width: 28 * sc, height: 28 * sc,
-          background: `radial-gradient(circle at ${cx ? '100%' : '0%'} ${cy ? '100%' : '0%'}, rgba(60,25,5,0.28) 0%, transparent 70%)`,
-          pointerEvents: 'none', zIndex: 2,
-        }} />
+  useFrame(({ clock }) => {
+    const t = clock.elapsedTime
+    if (grid.current) {
+      grid.current.rotation.y = t * 0.018
+      grid.current.material.opacity = 0.1 + Math.sin(t * 0.35) * 0.025
+    }
+    if (ringA.current) ringA.current.rotation.z = t * 0.08
+    if (ringB.current) ringB.current.rotation.z = -t * 0.05
+  })
+
+  return (
+    <group>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.55, 0]}>
+        <circleGeometry args={[34, 160]} />
+        <meshBasicMaterial color="#071018" transparent opacity={0.48} depthWrite={false} />
+      </mesh>
+      <gridHelper ref={grid} args={[62, 62, '#4da3ff', '#1b3248']} position={[0, -1.48, 0]} />
+      <mesh ref={ringA} rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.42, 0]}>
+        <torusGeometry args={[13.8, 0.012, 8, 240]} />
+        <meshBasicMaterial color="#d4a017" transparent opacity={0.25} blending={THREE.AdditiveBlending} />
+      </mesh>
+      <mesh ref={ringB} rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.38, 0]}>
+        <torusGeometry args={[21, 0.01, 8, 240]} />
+        <meshBasicMaterial color="#86f7ff" transparent opacity={0.16} blending={THREE.AdditiveBlending} />
+      </mesh>
+    </group>
+  )
+}
+
+function IslandCore({ zone, selected, hovered, onSelect, onHover }) {
+  const group = useRef()
+  const color = new THREE.Color(zone.color)
+  const accent = new THREE.Color(zone.accent)
+
+  useFrame(({ clock }) => {
+    if (!group.current) return
+    const t = clock.elapsedTime
+    group.current.position.y = zone.position[1] + Math.sin(t * 0.5 + hashValue(zone.id) * 6) * 0.12
+    group.current.rotation.y = t * 0.08 + hashValue(zone.id) * 2
+  })
+
+  return (
+    <group
+      ref={group}
+      position={zone.position}
+      onClick={(event) => { event.stopPropagation(); onSelect(zone) }}
+      onPointerEnter={(event) => { event.stopPropagation(); onHover(zone.id) }}
+      onPointerLeave={(event) => { event.stopPropagation(); onHover(null) }}
+    >
+      <pointLight color={zone.color} intensity={selected || hovered ? 2.2 : 1.2} distance={8.5} />
+      <mesh position={[0, -0.25, 0]}>
+        <cylinderGeometry args={[1.7 * zone.scale, 2.15 * zone.scale, 0.52, 7]} />
+        <meshStandardMaterial color={color} roughness={0.52} metalness={0.18} emissive={color} emissiveIntensity={selected || hovered ? 0.42 : 0.16} />
+      </mesh>
+      <mesh position={[0, 0.12, 0]}>
+        <icosahedronGeometry args={[1.42 * zone.scale, 2]} />
+        <meshStandardMaterial color={color} roughness={0.46} metalness={0.28} emissive={color} emissiveIntensity={selected || hovered ? 0.36 : 0.1} />
+      </mesh>
+      <mesh rotation={[-Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[2.22 * zone.scale, 0.018, 8, 120]} />
+        <meshBasicMaterial color={accent} transparent opacity={selected || hovered ? 0.75 : 0.36} blending={THREE.AdditiveBlending} />
+      </mesh>
+      <mesh scale={selected || hovered ? 1.35 : 1.05}>
+        <sphereGeometry args={[2.42 * zone.scale, 32, 32]} />
+        <meshBasicMaterial color={zone.color} transparent opacity={selected || hovered ? 0.13 : 0.055} blending={THREE.AdditiveBlending} depthWrite={false} />
+      </mesh>
+      <Html center distanceFactor={10} position={[0, 2.2 * zone.scale, 0]} className="world-map-label">
+        <button className={selected ? 'world-map-label-card active' : 'world-map-label-card'}>
+          <strong>{zone.name}</strong>
+          <span>{zone.subtitle}</span>
+        </button>
+      </Html>
+    </group>
+  )
+}
+
+function CharacterOrb({ char, selected, hovered, dimmed, onSelect, onHover }) {
+  const group = useRef()
+  const aura = useRef()
+  const color = char.color || findZoneForChar(char).color
+  const isLuffy = char.id === 'luffy'
+
+  useFrame(({ clock, camera }) => {
+    if (!group.current) return
+    const t = clock.elapsedTime
+    group.current.position.copy(orbitPosition(char, t))
+    group.current.quaternion.copy(camera.quaternion)
+    const s = isLuffy ? 1.45 : selected || hovered ? 1.12 : 1
+    group.current.scale.setScalar(s + Math.sin(t * 1.4 + hashValue(char.id) * 4) * 0.035)
+    if (aura.current) aura.current.rotation.z = t * (isLuffy ? 0.35 : 0.22)
+  })
+
+  return (
+    <group
+      ref={group}
+      onClick={(event) => { event.stopPropagation(); onSelect(char) }}
+      onPointerEnter={(event) => { event.stopPropagation(); onHover(char.id) }}
+      onPointerLeave={(event) => { event.stopPropagation(); onHover(null) }}
+    >
+      <pointLight color={color} intensity={isLuffy || hovered || selected ? 1.1 : 0.35} distance={3.4} />
+      <mesh ref={aura}>
+        <torusGeometry args={[0.54, 0.014, 8, 80]} />
+        <meshBasicMaterial color={char.haki?.includes('conqueror') ? HAKI_COLORS.conqueror : color} transparent opacity={dimmed ? 0.08 : selected || hovered ? 0.86 : 0.42} blending={THREE.AdditiveBlending} />
+      </mesh>
+      <mesh>
+        <sphereGeometry args={[isLuffy ? 0.48 : 0.34, 32, 32]} />
+        <meshStandardMaterial
+          color="#0d1118"
+          roughness={0.24}
+          metalness={0.58}
+          emissive={color}
+          emissiveIntensity={dimmed ? 0.04 : selected || hovered || isLuffy ? 0.78 : 0.34}
+          transparent
+          opacity={dimmed ? 0.36 : 0.96}
+        />
+      </mesh>
+      <mesh scale={isLuffy ? 1.28 : 1}>
+        <sphereGeometry args={[0.62, 32, 32]} />
+        <meshBasicMaterial color={color} transparent opacity={dimmed ? 0.025 : selected || hovered ? 0.18 : 0.08} blending={THREE.AdditiveBlending} depthWrite={false} />
+      </mesh>
+      <Html center distanceFactor={9} position={[0, isLuffy ? 0.84 : 0.68, 0]} className="world-map-node-label">
+        <div className={selected || hovered ? 'world-map-node-card active' : 'world-map-node-card'}>
+          <strong>{char.name}</strong>
+          <span>{char.alias || char.crew || char.org || 'Grand Line'}</span>
+        </div>
+      </Html>
+    </group>
+  )
+}
+
+function EnergyRelation({ relation, selectedChar, hoveredChar }) {
+  const line = useRef()
+  const pulse = useRef()
+  const from = CHARACTERS.find((char) => char.id === relation.from)
+  const to = CHARACTERS.find((char) => char.id === relation.to)
+  const style = RELATION_STYLE[relation.type] || RELATION_STYLE.ally
+  const active = selectedChar && (relation.from === selectedChar.id || relation.to === selectedChar.id)
+  const hover = hoveredChar && (relation.from === hoveredChar || relation.to === hoveredChar)
+
+  useFrame(({ clock }) => {
+    if (!from || !to || !line.current) return
+    const t = clock.elapsedTime
+    const a = orbitPosition(from, t)
+    const b = orbitPosition(to, t)
+    const mid = a.clone().lerp(b, 0.5)
+    mid.y += 1.2 + Math.sin(t * 0.6 + hashValue(relation.id) * 4) * 0.34
+    const curve = new THREE.CatmullRomCurve3([a, mid, b])
+    const points = curve.getPoints(48)
+    line.current.geometry.setFromPoints(points)
+    line.current.material.opacity = active || hover ? 0.76 : selectedChar || hoveredChar ? 0.07 : 0.2
+    line.current.material.linewidth = active || hover ? style.width * 1.9 : style.width
+
+    if (pulse.current) {
+      const p = curve.getPoint((t * style.speed + hashValue(relation.id)) % 1)
+      pulse.current.position.copy(p)
+      pulse.current.visible = active || hover || (!selectedChar && !hoveredChar)
+      pulse.current.material.opacity = active || hover ? 0.92 : 0.34
+    }
+  })
+
+  if (!from || !to) return null
+
+  return (
+    <group>
+      <line ref={line}>
+        <bufferGeometry />
+        <lineBasicMaterial color={LINK_COLORS[relation.type] || style.color} transparent opacity={0.22} blending={THREE.AdditiveBlending} />
+      </line>
+      <mesh ref={pulse}>
+        <sphereGeometry args={[active || hover ? 0.09 : 0.055, 12, 12]} />
+        <meshBasicMaterial color={style.color} transparent opacity={0.35} blending={THREE.AdditiveBlending} depthWrite={false} />
+      </mesh>
+    </group>
+  )
+}
+
+function CameraDirector({ focusZone, focusChar }) {
+  const { camera } = useThree()
+  const target = useMemo(() => new THREE.Vector3(), [])
+
+  useFrame(() => {
+    let desired = new THREE.Vector3(0, 8, 18)
+    if (focusZone) {
+      const p = new THREE.Vector3(...focusZone.position)
+      target.lerp(p, 0.04)
+      desired = p.clone().add(new THREE.Vector3(4.5, 4.2, 6.5))
+    } else if (focusChar) {
+      const p = orbitPosition(focusChar, performance.now() / 1000)
+      target.lerp(p, 0.045)
+      desired = p.clone().add(new THREE.Vector3(2.8, 2.5, 4))
+    } else {
+      target.lerp(new THREE.Vector3(0, 0.2, 0), 0.025)
+    }
+
+    camera.position.lerp(desired, focusZone || focusChar ? 0.018 : 0.006)
+    camera.lookAt(target)
+  })
+
+  return null
+}
+
+function WorldScene({ selectedZone, selectedChar, hoveredZone, hoveredChar, onSelectZone, onSelectChar, onHoverZone, onHoverChar }) {
+  const visibleCharacters = useMemo(() => {
+    const seen = new Map()
+    ZONES.forEach((zone) => zoneCharacters(zone).forEach((char) => seen.set(char.id, char)))
+    return Array.from(seen.values())
+  }, [])
+
+  return (
+    <>
+      <color attach="background" args={['#02050b']} />
+      <fog attach="fog" args={['#08111a', 10, 42]} />
+      <ambientLight intensity={0.16} />
+      <directionalLight position={[0, 10, 6]} intensity={1.25} color="#d8ecff" />
+      <pointLight position={[0, 4, 0]} intensity={1.6} color="#ffd27a" distance={16} />
+
+      <Stars radius={72} depth={38} count={1800} factor={3.4} saturation={0.35} fade speed={0.22} />
+      <HolographicOcean />
+      <AtmosphereParticles />
+
+      {ZONES.map((zone) => (
+        <IslandCore
+          key={zone.id}
+          zone={zone}
+          selected={selectedZone?.id === zone.id}
+          hovered={hoveredZone === zone.id}
+          onSelect={onSelectZone}
+          onHover={onHoverZone}
+        />
       ))}
 
-      {/* Header */}
-      <div style={{
-        background: hc + 'e0',
-        padding: `${5 * sc}px 0 ${4 * sc}px`,
-        textAlign: 'center', lineHeight: 1,
-        position: 'relative', zIndex: 3,
-      }}>
-        <div style={{
-          fontFamily: "'Cinzel','Georgia',serif",
-          fontSize: 13.5 * sc, fontWeight: 900,
-          color: '#FAF0DC', letterSpacing: '0.16em',
-          textShadow: `0 1px ${3 * sc}px rgba(0,0,0,0.9)`,
-        }}>WANTED</div>
-        <div style={{
-          fontFamily: "'IM Fell English',serif", fontStyle: 'italic',
-          fontSize: 6.5 * sc, color: 'rgba(250,240,220,0.8)', letterSpacing: '0.12em',
-          marginTop: 1 * sc,
-        }}>DEAD OR ALIVE</div>
+      {RELATIONS.slice(0, 40).map((relation) => (
+        <EnergyRelation
+          key={relation.id}
+          relation={relation}
+          selectedChar={selectedChar}
+          hoveredChar={hoveredChar}
+        />
+      ))}
+
+      {visibleCharacters.map((char) => {
+        const dimmed = Boolean(selectedZone) && findZoneForChar(char).id !== selectedZone.id
+        return (
+          <CharacterOrb
+            key={char.id}
+            char={char}
+            selected={selectedChar?.id === char.id}
+            hovered={hoveredChar === char.id}
+            dimmed={dimmed}
+            onSelect={onSelectChar}
+            onHover={onHoverChar}
+          />
+        )
+      })}
+
+      <CameraDirector focusZone={selectedZone} focusChar={selectedChar} />
+      <OrbitControls
+        enableDamping
+        dampingFactor={0.055}
+        rotateSpeed={0.42}
+        zoomSpeed={0.65}
+        panSpeed={0.42}
+        minDistance={7}
+        maxDistance={34}
+        maxPolarAngle={Math.PI * 0.47}
+      />
+    </>
+  )
+}
+
+function DetailPanel({ selectedZone, selectedChar, onClear }) {
+  const title = selectedChar?.name || selectedZone?.name || 'Carte mondiale classifiée'
+  const subtitle = selectedChar?.alias || selectedZone?.subtitle || 'Hologramme pirate du Gouvernement Mondial'
+  const color = selectedChar?.color || selectedZone?.color || '#d4a017'
+  const mood = selectedZone?.mood || selectedChar?.devilFruit || 'Exploration libre, relations vivantes, territoires en orbite.'
+
+  return (
+    <motion.aside
+      className="world-map-panel"
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+    >
+      <div className="world-map-panel-top">
+        <span>BRAMS COMMUNITY / GRAND LINE OS</span>
+        <button onClick={onClear}>Réinitialiser</button>
+      </div>
+      <h1>{title}</h1>
+      <p>{subtitle}</p>
+      <div className="world-map-signal" style={{ '--signal': color }}>
+        <i />
+        <span>{mood}</span>
       </div>
 
-      {/* Gold rule */}
-      <div style={{ height: 1, background: 'rgba(212,168,50,0.45)', position: 'relative', zIndex: 3 }} />
-
-      {/* Photo frame */}
-      <div style={{
-        margin: `${3 * sc}px ${6 * sc}px ${2 * sc}px`,
-        height: POSTER_H * sc * 0.43,
-        background: 'rgba(0,0,0,0.1)',
-        border: `${1.5 * sc}px solid ${hc}70`,
-        borderRadius: 2 * sc,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        position: 'relative', overflow: 'hidden', zIndex: 3,
-      }}>
-        <span style={{ fontSize: 42 * sc, lineHeight: 1, userSelect: 'none' }}>{char.emoji || '?'}</span>
-        {char.status === 'dead' && (
-          <div style={{
-            position: 'absolute', inset: 0,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            pointerEvents: 'none',
-          }}>
-            <div style={{
-              color: 'rgba(65,30,6,0.48)',
-              fontFamily: "'Cinzel',serif", fontSize: 10 * sc, fontWeight: 900,
-              transform: 'rotate(-18deg)',
-              border: `${1.5 * sc}px solid rgba(65,30,6,0.28)`,
-              padding: `${1 * sc}px ${5 * sc}px`,
-              letterSpacing: '0.08em',
-            }}>DÉCÉDÉ</div>
-          </div>
-        )}
-      </div>
-
-      {/* Name */}
-      <div style={{
-        textAlign: 'center', padding: `${2 * sc}px ${5 * sc}px 0`,
-        fontFamily: "'Cinzel','Georgia',serif",
-        fontSize: 8 * sc, fontWeight: 700,
-        color: '#1A0800', letterSpacing: '0.03em', lineHeight: 1.25,
-        position: 'relative', zIndex: 3,
-      }}>
-        {char.name.length > 19 ? char.name.slice(0, 17) + '…' : char.name}
-      </div>
-
-      {/* Alias */}
-      {char.alias && (
-        <div style={{
-          textAlign: 'center', fontSize: 5.8 * sc,
-          fontFamily: "'IM Fell English',serif", fontStyle: 'italic',
-          color: '#5C3A1A', padding: `${1 * sc}px ${5 * sc}px`,
-          lineHeight: 1.2, position: 'relative', zIndex: 3,
-        }}>
-          "{char.alias.length > 22 ? char.alias.slice(0, 20) + '…' : char.alias}"
-        </div>
-      )}
-
-      {/* Divider */}
-      <div style={{
-        height: 0.5, background: 'rgba(74,44,16,0.24)',
-        margin: `${2 * sc}px ${9 * sc}px`, position: 'relative', zIndex: 3,
-      }} />
-
-      {/* Bounty */}
-      {char.bounty && (
-        <div style={{ position: 'relative', zIndex: 3 }}>
-          <div style={{ textAlign: 'center', fontSize: 5.5 * sc, color: '#8A5A20', fontStyle: 'italic' }}>
-            — PRIME —
-          </div>
-          <div style={{
-            textAlign: 'center', fontSize: 7 * sc, fontWeight: 700,
-            color: '#1A0800', letterSpacing: '0.02em',
-          }}>
-            {char.bounty}
+      {selectedChar ? (
+        <div className="world-map-character-card active">
+          <div className="world-map-character-orb" style={{ background: selectedChar.color }}>{selectedChar.emoji}</div>
+          <div>
+            <strong>{selectedChar.name}</strong>
+            <span>{selectedChar.bounty || 'Prime inconnue'}</span>
+            <small>{selectedChar.devilFruit || 'Aucun fruit confirmé'}</small>
+            <div className="world-map-haki-row">
+              {selectedChar.haki.map((haki) => <i key={haki} style={{ background: HAKI_COLORS[haki] }} />)}
+            </div>
           </div>
         </div>
-      )}
-
-      {/* Haki dots */}
-      {char.haki.length > 0 && (
-        <div style={{
-          display: 'flex', justifyContent: 'center', gap: 4 * sc,
-          padding: `${3 * sc}px 0 ${2 * sc}px`,
-          position: 'relative', zIndex: 3,
-        }}>
-          {char.haki.map(h => (
-            <div key={h} style={{
-              width: 7 * sc, height: 7 * sc, borderRadius: '50%',
-              background: HAKI_COLORS[h],
-              boxShadow: `0 0 ${4 * sc}px ${HAKI_COLORS[h]}aa`,
-            }} />
+      ) : (
+        <div className="world-map-zone-grid">
+          {ZONES.map((zone) => (
+            <button key={zone.id} className="world-map-zone-card" style={{ '--zone': zone.color }}>
+              <strong>{zone.name}</strong>
+              <span>{zone.subtitle}</span>
+            </button>
           ))}
         </div>
       )}
 
-      {/* Inner gold border */}
-      <div style={{
-        position: 'absolute', inset: `${4 * sc}px`,
-        border: '0.5px solid rgba(212,168,50,0.16)',
-        borderRadius: 2 * sc, pointerEvents: 'none', zIndex: 5,
-      }} />
-    </div>
-  )
-}
-
-// ── SVG connection lines ──────────────────────────────────────────────────────
-
-function ConnectionLines({ rels, positions, hoveredId, selectedId }) {
-  return (
-    <svg style={{
-      position: 'absolute', left: 0, top: 0,
-      width: CANVAS_W, height: CANVAS_H,
-      pointerEvents: 'none', overflow: 'visible',
-    }}>
-      {rels.map(rel => {
-        const from = positions[rel.from]
-        const to   = positions[rel.to]
-        if (!from || !to) return null
-
-        const x1 = from.x, y1 = from.y
-        const x2 = to.x,   y2 = to.y
-        const dx  = x2 - x1, dy = y2 - y1
-        const len = Math.sqrt(dx * dx + dy * dy) || 1
-        const nx  = -dy / len, ny = dx / len
-        const cv  = len * 0.18 * (rel.type === 'enemy' ? -1 : 1)
-        const qx  = (x1 + x2) / 2 + nx * cv
-        const qy  = (y1 + y2) / 2 + ny * cv
-
-        const color    = LINK_COLORS[rel.type] || '#d4a017'
-        const isActive = rel.from === hoveredId || rel.to === hoveredId ||
-                         rel.from === selectedId || rel.to === selectedId
-        const isBg     = (hoveredId || selectedId) && !isActive
-
-        return (
-          <g key={rel.id}>
-            <path
-              d={`M ${x1} ${y1} Q ${qx} ${qy} ${x2} ${y2}`}
-              fill="none"
-              stroke={color}
-              strokeWidth={isActive ? 2.8 : 1.6}
-              strokeOpacity={isBg ? 0.07 : isActive ? 0.92 : 0.40}
-              strokeDasharray={rel.type === 'enemy' ? '8 5' : undefined}
-            />
-            {isActive && rel.label && (
-              <text
-                x={qx} y={qy - 7}
-                textAnchor="middle" dominantBaseline="middle"
-                fill={color} fontSize={11} opacity={0.88}
-                fontFamily="'IM Fell English',serif" fontStyle="italic"
-                style={{ userSelect: 'none' }}
-              >
-                {rel.label}
-              </text>
-            )}
-          </g>
-        )
-      })}
-    </svg>
-  )
-}
-
-// ── Character detail ──────────────────────────────────────────────────────────
-
-function CharDetail({ char, onClose, mangaMode }) {
-  if (!char) return null
-  const txt = mangaMode ? '#1a0800' : '#fff'
-  const sub = mangaMode ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.5)'
-
-  return (
-    <div style={{ background: `${char.color}18`, border: `1px solid ${char.color}50`, borderRadius: 14, padding: '16px 18px' }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 }}>
-        <div>
-          <div style={{ fontFamily: "'Cinzel',serif", fontSize: 14, fontWeight: 700, color: txt, lineHeight: 1.3, letterSpacing: '0.04em' }}>
-            {char.emoji} {char.name}
-          </div>
-          {char.alias && (
-            <div style={{ fontSize: 12, color: char.color, fontStyle: 'italic', marginTop: 3 }}>"{char.alias}"</div>
-          )}
-        </div>
-        <button onClick={onClose} style={{ background: 'none', border: 'none', color: sub, cursor: 'pointer', fontSize: 16, padding: 2 }}>✕</button>
-      </div>
-
-      <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 10 }}>
-        {char.haki.map(h => (
-          <span key={h} style={{ fontSize: 10, fontWeight: 700, background: HAKI_COLORS[h] + '22', color: h === 'armament' ? '#94a3b8' : HAKI_COLORS[h], border: `1px solid ${HAKI_COLORS[h]}44`, borderRadius: 100, padding: '2px 9px' }}>
-            {h === 'conqueror' ? '⚡ Conquérant' : h === 'armament' ? '⚫ Armement' : '👁 Observation'}
-          </span>
+      <div className="world-map-legend">
+        {Object.entries(RELATION_STYLE).map(([type, style]) => (
+          <span key={type}><i style={{ background: style.color }} />{type}</span>
         ))}
       </div>
-
-      {char.devilFruit && (
-        <div style={{ fontSize: 12, color: sub, marginBottom: 4 }}>🍎 <b style={{ color: txt }}>{char.devilFruit}</b></div>
-      )}
-      {char.bounty && (
-        <div style={{ fontSize: 13, color: '#d4a017', fontWeight: 800, marginBottom: 4 }}>💰 {char.bounty}</div>
-      )}
-      <div style={{ fontSize: 11, fontWeight: 700, color: char.status === 'alive' ? '#34d399' : '#9ca3af', marginTop: 4 }}>
-        {char.status === 'alive' ? '✅ Vivant' : '💀 Décédé'}
-      </div>
-    </div>
+    </motion.aside>
   )
 }
 
-// ── Main ──────────────────────────────────────────────────────────────────────
-
 export default function FamilyTree3D({ onClose }) {
-  const [activeTree,   setActiveTree]   = useState('straw_hats')
+  const [selectedZone, setSelectedZone] = useState(null)
   const [selectedChar, setSelectedChar] = useState(null)
-  const [hoveredId,    setHoveredId]    = useState(null)
-  const [mangaMode,    setMangaMode]    = useState(false)
-  const [filterStatus, setFilterStatus] = useState('all')
-  const [filterHaki,   setFilterHaki]   = useState(null)
-  const [panelOpen,    setPanelOpen]    = useState(true)
-  const [transform,    setTransform]    = useState({ x: 0, y: 0, scale: 0.85 })
-  const [dragging,     setDragging]     = useState(false)
+  const [hoveredZone, setHoveredZone] = useState(null)
+  const [hoveredChar, setHoveredChar] = useState(null)
 
-  const containerRef = useRef(null)
-  const dragRef      = useRef(null)
-  const txRef        = useRef(transform)
-  const wasDragged   = useRef(false)
-
-  const cfg    = TREE_CONFIGS[activeTree]
-  const bg     = mangaMode ? '#F5F0E8' : '#0D0804'
-  const panel  = mangaMode ? 'rgba(250,244,228,0.98)' : 'rgba(16,10,3,0.97)'
-  const txt    = mangaMode ? '#1A0800' : 'rgba(230,200,140,0.92)'
-  const muted  = mangaMode ? 'rgba(26,8,0,0.48)'  : 'rgba(195,155,70,0.5)'
-  const border = mangaMode ? 'rgba(26,8,0,0.12)'  : 'rgba(140,100,40,0.22)'
-
-  const chars = useMemo(() => {
-    let list = CHARACTERS.filter(cfg.charFilter)
-    if (filterStatus !== 'all') list = list.filter(c => c.status === filterStatus)
-    if (filterHaki)             list = list.filter(c => c.haki.includes(filterHaki))
-    return list
-  }, [cfg, filterStatus, filterHaki])
-
-  const rels = useMemo(() =>
-    RELATIONS.filter(r =>
-      chars.find(c => c.id === r.from) &&
-      chars.find(c => c.id === r.to)   &&
-      cfg.relFilter(r)
-    ), [chars, cfg])
-
-  const positions = useMemo(() => {
-    const ids  = chars.map(c => c.id)
-    const root = ids.includes(cfg.root) ? cfg.root : ids[0]
-    if (!root || !ids.length) return {}
-    return cfg.layout === 'radial'
-      ? computeRadialLayout2D(ids, rels, root)
-      : computeTreeLayout2D(ids, rels, root)
-  }, [chars, rels, cfg])
-
-  // Center on mount
   useEffect(() => {
-    const el = containerRef.current
-    if (!el) return
-    const rect = el.getBoundingClientRect()
-    const sc   = 0.85
-    const t    = { x: rect.width / 2 - (CANVAS_W / 2) * sc, y: rect.height / 2 - (CANVAS_H / 2) * sc, scale: sc }
-    txRef.current = t
-    setTransform(t)
-  }, [])
-
-  // Re-center on tree change
-  useEffect(() => {
-    const el = containerRef.current
-    if (!el) return
-    const rect = el.getBoundingClientRect()
-    const sc   = 0.85
-    const t    = { x: rect.width / 2 - (CANVAS_W / 2) * sc, y: rect.height / 2 - (CANVAS_H / 2) * sc, scale: sc }
-    txRef.current = t
-    setTransform(t)
-    setSelectedChar(null)
-    setHoveredId(null)
-  }, [activeTree])
-
-  // Wheel zoom (non-passive)
-  useEffect(() => {
-    const el = containerRef.current
-    if (!el) return
-    const onWheel = e => {
-      e.preventDefault()
-      const rect   = el.getBoundingClientRect()
-      const mx     = e.clientX - rect.left
-      const my     = e.clientY - rect.top
-      const factor = e.deltaY < 0 ? 1.10 : 1 / 1.10
-      setTransform(prev => {
-        const newScale = Math.max(0.12, Math.min(3.5, prev.scale * factor))
-        const ratio    = newScale / prev.scale
-        const next     = { scale: newScale, x: mx + (prev.x - mx) * ratio, y: my + (prev.y - my) * ratio }
-        txRef.current  = next
-        return next
-      })
-    }
-    el.addEventListener('wheel', onWheel, { passive: false })
-    return () => el.removeEventListener('wheel', onWheel)
-  }, [])
-
-  // Global mouse events for drag
-  useEffect(() => {
-    const onMove = e => {
-      if (!dragRef.current) return
-      const dx = e.clientX - dragRef.current.startX
-      const dy = e.clientY - dragRef.current.startY
-      if (Math.abs(dx) + Math.abs(dy) > 4) wasDragged.current = true
-      setTransform(prev => {
-        const next    = { ...prev, x: dragRef.current.startTx + dx, y: dragRef.current.startTy + dy }
-        txRef.current = next
-        return next
-      })
-    }
-    const onUp = () => { dragRef.current = null; setDragging(false) }
-    window.addEventListener('mousemove', onMove)
-    window.addEventListener('mouseup',   onUp)
-    return () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp) }
-  }, [])
-
-  // Body overflow lock
-  useEffect(() => {
-    document.title      = 'Arbre — Brams'
+    document.title = 'Carte mondiale One Piece — Brams'
     document.body.style.overflow = 'hidden'
-    return () => { document.title = 'Brams Community'; document.body.style.overflow = '' }
+    return () => {
+      document.title = 'Brams Community'
+      document.body.style.overflow = ''
+    }
   }, [])
 
-  const onMouseDown = e => {
-    if (e.button !== 0) return
-    wasDragged.current = false
-    dragRef.current    = { startX: e.clientX, startY: e.clientY, startTx: txRef.current.x, startTy: txRef.current.y }
-    setDragging(true)
+  const clearFocus = () => {
+    setSelectedZone(null)
+    setSelectedChar(null)
   }
 
-  // ── Render ─────────────────────────────────────────────────────────────────
-
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 600, background: bg, display: 'flex', flexDirection: 'column' }}>
+    <div className="world-map-shell">
+      <Canvas camera={{ position: [0, 8, 19], fov: 46 }} dpr={[1, 1.65]} gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}>
+        <Suspense fallback={null}>
+          <WorldScene
+            selectedZone={selectedZone}
+            selectedChar={selectedChar}
+            hoveredZone={hoveredZone}
+            hoveredChar={hoveredChar}
+            onSelectZone={(zone) => { setSelectedZone(zone); setSelectedChar(null) }}
+            onSelectChar={(char) => { setSelectedChar(char); setSelectedZone(findZoneForChar(char)) }}
+            onHoverZone={setHoveredZone}
+            onHoverChar={setHoveredChar}
+          />
+        </Suspense>
+      </Canvas>
 
-      {/* Header */}
-      <div style={{ flexShrink: 0, height: 58, display: 'flex', alignItems: 'center', gap: 12, padding: '0 18px', background: panel, backdropFilter: 'blur(22px)', borderBottom: `1px solid ${border}`, zIndex: 10 }}>
-        <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.07)', border: `1px solid ${border}`, borderRadius: 9, color: txt, cursor: 'pointer', padding: '7px 14px', fontSize: 13, fontWeight: 700 }}>
-          ← Retour
-        </button>
-        <div style={{ flex: 1, textAlign: 'center' }}>
-          <span style={{ fontFamily: "'Cinzel','Trajan Pro',serif", fontSize: 18, fontWeight: 700, letterSpacing: '0.12em', color: txt }}>
-            ARBRE DES PERSONNAGES
-          </span>
-          <span style={{ fontFamily: "'IM Fell English',serif", fontStyle: 'italic', fontSize: 11, color: muted, marginLeft: 12 }}>
-            {cfg.emoji} {cfg.label}
-          </span>
-        </div>
-        <button onClick={() => setMangaMode(m => !m)} style={{ background: mangaMode ? '#1a0800' : 'rgba(212,160,23,0.15)', border: `1px solid ${mangaMode ? 'transparent' : 'rgba(212,160,23,0.35)'}`, borderRadius: 9, color: mangaMode ? '#fff' : '#d4a017', cursor: 'pointer', padding: '7px 14px', fontSize: 12, fontWeight: 700 }}>
-          {mangaMode ? '🌙 Sombre' : '📖 Manga'}
-        </button>
-        <button onClick={() => setPanelOpen(p => !p)} style={{ background: 'rgba(255,255,255,0.07)', border: `1px solid ${border}`, borderRadius: 9, color: txt, cursor: 'pointer', padding: '7px 10px', fontSize: 15 }}>
-          {panelOpen ? '◀' : '▶'}
-        </button>
-      </div>
+      <div className="world-map-vignette" />
+      <div className="world-map-scanlines" />
 
-      <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+      <AnimatePresence>
+        <DetailPanel selectedZone={selectedZone} selectedChar={selectedChar} onClear={clearFocus} />
+      </AnimatePresence>
 
-        {/* Side panel */}
-        <div style={{ width: panelOpen ? 270 : 0, overflow: 'hidden', transition: 'width 0.28s cubic-bezier(.4,0,.2,1)', flexShrink: 0, background: panel, backdropFilter: 'blur(22px)', borderRight: `1px solid ${border}`, display: 'flex', flexDirection: 'column' }}>
-          <div style={{ width: 270, flex: 1, overflowY: 'auto' }}>
-
-            <div style={{ padding: '14px 14px 6px' }}>
-              <div style={{ fontFamily: "'Cinzel',serif", fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', color: muted, marginBottom: 8 }}>ARBRES</div>
-              {Object.values(TREE_CONFIGS).map(c => (
-                <button key={c.id} onClick={() => setActiveTree(c.id)} style={{ width: '100%', textAlign: 'left', padding: '9px 12px', borderRadius: 10, border: `1px solid ${activeTree === c.id ? c.color + '55' : border}`, background: activeTree === c.id ? `${c.color}15` : 'transparent', color: activeTree === c.id ? c.color : muted, cursor: 'pointer', marginBottom: 5, fontSize: 13, fontWeight: activeTree === c.id ? 700 : 500, display: 'flex', alignItems: 'center', gap: 8, transition: 'all 0.15s' }}>
-                  <span style={{ fontSize: 17 }}>{c.emoji}</span>
-                  <span>{c.label}</span>
-                  {activeTree === c.id && <span style={{ marginLeft: 'auto', fontSize: 9, background: c.color, color: '#fff', borderRadius: 100, padding: '2px 7px', fontWeight: 800 }}>ACTIF</span>}
-                </button>
-              ))}
-            </div>
-
-            <div style={{ padding: '12px 14px', borderTop: `1px solid ${border}` }}>
-              <div style={{ fontFamily: "'Cinzel',serif", fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', color: muted, marginBottom: 8 }}>FILTRES</div>
-              <div style={{ fontSize: 11, color: muted, marginBottom: 5 }}>Statut</div>
-              <div style={{ display: 'flex', gap: 5, marginBottom: 12 }}>
-                {[['all', 'Tous'], ['alive', '✅ Vivant'], ['dead', '💀 Mort']].map(([v, l]) => (
-                  <button key={v} onClick={() => setFilterStatus(v)} style={{ flex: 1, padding: '6px 2px', borderRadius: 7, border: `1px solid ${filterStatus === v ? '#34d399' : border}`, background: filterStatus === v ? 'rgba(52,211,153,0.14)' : 'transparent', color: filterStatus === v ? '#34d399' : muted, cursor: 'pointer', fontSize: 10, fontWeight: 600 }}>{l}</button>
-                ))}
-              </div>
-              <div style={{ fontSize: 11, color: muted, marginBottom: 5 }}>Haki</div>
-              {[[null, '🌊 Tous'], ['conqueror', '⚡ Conquérant'], ['armament', '⚫ Armement'], ['observation', '👁 Observation']].map(([v, l]) => (
-                <button key={String(v)} onClick={() => setFilterHaki(v)} style={{ width: '100%', padding: '7px 10px', borderRadius: 7, border: `1px solid ${filterHaki === v ? '#d4a017' : border}`, background: filterHaki === v ? 'rgba(212,160,23,0.13)' : 'transparent', color: filterHaki === v ? '#d4a017' : muted, cursor: 'pointer', fontSize: 11, fontWeight: filterHaki === v ? 700 : 500, textAlign: 'left', marginBottom: 4 }}>{l}</button>
-              ))}
-            </div>
-
-            <div style={{ padding: '12px 14px', borderTop: `1px solid ${border}` }}>
-              <div style={{ fontFamily: "'Cinzel',serif", fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', color: muted, marginBottom: 8 }}>LIENS</div>
-              {Object.entries(LINK_COLORS).map(([type, color]) => (
-                <div key={type} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
-                  <div style={{ width: 22, height: 3, background: color, borderRadius: 2, flexShrink: 0 }} />
-                  <span style={{ fontSize: 11, color: muted }}>
-                    {({ parent: 'Parent', sibling: 'Frères', crew: 'Équipage', ally: 'Allié', enemy: 'Ennemi', hierarchy: 'Hiérarchie', rival: 'Rival' })[type]}
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            <div style={{ padding: '12px 14px', borderTop: `1px solid ${border}` }}>
-              <div style={{ fontFamily: "'Cinzel',serif", fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', color: muted, marginBottom: 8 }}>HAKI</div>
-              {[['conqueror', '⚡ Conquérant', '#d4a017'], ['armament', '⚫ Armement', '#64748b'], ['observation', '👁 Observation', '#60a5fa']].map(([k, l, c]) => (
-                <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
-                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: c, flexShrink: 0 }} />
-                  <span style={{ fontSize: 11, color: muted }}>{l}</span>
-                </div>
-              ))}
-              <div style={{ fontSize: 10, color: muted, marginTop: 6, lineHeight: 1.5 }}>Aura dorée = Haki du Conquérant</div>
-            </div>
-
-            {selectedChar && (
-              <div style={{ padding: '12px 14px', borderTop: `1px solid ${border}` }}>
-                <CharDetail char={selectedChar} onClose={() => setSelectedChar(null)} mangaMode={mangaMode} />
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Canvas viewport */}
-        <div
-          ref={containerRef}
-          style={{ flex: 1, position: 'relative', overflow: 'hidden', minWidth: 0, minHeight: 0, cursor: dragging ? 'grabbing' : 'grab' }}
-          onMouseDown={onMouseDown}
-          onClick={() => { if (!wasDragged.current) setSelectedChar(null) }}
-        >
-          {/* Transformed canvas */}
-          <div style={{
-            position: 'absolute',
-            width: CANVAS_W, height: CANVAS_H,
-            transformOrigin: '0 0',
-            transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
-            willChange: 'transform',
-          }}>
-            {/* Background */}
-            <div style={{
-              position: 'absolute', inset: 0,
-              background: mangaMode
-                ? 'radial-gradient(ellipse at 50% 50%, #F5EDD6 0%, #EDE0BC 55%, #E2D3A5 100%)'
-                : 'radial-gradient(ellipse at 50% 40%, #1C0E07 0%, #0D0804 45%, #060301 100%)',
-            }} />
-
-            <ConnectionLines
-              rels={rels}
-              positions={positions}
-              hoveredId={hoveredId}
-              selectedId={selectedChar?.id ?? null}
-            />
-
-            {chars.map(char => {
-              const pos = positions[char.id]
-              if (!pos) return null
-              const sc    = pos.scale
-              const W     = POSTER_W * sc
-              const H     = POSTER_H * sc
-              const tilt  = posterTilt(char.id)
-              const isHov = hoveredId === char.id
-              const isSel = selectedChar?.id === char.id
-              const isDim = !!(hoveredId || selectedChar) && !isHov && !isSel
-
-              return (
-                <motion.div
-                  key={char.id}
-                  style={{
-                    position: 'absolute',
-                    left: pos.x - W / 2,
-                    top:  pos.y - H / 2,
-                    width: W, height: H,
-                    zIndex: isSel ? 10 : isHov ? 8 : 1,
-                    transformOrigin: '50% 5%',
-                    cursor: 'pointer',
-                    userSelect: 'none',
-                  }}
-                  initial={{ rotate: tilt, scale: 0.88, opacity: 0 }}
-                  animate={{
-                    rotate:  tilt,
-                    scale:   isSel ? 1.11 : isHov ? 1.06 : 1,
-                    opacity: isDim ? 0.25 : 1,
-                    y:       isSel ? -16 : isHov ? -9 : 0,
-                  }}
-                  transition={{
-                    scale:   { type: 'spring', stiffness: 340, damping: 26 },
-                    y:       { type: 'spring', stiffness: 340, damping: 26 },
-                    opacity: { duration: 0.22 },
-                    rotate:  { duration: 0 },
-                  }}
-                  onMouseEnter={e => { e.stopPropagation(); setHoveredId(char.id) }}
-                  onMouseLeave={e => { e.stopPropagation(); setHoveredId(null) }}
-                  onClick={e => {
-                    e.stopPropagation()
-                    if (wasDragged.current) return
-                    setSelectedChar(prev => prev?.id === char.id ? null : char)
-                  }}
-                >
-                  <PosterCard char={char} sc={sc} selected={isSel} hovered={isHov} />
-                </motion.div>
-              )
-            })}
-          </div>
-
-          {/* Controls hint */}
-          <div style={{ position: 'absolute', bottom: 16, right: 16, fontFamily: "'IM Fell English',serif", fontStyle: 'italic', fontSize: 11, color: mangaMode ? 'rgba(26,8,0,0.28)' : 'rgba(195,155,70,0.32)', textAlign: 'right', pointerEvents: 'none', lineHeight: 1.8 }}>
-            Glisser : déplacer · Molette : zoomer<br />
-            Clic sur un poster : détails
-          </div>
-
-          {/* Selected name badge */}
-          {selectedChar && (
-            <div style={{ position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)', background: 'rgba(14,9,2,0.92)', border: `1px solid ${selectedChar.color}99`, color: 'rgba(230,200,140,0.95)', borderRadius: 100, padding: '6px 22px', fontFamily: "'Cinzel',serif", fontSize: 12, fontWeight: 700, letterSpacing: '0.08em', pointerEvents: 'none', backdropFilter: 'blur(14px)', boxShadow: `0 4px 24px rgba(0,0,0,0.55), 0 0 22px ${selectedChar.color}44`, whiteSpace: 'nowrap' }}>
-              {selectedChar.emoji} {selectedChar.name}
-            </div>
-          )}
-        </div>
+      <div className="world-map-controls">
+        <button onClick={onClose}>Retour</button>
+        <span>Glisser pour orbiter · Molette pour zoomer · Cliquer pour focaliser</span>
       </div>
     </div>
   )

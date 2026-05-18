@@ -8,11 +8,11 @@ const NAV_LINKS = [
   { label: 'Rangs', href: '#rangs', action: null, gated: false, isRoute: false },
   { label: 'Quiz', href: '#quiz', action: null, gated: false, isRoute: false },
   { label: 'Classement', href: '#classement', action: null, gated: false, isRoute: false },
-  { label: 'Encyclopedie', href: '#', action: 'encyclopedie', gated: false, isRoute: false },
+  { label: 'Encyclopédie', href: '#', action: 'encyclopedie', gated: false, isRoute: false },
   { label: 'Wiki', href: '/wiki', action: null, gated: false, isRoute: true },
-  { label: 'Theories', href: '/theories', action: null, gated: false, isRoute: true },
+  { label: 'Théories', href: '/theories', action: null, gated: false, isRoute: true },
   { label: 'Carte 3D', href: '#', action: 'tree', gated: false, isRoute: false },
-  { label: 'Animes & Scans', href: '#', action: 'anime-hub', gated: true, isRoute: false, live: true },
+  { label: 'Animés & Scans', href: '#', action: 'anime-hub', gated: true, isRoute: false },
 ]
 
 function openAnimeHub(event) {
@@ -52,10 +52,38 @@ function LockIcon() {
 }
 
 const SOCIALS = [
-  { href: 'https://www.twitch.tv/bouledog_', icon: <TwitchIcon /> },
-  { href: 'https://www.youtube.com/@BouleDogg/featured', icon: <YouTubeIcon /> },
-  { href: 'https://www.tiktok.com/@bouledogg', icon: <TikTokIcon /> },
+  { label: 'Twitch', href: 'https://www.twitch.tv/bouledog_', icon: <TwitchIcon /> },
+  { label: 'YouTube', href: 'https://www.youtube.com/@BouleDogg/featured', icon: <YouTubeIcon /> },
+  { label: 'TikTok', href: 'https://www.tiktok.com/@bouledogg', icon: <TikTokIcon /> },
 ]
+
+function LiveStatus() {
+  return (
+    <span className="nav-live-inline" aria-label="Live actif">
+      <i />
+      <span>Live</span>
+    </span>
+  )
+}
+
+function SocialLinks({ mobile = false }) {
+  return (
+    <div className={mobile ? 'nav-mobile-socials' : 'nav-socials-premium'}>
+      {SOCIALS.map((social) => (
+        <a
+          key={social.href}
+          href={social.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={mobile ? 'nav-mobile-social' : 'nav-social-premium'}
+          aria-label={social.label}
+        >
+          {social.icon}
+        </a>
+      ))}
+    </div>
+  )
+}
 
 function BrandMark({ onClick }) {
   return (
@@ -100,7 +128,7 @@ function UserMenu({ displayName, avatarUrl, onSignOut }) {
         </span>
         <span className="nav-user-copy">
           <span className="nav-user-name">{displayName}</span>
-          <span className="nav-user-rank">Equipage</span>
+          <span className="nav-user-rank">Équipage</span>
         </span>
         <span className="nav-user-caret" />
       </button>
@@ -113,7 +141,7 @@ function UserMenu({ displayName, avatarUrl, onSignOut }) {
           </div>
           {[
             { label: 'Wiki', path: '/wiki' },
-            { label: 'Theories', path: '/theories' },
+            { label: 'Théories', path: '/theories' },
             { label: 'Arbre 3D', action: 'tree' },
           ].map((item) => (
             <button
@@ -129,7 +157,7 @@ function UserMenu({ displayName, avatarUrl, onSignOut }) {
             </button>
           ))}
           <button onClick={() => { setOpen(false); onSignOut() }} className="nav-user-row danger">
-            Deconnexion
+            Déconnexion
           </button>
         </div>
       )}
@@ -141,7 +169,6 @@ function DesktopNavLink({ link, active, locked, onClick }) {
   const content = (
     <>
       <span>{link.label}</span>
-      {link.live && <span className="nav-live-inline"><i /> Live</span>}
       {locked && <span className="nav-lock"><LockIcon /></span>}
     </>
   )
@@ -207,9 +234,11 @@ export default function Navbar() {
     <>
       <nav className={scrolled ? 'navbar-premium navbar-premium-scrolled' : 'navbar-premium'}>
         <div className="nav-shell-premium">
-          <BrandMark onClick={goHome} />
+          <div className="nav-zone-brand">
+            <BrandMark onClick={goHome} />
+          </div>
 
-          <div className="nav-center-premium hide-mobile">
+          <div className="nav-zone-center hide-mobile" aria-label="Navigation principale">
             {NAV_LINKS.map((link) => (
               <DesktopNavLink
                 key={link.label}
@@ -221,15 +250,12 @@ export default function Navbar() {
             ))}
           </div>
 
-          <div className="nav-actions-premium">
-            <div className="nav-socials-premium hide-mobile">
-              {SOCIALS.map((social) => (
-                <a key={social.href} href={social.href} target="_blank" rel="noopener noreferrer" className="nav-social-premium">
-                  {social.icon}
-                </a>
-              ))}
-            </div>
-            <span className="nav-separator-premium hide-mobile" />
+          <div className="nav-zone-status hide-mobile">
+            <LiveStatus />
+            <SocialLinks />
+          </div>
+
+          <div className="nav-zone-user">
             <div className="hide-mobile">
               {isAuthenticated
                 ? <UserMenu displayName={displayName} avatarUrl={avatarUrl} onSignOut={signOut} />
@@ -258,13 +284,11 @@ export default function Navbar() {
                 link.isRoute ? (
                   <Link key={link.label} to={link.href} onClick={() => setMenuOpen(false)} className="nav-mobile-link">
                     <span>{link.label}</span>
-                    {link.live && <span className="nav-live-inline"><i /> Live</span>}
                   </Link>
                 ) : (
                   <a key={link.label} href={link.href} onClick={link.action ? (event) => handleNavClick(link, event) : () => setMenuOpen(false)} className="nav-mobile-link">
                     <span>{link.label}</span>
                     <span className="nav-mobile-meta">
-                      {link.live && <span className="nav-live-inline"><i /> Live</span>}
                       {link.gated && !isAuthenticated && <span className="nav-lock"><LockIcon /></span>}
                     </span>
                   </a>
@@ -272,14 +296,11 @@ export default function Navbar() {
               ))}
             </div>
             <div className="nav-mobile-footer">
-              {SOCIALS.map((social) => (
-                <a key={social.href} href={social.href} target="_blank" rel="noopener noreferrer" className="nav-mobile-social">
-                  {social.icon}
-                </a>
-              ))}
+              <LiveStatus />
+              <SocialLinks mobile />
               <span className="nav-mobile-spacer" />
               {isAuthenticated
-                ? <button onClick={() => { setMenuOpen(false); signOut() }} className="nav-mobile-logout">Deconnexion</button>
+                ? <button onClick={() => { setMenuOpen(false); signOut() }} className="nav-mobile-logout">Déconnexion</button>
                 : <LoginButton onClick={() => { setMenuOpen(false); setAuthOpen(true) }} />
               }
             </div>
