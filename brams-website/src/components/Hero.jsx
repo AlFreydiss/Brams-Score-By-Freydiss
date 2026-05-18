@@ -1,6 +1,7 @@
 ﻿import { useState, useEffect, useRef, useCallback } from 'react'
 import Particles from './Particles.jsx'
 import UnifiedSidebar from './UnifiedSidebar.jsx'
+import ChromaKeyHeroVideo from './ChromaKeyHeroVideo.jsx'
 import { useMobile } from '../hooks/useMediaQuery.js'
 import { fetchStats } from '../lib/supabase.js'
 
@@ -180,6 +181,7 @@ export default function Hero() {
       <div className="orb" style={{ width: 350, height: 350, top: '55%', left: '-8%', background: 'rgba(255,215,0,.04)', animationDelay: '6s' }} />
       <div className="dot-bg" style={{ position: 'absolute', inset: 0, opacity: .4, pointerEvents: 'none' }} />
       <Particles />
+      {!isMobile && <ChromaKeyHeroVideo />}
 
       {[['5%','55%'],['88%','48%'],['70%','72%'],['15%','80%'],['50%','88%']].map(([left, top], i) => (
         <div key={i} style={{ position: 'absolute', left, top, fontSize: 14 + i * 4, opacity: 0.025, pointerEvents: 'none', userSelect: 'none', animation: `float ${8 + i * 2}s ease-in-out ${i}s infinite` }}>🏴‍☠️</div>

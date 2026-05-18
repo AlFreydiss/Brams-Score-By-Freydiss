@@ -5,3 +5,19 @@
 
 # Scans manga (fichiers locaux, non versionnés — trop volumineux pour git)
 brams-website/public/scans/
+
+# Node dependencies
+node_modules/
+**/node_modules/
+
+# Codex local configuration
+.codex/
+
+# Claude Flow runtime data
+.claude-flow/data/
+.claude-flow/logs/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
