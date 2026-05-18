@@ -12,6 +12,7 @@ const NAV_LINKS = [
   { label: 'Wiki', href: '/wiki', action: null, gated: false, isRoute: true },
   { label: 'Théories', href: '/theories', action: null, gated: false, isRoute: true },
   { label: 'Boutique', href: '/boutique', action: null, gated: true, isRoute: true },
+  { label: 'Brams Traitor', href: '/brams-traitor', action: null, gated: false, isRoute: true },
   { label: 'Carte 3D', href: '#', action: 'tree', gated: false, isRoute: false },
   { label: 'Animés & Scans', href: '#', action: 'anime-hub', gated: true, isRoute: false },
 ]
@@ -144,6 +145,7 @@ function UserMenu({ displayName, avatarUrl, onSignOut }) {
             { label: 'Wiki', path: '/wiki' },
             { label: 'Théories', path: '/theories' },
             { label: 'Boutique Berry', path: '/boutique' },
+            { label: 'Brams Traitor', path: '/brams-traitor' },
             { label: 'Arbre 3D', action: 'tree' },
           ].map((item) => (
             <button

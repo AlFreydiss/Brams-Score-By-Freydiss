@@ -53,6 +53,7 @@ const TheoryEditor       = lazy(() => import('./components/TheoryEditor.jsx'))
 const ConstellationPage  = lazy(() => import('./components/ConstellationPage.jsx'))
 const DevilFruitPage     = lazy(() => import('./components/devil-fruit/DevilFruitPage.jsx'))
 const BerryShop          = lazy(() => import('./components/BerryShop.jsx'))
+const BramsTraitorPage   = lazy(() => import('./components/BramsTraitorPage.jsx'))
 
 function BgVideo() {
   const [visible, setVisible] = useState(false)
@@ -293,6 +294,10 @@ export default function App() {
         {/* Boutique Berry connectee Discord */}
         <Route path="/boutique" element={<PageLayout><BerryShop /></PageLayout>} />
         <Route path="/shop" element={<PageLayout><BerryShop /></PageLayout>} />
+
+        {/* Jeu social deduction pirate */}
+        <Route path="/brams-traitor" element={<BramsTraitorPage />} />
+        <Route path="/pirate-arena" element={<BramsTraitorPage />} />
 
         {/* Homepage */}
         <Route path="/*" element={mainContent} />

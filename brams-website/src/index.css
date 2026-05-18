@@ -818,6 +818,290 @@ section {
   }
 }
 
+.traitor-shell {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  overflow: hidden;
+  background: #02050a;
+  color: #fff;
+}
+.traitor-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: crosshair;
+}
+.traitor-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(0,0,0,.58), transparent 24%, rgba(0,0,0,.62)),
+    radial-gradient(circle at 50% 50%, transparent 42%, rgba(0,0,0,.68));
+}
+.traitor-close {
+  position: absolute;
+  top: 22px;
+  right: 24px;
+  z-index: 6;
+  min-height: 38px;
+  padding: 0 15px;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 999px;
+  background: rgba(10,12,18,.66);
+  color: rgba(255,255,255,.82);
+  backdrop-filter: blur(14px);
+  cursor: pointer;
+  font-weight: 850;
+}
+.traitor-hud {
+  position: absolute;
+  top: 18px;
+  left: 20px;
+  right: 104px;
+  z-index: 4;
+  display: grid;
+  grid-template-columns: minmax(220px, 310px) 1fr auto;
+  gap: 14px;
+  align-items: start;
+  pointer-events: none;
+}
+.traitor-role,
+.traitor-hud-center,
+.traitor-keys,
+.traitor-side,
+.traitor-meeting,
+.traitor-sabotage,
+.traitor-berries {
+  border: 1px solid rgba(255,255,255,.1);
+  background: rgba(8,10,16,.66);
+  box-shadow: 0 24px 70px rgba(0,0,0,.34);
+  backdrop-filter: blur(18px);
+}
+.traitor-role {
+  padding: 14px;
+  border-color: color-mix(in srgb, var(--role), transparent 62%);
+  border-radius: 16px;
+}
+.traitor-role span,
+.traitor-section > span,
+.traitor-meeting span {
+  display: block;
+  margin-bottom: 7px;
+  color: rgba(246,179,75,.8);
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: .11em;
+  text-transform: uppercase;
+}
+.traitor-role strong {
+  display: block;
+  color: var(--role);
+  font-size: 20px;
+}
+.traitor-role em,
+.traitor-hud-center span,
+.traitor-task em,
+.traitor-suspect em {
+  display: block;
+  color: rgba(255,255,255,.56);
+  font-size: 12px;
+  font-style: normal;
+  line-height: 1.45;
+}
+.traitor-hud-center {
+  justify-self: center;
+  min-width: 300px;
+  padding: 13px 18px;
+  border-radius: 999px;
+  text-align: center;
+}
+.traitor-hud-center strong {
+  display: block;
+  color: #fff;
+  font-size: 15px;
+  letter-spacing: .12em;
+}
+.traitor-keys {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+  max-width: 290px;
+  padding: 10px;
+  border-radius: 16px;
+}
+.traitor-keys span {
+  padding: 5px 8px;
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 999px;
+  color: rgba(255,255,255,.64);
+  font-size: 11px;
+  font-weight: 850;
+}
+.traitor-side {
+  position: absolute;
+  right: 24px;
+  top: 92px;
+  z-index: 4;
+  width: 300px;
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border-radius: 18px;
+}
+.traitor-section {
+  display: grid;
+  gap: 9px;
+}
+.traitor-task,
+.traitor-suspect {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 12px;
+  background: rgba(255,255,255,.045);
+}
+.traitor-task strong,
+.traitor-suspect strong {
+  color: rgba(255,255,255,.88);
+  font-size: 13px;
+}
+.traitor-suspect {
+  grid-template-columns: auto 1fr auto;
+}
+.traitor-suspect i {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  box-shadow: 0 0 14px currentColor;
+}
+.traitor-notifications {
+  position: absolute;
+  left: 24px;
+  bottom: 24px;
+  z-index: 5;
+  display: grid;
+  gap: 8px;
+  width: min(380px, calc(100vw - 48px));
+  pointer-events: none;
+}
+.traitor-notifications div {
+  padding: 12px 14px;
+  border: 1px solid rgba(255,255,255,.1);
+  border-left-color: #f6b34b;
+  border-radius: 12px;
+  background: rgba(8,10,16,.72);
+  color: rgba(255,255,255,.82);
+  backdrop-filter: blur(14px);
+  font-size: 13px;
+  font-weight: 800;
+}
+.traitor-notifications .danger {
+  border-left-color: #e0524a;
+}
+.traitor-meeting {
+  position: absolute;
+  left: 50%;
+  bottom: 34px;
+  z-index: 7;
+  width: min(760px, calc(100vw - 40px));
+  padding: 22px;
+  border-radius: 22px;
+  transform: translateX(-50%);
+}
+.traitor-meeting h2 {
+  margin: 0 0 8px;
+  font-size: 32px;
+}
+.traitor-meeting p {
+  margin: 0 0 16px;
+  color: rgba(255,255,255,.62);
+}
+.traitor-vote-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+.traitor-vote-grid button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 11px;
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 12px;
+  background: rgba(255,255,255,.055);
+  color: #fff;
+  cursor: pointer;
+  font-weight: 850;
+}
+.traitor-vote-grid i {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+}
+.traitor-sabotage {
+  position: absolute;
+  top: 104px;
+  left: 50%;
+  z-index: 5;
+  width: min(520px, calc(100vw - 40px));
+  padding: 14px 18px;
+  border-color: color-mix(in srgb, var(--sabotage), transparent 56%);
+  border-radius: 16px;
+  transform: translateX(-50%);
+  text-align: center;
+}
+.traitor-sabotage strong {
+  display: block;
+  color: var(--sabotage);
+  font-size: 18px;
+}
+.traitor-sabotage span {
+  color: rgba(255,255,255,.62);
+  font-size: 13px;
+}
+.traitor-berries {
+  position: absolute;
+  left: 50%;
+  top: 22px;
+  z-index: 3;
+  padding: 9px 13px;
+  border-radius: 999px;
+  color: #ffd391;
+  font-size: 12px;
+  font-weight: 950;
+  transform: translateX(-50%) translateY(56px);
+}
+@media (max-width: 900px) {
+  .traitor-hud {
+    right: 16px;
+    grid-template-columns: 1fr;
+  }
+  .traitor-hud-center,
+  .traitor-keys {
+    display: none;
+  }
+  .traitor-side {
+    left: 12px;
+    right: 12px;
+    top: auto;
+    bottom: 12px;
+    width: auto;
+    grid-template-columns: 1fr 1fr;
+    max-height: 230px;
+    overflow: auto;
+  }
+  .traitor-vote-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hero-brams,
   .hero-community,
