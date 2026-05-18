@@ -299,15 +299,6 @@ export default function ScansPage({ onClose }) {
 
   useEffect(() => { setPage(1) }, [search, sort, perPage])
 
-  // Groupes de range
-  const rangeGroups = useMemo(() => {
-    const groups = [], size = 20
-    for (let i = 0; i < CHAPTERS.length; i += size) {
-      const sl = CHAPTERS.slice(i, i + size)
-      groups.push({ start: sl[0].num, end: sl[sl.length-1].num, idx: Math.floor(i/size) })
-    }
-    return groups
-  }, [])
 
   // Scroll vers un chapitre + highlight
   const scrollToChapter = useCallback((num) => {
@@ -483,23 +474,22 @@ export default function ScansPage({ onClose }) {
             </select>
           </div>
 
-          {/* Rangée de plages */}
-          {rangeGroups.length > 1 && (
-            <div style={{ display:'flex', gap:6, padding:'0 20px 10px', overflowX:'auto' }}>
-              {rangeGroups.map(g => {
-                const active = perPage !== Infinity && paginated.some(c => c.num >= g.start && c.num <= g.end)
-                return (
-                  <button key={g.start} onClick={() => {
-                    setSearch(''); setSort('asc'); setPerPage(PER_PAGE)
-                    const pos = CHAPTERS.findIndex(c => c.num === g.start)
-                    setPage(Math.floor(pos / PER_PAGE) + 1)
-                  }} style={{ flexShrink:0, height:28, padding:'0 12px', borderRadius:7, border:`1px solid ${active?'rgba(224,82,74,0.5)':'rgba(255,255,255,0.1)'}`, background:active?'rgba(224,82,74,0.12)':'transparent', color:active?'var(--accent)':'var(--muted)', fontSize:11, fontWeight:600, cursor:'pointer', transition:'all 0.15s' }}>
-                    {g.start}–{g.end}
-                  </button>
-                )
-              })}
-            </div>
-          )}
+          {/* Arcs navigation */}
+          <div style={{ display:'flex', gap:6, padding:'0 20px 10px', overflowX:'auto', scrollbarWidth:'none' }}>
+            {ARCS.filter(arc => CHAPTERS.some(c => c.num >= arc.range[0] && c.num <= arc.range[1])).map(arc => (
+              <button
+                key={arc.name}
+                onClick={() => handleJumpArc(arc)}
+                style={{ flexShrink:0, height:28, padding:'0 11px', borderRadius:7, border:`1px solid ${arc.current ? arc.color+'66' : 'rgba(255,255,255,0.09)'}`, background: arc.current ? `${arc.color}18` : 'transparent', color: arc.current ? arc.color : 'rgba(255,255,255,0.45)', fontSize:11, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', gap:5, transition:'all 0.15s', whiteSpace:'nowrap' }}
+                onMouseEnter={e => { e.currentTarget.style.background=`${arc.color}28`; e.currentTarget.style.color=arc.color; e.currentTarget.style.borderColor=arc.color+'70' }}
+                onMouseLeave={e => { e.currentTarget.style.background=arc.current?`${arc.color}18`:'transparent'; e.currentTarget.style.color=arc.current?arc.color:'rgba(255,255,255,0.45)'; e.currentTarget.style.borderColor=arc.current?arc.color+'66':'rgba(255,255,255,0.09)' }}
+              >
+                <span style={{ fontSize:13 }}>{arc.emoji}</span>
+                <span>{arc.name}</span>
+                {arc.current && <span style={{ fontSize:8, fontWeight:800, background:'rgba(52,211,153,0.18)', color:'#34d399', border:'1px solid rgba(52,211,153,0.3)', borderRadius:100, padding:'1px 5px' }}>EN COURS</span>}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* ── Contenu ── */}

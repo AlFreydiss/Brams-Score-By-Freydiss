@@ -275,6 +275,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
       <div
         ref={containerRef}
         onClick={togglePlay}
+        onDoubleClick={toggleFullscreen}
         onMouseMove={showControls}
         onMouseLeave={() => { if (playing) hideTimer.current = setTimeout(() => setShowCtrl(false), 1500) }}
         style={{ flex: 1, position: 'relative', background: '#000', cursor: showCtrl ? 'default' : 'none', overflow: 'hidden' }}
@@ -359,6 +360,14 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                 {/* Play/Pause */}
                 <Btn onClick={togglePlay} title={playing ? 'Pause (Espace)' : 'Lecture (Espace)'} color={color}>
                   {playing ? '⏸' : '▶'}
+                </Btn>
+
+                {/* Skip ±10s */}
+                <Btn onClick={() => { const v = videoRef.current; if (v) v.currentTime = Math.max(0, v.currentTime - 10) }} title="Reculer de 10s">
+                  <span style={{ fontSize: 13 }}>−10</span>
+                </Btn>
+                <Btn onClick={() => { const v = videoRef.current; if (v) v.currentTime = Math.min(v.duration || 0, v.currentTime + 10) }} title="Avancer de 10s">
+                  <span style={{ fontSize: 13 }}>+10</span>
                 </Btn>
 
                 {/* Volume */}
@@ -468,17 +477,36 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
       </div>
 
       {/* ── Bande épisodes ── */}
-      {videos.length > 1 && (
-        <div style={{ flexShrink: 0, display: 'flex', gap: 6, padding: '7px 14px', background: 'rgba(8,9,11,0.82)', backdropFilter: 'blur(18px)', borderTop: '1px solid rgba(255,255,255,0.05)', overflowX: 'auto', scrollbarWidth: 'thin' }}>
-          {videos.map((v, i) => (
-            <button key={i} onClick={() => setIdx(i)}
-              style={{ flexShrink: 0, padding: '5px 13px', borderRadius: 7, border: `1px solid ${i === idx ? color + '70' : 'rgba(255,255,255,0.09)'}`, background: i === idx ? `${color}25` : 'transparent', color: i === idx ? color : 'rgba(255,255,255,0.4)', fontSize: 12, fontWeight: 700, cursor: 'pointer', transition: 'all .15s', whiteSpace: 'nowrap' }}
-              onMouseEnter={e => { if (i !== idx) e.currentTarget.style.background = 'rgba(255,255,255,0.06)' }}
-              onMouseLeave={e => { if (i !== idx) e.currentTarget.style.background = 'transparent' }}
-            >Ép.{v.episode}</button>
-          ))}
-        </div>
-      )}
+      {videos.length > 1 && (() => {
+        const hasThumbs = videos.some(v => v.thumbnail)
+        return (
+          <div style={{ flexShrink: 0, display: 'flex', gap: 6, padding: hasThumbs ? '8px 14px' : '7px 14px', background: 'rgba(8,9,11,0.84)', backdropFilter: 'blur(18px)', borderTop: '1px solid rgba(255,255,255,0.05)', overflowX: 'auto', scrollbarWidth: 'thin', alignItems: 'flex-start' }}>
+            {videos.map((v, i) => (
+              <button key={i} onClick={() => setIdx(i)}
+                style={{ flexShrink: 0, borderRadius: 8, border: `1px solid ${i === idx ? color + '70' : 'rgba(255,255,255,0.09)'}`, background: i === idx ? `${color}22` : 'transparent', color: i === idx ? color : 'rgba(255,255,255,0.4)', cursor: 'pointer', transition: 'all .15s', overflow: 'hidden', padding: hasThumbs ? '0' : '5px 13px' }}
+                onMouseEnter={e => { if (i !== idx) e.currentTarget.style.background = 'rgba(255,255,255,0.06)' }}
+                onMouseLeave={e => { if (i !== idx) e.currentTarget.style.background = 'transparent' }}
+              >
+                {hasThumbs ? (
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    {v.thumbnail
+                      ? <img src={v.thumbnail} alt={`Ep.${v.episode}`} style={{ width: 96, height: 54, objectFit: 'cover', display: 'block' }} />
+                      : <div style={{ width: 96, height: 54, background: 'rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>▶</div>
+                    }
+                    <div style={{ padding: '4px 6px', fontSize: 11, fontWeight: 700, textAlign: 'center', whiteSpace: 'nowrap' }}>
+                      {v.season && <span style={{ opacity: 0.55, marginRight: 3 }}>S{v.season} ·</span>}Ép.{v.episode}
+                    </div>
+                  </div>
+                ) : (
+                  <span style={{ fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap' }}>
+                    {v.season && <span style={{ opacity: 0.55, marginRight: 3 }}>S{v.season}·</span>}Ép.{v.episode}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+        )
+      })()}
     </div>
   )
 }
