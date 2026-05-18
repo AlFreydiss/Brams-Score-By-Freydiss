@@ -52,6 +52,7 @@ const TheoryDetail       = lazy(() => import('./components/TheoryDetail.jsx'))
 const TheoryEditor       = lazy(() => import('./components/TheoryEditor.jsx'))
 const ConstellationPage  = lazy(() => import('./components/ConstellationPage.jsx'))
 const DevilFruitPage     = lazy(() => import('./components/devil-fruit/DevilFruitPage.jsx'))
+const BerryShop          = lazy(() => import('./components/BerryShop.jsx'))
 
 function BgVideo() {
   const [visible, setVisible] = useState(false)
@@ -288,6 +289,10 @@ export default function App() {
 
         {/* Encyclopédie Fruits du Démon */}
         <Route path="/fruits-du-demon" element={<PageLayout><DevilFruitPage /></PageLayout>} />
+
+        {/* Boutique Berry connectee Discord */}
+        <Route path="/boutique" element={<PageLayout><BerryShop /></PageLayout>} />
+        <Route path="/shop" element={<PageLayout><BerryShop /></PageLayout>} />
 
         {/* Homepage */}
         <Route path="/*" element={mainContent} />
