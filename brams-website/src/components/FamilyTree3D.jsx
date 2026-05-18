@@ -116,20 +116,38 @@ function findZoneForChar(char) {
   return ZONES.find((zone) => zone.filter(char)) || ZONES[0]
 }
 
-function orbitPosition(char, time = 0) {
-  const zone = findZoneForChar(char)
-  const base = new THREE.Vector3(...zone.position)
+const ZONE_BY_CHAR_ID = new Map(CHARACTERS.map((char) => [char.id, findZoneForChar(char)]))
+const ORBIT_META = new Map(CHARACTERS.map((char) => {
+  const zone = ZONE_BY_CHAR_ID.get(char.id)
   const seed = hashValue(char.id)
-  const radius = char.id === 'luffy' ? 2.15 : 1.65 + seed * 1.65
-  const speed = char.id === 'luffy' ? 0.22 : 0.12 + seed * 0.18
-  const angle = seed * Math.PI * 2 + time * speed
-  const y = 1.25 + Math.sin(time * (0.42 + seed * 0.3) + seed * 6) * 0.34
+  return [char.id, {
+    zone,
+    seed,
+    baseX: zone.position[0],
+    baseY: zone.position[1],
+    baseZ: zone.position[2],
+    radius: char.id === 'luffy' ? 2.15 : 1.65 + seed * 1.65,
+    speed: char.id === 'luffy' ? 0.22 : 0.12 + seed * 0.18,
+    angleOffset: seed * Math.PI * 2,
+    ySpeed: 0.42 + seed * 0.3,
+    yOffset: seed * 6,
+  }]
+}))
 
-  return base.add(new THREE.Vector3(
-    Math.cos(angle) * radius,
-    y,
-    Math.sin(angle) * radius * 0.72,
-  ))
+function orbitPositionTo(target, char, time = 0) {
+  const meta = ORBIT_META.get(char.id)
+  if (!meta) return target.set(0, 0, 0)
+  const angle = meta.angleOffset + time * meta.speed
+  target.set(
+    meta.baseX + Math.cos(angle) * meta.radius,
+    meta.baseY + 1.25 + Math.sin(time * meta.ySpeed + meta.yOffset) * 0.34,
+    meta.baseZ + Math.sin(angle) * meta.radius * 0.72,
+  )
+  return target
+}
+
+function zoneForChar(char) {
+  return ZONE_BY_CHAR_ID.get(char.id) || ZONES[0]
 }
 
 function zoneCharacters(zone) {
@@ -139,7 +157,7 @@ function zoneCharacters(zone) {
 function AtmosphereParticles() {
   const points = useRef()
   const { positions, colors } = useMemo(() => {
-    const count = 900
+    const count = 700
     const pos = new Float32Array(count * 3)
     const col = new Float32Array(count * 3)
     const palette = ['#ffd27a', '#e0524a', '#86f7ff', '#37b26c', '#ffffff']
@@ -194,16 +212,16 @@ function HolographicOcean() {
   return (
     <group>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.55, 0]}>
-        <circleGeometry args={[34, 160]} />
+        <circleGeometry args={[34, 128]} />
         <meshBasicMaterial color="#071018" transparent opacity={0.48} depthWrite={false} />
       </mesh>
       <gridHelper ref={grid} args={[62, 62, '#4da3ff', '#1b3248']} position={[0, -1.48, 0]} />
       <mesh ref={ringA} rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.42, 0]}>
-        <torusGeometry args={[13.8, 0.012, 8, 240]} />
+        <torusGeometry args={[13.8, 0.012, 8, 160]} />
         <meshBasicMaterial color="#d4a017" transparent opacity={0.25} blending={THREE.AdditiveBlending} />
       </mesh>
       <mesh ref={ringB} rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.38, 0]}>
-        <torusGeometry args={[21, 0.01, 8, 240]} />
+        <torusGeometry args={[21, 0.01, 8, 160]} />
         <meshBasicMaterial color="#86f7ff" transparent opacity={0.16} blending={THREE.AdditiveBlending} />
       </mesh>
     </group>
@@ -212,14 +230,15 @@ function HolographicOcean() {
 
 function IslandCore({ zone, selected, hovered, onSelect, onHover }) {
   const group = useRef()
-  const color = new THREE.Color(zone.color)
-  const accent = new THREE.Color(zone.accent)
+  const color = useMemo(() => new THREE.Color(zone.color), [zone.color])
+  const accent = useMemo(() => new THREE.Color(zone.accent), [zone.accent])
+  const zoneSeed = useMemo(() => hashValue(zone.id), [zone.id])
 
   useFrame(({ clock }) => {
     if (!group.current) return
     const t = clock.elapsedTime
-    group.current.position.y = zone.position[1] + Math.sin(t * 0.5 + hashValue(zone.id) * 6) * 0.12
-    group.current.rotation.y = t * 0.08 + hashValue(zone.id) * 2
+    group.current.position.y = zone.position[1] + Math.sin(t * 0.5 + zoneSeed * 6) * 0.12
+    group.current.rotation.y = t * 0.08 + zoneSeed * 2
   })
 
   return (
@@ -244,7 +263,7 @@ function IslandCore({ zone, selected, hovered, onSelect, onHover }) {
         <meshBasicMaterial color={accent} transparent opacity={selected || hovered ? 0.75 : 0.36} blending={THREE.AdditiveBlending} />
       </mesh>
       <mesh scale={selected || hovered ? 1.35 : 1.05}>
-        <sphereGeometry args={[2.42 * zone.scale, 32, 32]} />
+        <sphereGeometry args={[2.42 * zone.scale, 24, 24]} />
         <meshBasicMaterial color={zone.color} transparent opacity={selected || hovered ? 0.13 : 0.055} blending={THREE.AdditiveBlending} depthWrite={false} />
       </mesh>
       <Html center distanceFactor={10} position={[0, 2.2 * zone.scale, 0]} className="world-map-label">
@@ -260,16 +279,17 @@ function IslandCore({ zone, selected, hovered, onSelect, onHover }) {
 function CharacterOrb({ char, selected, hovered, dimmed, onSelect, onHover }) {
   const group = useRef()
   const aura = useRef()
-  const color = char.color || findZoneForChar(char).color
+  const color = char.color || zoneForChar(char).color
   const isLuffy = char.id === 'luffy'
+  const seed = useMemo(() => hashValue(char.id), [char.id])
 
   useFrame(({ clock, camera }) => {
     if (!group.current) return
     const t = clock.elapsedTime
-    group.current.position.copy(orbitPosition(char, t))
+    orbitPositionTo(group.current.position, char, t)
     group.current.quaternion.copy(camera.quaternion)
     const s = isLuffy ? 1.45 : selected || hovered ? 1.12 : 1
-    group.current.scale.setScalar(s + Math.sin(t * 1.4 + hashValue(char.id) * 4) * 0.035)
+    group.current.scale.setScalar(s + Math.sin(t * 1.4 + seed * 4) * 0.035)
     if (aura.current) aura.current.rotation.z = t * (isLuffy ? 0.35 : 0.22)
   })
 
@@ -280,13 +300,15 @@ function CharacterOrb({ char, selected, hovered, dimmed, onSelect, onHover }) {
       onPointerEnter={(event) => { event.stopPropagation(); onHover(char.id) }}
       onPointerLeave={(event) => { event.stopPropagation(); onHover(null) }}
     >
-      <pointLight color={color} intensity={isLuffy || hovered || selected ? 1.1 : 0.35} distance={3.4} />
+      {(isLuffy || hovered || selected) && (
+        <pointLight color={color} intensity={isLuffy ? 0.9 : 0.75} distance={3.2} />
+      )}
       <mesh ref={aura}>
-        <torusGeometry args={[0.54, 0.014, 8, 80]} />
+        <torusGeometry args={[0.54, 0.014, 8, 56]} />
         <meshBasicMaterial color={char.haki?.includes('conqueror') ? HAKI_COLORS.conqueror : color} transparent opacity={dimmed ? 0.08 : selected || hovered ? 0.86 : 0.42} blending={THREE.AdditiveBlending} />
       </mesh>
       <mesh>
-        <sphereGeometry args={[isLuffy ? 0.48 : 0.34, 32, 32]} />
+        <sphereGeometry args={[isLuffy ? 0.48 : 0.34, 24, 24]} />
         <meshStandardMaterial
           color="#0d1118"
           roughness={0.24}
@@ -298,15 +320,17 @@ function CharacterOrb({ char, selected, hovered, dimmed, onSelect, onHover }) {
         />
       </mesh>
       <mesh scale={isLuffy ? 1.28 : 1}>
-        <sphereGeometry args={[0.62, 32, 32]} />
+        <sphereGeometry args={[0.62, 24, 24]} />
         <meshBasicMaterial color={color} transparent opacity={dimmed ? 0.025 : selected || hovered ? 0.18 : 0.08} blending={THREE.AdditiveBlending} depthWrite={false} />
       </mesh>
-      <Html center distanceFactor={9} position={[0, isLuffy ? 0.84 : 0.68, 0]} className="world-map-node-label">
-        <div className={selected || hovered ? 'world-map-node-card active' : 'world-map-node-card'}>
-          <strong>{char.name}</strong>
-          <span>{char.alias || char.crew || char.org || 'Grand Line'}</span>
-        </div>
-      </Html>
+      {(isLuffy || selected || hovered) && (
+        <Html center distanceFactor={9} position={[0, isLuffy ? 0.84 : 0.68, 0]} className="world-map-node-label">
+          <div className={selected || hovered ? 'world-map-node-card active' : 'world-map-node-card'}>
+            <strong>{char.name}</strong>
+            <span>{char.alias || char.crew || char.org || 'Grand Line'}</span>
+          </div>
+        </Html>
+      )}
     </group>
   )
 }
@@ -314,28 +338,41 @@ function CharacterOrb({ char, selected, hovered, dimmed, onSelect, onHover }) {
 function EnergyRelation({ relation, selectedChar, hoveredChar }) {
   const line = useRef()
   const pulse = useRef()
-  const from = CHARACTERS.find((char) => char.id === relation.from)
-  const to = CHARACTERS.find((char) => char.id === relation.to)
+  const from = useMemo(() => CHARACTERS.find((char) => char.id === relation.from), [relation.from])
+  const to = useMemo(() => CHARACTERS.find((char) => char.id === relation.to), [relation.to])
   const style = RELATION_STYLE[relation.type] || RELATION_STYLE.ally
+  const seed = useMemo(() => hashValue(relation.id), [relation.id])
+  const scratch = useMemo(() => ({
+    a: new THREE.Vector3(),
+    b: new THREE.Vector3(),
+    mid: new THREE.Vector3(),
+    point: new THREE.Vector3(),
+    curve: new THREE.CatmullRomCurve3([new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()]),
+    points: Array.from({ length: 34 }, () => new THREE.Vector3()),
+  }), [])
   const active = selectedChar && (relation.from === selectedChar.id || relation.to === selectedChar.id)
   const hover = hoveredChar && (relation.from === hoveredChar || relation.to === hoveredChar)
 
   useFrame(({ clock }) => {
     if (!from || !to || !line.current) return
     const t = clock.elapsedTime
-    const a = orbitPosition(from, t)
-    const b = orbitPosition(to, t)
-    const mid = a.clone().lerp(b, 0.5)
-    mid.y += 1.2 + Math.sin(t * 0.6 + hashValue(relation.id) * 4) * 0.34
-    const curve = new THREE.CatmullRomCurve3([a, mid, b])
-    const points = curve.getPoints(48)
-    line.current.geometry.setFromPoints(points)
+    orbitPositionTo(scratch.a, from, t)
+    orbitPositionTo(scratch.b, to, t)
+    scratch.mid.copy(scratch.a).lerp(scratch.b, 0.5)
+    scratch.mid.y += 1.2 + Math.sin(t * 0.6 + seed * 4) * 0.34
+    scratch.curve.points[0].copy(scratch.a)
+    scratch.curve.points[1].copy(scratch.mid)
+    scratch.curve.points[2].copy(scratch.b)
+    const divisions = scratch.points.length - 1
+    for (let i = 0; i < scratch.points.length; i++) {
+      scratch.curve.getPoint(i / divisions, scratch.points[i])
+    }
+    line.current.geometry.setFromPoints(scratch.points)
     line.current.material.opacity = active || hover ? 0.76 : selectedChar || hoveredChar ? 0.07 : 0.2
-    line.current.material.linewidth = active || hover ? style.width * 1.9 : style.width
 
     if (pulse.current) {
-      const p = curve.getPoint((t * style.speed + hashValue(relation.id)) % 1)
-      pulse.current.position.copy(p)
+      scratch.curve.getPoint((t * style.speed + seed) % 1, scratch.point)
+      pulse.current.position.copy(scratch.point)
       pulse.current.visible = active || hover || (!selectedChar && !hoveredChar)
       pulse.current.material.opacity = active || hover ? 0.92 : 0.34
     }
@@ -360,19 +397,24 @@ function EnergyRelation({ relation, selectedChar, hoveredChar }) {
 function CameraDirector({ focusZone, focusChar }) {
   const { camera } = useThree()
   const target = useMemo(() => new THREE.Vector3(), [])
+  const desired = useMemo(() => new THREE.Vector3(0, 8, 18), [])
+  const focus = useMemo(() => new THREE.Vector3(), [])
+  const zoneOffset = useMemo(() => new THREE.Vector3(4.5, 4.2, 6.5), [])
+  const charOffset = useMemo(() => new THREE.Vector3(2.8, 2.5, 4), [])
 
-  useFrame(() => {
-    let desired = new THREE.Vector3(0, 8, 18)
+  useFrame(({ clock }) => {
+    desired.set(0, 8, 18)
     if (focusZone) {
-      const p = new THREE.Vector3(...focusZone.position)
-      target.lerp(p, 0.04)
-      desired = p.clone().add(new THREE.Vector3(4.5, 4.2, 6.5))
+      focus.set(focusZone.position[0], focusZone.position[1], focusZone.position[2])
+      target.lerp(focus, 0.04)
+      desired.copy(focus).add(zoneOffset)
     } else if (focusChar) {
-      const p = orbitPosition(focusChar, performance.now() / 1000)
-      target.lerp(p, 0.045)
-      desired = p.clone().add(new THREE.Vector3(2.8, 2.5, 4))
+      orbitPositionTo(focus, focusChar, clock.elapsedTime)
+      target.lerp(focus, 0.045)
+      desired.copy(focus).add(charOffset)
     } else {
-      target.lerp(new THREE.Vector3(0, 0.2, 0), 0.025)
+      focus.set(0, 0.2, 0)
+      target.lerp(focus, 0.025)
     }
 
     camera.position.lerp(desired, focusZone || focusChar ? 0.018 : 0.006)
@@ -397,7 +439,7 @@ function WorldScene({ selectedZone, selectedChar, hoveredZone, hoveredChar, onSe
       <directionalLight position={[0, 10, 6]} intensity={1.25} color="#d8ecff" />
       <pointLight position={[0, 4, 0]} intensity={1.6} color="#ffd27a" distance={16} />
 
-      <Stars radius={72} depth={38} count={1800} factor={3.4} saturation={0.35} fade speed={0.22} />
+      <Stars radius={72} depth={38} count={1200} factor={3.4} saturation={0.35} fade speed={0.22} />
       <HolographicOcean />
       <AtmosphereParticles />
 
@@ -412,7 +454,7 @@ function WorldScene({ selectedZone, selectedChar, hoveredZone, hoveredChar, onSe
         />
       ))}
 
-      {RELATIONS.slice(0, 40).map((relation) => (
+      {RELATIONS.slice(0, 30).map((relation) => (
         <EnergyRelation
           key={relation.id}
           relation={relation}
@@ -422,7 +464,7 @@ function WorldScene({ selectedZone, selectedChar, hoveredZone, hoveredChar, onSe
       ))}
 
       {visibleCharacters.map((char) => {
-        const dimmed = Boolean(selectedZone) && findZoneForChar(char).id !== selectedZone.id
+        const dimmed = Boolean(selectedZone) && zoneForChar(char).id !== selectedZone.id
         return (
           <CharacterOrb
             key={char.id}
@@ -529,7 +571,7 @@ export default function FamilyTree3D({ onClose }) {
 
   return (
     <div className="world-map-shell">
-      <Canvas camera={{ position: [0, 8, 19], fov: 46 }} dpr={[1, 1.65]} gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}>
+      <Canvas camera={{ position: [0, 8, 19], fov: 46 }} dpr={[1, 1.4]} gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}>
         <Suspense fallback={null}>
           <WorldScene
             selectedZone={selectedZone}
@@ -537,7 +579,7 @@ export default function FamilyTree3D({ onClose }) {
             hoveredZone={hoveredZone}
             hoveredChar={hoveredChar}
             onSelectZone={(zone) => { setSelectedZone(zone); setSelectedChar(null) }}
-            onSelectChar={(char) => { setSelectedChar(char); setSelectedZone(findZoneForChar(char)) }}
+            onSelectChar={(char) => { setSelectedChar(char); setSelectedZone(zoneForChar(char)) }}
             onHoverZone={setHoveredZone}
             onHoverChar={setHoveredChar}
           />
