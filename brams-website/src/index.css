@@ -1344,6 +1344,89 @@ section {
   cursor: pointer;
   font-weight: 850;
 }
+.world-map-controls span {
+  color: rgba(255,255,255,.72);
+  text-transform: uppercase;
+}
+.world-map-controls button.active,
+.world-map-region-filter button.active {
+  border-color: rgba(255,211,145,.42);
+  background: rgba(255,211,145,.14);
+  color: #fff;
+  box-shadow: 0 0 24px rgba(246,179,75,.16);
+}
+.world-map-region-filter {
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  bottom: 24px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-width: min(860px, calc(100vw - 48px));
+  z-index: 4;
+}
+.world-map-region-filter button {
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 999px;
+  background: rgba(8,11,18,.58);
+  color: rgba(229,234,242,.68);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .03em;
+  backdrop-filter: blur(14px);
+  cursor: pointer;
+  transition: border-color .24s ease, background .24s ease, color .24s ease, transform .24s ease;
+}
+.world-map-region-filter button:hover {
+  transform: translateY(-1px);
+  color: #fff;
+  border-color: rgba(255,255,255,.22);
+}
+.world-map-danger {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 4px;
+  margin: 14px 0 16px;
+}
+.world-map-danger i {
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.09);
+}
+.world-map-danger i.active {
+  background: linear-gradient(90deg, #f6b34b, #e0524a);
+  box-shadow: 0 0 14px rgba(224,82,74,.35);
+}
+.world-map-dossier-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 12px 0 16px;
+}
+.world-map-dossier-grid div {
+  min-height: 58px;
+  padding: 10px;
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: 12px;
+  background: rgba(255,255,255,.045);
+}
+.world-map-dossier-grid span {
+  display: block;
+  margin-bottom: 6px;
+  color: rgba(255,255,255,.42);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .09em;
+}
+.world-map-dossier-grid strong {
+  display: block;
+  color: rgba(255,255,255,.88);
+  font-size: 12px;
+  line-height: 1.25;
+}
 .world-map-label,
 .world-map-node-label {
   pointer-events: none;
@@ -1413,10 +1496,21 @@ section {
   .world-map-controls {
     left: 12px;
     right: 12px;
-    bottom: 12px;
+    bottom: 82px;
     text-align: center;
     white-space: normal;
     justify-content: center;
+  }
+  .world-map-region-filter {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    max-height: 58px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+  .world-map-region-filter button {
+    flex: 0 0 auto;
   }
   .world-map-zone-grid {
     display: none;
