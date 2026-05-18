@@ -55,7 +55,7 @@ const DevilFruitPage     = lazy(() => import('./components/devil-fruit/DevilFrui
 const BerryShop          = lazy(() => import('./components/BerryShop.jsx'))
 const BramsTraitorPage   = lazy(() => import('./components/BramsTraitorPage.jsx'))
 const StaffPanel         = lazy(() => import('./components/StaffPanel.jsx'))
-// CinematicPirateBackground removed — video AMV replaces it
+const CinematicPirateBackground = lazy(() => import('./components/atmosphere/CinematicPirateBackground.jsx'))
 
 // Wrapper pour les pages Wiki/Théories (Navbar + fond sombre + WelcomeAnimation)
 function PageLayout({ children }) {
@@ -154,12 +154,8 @@ export default function App() {
   const mainContent = (
     <>
       <WelcomeAnimation />
-      {/* Video AMV background */}
-      <div style={{ position: 'fixed', inset: 0, zIndex: 0, overflow: 'hidden', pointerEvents: 'none' }}>
-        <video autoPlay muted loop playsInline style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.48 }} src="/bg-video.mp4" />
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(2,4,8,.68) 0%, rgba(2,4,8,.42) 40%, rgba(2,4,8,.88) 100%)' }} />
-      </div>
-      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1, background: 'rgba(3,5,10,0.22)', pointerEvents: 'none', transform: 'translateZ(0)', willChange: 'transform' }} />
+      <CinematicPirateBackground />
+      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1, background: 'var(--overlay-bg, rgba(4,7,10,0.38))', pointerEvents: 'none', transform: 'translateZ(0)', willChange: 'transform' }} />
 
       <div style={{ position: 'relative', zIndex: 2, isolation: 'isolate' }}>
         <Navbar />

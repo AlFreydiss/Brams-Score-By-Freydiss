@@ -1,6 +1,7 @@
 ﻿import { useState, useEffect, useRef, useCallback } from 'react'
 import Particles from './Particles.jsx'
 import UnifiedSidebar from './UnifiedSidebar.jsx'
+import HeroAtmosphere from './HeroAtmosphere.jsx'
 import { useMobile } from '../hooks/useMediaQuery.js'
 import { fetchStats } from '../lib/supabase.js'
 
@@ -185,11 +186,12 @@ export default function Hero() {
 
   return (
     <section className="hero-premium" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', position: 'relative', overflow: 'hidden', paddingTop: 140, paddingBottom: 80 }}>
-      {/* Gradient directionnel */}
+      {/* Gradient directionnel cinématique */}
       <div style={{
         position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
-        background: 'linear-gradient(90deg, rgba(2,4,8,0.88) 0%, rgba(2,4,8,0.60) 50%, rgba(2,4,8,0.15) 85%, transparent 100%)',
+        background: 'linear-gradient(90deg, rgba(3,7,14,0.92) 0%, rgba(3,7,14,0.68) 45%, rgba(3,7,14,0.18) 80%, rgba(3,7,14,0.04) 100%)',
       }} />
+      <HeroAtmosphere />
       <Particles />
 
       <div style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: 1280, margin: '0 auto', padding: '0 40px' }}>
