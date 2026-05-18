@@ -1,5 +1,12 @@
 {
   "dependencies": {
     "@openai/agents": "^0.11.4"
+  },
+  "devDependencies": {
+    "wrangler": "^4.92.0"
+  },
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "preview": "wrangler dev"
   }
 }
