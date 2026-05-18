@@ -19,13 +19,13 @@ const SIDEBAR_STYLES = `
     to   { opacity:1; transform:translateY(0);    }
   }
   .evt-b {
-    background:linear-gradient(135deg,rgba(224,82,74,.45),rgba(255,138,128,.25),rgba(255,179,71,.45),rgba(224,82,74,.45));
+    background:linear-gradient(135deg,rgba(224,82,74,.30),rgba(255,138,128,.15),rgba(255,179,71,.28),rgba(224,82,74,.30));
     background-size:300% 300%;
     animation:borderShift 4s ease infinite;
     padding:1px; border-radius:12px;
     transition:transform .2s ease,box-shadow .2s ease;
   }
-  .evt-b:hover { transform:translateY(-2px); box-shadow:0 8px 22px rgba(224,82,74,.20); }
+  .evt-b:hover { transform:translateY(-2px); box-shadow:0 10px 24px rgba(224,82,74,.14); }
 `
 
 // ─── Calendar data ────────────────────────────────────────────────────────────
@@ -328,17 +328,19 @@ export default function UnifiedSidebar() {
     .slice(0, 3)
 
   return (
-    <div style={{
+    <div className="unified-sidebar-premium" style={{
       width: 320,
       height: 500,
       display: 'flex',
       flexDirection: 'column',
-      background: 'rgba(14,15,17,.68)',
-      backdropFilter: 'blur(20px)',
-      border: '1px solid rgba(255,255,255,.09)',
+      background: 'linear-gradient(180deg, rgba(14,15,17,.60), rgba(14,15,17,.48))',
+      backdropFilter: 'blur(22px)',
+      border: '1px solid rgba(255,255,255,.075)',
       borderRadius: 16,
       overflow: 'hidden',
       animation: 'sidebarIn .5s .2s ease-out both',
+      boxShadow: '0 20px 70px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.05)',
+      opacity: .92,
     }}>
 
       {/* ── Tab bar ───────────────────────────────────────────────────────── */}

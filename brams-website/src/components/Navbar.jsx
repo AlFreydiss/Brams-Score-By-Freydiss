@@ -42,7 +42,7 @@ const SOCIALS = [
 // ── Bouton Se connecter ──────────────────────────────────────────────────────
 function LoginButton({ onClick }) {
   return (
-    <button onClick={onClick} style={{ display: 'inline-flex', alignItems: 'center', padding: '8px 18px', fontSize: 13, fontWeight: 700, letterSpacing: '.03em', cursor: 'pointer', borderRadius: 8, border: 'none', background: '#d4a017', color: '#1a1f2e', transition: 'background .15s, transform .15s', whiteSpace: 'nowrap' }} onMouseEnter={e => { e.currentTarget.style.background = '#e5b83a'; e.currentTarget.style.transform = 'translateY(-1px)' }} onMouseLeave={e => { e.currentTarget.style.background = '#d4a017'; e.currentTarget.style.transform = 'translateY(0)' }}>
+    <button onClick={onClick} className="nav-login-premium" style={{ display: 'inline-flex', alignItems: 'center', padding: '8px 18px', fontSize: 13, fontWeight: 700, letterSpacing: '.03em', cursor: 'pointer', borderRadius: 8, border: 'none', background: '#d4a017', color: '#1a1f2e', transition: 'background .15s, transform .15s', whiteSpace: 'nowrap' }} onMouseEnter={e => { e.currentTarget.style.background = '#e5b83a'; e.currentTarget.style.transform = 'translateY(-1px)' }} onMouseLeave={e => { e.currentTarget.style.background = '#d4a017'; e.currentTarget.style.transform = 'translateY(0)' }}>
       Se connecter
     </button>
   )
@@ -157,7 +157,7 @@ export default function Navbar() {
 
   return (
     <>
-      <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 200, padding: '0 28px', background: scrolled ? 'rgba(14,15,17,.95)' : 'rgba(14,15,17,.6)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(255,255,255,.08)', transition: 'background .3s ease' }}>
+      <nav className={`navbar-premium ${scrolled ? 'navbar-premium-scrolled' : ''}`} style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 200, padding: '0 28px', background: scrolled ? 'rgba(14,15,17,.86)' : 'rgba(14,15,17,.48)', backdropFilter: scrolled ? 'blur(24px)' : 'blur(16px)', borderBottom: '1px solid rgba(255,255,255,.08)', transition: 'background .3s ease' }}>
         <div style={{ maxWidth: 1120, margin: '0 auto', display: 'flex', alignItems: 'center', height: 68, gap: 0 }}>
 
           {/* Logo */}
@@ -170,11 +170,11 @@ export default function Navbar() {
           <div className="hide-mobile" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
             {NAV_LINKS.map(link => (
               link.isRoute ? (
-                <Link key={link.label} to={link.href} style={linkBase} onMouseEnter={e => e.currentTarget.style.color = '#fff'} onMouseLeave={e => e.currentTarget.style.color = 'rgba(203,213,225,0.72)'}>
+                <Link key={link.label} to={link.href} className={pathname === link.href ? 'nav-link-premium active' : 'nav-link-premium'} style={linkBase} onMouseEnter={e => e.currentTarget.style.color = '#fff'} onMouseLeave={e => e.currentTarget.style.color = 'rgba(203,213,225,0.72)'}>
                   {link.label}
                 </Link>
               ) : (
-                <a key={link.label} href={link.href} onClick={link.action ? (e) => handleNavClick(link, e) : undefined} style={linkBase} onMouseEnter={e => e.currentTarget.style.color = '#fff'} onMouseLeave={e => e.currentTarget.style.color = 'rgba(203,213,225,0.72)'}>
+                <a key={link.label} href={link.href} className="nav-link-premium" onClick={link.action ? (e) => handleNavClick(link, e) : undefined} style={linkBase} onMouseEnter={e => e.currentTarget.style.color = '#fff'} onMouseLeave={e => e.currentTarget.style.color = 'rgba(203,213,225,0.72)'}>
                   {link.label}
                   {link.gated && !isAuthenticated && <span style={{ fontSize: 9, opacity: 0.45 }}>🔒</span>}
                 </a>

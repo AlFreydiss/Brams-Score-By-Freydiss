@@ -2,6 +2,7 @@
 import Particles from './Particles.jsx'
 import UnifiedSidebar from './UnifiedSidebar.jsx'
 import ChromaKeyHeroVideo from './ChromaKeyHeroVideo.jsx'
+import HeroAtmosphere from './HeroAtmosphere.jsx'
 import { useMobile } from '../hooks/useMediaQuery.js'
 import { fetchStats } from '../lib/supabase.js'
 
@@ -59,13 +60,13 @@ function StatBlock({ value, label, live = false, liveVal = null }) {
   const shown = live && liveVal != null ? liveVal : (active ? display : value)
 
   return (
-    <div ref={ref} style={{ textAlign: 'center' }}>
+    <div ref={ref} className="premium-stat">
       <div style={{ position: 'relative', display: 'inline-block' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           {live && (
             <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#2ECC71', boxShadow: '0 0 8px #2ECC71', animation: 'pulse 2s infinite', flexShrink: 0 }} />
           )}
-          <div style={{ fontFamily: 'var(--display)', fontSize: 32, fontWeight: 800, color: '#fff', lineHeight: 1, letterSpacing: '.02em' }}>
+          <div className="premium-stat-value">
             {shown}
           </div>
         </div>
@@ -78,7 +79,7 @@ function StatBlock({ value, label, live = false, liveVal = null }) {
           transition: 'transform 0.9s 0.3s cubic-bezier(0.22,1,0.36,1)',
         }} />
       </div>
-      <div style={{ fontSize: 11, color: 'rgba(255,255,255,.35)', marginTop: 10, textTransform: 'uppercase', letterSpacing: '.12em' }}>{label}</div>
+      <div className="premium-stat-label">{label}</div>
     </div>
   )
 }
@@ -170,7 +171,7 @@ export default function Hero() {
   }, [])
 
   return (
-    <section style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', position: 'relative', overflow: 'hidden', paddingTop: 140, paddingBottom: 80 }}>
+    <section className="hero-premium" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', position: 'relative', overflow: 'hidden', paddingTop: 140, paddingBottom: 80 }}>
       {/* Gradient directionnel — texte lisible à gauche, personnage visible à droite */}
       <div style={{
         position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
@@ -180,6 +181,7 @@ export default function Hero() {
       <div className="orb" style={{ width: 500, height: 500, bottom: '-10%', right: '-10%', background: 'rgba(155,89,182,.07)', animationDelay: '3s' }} />
       <div className="orb" style={{ width: 350, height: 350, top: '55%', left: '-8%', background: 'rgba(255,215,0,.04)', animationDelay: '6s' }} />
       <div className="dot-bg" style={{ position: 'absolute', inset: 0, opacity: .4, pointerEvents: 'none' }} />
+      <HeroAtmosphere />
       <Particles />
       {!isMobile && <ChromaKeyHeroVideo />}
 
@@ -201,7 +203,7 @@ export default function Hero() {
             </div>
 
             {/* Titre */}
-            <h1 style={{ fontFamily: 'var(--pirate)', fontSize: 'clamp(58px,8.5vw,100px)', fontWeight: 400, lineHeight: .95, color: '#fff', marginBottom: 14, letterSpacing: '.01em' }}>
+            <h1 className="hero-title-premium">
               <span className="hero-brams">Brams</span>
               <span className="hero-community-glow">
                 <span className="hero-community">Community</span>
@@ -222,6 +224,7 @@ export default function Hero() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn"
+                data-premium-cta="primary"
                 style={{
                   fontSize: 15, padding: '13px 26px',
                   background: 'linear-gradient(135deg, #D4A017, #E5B43A)',
@@ -237,6 +240,7 @@ export default function Hero() {
               <a
                 href="#rangs"
                 className="btn"
+                data-premium-cta="ghost"
                 style={{
                   fontSize: 15, padding: '13px 26px',
                   background: 'transparent',

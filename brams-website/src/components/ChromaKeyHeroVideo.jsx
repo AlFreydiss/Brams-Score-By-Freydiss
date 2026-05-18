@@ -81,9 +81,25 @@ export default function ChromaKeyHeroVideo({
         pointerEvents: 'none',
         opacity: ready ? 0.92 : 0,
         transition: 'opacity 600ms ease',
-        filter: 'drop-shadow(0 30px 55px rgba(0,0,0,.55))',
+        transform: 'translate3d(var(--hero-parallax-x, 0px), var(--hero-parallax-y, 0px), 0)',
+        filter: 'contrast(1.08) saturate(1.08) drop-shadow(0 32px 60px rgba(0,0,0,.62)) drop-shadow(0 0 34px rgba(224,82,74,.18))',
       }}
     >
+      <div
+        style={{
+          position: 'absolute',
+          right: '4%',
+          bottom: '14%',
+          width: '58%',
+          height: '62%',
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(224,82,74,.22), rgba(255,126,54,.08) 45%, transparent 72%)',
+          filter: 'blur(18px)',
+          opacity: ready ? 1 : 0,
+        }}
+      />
+      <span className="hero-haki-line hero-haki-line-a" />
+      <span className="hero-haki-line hero-haki-line-b" />
       <video
         ref={videoRef}
         src={src}
@@ -99,6 +115,7 @@ export default function ChromaKeyHeroVideo({
       <canvas
         ref={canvasRef}
         style={{
+          position: 'relative',
           width: '100%',
           height: '100%',
           objectFit: 'contain',
