@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, lazy, Suspense } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import GlobalStyles from './components/GlobalStyles.jsx'
 import { ThemeProvider } from './contexts/ThemeContext.jsx'
@@ -54,28 +54,7 @@ const ConstellationPage  = lazy(() => import('./components/ConstellationPage.jsx
 const DevilFruitPage     = lazy(() => import('./components/devil-fruit/DevilFruitPage.jsx'))
 const BerryShop          = lazy(() => import('./components/BerryShop.jsx'))
 const BramsTraitorPage   = lazy(() => import('./components/BramsTraitorPage.jsx'))
-
-function BgVideo() {
-  const [visible, setVisible] = useState(false)
-  const vidRef = useRef(null)
-
-  useEffect(() => {
-    const vid = vidRef.current
-    if (!vid) return
-    const onMeta = () => { vid.currentTime = 25 }
-    vid.addEventListener('loadedmetadata', onMeta)
-    return () => vid.removeEventListener('loadedmetadata', onMeta)
-  }, [])
-
-  return (
-    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 0, overflow: 'hidden', pointerEvents: 'none', transform: 'translateZ(0)' }}>
-      <video ref={vidRef} autoPlay muted loop playsInline onCanPlay={() => setVisible(true)}
-        style={{ display: 'block', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%) translateZ(0)', width: 'max(177.78vh,100vw)', height: 'max(56.25vw,100vh)', objectFit: 'cover', pointerEvents: 'none', backfaceVisibility: 'hidden', opacity: visible ? 1 : 0, transition: 'opacity 1.2s ease' }}>
-        <source src="/bg-video.mp4" type="video/mp4" />
-      </video>
-    </div>
-  )
-}
+const CinematicPirateBackground = lazy(() => import('./components/atmosphere/CinematicPirateBackground.jsx'))
 
 // Wrapper pour les pages Wiki/Théories (Navbar + fond sombre + WelcomeAnimation)
 function PageLayout({ children }) {
@@ -174,8 +153,8 @@ export default function App() {
   const mainContent = (
     <>
       <WelcomeAnimation />
-      <BgVideo />
-      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1, background: 'var(--overlay-bg, rgba(14,14,16,0.82))', pointerEvents: 'none', transform: 'translateZ(0)', willChange: 'transform' }} />
+      <CinematicPirateBackground />
+      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1, background: 'var(--overlay-bg, rgba(4,7,10,0.38))', pointerEvents: 'none', transform: 'translateZ(0)', willChange: 'transform' }} />
 
       <div style={{ position: 'relative', zIndex: 2, isolation: 'isolate' }}>
         <Navbar />
