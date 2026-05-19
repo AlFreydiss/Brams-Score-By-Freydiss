@@ -80,6 +80,13 @@ function PageLayout({ children }) {
 export default function App() {
   const { isAuthenticated } = useAuth()
   const [scansOpen,        setScansOpen]        = useState(false)
+
+  // Auto-open auth modal if Discord OAuth callback returned an error
+  useEffect(() => {
+    if (localStorage.getItem('brams_auth_error')) {
+      document.dispatchEvent(new CustomEvent('open-auth-modal'))
+    }
+  }, [])
   const [encyclopedieOpen, setEncyclopedieOpen]  = useState(false)
   const [animeHubOpen,     setAnimeHubOpen]      = useState(false)
   const [tpnOpen,          setTpnOpen]           = useState(false)
