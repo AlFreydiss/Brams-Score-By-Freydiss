@@ -26,6 +26,9 @@
     "react-router-dom": "^7.15.1",
     "three": "^0.170.0"
   },
+  "overrides": {
+    "three-mesh-bvh": "^0.8.0"
+  },
   "devDependencies": {
     "@aws-sdk/lib-storage": "^3.1048.0",
     "@vitejs/plugin-react": "^4.3.1",
