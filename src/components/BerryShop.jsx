@@ -151,10 +151,6 @@ function WalletCard({ balance, displayName, avatarUrl, preview, onEarn }) {
           <div style={{ fontSize:13, fontWeight:700, color:'#fff', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{displayName}</div>
           <div style={{ fontSize:8.5, fontWeight:800, letterSpacing:'.12em', textTransform:'uppercase', color:'rgba(212,160,23,0.55)', marginTop:2 }}>Portefeuille</div>
         </div>
-        <div style={{ display:'flex', alignItems:'center', gap:5 }}>
-          <div style={{ width:7, height:7, borderRadius:'50%', background:'#22c55e', boxShadow:'0 0 8px #22c55e', animation:'bsPulse 2.2s ease-in-out infinite' }} />
-          <span style={{ fontSize:9, fontWeight:700, color:'rgba(34,197,94,0.75)', letterSpacing:'.06em' }}>Live</span>
-        </div>
       </div>
 
       {/* Balance */}

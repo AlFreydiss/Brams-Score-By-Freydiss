@@ -5,14 +5,13 @@ import AuthModal from './AuthModal.jsx'
 import { useAuth } from '../contexts/AuthContext.jsx'
 
 const NAV_LINKS = [
-  { label: 'Rangs',         href: '#rangs',      action: null,           gated: false, isRoute: false },
-  { label: 'Classement',    href: '#classement', action: null,           gated: false, isRoute: false },
-  { label: 'Équipages',     href: '/equipage',   action: null,           gated: false, isRoute: true  },
-  { label: 'Wiki',          href: '/wiki',       action: null,           gated: false, isRoute: true  },
-  { label: 'Théories',      href: '/theories',   action: null,           gated: false, isRoute: true  },
-  { label: 'Encyclopédie',  href: '#',           action: 'encyclopedie', gated: false, isRoute: false },
-  { label: 'Animés & Scans',href: '#',           action: 'anime-hub',    gated: true,  isRoute: false },
-  { label: 'Boutique',      href: '/boutique',   action: null,           gated: true,  isRoute: true  },
+  { label: 'Rangs',           href: '#rangs',      action: null,           gated: false, isRoute: false },
+  { label: 'Classement',      href: '#classement', action: null,           gated: false, isRoute: false },
+  { label: 'Équipages',       href: '/equipage',   action: null,           gated: false, isRoute: true  },
+  { label: 'Wiki & Théories', href: '/wiki',       action: null,           gated: false, isRoute: true  },
+  { label: 'Encyclopédie',    href: '#',           action: 'encyclopedie', gated: false, isRoute: false },
+  { label: 'Animés & Scans',  href: '#',           action: 'anime-hub',    gated: true,  isRoute: false },
+  { label: 'Boutique',        href: '/boutique',   action: null,           gated: true,  isRoute: true  },
 ]
 
 function openAnimeHub(event) {
@@ -56,15 +55,6 @@ const SOCIALS = [
   { label: 'YouTube', href: 'https://www.youtube.com/@BouleDogg/featured', icon: <YouTubeIcon /> },
   { label: 'TikTok', href: 'https://www.tiktok.com/@bouledogg', icon: <TikTokIcon /> },
 ]
-
-function LiveStatus() {
-  return (
-    <span className="nav-live-inline" aria-label="Live actif">
-      <i />
-      <span>Live</span>
-    </span>
-  )
-}
 
 function SocialLinks({ mobile = false }) {
   return (
@@ -265,7 +255,6 @@ export default function Navbar() {
           </div>
 
           <div className="nav-zone-status hide-mobile">
-            <LiveStatus />
             <SocialLinks />
           </div>
 
@@ -310,7 +299,6 @@ export default function Navbar() {
               ))}
             </div>
             <div className="nav-mobile-footer">
-              <LiveStatus />
               <SocialLinks mobile />
               <span className="nav-mobile-spacer" />
               {isAuthenticated

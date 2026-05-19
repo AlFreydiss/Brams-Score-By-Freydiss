@@ -97,7 +97,7 @@ export default function EquipageSection() {
               onMouseLeave={() => setHovered(null)}
               style={{
                 display: 'flex', flexDirection: 'column', gap: 12,
-                background: hovered === i ? `${f.color}10` : 'var(--card)',
+                background: hovered === i ? `${f.color}10` : 'rgba(255,255,255,0.028)',
                 border: `1px solid ${hovered === i ? f.color + '40' : 'rgba(255,255,255,0.06)'}`,
                 borderRadius: 16, padding: '24px 20px',
                 transition: 'all 0.25s ease',

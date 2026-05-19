@@ -13,7 +13,6 @@ import AIChatWidget from './components/AIChatWidget.jsx'
 import Leaderboard from './components/Leaderboard.jsx'
 import JoinCTA from './components/JoinCTA.jsx'
 import Footer from './components/Footer.jsx'
-import Roadmap from './components/Roadmap.jsx'
 import Quiz from './components/Quiz.jsx'
 import HallOfFame from './components/HallOfFame.jsx'
 import QuoteSection from './components/QuoteSection.jsx'
@@ -44,10 +43,9 @@ const FireForcePage   = lazy(() => import('./components/FireForcePage.jsx'))
 const BlueLockPage    = lazy(() => import('./components/BlueLockPage.jsx'))
 const FamilyTree3D    = lazy(() => import('./components/FamilyTree3D.jsx'))
 const BlobUploadPage  = lazy(() => import('./components/BlobUploadPage.jsx'))
-const WikiHome        = lazy(() => import('./components/WikiHome.jsx'))
+const WikiTheoryHub   = lazy(() => import('./components/WikiTheoryHub.jsx'))
 const WikiArticle     = lazy(() => import('./components/WikiArticle.jsx'))
 const WikiEditor      = lazy(() => import('./components/WikiEditor.jsx'))
-const TheoriesHome       = lazy(() => import('./components/TheoriesHome.jsx'))
 const TheoryDetail       = lazy(() => import('./components/TheoryDetail.jsx'))
 const TheoryEditor       = lazy(() => import('./components/TheoryEditor.jsx'))
 const ConstellationPage  = lazy(() => import('./components/ConstellationPage.jsx'))
@@ -178,7 +176,6 @@ export default function App() {
         <HallOfFame />
         <EquipageSection />
         <NousSoutenir />
-        <Roadmap />
         <Leaderboard />
         <Contact />
         <JoinCTA />
@@ -216,14 +213,12 @@ export default function App() {
         {/* Profil utilisateur */}
         <Route path="/u/:discordId" element={<ProfilePage />} />
 
-        {/* Wiki Communautaire */}
-        <Route path="/wiki"           element={<PageLayout><WikiHome      /></PageLayout>} />
+        {/* Wiki & Théories — Hub unifié */}
+        <Route path="/wiki"           element={<PageLayout><WikiTheoryHub /></PageLayout>} />
+        <Route path="/theories"       element={<PageLayout><WikiTheoryHub /></PageLayout>} />
         <Route path="/wiki/new"       element={<PageLayout><WikiEditor    /></PageLayout>} />
         <Route path="/wiki/:slug/edit"element={<PageLayout><WikiEditor    /></PageLayout>} />
         <Route path="/wiki/:slug"     element={<PageLayout><WikiArticle   /></PageLayout>} />
-
-        {/* Forum Théories */}
-        <Route path="/theories"       element={<PageLayout><TheoriesHome  /></PageLayout>} />
         <Route path="/theories/new"   element={<PageLayout><TheoryEditor  /></PageLayout>} />
         <Route path="/theories/:id"   element={<PageLayout><TheoryDetail  /></PageLayout>} />
 
