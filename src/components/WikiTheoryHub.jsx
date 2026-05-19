@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import WikiHome from './WikiHome.jsx'
 import TheoriesHome from './TheoriesHome.jsx'
 
@@ -61,13 +61,13 @@ function BlindTestBanner({ onClick, active }) {
         </div>
         <div style={{
           display:'flex', alignItems:'center', gap:6, padding:'7px 16px', flexShrink:0,
-          background: active ? `${VIOLET}20` : 'rgba(255,255,255,0.05)',
-          border:`1px solid ${active ? VIOLET+'45' : 'rgba(255,255,255,0.10)'}`,
-          borderRadius:8, color: active ? VIOLET : 'rgba(255,255,255,0.45)',
+          background:'rgba(162,155,254,0.10)',
+          border:`1px solid ${VIOLET}45`,
+          borderRadius:8, color:VIOLET,
           fontSize:12, fontWeight:700, whiteSpace:'nowrap',
           transition:'all .18s',
         }}>
-          {active ? '✕ Fermer' : 'Voir →'}
+          Jouer →
         </div>
       </div>
     </div>
@@ -155,6 +155,7 @@ function UpcomingTab() {
 
 export default function WikiTheoryHub() {
   const { pathname } = useLocation()
+  const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState(() =>
     pathname.startsWith('/theories') ? 'theories' : 'wiki'
   )
@@ -192,7 +193,7 @@ export default function WikiTheoryHub() {
         </p>
 
         {/* Blind Tests banner — séparé, en vedette */}
-        <BlindTestBanner onClick={() => setShowBlindTests(v => !v)} active={showBlindTests} />
+        <BlindTestBanner onClick={() => navigate('/blind-test')} active={false} />
 
         {/* Tabs */}
         <div style={{ display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap', paddingBottom: 0 }}>

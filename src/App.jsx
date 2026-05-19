@@ -54,6 +54,8 @@ const DevilFruitPage     = lazy(() => import('./components/devil-fruit/DevilFrui
 const BerryShop          = lazy(() => import('./components/BerryShop.jsx'))
 const BramsTraitorPage   = lazy(() => import('./components/BramsTraitorPage.jsx'))
 const StaffPanel         = lazy(() => import('./components/StaffPanel.jsx'))
+const BlindTestPage      = lazy(() => import('./components/BlindTestPage.jsx'))
+const BlindTestLeaderboard = lazy(() => import('./components/BlindTestLeaderboard.jsx'))
 function AMVBackground() {
   return (
     <video
@@ -246,6 +248,10 @@ export default function App() {
 
         {/* Panel staff modération */}
         <Route path="/staff" element={<StaffPanel />} />
+
+        {/* Blind Test */}
+        <Route path="/blind-test" element={<PageLayout><BlindTestPage /></PageLayout>} />
+        <Route path="/blind-test/leaderboard" element={<PageLayout><BlindTestLeaderboard /></PageLayout>} />
 
         {/* Homepage */}
         <Route path="/*" element={mainContent} />
