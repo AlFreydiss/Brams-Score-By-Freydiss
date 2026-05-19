@@ -8,10 +8,9 @@ const VIOLET = '#a29bfe'
 const BLUE   = '#74b9ff'
 
 const TABS = [
-  { id: 'wiki',       label: 'Wiki',        icon: '📖', color: GOLD   },
-  { id: 'theories',   label: 'Théories',    icon: '🔮', color: VIOLET },
-  { id: 'blindtests', label: 'Blind Tests', icon: '🎵', color: BLUE   },
-  { id: 'upcoming',   label: 'À venir',     icon: '🚀', color: '#34d399' },
+  { id: 'wiki',     label: 'Wiki',     icon: '📖', color: GOLD        },
+  { id: 'theories', label: 'Théories', icon: '🔮', color: VIOLET      },
+  { id: 'upcoming', label: 'À venir',  icon: '🚀', color: '#34d399'   },
 ]
 
 const UPCOMING = [
@@ -26,6 +25,53 @@ const UPCOMING = [
 const STATUS_STYLE = {
   dev:     { label: '🔄 En cours', color: '#fdcb6e', bg: 'rgba(253,203,110,0.12)', border: 'rgba(253,203,110,0.28)' },
   planned: { label: '📅 Prévu',   color: BLUE,      bg: 'rgba(116,185,255,0.08)', border: 'rgba(116,185,255,0.20)' },
+}
+
+function BlindTestBanner({ onClick, active }) {
+  return (
+    <div style={{ maxWidth:900, margin:'0 auto 28px', padding:'0 20px' }}>
+      <div
+        onClick={onClick}
+        style={{
+          display:'flex', alignItems:'center', gap:18, padding:'16px 22px',
+          background: active
+            ? 'linear-gradient(135deg, rgba(74,85,255,0.18), rgba(162,155,254,0.12))'
+            : 'linear-gradient(135deg, rgba(74,85,255,0.10), rgba(162,155,254,0.06))',
+          border:`1px solid ${active ? 'rgba(162,155,254,0.45)' : 'rgba(162,155,254,0.18)'}`,
+          borderLeft:`3px solid ${VIOLET}`,
+          borderRadius:12,
+          cursor:'pointer',
+          transition:'all .22s',
+          boxShadow: active ? `0 0 24px rgba(162,155,254,0.14)` : 'none',
+        }}
+        onMouseEnter={e => { if (!active) e.currentTarget.style.borderColor='rgba(162,155,254,0.35)' }}
+        onMouseLeave={e => { if (!active) e.currentTarget.style.borderColor='rgba(162,155,254,0.18)' }}
+      >
+        <div style={{ fontSize:30, filter:`drop-shadow(0 0 12px ${VIOLET}66)`, flexShrink:0 }}>🎵</div>
+        <div style={{ flex:1, minWidth:0 }}>
+          <div style={{ fontSize:9, fontWeight:800, letterSpacing:'.22em', color:VIOLET, textTransform:'uppercase', marginBottom:3 }}>
+            Bientôt disponible
+          </div>
+          <div style={{ fontSize:14, fontWeight:800, color:'#fff', marginBottom:2 }}>
+            Blind Tests musicaux
+          </div>
+          <div style={{ fontSize:12, color:'rgba(255,255,255,0.38)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+            Sessions OST One Piece &amp; mangas — testez vos connaissances musicales en vocal
+          </div>
+        </div>
+        <div style={{
+          display:'flex', alignItems:'center', gap:6, padding:'7px 16px', flexShrink:0,
+          background: active ? `${VIOLET}20` : 'rgba(255,255,255,0.05)',
+          border:`1px solid ${active ? VIOLET+'45' : 'rgba(255,255,255,0.10)'}`,
+          borderRadius:8, color: active ? VIOLET : 'rgba(255,255,255,0.45)',
+          fontSize:12, fontWeight:700, whiteSpace:'nowrap',
+          transition:'all .18s',
+        }}>
+          {active ? '✕ Fermer' : 'Voir →'}
+        </div>
+      </div>
+    </div>
+  )
 }
 
 function BlindTestsTab() {
@@ -112,6 +158,7 @@ export default function WikiTheoryHub() {
   const [activeTab, setActiveTab] = useState(() =>
     pathname.startsWith('/theories') ? 'theories' : 'wiki'
   )
+  const [showBlindTests, setShowBlindTests] = useState(false)
 
   const activeColor = TABS.find(t => t.id === activeTab)?.color ?? GOLD
 
@@ -139,19 +186,22 @@ export default function WikiTheoryHub() {
         </h1>
         <p style={{
           fontSize: 15, color: 'rgba(255,255,255,0.40)',
-          maxWidth: 520, margin: '0 auto 36px', lineHeight: 1.7,
+          maxWidth: 520, margin: '0 auto 32px', lineHeight: 1.7,
         }}>
           Explore le lore, les théories, les mystères et les analyses de la communauté.
         </p>
 
+        {/* Blind Tests banner — séparé, en vedette */}
+        <BlindTestBanner onClick={() => setShowBlindTests(v => !v)} active={showBlindTests} />
+
         {/* Tabs */}
         <div style={{ display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap', paddingBottom: 0 }}>
           {TABS.map(tab => {
-            const active = activeTab === tab.id
+            const active = activeTab === tab.id && !showBlindTests
             return (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => { setActiveTab(tab.id); setShowBlindTests(false) }}
                 style={{
                   display: 'inline-flex', alignItems: 'center', gap: 7,
                   padding: '10px 20px', borderRadius: 100,
@@ -173,15 +223,20 @@ export default function WikiTheoryHub() {
         </div>
 
         {/* Tab separator */}
-        <div style={{ height: 1, maxWidth: 640, margin: '28px auto 0', background: `linear-gradient(90deg, transparent, ${activeColor}35, transparent)`, transition: 'background 0.4s' }} />
+        <div style={{ height: 1, maxWidth: 640, margin: '28px auto 0', background: `linear-gradient(90deg, transparent, ${showBlindTests ? VIOLET : activeColor}35, transparent)`, transition: 'background 0.4s' }} />
       </div>
 
       {/* ── Content ── */}
       <div>
-        {activeTab === 'wiki'       && <WikiHome />}
-        {activeTab === 'theories'   && <TheoriesHome />}
-        {activeTab === 'blindtests' && <BlindTestsTab />}
-        {activeTab === 'upcoming'   && <UpcomingTab />}
+        {showBlindTests ? (
+          <BlindTestsTab />
+        ) : (
+          <>
+            {activeTab === 'wiki'     && <WikiHome />}
+            {activeTab === 'theories' && <TheoriesHome />}
+            {activeTab === 'upcoming' && <UpcomingTab />}
+          </>
+        )}
       </div>
     </div>
   )

@@ -111,7 +111,7 @@ function RarityBadge({ rarity, size = 'sm' }) {
 function StatPill({ value, label, color }) {
   return (
     <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:4 }}>
-      <div style={{ fontSize:38, fontWeight:900, color, lineHeight:1, letterSpacing:'-0.02em' }}>{value}</div>
+      <div style={{ fontSize:26, fontWeight:900, color, lineHeight:1, letterSpacing:'-0.02em' }}>{value}</div>
       <div style={{ fontSize:10, fontWeight:700, color:'rgba(255,255,255,0.40)', letterSpacing:'.12em', textTransform:'uppercase' }}>{label}</div>
     </div>
   )
@@ -130,12 +130,13 @@ function WalletCard({ balance, displayName, avatarUrl, preview, onEarn }) {
 
   return (
     <div style={{
-      flexShrink:0, width:280,
-      background:'linear-gradient(145deg, rgba(13,15,20,0.96) 0%, rgba(8,9,13,0.98) 100%)',
-      border:'1px solid rgba(255,255,255,0.10)',
-      borderTop:'1px solid rgba(212,160,23,0.25)',
-      borderRadius:18, padding:22,
-      boxShadow:'0 24px 64px rgba(0,0,0,0.55), 0 0 0 1px rgba(212,160,23,0.06) inset',
+      flexShrink:0, width:290,
+      background:'linear-gradient(160deg, rgba(14,16,22,0.98) 0%, rgba(8,9,13,0.99) 100%)',
+      border:'1px solid rgba(212,160,23,0.16)',
+      borderTop:'2px solid rgba(212,160,23,0.45)',
+      borderLeft:'1px solid rgba(212,160,23,0.12)',
+      borderRadius:16, padding:22,
+      boxShadow:'0 28px 72px rgba(0,0,0,0.65), 0 0 0 1px rgba(212,160,23,0.05) inset, 0 0 40px rgba(212,160,23,0.06)',
       position:'relative', overflow:'hidden',
       animation:'bsFadeUp .6s .2s ease both',
     }}>
@@ -232,7 +233,7 @@ function FeaturedCard({ item, balance, onClick, index }) {
       <div style={{ position:'absolute', top:'-30%', right:'-10%', width:180, height:180, borderRadius:'50%', background:`radial-gradient(circle, ${r.color}18 0%, transparent 65%)`, pointerEvents:'none', animation:'bsGlow 3s ease-in-out infinite' }} />
 
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:18 }}>
-        <span style={{ fontSize:9, fontWeight:900, letterSpacing:'.16em', textTransform:'uppercase', color:`${r.color}cc`, background:`${r.color}12`, border:`1px solid ${r.color}30`, borderRadius:6, padding:'3px 9px' }}>✦ CONVOITÉ</span>
+        <span style={{ fontSize:8.5, fontWeight:900, letterSpacing:'.18em', textTransform:'uppercase', color:r.color, background:`${r.color}18`, border:`1px solid ${r.color}55`, borderRadius:100, padding:'4px 13px', boxShadow:`0 0 14px ${r.color}25` }}>◆ ULTRA RARE</span>
         <RarityBadge rarity={item.rarity} />
       </div>
 
@@ -288,8 +289,9 @@ function ShopCard({ item, balance, onClick, index }) {
         background: isLegendaryPlus
           ? `linear-gradient(145deg, ${r.color}14 0%, ${r.color}07 50%, rgba(8,9,13,0.95) 100%)`
           : 'rgba(255,255,255,0.035)',
-        border:`1px solid ${hov ? r.color+'50' : r.color+'1a'}`,
-        boxShadow: hov ? `0 12px 36px ${r.color}20` : isLegendaryPlus ? `0 4px 20px rgba(0,0,0,0.4)` : 'none',
+        border:`1px solid ${hov ? r.color+'55' : r.color+'22'}`,
+        borderLeft:`2.5px solid ${hov ? r.color+'90' : r.color+'58'}`,
+        boxShadow: hov ? `0 18px 44px ${r.color}30, 0 0 0 1px ${r.color}18` : isLegendaryPlus ? `0 4px 20px rgba(0,0,0,0.4), 0 0 0 1px ${r.color}10` : 'none',
         transition:'all 0.22s ease',
         transform: hov ? 'translateY(-3px)' : 'translateY(0)',
         animation:`bsFadeUp .45s ${Math.min(index * 0.05, 0.4)}s ease both`,
@@ -317,7 +319,7 @@ function ShopCard({ item, balance, onClick, index }) {
 
       {/* Name */}
       <div style={{ fontSize:13.5, fontWeight:700, color:'#fff', marginBottom:6, lineHeight:1.3 }}>{item.name}</div>
-      <div style={{ fontSize:11.5, color:'rgba(255,255,255,0.42)', lineHeight:1.6, marginBottom:'auto', paddingBottom:14, overflow:'hidden', display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical' }}>{item.description}</div>
+      <div style={{ fontSize:11.5, color:'rgba(255,255,255,0.42)', lineHeight:1.6, marginBottom:'auto', paddingBottom:14, overflow:'hidden', display:'-webkit-box', WebkitLineClamp:3, WebkitBoxOrient:'vertical' }}>{item.description}</div>
 
       {/* Footer */}
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:8, marginTop:'auto' }}>
@@ -844,41 +846,49 @@ export default function BerryShop() {
     <div style={{ minHeight:'100vh', background:'#08090d', overflowX:'hidden' }}>
 
       {/* ═══ HERO ═══════════════════════════════════════════════════════════ */}
-      <div style={{ position:'relative', padding:'100px 20px 60px', overflow:'hidden' }}>
+      <div style={{ position:'relative', padding:'72px 20px 44px', overflow:'hidden' }}>
+        {/* Subtle grid texture */}
+        <div style={{ position:'absolute', inset:0, backgroundImage:'linear-gradient(rgba(212,160,23,0.022) 1px, transparent 1px), linear-gradient(90deg, rgba(212,160,23,0.022) 1px, transparent 1px)', backgroundSize:'52px 52px', pointerEvents:'none', opacity:.7 }} />
         {/* Ambient glows */}
-        <div style={{ position:'absolute', top:'-20%', left:'5%', width:'50%', height:'80%', background:'radial-gradient(ellipse, rgba(212,160,23,0.06) 0%, transparent 65%)', pointerEvents:'none' }} />
-        <div style={{ position:'absolute', top:'10%', right:'0%', width:'40%', height:'70%', background:'radial-gradient(ellipse, rgba(139,92,246,0.07) 0%, transparent 65%)', pointerEvents:'none' }} />
-        <div style={{ position:'absolute', bottom:'-10%', left:'30%', width:'50%', height:'60%', background:'radial-gradient(ellipse, rgba(236,72,153,0.05) 0%, transparent 65%)', pointerEvents:'none' }} />
+        <div style={{ position:'absolute', top:'-10%', left:'8%', width:'45%', height:'90%', background:'radial-gradient(ellipse, rgba(212,160,23,0.07) 0%, transparent 62%)', pointerEvents:'none' }} />
+        <div style={{ position:'absolute', top:'5%', right:'2%', width:'38%', height:'75%', background:'radial-gradient(ellipse, rgba(139,92,246,0.09) 0%, transparent 60%)', pointerEvents:'none' }} />
+        <div style={{ position:'absolute', bottom:'-5%', left:'35%', width:'45%', height:'55%', background:'radial-gradient(ellipse, rgba(236,72,153,0.05) 0%, transparent 65%)', pointerEvents:'none' }} />
 
-        <div style={{ maxWidth:1120, margin:'0 auto', display:'flex', alignItems:'center', gap:40, flexWrap:'wrap' }}>
+        <div style={{ maxWidth:1120, margin:'0 auto', display:'flex', alignItems:'center', gap:48, flexWrap:'wrap' }}>
 
           {/* Left: copy */}
-          <div style={{ flex:1, minWidth:280, animation:'bsFadeUp .6s ease' }}>
-            <div style={{ fontSize:10, fontWeight:700, letterSpacing:'.22em', color:GOLD, textTransform:'uppercase', marginBottom:16 }}>
-              Berry Shop — Brams Community
+          <div style={{ flex:1, minWidth:280, animation:'bsFadeUp .5s ease' }}>
+            {/* Badge header */}
+            <div style={{ display:'inline-flex', alignItems:'center', gap:7, marginBottom:22, background:'rgba(212,160,23,0.07)', border:'1px solid rgba(212,160,23,0.22)', borderRadius:6, padding:'5px 14px' }}>
+              <span style={{ fontSize:11 }}>⚓</span>
+              <span style={{ fontSize:9, fontWeight:800, letterSpacing:'.22em', color:GOLD, textTransform:'uppercase' }}>Berry Shop — Brams Community</span>
             </div>
-            <h1 style={{
-              fontSize:'clamp(52px,9vw,96px)', fontWeight:900, margin:'0 0 16px', lineHeight:1.0, letterSpacing:'-0.02em',
-              background:'linear-gradient(140deg, #ffffff 0%, rgba(255,255,255,0.82) 45%, #d4a017 100%)',
-              WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', backgroundClip:'text',
-            }}>
-              🪙 Boutique Prestige
-            </h1>
-            <p style={{ fontSize:'clamp(13px,1.4vw,16px)', color:'rgba(255,255,255,0.55)', lineHeight:1.7, marginBottom:6, maxWidth:540 }}>
+            {/* Title */}
+            <div style={{ marginBottom:18 }}>
+              <div style={{ fontSize:'clamp(13px,1.8vw,17px)', fontWeight:400, color:'rgba(255,255,255,0.38)', letterSpacing:'.08em', marginBottom:4 }}>Boutique</div>
+              <h1 style={{
+                fontSize:'clamp(40px,6vw,72px)', fontWeight:900, margin:0, lineHeight:.9, letterSpacing:'-0.02em',
+                background:'linear-gradient(140deg, #ffffff 0%, rgba(255,255,255,0.88) 38%, #d4a017 72%, #f59e0b 100%)',
+                WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', backgroundClip:'text',
+              }}>
+                Prestige
+              </h1>
+            </div>
+            <p style={{ fontSize:'clamp(12px,1.3vw,14px)', color:'rgba(255,255,255,0.45)', lineHeight:1.78, marginBottom:6, maxWidth:500 }}>
               Récompenses exclusives, titres rares, rôles prestigieux, boosts d'élite et artefacts convoités.
             </p>
-            <p style={{ fontSize:12, color:'rgba(255,255,255,0.28)', fontStyle:'italic', marginBottom:32 }}>
+            <p style={{ fontSize:11, color:'rgba(255,255,255,0.22)', fontStyle:'italic', marginBottom:26 }}>
               Seuls les nakamas les plus investis peuvent prétendre à ces récompenses.
             </p>
 
             {/* Stat pills */}
-            <div style={{ display:'flex', alignItems:'center', gap:24, flexWrap:'wrap', animation:'bsFadeUp .6s 0.15s ease both' }}>
+            <div style={{ display:'flex', alignItems:'center', gap:20, flexWrap:'wrap', animation:'bsFadeUp .5s .12s ease both' }}>
               <StatPill value={state.items.length || '—'} label="Objets"   color="#fff"   />
-              <div style={{ width:1, height:40, background:'rgba(255,255,255,0.08)' }} />
+              <div style={{ width:1, height:30, background:'rgba(255,255,255,0.08)' }} />
               <StatPill value={Object.keys(RARITY).length}  label="Raretés"  color={GOLD}   />
-              <div style={{ width:1, height:40, background:'rgba(255,255,255,0.08)' }} />
+              <div style={{ width:1, height:30, background:'rgba(255,255,255,0.08)' }} />
               <StatPill value={fmtK(maxPrice)}               label="Prix max"  color="#8b5cf6" />
-              <div style={{ width:1, height:40, background:'rgba(255,255,255,0.08)' }} />
+              <div style={{ width:1, height:30, background:'rgba(255,255,255,0.08)' }} />
               <StatPill value={limitedCount}                 label="Limités"  color="#ec4899" />
             </div>
           </div>
@@ -902,9 +912,9 @@ export default function BerryShop() {
           <input
             type="text" value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Chercher un objet, un titre, un rôle, un badge…"
-            style={{ width:'100%', paddingLeft:48, paddingRight:20, height:50, background:'rgba(255,255,255,0.05)', backdropFilter:'blur(12px)', border:'1px solid rgba(255,255,255,0.10)', borderRadius:14, color:'#fff', fontSize:14, outline:'none', boxSizing:'border-box', transition:'border-color .2s, box-shadow .2s', fontFamily:'var(--body)' }}
-            onFocus={e => { e.currentTarget.style.borderColor='rgba(212,160,23,0.45)'; e.currentTarget.style.boxShadow='0 0 0 3px rgba(212,160,23,0.08)' }}
-            onBlur={e  => { e.currentTarget.style.borderColor='rgba(255,255,255,0.10)'; e.currentTarget.style.boxShadow='none' }}
+            style={{ width:'100%', paddingLeft:48, paddingRight:20, height:52, background:'rgba(255,255,255,0.04)', backdropFilter:'blur(16px)', border:'1px solid rgba(255,255,255,0.13)', borderRadius:12, color:'#fff', fontSize:14, outline:'none', boxSizing:'border-box', transition:'border-color .2s, box-shadow .2s', fontFamily:'var(--body)' }}
+            onFocus={e => { e.currentTarget.style.borderColor='rgba(212,160,23,0.50)'; e.currentTarget.style.boxShadow='0 0 0 3px rgba(212,160,23,0.10), 0 2px 16px rgba(212,160,23,0.08)' }}
+            onBlur={e  => { e.currentTarget.style.borderColor='rgba(255,255,255,0.13)'; e.currentTarget.style.boxShadow='none' }}
           />
         </div>
 
@@ -914,12 +924,13 @@ export default function BerryShop() {
             const active = category === cat.key
             return (
               <button key={cat.key} onClick={() => setCategory(cat.key)} style={{
-                display:'inline-flex', alignItems:'center', gap:5, padding:'8px 16px',
-                borderRadius:100, border:`1px solid ${active ? 'rgba(212,160,23,0.50)' : 'rgba(255,255,255,0.10)'}`,
-                background: active ? 'rgba(212,160,23,0.14)' : 'rgba(255,255,255,0.04)',
-                color: active ? GOLD : 'rgba(255,255,255,0.50)',
+                display:'inline-flex', alignItems:'center', gap:6, padding:'9px 18px',
+                borderRadius:100, border:`1px solid ${active ? 'rgba(212,160,23,0.55)' : 'rgba(255,255,255,0.09)'}`,
+                background: active ? 'rgba(212,160,23,0.15)' : 'rgba(255,255,255,0.03)',
+                color: active ? GOLD : 'rgba(255,255,255,0.45)',
                 fontSize:12, fontWeight:700, cursor:'pointer', whiteSpace:'nowrap',
-                transition:'all .15s', flexShrink:0,
+                transition:'all .18s', flexShrink:0,
+                boxShadow: active ? `0 0 20px rgba(212,160,23,0.18), inset 0 0 8px rgba(212,160,23,0.05)` : 'none',
               }}>
                 <span>{cat.icon}</span>
                 <span>{cat.label}</span>
