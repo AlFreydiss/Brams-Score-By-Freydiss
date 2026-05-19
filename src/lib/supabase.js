@@ -50,7 +50,7 @@ export async function fetchMemberProfile(discordId) {
 }
 
 export async function signInWithDiscord() {
-  if (!supabase) return { error: { message: 'Client Supabase non initialisÃ©' } }
+  if (!supabase) return { error: { message: 'Client Supabase non initialisé — variables VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY manquantes.' } }
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'discord',
     options: {
@@ -62,7 +62,7 @@ export async function signInWithDiscord() {
 }
 
 export async function signUpWithEmail(email, password, displayName) {
-  if (!supabase) return { error: { message: 'Client Supabase non initialisÃ©' } }
+  if (!supabase) return { error: { message: 'Client Supabase non initialisé.' } }
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -72,7 +72,7 @@ export async function signUpWithEmail(email, password, displayName) {
 }
 
 export async function signInWithEmail(email, password) {
-  if (!supabase) return { error: { message: 'Client Supabase non initialisÃ©' } }
+  if (!supabase) return { error: { message: 'Client Supabase non initialisé.' } }
   const { data, error } = await supabase.auth.signInWithPassword({ email, password })
   return { data, error }
 }

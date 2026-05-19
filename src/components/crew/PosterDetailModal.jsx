@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useNavigate } from 'react-router-dom'
 import { C, ROLE_COLORS, ROLE_LABELS, ROLE_LEVEL } from '../../lib/crew/constants.js'
 import { formatBounty, getBountyTier } from '../../lib/crew/bountyFormatter.js'
 import css from '../../styles/constellation.module.css'
@@ -65,6 +66,7 @@ export default function PosterDetailModal({ member, onClose }) {
 }
 
 function ModalContent({ member, onClose }) {
+  const navigate = useNavigate()
   const roleColor = ROLE_COLORS[member.position] || ROLE_COLORS.mousse
   const roleLabel = ROLE_LABELS[member.position] || member.position || 'Mousse'
   const tier      = getBountyTier(member.contribution)
@@ -202,6 +204,33 @@ function ModalContent({ member, onClose }) {
         >
           VOIR LE PROFIL COMPLET
         </a>
+
+        {member.crew_id && (
+          <button
+            onClick={() => { onClose(); navigate(`/equipage/${member.crew_id}`) }}
+            style={{
+              display:        'flex',
+              alignItems:     'center',
+              justifyContent: 'center',
+              gap:            8,
+              padding:        '10px 16px',
+              background:     'rgba(139,105,20,0.12)',
+              border:         `1px solid ${C.goldDark}`,
+              borderRadius:   6,
+              color:          C.goldDark,
+              fontFamily:     "'Cinzel', serif",
+              fontSize:       12,
+              fontWeight:     700,
+              letterSpacing:  '0.08em',
+              cursor:         'pointer',
+              transition:     'all 0.15s ease',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(139,105,20,0.24)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(139,105,20,0.12)' }}
+          >
+            ⚓ QG DE L'ÉQUIPAGE
+          </button>
+        )}
 
         <button
           onClick={onClose}

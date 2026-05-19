@@ -102,7 +102,7 @@ function LoginButton({ onClick }) {
   )
 }
 
-function UserMenu({ displayName, avatarUrl, onSignOut }) {
+function UserMenu({ displayName, avatarUrl, discordId, onSignOut }) {
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
@@ -137,12 +137,13 @@ function UserMenu({ displayName, avatarUrl, onSignOut }) {
             <span><i /> Connecte</span>
           </div>
           {[
-            { label: 'Équipages',    path: '/equipage'  },
-            { label: 'Wiki',         path: '/wiki'      },
-            { label: 'Théories',     path: '/theories'  },
-            { label: 'Boutique',     path: '/boutique'  },
-            { label: 'Staff Panel',  path: '/staff'     },
-          ].map((item) => (
+            { label: '⚔ Mon Profil',  path: discordId ? `/u/${discordId}` : null },
+            { label: 'Équipages',     path: '/equipage'  },
+            { label: 'Wiki',          path: '/wiki'      },
+            { label: 'Théories',      path: '/theories'  },
+            { label: 'Boutique',      path: '/boutique'  },
+            { label: 'Staff Panel',   path: '/staff'     },
+          ].filter(item => item.path).map((item) => (
             <button
               key={item.label}
               onClick={() => {
@@ -184,7 +185,7 @@ export default function Navbar() {
   const [about, setAbout] = useState(false)
   const [authOpen, setAuthOpen] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
-  const { isAuthenticated, signOut, displayName, avatarUrl } = useAuth()
+  const { isAuthenticated, signOut, displayName, avatarUrl, discordId } = useAuth()
   const { pathname } = useLocation()
   const navigate = useNavigate()
 
@@ -257,13 +258,13 @@ export default function Navbar() {
           <div className="nav-zone-user">
             <div className="hide-mobile">
               {isAuthenticated
-                ? <UserMenu displayName={displayName} avatarUrl={avatarUrl} onSignOut={signOut} />
+                ? <UserMenu displayName={displayName} avatarUrl={avatarUrl} discordId={discordId} onSignOut={signOut} />
                 : <LoginButton onClick={() => setAuthOpen(true)} />
               }
             </div>
             {isAuthenticated && (
               <div className="nav-mobile-account">
-                <UserMenu displayName={displayName} avatarUrl={avatarUrl} onSignOut={signOut} />
+                <UserMenu displayName={displayName} avatarUrl={avatarUrl} discordId={discordId} onSignOut={signOut} />
               </div>
             )}
             <button className={menuOpen ? 'nav-menu-button show-mobile open' : 'nav-menu-button show-mobile'} onClick={() => setMenuOpen((value) => !value)} aria-label="Menu">

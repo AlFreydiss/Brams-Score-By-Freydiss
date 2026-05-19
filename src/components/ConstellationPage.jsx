@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useNavigate } from 'react-router-dom'
 import ConstellationView from './crew/ConstellationView.jsx'
 import ConstellationHeader from './crew/ConstellationHeader.jsx'
 import PosterDetailModal from './crew/PosterDetailModal.jsx'
@@ -114,6 +115,7 @@ function ShortcutHint() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function ConstellationPage() {
+  const navigate = useNavigate()
   const [crews,       setCrews]       = useState([])
   const [selectedId,  setSelectedId]  = useState(null)
   const [activeCrew,  setActiveCrew]  = useState(null)
@@ -245,12 +247,33 @@ export default function ConstellationPage() {
               marginTop:   16,
               display:     'flex',
               justifyContent: 'center',
+              alignItems:  'center',
               gap:         8,
               flexWrap:    'wrap',
             }}
           >
             <StatusBadge label="Recrutement" value={activeCrew.is_recruiting ? 'Ouvert' : 'Fermé'} active={activeCrew.is_recruiting} />
             <StatusBadge label="Guerres gagnées" value={activeCrew.wars_won ?? '0'} />
+            <button
+              onClick={() => navigate(`/equipage/${activeCrew.id}`)}
+              style={{
+                padding:       '5px 16px',
+                background:    'rgba(139,105,20,0.15)',
+                border:        `1px solid ${C.goldDark}`,
+                borderRadius:  6,
+                color:         C.goldDark,
+                fontFamily:    "'Cinzel', serif",
+                fontSize:      11,
+                fontWeight:    700,
+                letterSpacing: '0.08em',
+                cursor:        'pointer',
+                transition:    'all 0.15s ease',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(139,105,20,0.28)' }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(139,105,20,0.15)' }}
+            >
+              ⚓ QG de l'Équipage
+            </button>
           </motion.div>
         )}
 

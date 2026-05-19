@@ -321,7 +321,8 @@ export default function BerryShop() {
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState(null)
 
-  const isAdmin = user?.user_metadata?.role === 'admin' || user?.app_metadata?.role === 'admin'
+  const ADMIN_IDS = ['1094070545248694342', '873117504367648798']
+  const isAdmin = ADMIN_IDS.includes(String(discordId)) || user?.user_metadata?.role === 'admin' || user?.app_metadata?.role === 'admin'
 
   useEffect(() => {
     if (isAuthenticated) fetchBerryShopState(discordId).then(setState)

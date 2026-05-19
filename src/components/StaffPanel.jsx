@@ -6,7 +6,8 @@ import Navbar from './Navbar.jsx'
 
 // Discord IDs des membres du staff — à compléter
 const STAFF_IDS = [
-  '873117504367648798', // Ayzeni
+  '1094070545248694342', // Freydiss — créateur
+  '873117504367648798',  // Ayzeni
 ]
 
 function timeAgo(iso) {

@@ -9,3 +9,4 @@ dist/
 # Gros fichiers médias — pas dans git
 public/anime/
 *.mkv
+.vercel

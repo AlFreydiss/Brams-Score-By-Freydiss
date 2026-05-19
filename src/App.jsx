@@ -51,6 +51,7 @@ const TheoriesHome       = lazy(() => import('./components/TheoriesHome.jsx'))
 const TheoryDetail       = lazy(() => import('./components/TheoryDetail.jsx'))
 const TheoryEditor       = lazy(() => import('./components/TheoryEditor.jsx'))
 const ConstellationPage  = lazy(() => import('./components/ConstellationPage.jsx'))
+const CrewHQPage         = lazy(() => import('./components/crew-hq/CrewHQPage.jsx'))
 const DevilFruitPage     = lazy(() => import('./components/devil-fruit/DevilFruitPage.jsx'))
 const BerryShop          = lazy(() => import('./components/BerryShop.jsx'))
 const BramsTraitorPage   = lazy(() => import('./components/BramsTraitorPage.jsx'))
@@ -228,6 +229,7 @@ export default function App() {
 
         {/* Constellation Équipages */}
         <Route path="/equipage" element={<PageLayout><ConstellationPage /></PageLayout>} />
+        <Route path="/equipage/:crewId" element={<CrewHQPage />} />
 
         {/* Encyclopédie Fruits du Démon */}
         <Route path="/fruits-du-demon" element={<PageLayout><DevilFruitPage /></PageLayout>} />
