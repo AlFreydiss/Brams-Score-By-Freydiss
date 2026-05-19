@@ -679,117 +679,162 @@ export default function BerryShop() {
   if (!isAuthenticated) {
     return (
       <div style={{
-        minHeight:'100vh', background:'#07080c',
-        display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
-        padding:'40px 20px', textAlign:'center', position:'relative', overflow:'hidden',
+        minHeight: '100vh',
+        background: 'radial-gradient(ellipse 80% 55% at 50% 0%, rgba(212,160,23,0.08) 0%, #171b23 50%), #171b23',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        padding: '60px 24px', textAlign: 'center', position: 'relative', overflow: 'hidden',
       }}>
         <style>{`
-          @keyframes bsLgFloat { 0%,100%{ transform:translateY(0) rotate(-2deg) } 50%{ transform:translateY(-16px) rotate(4deg) } }
-          @keyframes bsLgPulse { 0%,100%{ opacity:.25; transform:scale(1) } 50%{ opacity:.6; transform:scale(1.15) } }
-          @keyframes bsLgCoin  { 0%{ opacity:0; transform:translateY(0) rotate(0deg) } 15%{ opacity:.9 } 85%{ opacity:.9 } 100%{ opacity:0; transform:translateY(-140px) rotate(540deg) } }
-          @keyframes bsLgIn    { from{ opacity:0; transform:translateY(28px) } to{ opacity:1; transform:none } }
-          @keyframes bsLgShimmer { 0%{ left:-100% } 55%{ left:130% } 100%{ left:130% } }
-          @keyframes bsLgScan  { 0%{ transform:translateY(-100%) } 100%{ transform:translateY(100vh) } }
+          @keyframes bsPageFloat { 0%,100%{ transform:translateY(0) } 50%{ transform:translateY(-10px) } }
+          @keyframes bsPagePulse { 0%,100%{ opacity:.28; transform:scale(1) } 50%{ opacity:.6; transform:scale(1.14) } }
+          @keyframes bsPageStar  { 0%,100%{ opacity:.06 } 50%{ opacity:.40 } }
+          @keyframes bsPageIn    { from{ opacity:0; transform:translateY(20px) } to{ opacity:1; transform:none } }
+          @keyframes bsPageScan  { 0%{ transform:translateY(-200%) } 100%{ transform:translateY(120vh) } }
+          @media (prefers-reduced-motion: reduce) {
+            [style*="bsPage"] { animation: none !important; }
+          }
         `}</style>
 
-        {/* Deep radial glows */}
-        <div style={{ position:'absolute', top:'-15%', left:'50%', transform:'translateX(-50%)', width:'100%', height:'70%', background:'radial-gradient(ellipse 70% 60% at 50% 0%, rgba(212,160,23,0.10) 0%, transparent 65%)', pointerEvents:'none' }} />
-        <div style={{ position:'absolute', bottom:'5%', left:'15%', width:'70%', height:'50%', background:'radial-gradient(ellipse, rgba(88,101,242,0.06) 0%, transparent 65%)', pointerEvents:'none' }} />
-        <div style={{ position:'absolute', top:'20%', right:'-5%', width:'35%', height:'55%', background:'radial-gradient(ellipse, rgba(212,160,23,0.05) 0%, transparent 65%)', pointerEvents:'none' }} />
-
-        {/* Subtle grid */}
-        <div style={{ position:'absolute', inset:0, backgroundImage:'linear-gradient(rgba(212,160,23,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(212,160,23,0.03) 1px, transparent 1px)', backgroundSize:'64px 64px', pointerEvents:'none' }} />
+        {/* Ambient radial glows */}
+        <div style={{ position:'absolute', top:'-5%', left:'50%', transform:'translateX(-50%)', width:'90%', height:'60%', background:'radial-gradient(circle at center, rgba(245,158,11,0.08), transparent 55%)', pointerEvents:'none' }} />
+        <div style={{ position:'absolute', bottom:'0%', left:'-5%', width:'55%', height:'45%', background:'radial-gradient(ellipse, rgba(88,101,242,0.05) 0%, transparent 65%)', pointerEvents:'none' }} />
 
         {/* Scan line */}
-        <div style={{ position:'absolute', left:0, right:0, height:2, background:'linear-gradient(90deg, transparent, rgba(212,160,23,0.06), transparent)', animation:'bsLgScan 8s linear infinite', pointerEvents:'none' }} />
+        <div style={{ position:'absolute', left:0, right:0, height:1, background:'linear-gradient(90deg, transparent, rgba(212,160,23,0.07), transparent)', animation:'bsPageScan 12s linear infinite', pointerEvents:'none' }} />
 
-        {/* Floating coins */}
-        {[0,1,2,3,4,5,6,7,8,9,10,11].map(i => (
+        {/* Stars / particles */}
+        {Array.from({ length: 48 }).map((_, i) => (
           <div key={i} style={{
-            position:'absolute', fontSize:14 + (i * 3) % 14,
-            left:`${4 + (i * 8.3) % 88}%`,
-            top:`${55 + (i * 41) % 40}%`,
-            animation:`bsLgCoin ${3.5 + (i * 0.6) % 3.5}s ${i * 0.45}s ease-in-out infinite`,
-            opacity:0, pointerEvents:'none',
-            filter:'drop-shadow(0 0 5px rgba(212,160,23,0.55))',
-          }}>🪙</div>
+            position:'absolute',
+            top:`${(i * 37.3) % 90}%`, left:`${(i * 41.7) % 98}%`,
+            width: i % 6 === 0 ? 2 : 1, height: i % 6 === 0 ? 2 : 1,
+            borderRadius:'50%',
+            background: i % 9 === 0 ? 'rgba(212,160,23,0.65)' : 'rgba(255,255,255,0.55)',
+            opacity: 0.1 + (i * 0.03) % 0.35,
+            animation:`bsPageStar ${2.5 + (i * 0.31) % 3}s ${(i * 0.19) % 2.2}s ease-in-out infinite`,
+            pointerEvents:'none',
+          }} />
         ))}
 
-        {/* Main card */}
-        <div style={{
-          position:'relative', zIndex:2, maxWidth:460, width:'100%',
-          background:'linear-gradient(155deg, rgba(18,20,28,0.97) 0%, rgba(8,10,15,0.99) 100%)',
-          border:'1px solid rgba(212,160,23,0.18)',
-          borderTop:'2px solid rgba(212,160,23,0.45)',
-          borderRadius:24, padding:'44px 38px 36px',
-          overflow:'hidden',
-          boxShadow:'0 48px 120px rgba(0,0,0,0.85), 0 0 0 1px rgba(212,160,23,0.04) inset, 0 0 80px rgba(212,160,23,0.05)',
-          animation:'bsLgIn .55s ease',
-        }}>
-          {/* Card shimmer */}
-          <div style={{ position:'absolute', top:0, left:'-100%', width:'50%', height:'100%', background:'linear-gradient(90deg, transparent, rgba(212,160,23,0.05), transparent)', animation:'bsLgShimmer 5s 1.5s ease-in-out infinite', pointerEvents:'none' }} />
-          {/* Card inner glow */}
-          <div style={{ position:'absolute', top:-80, left:'50%', transform:'translateX(-50%)', width:360, height:240, background:'radial-gradient(ellipse, rgba(212,160,23,0.13) 0%, transparent 65%)', pointerEvents:'none' }} />
+        {/* Content — no box, full page breathing */}
+        <div style={{ position:'relative', zIndex:2, maxWidth:580, width:'100%', animation:'bsPageIn .55s ease' }}>
 
-          {/* Coin */}
-          <div style={{ position:'relative', display:'inline-block', marginBottom:22 }}>
-            <div style={{ position:'absolute', inset:-24, borderRadius:'50%', background:'radial-gradient(circle, rgba(212,160,23,0.22) 0%, transparent 65%)', animation:'bsLgPulse 2.8s ease-in-out infinite' }} />
-            <div style={{ fontSize:72, lineHeight:1, animation:'bsLgFloat 3.2s ease-in-out infinite', filter:'drop-shadow(0 0 28px rgba(212,160,23,0.65)) drop-shadow(0 0 8px rgba(212,160,23,0.9))', position:'relative', zIndex:1 }}>🪙</div>
+          {/* Icon */}
+          <div style={{ position:'relative', display:'inline-block', marginBottom:24 }}>
+            <div style={{ position:'absolute', inset:-22, borderRadius:'50%', background:'radial-gradient(circle, rgba(212,160,23,0.20) 0%, transparent 65%)', animation:'bsPagePulse 3s ease-in-out infinite' }} />
+            <div style={{
+              width:80, height:80, borderRadius:'50%',
+              background:'rgba(251,191,36,0.10)',
+              border:'1px solid rgba(251,191,36,0.35)',
+              boxShadow:'0 0 40px rgba(251,191,36,0.22)',
+              display:'flex', alignItems:'center', justifyContent:'center',
+              fontSize:38, lineHeight:1,
+              animation:'bsPageFloat 4s ease-in-out infinite',
+              position:'relative', zIndex:1,
+            }}>🪙</div>
           </div>
 
-          {/* Eyebrow */}
-          <div style={{ fontSize:9, fontWeight:800, letterSpacing:'.24em', color:'rgba(212,160,23,0.60)', textTransform:'uppercase', marginBottom:10 }}>Berry Shop — Brams Community</div>
+          {/* Badge */}
+          <div style={{ marginBottom:30 }}>
+            <span style={{
+              display:'inline-block',
+              background:'rgba(212,160,23,0.07)',
+              border:'1px solid rgba(212,160,23,0.32)',
+              borderRadius:5, padding:'6px 22px',
+              fontSize:11, fontWeight:800, letterSpacing:'.18em',
+              color:'rgba(212,160,23,0.82)', textTransform:'uppercase',
+            }}>Berry Shop — Zone Réservée</span>
+          </div>
 
-          {/* Title */}
-          <h1 style={{
-            fontSize:'clamp(34px,7vw,54px)', fontWeight:900, margin:'0 0 14px', lineHeight:1.0, letterSpacing:'-0.025em',
-            background:'linear-gradient(145deg, #ffffff 0%, rgba(255,255,255,0.88) 38%, #d4a017 72%, #f59e0b 100%)',
-            WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', backgroundClip:'text',
-          }}>Boutique Prestige</h1>
+          {/* Title hierarchy */}
+          <div style={{ marginBottom:28 }}>
+            <div style={{
+              fontSize:'clamp(17px,3vw,24px)', fontWeight:600,
+              color:'rgba(255,255,255,0.70)', letterSpacing:'.04em', marginBottom:6,
+            }}>Boutique</div>
+            <div style={{
+              fontSize:'clamp(52px,10vw,82px)', fontWeight:900, lineHeight:1,
+              letterSpacing:'-0.02em',
+              fontFamily:"'Pirata One', 'Cinzel', Georgia, serif",
+              background:'linear-gradient(135deg, #d4a017 0%, #f59e0b 28%, #E0524A 65%, #ff7055 100%)',
+              WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', backgroundClip:'text',
+            }}>Prestige</div>
+          </div>
 
-          {/* Desc */}
-          <p style={{ fontSize:13.5, color:'rgba(255,255,255,0.40)', maxWidth:350, margin:'0 auto 22px', lineHeight:1.8 }}>
-            Ta monnaie Discord devient puissante ici.<br/>Récompenses exclusives réservées aux nakamas.
+          {/* Description */}
+          <p style={{ fontSize:16, color:'rgba(255,255,255,0.52)', maxWidth:460, margin:'0 auto 18px', lineHeight:1.75 }}>
+            Ta monnaie <strong style={{ color:'rgba(255,255,255,0.88)' }}>Discord</strong> devient puissante ici.
+            Des <strong style={{ color:'rgba(255,255,255,0.88)' }}>récompenses rares, mythiques</strong> et légendaires
+            réservées aux vrais <strong style={{ color:'rgba(255,255,255,0.88)' }}>nakamas</strong>.
           </p>
 
-          {/* Rarity tiers */}
-          <div style={{ display:'flex', gap:5, justifyContent:'center', flexWrap:'wrap', marginBottom:24 }}>
+          {/* Quote */}
+          <p style={{
+            fontSize:14, color:'rgba(212,160,23,0.88)', fontStyle:'italic',
+            maxWidth:460, margin:'0 auto 34px', lineHeight:1.65,
+          }}>
+            « Les trésors les plus rares n'apparaissent qu'aux nakamas dignes du Grand Line. »
+          </p>
+
+          {/* Rarity tiers — subtle */}
+          <div style={{ display:'flex', gap:7, justifyContent:'center', flexWrap:'wrap', marginBottom:40 }}>
             {[
               { l:'Commun', c:'#6b7280' }, { l:'Rare', c:'#3b82f6' }, { l:'Épique', c:'#8b5cf6' },
               { l:'Légendaire', c:'#d4a017' }, { l:'Mythique', c:'#ec4899' },
             ].map(r => (
               <span key={r.l} style={{
-                fontSize:8.5, fontWeight:800, letterSpacing:'.1em', textTransform:'uppercase',
-                color:r.c, background:`${r.c}15`, border:`1px solid ${r.c}35`,
-                borderRadius:100, padding:'4px 11px',
-              }}>{r.l}</span>
+                fontSize:9, fontWeight:800, letterSpacing:'.10em', textTransform:'uppercase',
+                color:r.c, background:`${r.c}12`, border:`1px solid ${r.c}28`,
+                borderRadius:100, padding:'4px 13px', transition:'all .2s', cursor:'default',
+              }}
+                onMouseEnter={e => { e.currentTarget.style.boxShadow=`0 0 12px ${r.c}38`; e.currentTarget.style.borderColor=`${r.c}55` }}
+                onMouseLeave={e => { e.currentTarget.style.boxShadow='none'; e.currentTarget.style.borderColor=`${r.c}28` }}
+              >{r.l}</span>
             ))}
           </div>
 
-          {/* Divider */}
-          <div style={{ height:1, background:'linear-gradient(90deg, transparent, rgba(212,160,23,0.28), transparent)', marginBottom:26 }} />
+          {/* Discord button — narrow, centered */}
+          <div style={{ marginBottom:16 }}>
+            <button onClick={openAuth} style={{
+              display:'inline-flex', alignItems:'center', justifyContent:'center', gap:10,
+              padding:'14px 32px', width:'auto', minWidth:260, maxWidth:340,
+              background:'linear-gradient(135deg, #5865f2 0%, #4752c4 100%)',
+              border:'1px solid rgba(255,255,255,0.12)',
+              borderTop:'1px solid rgba(255,255,255,0.20)',
+              borderRadius:12, color:'#fff', fontSize:15, fontWeight:700, cursor:'pointer',
+              boxShadow:'0 6px 28px rgba(88,101,242,0.45)',
+              transition:'all .2s', letterSpacing:'.02em',
+            }}
+              onMouseEnter={e => { e.currentTarget.style.transform='translateY(-2px)'; e.currentTarget.style.boxShadow='0 12px 40px rgba(88,101,242,0.62)'; e.currentTarget.style.filter='brightness(1.06)' }}
+              onMouseLeave={e => { e.currentTarget.style.transform='translateY(0)'; e.currentTarget.style.boxShadow='0 6px 28px rgba(88,101,242,0.45)'; e.currentTarget.style.filter='none' }}
+              onMouseDown={e => { e.currentTarget.style.transform='scale(0.98)' }}
+              onMouseUp={e => { e.currentTarget.style.transform='translateY(-2px)' }}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
+              Se connecter avec Discord
+            </button>
+          </div>
 
-          {/* Discord button */}
-          <button onClick={openAuth} style={{
-            width:'100%', display:'inline-flex', alignItems:'center', justifyContent:'center', gap:10,
-            padding:'15px 28px',
-            background:'linear-gradient(135deg, #5865f2 0%, #4752c4 100%)',
-            border:'1px solid rgba(255,255,255,0.12)',
-            borderTop:'1px solid rgba(255,255,255,0.22)',
-            borderRadius:14, color:'#fff', fontSize:14, fontWeight:700, cursor:'pointer',
-            boxShadow:'0 8px 32px rgba(88,101,242,0.42), 0 1px 0 rgba(255,255,255,0.10) inset',
-            transition:'all .2s', letterSpacing:'.02em', marginBottom:14,
-          }}
-            onMouseEnter={e => { e.currentTarget.style.transform='translateY(-3px)'; e.currentTarget.style.boxShadow='0 16px 44px rgba(88,101,242,0.58), 0 1px 0 rgba(255,255,255,0.10) inset' }}
-            onMouseLeave={e => { e.currentTarget.style.transform='translateY(0)'; e.currentTarget.style.boxShadow='0 8px 32px rgba(88,101,242,0.42), 0 1px 0 rgba(255,255,255,0.10) inset' }}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
-            Connexion Discord
-          </button>
+          {/* Email link */}
+          <div style={{ marginBottom:40 }}>
+            <button onClick={openAuth} style={{
+              background:'none', border:'none', cursor:'pointer',
+              color:'rgba(255,255,255,0.28)', fontSize:13, fontFamily:'var(--body)',
+              textDecoration:'underline', transition:'color .15s',
+            }}
+              onMouseEnter={e => e.currentTarget.style.color='rgba(255,255,255,0.70)'}
+              onMouseLeave={e => e.currentTarget.style.color='rgba(255,255,255,0.28)'}
+            >Ou se connecter par email →</button>
+          </div>
 
-          <div style={{ fontSize:10, color:'rgba(255,255,255,0.18)', letterSpacing:'.06em', textTransform:'uppercase' }}>
+          {/* Footer note */}
+          <div style={{
+            fontSize:11, color:'rgba(255,255,255,0.22)',
+            letterSpacing:'.18em', textTransform:'uppercase',
+          }}>
             Les berries sont gagnées sur le serveur Discord
           </div>
+
         </div>
       </div>
     )
