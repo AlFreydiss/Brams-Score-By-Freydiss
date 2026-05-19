@@ -159,20 +159,31 @@ function QuoteRotator() {
       <div style={{
         opacity: fade ? 1 : 0,
         transition: 'opacity 0.4s ease',
-        background: 'rgba(255,255,255,.035)',
-        border: `1px solid rgba(255,255,255,.07)`,
+        background: 'linear-gradient(135deg, rgba(255,255,255,.048) 0%, rgba(255,255,255,.022) 100%)',
+        border: `1px solid rgba(255,255,255,.09)`,
         borderLeft: `3px solid ${q.color}`,
-        borderRadius: '0 12px 12px 0',
-        padding: '16px 18px',
+        borderTop: '1px solid rgba(255,255,255,.13)',
+        borderRadius: '0 14px 14px 0',
+        padding: '18px 20px',
         marginBottom: 12,
-        backdropFilter: 'blur(8px)',
+        backdropFilter: 'blur(16px) saturate(1.3)',
+        boxShadow: `0 8px 32px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.08)`,
+        position: 'relative',
+        overflow: 'hidden',
       }}>
-        <p style={{ fontSize: 14, color: 'rgba(255,255,255,.86)', lineHeight: 1.75, fontStyle: 'italic', margin: '0 0 8px' }}>
+        <div style={{
+          position: 'absolute', top: 0, left: 0, right: 0, height: 1,
+          background: `linear-gradient(90deg, ${q.color}66, transparent 60%)`,
+        }} />
+        <p style={{ fontSize: 14.5, color: 'rgba(255,255,255,.90)', lineHeight: 1.78, fontStyle: 'italic', margin: '0 0 10px', textShadow: '0 1px 8px rgba(0,0,0,.4)' }}>
           « {q.text} »
         </p>
-        <span style={{ fontSize: 10, color: q.color, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase' }}>
-          — {q.author}
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ width: 16, height: 1, background: `linear-gradient(90deg, ${q.color}, transparent)`, display: 'inline-block' }} />
+          <span style={{ fontSize: 10.5, color: q.color, fontWeight: 800, letterSpacing: '.10em', textTransform: 'uppercase' }}>
+            {q.author}
+          </span>
+        </div>
       </div>
       <button
         onClick={next}
@@ -192,7 +203,7 @@ function QuoteRotator() {
   )
 }
 
-function HeroFeatureCard({ icon, title, desc }) {
+function HeroFeatureCard({ icon, title, desc, accent = 'rgba(212,160,23' }) {
   const [hov, setHov] = useState(false)
   return (
     <div
@@ -200,20 +211,29 @@ function HeroFeatureCard({ icon, title, desc }) {
       onMouseLeave={() => setHov(false)}
       style={{
         flex: '1 1 130px',
-        background: hov ? 'rgba(212,160,23,.07)' : 'rgba(255,255,255,.025)',
-        border: `1px solid ${hov ? 'rgba(212,160,23,.24)' : 'rgba(255,255,255,.07)'}`,
-        borderRadius: 12, padding: '14px 16px',
-        transition: 'all .25s cubic-bezier(.22,1,.36,1)',
-        transform: hov ? 'translateY(-3px)' : 'none',
-        cursor: 'default', backdropFilter: 'blur(10px)',
-        display: 'flex', flexDirection: 'column', gap: 6,
-        boxShadow: hov ? '0 8px 24px rgba(212,160,23,.10)' : 'none',
+        background: hov
+          ? `linear-gradient(135deg, ${accent},.09) 0%, ${accent},.04) 100%)`
+          : 'linear-gradient(135deg, rgba(255,255,255,.038) 0%, rgba(255,255,255,.016) 100%)',
+        border: `1px solid ${hov ? `${accent},.32)` : 'rgba(255,255,255,.08)'}`,
+        borderTop: `1px solid ${hov ? `${accent},.22)` : 'rgba(255,255,255,.12)'}`,
+        borderRadius: 14, padding: '16px 16px 14px',
+        transition: 'all .28s cubic-bezier(.22,1,.36,1)',
+        transform: hov ? 'translateY(-4px)' : 'none',
+        cursor: 'default',
+        backdropFilter: 'blur(14px) saturate(1.2)',
+        display: 'flex', flexDirection: 'column', gap: 8,
+        boxShadow: hov ? `0 12px 32px ${accent},.14), inset 0 1px 0 rgba(255,255,255,.08)` : 'inset 0 1px 0 rgba(255,255,255,.06)',
+        position: 'relative', overflow: 'hidden',
       }}
     >
-      <span style={{ fontSize: 20, lineHeight: 1 }}>{icon}</span>
+      {hov && <div style={{
+        position: 'absolute', top: 0, left: 0, right: 0, height: 1,
+        background: `linear-gradient(90deg, ${accent},.50), ${accent},.20) 60%, transparent)`,
+      }} />}
+      <span style={{ fontSize: 22, lineHeight: 1, filter: hov ? 'drop-shadow(0 2px 8px rgba(0,0,0,.5))' : 'none', transition: 'filter .28s' }}>{icon}</span>
       <div>
-        <div style={{ fontSize: 12.5, fontWeight: 760, color: 'rgba(255,255,255,.92)', marginBottom: 3 }}>{title}</div>
-        <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,.56)', lineHeight: 1.45 }}>{desc}</div>
+        <div style={{ fontSize: 13, fontWeight: 780, color: hov ? '#fff' : 'rgba(255,255,255,.88)', marginBottom: 4, transition: 'color .2s' }}>{title}</div>
+        <div style={{ fontSize: 11, color: 'rgba(255,255,255,.52)', lineHeight: 1.5 }}>{desc}</div>
       </div>
     </div>
   )
@@ -258,7 +278,12 @@ export default function Hero() {
       {/* Glow radial derrière le dashboard */}
       <div style={{
         position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
-        background: 'radial-gradient(ellipse 45% 50% at 78% 50%, rgba(88,101,242,0.07) 0%, transparent 65%)',
+        background: 'radial-gradient(ellipse 52% 58% at 78% 50%, rgba(88,101,242,0.18) 0%, rgba(88,101,242,0.06) 55%, transparent 75%)',
+      }} />
+      {/* Aura dorée douce côté dashboard */}
+      <div style={{
+        position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
+        background: 'radial-gradient(ellipse 30% 40% at 85% 28%, rgba(212,160,23,0.09) 0%, transparent 70%)',
       }} />
       {/* Vignette top */}
       <div style={{
@@ -272,6 +297,17 @@ export default function Hero() {
       }} />
 
       <StarField />
+
+      {/* ── Atmospheric layers (CSS classes defined in index.css) ── */}
+      <div className="hero-atmosphere">
+        <div className="hero-depth-wash" />
+        <div className="hero-rain" />
+        <div className="hero-mist" />
+        <div className="hero-mist hero-mist-b" />
+        <div className="hero-haki" />
+        <div className="hero-haki-line" />
+        <div className="hero-haki-line hero-haki-line-b" />
+      </div>
 
       <div style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: 1320, margin: '0 auto', padding: isMobile ? '0 20px' : '0 48px' }}>
         <div style={{
@@ -298,7 +334,7 @@ export default function Hero() {
             {/* Titre */}
             <h1 className="hero-title-premium fade-up">
               <span className="hero-brams">Brams</span>
-              <span className="hero-community">Community</span>
+              <span className="hero-community hero-community-glow">Community</span>
             </h1>
 
             {/* Subtitle */}
@@ -316,7 +352,7 @@ export default function Hero() {
               color: 'rgba(255,255,255,.62)', fontWeight: 450,
               lineHeight: 1.75, marginBottom: 32, maxWidth: 470,
             }}>
-              Rangs, équipages, quiz, classements, théories, événements et aventures communautaires réunis au même endroit.
+              Rangs, équipages, quiz, classements, théories et événements réunis dans une même aventure communautaire.
             </p>
 
             <div className="fade-up-2"><QuoteRotator /></div>
@@ -399,17 +435,31 @@ export default function Hero() {
             </div>
 
               {/* Features */}
-              <div className="fade-up-3" style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 22 }}>
-                <HeroFeatureCard icon="⚓" title="Équipages" desc="Rejoins ton équipage de nakamas" />
-                <HeroFeatureCard icon="📊" title="Classements" desc="Grimpe le leaderboard vocal" />
-                <HeroFeatureCard icon="🎉" title="Événements" desc="Ne rate aucun event du serveur" />
+              <div className="fade-up-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 10, marginTop: 22 }}>
+                <HeroFeatureCard icon="⚓" title="Équipages" desc="Rejoins ton équipage de nakamas" accent="rgba(212,160,23" />
+                <HeroFeatureCard icon="📊" title="Classements" desc="Grimpe le leaderboard vocal" accent="rgba(88,101,242" />
+                <HeroFeatureCard icon="🎉" title="Événements" desc="Ne rate aucun event du serveur" accent="rgba(52,211,153" />
+                <HeroFeatureCard icon="🧠" title="Théories" desc="Partage tes théories One Piece" accent="rgba(224,82,74" />
               </div>
           </div>
 
           {/* ── Right column — UnifiedSidebar ── */}
           {!isNarrow && (
             <div style={{ position: 'sticky', top: 104, justifySelf: 'end', transform: 'translateY(10px)' }}>
-              <UnifiedSidebar />
+              {/* Aura derrière le sidebar */}
+              <div style={{
+                position: 'absolute', inset: '-40px -10px', zIndex: 0, pointerEvents: 'none',
+                background: 'radial-gradient(ellipse 90% 80% at 50% 50%, rgba(88,101,242,0.12) 0%, rgba(88,101,242,0.04) 55%, transparent 80%)',
+                filter: 'blur(30px)',
+              }} />
+              <div style={{
+                position: 'absolute', bottom: '-20px', left: '10%', right: '10%', height: '40px', zIndex: 0, pointerEvents: 'none',
+                background: 'radial-gradient(ellipse 80% 100% at 50% 100%, rgba(88,101,242,0.18) 0%, transparent 100%)',
+                filter: 'blur(20px)',
+              }} />
+              <div style={{ position: 'relative', zIndex: 1 }}>
+                <UnifiedSidebar />
+              </div>
             </div>
           )}
         </div>
