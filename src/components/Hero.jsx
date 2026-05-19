@@ -261,9 +261,7 @@ export default function Hero() {
       {/* Overlay directionnel principal */}
       <div style={{
         position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
-        background: isNarrow
-          ? 'linear-gradient(180deg, rgba(3,7,14,0.10) 0%, rgba(3,7,14,0.10) 100%)'
-          : 'linear-gradient(180deg, rgba(3,7,14,0.08) 0%, rgba(3,7,14,0.08) 100%)',
+        background: 'transparent',
       }} />
       {/* Overlay sombre uniforme */}
       <div style={{

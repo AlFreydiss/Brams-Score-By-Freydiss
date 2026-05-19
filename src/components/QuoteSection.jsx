@@ -53,27 +53,26 @@ export default function QuoteSection() {
     <section style={{
       position: 'relative', overflow: 'hidden',
       padding: '100px 0', textAlign: 'center',
-      background: `linear-gradient(180deg, rgba(3,7,14,0.08) 0%, ${q.color}06 50%, rgba(3,7,14,0.08) 100%)`,
-      transition: 'background 0.6s ease',
+      background: 'transparent',
     }}>
       {/* Fondu haut — raccordement cinématique avec le Hero */}
       <div style={{ position:'absolute', top:0, left:0, right:0, height:'45%', background:'transparent', pointerEvents:'none', zIndex:0 }} />
       {/* Fondu bas — transition vers la section Rangs */}
-      <div style={{ position:'absolute', bottom:0, left:0, right:0, height:'45%', background:'linear-gradient(0deg, rgba(3,7,14,0.72) 0%, rgba(3,7,14,0.45) 35%, rgba(3,7,14,0.15) 70%, transparent 100%)', pointerEvents:'none', zIndex:0 }} />
+      <div style={{ position:'absolute', bottom:0, left:0, right:0, height:'45%', background:'transparent', pointerEvents:'none', zIndex:0 }} />
 
       {/* Lignes latérales */}
       {['left', 'right'].map(side => (
         <div key={side} style={{
           position: 'absolute', [side]: 0, top: '50%', transform: 'translateY(-50%)',
           width: 3, height: '50%', minHeight: 100,
-          background: `linear-gradient(to bottom, transparent, ${q.color}60, transparent)`,
+          background: 'transparent',
           transition: 'background 0.6s ease',
         }} />
       ))}
 
       {/* Orbes déco */}
-      <div style={{ position: 'absolute', left: '10%', top: '20%', width: 300, height: 300, borderRadius: '50%', background: `radial-gradient(circle, ${q.color}08 0%, transparent 70%)`, pointerEvents: 'none', transition: 'background 0.6s ease' }} />
-      <div style={{ position: 'absolute', right: '10%', bottom: '10%', width: 250, height: 250, borderRadius: '50%', background: 'radial-gradient(circle, rgba(155,89,182,0.05) 0%, transparent 70%)', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', left: '10%', top: '20%', width: 300, height: 300, borderRadius: '50%', background: 'transparent', pointerEvents: 'none', transition: 'background 0.6s ease' }} />
+      <div style={{ position: 'absolute', right: '10%', bottom: '10%', width: 250, height: 250, borderRadius: '50%', background: 'transparent', pointerEvents: 'none' }} />
 
       <div className="container" style={{ position: 'relative', zIndex: 1 }}>
         <div style={{ opacity: fade ? 1 : 0, transition: 'opacity 0.5s ease', maxWidth: 720, margin: '0 auto' }}>
