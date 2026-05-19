@@ -135,10 +135,10 @@ export async function fetchUserVote(theoryId, userId) {
   return data?.vote ?? null
 }
 
-export async function castVote(theoryId, userId, vote) {
+export async function castVote(theoryId, userId, vote, currentVote) {
   if (!supabase) return { error: 'No client' }
-  // Upsert : remplace si déjà voté, retire si même vote (toggle)
-  const current = await fetchUserVote(theoryId, userId)
+  // Use passed currentVote to avoid extra round-trip and stale-read race
+  const current = currentVote !== undefined ? currentVote : await fetchUserVote(theoryId, userId)
   if (current === vote) {
     const { error } = await supabase.from('theory_votes').delete()
       .eq('theory_id', theoryId).eq('user_id', userId)

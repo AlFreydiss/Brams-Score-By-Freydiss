@@ -12,14 +12,26 @@ function timeAgo(iso) {
   return `il y a ${Math.floor(s / 86400)} j`
 }
 
-function VoteButton({ direction, count, active, onClick }) {
+function VoteButton({ direction, count, active, onClick, disabled }) {
   const color = direction === 'up' ? '#2ECC71' : '#E0524A'
   return (
     <button
       onClick={onClick}
-      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, padding: '10px 18px', borderRadius: 12, border: `1px solid ${active ? color + '60' : 'rgba(255,255,255,0.1)'}`, background: active ? `${color}15` : 'rgba(255,255,255,0.04)', color: active ? color : 'rgba(255,255,255,0.5)', cursor: 'pointer', transition: 'all .2s', fontFamily: 'inherit' }}
-      onMouseEnter={e => { e.currentTarget.style.borderColor = color + '50'; e.currentTarget.style.color = color }}
-      onMouseLeave={e => { e.currentTarget.style.borderColor = active ? color + '60' : 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = active ? color : 'rgba(255,255,255,0.5)' }}
+      disabled={disabled}
+      style={{
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+        padding: '10px 18px', borderRadius: 12,
+        border: `1px solid ${active ? color + '60' : 'rgba(255,255,255,0.1)'}`,
+        background: active ? `${color}18` : 'rgba(255,255,255,0.04)',
+        color: active ? color : 'rgba(255,255,255,0.5)',
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        transition: 'all .2s', fontFamily: 'inherit',
+        opacity: disabled ? 0.6 : 1,
+        transform: active ? 'scale(1.05)' : 'scale(1)',
+        boxShadow: active ? `0 0 16px ${color}28` : 'none',
+      }}
+      onMouseEnter={e => { if (!disabled) { e.currentTarget.style.borderColor = color + '50'; e.currentTarget.style.color = color } }}
+      onMouseLeave={e => { if (!disabled) { e.currentTarget.style.borderColor = active ? color + '60' : 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = active ? color : 'rgba(255,255,255,0.5)' } }}
     >
       <span style={{ fontSize: 18 }}>{direction === 'up' ? '▲' : '▼'}</span>
       <span style={{ fontSize: 15, fontWeight: 800 }}>{count}</span>
@@ -96,6 +108,7 @@ export default function TheoryDetail() {
   const [comments,   setComments]   = useState([])
   const [newComment, setNewComment] = useState('')
   const [commenting, setCommenting] = useState(false)
+  const [voting,     setVoting]     = useState(false)
 
   useEffect(() => {
     setLoading(true)
@@ -119,6 +132,7 @@ export default function TheoryDetail() {
 
   async function handleVote(vote) {
     if (!isAuthenticated) { document.dispatchEvent(new CustomEvent('open-auth-modal')); return }
+    if (voting) return
     const prev = userVote
     const prevVotes = { ...votes }
 
@@ -131,8 +145,14 @@ export default function TheoryDetail() {
       setUserVote(vote)
     }
 
-    const { error } = await castVote(id, user.id, vote)
-    if (error) { setUserVote(prev); setVotes(prevVotes) }
+    setVoting(true)
+    const { error } = await castVote(id, user.id, vote, prev)
+    setVoting(false)
+    if (error) {
+      console.error('[vote]', error)
+      setUserVote(prev)
+      setVotes(prevVotes)
+    }
   }
 
   async function handleComment(e) {
@@ -187,11 +207,11 @@ export default function TheoryDetail() {
         {/* Header avec votes */}
         <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start', marginBottom: 32 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'center', flexShrink: 0 }}>
-            <VoteButton direction="up"   count={votes.up}   active={userVote === 1}  onClick={() => handleVote(1)} />
-            <div style={{ fontSize: 16, fontWeight: 800, color: score > 0 ? '#2ECC71' : score < 0 ? '#E0524A' : 'rgba(255,255,255,0.4)', textAlign: 'center', minWidth: 32 }}>
+            <VoteButton direction="up"   count={votes.up}   active={userVote === 1}  onClick={() => handleVote(1)}  disabled={voting} />
+            <div style={{ fontSize: 16, fontWeight: 800, color: score > 0 ? '#2ECC71' : score < 0 ? '#E0524A' : 'rgba(255,255,255,0.4)', textAlign: 'center', minWidth: 32, transition: 'color .2s' }}>
               {score > 0 ? '+' : ''}{score}
             </div>
-            <VoteButton direction="down" count={votes.down} active={userVote === -1} onClick={() => handleVote(-1)} />
+            <VoteButton direction="down" count={votes.down} active={userVote === -1} onClick={() => handleVote(-1)} disabled={voting} />
           </div>
 
           <div style={{ flex: 1 }}>
