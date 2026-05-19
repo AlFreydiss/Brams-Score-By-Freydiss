@@ -600,9 +600,7 @@ section {
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background:
-    linear-gradient(180deg, transparent 0%, rgba(5,8,10,.12) 62%, rgba(5,8,10,.96) 100%),
-    radial-gradient(circle at 72% 24%, rgba(255,155,73,.12), transparent 24%);
+  background: transparent;
 }
 .hero-title-premium {
   filter: drop-shadow(0 6px 22px rgba(0,0,0,.70)) drop-shadow(0 0 42px rgba(212,160,23,0.10));
