@@ -142,7 +142,11 @@ export function AuthProvider({ children }) {
       || user?.email?.split('@')[0]
       || 'Pirate',
     avatarUrl: user?.user_metadata?.avatar_url ?? null,
-    discordId: user?.user_metadata?.provider_id ?? user?.user_metadata?.sub ?? null,
+    discordId: user?.user_metadata?.provider_id
+      ?? user?.identities?.find(i => i.provider === 'discord')?.id
+      ?? user?.user_metadata?.sub
+      ?? null,
+    userId: user?.id ?? null,
   }
 
   return (

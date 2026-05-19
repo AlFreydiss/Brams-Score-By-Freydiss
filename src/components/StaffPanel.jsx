@@ -4,10 +4,15 @@ import { fetchPending, moderateItem } from '../lib/wiki.js'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import Navbar from './Navbar.jsx'
 
-// Discord IDs des membres du staff — à compléter
+// Discord IDs des membres du staff
 const STAFF_IDS = [
-  '1094070545248694342', // Freydiss — créateur
-  '873117504367648798',  // Ayzeni
+  '1094070545248694342',              // Freydiss — Discord snowflake
+  '873117504367648798',               // Ayzeni — Discord snowflake
+]
+
+// Supabase user UUIDs (fallback quand connexion par email)
+const STAFF_UUIDS = [
+  'a7cf1a55-97bf-4648-9297-7af6e6d02720', // Freydiss — Supabase UUID
 ]
 
 function timeAgo(iso) {
@@ -80,7 +85,7 @@ function PendingCard({ item, table, onAction, actioning }) {
 
 export default function StaffPanel() {
   const navigate = useNavigate()
-  const { isAuthenticated, discordId, displayName } = useAuth()
+  const { isAuthenticated, discordId, displayName, userId } = useAuth()
   const [pending, setPending] = useState({ pages: [], theories: [] })
   const [loading, setLoading] = useState(true)
   const [actioning, setActioning] = useState(null)
@@ -88,8 +93,8 @@ export default function StaffPanel() {
   const [notice, setNotice] = useState(null)
 
   const isStaff = isAuthenticated && (
-    STAFF_IDS.includes(discordId) ||
-    STAFF_IDS.includes(String(discordId))
+    STAFF_IDS.includes(String(discordId)) ||
+    STAFF_UUIDS.includes(String(userId))
   )
 
   useEffect(() => {
