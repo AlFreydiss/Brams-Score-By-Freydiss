@@ -61,11 +61,20 @@ export function AuthProvider({ children }) {
         }
       }
 
-      // detectSessionInUrl: true → Supabase gère l'échange PKCE automatiquement
-      // On nettoie juste l'URL pour ne pas laisser le code traîner
-      if (params.get('code') && mounted) {
-        console.log('[auth] code PKCE dans URL — échange délégué à Supabase')
-        window.history.replaceState({}, document.title, window.location.pathname)
+      const code = params.get('code')
+      if (code) {
+        console.log('[auth] code PKCE trouvé, échange en cours...')
+        try {
+          const { data: exData, error: exErr } = await supabase.auth.exchangeCodeForSession(window.location.href)
+          if (exErr) {
+            console.error('[auth] échange PKCE erreur:', exErr.message, '| status:', exErr.status, '| full:', JSON.stringify(exErr))
+          } else {
+            console.log('[auth] échange PKCE OK — user:', exData?.session?.user?.id)
+          }
+        } catch (e) {
+          console.error('[auth] échange PKCE exception:', e)
+        }
+        if (mounted) window.history.replaceState({}, document.title, window.location.pathname)
       }
 
       // Lecture session APRÈS échange (ou directement si pas de code)
