@@ -282,6 +282,7 @@ section {
 .hero-atmosphere {
   z-index: 0;
   transform: translate3d(calc(var(--hero-parallax-x, 0px) * -.25), calc(var(--hero-parallax-y, 0px) * -.2), 0);
+  display: none;
 }
 .hero-depth-wash {
   background:
