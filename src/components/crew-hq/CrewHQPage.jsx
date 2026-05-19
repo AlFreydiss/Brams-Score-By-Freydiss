@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../../contexts/AuthContext.jsx'
 import Navbar from '../Navbar.jsx'
+import { supabase } from '../../lib/supabase.js'
 import { ROLE_COLORS, ROLE_LABELS, ROLE_LEVEL } from '../../lib/crew/constants.js'
 import {
   getLevelHQ, canAct,
@@ -19,16 +20,24 @@ import {
 // CONSTANTS
 // ──────────────────────────────────────────────────────────────────
 const TABS = [
-  { key: 'overview',    label: 'Vue d\'ensemble', icon: '🧭' },
-  { key: 'members',     label: 'Membres',          icon: '⚔️' },
-  { key: 'hierarchy',   label: 'Hiérarchie',        icon: '🏛️' },
-  { key: 'recruitment', label: 'Recrutement',       icon: '📋' },
-  { key: 'missions',    label: 'Missions',          icon: '🗺️' },
-  { key: 'treasury',    label: 'Coffre',            icon: '💰' },
-  { key: 'journal',     label: 'Journal',           icon: '📜' },
-  { key: 'ranking',     label: 'Classement',        icon: '🏆' },
-  { key: 'settings',    label: 'Paramètres',        icon: '⚙️' },
+  { key: 'overview',      label: 'Vue d\'ensemble', icon: '🧭' },
+  { key: 'members',       label: 'Membres',          icon: '⚔️' },
+  { key: 'hierarchy',     label: 'Hiérarchie',        icon: '🏛️' },
+  { key: 'recruitment',   label: 'Recrutement',       icon: '📋' },
+  { key: 'missions',      label: 'Missions',          icon: '🗺️' },
+  { key: 'treasury',      label: 'Coffre',            icon: '💰' },
+  { key: 'announcements', label: 'Annonces',          icon: '📢' },
+  { key: 'journal',       label: 'Journal',           icon: '📜' },
+  { key: 'ranking',       label: 'Classement',        icon: '🏆' },
+  { key: 'diplomacy',     label: 'Diplomatie',        icon: '🤝' },
+  { key: 'settings',      label: 'Paramètres',        icon: '⚙️' },
 ]
+
+const ALL_ROLES_BY_LEVEL = {
+  1: ['second','navigateur','cuisinier','sniper','medecin','archeologue','charpentier','bretteur'],
+  2: ['musicien','timonier'],
+  3: ['mousse'],
+}
 
 const LOG_ICONS = {
   member_joined:       { icon: '⚓', color: '#34d399' },
@@ -194,9 +203,16 @@ function MemberCard({ member, isCaptain: isCrewCaptain, myLevel, onAction, cc })
   const targetLevel = getLevelHQ(role)
   const canManage = myLevel <= 1 && targetLevel > myLevel
 
+  const menuItems = [
+    myLevel === 0 && targetLevel > 1 && { label: '⬆ Changer le rang', action: 'pick_role', color: '#fbbf24' },
+    myLevel <= 1 && targetLevel >= 2 && !( myLevel === 0 && targetLevel > 1) && { label: '⬆ Promouvoir Membre', action: 'promote_member', color: '#34d399' },
+    myLevel === 0 && targetLevel > 0 && { label: '👑 Transférer Capitaine', action: 'transfer', color: '#ffd700' },
+    { label: '⛔ Exclure', action: 'remove', color: '#e0524a' },
+  ].filter(Boolean)
+
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-      style={{ position: 'relative', background: 'linear-gradient(145deg, rgba(18,10,3,.98) 0%, rgba(12,7,2,1) 100%)', border: `1px solid ${rc}22`, borderTop: `1px solid ${rc}33`, borderRadius: 6, padding: '16px', overflow: 'hidden', cursor: 'pointer' }}
+      style={{ position: 'relative', background: 'linear-gradient(145deg, rgba(18,10,3,.98) 0%, rgba(12,7,2,1) 100%)', border: `1px solid ${rc}22`, borderTop: `1px solid ${rc}33`, borderRadius: 6, padding: '16px', overflow: 'hidden' }}
       whileHover={{ y: -2, transition: { duration: .15 } }}
     >
       {/* Role stripe top */}
@@ -221,13 +237,7 @@ function MemberCard({ member, isCaptain: isCrewCaptain, myLevel, onAction, cc })
               {menuOpen && (
                 <motion.div initial={{ opacity: 0, scale: .9, y: -4 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0 }}
                   style={{ position: 'absolute', right: 0, top: 34, zIndex: 100, background: 'linear-gradient(145deg, #1a1008, #120a04)', border: '1px solid rgba(180,130,30,.3)', borderRadius: 6, minWidth: 170, overflow: 'hidden', boxShadow: '0 12px 40px rgba(0,0,0,.7)' }}>
-                  {[
-                    myLevel === 0 && targetLevel > 1 && { label: '⬆ Promouvoir Officier', action: 'promote_officer', color: '#fbbf24' },
-                    myLevel <= 1 && targetLevel >= 2 && { label: '⬆ Promouvoir Membre', action: 'promote_member', color: '#34d399' },
-                    myLevel <= 1 && targetLevel === 1 && { label: '⬇ Rétrograder', action: 'demote', color: '#f87171' },
-                    myLevel === 0 && targetLevel > 0 && { label: '👑 Transférer Capitaine', action: 'transfer', color: '#ffd700' },
-                    { label: '⛔ Exclure', action: 'remove', color: '#e0524a' },
-                  ].filter(Boolean).map(item => (
+                  {menuItems.map(item => (
                     <button key={item.action}
                       onClick={() => { setMenuOpen(false); onAction(item.action, member) }}
                       style={{ width: '100%', padding: '10px 14px', background: 'none', border: 'none', color: item.color, fontSize: 12, fontWeight: 700, cursor: 'pointer', textAlign: 'left', letterSpacing: '.02em' }}
@@ -675,12 +685,29 @@ function RecruitmentTab({ crew, applications, invites, myLevel, isAuthenticated,
 }
 
 /* ── MISSIONS ── */
-function MissionsTab({ missions, cc }) {
+function MissionsTab({ missions, myLevel, crewId, discordId, displayName, onRefresh, cc }) {
+  const [showCreate, setShowCreate] = useState(false)
   const active = missions.filter(m => m.status === 'active')
   const completed = missions.filter(m => m.status === 'completed')
+  const canCreate = myLevel <= 1
 
   return (
     <div>
+      {canCreate && (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 20 }}>
+          <button onClick={() => setShowCreate(true)}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px', background: 'rgba(180,130,20,.18)', border: `1px solid ${cc}40`, borderRadius: 4, color: cc, fontSize: 12, fontWeight: 800, cursor: 'pointer', letterSpacing: '.05em', textTransform: 'uppercase' }}>
+            🗺️ Créer une mission
+          </button>
+        </div>
+      )}
+      <AnimatePresence>
+        {showCreate && (
+          <CreateMissionModal crewId={crewId} discordId={discordId} displayName={displayName} cc={cc}
+            onClose={() => setShowCreate(false)}
+            onDone={() => { setShowCreate(false); onRefresh() }} />
+        )}
+      </AnimatePresence>
       <SectionTitle sub={`${active.length} mission${active.length !== 1 ? 's' : ''} en cours`}>Missions Actives</SectionTitle>
       {active.length === 0 ? (
         <EmptyState icon="🗺️" title="Aucune mission active" sub="Les missions d'équipage apparaîtront ici." />
@@ -870,6 +897,314 @@ function JournalTab({ logs }) {
   )
 }
 
+/* ── ANNOUNCEMENTS ── */
+function AnnouncementsTab({ announcements: anns, crewId, myLevel, discordId, displayName, onRefresh, cc }) {
+  const [form, setForm] = useState({ title: '', content: '', priority: 'info', pinned: false })
+  const [busy, setBusy] = useState(null)
+  const [notice, setNotice] = useState(null)
+  const [showForm, setShowForm] = useState(false)
+  const canCreate = myLevel <= 1
+
+  async function handleCreate() {
+    if (!form.title.trim() || !form.content.trim())
+      return setNotice({ msg: 'Titre et contenu obligatoires.', type: 'err' })
+    setBusy('create')
+    const { error } = await createAnnouncement({ crewId, authorId: discordId, authorName: displayName, ...form })
+    setBusy(null)
+    if (error) setNotice({ msg: error.message, type: 'err' })
+    else { setNotice({ msg: '✓ Annonce publiée !', type: 'ok' }); setForm({ title: '', content: '', priority: 'info', pinned: false }); setShowForm(false); onRefresh() }
+  }
+
+  async function handlePin(ann) {
+    if (!supabase) return
+    setBusy('pin-' + ann.id)
+    await supabase.from('crew_announcements').update({ pinned: !ann.pinned }).eq('id', ann.id)
+    setBusy(null)
+    onRefresh()
+  }
+
+  async function handleDelete(ann) {
+    if (!supabase) return
+    setBusy('del-' + ann.id)
+    await supabase.from('crew_announcements').delete().eq('id', ann.id)
+    setBusy(null)
+    onRefresh()
+  }
+
+  const PRIORITY_OPTS = [
+    { key: 'info',      label: 'ℹ️ Info' },
+    { key: 'important', label: '⚠️ Important' },
+    { key: 'urgent',    label: '🚨 Urgent' },
+    { key: 'event',     label: '🎪 Événement' },
+  ]
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      {notice && <div style={{ padding: '10px 14px', background: notice.type === 'ok' ? 'rgba(52,211,153,.1)' : 'rgba(224,82,74,.1)', border: `1px solid ${notice.type === 'ok' ? 'rgba(52,211,153,.3)' : 'rgba(224,82,74,.3)'}`, borderRadius: 4, fontSize: 13, fontWeight: 600, color: notice.type === 'ok' ? '#34d399' : '#f87171' }}>{notice.msg}</div>}
+
+      {canCreate && (
+        <div>
+          <button onClick={() => setShowForm(v => !v)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px', background: showForm ? `rgba(180,130,20,.22)` : 'rgba(0,0,0,.35)', border: `1px solid ${showForm ? cc + '44' : 'rgba(180,130,30,.22)'}`, borderRadius: 4, color: showForm ? cc : 'rgba(200,170,110,.6)', fontSize: 12, fontWeight: 800, cursor: 'pointer', letterSpacing: '.05em', textTransform: 'uppercase', marginBottom: showForm ? 16 : 0 }}>
+            📢 {showForm ? 'Annuler' : 'Nouvelle annonce'}
+          </button>
+
+          <AnimatePresence>
+            {showForm && (
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+                style={{ overflow: 'hidden' }}>
+                <div style={{ background: 'linear-gradient(145deg, rgba(18,10,3,.98) 0%, rgba(12,7,2,1) 100%)', border: `1px solid ${cc}22`, borderTop: `2px solid ${cc}44`, borderRadius: 6, padding: '22px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 10, marginBottom: 12 }}>
+                    <input value={form.title} onChange={e => setForm(v => ({ ...v, title: e.target.value }))} placeholder="Titre de l'annonce…"
+                      style={{ padding: '10px 14px', background: 'rgba(0,0,0,.5)', border: '1px solid rgba(180,130,30,.25)', borderRadius: 4, color: 'rgba(220,195,145,.9)', fontSize: 14, fontWeight: 700, outline: 'none', fontFamily: 'Pirata One, cursive' }} />
+                    <select value={form.priority} onChange={e => setForm(v => ({ ...v, priority: e.target.value }))}
+                      style={{ padding: '10px 12px', background: 'rgba(0,0,0,.5)', border: '1px solid rgba(180,130,30,.25)', borderRadius: 4, color: ANNOUNCE_COLORS[form.priority]?.text || cc, fontSize: 12, fontWeight: 700, outline: 'none', cursor: 'pointer' }}>
+                      {PRIORITY_OPTS.map(p => <option key={p.key} value={p.key}>{p.label}</option>)}
+                    </select>
+                  </div>
+                  <textarea rows={5} value={form.content} onChange={e => setForm(v => ({ ...v, content: e.target.value }))} placeholder="Contenu de l'annonce…"
+                    style={{ width: '100%', padding: '12px 14px', background: 'rgba(0,0,0,.5)', border: '1px solid rgba(180,130,30,.22)', borderRadius: 4, color: 'rgba(220,195,145,.85)', fontSize: 13, lineHeight: 1.7, resize: 'vertical', outline: 'none', boxSizing: 'border-box', marginBottom: 12 }} />
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                      <input type="checkbox" checked={form.pinned} onChange={e => setForm(v => ({ ...v, pinned: e.target.checked }))} style={{ width: 16, height: 16 }} />
+                      <span style={{ fontSize: 12, color: 'rgba(200,175,130,.7)', fontWeight: 600 }}>📌 Épingler en haut</span>
+                    </label>
+                    <button disabled={busy === 'create'} onClick={handleCreate}
+                      style={{ padding: '10px 24px', background: `rgba(180,130,20,.22)`, border: `1px solid ${cc}44`, borderRadius: 4, color: cc, fontSize: 12, fontWeight: 800, cursor: 'pointer', letterSpacing: '.06em', textTransform: 'uppercase', opacity: busy === 'create' ? .5 : 1 }}>
+                      {busy === 'create' ? '…' : '📢 Publier'}
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      )}
+
+      {anns.length === 0 ? (
+        <EmptyState icon="📢" title="Aucune annonce" sub="Le capitaine n'a pas encore publié d'annonce officielle." />
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {anns.map(ann => {
+            const pc = ANNOUNCE_COLORS[ann.priority] || ANNOUNCE_COLORS.info
+            return (
+              <motion.div key={ann.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                style={{ background: pc.bg, border: `1px solid ${pc.border}`, borderLeft: `3px solid ${pc.text}`, borderRadius: 6, padding: '18px 20px', position: 'relative' }}>
+                {ann.pinned && <div style={{ position: 'absolute', top: 12, right: 12, fontSize: 14 }} title="Épinglé">📌</div>}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                  <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.1em', textTransform: 'uppercase', padding: '2px 8px', background: 'rgba(0,0,0,.25)', border: `1px solid ${pc.border}`, borderRadius: 3, color: pc.text }}>{pc.label}</span>
+                  <span style={{ fontSize: 10, color: 'rgba(180,150,100,.4)' }}>{timeAgo(ann.created_at)}</span>
+                </div>
+                <div style={{ fontFamily: 'Pirata One, cursive', fontSize: 18, color: 'rgba(232,215,175,.93)', marginBottom: 8, lineHeight: 1.2 }}>{ann.title}</div>
+                <div style={{ fontSize: 13, color: 'rgba(200,175,130,.65)', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{ann.content}</div>
+                <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: 11, color: 'rgba(180,150,100,.4)' }}>— {ann.author_name}</span>
+                  {canCreate && (
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button disabled={!!busy} onClick={() => handlePin(ann)} title={ann.pinned ? 'Désépingler' : 'Épingler'}
+                        style={{ padding: '4px 10px', background: 'rgba(0,0,0,.3)', border: '1px solid rgba(180,130,30,.2)', borderRadius: 3, color: ann.pinned ? cc : 'rgba(180,150,100,.4)', fontSize: 11, fontWeight: 700, cursor: 'pointer', opacity: busy === 'pin-' + ann.id ? .5 : 1 }}>
+                        {ann.pinned ? '📌 Désépingler' : '📌 Épingler'}
+                      </button>
+                      <button disabled={!!busy} onClick={() => handleDelete(ann)} title="Supprimer"
+                        style={{ padding: '4px 10px', background: 'rgba(0,0,0,.3)', border: '1px solid rgba(180,50,40,.2)', borderRadius: 3, color: '#f87171', fontSize: 11, fontWeight: 700, cursor: 'pointer', opacity: busy === 'del-' + ann.id ? .5 : 1 }}>
+                        ✕ Supprimer
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ── DIPLOMACY ── */
+function DiplomacyTab({ crew, members, myLevel, cc }) {
+  const allies  = (crew.allies  || [])
+  const enemies = (crew.enemies || [])
+  const neutral = (crew.neutrals || [])
+
+  const StatBox = ({ label, count, color, emoji }) => (
+    <div style={{ background: 'linear-gradient(145deg, rgba(18,10,3,.98) 0%, rgba(12,7,2,1) 100%)', border: `1px solid ${color}22`, borderTop: `2px solid ${color}44`, borderRadius: 6, padding: '20px', textAlign: 'center' }}>
+      <div style={{ fontSize: 32, marginBottom: 8 }}>{emoji}</div>
+      <div style={{ fontFamily: 'Pirata One, cursive', fontSize: 36, color, lineHeight: 1 }}>{count}</div>
+      <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.12em', textTransform: 'uppercase', color: 'rgba(180,150,100,.45)', marginTop: 6 }}>{label}</div>
+    </div>
+  )
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14 }}>
+        <StatBox label="Alliés" count={allies.length}  color="#34d399" emoji="🤝" />
+        <StatBox label="Neutres" count={neutral.length} color="#fbbf24" emoji="⚖️" />
+        <StatBox label="Rivaux"  count={enemies.length} color="#f87171" emoji="⚔️" />
+      </div>
+
+      <div style={{ background: 'linear-gradient(145deg, rgba(18,10,3,.98) 0%, rgba(12,7,2,1) 100%)', border: `1px solid ${cc}18`, borderRadius: 6, padding: '22px' }}>
+        <SectionTitle sub="Systèmes diplomatiques avancés disponibles dans la prochaine mise à jour">Carte des Relations</SectionTitle>
+        <div style={{ textAlign: 'center', padding: '40px 0' }}>
+          <div style={{ fontSize: 64, marginBottom: 16 }}>🗺️</div>
+          <div style={{ fontFamily: 'Pirata One, cursive', fontSize: 22, color: 'rgba(232,215,175,.7)', marginBottom: 8 }}>Grand Line Diplomatique</div>
+          <div style={{ fontSize: 13, color: 'rgba(180,150,100,.4)', lineHeight: 1.6, maxWidth: 380, margin: '0 auto' }}>
+            Les alliances, traités et déclarations de guerre entre équipages seront disponibles prochainement.
+            <br /><br />
+            <span style={{ color: cc, fontWeight: 700 }}>Fonctionnalités prévues :</span> alliances, pactes de non-agression, tournois inter-équipages, diplomatie secrète.
+          </div>
+        </div>
+      </div>
+
+      {crew.description && (
+        <div style={{ background: 'linear-gradient(145deg, rgba(18,10,3,.98) 0%, rgba(12,7,2,1) 100%)', border: '1px solid rgba(180,130,30,.18)', borderRadius: 6, padding: '22px' }}>
+          <SectionTitle>À propos de cet équipage</SectionTitle>
+          <p style={{ fontSize: 14, color: 'rgba(200,175,130,.65)', lineHeight: 1.8, margin: 0 }}>{crew.description}</p>
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ── ROLE PICKER MODAL ── */
+function RolePickerModal({ member, actorLevel, onPick, onClose, cc }) {
+  if (!member) return null
+
+  const currentLevel = getLevelHQ(member.position)
+  const availableLevels = []
+  if (actorLevel === 0 && currentLevel > 1) availableLevels.push(1)
+  if (actorLevel <= 1 && currentLevel >= 2) availableLevels.push(2)
+  if (actorLevel <= 1 && currentLevel >= 2) availableLevels.push(3)
+
+  const LEVEL_NAMES = { 1: 'Officier', 2: 'Membre', 3: 'Mousse (rétrograder)' }
+  const LEVEL_COLORS = { 1: '#fbbf24', 2: '#60a5fa', 3: '#94a3b8' }
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      style={{ position: 'fixed', inset: 0, zIndex: 9100, background: 'rgba(0,0,0,.9)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+      onClick={onClose}>
+      <motion.div initial={{ scale: .9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: .9 }}
+        onClick={e => e.stopPropagation()}
+        style={{ width: 'min(500px, 100%)', background: 'linear-gradient(145deg, #1a1008, #100804)', border: `1px solid ${cc}30`, borderRadius: 8, padding: '28px', boxShadow: '0 32px 80px rgba(0,0,0,.8)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 22 }}>
+          <Avatar src={member.avatar_url} name={member.username} size={44} color={cc} />
+          <div>
+            <div style={{ fontFamily: 'Pirata One, cursive', fontSize: 18, color: 'rgba(232,215,175,.9)' }}>Changer le rang</div>
+            <div style={{ fontSize: 12, color: 'rgba(180,150,100,.5)', marginTop: 2 }}>{member.username}</div>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {availableLevels.map(level => (
+            <div key={level}>
+              <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.12em', textTransform: 'uppercase', color: LEVEL_COLORS[level], marginBottom: 8, padding: '0 4px' }}>{LEVEL_NAMES[level]}</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 6 }}>
+                {(ALL_ROLES_BY_LEVEL[level] || []).map(role => (
+                  <button key={role} onClick={() => onPick(role)}
+                    style={{ padding: '9px 14px', background: 'rgba(0,0,0,.4)', border: `1px solid ${LEVEL_COLORS[level]}28`, borderRadius: 4, color: 'rgba(220,195,145,.8)', fontSize: 12, fontWeight: 700, cursor: 'pointer', textAlign: 'left', transition: 'all .15s' }}
+                    onMouseEnter={e => { e.currentTarget.style.background = `${LEVEL_COLORS[level]}12`; e.currentTarget.style.borderColor = `${LEVEL_COLORS[level]}50`; e.currentTarget.style.color = LEVEL_COLORS[level] }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(0,0,0,.4)'; e.currentTarget.style.borderColor = `${LEVEL_COLORS[level]}28`; e.currentTarget.style.color = 'rgba(220,195,145,.8)' }}>
+                    {ROLE_LABELS[role] || role}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <button onClick={onClose} style={{ width: '100%', marginTop: 20, padding: '10px', background: 'none', border: '1px solid rgba(180,130,30,.2)', borderRadius: 4, color: 'rgba(180,150,100,.5)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Annuler</button>
+      </motion.div>
+    </motion.div>
+  )
+}
+
+/* ── CREATE MISSION MODAL ── */
+function CreateMissionModal({ crewId, discordId, displayName, onClose, onDone, cc }) {
+  const [form, setForm] = useState({ title: '', description: '', type: 'weekly', target: 100, reward_description: '', deadline: '' })
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState(null)
+
+  async function handleCreate() {
+    if (!form.title.trim()) return setErr('Titre obligatoire.')
+    if (!form.target || form.target <= 0) return setErr('Objectif invalide.')
+    if (!supabase) return setErr('Non connecté.')
+    setBusy(true)
+    const { error } = await supabase.from('crew_missions').insert({
+      crew_id: crewId,
+      title: form.title,
+      description: form.description,
+      type: form.type,
+      target: parseInt(form.target),
+      progress: 0,
+      status: 'active',
+      reward_description: form.reward_description,
+      deadline: form.deadline || null,
+      created_by: discordId,
+    })
+    setBusy(false)
+    if (error) setErr(error.message)
+    else { writeCrewLog({ crewId, actorId: discordId, actorName: displayName, type: 'mission_complete', description: `Nouvelle mission créée : "${form.title}"`, visibility: 'members' }); onDone() }
+  }
+
+  const F = ({ label, field, type = 'text', rows, placeholder }) => (
+    <div style={{ marginBottom: 14 }}>
+      <label style={{ display: 'block', fontSize: 10, fontWeight: 800, letterSpacing: '.1em', textTransform: 'uppercase', color: 'rgba(200,175,130,.55)', marginBottom: 6 }}>{label}</label>
+      {rows ? (
+        <textarea rows={rows} value={form[field]} onChange={e => setForm(v => ({ ...v, [field]: e.target.value }))} placeholder={placeholder}
+          style={{ width: '100%', padding: '10px 12px', background: 'rgba(0,0,0,.5)', border: '1px solid rgba(180,130,30,.22)', borderRadius: 4, color: 'rgba(220,195,145,.9)', fontSize: 13, resize: 'vertical', outline: 'none', boxSizing: 'border-box' }} />
+      ) : (
+        <input type={type} value={form[field]} onChange={e => setForm(v => ({ ...v, [field]: e.target.value }))} placeholder={placeholder}
+          style={{ width: '100%', padding: '10px 12px', background: 'rgba(0,0,0,.5)', border: '1px solid rgba(180,130,30,.22)', borderRadius: 4, color: 'rgba(220,195,145,.9)', fontSize: 13, outline: 'none', boxSizing: 'border-box' }} />
+      )}
+    </div>
+  )
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      style={{ position: 'fixed', inset: 0, zIndex: 9100, background: 'rgba(0,0,0,.9)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+      onClick={onClose}>
+      <motion.div initial={{ scale: .9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: .9 }}
+        onClick={e => e.stopPropagation()}
+        style={{ width: 'min(520px, 100%)', background: 'linear-gradient(145deg, #1a1008, #100804)', border: `1px solid ${cc}30`, borderRadius: 8, padding: '28px', boxShadow: '0 32px 80px rgba(0,0,0,.8)', maxHeight: '85vh', overflowY: 'auto' }}>
+        <div style={{ fontFamily: 'Pirata One, cursive', fontSize: 22, color: 'rgba(232,215,175,.93)', marginBottom: 4 }}>Créer une mission</div>
+        <div style={{ fontSize: 12, color: 'rgba(180,150,100,.45)', marginBottom: 22 }}>Définis l'objectif et la récompense pour l'équipage.</div>
+
+        {err && <div style={{ marginBottom: 14, padding: '10px 12px', background: 'rgba(224,82,74,.1)', border: '1px solid rgba(224,82,74,.3)', borderRadius: 4, fontSize: 12, color: '#f87171' }}>{err}</div>}
+
+        <F label="Titre de la mission *" field="title" placeholder="Ex : Atteindre 1000h vocal total" />
+        <F label="Description" field="description" rows={2} placeholder="Détails de la mission…" />
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
+          <div>
+            <label style={{ display: 'block', fontSize: 10, fontWeight: 800, letterSpacing: '.1em', textTransform: 'uppercase', color: 'rgba(200,175,130,.55)', marginBottom: 6 }}>Type</label>
+            <select value={form.type} onChange={e => setForm(v => ({ ...v, type: e.target.value }))}
+              style={{ width: '100%', padding: '10px 12px', background: 'rgba(0,0,0,.5)', border: '1px solid rgba(180,130,30,.22)', borderRadius: 4, color: 'rgba(220,195,145,.85)', fontSize: 13, outline: 'none', cursor: 'pointer' }}>
+              <option value="daily">☀️ Quotidienne</option>
+              <option value="weekly">📅 Hebdomadaire</option>
+              <option value="event">🎪 Événement</option>
+              <option value="contribution">💎 Contribution</option>
+              <option value="recruitment">🧲 Recrutement</option>
+              <option value="ranking">🏆 Classement</option>
+              <option value="bounty">💰 Prime</option>
+            </select>
+          </div>
+          <F label="Objectif (nombre)" field="target" type="number" placeholder="100" />
+        </div>
+
+        <F label="Récompense" field="reward_description" placeholder="Ex : +500 XP d'équipage, badge exclusif…" />
+        <F label="Date limite (optionnel)" field="deadline" type="datetime-local" />
+
+        <div style={{ display: 'flex', gap: 10, marginTop: 22 }}>
+          <button disabled={busy} onClick={handleCreate}
+            style={{ flex: 1, padding: '12px', background: `rgba(180,130,20,.22)`, border: `1px solid ${cc}44`, borderRadius: 4, color: cc, fontSize: 13, fontWeight: 800, cursor: 'pointer', opacity: busy ? .5 : 1, letterSpacing: '.05em', textTransform: 'uppercase' }}>
+            {busy ? '…' : '🗺️ Créer la mission'}
+          </button>
+          <button onClick={onClose} style={{ padding: '12px 20px', background: 'none', border: '1px solid rgba(180,130,30,.2)', borderRadius: 4, color: 'rgba(200,170,110,.5)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Annuler</button>
+        </div>
+      </motion.div>
+    </motion.div>
+  )
+}
+
 /* ── RANKING ── */
 function RankingTab({ members, cc }) {
   const [mode, setMode] = useState('bounty')
@@ -1049,6 +1384,7 @@ export default function CrewHQPage() {
   const [toast, setToast] = useState(null)
   const [memberAction, setMemberAction] = useState(null)
   const [confirmModal, setConfirmModal] = useState(null)
+  const [rolePicker, setRolePicker] = useState(null)
 
   const myMember = useMemo(() => members.find(m => String(m.user_id) === String(discordId)), [members, discordId])
   const myLevel = useMemo(() => myMember ? getLevelHQ(myMember.position) : 99, [myMember])
@@ -1080,29 +1416,15 @@ export default function CrewHQPage() {
   useEffect(() => { loadAll() }, [loadAll])
 
   async function handleMemberAction(action, member) {
-    const targetLevel = getLevelHQ(member.position)
-    const ROLES_BY_LEVEL = {
-      officer: Object.entries(ROLE_LEVEL).filter(([,v]) => v === 1).map(([k]) => k),
-      member:  Object.entries(ROLE_LEVEL).filter(([,v]) => v === 2).map(([k]) => k),
-    }
-
-    if (action === 'promote_officer') {
-      const newPos = ROLES_BY_LEVEL.officer[0] || 'second'
-      const { error } = await promoteMember({ crewId, targetId: member.user_id, targetName: member.username, newPosition: newPos, actorId: discordId, actorName: displayName, actorLevel: myLevel })
-      if (error) setToast({ msg: error.message, type: 'err' })
-      else { setToast({ msg: `✓ ${member.username} promu ${ROLE_LABELS[newPos]} !`, type: 'ok' }); loadAll() }
+    if (action === 'pick_role') {
+      setRolePicker(member)
+      return
     }
     if (action === 'promote_member') {
       const newPos = 'musicien'
       const { error } = await promoteMember({ crewId, targetId: member.user_id, targetName: member.username, newPosition: newPos, actorId: discordId, actorName: displayName, actorLevel: myLevel })
       if (error) setToast({ msg: error.message, type: 'err' })
       else { setToast({ msg: `✓ ${member.username} promu membre !`, type: 'ok' }); loadAll() }
-    }
-    if (action === 'demote') {
-      const newPos = 'mousse'
-      const { error } = await demoteMember({ crewId, targetId: member.user_id, targetName: member.username, newPosition: newPos, actorId: discordId, actorName: displayName, actorLevel: myLevel })
-      if (error) setToast({ msg: error.message, type: 'err' })
-      else { setToast({ msg: `${member.username} rétrogradé.`, type: 'ok' }); loadAll() }
     }
     if (action === 'remove') {
       setConfirmModal({
@@ -1241,7 +1563,7 @@ export default function CrewHQPage() {
           <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 clamp(16px,4vw,48px)', display: 'flex', gap: 2, overflowX: 'auto' }}>
             {TABS.filter(t => {
               if (t.key === 'settings') return isCaptain
-              if (['treasury','journal'].includes(t.key)) return isMember || myLevel <= 1
+              if (['treasury','journal','announcements'].includes(t.key)) return isMember || myLevel <= 1
               return true
             }).map(t => (
               <button key={t.key} onClick={() => setTab(t.key)} style={{
@@ -1263,19 +1585,42 @@ export default function CrewHQPage() {
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '36px clamp(16px,4vw,48px) 80px' }}>
           <AnimatePresence mode="wait">
             <motion.div key={tab} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: .2 }}>
-              {tab === 'overview'    && <OverviewTab crew={crew} members={members} logs={logs} announcements={announcements} missions={missions} cc={cc} />}
-              {tab === 'members'     && <MembersTab crew={crew} members={members} myLevel={myLevel} isCaptain={isCaptain} onAction={handleMemberAction} cc={cc} />}
-              {tab === 'hierarchy'   && <HierarchyTab crew={crew} members={members} cc={cc} />}
-              {tab === 'recruitment' && <RecruitmentTab crew={crew} applications={applications} invites={invites} myLevel={myLevel} isAuthenticated={isAuthenticated} discordId={discordId} displayName={displayName} avatarUrl={avatarUrl} crewId={crewId} onRefresh={loadAll} cc={cc} />}
-              {tab === 'missions'    && <MissionsTab missions={missions} cc={cc} />}
-              {tab === 'treasury'    && <TreasuryTab crew={crew} txHistory={treasury} members={members} myLevel={myLevel} discordId={discordId} displayName={displayName} crewId={crewId} onRefresh={loadAll} cc={cc} />}
-              {tab === 'journal'     && <JournalTab logs={logs} />}
-              {tab === 'ranking'     && <RankingTab members={members} cc={cc} />}
-              {tab === 'settings'    && <SettingsTab crew={crew} myLevel={myLevel} discordId={discordId} displayName={displayName} crewId={crewId} onUpdate={updated => setCrew(v => ({ ...v, ...updated }))} />}
+              {tab === 'overview'      && <OverviewTab crew={crew} members={members} logs={logs} announcements={announcements} missions={missions} cc={cc} />}
+              {tab === 'members'       && <MembersTab crew={crew} members={members} myLevel={myLevel} isCaptain={isCaptain} onAction={handleMemberAction} cc={cc} />}
+              {tab === 'hierarchy'     && <HierarchyTab crew={crew} members={members} cc={cc} />}
+              {tab === 'recruitment'   && <RecruitmentTab crew={crew} applications={applications} invites={invites} myLevel={myLevel} isAuthenticated={isAuthenticated} discordId={discordId} displayName={displayName} avatarUrl={avatarUrl} crewId={crewId} onRefresh={loadAll} cc={cc} />}
+              {tab === 'missions'      && <MissionsTab missions={missions} myLevel={myLevel} crewId={crewId} discordId={discordId} displayName={displayName} onRefresh={loadAll} cc={cc} />}
+              {tab === 'treasury'      && <TreasuryTab crew={crew} txHistory={treasury} members={members} myLevel={myLevel} discordId={discordId} displayName={displayName} crewId={crewId} onRefresh={loadAll} cc={cc} />}
+              {tab === 'announcements' && <AnnouncementsTab announcements={announcements} crewId={crewId} myLevel={myLevel} discordId={discordId} displayName={displayName} onRefresh={loadAll} cc={cc} />}
+              {tab === 'journal'       && <JournalTab logs={logs} />}
+              {tab === 'ranking'       && <RankingTab members={members} cc={cc} />}
+              {tab === 'diplomacy'     && <DiplomacyTab crew={crew} members={members} myLevel={myLevel} cc={cc} />}
+              {tab === 'settings'      && <SettingsTab crew={crew} myLevel={myLevel} discordId={discordId} displayName={displayName} crewId={crewId} onUpdate={updated => setCrew(v => ({ ...v, ...updated }))} />}
             </motion.div>
           </AnimatePresence>
         </div>
       </div>
+
+      {/* ── Role Picker ── */}
+      <AnimatePresence>
+        {rolePicker && (
+          <RolePickerModal
+            member={rolePicker}
+            actorLevel={myLevel}
+            cc={cc}
+            onClose={() => setRolePicker(null)}
+            onPick={async (newPos) => {
+              setRolePicker(null)
+              const targetLevel = getLevelHQ(newPos)
+              const currentLevel = getLevelHQ(rolePicker.position)
+              const fn = targetLevel < currentLevel ? promoteMember : demoteMember
+              const { error } = await fn({ crewId, targetId: rolePicker.user_id, targetName: rolePicker.username, newPosition: newPos, actorId: discordId, actorName: displayName, actorLevel: myLevel })
+              if (error) setToast({ msg: error.message, type: 'err' })
+              else { setToast({ msg: `✓ ${rolePicker.username} → ${ROLE_LABELS[newPos] || newPos}`, type: 'ok' }); loadAll() }
+            }}
+          />
+        )}
+      </AnimatePresence>
 
       {/* ── Confirm Modal ── */}
       <AnimatePresence>
