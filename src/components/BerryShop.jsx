@@ -678,20 +678,119 @@ export default function BerryShop() {
 
   if (!isAuthenticated) {
     return (
-      <div style={{ minHeight:'100vh', background:'#08090d', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'40px 20px', textAlign:'center' }}>
-        <div style={{ fontSize:54, marginBottom:20, filter:'drop-shadow(0 0 20px rgba(212,160,23,0.4))' }}>🪙</div>
-        <div style={{ fontSize:10, fontWeight:700, letterSpacing:'.2em', color:GOLD, textTransform:'uppercase', marginBottom:14 }}>Berry Shop — Brams Community</div>
-        <h1 style={{ fontSize:'clamp(36px,6vw,64px)', fontWeight:900, color:'#fff', margin:'0 0 14px', background:'linear-gradient(140deg, #fff 0%, rgba(255,255,255,0.80) 50%, #d4a017 100%)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', backgroundClip:'text' }}>Boutique Prestige</h1>
-        <p style={{ fontSize:14, color:'rgba(255,255,255,0.45)', maxWidth:440, margin:'0 0 32px', lineHeight:1.7 }}>
-          Ta monnaie Discord devient puissante ici.<br/>Connecte-toi pour accéder aux récompenses exclusives.
-        </p>
-        <button onClick={openAuth} style={{ display:'inline-flex', alignItems:'center', gap:10, padding:'14px 28px', background:'#5865f2', border:'none', borderRadius:12, color:'#fff', fontSize:14, fontWeight:700, cursor:'pointer', boxShadow:'0 8px 32px rgba(88,101,242,0.40)', transition:'all .2s' }}
-          onMouseEnter={e => e.currentTarget.style.transform='translateY(-2px)'}
-          onMouseLeave={e => e.currentTarget.style.transform='translateY(0)'}
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
-          Connexion Discord
-        </button>
+      <div style={{
+        minHeight:'100vh', background:'#07080c',
+        display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+        padding:'40px 20px', textAlign:'center', position:'relative', overflow:'hidden',
+      }}>
+        <style>{`
+          @keyframes bsLgFloat { 0%,100%{ transform:translateY(0) rotate(-2deg) } 50%{ transform:translateY(-16px) rotate(4deg) } }
+          @keyframes bsLgPulse { 0%,100%{ opacity:.25; transform:scale(1) } 50%{ opacity:.6; transform:scale(1.15) } }
+          @keyframes bsLgCoin  { 0%{ opacity:0; transform:translateY(0) rotate(0deg) } 15%{ opacity:.9 } 85%{ opacity:.9 } 100%{ opacity:0; transform:translateY(-140px) rotate(540deg) } }
+          @keyframes bsLgIn    { from{ opacity:0; transform:translateY(28px) } to{ opacity:1; transform:none } }
+          @keyframes bsLgShimmer { 0%{ left:-100% } 55%{ left:130% } 100%{ left:130% } }
+          @keyframes bsLgScan  { 0%{ transform:translateY(-100%) } 100%{ transform:translateY(100vh) } }
+        `}</style>
+
+        {/* Deep radial glows */}
+        <div style={{ position:'absolute', top:'-15%', left:'50%', transform:'translateX(-50%)', width:'100%', height:'70%', background:'radial-gradient(ellipse 70% 60% at 50% 0%, rgba(212,160,23,0.10) 0%, transparent 65%)', pointerEvents:'none' }} />
+        <div style={{ position:'absolute', bottom:'5%', left:'15%', width:'70%', height:'50%', background:'radial-gradient(ellipse, rgba(88,101,242,0.06) 0%, transparent 65%)', pointerEvents:'none' }} />
+        <div style={{ position:'absolute', top:'20%', right:'-5%', width:'35%', height:'55%', background:'radial-gradient(ellipse, rgba(212,160,23,0.05) 0%, transparent 65%)', pointerEvents:'none' }} />
+
+        {/* Subtle grid */}
+        <div style={{ position:'absolute', inset:0, backgroundImage:'linear-gradient(rgba(212,160,23,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(212,160,23,0.03) 1px, transparent 1px)', backgroundSize:'64px 64px', pointerEvents:'none' }} />
+
+        {/* Scan line */}
+        <div style={{ position:'absolute', left:0, right:0, height:2, background:'linear-gradient(90deg, transparent, rgba(212,160,23,0.06), transparent)', animation:'bsLgScan 8s linear infinite', pointerEvents:'none' }} />
+
+        {/* Floating coins */}
+        {[0,1,2,3,4,5,6,7,8,9,10,11].map(i => (
+          <div key={i} style={{
+            position:'absolute', fontSize:14 + (i * 3) % 14,
+            left:`${4 + (i * 8.3) % 88}%`,
+            top:`${55 + (i * 41) % 40}%`,
+            animation:`bsLgCoin ${3.5 + (i * 0.6) % 3.5}s ${i * 0.45}s ease-in-out infinite`,
+            opacity:0, pointerEvents:'none',
+            filter:'drop-shadow(0 0 5px rgba(212,160,23,0.55))',
+          }}>🪙</div>
+        ))}
+
+        {/* Main card */}
+        <div style={{
+          position:'relative', zIndex:2, maxWidth:460, width:'100%',
+          background:'linear-gradient(155deg, rgba(18,20,28,0.97) 0%, rgba(8,10,15,0.99) 100%)',
+          border:'1px solid rgba(212,160,23,0.18)',
+          borderTop:'2px solid rgba(212,160,23,0.45)',
+          borderRadius:24, padding:'44px 38px 36px',
+          overflow:'hidden',
+          boxShadow:'0 48px 120px rgba(0,0,0,0.85), 0 0 0 1px rgba(212,160,23,0.04) inset, 0 0 80px rgba(212,160,23,0.05)',
+          animation:'bsLgIn .55s ease',
+        }}>
+          {/* Card shimmer */}
+          <div style={{ position:'absolute', top:0, left:'-100%', width:'50%', height:'100%', background:'linear-gradient(90deg, transparent, rgba(212,160,23,0.05), transparent)', animation:'bsLgShimmer 5s 1.5s ease-in-out infinite', pointerEvents:'none' }} />
+          {/* Card inner glow */}
+          <div style={{ position:'absolute', top:-80, left:'50%', transform:'translateX(-50%)', width:360, height:240, background:'radial-gradient(ellipse, rgba(212,160,23,0.13) 0%, transparent 65%)', pointerEvents:'none' }} />
+
+          {/* Coin */}
+          <div style={{ position:'relative', display:'inline-block', marginBottom:22 }}>
+            <div style={{ position:'absolute', inset:-24, borderRadius:'50%', background:'radial-gradient(circle, rgba(212,160,23,0.22) 0%, transparent 65%)', animation:'bsLgPulse 2.8s ease-in-out infinite' }} />
+            <div style={{ fontSize:72, lineHeight:1, animation:'bsLgFloat 3.2s ease-in-out infinite', filter:'drop-shadow(0 0 28px rgba(212,160,23,0.65)) drop-shadow(0 0 8px rgba(212,160,23,0.9))', position:'relative', zIndex:1 }}>🪙</div>
+          </div>
+
+          {/* Eyebrow */}
+          <div style={{ fontSize:9, fontWeight:800, letterSpacing:'.24em', color:'rgba(212,160,23,0.60)', textTransform:'uppercase', marginBottom:10 }}>Berry Shop — Brams Community</div>
+
+          {/* Title */}
+          <h1 style={{
+            fontSize:'clamp(34px,7vw,54px)', fontWeight:900, margin:'0 0 14px', lineHeight:1.0, letterSpacing:'-0.025em',
+            background:'linear-gradient(145deg, #ffffff 0%, rgba(255,255,255,0.88) 38%, #d4a017 72%, #f59e0b 100%)',
+            WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', backgroundClip:'text',
+          }}>Boutique Prestige</h1>
+
+          {/* Desc */}
+          <p style={{ fontSize:13.5, color:'rgba(255,255,255,0.40)', maxWidth:350, margin:'0 auto 22px', lineHeight:1.8 }}>
+            Ta monnaie Discord devient puissante ici.<br/>Récompenses exclusives réservées aux nakamas.
+          </p>
+
+          {/* Rarity tiers */}
+          <div style={{ display:'flex', gap:5, justifyContent:'center', flexWrap:'wrap', marginBottom:24 }}>
+            {[
+              { l:'Commun', c:'#6b7280' }, { l:'Rare', c:'#3b82f6' }, { l:'Épique', c:'#8b5cf6' },
+              { l:'Légendaire', c:'#d4a017' }, { l:'Mythique', c:'#ec4899' },
+            ].map(r => (
+              <span key={r.l} style={{
+                fontSize:8.5, fontWeight:800, letterSpacing:'.1em', textTransform:'uppercase',
+                color:r.c, background:`${r.c}15`, border:`1px solid ${r.c}35`,
+                borderRadius:100, padding:'4px 11px',
+              }}>{r.l}</span>
+            ))}
+          </div>
+
+          {/* Divider */}
+          <div style={{ height:1, background:'linear-gradient(90deg, transparent, rgba(212,160,23,0.28), transparent)', marginBottom:26 }} />
+
+          {/* Discord button */}
+          <button onClick={openAuth} style={{
+            width:'100%', display:'inline-flex', alignItems:'center', justifyContent:'center', gap:10,
+            padding:'15px 28px',
+            background:'linear-gradient(135deg, #5865f2 0%, #4752c4 100%)',
+            border:'1px solid rgba(255,255,255,0.12)',
+            borderTop:'1px solid rgba(255,255,255,0.22)',
+            borderRadius:14, color:'#fff', fontSize:14, fontWeight:700, cursor:'pointer',
+            boxShadow:'0 8px 32px rgba(88,101,242,0.42), 0 1px 0 rgba(255,255,255,0.10) inset',
+            transition:'all .2s', letterSpacing:'.02em', marginBottom:14,
+          }}
+            onMouseEnter={e => { e.currentTarget.style.transform='translateY(-3px)'; e.currentTarget.style.boxShadow='0 16px 44px rgba(88,101,242,0.58), 0 1px 0 rgba(255,255,255,0.10) inset' }}
+            onMouseLeave={e => { e.currentTarget.style.transform='translateY(0)'; e.currentTarget.style.boxShadow='0 8px 32px rgba(88,101,242,0.42), 0 1px 0 rgba(255,255,255,0.10) inset' }}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
+            Connexion Discord
+          </button>
+
+          <div style={{ fontSize:10, color:'rgba(255,255,255,0.18)', letterSpacing:'.06em', textTransform:'uppercase' }}>
+            Les berries sont gagnées sur le serveur Discord
+          </div>
+        </div>
       </div>
     )
   }

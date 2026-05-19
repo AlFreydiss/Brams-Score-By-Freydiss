@@ -7,14 +7,19 @@ const CSS = `
   100% { transform: translateX(-50%); }
 }
 @keyframes lockBounce {
-  0%,100% { transform: translateY(0) rotate(-3deg); }
-  50%     { transform: translateY(-10px) rotate(3deg); }
+  0%,20%  { transform: translateY(0) scale(1) rotate(-4deg); }
+  50%     { transform: translateY(-14px) scale(1.06) rotate(4deg); }
+  80%,100%{ transform: translateY(0) scale(1) rotate(-4deg); }
 }
 @keyframes guardIn {
-  from { opacity: 0; transform: scale(1.04); }
-  to   { opacity: 1; transform: scale(1); }
+  from { opacity: 0; transform: scale(1.06) translateY(10px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
 }
 @keyframes guardSpin { to { transform: rotate(360deg); } }
+@keyframes guardGlow { 0%,100%{ opacity:.4 } 50%{ opacity:.8 } }
+@keyframes guardShimmer { 0%{ left:-100% } 55%{ left:130% } 100%{ left:130% } }
+@keyframes guardStar { 0%,100%{ opacity:.06; transform:scale(1) } 50%{ opacity:.45; transform:scale(1.5) } }
+@keyframes guardScan { 0%{ transform:translateY(-100%) } 100%{ transform:translateY(100vh) } }
 `
 
 const DISCORD_BLUE = '#5865F2'
@@ -80,86 +85,118 @@ export default function AuthGuard({ onClose, feature = 'ce contenu' }) {
       <style>{CSS}</style>
       <div style={{
         position: 'fixed', inset: 0, zIndex: 500,
-        background: 'linear-gradient(180deg, #0a0b0e 0%, #111520 50%, #0d1520 100%)',
+        background: 'radial-gradient(ellipse 80% 60% at 50% 0%, rgba(224,82,74,0.07) 0%, #09090e 55%), linear-gradient(180deg, #09090e 0%, #0d1018 100%)',
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        animation: 'guardIn 0.3s ease-out both', overflow: 'hidden',
+        animation: 'guardIn 0.35s cubic-bezier(0.16,1,0.3,1) both', overflow: 'hidden',
       }}>
+        {/* Retour */}
         <button onClick={onClose} style={{
           position: 'absolute', top: 20, right: 20,
-          background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)',
-          borderRadius: 9, color: '#fff', cursor: 'pointer', padding: '8px 16px',
-          fontSize: 13, fontWeight: 700, zIndex: 10, transition: 'background .15s',
+          background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)',
+          borderRadius: 9, color: 'rgba(255,255,255,0.55)', cursor: 'pointer', padding: '8px 16px',
+          fontSize: 12, fontWeight: 700, zIndex: 10, transition: 'all .15s', letterSpacing: '.04em',
         }}
-          onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.13)'}
-          onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.07)'}
+          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.12)'; e.currentTarget.style.color = '#fff' }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = 'rgba(255,255,255,0.55)' }}
         >← Retour</button>
 
-        <div style={{ position: 'absolute', top: '10%', left: '10%', width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(224,82,74,0.06), transparent 70%)', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', bottom: '20%', right: '5%', width: 300, height: 300, borderRadius: '50%', background: 'radial-gradient(circle, rgba(88,101,242,0.06), transparent 70%)', pointerEvents: 'none' }} />
+        {/* Ambient glows */}
+        <div style={{ position: 'absolute', top: '-10%', left: '50%', transform: 'translateX(-50%)', width: '90%', height: '60%', background: 'radial-gradient(ellipse, rgba(224,82,74,0.09) 0%, transparent 65%)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', bottom: '10%', left: '5%', width: '50%', height: '50%', background: 'radial-gradient(ellipse, rgba(88,101,242,0.06) 0%, transparent 65%)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', top: '30%', right: '-5%', width: '40%', height: '45%', background: 'radial-gradient(ellipse, rgba(212,160,23,0.04) 0%, transparent 65%)', pointerEvents: 'none' }} />
 
-        {Array.from({ length: 40 }).map((_, i) => (
+        {/* Scan line */}
+        <div style={{ position: 'absolute', left: 0, right: 0, height: 1, background: 'linear-gradient(90deg, transparent, rgba(224,82,74,0.08), transparent)', animation: 'guardScan 10s linear infinite', pointerEvents: 'none' }} />
+
+        {/* Stars */}
+        {Array.from({ length: 48 }).map((_, i) => (
           <div key={i} style={{
             position: 'absolute',
-            top: `${Math.random() * 80}%`, left: `${Math.random() * 100}%`,
-            width: 1 + Math.random() * 2, height: 1 + Math.random() * 2,
-            borderRadius: '50%', background: '#fff',
-            opacity: 0.1 + Math.random() * 0.3,
-            animation: `pulse ${2 + Math.random() * 3}s ${Math.random() * 2}s ease-in-out infinite`,
+            top: `${(i * 37.3) % 90}%`, left: `${(i * 41.7) % 98}%`,
+            width: i % 5 === 0 ? 2 : 1, height: i % 5 === 0 ? 2 : 1,
+            borderRadius: '50%', background: i % 8 === 0 ? 'rgba(224,82,74,0.6)' : '#fff',
+            animation: `guardStar ${2.5 + (i * 0.31) % 3}s ${(i * 0.17) % 2}s ease-in-out infinite`,
             pointerEvents: 'none',
           }} />
         ))}
 
         <WavesBg />
 
+        {/* Card */}
         <div style={{
           position: 'relative', zIndex: 2,
-          maxWidth: 560, width: '90%', textAlign: 'center', padding: '0 24px',
+          maxWidth: 520, width: '92%', textAlign: 'center',
+          background: 'linear-gradient(155deg, rgba(16,17,25,0.97) 0%, rgba(9,10,16,0.99) 100%)',
+          border: '1px solid rgba(224,82,74,0.18)',
+          borderTop: '2px solid rgba(224,82,74,0.45)',
+          borderRadius: 22, padding: '40px 36px 32px',
+          overflow: 'hidden',
+          boxShadow: '0 48px 100px rgba(0,0,0,0.85), 0 0 0 1px rgba(224,82,74,0.04) inset',
         }}>
-          <div style={{ fontSize: 80, marginBottom: 16, animation: 'lockBounce 3s ease-in-out infinite', display: 'inline-block' }}>
-            ☠️
-          </div>
+          {/* Card shimmer */}
+          <div style={{ position: 'absolute', top: 0, left: '-100%', width: '50%', height: '100%', background: 'linear-gradient(90deg, transparent, rgba(224,82,74,0.04), transparent)', animation: 'guardShimmer 6s 2s ease-in-out infinite', pointerEvents: 'none' }} />
+          {/* Top glow */}
+          <div style={{ position: 'absolute', top: -70, left: '50%', transform: 'translateX(-50%)', width: 360, height: 200, background: 'radial-gradient(ellipse, rgba(224,82,74,0.12) 0%, transparent 65%)', pointerEvents: 'none' }} />
 
-          <div style={{
-            background: 'linear-gradient(145deg, rgba(244,228,188,0.06), rgba(200,160,60,0.04))',
-            border: '1px solid rgba(255,215,0,0.2)', borderRadius: 4,
-            padding: '6px 20px', display: 'inline-block', marginBottom: 32,
-          }}>
-            <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: '.2em', color: 'rgba(255,215,0,0.7)' }}>
-              ZONE RÉSERVÉE
+          {/* Skull */}
+          <div style={{ position: 'relative', display: 'inline-block', marginBottom: 10 }}>
+            <div style={{ position: 'absolute', inset: -28, borderRadius: '50%', background: 'radial-gradient(circle, rgba(224,82,74,0.20) 0%, transparent 65%)', animation: 'guardGlow 3s ease-in-out infinite' }} />
+            <div style={{ fontSize: 76, lineHeight: 1, animation: 'lockBounce 3.5s ease-in-out infinite', display: 'inline-block', filter: 'drop-shadow(0 0 24px rgba(224,82,74,0.55)) drop-shadow(0 0 6px rgba(224,82,74,0.8))', position: 'relative', zIndex: 1 }}>
+              ☠️
             </div>
           </div>
 
+          {/* Zone réservée badge */}
+          <div style={{ marginBottom: 22 }}>
+            <span style={{
+              display: 'inline-block',
+              background: 'linear-gradient(135deg, rgba(224,82,74,0.14), rgba(200,60,60,0.08))',
+              border: '1px solid rgba(224,82,74,0.35)',
+              borderRadius: 6, padding: '5px 18px',
+              fontSize: 9, fontWeight: 900, letterSpacing: '.22em', color: 'rgba(224,82,74,0.85)',
+              textTransform: 'uppercase',
+            }}>⚠ Zone Réservée</span>
+          </div>
+
           <h1 style={{
-            fontFamily: "'Pirata One', cursive", fontSize: 'clamp(28px, 5vw, 52px)',
-            color: '#fff', lineHeight: 1.1, marginBottom: 20,
+            fontFamily: "'Pirata One', cursive",
+            fontSize: 'clamp(26px, 5vw, 50px)',
+            color: '#fff', lineHeight: 1.1, marginBottom: 18,
           }}>
             Accès<br />
-            <span style={{ fontFamily: "'Pirata One', cursive", background: 'linear-gradient(135deg, #E0524A, #ff8a50)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
-              Équipage uniquement
-            </span>
+            <span style={{
+              fontFamily: "'Pirata One', cursive",
+              background: 'linear-gradient(135deg, #E0524A 0%, #ff7055 50%, #ffb347 100%)',
+              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+            }}>Équipage uniquement</span>
           </h1>
 
-          <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.55)', lineHeight: 1.75, marginBottom: 12, maxWidth: 420, margin: '0 auto 12px' }}>
-            Pour accéder à <strong style={{ color: 'rgba(255,255,255,0.8)' }}>{feature}</strong>, tu dois faire partie de l'équipage.
+          <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.50)', lineHeight: 1.75, maxWidth: 400, margin: '0 auto 10px' }}>
+            Pour accéder à <strong style={{ color: 'rgba(255,255,255,0.85)' }}>{feature}</strong>, tu dois faire partie de l'équipage.
           </p>
-          <p style={{ fontSize: 14, color: 'rgba(255,215,0,0.6)', lineHeight: 1.6, marginBottom: 36, fontStyle: 'italic' }}>
+          <p style={{ fontSize: 13, color: 'rgba(255,200,80,0.55)', lineHeight: 1.6, marginBottom: 28, fontStyle: 'italic' }}>
             « Seuls les nakamas de Brams Community ont accès au Grand Line. »
           </p>
 
+          {/* Divider */}
+          <div style={{ height: 1, background: 'linear-gradient(90deg, transparent, rgba(224,82,74,0.25), transparent)', marginBottom: 24 }} />
+
           {!showEmail ? (
             <>
-              {/* Bouton Discord */}
               <button onClick={handleDiscord} disabled={loading} style={{
-                display: 'inline-flex', alignItems: 'center', gap: 12,
-                padding: '14px 36px', fontSize: 15, fontWeight: 700,
-                background: loading ? `${DISCORD_DARK}99` : DISCORD_BLUE,
-                border: 'none', borderRadius: 12, color: '#fff',
+                width: '100%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 12,
+                padding: '15px 36px', fontSize: 15, fontWeight: 700,
+                background: loading ? `${DISCORD_DARK}99` : `linear-gradient(135deg, ${DISCORD_BLUE} 0%, ${DISCORD_DARK} 100%)`,
+                border: '1px solid rgba(255,255,255,0.12)',
+                borderTop: '1px solid rgba(255,255,255,0.22)',
+                borderRadius: 14, color: '#fff',
                 cursor: loading ? 'not-allowed' : 'pointer',
                 letterSpacing: '.02em', fontFamily: 'var(--body)',
-                boxShadow: loading ? 'none' : `0 4px 24px ${DISCORD_BLUE}55`, transition: 'all .2s',
+                boxShadow: loading ? 'none' : `0 8px 32px ${DISCORD_BLUE}45, 0 1px 0 rgba(255,255,255,0.10) inset`,
+                transition: 'all .2s', marginBottom: 14,
               }}
-                onMouseEnter={e => { if (!loading) { e.currentTarget.style.background = DISCORD_DARK; e.currentTarget.style.transform = 'translateY(-2px)' } }}
-                onMouseLeave={e => { if (!loading) { e.currentTarget.style.background = DISCORD_BLUE; e.currentTarget.style.transform = 'translateY(0)' } }}
+                onMouseEnter={e => { if (!loading) { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = `0 16px 44px ${DISCORD_BLUE}60, 0 1px 0 rgba(255,255,255,0.10) inset` } }}
+                onMouseLeave={e => { if (!loading) { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = `0 8px 32px ${DISCORD_BLUE}45, 0 1px 0 rgba(255,255,255,0.10) inset` } }}
               >
                 {loading ? (
                   <><span style={{ width: 18, height: 18, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', display: 'inline-block', animation: 'guardSpin .7s linear infinite' }} /> Connexion…</>
@@ -169,20 +206,18 @@ export default function AuthGuard({ onClose, feature = 'ce contenu' }) {
                 )}
               </button>
 
-              {/* Lien email */}
-              <div style={{ marginTop: 18 }}>
+              <div>
                 <button onClick={() => setShowEmail(true)} style={{
                   background: 'none', border: 'none', cursor: 'pointer',
-                  color: 'rgba(255,255,255,0.35)', fontSize: 13, fontFamily: 'var(--body)',
-                  textDecoration: 'underline', transition: 'color .15s',
+                  color: 'rgba(255,255,255,0.28)', fontSize: 12, fontFamily: 'var(--body)',
+                  textDecoration: 'underline', transition: 'color .15s', letterSpacing: '.02em',
                 }}
-                  onMouseEnter={e => e.currentTarget.style.color = 'rgba(255,255,255,0.7)'}
-                  onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.35)'}
+                  onMouseEnter={e => e.currentTarget.style.color = 'rgba(255,255,255,0.65)'}
+                  onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.28)'}
                 >Ou se connecter par email →</button>
               </div>
             </>
           ) : (
-            /* Formulaire email */
             <div style={{ maxWidth: 360, margin: '0 auto', textAlign: 'left' }}>
               <div style={{ display: 'flex', justifyContent: 'center', gap: 20, marginBottom: 18 }}>
                 {[['login', 'Connexion'], ['signup', 'Inscription']].map(([m, label]) => (

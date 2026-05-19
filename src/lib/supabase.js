@@ -5,7 +5,7 @@ const key = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
 
 export const supabase = url && key ? createClient(url, key, {
   auth: {
-    detectSessionInUrl: false,
+    detectSessionInUrl: true,
     persistSession:     true,
     autoRefreshToken:   true,
     flowType:           'pkce',
