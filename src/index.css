@@ -420,12 +420,13 @@ section {
 .premium-stat:hover::after { opacity: 1; }
 .premium-stat-value {
   font-family: var(--display);
-  font-size: 34px;
+  font-size: clamp(22px, 2.4vw, 34px);
   font-weight: 850;
   color: #fff;
   line-height: 1;
   letter-spacing: .02em;
   text-shadow: 0 0 18px rgba(255,160,76,.14);
+  white-space: nowrap;
 }
 .premium-stat-label {
   margin-top: 10px;

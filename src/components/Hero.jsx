@@ -275,10 +275,20 @@ export default function Hero() {
         position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
         background: 'radial-gradient(ellipse 62% 55% at 27% 50%, rgba(212,160,23,0.18) 0%, transparent 65%)',
       }} />
-      {/* Glow radial derrière le dashboard */}
+      {/* Glow violet principal derrière le dashboard */}
       <div style={{
         position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
-        background: 'radial-gradient(ellipse 52% 58% at 78% 50%, rgba(88,101,242,0.18) 0%, rgba(88,101,242,0.06) 55%, transparent 75%)',
+        background: 'radial-gradient(ellipse 52% 58% at 78% 50%, rgba(120,60,220,0.38) 0%, rgba(88,101,242,0.18) 55%, transparent 75%)',
+      }} />
+      {/* Glow rouge chaud — coin bas droit */}
+      <div style={{
+        position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
+        background: 'radial-gradient(ellipse 40% 38% at 88% 75%, rgba(200,40,60,0.32) 0%, rgba(180,30,50,0.12) 55%, transparent 75%)',
+      }} />
+      {/* Halo violet vif haut dashboard */}
+      <div style={{
+        position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
+        background: 'radial-gradient(ellipse 30% 30% at 82% 20%, rgba(140,80,255,0.28) 0%, transparent 65%)',
       }} />
       {/* Aura dorée douce côté dashboard */}
       <div style={{

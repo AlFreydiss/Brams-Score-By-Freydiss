@@ -116,31 +116,33 @@ function MiniCalendar({ events }) {
         >›</button>
       </div>
 
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', gap:1, marginBottom:4 }}>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', marginBottom:4 }}>
         {WEEKDAYS.map((w, i) => (
-          <div key={i} style={{ textAlign:'center', fontSize:7.5, fontWeight:700, color:'rgba(255,255,255,.25)' }}>{w}</div>
+          <div key={i} style={{ textAlign:'center', fontSize:7.5, fontWeight:700, color:'rgba(255,255,255,.25)', padding:'2px 0' }}>{w}</div>
         ))}
       </div>
 
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', gap:1 }}>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)' }}>
         {cells.map((d, i) => {
-          if (!d) return <div key={`e${i}`} />
+          if (!d) return <div key={`e${i}`} style={{ aspectRatio:'1' }} />
           const key = dateKey(d)
           const ev  = eventMap[key]
           const tod = isToday(d)
           return (
-            <div key={d} style={{ position:'relative', display:'flex', flexDirection:'column', alignItems:'center', padding:'2px 0' }}
+            <div key={d} style={{ position:'relative', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'2px 0' }}
               onMouseEnter={ev ? () => setTip(d) : undefined}
               onMouseLeave={ev ? () => setTip(null) : undefined}
             >
               <div style={{
-                width:24, height:24, display:'flex', alignItems:'center', justifyContent:'center',
+                width:26, height:26, display:'flex', alignItems:'center', justifyContent:'center',
                 borderRadius:'50%', fontSize:9.5, fontWeight: tod ? 800 : ev ? 600 : 400,
                 color: tod ? '#1a1a1a' : ev ? '#d4a017' : 'rgba(255,255,255,.38)',
                 background: tod ? '#d4a017' : 'transparent',
                 animation: tod ? 'todayRing 2s ease-in-out infinite' : 'none',
+                cursor: ev ? 'default' : 'default',
               }}>{d}</div>
               {ev && <div style={{ width:3, height:3, borderRadius:'50%', background: ev.color || '#d4a017', marginTop:1, animation:'dotBeat 2.5s ease-in-out infinite' }} />}
+              {!ev && <div style={{ width:3, height:3 }} />}
               {tip === d && ev && (
                 <div style={{
                   position:'absolute', bottom:'calc(100% + 5px)', left:'50%', transform:'translateX(-50%)',
