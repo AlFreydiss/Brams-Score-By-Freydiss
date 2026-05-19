@@ -379,6 +379,69 @@ function CreateCrewModal({ onClose, onCreate }) {
   )
 }
 
+// ── MusicBar ──────────────────────────────────────────────────────────────────
+function MusicBar({ videoRef }) {
+  const [on, setOn] = useState(false)
+  const [vol, setVol] = useState(0.35)
+
+  function toggle() {
+    const v = videoRef.current
+    if (!v) return
+    if (!on) {
+      v.muted = false
+      v.volume = vol
+      setOn(true)
+    } else {
+      v.muted = true
+      setOn(false)
+    }
+  }
+
+  function handleVol(e) {
+    const value = parseFloat(e.target.value)
+    setVol(value)
+    const v = videoRef.current
+    if (!v) return
+    v.volume = value
+    if (value === 0) { v.muted = true; setOn(false) }
+    else if (on) v.muted = false
+  }
+
+  return (
+    <div style={{
+      position: 'fixed', bottom: 24, right: 24, zIndex: 9000,
+      display: 'flex', alignItems: 'center', gap: 10,
+      background: 'rgba(8,9,13,0.90)',
+      backdropFilter: 'blur(20px)',
+      border: `1px solid ${on ? 'rgba(224,82,74,0.30)' : 'rgba(255,255,255,0.07)'}`,
+      borderRadius: 40, padding: '7px 14px 7px 12px',
+      transition: 'border-color 0.3s, box-shadow 0.3s',
+      boxShadow: on ? '0 0 24px rgba(224,82,74,0.12)' : '0 4px 20px rgba(0,0,0,0.5)',
+    }}>
+      <span style={{ fontSize: 14, color: on ? ACCENT : 'rgba(255,255,255,0.28)', transition: 'color 0.3s' }}>♫</span>
+      <span style={{ fontSize: 11, fontWeight: 600, color: on ? 'rgba(255,255,255,0.65)' : 'rgba(255,255,255,0.28)', transition: 'color 0.3s', whiteSpace: 'nowrap', letterSpacing: '0.03em' }}>Dear Sunrise</span>
+      {on && (
+        <input type="range" min="0" max="1" step="0.05" value={vol} onChange={handleVol}
+          style={{ width: 60, cursor: 'pointer', accentColor: ACCENT }} />
+      )}
+      <button onClick={toggle}
+        style={{
+          width: 28, height: 28, borderRadius: '50%', border: 'none', cursor: 'pointer',
+          background: on ? 'rgba(224,82,74,0.20)' : 'rgba(255,255,255,0.07)',
+          color: on ? ACCENT : 'rgba(255,255,255,0.45)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 10, fontWeight: 700, transition: 'all 0.2s', flexShrink: 0,
+        }}
+        onMouseEnter={e => { e.currentTarget.style.background = on ? 'rgba(224,82,74,0.35)' : 'rgba(255,255,255,0.14)' }}
+        onMouseLeave={e => { e.currentTarget.style.background = on ? 'rgba(224,82,74,0.20)' : 'rgba(255,255,255,0.07)' }}
+        title={on ? 'Couper la musique' : 'Activer la musique'}
+      >
+        {on ? '⏸' : '▶'}
+      </button>
+    </div>
+  )
+}
+
 // ── Main ConstellationPage ────────────────────────────────────────────────────
 export default function ConstellationPage() {
   const navigate    = useNavigate()
@@ -396,6 +459,7 @@ export default function ConstellationPage() {
   const [usingMock,   setUsingMock]   = useState(false)
   const searchRef = useRef(null)
   const gridRef   = useRef(null)
+  const videoRef  = useRef(null)
   const uid = discordId || userId
 
   useEffect(() => {
@@ -499,6 +563,7 @@ export default function ConstellationPage() {
 
       {/* ── Video background (from 26s) ─────────────────────────────────── */}
       <video
+        ref={videoRef}
         style={{ position:'fixed', inset:0, width:'100%', height:'100%', objectFit:'cover', zIndex:0, pointerEvents:'none', opacity:0, animation:'vfade 2.5s 0.5s ease forwards' }}
         autoPlay muted loop playsInline
         onLoadedMetadata={e => { e.currentTarget.currentTime = 26 }}
@@ -668,6 +733,9 @@ export default function ConstellationPage() {
           )}
         </div>
       </div>
+
+      {/* ── Music bar ──────────────────────────────────────────────────── */}
+      <MusicBar videoRef={videoRef} />
 
       {/* ── Modals ─────────────────────────────────────────────────────── */}
       {showCreate  && <CreateCrewModal crew={null} onClose={() => setShowCreate(false)} onCreate={handleCreate} />}

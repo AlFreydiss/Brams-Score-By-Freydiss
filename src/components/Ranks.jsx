@@ -37,7 +37,10 @@ export default function Ranks() {
         transition: 'background 0.5s ease',
       }}>
         {!parchment && (
-          <div className="orb" style={{ width:500, height:500, bottom:0, left:'50%', transform:'translateX(-50%)', background:'rgba(255,215,0,.04)', pointerEvents:'none' }} />
+          <>
+            <div style={{ position:'absolute', top:0, left:0, right:0, height:220, background:'linear-gradient(180deg, rgba(3,7,14,0.85) 0%, rgba(3,7,14,0.48) 45%, transparent 100%)', pointerEvents:'none', zIndex:0 }} />
+            <div className="orb" style={{ width:500, height:500, bottom:0, left:'50%', transform:'translateX(-50%)', background:'rgba(255,215,0,.04)', pointerEvents:'none' }} />
+          </>
         )}
         {parchment && (
           <>
