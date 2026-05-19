@@ -1,1001 +1,677 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../contexts/AuthContext.jsx'
-import Navbar from './Navbar.jsx'
-import { supabase } from '../lib/supabase.js'
 import { fetchCrews } from '../lib/crew/supabaseCrewQueries.js'
-import { getUserCrewMembership, fetchCrewById, applyToCrew, writeCrewLog } from '../lib/crew/crewHQQueries.js'
+import { getUserCrewMembership, applyToCrew, fetchCrewById } from '../lib/crew/crewHQQueries.js'
+import { supabase } from '../lib/supabase.js'
 
-// ─────────────────────────────────────────────────────────────────────────────
-// MOCK DATA — remplacé automatiquement si des équipages existent en DB
-// ─────────────────────────────────────────────────────────────────────────────
+// ── Design tokens (identiques à l'Encyclopédie) ───────────────────────────────
+const ACCENT = '#e0524a'
+const VIOLET = '#a29bfe'
+const GOLD   = '#fdcb6e'
+
+// ── Mock data ─────────────────────────────────────────────────────────────────
 const MOCK_CREWS = [
-  { id:'mock-1', name:'Les Dragons Rouges', tag:'DR', motto:'Le feu ne meurt jamais.', description:'Équipage d\'élite fondé sur la puissance brute et la loyauté absolue. Les Dragons Rouges écrasent tout sur leur passage.', emblem_emoji:'🐉', primary_color:'#c41c1c', captain_name:'Kaido_Jr', captain_id:'mock-cap-1', member_count:28, max_members:30, total_bounty:4_500_000_000, level:8, xp:78000, reputation:4200, wins:47, is_recruiting:true, recruitment_message:'Cherchons guerriers d\'élite. Min. 500h vocal.', styles:['pvp','tryhard'], rank:1, treasury_balance:12_000_000, created_at:'2024-01-15T00:00:00Z', is_mock:true },
-  { id:'mock-2', name:'Les Ombres du Nouveau Monde', tag:'ONM', motto:'Dans l\'ombre, on prépare la tempête.', description:'Maîtres des stratégies nocturnes et des missions secrètes. On ne les entend jamais venir.', emblem_emoji:'🌑', primary_color:'#7c3aed', captain_name:'Shadowstrike', captain_id:'mock-cap-2', member_count:21, max_members:25, total_bounty:3_200_000_000, level:6, xp:58000, reputation:3100, wins:31, is_recruiting:true, recruitment_message:'Actifs la nuit. Stratèges discrets bienvenus.', styles:['rp','event'], rank:2, treasury_balance:8_500_000, created_at:'2024-02-01T00:00:00Z', is_mock:true },
-  { id:'mock-3', name:'Les Rois des Mers', tag:'RM', motto:'Nul ne règne sans l\'avoir mérité.', description:'Les anciens du serveur. 15 mois d\'existence, 89 victoires. La référence absolue des sept mers.', emblem_emoji:'👑', primary_color:'#d4a017', captain_name:'SeaKing_X', captain_id:'mock-cap-3', member_count:35, max_members:40, total_bounty:6_100_000_000, level:10, xp:100000, reputation:5800, wins:89, is_recruiting:false, recruitment_message:null, styles:['quiz','vocal'], rank:3, treasury_balance:45_000_000, created_at:'2023-11-01T00:00:00Z', is_mock:true },
-  { id:'mock-4', name:'Les Chasseurs de Primes', tag:'CDP', motto:'Chaque prime a un prix.', description:'Spécialisés dans les événements classement. On grimpe, on gagne, on recommence. Résultats garantis.', emblem_emoji:'🎯', primary_color:'#f97316', captain_name:'BountyHunter99', captain_id:'mock-cap-4', member_count:15, max_members:20, total_bounty:2_800_000_000, level:5, xp:44000, reputation:2400, wins:22, is_recruiting:true, recruitment_message:'On cherche des membres actifs sur le classement.', styles:['tryhard','pvp'], rank:4, treasury_balance:3_200_000, created_at:'2024-03-10T00:00:00Z', is_mock:true },
-  { id:'mock-5', name:'Les Héritiers du D.', tag:'HD', motto:'La volonté du D. nous guide.', description:'Équipage RP fondé sur la lore One Piece. Quiz hebdo, débats canon et théories. Ambiance bienveillante.', emblem_emoji:'🌀', primary_color:'#06b6d4', captain_name:'Luffy_D_Monkey', captain_id:'mock-cap-5', member_count:18, max_members:30, total_bounty:1_900_000_000, level:4, xp:32000, reputation:1800, wins:14, is_recruiting:true, recruitment_message:'RP bienvenu. Quiz hebdo. Ambiance détendue.', styles:['rp','quiz','chill'], rank:5, treasury_balance:1_500_000, created_at:'2024-04-05T00:00:00Z', is_mock:true },
-  { id:'mock-6', name:'La Marine Noire', tag:'MN', motto:'L\'ordre avant tout, même dans l\'ombre.', description:'Né d\'une trahison. Combat à contre-courant. Ni pirate, ni marine — quelque chose de nouveau.', emblem_emoji:'⚓', primary_color:'#374151', captain_name:'DarkAdmiral', captain_id:'mock-cap-6', member_count:12, max_members:20, total_bounty:1_200_000_000, level:3, xp:24000, reputation:1200, wins:9, is_recruiting:true, recruitment_message:'Cherchons soldats disciplinés. Aucune faiblesse tolérée.', styles:['vocal','event'], rank:6, treasury_balance:800_000, created_at:'2024-05-20T00:00:00Z', is_mock:true },
+  { id:'m1', name:'Les Dragons Rouges',          tag:'DR',  emoji:'🐉', color:'#e0524a', description:"Équipage légendaire visant le sommet des classements. Ici seuls les meilleurs survivent.", captain_name:'Freydiss',   member_count:24, total_bounty:4200000, level:12, styles:['tryhard','vocal'],  recruiting:true,  wins:89  },
+  { id:'m2', name:'Les Ombres du Nouveau Monde', tag:'ONM', emoji:'🌑', color:'#8b5cf6', description:"Dans l'ombre des Grands, nous préparons notre ascension silencieuse.",                    captain_name:'Ayzeni',     member_count:18, total_bounty:2800000, level:9,  styles:['quiz','rp'],        recruiting:true,  wins:52  },
+  { id:'m3', name:'Les Rois des Mers',           tag:'RM',  emoji:'🌊', color:'#0984e3', description:"Maîtres des eaux profondes. Chaque membre est un Nakama pour la vie.",                   captain_name:'Océan',      member_count:31, total_bounty:5100000, level:15, styles:['chill','vocal'],    recruiting:false, wins:120 },
+  { id:'m4', name:'Les Chasseurs de Primes',     tag:'CDP', emoji:'🎯', color:'#fdcb6e', description:"La prime, notre obsession. On chasse, on monte, on domine.",                              captain_name:'BountyKing', member_count:12, total_bounty:1900000, level:7,  styles:['tryhard'],          recruiting:true,  wins:34  },
+  { id:'m5', name:"Les Héritiers du D.",         tag:'HD',  emoji:'⚡', color:'#06b6d4', description:"Porteurs de la volonté du D. Notre destinée est gravée dans l'histoire.",                captain_name:'RogerFan',   member_count:20, total_bounty:3400000, level:11, styles:['rp','quiz'],        recruiting:false, wins:78  },
+  { id:'m6', name:'La Marine Noire',             tag:'MN',  emoji:'⚓', color:'#6c5ce7', description:"Ordre et discipline. Nous imposons notre loi sans compromis.",                            captain_name:'Akainu_2',   member_count:15, total_bounty:2200000, level:8,  styles:['tryhard','vocal'],  recruiting:true,  wins:61  },
+  { id:'m7', name:'Les Loups de Grand Line',     tag:'LGL', emoji:'🐺', color:'#10b981', description:"Survivants des pires tempêtes. Grand Line est notre terrain de chasse.",                  captain_name:'WolfLeader', member_count:22, total_bounty:3700000, level:10, styles:['event','chill'],    recruiting:true,  wins:95  },
+  { id:'m8', name:"Les Fantômes d'Onyx",         tag:'FO',  emoji:'💀', color:'#f97316', description:"Nous hantions les classements depuis l'ombre. L'heure est venue de sortir.",              captain_name:'OnxyCpt',    member_count:8,  total_bounty:1100000, level:5,  styles:['quiz','rp'],        recruiting:true,  wins:18  },
 ]
 
-const STYLE_TAGS = {
-  pvp:     { label:'PvP',       color:'#e0524a', icon:'⚔️' },
-  quiz:    { label:'Quiz',      color:'#60a5fa', icon:'❓' },
-  vocal:   { label:'Vocal',     color:'#34d399', icon:'🎙️' },
-  chill:   { label:'Chill',     color:'#a78bfa', icon:'🌊' },
-  tryhard: { label:'Tryhard',   color:'#f97316', icon:'🔥' },
-  event:   { label:'Événement', color:'#fbbf24', icon:'🎪' },
-  rp:      { label:'RP',        color:'#ec4899', icon:'🎭' },
-}
-
-const HOW_IT_WORKS = [
-  { icon:'⚔️', title:'Crée ton équipage', text:'Choisis un nom, un emblème, une couleur. Lance ton pavillon sur les sept mers.' },
-  { icon:'🧲', title:'Recrute tes membres', text:'Ouvre le recrutement, accepte les candidatures, construis ton équipe.' },
-  { icon:'💰', title:'Monte ta prime', text:'Sois actif. Chaque heure vocale, chaque événement gagne de la prime pour ton équipage.' },
-  { icon:'🗺️', title:'Termine des missions', text:'Missions quotidiennes, hebdomadaires et événements spéciaux. Gagnez de l\'XP ensemble.' },
-  { icon:'🏆', title:'Grimpe dans le classement', text:'Domine le podium mensuel et prouve que ton équipage est le meilleur du serveur.' },
+const STYLE_FILTERS = ['Tous', 'Recrute', 'Tryhard', 'Chill', 'Quiz', 'Vocal', 'RP', 'Événement']
+const SORT_OPTIONS  = [
+  { value:'bounty',  label:'Prime totale' },
+  { value:'members', label:'Membres'      },
+  { value:'level',   label:'Niveau'       },
+  { value:'wins',    label:'Victoires'    },
 ]
-
 const ROADMAP = [
-  { icon:'🗺️', label:'Missions d\'équipage',   status:'beta' },
-  { icon:'💰', label:'Coffre commun',           status:'beta' },
-  { icon:'🤝', label:'Alliances & Rivalités',   status:'soon' },
-  { icon:'🏝️', label:'Territoires',             status:'soon' },
-  { icon:'🏟️', label:'Tournois d\'équipages',   status:'soon' },
-  { icon:'🎖️', label:'Saisons mensuelles',      status:'soon' },
-  { icon:'🎁', label:'Récompenses exclusives',  status:'soon' },
-  { icon:'🏆', label:'Trophées & Badges',       status:'soon' },
+  { emoji:'⚔️', title:"Missions d'équipage", desc:"Des quêtes communes pour gagner des primes et progresser ensemble.",       soon:false },
+  { emoji:'💰', title:'Coffre commun',        desc:"Gérez un trésor partagé entre les membres actifs.",                        soon:true  },
+  { emoji:'🤝', title:'Alliances',            desc:"Forgez des alliances stratégiques avec d'autres équipages.",               soon:true  },
+  { emoji:'⚡', title:'Rivalités',            desc:"Déclarez vos rivaux et mesurez-vous à eux en compétition.",                soon:true  },
+  { emoji:'🏆', title:'Saisons',              desc:"Classements saisonniers avec récompenses exclusives.",                     soon:true  },
+  { emoji:'🎖️', title:"Trophées d'équipage", desc:"Débloquez des distinctions visibles sur votre profil QG.",                 soon:true  },
 ]
 
-// ─────────────────────────────────────────────────────────────────────────────
-// UTILS
-// ─────────────────────────────────────────────────────────────────────────────
+// ── Helpers ───────────────────────────────────────────────────────────────────
 function fmtB(n) {
   if (!n) return '0'
-  n = parseInt(n)
-  if (n >= 1_000_000_000) return `${(n/1_000_000_000).toFixed(1)}Md`
-  if (n >= 1_000_000)     return `${(n/1_000_000).toFixed(1)}M`
-  if (n >= 1_000)         return `${(n/1_000).toFixed(0)}K`
+  if (n >= 1000000) return (n / 1000000).toFixed(1).replace('.0', '') + 'M'
+  if (n >= 1000)    return Math.round(n / 1000) + 'K'
   return String(n)
 }
-function fmtNum(n) { return new Intl.NumberFormat('fr-FR').format(n || 0) }
-function levelTitle(lvl) {
-  if (lvl >= 10) return 'ROI DES PIRATES'
-  if (lvl >= 8)  return 'Yonkou'
-  if (lvl >= 6)  return 'Warlord'
-  if (lvl >= 4)  return 'Supernova'
-  if (lvl >= 2)  return 'Marin courageux'
-  return 'Débutant'
+
+function useCountUp(target, dur = 1400, delay = 350) {
+  const [val, setVal] = useState(0)
+  useEffect(() => {
+    let raf
+    const t = setTimeout(() => {
+      const s = performance.now()
+      const tick = now => {
+        const p = Math.min((now - s) / dur, 1)
+        setVal(Math.round((1 - Math.pow(1 - p, 3)) * target))
+        if (p < 1) raf = requestAnimationFrame(tick)
+      }
+      raf = requestAnimationFrame(tick)
+    }, delay)
+    return () => { clearTimeout(t); cancelAnimationFrame(raf) }
+  }, [target, dur, delay])
+  return val
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ATOMS
-// ─────────────────────────────────────────────────────────────────────────────
-function RecruitBadge({ open }) {
+// ── StatPill — copie exacte Encyclopédie ────────────────────────────────────
+function StatPill({ value, label, color = ACCENT }) {
   return (
-    <span style={{ display:'inline-flex', alignItems:'center', gap:5, padding:'3px 9px', background: open ? 'rgba(52,211,153,.1)' : 'rgba(239,68,68,.07)', border:`1px solid ${open ? 'rgba(52,211,153,.3)' : 'rgba(239,68,68,.2)'}`, borderRadius:100, fontSize:10, fontWeight:800, color: open ? '#34d399' : '#f87171', letterSpacing:'.06em', textTransform:'uppercase', whiteSpace:'nowrap' }}>
-      <span style={{ width:6, height:6, borderRadius:'50%', background: open ? '#34d399' : '#e0524a', boxShadow:`0 0 6px ${open ? '#34d399' : '#e0524a'}` }} />
-      {open ? 'Recrute' : 'Fermé'}
-    </span>
+    <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:4, minWidth:90 }}>
+      <span style={{ fontFamily:'var(--display)', fontWeight:900, fontSize:40, lineHeight:1, color }}>{value}</span>
+      <span style={{ fontSize:11, fontWeight:700, letterSpacing:'0.1em', textTransform:'uppercase', color:'rgba(255,255,255,0.45)' }}>{label}</span>
+    </div>
   )
 }
 
-function StyleTag({ tag }) {
-  const t = STYLE_TAGS[tag]
-  if (!t) return null
-  return <span style={{ display:'inline-flex', alignItems:'center', gap:3, padding:'2px 8px', background:`${t.color}12`, border:`1px solid ${t.color}28`, borderRadius:3, fontSize:9, fontWeight:800, color:t.color, letterSpacing:'.06em', textTransform:'uppercase', whiteSpace:'nowrap' }}>{t.icon} {t.label}</span>
-}
-
-function BountyGlow({ value, color = '#d4a017', size = 20 }) {
+// ── SectionHeading — même structure que l'Encyclopédie ─────────────────────
+function SectionHeading({ eyebrow, title, subtitle, color = ACCENT }) {
   return (
-    <span style={{ fontFamily:'Pirata One, cursive', fontSize:size, fontWeight:900, color, textShadow:`0 0 16px ${color}55`, lineHeight:1 }}>
-      {fmtB(value)} <span style={{ fontSize:size*0.65 }}>฿</span>
-    </span>
+    <div style={{ textAlign:'center', marginBottom:48 }}>
+      <div style={{ fontSize:10, letterSpacing:'0.3em', fontWeight:800, color, marginBottom:14, textTransform:'uppercase' }}>{eyebrow}</div>
+      <h2 style={{ fontFamily:'var(--display)', fontWeight:900, fontSize:'clamp(32px,6vw,58px)', color:'#fff', margin:'0 0 12px', lineHeight:1 }}>{title}</h2>
+      {subtitle && <p style={{ fontSize:14, color:'rgba(255,255,255,0.45)', maxWidth:480, margin:'0 auto', lineHeight:1.7 }}>{subtitle}</p>}
+    </div>
   )
 }
 
-function LevelBadge({ level, color }) {
-  return (
-    <span style={{ display:'inline-flex', alignItems:'center', gap:4, padding:'2px 8px', background:`${color || '#d4a017'}14`, border:`1px solid ${color || '#d4a017'}30`, borderRadius:3, fontSize:10, fontWeight:800, color:color||'#d4a017', letterSpacing:'.05em' }}>
-      ⭐ Niv.{level}
-    </span>
-  )
-}
+// ── CrewCard — adapté de FruitCard Encyclopédie ──────────────────────────────
+function CrewCard({ crew, index, onApply, userCrewId }) {
+  const [hov, setHov] = useState(false)
+  const navigate = useNavigate()
+  const isMock = String(crew.id).startsWith('m')
+  const c = crew.color || ACCENT
 
-function GlassCard({ children, style, onClick, hoverGlow = 'rgba(180,130,30,.08)' }) {
   return (
-    <motion.div
-      onClick={onClick}
-      whileHover={{ y: onClick ? -3 : 0 }}
-      transition={{ duration:.15 }}
-      style={{ background:'linear-gradient(145deg, rgba(12,8,3,.98) 0%, rgba(6,4,2,1) 100%)', border:'1px solid rgba(180,130,30,.22)', borderRadius:8, ...style, cursor: onClick ? 'pointer' : 'default' }}
-      onMouseEnter={e => { if(onClick) e.currentTarget.style.borderColor = 'rgba(180,130,30,.5)' }}
-      onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(180,130,30,.22)' }}
+    <div
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      style={{
+        position:'relative',
+        background:`linear-gradient(145deg, ${c}28 0%, ${c}0e 50%, rgba(14,14,16,0.90) 100%)`,
+        border:`1px solid ${hov ? c+'60' : c+'28'}`,
+        borderRadius:16,
+        padding:'20px 20px 16px',
+        transition:'all 0.22s ease',
+        boxShadow: hov ? `0 8px 32px ${c}28` : `0 2px 10px ${c}0a`,
+        animation:`fadeUp 0.45s ${index * 0.05}s ease-out both`,
+        display:'flex', flexDirection:'column', gap:12,
+      }}
     >
-      {children}
-    </motion.div>
+      {/* Top accent stripe */}
+      <div style={{ position:'absolute', top:0, left:0, right:0, height:3, background:`linear-gradient(90deg, ${c}, ${c}33)`, borderRadius:'16px 16px 0 0' }} />
+
+      {/* Header */}
+      <div style={{ display:'flex', alignItems:'flex-start', gap:12 }}>
+        <div style={{ fontSize:34, filter:`drop-shadow(0 0 10px ${c}70)`, lineHeight:1, flexShrink:0, marginTop:3 }}>{crew.emoji}</div>
+        <div style={{ flex:1, minWidth:0 }}>
+          <div style={{ fontWeight:800, fontSize:15, color:'#fff', marginBottom:6, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', lineHeight:1.2 }}>{crew.name}</div>
+          <div style={{ display:'flex', gap:5, flexWrap:'wrap' }}>
+            {crew.styles?.map(s => (
+              <span key={s} style={{ fontSize:9.5, fontWeight:700, padding:'2px 7px', borderRadius:20, background:`${c}18`, color:c, border:`1px solid ${c}35`, letterSpacing:'0.05em', textTransform:'uppercase' }}>{s}</span>
+            ))}
+            {crew.recruiting && (
+              <span style={{ fontSize:9.5, fontWeight:800, padding:'2px 7px', borderRadius:20, background:'rgba(52,211,153,0.14)', color:'#34d399', border:'1px solid rgba(52,211,153,0.32)', letterSpacing:'0.05em', textTransform:'uppercase' }}>Recrute</span>
+            )}
+          </div>
+        </div>
+        <div style={{ flexShrink:0, fontFamily:'var(--display)', fontSize:11, fontWeight:800, color:c }}>Niv.{crew.level||1}</div>
+      </div>
+
+      {/* Description */}
+      <p style={{ fontSize:12, color:'rgba(255,255,255,0.58)', lineHeight:1.65, margin:0 }}>{crew.description}</p>
+
+      {/* Stats */}
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8, padding:'10px 0', borderTop:`1px solid ${c}18`, borderBottom:`1px solid ${c}18` }}>
+        {[
+          { label:'Prime',     value:`${fmtB(crew.total_bounty)} B`, color:GOLD },
+          { label:'Membres',   value: crew.member_count || 0,         color:'rgba(255,255,255,0.8)' },
+          { label:'Victoires', value: crew.wins || 0,                  color:ACCENT },
+        ].map(s => (
+          <div key={s.label} style={{ textAlign:'center' }}>
+            <div style={{ fontSize:14, fontWeight:800, color:s.color, lineHeight:1 }}>{s.value}</div>
+            <div style={{ fontSize:9.5, color:'rgba(255,255,255,0.32)', fontWeight:700, letterSpacing:'0.08em', textTransform:'uppercase', marginTop:3 }}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Footer */}
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+        <span style={{ fontSize:11, color:'rgba(255,255,255,0.38)' }}>⚓ <span style={{ color:'rgba(255,255,255,0.72)', fontWeight:600 }}>{crew.captain_name || '—'}</span></span>
+        <div style={{ display:'flex', gap:7 }}>
+          {crew.recruiting && !userCrewId && !isMock && (
+            <button onClick={() => onApply(crew)} style={{ fontSize:11, padding:'5px 11px', borderRadius:8, background:`${c}18`, border:`1px solid ${c}40`, color:c, fontWeight:700, cursor:'pointer', transition:'background 0.15s' }}
+              onMouseEnter={e => e.currentTarget.style.background=`${c}30`}
+              onMouseLeave={e => e.currentTarget.style.background=`${c}18`}
+            >Candidater</button>
+          )}
+          {!isMock && (
+            <button onClick={() => navigate(`/equipage/${crew.id}`)} style={{ fontSize:11, padding:'5px 11px', borderRadius:8, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.10)', color:'rgba(255,255,255,0.65)', fontWeight:700, cursor:'pointer', transition:'all 0.15s' }}
+              onMouseEnter={e => { e.currentTarget.style.background='rgba(255,255,255,0.12)'; e.currentTarget.style.color='#fff' }}
+              onMouseLeave={e => { e.currentTarget.style.background='rgba(255,255,255,0.05)'; e.currentTarget.style.color='rgba(255,255,255,0.65)' }}
+            >Voir QG →</button>
+          )}
+          {isMock && <span style={{ fontSize:10, color:`${c}88`, fontWeight:600 }}>Démo ↺</span>}
+        </div>
+      </div>
+    </div>
   )
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// CREW CARD
-// ─────────────────────────────────────────────────────────────────────────────
-function CrewCard({ crew, onApply, onView, currentCrewId }) {
-  const cc = crew.primary_color || '#d4a017'
-  const isFull = crew.member_count >= (crew.max_members || 40)
-  const isMyCrewCard = currentCrewId && String(crew.id) === String(currentCrewId)
+// ── TopCrewCard ───────────────────────────────────────────────────────────────
+function TopCrewCard({ crew, rank, index }) {
+  const [hov, setHov] = useState(false)
+  const navigate = useNavigate()
+  const isMock = String(crew.id).startsWith('m')
+  const c = crew.color || ACCENT
+  const rc = rank === 1 ? GOLD : rank === 2 ? '#c0c0c0' : '#cd7f32'
 
   return (
-    <motion.div
-      initial={{ opacity:0, y:16 }}
-      animate={{ opacity:1, y:0 }}
-      whileHover={{ y:-4, transition:{duration:.18} }}
-      style={{ position:'relative', background:'linear-gradient(145deg, rgba(12,8,3,.99) 0%, rgba(5,3,1,1) 100%)', border:`1px solid ${cc}28`, borderTop:`2px solid ${cc}66`, borderRadius:10, overflow:'hidden', display:'flex', flexDirection:'column' }}
-      onMouseEnter={e => e.currentTarget.style.boxShadow = `0 8px 40px ${cc}18, 0 0 0 1px ${cc}35`}
-      onMouseLeave={e => e.currentTarget.style.boxShadow = 'none'}
+    <div
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      style={{
+        background:`linear-gradient(135deg, ${c}1c 0%, rgba(14,14,16,0.92) 100%)`,
+        border:`1px solid ${hov ? c+'55' : c+'28'}`,
+        borderRadius:18,
+        padding: rank === 1 ? '28px 24px' : '22px 20px',
+        transition:'all 0.22s ease',
+        boxShadow: hov ? `0 12px 40px ${c}25` : rank === 1 ? `0 4px 24px ${c}12` : 'none',
+        animation:`fadeUp 0.5s ${index*0.1}s ease-out both`,
+        position:'relative',
+        cursor: isMock ? 'default' : 'pointer',
+      }}
+      onClick={() => !isMock && navigate(`/equipage/${crew.id}`)}
     >
-      {/* Top stripe glow */}
-      <div style={{ position:'absolute', top:0, left:0, right:0, height:60, background:`radial-gradient(ellipse 60% 100% at 50% 0%, ${cc}16, transparent)`, pointerEvents:'none' }} />
-
-      {/* Rank badge */}
-      {crew.rank && crew.rank <= 3 && (
-        <div style={{ position:'absolute', top:12, right:12, fontSize:18 }}>
-          {['🥇','🥈','🥉'][crew.rank-1]}
-        </div>
-      )}
-      {isMyCrewCard && (
-        <div style={{ position:'absolute', top:12, left:12, fontSize:9, fontWeight:900, letterSpacing:'.1em', textTransform:'uppercase', color:'#34d399', background:'rgba(52,211,153,.12)', border:'1px solid rgba(52,211,153,.3)', borderRadius:3, padding:'2px 7px' }}>MON ÉQUIPAGE</div>
-      )}
-      {crew.is_mock && (
-        <div style={{ position:'absolute', top:12, left:12, fontSize:9, fontWeight:900, letterSpacing:'.1em', textTransform:'uppercase', color:'rgba(180,150,100,.4)', background:'rgba(180,130,30,.08)', border:'1px solid rgba(180,130,30,.15)', borderRadius:3, padding:'2px 7px' }}>DÉMO</div>
-      )}
-
-      <div style={{ padding:'18px 18px 14px' }}>
-        {/* Header */}
-        <div style={{ display:'flex', alignItems:'flex-start', gap:14, marginBottom:14 }}>
-          <div style={{ width:52, height:52, borderRadius:8, background:`${cc}14`, border:`1px solid ${cc}35`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:26, flexShrink:0, boxShadow:`inset 0 0 20px ${cc}10` }}>
-            {crew.emblem_emoji || '🏴‍☠️'}
+      <div style={{ position:'absolute', top:0, left:0, right:0, height:3, background:`linear-gradient(90deg, ${c}, transparent)`, borderRadius:'18px 18px 0 0' }} />
+      <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:16 }}>
+        <div style={{ fontSize: rank===1 ? 38 : 30, filter:`drop-shadow(0 0 12px ${c}60)`, lineHeight:1, flexShrink:0 }}>{crew.emoji}</div>
+        <div style={{ flex:1 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:5 }}>
+            <span style={{ fontFamily:'var(--display)', fontSize: rank===1?13:11, fontWeight:900, color:rc }}>#{rank}</span>
+            <span style={{ fontWeight:800, fontSize: rank===1?17:14, color:'#fff' }}>{crew.name}</span>
           </div>
-          <div style={{ flex:1, minWidth:0 }}>
-            <div style={{ fontFamily:'Pirata One, cursive', fontSize:17, color:'rgba(232,215,175,.95)', lineHeight:1.15, marginBottom:3, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{crew.name}</div>
-            <div style={{ fontSize:10, color:'rgba(180,150,100,.5)', fontWeight:700, letterSpacing:'.12em', marginBottom:5 }}>[{crew.tag}]</div>
-            {crew.motto && <div style={{ fontSize:11, color:`${cc}80`, fontStyle:'italic', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>« {crew.motto} »</div>}
-          </div>
+          <div style={{ fontSize:11, color:`${c}cc`, fontWeight:600 }}>Cap. {crew.captain_name || '—'}</div>
         </div>
-
-        {/* Stats row */}
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:6, marginBottom:12 }}>
-          {[
-            { icon:'⚔️', label:'Membres', value:`${crew.member_count || 0}/${crew.max_members || '∞'}` },
-            { icon:'💰', label:'Prime',   value: fmtB(crew.total_bounty) + ' ฿' },
-            { icon:'⭐', label:'Niveau',  value: `Niv. ${crew.level || 1}` },
-          ].map(s => (
-            <div key={s.label} style={{ background:'rgba(0,0,0,.35)', border:'1px solid rgba(180,130,30,.1)', borderRadius:5, padding:'7px 8px', textAlign:'center' }}>
-              <div style={{ fontSize:13, marginBottom:2 }}>{s.icon}</div>
-              <div style={{ fontSize:12, fontWeight:900, color:s.label==='Prime'?cc:'rgba(220,195,145,.85)', fontFamily:s.label==='Prime'?'Pirata One, cursive':'inherit', lineHeight:1 }}>{s.value}</div>
-              <div style={{ fontSize:8.5, color:'rgba(180,150,100,.38)', textTransform:'uppercase', letterSpacing:'.08em', marginTop:2 }}>{s.label}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* Captain */}
-        <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:10 }}>
-          <span style={{ fontSize:10, color:'rgba(180,150,100,.45)', fontWeight:700, letterSpacing:'.08em', textTransform:'uppercase' }}>Capitaine :</span>
-          <span style={{ fontSize:12, fontWeight:800, color:'rgba(220,195,145,.8)', fontFamily:'Pirata One, cursive' }}>{crew.captain_name || '—'}</span>
-        </div>
-
-        {/* Tags row */}
-        <div style={{ display:'flex', flexWrap:'wrap', gap:5, marginBottom:12, minHeight:18 }}>
-          <RecruitBadge open={crew.is_recruiting && !isFull} />
-          {(crew.styles || []).map(t => <StyleTag key={t} tag={t} />)}
-          {crew.wins > 0 && <span style={{ display:'inline-flex', alignItems:'center', gap:3, padding:'2px 7px', background:'rgba(251,191,36,.08)', border:'1px solid rgba(251,191,36,.2)', borderRadius:3, fontSize:9, fontWeight:800, color:'#fbbf24', letterSpacing:'.06em' }}>🏆 {crew.wins}v</span>}
-        </div>
-
-        {/* Description */}
-        {crew.description && (
-          <div style={{ fontSize:11.5, color:'rgba(200,175,130,.5)', lineHeight:1.6, marginBottom:14, display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical', overflow:'hidden' }}>
-            {crew.description}
-          </div>
-        )}
       </div>
-
-      {/* CTA buttons */}
-      <div style={{ marginTop:'auto', padding:'0 14px 14px', display:'flex', gap:8 }}>
-        <button onClick={() => onView(crew)}
-          style={{ flex:1, padding:'9px 10px', background:'rgba(0,0,0,.4)', border:'1px solid rgba(180,130,30,.25)', borderRadius:5, color:'rgba(200,175,130,.65)', fontSize:11, fontWeight:700, cursor:'pointer', letterSpacing:'.04em', transition:'all .15s' }}
-          onMouseEnter={e => { e.currentTarget.style.background='rgba(180,130,20,.12)'; e.currentTarget.style.color='rgba(220,195,145,.9)' }}
-          onMouseLeave={e => { e.currentTarget.style.background='rgba(0,0,0,.4)'; e.currentTarget.style.color='rgba(200,175,130,.65)' }}>
-          ⚓ Voir le QG
-        </button>
-        {crew.is_recruiting && !isFull && (
-          <button onClick={() => onApply(crew)}
-            style={{ flex:1, padding:'9px 10px', background:`${cc}14`, border:`1px solid ${cc}40`, borderRadius:5, color:cc, fontSize:11, fontWeight:800, cursor:'pointer', letterSpacing:'.04em', transition:'all .15s' }}
-            onMouseEnter={e => { e.currentTarget.style.background=`${cc}28` }}
-            onMouseLeave={e => { e.currentTarget.style.background=`${cc}14` }}>
-            📋 Candidater
-          </button>
-        )}
+      <div style={{ display:'flex', gap:20 }}>
+        <div>
+          <div style={{ fontFamily:'var(--display)', fontSize: rank===1?22:18, fontWeight:900, color:GOLD, lineHeight:1 }}>{fmtB(crew.total_bounty)} B</div>
+          <div style={{ fontSize:9.5, color:'rgba(255,255,255,0.32)', textTransform:'uppercase', letterSpacing:'0.08em', marginTop:3 }}>Prime totale</div>
+        </div>
+        <div>
+          <div style={{ fontFamily:'var(--display)', fontSize: rank===1?22:18, fontWeight:900, color:'rgba(255,255,255,0.78)', lineHeight:1 }}>{crew.member_count||0}</div>
+          <div style={{ fontSize:9.5, color:'rgba(255,255,255,0.32)', textTransform:'uppercase', letterSpacing:'0.08em', marginTop:3 }}>Membres</div>
+        </div>
       </div>
-    </motion.div>
-  )
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// TOP PODIUM
-// ─────────────────────────────────────────────────────────────────────────────
-function TopPodium({ crews }) {
-  const top3 = [...crews].sort((a,b) => (b.total_bounty||0)-(a.total_bounty||0)).slice(0,3)
-  if (top3.length < 1) return null
-  const order = [top3[1], top3[0], top3[2]].filter(Boolean)
-  const heights = [130, 175, 105]
-  const medals = ['🥈','🥇','🥉']
-  const colors = ['#c0c0c0', '#d4a017', '#cd7f32']
-  const ranks = [2, 1, 3]
-
-  return (
-    <div style={{ display:'flex', alignItems:'flex-end', justifyContent:'center', gap:16, padding:'0 20px 20px' }}>
-      {order.map((crew, i) => {
-        const cc = crew.primary_color || colors[i]
-        return (
-          <motion.div key={crew.id} initial={{ opacity:0, y:30 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }}
-            transition={{ delay: i * 0.12, duration:.5, ease:[.22,1,.36,1] }}
-            style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:8, flex: i===1 ? '0 0 200px' : '0 0 160px' }}>
-            <div style={{ fontSize: i===1?32:24 }}>{medals[i]}</div>
-            <div style={{ width:i===1?68:52, height:i===1?68:52, borderRadius:8, background:`${cc}14`, border:`2px solid ${cc}60`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:i===1?30:22, boxShadow:`0 4px 20px ${cc}30` }}>
-              {crew.emblem_emoji || '🏴‍☠️'}
-            </div>
-            <div style={{ textAlign:'center' }}>
-              <div style={{ fontFamily:'Pirata One, cursive', fontSize:i===1?16:13, color:'rgba(232,215,175,.93)', lineHeight:1.2, marginBottom:3 }}>{crew.name}</div>
-              <div style={{ fontSize:10, color:`${colors[i]}`, fontFamily:'Pirata One, cursive', fontWeight:900 }}>{fmtB(crew.total_bounty)} ฿</div>
-              <div style={{ fontSize:9, color:'rgba(180,150,100,.4)', marginTop:3 }}>👥 {crew.member_count} membres</div>
-            </div>
-            <div style={{ width:'100%', height:heights[i], background:`linear-gradient(180deg, ${cc}20, ${cc}08)`, border:`1px solid ${cc}28`, borderRadius:'6px 6px 0 0', minWidth:'100%', display:'flex', alignItems:'flex-start', justifyContent:'center', paddingTop:10 }}>
-              <span style={{ fontFamily:'Pirata One, cursive', fontSize:28, color:`${cc}40` }}>#{ranks[i]}</span>
-            </div>
-          </motion.div>
-        )
-      })}
     </div>
   )
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// MARITIME MAP SECTION
-// ─────────────────────────────────────────────────────────────────────────────
-function MaritimeMapSection({ crews }) {
-  const zones = [
-    { name:'East Blue',       color:'#3b82f6', x:'15%', y:'30%', crew: crews[5] },
-    { name:'Grand Line',      color:'#d4a017', x:'50%', y:'25%', crew: crews[2] },
-    { name:'Nouveau Monde',   color:'#dc2626', x:'75%', y:'30%', crew: crews[0] },
-    { name:'South Blue',      color:'#7c3aed', x:'20%', y:'65%', crew: crews[1] },
-    { name:'North Blue',      color:'#06b6d4', x:'80%', y:'65%', crew: crews[4] },
-    { name:'Mer de l\'Ouest', color:'#f97316', x:'50%', y:'70%', crew: crews[3] },
-  ]
-  const [hovered, setHovered] = useState(null)
+// ── MyCrewPanel ───────────────────────────────────────────────────────────────
+function MyCrewPanel({ membership, crewData, isAuthenticated, onCreate, onFind }) {
+  const navigate = useNavigate()
+  if (!isAuthenticated) return null
 
-  return (
-    <div style={{ position:'relative', height:360, background:'linear-gradient(135deg, #020c18 0%, #04152a 50%, #020c18 100%)', borderRadius:12, border:'1px solid rgba(180,130,30,.18)', overflow:'hidden' }}>
-      {/* Grid lines */}
-      {[...Array(8)].map((_,i) => (
-        <div key={i} style={{ position:'absolute', left:`${i*14}%`, top:0, bottom:0, width:1, background:'rgba(180,130,30,.05)' }} />
-      ))}
-      {[...Array(5)].map((_,i) => (
-        <div key={i} style={{ position:'absolute', top:`${i*25}%`, left:0, right:0, height:1, background:'rgba(180,130,30,.05)' }} />
-      ))}
-
-      {/* Title */}
-      <div style={{ position:'absolute', top:16, left:20, zIndex:2 }}>
-        <div style={{ fontSize:9, fontWeight:900, letterSpacing:'.18em', textTransform:'uppercase', color:'rgba(180,130,30,.5)', marginBottom:4 }}>GRAND LINE · CARTE DES MERS</div>
-        <div style={{ fontFamily:'Pirata One, cursive', fontSize:18, color:'rgba(220,195,145,.6)' }}>Territoires des Équipages</div>
-      </div>
-
-      {/* Coming soon overlay */}
-      <div style={{ position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', zIndex:10, background:'rgba(2,4,10,.75)', backdropFilter:'blur(2px)' }}>
-        <div style={{ fontSize:52, marginBottom:14 }}>🗺️</div>
-        <div style={{ fontFamily:'Pirata One, cursive', fontSize:24, color:'rgba(220,195,145,.8)', marginBottom:8 }}>Carte des Territoires</div>
-        <div style={{ fontSize:13, color:'rgba(180,150,100,.45)', textAlign:'center', maxWidth:360, lineHeight:1.7, marginBottom:20 }}>
-          Les équipages pourront bientôt revendiquer des zones, déclarer des guerres
-          <br />et établir leur dominance sur les sept mers.
+  if (membership && crewData) {
+    const c = crewData.color || ACCENT
+    return (
+      <div style={{ background:`linear-gradient(145deg, ${c}16 0%, rgba(14,14,16,0.92) 100%)`, border:`1px solid ${c}30`, borderRadius:16, padding:'20px 24px', display:'flex', alignItems:'center', gap:20, flexWrap:'wrap', marginBottom:48 }}>
+        <div style={{ fontSize:44, lineHeight:1 }}>{crewData.emoji||'⚓'}</div>
+        <div style={{ flex:1, minWidth:180 }}>
+          <div style={{ fontSize:11, color:c, fontWeight:700, letterSpacing:'0.1em', textTransform:'uppercase', marginBottom:4 }}>Mon équipage</div>
+          <div style={{ fontWeight:800, fontSize:18, color:'#fff', marginBottom:4 }}>{crewData.name}</div>
+          <div style={{ fontSize:12, color:'rgba(255,255,255,0.48)' }}>Rang : <span style={{ color:'rgba(255,255,255,0.78)', fontWeight:600 }}>{membership.position||'Mousse'}</span></div>
         </div>
-        <span style={{ padding:'6px 18px', background:'rgba(180,130,20,.15)', border:'1px solid rgba(180,130,30,.35)', borderRadius:100, fontSize:11, fontWeight:800, color:'#d4a017', letterSpacing:'.1em', textTransform:'uppercase' }}>
-          🔒 Bientôt disponible
-        </span>
+        <button onClick={() => navigate(`/equipage/${membership.crew_id}`)} style={{ padding:'10px 22px', borderRadius:10, background:`${c}1c`, border:`1px solid ${c}50`, color:c, fontWeight:700, fontSize:13, cursor:'pointer', transition:'all 0.15s' }}
+          onMouseEnter={e => e.currentTarget.style.background=`${c}34`}
+          onMouseLeave={e => e.currentTarget.style.background=`${c}1c`}
+        >Voir le QG →</button>
       </div>
-
-      {/* Zone markers (decorative, behind overlay) */}
-      {zones.map((z,i) => (
-        <div key={i} style={{ position:'absolute', left:z.x, top:z.y, transform:'translate(-50%,-50%)' }}>
-          <div style={{ width:10, height:10, borderRadius:'50%', background:z.color, boxShadow:`0 0 12px ${z.color}80` }} />
-        </div>
-      ))}
-
-      {/* Compass */}
-      <div style={{ position:'absolute', bottom:20, right:24, fontSize:36, opacity:.25 }}>🧭</div>
-    </div>
-  )
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// HOW IT WORKS
-// ─────────────────────────────────────────────────────────────────────────────
-function HowItWorks() {
-  return (
-    <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))', gap:14 }}>
-      {HOW_IT_WORKS.map((step, i) => (
-        <motion.div key={i} initial={{ opacity:0, y:20 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }}
-          transition={{ delay: i*0.08, duration:.45 }}
-          whileHover={{ y:-3 }}
-          style={{ background:'linear-gradient(145deg, rgba(12,8,3,.98) 0%, rgba(6,4,2,1) 100%)', border:'1px solid rgba(180,130,30,.18)', borderRadius:8, padding:'20px 16px', textAlign:'center' }}>
-          <div style={{ fontSize:32, marginBottom:12 }}>{step.icon}</div>
-          <div style={{ fontFamily:'Pirata One, cursive', fontSize:15, color:'rgba(232,215,175,.9)', marginBottom:8, lineHeight:1.2 }}>{step.title}</div>
-          <div style={{ fontSize:12, color:'rgba(180,150,100,.5)', lineHeight:1.6 }}>{step.text}</div>
-          <div style={{ marginTop:12, width:32, height:2, background:'linear-gradient(90deg,transparent,rgba(180,130,30,.4),transparent)', margin:'12px auto 0' }} />
-          <div style={{ fontSize:10, color:'rgba(180,130,30,.35)', fontWeight:700, letterSpacing:'.1em', marginTop:6 }}>ÉTAPE {i+1}</div>
-        </motion.div>
-      ))}
-    </div>
-  )
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ROADMAP
-// ─────────────────────────────────────────────────────────────────────────────
-function RoadmapSection() {
-  return (
-    <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(170px,1fr))', gap:10 }}>
-      {ROADMAP.map((item, i) => (
-        <motion.div key={i} initial={{ opacity:0, scale:.95 }} whileInView={{ opacity:1, scale:1 }} viewport={{ once:true }}
-          transition={{ delay: i*0.06 }}
-          style={{ background:'linear-gradient(145deg, rgba(12,8,3,.98), rgba(6,4,2,1))', border:`1px solid ${item.status==='beta' ? 'rgba(52,211,153,.25)' : 'rgba(180,130,30,.15)'}`, borderRadius:8, padding:'16px', display:'flex', alignItems:'center', gap:12, opacity: item.status==='soon' ? .7 : 1 }}>
-          <div style={{ fontSize:24, lineHeight:1 }}>{item.icon}</div>
-          <div>
-            <div style={{ fontSize:12, fontWeight:700, color:'rgba(220,195,145,.8)', lineHeight:1.3 }}>{item.label}</div>
-            <div style={{ marginTop:4, display:'inline-flex', alignItems:'center', gap:4, padding:'1px 7px', background: item.status==='beta' ? 'rgba(52,211,153,.1)' : 'rgba(180,130,30,.1)', border:`1px solid ${item.status==='beta' ? 'rgba(52,211,153,.25)' : 'rgba(180,130,30,.2)'}`, borderRadius:3, fontSize:8.5, fontWeight:800, color:item.status==='beta'?'#34d399':'rgba(180,130,30,.7)', letterSpacing:'.08em', textTransform:'uppercase' }}>
-              {item.status==='beta' ? '🟢 EN BETA' : '🔒 BIENTÔT'}
-            </div>
-          </div>
-        </motion.div>
-      ))}
-    </div>
-  )
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// CREATE CREW MODAL
-// ─────────────────────────────────────────────────────────────────────────────
-const EMOJIS = ['🏴‍☠️','🐉','👑','🌑','🌀','⚓','🎯','🔥','⚡','🌊','🦅','🐺','🦁','🗡️','💀','🌙','☠️','🌋','🏹','🗺️']
-const COLORS_PRESETS = ['#d4a017','#c41c1c','#7c3aed','#06b6d4','#f97316','#374151','#34d399','#ec4899','#3b82f6','#10b981']
-
-function CreateCrewModal({ onClose, onDone, discordId, displayName }) {
-  const [form, setForm] = useState({ name:'', tag:'', motto:'', description:'', emblem_emoji:'🏴‍☠️', primary_color:'#d4a017', is_recruiting:true, styles:[] })
-  const [busy, setBusy] = useState(false)
-  const [err, setErr] = useState(null)
-
-  const suggestTag = (name) => name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,4) || ''
-
-  async function handleCreate() {
-    if (!form.name.trim()) return setErr('Le nom de l\'équipage est obligatoire.')
-    if (form.name.trim().length < 3) return setErr('Le nom doit faire au moins 3 caractères.')
-    if (!supabase) return setErr('Non connecté à la base de données.')
-    setBusy(true)
-    const tag = (form.tag || suggestTag(form.name)).toUpperCase().slice(0,5)
-
-    const { data: crew, error } = await supabase.from('crews').insert({
-      name: form.name.trim(), tag, motto: form.motto.trim(),
-      description: form.description.trim(),
-      emblem_emoji: form.emblem_emoji,
-      primary_color: form.primary_color,
-      captain_id: discordId,
-      is_recruiting: form.is_recruiting,
-      level:1, xp:0, total_bounty:0, reputation:0, wins:0,
-      treasury_balance:0,
-    }).select().single()
-
-    if (error) { setBusy(false); return setErr(error.message) }
-
-    await supabase.from('crew_members').upsert({
-      crew_id: crew.id, user_id: discordId, position:'capitaine',
-      contribution:0, joined_at: new Date().toISOString(),
-    })
-
-    setBusy(false)
-    onDone(crew)
+    )
   }
 
-  const F = ({ label, field, type='text', placeholder, rows }) => (
-    <div style={{ marginBottom:14 }}>
-      <label style={{ display:'block', fontSize:10, fontWeight:800, letterSpacing:'.1em', textTransform:'uppercase', color:'rgba(200,175,130,.55)', marginBottom:6 }}>{label}</label>
-      {rows ? (
-        <textarea rows={rows} value={form[field]} onChange={e => setForm(v=>({...v,[field]:e.target.value}))} placeholder={placeholder}
-          style={{ width:'100%', padding:'10px 12px', background:'rgba(0,0,0,.5)', border:'1px solid rgba(180,130,30,.22)', borderRadius:5, color:'rgba(220,195,145,.9)', fontSize:13, resize:'vertical', outline:'none', boxSizing:'border-box', fontFamily:'inherit' }} />
-      ) : (
-        <input type={type} value={form[field]} onChange={e => setForm(v=>({...v,[field]:e.target.value}))} placeholder={placeholder}
-          style={{ width:'100%', padding:'10px 12px', background:'rgba(0,0,0,.5)', border:'1px solid rgba(180,130,30,.22)', borderRadius:5, color:'rgba(220,195,145,.9)', fontSize:13, outline:'none', boxSizing:'border-box' }} />
-      )}
+  return (
+    <div style={{ background:'linear-gradient(135deg, rgba(224,82,74,0.06) 0%, rgba(14,14,16,0.9) 100%)', border:'1px solid rgba(224,82,74,0.16)', borderRadius:16, padding:'28px 32px', display:'flex', alignItems:'center', gap:24, flexWrap:'wrap', marginBottom:48 }}>
+      <div style={{ fontSize:44, lineHeight:1, opacity:0.55 }}>🏴‍☠️</div>
+      <div style={{ flex:1, minWidth:180 }}>
+        <div style={{ fontWeight:800, fontSize:16, color:'#fff', marginBottom:8 }}>Aucun pavillon ne flotte encore sous ton nom</div>
+        <p style={{ fontSize:13, color:'rgba(255,255,255,0.42)', margin:0, lineHeight:1.6 }}>Crée ton propre équipage ou rejoins une flotte pour commencer ta conquête.</p>
+      </div>
+      <div style={{ display:'flex', gap:10, flexWrap:'wrap' }}>
+        <button onClick={onCreate} style={{ padding:'10px 20px', borderRadius:10, fontWeight:700, fontSize:13, cursor:'pointer', background:'rgba(224,82,74,0.14)', border:'1px solid rgba(224,82,74,0.38)', color:ACCENT, transition:'all 0.15s' }}
+          onMouseEnter={e => e.currentTarget.style.background='rgba(224,82,74,0.26)'}
+          onMouseLeave={e => e.currentTarget.style.background='rgba(224,82,74,0.14)'}
+        >⚔️ Créer mon équipage</button>
+        <button onClick={onFind} style={{ padding:'10px 20px', borderRadius:10, fontWeight:700, fontSize:13, cursor:'pointer', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.10)', color:'rgba(255,255,255,0.55)', transition:'all 0.15s' }}
+          onMouseEnter={e => { e.currentTarget.style.color='#fff'; e.currentTarget.style.background='rgba(255,255,255,0.09)' }}
+          onMouseLeave={e => { e.currentTarget.style.color='rgba(255,255,255,0.55)'; e.currentTarget.style.background='rgba(255,255,255,0.04)' }}
+        >🔍 Trouver un équipage</button>
+      </div>
     </div>
   )
+}
+
+// ── ApplyModal ────────────────────────────────────────────────────────────────
+function ApplyModal({ crew, onClose, onSubmit }) {
+  const [msg,       setMsg]       = useState('')
+  const [specialty, setSpecialty] = useState('')
+  const [loading,   setLoading]   = useState(false)
+  const c = crew.color || ACCENT
+
+  async function submit() {
+    setLoading(true)
+    await onSubmit({ message:msg, specialty })
+    setLoading(false)
+    onClose()
+  }
 
   return (
-    <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
-      style={{ position:'fixed', inset:0, zIndex:9200, background:'rgba(0,0,0,.92)', backdropFilter:'blur(10px)', display:'flex', alignItems:'center', justifyContent:'center', padding:20, overflowY:'auto' }}
-      onClick={onClose}>
-      <motion.div initial={{ scale:.9, y:20 }} animate={{ scale:1, y:0 }} exit={{ scale:.9 }}
-        onClick={e => e.stopPropagation()}
-        style={{ width:'min(560px,100%)', background:'#120a03', border:'1px solid rgba(180,130,30,.35)', borderTop:'2px solid rgba(212,160,23,.5)', borderRadius:10, padding:'28px', boxShadow:'0 40px 100px rgba(0,0,0,.9)', maxHeight:'90vh', overflowY:'auto' }}>
+    <div style={{ position:'fixed', inset:0, zIndex:9200, background:'rgba(0,0,0,0.86)', backdropFilter:'blur(10px)', display:'flex', alignItems:'center', justifyContent:'center', padding:20 }} onClick={onClose}>
+      <div style={{ width:'min(500px,100%)', background:'#0e0f11', border:`1px solid ${c}40`, borderTop:`2px solid ${c}`, borderRadius:16, padding:28 }} onClick={e => e.stopPropagation()}>
+        <div style={{ fontFamily:'var(--display)', fontSize:22, color:'#fff', marginBottom:4 }}>{crew.emoji} Candidater à {crew.name}</div>
+        <div style={{ fontSize:12, color:'rgba(255,255,255,0.38)', marginBottom:20 }}>Présente-toi — le capitaine examinera ta candidature.</div>
+        <textarea placeholder="Message de candidature..." value={msg} onChange={e => setMsg(e.target.value)}
+          style={{ width:'100%', minHeight:90, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:10, color:'#fff', fontSize:13, padding:'10px 12px', boxSizing:'border-box', resize:'vertical', outline:'none', fontFamily:'var(--body)', marginBottom:12 }} />
+        <input placeholder="Spécialité (quiz, vocal…)" value={specialty} onChange={e => setSpecialty(e.target.value)}
+          style={{ width:'100%', height:42, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:10, color:'#fff', fontSize:13, padding:'0 14px', boxSizing:'border-box', outline:'none', fontFamily:'var(--body)', marginBottom:20 }} />
+        <div style={{ display:'flex', gap:10, justifyContent:'flex-end' }}>
+          <button onClick={onClose} style={{ padding:'9px 18px', borderRadius:9, border:'1px solid rgba(255,255,255,0.1)', background:'none', color:'rgba(255,255,255,0.45)', cursor:'pointer', fontWeight:700, fontSize:13 }}>Annuler</button>
+          <button onClick={submit} disabled={loading || !msg.trim()} style={{ padding:'9px 20px', borderRadius:9, border:`1px solid ${c}50`, background:`${c}1c`, color:c, cursor:'pointer', fontWeight:700, fontSize:13, opacity: loading || !msg.trim() ? 0.5 : 1 }}>
+            {loading ? 'Envoi…' : 'Candidater'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
 
-        <div style={{ fontFamily:'Pirata One, cursive', fontSize:26, color:'rgba(232,215,175,.95)', marginBottom:4 }}>⚓ Lever son pavillon</div>
-        <div style={{ fontSize:12, color:'rgba(180,150,100,.45)', marginBottom:22 }}>Crée ton équipage et commence ta conquête des sept mers.</div>
+// ── CreateCrewModal ───────────────────────────────────────────────────────────
+function CreateCrewModal({ onClose, onCreate }) {
+  const [name,       setName]       = useState('')
+  const [tag,        setTag]        = useState('')
+  const [desc,       setDesc]       = useState('')
+  const [emoji,      setEmoji]      = useState('⚓')
+  const [color,      setColor]      = useState(ACCENT)
+  const [recruiting, setRecruiting] = useState(true)
+  const [loading,    setLoading]    = useState(false)
 
-        {err && <div style={{ marginBottom:14, padding:'10px 14px', background:'rgba(224,82,74,.1)', border:'1px solid rgba(224,82,74,.3)', borderRadius:5, fontSize:12, color:'#f87171', fontWeight:600 }}>⚠ {err}</div>}
+  const EMOJIS = ['⚓','🐉','🌑','🔥','⚡','🌊','🎯','💀','🐺','⚔️','🌸','💥','🔮','🦅','🛡️','🌹','🦁','💎']
+  const COLORS = [ACCENT,'#8b5cf6','#0984e3',GOLD,'#06b6d4','#10b981','#f97316','#ec4899','#6c5ce7','#d4a017']
 
-        <div style={{ display:'grid', gridTemplateColumns:'1fr auto', gap:10, marginBottom:14 }}>
+  async function submit() {
+    if (!name.trim()) return
+    setLoading(true)
+    await onCreate({ name:name.trim(), tag:tag.trim() || name.trim().slice(0,3).toUpperCase(), description:desc, emoji, color, recruiting })
+    setLoading(false)
+  }
+
+  return (
+    <div style={{ position:'fixed', inset:0, zIndex:9200, background:'rgba(0,0,0,0.9)', backdropFilter:'blur(10px)', display:'flex', alignItems:'center', justifyContent:'center', padding:20, overflowY:'auto' }} onClick={onClose}>
+      <div style={{ width:'min(520px,100%)', background:'#0e0f11', border:'1px solid rgba(224,82,74,0.28)', borderTop:'2px solid #e0524a', borderRadius:16, padding:28, margin:'auto' }} onClick={e => e.stopPropagation()}>
+        <div style={{ fontFamily:'var(--display)', fontSize:22, color:'#fff', marginBottom:4 }}>⚓ Lever son pavillon</div>
+        <div style={{ fontSize:12, color:'rgba(255,255,255,0.38)', marginBottom:24 }}>Crée ton équipage et impose ton nom dans le Grand Line.</div>
+
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginBottom:14 }}>
           <div>
-            <label style={{ display:'block', fontSize:10, fontWeight:800, letterSpacing:'.1em', textTransform:'uppercase', color:'rgba(200,175,130,.55)', marginBottom:6 }}>Nom de l'équipage *</label>
-            <input value={form.name} onChange={e => setForm(v=>({...v, name:e.target.value, tag: suggestTag(e.target.value)}))} placeholder="Ex : Les Dragons du Nouveau Monde"
-              style={{ width:'100%', padding:'10px 12px', background:'rgba(0,0,0,.5)', border:'1px solid rgba(180,130,30,.22)', borderRadius:5, color:'rgba(220,195,145,.9)', fontSize:13, outline:'none', boxSizing:'border-box' }} />
+            <label style={{ fontSize:11, color:'rgba(255,255,255,0.42)', fontWeight:700, letterSpacing:'0.08em', display:'block', marginBottom:6 }}>NOM</label>
+            <input value={name} onChange={e => { setName(e.target.value); if (!tag) setTag(e.target.value.slice(0,3).toUpperCase()) }}
+              placeholder="Les Dragons Rouges…"
+              style={{ width:'100%', height:42, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:9, color:'#fff', fontSize:13, padding:'0 12px', boxSizing:'border-box', outline:'none', fontFamily:'var(--body)' }} />
           </div>
-          <div style={{ width:90 }}>
-            <label style={{ display:'block', fontSize:10, fontWeight:800, letterSpacing:'.1em', textTransform:'uppercase', color:'rgba(200,175,130,.55)', marginBottom:6 }}>Tag</label>
-            <input value={form.tag} maxLength={5} onChange={e => setForm(v=>({...v, tag:e.target.value.toUpperCase()}))} placeholder="DR"
-              style={{ width:'100%', padding:'10px 12px', background:'rgba(0,0,0,.5)', border:'1px solid rgba(180,130,30,.22)', borderRadius:5, color:'rgba(220,195,145,.9)', fontSize:13, outline:'none', boxSizing:'border-box', textAlign:'center', fontWeight:800, letterSpacing:'.08em' }} />
+          <div>
+            <label style={{ fontSize:11, color:'rgba(255,255,255,0.42)', fontWeight:700, letterSpacing:'0.08em', display:'block', marginBottom:6 }}>TAG (2-4)</label>
+            <input value={tag} onChange={e => setTag(e.target.value.toUpperCase().slice(0,4))}
+              placeholder="DR"
+              style={{ width:'100%', height:42, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:9, color:'#fff', fontSize:13, padding:'0 12px', boxSizing:'border-box', outline:'none', fontFamily:'var(--body)' }} />
           </div>
         </div>
 
-        <F label="Devise" field="motto" placeholder="Ex : Le feu ne meurt jamais." />
-        <F label="Description" field="description" rows={3} placeholder="Décris ton équipage..." />
-
-        {/* Emoji picker */}
         <div style={{ marginBottom:14 }}>
-          <label style={{ display:'block', fontSize:10, fontWeight:800, letterSpacing:'.1em', textTransform:'uppercase', color:'rgba(200,175,130,.55)', marginBottom:8 }}>Emblème</label>
+          <label style={{ fontSize:11, color:'rgba(255,255,255,0.42)', fontWeight:700, letterSpacing:'0.08em', display:'block', marginBottom:6 }}>DESCRIPTION</label>
+          <textarea value={desc} onChange={e => setDesc(e.target.value)} placeholder="Présente ton équipage en quelques mots…"
+            style={{ width:'100%', minHeight:66, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:9, color:'#fff', fontSize:13, padding:'10px 12px', boxSizing:'border-box', resize:'none', outline:'none', fontFamily:'var(--body)' }} />
+        </div>
+
+        <div style={{ marginBottom:14 }}>
+          <label style={{ fontSize:11, color:'rgba(255,255,255,0.42)', fontWeight:700, letterSpacing:'0.08em', display:'block', marginBottom:8 }}>EMBLÈME</label>
           <div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>
             {EMOJIS.map(e => (
-              <button key={e} onClick={() => setForm(v=>({...v, emblem_emoji:e}))}
-                style={{ width:36, height:36, borderRadius:6, background: form.emblem_emoji===e ? 'rgba(212,160,23,.2)' : 'rgba(0,0,0,.4)', border:`1px solid ${form.emblem_emoji===e ? 'rgba(212,160,23,.6)' : 'rgba(180,130,30,.2)'}`, cursor:'pointer', fontSize:18, display:'flex', alignItems:'center', justifyContent:'center' }}>
-                {e}
-              </button>
+              <button key={e} onClick={() => setEmoji(e)} style={{ width:34, height:34, borderRadius:8, fontSize:17, background: emoji===e ? 'rgba(224,82,74,0.18)' : 'rgba(255,255,255,0.05)', border:`1px solid ${emoji===e ? 'rgba(224,82,74,0.5)' : 'rgba(255,255,255,0.1)'}`, cursor:'pointer', transition:'all 0.15s' }}>{e}</button>
             ))}
           </div>
         </div>
 
-        {/* Color picker */}
-        <div style={{ marginBottom:14 }}>
-          <label style={{ display:'block', fontSize:10, fontWeight:800, letterSpacing:'.1em', textTransform:'uppercase', color:'rgba(200,175,130,.55)', marginBottom:8 }}>Couleur principale</label>
-          <div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>
-            {COLORS_PRESETS.map(c => (
-              <button key={c} onClick={() => setForm(v=>({...v, primary_color:c}))}
-                style={{ width:28, height:28, borderRadius:'50%', background:c, border:`2px solid ${form.primary_color===c ? '#fff' : 'transparent'}`, cursor:'pointer', boxShadow: form.primary_color===c ? `0 0 10px ${c}` : 'none', transition:'all .15s' }} />
+        <div style={{ marginBottom:16 }}>
+          <label style={{ fontSize:11, color:'rgba(255,255,255,0.42)', fontWeight:700, letterSpacing:'0.08em', display:'block', marginBottom:8 }}>COULEUR</label>
+          <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+            {COLORS.map(col => (
+              <button key={col} onClick={() => setColor(col)} style={{ width:28, height:28, borderRadius:'50%', background:col, cursor:'pointer', border: color===col ? '3px solid #fff' : '2px solid transparent', transition:'all 0.15s', outline:'none' }} />
             ))}
-            <input type="color" value={form.primary_color} onChange={e => setForm(v=>({...v,primary_color:e.target.value}))}
-              style={{ width:28, height:28, border:'none', background:'none', cursor:'pointer', padding:0 }} title="Couleur personnalisée" />
           </div>
         </div>
 
-        {/* Styles */}
-        <div style={{ marginBottom:18 }}>
-          <label style={{ display:'block', fontSize:10, fontWeight:800, letterSpacing:'.1em', textTransform:'uppercase', color:'rgba(200,175,130,.55)', marginBottom:8 }}>Style de l'équipage</label>
-          <div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>
-            {Object.entries(STYLE_TAGS).map(([key,t]) => {
-              const active = form.styles.includes(key)
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:24 }}>
+          <span style={{ fontSize:13, color:'rgba(255,255,255,0.55)' }}>Recrutement ouvert</span>
+          <button onClick={() => setRecruiting(r => !r)} style={{ width:44, height:24, borderRadius:12, cursor:'pointer', background: recruiting ? 'rgba(52,211,153,0.28)' : 'rgba(255,255,255,0.08)', border:`1px solid ${recruiting ? 'rgba(52,211,153,0.45)' : 'rgba(255,255,255,0.12)'}`, position:'relative', transition:'all 0.2s', padding:0 }}>
+            <div style={{ position:'absolute', top:3, left: recruiting ? 22 : 3, width:16, height:16, borderRadius:'50%', background: recruiting ? '#34d399' : 'rgba(255,255,255,0.35)', transition:'left 0.2s' }} />
+          </button>
+        </div>
+
+        <div style={{ display:'flex', gap:10, justifyContent:'flex-end' }}>
+          <button onClick={onClose} style={{ padding:'9px 18px', borderRadius:9, border:'1px solid rgba(255,255,255,0.1)', background:'none', color:'rgba(255,255,255,0.45)', cursor:'pointer', fontWeight:700, fontSize:13 }}>Annuler</button>
+          <button onClick={submit} disabled={loading || !name.trim()} style={{ padding:'9px 22px', borderRadius:9, border:'1px solid rgba(224,82,74,0.4)', background:'rgba(224,82,74,0.15)', color:ACCENT, cursor:'pointer', fontWeight:700, fontSize:13, opacity: loading || !name.trim() ? 0.5 : 1 }}>
+            {loading ? 'Création…' : "⚓ Créer l'équipage"}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Main ConstellationPage ────────────────────────────────────────────────────
+export default function ConstellationPage() {
+  const navigate    = useNavigate()
+  const { isAuthenticated, discordId, userId } = useAuth()
+  const [crews,       setCrews]       = useState([])
+  const [membership,  setMembership]  = useState(null)
+  const [memberCrew,  setMemberCrew]  = useState(null)
+  const [loading,     setLoading]     = useState(true)
+  const [search,      setSearch]      = useState('')
+  const [filter,      setFilter]      = useState('Tous')
+  const [sort,        setSort]        = useState('bounty')
+  const [applyTarget, setApplyTarget] = useState(null)
+  const [showCreate,  setShowCreate]  = useState(false)
+  const [toast,       setToast]       = useState(null)
+  const [usingMock,   setUsingMock]   = useState(false)
+  const searchRef = useRef(null)
+  const gridRef   = useRef(null)
+  const uid = discordId || userId
+
+  useEffect(() => {
+    document.title = 'Équipages — Brams Community'
+    return () => { document.title = 'Brams Community' }
+  }, [])
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const [data, mem] = await Promise.all([
+          fetchCrews(),
+          uid ? getUserCrewMembership(uid) : Promise.resolve(null),
+        ])
+        if (data && data.length > 0) {
+          setCrews(data)
+        } else {
+          setCrews(MOCK_CREWS)
+          setUsingMock(true)
+        }
+        if (mem?.crew_id) {
+          setMembership(mem)
+          const cd = await fetchCrewById(mem.crew_id)
+          setMemberCrew(cd)
+        }
+      } catch {
+        setCrews(MOCK_CREWS)
+        setUsingMock(true)
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
+  }, [uid])
+
+  const filtered = useMemo(() => {
+    let r = [...crews]
+    if (filter === 'Recrute') r = r.filter(c => c.recruiting)
+    else if (filter !== 'Tous') r = r.filter(c => c.styles?.includes(filter.toLowerCase()))
+    if (search.trim()) {
+      const q = search.toLowerCase()
+      r = r.filter(c => c.name?.toLowerCase().includes(q) || c.captain_name?.toLowerCase().includes(q) || c.tag?.toLowerCase().includes(q))
+    }
+    r.sort((a, b) => {
+      if (sort === 'bounty')  return (b.total_bounty||0) - (a.total_bounty||0)
+      if (sort === 'members') return (b.member_count||0) - (a.member_count||0)
+      if (sort === 'level')   return (b.level||0) - (a.level||0)
+      if (sort === 'wins')    return (b.wins||0) - (a.wins||0)
+      return 0
+    })
+    return r
+  }, [crews, filter, search, sort])
+
+  const top3 = useMemo(() => [...crews].sort((a,b) => (b.total_bounty||0)-(a.total_bounty||0)).slice(0,3), [crews])
+
+  const nCrews     = useCountUp(crews.length,                                           1000, 300)
+  const nPirates   = useCountUp(crews.reduce((s,c) => s+(c.member_count||0), 0),       1400, 400)
+  const nBounty    = useCountUp(crews.reduce((s,c) => s+(c.total_bounty||0),  0),      1600, 350)
+  const nRecruit   = useCountUp(crews.filter(c => c.recruiting).length,                 800, 500)
+
+  async function handleCreate({ name, tag, description, emoji, color, recruiting }) {
+    if (!isAuthenticated) { showToast('Connecte-toi pour créer un équipage.', 'error'); return }
+    try {
+      const { data: crew, error } = await supabase
+        .from('crews')
+        .insert({ name, tag, description, emoji, color, recruiting, level:1, total_bounty:0, member_count:1 })
+        .select().single()
+      if (error) throw error
+      await supabase.from('crew_members').insert({ crew_id:crew.id, user_id:uid, position:'capitaine', contribution:0, joined_at:new Date().toISOString() })
+      showToast('Équipage créé ! Bienvenue capitaine.', 'success')
+      setShowCreate(false)
+      navigate(`/equipage/${crew.id}`)
+    } catch { showToast('Erreur lors de la création.', 'error') }
+  }
+
+  async function handleApply({ message, specialty }) {
+    if (!applyTarget) return
+    try {
+      await applyToCrew({ crewId:applyTarget.id, userId:uid, username:'', avatarUrl:'', message, specialty, previousCrew:'', acceptsRules:true, availability:'' })
+      showToast('Candidature envoyée !', 'success')
+    } catch { showToast("Erreur lors de l'envoi.", 'error') }
+  }
+
+  function showToast(msg, type = 'success') {
+    setToast({ msg, type })
+    setTimeout(() => setToast(null), 3000)
+  }
+
+  function scrollToGrid() {
+    gridRef.current?.scrollIntoView({ behavior:'smooth', block:'start' })
+  }
+
+  return (
+    <>
+      <style>{`
+        @keyframes fadeUp  { from { opacity:0; transform:translateY(20px) } to { opacity:1; transform:translateY(0) } }
+        @keyframes fadeIn  { from { opacity:0 } to { opacity:1 } }
+        @keyframes drift   { 0%,100%{transform:translate(0,0)} 33%{transform:translate(20px,-15px)} 66%{transform:translate(-10px,20px)} }
+        @keyframes vfade   { from { opacity:0 } to { opacity:0.18 } }
+      `}</style>
+
+      {/* ── Video background (from 26s) ─────────────────────────────────── */}
+      <video
+        style={{ position:'fixed', inset:0, width:'100%', height:'100%', objectFit:'cover', zIndex:0, pointerEvents:'none', opacity:0, animation:'vfade 2.5s 0.5s ease forwards' }}
+        autoPlay muted loop playsInline
+        onLoadedMetadata={e => { e.currentTarget.currentTime = 26 }}
+      >
+        <source src="/dear-sunrise.mp4" type="video/mp4" />
+      </video>
+      {/* Overlay over video */}
+      <div style={{ position:'fixed', inset:0, zIndex:1, pointerEvents:'none', background:'rgba(11,12,14,0.80)' }} />
+
+      {/* ── Toast ───────────────────────────────────────────────────────── */}
+      {toast && (
+        <div style={{ position:'fixed', bottom:32, right:24, zIndex:9999, padding:'12px 20px', borderRadius:12, fontWeight:700, fontSize:13, color:'#fff', background: toast.type==='success' ? 'rgba(52,211,153,0.16)' : 'rgba(224,82,74,0.16)', border:`1px solid ${toast.type==='success' ? 'rgba(52,211,153,0.45)' : 'rgba(224,82,74,0.45)'}`, backdropFilter:'blur(12px)', animation:'fadeUp 0.3s ease both' }}>
+          {toast.msg}
+        </div>
+      )}
+
+      <div style={{ position:'relative', zIndex:2 }}>
+
+        {/* ═══════════════════════════════ HERO ═══════════════════════════ */}
+        <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'80px 24px 48px', position:'relative', overflow:'hidden' }}>
+          {/* Ambient */}
+          <div style={{ position:'absolute', top:'10%', left:'8%', width:340, height:340, borderRadius:'50%', background:'radial-gradient(circle, rgba(224,82,74,0.12) 0%, transparent 70%)', pointerEvents:'none', animation:'drift 18s ease-in-out infinite' }} />
+          <div style={{ position:'absolute', bottom:'5%', right:'6%', width:280, height:280, borderRadius:'50%', background:'radial-gradient(circle, rgba(162,155,254,0.10) 0%, transparent 70%)', pointerEvents:'none', animation:'drift 24s 4s ease-in-out infinite reverse' }} />
+
+          {/* Eyebrow */}
+          <div style={{ fontSize:10, letterSpacing:'0.35em', fontWeight:800, color:ACCENT, marginBottom:22, textTransform:'uppercase', animation:'fadeUp 0.6s ease both' }}>
+            BRAMS — SYSTÈME D'ÉQUIPAGES
+          </div>
+
+          {/* Title */}
+          <h1 style={{ fontFamily:'var(--display)', fontWeight:900, textAlign:'center', fontSize:'clamp(56px,11vw,108px)', lineHeight:0.92, margin:'0 0 20px', background:`linear-gradient(140deg, #ffffff 0%, rgba(255,255,255,0.80) 45%, ${ACCENT} 100%)`, WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', backgroundClip:'text', animation:'fadeUp 0.75s 0.1s ease both' }}>
+            ⚓<br />Équipages
+          </h1>
+
+          {/* Subtitle */}
+          <p style={{ fontSize:17, color:'rgba(255,255,255,0.5)', textAlign:'center', maxWidth:500, lineHeight:1.65, margin:'0 0 44px', animation:'fadeUp 0.75s 0.2s ease both' }}>
+            Crée ton équipage, recrute tes membres, grimpe dans le classement et impose ton pavillon.
+          </p>
+
+          {/* Stats — même style Encyclopédie */}
+          {!loading && (
+            <div style={{ display:'flex', gap:48, justifyContent:'center', flexWrap:'wrap', marginBottom:48, animation:'fadeUp 0.75s 0.3s ease both' }}>
+              <StatPill value={nCrews}                   label="Équipages"    color={ACCENT}   />
+              <div style={{ width:1, background:'rgba(255,255,255,0.08)', alignSelf:'center', height:40 }} />
+              <StatPill value={nPirates}                 label="Pirates"      color={VIOLET}   />
+              <div style={{ width:1, background:'rgba(255,255,255,0.08)', alignSelf:'center', height:40 }} />
+              <StatPill value={`${fmtB(nBounty)} B`}    label="Prime totale" color={GOLD}     />
+              <div style={{ width:1, background:'rgba(255,255,255,0.08)', alignSelf:'center', height:40 }} />
+              <StatPill value={nRecruit}                 label="Recrutent"    color="#34d399"  />
+            </div>
+          )}
+
+          {/* Action buttons */}
+          <div style={{ display:'flex', gap:10, flexWrap:'wrap', justifyContent:'center', marginBottom:40, animation:'fadeUp 0.75s 0.35s ease both' }}>
+            {[
+              { label:'⚔️ Créer mon équipage', onClick:() => setShowCreate(true), accent:ACCENT, accentA:'rgba(224,82,74' },
+              { label:'🔍 Trouver un équipage', onClick:scrollToGrid,              accent:'rgba(255,255,255,0.65)', accentA:'rgba(255,255,255' },
+              { label:'🏆 Classement',          onClick:() => top3.length && gridRef.current?.scrollIntoView({behavior:'smooth'}), accent:VIOLET, accentA:'rgba(162,155,254' },
+            ].map(b => (
+              <button key={b.label} onClick={b.onClick} style={{ height:46, padding:'0 24px', borderRadius:12, background:`${b.accentA},0.10)`, border:`1px solid ${b.accentA},0.30)`, color:b.accent, fontSize:14, fontWeight:700, cursor:'pointer', transition:'all 0.2s' }}
+                onMouseEnter={e => e.currentTarget.style.background=`${b.accentA},0.22)`}
+                onMouseLeave={e => e.currentTarget.style.background=`${b.accentA},0.10)`}
+              >{b.label}</button>
+            ))}
+          </div>
+
+          {/* Search bar — même style Encyclopédie */}
+          <div style={{ width:'100%', maxWidth:640, display:'flex', gap:10, animation:'fadeUp 0.75s 0.4s ease both' }}>
+            <div style={{ flex:1, position:'relative' }}>
+              <span style={{ position:'absolute', left:18, top:'50%', transform:'translateY(-50%)', fontSize:18, color:'rgba(255,255,255,0.28)', pointerEvents:'none' }}>🔍</span>
+              <input ref={searchRef} type="text" placeholder="Chercher un équipage, un capitaine, un style…" value={search} onChange={e => setSearch(e.target.value)}
+                style={{ width:'100%', paddingLeft:50, paddingRight:20, height:50, background:'rgba(255,255,255,0.06)', backdropFilter:'blur(12px)', border:'1px solid rgba(255,255,255,0.12)', borderRadius:14, color:'#fff', fontSize:15, outline:'none', fontFamily:'var(--body)', boxSizing:'border-box', boxShadow:'0 8px 32px rgba(0,0,0,0.22)', transition:'border-color 0.2s, box-shadow 0.2s' }}
+                onFocus={e => { e.currentTarget.style.borderColor='rgba(224,82,74,0.5)'; e.currentTarget.style.boxShadow='0 8px 32px rgba(224,82,74,0.15)' }}
+                onBlur={e  => { e.currentTarget.style.borderColor='rgba(255,255,255,0.12)'; e.currentTarget.style.boxShadow='0 8px 32px rgba(0,0,0,0.22)' }}
+              />
+            </div>
+            <select value={sort} onChange={e => setSort(e.target.value)} style={{ height:50, padding:'0 14px', borderRadius:14, border:'1px solid rgba(255,255,255,0.12)', background:'rgba(255,255,255,0.06)', backdropFilter:'blur(12px)', color:'rgba(255,255,255,0.65)', fontSize:13, cursor:'pointer', outline:'none', fontFamily:'var(--body)' }}>
+              {SORT_OPTIONS.map(o => <option key={o.value} value={o.value} style={{ background:'#0e0f11' }}>{o.label}</option>)}
+            </select>
+          </div>
+        </div>
+
+        {/* ═══════════════════════════ CONTENT ════════════════════════════ */}
+        <div style={{ maxWidth:1120, margin:'0 auto', padding:'0 20px 80px' }}>
+
+          {/* Demo banner */}
+          {usingMock && (
+            <div style={{ marginBottom:24, padding:'10px 16px', borderRadius:10, background:'rgba(253,203,110,0.07)', border:'1px solid rgba(253,203,110,0.18)', color:GOLD, fontSize:12, fontWeight:600, textAlign:'center' }}>
+              ⚠️ Données de démo — aucun équipage en base. Les vraies données s'afficheront automatiquement.
+            </div>
+          )}
+
+          {/* Filter pills — même style Encyclopédie */}
+          <div style={{ display:'flex', gap:8, flexWrap:'wrap', justifyContent:'center', marginBottom:40 }}>
+            {STYLE_FILTERS.map(f => {
+              const active = filter === f
               return (
-                <button key={key} onClick={() => setForm(v=>({...v, styles: active ? v.styles.filter(s=>s!==key) : [...v.styles, key].slice(0,3)}))}
-                  style={{ padding:'5px 12px', background:active?`${t.color}18`:'rgba(0,0,0,.35)', border:`1px solid ${active?`${t.color}50`:'rgba(180,130,30,.18)'}`, borderRadius:4, color:active?t.color:'rgba(180,150,100,.5)', fontSize:11, fontWeight:700, cursor:'pointer', transition:'all .15s' }}>
-                  {t.icon} {t.label}
+                <button key={f} onClick={() => setFilter(f)} style={{ height:36, padding:'0 18px', borderRadius:100, border:`1px solid ${active ? 'rgba(224,82,74,0.5)' : 'rgba(255,255,255,0.10)'}`, background: active ? 'rgba(224,82,74,0.15)' : 'transparent', color: active ? ACCENT : 'rgba(255,255,255,0.4)', fontSize:13, fontWeight:700, cursor:'pointer', transition:'all 0.15s' }}>
+                  {f}
                 </button>
               )
             })}
           </div>
-        </div>
 
-        <label style={{ display:'flex', alignItems:'center', gap:10, cursor:'pointer', marginBottom:22 }}>
-          <input type="checkbox" checked={form.is_recruiting} onChange={e=>setForm(v=>({...v,is_recruiting:e.target.checked}))} style={{ width:16, height:16 }} />
-          <span style={{ fontSize:12, color:'rgba(200,175,130,.7)', fontWeight:600 }}>Ouvrir le recrutement dès maintenant</span>
-        </label>
+          {/* Mon équipage */}
+          <MyCrewPanel membership={membership} crewData={memberCrew} isAuthenticated={isAuthenticated} onCreate={() => setShowCreate(true)} onFind={scrollToGrid} />
 
-        <div style={{ display:'flex', gap:10 }}>
-          <button disabled={busy} onClick={handleCreate}
-            style={{ flex:1, padding:'13px', background:'linear-gradient(135deg, rgba(180,130,20,.28), rgba(140,90,10,.2))', border:'1px solid rgba(212,160,23,.5)', borderRadius:5, color:'#d4a017', fontSize:13, fontWeight:800, cursor:'pointer', letterSpacing:'.06em', textTransform:'uppercase', opacity:busy?.5:1 }}>
-            {busy ? 'Création...' : '⚓ Lever le pavillon'}
-          </button>
-          <button onClick={onClose} style={{ padding:'13px 20px', background:'none', border:'1px solid rgba(180,130,30,.2)', borderRadius:5, color:'rgba(200,175,130,.5)', fontSize:12, fontWeight:600, cursor:'pointer' }}>Annuler</button>
-        </div>
-      </motion.div>
-    </motion.div>
-  )
-}
+          {/* Top 3 */}
+          {top3.length > 0 && (
+            <div style={{ marginBottom:64 }}>
+              <SectionHeading eyebrow="Brams • Classement" title="🏆 Top Équipages" subtitle="Les équipages qui dominent le Grand Line de Brams Community." color={GOLD} />
+              <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(260px, 1fr))', gap:14 }}>
+                {top3.map((c, i) => <TopCrewCard key={c.id} crew={c} rank={i+1} index={i} />)}
+              </div>
+            </div>
+          )}
 
-// ─────────────────────────────────────────────────────────────────────────────
-// APPLY MODAL
-// ─────────────────────────────────────────────────────────────────────────────
-function ApplyModal({ crew, onClose, onDone, discordId, displayName, avatarUrl }) {
-  const [form, setForm] = useState({ message:'', specialty:'', availability:'', previousCrew:'', acceptsRules:false })
-  const [busy, setBusy] = useState(false)
-  const [err, setErr] = useState(null)
-  if (!crew) return null
-  const cc = crew.primary_color || '#d4a017'
-
-  async function handleApply() {
-    if (!form.message.trim()) return setErr('Écris un message de motivation.')
-    if (!form.acceptsRules) return setErr('Tu dois accepter le règlement.')
-    setBusy(true)
-    const { error } = await applyToCrew({ crewId: crew.id, userId: discordId, username: displayName, avatarUrl, ...form })
-    setBusy(false)
-    if (error) setErr(error.message)
-    else onDone()
-  }
-
-  return (
-    <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
-      style={{ position:'fixed', inset:0, zIndex:9200, background:'rgba(0,0,0,.92)', backdropFilter:'blur(10px)', display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}
-      onClick={onClose}>
-      <motion.div initial={{ scale:.9, y:20 }} animate={{ scale:1, y:0 }} exit={{ scale:.9 }}
-        onClick={e=>e.stopPropagation()}
-        style={{ width:'min(520px,100%)', background:'#120a03', border:`1px solid ${cc}35`, borderTop:`2px solid ${cc}55`, borderRadius:10, padding:'28px', boxShadow:'0 40px 100px rgba(0,0,0,.9)' }}>
-
-        {/* Crew info */}
-        <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:22, padding:'14px', background:'rgba(0,0,0,.35)', border:`1px solid ${cc}20`, borderRadius:6 }}>
-          <div style={{ width:48, height:48, borderRadius:8, background:`${cc}14`, border:`1px solid ${cc}35`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:24 }}>{crew.emblem_emoji||'🏴‍☠️'}</div>
-          <div>
-            <div style={{ fontFamily:'Pirata One, cursive', fontSize:18, color:'rgba(232,215,175,.9)' }}>{crew.name}</div>
-            <div style={{ fontSize:11, color:`${cc}80`, marginTop:2 }}>« {crew.motto} »</div>
-          </div>
-        </div>
-
-        <div style={{ fontFamily:'Pirata One, cursive', fontSize:22, color:'rgba(232,215,175,.9)', marginBottom:4 }}>📋 Candidature</div>
-        <div style={{ fontSize:12, color:'rgba(180,150,100,.45)', marginBottom:20 }}>Convaincs le capitaine de t'accueillir à son bord.</div>
-
-        {err && <div style={{ marginBottom:14, padding:'10px 14px', background:'rgba(224,82,74,.1)', border:'1px solid rgba(224,82,74,.3)', borderRadius:5, fontSize:12, color:'#f87171', fontWeight:600 }}>⚠ {err}</div>}
-
-        {[
-          { label:'Pourquoi tu veux rejoindre cet équipage ? *', field:'message', rows:4, placeholder:'Convaincs le capitaine...' },
-          { label:'Ta spécialité / rôle souhaité', field:'specialty', placeholder:'Ex : Tireur d\'élite, Stratège...' },
-          { label:'Ta disponibilité', field:'availability', placeholder:'Ex : Soir, week-end...' },
-          { label:'Ancien équipage (si applicable)', field:'previousCrew', placeholder:'Ex : Les X, ou aucun' },
-        ].map(f => (
-          <div key={f.field} style={{ marginBottom:14 }}>
-            <label style={{ display:'block', fontSize:10, fontWeight:800, letterSpacing:'.1em', textTransform:'uppercase', color:'rgba(200,175,130,.55)', marginBottom:6 }}>{f.label}</label>
-            {f.rows ? (
-              <textarea rows={f.rows} value={form[f.field]} onChange={e=>setForm(v=>({...v,[f.field]:e.target.value}))} placeholder={f.placeholder}
-                style={{ width:'100%', padding:'10px 12px', background:'rgba(0,0,0,.5)', border:'1px solid rgba(180,130,30,.22)', borderRadius:5, color:'rgba(220,195,145,.9)', fontSize:13, resize:'vertical', outline:'none', boxSizing:'border-box', fontFamily:'inherit' }} />
+          {/* Crew grid */}
+          <div ref={gridRef} style={{ scrollMarginTop:100 }}>
+            <SectionHeading eyebrow="Brams • Équipages" title="🏴‍☠️ Tous les Équipages" subtitle="Trouve l'équipage qui correspond à ton style et rejoins la flotte." color={ACCENT} />
+            {loading ? (
+              <div style={{ textAlign:'center', padding:'80px 0', color:'rgba(255,255,255,0.25)', fontSize:14 }}>Chargement…</div>
+            ) : filtered.length === 0 ? (
+              <div style={{ textAlign:'center', padding:'80px 0' }}>
+                <div style={{ fontSize:48, marginBottom:16 }}>🔍</div>
+                <div style={{ fontWeight:700, color:'#fff', marginBottom:8 }}>Aucun équipage trouvé</div>
+                <div style={{ fontSize:14, color:'rgba(255,255,255,0.4)' }}>Essaie un autre filtre ou un autre nom</div>
+              </div>
             ) : (
-              <input value={form[f.field]} onChange={e=>setForm(v=>({...v,[f.field]:e.target.value}))} placeholder={f.placeholder}
-                style={{ width:'100%', padding:'10px 12px', background:'rgba(0,0,0,.5)', border:'1px solid rgba(180,130,30,.22)', borderRadius:5, color:'rgba(220,195,145,.9)', fontSize:13, outline:'none', boxSizing:'border-box' }} />
+              <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(310px, 1fr))', gap:14 }}>
+                {filtered.map((c, i) => <CrewCard key={c.id} crew={c} index={i} onApply={setApplyTarget} userCrewId={membership?.crew_id} />)}
+              </div>
             )}
           </div>
-        ))}
 
-        <label style={{ display:'flex', alignItems:'center', gap:10, cursor:'pointer', marginBottom:22 }}>
-          <input type="checkbox" checked={form.acceptsRules} onChange={e=>setForm(v=>({...v,acceptsRules:e.target.checked}))} style={{ width:16, height:16 }} />
-          <span style={{ fontSize:12, color:'rgba(200,175,130,.7)', fontWeight:600 }}>J'accepte le règlement de l'équipage et du serveur</span>
-        </label>
-
-        <div style={{ display:'flex', gap:10 }}>
-          <button disabled={busy} onClick={handleApply}
-            style={{ flex:1, padding:'13px', background:`rgba(${cc.replace('#','').match(/.{2}/g).map(h=>parseInt(h,16)).join(',')}, .15)`, border:`1px solid ${cc}50`, borderRadius:5, color:cc, fontSize:13, fontWeight:800, cursor:'pointer', letterSpacing:'.06em', textTransform:'uppercase', opacity:busy?.5:1 }}>
-            {busy ? 'Envoi...' : '🏴‍☠️ Envoyer ma candidature'}
-          </button>
-          <button onClick={onClose} style={{ padding:'13px 20px', background:'none', border:'1px solid rgba(180,130,30,.2)', borderRadius:5, color:'rgba(200,175,130,.5)', fontSize:12, fontWeight:600, cursor:'pointer' }}>Annuler</button>
-        </div>
-      </motion.div>
-    </motion.div>
-  )
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// FILTER BAR
-// ─────────────────────────────────────────────────────────────────────────────
-function FilterBar({ search, setSearch, onlyRecruiting, setOnlyRecruiting, sortBy, setSortBy, selectedStyle, setSelectedStyle }) {
-  return (
-    <div style={{ display:'flex', gap:10, flexWrap:'wrap', alignItems:'center', padding:'14px 16px', background:'rgba(0,0,0,.45)', border:'1px solid rgba(180,130,30,.18)', borderRadius:8, backdropFilter:'blur(8px)' }}>
-      <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 Rechercher un équipage..."
-        style={{ flex:'1 1 200px', padding:'9px 14px', background:'rgba(0,0,0,.5)', border:'1px solid rgba(180,130,30,.22)', borderRadius:5, color:'rgba(220,195,145,.9)', fontSize:13, outline:'none' }} />
-
-      <button onClick={()=>setOnlyRecruiting(v=>!v)}
-        style={{ padding:'9px 14px', background:onlyRecruiting?'rgba(52,211,153,.12)':'rgba(0,0,0,.4)', border:`1px solid ${onlyRecruiting?'rgba(52,211,153,.35)':'rgba(180,130,30,.2)'}`, borderRadius:5, color:onlyRecruiting?'#34d399':'rgba(180,150,100,.55)', fontSize:11, fontWeight:800, cursor:'pointer', letterSpacing:'.05em', textTransform:'uppercase', whiteSpace:'nowrap', transition:'all .15s' }}>
-        {onlyRecruiting ? '✓ ' : ''}Recrute
-      </button>
-
-      <select value={sortBy} onChange={e=>setSortBy(e.target.value)}
-        style={{ padding:'9px 12px', background:'rgba(0,0,0,.5)', border:'1px solid rgba(180,130,30,.22)', borderRadius:5, color:'rgba(220,195,145,.7)', fontSize:12, cursor:'pointer', outline:'none' }}>
-        <option value="bounty">🏆 Meilleure prime</option>
-        <option value="members">👥 Plus de membres</option>
-        <option value="level">⭐ Niveau le plus haut</option>
-        <option value="wins">🎖️ Plus de victoires</option>
-        <option value="recent">🆕 Plus récent</option>
-      </select>
-
-      <select value={selectedStyle} onChange={e=>setSelectedStyle(e.target.value)}
-        style={{ padding:'9px 12px', background:'rgba(0,0,0,.5)', border:'1px solid rgba(180,130,30,.22)', borderRadius:5, color:'rgba(220,195,145,.7)', fontSize:12, cursor:'pointer', outline:'none' }}>
-        <option value="">Tous les styles</option>
-        {Object.entries(STYLE_TAGS).map(([k,t])=><option key={k} value={k}>{t.icon} {t.label}</option>)}
-      </select>
-    </div>
-  )
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// SECTION TITLE
-// ─────────────────────────────────────────────────────────────────────────────
-function SectionHeading({ icon, title, sub }) {
-  return (
-    <div style={{ marginBottom:28 }}>
-      <div style={{ display:'flex', alignItems:'center', gap:16, marginBottom:sub ? 8 : 0 }}>
-        <div style={{ flex:1, height:1, background:'linear-gradient(90deg, rgba(180,130,30,.4), transparent)' }} />
-        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-          <span style={{ fontSize:22 }}>{icon}</span>
-          <h2 style={{ fontFamily:'Pirata One, cursive', fontSize:'clamp(20px,3vw,28px)', color:'rgba(232,215,175,.93)', margin:0 }}>{title}</h2>
-        </div>
-        <div style={{ flex:1, height:1, background:'linear-gradient(90deg, transparent, rgba(180,130,30,.4))' }} />
-      </div>
-      {sub && <p style={{ textAlign:'center', fontSize:13, color:'rgba(180,150,100,.45)', margin:0 }}>{sub}</p>}
-    </div>
-  )
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// MAIN COMPONENT
-// ─────────────────────────────────────────────────────────────────────────────
-export default function ConstellationPage() {
-  const navigate = useNavigate()
-  const { isAuthenticated, discordId, displayName, avatarUrl, userId } = useAuth()
-
-  const [crews, setCrews] = useState([])
-  const [myMembership, setMyMembership] = useState(null)
-  const [myCrew, setMyCrew] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [usingMock, setUsingMock] = useState(false)
-
-  // Modals
-  const [showCreate, setShowCreate] = useState(false)
-  const [applyTarget, setApplyTarget] = useState(null)
-  const [toast, setToast] = useState(null)
-
-  // Filters
-  const [search, setSearch] = useState('')
-  const [onlyRecruiting, setOnlyRecruiting] = useState(false)
-  const [sortBy, setSortBy] = useState('bounty')
-  const [selectedStyle, setSelectedStyle] = useState('')
-
-  // Load data
-  const loadData = useCallback(async () => {
-    setLoading(true)
-    const [realCrews, membership] = await Promise.all([
-      fetchCrews(),
-      isAuthenticated && discordId ? getUserCrewMembership(discordId) : Promise.resolve(null),
-    ])
-    const crewList = (realCrews && realCrews.length > 0) ? realCrews : MOCK_CREWS
-    setUsingMock(!realCrews || realCrews.length === 0)
-    setCrews(crewList)
-    setMyMembership(membership)
-
-    if (membership?.crew_id) {
-      const mc = await fetchCrewById(membership.crew_id)
-      setMyCrew(mc)
-    }
-    setLoading(false)
-  }, [isAuthenticated, discordId])
-
-  useEffect(() => {
-    document.title = 'Équipages — Brams Community'
-    loadData()
-    return () => { document.title = 'Brams Community' }
-  }, [loadData])
-
-  // Filtered & sorted crews
-  const filteredCrews = useMemo(() => {
-    let list = [...crews]
-    if (search) list = list.filter(c => c.name.toLowerCase().includes(search.toLowerCase()) || (c.tag||'').toLowerCase().includes(search.toLowerCase()))
-    if (onlyRecruiting) list = list.filter(c => c.is_recruiting)
-    if (selectedStyle) list = list.filter(c => (c.styles||[]).includes(selectedStyle))
-    if (sortBy === 'bounty')   list.sort((a,b) => (b.total_bounty||0)-(a.total_bounty||0))
-    if (sortBy === 'members')  list.sort((a,b) => (b.member_count||0)-(a.member_count||0))
-    if (sortBy === 'level')    list.sort((a,b) => (b.level||0)-(a.level||0))
-    if (sortBy === 'wins')     list.sort((a,b) => (b.wins||0)-(a.wins||0))
-    if (sortBy === 'recent')   list.sort((a,b) => new Date(b.created_at)-new Date(a.created_at))
-    return list
-  }, [crews, search, onlyRecruiting, selectedStyle, sortBy])
-
-  // Totals for hero stats
-  const totalCrews = crews.length
-  const totalMembers = crews.reduce((s,c) => s + (c.member_count||0), 0)
-  const totalBounty = crews.reduce((s,c) => s + (c.total_bounty||0), 0)
-  const openCrews = crews.filter(c => c.is_recruiting).length
-
-  function showToast(msg, type='ok') {
-    setToast({ msg, type })
-    setTimeout(() => setToast(null), 3200)
-  }
-
-  // ── LOADING ──
-  if (loading) return (
-    <div style={{ minHeight:'100vh', background:'#020711' }}>
-      <Navbar />
-      <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', height:'calc(100vh - 80px)', gap:20 }}>
-        <motion.div animate={{ rotate:360 }} transition={{ duration:2, repeat:Infinity, ease:'linear' }}
-          style={{ width:44, height:44, border:'3px solid rgba(180,130,30,.15)', borderTopColor:'#d4a017', borderRadius:'50%' }} />
-        <div style={{ fontFamily:'Pirata One, cursive', fontSize:16, color:'rgba(180,130,40,.6)', letterSpacing:'.1em' }}>Chargement des équipages…</div>
-      </div>
-    </div>
-  )
-
-  return (
-    <div style={{ minHeight:'100vh', background:'#020711', color:'rgba(232,215,175,.93)', fontFamily:'system-ui,-apple-system,sans-serif' }}>
-      <Navbar />
-
-      {/* Ambient BG */}
-      <div style={{ position:'fixed', inset:0, pointerEvents:'none', zIndex:0 }}>
-        <div style={{ position:'absolute', inset:0, background:'radial-gradient(ellipse 80% 40% at 50% 0%, rgba(180,130,20,.07) 0%, transparent 55%)' }} />
-        <div style={{ position:'absolute', inset:0, background:'radial-gradient(ellipse 50% 30% at 80% 80%, rgba(100,50,10,.04) 0%, transparent 50%)' }} />
-        <div style={{ position:'absolute', top:0, left:0, right:0, height:1, background:'linear-gradient(90deg, transparent, rgba(180,130,30,.3), transparent)' }} />
-      </div>
-
-      <div style={{ position:'relative', zIndex:1 }}>
-
-        {/* ═══════════════════════════════════════════════════════
-            HERO CINÉMATIQUE
-        ═══════════════════════════════════════════════════════ */}
-        <div style={{ position:'relative', overflow:'hidden', minHeight:460, display:'flex', flexDirection:'column', justifyContent:'flex-end' }}>
-          {/* Hero background */}
-          <div style={{ position:'absolute', inset:0, background:'linear-gradient(180deg, #000c1e 0%, #020a18 50%, #020711 100%)' }} />
-          <div style={{ position:'absolute', inset:0, background:'radial-gradient(ellipse 100% 80% at 50% 20%, rgba(180,130,20,.12) 0%, transparent 60%)' }} />
-
-          {/* Decorative vertical lines */}
-          {[...Array(12)].map((_,i) => (
-            <div key={i} style={{ position:'absolute', left:`${8+i*8}%`, top:0, bottom:0, width:1, background:'rgba(180,130,30,.025)', pointerEvents:'none' }} />
-          ))}
-
-          {/* Big compass bg */}
-          <div style={{ position:'absolute', right:'-5%', top:'10%', width:340, height:340, opacity:.06, fontSize:340, lineHeight:1, pointerEvents:'none', userSelect:'none' }}>🧭</div>
-
-          {/* Content */}
-          <motion.div initial={{ opacity:0, y:30 }} animate={{ opacity:1, y:0 }} transition={{ duration:.7, ease:[.22,1,.36,1] }}
-            style={{ position:'relative', maxWidth:1100, margin:'0 auto', padding:'120px clamp(16px,4vw,48px) 48px', width:'100%' }}>
-
-            <div style={{ fontSize:10, fontWeight:900, letterSpacing:'.22em', textTransform:'uppercase', color:'rgba(180,130,30,.55)', marginBottom:14, display:'flex', alignItems:'center', gap:10 }}>
-              <span style={{ width:30, height:1, background:'rgba(180,130,30,.4)', display:'block' }} />
-              GOUVERNEMENT MONDIAL — MARINE
-              <span style={{ width:30, height:1, background:'rgba(180,130,30,.4)', display:'block' }} />
-            </div>
-
-            <h1 style={{ fontFamily:'Pirata One, cursive', fontSize:'clamp(42px,7vw,88px)', color:'rgba(232,215,175,.97)', lineHeight:.95, margin:'0 0 18px', textShadow:'0 8px 50px rgba(0,0,0,.8), 0 0 60px rgba(180,130,20,.12)' }}>
-              QG des<br />Équipages
-            </h1>
-
-            <p style={{ fontSize:'clamp(13px,1.6vw,16px)', color:'rgba(200,175,130,.55)', maxWidth:560, lineHeight:1.7, marginBottom:28 }}>
-              Forme ton équipage, recrute tes pirates, grimpe dans le classement
-              et impose ton pavillon sur les sept mers de Brams.
-            </p>
-
-            {/* Hero stats */}
-            <div style={{ display:'flex', flexWrap:'wrap', gap:12, marginBottom:32 }}>
-              {[
-                { icon:'🏴‍☠️', label:'Équipages', value:totalCrews },
-                { icon:'⚔️',  label:'Pirates',   value:totalMembers },
-                { icon:'💰',  label:'Primes',     value:fmtB(totalBounty)+' ฿', big:true },
-                { icon:'🟢',  label:'Recrutent',  value:openCrews },
-              ].map(s => (
-                <div key={s.label} style={{ display:'flex', alignItems:'center', gap:8, padding:'9px 16px', background:'rgba(0,0,0,.45)', border:'1px solid rgba(180,130,30,.18)', borderRadius:6, backdropFilter:'blur(4px)' }}>
-                  <span style={{ fontSize:14 }}>{s.icon}</span>
-                  <div>
-                    <div style={{ fontSize: s.big ? 16 : 18, fontWeight:900, color:'rgba(232,215,175,.93)', fontFamily: s.big ? 'Pirata One, cursive' : 'inherit', lineHeight:1 }}>{s.value}</div>
-                    <div style={{ fontSize:9, color:'rgba(180,150,100,.4)', textTransform:'uppercase', letterSpacing:'.1em', fontWeight:700 }}>{s.label}</div>
+          {/* Roadmap */}
+          <div style={{ marginTop:80 }}>
+            <SectionHeading eyebrow="Brams • Fonctionnalités" title="🔭 Bientôt disponible" subtitle="Les prochaines fonctionnalités du système d'équipages Brams Community." color={VIOLET} />
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(280px, 1fr))', gap:12 }}>
+              {ROADMAP.map((item, i) => (
+                <div key={i} style={{ background:'linear-gradient(145deg, rgba(255,255,255,0.04) 0%, rgba(14,14,16,0.9) 100%)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:14, padding:'18px 20px', animation:`fadeUp 0.4s ${i*0.06}s ease-out both` }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:8 }}>
+                    <span style={{ fontSize:22 }}>{item.emoji}</span>
+                    <span style={{ fontWeight:800, fontSize:14, color:'#fff' }}>{item.title}</span>
+                    {item.soon
+                      ? <span style={{ fontSize:9, fontWeight:800, padding:'2px 7px', borderRadius:10, background:'rgba(162,155,254,0.14)', color:VIOLET, border:'1px solid rgba(162,155,254,0.28)', marginLeft:'auto' }}>BIENTÔT</span>
+                      : <span style={{ fontSize:9, fontWeight:800, padding:'2px 7px', borderRadius:10, background:'rgba(52,211,153,0.14)', color:'#34d399', border:'1px solid rgba(52,211,153,0.28)', marginLeft:'auto' }}>BETA</span>
+                    }
                   </div>
+                  <p style={{ fontSize:12, color:'rgba(255,255,255,0.48)', margin:0, lineHeight:1.65 }}>{item.desc}</p>
                 </div>
               ))}
             </div>
+          </div>
 
-            {/* CTA */}
-            <div style={{ display:'flex', flexWrap:'wrap', gap:12 }}>
-              {!myMembership && isAuthenticated && (
-                <button onClick={() => setShowCreate(true)}
-                  style={{ padding:'13px 28px', background:'linear-gradient(135deg, rgba(212,160,23,.28), rgba(160,100,10,.2))', border:'1px solid rgba(212,160,23,.5)', borderRadius:6, color:'#d4a017', fontSize:14, fontWeight:800, cursor:'pointer', letterSpacing:'.06em', textTransform:'uppercase', transition:'all .2s' }}
-                  onMouseEnter={e => e.currentTarget.style.background='linear-gradient(135deg, rgba(212,160,23,.4), rgba(160,100,10,.3))'}
-                  onMouseLeave={e => e.currentTarget.style.background='linear-gradient(135deg, rgba(212,160,23,.28), rgba(160,100,10,.2))'}>
-                  ⚓ Créer mon équipage
-                </button>
-              )}
-              {myMembership && myCrew && (
-                <button onClick={() => navigate(`/equipage/${myMembership.crew_id}`)}
-                  style={{ padding:'13px 28px', background:'linear-gradient(135deg, rgba(212,160,23,.28), rgba(160,100,10,.2))', border:'1px solid rgba(212,160,23,.5)', borderRadius:6, color:'#d4a017', fontSize:14, fontWeight:800, cursor:'pointer', letterSpacing:'.06em', textTransform:'uppercase' }}>
-                  🏰 Mon QG — {myCrew.name}
-                </button>
-              )}
-              <button onClick={() => document.getElementById('crew-grid')?.scrollIntoView({ behavior:'smooth' })}
-                style={{ padding:'13px 28px', background:'rgba(0,0,0,.45)', border:'1px solid rgba(180,130,30,.28)', borderRadius:6, color:'rgba(200,175,130,.7)', fontSize:14, fontWeight:700, cursor:'pointer', letterSpacing:'.06em', textTransform:'uppercase' }}>
-                🔍 Trouver un équipage
-              </button>
-              {!isAuthenticated && (
-                <button onClick={() => document.dispatchEvent(new CustomEvent('open-auth-modal'))}
-                  style={{ padding:'13px 28px', background:'rgba(52,211,153,.1)', border:'1px solid rgba(52,211,153,.3)', borderRadius:6, color:'#34d399', fontSize:14, fontWeight:800, cursor:'pointer', letterSpacing:'.06em', textTransform:'uppercase' }}>
-                  Connexion Discord
-                </button>
-              )}
-            </div>
-
-          </motion.div>
-
-          {/* Bottom fade */}
-          <div style={{ position:'absolute', bottom:0, left:0, right:0, height:80, background:'linear-gradient(transparent, #020711)', pointerEvents:'none' }} />
-        </div>
-
-        {/* Content sections */}
-        <div style={{ maxWidth:1100, margin:'0 auto', padding:'0 clamp(16px,4vw,48px) 100px', display:'flex', flexDirection:'column', gap:72 }}>
-
-          {/* ═══ MON ÉQUIPAGE ═══ */}
-          {isAuthenticated && (
-            <section>
-              <SectionHeading icon="⚓" title="Mon Équipage" sub={myMembership ? null : "Aucun pavillon ne flotte encore sous ton nom."} />
-
-              {myMembership && myCrew ? (
-                <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }}
-                  style={{ background:'linear-gradient(145deg, rgba(12,8,3,.99) 0%, rgba(6,4,2,1) 100%)', border:`1px solid ${myCrew.primary_color||'#d4a017'}35`, borderTop:`2px solid ${myCrew.primary_color||'#d4a017'}60`, borderRadius:10, padding:'24px', position:'relative', overflow:'hidden' }}>
-                  <div style={{ position:'absolute', top:0, left:0, right:0, height:80, background:`radial-gradient(ellipse 60% 100% at 50% 0%, ${myCrew.primary_color||'#d4a017'}10, transparent)`, pointerEvents:'none' }} />
-                  <div style={{ display:'flex', flexWrap:'wrap', gap:20, alignItems:'center' }}>
-                    <div style={{ width:70, height:70, borderRadius:10, background:`${myCrew.primary_color||'#d4a017'}14`, border:`2px solid ${myCrew.primary_color||'#d4a017'}45`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:34, flexShrink:0 }}>{myCrew.emblem_emoji||'🏴‍☠️'}</div>
-                    <div style={{ flex:1, minWidth:200 }}>
-                      <div style={{ fontFamily:'Pirata One, cursive', fontSize:26, color:'rgba(232,215,175,.95)', lineHeight:1, marginBottom:6 }}>{myCrew.name}</div>
-                      {myCrew.motto && <div style={{ fontSize:13, color:`${myCrew.primary_color||'#d4a017'}70`, fontStyle:'italic', marginBottom:8 }}>« {myCrew.motto} »</div>}
-                      <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
-                        <RecruitBadge open={myCrew.is_recruiting} />
-                        <LevelBadge level={myCrew.level||1} color={myCrew.primary_color} />
-                        <span style={{ fontSize:11, color:'rgba(180,150,100,.5)', fontWeight:600 }}>👥 {myCrew.member_count||0} membres</span>
-                        <span style={{ fontFamily:'Pirata One, cursive', fontSize:13, color:myCrew.primary_color||'#d4a017' }}>💰 {fmtB(myCrew.total_bounty)} ฿</span>
-                      </div>
-                    </div>
-                    <div style={{ display:'flex', gap:10, flexShrink:0 }}>
-                      <button onClick={() => navigate(`/equipage/${myMembership.crew_id}`)}
-                        style={{ padding:'11px 22px', background:`${myCrew.primary_color||'#d4a017'}18`, border:`1px solid ${myCrew.primary_color||'#d4a017'}45`, borderRadius:6, color:myCrew.primary_color||'#d4a017', fontSize:13, fontWeight:800, cursor:'pointer', letterSpacing:'.05em', textTransform:'uppercase' }}>
-                        🏰 Entrer dans le QG
-                      </button>
-                    </div>
-                  </div>
-                </motion.div>
-              ) : (
-                <motion.div initial={{ opacity:0, y:12 }} animate={{ opacity:1, y:0 }}
-                  style={{ textAlign:'center', padding:'48px 20px', background:'linear-gradient(145deg, rgba(12,8,3,.98) 0%, rgba(6,4,2,1) 100%)', border:'1px dashed rgba(180,130,30,.2)', borderRadius:10 }}>
-                  <div style={{ fontSize:52, marginBottom:16 }}>🏴‍☠️</div>
-                  <div style={{ fontFamily:'Pirata One, cursive', fontSize:22, color:'rgba(232,215,175,.7)', marginBottom:8 }}>Aucun pavillon ne flotte encore sous ton nom</div>
-                  <div style={{ fontSize:13, color:'rgba(180,150,100,.4)', lineHeight:1.7, maxWidth:400, margin:'0 auto 24px' }}>
-                    Crée ton propre équipage et commence à recruter, ou rejoins un équipage existant pour commencer ta conquête.
-                  </div>
-                  <div style={{ display:'flex', gap:12, justifyContent:'center', flexWrap:'wrap' }}>
-                    <button onClick={() => setShowCreate(true)}
-                      style={{ padding:'11px 24px', background:'rgba(212,160,23,.18)', border:'1px solid rgba(212,160,23,.45)', borderRadius:6, color:'#d4a017', fontSize:13, fontWeight:800, cursor:'pointer', letterSpacing:'.05em', textTransform:'uppercase' }}>
-                      ⚓ Créer mon équipage
-                    </button>
-                    <button onClick={() => document.getElementById('crew-grid')?.scrollIntoView({ behavior:'smooth' })}
-                      style={{ padding:'11px 24px', background:'rgba(0,0,0,.4)', border:'1px solid rgba(180,130,30,.22)', borderRadius:6, color:'rgba(200,175,130,.6)', fontSize:13, fontWeight:700, cursor:'pointer', letterSpacing:'.05em', textTransform:'uppercase' }}>
-                      🔍 Trouver un équipage
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-            </section>
-          )}
-
-          {/* ═══ TOP PODIUM ═══ */}
-          {crews.length >= 3 && (
-            <section>
-              <SectionHeading icon="🏆" title="Top Équipages" sub="Les 3 équipages avec la plus forte prime totale" />
-              <div style={{ background:'linear-gradient(145deg, rgba(12,8,3,.98) 0%, rgba(6,4,2,1) 100%)', border:'1px solid rgba(180,130,30,.18)', borderRadius:10, padding:'28px 20px 0', position:'relative', overflow:'hidden' }}>
-                <div style={{ position:'absolute', top:-40, left:'50%', transform:'translateX(-50%)', width:300, height:300, borderRadius:'50%', background:'radial-gradient(circle, rgba(212,160,23,.06), transparent)', pointerEvents:'none' }} />
-                <TopPodium crews={crews} />
-              </div>
-            </section>
-          )}
-
-          {/* ═══ GRILLE ÉQUIPAGES ═══ */}
-          <section id="crew-grid">
-            <SectionHeading icon="⚔️" title="Tous les Équipages" sub={`${filteredCrews.length} équipage${filteredCrews.length !== 1 ? 's' : ''} ${usingMock ? '— données de démo' : 'sur le serveur'}`} />
-
-            {usingMock && (
-              <div style={{ marginBottom:20, padding:'12px 16px', background:'rgba(245,158,11,.07)', border:'1px solid rgba(245,158,11,.2)', borderRadius:6, display:'flex', alignItems:'center', gap:10 }}>
-                <span style={{ fontSize:16 }}>📋</span>
-                <div style={{ fontSize:12, color:'rgba(245,158,11,.8)', lineHeight:1.5 }}>
-                  <strong>Données de démonstration</strong> — Aucun équipage n'est encore enregistré dans la base de données. <a href="/staff" style={{ color:'#fbbf24', textDecoration:'underline' }}>Créer le premier équipage</a> ou exécuter la migration SQL.
-                </div>
-              </div>
-            )}
-
-            <FilterBar search={search} setSearch={setSearch} onlyRecruiting={onlyRecruiting} setOnlyRecruiting={setOnlyRecruiting} sortBy={sortBy} setSortBy={setSortBy} selectedStyle={selectedStyle} setSelectedStyle={setSelectedStyle} />
-
-            <div style={{ marginTop:20 }}>
-              {filteredCrews.length === 0 ? (
-                <div style={{ textAlign:'center', padding:'60px 20px', background:'linear-gradient(145deg, rgba(12,8,3,.98) 0%, rgba(6,4,2,1) 100%)', border:'1px solid rgba(180,130,30,.12)', borderRadius:10 }}>
-                  <div style={{ fontSize:48, marginBottom:16 }}>🔍</div>
-                  <div style={{ fontFamily:'Pirata One, cursive', fontSize:22, color:'rgba(232,215,175,.7)', marginBottom:8 }}>Aucun équipage trouvé</div>
-                  <div style={{ fontSize:13, color:'rgba(180,150,100,.4)' }}>Aucun équipage ne correspond à ta recherche. Modifie tes filtres.</div>
-                </div>
-              ) : (
-                <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(300px,1fr))', gap:18 }}>
-                  {filteredCrews.map(crew => (
-                    <CrewCard key={crew.id} crew={crew}
-                      currentCrewId={myMembership?.crew_id}
-                      onView={c => navigate(`/equipage/${c.id}`)}
-                      onApply={c => isAuthenticated ? setApplyTarget(c) : document.dispatchEvent(new CustomEvent('open-auth-modal'))} />
-                  ))}
-                </div>
-              )}
-            </div>
-          </section>
-
-          {/* ═══ CARTE MARITIME ═══ */}
-          <section>
-            <SectionHeading icon="🗺️" title="Carte des Territoires" sub="Réclame ta zone, domine les sept mers" />
-            <MaritimeMapSection crews={crews} />
-          </section>
-
-          {/* ═══ COMMENT ÇA MARCHE ═══ */}
-          <section>
-            <SectionHeading icon="📖" title="Comment ça marche" sub="Cinq étapes pour dominer les sept mers" />
-            <HowItWorks />
-          </section>
-
-          {/* ═══ ROADMAP ═══ */}
-          <section>
-            <SectionHeading icon="🚀" title="Fonctionnalités à Venir" sub="Le système équipage continue d'évoluer" />
-            <RoadmapSection />
-          </section>
-
-          {/* ═══ FINAL CTA ═══ */}
+          {/* CTA unauthenticated */}
           {!isAuthenticated && (
-            <section>
-              <div style={{ textAlign:'center', padding:'48px 24px', background:'linear-gradient(145deg, rgba(12,8,3,.99) 0%, rgba(6,4,2,1) 100%)', border:'1px solid rgba(212,160,23,.22)', borderRadius:10, position:'relative', overflow:'hidden' }}>
-                <div style={{ position:'absolute', inset:0, background:'radial-gradient(ellipse 60% 60% at 50% 50%, rgba(212,160,23,.05), transparent)', pointerEvents:'none' }} />
-                <div style={{ fontSize:52, marginBottom:16 }}>⚓</div>
-                <div style={{ fontFamily:'Pirata One, cursive', fontSize:28, color:'rgba(232,215,175,.93)', marginBottom:8 }}>Prêt à prendre la mer ?</div>
-                <div style={{ fontSize:14, color:'rgba(180,150,100,.5)', maxWidth:380, margin:'0 auto 24px', lineHeight:1.7 }}>Connecte-toi avec Discord pour créer ou rejoindre un équipage et commencer ta conquête.</div>
-                <button onClick={() => document.dispatchEvent(new CustomEvent('open-auth-modal'))}
-                  style={{ padding:'14px 32px', background:'linear-gradient(135deg, rgba(212,160,23,.3), rgba(160,100,10,.22))', border:'1px solid rgba(212,160,23,.5)', borderRadius:6, color:'#d4a017', fontSize:14, fontWeight:800, cursor:'pointer', letterSpacing:'.07em', textTransform:'uppercase' }}>
-                  ⚓ Connexion Discord
-                </button>
-              </div>
-            </section>
+            <div style={{ marginTop:64, textAlign:'center', padding:'48px 24px', background:'linear-gradient(135deg, rgba(224,82,74,0.06) 0%, rgba(14,14,16,0.9) 100%)', border:'1px solid rgba(224,82,74,0.14)', borderRadius:18 }}>
+              <div style={{ fontSize:40, marginBottom:16 }}>⚓</div>
+              <h3 style={{ fontFamily:'var(--display)', fontSize:'clamp(24px,4vw,38px)', color:'#fff', margin:'0 0 12px', lineHeight:1 }}>Prêt à lever le pavillon ?</h3>
+              <p style={{ fontSize:15, color:'rgba(255,255,255,0.42)', maxWidth:440, margin:'0 auto 28px', lineHeight:1.7 }}>Connecte-toi pour créer ou rejoindre un équipage et écrire ton histoire dans le Grand Line.</p>
+              <button onClick={() => document.dispatchEvent(new CustomEvent('open-auth-modal'))} style={{ padding:'13px 32px', borderRadius:12, background:'rgba(224,82,74,0.16)', border:'1px solid rgba(224,82,74,0.42)', color:ACCENT, fontWeight:700, fontSize:15, cursor:'pointer', transition:'all 0.2s' }}
+                onMouseEnter={e => e.currentTarget.style.background='rgba(224,82,74,0.28)'}
+                onMouseLeave={e => e.currentTarget.style.background='rgba(224,82,74,0.16)'}
+              >Se connecter</button>
+            </div>
           )}
-
         </div>
       </div>
 
-      {/* ═══ MODALS ═══ */}
-      <AnimatePresence>
-        {showCreate && (
-          <CreateCrewModal
-            onClose={() => setShowCreate(false)}
-            discordId={discordId}
-            displayName={displayName}
-            onDone={crew => {
-              setShowCreate(false)
-              showToast('✓ Équipage créé ! Bienvenue, capitaine.', 'ok')
-              loadData()
-              if (crew?.id) navigate(`/equipage/${crew.id}`)
-            }} />
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {applyTarget && (
-          <ApplyModal
-            crew={applyTarget}
-            discordId={discordId}
-            displayName={displayName}
-            avatarUrl={avatarUrl}
-            onClose={() => setApplyTarget(null)}
-            onDone={() => {
-              setApplyTarget(null)
-              showToast('✓ Candidature envoyée ! Le capitaine va l\'examiner.', 'ok')
-            }} />
-        )}
-      </AnimatePresence>
-
-      {/* Toast */}
-      <AnimatePresence>
-        {toast && (
-          <motion.div initial={{ opacity:0, y:30 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, y:20 }}
-            style={{ position:'fixed', bottom:32, right:32, zIndex:9999, padding:'13px 20px', borderRadius:6, background: toast.type==='ok' ? 'rgba(52,211,153,.12)' : 'rgba(224,82,74,.1)', border:`1px solid ${toast.type==='ok' ? 'rgba(52,211,153,.3)' : 'rgba(224,82,74,.3)'}`, color: toast.type==='ok' ? '#34d399' : '#f87171', fontSize:14, fontWeight:700, boxShadow:'0 8px 32px rgba(0,0,0,.5)', maxWidth:320 }}>
-            {toast.msg}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+      {/* ── Modals ─────────────────────────────────────────────────────── */}
+      {showCreate  && <CreateCrewModal crew={null} onClose={() => setShowCreate(false)} onCreate={handleCreate} />}
+      {applyTarget && <ApplyModal crew={applyTarget} onClose={() => setApplyTarget(null)} onSubmit={handleApply} />}
+    </>
   )
 }
