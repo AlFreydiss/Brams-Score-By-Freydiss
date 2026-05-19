@@ -1412,7 +1412,7 @@ section {
 .nav-shell-premium {
   position: relative;
   width: 100%;
-  height: 66px;
+  height: 72px;
   margin: 0 auto;
   padding: 0 36px;
   display: grid;
@@ -1427,12 +1427,12 @@ section {
 }
 .nav-shell-premium::before { display: none; }
 .navbar-premium-scrolled .nav-shell-premium {
-  height: 60px;
-  background: rgba(4,7,14,0.82);
-  backdrop-filter: blur(24px) saturate(1.35);
-  -webkit-backdrop-filter: blur(24px) saturate(1.35);
-  border-bottom: 1px solid rgba(255,255,255,.08);
-  box-shadow: 0 4px 32px rgba(0,0,0,0.28);
+  height: 64px;
+  background: rgba(4,7,14,0.88);
+  backdrop-filter: blur(28px) saturate(1.4);
+  -webkit-backdrop-filter: blur(28px) saturate(1.4);
+  border-bottom: 1px solid rgba(255,255,255,.10);
+  box-shadow: 0 4px 36px rgba(0,0,0,0.32);
 }
 .nav-zone-brand,
 .nav-zone-center,
@@ -1514,9 +1514,9 @@ section {
   gap: 6px;
   padding: 0 13px;
   border-radius: 8px;
-  color: rgba(230,235,244,.60);
-  font-size: 12px;
-  font-weight: 650;
+  color: rgba(230,235,244,.65);
+  font-size: 12.5px;
+  font-weight: 660;
   letter-spacing: .01em;
   text-decoration: none;
   white-space: nowrap;
@@ -1536,8 +1536,8 @@ section {
   transition: opacity .24s, transform .24s cubic-bezier(.22,1,.36,1);
 }
 .nav-link-premium:hover {
-  color: rgba(255,255,255,.90);
-  background: rgba(255,255,255,.06);
+  color: rgba(255,215,130,.95);
+  background: rgba(212,160,23,.07);
 }
 .nav-link-premium.active {
   color: #D4A017;

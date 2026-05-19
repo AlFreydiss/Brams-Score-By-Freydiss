@@ -304,17 +304,42 @@ export default function UnifiedSidebar() {
     .slice(0, 3)
 
   return (
+    <div style={{ position:'relative', overflow:'visible' }}>
+      <div style={{
+        position:'absolute', top:18, right:-6, zIndex:10,
+        background:'rgba(88,101,242,.15)', border:'1px solid rgba(88,101,242,.30)',
+        borderRadius:20, padding:'5px 11px', display:'flex', alignItems:'center', gap:5,
+        fontSize:9.5, fontWeight:800, color:'#818cf8', letterSpacing:'.04em',
+        backdropFilter:'blur(12px)', animation:'floatCard 4s ease-in-out infinite',
+        boxShadow:'0 4px 16px rgba(88,101,242,.16)', whiteSpace:'nowrap',
+      }}>🎙️ Tournoi vocal</div>
+      <div style={{
+        position:'absolute', top:'42%', right:-8, zIndex:10,
+        background:'rgba(212,160,23,.14)', border:'1px solid rgba(212,160,23,.28)',
+        borderRadius:20, padding:'5px 11px', display:'flex', alignItems:'center', gap:5,
+        fontSize:9.5, fontWeight:800, color:'#d4a017', letterSpacing:'.04em',
+        backdropFilter:'blur(12px)', animation:'floatCard 5.5s 1.8s ease-in-out infinite',
+        boxShadow:'0 4px 16px rgba(212,160,23,.14)', whiteSpace:'nowrap',
+      }}>📊 Classement mensuel</div>
+      <div style={{
+        position:'absolute', bottom:40, left:-6, zIndex:10,
+        background:'rgba(52,211,153,.12)', border:'1px solid rgba(52,211,153,.24)',
+        borderRadius:20, padding:'5px 11px', display:'flex', alignItems:'center', gap:5,
+        fontSize:9.5, fontWeight:800, color:'#34d399', letterSpacing:'.04em',
+        backdropFilter:'blur(12px)', animation:'floatCard 6s 3.5s ease-in-out infinite',
+        boxShadow:'0 4px 16px rgba(52,211,153,.12)', whiteSpace:'nowrap',
+      }}>⚓ Équipages bientôt</div>
     <div style={{
-      width:390, maxHeight:560,
+      width:'clamp(390px, 34vw, 470px)', maxHeight:660,
       display:'flex', flexDirection:'column',
-      background:'linear-gradient(160deg, rgba(14,15,20,.78) 0%, rgba(8,9,13,.68) 100%)',
+      background:'linear-gradient(160deg, rgba(14,15,20,.82) 0%, rgba(8,9,13,.72) 100%)',
       backdropFilter:'blur(32px) saturate(1.5)',
       WebkitBackdropFilter:'blur(32px) saturate(1.5)',
-      border:'1px solid rgba(255,255,255,.11)',
-      borderTop:'1px solid rgba(255,255,255,.16)',
+      border:'1px solid rgba(255,255,255,.12)',
+      borderTop:'1px solid rgba(255,255,255,.18)',
       borderRadius:20, overflow:'hidden',
       animation:'sbIn .5s .1s cubic-bezier(.22,1,.36,1) both, floatCard 7s ease-in-out 1s infinite',
-      boxShadow:'0 32px 80px rgba(0,0,0,.50), 0 0 0 1px rgba(255,255,255,.04) inset, 0 1px 0 rgba(255,255,255,.10) inset',
+      boxShadow:'0 32px 80px rgba(0,0,0,.60), 0 0 50px rgba(212,160,23,.06), 0 0 0 1px rgba(255,255,255,.04) inset, 0 1px 0 rgba(255,255,255,.10) inset',
     }}>
 
       {/* ── Header ────────────────────────────────────────────────────────── */}
@@ -476,6 +501,7 @@ export default function UnifiedSidebar() {
         </a>
       </div>
 
+    </div>
     </div>
   )
 }

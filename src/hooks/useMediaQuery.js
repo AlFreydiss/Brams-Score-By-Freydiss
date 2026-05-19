@@ -16,6 +16,7 @@ export function useMediaQuery(query) {
 
 export const useMobile  = () => useMediaQuery('(max-width: 768px)')
 export const useTablet  = () => useMediaQuery('(max-width: 1024px)')
+export const useNarrow  = () => useMediaQuery('(max-width: 1100px)')
 export const useLowEnd  = () => {
   const lowMem = typeof navigator !== 'undefined' && navigator.deviceMemory < 4
   const mobile = useMediaQuery('(max-width: 768px)')

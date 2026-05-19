@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import UnifiedSidebar from './UnifiedSidebar.jsx'
-import { useMobile } from '../hooks/useMediaQuery.js'
+import { useMobile, useNarrow } from '../hooks/useMediaQuery.js'
 import { fetchStats } from '../lib/supabase.js'
 
 const QUOTES = [
@@ -192,8 +192,36 @@ function QuoteRotator() {
   )
 }
 
+function HeroFeatureCard({ icon, title, desc }) {
+  const [hov, setHov] = useState(false)
+  return (
+    <div
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      style={{
+        flex: '1 1 130px',
+        background: hov ? 'rgba(212,160,23,.07)' : 'rgba(255,255,255,.025)',
+        border: `1px solid ${hov ? 'rgba(212,160,23,.24)' : 'rgba(255,255,255,.07)'}`,
+        borderRadius: 14, padding: '14px 16px',
+        transition: 'all .25s cubic-bezier(.22,1,.36,1)',
+        transform: hov ? 'translateY(-3px)' : 'none',
+        cursor: 'default', backdropFilter: 'blur(10px)',
+        display: 'flex', flexDirection: 'column', gap: 6,
+        boxShadow: hov ? '0 8px 24px rgba(212,160,23,.10)' : 'none',
+      }}
+    >
+      <span style={{ fontSize: 20, lineHeight: 1 }}>{icon}</span>
+      <div>
+        <div style={{ fontSize: 12.5, fontWeight: 700, color: 'rgba(255,255,255,.88)', marginBottom: 3 }}>{title}</div>
+        <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,.34)', lineHeight: 1.4 }}>{desc}</div>
+      </div>
+    </div>
+  )
+}
+
 export default function Hero() {
   const isMobile = useMobile()
+  const isNarrow = useNarrow()
   const [stats, setStats] = useState(null)
 
   useEffect(() => {
@@ -213,12 +241,22 @@ export default function Hero() {
       {/* Overlay directionnel principal */}
       <div style={{
         position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
-        background: 'linear-gradient(90deg, rgba(3,7,14,0.93) 0%, rgba(3,7,14,0.80) 35%, rgba(3,7,14,0.42) 62%, rgba(3,7,14,0.06) 100%)',
+        background: 'linear-gradient(90deg, rgba(3,7,14,0.97) 0%, rgba(3,7,14,0.90) 35%, rgba(3,7,14,0.58) 58%, rgba(3,7,14,0.14) 100%)',
+      }} />
+      {/* Overlay sombre uniforme */}
+      <div style={{
+        position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
+        background: 'rgba(3,7,14,0.22)',
       }} />
       {/* Glow radial doré derrière le titre */}
       <div style={{
         position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
-        background: 'radial-gradient(ellipse 58% 52% at 27% 52%, rgba(212,160,23,0.14) 0%, transparent 65%)',
+        background: 'radial-gradient(ellipse 62% 55% at 27% 50%, rgba(212,160,23,0.18) 0%, transparent 65%)',
+      }} />
+      {/* Glow radial derrière le dashboard */}
+      <div style={{
+        position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
+        background: 'radial-gradient(ellipse 45% 50% at 78% 50%, rgba(88,101,242,0.07) 0%, transparent 65%)',
       }} />
       {/* Vignette top */}
       <div style={{
@@ -228,7 +266,7 @@ export default function Hero() {
       {/* Vignette bottom */}
       <div style={{
         position: 'absolute', bottom: 0, left: 0, right: 0, height: '22%', zIndex: 0, pointerEvents: 'none',
-        background: 'linear-gradient(0deg, rgba(3,7,14,0.60) 0%, transparent 100%)',
+        background: 'linear-gradient(0deg, rgba(3,7,14,0.92) 0%, rgba(3,7,14,0.30) 55%, transparent 100%)',
       }} />
 
       <StarField />
@@ -236,9 +274,9 @@ export default function Hero() {
       <div style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: 1320, margin: '0 auto', padding: isMobile ? '0 20px' : '0 48px' }}>
         <div style={{
           display: 'grid',
-          gridTemplateColumns: isMobile ? '1fr' : 'minmax(0,1fr) 390px',
+          gridTemplateColumns: isNarrow ? '1fr' : 'minmax(0,1fr) clamp(390px, 34vw, 470px)',
           alignItems: 'center',
-          gap: isMobile ? 48 : 72,
+          gap: isNarrow ? 40 : 56,
         }}>
 
           {/* ── Left column ── */}
@@ -282,7 +320,8 @@ export default function Hero() {
             <div className="fade-up-2"><QuoteRotator /></div>
 
             {/* CTA */}
-            <div className="fade-up-3" style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 52, alignItems: 'center' }}>
+            <div className="fade-up-3" style={{ marginBottom: 32 }}>
+              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 11, alignItems: 'center' }}>
               <a
                 href="https://discord.gg/v3Ddhtbz"
                 target="_blank"
@@ -320,6 +359,10 @@ export default function Hero() {
               >
                 ⚔️ Voir les rangs
               </a>
+              </div>
+              <p style={{ fontSize: 10.5, color: 'rgba(255,255,255,.26)', fontWeight: 600, letterSpacing: '.07em', textTransform: 'uppercase', margin: 0 }}>
+                Gratuit · Actif 24/7 · Classements, équipages, events
+              </p>
             </div>
 
             {/* Séparateur gradient */}
@@ -352,10 +395,17 @@ export default function Hero() {
                 liveVal={stats?.activeVocal > 0 ? `${stats.activeVocal}` : null}
               />
             </div>
+
+              {/* Features */}
+              <div className="fade-up-3" style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 22 }}>
+                <HeroFeatureCard icon="⚓" title="Équipages" desc="Rejoins ton équipage de nakamas" />
+                <HeroFeatureCard icon="📊" title="Classements" desc="Grimpe le leaderboard vocal" />
+                <HeroFeatureCard icon="🎉" title="Événements" desc="Ne rate aucun event du serveur" />
+              </div>
           </div>
 
           {/* ── Right column — UnifiedSidebar ── */}
-          {!isMobile && (
+          {!isNarrow && (
             <div style={{ position: 'sticky', top: 90 }}>
               <UnifiedSidebar />
             </div>
