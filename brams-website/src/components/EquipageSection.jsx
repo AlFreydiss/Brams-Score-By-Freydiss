@@ -140,6 +140,13 @@ export default function EquipageSection() {
           </p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
             <a
+              href="/equipage"
+              className="btn"
+              style={{ fontSize: 14, background: 'linear-gradient(135deg,#d4a017,#e8b84a)', color: '#1a1a1a', fontWeight: 700, boxShadow: '0 4px 20px rgba(212,160,23,0.3)' }}
+            >
+              ⚔️ Explorer les équipages
+            </a>
+            <a
               href="https://discord.gg/v3Ddhtbz"
               target="_blank"
               rel="noopener noreferrer"

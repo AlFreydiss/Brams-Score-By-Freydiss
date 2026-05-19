@@ -97,16 +97,26 @@ const CSS = `
     100% { background-position: 0% 50%; }
   }
   @keyframes communityGlow {
-    0%, 100% { filter: drop-shadow(0 0 18px rgba(224,82,74,0.30)); }
-    50%       { filter: drop-shadow(0 0 38px rgba(224,82,74,0.62)); }
+    0%, 100% { filter: drop-shadow(0 0 18px rgba(255,160,30,0.28)); }
+    50%       { filter: drop-shadow(0 0 42px rgba(255,185,55,0.58)); }
+  }
+  @keyframes ha-title-breath {
+    0%, 100% { text-shadow: 0 1px 0 rgba(0,0,0,.70), 0 4px 16px rgba(0,0,0,.55), 0 0 50px rgba(200,130,25,.18); }
+    50%       { text-shadow: 0 1px 0 rgba(0,0,0,.70), 0 4px 16px rgba(0,0,0,.55), 0 0 70px rgba(220,150,30,.34); }
   }
   .hero-brams {
     display: block;
-    background: linear-gradient(135deg, #fff 40%, rgba(255,255,255,0.55));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    animation: slideFromLeft 0.85s cubic-bezier(0.22,1,0.36,1) both;
+    background: none !important;
+    -webkit-text-fill-color: unset !important;
+    -webkit-background-clip: unset !important;
+    background-clip: unset !important;
+    color: rgba(238,228,205,0.96);
+    text-shadow:
+      0 1px 0 rgba(0,0,0,.70),
+      0 4px 16px rgba(0,0,0,.55),
+      0 0 50px rgba(200,130,25,.18);
+    animation: slideFromLeft 0.85s cubic-bezier(0.22,1,0.36,1) both,
+               ha-title-breath 8s 1s ease-in-out infinite;
   }
   .hero-community-glow {
     display: block;
@@ -117,7 +127,7 @@ const CSS = `
     display: block;
     /* Force Pirata One — OnePiece n'a pas tous les glyphes ASCII (i, t, y…) */
     font-family: 'Pirata One', cursive;
-    background: linear-gradient(135deg, #e0524a 0%, #ff8a80 25%, #ffb347 55%, #ff6b35 78%, #e0524a 100%);
+    background: linear-gradient(135deg, #b86a0a 0%, #e8a820 25%, #f5c842 50%, #d4900a 75%, #b86a0a 100%);
     background-size: 300% 300%;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;

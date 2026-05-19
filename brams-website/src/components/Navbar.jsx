@@ -5,16 +5,14 @@ import AuthModal from './AuthModal.jsx'
 import { useAuth } from '../contexts/AuthContext.jsx'
 
 const NAV_LINKS = [
-  { label: 'Rangs', href: '#rangs', action: null, gated: false, isRoute: false },
-  { label: 'Quiz', href: '#quiz', action: null, gated: false, isRoute: false },
-  { label: 'Classement', href: '#classement', action: null, gated: false, isRoute: false },
-  { label: 'Encyclopédie', href: '#', action: 'encyclopedie', gated: false, isRoute: false },
-  { label: 'Wiki', href: '/wiki', action: null, gated: false, isRoute: true },
-  { label: 'Théories', href: '/theories', action: null, gated: false, isRoute: true },
-  { label: 'Boutique', href: '/boutique', action: null, gated: true, isRoute: true },
-  { label: 'Brams Traitor', href: '/brams-traitor', action: null, gated: false, isRoute: true },
-  { label: 'Carte 3D', href: '#', action: 'tree', gated: false, isRoute: false },
-  { label: 'Animés & Scans', href: '#', action: 'anime-hub', gated: true, isRoute: false },
+  { label: 'Rangs',         href: '#rangs',      action: null,           gated: false, isRoute: false },
+  { label: 'Classement',    href: '#classement', action: null,           gated: false, isRoute: false },
+  { label: 'Équipages',     href: '/equipage',   action: null,           gated: false, isRoute: true  },
+  { label: 'Wiki',          href: '/wiki',       action: null,           gated: false, isRoute: true  },
+  { label: 'Théories',      href: '/theories',   action: null,           gated: false, isRoute: true  },
+  { label: 'Encyclopédie',  href: '#',           action: 'encyclopedie', gated: false, isRoute: false },
+  { label: 'Animés & Scans',href: '#',           action: 'anime-hub',    gated: true,  isRoute: false },
+  { label: 'Boutique',      href: '/boutique',   action: null,           gated: true,  isRoute: true  },
 ]
 
 function openAnimeHub(event) {
@@ -89,12 +87,9 @@ function SocialLinks({ mobile = false }) {
 
 function BrandMark({ onClick }) {
   return (
-    <button onClick={onClick} className="nav-brand-premium" aria-label="Accueil Brams Community">
-      <span className="nav-brand-emblem">B</span>
-      <span className="nav-brand-copy">
-        <span className="nav-brand-title">Brams</span>
-        <span className="nav-brand-subtitle">Community</span>
-      </span>
+    <button onClick={onClick} className="nav-brand-premium" aria-label="Accueil Brams Community" style={{ gap: 0 }}>
+      <span style={{ fontSize: 22, marginRight: 8, opacity: 0.9 }}>☠</span>
+      <span className="nav-brand-title" style={{ fontSize: 18, letterSpacing: '.01em', fontWeight: 800 }}>Brams</span>
     </button>
   )
 }
@@ -142,11 +137,11 @@ function UserMenu({ displayName, avatarUrl, onSignOut }) {
             <span><i /> Connecte</span>
           </div>
           {[
-            { label: 'Wiki', path: '/wiki' },
-            { label: 'Théories', path: '/theories' },
-            { label: 'Boutique Berry', path: '/boutique' },
-            { label: 'Brams Traitor', path: '/brams-traitor' },
-            { label: 'Arbre 3D', action: 'tree' },
+            { label: 'Équipages',    path: '/equipage'  },
+            { label: 'Wiki',         path: '/wiki'      },
+            { label: 'Théories',     path: '/theories'  },
+            { label: 'Boutique',     path: '/boutique'  },
+            { label: 'Staff Panel',  path: '/staff'     },
           ].map((item) => (
             <button
               key={item.label}

@@ -5,3 +5,7 @@ dist/
 .env.*.local
 *.log
 .DS_Store
+
+# Gros fichiers médias — pas dans git
+public/anime/
+*.mkv

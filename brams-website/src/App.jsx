@@ -54,7 +54,18 @@ const ConstellationPage  = lazy(() => import('./components/ConstellationPage.jsx
 const DevilFruitPage     = lazy(() => import('./components/devil-fruit/DevilFruitPage.jsx'))
 const BerryShop          = lazy(() => import('./components/BerryShop.jsx'))
 const BramsTraitorPage   = lazy(() => import('./components/BramsTraitorPage.jsx'))
-const CinematicPirateBackground = lazy(() => import('./components/atmosphere/CinematicPirateBackground.jsx'))
+const StaffPanel         = lazy(() => import('./components/StaffPanel.jsx'))
+function AMVBackground() {
+  return (
+    <video
+      autoPlay muted loop playsInline
+      onLoadedMetadata={e => { e.target.currentTime = 25 }}
+      style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 0, pointerEvents: 'none' }}
+    >
+      <source src="/bg-video.mp4" type="video/mp4" />
+    </video>
+  )
+}
 
 // Wrapper pour les pages Wiki/Théories (Navbar + fond sombre + WelcomeAnimation)
 function PageLayout({ children }) {
@@ -153,8 +164,8 @@ export default function App() {
   const mainContent = (
     <>
       <WelcomeAnimation />
-      <CinematicPirateBackground />
-      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1, background: 'var(--overlay-bg, rgba(4,7,10,0.38))', pointerEvents: 'none', transform: 'translateZ(0)', willChange: 'transform' }} />
+      <AMVBackground />
+      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1, background: 'rgba(4,7,10,0.45)', pointerEvents: 'none' }} />
 
       <div style={{ position: 'relative', zIndex: 2, isolation: 'isolate' }}>
         <Navbar />
@@ -178,55 +189,6 @@ export default function App() {
       <AIChatWidget hidden={mediaOverlayOpen || encyclopedieOpen} />
       <AkainuGame />
 
-      {animeHubOpen && (
-        isAuthenticated ? (
-          <AnimeHub
-            onClose={() => setAnimeHubOpen(false)}
-            onOpenOnepiece={() => { setAnimeHubOpen(false); setScansOpen(true) }}
-            onOpenTpn={() => { setAnimeHubOpen(false); setTpnOpen(true) }}
-            onOpenDrstone={() => { setAnimeHubOpen(false); setDrstoneOpen(true) }}
-            onOpenJjk={() => { setAnimeHubOpen(false); setJjkOpen(true) }}
-            onOpenKingdom={() => { setAnimeHubOpen(false); setKingdomOpen(true) }}
-            onOpenAot={() => { setAnimeHubOpen(false); setAotOpen(true) }}
-            onOpenKny={() => { setAnimeHubOpen(false); setKnyOpen(true) }}
-            onOpenNnt={() => { setAnimeHubOpen(false); setNntOpen(true) }}
-            onOpenSl={() => { setAnimeHubOpen(false); setSlOpen(true) }}
-            onOpenDbs={() => { setAnimeHubOpen(false); setDbsOpen(true) }}
-            onOpenBc={() => { setAnimeHubOpen(false); setBcOpen(true) }}
-            onOpenMha={() => { setAnimeHubOpen(false); setMhaOpen(true) }}
-            onOpenFireforce={() => { setAnimeHubOpen(false); setFireforcOpen(true) }}
-            onOpenBluelock={() => { setAnimeHubOpen(false); setBluelockOpen(true) }}
-          />
-        ) : (
-          <AuthGuard onClose={() => setAnimeHubOpen(false)} feature="les animés & scans" />
-        )
-      )}
-      {tpnOpen     && <TpnPage     onClose={() => setTpnOpen(false)} />}
-      {drstoneOpen && <DrStonePage onClose={() => setDrstoneOpen(false)} />}
-      {jjkOpen     && <JjkPage     onClose={() => setJjkOpen(false)} />}
-      {kingdomOpen && <KingdomPage onClose={() => setKingdomOpen(false)} />}
-      {aotOpen     && <AotPage     onClose={() => setAotOpen(false)} />}
-      {knyOpen     && <KnyPage     onClose={() => setKnyOpen(false)} />}
-      {nntOpen     && <NntPage     onClose={() => setNntOpen(false)} />}
-      {slOpen      && <SlPage      onClose={() => setSlOpen(false)} />}
-      {dbsOpen     && <DbsPage     onClose={() => setDbsOpen(false)} />}
-      {bcOpen        && <BcPage        onClose={() => setBcOpen(false)} />}
-      {mhaOpen       && <MhaPage       onClose={() => setMhaOpen(false)} />}
-      {fireforcOpen  && <FireForcePage onClose={() => setFireforcOpen(false)} />}
-      {bluelockOpen  && <BlueLockPage  onClose={() => setBluelockOpen(false)} />}
-      {treeOpen      && <FamilyTree3D  onClose={() => setTreeOpen(false)} />}
-      {scansOpen && (
-        isAuthenticated
-          ? <ScansPage onClose={() => setScansOpen(false)} />
-          : <AuthGuard onClose={() => setScansOpen(false)} feature="les scans One Piece" />
-      )}
-      {encyclopedieOpen && <EncyclopediePage onClose={() => setEncyclopedieOpen(false)} />}
-      {uploadOpen && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: '#0b0c0e', overflowY: 'auto' }}>
-          <button onClick={() => setUploadOpen(false)} style={{ position: 'fixed', top: 16, right: 16, zIndex: 10000, background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, color: '#fff', padding: '8px 16px', cursor: 'pointer', fontSize: 14 }}>✕ Fermer</button>
-          <BlobUploadPage />
-        </div>
-      )}
     </>
   )
 
@@ -278,9 +240,63 @@ export default function App() {
         <Route path="/brams-traitor" element={<BramsTraitorPage />} />
         <Route path="/pirate-arena" element={<BramsTraitorPage />} />
 
+        {/* Panel staff modération */}
+        <Route path="/staff" element={<StaffPanel />} />
+
         {/* Homepage */}
         <Route path="/*" element={mainContent} />
       </Routes>
+
+      {/* ── Overlays globaux — disponibles sur toutes les routes ── */}
+      {animeHubOpen && (
+        isAuthenticated ? (
+          <AnimeHub
+            onClose={() => setAnimeHubOpen(false)}
+            onOpenOnepiece={() => { setAnimeHubOpen(false); setScansOpen(true) }}
+            onOpenTpn={() => { setAnimeHubOpen(false); setTpnOpen(true) }}
+            onOpenDrstone={() => { setAnimeHubOpen(false); setDrstoneOpen(true) }}
+            onOpenJjk={() => { setAnimeHubOpen(false); setJjkOpen(true) }}
+            onOpenKingdom={() => { setAnimeHubOpen(false); setKingdomOpen(true) }}
+            onOpenAot={() => { setAnimeHubOpen(false); setAotOpen(true) }}
+            onOpenKny={() => { setAnimeHubOpen(false); setKnyOpen(true) }}
+            onOpenNnt={() => { setAnimeHubOpen(false); setNntOpen(true) }}
+            onOpenSl={() => { setAnimeHubOpen(false); setSlOpen(true) }}
+            onOpenDbs={() => { setAnimeHubOpen(false); setDbsOpen(true) }}
+            onOpenBc={() => { setAnimeHubOpen(false); setBcOpen(true) }}
+            onOpenMha={() => { setAnimeHubOpen(false); setMhaOpen(true) }}
+            onOpenFireforce={() => { setAnimeHubOpen(false); setFireforcOpen(true) }}
+            onOpenBluelock={() => { setAnimeHubOpen(false); setBluelockOpen(true) }}
+          />
+        ) : (
+          <AuthGuard onClose={() => setAnimeHubOpen(false)} feature="les animés & scans" />
+        )
+      )}
+      {tpnOpen     && <TpnPage     onClose={() => setTpnOpen(false)} />}
+      {drstoneOpen && <DrStonePage onClose={() => setDrstoneOpen(false)} />}
+      {jjkOpen     && <JjkPage     onClose={() => setJjkOpen(false)} />}
+      {kingdomOpen && <KingdomPage onClose={() => setKingdomOpen(false)} />}
+      {aotOpen     && <AotPage     onClose={() => setAotOpen(false)} />}
+      {knyOpen     && <KnyPage     onClose={() => setKnyOpen(false)} />}
+      {nntOpen     && <NntPage     onClose={() => setNntOpen(false)} />}
+      {slOpen      && <SlPage      onClose={() => setSlOpen(false)} />}
+      {dbsOpen     && <DbsPage     onClose={() => setDbsOpen(false)} />}
+      {bcOpen        && <BcPage        onClose={() => setBcOpen(false)} />}
+      {mhaOpen       && <MhaPage       onClose={() => setMhaOpen(false)} />}
+      {fireforcOpen  && <FireForcePage onClose={() => setFireforcOpen(false)} />}
+      {bluelockOpen  && <BlueLockPage  onClose={() => setBluelockOpen(false)} />}
+      {treeOpen      && <FamilyTree3D  onClose={() => setTreeOpen(false)} />}
+      {scansOpen && (
+        isAuthenticated
+          ? <ScansPage onClose={() => setScansOpen(false)} />
+          : <AuthGuard onClose={() => setScansOpen(false)} feature="les scans One Piece" />
+      )}
+      {encyclopedieOpen && <EncyclopediePage onClose={() => setEncyclopedieOpen(false)} />}
+      {uploadOpen && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: '#0b0c0e', overflowY: 'auto' }}>
+          <button onClick={() => setUploadOpen(false)} style={{ position: 'fixed', top: 16, right: 16, zIndex: 10000, background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, color: '#fff', padding: '8px 16px', cursor: 'pointer', fontSize: 14 }}>✕ Fermer</button>
+          <BlobUploadPage />
+        </div>
+      )}
       </Suspense>
     </ThemeProvider>
   )
