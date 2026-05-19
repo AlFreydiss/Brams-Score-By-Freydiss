@@ -1,39 +1,126 @@
 import { rarityLabels } from '../data/rarityStyles'
 
-export function RarityBadge({ rarity }) {
-  return <span className={`enc-rarity enc-rarity-${rarity}`}>{rarityLabels[rarity] || rarity}</span>
+export const rarityColors = {
+  common: '#6b7280',
+  rare: '#3b82f6',
+  epic: '#8b5cf6',
+  legendary: '#f59e0b',
+  mythic: '#ec4899',
+  secret: '#10b981',
+  forbidden: '#ef4444',
 }
 
-export function AnimeSelector({ animes, activeId, entriesByAnime, onSelect }) {
+export function hexToRgba(hex, alpha = 1) {
+  const clean = String(hex || '#ffffff').replace('#', '')
+  const value = clean.length === 3
+    ? clean.split('').map(char => char + char).join('')
+    : clean.padEnd(6, 'f').slice(0, 6)
+  const number = Number.parseInt(value, 16)
+  const r = (number >> 16) & 255
+  const g = (number >> 8) & 255
+  const b = number & 255
+  return `rgba(${r},${g},${b},${alpha})`
+}
+
+function isSpoilerHidden(item, spoilerSafe, revealed = []) {
+  return spoilerSafe && (item.isMajorSpoiler || item.spoilerLevel >= 4 || item.badge === 'Spoiler') && !revealed.includes(item.id)
+}
+
+export function RarityBadge({ rarity }) {
+  const color = rarityColors[rarity] || rarityColors.common
   return (
-    <div className="enc-selector" aria-label="Choisir un univers anime">
-      {animes.map(anime => {
-        const active = anime.id === activeId
-        return (
-          <button key={anime.id} className={`enc-anime-tab ${active ? 'is-active' : ''}`} onClick={() => onSelect(anime.id)} style={{ '--anime-accent': anime.theme.accent, '--anime-soft': anime.theme.accentSoft }}>
-            <span className="enc-anime-short">{anime.shortName}</span>
-            <span className="enc-anime-copy">
-              <strong>{anime.name}</strong>
-              <small>{entriesByAnime[anime.id] || 0} archives - {anime.status}</small>
-            </span>
-          </button>
-        )
-      })}
-    </div>
+    <span className={`enc-rarity enc-rarity-${rarity}`} style={{ '--rarity-color': color }}>
+      {rarityLabels[rarity] || rarity}
+    </span>
   )
 }
 
-export function AnimeHero({ anime, spoilerSafe, setSpoilerSafe }) {
+export function Sidebar({ animes, activeId, entriesByAnime, query, onQueryChange, spoilerSafe, onSpoilerToggle, onSelect, onClose }) {
   return (
-    <section className="enc-hero" style={{ '--title-gradient': anime.theme.titleGradient }}>
-      <p className="enc-kicker">{anime.label}</p>
-      <h1>{anime.title}</h1>
-      <p className="enc-subtitle">{anime.description}</p>
-      <div className="enc-stats">
-        {anime.stats.map(stat => (
-          <div className="enc-stat" key={stat.label}>
+    <aside className="enc-sidebar">
+      <div className="enc-sidebar-head">
+        <strong>☠ Archives</strong>
+        <button className="enc-icon-btn" type="button" onClick={onClose} aria-label="Fermer">X</button>
+      </div>
+
+      <nav className="enc-anime-list" aria-label="Univers anime">
+        {animes.map((anime, index) => {
+          const active = anime.id === activeId
+          const accent = anime.theme?.accent || '#ffffff'
+          return (
+            <button
+              key={anime.id}
+              type="button"
+              className={`enc-sidebar-item ${active ? 'is-active' : ''}`}
+              onClick={() => onSelect(anime.id)}
+              style={{
+                '--anime-accent': accent,
+                '--anime-accent-soft': hexToRgba(accent, 0.1),
+                animationDelay: `${index * 34}ms`,
+              }}
+            >
+              <span className="enc-sidebar-bar" />
+              <span className="enc-sidebar-emoji" aria-hidden="true">{anime.emoji || anime.shortName}</span>
+              <span className="enc-sidebar-name">{anime.name}</span>
+              <span className="enc-sidebar-count">{entriesByAnime[anime.id] || 0}</span>
+            </button>
+          )
+        })}
+      </nav>
+
+      <div className="enc-sidebar-tools">
+        <label className="enc-search">
+          <span aria-hidden="true">⌕</span>
+          <input value={query} onChange={event => onQueryChange(event.target.value)} placeholder="Recherche" />
+        </label>
+      </div>
+
+      <button className={`enc-spoiler-button ${spoilerSafe ? 'is-active' : ''}`} type="button" onClick={onSpoilerToggle}>
+        <span>Mode spoiler</span>
+        <strong>{spoilerSafe ? 'Protege' : 'Libre'}</strong>
+      </button>
+    </aside>
+  )
+}
+
+export function MainTopbar({ anime, activeTab, tabs, onTabChange, onClose }) {
+  return (
+    <header className="enc-main-topbar">
+      <div className="enc-breadcrumb">
+        <span>Archives</span>
+        <strong>{anime.name}</strong>
+      </div>
+      <div className="enc-tabs" role="tablist" aria-label="Sections">
+        {tabs.map(tab => (
+          <button key={tab.id} type="button" role="tab" aria-selected={activeTab === tab.id} className={activeTab === tab.id ? 'is-active' : ''} onClick={() => onTabChange(tab.id)}>
+            {tab.label}
+          </button>
+        ))}
+      </div>
+      <button className="enc-icon-btn enc-top-close" type="button" onClick={onClose} aria-label="Fermer">X</button>
+    </header>
+  )
+}
+
+export function AnimeHeroStrip({ anime, entryCount, secretCount }) {
+  const stats = [
+    { label: 'Fiches', value: entryCount },
+    { label: 'Stats', value: anime.stats?.length || 0 },
+    { label: 'Archives', value: secretCount },
+  ]
+
+  return (
+    <section className="enc-hero-strip" style={{ '--title-gradient': anime.theme?.titleGradient }}>
+      <div>
+        <span>{anime.label}</span>
+        <h1>{anime.name}</h1>
+        <p>{anime.description}</p>
+      </div>
+      <div className="enc-hero-stats">
+        {stats.map(stat => (
+          <div key={stat.label}>
             <strong>{stat.value}</strong>
-            <span>{stat.label}</span>
+            <small>{stat.label}</small>
           </div>
         ))}
       </div>
@@ -41,99 +128,183 @@ export function AnimeHero({ anime, spoilerSafe, setSpoilerSafe }) {
   )
 }
 
-export function AnimeSearchBar({ value, onChange, placeholder }) {
+export function CategoryPills({ categories, active, onChange }) {
+  const visible = categories.filter(category => !['world-map', 'coming-soon', 'comparator'].includes(category.id))
   return (
-    <label className="enc-search">
-      <span>Recherche</span>
-      <input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} />
-    </label>
-  )
-}
-
-export function AnimeCategoryPills({ categories, active, onChange }) {
-  return (
-    <div className="enc-pill-row" aria-label="Filtres categories">
-      <button className={active === 'all' ? 'is-active' : ''} onClick={() => onChange('all')}>Tout</button>
-      {categories.filter(category => !['world-map', 'coming-soon', 'comparator'].includes(category.id)).map(category => (
-        <button key={category.id} className={active === category.id ? 'is-active' : ''} onClick={() => onChange(category.id)}>{category.label}</button>
+    <div className="enc-category-row" aria-label="Categories">
+      <button type="button" className={active === 'all' ? 'is-active' : ''} onClick={() => onChange('all')}>Tout</button>
+      {visible.map(category => (
+        <button key={category.id} type="button" className={active === category.id ? 'is-active' : ''} onClick={() => onChange(category.id)}>
+          {category.label}
+        </button>
       ))}
     </div>
   )
 }
 
-export function FilterPills({ rarity, setRarity, favoritesOnly, setFavoritesOnly, secretOnly, setSecretOnly }) {
-  const rarities = ['all', 'common', 'rare', 'epic', 'legendary', 'mythic', 'secret', 'forbidden']
-  return (
-    <div className="enc-pill-row enc-secondary-filters" aria-label="Filtres avances">
-      {rarities.map(item => <button key={item} className={rarity === item ? 'is-active' : ''} onClick={() => setRarity(item)}>{item === 'all' ? 'Toutes raretes' : rarityLabels[item]}</button>)}
-      <button className={favoritesOnly ? 'is-active' : ''} onClick={() => setFavoritesOnly(!favoritesOnly)}>Favoris</button>
-      <button className={secretOnly ? 'is-active' : ''} onClick={() => setSecretOnly(!secretOnly)}>Archives sensibles</button>
-    </div>
-  )
-}
-
-export function EntryGrid({ entries, favorites, spoilerSafe, onToggleFavorite, onReveal, revealed, onSelect }) {
+export function EntryGrid({ entries, favorites, spoilerSafe, revealed, onToggleFavorite, onReveal, onSelect }) {
   if (!entries.length) {
     return (
       <div className="enc-empty">
         <strong>Aucune archive trouvee.</strong>
-        <span>Essaie un autre nom, une categorie ou un univers.</span>
+        <span>Essaie une autre recherche ou categorie.</span>
       </div>
     )
   }
+
   return (
     <div className="enc-entry-grid">
-      {entries.map(entry => (
-        <EntryCard key={entry.id} entry={entry} isFavorite={favorites.includes(entry.slug)} spoilerSafe={spoilerSafe} onToggleFavorite={onToggleFavorite} revealed={revealed.includes(entry.id)} onReveal={onReveal} onSelect={onSelect} />
+      {entries.map((entry, index) => (
+        <EntryCard
+          key={entry.id}
+          entry={entry}
+          index={index}
+          isFavorite={favorites.includes(entry.slug)}
+          spoilerSafe={spoilerSafe}
+          revealed={revealed}
+          onToggleFavorite={onToggleFavorite}
+          onReveal={onReveal}
+          onSelect={onSelect}
+        />
       ))}
     </div>
   )
 }
 
-export function EntryCard({ entry, isFavorite, spoilerSafe, onToggleFavorite, revealed, onReveal, onSelect }) {
-  const hidden = false
+export function EntryCard({ entry, index = 0, isFavorite, spoilerSafe, revealed, onToggleFavorite, onReveal, onSelect }) {
+  const color = rarityColors[entry.rarity] || rarityColors.common
+  const hidden = isSpoilerHidden(entry, spoilerSafe, revealed)
+  const tags = entry.tags || []
+
   return (
-    <article className={`enc-card enc-rarity-card-${entry.rarity} ${hidden ? 'is-spoiler-hidden' : ''}`}>
+    <article className={`enc-card enc-rarity-card-${entry.rarity} ${hidden ? 'is-spoiler-hidden' : ''}`} style={{ '--rarity-color': color, '--rarity-glow': hexToRgba(color, 0.2), animationDelay: `${Math.min(index, 12) * 28}ms` }}>
       <div className="enc-card-top">
         <RarityBadge rarity={entry.rarity} />
-        <button className={`enc-fav ${isFavorite ? 'is-active' : ''}`} aria-label={`Ajouter ${entry.name} aux favoris`} onClick={() => onToggleFavorite(entry.slug)}>♥</button>
+        <button className={`enc-fav ${isFavorite ? 'is-active' : ''}`} type="button" aria-label={`${isFavorite ? 'Retirer' : 'Ajouter'} ${entry.name} des favoris`} onClick={() => onToggleFavorite(entry.slug)}>
+          ♥
+        </button>
       </div>
-      <h3>{hidden ? 'Archive masquee' : entry.name}</h3>
-      <p className="enc-card-sub">{hidden ? 'Mode sans spoiler actif' : entry.subtitle || entry.category}</p>
-      <p>{hidden ? 'Cette carte contient un spoiler majeur. Tu peux la reveler manuellement.' : entry.description}</p>
-      <div className="enc-tags">{entry.tags.slice(0, 4).map(tag => <span key={tag}>{tag}</span>)}</div>
-      <button className="enc-card-detail" onClick={() => onSelect(entry)}>Ouvrir la fiche</button>
+      <h3>{hidden ? 'Archive protegee' : entry.name}</h3>
+      <p className="enc-card-sub">{hidden ? 'Mode spoiler actif' : entry.subtitle || entry.category}</p>
+      <p className="enc-card-desc">{hidden ? 'Cette fiche contient un spoiler majeur. Tu peux la reveler manuellement.' : entry.description}</p>
+      <div className="enc-tags">
+        {tags.slice(0, 4).map(tag => <span key={tag}>{tag}</span>)}
+      </div>
+      <div className="enc-card-actions">
+        {hidden && <button type="button" className="enc-ghost-btn" onClick={() => onReveal(entry.id)}>Reveler</button>}
+        <button type="button" className="enc-ghost-btn" onClick={() => onSelect(entry)}>Ouvrir</button>
+      </div>
     </article>
   )
 }
 
+export function TimelineTab({ items, spoilerSafe, revealed, onReveal }) {
+  if (!items.length) return <EmptyState text="Aucune timeline disponible pour cet univers." />
+
+  return (
+    <section className="enc-timeline">
+      {items.map((item, index) => {
+        const hidden = isSpoilerHidden(item, spoilerSafe, revealed)
+        return (
+          <article key={item.id} className={`enc-time-item ${hidden ? 'is-spoiler-hidden' : ''}`} style={{ animationDelay: `${index * 35}ms` }}>
+            <div className="enc-time-meta">
+              <span className={item.badge === 'Spoiler' ? 'is-spoiler' : ''}>{item.badge}</span>
+              <strong>{String(index + 1).padStart(2, '0')}</strong>
+            </div>
+            <div className="enc-time-line"><i /></div>
+            <div className="enc-time-card">
+              <h3>{hidden ? 'Arc protege' : item.title}</h3>
+              <p>{hidden ? 'Ce passage est masque par le mode spoiler.' : item.description}</p>
+              <div className="enc-tags">
+                {(item.arcs || [item.title]).slice(0, 4).map(tag => <span key={tag}>{tag}</span>)}
+              </div>
+              {hidden && <button type="button" className="enc-ghost-btn" onClick={() => onReveal(item.id)}>Reveler</button>}
+            </div>
+          </article>
+        )
+      })}
+    </section>
+  )
+}
+
+export function SecretFilesTab({ files, spoilerSafe, revealed, onReveal }) {
+  return (
+    <section className="enc-archive-section">
+      <SectionTitle label="Archives Classifiees" text="Dossiers sensibles et zones volontairement protegees par le mode spoiler." />
+      {!files.length ? (
+        <EmptyState text="Aucune archive classifiee disponible pour cet univers." />
+      ) : (
+        <div className="enc-secret-grid">
+          {files.map((file, index) => {
+            const color = rarityColors[file.rarity] || rarityColors.secret
+            const hidden = isSpoilerHidden(file, spoilerSafe, revealed)
+            return (
+              <article key={file.id} className={`enc-secret enc-secret-${file.rarity} ${hidden ? 'is-spoiler-hidden' : ''}`} style={{ '--rarity-color': color, animationDelay: `${index * 32}ms` }}>
+                <span className="enc-stamp">{file.rarity}</span>
+                <div className="enc-card-top">
+                  <RarityBadge rarity={file.rarity} />
+                  <span className="enc-danger">{file.dangerLevel}</span>
+                </div>
+                <h3>{hidden ? 'Dossier protege' : file.title}</h3>
+                <p>{hidden ? 'Archive masquee par le mode spoiler.' : file.summary}</p>
+                <div className="enc-tags">
+                  {(file.tags || []).map(tag => <span key={tag}>{tag}</span>)}
+                </div>
+                {hidden && <button type="button" className="enc-ghost-btn" onClick={() => onReveal(file.id)}>Reveler</button>}
+              </article>
+            )
+          })}
+        </div>
+      )}
+    </section>
+  )
+}
+
+export function ToolsTab({ children }) {
+  return <div className="enc-tools-stack">{children}</div>
+}
+
 export function EntryDetailPanel({ entry, onClose }) {
   if (!entry) return null
+
+  const color = rarityColors[entry.rarity] || rarityColors.common
   const stats = entry.stats || {}
+
   return (
-    <div className="enc-modal" role="dialog" aria-modal="true" aria-label={`Fiche ${entry.name}`}>
-      <article className={`enc-modal-card enc-detail-panel enc-rarity-card-${entry.rarity}`}>
-        <button className="enc-modal-close" onClick={onClose} aria-label="Fermer">×</button>
+    <>
+      <button className="enc-drawer-overlay" type="button" aria-label="Fermer la fiche" onClick={onClose} />
+      <aside className={`enc-entry-drawer enc-rarity-card-${entry.rarity}`} role="dialog" aria-modal="true" aria-label={`Fiche ${entry.name}`} style={{ '--rarity-color': color, '--rarity-glow': hexToRgba(color, 0.2) }}>
+        <button className="enc-icon-btn enc-drawer-close" type="button" onClick={onClose} aria-label="Fermer">X</button>
         <RarityBadge rarity={entry.rarity} />
         <h2>{entry.name}</h2>
-        <p className="enc-card-sub">{entry.subtitle || entry.category}</p>
-        <p>{entry.description}</p>
+        <p className="enc-drawer-sub">{entry.subtitle || entry.category}</p>
+        <p className="enc-drawer-desc">{entry.description}</p>
+
         {!!Object.keys(stats).length && (
           <div className="enc-detail-stats">
             {Object.entries(stats).map(([key, value]) => (
               <div key={key}>
-                <span>{key}</span>
-                <i><b style={{ width: `${value}%` }} /></i>
+                <span>{statLabel(key)}</span>
+                <i><b style={{ width: `${Math.max(0, Math.min(100, Number(value) || 0))}%` }} /></i>
                 <em>{value}</em>
               </div>
             ))}
           </div>
         )}
-        {entry.strengths && <div className="enc-detail-columns"><DetailList title="Forces" items={entry.strengths} /><DetailList title="Faiblesses" items={entry.weaknesses || []} /></div>}
-        {entry.awakening && <p><strong>Eveil:</strong> {entry.awakening}</p>}
-        <div className="enc-tags">{(entry.tags || []).map(tag => <span key={tag}>{tag}</span>)}</div>
-      </article>
-    </div>
+
+        {entry.strengths && (
+          <div className="enc-detail-columns">
+            <DetailList title="Forces" items={entry.strengths} />
+            <DetailList title="Faiblesses" items={entry.weaknesses || []} />
+          </div>
+        )}
+
+        {entry.awakening && <p className="enc-awakening"><strong>Eveil:</strong> {entry.awakening}</p>}
+        <div className="enc-tags">
+          {(entry.tags || []).map(tag => <span key={tag}>{tag}</span>)}
+        </div>
+      </aside>
+    </>
   )
 }
 
@@ -146,74 +317,8 @@ function DetailList({ title, items }) {
   )
 }
 
-export function SecretFilesSection({ files, spoilerSafe, revealed, onReveal }) {
-  return (
-    <section className="enc-section">
-      <SectionTitle label="Archives interdites" text="Dossiers sensibles, theories majeures et zones volontairement protegees par le mode sans spoiler." />
-      <div className="enc-secret-grid">
-        {files.map(file => {
-          const hidden = false
-          return (
-            <article key={file.id} className={`enc-secret enc-rarity-card-${file.rarity} ${hidden ? 'is-spoiler-hidden' : ''}`}>
-              <div className="enc-card-top"><RarityBadge rarity={file.rarity} /><span>{file.dangerLevel}</span></div>
-              <h3>{hidden ? 'Dossier classifie' : file.title}</h3>
-              <p>{hidden ? 'Archive masquee par le mode sans spoiler.' : file.summary}</p>
-              <div className="enc-tags">{file.tags.map(tag => <span key={tag}>{tag}</span>)}</div>
-            </article>
-          )
-        })}
-      </div>
-    </section>
-  )
-}
-
-export function AnimeTimeline({ items, spoilerSafe, revealed, onReveal }) {
-  return (
-    <section className="enc-section">
-      <SectionTitle label="Timeline" text="Chronologie dynamique de l'univers selectionne, avec protection des arcs sensibles." />
-      <div className="enc-timeline">
-        {items.map(item => {
-          const hidden = false
-          return (
-            <article key={item.id} className={`enc-time-item ${hidden ? 'is-spoiler-hidden' : ''}`}>
-              <span>{item.badge}</span>
-              <h3>{hidden ? 'Arc masque' : item.title}</h3>
-              <p>{hidden ? 'Spoiler protege.' : item.description}</p>
-              {hidden && <button className="enc-reveal" onClick={() => onReveal(item.id)}>Reveler</button>}
-            </article>
-          )
-        })}
-      </div>
-    </section>
-  )
-}
-
-export function CommunityModesSection({ modes }) {
-  return (
-    <section className="enc-section">
-      <SectionTitle label="Modes communautaires bientot" text="Quiz, blind tests et defis seront lies au classement Brams et aux berries." />
-      <div className="enc-mode-grid">
-        {modes.map(mode => (
-          <article className="enc-mode" key={`${mode.animeId}:${mode.title}`}>
-            <span>Bientot</span>
-            <h3>{mode.title}</h3>
-            <p>{mode.description}</p>
-            <button disabled>Arrive bientot</button>
-          </article>
-        ))}
-      </div>
-    </section>
-  )
-}
-
-export function FavoritesSection({ entries }) {
-  if (!entries.length) return null
-  return (
-    <section className="enc-section">
-      <SectionTitle label="Ma collection" text={`${entries.length} archive(s) sauvegardee(s) dans cet univers.`} />
-      <div className="enc-mini-list">{entries.map(entry => <span key={entry.id}>{entry.name}</span>)}</div>
-    </section>
-  )
+function statLabel(key) {
+  return key.replace(/([A-Z])/g, ' $1').replace(/^./, char => char.toUpperCase())
 }
 
 export function SectionTitle({ label, text }) {
@@ -221,7 +326,26 @@ export function SectionTitle({ label, text }) {
     <div className="enc-section-title">
       <span>BRAMS ARCHIVES</span>
       <h2>{label}</h2>
-      <p>{text}</p>
+      {text && <p>{text}</p>}
     </div>
   )
 }
+
+function EmptyState({ text }) {
+  return (
+    <div className="enc-empty">
+      <strong>Rien a afficher.</strong>
+      <span>{text}</span>
+    </div>
+  )
+}
+
+export const AnimeSelector = Sidebar
+export const AnimeHero = AnimeHeroStrip
+export const AnimeSearchBar = null
+export const AnimeCategoryPills = CategoryPills
+export const FilterPills = null
+export const SecretFilesSection = SecretFilesTab
+export const AnimeTimeline = TimelineTab
+export function CommunityModesSection() { return null }
+export function FavoritesSection() { return null }
