@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
-import { supabase, signUpWithEmail, signInWithEmail, signOutUser, signInWithDiscord as discordOAuth } from '../lib/supabase.js'
+import { supabase, signUpWithEmail, signInWithEmail, signOutUser, signInWithDiscord as discordOAuth, fetchMemberProfile } from '../lib/supabase.js'
 
 const AuthContext = createContext(null)
 
@@ -12,11 +12,27 @@ function hasSeenWelcome(user) {
   return false
 }
 
+function getDiscordIdentity(user) {
+  return user?.identities?.find(identity => identity.provider === 'discord') || null
+}
+
+function resolveDiscordId(user) {
+  const discordIdentity = getDiscordIdentity(user)
+  return user?.user_metadata?.provider_id
+    ?? user?.user_metadata?.custom_claims?.provider_id
+    ?? discordIdentity?.identity_data?.provider_id
+    ?? discordIdentity?.identity_data?.sub
+    ?? discordIdentity?.id
+    ?? user?.user_metadata?.sub
+    ?? null
+}
+
 export function AuthProvider({ children }) {
   const [user,        setUser]        = useState(null)
   const [session,     setSession]     = useState(null)
   const [loading,     setLoading]     = useState(true)
   const [showWelcome, setShowWelcome] = useState(false)
+  const [memberProfile, setMemberProfile] = useState(null)
 
   const userRef = useRef(null)
 
@@ -35,7 +51,17 @@ export function AuthProvider({ children }) {
       console.log('[auth] init — search:', search.slice(0, 80) || '(vide)', '| hash:', hash.slice(0, 80) || '(vide)')
 
       // Code PKCE détecté dans l'URL → échange séquentiel (await obligatoire)
-      const code = new URLSearchParams(search).get('code')
+      const params = new URLSearchParams(search)
+      const authError = params.get('error_description') || params.get('error')
+      if (authError) {
+        console.error('[auth] OAuth retour erreur:', authError)
+        if (mounted) {
+          localStorage.setItem('brams_auth_error', authError)
+          window.history.replaceState({}, document.title, window.location.pathname)
+        }
+      }
+
+      const code = params.get('code')
       if (code) {
         console.log('[auth] code PKCE trouvé, échange...')
         try {
@@ -116,6 +142,20 @@ export function AuthProvider({ children }) {
 
   const signOut = useCallback(async () => { await signOutUser() }, [])
 
+  const discordId = resolveDiscordId(user)
+
+  useEffect(() => {
+    let active = true
+    if (!discordId) {
+      setMemberProfile(null)
+      return
+    }
+    fetchMemberProfile(discordId).then(profile => {
+      if (active) setMemberProfile(profile)
+    })
+    return () => { active = false }
+  }, [discordId])
+
   const dismissWelcome = useCallback(() => {
     const u = userRef.current
     if (u?.id) {
@@ -136,16 +176,18 @@ export function AuthProvider({ children }) {
     signUp,
     signOut,
     isAuthenticated: !!user,
-    displayName: user?.user_metadata?.full_name
+    displayName: memberProfile?.username
+      || user?.user_metadata?.full_name
       || user?.user_metadata?.display_name
+      || user?.user_metadata?.name
+      || user?.user_metadata?.global_name
       || user?.user_metadata?.custom_claims?.global_name
       || user?.email?.split('@')[0]
       || 'Pirate',
-    avatarUrl: user?.user_metadata?.avatar_url ?? null,
-    discordId: user?.user_metadata?.provider_id
-      ?? user?.identities?.find(i => i.provider === 'discord')?.id
-      ?? user?.user_metadata?.sub
-      ?? null,
+    avatarUrl: memberProfile?.avatar_url || user?.user_metadata?.avatar_url || user?.user_metadata?.picture || null,
+    discordId,
+    memberProfile,
+    berryCount: memberProfile?.berrys ?? null,
     userId: user?.id ?? null,
   }
 

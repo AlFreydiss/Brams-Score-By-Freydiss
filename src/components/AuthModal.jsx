@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext.jsx'
 
 const DISCORD_BLUE = '#5865F2'
@@ -30,6 +30,13 @@ export default function AuthModal({ onClose }) {
   const [email,    setEmail]    = useState('')
   const [password, setPassword] = useState('')
   const [name,     setName]     = useState('')
+
+  useEffect(() => {
+    const storedError = localStorage.getItem('brams_auth_error')
+    if (!storedError) return
+    setError(storedError)
+    localStorage.removeItem('brams_auth_error')
+  }, [])
 
   async function handleDiscord() {
     setLoading(true); setError('')
