@@ -40,14 +40,14 @@ const animeAccentColors = {
 }
 
 const animeEmojis = {
-  'one-piece': '☠',
-  naruto: '🍥',
-  'dragon-ball': '🟠',
-  bleach: '⚔',
-  'fullmetal-alchemist': '⚗',
-  'my-hero-academia': '★',
-  'the-promised-neverland': '⌖',
-  'dr-stone': '✦',
+  'one-piece': '☠️',
+  naruto: '🍃',
+  'dragon-ball': '🔮',
+  bleach: '⚔️',
+  'fullmetal-alchemist': '⚗️',
+  'my-hero-academia': '⚡',
+  'the-promised-neverland': '🔑',
+  'dr-stone': '🧪',
 }
 
 const baseTabs = [
@@ -84,6 +84,7 @@ export default function AnimeEncyclopediaPage({ onClose }) {
   const [activeTab, setActiveTab] = useState('fiches')
   const [category, setCategory] = useState('all')
   const [query, setQuery] = useState('')
+  const [tagFilter, setTagFilter] = useState('')
   const [revealed, setRevealed] = useState([])
   const [selectedEntry, setSelectedEntry] = useState(null)
   const [favorites, setFavorites] = useState(() => readJson(FAVORITES_KEY, {}))
@@ -120,15 +121,24 @@ export default function AnimeEncyclopediaPage({ onClose }) {
     Object.fromEntries((animeCategories[animeId] || anime.categories || []).map(item => [item.id, item.label]))
   ), [animeId, anime.categories])
 
+  const categoryCounts = useMemo(() => {
+    const counts = { all: baseEntries.length }
+    baseEntries.forEach(entry => {
+      counts[entry.category] = (counts[entry.category] || 0) + 1
+    })
+    return counts
+  }, [baseEntries])
+
   const favoriteSlugs = favorites[animeId] || []
   const normalizedQuery = query.trim().toLowerCase()
 
   const filteredEntries = useMemo(() => {
     return baseEntries.filter(entry => {
       if (category !== 'all' && entry.category !== category) return false
+      if (tagFilter && !(entry.tags || []).includes(tagFilter)) return false
       return searchEntry(entry, normalizedQuery, categoryLabels[entry.category])
     })
-  }, [baseEntries, category, categoryLabels, normalizedQuery])
+  }, [baseEntries, category, categoryLabels, normalizedQuery, tagFilter])
 
   const secretFiles = useMemo(() => animeSecretFiles.filter(file => file.animeId === animeId), [animeId])
   const timeline = animeTimelines[animeId] || []
@@ -160,6 +170,7 @@ export default function AnimeEncyclopediaPage({ onClose }) {
   useEffect(() => {
     setCategory('all')
     setQuery('')
+    setTagFilter('')
     setSelectedEntry(null)
     if (animeId !== 'one-piece' && activeTab === 'tools') setActiveTab('fiches')
   }, [activeTab, animeId])
@@ -211,7 +222,7 @@ export default function AnimeEncyclopediaPage({ onClose }) {
         <div className="enc-content">
           {activeTab === 'fiches' && (
             <>
-              <CategoryPills categories={animeCategories[animeId] || anime.categories || []} active={category} onChange={setCategory} />
+              <CategoryPills categories={animeCategories[animeId] || anime.categories || []} active={category} onChange={setCategory} counts={categoryCounts} />
               <EntryGrid
                 entries={filteredEntries}
                 favorites={favoriteSlugs}
@@ -220,6 +231,9 @@ export default function AnimeEncyclopediaPage({ onClose }) {
                 onToggleFavorite={toggleFavorite}
                 onReveal={reveal}
                 onSelect={setSelectedEntry}
+                onTagClick={setTagFilter}
+                activeTag={tagFilter}
+                onClearTag={() => setTagFilter('')}
               />
             </>
           )}

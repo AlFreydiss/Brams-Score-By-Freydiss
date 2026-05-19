@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { rarityLabels } from '../data/rarityStyles'
 
 export const rarityColors = {
@@ -8,6 +9,27 @@ export const rarityColors = {
   mythic: '#ec4899',
   secret: '#10b981',
   forbidden: '#ef4444',
+}
+
+const rarityIcons = {
+  forbidden: '⛔',
+  legendary: '★',
+  mythic: '✦',
+  epic: '◆',
+  rare: '◇',
+  secret: '👁',
+  common: '·',
+}
+
+const UNIVERSE_ICONS = {
+  'one-piece': '☠️',
+  naruto: '🍃',
+  'dragon-ball': '🔮',
+  bleach: '⚔️',
+  'fullmetal-alchemist': '⚗️',
+  'my-hero-academia': '⚡',
+  'the-promised-neverland': '🔑',
+  'dr-stone': '🧪',
 }
 
 export function hexToRgba(hex, alpha = 1) {
@@ -30,6 +52,7 @@ export function RarityBadge({ rarity }) {
   const color = rarityColors[rarity] || rarityColors.common
   return (
     <span className={`enc-rarity enc-rarity-${rarity}`} style={{ '--rarity-color': color }}>
+      <span aria-hidden="true">{rarityIcons[rarity] || rarityIcons.common}</span>
       {rarityLabels[rarity] || rarity}
     </span>
   )
@@ -75,10 +98,21 @@ export function Sidebar({ animes, activeId, entriesByAnime, query, onQueryChange
         </label>
       </div>
 
-      <button className={`enc-spoiler-button ${spoilerSafe ? 'is-active' : ''}`} type="button" onClick={onSpoilerToggle}>
-        <span>Mode spoiler</span>
-        <strong>{spoilerSafe ? 'Protege' : 'Libre'}</strong>
-      </button>
+      <div className="enc-spoiler-toggle">
+        <div>
+          <span className="enc-toggle-label">Mode spoiler</span>
+          <span className="enc-toggle-desc">Masque les spoilers majeurs</span>
+        </div>
+        <button
+          className={`enc-toggle-switch ${spoilerSafe ? 'is-on' : ''}`}
+          type="button"
+          onClick={onSpoilerToggle}
+          aria-pressed={spoilerSafe}
+          aria-label="Basculer le mode spoiler"
+        >
+          <span className="enc-toggle-knob" />
+        </button>
+      </div>
     </aside>
   )
 }
@@ -103,6 +137,7 @@ export function MainTopbar({ anime, activeTab, tabs, onTabChange, onClose }) {
 }
 
 export function AnimeHeroStrip({ anime, entryCount, secretCount }) {
+  const icon = UNIVERSE_ICONS[anime.id] || anime.emoji || anime.shortName || '✦'
   const stats = [
     { label: 'Fiches', value: entryCount },
     { label: 'Stats', value: anime.stats?.length || 0 },
@@ -111,10 +146,14 @@ export function AnimeHeroStrip({ anime, entryCount, secretCount }) {
 
   return (
     <section className="enc-hero-strip" style={{ '--title-gradient': anime.theme?.titleGradient }}>
-      <div>
-        <span>{anime.label}</span>
-        <h1>{anime.name}</h1>
-        <p>{anime.description}</p>
+      <span className="enc-hero-watermark" aria-hidden="true">{icon}</span>
+      <div className="enc-hero-copy">
+        <span className="enc-hero-icon" aria-hidden="true">{icon}</span>
+        <div>
+          <span>{anime.label}</span>
+          <h1>{anime.name}</h1>
+          <p>{anime.description}</p>
+        </div>
       </div>
       <div className="enc-hero-stats">
         {stats.map(stat => (
@@ -128,53 +167,76 @@ export function AnimeHeroStrip({ anime, entryCount, secretCount }) {
   )
 }
 
-export function CategoryPills({ categories, active, onChange }) {
+export function CategoryPills({ categories, active, onChange, counts = {} }) {
   const visible = categories.filter(category => !['world-map', 'coming-soon', 'comparator'].includes(category.id))
+  const allCount = counts.all ?? visible.reduce((sum, category) => sum + (counts[category.id] || 0), 0)
+
   return (
     <div className="enc-category-row" aria-label="Categories">
-      <button type="button" className={active === 'all' ? 'is-active' : ''} onClick={() => onChange('all')}>Tout</button>
+      <button type="button" className={active === 'all' ? 'is-active' : ''} onClick={() => onChange('all')}>
+        <span>Tout</span>
+        <span className="enc-pill-count">{allCount}</span>
+      </button>
       {visible.map(category => (
         <button key={category.id} type="button" className={active === category.id ? 'is-active' : ''} onClick={() => onChange(category.id)}>
-          {category.label}
+          <span>{category.label}</span>
+          <span className="enc-pill-count">{counts[category.id] || 0}</span>
         </button>
       ))}
     </div>
   )
 }
 
-export function EntryGrid({ entries, favorites, spoilerSafe, revealed, onToggleFavorite, onReveal, onSelect }) {
-  if (!entries.length) {
-    return (
-      <div className="enc-empty">
-        <strong>Aucune archive trouvee.</strong>
-        <span>Essaie une autre recherche ou categorie.</span>
-      </div>
-    )
-  }
-
+export function EntryGrid({ entries, favorites, spoilerSafe, revealed, onToggleFavorite, onReveal, onSelect, onTagClick, activeTag, onClearTag }) {
   return (
-    <div className="enc-entry-grid">
-      {entries.map((entry, index) => (
-        <EntryCard
-          key={entry.id}
-          entry={entry}
-          index={index}
-          isFavorite={favorites.includes(entry.slug)}
-          spoilerSafe={spoilerSafe}
-          revealed={revealed}
-          onToggleFavorite={onToggleFavorite}
-          onReveal={onReveal}
-          onSelect={onSelect}
-        />
-      ))}
-    </div>
+    <>
+      <div className="enc-fiches-header">
+        <span className="enc-fiches-count">{entries.length} archive{entries.length > 1 ? 's' : ''}</span>
+        {activeTag && (
+          <button type="button" onClick={onClearTag} className="enc-tag-active-filter">
+            🏷 {activeTag} ✕
+          </button>
+        )}
+      </div>
+
+      {!entries.length ? (
+        <div className="enc-empty">
+          <strong>Aucune archive trouvee.</strong>
+          <span>Essaie une autre recherche ou categorie.</span>
+        </div>
+      ) : (
+        <div className="enc-entry-grid">
+          {entries.map((entry, index) => (
+            <EntryCard
+              key={entry.id}
+              entry={entry}
+              index={index}
+              isFavorite={favorites.includes(entry.slug)}
+              spoilerSafe={spoilerSafe}
+              revealed={revealed}
+              onToggleFavorite={onToggleFavorite}
+              onReveal={onReveal}
+              onSelect={onSelect}
+              onTagClick={onTagClick}
+              activeTag={activeTag}
+            />
+          ))}
+        </div>
+      )}
+    </>
   )
 }
 
-export function EntryCard({ entry, index = 0, isFavorite, spoilerSafe, revealed, onToggleFavorite, onReveal, onSelect }) {
+export function EntryCard({ entry, index = 0, isFavorite, spoilerSafe, revealed, onToggleFavorite, onReveal, onSelect, onTagClick, activeTag }) {
+  const [revealing, setRevealing] = useState(false)
   const color = rarityColors[entry.rarity] || rarityColors.common
   const hidden = isSpoilerHidden(entry, spoilerSafe, revealed)
   const tags = entry.tags || []
+
+  const revealCard = () => {
+    setRevealing(true)
+    window.setTimeout(() => onReveal(entry.id), 320)
+  }
 
   return (
     <article className={`enc-card enc-rarity-card-${entry.rarity} ${hidden ? 'is-spoiler-hidden' : ''}`} style={{ '--rarity-color': color, '--rarity-glow': hexToRgba(color, 0.2), animationDelay: `${Math.min(index, 12) * 28}ms` }}>
@@ -184,16 +246,36 @@ export function EntryCard({ entry, index = 0, isFavorite, spoilerSafe, revealed,
           ♥
         </button>
       </div>
-      <h3>{hidden ? 'Archive protegee' : entry.name}</h3>
-      <p className="enc-card-sub">{hidden ? 'Mode spoiler actif' : entry.subtitle || entry.category}</p>
-      <p className="enc-card-desc">{hidden ? 'Cette fiche contient un spoiler majeur. Tu peux la reveler manuellement.' : entry.description}</p>
+      <h3>{entry.name}</h3>
+      <p className="enc-card-sub">{entry.subtitle || entry.category}</p>
+      <p className="enc-card-desc">{entry.description}</p>
       <div className="enc-tags">
-        {tags.slice(0, 4).map(tag => <span key={tag}>{tag}</span>)}
+        {tags.slice(0, 4).map(tag => (
+          <span
+            key={tag}
+            className={activeTag === tag ? 'is-active' : ''}
+            onClick={() => onTagClick?.(tag)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={event => {
+              if (event.key === 'Enter' || event.key === ' ') onTagClick?.(tag)
+            }}
+          >
+            {tag}
+          </span>
+        ))}
       </div>
       <div className="enc-card-actions">
-        {hidden && <button type="button" className="enc-ghost-btn" onClick={() => onReveal(entry.id)}>Reveler</button>}
         <button type="button" className="enc-ghost-btn" onClick={() => onSelect(entry)}>Ouvrir</button>
       </div>
+      {hidden && (
+        <div className={`enc-spoiler-overlay ${revealing ? 'enc-revealing' : ''}`}>
+          <span className="enc-spoiler-lock" aria-hidden="true">🔒</span>
+          <strong>FICHE PROTÉGÉE</strong>
+          <small>Archive sensible</small>
+          <button type="button" className="enc-reveal-btn" onClick={revealCard}>Reveler</button>
+        </div>
+      )}
     </article>
   )
 }
