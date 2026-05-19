@@ -59,7 +59,7 @@ function AMVBackground() {
     <video
       autoPlay muted loop playsInline
       onLoadedMetadata={e => { e.target.currentTime = 25 }}
-      style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 0, pointerEvents: 'none' }}
+      style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 0, pointerEvents: 'none', opacity: 0.35 }}
     >
       <source src="/bg-video.mp4" type="video/mp4" />
     </video>
