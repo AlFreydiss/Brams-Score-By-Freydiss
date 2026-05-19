@@ -908,9 +908,9 @@ export default function BerryShop() {
             <div style={{ marginBottom:18 }}>
               <div style={{ fontSize:'clamp(13px,1.8vw,17px)', fontWeight:400, color:'rgba(255,255,255,0.38)', letterSpacing:'.08em', marginBottom:4 }}>Boutique</div>
               <h1 style={{
-                fontSize:'clamp(40px,6vw,72px)', fontWeight:900, margin:0, lineHeight:.9, letterSpacing:'-0.02em',
-                background:'linear-gradient(140deg, #ffffff 0%, rgba(255,255,255,0.88) 38%, #d4a017 72%, #f59e0b 100%)',
-                WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', backgroundClip:'text',
+                fontFamily:"'Pirata One', cursive",
+                fontSize:'clamp(52px,7vw,88px)', fontWeight:900, margin:0, lineHeight:.9, letterSpacing:'-0.02em', color:'#fff',
+                textShadow:'0 0 60px rgba(212,160,23,0.22)',
               }}>
                 Prestige
               </h1>
@@ -945,102 +945,33 @@ export default function BerryShop() {
         </div>
       </div>
 
-      {/* ═══ CONTROLS ════════════════════════════════════════════════════════ */}
-      <div style={{ maxWidth:1120, margin:'0 auto 36px', padding:'0 20px' }}>
-        {/* Search */}
-        <div style={{ position:'relative', marginBottom:14 }}>
-          <span style={{ position:'absolute', left:18, top:'50%', transform:'translateY(-50%)', fontSize:16, color:'rgba(255,255,255,0.28)', pointerEvents:'none' }}>🔍</span>
-          <input
-            type="text" value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Chercher un objet, un titre, un rôle, un badge…"
-            style={{ width:'100%', paddingLeft:48, paddingRight:20, height:52, background:'rgba(255,255,255,0.04)', backdropFilter:'blur(16px)', border:'1px solid rgba(255,255,255,0.13)', borderRadius:12, color:'#fff', fontSize:14, outline:'none', boxSizing:'border-box', transition:'border-color .2s, box-shadow .2s', fontFamily:'var(--body)' }}
-            onFocus={e => { e.currentTarget.style.borderColor='rgba(212,160,23,0.50)'; e.currentTarget.style.boxShadow='0 0 0 3px rgba(212,160,23,0.10), 0 2px 16px rgba(212,160,23,0.08)' }}
-            onBlur={e  => { e.currentTarget.style.borderColor='rgba(255,255,255,0.13)'; e.currentTarget.style.boxShadow='none' }}
-          />
-        </div>
-
-        {/* Category pills */}
-        <div style={{ display:'flex', gap:6, overflowX:'auto', scrollbarWidth:'none', paddingBottom:6, marginBottom:10 }}>
-          {DISPLAY_CATS.map(cat => {
-            const active = category === cat.key
-            return (
-              <button key={cat.key} onClick={() => setCategory(cat.key)} style={{
-                display:'inline-flex', alignItems:'center', gap:6, padding:'9px 18px',
-                borderRadius:100, border:`1px solid ${active ? 'rgba(212,160,23,0.55)' : 'rgba(255,255,255,0.09)'}`,
-                background: active ? 'rgba(212,160,23,0.15)' : 'rgba(255,255,255,0.03)',
-                color: active ? GOLD : 'rgba(255,255,255,0.45)',
-                fontSize:12, fontWeight:700, cursor:'pointer', whiteSpace:'nowrap',
-                transition:'all .18s', flexShrink:0,
-                boxShadow: active ? `0 0 20px rgba(212,160,23,0.18), inset 0 0 8px rgba(212,160,23,0.05)` : 'none',
-              }}>
-                <span>{cat.icon}</span>
-                <span>{cat.label}</span>
-              </button>
-            )
-          })}
-        </div>
-
-        {/* Secondary filters */}
-        <div style={{ display:'flex', gap:8, flexWrap:'wrap', alignItems:'center' }}>
-          {[
-            { label:'Achetables uniquement', active:showAffordable, fn:() => setShowAffordable(v=>!v) },
-            { label:'Limités uniquement',    active:showLimited,    fn:() => setShowLimited(v=>!v)    },
-          ].map(f => (
-            <button key={f.label} onClick={f.fn} style={{
-              padding:'6px 14px', borderRadius:8, border:`1px solid ${f.active ? 'rgba(34,197,94,0.40)' : 'rgba(255,255,255,0.08)'}`,
-              background: f.active ? 'rgba(34,197,94,0.10)' : 'transparent',
-              color: f.active ? '#4ade80' : 'rgba(255,255,255,0.40)',
-              fontSize:11, fontWeight:700, cursor:'pointer', transition:'all .15s',
-            }}>{f.active ? '✓ ' : ''}{f.label}</button>
-          ))}
-
-          <select value={sort} onChange={e => setSort(e.target.value)} style={{ marginLeft:'auto', padding:'6px 12px', borderRadius:8, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.10)', color:'rgba(255,255,255,0.65)', fontSize:11, fontWeight:700, cursor:'pointer', outline:'none' }}>
-            {SORT_OPTIONS.map(o => <option key={o.key} value={o.key} style={{ background:'#0d0f14' }}>{o.label}</option>)}
-          </select>
-        </div>
-      </div>
-
-      {/* ═══ FEATURED — Légendaire + Mythique ══════════════════════════════ */}
-      {featuredItems.length > 0 && category === 'Tous' && !search && (
-        <div style={{ maxWidth:1120, margin:'0 auto 56px', padding:'0 20px' }}>
-          <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:12 }}>
-            <div style={{ flex:1, height:1, background:'linear-gradient(90deg, transparent, rgba(212,160,23,0.40), transparent)' }} />
-            <span style={{ fontSize:11, fontWeight:900, letterSpacing:'.2em', color:GOLD, textTransform:'uppercase', whiteSpace:'nowrap' }}>✦ Prestige &amp; Objets Convoités</span>
-            <div style={{ flex:1, height:1, background:'linear-gradient(90deg, transparent, rgba(212,160,23,0.40), transparent)' }} />
-          </div>
-          <p style={{ textAlign:'center', fontSize:12.5, color:'rgba(255,255,255,0.35)', marginBottom:24, fontStyle:'italic' }}>
-            Ces récompenses ne sont accessibles qu'aux nakamas les plus dévoués. Chaque objet est rare.
-          </p>
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(300px, 1fr))', gap:18 }}>
-            {featuredItems.map((item, i) => (
-              <FeaturedCard key={item.id} item={item} balance={state.balance} onClick={setSelectedItem} index={i} />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ═══ MAIN GRID ═══════════════════════════════════════════════════════ */}
+      {/* ═══ COMING SOON BANNER ═════════════════════════════════════════════ */}
       <div style={{ maxWidth:1120, margin:'0 auto 60px', padding:'0 20px' }}>
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
-          <div style={{ fontSize:9, fontWeight:800, letterSpacing:'.18em', color:'rgba(255,255,255,0.35)', textTransform:'uppercase' }}>
-            {category === 'Tous' ? 'Toutes les récompenses' : DISPLAY_CATS.find(c=>c.key===category)?.label}
-          </div>
-          <div style={{ fontSize:10, color:'rgba(255,255,255,0.28)', fontWeight:700 }}>{gridItems.length} objet{gridItems.length > 1 ? 's':''}</div>
-        </div>
-
-        {gridItems.length === 0 ? (
-          <div style={{ textAlign:'center', padding:'60px 20px', background:'rgba(255,255,255,0.02)', border:'1px solid rgba(255,255,255,0.06)', borderRadius:16 }}>
-            <div style={{ fontSize:48, marginBottom:14, opacity:.3 }}>🏴</div>
-            <div style={{ fontSize:15, fontWeight:700, color:'rgba(255,255,255,0.45)', marginBottom:6 }}>Aucun objet trouvé</div>
-            <div style={{ fontSize:12, color:'rgba(255,255,255,0.25)' }}>Essaie une autre catégorie ou supprime les filtres.</div>
-          </div>
-        ) : (
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(220px, 1fr))', gap:14 }}>
-            {gridItems.map((item, i) => (
-              <ShopCard key={item.id} item={item} balance={state.balance} onClick={setSelectedItem} index={i} />
+        <div style={{
+          padding:'36px 32px', borderRadius:18, textAlign:'center',
+          background:'linear-gradient(145deg, rgba(212,160,23,0.06) 0%, rgba(8,9,13,0.97) 100%)',
+          border:'1px solid rgba(212,160,23,0.18)',
+          borderTop:'3px solid rgba(212,160,23,0.50)',
+          position:'relative', overflow:'hidden',
+          animation:'bsFadeUp .5s ease',
+        }}>
+          <div style={{ position:'absolute', top:-60, left:'50%', transform:'translateX(-50%)', width:320, height:200, background:'radial-gradient(circle, rgba(212,160,23,0.09) 0%, transparent 65%)', pointerEvents:'none' }} />
+          <div style={{ fontSize:48, marginBottom:14, filter:`drop-shadow(0 0 18px rgba(212,160,23,0.55))`, animation:'bsDrift 5s ease-in-out infinite' }}>🏴‍☠️</div>
+          <div style={{ fontSize:11, fontWeight:800, letterSpacing:'.22em', color:GOLD, textTransform:'uppercase', marginBottom:10 }}>Boutique en préparation</div>
+          <h2 style={{ fontFamily:"'Pirata One', cursive", fontSize:'clamp(26px,4vw,42px)', color:'#fff', margin:'0 0 12px', lineHeight:1.1 }}>
+            Les récompenses arrivent
+          </h2>
+          <p style={{ fontSize:14, color:'rgba(255,255,255,0.42)', lineHeight:1.75, maxWidth:520, margin:'0 auto', fontStyle:'italic' }}>
+            Les objets seront ajoutés progressivement. Accumule tes berries sur le Discord — les nakamas les plus investis seront récompensés en premier.
+          </p>
+          <div style={{ display:'flex', gap:8, justifyContent:'center', flexWrap:'wrap', marginTop:22 }}>
+            {Object.entries(RARITY).map(([k, r]) => (
+              <span key={k} style={{ fontSize:9, fontWeight:800, letterSpacing:'.10em', textTransform:'uppercase', color:r.color, background:`${r.color}12`, border:`1px solid ${r.color}30`, borderRadius:100, padding:'4px 13px' }}>
+                {r.label}
+              </span>
             ))}
           </div>
-        )}
+        </div>
       </div>
 
       {/* ═══ PRESTIGE MILESTONES ═════════════════════════════════════════════ */}
