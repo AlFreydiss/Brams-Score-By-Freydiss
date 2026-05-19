@@ -139,6 +139,7 @@ export default function BlindTestPage() {
   const navigate = useNavigate()
   const { isAuthenticated, user, displayName, avatarUrl } = useAuth()
   const videoRef = useRef(null)
+  const titleRef = useRef(null)
 
   // Game state
   const [phase, setPhase]           = useState('intro')   // intro | countdown | playing | reveal | end
@@ -431,6 +432,7 @@ export default function BlindTestPage() {
                     value={titleGuess}
                     onChange={e => setTitleGuess(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && submitGuess()}
+                    ref={titleRef}
                     placeholder="Titre de l'opening / ending…"
                     style={{
                       padding:'14px 18px', borderRadius:12,
