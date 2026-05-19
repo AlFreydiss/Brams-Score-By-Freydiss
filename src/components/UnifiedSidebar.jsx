@@ -319,9 +319,6 @@ export default function UnifiedSidebar() {
           <span style={{ fontSize:10, fontWeight:700, color:'rgba(255,255,255,.45)', letterSpacing:'.10em', textTransform:'uppercase' }}>
             Brams Community
           </span>
-          <span style={{ marginLeft:'auto', fontSize:9, color:'rgba(255,255,255,.22)', fontWeight:600 }}>
-            discord.gg/v3Ddhtbz
-          </span>
         </div>
 
         {/* Tab bar */}
@@ -446,7 +443,6 @@ export default function UnifiedSidebar() {
         display:'flex', alignItems:'center', justifyContent:'space-between',
         background:'rgba(0,0,0,.15)',
       }}>
-        <span style={{ fontSize:9.5, color:'rgba(255,255,255,.28)', fontWeight:600 }}>discord.gg/v3Ddhtbz</span>
         <a
           href="https://discord.gg/v3Ddhtbz"
           target="_blank"

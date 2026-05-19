@@ -213,17 +213,14 @@ section {
 }
 .hero-title-premium {
   position: relative;
-  margin-bottom: 20px;
-  max-width: 760px;
+  margin-bottom: 24px;
+  max-width: 600px;
   font-family: var(--pirate);
-  font-size: clamp(74px, 10.8vw, 142px);
+  font-size: clamp(52px, 6.5vw, 82px);
   font-weight: 400;
-  line-height: .82;
+  line-height: .90;
   color: #fff;
-  letter-spacing: .012em;
-  transform: translateZ(0) rotateX(1deg);
-  text-shadow: 0 8px 30px rgba(0,0,0,.65), 0 0 18px rgba(200,130,25,.16);
-  animation: titleMicroGlow 7s ease-in-out infinite;
+  letter-spacing: .015em;
 }
 .hero-title-premium::before {
   content: "";
@@ -239,21 +236,11 @@ section {
 }
 .hero-brams {
   display: block;
-  background: linear-gradient(112deg, #fff 0%, #ffe4ba 24%, #ffffff 48%, #e9eef9 72%, #fff 100%);
-  background-size: 180% 180%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  animation: premiumTitleShift 9s ease-in-out infinite;
+  color: #ffffff;
 }
 .hero-community {
   display: block;
-  background: linear-gradient(112deg, #E0524A 0%, #F97316 55%, #E0524A 100%);
-  background-size: 200% 200%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  animation: premiumTitleShift 7s ease-in-out infinite;
+  color: #E0524A;
 }
 .hero-community-glow {
   position: relative;
@@ -606,11 +593,7 @@ section {
     radial-gradient(circle at 72% 24%, rgba(255,155,73,.12), transparent 24%);
 }
 .hero-title-premium {
-  max-width: 900px;
-  font-size: clamp(88px, 13vw, 180px);
-  line-height: .78;
-  letter-spacing: .01em;
-  filter: drop-shadow(0 30px 50px rgba(0,0,0,.70));
+  filter: drop-shadow(0 8px 24px rgba(0,0,0,.75));
 }
 .hero-title-premium::after {
   content: "";
@@ -625,17 +608,10 @@ section {
   animation: titleLightSweep 7.4s cubic-bezier(.22,1,.36,1) infinite;
 }
 .hero-brams {
-  text-shadow:
-    0 2px 0 rgba(74,34,16,.85),
-    0 10px 0 rgba(0,0,0,.18),
-    0 24px 42px rgba(0,0,0,.66);
+  text-shadow: 0 2px 20px rgba(0,0,0,.7);
 }
 .hero-community {
-  text-shadow:
-    0 2px 0 rgba(120,20,10,.60),
-    0 10px 0 rgba(0,0,0,.20),
-    0 24px 42px rgba(0,0,0,.66),
-    0 0 48px rgba(224,82,74,.35);
+  text-shadow: 0 2px 20px rgba(0,0,0,.6), 0 0 32px rgba(224,82,74,.25);
 }
 .hero-community-glow::after {
   content: "";
