@@ -146,6 +146,7 @@ export function AnimeHeroStrip({ anime, entryCount, secretCount }) {
         '--enc-card-glow': hexToRgba(accent, 0.22),
       }}
     >
+      <div className="enc-hero-watermark" aria-hidden="true">{anime.name}</div>
       <div className="enc-hero-copy">
         <div className="enc-hero-emblem" aria-hidden="true">
           {icon}
