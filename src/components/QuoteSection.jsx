@@ -53,7 +53,7 @@ export default function QuoteSection() {
     <section style={{
       position: 'relative', overflow: 'hidden',
       padding: '100px 0', textAlign: 'center',
-      background: `linear-gradient(180deg, transparent 0%, ${q.color}08 50%, transparent 100%)`,
+      background: `linear-gradient(180deg, rgba(3,7,14,0.30) 0%, ${q.color}10 50%, rgba(3,7,14,0.30) 100%)`,
       transition: 'background 0.6s ease',
     }}>
       {/* Lignes latérales */}

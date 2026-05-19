@@ -165,7 +165,7 @@ export default function App() {
     <>
       <WelcomeAnimation />
       <AMVBackground />
-      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1, background: 'rgba(4,7,10,0.45)', pointerEvents: 'none' }} />
+      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1, background: 'rgba(4,7,10,0.72)', pointerEvents: 'none' }} />
 
       <div style={{ position: 'relative', zIndex: 2, isolation: 'isolate' }}>
         <Navbar />
