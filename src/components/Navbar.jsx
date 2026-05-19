@@ -177,7 +177,7 @@ function DesktopNavLink({ link, active, locked, onClick }) {
     return <Link to={link.href} className={active ? 'nav-link-premium active' : 'nav-link-premium'}>{content}</Link>
   }
 
-  return <a href={link.href} onClick={link.action ? onClick : undefined} className="nav-link-premium">{content}</a>
+  return <a href={link.href} onClick={onClick} className="nav-link-premium">{content}</a>
 }
 
 export default function Navbar() {
@@ -218,9 +218,23 @@ export default function Navbar() {
   }, [menuOpen])
 
   function handleNavClick(link, event) {
-    if (link.action === 'anime-hub') openAnimeHub(event)
-    if (link.action === 'encyclopedie') openEncyclopedie(event)
-    if (link.action === 'tree') openTree(event)
+    if (link.action === 'anime-hub') { openAnimeHub(event); setMenuOpen(false); return }
+    if (link.action === 'encyclopedie') { openEncyclopedie(event); setMenuOpen(false); return }
+    if (link.action === 'tree') { openTree(event); setMenuOpen(false); return }
+
+    if (link.href?.startsWith('#')) {
+      event?.preventDefault()
+      const targetId = link.href.slice(1)
+      if (pathname !== '/') {
+        navigate('/')
+        setTimeout(() => {
+          document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth' })
+        }, 350)
+      } else {
+        document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth' })
+      }
+    }
+
     setMenuOpen(false)
   }
 
@@ -286,7 +300,7 @@ export default function Navbar() {
                     <span>{link.label}</span>
                   </Link>
                 ) : (
-                  <a key={link.label} href={link.href} onClick={link.action ? (event) => handleNavClick(link, event) : () => setMenuOpen(false)} className="nav-mobile-link">
+                  <a key={link.label} href={link.href} onClick={(event) => handleNavClick(link, event)} className="nav-mobile-link">
                     <span>{link.label}</span>
                     <span className="nav-mobile-meta">
                       {link.gated && !isAuthenticated && <span className="nav-lock"><LockIcon /></span>}
