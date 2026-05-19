@@ -5,10 +5,10 @@ const key = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
 
 export const supabase = url && key ? createClient(url, key, {
   auth: {
-    detectSessionInUrl: false,
+    detectSessionInUrl: true,
     persistSession:     true,
     autoRefreshToken:   true,
-    flowType:           'pkce',
+    flowType:           'implicit',
   },
 }) : null
 
@@ -51,11 +51,6 @@ export async function fetchMemberProfile(discordId) {
 
 export async function signInWithDiscord() {
   if (!supabase) return { error: { message: 'Client Supabase non initialisé — variables VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY manquantes.' } }
-  // Vider les verifiers PKCE périmés pour éviter les conflits entre tentatives
-  try {
-    const ref = url ? new URL(url).hostname.split('.')[0] : ''
-    if (ref) localStorage.removeItem(`sb-${ref}-auth-token-code-verifier`)
-  } catch {}
   const redirectTo = `${window.location.origin}/`
   console.log('[auth] signInWithDiscord → redirectTo:', redirectTo)
   const { data, error } = await supabase.auth.signInWithOAuth({
