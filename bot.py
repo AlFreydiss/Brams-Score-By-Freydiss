@@ -865,6 +865,16 @@ def spend_berrys(uid: str, amount: int, track: str = "spent") -> bool:
     return True
 
 
+def reset_berrys(uid: str, track: str = "lost") -> int:
+    user = get_user(_CACHE, uid)
+    old_balance = int(user.get("berrys", 0) or 0)
+    user["berrys"] = 0
+    if track and old_balance > 0:
+        _track_berry(user, track, old_balance)
+    _DIRTY.add(uid)
+    return old_balance
+
+
 
 def seconds_in_period(sessions, days, join_time=None, _now=None):
     _now = _now or now_ts()
@@ -1071,6 +1081,7 @@ db_executor = ThreadPoolExecutor(max_workers=4, thread_name_prefix="db_worker")
 bot.get_berrys   = lambda uid: get_berrys(uid)
 bot.spend_berrys = lambda uid, amount, track="spent": spend_berrys(uid, amount, track)
 bot.add_berrys   = lambda uid, amount, track="earned": add_berrys(uid, amount, track)
+bot.reset_berrys = lambda uid, track="lost": reset_berrys(uid, track)
 
 # Mémoire IA persistante par utilisateur
 bot.get_ai_memory = lambda uid: get_user(_CACHE, str(uid)).get("ai_memory", "")
@@ -7721,6 +7732,58 @@ async def addberries_cmd(
                 f"💼 Nouveau solde : `{new_balance:,}` ฿"
             ),
             color=0x2ECC71,
+        ).set_footer(text=f"Admin : {interaction.user.display_name}"),
+        ephemeral=True,
+    )
+
+
+# ─────────────────────────────────────────
+#  /reset_berry  (ADMIN)
+# ─────────────────────────────────────────
+@bot.tree.command(name="reset_berry", description="[ADMIN] Remet le solde Berry d'un membre a zero")
+@app_commands.default_permissions(administrator=True)
+@app_commands.checks.has_permissions(administrator=True)
+@app_commands.describe(
+    membre="Membre dont le solde Berry doit etre remis a zero",
+    raison="Raison du reset (optionnel, logguee dans l'historique)",
+)
+async def reset_berry_cmd(
+    interaction: discord.Interaction,
+    membre: discord.Member,
+    raison: str = "Reset admin",
+):
+    await interaction.response.defer(ephemeral=True)
+
+    if membre.bot:
+        await interaction.followup.send("❌ Les bots n'ont pas de compte Berry.", ephemeral=True)
+        return
+
+    uid = str(membre.id)
+    old_balance = reset_berrys(uid, track="lost")
+
+    # Persist immediately: this command is destructive and should not wait for
+    # the periodic cache flush.
+    await asyncio.get_running_loop().run_in_executor(db_executor, _sync_flush_dirty)
+
+    from utils.transactions import log_transaction
+    await log_transaction(
+        uid,
+        "depense",
+        "autre",
+        old_balance,
+        f"{raison} — reset par {interaction.user.display_name}",
+        0,
+    )
+
+    await interaction.followup.send(
+        embed=discord.Embed(
+            title="✅ Solde Berry reset",
+            description=(
+                f"{membre.mention} est maintenant a **0 ฿**.\n"
+                f"Ancien solde : **`{old_balance:,}` ฿**\n"
+                f"Raison : *{raison}*"
+            ),
+            color=0xE0524A,
         ).set_footer(text=f"Admin : {interaction.user.display_name}"),
         ephemeral=True,
     )
