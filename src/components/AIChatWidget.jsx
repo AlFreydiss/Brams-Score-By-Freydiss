@@ -60,7 +60,8 @@ export default function AIChatWidget({ hidden = false }) {
         body: JSON.stringify({ message: msg, history }),
         signal: AbortSignal.timeout(20_000),
       })
-      const data = await res.json()
+      let data
+      try { data = await res.json() } catch { data = {} }
       let reply
       if (res.status === 429) {
         reply = "🕐 Je reçois trop de messages en ce moment. Réessaie dans quelques secondes !"
@@ -68,13 +69,19 @@ export default function AIChatWidget({ hidden = false }) {
         reply = "⚡ L'IA est temporairement occupée. Retente dans un instant !"
       } else if (res.status === 400) {
         reply = "❌ Message invalide."
+      } else if (!res.ok) {
+        reply = "⚠️ Erreur serveur, réessaie dans un instant !"
       } else {
         reply = data.reply || "🤕 Quelque chose a raté, réessaie !"
       }
       setHistory(h => [...h, { role:'model', text: reply }])
       if (!open) setUnread(u => u + 1)
-    } catch {
-      setHistory(h => [...h, { role:'model', text:'📡 Connexion impossible, vérifie ta connexion.' }])
+    } catch (err) {
+      const isTimeout = err?.name === 'TimeoutError' || err?.name === 'AbortError'
+      setHistory(h => [...h, { role:'model', text: isTimeout
+        ? '⏱️ Réponse trop lente, réessaie !'
+        : '⚠️ Erreur inattendue, réessaie dans un instant !'
+      }])
     } finally {
       setLoading(false)
     }

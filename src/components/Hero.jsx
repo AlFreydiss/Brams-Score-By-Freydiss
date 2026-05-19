@@ -47,7 +47,7 @@ function StatBlock({ value, label, icon, live = false, liveVal = null }) {
   const [active, setActive] = useState(false)
   const [display, setDisplay] = useState('0')
   const [hov, setHov] = useState(false)
-  const isStatic = value.includes('/') || value.includes('+')
+  const isStatic = value.includes('/') || value.includes('+') || !/\d/.test(value)
 
   useEffect(() => {
     const el = ref.current
@@ -94,31 +94,34 @@ function StatBlock({ value, label, icon, live = false, liveVal = null }) {
         background: hov ? 'rgba(212,160,23,0.08)' : 'rgba(255,255,255,0.04)',
         border: `1px solid ${hov ? 'rgba(212,160,23,0.32)' : 'rgba(255,255,255,0.09)'}`,
         borderRadius: 16,
-        padding: '18px 20px',
+        padding: '18px 20px 14px',
         transition: 'all .25s cubic-bezier(.22,1,.36,1)',
         transform: hov ? 'translateY(-4px)' : 'none',
         boxShadow: hov ? '0 14px 36px rgba(212,160,23,0.14)' : '0 2px 10px rgba(0,0,0,0.18)',
         cursor: 'default',
         backdropFilter: 'blur(12px)',
+        display: 'flex',
+        flexDirection: 'column',
       }}
     >
-      {icon && <div style={{ fontSize: 20, marginBottom: 10, opacity: 0.85 }}>{icon}</div>}
-      <div style={{ position: 'relative', display: 'inline-block' }}>
+      <div style={{ height: 80, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'flex-start' }}>
+        {icon && <div style={{ fontSize: 18, opacity: 0.85, marginBottom: 6 }}>{icon}</div>}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           {live && (
             <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#2ECC71', boxShadow: '0 0 8px #2ECC71', animation: 'pulse 2s infinite', flexShrink: 0 }} />
           )}
           <div className="premium-stat-value">{shown}</div>
         </div>
-        <div style={{
-          position: 'absolute', bottom: -5, left: 0, right: 0, height: 2,
-          background: 'linear-gradient(90deg, #d4a017, #e8b84a)',
-          borderRadius: 2,
-          transform: active ? 'scaleX(1)' : 'scaleX(0)',
-          transformOrigin: 'left',
-          transition: 'transform 0.9s 0.3s cubic-bezier(0.22,1,0.36,1)',
-        }} />
       </div>
+      <div style={{
+        height: 2, width: '100%',
+        background: 'linear-gradient(90deg, #d4a017, #e8b84a)',
+        borderRadius: 2,
+        margin: '8px 0 10px',
+        transform: active ? 'scaleX(1)' : 'scaleX(0)',
+        transformOrigin: 'left',
+        transition: 'transform 0.9s 0.3s cubic-bezier(0.22,1,0.36,1)',
+      }} />
       <div className="premium-stat-label">{label}</div>
     </div>
   )
@@ -329,7 +332,7 @@ export default function Hero() {
             {/* Stats */}
             <div className="fade-up-3" style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
+              gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
               gap: 12,
             }}>
               <StatBlock value="2 000+" label="Nakamas" icon="🏴‍☠️" />
@@ -341,15 +344,13 @@ export default function Hero() {
                 live={!!stats}
                 liveVal={stats ? `${stats.membersTracked}` : null}
               />
-              {stats?.activeVocal > 0 && (
-                <StatBlock
-                  value={`${stats.activeVocal}`}
-                  label="Vocal / sem."
-                  icon="🎙️"
-                  live
-                  liveVal={`${stats.activeVocal}`}
-                />
-              )}
+              <StatBlock
+                value={stats?.activeVocal > 0 ? `${stats.activeVocal}` : '—'}
+                label="Vocal / sem."
+                icon="🎙️"
+                live={!!(stats?.activeVocal > 0)}
+                liveVal={stats?.activeVocal > 0 ? `${stats.activeVocal}` : null}
+              />
             </div>
           </div>
 
