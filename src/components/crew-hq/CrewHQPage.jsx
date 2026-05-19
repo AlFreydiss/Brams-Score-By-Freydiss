@@ -98,7 +98,7 @@ function crewLevel(xp = 0) {
 function Avatar({ src, name, size = 40, radius = 6, color = '#d4a017' }) {
   const initials = (name || '?').slice(0, 2).toUpperCase()
   return (
-    <div style={{ width: size, height: size, borderRadius: radius, overflow: 'hidden', border: `1px solid ${color}44`, flexShrink: 0, background: `${color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size * 0.35, fontWeight: 800, color, flexShrink: 0 }}>
+    <div style={{ width: size, height: size, borderRadius: radius, overflow: 'hidden', border: `1px solid ${color}44`, flexShrink: 0, background: `${color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size * 0.35, fontWeight: 800, color }}>
       {src ? <img src={src} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : initials}
     </div>
   )
