@@ -5,7 +5,6 @@ Tu réponds en français avec passion pour One Piece.
 Rangs du serveur : Pirate → Shichibukai → Amiral → Yonkou, attribués automatiquement selon l'activité vocale et messages des 7 derniers jours.
 Réponds en 2-4 phrases max sauf si on te demande un détail approfondi.`
 
-// Gemini keys start with AIzaSy and are ~39 chars — reject anything malformed
 function isValidKey(k) {
   return typeof k === 'string' && /^AIzaSy[A-Za-z0-9_-]{30,}$/.test(k.trim())
 }
@@ -53,6 +52,39 @@ async function tryWithRotation(message, chatHistory) {
   }
 }
 
+async function tryGroq(message, chatHistory) {
+  const key = process.env.GROQ_API_KEY
+  if (!key) throw new Error('no_groq_key')
+
+  const messages = [
+    { role: 'system', content: SYSTEM },
+    ...chatHistory.map(m => ({ role: m.role === 'model' ? 'assistant' : 'user', content: m.parts[0].text })),
+    { role: 'user', content: message },
+  ]
+
+  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${key}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'llama-3.1-8b-instant',
+      messages,
+      max_tokens: 300,
+      temperature: 0.7,
+    }),
+  })
+
+  if (!res.ok) {
+    const err = await res.text()
+    throw new Error(`groq_${res.status}: ${err}`)
+  }
+
+  const data = await res.json()
+  return data.choices[0].message.content
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
@@ -71,11 +103,22 @@ export default async function handler(req, res) {
     const reply = await tryWithRotation(message.trim(), chatHistory)
     return res.status(200).json({ reply })
   } catch (err) {
-    console.error('[chat]', err?.message || err)
     const isRateLimit = err?.status === 429
       || String(err?.message).includes('quota')
       || String(err?.message).includes('RESOURCE_EXHAUSTED')
-    if (isRateLimit) return res.status(429).json({ error: 'Rate limit' })
+      || err?.message === 'no_valid_keys'
+
+    if (isRateLimit) {
+      try {
+        const reply = await tryGroq(message.trim(), chatHistory)
+        return res.status(200).json({ reply })
+      } catch (groqErr) {
+        console.error('[chat] groq fallback failed:', groqErr?.message)
+      }
+    }
+
+    console.error('[chat]', err?.message || err)
+    if (isRateLimit) return res.status(429).json({ error: 'Je reçois trop de messages en ce moment, réessaie dans quelques secondes !' })
     return res.status(503).json({ error: 'Service unavailable' })
   }
 }
