@@ -51,9 +51,9 @@ const animeEmojis = {
 }
 
 const baseTabs = [
-  { id: 'fiches', label: 'Fiches' },
-  { id: 'timeline', label: 'Timeline' },
-  { id: 'archives', label: 'Archives' },
+  { id: 'fiches',   label: 'Fiches',    icon: '📋' },
+  { id: 'timeline', label: 'Timeline',  icon: '📅' },
+  { id: 'archives', label: 'Archives',  icon: '🔒' },
 ]
 
 function readJson(key, fallback) {
@@ -100,7 +100,7 @@ export default function AnimeEncyclopediaPage({ onClose }) {
   }
 
   const tabs = useMemo(() => (
-    animeId === 'one-piece' ? [...baseTabs, { id: 'tools', label: 'Outils' }] : baseTabs
+    animeId === 'one-piece' ? [...baseTabs, { id: 'tools', label: 'Outils', icon: '⚙️' }] : baseTabs
   ), [animeId])
 
   const entriesByAnime = useMemo(() => {
