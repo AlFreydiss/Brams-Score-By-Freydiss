@@ -306,33 +306,8 @@ export default function UnifiedSidebar() {
     .slice(0, 3)
 
   return (
-    <div style={{ position:'relative', overflow:'visible' }}>
-      <div style={{
-        position:'absolute', top:-18, right:16, zIndex:10,
-        background:'rgba(88,101,242,.15)', border:'1px solid rgba(88,101,242,.30)',
-        borderRadius:20, padding:'5px 11px', display:'flex', alignItems:'center', gap:5,
-        fontSize:9.5, fontWeight:800, color:'#a5b4fc', letterSpacing:'.04em',
-        backdropFilter:'blur(12px)', animation:'floatCard 4s ease-in-out infinite',
-        boxShadow:'0 4px 16px rgba(88,101,242,.16)', whiteSpace:'nowrap',
-      }}>🎙️ Tournoi vocal</div>
-      <div style={{
-        position:'absolute', bottom:80, right:-8, zIndex:10,
-        background:'rgba(212,160,23,.14)', border:'1px solid rgba(212,160,23,.28)',
-        borderRadius:20, padding:'5px 11px', display:'flex', alignItems:'center', gap:5,
-        fontSize:9.5, fontWeight:800, color:'#f3c454', letterSpacing:'.04em',
-        backdropFilter:'blur(12px)', animation:'floatCard 5.5s 1.8s ease-in-out infinite',
-        boxShadow:'0 4px 16px rgba(212,160,23,.14)', whiteSpace:'nowrap',
-      }}>📊 Classement mensuel</div>
-      <div style={{
-        position:'absolute', bottom:-18, left:16, zIndex:10,
-        background:'rgba(52,211,153,.12)', border:'1px solid rgba(52,211,153,.24)',
-        borderRadius:20, padding:'5px 11px', display:'flex', alignItems:'center', gap:5,
-        fontSize:9.5, fontWeight:800, color:'#6ee7b7', letterSpacing:'.04em',
-        backdropFilter:'blur(12px)', animation:'floatCard 6s 3.5s ease-in-out infinite',
-        boxShadow:'0 4px 16px rgba(52,211,153,.12)', whiteSpace:'nowrap',
-      }}>⚓ Équipages bientôt</div>
     <div style={{
-      width:'clamp(410px, 35vw, 500px)', maxHeight:660,
+      width:'clamp(300px, 35vw, 480px)', maxHeight:660,
       display:'flex', flexDirection:'column',
       background:'linear-gradient(160deg, rgba(18,20,27,.90) 0%, rgba(9,11,16,.80) 100%)',
       backdropFilter:'blur(32px) saturate(1.5)',
@@ -340,7 +315,7 @@ export default function UnifiedSidebar() {
       border:'1px solid rgba(255,255,255,.16)',
       borderTop:'1px solid rgba(255,255,255,.24)',
       borderRadius:20, overflow:'hidden',
-      animation:'sbIn .5s .1s cubic-bezier(.22,1,.36,1) both, floatCard 7s ease-in-out 1s infinite',
+      animation:'sbIn .5s .1s cubic-bezier(.22,1,.36,1) both',
       boxShadow:'0 34px 92px rgba(0,0,0,.64), 0 0 70px rgba(212,160,23,.09), 0 0 0 1px rgba(255,255,255,.05) inset, 0 1px 0 rgba(255,255,255,.12) inset',
     }}>
 
@@ -359,10 +334,27 @@ export default function UnifiedSidebar() {
           <span style={{ fontSize:12, fontWeight:850, color:'rgba(255,255,255,.90)', letterSpacing:'.04em' }}>
             Brams Community
           </span>
-          <span style={{ marginLeft:'auto', fontSize:8.5, fontWeight:700, color:'rgba(46,204,113,.75)', letterSpacing:'.08em', textTransform:'uppercase', background:'rgba(46,204,113,.10)', border:'1px solid rgba(46,204,113,.22)', borderRadius:20, padding:'1px 8px' }}>
+          <span style={{ marginLeft:'auto', fontSize:8.5, fontWeight:700, color:'rgba(46,204,113,.75)', letterSpacing:'.08em', textTransform:'uppercase', background:'rgba(46,204,113,.10)', border:'1px solid rgba(46,204,113,.22)', borderRadius:20, padding:'1px 8px', flexShrink:0 }}>
             Live
           </span>
         </div>
+
+        {/* Upcoming event pills — inline, never overflow */}
+        {upcomingEvents.length > 0 && (
+          <div style={{ display:'flex', gap:5, marginBottom:10, overflowX:'auto', overflowY:'visible', scrollbarWidth:'none', msOverflowStyle:'none', paddingBottom:1 }}>
+            {upcomingEvents.map(ev => (
+              <div key={ev.id} style={{
+                display:'inline-flex', alignItems:'center', gap:4, flexShrink:0,
+                background:`${ev.color}15`, border:`1px solid ${ev.color}30`,
+                borderRadius:20, padding:'3px 9px',
+                fontSize:8.5, fontWeight:700, color:ev.color, whiteSpace:'nowrap',
+              }}>
+                <span>{ev.icon}</span>
+                <span>{ev.title}</span>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Tab bar */}
         <div style={{ display:'flex', gap:2 }}>
@@ -503,7 +495,6 @@ export default function UnifiedSidebar() {
         </a>
       </div>
 
-    </div>
     </div>
   )
 }
