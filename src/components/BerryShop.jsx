@@ -68,12 +68,15 @@ const MILESTONES = [
 const ADMIN_IDS = ['1094070545248694342', '873117504367648798']
 
 const BS_CSS = `
-  @keyframes bsFadeUp   { from { opacity:0; transform:translateY(20px) } to { opacity:1; transform:none } }
-  @keyframes bsGlow     { 0%,100% { opacity:.55 } 50% { opacity:.90 } }
-  @keyframes bsShimmer  { 0% { left:-100% } 60% { left:130% } 100% { left:130% } }
-  @keyframes bsPulse    { 0%,100% { transform:scale(1); opacity:.7 } 50% { transform:scale(1.65); opacity:1 } }
-  @keyframes bsFloat    { 0%,100% { transform:translateY(0) } 50% { transform:translateY(-6px) } }
+  @keyframes bsFadeUp    { from { opacity:0; transform:translateY(20px) } to { opacity:1; transform:none } }
+  @keyframes bsGlow      { 0%,100% { opacity:.55 } 50% { opacity:.90 } }
+  @keyframes bsShimmer   { 0% { left:-100% } 60% { left:130% } 100% { left:130% } }
+  @keyframes bsPulse     { 0%,100% { transform:scale(1); opacity:.7 } 50% { transform:scale(1.65); opacity:1 } }
+  @keyframes bsFloat     { 0%,100% { transform:translateY(0) } 50% { transform:translateY(-6px) } }
   @keyframes bsRarePulse { 0%,100% { box-shadow:none } 50% { box-shadow:0 0 28px var(--rc,transparent) } }
+  @keyframes bsTwinkle   { 0%,100% { opacity:.08; transform:scale(1) } 50% { opacity:.88; transform:scale(1.8) } }
+  @keyframes bsScan      { 0% { top:-1% } 100% { top:102% } }
+  @keyframes bsDrift     { 0%,100% { transform:translateY(0) } 50% { transform:translateY(-12px) } }
 `
 
 // ─── Utils ────────────────────────────────────────────────────────────────────
@@ -86,6 +89,42 @@ function fmtK(n) {
   return String(v)
 }
 function openAuth() { document.dispatchEvent(new CustomEvent('open-auth-modal')) }
+
+// ─── Background atmosphere ───────────────────────────────────────────────────
+
+function BSStars() {
+  const stars = useMemo(() => Array.from({ length: 48 }, (_, i) => ({
+    x: (i * 37.3 + 11) % 98, y: (i * 41.7 + 7) % 95,
+    size: i % 7 === 0 ? 2.5 : i % 3 === 0 ? 1.5 : 1,
+    dur: 2.8 + (i * 0.29) % 4.2,
+    delay: (i * 0.21) % 6,
+    gold: i % 11 === 0,
+  })), [])
+  return (
+    <div style={{ position:'fixed', inset:0, pointerEvents:'none', zIndex:0 }}>
+      {stars.map((s, i) => (
+        <div key={i} style={{
+          position:'absolute', left:`${s.x}%`, top:`${s.y}%`,
+          width:s.size, height:s.size, borderRadius:'50%',
+          background: s.gold ? 'rgba(212,160,23,0.70)' : 'rgba(255,255,255,0.55)',
+          animation:`bsTwinkle ${s.dur}s ${s.delay}s ease-in-out infinite`,
+        }} />
+      ))}
+    </div>
+  )
+}
+
+function BSScanLine() {
+  return (
+    <div style={{ position:'fixed', inset:0, pointerEvents:'none', zIndex:1, overflow:'hidden' }}>
+      <div style={{
+        position:'absolute', left:0, right:0, height:2,
+        background:'linear-gradient(90deg, transparent 0%, rgba(212,160,23,0.09) 30%, rgba(212,160,23,0.18) 50%, rgba(212,160,23,0.09) 70%, transparent 100%)',
+        animation:'bsScan 14s linear infinite',
+      }} />
+    </div>
+  )
+}
 
 // ─── RarityBadge ─────────────────────────────────────────────────────────────
 
@@ -220,7 +259,8 @@ function FeaturedCard({ item, balance, onClick, index }) {
         padding:24, overflow:'hidden',
         background:`linear-gradient(145deg, ${r.color}12 0%, ${r.color}06 45%, rgba(8,9,13,0.96) 100%)`,
         border:`1px solid ${hov ? r.color+'55' : r.color+'22'}`,
-        boxShadow: hov ? `0 20px 60px ${r.color}25, 0 0 0 1px ${r.color}22` : `0 8px 32px rgba(0,0,0,0.5)`,
+        borderTop:`3px solid ${hov ? r.color : r.color+'bb'}`,
+        boxShadow: hov ? `0 24px 64px ${r.color}30, 0 0 0 1px ${r.color}22` : `0 8px 32px rgba(0,0,0,0.5), 0 0 24px ${r.color}10`,
         transition:'all 0.28s ease',
         transform: hov ? 'translateY(-4px)' : 'translateY(0)',
         animation:`bsFadeUp .5s ${0.1 + index * 0.12}s ease both`,
@@ -285,24 +325,22 @@ function ShopCard({ item, balance, onClick, index }) {
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
       style={{
-        position:'relative', cursor:'pointer', borderRadius:16, padding:18,
-        background: isLegendaryPlus
-          ? `linear-gradient(145deg, ${r.color}14 0%, ${r.color}07 50%, rgba(8,9,13,0.95) 100%)`
-          : 'rgba(255,255,255,0.035)',
-        border:`1px solid ${hov ? r.color+'55' : r.color+'22'}`,
-        borderLeft:`2.5px solid ${hov ? r.color+'90' : r.color+'58'}`,
-        boxShadow: hov ? `0 18px 44px ${r.color}30, 0 0 0 1px ${r.color}18` : isLegendaryPlus ? `0 4px 20px rgba(0,0,0,0.4), 0 0 0 1px ${r.color}10` : 'none',
+        position:'relative', cursor:'pointer', borderRadius:12, padding:18,
+        background:`linear-gradient(160deg, ${r.color}0c 0%, ${r.color}04 40%, rgba(7,9,14,0.97) 100%)`,
+        border:`1px solid ${hov ? r.color+'40' : 'rgba(255,255,255,0.07)'}`,
+        borderTop:`3px solid ${hov ? r.color : r.color+'cc'}`,
+        boxShadow: hov
+          ? `0 20px 44px ${r.color}28, 0 4px 16px rgba(0,0,0,0.5)`
+          : isLegendaryPlus
+            ? `0 4px 20px rgba(0,0,0,0.45), 0 0 24px ${r.color}10`
+            : '0 2px 10px rgba(0,0,0,0.3)',
         transition:'all 0.22s ease',
-        transform: hov ? 'translateY(-3px)' : 'translateY(0)',
+        transform: hov ? 'translateY(-4px)' : 'translateY(0)',
         animation:`bsFadeUp .45s ${Math.min(index * 0.05, 0.4)}s ease both`,
         display:'flex', flexDirection:'column', overflow:'hidden',
-        ...(isLegendaryPlus && { animation: `bsFadeUp .45s ${Math.min(index * 0.05, 0.4)}s ease both, bsRarePulse 4s ease-in-out infinite`, '--rc': r.color+'25' }),
+        ...(isLegendaryPlus && { animation: `bsFadeUp .45s ${Math.min(index * 0.05, 0.4)}s ease both, bsRarePulse 4s ease-in-out infinite`, '--rc': r.color+'22' }),
       }}
     >
-      {/* Top stripe for legendaire+ */}
-      {isLegendaryPlus && (
-        <div style={{ position:'absolute', top:0, left:0, right:0, height:2, background:`linear-gradient(90deg, transparent, ${r.color}80, transparent)`, borderRadius:'16px 16px 0 0' }} />
-      )}
 
       {/* Top row */}
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14 }}>
@@ -315,7 +353,7 @@ function ShopCard({ item, balance, onClick, index }) {
       </div>
 
       {/* Icon */}
-      <div style={{ fontSize:34, lineHeight:1, marginBottom:12, filter: isLegendaryPlus ? `drop-shadow(0 0 10px ${r.color}55)` : 'none' }}>{icon}</div>
+      <div style={{ fontSize:36, lineHeight:1, marginBottom:12, filter:`drop-shadow(0 0 ${isLegendaryPlus?12:5}px ${r.color}${isLegendaryPlus?'66':'33'})`, animation: isLegendaryPlus ? 'bsDrift 4s ease-in-out infinite' : 'none' }}>{icon}</div>
 
       {/* Name */}
       <div style={{ fontSize:13.5, fontWeight:700, color:'#fff', marginBottom:6, lineHeight:1.3 }}>{item.name}</div>
@@ -843,7 +881,10 @@ export default function BerryShop() {
   }
 
   return (
-    <div style={{ minHeight:'100vh', background:'#08090d', overflowX:'hidden' }}>
+    <div style={{ minHeight:'100vh', background:'#07090e', overflowX:'hidden', position:'relative' }}>
+      <BSStars />
+      <BSScanLine />
+      <div style={{ position:'relative', zIndex:2 }}>
 
       {/* ═══ HERO ═══════════════════════════════════════════════════════════ */}
       <div style={{ position:'relative', padding:'72px 20px 44px', overflow:'hidden' }}>
@@ -1050,6 +1091,7 @@ export default function BerryShop() {
           onConfirm={confirmPurchase}
         />
       )}
+      </div>
     </div>
   )
 }
