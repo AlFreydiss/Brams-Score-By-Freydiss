@@ -53,11 +53,11 @@ export default function QuoteSection() {
     <section style={{
       position: 'relative', overflow: 'hidden',
       padding: '100px 0', textAlign: 'center',
-      background: `linear-gradient(180deg, rgba(3,7,14,0.30) 0%, ${q.color}10 50%, rgba(3,7,14,0.30) 100%)`,
+      background: `linear-gradient(180deg, rgba(3,7,14,0.12) 0%, ${q.color}08 50%, rgba(3,7,14,0.12) 100%)`,
       transition: 'background 0.6s ease',
     }}>
       {/* Fondu haut — raccordement cinématique avec le Hero */}
-      <div style={{ position:'absolute', top:0, left:0, right:0, height:'45%', background:'linear-gradient(180deg, rgba(3,7,14,0.92) 0%, rgba(3,7,14,0.55) 35%, rgba(3,7,14,0.18) 70%, transparent 100%)', pointerEvents:'none', zIndex:0 }} />
+      <div style={{ position:'absolute', top:0, left:0, right:0, height:'45%', background:'linear-gradient(180deg, rgba(3,7,14,0.18) 0%, rgba(3,7,14,0.12) 35%, rgba(3,7,14,0.06) 70%, transparent 100%)', pointerEvents:'none', zIndex:0 }} />
       {/* Fondu bas — transition vers la section Rangs */}
       <div style={{ position:'absolute', bottom:0, left:0, right:0, height:'45%', background:'linear-gradient(0deg, rgba(3,7,14,0.72) 0%, rgba(3,7,14,0.45) 35%, rgba(3,7,14,0.15) 70%, transparent 100%)', pointerEvents:'none', zIndex:0 }} />
 

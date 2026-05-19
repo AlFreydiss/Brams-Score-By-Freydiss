@@ -262,13 +262,13 @@ export default function Hero() {
       <div style={{
         position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
         background: isNarrow
-          ? 'linear-gradient(180deg, rgba(3,7,14,0.96) 0%, rgba(3,7,14,0.86) 48%, rgba(3,7,14,0.76) 100%)'
-          : 'linear-gradient(90deg, rgba(3,7,14,0.97) 0%, rgba(3,7,14,0.91) 34%, rgba(3,7,14,0.64) 60%, rgba(3,7,14,0.20) 100%)',
+          ? 'linear-gradient(180deg, rgba(3,7,14,0.34) 0%, rgba(3,7,14,0.28) 48%, rgba(3,7,14,0.24) 100%)'
+          : 'linear-gradient(90deg, rgba(3,7,14,0.36) 0%, rgba(3,7,14,0.30) 34%, rgba(3,7,14,0.18) 60%, rgba(3,7,14,0.08) 100%)',
       }} />
       {/* Overlay sombre uniforme */}
       <div style={{
         position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
-        background: 'rgba(3,7,14,0.22)',
+        background: 'rgba(3,7,14,0.10)',
       }} />
       {/* Glow radial doré derrière le titre */}
       <div style={{
@@ -298,12 +298,12 @@ export default function Hero() {
       {/* Vignette top */}
       <div style={{
         position: 'absolute', top: 0, left: 0, right: 0, height: '28%', zIndex: 0, pointerEvents: 'none',
-        background: 'linear-gradient(180deg, rgba(3,7,14,0.40) 0%, transparent 100%)',
+        background: 'linear-gradient(180deg, rgba(3,7,14,0.12) 0%, transparent 100%)',
       }} />
       {/* Vignette bottom — fade cinématique étendu vers la section suivante */}
       <div style={{
         position: 'absolute', bottom: 0, left: 0, right: 0, height: '38%', zIndex: 0, pointerEvents: 'none',
-        background: 'linear-gradient(0deg, rgba(3,7,14,0.97) 0%, rgba(3,7,14,0.82) 18%, rgba(3,7,14,0.52) 40%, rgba(3,7,14,0.18) 68%, rgba(3,7,14,0.04) 88%, transparent 100%)',
+        background: 'linear-gradient(0deg, rgba(3,7,14,0.36) 0%, rgba(3,7,14,0.30) 24%, rgba(3,7,14,0.20) 50%, rgba(3,7,14,0.08) 78%, transparent 100%)',
       }} />
 
       <StarField />
