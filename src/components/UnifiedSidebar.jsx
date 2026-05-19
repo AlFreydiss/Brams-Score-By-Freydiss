@@ -164,21 +164,31 @@ function EventCard({ event }) {
   const dt  = new Date(event.date)
   const day = dt.getDate()
   const mon = dt.toLocaleDateString('fr-FR', { month:'short' }).replace('.', '')
+  const isSoon = countdown.startsWith('dans') && !countdown.includes('j')
   return (
-    <div className="sb-card" style={{ display:'flex', alignItems:'center', gap:10 }}>
+    <div className="sb-card" style={{ display:'flex', alignItems:'center', gap:12 }}>
       <div style={{
-        flexShrink:0, width:36, height:36, borderRadius:9,
-        background:`${event.color}18`, border:`1px solid ${event.color}40`,
+        flexShrink:0, width:40, height:40, borderRadius:10,
+        background:`linear-gradient(135deg, ${event.color}28, ${event.color}12)`,
+        border:`1px solid ${event.color}55`,
         display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+        boxShadow:`0 4px 12px ${event.color}18`,
       }}>
-        <span style={{ fontSize:13, fontWeight:800, color:event.color, lineHeight:1 }}>{day}</span>
-        <span style={{ fontSize:7, fontWeight:700, color:`${event.color}99`, letterSpacing:'.06em', marginTop:1 }}>{mon.toUpperCase()}</span>
+        <span style={{ fontSize:14, fontWeight:900, color:event.color, lineHeight:1 }}>{day}</span>
+        <span style={{ fontSize:7.5, fontWeight:700, color:`${event.color}bb`, letterSpacing:'.05em', marginTop:1 }}>{mon.toUpperCase()}</span>
       </div>
       <div style={{ flex:1, minWidth:0 }}>
-        <div style={{ fontSize:11.5, fontWeight:700, color:'#fff', marginBottom:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+        <div style={{ fontSize:12, fontWeight:700, color:'rgba(255,255,255,.92)', marginBottom:4, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
           {event.icon} {event.title}
         </div>
-        <div style={{ fontSize:9.5, color:event.color, fontWeight:600 }}>{countdown}</div>
+        <div style={{
+          fontSize:10, fontWeight:700,
+          color: isSoon ? '#2ECC71' : '#d4a017',
+          display:'inline-flex', alignItems:'center', gap:4,
+        }}>
+          {isSoon && <span style={{ width:5, height:5, borderRadius:'50%', background:'#2ECC71', boxShadow:'0 0 6px #2ECC71', display:'inline-block' }} />}
+          {countdown}
+        </div>
       </div>
     </div>
   )
@@ -295,14 +305,16 @@ export default function UnifiedSidebar() {
 
   return (
     <div style={{
-      width:360, maxHeight:540,
+      width:390, maxHeight:560,
       display:'flex', flexDirection:'column',
-      background:'linear-gradient(180deg, rgba(12,13,16,.72) 0%, rgba(10,11,14,.60) 100%)',
-      backdropFilter:'blur(28px) saturate(1.4)',
-      border:'1px solid rgba(255,255,255,.08)',
-      borderRadius:18, overflow:'hidden',
-      animation:'sbIn .45s .15s ease-out both',
-      boxShadow:'0 24px 80px rgba(0,0,0,.38), inset 0 1px 0 rgba(255,255,255,.06)',
+      background:'linear-gradient(160deg, rgba(14,15,20,.78) 0%, rgba(8,9,13,.68) 100%)',
+      backdropFilter:'blur(32px) saturate(1.5)',
+      WebkitBackdropFilter:'blur(32px) saturate(1.5)',
+      border:'1px solid rgba(255,255,255,.11)',
+      borderTop:'1px solid rgba(255,255,255,.16)',
+      borderRadius:20, overflow:'hidden',
+      animation:'sbIn .5s .1s cubic-bezier(.22,1,.36,1) both, floatCard 7s ease-in-out 1s infinite',
+      boxShadow:'0 32px 80px rgba(0,0,0,.50), 0 0 0 1px rgba(255,255,255,.04) inset, 0 1px 0 rgba(255,255,255,.10) inset',
     }}>
 
       {/* ── Header ────────────────────────────────────────────────────────── */}
@@ -312,12 +324,16 @@ export default function UnifiedSidebar() {
       }}>
         <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:12 }}>
           <div style={{
-            width:8, height:8, borderRadius:'50%',
-            background:'#2ECC71', boxShadow:'0 0 8px #2ECC71',
-            animation:'dotBeat 2s infinite', flexShrink:0,
+            width:9, height:9, borderRadius:'50%', flexShrink:0,
+            background:'#2ECC71',
+            boxShadow:'0 0 0 2px rgba(46,204,113,.25), 0 0 12px rgba(46,204,113,.60)',
+            animation:'dotBeat 2.2s ease-in-out infinite',
           }} />
-          <span style={{ fontSize:10, fontWeight:700, color:'rgba(255,255,255,.45)', letterSpacing:'.10em', textTransform:'uppercase' }}>
+          <span style={{ fontSize:11.5, fontWeight:800, color:'rgba(255,255,255,.82)', letterSpacing:'.04em' }}>
             Brams Community
+          </span>
+          <span style={{ marginLeft:'auto', fontSize:8.5, fontWeight:700, color:'rgba(46,204,113,.75)', letterSpacing:'.08em', textTransform:'uppercase', background:'rgba(46,204,113,.10)', border:'1px solid rgba(46,204,113,.22)', borderRadius:20, padding:'1px 8px' }}>
+            Live
           </span>
         </div>
 
