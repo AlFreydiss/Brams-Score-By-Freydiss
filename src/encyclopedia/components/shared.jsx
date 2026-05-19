@@ -27,6 +27,7 @@ export function AnimeHero({ anime, spoilerSafe, setSpoilerSafe }) {
   return (
     <section className="enc-hero" style={{ '--title-gradient': anime.theme.titleGradient }}>
       <p className="enc-kicker">{anime.label}</p>
+      <div className="enc-hero-mark">📚</div>
       <h1>{anime.title}</h1>
       <p className="enc-subtitle">{anime.description}</p>
       <div className="enc-stats">
