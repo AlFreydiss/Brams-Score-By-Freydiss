@@ -146,7 +146,6 @@ export function AnimeHeroStrip({ anime, entryCount, secretCount }) {
 
   return (
     <section className="enc-hero-strip" style={{ '--title-gradient': anime.theme?.titleGradient }}>
-      <span className="enc-hero-watermark" aria-hidden="true">{icon}</span>
       <div className="enc-hero-copy">
         <span className="enc-hero-icon" aria-hidden="true">{icon}</span>
         <div>
@@ -201,8 +200,8 @@ export function EntryGrid({ entries, favorites, spoilerSafe, revealed, onToggleF
 
       {!entries.length ? (
         <div className="enc-empty">
-          <strong>Aucune archive trouvee.</strong>
-          <span>Essaie une autre recherche ou categorie.</span>
+          <strong>Aucune archive trouvée.</strong>
+          <span>Essaie une autre recherche ou catégorie.</span>
         </div>
       ) : (
         <div className="enc-entry-grid">
@@ -235,11 +234,11 @@ export function EntryCard({ entry, index = 0, isFavorite, spoilerSafe, revealed,
 
   const revealCard = () => {
     setRevealing(true)
-    window.setTimeout(() => onReveal(entry.id), 320)
+    window.setTimeout(() => onReveal(entry.id), 220)
   }
 
   return (
-    <article className={`enc-card enc-rarity-card-${entry.rarity} ${hidden ? 'is-spoiler-hidden' : ''}`} style={{ '--rarity-color': color, '--rarity-glow': hexToRgba(color, 0.2), animationDelay: `${Math.min(index, 12) * 28}ms` }}>
+    <article className={`enc-card enc-rarity-card-${entry.rarity} ${hidden ? 'is-spoiler-hidden' : ''} ${revealing ? 'enc-revealing' : ''}`} style={{ '--rarity-color': color, '--rarity-glow': hexToRgba(color, 0.2), animationDelay: `${Math.min(index, 12) * 28}ms` }}>
       <div className="enc-card-top">
         <RarityBadge rarity={entry.rarity} />
         <button className={`enc-fav ${isFavorite ? 'is-active' : ''}`} type="button" aria-label={`${isFavorite ? 'Retirer' : 'Ajouter'} ${entry.name} des favoris`} onClick={() => onToggleFavorite(entry.slug)}>
@@ -247,35 +246,31 @@ export function EntryCard({ entry, index = 0, isFavorite, spoilerSafe, revealed,
         </button>
       </div>
       <h3>{entry.name}</h3>
-      <p className="enc-card-sub">{entry.subtitle || entry.category}</p>
-      <p className="enc-card-desc">{entry.description}</p>
-      <div className="enc-tags">
-        {tags.slice(0, 4).map(tag => (
-          <span
-            key={tag}
-            className={activeTag === tag ? 'is-active' : ''}
-            onClick={() => onTagClick?.(tag)}
-            role="button"
-            tabIndex={0}
-            onKeyDown={event => {
-              if (event.key === 'Enter' || event.key === ' ') onTagClick?.(tag)
-            }}
-          >
-            {tag}
-          </span>
-        ))}
+      {hidden && <span className="enc-classified-badge">🔒 CLASSIFIÉ</span>}
+      <div className="enc-card-body">
+        <p className="enc-card-sub">{entry.subtitle || entry.category}</p>
+        <p className="enc-card-desc">{entry.description}</p>
+        <div className="enc-tags">
+          {tags.slice(0, 4).map(tag => (
+            <span
+              key={tag}
+              className={activeTag === tag ? 'is-active' : ''}
+              onClick={() => onTagClick?.(tag)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={event => {
+                if (event.key === 'Enter' || event.key === ' ') onTagClick?.(tag)
+              }}
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
       </div>
       <div className="enc-card-actions">
+        {hidden && <button type="button" className="enc-reveal-btn" onClick={revealCard}>Révéler</button>}
         <button type="button" className="enc-ghost-btn" onClick={() => onSelect(entry)}>Ouvrir</button>
       </div>
-      {hidden && (
-        <div className={`enc-spoiler-overlay ${revealing ? 'enc-revealing' : ''}`}>
-          <span className="enc-spoiler-lock" aria-hidden="true">🔒</span>
-          <strong>FICHE PROTÉGÉE</strong>
-          <small>Archive sensible</small>
-          <button type="button" className="enc-reveal-btn" onClick={revealCard}>Reveler</button>
-        </div>
-      )}
     </article>
   )
 }
@@ -295,12 +290,12 @@ export function TimelineTab({ items, spoilerSafe, revealed, onReveal }) {
             </div>
             <div className="enc-time-line"><i /></div>
             <div className="enc-time-card">
-              <h3>{hidden ? 'Arc protege' : item.title}</h3>
-              <p>{hidden ? 'Ce passage est masque par le mode spoiler.' : item.description}</p>
+              <h3>{hidden ? 'Arc protégé' : item.title}</h3>
+              <p>{hidden ? 'Ce passage est masqué par le mode spoiler.' : item.description}</p>
               <div className="enc-tags">
                 {(item.arcs || [item.title]).slice(0, 4).map(tag => <span key={tag}>{tag}</span>)}
               </div>
-              {hidden && <button type="button" className="enc-ghost-btn" onClick={() => onReveal(item.id)}>Reveler</button>}
+              {hidden && <button type="button" className="enc-ghost-btn" onClick={() => onReveal(item.id)}>Révéler</button>}
             </div>
           </article>
         )
@@ -312,9 +307,9 @@ export function TimelineTab({ items, spoilerSafe, revealed, onReveal }) {
 export function SecretFilesTab({ files, spoilerSafe, revealed, onReveal }) {
   return (
     <section className="enc-archive-section">
-      <SectionTitle label="Archives Classifiees" text="Dossiers sensibles et zones volontairement protegees par le mode spoiler." />
+      <SectionTitle label="Archives Classifiées" text="Dossiers sensibles et zones volontairement protégées par le mode spoiler." />
       {!files.length ? (
-        <EmptyState text="Aucune archive classifiee disponible pour cet univers." />
+        <EmptyState text="Aucune archive classifiée disponible pour cet univers." />
       ) : (
         <div className="enc-secret-grid">
           {files.map((file, index) => {
@@ -327,12 +322,12 @@ export function SecretFilesTab({ files, spoilerSafe, revealed, onReveal }) {
                   <RarityBadge rarity={file.rarity} />
                   <span className="enc-danger">{file.dangerLevel}</span>
                 </div>
-                <h3>{hidden ? 'Dossier protege' : file.title}</h3>
-                <p>{hidden ? 'Archive masquee par le mode spoiler.' : file.summary}</p>
+                <h3>{hidden ? 'Dossier protégé' : file.title}</h3>
+                <p>{hidden ? 'Archive masquée par le mode spoiler.' : file.summary}</p>
                 <div className="enc-tags">
                   {(file.tags || []).map(tag => <span key={tag}>{tag}</span>)}
                 </div>
-                {hidden && <button type="button" className="enc-ghost-btn" onClick={() => onReveal(file.id)}>Reveler</button>}
+                {hidden && <button type="button" className="enc-ghost-btn" onClick={() => onReveal(file.id)}>Révéler</button>}
               </article>
             )
           })}
@@ -381,7 +376,7 @@ export function EntryDetailPanel({ entry, onClose }) {
           </div>
         )}
 
-        {entry.awakening && <p className="enc-awakening"><strong>Eveil:</strong> {entry.awakening}</p>}
+        {entry.awakening && <p className="enc-awakening"><strong>Éveil:</strong> {entry.awakening}</p>}
         <div className="enc-tags">
           {(entry.tags || []).map(tag => <span key={tag}>{tag}</span>)}
         </div>
@@ -416,7 +411,7 @@ export function SectionTitle({ label, text }) {
 function EmptyState({ text }) {
   return (
     <div className="enc-empty">
-      <strong>Rien a afficher.</strong>
+      <strong>Rien à afficher.</strong>
       <span>{text}</span>
     </div>
   )
