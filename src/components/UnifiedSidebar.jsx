@@ -8,14 +8,14 @@ const SIDEBAR_CSS = `
     50%      { box-shadow:0 0 0 3px rgba(212,160,23,.80),0 0 22px rgba(212,160,23,.55) }
   }
   .sb-card {
-    background:rgba(255,255,255,.035);
-    border:1px solid rgba(255,255,255,.07);
+    background:rgba(255,255,255,.045);
+    border:1px solid rgba(255,255,255,.09);
     border-radius:11px;
-    padding:10px 12px;
+    padding:11px 12px;
     transition:background .18s,border-color .18s,transform .18s;
     cursor:default;
   }
-  .sb-card:hover { background:rgba(212,160,23,.06); border-color:rgba(212,160,23,.22); transform:translateY(-2px); }
+  .sb-card:hover { background:rgba(212,160,23,.07); border-color:rgba(212,160,23,.26); transform:translateY(-2px); }
 `
 
 const EVENTS = [
@@ -306,40 +306,40 @@ export default function UnifiedSidebar() {
   return (
     <div style={{ position:'relative', overflow:'visible' }}>
       <div style={{
-        position:'absolute', top:18, right:-6, zIndex:10,
+        position:'absolute', top:18, right:-10, zIndex:10,
         background:'rgba(88,101,242,.15)', border:'1px solid rgba(88,101,242,.30)',
         borderRadius:20, padding:'5px 11px', display:'flex', alignItems:'center', gap:5,
-        fontSize:9.5, fontWeight:800, color:'#818cf8', letterSpacing:'.04em',
+        fontSize:9.5, fontWeight:800, color:'#a5b4fc', letterSpacing:'.04em',
         backdropFilter:'blur(12px)', animation:'floatCard 4s ease-in-out infinite',
         boxShadow:'0 4px 16px rgba(88,101,242,.16)', whiteSpace:'nowrap',
       }}>🎙️ Tournoi vocal</div>
       <div style={{
-        position:'absolute', top:'42%', right:-8, zIndex:10,
+        position:'absolute', top:'42%', right:-12, zIndex:10,
         background:'rgba(212,160,23,.14)', border:'1px solid rgba(212,160,23,.28)',
         borderRadius:20, padding:'5px 11px', display:'flex', alignItems:'center', gap:5,
-        fontSize:9.5, fontWeight:800, color:'#d4a017', letterSpacing:'.04em',
+        fontSize:9.5, fontWeight:800, color:'#f3c454', letterSpacing:'.04em',
         backdropFilter:'blur(12px)', animation:'floatCard 5.5s 1.8s ease-in-out infinite',
         boxShadow:'0 4px 16px rgba(212,160,23,.14)', whiteSpace:'nowrap',
       }}>📊 Classement mensuel</div>
       <div style={{
-        position:'absolute', bottom:40, left:-6, zIndex:10,
+        position:'absolute', bottom:40, left:-10, zIndex:10,
         background:'rgba(52,211,153,.12)', border:'1px solid rgba(52,211,153,.24)',
         borderRadius:20, padding:'5px 11px', display:'flex', alignItems:'center', gap:5,
-        fontSize:9.5, fontWeight:800, color:'#34d399', letterSpacing:'.04em',
+        fontSize:9.5, fontWeight:800, color:'#6ee7b7', letterSpacing:'.04em',
         backdropFilter:'blur(12px)', animation:'floatCard 6s 3.5s ease-in-out infinite',
         boxShadow:'0 4px 16px rgba(52,211,153,.12)', whiteSpace:'nowrap',
       }}>⚓ Équipages bientôt</div>
     <div style={{
-      width:'clamp(390px, 34vw, 470px)', maxHeight:660,
+      width:'clamp(410px, 35vw, 500px)', maxHeight:660,
       display:'flex', flexDirection:'column',
-      background:'linear-gradient(160deg, rgba(14,15,20,.82) 0%, rgba(8,9,13,.72) 100%)',
+      background:'linear-gradient(160deg, rgba(18,20,27,.90) 0%, rgba(9,11,16,.80) 100%)',
       backdropFilter:'blur(32px) saturate(1.5)',
       WebkitBackdropFilter:'blur(32px) saturate(1.5)',
-      border:'1px solid rgba(255,255,255,.12)',
-      borderTop:'1px solid rgba(255,255,255,.18)',
+      border:'1px solid rgba(255,255,255,.16)',
+      borderTop:'1px solid rgba(255,255,255,.24)',
       borderRadius:20, overflow:'hidden',
       animation:'sbIn .5s .1s cubic-bezier(.22,1,.36,1) both, floatCard 7s ease-in-out 1s infinite',
-      boxShadow:'0 32px 80px rgba(0,0,0,.60), 0 0 50px rgba(212,160,23,.06), 0 0 0 1px rgba(255,255,255,.04) inset, 0 1px 0 rgba(255,255,255,.10) inset',
+      boxShadow:'0 34px 92px rgba(0,0,0,.64), 0 0 70px rgba(212,160,23,.09), 0 0 0 1px rgba(255,255,255,.05) inset, 0 1px 0 rgba(255,255,255,.12) inset',
     }}>
 
       {/* ── Header ────────────────────────────────────────────────────────── */}
@@ -354,7 +354,7 @@ export default function UnifiedSidebar() {
             boxShadow:'0 0 0 2px rgba(46,204,113,.25), 0 0 12px rgba(46,204,113,.60)',
             animation:'dotBeat 2.2s ease-in-out infinite',
           }} />
-          <span style={{ fontSize:11.5, fontWeight:800, color:'rgba(255,255,255,.82)', letterSpacing:'.04em' }}>
+          <span style={{ fontSize:12, fontWeight:850, color:'rgba(255,255,255,.90)', letterSpacing:'.04em' }}>
             Brams Community
           </span>
           <span style={{ marginLeft:'auto', fontSize:8.5, fontWeight:700, color:'rgba(46,204,113,.75)', letterSpacing:'.08em', textTransform:'uppercase', background:'rgba(46,204,113,.10)', border:'1px solid rgba(46,204,113,.22)', borderRadius:20, padding:'1px 8px' }}>
@@ -368,13 +368,13 @@ export default function UnifiedSidebar() {
             <button key={t.id} onClick={() => setTab(t.id)} style={{
               flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:5,
               padding:'8px 4px 9px', border:'none', cursor:'pointer',
-              fontSize:10, fontWeight:700, letterSpacing:'.04em',
-              color: tab === t.id ? '#d4a017' : 'rgba(255,255,255,.32)',
+              fontSize:10.5, fontWeight:760, letterSpacing:'.04em',
+              color: tab === t.id ? '#f0be46' : 'rgba(255,255,255,.48)',
               borderBottom: tab === t.id ? '2px solid #d4a017' : '2px solid transparent',
               marginBottom:-1,
               transition:'color .15s, border-color .15s',
               borderRadius:'4px 4px 0 0',
-              background: tab === t.id ? 'rgba(212,160,23,.08)' : 'transparent',
+              background: tab === t.id ? 'rgba(212,160,23,.10)' : 'transparent',
             }}>
               <span style={{ fontSize:12 }}>{t.icon}</span>
               <span>{t.label}</span>
@@ -392,7 +392,7 @@ export default function UnifiedSidebar() {
             <MiniCalendar events={EVENTS} />
             {upcomingEvents.length > 0 && (
               <div style={{ marginTop:16 }}>
-                <div style={{ fontSize:8, fontWeight:700, color:'rgba(255,255,255,.28)', letterSpacing:'.12em', marginBottom:8 }}>
+                <div style={{ fontSize:8.5, fontWeight:800, color:'rgba(255,255,255,.42)', letterSpacing:'.12em', marginBottom:8 }}>
                   PROCHAINS ÉVÉNEMENTS
                 </div>
                 <div style={{ display:'flex', flexDirection:'column', gap:7 }}>
@@ -407,8 +407,8 @@ export default function UnifiedSidebar() {
         {tab === 'programme' && (
           <div style={{ animation:'sbIn .2s ease-out both' }}>
             <div style={{ padding:'12px 14px 8px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-              <span style={{ fontSize:8, fontWeight:700, color:'rgba(255,255,255,.28)', letterSpacing:'.12em' }}>PROGRAMME DE LA SEMAINE</span>
-              <span style={{ fontSize:8, color:'rgba(255,255,255,.22)', fontWeight:600 }}>22h30 / soir</span>
+              <span style={{ fontSize:8.5, fontWeight:800, color:'rgba(255,255,255,.42)', letterSpacing:'.12em' }}>PROGRAMME DE LA SEMAINE</span>
+              <span style={{ fontSize:8.5, color:'rgba(255,255,255,.38)', fontWeight:700 }}>22h30 / soir</span>
             </div>
             {DAYS.map((d, i) => {
               const isToday   = i === TODAY_IDX
@@ -448,7 +448,7 @@ export default function UnifiedSidebar() {
                 <span style={{ fontSize:8, fontWeight:700, color:'rgba(255,255,255,.28)', letterSpacing:'.12em' }}>ANNONCES DISCORD</span>
               </div>
               <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-                {lastRefresh && <span style={{ fontSize:8, color:'rgba(255,255,255,.20)' }}>{lastRefresh.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' })}</span>}
+                {lastRefresh && <span style={{ fontSize:8, color:'rgba(255,255,255,.36)' }}>{lastRefresh.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' })}</span>}
                 <button onClick={loadDiscord} title="Actualiser" style={{
                   background:'none', border:'none', cursor:'pointer',
                   color:'rgba(255,255,255,.28)', fontSize:13, padding:'0 2px', lineHeight:1, transition:'color .15s',

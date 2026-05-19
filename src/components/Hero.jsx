@@ -94,7 +94,7 @@ function StatBlock({ value, label, icon, live = false, liveVal = null }) {
         background: hov ? 'rgba(212,160,23,0.08)' : 'rgba(255,255,255,0.04)',
         border: `1px solid ${hov ? 'rgba(212,160,23,0.32)' : 'rgba(255,255,255,0.09)'}`,
         borderRadius: 16,
-        padding: '18px 20px 14px',
+      padding: '15px 16px 13px',
         transition: 'all .25s cubic-bezier(.22,1,.36,1)',
         transform: hov ? 'translateY(-4px)' : 'none',
         boxShadow: hov ? '0 14px 36px rgba(212,160,23,0.14)' : '0 2px 10px rgba(0,0,0,0.18)',
@@ -104,8 +104,8 @@ function StatBlock({ value, label, icon, live = false, liveVal = null }) {
         flexDirection: 'column',
       }}
     >
-      <div style={{ height: 80, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'flex-start' }}>
-        {icon && <div style={{ fontSize: 18, opacity: 0.85, marginBottom: 6 }}>{icon}</div>}
+      <div style={{ height: 64, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'flex-start' }}>
+        {icon && <div style={{ fontSize: 16, opacity: 0.9, marginBottom: 5 }}>{icon}</div>}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           {live && (
             <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#2ECC71', boxShadow: '0 0 8px #2ECC71', animation: 'pulse 2s infinite', flexShrink: 0 }} />
@@ -163,11 +163,11 @@ function QuoteRotator() {
         border: `1px solid rgba(255,255,255,.07)`,
         borderLeft: `3px solid ${q.color}`,
         borderRadius: '0 12px 12px 0',
-        padding: '14px 18px',
+        padding: '16px 18px',
         marginBottom: 12,
         backdropFilter: 'blur(8px)',
       }}>
-        <p style={{ fontSize: 13.5, color: 'rgba(255,255,255,.80)', lineHeight: 1.75, fontStyle: 'italic', margin: '0 0 8px' }}>
+        <p style={{ fontSize: 14, color: 'rgba(255,255,255,.86)', lineHeight: 1.75, fontStyle: 'italic', margin: '0 0 8px' }}>
           « {q.text} »
         </p>
         <span style={{ fontSize: 10, color: q.color, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase' }}>
@@ -180,7 +180,7 @@ function QuoteRotator() {
           display: 'inline-flex', alignItems: 'center', gap: 6,
           background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.10)',
           borderRadius: 20, padding: '5px 14px', fontSize: 10.5, fontWeight: 600,
-          color: 'rgba(255,255,255,.45)', cursor: 'pointer', letterSpacing: '.04em',
+          color: 'rgba(255,255,255,.58)', cursor: 'pointer', letterSpacing: '.04em',
           transition: 'all .15s',
         }}
         onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,.1)'; e.currentTarget.style.color = '#fff' }}
@@ -202,7 +202,7 @@ function HeroFeatureCard({ icon, title, desc }) {
         flex: '1 1 130px',
         background: hov ? 'rgba(212,160,23,.07)' : 'rgba(255,255,255,.025)',
         border: `1px solid ${hov ? 'rgba(212,160,23,.24)' : 'rgba(255,255,255,.07)'}`,
-        borderRadius: 14, padding: '14px 16px',
+        borderRadius: 12, padding: '14px 16px',
         transition: 'all .25s cubic-bezier(.22,1,.36,1)',
         transform: hov ? 'translateY(-3px)' : 'none',
         cursor: 'default', backdropFilter: 'blur(10px)',
@@ -212,8 +212,8 @@ function HeroFeatureCard({ icon, title, desc }) {
     >
       <span style={{ fontSize: 20, lineHeight: 1 }}>{icon}</span>
       <div>
-        <div style={{ fontSize: 12.5, fontWeight: 700, color: 'rgba(255,255,255,.88)', marginBottom: 3 }}>{title}</div>
-        <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,.34)', lineHeight: 1.4 }}>{desc}</div>
+        <div style={{ fontSize: 12.5, fontWeight: 760, color: 'rgba(255,255,255,.92)', marginBottom: 3 }}>{title}</div>
+        <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,.56)', lineHeight: 1.45 }}>{desc}</div>
       </div>
     </div>
   )
@@ -236,12 +236,14 @@ export default function Hero() {
     <section className="hero-premium" style={{
       minHeight: '100vh', display: 'flex', alignItems: 'center',
       position: 'relative', overflow: 'visible',
-      paddingTop: isMobile ? 80 : 110, paddingBottom: 80,
+      paddingTop: isMobile ? 92 : 110, paddingBottom: isMobile ? 64 : 80,
     }}>
       {/* Overlay directionnel principal */}
       <div style={{
         position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
-        background: 'linear-gradient(90deg, rgba(3,7,14,0.97) 0%, rgba(3,7,14,0.90) 35%, rgba(3,7,14,0.58) 58%, rgba(3,7,14,0.14) 100%)',
+        background: isNarrow
+          ? 'linear-gradient(180deg, rgba(3,7,14,0.96) 0%, rgba(3,7,14,0.86) 48%, rgba(3,7,14,0.76) 100%)'
+          : 'linear-gradient(90deg, rgba(3,7,14,0.97) 0%, rgba(3,7,14,0.91) 34%, rgba(3,7,14,0.64) 60%, rgba(3,7,14,0.20) 100%)',
       }} />
       {/* Overlay sombre uniforme */}
       <div style={{
@@ -302,7 +304,7 @@ export default function Hero() {
             {/* Subtitle */}
             <p className="fade-up" style={{
               fontSize: 'clamp(14px,1.6vw,17px)',
-              color: 'rgba(255,255,255,.75)', fontWeight: 500,
+              color: 'rgba(255,255,255,.86)', fontWeight: 650,
               letterSpacing: '.01em', marginBottom: 10, maxWidth: 480, lineHeight: 1.5,
             }}>
               La plus grande communauté One Piece francophone 🏴‍☠️
@@ -311,8 +313,8 @@ export default function Hero() {
             {/* Description */}
             <p className="fade-up-2" style={{
               fontSize: 'clamp(12px,1.2vw,14px)',
-              color: 'rgba(255,255,255,.40)', fontWeight: 400,
-              lineHeight: 1.7, marginBottom: 32, maxWidth: 440,
+              color: 'rgba(255,255,255,.62)', fontWeight: 450,
+              lineHeight: 1.75, marginBottom: 32, maxWidth: 470,
             }}>
               Rangs, équipages, quiz, classements, théories, événements et aventures communautaires réunis au même endroit.
             </p>
@@ -329,11 +331,11 @@ export default function Hero() {
                 className="btn"
                 data-premium-cta="primary"
                 style={{
-                  fontSize: 15, padding: '14px 28px',
+                  fontSize: 15, padding: '15px 30px',
                   background: 'linear-gradient(135deg, #C8940F 0%, #E8B84A 50%, #C8940F 100%)',
                   backgroundSize: '200% auto',
                   color: '#12090a', fontWeight: 700,
-                  boxShadow: '0 4px 28px rgba(212,160,23,0.40)',
+                  boxShadow: '0 8px 34px rgba(212,160,23,0.42)',
                   border: 'none', textDecoration: 'none',
                   transition: 'box-shadow .28s, transform .28s, background-position .4s',
                 }}
@@ -348,19 +350,19 @@ export default function Hero() {
                 className="btn"
                 data-premium-cta="ghost"
                 style={{
-                  fontSize: 15, padding: '14px 28px',
-                  background: 'transparent',
-                  border: '1px solid rgba(212,160,23,0.50)',
-                  color: '#D4A017', textDecoration: 'none',
+                  fontSize: 15, padding: '15px 26px',
+                  background: 'rgba(255,255,255,0.035)',
+                  border: '1px solid rgba(255,211,145,0.36)',
+                  color: 'rgba(255,225,171,.92)', textDecoration: 'none',
                   transition: 'background .22s, border-color .22s, transform .22s, box-shadow .22s',
                 }}
-                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(212,160,23,0.12)'; e.currentTarget.style.borderColor = 'rgba(212,160,23,0.80)'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(212,160,23,0.18)' }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'rgba(212,160,23,0.50)'; e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none' }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(212,160,23,0.12)'; e.currentTarget.style.borderColor = 'rgba(255,211,145,0.62)'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(212,160,23,0.18)' }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.035)'; e.currentTarget.style.borderColor = 'rgba(255,211,145,0.36)'; e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none' }}
               >
                 ⚔️ Voir les rangs
               </a>
               </div>
-              <p style={{ fontSize: 10.5, color: 'rgba(255,255,255,.26)', fontWeight: 600, letterSpacing: '.07em', textTransform: 'uppercase', margin: 0 }}>
+              <p style={{ fontSize: 10.5, color: 'rgba(255,255,255,.42)', fontWeight: 700, letterSpacing: '.07em', textTransform: 'uppercase', margin: 0 }}>
                 Gratuit · Actif 24/7 · Classements, équipages, events
               </p>
             </div>
@@ -375,7 +377,7 @@ export default function Hero() {
             {/* Stats */}
             <div className="fade-up-3" style={{
               display: 'grid',
-              gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
+              gridTemplateColumns: isMobile ? 'repeat(2, minmax(0, 1fr))' : 'repeat(4, minmax(0, 1fr))',
               gap: 12,
             }}>
               <StatBlock value="2 000+" label="Nakamas" icon="🏴‍☠️" />
@@ -406,7 +408,7 @@ export default function Hero() {
 
           {/* ── Right column — UnifiedSidebar ── */}
           {!isNarrow && (
-            <div style={{ position: 'sticky', top: 90 }}>
+            <div style={{ position: 'sticky', top: 104, justifySelf: 'end', transform: 'translateY(10px)' }}>
               <UnifiedSidebar />
             </div>
           )}
