@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense } from 'react'
+import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import GlobalStyles from './components/GlobalStyles.jsx'
 import { ThemeProvider } from './contexts/ThemeContext.jsx'
@@ -21,7 +21,6 @@ import NousSoutenir from './components/NousSoutenir.jsx'
 import EquipageSection from './components/EquipageSection.jsx'
 import AkainuGame from './components/AkainuGame.jsx'
 import ThemeToggle from './components/ThemeToggle.jsx'
-import MusicPlayer from './components/MusicPlayer.jsx'
 
 // Lazy — chargés uniquement quand ouverts
 const ProfilePage     = lazy(() => import('./components/ProfilePage.jsx'))
@@ -57,14 +56,85 @@ const StaffPanel         = lazy(() => import('./components/StaffPanel.jsx'))
 const BlindTestPage      = lazy(() => import('./components/BlindTestPage.jsx'))
 const BlindTestLeaderboard = lazy(() => import('./components/BlindTestLeaderboard.jsx'))
 function AMVBackground() {
+  const videoRef = useRef(null)
+  const [muted, setMuted]     = useState(true)
+  const [volume, setVolume]   = useState(40)
+  const [hovered, setHovered] = useState(false)
+
+  const toggle = () => {
+    const v = videoRef.current
+    if (!v) return
+    const next = !muted
+    v.muted = next
+    if (!next) v.volume = volume / 100
+    setMuted(next)
+  }
+
+  const handleVolume = e => {
+    const val = parseInt(e.target.value)
+    setVolume(val)
+    const v = videoRef.current
+    if (!v) return
+    v.volume = val / 100
+    if (val === 0) { v.muted = true; setMuted(true) }
+    else { v.muted = false; setMuted(false) }
+  }
+
   return (
-    <video
-      autoPlay muted loop playsInline
-      onLoadedMetadata={e => { e.target.currentTime = 25 }}
-      style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 0, pointerEvents: 'none', opacity: 0.35 }}
-    >
-      <source src="/bg-video.mp4" type="video/mp4" />
-    </video>
+    <>
+      <video
+        ref={videoRef}
+        autoPlay muted loop playsInline
+        onLoadedMetadata={e => { e.target.currentTime = 25 }}
+        style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 0, pointerEvents: 'none', opacity: 0.35 }}
+      >
+        <source src="/bg-video.mp4" type="video/mp4" />
+      </video>
+
+      {/* Contrôle audio AMV */}
+      <div
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        style={{
+          position: 'fixed', bottom: 90, left: 16, zIndex: 800,
+          display: 'flex', alignItems: 'center', gap: 8,
+          background: hovered ? 'rgba(14,14,16,0.85)' : 'transparent',
+          border: `1px solid ${hovered ? 'rgba(255,255,255,0.08)' : 'transparent'}`,
+          borderRadius: 12, padding: hovered ? '6px 10px' : '6px 6px',
+          backdropFilter: hovered ? 'blur(12px)' : 'none',
+          transition: 'all 0.2s',
+        }}
+      >
+        <button
+          onClick={toggle}
+          title={muted ? 'Activer le son AMV' : 'Couper le son AMV'}
+          style={{
+            width: 28, height: 28, borderRadius: 7, flexShrink: 0,
+            background: 'transparent', border: 'none',
+            color: muted ? 'rgba(255,255,255,0.28)' : 'rgba(255,255,255,0.85)',
+            cursor: 'pointer', fontSize: 15,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            transition: 'color .2s',
+          }}
+        >
+          {muted || volume === 0 ? '🔇' : volume < 40 ? '🔉' : '🔊'}
+        </button>
+
+        {hovered && (
+          <input
+            type="range" min="0" max="100"
+            value={muted ? 0 : volume}
+            onChange={handleVolume}
+            style={{
+              width: 80, height: 4, cursor: 'pointer',
+              accentColor: '#d4a017', borderRadius: 4,
+              outline: 'none', border: 'none',
+              appearance: 'none', WebkitAppearance: 'none',
+            }}
+          />
+        )}
+      </div>
+    </>
   )
 }
 
@@ -191,7 +261,6 @@ export default function App() {
         <Footer />
       </div>
 
-      {!immersiveOverlayOpen && <MusicPlayer />}
       <ThemeToggle />
       <AIChatWidget hidden={mediaOverlayOpen || encyclopedieOpen} />
       <AkainuGame />
