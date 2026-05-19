@@ -138,7 +138,7 @@ const GUESS_DELAY = 5 // seconds before guessing is enabled
 export default function BlindTestPage() {
   const navigate = useNavigate()
   const { isAuthenticated, user, displayName, avatarUrl } = useAuth()
-  const videoRef = useRef(null)
+  const audioRef = useRef(null)
   const titleRef = useRef(null)
 
   // Game state
@@ -165,7 +165,11 @@ export default function BlindTestPage() {
   // Countdown 3-2-1 before track plays
   useEffect(() => {
     if (phase !== 'countdown') return
-    if (countdown <= 0) { setPhase('playing'); setStartTime(Date.now()); setElapsed(0); return }
+    if (countdown <= 0) {
+      // Play audio here — audio was unlocked during user gesture in startGame()
+      audioRef.current?.play().catch(() => {})
+      setPhase('playing'); setStartTime(Date.now()); setElapsed(0); return
+    }
     const t = setTimeout(() => setCountdown(v => v - 1), 1000)
     return () => clearTimeout(t)
   }, [phase, countdown])
@@ -182,16 +186,19 @@ export default function BlindTestPage() {
     return () => clearInterval(t)
   }, [phase, startTime])
 
-  // Auto-play video when phase=playing
+  // Pause audio when not playing
   useEffect(() => {
-    if (phase === 'playing' && videoRef.current) {
-      videoRef.current.currentTime = 0
-      videoRef.current.play().catch(() => {})
-    }
-    if (phase !== 'playing' && videoRef.current) {
-      videoRef.current.pause()
+    if (phase !== 'playing' && audioRef.current) {
+      audioRef.current.pause()
     }
   }, [phase])
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) { audioRef.current.pause(); audioRef.current.src = '' }
+    }
+  }, [])
 
   function startGame() {
     const t = pickTrack(lastTrackId)
@@ -203,6 +210,14 @@ export default function BlindTestPage() {
     setBerries(0)
     setCountdown(3)
     setGuessEnabled(false)
+
+    // Create Audio during user gesture to unlock autoplay with sound
+    if (audioRef.current) { audioRef.current.pause(); audioRef.current.src = '' }
+    const audio = new Audio(t.url)
+    audioRef.current = audio
+    // play() + immediate pause unlocks the audio element for future plays
+    audio.play().then(() => { audio.pause(); audio.currentTime = 0 }).catch(() => {})
+
     setPhase('countdown')
   }
 
@@ -262,17 +277,6 @@ export default function BlindTestPage() {
       <style>{BT_CSS}</style>
       <BTStars />
       <BTScanLine />
-
-      {/* Hidden video player */}
-      {track && (
-        <video
-          ref={videoRef}
-          key={track.id}
-          src={track.url}
-          style={{ display:'none' }}
-          preload="auto"
-        />
-      )}
 
       <div style={{ position:'relative', zIndex:2, maxWidth:780, margin:'0 auto', padding:'80px 20px 100px' }}>
 
