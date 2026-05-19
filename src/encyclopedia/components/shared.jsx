@@ -207,10 +207,11 @@ export function CommunityModesSection({ modes }) {
 }
 
 export function FavoritesSection({ entries }) {
+  if (!entries.length) return null
   return (
     <section className="enc-section">
       <SectionTitle label="Ma collection" text={`${entries.length} archive(s) sauvegardee(s) dans cet univers.`} />
-      {entries.length ? <div className="enc-mini-list">{entries.map(entry => <span key={entry.id}>{entry.name}</span>)}</div> : <p className="enc-muted">Aucun favori pour cet anime.</p>}
+      <div className="enc-mini-list">{entries.map(entry => <span key={entry.id}>{entry.name}</span>)}</div>
     </section>
   )
 }
