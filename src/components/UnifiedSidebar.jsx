@@ -76,7 +76,6 @@ function MiniCalendar({ events }) {
   const today  = new Date()
   const [year,  setYear]  = useState(today.getFullYear())
   const [month, setMonth] = useState(today.getMonth())
-  const [tip,   setTip]   = useState(null)
 
   const eventMap = {}
   events.forEach(e => { eventMap[e.date] = e })
@@ -116,41 +115,36 @@ function MiniCalendar({ events }) {
         >›</button>
       </div>
 
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', gap:1, marginBottom:4 }}>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', gap:2, marginBottom:6 }}>
         {WEEKDAYS.map((w, i) => (
-          <div key={i} style={{ textAlign:'center', fontSize:7.5, fontWeight:700, color:'rgba(255,255,255,.25)' }}>{w}</div>
+          <div key={i} style={{ textAlign:'center', fontSize:8, fontWeight:700, color:'rgba(255,255,255,.36)' }}>{w}</div>
         ))}
       </div>
 
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', gap:1 }}>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', gap:3 }}>
         {cells.map((d, i) => {
-          if (!d) return <div key={`e${i}`} />
+          if (!d) return <div key={`e${i}`} style={{ minHeight:29 }} />
           const key = dateKey(d)
           const ev  = eventMap[key]
           const tod = isToday(d)
           return (
-            <div key={d} style={{ position:'relative', display:'flex', flexDirection:'column', alignItems:'center', padding:'2px 0' }}
-              onMouseEnter={ev ? () => setTip(d) : undefined}
-              onMouseLeave={ev ? () => setTip(null) : undefined}
+            <button key={d} type="button"
+              title={ev ? `${ev.title} - ${new Date(ev.date).toLocaleDateString('fr-FR')}` : undefined}
+              aria-label={ev ? `${d}, evenement ${ev.title}` : `${d}`}
+              style={{
+                minHeight:29, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+                padding:'1px 0', border:0, background:'transparent', cursor:ev ? 'help' : 'default',
+              }}
             >
               <div style={{
                 width:24, height:24, display:'flex', alignItems:'center', justifyContent:'center',
                 borderRadius:'50%', fontSize:9.5, fontWeight: tod ? 800 : ev ? 600 : 400,
-                color: tod ? '#1a1a1a' : ev ? '#d4a017' : 'rgba(255,255,255,.38)',
+                color: tod ? '#1a1a1a' : ev ? '#f0c94c' : 'rgba(255,255,255,.48)',
                 background: tod ? '#d4a017' : 'transparent',
                 animation: tod ? 'todayRing 2s ease-in-out infinite' : 'none',
               }}>{d}</div>
               {ev && <div style={{ width:3, height:3, borderRadius:'50%', background: ev.color || '#d4a017', marginTop:1, animation:'dotBeat 2.5s ease-in-out infinite' }} />}
-              {tip === d && ev && (
-                <div style={{
-                  position:'absolute', bottom:'calc(100% + 5px)', left:'50%', transform:'translateX(-50%)',
-                  background:'rgba(10,11,14,.98)', border:`1px solid ${ev.color || '#d4a017'}55`,
-                  borderRadius:7, padding:'4px 8px', zIndex:30, whiteSpace:'nowrap',
-                  fontSize:10, fontWeight:600, color:'#fff',
-                  boxShadow:'0 6px 18px rgba(0,0,0,.7)', pointerEvents:'none',
-                }}>{ev.icon} {ev.title}</div>
-              )}
-            </div>
+            </button>
           )
         })}
       </div>
@@ -305,7 +299,7 @@ export default function UnifiedSidebar() {
 
   return (
     <div style={{
-      width:390, maxHeight:560,
+      width:390, maxHeight:590,
       display:'flex', flexDirection:'column',
       background:'linear-gradient(160deg, rgba(14,15,20,.78) 0%, rgba(8,9,13,.68) 100%)',
       backdropFilter:'blur(32px) saturate(1.5)',
@@ -363,14 +357,14 @@ export default function UnifiedSidebar() {
 
         {/* Calendrier */}
         {tab === 'calendrier' && (
-          <div style={{ padding:'14px', animation:'sbIn .2s ease-out both' }}>
+          <div style={{ padding:'14px 14px 16px', animation:'sbIn .2s ease-out both' }}>
             <MiniCalendar events={EVENTS} />
             {upcomingEvents.length > 0 && (
-              <div style={{ marginTop:16 }}>
+              <div style={{ marginTop:17 }}>
                 <div style={{ fontSize:8, fontWeight:700, color:'rgba(255,255,255,.28)', letterSpacing:'.12em', marginBottom:8 }}>
                   PROCHAINS ÉVÉNEMENTS
                 </div>
-                <div style={{ display:'flex', flexDirection:'column', gap:7 }}>
+                <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
                   {upcomingEvents.map(ev => <EventCard key={ev.id} event={ev} />)}
                 </div>
               </div>
@@ -454,11 +448,24 @@ export default function UnifiedSidebar() {
 
       {/* ── Footer ────────────────────────────────────────────────────────── */}
       <div style={{
-        padding:'10px 14px', flexShrink:0,
+        padding:'12px 14px', flexShrink:0,
         borderTop:'1px solid rgba(255,255,255,.06)',
-        display:'flex', alignItems:'center', justifyContent:'space-between',
+        display:'flex', alignItems:'center', justifyContent:'space-between', gap:12,
         background:'rgba(0,0,0,.15)',
       }}>
+        <div style={{
+          minWidth:0, display:'inline-flex', alignItems:'center', gap:7,
+          color:'rgba(46,204,113,.82)', fontSize:10, fontWeight:800,
+          letterSpacing:'.02em',
+        }}>
+          <span aria-hidden="true" style={{
+            width:16, height:16, borderRadius:'50%',
+            display:'inline-flex', alignItems:'center', justifyContent:'center',
+            background:'rgba(46,204,113,.10)', border:'1px solid rgba(46,204,113,.24)',
+            fontSize:10, flexShrink:0,
+          }}>+</span>
+          <span style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>Equipages bientot</span>
+        </div>
         <a
           href="https://discord.gg/v3Ddhtbz"
           target="_blank"
@@ -466,7 +473,7 @@ export default function UnifiedSidebar() {
           style={{
             fontSize:10, fontWeight:700, color:'#d4a017',
             background:'rgba(212,160,23,.10)', border:'1px solid rgba(212,160,23,.28)',
-            borderRadius:6, padding:'4px 10px', textDecoration:'none',
+            borderRadius:6, padding:'5px 11px', textDecoration:'none', flexShrink:0,
             transition:'all .15s', display:'inline-flex', alignItems:'center', gap:4,
           }}
           onMouseEnter={e => { e.currentTarget.style.background='rgba(212,160,23,.20)'; e.currentTarget.style.borderColor='rgba(212,160,23,.60)' }}
