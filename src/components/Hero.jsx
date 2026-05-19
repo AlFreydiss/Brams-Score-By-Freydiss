@@ -235,7 +235,7 @@ export default function Hero() {
   return (
     <section className="hero-premium" style={{
       minHeight: '100vh', display: 'flex', alignItems: 'center',
-      position: 'relative', overflow: 'hidden',
+      position: 'relative', overflow: 'visible',
       paddingTop: isMobile ? 80 : 110, paddingBottom: 80,
     }}>
       {/* Overlay directionnel principal */}
