@@ -27,7 +27,6 @@ export function AnimeHero({ anime, spoilerSafe, setSpoilerSafe }) {
   return (
     <section className="enc-hero" style={{ '--title-gradient': anime.theme.titleGradient }}>
       <p className="enc-kicker">{anime.label}</p>
-      <div className="enc-hero-mark">📚</div>
       <h1>{anime.title}</h1>
       <p className="enc-subtitle">{anime.description}</p>
       <div className="enc-stats">
@@ -38,10 +37,6 @@ export function AnimeHero({ anime, spoilerSafe, setSpoilerSafe }) {
           </div>
         ))}
       </div>
-      <button className={`enc-spoiler-toggle ${spoilerSafe ? 'is-on' : ''}`} onClick={() => setSpoilerSafe(!spoilerSafe)} aria-pressed={spoilerSafe}>
-        <span>{spoilerSafe ? 'Mode sans spoiler actif' : 'Spoilers visibles'}</span>
-        <b>{spoilerSafe ? 'Protege' : 'Libre'}</b>
-      </button>
     </section>
   )
 }
@@ -59,7 +54,7 @@ export function AnimeCategoryPills({ categories, active, onChange }) {
   return (
     <div className="enc-pill-row" aria-label="Filtres categories">
       <button className={active === 'all' ? 'is-active' : ''} onClick={() => onChange('all')}>Tout</button>
-      {categories.map(category => (
+      {categories.filter(category => !['world-map', 'coming-soon', 'comparator'].includes(category.id)).map(category => (
         <button key={category.id} className={active === category.id ? 'is-active' : ''} onClick={() => onChange(category.id)}>{category.label}</button>
       ))}
     </div>
@@ -72,7 +67,7 @@ export function FilterPills({ rarity, setRarity, favoritesOnly, setFavoritesOnly
     <div className="enc-pill-row enc-secondary-filters" aria-label="Filtres avances">
       {rarities.map(item => <button key={item} className={rarity === item ? 'is-active' : ''} onClick={() => setRarity(item)}>{item === 'all' ? 'Toutes raretes' : rarityLabels[item]}</button>)}
       <button className={favoritesOnly ? 'is-active' : ''} onClick={() => setFavoritesOnly(!favoritesOnly)}>Favoris</button>
-      <button className={secretOnly ? 'is-active' : ''} onClick={() => setSecretOnly(!secretOnly)}>Dossiers secrets</button>
+      <button className={secretOnly ? 'is-active' : ''} onClick={() => setSecretOnly(!secretOnly)}>Archives sensibles</button>
     </div>
   )
 }
@@ -96,7 +91,7 @@ export function EntryGrid({ entries, favorites, spoilerSafe, onToggleFavorite, o
 }
 
 export function EntryCard({ entry, isFavorite, spoilerSafe, onToggleFavorite, revealed, onReveal, onSelect }) {
-  const hidden = spoilerSafe && entry.spoilerLevel >= 4 && !revealed
+  const hidden = false
   return (
     <article className={`enc-card enc-rarity-card-${entry.rarity} ${hidden ? 'is-spoiler-hidden' : ''}`}>
       <div className="enc-card-top">
@@ -106,12 +101,8 @@ export function EntryCard({ entry, isFavorite, spoilerSafe, onToggleFavorite, re
       <h3>{hidden ? 'Archive masquee' : entry.name}</h3>
       <p className="enc-card-sub">{hidden ? 'Mode sans spoiler actif' : entry.subtitle || entry.category}</p>
       <p>{hidden ? 'Cette carte contient un spoiler majeur. Tu peux la reveler manuellement.' : entry.description}</p>
-      {hidden ? <button className="enc-reveal" onClick={() => onReveal(entry.id)}>Reveler</button> : (
-        <>
-          <div className="enc-tags">{entry.tags.slice(0, 4).map(tag => <span key={tag}>{tag}</span>)}</div>
-          <button className="enc-card-detail" onClick={() => onSelect(entry)}>Ouvrir la fiche</button>
-        </>
-      )}
+      <div className="enc-tags">{entry.tags.slice(0, 4).map(tag => <span key={tag}>{tag}</span>)}</div>
+      <button className="enc-card-detail" onClick={() => onSelect(entry)}>Ouvrir la fiche</button>
     </article>
   )
 }
@@ -161,13 +152,13 @@ export function SecretFilesSection({ files, spoilerSafe, revealed, onReveal }) {
       <SectionTitle label="Archives interdites" text="Dossiers sensibles, theories majeures et zones volontairement protegees par le mode sans spoiler." />
       <div className="enc-secret-grid">
         {files.map(file => {
-          const hidden = spoilerSafe && file.spoilerLevel >= 4 && !revealed.includes(file.id)
+          const hidden = false
           return (
             <article key={file.id} className={`enc-secret enc-rarity-card-${file.rarity} ${hidden ? 'is-spoiler-hidden' : ''}`}>
               <div className="enc-card-top"><RarityBadge rarity={file.rarity} /><span>{file.dangerLevel}</span></div>
               <h3>{hidden ? 'Dossier classifie' : file.title}</h3>
               <p>{hidden ? 'Archive masquee par le mode sans spoiler.' : file.summary}</p>
-              {hidden ? <button className="enc-reveal" onClick={() => onReveal(file.id)}>Reveler le dossier</button> : <div className="enc-tags">{file.tags.map(tag => <span key={tag}>{tag}</span>)}</div>}
+              <div className="enc-tags">{file.tags.map(tag => <span key={tag}>{tag}</span>)}</div>
             </article>
           )
         })}
@@ -182,7 +173,7 @@ export function AnimeTimeline({ items, spoilerSafe, revealed, onReveal }) {
       <SectionTitle label="Timeline" text="Chronologie dynamique de l'univers selectionne, avec protection des arcs sensibles." />
       <div className="enc-timeline">
         {items.map(item => {
-          const hidden = spoilerSafe && item.spoilerLevel >= 4 && !revealed.includes(item.id)
+          const hidden = false
           return (
             <article key={item.id} className={`enc-time-item ${hidden ? 'is-spoiler-hidden' : ''}`}>
               <span>{item.badge}</span>
@@ -227,6 +218,7 @@ export function FavoritesSection({ entries }) {
 export function SectionTitle({ label, text }) {
   return (
     <div className="enc-section-title">
+      <span>BRAMS ARCHIVES</span>
       <h2>{label}</h2>
       <p>{text}</p>
     </div>

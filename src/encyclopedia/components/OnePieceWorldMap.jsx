@@ -16,6 +16,9 @@ export default function OnePieceWorldMap({ spoilerSafe, revealed, onReveal }) {
       </div>
       <div className="enc-world-layout">
         <div className="enc-world-map" role="img" aria-label="Carte abstraite de Grand Line">
+          <span className="enc-map-label east">East Blue</span>
+          <span className="enc-map-label grand">Grand Line</span>
+          <span className="enc-map-label new">Nouveau Monde</span>
           <div className="enc-red-line" />
           <div className="enc-grand-line" />
           {islands.map(island => {

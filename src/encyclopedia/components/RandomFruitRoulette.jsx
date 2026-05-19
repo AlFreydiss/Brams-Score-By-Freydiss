@@ -38,7 +38,13 @@ export default function RandomFruitRoulette() {
   return (
     <section className="enc-section">
       <SectionTitle label="Le destin du fruit" text="Mini-mode aleatoire avec raretes ponderees, suspense et partage Discord." />
-      <button className="enc-primary" onClick={roll}>Lancer la roulette</button>
+      <div className="enc-roulette-launch">
+        <div>
+          <strong>Roulette des fruits</strong>
+          <span>Commun 50% · Rare 25% · Epique 15% · Legendaire 7% · Mythique 2% · Secret 0.8% · Interdit 0.2%</span>
+        </div>
+        <button className="enc-primary" onClick={roll}>Lancer la roulette</button>
+      </div>
       {open && (
         <div className="enc-modal" role="dialog" aria-modal="true" aria-label="Resultat du destin du fruit">
           <div className="enc-modal-card">

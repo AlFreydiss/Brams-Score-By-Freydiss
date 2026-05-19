@@ -31,6 +31,16 @@ function FruitSummary({ fruit }) {
       <h3>{fruit.name}</h3>
       <p>{fruit.subtitle}</p>
       <strong>{fruit.knownUser}</strong>
+      <div className="enc-detail-columns">
+        <div>
+          <span>Forces</span>
+          <ul>{fruit.strengths.slice(0, 3).map(item => <li key={item}>{item}</li>)}</ul>
+        </div>
+        <div>
+          <span>Faiblesses</span>
+          <ul>{fruit.weaknesses.slice(0, 2).map(item => <li key={item}>{item}</li>)}</ul>
+        </div>
+      </div>
     </article>
   )
 }
@@ -60,10 +70,13 @@ export default function FruitComparator() {
     <section className="enc-section">
       <SectionTitle label="Comparateur de fruits" text="Deux fruits, huit statistiques, forces/faiblesses et verdict automatique." />
       <div className="enc-comparator">
-        <FruitSelect label="Fruit A" value={leftSlug} onChange={setLeftSlug} />
-        <div className="enc-vs">VS</div>
-        <FruitSelect label="Fruit B" value={rightSlug} onChange={setRightSlug} />
-        <FruitSummary fruit={left} />
+        <div className="enc-compare-selects">
+          <FruitSelect label="Fruit A" value={leftSlug} onChange={setLeftSlug} />
+          <div className="enc-vs">VS</div>
+          <FruitSelect label="Fruit B" value={rightSlug} onChange={setRightSlug} />
+        </div>
+        <div className="enc-compare-board">
+          <FruitSummary fruit={left} />
         <div className="enc-stat-bars">
           {Object.keys(statLabels).map(key => {
             const a = left.stats[key]
@@ -81,6 +94,7 @@ export default function FruitComparator() {
           })}
         </div>
         <FruitSummary fruit={right} />
+        </div>
         <div className="enc-verdict">
           <strong>Verdict</strong>
           <p>{verdict}</p>
