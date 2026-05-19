@@ -101,8 +101,8 @@ const CSS = `
     50%       { filter: drop-shadow(0 0 42px rgba(255,185,55,0.58)); }
   }
   @keyframes ha-title-breath {
-    0%, 100% { text-shadow: 0 1px 0 rgba(0,0,0,.70), 0 4px 16px rgba(0,0,0,.55), 0 0 50px rgba(200,130,25,.18); }
-    50%       { text-shadow: 0 1px 0 rgba(0,0,0,.70), 0 4px 16px rgba(0,0,0,.55), 0 0 70px rgba(220,150,30,.34); }
+    0%, 100% { text-shadow: 0 1px 0 rgba(0,0,0,.70), 0 4px 16px rgba(0,0,0,.55), 0 0 50px rgba(220,40,30,.22); }
+    50%       { text-shadow: 0 1px 0 rgba(0,0,0,.70), 0 4px 16px rgba(0,0,0,.55), 0 0 80px rgba(240,60,45,.42); }
   }
   .hero-brams {
     display: block;
@@ -110,11 +110,11 @@ const CSS = `
     -webkit-text-fill-color: unset !important;
     -webkit-background-clip: unset !important;
     background-clip: unset !important;
-    color: rgba(238,228,205,0.96);
+    color: #ff4e4e;
     text-shadow:
       0 1px 0 rgba(0,0,0,.70),
       0 4px 16px rgba(0,0,0,.55),
-      0 0 50px rgba(200,130,25,.18);
+      0 0 50px rgba(220,40,30,.28);
     animation: slideFromLeft 0.85s cubic-bezier(0.22,1,0.36,1) both,
                ha-title-breath 8s 1s ease-in-out infinite;
   }
