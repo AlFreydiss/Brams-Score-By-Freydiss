@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 
 const ANIMES = [
   {
@@ -269,96 +269,177 @@ const ANIMES = [
   },
 ]
 
-function AnimeCard({ anime, onClick }) {
-  const [hovered, setHovered] = useState(false)
+const AH_CSS = `
+  @keyframes ahFadeUp  { from { opacity:0; transform:translateY(24px) } to { opacity:1; transform:none } }
+  @keyframes ahTwinkle { 0%,100% { opacity:.12 } 50% { opacity:.65 } }
+  @keyframes ahScan    { 0% { top:-2px } 100% { top:100% } }
+  @keyframes ahDrift   { 0%,100% { transform:translateY(0) } 50% { transform:translateY(-12px) } }
+  @keyframes ahPulse   { 0%,100% { opacity:.06 } 50% { opacity:.14 } }
+`
+
+// Ambient colored orbs drift in background
+const ORB_COLORS = ['#e0524a', '#6c5ce7', '#00b894', '#c62828', '#c9a227', '#1976d2', '#8e44ad', '#f57f17']
+
+function AHStars() {
+  const stars = useMemo(() => Array.from({ length: 55 }, (_, i) => ({
+    x:    (i * 37.7 + 9)  % 98,
+    y:    (i * 43.1 + 17) % 95,
+    size: i % 8 === 0 ? 2.5 : i % 3 === 0 ? 1.6 : 1,
+    dur:  3.2 + (i * 0.27) % 4.8,
+    del:  (i * 0.23) % 7,
+    col:  i % 5 === 0 ? ORB_COLORS[i % ORB_COLORS.length] : null,
+  })), [])
+
+  return (
+    <div style={{ position:'absolute', inset:0, pointerEvents:'none', zIndex:0, overflow:'hidden' }}>
+      {stars.map((s, i) => (
+        <div key={i} style={{
+          position:'absolute', left:`${s.x}%`, top:`${s.y}%`,
+          width:s.size, height:s.size, borderRadius:'50%',
+          background: s.col ?? 'rgba(255,255,255,0.55)',
+          animation:`ahTwinkle ${s.dur}s ${s.del}s ease-in-out infinite`,
+        }} />
+      ))}
+    </div>
+  )
+}
+
+function AHScanLine() {
+  return (
+    <div style={{ position:'absolute', inset:0, pointerEvents:'none', zIndex:1, overflow:'hidden' }}>
+      <div style={{
+        position:'absolute', left:0, right:0, height:2,
+        background:'linear-gradient(90deg, transparent, rgba(224,82,74,.06), rgba(224,82,74,.14), rgba(224,82,74,.06), transparent)',
+        animation:'ahScan 18s linear infinite',
+      }} />
+    </div>
+  )
+}
+
+function AmbientOrbs() {
+  const orbs = useMemo(() => [
+    { x:10,  y:20, size:320, color:'rgba(224,82,74,0.04)',  dur:18 },
+    { x:75,  y:60, size:280, color:'rgba(108,92,231,0.04)', dur:22 },
+    { x:45,  y:80, size:380, color:'rgba(0,184,148,0.03)',  dur:26 },
+    { x:88,  y:10, size:240, color:'rgba(201,162,39,0.04)', dur:20 },
+  ], [])
+  return (
+    <div style={{ position:'absolute', inset:0, pointerEvents:'none', zIndex:0, overflow:'hidden' }}>
+      {orbs.map((o, i) => (
+        <div key={i} style={{
+          position:'absolute',
+          left:`${o.x}%`, top:`${o.y}%`,
+          width:o.size, height:o.size,
+          borderRadius:'50%',
+          background:`radial-gradient(circle, ${o.color}, transparent 70%)`,
+          transform:'translate(-50%, -50%)',
+          animation:`ahDrift ${o.dur}s ease-in-out infinite`,
+        }} />
+      ))}
+    </div>
+  )
+}
+
+function AnimeCard({ anime, index, onClick }) {
+  const [hov, setHov] = useState(false)
+  const c = anime.color
 
   return (
     <div
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
       onClick={onClick}
       style={{
-        borderRadius: 20, overflow: 'hidden',
-        border: `1px solid ${hovered ? anime.color + '55' : 'rgba(255,255,255,0.07)'}`,
-        background: 'rgba(18,19,22,0.9)',
-        transition: 'all 0.25s ease',
-        transform: hovered ? 'translateY(-8px)' : 'translateY(0)',
-        boxShadow: hovered ? `0 24px 64px ${anime.color}22` : 'none',
-        cursor: 'pointer',
+        position:'relative',
+        borderRadius:20, overflow:'hidden',
+        background:`linear-gradient(175deg, ${c}14 0%, rgba(14,14,18,0.97) 100%)`,
+        border:`1px solid ${hov ? c+'55' : c+'1e'}`,
+        borderTop:`3px solid ${hov ? c : c+'aa'}`,
+        transition:'all 0.38s ease',
+        transform: hov ? 'translateY(-10px)' : 'translateY(0)',
+        boxShadow: hov ? `0 28px 70px ${c}28, 0 0 0 1px ${c}18` : `0 4px 18px ${c}0a`,
+        cursor:'pointer',
+        animation:`ahFadeUp 0.55s ${index * 0.07}s ease-out both`,
       }}
     >
-      {/* Banner — cover art ou gradient fallback */}
-      <div style={{
-        height: 250, position: 'relative', overflow: 'hidden',
-        background: `linear-gradient(135deg, ${anime.color}dd 0%, ${anime.colorDark} 100%)`,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}>
-        {anime.coverImage ? (
+      {/* Cover image */}
+      <div style={{ height:250, position:'relative', overflow:'hidden', background:`linear-gradient(135deg, ${c}cc 0%, ${anime.colorDark} 100%)` }}>
+        {anime.coverImage && (
           <img
             src={anime.coverImage}
             alt={anime.title}
             style={{
-              position: 'absolute', inset: 0, width: '100%', height: '100%',
-              objectFit: 'cover', objectPosition: 'top center',
-              opacity: hovered ? 1 : 0.88,
-              transition: 'opacity 0.25s ease, transform 0.35s ease',
-              transform: hovered ? 'scale(1.04)' : 'scale(1)',
+              position:'absolute', inset:0, width:'100%', height:'100%',
+              objectFit:'cover', objectPosition:'top center',
+              opacity: hov ? 1 : 0.85,
+              transition:'opacity 0.38s ease, transform 0.45s ease',
+              transform: hov ? 'scale(1.06)' : 'scale(1)',
             }}
           />
-        ) : (
-          <div style={{ fontSize: 88, filter: 'drop-shadow(0 6px 16px rgba(0,0,0,0.5))', position: 'relative', zIndex: 1, transition: 'transform 0.25s ease', transform: hovered ? 'scale(1.08)' : 'scale(1)' }}>
+        )}
+        {!anime.coverImage && (
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100%', fontSize:88, filter:`drop-shadow(0 6px 20px ${c}66)`, transition:'transform 0.38s', transform: hov ? 'scale(1.1)' : 'scale(1)' }}>
             {anime.emoji}
           </div>
         )}
 
-        {/* Gradient overlay bottom pour lisibilité */}
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.05) 40%, rgba(0,0,0,0.55) 100%)', pointerEvents: 'none', zIndex: 1 }} />
+        {/* Bottom gradient */}
+        <div style={{ position:'absolute', inset:0, background:'linear-gradient(to bottom, transparent 30%, rgba(8,8,12,0.72) 100%)', zIndex:1 }} />
+
+        {/* Glow rim at top */}
+        <div style={{
+          position:'absolute', top:0, left:0, right:0, height:60,
+          background:`linear-gradient(to bottom, ${c}22, transparent)`,
+          zIndex:1, opacity: hov ? 1 : 0,
+          transition:'opacity .38s',
+        }} />
 
         {/* Badge */}
-        <div style={{ position: 'absolute', top: 12, right: 12, fontSize: 10, fontWeight: 800, letterSpacing: '0.1em', background: `${anime.badgeColor}cc`, color: '#fff', borderRadius: 100, padding: '3px 10px', zIndex: 2, backdropFilter: 'blur(6px)' }}>
+        <div style={{ position:'absolute', top:12, right:12, zIndex:2, fontSize:10, fontWeight:800, letterSpacing:'.08em', background:`${anime.badgeColor}dd`, color:'#fff', borderRadius:100, padding:'3px 10px', backdropFilter:'blur(6px)' }}>
           {anime.badge}
         </div>
 
-        {/* Titre en bas du banner sur les covers */}
+        {/* Subtitle on cover */}
         {anime.coverImage && (
-          <div style={{ position: 'absolute', bottom: 14, left: 16, zIndex: 2 }}>
-            <div style={{ fontSize: 11, fontWeight: 800, color: anime.color, letterSpacing: '0.06em', textShadow: '0 1px 8px rgba(0,0,0,0.9)' }}>{anime.subtitle}</div>
+          <div style={{ position:'absolute', bottom:14, left:16, zIndex:2 }}>
+            <div style={{ fontSize:11, fontWeight:800, color:c, letterSpacing:'.06em', textShadow:'0 1px 10px rgba(0,0,0,0.9)' }}>{anime.subtitle}</div>
           </div>
         )}
       </div>
 
-      {/* Info */}
-      <div style={{ padding: '22px 24px' }}>
-        <div style={{ marginBottom: 12 }}>
-          <div style={{ fontFamily: 'var(--display)', fontWeight: 800, fontSize: 20, color: '#fff', marginBottom: 3 }}>{anime.title}</div>
-          <div style={{ fontSize: 12, color: anime.color, fontWeight: 600 }}>{anime.subtitle}</div>
+      {/* Info body */}
+      <div style={{ padding:'22px 22px 20px' }}>
+        <div style={{ marginBottom:12 }}>
+          <div style={{ fontFamily:'var(--display)', fontWeight:800, fontSize:19, color:'#fff', marginBottom:3, letterSpacing:'-.01em' }}>{anime.title}</div>
+          <div style={{ fontSize:12, color:c, fontWeight:600 }}>{anime.subtitle}</div>
         </div>
 
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
+        <div style={{ display:'flex', gap:5, flexWrap:'wrap', marginBottom:14 }}>
           {anime.genres.map(g => (
-            <span key={g} style={{ fontSize: 11, fontWeight: 700, background: `${anime.color}18`, color: anime.color, border: `1px solid ${anime.color}33`, borderRadius: 100, padding: '2px 10px' }}>{g}</span>
+            <span key={g} style={{ fontSize:11, fontWeight:700, background:`${c}18`, color:c, border:`1px solid ${c}33`, borderRadius:100, padding:'2px 10px' }}>{g}</span>
           ))}
         </div>
 
-        <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.65, marginBottom: 18 }}>{anime.description}</p>
+        <p style={{ fontSize:13, color:'rgba(255,255,255,0.50)', lineHeight:1.7, marginBottom:18 }}>{anime.description}</p>
 
-        <div style={{ display: 'flex', gap: 20, marginBottom: 20, paddingBottom: 18, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <div style={{ display:'flex', gap:20, marginBottom:20, paddingBottom:18, borderBottom:`1px solid ${c}14` }}>
           {anime.stats.map(s => (
             <div key={s.label}>
-              <div style={{ fontSize: 17, fontWeight: 800, color: '#fff' }}>{s.value}</div>
-              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontWeight: 600, letterSpacing: '0.06em', marginTop: 1 }}>{s.label.toUpperCase()}</div>
+              <div style={{ fontSize:17, fontWeight:800, color:'#fff' }}>{s.value}</div>
+              <div style={{ fontSize:10, color:'rgba(255,255,255,0.32)', fontWeight:700, letterSpacing:'.06em', marginTop:1 }}>{s.label.toUpperCase()}</div>
             </div>
           ))}
         </div>
 
         <button style={{
-          width: '100%', padding: '13px', borderRadius: 11, border: 'none',
-          background: hovered ? anime.color : `${anime.color}22`,
-          color: hovered ? '#fff' : anime.color,
-          fontWeight: 700, fontSize: 14, cursor: 'pointer',
-          transition: 'all 0.2s',
-          fontFamily: 'var(--body)',
-          boxShadow: hovered ? `0 6px 20px ${anime.color}44` : 'none',
+          width:'100%', padding:'13px', borderRadius:11, border:'none',
+          background: hov ? c : `${c}20`,
+          color: hov ? '#fff' : c,
+          fontWeight:800, fontSize:14, cursor:'pointer',
+          transition:'all 0.32s',
+          fontFamily:'var(--body)',
+          boxShadow: hov ? `0 8px 24px ${c}44` : 'none',
+          letterSpacing:'.02em',
         }}>
           {anime.action}
         </button>
@@ -367,18 +448,19 @@ function AnimeCard({ anime, onClick }) {
   )
 }
 
-function ComingSoonCard() {
+function ComingSoonCard({ index }) {
   return (
     <div style={{
-      borderRadius: 20, overflow: 'hidden',
-      border: '1px dashed rgba(255,255,255,0.08)',
-      background: 'rgba(255,255,255,0.015)',
-      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      minHeight: 420, padding: 40, textAlign: 'center',
+      borderRadius:20, overflow:'hidden',
+      border:'1px dashed rgba(255,255,255,0.07)',
+      background:'rgba(255,255,255,0.012)',
+      display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+      minHeight:420, padding:40, textAlign:'center',
+      animation:`ahFadeUp 0.55s ${index * 0.07}s ease-out both`,
     }}>
-      <div style={{ fontSize: 52, marginBottom: 18, opacity: 0.2 }}>+</div>
-      <div style={{ fontWeight: 700, fontSize: 15, color: 'rgba(255,255,255,0.2)', marginBottom: 10 }}>D'autres animes bientôt</div>
-      <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.1)', lineHeight: 1.6 }}>Naruto · Dragon Ball<br />Bleach · Demon Slayer…</div>
+      <div style={{ fontSize:52, marginBottom:18, opacity:.18, animation:'ahDrift 6s ease-in-out infinite' }}>＋</div>
+      <div style={{ fontWeight:700, fontSize:15, color:'rgba(255,255,255,0.18)', marginBottom:10 }}>D'autres animes bientôt</div>
+      <div style={{ fontSize:13, color:'rgba(255,255,255,0.09)', lineHeight:1.7 }}>Naruto · Dragon Ball<br />Bleach · Sword Art Online…</div>
     </div>
   )
 }
@@ -389,62 +471,83 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
     return () => { document.body.style.overflow = '' }
   }, [])
 
-  const handleClick = (id) => {
-    if (id === 'onepiece') onOpenOnepiece()
-    else if (id === 'tpn') onOpenTpn()
-    else if (id === 'drstone') onOpenDrstone()
-    else if (id === 'jjk') onOpenJjk()
-    else if (id === 'kingdom') onOpenKingdom()
-    else if (id === 'aot') onOpenAot()
-    else if (id === 'kny') onOpenKny()
-    else if (id === 'nnt') onOpenNnt()
-    else if (id === 'sl') onOpenSl()
-    else if (id === 'dbs') onOpenDbs()
-    else if (id === 'bc') onOpenBc()
-    else if (id === 'mha') onOpenMha()
-    else if (id === 'fireforce') onOpenFireforce()
-    else if (id === 'bluelock') onOpenBluelock()
+  const handleClick = id => {
+    const map = {
+      onepiece: onOpenOnepiece, tpn: onOpenTpn, drstone: onOpenDrstone,
+      jjk: onOpenJjk, kingdom: onOpenKingdom, aot: onOpenAot,
+      kny: onOpenKny, nnt: onOpenNnt, sl: onOpenSl, dbs: onOpenDbs,
+      bc: onOpenBc, mha: onOpenMha, fireforce: onOpenFireforce, bluelock: onOpenBluelock,
+    }
+    map[id]?.()
   }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 500, background: 'var(--bg)', display: 'flex', flexDirection: 'column', animation: 'fadeIn 0.18s ease-out' }}>
+    <div style={{ position:'fixed', inset:0, zIndex:500, background:'#07090e', display:'flex', flexDirection:'column' }}>
+      <style>{AH_CSS}</style>
 
-      {/* Header */}
-      <div style={{ flexShrink: 0, padding: '0 24px', height: 72, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(17,18,20,0.97)', backdropFilter: 'blur(20px)', borderBottom: '1px solid var(--border)', zIndex: 10 }}>
-        <div>
-          <div style={{ fontFamily: 'var(--display)', fontWeight: 800, fontSize: 20, color: '#fff' }}>🎌 Hub des Animés</div>
-          <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 1 }}>Sélectionne un anime pour commencer</div>
+      {/* ── Header ── */}
+      <div style={{
+        flexShrink:0, padding:'0 24px', height:72,
+        display:'flex', alignItems:'center', justifyContent:'space-between',
+        background:'rgba(7,9,14,0.96)', backdropFilter:'blur(20px)',
+        borderBottom:'1px solid rgba(255,255,255,0.07)', zIndex:10,
+        position:'relative',
+      }}>
+        <div style={{ display:'flex', alignItems:'center', gap:14 }}>
+          <div style={{ fontSize:28, filter:'drop-shadow(0 0 14px rgba(224,82,74,0.6))', animation:'ahDrift 5s ease-in-out infinite' }}>🎌</div>
+          <div>
+            <div style={{ fontFamily:"'Pirata One', cursive", fontWeight:900, fontSize:22, color:'#fff', letterSpacing:'-.01em', lineHeight:1 }}>Hub des Animés</div>
+            <div style={{ fontSize:11, color:'rgba(255,255,255,0.32)', marginTop:3, fontWeight:600, letterSpacing:'.04em' }}>
+              {ANIMES.length} séries disponibles
+            </div>
+          </div>
         </div>
         <button
           onClick={onClose}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border)', borderRadius: 9, color: '#fff', cursor: 'pointer', padding: '8px 16px', fontSize: 13, fontWeight: 700, transition: 'background 0.15s' }}
-          onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.12)'}
-          onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
+          style={{ display:'flex', alignItems:'center', gap:7, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.10)', borderRadius:10, color:'rgba(255,255,255,0.75)', cursor:'pointer', padding:'9px 18px', fontSize:13, fontWeight:700, transition:'all .18s' }}
+          onMouseEnter={e => { e.currentTarget.style.background='rgba(255,255,255,0.10)'; e.currentTarget.style.color='#fff' }}
+          onMouseLeave={e => { e.currentTarget.style.background='rgba(255,255,255,0.05)'; e.currentTarget.style.color='rgba(255,255,255,0.75)' }}
         >
           ← Retour
         </button>
       </div>
 
-      {/* Content */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '48px 24px' }}>
-        <div style={{ maxWidth: 1040, margin: '0 auto' }}>
+      {/* ── Content ── */}
+      <div style={{ flex:1, overflowY:'auto', position:'relative' }}>
+        {/* Atmospheric layers */}
+        <AmbientOrbs />
+        <AHStars />
+        <AHScanLine />
 
-          {/* Intro */}
-          <div style={{ textAlign: 'center', marginBottom: 48 }}>
-            <h2 style={{ fontFamily: 'var(--display)', fontWeight: 800, fontSize: 'clamp(22px, 4vw, 36px)', color: '#fff', marginBottom: 12 }}>
-              Ton espace manga & anime
-            </h2>
-            <p style={{ fontSize: 15, color: 'var(--muted)', maxWidth: 500, margin: '0 auto' }}>
-              Lis les scans, regarde les épisodes, suis ta progression — tout au même endroit.
-            </p>
-          </div>
+        <div style={{ position:'relative', zIndex:2, padding:'52px 24px 80px' }}>
+          <div style={{ maxWidth:1080, margin:'0 auto' }}>
 
-          {/* Cards grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 24 }}>
-            {ANIMES.map(anime => (
-              <AnimeCard key={anime.id} anime={anime} onClick={() => handleClick(anime.id)} />
-            ))}
-            <ComingSoonCard />
+            {/* Intro */}
+            <div style={{ textAlign:'center', marginBottom:52 }}>
+              <div style={{
+                display:'inline-flex', alignItems:'center', gap:8,
+                padding:'5px 18px', borderRadius:100,
+                background:'rgba(224,82,74,0.10)', border:'1px solid rgba(224,82,74,0.25)',
+                fontSize:10, fontWeight:800, letterSpacing:'.22em', color:'#e0524a', textTransform:'uppercase',
+                marginBottom:20,
+              }}>
+                ✦ Espace Manga & Anime
+              </div>
+              <h2 style={{ fontFamily:"'Pirata One', cursive", fontWeight:900, fontSize:'clamp(28px,5vw,52px)', color:'#fff', marginBottom:14, lineHeight:1, letterSpacing:'-.02em' }}>
+                Ton univers, ton rythme
+              </h2>
+              <p style={{ fontSize:15, color:'rgba(255,255,255,0.38)', maxWidth:480, margin:'0 auto', lineHeight:1.75 }}>
+                Scans, épisodes, suivis — tout au même endroit pour la communauté Brams.
+              </p>
+            </div>
+
+            {/* Cards grid */}
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(310px, 1fr))', gap:22 }}>
+              {ANIMES.map((anime, i) => (
+                <AnimeCard key={anime.id} anime={anime} index={i} onClick={() => handleClick(anime.id)} />
+              ))}
+              <ComingSoonCard index={ANIMES.length} />
+            </div>
           </div>
         </div>
       </div>
