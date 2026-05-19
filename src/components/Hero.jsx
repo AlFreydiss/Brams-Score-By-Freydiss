@@ -300,10 +300,10 @@ export default function Hero() {
         position: 'absolute', top: 0, left: 0, right: 0, height: '28%', zIndex: 0, pointerEvents: 'none',
         background: 'linear-gradient(180deg, rgba(3,7,14,0.40) 0%, transparent 100%)',
       }} />
-      {/* Vignette bottom */}
+      {/* Vignette bottom — fade cinématique étendu vers la section suivante */}
       <div style={{
-        position: 'absolute', bottom: 0, left: 0, right: 0, height: '22%', zIndex: 0, pointerEvents: 'none',
-        background: 'linear-gradient(0deg, rgba(3,7,14,0.92) 0%, rgba(3,7,14,0.30) 55%, transparent 100%)',
+        position: 'absolute', bottom: 0, left: 0, right: 0, height: '38%', zIndex: 0, pointerEvents: 'none',
+        background: 'linear-gradient(0deg, rgba(3,7,14,0.97) 0%, rgba(3,7,14,0.82) 18%, rgba(3,7,14,0.52) 40%, rgba(3,7,14,0.18) 68%, rgba(3,7,14,0.04) 88%, transparent 100%)',
       }} />
 
       <StarField />
