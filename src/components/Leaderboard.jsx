@@ -15,6 +15,11 @@ const RANK_MAP = [
 
 const PERIODS    = ['Semaine', 'Mois', 'All-time']
 const RANG_OPTS  = ['Tous', ...RANK_MAP.map(r => r.rang)]
+const PERIOD_CONFIG = {
+  Semaine: { rpc: 'week', label: 'cette semaine' },
+  Mois: { rpc: 'month', label: 'sur 30 jours' },
+  'All-time': { rpc: 'all', label: 'depuis le debut' },
+}
 
 function getRank(h) { return RANK_MAP.find(r => h >= r.min) ?? RANK_MAP[RANK_MAP.length-1] }
 function fmt(n) { return n >= 1000000 ? `${(n/1000000).toFixed(1)}M` : n >= 1000 ? `${(n/1000).toFixed(0)}k` : String(n) }
@@ -32,10 +37,20 @@ export default function Leaderboard() {
   const [ref, inView] = useInView()
 
   useEffect(() => {
-    fetchLeaderboard(100)
-      .then(data => { setAllRows(data); setLoading(false) })
-      .catch(() => setLoading(false))
-  }, [])
+    let ignore = false
+    setLoading(true)
+    fetchLeaderboard(100, PERIOD_CONFIG[period]?.rpc || 'week')
+      .then(data => {
+        if (!ignore) {
+          setAllRows(data || [])
+          setLoading(false)
+        }
+      })
+      .catch(() => {
+        if (!ignore) setLoading(false)
+      })
+    return () => { ignore = true }
+  }, [period])
 
   const handlePeriod = (p) => { setPeriod(p); localStorage.setItem('lb_period', p); setPage(0) }
 
@@ -64,7 +79,7 @@ export default function Leaderboard() {
             <div className="label">Top membres</div>
             <h2 className="h2" style={{ margin:'0 auto 16px' }}>Classement vocal</h2>
             <p className="sub" style={{ margin:'0 auto' }}>
-              Les membres les plus actifs en vocal cette semaine · Top {rows.length || 100}
+              Les membres les plus actifs en vocal {PERIOD_CONFIG[period]?.label || 'cette semaine'} · Top {rows.length || 100}
             </p>
           </div>
         </div>

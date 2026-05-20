@@ -12,9 +12,9 @@ export const supabase = url && key ? createClient(url, key, {
   },
 }) : null
 
-export async function fetchLeaderboard(limit = 10) {
+export async function fetchLeaderboard(limit = 10, period = 'week') {
   if (!supabase) return null
-  const { data, error } = await supabase.rpc('top_classement', { p_limit: limit })
+  const { data, error } = await supabase.rpc('top_classement', { p_limit: limit, p_period: period })
   if (error) { console.error('[leaderboard]', error); return null }
   return data
 }
@@ -28,7 +28,7 @@ export async function fetchMembersByRank(minH, maxH = 99999) {
 
 export async function fetchStats() {
   if (!supabase) return null
-  const { data, error } = await supabase.rpc('top_classement', { p_limit: 200 })
+  const { data, error } = await supabase.rpc('top_classement', { p_limit: 200, p_period: 'week' })
   if (error || !data) return null
   const active = data.filter(m => (parseFloat(m.vocal_h) || 0) >= 1).length
   return { membersTracked: data.length, activeVocal: active }
@@ -38,7 +38,7 @@ export async function fetchStats() {
 
 export async function fetchMemberProfile(discordId) {
   if (!supabase) return null
-  const { data, error } = await supabase.rpc('top_classement', { p_limit: 500 })
+  const { data, error } = await supabase.rpc('top_classement', { p_limit: 500, p_period: 'week' })
   if (error || !data) return null
   const member = data.find(m => String(m.uid) === String(discordId))
   if (!member) return null

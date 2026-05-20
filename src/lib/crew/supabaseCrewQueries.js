@@ -28,7 +28,7 @@ export async function fetchCrewMembersEnriched(crewId) {
       .select('*')
       .eq('crew_id', crewId)
       .order('contribution', { ascending: false }),
-    supabase.rpc('top_classement', { p_limit: 500 }),
+    supabase.rpc('top_classement', { p_limit: 500, p_period: 'week' }),
   ])
 
   if (membersRes.error) {
