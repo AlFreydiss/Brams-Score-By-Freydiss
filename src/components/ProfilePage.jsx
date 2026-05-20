@@ -72,6 +72,7 @@ function timeAgo(iso) {
 function StatTile({ label, value, detail, color, tone = 'gold' }) {
   return (
     <article className={`profile-stat profile-stat-${tone}`} style={{ '--accent': color }}>
+      <b aria-hidden="true" />
       <span>{label}</span>
       <strong>{value}</strong>
       {detail && <small>{detail}</small>}
@@ -267,6 +268,11 @@ export default function ProfilePage() {
           0%, 100% { transform: rotate(-10deg) scale(1); filter: brightness(1); }
           50% { transform: rotate(-7deg) scale(1.04); filter: brightness(1.18); }
         }
+        @keyframes profileSoftScan {
+          from { transform: translateX(-45%); opacity: 0; }
+          35% { opacity: .8; }
+          to { transform: translateX(45%); opacity: 0; }
+        }
         .profile-shell {
           min-height: 100vh;
           color: #f3ead7;
@@ -334,10 +340,49 @@ export default function ProfilePage() {
         .profile-wrap {
           position: relative;
           z-index: 1;
-          width: min(1180px, calc(100% - 32px));
+          width: min(1200px, calc(100% - 32px));
           margin: 0 auto;
-          padding: 84px 0 72px;
+          padding: 70px 0 64px;
           animation: profileRise .72s cubic-bezier(.22,1,.36,1) both;
+        }
+        .profile-topbar {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 18px;
+        }
+        .profile-title-block {
+          text-align: center;
+          margin: 4px auto 22px;
+        }
+        .profile-title-block span {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          padding: 5px 16px;
+          border-radius: 999px;
+          background: rgba(212,160,23,.1);
+          border: 1px solid rgba(212,160,23,.26);
+          color: #d4a017;
+          font-size: 10px;
+          font-weight: 900;
+          letter-spacing: .28em;
+          text-transform: uppercase;
+        }
+        .profile-title-block h2 {
+          margin: 13px 0 8px;
+          font-family: var(--display), Pirata One, serif;
+          font-size: clamp(34px, 5.2vw, 60px);
+          line-height: .96;
+          color: #fff;
+        }
+        .profile-title-block p {
+          max-width: 560px;
+          margin: 0 auto;
+          color: rgba(255,255,255,.42);
+          font-size: 14px;
+          line-height: 1.65;
         }
         .profile-back {
           height: 36px;
@@ -358,18 +403,52 @@ export default function ProfilePage() {
           transform: translateY(-1px);
           box-shadow: 0 0 28px rgba(242, 201, 76, .14);
         }
+        .profile-hero-shell {
+          position: relative;
+          padding: 16px;
+          border-radius: 18px;
+          border: 1px solid rgba(255,255,255,.09);
+          border-top-color: color-mix(in srgb, var(--rank) 34%, rgba(255,255,255,.08));
+          background:
+            radial-gradient(circle at 18% 28%, color-mix(in srgb, var(--rank) 18%, transparent), transparent 21rem),
+            radial-gradient(circle at 80% 16%, rgba(212,160,23,.12), transparent 18rem),
+            linear-gradient(145deg, rgba(255,255,255,.045), rgba(7,8,11,.78));
+          box-shadow: 0 28px 90px rgba(0,0,0,.38), inset 0 1px 0 rgba(255,255,255,.055);
+          overflow: hidden;
+        }
+        .profile-hero-shell::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+          background:
+            linear-gradient(90deg, transparent, rgba(242,201,76,.13), transparent),
+            repeating-linear-gradient(90deg, transparent 0 34px, rgba(255,255,255,.035) 35px 36px);
+          animation: profileSoftScan 7s ease-in-out infinite;
+        }
+        .profile-hero-shell::after {
+          content: "";
+          position: absolute;
+          left: 18px;
+          right: 18px;
+          top: 0;
+          height: 3px;
+          background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--rank) 64%, #f2c94c), rgba(242,201,76,.72), transparent);
+          opacity: .8;
+        }
         .profile-hero {
+          position: relative;
+          z-index: 1;
           display: grid;
-          grid-template-columns: 320px minmax(0, 1fr);
-          gap: 28px;
+          grid-template-columns: 330px minmax(0, 1fr);
+          gap: 16px;
           align-items: stretch;
-          margin-top: 22px;
         }
         .profile-poster {
           position: relative;
-          min-height: 470px;
-          padding: 26px 24px 22px;
-          border-radius: 8px;
+          min-height: 486px;
+          padding: 24px 22px 20px;
+          border-radius: 14px;
           border: 1px solid color-mix(in srgb, var(--accent) 52%, rgba(255,255,255,.08));
           background:
             linear-gradient(145deg, rgba(255,255,255,.055), transparent 28%),
@@ -467,7 +546,7 @@ export default function ProfilePage() {
           text-shadow: 0 0 22px rgba(242, 202, 87, .24);
         }
         .profile-poster-photo {
-          width: min(210px, 86%);
+          width: min(218px, 88%);
           aspect-ratio: 1;
           margin: 20px auto 16px;
           border-radius: 7px;
@@ -479,6 +558,8 @@ export default function ProfilePage() {
           box-shadow: inset 0 0 24px rgba(0,0,0,.5);
         }
         .profile-poster-photo img { width: 100%; height: 100%; object-fit: cover; }
+        .profile-poster:hover .profile-poster-photo img { transform: scale(1.045); }
+        .profile-poster-photo img { transition: transform .35s ease; }
         .profile-poster-photo span { font-size: 72px; }
         .profile-poster-name {
           text-align: center;
@@ -554,9 +635,9 @@ export default function ProfilePage() {
         }
         .profile-main-card {
           position: relative;
-          min-height: 470px;
-          padding: clamp(22px, 3vw, 34px);
-          border-radius: 8px;
+          min-height: 486px;
+          padding: clamp(24px, 3vw, 36px);
+          border-radius: 14px;
           background:
             linear-gradient(135deg, rgba(255,255,255,.075), transparent 28%),
             linear-gradient(180deg, rgba(19,18,22,.86), rgba(10,9,10,.96));
@@ -653,16 +734,29 @@ export default function ProfilePage() {
           display: grid;
           grid-template-columns: repeat(3, minmax(0, 1fr));
           gap: 12px;
-          margin-top: 28px;
+          margin-top: 24px;
         }
         .profile-stat {
           position: relative;
           overflow: hidden;
-          min-height: 116px;
+          min-height: 122px;
           padding: 18px;
-          border-radius: 8px;
-          border: 1px solid rgba(255,255,255,.075);
-          background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.025));
+          border-radius: 12px;
+          border: 1px solid color-mix(in srgb, var(--accent) 22%, rgba(255,255,255,.075));
+          border-top: 3px solid color-mix(in srgb, var(--accent) 74%, rgba(255,255,255,.12));
+          background:
+            radial-gradient(circle at 90% 10%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 7rem),
+            linear-gradient(145deg, color-mix(in srgb, var(--accent) 8%, transparent), rgba(255,255,255,.026));
+        }
+        .profile-stat b {
+          position: absolute;
+          right: 14px;
+          top: 12px;
+          width: 34px;
+          height: 34px;
+          border-radius: 10px;
+          background: color-mix(in srgb, var(--accent) 14%, transparent);
+          border: 1px solid color-mix(in srgb, var(--accent) 26%, transparent);
         }
         .profile-stat::after {
           content: "";
@@ -687,10 +781,12 @@ export default function ProfilePage() {
         .profile-stat small { display: block; text-transform: none; letter-spacing: 0; }
         .profile-progress-card {
           margin-top: 14px;
-          padding: 18px;
-          border-radius: 8px;
-          background: rgba(0,0,0,.24);
-          border: 1px solid rgba(255,255,255,.075);
+          padding: 20px;
+          border-radius: 12px;
+          background:
+            radial-gradient(circle at 88% 20%, color-mix(in srgb, var(--rank) 12%, transparent), transparent 12rem),
+            rgba(0,0,0,.28);
+          border: 1px solid rgba(255,255,255,.085);
         }
         .profile-progress-top,
         .profile-progress-bottom {
@@ -706,8 +802,8 @@ export default function ProfilePage() {
         .profile-progress-bottom strong { color: var(--rank); }
         .profile-progress {
           position: relative;
-          height: 10px;
-          margin-top: 12px;
+          height: 13px;
+          margin-top: 15px;
           overflow: visible;
           border-radius: 999px;
           background: rgba(255,255,255,.07);
@@ -753,12 +849,12 @@ export default function ProfilePage() {
           display: grid;
           grid-template-columns: 1fr 1fr;
           gap: 12px;
-          margin-top: 16px;
+          margin-top: 18px;
         }
         .profile-actions button,
         .profile-actions a {
-          height: 44px;
-          border-radius: 8px;
+          height: 46px;
+          border-radius: 11px;
           display: grid;
           place-items: center;
           border: 1px solid rgba(255,255,255,.09);
@@ -811,9 +907,6 @@ export default function ProfilePage() {
           opacity: .78;
         }
         .profile-mode {
-          position: absolute;
-          right: 0;
-          top: 84px;
           height: 36px;
           padding: 0 14px;
           border-radius: 999px;
@@ -826,46 +919,89 @@ export default function ProfilePage() {
         }
         .profile-tabs {
           display: flex;
-          gap: 8px;
-          margin-top: 30px;
-          padding: 6px;
-          width: fit-content;
-          border-radius: 10px;
-          background: rgba(0,0,0,.26);
-          border: 1px solid rgba(255,255,255,.075);
+          position: relative;
+          z-index: 1;
+          gap: 7px;
+          margin: 14px auto 0;
+          padding: 7px;
+          width: max-content;
+          max-width: 100%;
+          border-radius: 999px;
+          background: rgba(0,0,0,.34);
+          border: 1px solid rgba(255,255,255,.09);
+          box-shadow: inset 0 1px 0 rgba(255,255,255,.055);
         }
         .profile-tabs button {
           height: 38px;
-          padding: 0 14px;
-          border: 0;
-          border-radius: 7px;
+          padding: 0 18px;
+          border: 1px solid transparent;
+          border-radius: 999px;
           background: transparent;
           color: rgba(235, 207, 157, .5);
           font-size: 12px;
           font-weight: 900;
           cursor: pointer;
+          transition: color .18s, border-color .18s, background .18s, box-shadow .18s;
+        }
+        .profile-tabs button:hover {
+          color: rgba(255,255,255,.78);
+          border-color: rgba(255,255,255,.12);
+          background: rgba(255,255,255,.035);
         }
         .profile-tabs button.active {
-          background: color-mix(in srgb, var(--rank) 19%, rgba(255,255,255,.06));
-          color: #fff3d8;
+          border-color: color-mix(in srgb, var(--rank) 46%, rgba(255,255,255,.1));
+          background: color-mix(in srgb, var(--rank) 16%, rgba(255,255,255,.045));
+          color: #fff2d4;
+          box-shadow: 0 0 22px color-mix(in srgb, var(--rank) 16%, transparent);
         }
         .profile-content {
           margin-top: 18px;
         }
         .profile-panel-grid {
           display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
+          grid-template-columns: 1.02fr .98fr 1.12fr;
           gap: 14px;
         }
         .profile-panel,
         .profile-item,
         .profile-transaction {
-          border-radius: 8px;
-          border: 1px solid rgba(255,255,255,.075);
-          background: rgba(255,255,255,.04);
+          border-radius: 14px;
+          border: 1px solid rgba(255,255,255,.085);
+          background:
+            linear-gradient(145deg, rgba(255,255,255,.045), rgba(7,8,11,.78));
         }
-        .profile-panel { padding: 18px; }
-        .profile-panel-title { margin-bottom: 14px; color: #d8a84b; }
+        .profile-panel {
+          position: relative;
+          overflow: hidden;
+          padding: 18px;
+          box-shadow: 0 12px 38px rgba(0,0,0,.22);
+        }
+        .profile-panel::before,
+        .profile-item::before {
+          content: "";
+          position: absolute;
+          left: 0;
+          right: 0;
+          top: 0;
+          height: 3px;
+          background: linear-gradient(90deg, var(--rank), rgba(242,201,76,.55), transparent);
+          opacity: .72;
+        }
+        .profile-panel-title {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-bottom: 14px;
+          color: #d8a84b;
+        }
+        .profile-panel-title::before {
+          content: "";
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background: currentColor;
+          box-shadow: 0 0 14px currentColor;
+        }
         .profile-list-row {
           display: flex;
           justify-content: space-between;
@@ -894,9 +1030,11 @@ export default function ProfilePage() {
           grid-template-columns: 34px 1fr auto;
           align-items: center;
           gap: 10px;
-          padding: 9px;
-          border-radius: 7px;
-          background: rgba(0,0,0,.18);
+          padding: 10px;
+          border-radius: 10px;
+          background:
+            linear-gradient(135deg, color-mix(in srgb, var(--accent) 10%, transparent), rgba(0,0,0,.2));
+          border: 1px solid color-mix(in srgb, var(--accent) 16%, transparent);
           opacity: var(--active);
         }
         .profile-rank-step i {
@@ -919,6 +1057,8 @@ export default function ProfilePage() {
         .profile-item {
           min-height: 138px;
           padding: 16px;
+          position: relative;
+          overflow: hidden;
           background:
             radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--accent) 15%, transparent), transparent 8rem),
             rgba(255,255,255,.04);
@@ -983,26 +1123,31 @@ export default function ProfilePage() {
         }
         @media (max-width: 920px) {
           .profile-hero { grid-template-columns: 1fr; }
+          .profile-hero-shell { padding: 12px; }
           .profile-poster { min-height: auto; }
           .profile-panel-grid { grid-template-columns: 1fr; }
         }
         @media (max-width: 620px) {
-          .profile-wrap { width: min(100% - 22px, 1180px); padding-top: 76px; }
+          .profile-wrap { width: min(100% - 22px, 1180px); padding-top: 68px; }
+          .profile-topbar { align-items: flex-start; }
+          .profile-title-block { text-align: left; }
+          .profile-title-block span { letter-spacing: .18em; }
           .profile-main-card { padding: 18px; }
           .profile-stat-grid,
           .profile-actions { grid-template-columns: 1fr; }
-          .profile-tabs { width: 100%; overflow-x: auto; }
+          .profile-tabs { width: 100%; overflow-x: auto; justify-content: flex-start; border-radius: 14px; }
           .profile-tabs button { white-space: nowrap; }
           .profile-head h1 { font-size: clamp(38px, 18vw, 60px); }
-          .profile-mode { position: static; margin-left: 10px; }
         }
       `}</style>
 
       <main className="profile-wrap">
-        <button className="profile-back" type="button" onClick={() => navigate(-1)}>← Retour</button>
-        <button className="profile-mode" type="button" onClick={() => setImmersive((value) => !value)}>
-          {immersive ? 'Interface' : 'Full immersion'}
-        </button>
+        <div className="profile-topbar">
+          <button className="profile-back" type="button" onClick={() => navigate(-1)}>← Retour</button>
+          <button className="profile-mode" type="button" onClick={() => setImmersive((value) => !value)}>
+            {immersive ? 'Interface' : 'Full immersion'}
+          </button>
+        </div>
 
         {loading && (
           <EmptyState icon="⌛" title="Chargement du profil" text="Les donnees du pirate arrivent." />
@@ -1014,67 +1159,75 @@ export default function ProfilePage() {
 
         {!loading && member && (
           <>
-            <section className="profile-hero">
-              <WantedPoster member={member} rank={rank} hours={hours} />
+            <header className="profile-title-block">
+              <span>Brams • Fiche pirate</span>
+              <h2>Profil Wanted</h2>
+              <p>Carte personnelle, prestige vocal, prime publique et progression vers le prochain rang.</p>
+            </header>
 
-              <div className="profile-main-card">
-                <header className="profile-head">
-                  <div className="profile-kicker">
-                    <span className="profile-rank-badge">{rank.emoji} {rank.rang} #{member.rank}</span>
-                    {isOwnProfile && <span className="profile-own">Mon profil</span>}
-                  </div>
-                  <h1>{displayName}</h1>
-                  <p className="profile-sub">
-                    {rank.rang} <strong>#{member.rank} mondial</strong> sur {member.total} nakamas
-                  </p>
-                </header>
+            <div className="profile-hero-shell">
+              <section className="profile-hero">
+                <WantedPoster member={member} rank={rank} hours={hours} />
 
-                <div className="profile-stat-grid">
-                  <StatTile label="Vocal" value={<CountUp value={hours} decimals={1} suffix="h" />} detail="sur 7 jours" color={rank.color} tone="rank" />
-                  <StatTile label="Berrys" value={<><CountUp value={Number.parseInt(member.berrys || 0, 10) / 1000000} decimals={1} suffix="M" /> B</>} detail="prime publique" color="#F2C94C" />
-                  <StatTile label="Position" value={`#${member.rank}`} detail={`/ ${member.total}`} color="#8AA8FF" tone="blue" />
-                </div>
-
-                <section className="profile-progress-card">
-                  {nextRank ? (
-                    <>
-                      <div className="profile-progress-top">
-                        <span>Progression vers {nextRank.rang}</span>
-                        <strong>{nextRank.min}h</strong>
-                      </div>
-                      <Progress value={hours - rank.min} max={nextRank.min - rank.min} color={nextRank.color} />
-                      <div className="profile-progress-bottom">
-                        <span>{rank.rang} depuis {rank.min}h</span>
-                        <strong>{remaining.toFixed(1)}h restantes</strong>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="profile-progress-top">
-                      <span>Rang maximum atteint</span>
-                      <strong>Grand Line conquise</strong>
+                <div className="profile-main-card">
+                  <header className="profile-head">
+                    <div className="profile-kicker">
+                      <span className="profile-rank-badge">{rank.emoji} {rank.rang} #{member.rank}</span>
+                      {isOwnProfile && <span className="profile-own">Mon profil</span>}
                     </div>
-                  )}
-                </section>
+                    <h1>{displayName}</h1>
+                    <p className="profile-sub">
+                      {rank.rang} <strong>#{member.rank} mondial</strong> sur {member.total} nakamas
+                    </p>
+                  </header>
 
-                <div className="profile-actions">
-                  <button type="button" onClick={copyLink}>{copied ? 'Lien copie' : 'Partager le profil'}</button>
-                  <a href="https://discord.gg/v3Ddhtbz" target="_blank" rel="noopener noreferrer">Ouvrir Discord</a>
+                  <div className="profile-stat-grid">
+                    <StatTile label="Vocal" value={<CountUp value={hours} decimals={1} suffix="h" />} detail="sur 7 jours" color={rank.color} tone="rank" />
+                    <StatTile label="Berrys" value={<><CountUp value={Number.parseInt(member.berrys || 0, 10) / 1000000} decimals={1} suffix="M" /> B</>} detail="prime publique" color="#F2C94C" />
+                    <StatTile label="Position" value={`#${member.rank}`} detail={`/ ${member.total}`} color="#8AA8FF" tone="blue" />
+                  </div>
+
+                  <section className="profile-progress-card">
+                    {nextRank ? (
+                      <>
+                        <div className="profile-progress-top">
+                          <span>Progression vers {nextRank.rang}</span>
+                          <strong>{nextRank.min}h</strong>
+                        </div>
+                        <Progress value={hours - rank.min} max={nextRank.min - rank.min} color={nextRank.color} />
+                        <div className="profile-progress-bottom">
+                          <span>{rank.rang} depuis {rank.min}h</span>
+                          <strong>{remaining.toFixed(1)}h restantes</strong>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="profile-progress-top">
+                        <span>Rang maximum atteint</span>
+                        <strong>Grand Line conquise</strong>
+                      </div>
+                    )}
+                  </section>
+
+                  <div className="profile-actions">
+                    <button type="button" onClick={copyLink}>{copied ? 'Lien copie' : 'Partager le profil'}</button>
+                    <a href="https://discord.gg/v3Ddhtbz" target="_blank" rel="noopener noreferrer">Ouvrir Discord</a>
+                  </div>
                 </div>
-              </div>
-            </section>
+              </section>
 
-            <nav className="profile-tabs" aria-label="Sections du profil">
-              {TABS.map((item) => (
-                <button
-                  key={item.key}
-                  type="button"
-                  className={tab === item.key ? 'active' : ''}
-                  onClick={() => setTab(item.key)}
-                >
-                  {item.icon} {item.label}
-                </button>
-              ))}
-            </nav>
+              <nav className="profile-tabs" aria-label="Sections du profil">
+                {TABS.map((item) => (
+                  <button
+                    key={item.key}
+                    type="button"
+                    className={tab === item.key ? 'active' : ''}
+                    onClick={() => setTab(item.key)}
+                  >
+                    {item.icon} {item.label}
+                  </button>
+                ))}
+              </nav>
+              </div>
 
             <section className="profile-content">
               {tab === 'stats' && (
