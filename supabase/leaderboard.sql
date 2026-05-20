@@ -67,7 +67,7 @@ AS $$
   )
   SELECT *
   FROM computed
-  ORDER BY vocal_h DESC
+  ORDER BY vocal_h DESC, berrys DESC
   LIMIT p_limit;
 $$;
 

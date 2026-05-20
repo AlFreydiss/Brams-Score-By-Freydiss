@@ -38,7 +38,7 @@ AS $$
   )
   SELECT * FROM computed
   WHERE vocal_h >= p_min_h AND vocal_h < p_max_h
-  ORDER BY vocal_h DESC;
+  ORDER BY vocal_h DESC, berrys DESC;
 $$;
 
 REVOKE ALL ON FUNCTION public.members_by_rank(float, float) FROM public;

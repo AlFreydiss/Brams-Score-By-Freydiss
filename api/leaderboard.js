@@ -87,7 +87,7 @@ export default async function handler(req, res) {
           berrys: Number.parseInt(data.berrys || 0, 10) || 0,
         }
       })
-      .sort((a, b) => b.vocal_h - a.vocal_h)
+      .sort((a, b) => (b.vocal_h - a.vocal_h) || (b.berrys - a.berrys))
       .slice(0, limit)
 
     res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=300')
