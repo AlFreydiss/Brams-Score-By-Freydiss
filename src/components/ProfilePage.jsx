@@ -83,6 +83,7 @@ function Progress({ value, max, color }) {
   const pct = max > 0 ? Math.min(100, Math.max(0, (value / max) * 100)) : 100
   return (
     <div className="profile-progress">
+      <span className="profile-progress-ship" style={{ left: `${pct}%` }}>⛵</span>
       <div style={{ width: `${pct}%`, '--accent': color }} />
     </div>
   )
@@ -249,6 +250,23 @@ export default function ProfilePage() {
           0%, 100% { box-shadow: 0 0 0 rgba(242, 201, 76, 0); }
           50% { box-shadow: 0 0 34px rgba(242, 201, 76, .35); }
         }
+        @keyframes profileRankAura {
+          0%, 100% { box-shadow: 0 0 18px color-mix(in srgb, var(--rank) 24%, transparent); }
+          50% { box-shadow: 0 0 38px color-mix(in srgb, var(--rank) 52%, transparent); }
+        }
+        @keyframes profileBoat {
+          0%, 100% { transform: translate(-50%, -62%) rotate(-4deg); }
+          50% { transform: translate(-50%, -82%) rotate(5deg); }
+        }
+        @keyframes profileGoldTrail {
+          from { transform: translateX(-120%); opacity: 0; }
+          35% { opacity: 1; }
+          to { transform: translateX(120%); opacity: 0; }
+        }
+        @keyframes profileSeal {
+          0%, 100% { transform: rotate(-10deg) scale(1); filter: brightness(1); }
+          50% { transform: rotate(-7deg) scale(1.04); filter: brightness(1.18); }
+        }
         .profile-shell {
           min-height: 100vh;
           color: #f3ead7;
@@ -359,6 +377,19 @@ export default function ProfilePage() {
           box-shadow: 0 26px 70px rgba(0,0,0,.42), 0 0 54px color-mix(in srgb, var(--accent) 24%, transparent);
           overflow: hidden;
           transition: transform .24s ease, box-shadow .24s ease, border-color .24s ease;
+          transform-style: preserve-3d;
+        }
+        .profile-poster::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          opacity: .22;
+          background:
+            radial-gradient(circle at 20% 18%, rgba(255,255,255,.2), transparent 3px),
+            radial-gradient(circle at 82% 58%, rgba(255,255,255,.16), transparent 2px),
+            repeating-linear-gradient(108deg, transparent 0 17px, rgba(255,220,140,.08) 18px 19px);
+          mix-blend-mode: overlay;
+          pointer-events: none;
         }
         .profile-poster:hover,
         .profile-main-card:hover,
@@ -396,6 +427,7 @@ export default function ProfilePage() {
           font-size: 22px;
           background: radial-gradient(circle at 35% 28%, #d15a48, #6e1013 72%);
           box-shadow: inset 0 2px 8px rgba(255,255,255,.22), 0 8px 18px rgba(0,0,0,.32);
+          animation: profileSeal 3.6s ease-in-out infinite;
         }
         .profile-poster::after {
           content: "";
@@ -538,7 +570,23 @@ export default function ProfilePage() {
           content: "";
           position: absolute;
           inset: 0;
-          background: radial-gradient(circle at 74% 10%, color-mix(in srgb, var(--rank) 26%, transparent), transparent 18rem);
+          background:
+            radial-gradient(circle at 74% 10%, color-mix(in srgb, var(--rank) 26%, transparent), transparent 18rem),
+            linear-gradient(115deg, transparent 0 38%, rgba(242, 201, 76, .1) 39%, transparent 40% 100%);
+          pointer-events: none;
+        }
+        .profile-main-card::after {
+          content: "";
+          position: absolute;
+          inset: 18px;
+          opacity: .13;
+          background:
+            radial-gradient(circle at 50% 50%, transparent 0 22%, rgba(242,201,76,.34) 23% 24%, transparent 25%),
+            conic-gradient(from 32deg at 50% 50%, transparent 0 12deg, rgba(242,201,76,.34) 13deg 15deg, transparent 16deg 58deg, rgba(166,108,255,.24) 59deg 61deg, transparent 62deg),
+            repeating-linear-gradient(0deg, rgba(255,255,255,.1) 0 1px, transparent 1px 32px),
+            repeating-linear-gradient(90deg, rgba(255,255,255,.08) 0 1px, transparent 1px 32px);
+          border-radius: 8px;
+          mask-image: radial-gradient(circle at 70% 24%, black, transparent 68%);
           pointer-events: none;
         }
         .profile-head,
@@ -559,6 +607,20 @@ export default function ProfilePage() {
           font-size: 11px;
           font-weight: 950;
         }
+        .profile-rank-badge {
+          position: relative;
+          display: inline-flex;
+          align-items: center;
+          min-height: 28px;
+          padding: 0 11px;
+          border-radius: 999px;
+          background:
+            linear-gradient(135deg, color-mix(in srgb, var(--rank) 24%, transparent), rgba(255,255,255,.04)),
+            rgba(0,0,0,.22);
+          border: 1px solid color-mix(in srgb, var(--rank) 48%, rgba(255,255,255,.08));
+          color: #fff2d2;
+          animation: profileRankAura 2.8s ease-in-out infinite;
+        }
         .profile-own {
           padding: 4px 8px;
           border-radius: 999px;
@@ -569,13 +631,17 @@ export default function ProfilePage() {
         }
         .profile-head h1 {
           margin: 0;
-          color: #fff4d8;
+          color: transparent;
           font-family: Pirata One, serif;
           font-size: clamp(44px, 7vw, 86px);
           line-height: .88;
           letter-spacing: 0;
           max-width: 760px;
           overflow-wrap: anywhere;
+          background: linear-gradient(180deg, #ffffff 0%, #ffe3a1 36%, #c58a26 62%, #fff1bf 100%);
+          -webkit-background-clip: text;
+          background-clip: text;
+          filter: drop-shadow(0 0 26px color-mix(in srgb, var(--rank) 26%, transparent));
         }
         .profile-sub {
           margin: 16px 0 0;
@@ -590,11 +656,24 @@ export default function ProfilePage() {
           margin-top: 28px;
         }
         .profile-stat {
+          position: relative;
+          overflow: hidden;
           min-height: 116px;
           padding: 18px;
           border-radius: 8px;
           border: 1px solid rgba(255,255,255,.075);
           background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.025));
+        }
+        .profile-stat::after {
+          content: "";
+          position: absolute;
+          inset: 0;
+          transform: translateX(-120%);
+          background: linear-gradient(105deg, transparent, color-mix(in srgb, var(--accent) 22%, transparent), transparent);
+          transition: transform .55s ease;
+        }
+        .profile-stat:hover::after {
+          transform: translateX(120%);
         }
         .profile-stat strong {
           display: block;
@@ -626,9 +705,10 @@ export default function ProfilePage() {
         .profile-progress-bottom { margin-top: 9px; color: rgba(235, 207, 157, .46); }
         .profile-progress-bottom strong { color: var(--rank); }
         .profile-progress {
+          position: relative;
           height: 10px;
           margin-top: 12px;
-          overflow: hidden;
+          overflow: visible;
           border-radius: 999px;
           background: rgba(255,255,255,.07);
         }
@@ -639,6 +719,7 @@ export default function ProfilePage() {
           background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 62%, #fff), var(--accent));
           box-shadow: 0 0 24px color-mix(in srgb, var(--accent) 45%, transparent);
           transition: width 1.25s cubic-bezier(.22,1,.36,1);
+          overflow: hidden;
         }
         .profile-progress div::after {
           content: "";
@@ -651,6 +732,22 @@ export default function ProfilePage() {
           transform: translateY(-50%);
           background: radial-gradient(circle, #fff8bd 0 20%, #f2c94c 35%, transparent 70%);
           box-shadow: 0 0 26px #f2c94c;
+        }
+        .profile-progress div::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,.75), transparent);
+          animation: profileGoldTrail 2.4s ease-in-out infinite;
+        }
+        .profile-progress-ship {
+          position: absolute;
+          z-index: 3;
+          top: -13px;
+          font-size: 20px;
+          filter: drop-shadow(0 0 12px #f2c94c);
+          animation: profileBoat 2.2s ease-in-out infinite;
+          transition: left 1.25s cubic-bezier(.22,1,.36,1);
         }
         .profile-actions {
           display: grid;
@@ -694,8 +791,24 @@ export default function ProfilePage() {
           background: linear-gradient(100deg, transparent, rgba(255,255,255,.24), transparent);
           transition: transform .55s ease;
         }
+        .profile-actions a::after {
+          content: "";
+          position: absolute;
+          left: -12%;
+          right: -12%;
+          bottom: -22px;
+          height: 38px;
+          opacity: .42;
+          background: radial-gradient(ellipse at center, rgba(138,168,255,.72), transparent 68%);
+          transform: translateX(-18%);
+          transition: transform .55s ease, opacity .2s ease;
+        }
         .profile-actions a:hover::before {
           transform: translateX(110%);
+        }
+        .profile-actions a:hover::after {
+          transform: translateX(18%);
+          opacity: .78;
         }
         .profile-mode {
           position: absolute;
@@ -907,18 +1020,18 @@ export default function ProfilePage() {
               <div className="profile-main-card">
                 <header className="profile-head">
                   <div className="profile-kicker">
-                    <span>{rank.emoji} {rank.rang}</span>
+                    <span className="profile-rank-badge">{rank.emoji} {rank.rang} #{member.rank}</span>
                     {isOwnProfile && <span className="profile-own">Mon profil</span>}
                   </div>
                   <h1>{displayName}</h1>
                   <p className="profile-sub">
-                    Classement global <strong>#{member.rank}</strong> sur {member.total} nakamas
+                    {rank.rang} <strong>#{member.rank} mondial</strong> sur {member.total} nakamas
                   </p>
                 </header>
 
                 <div className="profile-stat-grid">
                   <StatTile label="Vocal" value={<CountUp value={hours} decimals={1} suffix="h" />} detail="sur 7 jours" color={rank.color} tone="rank" />
-                  <StatTile label="Berrys" value={`${fmtB(member.berrys)} ฿`} detail="prime publique" color="#F2C94C" />
+                  <StatTile label="Berrys" value={<><CountUp value={Number.parseInt(member.berrys || 0, 10) / 1000000} decimals={1} suffix="M" /> B</>} detail="prime publique" color="#F2C94C" />
                   <StatTile label="Position" value={`#${member.rank}`} detail={`/ ${member.total}`} color="#8AA8FF" tone="blue" />
                 </div>
 
