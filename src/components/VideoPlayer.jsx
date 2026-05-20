@@ -23,6 +23,16 @@ function sourceType(src = '') {
   return 'video/mp4'
 }
 
+function loadVideoProgress(storageKey) {
+  if (!storageKey) return null
+  try { return JSON.parse(localStorage.getItem(storageKey) || 'null') } catch { return null }
+}
+
+function saveVideoProgress(storageKey, progress) {
+  if (!storageKey) return
+  try { localStorage.setItem(storageKey, JSON.stringify(progress)) } catch {}
+}
+
 const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2]
 
 // ── Bouton icône ─────────────────────────────────────────────────────────────
@@ -132,10 +142,11 @@ function EpisodeMiniThumb({ video, color }) {
 }
 
 // ── Composant principal ───────────────────────────────────────────────────────
-export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce7' }) {
+export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce7', storageKey = null, onProgressUpdate = null }) {
   const videoRef     = useRef(null)
   const containerRef = useRef(null)
   const hideTimer    = useRef(null)
+  const lastSaveRef  = useRef(0)
 
   const [idx,          setIdx]         = useState(startIdx)
   const [playing,      setPlaying]     = useState(false)
@@ -156,6 +167,33 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   const video   = videos[idx]
   const isLocal = Boolean(video?.src)
   const hasSubs = Array.isArray(video?.subtitles) && video.subtitles.length > 0
+
+  const persistProgress = useCallback((patch = {}) => {
+    if (!storageKey || !video) return
+    const previous = loadVideoProgress(storageKey) || { episodes: {} }
+    const episodeKey = String(video.episode ?? idx + 1)
+    const nextEpisode = {
+      ...(previous.episodes?.[episodeKey] || {}),
+      idx,
+      episode: video.episode,
+      title: video.title,
+      ...patch,
+      updatedAt: Date.now(),
+    }
+    const next = {
+      ...previous,
+      lastIdx: idx,
+      lastEpisode: video.episode,
+      lastTitle: video.title,
+      episodes: {
+        ...(previous.episodes || {}),
+        [episodeKey]: nextEpisode,
+      },
+      updatedAt: Date.now(),
+    }
+    saveVideoProgress(storageKey, next)
+    onProgressUpdate?.(next)
+  }, [idx, onProgressUpdate, storageKey, video])
 
   // ── Masquage auto des contrôles ──────────────────────────────────────────
   const showControls = useCallback(() => {
@@ -209,6 +247,22 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
     setCurrentTime(0); setDuration(0); setBuffered(0); setPlaying(false); setCueText('')
   }, [idx])
 
+  useEffect(() => {
+    if (!storageKey || !videoRef.current || !video) return
+    const saved = loadVideoProgress(storageKey)
+    const savedEpisode = saved?.episodes?.[String(video.episode ?? idx + 1)]
+    if (!savedEpisode?.time || savedEpisode.completed) return
+    const v = videoRef.current
+    const resume = () => {
+      if (Number.isFinite(savedEpisode.time) && savedEpisode.time > 3) {
+        v.currentTime = Math.max(0, savedEpisode.time - 2)
+      }
+    }
+    if (v.readyState >= 1) resume()
+    else v.addEventListener('loadedmetadata', resume, { once: true })
+    return () => v.removeEventListener('loadedmetadata', resume)
+  }, [idx, storageKey, video])
+
   // ── Appliquer la vitesse ─────────────────────────────────────────────────
   useEffect(() => {
     if (videoRef.current) videoRef.current.playbackRate = speed
@@ -255,6 +309,14 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
     const v = videoRef.current; if (!v) return
     setCurrentTime(v.currentTime)
     if (v.buffered.length) setBuffered(v.buffered.end(v.buffered.length - 1))
+    if (storageKey && performance.now() - lastSaveRef.current > 1200) {
+      lastSaveRef.current = performance.now()
+      persistProgress({
+        time: v.currentTime,
+        duration: v.duration || 0,
+        completed: Boolean(v.duration && v.currentTime / v.duration > 0.92),
+      })
+    }
   }
   const onDurChg   = () => { if (videoRef.current) setDuration(videoRef.current.duration || 0) }
   const onVolChg   = () => {
@@ -322,7 +384,10 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
               onTimeUpdate={onTimeUpd}
               onDurationChange={onDurChg}
               onVolumeChange={onVolChg}
-              onEnded={() => { if (idx < videos.length - 1) setIdx(i => i + 1) }}
+              onEnded={() => {
+                persistProgress({ time: videoRef.current?.duration || duration || 0, duration: videoRef.current?.duration || duration || 0, completed: true })
+                if (idx < videos.length - 1) setIdx(i => i + 1)
+              }}
             >
               <source
                 src={encSrc(video.src)}

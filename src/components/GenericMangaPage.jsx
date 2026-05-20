@@ -8,6 +8,9 @@ function loadProgress(ns) {
 function saveProgress(ns, p) {
   try { localStorage.setItem(`${ns}_progress`, JSON.stringify(p)) } catch {}
 }
+function loadVideoProgress(ns) {
+  try { return JSON.parse(localStorage.getItem(`${ns}_video_progress`) || 'null') } catch { return null }
+}
 
 function EmptyState({ icon, title, desc }) {
   return (
@@ -181,8 +184,12 @@ function tpnArcLabel(arc = '') {
   return arc || 'Arc inconnu'
 }
 
-function TpnHero({ title, readCount, chapterCount, episodeCount, arcCount, color }) {
-  const pct = chapterCount > 0 ? Math.round((readCount / chapterCount) * 100) : 0
+function TpnHero({ title, tab, readCount, chapterCount, watchedCount, episodeCount, arcCount, color }) {
+  const isVideos = tab === 'videos'
+  const total = isVideos ? episodeCount : chapterCount
+  const done = isVideos ? watchedCount : readCount
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0
+  const progressLabel = isVideos ? `${watchedCount} / ${episodeCount} episodes vus` : `${readCount} / ${chapterCount} chapitres lus`
   return (
     <section style={{
       position: 'relative',
@@ -196,7 +203,7 @@ function TpnHero({ title, readCount, chapterCount, episodeCount, arcCount, color
       backdropFilter: 'blur(14px)',
     }}>
       <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 15% 25%, rgba(40,150,95,0.18), transparent 20rem), radial-gradient(circle at 86% 18%, rgba(108,92,231,0.18), transparent 18rem)', pointerEvents: 'none' }} />
-      <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: 22, alignItems: 'end' }}>
+      <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: 22, alignItems: 'end' }}>
         <div>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '5px 12px', borderRadius: 999, background: 'rgba(108,92,231,0.14)', border: '1px solid rgba(139,124,255,0.28)', color: '#a9a0ff', fontSize: 10, fontWeight: 900, letterSpacing: '.18em', textTransform: 'uppercase', marginBottom: 12 }}>
             🌿 Grace Field Archive
@@ -220,7 +227,7 @@ function TpnHero({ title, readCount, chapterCount, episodeCount, arcCount, color
             ))}
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, color: 'rgba(255,255,255,0.58)', fontSize: 12, fontWeight: 800, marginBottom: 8 }}>
-            <span>{readCount} / {chapterCount} chapitres lus</span>
+            <span>{progressLabel}</span>
             <span>{pct}%</span>
           </div>
           <div style={{ height: 8, borderRadius: 999, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
@@ -261,6 +268,143 @@ function ArcFilter({ arcs, active, onChange, color }) {
         )
       })}
     </div>
+  )
+}
+
+function TpnInfoPanel({ color, tab, readCount, chapterCount, watchedCount, episodeCount, videoProgress, onResume }) {
+  const lastIdx = Number.isInteger(videoProgress?.lastIdx) ? videoProgress.lastIdx : 0
+  const nextLabel = videoProgress?.lastEpisode
+    ? `Episode ${videoProgress.lastEpisode} - ${videoProgress.lastTitle || 'reprise'}`
+    : 'Episode 1 - Grace Field House'
+  const modeLine = tab === 'videos'
+    ? `${watchedCount}/${episodeCount} episodes termines`
+    : `${readCount}/${chapterCount} chapitres lus`
+  return (
+    <aside className="tpn-info-panel" style={{
+      position: 'sticky',
+      top: 18,
+      alignSelf: 'start',
+      borderRadius: 22,
+      overflow: 'hidden',
+      background: 'linear-gradient(180deg, rgba(20,24,25,0.86), rgba(12,13,16,0.94))',
+      border: '1px solid rgba(139,124,255,0.20)',
+      boxShadow: '0 24px 70px rgba(0,0,0,0.30), inset 0 1px 0 rgba(255,255,255,0.06)',
+      backdropFilter: 'blur(16px)',
+    }}>
+      <div style={{ position: 'relative', minHeight: 170, background: 'linear-gradient(135deg, rgba(100,217,139,0.18), rgba(108,92,231,0.22))', padding: 18 }}>
+        <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 20% 20%, rgba(255,255,255,0.10), transparent 9rem), linear-gradient(180deg, transparent, rgba(0,0,0,0.48))' }} />
+        <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', minHeight: 134, justifyContent: 'space-between', gap: 28 }}>
+          <div style={{ width: 46, height: 46, borderRadius: 14, background: 'rgba(0,0,0,0.32)', border: '1px solid rgba(255,255,255,0.12)', display: 'grid', placeItems: 'center', color: '#64d98b', fontSize: 18, fontWeight: 900 }}>TPN</div>
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: '.18em', color: '#64d98b', textTransform: 'uppercase', marginBottom: 8 }}>Dossier anime</div>
+            <div style={{ fontFamily: 'var(--display)', fontSize: 28, lineHeight: 0.95, fontWeight: 900, color: '#fff' }}>Grace Field<br />House</div>
+          </div>
+        </div>
+      </div>
+      <div style={{ padding: 18 }}>
+        <p style={{ margin: '0 0 16px', color: 'rgba(255,255,255,0.58)', fontSize: 13, lineHeight: 1.7 }}>
+          Une page dossier pour suivre l'anime et les scans sans perdre ta progression.
+        </p>
+        <div style={{ display: 'grid', gap: 8, marginBottom: 16 }}>
+          {[
+            ['Studio', 'CloverWorks'],
+            ['Ambiance', 'Mystere / survie'],
+            ['Arcs', 'Grace Field + Evasion'],
+            ['Progression', modeLine],
+          ].map(([label, value]) => (
+            <div key={label} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, padding: '9px 0', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+              <span style={{ color: 'rgba(255,255,255,0.34)', fontSize: 11, fontWeight: 850, textTransform: 'uppercase', letterSpacing: '.09em' }}>{label}</span>
+              <span style={{ color: '#fff', fontSize: 12, fontWeight: 800, textAlign: 'right' }}>{value}</span>
+            </div>
+          ))}
+        </div>
+        <div style={{ padding: 12, borderRadius: 14, background: 'rgba(108,92,231,0.10)', border: '1px solid rgba(139,124,255,0.20)', marginBottom: 12 }}>
+          <div style={{ color: 'rgba(255,255,255,0.38)', fontSize: 10, fontWeight: 900, letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 5 }}>A regarder apres</div>
+          <div style={{ color: '#fff', fontSize: 13, fontWeight: 850, lineHeight: 1.35 }}>{nextLabel}</div>
+        </div>
+        <button
+          type="button"
+          onClick={() => onResume(lastIdx)}
+          style={{ width: '100%', height: 42, borderRadius: 12, border: `1px solid ${color}55`, background: `linear-gradient(135deg, ${color}24, rgba(100,217,139,0.14))`, color: '#fff', fontSize: 13, fontWeight: 900, cursor: 'pointer' }}
+        >
+          Reprendre les episodes
+        </button>
+      </div>
+    </aside>
+  )
+}
+
+function TpnMusicControl({ videoRef, color }) {
+  const [muted, setMuted] = useState(true)
+  const [volume, setVolume] = useState(28)
+  const toggle = () => {
+    const v = videoRef.current
+    if (!v) return
+    const next = !muted
+    v.muted = next
+    if (!next) v.volume = volume / 100
+    setMuted(next)
+  }
+  const changeVolume = e => {
+    const val = Number(e.target.value)
+    setVolume(val)
+    const v = videoRef.current
+    if (!v) return
+    v.volume = val / 100
+    v.muted = val === 0
+    setMuted(val === 0)
+  }
+  return (
+    <div style={{ position: 'fixed', left: 18, bottom: 18, zIndex: 20, display: 'flex', alignItems: 'center', gap: 9, padding: '8px 12px', borderRadius: 999, background: 'rgba(12,13,16,0.72)', border: '1px solid rgba(255,255,255,0.10)', backdropFilter: 'blur(14px)' }}>
+      <button type="button" onClick={toggle} title="Son opening TPN" style={{ width: 30, height: 30, borderRadius: '50%', border: `1px solid ${color}44`, background: `${color}18`, color: '#fff', cursor: 'pointer', fontSize: 10, fontWeight: 900 }}>{muted || volume === 0 ? 'off' : 'on'}</button>
+      <span style={{ fontSize: 11, color: muted ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.72)', fontWeight: 800, whiteSpace: 'nowrap' }}>Touch Off</span>
+      <input type="range" min="0" max="100" value={muted ? 0 : volume} onChange={changeVolume} style={{ width: 92, accentColor: color }} />
+    </div>
+  )
+}
+
+function TpnHeroClean({ title, tab, readCount, chapterCount, watchedCount, episodeCount, arcCount, color }) {
+  const isVideos = tab === 'videos'
+  const total = isVideos ? episodeCount : chapterCount
+  const done = isVideos ? watchedCount : readCount
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0
+  const progressLabel = isVideos ? `${watchedCount} / ${episodeCount} episodes vus` : `${readCount} / ${chapterCount} chapitres lus`
+  return (
+    <section style={{ position: 'relative', overflow: 'hidden', borderRadius: 22, padding: '22px 24px', marginBottom: 18, background: 'linear-gradient(135deg, rgba(108,92,231,0.16), rgba(20,83,45,0.12) 48%, rgba(12,13,16,0.86))', border: '1px solid rgba(139,124,255,0.22)', boxShadow: '0 24px 70px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.06)', backdropFilter: 'blur(14px)' }}>
+      <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 15% 25%, rgba(40,150,95,0.18), transparent 20rem), radial-gradient(circle at 86% 18%, rgba(108,92,231,0.18), transparent 18rem)', pointerEvents: 'none' }} />
+      <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: 22, alignItems: 'end' }}>
+        <div>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '5px 12px', borderRadius: 999, background: 'rgba(108,92,231,0.14)', border: '1px solid rgba(139,124,255,0.28)', color: '#a9a0ff', fontSize: 10, fontWeight: 900, letterSpacing: '.18em', textTransform: 'uppercase', marginBottom: 12 }}>
+            BRAMS ARCHIVES - SECTION TPN
+          </div>
+          <h1 style={{ margin: 0, fontFamily: 'var(--display)', fontSize: 'clamp(34px,5vw,58px)', lineHeight: .95, color: '#fff', letterSpacing: '-.025em' }}>{title}</h1>
+          <p style={{ margin: '12px 0 0', color: 'rgba(255,255,255,0.54)', fontSize: 14, lineHeight: 1.7 }}>
+            Dossier confidentiel de Grace Field. Episodes, scans et reprise de lecture au meme endroit.
+          </p>
+        </div>
+        <div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 14 }}>
+            {[
+              [`${episodeCount}`, 'Episodes'],
+              [`${arcCount}`, 'Arcs'],
+              [`${pct}%`, 'Progression'],
+            ].map(([value, label]) => (
+              <div key={label} style={{ padding: '12px 10px', borderRadius: 14, background: 'rgba(255,255,255,0.055)', border: '1px solid rgba(255,255,255,0.08)', textAlign: 'center' }}>
+                <div style={{ fontFamily: 'var(--display)', fontSize: 24, fontWeight: 900, color: label === 'Arcs' ? '#64d98b' : color, lineHeight: 1 }}>{value}</div>
+                <div style={{ marginTop: 5, fontSize: 9, fontWeight: 850, letterSpacing: '.11em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.36)' }}>{label}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, color: 'rgba(255,255,255,0.58)', fontSize: 12, fontWeight: 800, marginBottom: 8 }}>
+            <span>{progressLabel}</span>
+            <span>{pct}%</span>
+          </div>
+          <div style={{ height: 8, borderRadius: 999, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+            <div style={{ width: `${pct}%`, height: '100%', borderRadius: 999, background: `linear-gradient(90deg, #64d98b, ${color})`, boxShadow: `0 0 18px ${color}66`, transition: 'width .5s ease' }} />
+          </div>
+        </div>
+      </div>
+    </section>
   )
 }
 
@@ -316,8 +460,10 @@ export default function GenericMangaPage({ chaptersData, videosData, color, name
   const [progress,     setProgress]     = useState(() => loadProgress(namespace))
   const [playerIdx,    setPlayerIdx]    = useState(null)
   const [videoArc,     setVideoArc]     = useState('all')
+  const [videoProgress,setVideoProgress]= useState(() => loadVideoProgress(namespace))
   const arcRefs = useRef({})
   const scrollRef = useRef(null)
+  const bgVideoRef = useRef(null)
 
   useEffect(() => {
     document.body.style.overflow = 'hidden'
@@ -329,6 +475,13 @@ export default function GenericMangaPage({ chaptersData, videosData, color, name
     window.addEventListener('keydown', fn)
     return () => window.removeEventListener('keydown', fn)
   }, [reading, onClose])
+
+  useEffect(() => {
+    const v = bgVideoRef.current
+    if (!v) return
+    if (playerIdx !== null) v.pause()
+    else v.play?.().catch(() => {})
+  }, [playerIdx])
 
   const markProgress = useCallback((chNum, status) => {
     setProgress(prev => {
@@ -352,6 +505,15 @@ export default function GenericMangaPage({ chaptersData, videosData, color, name
 
   const readCount = useMemo(() =>
     CHAPTERS.filter(c => progress[c.num] === 'read').length, [CHAPTERS, progress])
+
+  const watchedCount = useMemo(() => {
+    const episodes = videoProgress?.episodes || {}
+    return Object.values(episodes).filter(ep => ep?.completed).length
+  }, [videoProgress])
+
+  const topProgressLabel = tab === 'videos'
+    ? `${watchedCount}/${VIDEOS.length} episodes vus`
+    : `${readCount}/${CHAPTERS.length} chapitres lus`
 
   const videoArcFilters = useMemo(() => {
     const counts = new Map()
@@ -406,8 +568,54 @@ export default function GenericMangaPage({ chaptersData, videosData, color, name
     </div>
   )
 
+  const renderMainContent = () => (
+    tab === 'scans' ? (
+      CHAPTERS.length === 0
+        ? <EmptyState icon={headerEmoji} title="Scans bientÃ´t disponibles" desc={`Les chapitres de ${title} seront ajoutÃ©s prochainement.`} />
+        : chaptersByArc
+          ? chaptersByArc.map(arc => (
+              <div key={arc.name} ref={el => { if (el) arcRefs.current[arc.name] = el }}>
+                <ArcHeader arc={arc} color={color} readCount={readCountForArc(arc)} total={arc.chapters.length} />
+                {renderChapterGrid(arc.chapters)}
+              </div>
+            ))
+          : renderChapterGrid(CHAPTERS)
+    ) : (
+      VIDEOS.length === 0
+        ? <EmptyState icon="ðŸŽ¬" title="Ã‰pisodes bientÃ´t disponibles" desc="Les Ã©pisodes seront ajoutÃ©s prochainement." />
+        : <>
+            {isTpn && <ArcFilter arcs={videoArcFilters} active={videoArc} onChange={setVideoArc} color={color} />}
+            <div style={{ display: 'grid', gridTemplateColumns: isTpn ? 'repeat(auto-fit, minmax(min(100%, 285px), 1fr))' : 'repeat(auto-fill, minmax(300px, 1fr))', gap: isTpn ? 20 : 18 }}>
+              {filteredVideos.map((v, i) => (
+                <VideoCard
+                  key={`${v.episode}-${i}`}
+                  video={v}
+                  color={color}
+                  premium={isTpn}
+                  onPlay={() => setPlayerIdx(VIDEOS.indexOf(v))}
+                />
+              ))}
+            </div>
+          </>
+    )
+  )
+
   return (
     <>
+      {isTpn && (
+        <style>{`
+          .tpn-content-grid {
+            display: grid;
+            grid-template-columns: minmax(280px, 330px) minmax(0, 1fr);
+            gap: 22px;
+            align-items: start;
+          }
+          @media (max-width: 980px) {
+            .tpn-content-grid { grid-template-columns: 1fr; }
+            .tpn-info-panel { position: relative !important; top: auto !important; }
+          }
+        `}</style>
+      )}
       <div style={{
         position: 'fixed',
         inset: 0,
@@ -419,6 +627,19 @@ export default function GenericMangaPage({ chaptersData, videosData, color, name
         flexDirection: 'column',
         animation: 'fadeIn 0.18s ease-out',
       }}>
+        {isTpn && (
+          <video
+            ref={bgVideoRef}
+            autoPlay
+            muted
+            loop
+            playsInline
+            onLoadedMetadata={e => { e.currentTarget.currentTime = 18 }}
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.18, filter: 'saturate(0.9) brightness(0.55) contrast(1.15)', pointerEvents: 'none' }}
+          >
+            <source src="/tpn-opening.mp4" type="video/mp4" />
+          </video>
+        )}
         {isTpn && <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: 'radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.22) 72%, rgba(0,0,0,0.42) 100%)' }} />}
         <div style={{ flexShrink: 0, background: isTpn ? 'rgba(18,19,22,0.88)' : 'rgba(17,18,20,0.97)', backdropFilter: 'blur(20px)', borderBottom: '1px solid var(--border)', zIndex: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '0 20px', minHeight: 64, flexWrap: 'wrap' }}>
@@ -430,7 +651,7 @@ export default function GenericMangaPage({ chaptersData, videosData, color, name
             <div style={{ width: 3, height: 32, borderRadius: 2, background: color, flexShrink: 0 }} />
             <div style={{ flex: 1, minWidth: 220 }}>
               <div style={{ fontFamily: 'var(--display)', fontWeight: 900, fontSize: isTpn ? 19 : 16, color: '#fff', letterSpacing: isTpn ? '-.01em' : 0 }}>{headerEmoji} {title}</div>
-              {CHAPTERS.length > 0 && <div style={{ fontSize: isTpn ? 12 : 11, color: '#34d399', fontWeight: 800 }}>{readCount}/{CHAPTERS.length} chapitres lus</div>}
+              {CHAPTERS.length > 0 && <div style={{ fontSize: isTpn ? 12 : 11, color: '#34d399', fontWeight: 800 }}>{isTpn ? topProgressLabel : `${readCount}/${CHAPTERS.length} chapitres lus`}</div>}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
               {tab === 'scans' && chaptersByArc && chaptersByArc.length > 1 && (
@@ -446,12 +667,28 @@ export default function GenericMangaPage({ chaptersData, videosData, color, name
         </div>
 
         <div ref={scrollRef} style={{ position: 'relative', zIndex: 1, flex: 1, overflowY: 'auto', padding: isTpn ? '24px 24px 30px' : '28px 20px' }}>
-          <div style={{ maxWidth: isTpn && tab === 'videos' ? 1360 : tab === 'videos' ? 1280 : 1120, margin: '0 auto' }}>
+          <div style={{ maxWidth: isTpn ? 1760 : tab === 'videos' ? 1280 : 1120, margin: '0 auto' }}>
+            <div className={isTpn ? 'tpn-content-grid' : undefined} style={{ display: isTpn ? undefined : 'block' }}>
+              {isTpn && (
+                <TpnInfoPanel
+                  color={color}
+                  tab={tab}
+                  readCount={readCount}
+                  chapterCount={CHAPTERS.length}
+                  watchedCount={watchedCount}
+                  episodeCount={VIDEOS.length}
+                  videoProgress={videoProgress}
+                  onResume={idx => setPlayerIdx(Math.max(0, Math.min(VIDEOS.length - 1, idx)))}
+                />
+              )}
+              <main style={{ minWidth: 0 }}>
             {isTpn && (
-              <TpnHero
+              <TpnHeroClean
                 title={title}
+                tab={tab}
                 readCount={readCount}
                 chapterCount={CHAPTERS.length}
+                watchedCount={watchedCount}
                 episodeCount={VIDEOS.length}
                 arcCount={Math.max(0, videoArcFilters.length - 1)}
                 color={color}
@@ -486,6 +723,8 @@ export default function GenericMangaPage({ chaptersData, videosData, color, name
                     </div>
                   </>
             )}
+              </main>
+            </div>
           </div>
         </div>
 
@@ -497,6 +736,7 @@ export default function GenericMangaPage({ chaptersData, videosData, color, name
             </span>
           ))}
         </div>
+        {isTpn && <TpnMusicControl videoRef={bgVideoRef} color={color} />}
       </div>
 
       {reading !== null && CHAPTERS[reading] && (
@@ -520,6 +760,8 @@ export default function GenericMangaPage({ chaptersData, videosData, color, name
           startIdx={playerIdx}
           onClose={() => setPlayerIdx(null)}
           color={color}
+          storageKey={`${namespace}_video_progress`}
+          onProgressUpdate={setVideoProgress}
         />
       )}
     </>
