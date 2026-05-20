@@ -413,12 +413,12 @@ function TpnHeroClean({ title, tab, readCount, chapterCount, watchedCount, episo
           </div>
           <h1 style={{
             margin: 0,
-            fontFamily: 'var(--pirate)',
+            fontFamily: 'var(--display)',
             fontSize: 'clamp(38px, 5vw, 66px)',
             lineHeight: .88,
             color: '#fff',
-            letterSpacing: 0,
-            fontWeight: 400,
+            letterSpacing: '-.045em',
+            fontWeight: 900,
             textWrap: 'balance',
             background: 'linear-gradient(90deg, #efe0d0 0%, #ffc3c3 52%, #7d4db5 100%)',
             WebkitBackgroundClip: 'text',
