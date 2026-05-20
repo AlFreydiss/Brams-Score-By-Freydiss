@@ -13,6 +13,15 @@ export const supabase = url && key ? createClient(url, key, {
 }) : null
 
 async function callTopClassement(limit, period = 'week') {
+  try {
+    const response = await fetch(`/api/leaderboard?limit=${encodeURIComponent(limit)}&period=${encodeURIComponent(period)}`)
+    if (response.ok) {
+      return { data: await response.json(), error: null }
+    }
+  } catch {
+    // Keep the Supabase RPC fallback below for local/static environments.
+  }
+
   const next = await supabase.rpc('top_classement', { p_limit: limit, p_period: period })
   if (!next.error) return next
 
