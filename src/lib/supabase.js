@@ -12,9 +12,22 @@ export const supabase = url && key ? createClient(url, key, {
   },
 }) : null
 
+async function callTopClassement(limit, period = 'week') {
+  const next = await supabase.rpc('top_classement', { p_limit: limit, p_period: period })
+  if (!next.error) return next
+
+  // Production can briefly have the older RPC signature until the Supabase SQL is run.
+  if (period === 'week') {
+    const legacy = await supabase.rpc('top_classement', { p_limit: limit })
+    if (!legacy.error) return legacy
+  }
+
+  return next
+}
+
 export async function fetchLeaderboard(limit = 10, period = 'week') {
   if (!supabase) return null
-  const { data, error } = await supabase.rpc('top_classement', { p_limit: limit, p_period: period })
+  const { data, error } = await callTopClassement(limit, period)
   if (error) { console.error('[leaderboard]', error); return null }
   return data
 }
@@ -28,7 +41,7 @@ export async function fetchMembersByRank(minH, maxH = 99999) {
 
 export async function fetchStats() {
   if (!supabase) return null
-  const { data, error } = await supabase.rpc('top_classement', { p_limit: 200, p_period: 'week' })
+  const { data, error } = await callTopClassement(200, 'week')
   if (error || !data) return null
   const active = data.filter(m => (parseFloat(m.vocal_h) || 0) >= 1).length
   return { membersTracked: data.length, activeVocal: active }
@@ -38,7 +51,7 @@ export async function fetchStats() {
 
 export async function fetchMemberProfile(discordId) {
   if (!supabase) return null
-  const { data, error } = await supabase.rpc('top_classement', { p_limit: 500, p_period: 'week' })
+  const { data, error } = await callTopClassement(500, 'week')
   if (error || !data) return null
   const member = data.find(m => String(m.uid) === String(discordId))
   if (!member) return null
