@@ -284,6 +284,7 @@ function TpnInfoPanel({ color, tab, readCount, chapterCount, watchedCount, episo
       position: 'sticky',
       top: 18,
       alignSelf: 'start',
+      minHeight: 720,
       borderRadius: 22,
       overflow: 'hidden',
       background: 'linear-gradient(180deg, rgba(20,24,25,0.86), rgba(12,13,16,0.94))',
@@ -291,14 +292,17 @@ function TpnInfoPanel({ color, tab, readCount, chapterCount, watchedCount, episo
       boxShadow: '0 24px 70px rgba(0,0,0,0.30), inset 0 1px 0 rgba(255,255,255,0.06)',
       backdropFilter: 'blur(16px)',
     }}>
-      <div style={{ position: 'relative', minHeight: 170, background: 'linear-gradient(135deg, rgba(100,217,139,0.18), rgba(108,92,231,0.22))', padding: 18 }}>
-        <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 20% 20%, rgba(255,255,255,0.10), transparent 9rem), linear-gradient(180deg, transparent, rgba(0,0,0,0.48))' }} />
-        <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', minHeight: 134, justifyContent: 'space-between', gap: 28 }}>
+      <div style={{ position: 'relative', minHeight: 220, background: 'linear-gradient(135deg, rgba(100,217,139,0.16), rgba(108,92,231,0.26))', padding: 18 }}>
+        <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 20% 20%, rgba(255,255,255,0.10), transparent 9rem), linear-gradient(180deg, transparent, rgba(0,0,0,0.56))' }} />
+        <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', minHeight: 184, justifyContent: 'space-between', gap: 18 }}>
           <div style={{ width: 46, height: 46, borderRadius: 14, background: 'rgba(0,0,0,0.32)', border: '1px solid rgba(255,255,255,0.12)', display: 'grid', placeItems: 'center', color: '#64d98b', fontSize: 18, fontWeight: 900 }}>TPN</div>
           <div>
             <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: '.18em', color: '#64d98b', textTransform: 'uppercase', marginBottom: 8 }}>Dossier anime</div>
-            <div style={{ fontFamily: 'var(--display)', fontSize: 28, lineHeight: 0.95, fontWeight: 900, color: '#fff' }}>Grace Field<br />House</div>
+            <div style={{ fontFamily: 'var(--body)', fontSize: 30, lineHeight: 0.98, fontWeight: 900, color: '#fff', letterSpacing: '-.03em' }}>Grace Field<br />House</div>
           </div>
+          <p style={{ margin: 0, color: 'rgba(255,255,255,0.72)', fontSize: 13, lineHeight: 1.7, maxWidth: 280 }}>
+            Un orphelinat trop propre, des enfants trop brillants, et une fuite qui commence quand la vérité devient plus dangereuse que les murs.
+          </p>
         </div>
       </div>
       <div style={{ padding: 18 }}>
@@ -308,15 +312,45 @@ function TpnInfoPanel({ color, tab, readCount, chapterCount, watchedCount, episo
         <div style={{ display: 'grid', gap: 8, marginBottom: 16 }}>
           {[
             ['Studio', 'CloverWorks'],
-            ['Ambiance', 'Mystere / survie'],
+            ['Genre', 'Mystere, thriller, survie'],
             ['Arcs', 'Grace Field + Evasion'],
             ['Progression', modeLine],
+            ['Tonalite', 'Course mentale, tension, strategie'],
+            ['Point fort', 'Chaque episode resserre la pression'],
           ].map(([label, value]) => (
             <div key={label} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, padding: '9px 0', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
               <span style={{ color: 'rgba(255,255,255,0.34)', fontSize: 11, fontWeight: 850, textTransform: 'uppercase', letterSpacing: '.09em' }}>{label}</span>
               <span style={{ color: '#fff', fontSize: 12, fontWeight: 800, textAlign: 'right' }}>{value}</span>
             </div>
           ))}
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0,1fr))', gap: 10, marginBottom: 16 }}>
+          {[
+            ['12', 'Episodes disponibles'],
+            ['2', 'Arcs principaux'],
+            ['0%', 'Progression anime'],
+            ['184', 'Chapitres scans'],
+          ].map(([value, label]) => (
+            <div key={label} style={{ padding: '12px 10px', borderRadius: 14, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <div style={{ fontFamily: 'var(--display)', color: '#fff', fontSize: 18, fontWeight: 900, lineHeight: 1 }}>{value}</div>
+              <div style={{ marginTop: 5, color: 'rgba(255,255,255,0.35)', fontSize: 10, fontWeight: 800, letterSpacing: '.09em', textTransform: 'uppercase' }}>{label}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{ padding: 12, borderRadius: 16, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', marginBottom: 16 }}>
+          <div style={{ color: 'rgba(255,255,255,0.40)', fontSize: 10, fontWeight: 900, letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 8 }}>Pourquoi ca marche</div>
+          <div style={{ display: 'grid', gap: 8 }}>
+            {[
+              'Des enfants intelligents confrontes a une verite adulte.',
+              'Une fuite qui transforme chaque plan en enjeu vital.',
+              'Une ambiance propre en surface, suffocante en profondeur.',
+            ].map((line, i) => (
+              <div key={line} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', color: 'rgba(255,255,255,0.70)', fontSize: 12, lineHeight: 1.6 }}>
+                <span style={{ color: i === 0 ? '#64d98b' : i === 1 ? color : '#8f86ff', fontWeight: 900 }}>▸</span>
+                <span>{line}</span>
+              </div>
+            ))}
+          </div>
         </div>
         <div style={{ padding: 12, borderRadius: 14, background: 'rgba(108,92,231,0.10)', border: '1px solid rgba(139,124,255,0.20)', marginBottom: 12 }}>
           <div style={{ color: 'rgba(255,255,255,0.38)', fontSize: 10, fontWeight: 900, letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 5 }}>A regarder apres</div>
@@ -370,16 +404,16 @@ function TpnHeroClean({ title, tab, readCount, chapterCount, watchedCount, episo
   const pct = total > 0 ? Math.round((done / total) * 100) : 0
   const progressLabel = isVideos ? `${watchedCount} / ${episodeCount} episodes vus` : `${readCount} / ${chapterCount} chapitres lus`
   return (
-    <section style={{ position: 'relative', overflow: 'hidden', borderRadius: 22, padding: '22px 24px', marginBottom: 18, background: 'linear-gradient(135deg, rgba(108,92,231,0.16), rgba(20,83,45,0.12) 48%, rgba(12,13,16,0.86))', border: '1px solid rgba(139,124,255,0.22)', boxShadow: '0 24px 70px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.06)', backdropFilter: 'blur(14px)' }}>
+    <section style={{ position: 'relative', overflow: 'hidden', borderRadius: 22, padding: '20px 22px', marginBottom: 18, background: 'linear-gradient(135deg, rgba(108,92,231,0.14), rgba(20,83,45,0.10) 48%, rgba(12,13,16,0.88))', border: '1px solid rgba(139,124,255,0.18)', boxShadow: '0 20px 60px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.05)', backdropFilter: 'blur(14px)' }}>
       <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 15% 25%, rgba(40,150,95,0.18), transparent 20rem), radial-gradient(circle at 86% 18%, rgba(108,92,231,0.18), transparent 18rem)', pointerEvents: 'none' }} />
       <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: 22, alignItems: 'end' }}>
         <div>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '5px 12px', borderRadius: 999, background: 'rgba(108,92,231,0.14)', border: '1px solid rgba(139,124,255,0.28)', color: '#a9a0ff', fontSize: 10, fontWeight: 900, letterSpacing: '.18em', textTransform: 'uppercase', marginBottom: 12 }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '5px 12px', borderRadius: 999, background: 'rgba(108,92,231,0.12)', border: '1px solid rgba(139,124,255,0.22)', color: '#a9a0ff', fontSize: 10, fontWeight: 900, letterSpacing: '.18em', textTransform: 'uppercase', marginBottom: 12 }}>
             BRAMS ARCHIVES - SECTION TPN
           </div>
-          <h1 style={{ margin: 0, fontFamily: 'var(--display)', fontSize: 'clamp(34px,5vw,58px)', lineHeight: .95, color: '#fff', letterSpacing: '-.025em' }}>{title}</h1>
-          <p style={{ margin: '12px 0 0', color: 'rgba(255,255,255,0.54)', fontSize: 14, lineHeight: 1.7 }}>
-            Dossier confidentiel de Grace Field. Episodes, scans et reprise de lecture au meme endroit.
+          <h1 style={{ margin: 0, fontFamily: 'var(--body)', fontSize: 'clamp(30px,4.2vw,50px)', lineHeight: .95, color: '#fff', letterSpacing: '-.05em', fontWeight: 900 }}>{title}</h1>
+          <p style={{ margin: '12px 0 0', color: 'rgba(255,255,255,0.58)', fontSize: 14, lineHeight: 1.7, maxWidth: 540 }}>
+            Orphelinat trop parfait, enfants trop lucides, adultes trop calmes. The Promised Neverland avance comme un thriller de survie qui serre la gorge episode apres episode.
           </p>
         </div>
         <div>
@@ -390,7 +424,7 @@ function TpnHeroClean({ title, tab, readCount, chapterCount, watchedCount, episo
               [`${pct}%`, 'Progression'],
             ].map(([value, label]) => (
               <div key={label} style={{ padding: '12px 10px', borderRadius: 14, background: 'rgba(255,255,255,0.055)', border: '1px solid rgba(255,255,255,0.08)', textAlign: 'center' }}>
-                <div style={{ fontFamily: 'var(--display)', fontSize: 24, fontWeight: 900, color: label === 'Arcs' ? '#64d98b' : color, lineHeight: 1 }}>{value}</div>
+                <div style={{ fontFamily: 'var(--body)', fontSize: 22, fontWeight: 900, color: label === 'Arcs' ? '#64d98b' : color, lineHeight: 1, letterSpacing: '-.02em' }}>{value}</div>
                 <div style={{ marginTop: 5, fontSize: 9, fontWeight: 850, letterSpacing: '.11em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.36)' }}>{label}</div>
               </div>
             ))}
