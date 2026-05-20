@@ -84,7 +84,7 @@ function Progress({ value, max, color }) {
   const pct = max > 0 ? Math.min(100, Math.max(0, (value / max) * 100)) : 100
   return (
     <div className="profile-progress">
-      <span className="profile-progress-ship" style={{ left: `${pct}%` }}>⛵</span>
+      <span className="profile-progress-ship" style={{ left: `${pct}%` }} />
       <div style={{ width: `${pct}%`, '--accent': color }} />
     </div>
   )
@@ -98,8 +98,8 @@ function WantedPoster({ member, rank, hours }) {
       <div className="profile-burn burn-b" />
       <div className="profile-wax">B</div>
       <div className="profile-poster-rank">#{member.rank || '-'}</div>
-      <div className="profile-poster-top">Avis de recherche</div>
-      <div className="profile-poster-title">Wanted</div>
+      <div className="profile-poster-top">Profil membre</div>
+      <div className="profile-poster-title">Carte joueur</div>
       <div className="profile-poster-photo">
         {member.avatar_url ? (
           <img src={member.avatar_url} alt="" />
@@ -343,7 +343,7 @@ export default function ProfilePage() {
           z-index: 1;
           width: min(1200px, calc(100% - 32px));
           margin: 0 auto;
-          padding: 70px 0 64px;
+          padding: 64px 0 64px;
           animation: profileRise .72s cubic-bezier(.22,1,.36,1) both;
         }
         .profile-topbar {
@@ -353,10 +353,7 @@ export default function ProfilePage() {
           gap: 12px;
           margin-bottom: 18px;
         }
-        .profile-title-block {
-          text-align: center;
-          margin: 4px auto 22px;
-        }
+        .profile-title-block { display: none; }
         .profile-title-block span {
           display: inline-flex;
           align-items: center;
@@ -410,15 +407,14 @@ export default function ProfilePage() {
         }
         .profile-hero-shell {
           position: relative;
-          padding: 16px;
-          border-radius: 18px;
+          padding: 14px;
+          border-radius: 16px;
           border: 1px solid rgba(255,255,255,.09);
           border-top-color: color-mix(in srgb, var(--rank) 34%, rgba(255,255,255,.08));
           background:
-            radial-gradient(circle at 18% 28%, color-mix(in srgb, var(--rank) 18%, transparent), transparent 21rem),
-            radial-gradient(circle at 80% 16%, rgba(212,160,23,.12), transparent 18rem),
-            linear-gradient(145deg, rgba(255,255,255,.045), rgba(7,8,11,.78));
-          box-shadow: 0 28px 90px rgba(0,0,0,.38), inset 0 1px 0 rgba(255,255,255,.055);
+            radial-gradient(circle at 18% 20%, color-mix(in srgb, var(--rank) 12%, transparent), transparent 20rem),
+            linear-gradient(145deg, rgba(255,255,255,.04), rgba(7,8,11,.86));
+          box-shadow: 0 22px 70px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.055);
           overflow: hidden;
         }
         .profile-hero-shell::before {
@@ -426,10 +422,7 @@ export default function ProfilePage() {
           position: absolute;
           inset: 0;
           pointer-events: none;
-          background:
-            linear-gradient(90deg, transparent, rgba(242,201,76,.13), transparent),
-            repeating-linear-gradient(90deg, transparent 0 34px, rgba(255,255,255,.035) 35px 36px);
-          animation: profileSoftScan 7s ease-in-out infinite;
+          display: none;
         }
         .profile-hero-shell::after {
           content: "";
@@ -439,26 +432,26 @@ export default function ProfilePage() {
           top: 0;
           height: 3px;
           background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--rank) 64%, #f2c94c), rgba(242,201,76,.72), transparent);
-          opacity: .8;
+          opacity: .45;
         }
         .profile-hero {
           position: relative;
           z-index: 1;
           display: grid;
-          grid-template-columns: 330px minmax(0, 1fr);
-          gap: 16px;
+          grid-template-columns: 300px minmax(0, 1fr);
+          gap: 14px;
           align-items: stretch;
         }
         .profile-poster {
           position: relative;
-          min-height: 486px;
-          padding: 24px 22px 20px;
-          border-radius: 14px;
-          border: 1px solid color-mix(in srgb, var(--accent) 52%, rgba(255,255,255,.08));
+          min-height: 442px;
+          padding: 20px;
+          border-radius: 12px;
+          border: 1px solid color-mix(in srgb, var(--accent) 34%, rgba(255,255,255,.08));
           background:
-            linear-gradient(145deg, rgba(255,255,255,.055), transparent 28%),
-            linear-gradient(180deg, rgba(36,22,11,.96), rgba(12,9,7,.98));
-          box-shadow: 0 26px 70px rgba(0,0,0,.42), 0 0 54px color-mix(in srgb, var(--accent) 24%, transparent);
+            radial-gradient(circle at 80% 0%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 10rem),
+            linear-gradient(180deg, rgba(18,18,21,.94), rgba(8,9,12,.98));
+          box-shadow: 0 18px 50px rgba(0,0,0,.34);
           overflow: hidden;
           transition: transform .24s ease, box-shadow .24s ease, border-color .24s ease;
           transform-style: preserve-3d;
@@ -467,12 +460,10 @@ export default function ProfilePage() {
           content: "";
           position: absolute;
           inset: 0;
-          opacity: .22;
-          background:
-            radial-gradient(circle at 20% 18%, rgba(255,255,255,.2), transparent 3px),
-            radial-gradient(circle at 82% 58%, rgba(255,255,255,.16), transparent 2px),
-            repeating-linear-gradient(108deg, transparent 0 17px, rgba(255,220,140,.08) 18px 19px);
-          mix-blend-mode: overlay;
+          opacity: .35;
+          background: linear-gradient(90deg, var(--accent), transparent);
+          height: 3px;
+          inset: 0 0 auto;
           pointer-events: none;
         }
         .profile-poster:hover,
@@ -482,44 +473,22 @@ export default function ProfilePage() {
         .profile-stat:hover {
           transform: translateY(-3px);
           border-color: color-mix(in srgb, var(--rank) 46%, rgba(255,255,255,.1));
-          box-shadow: 0 26px 80px rgba(0,0,0,.45), 0 0 48px color-mix(in srgb, var(--rank) 18%, transparent);
+          box-shadow: 0 18px 54px rgba(0,0,0,.38), 0 0 28px color-mix(in srgb, var(--rank) 12%, transparent);
         }
         .profile-burn {
-          position: absolute;
-          z-index: 1;
-          width: 72px;
-          height: 72px;
-          border-radius: 50%;
-          background: radial-gradient(circle, #050201 0 36%, rgba(45, 15, 4, .9) 37% 50%, transparent 52%);
-          filter: blur(.2px);
-          opacity: .7;
+          display: none;
         }
         .burn-a { left: -34px; top: -26px; }
         .burn-b { right: -38px; bottom: -28px; }
         .profile-wax {
-          position: absolute;
-          z-index: 3;
-          left: 22px;
-          top: 22px;
-          width: 40px;
-          height: 40px;
-          border-radius: 50%;
-          display: grid;
-          place-items: center;
-          color: #ffd7b0;
-          font-family: var(--display), Syne, system-ui, sans-serif;
-          font-size: 16px;
-          font-weight: 900;
-          background: radial-gradient(circle at 35% 28%, #d15a48, #6e1013 72%);
-          box-shadow: inset 0 2px 8px rgba(255,255,255,.22), 0 8px 18px rgba(0,0,0,.32);
-          animation: profileSeal 3.6s ease-in-out infinite;
+          display: none;
         }
         .profile-poster::after {
           content: "";
           position: absolute;
-          inset: 10px;
-          border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
-          border-radius: 6px;
+          inset: 8px;
+          border: 1px solid rgba(255,255,255,.055);
+          border-radius: 10px;
           pointer-events: none;
         }
         .profile-poster-rank {
@@ -529,7 +498,7 @@ export default function ProfilePage() {
           z-index: 2;
           padding: 5px 8px;
           border-radius: 6px;
-          background: rgba(0,0,0,.42);
+          background: rgba(0,0,0,.35);
           color: var(--accent);
           font-size: 12px;
           font-weight: 900;
@@ -537,34 +506,34 @@ export default function ProfilePage() {
         .profile-poster-top {
           text-align: center;
           text-transform: uppercase;
-          letter-spacing: .32em;
+          letter-spacing: .22em;
           font-size: 9px;
           font-weight: 900;
-          color: rgba(238, 204, 132, .55);
+          color: rgba(255,255,255,.42);
         }
         .profile-poster-title {
-          margin-top: 10px;
+          margin-top: 8px;
           text-align: center;
           font-family: var(--display), Syne, system-ui, sans-serif;
-          font-size: 38px;
+          font-size: 24px;
           font-weight: 900;
           line-height: .95;
-          letter-spacing: .04em;
+          letter-spacing: .02em;
           text-transform: uppercase;
-          color: #f4d88a;
-          text-shadow: 0 0 18px rgba(242, 202, 87, .18);
+          color: #fff;
+          text-shadow: none;
         }
         .profile-poster-photo {
-          width: min(218px, 88%);
+          width: min(190px, 84%);
           aspect-ratio: 1;
-          margin: 20px auto 16px;
-          border-radius: 7px;
+          margin: 18px auto 16px;
+          border-radius: 12px;
           overflow: hidden;
           border: 1px solid color-mix(in srgb, var(--accent) 52%, rgba(255,255,255,.12));
           background: rgba(255,255,255,.05);
           display: grid;
           place-items: center;
-          box-shadow: inset 0 0 24px rgba(0,0,0,.5);
+          box-shadow: inset 0 0 22px rgba(0,0,0,.45), 0 14px 28px rgba(0,0,0,.24);
         }
         .profile-poster-photo img { width: 100%; height: 100%; object-fit: cover; }
         .profile-poster:hover .profile-poster-photo img { transform: scale(1.045); }
@@ -574,7 +543,7 @@ export default function ProfilePage() {
           text-align: center;
           font-family: var(--display), Syne, system-ui, sans-serif;
           color: #fff4d8;
-          font-size: 24px;
+          font-size: 22px;
           font-weight: 900;
           line-height: 1.08;
           overflow-wrap: anywhere;
@@ -646,14 +615,14 @@ export default function ProfilePage() {
         }
         .profile-main-card {
           position: relative;
-          min-height: 486px;
-          padding: clamp(24px, 3vw, 36px);
-          border-radius: 14px;
+          min-height: 442px;
+          padding: clamp(22px, 2.8vw, 32px);
+          border-radius: 12px;
           background:
             linear-gradient(135deg, rgba(255,255,255,.075), transparent 28%),
             linear-gradient(180deg, rgba(19,18,22,.86), rgba(10,9,10,.96));
           border: 1px solid rgba(255,255,255,.08);
-          box-shadow: 0 20px 70px rgba(0,0,0,.35);
+          box-shadow: 0 18px 58px rgba(0,0,0,.32);
           overflow: hidden;
           backdrop-filter: blur(16px);
           transition: transform .24s ease, box-shadow .24s ease, border-color .24s ease;
@@ -725,7 +694,7 @@ export default function ProfilePage() {
           margin: 0;
           color: transparent;
           font-family: var(--display), Syne, system-ui, sans-serif;
-          font-size: clamp(40px, 6.4vw, 76px);
+          font-size: clamp(38px, 5.5vw, 64px);
           font-weight: 900;
           line-height: .94;
           letter-spacing: -0.02em;
@@ -852,9 +821,13 @@ export default function ProfilePage() {
         .profile-progress-ship {
           position: absolute;
           z-index: 3;
-          top: -13px;
-          font-size: 20px;
-          filter: drop-shadow(0 0 12px #f2c94c);
+          top: 50%;
+          width: 15px;
+          height: 15px;
+          border-radius: 50%;
+          background: #f2c94c;
+          border: 3px solid rgba(8,9,12,.95);
+          filter: drop-shadow(0 0 10px rgba(242,201,76,.55));
           animation: profileBoat 2.2s ease-in-out infinite;
           transition: left 1.25s cubic-bezier(.22,1,.36,1);
         }
