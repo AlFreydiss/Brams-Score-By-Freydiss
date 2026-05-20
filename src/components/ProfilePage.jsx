@@ -39,6 +39,26 @@ function fmtNum(value) {
   return new Intl.NumberFormat('fr-FR').format(Number(value || 0))
 }
 
+function CountUp({ value, decimals = 0, suffix = '' }) {
+  const [current, setCurrent] = useState(0)
+
+  useEffect(() => {
+    const target = Number(value || 0)
+    let frame = 0
+    const total = 54
+    const tick = () => {
+      frame += 1
+      const eased = 1 - Math.pow(1 - frame / total, 3)
+      setCurrent(target * eased)
+      if (frame < total) requestAnimationFrame(tick)
+    }
+    setCurrent(0)
+    requestAnimationFrame(tick)
+  }, [value])
+
+  return `${current.toFixed(decimals)}${suffix}`
+}
+
 function timeAgo(iso) {
   if (!iso) return ''
   const minutes = Math.floor((Date.now() - new Date(iso)) / 60000)
@@ -72,6 +92,9 @@ function WantedPoster({ member, rank, hours }) {
   const bounty = Number.parseInt(member.berrys || 0, 10)
   return (
     <aside className="profile-poster" style={{ '--accent': rank.color }}>
+      <div className="profile-burn burn-a" />
+      <div className="profile-burn burn-b" />
+      <div className="profile-wax">B</div>
       <div className="profile-poster-rank">#{member.rank || '-'}</div>
       <div className="profile-poster-top">Avis de recherche</div>
       <div className="profile-poster-title">Wanted</div>
@@ -86,13 +109,14 @@ function WantedPoster({ member, rank, hours }) {
       <div className="profile-poster-role">{rank.emoji} {rank.rang}</div>
       <div className="profile-poster-line" />
       <div className="profile-poster-meta">
-        <div>
+        <div className="profile-bounty">
+          {Array.from({ length: 7 }).map((_, index) => <i key={index} style={{ '--i': index }} />)}
           <span>Prime</span>
           <strong>{fmtB(bounty)} ฿</strong>
         </div>
         <div>
           <span>Vocal</span>
-          <strong>{hours}h</strong>
+          <strong><CountUp value={hours} decimals={1} suffix="h" /></strong>
         </div>
       </div>
     </aside>
@@ -152,6 +176,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState('stats')
   const [copied, setCopied] = useState(false)
+  const [immersive, setImmersive] = useState(false)
 
   useEffect(() => {
     let ignore = false
@@ -188,16 +213,50 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="profile-shell" style={{ '--rank': rank.color }}>
-      <Navbar />
+    <div className={`profile-shell ${immersive ? 'profile-immersive' : ''}`} style={{ '--rank': rank.color }}>
+      {!immersive && <Navbar />}
+      <div className="profile-atmosphere" aria-hidden="true">
+        <span className="fog fog-a" />
+        <span className="fog fog-b" />
+        <span className="wave wave-a" />
+        <span className="wave wave-b" />
+        {Array.from({ length: 18 }).map((_, index) => <i key={index} style={{ '--i': index }} />)}
+      </div>
       <style>{`
+        @keyframes profileRise {
+          from { opacity: 0; transform: translateY(18px) scale(.985); filter: blur(8px); }
+          to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+        }
+        @keyframes profileDrift {
+          0%, 100% { transform: translate3d(-2%, 0, 0) rotate(-1deg); opacity: .34; }
+          50% { transform: translate3d(3%, -2%, 0) rotate(1deg); opacity: .58; }
+        }
+        @keyframes profileWave {
+          from { transform: translateX(-8%) skewX(-8deg); }
+          to { transform: translateX(8%) skewX(-8deg); }
+        }
+        @keyframes profileSpark {
+          0% { transform: translateY(0) scale(.55); opacity: 0; }
+          16% { opacity: .9; }
+          100% { transform: translateY(-86vh) scale(1.08); opacity: 0; }
+        }
+        @keyframes profileCoin {
+          0% { transform: translateY(-12px) rotate(0deg); opacity: 0; }
+          18% { opacity: 1; }
+          100% { transform: translateY(86px) rotate(460deg); opacity: 0; }
+        }
+        @keyframes profilePulse {
+          0%, 100% { box-shadow: 0 0 0 rgba(242, 201, 76, 0); }
+          50% { box-shadow: 0 0 34px rgba(242, 201, 76, .35); }
+        }
         .profile-shell {
           min-height: 100vh;
           color: #f3ead7;
           background:
-            radial-gradient(circle at 18% 8%, color-mix(in srgb, var(--rank) 24%, transparent), transparent 28rem),
-            radial-gradient(circle at 90% 20%, rgba(40, 118, 180, .16), transparent 30rem),
-            linear-gradient(135deg, #080605 0%, #100a08 42%, #070809 100%);
+            radial-gradient(circle at 18% 8%, color-mix(in srgb, var(--rank) 28%, transparent), transparent 28rem),
+            radial-gradient(circle at 90% 20%, rgba(86, 26, 128, .22), transparent 32rem),
+            radial-gradient(circle at 50% 130%, rgba(116, 12, 22, .18), transparent 38rem),
+            linear-gradient(135deg, #030303 0%, #100709 42%, #05070b 100%);
           overflow-x: hidden;
         }
         .profile-shell::before {
@@ -212,12 +271,55 @@ export default function ProfilePage() {
           background-size: 56px 56px;
           mask-image: linear-gradient(to bottom, black 0%, transparent 78%);
         }
+        .profile-atmosphere {
+          position: fixed;
+          inset: 0;
+          overflow: hidden;
+          pointer-events: none;
+          z-index: 0;
+        }
+        .profile-atmosphere .fog {
+          position: absolute;
+          width: 62vw;
+          height: 28vh;
+          border-radius: 999px;
+          background: radial-gradient(ellipse, rgba(156, 120, 255, .13), transparent 66%);
+          filter: blur(20px);
+          animation: profileDrift 11s ease-in-out infinite;
+        }
+        .fog-a { left: -12vw; top: 20vh; }
+        .fog-b { right: -18vw; top: 50vh; animation-delay: -4s; }
+        .profile-atmosphere .wave {
+          position: absolute;
+          left: -10%;
+          right: -10%;
+          height: 120px;
+          opacity: .12;
+          background: repeating-linear-gradient(100deg, transparent 0 38px, rgba(128, 180, 255, .36) 39px 41px, transparent 42px 80px);
+          filter: blur(.5px);
+          animation: profileWave 9s ease-in-out infinite alternate;
+        }
+        .wave-a { bottom: 14%; }
+        .wave-b { bottom: 7%; animation-delay: -2s; opacity: .08; }
+        .profile-atmosphere i {
+          position: absolute;
+          left: calc((var(--i) * 5.7%) + 2%);
+          bottom: -12px;
+          width: 3px;
+          height: 3px;
+          border-radius: 50%;
+          background: #f2c94c;
+          box-shadow: 0 0 12px #f2c94c;
+          animation: profileSpark calc(7s + (var(--i) * .35s)) linear infinite;
+          animation-delay: calc(var(--i) * -.52s);
+        }
         .profile-wrap {
           position: relative;
           z-index: 1;
           width: min(1180px, calc(100% - 32px));
           margin: 0 auto;
           padding: 84px 0 72px;
+          animation: profileRise .72s cubic-bezier(.22,1,.36,1) both;
         }
         .profile-back {
           height: 36px;
@@ -230,6 +332,13 @@ export default function ProfilePage() {
           font-size: 12px;
           letter-spacing: .05em;
           cursor: pointer;
+          transition: border-color .2s, color .2s, box-shadow .2s, transform .2s;
+        }
+        .profile-back:hover {
+          border-color: rgba(242, 201, 76, .55);
+          color: #ffe5a0;
+          transform: translateY(-1px);
+          box-shadow: 0 0 28px rgba(242, 201, 76, .14);
         }
         .profile-hero {
           display: grid;
@@ -249,6 +358,44 @@ export default function ProfilePage() {
             linear-gradient(180deg, rgba(36,22,11,.96), rgba(12,9,7,.98));
           box-shadow: 0 26px 70px rgba(0,0,0,.42), 0 0 54px color-mix(in srgb, var(--accent) 24%, transparent);
           overflow: hidden;
+          transition: transform .24s ease, box-shadow .24s ease, border-color .24s ease;
+        }
+        .profile-poster:hover,
+        .profile-main-card:hover,
+        .profile-panel:hover,
+        .profile-item:hover,
+        .profile-stat:hover {
+          transform: translateY(-3px);
+          border-color: color-mix(in srgb, var(--rank) 46%, rgba(255,255,255,.1));
+          box-shadow: 0 26px 80px rgba(0,0,0,.45), 0 0 48px color-mix(in srgb, var(--rank) 18%, transparent);
+        }
+        .profile-burn {
+          position: absolute;
+          z-index: 1;
+          width: 72px;
+          height: 72px;
+          border-radius: 50%;
+          background: radial-gradient(circle, #050201 0 36%, rgba(45, 15, 4, .9) 37% 50%, transparent 52%);
+          filter: blur(.2px);
+          opacity: .7;
+        }
+        .burn-a { left: -34px; top: -26px; }
+        .burn-b { right: -38px; bottom: -28px; }
+        .profile-wax {
+          position: absolute;
+          z-index: 3;
+          left: 22px;
+          top: 22px;
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          display: grid;
+          place-items: center;
+          color: #ffd7b0;
+          font-family: Pirata One, serif;
+          font-size: 22px;
+          background: radial-gradient(circle at 35% 28%, #d15a48, #6e1013 72%);
+          box-shadow: inset 0 2px 8px rgba(255,255,255,.22), 0 8px 18px rgba(0,0,0,.32);
         }
         .profile-poster::after {
           content: "";
@@ -327,11 +474,33 @@ export default function ProfilePage() {
           gap: 10px;
         }
         .profile-poster-meta div {
+          position: relative;
           padding: 12px 10px;
           border-radius: 7px;
           background: rgba(0,0,0,.28);
           border: 1px solid rgba(255,255,255,.06);
           text-align: center;
+        }
+        .profile-bounty {
+          overflow: hidden;
+          cursor: crosshair;
+        }
+        .profile-bounty i {
+          position: absolute;
+          left: calc(10% + var(--i) * 12%);
+          top: -12px;
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background: radial-gradient(circle at 34% 34%, #fff3a9, #f2c94c 48%, #9b6d13);
+          opacity: 0;
+        }
+        .profile-bounty:hover {
+          animation: profilePulse 1.1s ease-in-out infinite;
+        }
+        .profile-bounty:hover i {
+          animation: profileCoin .9s ease-in infinite;
+          animation-delay: calc(var(--i) * .08s);
         }
         .profile-poster-meta span,
         .profile-stat span,
@@ -362,6 +531,8 @@ export default function ProfilePage() {
           border: 1px solid rgba(255,255,255,.08);
           box-shadow: 0 20px 70px rgba(0,0,0,.35);
           overflow: hidden;
+          backdrop-filter: blur(16px);
+          transition: transform .24s ease, box-shadow .24s ease, border-color .24s ease;
         }
         .profile-main-card::before {
           content: "";
@@ -462,10 +633,24 @@ export default function ProfilePage() {
           background: rgba(255,255,255,.07);
         }
         .profile-progress div {
+          position: relative;
           height: 100%;
           border-radius: inherit;
           background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 62%, #fff), var(--accent));
           box-shadow: 0 0 24px color-mix(in srgb, var(--accent) 45%, transparent);
+          transition: width 1.25s cubic-bezier(.22,1,.36,1);
+        }
+        .profile-progress div::after {
+          content: "";
+          position: absolute;
+          right: -10px;
+          top: 50%;
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          transform: translateY(-50%);
+          background: radial-gradient(circle, #fff8bd 0 20%, #f2c94c 35%, transparent 70%);
+          box-shadow: 0 0 26px #f2c94c;
         }
         .profile-actions {
           display: grid;
@@ -486,11 +671,45 @@ export default function ProfilePage() {
           font-size: 13px;
           text-decoration: none;
           cursor: pointer;
+          position: relative;
+          overflow: hidden;
+          transition: transform .2s, border-color .2s, box-shadow .2s;
+        }
+        .profile-actions button:hover,
+        .profile-actions a:hover {
+          transform: translateY(-2px);
+          border-color: rgba(242, 201, 76, .42);
+          box-shadow: 0 0 32px rgba(242, 201, 76, .14);
         }
         .profile-actions a {
           color: #9db7ff;
           border-color: rgba(90, 120, 255, .28);
           background: rgba(90, 120, 255, .1);
+        }
+        .profile-actions a::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          transform: translateX(-110%);
+          background: linear-gradient(100deg, transparent, rgba(255,255,255,.24), transparent);
+          transition: transform .55s ease;
+        }
+        .profile-actions a:hover::before {
+          transform: translateX(110%);
+        }
+        .profile-mode {
+          position: absolute;
+          right: 0;
+          top: 84px;
+          height: 36px;
+          padding: 0 14px;
+          border-radius: 999px;
+          border: 1px solid rgba(166,108,255,.32);
+          background: rgba(166,108,255,.1);
+          color: #d6c2ff;
+          font-size: 12px;
+          font-weight: 900;
+          cursor: pointer;
         }
         .profile-tabs {
           display: flex;
@@ -640,6 +859,15 @@ export default function ProfilePage() {
         .profile-empty div { font-size: 42px; color: var(--rank); }
         .profile-empty strong { margin-top: 10px; color: #fff1ce; font-size: 18px; }
         .profile-empty span { margin-top: 6px; }
+        .profile-immersive .profile-wrap {
+          width: min(1280px, calc(100% - 28px));
+          padding-top: 34px;
+        }
+        .profile-immersive .profile-back,
+        .profile-immersive .profile-tabs,
+        .profile-immersive .profile-content {
+          display: none;
+        }
         @media (max-width: 920px) {
           .profile-hero { grid-template-columns: 1fr; }
           .profile-poster { min-height: auto; }
@@ -653,11 +881,15 @@ export default function ProfilePage() {
           .profile-tabs { width: 100%; overflow-x: auto; }
           .profile-tabs button { white-space: nowrap; }
           .profile-head h1 { font-size: clamp(38px, 18vw, 60px); }
+          .profile-mode { position: static; margin-left: 10px; }
         }
       `}</style>
 
       <main className="profile-wrap">
         <button className="profile-back" type="button" onClick={() => navigate(-1)}>← Retour</button>
+        <button className="profile-mode" type="button" onClick={() => setImmersive((value) => !value)}>
+          {immersive ? 'Interface' : 'Full immersion'}
+        </button>
 
         {loading && (
           <EmptyState icon="⌛" title="Chargement du profil" text="Les donnees du pirate arrivent." />
@@ -685,7 +917,7 @@ export default function ProfilePage() {
                 </header>
 
                 <div className="profile-stat-grid">
-                  <StatTile label="Vocal" value={`${hours}h`} detail="sur 7 jours" color={rank.color} tone="rank" />
+                  <StatTile label="Vocal" value={<CountUp value={hours} decimals={1} suffix="h" />} detail="sur 7 jours" color={rank.color} tone="rank" />
                   <StatTile label="Berrys" value={`${fmtB(member.berrys)} ฿`} detail="prime publique" color="#F2C94C" />
                   <StatTile label="Position" value={`#${member.rank}`} detail={`/ ${member.total}`} color="#8AA8FF" tone="blue" />
                 </div>
