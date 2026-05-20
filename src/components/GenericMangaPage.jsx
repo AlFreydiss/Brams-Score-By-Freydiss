@@ -127,7 +127,10 @@ function VideoThumbnail({ src, episode, color }) {
       try { c.getContext('2d').drawImage(v, 0, 0, 320, 180); setThumb(c.toDataURL('image/jpeg', 0.8)) } catch {}
       v.src = ''
     }
-    v.addEventListener('loadedmetadata', () => { v.currentTime = 1 }, { once: true })
+    v.addEventListener('loadedmetadata', () => {
+      const duration = Number.isFinite(v.duration) ? v.duration : 0
+      v.currentTime = duration > 0 ? Math.min(45, Math.max(2, duration * 0.35)) : 2
+    }, { once: true })
     v.addEventListener('seeked', extract, { once: true })
     v.load()
   }, [src])
@@ -142,24 +145,30 @@ function VideoThumbnail({ src, episode, color }) {
           playsInline
           preload="metadata"
           onLoadedMetadata={e => {
-            setVideoReady(true)
-            try { e.currentTarget.currentTime = Math.min(1.5, e.currentTarget.duration || 1.5) } catch {}
+            const duration = Number.isFinite(e.currentTarget.duration) ? e.currentTarget.duration : 0
+            try { e.currentTarget.currentTime = duration > 0 ? Math.min(45, Math.max(2, duration * 0.35)) : 2 } catch {}
           }}
+          onSeeked={() => setVideoReady(true)}
+          onLoadedData={() => setVideoReady(true)}
           style={{
             position: 'absolute',
             inset: 0,
             width: '100%',
             height: '100%',
             objectFit: 'cover',
-            opacity: videoReady ? 0.58 : 0,
-            filter: 'saturate(1.08) contrast(1.06)',
+            opacity: videoReady ? 0.82 : 0,
+            filter: 'brightness(1.18) saturate(1.12) contrast(1.1)',
           }}
         />
       )}
-      <div style={{ position: 'absolute', inset: 0, background: videoReady ? 'linear-gradient(180deg, rgba(0,0,0,0.12), rgba(0,0,0,0.42))' : 'none' }} />
+      <div style={{ position: 'absolute', inset: 0, background: videoReady ? 'linear-gradient(180deg, rgba(0,0,0,0.04), rgba(0,0,0,0.24))' : 'none' }} />
       <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
-        <span style={{ fontFamily: 'var(--display)', fontWeight: 900, fontSize: 13, letterSpacing: '0.15em', color: videoReady ? 'rgba(255,255,255,0.72)' : `${color}77`, textTransform: 'uppercase', textShadow: '0 2px 10px rgba(0,0,0,0.75)' }}>Épisode</span>
-        <span style={{ fontFamily: 'var(--display)', fontWeight: 900, fontSize: 48, color: videoReady ? '#fff' : `${color}99`, lineHeight: 1, textShadow: '0 2px 18px rgba(0,0,0,0.8)' }}>{episode}</span>
+        {!videoReady && (
+          <>
+            <span style={{ fontFamily: 'var(--display)', fontWeight: 900, fontSize: 13, letterSpacing: '0.15em', color: `${color}77`, textTransform: 'uppercase', textShadow: '0 2px 10px rgba(0,0,0,0.75)' }}>Épisode</span>
+            <span style={{ fontFamily: 'var(--display)', fontWeight: 900, fontSize: 48, color: `${color}99`, lineHeight: 1, textShadow: '0 2px 18px rgba(0,0,0,0.8)' }}>{episode}</span>
+          </>
+        )}
       </div>
     </div>
   )
@@ -176,8 +185,8 @@ function VideoCard({ video, onPlay, color }) {
           ? <img src={thumb} alt={video.title} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: hovered ? 0.85 : 0.65, transition: 'opacity 0.2s' }} />
           : <VideoThumbnail src={video.src} episode={video.episode} color={color} />
         }
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: hovered ? 'rgba(0,0,0,0.35)' : 'rgba(0,0,0,0.15)', transition: 'background 0.2s' }}>
-          <div style={{ width: 56, height: 56, borderRadius: '50%', background: `${color}cc`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, backdropFilter: 'blur(4px)', transform: hovered ? 'scale(1.12)' : 'scale(1)', transition: 'transform 0.2s', boxShadow: `0 4px 20px ${color}55` }}>▶</div>
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: hovered ? 'rgba(0,0,0,0.22)' : 'rgba(0,0,0,0.04)', transition: 'background 0.2s' }}>
+          <div style={{ width: 46, height: 46, borderRadius: '50%', background: `${color}b5`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, backdropFilter: 'blur(4px)', transform: hovered ? 'scale(1.08)' : 'scale(1)', transition: 'transform 0.2s, opacity 0.2s', boxShadow: `0 4px 18px ${color}44`, opacity: hovered ? 1 : 0.82 }}>▶</div>
         </div>
         {video.duration && <div style={{ position: 'absolute', bottom: 8, right: 10, fontSize: 11, fontWeight: 700, background: 'rgba(0,0,0,0.8)', borderRadius: 4, padding: '2px 7px', color: '#fff' }}>{video.duration}</div>}
       </div>
@@ -307,7 +316,7 @@ export default function GenericMangaPage({ chaptersData, videosData, color, name
         </div>
 
         <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '28px 20px' }}>
-          <div style={{ maxWidth: 1120, margin: '0 auto' }}>
+          <div style={{ maxWidth: tab === 'videos' ? 1280 : 1120, margin: '0 auto' }}>
             {tab === 'scans' ? (
               CHAPTERS.length === 0
                 ? <EmptyState icon={headerEmoji} title="Scans bientôt disponibles" desc={`Les chapitres de ${title} seront ajoutés prochainement.`} />

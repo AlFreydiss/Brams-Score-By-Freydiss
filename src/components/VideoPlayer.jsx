@@ -117,12 +117,14 @@ function EpisodeMiniThumb({ video, color }) {
         playsInline
         preload="metadata"
         onLoadedMetadata={e => {
-          setReady(true)
-          try { e.currentTarget.currentTime = Math.min(1.5, e.currentTarget.duration || 1.5) } catch {}
+          const duration = Number.isFinite(e.currentTarget.duration) ? e.currentTarget.duration : 0
+          try { e.currentTarget.currentTime = duration > 0 ? Math.min(45, Math.max(2, duration * 0.35)) : 2 } catch {}
         }}
-        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', opacity: ready ? 0.72 : 0 }}
+        onSeeked={() => setReady(true)}
+        onLoadedData={() => setReady(true)}
+        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', opacity: ready ? 0.86 : 0, filter: 'brightness(1.16) saturate(1.12) contrast(1.08)' }}
       />
-      <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', background: ready ? 'rgba(0,0,0,0.18)' : `linear-gradient(135deg, ${color}30, rgba(0,0,0,0.75))`, color: '#fff', fontSize: 18, fontWeight: 900 }}>
+      <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', background: ready ? 'rgba(0,0,0,0.08)' : `linear-gradient(135deg, ${color}30, rgba(0,0,0,0.75))`, color: '#fff', fontSize: 18, fontWeight: 900 }}>
         {!ready && '▶'}
       </div>
     </div>
