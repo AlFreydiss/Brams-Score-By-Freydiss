@@ -111,6 +111,7 @@ function ArcNav({ arcs, color, onJump }) {
 
 function VideoThumbnail({ src, episode, color }) {
   const [thumb, setThumb] = useState(null)
+  const [videoReady, setVideoReady] = useState(false)
   const tried = useRef(false)
 
   useEffect(() => {
@@ -133,9 +134,33 @@ function VideoThumbnail({ src, episode, color }) {
 
   if (thumb) return <img src={thumb} alt={`Ép.${episode}`} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
   return (
-    <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(135deg, ${color}28 0%, rgba(0,0,0,0.88) 100%)`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
-      <span style={{ fontFamily: 'var(--display)', fontWeight: 900, fontSize: 13, letterSpacing: '0.15em', color: `${color}77`, textTransform: 'uppercase' }}>Épisode</span>
-      <span style={{ fontFamily: 'var(--display)', fontWeight: 900, fontSize: 48, color: `${color}99`, lineHeight: 1 }}>{episode}</span>
+    <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(135deg, ${color}28 0%, rgba(0,0,0,0.88) 100%)`, overflow: 'hidden' }}>
+      {src && (
+        <video
+          src={encodeURI(src)}
+          muted
+          playsInline
+          preload="metadata"
+          onLoadedMetadata={e => {
+            setVideoReady(true)
+            try { e.currentTarget.currentTime = Math.min(1.5, e.currentTarget.duration || 1.5) } catch {}
+          }}
+          style={{
+            position: 'absolute',
+            inset: 0,
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            opacity: videoReady ? 0.58 : 0,
+            filter: 'saturate(1.08) contrast(1.06)',
+          }}
+        />
+      )}
+      <div style={{ position: 'absolute', inset: 0, background: videoReady ? 'linear-gradient(180deg, rgba(0,0,0,0.12), rgba(0,0,0,0.42))' : 'none' }} />
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+        <span style={{ fontFamily: 'var(--display)', fontWeight: 900, fontSize: 13, letterSpacing: '0.15em', color: videoReady ? 'rgba(255,255,255,0.72)' : `${color}77`, textTransform: 'uppercase', textShadow: '0 2px 10px rgba(0,0,0,0.75)' }}>Épisode</span>
+        <span style={{ fontFamily: 'var(--display)', fontWeight: 900, fontSize: 48, color: videoReady ? '#fff' : `${color}99`, lineHeight: 1, textShadow: '0 2px 18px rgba(0,0,0,0.8)' }}>{episode}</span>
+      </div>
     </div>
   )
 }

@@ -101,6 +101,34 @@ function ProgressBar({ currentTime, duration, buffered, onSeek, color }) {
   )
 }
 
+function EpisodeMiniThumb({ video, color }) {
+  const [ready, setReady] = useState(false)
+  if (video.thumbnail) {
+    return <img src={video.thumbnail} alt={`Ep.${video.episode}`} style={{ width: 96, height: 54, objectFit: 'cover', display: 'block' }} />
+  }
+  if (!video.src) {
+    return <div style={{ width: 96, height: 54, background: 'rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>▶</div>
+  }
+  return (
+    <div style={{ position: 'relative', width: 96, height: 54, background: `${color}18`, overflow: 'hidden' }}>
+      <video
+        src={encSrc(video.src)}
+        muted
+        playsInline
+        preload="metadata"
+        onLoadedMetadata={e => {
+          setReady(true)
+          try { e.currentTarget.currentTime = Math.min(1.5, e.currentTarget.duration || 1.5) } catch {}
+        }}
+        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', opacity: ready ? 0.72 : 0 }}
+      />
+      <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', background: ready ? 'rgba(0,0,0,0.18)' : `linear-gradient(135deg, ${color}30, rgba(0,0,0,0.75))`, color: '#fff', fontSize: 18, fontWeight: 900 }}>
+        {!ready && '▶'}
+      </div>
+    </div>
+  )
+}
+
 // ── Composant principal ───────────────────────────────────────────────────────
 export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce7' }) {
   const videoRef     = useRef(null)
@@ -478,7 +506,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
 
       {/* ── Bande épisodes ── */}
       {videos.length > 1 && (() => {
-        const hasThumbs = videos.some(v => v.thumbnail)
+        const hasThumbs = videos.some(v => v.thumbnail || v.src)
         return (
           <div style={{ flexShrink: 0, display: 'flex', gap: 6, padding: hasThumbs ? '8px 14px' : '7px 14px', background: 'rgba(8,9,11,0.84)', backdropFilter: 'blur(18px)', borderTop: '1px solid rgba(255,255,255,0.05)', overflowX: 'auto', scrollbarWidth: 'thin', alignItems: 'flex-start' }}>
             {videos.map((v, i) => (
@@ -489,10 +517,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
               >
                 {hasThumbs ? (
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    {v.thumbnail
-                      ? <img src={v.thumbnail} alt={`Ep.${v.episode}`} style={{ width: 96, height: 54, objectFit: 'cover', display: 'block' }} />
-                      : <div style={{ width: 96, height: 54, background: 'rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>▶</div>
-                    }
+                    <EpisodeMiniThumb video={v} color={color} />
                     <div style={{ padding: '4px 6px', fontSize: 11, fontWeight: 700, textAlign: 'center', whiteSpace: 'nowrap' }}>
                       {v.season && <span style={{ opacity: 0.55, marginRight: 3 }}>S{v.season} ·</span>}Ép.{v.episode}
                     </div>
