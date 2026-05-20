@@ -129,7 +129,7 @@ function VideoThumbnail({ src, episode, color }) {
     }
     v.addEventListener('loadedmetadata', () => {
       const duration = Number.isFinite(v.duration) ? v.duration : 0
-      v.currentTime = duration > 0 ? Math.min(45, Math.max(2, duration * 0.35)) : 2
+      v.currentTime = duration > 0 ? Math.max(2, duration * 0.5) : 2
     }, { once: true })
     v.addEventListener('seeked', extract, { once: true })
     v.load()
@@ -146,7 +146,7 @@ function VideoThumbnail({ src, episode, color }) {
           preload="metadata"
           onLoadedMetadata={e => {
             const duration = Number.isFinite(e.currentTarget.duration) ? e.currentTarget.duration : 0
-            try { e.currentTarget.currentTime = duration > 0 ? Math.min(45, Math.max(2, duration * 0.35)) : 2 } catch {}
+            try { e.currentTarget.currentTime = duration > 0 ? Math.max(2, duration * 0.5) : 2 } catch {}
           }}
           onSeeked={() => setVideoReady(true)}
           onLoadedData={() => setVideoReady(true)}
