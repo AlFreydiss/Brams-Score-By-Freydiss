@@ -1,5 +1,5 @@
 const SUPABASE_URL = process.env.SUPABASE_REST_URL || process.env.VITE_SUPABASE_URL || 'https://zeqetrmulqndxugfbojd.supabase.co'
-const SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || ''
+const API_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_ANON_KEY || ''
 
 const PERIOD_DAYS = {
   day: 1,
@@ -52,8 +52,8 @@ function computeHours(userData, period, now) {
 }
 
 export default async function handler(req, res) {
-  if (!SERVICE_KEY) {
-    res.status(500).json({ error: 'SUPABASE_SERVICE_KEY missing' })
+  if (!API_KEY) {
+    res.status(500).json({ error: 'SUPABASE key missing' })
     return
   }
 
@@ -64,8 +64,8 @@ export default async function handler(req, res) {
   try {
     const response = await fetch(`${SUPABASE_URL}/rest/v1/users?select=uid,data&limit=1000`, {
       headers: {
-        apikey: SERVICE_KEY,
-        Authorization: `Bearer ${SERVICE_KEY}`,
+        apikey: API_KEY,
+        Authorization: `Bearer ${API_KEY}`,
       },
     })
 
