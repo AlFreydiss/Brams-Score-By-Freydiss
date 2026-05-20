@@ -404,14 +404,28 @@ function TpnHeroClean({ title, tab, readCount, chapterCount, watchedCount, episo
   const pct = total > 0 ? Math.round((done / total) * 100) : 0
   const progressLabel = isVideos ? `${watchedCount} / ${episodeCount} episodes vus` : `${readCount} / ${chapterCount} chapitres lus`
   return (
-    <section style={{ position: 'relative', overflow: 'hidden', borderRadius: 22, padding: '20px 22px', marginBottom: 18, background: 'linear-gradient(135deg, rgba(108,92,231,0.14), rgba(20,83,45,0.10) 48%, rgba(12,13,16,0.88))', border: '1px solid rgba(139,124,255,0.18)', boxShadow: '0 20px 60px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.05)', backdropFilter: 'blur(14px)' }}>
+    <section className="tpn-hero" style={{ position: 'relative', overflow: 'hidden', borderRadius: 22, padding: '20px 22px', marginBottom: 18, background: 'linear-gradient(135deg, rgba(108,92,231,0.14), rgba(20,83,45,0.10) 48%, rgba(12,13,16,0.88))', border: '1px solid rgba(139,124,255,0.18)', boxShadow: '0 20px 60px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.05)', backdropFilter: 'blur(14px)' }}>
       <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 15% 25%, rgba(40,150,95,0.18), transparent 20rem), radial-gradient(circle at 86% 18%, rgba(108,92,231,0.18), transparent 18rem)', pointerEvents: 'none' }} />
       <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: 22, alignItems: 'end' }}>
         <div>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '5px 12px', borderRadius: 999, background: 'rgba(108,92,231,0.12)', border: '1px solid rgba(139,124,255,0.22)', color: '#a9a0ff', fontSize: 10, fontWeight: 900, letterSpacing: '.18em', textTransform: 'uppercase', marginBottom: 12 }}>
             BRAMS ARCHIVES - SECTION TPN
           </div>
-          <h1 style={{ margin: 0, fontFamily: 'var(--body)', fontSize: 'clamp(30px,4.2vw,50px)', lineHeight: .95, color: '#fff', letterSpacing: '-.05em', fontWeight: 900 }}>{title}</h1>
+          <h1 style={{
+            margin: 0,
+            fontFamily: 'var(--pirate)',
+            fontSize: 'clamp(38px, 5vw, 66px)',
+            lineHeight: .88,
+            color: '#fff',
+            letterSpacing: 0,
+            fontWeight: 400,
+            textWrap: 'balance',
+            background: 'linear-gradient(90deg, #efe0d0 0%, #ffc3c3 52%, #7d4db5 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+            textShadow: '0 10px 28px rgba(0,0,0,0.40)',
+          }}>{title}</h1>
           <p style={{ margin: '12px 0 0', color: 'rgba(255,255,255,0.58)', fontSize: 14, lineHeight: 1.7, maxWidth: 540 }}>
             Orphelinat trop parfait, enfants trop lucides, adultes trop calmes. The Promised Neverland avance comme un thriller de survie qui serre la gorge episode apres episode.
           </p>
@@ -644,9 +658,30 @@ export default function GenericMangaPage({ chaptersData, videosData, color, name
             gap: 22px;
             align-items: start;
           }
+          .tpn-hero h1 {
+            max-width: 14ch;
+          }
           @media (max-width: 980px) {
             .tpn-content-grid { grid-template-columns: 1fr; }
             .tpn-info-panel { position: relative !important; top: auto !important; }
+          }
+          @media (max-width: 640px) {
+            .tpn-hero {
+              padding: 18px 16px;
+            }
+            .tpn-hero h1 {
+              max-width: none;
+              font-size: clamp(40px, 12vw, 58px) !important;
+              line-height: .86 !important;
+              letter-spacing: -.045em !important;
+            }
+            .tpn-hero p {
+              font-size: 13px !important;
+              line-height: 1.65 !important;
+            }
+            .tpn-hero > div > div:last-child > div:first-child {
+              grid-template-columns: 1fr;
+            }
           }
         `}</style>
       )}

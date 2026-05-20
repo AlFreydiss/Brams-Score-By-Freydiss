@@ -163,6 +163,8 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   const [buffered,     setBuffered]    = useState(0)
   const [showSubMenu,  setShowSubMenu] = useState(false)
   const [showSpdMenu,  setShowSpdMenu] = useState(false)
+  const [showQualityMenu, setShowQualityMenu] = useState(false)
+  const [qualityLabel, setQualityLabel] = useState('AUTO')
 
   const video   = videos[idx]
   const isLocal = Boolean(video?.src)
@@ -203,6 +205,14 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   }, [playing])
 
   useEffect(() => { showControls() }, [playing])
+
+  useEffect(() => {
+    const onKey = e => {
+      if (e.key === 'Escape') setShowQualityMenu(false)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
 
   // ── Sous-titres — polling RAF sur activeCues ────────────────────────────
   useEffect(() => {
@@ -323,6 +333,16 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
     const v = videoRef.current; if (!v) return
     setVolume(v.volume); setMuted(v.muted)
   }
+  const onMetaChg = () => {
+    const v = videoRef.current; if (!v) return
+    const h = Number(v.videoHeight || 0)
+    if (h >= 2160) setQualityLabel('4K')
+    else if (h >= 1440) setQualityLabel('1440p')
+    else if (h >= 1080) setQualityLabel('1080p')
+    else if (h >= 720) setQualityLabel('720p')
+    else if (h > 0) setQualityLabel(`${h}p`)
+    else setQualityLabel('SD')
+  }
 
   const togglePlay = () => {
     const v = videoRef.current; if (!v) return
@@ -341,6 +361,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
 
   const volIcon = muted || volume === 0 ? '🔇' : volume < 0.5 ? '🔉' : '🔊'
   const subLabel = subsOff ? 'OFF' : hasSubs ? (video.subtitles[subIdx]?.label ?? 'CC') : 'N/A'
+  const qualityHint = isLocal ? qualityLabel : 'AUTO'
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 1200, background: '#000', display: 'flex', flexDirection: 'column' }}>
@@ -384,6 +405,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
               onTimeUpdate={onTimeUpd}
               onDurationChange={onDurChg}
               onVolumeChange={onVolChg}
+              onLoadedMetadata={onMetaChg}
               onEnded={() => {
                 persistProgress({ time: videoRef.current?.duration || duration || 0, duration: videoRef.current?.duration || duration || 0, completed: true })
                 if (idx < videos.length - 1) setIdx(i => i + 1)
@@ -420,6 +442,36 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                 {cueText.replace(/<[^>]*>/g, '')}
               </div>
             )}
+
+            {/* Indicateur de qualité */}
+            <div style={{
+              position: 'absolute',
+              top: 12,
+              right: 12,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '8px 11px',
+              borderRadius: 999,
+              background: 'rgba(12,13,16,0.68)',
+              border: `1px solid ${color}33`,
+              boxShadow: '0 12px 30px rgba(0,0,0,0.38)',
+              backdropFilter: 'blur(14px)',
+              zIndex: 5,
+              pointerEvents: 'none',
+            }}>
+              <span style={{
+                width: 8,
+                height: 8,
+                borderRadius: '50%',
+                background: isLocal ? color : '#6fdc91',
+                boxShadow: isLocal ? `0 0 10px ${color}` : '0 0 10px rgba(111,220,145,0.75)',
+              }} />
+              <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1 }}>
+                <span style={{ fontSize: 9, letterSpacing: '.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.48)', fontWeight: 900 }}>Qualité</span>
+                <span style={{ fontSize: 14, fontWeight: 900, color: '#fff' }}>{qualityHint}</span>
+              </div>
+            </div>
 
             {/* ── Big play icon au centre ── */}
             {!playing && (
@@ -531,6 +583,31 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                           onMouseEnter={e => { if (s !== speed) e.currentTarget.style.background = 'rgba(255,255,255,0.07)' }}
                           onMouseLeave={e => { if (s !== speed) e.currentTarget.style.background = 'none' }}
                         >{s}×</button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ position: 'relative' }}>
+                  <button
+                    onClick={e => { e.stopPropagation(); setShowQualityMenu(q => !q); setShowSpdMenu(false); setShowSubMenu(false) }}
+                    title="Qualité vidéo"
+                    style={{ background: 'rgba(100,217,139,0.10)', border: '1px solid rgba(100,217,139,0.28)', borderRadius: 7, color: '#64d98b', fontSize: 11, fontWeight: 900, padding: '4px 9px', cursor: 'pointer', letterSpacing: '0.05em' }}
+                  >{qualityHint}</button>
+                  {showQualityMenu && (
+                    <div style={{ position: 'absolute', bottom: 'calc(100% + 6px)', right: 0, background: 'rgba(14,15,17,0.98)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, minWidth: 168, padding: '8px 0', boxShadow: '0 12px 40px rgba(0,0,0,0.7)', backdropFilter: 'blur(16px)', zIndex: 20 }}
+                      onClick={e => e.stopPropagation()}
+                    >
+                      <div style={{ padding: '0 14px 8px', color: 'rgba(255,255,255,0.38)', fontSize: 10, fontWeight: 900, letterSpacing: '.12em', textTransform: 'uppercase' }}>
+                        Qualité détectée
+                      </div>
+                      {[
+                        { label: qualityHint, active: true },
+                        { label: isLocal ? 'Source locale' : 'Lecture externe', active: false },
+                      ].map((item, i) => (
+                        <button key={i} onClick={() => setShowQualityMenu(false)}
+                          style={{ width: '100%', padding: '8px 14px', background: item.active ? `${color}18` : 'none', border: 'none', cursor: 'default', textAlign: 'left', color: item.active ? '#64d98b' : '#fff', fontSize: 13, fontWeight: item.active ? 800 : 600, transition: 'background .12s' }}
+                        >{item.label}</button>
                       ))}
                     </div>
                   )}
