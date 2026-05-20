@@ -276,6 +276,7 @@ export default function ProfilePage() {
         .profile-shell {
           min-height: 100vh;
           color: #f3ead7;
+          font-family: var(--body), Inter, system-ui, sans-serif;
           background:
             radial-gradient(circle at 18% 8%, color-mix(in srgb, var(--rank) 28%, transparent), transparent 28rem),
             radial-gradient(circle at 90% 20%, rgba(86, 26, 128, .22), transparent 32rem),
@@ -372,10 +373,14 @@ export default function ProfilePage() {
         }
         .profile-title-block h2 {
           margin: 13px 0 8px;
-          font-family: var(--display), Pirata One, serif;
-          font-size: clamp(34px, 5.2vw, 60px);
-          line-height: .96;
-          color: #fff;
+          font-family: var(--display), Syne, system-ui, sans-serif;
+          font-weight: 900;
+          font-size: clamp(34px, 5.8vw, 66px);
+          line-height: .92;
+          color: transparent;
+          background: linear-gradient(135deg, #ffffff 0%, rgba(255,255,255,.82) 46%, #d4a017 100%);
+          -webkit-background-clip: text;
+          background-clip: text;
         }
         .profile-title-block p {
           max-width: 560px;
@@ -502,8 +507,9 @@ export default function ProfilePage() {
           display: grid;
           place-items: center;
           color: #ffd7b0;
-          font-family: Pirata One, serif;
-          font-size: 22px;
+          font-family: var(--display), Syne, system-ui, sans-serif;
+          font-size: 16px;
+          font-weight: 900;
           background: radial-gradient(circle at 35% 28%, #d15a48, #6e1013 72%);
           box-shadow: inset 0 2px 8px rgba(255,255,255,.22), 0 8px 18px rgba(0,0,0,.32);
           animation: profileSeal 3.6s ease-in-out infinite;
@@ -537,13 +543,16 @@ export default function ProfilePage() {
           color: rgba(238, 204, 132, .55);
         }
         .profile-poster-title {
-          margin-top: 2px;
+          margin-top: 10px;
           text-align: center;
-          font-family: Pirata One, serif;
-          font-size: 54px;
+          font-family: var(--display), Syne, system-ui, sans-serif;
+          font-size: 38px;
+          font-weight: 900;
           line-height: .95;
-          color: #f2ca57;
-          text-shadow: 0 0 22px rgba(242, 202, 87, .24);
+          letter-spacing: .04em;
+          text-transform: uppercase;
+          color: #f4d88a;
+          text-shadow: 0 0 18px rgba(242, 202, 87, .18);
         }
         .profile-poster-photo {
           width: min(218px, 88%);
@@ -563,10 +572,11 @@ export default function ProfilePage() {
         .profile-poster-photo span { font-size: 72px; }
         .profile-poster-name {
           text-align: center;
-          font-family: Pirata One, serif;
+          font-family: var(--display), Syne, system-ui, sans-serif;
           color: #fff4d8;
-          font-size: 30px;
-          line-height: 1;
+          font-size: 24px;
+          font-weight: 900;
+          line-height: 1.08;
           overflow-wrap: anywhere;
         }
         .profile-poster-role {
@@ -632,6 +642,7 @@ export default function ProfilePage() {
           font-size: 18px;
           color: #f2ca57;
           font-weight: 950;
+          font-family: var(--display), Syne, system-ui, sans-serif;
         }
         .profile-main-card {
           position: relative;
@@ -713,16 +724,17 @@ export default function ProfilePage() {
         .profile-head h1 {
           margin: 0;
           color: transparent;
-          font-family: Pirata One, serif;
-          font-size: clamp(44px, 7vw, 86px);
-          line-height: .88;
-          letter-spacing: 0;
+          font-family: var(--display), Syne, system-ui, sans-serif;
+          font-size: clamp(40px, 6.4vw, 76px);
+          font-weight: 900;
+          line-height: .94;
+          letter-spacing: -0.02em;
           max-width: 760px;
           overflow-wrap: anywhere;
-          background: linear-gradient(180deg, #ffffff 0%, #ffe3a1 36%, #c58a26 62%, #fff1bf 100%);
+          background: linear-gradient(135deg, #ffffff 0%, rgba(255,255,255,.86) 42%, color-mix(in srgb, var(--rank) 74%, #d4a017) 100%);
           -webkit-background-clip: text;
           background-clip: text;
-          filter: drop-shadow(0 0 26px color-mix(in srgb, var(--rank) 26%, transparent));
+          filter: drop-shadow(0 0 18px color-mix(in srgb, var(--rank) 18%, transparent));
         }
         .profile-sub {
           margin: 16px 0 0;
@@ -777,6 +789,7 @@ export default function ProfilePage() {
           line-height: .9;
           font-weight: 950;
           letter-spacing: 0;
+          font-family: var(--display), Syne, system-ui, sans-serif;
         }
         .profile-stat small { display: block; text-transform: none; letter-spacing: 0; }
         .profile-progress-card {
@@ -993,6 +1006,8 @@ export default function ProfilePage() {
           gap: 8px;
           margin-bottom: 14px;
           color: #d8a84b;
+          font-family: var(--display), Syne, system-ui, sans-serif;
+          font-weight: 900;
         }
         .profile-panel-title::before {
           content: "";
