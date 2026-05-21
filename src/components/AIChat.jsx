@@ -75,12 +75,12 @@ export default function AIChat() {
       <div className="container">
         <div style={{ textAlign:'center', marginBottom:48 }}>
           <div className={`reveal ${inView?'visible':''}`}>
-            <div className="label">Intelligence artificielle</div>
+            <div className="label">Intelligence artificielle • Grok Codex</div>
             <h2 className="h2" style={{ margin:'0 auto 16px' }}>
-              Brams Score IA
+              Brams Score IA - Grok Codex
             </h2>
             <p className="sub" style={{ margin:'0 auto' }}>
-              Pose tes questions sur One Piece, les animes ou le serveur.
+              Mode Max Performance activé. Pose tes questions sur One Piece, les animes ou le serveur.
             </p>
           </div>
         </div>
@@ -105,10 +105,10 @@ export default function AIChat() {
                 display:'flex', alignItems:'center', justifyContent:'center', fontSize:18,
               }}>🏴‍☠️</div>
               <div>
-                <div style={{ fontWeight:700, fontSize:15, color:'#fff' }}>Brams Score IA</div>
+                <div style={{ fontWeight:700, fontSize:15, color:'#fff' }}>Brams Score IA - Grok Codex</div>
                 <div style={{ fontSize:12, color:'var(--success)', display:'flex', alignItems:'center', gap:5 }}>
                   <span style={{ width:6, height:6, borderRadius:'50%', background:'var(--success)', display:'inline-block', animation:'pulse 2s infinite' }} />
-                  En ligne
+                  En ligne • Max Performance
                 </div>
               </div>
             </div>
@@ -118,7 +118,7 @@ export default function AIChat() {
               {history.length === 0 && (
                 <div style={{ textAlign:'center', paddingTop:60 }}>
                   <div style={{ fontSize:40, marginBottom:16 }}>🏴‍☠️</div>
-                  <p style={{ color:'var(--muted)', fontSize:14 }}>Yo ! Pose-moi n'importe quelle question sur One Piece, les animes ou le serveur Brams.</p>
+                  <p style={{ color:'var(--muted)', fontSize:14 }}>Mode Grok Codex activé (Max Performance). Pose ta question sur One Piece, les animes ou le serveur Brams.</p>
                   <div style={{ display:'flex', flexWrap:'wrap', gap:8, justifyContent:'center', marginTop:24 }}>
                     {SUGGESTIONS.map(s => (
                       <button key={s} onClick={() => send(s)} style={{
@@ -151,7 +151,7 @@ export default function AIChat() {
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && !e.shiftKey && send()}
-                placeholder="Pose ta question…"
+                placeholder="Pose ta question en mode Codex…"
                 maxLength={500}
                 style={{
                   flex:1, background:'rgba(255,255,255,.05)', border:'1px solid rgba(255,255,255,.1)',
@@ -178,7 +178,7 @@ export default function AIChat() {
           </div>
 
           <p style={{ textAlign:'center', marginTop:14, fontSize:12, color:'var(--muted)' }}>
-            L'IA peut se tromper · Ne partage jamais d'infos personnelles
+            Grok Codex • L'IA peut se tromper · Ne partage jamais d'infos personnelles
           </p>
         </div>
       </div>

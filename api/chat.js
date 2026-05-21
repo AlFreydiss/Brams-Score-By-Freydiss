@@ -77,6 +77,39 @@ async function tryGroq(message, chatHistory) {
   return data.choices[0].message.content
 }
 
+async function tryXAI(message, chatHistory) {
+  const key = process.env.XAI_API_KEY
+  if (!key) throw new Error('no_xai_key')
+
+  const messages = [
+    { role: 'system', content: SYSTEM },
+    ...chatHistory.map(m => ({ role: m.role === 'model' ? 'assistant' : 'user', content: m.parts[0].text })),
+    { role: 'user', content: message },
+  ]
+
+  const res = await fetch('https://api.x.ai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${key}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'grok-code-fast-1',
+      messages,
+      max_tokens: 400,
+      temperature: 0.7,
+    }),
+  })
+
+  if (!res.ok) {
+    const err = await res.text()
+    throw new Error(`xai_${res.status}: ${err}`)
+  }
+
+  const data = await res.json()
+  return data.choices[0].message.content
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
@@ -92,25 +125,33 @@ export default async function handler(req, res) {
     .map(m => ({ role: m.role === 'user' ? 'user' : 'model', parts: [{ text: m.text }] }))
 
   try {
-    const reply = await tryWithRotation(message.trim(), chatHistory)
+    // Grok Codex Mode (Max Performance) - Priorité absolue
+    const reply = await tryXAI(message.trim(), chatHistory)
     return res.status(200).json({ reply })
-  } catch (err) {
-    const isRateLimit = err?.status === 429
-      || String(err?.message).includes('quota')
-      || String(err?.message).includes('RESOURCE_EXHAUSTED')
-      || err?.message === 'no_valid_keys'
+  } catch (xaiErr) {
+    console.error('[chat] xai primary failed, falling back:', xaiErr?.message)
 
-    if (isRateLimit) {
-      try {
-        const reply = await tryGroq(message.trim(), chatHistory)
-        return res.status(200).json({ reply })
-      } catch (groqErr) {
-        console.error('[chat] groq fallback failed:', groqErr?.message)
+    try {
+      const reply = await tryWithRotation(message.trim(), chatHistory)
+      return res.status(200).json({ reply })
+    } catch (err) {
+      const isRateLimit = err?.status === 429
+        || String(err?.message).includes('quota')
+        || String(err?.message).includes('RESOURCE_EXHAUSTED')
+        || err?.message === 'no_valid_keys'
+
+      if (isRateLimit) {
+        try {
+          const reply = await tryGroq(message.trim(), chatHistory)
+          return res.status(200).json({ reply })
+        } catch (groqErr) {
+          console.error('[chat] groq fallback failed:', groqErr?.message)
+        }
       }
-    }
 
-    console.error('[chat]', err?.message || err)
-    if (isRateLimit) return res.status(429).json({ error: 'Je reçois trop de messages en ce moment, réessaie dans quelques secondes !' })
-    return res.status(503).json({ error: 'Service unavailable' })
+      console.error('[chat]', err?.message || err)
+      if (isRateLimit) return res.status(429).json({ error: 'Je reçois trop de messages en ce moment, réessaie dans quelques secondes !' })
+      return res.status(503).json({ error: 'Service unavailable' })
+    }
   }
 }
