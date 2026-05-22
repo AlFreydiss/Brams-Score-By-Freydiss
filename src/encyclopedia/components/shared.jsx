@@ -1,6 +1,418 @@
 import { useState } from 'react'
 import { rarityLabels, rarityConfig } from '../data/rarityStyles'
 
+/* ══════════════════════════════════════════════
+   ARC-* NEW COMPONENTS — Terminal d'Archives
+   ══════════════════════════════════════════════ */
+
+const ANIME_IDS = ['one-piece','naruto','dragon-ball','bleach','fullmetal-alchemist','my-hero-academia','the-promised-neverland','dr-stone']
+let _arcIdCounter = 0
+const fmtId = i => `#${String(i + 1).padStart(4, '0')}`
+
+function isSpoilerHiddenArc(item, spoilerSafe, revealed = []) {
+  return spoilerSafe && (item.isMajorSpoiler || item.spoilerLevel >= 4 || item.badge === 'Spoiler') && !revealed.includes(item.id)
+}
+
+/* ── Universe Rail ── */
+export function UniverseRail({ animes, activeId, entriesByAnime, onSelect, onClose }) {
+  return (
+    <nav className="arc-rail" aria-label="Sélection univers">
+      <div className="arc-rail-brand">
+        <em>☠</em> BRAMS ARCHIVES
+      </div>
+      <div className="arc-rail-universes">
+        {animes.map((anime, i) => {
+          const id = String(i + 1).padStart(2, '0')
+          return (
+            <button
+              key={anime.id}
+              type="button"
+              className={`arc-rail-btn ${anime.id === activeId ? 'is-active' : ''}`}
+              onClick={() => onSelect(anime.id)}
+              style={{ '--anime-accent': anime.theme?.accent || '#fff' }}
+            >
+              <span>{anime.emoji || anime.shortName}</span>
+              <span>{anime.shortName || anime.name.split(' ')[0].toUpperCase()}</span>
+              <span className="arc-rail-count">{entriesByAnime[anime.id] || 0}</span>
+            </button>
+          )
+        })}
+      </div>
+      <button className="arc-rail-close" type="button" onClick={onClose} aria-label="Fermer">✕</button>
+    </nav>
+  )
+}
+
+/* ── Control Panel ── */
+export function ControlPanel({
+  anime, entryCount, secretCount,
+  categories, categoryCounts, activeCategory, onCategoryChange,
+  query, onQueryChange, spoilerSafe, onSpoilerToggle,
+}) {
+  const accent = anime.theme?.accent || '#e0524a'
+  const visible = (categories || []).filter(c => !['world-map', 'coming-soon', 'comparator'].includes(c.id))
+  const allCount = categoryCounts.all ?? entryCount
+
+  return (
+    <aside className="arc-panel" aria-label="Panneau de contrôle">
+      {/* Classification header */}
+      <div className="arc-classification">
+        <div className="arc-clearance-badge">
+          <span className="arc-clearance-dot" />
+          NIVEAU 5 RESTREINT
+        </div>
+        <h2 className="arc-anime-title">{anime.name}</h2>
+        {anime.description && <p className="arc-anime-tagline">{anime.description.slice(0, 80)}</p>}
+        <div className="arc-stats-row">
+          <div className="arc-stat-chip">
+            <strong>{entryCount}</strong>
+            <span>Fiches</span>
+          </div>
+          <div className="arc-stat-chip">
+            <strong>{secretCount}</strong>
+            <span>Secrets</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Search */}
+      <div className="arc-panel-search">
+        <div className="arc-search-wrap">
+          <span className="arc-search-icon" aria-hidden="true">⌕</span>
+          <input
+            className="arc-search-input"
+            value={query}
+            onChange={e => onQueryChange(e.target.value)}
+            placeholder="Recherche…"
+            aria-label="Rechercher dans les archives"
+          />
+        </div>
+      </div>
+
+      {/* Category folders */}
+      <div className="arc-panel-label">DOSSIERS</div>
+      <nav className="arc-folder-nav" aria-label="Catégories">
+        <button
+          type="button"
+          className={`arc-folder-btn ${activeCategory === 'all' ? 'is-active' : ''}`}
+          onClick={() => onCategoryChange('all')}
+        >
+          <span className="arc-folder-marker" />
+          <span className="arc-folder-name">Tout</span>
+          <span className="arc-folder-count">{allCount}</span>
+        </button>
+        {visible.map(cat => (
+          <button
+            key={cat.id}
+            type="button"
+            className={`arc-folder-btn ${activeCategory === cat.id ? 'is-active' : ''}`}
+            onClick={() => onCategoryChange(cat.id)}
+          >
+            <span className="arc-folder-marker" />
+            <span className="arc-folder-name">{cat.label}</span>
+            <span className="arc-folder-count">{categoryCounts[cat.id] || 0}</span>
+          </button>
+        ))}
+      </nav>
+
+      {/* Spoiler toggle */}
+      <div className="arc-spoiler-block">
+        <div className="arc-spoiler-info">
+          <span className="arc-spoiler-label">Mode Spoiler</span>
+          <span className="arc-spoiler-desc">Masque les archives sensibles</span>
+        </div>
+        <button
+          className={`arc-spoiler-switch ${spoilerSafe ? 'is-on' : ''}`}
+          type="button"
+          onClick={onSpoilerToggle}
+          aria-pressed={spoilerSafe}
+          aria-label="Basculer mode spoiler"
+        >
+          <span />
+        </button>
+      </div>
+    </aside>
+  )
+}
+
+/* ── Archive Hero + Tabs ── */
+export function ArchiveHero({ anime, activeTab, tabs, onTabChange, onClose }) {
+  return (
+    <div className="arc-hero" role="banner">
+      <div className="arc-hero-watermark" aria-hidden="true">{anime.name}</div>
+      <div className="arc-hero-identity">
+        <span className="arc-hero-pre">Archives Confidentielles</span>
+        <h1 className="arc-hero-title">{anime.name}</h1>
+      </div>
+      <div className="arc-hero-tabs" role="tablist" aria-label="Sections">
+        {tabs.map(tab => (
+          <button
+            key={tab.id}
+            type="button"
+            role="tab"
+            aria-selected={activeTab === tab.id}
+            className={`arc-tab-btn ${activeTab === tab.id ? 'is-active' : ''}`}
+            onClick={() => onTabChange(tab.id)}
+          >
+            <span aria-hidden="true">{tab.icon}</span>
+            {tab.label}
+          </button>
+        ))}
+      </div>
+      <button className="arc-hero-close" type="button" onClick={onClose} aria-label="Fermer">✕</button>
+    </div>
+  )
+}
+
+/* ── Archive Register (list + inspection) ── */
+export function ArchiveRegister({
+  entries, selectedEntry, onSelectEntry,
+  favorites, onToggleFavorite,
+  spoilerSafe, revealed, onReveal,
+  onTagClick, activeTag, onClearTag,
+}) {
+  return (
+    <div className="arc-fiches-layout">
+      {/* LEFT: file register */}
+      <div className="arc-register">
+        <div className="arc-register-head">
+          <span className="arc-register-title">Registre d'Archives</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            {activeTag && (
+              <button type="button" className="arc-active-tag" onClick={onClearTag}>
+                🏷 {activeTag} ✕
+              </button>
+            )}
+            <span className="arc-register-count">{entries.length} dossier{entries.length > 1 ? 's' : ''}</span>
+          </div>
+        </div>
+
+        <div className="arc-col-headers">
+          <span />
+          <span className="arc-col-h">N° Dossier</span>
+          <span className="arc-col-h">Désignation</span>
+          <span className="arc-col-h">Classification</span>
+          <span />
+        </div>
+
+        {!entries.length ? (
+          <div className="arc-register-empty">
+            <div className="arc-register-empty-icon">📂</div>
+            <strong>Aucun dossier trouvé</strong>
+            <span>Modifiez les filtres ou la recherche.</span>
+          </div>
+        ) : (
+          <div className="arc-rows-list">
+            {entries.map((entry, i) => (
+              <ArchiveRow
+                key={entry.id}
+                entry={entry}
+                index={i}
+                isActive={selectedEntry?.id === entry.id}
+                isFavorite={favorites.includes(entry.slug)}
+                spoilerSafe={spoilerSafe}
+                revealed={revealed}
+                onSelect={onSelectEntry}
+                onToggleFavorite={onToggleFavorite}
+                onTagClick={onTagClick}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* RIGHT: inspection panel */}
+      <div className="arc-inspection">
+        {!selectedEntry ? (
+          <div className="arc-inspection-empty">
+            <div className="arc-inspection-emblem">☠</div>
+            <div className="arc-inspection-prompt">Aucun dossier sélectionné</div>
+            <div className="arc-inspection-hint">Sélectionnez un dossier dans le registre pour consulter son contenu classifié.</div>
+          </div>
+        ) : (
+          <ArchiveInspection
+            entry={selectedEntry}
+            index={entries.indexOf(selectedEntry)}
+            isFavorite={favorites.includes(selectedEntry.slug)}
+            spoilerSafe={spoilerSafe}
+            revealed={revealed}
+            onReveal={onReveal}
+            onToggleFavorite={onToggleFavorite}
+            onTagClick={onTagClick}
+          />
+        )}
+      </div>
+    </div>
+  )
+}
+
+/* ── Archive Row ── */
+function ArchiveRow({ entry, index, isActive, isFavorite, spoilerSafe, revealed, onSelect, onToggleFavorite, onTagClick }) {
+  const cfg = rarityConfig[entry.rarity] || rarityConfig.common
+  const hidden = isSpoilerHiddenArc(entry, spoilerSafe, revealed)
+
+  return (
+    <div
+      className={`arc-row ${isActive ? 'is-active' : ''}`}
+      style={{
+        '--rarity-color': cfg.accent,
+        '--rarity-glow': cfg.glow,
+        '--rarity-gradient': cfg.gradient,
+        animationDelay: `${Math.min(index, 20) * 22}ms`,
+      }}
+      onClick={() => onSelect(entry)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') onSelect(entry) }}
+      aria-label={`Ouvrir dossier ${entry.name}`}
+    >
+      <div className="arc-row-bar" aria-hidden="true" />
+
+      <div className="arc-row-id">{fmtId(index)}</div>
+
+      <div className="arc-row-info">
+        {hidden ? (
+          <span className="arc-row-classified-name">███ CLASSIFIÉ ███</span>
+        ) : (
+          <span className="arc-row-name">{entry.name}</span>
+        )}
+        {!hidden && entry.subtitle && <span className="arc-row-sub">{entry.subtitle}</span>}
+      </div>
+
+      <div className="arc-row-rarity">
+        <span aria-hidden="true">{cfg.icon}</span>
+        {rarityLabels[entry.rarity] || entry.rarity}
+      </div>
+
+      <button
+        className={`arc-row-fav ${isFavorite ? 'is-active' : ''}`}
+        type="button"
+        onClick={e => { e.stopPropagation(); onToggleFavorite(entry.slug) }}
+        aria-label={isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+      >
+        ♥
+      </button>
+
+      {hidden && <div className="arc-row-scan" aria-hidden="true" />}
+    </div>
+  )
+}
+
+/* ── Archive Inspection Panel ── */
+function ArchiveInspection({ entry, index, isFavorite, spoilerSafe, revealed, onReveal, onToggleFavorite, onTagClick }) {
+  const cfg = rarityConfig[entry.rarity] || rarityConfig.common
+  const hidden = isSpoilerHiddenArc(entry, spoilerSafe, revealed)
+  const stats = entry.stats || {}
+
+  return (
+    <>
+      <div
+        className="arc-insp-band"
+        style={{ '--rarity-color': cfg.accent, '--rarity-glow': cfg.glow, '--rarity-gradient': cfg.gradient }}
+        aria-hidden="true"
+      />
+
+      <div
+        className={`enc-rarity-card-${entry.rarity}`}
+        style={{ '--rarity-color': cfg.accent, '--rarity-glow': cfg.glow, '--rarity-gradient': cfg.gradient }}
+      >
+        <div className="arc-insp-head">
+          <div className="arc-insp-meta">
+            <span className="arc-insp-file-id">{fmtId(index >= 0 ? index : 0)} — {entry.category?.toUpperCase()}</span>
+            <RarityBadge rarity={entry.rarity} />
+          </div>
+          <h2 className="arc-insp-name">{entry.name}</h2>
+          {entry.subtitle && <div className="arc-insp-sub">{entry.subtitle}</div>}
+        </div>
+
+        {hidden ? (
+          <div className="arc-insp-classified">
+            <div className="arc-insp-class-scan" aria-hidden="true" />
+            <span className="arc-insp-class-icon">🔒</span>
+            <span className="arc-insp-class-stamp">ACCÈS RESTREINT</span>
+            <span className="arc-insp-class-hint">Contenu classifié — spoiler majeur</span>
+            <button type="button" className="arc-insp-reveal-btn" onClick={() => onReveal(entry.id)}>
+              Déclassifier
+            </button>
+          </div>
+        ) : (
+          <div className="arc-insp-body">
+            {entry.description && (
+              <div className="arc-insp-section">
+                <div className="arc-insp-section-title">Description</div>
+                <p className="arc-insp-desc">{entry.description}</p>
+              </div>
+            )}
+
+            {!!Object.keys(stats).length && (
+              <div className="arc-insp-section">
+                <div className="arc-insp-section-title">Statistiques</div>
+                <div className="arc-insp-stats">
+                  {Object.entries(stats).map(([key, value]) => (
+                    <div key={key} className="arc-insp-stat-row">
+                      <span className="arc-insp-stat-label">{key.replace(/([A-Z])/g, ' $1').replace(/^./, c => c.toUpperCase())}</span>
+                      <div className="arc-insp-stat-bar">
+                        <div className="arc-insp-stat-fill" style={{ width: `${Math.max(0, Math.min(100, Number(value) || 0))}%` }} />
+                      </div>
+                      <span className="arc-insp-stat-val">{value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {entry.strengths && (
+              <div className="arc-insp-section">
+                <div className="arc-insp-section-title">Analyse</div>
+                <div className="arc-insp-cols">
+                  <div className="arc-insp-col">
+                    <div className="arc-insp-col-title">Forces</div>
+                    <ul>{(entry.strengths || []).map(s => <li key={s}>{s}</li>)}</ul>
+                  </div>
+                  <div className="arc-insp-col">
+                    <div className="arc-insp-col-title">Faiblesses</div>
+                    <ul>{(entry.weaknesses || []).map(w => <li key={w}>{w}</li>)}</ul>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {entry.awakening && (
+              <div className="arc-insp-section">
+                <div className="arc-insp-section-title">Éveil</div>
+                <div className="arc-insp-awakening">{entry.awakening}</div>
+              </div>
+            )}
+
+            {!!(entry.tags || []).length && (
+              <div className="arc-insp-section">
+                <div className="arc-insp-section-title">Tags</div>
+                <div className="arc-insp-tags">
+                  {(entry.tags || []).map(tag => (
+                    <span key={tag} className="arc-insp-tag" onClick={() => onTagClick?.(tag)} role="button" tabIndex={0}>
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="arc-insp-footer">
+          <button
+            type="button"
+            className={`arc-insp-btn ${isFavorite ? 'is-active' : ''}`}
+            onClick={() => onToggleFavorite(entry.slug)}
+          >
+            {isFavorite ? '♥ Favori' : '♡ Favori'}
+          </button>
+        </div>
+      </div>
+    </>
+  )
+}
+
 export const rarityColors = {
   common:    '#a8b0bd',
   rare:      '#4ea8ff',
