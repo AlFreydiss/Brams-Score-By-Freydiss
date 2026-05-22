@@ -34,16 +34,30 @@ function saveVideoProgress(storageKey, progress) {
 }
 
 const VIDEO_PREFS_KEY = 'brams_video_preferences'
+const DEFAULT_SUBTITLE_STYLE = {
+  size: 19,
+  background: 0.72,
+  color: '#ffffff',
+  outline: true,
+  weight: 600,
+  bottom: 110,
+}
 
 function loadVideoPreferences() {
   try {
-    return JSON.parse(localStorage.getItem(VIDEO_PREFS_KEY) || 'null') || {
+    const prefs = JSON.parse(localStorage.getItem(VIDEO_PREFS_KEY) || 'null') || {
       audioLang: 'ja',
       subtitlesOff: false,
       subtitleLang: 'fr',
     }
+    return {
+      audioLang: prefs.audioLang || 'ja',
+      subtitlesOff: Boolean(prefs.subtitlesOff),
+      subtitleLang: prefs.subtitleLang || 'fr',
+      subtitleStyle: { ...DEFAULT_SUBTITLE_STYLE, ...(prefs.subtitleStyle || {}) },
+    }
   } catch {
-    return { audioLang: 'ja', subtitlesOff: false, subtitleLang: 'fr' }
+    return { audioLang: 'ja', subtitlesOff: false, subtitleLang: 'fr', subtitleStyle: DEFAULT_SUBTITLE_STYLE }
   }
 }
 
@@ -199,6 +213,7 @@ function EpisodeMiniThumb({ video, color }) {
 // ── Composant principal ───────────────────────────────────────────────────────
 export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce7', storageKey = null, onProgressUpdate = null }) {
   const videoRef     = useRef(null)
+  const audioRef     = useRef(null)
   const containerRef = useRef(null)
   const hideTimer    = useRef(null)
   const lastSaveRef  = useRef(0)
@@ -223,6 +238,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   const [qualityLabel, setQualityLabel] = useState('AUTO')
   const [audioIdx,     setAudioIdx]    = useState(0)
   const [audioTrackState, setAudioTrackState] = useState('pending')
+  const [subtitleStyle, setSubtitleStyle] = useState(() => loadVideoPreferences().subtitleStyle)
 
   const video   = videos[idx]
   const isLocal = Boolean(video?.src)
@@ -231,6 +247,8 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
     Array.isArray(video?.audio) && video.audio.length > 0 ? video.audio : []
   ), [video])
   const hasAudioChoices = audioOptions.length > 1
+  const selectedAudio = hasAudioChoices ? audioOptions[audioIdx] : null
+  const usesExternalAudio = Boolean(selectedAudio?.src)
 
   const persistProgress = useCallback((patch = {}) => {
     if (!storageKey || !video) return
@@ -297,8 +315,29 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
     })
   }, [updatePreferences, video?.subtitles])
 
+  const updateSubtitleStyle = useCallback((patch) => {
+    setSubtitleStyle(prev => {
+      const nextStyle = { ...prev, ...patch }
+      updatePreferences({ subtitleStyle: nextStyle })
+      return nextStyle
+    })
+  }, [updatePreferences])
+
   const applyAudioPreference = useCallback((nextAudioIdx) => {
     const v = videoRef.current
+    const external = audioOptions[nextAudioIdx]?.src
+    if (external) {
+      if (v) v.muted = true
+      setAudioTrackState('external')
+      return true
+    }
+
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current.currentTime = v?.currentTime || 0
+    }
+    if (v) v.muted = muted
+
     const nativeTracks = v?.audioTracks
     if (!nativeTracks || !nativeTracks.length) {
       setAudioTrackState(hasAudioChoices ? 'unsupported' : 'none')
@@ -310,7 +349,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
     }
     setAudioTrackState('ready')
     return true
-  }, [hasAudioChoices])
+  }, [audioOptions, hasAudioChoices, muted])
 
   const chooseAudio = useCallback((nextAudioIdx) => {
     setAudioIdx(nextAudioIdx)
@@ -369,6 +408,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
     setSubIdx(nextSubIdx)
     setSubsOff(hasSubs ? Boolean(prefs.subtitlesOff) : true)
     setAudioIdx(nextAudioIdx)
+    setSubtitleStyle(prefs.subtitleStyle)
     setAudioTrackState(hasAudioChoices ? 'pending' : 'none')
   }, [idx, hasAudioChoices, hasSubs, audioOptions, video?.subtitles])
 
@@ -391,7 +431,20 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   // ── Appliquer la vitesse ─────────────────────────────────────────────────
   useEffect(() => {
     if (videoRef.current) videoRef.current.playbackRate = speed
+    if (audioRef.current) audioRef.current.playbackRate = speed
   }, [speed])
+
+  useEffect(() => {
+    const v = videoRef.current
+    const a = audioRef.current
+    if (!usesExternalAudio || !v || !a) return
+    v.muted = true
+    a.volume = volume
+    a.muted = muted
+    a.playbackRate = speed
+    a.currentTime = v.currentTime || 0
+    if (!v.paused) a.play().catch(() => {})
+  }, [audioIdx, idx, muted, speed, usesExternalAudio, volume])
 
   // ── Fullscreen ───────────────────────────────────────────────────────────
   useEffect(() => {
@@ -419,20 +472,41 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
         case 'ArrowUp':     e.preventDefault(); v && (v.volume = Math.min(1, v.volume + 0.1)); break
         case 'ArrowDown':   e.preventDefault(); v && (v.volume = Math.max(0, v.volume - 0.1)); break
         case 'f': case 'F': toggleFullscreen(); break
-        case 'm': case 'M': v && (v.muted = !v.muted); break
+        case 'm': case 'M':
+          if (usesExternalAudio) {
+            const nextMuted = !muted
+            if (audioRef.current) audioRef.current.muted = nextMuted
+            if (v) v.muted = true
+            setMuted(nextMuted)
+          } else if (v) {
+            v.muted = !v.muted
+          }
+          break
         default: break
       }
     }
     window.addEventListener('keydown', fn)
     return () => window.removeEventListener('keydown', fn)
-  }, [onClose])
+  }, [muted, onClose, usesExternalAudio])
 
   // ── Handlers vidéo ───────────────────────────────────────────────────────
-  const onPlay     = () => setPlaying(true)
-  const onPause    = () => { setPlaying(false); setShowCtrl(true); clearTimeout(hideTimer.current) }
+  const onPlay     = () => {
+    setPlaying(true)
+    if (usesExternalAudio && audioRef.current && videoRef.current) {
+      audioRef.current.currentTime = videoRef.current.currentTime || 0
+      audioRef.current.play().catch(() => {})
+    }
+  }
+  const onPause    = () => {
+    setPlaying(false); setShowCtrl(true); clearTimeout(hideTimer.current)
+    if (audioRef.current) audioRef.current.pause()
+  }
   const onTimeUpd  = () => {
     const v = videoRef.current; if (!v) return
     setCurrentTime(v.currentTime)
+    if (usesExternalAudio && audioRef.current && Math.abs(audioRef.current.currentTime - v.currentTime) > 0.35) {
+      audioRef.current.currentTime = v.currentTime
+    }
     if (v.buffered.length) setBuffered(v.buffered.end(v.buffered.length - 1))
     if (storageKey && performance.now() - lastSaveRef.current > 1200) {
       lastSaveRef.current = performance.now()
@@ -446,6 +520,13 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   const onDurChg   = () => { if (videoRef.current) setDuration(videoRef.current.duration || 0) }
   const onVolChg   = () => {
     const v = videoRef.current; if (!v) return
+    if (usesExternalAudio && audioRef.current) {
+      audioRef.current.volume = v.volume
+      audioRef.current.muted = muted
+      setVolume(v.volume)
+      setMuted(audioRef.current.muted)
+      return
+    }
     setVolume(v.volume); setMuted(v.muted)
   }
   const onMetaChg = () => {
@@ -468,11 +549,22 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   const handleVolume = e => {
     const v = videoRef.current; if (!v) return
     const val = parseFloat(e.target.value)
-    v.volume = val; v.muted = val === 0
+    v.volume = val
+    if (usesExternalAudio && audioRef.current) {
+      audioRef.current.volume = val
+      audioRef.current.muted = val === 0
+      v.muted = true
+      setVolume(val)
+      setMuted(val === 0)
+    } else {
+      v.muted = val === 0
+    }
   }
 
   const seek = useCallback((t) => {
-    if (videoRef.current) videoRef.current.currentTime = Math.max(0, Math.min(t, duration))
+    const nextTime = Math.max(0, Math.min(t, duration))
+    if (videoRef.current) videoRef.current.currentTime = nextTime
+    if (audioRef.current) audioRef.current.currentTime = nextTime
   }, [duration])
 
   const volIcon = muted || volume === 0 ? '🔇' : volume < 0.5 ? '🔉' : '🔊'
@@ -524,6 +616,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
               onVolumeChange={onVolChg}
               onLoadedMetadata={onMetaChg}
               onEnded={() => {
+                if (audioRef.current) audioRef.current.pause()
                 persistProgress({ time: videoRef.current?.duration || duration || 0, duration: videoRef.current?.duration || duration || 0, completed: true })
                 if (idx < videos.length - 1) setIdx(i => i + 1)
               }}
@@ -537,6 +630,15 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                 <track key={i} kind="subtitles" src={sub.src} srcLang={sub.srclang || 'fr'} label={sub.label} />
               ))}
             </video>
+            {selectedAudio?.src && (
+              <audio
+                ref={audioRef}
+                key={selectedAudio.src}
+                src={selectedAudio.src}
+                preload="auto"
+                crossOrigin="anonymous"
+              />
+            )}
 
             {/* ── Sous-titres overlay ── */}
             {cueText && !subsOff && (
@@ -546,11 +648,13 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                 left: '50%', transform: 'translateX(-50%)',
                 maxWidth: '82%', textAlign: 'center',
                 padding: '5px 16px',
-                background: 'rgba(0,0,0,0.72)',
+                background: `rgba(0,0,0,${subtitleStyle.background})`,
                 borderRadius: 6,
-                color: '#fff', fontSize: 19, fontWeight: 600,
+                color: subtitleStyle.color,
+                fontSize: subtitleStyle.size,
+                fontWeight: subtitleStyle.weight,
                 lineHeight: 1.55,
-                textShadow: '0 1px 6px rgba(0,0,0,0.9), 0 2px 12px rgba(0,0,0,0.7)',
+                textShadow: subtitleStyle.outline ? '0 1px 6px rgba(0,0,0,0.9), 0 2px 12px rgba(0,0,0,0.7)' : 'none',
                 whiteSpace: 'pre-line',
                 transition: 'bottom .2s ease',
                 pointerEvents: 'none',
@@ -635,7 +739,18 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                 </Btn>
 
                 {/* Volume */}
-                <Btn onClick={() => { const v = videoRef.current; if (v) v.muted = !v.muted }} title="Muet (M)">
+                <Btn onClick={() => {
+                  const v = videoRef.current
+                  const a = audioRef.current
+                  const nextMuted = !muted
+                  if (usesExternalAudio) {
+                    if (a) a.muted = nextMuted
+                    if (v) v.muted = true
+                    setMuted(nextMuted)
+                  } else if (v) {
+                    v.muted = nextMuted
+                  }
+                }} title="Muet (M)">
                   {volIcon}
                 </Btn>
                 <input
@@ -679,6 +794,32 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                           onMouseLeave={e => e.currentTarget.style.background = 'none'}
                         >{item.label}</button>
                       ))}
+                      <div style={{ height: 1, margin: '5px 0', background: 'rgba(255,255,255,0.08)' }} />
+                      <div style={{ padding: '7px 14px 5px', color: 'rgba(255,255,255,0.42)', fontSize: 10, fontWeight: 900, letterSpacing: '.12em', textTransform: 'uppercase' }}>
+                        Apparence
+                      </div>
+                      {[
+                        ['A-', () => updateSubtitleStyle({ size: Math.max(14, subtitleStyle.size - 2) })],
+                        ['A+', () => updateSubtitleStyle({ size: Math.min(34, subtitleStyle.size + 2) })],
+                        ['Fond -', () => updateSubtitleStyle({ background: Math.max(0, Number((subtitleStyle.background - 0.12).toFixed(2))) })],
+                        ['Fond +', () => updateSubtitleStyle({ background: Math.min(0.95, Number((subtitleStyle.background + 0.12).toFixed(2))) })],
+                        [subtitleStyle.outline ? 'Contour ON' : 'Contour OFF', () => updateSubtitleStyle({ outline: !subtitleStyle.outline })],
+                        [subtitleStyle.weight >= 800 ? 'Texte normal' : 'Texte gras', () => updateSubtitleStyle({ weight: subtitleStyle.weight >= 800 ? 600 : 800 })],
+                      ].map(([label, action]) => (
+                        <button key={label} onClick={action}
+                          style={{ width: '50%', display: 'inline-block', padding: '7px 10px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'center', color: '#fff', fontSize: 12, fontWeight: 700 }}
+                          onMouseEnter={e => e.currentTarget.style.background = `${color}18`}
+                          onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                        >{label}</button>
+                      ))}
+                      <div style={{ display: 'flex', gap: 5, padding: '6px 10px 8px' }}>
+                        {['#ffffff', '#ffe66d', '#8be9ff'].map(c => (
+                          <button key={c} onClick={() => updateSubtitleStyle({ color: c })}
+                            title={c}
+                            style={{ flex: 1, height: 22, borderRadius: 5, border: `1px solid ${subtitleStyle.color === c ? color : 'rgba(255,255,255,0.2)'}`, background: c, cursor: 'pointer' }}
+                          />
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
