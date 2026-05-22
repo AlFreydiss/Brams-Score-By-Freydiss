@@ -55,6 +55,7 @@ const BramsTraitorPage   = lazy(() => import('./components/BramsTraitorPage.jsx'
 const StaffPanel         = lazy(() => import('./components/StaffPanel.jsx'))
 const BlindTestPage      = lazy(() => import('./components/BlindTestPage.jsx'))
 const BlindTestLeaderboard = lazy(() => import('./components/BlindTestLeaderboard.jsx'))
+const TierListPage       = lazy(() => import('./components/TierListPage.jsx'))
 function AMVBackground() {
   const videoRef = useRef(null)
   const [muted, setMuted]     = useState(true)
@@ -321,6 +322,9 @@ export default function App() {
         {/* Blind Test */}
         <Route path="/blind-test" element={<PageLayout><BlindTestPage /></PageLayout>} />
         <Route path="/blind-test/leaderboard" element={<PageLayout><BlindTestLeaderboard /></PageLayout>} />
+
+        {/* Tier List */}
+        <Route path="/tier-list" element={<PageLayout><TierListPage /></PageLayout>} />
 
         {/* Homepage */}
         <Route path="/*" element={mainContent} />

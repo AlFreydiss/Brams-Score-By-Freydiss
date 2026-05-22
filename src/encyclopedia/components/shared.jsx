@@ -224,11 +224,7 @@ export function ArchiveRegister({
       {/* RIGHT: inspection panel */}
       <div className="arc-inspection">
         {!selectedEntry ? (
-          <div className="arc-inspection-empty">
-            <div className="arc-inspection-emblem">☠</div>
-            <div className="arc-inspection-prompt">Aucun dossier sélectionné</div>
-            <div className="arc-inspection-hint">Sélectionnez un dossier dans le registre pour consulter son contenu classifié.</div>
-          </div>
+          <DefaultInspectionPanel entries={entries} />
         ) : (
           <ArchiveInspection
             entry={selectedEntry}
@@ -253,7 +249,7 @@ function ArchiveRow({ entry, index, isActive, isFavorite, spoilerSafe, revealed,
 
   return (
     <div
-      className={`arc-row ${isActive ? 'is-active' : ''}`}
+      className={`arc-row ${isActive ? 'is-active' : ''} ${hidden ? 'is-classified' : ''}`}
       style={{
         '--rarity-color': cfg.accent,
         '--rarity-glow': cfg.glow,
@@ -294,6 +290,82 @@ function ArchiveRow({ entry, index, isActive, isFavorite, spoilerSafe, revealed,
       </button>
 
       {hidden && <div className="arc-row-scan" aria-hidden="true" />}
+    </div>
+  )
+}
+
+/* ── Default Inspection Panel (DOSSIER PRIORITAIRE) ── */
+function DefaultInspectionPanel({ entries }) {
+  const featured = entries.find(e =>
+    !e.isMajorSpoiler && !isSpoilerHiddenArc(e, true, []) &&
+    (e.rarity === 'legendary' || e.rarity === 'mythic')
+  ) || entries.find(e => !e.isMajorSpoiler) || entries[0]
+
+  if (!featured) {
+    return (
+      <div className="arc-inspection-empty">
+        <div className="arc-inspection-emblem">☠</div>
+        <div className="arc-inspection-prompt">Archives Confidentielles</div>
+        <div className="arc-inspection-hint">Aucun dossier disponible pour cette sélection.</div>
+      </div>
+    )
+  }
+
+  const cfg = rarityConfig[featured.rarity] || rarityConfig.common
+  const stats = featured.stats || {}
+  const statEntries = Object.entries(stats).slice(0, 3)
+
+  return (
+    <div
+      className="arc-insp-default"
+      style={{ '--rarity-color': cfg.accent, '--rarity-glow': cfg.glow, '--rarity-gradient': cfg.gradient }}
+    >
+      <div className="arc-insp-default-wm" aria-hidden="true">CLASSIFIED</div>
+
+      <div className="arc-insp-default-stamp">
+        <span className="arc-insp-default-org">Gouvernement Mondial — Division Renseignement</span>
+        <span className="arc-insp-default-title-stamp">DOSSIER PRIORITAIRE</span>
+        <span className="arc-insp-default-access">NIVEAU A · ACCÈS RESTREINT</span>
+      </div>
+
+      <div className="arc-insp-default-hero">
+        <span className="arc-insp-default-icon" aria-hidden="true">{cfg.icon}</span>
+        <div className="arc-insp-default-name">{featured.name}</div>
+        <RarityBadge rarity={featured.rarity} />
+        {featured.subtitle && <span className="arc-insp-default-sub">{featured.subtitle}</span>}
+      </div>
+
+      <div className="arc-insp-default-divider" />
+
+      {statEntries.length > 0 && (
+        <div className="arc-insp-default-stats">
+          {statEntries.map(([key, val]) => (
+            <div key={key} className="arc-insp-default-stat">
+              <span>{key.replace(/([A-Z])/g, ' $1').replace(/^./, c => c.toUpperCase())}</span>
+              <div className="arc-insp-default-stat-bar">
+                <div style={{ width: `${Math.max(0, Math.min(100, Number(val) || 0))}%` }} />
+              </div>
+              <span>{val}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {featured.description && (
+        <div className="arc-insp-default-desc">
+          {featured.description.length > 130
+            ? featured.description.slice(0, 130) + '…'
+            : featured.description}
+        </div>
+      )}
+
+      <div className="arc-insp-default-hint">
+        Sélectionnez un dossier dans le registre pour l'ouvrir
+      </div>
+
+      <div className="arc-insp-default-coords">
+        LAT: 34°12′N · LON: 128°47′E · SECT: GRAND-LINE · REF: ARCH-001
+      </div>
     </div>
   )
 }

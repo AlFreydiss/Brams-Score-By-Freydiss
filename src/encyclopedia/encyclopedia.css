@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cinzel:wght@400;600;700;900&family=Rajdhani:wght@400;500;600;700&display=swap');
+
 /* ══════════════════════════════════════════════
    BRAMS ARCHIVES — Encyclopedia ULTRA PREMIUM
    Void Dark · Poneglyph · Neon Rarity System
@@ -581,7 +583,7 @@
 .arc-col-headers {
   flex-shrink: 0;
   display: grid;
-  grid-template-columns: 3px 60px 1fr 100px 28px;
+  grid-template-columns: 3px 56px 1fr 112px 30px;
   gap: 0 8px;
   align-items: center;
   padding: 5px 14px 5px 0;
@@ -606,39 +608,46 @@
 /* Individual row */
 .arc-row {
   display: grid;
-  grid-template-columns: 3px 60px 1fr 100px 28px;
+  grid-template-columns: 3px 56px 1fr 112px 30px;
   gap: 0 8px;
   align-items: center;
   padding: 0 14px 0 0;
-  min-height: 48px;
+  min-height: 66px;
   border-bottom: 1px solid rgba(255,255,255,0.03);
   cursor: pointer;
   position: relative;
   animation: enc-card-in 0.28s ease both;
-  transition: background 0.14s;
+  transition: background 0.14s ease, transform 0.15s ease;
 }
 
-.arc-row:hover { background: rgba(255,255,255,0.022); }
+.arc-row:hover { background: rgba(255,255,255,0.028); transform: translateX(3px); }
 
 .arc-row.is-active {
-  background: color-mix(in srgb, var(--rarity-color, #fff) 5%, rgba(255,255,255,0.015));
+  background: color-mix(in srgb, var(--rarity-color, #fff) 7%, rgba(255,255,255,0.018));
+  transform: translateX(4px);
 }
 .arc-row.is-active::after {
   content: '';
   position: absolute; right: 0; top: 0; bottom: 0; width: 2px;
   background: var(--rarity-color, var(--enc-accent));
-  box-shadow: 0 0 8px var(--rarity-color, var(--enc-accent));
+  box-shadow: 0 0 10px var(--rarity-color, var(--enc-accent));
 }
 
+.arc-row.is-classified { background: rgba(255,61,77,0.025); }
+.arc-row.is-classified:hover { background: rgba(255,61,77,0.05); transform: translateX(2px); }
+
 .arc-row-bar {
-  height: 100%; min-height: 48px;
+  height: 100%; min-height: 66px;
   background: var(--rarity-color, rgba(255,255,255,0.3));
-  opacity: 0.55;
+  opacity: 0.2;
+  transition: opacity 0.15s ease, box-shadow 0.15s ease;
 }
+.arc-row:hover .arc-row-bar { opacity: 0.75; box-shadow: 3px 0 12px var(--rarity-glow, transparent); }
+.arc-row.is-active .arc-row-bar { opacity: 1; box-shadow: 3px 0 16px var(--rarity-glow, transparent); }
 
 .arc-row-id {
   font-size: 9px; font-weight: 700;
-  color: rgba(255,255,255,0.18);
+  color: rgba(255,255,255,0.16);
   font-family: 'Rajdhani', sans-serif;
   letter-spacing: 0.06em;
   padding-left: 6px; white-space: nowrap;
@@ -649,39 +658,45 @@
 .arc-row-name {
   display: block;
   font-family: 'Cinzel', serif;
-  font-size: 12px; font-weight: 700;
-  color: #fff;
+  font-size: 13px; font-weight: 700;
+  color: rgba(255,255,255,0.88);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   line-height: 1.2;
+  transition: color 0.14s;
 }
+.arc-row:hover .arc-row-name { color: #fff; }
 
 .arc-row-sub {
   display: block;
-  font-size: 9px; color: rgba(255,255,255,0.30);
+  font-size: 10px; color: rgba(255,255,255,0.34);
   font-family: 'Rajdhani', sans-serif; font-weight: 500;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  margin-top: 1px;
+  margin-top: 2px;
 }
 
 .arc-row-classified-name {
   font-family: 'Rajdhani', sans-serif;
-  font-size: 11px; font-weight: 700;
-  color: rgba(248,113,113,0.55); letter-spacing: 0.12em;
+  font-size: 12px; font-weight: 700;
+  color: rgba(255,61,77,0.42); letter-spacing: 0.18em;
+  text-transform: uppercase;
 }
 
 .arc-row-rarity {
   display: inline-flex; align-items: center; gap: 3px;
-  padding: 2px 6px;
-  border-radius: 3px;
+  padding: 3px 8px;
+  border-radius: 2px;
   border: 1px solid color-mix(in srgb, var(--rarity-color) 44%, transparent);
-  background: color-mix(in srgb, var(--rarity-color) 8%, transparent);
+  background: color-mix(in srgb, var(--rarity-color) 9%, transparent);
   color: var(--rarity-color);
-  font-size: 7px; font-weight: 700;
-  letter-spacing: 0.18em; text-transform: uppercase;
+  font-size: 8px; font-weight: 700;
+  letter-spacing: 0.16em; text-transform: uppercase;
   font-family: 'Rajdhani', sans-serif;
   white-space: nowrap;
-  box-shadow: 0 0 5px color-mix(in srgb, var(--rarity-color) 16%, transparent);
+  box-shadow: 0 0 7px color-mix(in srgb, var(--rarity-color) 20%, transparent);
+  transition: box-shadow 0.15s;
 }
+.arc-row:hover .arc-row-rarity { box-shadow: 0 0 14px var(--rarity-glow, transparent); }
+.arc-row.is-active .arc-row-rarity { box-shadow: 0 0 18px var(--rarity-glow, transparent); }
 
 .arc-row-fav {
   width: 26px; height: 26px;
@@ -730,7 +745,7 @@
   scrollbar-color: rgba(255,255,255,0.06) transparent;
 }
 
-/* Inspection: empty placeholder */
+/* Inspection: empty placeholder (fallback) */
 .arc-inspection-empty {
   flex: 1; display: flex; flex-direction: column;
   align-items: center; justify-content: center;
@@ -746,6 +761,151 @@
 .arc-inspection-hint {
   font-size: 11px; color: rgba(255,255,255,0.18);
   font-family: 'Rajdhani', sans-serif; font-weight: 500; line-height: 1.5;
+}
+
+/* ── Default Inspection Panel (DOSSIER PRIORITAIRE) ── */
+.arc-insp-default {
+  flex: 1; display: flex; flex-direction: column;
+  position: relative; overflow: hidden;
+}
+
+.arc-insp-default-wm {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%) rotate(-35deg);
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 50px; color: rgba(159,18,57,0.04);
+  letter-spacing: 0.3em; white-space: nowrap;
+  pointer-events: none; user-select: none; z-index: 0;
+}
+
+.arc-insp-default-stamp {
+  position: relative; z-index: 1;
+  padding: 16px 16px 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  text-align: center;
+}
+
+.arc-insp-default-org {
+  display: block;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 7px; font-weight: 700;
+  letter-spacing: 0.3em; text-transform: uppercase;
+  color: rgba(159,18,57,0.45); margin-bottom: 10px;
+}
+
+.arc-insp-default-title-stamp {
+  display: inline-block;
+  font-family: 'Cinzel', serif;
+  font-size: 12px; font-weight: 700;
+  letter-spacing: 0.25em; text-transform: uppercase;
+  color: rgba(159,18,57,0.75);
+  border: 1px solid rgba(159,18,57,0.22);
+  padding: 5px 14px; border-radius: 2px;
+  background: rgba(159,18,57,0.05);
+  transform: rotate(-1deg); display: inline-block;
+  box-shadow: inset 0 0 10px rgba(159,18,57,0.06);
+}
+
+.arc-insp-default-access {
+  display: block;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 7px; font-weight: 700;
+  letter-spacing: 0.28em; text-transform: uppercase;
+  color: rgba(255,255,255,0.10); margin-top: 9px;
+}
+
+.arc-insp-default-hero {
+  position: relative; z-index: 1;
+  padding: 20px 16px 16px; text-align: center;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+.arc-insp-default-icon {
+  font-size: 42px; display: block; margin-bottom: 13px;
+  filter: drop-shadow(0 0 18px var(--rarity-glow, rgba(255,255,255,0.2)));
+  animation: df-float 6s ease-in-out infinite;
+}
+
+.arc-insp-default-name {
+  font-family: 'Cinzel', serif;
+  font-size: 15px; font-weight: 700;
+  color: rgba(255,255,255,0.88); letter-spacing: 0.05em;
+  margin-bottom: 10px; line-height: 1.3;
+}
+
+.arc-insp-default-sub {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 9px; font-weight: 700;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--rarity-color, #f8c14a);
+  text-shadow: 0 0 12px var(--rarity-glow, transparent);
+  margin-top: 9px; display: block;
+}
+
+.arc-insp-default-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--rarity-color, rgba(255,255,255,0.1)), transparent);
+  opacity: 0.25;
+}
+
+.arc-insp-default-stats {
+  position: relative; z-index: 1;
+  padding: 11px 16px; border-bottom: 1px solid rgba(255,255,255,0.04);
+  display: grid; gap: 8px;
+}
+
+.arc-insp-default-stat {
+  display: grid;
+  grid-template-columns: 88px 1fr 28px;
+  gap: 8px; align-items: center;
+}
+.arc-insp-default-stat > span:first-child {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 9px; color: rgba(255,255,255,0.28); font-weight: 600;
+}
+.arc-insp-default-stat-bar {
+  height: 4px; border-radius: 2px;
+  background: rgba(255,255,255,0.06); overflow: hidden;
+}
+.arc-insp-default-stat-bar > div {
+  height: 100%;
+  background: var(--rarity-gradient, linear-gradient(90deg, var(--rarity-color), var(--rarity-color)));
+  box-shadow: 0 0 6px var(--rarity-glow, transparent);
+  border-radius: 2px;
+}
+.arc-insp-default-stat > span:last-child {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 9px; color: var(--rarity-color, #f8c14a); font-weight: 700; text-align: right;
+}
+
+.arc-insp-default-desc {
+  position: relative; z-index: 1;
+  padding: 12px 14px 12px 16px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 12px; font-weight: 500; line-height: 1.65;
+  color: rgba(255,255,255,0.28);
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  border-left: 2px solid var(--rarity-color, rgba(255,255,255,0.1));
+  margin: 0;
+}
+
+.arc-insp-default-hint {
+  position: relative; z-index: 1;
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  padding: 14px 20px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 9px; font-weight: 600;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: rgba(255,255,255,0.08); text-align: center;
+}
+
+.arc-insp-default-coords {
+  position: relative; z-index: 1;
+  padding: 6px 16px 12px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 7px; font-weight: 600;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: rgba(255,255,255,0.06); text-align: center;
 }
 
 /* Inspection: content */
@@ -959,8 +1119,6 @@
 }
 
 /* enc-* kept for EntryDetailPanel / TimelineTab / SecretFilesTab / ToolsTab */
-
-@import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cinzel:wght@400;600;700;900&family=Rajdhani:wght@400;500;600;700&display=swap');
 
 /* ── Keyframes ── */
 @keyframes enc-card-in {

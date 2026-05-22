@@ -50,13 +50,13 @@ function BlindTestBanner({ onClick, active }) {
         <div style={{ fontSize:30, filter:`drop-shadow(0 0 12px ${VIOLET}66)`, flexShrink:0 }}>🎵</div>
         <div style={{ flex:1, minWidth:0 }}>
           <div style={{ fontSize:9, fontWeight:800, letterSpacing:'.22em', color:VIOLET, textTransform:'uppercase', marginBottom:3 }}>
-            Bientôt disponible
+            Disponible
           </div>
           <div style={{ fontSize:14, fontWeight:800, color:'#fff', marginBottom:2 }}>
             Blind Tests musicaux
           </div>
           <div style={{ fontSize:12, color:'rgba(255,255,255,0.38)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-            Sessions OST One Piece &amp; mangas — testez vos connaissances musicales en vocal
+            Openings anime disponibles sur le site — lance le blind test directement
           </div>
         </div>
         <div style={{
