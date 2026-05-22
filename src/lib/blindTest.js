@@ -89,14 +89,14 @@ export const LOCAL_TRACKS = [
   {
     id: 'bc-op10',
     anime:      'Black Clover',
-    title:      'Highest Peak',
+    title:      'Black Catcher',
     type:       'OP',
-    episode:    'Opening 10',
+    episode:    'Opening 14',
     url:        '/blind-test/bc-op10.mp4',
     difficulty: 'moyen',
     color:      '#4ade80',
     emoji:      '🍀',
-    aliases:    ['black clover', 'highest peak', 'bc', 'asta'],
+    aliases:    ['black clover', 'black catcher', 'bc', 'asta'],
   },
   {
     id: 'sao-op1',

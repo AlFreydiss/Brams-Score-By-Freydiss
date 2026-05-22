@@ -28,6 +28,7 @@ const BT_CSS = `
   @keyframes btCountShake { 0%,100%{transform:scale(1) rotate(0deg)} 20%{transform:scale(1.08) rotate(-3deg)} 40%{transform:scale(1.04) rotate(3deg)} 60%{transform:scale(1.06) rotate(-2deg)} 80%{transform:scale(1.02) rotate(2deg)} }
   @keyframes btCountFlash { 0%,100%{opacity:1} 25%{opacity:0.3} 50%{opacity:1} 75%{opacity:0.5} }
   @keyframes btRingOut    { 0%{transform:scale(0.6);opacity:0.9} 100%{transform:scale(2.8);opacity:0} }
+  @keyframes btGradPulse  { 0%,100%{opacity:0.55} 50%{opacity:0.85} }
   input[type=range].bt-vol { -webkit-appearance:none; appearance:none; background:transparent; writing-mode:vertical-lr; direction:rtl; height:90px; width:4px; cursor:pointer; }
   input[type=range].bt-vol::-webkit-slider-runnable-track { background:rgba(255,255,255,0.14); border-radius:4px; }
   input[type=range].bt-vol::-webkit-slider-thumb { -webkit-appearance:none; width:14px; height:14px; border-radius:50%; background:#d4a017; margin-left:-5px; }
@@ -242,6 +243,7 @@ export default function BlindTestPage() {
   const [countdown,    setCountdown]    = useState(3)
   const [guessEnabled, setGuessEnabled] = useState(false)
   const [volume,       setVolume]       = useState(0.7)
+  const [videoFailed,  setVideoFailed]  = useState(false)
 
   const [roomCode,    setRoomCode]    = useState('')
   const [roomInput,   setRoomInput]   = useState('')
@@ -312,8 +314,9 @@ export default function BlindTestPage() {
     v.currentTime = 0
     v.volume = volume
     v.load()
+    setVideoFailed(false)
     // Pre-play within user-gesture context to unlock autoplay, then pause for countdown
-    v.play().then(() => v.pause()).catch(() => {})
+    v.play().then(() => v.pause()).catch(() => setVideoFailed(true))
   }
 
   function syncRoomPayload(roomRow) {
@@ -472,6 +475,7 @@ export default function BlindTestPage() {
         ref={videoRef}
         playsInline
         loop
+        onError={() => setVideoFailed(true)}
         style={{
           position: 'fixed', inset: 0, width: '100%', height: '100%',
           objectFit: 'cover', zIndex: 1,
@@ -484,10 +488,19 @@ export default function BlindTestPage() {
         }}
       />
 
-      {/* ── Dark overlay over video ── */}
+      {/* ── Gradient fallback when video codec unsupported ── */}
+      {isPlaying && videoFailed && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 1, pointerEvents: 'none',
+          background: `radial-gradient(ellipse 80% 60% at 50% 40%, ${activeTrack.color}55 0%, rgba(7,9,14,0.97) 68%)`,
+          animation: 'btGradPulse 3.5s ease-in-out infinite',
+        }} />
+      )}
+
+      {/* ── Dark overlay over video / gradient ── */}
       <div style={{
         position: 'fixed', inset: 0, zIndex: 2,
-        background: `rgba(7,9,14,${overlayAlpha})`,
+        background: `rgba(7,9,14,${videoFailed && isPlaying ? overlayAlpha - 0.30 : overlayAlpha})`,
         transition: 'background 1.4s ease',
         pointerEvents: 'none',
       }} />
