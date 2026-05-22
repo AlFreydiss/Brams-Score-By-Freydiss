@@ -210,6 +210,10 @@ export default function AnimeEncyclopediaPage({ onClose }) {
             tabs={tabs}
             onTabChange={setActiveTab}
             onClose={onClose}
+            entryCount={baseEntries.length}
+            favoritesCount={favoriteSlugs.length}
+            classifiedCount={baseEntries.filter(e => e.rarity === 'forbidden' || e.rarity === 'secret').length}
+            legendaryCount={baseEntries.filter(e => e.rarity === 'legendary' || e.rarity === 'mythic').length}
           />
 
           <div className="arc-content">
