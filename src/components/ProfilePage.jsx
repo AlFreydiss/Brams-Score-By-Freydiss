@@ -166,11 +166,13 @@ export default function ProfilePage() {
   useEffect(() => {
     let dead = false
     setLoading(true)
-    Promise.all([fetchMemberProfile(discordId), fetchBerryShopState(discordId)])
-      .then(([profile, shop]) => {
-        if (!dead) { setMember(profile); setShopData(shop); setLoading(false) }
-      })
+    // Profile and shop fetched independently — shop failure must NOT hide the profile
+    fetchMemberProfile(discordId)
+      .then(profile => { if (!dead) { setMember(profile); setLoading(false) } })
       .catch(() => { if (!dead) setLoading(false) })
+    fetchBerryShopState(discordId)
+      .then(shop => { if (!dead) setShopData(shop) })
+      .catch(() => {})
     return () => { dead = true }
   }, [discordId])
 

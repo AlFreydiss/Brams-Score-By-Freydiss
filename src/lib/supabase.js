@@ -60,14 +60,33 @@ export async function fetchStats() {
 
 export async function fetchMemberProfile(discordId) {
   if (!supabase) return null
-  const { data, error } = await callTopClassement(2000, 'all')
-  if (error || !data) return null
-  const idx = data.findIndex(m => String(m.uid) === String(discordId))
-  if (idx === -1) return null
+  const id = String(discordId)
+
+  // Try multiple periods — week first (user likely active), then month, then all-time
+  for (const period of ['week', 'month', 'all']) {
+    const { data, error } = await callTopClassement(500, period)
+    if (error || !data) continue
+    const idx = data.findIndex(m => String(m.uid) === id)
+    if (idx !== -1) return { ...data[idx], rank: idx + 1, total: data.length }
+  }
+
+  // Last resort: direct lookup from users table (works even with 0 vocal hours)
+  const { data: user } = await supabase
+    .from('users')
+    .select('uid, data')
+    .eq('uid', id)
+    .maybeSingle()
+
+  if (!user?.data) return null
+  const d = user.data
   return {
-    ...data[idx],
-    rank: idx + 1,
-    total: data.length,
+    uid: id,
+    username: d.username || `Pirate #${id.slice(-5)}`,
+    avatar_url: d.avatar_url || null,
+    vocal_h: 0,
+    berrys: parseInt(d.berrys || 0) || 0,
+    rank: '?',
+    total: '?',
   }
 }
 
