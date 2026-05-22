@@ -8,5 +8,6 @@ dist/
 
 # Gros fichiers médias — pas dans git
 public/anime/
+public/blind-test/*.mp4
 *.mkv
 .vercel
