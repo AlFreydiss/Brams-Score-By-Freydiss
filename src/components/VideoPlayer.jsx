@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 
 function fmt(sec) {
   const t = Math.max(0, Math.floor(sec || 0))
@@ -32,6 +32,45 @@ function saveVideoProgress(storageKey, progress) {
   if (!storageKey) return
   try { localStorage.setItem(storageKey, JSON.stringify(progress)) } catch {}
 }
+
+const VIDEO_PREFS_KEY = 'brams_video_preferences'
+
+function loadVideoPreferences() {
+  try {
+    return JSON.parse(localStorage.getItem(VIDEO_PREFS_KEY) || 'null') || {
+      audioLang: 'ja',
+      subtitlesOff: false,
+      subtitleLang: 'fr',
+    }
+  } catch {
+    return { audioLang: 'ja', subtitlesOff: false, subtitleLang: 'fr' }
+  }
+}
+
+function saveVideoPreferences(prefs) {
+  try { localStorage.setItem(VIDEO_PREFS_KEY, JSON.stringify(prefs)) } catch {}
+}
+
+function langMatches(value = '', target = '') {
+  const v = String(value).toLowerCase()
+  const t = String(target).toLowerCase()
+  if (!v || !t) return false
+  if (v === t || v.startsWith(`${t}-`)) return true
+  if (t === 'ja') return ['jpn', 'japanese', 'japonais', 'jp'].some(x => v.includes(x))
+  if (t === 'fr') return ['fre', 'fra', 'french', 'francais', 'français', 'vf'].some(x => v.includes(x))
+  return false
+}
+
+function findTrackIndex(tracks, preferredLang, fallbackIndex = 0) {
+  if (!tracks?.length) return fallbackIndex
+  const found = tracks.findIndex(track => (
+    langMatches(track.srclang, preferredLang) ||
+    langMatches(track.language, preferredLang) ||
+    langMatches(track.label, preferredLang)
+  ))
+  return found >= 0 ? found : Math.min(fallbackIndex, tracks.length - 1)
+}
+
 function cleanCueText(text) {
   const seen = new Set()
   return String(text || '')
@@ -178,13 +217,20 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   const [cueText,      setCueText]     = useState('')
   const [buffered,     setBuffered]    = useState(0)
   const [showSubMenu,  setShowSubMenu] = useState(false)
+  const [showAudioMenu, setShowAudioMenu] = useState(false)
   const [showSpdMenu,  setShowSpdMenu] = useState(false)
   const [showQualityMenu, setShowQualityMenu] = useState(false)
   const [qualityLabel, setQualityLabel] = useState('AUTO')
+  const [audioIdx,     setAudioIdx]    = useState(0)
+  const [audioTrackState, setAudioTrackState] = useState('pending')
 
   const video   = videos[idx]
   const isLocal = Boolean(video?.src)
   const hasSubs = Array.isArray(video?.subtitles) && video.subtitles.length > 0
+  const audioOptions = useMemo(() => (
+    Array.isArray(video?.audio) && video.audio.length > 0 ? video.audio : []
+  ), [video])
+  const hasAudioChoices = audioOptions.length > 1
 
   const persistProgress = useCallback((patch = {}) => {
     if (!storageKey || !video) return
@@ -224,11 +270,56 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
 
   useEffect(() => {
     const onKey = e => {
-      if (e.key === 'Escape') setShowQualityMenu(false)
+      if (e.key === 'Escape') {
+        setShowQualityMenu(false)
+        setShowAudioMenu(false)
+        setShowSubMenu(false)
+        setShowSpdMenu(false)
+      }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [])
+
+  const updatePreferences = useCallback((patch) => {
+    const next = { ...loadVideoPreferences(), ...patch }
+    saveVideoPreferences(next)
+    return next
+  }, [])
+
+  const chooseSubtitle = useCallback((nextSubIdx, off) => {
+    setSubIdx(nextSubIdx)
+    setSubsOff(off)
+    const selected = video?.subtitles?.[nextSubIdx]
+    updatePreferences({
+      subtitlesOff: off,
+      subtitleLang: selected?.srclang || selected?.label || 'fr',
+    })
+  }, [updatePreferences, video?.subtitles])
+
+  const applyAudioPreference = useCallback((nextAudioIdx) => {
+    const v = videoRef.current
+    const nativeTracks = v?.audioTracks
+    if (!nativeTracks || !nativeTracks.length) {
+      setAudioTrackState(hasAudioChoices ? 'unsupported' : 'none')
+      return false
+    }
+
+    for (let i = 0; i < nativeTracks.length; i++) {
+      nativeTracks[i].enabled = i === nextAudioIdx
+    }
+    setAudioTrackState('ready')
+    return true
+  }, [hasAudioChoices])
+
+  const chooseAudio = useCallback((nextAudioIdx) => {
+    setAudioIdx(nextAudioIdx)
+    applyAudioPreference(nextAudioIdx)
+    const selected = audioOptions[nextAudioIdx]
+    updatePreferences({
+      audioLang: selected?.srclang || selected?.language || selected?.label || 'ja',
+    })
+  }, [applyAudioPreference, audioOptions, updatePreferences])
 
   // ── Sous-titres — polling RAF sur activeCues ────────────────────────────
   useEffect(() => {
@@ -270,9 +361,16 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
 
   // ── Réinitialiser état au changement d'épisode ───────────────────────────
   useEffect(() => {
+    const prefs = loadVideoPreferences()
+    const nextSubIdx = findTrackIndex(video?.subtitles || [], prefs.subtitleLang || 'fr', 0)
+    const nextAudioIdx = findTrackIndex(audioOptions, prefs.audioLang || 'ja', 0)
+
     setCurrentTime(0); setDuration(0); setBuffered(0); setPlaying(false); setCueText('')
-    setSubsOff(Boolean(video?.defaultSubtitlesOff))
-  }, [idx, video?.defaultSubtitlesOff])
+    setSubIdx(nextSubIdx)
+    setSubsOff(hasSubs ? Boolean(prefs.subtitlesOff) : true)
+    setAudioIdx(nextAudioIdx)
+    setAudioTrackState(hasAudioChoices ? 'pending' : 'none')
+  }, [idx, hasAudioChoices, hasSubs, audioOptions, video?.subtitles])
 
   useEffect(() => {
     if (!storageKey || !videoRef.current || !video) return
@@ -359,6 +457,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
     else if (h >= 720) setQualityLabel('720p')
     else if (h > 0) setQualityLabel(`${h}p`)
     else setQualityLabel('SD')
+    applyAudioPreference(audioIdx)
   }
 
   const togglePlay = () => {
@@ -377,6 +476,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   }, [duration])
 
   const volIcon = muted || volume === 0 ? '🔇' : volume < 0.5 ? '🔉' : '🔊'
+  const audioLabel = hasAudioChoices ? (audioOptions[audioIdx]?.label ?? 'Audio') : 'AUTO'
   const subLabel = subsOff ? 'OFF' : hasSubs ? (video.subtitles[subIdx]?.label ?? 'CC') : 'N/A'
   const qualityHint = isLocal ? qualityLabel : 'AUTO'
 
@@ -556,7 +656,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                 {/* Sous-titres */}
                 <div style={{ position: 'relative' }}>
                   <button
-                    onClick={e => { e.stopPropagation(); setShowSubMenu(s => !s); setShowSpdMenu(false) }}
+                    onClick={e => { e.stopPropagation(); setShowSubMenu(s => !s); setShowSpdMenu(false); setShowAudioMenu(false); setShowQualityMenu(false) }}
                     title="Sous-titres"
                     style={{
                       background: subsOff ? 'transparent' : `${color}22`,
@@ -570,8 +670,8 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                     <div style={{ position: 'absolute', bottom: 'calc(100% + 6px)', right: 0, background: 'rgba(14,15,17,0.98)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, minWidth: 160, padding: '5px 0', boxShadow: '0 12px 40px rgba(0,0,0,0.7)', backdropFilter: 'blur(16px)', zIndex: 20 }}
                       onClick={e => e.stopPropagation()}
                     >
-                      {[{ label: '🚫 Désactivés', action: () => setSubsOff(true) },
-                        ...video.subtitles.map((sub, i) => ({ label: sub.label, action: () => { setSubIdx(i); setSubsOff(false) } }))
+                      {[{ label: '🚫 Désactivés', action: () => chooseSubtitle(subIdx, true) },
+                        ...video.subtitles.map((sub, i) => ({ label: sub.label, action: () => chooseSubtitle(i, false) }))
                       ].map((item, i) => (
                         <button key={i} onClick={() => { item.action(); setShowSubMenu(false) }}
                           style={{ width: '100%', padding: '8px 14px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', color: '#fff', fontSize: 13, fontWeight: 600, transition: 'background .12s' }}
@@ -583,10 +683,48 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                   )}
                 </div>
 
+                {/* Audio */}
+                <div style={{ position: 'relative' }}>
+                  <button
+                    onClick={e => { e.stopPropagation(); setShowAudioMenu(s => !s); setShowSubMenu(false); setShowSpdMenu(false); setShowQualityMenu(false) }}
+                    title="Audio"
+                    style={{
+                      background: hasAudioChoices ? `${color}18` : 'transparent',
+                      border: `1px solid ${hasAudioChoices ? color + '44' : 'rgba(255,255,255,0.15)'}`,
+                      borderRadius: 7,
+                      color: hasAudioChoices ? color : 'rgba(255,255,255,0.4)',
+                      fontSize: 11,
+                      fontWeight: 800,
+                      padding: '4px 9px',
+                      cursor: hasAudioChoices ? 'pointer' : 'default',
+                      letterSpacing: '0.05em',
+                      transition: 'all .15s',
+                    }}
+                  >AU {audioLabel}</button>
+                  {showAudioMenu && hasAudioChoices && (
+                    <div style={{ position: 'absolute', bottom: 'calc(100% + 6px)', right: 0, background: 'rgba(14,15,17,0.98)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, minWidth: 168, padding: '5px 0', boxShadow: '0 12px 40px rgba(0,0,0,0.7)', backdropFilter: 'blur(16px)', zIndex: 20 }}
+                      onClick={e => e.stopPropagation()}
+                    >
+                      {audioTrackState === 'unsupported' && (
+                        <div style={{ padding: '8px 14px', color: 'rgba(255,255,255,0.45)', fontSize: 11, lineHeight: 1.4 }}>
+                          Changement audio non supporté par ce navigateur.
+                        </div>
+                      )}
+                      {audioOptions.map((track, i) => (
+                        <button key={`${track.label || 'audio'}-${i}`} onClick={() => { chooseAudio(i); setShowAudioMenu(false) }}
+                          style={{ width: '100%', padding: '8px 14px', background: i === audioIdx ? `${color}22` : 'none', border: 'none', cursor: 'pointer', textAlign: 'left', color: i === audioIdx ? color : '#fff', fontSize: 13, fontWeight: i === audioIdx ? 800 : 600, transition: 'background .12s' }}
+                          onMouseEnter={e => { if (i !== audioIdx) e.currentTarget.style.background = `${color}18` }}
+                          onMouseLeave={e => { if (i !== audioIdx) e.currentTarget.style.background = 'none' }}
+                        >{track.label || `Audio ${i + 1}`}</button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
                 {/* Vitesse */}
                 <div style={{ position: 'relative' }}>
                   <button
-                    onClick={e => { e.stopPropagation(); setShowSpdMenu(s => !s); setShowSubMenu(false) }}
+                    onClick={e => { e.stopPropagation(); setShowSpdMenu(s => !s); setShowSubMenu(false); setShowAudioMenu(false); setShowQualityMenu(false) }}
                     title="Vitesse de lecture"
                     style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 7, color: 'rgba(255,255,255,0.85)', fontSize: 11, fontWeight: 800, padding: '4px 9px', cursor: 'pointer', letterSpacing: '0.05em' }}
                   >{speed}×</button>
@@ -607,7 +745,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
 
                 <div style={{ position: 'relative' }}>
                   <button
-                    onClick={e => { e.stopPropagation(); setShowQualityMenu(q => !q); setShowSpdMenu(false); setShowSubMenu(false) }}
+                    onClick={e => { e.stopPropagation(); setShowQualityMenu(q => !q); setShowSpdMenu(false); setShowSubMenu(false); setShowAudioMenu(false) }}
                     title="Qualité vidéo"
                     style={{ background: 'rgba(100,217,139,0.10)', border: '1px solid rgba(100,217,139,0.28)', borderRadius: 7, color: '#64d98b', fontSize: 11, fontWeight: 900, padding: '4px 9px', cursor: 'pointer', letterSpacing: '0.05em' }}
                   >{qualityHint}</button>
