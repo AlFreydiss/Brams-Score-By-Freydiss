@@ -1,5 +1,6 @@
 const BASE_PATH = 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/op-egghead'
 const SUBTITLE_BASE_PATH = 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/op-egghead-subtitles'
+const THUMBNAIL_BASE_PATH = 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/op-egghead-thumbnails'
 
 const SPECIAL_FILENAMES = {
   1120: 'One.Piece.E1120.v2.VOSTFR.1080p.WEBRiP.x265-KAF.mkv',
@@ -96,6 +97,7 @@ export default Array.from({ length: 70 }, (_, index) => {
     episode,
     title: EPISODE_TITLES[episode] || `Episode ${episode}`,
     src: `${BASE_PATH}/${filename}`,
+    thumbnail: `${THUMBNAIL_BASE_PATH}/E${episode}.jpg`,
     season: 'Egghead',
     arc: 'Arc Egghead',
     subtitles: buildSubtitles(episode),
