@@ -23,7 +23,11 @@ const BT_CSS = `
   @keyframes btPulse   { 0%,100%{transform:scale(1);opacity:.7} 50%{transform:scale(1.55);opacity:1} }
   @keyframes btFloat   { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-7px)} }
   @keyframes btBounce  { 0%,100%{transform:translateY(0) scale(1)} 40%{transform:translateY(-14px) scale(1.12)} }
-  @keyframes btWave    { 0%,100%{height:8px} 50%{height:32px} }
+  @keyframes btWave       { 0%,100%{height:8px} 50%{height:32px} }
+  @keyframes btCountIn    { 0%{opacity:0;transform:scale(2.2) translateY(-20px)} 60%{opacity:1;transform:scale(0.92)} 100%{transform:scale(1)} }
+  @keyframes btCountShake { 0%,100%{transform:scale(1) rotate(0deg)} 20%{transform:scale(1.08) rotate(-3deg)} 40%{transform:scale(1.04) rotate(3deg)} 60%{transform:scale(1.06) rotate(-2deg)} 80%{transform:scale(1.02) rotate(2deg)} }
+  @keyframes btCountFlash { 0%,100%{opacity:1} 25%{opacity:0.3} 50%{opacity:1} 75%{opacity:0.5} }
+  @keyframes btRingOut    { 0%{transform:scale(0.6);opacity:0.9} 100%{transform:scale(2.8);opacity:0} }
   input[type=range].bt-vol { -webkit-appearance:none; appearance:none; background:transparent; writing-mode:vertical-lr; direction:rtl; height:90px; width:4px; cursor:pointer; }
   input[type=range].bt-vol::-webkit-slider-runnable-track { background:rgba(255,255,255,0.14); border-radius:4px; }
   input[type=range].bt-vol::-webkit-slider-thumb { -webkit-appearance:none; width:14px; height:14px; border-radius:50%; background:#d4a017; margin-left:-5px; }
@@ -252,8 +256,8 @@ export default function BlindTestPage() {
   const activeTrack = track || LOCAL_TRACKS[0]
 
   // ── Video overlay alpha: lower = more video visible ───────────────────────
-  const overlayAlpha = phase === 'reveal' ? 0.50 : phase === 'playing' ? 0.72 : phase === 'countdown' ? 0.82 : 0.94
-  const videoBlur    = phase === 'reveal' ? 0   : 14
+  const overlayAlpha = phase === 'reveal' ? 0.52 : phase === 'playing' ? 0.86 : phase === 'countdown' ? 0.88 : 0.96
+  const videoBlur    = phase === 'reveal' ? 0   : 26
   const videoOpacity = isPlaying ? 1 : 0
 
   // ── Sync volume to video element ──────────────────────────────────────────
@@ -308,6 +312,8 @@ export default function BlindTestPage() {
     v.currentTime = 0
     v.volume = volume
     v.load()
+    // Pre-play within user-gesture context to unlock autoplay, then pause for countdown
+    v.play().then(() => v.pause()).catch(() => {})
   }
 
   function syncRoomPayload(roomRow) {
@@ -624,26 +630,62 @@ export default function BlindTestPage() {
         )}
 
         {/* ── COUNTDOWN — centré verticalement ── */}
-        {phase === 'countdown' && (
-          <div style={{
-            textAlign: 'center', animation: 'btFadeUp .3s ease',
-            minHeight: 'calc(100vh - 260px)', display: 'flex', flexDirection: 'column', justifyContent: 'center',
-          }}>
-            <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.22em', color: GOLD, textTransform: 'uppercase', marginBottom: 20 }}>
-              {roomCode ? `Salle ${roomCode} · prépare-toi...` : 'Prépare-toi...'}
-            </div>
+        {phase === 'countdown' && (() => {
+          const n = countdown
+          const cfg = n === 3
+            ? { color: '#22c55e', glow: 'rgba(34,197,94,0.55)',  anim: 'btCountIn .45s cubic-bezier(.22,1,.36,1) both', ring: 'rgba(34,197,94,0.35)' }
+            : n === 2
+            ? { color: '#f59e0b', glow: 'rgba(245,158,11,0.60)', anim: 'btCountIn .40s cubic-bezier(.22,1,.36,1) both', ring: 'rgba(245,158,11,0.40)' }
+            : n === 1
+            ? { color: '#ef4444', glow: 'rgba(239,68,68,0.70)',  anim: 'btCountShake .55s ease-in-out, btCountFlash .3s .1s ease-in-out', ring: 'rgba(239,68,68,0.45)' }
+            : { color: GOLD,      glow: `rgba(212,160,23,0.55)`, anim: 'btCountIn .35s cubic-bezier(.22,1,.36,1) both', ring: 'rgba(212,160,23,0.35)' }
+          return (
             <div style={{
-              fontFamily: "'Pirata One',cursive",
-              fontSize: 'clamp(120px,22vw,180px)',
-              color: '#fff', lineHeight: 1,
-              textShadow: `0 0 80px ${GOLD}55`,
-              animation: 'btPulse .9s ease-in-out infinite',
+              textAlign: 'center',
+              minHeight: 'calc(100vh - 260px)', display: 'flex', flexDirection: 'column', justifyContent: 'center',
             }}>
-              {countdown || '▶'}
+              <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.22em', color: 'rgba(255,255,255,0.40)', textTransform: 'uppercase', marginBottom: 32 }}>
+                {roomCode ? `Salle ${roomCode} · prépare-toi...` : 'Prépare-toi...'}
+              </div>
+
+              {/* Number + ring VFX */}
+              <div style={{ position: 'relative', display: 'inline-block', margin: '0 auto' }}>
+                {/* Expanding ring */}
+                <div key={`ring-${n}`} style={{
+                  position: 'absolute', inset: '-20%', borderRadius: '50%',
+                  border: `3px solid ${cfg.ring}`,
+                  animation: 'btRingOut .7s ease-out forwards',
+                  pointerEvents: 'none',
+                }} />
+                <div key={`ring2-${n}`} style={{
+                  position: 'absolute', inset: '-5%', borderRadius: '50%',
+                  border: `2px solid ${cfg.ring}`,
+                  animation: 'btRingOut .9s .12s ease-out forwards',
+                  pointerEvents: 'none',
+                }} />
+
+                <div
+                  key={n}
+                  style={{
+                    fontFamily: "'Pirata One',cursive",
+                    fontSize: 'clamp(130px,24vw,200px)',
+                    color: n === 0 ? GOLD : cfg.color,
+                    lineHeight: 1,
+                    textShadow: `0 0 60px ${cfg.glow}, 0 0 120px ${cfg.glow}`,
+                    animation: cfg.anim,
+                    display: 'block',
+                  }}
+                >
+                  {n || '▶'}
+                </div>
+              </div>
+
+              <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.28)', marginTop: 28, letterSpacing: '.06em' }}>
+                L'extrait va commencer...
+              </div>
             </div>
-            <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.35)', marginTop: 20 }}>L'extrait va commencer...</div>
-          </div>
-        )}
+          )
+        })()}
 
         {/* ── PLAYING — centré ── */}
         {phase === 'playing' && track && (
