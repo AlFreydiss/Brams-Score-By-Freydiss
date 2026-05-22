@@ -57,6 +57,7 @@ const StaffPanel         = lazy(() => import('./components/StaffPanel.jsx'))
 const BlindTestPage      = lazy(() => import('./components/BlindTestPage.jsx'))
 const BlindTestLeaderboard = lazy(() => import('./components/BlindTestLeaderboard.jsx'))
 const TierListPage       = lazy(() => import('./components/TierListPage.jsx'))
+const ProfilePageYonkou  = lazy(() => import('./components/ProfilePageYonkou.jsx'))
 function AMVBackground() {
   const videoRef = useRef(null)
   const [muted, setMuted]     = useState(true)
@@ -330,6 +331,9 @@ export default function App() {
 
         {/* Tier List */}
         <Route path="/tier-list" element={<PageLayout><TierListPage /></PageLayout>} />
+
+        {/* Profil Yonkou — Next-Gen 3D */}
+        <Route path="/profil-yonkou" element={<ProfilePageYonkou />} />
 
         {/* Homepage */}
         <Route path="/*" element={mainContent} />
