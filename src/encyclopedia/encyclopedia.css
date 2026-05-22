@@ -3609,3 +3609,103 @@ select:focus-visible {
     min-height: 320px;
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   PREMIUM OVERRIDE — Dark AAA · One Piece · Framer Motion ready
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Fond unifié */
+.arc-shell { background: #050507 !important; }
+
+/* Rail */
+.arc-rail { background: #0c0c0f !important; border-bottom: 1px solid rgba(255,255,255,0.07) !important; }
+.arc-rail-brand { color: rgba(255,255,255,0.65) !important; gap: 8px !important; }
+.arc-rail-universes { gap: 2px !important; }
+.arc-rail-close { background: none !important; border: none !important; color: rgba(255,255,255,0.40) !important; }
+
+/* Sidebar / control panel */
+.arc-panel {
+  background: #0c0c0f !important;
+  border-right: 1px solid rgba(255,255,255,0.07) !important;
+  width: 230px !important;
+}
+.arc-panel-label { display: none !important; }
+.arc-panel-search { padding: 0 14px 14px !important; }
+.arc-search-input {
+  background: #111114 !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  color: rgba(255,255,255,0.90) !important;
+  border-radius: 10px !important;
+}
+.arc-search-input:focus { border-color: rgba(201,31,46,0.50) !important; outline: none !important; }
+.arc-search-input::placeholder { color: rgba(255,255,255,0.28) !important; }
+.arc-spoiler-block { margin: 12px 14px 0 !important; }
+.arc-folder-nav { padding: 0 8px !important; }
+.arc-folder-btn { position: relative !important; border-radius: 9px !important; transition: background .15s !important; }
+.arc-folder-btn:not(.is-active):hover { background: rgba(255,255,255,0.04) !important; }
+.arc-folder-marker { display: none !important; }
+
+/* Hero header */
+.arc-hero { background: #0c0c0f !important; border-bottom: 1px solid rgba(255,255,255,0.07) !important; }
+.arc-hero-watermark { font-family: 'Cinzel Decorative', serif !important; }
+.arc-hero-scanline { display: none !important; }
+
+/* Content area */
+.arc-board { background: #050507 !important; }
+.arc-content { background: #050507 !important; }
+
+/* Fiches layout */
+.arc-fiches-layout {
+  display: grid !important;
+  grid-template-columns: 1fr 360px !important;
+  height: 100% !important;
+}
+.arc-register { background: #050507 !important; overflow-y: auto !important; }
+.arc-inspection { background: #050507 !important; overflow-y: auto !important; position: sticky !important; top: 0 !important; height: calc(100vh - 120px) !important; }
+
+/* Register header / columns */
+.arc-register-head { display: none !important; }
+.arc-col-headers { display: none !important; }
+
+/* Row list */
+.arc-rows-list { overflow: visible !important; }
+.arc-row {
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 1px solid rgba(255,255,255,0.06) !important;
+  border-radius: 0 !important;
+  animation: none !important;
+}
+.arc-row.is-active { background: transparent !important; }
+.arc-row-bar { display: none !important; }
+.arc-row-id { display: flex !important; flex-direction: column !important; gap: 3px !important; }
+.arc-row-num { font-size: 10px !important; color: rgba(255,255,255,0.35) !important; }
+.arc-row-rarity { display: flex !important; align-items: center !important; }
+.arc-row-rarity-icon { display: none !important; }
+.arc-row-scan { display: none !important; }
+
+/* Inspection card */
+.arc-insp-card { background: transparent !important; border: none !important; border-radius: 0 !important; height: 100% !important; display: flex !important; flex-direction: column !important; }
+.arc-insp-card-header { flex-shrink: 0 !important; }
+.arc-insp-header-bg { display: none !important; }
+.arc-insp-header-scanline { display: none !important; }
+.arc-insp-classified { background: transparent !important; }
+.arc-insp-class-scan { display: none !important; }
+.arc-insp-default { background: transparent !important; }
+.arc-insp-default-wm { display: none !important; }
+
+/* Body scroll */
+.arc-body {
+  display: flex !important;
+  flex: 1 !important;
+  overflow: hidden !important;
+  min-height: 0 !important;
+}
+
+/* Search input general */
+input[type="text"], input[type="search"] {
+  box-sizing: border-box;
+}
+
+/* Timeline page */
+.arc-content > div[style] { min-height: 0 !important; }
