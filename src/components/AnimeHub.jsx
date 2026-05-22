@@ -192,6 +192,25 @@ const ANIMES = [
     badgeColor: '#f57f17',
   },
   {
+    id: 'violet-evergarden',
+    title: 'Violet Evergarden',
+    subtitle: 'VF & VOSTFR',
+    emoji: '✉',
+    color: '#8b7cff',
+    colorDark: '#30255f',
+    coverImage: 'https://static.wikia.nocookie.net/violet-evergarden/images/4/4f/Violet_Evergarden_Key_Visual_3.png',
+    genres: ['Drame', 'Slice of Life', 'Emotion'],
+    description: "Violet, ancienne soldate, devient Auto Memory Doll pour comprendre les sentiments humains et le sens des mots qu'elle a recus.",
+    stats: [
+      { label: 'Chapitres', value: '0' },
+      { label: 'Episodes', value: '13' },
+      { label: 'Statut', value: 'Disponible' },
+    ],
+    action: '▶ Acceder',
+    badge: 'NOUVEAU',
+    badgeColor: '#8b7cff',
+  },
+  {
     id: 'bc',
     title: 'Black Clover',
     subtitle: 'La magie du trèfle noir',
@@ -268,6 +287,42 @@ const ANIMES = [
     badgeColor: '#1565c0',
   },
 ]
+
+const SEARCH_ALIASES = {
+  onepiece: ['op', 'one piece', 'luffy', 'mugiwara', 'elbaf', 'pirate'],
+  tpn: ['promised neverland', 'the promised neverland', 'neverland', 'emma', 'norman', 'ray'],
+  drstone: ['dr stone', 'dr. stone', 'doctor stone', 'senku', 'science'],
+  jjk: ['jujutsu', 'jujutsu kaisen', 'sukuna', 'itadori', 'gojo'],
+  kingdom: ['shin', 'chine', 'guerre', 'royaumes combattants'],
+  aot: ['aot', 'snk', 'shingeki', 'shingeki no kyojin', 'attaque des titans', 'attaque des titan', 'attack on titan', 'eren', 'mikasa', 'levi'],
+  kny: ['kny', 'demon slayer', 'kimetsu', 'kimetsu no yaiba', 'tanjiro', 'nezuko'],
+  nnt: ['nnt', 'nanatsu', 'nanatsu no taizai', 'seven deadly sins', '7ds', 'meliodas'],
+  sl: ['solo leveling', 'sung jinwoo', 'jinwoo', 'manhwa'],
+  dbs: ['dbs', 'dragon ball', 'dragon ball super', 'goku', 'vegeta'],
+  'violet-evergarden': ['violet', 'violet evergarden', 'vostfr', 'vf', 'auto memory doll', 'doll'],
+  bc: ['black clover', 'asta', 'yuno', 'trefle', 'magie'],
+  mha: ['mha', 'my hero academia', 'boku no hero academia', 'bnha', 'deku', 'izuku'],
+  fireforce: ['fire force', 'enen no shouboutai', 'shouboutai', 'shinra'],
+  bluelock: ['blue lock', 'bluelock', 'football', 'isagi', 'ego'],
+}
+
+function normalizeText(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+}
+
+function searchableText(anime) {
+  return normalizeText([
+    anime.id,
+    anime.title,
+    anime.subtitle,
+    anime.description,
+    ...(anime.genres || []),
+    ...(SEARCH_ALIASES[anime.id] || []),
+  ].join(' '))
+}
 
 const AH_CSS = `
   @keyframes ahFadeUp  { from { opacity:0; transform:translateY(24px) } to { opacity:1; transform:none } }
@@ -465,7 +520,30 @@ function ComingSoonCard({ index }) {
   )
 }
 
-export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrstone, onOpenJjk, onOpenKingdom, onOpenAot, onOpenKny, onOpenNnt, onOpenSl, onOpenDbs, onOpenBc, onOpenMha, onOpenFireforce, onOpenBluelock }) {
+export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrstone, onOpenJjk, onOpenKingdom, onOpenAot, onOpenKny, onOpenNnt, onOpenSl, onOpenDbs, onOpenViolet, onOpenBc, onOpenMha, onOpenFireforce, onOpenBluelock }) {
+  const [query, setQuery] = useState('')
+  const [activeGenre, setActiveGenre] = useState('all')
+
+  const sortedAnimes = useMemo(() => {
+    const priority = { onepiece: 0, 'violet-evergarden': 1 }
+    return [...ANIMES].sort((a, b) => (priority[a.id] ?? 10) - (priority[b.id] ?? 10))
+  }, [])
+
+  const genreOptions = useMemo(() => {
+    const genres = new Set()
+    sortedAnimes.forEach(anime => (anime.genres || []).forEach(genre => genres.add(genre)))
+    return ['all', ...Array.from(genres).sort((a, b) => a.localeCompare(b, 'fr'))]
+  }, [sortedAnimes])
+
+  const visibleAnimes = useMemo(() => {
+    const needle = normalizeText(query).trim()
+    return sortedAnimes.filter(anime => {
+      const genreMatch = activeGenre === 'all' || anime.genres?.includes(activeGenre)
+      const textMatch = !needle || searchableText(anime).includes(needle)
+      return genreMatch && textMatch
+    })
+  }, [activeGenre, query, sortedAnimes])
+
   useEffect(() => {
     document.body.style.overflow = 'hidden'
     return () => { document.body.style.overflow = '' }
@@ -476,6 +554,7 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
       onepiece: onOpenOnepiece, tpn: onOpenTpn, drstone: onOpenDrstone,
       jjk: onOpenJjk, kingdom: onOpenKingdom, aot: onOpenAot,
       kny: onOpenKny, nnt: onOpenNnt, sl: onOpenSl, dbs: onOpenDbs,
+      'violet-evergarden': onOpenViolet,
       bc: onOpenBc, mha: onOpenMha, fireforce: onOpenFireforce, bluelock: onOpenBluelock,
     }
     map[id]?.()
@@ -498,7 +577,7 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
           <div>
             <div style={{ fontFamily:"'Pirata One', cursive", fontWeight:900, fontSize:22, color:'#fff', letterSpacing:'-.01em', lineHeight:1 }}>Hub des Animés</div>
             <div style={{ fontSize:11, color:'rgba(255,255,255,0.32)', marginTop:3, fontWeight:600, letterSpacing:'.04em' }}>
-              {ANIMES.length} séries disponibles
+              {visibleAnimes.length} séries disponibles
             </div>
           </div>
         </div>
@@ -541,13 +620,105 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
               </p>
             </div>
 
-            {/* Cards grid */}
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(310px, 1fr))', gap:22 }}>
-              {ANIMES.map((anime, i) => (
-                <AnimeCard key={anime.id} anime={anime} index={i} onClick={() => handleClick(anime.id)} />
-              ))}
-              <ComingSoonCard index={ANIMES.length} />
+            <div style={{ margin:'0 auto 30px', maxWidth:820 }}>
+              <div style={{
+                display:'flex', alignItems:'center', gap:10,
+                background:'rgba(255,255,255,0.055)',
+                border:'1px solid rgba(255,255,255,0.10)',
+                borderRadius:12,
+                padding:'10px 12px',
+                boxShadow:'0 18px 45px rgba(0,0,0,0.22)',
+              }}>
+                <span style={{ color:'rgba(255,255,255,0.42)', fontSize:15, flexShrink:0 }}>⌕</span>
+                <input
+                  value={query}
+                  onChange={event => setQuery(event.target.value)}
+                  placeholder="Rechercher : attaque des titans, snk, aot, violet, dbs..."
+                  style={{
+                    width:'100%',
+                    background:'transparent',
+                    border:'none',
+                    outline:'none',
+                    color:'#fff',
+                    fontSize:14,
+                    fontWeight:650,
+                    fontFamily:'var(--body)',
+                  }}
+                />
+                {(query || activeGenre !== 'all') && (
+                  <button
+                    type="button"
+                    onClick={() => { setQuery(''); setActiveGenre('all') }}
+                    style={{
+                      flexShrink:0,
+                      border:'1px solid rgba(255,255,255,0.10)',
+                      background:'rgba(255,255,255,0.06)',
+                      color:'rgba(255,255,255,0.72)',
+                      borderRadius:8,
+                      padding:'7px 10px',
+                      cursor:'pointer',
+                      fontSize:12,
+                      fontWeight:800,
+                    }}
+                  >
+                    Reset
+                  </button>
+                )}
+              </div>
+
+              <div style={{ display:'flex', flexWrap:'wrap', gap:8, marginTop:12, justifyContent:'center' }}>
+                {genreOptions.map(genre => {
+                  const active = activeGenre === genre
+                  const label = genre === 'all' ? 'Tous' : genre
+                  return (
+                    <button
+                      key={genre}
+                      type="button"
+                      onClick={() => setActiveGenre(genre)}
+                      style={{
+                        border:`1px solid ${active ? 'rgba(224,82,74,0.65)' : 'rgba(255,255,255,0.10)'}`,
+                        background:active ? 'rgba(224,82,74,0.18)' : 'rgba(255,255,255,0.045)',
+                        color:active ? '#fff' : 'rgba(255,255,255,0.58)',
+                        borderRadius:999,
+                        padding:'7px 13px',
+                        cursor:'pointer',
+                        fontSize:12,
+                        fontWeight:800,
+                        transition:'all .18s',
+                      }}
+                    >
+                      {label}
+                    </button>
+                  )
+                })}
+              </div>
+
+              <div style={{ marginTop:12, textAlign:'center', fontSize:12, color:'rgba(255,255,255,0.32)', fontWeight:700 }}>
+                {visibleAnimes.length} resultat{visibleAnimes.length > 1 ? 's' : ''}
+              </div>
             </div>
+
+            {/* Cards grid */}
+            {visibleAnimes.length > 0 ? (
+              <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(310px, 1fr))', gap:22 }}>
+                {visibleAnimes.map((anime, i) => (
+                  <AnimeCard key={anime.id} anime={anime} index={i} onClick={() => handleClick(anime.id)} />
+                ))}
+                {!query && activeGenre === 'all' && <ComingSoonCard index={visibleAnimes.length} />}
+              </div>
+            ) : (
+              <div style={{
+                border:'1px dashed rgba(255,255,255,0.10)',
+                background:'rgba(255,255,255,0.025)',
+                borderRadius:14,
+                padding:'44px 20px',
+                textAlign:'center',
+                color:'rgba(255,255,255,0.42)',
+                fontWeight:750,
+              }}>
+                Aucun anime trouve
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -843,9 +843,7 @@
   display: flex; flex-direction: column;
   background: rgba(3,3,3,0.99);
   border-left: 1px solid rgba(255,255,255,0.04);
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255,255,255,0.06) transparent;
+  overflow: hidden;
 }
 
 /* Inspection: empty placeholder (fallback) */

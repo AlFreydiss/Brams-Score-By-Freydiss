@@ -456,17 +456,6 @@ export function ArchiveRegister({
           </div>
         </div>
 
-        {/* Column headers */}
-        <div style={{
-          display: 'grid', gridTemplateColumns: '52px 1fr auto 36px',
-          padding: '6px 18px', borderBottom: `1px solid ${T.border}`,
-          background: T.surface,
-        }}>
-          {['Réf.', 'Désignation classifiée', 'Classification', ''].map((h, i) => (
-            <span key={i} style={{ fontSize: 9, fontWeight: 800, letterSpacing: '.14em', color: T.textDim, textTransform: 'uppercase' }}>{h}</span>
-          ))}
-        </div>
-
         {!entries.length ? (
           <div style={{ textAlign: 'center', padding: '60px 20px', color: T.textDim }}>
             <div style={{ fontSize: 40, marginBottom: 14 }}>🔐</div>
@@ -502,11 +491,11 @@ export function ArchiveRegister({
       <div className="arc-inspection" style={{ background: T.bg, borderLeft: `1px solid ${T.border}` }}>
         <AnimatePresence mode="wait">
           {!selectedEntry ? (
-            <motion.div key="default" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <motion.div key="default" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ height: '100%' }}>
               <DefaultInspectionPanel entries={entries} />
             </motion.div>
           ) : (
-            <motion.div key={selectedEntry.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}>
+            <motion.div key={selectedEntry.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }} style={{ height: '100%' }}>
               <ArchiveInspection
                 entry={selectedEntry}
                 index={entries.indexOf(selectedEntry)}
@@ -662,80 +651,115 @@ function DefaultInspectionPanel({ entries }) {
   const statEntries = Object.entries(featured.stats || {}).slice(0, 5)
 
   return (
-    <div style={{ height: '100%', overflowY: 'auto', position: 'relative' }}>
-      {/* Gov header */}
+    <div style={{ height: '100%', overflow: 'hidden', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+
+      {/* Sticky classified stamp header */}
       <div style={{
-        padding: '20px 20px 24px',
-        background: `linear-gradient(160deg, ${hexToRgba(cfg.accent, 0.14)}, ${hexToRgba(cfg.accent, 0.04)}, transparent)`,
-        borderBottom: `1px solid ${hexToRgba(cfg.accent, 0.20)}`,
+        flexShrink: 0, padding: '14px 20px 12px',
+        background: `linear-gradient(160deg, ${hexToRgba(cfg.accent, 0.16)}, ${hexToRgba(cfg.accent, 0.05)}, transparent)`,
+        borderBottom: `1px solid ${hexToRgba(cfg.accent, 0.18)}`,
         position: 'relative', overflow: 'hidden',
       }}>
+        {/* Watermark */}
         <div style={{
-          position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
-          fontSize: 120, fontWeight: 900, color: hexToRgba(cfg.accent, 0.04),
-          fontFamily: 'var(--display, serif)', userSelect: 'none', whiteSpace: 'nowrap', pointerEvents: 'none',
-        }}>CLASSIFIED</div>
+          position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%) rotate(-20deg)',
+          fontSize: 72, fontWeight: 900, color: hexToRgba(cfg.accent, 0.05),
+          fontFamily: 'serif', userSelect: 'none', whiteSpace: 'nowrap', pointerEvents: 'none', letterSpacing: '.08em',
+        }}>CLASSIFIÉ</div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-          <Shield size={13} color={T.red} />
-          <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: '.18em', color: T.red, textTransform: 'uppercase' }}>
-            GOUVERNEMENT MONDIAL — DIVISION RENSEIGNEMENT
+        {/* Animated scanner line */}
+        <motion.div
+          animate={{ top: ['0%', '100%', '0%'] }}
+          transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
+          style={{
+            position: 'absolute', left: 0, right: 0, height: 1,
+            background: `linear-gradient(90deg, transparent, ${hexToRgba(cfg.accent, 0.55)}, transparent)`,
+            pointerEvents: 'none',
+          }}
+        />
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+            <motion.div
+              animate={{ opacity: [1, 0.3, 1] }}
+              transition={{ duration: 1.6, repeat: Infinity }}
+              style={{ width: 6, height: 6, borderRadius: '50%', background: T.red, boxShadow: `0 0 8px ${T.red}` }}
+            />
+            <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: '.18em', color: T.red, textTransform: 'uppercase' }}>
+              Gouvernement Mondial · Division Renseignement
+            </span>
+          </div>
+          <span style={{ fontSize: 8, fontWeight: 700, color: T.textDim, letterSpacing: '.12em' }}>
+            ACCÈS NIV.5
           </span>
         </div>
 
-        <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.24em', color: T.textDim, textTransform: 'uppercase', marginBottom: 14, textAlign: 'center' }}>
-          DOSSIER PRIORITAIRE
-        </div>
-
-        {/* Featured icon */}
-        <div style={{ textAlign: 'center', marginBottom: 14 }}>
+        {/* Featured entry identity */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <motion.div
-            animate={{ scale: [1, 1.06, 1] }}
-            transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+            animate={{ boxShadow: [`0 0 18px ${hexToRgba(cfg.accent, 0.25)}`, `0 0 36px ${hexToRgba(cfg.accent, 0.50)}`, `0 0 18px ${hexToRgba(cfg.accent, 0.25)}`] }}
+            transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
             style={{
-              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-              width: 80, height: 80, borderRadius: '50%',
-              background: `radial-gradient(circle, ${hexToRgba(cfg.accent, 0.22)}, ${hexToRgba(cfg.accent, 0.06)})`,
-              border: `2px solid ${hexToRgba(cfg.accent, 0.45)}`,
-              boxShadow: `0 0 30px ${hexToRgba(cfg.accent, 0.30)}, inset 0 0 20px ${hexToRgba(cfg.accent, 0.10)}`,
-              fontSize: 36, marginBottom: 14,
+              flexShrink: 0, width: 64, height: 64, borderRadius: '50%',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: `radial-gradient(circle at 35% 35%, ${hexToRgba(cfg.accent, 0.30)}, ${hexToRgba(cfg.accent, 0.08)})`,
+              border: `2px solid ${hexToRgba(cfg.accent, 0.50)}`,
+              fontSize: 30,
             }}
           >
             {cfg.icon}
           </motion.div>
-          <div style={{ fontFamily: 'var(--display, serif)', fontSize: 'clamp(16px,2vw,22px)', fontWeight: 900, color: T.text, marginBottom: 8, lineHeight: 1.2 }}>
-            {featured.name}
-          </div>
-          <RarityBadge rarity={featured.rarity} size="lg" />
-          {featured.subtitle && <div style={{ fontSize: 12, color: T.textDim, marginTop: 8 }}>{featured.subtitle}</div>}
-          {featured.knownUser && (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, marginTop: 6, fontSize: 12, color: T.textMid }}>
-              <Eye size={12} /> {featured.knownUser}
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.20em', color: T.textDim, textTransform: 'uppercase', marginBottom: 4 }}>
+              Dossier prioritaire
             </div>
-          )}
+            <div style={{ fontSize: 17, fontWeight: 900, color: T.text, lineHeight: 1.2, marginBottom: 6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {featured.name}
+            </div>
+            <RarityBadge rarity={featured.rarity} size="sm" />
+          </div>
         </div>
       </div>
 
-      {/* Stats */}
-      {statEntries.length > 0 && (
-        <div style={{ padding: '16px 20px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12, fontSize: 10, fontWeight: 800, letterSpacing: '.14em', color: T.textDim, textTransform: 'uppercase' }}>
-            <Zap size={11} color={T.orange} /> Indices de capacité
+      {/* Scrollable body */}
+      <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.08) transparent' }}>
+        {/* Stats */}
+        {statEntries.length > 0 && (
+          <div style={{ padding: '16px 20px 0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12, fontSize: 10, fontWeight: 800, letterSpacing: '.14em', color: T.textDim, textTransform: 'uppercase' }}>
+              <Zap size={11} color={T.orange} /> Indices de capacité
+            </div>
+            {statEntries.map(([key, val], i) => (
+              <StatBar key={key} label={statLabel(key)} value={val} color={cfg.accent} index={i} />
+            ))}
           </div>
-          {statEntries.map(([key, val], i) => (
-            <StatBar key={key} label={statLabel(key)} value={val} color={cfg.accent} index={i} />
-          ))}
-        </div>
-      )}
+        )}
 
-      {featured.description && (
-        <div style={{ padding: '0 20px 16px', fontSize: 12, color: T.textDim, lineHeight: 1.65 }}>
-          {featured.description.slice(0, 160)}…
-        </div>
-      )}
+        {featured.description && (
+          <div style={{ padding: '12px 20px', fontSize: 12, color: T.textDim, lineHeight: 1.70, borderTop: `1px solid ${T.border}` }}>
+            {featured.description.slice(0, 200)}…
+          </div>
+        )}
 
-      <div style={{ padding: '0 20px 20px', fontSize: 11, color: T.textDim, fontStyle: 'italic', textAlign: 'center', opacity: 0.6 }}>
-        Sélectionnez un dossier pour l'inspecter
+        {featured.subtitle && !featured.description && (
+          <div style={{ padding: '12px 20px', fontSize: 12, color: T.textDim, lineHeight: 1.65 }}>
+            {featured.subtitle}
+          </div>
+        )}
+
+        {/* CTA */}
+        <div style={{
+          margin: '12px 20px 20px',
+          padding: '14px 16px',
+          borderRadius: 10,
+          background: 'rgba(255,255,255,0.02)',
+          border: `1px dashed rgba(255,255,255,0.09)`,
+          textAlign: 'center',
+        }}>
+          <ChevronRight size={16} style={{ color: T.textDim, marginBottom: 6, display: 'block', margin: '0 auto 8px' }} />
+          <div style={{ fontSize: 11, fontWeight: 700, color: T.textMid, marginBottom: 3 }}>Sélectionner un dossier</div>
+          <div style={{ fontSize: 10, color: T.textDim }}>Cliquez sur une ligne pour consulter l'archive complète</div>
+        </div>
       </div>
     </div>
   )
@@ -748,7 +772,7 @@ function ArchiveInspection({ entry, index, isFavorite, spoilerSafe, revealed, on
   const catIcon = CATEGORY_ICONS[entry.category] || '·'
 
   return (
-    <div style={{ height: '100%', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ height: '100%', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
       {/* Header */}
       <div style={{
         position: 'relative', overflow: 'hidden',
@@ -850,7 +874,7 @@ function ArchiveInspection({ entry, index, isFavorite, spoilerSafe, revealed, on
           </motion.button>
         </div>
       ) : (
-        <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px' }}>
+        <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '16px 20px 16px 20px', scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.08) transparent' }}>
 
           {/* Description */}
           {entry.description && (

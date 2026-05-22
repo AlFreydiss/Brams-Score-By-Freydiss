@@ -133,11 +133,12 @@ function UserMenu({ displayName, avatarUrl, discordId, berryCount, onSignOut }) 
             { label: 'Équipages',     path: '/equipage'  },
             { label: 'Wiki',          path: '/wiki'      },
             { label: 'Théories',      path: '/theories'  },
+            { label: 'Animés & Scans', action: 'anime-hub' },
             { label: 'Blind Test',    path: '/blind-test' },
             { label: 'Tier List',     path: '/tier-list'  },
             { label: 'Boutique',      path: '/boutique'  },
             { label: 'Staff Panel',   path: '/staff'     },
-          ].filter(item => item.path).map((item) => (
+          ].filter(item => item.path || item.action).map((item) => (
             <button
               key={item.label}
               onClick={() => {
