@@ -1,1 +1,3408 @@
-[]
+[
+  {
+    "episode": 1,
+    "title": "Episode 1",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E01 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E001.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 2,
+    "title": "Episode 2",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E02 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E002.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 3,
+    "title": "Episode 3",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E03 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E003.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 4,
+    "title": "Episode 4",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E04 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E004.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 5,
+    "title": "Episode 5",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E05 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E005.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 6,
+    "title": "Episode 6",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E06 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E006.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 7,
+    "title": "Episode 7",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E07 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E007.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 8,
+    "title": "Episode 8",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E08 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E008.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 9,
+    "title": "Episode 9",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E09 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E009.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 10,
+    "title": "Episode 10",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E10 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E010.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 11,
+    "title": "Episode 11",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E11 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E011.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 12,
+    "title": "Episode 12",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E12 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E012.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 13,
+    "title": "Episode 13",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E13 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E013.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 14,
+    "title": "Episode 14",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E14 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E014.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 15,
+    "title": "Episode 15",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E15 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E015.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 16,
+    "title": "Episode 16",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E16 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E016.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 17,
+    "title": "Episode 17",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E17 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E017.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 18,
+    "title": "Episode 18",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E18 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E018.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 19,
+    "title": "Episode 19",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E19 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E019.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 20,
+    "title": "Episode 20",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E20 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E020.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 21,
+    "title": "Episode 21",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E21 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E021.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 22,
+    "title": "Episode 22",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E22 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E022.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 23,
+    "title": "Episode 23",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E23 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E023.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 24,
+    "title": "Episode 24",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E24 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E024.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 25,
+    "title": "Episode 25",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E25 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E025.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 26,
+    "title": "Episode 26",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E26 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E026.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 27,
+    "title": "Episode 27",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E27 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E027.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 28,
+    "title": "Episode 28",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E28 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E028.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 29,
+    "title": "Episode 29",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E29 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E029.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 30,
+    "title": "Episode 30",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E30 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E030.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 31,
+    "title": "Episode 31",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E31 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E031.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 32,
+    "title": "Episode 32",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E32 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E032.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 33,
+    "title": "Episode 33",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E33 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E033.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 34,
+    "title": "Episode 34",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E34 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E034.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 35,
+    "title": "Episode 35",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E35 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E035.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 36,
+    "title": "Episode 36",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E36 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E036.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 37,
+    "title": "Episode 37",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E37 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E037.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 38,
+    "title": "Episode 38",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E38 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E038.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 39,
+    "title": "Episode 39",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E39 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E039.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 40,
+    "title": "Episode 40",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E40 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E040.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 41,
+    "title": "Episode 41",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E41 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E041.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 42,
+    "title": "Episode 42",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E42 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E042.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 43,
+    "title": "Episode 43",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E43 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E043.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 44,
+    "title": "Episode 44",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E44 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E044.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 45,
+    "title": "Episode 45",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E45 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E045.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 46,
+    "title": "Episode 46",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E46 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E046.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 47,
+    "title": "Episode 47",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E47 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E047.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 48,
+    "title": "Episode 48",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E48 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E048.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 49,
+    "title": "Episode 49",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E49 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E049.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 50,
+    "title": "Episode 50",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E50 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E050.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 51,
+    "title": "Episode 51",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E51 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E051.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 52,
+    "title": "Episode 52",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E52 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E052.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 53,
+    "title": "Episode 53",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E53 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E053.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 54,
+    "title": "Episode 54",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E54 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E054.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 55,
+    "title": "Episode 55",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E55 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E055.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 56,
+    "title": "Episode 56",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E56 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E056.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 57,
+    "title": "Episode 57",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E57 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E057.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 58,
+    "title": "Episode 58",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E58 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E058.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 59,
+    "title": "Episode 59",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E59 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E059.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 60,
+    "title": "Episode 60",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E60 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E060.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 61,
+    "title": "Episode 61",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E61 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E061.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 62,
+    "title": "Episode 62",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E62 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E062.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 63,
+    "title": "Episode 63",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E63 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E063.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 64,
+    "title": "Episode 64",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E64 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E064.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 65,
+    "title": "Episode 65",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E65 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E065.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 66,
+    "title": "Episode 66",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E66 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E066.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 67,
+    "title": "Episode 67",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E67 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E067.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 68,
+    "title": "Episode 68",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E68 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E068.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 69,
+    "title": "Episode 69",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E69 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E069.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 70,
+    "title": "Episode 70",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E70 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E070.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 71,
+    "title": "Episode 71",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E71 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E071.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 72,
+    "title": "Episode 72",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E72 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E072.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 73,
+    "title": "Episode 73",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E73 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E073.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 74,
+    "title": "Episode 74",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E74 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E074.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 75,
+    "title": "Episode 75",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E75 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E075.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 76,
+    "title": "Episode 76",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E76 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E076.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 77,
+    "title": "Episode 77",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E77 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E077.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 78,
+    "title": "Episode 78",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E78 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E078.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 79,
+    "title": "Episode 79",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E79 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E079.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 80,
+    "title": "Episode 80",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E80 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E080.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 81,
+    "title": "Episode 81",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E81 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E081.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 82,
+    "title": "Episode 82",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E82 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E082.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 83,
+    "title": "Episode 83",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E83 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E083.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 84,
+    "title": "Episode 84",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E84 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E084.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 85,
+    "title": "Episode 85",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E85 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E085.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 86,
+    "title": "Episode 86",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E86 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E086.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 87,
+    "title": "Episode 87",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E87 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E087.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 88,
+    "title": "Episode 88",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E88 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E088.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 89,
+    "title": "Episode 89",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E89 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E089.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 90,
+    "title": "Episode 90",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E90 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E090.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 91,
+    "title": "Episode 91",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E91 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E091.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 92,
+    "title": "Episode 92",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E92 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E092.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 93,
+    "title": "Episode 93",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E93 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E093.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 94,
+    "title": "Episode 94",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E94 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E094.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 95,
+    "title": "Episode 95",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E95 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E095.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 96,
+    "title": "Episode 96",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E96 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E096.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 97,
+    "title": "Episode 97",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E97 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E097.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 98,
+    "title": "Episode 98",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E98 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E098.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 99,
+    "title": "Episode 99",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E99 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E099.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 100,
+    "title": "Episode 100",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E100 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E100.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 101,
+    "title": "Episode 101",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E101 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E101.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 102,
+    "title": "Episode 102",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E102 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E102.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 103,
+    "title": "Episode 103",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E103 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E103.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 104,
+    "title": "Episode 104",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E104 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E104.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 105,
+    "title": "Episode 105",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E105 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E105.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 106,
+    "title": "Episode 106",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E106 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E106.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 107,
+    "title": "Episode 107",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E107 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E107.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 108,
+    "title": "Episode 108",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E108 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E108.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 109,
+    "title": "Episode 109",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E109 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E109.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 110,
+    "title": "Episode 110",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E110 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E110.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 111,
+    "title": "Episode 111",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E111 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E111.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 112,
+    "title": "Episode 112",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E112 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E112.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 113,
+    "title": "Episode 113",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E113 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E113.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 114,
+    "title": "Episode 114",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E114 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E114.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 115,
+    "title": "Episode 115",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E115 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E115.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 116,
+    "title": "Episode 116",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E116 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E116.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 117,
+    "title": "Episode 117",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E117 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E117.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 118,
+    "title": "Episode 118",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E118 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E118.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 119,
+    "title": "Episode 119",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E119 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E119.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 120,
+    "title": "Episode 120",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E120 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E120.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 121,
+    "title": "Episode 121",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E121 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E121.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 122,
+    "title": "Episode 122",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E122 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E122.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 123,
+    "title": "Episode 123",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E123 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E123.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 124,
+    "title": "Episode 124",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E124 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E124.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 125,
+    "title": "Episode 125",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E125 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E125.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 126,
+    "title": "Episode 126",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E126 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E126.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 127,
+    "title": "Episode 127",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E127 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E127.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 128,
+    "title": "Episode 128",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E128 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E128.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 129,
+    "title": "Episode 129",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E129 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E129.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 130,
+    "title": "Episode 130",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E130 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E130.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  },
+  {
+    "episode": 131,
+    "title": "Episode 131",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E131 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "season": "S01",
+    "arc": "Dragon Ball Super",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-subtitles/Dragon.Ball.Super.S01E131.fr.vtt"
+      }
+    ],
+    "defaultSubtitlesOff": true
+  }
+]

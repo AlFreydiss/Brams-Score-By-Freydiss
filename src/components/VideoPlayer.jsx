@@ -271,7 +271,8 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   // ── Réinitialiser état au changement d'épisode ───────────────────────────
   useEffect(() => {
     setCurrentTime(0); setDuration(0); setBuffered(0); setPlaying(false); setCueText('')
-  }, [idx])
+    setSubsOff(Boolean(video?.defaultSubtitlesOff))
+  }, [idx, video?.defaultSubtitlesOff])
 
   useEffect(() => {
     if (!storageKey || !videoRef.current || !video) return
