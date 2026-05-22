@@ -894,14 +894,23 @@ export default function ProfilePage() {
         }
         .profile-mode {
           height: 36px;
-          padding: 0 14px;
+          padding: 0 18px;
           border-radius: 999px;
-          border: 1px solid rgba(166,108,255,.32);
-          background: rgba(166,108,255,.1);
+          border: 1px solid rgba(123,0,255,.55);
+          background: linear-gradient(135deg, rgba(123,0,255,.25), rgba(75,0,204,.18));
           color: #d6c2ff;
           font-size: 12px;
           font-weight: 900;
           cursor: pointer;
+          letter-spacing: .04em;
+          box-shadow: 0 0 14px rgba(123,0,255,.3);
+          transition: box-shadow .25s, border-color .25s, transform .2s;
+        }
+        .profile-mode:hover {
+          border-color: rgba(155,48,255,.9);
+          box-shadow: 0 0 28px rgba(123,0,255,.65);
+          transform: translateY(-1px);
+          color: #fff;
         }
         .profile-tabs {
           display: flex;
@@ -1132,8 +1141,8 @@ export default function ProfilePage() {
       <main className="profile-wrap">
         <div className="profile-topbar">
           <button className="profile-back" type="button" onClick={() => navigate(-1)}>← Retour</button>
-          <button className="profile-mode" type="button" onClick={() => setImmersive((value) => !value)}>
-            {immersive ? 'Interface' : 'Full immersion'}
+          <button className="profile-mode" type="button" onClick={() => navigate('/profil-yonkou')}>
+            ⚡ Expérience 3D
           </button>
         </div>
 
