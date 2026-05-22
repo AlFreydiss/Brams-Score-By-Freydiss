@@ -4,8 +4,6 @@ import { supabase } from '../lib/supabase.js'
 const STORAGE_KEY = 'brams_tier_list_v2'
 const VIEW_KEY = 'brams_tier_list_view'
 const ROOM_QUERY = 'room'
-const ROOM_PREFIX = 'brams_tier_room_'
-
 const TIERS = [
   { id: 's', label: 'S', color: '#facc15' },
   { id: 'a', label: 'A', color: '#22c55e' },
@@ -131,25 +129,17 @@ async function saveRoom(roomCode, board) {
   return !error
 }
 
-async function deleteRoom(roomCode) {
-  if (!supabase) return
-  await supabase.from('tier_list_rooms').delete().eq('room_code', roomCode)
-}
-
 export default function TierListPage() {
   const [mode, setMode] = useState(readViewMode)
   const [board, setBoard] = useState(loadLocalBoard)
   const [selectedId, setSelectedId] = useState(null)
   const [roomCode, setRoomCode] = useState('')
   const [roomInput, setRoomInput] = useState(getRoomFromUrl())
-  const [roomState, setRoomState] = useState('local')
   const [roomStatus, setRoomStatus] = useState('Mode local')
   const [shareNotice, setShareNotice] = useState('')
   const [syncState, setSyncState] = useState('idle')
   const boardJsonRef = useRef(JSON.stringify(board))
   const roomSubscriptionRef = useRef(null)
-  const lastUrlRoomRef = useRef(getRoomFromUrl())
-
   const itemsById = useMemo(() => ITEMS_BY_ID, [])
   const link = roomCode ? roomUrl(roomCode) : ''
 
@@ -205,11 +195,9 @@ export default function TierListPage() {
     setRoomInput(nextCode)
     setBoard(nextBoard)
     setSelectedId(null)
-    setRoomState('creating')
     setRoomStatus('Création de la salle...')
     setSyncState('saving')
     boardJsonRef.current = JSON.stringify(nextBoard)
-    lastUrlRoomRef.current = nextCode
     window.history.replaceState({}, '', roomUrl(nextCode))
 
     const ok = await saveRoom(nextCode, nextBoard)
@@ -219,9 +207,8 @@ export default function TierListPage() {
       return
     }
 
-    setRoomState('host')
-    setRoomStatus(`Salle ${nextCode}`)
-    setSyncState('saved')
+      setRoomStatus(`Salle ${nextCode}`)
+      setSyncState('saved')
     subscribeRoom(nextCode)
   }
 
@@ -235,11 +222,9 @@ export default function TierListPage() {
     setMode('multi')
     setRoomCode(nextCode)
     setRoomInput(nextCode)
-    setRoomState('joining')
     setRoomStatus(`Connexion ${nextCode}...`)
     setShareNotice('')
     window.history.replaceState({}, '', roomUrl(nextCode))
-    lastUrlRoomRef.current = nextCode
 
     const remote = await fetchRoom(nextCode)
     const nextBoard = normalizeBoard(remote?.board || createDefaultBoard())
@@ -249,10 +234,8 @@ export default function TierListPage() {
 
     if (!remote) {
       await saveRoom(nextCode, nextBoard)
-      setRoomState('host')
       setRoomStatus(`Salle ${nextCode} créée`)
     } else {
-      setRoomState('guest')
       setRoomStatus(`Salle ${nextCode} rejointe`)
     }
 
@@ -307,11 +290,9 @@ export default function TierListPage() {
   async function leaveRoom() {
     roomSubscriptionRef.current?.unsubscribe?.()
     roomSubscriptionRef.current = null
-    if (roomCode) await deleteRoom(roomCode)
     setMode('local')
     setRoomCode('')
     setRoomInput('')
-    setRoomState('local')
     setRoomStatus('Mode local')
     setSyncState('idle')
     setBoard(loadLocalBoard())
