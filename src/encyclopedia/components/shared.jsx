@@ -84,6 +84,15 @@ export function RarityBadge({ rarity, size = 'sm' }) {
   )
 }
 
+export function SectionTitle({ label, text }) {
+  return (
+    <header className="enc-section-title">
+      <span>{label}</span>
+      {text && <p>{text}</p>}
+    </header>
+  )
+}
+
 // ─── Animated stat bar ───────────────────────────────────────────────────────
 function StatBar({ label, value, color, index = 0 }) {
   return (
