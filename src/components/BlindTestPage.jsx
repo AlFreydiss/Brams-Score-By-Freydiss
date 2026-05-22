@@ -24,7 +24,9 @@ const BT_CSS = `
   @keyframes btFloat   { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-7px)} }
   @keyframes btBounce  { 0%,100%{transform:translateY(0) scale(1)} 40%{transform:translateY(-14px) scale(1.12)} }
   @keyframes btWave    { 0%,100%{height:8px} 50%{height:32px} }
-  @keyframes btRevealGlow { from{box-shadow:0 0 0px transparent} to{box-shadow:0 0 40px var(--glow,rgba(212,160,23,0.4))} }
+  input[type=range].bt-vol { -webkit-appearance:none; appearance:none; background:transparent; writing-mode:vertical-lr; direction:rtl; height:90px; width:4px; cursor:pointer; }
+  input[type=range].bt-vol::-webkit-slider-runnable-track { background:rgba(255,255,255,0.14); border-radius:4px; }
+  input[type=range].bt-vol::-webkit-slider-thumb { -webkit-appearance:none; width:14px; height:14px; border-radius:50%; background:#d4a017; margin-left:-5px; }
 `
 
 function pickMCQChoices(correctTrack, allTracks) {
@@ -44,7 +46,7 @@ function BTStars() {
     gold: i % 13 === 0,
   })), [])
   return (
-    <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0 }}>
+    <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 3 }}>
       {stars.map((s, i) => (
         <div key={i} style={{
           position: 'absolute', left: `${s.x}%`, top: `${s.y}%`,
@@ -59,12 +61,47 @@ function BTStars() {
 
 function BTScanLine() {
   return (
-    <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 1, overflow: 'hidden' }}>
+    <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 4, overflow: 'hidden' }}>
       <div style={{
         position: 'absolute', left: 0, right: 0, height: 2,
         background: 'linear-gradient(90deg,transparent,rgba(212,160,23,.07),rgba(212,160,23,.16),rgba(212,160,23,.07),transparent)',
         animation: 'btScan 16s linear infinite',
       }} />
+    </div>
+  )
+}
+
+function VolumeWidget({ volume, onChange }) {
+  const [hover, setHover] = useState(false)
+  const icon = volume === 0 ? '🔇' : volume < 0.4 ? '🔈' : volume < 0.75 ? '🔉' : '🔊'
+  return (
+    <div
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{
+        position: 'fixed', bottom: 28, right: 28, zIndex: 20,
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+      }}
+    >
+      {hover && (
+        <input
+          type="range" className="bt-vol"
+          min={0} max={1} step={0.02}
+          value={volume}
+          onChange={e => onChange(Number(e.target.value))}
+          style={{ animation: 'btFadeUp .15s ease' }}
+        />
+      )}
+      <div style={{
+        width: hover ? 44 : 34, height: hover ? 44 : 34,
+        background: 'rgba(7,9,14,0.88)', border: `1px solid rgba(255,255,255,${hover ? '0.24' : '0.12'})`,
+        borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: hover ? 20 : 15, cursor: 'pointer',
+        transition: 'all .18s ease',
+        boxShadow: hover ? '0 0 16px rgba(212,160,23,0.18)' : 'none',
+      }}>
+        {icon}
+      </div>
     </div>
   )
 }
@@ -101,23 +138,18 @@ function MCQButton({ label, onClick, selected, correct, revealed, color }) {
   if (selected && !revealed) { bg = `${color || GOLD}20`; border = `1px solid ${color || GOLD}60`; textColor = '#fff' }
   if (revealed && correct)   { bg = 'rgba(34,197,94,0.15)'; border = '1px solid rgba(34,197,94,0.50)'; textColor = GREEN }
   if (revealed && selected && !correct) { bg = 'rgba(239,68,68,0.12)'; border = '1px solid rgba(239,68,68,0.40)'; textColor = RED }
-
   return (
-    <button
-      onClick={onClick}
-      disabled={revealed}
-      style={{
-        width: '100%', padding: '14px 18px', borderRadius: 12,
-        background: bg, border, color: textColor,
-        fontSize: 14, fontWeight: 700, cursor: revealed ? 'default' : 'pointer',
-        textAlign: 'left', transition: 'all .15s',
-        display: 'flex', alignItems: 'center', gap: 10,
-      }}
-    >
-      {revealed && correct && <span style={{ flexShrink: 0, color: GREEN }}>✓</span>}
+    <button onClick={onClick} disabled={revealed} style={{
+      width: '100%', padding: '14px 18px', borderRadius: 12,
+      background: bg, border, color: textColor,
+      fontSize: 13, fontWeight: 700, cursor: revealed ? 'default' : 'pointer',
+      textAlign: 'left', transition: 'all .15s',
+      display: 'flex', alignItems: 'center', gap: 10,
+    }}>
+      {revealed && correct      && <span style={{ flexShrink: 0, color: GREEN }}>✓</span>}
       {revealed && selected && !correct && <span style={{ flexShrink: 0, color: RED }}>✗</span>}
-      {!revealed && selected && <span style={{ flexShrink: 0, color: color || GOLD }}>▶</span>}
-      {!revealed && !selected && <span style={{ flexShrink: 0, color: 'rgba(255,255,255,0.25)' }}>○</span>}
+      {!revealed && selected    && <span style={{ flexShrink: 0, color: color || GOLD }}>▶</span>}
+      {!revealed && !selected   && <span style={{ flexShrink: 0, color: 'rgba(255,255,255,0.25)' }}>○</span>}
       {label}
     </button>
   )
@@ -128,11 +160,9 @@ function RevealCard({ track, result, berries }) {
   return (
     <div style={{
       background: `linear-gradient(145deg,${c}18 0%,rgba(7,9,14,0.97) 100%)`,
-      border: `1px solid ${c}44`,
-      borderTop: `3px solid ${c}`,
+      border: `1px solid ${c}44`, borderTop: `3px solid ${c}`,
       borderRadius: 16, padding: '22px 24px',
-      animation: 'btFadeUp .4s ease',
-      textAlign: 'center',
+      animation: 'btFadeUp .4s ease', textAlign: 'center',
     }}>
       <div style={{ fontSize: 52, marginBottom: 12, animation: 'btBounce 1s ease', filter: `drop-shadow(0 0 20px ${c}66)` }}>{track.emoji}</div>
       <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.18em', color: c, textTransform: 'uppercase', marginBottom: 6 }}>
@@ -142,7 +172,7 @@ function RevealCard({ track, result, berries }) {
       <div style={{ fontSize: 15, color: 'rgba(255,255,255,0.60)', marginBottom: 16 }}>{track.anime}</div>
       <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 16 }}>
         {result.animeOk && <span style={{ fontSize: 11, fontWeight: 700, color: GREEN, background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.30)', borderRadius: 100, padding: '4px 14px' }}>✓ Anime correct</span>}
-        {result.titleOk && <span style={{ fontSize: 11, fontWeight: 700, color: GREEN, background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.30)', borderRadius: 100, padding: '4px 14px' }}>✓ Titre correct (bonus)</span>}
+        {result.titleOk && <span style={{ fontSize: 11, fontWeight: 700, color: GREEN, background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.30)', borderRadius: 100, padding: '4px 14px' }}>✓ Titre bonus</span>}
         {!result.animeOk && !result.titleOk && <span style={{ fontSize: 11, fontWeight: 700, color: '#f87171', background: 'rgba(239,68,68,0.10)', border: '1px solid rgba(239,68,68,0.28)', borderRadius: 100, padding: '4px 14px' }}>✗ Raté</span>}
       </div>
       {berries > 0 && <div style={{ fontSize: 13, fontWeight: 800, color: GOLD }}>+{berries.toLocaleString('fr-FR')} 🪙 berries</div>}
@@ -150,13 +180,25 @@ function RevealCard({ track, result, berries }) {
   )
 }
 
+function PlayerChip({ player }) {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 6,
+      padding: '4px 10px 4px 4px', borderRadius: 100,
+      background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.10)',
+    }}>
+      {player.avatarUrl
+        ? <img src={player.avatarUrl} alt="" style={{ width: 22, height: 22, borderRadius: '50%', objectFit: 'cover' }} />
+        : <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'rgba(212,160,23,0.20)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>👤</div>
+      }
+      <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.75)' }}>{player.displayName}</span>
+    </div>
+  )
+}
+
 function makeRoomCode() { return Math.random().toString(36).slice(2, 8).toUpperCase() }
 function getRoomFromUrl() { return (new URLSearchParams(window.location.search).get(ROOM_QUERY) || '').trim().toUpperCase() }
-function roomUrl(roomCode) {
-  const url = new URL(window.location.href)
-  url.searchParams.set(ROOM_QUERY, roomCode)
-  return url.toString()
-}
+function roomUrl(code) { const u = new URL(window.location.href); u.searchParams.set(ROOM_QUERY, code); return u.toString() }
 
 function normalizeRoom(row) {
   return {
@@ -166,60 +208,65 @@ function normalizeRoom(row) {
     round:         Number(row?.round  || 0),
     last_track_id: row?.last_track_id || null,
     started_at:    row?.started_at    || null,
-    updated_at:    row?.updated_at    || null,
   }
 }
 
 export default function BlindTestPage() {
   const navigate = useNavigate()
   const { isAuthenticated, user, displayName, avatarUrl } = useAuth()
-  const videoRef        = useRef(null)
-  const roomChannelRef  = useRef(null)
-  const roomGuardRef    = useRef(false)
-  const roomStateRef    = useRef(null)
-  const titleRef        = useRef(null)
+  const videoRef       = useRef(null)
+  const roomChannelRef = useRef(null)
+  const roomGuardRef   = useRef(false)
+  const titleRef       = useRef(null)
 
-  const [phase,         setPhase]         = useState('intro')
-  const [track,         setTrack]         = useState(null)
-  const [lastTrackId,   setLastTrackId]   = useState(null)
-  const [elapsed,       setElapsed]       = useState(0)
-  const [startTime,     setStartTime]     = useState(null)
-  const [animeGuess,    setAnimeGuess]    = useState('')
-  const [mcqSelected,   setMcqSelected]   = useState(null)
-  const [mcqChoices,    setMcqChoices]    = useState([])
-  const [titleGuess,    setTitleGuess]    = useState('')
-  const [result,        setResult]        = useState(null)
-  const [berries,       setBerries]       = useState(0)
-  const [totalScore,    setTotalScore]    = useState(0)
-  const [streak,        setStreak]        = useState(0)
-  const [maxStreak,     setMaxStreak]     = useState(0)
-  const [round,         setRound]         = useState(0)
-  const [history,       setHistory]       = useState([])
-  const [countdown,     setCountdown]     = useState(3)
-  const [guessEnabled,  setGuessEnabled]  = useState(false)
+  const [phase,        setPhase]        = useState('intro')
+  const [track,        setTrack]        = useState(null)
+  const [lastTrackId,  setLastTrackId]  = useState(null)
+  const [elapsed,      setElapsed]      = useState(0)
+  const [startTime,    setStartTime]    = useState(null)
+  const [animeGuess,   setAnimeGuess]   = useState('')
+  const [mcqSelected,  setMcqSelected]  = useState(null)
+  const [mcqChoices,   setMcqChoices]   = useState([])
+  const [titleGuess,   setTitleGuess]   = useState('')
+  const [result,       setResult]       = useState(null)
+  const [berries,      setBerries]      = useState(0)
+  const [totalScore,   setTotalScore]   = useState(0)
+  const [streak,       setStreak]       = useState(0)
+  const [maxStreak,    setMaxStreak]    = useState(0)
+  const [round,        setRound]        = useState(0)
+  const [history,      setHistory]      = useState([])
+  const [countdown,    setCountdown]    = useState(3)
+  const [guessEnabled, setGuessEnabled] = useState(false)
+  const [volume,       setVolume]       = useState(0.7)
 
-  const [roomCode,   setRoomCode]   = useState('')
-  const [roomInput,  setRoomInput]  = useState('')
-  const [roomRole,   setRoomRole]   = useState('local')
-  const [roomStatus, setRoomStatus] = useState('Mode solo')
-  const [roomSync,   setRoomSync]   = useState('idle')
-  const [roomNotice, setRoomNotice] = useState('')
+  const [roomCode,    setRoomCode]    = useState('')
+  const [roomInput,   setRoomInput]   = useState('')
+  const [roomRole,    setRoomRole]    = useState('local')
+  const [roomStatus,  setRoomStatus]  = useState('Mode solo')
+  const [roomSync,    setRoomSync]    = useState('idle')
+  const [roomNotice,  setRoomNotice]  = useState('')
+  const [roomPlayers, setRoomPlayers] = useState([])
 
   const roomLink = roomCode ? roomUrl(roomCode) : ''
+  const isPlaying = phase === 'playing' || phase === 'countdown' || phase === 'reveal'
+  const activeTrack = track || LOCAL_TRACKS[0]
 
-  // ── Video blur/opacity based on phase ────────────────────────────────────
-  const videoBlur    = phase === 'reveal' ? 0   : 16
-  const videoOpacity = phase === 'playing' ? 0.20 : phase === 'reveal' ? 0.45 : phase === 'countdown' ? 0.10 : 0
+  // ── Video overlay alpha: lower = more video visible ───────────────────────
+  const overlayAlpha = phase === 'reveal' ? 0.50 : phase === 'playing' ? 0.72 : phase === 'countdown' ? 0.82 : 0.94
+  const videoBlur    = phase === 'reveal' ? 0   : 14
+  const videoOpacity = isPlaying ? 1 : 0
+
+  // ── Sync volume to video element ──────────────────────────────────────────
+  useEffect(() => {
+    if (videoRef.current) videoRef.current.volume = volume
+  }, [volume])
 
   useEffect(() => {
     const initialRoom = getRoomFromUrl()
     if (initialRoom) void joinRoom(initialRoom)
     return () => {
       roomChannelRef.current?.unsubscribe?.()
-      if (videoRef.current) {
-        videoRef.current.pause()
-        videoRef.current.src = ''
-      }
+      if (videoRef.current) { videoRef.current.pause(); videoRef.current.src = '' }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -244,7 +291,7 @@ export default function BlindTestPage() {
       const s = Math.floor((Date.now() - startTime) / 1000)
       setElapsed(s)
       if (s >= GUESS_DELAY) setGuessEnabled(true)
-      if (s >= ROUND_SECS) handleTimeout()
+      if (s >= ROUND_SECS)  handleTimeout()
     }, 250)
     return () => clearInterval(t)
   }, [phase, startTime])
@@ -259,67 +306,47 @@ export default function BlindTestPage() {
     v.pause()
     v.src = url
     v.currentTime = 0
+    v.volume = volume
     v.load()
   }
 
   function syncRoomPayload(roomRow) {
     const room = normalizeRoom(roomRow)
-    roomStateRef.current = room
     if (!room.room_code) return
-
     setRoomCode(room.room_code)
     setRoomInput(room.room_code)
-    setRoomStatus(room.phase === 'lobby' ? `Salle ${room.room_code}` : `Salle ${room.room_code} synchronisée`)
+    setRoomStatus(room.phase === 'lobby' ? `Salle ${room.room_code}` : `Salle ${room.room_code} ✓`)
     setRoomSync('live')
-
     if (!room.track_id) return
-    const nextTrack = LOCAL_TRACKS.find(t => t.id === room.track_id) || null
+    const nextTrack = LOCAL_TRACKS.find(t => t.id === room.track_id)
     if (!nextTrack) return
-
     roomGuardRef.current = true
     loadVideo(nextTrack.url)
     setTrack(nextTrack)
     setLastTrackId(room.last_track_id || nextTrack.id)
-    setAnimeGuess('')
-    setMcqSelected(null)
+    setAnimeGuess(''); setMcqSelected(null)
     setMcqChoices(pickMCQChoices(nextTrack, LOCAL_TRACKS))
-    setTitleGuess('')
-    setResult(null)
-    setBerries(0)
-
+    setTitleGuess(''); setResult(null); setBerries(0)
     if (room.phase === 'countdown') {
       const started = room.started_at ? Date.parse(room.started_at) : Date.now()
-      const elapsedMs = Math.max(0, Date.now() - started)
-      const remaining = Math.max(0, 3 - Math.floor(elapsedMs / 1000))
-      setCountdown(remaining)
-      setGuessEnabled(false)
-      setPhase('countdown')
-      return
+      const remaining = Math.max(0, 3 - Math.floor((Date.now() - started) / 1000))
+      setCountdown(remaining); setGuessEnabled(false); setPhase('countdown')
+    } else if (room.phase === 'playing') {
+      setPhase('playing'); setStartTime(Date.now()); setElapsed(0); setCountdown(0); setGuessEnabled(false)
+    } else if (room.phase === 'reveal') {
+      setPhase('reveal')
     }
-    if (room.phase === 'playing') {
-      setPhase('playing')
-      setStartTime(Date.now())
-      setElapsed(0)
-      setCountdown(0)
-      setGuessEnabled(false)
-      return
-    }
-    if (room.phase === 'reveal') { setPhase('reveal'); return }
   }
 
   async function joinRoom(code) {
     const nextCode = (code || roomInput || '').trim().toUpperCase()
     if (!nextCode) { setRoomStatus('Code manquant'); return }
-
-    setRoomInput(nextCode); setRoomCode(nextCode)
-    setRoomRole('guest'); setRoomStatus(`Connexion ${nextCode}...`); setRoomSync('loading')
+    setRoomInput(nextCode); setRoomCode(nextCode); setRoomRole('guest')
+    setRoomStatus(`Connexion ${nextCode}...`); setRoomSync('loading')
     window.history.replaceState({}, '', roomUrl(nextCode))
-
     if (!supabase) { setRoomStatus('Supabase non configuré'); setRoomSync('error'); return }
-
     const { data } = await supabase.from(ROOM_TABLE).select('*').eq('room_code', nextCode).maybeSingle()
     if (!data) { setRoomStatus(`Salle ${nextCode} introuvable`); setRoomSync('error'); return }
-
     syncRoomPayload(data)
     subscribeRoom(nextCode)
   }
@@ -329,13 +356,11 @@ export default function BlindTestPage() {
     setRoomRole('host'); setRoomCode(nextCode); setRoomInput(nextCode)
     setRoomStatus(`Salle ${nextCode} créée`); setRoomSync('saving')
     window.history.replaceState({}, '', roomUrl(nextCode))
-
     if (!supabase) { setRoomStatus('Supabase non configuré'); setRoomSync('error'); return }
-
     await supabase.from(ROOM_TABLE).upsert({
       room_code: nextCode, phase: 'lobby', round: 0,
-      track_id: null, last_track_id: null,
-      started_at: null, updated_at: new Date().toISOString(),
+      track_id: null, last_track_id: null, started_at: null,
+      updated_at: new Date().toISOString(),
     }, { onConflict: 'room_code' })
     subscribeRoom(nextCode)
     setRoomSync('saved')
@@ -344,22 +369,35 @@ export default function BlindTestPage() {
   function subscribeRoom(code) {
     roomChannelRef.current?.unsubscribe?.()
     if (!supabase) return
+    const myId   = user?.id || 'anon-' + Math.random().toString(36).slice(2, 8)
+    const myName = displayName || 'Joueur'
+
     const channel = supabase
-      .channel(`blind-test-room-${code}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: ROOM_TABLE, filter: `room_code=eq.${code}` }, payload => {
+      .channel(`brams-bt-${code}`)
+      .on('presence', { event: 'sync' }, () => {
+        const state = channel.presenceState()
+        setRoomPlayers(Object.values(state).flat())
+      })
+      .on('postgres_changes', {
+        event: '*', schema: 'public', table: ROOM_TABLE, filter: `room_code=eq.${code}`
+      }, payload => {
         if (roomGuardRef.current) { roomGuardRef.current = false; return }
         syncRoomPayload(payload.new || payload.old)
       })
-      .subscribe()
+      .subscribe(async status => {
+        if (status === 'SUBSCRIBED') {
+          await channel.track({ userId: myId, displayName: myName, avatarUrl: avatarUrl || null })
+        }
+      })
     roomChannelRef.current = channel
   }
 
-  async function publishRoomState(nextPhase, nextTrack = track, nextRound = round, nextLastTrackId = lastTrackId) {
+  async function publishRoomState(nextPhase, nextTrack = track, nextRound = round, nextLastId = lastTrackId) {
     if (!roomCode || roomRole !== 'host' || !supabase) return
     roomGuardRef.current = true
     await supabase.from(ROOM_TABLE).upsert({
       room_code: roomCode, phase: nextPhase, round: nextRound,
-      track_id: nextTrack?.id || null, last_track_id: nextLastTrackId || null,
+      track_id: nextTrack?.id || null, last_track_id: nextLastId || null,
       started_at: new Date().toISOString(), updated_at: new Date().toISOString(),
     }, { onConflict: 'room_code' })
     setRoomSync('saved')
@@ -367,9 +405,9 @@ export default function BlindTestPage() {
 
   async function leaveRoom() {
     roomChannelRef.current?.unsubscribe?.()
-    roomChannelRef.current = null; roomStateRef.current = null
+    roomChannelRef.current = null
     setRoomCode(''); setRoomInput(''); setRoomRole('local')
-    setRoomStatus('Mode solo'); setRoomSync('idle')
+    setRoomStatus('Mode solo'); setRoomSync('idle'); setRoomPlayers([])
     setPhase('intro'); setTrack(null); setLastTrackId(null)
     setCountdown(3); setGuessEnabled(false)
     window.history.replaceState({}, '', window.location.pathname)
@@ -377,50 +415,32 @@ export default function BlindTestPage() {
 
   function startGame() {
     if (roomCode && roomRole !== 'host') { setRoomStatus('Attends le host pour lancer'); return }
-
     const t = pickTrack(lastTrackId)
-    setTrack(t)
-    setLastTrackId(t.id)
-    setAnimeGuess('')
-    setMcqSelected(null)
+    setTrack(t); setLastTrackId(t.id)
+    setAnimeGuess(''); setMcqSelected(null)
     setMcqChoices(pickMCQChoices(t, LOCAL_TRACKS))
-    setTitleGuess('')
-    setResult(null)
-    setBerries(0)
-    setCountdown(3)
-    setGuessEnabled(false)
-    setRoomStatus(roomCode ? `Salle ${roomCode} en cours` : 'Mode solo')
-
+    setTitleGuess(''); setResult(null); setBerries(0)
+    setCountdown(3); setGuessEnabled(false)
     loadVideo(t.url)
-
     if (roomCode && roomRole === 'host') void publishRoomState('countdown', t, round + 1, t.id)
-
     setPhase('countdown')
   }
 
-  function handleTimeout() {
-    if (phase !== 'playing') return
-    submitGuess(true)
-  }
+  function handleTimeout() { if (phase !== 'playing') return; submitGuess(true) }
 
   function submitGuess(timeout = false) {
     if (phase !== 'playing' && !timeout) return
     const ms = Date.now() - startTime
     const res = checkAnswer(animeGuess, titleGuess, track)
     const newStreak = (res.animeOk || res.titleOk) ? streak + 1 : 0
-    const earned = timeout && !res.animeOk && !res.titleOk
-      ? 0
+    const earned = (timeout && !res.animeOk && !res.titleOk) ? 0
       : calcBerries({ animeOk: res.animeOk, titleOk: res.titleOk, timeMs: ms, streak })
-
-    setResult(res)
-    setBerries(earned)
-    setStreak(newStreak)
+    setResult(res); setBerries(earned); setStreak(newStreak)
     setMaxStreak(prev => Math.max(prev, newStreak))
     setTotalScore(prev => prev + earned)
     setRound(prev => prev + 1)
     setHistory(prev => [...prev, { track, result: res, earned }])
     setPhase('reveal')
-
     if (user) logSession({ userId: user.id, trackId: track.id, correct: res.animeOk || res.titleOk, timeMs: ms })
   }
 
@@ -433,71 +453,116 @@ export default function BlindTestPage() {
 
   const barPct   = phase === 'playing' ? Math.max(0, 100 - (elapsed / ROUND_SECS) * 100) : 0
   const barColor = barPct > 50 ? GREEN : barPct > 25 ? '#f59e0b' : RED
-  const activeTrack = track || LOCAL_TRACKS[0]
 
   return (
-    <div style={{ minHeight: '100vh', background: 'rgba(7,9,14,0.88)', position: 'relative', overflowX: 'hidden' }}>
+    <div style={{ minHeight: '100vh', position: 'relative', overflowX: 'hidden' }}>
       <style>{BT_CSS}</style>
 
-      {/* ── Video background ── */}
+      {/* ── Dark base ── */}
+      <div style={{ position: 'fixed', inset: 0, background: '#07090e', zIndex: 0 }} />
+
+      {/* ── Video ── */}
       <video
         ref={videoRef}
         playsInline
         loop
         style={{
           position: 'fixed', inset: 0, width: '100%', height: '100%',
-          objectFit: 'cover', zIndex: -1,
+          objectFit: 'cover', zIndex: 1,
           filter: `blur(${videoBlur}px)`,
           opacity: videoOpacity,
-          transition: 'filter 1.4s ease, opacity 1.2s ease',
+          transition: 'filter 1.4s ease, opacity 1.0s ease',
           pointerEvents: 'none',
           willChange: 'filter, opacity',
+          transform: 'scale(1.06)',
         }}
       />
+
+      {/* ── Dark overlay over video ── */}
+      <div style={{
+        position: 'fixed', inset: 0, zIndex: 2,
+        background: `rgba(7,9,14,${overlayAlpha})`,
+        transition: 'background 1.4s ease',
+        pointerEvents: 'none',
+      }} />
 
       <BTStars />
       <BTScanLine />
 
-      <div style={{ position: 'relative', zIndex: 2, maxWidth: 860, margin: '0 auto', padding: '72px 20px 100px' }}>
-        {/* Room bar */}
-        <div style={{
-          display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap',
-          padding: '12px 14px', marginBottom: 20,
-          border: '1px solid rgba(255,255,255,0.09)', borderRadius: 12,
-          background: 'rgba(7,9,14,0.70)',
-        }}>
-          <div style={{ fontSize: 12, fontWeight: 800, color: 'rgba(255,255,255,0.75)' }}>
-            {roomStatus}{roomCode ? ` · ${roomRole === 'host' ? 'host' : 'guest'} · ${roomSync}` : ''}
-          </div>
-          <div style={{ flex: 1 }} />
-          <input
-            value={roomInput}
-            onChange={e => setRoomInput(e.target.value.toUpperCase())}
-            placeholder="Code salle"
-            style={{
-              width: 130, padding: '10px 12px', borderRadius: 10,
-              border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(7,9,14,0.9)',
-              color: '#fff', fontSize: 13, fontWeight: 800, outline: 'none',
-            }}
-          />
-          <button onClick={() => joinRoom(roomInput)} style={smallBtn(false)}>Rejoindre</button>
-          <button onClick={createRoom} style={smallBtn(true)}>Créer</button>
-          <button onClick={leaveRoom} style={smallBtn(false)} disabled={!roomCode}>Quitter</button>
-        </div>
+      {/* ── Volume widget ── */}
+      <VolumeWidget volume={volume} onChange={v => { setVolume(v); if (videoRef.current) videoRef.current.volume = v }} />
 
-        {roomLink && (
+      {/* ── Content ── */}
+      <div style={{ position: 'relative', zIndex: 5, maxWidth: 720, margin: '0 auto', padding: '72px 20px 120px' }}>
+
+        {/* Room bar — hidden during active play to keep focus */}
+        {!isPlaying && (
           <div style={{
             display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap',
-            padding: '10px 14px', marginBottom: 20,
-            border: '1px solid rgba(212,160,23,0.20)', borderRadius: 12,
-            background: 'rgba(212,160,23,0.08)',
+            padding: '12px 14px', marginBottom: 16,
+            border: '1px solid rgba(255,255,255,0.09)', borderRadius: 12,
+            background: 'rgba(7,9,14,0.80)',
           }}>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.72)' }}>Code: <strong style={{ color: '#fff' }}>{roomCode}</strong></div>
-            <div style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 12, color: 'rgba(255,255,255,0.55)' }}>{roomLink}</div>
+            <div style={{ fontSize: 12, fontWeight: 800, color: 'rgba(255,255,255,0.75)' }}>
+              {roomStatus}
+              {roomCode ? ` · ${roomRole === 'host' ? 'host' : 'guest'}` : ''}
+            </div>
+            <div style={{ flex: 1 }} />
+            <input
+              value={roomInput}
+              onChange={e => setRoomInput(e.target.value.toUpperCase())}
+              placeholder="Code salle"
+              style={{
+                width: 120, padding: '9px 12px', borderRadius: 10,
+                border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(7,9,14,0.9)',
+                color: '#fff', fontSize: 13, fontWeight: 800, outline: 'none',
+              }}
+            />
+            <button onClick={() => joinRoom(roomInput)} style={smallBtn(false)}>Rejoindre</button>
+            <button onClick={createRoom}               style={smallBtn(true)}>Créer</button>
+            <button onClick={leaveRoom}                style={smallBtn(false)} disabled={!roomCode}>Quitter</button>
+          </div>
+        )}
+
+        {/* Room link — only in lobby */}
+        {roomLink && !isPlaying && (
+          <div style={{
+            display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap',
+            padding: '10px 14px', marginBottom: 12,
+            border: '1px solid rgba(212,160,23,0.20)', borderRadius: 12,
+            background: 'rgba(212,160,23,0.07)',
+          }}>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.72)' }}>Code: <strong style={{ color: '#fff', letterSpacing: '.06em' }}>{roomCode}</strong></div>
+            <div style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 11, color: 'rgba(255,255,255,0.40)' }}>{roomLink}</div>
             <button
-              onClick={async () => { await navigator.clipboard.writeText(roomLink); setRoomNotice('Lien copié'); setTimeout(() => setRoomNotice(''), 1500) }}
+              onClick={async () => { await navigator.clipboard.writeText(roomLink); setRoomNotice('Copié !'); setTimeout(() => setRoomNotice(''), 1400) }}
               style={smallBtn(true)}
             >{roomNotice || 'Copier le lien'}</button>
+          </div>
+        )}
+
+        {/* Player list */}
+        {roomCode && roomPlayers.length > 0 && !isPlaying && (
+          <div style={{
+            display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center',
+            padding: '8px 14px', marginBottom: 20,
+            border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12,
+            background: 'rgba(255,255,255,0.03)',
+          }}>
+            <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: '.18em', color: 'rgba(255,255,255,0.28)', textTransform: 'uppercase', marginRight: 4 }}>
+              {roomPlayers.length} joueur{roomPlayers.length > 1 ? 's' : ''}
+            </span>
+            {roomPlayers.map((p, i) => <PlayerChip key={i} player={p} />)}
+          </div>
+        )}
+
+        {/* Player list compact during play */}
+        {roomCode && roomPlayers.length > 0 && isPlaying && (
+          <div style={{
+            display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 16,
+            justifyContent: 'center',
+          }}>
+            {roomPlayers.map((p, i) => <PlayerChip key={i} player={p} />)}
           </div>
         )}
 
@@ -509,37 +574,32 @@ export default function BlindTestPage() {
               borderRadius: 100, background: 'rgba(212,160,23,0.10)', border: '1px solid rgba(212,160,23,0.28)',
               fontSize: 10, fontWeight: 800, letterSpacing: '.22em', color: GOLD, textTransform: 'uppercase', marginBottom: 22,
             }}>🎵 Blind Test Anime</div>
-            <h1 style={{ fontFamily: "'Pirata One',cursive", fontSize: 'clamp(46px,8vw,84px)', color: '#fff', margin: '0 0 16px', lineHeight: 1, letterSpacing: '-.02em' }}>
+            <h1 style={{ fontFamily: "'Pirata One',cursive", fontSize: 'clamp(46px,8vw,84px)', color: '#fff', margin: '0 0 16px', lineHeight: 1 }}>
               Blind Test
             </h1>
-            <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.42)', maxWidth: 520, margin: '0 auto 36px', lineHeight: 1.75 }}>
-              Un extrait d'opening anime se lance en fond. Choisis parmi 4 propositions et tape le titre pour le bonus !
+            <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.42)', maxWidth: 480, margin: '0 auto 36px', lineHeight: 1.75 }}>
+              Un opening se lance en fond. Choisis parmi 4 propositions et tape le titre pour le bonus.
             </p>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(160px,1fr))', gap: 10, marginBottom: 40, textAlign: 'left' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: 10, marginBottom: 40, textAlign: 'left' }}>
               {LOCAL_TRACKS.map((t, i) => (
                 <div key={t.id} style={{
                   background: `linear-gradient(145deg,${t.color}14 0%,rgba(7,9,14,0.97) 100%)`,
                   border: `1px solid ${t.color}22`, borderTop: `2px solid ${t.color}`,
-                  borderRadius: 12, padding: '14px 16px',
-                  animation: `btFadeUp .4s ${i * 0.05}s ease both`,
+                  borderRadius: 12, padding: '12px 14px',
+                  animation: `btFadeUp .4s ${i * 0.04}s ease both`,
                 }}>
-                  <div style={{ fontSize: 24, marginBottom: 6 }}>{t.emoji}</div>
-                  <div style={{ fontSize: 12, fontWeight: 800, color: '#fff', marginBottom: 2 }}>{t.anime}</div>
-                  <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.38)' }}>{t.type} · {t.episode}</div>
+                  <div style={{ fontSize: 22, marginBottom: 5 }}>{t.emoji}</div>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: '#fff', marginBottom: 2 }}>{t.anime}</div>
+                  <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.35)' }}>{t.type} · {t.episode}</div>
                 </div>
               ))}
             </div>
 
             <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 36 }}>
-              {[
-                { icon: '🎯', text: 'Anime = 50 pts' },
-                { icon: '🎵', text: 'Titre = +30 pts bonus' },
-                { icon: '⚡', text: '< 5s = ×2' },
-                { icon: '🔥', text: 'Streak ×3 = ×1.2' },
-              ].map((r, i) => (
+              {[['🎯','Anime = 50 pts'],['🎵','Titre = +30 pts'],['⚡','< 5s = ×2'],['🔥','Streak ×3 = ×1.2']].map(([icon, text], i) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 100, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)', fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.65)' }}>
-                  <span>{r.icon}</span><span>{r.text}</span>
+                  <span>{icon}</span><span>{text}</span>
                 </div>
               ))}
             </div>
@@ -550,7 +610,7 @@ export default function BlindTestPage() {
                 padding: '15px 44px', borderRadius: 100, border: 'none', fontSize: 16, fontWeight: 800,
                 background: `linear-gradient(135deg,${GOLD},#e5b83a)`, color: '#1a1200', cursor: 'pointer',
                 letterSpacing: '.04em', boxShadow: `0 8px 32px rgba(212,160,23,0.35)`,
-                transition: 'all .2s', fontFamily: "'Pirata One',cursive",
+                fontFamily: "'Pirata One',cursive",
               }}
             >
               {roomCode && roomRole !== 'host' ? 'Attendre le host' : 'Lancer le jeu'}
@@ -563,17 +623,20 @@ export default function BlindTestPage() {
           </div>
         )}
 
-        {/* ── COUNTDOWN ── */}
+        {/* ── COUNTDOWN — centré verticalement ── */}
         {phase === 'countdown' && (
-          <div style={{ textAlign: 'center', animation: 'btFadeUp .3s ease' }}>
+          <div style={{
+            textAlign: 'center', animation: 'btFadeUp .3s ease',
+            minHeight: 'calc(100vh - 260px)', display: 'flex', flexDirection: 'column', justifyContent: 'center',
+          }}>
             <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.22em', color: GOLD, textTransform: 'uppercase', marginBottom: 20 }}>
               {roomCode ? `Salle ${roomCode} · prépare-toi...` : 'Prépare-toi...'}
             </div>
             <div style={{
               fontFamily: "'Pirata One',cursive",
-              fontSize: 'clamp(100px,20vw,160px)',
+              fontSize: 'clamp(120px,22vw,180px)',
               color: '#fff', lineHeight: 1,
-              textShadow: `0 0 80px ${GOLD}44`,
+              textShadow: `0 0 80px ${GOLD}55`,
               animation: 'btPulse .9s ease-in-out infinite',
             }}>
               {countdown || '▶'}
@@ -582,20 +645,23 @@ export default function BlindTestPage() {
           </div>
         )}
 
-        {/* ── PLAYING ── */}
+        {/* ── PLAYING — centré ── */}
         {phase === 'playing' && track && (
-          <div style={{ animation: 'btFadeUp .3s ease' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
+          <div style={{
+            animation: 'btFadeUp .3s ease',
+            minHeight: 'calc(100vh - 260px)', display: 'flex', flexDirection: 'column', justifyContent: 'center',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
               <ScorePill label="Score" value={totalScore.toLocaleString('fr-FR')} />
               <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
                 <ScorePill label="Streak" value={streak} color={streak >= 3 ? '#f59e0b' : 'rgba(255,255,255,0.55)'} />
-                <ScorePill label="Round" value={round + 1} color="rgba(255,255,255,0.55)" />
+                <ScorePill label="Round"  value={round + 1} color="rgba(255,255,255,0.55)" />
               </div>
             </div>
 
-            <div style={{ background: 'rgba(7,9,14,0.80)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: 18, padding: '28px 28px 24px', marginBottom: 20, backdropFilter: 'blur(8px)' }}>
+            <div style={{ background: 'rgba(7,9,14,0.82)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 18, padding: '24px 24px 20px', backdropFilter: 'blur(6px)' }}>
               {/* Timer bar */}
-              <div style={{ height: 4, background: 'rgba(255,255,255,0.06)', borderRadius: 100, overflow: 'hidden', marginBottom: 22, position: 'relative' }}>
+              <div style={{ height: 4, background: 'rgba(255,255,255,0.06)', borderRadius: 100, overflow: 'hidden', marginBottom: 20, position: 'relative' }}>
                 <div style={{
                   position: 'absolute', left: 0, top: 0, height: '100%',
                   background: `linear-gradient(90deg,${barColor}88,${barColor})`,
@@ -605,52 +671,43 @@ export default function BlindTestPage() {
                 }} />
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
                 <Waveform playing color={activeTrack.color} />
                 <div style={{ fontFamily: "'Pirata One',cursive", fontSize: 28, color: elapsed <= 5 ? GREEN : elapsed <= 15 ? GOLD : RED, fontWeight: 900 }}>
                   {ROUND_SECS - elapsed}s
                 </div>
               </div>
 
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', textAlign: 'center', marginBottom: guessEnabled ? 20 : 0 }}>
-                {!guessEnabled ? `⏳ Écoute encore ${GUESS_DELAY - elapsed}s avant de répondre...` : '🎯 Choisis l\'anime !'}
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.32)', textAlign: 'center', marginBottom: guessEnabled ? 18 : 0 }}>
+                {!guessEnabled ? `⏳ Écoute encore ${GUESS_DELAY - elapsed}s...` : '🎯 Choisis l\'anime !'}
               </div>
 
               {guessEnabled && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {/* MCQ buttons */}
-                  <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.18em', color: 'rgba(255,255,255,0.30)', textTransform: 'uppercase', marginBottom: 4 }}>
+                  <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: '.18em', color: 'rgba(255,255,255,0.28)', textTransform: 'uppercase', marginBottom: 2 }}>
                     Quel anime ?
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 10 }}>
                     {mcqChoices.map((choice, i) => (
                       <MCQButton
-                        key={i}
-                        label={choice}
+                        key={i} label={choice}
                         selected={mcqSelected === choice}
-                        revealed={false}
-                        color={activeTrack.color}
-                        onClick={() => {
-                          setAnimeGuess(choice)
-                          setMcqSelected(choice)
-                          titleRef.current?.focus()
-                        }}
+                        revealed={false} color={activeTrack.color}
+                        onClick={() => { setAnimeGuess(choice); setMcqSelected(choice); titleRef.current?.focus() }}
                       />
                     ))}
                   </div>
 
-                  {/* Title bonus input */}
-                  <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.18em', color: 'rgba(255,255,255,0.30)', textTransform: 'uppercase', marginBottom: 4 }}>
+                  <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: '.18em', color: 'rgba(255,255,255,0.28)', textTransform: 'uppercase', marginBottom: 2 }}>
                     Titre de l'opening (bonus)
                   </div>
                   <input
-                    type="text"
-                    value={titleGuess}
+                    type="text" value={titleGuess}
                     onChange={e => setTitleGuess(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && submitGuess()}
                     ref={titleRef}
                     placeholder="Titre de l'opening..."
-                    style={inputGuessStyle}
+                    style={inputStyle}
                   />
 
                   <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
@@ -665,26 +722,24 @@ export default function BlindTestPage() {
 
         {/* ── REVEAL ── */}
         {phase === 'reveal' && track && result && (
-          <div style={{ animation: 'btFadeUp .4s ease' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+          <div style={{
+            animation: 'btFadeUp .4s ease',
+            minHeight: 'calc(100vh - 260px)', display: 'flex', flexDirection: 'column', justifyContent: 'center',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <ScorePill label="Score total" value={totalScore.toLocaleString('fr-FR')} />
               <ScorePill label="Streak" value={streak} color={streak >= 3 ? '#f59e0b' : 'rgba(255,255,255,0.55)'} />
             </div>
 
-            {/* MCQ revealed state */}
-            <div style={{ background: 'rgba(7,9,14,0.75)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '18px 20px', marginBottom: 16, backdropFilter: 'blur(4px)' }}>
-              <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.18em', color: 'rgba(255,255,255,0.30)', textTransform: 'uppercase', marginBottom: 10 }}>
-                Quel anime ?
-              </div>
+            {/* MCQ revealed */}
+            <div style={{ background: 'rgba(7,9,14,0.72)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 14, padding: '16px 18px', marginBottom: 14, backdropFilter: 'blur(4px)' }}>
+              <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: '.18em', color: 'rgba(255,255,255,0.28)', textTransform: 'uppercase', marginBottom: 8 }}>Quel anime ?</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                 {mcqChoices.map((choice, i) => (
-                  <MCQButton
-                    key={i}
-                    label={choice}
+                  <MCQButton key={i} label={choice}
                     selected={mcqSelected === choice}
                     correct={choice === track.anime}
-                    revealed={true}
-                    color={activeTrack.color}
+                    revealed={true} color={activeTrack.color}
                     onClick={() => {}}
                   />
                 ))}
@@ -693,7 +748,7 @@ export default function BlindTestPage() {
 
             <RevealCard track={track} result={result} berries={berries} />
 
-            <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
+            <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
               <button onClick={nextRound} style={{ ...primaryBtnStyle, flex: 1, fontFamily: "'Pirata One',cursive" }}>Extrait suivant →</button>
               {round >= 2 && <button onClick={endGame} style={endBtnStyle}>Terminer</button>}
             </div>
@@ -704,40 +759,33 @@ export default function BlindTestPage() {
         {phase === 'end' && (
           <div style={{ textAlign: 'center', animation: 'btFadeUp .5s ease' }}>
             <div style={{ fontSize: 72, marginBottom: 20, animation: 'btFloat 3s ease-in-out infinite', filter: `drop-shadow(0 0 28px ${GOLD}55)` }}>🏆</div>
-            <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.22em', color: GOLD, textTransform: 'uppercase', marginBottom: 12 }}>
-              Partie terminée
-            </div>
-            <h2 style={{ fontFamily: "'Pirata One',cursive", fontSize: 'clamp(36px,6vw,64px)', color: '#fff', margin: '0 0 28px', lineHeight: 1 }}>
-              Score final
-            </h2>
+            <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.22em', color: GOLD, textTransform: 'uppercase', marginBottom: 12 }}>Partie terminée</div>
+            <h2 style={{ fontFamily: "'Pirata One',cursive", fontSize: 'clamp(36px,6vw,64px)', color: '#fff', margin: '0 0 28px', lineHeight: 1 }}>Score final</h2>
 
             <div style={{ display: 'flex', gap: 28, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 36 }}>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontFamily: "'Pirata One',cursive", fontSize: 42, fontWeight: 900, color: GOLD, lineHeight: 1 }}>{totalScore.toLocaleString('fr-FR')}</div>
-                <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.38)', marginTop: 4 }}>Berries gagnées</div>
-              </div>
-              <div style={{ width: 1, height: 48, background: 'rgba(255,255,255,0.08)', alignSelf: 'center' }} />
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontFamily: "'Pirata One',cursive", fontSize: 42, fontWeight: 900, color: '#f59e0b', lineHeight: 1 }}>{maxStreak}</div>
-                <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.38)', marginTop: 4 }}>Streak max</div>
-              </div>
-              <div style={{ width: 1, height: 48, background: 'rgba(255,255,255,0.08)', alignSelf: 'center' }} />
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontFamily: "'Pirata One',cursive", fontSize: 42, fontWeight: 900, color: 'rgba(255,255,255,0.80)', lineHeight: 1 }}>{round}</div>
-                <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.38)', marginTop: 4 }}>Rounds joués</div>
-              </div>
+              {[
+                { val: totalScore.toLocaleString('fr-FR'), label: 'Berries gagnées', color: GOLD },
+                { val: maxStreak, label: 'Streak max', color: '#f59e0b' },
+                { val: round, label: 'Rounds joués', color: 'rgba(255,255,255,0.80)' },
+              ].map((s, i, arr) => (
+                <>
+                  <div key={i} style={{ textAlign: 'center' }}>
+                    <div style={{ fontFamily: "'Pirata One',cursive", fontSize: 42, fontWeight: 900, color: s.color, lineHeight: 1 }}>{s.val}</div>
+                    <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.38)', marginTop: 4 }}>{s.label}</div>
+                  </div>
+                  {i < arr.length - 1 && <div key={`d${i}`} style={{ width: 1, height: 48, background: 'rgba(255,255,255,0.08)', alignSelf: 'center' }} />}
+                </>
+              ))}
             </div>
 
             {!isAuthenticated && (
               <div style={{ padding: '14px 20px', borderRadius: 12, background: 'rgba(212,160,23,0.08)', border: '1px solid rgba(212,160,23,0.22)', marginBottom: 24, fontSize: 13, color: 'rgba(255,255,255,0.60)', lineHeight: 1.6 }}>
-                💡 Connecte-toi avec Discord pour sauvegarder ton score et apparaître dans le classement !
+                💡 Connecte-toi avec Discord pour sauvegarder ton score !
               </div>
             )}
 
             <div style={{ textAlign: 'left', marginBottom: 32 }}>
-              <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.18em', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', marginBottom: 14 }}>
-                Récapitulatif
-              </div>
+              <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.18em', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', marginBottom: 14 }}>Récap</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {history.map((h, i) => (
                   <div key={i} style={{
@@ -760,15 +808,8 @@ export default function BlindTestPage() {
             </div>
 
             <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
-              <button
-                onClick={() => { setPhase('intro'); setTotalScore(0); setStreak(0); setMaxStreak(0); setRound(0); setHistory([]) }}
-                style={primaryBtnStyle}
-              >
-                Rejouer
-              </button>
-              <button onClick={() => navigate('/blind-test/leaderboard')} style={endBtnStyle}>
-                Classement
-              </button>
+              <button onClick={() => { setPhase('intro'); setTotalScore(0); setStreak(0); setMaxStreak(0); setRound(0); setHistory([]) }} style={primaryBtnStyle}>Rejouer</button>
+              <button onClick={() => navigate('/blind-test/leaderboard')} style={endBtnStyle}>Classement</button>
             </div>
           </div>
         )}
@@ -779,35 +820,34 @@ export default function BlindTestPage() {
 
 function smallBtn(primary) {
   return {
-    border:     `1px solid ${primary ? 'rgba(212,160,23,0.42)' : 'rgba(255,255,255,0.14)'}`,
+    border: `1px solid ${primary ? 'rgba(212,160,23,0.42)' : 'rgba(255,255,255,0.14)'}`,
     background: primary ? 'rgba(212,160,23,0.14)' : 'rgba(255,255,255,0.05)',
-    color:      primary ? '#facc15' : 'rgba(255,255,255,0.78)',
-    borderRadius: 10, padding: '10px 14px',
-    cursor: 'pointer', fontWeight: 800, fontSize: 13,
+    color: primary ? '#facc15' : 'rgba(255,255,255,0.78)',
+    borderRadius: 10, padding: '9px 13px',
+    cursor: 'pointer', fontWeight: 800, fontSize: 12,
   }
 }
 
-const inputGuessStyle = {
-  padding: '14px 18px', borderRadius: 12,
+const inputStyle = {
+  padding: '13px 16px', borderRadius: 12, width: '100%', boxSizing: 'border-box',
   background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.14)',
-  color: '#fff', fontSize: 15, outline: 'none', fontFamily: 'var(--body)',
-  transition: 'border-color .15s, box-shadow .15s', width: '100%', boxSizing: 'border-box',
+  color: '#fff', fontSize: 14, outline: 'none', fontFamily: 'var(--body)',
 }
 
 const primaryBtnStyle = {
-  flex: 1, padding: '13px', borderRadius: 12, border: 'none',
+  flex: 1, padding: '12px', borderRadius: 12, border: 'none',
   background: `linear-gradient(135deg,${GOLD},#e5b83a)`, color: '#1a1200',
-  fontSize: 14, fontWeight: 800, cursor: 'pointer', transition: 'all .15s', letterSpacing: '.02em',
+  fontSize: 14, fontWeight: 800, cursor: 'pointer', letterSpacing: '.02em',
 }
 
 const secondaryBtnStyle = {
-  padding: '13px 18px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.10)',
+  padding: '12px 16px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.10)',
   background: 'rgba(255,255,255,0.03)', color: 'rgba(255,255,255,0.45)',
-  fontSize: 13, fontWeight: 700, cursor: 'pointer', transition: 'all .15s',
+  fontSize: 13, fontWeight: 700, cursor: 'pointer',
 }
 
 const endBtnStyle = {
-  padding: '13px 30px', borderRadius: 100,
+  padding: '12px 28px', borderRadius: 100,
   border: '1px solid rgba(255,255,255,0.14)', background: 'rgba(255,255,255,0.04)',
   color: 'rgba(255,255,255,0.70)', fontSize: 14, fontWeight: 700, cursor: 'pointer',
 }
