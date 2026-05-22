@@ -62,15 +62,23 @@ export async function fetchMemberProfile(discordId) {
   if (!supabase) return null
   const id = String(discordId)
 
-  // Try multiple periods — week first (user likely active), then month, then all-time
-  for (const period of ['week', 'month', 'all']) {
-    const { data, error } = await callTopClassement(500, period)
-    if (error || !data) continue
-    const idx = data.findIndex(m => String(m.uid) === id)
-    if (idx !== -1) return { ...data[idx], rank: idx + 1, total: data.length }
+  // Go directly to Supabase RPC — skip the broken /api/leaderboard (402 on every call).
+  // Try new signature (with p_period) then legacy (without).
+  let board = null
+  const rpc1 = await supabase.rpc('top_classement', { p_limit: 500, p_period: 'week' })
+  if (!rpc1.error && rpc1.data) {
+    board = rpc1.data
+  } else {
+    const rpc2 = await supabase.rpc('top_classement', { p_limit: 500 })
+    if (!rpc2.error && rpc2.data) board = rpc2.data
   }
 
-  // Last resort: direct lookup from users table (works even with 0 vocal hours)
+  if (board) {
+    const idx = board.findIndex(m => String(m.uid) === id)
+    if (idx !== -1) return { ...board[idx], rank: idx + 1, total: board.length }
+  }
+
+  // Direct lookup: works even if user has 0 vocal hours or is outside top 500
   const { data: user } = await supabase
     .from('users')
     .select('uid, data')
@@ -85,8 +93,8 @@ export async function fetchMemberProfile(discordId) {
     avatar_url: d.avatar_url || null,
     vocal_h: 0,
     berrys: parseInt(d.berrys || 0) || 0,
-    rank: '?',
-    total: '?',
+    rank: board ? board.length + 1 : '?',
+    total: board ? board.length : '?',
   }
 }
 
