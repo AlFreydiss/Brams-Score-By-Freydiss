@@ -59,40 +59,47 @@ export async function fetchStats() {
 // â”€â”€ Auth helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function fetchMemberProfile(discordId) {
-  if (!supabase) return null
+  if (!supabase) { console.warn('[profile] supabase null — env vars manquantes'); return null }
   const id = String(discordId)
 
-  // Go directly to Supabase RPC — skip the broken /api/leaderboard (402 on every call).
-  // Try new signature (with p_period) then legacy (without).
+  // ── 1. Leaderboard RPC (gives vocal_h + rank) ──────────────────────────────
   let board = null
   const rpc1 = await supabase.rpc('top_classement', { p_limit: 500, p_period: 'week' })
-  if (!rpc1.error && rpc1.data) {
+  console.log('[profile] rpc1', { err: rpc1.error?.message, rows: rpc1.data?.length })
+  if (!rpc1.error && rpc1.data?.length) {
     board = rpc1.data
   } else {
     const rpc2 = await supabase.rpc('top_classement', { p_limit: 500 })
-    if (!rpc2.error && rpc2.data) board = rpc2.data
+    console.log('[profile] rpc2 (legacy)', { err: rpc2.error?.message, rows: rpc2.data?.length })
+    if (!rpc2.error && rpc2.data?.length) board = rpc2.data
   }
 
   if (board) {
-    const idx = board.findIndex(m => String(m.uid) === id)
-    if (idx !== -1) return { ...board[idx], rank: idx + 1, total: board.length }
+    // uid field might be named differently depending on RPC version
+    const idx = board.findIndex(m =>
+      String(m.uid ?? m.user_id ?? m.discord_id ?? '') === id
+    )
+    console.log('[profile] board match idx', idx, 'for id', id, 'sample uid', board[0]?.uid ?? board[0]?.user_id)
+    if (idx !== -1) return { ...board[idx], uid: id, rank: idx + 1, total: board.length }
   }
 
-  // Direct lookup: works even if user has 0 vocal hours or is outside top 500
-  const { data: user } = await supabase
+  // ── 2. Direct users table lookup ────────────────────────────────────────────
+  console.log('[profile] falling back to direct users table query')
+  const { data: user, error: userErr } = await supabase
     .from('users')
     .select('uid, data')
     .eq('uid', id)
     .maybeSingle()
+  console.log('[profile] direct query', { err: userErr?.message, found: !!user })
 
-  if (!user?.data) return null
-  const d = user.data
+  if (!user) return null
+  const d = user.data || {}
   return {
     uid: id,
-    username: d.username || `Pirate #${id.slice(-5)}`,
-    avatar_url: d.avatar_url || null,
-    vocal_h: 0,
-    berrys: parseInt(d.berrys || 0) || 0,
+    username: d.username || d.display_name || `Pirate #${id.slice(-5)}`,
+    avatar_url: d.avatar_url || d.avatar || null,
+    vocal_h: parseFloat(d.vocal_h || d.total_vocal_h || 0),
+    berrys: parseInt(d.berrys || d.balance || 0) || 0,
     rank: board ? board.length + 1 : '?',
     total: board ? board.length : '?',
   }
