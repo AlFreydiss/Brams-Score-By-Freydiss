@@ -60,13 +60,13 @@ export async function fetchStats() {
 
 export async function fetchMemberProfile(discordId) {
   if (!supabase) return null
-  const { data, error } = await callTopClassement(500, 'week')
+  const { data, error } = await callTopClassement(2000, 'all')
   if (error || !data) return null
-  const member = data.find(m => String(m.uid) === String(discordId))
-  if (!member) return null
+  const idx = data.findIndex(m => String(m.uid) === String(discordId))
+  if (idx === -1) return null
   return {
-    ...member,
-    rank: parseInt(data.indexOf(member)) + 1,
+    ...data[idx],
+    rank: idx + 1,
     total: data.length,
   }
 }
