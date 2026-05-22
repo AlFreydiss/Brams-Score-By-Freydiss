@@ -32,6 +32,22 @@ function saveVideoProgress(storageKey, progress) {
   if (!storageKey) return
   try { localStorage.setItem(storageKey, JSON.stringify(progress)) } catch {}
 }
+function cleanCueText(text) {
+  const seen = new Set()
+  return String(text || '')
+    .replace(/<[^>]*>/g, '')
+    .replace(/\{[^}]*\}/g, '')
+    .split('\n')
+    .map(line => line.trim())
+    .filter(Boolean)
+    .filter(line => {
+      if (seen.has(line)) return false
+      seen.add(line)
+      return true
+    })
+    .join('\n')
+}
+
 
 const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2]
 
@@ -235,7 +251,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
     const tick = () => {
       if (activeTrack) {
         const cues = activeTrack.activeCues
-        const text = cues && cues.length ? Array.from(cues).map(c => c.text).join('\n') : ''
+        const text = cues && cues.length ? cleanCueText(Array.from(cues).map(c => c.text).join('\n')) : ''
         setCueText(prev => prev === text ? prev : text)
       }
       rafId = requestAnimationFrame(tick)
@@ -439,7 +455,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                 pointerEvents: 'none',
                 zIndex: 5,
               }}>
-                {cueText.replace(/<[^>]*>/g, '')}
+                {cueText}
               </div>
             )}
 
