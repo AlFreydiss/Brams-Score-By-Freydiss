@@ -7,8 +7,8 @@ import {
   upsertBlindTestScore, logSession,
 } from '../lib/blindTest.js'
 
-const GOLD = '#d4a017'
-const RED = '#e0524a'
+const GOLD  = '#d4a017'
+const RED   = '#e0524a'
 const GREEN = '#22c55e'
 const ROOM_QUERY = 'room'
 const ROOM_TABLE = 'blind_test_rooms'
@@ -24,7 +24,17 @@ const BT_CSS = `
   @keyframes btFloat   { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-7px)} }
   @keyframes btBounce  { 0%,100%{transform:translateY(0) scale(1)} 40%{transform:translateY(-14px) scale(1.12)} }
   @keyframes btWave    { 0%,100%{height:8px} 50%{height:32px} }
+  @keyframes btRevealGlow { from{box-shadow:0 0 0px transparent} to{box-shadow:0 0 40px var(--glow,rgba(212,160,23,0.4))} }
 `
+
+function pickMCQChoices(correctTrack, allTracks) {
+  const allAnimes = [...new Set(allTracks.map(t => t.anime))]
+  const wrong = allAnimes
+    .filter(a => a !== correctTrack.anime)
+    .sort(() => Math.random() - 0.5)
+    .slice(0, 3)
+  return [correctTrack.anime, ...wrong].sort(() => Math.random() - 0.5)
+}
 
 function BTStars() {
   const stars = useMemo(() => Array.from({ length: 50 }, (_, i) => ({
@@ -33,19 +43,15 @@ function BTStars() {
     dur: 2.8 + (i * 0.28) % 4.5, del: (i * 0.21) % 7,
     gold: i % 13 === 0,
   })), [])
-
   return (
     <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0 }}>
       {stars.map((s, i) => (
-        <div
-          key={i}
-          style={{
-            position: 'absolute', left: `${s.x}%`, top: `${s.y}%`,
-            width: s.size, height: s.size, borderRadius: '50%',
-            background: s.gold ? 'rgba(212,160,23,.65)' : 'rgba(255,255,255,.5)',
-            animation: `btTwinkle ${s.dur}s ${s.del}s ease-in-out infinite`,
-          }}
-        />
+        <div key={i} style={{
+          position: 'absolute', left: `${s.x}%`, top: `${s.y}%`,
+          width: s.size, height: s.size, borderRadius: '50%',
+          background: s.gold ? 'rgba(212,160,23,.65)' : 'rgba(255,255,255,.5)',
+          animation: `btTwinkle ${s.dur}s ${s.del}s ease-in-out infinite`,
+        }} />
       ))}
     </div>
   )
@@ -54,13 +60,11 @@ function BTStars() {
 function BTScanLine() {
   return (
     <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 1, overflow: 'hidden' }}>
-      <div
-        style={{
-          position: 'absolute', left: 0, right: 0, height: 2,
-          background: 'linear-gradient(90deg,transparent,rgba(212,160,23,.07),rgba(212,160,23,.16),rgba(212,160,23,.07),transparent)',
-          animation: 'btScan 16s linear infinite',
-        }}
-      />
+      <div style={{
+        position: 'absolute', left: 0, right: 0, height: 2,
+        background: 'linear-gradient(90deg,transparent,rgba(212,160,23,.07),rgba(212,160,23,.16),rgba(212,160,23,.07),transparent)',
+        animation: 'btScan 16s linear infinite',
+      }} />
     </div>
   )
 }
@@ -69,16 +73,13 @@ function Waveform({ playing, color }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 3, height: 40 }}>
       {Array.from({ length: 18 }).map((_, i) => (
-        <div
-          key={i}
-          style={{
-            width: 3, borderRadius: 2,
-            background: color || GOLD,
-            opacity: playing ? 0.85 : 0.25,
-            animation: playing ? `btWave ${0.5 + (i % 5) * 0.12}s ${i * 0.04}s ease-in-out infinite` : 'none',
-            height: playing ? undefined : 8,
-          }}
-        />
+        <div key={i} style={{
+          width: 3, borderRadius: 2,
+          background: color || GOLD,
+          opacity: playing ? 0.85 : 0.25,
+          animation: playing ? `btWave ${0.5 + (i % 5) * 0.12}s ${i * 0.04}s ease-in-out infinite` : 'none',
+          height: playing ? undefined : 8,
+        }} />
       ))}
     </div>
   )
@@ -93,19 +94,46 @@ function ScorePill({ label, value, color = GOLD }) {
   )
 }
 
+function MCQButton({ label, onClick, selected, correct, revealed, color }) {
+  let bg = 'rgba(255,255,255,0.04)'
+  let border = '1px solid rgba(255,255,255,0.12)'
+  let textColor = 'rgba(255,255,255,0.80)'
+  if (selected && !revealed) { bg = `${color || GOLD}20`; border = `1px solid ${color || GOLD}60`; textColor = '#fff' }
+  if (revealed && correct)   { bg = 'rgba(34,197,94,0.15)'; border = '1px solid rgba(34,197,94,0.50)'; textColor = GREEN }
+  if (revealed && selected && !correct) { bg = 'rgba(239,68,68,0.12)'; border = '1px solid rgba(239,68,68,0.40)'; textColor = RED }
+
+  return (
+    <button
+      onClick={onClick}
+      disabled={revealed}
+      style={{
+        width: '100%', padding: '14px 18px', borderRadius: 12,
+        background: bg, border, color: textColor,
+        fontSize: 14, fontWeight: 700, cursor: revealed ? 'default' : 'pointer',
+        textAlign: 'left', transition: 'all .15s',
+        display: 'flex', alignItems: 'center', gap: 10,
+      }}
+    >
+      {revealed && correct && <span style={{ flexShrink: 0, color: GREEN }}>✓</span>}
+      {revealed && selected && !correct && <span style={{ flexShrink: 0, color: RED }}>✗</span>}
+      {!revealed && selected && <span style={{ flexShrink: 0, color: color || GOLD }}>▶</span>}
+      {!revealed && !selected && <span style={{ flexShrink: 0, color: 'rgba(255,255,255,0.25)' }}>○</span>}
+      {label}
+    </button>
+  )
+}
+
 function RevealCard({ track, result, berries }) {
   const c = track.color
   return (
-    <div
-      style={{
-        background: `linear-gradient(145deg,${c}18 0%,rgba(7,9,14,0.97) 100%)`,
-        border: `1px solid ${c}44`,
-        borderTop: `3px solid ${c}`,
-        borderRadius: 16, padding: '22px 24px',
-        animation: 'btFadeUp .4s ease',
-        textAlign: 'center',
-      }}
-    >
+    <div style={{
+      background: `linear-gradient(145deg,${c}18 0%,rgba(7,9,14,0.97) 100%)`,
+      border: `1px solid ${c}44`,
+      borderTop: `3px solid ${c}`,
+      borderRadius: 16, padding: '22px 24px',
+      animation: 'btFadeUp .4s ease',
+      textAlign: 'center',
+    }}>
       <div style={{ fontSize: 52, marginBottom: 12, animation: 'btBounce 1s ease', filter: `drop-shadow(0 0 20px ${c}66)` }}>{track.emoji}</div>
       <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.18em', color: c, textTransform: 'uppercase', marginBottom: 6 }}>
         {track.type} · {track.episode}
@@ -114,7 +142,7 @@ function RevealCard({ track, result, berries }) {
       <div style={{ fontSize: 15, color: 'rgba(255,255,255,0.60)', marginBottom: 16 }}>{track.anime}</div>
       <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 16 }}>
         {result.animeOk && <span style={{ fontSize: 11, fontWeight: 700, color: GREEN, background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.30)', borderRadius: 100, padding: '4px 14px' }}>✓ Anime correct</span>}
-        {result.titleOk && <span style={{ fontSize: 11, fontWeight: 700, color: GREEN, background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.30)', borderRadius: 100, padding: '4px 14px' }}>✓ Titre correct</span>}
+        {result.titleOk && <span style={{ fontSize: 11, fontWeight: 700, color: GREEN, background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.30)', borderRadius: 100, padding: '4px 14px' }}>✓ Titre correct (bonus)</span>}
         {!result.animeOk && !result.titleOk && <span style={{ fontSize: 11, fontWeight: 700, color: '#f87171', background: 'rgba(239,68,68,0.10)', border: '1px solid rgba(239,68,68,0.28)', borderRadius: 100, padding: '4px 14px' }}>✗ Raté</span>}
       </div>
       {berries > 0 && <div style={{ fontSize: 13, fontWeight: 800, color: GOLD }}>+{berries.toLocaleString('fr-FR')} 🪙 berries</div>}
@@ -122,14 +150,8 @@ function RevealCard({ track, result, berries }) {
   )
 }
 
-function makeRoomCode() {
-  return Math.random().toString(36).slice(2, 8).toUpperCase()
-}
-
-function getRoomFromUrl() {
-  return (new URLSearchParams(window.location.search).get(ROOM_QUERY) || '').trim().toUpperCase()
-}
-
+function makeRoomCode() { return Math.random().toString(36).slice(2, 8).toUpperCase() }
+function getRoomFromUrl() { return (new URLSearchParams(window.location.search).get(ROOM_QUERY) || '').trim().toUpperCase() }
 function roomUrl(roomCode) {
   const url = new URL(window.location.href)
   url.searchParams.set(ROOM_QUERY, roomCode)
@@ -138,59 +160,65 @@ function roomUrl(roomCode) {
 
 function normalizeRoom(row) {
   return {
-    room_code: row?.room_code || '',
-    track_id: row?.track_id || null,
-    phase: row?.phase || 'lobby',
-    round: Number(row?.round || 0),
+    room_code:     row?.room_code     || '',
+    track_id:      row?.track_id      || null,
+    phase:         row?.phase         || 'lobby',
+    round:         Number(row?.round  || 0),
     last_track_id: row?.last_track_id || null,
-    started_at: row?.started_at || null,
-    updated_at: row?.updated_at || null,
+    started_at:    row?.started_at    || null,
+    updated_at:    row?.updated_at    || null,
   }
 }
 
 export default function BlindTestPage() {
   const navigate = useNavigate()
   const { isAuthenticated, user, displayName, avatarUrl } = useAuth()
-  const audioRef = useRef(null)
-  const roomChannelRef = useRef(null)
-  const roomGuardRef = useRef(false)
-  const roomStateRef = useRef(null)
+  const videoRef        = useRef(null)
+  const roomChannelRef  = useRef(null)
+  const roomGuardRef    = useRef(false)
+  const roomStateRef    = useRef(null)
+  const titleRef        = useRef(null)
 
-  const [phase, setPhase] = useState('intro')
-  const [track, setTrack] = useState(null)
-  const [lastTrackId, setLastTrackId] = useState(null)
-  const [elapsed, setElapsed] = useState(0)
-  const [startTime, setStartTime] = useState(null)
-  const [animeGuess, setAnimeGuess] = useState('')
-  const [titleGuess, setTitleGuess] = useState('')
-  const [result, setResult] = useState(null)
-  const [berries, setBerries] = useState(0)
-  const [totalScore, setTotalScore] = useState(0)
-  const [streak, setStreak] = useState(0)
-  const [maxStreak, setMaxStreak] = useState(0)
-  const [round, setRound] = useState(0)
-  const [history, setHistory] = useState([])
-  const [countdown, setCountdown] = useState(3)
-  const [guessEnabled, setGuessEnabled] = useState(false)
+  const [phase,         setPhase]         = useState('intro')
+  const [track,         setTrack]         = useState(null)
+  const [lastTrackId,   setLastTrackId]   = useState(null)
+  const [elapsed,       setElapsed]       = useState(0)
+  const [startTime,     setStartTime]     = useState(null)
+  const [animeGuess,    setAnimeGuess]    = useState('')
+  const [mcqSelected,   setMcqSelected]   = useState(null)
+  const [mcqChoices,    setMcqChoices]    = useState([])
+  const [titleGuess,    setTitleGuess]    = useState('')
+  const [result,        setResult]        = useState(null)
+  const [berries,       setBerries]       = useState(0)
+  const [totalScore,    setTotalScore]    = useState(0)
+  const [streak,        setStreak]        = useState(0)
+  const [maxStreak,     setMaxStreak]     = useState(0)
+  const [round,         setRound]         = useState(0)
+  const [history,       setHistory]       = useState([])
+  const [countdown,     setCountdown]     = useState(3)
+  const [guessEnabled,  setGuessEnabled]  = useState(false)
 
-  const [roomCode, setRoomCode] = useState('')
-  const [roomInput, setRoomInput] = useState('')
-  const [roomRole, setRoomRole] = useState('local')
+  const [roomCode,   setRoomCode]   = useState('')
+  const [roomInput,  setRoomInput]  = useState('')
+  const [roomRole,   setRoomRole]   = useState('local')
   const [roomStatus, setRoomStatus] = useState('Mode solo')
-  const [roomSync, setRoomSync] = useState('idle')
+  const [roomSync,   setRoomSync]   = useState('idle')
   const [roomNotice, setRoomNotice] = useState('')
-  const titleRef = useRef(null)
 
   const roomLink = roomCode ? roomUrl(roomCode) : ''
+
+  // ── Video blur/opacity based on phase ────────────────────────────────────
+  const videoBlur    = phase === 'reveal' ? 0   : 16
+  const videoOpacity = phase === 'playing' ? 0.20 : phase === 'reveal' ? 0.45 : phase === 'countdown' ? 0.10 : 0
 
   useEffect(() => {
     const initialRoom = getRoomFromUrl()
     if (initialRoom) void joinRoom(initialRoom)
     return () => {
       roomChannelRef.current?.unsubscribe?.()
-      if (audioRef.current) {
-        audioRef.current.pause()
-        audioRef.current.src = ''
+      if (videoRef.current) {
+        videoRef.current.pause()
+        videoRef.current.src = ''
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -199,7 +227,7 @@ export default function BlindTestPage() {
   useEffect(() => {
     if (phase !== 'countdown') return
     if (countdown <= 0) {
-      audioRef.current?.play().catch(() => {})
+      videoRef.current?.play().catch(() => {})
       setPhase('playing')
       setStartTime(Date.now())
       setElapsed(0)
@@ -222,8 +250,17 @@ export default function BlindTestPage() {
   }, [phase, startTime])
 
   useEffect(() => {
-    if (phase !== 'playing' && audioRef.current) audioRef.current.pause()
+    if (phase !== 'playing' && videoRef.current) videoRef.current.pause()
   }, [phase])
+
+  function loadVideo(url) {
+    const v = videoRef.current
+    if (!v) return
+    v.pause()
+    v.src = url
+    v.currentTime = 0
+    v.load()
+  }
 
   function syncRoomPayload(roomRow) {
     const room = normalizeRoom(roomRow)
@@ -240,14 +277,12 @@ export default function BlindTestPage() {
     if (!nextTrack) return
 
     roomGuardRef.current = true
-    if (audioRef.current) {
-      audioRef.current.pause()
-      audioRef.current.src = ''
-    }
-    audioRef.current = new Audio(nextTrack.url)
+    loadVideo(nextTrack.url)
     setTrack(nextTrack)
     setLastTrackId(room.last_track_id || nextTrack.id)
     setAnimeGuess('')
+    setMcqSelected(null)
+    setMcqChoices(pickMCQChoices(nextTrack, LOCAL_TRACKS))
     setTitleGuess('')
     setResult(null)
     setBerries(0)
@@ -261,7 +296,6 @@ export default function BlindTestPage() {
       setPhase('countdown')
       return
     }
-
     if (room.phase === 'playing') {
       setPhase('playing')
       setStartTime(Date.now())
@@ -270,39 +304,21 @@ export default function BlindTestPage() {
       setGuessEnabled(false)
       return
     }
-
-    if (room.phase === 'reveal') {
-      setPhase('reveal')
-      return
-    }
+    if (room.phase === 'reveal') { setPhase('reveal'); return }
   }
 
   async function joinRoom(code) {
     const nextCode = (code || roomInput || '').trim().toUpperCase()
-    if (!nextCode) {
-      setRoomStatus('Code manquant')
-      return
-    }
+    if (!nextCode) { setRoomStatus('Code manquant'); return }
 
-    setRoomInput(nextCode)
-    setRoomCode(nextCode)
-    setRoomRole('guest')
-    setRoomStatus(`Connexion ${nextCode}...`)
-    setRoomSync('loading')
+    setRoomInput(nextCode); setRoomCode(nextCode)
+    setRoomRole('guest'); setRoomStatus(`Connexion ${nextCode}...`); setRoomSync('loading')
     window.history.replaceState({}, '', roomUrl(nextCode))
 
-    if (!supabase) {
-      setRoomStatus('Supabase non configuré')
-      setRoomSync('error')
-      return
-    }
+    if (!supabase) { setRoomStatus('Supabase non configuré'); setRoomSync('error'); return }
 
     const { data } = await supabase.from(ROOM_TABLE).select('*').eq('room_code', nextCode).maybeSingle()
-    if (!data) {
-      setRoomStatus(`Salle ${nextCode} introuvable`)
-      setRoomSync('error')
-      return
-    }
+    if (!data) { setRoomStatus(`Salle ${nextCode} introuvable`); setRoomSync('error'); return }
 
     syncRoomPayload(data)
     subscribeRoom(nextCode)
@@ -310,29 +326,17 @@ export default function BlindTestPage() {
 
   async function createRoom() {
     const nextCode = makeRoomCode()
-    setRoomRole('host')
-    setRoomCode(nextCode)
-    setRoomInput(nextCode)
-    setRoomStatus(`Salle ${nextCode} créée`)
-    setRoomSync('saving')
+    setRoomRole('host'); setRoomCode(nextCode); setRoomInput(nextCode)
+    setRoomStatus(`Salle ${nextCode} créée`); setRoomSync('saving')
     window.history.replaceState({}, '', roomUrl(nextCode))
 
-    if (!supabase) {
-      setRoomStatus('Supabase non configuré')
-      setRoomSync('error')
-      return
-    }
+    if (!supabase) { setRoomStatus('Supabase non configuré'); setRoomSync('error'); return }
 
-    const payload = {
-      room_code: nextCode,
-      phase: 'lobby',
-      round: 0,
-      track_id: null,
-      last_track_id: null,
-      started_at: null,
-      updated_at: new Date().toISOString(),
-    }
-    await supabase.from(ROOM_TABLE).upsert(payload, { onConflict: 'room_code' })
+    await supabase.from(ROOM_TABLE).upsert({
+      room_code: nextCode, phase: 'lobby', round: 0,
+      track_id: null, last_track_id: null,
+      started_at: null, updated_at: new Date().toISOString(),
+    }, { onConflict: 'room_code' })
     subscribeRoom(nextCode)
     setRoomSync('saved')
   }
@@ -340,64 +344,46 @@ export default function BlindTestPage() {
   function subscribeRoom(code) {
     roomChannelRef.current?.unsubscribe?.()
     if (!supabase) return
-
     const channel = supabase
       .channel(`blind-test-room-${code}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: ROOM_TABLE, filter: `room_code=eq.${code}` }, payload => {
-        if (roomGuardRef.current) {
-          roomGuardRef.current = false
-          return
-        }
+        if (roomGuardRef.current) { roomGuardRef.current = false; return }
         syncRoomPayload(payload.new || payload.old)
       })
       .subscribe()
-
     roomChannelRef.current = channel
   }
 
   async function publishRoomState(nextPhase, nextTrack = track, nextRound = round, nextLastTrackId = lastTrackId) {
     if (!roomCode || roomRole !== 'host' || !supabase) return
-    const payload = {
-      room_code: roomCode,
-      phase: nextPhase,
-      round: nextRound,
-      track_id: nextTrack?.id || null,
-      last_track_id: nextLastTrackId || null,
-      started_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    }
     roomGuardRef.current = true
-    await supabase.from(ROOM_TABLE).upsert(payload, { onConflict: 'room_code' })
+    await supabase.from(ROOM_TABLE).upsert({
+      room_code: roomCode, phase: nextPhase, round: nextRound,
+      track_id: nextTrack?.id || null, last_track_id: nextLastTrackId || null,
+      started_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+    }, { onConflict: 'room_code' })
     setRoomSync('saved')
   }
 
   async function leaveRoom() {
     roomChannelRef.current?.unsubscribe?.()
-    roomChannelRef.current = null
-    roomStateRef.current = null
-    setRoomCode('')
-    setRoomInput('')
-    setRoomRole('local')
-    setRoomStatus('Mode solo')
-    setRoomSync('idle')
-    setPhase('intro')
-    setTrack(null)
-    setLastTrackId(null)
-    setCountdown(3)
-    setGuessEnabled(false)
+    roomChannelRef.current = null; roomStateRef.current = null
+    setRoomCode(''); setRoomInput(''); setRoomRole('local')
+    setRoomStatus('Mode solo'); setRoomSync('idle')
+    setPhase('intro'); setTrack(null); setLastTrackId(null)
+    setCountdown(3); setGuessEnabled(false)
     window.history.replaceState({}, '', window.location.pathname)
   }
 
   function startGame() {
-    if (roomCode && roomRole !== 'host') {
-      setRoomStatus('Attends le host pour lancer')
-      return
-    }
+    if (roomCode && roomRole !== 'host') { setRoomStatus('Attends le host pour lancer'); return }
 
     const t = pickTrack(lastTrackId)
     setTrack(t)
     setLastTrackId(t.id)
     setAnimeGuess('')
+    setMcqSelected(null)
+    setMcqChoices(pickMCQChoices(t, LOCAL_TRACKS))
     setTitleGuess('')
     setResult(null)
     setBerries(0)
@@ -405,14 +391,9 @@ export default function BlindTestPage() {
     setGuessEnabled(false)
     setRoomStatus(roomCode ? `Salle ${roomCode} en cours` : 'Mode solo')
 
-    if (audioRef.current) { audioRef.current.pause(); audioRef.current.src = '' }
-    const audio = new Audio(t.url)
-    audioRef.current = audio
-    audio.play().then(() => { audio.pause(); audio.currentTime = 0 }).catch(() => {})
+    loadVideo(t.url)
 
-    if (roomCode && roomRole === 'host') {
-      void publishRoomState('countdown', t, round + 1, t.id)
-    }
+    if (roomCode && roomRole === 'host') void publishRoomState('countdown', t, round + 1, t.id)
 
     setPhase('countdown')
   }
@@ -440,50 +421,53 @@ export default function BlindTestPage() {
     setHistory(prev => [...prev, { track, result: res, earned }])
     setPhase('reveal')
 
-    if (user) {
-      logSession({ userId: user.id, trackId: track.id, correct: res.animeOk || res.titleOk, timeMs: ms })
-    }
+    if (user) logSession({ userId: user.id, trackId: track.id, correct: res.animeOk || res.titleOk, timeMs: ms })
   }
 
-  function nextRound() {
-    if (roomCode && roomRole !== 'host') return
-    startGame()
-  }
+  function nextRound() { if (roomCode && roomRole !== 'host') return; startGame() }
 
   function endGame() {
     setPhase('end')
-    if (user && round > 0) {
-      upsertBlindTestScore({
-        userId: user.id,
-        displayName,
-        avatarUrl,
-        score: totalScore,
-        streakMax: maxStreak,
-        gamesPlayed: 1,
-      })
-    }
+    if (user && round > 0) upsertBlindTestScore({ userId: user.id, displayName, avatarUrl, score: totalScore, streakMax: maxStreak, gamesPlayed: 1 })
   }
 
-  const barPct = phase === 'playing' ? Math.max(0, 100 - (elapsed / ROUND_SECS) * 100) : 0
+  const barPct   = phase === 'playing' ? Math.max(0, 100 - (elapsed / ROUND_SECS) * 100) : 0
   const barColor = barPct > 50 ? GREEN : barPct > 25 ? '#f59e0b' : RED
   const activeTrack = track || LOCAL_TRACKS[0]
 
   return (
-    <div style={{ minHeight: '100vh', background: '#07090e', position: 'relative', overflowX: 'hidden' }}>
+    <div style={{ minHeight: '100vh', background: 'rgba(7,9,14,0.88)', position: 'relative', overflowX: 'hidden' }}>
       <style>{BT_CSS}</style>
+
+      {/* ── Video background ── */}
+      <video
+        ref={videoRef}
+        playsInline
+        loop
+        style={{
+          position: 'fixed', inset: 0, width: '100%', height: '100%',
+          objectFit: 'cover', zIndex: -1,
+          filter: `blur(${videoBlur}px)`,
+          opacity: videoOpacity,
+          transition: 'filter 1.4s ease, opacity 1.2s ease',
+          pointerEvents: 'none',
+          willChange: 'filter, opacity',
+        }}
+      />
+
       <BTStars />
       <BTScanLine />
 
       <div style={{ position: 'relative', zIndex: 2, maxWidth: 860, margin: '0 auto', padding: '72px 20px 100px' }}>
+        {/* Room bar */}
         <div style={{
           display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap',
           padding: '12px 14px', marginBottom: 20,
           border: '1px solid rgba(255,255,255,0.09)', borderRadius: 12,
-          background: 'rgba(255,255,255,0.03)',
+          background: 'rgba(7,9,14,0.70)',
         }}>
           <div style={{ fontSize: 12, fontWeight: 800, color: 'rgba(255,255,255,0.75)' }}>
-            {roomStatus}
-            {roomCode ? ` · ${roomRole === 'host' ? 'host' : 'guest'} · ${roomSync}` : ''}
+            {roomStatus}{roomCode ? ` · ${roomRole === 'host' ? 'host' : 'guest'} · ${roomSync}` : ''}
           </div>
           <div style={{ flex: 1 }} />
           <input
@@ -510,10 +494,14 @@ export default function BlindTestPage() {
           }}>
             <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.72)' }}>Code: <strong style={{ color: '#fff' }}>{roomCode}</strong></div>
             <div style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 12, color: 'rgba(255,255,255,0.55)' }}>{roomLink}</div>
-            <button onClick={async () => { await navigator.clipboard.writeText(roomLink); setRoomNotice('Lien copié'); setTimeout(() => setRoomNotice(''), 1500) }} style={smallBtn(true)}>{roomNotice || 'Copier le lien'}</button>
+            <button
+              onClick={async () => { await navigator.clipboard.writeText(roomLink); setRoomNotice('Lien copié'); setTimeout(() => setRoomNotice(''), 1500) }}
+              style={smallBtn(true)}
+            >{roomNotice || 'Copier le lien'}</button>
           </div>
         )}
 
+        {/* ── INTRO ── */}
         {phase === 'intro' && (
           <div style={{ textAlign: 'center', animation: 'btFadeUp .5s ease' }}>
             <div style={{
@@ -521,12 +509,11 @@ export default function BlindTestPage() {
               borderRadius: 100, background: 'rgba(212,160,23,0.10)', border: '1px solid rgba(212,160,23,0.28)',
               fontSize: 10, fontWeight: 800, letterSpacing: '.22em', color: GOLD, textTransform: 'uppercase', marginBottom: 22,
             }}>🎵 Blind Test Anime</div>
-
             <h1 style={{ fontFamily: "'Pirata One',cursive", fontSize: 'clamp(46px,8vw,84px)', color: '#fff', margin: '0 0 16px', lineHeight: 1, letterSpacing: '-.02em' }}>
               Blind Test
             </h1>
             <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.42)', maxWidth: 520, margin: '0 auto 36px', lineHeight: 1.75 }}>
-              Un extrait d'opening anime se lance. Trouve l'anime et/ou le titre pour gagner des <strong style={{ color: GOLD }}>berries</strong>.
+              Un extrait d'opening anime se lance en fond. Choisis parmi 4 propositions et tape le titre pour le bonus !
             </p>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(160px,1fr))', gap: 10, marginBottom: 40, textAlign: 'left' }}>
@@ -535,7 +522,7 @@ export default function BlindTestPage() {
                   background: `linear-gradient(145deg,${t.color}14 0%,rgba(7,9,14,0.97) 100%)`,
                   border: `1px solid ${t.color}22`, borderTop: `2px solid ${t.color}`,
                   borderRadius: 12, padding: '14px 16px',
-                  animation: `btFadeUp .4s ${i * 0.08}s ease both`,
+                  animation: `btFadeUp .4s ${i * 0.05}s ease both`,
                 }}>
                   <div style={{ fontSize: 24, marginBottom: 6 }}>{t.emoji}</div>
                   <div style={{ fontSize: 12, fontWeight: 800, color: '#fff', marginBottom: 2 }}>{t.anime}</div>
@@ -547,7 +534,7 @@ export default function BlindTestPage() {
             <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 36 }}>
               {[
                 { icon: '🎯', text: 'Anime = 50 pts' },
-                { icon: '🎵', text: 'Titre = 30 pts' },
+                { icon: '🎵', text: 'Titre = +30 pts bonus' },
                 { icon: '⚡', text: '< 5s = ×2' },
                 { icon: '🔥', text: 'Streak ×3 = ×1.2' },
               ].map((r, i) => (
@@ -568,7 +555,6 @@ export default function BlindTestPage() {
             >
               {roomCode && roomRole !== 'host' ? 'Attendre le host' : 'Lancer le jeu'}
             </button>
-
             <div style={{ marginTop: 20 }}>
               <button onClick={() => navigate('/blind-test/leaderboard')} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.35)', cursor: 'pointer', fontSize: 13, fontWeight: 600, textDecoration: 'underline' }}>
                 Voir le classement →
@@ -577,6 +563,7 @@ export default function BlindTestPage() {
           </div>
         )}
 
+        {/* ── COUNTDOWN ── */}
         {phase === 'countdown' && (
           <div style={{ textAlign: 'center', animation: 'btFadeUp .3s ease' }}>
             <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.22em', color: GOLD, textTransform: 'uppercase', marginBottom: 20 }}>
@@ -595,6 +582,7 @@ export default function BlindTestPage() {
           </div>
         )}
 
+        {/* ── PLAYING ── */}
         {phase === 'playing' && track && (
           <div style={{ animation: 'btFadeUp .3s ease' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
@@ -605,52 +593,68 @@ export default function BlindTestPage() {
               </div>
             </div>
 
-            <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: 18, padding: '28px 28px 24px', marginBottom: 20 }}>
+            <div style={{ background: 'rgba(7,9,14,0.80)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: 18, padding: '28px 28px 24px', marginBottom: 20, backdropFilter: 'blur(8px)' }}>
+              {/* Timer bar */}
               <div style={{ height: 4, background: 'rgba(255,255,255,0.06)', borderRadius: 100, overflow: 'hidden', marginBottom: 22, position: 'relative' }}>
                 <div style={{
                   position: 'absolute', left: 0, top: 0, height: '100%',
                   background: `linear-gradient(90deg,${barColor}88,${barColor})`,
-                  borderRadius: 100,
-                  width: `${barPct}%`,
+                  borderRadius: 100, width: `${barPct}%`,
                   transition: 'width .25s linear, background .25s',
                   boxShadow: `0 0 8px ${barColor}44`,
                 }} />
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-                <Waveform playing color={track.color} />
+                <Waveform playing color={activeTrack.color} />
                 <div style={{ fontFamily: "'Pirata One',cursive", fontSize: 28, color: elapsed <= 5 ? GREEN : elapsed <= 15 ? GOLD : RED, fontWeight: 900 }}>
                   {ROUND_SECS - elapsed}s
                 </div>
               </div>
 
               <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', textAlign: 'center', marginBottom: guessEnabled ? 20 : 0 }}>
-                {!guessEnabled ? `⏳ Écoute encore ${GUESS_DELAY - elapsed}s avant de répondre...` : '🎯 Réponds maintenant !'}
+                {!guessEnabled ? `⏳ Écoute encore ${GUESS_DELAY - elapsed}s avant de répondre...` : '🎯 Choisis l\'anime !'}
               </div>
 
               {guessEnabled && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  <input
-                    autoFocus
-                    type="text"
-                    value={animeGuess}
-                    onChange={e => setAnimeGuess(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && titleRef?.current?.focus()}
-                    placeholder="Nom de l'anime..."
-                    style={inputGuessStyle}
-                  />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {/* MCQ buttons */}
+                  <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.18em', color: 'rgba(255,255,255,0.30)', textTransform: 'uppercase', marginBottom: 4 }}>
+                    Quel anime ?
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
+                    {mcqChoices.map((choice, i) => (
+                      <MCQButton
+                        key={i}
+                        label={choice}
+                        selected={mcqSelected === choice}
+                        revealed={false}
+                        color={activeTrack.color}
+                        onClick={() => {
+                          setAnimeGuess(choice)
+                          setMcqSelected(choice)
+                          titleRef.current?.focus()
+                        }}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Title bonus input */}
+                  <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.18em', color: 'rgba(255,255,255,0.30)', textTransform: 'uppercase', marginBottom: 4 }}>
+                    Titre de l'opening (bonus)
+                  </div>
                   <input
                     type="text"
                     value={titleGuess}
                     onChange={e => setTitleGuess(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && submitGuess()}
                     ref={titleRef}
-                    placeholder="Titre de l'opening / ending..."
+                    placeholder="Titre de l'opening..."
                     style={inputGuessStyle}
                   />
 
                   <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
-                    <button onClick={() => submitGuess()} style={primaryBtnStyle}>Valider ma réponse</button>
+                    <button onClick={() => submitGuess()} style={primaryBtnStyle} disabled={!mcqSelected}>Valider</button>
                     <button onClick={() => submitGuess()} style={secondaryBtnStyle}>Passer</button>
                   </div>
                 </div>
@@ -659,11 +663,32 @@ export default function BlindTestPage() {
           </div>
         )}
 
+        {/* ── REVEAL ── */}
         {phase === 'reveal' && track && result && (
           <div style={{ animation: 'btFadeUp .4s ease' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
               <ScorePill label="Score total" value={totalScore.toLocaleString('fr-FR')} />
               <ScorePill label="Streak" value={streak} color={streak >= 3 ? '#f59e0b' : 'rgba(255,255,255,0.55)'} />
+            </div>
+
+            {/* MCQ revealed state */}
+            <div style={{ background: 'rgba(7,9,14,0.75)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '18px 20px', marginBottom: 16, backdropFilter: 'blur(4px)' }}>
+              <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.18em', color: 'rgba(255,255,255,0.30)', textTransform: 'uppercase', marginBottom: 10 }}>
+                Quel anime ?
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                {mcqChoices.map((choice, i) => (
+                  <MCQButton
+                    key={i}
+                    label={choice}
+                    selected={mcqSelected === choice}
+                    correct={choice === track.anime}
+                    revealed={true}
+                    color={activeTrack.color}
+                    onClick={() => {}}
+                  />
+                ))}
+              </div>
             </div>
 
             <RevealCard track={track} result={result} berries={berries} />
@@ -675,6 +700,7 @@ export default function BlindTestPage() {
           </div>
         )}
 
+        {/* ── END ── */}
         {phase === 'end' && (
           <div style={{ textAlign: 'center', animation: 'btFadeUp .5s ease' }}>
             <div style={{ fontSize: 72, marginBottom: 20, animation: 'btFloat 3s ease-in-out infinite', filter: `drop-shadow(0 0 28px ${GOLD}55)` }}>🏆</div>
@@ -753,14 +779,11 @@ export default function BlindTestPage() {
 
 function smallBtn(primary) {
   return {
-    border: `1px solid ${primary ? 'rgba(212,160,23,0.42)' : 'rgba(255,255,255,0.14)'}`,
+    border:     `1px solid ${primary ? 'rgba(212,160,23,0.42)' : 'rgba(255,255,255,0.14)'}`,
     background: primary ? 'rgba(212,160,23,0.14)' : 'rgba(255,255,255,0.05)',
-    color: primary ? '#facc15' : 'rgba(255,255,255,0.78)',
-    borderRadius: 10,
-    padding: '10px 14px',
-    cursor: 'pointer',
-    fontWeight: 800,
-    fontSize: 13,
+    color:      primary ? '#facc15' : 'rgba(255,255,255,0.78)',
+    borderRadius: 10, padding: '10px 14px',
+    cursor: 'pointer', fontWeight: 800, fontSize: 13,
   }
 }
 
@@ -768,7 +791,7 @@ const inputGuessStyle = {
   padding: '14px 18px', borderRadius: 12,
   background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.14)',
   color: '#fff', fontSize: 15, outline: 'none', fontFamily: 'var(--body)',
-  transition: 'border-color .15s, box-shadow .15s',
+  transition: 'border-color .15s, box-shadow .15s', width: '100%', boxSizing: 'border-box',
 }
 
 const primaryBtnStyle = {

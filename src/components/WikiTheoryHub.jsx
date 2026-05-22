@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 import WikiHome from './WikiHome.jsx'
 import TheoriesHome from './TheoriesHome.jsx'
 
@@ -27,84 +27,6 @@ const STATUS_STYLE = {
   planned: { label: '📅 Prévu',   color: BLUE,      bg: 'rgba(116,185,255,0.08)', border: 'rgba(116,185,255,0.20)' },
 }
 
-function BlindTestBanner({ onClick, active }) {
-  return (
-    <div style={{ maxWidth:900, margin:'0 auto 28px', padding:'0 20px' }}>
-      <div
-        onClick={onClick}
-        style={{
-          display:'flex', alignItems:'center', gap:18, padding:'16px 22px',
-          background: active
-            ? 'linear-gradient(135deg, rgba(74,85,255,0.18), rgba(162,155,254,0.12))'
-            : 'linear-gradient(135deg, rgba(74,85,255,0.10), rgba(162,155,254,0.06))',
-          border:`1px solid ${active ? 'rgba(162,155,254,0.45)' : 'rgba(162,155,254,0.18)'}`,
-          borderLeft:`3px solid ${VIOLET}`,
-          borderRadius:12,
-          cursor:'pointer',
-          transition:'all .22s',
-          boxShadow: active ? `0 0 24px rgba(162,155,254,0.14)` : 'none',
-        }}
-        onMouseEnter={e => { if (!active) e.currentTarget.style.borderColor='rgba(162,155,254,0.35)' }}
-        onMouseLeave={e => { if (!active) e.currentTarget.style.borderColor='rgba(162,155,254,0.18)' }}
-      >
-        <div style={{ fontSize:30, filter:`drop-shadow(0 0 12px ${VIOLET}66)`, flexShrink:0 }}>🎵</div>
-        <div style={{ flex:1, minWidth:0 }}>
-          <div style={{ fontSize:9, fontWeight:800, letterSpacing:'.22em', color:VIOLET, textTransform:'uppercase', marginBottom:3 }}>
-            Disponible
-          </div>
-          <div style={{ fontSize:14, fontWeight:800, color:'#fff', marginBottom:2 }}>
-            Blind Tests musicaux
-          </div>
-          <div style={{ fontSize:12, color:'rgba(255,255,255,0.38)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-            Openings anime disponibles sur le site — lance le blind test directement
-          </div>
-        </div>
-        <div style={{
-          display:'flex', alignItems:'center', gap:6, padding:'7px 16px', flexShrink:0,
-          background:'rgba(162,155,254,0.10)',
-          border:`1px solid ${VIOLET}45`,
-          borderRadius:8, color:VIOLET,
-          fontSize:12, fontWeight:700, whiteSpace:'nowrap',
-          transition:'all .18s',
-        }}>
-          Jouer →
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function BlindTestsTab() {
-  return (
-    <div style={{ padding: '80px 20px 120px', textAlign: 'center' }}>
-      <div style={{ maxWidth: 560, margin: '0 auto' }}>
-        <div style={{ fontSize: 72, marginBottom: 24, filter: `drop-shadow(0 0 28px ${VIOLET}66)` }}>🎵</div>
-        <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.3em', color: VIOLET, textTransform: 'uppercase', marginBottom: 12 }}>
-          Bientôt disponible
-        </div>
-        <h2 style={{
-          fontFamily: 'var(--display)', fontWeight: 900,
-          fontSize: 'clamp(34px,6vw,56px)',
-          color: '#fff', margin: '0 0 18px', lineHeight: 1.1,
-        }}>
-          Blind Tests
-        </h2>
-        <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.42)', lineHeight: 1.8, maxWidth: 440, margin: '0 auto 40px' }}>
-          Les blind tests arrivent bientôt.<br />
-          De nouveaux modes communautaires seront ajoutés progressivement pour tester vos connaissances musicales.
-        </p>
-        <div style={{
-          display: 'inline-flex', alignItems: 'center', gap: 9,
-          padding: '11px 22px', borderRadius: 100,
-          background: 'rgba(162,155,254,0.10)', border: '1px solid rgba(162,155,254,0.28)',
-          color: VIOLET, fontSize: 13, fontWeight: 700,
-        }}>
-          🔔 Notifications à venir dans le Discord
-        </div>
-      </div>
-    </div>
-  )
-}
 
 function UpcomingTab() {
   return (
@@ -155,11 +77,9 @@ function UpcomingTab() {
 
 export default function WikiTheoryHub() {
   const { pathname } = useLocation()
-  const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState(() =>
     pathname.startsWith('/theories') ? 'theories' : 'wiki'
   )
-  const [showBlindTests, setShowBlindTests] = useState(false)
 
   const activeColor = TABS.find(t => t.id === activeTab)?.color ?? GOLD
 
@@ -192,17 +112,14 @@ export default function WikiTheoryHub() {
           Explore le lore, les théories, les mystères et les analyses de la communauté.
         </p>
 
-        {/* Blind Tests banner — séparé, en vedette */}
-        <BlindTestBanner onClick={() => navigate('/blind-test')} active={false} />
-
         {/* Tabs */}
         <div style={{ display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap', paddingBottom: 0 }}>
           {TABS.map(tab => {
-            const active = activeTab === tab.id && !showBlindTests
+            const active = activeTab === tab.id
             return (
               <button
                 key={tab.id}
-                onClick={() => { setActiveTab(tab.id); setShowBlindTests(false) }}
+                onClick={() => setActiveTab(tab.id)}
                 style={{
                   display: 'inline-flex', alignItems: 'center', gap: 7,
                   padding: '10px 20px', borderRadius: 100,
@@ -224,20 +141,14 @@ export default function WikiTheoryHub() {
         </div>
 
         {/* Tab separator */}
-        <div style={{ height: 1, maxWidth: 640, margin: '28px auto 0', background: `linear-gradient(90deg, transparent, ${showBlindTests ? VIOLET : activeColor}35, transparent)`, transition: 'background 0.4s' }} />
+        <div style={{ height: 1, maxWidth: 640, margin: '28px auto 0', background: `linear-gradient(90deg, transparent, ${activeColor}35, transparent)`, transition: 'background 0.4s' }} />
       </div>
 
       {/* ── Content ── */}
       <div>
-        {showBlindTests ? (
-          <BlindTestsTab />
-        ) : (
-          <>
-            {activeTab === 'wiki'     && <WikiHome />}
-            {activeTab === 'theories' && <TheoriesHome />}
-            {activeTab === 'upcoming' && <UpcomingTab />}
-          </>
-        )}
+        {activeTab === 'wiki'     && <WikiHome />}
+        {activeTab === 'theories' && <TheoriesHome />}
+        {activeTab === 'upcoming' && <UpcomingTab />}
       </div>
     </div>
   )
