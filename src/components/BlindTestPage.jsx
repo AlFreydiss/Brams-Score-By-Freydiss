@@ -280,10 +280,10 @@ export default function BlindTestPage() {
   useEffect(() => {
     if (phase !== 'countdown') return
     if (countdown <= 0) {
-      // Audio already playing at volume 0 since startGame() — just unmute & seek to 0
       if (audioRef.current) {
         audioRef.current.currentTime = 0
         audioRef.current.volume = volume
+        audioRef.current.play().catch(() => {})
       }
       setGuessEnabled(answerDelay === 0)
       setPhase('playing'); setStartTime(Date.now()); setElapsed(0); return
@@ -311,16 +311,19 @@ export default function BlindTestPage() {
     }
   }, [phase])
 
-  useEffect(() => {
-    if (audioRef.current) audioRef.current.volume = volume
-  }, [volume])
-
   // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (audioRef.current) { audioRef.current.pause(); audioRef.current.src = '' }
     }
   }, [])
+
+  // Sync volume slider with the audio element while playing
+  useEffect(() => {
+    if (audioRef.current && ['playing', 'reveal'].includes(phase)) {
+      audioRef.current.volume = volume
+    }
+  }, [volume, phase])
 
   function startGame() {
     const t = pickTrack(lastTrackId)
@@ -333,12 +336,16 @@ export default function BlindTestPage() {
     setCountdown(3)
     setGuessEnabled(false)
 
-    // Start audio silently during user gesture (avoids autoplay block on delayed play)
-    if (audioRef.current) { audioRef.current.pause(); audioRef.current.src = '' }
-    const audio = new Audio(t.url)
-    audio.volume = 0  // muted until countdown hits 0
-    audioRef.current = audio
-    audio.play().catch(() => {})
+    // Load and silently pre-roll during user gesture so play() at countdown=0 is unblocked
+    const audio = audioRef.current
+    if (audio) {
+      audio.pause()
+      audio.currentTime = 0
+      audio.volume = 0
+      audio.src = t.url
+      audio.load()
+      audio.play().catch(() => {})
+    }
 
     setPhase('countdown')
   }
@@ -425,6 +432,7 @@ export default function BlindTestPage() {
 
   return (
     <div style={{ minHeight:'100vh', background:'#07090e', position:'relative', overflowX:'hidden' }}>
+      <audio ref={audioRef} preload="auto" style={{ display:'none' }} />
       <style>{BT_CSS}</style>
       <OpeningBackdrop track={track} phase={phase} />
       <BTStars />
