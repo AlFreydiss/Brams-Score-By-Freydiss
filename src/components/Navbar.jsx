@@ -11,6 +11,8 @@ const NAV_LINKS = [
   { label: 'Wiki & Théories', href: '/wiki',       action: null,           gated: false, isRoute: true  },
   { label: 'Encyclopédie',    href: '#',           action: 'encyclopedie', gated: false, isRoute: false },
   { label: 'Animés & Scans',  href: '#',           action: 'anime-hub',    gated: true,  isRoute: false },
+  { label: 'Blind Test',      href: '/blind-test', action: null,           gated: false, isRoute: true  },
+  { label: 'Tier List',       href: '/tier-list',  action: null,           gated: false, isRoute: true  },
   { label: 'Boutique',        href: '/boutique',   action: null,           gated: true,  isRoute: true  },
 ]
 

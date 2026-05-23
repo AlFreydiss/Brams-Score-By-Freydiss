@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cinzel:wght@400;600;700;900&family=Rajdhani:wght@400;500;600;700&display=swap');
+
 /* ══════════════════════════════════════════════
    BRAMS ARCHIVES — Encyclopedia ULTRA PREMIUM
    Void Dark · Poneglyph · Neon Rarity System
@@ -959,8 +961,6 @@
 }
 
 /* enc-* kept for EntryDetailPanel / TimelineTab / SecretFilesTab / ToolsTab */
-
-@import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cinzel:wght@400;600;700;900&family=Rajdhani:wght@400;500;600;700&display=swap');
 
 /* ── Keyframes ── */
 @keyframes enc-card-in {

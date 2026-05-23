@@ -86,18 +86,124 @@ function ScorePill({ label, value, color = GOLD }) {
 }
 
 // ── Track card (revealed after answer) ────────────────────────────────────
+function openingLabel(track) {
+  const number = (track?.episode || '').match(/\d+/)?.[0]
+  return number ? `OP ${number}` : (track?.type || 'OP')
+}
+
+function OpeningBackdrop({ track, phase }) {
+  const visible = track && (phase === 'countdown' || phase === 'playing' || phase === 'reveal')
+  if (!visible) return null
+
+  const revealed = phase === 'reveal'
+  return (
+    <>
+      <video
+        key={track.url}
+        src={track.url}
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="metadata"
+        style={{
+          position: 'fixed',
+          inset: 0,
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
+          zIndex: 0,
+          pointerEvents: 'none',
+          opacity: revealed ? 0.34 : 0.22,
+          filter: revealed
+            ? 'blur(0px) brightness(0.78) saturate(1.14)'
+            : 'blur(34px) brightness(0.34) saturate(1.08)',
+          transform: revealed ? 'scale(1.01)' : 'scale(1.14)',
+          transition: 'opacity 1.25s ease, filter 1.45s cubic-bezier(.22,.8,.22,1), transform 1.45s cubic-bezier(.22,.8,.22,1)',
+          willChange: 'opacity, filter, transform',
+        }}
+      />
+      <div style={{ position:'fixed', inset:0, zIndex:0, pointerEvents:'none' }}>
+        <div
+          style={{
+            position:'absolute',
+            inset:0,
+            background:'linear-gradient(180deg, rgba(7,9,14,0.70), rgba(7,9,14,0.88))',
+            opacity: revealed ? 0 : 1,
+            transition:'opacity 1.2s ease',
+          }}
+        />
+        <div
+          style={{
+            position:'absolute',
+            inset:0,
+            background:'linear-gradient(180deg, rgba(7,9,14,0.34), rgba(7,9,14,0.56))',
+            opacity: revealed ? 1 : 0,
+            transition:'opacity 1.2s ease',
+          }}
+        />
+      </div>
+    </>
+  )
+}
+
+function VolumeDock({ volume, onChange, visible }) {
+  if (!visible) return null
+  return (
+    <div
+      style={{
+        position:'fixed',
+        left:22,
+        bottom:22,
+        zIndex:5,
+        width:48,
+        height:48,
+        borderRadius:999,
+        overflow:'hidden',
+        display:'flex',
+        alignItems:'center',
+        gap:10,
+        padding:'0 14px',
+        border:'1px solid rgba(255,255,255,.13)',
+        background:'rgba(18,20,26,.72)',
+        backdropFilter:'blur(16px)',
+        boxShadow:'0 18px 50px rgba(0,0,0,.28)',
+        transition:'width .22s ease, background .22s ease',
+      }}
+      onMouseEnter={e => { e.currentTarget.style.width = '190px'; e.currentTarget.style.background = 'rgba(24,26,34,.86)' }}
+      onMouseLeave={e => { e.currentTarget.style.width = '48px'; e.currentTarget.style.background = 'rgba(18,20,26,.72)' }}
+    >
+      <span style={{ flex:'0 0 auto', width:20, color:GOLD, fontSize:17, lineHeight:1 }}>♪</span>
+      <input
+        type="range"
+        min="0"
+        max="100"
+        value={Math.round(volume * 100)}
+        onChange={e => onChange(Number(e.target.value) / 100)}
+        style={{ width:118, accentColor:GOLD, cursor:'pointer', flex:'0 0 auto' }}
+      />
+      <span style={{ color:'rgba(255,255,255,.48)', fontSize:11, fontWeight:900, flex:'0 0 auto' }}>{Math.round(volume * 100)}</span>
+    </div>
+  )
+}
+
 function RevealCard({ track, result, berries }) {
   const c = track.color
   return (
     <div style={{
-      background:`linear-gradient(145deg,${c}18 0%,rgba(7,9,14,0.97) 100%)`,
+      background:`linear-gradient(145deg,${c}18 0%,rgba(7,9,14,0.74) 100%)`,
       border:`1px solid ${c}44`,
       borderTop:`3px solid ${c}`,
       borderRadius:16, padding:'22px 24px',
       animation:'btFadeUp .4s ease',
       textAlign:'center',
+      backdropFilter:'blur(14px)',
+      boxShadow:'0 24px 80px rgba(0,0,0,0.28)',
     }}>
       <div style={{ fontSize:52, marginBottom:12, animation:'btBounce 1s ease', filter:`drop-shadow(0 0 20px ${c}66)` }}>{track.emoji}</div>
+      <div style={{ display:'inline-flex', alignItems:'center', justifyContent:'center', minHeight:26, padding:'0 12px', borderRadius:100, background:`${c}18`, border:`1px solid ${c}44`, color:c, fontSize:12, fontWeight:900, letterSpacing:'.12em', textTransform:'uppercase', marginBottom:8 }}>
+        {openingLabel(track)}
+      </div>
       <div style={{ fontSize:10, fontWeight:800, letterSpacing:'.18em', color:c, textTransform:'uppercase', marginBottom:6 }}>
         {track.type} · {track.episode}
       </div>
@@ -132,8 +238,12 @@ function RevealCard({ track, result, berries }) {
 }
 
 // ── Main game ─────────────────────────────────────────────────────────────
-const ROUND_SECS = 30
 const GUESS_DELAY = 5 // seconds before guessing is enabled
+const DIFFICULTIES = [
+  { id: 'easy', label: 'Facile', seconds: 30, color: GREEN },
+  { id: 'normal', label: 'Normal', seconds: 15, color: GOLD },
+  { id: 'expert', label: 'Expert', seconds: 5, color: RED },
+]
 
 export default function BlindTestPage() {
   const navigate = useNavigate()
@@ -161,6 +271,10 @@ export default function BlindTestPage() {
 
   const [countdown, setCountdown]   = useState(3)
   const [guessEnabled, setGuessEnabled] = useState(false)
+  const [difficulty, setDifficulty] = useState(DIFFICULTIES[0])
+  const [joinCode, setJoinCode] = useState('')
+  const [volume, setVolume] = useState(0.65)
+  const answerDelay = difficulty.seconds <= 5 ? 0 : Math.min(GUESS_DELAY, difficulty.seconds)
 
   // Countdown 3-2-1 before track plays
   useEffect(() => {
@@ -168,11 +282,12 @@ export default function BlindTestPage() {
     if (countdown <= 0) {
       // Play audio here — audio was unlocked during user gesture in startGame()
       audioRef.current?.play().catch(() => {})
+      setGuessEnabled(answerDelay === 0)
       setPhase('playing'); setStartTime(Date.now()); setElapsed(0); return
     }
     const t = setTimeout(() => setCountdown(v => v - 1), 1000)
     return () => clearTimeout(t)
-  }, [phase, countdown])
+  }, [phase, countdown, answerDelay])
 
   // Playing timer
   useEffect(() => {
@@ -180,18 +295,22 @@ export default function BlindTestPage() {
     const t = setInterval(() => {
       const s = Math.floor((Date.now() - startTime) / 1000)
       setElapsed(s)
-      if (s >= GUESS_DELAY) setGuessEnabled(true)
-      if (s >= ROUND_SECS) handleTimeout()
+      if (s >= answerDelay) setGuessEnabled(true)
+      if (s >= difficulty.seconds) handleTimeout()
     }, 250)
     return () => clearInterval(t)
-  }, [phase, startTime])
+  }, [phase, startTime, difficulty, answerDelay])
 
-  // Pause audio when not playing
+  // Keep the excerpt playing through the reveal; stop only outside the round flow.
   useEffect(() => {
-    if (phase !== 'playing' && audioRef.current) {
+    if (!['playing', 'reveal'].includes(phase) && audioRef.current) {
       audioRef.current.pause()
     }
   }, [phase])
+
+  useEffect(() => {
+    if (audioRef.current) audioRef.current.volume = volume
+  }, [volume])
 
   // Cleanup on unmount
   useEffect(() => {
@@ -214,11 +333,17 @@ export default function BlindTestPage() {
     // Create Audio during user gesture to unlock autoplay with sound
     if (audioRef.current) { audioRef.current.pause(); audioRef.current.src = '' }
     const audio = new Audio(t.url)
+    audio.volume = volume
     audioRef.current = audio
     // play() + immediate pause unlocks the audio element for future plays
     audio.play().then(() => { audio.pause(); audio.currentTime = 0 }).catch(() => {})
 
     setPhase('countdown')
+  }
+
+  function joinMultiplayer() {
+    const code = joinCode.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6)
+    if (code.length === 6) navigate(`/blind-test/room/${code}`)
   }
 
   function handleTimeout() {
@@ -268,48 +393,96 @@ export default function BlindTestPage() {
     }
   }
 
-  const barPct = phase === 'playing' ? Math.max(0, 100 - (elapsed / ROUND_SECS) * 100) : 0
+  const roundSecs = difficulty.seconds
+  const barPct = phase === 'playing' ? Math.max(0, 100 - (elapsed / roundSecs) * 100) : 0
   const barColor = barPct > 50 ? GREEN : barPct > 25 ? '#f59e0b' : RED
   const activeTrack = track || LOCAL_TRACKS[0]
+  const centeredPhase = ['intro', 'countdown', 'playing', 'reveal'].includes(phase)
+  const animeOptions = useMemo(() => {
+    if (!track) return []
+    const byAnime = new Map()
+    LOCAL_TRACKS.forEach(item => {
+      if (!byAnime.has(item.anime)) byAnime.set(item.anime, item)
+    })
+    const distractors = Array.from(byAnime.values())
+      .filter(item => item.anime !== track.anime)
+      .map((item, index) => ({
+        ...item,
+        order: (item.id.charCodeAt(0) + item.id.charCodeAt(item.id.length - 1) + index * 17 + track.id.length) % 97,
+      }))
+      .sort((a, b) => a.order - b.order)
+      .slice(0, 3)
+
+    return [track, ...distractors]
+      .map((item, index) => ({
+        ...item,
+        order: (item.anime.charCodeAt(0) + item.id.length * 13 + index * 29) % 97,
+      }))
+      .sort((a, b) => a.order - b.order)
+  }, [track])
 
   return (
     <div style={{ minHeight:'100vh', background:'#07090e', position:'relative', overflowX:'hidden' }}>
       <style>{BT_CSS}</style>
+      <OpeningBackdrop track={track} phase={phase} />
       <BTStars />
       <BTScanLine />
+      <VolumeDock volume={volume} onChange={setVolume} visible={['countdown', 'playing', 'reveal'].includes(phase)} />
 
-      <div style={{ position:'relative', zIndex:2, maxWidth:780, margin:'0 auto', padding:'80px 20px 100px' }}>
+      <div style={{
+        position:'relative',
+        zIndex:2,
+        maxWidth:780,
+        margin:'0 auto',
+        padding: centeredPhase ? '92px 20px 64px' : '118px 20px 100px',
+        minHeight: centeredPhase ? '100vh' : undefined,
+        display: centeredPhase ? 'flex' : 'block',
+        alignItems: centeredPhase ? 'center' : undefined,
+        boxSizing:'border-box',
+      }}>
 
         {/* ── INTRO ── */}
         {phase === 'intro' && (
-          <div style={{ textAlign:'center', animation:'btFadeUp .5s ease' }}>
+          <div style={{ width:'100%', textAlign:'center', animation:'btFadeUp .5s ease' }}>
             <div style={{
               display:'inline-flex', alignItems:'center', gap:8, padding:'5px 18px',
               borderRadius:100, background:'rgba(212,160,23,0.10)', border:'1px solid rgba(212,160,23,0.28)',
               fontSize:10, fontWeight:800, letterSpacing:'.22em', color:GOLD, textTransform:'uppercase', marginBottom:22,
             }}>🎵 Blind Test Anime</div>
 
-            <h1 style={{ fontFamily:"'Pirata One',cursive", fontSize:'clamp(46px,8vw,84px)', color:'#fff', margin:'0 0 16px', lineHeight:1, letterSpacing:'-.02em' }}>
+            <h1 style={{ fontFamily:"'Pirata One',cursive", fontSize:'clamp(42px,7vw,72px)', color:'#fff', margin:'0 0 18px', lineHeight:1, letterSpacing:'-.02em' }}>
               Blind Test
             </h1>
             <p style={{ fontSize:15, color:'rgba(255,255,255,0.42)', maxWidth:480, margin:'0 auto 36px', lineHeight:1.75 }}>
               Un extrait d'Opening anime se lance. Trouve l'anime et/ou le titre pour gagner des <strong style={{ color:GOLD }}>berries</strong> !
             </p>
 
-            {/* Tracks preview */}
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(160px,1fr))', gap:10, marginBottom:40, textAlign:'left' }}>
-              {LOCAL_TRACKS.map((t, i) => (
-                <div key={t.id} style={{
-                  background:`linear-gradient(145deg,${t.color}14 0%,rgba(7,9,14,0.97) 100%)`,
-                  border:`1px solid ${t.color}22`, borderTop:`2px solid ${t.color}`,
-                  borderRadius:12, padding:'14px 16px',
-                  animation:`btFadeUp .4s ${i * 0.08}s ease both`,
-                }}>
-                  <div style={{ fontSize:24, marginBottom:6 }}>{t.emoji}</div>
-                  <div style={{ fontSize:12, fontWeight:800, color:'#fff', marginBottom:2 }}>{t.anime}</div>
-                  <div style={{ fontSize:10, color:'rgba(255,255,255,0.38)' }}>{t.type} · {t.episode}</div>
-                </div>
-              ))}
+            <div style={{ display:'flex', justifyContent:'center', gap:8, flexWrap:'wrap', marginBottom:28 }}>
+              {DIFFICULTIES.map(item => {
+                const active = difficulty.id === item.id
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => setDifficulty(item)}
+                    style={{
+                      minWidth:112,
+                      height:42,
+                      padding:'0 14px',
+                      borderRadius:999,
+                      border:`1px solid ${active ? item.color : 'rgba(255,255,255,0.12)'}`,
+                      background:active ? `${item.color}18` : 'rgba(255,255,255,0.045)',
+                      color:active ? '#fff' : 'rgba(255,255,255,0.62)',
+                      cursor:'pointer',
+                      fontSize:12,
+                      fontWeight:900,
+                      boxShadow:active ? `0 0 22px ${item.color}18` : 'none',
+                    }}
+                  >
+                    {item.label} · {item.seconds}s
+                  </button>
+                )
+              })}
             </div>
 
             {/* Rules */}
@@ -340,6 +513,48 @@ export default function BlindTestPage() {
               Lancer le jeu
             </button>
 
+            <div style={{ width:'min(460px,100%)', margin:'18px auto 0', display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+              <button
+                onClick={() => navigate('/blind-test/multi')}
+                style={{
+                  padding:'13px 18px', borderRadius:12, border:'1px solid rgba(212,160,23,0.32)',
+                  background:'rgba(212,160,23,0.10)', color:GOLD, fontSize:13, fontWeight:900, cursor:'pointer',
+                }}
+              >
+                Mode multijoueur
+              </button>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr auto', gap:8 }}>
+                <input
+                  value={joinCode}
+                  onChange={e => setJoinCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6))}
+                  onKeyDown={e => e.key === 'Enter' && joinMultiplayer()}
+                  placeholder="CODE"
+                  style={{
+                    minWidth:0,
+                    height:43,
+                    borderRadius:12,
+                    border:'1px solid rgba(255,255,255,0.12)',
+                    background:'rgba(255,255,255,0.055)',
+                    color:'#fff',
+                    padding:'0 12px',
+                    fontSize:12,
+                    fontWeight:900,
+                    letterSpacing:'.12em',
+                    outline:'none',
+                  }}
+                />
+                <button
+                  onClick={joinMultiplayer}
+                  style={{
+                    width:44, height:43, borderRadius:12, border:'1px solid rgba(255,255,255,0.12)',
+                    background:'rgba(255,255,255,0.055)', color:'#fff', fontSize:16, fontWeight:900, cursor:'pointer',
+                  }}
+                >
+                  →
+                </button>
+              </div>
+            </div>
+
             <div style={{ marginTop:20 }}>
               <button onClick={() => navigate('/blind-test/leaderboard')} style={{ background:'none', border:'none', color:'rgba(255,255,255,0.35)', cursor:'pointer', fontSize:13, fontWeight:600, textDecoration:'underline' }}>
                 Voir le classement →
@@ -350,7 +565,7 @@ export default function BlindTestPage() {
 
         {/* ── COUNTDOWN ── */}
         {phase === 'countdown' && (
-          <div style={{ textAlign:'center', animation:'btFadeUp .3s ease' }}>
+          <div style={{ width:'100%', textAlign:'center', animation:'btFadeUp .3s ease' }}>
             <div style={{ fontSize:10, fontWeight:800, letterSpacing:'.22em', color:GOLD, textTransform:'uppercase', marginBottom:20 }}>
               Prépare-toi…
             </div>
@@ -369,7 +584,7 @@ export default function BlindTestPage() {
 
         {/* ── PLAYING ── */}
         {phase === 'playing' && track && (
-          <div style={{ animation:'btFadeUp .3s ease' }}>
+          <div style={{ width:'100%', animation:'btFadeUp .3s ease' }}>
             {/* Score bar top */}
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:28 }}>
               <ScorePill label="Score" value={totalScore.toLocaleString('fr-FR')} />
@@ -400,14 +615,14 @@ export default function BlindTestPage() {
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
                 <Waveform playing color={track.color} />
                 <div style={{ fontFamily:"'Pirata One',cursive", fontSize:28, color: elapsed <= 5 ? GREEN : elapsed <= 15 ? GOLD : RED, fontWeight:900 }}>
-                  {ROUND_SECS - elapsed}s
+                  {Math.max(0, roundSecs - elapsed)}s
                 </div>
               </div>
 
               {/* Status */}
               <div style={{ fontSize:12, color:'rgba(255,255,255,0.35)', textAlign:'center', marginBottom:guessEnabled ? 20 : 0 }}>
                 {!guessEnabled
-                  ? `⏳ Écoute encore ${GUESS_DELAY - elapsed}s avant de répondre…`
+                  ? `⏳ Écoute encore ${Math.max(0, answerDelay - elapsed)}s avant de répondre…`
                   : '🎯 Réponds maintenant !'
                 }
               </div>
@@ -415,14 +630,49 @@ export default function BlindTestPage() {
               {/* Input fields */}
               {guessEnabled && (
                 <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+                  <div style={{ display:'grid', gridTemplateColumns:'repeat(2,minmax(0,1fr))', gap:10 }}>
+                    {animeOptions.map(option => {
+                      const selected = animeGuess === option.anime
+                      return (
+                        <button
+                          key={option.id}
+                          type="button"
+                          onClick={() => setAnimeGuess(option.anime)}
+                          style={{
+                            minHeight:54,
+                            padding:'10px 12px',
+                            borderRadius:12,
+                            border:`1px solid ${selected ? track.color : 'rgba(255,255,255,0.12)'}`,
+                            background:selected ? `${track.color}26` : 'rgba(255,255,255,0.045)',
+                            color:selected ? '#fff' : 'rgba(255,255,255,0.72)',
+                            cursor:'pointer',
+                            fontSize:13,
+                            fontWeight:850,
+                            textAlign:'left',
+                            display:'flex',
+                            alignItems:'center',
+                            gap:10,
+                            boxShadow:selected ? `0 0 0 3px ${track.color}18` : 'none',
+                            transition:'border-color .15s, background .15s, box-shadow .15s, color .15s',
+                          }}
+                        >
+                          <span style={{ width:28, height:28, flex:'0 0 auto', display:'grid', placeItems:'center', borderRadius:9, background:selected ? `${track.color}34` : 'rgba(255,255,255,0.06)' }}>{option.emoji}</span>
+                          <span>{option.anime}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
                   <input
-                    autoFocus
+                    autoFocus={false}
+                    aria-hidden="true"
+                    tabIndex={-1}
                     type="text"
                     value={animeGuess}
                     onChange={e => setAnimeGuess(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && titleRef?.current?.focus()}
                     placeholder="Nom de l'anime…"
                     style={{
+                      display:'none',
                       padding:'14px 18px', borderRadius:12,
                       background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.14)',
                       color:'#fff', fontSize:15, outline:'none', fontFamily:'var(--body)',
@@ -437,7 +687,7 @@ export default function BlindTestPage() {
                     onChange={e => setTitleGuess(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && submitGuess()}
                     ref={titleRef}
-                    placeholder="Titre de l'opening / ending…"
+                    placeholder="Titre de l'opening (bonus facultatif)"
                     style={{
                       padding:'14px 18px', borderRadius:12,
                       background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.14)',
@@ -482,7 +732,7 @@ export default function BlindTestPage() {
 
         {/* ── REVEAL ── */}
         {phase === 'reveal' && track && result && (
-          <div style={{ animation:'btFadeUp .4s ease' }}>
+          <div style={{ width:'100%', animation:'btFadeUp .4s ease' }}>
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:24 }}>
               <ScorePill label="Score total" value={totalScore.toLocaleString('fr-FR')} />
               <ScorePill label="Streak" value={streak} color={streak >= 3 ? '#f59e0b' : 'rgba(255,255,255,0.55)'} />

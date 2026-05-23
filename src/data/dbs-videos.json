@@ -2,7 +2,7 @@
   {
     "episode": 1,
     "title": "Episode 1",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E01 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E001/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -28,7 +28,7 @@
   {
     "episode": 2,
     "title": "Episode 2",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E02 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E002/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -54,7 +54,7 @@
   {
     "episode": 3,
     "title": "Episode 3",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E03 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E003/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -80,7 +80,7 @@
   {
     "episode": 4,
     "title": "Episode 4",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E04 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E004/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -106,7 +106,7 @@
   {
     "episode": 5,
     "title": "Episode 5",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E05 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E005/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -132,7 +132,7 @@
   {
     "episode": 6,
     "title": "Episode 6",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E06 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E006/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -158,7 +158,7 @@
   {
     "episode": 7,
     "title": "Episode 7",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E07 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E007/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -184,7 +184,7 @@
   {
     "episode": 8,
     "title": "Episode 8",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E08 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E008/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -210,7 +210,7 @@
   {
     "episode": 9,
     "title": "Episode 9",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E09 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E009/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -236,7 +236,7 @@
   {
     "episode": 10,
     "title": "Episode 10",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E10 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E010/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -262,7 +262,7 @@
   {
     "episode": 11,
     "title": "Episode 11",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E11 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E011/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -288,7 +288,7 @@
   {
     "episode": 12,
     "title": "Episode 12",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E12 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E012/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -314,7 +314,7 @@
   {
     "episode": 13,
     "title": "Episode 13",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E13 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E013/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -340,7 +340,7 @@
   {
     "episode": 14,
     "title": "Episode 14",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E14 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E014/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -366,7 +366,7 @@
   {
     "episode": 15,
     "title": "Episode 15",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E15 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E015/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -392,7 +392,7 @@
   {
     "episode": 16,
     "title": "Episode 16",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E16 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E016/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -418,7 +418,7 @@
   {
     "episode": 17,
     "title": "Episode 17",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E17 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E017/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -444,7 +444,7 @@
   {
     "episode": 18,
     "title": "Episode 18",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E18 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E018/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -470,7 +470,7 @@
   {
     "episode": 19,
     "title": "Episode 19",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E19 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E019/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -496,7 +496,7 @@
   {
     "episode": 20,
     "title": "Episode 20",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E20 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E020/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -522,7 +522,7 @@
   {
     "episode": 21,
     "title": "Episode 21",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E21 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E021/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -548,7 +548,7 @@
   {
     "episode": 22,
     "title": "Episode 22",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E22 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E022/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -574,7 +574,7 @@
   {
     "episode": 23,
     "title": "Episode 23",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E23 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E023/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -600,7 +600,7 @@
   {
     "episode": 24,
     "title": "Episode 24",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E24 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E024/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -626,7 +626,7 @@
   {
     "episode": 25,
     "title": "Episode 25",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E25 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E025/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -652,7 +652,7 @@
   {
     "episode": 26,
     "title": "Episode 26",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E26 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E026/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -678,7 +678,7 @@
   {
     "episode": 27,
     "title": "Episode 27",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E27 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E027/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -704,7 +704,7 @@
   {
     "episode": 28,
     "title": "Episode 28",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E28 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E028/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -730,7 +730,7 @@
   {
     "episode": 29,
     "title": "Episode 29",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E29 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E029/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -756,7 +756,7 @@
   {
     "episode": 30,
     "title": "Episode 30",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E30 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E030/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -782,7 +782,7 @@
   {
     "episode": 31,
     "title": "Episode 31",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E31 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E031/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -808,7 +808,7 @@
   {
     "episode": 32,
     "title": "Episode 32",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E32 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E032/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -834,7 +834,7 @@
   {
     "episode": 33,
     "title": "Episode 33",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E33 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E033/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -860,7 +860,7 @@
   {
     "episode": 34,
     "title": "Episode 34",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E34 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E034/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -886,7 +886,7 @@
   {
     "episode": 35,
     "title": "Episode 35",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E35 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E035/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -912,7 +912,7 @@
   {
     "episode": 36,
     "title": "Episode 36",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E36 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E036/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -938,7 +938,7 @@
   {
     "episode": 37,
     "title": "Episode 37",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E37 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E037/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -964,7 +964,7 @@
   {
     "episode": 38,
     "title": "Episode 38",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E38 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E038/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -990,7 +990,7 @@
   {
     "episode": 39,
     "title": "Episode 39",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E39 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E039/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -1016,7 +1016,7 @@
   {
     "episode": 40,
     "title": "Episode 40",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E40 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E040/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -1042,7 +1042,7 @@
   {
     "episode": 41,
     "title": "Episode 41",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E41 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E041/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -1068,7 +1068,7 @@
   {
     "episode": 42,
     "title": "Episode 42",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E42 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E042/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -1094,7 +1094,7 @@
   {
     "episode": 43,
     "title": "Episode 43",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E43 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E043/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -1120,7 +1120,7 @@
   {
     "episode": 44,
     "title": "Episode 44",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E44 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E044/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -1146,7 +1146,7 @@
   {
     "episode": 45,
     "title": "Episode 45",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E45 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E045/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -1172,7 +1172,7 @@
   {
     "episode": 46,
     "title": "Episode 46",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E46 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E046/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -1198,7 +1198,7 @@
   {
     "episode": 47,
     "title": "Episode 47",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E47 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E047/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -1224,7 +1224,7 @@
   {
     "episode": 48,
     "title": "Episode 48",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E48 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E048/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -1250,7 +1250,7 @@
   {
     "episode": 49,
     "title": "Episode 49",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E49 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E049/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -1276,7 +1276,7 @@
   {
     "episode": 50,
     "title": "Episode 50",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E50 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E050/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -1302,7 +1302,7 @@
   {
     "episode": 51,
     "title": "Episode 51",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E51 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E051/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -1328,7 +1328,7 @@
   {
     "episode": 52,
     "title": "Episode 52",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E52 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E052/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -1354,7 +1354,7 @@
   {
     "episode": 53,
     "title": "Episode 53",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E53 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E053/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -1380,7 +1380,7 @@
   {
     "episode": 54,
     "title": "Episode 54",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E54 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E054/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -1406,7 +1406,7 @@
   {
     "episode": 55,
     "title": "Episode 55",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E55 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E055/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -1432,7 +1432,7 @@
   {
     "episode": 56,
     "title": "Episode 56",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E56 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E056/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -1458,7 +1458,7 @@
   {
     "episode": 57,
     "title": "Episode 57",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E57 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E057/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -1484,7 +1484,7 @@
   {
     "episode": 58,
     "title": "Episode 58",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E58 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E058/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -1510,7 +1510,7 @@
   {
     "episode": 59,
     "title": "Episode 59",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E59 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E059/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -1536,7 +1536,7 @@
   {
     "episode": 60,
     "title": "Episode 60",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E60 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E060/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -1562,7 +1562,7 @@
   {
     "episode": 61,
     "title": "Episode 61",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E61 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E061/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -1588,7 +1588,7 @@
   {
     "episode": 62,
     "title": "Episode 62",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E62 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E062/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -1614,7 +1614,7 @@
   {
     "episode": 63,
     "title": "Episode 63",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E63 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E063/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -1640,7 +1640,7 @@
   {
     "episode": 64,
     "title": "Episode 64",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E64 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E064/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -1666,7 +1666,7 @@
   {
     "episode": 65,
     "title": "Episode 65",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E65 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E065/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -1692,7 +1692,7 @@
   {
     "episode": 66,
     "title": "Episode 66",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E66 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E066/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -1718,7 +1718,7 @@
   {
     "episode": 67,
     "title": "Episode 67",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E67 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E067/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -1744,7 +1744,7 @@
   {
     "episode": 68,
     "title": "Episode 68",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E68 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E068/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -1770,7 +1770,7 @@
   {
     "episode": 69,
     "title": "Episode 69",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E69 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E069/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -1796,7 +1796,7 @@
   {
     "episode": 70,
     "title": "Episode 70",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E70 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E070/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -1822,7 +1822,7 @@
   {
     "episode": 71,
     "title": "Episode 71",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E71 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E071/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -1848,7 +1848,7 @@
   {
     "episode": 72,
     "title": "Episode 72",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E72 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E072/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -1874,7 +1874,7 @@
   {
     "episode": 73,
     "title": "Episode 73",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E73 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E073/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -1900,7 +1900,7 @@
   {
     "episode": 74,
     "title": "Episode 74",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E74 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E074/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -1926,7 +1926,7 @@
   {
     "episode": 75,
     "title": "Episode 75",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E75 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E075/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -1952,7 +1952,7 @@
   {
     "episode": 76,
     "title": "Episode 76",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E76 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E076/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -1978,7 +1978,7 @@
   {
     "episode": 77,
     "title": "Episode 77",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E77 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E077/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -2004,7 +2004,7 @@
   {
     "episode": 78,
     "title": "Episode 78",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E78 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E078/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -2030,7 +2030,7 @@
   {
     "episode": 79,
     "title": "Episode 79",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E79 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E079/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -2056,7 +2056,7 @@
   {
     "episode": 80,
     "title": "Episode 80",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E80 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E080/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -2082,7 +2082,7 @@
   {
     "episode": 81,
     "title": "Episode 81",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E81 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E081/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -2108,7 +2108,7 @@
   {
     "episode": 82,
     "title": "Episode 82",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E82 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E082/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -2134,7 +2134,7 @@
   {
     "episode": 83,
     "title": "Episode 83",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E83 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E083/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -2160,7 +2160,7 @@
   {
     "episode": 84,
     "title": "Episode 84",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E84 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E084/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -2186,7 +2186,7 @@
   {
     "episode": 85,
     "title": "Episode 85",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E85 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E085/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -2212,7 +2212,7 @@
   {
     "episode": 86,
     "title": "Episode 86",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E86 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E086/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -2238,7 +2238,7 @@
   {
     "episode": 87,
     "title": "Episode 87",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E87 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E087/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -2264,7 +2264,7 @@
   {
     "episode": 88,
     "title": "Episode 88",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E88 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E088/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -2290,7 +2290,7 @@
   {
     "episode": 89,
     "title": "Episode 89",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E89 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E089/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -2316,7 +2316,7 @@
   {
     "episode": 90,
     "title": "Episode 90",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E90 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E090/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -2342,7 +2342,7 @@
   {
     "episode": 91,
     "title": "Episode 91",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E91 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E091/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -2368,7 +2368,7 @@
   {
     "episode": 92,
     "title": "Episode 92",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E92 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E092/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -2394,7 +2394,7 @@
   {
     "episode": 93,
     "title": "Episode 93",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E93 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E093/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -2420,7 +2420,7 @@
   {
     "episode": 94,
     "title": "Episode 94",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E94 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E094/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -2446,7 +2446,7 @@
   {
     "episode": 95,
     "title": "Episode 95",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E95 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E095/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -2472,7 +2472,7 @@
   {
     "episode": 96,
     "title": "Episode 96",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E96 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E096/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -2498,7 +2498,7 @@
   {
     "episode": 97,
     "title": "Episode 97",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E97 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E097/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -2524,7 +2524,7 @@
   {
     "episode": 98,
     "title": "Episode 98",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E98 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E098/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -2550,7 +2550,7 @@
   {
     "episode": 99,
     "title": "Episode 99",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E99 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E099/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -2576,7 +2576,7 @@
   {
     "episode": 100,
     "title": "Episode 100",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E100 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E100/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -2602,7 +2602,7 @@
   {
     "episode": 101,
     "title": "Episode 101",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E101 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E101/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -2628,7 +2628,7 @@
   {
     "episode": 102,
     "title": "Episode 102",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E102 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E102/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -2654,7 +2654,7 @@
   {
     "episode": 103,
     "title": "Episode 103",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E103 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E103/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -2680,7 +2680,7 @@
   {
     "episode": 104,
     "title": "Episode 104",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E104 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E104/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -2706,7 +2706,7 @@
   {
     "episode": 105,
     "title": "Episode 105",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E105 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E105/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -2732,7 +2732,7 @@
   {
     "episode": 106,
     "title": "Episode 106",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E106 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E106/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -2758,7 +2758,7 @@
   {
     "episode": 107,
     "title": "Episode 107",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E107 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E107/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -2784,7 +2784,7 @@
   {
     "episode": 108,
     "title": "Episode 108",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E108 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E108/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -2810,7 +2810,7 @@
   {
     "episode": 109,
     "title": "Episode 109",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E109 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E109/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -2836,7 +2836,7 @@
   {
     "episode": 110,
     "title": "Episode 110",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E110 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E110/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -2862,7 +2862,7 @@
   {
     "episode": 111,
     "title": "Episode 111",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E111 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E111/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -2888,7 +2888,7 @@
   {
     "episode": 112,
     "title": "Episode 112",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E112 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E112/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -2914,7 +2914,7 @@
   {
     "episode": 113,
     "title": "Episode 113",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E113 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E113/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -2940,7 +2940,7 @@
   {
     "episode": 114,
     "title": "Episode 114",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E114 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E114/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -2966,7 +2966,7 @@
   {
     "episode": 115,
     "title": "Episode 115",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E115 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E115/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -2992,7 +2992,7 @@
   {
     "episode": 116,
     "title": "Episode 116",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E116 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E116/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -3018,7 +3018,7 @@
   {
     "episode": 117,
     "title": "Episode 117",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E117 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E117/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -3044,7 +3044,7 @@
   {
     "episode": 118,
     "title": "Episode 118",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E118 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E118/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -3070,7 +3070,7 @@
   {
     "episode": 119,
     "title": "Episode 119",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E119 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E119/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -3096,7 +3096,7 @@
   {
     "episode": 120,
     "title": "Episode 120",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E120 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E120/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -3122,7 +3122,7 @@
   {
     "episode": 121,
     "title": "Episode 121",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E121 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E121/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -3148,7 +3148,7 @@
   {
     "episode": 122,
     "title": "Episode 122",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E122 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E122/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -3174,7 +3174,7 @@
   {
     "episode": 123,
     "title": "Episode 123",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E123 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E123/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -3200,7 +3200,7 @@
   {
     "episode": 124,
     "title": "Episode 124",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E124 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E124/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -3226,7 +3226,7 @@
   {
     "episode": 125,
     "title": "Episode 125",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E125 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E125/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -3252,7 +3252,7 @@
   {
     "episode": 126,
     "title": "Episode 126",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E126 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E126/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -3278,7 +3278,7 @@
   {
     "episode": 127,
     "title": "Episode 127",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E127 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E127/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -3304,7 +3304,7 @@
   {
     "episode": 128,
     "title": "Episode 128",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E128 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E128/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -3330,7 +3330,7 @@
   {
     "episode": 129,
     "title": "Episode 129",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E129 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E129/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -3356,7 +3356,7 @@
   {
     "episode": 130,
     "title": "Episode 130",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E130 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E130/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [
@@ -3382,7 +3382,7 @@
   {
     "episode": 131,
     "title": "Episode 131",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs/Dragon Ball Super S01E131 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN).mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-hls/S01E131/master.m3u8",
     "season": "S01",
     "arc": "Dragon Ball Super",
     "audio": [

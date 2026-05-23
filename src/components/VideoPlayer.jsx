@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import Hls from 'hls.js'
 
 function fmt(sec) {
   const t = Math.max(0, Math.floor(sec || 0))
@@ -32,6 +33,13 @@ function saveVideoProgress(storageKey, progress) {
   if (!storageKey) return
   try { localStorage.setItem(storageKey, JSON.stringify(progress)) } catch {}
 }
+
+function safePlay(video) {
+  if (!video) return
+  const promise = video.play()
+  if (promise?.catch) promise.catch(() => {})
+}
+
 function cleanCueText(text) {
   const seen = new Set()
   return String(text || '')
@@ -47,7 +55,6 @@ function cleanCueText(text) {
     })
     .join('\n')
 }
-
 
 const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2]
 
@@ -128,41 +135,21 @@ function ProgressBar({ currentTime, duration, buffered, onSeek, color }) {
 }
 
 function EpisodeMiniThumb({ video, color }) {
-  const [ready, setReady] = useState(false)
   if (video.thumbnail) {
-    return <img src={video.thumbnail} alt={`Ep.${video.episode}`} style={{ width: 96, height: 54, objectFit: 'cover', display: 'block' }} />
-  }
-  if (!video.src) {
-    return <div style={{ width: 96, height: 54, background: 'rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>▶</div>
+    return <img src={video.thumbnail} alt={`Ep.${video.episode}`} loading="lazy" decoding="async" style={{ width: 96, height: 54, objectFit: "cover", display: "block" }} />
   }
   return (
-    <div style={{ position: 'relative', width: 96, height: 54, background: `${color}18`, overflow: 'hidden' }}>
-      <video
-        src={encSrc(video.src)}
-        muted
-        playsInline
-        preload="metadata"
-        onLoadedMetadata={e => {
-          const duration = Number.isFinite(e.currentTarget.duration) ? e.currentTarget.duration : 0
-          try { e.currentTarget.currentTime = duration > 0 ? Math.max(2, duration * 0.5) : 2 } catch {}
-        }}
-        onSeeked={() => setReady(true)}
-        onLoadedData={() => setReady(true)}
-        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', opacity: ready ? 0.86 : 0, filter: 'brightness(1.16) saturate(1.12) contrast(1.08)' }}
-      />
-      <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', background: ready ? 'rgba(0,0,0,0.08)' : `linear-gradient(135deg, ${color}30, rgba(0,0,0,0.75))`, color: '#fff', fontSize: 18, fontWeight: 900 }}>
-        {!ready && '▶'}
-      </div>
+    <div style={{ position: 'relative', width: 96, height: 54, background: `radial-gradient(circle at 28% 18%, ${color}42, transparent 35%), linear-gradient(135deg, rgba(25,25,30,0.96), rgba(5,5,8,0.98))`, overflow: 'hidden', display: 'grid', placeItems: 'center', color: '#fff', fontSize: 18, fontWeight: 900 }}>
+      ▶
     </div>
   )
 }
-
-// ── Composant principal ───────────────────────────────────────────────────────
 export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce7', storageKey = null, onProgressUpdate = null }) {
   const videoRef     = useRef(null)
   const containerRef = useRef(null)
   const hideTimer    = useRef(null)
   const lastSaveRef  = useRef(0)
+  const hlsRef       = useRef(null)
 
   const [idx,          setIdx]         = useState(startIdx)
   const [playing,      setPlaying]     = useState(false)
@@ -178,13 +165,17 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   const [cueText,      setCueText]     = useState('')
   const [buffered,     setBuffered]    = useState(0)
   const [showSubMenu,  setShowSubMenu] = useState(false)
+  const [showAudioMenu, setShowAudioMenu] = useState(false)
   const [showSpdMenu,  setShowSpdMenu] = useState(false)
   const [showQualityMenu, setShowQualityMenu] = useState(false)
   const [qualityLabel, setQualityLabel] = useState('AUTO')
+  const [audioTracks, setAudioTracks] = useState([])
+  const [audioTrackIdx, setAudioTrackIdx] = useState(-1)
 
   const video   = videos[idx]
   const isLocal = Boolean(video?.src)
   const hasSubs = Array.isArray(video?.subtitles) && video.subtitles.length > 0
+  const isHlsSource = Boolean(video?.src && video.src.split('?')[0].toLowerCase().endsWith('.m3u8'))
 
   const persistProgress = useCallback((patch = {}) => {
     if (!storageKey || !video) return
@@ -229,6 +220,56 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [])
+
+  useEffect(() => {
+    const v = videoRef.current
+    if (!v || !isHlsSource || !video?.src) {
+      setAudioTracks([])
+      setAudioTrackIdx(-1)
+      return
+    }
+
+    const src = encSrc(video.src)
+    hlsRef.current?.destroy()
+    hlsRef.current = null
+
+    if (Hls.isSupported()) {
+      const hls = new Hls({ enableWorker: true })
+      hlsRef.current = hls
+
+      const syncAudioTracks = () => {
+        setAudioTracks(hls.audioTracks.map((track, index) => ({
+          index,
+          label: track.name || track.lang || `Audio ${index + 1}`,
+          lang: track.lang || '',
+        })))
+        setAudioTrackIdx(hls.audioTrack)
+      }
+
+      hls.loadSource(src)
+      hls.attachMedia(v)
+      hls.on(Hls.Events.AUDIO_TRACKS_UPDATED, syncAudioTracks)
+      hls.on(Hls.Events.AUDIO_TRACK_SWITCHED, (_, data) => setAudioTrackIdx(data.id))
+
+      return () => {
+        hls.destroy()
+        if (hlsRef.current === hls) hlsRef.current = null
+        setAudioTracks([])
+        setAudioTrackIdx(-1)
+      }
+    }
+
+    if (v.canPlayType('application/vnd.apple.mpegurl')) {
+      v.src = src
+    }
+
+    return () => {
+      v.removeAttribute('src')
+      v.load()
+      setAudioTracks([])
+      setAudioTrackIdx(-1)
+    }
+  }, [isHlsSource, video?.src])
 
   // ── Sous-titres — polling RAF sur activeCues ────────────────────────────
   useEffect(() => {
@@ -315,7 +356,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
       const v = videoRef.current
       switch (e.key) {
         case 'Escape':      onClose(); break
-        case ' ':           e.preventDefault(); v && (v.paused ? v.play() : v.pause()); break
+        case ' ':           e.preventDefault(); if (!e.repeat && v) (v.paused ? safePlay(v) : v.pause()); break
         case 'ArrowLeft':   e.preventDefault(); v && (v.currentTime = Math.max(0, v.currentTime - 5)); break
         case 'ArrowRight':  e.preventDefault(); v && (v.currentTime = Math.min(v.duration, v.currentTime + 5)); break
         case 'ArrowUp':     e.preventDefault(); v && (v.volume = Math.min(1, v.volume + 0.1)); break
@@ -363,7 +404,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
 
   const togglePlay = () => {
     const v = videoRef.current; if (!v) return
-    v.paused ? v.play() : v.pause()
+    v.paused ? safePlay(v) : v.pause()
   }
 
   const handleVolume = e => {
@@ -428,10 +469,12 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                 if (idx < videos.length - 1) setIdx(i => i + 1)
               }}
             >
-              <source
-                src={encSrc(video.src)}
-                type={sourceType(video.src)}
-              />
+              {!isHlsSource && (
+                <source
+                  src={encSrc(video.src)}
+                  type={sourceType(video.src)}
+                />
+              )}
               {/* Pistes de sous-titres (lues via TextTrack API, mode hidden) */}
               {hasSubs && video.subtitles.map((sub, i) => (
                 <track key={i} kind="subtitles" src={sub.src} srcLang={sub.srclang || 'fr'} label={sub.label} />
@@ -465,7 +508,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
               position: 'absolute',
               top: 12,
               right: 12,
-              display: 'inline-flex',
+              display: 'none',
               alignItems: 'center',
               gap: 8,
               padding: '8px 11px',
@@ -553,10 +596,48 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
 
                 <div style={{ flex: 1 }} />
 
+                {audioTracks.length > 1 && (
+                  <div style={{ position: 'relative' }}>
+                    <button
+                      onClick={e => { e.stopPropagation(); setShowAudioMenu(s => !s); setShowSubMenu(false); setShowSpdMenu(false); setShowQualityMenu(false) }}
+                      title="Piste audio"
+                      style={{
+                        background: 'rgba(255,255,255,0.07)',
+                        border: '1px solid rgba(255,255,255,0.15)',
+                        borderRadius: 7,
+                        color: 'rgba(255,255,255,0.88)',
+                        fontSize: 11,
+                        fontWeight: 900,
+                        padding: '4px 9px',
+                        cursor: 'pointer',
+                        letterSpacing: '0.05em',
+                      }}
+                    >AUDIO {audioTracks.find(track => track.index === audioTrackIdx)?.label || 'AUTO'}</button>
+                    {showAudioMenu && (
+                      <div style={{ position: 'absolute', bottom: 'calc(100% + 6px)', right: 0, background: 'rgba(14,15,17,0.98)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, minWidth: 150, padding: '5px 0', boxShadow: '0 12px 40px rgba(0,0,0,0.7)', backdropFilter: 'blur(16px)', zIndex: 20 }}
+                        onClick={e => e.stopPropagation()}
+                      >
+                        {audioTracks.map(track => (
+                          <button key={track.index} onClick={() => {
+                            if (hlsRef.current) hlsRef.current.audioTrack = track.index
+                            setAudioTrackIdx(track.index)
+                            setSubsOff(track.lang === 'fr' || track.label.toLowerCase() === 'vf')
+                            setShowAudioMenu(false)
+                          }}
+                            style={{ width: '100%', padding: '8px 14px', background: track.index === audioTrackIdx ? `${color}22` : 'none', border: 'none', cursor: 'pointer', textAlign: 'left', color: track.index === audioTrackIdx ? color : '#fff', fontSize: 13, fontWeight: track.index === audioTrackIdx ? 800 : 600, transition: 'background .12s' }}
+                            onMouseEnter={e => { if (track.index !== audioTrackIdx) e.currentTarget.style.background = 'rgba(255,255,255,0.07)' }}
+                            onMouseLeave={e => { if (track.index !== audioTrackIdx) e.currentTarget.style.background = 'none' }}
+                          >{track.label}</button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* Sous-titres */}
                 <div style={{ position: 'relative' }}>
                   <button
-                    onClick={e => { e.stopPropagation(); setShowSubMenu(s => !s); setShowSpdMenu(false) }}
+                    onClick={e => { e.stopPropagation(); setShowSubMenu(s => !s); setShowAudioMenu(false); setShowSpdMenu(false) }}
                     title="Sous-titres"
                     style={{
                       background: subsOff ? 'transparent' : `${color}22`,
@@ -586,7 +667,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                 {/* Vitesse */}
                 <div style={{ position: 'relative' }}>
                   <button
-                    onClick={e => { e.stopPropagation(); setShowSpdMenu(s => !s); setShowSubMenu(false) }}
+                    onClick={e => { e.stopPropagation(); setShowSpdMenu(s => !s); setShowAudioMenu(false); setShowSubMenu(false) }}
                     title="Vitesse de lecture"
                     style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 7, color: 'rgba(255,255,255,0.85)', fontSize: 11, fontWeight: 800, padding: '4px 9px', cursor: 'pointer', letterSpacing: '0.05em' }}
                   >{speed}×</button>
@@ -607,7 +688,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
 
                 <div style={{ position: 'relative' }}>
                   <button
-                    onClick={e => { e.stopPropagation(); setShowQualityMenu(q => !q); setShowSpdMenu(false); setShowSubMenu(false) }}
+                    onClick={e => { e.stopPropagation(); setShowQualityMenu(q => !q); setShowAudioMenu(false); setShowSpdMenu(false); setShowSubMenu(false) }}
                     title="Qualité vidéo"
                     style={{ background: 'rgba(100,217,139,0.10)', border: '1px solid rgba(100,217,139,0.28)', borderRadius: 7, color: '#64d98b', fontSize: 11, fontWeight: 900, padding: '4px 9px', cursor: 'pointer', letterSpacing: '0.05em' }}
                   >{qualityHint}</button>
@@ -667,7 +748,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
 
       {/* ── Bande épisodes ── */}
       {videos.length > 1 && (() => {
-        const hasThumbs = videos.some(v => v.thumbnail || v.src)
+        const hasThumbs = videos.some(v => v.thumbnail)
         return (
           <div style={{ flexShrink: 0, display: 'flex', gap: 6, padding: hasThumbs ? '8px 14px' : '7px 14px', background: 'rgba(8,9,11,0.84)', backdropFilter: 'blur(18px)', borderTop: '1px solid rgba(255,255,255,0.05)', overflowX: 'auto', scrollbarWidth: 'thin', alignItems: 'flex-start' }}>
             {videos.map((v, i) => (
@@ -678,7 +759,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
               >
                 {hasThumbs ? (
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <EpisodeMiniThumb video={v} color={color} />
+                    <EpisodeMiniThumb video={v} color={color} active={Math.abs(i - idx) <= 4} />
                     <div style={{ padding: '4px 6px', fontSize: 11, fontWeight: 700, textAlign: 'center', whiteSpace: 'nowrap' }}>
                       {v.season && <span style={{ opacity: 0.55, marginRight: 3 }}>S{v.season} ·</span>}Ép.{v.episode}
                     </div>

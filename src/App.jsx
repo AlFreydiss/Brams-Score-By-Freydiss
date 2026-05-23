@@ -27,6 +27,7 @@ const ProfilePage     = lazy(() => import('./components/ProfilePage.jsx'))
 const EncyclopediePage= lazy(() => import('./components/EncyclopediePage.jsx'))
 const ScansPage       = lazy(() => import('./components/ScansPage.jsx'))
 const AnimeHub        = lazy(() => import('./components/AnimeHub.jsx'))
+const OnePiecePage    = lazy(() => import('./components/OnePiecePage.jsx'))
 const TpnPage         = lazy(() => import('./components/TpnPage.jsx'))
 const DrStonePage     = lazy(() => import('./components/DrStonePage.jsx'))
 const JjkPage         = lazy(() => import('./components/JjkPage.jsx'))
@@ -54,12 +55,46 @@ const BerryShop          = lazy(() => import('./components/BerryShop.jsx'))
 const BramsTraitorPage   = lazy(() => import('./components/BramsTraitorPage.jsx'))
 const StaffPanel         = lazy(() => import('./components/StaffPanel.jsx'))
 const BlindTestPage      = lazy(() => import('./components/BlindTestPage.jsx'))
+const BlindTestRoomPage  = lazy(() => import('./components/BlindTestRoomPage.jsx'))
 const BlindTestLeaderboard = lazy(() => import('./components/BlindTestLeaderboard.jsx'))
+const TierListPage       = lazy(() => import('./components/TierListPage.jsx'))
+
+function shouldSkipAmbientVideo() {
+  if (typeof window === 'undefined') return true
+  if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return true
+
+  const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection
+  if (connection?.saveData) return true
+  if (['slow-2g', '2g'].includes(connection?.effectiveType)) return true
+
+  return false
+}
+
 function AMVBackground() {
   const videoRef = useRef(null)
+  const [videoEnabled, setVideoEnabled] = useState(false)
   const [muted, setMuted]     = useState(true)
   const [volume, setVolume]   = useState(40)
   const [hovered, setHovered] = useState(false)
+
+  useEffect(() => {
+    if (shouldSkipAmbientVideo()) return
+
+    let timeoutId
+    let idleId
+    const enableVideo = () => setVideoEnabled(true)
+
+    if ('requestIdleCallback' in window) {
+      idleId = window.requestIdleCallback(enableVideo, { timeout: 2500 })
+    } else {
+      timeoutId = window.setTimeout(enableVideo, 1200)
+    }
+
+    return () => {
+      if (idleId) window.cancelIdleCallback?.(idleId)
+      if (timeoutId) window.clearTimeout(timeoutId)
+    }
+  }, [])
 
   const toggle = () => {
     const v = videoRef.current
@@ -82,17 +117,17 @@ function AMVBackground() {
 
   return (
     <>
-      <video
+      {videoEnabled && <video
         ref={videoRef}
-        autoPlay muted loop playsInline
+        autoPlay muted loop playsInline preload="metadata"
         onLoadedMetadata={e => { e.target.currentTime = 25 }}
         style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 0, pointerEvents: 'none', opacity: 0.35 }}
       >
         <source src="/bg-video.mp4" type="video/mp4" />
-      </video>
+      </video>}
 
       {/* Contrôle audio AMV */}
-      <div
+      {videoEnabled && <div
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         style={{
@@ -133,7 +168,7 @@ function AMVBackground() {
             }}
           />
         )}
-      </div>
+      </div>}
     </>
   )
 }
@@ -161,6 +196,7 @@ export default function App() {
   }, [])
   const [encyclopedieOpen, setEncyclopedieOpen]  = useState(false)
   const [animeHubOpen,     setAnimeHubOpen]      = useState(false)
+  const [onepieceOpen,     setOnepieceOpen]      = useState(false)
   const [tpnOpen,          setTpnOpen]           = useState(false)
   const [drstoneOpen,      setDrstoneOpen]       = useState(false)
   const [jjkOpen,          setJjkOpen]           = useState(false)
@@ -181,6 +217,7 @@ export default function App() {
     const fnScans    = () => setScansOpen(true)
     const fnEncy     = () => setEncyclopedieOpen(true)
     const fnAnimeHub = () => setAnimeHubOpen(true)
+    const fnOnepiece = () => setOnepieceOpen(true)
     const fnTpn      = () => setTpnOpen(true)
     const fnDrstone  = () => setDrstoneOpen(true)
     const fnJjk      = () => setJjkOpen(true)
@@ -199,6 +236,7 @@ export default function App() {
     document.addEventListener('open-scans',        fnScans)
     document.addEventListener('open-encyclopedie', fnEncy)
     document.addEventListener('open-anime-hub',    fnAnimeHub)
+    document.addEventListener('open-onepiece',      fnOnepiece)
     document.addEventListener('open-tpn',          fnTpn)
     document.addEventListener('open-drstone',      fnDrstone)
     document.addEventListener('open-jjk',          fnJjk)
@@ -218,6 +256,7 @@ export default function App() {
       document.removeEventListener('open-scans',        fnScans)
       document.removeEventListener('open-encyclopedie', fnEncy)
       document.removeEventListener('open-anime-hub',    fnAnimeHub)
+      document.removeEventListener('open-onepiece',      fnOnepiece)
       document.removeEventListener('open-tpn',          fnTpn)
       document.removeEventListener('open-drstone',      fnDrstone)
       document.removeEventListener('open-jjk',          fnJjk)
@@ -236,7 +275,7 @@ export default function App() {
     }
   }, [])
 
-  const mediaOverlayOpen = scansOpen || animeHubOpen || tpnOpen || drstoneOpen || jjkOpen || kingdomOpen || aotOpen || knyOpen || nntOpen || slOpen || dbsOpen || bcOpen || mhaOpen || fireforcOpen || bluelockOpen
+  const mediaOverlayOpen = scansOpen || animeHubOpen || onepieceOpen || tpnOpen || drstoneOpen || jjkOpen || kingdomOpen || aotOpen || knyOpen || nntOpen || slOpen || dbsOpen || bcOpen || mhaOpen || fireforcOpen || bluelockOpen
   const immersiveOverlayOpen = mediaOverlayOpen || encyclopedieOpen || treeOpen || uploadOpen
 
   const mainContent = (
@@ -320,7 +359,10 @@ export default function App() {
 
         {/* Blind Test */}
         <Route path="/blind-test" element={<PageLayout><BlindTestPage /></PageLayout>} />
+        <Route path="/blind-test/multi" element={<PageLayout><BlindTestRoomPage /></PageLayout>} />
+        <Route path="/blind-test/room/:code" element={<PageLayout><BlindTestRoomPage /></PageLayout>} />
         <Route path="/blind-test/leaderboard" element={<PageLayout><BlindTestLeaderboard /></PageLayout>} />
+        <Route path="/tier-list" element={<PageLayout><TierListPage /></PageLayout>} />
 
         {/* Homepage */}
         <Route path="/*" element={mainContent} />
@@ -331,7 +373,7 @@ export default function App() {
         isAuthenticated ? (
           <AnimeHub
             onClose={() => setAnimeHubOpen(false)}
-            onOpenOnepiece={() => { setAnimeHubOpen(false); setScansOpen(true) }}
+            onOpenOnepiece={() => { setAnimeHubOpen(false); setOnepieceOpen(true) }}
             onOpenTpn={() => { setAnimeHubOpen(false); setTpnOpen(true) }}
             onOpenDrstone={() => { setAnimeHubOpen(false); setDrstoneOpen(true) }}
             onOpenJjk={() => { setAnimeHubOpen(false); setJjkOpen(true) }}
@@ -350,6 +392,7 @@ export default function App() {
           <AuthGuard onClose={() => setAnimeHubOpen(false)} feature="les animés & scans" />
         )
       )}
+      {onepieceOpen && <OnePiecePage onClose={() => setOnepieceOpen(false)} />}
       {tpnOpen     && <TpnPage     onClose={() => setTpnOpen(false)} />}
       {drstoneOpen && <DrStonePage onClose={() => setDrstoneOpen(false)} />}
       {jjkOpen     && <JjkPage     onClose={() => setJjkOpen(false)} />}

@@ -1,0 +1,16 @@
+@tailwind components;
+@tailwind utilities;
+
+.tier-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.tier-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+}
+
+.tier-range {
+  accent-color: #f6c52f;
+}

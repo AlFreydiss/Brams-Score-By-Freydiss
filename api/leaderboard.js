@@ -51,18 +51,29 @@ function computeHours(userData, period, now) {
   return Math.round((seconds / 3600) * 10) / 10
 }
 
+function getRequestUrl(req) {
+  const proto = req.headers['x-forwarded-proto'] || 'https'
+  const host = req.headers.host || 'localhost'
+  return new URL(req.url || '/', `${proto}://${host}`)
+}
+
 export default async function handler(req, res) {
   if (!API_KEY) {
     res.status(500).json({ error: 'SUPABASE key missing' })
     return
   }
 
-  const limit = Math.min(Math.max(parseInt(req.query.limit || '100', 10) || 100, 1), 500)
-  const period = String(req.query.period || 'week').toLowerCase()
+  const requestUrl = getRequestUrl(req)
+  const limit = Math.min(Math.max(parseInt(requestUrl.searchParams.get('limit') || '100', 10) || 100, 1), 500)
+  const period = String(requestUrl.searchParams.get('period') || 'week').toLowerCase()
   const now = Date.now() / 1000
 
   try {
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/users?select=uid,data&limit=1000`, {
+    const usersUrl = new URL('/rest/v1/users', SUPABASE_URL)
+    usersUrl.searchParams.set('select', 'uid,data')
+    usersUrl.searchParams.set('limit', '1000')
+
+    const response = await fetch(usersUrl, {
       headers: {
         apikey: API_KEY,
         Authorization: `Bearer ${API_KEY}`,

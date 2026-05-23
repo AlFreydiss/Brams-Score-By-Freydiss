@@ -4,7 +4,7 @@ const ANIMES = [
   {
     id: 'onepiece',
     title: 'One Piece',
-    subtitle: 'Arc Elbaf · En cours',
+    subtitle: 'Arc Egghead · VOSTFR',
     emoji: '🏴‍☠️',
     color: '#e0524a',
     colorDark: '#7a1f1a',
@@ -12,11 +12,11 @@ const ANIMES = [
     genres: ['Aventure', 'Action', 'Shōnen'],
     description: "Monkey D. Luffy et son équipage sillonnent les mers à la recherche du légendaire trésor « One Piece » pour devenir Roi des Pirates.",
     stats: [
-      { label: 'Chapitres', value: '56' },
-      { label: 'Arc actuel', value: 'Elbaf' },
-      { label: 'Statut', value: 'En cours' },
+      { label: 'Episodes', value: '70' },
+      { label: 'Arc', value: 'Egghead' },
+      { label: 'Statut', value: 'Disponible' },
     ],
-    action: '📖 Lire les Scans',
+    action: '▶ Accéder',
     badge: 'À JOUR',
     badgeColor: '#34d399',
   },
@@ -465,11 +465,38 @@ function ComingSoonCard({ index }) {
   )
 }
 
+function normalizeSearch(value) {
+  return String(value || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+}
+
 export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrstone, onOpenJjk, onOpenKingdom, onOpenAot, onOpenKny, onOpenNnt, onOpenSl, onOpenDbs, onOpenBc, onOpenMha, onOpenFireforce, onOpenBluelock }) {
+  const [searchQuery, setSearchQuery] = useState('')
+
   useEffect(() => {
     document.body.style.overflow = 'hidden'
     return () => { document.body.style.overflow = '' }
   }, [])
+
+  const filteredAnimes = useMemo(() => {
+    const query = normalizeSearch(searchQuery.trim())
+    if (!query) return ANIMES
+
+    return ANIMES.filter(anime => {
+      const haystack = normalizeSearch([
+        anime.title,
+        anime.subtitle,
+        anime.description,
+        anime.badge,
+        ...anime.genres,
+        ...anime.stats.map(s => `${s.label} ${s.value}`),
+      ].join(' '))
+
+      return haystack.includes(query)
+    })
+  }, [searchQuery])
 
   const handleClick = id => {
     const map = {
@@ -541,13 +568,120 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
               </p>
             </div>
 
+            {/* Search */}
+            <div style={{
+              maxWidth:720,
+              margin:'-22px auto 38px',
+              position:'relative',
+            }}>
+              <div style={{
+                position:'relative',
+                borderRadius:18,
+                background:'linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.025))',
+                border:'1px solid rgba(255,255,255,0.10)',
+                boxShadow:'0 22px 70px rgba(0,0,0,0.34), inset 0 1px 0 rgba(255,255,255,0.08)',
+                backdropFilter:'blur(22px)',
+                overflow:'hidden',
+              }}>
+                <div style={{
+                  position:'absolute',
+                  inset:0,
+                  pointerEvents:'none',
+                  background:'radial-gradient(circle at 18% 50%, rgba(224,82,74,0.16), transparent 32%), radial-gradient(circle at 82% 50%, rgba(108,92,231,0.16), transparent 32%)',
+                  opacity: searchQuery ? 1 : 0.6,
+                  transition:'opacity .24s ease',
+                }} />
+                <span style={{
+                  position:'absolute',
+                  left:18,
+                  top:'50%',
+                  transform:'translateY(-50%)',
+                  zIndex:1,
+                  color:'rgba(255,255,255,0.44)',
+                  fontSize:18,
+                }}>
+                  &#8981;
+                </span>
+                <input
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  placeholder="Rechercher un anime, un genre, un arc..."
+                  aria-label="Rechercher un anime"
+                  style={{
+                    position:'relative',
+                    zIndex:1,
+                    width:'100%',
+                    height:58,
+                    padding:'0 56px',
+                    border:'none',
+                    outline:'none',
+                    background:'transparent',
+                    color:'#fff',
+                    fontSize:15,
+                    fontWeight:700,
+                    fontFamily:'var(--body)',
+                    letterSpacing:0,
+                  }}
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    aria-label="Effacer la recherche"
+                    style={{
+                      position:'absolute',
+                      right:12,
+                      top:'50%',
+                      zIndex:2,
+                      width:34,
+                      height:34,
+                      transform:'translateY(-50%)',
+                      border:'1px solid rgba(255,255,255,0.10)',
+                      borderRadius:10,
+                      background:'rgba(255,255,255,0.06)',
+                      color:'rgba(255,255,255,0.72)',
+                      cursor:'pointer',
+                      fontSize:16,
+                      fontWeight:800,
+                    }}
+                  >
+                    x
+                  </button>
+                )}
+              </div>
+              <div style={{
+                marginTop:10,
+                textAlign:'center',
+                color:'rgba(255,255,255,0.32)',
+                fontSize:12,
+                fontWeight:700,
+              }}>
+                {filteredAnimes.length} resultat{filteredAnimes.length > 1 ? 's' : ''}
+              </div>
+            </div>
+
             {/* Cards grid */}
             <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(310px, 1fr))', gap:22 }}>
-              {ANIMES.map((anime, i) => (
+              {filteredAnimes.map((anime, i) => (
                 <AnimeCard key={anime.id} anime={anime} index={i} onClick={() => handleClick(anime.id)} />
               ))}
-              <ComingSoonCard index={ANIMES.length} />
+              {filteredAnimes.length === ANIMES.length && <ComingSoonCard index={ANIMES.length} />}
             </div>
+
+            {filteredAnimes.length === 0 && (
+              <div style={{
+                marginTop:24,
+                padding:'40px 24px',
+                border:'1px solid rgba(255,255,255,0.08)',
+                borderRadius:20,
+                background:'rgba(255,255,255,0.025)',
+                textAlign:'center',
+                color:'rgba(255,255,255,0.48)',
+                fontWeight:700,
+              }}>
+                Aucun anime trouve.
+              </div>
+            )}
           </div>
         </div>
       </div>
