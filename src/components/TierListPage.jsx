@@ -113,6 +113,53 @@ function useToast() {
   return { msg, show }
 }
 
+// ── Images Jikan (MyAnimeList) ────────────────────────────────
+// Fetche les images progressivement depuis l'API Jikan, 3 par batch,
+// met en cache dans sessionStorage pour éviter les refetch.
+function useItemImages(items, categoryId) {
+  const SKEY = `brams-tier-imgs-${categoryId}`
+  const [cache, setCache] = useState(() => {
+    try { return JSON.parse(sessionStorage.getItem(SKEY) || '{}') } catch { return {} }
+  })
+  const fetching = useRef(false)
+  const endpoint = categoryId === 'personnages' ? 'characters' : 'anime'
+
+  useEffect(() => {
+    if (!items.length || fetching.current) return
+    const missing = items.filter(i => !cache[i.name])
+    if (!missing.length) return
+    fetching.current = true
+
+    async function go() {
+      const next = { ...cache }
+      const BATCH = 3
+      for (let i = 0; i < missing.length; i += BATCH) {
+        await Promise.all(
+          missing.slice(i, i + BATCH).map(async ({ name }) => {
+            try {
+              const res = await fetch(
+                `https://api.jikan.moe/v4/${endpoint}?q=${encodeURIComponent(name)}&limit=1`,
+                { signal: AbortSignal.timeout(6000) }
+              )
+              if (!res.ok) return
+              const data = await res.json()
+              const img = data.data?.[0]?.images?.jpg?.image_url
+              if (img) next[name] = img
+            } catch {}
+          })
+        )
+        setCache({ ...next })
+        try { sessionStorage.setItem(SKEY, JSON.stringify(next)) } catch {}
+        if (i + BATCH < missing.length) await new Promise(r => setTimeout(r, 1100))
+      }
+      fetching.current = false
+    }
+    go()
+  }, [items.length, categoryId])
+
+  return cache
+}
+
 // ── Toast ─────────────────────────────────────────────────────
 function Toast({ msg }) {
   return (
@@ -331,39 +378,71 @@ function Hero({ onCreate, onFavs, hasDraft, onResume }) {
   )
 }
 
-// ── DnD Item ──────────────────────────────────────────────────
-function DragItem({ item, onDelete }) {
+// ── DnD Item (image card) ─────────────────────────────────────
+function DragItem({ item, img, onDelete }) {
+  const [imgErr, setImgErr] = useState(false)
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: item.id })
+  const showImg = img && !imgErr
+
   return (
     <div
       ref={setNodeRef} {...listeners} {...attributes}
       style={{
-        display: 'flex', alignItems: 'center', gap: 6,
-        padding: '6px 10px', borderRadius: 8,
+        width: 86, flexShrink: 0, borderRadius: 10, overflow: 'hidden',
         border: `1px solid ${isDragging ? T.borderHover : T.border}`,
         background: isDragging ? 'rgba(255,255,255,.12)' : 'rgba(255,255,255,.055)',
-        color: '#fff', fontSize: 13, fontWeight: 700,
         cursor: isDragging ? 'grabbing' : 'grab',
         opacity: isDragging ? .45 : 1, touchAction: 'none', userSelect: 'none',
         transform: transform ? `translate(${transform.x}px,${transform.y}px)` : undefined,
         transition: isDragging ? 'none' : 'border-color .15s,background .15s',
+        position: 'relative',
       }}
     >
-      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{item.name}</span>
+      {/* Bouton supprimer */}
       <button
         onPointerDown={e => e.stopPropagation()}
         onClick={() => onDelete(item.id)}
-        style={{ background: 'none', border: 'none', color: T.faint, cursor: 'pointer', fontSize: 15, lineHeight: 1 }}
+        style={{
+          position: 'absolute', top: 3, right: 3, zIndex: 2,
+          width: 18, height: 18, borderRadius: 5,
+          background: 'rgba(0,0,0,.65)', border: 'none',
+          color: '#fff', fontSize: 11, cursor: 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1,
+        }}
       >×</button>
+
+      {/* Image ou placeholder */}
+      {showImg ? (
+        <img
+          src={img} alt={item.name} onError={() => setImgErr(true)}
+          style={{ width: '100%', height: 86, objectFit: 'cover', display: 'block' }}
+        />
+      ) : (
+        <div style={{
+          width: '100%', height: 86,
+          background: 'linear-gradient(135deg,rgba(191,164,106,.18),rgba(192,57,43,.12))',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 30, fontWeight: 950, color: T.gold, userSelect: 'none',
+        }}>
+          {item.name[0]}
+        </div>
+      )}
+
+      {/* Nom */}
+      <div style={{
+        padding: '4px 5px', fontSize: 10, fontWeight: 700, color: '#fff',
+        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+        textAlign: 'center', background: 'rgba(0,0,0,.42)',
+      }}>{item.name}</div>
     </div>
   )
 }
 
 // ── Droppable Tier Row ────────────────────────────────────────
-function TierRow({ tier, items, onLabel, onDelTier, onDelItem }) {
+function TierRow({ tier, items, imgCache, onLabel, onDelTier, onDelItem }) {
   const { setNodeRef, isOver } = useDroppable({ id: tier.id })
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '68px minmax(0,1fr) 34px', gap: 6, minHeight: 60 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: '68px minmax(0,1fr) 34px', gap: 6, minHeight: 100 }}>
       <input
         value={tier.label} onChange={e => onLabel(tier.id, e.target.value)} maxLength={12}
         style={{
@@ -375,14 +454,16 @@ function TierRow({ tier, items, onLabel, onDelTier, onDelItem }) {
       <div
         ref={setNodeRef}
         style={{
-          display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 7, padding: 10,
-          borderRadius: 12, minHeight: 60,
+          display: 'flex', alignItems: 'flex-start', flexWrap: 'wrap', gap: 7, padding: 10,
+          borderRadius: 12, minHeight: 100,
           border: `1px solid ${isOver ? T.borderHover : T.border}`,
           background: isOver ? 'rgba(255,255,255,.08)' : 'rgba(255,255,255,.04)',
           transition: 'border-color .15s,background .15s',
         }}
       >
-        {items.map(item => <DragItem key={item.id} item={item} onDelete={onDelItem} />)}
+        {items.map(item => (
+          <DragItem key={item.id} item={item} img={imgCache?.[item.name]} onDelete={onDelItem} />
+        ))}
       </div>
       <button
         onClick={() => onDelTier(tier.id)}
@@ -396,7 +477,7 @@ function TierRow({ tier, items, onLabel, onDelTier, onDelItem }) {
 }
 
 // ── Pool ──────────────────────────────────────────────────────
-function Pool({ items, onDelItem }) {
+function Pool({ items, imgCache, onDelItem }) {
   const { setNodeRef, isOver } = useDroppable({ id: 'pool' })
   return (
     <div style={{ marginTop: 10 }}>
@@ -406,16 +487,18 @@ function Pool({ items, onDelItem }) {
       <div
         ref={setNodeRef}
         style={{
-          display: 'flex', flexWrap: 'wrap', gap: 7, padding: 14,
-          borderRadius: 14, minHeight: 54,
+          display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', gap: 7, padding: 14,
+          borderRadius: 14, minHeight: 110,
           border: `1px dashed ${isOver ? T.borderHover : T.border}`,
           background: isOver ? 'rgba(255,255,255,.06)' : 'rgba(255,255,255,.02)',
           transition: 'border-color .15s,background .15s',
         }}
       >
         {items.length === 0
-          ? <span style={{ color: T.faint, fontSize: 13 }}>Glisse des items ici, ou ajoute-en via le panneau</span>
-          : items.map(item => <DragItem key={item.id} item={item} onDelete={onDelItem} />)
+          ? <span style={{ color: T.faint, fontSize: 13, alignSelf: 'center' }}>Glisse des items ici, ou ajoute-en via le panneau</span>
+          : items.map(item => (
+              <DragItem key={item.id} item={item} img={imgCache?.[item.name]} onDelete={onDelItem} />
+            ))
         }
       </div>
     </div>
@@ -457,7 +540,8 @@ function Builder({ cat, initDraft, fromDraft, onBack, saveDraft, clearDraft, toa
   const [newTier, setNT]    = useState('')
   const [activeId, setActId]= useState(null)
   const [imgUrl, setImg]    = useState('')
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))
+  const sensors  = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))
+  const imgCache = useItemImages(items, cat?.id ?? 'custom')
 
   const pool       = items.filter(i => !i.tierId)
   const activeItem = items.find(i => i.id === activeId) ?? null
@@ -598,22 +682,34 @@ function Builder({ cat, initDraft, fromDraft, onBack, saveDraft, clearDraft, toa
                 {tiers.map(tier => (
                   <TierRow key={tier.id} tier={tier}
                     items={items.filter(i => i.tierId === tier.id)}
+                    imgCache={imgCache}
                     onLabel={updLabel} onDelTier={delTier} onDelItem={delItem}
                   />
                 ))}
               </div>
-              <Pool items={pool} onDelItem={delItem} />
+              <Pool items={pool} imgCache={imgCache} onDelItem={delItem} />
             </div>
 
             <DragOverlay>
               {activeItem && (
                 <div style={{
-                  padding:'7px 12px', borderRadius:8,
-                  border:`1px solid ${T.borderHover}`,
-                  background:'rgba(20,22,30,.96)', color:'#fff',
-                  fontSize:13, fontWeight:700,
-                  boxShadow:'0 20px 60px rgba(0,0,0,.5)', cursor:'grabbing',
-                }}>{activeItem.name}</div>
+                  width: 86, borderRadius: 10, overflow: 'hidden',
+                  border: `1px solid ${T.borderHover}`,
+                  boxShadow: '0 20px 60px rgba(0,0,0,.6)', cursor: 'grabbing',
+                  opacity: .92,
+                }}>
+                  {imgCache[activeItem.name] ? (
+                    <img src={imgCache[activeItem.name]} alt={activeItem.name}
+                      style={{ width: '100%', height: 86, objectFit: 'cover', display: 'block' }} />
+                  ) : (
+                    <div style={{ width: '100%', height: 86, background: 'linear-gradient(135deg,rgba(191,164,106,.25),rgba(192,57,43,.2))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 30, fontWeight: 950, color: T.gold }}>
+                      {activeItem.name[0]}
+                    </div>
+                  )}
+                  <div style={{ padding: '4px 5px', fontSize: 10, fontWeight: 700, color: '#fff', textAlign: 'center', background: 'rgba(0,0,0,.5)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {activeItem.name}
+                  </div>
+                </div>
               )}
             </DragOverlay>
           </DndContext>
