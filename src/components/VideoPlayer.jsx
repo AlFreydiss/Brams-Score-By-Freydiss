@@ -11,8 +11,17 @@ function fmt(sec) {
   return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`
 }
 
+const R2_BASE = 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/'
+
 function encSrc(src) {
   return src.split('/').map((seg, i) => i === 0 ? seg : encodeURIComponent(seg)).join('/')
+}
+
+function proxySub(src) {
+  if (!src) return src
+  // Proxy R2 VTT files through Vercel to bypass CORS — same-origin removes crossOrigin requirement on <video>
+  if (src.startsWith(R2_BASE)) return `/api/subtitles/r2?url=${encodeURIComponent(src)}`
+  return src
 }
 
 function sourceType(src = '') {
@@ -556,7 +565,6 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
             <video
               ref={videoRef}
               key={video.src}
-              crossOrigin="anonymous"
               preload="auto"
               style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
               onPlay={onPlay}
@@ -581,9 +589,9 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                   type={sourceType(video.src)}
                 />
               )}
-              {/* Pistes de sous-titres (lues via TextTrack API, mode hidden) */}
+              {/* Pistes de sous-titres — proxifiées via /api/subtitles/r2 pour éviter CORS R2 */}
               {hasSubs && video.subtitles.map((sub, i) => (
-                <track key={i} kind="subtitles" src={sub.src} srcLang={sub.srclang || 'fr'} label={sub.label} />
+                <track key={i} kind="subtitles" src={proxySub(sub.src)} srcLang={sub.srclang || 'fr'} label={sub.label} />
               ))}
             </video>
 
