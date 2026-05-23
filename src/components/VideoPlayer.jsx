@@ -19,7 +19,7 @@ function sourceType(src = '') {
   const clean = src.split('?')[0].toLowerCase()
   if (clean.endsWith('.mp4')) return 'video/mp4'
   if (clean.endsWith('.webm')) return 'video/webm'
-  if (clean.endsWith('.mkv')) return 'video/x-matroska'
+  if (clean.endsWith('.mkv')) return 'video/mp4'
   if (clean.endsWith('.m3u8')) return 'application/x-mpegURL'
   return 'video/mp4'
 }
@@ -150,6 +150,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   const hideTimer    = useRef(null)
   const lastSaveRef  = useRef(0)
   const hlsRef       = useRef(null)
+  const extAudioRef  = useRef(null)
 
   const [idx,          setIdx]         = useState(startIdx)
   const [playing,      setPlaying]     = useState(false)
@@ -171,11 +172,27 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   const [qualityLabel, setQualityLabel] = useState('AUTO')
   const [audioTracks, setAudioTracks] = useState([])
   const [audioTrackIdx, setAudioTrackIdx] = useState(-1)
+  const [extAudioSrc,   setExtAudioSrc]   = useState(null)
+  const [extAudioActive, setExtAudioActive] = useState(false)
+  const [selectedAudioKey, setSelectedAudioKey] = useState(null)
 
   const video   = videos[idx]
   const isLocal = Boolean(video?.src)
   const hasSubs = Array.isArray(video?.subtitles) && video.subtitles.length > 0
   const isHlsSource = Boolean(video?.src && video.src.split('?')[0].toLowerCase().endsWith('.m3u8'))
+
+  // Audio options: merge HLS tracks + external JSON tracks (m4a VF etc.)
+  const jsonExtTracks = Array.isArray(video?.audio)
+    ? video.audio.filter(a => a.src).map((a, i) => ({ type: 'ext', key: `ext-${i}`, label: a.label || 'Audio ext.', src: a.src, srclang: a.srclang || '' }))
+    : []
+  const jsonDefaultLabel = Array.isArray(video?.audio) ? (video.audio.find(a => !a.src)?.label ?? null) : null
+  const audioMenuOptions = isHlsSource
+    ? [...audioTracks.map(t => ({ type: 'hls', key: `hls-${t.index}`, label: t.label, hlsIdx: t.index, srclang: t.lang || '' })), ...jsonExtTracks]
+    : jsonDefaultLabel !== null
+      ? [{ type: 'embedded', key: 'embedded', label: jsonDefaultLabel }, ...jsonExtTracks]
+      : []
+  const showAudioBtn = audioMenuOptions.length > 1
+  const currentAudioKey = selectedAudioKey ?? audioMenuOptions[0]?.key ?? null
 
   const persistProgress = useCallback((patch = {}) => {
     if (!storageKey || !video) return
@@ -212,6 +229,14 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   }, [playing])
 
   useEffect(() => { showControls() }, [playing])
+
+  // Keep controls visible while any menu is open
+  useEffect(() => {
+    if (showSubMenu || showAudioMenu || showSpdMenu || showQualityMenu) {
+      clearTimeout(hideTimer.current)
+      setShowCtrl(true)
+    }
+  }, [showSubMenu, showAudioMenu, showSpdMenu, showQualityMenu])
 
   useEffect(() => {
     const onKey = e => {
@@ -271,6 +296,23 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
     }
   }, [isHlsSource, video?.src])
 
+  // ── Audio externe (m4a VF) — init + sync ─────────────────────────────────
+  useEffect(() => {
+    const ea = extAudioRef.current
+    if (!ea) return
+    if (!extAudioActive || !extAudioSrc) {
+      ea.pause(); ea.src = ''; return
+    }
+    ea.src = encSrc(extAudioSrc)
+    ea.volume = volume
+    ea.muted = muted
+    ea.playbackRate = speed
+    const syncTime = () => { if (videoRef.current) ea.currentTime = videoRef.current.currentTime }
+    ea.addEventListener('loadedmetadata', syncTime, { once: true })
+    if (videoRef.current && !videoRef.current.paused) ea.play().catch(() => {})
+    return () => ea.removeEventListener('loadedmetadata', syncTime)
+  }, [extAudioSrc, extAudioActive]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── Sous-titres — polling RAF sur activeCues ────────────────────────────
   useEffect(() => {
     const v = videoRef.current
@@ -313,6 +355,9 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   useEffect(() => {
     setCurrentTime(0); setDuration(0); setBuffered(0); setPlaying(false); setCueText('')
     setSubsOff(Boolean(video?.defaultSubtitlesOff))
+    setExtAudioActive(false); setExtAudioSrc(null); setSelectedAudioKey(null)
+    if (extAudioRef.current) { extAudioRef.current.pause(); extAudioRef.current.src = '' }
+    if (videoRef.current) videoRef.current.muted = false
   }, [idx, video?.defaultSubtitlesOff])
 
   useEffect(() => {
@@ -334,6 +379,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   // ── Appliquer la vitesse ─────────────────────────────────────────────────
   useEffect(() => {
     if (videoRef.current) videoRef.current.playbackRate = speed
+    if (extAudioRef.current) extAudioRef.current.playbackRate = speed
   }, [speed])
 
   // ── Fullscreen ───────────────────────────────────────────────────────────
@@ -371,8 +417,21 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   }, [onClose])
 
   // ── Handlers vidéo ───────────────────────────────────────────────────────
-  const onPlay     = () => setPlaying(true)
-  const onPause    = () => { setPlaying(false); setShowCtrl(true); clearTimeout(hideTimer.current) }
+  const onPlay     = () => {
+    setPlaying(true)
+    if (extAudioActive && extAudioRef.current && videoRef.current) {
+      extAudioRef.current.currentTime = videoRef.current.currentTime
+      extAudioRef.current.play().catch(() => {})
+    }
+  }
+  const onPause    = () => {
+    setPlaying(false); setShowCtrl(true); clearTimeout(hideTimer.current)
+    if (extAudioRef.current) extAudioRef.current.pause()
+  }
+  const onSeeked   = () => {
+    if (extAudioActive && extAudioRef.current && videoRef.current)
+      extAudioRef.current.currentTime = videoRef.current.currentTime
+  }
   const onTimeUpd  = () => {
     const v = videoRef.current; if (!v) return
     setCurrentTime(v.currentTime)
@@ -388,8 +447,12 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   }
   const onDurChg   = () => { if (videoRef.current) setDuration(videoRef.current.duration || 0) }
   const onVolChg   = () => {
-    const v = videoRef.current; if (!v) return
-    setVolume(v.volume); setMuted(v.muted)
+    if (extAudioActive && extAudioRef.current) {
+      setVolume(extAudioRef.current.volume); setMuted(extAudioRef.current.muted)
+    } else {
+      const v = videoRef.current; if (!v) return
+      setVolume(v.volume); setMuted(v.muted)
+    }
   }
   const onMetaChg = () => {
     const v = videoRef.current; if (!v) return
@@ -408,9 +471,33 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   }
 
   const handleVolume = e => {
-    const v = videoRef.current; if (!v) return
     const val = parseFloat(e.target.value)
-    v.volume = val; v.muted = val === 0
+    if (extAudioActive && extAudioRef.current) {
+      extAudioRef.current.volume = val; extAudioRef.current.muted = val === 0
+      setVolume(val); setMuted(val === 0)
+    } else {
+      const v = videoRef.current; if (!v) return
+      v.volume = val; v.muted = val === 0
+    }
+  }
+
+  const selectAudio = (option) => {
+    setSelectedAudioKey(option.key)
+    if (option.type === 'ext') {
+      setExtAudioSrc(option.src); setExtAudioActive(true)
+      if (videoRef.current) videoRef.current.muted = true
+      setSubsOff(option.srclang === 'fr' || option.label?.toLowerCase().includes('vf'))
+    } else if (option.type === 'hls') {
+      if (hlsRef.current) hlsRef.current.audioTrack = option.hlsIdx
+      setExtAudioActive(false); setExtAudioSrc(null)
+      if (videoRef.current) videoRef.current.muted = false
+      setSubsOff(option.srclang === 'fr' || option.label?.toLowerCase().includes('vf'))
+    } else {
+      setExtAudioActive(false); setExtAudioSrc(null)
+      if (videoRef.current) videoRef.current.muted = false
+      setSubsOff(false)
+    }
+    setShowAudioMenu(false)
   }
 
   const seek = useCallback((t) => {
@@ -460,12 +547,14 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
               style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
               onPlay={onPlay}
               onPause={onPause}
+              onSeeked={onSeeked}
               onTimeUpdate={onTimeUpd}
               onDurationChange={onDurChg}
               onVolumeChange={onVolChg}
               onLoadedMetadata={onMetaChg}
               onEnded={() => {
                 persistProgress({ time: videoRef.current?.duration || duration || 0, duration: videoRef.current?.duration || duration || 0, completed: true })
+                if (extAudioRef.current) extAudioRef.current.pause()
                 if (idx < videos.length - 1) setIdx(i => i + 1)
               }}
             >
@@ -480,6 +569,9 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                 <track key={i} kind="subtitles" src={sub.src} srcLang={sub.srclang || 'fr'} label={sub.label} />
               ))}
             </video>
+
+            {/* Audio externe (VF m4a synchronisé) */}
+            <audio ref={extAudioRef} style={{ display: 'none' }} />
 
             {/* ── Sous-titres overlay ── */}
             {cueText && !subsOff && (
@@ -578,7 +670,14 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                 </Btn>
 
                 {/* Volume */}
-                <Btn onClick={() => { const v = videoRef.current; if (v) v.muted = !v.muted }} title="Muet (M)">
+                <Btn onClick={() => {
+                  if (extAudioActive && extAudioRef.current) {
+                    extAudioRef.current.muted = !extAudioRef.current.muted
+                    setMuted(extAudioRef.current.muted)
+                  } else {
+                    const v = videoRef.current; if (v) v.muted = !v.muted
+                  }
+                }} title="Muet (M)">
                   {volIcon}
                 </Btn>
                 <input
@@ -596,38 +695,33 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
 
                 <div style={{ flex: 1 }} />
 
-                {audioTracks.length > 1 && (
+                {showAudioBtn && (
                   <div style={{ position: 'relative' }}>
                     <button
                       onClick={e => { e.stopPropagation(); setShowAudioMenu(s => !s); setShowSubMenu(false); setShowSpdMenu(false); setShowQualityMenu(false) }}
                       title="Piste audio"
                       style={{
-                        background: 'rgba(255,255,255,0.07)',
-                        border: '1px solid rgba(255,255,255,0.15)',
+                        background: extAudioActive ? `${color}22` : 'rgba(255,255,255,0.07)',
+                        border: `1px solid ${extAudioActive ? color + '55' : 'rgba(255,255,255,0.15)'}`,
                         borderRadius: 7,
-                        color: 'rgba(255,255,255,0.88)',
+                        color: extAudioActive ? color : 'rgba(255,255,255,0.88)',
                         fontSize: 11,
                         fontWeight: 900,
                         padding: '4px 9px',
                         cursor: 'pointer',
                         letterSpacing: '0.05em',
                       }}
-                    >AUDIO {audioTracks.find(track => track.index === audioTrackIdx)?.label || 'AUTO'}</button>
+                    >AUDIO {audioMenuOptions.find(o => o.key === currentAudioKey)?.label || 'AUTO'}</button>
                     {showAudioMenu && (
                       <div style={{ position: 'absolute', bottom: 'calc(100% + 6px)', right: 0, background: 'rgba(14,15,17,0.98)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, minWidth: 150, padding: '5px 0', boxShadow: '0 12px 40px rgba(0,0,0,0.7)', backdropFilter: 'blur(16px)', zIndex: 20 }}
                         onClick={e => e.stopPropagation()}
                       >
-                        {audioTracks.map(track => (
-                          <button key={track.index} onClick={() => {
-                            if (hlsRef.current) hlsRef.current.audioTrack = track.index
-                            setAudioTrackIdx(track.index)
-                            setSubsOff(track.lang === 'fr' || track.label.toLowerCase() === 'vf')
-                            setShowAudioMenu(false)
-                          }}
-                            style={{ width: '100%', padding: '8px 14px', background: track.index === audioTrackIdx ? `${color}22` : 'none', border: 'none', cursor: 'pointer', textAlign: 'left', color: track.index === audioTrackIdx ? color : '#fff', fontSize: 13, fontWeight: track.index === audioTrackIdx ? 800 : 600, transition: 'background .12s' }}
-                            onMouseEnter={e => { if (track.index !== audioTrackIdx) e.currentTarget.style.background = 'rgba(255,255,255,0.07)' }}
-                            onMouseLeave={e => { if (track.index !== audioTrackIdx) e.currentTarget.style.background = 'none' }}
-                          >{track.label}</button>
+                        {audioMenuOptions.map(option => (
+                          <button key={option.key} onClick={() => selectAudio(option)}
+                            style={{ width: '100%', padding: '8px 14px', background: option.key === currentAudioKey ? `${color}22` : 'none', border: 'none', cursor: 'pointer', textAlign: 'left', color: option.key === currentAudioKey ? color : '#fff', fontSize: 13, fontWeight: option.key === currentAudioKey ? 800 : 600, transition: 'background .12s' }}
+                            onMouseEnter={e => { if (option.key !== currentAudioKey) e.currentTarget.style.background = 'rgba(255,255,255,0.07)' }}
+                            onMouseLeave={e => { if (option.key !== currentAudioKey) e.currentTarget.style.background = 'none' }}
+                          >{option.label}</button>
                         ))}
                       </div>
                     )}
