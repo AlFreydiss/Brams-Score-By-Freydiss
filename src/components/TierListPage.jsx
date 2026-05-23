@@ -1,1176 +1,1006 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
-import { toPng } from 'html-to-image'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { toPng } from 'html-to-image'
+import confetti from 'canvas-confetti'
 import {
-  DndContext, DragOverlay, PointerSensor,
-  useSensor, useSensors, useDroppable, useDraggable,
-  rectIntersection,
+  DndContext, DragOverlay, closestCenter,
+  PointerSensor, TouchSensor, useSensor, useSensors,
+  useDroppable, useDraggable,
 } from '@dnd-kit/core'
-import { useAuth } from '../contexts/AuthContext.jsx'
-import { useMediaQuery } from '../hooks/useMediaQuery.js'
+import {
+  Star, Search, Download, RotateCcw,
+  X, Edit3, Check, Trash2, Crown, ArrowLeft,
+} from 'lucide-react'
 
-// ── Tokens ────────────────────────────────────────────────────
-const T = {
-  bg:           '#111214',
-  surface:      '#18191c',
-  card:         '#1e2024',
-  card2:        '#242629',
-  border:       'rgba(255,255,255,0.06)',
-  borderHover:  'rgba(255,255,255,0.18)',
-  borderPurple: 'rgba(155,89,182,0.38)',
-  borderGold:   'rgba(255,215,0,0.22)',
-  purple:       '#9b59b6',
-  violet:       '#A66CFF',
-  gold:         '#ffd700',
-  goldMuted:    'rgba(235,207,157,.62)',
-  accent:       '#e0524a',
-  text:         '#e8e9ea',
-  muted:        '#7c7f8a',
-  faint:        'rgba(255,255,255,0.22)',
-}
+// ── Tiers config ─────────────────────────────────────────────────────────────
 
-// ── Storage ───────────────────────────────────────────────────
-const FAV_KEY    = 'brams-tier-favorites'
-const DRAFT_KEY  = 'brams-tier-drafts'
-const PUBLIC_KEY = 'brams_tierlists_public'
-const MY_KEY     = 'brams_tierlists_my'
-
-function sg(key, fb) {
-  try { return JSON.parse(localStorage.getItem(key) ?? '') ?? fb } catch { return fb }
-}
-function ss(key, val) { localStorage.setItem(key, JSON.stringify(val)) }
-
-// ── Utils ─────────────────────────────────────────────────────
-function uid(p = 'id') {
-  return `${p}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`
-}
-function splitItems(v) {
-  return v.split(/[\n,]/).map(s => s.trim()).filter(Boolean)
-}
-
-// ── Data ──────────────────────────────────────────────────────
-const DEFAULT_TIERS = [
-  { id: 's', label: 'S', color: '#a0445c' },
-  { id: 'a', label: 'A', color: '#b6913d' },
-  { id: 'b', label: 'B', color: '#6b8098' },
-  { id: 'c', label: 'C', color: '#4a86b8' },
-  { id: 'd', label: 'D', color: '#7b6aa8' },
-  { id: 'e', label: 'E', color: '#b86a42' },
-  { id: 'f', label: 'F', color: '#b44a58' },
+const TIERS = [
+  { id:'top10', label:'TOP 10', color:'#a0445c', bg:'linear-gradient(135deg,#241017,#4a1b2a)', glow:'rgba(160,68,92,.35)',  icon:<Crown size={13}/> },
+  { id:'s',     label:'S',      color:'#b6913d', bg:'linear-gradient(135deg,#2b2112,#55401c)', glow:'rgba(182,145,61,.30)',  icon:'⭐' },
+  { id:'a',     label:'A',      color:'#6b8098', bg:'linear-gradient(135deg,#18202a,#263544)', glow:'rgba(107,128,152,.28)', icon:'•' },
+  { id:'b',     label:'B',      color:'#4a86b8', bg:'linear-gradient(135deg,#152330,#21384c)', glow:'rgba(74,134,184,.28)',icon:'•' },
+  { id:'c',     label:'C',      color:'#7b6aa8', bg:'linear-gradient(135deg,#1c1728,#31284b)', glow:'rgba(123,106,168,.28)',icon:'•' },
+  { id:'d',     label:'D',      color:'#b86a42', bg:'linear-gradient(135deg,#261715,#4a2a22)', glow:'rgba(184,106,66,.28)',icon:'•' },
+  { id:'f',     label:'F',      color:'#b44a58', bg:'linear-gradient(135deg,#281317,#4b1b22)', glow:'rgba(180,74,88,.28)', icon:'•' },
+  { id:'trash', label:'TRASH',  color:'#6e7b86', bg:'linear-gradient(135deg,#161c22,#27313a)', glow:'rgba(110,123,134,.22)',icon:<Trash2 size={12}/> },
 ]
 
-const CATEGORIES = [
-  {
-    id: 'animes', title: 'Animes', icon: '🎬',
-    description: '40 séries légendaires', count: 40,
-    badge: 'POPULAIRE', badgeColor: '#a0445c',
-    items: ['One Piece','Naruto','Bleach','Dragon Ball Z','Attack on Titan','Fullmetal Alchemist: Brotherhood','Hunter x Hunter','Death Note','Demon Slayer','Jujutsu Kaisen','My Hero Academia','Tokyo Ghoul','Sword Art Online','Code Geass','Steins;Gate','Vinland Saga','Kingdom','Berserk','Blue Lock','Chainsaw Man','Spy x Family','Mob Psycho 100','The Promised Neverland','Re:Zero','Overlord','Black Clover','Seven Deadly Sins','Fairy Tail','Gintama','Haikyuu!!','Kuroko no Basket','Slam Dunk','Dr. Stone','Fire Force','Mushishi','Akira','Ghost in the Shell','Cowboy Bebop','Neon Genesis Evangelion','Trigun'],
-  },
-  {
-    id: 'personnages', title: 'Personnages', icon: '⚔️',
-    description: '30 héros & antagonistes', count: 30,
-    badge: 'NOUVEAU', badgeColor: '#b6913d',
-    items: ['Monkey D. Luffy','Roronoa Zoro','Sanji','Portgas D. Ace','Shanks','Whitebeard','Gol D. Roger','Naruto Uzumaki','Sasuke Uchiha','Madara Uchiha','Ichigo Kurosaki','Aizen Sosuke','Goku','Vegeta','Levi Ackerman','Eren Yeager','Edward Elric','Killua Zoldyck','Gon Freecss','Light Yagami','L Lawliet','Tanjiro Kamado','Muzan Kibutsuji','Itadori Yuji','Ryomen Sukuna','Deku Izuku','All Might','Ken Kaneki','Griffith','Guts'],
-  },
-  {
-    id: 'arcs', title: 'Arcs', icon: '📖',
-    description: '25 arcs épiques', count: 25,
-    items: ['Marineford','Enies Lobby','Whole Cake Island','Wano','Dressrosa','Alabasta','Skypiea','Water 7','Thriller Bark','Impel Down','Punk Hazard','Zou','Sabaody Archipelago','East Blue','Baratie','Loguetown','Little Garden','Drum Island','Amazon Lily','Fish-Man Island','Reverie','Egghead','Paramount War','Mock Town','Long Ring Long Land'],
-  },
-  {
-    id: 'films', title: 'Films & OAV', icon: '🎥',
-    description: "20 films d'animation", count: 20,
-    items: ['One Piece Film: Red','One Piece Film: Gold','One Piece Stampede','One Piece: Strong World','One Piece: Z','One Piece: Baron Omatsuri','Demon Slayer: Mugen Train','Dragon Ball Super: Broly','Dragon Ball Super: Super Hero','Jujutsu Kaisen 0','My Hero Academia: Two Heroes','Naruto: Road to Ninja','SAO: Ordinal Scale',"Fate/Stay Night: Heaven's Feel","Spirited Away",'Princess Mononoke','Akira','Ghost in the Shell','Cowboy Bebop: The Movie','Your Name'],
-  },
-  { id: 'combats', title: 'Combats',       icon: '💥', description: 'Les meilleures batailles', count: 0, comingSoon: true },
-  { id: 'ost',     title: 'OST & Openings', icon: '🎵', description: 'Musiques légendaires',      count: 0, comingSoon: true },
+// ── Datasets ──────────────────────────────────────────────────────────────────
+
+// img = primary, img2 = fallback
+const ANIME_LIST = [
+  { id:'a01', name:'Fullmetal Alchemist', sub:'Brotherhood', year:2009, genres:['Action','Fantasy'],
+    img:'https://cdn.myanimelist.net/images/anime/1223/96541.jpg' },
+  { id:'a02', name:'Attack on Titan', sub:'Shingeki no Kyojin', year:2013, genres:['Action','Thriller'],
+    img:'https://cdn.myanimelist.net/images/anime/10/47347.jpg' },
+  { id:'a03', name:'Death Note', sub:'デスノート', year:2006, genres:['Thriller'],
+    img:'https://cdn.myanimelist.net/images/anime/9/9453.jpg' },
+  { id:'a04', name:'One Piece', sub:'1000+ épisodes', year:1999, genres:['Action','Aventure'],
+    img:'https://cdn.myanimelist.net/images/anime/6/73245.jpg' },
+  { id:'a05', name:'Demon Slayer', sub:'Kimetsu no Yaiba', year:2019, genres:['Action','Fantasy'],
+    img:'https://cdn.myanimelist.net/images/anime/1286/99889.jpg' },
+  { id:'a06', name:'Jujutsu Kaisen', sub:'呪術廻戦', year:2020, genres:['Action','Fantasy'],
+    img:'https://cdn.myanimelist.net/images/anime/1171/109222.jpg' },
+  { id:'a07', name:'Hunter x Hunter', sub:'2011', year:2011, genres:['Action','Aventure'],
+    img:'https://cdn.myanimelist.net/images/anime/11/33657.jpg' },
+  { id:'a08', name:'Steins;Gate', sub:'シュタインズ・ゲート', year:2011, genres:['Sci-Fi','Thriller'],
+    img:'https://cdn.myanimelist.net/images/anime/5/73199.jpg' },
+  { id:'a09', name:'Code Geass', sub:'Hangyaku no Lelouch', year:2006, genres:['Action','Sci-Fi'],
+    img:'https://cdn.myanimelist.net/images/anime/1/30601.jpg' },
+  { id:'a10', name:'Naruto Shippuden', sub:'ナルト 疾風伝', year:2007, genres:['Action','Aventure'],
+    img:'https://cdn.myanimelist.net/images/anime/3/72078.jpg' },
+  { id:'a11', name:'Dragon Ball Z', sub:'ドラゴンボールZ', year:1989, genres:['Action'],
+    img:'https://cdn.myanimelist.net/images/anime/5/16038.jpg' },
+  { id:'a12', name:'My Hero Academia', sub:'Boku no Hero', year:2016, genres:['Action','Fantasy'],
+    img:'https://cdn.myanimelist.net/images/anime/10/78745.jpg' },
+  { id:'a13', name:'Tokyo Ghoul', sub:'東京喰種', year:2014, genres:['Action','Thriller'],
+    img:'https://cdn.myanimelist.net/images/anime/9/52986.jpg' },
+  { id:'a14', name:'Vinland Saga', sub:'ヴィンランド・サガ', year:2019, genres:['Action','Aventure'],
+    img:'https://cdn.myanimelist.net/images/anime/1500/103005.jpg' },
+  { id:'a15', name:'Mob Psycho 100', sub:'モブサイコ100', year:2016, genres:['Action','Fantasy'],
+    img:'https://cdn.myanimelist.net/images/anime/8/80356.jpg' },
+  { id:'a16', name:'Chainsaw Man', sub:'チェンソーマン', year:2022, genres:['Action','Thriller'],
+    img:'https://cdn.myanimelist.net/images/anime/1806/126216.jpg' },
+  { id:'a17', name:'Promised Neverland', sub:'Yakusoku no Neverland', year:2019, genres:['Thriller'],
+    img:'https://cdn.myanimelist.net/images/anime/1171/97397.jpg' },
+  { id:'a18', name:'Re:Zero', sub:'Starting Life in Another World', year:2016, genres:['Fantasy','Thriller'],
+    img:'https://cdn.myanimelist.net/images/anime/11/79410.jpg' },
+  { id:'a19', name:'Blue Lock', sub:'ブルーロック', year:2022, genres:['Sport','Action'],
+    img:'https://cdn.myanimelist.net/images/anime/1258/122072.jpg' },
+  { id:'a20', name:'Dr. Stone', sub:'ドクターストーン', year:2019, genres:['Action','Sci-Fi'],
+    img:'https://cdn.myanimelist.net/images/anime/1667/105038.jpg' },
+  { id:'a21', name:'Bleach', sub:'ブリーチ', year:2004, genres:['Action','Fantasy'],
+    img:'https://cdn.myanimelist.net/images/anime/3/20235.jpg' },
+  { id:'a22', name:'Black Clover', sub:'ブラッククローバー', year:2017, genres:['Action','Fantasy'],
+    img:'https://cdn.myanimelist.net/images/anime/2/88336.jpg' },
+  { id:'a23', name:'Sword Art Online', sub:'ソードアート・オンライン', year:2012, genres:['Action','Romance'],
+    img:'https://cdn.myanimelist.net/images/anime/11/39717.jpg' },
+  { id:'a24', name:'Seven Deadly Sins', sub:'Nanatsu no Taizai', year:2014, genres:['Action','Fantasy'],
+    img:'https://cdn.myanimelist.net/images/anime/8/65409.jpg' },
+  { id:'a25', name:'Fire Force', sub:'Enen no Shouboutai', year:2019, genres:['Action','Fantasy'],
+    img:'https://cdn.myanimelist.net/images/anime/1083/105904.jpg' },
+  { id:'a26', name:'Solo Leveling', sub:'俺だけレベルアップな件', year:2024, genres:['Action','Fantasy'],
+    img:'https://cdn.myanimelist.net/images/anime/1987/144973.jpg' },
+  { id:'a27', name:'Overlord', sub:'オーバーロード', year:2015, genres:['Action','Fantasy'],
+    img:'https://cdn.myanimelist.net/images/anime/13/73545.jpg',
+    img2:'https://cdn.myanimelist.net/images/anime/9/49729.jpg' },
+  { id:'a28', name:'Violet Evergarden', sub:'ヴァイオレット・エヴァーガーデン', year:2018, genres:['Fantasy','Romance'],
+    img:'https://cdn.myanimelist.net/images/anime/1825/110716.jpg' },
+  { id:'a29', name:'Made in Abyss', sub:'メイドインアビス', year:2017, genres:['Aventure','Fantasy'],
+    img:'https://cdn.myanimelist.net/images/anime/6/86733.jpg' },
+  { id:'a30', name:'Neon Genesis Evangelion', sub:'エヴァンゲリオン', year:1995, genres:['Action','Sci-Fi'],
+    img:'https://cdn.myanimelist.net/images/anime/1314/108941.jpg' },
+  { id:'a31', name:'Cowboy Bebop', sub:'カウボーイビバップ', year:1998, genres:['Action','Sci-Fi'],
+    img:'https://cdn.myanimelist.net/images/anime/4/19644.jpg' },
+  { id:'a32', name:'Gurren Lagann', sub:'天元突破グレンラガン', year:2007, genres:['Action','Sci-Fi'],
+    img:'https://cdn.myanimelist.net/images/anime/4/26551.jpg' },
+  { id:'a33', name:"JoJo's Bizarre Adventure", sub:'ジョジョの奇妙な冒険', year:2012, genres:['Action','Fantasy'],
+    img:'https://cdn.myanimelist.net/images/anime/3/40409.jpg' },
+  { id:'a34', name:'Spy x Family', sub:'スパイファミリー', year:2022, genres:['Action','Romance'],
+    img:'https://cdn.myanimelist.net/images/anime/1441/122795.jpg' },
+  { id:'a35', name:'Oshi no Ko', sub:'推しの子', year:2023, genres:['Thriller'],
+    img:'https://cdn.myanimelist.net/images/anime/1812/134736.jpg' },
+  { id:'a36', name:'Kingdom', sub:'キングダム', year:2012, genres:['Action','Aventure'],
+    img:'https://cdn.myanimelist.net/images/anime/3/57491.jpg' },
+  { id:'a37', name:'Naruto', sub:'ナルト', year:2002, genres:['Action','Aventure'],
+    img:'https://cdn.myanimelist.net/images/anime/13/17405.jpg' },
+  { id:'a38', name:'Dragon Ball Super', sub:'ドラゴンボール超', year:2015, genres:['Action'],
+    img:'https://cdn.myanimelist.net/images/anime/7/74903.jpg',
+    img2:'https://cdn.myanimelist.net/images/anime/1015/63974.jpg' },
+  { id:'a39', name:'Hellsing Ultimate', sub:'ヘルシング OVA', year:2006, genres:['Action','Thriller'],
+    img:'https://cdn.myanimelist.net/images/anime/10/15525.jpg',
+    img2:'https://cdn.myanimelist.net/images/anime/1/30603.jpg' },
+  { id:'a40', name:'Your Name', sub:'君の名は。', year:2016, genres:['Romance','Sci-Fi'],
+    img:'https://cdn.myanimelist.net/images/anime/5/87048.jpg' },
 ]
 
-const TABS = ['Création', 'Créer sa Tier List', 'Favoris', 'Partagées', 'Historique']
+const PERSO_LIST = [
+  { id:'p01', name:'Monkey D. Luffy',  sub:'One Piece',         year:1999, genres:['Shonen'],
+    img:'https://cdn.myanimelist.net/images/characters/9/310307.jpg' },
+  { id:'p02', name:'Naruto Uzumaki',   sub:'Naruto Shippuden',  year:2002, genres:['Shonen'],
+    img:'https://cdn.myanimelist.net/images/characters/14/164519.jpg' },
+  { id:'p03', name:'Son Goku',         sub:'Dragon Ball Z',     year:1986, genres:['Shonen'],
+    img:'https://cdn.myanimelist.net/images/characters/5/37165.jpg' },
+  { id:'p04', name:'Levi Ackerman',    sub:'Attack on Titan',   year:2013, genres:['Seinen'],
+    img:'https://cdn.myanimelist.net/images/characters/2/241413.jpg' },
+  { id:'p05', name:'Gojo Satoru',      sub:'Jujutsu Kaisen',    year:2020, genres:['Shonen'],
+    img:'https://cdn.myanimelist.net/images/characters/8/394157.jpg' },
+  { id:'p06', name:'L Lawliet',        sub:'Death Note',        year:2006, genres:['Seinen'],
+    img:'https://cdn.myanimelist.net/images/characters/10/8269.jpg' },
+  { id:'p07', name:'Killua Zoldyck',   sub:'Hunter x Hunter',   year:2011, genres:['Shonen'],
+    img:'https://cdn.myanimelist.net/images/characters/4/60141.jpg' },
+  { id:'p08', name:'Itachi Uchiha',    sub:'Naruto Shippuden',  year:2002, genres:['Shonen'],
+    img:'https://cdn.myanimelist.net/images/characters/14/64218.jpg' },
+  { id:'p09', name:'Roronoa Zoro',     sub:'One Piece',         year:1999, genres:['Shonen'],
+    img:'https://cdn.myanimelist.net/images/characters/14/324588.jpg' },
+  { id:'p10', name:'Light Yagami',     sub:'Death Note',        year:2006, genres:['Seinen'],
+    img:'https://cdn.myanimelist.net/images/characters/8/8286.jpg' },
+  { id:'p11', name:'Edward Elric',     sub:'FMA Brotherhood',   year:2009, genres:['Shonen'],
+    img:'https://cdn.myanimelist.net/images/characters/7/97789.jpg' },
+  { id:'p12', name:'Eren Yeager',      sub:'Attack on Titan',   year:2013, genres:['Seinen'],
+    img:'https://cdn.myanimelist.net/images/characters/10/216895.jpg' },
+  { id:'p13', name:'Tanjiro Kamado',   sub:'Demon Slayer',      year:2019, genres:['Shonen'],
+    img:'https://cdn.myanimelist.net/images/characters/1/392387.jpg' },
+  { id:'p14', name:'Yuji Itadori',     sub:'Jujutsu Kaisen',    year:2020, genres:['Shonen'],
+    img:'https://cdn.myanimelist.net/images/characters/9/436971.jpg' },
+  { id:'p15', name:'Kakashi Hatake',   sub:'Naruto Shippuden',  year:2002, genres:['Shonen'],
+    img:'https://cdn.myanimelist.net/images/characters/7/284847.jpg' },
+  { id:'p16', name:'Vegeta',           sub:'Dragon Ball Z',     year:1986, genres:['Shonen'],
+    img:'https://cdn.myanimelist.net/images/characters/2/54540.jpg' },
+  { id:'p17', name:'Lelouch vi Britannia', sub:'Code Geass',    year:2006, genres:['Sci-Fi'],
+    img:'https://cdn.myanimelist.net/images/characters/5/183245.jpg' },
+  { id:'p18', name:'Izuku Midoriya',   sub:'My Hero Academia',  year:2016, genres:['Shonen'],
+    img:'https://cdn.myanimelist.net/images/characters/3/342118.jpg' },
+  { id:'p19', name:'Ken Kaneki',       sub:'Tokyo Ghoul',       year:2014, genres:['Seinen'],
+    img:'https://cdn.myanimelist.net/images/characters/9/311090.jpg' },
+  { id:'p20', name:'Okabe Rintarou',   sub:'Steins;Gate',       year:2011, genres:['Sci-Fi'],
+    img:'https://cdn.myanimelist.net/images/characters/2/236268.jpg' },
+  { id:'p21', name:'Meruem',           sub:'Hunter x Hunter',   year:2011, genres:['Shonen'],
+    img:'https://cdn.myanimelist.net/images/characters/7/288569.jpg' },
+  { id:'p22', name:'Shigeo Kageyama',  sub:'Mob Psycho 100',    year:2016, genres:['Seinen'],
+    img:'https://cdn.myanimelist.net/images/characters/4/302756.jpg' },
+  { id:'p23', name:'Nezuko Kamado',    sub:'Demon Slayer',      year:2019, genres:['Shonen'],
+    img:'https://cdn.myanimelist.net/images/characters/3/402033.jpg' },
+  { id:'p24', name:'Makima',           sub:'Chainsaw Man',      year:2022, genres:['Seinen'],
+    img:'https://cdn.myanimelist.net/images/characters/4/464441.jpg' },
+  { id:'p25', name:'Mikasa Ackerman',  sub:'Attack on Titan',   year:2013, genres:['Seinen'],
+    img:'https://cdn.myanimelist.net/images/characters/15/245009.jpg' },
+  { id:'p26', name:'Gon Freecss',      sub:'Hunter x Hunter',   year:2011, genres:['Shonen'],
+    img:'https://cdn.myanimelist.net/images/characters/5/60139.jpg' },
+  { id:'p27', name:'Denji',            sub:'Chainsaw Man',      year:2022, genres:['Seinen'],
+    img:'https://cdn.myanimelist.net/images/characters/6/462199.jpg' },
+  { id:'p28', name:'Yor Forger',       sub:'Spy x Family',      year:2022, genres:['Action'],
+    img:'https://cdn.myanimelist.net/images/characters/1/518517.jpg' },
+  { id:'p29', name:'Ryuk',             sub:'Death Note',        year:2006, genres:['Thriller'],
+    img:'https://cdn.myanimelist.net/images/characters/7/8283.jpg' },
+  { id:'p30', name:'Gon Freecss',      sub:'Hunter x Hunter',   year:2011, genres:['Shonen'],
+    img:'https://cdn.myanimelist.net/images/characters/10/92545.jpg' },
+]
 
-// ── Hooks ─────────────────────────────────────────────────────
-function useFavorites() {
-  const [favs, setFavs] = useState(() => sg(FAV_KEY, []))
-  const toggle = useCallback((id) => {
-    setFavs(prev => {
-      const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
-      ss(FAV_KEY, next)
-      return next
-    })
-  }, [])
-  const isFav = useCallback((id) => favs.includes(id), [favs])
-  return { favs, toggle, isFav }
+// Arcs — réutilise les posters anime en guise d'image d'arc
+const ARC_LIST = [
+  { id:'arc01', name:'Marineford War',        sub:'One Piece',         year:2010, genres:['Action'],
+    img:'https://cdn.myanimelist.net/images/anime/6/73245.jpg' },
+  { id:'arc02', name:'Chimera Ant',           sub:'Hunter x Hunter',   year:2012, genres:['Action'],
+    img:'https://cdn.myanimelist.net/images/anime/11/33657.jpg' },
+  { id:'arc03', name:'Shibuya Incident',      sub:'Jujutsu Kaisen',    year:2023, genres:['Action'],
+    img:'https://cdn.myanimelist.net/images/anime/1171/109222.jpg' },
+  { id:'arc04', name:'Final Season',          sub:'Attack on Titan',   year:2020, genres:['Thriller'],
+    img:'https://cdn.myanimelist.net/images/anime/10/47347.jpg' },
+  { id:'arc05', name:'Mugen Train',           sub:'Demon Slayer',      year:2020, genres:['Action'],
+    img:'https://cdn.myanimelist.net/images/anime/1286/99889.jpg' },
+  { id:'arc06', name:'Pain Attack',           sub:'Naruto Shippuden',  year:2009, genres:['Action'],
+    img:'https://cdn.myanimelist.net/images/anime/3/72078.jpg' },
+  { id:'arc07', name:'Enies Lobby',           sub:'One Piece',         year:2006, genres:['Action'],
+    img:'https://cdn.myanimelist.net/images/anime/6/73245.jpg' },
+  { id:'arc08', name:'Greed Island',          sub:'Hunter x Hunter',   year:2012, genres:['Aventure'],
+    img:'https://cdn.myanimelist.net/images/anime/11/33657.jpg' },
+  { id:'arc09', name:'Yorknew City',          sub:'Hunter x Hunter',   year:2011, genres:['Thriller'],
+    img:'https://cdn.myanimelist.net/images/anime/11/33657.jpg' },
+  { id:'arc10', name:'Alabasta',              sub:'One Piece',         year:2001, genres:['Aventure'],
+    img:'https://cdn.myanimelist.net/images/anime/6/73245.jpg' },
+  { id:'arc11', name:'Return to Shiganshina', sub:'Attack on Titan',   year:2019, genres:['Action'],
+    img:'https://cdn.myanimelist.net/images/anime/10/47347.jpg' },
+  { id:'arc12', name:'Mugen Train Arc',       sub:'Demon Slayer',      year:2021, genres:['Action'],
+    img:'https://cdn.myanimelist.net/images/anime/1286/99889.jpg' },
+  { id:'arc13', name:'Election Arc',          sub:'Hunter x Hunter',   year:2014, genres:['Thriller'],
+    img:'https://cdn.myanimelist.net/images/anime/11/33657.jpg' },
+  { id:'arc14', name:'Soul Society Arc',      sub:'Bleach',            year:2004, genres:['Action'],
+    img:'https://cdn.myanimelist.net/images/anime/3/20235.jpg' },
+  { id:'arc15', name:'Thousand Year Blood War', sub:'Bleach TYBW',     year:2022, genres:['Action'],
+    img:'https://cdn.myanimelist.net/images/anime/3/20235.jpg' },
+  { id:'arc16', name:'Tournament of Power',   sub:'Dragon Ball Super', year:2017, genres:['Action'],
+    img:'https://cdn.myanimelist.net/images/anime/7/74903.jpg' },
+  { id:'arc17', name:'Cell Games',            sub:'Dragon Ball Z',     year:1992, genres:['Action'],
+    img:'https://cdn.myanimelist.net/images/anime/5/16038.jpg' },
+  { id:'arc18', name:'Wano',                  sub:'One Piece',         year:2019, genres:['Action'],
+    img:'https://cdn.myanimelist.net/images/anime/6/73245.jpg' },
+  { id:'arc19', name:'Sanctuary Arc',         sub:'Re:Zero S2',        year:2020, genres:['Fantasy'],
+    img:'https://cdn.myanimelist.net/images/anime/11/79410.jpg' },
+  { id:'arc20', name:'Final Exam',            sub:'Jujutsu Kaisen',    year:2021, genres:['Action'],
+    img:'https://cdn.myanimelist.net/images/anime/1171/109222.jpg' },
+  { id:'arc21', name:'Paranormal Liberation War', sub:'My Hero Academia', year:2021, genres:['Action'],
+    img:'https://cdn.myanimelist.net/images/anime/10/78745.jpg' },
+  { id:'arc22', name:'Abyss Layer 2',         sub:'Made in Abyss',    year:2017, genres:['Aventure'],
+    img:'https://cdn.myanimelist.net/images/anime/6/86733.jpg' },
+  { id:'arc23', name:'Invasion Arc',          sub:'Solo Leveling',    year:2024, genres:['Action'],
+    img:'https://cdn.myanimelist.net/images/anime/1987/144973.jpg' },
+  { id:'arc24', name:'Holy War',              sub:'Seven Deadly Sins', year:2018, genres:['Fantasy'],
+    img:'https://cdn.myanimelist.net/images/anime/8/65409.jpg' },
+  { id:'arc25', name:'Forger Family Origins', sub:'Spy x Family',     year:2022, genres:['Action'],
+    img:'https://cdn.myanimelist.net/images/anime/1441/122795.jpg' },
+]
+
+const FILM_LIST = [
+  { id:'f01', name:'Your Name', sub:'Makoto Shinkai', year:2016, genres:['Romance','Sci-Fi'],
+    img:'https://cdn.myanimelist.net/images/anime/5/87048.jpg' },
+  { id:'f02', name:'Spirited Away', sub:'Studio Ghibli', year:2001, genres:['Fantasy'],
+    img:'https://cdn.myanimelist.net/images/anime/6/79597.jpg' },
+  { id:'f03', name:"Princess Mononoke", sub:'Studio Ghibli', year:1997, genres:['Fantasy','Aventure'],
+    img:'https://cdn.myanimelist.net/images/anime/7/75919.jpg' },
+  { id:'f04', name:'Mugen Train', sub:'Demon Slayer Movie', year:2020, genres:['Action','Fantasy'],
+    img:'https://cdn.myanimelist.net/images/anime/1286/99889.jpg' },
+  { id:'f05', name:'Jujutsu Kaisen 0', sub:'JJK Movie', year:2021, genres:['Action','Fantasy'],
+    img:'https://cdn.myanimelist.net/images/anime/1171/109222.jpg' },
+  { id:'f06', name:'Dragon Ball Super: Broly', sub:'DBS Film', year:2018, genres:['Action'],
+    img:'https://cdn.myanimelist.net/images/anime/5/16038.jpg' },
+  { id:'f07', name:'One Piece: Red', sub:'OP Film', year:2022, genres:['Action','Aventure'],
+    img:'https://cdn.myanimelist.net/images/anime/6/73245.jpg' },
+  { id:'f08', name:'Evangelion 3.0+1.0', sub:'Rebuild of Eva', year:2021, genres:['Sci-Fi','Action'],
+    img:'https://cdn.myanimelist.net/images/anime/1314/108941.jpg' },
+  { id:'f09', name:'Howl\'s Moving Castle', sub:'Studio Ghibli', year:2004, genres:['Fantasy','Romance'],
+    img:'https://cdn.myanimelist.net/images/anime/5/75810.jpg' },
+  { id:'f10', name:'My Neighbor Totoro', sub:'Studio Ghibli', year:1988, genres:['Fantasy'],
+    img:'https://cdn.myanimelist.net/images/anime/6/75954.jpg' },
+  { id:'f11', name:'Weathering with You', sub:'Makoto Shinkai', year:2019, genres:['Romance','Fantasy'],
+    img:'https://cdn.myanimelist.net/images/anime/1764/98929.jpg' },
+  { id:'f12', name:'A Silent Voice', sub:'KyoAni', year:2016, genres:['Romance','Thriller'],
+    img:'https://cdn.myanimelist.net/images/anime/5/87048.jpg' },
+  { id:'f13', name:'Suzume', sub:'Makoto Shinkai', year:2022, genres:['Fantasy','Romance'],
+    img:'https://cdn.myanimelist.net/images/anime/1764/98929.jpg' },
+  { id:'f14', name:'Nausicaa of the Valley', sub:'Studio Ghibli', year:1984, genres:['Fantasy','Sci-Fi'],
+    img:'https://cdn.myanimelist.net/images/anime/7/75919.jpg' },
+  { id:'f15', name:'Castle in the Sky', sub:'Studio Ghibli', year:1986, genres:['Fantasy','Aventure'],
+    img:'https://cdn.myanimelist.net/images/anime/7/75919.jpg' },
+  { id:'f16', name:'Promare', sub:'Studio Trigger', year:2019, genres:['Action','Sci-Fi'],
+    img:'https://cdn.myanimelist.net/images/anime/1083/105904.jpg' },
+  { id:'f17', name:'Akira', sub:'Katsuhiro Otomo', year:1988, genres:['Sci-Fi','Thriller'],
+    img:'https://cdn.myanimelist.net/images/anime/4/19644.jpg' },
+  { id:'f18', name:'Ghost in the Shell', sub:'Mamoru Oshii', year:1995, genres:['Sci-Fi'],
+    img:'https://cdn.myanimelist.net/images/anime/4/19644.jpg' },
+  { id:'f19', name:'DBZ: Battle of Gods', sub:'Dragon Ball Z', year:2013, genres:['Action'],
+    img:'https://cdn.myanimelist.net/images/anime/5/16038.jpg' },
+  { id:'f20', name:'Violet Evergarden Movie', sub:'KyoAni', year:2020, genres:['Romance','Fantasy'],
+    img:'https://cdn.myanimelist.net/images/anime/1825/110716.jpg' },
+]
+
+// ── Tier Types ────────────────────────────────────────────────────────────────
+
+const TIER_TYPES = [
+  { id:'anime',  label:'Animes',       icon:'🎬', color:'#a0445c', grad:'linear-gradient(135deg,#31111c,#5a2031)',
+    desc:'40 séries légendaires',  count:40, items:ANIME_LIST,  popular:true  },
+  { id:'persos', label:'Personnages',  icon:'👤', color:'#b6913d', grad:'linear-gradient(135deg,#2d2212,#5a431b)',
+    desc:'30 héros & antagonistes', count:30, items:PERSO_LIST               },
+  { id:'arcs',   label:'Arcs',         icon:'🗺️', color:'#6b8098', grad:'linear-gradient(135deg,#15202d,#243344)',
+    desc:'25 arcs épiques',         count:25, items:ARC_LIST                 },
+  { id:'films',  label:'Films & OAV',  icon:'🎥', color:'#4a86b8', grad:'linear-gradient(135deg,#13202d,#22415e)',
+    desc:'20 films d\'animation',   count:20, items:FILM_LIST                },
+  { id:'combats',label:'Combats',      icon:'⚔️', color:'#7b6aa8', grad:'linear-gradient(135deg,#1b1627,#34274c)',
+    desc:'Bientôt disponible',      count:0,  items:[],          soon:true   },
+  { id:'ost',    label:'OST & Openings',icon:'🎵', color:'#b86a42', grad:'linear-gradient(135deg,#281612,#4a2b20)',
+    desc:'Bientôt disponible',      count:0,  items:[],          soon:true   },
+]
+
+// ── Storage / share helpers ───────────────────────────────────────────────────
+
+const STORAGE_KEY = 'brams_tierlist_v4'
+const SHARE_HASH_PREFIX = 'tierlist='
+
+function svgDataUri({ title, subtitle, bg, fg = '#fff' }) {
+  const safeTitle = String(title || '').replace(/[<>&"]/g, s => ({ '<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;' }[s]))
+  const safeSubtitle = String(subtitle || '').replace(/[<>&"]/g, s => ({ '<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;' }[s]))
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="360" height="512" viewBox="0 0 360 512">
+      <defs>
+        <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="${bg[0]}"/>
+          <stop offset="100%" stop-color="${bg[1]}"/>
+        </linearGradient>
+      </defs>
+      <rect width="360" height="512" rx="26" fill="url(#g)"/>
+      <rect x="20" y="20" width="320" height="472" rx="20" fill="rgba(0,0,0,0.18)" stroke="rgba(255,255,255,0.18)"/>
+      <text x="180" y="214" text-anchor="middle" fill="${fg}" font-family="Arial, sans-serif" font-size="30" font-weight="700">${safeTitle}</text>
+      <text x="180" y="258" text-anchor="middle" fill="rgba(255,255,255,0.78)" font-family="Arial, sans-serif" font-size="18" font-weight="600">${safeSubtitle}</text>
+      <text x="180" y="452" text-anchor="middle" fill="rgba(255,255,255,0.45)" font-family="Arial, sans-serif" font-size="14" font-weight="700">Brams Tier List</text>
+    </svg>`
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`
 }
 
-function useDraft() {
-  const [draft, setDraft] = useState(() => sg(DRAFT_KEY, null))
-  const save  = useCallback((d) => { ss(DRAFT_KEY, d); setDraft(d) }, [])
-  const clear = useCallback(()  => { localStorage.removeItem(DRAFT_KEY); setDraft(null) }, [])
-  return { draft, save, clear }
-}
-
-function useToast() {
-  const [msg, setMsg] = useState(null)
-  const t = useRef(null)
-  const show = useCallback((m, ms = 2800) => {
-    clearTimeout(t.current)
-    setMsg(m)
-    t.current = setTimeout(() => setMsg(null), ms)
-  }, [])
-  useEffect(() => () => clearTimeout(t.current), [])
-  return { msg, show }
-}
-
-function useItemImages(items, categoryId) {
-  const SKEY = `brams-tier-imgs-${categoryId}`
-  const [cache, setCache] = useState(() => {
-    try { return JSON.parse(sessionStorage.getItem(SKEY) || '{}') } catch { return {} }
+function fallbackImage(item, tint = ['#1f2937', '#0f172a']) {
+  return svgDataUri({
+    title: item?.name || 'Image',
+    subtitle: item?.sub || item?.year || '',
+    bg: tint,
   })
-  const fetching = useRef(false)
-  const endpoint = categoryId === 'personnages' ? 'characters' : 'anime'
-
-  useEffect(() => {
-    if (!items.length || fetching.current) return
-    const missing = items.filter(i => !cache[i.name])
-    if (!missing.length) return
-    fetching.current = true
-
-    async function go() {
-      const next = { ...cache }
-      const BATCH = 3
-      for (let i = 0; i < missing.length; i += BATCH) {
-        await Promise.all(
-          missing.slice(i, i + BATCH).map(async ({ name }) => {
-            try {
-              const res = await fetch(
-                `https://api.jikan.moe/v4/${endpoint}?q=${encodeURIComponent(name)}&limit=1`,
-                { signal: AbortSignal.timeout(6000) }
-              )
-              if (!res.ok) return
-              const data = await res.json()
-              const img = data.data?.[0]?.images?.jpg?.image_url
-              if (img) next[name] = img
-            } catch {}
-          })
-        )
-        setCache({ ...next })
-        try { sessionStorage.setItem(SKEY, JSON.stringify(next)) } catch {}
-        if (i + BATCH < missing.length) await new Promise(r => setTimeout(r, 1100))
-      }
-      fetching.current = false
-    }
-    go()
-  }, [items.length, categoryId])
-
-  return cache
 }
 
-// ── Toast ─────────────────────────────────────────────────────
-function Toast({ msg }) {
-  return (
-    <AnimatePresence>
-      {msg && (
-        <motion.div key={msg}
-          initial={{ opacity: 0, y: 16, x: '-50%' }}
-          animate={{ opacity: 1, y: 0,  x: '-50%' }}
-          exit={{   opacity: 0, y: 16,  x: '-50%' }}
-          style={{
-            position: 'fixed', bottom: 28, left: '50%',
-            background: T.card2, border: `1px solid ${T.borderPurple}`,
-            borderLeft: `3px solid ${T.violet}`,
-            color: T.text, fontWeight: 700, fontSize: 13,
-            padding: '12px 20px', borderRadius: 12,
-            boxShadow: '0 20px 60px rgba(0,0,0,.6)',
-            zIndex: 9999, whiteSpace: 'nowrap',
-          }}
-        >{msg}</motion.div>
-      )}
-    </AnimatePresence>
-  )
-}
-
-// ── FavoriteButton ─────────────────────────────────────────────
-function FavoriteButton({ active, onClick }) {
-  return (
-    <motion.button whileTap={{ scale: .75 }}
-      onClick={e => { e.stopPropagation(); onClick() }}
-      style={{
-        background: active ? 'rgba(224,82,74,.1)' : 'none',
-        border: `1px solid ${active ? 'rgba(224,82,74,.3)' : T.border}`,
-        borderRadius: 8, cursor: 'pointer',
-        fontSize: 16, lineHeight: 1, padding: '5px 8px',
-        color: active ? T.accent : T.muted,
-        transition: 'all .2s', flexShrink: 0,
-      }}
-      title={active ? 'Retirer des favoris' : 'Ajouter aux favoris'}
-    >{active ? '♥' : '♡'}</motion.button>
-  )
-}
-
-// ── TierCreatorCard (left column hero) ────────────────────────
-function TierCreatorCard({ draft, favCount }) {
-  const PREVIEW = [
-    { label: 'S', color: '#ef4444', slots: 2 },
-    { label: 'A', color: '#f97316', slots: 3 },
-    { label: 'B', color: '#eab308', slots: 2 },
-    { label: 'C', color: '#22c55e', slots: 1 },
-  ]
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: .2, duration: .4 }}
-      style={{
-        background: 'rgba(0,0,0,.22)',
-        border: `1px solid rgba(155,89,182,.14)`,
-        borderRadius: 18, padding: '20px 18px',
-        display: 'flex', flexDirection: 'column', gap: 14,
-      }}
-    >
-      {/* Label */}
-      <div style={{
-        fontSize: 10, fontWeight: 900, letterSpacing: '.18em',
-        textTransform: 'uppercase', color: T.muted, textAlign: 'center',
-      }}>PROFIL TIER MAKER</div>
-
-      {/* Badge */}
-      <div style={{ textAlign: 'center' }}>
-        <span style={{
-          display: 'inline-flex', alignItems: 'center', gap: 6,
-          border: `1px solid rgba(166,108,255,.28)`, background: 'rgba(166,108,255,.08)',
-          borderRadius: 99, padding: '5px 14px',
-          fontSize: 11, fontWeight: 900, color: T.violet, letterSpacing: '.06em',
-        }}>🏆 NOUVEAU</span>
-      </div>
-
-      {/* Mini tier preview */}
-      <div style={{
-        background: 'rgba(0,0,0,.35)', borderRadius: 12,
-        padding: '12px 10px', border: `1px solid ${T.border}`,
-        display: 'flex', flexDirection: 'column', gap: 5,
-      }}>
-        {PREVIEW.map(t => (
-          <div key={t.label} style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
-            <div style={{
-              width: 26, height: 26, borderRadius: 7, background: t.color, flexShrink: 0,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 12, fontWeight: 950, color: '#000',
-            }}>{t.label}</div>
-            <div style={{ display: 'flex', gap: 3, flex: 1 }}>
-              {Array.from({ length: t.slots }).map((_, i) => (
-                <div key={i} style={{
-                  height: 26, flex: 1, borderRadius: 5,
-                  background: `${t.color}1a`, border: `1px solid ${t.color}33`,
-                }} />
-              ))}
-              <div style={{
-                height: 26, flex: 2, borderRadius: 5,
-                background: 'rgba(255,255,255,.025)',
-                border: '1px dashed rgba(255,255,255,.05)',
-              }} />
-            </div>
-          </div>
-        ))}
-        <div style={{
-          marginTop: 4, padding: '5px', borderRadius: 8,
-          background: 'rgba(155,89,182,.06)', border: '1px solid rgba(155,89,182,.14)',
-          fontSize: 10, fontWeight: 700, color: T.violet, textAlign: 'center', letterSpacing: '.06em',
-        }}>Glisse et classe</div>
-      </div>
-
-      {/* Mini stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-        <div style={{
-          background: 'rgba(255,215,0,.05)', border: 'rgba(255,215,0,.15) 1px solid',
-          borderRadius: 12, padding: '10px 0', textAlign: 'center',
-        }}>
-          <div style={{ fontSize: 22, fontWeight: 950, color: T.gold, lineHeight: 1 }}>{favCount}</div>
-          <div style={{ fontSize: 10, color: T.muted, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', marginTop: 3 }}>Favoris</div>
-        </div>
-        <div style={{
-          background: 'rgba(155,89,182,.05)', border: 'rgba(155,89,182,.17) 1px solid',
-          borderRadius: 12, padding: '10px 0', textAlign: 'center',
-        }}>
-          <div style={{ fontSize: 22, fontWeight: 950, color: T.violet, lineHeight: 1 }}>{draft ? '1' : '0'}</div>
-          <div style={{ fontSize: 10, color: T.muted, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', marginTop: 3 }}>Brouillon</div>
-        </div>
-      </div>
-    </motion.div>
-  )
-}
-
-// ── TierMainInfo (right column hero) ─────────────────────────
-function TierMainInfo({ onCreate, onFavs, onResume, draft, catsUsed }) {
-  const STATS = [
-    { v: '40', l: 'Animes',     color: T.violet,  bg: 'rgba(155,89,182,.07)',  border: 'rgba(155,89,182,.2)'  },
-    { v: '30', l: 'Personnages', color: T.gold,    bg: 'rgba(255,215,0,.06)',   border: 'rgba(255,215,0,.18)'  },
-    { v: '25', l: 'Arcs',       color: '#4F8CFF', bg: 'rgba(79,140,255,.06)',  border: 'rgba(79,140,255,.18)' },
-    { v: '20', l: 'Films',      color: '#2ECC71', bg: 'rgba(46,204,113,.06)',  border: 'rgba(46,204,113,.18)' },
-  ]
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: .22, duration: .4 }}
-      style={{ display: 'flex', flexDirection: 'column', gap: 16 }}
-    >
-      {/* Badge pills */}
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        <span style={{
-          display: 'inline-flex', alignItems: 'center', gap: 6,
-          border: '1px solid rgba(166,108,255,.3)', background: 'rgba(166,108,255,.1)',
-          borderRadius: 99, padding: '5px 14px',
-          fontSize: 11, fontWeight: 900, color: T.violet, letterSpacing: '.06em',
-        }}>🏆 BRAMS TIER MAKER</span>
-        <span style={{
-          display: 'inline-flex', alignItems: 'center',
-          border: `1px solid rgba(255,255,255,.1)`, background: 'rgba(255,255,255,.05)',
-          borderRadius: 99, padding: '5px 14px',
-          fontSize: 11, fontWeight: 700, color: T.muted,
-        }}>MON CLASSEMENT</span>
-      </div>
-
-      {/* Title + desc */}
-      <div>
-        <h1 style={{
-          fontFamily: "'Pirata One', cursive",
-          fontSize: 'clamp(32px, 4.5vw, 56px)',
-          margin: '0 0 10px', lineHeight: .94,
-          background: 'linear-gradient(135deg, #fff 0%, rgba(255,255,255,.82) 55%, #ffd700 100%)',
-          WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-        }}>Crée ta tier list ultime</h1>
-        <p style={{ fontSize: 13.5, color: T.muted, lineHeight: 1.72, margin: 0, maxWidth: 500 }}>
-          Classe tes animes, personnages, arcs et films préférés. Sauvegarde, partage et compare avec la communauté.
-        </p>
-      </div>
-
-      {/* Stat cards — like Vocal / Berrys / Position */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10 }}>
-        {STATS.map(s => (
-          <div key={s.l} style={{
-            background: s.bg, border: `1px solid ${s.border}`,
-            borderRadius: 14, padding: '14px 12px', position: 'relative', overflow: 'hidden',
-          }}>
-            <div style={{
-              position: 'absolute', top: 8, right: 8,
-              width: 20, height: 20, borderRadius: 6,
-              background: `${s.color}1c`, border: `1px solid ${s.color}2e`,
-            }} />
-            <div style={{ fontSize: 26, fontWeight: 950, color: s.color, lineHeight: 1, marginBottom: 4 }}>{s.v}</div>
-            <div style={{ fontSize: 10.5, color: T.muted, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase' }}>{s.l}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Progress — like "Progression vers Roi des Pirates" */}
-      <div style={{
-        background: 'rgba(255,255,255,.03)', border: `1px solid ${T.border}`,
-        borderRadius: 14, padding: '14px 16px',
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-          <span style={{ fontSize: 13, color: T.text, fontWeight: 700 }}>Catégories explorées</span>
-          <span style={{ fontSize: 13, color: T.violet, fontWeight: 900 }}>{catsUsed}/6</span>
-        </div>
-        <div style={{ height: 6, background: 'rgba(255,255,255,.06)', borderRadius: 99, overflow: 'hidden' }}>
-          <motion.div
-            initial={{ width: 0 }}
-            animate={{ width: `${catsUsed > 0 ? Math.max((catsUsed / 6) * 100, 5) : 0}%` }}
-            transition={{ duration: .9, delay: .4, ease: 'easeOut' }}
-            style={{ height: '100%', borderRadius: 99, background: `linear-gradient(90deg, ${T.purple}, ${T.violet})` }}
-          />
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
-          {draft
-            ? <span style={{ fontSize: 12, color: T.goldMuted }}>⏳ Brouillon : {draft.title || 'Sans titre'}</span>
-            : <span style={{ fontSize: 12, color: T.muted }}>Pirate depuis {catsUsed} tier list{catsUsed !== 1 ? 's' : ''}</span>
-          }
-          <span style={{ fontSize: 12, color: T.violet }}>
-            {catsUsed < 6 ? `${6 - catsUsed} restante${6 - catsUsed !== 1 ? 's' : ''}` : '✓ Complété'}
-          </span>
-        </div>
-      </div>
-
-      {/* CTAs — like "Partager le profil" / "Ouvrir Discord" */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-        <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: .97 }} onClick={onCreate} style={{
-          padding: '13px', borderRadius: 12, border: 'none',
-          background: `linear-gradient(135deg, ${T.purple}, ${T.violet})`,
-          color: '#fff', fontWeight: 900, fontSize: 14, cursor: 'pointer',
-          boxShadow: `0 6px 24px rgba(155,89,182,.3)`,
-        }}>Créer une tier list</motion.button>
-        <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: .97 }} onClick={onFavs} style={{
-          padding: '13px', borderRadius: 12,
-          border: `1px solid ${T.border}`, background: 'rgba(255,255,255,.05)',
-          color: T.text, fontWeight: 800, fontSize: 14, cursor: 'pointer',
-        }}>♡ Mes favoris</motion.button>
-      </div>
-      {draft && (
-        <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: .98 }} onClick={onResume} style={{
-          padding: '12px 16px', borderRadius: 12, width: '100%',
-          border: `1px solid ${T.borderGold}`, background: 'rgba(255,215,0,.04)',
-          color: T.gold, fontWeight: 800, fontSize: 13, cursor: 'pointer',
-          display: 'flex', alignItems: 'center', gap: 8, textAlign: 'left',
-        }}>
-          <span>⏳</span>
-          <span>Reprendre : <strong style={{ fontWeight: 950 }}>{draft.title || 'Sans titre'}</strong></span>
-          <span style={{ marginLeft: 'auto', opacity: .6 }}>→</span>
-        </motion.button>
-      )}
-    </motion.div>
-  )
-}
-
-// ── MainPanel (profil-style shell) ────────────────────────────
-function MainPanel({ leftCard, rightPanel, tab, setTab, tabsRef, children, isMobile }) {
-  return (
-    <div style={{ maxWidth: 1160, margin: '0 auto', padding: '0 20px 80px', position: 'relative', zIndex: 1 }}>
-      <motion.div
-        initial={{ opacity: 0, y: 28 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .08, duration: .45 }}
-        style={{
-          background: T.surface,
-          border: '1px solid rgba(155,89,182,.12)',
-          borderRadius: 24, overflow: 'hidden',
-          boxShadow: '0 32px 80px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.04)',
-          position: 'relative',
-        }}
-      >
-        {/* Diagonal texture (like profile page) */}
-        <div style={{
-          position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0,
-          backgroundImage: `repeating-linear-gradient(
-            -55deg, transparent, transparent 58px,
-            rgba(255,255,255,.008) 58px, rgba(255,255,255,.008) 59px
-          )`,
-        }} />
-
-        {/* Hero — two columns */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: isMobile ? '1fr' : '210px 1fr',
-          gap: isMobile ? 20 : 24,
-          padding: isMobile ? '24px 20px 20px' : '32px 32px 28px',
-          position: 'relative', zIndex: 1,
-        }}>
-          {leftCard}
-          {rightPanel}
-        </div>
-
-        {/* Separator */}
-        <div style={{ height: 1, background: T.border, margin: '0 28px', position: 'relative', zIndex: 1 }} />
-
-        {/* Pill tabs — exactly like profile "Statistiques / Inventaire / Historique" */}
-        <div ref={tabsRef} style={{
-          display: 'flex', gap: 8,
-          padding: isMobile ? '18px 20px' : '22px 32px',
-          justifyContent: isMobile ? 'center' : 'flex-start',
-          overflowX: 'auto', position: 'relative', zIndex: 1,
-        }}>
-          {TABS.map(t => (
-            <motion.button key={t} onClick={() => setTab(t)} whileTap={{ scale: .93 }} style={{
-              padding: '9px 22px', borderRadius: 99, cursor: 'pointer', whiteSpace: 'nowrap',
-              background: tab === t ? 'rgba(155,89,182,.15)' : 'rgba(255,255,255,.04)',
-              border: `1px solid ${tab === t ? 'rgba(155,89,182,.4)' : T.border}`,
-              color: tab === t ? T.violet : T.muted,
-              fontWeight: tab === t ? 800 : 500, fontSize: 13,
-              transition: 'all .22s', outline: 'none',
-            }}>
-              {{
-                'Création':           '✦ Création',
-                'Créer sa Tier List': '✚ Créer sa Tier List',
-                'Favoris':            '♡ Favoris',
-                'Partagées':          '🌍 Partagées',
-                'Historique':         '📋 Historique',
-              }[t]}
-            </motion.button>
-          ))}
-        </div>
-
-        {/* Separator */}
-        <div style={{ height: 1, background: T.border, margin: '0 28px', position: 'relative', zIndex: 1 }} />
-
-        {/* Tab content */}
-        <div style={{ padding: isMobile ? '24px 20px 36px' : '28px 32px 44px', position: 'relative', zIndex: 1 }}>
-          <AnimatePresence mode="wait">
-            <motion.div key={tab}
-              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-              transition={{ duration: .2 }}
-            >
-              {children}
-            </motion.div>
-          </AnimatePresence>
-        </div>
-      </motion.div>
-    </div>
-  )
-}
-
-// ── CategoryCard ──────────────────────────────────────────────
-function CategoryCard({ cat, isFavorite, onToggle, onSelect }) {
-  const [hov, setHov] = useState(false)
-
-  if (cat.comingSoon) {
-    return (
-      <div style={{
-        background: T.card, border: `1px solid ${T.border}`,
-        borderRadius: 20, padding: '24px 22px', opacity: .38, position: 'relative',
-      }}>
-        <span style={{
-          position: 'absolute', top: 14, right: 14,
-          background: 'rgba(255,255,255,.05)', color: T.muted,
-          fontSize: 9.5, fontWeight: 900, letterSpacing: '.14em', padding: '4px 10px', borderRadius: 8,
-        }}>BIENTÔT</span>
-        <div style={{
-          width: 50, height: 50, borderRadius: 14,
-          background: 'rgba(255,255,255,.04)', border: `1px solid ${T.border}`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 24, marginBottom: 14,
-        }}>{cat.icon}</div>
-        <div style={{ fontWeight: 800, fontSize: 16, color: T.muted, marginBottom: 6 }}>{cat.title}</div>
-        <div style={{ fontSize: 13, color: 'rgba(255,255,255,.18)', marginBottom: 18, lineHeight: 1.5 }}>{cat.description}</div>
-        <div style={{
-          padding: '10px', borderRadius: 10, border: `1px solid ${T.border}`,
-          background: 'rgba(255,255,255,.02)', color: 'rgba(255,255,255,.16)',
-          fontSize: 12, fontWeight: 700, textAlign: 'center',
-        }}>Arrive bientôt</div>
-      </div>
-    )
+function encodeShareState(state) {
+  try {
+    return `${SHARE_HASH_PREFIX}${btoa(unescape(encodeURIComponent(JSON.stringify(state))))}`
+  } catch {
+    return ''
   }
-
-  return (
-    <motion.div
-      whileHover={{ y: -6 }}
-      onHoverStart={() => setHov(true)}
-      onHoverEnd={() => setHov(false)}
-      style={{
-        background: hov ? T.card2 : T.card,
-        border: `1px solid ${hov ? T.borderPurple : T.border}`,
-        borderRadius: 20, padding: '24px 22px', cursor: 'pointer',
-        position: 'relative', overflow: 'hidden',
-        transition: 'border-color .25s, background .2s, box-shadow .25s',
-        boxShadow: hov
-          ? `0 0 0 1px rgba(155,89,182,.1), 0 24px 64px rgba(0,0,0,.45), inset 0 1px 0 rgba(155,89,182,.08)`
-          : '0 4px 20px rgba(0,0,0,.2)',
-      }}
-      onClick={() => onSelect(cat)}
-    >
-      {hov && (
-        <div style={{
-          position: 'absolute', top: 0, left: 0, right: 0, height: 1,
-          background: 'linear-gradient(90deg, transparent, rgba(155,89,182,.5), transparent)',
-          pointerEvents: 'none',
-        }} />
-      )}
-      {cat.badge && (
-        <span style={{
-          position: 'absolute', top: 14, right: 14,
-          background: cat.badgeColor || T.accent, color: '#fff',
-          fontSize: 9.5, fontWeight: 900, letterSpacing: '.12em', padding: '4px 10px', borderRadius: 8,
-        }}>{cat.badge}</span>
-      )}
-      <div style={{
-        width: 52, height: 52, borderRadius: 14,
-        background: hov ? 'rgba(155,89,182,.12)' : 'rgba(255,255,255,.05)',
-        border: `1px solid ${hov ? 'rgba(155,89,182,.28)' : T.border}`,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 26, marginBottom: 16, transition: 'background .2s, border-color .2s',
-      }}>{cat.icon}</div>
-      <div style={{ fontWeight: 800, fontSize: 17, color: T.text, marginBottom: 6, paddingRight: cat.badge ? 70 : 0 }}>{cat.title}</div>
-      <div style={{ fontSize: 13, color: T.muted, marginBottom: 18, lineHeight: 1.55 }}>{cat.description}</div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
-        <div style={{
-          display: 'inline-flex', alignItems: 'center',
-          background: 'rgba(255,255,255,.04)', border: `1px solid ${T.border}`,
-          borderRadius: 99, padding: '4px 12px',
-          fontSize: 12, fontWeight: 700, color: T.muted,
-        }}>{cat.count} entrées</div>
-        <FavoriteButton active={isFavorite} onClick={() => onToggle(cat.id)} />
-      </div>
-      <button onClick={e => { e.stopPropagation(); onSelect(cat) }} style={{
-        width: '100%', padding: '11px 0', borderRadius: 12, border: 'none',
-        background: hov ? `linear-gradient(135deg, ${T.purple}, ${T.violet})` : 'rgba(255,255,255,.05)',
-        color: hov ? '#fff' : T.muted,
-        fontWeight: 900, fontSize: 13, cursor: 'pointer',
-        transition: 'background .25s, color .2s',
-        boxShadow: hov ? `0 6px 24px rgba(155,89,182,.3)` : 'none',
-      }}>Créer cette tier list</button>
-    </motion.div>
-  )
 }
 
-// ── ListsGrid ─────────────────────────────────────────────────
-function ListsGrid({ lists, emptyIcon, emptyText, emptyDesc, onTabSwitch }) {
-  if (!lists || !lists.length) return (
-    <div style={{ textAlign: 'center', padding: '60px 0', color: T.muted }}>
-      <div style={{ fontSize: 44, marginBottom: 16, opacity: .3 }}>{emptyIcon}</div>
-      <div style={{ fontWeight: 700, fontSize: 17, marginBottom: 8, color: T.text }}>{emptyText}</div>
-      <div style={{ fontSize: 13, marginBottom: 24, lineHeight: 1.6 }}>{emptyDesc}</div>
-      {onTabSwitch && (
-        <button onClick={onTabSwitch} style={{
-          padding: '10px 24px', borderRadius: 10,
-          border: `1px solid ${T.borderPurple}`, background: 'rgba(155,89,182,.08)',
-          color: T.violet, fontWeight: 800, cursor: 'pointer', fontSize: 13,
-        }}>Créer une tier list</button>
-      )}
-    </div>
-  )
+function decodeShareState(hash = '') {
+  const raw = String(hash || '').replace(/^#/, '')
+  if (!raw.startsWith(SHARE_HASH_PREFIX)) return null
+  try {
+    const json = decodeURIComponent(escape(atob(raw.slice(SHARE_HASH_PREFIX.length))))
+    return JSON.parse(json)
+  } catch {
+    return null
+  }
+}
+
+function initBoard(items) {
+  return {
+    top10:[], s:[], a:[], b:[], c:[], d:[], f:[], trash:[],
+    pool: items.map(a => a.id),
+  }
+}
+
+// ── Confetti S ────────────────────────────────────────────────────────────────
+
+function fireSTierConfetti() {
+  const end = Date.now() + 2800
+  const colors = ['#FFD700','#FF1744','#ffffff','#f59f00']
+  const shoot = () => {
+    confetti({ particleCount:4, angle:60,  spread:60, origin:{x:0}, colors, zIndex:99999 })
+    confetti({ particleCount:4, angle:120, spread:60, origin:{x:1}, colors, zIndex:99999 })
+    if (Date.now() < end) requestAnimationFrame(shoot)
+  }
+  shoot()
+  confetti({ particleCount:60, spread:100, origin:{x:.5,y:.4}, colors, zIndex:99999 })
+}
+
+// ── Particles canvas ──────────────────────────────────────────────────────────
+
+function ParticleCanvas() {
+  const cvs = useRef(null)
+  const mxy = useRef({ x:-1000, y:-1000 })
+  useEffect(() => {
+    const canvas = cvs.current; if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    const PAL = ['#FFD70030','#FF174430','#40C4FF30','#CE93D830','#00E67630','#FFAB4030']
+    const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight }
+    resize(); window.addEventListener('resize', resize)
+    const pts = Array.from({length:85}, () => ({
+      x: Math.random()*window.innerWidth, y: Math.random()*window.innerHeight,
+      vx:(Math.random()-.5)*.22, vy:(Math.random()-.5)*.16,
+      r: Math.random()*1.5+.5, col:PAL[Math.floor(Math.random()*PAL.length)],
+      ph:Math.random()*Math.PI*2,
+    }))
+    let raf, t=0
+    const draw = () => {
+      ctx.clearRect(0,0,canvas.width,canvas.height); t+=.01
+      for (const p of pts) {
+        const dx=p.x-mxy.current.x, dy=p.y-mxy.current.y, d2=dx*dx+dy*dy
+        if (d2<9000) { const d=Math.sqrt(d2), f=(95-d)/95; p.vx+=(dx/d)*f*.07; p.vy+=(dy/d)*f*.07 }
+        p.vx*=.976; p.vy*=.976
+        p.x+=p.vx+Math.sin(t+p.ph)*.17; p.y+=p.vy+Math.cos(t*.7+p.ph)*.11
+        if (p.x<0) p.x=canvas.width; if (p.x>canvas.width) p.x=0
+        if (p.y<0) p.y=canvas.height; if (p.y>canvas.height) p.y=0
+        ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fillStyle=p.col; ctx.fill()
+        const g=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r*5)
+        g.addColorStop(0,p.col); g.addColorStop(1,'transparent')
+        ctx.beginPath(); ctx.arc(p.x,p.y,p.r*5,0,Math.PI*2); ctx.fillStyle=g; ctx.fill()
+      }
+      raf=requestAnimationFrame(draw)
+    }
+    draw()
+    const onMove = e => { mxy.current={x:e.clientX,y:e.clientY} }
+    window.addEventListener('mousemove',onMove)
+    return () => { cancelAnimationFrame(raf); window.removeEventListener('resize',resize); window.removeEventListener('mousemove',onMove) }
+  }, [])
+  return <canvas ref={cvs} style={{position:'fixed',inset:0,zIndex:0,pointerEvents:'none',opacity:.6}}/>
+}
+
+// ── Type Selector (landing) ───────────────────────────────────────────────────
+
+function TypeSelector({ onSelect }) {
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(240px,1fr))', gap: 16 }}>
-      {lists.map((list, i) => (
-        <motion.div key={list.id}
-          initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * .04 }}
+    <motion.div
+      initial={{ opacity:0 }}
+      animate={{ opacity:1 }}
+      exit={{ opacity:0, scale:.97 }}
+      transition={{ duration:.4 }}
+      style={{
+        position:'fixed', inset:0, zIndex:10,
+        display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+        padding:'24px 16px',
+      }}
+    >
+      <div style={{
+        width:'100%',
+        maxWidth:1120,
+        display:'grid',
+        gap:18,
+      }}>
+        <motion.div
+          initial={{ y:-20, opacity:0 }} animate={{ y:0, opacity:1 }} transition={{ delay:.08 }}
           style={{
-            background: T.card, border: `1px solid ${T.border}`,
-            borderRadius: 18, padding: '20px 18px',
+            position:'relative',
+            overflow:'hidden',
+            borderRadius:24,
+            background:'linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.03))',
+            border:'1px solid rgba(255,255,255,.09)',
+            boxShadow:'0 20px 60px rgba(0,0,0,.35)',
+            padding:'28px 28px 26px',
+            backdropFilter:'blur(16px)',
+            textAlign:'center',
           }}
         >
-          <div style={{ fontWeight: 800, fontSize: 15, color: T.text, marginBottom: 5 }}>{list.title}</div>
-          <div style={{ fontSize: 12, color: T.muted, marginBottom: 14 }}>
-            {list.theme} · {new Date(list.createdAt).toLocaleDateString('fr-FR')}
+          <div style={{
+            position:'absolute',
+            inset:0,
+            background:'radial-gradient(circle at 50% 0%, rgba(160,68,92,.12), transparent 42%), radial-gradient(circle at 85% 100%, rgba(182,145,61,.10), transparent 34%)',
+            pointerEvents:'none',
+          }} />
+          <div style={{
+            position:'relative',
+            display:'inline-flex',
+            alignItems:'center',
+            gap:10,
+            padding:'6px 12px',
+            borderRadius:999,
+            background:'rgba(160,68,92,.12)',
+            border:'1px solid rgba(160,68,92,.28)',
+            color:'#d8b4bf',
+            fontSize:11,
+            fontWeight:800,
+            letterSpacing:'.18em',
+            textTransform:'uppercase',
+            marginBottom:16,
+          }}>
+            <Crown size={12} />
+            Zone sélection
           </div>
-          {list.image && (
-            <img src={list.image} alt={list.title} style={{
-              width: '100%', borderRadius: 10, marginBottom: 12,
-              border: `1px solid ${T.border}`, display: 'block',
-            }} />
-          )}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{
-              background: list.visibility === 'public' ? 'rgba(155,89,182,.12)' : 'rgba(255,255,255,.04)',
-              color: list.visibility === 'public' ? T.violet : T.muted,
-              border: `1px solid ${list.visibility === 'public' ? 'rgba(155,89,182,.28)' : T.border}`,
-              borderRadius: 99, padding: '3px 10px', fontSize: 11, fontWeight: 800,
-            }}>
-              {list.visibility === 'public' ? '🌍 Public' : '🔒 Privé'}
+          <div style={{ position:'relative', display:'flex', alignItems:'center', justifyContent:'center', gap:12, marginBottom:12 }}>
+            <span style={{ fontSize:30, filter:'drop-shadow(0 0 12px rgba(182,145,61,.18))' }}>⚔️</span>
+            <span style={{ fontSize:22, fontWeight:900, letterSpacing:'.03em', color:'#f0f0f3' }}>
+              BRAMS<span style={{ color:'#ff6a7d' }}>.TIER</span>
             </span>
-            <span style={{ fontSize: 11, color: T.muted }}>{list.tiers?.length || 0} tiers</span>
           </div>
+          <h1 style={{ position:'relative', margin:0, fontSize:'clamp(24px,3.1vw,38px)', fontWeight:900, color:'#f5f5f7', letterSpacing:'-.03em', lineHeight:1.06 }}>
+            Quelle tier list tu veux faire ?
+          </h1>
+          <p style={{ position:'relative', margin:'10px 0 0', fontSize:14, color:'rgba(255,255,255,0.46)' }}>
+            Choisis une catégorie pour ouvrir l’atelier
+          </p>
         </motion.div>
-      ))}
-    </div>
-  )
-}
 
-// ── DnD Item ──────────────────────────────────────────────────
-function DragItem({ item, img, onDelete }) {
-  const [imgErr, setImgErr] = useState(false)
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: item.id })
-  const showImg = img && !imgErr
-
-  return (
-    <div
-      ref={setNodeRef} {...listeners} {...attributes}
-      style={{
-        width: 86, flexShrink: 0, borderRadius: 10, overflow: 'hidden',
-        border: `1px solid ${isDragging ? T.borderPurple : T.border}`,
-        background: isDragging ? 'rgba(155,89,182,.18)' : 'rgba(255,255,255,.05)',
-        cursor: isDragging ? 'grabbing' : 'grab',
-        opacity: isDragging ? .45 : 1, touchAction: 'none', userSelect: 'none',
-        transform: transform ? `translate(${transform.x}px,${transform.y}px)` : undefined,
-        transition: isDragging ? 'none' : 'border-color .15s,background .15s',
-        position: 'relative',
-      }}
-    >
-      <button onPointerDown={e => e.stopPropagation()} onClick={() => onDelete(item.id)} style={{
-        position: 'absolute', top: 3, right: 3, zIndex: 2,
-        width: 18, height: 18, borderRadius: 5, background: 'rgba(0,0,0,.7)',
-        border: 'none', color: '#fff', fontSize: 11, cursor: 'pointer',
-        display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1,
-      }}>×</button>
-      {showImg ? (
-        <img src={img} alt={item.name} onError={() => setImgErr(true)}
-          style={{ width: '100%', height: 86, objectFit: 'cover', display: 'block' }} />
-      ) : (
         <div style={{
-          width: '100%', height: 86,
-          background: 'linear-gradient(135deg, rgba(155,89,182,.22), rgba(166,108,255,.1))',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 30, fontWeight: 950, color: T.violet, userSelect: 'none',
-        }}>{item.name[0]}</div>
-      )}
-      <div style={{
-        padding: '4px 5px', fontSize: 10, fontWeight: 700, color: T.text,
-        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-        textAlign: 'center', background: 'rgba(0,0,0,.5)',
-      }}>{item.name}</div>
-    </div>
-  )
-}
+          display:'grid',
+          gridTemplateColumns:'repeat(auto-fit, minmax(180px, 1fr))',
+          gap:14,
+          width:'100%',
+        }}>
+        {TIER_TYPES.map((type, i) => (
+          <motion.button
+            key={type.id}
+            initial={{ y:30, opacity:0 }} animate={{ y:0, opacity:1 }}
+            transition={{ delay:.15 + i*.07, type:'spring', stiffness:280, damping:24 }}
+            whileHover={type.soon ? {} : { scale:1.03, y:-3 }}
+            whileTap={type.soon ? {} : { scale:.97 }}
+            onClick={() => !type.soon && onSelect(type)}
+            style={{
+              position:'relative', overflow:'hidden',
+              padding:'22px 18px',
+              background: type.soon
+                ? 'rgba(255,255,255,0.025)'
+                : 'rgba(255,255,255,0.045)',
+              border:`1px solid ${type.soon ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.11)'}`,
+              borderRadius:18, cursor: type.soon ? 'default' : 'pointer',
+              textAlign:'left', color:'#fff',
+              backdropFilter:'blur(14px)',
+              boxShadow: type.soon ? 'none' : '0 12px 36px rgba(0,0,0,0.28)',
+              opacity: type.soon ? .45 : 1,
+              transition:'border-color .2s, box-shadow .2s',
+            }}
+            onMouseEnter={e => {
+              if (!type.soon) {
+                e.currentTarget.style.borderColor = type.color + '66'
+                e.currentTarget.style.boxShadow = `0 12px 40px ${type.color}18`
+              }
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.borderColor = 'rgba(255,255,255,0.10)'
+              e.currentTarget.style.boxShadow = '0 12px 36px rgba(0,0,0,0.28)'
+            }}
+          >
+            {/* Gradient accent line */}
+            {!type.soon && (
+              <div style={{
+                position:'absolute', top:0, left:0, right:0, height:2,
+                background: type.grad, borderRadius:'16px 16px 0 0',
+              }}/>
+            )}
 
-// ── TierRow ───────────────────────────────────────────────────
-function TierRow({ tier, items, imgCache, onLabel, onDelTier, onDelItem }) {
-  const { setNodeRef, isOver } = useDroppable({ id: tier.id })
-  return (
-    <div style={{ display: 'grid', gridTemplateColumns: '68px minmax(0,1fr) 34px', gap: 6, minHeight: 100 }}>
-      <input
-        value={tier.label} onChange={e => onLabel(tier.id, e.target.value)} maxLength={12}
-        style={{
-          height: '100%', boxSizing: 'border-box', borderRadius: 10, border: 'none',
-          background: tier.color, color: '#06070a', textAlign: 'center',
-          fontSize: 24, fontWeight: 950, outline: 'none', cursor: 'text',
-        }}
-      />
-      <div ref={setNodeRef} style={{
-        display: 'flex', alignItems: 'flex-start', flexWrap: 'wrap', gap: 7, padding: 10,
-        borderRadius: 12, minHeight: 100,
-        border: `1px solid ${isOver ? T.borderPurple : T.border}`,
-        background: isOver ? 'rgba(155,89,182,.07)' : 'rgba(255,255,255,.03)',
-        transition: 'border-color .15s,background .15s',
-      }}>
-        {items.map(item => (
-          <DragItem key={item.id} item={item} img={imgCache?.[item.name]} onDelete={onDelItem} />
+            {/* Popular badge */}
+            {type.popular && (
+              <div style={{
+                position:'absolute', top:10, right:10,
+                background:'rgba(160,68,92,.14)', color:'#f2d8de',
+                border:'1px solid rgba(160,68,92,.25)',
+                fontSize:8, fontWeight:800, letterSpacing:'.12em',
+                padding:'2px 7px', borderRadius:100,
+              }}>POPULAIRE</div>
+            )}
+
+            {/* Soon badge */}
+            {type.soon && (
+              <div style={{
+                position:'absolute', top:10, right:10,
+                background:'rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.4)',
+                fontSize:8, fontWeight:800, letterSpacing:'.12em',
+                padding:'2px 7px', borderRadius:100,
+              }}>BIENTÔT</div>
+            )}
+
+            <div style={{ fontSize:32, marginBottom:10, lineHeight:1 }}>{type.icon}</div>
+            <div style={{ fontSize:16, fontWeight:800, marginBottom:4, color: type.soon ? 'rgba(255,255,255,0.42)' : '#f6f6f8' }}>
+              {type.label}
+            </div>
+            <div style={{ fontSize:12, color:'rgba(255,255,255,0.38)', marginBottom:12 }}>
+              {type.desc}
+            </div>
+            {!type.soon && (
+              <div style={{
+                display:'inline-flex', alignItems:'center', gap:5,
+                padding:'3px 10px', borderRadius:100,
+                background: type.color + '14',
+                border: `1px solid ${type.color}30`,
+                color: type.color, fontSize:11, fontWeight:700,
+              }}>
+                {type.count} entrées
+              </div>
+            )}
+          </motion.button>
         ))}
-      </div>
-      <button onClick={() => onDelTier(tier.id)} style={{
-        borderRadius: 10, border: `1px solid ${T.border}`,
-        background: 'none', color: T.muted, cursor: 'pointer', fontSize: 18,
-      }}>×</button>
-    </div>
-  )
-}
-
-// ── Pool ──────────────────────────────────────────────────────
-function Pool({ items, imgCache, onDelItem }) {
-  const { setNodeRef, isOver } = useDroppable({ id: 'pool' })
-  return (
-    <div style={{ marginTop: 10 }}>
-      <div style={{ color: T.muted, fontSize: 11, fontWeight: 900, letterSpacing: '.14em', textTransform: 'uppercase', marginBottom: 8 }}>
-        Pool — non classés
-      </div>
-      <div ref={setNodeRef} style={{
-        display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', gap: 7, padding: 14,
-        borderRadius: 14, minHeight: 110,
-        border: `1px dashed ${isOver ? T.borderPurple : T.border}`,
-        background: isOver ? 'rgba(155,89,182,.05)' : 'rgba(255,255,255,.02)',
-        transition: 'border-color .15s,background .15s',
-      }}>
-        {items.length === 0
-          ? <span style={{ color: T.muted, fontSize: 13, alignSelf: 'center' }}>Glisse des items ici, ou ajoute-en via le panneau</span>
-          : items.map(item => (
-              <DragItem key={item.id} item={item} img={imgCache?.[item.name]} onDelete={onDelItem} />
-            ))
-        }
-      </div>
-    </div>
-  )
-}
-
-// ── Sidebar helpers ───────────────────────────────────────────
-const lbl = { display: 'block', color: T.muted, fontSize: 11, fontWeight: 900, letterSpacing: '.14em', textTransform: 'uppercase', marginBottom: 7 }
-const inp = { width: '100%', boxSizing: 'border-box', height: 40, borderRadius: 10, border: `1px solid ${T.border}`, background: 'rgba(255,255,255,.05)', color: T.text, padding: '0 12px', outline: 'none', fontWeight: 700, fontSize: 13 }
-
-function BtnPrimary({ children, onClick, style: sx }) {
-  return (
-    <button onClick={onClick} style={{
-      padding: '10px 16px', borderRadius: 10, border: 'none',
-      background: `linear-gradient(135deg, ${T.purple}, ${T.violet})`,
-      color: '#fff', fontWeight: 900, fontSize: 13, cursor: 'pointer',
-      width: '100%', boxShadow: `0 4px 16px rgba(155,89,182,.28)`, ...sx,
-    }}>{children}</button>
-  )
-}
-function BtnGhost({ children, onClick }) {
-  return (
-    <button onClick={onClick} style={{
-      padding: '10px 16px', borderRadius: 10,
-      border: `1px solid ${T.border}`, background: 'rgba(255,255,255,.04)',
-      color: T.muted, fontWeight: 800, fontSize: 13, cursor: 'pointer', width: '100%',
-    }}>{children}</button>
-  )
-}
-
-// ── Builder ───────────────────────────────────────────────────
-function Builder({ cat, initDraft, fromDraft, onBack, saveDraft, clearDraft, toast, displayName }) {
-  const isMobile = useMediaQuery('(max-width: 768px)')
-  const boardRef = useRef(null)
-
-  const [title, setTitle]    = useState(() => fromDraft && initDraft?.title ? initDraft.title : cat ? `Mes ${cat.title}` : 'Ma Tier List')
-  const [tiers, setTiers]    = useState(() => fromDraft && initDraft?.tiers ? initDraft.tiers : DEFAULT_TIERS)
-  const [items, setItems]    = useState(() => {
-    if (fromDraft && initDraft?.items) return initDraft.items
-    if (cat?.items) return cat.items.map(name => ({ id: uid('item'), name, tierId: null }))
-    return []
-  })
-  const [newInput, setNew]   = useState('')
-  const [newTier, setNT]     = useState('')
-  const [activeId, setActId] = useState(null)
-  const [imgUrl, setImg]     = useState('')
-  const sensors  = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))
-  const imgCache = useItemImages(items, cat?.id ?? 'custom')
-
-  const pool       = items.filter(i => !i.tierId)
-  const activeItem = items.find(i => i.id === activeId) ?? null
-
-  const mounted = useRef(false)
-  useEffect(() => {
-    if (!mounted.current) { mounted.current = true; return }
-    saveDraft({ title, tiers, items, categoryId: cat?.id })
-  }, [title, tiers, items])
-
-  function addItems() {
-    const names = splitItems(newInput); if (!names.length) return
-    setItems(p => [...p, ...names.map(n => ({ id: uid('item'), name: n, tierId: null }))])
-    setNew('')
-  }
-  function delItem(id) { setItems(p => p.filter(i => i.id !== id)) }
-  function addTier() {
-    const lbl2 = newTier.trim().slice(0, 12); if (!lbl2) return
-    const cols = ['#ef4444','#f97316','#eab308','#22c55e','#3b82f6','#a855f7','#64748b']
-    setTiers(p => [...p, { id: uid('tier'), label: lbl2, color: cols[p.length % cols.length] }])
-    setNT('')
-  }
-  function updLabel(tid, l) { setTiers(p => p.map(t => t.id === tid ? { ...t, label: l } : t)) }
-  function delTier(tid) {
-    setTiers(p => p.filter(t => t.id !== tid))
-    setItems(p => p.map(i => i.tierId === tid ? { ...i, tierId: null } : i))
-  }
-
-  function onDragStart({ active }) { setActId(active.id) }
-  function onDragEnd({ active, over }) {
-    setActId(null)
-    if (!over) return
-    setItems(p => p.map(i => i.id === active.id ? { ...i, tierId: over.id === 'pool' ? null : over.id } : i))
-  }
-
-  async function genImg() {
-    if (!boardRef.current) return null
-    try {
-      const url = await toPng(boardRef.current, { pixelRatio: 2, cacheBust: true, backgroundColor: '#111214' })
-      setImg(url); toast('Image générée !'); return url
-    } catch { toast('Erreur génération.'); return null }
-  }
-
-  async function publish(vis) {
-    const url = imgUrl || await genImg()
-    const list = {
-      id: uid('tl'), title, theme: cat?.title || 'Custom', categoryId: cat?.id,
-      author: displayName || 'Pirate', createdAt: new Date().toISOString(),
-      visibility: vis, likes: 0, tiers, items, image: url || '',
-    }
-    ss(MY_KEY, [list, ...sg(MY_KEY, [])])
-    if (vis === 'public') ss(PUBLIC_KEY, [list, ...sg(PUBLIC_KEY, [])])
-    clearDraft()
-    toast(vis === 'public' ? 'Tier List publiée !' : 'Sauvegardée en privé.')
-  }
-
-  async function share() {
-    try {
-      const enc = btoa(encodeURIComponent(JSON.stringify({ title, tiers, items, categoryId: cat?.id })))
-      await navigator.clipboard.writeText(`${window.location.origin}/tier-list?share=${enc}`)
-      toast('Lien copié !')
-    } catch { toast('Impossible de copier le lien.') }
-  }
-
-  const sidebarContent = (
-    <>
-      <div style={{ marginBottom: 16 }}>
-        <div style={lbl}>Titre</div>
-        <input value={title} onChange={e => setTitle(e.target.value)} style={inp} />
-      </div>
-      <div style={{ marginBottom: 18 }}>
-        <div style={lbl}>Ajouter des éléments</div>
-        <textarea value={newInput} onChange={e => setNew(e.target.value)}
-          placeholder="Un par ligne ou séparés par virgules"
-          style={{ ...inp, height: 80, paddingTop: 10, resize: 'vertical' }}
-        />
-        <BtnPrimary onClick={addItems} style={{ marginTop: 8 }}>+ Ajouter</BtnPrimary>
-      </div>
-      <div style={{ marginBottom: 20 }}>
-        <div style={lbl}>Nouveau tier</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 8 }}>
-          <input value={newTier} onChange={e => setNT(e.target.value)} placeholder="Ex: GOAT" style={inp}
-            onKeyDown={e => e.key === 'Enter' && addTier()} />
-          <BtnPrimary onClick={addTier} style={{ width: 40 }}>+</BtnPrimary>
         </div>
-      </div>
-      <div style={{ display: 'grid', gap: 8 }}>
-        <BtnGhost onClick={genImg}>📷 Générer l'image</BtnGhost>
-        <BtnGhost onClick={() => publish('public')}>🌍 Publier</BtnGhost>
-        <BtnGhost onClick={() => publish('private')}>🔒 Sauvegarder</BtnGhost>
-        <BtnGhost onClick={share}>🔗 Copier le lien</BtnGhost>
-        {imgUrl && (
-          <a href={imgUrl} download={`${title.replace(/\s+/g, '-')}.png`} style={{
-            padding: '10px 16px', borderRadius: 10, border: `1px solid ${T.border}`,
-            background: 'rgba(255,255,255,.04)', color: T.muted, fontWeight: 800,
-            fontSize: 13, width: '100%', boxSizing: 'border-box',
-            textAlign: 'center', textDecoration: 'none', display: 'block',
-          }}>⬇ Télécharger</a>
-        )}
-      </div>
-      <div style={{ marginTop: 16, padding: '10px 14px', borderRadius: 10, background: 'rgba(155,89,182,.05)', border: '1px solid rgba(155,89,182,.12)' }}>
-        <div style={{ color: T.violet, fontSize: 11, fontWeight: 900, letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 5 }}>Astuce</div>
-        <div style={{ color: T.muted, fontSize: 12, lineHeight: 1.55 }}>Glisse les items entre les tiers. La tier list est sauvegardée automatiquement.</div>
-      </div>
-    </>
-  )
-
-  return (
-    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-      style={{ maxWidth: 1180, margin: '0 auto', padding: '90px 20px 80px', position: 'relative', zIndex: 1 }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
-        <button onClick={onBack} style={{
-          padding: '8px 18px', borderRadius: 10, border: `1px solid ${T.border}`,
-          background: 'rgba(255,255,255,.04)', color: T.muted, fontWeight: 800, cursor: 'pointer', fontSize: 13,
-        }}>← Retour</button>
-        {cat && (
-          <span style={{
-            display: 'inline-flex', alignItems: 'center', gap: 6,
-            border: '1px solid rgba(155,89,182,.22)', background: 'rgba(155,89,182,.07)',
-            borderRadius: 99, padding: '5px 14px',
-            fontSize: 12, fontWeight: 700, color: T.violet,
-          }}>{cat.icon} {cat.title}</span>
-        )}
-      </div>
-
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: isMobile ? '1fr' : '290px minmax(0,1fr)',
-        gap: 16, alignItems: 'start',
-      }}>
-        {!isMobile && (
-          <aside style={{
-            border: '1px solid rgba(155,89,182,.12)', background: T.surface,
-            borderRadius: 18, padding: 20, backdropFilter: 'blur(16px)',
-            position: 'sticky', top: 90,
-          }}>{sidebarContent}</aside>
-        )}
-
-        <main>
-          <DndContext sensors={sensors} collisionDetection={rectIntersection} onDragStart={onDragStart} onDragEnd={onDragEnd}>
-            <div ref={boardRef} style={{
-              border: '1px solid rgba(155,89,182,.14)',
-              background: `radial-gradient(ellipse 60% 40% at 50% 0%, rgba(155,89,182,.07), transparent 55%), ${T.surface}`,
-              borderRadius: 18, padding: 22, boxShadow: '0 24px 80px rgba(0,0,0,.35)',
-            }}>
-              <div style={{ marginBottom: 18 }}>
-                <div style={{ color: T.violet, fontSize: 11, fontWeight: 950, letterSpacing: '.18em', textTransform: 'uppercase' }}>{cat?.title || 'Custom'}</div>
-                <h2 style={{
-                  fontFamily: "'Pirata One', cursive", fontSize: 40, margin: '4px 0 0', lineHeight: 1,
-                  background: 'linear-gradient(135deg, #fff, rgba(255,255,255,.78), #ffd700)',
-                  WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-                }}>{title}</h2>
-              </div>
-              <div style={{ display: 'grid', gap: 7 }}>
-                {tiers.map(tier => (
-                  <TierRow key={tier.id} tier={tier}
-                    items={items.filter(i => i.tierId === tier.id)}
-                    imgCache={imgCache} onLabel={updLabel} onDelTier={delTier} onDelItem={delItem}
-                  />
-                ))}
-              </div>
-              <Pool items={pool} imgCache={imgCache} onDelItem={delItem} />
-            </div>
-
-            <DragOverlay>
-              {activeItem && (
-                <div style={{
-                  width: 86, borderRadius: 10, overflow: 'hidden',
-                  border: `1px solid ${T.borderPurple}`,
-                  boxShadow: `0 20px 60px rgba(0,0,0,.6), 0 0 0 1px rgba(155,89,182,.2)`,
-                  cursor: 'grabbing', opacity: .94,
-                }}>
-                  {imgCache[activeItem.name] ? (
-                    <img src={imgCache[activeItem.name]} alt={activeItem.name}
-                      style={{ width: '100%', height: 86, objectFit: 'cover', display: 'block' }} />
-                  ) : (
-                    <div style={{
-                      width: '100%', height: 86,
-                      background: 'linear-gradient(135deg, rgba(155,89,182,.3), rgba(166,108,255,.2))',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 30, fontWeight: 950, color: T.violet,
-                    }}>{activeItem.name[0]}</div>
-                  )}
-                  <div style={{
-                    padding: '4px 5px', fontSize: 10, fontWeight: 700, color: T.text,
-                    textAlign: 'center', background: 'rgba(0,0,0,.55)',
-                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                  }}>{activeItem.name}</div>
-                </div>
-              )}
-            </DragOverlay>
-          </DndContext>
-
-          {imgUrl && (
-            <div style={{ border: `1px solid ${T.borderGold}`, background: T.surface, borderRadius: 18, padding: 18, marginTop: 16 }}>
-              <div style={{ color: T.gold, fontWeight: 950, marginBottom: 10, fontSize: 13 }}>Image exportée</div>
-              <img src={imgUrl} alt="Export" style={{ width: '100%', borderRadius: 12, border: `1px solid ${T.border}` }} />
-            </div>
-          )}
-        </main>
-
-        {isMobile && (
-          <aside style={{ border: '1px solid rgba(155,89,182,.12)', background: T.surface, borderRadius: 18, padding: 20 }}>
-            {sidebarContent}
-          </aside>
-        )}
       </div>
     </motion.div>
   )
 }
 
-// ── Main ──────────────────────────────────────────────────────
-export default function TierListPage() {
-  const { displayName } = useAuth()
-  const isMobile = useMediaQuery('(max-width: 920px)')
-  const [view, setView]           = useState('landing')
-  const [selCat, setSelCat]       = useState(null)
-  const [fromDraft, setFromDraft] = useState(false)
-  const [tab, setTab]             = useState('Création')
-  const { favs, toggle, isFav }   = useFavorites()
-  const { draft, save, clear }    = useDraft()
-  const { msg, show }             = useToast()
-  const tabsRef                   = useRef(null)
+// ── Anime card (draggable) ────────────────────────────────────────────────────
 
-  useEffect(() => {
-    const p = new URLSearchParams(window.location.search).get('share')
-    if (!p) return
-    try {
-      const data = JSON.parse(decodeURIComponent(atob(p)))
-      if (!data || !Array.isArray(data.tiers) || !Array.isArray(data.items)) return
-      save(data)
-      setSelCat(CATEGORIES.find(c => c.id === data.categoryId) ?? null)
-      setFromDraft(true)
-      setView('creating')
-    } catch {}
-  }, [])
+function ItemCard({ itemId, allById, compact=false, isDragOverlay=false }) {
+  const item = allById[itemId]
+  const [imgSrc, setImgSrc] = useState(item?.img || fallbackImage(item))
+  const [imgErr, setImgErr] = useState(false)
+  const [hovered, setHovered] = useState(false)
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: itemId })
+  const W = compact ? 76 : 88
+  const H = compact ? 108 : 124
 
-  function selectCat(cat) { setSelCat(cat); setFromDraft(false); setView('creating') }
-  function create()        { setSelCat(null); setFromDraft(false); setView('creating') }
-  function resume() {
-    setSelCat(draft?.categoryId ? (CATEGORIES.find(c => c.id === draft.categoryId) ?? null) : null)
-    setFromDraft(true); setView('creating')
+  const handleError = () => {
+    if (item?.img2 && imgSrc !== item.img2) { setImgSrc(item.img2); return }
+    if (imgSrc !== fallbackImage(item)) { setImgSrc(fallbackImage(item)); return }
+    setImgErr(true)
   }
-  function goFavs() {
-    setTab('Favoris')
-    setTimeout(() => tabsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 60)
-  }
-
-  const myLists     = sg(MY_KEY, [])
-  const publicLists = sg(PUBLIC_KEY, [])
-  const favCats     = CATEGORIES.filter(c => isFav(c.id))
-  const MAIN_TITLES = new Set(CATEGORIES.filter(c => !c.comingSoon).map(c => c.title))
-  const catsUsed    = new Set(myLists.map(l => l.theme).filter(t => MAIN_TITLES.has(t))).size
-
-  const tabContent = (
-    <>
-      {tab === 'Création' && (
-        <div>
-          <div style={{ marginBottom: 26 }}>
-            <div style={{ color: T.violet, fontSize: 11, fontWeight: 900, letterSpacing: '.14em', textTransform: 'uppercase', marginBottom: 7 }}>CHOISIR UNE CATÉGORIE</div>
-            <h2 style={{ margin: 0, fontSize: 21, fontWeight: 950, color: T.text }}>Quelle tier list tu veux faire ?</h2>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(230px,1fr))', gap: 16 }}>
-            {CATEGORIES.map((cat, i) => (
-              <motion.div key={cat.id} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * .05 }}>
-                <CategoryCard cat={cat} isFavorite={isFav(cat.id)}
-                  onToggle={(id) => { const was = isFav(id); toggle(id); show(was ? 'Retiré des favoris' : 'Ajouté aux favoris ♥') }}
-                  onSelect={selectCat}
-                />
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {tab === 'Favoris' && (
-        <div>
-          <div style={{ marginBottom: 26 }}>
-            <div style={{ color: T.violet, fontSize: 11, fontWeight: 900, letterSpacing: '.14em', textTransform: 'uppercase', marginBottom: 7 }}>MES FAVORIS</div>
-            <h2 style={{ margin: 0, fontSize: 21, fontWeight: 950, color: T.text }}>Catégories sauvegardées</h2>
-          </div>
-          {favCats.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '56px 0', color: T.muted }}>
-              <div style={{ fontSize: 44, marginBottom: 16, opacity: .3 }}>♡</div>
-              <div style={{ fontWeight: 700, fontSize: 17, marginBottom: 8, color: T.text }}>Aucun favori pour l'instant</div>
-              <div style={{ fontSize: 13, marginBottom: 24 }}>Clique sur ♡ sur une catégorie pour la retrouver ici</div>
-              <button onClick={() => setTab('Création')} style={{
-                padding: '10px 24px', borderRadius: 10,
-                border: `1px solid ${T.borderPurple}`, background: 'rgba(155,89,182,.08)',
-                color: T.violet, fontWeight: 800, cursor: 'pointer', fontSize: 13,
-              }}>Voir les catégories</button>
-            </div>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(230px,1fr))', gap: 16 }}>
-              {favCats.map((cat, i) => (
-                <motion.div key={cat.id} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * .05 }}>
-                  <CategoryCard cat={cat} isFavorite
-                    onToggle={(id) => { toggle(id); show('Retiré des favoris') }}
-                    onSelect={selectCat}
-                  />
-                </motion.div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {tab === 'Partagées' && (
-        <div>
-          <div style={{ marginBottom: 26 }}>
-            <div style={{ color: T.violet, fontSize: 11, fontWeight: 900, letterSpacing: '.14em', textTransform: 'uppercase', marginBottom: 7 }}>TIER LISTS PUBLIQUES</div>
-            <h2 style={{ margin: 0, fontSize: 21, fontWeight: 950, color: T.text }}>Partagées avec la communauté</h2>
-          </div>
-          <ListsGrid lists={publicLists} emptyIcon="🌍" emptyText="Aucune tier list publiée"
-            emptyDesc="Crée une tier list et publie-la pour qu'elle apparaisse ici"
-            onTabSwitch={() => setTab('Création')} />
-        </div>
-      )}
-
-      {tab === 'Historique' && (
-        <div>
-          <div style={{ marginBottom: 26 }}>
-            <div style={{ color: T.violet, fontSize: 11, fontWeight: 900, letterSpacing: '.14em', textTransform: 'uppercase', marginBottom: 7 }}>MON HISTORIQUE</div>
-            <h2 style={{ margin: 0, fontSize: 21, fontWeight: 950, color: T.text }}>Mes tier lists sauvegardées</h2>
-          </div>
-          <ListsGrid lists={myLists} emptyIcon="📋" emptyText="Aucune tier list sauvegardée"
-            emptyDesc="Crée et sauvegarde une tier list pour la retrouver ici"
-            onTabSwitch={() => setTab('Création')} />
-        </div>
-      )}
-    </>
-  )
 
   return (
-    <div style={{ minHeight: '100vh', background: T.bg, color: T.text }}>
-      {/* Atmospheric bg */}
+    <motion.div
+      ref={isDragOverlay ? undefined : setNodeRef}
+      {...(isDragOverlay ? {} : { ...listeners, ...attributes })}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      animate={isDragOverlay ? { scale:1.08, rotate:2 } : { scale:1 }}
+      whileHover={isDragOverlay ? {} : { scale:1.07, y:-3 }}
+      transition={{ type:'spring', stiffness:300, damping:22 }}
+      style={{
+        width:W, height:H, borderRadius:10, overflow:'hidden', flexShrink:0,
+        cursor: isDragging ? 'grabbing' : 'grab',
+        position:'relative',
+        opacity: isDragging && !isDragOverlay ? 0.3 : 1,
+        transform: transform && !isDragOverlay ? `translate3d(${transform.x}px,${transform.y}px,0)` : undefined,
+        boxShadow: hovered || isDragOverlay
+          ? '0 8px 30px rgba(0,0,0,.7), 0 0 0 1.5px rgba(255,255,255,.22)'
+          : '0 2px 10px rgba(0,0,0,.5)',
+        userSelect:'none',
+        zIndex: isDragging && !isDragOverlay ? 1000 : 'auto',
+      }}
+    >
+      {imgErr ? (
+        <div style={{
+          width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', padding:6,
+          background:`linear-gradient(135deg,#1a1a2e,#16213e)`, textAlign:'center',
+        }}>
+          <span style={{ fontSize:9, color:'rgba(255,255,255,.5)', fontWeight:600, lineHeight:1.3 }}>{item?.name}</span>
+        </div>
+      ) : (
+        <img src={imgSrc} alt={item?.name} onError={handleError}
+          style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }} draggable={false} />
+      )}
+
       <div style={{
-        position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0,
-        background: `
-          radial-gradient(ellipse 85% 55% at 50% -5%, rgba(155,89,182,0.16) 0%, transparent 60%),
-          radial-gradient(ellipse 40% 30% at 88% 70%, rgba(166,108,255,0.05) 0%, transparent 50%)
-        `,
-      }} />
+        position:'absolute', inset:0,
+        background: hovered
+          ? 'linear-gradient(to top,rgba(0,0,0,.92) 55%,rgba(0,0,0,.08) 100%)'
+          : 'linear-gradient(to top,rgba(0,0,0,.80) 38%,transparent 100%)',
+        transition:'background .18s',
+      }}>
+        <div style={{ position:'absolute', bottom:0, left:0, right:0, padding:'5px 5px 4px' }}>
+          <div style={{
+            fontSize: hovered ? 9.5 : 9, fontWeight:700, color:'#fff', lineHeight:1.25,
+            overflow:'hidden', textOverflow:'ellipsis',
+            display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical',
+            transition:'font-size .18s',
+          }}>
+            {item?.name}
+          </div>
+          {hovered && <div style={{ fontSize:8, color:'rgba(255,255,255,.45)', marginTop:2 }}>{item?.year}</div>}
+        </div>
+      </div>
 
-      <Toast msg={msg} />
+      {hovered && (
+        <motion.div
+          initial={{ opacity:0, x:-80 }} animate={{ opacity:[0,.4,0], x:['-100%','200%'] }}
+          transition={{ duration:.55 }}
+          style={{ position:'absolute', inset:0, pointerEvents:'none',
+            background:'linear-gradient(105deg,transparent 40%,rgba(255,255,255,.22) 50%,transparent 60%)' }}
+        />
+      )}
+    </motion.div>
+  )
+}
 
-      <AnimatePresence mode="wait">
-        {view === 'landing' && (
-          <motion.div key="landing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            style={{ position: 'relative', zIndex: 1, paddingTop: 80 }}
-          >
-            <MainPanel
-              leftCard={<TierCreatorCard draft={draft} favCount={favs.length} />}
-              rightPanel={<TierMainInfo onCreate={create} onFavs={goFavs} onResume={resume} draft={draft} catsUsed={catsUsed} />}
-              tab={tab}
-              setTab={(t) => {
-                if (t === 'Créer sa Tier List') { create(); return }
-                setTab(t)
-              }}
-              tabsRef={tabsRef} isMobile={isMobile}
-            >
-              {tabContent}
-            </MainPanel>
-          </motion.div>
+// ── Tier row ──────────────────────────────────────────────────────────────────
+
+function TierRow({ tier, items, allById }) {
+  const { isOver, setNodeRef } = useDroppable({ id: tier.id })
+  return (
+    <div style={{
+      display:'flex', alignItems:'stretch',
+      borderBottom:'1px solid rgba(255,255,255,.05)', minHeight:96,
+      background: isOver ? 'rgba(255,255,255,.04)' : 'transparent',
+      transition:'background .2s',
+    }}>
+      <div style={{
+        width:76, flexShrink:0, background:tier.bg,
+        display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:3,
+        boxShadow: isOver ? `0 0 22px ${tier.glow}` : 'none',
+        transition:'box-shadow .25s', position:'relative', overflow:'hidden',
+      }}>
+        <div style={{ position:'absolute', top:0, bottom:0, width:1, left:0, background:`linear-gradient(to bottom,transparent,${tier.color}88,transparent)` }}/>
+        <span style={{ fontSize: typeof tier.icon === 'string' ? 16 : 12, lineHeight:1 }}>{tier.icon}</span>
+        <span style={{
+          fontSize: tier.label.length>2 ? 10 : 22, fontWeight:900, color:'#fff', lineHeight:1,
+          textShadow:`0 0 18px ${tier.glow}`, letterSpacing: tier.label.length>2 ? '.04em' : '-.01em',
+          fontFamily:'serif',
+        }}>{tier.label}</span>
+      </div>
+      <div ref={setNodeRef} style={{
+        flex:1, display:'flex', flexWrap:'wrap', gap:6, padding:'8px 12px',
+        alignContent:'flex-start', alignItems:'flex-start', minHeight:96,
+        outline: isOver ? `2px dashed ${tier.color}88` : '2px dashed transparent',
+        outlineOffset:-4, borderRadius:4, transition:'outline .2s', position:'relative',
+      }}>
+        {items.length===0 && !isOver && (
+          <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center',
+            color:'rgba(255,255,255,.10)', fontSize:12, pointerEvents:'none' }}>
+            Glisse ici
+          </div>
         )}
+        {items.map(id => <ItemCard key={id} itemId={id} allById={allById} compact/>)}
+      </div>
+    </div>
+  )
+}
 
-        {view === 'creating' && (
-          <motion.div key="creating" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <Builder
-              cat={selCat} initDraft={draft} fromDraft={fromDraft}
-              onBack={() => setView('landing')}
-              saveDraft={save} clearDraft={clear} toast={show} displayName={displayName}
-            />
-          </motion.div>
+// ── Pool ──────────────────────────────────────────────────────────────────────
+
+function ItemPool({ items, allById, favorites, onToggleFav, search, onSearch, genre, onGenre, currentType }) {
+  const { isOver, setNodeRef } = useDroppable({ id:'pool' })
+  const genres = useMemo(() => ['Tous', ...new Set(currentType.items.flatMap(a => a.genres || []))], [currentType])
+
+  const filtered = useMemo(() => {
+    const fav  = items.filter(id => favorites.includes(id))
+    const rest = items.filter(id => !favorites.includes(id))
+    const q = search.toLowerCase()
+    return [...fav, ...rest].filter(id => {
+      const a = allById[id]; if (!a) return false
+      const mq = !q || a.name.toLowerCase().includes(q) || (a.sub||'').toLowerCase().includes(q)
+      const mg = genre==='Tous' || (a.genres||[]).includes(genre)
+      return mq && mg
+    })
+  }, [items, favorites, search, genre, allById])
+
+  return (
+    <div style={{ background:'rgba(0,0,0,.55)', backdropFilter:'blur(20px)', borderTop:'1px solid rgba(255,255,255,.07)' }}>
+      <div style={{ display:'flex', alignItems:'center', gap:10, padding:'9px 14px', borderBottom:'1px solid rgba(255,255,255,.05)', flexWrap:'wrap' }}>
+        <span style={{ fontSize:11, fontWeight:800, letterSpacing:'.12em', color:'rgba(255,255,255,.4)', textTransform:'uppercase', whiteSpace:'nowrap' }}>
+          {currentType.icon} Pool · {filtered.length}
+        </span>
+        <div style={{ position:'relative', flex:'1 1 140px', minWidth:110, maxWidth:240 }}>
+          <Search size={11} style={{ position:'absolute', left:8, top:'50%', transform:'translateY(-50%)', color:'rgba(255,255,255,.3)' }}/>
+          <input value={search} onChange={e=>onSearch(e.target.value)} placeholder="Rechercher…"
+            style={{ width:'100%', height:30, paddingLeft:26, paddingRight:10, background:'rgba(255,255,255,.06)',
+              border:'1px solid rgba(255,255,255,.08)', borderRadius:8, color:'#fff', fontSize:12, outline:'none' }}/>
+          {search && <button onClick={()=>onSearch('')} style={{ position:'absolute',right:6,top:'50%',transform:'translateY(-50%)',
+            background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,.4)',padding:0 }}><X size={11}/></button>}
+        </div>
+        <div style={{ display:'flex', gap:4, flexWrap:'wrap' }}>
+          {genres.map(g => (
+            <button key={g} onClick={()=>onGenre(g)} style={{
+              padding:'2px 9px', borderRadius:100, border:'none', cursor:'pointer',
+              fontSize:10, fontWeight:700,
+              background: genre===g ? '#FF1744' : 'rgba(255,255,255,.07)',
+              color: genre===g ? '#fff' : 'rgba(255,255,255,.4)',
+              transition:'all .15s',
+            }}>{g}</button>
+          ))}
+        </div>
+      </div>
+      <div ref={setNodeRef} style={{
+        display:'flex', flexWrap:'wrap', gap:7, padding:'9px 13px',
+        overflowY:'auto', maxHeight:250,
+        outline: isOver ? '2px dashed rgba(255,255,255,.22)' : '2px dashed transparent',
+        outlineOffset:-4, borderRadius:6,
+        scrollbarWidth:'thin', scrollbarColor:'rgba(255,255,255,.1) transparent',
+      }}>
+        {filtered.map(id => (
+          <div key={id} style={{ position:'relative' }}>
+            <ItemCard itemId={id} allById={allById}/>
+            <button onClick={()=>onToggleFav(id)} style={{
+              position:'absolute', top:4, right:4, width:20, height:20, borderRadius:'50%',
+              background: favorites.includes(id) ? 'rgba(255,215,0,.85)' : 'rgba(0,0,0,.55)',
+              border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
+              transition:'all .18s',
+            }}>
+              <Star size={10} fill={favorites.includes(id)?'#fff':'none'} color={favorites.includes(id)?'#fff':'rgba(255,255,255,.6)'}/>
+            </button>
+          </div>
+        ))}
+        {!filtered.length && (
+          <div style={{ color:'rgba(255,255,255,.22)', fontSize:13, padding:'18px 0', width:'100%', textAlign:'center' }}>
+            Aucun résultat
+          </div>
         )}
-      </AnimatePresence>
+      </div>
+    </div>
+  )
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+
+function Toast({ msg, onDone }) {
+  useEffect(() => { const t=setTimeout(onDone,2400); return ()=>clearTimeout(t) }, [onDone])
+  return (
+    <motion.div initial={{opacity:0,y:28,scale:.9}} animate={{opacity:1,y:0,scale:1}} exit={{opacity:0,y:16}}
+      style={{
+        position:'fixed',bottom:30,left:'50%',transform:'translateX(-50%)',zIndex:99998,
+        background:'rgba(18,18,28,.96)',backdropFilter:'blur(16px)',
+        border:'1px solid rgba(255,255,255,.12)',borderRadius:12,
+        padding:'9px 20px',color:'#fff',fontSize:13,fontWeight:600,
+        boxShadow:'0 8px 32px rgba(0,0,0,.5)',whiteSpace:'nowrap',
+      }}>
+      {msg}
+    </motion.div>
+  )
+}
+
+// ── Main Page ─────────────────────────────────────────────────────────────────
+
+export default function TierListPage() {
+  const [selectedType, setSelectedType] = useState(null)
+  const [board,        setBoard]        = useState(null)
+  const [favorites,    setFavorites]    = useState([])
+  const [title,        setTitle]        = useState('Ma Tier List 🔥')
+  const [editTitle,    setEditTitle]    = useState(false)
+  const [tmpTitle,     setTmpTitle]     = useState(title)
+  const [search,       setSearch]       = useState('')
+  const [genre,        setGenre]        = useState('Tous')
+  const [activeId,     setActiveId]     = useState(null)
+  const [toast,        setToast]        = useState(null)
+  const boardRef   = useRef(null)
+  const titleRef   = useRef(null)
+
+  const allById = useMemo(() =>
+    selectedType ? Object.fromEntries(selectedType.items.map(a => [a.id, a])) : {}
+  , [selectedType])
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint:{ distance:6 } }),
+    useSensor(TouchSensor,   { activationConstraint:{ delay:250, tolerance:6 } }),
+  )
+
+  const handleTypeSelect = (type) => {
+    setSelectedType(type)
+    setBoard(initBoard(type.items))
+    setTitle(`Ma Tier List ${type.icon} ${type.label}`)
+    setFavorites([])
+    setSearch('')
+    setGenre('Tous')
+  }
+
+  const findContainer = useCallback((id) => {
+    if (!board) return null
+    for (const [k, ids] of Object.entries(board)) if (ids.includes(id)) return k
+    return null
+  }, [board])
+
+  const handleDragStart = ({ active }) => setActiveId(active.id)
+
+  const handleDragEnd = ({ active, over }) => {
+    setActiveId(null)
+    if (!over || !board) return
+    const dest = over.id
+    const isContainer = [...TIERS.map(t=>t.id),'pool'].includes(dest)
+    if (!isContainer) return
+    const src = findContainer(active.id)
+    if (!src || src===dest) return
+    setBoard(prev => {
+      const next = {}
+      for (const k of Object.keys(prev))
+        next[k] = k===src ? prev[k].filter(id=>id!==active.id)
+          : k===dest ? [...prev[k], active.id] : [...prev[k]]
+      return next
+    })
+    if (dest==='s') fireSTierConfetti()
+  }
+
+  const save = () => {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ board, favorites, title, typeId: selectedType?.id })); setToast('✅ Sauvegardé !') }
+    catch { setToast('❌ Erreur') }
+  }
+
+  const load = () => {
+    try {
+      const s = JSON.parse(localStorage.getItem(STORAGE_KEY)||'null')
+      if (s?.board && s?.typeId) {
+        const type = TIER_TYPES.find(t=>t.id===s.typeId)
+        if (type) { setSelectedType(type); setBoard(s.board); setFavorites(s.favorites||[]); setTitle(s.title||title) }
+      }
+      setToast('📂 Chargé !')
+    } catch { setToast('❌ Aucune sauvegarde') }
+  }
+
+  const reset = () => { if (selectedType) { setBoard(initBoard(selectedType.items)); setFavorites([]); setToast('🔄 Reset !') } }
+
+  const randomize = () => {
+    if (!selectedType) return
+    const all = [...selectedType.items.map(a=>a.id)].sort(()=>Math.random()-.5)
+    const sizes = [2,3,4,5,5,4,3,2]
+    const newB = {}; let i=0
+    TIERS.forEach((t,j) => { newB[t.id]=all.slice(i,i+sizes[j]); i+=sizes[j] })
+    newB.pool=all.slice(i)
+    setBoard(newB); setToast('🎲 Randomisé !')
+  }
+
+  const exportPng = async () => {
+    if (!boardRef.current) return
+    setToast('⏳ Export…')
+    try {
+      const url = await toPng(boardRef.current, { backgroundColor:'#080810', pixelRatio:2 })
+      const a = document.createElement('a'); a.download=`tierlist.png`; a.href=url; a.click()
+      setToast('🖼️ PNG exporté !')
+    } catch { setToast('❌ Export échoué') }
+  }
+
+  const BG = {
+    position:'fixed', inset:0, zIndex:0,
+    background:'radial-gradient(ellipse 110% 80% at 20% 0%,rgba(140,44,64,.10) 0%,transparent 52%),radial-gradient(ellipse 100% 70% at 82% 100%,rgba(182,145,61,.08) 0%,transparent 48%),radial-gradient(ellipse 70% 42% at 50% 5%,rgba(123,106,168,.08) 0%,transparent 64%),#080810',
+  }
+
+  return (
+    <div style={{ position:'relative', minHeight:'100vh', fontFamily:"'Inter',system-ui,sans-serif", color:'#fff' }}>
+      <div style={BG}/>
+      <ParticleCanvas/>
+
+      <div style={{ position:'relative', zIndex:1, display:'flex', flexDirection:'column', minHeight:'100vh', paddingTop:72 }}>
+        <AnimatePresence mode="wait">
+          {!selectedType ? (
+            <TypeSelector key="select" onSelect={handleTypeSelect}/>
+          ) : (
+            <motion.div key="tierlist" initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }}
+              transition={{ duration:.35 }} style={{ display:'flex', flexDirection:'column', flex:1 }}>
+
+              {/* Toolbar */}
+              <header style={{
+                position:'sticky', top:72, zIndex:50,
+                background:'rgba(8,8,16,.84)', backdropFilter:'blur(24px)',
+                borderBottom:'1px solid rgba(255,255,255,.07)',
+                padding:'0 16px', display:'flex', alignItems:'center', gap:10, height:54, flexWrap:'wrap',
+              }}>
+                {/* Back */}
+                <motion.button whileHover={{scale:1.06}} whileTap={{scale:.96}}
+                  onClick={()=>setSelectedType(null)}
+                  style={{ display:'flex',alignItems:'center',gap:5,background:'rgba(255,255,255,.06)',
+                    border:'1px solid rgba(255,255,255,.10)',borderRadius:8,padding:'5px 10px',
+                    color:'rgba(255,255,255,.6)',fontSize:11,fontWeight:700,cursor:'pointer' }}>
+                  <ArrowLeft size={12}/> Changer
+                </motion.button>
+
+                {/* Type badge */}
+                <div style={{ display:'flex',alignItems:'center',gap:6,padding:'4px 10px',borderRadius:100,
+                  background:`${selectedType.color}15`, border:`1px solid ${selectedType.color}30`,
+                  fontSize:11,fontWeight:700, color:selectedType.color, flexShrink:0 }}>
+                  {selectedType.icon} {selectedType.label}
+                </div>
+
+                {/* Title */}
+                <div style={{ flex:1, minWidth:120, display:'flex', alignItems:'center', gap:6 }}>
+                  {editTitle ? (
+                    <>
+                      <input ref={titleRef} value={tmpTitle} onChange={e=>setTmpTitle(e.target.value)}
+                        onKeyDown={e=>{ if(e.key==='Enter'){setTitle(tmpTitle);setEditTitle(false)} if(e.key==='Escape') setEditTitle(false) }}
+                        style={{ background:'rgba(255,255,255,.08)',border:'1px solid rgba(255,255,255,.2)',
+                          borderRadius:8,padding:'4px 10px',color:'#fff',fontSize:14,fontWeight:700,outline:'none',maxWidth:280 }}/>
+                      <button onClick={()=>{setTitle(tmpTitle);setEditTitle(false)}} style={{ background:'#22c55e22',border:'1px solid #22c55e44',borderRadius:6,padding:'4px 8px',cursor:'pointer',color:'#22c55e' }}><Check size={12}/></button>
+                      <button onClick={()=>setEditTitle(false)} style={{ background:'rgba(255,255,255,.05)',border:'1px solid rgba(255,255,255,.1)',borderRadius:6,padding:'4px 8px',cursor:'pointer',color:'rgba(255,255,255,.4)' }}><X size={12}/></button>
+                    </>
+                  ) : (
+                    <button onClick={()=>{setTmpTitle(title);setEditTitle(true);setTimeout(()=>titleRef.current?.focus(),40)}}
+                      style={{ display:'flex',alignItems:'center',gap:6,background:'none',border:'none',cursor:'pointer',
+                        color:'#fff',fontSize:14,fontWeight:800,padding:0 }}>
+                      {title} <Edit3 size={11} style={{ color:'rgba(255,255,255,.3)' }}/>
+                    </button>
+                  )}
+                </div>
+
+                {/* Actions */}
+                <div style={{ display:'flex', gap:8 }}>
+                  {[
+                    {icon:<Download size={12}/>, label:'PNG',   action:exportPng, col:'#b6913d', filled:true},
+                    {icon:<RotateCcw size={12}/>,label:'Reset', action:reset,     col:'#a0445c', filled:false},
+                  ].map(b => (
+                    <motion.button key={b.label} onClick={b.action} whileHover={{scale:1.05,y:-1}} whileTap={{scale:.96}}
+                      style={{ display:'flex',alignItems:'center',gap:5,padding:'6px 12px',borderRadius:10,
+                        background:b.filled ? `${b.col}18` : 'rgba(255,255,255,.04)',
+                        border:`1px solid ${b.filled ? b.col + '35' : 'rgba(255,255,255,.10)'}`,
+                        color:b.filled ? b.col : 'rgba(255,255,255,.78)',
+                        fontSize:11,fontWeight:700,cursor:'pointer',whiteSpace:'nowrap' }}>
+                      {b.icon}
+                      <span style={{ display: window.innerWidth < 700 ? 'none' : 'inline' }}>{b.label}</span>
+                    </motion.button>
+                  ))}
+                </div>
+              </header>
+
+              {/* DnD */}
+              <DndContext sensors={sensors} collisionDetection={closestCenter}
+                onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+
+                {/* Tier board */}
+                <div ref={boardRef} style={{ background:'rgba(8,8,16,.45)', backdropFilter:'blur(12px)', borderBottom:'1px solid rgba(255,255,255,.05)' }}>
+                  {board && TIERS.map(tier => (
+                    <TierRow key={tier.id} tier={tier} items={board[tier.id]||[]} allById={allById}/>
+                  ))}
+                </div>
+
+                {/* Pool */}
+                {board && (
+                  <ItemPool items={board.pool||[]} allById={allById}
+                    favorites={favorites} onToggleFav={id=>setFavorites(p=>p.includes(id)?p.filter(f=>f!==id):[...p,id])}
+                    search={search} onSearch={setSearch} genre={genre} onGenre={setGenre}
+                    currentType={selectedType}/>
+                )}
+
+                <DragOverlay>
+                  {activeId ? <ItemCard itemId={activeId} allById={allById} isDragOverlay/> : null}
+                </DragOverlay>
+              </DndContext>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {toast && <Toast key={toast} msg={toast} onDone={()=>setToast(null)}/>}
+        </AnimatePresence>
+      </div>
     </div>
   )
 }
