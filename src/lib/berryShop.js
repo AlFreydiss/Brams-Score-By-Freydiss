@@ -297,6 +297,11 @@ export async function fetchBerryShopState(discordId) {
 
 export async function purchaseShopItem(itemId) {
   if (!supabase) return { error: { message: 'Supabase non configuré.' } }
+
+  // Vérification auth côté client avant d'envoyer la requête
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: { message: 'Connexion requise pour acheter.' } }
+
   const idempotencyKey = `${itemId}-${crypto.randomUUID()}`
   const { data, error } = await supabase.rpc('purchase_shop_item', {
     p_item_id: itemId,
@@ -316,5 +321,25 @@ export async function fetchAdminShopData() {
 
 export async function upsertShopItem(item) {
   if (!supabase) return { error: { message: 'Supabase non configuré.' } }
-  return supabase.from('shop_items').upsert(item).select().single()
+
+  // Passe par l'API sécurisée /api/shop-admin côté serveur
+  // (la vérification staff est faite côté serveur, pas seulement côté front)
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.access_token) return { error: { message: 'Session expirée.' } }
+
+  try {
+    const res = await fetch('/api/shop-admin?action=upsert', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify(item),
+    })
+    const json = await res.json()
+    if (!res.ok || !json.success) return { error: { message: json.error || 'Erreur serveur' } }
+    return { data: json.item, error: null }
+  } catch (err) {
+    return { error: { message: err?.message || 'Erreur réseau' } }
+  }
 }
