@@ -716,8 +716,8 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
         <AHStars />
         <AHScanLine />
 
-        <div style={{ position:'relative', zIndex:2, padding:'52px 24px 80px' }}>
-          <div style={{ maxWidth:1080, margin:'0 auto' }}>
+        <div style={{ position:'relative', zIndex:2, padding:'52px 0 80px' }}>
+          <div style={{ maxWidth:1080, margin:'0 auto', padding:'0 24px' }}>
 
             {/* Intro */}
             <div style={{ textAlign:'center', marginBottom:52 }}>
@@ -819,9 +819,12 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
               </div>
             </div>
 
-            {/* Marquee gallery (default) or filtered grid */}
-            {isFiltering ? (
-              visibleAnimes.length > 0 ? (
+          </div>
+
+          {/* Marquee gallery (default) or filtered grid — outside maxWidth container for true full-bleed */}
+          {isFiltering ? (
+            <div style={{ maxWidth:1080, margin:'0 auto', padding:'0 24px' }}>
+              {visibleAnimes.length > 0 ? (
                 <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(300px, 1fr))', gap:20 }}>
                   {visibleAnimes.map((anime, i) => (
                     <AnimeCard key={anime.id} anime={anime} index={i} onClick={() => handleClick(anime.id)} />
@@ -839,24 +842,24 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
                 }}>
                   Aucun anime trouvé
                 </div>
-              )
-            ) : (
-              <div style={{ margin:'0 -24px' }}>
-                <div style={{ textAlign:'center', marginBottom:22, padding:'0 24px', fontSize:11, color:'rgba(255,255,255,0.22)', fontWeight:700, letterSpacing:'.10em', textTransform:'uppercase' }}>
-                  ✦ Galerie cinématique · survole pour pause · clique pour accéder
-                </div>
-                {marqueeRows.map((row, i) => (
-                  <AnimeMarqueeRow
-                    key={i}
-                    animes={row.animes}
-                    direction={row.direction}
-                    speed={row.speed}
-                    onCardClick={handleClick}
-                  />
-                ))}
+              )}
+            </div>
+          ) : (
+            <div>
+              <div style={{ textAlign:'center', marginBottom:22, padding:'0 24px', fontSize:11, color:'rgba(255,255,255,0.22)', fontWeight:700, letterSpacing:'.10em', textTransform:'uppercase' }}>
+                ✦ Galerie cinématique · survole pour pause · clique pour accéder
               </div>
-            )}
-          </div>
+              {marqueeRows.map((row, i) => (
+                <AnimeMarqueeRow
+                  key={i}
+                  animes={row.animes}
+                  direction={row.direction}
+                  speed={row.speed}
+                  onCardClick={handleClick}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
