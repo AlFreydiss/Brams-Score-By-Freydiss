@@ -498,23 +498,43 @@ function RewardModal({ item, balance, busy, message, onClose, onConfirm }) {
 function BerryEarningGuide() {
   return (
     <div style={{ maxWidth:1120, margin:'0 auto 60px', padding:'0 20px' }}>
-      <div style={{ textAlign:'center', marginBottom:28 }}>
+      <div style={{ textAlign:'center', marginBottom:36 }}>
         <div style={{ fontSize:10, fontWeight:700, letterSpacing:'.18em', color:GOLD, textTransform:'uppercase', marginBottom:10 }}>Sources</div>
-        <h2 style={{ fontSize:'clamp(24px,4vw,36px)', fontWeight:900, color:'#fff', margin:0 }}>Comment gagner des Berries ?</h2>
+        <h2 style={{ fontSize:'clamp(24px,4vw,38px)', fontWeight:900, color:'#fff', margin:'0 0 8px' }}>Comment gagner des Berries ?</h2>
+        <div style={{ fontSize:13, color:'rgba(255,255,255,0.35)' }}>Sois actif sur le Discord — chaque action compte.</div>
       </div>
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(170px, 1fr))', gap:12 }}>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(185px, 1fr))', gap:14 }}>
         {BERRY_SOURCES.map((s, i) => (
           <div key={i} style={{
-            background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.07)',
-            borderRadius:14, padding:'18px 16px', textAlign:'center',
-            transition:'all .2s', cursor:'default',
+            background: `linear-gradient(155deg, ${s.color}14 0%, rgba(10,12,18,0.97) 100%)`,
+            border: `1px solid ${s.color}20`,
+            borderTop: `2px solid ${s.color}55`,
+            borderRadius: 16,
+            padding: '22px 18px',
+            transition: 'all .22s ease',
+            cursor: 'default',
+            boxShadow: `0 4px 20px rgba(0,0,0,0.35)`,
+            animation: `bsFadeUp .5s ${i * 0.06}s ease both`,
           }}
-            onMouseEnter={e => { e.currentTarget.style.background=`${s.color}0d`; e.currentTarget.style.borderColor=`${s.color}35` }}
-            onMouseLeave={e => { e.currentTarget.style.background='rgba(255,255,255,0.03)'; e.currentTarget.style.borderColor='rgba(255,255,255,0.07)' }}
+            onMouseEnter={e => { e.currentTarget.style.transform='translateY(-5px)'; e.currentTarget.style.boxShadow=`0 18px 44px rgba(0,0,0,0.45), 0 0 0 1px ${s.color}30`; e.currentTarget.style.borderColor=`${s.color}44` }}
+            onMouseLeave={e => { e.currentTarget.style.transform=''; e.currentTarget.style.boxShadow='0 4px 20px rgba(0,0,0,0.35)'; e.currentTarget.style.borderColor=`${s.color}20` }}
           >
-            <div style={{ fontSize:28, marginBottom:10 }}>{s.icon}</div>
-            <div style={{ fontSize:12.5, fontWeight:700, color:'#fff', marginBottom:4 }}>{s.title}</div>
-            <div style={{ fontSize:10.5, color:'rgba(255,255,255,0.40)', lineHeight:1.5 }}>{s.desc}</div>
+            <div style={{
+              width: 56, height: 56, borderRadius: 14,
+              background: `linear-gradient(135deg, ${s.color}22 0%, ${s.color}0d 100%)`,
+              border: `1px solid ${s.color}33`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 26, marginBottom: 18,
+              boxShadow: `0 0 16px ${s.color}22`,
+            }}>
+              {s.icon}
+            </div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#fff', marginBottom: 6, letterSpacing: '-.01em' }}>{s.title}</div>
+            <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.42)', lineHeight: 1.6 }}>{s.desc}</div>
+            <div style={{ display:'inline-flex', alignItems:'center', gap:5, marginTop:12, padding:'3px 10px', borderRadius:100, background:`${s.color}12`, border:`1px solid ${s.color}28` }}>
+              <span style={{ width:5, height:5, borderRadius:'50%', background:s.color, display:'inline-block', boxShadow:`0 0 6px ${s.color}` }} />
+              <span style={{ fontSize:9, fontWeight:800, letterSpacing:'.10em', color:s.color, textTransform:'uppercase' }}>Actif</span>
+            </div>
           </div>
         ))}
       </div>

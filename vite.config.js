@@ -78,8 +78,16 @@ const animePlugin = {
   },
 }
 
+const pruneHeavyPublicAssets = {
+  name: 'prune-heavy-public-assets',
+  closeBundle() {
+    const heavyDir = path.join(__dirname, 'dist', 'Violet Evergarden')
+    fs.rmSync(heavyDir, { recursive: true, force: true })
+  },
+}
+
 export default defineConfig({
-  plugins: [react(), animePlugin],
+  plugins: [react(), animePlugin, pruneHeavyPublicAssets],
   build: {
     target:               'es2020',
     chunkSizeWarningLimit: 3000,

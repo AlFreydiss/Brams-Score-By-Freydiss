@@ -317,10 +317,10 @@ export default function Hero() {
         <div className="hero-haki-line hero-haki-line-b" />
       </div>
 
-      <div style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: 1320, margin: '0 auto', padding: isMobile ? '0 20px' : '0 48px' }}>
+      <div style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: 1400, margin: '0 auto', padding: isMobile ? '0 20px' : '0 48px' }}>
         <div style={{
           display: 'grid',
-          gridTemplateColumns: isNarrow ? '1fr' : 'minmax(0,1fr) clamp(390px, 34vw, 470px)',
+          gridTemplateColumns: isNarrow ? '1fr' : 'minmax(0,7fr) minmax(0,5fr)',
           alignItems: 'center',
           gap: isNarrow ? 40 : 56,
         }}>
@@ -453,7 +453,7 @@ export default function Hero() {
 
           {/* ── Right column — UnifiedSidebar ── */}
           {!isNarrow && (
-            <div style={{ position: 'sticky', top: 104, justifySelf: 'end', transform: 'translateY(10px)' }}>
+            <div style={{ position: 'sticky', top: 104, transform: 'translateY(10px)' }}>
               {/* Aura derrière le sidebar */}
               <div style={{
                 position: 'absolute', inset: '-40px -10px', zIndex: 0, pointerEvents: 'none',

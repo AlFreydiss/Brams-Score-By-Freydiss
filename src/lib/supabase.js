@@ -59,15 +59,49 @@ export async function fetchStats() {
 // â”€â”€ Auth helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function fetchMemberProfile(discordId) {
-  if (!supabase) return null
-  const { data, error } = await callTopClassement(500, 'week')
-  if (error || !data) return null
-  const member = data.find(m => String(m.uid) === String(discordId))
-  if (!member) return null
+  if (!supabase) { console.warn('[profile] supabase null — env vars manquantes'); return null }
+  const id = String(discordId)
+
+  // ── 1. Leaderboard RPC (gives vocal_h + rank) ──────────────────────────────
+  let board = null
+  const rpc1 = await supabase.rpc('top_classement', { p_limit: 500, p_period: 'week' })
+  console.log('[profile] rpc1', { err: rpc1.error?.message, rows: rpc1.data?.length })
+  if (!rpc1.error && rpc1.data?.length) {
+    board = rpc1.data
+  } else {
+    const rpc2 = await supabase.rpc('top_classement', { p_limit: 500 })
+    console.log('[profile] rpc2 (legacy)', { err: rpc2.error?.message, rows: rpc2.data?.length })
+    if (!rpc2.error && rpc2.data?.length) board = rpc2.data
+  }
+
+  if (board) {
+    // uid field might be named differently depending on RPC version
+    const idx = board.findIndex(m =>
+      String(m.uid ?? m.user_id ?? m.discord_id ?? '') === id
+    )
+    console.log('[profile] board match idx', idx, 'for id', id, 'sample uid', board[0]?.uid ?? board[0]?.user_id)
+    if (idx !== -1) return { ...board[idx], uid: id, rank: idx + 1, total: board.length }
+  }
+
+  // ── 2. Direct users table lookup ────────────────────────────────────────────
+  console.log('[profile] falling back to direct users table query')
+  const { data: user, error: userErr } = await supabase
+    .from('users')
+    .select('uid, data')
+    .eq('uid', id)
+    .maybeSingle()
+  console.log('[profile] direct query', { err: userErr?.message, found: !!user })
+
+  if (!user) return null
+  const d = user.data || {}
   return {
-    ...member,
-    rank: parseInt(data.indexOf(member)) + 1,
-    total: data.length,
+    uid: id,
+    username: d.username || d.display_name || `Pirate #${id.slice(-5)}`,
+    avatar_url: d.avatar_url || d.avatar || null,
+    vocal_h: parseFloat(d.vocal_h || d.total_vocal_h || 0),
+    berrys: parseInt(d.berrys || d.balance || 0) || 0,
+    rank: board ? board.length + 1 : '?',
+    total: board ? board.length : '?',
   }
 }
 

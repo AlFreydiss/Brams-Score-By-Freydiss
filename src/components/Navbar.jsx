@@ -9,6 +9,8 @@ const NAV_LINKS = [
   { label: 'Classement',      href: '#classement', action: null,           gated: false, isRoute: false },
   { label: 'Équipages',       href: '/equipage',   action: null,           gated: false, isRoute: true  },
   { label: 'Wiki & Théories', href: '/wiki',       action: null,           gated: false, isRoute: true  },
+  { label: 'Blind Test',      href: '/blind-test', action: null,           gated: false, isRoute: true  },
+  { label: 'Tier List',       href: '/tier-list',  action: null,           gated: false, isRoute: true  },
   { label: 'Encyclopédie',    href: '#',           action: 'encyclopedie', gated: false, isRoute: false },
   { label: 'Animés & Scans',  href: '#',           action: 'anime-hub',    gated: true,  isRoute: false },
   { label: 'Blind Test',      href: '/blind-test', action: null,           gated: false, isRoute: true  },
@@ -133,9 +135,12 @@ function UserMenu({ displayName, avatarUrl, discordId, berryCount, onSignOut }) 
             { label: 'Équipages',     path: '/equipage'  },
             { label: 'Wiki',          path: '/wiki'      },
             { label: 'Théories',      path: '/theories'  },
+            { label: 'Animés & Scans', action: 'anime-hub' },
+            { label: 'Blind Test',    path: '/blind-test' },
+            { label: 'Tier List',     path: '/tier-list'  },
             { label: 'Boutique',      path: '/boutique'  },
             { label: 'Staff Panel',   path: '/staff'     },
-          ].filter(item => item.path).map((item) => (
+          ].filter(item => item.path || item.action).map((item) => (
             <button
               key={item.label}
               onClick={() => {

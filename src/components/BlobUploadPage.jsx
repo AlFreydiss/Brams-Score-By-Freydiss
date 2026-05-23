@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from 'react'
 
 const SERIES = [
+  { id: 'violet-evergarden', label: 'Violet Evergarden' },
   { id: 'tpn', label: 'The Promised Neverland' },
   { id: 'drs', label: 'Dr. Stone' },
   { id: 'jjk', label: 'Jujutsu Kaisen' },

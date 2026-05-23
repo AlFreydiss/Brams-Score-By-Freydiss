@@ -1,0 +1,50 @@
+{
+  "agents": {
+    "agent-1779344548799-f3us34": {
+      "agentId": "agent-1779344548799-f3us34",
+      "agentType": "tester",
+      "status": "idle",
+      "health": 1,
+      "taskCount": 0,
+      "config": {
+        "provider": "anthropic",
+        "task": "Support build, regression, and QA checks for brams-web-clone",
+        "timeout": 300
+      },
+      "createdAt": "2026-05-21T06:22:28.805Z",
+      "model": "haiku",
+      "modelRoutedBy": "router"
+    },
+    "agent-1779344548904-8ppl3l": {
+      "agentId": "agent-1779344548904-8ppl3l",
+      "agentType": "architect",
+      "status": "idle",
+      "health": 1,
+      "taskCount": 0,
+      "config": {
+        "provider": "anthropic",
+        "task": "Review architecture and plan changes for brams-web-clone React/Vercel project",
+        "timeout": 300
+      },
+      "createdAt": "2026-05-21T06:22:28.908Z",
+      "model": "opus",
+      "modelRoutedBy": "router"
+    },
+    "agent-1779344549091-h3v84t": {
+      "agentId": "agent-1779344549091-h3v84t",
+      "agentType": "coder",
+      "status": "idle",
+      "health": 1,
+      "taskCount": 0,
+      "config": {
+        "provider": "anthropic",
+        "task": "Support frontend implementation work in brams-web-clone React components and CSS",
+        "timeout": 300
+      },
+      "createdAt": "2026-05-21T06:22:29.095Z",
+      "model": "sonnet",
+      "modelRoutedBy": "router"
+    }
+  },
+  "version": "3.0.0"
+}
