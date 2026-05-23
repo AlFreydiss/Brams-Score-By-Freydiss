@@ -4,21 +4,42 @@ const ANIMES = [
   {
     id: 'onepiece',
     title: 'One Piece',
-    subtitle: 'Arc Egghead · VOSTFR',
+    subtitle: 'Arc Elbaf · En cours',
     emoji: '🏴‍☠️',
     color: '#e0524a',
     colorDark: '#7a1f1a',
-    coverImage: 'https://www.dexerto.fr/cdn-image/wp-content/uploads/sites/2/2026/04/02/luffy-one-piece-erbaf-calendrier-sortie-episodes.jpg?width=1200&quality=60&format=auto',
+    coverImage: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/op-egghead-thumbnails/E1086.jpg',
+    coverPosition: 'center top',
     genres: ['Aventure', 'Action', 'Shōnen'],
     description: "Monkey D. Luffy et son équipage sillonnent les mers à la recherche du légendaire trésor « One Piece » pour devenir Roi des Pirates.",
     stats: [
-      { label: 'Episodes', value: '70' },
-      { label: 'Arc', value: 'Egghead' },
-      { label: 'Statut', value: 'Disponible' },
+      { label: 'Épisodes', value: '1100+' },
+      { label: 'Arc actuel', value: 'Elbaf' },
+      { label: 'Statut', value: 'En cours' },
     ],
     action: '▶ Accéder',
     badge: 'À JOUR',
     badgeColor: '#34d399',
+  },
+  {
+    id: 'violet-evergarden',
+    title: 'Violet Evergarden',
+    subtitle: 'VF & VOSTFR · 13 épisodes',
+    emoji: '💜',
+    color: '#8b7cff',
+    colorDark: '#30255f',
+    coverImage: 'https://www.manga-news.com/public/images/dvd/violet-evergarden-anime-key.webp',
+    coverPosition: 'center center',
+    genres: ['Drame', 'Émotion', 'Josei'],
+    description: "Violet, ancienne soldate, devient Auto Memory Doll pour comprendre les sentiments humains et le sens des mots qu'elle a reçus.",
+    stats: [
+      { label: 'Épisodes', value: '13' },
+      { label: 'Audio', value: 'VF + JAP' },
+      { label: 'Statut', value: 'Disponible' },
+    ],
+    action: '▶ Accéder',
+    badge: 'VF + VOSTFR',
+    badgeColor: '#8b7cff',
   },
   {
     id: 'tpn',
@@ -28,6 +49,7 @@ const ANIMES = [
     color: '#6c5ce7',
     colorDark: '#2d1b8e',
     coverImage: 'https://a.storyblok.com/f/178900/678x960/b998a75a12/30b71f52a3fcad111ddf2f84aab4dad91631262181_main.jpg/m/filters:quality(95)format(webp)',
+    coverPosition: 'center top',
     genres: ['Thriller', 'Mystère', 'Shōnen'],
     description: "Emma, Norman et Ray vivent dans un orphelinat idyllique… jusqu'au jour où ils découvrent une vérité qui brise tout.",
     stats: [
@@ -47,6 +69,7 @@ const ANIMES = [
     color: '#00b894',
     colorDark: '#005c45',
     coverImage: 'https://images.squarespace-cdn.com/content/v1/5e90e8679180dd053f86571c/1607648759877-XA0OOQUYTHR5DPVRJY0K/keyvisual_notext.jpg',
+    coverPosition: 'center center',
     genres: ['Science-fiction', 'Aventure', 'Shōnen'],
     description: "Toute l'humanité est pétrifiée. Des millénaires plus tard, le génie Senku se réveille et décide de reconstruire la civilisation grâce à la science.",
     stats: [
@@ -66,6 +89,7 @@ const ANIMES = [
     color: '#c62828',
     colorDark: '#5a0a0a',
     coverImage: 'https://d28hgpri8am2if.cloudfront.net/book_images/onix/cvr9781974740819/jujutsu-kaisen-the-official-anime-guide-season-1-9781974740819_lg.jpg',
+    coverPosition: 'center top',
     genres: ['Action', 'Surnaturel', 'Shōnen'],
     description: "Yuji Itadori avale un doigt de Ryomen Sukuna, le roi des Fléaux. Condamné à mort, il rejoint l'École de sorcellerie de Jujutsu pour trouver les doigts restants.",
     stats: [
@@ -85,11 +109,12 @@ const ANIMES = [
     color: '#c9a227',
     colorDark: '#4a3205',
     coverImage: 'https://www.manga-news.com/public/images/dvd/Kingdom-anime-saison-3-visual-1.webp',
+    coverPosition: 'center center',
     genres: ['Action', 'Historique', 'Seinen'],
-    description: "Dans la Chine des Royaumes Combattants, Shin, un orphelin de guerre, rêve de devenir le plus grand général sous les cieux aux côtés du futur roi Ying Zheng.",
+    description: "Dans la Chine des Royaumes Combattants, Shin rêve de devenir le plus grand général sous les cieux aux côtés du futur roi Ying Zheng.",
     stats: [
       { label: 'Chapitres', value: '874' },
-      { label: 'Épisodes', value: '0' },
+      { label: 'Épisodes', value: '100+' },
       { label: 'Statut', value: 'Disponible' },
     ],
     action: '▶ Accéder',
@@ -104,15 +129,16 @@ const ANIMES = [
     color: '#546e7a',
     colorDark: '#1c313a',
     coverImage: 'https://www.manga-news.com/public/images/dvd/Attaque-des-Titans-s4-anime-visual.jpg',
+    coverPosition: 'center top',
     genres: ['Action', 'Drame', 'Shōnen'],
     description: "Eren Yeager découvre que les murs qui protègent l'humanité cachent un secret bien plus sombre que les Titans eux-mêmes.",
     stats: [
       { label: 'Chapitres', value: '81' },
       { label: 'Épisodes', value: '87' },
-      { label: 'Statut', value: 'Disponible' },
+      { label: 'Statut', value: 'Terminé' },
     ],
     action: '▶ Accéder',
-    badge: 'NOUVEAU',
+    badge: 'COMPLET',
     badgeColor: '#546e7a',
   },
   {
@@ -123,6 +149,7 @@ const ANIMES = [
     color: '#e85d27',
     colorDark: '#6b1f05',
     coverImage: 'https://storage.ghost.io/c/2b/7f/2b7f69fc-a243-4d2f-ae8e-db8312c6653a/content/images/size/w1200/2025/10/Demon-Slayer-en-421-c-1.png',
+    coverPosition: 'center top',
     genres: ['Action', 'Surnaturel', 'Shōnen'],
     description: "Tanjiro Kamado devient chasseur de démons après que sa famille est massacrée et sa sœur Nezuko transformée en démon.",
     stats: [
@@ -142,6 +169,7 @@ const ANIMES = [
     color: '#8e44ad',
     colorDark: '#3d0f5a',
     coverImage: 'https://static.wikia.nocookie.net/nanatsu-no-taizai/images/2/25/Nanatsu_no_Taizai_Anime_Fourth_Season_Poster.png/revision/latest?cb=20200805045531',
+    coverPosition: 'center top',
     genres: ['Action', 'Fantasy', 'Shōnen'],
     description: "La princesse Elizabeth part à la recherche des Sept Péchés Capitaux, des chevaliers légendaires bannis du royaume, pour sauver Britannia.",
     stats: [
@@ -161,8 +189,9 @@ const ANIMES = [
     color: '#1976d2',
     colorDark: '#0a2e5c',
     coverImage: 'https://i.pinimg.com/736x/e3/9c/56/e39c564360a91e48edcd430355ee68ce.jpg',
+    coverPosition: 'center top',
     genres: ['Action', 'Fantasy', 'Manhwa'],
-    description: "Sung Jinwoo, le chasseur le plus faible du monde, se retrouve piégé dans un donjon mortel et reçoit un mystérieux système qui lui permet de monter de rang à l'infini.",
+    description: "Sung Jinwoo, le chasseur le plus faible du monde, reçoit un mystérieux système qui lui permet de monter de rang à l'infini.",
     stats: [
       { label: 'Chapitres', value: '202' },
       { label: 'Épisodes', value: '12' },
@@ -180,6 +209,7 @@ const ANIMES = [
     color: '#f57f17',
     colorDark: '#5c2e00',
     coverImage: 'https://resizing.flixster.com/rkYW70Qo4tqbX8akxnoNX0Yf5z0=/ems.cHJkLWVtcy1hc3NldHMvbW92aWVzLzllY2IwZjMyLWVjYjMtNDAzMC1hYWViLTBjZjcxMmFmNDU1MC5wbmc=',
+    coverPosition: 'center center',
     genres: ['Action', 'Science-fiction', 'Shōnen'],
     description: "Après la défaite de Majin Buu, Goku continue à repousser ses limites en affrontant des adversaires venus d'autres univers.",
     stats: [
@@ -188,7 +218,7 @@ const ANIMES = [
       { label: 'Statut', value: 'Disponible' },
     ],
     action: '▶ Accéder',
-    badge: 'NOUVEAU',
+    badge: 'VF + JAP',
     badgeColor: '#f57f17',
   },
   {
@@ -199,6 +229,7 @@ const ANIMES = [
     color: '#388e3c',
     colorDark: '#0a3d0c',
     coverImage: 'https://img2.hulu.com/user/v3/artwork/f6451467-97a8-4ddf-9ae8-e9e4cbb53fc8?base_image_bucket_name=image_manager&base_image=bc1a1c50-6786-4cf7-ae75-75de958b64e1&size=458x687&format=webp',
+    coverPosition: 'center center',
     genres: ['Action', 'Fantasy', 'Shōnen'],
     description: "Asta, né sans magie dans un monde où tout le monde en a, rêve de devenir Sorcier Empereur grâce à sa ténacité et à son grimoire à cinq feuilles.",
     stats: [
@@ -218,6 +249,7 @@ const ANIMES = [
     color: '#1e88e5',
     colorDark: '#0a2a5c',
     coverImage: 'https://upload.wikimedia.org/wikipedia/en/4/46/Boku_no_Hero_Academia_Vol.1.png',
+    coverPosition: 'center top',
     genres: ['Action', 'Super-héros', 'Shōnen'],
     description: "Dans un monde où 80% de la population a un Super Pouvoir, Izuku Midoriya naît sans capacité mais rêve de devenir le plus grand héros.",
     stats: [
@@ -226,7 +258,7 @@ const ANIMES = [
       { label: 'Statut', value: 'Terminé' },
     ],
     action: '▶ Accéder',
-    badge: 'NOUVEAU',
+    badge: 'COMPLET',
     badgeColor: '#1e88e5',
   },
   {
@@ -237,6 +269,7 @@ const ANIMES = [
     color: '#f4511e',
     colorDark: '#5c1208',
     coverImage: 'https://upload.wikimedia.org/wikipedia/en/a/ab/Fire_Force_volume_1.jpg',
+    coverPosition: 'center top',
     genres: ['Action', 'Surnaturel', 'Shōnen'],
     description: "Dans un monde où des humains s'enflamment spontanément, Shinra Kusakabe intègre la 8ème Brigade pour comprendre les mystères de la combustion spontanée.",
     stats: [
@@ -245,7 +278,7 @@ const ANIMES = [
       { label: 'Statut', value: 'Terminé' },
     ],
     action: '▶ Accéder',
-    badge: 'NOUVEAU',
+    badge: 'COMPLET',
     badgeColor: '#f4511e',
   },
   {
@@ -256,6 +289,7 @@ const ANIMES = [
     color: '#1565c0',
     colorDark: '#071b3a',
     coverImage: 'https://upload.wikimedia.org/wikipedia/en/a/aa/Blue_Lock_Volume_1.jpg',
+    coverPosition: 'center top',
     genres: ['Sport', 'Compétition', 'Shōnen'],
     description: "La Fédération japonaise de football engage Ego Jinpachi pour former le meilleur attaquant du monde via un programme radical : Blue Lock.",
     stats: [
@@ -267,50 +301,59 @@ const ANIMES = [
     badge: 'NOUVEAU',
     badgeColor: '#1565c0',
   },
-  {
-    id: 'violet',
-    title: 'Violet Evergarden',
-    subtitle: 'Lettres & Émotions',
-    emoji: '💜',
-    color: '#A66CFF',
-    colorDark: '#3a1a6e',
-    coverImage: 'https://www.manga-news.com/public/images/dvd/violet-evergarden-anime-key.webp',
-    genres: ['Drame', 'Fantasy', 'Josei'],
-    description: "Après la Grande Guerre, Violet Evergarden, ancienne soldate, apprend le métier de « poupée courrier » pour comprendre les derniers mots de son Major : « Je t'aime. »",
-    stats: [
-      { label: 'Épisodes', value: '13' },
-      { label: 'Films', value: '2' },
-      { label: 'Statut', value: 'Terminé' },
-    ],
-    action: '▶ Accéder',
-    badge: 'BIENTÔT',
-    badgeColor: '#A66CFF',
-  },
 ]
 
+const SEARCH_ALIASES = {
+  onepiece:          ['op', 'one piece', 'luffy', 'mugiwara', 'elbaf', 'pirate'],
+  'violet-evergarden': ['violet', 'violet evergarden', 'vostfr', 'vf', 'auto memory doll', 'doll', 'lettres'],
+  tpn:               ['promised neverland', 'neverland', 'emma', 'norman', 'ray'],
+  drstone:           ['dr stone', 'senku', 'science'],
+  jjk:               ['jujutsu', 'jujutsu kaisen', 'sukuna', 'itadori', 'gojo'],
+  kingdom:           ['shin', 'chine', 'guerre', 'royaumes combattants'],
+  aot:               ['aot', 'snk', 'shingeki', 'attaque des titans', 'attack on titan', 'eren', 'levi'],
+  kny:               ['kny', 'demon slayer', 'kimetsu', 'tanjiro', 'nezuko'],
+  nnt:               ['nnt', 'nanatsu', 'seven deadly sins', '7ds', 'meliodas'],
+  sl:                ['solo leveling', 'sung jinwoo', 'manhwa'],
+  dbs:               ['dbs', 'dragon ball', 'goku', 'vegeta'],
+  bc:                ['black clover', 'asta', 'yuno', 'trefle'],
+  mha:               ['mha', 'my hero academia', 'boku no hero', 'deku', 'izuku'],
+  fireforce:         ['fire force', 'enen no shouboutai', 'shinra'],
+  bluelock:          ['blue lock', 'football', 'isagi', 'ego'],
+}
+
+function normalizeText(value) {
+  return String(value || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+}
+
+function searchableText(anime) {
+  return normalizeText([
+    anime.id, anime.title, anime.subtitle, anime.description,
+    ...(anime.genres || []),
+    ...(SEARCH_ALIASES[anime.id] || []),
+  ].join(' '))
+}
+
 const AH_CSS = `
-  @keyframes ahFadeUp    { from { opacity:0; transform:translateY(28px) }           to { opacity:1; transform:none } }
-  @keyframes ahSlideLeft { from { opacity:0; transform:translateX(-64px) scale(.97) } to { opacity:1; transform:none } }
-  @keyframes ahSlideRight{ from { opacity:0; transform:translateX(64px)  scale(.97) } to { opacity:1; transform:none } }
+  @keyframes ahFadeUp    { from { opacity:0; transform:translateY(24px) } to { opacity:1; transform:none } }
   @keyframes ahTwinkle   { 0%,100% { opacity:.12 } 50% { opacity:.65 } }
   @keyframes ahScan      { 0% { top:-2px } 100% { top:100% } }
   @keyframes ahDrift     { 0%,100% { transform:translateY(0) } 50% { transform:translateY(-12px) } }
-  @keyframes ahPulse     { 0%,100% { opacity:.06 } 50% { opacity:.14 } }
+  @keyframes ahMarqueeL  { from { transform:translateX(0) } to { transform:translateX(-33.333%) } }
+  @keyframes ahMarqueeR  { from { transform:translateX(-33.333%) } to { transform:translateX(0) } }
+  .ah-mq-l { animation: ahMarqueeL var(--mq-dur, 40s) linear infinite; will-change:transform; }
+  .ah-mq-r { animation: ahMarqueeR var(--mq-dur, 52s) linear infinite; will-change:transform; }
+  @media (prefers-reduced-motion: reduce) { .ah-mq-l, .ah-mq-r { animation: none !important; } }
 `
 
-// Ambient colored orbs drift in background
-const ORB_COLORS = ['#e0524a', '#6c5ce7', '#00b894', '#c62828', '#c9a227', '#1976d2', '#8e44ad', '#f57f17']
+const ORB_COLORS = ['#e0524a', '#6c5ce7', '#00b894', '#c62828', '#c9a227', '#1976d2', '#8e44ad', '#f57f17', '#8b7cff']
 
 function AHStars() {
   const stars = useMemo(() => Array.from({ length: 55 }, (_, i) => ({
-    x:    (i * 37.7 + 9)  % 98,
-    y:    (i * 43.1 + 17) % 95,
+    x: (i * 37.7 + 9) % 98, y: (i * 43.1 + 17) % 95,
     size: i % 8 === 0 ? 2.5 : i % 3 === 0 ? 1.6 : 1,
-    dur:  3.2 + (i * 0.27) % 4.8,
-    del:  (i * 0.23) % 7,
-    col:  i % 5 === 0 ? ORB_COLORS[i % ORB_COLORS.length] : null,
+    dur: 3.2 + (i * 0.27) % 4.8, del: (i * 0.23) % 7,
+    col: i % 5 === 0 ? ORB_COLORS[i % ORB_COLORS.length] : null,
   })), [])
-
   return (
     <div style={{ position:'absolute', inset:0, pointerEvents:'none', zIndex:0, overflow:'hidden' }}>
       {stars.map((s, i) => (
@@ -330,7 +373,7 @@ function AHScanLine() {
     <div style={{ position:'absolute', inset:0, pointerEvents:'none', zIndex:1, overflow:'hidden' }}>
       <div style={{
         position:'absolute', left:0, right:0, height:2,
-        background:'linear-gradient(90deg, transparent, rgba(224,82,74,.06), rgba(224,82,74,.14), rgba(224,82,74,.06), transparent)',
+        background:'linear-gradient(90deg,transparent,rgba(224,82,74,.06),rgba(224,82,74,.14),rgba(224,82,74,.06),transparent)',
         animation:'ahScan 18s linear infinite',
       }} />
     </div>
@@ -339,21 +382,20 @@ function AHScanLine() {
 
 function AmbientOrbs() {
   const orbs = useMemo(() => [
-    { x:10,  y:20, size:320, color:'rgba(224,82,74,0.04)',  dur:18 },
-    { x:75,  y:60, size:280, color:'rgba(108,92,231,0.04)', dur:22 },
-    { x:45,  y:80, size:380, color:'rgba(0,184,148,0.03)',  dur:26 },
-    { x:88,  y:10, size:240, color:'rgba(201,162,39,0.04)', dur:20 },
+    { x:10, y:20, size:320, color:'rgba(224,82,74,0.04)',  dur:18 },
+    { x:75, y:60, size:280, color:'rgba(108,92,231,0.04)', dur:22 },
+    { x:45, y:80, size:380, color:'rgba(0,184,148,0.03)',  dur:26 },
+    { x:88, y:10, size:240, color:'rgba(201,162,39,0.04)', dur:20 },
+    { x:30, y:50, size:260, color:'rgba(139,124,255,0.04)',dur:24 },
   ], [])
   return (
     <div style={{ position:'absolute', inset:0, pointerEvents:'none', zIndex:0, overflow:'hidden' }}>
       {orbs.map((o, i) => (
         <div key={i} style={{
-          position:'absolute',
-          left:`${o.x}%`, top:`${o.y}%`,
-          width:o.size, height:o.size,
-          borderRadius:'50%',
-          background:`radial-gradient(circle, ${o.color}, transparent 70%)`,
-          transform:'translate(-50%, -50%)',
+          position:'absolute', left:`${o.x}%`, top:`${o.y}%`,
+          width:o.size, height:o.size, borderRadius:'50%',
+          background:`radial-gradient(circle,${o.color},transparent 70%)`,
+          transform:'translate(-50%,-50%)',
           animation:`ahDrift ${o.dur}s ease-in-out infinite`,
         }} />
       ))}
@@ -361,39 +403,121 @@ function AmbientOrbs() {
   )
 }
 
-function AnimeCard({ anime, index, onClick }) {
+function AnimeMarqueeCard({ anime, onClick }) {
   const [hov, setHov] = useState(false)
   const c = anime.color
-
   return (
     <div
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
       onClick={onClick}
       style={{
-        position:'relative',
-        borderRadius:20, overflow:'hidden',
-        background:`linear-gradient(175deg, ${c}14 0%, rgba(14,14,18,0.97) 100%)`,
+        flexShrink:0, width:190, height:268, borderRadius:14, overflow:'hidden',
+        position:'relative', cursor:'pointer',
+        background:`linear-gradient(160deg,${anime.colorDark} 0%,${c} 100%)`,
+        border:`1px solid ${hov ? c+'66' : 'rgba(255,255,255,0.08)'}`,
+        transform: hov ? 'scale(1.05) translateY(-6px)' : 'scale(1)',
+        boxShadow: hov ? `0 20px 48px ${c}44` : '0 4px 16px rgba(0,0,0,0.45)',
+        transition:'transform 0.32s ease,box-shadow 0.32s ease,border-color 0.28s ease',
+        marginRight:12,
+      }}
+    >
+      {anime.coverImage && (
+        <img
+          src={anime.coverImage} alt={anime.title}
+          onError={e => { e.currentTarget.style.display='none' }}
+          style={{
+            position:'absolute', inset:0, width:'100%', height:'100%',
+            objectFit:'cover', objectPosition: anime.coverPosition || 'center top',
+            transform: hov ? 'scale(1.08)' : 'scale(1)',
+            transition:'transform 0.4s ease',
+          }}
+        />
+      )}
+      <div style={{ position:'absolute', inset:0, background:'linear-gradient(to bottom,transparent 30%,rgba(0,0,0,0.84) 100%)', zIndex:1 }} />
+      <div style={{
+        position:'absolute', inset:0,
+        background:`linear-gradient(to bottom,${c}22 0%,transparent 50%)`,
+        zIndex:2, opacity: hov ? 1 : 0, transition:'opacity 0.28s',
+      }} />
+      <div style={{ position:'absolute', top:9, right:9, zIndex:4, fontSize:9, fontWeight:800, letterSpacing:'.06em', background:c+'cc', color:'#fff', borderRadius:100, padding:'2px 8px', backdropFilter:'blur(6px)' }}>
+        {anime.badge}
+      </div>
+      <div style={{ position:'absolute', bottom:0, left:0, right:0, padding:'10px 12px 13px', zIndex:3 }}>
+        <div style={{ fontSize:12.5, fontWeight:800, color:'#F2F0EA', lineHeight:1.25, marginBottom:5, textShadow:'0 1px 8px rgba(0,0,0,0.95)' }}>
+          {anime.title}
+        </div>
+        <div style={{ display:'flex', gap:4, flexWrap:'wrap' }}>
+          {anime.genres.slice(0,2).map(g => (
+            <span key={g} style={{ fontSize:9, fontWeight:700, background:'rgba(255,255,255,0.13)', color:'rgba(255,255,255,0.68)', borderRadius:100, padding:'2px 7px', whiteSpace:'nowrap' }}>{g}</span>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function AnimeMarqueeRow({ animes, direction, speed, onCardClick }) {
+  const [paused, setPaused] = useState(false)
+  const items = [...animes, ...animes, ...animes]
+  const cls = direction === 'rtl' ? 'ah-mq-l' : 'ah-mq-r'
+  return (
+    <div
+      style={{
+        overflow:'hidden',
+        WebkitMaskImage:'linear-gradient(to right,transparent 0%,black 7%,black 93%,transparent 100%)',
+        maskImage:'linear-gradient(to right,transparent 0%,black 7%,black 93%,transparent 100%)',
+        marginBottom:10,
+      }}
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+    >
+      <div
+        className={cls}
+        style={{
+          display:'flex', padding:'6px 0 10px',
+          '--mq-dur':`${speed}s`,
+          animationPlayState: paused ? 'paused' : 'running',
+        }}
+      >
+        {items.map((anime, i) => (
+          <AnimeMarqueeCard key={`${anime.id}-${i}`} anime={anime} onClick={() => onCardClick(anime.id)} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function AnimeCard({ anime, index, onClick }) {
+  const [hov, setHov] = useState(false)
+  const c = anime.color
+  return (
+    <div
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      onClick={onClick}
+      style={{
+        position:'relative', borderRadius:20, overflow:'hidden',
+        background:`linear-gradient(175deg,${c}14 0%,rgba(14,14,18,0.97) 100%)`,
         border:`1px solid ${hov ? c+'55' : c+'1e'}`,
         borderTop:`3px solid ${hov ? c : c+'aa'}`,
         transition:'all 0.38s ease',
         transform: hov ? 'translateY(-10px)' : 'translateY(0)',
-        boxShadow: hov ? `0 28px 70px ${c}28, 0 0 0 1px ${c}18` : `0 4px 18px ${c}0a`,
+        boxShadow: hov ? `0 28px 70px ${c}28,0 0 0 1px ${c}18` : `0 4px 18px ${c}0a`,
         cursor:'pointer',
-        animation:`${index % 2 === 0 ? 'ahSlideLeft' : 'ahSlideRight'} 0.6s ${index * 0.08}s cubic-bezier(.22,.68,0,1.2) both`,
+        animation:`ahFadeUp 0.55s ${index * 0.07}s ease-out both`,
       }}
     >
-      {/* Cover image */}
-      <div style={{ height:250, position:'relative', overflow:'hidden', background:`linear-gradient(135deg, ${c}cc 0%, ${anime.colorDark} 100%)` }}>
+      <div style={{ height:250, position:'relative', overflow:'hidden', background:`linear-gradient(135deg,${c}cc 0%,${anime.colorDark} 100%)` }}>
         {anime.coverImage && (
           <img
-            src={anime.coverImage}
-            alt={anime.title}
+            src={anime.coverImage} alt={anime.title}
+            onError={e => { e.currentTarget.style.display='none' }}
             style={{
               position:'absolute', inset:0, width:'100%', height:'100%',
-              objectFit:'cover', objectPosition:'top center',
+              objectFit:'cover', objectPosition: anime.coverPosition || 'center top',
               opacity: hov ? 1 : 0.85,
-              transition:'opacity 0.38s ease, transform 0.45s ease',
+              transition:'opacity 0.38s ease,transform 0.45s ease',
               transform: hov ? 'scale(1.06)' : 'scale(1)',
             }}
           />
@@ -403,24 +527,11 @@ function AnimeCard({ anime, index, onClick }) {
             {anime.emoji}
           </div>
         )}
-
-        {/* Bottom gradient */}
-        <div style={{ position:'absolute', inset:0, background:'linear-gradient(to bottom, transparent 30%, rgba(8,8,12,0.72) 100%)', zIndex:1 }} />
-
-        {/* Glow rim at top */}
-        <div style={{
-          position:'absolute', top:0, left:0, right:0, height:60,
-          background:`linear-gradient(to bottom, ${c}22, transparent)`,
-          zIndex:1, opacity: hov ? 1 : 0,
-          transition:'opacity .38s',
-        }} />
-
-        {/* Badge */}
+        <div style={{ position:'absolute', inset:0, background:'linear-gradient(to bottom,transparent 30%,rgba(8,8,12,0.72) 100%)', zIndex:1 }} />
+        <div style={{ position:'absolute', top:0, left:0, right:0, height:60, background:`linear-gradient(to bottom,${c}22,transparent)`, zIndex:1, opacity: hov ? 1 : 0, transition:'opacity .38s' }} />
         <div style={{ position:'absolute', top:12, right:12, zIndex:2, fontSize:10, fontWeight:800, letterSpacing:'.08em', background:`${anime.badgeColor}dd`, color:'#fff', borderRadius:100, padding:'3px 10px', backdropFilter:'blur(6px)' }}>
           {anime.badge}
         </div>
-
-        {/* Subtitle on cover */}
         {anime.coverImage && (
           <div style={{ position:'absolute', bottom:14, left:16, zIndex:2 }}>
             <div style={{ fontSize:11, fontWeight:800, color:c, letterSpacing:'.06em', textShadow:'0 1px 10px rgba(0,0,0,0.9)' }}>{anime.subtitle}</div>
@@ -428,21 +539,17 @@ function AnimeCard({ anime, index, onClick }) {
         )}
       </div>
 
-      {/* Info body */}
       <div style={{ padding:'22px 22px 20px' }}>
         <div style={{ marginBottom:12 }}>
           <div style={{ fontFamily:'var(--display)', fontWeight:800, fontSize:19, color:'#fff', marginBottom:3, letterSpacing:'-.01em' }}>{anime.title}</div>
           <div style={{ fontSize:12, color:c, fontWeight:600 }}>{anime.subtitle}</div>
         </div>
-
         <div style={{ display:'flex', gap:5, flexWrap:'wrap', marginBottom:14 }}>
           {anime.genres.map(g => (
             <span key={g} style={{ fontSize:11, fontWeight:700, background:`${c}18`, color:c, border:`1px solid ${c}33`, borderRadius:100, padding:'2px 10px' }}>{g}</span>
           ))}
         </div>
-
         <p style={{ fontSize:13, color:'rgba(255,255,255,0.50)', lineHeight:1.7, marginBottom:18 }}>{anime.description}</p>
-
         <div style={{ display:'flex', gap:20, marginBottom:20, paddingBottom:18, borderBottom:`1px solid ${c}14` }}>
           {anime.stats.map(s => (
             <div key={s.label}>
@@ -451,14 +558,12 @@ function AnimeCard({ anime, index, onClick }) {
             </div>
           ))}
         </div>
-
         <button style={{
           width:'100%', padding:'13px', borderRadius:11, border:'none',
           background: hov ? c : `${c}20`,
           color: hov ? '#fff' : c,
           fontWeight:800, fontSize:14, cursor:'pointer',
-          transition:'all 0.32s',
-          fontFamily:'var(--body)',
+          transition:'all 0.32s', fontFamily:'var(--body)',
           boxShadow: hov ? `0 8px 24px ${c}44` : 'none',
           letterSpacing:'.02em',
         }}>
@@ -469,61 +574,49 @@ function AnimeCard({ anime, index, onClick }) {
   )
 }
 
-function ComingSoonCard({ index }) {
-  return (
-    <div style={{
-      borderRadius:20, overflow:'hidden',
-      border:'1px dashed rgba(255,255,255,0.07)',
-      background:'rgba(255,255,255,0.012)',
-      display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
-      minHeight:420, padding:40, textAlign:'center',
-      animation:`ahFadeUp 0.55s ${index * 0.08}s ease-out both`,
-    }}>
-      <div style={{ fontSize:52, marginBottom:18, opacity:.18, animation:'ahDrift 6s ease-in-out infinite' }}>＋</div>
-      <div style={{ fontWeight:700, fontSize:15, color:'rgba(255,255,255,0.18)', marginBottom:10 }}>D'autres animes bientôt</div>
-      <div style={{ fontSize:13, color:'rgba(255,255,255,0.09)', lineHeight:1.7 }}>Naruto · Dragon Ball<br />Bleach · Sword Art Online…</div>
-    </div>
-  )
-}
+export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrstone, onOpenJjk, onOpenKingdom, onOpenAot, onOpenKny, onOpenNnt, onOpenSl, onOpenDbs, onOpenViolet, onOpenBc, onOpenMha, onOpenFireforce, onOpenBluelock }) {
+  const [query, setQuery]           = useState('')
+  const [activeGenre, setActiveGenre] = useState('all')
 
-function normalizeSearch(value) {
-  return String(value || '')
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-}
+  const sortedAnimes = useMemo(() => {
+    const priority = { onepiece: 0, 'violet-evergarden': 1 }
+    return [...ANIMES].sort((a, b) => (priority[a.id] ?? 10) - (priority[b.id] ?? 10))
+  }, [])
 
-export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrstone, onOpenJjk, onOpenKingdom, onOpenAot, onOpenKny, onOpenNnt, onOpenSl, onOpenDbs, onOpenBc, onOpenMha, onOpenFireforce, onOpenBluelock }) {
-  const [searchQuery, setSearchQuery] = useState('')
+  const genreOptions = useMemo(() => {
+    const genres = new Set()
+    sortedAnimes.forEach(a => (a.genres || []).forEach(g => genres.add(g)))
+    return ['all', ...Array.from(genres).sort((a, b) => a.localeCompare(b, 'fr'))]
+  }, [sortedAnimes])
+
+  const visibleAnimes = useMemo(() => {
+    const needle = normalizeText(query).trim()
+    return sortedAnimes.filter(anime => {
+      const genreMatch = activeGenre === 'all' || anime.genres?.includes(activeGenre)
+      const textMatch  = !needle || searchableText(anime).includes(needle)
+      return genreMatch && textMatch
+    })
+  }, [activeGenre, query, sortedAnimes])
+
+  const isFiltering = query.trim() !== '' || activeGenre !== 'all'
+
+  const marqueeRows = useMemo(() => [
+    { animes: sortedAnimes.slice(0, 5),  direction:'rtl', speed:42 },
+    { animes: sortedAnimes.slice(5, 10), direction:'ltr', speed:54 },
+    { animes: sortedAnimes.slice(10),    direction:'rtl', speed:36 },
+  ], [sortedAnimes])
 
   useEffect(() => {
     document.body.style.overflow = 'hidden'
     return () => { document.body.style.overflow = '' }
   }, [])
 
-  const filteredAnimes = useMemo(() => {
-    const query = normalizeSearch(searchQuery.trim())
-    if (!query) return ANIMES
-
-    return ANIMES.filter(anime => {
-      const haystack = normalizeSearch([
-        anime.title,
-        anime.subtitle,
-        anime.description,
-        anime.badge,
-        ...anime.genres,
-        ...anime.stats.map(s => `${s.label} ${s.value}`),
-      ].join(' '))
-
-      return haystack.includes(query)
-    })
-  }, [searchQuery])
-
   const handleClick = id => {
     const map = {
       onepiece: onOpenOnepiece, tpn: onOpenTpn, drstone: onOpenDrstone,
       jjk: onOpenJjk, kingdom: onOpenKingdom, aot: onOpenAot,
       kny: onOpenKny, nnt: onOpenNnt, sl: onOpenSl, dbs: onOpenDbs,
+      'violet-evergarden': onOpenViolet,
       bc: onOpenBc, mha: onOpenMha, fireforce: onOpenFireforce, bluelock: onOpenBluelock,
     }
     map[id]?.()
@@ -533,20 +626,19 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
     <div style={{ position:'fixed', inset:0, zIndex:500, background:'#07090e', display:'flex', flexDirection:'column' }}>
       <style>{AH_CSS}</style>
 
-      {/* ── Header ── */}
+      {/* Header */}
       <div style={{
         flexShrink:0, padding:'0 24px', height:72,
         display:'flex', alignItems:'center', justifyContent:'space-between',
         background:'rgba(7,9,14,0.96)', backdropFilter:'blur(20px)',
-        borderBottom:'1px solid rgba(255,255,255,0.07)', zIndex:10,
-        position:'relative',
+        borderBottom:'1px solid rgba(255,255,255,0.07)', zIndex:10, position:'relative',
       }}>
         <div style={{ display:'flex', alignItems:'center', gap:14 }}>
           <div style={{ fontSize:28, filter:'drop-shadow(0 0 14px rgba(224,82,74,0.6))', animation:'ahDrift 5s ease-in-out infinite' }}>🎌</div>
           <div>
             <div style={{ fontFamily:"'Pirata One', cursive", fontWeight:900, fontSize:22, color:'#fff', letterSpacing:'-.01em', lineHeight:1 }}>Hub des Animés</div>
             <div style={{ fontSize:11, color:'rgba(255,255,255,0.32)', marginTop:3, fontWeight:600, letterSpacing:'.04em' }}>
-              {ANIMES.length} séries disponibles
+              {sortedAnimes.length} séries disponibles
             </div>
           </div>
         </div>
@@ -560,25 +652,18 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
         </button>
       </div>
 
-      {/* ── Content ── */}
+      {/* Content */}
       <div style={{ flex:1, overflowY:'auto', position:'relative' }}>
-        {/* Atmospheric layers */}
         <AmbientOrbs />
         <AHStars />
         <AHScanLine />
 
-        <div style={{ position:'relative', zIndex:2, padding:'52px 24px 80px' }}>
-          <div style={{ maxWidth:1080, margin:'0 auto' }}>
+        <div style={{ position:'relative', zIndex:2, padding:'48px 0 80px' }}>
+          <div style={{ maxWidth:1080, margin:'0 auto', padding:'0 24px' }}>
 
-            {/* Intro */}
-            <div style={{ textAlign:'center', marginBottom:52 }}>
-              <div style={{
-                display:'inline-flex', alignItems:'center', gap:8,
-                padding:'5px 18px', borderRadius:100,
-                background:'rgba(224,82,74,0.10)', border:'1px solid rgba(224,82,74,0.25)',
-                fontSize:10, fontWeight:800, letterSpacing:'.22em', color:'#e0524a', textTransform:'uppercase',
-                marginBottom:20,
-              }}>
+            {/* Hero text */}
+            <div style={{ textAlign:'center', marginBottom:44 }}>
+              <div style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'5px 18px', borderRadius:100, background:'rgba(224,82,74,0.10)', border:'1px solid rgba(224,82,74,0.25)', fontSize:10, fontWeight:800, letterSpacing:'.22em', color:'#e0524a', textTransform:'uppercase', marginBottom:20 }}>
                 ✦ Espace Manga & Anime
               </div>
               <h2 style={{ fontFamily:"'Pirata One', cursive", fontWeight:900, fontSize:'clamp(28px,5vw,52px)', color:'#fff', marginBottom:14, lineHeight:1, letterSpacing:'-.02em' }}>
@@ -589,121 +674,71 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
               </p>
             </div>
 
-            {/* Search */}
-            <div style={{
-              maxWidth:720,
-              margin:'-22px auto 38px',
-              position:'relative',
-            }}>
-              <div style={{
-                position:'relative',
-                borderRadius:18,
-                background:'linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.025))',
-                border:'1px solid rgba(255,255,255,0.10)',
-                boxShadow:'0 22px 70px rgba(0,0,0,0.34), inset 0 1px 0 rgba(255,255,255,0.08)',
-                backdropFilter:'blur(22px)',
-                overflow:'hidden',
-              }}>
-                <div style={{
-                  position:'absolute',
-                  inset:0,
-                  pointerEvents:'none',
-                  background:'radial-gradient(circle at 18% 50%, rgba(224,82,74,0.16), transparent 32%), radial-gradient(circle at 82% 50%, rgba(108,92,231,0.16), transparent 32%)',
-                  opacity: searchQuery ? 1 : 0.6,
-                  transition:'opacity .24s ease',
-                }} />
-                <span style={{
-                  position:'absolute',
-                  left:18,
-                  top:'50%',
-                  transform:'translateY(-50%)',
-                  zIndex:1,
-                  color:'rgba(255,255,255,0.44)',
-                  fontSize:18,
-                }}>
-                  &#8981;
-                </span>
+            {/* Search + genre filters */}
+            <div style={{ maxWidth:820, margin:'0 auto 28px' }}>
+              <div style={{ display:'flex', alignItems:'center', gap:10, background:'rgba(255,255,255,0.055)', border:'1px solid rgba(255,255,255,0.10)', borderRadius:12, padding:'10px 14px', boxShadow:'0 18px 45px rgba(0,0,0,0.22)' }}>
+                <span style={{ color:'rgba(255,255,255,0.42)', fontSize:16, flexShrink:0 }}>⌕</span>
                 <input
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                  placeholder="Rechercher un anime, un genre, un arc..."
-                  aria-label="Rechercher un anime"
-                  style={{
-                    position:'relative',
-                    zIndex:1,
-                    width:'100%',
-                    height:58,
-                    padding:'0 56px',
-                    border:'none',
-                    outline:'none',
-                    background:'transparent',
-                    color:'#fff',
-                    fontSize:15,
-                    fontWeight:700,
-                    fontFamily:'var(--body)',
-                    letterSpacing:0,
-                  }}
+                  value={query}
+                  onChange={e => setQuery(e.target.value)}
+                  placeholder="Rechercher : violet, dbs, aot, demon slayer…"
+                  style={{ width:'100%', background:'transparent', border:'none', outline:'none', color:'#fff', fontSize:14, fontWeight:650, fontFamily:'var(--body)' }}
                 />
-                {searchQuery && (
-                  <button
-                    type="button"
-                    onClick={() => setSearchQuery('')}
-                    aria-label="Effacer la recherche"
-                    style={{
-                      position:'absolute',
-                      right:12,
-                      top:'50%',
-                      zIndex:2,
-                      width:34,
-                      height:34,
-                      transform:'translateY(-50%)',
-                      border:'1px solid rgba(255,255,255,0.10)',
-                      borderRadius:10,
-                      background:'rgba(255,255,255,0.06)',
-                      color:'rgba(255,255,255,0.72)',
-                      cursor:'pointer',
-                      fontSize:16,
-                      fontWeight:800,
-                    }}
-                  >
-                    x
+                {(query || activeGenre !== 'all') && (
+                  <button type="button" onClick={() => { setQuery(''); setActiveGenre('all') }}
+                    style={{ flexShrink:0, border:'1px solid rgba(255,255,255,0.10)', background:'rgba(255,255,255,0.06)', color:'rgba(255,255,255,0.72)', borderRadius:8, padding:'6px 10px', cursor:'pointer', fontSize:12, fontWeight:800 }}>
+                    Reset
                   </button>
                 )}
               </div>
-              <div style={{
-                marginTop:10,
-                textAlign:'center',
-                color:'rgba(255,255,255,0.32)',
-                fontSize:12,
-                fontWeight:700,
-              }}>
-                {filteredAnimes.length} resultat{filteredAnimes.length > 1 ? 's' : ''}
+              <div style={{ display:'flex', flexWrap:'wrap', gap:7, marginTop:10, justifyContent:'center' }}>
+                {genreOptions.map(genre => {
+                  const active = activeGenre === genre
+                  return (
+                    <button key={genre} type="button" onClick={() => setActiveGenre(genre)}
+                      style={{ border:`1px solid ${active ? 'rgba(224,82,74,0.65)' : 'rgba(255,255,255,0.10)'}`, background:active ? 'rgba(224,82,74,0.18)' : 'rgba(255,255,255,0.045)', color:active ? '#fff' : 'rgba(255,255,255,0.58)', borderRadius:999, padding:'6px 13px', cursor:'pointer', fontSize:12, fontWeight:800, transition:'all .18s' }}>
+                      {genre === 'all' ? 'Tous' : genre}
+                    </button>
+                  )
+                })}
+              </div>
+              <div style={{ marginTop:10, textAlign:'center', fontSize:12, color:'rgba(255,255,255,0.28)', fontWeight:700 }}>
+                {isFiltering ? `${visibleAnimes.length} résultat${visibleAnimes.length > 1 ? 's' : ''}` : `${sortedAnimes.length} animés disponibles`}
               </div>
             </div>
-
-            {/* Cards grid */}
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(310px, 1fr))', gap:22 }}>
-              {filteredAnimes.map((anime, i) => (
-                <AnimeCard key={anime.id} anime={anime} index={i} onClick={() => handleClick(anime.id)} />
-              ))}
-              {filteredAnimes.length === ANIMES.length && <ComingSoonCard index={ANIMES.length} />}
-            </div>
-
-            {filteredAnimes.length === 0 && (
-              <div style={{
-                marginTop:24,
-                padding:'40px 24px',
-                border:'1px solid rgba(255,255,255,0.08)',
-                borderRadius:20,
-                background:'rgba(255,255,255,0.025)',
-                textAlign:'center',
-                color:'rgba(255,255,255,0.48)',
-                fontWeight:700,
-              }}>
-                Aucun anime trouve.
-              </div>
-            )}
           </div>
+
+          {/* Marquee gallery OR filtered grid */}
+          {isFiltering ? (
+            <div style={{ maxWidth:1080, margin:'0 auto', padding:'0 24px' }}>
+              {visibleAnimes.length > 0 ? (
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(300px,1fr))', gap:20 }}>
+                  {visibleAnimes.map((anime, i) => (
+                    <AnimeCard key={anime.id} anime={anime} index={i} onClick={() => handleClick(anime.id)} />
+                  ))}
+                </div>
+              ) : (
+                <div style={{ border:'1px dashed rgba(255,255,255,0.10)', background:'rgba(255,255,255,0.025)', borderRadius:14, padding:'44px 20px', textAlign:'center', color:'rgba(255,255,255,0.42)', fontWeight:750 }}>
+                  Aucun anime trouvé
+                </div>
+              )}
+            </div>
+          ) : (
+            <div>
+              <div style={{ textAlign:'center', marginBottom:18, padding:'0 24px', fontSize:11, color:'rgba(255,255,255,0.20)', fontWeight:700, letterSpacing:'.10em', textTransform:'uppercase' }}>
+                ✦ Galerie cinématique · survole pour pause · clique pour accéder
+              </div>
+              {marqueeRows.map((row, i) => (
+                <AnimeMarqueeRow
+                  key={i}
+                  animes={row.animes}
+                  direction={row.direction}
+                  speed={row.speed}
+                  onCardClick={handleClick}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

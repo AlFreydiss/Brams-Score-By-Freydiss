@@ -40,7 +40,8 @@ const DbsPage         = lazy(() => import('./components/DbsPage.jsx'))
 const BcPage          = lazy(() => import('./components/BcPage.jsx'))
 const MhaPage         = lazy(() => import('./components/MhaPage.jsx'))
 const FireForcePage   = lazy(() => import('./components/FireForcePage.jsx'))
-const BlueLockPage    = lazy(() => import('./components/BlueLockPage.jsx'))
+const BlueLockPage           = lazy(() => import('./components/BlueLockPage.jsx'))
+const VioletEvergardenPage   = lazy(() => import('./components/VioletEvergardenPage.jsx'))
 const FamilyTree3D    = lazy(() => import('./components/FamilyTree3D.jsx'))
 const BlobUploadPage  = lazy(() => import('./components/BlobUploadPage.jsx'))
 const WikiTheoryHub   = lazy(() => import('./components/WikiTheoryHub.jsx'))
@@ -210,6 +211,7 @@ export default function App() {
   const [mhaOpen,          setMhaOpen]           = useState(false)
   const [fireforcOpen,     setFireforcOpen]      = useState(false)
   const [bluelockOpen,     setBluelockOpen]      = useState(false)
+  const [violetOpen,       setVioletOpen]        = useState(false)
   const [treeOpen,         setTreeOpen]          = useState(false)
   const [uploadOpen,       setUploadOpen]        = useState(false)
 
@@ -231,6 +233,7 @@ export default function App() {
     const fnMha        = () => setMhaOpen(true)
     const fnFireforce  = () => setFireforcOpen(true)
     const fnBluelock   = () => setBluelockOpen(true)
+    const fnViolet     = () => setVioletOpen(true)
     const fnTree       = () => setTreeOpen(true)
     const fnUpload     = () => setUploadOpen(true)
     document.addEventListener('open-scans',        fnScans)
@@ -250,6 +253,7 @@ export default function App() {
     document.addEventListener('open-mha',          fnMha)
     document.addEventListener('open-fireforce',    fnFireforce)
     document.addEventListener('open-bluelock',     fnBluelock)
+    document.addEventListener('open-violet',       fnViolet)
     document.addEventListener('open-tree',         fnTree)
     document.addEventListener('open-upload',       fnUpload)
     return () => {
@@ -270,12 +274,13 @@ export default function App() {
       document.removeEventListener('open-mha',          fnMha)
       document.removeEventListener('open-fireforce',    fnFireforce)
       document.removeEventListener('open-bluelock',     fnBluelock)
+      document.removeEventListener('open-violet',       fnViolet)
       document.removeEventListener('open-tree',         fnTree)
       document.removeEventListener('open-upload',       fnUpload)
     }
   }, [])
 
-  const mediaOverlayOpen = scansOpen || animeHubOpen || onepieceOpen || tpnOpen || drstoneOpen || jjkOpen || kingdomOpen || aotOpen || knyOpen || nntOpen || slOpen || dbsOpen || bcOpen || mhaOpen || fireforcOpen || bluelockOpen
+  const mediaOverlayOpen = scansOpen || animeHubOpen || onepieceOpen || tpnOpen || drstoneOpen || jjkOpen || kingdomOpen || aotOpen || knyOpen || nntOpen || slOpen || dbsOpen || bcOpen || mhaOpen || fireforcOpen || bluelockOpen || violetOpen
   const immersiveOverlayOpen = mediaOverlayOpen || encyclopedieOpen || treeOpen || uploadOpen
 
   const mainContent = (
@@ -387,6 +392,7 @@ export default function App() {
             onOpenMha={() => { setAnimeHubOpen(false); setMhaOpen(true) }}
             onOpenFireforce={() => { setAnimeHubOpen(false); setFireforcOpen(true) }}
             onOpenBluelock={() => { setAnimeHubOpen(false); setBluelockOpen(true) }}
+            onOpenViolet={() => { setAnimeHubOpen(false); setVioletOpen(true) }}
           />
         ) : (
           <AuthGuard onClose={() => setAnimeHubOpen(false)} feature="les animés & scans" />
@@ -406,6 +412,7 @@ export default function App() {
       {mhaOpen       && <MhaPage       onClose={() => setMhaOpen(false)} />}
       {fireforcOpen  && <FireForcePage onClose={() => setFireforcOpen(false)} />}
       {bluelockOpen  && <BlueLockPage  onClose={() => setBluelockOpen(false)} />}
+      {violetOpen    && <VioletEvergardenPage onClose={() => setVioletOpen(false)} />}
       {treeOpen      && <FamilyTree3D  onClose={() => setTreeOpen(false)} />}
       {scansOpen && (
         isAuthenticated
