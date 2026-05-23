@@ -19,8 +19,15 @@ function encSrc(src) {
 
 function proxySub(src) {
   if (!src) return src
-  // Proxy R2 VTT files through Vercel to bypass CORS — same-origin removes crossOrigin requirement on <video>
   if (src.startsWith(R2_BASE)) return `/api/subtitles/r2?url=${encodeURIComponent(src)}`
+  return src
+}
+
+function proxyHls(src) {
+  if (!src) return src
+  // Route R2 HLS through server-side proxy to bypass CORS
+  if (src.startsWith(R2_BASE) && src.split('?')[0].endsWith('.m3u8'))
+    return `/api/hls?url=${encodeURIComponent(src)}`
   return src
 }
 
@@ -201,9 +208,11 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   const jsonDefaultLabel = Array.isArray(video?.audio) ? (video.audio.find(a => !a.src)?.label ?? null) : null
   const audioMenuOptions = isHlsSource
     ? [...audioTracks.map(t => ({ type: 'hls', key: `hls-${t.index}`, label: t.label, hlsIdx: t.index, srclang: t.lang || '' })), ...jsonExtTracks]
-    : jsonDefaultLabel !== null
-      ? [{ type: 'embedded', key: 'embedded', label: jsonDefaultLabel }, ...jsonExtTracks]
-      : []
+    : jsonExtTracks.length > 0
+      ? [{ type: 'embedded', key: 'embedded', label: jsonDefaultLabel ?? 'Original' }, ...jsonExtTracks]
+      : jsonDefaultLabel !== null
+        ? [{ type: 'embedded', key: 'embedded', label: jsonDefaultLabel }, ...jsonExtTracks]
+        : []
   const showAudioBtn = audioMenuOptions.length > 1
   const currentAudioKey = selectedAudioKey ?? audioMenuOptions[0]?.key ?? null
 
@@ -267,7 +276,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
       return
     }
 
-    const src = encSrc(video.src)
+    const src = proxyHls(video.src) || encSrc(video.src)
     hlsRef.current?.destroy()
     hlsRef.current = null
 
