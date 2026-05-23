@@ -13,9 +13,6 @@ const NAV_LINKS = [
   { label: 'Tier List',       href: '/tier-list',  action: null,           gated: false, isRoute: true  },
   { label: 'Encyclopédie',    href: '#',           action: 'encyclopedie', gated: false, isRoute: false },
   { label: 'Animés & Scans',  href: '#',           action: 'anime-hub',    gated: true,  isRoute: false },
-  { label: 'Blind Test',      href: '/blind-test', action: null,           gated: false, isRoute: true  },
-  { label: 'Tier List',       href: '/tier-list',  action: null,           gated: false, isRoute: true  },
-  { label: 'Boutique',        href: '/boutique',   action: null,           gated: true,  isRoute: true  },
 ]
 
 function openAnimeHub(event) {
@@ -84,6 +81,20 @@ function BrandMark({ onClick }) {
     <button onClick={onClick} className="nav-brand-premium" aria-label="Accueil Brams Community" style={{ gap: 0 }}>
       <span style={{ fontSize: 22, marginRight: 8, opacity: 0.9 }}>☠</span>
       <span className="nav-brand-title" style={{ fontSize: 18, letterSpacing: '.01em', fontWeight: 800 }}>Brams</span>
+    </button>
+  )
+}
+
+function BoutiqueButton() {
+  const navigate = useNavigate()
+  return (
+    <button
+      onClick={() => navigate('/boutique')}
+      className="nav-boutique-btn"
+      aria-label="Boutique Berry"
+    >
+      <span style={{ fontSize: 14 }}>🛒</span>
+      Boutique
     </button>
   )
 }
@@ -262,6 +273,7 @@ export default function Navbar() {
           </div>
 
           <div className="nav-zone-status hide-mobile">
+            <BoutiqueButton />
             <SocialLinks />
           </div>
 

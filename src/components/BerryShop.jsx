@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, useRef } from 'react'
 import { useAuth } from '../contexts/AuthContext.jsx'
+import { STAFF_DISCORD_IDS } from '../lib/roles.js'
 import {
   RARITY_STYLES,
   fetchBerryShopState,
@@ -65,7 +66,6 @@ const MILESTONES = [
   { amount: 25000000,  label: '25M',   desc: 'Mythiques',         color: '#ec4899', rarity: 'Mythique'   },
 ]
 
-const ADMIN_IDS = ['1094070545248694342', '873117504367648798']
 
 const BS_CSS = `
   @keyframes bsFadeUp    { from { opacity:0; transform:translateY(20px) } to { opacity:1; transform:none } }
@@ -677,7 +677,7 @@ export default function BerryShop() {
   const [message, setMessage] = useState(null)
   const earnRef = useRef(null)
 
-  const isAdmin = ADMIN_IDS.includes(String(discordId)) || user?.user_metadata?.role === 'admin' || user?.app_metadata?.role === 'admin'
+  const isAdmin = STAFF_DISCORD_IDS.includes(String(discordId))
 
   useEffect(() => {
     document.title = 'Berry Shop — Brams Community'

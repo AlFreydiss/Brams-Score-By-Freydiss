@@ -5,7 +5,7 @@ import { fetchBerryShopState, RARITY_STYLES } from '../lib/berryShop.js'
 import { fetchMemberProfile } from '../lib/supabase.js'
 import Navbar from './Navbar.jsx'
 
-// ── Data ──────────────────────────────────────────────────────
+// ── Constants ──────────────────────────────────────────────────────────────
 const RANK_MAP = [
   { min: 150, rang: 'Roi des Pirates', emoji: '👑', color: '#FFD700', next: null },
   { min: 70,  rang: 'Yonkou',          emoji: '🌊', color: '#A66CFF', next: 150 },
@@ -14,180 +14,713 @@ const RANK_MAP = [
   { min: 10,  rang: 'Pirate',          emoji: '🏴‍☠️', color: '#4F8CFF', next: 25  },
   { min: 0,   rang: 'Moussaillon',     emoji: '⚓',  color: '#8A8F9F', next: 10  },
 ]
-
 const RANK_QUOTES = {
-  'Roi des Pirates': 'Les mers du monde m\'appartiennent.',
+  'Roi des Pirates': "Les mers du monde m'appartiennent.",
   'Yonkou':          'Les mers tremblent là où je marche.',
-  'Amiral':          'La justice forgée dans l\'acier ne faiblit jamais.',
+  'Amiral':          "La justice forgée dans l'acier ne faiblit jamais.",
   'Shichibukai':     'Entre ombre et lumière, je trace ma propre route.',
   'Pirate':          'La liberté se mérite par le sang et la sueur.',
   'Moussaillon':     'Chaque légende commence par un premier voyage.',
 }
-
 const TABS = [
-  { key: 'stats',      label: 'Statistiques', icon: '▦' },
-  { key: 'inventaire', label: 'Inventaire',   icon: '◇' },
-  { key: 'historique', label: 'Historique',   icon: '≡' },
+  { key: 'stats',        label: "Vue d'ensemble" },
+  { key: 'inventaire',   label: 'Inventaire' },
+  { key: 'historique',   label: 'Historique' },
+  { key: 'achievements', label: 'Succès' },
+]
+const ACHIEVEMENTS = [
+  { id: 'premier_million', label: 'Premier Million',  desc: 'Atteindre 1 000 000 ฿',     icon: '💎', check: (m)      => parseInt(m?.berrys || 0) >= 1_000_000 },
+  { id: 'vocal_10',        label: 'Voix du Peuple',   desc: '10 heures en vocal',         icon: '🎙', check: (m,s,h) => h >= 10 },
+  { id: 'vocal_100',       label: 'Légende Vocale',   desc: '100 heures en vocal',        icon: '🎤', check: (m,s,h) => h >= 100 },
+  { id: 'top_100',         label: 'Top 100',           desc: 'Entrer dans le classement', icon: '🏆', check: (m)      => m?.rank <= 100 },
+  { id: 'top_10',          label: 'Élite Nakama',      desc: 'Top 10 du serveur',         icon: '⭐', check: (m)      => m?.rank <= 10 },
+  { id: 'collector',       label: 'Collectionneur',   desc: '5 objets en inventaire',     icon: '🗃', check: (m,s)   => (s?.inventory?.length || 0) >= 5 },
+  { id: 'shopper',         label: 'Grand Marchand',   desc: '3 achats effectués',         icon: '🛒', check: (m,s)   => (s?.transactions?.length || 0) >= 3 },
+  { id: 'yonkou',          label: 'Yonkou',            desc: 'Rang Yonkou atteint',       icon: '🌊', check: (m,s,h) => h >= 70 },
+  { id: 'roi',             label: 'Roi des Pirates',  desc: 'Rang maximum atteint',       icon: '👑', check: (m,s,h) => h >= 150 },
 ]
 
-// ── Utils ─────────────────────────────────────────────────────
-function getRank(hours) {
-  return RANK_MAP.find(r => hours >= r.min) ?? RANK_MAP[RANK_MAP.length - 1]
-}
-function getNextRank(rank) {
-  return rank.next != null ? RANK_MAP.find(r => r.min === rank.next) : null
-}
+// ── Utils ──────────────────────────────────────────────────────────────────
+function getRank(hours)    { return RANK_MAP.find(r => hours >= r.min) ?? RANK_MAP[RANK_MAP.length - 1] }
+function getNextRank(rank) { return rank.next != null ? RANK_MAP.find(r => r.min === rank.next) : null }
 function fmtB(value) {
   const n = Number.parseInt(value || 0, 10)
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
-  if (n >= 1_000) return `${(n / 1_000).toFixed(0)}K`
+  if (n >= 1_000)     return `${(n / 1_000).toFixed(0)}K`
   return String(n)
 }
-function fmtNum(value) {
-  return new Intl.NumberFormat('fr-FR').format(Number(value || 0))
-}
+function fmtNum(value) { return new Intl.NumberFormat('fr-FR').format(Number(value || 0)) }
 function timeAgo(iso) {
   if (!iso) return ''
-  const minutes = Math.floor((Date.now() - new Date(iso)) / 60000)
-  if (minutes < 1) return "à l'instant"
-  if (minutes < 60) return `il y a ${minutes} min`
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `il y a ${hours} h`
-  return `il y a ${Math.floor(hours / 24)} j`
+  const m = Math.floor((Date.now() - new Date(iso)) / 60000)
+  if (m < 1)  return "à l'instant"
+  if (m < 60) return `il y a ${m} min`
+  const h = Math.floor(m / 60)
+  if (h < 24) return `il y a ${h} h`
+  return `il y a ${Math.floor(h / 24)} j`
+}
+function getAuraTier(score) {
+  if (score >= 85) return { label: 'Légende du serveur', color: '#FFD700' }
+  if (score >= 70) return { label: 'Profil très actif',  color: '#d4a017' }
+  if (score >= 50) return { label: 'Profil actif',       color: '#a88a30' }
+  if (score >= 30) return { label: 'Présence modérée',   color: '#7c7f8a' }
+  return             { label: 'Début du voyage',          color: '#5a5d6a' }
 }
 
-// ── CountUp ───────────────────────────────────────────────────
+// ── CountUp ────────────────────────────────────────────────────────────────
 function CountUp({ value, decimals = 0, suffix = '' }) {
   const [current, setCurrent] = useState(0)
   useEffect(() => {
     const target = Number(value || 0)
-    let frame = 0
-    const total = 60
+    let frame = 0; const total = 55
     const tick = () => {
-      frame += 1
-      const eased = 1 - Math.pow(1 - frame / total, 3)
-      setCurrent(target * eased)
+      frame++
+      setCurrent(target * (1 - Math.pow(1 - frame / total, 3)))
       if (frame < total) requestAnimationFrame(tick)
     }
-    setCurrent(0)
-    requestAnimationFrame(tick)
+    setCurrent(0); requestAnimationFrame(tick)
   }, [value])
   return `${current.toFixed(decimals)}${suffix}`
 }
 
-// ── StatTile ──────────────────────────────────────────────────
-function StatTile({ label, value, detail, color, tone = 'gold' }) {
+// ── AuraFactor ─────────────────────────────────────────────────────────────
+function AuraFactor({ label, value, max, color }) {
+  const pct = Math.min(100, Math.round((value / max) * 100))
   return (
-    <article className={`profile-stat profile-stat-${tone}`} style={{ '--accent': color }}>
-      <b aria-hidden="true" />
-      <span>{label}</span>
-      <strong>{value}</strong>
-      {detail && <small>{detail}</small>}
-    </article>
-  )
-}
-
-// ── Progress ──────────────────────────────────────────────────
-function Progress({ value, max, color }) {
-  const pct = max > 0 ? Math.min(100, Math.max(0, (value / max) * 100)) : 100
-  return (
-    <div className="profile-progress">
-      <span className="profile-progress-ship" style={{ left: `${pct}%` }} />
-      <div style={{ width: `${pct}%`, '--accent': color }} />
+    <div className="pf-factor" style={{ '--fc': color }}>
+      <div className="pf-factor-hd">
+        <span>{label}</span>
+        <span className="pf-factor-val">{Math.round(value)}<em>/{max}</em></span>
+      </div>
+      <div className="pf-factor-track">
+        <div className="pf-factor-fill" style={{ width: `${pct}%` }} />
+      </div>
     </div>
   )
 }
 
-// ── WantedPoster ──────────────────────────────────────────────
-function WantedPoster({ member, rank, hours }) {
-  const bounty = Number.parseInt(member.berrys || 0, 10)
+// ── AchievementCard ────────────────────────────────────────────────────────
+function AchievementCard({ ach, unlocked, delay = 0 }) {
   return (
-    <aside className="profile-poster" style={{ '--accent': rank.color }}>
-      <div className="profile-poster-shimmer" />
-      <div className="profile-poster-rank">#{member.rank || '—'}</div>
-      <div className="profile-poster-top">Profil membre</div>
-      <div className="profile-poster-title">Carte joueur</div>
-      <div className="profile-poster-photo">
-        {member.avatar_url
-          ? <img src={member.avatar_url} alt="" />
-          : <span>{rank.emoji}</span>
-        }
+    <div className={`pf-ach${unlocked ? ' pf-ach-on' : ''}`} style={{ animationDelay: `${delay}ms` }}>
+      <span className="pf-ach-icon">{ach.icon}</span>
+      <div className="pf-ach-body">
+        <strong>{ach.label}</strong>
+        <span>{ach.desc}</span>
       </div>
-      <div className="profile-poster-name">{member.username || `Pirate #${String(member.uid).slice(-4)}`}</div>
-      <div className="profile-poster-role">{rank.emoji} {rank.rang}</div>
-      <div className="profile-poster-line" />
-      <div className="profile-poster-meta">
-        <div className="profile-bounty">
-          {Array.from({ length: 7 }).map((_, i) => <i key={i} style={{ '--i': i }} />)}
-          <span>Prime</span>
-          <strong>{fmtB(bounty)} ฿</strong>
-        </div>
-        <div>
-          <span>Vocal</span>
-          <strong><CountUp value={hours} decimals={1} suffix="h" /></strong>
-        </div>
-      </div>
-    </aside>
+      <span className="pf-ach-check">{unlocked ? '✓' : '·'}</span>
+    </div>
   )
 }
 
-// ── InventoryCard ─────────────────────────────────────────────
-function InventoryCard({ item }) {
+// ── InventoryCard ──────────────────────────────────────────────────────────
+function InventoryCard({ item, delay = 0 }) {
   const shopItem = item?.shop_items || item || {}
-  const rarity = shopItem.rarity || 'Commun'
-  const style = RARITY_STYLES[rarity] || RARITY_STYLES.Commun
-  const name = shopItem.name || 'Objet inconnu'
-  const category = shopItem.category || item?.category || 'Cosmetique'
+  const rarity   = shopItem.rarity || 'Commun'
+  const style    = RARITY_STYLES[rarity] || RARITY_STYLES.Commun
   return (
-    <article className="profile-item" style={{ '--accent': style.color }}>
-      <div className="profile-item-top">
-        <span>{category.slice(0, 2).toUpperCase()}</span>
-        <em>{style.label}</em>
+    <article className="pf-item" style={{ '--ac': style.color, animationDelay: `${delay}ms` }}>
+      <div className="pf-item-header">
+        <span className="pf-item-cat">{(shopItem.category || 'CO').slice(0, 2).toUpperCase()}</span>
+        <em className="pf-item-rarity">{style.label}</em>
       </div>
-      <strong>{name}</strong>
-      {item?.acquired_at && <small>Obtenu {timeAgo(item.acquired_at)}</small>}
+      <strong className="pf-item-name">{shopItem.name || 'Objet inconnu'}</strong>
+      {item?.acquired_at && <small className="pf-item-date">Obtenu {timeAgo(item.acquired_at)}</small>}
     </article>
   )
 }
 
-// ── TransactionRow ────────────────────────────────────────────
-function TransactionRow({ tx }) {
+// ── TransactionRow ─────────────────────────────────────────────────────────
+function TransactionRow({ tx, delay = 0 }) {
   const shopItem = tx?.shop_items || {}
-  const style = RARITY_STYLES[shopItem.rarity] || RARITY_STYLES.Commun
+  const style    = RARITY_STYLES[shopItem.rarity] || RARITY_STYLES.Commun
   return (
-    <div className="profile-transaction" style={{ '--accent': style.color }}>
-      <div className="profile-transaction-icon">฿</div>
-      <div>
+    <div className="pf-tx" style={{ '--ac': style.color, animationDelay: `${delay}ms` }}>
+      <div className="pf-tx-icon">฿</div>
+      <div className="pf-tx-info">
         <strong>{shopItem.name || 'Achat boutique'}</strong>
         <span>{timeAgo(tx?.created_at)}</span>
       </div>
-      <em>-{fmtNum(tx?.amount || 0)} ฿</em>
+      <em className="pf-tx-amount">-{fmtNum(tx?.amount || 0)} ฿</em>
     </div>
   )
 }
 
-// ── EmptyState ────────────────────────────────────────────────
-function EmptyState({ icon, title, text }) {
+// ── EmptyState ─────────────────────────────────────────────────────────────
+function EmptyState({ icon, title, sub }) {
   return (
-    <div className="profile-empty">
-      <div>{icon}</div>
+    <div className="pf-empty">
+      <span className="pf-empty-icon">{icon}</span>
       <strong>{title}</strong>
-      <span>{text}</span>
+      {sub && <p>{sub}</p>}
     </div>
   )
 }
 
-// ── Main ──────────────────────────────────────────────────────
+// ── CSS ────────────────────────────────────────────────────────────────────
+const CSS = `
+@keyframes pfRise    { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:none; } }
+@keyframes pfFadeUp  { from { opacity:0; transform:translateY(8px); }  to { opacity:1; transform:none; } }
+@keyframes pfBarFill { from { width:0 !important; } }
+@keyframes pfShimmer { from { transform:translateX(-130%); } to { transform:translateX(230%); } }
+@keyframes pfDotPulse {
+  0%,100% { box-shadow:0 0 0 0 rgba(35,209,139,.55); }
+  60%     { box-shadow:0 0 0 5px rgba(35,209,139,0); }
+}
+
+/* ── Shell ── */
+.pf-shell {
+  min-height:100vh;
+  background:#0b0c0e;
+  color:#e0e1e3;
+  font-family:var(--body,'Inter',system-ui,sans-serif);
+  overflow-x:hidden;
+}
+
+/* ── Wrap ── */
+.pf-wrap {
+  position:relative; z-index:1;
+  width:min(1100px,calc(100% - 40px));
+  margin:0 auto;
+  padding:80px 0 120px;
+  animation:pfRise .55s cubic-bezier(.22,1,.36,1) both;
+}
+
+/* ── Topbar ── */
+.pf-topbar {
+  display:flex; justify-content:space-between; align-items:center;
+  margin-bottom:28px;
+}
+.pf-back {
+  height:34px; padding:0 14px; border-radius:8px;
+  border:1px solid rgba(255,255,255,.07);
+  background:rgba(255,255,255,.03);
+  color:#5d616f; font-size:12.5px; font-weight:700; cursor:pointer; transition:.15s;
+}
+.pf-back:hover { color:#e0e1e3; border-color:rgba(255,255,255,.12); }
+.pf-btn-immersive {
+  height:34px; padding:0 14px; border-radius:8px;
+  border:1px solid rgba(212,160,23,.18);
+  background:rgba(212,160,23,.06);
+  color:rgba(212,160,23,.7); font-size:12px; font-weight:800; cursor:pointer; transition:.15s;
+}
+.pf-btn-immersive:hover { background:rgba(212,160,23,.12); color:#d4a017; }
+
+/* ════════════════════════════ HERO ════════════════════════════════════════ */
+.pf-hero {
+  position:relative; overflow:hidden;
+  display:flex; align-items:flex-start; gap:36px;
+  padding:40px 48px 36px;
+  border-radius:18px;
+  background:#0f1013;
+  border:1px solid rgba(255,255,255,.05);
+  border-top-color:rgba(212,160,23,.25);
+  margin-bottom:10px;
+}
+.pf-hero-line {
+  position:absolute; left:0; right:0; top:0; height:1px;
+  background:linear-gradient(90deg,transparent 0%,#d4a017 35%,rgba(212,160,23,.35) 70%,transparent 100%);
+}
+.pf-hero-grid {
+  position:absolute; right:0; top:0; bottom:0; width:38%;
+  pointer-events:none; z-index:0;
+  background:
+    repeating-linear-gradient(0deg,transparent,transparent 28px,rgba(255,255,255,.018) 28px,rgba(255,255,255,.018) 29px),
+    repeating-linear-gradient(90deg,transparent,transparent 28px,rgba(255,255,255,.014) 28px,rgba(255,255,255,.014) 29px);
+  mask-image:linear-gradient(to left,rgba(0,0,0,.4),transparent 80%);
+}
+
+/* Avatar column */
+.pf-avatar-col {
+  position:relative; z-index:1; flex-shrink:0;
+  display:flex; flex-direction:column; align-items:center; gap:14px;
+  min-width:148px;
+}
+.pf-avatar-ring {
+  position:relative;
+  width:136px; height:136px; border-radius:50%;
+}
+.pf-avatar-inner {
+  width:100%; height:100%; border-radius:50%; overflow:hidden;
+  border:2px solid rgba(212,160,23,.22);
+  background:#141518;
+  display:grid; place-items:center;
+  box-shadow:0 8px 32px rgba(0,0,0,.45);
+  transition:border-color .25s;
+}
+.pf-avatar-ring:hover .pf-avatar-inner {
+  border-color:rgba(212,160,23,.45);
+  box-shadow:0 8px 32px rgba(0,0,0,.45), 0 0 28px rgba(212,160,23,.12);
+}
+.pf-avatar-img   { width:100%; height:100%; object-fit:cover; transition:transform .4s ease; }
+.pf-avatar-ring:hover .pf-avatar-img { transform:scale(1.04); }
+.pf-avatar-emoji { font-size:64px; }
+.pf-avatar-dot {
+  position:absolute; bottom:8px; right:8px; z-index:2;
+  width:14px; height:14px; border-radius:50%;
+  background:#23d18b;
+  border:2.5px solid #0b0c0e;
+  animation:pfDotPulse 2.6s ease-in-out infinite;
+}
+.pf-rank-chip {
+  display:flex; align-items:center; gap:8px;
+  width:100%; padding:9px 12px; border-radius:10px;
+  background:color-mix(in srgb,var(--rank) 9%,rgba(0,0,0,.3));
+  border:1px solid color-mix(in srgb,var(--rank) 25%,rgba(255,255,255,.04));
+  transition:.18s;
+}
+.pf-rank-chip:hover { border-color:color-mix(in srgb,var(--rank) 42%,rgba(255,255,255,.05)); }
+.pf-rank-chip-text strong { display:block; font-size:12.5px; font-weight:900; color:var(--rank); line-height:1.1; }
+.pf-rank-chip-text small  { font-size:10px; color:#5d616f; }
+.pf-own-badge {
+  padding:3px 10px; border-radius:999px;
+  background:rgba(35,209,139,.08); border:1px solid rgba(35,209,139,.2);
+  color:#6ee7b7; font-size:10.5px; font-weight:800; letter-spacing:.04em;
+}
+
+/* Hero info column */
+.pf-hero-info { position:relative; z-index:1; flex:1; min-width:0; }
+
+.pf-eyebrow {
+  font-size:10px; font-weight:800; letter-spacing:.28em;
+  text-transform:uppercase; color:rgba(212,160,23,.65);
+  margin-bottom:11px;
+}
+
+.pf-name {
+  margin:0 0 10px;
+  font-family:var(--display,'Syne',system-ui,sans-serif);
+  font-size:clamp(34px,4.5vw,60px);
+  font-weight:900; line-height:.92; letter-spacing:-.026em;
+  color:#ffffff; overflow-wrap:anywhere;
+}
+
+.pf-quote {
+  margin:0 0 20px; padding-left:12px;
+  border-left:2px solid rgba(212,160,23,.22);
+  color:#5d616f; font-size:13px; font-style:italic;
+  line-height:1.6; max-width:500px;
+}
+
+/* Stats pills */
+.pf-stats { display:flex; gap:7px; flex-wrap:wrap; margin-bottom:20px; }
+.pf-stat {
+  display:flex; flex-direction:column; gap:3px;
+  padding:10px 15px; border-radius:10px; min-width:86px;
+  background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.06);
+  cursor:default; transition:.15s;
+}
+.pf-stat:hover { border-color:rgba(255,255,255,.1); }
+.pf-stat span   { font-size:9.5px; text-transform:uppercase; letter-spacing:.12em; color:#5d616f; font-weight:800; }
+.pf-stat strong { font-size:19px; font-weight:900; color:#e0e1e3; font-family:var(--display,'Syne',system-ui); line-height:1; }
+.pf-stat-gold strong { color:#d4a017; }
+
+/* Progress */
+.pf-prog { margin-bottom:20px; }
+.pf-prog-header { display:flex; justify-content:space-between; align-items:flex-end; gap:8px; margin-bottom:8px; }
+.pf-prog-from, .pf-prog-to { display:flex; flex-direction:column; gap:2px; font-size:10.5px; color:#5d616f; font-weight:700; }
+.pf-prog-to { text-align:right; align-items:flex-end; }
+.pf-prog-from em, .pf-prog-to em { font-style:normal; font-size:13.5px; }
+.pf-prog-from small, .pf-prog-to small { font-size:9.5px; color:rgba(93,97,111,.5); letter-spacing:.04em; }
+.pf-prog-center { text-align:center; font-size:11.5px; color:#5d616f; font-weight:700; flex:1; }
+.pf-prog-center strong { color:var(--rank); font-size:14px; font-weight:950; display:block; }
+.pf-prog-maxed { font-size:13px; font-weight:900; color:#d4a017; text-align:center; flex:1; }
+.pf-prog-track {
+  position:relative; height:7px; border-radius:999px;
+  background:rgba(255,255,255,.05); overflow:hidden;
+}
+.pf-prog-fill {
+  position:relative; height:100%; border-radius:inherit; overflow:hidden;
+  background:linear-gradient(90deg,color-mix(in srgb,var(--ac) 55%,rgba(255,255,255,.1)),var(--ac));
+  animation:pfBarFill .9s cubic-bezier(.22,1,.36,1) both;
+}
+.pf-prog-fill::after {
+  content:""; position:absolute; inset:0;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.5),transparent);
+  animation:pfShimmer 3s ease-in-out infinite;
+}
+
+/* Actions */
+.pf-actions { display:flex; gap:8px; flex-wrap:wrap; }
+.pf-btn {
+  height:38px; padding:0 16px; border-radius:9px;
+  font-size:12.5px; font-weight:800; cursor:pointer;
+  display:inline-flex; align-items:center; justify-content:center;
+  text-decoration:none; border:1px solid transparent;
+  transition:transform .15s, background .15s, border-color .15s;
+}
+.pf-btn:hover { transform:translateY(-1px); }
+.pf-btn-gold {
+  background:rgba(212,160,23,.1); border-color:rgba(212,160,23,.25); color:#d4a017;
+}
+.pf-btn-gold:hover { background:rgba(212,160,23,.18); border-color:rgba(212,160,23,.42); }
+.pf-btn-discord {
+  background:rgba(88,101,242,.1); border-color:rgba(88,101,242,.25); color:#93b7ff;
+}
+.pf-btn-discord:hover { background:rgba(88,101,242,.18); }
+.pf-btn-ghost {
+  background:transparent; border-color:rgba(255,255,255,.07); color:#5d616f;
+}
+.pf-btn-ghost:hover { color:#e0e1e3; border-color:rgba(255,255,255,.13); }
+
+/* ══════════════════════════ AURA BRAMS ════════════════════════════════════ */
+.pf-aura {
+  display:flex; border-radius:16px; margin-bottom:10px; overflow:hidden;
+  background:#0f1013;
+  border:1px solid rgba(212,160,23,.1);
+  transition:border-color .2s;
+}
+.pf-aura:hover { border-color:rgba(212,160,23,.2); }
+
+.pf-aura-score-col {
+  display:flex; flex-direction:column; justify-content:center; gap:8px;
+  padding:24px 28px; min-width:158px; flex-shrink:0;
+  border-right:1px solid rgba(255,255,255,.05);
+  background:rgba(212,160,23,.04);
+}
+.pf-aura-eyebrow {
+  font-size:9.5px; text-transform:uppercase; letter-spacing:.2em;
+  color:rgba(212,160,23,.5); font-weight:800;
+}
+.pf-aura-num {
+  font-family:var(--display,'Syne',system-ui);
+  font-size:58px; font-weight:950; line-height:1;
+  color:#d4a017; display:flex; align-items:baseline; gap:4px;
+}
+.pf-aura-num small { font-size:16px; color:#5d616f; font-weight:700; }
+.pf-aura-tier {
+  font-size:10.5px; font-weight:800;
+  letter-spacing:.04em;
+}
+
+.pf-aura-main {
+  flex:1; display:flex; flex-direction:column; justify-content:center; gap:16px;
+  padding:24px 28px;
+}
+.pf-aura-bar-section { display:flex; flex-direction:column; gap:6px; }
+.pf-aura-bar-top {
+  display:flex; justify-content:space-between; align-items:center;
+  font-size:10px; color:#5d616f; font-weight:700;
+}
+.pf-aura-track {
+  height:6px; border-radius:999px; background:rgba(255,255,255,.05); overflow:hidden;
+}
+.pf-aura-fill {
+  height:100%; border-radius:inherit;
+  background:linear-gradient(90deg,rgba(212,160,23,.55),#d4a017,rgba(212,160,23,.9));
+  animation:pfBarFill .95s cubic-bezier(.22,1,.36,1) .15s both;
+  transition:width 1.2s cubic-bezier(.22,1,.36,1);
+}
+.pf-aura-factors { display:flex; gap:14px; }
+.pf-factor { flex:1; display:flex; flex-direction:column; gap:5px; }
+.pf-factor-hd { display:flex; justify-content:space-between; align-items:center; gap:4px; }
+.pf-factor-hd > span:first-child { font-size:9.5px; text-transform:uppercase; letter-spacing:.11em; color:#5d616f; font-weight:800; }
+.pf-factor-val { font-size:11px; font-weight:800; color:var(--fc,#5d616f); }
+.pf-factor-val em { font-style:normal; color:#5d616f; font-weight:700; font-size:9px; }
+.pf-factor-track { height:3px; border-radius:999px; background:rgba(255,255,255,.05); overflow:hidden; }
+.pf-factor-fill  { height:100%; border-radius:inherit; background:var(--fc,rgba(212,160,23,.6)); opacity:.8; animation:pfBarFill .85s cubic-bezier(.22,1,.36,1) .3s both; }
+
+/* ══════════════════════════════ TABS ══════════════════════════════════════ */
+.pf-tabs {
+  display:flex; gap:2px; padding:4px; border-radius:11px; margin-bottom:18px;
+  background:#0f1013;
+  border:1px solid rgba(255,255,255,.05);
+  width:max-content; max-width:100%;
+  overflow-x:auto; scrollbar-width:none;
+}
+.pf-tabs::-webkit-scrollbar { display:none; }
+.pf-tabs button {
+  height:36px; padding:0 20px; border-radius:8px;
+  border:1px solid transparent; background:transparent;
+  color:#5d616f; font-size:12.5px; font-weight:700;
+  cursor:pointer; white-space:nowrap; letter-spacing:.02em; flex-shrink:0;
+  transition:.15s;
+}
+.pf-tabs button:hover { color:#e0e1e3; background:rgba(255,255,255,.03); }
+.pf-tabs button.active {
+  color:#d4a017;
+  background:rgba(212,160,23,.08);
+  border-color:rgba(212,160,23,.22);
+}
+
+/* ── Content ── */
+.pf-tab-content { animation:pfFadeUp .25s cubic-bezier(.22,1,.36,1) both; }
+
+/* ── Grid 3 cols ── */
+.pf-grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:14px; }
+
+/* ══════════════════════════════ PANELS ════════════════════════════════════ */
+.pf-panel {
+  position:relative; overflow:hidden;
+  padding:20px 22px; border-radius:14px;
+  background:#0f1013;
+  border:1px solid rgba(255,255,255,.05);
+  animation:pfFadeUp .45s cubic-bezier(.22,1,.36,1) both;
+  transition:border-color .18s, transform .18s, box-shadow .18s;
+}
+.pf-panel::before {
+  content:""; position:absolute; left:0; right:0; top:0; height:1.5px;
+  background:var(--panel-line,linear-gradient(90deg,rgba(212,160,23,.5),transparent));
+}
+.pf-panel:hover { border-color:rgba(255,255,255,.09); transform:translateY(-1px); box-shadow:0 12px 36px rgba(0,0,0,.22); }
+
+.pf-panel-gold {
+  border-color:rgba(212,160,23,.1);
+  background:linear-gradient(145deg,rgba(212,160,23,.04),#0f1013);
+}
+.pf-panel-gold::before { background:linear-gradient(90deg,rgba(212,160,23,.65),rgba(212,160,23,.2),transparent); }
+.pf-panel-gold:hover { border-color:rgba(212,160,23,.2); }
+
+.pf-panel-rank::before { background:linear-gradient(90deg,var(--rank),color-mix(in srgb,var(--rank) 30%,transparent),transparent); }
+
+.pf-panel-h {
+  font-size:10px; font-weight:900; letter-spacing:.12em; text-transform:uppercase;
+  color:#5d616f; margin:0 0 16px;
+  display:flex; align-items:center; gap:7px;
+}
+.pf-panel-h::before {
+  content:""; width:5px; height:5px; border-radius:50%;
+  background:var(--dot-c,#d4a017);
+  box-shadow:0 0 6px var(--dot-c,#d4a017);
+  flex-shrink:0;
+}
+
+/* Rows */
+.pf-rows { display:flex; flex-direction:column; }
+.pf-row {
+  display:flex; justify-content:space-between; align-items:center; gap:8px;
+  padding:8px 0; border-bottom:1px solid rgba(255,255,255,.04);
+}
+.pf-row:last-child { border-bottom:none; }
+.pf-row span   { font-size:10px; text-transform:uppercase; letter-spacing:.1em; color:#5d616f; font-weight:800; }
+.pf-row strong { font-size:12.5px; color:#e0e1e3; text-align:right; overflow-wrap:anywhere; }
+
+.pf-divider { height:1px; background:rgba(255,255,255,.04); margin:12px 0; }
+
+/* Badges */
+.pf-badge-row { display:flex; gap:5px; flex-wrap:wrap; }
+.pf-badge {
+  display:inline-flex; align-items:center; gap:4px;
+  padding:3px 10px; border-radius:999px; font-size:11px; font-weight:800;
+  background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08);
+  color:#e0e1e3;
+}
+.pf-badge-rank {
+  background:color-mix(in srgb,var(--rank) 10%,rgba(0,0,0,.2));
+  border-color:color-mix(in srgb,var(--rank) 24%,rgba(255,255,255,.04));
+}
+.pf-badge-discord { background:rgba(88,101,242,.09); border-color:rgba(88,101,242,.2); color:#93b7ff; }
+.pf-badge-own { background:rgba(35,209,139,.08); border-color:rgba(35,209,139,.18); color:#6ee7b7; }
+
+/* Berry hero */
+.pf-berry-hero {
+  padding:13px 15px; border-radius:10px; margin-bottom:14px;
+  background:rgba(212,160,23,.07); border:1px solid rgba(212,160,23,.14);
+}
+.pf-berry-hero span   { font-size:9.5px; text-transform:uppercase; letter-spacing:.12em; color:rgba(212,160,23,.5); font-weight:800; display:block; margin-bottom:4px; }
+.pf-berry-hero strong { font-size:26px; font-weight:950; color:#d4a017; font-family:var(--display,'Syne',system-ui); line-height:1; }
+.pf-berry-hero em     { font-size:16px; font-style:normal; }
+
+/* ══════════════════════════ RANK JOURNEY ══════════════════════════════════ */
+.pf-journey { display:flex; flex-direction:column; }
+.pf-jstep {
+  display:flex; align-items:center; position:relative;
+  padding:3px 0;
+  animation:pfFadeUp .35s cubic-bezier(.22,1,.36,1) both;
+}
+.pf-jconnector {
+  position:absolute; left:10px; top:0; bottom:0; width:1px;
+  background:rgba(255,255,255,.05);
+}
+.pf-jstep:last-child .pf-jconnector { display:none; }
+.pf-jdot {
+  position:relative; z-index:1; flex-shrink:0; margin-right:10px;
+  width:22px; height:22px; border-radius:50%;
+  background:rgba(255,255,255,.03); border:2px solid rgba(255,255,255,.06);
+  display:grid; place-items:center; transition:.18s;
+}
+.pf-jstep.j-on .pf-jdot {
+  background:color-mix(in srgb,var(--ac) 18%,rgba(0,0,0,.25));
+  border-color:color-mix(in srgb,var(--ac) 48%,transparent);
+}
+.pf-jstep.j-current .pf-jdot {
+  border-color:var(--ac);
+  box-shadow:0 0 12px color-mix(in srgb,var(--ac) 32%,transparent);
+}
+.pf-jbody {
+  display:flex; align-items:center; gap:9px; flex:1;
+  padding:5px 9px; border-radius:9px; opacity:.2; transition:.18s;
+}
+.pf-jstep.j-on      .pf-jbody { opacity:1; }
+.pf-jstep.j-current .pf-jbody {
+  opacity:1; padding:8px 11px;
+  background:color-mix(in srgb,var(--ac) 8%,rgba(255,255,255,.01));
+  border:1px solid color-mix(in srgb,var(--ac) 22%,transparent);
+}
+.pf-jemoji { font-size:15px; flex-shrink:0; }
+.pf-jtext strong { display:block; font-size:12px; color:#e0e1e3; }
+.pf-jstep.j-current .pf-jtext strong { color:color-mix(in srgb,var(--ac) 75%,#f0e6d3); font-size:12.5px; }
+.pf-jtext small { font-size:9.5px; color:#5d616f; }
+.pf-jcheck { font-size:12px; font-weight:950; color:rgba(255,255,255,.1); flex-shrink:0; }
+.pf-jstep.j-on .pf-jcheck { color:var(--ac); }
+.pf-j-current-tag {
+  flex-shrink:0; font-size:9px; font-weight:900; text-transform:uppercase; letter-spacing:.1em;
+  padding:2px 6px; border-radius:999px;
+  background:color-mix(in srgb,var(--ac) 12%,rgba(0,0,0,.2));
+  border:1px solid color-mix(in srgb,var(--ac) 28%,transparent);
+  color:var(--ac);
+}
+
+/* ═══════════════════════════ ACHIEVEMENTS ═════════════════════════════════ */
+.pf-ach-section { margin-top:4px; }
+.pf-section-hd  { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+.pf-section-hd h3 {
+  margin:0; font-size:10px; font-weight:900; letter-spacing:.12em;
+  text-transform:uppercase; color:#5d616f;
+  display:flex; align-items:center; gap:7px;
+}
+.pf-section-hd h3::before { content:""; width:5px; height:5px; border-radius:50%; background:#d4a017; box-shadow:0 0 6px #d4a017; }
+.pf-see-all { background:none; border:none; cursor:pointer; color:#5d616f; font-size:12px; font-weight:700; transition:.15s; }
+.pf-see-all:hover { color:#e0e1e3; }
+
+.pf-ach-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(255px,1fr)); gap:9px; }
+.pf-ach-row  { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:9px; }
+
+.pf-ach {
+  display:flex; align-items:center; gap:12px;
+  padding:12px 14px; border-radius:10px;
+  background:#0f1013; border:1px solid rgba(255,255,255,.05);
+  opacity:.28; filter:grayscale(.55);
+  animation:pfFadeUp .4s cubic-bezier(.22,1,.36,1) both;
+  transition:.18s;
+}
+.pf-ach-on { opacity:1; filter:none; border-color:rgba(212,160,23,.12); }
+.pf-ach-on:hover { border-color:rgba(212,160,23,.26); transform:translateY(-1px); }
+.pf-ach-icon  { font-size:22px; flex-shrink:0; }
+.pf-ach-body  { flex:1; min-width:0; }
+.pf-ach-body strong { display:block; font-size:13px; color:#e0e1e3; }
+.pf-ach-body span   { font-size:11px; color:#5d616f; }
+.pf-ach-check { font-size:13px; font-weight:950; color:rgba(255,255,255,.1); flex-shrink:0; }
+.pf-ach-on .pf-ach-check { color:#d4a017; }
+
+/* ═══════════════════════════ CREW CARD ════════════════════════════════════ */
+.pf-crew {
+  display:flex; align-items:center; gap:14px;
+  padding:16px 20px; border-radius:12px; margin-top:14px;
+  background:#0f1013; border:1px solid rgba(255,255,255,.05);
+  transition:.15s;
+}
+.pf-crew:hover { border-color:rgba(255,255,255,.09); }
+.pf-crew-icon { font-size:24px; flex-shrink:0; }
+.pf-crew-body { flex:1; min-width:0; }
+.pf-crew-body strong { display:block; font-size:14px; color:#e0e1e3; margin-bottom:2px; }
+.pf-crew-body span   { font-size:12px; color:#5d616f; }
+.pf-crew-cta { white-space:nowrap; margin-left:auto; }
+
+/* ══════════════════════ INVENTORY + FILTERS ═══════════════════════════════ */
+.pf-inv-filters { display:flex; gap:6px; margin-bottom:12px; flex-wrap:wrap; }
+.pf-filter-btn {
+  height:30px; padding:0 12px; border-radius:7px; font-size:12px; font-weight:700;
+  border:1px solid rgba(255,255,255,.06);
+  background:rgba(255,255,255,.03); color:#5d616f; cursor:pointer; transition:.15s;
+}
+.pf-filter-btn:hover { color:#e0e1e3; }
+.pf-filter-btn.active {
+  background:rgba(212,160,23,.09); border-color:rgba(212,160,23,.22); color:#d4a017;
+}
+
+.pf-item-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:10px; }
+.pf-item {
+  position:relative; overflow:hidden; min-height:130px; padding:14px;
+  border-radius:11px; background:#0f1013;
+  border:1px solid color-mix(in srgb,var(--ac) 16%,rgba(255,255,255,.04));
+  animation:pfFadeUp .4s cubic-bezier(.22,1,.36,1) both;
+  transition:.18s;
+}
+.pf-item::before { content:""; position:absolute; left:0; right:0; top:0; height:1.5px; background:linear-gradient(90deg,var(--ac),transparent); opacity:.5; }
+.pf-item:hover { transform:translateY(-2px); border-color:color-mix(in srgb,var(--ac) 30%,rgba(255,255,255,.06)); }
+.pf-item-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; }
+.pf-item-cat    { width:34px; height:34px; border-radius:8px; display:grid; place-items:center; background:color-mix(in srgb,var(--ac) 13%,transparent); color:var(--ac); font-weight:950; font-size:11px; }
+.pf-item-rarity { text-transform:uppercase; letter-spacing:.09em; font-size:9.5px; color:#5d616f; font-weight:850; font-style:normal; }
+.pf-item-name   { display:block; color:#e0e1e3; font-size:13.5px; font-weight:800; }
+.pf-item-date   { display:block; margin-top:6px; color:#5d616f; font-size:11px; }
+
+/* ════════════════════════ TRANSACTIONS ═══════════════════════════════════ */
+.pf-tx-list { display:flex; flex-direction:column; gap:8px; }
+.pf-tx {
+  display:grid; grid-template-columns:40px 1fr auto; align-items:center;
+  gap:12px; padding:12px; border-radius:10px;
+  background:#0f1013; border:1px solid rgba(255,255,255,.05);
+  animation:pfFadeUp .35s cubic-bezier(.22,1,.36,1) both; transition:.15s;
+}
+.pf-tx:hover { border-color:rgba(255,255,255,.09); }
+.pf-tx-icon   { width:40px; height:40px; border-radius:9px; display:grid; place-items:center; color:var(--ac); background:color-mix(in srgb,var(--ac) 11%,transparent); font-weight:950; font-size:16px; }
+.pf-tx-info strong { display:block; color:#e0e1e3; font-size:13px; }
+.pf-tx-info span   { color:#5d616f; font-size:11.5px; }
+.pf-tx-amount      { color:#e06969; font-style:normal; font-weight:950; font-size:14px; white-space:nowrap; }
+
+/* ════════════════════════ EMPTY ══════════════════════════════════════════ */
+.pf-empty { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:260px; gap:9px; text-align:center; color:#5d616f; }
+.pf-empty-icon   { font-size:40px; }
+.pf-empty strong { color:#e0e1e3; font-size:17px; font-weight:800; }
+.pf-empty p      { font-size:13px; max-width:320px; line-height:1.55; margin:0; }
+
+/* ════════════════════════ IMMERSIVE ══════════════════════════════════════ */
+.pf-immersive .pf-topbar,
+.pf-immersive .pf-tabs,
+.pf-immersive .pf-tab-content,
+.pf-immersive .pf-aura,
+.pf-immersive .pf-ach-section,
+.pf-immersive .pf-crew { display:none; }
+.pf-immersive .pf-wrap { padding-top:24px; }
+
+/* ════════════════════════ RESPONSIVE ════════════════════════════════════ */
+@media (max-width:960px) {
+  .pf-wrap { width:min(1100px,calc(100% - 32px)); }
+  .pf-hero { padding:32px 36px; gap:28px; }
+  .pf-grid-3 { grid-template-columns:1fr 1fr; }
+  .pf-grid-3 > :last-child { grid-column:1/-1; }
+  .pf-aura { flex-direction:column; }
+  .pf-aura-score-col { border-right:none; border-bottom:1px solid rgba(255,255,255,.05); flex-direction:row; align-items:center; gap:22px; min-width:unset; padding:18px 22px; }
+  .pf-aura-num { font-size:48px; }
+  .pf-aura-factors { flex-wrap:wrap; }
+  .pf-factor { min-width:calc(50% - 7px); }
+}
+@media (max-width:640px) {
+  .pf-wrap { width:calc(100% - 24px); padding-top:70px; }
+  .pf-hero { flex-direction:column; padding:22px; border-radius:14px; gap:20px; }
+  .pf-avatar-col { flex-direction:row; align-items:center; gap:18px; min-width:unset; }
+  .pf-avatar-ring { width:100px; height:100px; }
+  .pf-avatar-emoji { font-size:50px; }
+  .pf-name { font-size:clamp(28px,10vw,46px); }
+  .pf-stats { gap:6px; }
+  .pf-stat { min-width:78px; padding:9px 11px; }
+  .pf-stat strong { font-size:17px; }
+  .pf-prog-header { flex-direction:column; align-items:center; gap:6px; }
+  .pf-prog-from, .pf-prog-to { align-items:center; text-align:center; }
+  .pf-grid-3 { grid-template-columns:1fr; }
+  .pf-grid-3 > :last-child { grid-column:auto; }
+  .pf-tabs { width:100%; }
+  .pf-aura-score-col { flex-direction:row; gap:18px; }
+  .pf-aura-num { font-size:42px; }
+  .pf-aura-factors { flex-direction:column; gap:10px; }
+  .pf-factor { min-width:unset; }
+  .pf-ach-row { grid-template-columns:1fr; }
+}
+`
+
+// ── Main ────────────────────────────────────────────────────────────────────
 export default function ProfilePage() {
   const { discordId } = useParams()
-  const navigate = useNavigate()
+  const navigate      = useNavigate()
   const { discordId: myId } = useAuth()
-  const [member, setMember] = useState(null)
+  const [member,   setMember]   = useState(null)
   const [shopData, setShopData] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [tab, setTab] = useState('stats')
-  const [copied, setCopied] = useState(false)
-  const [immersive, setImmersive] = useState(false)
+  const [loading,  setLoading]  = useState(true)
+  const [tab,      setTab]      = useState('stats')
+  const [copied,   setCopied]   = useState(false)
+  const [immersive,setImmersive]= useState(false)
+  const [invFilter,setInvFilter]= useState('Tous')
 
   useEffect(() => {
     let ignore = false
@@ -203,938 +736,364 @@ export default function ProfilePage() {
     return () => { ignore = true }
   }, [discordId])
 
-  const hours = Number.parseFloat(member?.vocal_h || 0)
-  const rank = getRank(hours)
+  const hours    = Number.parseFloat(member?.vocal_h || 0)
+  const rank     = getRank(hours)
   const nextRank = getNextRank(rank)
   const remaining = nextRank ? Math.max(0, nextRank.min - hours) : 0
+  const pct = useMemo(() => {
+    if (!nextRank) return 100
+    return Math.min(100, Math.max(0, ((hours - rank.min) / (nextRank.min - rank.min)) * 100))
+  }, [hours, rank, nextRank])
+
   const isOwnProfile = String(myId) === String(discordId)
-  const displayName = member?.username || `Pirate #${String(member?.uid || '').slice(-4)}`
-  const quote = RANK_QUOTES[rank.rang] || ''
+  const displayName  = member?.username || `Pirate #${String(member?.uid || '').slice(-4)}`
+  const quote        = RANK_QUOTES[rank.rang] || ''
 
   const wallet = useMemo(() => {
     if (shopData && !shopData.preview) return shopData.balance || 0
     return member?.berrys || 0
   }, [member, shopData])
 
-  const copyLink = () => {
-    navigator.clipboard.writeText(window.location.href)
-    setCopied(true)
-    window.setTimeout(() => setCopied(false), 1800)
-  }
+  const auraFactors = useMemo(() => {
+    if (!member) return { vocal: 0, berries: 0, rankF: 0, total: 0 }
+    const vocal   = Math.min(hours / 2, 30)
+    const berries = Math.min(parseInt(member?.berrys || 0) / 3_000_000, 25)
+    const rankF   = Math.max(0, (RANK_MAP.length - 1 - RANK_MAP.indexOf(rank))) * 6
+    const inv     = Math.min((shopData?.inventory?.length || 0) * 0.5, 5)
+    const total   = Math.min(Math.round(vocal + berries + rankF + inv), 100)
+    return { vocal, berries, rankF, total }
+  }, [hours, member, rank, shopData])
+  const aura     = auraFactors.total
+  const auraTier = getAuraTier(aura)
+
+  const achievements = useMemo(() => {
+    if (!member) return []
+    return ACHIEVEMENTS.map(a => ({ ...a, unlocked: a.check(member, shopData, hours) }))
+  }, [member, shopData, hours])
+
+  const rarities = useMemo(() => {
+    if (!shopData?.inventory?.length) return []
+    return [...new Set(shopData.inventory.map(i => i?.shop_items?.rarity || 'Commun'))]
+  }, [shopData])
+
+  const filteredInv = useMemo(() => {
+    if (!shopData?.inventory?.length) return []
+    if (invFilter === 'Tous') return shopData.inventory
+    return shopData.inventory.filter(i => (i?.shop_items?.rarity || 'Commun') === invFilter)
+  }, [shopData, invFilter])
+
+  const copyLink = () => { navigator.clipboard.writeText(window.location.href); setCopied(true); window.setTimeout(() => setCopied(false), 1800) }
+  const copyId   = () => { navigator.clipboard.writeText(String(member?.uid || discordId)); setCopied(true); window.setTimeout(() => setCopied(false), 1800) }
 
   return (
-    <div className={`profile-shell ${immersive ? 'profile-immersive' : ''}`} style={{ '--rank': rank.color }}>
+    <div className={`pf-shell${immersive ? ' pf-immersive' : ''}`} style={{ '--rank': rank.color }}>
       {!immersive && <Navbar />}
+      <style>{CSS}</style>
 
-      {/* ── Atmospheric background ── */}
-      <div className="profile-atmosphere" aria-hidden="true">
-        <span className="fog fog-a" />
-        <span className="fog fog-b" />
-        <span className="fog fog-c" />
-        <span className="wave wave-a" />
-        <span className="wave wave-b" />
-        {Array.from({ length: 30 }).map((_, i) => <i key={i} style={{ '--i': i }} />)}
-        {Array.from({ length: 26 }).map((_, i) => <b key={i} style={{ '--i': i }} />)}
-        {Array.from({ length: 8 }).map((_, i) => <s key={i} style={{ '--i': i }} />)}
-        {Array.from({ length: 5 }).map((_, i) => <em key={i} style={{ '--i': i }} />)}
-        {Array.from({ length: 6 }).map((_, i) => <u key={i} style={{ '--i': i }} />)}
-      </div>
-
-      <style>{`
-        /* ── Keyframes ─────────────────────────────────────────── */
-        @keyframes profileRise {
-          from { opacity:0; transform:translateY(22px) scale(.984); filter:blur(10px); }
-          to   { opacity:1; transform:translateY(0) scale(1); filter:blur(0); }
-        }
-        @keyframes profileDrift {
-          0%,100% { transform:translate3d(-2%,0,0) rotate(-1deg); opacity:.34; }
-          50%     { transform:translate3d(3%,-2%,0) rotate(1deg);  opacity:.58; }
-        }
-        @keyframes profileWave {
-          from { transform:translateX(-8%) skewX(-8deg); }
-          to   { transform:translateX(8%)  skewX(-8deg); }
-        }
-        @keyframes profileSpark {
-          0%   { transform:translateY(0) scale(.55); opacity:0; }
-          16%  { opacity:.9; }
-          100% { transform:translateY(-86vh) scale(1.08); opacity:0; }
-        }
-        @keyframes profileCoin {
-          0%   { transform:translateY(-12px) rotate(0deg); opacity:0; }
-          18%  { opacity:1; }
-          100% { transform:translateY(86px) rotate(460deg); opacity:0; }
-        }
-        @keyframes profilePulse {
-          0%,100% { box-shadow:0 0 0 rgba(242,201,76,0); }
-          50%     { box-shadow:0 0 34px rgba(242,201,76,.35); }
-        }
-        @keyframes profileRankAura {
-          0%,100% { box-shadow:0 0 18px color-mix(in srgb,var(--rank) 24%,transparent); }
-          50%     { box-shadow:0 0 44px color-mix(in srgb,var(--rank) 56%,transparent); }
-        }
-        @keyframes profileBoat {
-          0%,100% { transform:translate(-50%,-62%) rotate(-4deg); }
-          50%     { transform:translate(-50%,-82%) rotate(5deg); }
-        }
-        @keyframes profileGoldTrail {
-          from { transform:translateX(-120%); opacity:0; }
-          35%  { opacity:1; }
-          to   { transform:translateX(120%);  opacity:0; }
-        }
-        @keyframes profileShimmer {
-          0%   { transform:translateX(-120%) rotate(20deg); opacity:0; }
-          40%  { opacity:.7; }
-          100% { transform:translateX(120%)  rotate(20deg); opacity:0; }
-        }
-        @keyframes profileRain {
-          0%   { transform:translateY(-8%) rotate(-55deg); opacity:0; }
-          7%   { opacity:.75; }
-          88%  { opacity:.22; }
-          100% { transform:translateY(112vh)  rotate(-55deg); opacity:0; }
-        }
-        @keyframes profileShoot {
-          0%   { transform:translateX(-12vw) scaleX(.2); opacity:0; }
-          5%   { opacity:.9; transform:translateX(-12vw) scaleX(1); }
-          22%  { opacity:.45; }
-          32%  { transform:translateX(118vw)  scaleX(1); opacity:0; }
-          100% { transform:translateX(118vw)  scaleX(1); opacity:0; }
-        }
-        @keyframes profileHalo {
-          0%   { transform:translate(0,0) scale(1); opacity:.42; }
-          34%  { transform:translate(5%,-9%) scale(1.24); opacity:.76; }
-          67%  { transform:translate(-5%,7%) scale(.87);  opacity:.34; }
-          100% { transform:translate(3%,-4%) scale(1.07); opacity:.50; }
-        }
-        @keyframes profileRay {
-          0%,100% { opacity:0; height:22%; }
-          50%     { opacity:.38; height:52%; }
-        }
-        @keyframes profileBarFill {
-          from { width:0; }
-        }
-        @keyframes profileFadeUp {
-          from { opacity:0; transform:translateY(14px); }
-          to   { opacity:1; transform:translateY(0); }
-        }
-        @keyframes profileStatPop {
-          0%   { transform:scale(.9); opacity:0; }
-          70%  { transform:scale(1.03); }
-          100% { transform:scale(1); opacity:1; }
-        }
-
-        /* ── Shell ────────────────────────────────────────────── */
-        .profile-shell {
-          min-height:100vh;
-          color:#f3ead7;
-          font-family:var(--body,Inter,system-ui,sans-serif);
-          background:
-            radial-gradient(circle at 18% 8%,  color-mix(in srgb,var(--rank) 38%,transparent), transparent 34rem),
-            radial-gradient(circle at 84% 14%, rgba(86,26,128,.32), transparent 38rem),
-            radial-gradient(circle at 50% 130%,rgba(116,12,22,.24), transparent 46rem),
-            radial-gradient(circle at 4%  90%, color-mix(in srgb,var(--rank) 18%,transparent), transparent 26rem),
-            radial-gradient(circle at 62% 55%, rgba(60,8,100,.14), transparent 30rem),
-            linear-gradient(135deg, #020202 0%, #090407 42%, #030509 100%);
-          overflow-x:hidden;
-        }
-        .profile-shell::before {
-          content:"";
-          position:fixed; inset:0; pointer-events:none; opacity:.22;
-          background-image:repeating-linear-gradient(
-            -55deg, transparent, transparent 44px,
-            rgba(255,255,255,.048) 44px, rgba(255,255,255,.048) 45px
-          );
-          mask-image:linear-gradient(to bottom,black 0%,transparent 88%);
-        }
-
-        /* ── Atmosphere ───────────────────────────────────────── */
-        .profile-atmosphere { position:fixed; inset:0; overflow:hidden; pointer-events:none; z-index:0; }
-        .profile-atmosphere .fog {
-          position:absolute; width:62vw; height:28vh; border-radius:999px;
-          background:radial-gradient(ellipse,rgba(156,120,255,.13),transparent 66%);
-          filter:blur(20px); animation:profileDrift 11s ease-in-out infinite;
-        }
-        .fog-a { left:-12vw; top:20vh; }
-        .fog-b { right:-18vw; top:50vh; animation-delay:-4s; }
-        .fog-c { left:30vw; top:68vh; animation-delay:-8s; width:50vw; height:22vh; background:radial-gradient(ellipse,color-mix(in srgb,var(--rank) 10%,transparent),transparent 62%); }
-        .profile-atmosphere .wave {
-          position:absolute; left:-10%; right:-10%; height:120px; opacity:.12;
-          background:repeating-linear-gradient(100deg,transparent 0 38px,rgba(128,180,255,.36) 39px 41px,transparent 42px 80px);
-          filter:blur(.5px); animation:profileWave 9s ease-in-out infinite alternate;
-        }
-        .wave-a { bottom:14%; }
-        .wave-b { bottom:7%; animation-delay:-2s; opacity:.08; }
-        .profile-atmosphere i {
-          position:absolute;
-          left:calc((var(--i) * 3.5%) + 1%); bottom:-12px;
-          width:calc(2px + (var(--i) % 3) * 1px); height:calc(2px + (var(--i) % 3) * 1px);
-          border-radius:50%; background:#f2c94c; box-shadow:0 0 12px #f2c94c;
-          animation:profileSpark calc(6s + (var(--i) * .3s)) linear infinite;
-          animation-delay:calc(var(--i) * -.44s);
-        }
-        .profile-atmosphere b {
-          position:absolute; left:calc((var(--i) * 4.0%) + 1%); top:-10%;
-          width:1.5px; height:calc(52px + (var(--i) * 7px));
-          background:linear-gradient(180deg,transparent,color-mix(in srgb,var(--rank) 65%,rgba(166,108,255,.5)) 50%,transparent);
-          animation:profileRain calc(3.4s + (var(--i) * 0.17s)) linear infinite;
-          animation-delay:calc(var(--i) * -0.24s);
-          transform:rotate(-55deg); transform-origin:top center;
-          border-radius:2px; filter:blur(.4px);
-        }
-        .profile-atmosphere s {
-          display:block; position:absolute;
-          top:calc((var(--i) * 11.5%) + 2%); left:-12%;
-          height:1.5px; width:calc(80px + (var(--i) * 38px)); border-radius:2px;
-          background:linear-gradient(90deg,transparent,#f2c94c 28%,rgba(255,245,200,.7) 55%,transparent);
-          animation:profileShoot calc(6s + (var(--i) * 2s)) linear infinite;
-          animation-delay:calc(var(--i) * -2.1s);
-          opacity:0; filter:blur(.5px); box-shadow:0 0 6px rgba(242,201,76,.35);
-        }
-        .profile-atmosphere em {
-          display:block; position:absolute;
-          width:calc(320px + (var(--i) * 85px)); height:calc(320px + (var(--i) * 85px));
-          border-radius:50%;
-          background:radial-gradient(ellipse,color-mix(in srgb,var(--rank) 22%,transparent),transparent 64%);
-          filter:blur(40px);
-          animation:profileHalo calc(16s + (var(--i) * 4.5s)) ease-in-out infinite alternate;
-          animation-delay:calc(var(--i) * -5.5s);
-          left:calc(var(--i) * 25% - 10%); top:calc(4% + (var(--i) * 22%));
-          pointer-events:none;
-        }
-        .profile-atmosphere u {
-          display:block; text-decoration:none; position:absolute;
-          left:calc((var(--i) * 18%) + 3%); top:-5%;
-          width:2px; height:35%;
-          background:linear-gradient(180deg,color-mix(in srgb,var(--rank) 30%,transparent),transparent);
-          opacity:0;
-          animation:profileRay calc(10s + (var(--i) * 2.5s)) ease-in-out infinite;
-          animation-delay:calc(var(--i) * -3s);
-          transform:rotate(calc(-5deg + (var(--i) * 2deg)));
-          filter:blur(4px); border-radius:4px;
-        }
-
-        /* ── Wrap ─────────────────────────────────────────────── */
-        .profile-wrap {
-          position:relative; z-index:1;
-          width:min(1240px,calc(100% - 40px));
-          margin:0 auto;
-          padding:72px 0 80px;
-          animation:profileRise .72s cubic-bezier(.22,1,.36,1) both;
-        }
-
-        /* ── Topbar ───────────────────────────────────────────── */
-        .profile-topbar {
-          display:flex; justify-content:space-between; align-items:center;
-          gap:12px; margin-bottom:24px;
-        }
-        .profile-back {
-          height:38px; padding:0 18px; border-radius:9px;
-          border:1px solid rgba(230,180,80,.2); background:rgba(6,5,8,.72);
-          color:rgba(236,208,150,.78); font-weight:800; font-size:12px;
-          letter-spacing:.05em; cursor:pointer;
-          transition:border-color .2s,color .2s,box-shadow .2s,transform .2s;
-        }
-        .profile-back:hover {
-          border-color:rgba(242,201,76,.55); color:#ffe5a0;
-          transform:translateY(-1px); box-shadow:0 0 28px rgba(242,201,76,.14);
-        }
-        .profile-mode {
-          height:38px; padding:0 16px; border-radius:999px;
-          border:1px solid rgba(166,108,255,.32); background:rgba(166,108,255,.1);
-          color:#d6c2ff; font-size:12px; font-weight:900; cursor:pointer;
-          transition:all .2s;
-        }
-        .profile-mode:hover { background:rgba(166,108,255,.18); border-color:rgba(166,108,255,.5); }
-
-        /* ── Hero shell ───────────────────────────────────────── */
-        .profile-hero-shell {
-          position:relative; border-radius:20px;
-          border:1px solid rgba(255,255,255,.08);
-          border-top-color:color-mix(in srgb,var(--rank) 38%,rgba(255,255,255,.09));
-          background:
-            radial-gradient(circle at 16% 18%, color-mix(in srgb,var(--rank) 14%,transparent), transparent 22rem),
-            radial-gradient(circle at 82% 80%, rgba(86,26,128,.18), transparent 20rem),
-            linear-gradient(145deg,rgba(255,255,255,.045),rgba(6,7,10,.92));
-          box-shadow:0 28px 90px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.06);
-          overflow:hidden;
-        }
-        .profile-hero-shell::after {
-          content:"";
-          position:absolute; left:24px; right:24px; top:0; height:3px;
-          background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--rank) 68%,#f2c94c),rgba(242,201,76,.72),transparent);
-          opacity:.55;
-        }
-
-        /* ── Hero (two-col) ───────────────────────────────────── */
-        .profile-hero {
-          position:relative; z-index:1;
-          display:grid; grid-template-columns:310px minmax(0,1fr);
-          gap:20px; align-items:stretch;
-          padding:20px;
-        }
-
-        /* ── Wanted Poster ────────────────────────────────────── */
-        .profile-poster {
-          position:relative; min-height:540px; padding:24px;
-          border-radius:14px;
-          border:1px solid color-mix(in srgb,var(--accent) 36%,rgba(255,255,255,.08));
-          background:
-            radial-gradient(circle at 80% 0%,color-mix(in srgb,var(--accent) 12%,transparent),transparent 12rem),
-            linear-gradient(180deg,rgba(14,13,18,.96),rgba(6,7,10,.98));
-          box-shadow:0 20px 60px rgba(0,0,0,.38);
-          overflow:hidden;
-          transition:transform .24s ease,box-shadow .24s ease,border-color .24s ease;
-        }
-        .profile-poster::before {
-          content:""; position:absolute; inset:0 0 auto; height:3px;
-          background:linear-gradient(90deg,var(--accent),transparent);
-          opacity:.4; pointer-events:none;
-        }
-        .profile-poster::after {
-          content:""; position:absolute; inset:10px;
-          border:1px solid rgba(255,255,255,.05); border-radius:11px; pointer-events:none;
-        }
-        .profile-poster-shimmer {
-          position:absolute; inset:0; pointer-events:none; z-index:0;
-          background:linear-gradient(115deg,transparent 0 35%,rgba(242,201,76,.055) 36%,transparent 37%);
-          animation:profileShimmer 7s ease-in-out infinite;
-        }
-        .profile-poster:hover { transform:translateY(-4px); border-color:color-mix(in srgb,var(--accent) 55%,rgba(255,255,255,.1)); box-shadow:0 30px 80px rgba(0,0,0,.48),0 0 40px color-mix(in srgb,var(--accent) 16%,transparent); }
-        .profile-poster-rank {
-          position:absolute; top:20px; right:20px; z-index:2;
-          padding:5px 9px; border-radius:7px;
-          background:rgba(0,0,0,.4); color:var(--accent);
-          font-size:13px; font-weight:900; letter-spacing:.04em;
-        }
-        .profile-poster-top {
-          position:relative; z-index:1; text-align:center; text-transform:uppercase;
-          letter-spacing:.22em; font-size:9px; font-weight:900; color:rgba(255,255,255,.36);
-        }
-        .profile-poster-title {
-          position:relative; z-index:1; margin-top:10px; text-align:center;
-          font-family:var(--display,Syne,system-ui,sans-serif);
-          font-size:26px; font-weight:900; line-height:.94; letter-spacing:.02em;
-          text-transform:uppercase; color:#fff;
-        }
-        .profile-poster-photo {
-          position:relative; z-index:1;
-          width:min(210px,84%); aspect-ratio:1;
-          margin:20px auto 18px; border-radius:14px; overflow:hidden;
-          border:1px solid color-mix(in srgb,var(--accent) 55%,rgba(255,255,255,.12));
-          background:rgba(255,255,255,.04);
-          display:grid; place-items:center;
-          box-shadow:inset 0 0 28px rgba(0,0,0,.5), 0 16px 36px rgba(0,0,0,.28),
-                     0 0 60px color-mix(in srgb,var(--accent) 18%,transparent);
-          transition:box-shadow .3s;
-        }
-        .profile-poster:hover .profile-poster-photo { box-shadow:inset 0 0 28px rgba(0,0,0,.5),0 16px 36px rgba(0,0,0,.28),0 0 80px color-mix(in srgb,var(--accent) 30%,transparent); }
-        .profile-poster-photo img { width:100%; height:100%; object-fit:cover; transition:transform .35s ease; }
-        .profile-poster:hover .profile-poster-photo img { transform:scale(1.04); }
-        .profile-poster-photo span { font-size:80px; }
-        .profile-poster-name {
-          position:relative; z-index:1; text-align:center;
-          font-family:var(--display,Syne,system-ui,sans-serif);
-          color:#fff4d8; font-size:22px; font-weight:900; line-height:1.1;
-          overflow-wrap:anywhere;
-        }
-        .profile-poster-role {
-          position:relative; z-index:1; margin-top:9px; text-align:center;
-          color:var(--accent); font-size:13px; font-weight:900; letter-spacing:.04em;
-        }
-        .profile-poster-line {
-          position:relative; z-index:1; height:1px; margin:20px 0;
-          background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--accent) 62%,transparent),transparent);
-        }
-        .profile-poster-meta {
-          position:relative; z-index:1;
-          display:grid; grid-template-columns:1fr 1fr; gap:10px;
-        }
-        .profile-poster-meta div {
-          position:relative; padding:14px 12px; border-radius:10px;
-          background:rgba(0,0,0,.3); border:1px solid rgba(255,255,255,.07);
-          text-align:center;
-        }
-        .profile-bounty { overflow:hidden; cursor:crosshair; }
-        .profile-bounty i {
-          position:absolute; left:calc(10% + var(--i) * 12%); top:-12px;
-          width:8px; height:8px; border-radius:50%;
-          background:radial-gradient(circle at 34% 34%,#fff3a9,#f2c94c 48%,#9b6d13); opacity:0;
-        }
-        .profile-bounty:hover { animation:profilePulse 1.1s ease-in-out infinite; }
-        .profile-bounty:hover i { animation:profileCoin .9s ease-in infinite; animation-delay:calc(var(--i) * .08s); }
-        .profile-poster-meta span,
-        .profile-stat span,
-        .profile-panel-title,
-        .profile-item-top em,
-        .profile-stat small { text-transform:uppercase; letter-spacing:.11em; font-size:10px; color:rgba(235,207,157,.52); font-weight:850; }
-        .profile-poster-meta strong {
-          display:block; margin-top:6px; font-size:20px;
-          color:#f2ca57; font-weight:950;
-          font-family:var(--display,Syne,system-ui,sans-serif);
-        }
-
-        /* ── Main card (right column) ─────────────────────────── */
-        .profile-main-card {
-          position:relative; min-height:540px;
-          padding:clamp(26px,3vw,38px);
-          border-radius:14px;
-          background:
-            linear-gradient(135deg,rgba(255,255,255,.06),transparent 28%),
-            linear-gradient(180deg,rgba(14,13,18,.9),rgba(8,7,12,.97));
-          border:1px solid rgba(255,255,255,.07);
-          box-shadow:0 18px 60px rgba(0,0,0,.34);
-          overflow:hidden;
-          transition:transform .24s ease,box-shadow .24s ease,border-color .24s ease;
-        }
-        .profile-main-card::before {
-          content:""; position:absolute; inset:0; pointer-events:none;
-          background:
-            radial-gradient(circle at 76% 8%,color-mix(in srgb,var(--rank) 28%,transparent),transparent 20rem),
-            linear-gradient(115deg,transparent 0 36%,rgba(242,201,76,.09) 37%,transparent 38% 100%);
-        }
-        .profile-main-card::after {
-          content:""; position:absolute; inset:20px; opacity:.1;
-          background:
-            radial-gradient(circle at 50% 50%,transparent 0 22%,rgba(242,201,76,.3) 23% 24%,transparent 25%),
-            conic-gradient(from 32deg at 50% 50%,transparent 0 12deg,rgba(242,201,76,.3) 13deg 15deg,transparent 16deg 58deg,rgba(166,108,255,.2) 59deg 61deg,transparent 62deg),
-            repeating-linear-gradient(0deg,rgba(255,255,255,.08) 0 1px,transparent 1px 32px),
-            repeating-linear-gradient(90deg,rgba(255,255,255,.06) 0 1px,transparent 1px 32px);
-          border-radius:10px;
-          mask-image:radial-gradient(circle at 72% 22%,black,transparent 65%);
-          pointer-events:none;
-        }
-        .profile-head,
-        .profile-actions,
-        .profile-stat-grid,
-        .profile-progress-card,
-        .profile-tabs,
-        .profile-content { position:relative; z-index:1; }
-
-        /* ── Kicker / badges ──────────────────────────────────── */
-        .profile-kicker {
-          display:flex; gap:9px; align-items:center; flex-wrap:wrap;
-          margin-bottom:14px; color:var(--rank);
-          text-transform:uppercase; letter-spacing:.16em;
-          font-size:11px; font-weight:950;
-        }
-        .profile-rank-badge {
-          position:relative;
-          display:inline-flex; align-items:center;
-          min-height:30px; padding:0 13px; border-radius:999px;
-          background:linear-gradient(135deg,color-mix(in srgb,var(--rank) 26%,transparent),rgba(255,255,255,.04)),rgba(0,0,0,.24);
-          border:1px solid color-mix(in srgb,var(--rank) 52%,rgba(255,255,255,.09));
-          color:#fff2d2; animation:profileRankAura 2.8s ease-in-out infinite;
-          font-size:11px; font-weight:900;
-        }
-        .profile-own {
-          padding:5px 10px; border-radius:999px;
-          background:rgba(79,140,255,.14); border:1px solid rgba(79,140,255,.32);
-          color:#93b7ff; letter-spacing:.08em; font-size:11px;
-        }
-
-        /* ── H1 ───────────────────────────────────────────────── */
-        .profile-head h1 {
-          margin:0; color:transparent;
-          font-family:var(--display,Syne,system-ui,sans-serif);
-          font-size:clamp(40px,5.8vw,70px);
-          font-weight:900; line-height:.92; letter-spacing:-0.02em;
-          max-width:780px; overflow-wrap:anywhere;
-          background:linear-gradient(135deg,#ffffff 0%,rgba(255,255,255,.86) 42%,color-mix(in srgb,var(--rank) 74%,#d4a017) 100%);
-          -webkit-background-clip:text; background-clip:text;
-          filter:drop-shadow(0 0 22px color-mix(in srgb,var(--rank) 20%,transparent));
-        }
-        .profile-quote {
-          margin:14px 0 0; padding:0 0 0 12px;
-          border-left:2px solid color-mix(in srgb,var(--rank) 50%,transparent);
-          color:rgba(235,207,157,.55); font-size:13.5px;
-          font-style:italic; line-height:1.5; max-width:480px;
-        }
-        .profile-sub {
-          margin:14px 0 0; color:rgba(235,207,157,.58); font-size:14px;
-        }
-        .profile-sub strong { color:#fff0c3; }
-
-        /* ── Stat grid ────────────────────────────────────────── */
-        .profile-stat-grid {
-          display:grid; grid-template-columns:repeat(3,minmax(0,1fr));
-          gap:13px; margin-top:28px;
-        }
-        .profile-stat {
-          position:relative; overflow:hidden; min-height:140px; padding:20px;
-          border-radius:14px;
-          border:1px solid color-mix(in srgb,var(--accent) 24%,rgba(255,255,255,.07));
-          border-top:3px solid color-mix(in srgb,var(--accent) 78%,rgba(255,255,255,.12));
-          background:
-            radial-gradient(circle at 88% 10%,color-mix(in srgb,var(--accent) 16%,transparent),transparent 8rem),
-            linear-gradient(145deg,color-mix(in srgb,var(--accent) 9%,transparent),rgba(255,255,255,.028));
-          animation:profileStatPop .55s cubic-bezier(.22,1,.36,1) both;
-        }
-        .profile-stat b {
-          position:absolute; right:15px; top:14px;
-          width:36px; height:36px; border-radius:10px;
-          background:color-mix(in srgb,var(--accent) 16%,transparent);
-          border:1px solid color-mix(in srgb,var(--accent) 28%,transparent);
-        }
-        .profile-stat::after {
-          content:""; position:absolute; inset:0;
-          transform:translateX(-120%);
-          background:linear-gradient(105deg,transparent,color-mix(in srgb,var(--accent) 24%,transparent),transparent);
-          transition:transform .55s ease;
-        }
-        .profile-stat:hover::after { transform:translateX(120%); }
-        .profile-stat:hover { transform:translateY(-4px); border-color:color-mix(in srgb,var(--rank) 50%,rgba(255,255,255,.1)); box-shadow:0 18px 54px rgba(0,0,0,.38),0 0 30px color-mix(in srgb,var(--rank) 14%,transparent); }
-        .profile-stat strong {
-          display:block; margin:14px 0 6px; color:var(--accent);
-          font-size:clamp(30px,4.2vw,44px); line-height:.88;
-          font-weight:950; font-family:var(--display,Syne,system-ui,sans-serif);
-        }
-        .profile-stat small { display:block; text-transform:none; letter-spacing:0; font-size:11px; }
-
-        /* ── Progress card ────────────────────────────────────── */
-        .profile-progress-card {
-          margin-top:16px; padding:22px; border-radius:14px;
-          background:
-            radial-gradient(circle at 88% 20%,color-mix(in srgb,var(--rank) 14%,transparent),transparent 14rem),
-            rgba(0,0,0,.32);
-          border:1px solid rgba(255,255,255,.085);
-        }
-        .profile-progress-top,
-        .profile-progress-bottom {
-          display:flex; justify-content:space-between; gap:12px; align-items:center;
-          color:rgba(235,207,157,.62); font-size:12px; font-weight:750;
-        }
-        .profile-progress-bottom { margin-top:10px; color:rgba(235,207,157,.46); }
-        .profile-progress-bottom strong { color:var(--rank); }
-        .profile-progress {
-          position:relative; height:16px; margin-top:16px; overflow:visible;
-          border-radius:999px; background:rgba(255,255,255,.07);
-        }
-        .profile-progress div {
-          position:relative; height:100%; border-radius:inherit;
-          background:linear-gradient(90deg,color-mix(in srgb,var(--accent) 62%,#fff),var(--accent));
-          box-shadow:0 0 28px color-mix(in srgb,var(--accent) 50%,transparent);
-          transition:width 1.35s cubic-bezier(.22,1,.36,1);
-          animation:profileBarFill .8s cubic-bezier(.22,1,.36,1) both;
-        }
-        .profile-progress div::after {
-          content:""; position:absolute; right:-12px; top:50%;
-          width:24px; height:24px; border-radius:50%; transform:translateY(-50%);
-          background:radial-gradient(circle,#fff8bd 0 20%,#f2c94c 35%,transparent 70%);
-          box-shadow:0 0 30px #f2c94c, 0 0 60px rgba(242,201,76,.4);
-        }
-        .profile-progress div::before {
-          content:""; position:absolute; inset:0;
-          background:linear-gradient(90deg,transparent,rgba(255,255,255,.75),transparent);
-          animation:profileGoldTrail 2.4s ease-in-out infinite;
-        }
-        .profile-progress-ship {
-          position:absolute; z-index:3; top:50%;
-          width:17px; height:17px; border-radius:50%;
-          background:#f2c94c; border:3px solid rgba(6,7,10,.96);
-          filter:drop-shadow(0 0 12px rgba(242,201,76,.6));
-          animation:profileBoat 2.2s ease-in-out infinite;
-          transition:left 1.35s cubic-bezier(.22,1,.36,1);
-        }
-
-        /* ── Actions ──────────────────────────────────────────── */
-        .profile-actions {
-          display:grid; grid-template-columns:1fr 1fr; gap:13px; margin-top:20px;
-        }
-        .profile-actions button,
-        .profile-actions a {
-          height:50px; border-radius:12px; display:grid; place-items:center;
-          border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05);
-          color:rgba(255,244,216,.8); font-weight:900; font-size:13px;
-          text-decoration:none; cursor:pointer; position:relative; overflow:hidden;
-          transition:transform .2s,border-color .2s,box-shadow .2s;
-          letter-spacing:.02em;
-        }
-        .profile-actions button:hover {
-          transform:translateY(-2px);
-          border-color:rgba(242,201,76,.45);
-          box-shadow:0 0 36px rgba(242,201,76,.16);
-        }
-        .profile-actions a {
-          color:#9db7ff;
-          border-color:rgba(90,120,255,.3); background:rgba(90,120,255,.1);
-        }
-        .profile-actions a::before {
-          content:""; position:absolute; inset:0; transform:translateX(-110%);
-          background:linear-gradient(100deg,transparent,rgba(255,255,255,.24),transparent);
-          transition:transform .55s ease;
-        }
-        .profile-actions a:hover::before { transform:translateX(110%); }
-        .profile-actions a:hover {
-          transform:translateY(-2px);
-          border-color:rgba(90,120,255,.55);
-          box-shadow:0 0 36px rgba(90,120,255,.22);
-        }
-
-        /* ── Mode button ──────────────────────────────────────── */
-        .profile-mode { height:38px; padding:0 16px; border-radius:999px; border:1px solid rgba(166,108,255,.32); background:rgba(166,108,255,.1); color:#d6c2ff; font-size:12px; font-weight:900; cursor:pointer; transition:all .2s; }
-
-        /* ── Tabs ─────────────────────────────────────────────── */
-        .profile-tabs {
-          display:flex; position:relative; z-index:1;
-          gap:7px; margin:20px auto 0; padding:7px;
-          width:max-content; max-width:100%; border-radius:999px;
-          background:rgba(0,0,0,.38); border:1px solid rgba(255,255,255,.09);
-          box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
-        }
-        .profile-tabs button {
-          height:40px; padding:0 22px;
-          border:1px solid transparent; border-radius:999px;
-          background:transparent; color:rgba(235,207,157,.5);
-          font-size:12px; font-weight:900; cursor:pointer;
-          transition:color .18s,border-color .18s,background .18s,box-shadow .18s;
-          letter-spacing:.04em;
-        }
-        .profile-tabs button:hover { color:rgba(255,255,255,.78); border-color:rgba(255,255,255,.12); background:rgba(255,255,255,.035); }
-        .profile-tabs button.active {
-          border-color:color-mix(in srgb,var(--rank) 50%,rgba(255,255,255,.12));
-          background:color-mix(in srgb,var(--rank) 18%,rgba(255,255,255,.04));
-          color:#fff2d4;
-          box-shadow:0 0 28px color-mix(in srgb,var(--rank) 20%,transparent);
-        }
-
-        /* ── Content panels ───────────────────────────────────── */
-        .profile-content { margin-top:20px; }
-        .profile-panel-grid {
-          display:grid; grid-template-columns:1.02fr .98fr 1.12fr;
-          gap:16px;
-        }
-        .profile-panel,
-        .profile-item,
-        .profile-transaction {
-          border-radius:16px; border:1px solid rgba(255,255,255,.085);
-          background:linear-gradient(145deg,rgba(255,255,255,.045),rgba(6,7,10,.82));
-        }
-        .profile-panel {
-          position:relative; overflow:hidden; padding:22px;
-          box-shadow:0 14px 42px rgba(0,0,0,.24);
-          transition:transform .24s,box-shadow .24s,border-color .24s;
-        }
-        .profile-panel::before {
-          content:""; position:absolute; left:0; right:0; top:0; height:3px;
-          background:linear-gradient(90deg,var(--rank),rgba(242,201,76,.55),transparent);
-          opacity:.72;
-        }
-        .profile-panel:hover { transform:translateY(-3px); border-color:color-mix(in srgb,var(--rank) 38%,rgba(255,255,255,.1)); box-shadow:0 20px 60px rgba(0,0,0,.36),0 0 32px color-mix(in srgb,var(--rank) 10%,transparent); }
-        .profile-panel-title {
-          display:flex; align-items:center; gap:9px; margin-bottom:16px;
-          color:#d8a84b; font-family:var(--display,Syne,system-ui,sans-serif);
-          font-weight:900; font-size:15px;
-        }
-        .profile-panel-title::before {
-          content:""; width:8px; height:8px; border-radius:50%;
-          background:currentColor; box-shadow:0 0 14px currentColor; flex-shrink:0;
-        }
-        .profile-list-row {
-          display:flex; justify-content:space-between; gap:14px;
-          padding:11px 0; border-bottom:1px solid rgba(255,255,255,.055);
-        }
-        .profile-list-row:last-child { border-bottom:none; padding-bottom:0; }
-        .profile-list-row span { color:rgba(235,207,157,.5); font-size:11px; text-transform:uppercase; letter-spacing:.08em; font-weight:850; }
-        .profile-list-row strong { color:#fff0c3; text-align:right; overflow-wrap:anywhere; font-size:13px; }
-
-        /* ── Rank steps ───────────────────────────────────────── */
-        .profile-rank-list { display:grid; gap:8px; }
-        .profile-rank-step {
-          display:grid; grid-template-columns:34px 1fr auto;
-          align-items:center; gap:10px; padding:11px;
-          border-radius:11px;
-          background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 10%,transparent),rgba(0,0,0,.22));
-          border:1px solid color-mix(in srgb,var(--accent) 17%,transparent);
-          opacity:var(--active);
-          transition:transform .2s, opacity .2s;
-        }
-        .profile-rank-step:hover { transform:translateX(3px); }
-        .profile-rank-step i {
-          width:32px; height:32px; border-radius:8px;
-          display:grid; place-items:center;
-          background:color-mix(in srgb,var(--accent) 16%,transparent);
-          border:1px solid color-mix(in srgb,var(--accent) 30%,transparent);
-          font-style:normal; font-size:16px;
-        }
-        .profile-rank-step strong { color:#fff0c3; font-size:12px; }
-        .profile-rank-step span { display:block; color:rgba(235,207,157,.4); font-size:10px; }
-
-        /* ── Inventory ────────────────────────────────────────── */
-        .profile-item-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:13px; }
-        .profile-item {
-          min-height:144px; padding:18px; position:relative; overflow:hidden;
-          background:
-            radial-gradient(circle at 100% 0%,color-mix(in srgb,var(--accent) 15%,transparent),transparent 8rem),
-            rgba(255,255,255,.04);
-          transition:transform .2s,border-color .2s;
-        }
-        .profile-item::before {
-          content:""; position:absolute; left:0; right:0; top:0; height:3px;
-          background:linear-gradient(90deg,var(--accent),transparent); opacity:.4;
-        }
-        .profile-item:hover { transform:translateY(-3px); border-color:color-mix(in srgb,var(--rank) 40%,rgba(255,255,255,.1)); }
-        .profile-item-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:26px; }
-        .profile-item-top span {
-          width:38px; height:38px; border-radius:10px; display:grid; place-items:center;
-          background:color-mix(in srgb,var(--accent) 18%,transparent);
-          color:var(--accent); font-weight:950;
-        }
-        .profile-item strong { display:block; color:#fff2d1; font-size:15px; }
-        .profile-item small { display:block; margin-top:8px; color:rgba(235,207,157,.45); }
-
-        /* ── Transactions ─────────────────────────────────────── */
-        .profile-transaction {
-          display:grid; grid-template-columns:46px 1fr auto;
-          align-items:center; gap:13px; padding:13px;
-          margin-bottom:9px;
-        }
-        .profile-transaction:hover { border-color:color-mix(in srgb,var(--rank) 30%,rgba(255,255,255,.09)); }
-        .profile-transaction-icon {
-          width:42px; height:42px; border-radius:11px; display:grid; place-items:center;
-          color:var(--accent); background:color-mix(in srgb,var(--accent) 15%,transparent);
-          font-weight:950;
-        }
-        .profile-transaction strong { display:block; color:#fff2d1; }
-        .profile-transaction span { color:rgba(235,207,157,.45); font-size:12px; }
-        .profile-transaction em { color:#f06969; font-style:normal; font-weight:950; }
-
-        /* ── Empty ────────────────────────────────────────────── */
-        .profile-empty {
-          display:grid; place-items:center; min-height:240px;
-          text-align:center; color:rgba(235,207,157,.48);
-        }
-        .profile-empty div { font-size:46px; color:var(--rank); }
-        .profile-empty strong { margin-top:12px; color:#fff1ce; font-size:19px; }
-        .profile-empty span { margin-top:7px; }
-
-        /* ── Immersive ────────────────────────────────────────── */
-        .profile-immersive .profile-wrap { width:min(1300px,calc(100% - 28px)); padding-top:34px; }
-        .profile-immersive .profile-back,
-        .profile-immersive .profile-tabs,
-        .profile-immersive .profile-content { display:none; }
-
-        /* ── Title block (hidden / for a11y) ─────────────────── */
-        .profile-title-block { display:none; }
-
-        /* ── Responsive ───────────────────────────────────────── */
-        @media (max-width: 920px) {
-          .profile-hero { grid-template-columns:1fr; }
-          .profile-hero-shell { padding:0; }
-          .profile-poster { min-height:auto; }
-          .profile-panel-grid { grid-template-columns:1fr; }
-        }
-        @media (max-width: 620px) {
-          .profile-wrap { width:min(100% - 22px,1180px); padding-top:68px; }
-          .profile-topbar { align-items:flex-start; }
-          .profile-main-card { padding:18px; }
-          .profile-stat-grid,
-          .profile-actions { grid-template-columns:1fr; }
-          .profile-tabs { width:100%; overflow-x:auto; justify-content:flex-start; border-radius:14px; }
-          .profile-tabs button { white-space:nowrap; }
-          .profile-head h1 { font-size:clamp(38px,18vw,60px); }
-        }
-      `}</style>
-
-      <main className="profile-wrap">
-        {/* Topbar */}
-        <div className="profile-topbar">
-          <button className="profile-back" type="button" onClick={() => navigate(-1)}>← Retour</button>
-          <button className="profile-mode" type="button" onClick={() => setImmersive(v => !v)}>
-            {immersive ? 'Interface' : 'Full immersion'}
+      <main className="pf-wrap">
+        {/* ── Topbar ── */}
+        <div className="pf-topbar">
+          <button className="pf-back" type="button" onClick={() => navigate(-1)}>← Retour</button>
+          <button className="pf-btn-immersive" type="button" onClick={() => setImmersive(v => !v)}>
+            {immersive ? '⊠ Interface' : '⊡ Plein écran'}
           </button>
         </div>
 
-        {/* Loading */}
-        {loading && <EmptyState icon="⌛" title="Chargement du profil" text="Les données du pirate arrivent." />}
+        {loading && <EmptyState icon="⌛" title="Chargement du profil…" sub="Les données arrivent." />}
+        {!loading && !member && <EmptyState icon="☠" title="Pirate introuvable" sub="Ce membre n'est pas dans le classement." />}
 
-        {!loading && !member && (
-          <EmptyState icon="☠" title="Pirate introuvable" text="Ce membre n'est pas dans le classement." />
-        )}
+        {!loading && member && (<>
 
-        {!loading && member && (
-          <>
-            {/* Hidden a11y block */}
-            <header className="profile-title-block">
-              <span>Brams • Fiche pirate</span>
-              <h2>Profil Wanted</h2>
-              <p>Carte personnelle, prestige vocal, prime publique et progression vers le prochain rang.</p>
-            </header>
+          {/* ════════ HERO ════════ */}
+          <section className="pf-hero">
+            <div className="pf-hero-line"  aria-hidden />
+            <div className="pf-hero-grid"  aria-hidden />
 
-            {/* ── Hero shell ── */}
-            <div className="profile-hero-shell">
-              <section className="profile-hero">
-                {/* Left: Wanted poster */}
-                <WantedPoster member={member} rank={rank} hours={hours} />
-
-                {/* Right: Main dashboard */}
-                <div className="profile-main-card">
-                  <header className="profile-head">
-                    <div className="profile-kicker">
-                      <span className="profile-rank-badge">{rank.emoji} {rank.rang} #{member.rank}</span>
-                      {isOwnProfile && <span className="profile-own">Mon profil</span>}
-                    </div>
-                    <h1>{displayName}</h1>
-                    {quote && <p className="profile-quote">{quote}</p>}
-                    <p className="profile-sub">
-                      {rank.rang} <strong>#{member.rank} mondial</strong> sur {member.total} nakamas
-                    </p>
-                  </header>
-
-                  {/* Stat cards */}
-                  <div className="profile-stat-grid">
-                    <StatTile
-                      label="Vocal" detail="sur 7 jours"
-                      value={<><CountUp value={hours} decimals={1} suffix="h" /></>}
-                      color={rank.color} tone="rank"
-                    />
-                    <StatTile
-                      label="Berrys" detail="prime publique"
-                      value={<><CountUp value={Number.parseInt(member.berrys || 0, 10) / 1000000} decimals={1} suffix="M" /> B</>}
-                      color="#F2C94C"
-                    />
-                    <StatTile
-                      label="Position" detail={`/ ${member.total}`}
-                      value={`#${member.rank}`}
-                      color="#8AA8FF" tone="blue"
-                    />
-                  </div>
-
-                  {/* Progression */}
-                  <section className="profile-progress-card">
-                    {nextRank ? (
-                      <>
-                        <div className="profile-progress-top">
-                          <span>Progression vers {nextRank.rang}</span>
-                          <strong>{nextRank.min}h</strong>
-                        </div>
-                        <Progress value={hours - rank.min} max={nextRank.min - rank.min} color={nextRank.color} />
-                        <div className="profile-progress-bottom">
-                          <span>{rank.rang} depuis {rank.min}h</span>
-                          <strong>{remaining.toFixed(1)}h restantes</strong>
-                        </div>
-                      </>
-                    ) : (
-                      <div className="profile-progress-top">
-                        <span>Rang maximum atteint</span>
-                        <strong>Grand Line conquise 👑</strong>
-                      </div>
-                    )}
-                  </section>
-
-                  {/* Actions */}
-                  <div className="profile-actions">
-                    <button type="button" onClick={copyLink}>
-                      {copied ? '✓ Lien copié' : 'Partager le profil'}
-                    </button>
-                    <a href="https://discord.gg/v3Ddhtbz" target="_blank" rel="noopener noreferrer">
-                      Ouvrir Discord
-                    </a>
-                  </div>
+            {/* Avatar */}
+            <div className="pf-avatar-col">
+              <div className="pf-avatar-ring">
+                <div className="pf-avatar-inner">
+                  {member.avatar_url
+                    ? <img src={member.avatar_url} alt={displayName} className="pf-avatar-img" />
+                    : <span className="pf-avatar-emoji">{rank.emoji}</span>
+                  }
                 </div>
-              </section>
-
-              {/* Tabs */}
-              <nav className="profile-tabs" aria-label="Sections du profil">
-                {TABS.map(item => (
-                  <button
-                    key={item.key} type="button"
-                    className={tab === item.key ? 'active' : ''}
-                    onClick={() => setTab(item.key)}
-                  >
-                    {item.icon} {item.label}
-                  </button>
-                ))}
-              </nav>
+                <div className="pf-avatar-dot" aria-hidden />
+              </div>
+              <div className="pf-rank-chip">
+                <span style={{ fontSize: 18 }}>{rank.emoji}</span>
+                <div className="pf-rank-chip-text">
+                  <strong>{rank.rang}</strong>
+                  <small>{hours.toFixed(0)}h · #{member.rank} / {member.total}</small>
+                </div>
+              </div>
+              {isOwnProfile && <div className="pf-own-badge">Mon profil</div>}
             </div>
 
-            {/* ── Tab content ── */}
-            <section className="profile-content">
-              {tab === 'stats' && (
-                <div className="profile-panel-grid">
-                  {/* Identité */}
-                  <article className="profile-panel">
-                    <div className="profile-panel-title">Identité</div>
-                    {[
-                      ['Pseudo',      displayName],
-                      ['Discord ID',  member.uid],
-                      ['Rang actuel', `${rank.emoji} ${rank.rang}`],
-                      ['Position',    `#${member.rank} / ${member.total}`],
-                    ].map(([label, value]) => (
-                      <div className="profile-list-row" key={label}>
-                        <span>{label}</span>
-                        <strong>{value}</strong>
-                      </div>
-                    ))}
-                  </article>
+            {/* Info */}
+            <div className="pf-hero-info">
+              <div className="pf-eyebrow">
+                Brams Community · #{member.rank} sur {member.total} Nakamas
+              </div>
 
-                  {/* Trésor */}
-                  <article className="profile-panel">
-                    <div className="profile-panel-title">Trésor</div>
-                    <StatTile label="Solde" value={`${fmtNum(wallet)} ฿`} detail="wallet boutique" color="#F2C94C" />
-                    <div className="profile-list-row" style={{ marginTop: 12 }}>
-                      <span>Inventaire</span>
-                      <strong>{shopData?.inventory?.length || 0} objets</strong>
-                    </div>
-                    <div className="profile-list-row">
-                      <span>Achats récents</span>
-                      <strong>{shopData?.transactions?.length || 0}</strong>
-                    </div>
-                    <div className="profile-list-row">
-                      <span>Prime publique</span>
-                      <strong>{fmtB(member.berrys || 0)} ฿</strong>
-                    </div>
-                  </article>
+              <h1 className="pf-name">{displayName}</h1>
+              {quote && <p className="pf-quote">"{quote}"</p>}
 
-                  {/* Rangs débloqués */}
-                  <article className="profile-panel">
-                    <div className="profile-panel-title">Rangs débloqués</div>
-                    <div className="profile-rank-list">
-                      {RANK_MAP.slice().reverse().map(item => {
-                        const active = hours >= item.min
-                        return (
-                          <div className="profile-rank-step" key={item.rang}
-                            style={{ '--accent': item.color, '--active': active ? 1 : .3 }}>
-                            <i>{item.emoji}</i>
-                            <div>
-                              <strong>{item.rang}</strong>
-                              <span>{item.min}h requis</span>
-                            </div>
-                            <b style={{ color: active ? item.color : 'transparent', fontWeight: 950 }}>
-                              {active ? '✓' : '·'}
-                            </b>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </article>
+              <div className="pf-stats">
+                <div className="pf-stat">
+                  <span>Vocal</span>
+                  <strong><CountUp value={hours} decimals={1} suffix="h" /></strong>
                 </div>
-              )}
+                <div className="pf-stat pf-stat-gold">
+                  <span>Berries</span>
+                  <strong><CountUp value={parseInt(wallet) / 1e6} decimals={1} suffix="M ฿" /></strong>
+                </div>
+                <div className="pf-stat">
+                  <span>Classement</span>
+                  <strong>#{member.rank}</strong>
+                </div>
+                <div className="pf-stat">
+                  <span>Objets</span>
+                  <strong>{shopData?.inventory?.length || 0}</strong>
+                </div>
+              </div>
 
-              {tab === 'inventaire' && (
-                shopData?.inventory?.length ? (
-                  <div className="profile-item-grid">
-                    {shopData.inventory.map((item, i) => (
-                      <InventoryCard key={`${item.item_id || 'item'}-${i}`} item={item} />
+              <div className="pf-prog">
+                <div className="pf-prog-header">
+                  <div className="pf-prog-from">
+                    <em>{rank.emoji}</em>
+                    <span>{rank.rang}</span>
+                    <small>{rank.min}h requis</small>
+                  </div>
+                  {nextRank ? (
+                    <div className="pf-prog-center">
+                      <strong>{remaining.toFixed(1)}h</strong>
+                      avant {nextRank.rang}
+                    </div>
+                  ) : (
+                    <div className="pf-prog-maxed">👑 Rang maximum</div>
+                  )}
+                  {nextRank && (
+                    <div className="pf-prog-to">
+                      <em>{nextRank.emoji}</em>
+                      <span>{nextRank.rang}</span>
+                      <small>{nextRank.min}h requis</small>
+                    </div>
+                  )}
+                </div>
+                <div className="pf-prog-track">
+                  <div className="pf-prog-fill"
+                    style={{ width: `${pct}%`, '--ac': nextRank?.color || rank.color }}
+                  />
+                </div>
+              </div>
+
+              <div className="pf-actions">
+                <button className="pf-btn pf-btn-gold" type="button" onClick={copyLink}>
+                  {copied ? '✓ Copié' : '⎘ Partager'}
+                </button>
+                <a className="pf-btn pf-btn-discord" href="https://discord.gg/v3Ddhtbz" target="_blank" rel="noopener noreferrer">
+                  Discord
+                </a>
+                <button className="pf-btn pf-btn-ghost" type="button" onClick={copyId}>
+                  Copier l'ID
+                </button>
+              </div>
+            </div>
+          </section>
+
+          {/* ════════ AURA BRAMS ════════ */}
+          <div className="pf-aura">
+            <div className="pf-aura-score-col">
+              <span className="pf-aura-eyebrow">Aura Brams</span>
+              <div className="pf-aura-num">
+                <CountUp value={aura} decimals={0} />
+                <small>/100</small>
+              </div>
+              <span className="pf-aura-tier" style={{ color: auraTier.color }}>
+                {auraTier.label}
+              </span>
+            </div>
+            <div className="pf-aura-main">
+              <div className="pf-aura-bar-section">
+                <div className="pf-aura-bar-top">
+                  <span>Score de prestige global</span>
+                  <span>{aura}/100</span>
+                </div>
+                <div className="pf-aura-track">
+                  <div className="pf-aura-fill" style={{ width: `${aura}%` }} />
+                </div>
+              </div>
+              <div className="pf-aura-factors">
+                <AuraFactor label="Vocal"      value={auraFactors.vocal}   max={30} color="#d4a017" />
+                <AuraFactor label="Berries"    value={auraFactors.berries} max={25} color="#b8912a" />
+                <AuraFactor label="Classement" value={auraFactors.rankF}   max={30} color={rank.color} />
+              </div>
+            </div>
+          </div>
+
+          {/* ════════ TABS ════════ */}
+          <nav className="pf-tabs" aria-label="Navigation profil">
+            {TABS.map(t => (
+              <button key={t.key} type="button" className={tab === t.key ? 'active' : ''} onClick={() => setTab(t.key)}>
+                {t.label}
+              </button>
+            ))}
+          </nav>
+
+          {/* ════════ TAB CONTENT ════════ */}
+          <div className="pf-tab-content" key={tab}>
+
+            {/* Vue d'ensemble */}
+            {tab === 'stats' && (<>
+              <div className="pf-grid-3">
+
+                {/* Identité */}
+                <article className="pf-panel" style={{ '--dot-c': '#6b7280' }}>
+                  <h3 className="pf-panel-h" style={{ '--dot-c': '#6b7280' }}>Identité</h3>
+                  <div className="pf-rows">
+                    {[
+                      ['Pseudo',     displayName],
+                      ['Discord ID', member.uid],
+                      ['Rang',       `${rank.emoji} ${rank.rang}`],
+                      ['Position',   `#${member.rank} / ${member.total}`],
+                    ].map(([k, v]) => (
+                      <div className="pf-row" key={k}><span>{k}</span><strong>{v}</strong></div>
+                    ))}
+                  </div>
+                  <div className="pf-divider" />
+                  <div className="pf-badge-row">
+                    <span className="pf-badge pf-badge-rank" style={{ '--rank': rank.color }}>{rank.emoji} {rank.rang}</span>
+                    <span className="pf-badge pf-badge-discord">Discord</span>
+                    {isOwnProfile && <span className="pf-badge pf-badge-own">Mon profil</span>}
+                  </div>
+                </article>
+
+                {/* Trésor */}
+                <article className="pf-panel pf-panel-gold">
+                  <h3 className="pf-panel-h">Trésor</h3>
+                  <div className="pf-berry-hero">
+                    <span>Solde wallet</span>
+                    <strong>{fmtNum(wallet)} <em>฿</em></strong>
+                  </div>
+                  <div className="pf-rows">
+                    {[
+                      ['Prime publique', `${fmtB(member.berrys || 0)} ฿`],
+                      ['Inventaire',     `${shopData?.inventory?.length || 0} objet${(shopData?.inventory?.length || 0) > 1 ? 's' : ''}`],
+                      ['Transactions',   `${shopData?.transactions?.length || 0} achat${(shopData?.transactions?.length || 0) > 1 ? 's' : ''}`],
+                    ].map(([k, v]) => (
+                      <div className="pf-row" key={k}><span>{k}</span><strong>{v}</strong></div>
+                    ))}
+                  </div>
+                </article>
+
+                {/* Parcours */}
+                <article className="pf-panel pf-panel-rank">
+                  <h3 className="pf-panel-h" style={{ '--dot-c': rank.color }}>Parcours des rangs</h3>
+                  <div className="pf-journey">
+                    {RANK_MAP.slice().reverse().map((item, idx) => {
+                      const unlocked  = hours >= item.min
+                      const isCurrent = rank.rang === item.rang
+                      return (
+                        <div
+                          key={item.rang}
+                          className={`pf-jstep${unlocked ? ' j-on' : ''}${isCurrent ? ' j-current' : ''}`}
+                          style={{ '--ac': item.color, animationDelay: `${idx * 38}ms` }}
+                        >
+                          <div className="pf-jconnector" />
+                          <div className="pf-jdot" />
+                          <div className="pf-jbody">
+                            <span className="pf-jemoji">{item.emoji}</span>
+                            <div className="pf-jtext">
+                              <strong>{item.rang}</strong>
+                              <small>{item.min}h requis</small>
+                            </div>
+                            {isCurrent
+                              ? <span className="pf-j-current-tag">Actuel</span>
+                              : <span className="pf-jcheck">{unlocked ? '✓' : '—'}</span>
+                            }
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </article>
+              </div>
+
+              {/* Succès preview */}
+              <div className="pf-ach-section">
+                <div className="pf-section-hd">
+                  <h3>Succès débloqués</h3>
+                  <button type="button" className="pf-see-all" onClick={() => setTab('achievements')}>Voir tous →</button>
+                </div>
+                {achievements.filter(a => a.unlocked).length > 0 ? (
+                  <div className="pf-ach-row">
+                    {achievements.filter(a => a.unlocked).slice(0, 5).map((a, i) => (
+                      <AchievementCard key={a.id} ach={a} unlocked={true} delay={i * 55} />
                     ))}
                   </div>
                 ) : (
-                  <EmptyState icon="◇" title="Inventaire vide" text="Aucun objet boutique pour ce pirate." />
-                )
-              )}
+                  <EmptyState icon="🎯" title="Aucun succès débloqué." sub="Continue à être actif sur le serveur." />
+                )}
+              </div>
 
-              {tab === 'historique' && (
-                shopData?.transactions?.length ? (
-                  <div>
-                    {shopData.transactions.map((tx, i) => (
-                      <TransactionRow key={`${tx.id || 'tx'}-${i}`} tx={tx} />
-                    ))}
-                  </div>
-                ) : (
-                  <EmptyState icon="≡" title="Aucune transaction" text="L'historique d'achats est vide." />
-                )
-              )}
-            </section>
-          </>
-        )}
+              {/* Équipage */}
+              <div className="pf-crew">
+                <span className="pf-crew-icon">⚓</span>
+                <div className="pf-crew-body">
+                  <strong>Aucun équipage</strong>
+                  <span>Ce pirate navigue en solitaire pour l'instant.</span>
+                </div>
+                <a className="pf-btn pf-btn-ghost pf-crew-cta" href="/equipage">Explorer →</a>
+              </div>
+            </>)}
+
+            {/* Inventaire */}
+            {tab === 'inventaire' && (
+              shopData?.inventory?.length ? (<>
+                <div className="pf-inv-filters">
+                  {['Tous', ...rarities].map(r => (
+                    <button key={r} type="button"
+                      className={`pf-filter-btn${invFilter === r ? ' active' : ''}`}
+                      onClick={() => setInvFilter(r)}>
+                      {r}
+                    </button>
+                  ))}
+                </div>
+                <div className="pf-item-grid">
+                  {filteredInv.map((item, i) => (
+                    <InventoryCard key={`${item.item_id || 'item'}-${i}`} item={item} delay={i * 40} />
+                  ))}
+                </div>
+              </>) : (
+                <EmptyState icon="🗃" title="Le coffre est encore vide." sub="Gagne des berries et débloque tes premiers trésors." />
+              )
+            )}
+
+            {/* Historique */}
+            {tab === 'historique' && (
+              shopData?.transactions?.length ? (
+                <div className="pf-tx-list">
+                  {shopData.transactions.map((tx, i) => (
+                    <TransactionRow key={`${tx.id || 'tx'}-${i}`} tx={tx} delay={i * 38} />
+                  ))}
+                </div>
+              ) : (
+                <EmptyState icon="📜" title="Aucune transaction." sub="L'historique d'achats boutique est vide." />
+              )
+            )}
+
+            {/* Succès */}
+            {tab === 'achievements' && (
+              <div className="pf-ach-grid">
+                {achievements.map((a, i) => (
+                  <AchievementCard key={a.id} ach={a} unlocked={a.unlocked} delay={i * 48} />
+                ))}
+              </div>
+            )}
+          </div>
+
+        </>)}
       </main>
     </div>
   )

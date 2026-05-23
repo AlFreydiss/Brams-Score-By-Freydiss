@@ -1,5 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 
+// ─── Data ────────────────────────────────────────────────────────────────────
+
 const ANIMES = [
   {
     id: 'onepiece',
@@ -12,14 +14,8 @@ const ANIMES = [
     coverPosition: 'center top',
     genres: ['Aventure', 'Action', 'Shōnen'],
     description: "Monkey D. Luffy et son équipage sillonnent les mers à la recherche du légendaire trésor « One Piece » pour devenir Roi des Pirates.",
-    stats: [
-      { label: 'Épisodes', value: '1100+' },
-      { label: 'Arc actuel', value: 'Elbaf' },
-      { label: 'Statut', value: 'En cours' },
-    ],
-    action: '▶ Accéder',
-    badge: 'À JOUR',
-    badgeColor: '#34d399',
+    stats: [{ label: 'Épisodes', value: '1100+' }, { label: 'Arc actuel', value: 'Elbaf' }, { label: 'Statut', value: 'En cours' }],
+    action: '▶ Accéder', badge: 'À JOUR',
   },
   {
     id: 'violet-evergarden',
@@ -32,14 +28,8 @@ const ANIMES = [
     coverPosition: 'center center',
     genres: ['Drame', 'Émotion', 'Josei'],
     description: "Violet, ancienne soldate, devient Auto Memory Doll pour comprendre les sentiments humains et le sens des mots qu'elle a reçus.",
-    stats: [
-      { label: 'Épisodes', value: '13' },
-      { label: 'Audio', value: 'VF + JAP' },
-      { label: 'Statut', value: 'Disponible' },
-    ],
-    action: '▶ Accéder',
-    badge: 'VF + VOSTFR',
-    badgeColor: '#8b7cff',
+    stats: [{ label: 'Épisodes', value: '13' }, { label: 'Audio', value: 'VF + JAP' }, { label: 'Statut', value: 'Disponible' }],
+    action: '▶ Accéder', badge: 'VF + VOSTFR',
   },
   {
     id: 'tpn',
@@ -52,14 +42,8 @@ const ANIMES = [
     coverPosition: 'center top',
     genres: ['Thriller', 'Mystère', 'Shōnen'],
     description: "Emma, Norman et Ray vivent dans un orphelinat idyllique… jusqu'au jour où ils découvrent une vérité qui brise tout.",
-    stats: [
-      { label: 'Chapitres', value: '184' },
-      { label: 'Épisodes', value: '12' },
-      { label: 'Statut', value: 'Disponible' },
-    ],
-    action: '▶ Accéder',
-    badge: 'NOUVEAU',
-    badgeColor: '#6c5ce7',
+    stats: [{ label: 'Chapitres', value: '184' }, { label: 'Épisodes', value: '12' }, { label: 'Statut', value: 'Disponible' }],
+    action: '▶ Accéder', badge: 'NOUVEAU',
   },
   {
     id: 'drstone',
@@ -72,14 +56,8 @@ const ANIMES = [
     coverPosition: 'center center',
     genres: ['Science-fiction', 'Aventure', 'Shōnen'],
     description: "Toute l'humanité est pétrifiée. Des millénaires plus tard, le génie Senku se réveille et décide de reconstruire la civilisation grâce à la science.",
-    stats: [
-      { label: 'Chapitres', value: '174' },
-      { label: 'Épisodes', value: '35' },
-      { label: 'Statut', value: 'Disponible' },
-    ],
-    action: '▶ Accéder',
-    badge: 'NOUVEAU',
-    badgeColor: '#00b894',
+    stats: [{ label: 'Chapitres', value: '174' }, { label: 'Épisodes', value: '35' }, { label: 'Statut', value: 'Disponible' }],
+    action: '▶ Accéder', badge: 'NOUVEAU',
   },
   {
     id: 'jjk',
@@ -92,14 +70,8 @@ const ANIMES = [
     coverPosition: 'center top',
     genres: ['Action', 'Surnaturel', 'Shōnen'],
     description: "Yuji Itadori avale un doigt de Ryomen Sukuna, le roi des Fléaux. Condamné à mort, il rejoint l'École de sorcellerie de Jujutsu pour trouver les doigts restants.",
-    stats: [
-      { label: 'Chapitres', value: '263' },
-      { label: 'Épisodes', value: '48' },
-      { label: 'Statut', value: 'Disponible' },
-    ],
-    action: '▶ Accéder',
-    badge: 'NOUVEAU',
-    badgeColor: '#c62828',
+    stats: [{ label: 'Chapitres', value: '263' }, { label: 'Épisodes', value: '48' }, { label: 'Statut', value: 'Disponible' }],
+    action: '▶ Accéder', badge: 'NOUVEAU',
   },
   {
     id: 'kingdom',
@@ -112,14 +84,8 @@ const ANIMES = [
     coverPosition: 'center center',
     genres: ['Action', 'Historique', 'Seinen'],
     description: "Dans la Chine des Royaumes Combattants, Shin rêve de devenir le plus grand général sous les cieux aux côtés du futur roi Ying Zheng.",
-    stats: [
-      { label: 'Chapitres', value: '874' },
-      { label: 'Épisodes', value: '100+' },
-      { label: 'Statut', value: 'Disponible' },
-    ],
-    action: '▶ Accéder',
-    badge: 'NOUVEAU',
-    badgeColor: '#c9a227',
+    stats: [{ label: 'Chapitres', value: '874' }, { label: 'Épisodes', value: '100+' }, { label: 'Statut', value: 'Disponible' }],
+    action: '▶ Accéder', badge: 'NOUVEAU',
   },
   {
     id: 'aot',
@@ -132,14 +98,8 @@ const ANIMES = [
     coverPosition: 'center top',
     genres: ['Action', 'Drame', 'Shōnen'],
     description: "Eren Yeager découvre que les murs qui protègent l'humanité cachent un secret bien plus sombre que les Titans eux-mêmes.",
-    stats: [
-      { label: 'Chapitres', value: '81' },
-      { label: 'Épisodes', value: '87' },
-      { label: 'Statut', value: 'Terminé' },
-    ],
-    action: '▶ Accéder',
-    badge: 'COMPLET',
-    badgeColor: '#546e7a',
+    stats: [{ label: 'Chapitres', value: '81' }, { label: 'Épisodes', value: '87' }, { label: 'Statut', value: 'Terminé' }],
+    action: '▶ Accéder', badge: 'COMPLET',
   },
   {
     id: 'kny',
@@ -152,14 +112,8 @@ const ANIMES = [
     coverPosition: 'center top',
     genres: ['Action', 'Surnaturel', 'Shōnen'],
     description: "Tanjiro Kamado devient chasseur de démons après que sa famille est massacrée et sa sœur Nezuko transformée en démon.",
-    stats: [
-      { label: 'Chapitres', value: '206' },
-      { label: 'Épisodes', value: '44' },
-      { label: 'Statut', value: 'Disponible' },
-    ],
-    action: '▶ Accéder',
-    badge: 'NOUVEAU',
-    badgeColor: '#e85d27',
+    stats: [{ label: 'Chapitres', value: '206' }, { label: 'Épisodes', value: '44' }, { label: 'Statut', value: 'Disponible' }],
+    action: '▶ Accéder', badge: 'NOUVEAU',
   },
   {
     id: 'nnt',
@@ -172,14 +126,8 @@ const ANIMES = [
     coverPosition: 'center top',
     genres: ['Action', 'Fantasy', 'Shōnen'],
     description: "La princesse Elizabeth part à la recherche des Sept Péchés Capitaux, des chevaliers légendaires bannis du royaume, pour sauver Britannia.",
-    stats: [
-      { label: 'Chapitres', value: '342' },
-      { label: 'Épisodes', value: '100' },
-      { label: 'Statut', value: 'Disponible' },
-    ],
-    action: '▶ Accéder',
-    badge: 'NOUVEAU',
-    badgeColor: '#8e44ad',
+    stats: [{ label: 'Chapitres', value: '342' }, { label: 'Épisodes', value: '100' }, { label: 'Statut', value: 'Disponible' }],
+    action: '▶ Accéder', badge: 'NOUVEAU',
   },
   {
     id: 'sl',
@@ -192,14 +140,8 @@ const ANIMES = [
     coverPosition: 'center top',
     genres: ['Action', 'Fantasy', 'Manhwa'],
     description: "Sung Jinwoo, le chasseur le plus faible du monde, reçoit un mystérieux système qui lui permet de monter de rang à l'infini.",
-    stats: [
-      { label: 'Chapitres', value: '202' },
-      { label: 'Épisodes', value: '12' },
-      { label: 'Statut', value: 'Disponible' },
-    ],
-    action: '▶ Accéder',
-    badge: 'NOUVEAU',
-    badgeColor: '#1976d2',
+    stats: [{ label: 'Chapitres', value: '202' }, { label: 'Épisodes', value: '12' }, { label: 'Statut', value: 'Disponible' }],
+    action: '▶ Accéder', badge: 'NOUVEAU',
   },
   {
     id: 'dbs',
@@ -208,18 +150,12 @@ const ANIMES = [
     emoji: '🐉',
     color: '#f57f17',
     colorDark: '#5c2e00',
-    coverImage: 'https://resizing.flixster.com/rkYW70Qo4tqbX8akxnoNX0Yf5z0=/ems.cHJkLWVtcy1hc3NldHMvbW92aWVzLzllY2IwZjMyLWVjYjMtNDAzMC1hYWViLTBjZjcxMmFmNDU1MC5wbmc=',
+    coverImage: 'https://upload.wikimedia.org/wikipedia/en/a/a9/Dragon_Ball_Super_manga_volume_1.png',
     coverPosition: 'center center',
     genres: ['Action', 'Science-fiction', 'Shōnen'],
     description: "Après la défaite de Majin Buu, Goku continue à repousser ses limites en affrontant des adversaires venus d'autres univers.",
-    stats: [
-      { label: 'Chapitres', value: '101' },
-      { label: 'Épisodes', value: '131' },
-      { label: 'Statut', value: 'Disponible' },
-    ],
-    action: '▶ Accéder',
-    badge: 'VF + JAP',
-    badgeColor: '#f57f17',
+    stats: [{ label: 'Chapitres', value: '101' }, { label: 'Épisodes', value: '131' }, { label: 'Statut', value: 'Disponible' }],
+    action: '▶ Accéder', badge: 'VF + JAP',
   },
   {
     id: 'bc',
@@ -232,14 +168,8 @@ const ANIMES = [
     coverPosition: 'center center',
     genres: ['Action', 'Fantasy', 'Shōnen'],
     description: "Asta, né sans magie dans un monde où tout le monde en a, rêve de devenir Sorcier Empereur grâce à sa ténacité et à son grimoire à cinq feuilles.",
-    stats: [
-      { label: 'Chapitres', value: '280' },
-      { label: 'Épisodes', value: '170' },
-      { label: 'Statut', value: 'Disponible' },
-    ],
-    action: '▶ Accéder',
-    badge: 'NOUVEAU',
-    badgeColor: '#388e3c',
+    stats: [{ label: 'Chapitres', value: '280' }, { label: 'Épisodes', value: '170' }, { label: 'Statut', value: 'Disponible' }],
+    action: '▶ Accéder', badge: 'NOUVEAU',
   },
   {
     id: 'mha',
@@ -252,14 +182,8 @@ const ANIMES = [
     coverPosition: 'center top',
     genres: ['Action', 'Super-héros', 'Shōnen'],
     description: "Dans un monde où 80% de la population a un Super Pouvoir, Izuku Midoriya naît sans capacité mais rêve de devenir le plus grand héros.",
-    stats: [
-      { label: 'Chapitres', value: '430+' },
-      { label: 'Épisodes', value: '138' },
-      { label: 'Statut', value: 'Terminé' },
-    ],
-    action: '▶ Accéder',
-    badge: 'COMPLET',
-    badgeColor: '#1e88e5',
+    stats: [{ label: 'Chapitres', value: '430+' }, { label: 'Épisodes', value: '138' }, { label: 'Statut', value: 'Terminé' }],
+    action: '▶ Accéder', badge: 'COMPLET',
   },
   {
     id: 'fireforce',
@@ -272,14 +196,8 @@ const ANIMES = [
     coverPosition: 'center top',
     genres: ['Action', 'Surnaturel', 'Shōnen'],
     description: "Dans un monde où des humains s'enflamment spontanément, Shinra Kusakabe intègre la 8ème Brigade pour comprendre les mystères de la combustion spontanée.",
-    stats: [
-      { label: 'Chapitres', value: '304' },
-      { label: 'Épisodes', value: '48' },
-      { label: 'Statut', value: 'Terminé' },
-    ],
-    action: '▶ Accéder',
-    badge: 'COMPLET',
-    badgeColor: '#f4511e',
+    stats: [{ label: 'Chapitres', value: '304' }, { label: 'Épisodes', value: '48' }, { label: 'Statut', value: 'Terminé' }],
+    action: '▶ Accéder', badge: 'COMPLET',
   },
   {
     id: 'bluelock',
@@ -292,75 +210,99 @@ const ANIMES = [
     coverPosition: 'center top',
     genres: ['Sport', 'Compétition', 'Shōnen'],
     description: "La Fédération japonaise de football engage Ego Jinpachi pour former le meilleur attaquant du monde via un programme radical : Blue Lock.",
-    stats: [
-      { label: 'Chapitres', value: '280+' },
-      { label: 'Épisodes', value: '24' },
-      { label: 'Statut', value: 'En cours' },
-    ],
-    action: '▶ Accéder',
-    badge: 'NOUVEAU',
-    badgeColor: '#1565c0',
+    stats: [{ label: 'Chapitres', value: '280+' }, { label: 'Épisodes', value: '24' }, { label: 'Statut', value: 'En cours' }],
+    action: '▶ Accéder', badge: 'NOUVEAU',
   },
 ]
 
 const SEARCH_ALIASES = {
-  onepiece:          ['op', 'one piece', 'luffy', 'mugiwara', 'elbaf', 'pirate'],
-  'violet-evergarden': ['violet', 'violet evergarden', 'vostfr', 'vf', 'auto memory doll', 'doll', 'lettres'],
-  tpn:               ['promised neverland', 'neverland', 'emma', 'norman', 'ray'],
-  drstone:           ['dr stone', 'senku', 'science'],
-  jjk:               ['jujutsu', 'jujutsu kaisen', 'sukuna', 'itadori', 'gojo'],
-  kingdom:           ['shin', 'chine', 'guerre', 'royaumes combattants'],
-  aot:               ['aot', 'snk', 'shingeki', 'attaque des titans', 'attack on titan', 'eren', 'levi'],
-  kny:               ['kny', 'demon slayer', 'kimetsu', 'tanjiro', 'nezuko'],
-  nnt:               ['nnt', 'nanatsu', 'seven deadly sins', '7ds', 'meliodas'],
-  sl:                ['solo leveling', 'sung jinwoo', 'manhwa'],
-  dbs:               ['dbs', 'dragon ball', 'goku', 'vegeta'],
-  bc:                ['black clover', 'asta', 'yuno', 'trefle'],
-  mha:               ['mha', 'my hero academia', 'boku no hero', 'deku', 'izuku'],
-  fireforce:         ['fire force', 'enen no shouboutai', 'shinra'],
-  bluelock:          ['blue lock', 'football', 'isagi', 'ego'],
+  onepiece:            ['op', 'one piece', 'luffy', 'mugiwara', 'elbaf', 'pirate'],
+  'violet-evergarden': ['violet', 'violet evergarden', 'vostfr', 'vf', 'auto memory doll', 'lettres'],
+  tpn:                 ['promised neverland', 'neverland', 'emma', 'norman', 'ray'],
+  drstone:             ['dr stone', 'senku', 'science'],
+  jjk:                 ['jujutsu', 'jujutsu kaisen', 'sukuna', 'itadori', 'gojo'],
+  kingdom:             ['shin', 'chine', 'guerre', 'royaumes combattants'],
+  aot:                 ['aot', 'snk', 'shingeki', 'attaque des titans', 'attack on titan', 'eren', 'levi'],
+  kny:                 ['kny', 'demon slayer', 'kimetsu', 'tanjiro', 'nezuko'],
+  nnt:                 ['nnt', 'nanatsu', 'seven deadly sins', '7ds', 'meliodas'],
+  sl:                  ['solo leveling', 'sung jinwoo', 'manhwa'],
+  dbs:                 ['dbs', 'dragon ball', 'goku', 'vegeta'],
+  bc:                  ['black clover', 'asta', 'yuno', 'trefle'],
+  mha:                 ['mha', 'my hero academia', 'boku no hero', 'deku', 'izuku'],
+  fireforce:           ['fire force', 'enen no shouboutai', 'shinra'],
+  bluelock:            ['blue lock', 'football', 'isagi', 'ego'],
 }
 
-function normalizeText(value) {
-  return String(value || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
-}
+// ─── Utils ────────────────────────────────────────────────────────────────────
 
+function normalizeText(v) {
+  return String(v || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+}
 function searchableText(anime) {
-  return normalizeText([
-    anime.id, anime.title, anime.subtitle, anime.description,
-    ...(anime.genres || []),
-    ...(SEARCH_ALIASES[anime.id] || []),
-  ].join(' '))
+  return normalizeText([anime.id, anime.title, anime.subtitle, anime.description, ...(anime.genres || []), ...(SEARCH_ALIASES[anime.id] || [])].join(' '))
 }
+
+// ─── Badge styles — sobre, pas flashy ─────────────────────────────────────────
+
+const BADGE = {
+  'NOUVEAU':     { bg:'rgba(52,211,153,0.12)',  color:'#86efac', border:'rgba(52,211,153,0.22)'  },
+  'À JOUR':      { bg:'rgba(251,146,60,0.12)',  color:'#fdba74', border:'rgba(251,146,60,0.22)'  },
+  'COMPLET':     { bg:'rgba(148,163,184,0.10)', color:'#cbd5e1', border:'rgba(148,163,184,0.18)' },
+  'VF + VOSTFR': { bg:'rgba(167,139,250,0.12)', color:'#c4b5fd', border:'rgba(167,139,250,0.22)' },
+  'VF + JAP':    { bg:'rgba(251,191,36,0.10)',  color:'#fde68a', border:'rgba(251,191,36,0.18)'  },
+}
+
+// ─── CSS ─────────────────────────────────────────────────────────────────────
 
 const AH_CSS = `
-  @keyframes ahFadeUp    { from { opacity:0; transform:translateY(24px) } to { opacity:1; transform:none } }
-  @keyframes ahTwinkle   { 0%,100% { opacity:.12 } 50% { opacity:.65 } }
-  @keyframes ahScan      { 0% { top:-2px } 100% { top:100% } }
-  @keyframes ahDrift     { 0%,100% { transform:translateY(0) } 50% { transform:translateY(-12px) } }
-  @keyframes ahMarqueeL  { from { transform:translateX(0) } to { transform:translateX(-33.333%) } }
-  @keyframes ahMarqueeR  { from { transform:translateX(-33.333%) } to { transform:translateX(0) } }
-  .ah-mq-l { animation: ahMarqueeL var(--mq-dur, 40s) linear infinite; will-change:transform; }
-  .ah-mq-r { animation: ahMarqueeR var(--mq-dur, 52s) linear infinite; will-change:transform; }
-  @media (prefers-reduced-motion: reduce) { .ah-mq-l, .ah-mq-r { animation: none !important; } }
+  @keyframes ahFadeUp  { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:none} }
+  @keyframes ahTwinkle { 0%,100%{opacity:.04} 50%{opacity:.32} }
+  @keyframes ahDrift   { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-9px)} }
+  @keyframes ahPulse   { 0%,100%{opacity:.5} 50%{opacity:1} }
+  @keyframes ahMqL     { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+  @keyframes ahMqR     { from{transform:translateX(-50%)} to{transform:translateX(0)} }
+  .ah-mq-l { animation:ahMqL var(--mq-dur,65s) linear infinite; will-change:transform; }
+  .ah-mq-r { animation:ahMqR var(--mq-dur,80s) linear infinite; will-change:transform; }
+  @media(prefers-reduced-motion:reduce){ .ah-mq-l,.ah-mq-r{ animation:none!important; } }
+
+  .ah-card { transition:transform .30s cubic-bezier(.25,.46,.45,.94),box-shadow .30s ease,border-color .22s ease; }
+  .ah-card:hover { transform:scale(1.025) translateY(-4px)!important; }
+  .ah-card:focus-visible { outline:2px solid rgba(212,160,23,.7); outline-offset:2px; }
+  .ah-card-img { transition:transform .45s cubic-bezier(.25,.46,.45,.94); }
+  .ah-card:hover .ah-card-img { transform:scale(1.07)!important; }
+
+  .ah-search { transition:border-color .2s,box-shadow .2s; }
+  .ah-search:focus-within { border-color:rgba(255,255,255,0.22)!important; box-shadow:0 0 0 3px rgba(255,255,255,.05)!important; }
+
+  .ah-pill { transition:all .18s; }
+  .ah-pill:hover { border-color:rgba(255,255,255,.22)!important; color:rgba(255,255,255,.85)!important; }
+  .ah-pill:focus-visible { outline:2px solid rgba(212,160,23,.6); outline-offset:2px; }
+
+  .ah-back { transition:all .18s; }
+  .ah-back:hover { background:rgba(255,255,255,.10)!important; color:#fff!important; }
+
+  .ah-grid-card { transition:transform .28s ease,box-shadow .28s ease,border-color .2s ease; }
+  .ah-grid-card:hover { transform:translateY(-8px)!important; }
+  .ah-grid-card:focus-visible { outline:2px solid rgba(212,160,23,.7); outline-offset:3px; }
+  .ah-grid-img { transition:transform .4s ease; }
+  .ah-grid-card:hover .ah-grid-img { transform:scale(1.055)!important; }
 `
 
-const ORB_COLORS = ['#e0524a', '#6c5ce7', '#00b894', '#c62828', '#c9a227', '#1976d2', '#8e44ad', '#f57f17', '#8b7cff']
+// ─── Background atmosphere ────────────────────────────────────────────────────
 
 function AHStars() {
-  const stars = useMemo(() => Array.from({ length: 55 }, (_, i) => ({
-    x: (i * 37.7 + 9) % 98, y: (i * 43.1 + 17) % 95,
-    size: i % 8 === 0 ? 2.5 : i % 3 === 0 ? 1.6 : 1,
-    dur: 3.2 + (i * 0.27) % 4.8, del: (i * 0.23) % 7,
-    col: i % 5 === 0 ? ORB_COLORS[i % ORB_COLORS.length] : null,
+  const stars = useMemo(() => Array.from({ length: 40 }, (_, i) => ({
+    x: (i * 43.7 + 9) % 98, y: (i * 37.1 + 13) % 93,
+    size: i % 11 === 0 ? 1.8 : 1,
+    dur: 3.8 + (i * 0.33) % 5.5, del: (i * 0.29) % 9,
   })), [])
   return (
-    <div style={{ position:'absolute', inset:0, pointerEvents:'none', zIndex:0, overflow:'hidden' }}>
+    <div style={{ position:'absolute', inset:0, pointerEvents:'none', overflow:'hidden', zIndex:0 }}>
       {stars.map((s, i) => (
         <div key={i} style={{
           position:'absolute', left:`${s.x}%`, top:`${s.y}%`,
           width:s.size, height:s.size, borderRadius:'50%',
-          background: s.col ?? 'rgba(255,255,255,0.55)',
+          background:'rgba(255,255,255,0.45)',
           animation:`ahTwinkle ${s.dur}s ${s.del}s ease-in-out infinite`,
         }} />
       ))}
@@ -368,28 +310,15 @@ function AHStars() {
   )
 }
 
-function AHScanLine() {
-  return (
-    <div style={{ position:'absolute', inset:0, pointerEvents:'none', zIndex:1, overflow:'hidden' }}>
-      <div style={{
-        position:'absolute', left:0, right:0, height:2,
-        background:'linear-gradient(90deg,transparent,rgba(224,82,74,.06),rgba(224,82,74,.14),rgba(224,82,74,.06),transparent)',
-        animation:'ahScan 18s linear infinite',
-      }} />
-    </div>
-  )
-}
-
 function AmbientOrbs() {
   const orbs = useMemo(() => [
-    { x:10, y:20, size:320, color:'rgba(224,82,74,0.04)',  dur:18 },
-    { x:75, y:60, size:280, color:'rgba(108,92,231,0.04)', dur:22 },
-    { x:45, y:80, size:380, color:'rgba(0,184,148,0.03)',  dur:26 },
-    { x:88, y:10, size:240, color:'rgba(201,162,39,0.04)', dur:20 },
-    { x:30, y:50, size:260, color:'rgba(139,124,255,0.04)',dur:24 },
+    { x:10, y:20, size:500, color:'rgba(139,92,246,0.022)', dur:22 },
+    { x:80, y:60, size:420, color:'rgba(59,130,246,0.018)', dur:28 },
+    { x:45, y:82, size:380, color:'rgba(212,160,23,0.016)', dur:18 },
+    { x:25, y:45, size:320, color:'rgba(52,211,153,0.014)', dur:24 },
   ], [])
   return (
-    <div style={{ position:'absolute', inset:0, pointerEvents:'none', zIndex:0, overflow:'hidden' }}>
+    <div style={{ position:'absolute', inset:0, pointerEvents:'none', overflow:'hidden', zIndex:0 }}>
       {orbs.map((o, i) => (
         <div key={i} style={{
           position:'absolute', left:`${o.x}%`, top:`${o.y}%`,
@@ -403,53 +332,95 @@ function AmbientOrbs() {
   )
 }
 
-function AnimeMarqueeCard({ anime, onClick }) {
-  const [hov, setHov] = useState(false)
-  const c = anime.color
+// ─── Badge pill ───────────────────────────────────────────────────────────────
+
+function BadgePill({ badge, pos = 'tl' }) {
+  if (!badge) return null
+  const s = BADGE[badge] || { bg:'rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.5)', border:'rgba(255,255,255,0.12)' }
+  const posStyle = pos === 'tr' ? { top:9, right:9 } : { top:9, left:9 }
+  return (
+    <div style={{
+      position:'absolute', zIndex:4, ...posStyle,
+      fontSize:9, fontWeight:800, letterSpacing:'.07em', textTransform:'uppercase',
+      background:s.bg, color:s.color, border:`1px solid ${s.border}`,
+      borderRadius:100, padding:'3px 9px', backdropFilter:'blur(10px)',
+    }}>
+      {badge}
+    </div>
+  )
+}
+
+// ─── Premium fallback for missing/cheap covers ────────────────────────────────
+
+function FallbackCover({ anime }) {
+  const initials = anime.title.split(' ').slice(0,2).map(w => w[0]).join('').toUpperCase()
+  return (
+    <div style={{
+      position:'absolute', inset:0,
+      background:'linear-gradient(160deg,#14161e 0%,#0b0d12 60%,#0e1018 100%)',
+      display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:10,
+    }}>
+      <div style={{
+        width:52, height:52, borderRadius:12,
+        background:'rgba(255,255,255,0.04)',
+        border:'1px solid rgba(255,255,255,0.07)',
+        display:'flex', alignItems:'center', justifyContent:'center',
+        fontSize:22, filter:'grayscale(0.15) brightness(0.8)',
+      }}>
+        {anime.emoji}
+      </div>
+      <div style={{
+        fontSize:10, fontWeight:800, color:'rgba(255,255,255,0.2)',
+        letterSpacing:'.14em', textTransform:'uppercase', textAlign:'center',
+        maxWidth:120, lineHeight:1.4,
+      }}>
+        {initials}
+      </div>
+    </div>
+  )
+}
+
+// ─── Carousel card ────────────────────────────────────────────────────────────
+
+function AnimeCarouselCard({ anime, onClick }) {
+  const [imgErr, setImgErr] = useState(false)
   return (
     <div
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
+      className="ah-card"
       onClick={onClick}
+      role="button" tabIndex={0}
+      onKeyDown={e => e.key === 'Enter' && onClick()}
+      aria-label={anime.title}
       style={{
-        flexShrink:0, width:190, height:268, borderRadius:14, overflow:'hidden',
-        position:'relative', cursor:'pointer',
-        background:`linear-gradient(160deg,${anime.colorDark} 0%,${c} 100%)`,
-        border:`1px solid ${hov ? c+'66' : 'rgba(255,255,255,0.08)'}`,
-        transform: hov ? 'scale(1.05) translateY(-6px)' : 'scale(1)',
-        boxShadow: hov ? `0 20px 48px ${c}44` : '0 4px 16px rgba(0,0,0,0.45)',
-        transition:'transform 0.32s ease,box-shadow 0.32s ease,border-color 0.28s ease',
-        marginRight:12,
+        flexShrink:0, width:188, height:272, borderRadius:13, overflow:'hidden',
+        position:'relative', cursor:'pointer', background:'#0c0e14', marginRight:12,
+        border:'1px solid rgba(255,255,255,0.07)',
+        boxShadow:'0 3px 14px rgba(0,0,0,0.45)',
       }}
     >
-      {anime.coverImage && (
-        <img
-          src={anime.coverImage} alt={anime.title}
-          onError={e => { e.currentTarget.style.display='none' }}
-          style={{
-            position:'absolute', inset:0, width:'100%', height:'100%',
-            objectFit:'cover', objectPosition: anime.coverPosition || 'center top',
-            transform: hov ? 'scale(1.08)' : 'scale(1)',
-            transition:'transform 0.4s ease',
-          }}
-        />
-      )}
-      <div style={{ position:'absolute', inset:0, background:'linear-gradient(to bottom,transparent 30%,rgba(0,0,0,0.84) 100%)', zIndex:1 }} />
-      <div style={{
-        position:'absolute', inset:0,
-        background:`linear-gradient(to bottom,${c}22 0%,transparent 50%)`,
-        zIndex:2, opacity: hov ? 1 : 0, transition:'opacity 0.28s',
-      }} />
-      <div style={{ position:'absolute', top:9, right:9, zIndex:4, fontSize:9, fontWeight:800, letterSpacing:'.06em', background:c+'cc', color:'#fff', borderRadius:100, padding:'2px 8px', backdropFilter:'blur(6px)' }}>
-        {anime.badge}
+      <div style={{ position:'absolute', inset:0, overflow:'hidden' }}>
+        {(!imgErr && anime.coverImage) ? (
+          <img
+            src={anime.coverImage} alt={anime.title} loading="lazy"
+            className="ah-card-img"
+            onError={() => setImgErr(true)}
+            style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', objectPosition:anime.coverPosition || 'center top' }}
+          />
+        ) : (
+          <FallbackCover anime={anime} />
+        )}
       </div>
-      <div style={{ position:'absolute', bottom:0, left:0, right:0, padding:'10px 12px 13px', zIndex:3 }}>
-        <div style={{ fontSize:12.5, fontWeight:800, color:'#F2F0EA', lineHeight:1.25, marginBottom:5, textShadow:'0 1px 8px rgba(0,0,0,0.95)' }}>
+      <div style={{ position:'absolute', inset:0, background:'linear-gradient(to bottom,rgba(0,0,0,0.12) 0%,transparent 38%,rgba(0,0,0,0.92) 100%)', zIndex:2, pointerEvents:'none' }} />
+      <BadgePill badge={anime.badge} pos="tl" />
+      <div style={{ position:'absolute', bottom:0, left:0, right:0, padding:'10px 13px 14px', zIndex:3 }}>
+        <div style={{ fontSize:12.5, fontWeight:800, color:'#EDEBE3', lineHeight:1.3, marginBottom:6, textShadow:'0 1px 8px rgba(0,0,0,0.95)' }}>
           {anime.title}
         </div>
         <div style={{ display:'flex', gap:4, flexWrap:'wrap' }}>
           {anime.genres.slice(0,2).map(g => (
-            <span key={g} style={{ fontSize:9, fontWeight:700, background:'rgba(255,255,255,0.13)', color:'rgba(255,255,255,0.68)', borderRadius:100, padding:'2px 7px', whiteSpace:'nowrap' }}>{g}</span>
+            <span key={g} style={{ fontSize:9, fontWeight:700, background:'rgba(255,255,255,0.09)', color:'rgba(255,255,255,0.50)', border:'1px solid rgba(255,255,255,0.07)', borderRadius:100, padding:'2px 7px', whiteSpace:'nowrap' }}>
+              {g}
+            </span>
           ))}
         </div>
       </div>
@@ -457,159 +428,158 @@ function AnimeMarqueeCard({ anime, onClick }) {
   )
 }
 
-function AnimeMarqueeRow({ animes, direction, speed, onCardClick }) {
+// ─── Section carousel row ─────────────────────────────────────────────────────
+
+function SectionCarousel({ title, subtitle, accent, animes, direction, speed, onCardClick }) {
   const [paused, setPaused] = useState(false)
-  const items = [...animes, ...animes, ...animes]
-  const cls = direction === 'rtl' ? 'ah-mq-l' : 'ah-mq-r'
+  const items = useMemo(() => [...animes, ...animes], [animes])
+  const cls   = direction === 'rtl' ? 'ah-mq-l' : 'ah-mq-r'
+
   return (
-    <div
-      style={{
-        overflow:'hidden',
-        WebkitMaskImage:'linear-gradient(to right,transparent 0%,black 7%,black 93%,transparent 100%)',
-        maskImage:'linear-gradient(to right,transparent 0%,black 7%,black 93%,transparent 100%)',
-        marginBottom:10,
-      }}
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-    >
+    <section style={{ marginBottom:52 }} aria-label={title}>
+      <div style={{ maxWidth:1280, margin:'0 auto', padding:'0 32px', marginBottom:16, display:'flex', alignItems:'center', gap:10 }}>
+        {accent && <div style={{ width:3, height:16, borderRadius:2, background:accent, flexShrink:0 }} />}
+        <h3 style={{ fontSize:16, fontWeight:800, color:'#fff', margin:0, letterSpacing:'-.01em' }}>{title}</h3>
+        {subtitle && <span style={{ fontSize:12, color:'rgba(255,255,255,0.30)', fontWeight:600 }}>{subtitle}</span>}
+      </div>
       <div
-        className={cls}
+        onMouseEnter={() => setPaused(true)}
+        onMouseLeave={() => setPaused(false)}
         style={{
-          display:'flex', padding:'6px 0 10px',
-          '--mq-dur':`${speed}s`,
-          animationPlayState: paused ? 'paused' : 'running',
+          overflow:'hidden',
+          WebkitMaskImage:'linear-gradient(to right,transparent 0%,black 9%,black 91%,transparent 100%)',
+          maskImage:'linear-gradient(to right,transparent 0%,black 9%,black 91%,transparent 100%)',
+          paddingBottom:6,
         }}
       >
-        {items.map((anime, i) => (
-          <AnimeMarqueeCard key={`${anime.id}-${i}`} anime={anime} onClick={() => onCardClick(anime.id)} />
-        ))}
+        <div
+          className={cls}
+          style={{
+            display:'flex', paddingLeft:32, paddingTop:4, paddingBottom:8,
+            '--mq-dur':`${speed}s`,
+            animationPlayState: paused ? 'paused' : 'running',
+          }}
+        >
+          {items.map((anime, i) => (
+            <AnimeCarouselCard key={`${anime.id}-${i}`} anime={anime} onClick={() => onCardClick(anime.id)} />
+          ))}
+        </div>
       </div>
-    </div>
+    </section>
   )
 }
 
-function AnimeCard({ anime, index, onClick }) {
-  const [hov, setHov] = useState(false)
-  const c = anime.color
+// ─── Grid card (search results) ───────────────────────────────────────────────
+
+function AnimeGridCard({ anime, index, onClick }) {
+  const [imgErr, setImgErr] = useState(false)
+  const bs = BADGE[anime.badge] || {}
   return (
     <div
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
+      className="ah-grid-card"
       onClick={onClick}
+      role="button" tabIndex={0}
+      onKeyDown={e => e.key === 'Enter' && onClick()}
+      aria-label={anime.title}
       style={{
-        position:'relative', borderRadius:20, overflow:'hidden',
-        background:`linear-gradient(175deg,${c}14 0%,rgba(14,14,18,0.97) 100%)`,
-        border:`1px solid ${hov ? c+'55' : c+'1e'}`,
-        borderTop:`3px solid ${hov ? c : c+'aa'}`,
-        transition:'all 0.38s ease',
-        transform: hov ? 'translateY(-10px)' : 'translateY(0)',
-        boxShadow: hov ? `0 28px 70px ${c}28,0 0 0 1px ${c}18` : `0 4px 18px ${c}0a`,
+        position:'relative', borderRadius:16, overflow:'hidden',
+        background:'rgba(255,255,255,0.024)',
+        border:'1px solid rgba(255,255,255,0.07)',
+        boxShadow:'0 2px 16px rgba(0,0,0,0.30)',
         cursor:'pointer',
-        animation:`ahFadeUp 0.55s ${index * 0.07}s ease-out both`,
+        animation:`ahFadeUp .42s ${index * 0.055}s ease-out both`,
       }}
     >
-      <div style={{ height:250, position:'relative', overflow:'hidden', background:`linear-gradient(135deg,${c}cc 0%,${anime.colorDark} 100%)` }}>
-        {anime.coverImage && (
+      <div style={{ height:210, position:'relative', overflow:'hidden', background:'#0c0e14' }}>
+        {(!imgErr && anime.coverImage) ? (
           <img
-            src={anime.coverImage} alt={anime.title}
-            onError={e => { e.currentTarget.style.display='none' }}
-            style={{
-              position:'absolute', inset:0, width:'100%', height:'100%',
-              objectFit:'cover', objectPosition: anime.coverPosition || 'center top',
-              opacity: hov ? 1 : 0.85,
-              transition:'opacity 0.38s ease,transform 0.45s ease',
-              transform: hov ? 'scale(1.06)' : 'scale(1)',
-            }}
+            src={anime.coverImage} alt={anime.title} loading="lazy"
+            className="ah-grid-img"
+            onError={() => setImgErr(true)}
+            style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', objectPosition:anime.coverPosition || 'center top' }}
           />
+        ) : (
+          <FallbackCover anime={anime} />
         )}
-        {!anime.coverImage && (
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100%', fontSize:88, filter:`drop-shadow(0 6px 20px ${c}66)`, transition:'transform 0.38s', transform: hov ? 'scale(1.1)' : 'scale(1)' }}>
-            {anime.emoji}
-          </div>
-        )}
-        <div style={{ position:'absolute', inset:0, background:'linear-gradient(to bottom,transparent 30%,rgba(8,8,12,0.72) 100%)', zIndex:1 }} />
-        <div style={{ position:'absolute', top:0, left:0, right:0, height:60, background:`linear-gradient(to bottom,${c}22,transparent)`, zIndex:1, opacity: hov ? 1 : 0, transition:'opacity .38s' }} />
-        <div style={{ position:'absolute', top:12, right:12, zIndex:2, fontSize:10, fontWeight:800, letterSpacing:'.08em', background:`${anime.badgeColor}dd`, color:'#fff', borderRadius:100, padding:'3px 10px', backdropFilter:'blur(6px)' }}>
-          {anime.badge}
-        </div>
-        {anime.coverImage && (
-          <div style={{ position:'absolute', bottom:14, left:16, zIndex:2 }}>
-            <div style={{ fontSize:11, fontWeight:800, color:c, letterSpacing:'.06em', textShadow:'0 1px 10px rgba(0,0,0,0.9)' }}>{anime.subtitle}</div>
+        <div style={{ position:'absolute', inset:0, background:'linear-gradient(to bottom,transparent 35%,rgba(0,0,0,0.72) 100%)', zIndex:1 }} />
+        {anime.badge && (
+          <div style={{
+            position:'absolute', top:10, left:10, zIndex:2,
+            fontSize:9, fontWeight:800, letterSpacing:'.07em', textTransform:'uppercase',
+            background:bs.bg || 'rgba(255,255,255,0.08)', color:bs.color || 'rgba(255,255,255,0.55)',
+            border:`1px solid ${bs.border || 'rgba(255,255,255,0.1)'}`,
+            borderRadius:100, padding:'3px 9px', backdropFilter:'blur(8px)',
+          }}>
+            {anime.badge}
           </div>
         )}
       </div>
-
-      <div style={{ padding:'22px 22px 20px' }}>
-        <div style={{ marginBottom:12 }}>
-          <div style={{ fontFamily:'var(--display)', fontWeight:800, fontSize:19, color:'#fff', marginBottom:3, letterSpacing:'-.01em' }}>{anime.title}</div>
-          <div style={{ fontSize:12, color:c, fontWeight:600 }}>{anime.subtitle}</div>
-        </div>
-        <div style={{ display:'flex', gap:5, flexWrap:'wrap', marginBottom:14 }}>
+      <div style={{ padding:'16px 18px 15px' }}>
+        <div style={{ fontWeight:800, fontSize:15.5, color:'#fff', marginBottom:3, letterSpacing:'-.01em' }}>{anime.title}</div>
+        <div style={{ fontSize:11, color:'rgba(255,255,255,0.32)', marginBottom:10, fontWeight:600 }}>{anime.subtitle}</div>
+        <div style={{ display:'flex', gap:5, flexWrap:'wrap', marginBottom:12 }}>
           {anime.genres.map(g => (
-            <span key={g} style={{ fontSize:11, fontWeight:700, background:`${c}18`, color:c, border:`1px solid ${c}33`, borderRadius:100, padding:'2px 10px' }}>{g}</span>
+            <span key={g} style={{ fontSize:10, fontWeight:700, background:'rgba(255,255,255,0.05)', color:'rgba(255,255,255,0.42)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:100, padding:'2px 9px' }}>{g}</span>
           ))}
         </div>
-        <p style={{ fontSize:13, color:'rgba(255,255,255,0.50)', lineHeight:1.7, marginBottom:18 }}>{anime.description}</p>
-        <div style={{ display:'flex', gap:20, marginBottom:20, paddingBottom:18, borderBottom:`1px solid ${c}14` }}>
+        <div style={{ display:'flex', gap:16, borderTop:'1px solid rgba(255,255,255,0.05)', paddingTop:11 }}>
           {anime.stats.map(s => (
             <div key={s.label}>
-              <div style={{ fontSize:17, fontWeight:800, color:'#fff' }}>{s.value}</div>
-              <div style={{ fontSize:10, color:'rgba(255,255,255,0.32)', fontWeight:700, letterSpacing:'.06em', marginTop:1 }}>{s.label.toUpperCase()}</div>
+              <div style={{ fontSize:14, fontWeight:800, color:'#fff' }}>{s.value}</div>
+              <div style={{ fontSize:9, color:'rgba(255,255,255,0.26)', fontWeight:700, letterSpacing:'.06em', textTransform:'uppercase', marginTop:1 }}>{s.label}</div>
             </div>
           ))}
         </div>
-        <button style={{
-          width:'100%', padding:'13px', borderRadius:11, border:'none',
-          background: hov ? c : `${c}20`,
-          color: hov ? '#fff' : c,
-          fontWeight:800, fontSize:14, cursor:'pointer',
-          transition:'all 0.32s', fontFamily:'var(--body)',
-          boxShadow: hov ? `0 8px 24px ${c}44` : 'none',
-          letterSpacing:'.02em',
-        }}>
-          {anime.action}
-        </button>
       </div>
     </div>
   )
 }
 
+// ─── Main component ───────────────────────────────────────────────────────────
+
 export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrstone, onOpenJjk, onOpenKingdom, onOpenAot, onOpenKny, onOpenNnt, onOpenSl, onOpenDbs, onOpenViolet, onOpenBc, onOpenMha, onOpenFireforce, onOpenBluelock }) {
-  const [query, setQuery]           = useState('')
+  const [query,       setQuery]       = useState('')
   const [activeGenre, setActiveGenre] = useState('all')
-
-  const sortedAnimes = useMemo(() => {
-    const priority = { onepiece: 0, 'violet-evergarden': 1 }
-    return [...ANIMES].sort((a, b) => (priority[a.id] ?? 10) - (priority[b.id] ?? 10))
-  }, [])
-
-  const genreOptions = useMemo(() => {
-    const genres = new Set()
-    sortedAnimes.forEach(a => (a.genres || []).forEach(g => genres.add(g)))
-    return ['all', ...Array.from(genres).sort((a, b) => a.localeCompare(b, 'fr'))]
-  }, [sortedAnimes])
-
-  const visibleAnimes = useMemo(() => {
-    const needle = normalizeText(query).trim()
-    return sortedAnimes.filter(anime => {
-      const genreMatch = activeGenre === 'all' || anime.genres?.includes(activeGenre)
-      const textMatch  = !needle || searchableText(anime).includes(needle)
-      return genreMatch && textMatch
-    })
-  }, [activeGenre, query, sortedAnimes])
-
-  const isFiltering = query.trim() !== '' || activeGenre !== 'all'
-
-  const marqueeRows = useMemo(() => [
-    { animes: sortedAnimes.slice(0, 5),  direction:'rtl', speed:42 },
-    { animes: sortedAnimes.slice(5, 10), direction:'ltr', speed:54 },
-    { animes: sortedAnimes.slice(10),    direction:'rtl', speed:36 },
-  ], [sortedAnimes])
 
   useEffect(() => {
     document.body.style.overflow = 'hidden'
     return () => { document.body.style.overflow = '' }
   }, [])
+
+  const sortedAnimes = useMemo(() => {
+    const prio = { onepiece:0, 'violet-evergarden':1, jjk:2, sl:3, aot:4, kny:5 }
+    return [...ANIMES].sort((a, b) => (prio[a.id] ?? 10) - (prio[b.id] ?? 10))
+  }, [])
+
+  const sections = useMemo(() => ({
+    tendances:  sortedAnimes.filter(a => ['onepiece','jjk','sl','aot','kny','violet-evergarden'].includes(a.id)),
+    nouveautes: sortedAnimes.filter(a => a.badge === 'NOUVEAU'),
+    collection: sortedAnimes,
+  }), [sortedAnimes])
+
+  const heroStats = useMemo(() => ({
+    total:     sortedAnimes.length,
+    vf:        sortedAnimes.filter(a => a.badge === 'VF + VOSTFR' || a.badge === 'VF + JAP').length,
+    nouveautes:sortedAnimes.filter(a => a.badge === 'NOUVEAU').length,
+    complets:  sortedAnimes.filter(a => a.badge === 'COMPLET').length,
+  }), [sortedAnimes])
+
+  const genreOptions = useMemo(() => {
+    const g = new Set()
+    sortedAnimes.forEach(a => a.genres?.forEach(x => g.add(x)))
+    return ['all', ...Array.from(g).sort((a, b) => a.localeCompare(b, 'fr'))]
+  }, [sortedAnimes])
+
+  const visibleAnimes = useMemo(() => {
+    const needle = normalizeText(query).trim()
+    return sortedAnimes.filter(a => {
+      const genreOk = activeGenre === 'all' || a.genres?.includes(activeGenre)
+      const textOk  = !needle || searchableText(a).includes(needle)
+      return genreOk && textOk
+    })
+  }, [activeGenre, query, sortedAnimes])
+
+  const isFiltering = query.trim() !== '' || activeGenre !== 'all'
 
   const handleClick = id => {
     const map = {
@@ -626,118 +596,204 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
     <div style={{ position:'fixed', inset:0, zIndex:500, background:'#07090e', display:'flex', flexDirection:'column' }}>
       <style>{AH_CSS}</style>
 
-      {/* Header */}
+      {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div style={{
-        flexShrink:0, padding:'0 24px', height:72,
+        flexShrink:0, padding:'0 28px', height:66,
         display:'flex', alignItems:'center', justifyContent:'space-between',
-        background:'rgba(7,9,14,0.96)', backdropFilter:'blur(20px)',
-        borderBottom:'1px solid rgba(255,255,255,0.07)', zIndex:10, position:'relative',
+        background:'rgba(7,9,14,0.97)', backdropFilter:'blur(24px)',
+        borderBottom:'1px solid rgba(255,255,255,0.06)', zIndex:10, position:'relative',
       }}>
-        <div style={{ display:'flex', alignItems:'center', gap:14 }}>
-          <div style={{ fontSize:28, filter:'drop-shadow(0 0 14px rgba(224,82,74,0.6))', animation:'ahDrift 5s ease-in-out infinite' }}>🎌</div>
-          <div>
-            <div style={{ fontFamily:"'Pirata One', cursive", fontWeight:900, fontSize:22, color:'#fff', letterSpacing:'-.01em', lineHeight:1 }}>Hub des Animés</div>
-            <div style={{ fontSize:11, color:'rgba(255,255,255,0.32)', marginTop:3, fontWeight:600, letterSpacing:'.04em' }}>
-              {sortedAnimes.length} séries disponibles
-            </div>
-          </div>
-        </div>
         <button
+          className="ah-back"
           onClick={onClose}
-          style={{ display:'flex', alignItems:'center', gap:7, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.10)', borderRadius:10, color:'rgba(255,255,255,0.75)', cursor:'pointer', padding:'9px 18px', fontSize:13, fontWeight:700, transition:'all .18s' }}
-          onMouseEnter={e => { e.currentTarget.style.background='rgba(255,255,255,0.10)'; e.currentTarget.style.color='#fff' }}
-          onMouseLeave={e => { e.currentTarget.style.background='rgba(255,255,255,0.05)'; e.currentTarget.style.color='rgba(255,255,255,0.75)' }}
+          style={{
+            display:'flex', alignItems:'center', gap:7,
+            background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.10)',
+            borderRadius:10, color:'rgba(255,255,255,0.68)', cursor:'pointer',
+            padding:'9px 18px', fontSize:13, fontWeight:700,
+          }}
         >
           ← Retour
         </button>
+
+        <div style={{ display:'flex', alignItems:'center', gap:10, position:'absolute', left:'50%', transform:'translateX(-50%)' }}>
+          <span style={{ fontSize:20, animation:'ahDrift 6s ease-in-out infinite' }}>🎌</span>
+          <span style={{ fontFamily:"'Pirata One',cursive", fontSize:18, fontWeight:900, color:'#fff', letterSpacing:'-.01em' }}>
+            Hub des Animés
+          </span>
+        </div>
+
+        <div style={{ fontSize:12, color:'rgba(255,255,255,0.28)', fontWeight:700 }}>
+          {heroStats.total} séries
+        </div>
       </div>
 
-      {/* Content */}
+      {/* ── Content ────────────────────────────────────────────────────────── */}
       <div style={{ flex:1, overflowY:'auto', position:'relative' }}>
         <AmbientOrbs />
         <AHStars />
-        <AHScanLine />
 
-        <div style={{ position:'relative', zIndex:2, padding:'48px 0 80px' }}>
-          <div style={{ maxWidth:1080, margin:'0 auto', padding:'0 24px' }}>
+        <div style={{ position:'relative', zIndex:2, paddingBottom:80 }}>
 
-            {/* Hero text */}
-            <div style={{ textAlign:'center', marginBottom:44 }}>
-              <div style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'5px 18px', borderRadius:100, background:'rgba(224,82,74,0.10)', border:'1px solid rgba(224,82,74,0.25)', fontSize:10, fontWeight:800, letterSpacing:'.22em', color:'#e0524a', textTransform:'uppercase', marginBottom:20 }}>
-                ✦ Espace Manga & Anime
-              </div>
-              <h2 style={{ fontFamily:"'Pirata One', cursive", fontWeight:900, fontSize:'clamp(28px,5vw,52px)', color:'#fff', marginBottom:14, lineHeight:1, letterSpacing:'-.02em' }}>
-                Ton univers, ton rythme
-              </h2>
-              <p style={{ fontSize:15, color:'rgba(255,255,255,0.38)', maxWidth:480, margin:'0 auto', lineHeight:1.75 }}>
-                Scans, épisodes, suivis — tout au même endroit pour la communauté Brams.
-              </p>
+          {/* ── Hero ─────────────────────────────────────────────────────── */}
+          <div style={{
+            position:'relative', overflow:'hidden',
+            padding:'56px 32px 48px',
+            background:'linear-gradient(180deg,rgba(14,12,22,0.6) 0%,transparent 100%)',
+            textAlign:'center',
+          }}>
+            <div style={{
+              position:'absolute', inset:0, pointerEvents:'none',
+              background:'radial-gradient(ellipse 70% 55% at 50% 0%,rgba(139,92,246,0.06),transparent)',
+            }} />
+
+            <div style={{
+              display:'inline-flex', alignItems:'center', gap:7, marginBottom:20,
+              padding:'4px 16px', borderRadius:100,
+              background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.09)',
+              fontSize:10, fontWeight:800, letterSpacing:'.18em', color:'rgba(255,255,255,0.40)', textTransform:'uppercase',
+            }}>
+              Bibliothèque · Communauté Brams
             </div>
 
-            {/* Search + genre filters */}
-            <div style={{ maxWidth:820, margin:'0 auto 28px' }}>
-              <div style={{ display:'flex', alignItems:'center', gap:10, background:'rgba(255,255,255,0.055)', border:'1px solid rgba(255,255,255,0.10)', borderRadius:12, padding:'10px 14px', boxShadow:'0 18px 45px rgba(0,0,0,0.22)' }}>
-                <span style={{ color:'rgba(255,255,255,0.42)', fontSize:16, flexShrink:0 }}>⌕</span>
-                <input
-                  value={query}
-                  onChange={e => setQuery(e.target.value)}
-                  placeholder="Rechercher : violet, dbs, aot, demon slayer…"
-                  style={{ width:'100%', background:'transparent', border:'none', outline:'none', color:'#fff', fontSize:14, fontWeight:650, fontFamily:'var(--body)' }}
-                />
-                {(query || activeGenre !== 'all') && (
-                  <button type="button" onClick={() => { setQuery(''); setActiveGenre('all') }}
-                    style={{ flexShrink:0, border:'1px solid rgba(255,255,255,0.10)', background:'rgba(255,255,255,0.06)', color:'rgba(255,255,255,0.72)', borderRadius:8, padding:'6px 10px', cursor:'pointer', fontSize:12, fontWeight:800 }}>
-                    Reset
-                  </button>
-                )}
-              </div>
-              <div style={{ display:'flex', flexWrap:'wrap', gap:7, marginTop:10, justifyContent:'center' }}>
-                {genreOptions.map(genre => {
-                  const active = activeGenre === genre
-                  return (
-                    <button key={genre} type="button" onClick={() => setActiveGenre(genre)}
-                      style={{ border:`1px solid ${active ? 'rgba(224,82,74,0.65)' : 'rgba(255,255,255,0.10)'}`, background:active ? 'rgba(224,82,74,0.18)' : 'rgba(255,255,255,0.045)', color:active ? '#fff' : 'rgba(255,255,255,0.58)', borderRadius:999, padding:'6px 13px', cursor:'pointer', fontSize:12, fontWeight:800, transition:'all .18s' }}>
-                      {genre === 'all' ? 'Tous' : genre}
-                    </button>
-                  )
-                })}
-              </div>
-              <div style={{ marginTop:10, textAlign:'center', fontSize:12, color:'rgba(255,255,255,0.28)', fontWeight:700 }}>
-                {isFiltering ? `${visibleAnimes.length} résultat${visibleAnimes.length > 1 ? 's' : ''}` : `${sortedAnimes.length} animés disponibles`}
-              </div>
+            <h1 style={{
+              fontFamily:"'Pirata One',cursive", fontWeight:900,
+              fontSize:'clamp(30px,5vw,54px)', color:'#fff',
+              margin:'0 0 12px', lineHeight:1.05, letterSpacing:'-.02em',
+            }}>
+              Mes Animés
+            </h1>
+
+            <p style={{ fontSize:15, color:'rgba(255,255,255,0.36)', maxWidth:440, margin:'0 auto 28px', lineHeight:1.7 }}>
+              {heroStats.total} séries · Scans, épisodes et suivis de la communauté.
+            </p>
+
+            {/* Mini stats */}
+            <div style={{ display:'flex', gap:10, justifyContent:'center', flexWrap:'wrap' }}>
+              {[
+                { label:'Nouveautés', value:heroStats.nouveautes, dot:'#86efac' },
+                { label:'VF dispo',   value:heroStats.vf,         dot:'#c4b5fd' },
+                { label:'Complétés',  value:heroStats.complets,   dot:'#cbd5e1' },
+              ].map(s => (
+                <div key={s.label} style={{
+                  display:'flex', alignItems:'center', gap:7,
+                  padding:'6px 14px', borderRadius:100,
+                  background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.07)',
+                  fontSize:12, fontWeight:700, color:'rgba(255,255,255,0.5)',
+                }}>
+                  <div style={{ width:6, height:6, borderRadius:'50%', background:s.dot, flexShrink:0, animation:'ahPulse 2.5s ease-in-out infinite' }} />
+                  <span style={{ fontWeight:800, color:'rgba(255,255,255,0.75)' }}>{s.value}</span>
+                  <span>{s.label}</span>
+                </div>
+              ))}
             </div>
           </div>
 
-          {/* Marquee gallery OR filtered grid */}
+          {/* ── Search + filters ──────────────────────────────────────────── */}
+          <div style={{ maxWidth:780, margin:'0 auto 36px', padding:'0 28px' }}>
+            <div
+              className="ah-search"
+              style={{
+                display:'flex', alignItems:'center', gap:10,
+                background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.09)',
+                borderRadius:12, padding:'10px 14px',
+                boxShadow:'0 12px 36px rgba(0,0,0,0.18)',
+              }}
+            >
+              <span style={{ color:'rgba(255,255,255,0.35)', fontSize:16, flexShrink:0 }}>⌕</span>
+              <input
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                placeholder="Rechercher un animé, un genre, un statut…"
+                aria-label="Rechercher un animé"
+                style={{ width:'100%', background:'transparent', border:'none', outline:'none', color:'#fff', fontSize:14, fontWeight:600, fontFamily:'var(--body)' }}
+              />
+              {(query || activeGenre !== 'all') && (
+                <button type="button" onClick={() => { setQuery(''); setActiveGenre('all') }}
+                  style={{ flexShrink:0, border:'1px solid rgba(255,255,255,0.09)', background:'rgba(255,255,255,0.05)', color:'rgba(255,255,255,0.65)', borderRadius:8, padding:'5px 11px', cursor:'pointer', fontSize:11, fontWeight:800 }}>
+                  ✕
+                </button>
+              )}
+            </div>
+
+            <div style={{ display:'flex', flexWrap:'wrap', gap:6, marginTop:12, justifyContent:'center' }}>
+              {genreOptions.map(genre => {
+                const active = activeGenre === genre
+                return (
+                  <button
+                    key={genre} type="button"
+                    className="ah-pill"
+                    onClick={() => setActiveGenre(genre)}
+                    style={{
+                      border:`1px solid ${active ? 'rgba(255,255,255,0.28)' : 'rgba(255,255,255,0.09)'}`,
+                      background: active ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.035)',
+                      color: active ? '#fff' : 'rgba(255,255,255,0.45)',
+                      borderRadius:999, padding:'5px 13px', cursor:'pointer',
+                      fontSize:12, fontWeight:700,
+                    }}
+                  >
+                    {genre === 'all' ? 'Tous' : genre}
+                  </button>
+                )
+              })}
+            </div>
+
+            <div style={{ marginTop:10, textAlign:'center', fontSize:11, color:'rgba(255,255,255,0.22)', fontWeight:700 }}>
+              {isFiltering
+                ? `${visibleAnimes.length} résultat${visibleAnimes.length !== 1 ? 's' : ''} trouvé${visibleAnimes.length !== 1 ? 's' : ''}`
+                : `${sortedAnimes.length} animés disponibles dans la bibliothèque`}
+            </div>
+          </div>
+
+          {/* ── Content: filtered grid OR section carousels ───────────────── */}
           {isFiltering ? (
-            <div style={{ maxWidth:1080, margin:'0 auto', padding:'0 24px' }}>
+            <div style={{ maxWidth:1240, margin:'0 auto', padding:'0 28px' }}>
               {visibleAnimes.length > 0 ? (
-                <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(300px,1fr))', gap:20 }}>
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(290px,1fr))', gap:18 }}>
                   {visibleAnimes.map((anime, i) => (
-                    <AnimeCard key={anime.id} anime={anime} index={i} onClick={() => handleClick(anime.id)} />
+                    <AnimeGridCard key={anime.id} anime={anime} index={i} onClick={() => handleClick(anime.id)} />
                   ))}
                 </div>
               ) : (
-                <div style={{ border:'1px dashed rgba(255,255,255,0.10)', background:'rgba(255,255,255,0.025)', borderRadius:14, padding:'44px 20px', textAlign:'center', color:'rgba(255,255,255,0.42)', fontWeight:750 }}>
-                  Aucun anime trouvé
+                <div style={{
+                  border:'1px dashed rgba(255,255,255,0.08)', background:'rgba(255,255,255,0.02)',
+                  borderRadius:16, padding:'52px 20px', textAlign:'center',
+                  color:'rgba(255,255,255,0.30)', fontSize:14, fontWeight:700,
+                }}>
+                  Aucun animé trouvé pour cette recherche
                 </div>
               )}
             </div>
           ) : (
-            <div>
-              <div style={{ textAlign:'center', marginBottom:18, padding:'0 24px', fontSize:11, color:'rgba(255,255,255,0.20)', fontWeight:700, letterSpacing:'.10em', textTransform:'uppercase' }}>
-                ✦ Galerie cinématique · survole pour pause · clique pour accéder
-              </div>
-              {marqueeRows.map((row, i) => (
-                <AnimeMarqueeRow
-                  key={i}
-                  animes={row.animes}
-                  direction={row.direction}
-                  speed={row.speed}
-                  onCardClick={handleClick}
-                />
-              ))}
-            </div>
+            <>
+              <SectionCarousel
+                title="Tendances"
+                subtitle="Les séries les plus suivies"
+                accent="#e0524a"
+                animes={sections.tendances}
+                direction="ltr"
+                speed={88}
+                onCardClick={handleClick}
+              />
+              <SectionCarousel
+                title="Nouveautés"
+                subtitle="Récemment ajoutées à la bibliothèque"
+                accent="#86efac"
+                animes={sections.nouveautes}
+                direction="rtl"
+                speed={120}
+                onCardClick={handleClick}
+              />
+              <SectionCarousel
+                title="Collection complète"
+                subtitle={`${sortedAnimes.length} séries disponibles`}
+                accent="#c4b5fd"
+                animes={sections.collection}
+                direction="ltr"
+                speed={155}
+                onCardClick={handleClick}
+              />
+            </>
           )}
         </div>
       </div>
