@@ -280,14 +280,17 @@ export default function BlindTestPage() {
   useEffect(() => {
     if (phase !== 'countdown') return
     if (countdown <= 0) {
-      // Play audio here — audio was unlocked during user gesture in startGame()
-      audioRef.current?.play().catch(() => {})
+      // Audio already playing at volume 0 since startGame() — just unmute & seek to 0
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0
+        audioRef.current.volume = volume
+      }
       setGuessEnabled(answerDelay === 0)
       setPhase('playing'); setStartTime(Date.now()); setElapsed(0); return
     }
     const t = setTimeout(() => setCountdown(v => v - 1), 1000)
     return () => clearTimeout(t)
-  }, [phase, countdown, answerDelay])
+  }, [phase, countdown, answerDelay, volume])
 
   // Playing timer
   useEffect(() => {
@@ -303,7 +306,7 @@ export default function BlindTestPage() {
 
   // Keep the excerpt playing through the reveal; stop only outside the round flow.
   useEffect(() => {
-    if (!['playing', 'reveal'].includes(phase) && audioRef.current) {
+    if (!['countdown', 'playing', 'reveal'].includes(phase) && audioRef.current) {
       audioRef.current.pause()
     }
   }, [phase])
@@ -330,13 +333,12 @@ export default function BlindTestPage() {
     setCountdown(3)
     setGuessEnabled(false)
 
-    // Create Audio during user gesture to unlock autoplay with sound
+    // Start audio silently during user gesture (avoids autoplay block on delayed play)
     if (audioRef.current) { audioRef.current.pause(); audioRef.current.src = '' }
     const audio = new Audio(t.url)
-    audio.volume = volume
+    audio.volume = 0  // muted until countdown hits 0
     audioRef.current = audio
-    // play() + immediate pause unlocks the audio element for future plays
-    audio.play().then(() => { audio.pause(); audio.currentTime = 0 }).catch(() => {})
+    audio.play().catch(() => {})
 
     setPhase('countdown')
   }
