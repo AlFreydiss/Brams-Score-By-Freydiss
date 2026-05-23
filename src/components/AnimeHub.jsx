@@ -267,14 +267,35 @@ const ANIMES = [
     badge: 'NOUVEAU',
     badgeColor: '#1565c0',
   },
+  {
+    id: 'violet',
+    title: 'Violet Evergarden',
+    subtitle: 'Lettres & Émotions',
+    emoji: '💜',
+    color: '#A66CFF',
+    colorDark: '#3a1a6e',
+    coverImage: 'https://www.manga-news.com/public/images/dvd/violet-evergarden-anime-key.webp',
+    genres: ['Drame', 'Fantasy', 'Josei'],
+    description: "Après la Grande Guerre, Violet Evergarden, ancienne soldate, apprend le métier de « poupée courrier » pour comprendre les derniers mots de son Major : « Je t'aime. »",
+    stats: [
+      { label: 'Épisodes', value: '13' },
+      { label: 'Films', value: '2' },
+      { label: 'Statut', value: 'Terminé' },
+    ],
+    action: '▶ Accéder',
+    badge: 'BIENTÔT',
+    badgeColor: '#A66CFF',
+  },
 ]
 
 const AH_CSS = `
-  @keyframes ahFadeUp  { from { opacity:0; transform:translateY(24px) } to { opacity:1; transform:none } }
-  @keyframes ahTwinkle { 0%,100% { opacity:.12 } 50% { opacity:.65 } }
-  @keyframes ahScan    { 0% { top:-2px } 100% { top:100% } }
-  @keyframes ahDrift   { 0%,100% { transform:translateY(0) } 50% { transform:translateY(-12px) } }
-  @keyframes ahPulse   { 0%,100% { opacity:.06 } 50% { opacity:.14 } }
+  @keyframes ahFadeUp    { from { opacity:0; transform:translateY(28px) }           to { opacity:1; transform:none } }
+  @keyframes ahSlideLeft { from { opacity:0; transform:translateX(-64px) scale(.97) } to { opacity:1; transform:none } }
+  @keyframes ahSlideRight{ from { opacity:0; transform:translateX(64px)  scale(.97) } to { opacity:1; transform:none } }
+  @keyframes ahTwinkle   { 0%,100% { opacity:.12 } 50% { opacity:.65 } }
+  @keyframes ahScan      { 0% { top:-2px } 100% { top:100% } }
+  @keyframes ahDrift     { 0%,100% { transform:translateY(0) } 50% { transform:translateY(-12px) } }
+  @keyframes ahPulse     { 0%,100% { opacity:.06 } 50% { opacity:.14 } }
 `
 
 // Ambient colored orbs drift in background
@@ -359,7 +380,7 @@ function AnimeCard({ anime, index, onClick }) {
         transform: hov ? 'translateY(-10px)' : 'translateY(0)',
         boxShadow: hov ? `0 28px 70px ${c}28, 0 0 0 1px ${c}18` : `0 4px 18px ${c}0a`,
         cursor:'pointer',
-        animation:`ahFadeUp 0.55s ${index * 0.07}s ease-out both`,
+        animation:`${index % 2 === 0 ? 'ahSlideLeft' : 'ahSlideRight'} 0.6s ${index * 0.08}s cubic-bezier(.22,.68,0,1.2) both`,
       }}
     >
       {/* Cover image */}
@@ -456,7 +477,7 @@ function ComingSoonCard({ index }) {
       background:'rgba(255,255,255,0.012)',
       display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
       minHeight:420, padding:40, textAlign:'center',
-      animation:`ahFadeUp 0.55s ${index * 0.07}s ease-out both`,
+      animation:`ahFadeUp 0.55s ${index * 0.08}s ease-out both`,
     }}>
       <div style={{ fontSize:52, marginBottom:18, opacity:.18, animation:'ahDrift 6s ease-in-out infinite' }}>＋</div>
       <div style={{ fontWeight:700, fontSize:15, color:'rgba(255,255,255,0.18)', marginBottom:10 }}>D'autres animes bientôt</div>
