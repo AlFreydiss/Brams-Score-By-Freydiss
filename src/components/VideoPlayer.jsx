@@ -187,6 +187,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   const [selectedAudioKey, setSelectedAudioKey] = useState(null)
   const [isBuffering,   setIsBuffering]   = useState(false)
   const [videoError,    setVideoError]    = useState(null)
+  const [subStyle,      setSubStyle]      = useState({ size: 19, color: '#ffffff', bg: true })
 
   const video   = videos[idx]
   const isLocal = Boolean(video?.src)
@@ -604,13 +605,15 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                 position: 'absolute',
                 bottom: showCtrl ? 110 : 40,
                 left: '50%', transform: 'translateX(-50%)',
-                maxWidth: '82%', textAlign: 'center',
-                padding: '5px 16px',
-                background: 'rgba(0,0,0,0.72)',
+                maxWidth: '84%', textAlign: 'center',
+                padding: subStyle.bg ? '4px 14px' : '0 14px',
+                background: subStyle.bg ? 'rgba(0,0,0,0.72)' : 'transparent',
                 borderRadius: 6,
-                color: '#fff', fontSize: 19, fontWeight: 600,
+                color: subStyle.color,
+                fontSize: subStyle.size,
+                fontWeight: 700,
                 lineHeight: 1.55,
-                textShadow: '0 1px 6px rgba(0,0,0,0.9), 0 2px 12px rgba(0,0,0,0.7)',
+                textShadow: '0 1px 5px rgba(0,0,0,0.95), 0 2px 14px rgba(0,0,0,0.8)',
                 whiteSpace: 'pre-line',
                 transition: 'bottom .2s ease',
                 pointerEvents: 'none',
@@ -796,7 +799,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                 {/* Sous-titres */}
                 <div style={{ position: 'relative' }}>
                   <button
-                    onClick={e => { e.stopPropagation(); setShowSubMenu(s => !s); setShowAudioMenu(false); setShowSpdMenu(false) }}
+                    onClick={e => { e.stopPropagation(); setShowSubMenu(s => !s); setShowAudioMenu(false); setShowSpdMenu(false); setShowQualityMenu(false) }}
                     title="Sous-titres"
                     style={{
                       background: subsOff ? 'transparent' : `${color}22`,
@@ -807,18 +810,55 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                     }}
                   >CC {subLabel}</button>
                   {showSubMenu && hasSubs && (
-                    <div style={{ position: 'absolute', bottom: 'calc(100% + 6px)', right: 0, background: 'rgba(14,15,17,0.98)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, minWidth: 160, padding: '5px 0', boxShadow: '0 12px 40px rgba(0,0,0,0.7)', backdropFilter: 'blur(16px)', zIndex: 20 }}
+                    <div style={{ position: 'absolute', bottom: 'calc(100% + 6px)', right: 0, background: 'rgba(14,15,17,0.98)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, minWidth: 200, padding: '6px 0 4px', boxShadow: '0 12px 40px rgba(0,0,0,0.7)', backdropFilter: 'blur(16px)', zIndex: 20 }}
                       onClick={e => e.stopPropagation()}
                     >
-                      {[{ label: '🚫 Désactivés', action: () => setSubsOff(true) },
-                        ...video.subtitles.map((sub, i) => ({ label: sub.label, action: () => { setSubIdx(i); setSubsOff(false) } }))
-                      ].map((item, i) => (
-                        <button key={i} onClick={() => { item.action(); setShowSubMenu(false) }}
-                          style={{ width: '100%', padding: '8px 14px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', color: '#fff', fontSize: 13, fontWeight: 600, transition: 'background .12s' }}
+                      {/* Piste selection */}
+                      {[{ label: '🚫 Désactivés', off: true },
+                        ...video.subtitles.map((sub, i) => ({ label: sub.label, i }))
+                      ].map((item, key) => (
+                        <button key={key} onClick={() => { item.off ? setSubsOff(true) : (setSubIdx(item.i), setSubsOff(false)); setShowSubMenu(false) }}
+                          style={{ width: '100%', padding: '7px 14px', background: item.off ? (subsOff ? `${color}18` : 'none') : (!subsOff && subIdx === item.i ? `${color}18` : 'none'), border: 'none', cursor: 'pointer', textAlign: 'left', color: item.off ? (subsOff ? color : '#fff') : (!subsOff && subIdx === item.i ? color : '#fff'), fontSize: 13, fontWeight: 600, transition: 'background .12s' }}
                           onMouseEnter={e => e.currentTarget.style.background = `${color}18`}
-                          onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                          onMouseLeave={e => e.currentTarget.style.background = item.off ? (subsOff ? `${color}18` : 'none') : (!subsOff && subIdx === item.i ? `${color}18` : 'none')}
                         >{item.label}</button>
                       ))}
+
+                      {/* Séparateur + style subs */}
+                      {!subsOff && (
+                        <>
+                          <div style={{ margin: '4px 14px', height: 1, background: 'rgba(255,255,255,0.08)' }} />
+                          <div style={{ padding: '4px 14px 2px', color: 'rgba(255,255,255,0.35)', fontSize: 9, fontWeight: 900, letterSpacing: '.12em', textTransform: 'uppercase' }}>Apparence</div>
+
+                          {/* Taille */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 14px' }}>
+                            <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, minWidth: 36 }}>Taille</span>
+                            {[{ label: 'A', size: 15 }, { label: 'A', size: 19 }, { label: 'A', size: 25 }].map(({ label, size }) => (
+                              <button key={size} onClick={() => setSubStyle(s => ({ ...s, size }))}
+                                style={{ flex: 1, padding: '4px 0', border: `1px solid ${subStyle.size === size ? color : 'rgba(255,255,255,0.15)'}`, borderRadius: 6, background: subStyle.size === size ? `${color}22` : 'transparent', color: subStyle.size === size ? color : 'rgba(255,255,255,0.7)', fontSize: size === 15 ? 11 : size === 19 ? 14 : 18, fontWeight: 700, cursor: 'pointer', lineHeight: 1 }}
+                              >{label}</button>
+                            ))}
+                          </div>
+
+                          {/* Couleur */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 14px' }}>
+                            <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, minWidth: 36 }}>Couleur</span>
+                            {[{ c: '#ffffff', label: 'Blanc' }, { c: '#ffe84d', label: 'Jaune' }, { c: '#7df3ff', label: 'Cyan' }].map(({ c, label }) => (
+                              <button key={c} onClick={() => setSubStyle(s => ({ ...s, color: c }))} title={label}
+                                style={{ flex: 1, height: 22, borderRadius: 5, background: c, border: `2px solid ${subStyle.color === c ? '#fff' : 'transparent'}`, cursor: 'pointer', boxShadow: subStyle.color === c ? `0 0 0 1px ${color}` : 'none' }}
+                              />
+                            ))}
+                          </div>
+
+                          {/* Fond */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 14px 8px' }}>
+                            <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, minWidth: 36 }}>Fond</span>
+                            <button onClick={() => setSubStyle(s => ({ ...s, bg: !s.bg }))}
+                              style={{ flex: 1, padding: '4px 0', border: `1px solid ${subStyle.bg ? color : 'rgba(255,255,255,0.15)'}`, borderRadius: 6, background: subStyle.bg ? `${color}22` : 'transparent', color: subStyle.bg ? color : 'rgba(255,255,255,0.5)', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}
+                            >{subStyle.bg ? 'Activé' : 'Désactivé'}</button>
+                          </div>
+                        </>
+                      )}
                     </div>
                   )}
                 </div>
