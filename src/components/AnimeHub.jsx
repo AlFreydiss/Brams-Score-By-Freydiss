@@ -8,7 +8,7 @@ const ANIMES = [
     emoji: '🏴‍☠️',
     color: '#e0524a',
     colorDark: '#7a1f1a',
-    coverImage: 'https://www.dexerto.fr/cdn-image/wp-content/uploads/sites/2/2026/04/02/luffy-one-piece-erbaf-calendrier-sortie-episodes.jpg?width=1200&quality=60&format=auto',
+    coverImage: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/op-egghead-thumbnails/E1086.jpg',
     genres: ['Aventure', 'Action', 'Shōnen'],
     description: "Monkey D. Luffy et son équipage sillonnent les mers à la recherche du légendaire trésor « One Piece » pour devenir Roi des Pirates.",
     stats: [
@@ -180,6 +180,7 @@ const ANIMES = [
     color: '#f57f17',
     colorDark: '#5c2e00',
     coverImage: 'https://resizing.flixster.com/rkYW70Qo4tqbX8akxnoNX0Yf5z0=/ems.cHJkLWVtcy1hc3NldHMvbW92aWVzLzllY2IwZjMyLWVjYjMtNDAzMC1hYWViLTBjZjcxMmFmNDU1MC5wbmc=',
+    coverPosition: 'center center',
     genres: ['Action', 'Science-fiction', 'Shōnen'],
     description: "Après la défaite de Majin Buu, Goku continue à repousser ses limites en affrontant des adversaires venus d'autres univers.",
     stats: [
@@ -198,7 +199,8 @@ const ANIMES = [
     emoji: '✉',
     color: '#8b7cff',
     colorDark: '#30255f',
-    coverImage: 'https://static.wikia.nocookie.net/violet-evergarden/images/4/4f/Violet_Evergarden_Key_Visual_3.png',
+    coverImage: '/anime-covers/violet.jpg',
+    coverPosition: 'center center',
     genres: ['Drame', 'Slice of Life', 'Emotion'],
     description: "Violet, ancienne soldate, devient Auto Memory Doll pour comprendre les sentiments humains et le sens des mots qu'elle a recus.",
     stats: [
@@ -218,6 +220,7 @@ const ANIMES = [
     color: '#388e3c',
     colorDark: '#0a3d0c',
     coverImage: 'https://img2.hulu.com/user/v3/artwork/f6451467-97a8-4ddf-9ae8-e9e4cbb53fc8?base_image_bucket_name=image_manager&base_image=bc1a1c50-6786-4cf7-ae75-75de958b64e1&size=458x687&format=webp',
+    coverPosition: 'center center',
     genres: ['Action', 'Fantasy', 'Shōnen'],
     description: "Asta, né sans magie dans un monde où tout le monde en a, rêve de devenir Sorcier Empereur grâce à sa ténacité et à son grimoire à cinq feuilles.",
     stats: [
@@ -236,7 +239,8 @@ const ANIMES = [
     emoji: '💪',
     color: '#1e88e5',
     colorDark: '#0a2a5c',
-    coverImage: 'https://upload.wikimedia.org/wikipedia/en/4/46/Boku_no_Hero_Academia_Vol.1.png',
+    coverImage: '/anime-covers/mha-dark-deku.webp',
+    coverPosition: 'center center',
     genres: ['Action', 'Super-héros', 'Shōnen'],
     description: "Dans un monde où 80% de la population a un Super Pouvoir, Izuku Midoriya naît sans capacité mais rêve de devenir le plus grand héros.",
     stats: [
@@ -255,7 +259,7 @@ const ANIMES = [
     emoji: '🔥',
     color: '#f4511e',
     colorDark: '#5c1208',
-    coverImage: 'https://upload.wikimedia.org/wikipedia/en/a/ab/Fire_Force_volume_1.jpg',
+    coverImage: '/anime-covers/fire-force.avif',
     genres: ['Action', 'Surnaturel', 'Shōnen'],
     description: "Dans un monde où des humains s'enflamment spontanément, Shinra Kusakabe intègre la 8ème Brigade pour comprendre les mystères de la combustion spontanée.",
     stats: [
@@ -274,7 +278,8 @@ const ANIMES = [
     emoji: '⚽',
     color: '#1565c0',
     colorDark: '#071b3a',
-    coverImage: 'https://upload.wikimedia.org/wikipedia/en/a/aa/Blue_Lock_Volume_1.jpg',
+    coverImage: '/anime-covers/blue-lock-isagi.webp',
+    coverPosition: 'center center',
     genres: ['Sport', 'Compétition', 'Shōnen'],
     description: "La Fédération japonaise de football engage Ego Jinpachi pour former le meilleur attaquant du monde via un programme radical : Blue Lock.",
     stats: [
@@ -330,6 +335,13 @@ const AH_CSS = `
   @keyframes ahScan    { 0% { top:-2px } 100% { top:100% } }
   @keyframes ahDrift   { 0%,100% { transform:translateY(0) } 50% { transform:translateY(-12px) } }
   @keyframes ahPulse   { 0%,100% { opacity:.06 } 50% { opacity:.14 } }
+  @keyframes ahMarqueeL { from { transform:translateX(0) } to { transform:translateX(-33.333%) } }
+  @keyframes ahMarqueeR { from { transform:translateX(-33.333%) } to { transform:translateX(0) } }
+  .ah-mq-l { animation: ahMarqueeL var(--mq-dur, 40s) linear infinite; will-change:transform; }
+  .ah-mq-r { animation: ahMarqueeR var(--mq-dur, 52s) linear infinite; will-change:transform; }
+  @media (prefers-reduced-motion: reduce) {
+    .ah-mq-l, .ah-mq-r { animation: none !important; }
+  }
 `
 
 // Ambient colored orbs drift in background
@@ -395,9 +407,107 @@ function AmbientOrbs() {
   )
 }
 
+function AnimeMarqueeCard({ anime, onClick }) {
+  const [hov, setHov] = useState(false)
+  const c = anime.color
+  return (
+    <div
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      onClick={onClick}
+      style={{
+        flexShrink:0, width:180, height:260, borderRadius:14, overflow:'hidden',
+        position:'relative', cursor:'pointer',
+        background:`linear-gradient(160deg, ${anime.colorDark} 0%, ${c} 100%)`,
+        border:`1px solid ${hov ? c+'66' : 'rgba(255,255,255,0.08)'}`,
+        transform: hov ? 'scale(1.05) translateY(-5px)' : 'scale(1) translateY(0)',
+        boxShadow: hov ? `0 18px 44px ${c}33` : '0 4px 16px rgba(0,0,0,0.45)',
+        transition:'transform 0.32s ease, box-shadow 0.32s ease, border-color 0.28s ease',
+        marginRight:14,
+      }}
+    >
+      {anime.coverImage && (
+        <img
+          src={anime.coverImage} alt={anime.title}
+          onError={e => { e.currentTarget.style.display='none' }}
+          style={{
+            position:'absolute', inset:0, width:'100%', height:'100%',
+            objectFit:'cover', objectPosition: anime.coverPosition || 'center top',
+            transform: hov ? 'scale(1.08)' : 'scale(1)',
+            transition:'transform 0.4s ease',
+          }}
+        />
+      )}
+      <div style={{ position:'absolute', inset:0, background:'linear-gradient(to bottom, transparent 30%, rgba(0,0,0,0.82) 100%)', zIndex:1 }} />
+      <div style={{
+        position:'absolute', inset:0,
+        background:`linear-gradient(to bottom, ${c}20 0%, transparent 50%)`,
+        zIndex:2, opacity: hov ? 1 : 0, transition:'opacity 0.28s',
+      }} />
+      <div style={{ position:'absolute', top:8, right:8, zIndex:4, fontSize:9, fontWeight:800, letterSpacing:'.06em', background:c+'bb', color:'#fff', borderRadius:100, padding:'2px 7px', backdropFilter:'blur(6px)' }}>
+        {anime.badge}
+      </div>
+      <div style={{ position:'absolute', bottom:0, left:0, right:0, padding:'10px 12px 12px', zIndex:3 }}>
+        <div style={{ fontSize:12, fontWeight:800, color:'#F2F0EA', lineHeight:1.25, marginBottom:5, textShadow:'0 1px 8px rgba(0,0,0,0.95)' }}>
+          {anime.title}
+        </div>
+        <div style={{ display:'flex', gap:4 }}>
+          {anime.genres.slice(0,2).map(g => (
+            <span key={g} style={{ fontSize:9, fontWeight:700, background:'rgba(255,255,255,0.13)', color:'rgba(255,255,255,0.68)', borderRadius:100, padding:'2px 7px', whiteSpace:'nowrap' }}>{g}</span>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function AnimeMarqueeRow({ animes, direction, speed, onCardClick }) {
+  const [paused, setPaused] = useState(false)
+  const items = [...animes, ...animes, ...animes]
+  const cls = direction === 'rtl' ? 'ah-mq-l' : 'ah-mq-r'
+  return (
+    <div
+      style={{
+        overflow:'hidden',
+        WebkitMaskImage:'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)',
+        maskImage:'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)',
+        marginBottom:12,
+      }}
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+    >
+      <div
+        className={cls}
+        style={{
+          display:'flex', gap:0, padding:'6px 0 10px',
+          '--mq-dur':`${speed}s`,
+          animationPlayState: paused ? 'paused' : 'running',
+        }}
+      >
+        {items.map((anime, i) => (
+          <AnimeMarqueeCard key={`${anime.id}-${i}`} anime={anime} onClick={() => onCardClick(anime.id)} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function AnimeCard({ anime, index, onClick }) {
   const [hov, setHov] = useState(false)
   const c = anime.color
+  const fallbackCover = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
+    <svg xmlns="http://www.w3.org/2000/svg" width="458" height="687" viewBox="0 0 458 687">
+      <defs>
+        <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="${anime.colorDark}"/>
+          <stop offset="100%" stop-color="${anime.color}"/>
+        </linearGradient>
+      </defs>
+      <rect width="458" height="687" rx="24" fill="url(#g)"/>
+      <text x="229" y="326" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="30" font-weight="700">${anime.title}</text>
+      <text x="229" y="370" text-anchor="middle" fill="rgba(255,255,255,.78)" font-family="Arial, sans-serif" font-size="17" font-weight="600">${anime.subtitle}</text>
+    </svg>
+  `)}`
 
   return (
     <div
@@ -423,9 +533,10 @@ function AnimeCard({ anime, index, onClick }) {
           <img
             src={anime.coverImage}
             alt={anime.title}
+            onError={e => { if (e.currentTarget.src !== fallbackCover) e.currentTarget.src = fallbackCover }}
             style={{
               position:'absolute', inset:0, width:'100%', height:'100%',
-              objectFit:'cover', objectPosition:'top center',
+              objectFit:'cover', objectPosition: anime.coverPosition || 'center center',
               opacity: hov ? 1 : 0.85,
               transition:'opacity 0.38s ease, transform 0.45s ease',
               transform: hov ? 'scale(1.06)' : 'scale(1)',
@@ -543,6 +654,13 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
       return genreMatch && textMatch
     })
   }, [activeGenre, query, sortedAnimes])
+
+  const isFiltering = query.trim() !== '' || activeGenre !== 'all'
+  const marqueeRows = useMemo(() => [
+    { animes: sortedAnimes.slice(0, 5),   direction: 'rtl', speed: 40 },
+    { animes: sortedAnimes.slice(5, 10),  direction: 'ltr', speed: 52 },
+    { animes: sortedAnimes.slice(10, 15), direction: 'rtl', speed: 34 },
+  ], [sortedAnimes])
 
   useEffect(() => {
     document.body.style.overflow = 'hidden'
@@ -694,29 +812,48 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
               </div>
 
               <div style={{ marginTop:12, textAlign:'center', fontSize:12, color:'rgba(255,255,255,0.32)', fontWeight:700 }}>
-                {visibleAnimes.length} resultat{visibleAnimes.length > 1 ? 's' : ''}
+                {isFiltering
+                  ? `${visibleAnimes.length} résultat${visibleAnimes.length > 1 ? 's' : ''}`
+                  : `${sortedAnimes.length} animés disponibles`
+                }
               </div>
             </div>
 
-            {/* Cards grid */}
-            {visibleAnimes.length > 0 ? (
-              <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(310px, 1fr))', gap:22 }}>
-                {visibleAnimes.map((anime, i) => (
-                  <AnimeCard key={anime.id} anime={anime} index={i} onClick={() => handleClick(anime.id)} />
-                ))}
-                {!query && activeGenre === 'all' && <ComingSoonCard index={visibleAnimes.length} />}
-              </div>
+            {/* Marquee gallery (default) or filtered grid */}
+            {isFiltering ? (
+              visibleAnimes.length > 0 ? (
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(300px, 1fr))', gap:20 }}>
+                  {visibleAnimes.map((anime, i) => (
+                    <AnimeCard key={anime.id} anime={anime} index={i} onClick={() => handleClick(anime.id)} />
+                  ))}
+                </div>
+              ) : (
+                <div style={{
+                  border:'1px dashed rgba(255,255,255,0.10)',
+                  background:'rgba(255,255,255,0.025)',
+                  borderRadius:14,
+                  padding:'44px 20px',
+                  textAlign:'center',
+                  color:'rgba(255,255,255,0.42)',
+                  fontWeight:750,
+                }}>
+                  Aucun anime trouvé
+                </div>
+              )
             ) : (
-              <div style={{
-                border:'1px dashed rgba(255,255,255,0.10)',
-                background:'rgba(255,255,255,0.025)',
-                borderRadius:14,
-                padding:'44px 20px',
-                textAlign:'center',
-                color:'rgba(255,255,255,0.42)',
-                fontWeight:750,
-              }}>
-                Aucun anime trouve
+              <div style={{ margin:'0 -24px' }}>
+                <div style={{ textAlign:'center', marginBottom:22, padding:'0 24px', fontSize:11, color:'rgba(255,255,255,0.22)', fontWeight:700, letterSpacing:'.10em', textTransform:'uppercase' }}>
+                  ✦ Galerie cinématique · survole pour pause · clique pour accéder
+                </div>
+                {marqueeRows.map((row, i) => (
+                  <AnimeMarqueeRow
+                    key={i}
+                    animes={row.animes}
+                    direction={row.direction}
+                    speed={row.speed}
+                    onCardClick={handleClick}
+                  />
+                ))}
               </div>
             )}
           </div>
