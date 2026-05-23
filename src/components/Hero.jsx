@@ -317,12 +317,12 @@ export default function Hero() {
         <div className="hero-haki-line hero-haki-line-b" />
       </div>
 
-      <div style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: 1400, margin: '0 auto', padding: isMobile ? '0 20px' : '0 48px' }}>
+      <div style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: 1560, margin: '0 auto', padding: isMobile ? '0 20px' : '0 clamp(32px, 4vw, 72px)' }}>
         <div style={{
           display: 'grid',
-          gridTemplateColumns: isNarrow ? '1fr' : 'minmax(0,7fr) minmax(0,5fr)',
-          alignItems: 'center',
-          gap: isNarrow ? 40 : 56,
+          gridTemplateColumns: isNarrow ? '1fr' : '1fr minmax(340px, 420px)',
+          alignItems: 'start',
+          gap: isNarrow ? 40 : 'clamp(64px, 7vw, 140px)',
         }}>
 
           {/* ── Left column ── */}
@@ -452,9 +452,16 @@ export default function Hero() {
           </div>
 
           {/* ── Right column — UnifiedSidebar ── */}
-          {!isNarrow && (
-            <div style={{ position: 'sticky', top: 104, transform: 'translateY(10px)' }}>
-              {/* Aura derrière le sidebar */}
+          <div style={isNarrow ? {
+            marginTop: isMobile ? 48 : 40,
+            maxWidth: 480,
+          } : {
+            position: 'sticky',
+            top: 112,
+            marginTop: 'clamp(0px, 2vw, 32px)',
+          }}>
+            {/* Aura derrière le sidebar */}
+            {!isNarrow && <>
               <div style={{
                 position: 'absolute', inset: '-40px -10px', zIndex: 0, pointerEvents: 'none',
                 background: 'radial-gradient(ellipse 90% 80% at 50% 50%, rgba(88,101,242,0.12) 0%, rgba(88,101,242,0.04) 55%, transparent 80%)',
@@ -465,11 +472,11 @@ export default function Hero() {
                 background: 'radial-gradient(ellipse 80% 100% at 50% 100%, rgba(88,101,242,0.18) 0%, transparent 100%)',
                 filter: 'blur(20px)',
               }} />
-              <div style={{ position: 'relative', zIndex: 1 }}>
-                <UnifiedSidebar />
-              </div>
+            </>}
+            <div style={{ position: 'relative', zIndex: 1 }}>
+              <UnifiedSidebar />
             </div>
-          )}
+          </div>
         </div>
       </div>
     </section>
