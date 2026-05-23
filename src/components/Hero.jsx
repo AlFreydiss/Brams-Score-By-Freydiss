@@ -1,19 +1,7 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import UnifiedSidebar from './UnifiedSidebar.jsx'
 import { useMobile, useNarrow } from '../hooks/useMediaQuery.js'
 import { fetchStats } from '../lib/supabase.js'
-
-const QUOTES = [
-  { text: "Je vais devenir le Roi des Pirates !", author: "Monkey D. Luffy", color: '#E0524A' },
-  { text: "Un homme qui abandonne quelque chose ne mérite pas de le retrouver.", author: "Roronoa Zoro", color: '#2ECC71' },
-  { text: "La force n'est pas la seule chose qui compte dans ce monde.", author: "Shanks", color: '#FFD700' },
-  { text: "Les rêves ne meurent jamais tant qu'il reste quelqu'un pour les porter.", author: "Monkey D. Luffy", color: '#E0524A' },
-  { text: "Je ne regrette rien.", author: "Portgas D. Ace", color: '#F97316' },
-  { text: "Ce n'est pas le monde qui est cruel. C'est toi qui es trop faible.", author: "Donquixote Doflamingo", color: '#9B59B6' },
-  { text: "Nul ne peut changer le passé. Mais n'importe qui peut changer l'avenir.", author: "Nico Robin", color: '#3B82F6' },
-  { text: "Même affaibli, un lion reste un lion.", author: "Rayleigh", color: '#F1C40F' },
-  { text: "Je vis selon mes propres règles. C'est ça la vraie liberté.", author: "Eustass Kid", color: '#E0524A' },
-]
 
 const STARS = Array.from({ length: 32 }, (_, i) => ({
   id: i,
@@ -42,7 +30,7 @@ function StarField() {
   )
 }
 
-function StatBlock({ value, label, icon, live = false, liveVal = null }) {
+function StatBlock({ value, label, icon, live = false, liveVal = null, sub = null }) {
   const ref = useRef(null)
   const [active, setActive] = useState(false)
   const [display, setDisplay] = useState('0')
@@ -123,82 +111,7 @@ function StatBlock({ value, label, icon, live = false, liveVal = null }) {
         transition: 'transform 0.9s 0.3s cubic-bezier(0.22,1,0.36,1)',
       }} />
       <div className="premium-stat-label">{label}</div>
-    </div>
-  )
-}
-
-function QuoteRotator() {
-  const [idx, setIdx] = useState(0)
-  const [fade, setFade] = useState(true)
-  const timerRef = useRef(null)
-
-  const goTo = useCallback((nextIdx) => {
-    setFade(false)
-    setTimeout(() => { setIdx(nextIdx); setFade(true) }, 400)
-  }, [])
-
-  const next = useCallback(() => {
-    clearInterval(timerRef.current)
-    goTo((idx + 1) % QUOTES.length)
-    timerRef.current = setInterval(() => {
-      setIdx(i => { const n = (i + 1) % QUOTES.length; goTo(n); return i })
-    }, 12000)
-  }, [idx, goTo])
-
-  useEffect(() => {
-    timerRef.current = setInterval(() => {
-      setFade(false)
-      setTimeout(() => { setIdx(i => (i + 1) % QUOTES.length); setFade(true) }, 400)
-    }, 12000)
-    return () => clearInterval(timerRef.current)
-  }, [])
-
-  const q = QUOTES[idx]
-  return (
-    <div style={{ marginBottom: 36, maxWidth: 480 }}>
-      <div style={{
-        opacity: fade ? 1 : 0,
-        transition: 'opacity 0.4s ease',
-        background: 'linear-gradient(135deg, rgba(255,255,255,.048) 0%, rgba(255,255,255,.022) 100%)',
-        border: `1px solid rgba(255,255,255,.09)`,
-        borderLeft: `3px solid ${q.color}`,
-        borderTop: '1px solid rgba(255,255,255,.13)',
-        borderRadius: '0 14px 14px 0',
-        padding: '18px 20px',
-        marginBottom: 12,
-        backdropFilter: 'blur(16px) saturate(1.3)',
-        boxShadow: `0 8px 32px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.08)`,
-        position: 'relative',
-        overflow: 'hidden',
-      }}>
-        <div style={{
-          position: 'absolute', top: 0, left: 0, right: 0, height: 1,
-          background: `linear-gradient(90deg, ${q.color}66, transparent 60%)`,
-        }} />
-        <p style={{ fontSize: 14.5, color: 'rgba(255,255,255,.90)', lineHeight: 1.78, fontStyle: 'italic', margin: '0 0 10px', textShadow: '0 1px 8px rgba(0,0,0,.4)' }}>
-          « {q.text} »
-        </p>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ width: 16, height: 1, background: `linear-gradient(90deg, ${q.color}, transparent)`, display: 'inline-block' }} />
-          <span style={{ fontSize: 10.5, color: q.color, fontWeight: 800, letterSpacing: '.10em', textTransform: 'uppercase' }}>
-            {q.author}
-          </span>
-        </div>
-      </div>
-      <button
-        onClick={next}
-        style={{
-          display: 'inline-flex', alignItems: 'center', gap: 6,
-          background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.10)',
-          borderRadius: 20, padding: '5px 14px', fontSize: 10.5, fontWeight: 600,
-          color: 'rgba(255,255,255,.58)', cursor: 'pointer', letterSpacing: '.04em',
-          transition: 'all .15s',
-        }}
-        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,.1)'; e.currentTarget.style.color = '#fff' }}
-        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,.05)'; e.currentTarget.style.color = 'rgba(255,255,255,.45)' }}
-      >
-        ↻ Autre citation
-      </button>
+      {sub && <div style={{ fontSize: 9.5, color: 'rgba(255,255,255,.28)', marginTop: 2, letterSpacing: '.03em', lineHeight: 1.3 }}>{sub}</div>}
     </div>
   )
 }
@@ -347,23 +260,21 @@ export default function Hero() {
 
             {/* Subtitle */}
             <p className="fade-up" style={{
-              fontSize: 'clamp(14px,1.6vw,17px)',
-              color: 'rgba(255,255,255,.86)', fontWeight: 650,
-              letterSpacing: '.01em', marginBottom: 10, maxWidth: 480, lineHeight: 1.5,
+              fontSize: 'clamp(15px,1.7vw,20px)',
+              color: 'rgba(255,255,255,.90)', fontWeight: 640,
+              letterSpacing: '.005em', marginBottom: 16, maxWidth: 520, lineHeight: 1.4,
             }}>
-              La plus grande communauté One Piece francophone 🏴‍☠️
+              Ton équipage, tes rangs, tes théories, tes moments.
             </p>
 
             {/* Description */}
             <p className="fade-up-2" style={{
-              fontSize: 'clamp(12px,1.2vw,14px)',
-              color: 'rgba(255,255,255,.62)', fontWeight: 450,
-              lineHeight: 1.75, marginBottom: 32, maxWidth: 470,
+              fontSize: 'clamp(13px,1.25vw,15px)',
+              color: 'rgba(255,255,255,.56)', fontWeight: 440,
+              lineHeight: 1.78, marginBottom: 36, maxWidth: 480,
             }}>
-              Rangs, équipages, quiz, classements, théories et événements réunis dans une même aventure communautaire.
+              Une communauté anime connectée à Discord, avec classements, équipages, blind tests, wiki, événements et récompenses en berries.
             </p>
-
-            <div className="fade-up-2"><QuoteRotator /></div>
 
             {/* CTA */}
             <div className="fade-up-3" style={{ marginBottom: 32 }}>
@@ -387,7 +298,7 @@ export default function Hero() {
                 onMouseLeave={e => { e.currentTarget.style.backgroundPosition = 'left center'; e.currentTarget.style.boxShadow = '0 4px 28px rgba(212,160,23,0.40)'; e.currentTarget.style.transform = 'none' }}
               >
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z" /></svg>
-                Rejoindre le Discord
+                Rejoindre l'équipage
               </a>
               <a
                 href="#rangs"
@@ -403,11 +314,11 @@ export default function Hero() {
                 onMouseEnter={e => { e.currentTarget.style.background = 'rgba(212,160,23,0.12)'; e.currentTarget.style.borderColor = 'rgba(255,211,145,0.62)'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(212,160,23,0.18)' }}
                 onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.035)'; e.currentTarget.style.borderColor = 'rgba(255,211,145,0.36)'; e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none' }}
               >
-                ⚔️ Voir les rangs
+                ⚔️ Explorer les rangs
               </a>
               </div>
               <p style={{ fontSize: 10.5, color: 'rgba(255,255,255,.42)', fontWeight: 700, letterSpacing: '.07em', textTransform: 'uppercase', margin: 0 }}>
-                Gratuit · Actif 24/7 · Classements, équipages, events
+                Gratuit • Discord connecté • Progression en berries • Events communautaires
               </p>
             </div>
 
@@ -424,30 +335,34 @@ export default function Hero() {
               gridTemplateColumns: isMobile ? 'repeat(2, minmax(0, 1fr))' : 'repeat(4, minmax(0, 1fr))',
               gap: 12,
             }}>
-              <StatBlock value="2 000+" label="Nakamas" icon="🏴‍☠️" />
-              <StatBlock value="24/7" label="Bot actif" icon="🤖" />
+              <StatBlock value="2 000+" label="Nakamas" icon="🏴‍☠️" sub="Membres actifs" />
+              <StatBlock value="24/7" label="Bot actif" icon="🤖" sub="Toujours disponible" />
               <StatBlock
-                value={stats ? `${stats.membersTracked}` : '100+'}
+                value={stats ? `${stats.membersTracked}` : '200+'}
                 label="Classés"
                 icon="📊"
+                sub="Au leaderboard"
                 live={!!stats}
                 liveVal={stats ? `${stats.membersTracked}` : null}
               />
               <StatBlock
-                value={stats?.activeVocal > 0 ? `${stats.activeVocal}` : '—'}
+                value={stats?.activeVocal > 0 ? `${stats.activeVocal}` : '64'}
                 label="Vocal / sem."
                 icon="🎙️"
+                sub="Sessions actives"
                 live={!!(stats?.activeVocal > 0)}
                 liveVal={stats?.activeVocal > 0 ? `${stats.activeVocal}` : null}
               />
             </div>
 
-              {/* Features */}
-              <div className="fade-up-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 10, marginTop: 22 }}>
-                <HeroFeatureCard icon="⚓" title="Équipages" desc="Rejoins ton équipage de nakamas" accent="rgba(212,160,23" />
-                <HeroFeatureCard icon="📊" title="Classements" desc="Grimpe le leaderboard vocal" accent="rgba(88,101,242" />
-                <HeroFeatureCard icon="🎉" title="Événements" desc="Ne rate aucun event du serveur" accent="rgba(52,211,153" />
-                <HeroFeatureCard icon="🧠" title="Théories" desc="Partage tes théories One Piece" accent="rgba(224,82,74" />
+              {/* Modules */}
+              <div className="fade-up-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10, marginTop: 22 }}>
+                <HeroFeatureCard icon="⚓" title="Équipages" desc="Rejoins un crew, progresse avec tes nakamas." accent="rgba(212,160,23" />
+                <HeroFeatureCard icon="📊" title="Classements" desc="Monte dans les rangs et marque ton nom." accent="rgba(88,101,242" />
+                <HeroFeatureCard icon="🎵" title="Blind Test" desc="Teste ta mémoire sur les openings anime." accent="rgba(52,211,153" />
+                <HeroFeatureCard icon="📖" title="Wiki & Théories" desc="Partage tes idées, débats et analyses." accent="rgba(224,82,74" />
+                <HeroFeatureCard icon="🛒" title="Boutique" desc="Utilise tes berries pour débloquer des récompenses." accent="rgba(168,85,247" />
+                <HeroFeatureCard icon="🎉" title="Événements" desc="Participe aux soirées, tournois et défis." accent="rgba(234,179,8" />
               </div>
           </div>
 
