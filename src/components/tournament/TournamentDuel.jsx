@@ -169,8 +169,20 @@ function ParticipantCard({
 
       {/* Info */}
       <div style={{ padding: '18px 18px 20px', flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <div style={{ fontSize: 11, color: 'rgba(255,255,255,.35)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-          {participant.anime}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+          <span style={{ fontSize: 11, color: 'rgba(255,255,255,.35)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+            {participant.anime}
+          </span>
+          {participant.type && (
+            <span style={{
+              fontSize: 9, padding: '2px 6px', borderRadius: 4,
+              background: participant.type === 'insert' ? 'rgba(212,160,23,.12)' : 'rgba(255,255,255,.06)',
+              color: participant.type === 'insert' ? GOLD : 'rgba(255,255,255,.3)',
+              letterSpacing: '0.06em', fontWeight: 700, textTransform: 'uppercase',
+            }}>
+              {participant.type === 'insert' ? 'INSERT' : 'BGM'}
+            </span>
+          )}
         </div>
         <div style={{ fontSize: 18, fontWeight: 700, color: isWinner ? GOLD_L : 'rgba(255,255,255,.92)', lineHeight: 1.2 }}>
           {participant.title}

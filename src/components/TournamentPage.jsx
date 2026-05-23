@@ -146,15 +146,28 @@ function TournamentHeader({ config, progress }) {
   )
 }
 
+// Version stamp — bump when participants list changes to auto-reset saved state.
+const TOURNAMENT_VERSION = 'v2-ost'
+const VERSION_KEY = `brams_t_version_${TOURNAMENT_CONFIG.id}`
+
+function loadRoundsWithVersionCheck() {
+  const savedVersion = localStorage.getItem(VERSION_KEY)
+  if (savedVersion !== TOURNAMENT_VERSION) {
+    resetTournament(TOURNAMENT_CONFIG.id)
+    localStorage.setItem(VERSION_KEY, TOURNAMENT_VERSION)
+    const { rounds } = generateBracket(TOURNAMENT_CONFIG.participants)
+    return rounds
+  }
+  const saved = loadState(TOURNAMENT_CONFIG.id)
+  if (saved) return saved
+  const { rounds } = generateBracket(TOURNAMENT_CONFIG.participants)
+  return rounds
+}
+
 // ── Main page ──────────────────────────────────────────────────────────────
 export default function TournamentPage() {
   const [tab,           setTab]          = useState('duel')
-  const [rounds,        setRounds]       = useState(() => {
-    const saved = loadState(TOURNAMENT_CONFIG.id)
-    if (saved) return saved
-    const { rounds } = generateBracket(TOURNAMENT_CONFIG.participants)
-    return rounds
-  })
+  const [rounds,        setRounds]       = useState(() => loadRoundsWithVersionCheck())
   const [personalVotes, setPersonalVotes] = useState(() => loadPersonalVotes(TOURNAMENT_CONFIG.id))
   const [voteCounts,    setVoteCounts]    = useState(() => loadVoteCounts(TOURNAMENT_CONFIG.id))
   const [isMobile,      setIsMobile]      = useState(() => window.innerWidth < 768)
