@@ -59,6 +59,7 @@ const BlindTestPage      = lazy(() => import('./components/BlindTestPage.jsx'))
 const BlindTestRoomPage  = lazy(() => import('./components/BlindTestRoomPage.jsx'))
 const BlindTestLeaderboard = lazy(() => import('./components/BlindTestLeaderboard.jsx'))
 const TierListPage       = lazy(() => import('./components/TierListPage.jsx'))
+const TournamentPage     = lazy(() => import('./components/TournamentPage.jsx'))
 
 function shouldSkipAmbientVideo() {
   if (typeof window === 'undefined') return true
@@ -368,6 +369,7 @@ export default function App() {
         <Route path="/blind-test/room/:code" element={<PageLayout><BlindTestRoomPage /></PageLayout>} />
         <Route path="/blind-test/leaderboard" element={<PageLayout><BlindTestLeaderboard /></PageLayout>} />
         <Route path="/tier-list" element={<PageLayout><TierListPage /></PageLayout>} />
+        <Route path="/tournoi-ost" element={<PageLayout><TournamentPage /></PageLayout>} />
 
         {/* Homepage */}
         <Route path="/*" element={mainContent} />
