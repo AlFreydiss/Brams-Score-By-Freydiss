@@ -3,6 +3,7 @@ import { Routes, Route } from 'react-router-dom'
 import GlobalStyles from './components/GlobalStyles.jsx'
 import { ThemeProvider } from './contexts/ThemeContext.jsx'
 import { useAuth } from './contexts/AuthContext.jsx'
+import { OpeningBgProvider, useOpeningBg } from './contexts/OpeningBgContext.jsx'
 import WelcomeAnimation from './components/WelcomeAnimation.jsx'
 import AuthGuard from './components/AuthGuard.jsx'
 import Navbar from './components/Navbar.jsx'
@@ -175,6 +176,26 @@ function AMVBackground() {
   )
 }
 
+function EquippedOpeningBg() {
+  const { activeBg } = useOpeningBg()
+  if (!activeBg) return null
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none' }}>
+      <div style={{
+        position: 'absolute', inset: 0,
+        backgroundImage: `url(https://img.youtube.com/vi/${activeBg.ytId}/maxresdefault.jpg)`,
+        backgroundSize: 'cover', backgroundPosition: 'center',
+        filter: 'blur(22px) brightness(0.45)',
+        transform: 'scale(1.08)',
+      }} />
+      <div style={{
+        position: 'absolute', inset: 0,
+        background: `linear-gradient(155deg, ${activeBg.overlayStart} 0%, ${activeBg.overlayEnd} 100%)`,
+      }} />
+    </div>
+  )
+}
+
 // Wrapper pour les pages Wiki/Théories (Navbar + fond sombre + WelcomeAnimation)
 function PageLayout({ children }) {
   return (
@@ -288,6 +309,7 @@ export default function App() {
     <>
       <WelcomeAnimation />
       <AMVBackground />
+      <EquippedOpeningBg />
       <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1, background: 'rgba(4,7,10,0.58)', pointerEvents: 'none' }} />
 
       <div style={{ position: 'relative', zIndex: 2, isolation: 'isolate' }}>
@@ -314,6 +336,7 @@ export default function App() {
   )
 
   return (
+    <OpeningBgProvider>
     <ThemeProvider>
       <GlobalStyles />
       <Suspense fallback={
@@ -430,5 +453,6 @@ export default function App() {
       )}
       </Suspense>
     </ThemeProvider>
+    </OpeningBgProvider>
   )
 }
