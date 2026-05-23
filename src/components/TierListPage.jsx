@@ -50,26 +50,26 @@ function splitItems(v) {
 
 // ── Data ──────────────────────────────────────────────────────
 const DEFAULT_TIERS = [
-  { id: 's', label: 'S', color: '#ef4444' },
-  { id: 'a', label: 'A', color: '#f97316' },
-  { id: 'b', label: 'B', color: '#eab308' },
-  { id: 'c', label: 'C', color: '#22c55e' },
-  { id: 'd', label: 'D', color: '#3b82f6' },
-  { id: 'e', label: 'E', color: '#a855f7' },
-  { id: 'f', label: 'F', color: '#64748b' },
+  { id: 's', label: 'S', color: '#a0445c' },
+  { id: 'a', label: 'A', color: '#b6913d' },
+  { id: 'b', label: 'B', color: '#6b8098' },
+  { id: 'c', label: 'C', color: '#4a86b8' },
+  { id: 'd', label: 'D', color: '#7b6aa8' },
+  { id: 'e', label: 'E', color: '#b86a42' },
+  { id: 'f', label: 'F', color: '#b44a58' },
 ]
 
 const CATEGORIES = [
   {
     id: 'animes', title: 'Animes', icon: '🎬',
     description: '40 séries légendaires', count: 40,
-    badge: 'POPULAIRE', badgeColor: '#c0392b',
+    badge: 'POPULAIRE', badgeColor: '#a0445c',
     items: ['One Piece','Naruto','Bleach','Dragon Ball Z','Attack on Titan','Fullmetal Alchemist: Brotherhood','Hunter x Hunter','Death Note','Demon Slayer','Jujutsu Kaisen','My Hero Academia','Tokyo Ghoul','Sword Art Online','Code Geass','Steins;Gate','Vinland Saga','Kingdom','Berserk','Blue Lock','Chainsaw Man','Spy x Family','Mob Psycho 100','The Promised Neverland','Re:Zero','Overlord','Black Clover','Seven Deadly Sins','Fairy Tail','Gintama','Haikyuu!!','Kuroko no Basket','Slam Dunk','Dr. Stone','Fire Force','Mushishi','Akira','Ghost in the Shell','Cowboy Bebop','Neon Genesis Evangelion','Trigun'],
   },
   {
     id: 'personnages', title: 'Personnages', icon: '⚔️',
     description: '30 héros & antagonistes', count: 30,
-    badge: 'NOUVEAU', badgeColor: '#3b82f6',
+    badge: 'NOUVEAU', badgeColor: '#b6913d',
     items: ['Monkey D. Luffy','Roronoa Zoro','Sanji','Portgas D. Ace','Shanks','Whitebeard','Gol D. Roger','Naruto Uzumaki','Sasuke Uchiha','Madara Uchiha','Ichigo Kurosaki','Aizen Sosuke','Goku','Vegeta','Levi Ackerman','Eren Yeager','Edward Elric','Killua Zoldyck','Gon Freecss','Light Yagami','L Lawliet','Tanjiro Kamado','Muzan Kibutsuji','Itadori Yuji','Ryomen Sukuna','Deku Izuku','All Might','Ken Kaneki','Griffith','Guts'],
   },
   {
@@ -86,7 +86,7 @@ const CATEGORIES = [
   { id: 'ost',     title: 'OST & Openings', icon: '🎵', description: 'Musiques légendaires',      count: 0, comingSoon: true },
 ]
 
-const TABS = ['Création', 'Favoris', 'Partagées', 'Historique']
+const TABS = ['Création', 'Créer sa Tier List', 'Favoris', 'Partagées', 'Historique']
 
 // ── Hooks ─────────────────────────────────────────────────────
 function useFavorites() {
@@ -473,10 +473,11 @@ function MainPanel({ leftCard, rightPanel, tab, setTab, tabsRef, children, isMob
               transition: 'all .22s', outline: 'none',
             }}>
               {{
-                'Création':  '✦ Création',
-                'Favoris':   '♡ Favoris',
-                'Partagées': '🌍 Partagées',
-                'Historique':'📋 Historique',
+                'Création':           '✦ Création',
+                'Créer sa Tier List': '✚ Créer sa Tier List',
+                'Favoris':            '♡ Favoris',
+                'Partagées':          '🌍 Partagées',
+                'Historique':         '📋 Historique',
               }[t]}
             </motion.button>
           ))}
@@ -1148,7 +1149,12 @@ export default function TierListPage() {
             <MainPanel
               leftCard={<TierCreatorCard draft={draft} favCount={favs.length} />}
               rightPanel={<TierMainInfo onCreate={create} onFavs={goFavs} onResume={resume} draft={draft} catsUsed={catsUsed} />}
-              tab={tab} setTab={setTab} tabsRef={tabsRef} isMobile={isMobile}
+              tab={tab}
+              setTab={(t) => {
+                if (t === 'Créer sa Tier List') { create(); return }
+                setTab(t)
+              }}
+              tabsRef={tabsRef} isMobile={isMobile}
             >
               {tabContent}
             </MainPanel>
