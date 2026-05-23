@@ -7,12 +7,12 @@ import Navbar from './Navbar.jsx'
 
 // ─── Rank system ──────────────────────────────────────────────────────────────
 const RANK_MAP = [
-  { min: 150, rang: 'Roi des Pirates', emoji: '👑', color: '#BFA46A', next: null },
-  { min: 70,  rang: 'Yonkou',          emoji: '🌊', color: '#8B6FD6', next: 150  },
-  { min: 40,  rang: 'Amiral',          emoji: '🪖', color: '#9A8656', next: 70   },
-  { min: 25,  rang: 'Shichibukai',     emoji: '⚔️', color: '#8B8E98', next: 40   },
-  { min: 10,  rang: 'Pirate',          emoji: '🏴‍☠️', color: '#6E7280', next: 25  },
-  { min: 0,   rang: 'Moussaillon',     emoji: '⚓', color: '#4A4E5A', next: 10   },
+  { min: 150, rang: 'Roi des Pirates', emoji: '👑', color: '#C9A84C', next: null },
+  { min: 70,  rang: 'Yonkou',          emoji: '🌊', color: '#7C63C8', next: 150  },
+  { min: 40,  rang: 'Amiral',          emoji: '🪖', color: '#B4892A', next: 70   },
+  { min: 25,  rang: 'Shichibukai',     emoji: '⚔️', color: '#4A7C8E', next: 40   },
+  { min: 10,  rang: 'Pirate',          emoji: '🏴‍☠️', color: '#5A8A5A', next: 25  },
+  { min: 0,   rang: 'Moussaillon',     emoji: '⚓', color: '#7B8494', next: 10   },
 ]
 const TABS = [
   { key: 'stats',      label: 'Statistiques', icon: '⚔️' },
@@ -111,7 +111,11 @@ function BadgeRow({ badges }) {
   return (
     <div className="pf-badge-row">
       {badges.map(b => (
-        <span key={b.label} className="pf-badge" style={{ '--bc': b.color }}>
+        <span key={b.label} className="pf-badge" style={{
+          color: b.color,
+          background: `${b.color}14`,
+          borderColor: `${b.color}36`,
+        }}>
           {b.icon} {b.label}
         </span>
       ))}
@@ -140,7 +144,7 @@ function RankJourney({ rank, nextRank, hours, remaining, progPct }) {
           <span className="pf-journey-rank-name">{rank.rang}</span>
         </div>
         <div className="pf-journey-pct-wrap">
-          <span className="pf-journey-pct">{progPct.toFixed(0)}</span>
+          <span className="pf-journey-pct" style={{ color: rank.color }}>{progPct.toFixed(0)}</span>
           <span className="pf-journey-pct-sym">%</span>
         </div>
         <div className="pf-journey-to">
@@ -150,7 +154,11 @@ function RankJourney({ rank, nextRank, hours, remaining, progPct }) {
       </div>
       <div className="pf-journey-track-wrap">
         <div className="pf-journey-track">
-          <div className="pf-journey-fill" style={{ width: `${progPct}%` }} />
+          <div className="pf-journey-fill" style={{
+            width: `${progPct}%`,
+            background: `linear-gradient(90deg, ${rank.color}66 0%, ${rank.color} 80%, ${rank.color}ee 100%)`,
+            boxShadow: `0 0 10px ${rank.color}44`,
+          }} />
           <div className="pf-journey-ship" style={{ left: `${Math.min(progPct, 94)}%` }}>🏴‍☠️</div>
         </div>
       </div>
@@ -204,18 +212,24 @@ function RankTimeline({ hours, rank }) {
 }
 
 // ─── Stat Card ────────────────────────────────────────────────────────────────
-function StatCard({ icon, label, val, sub, secondary, badge, delay = 0 }) {
+function StatCard({ icon, label, val, sub, secondary, badge, delay = 0, accent = null, valColor = null }) {
   return (
-    <div className="pf-stat-card" style={{ animationDelay: `${delay}s` }}>
+    <div className="pf-stat-card" style={{
+      animationDelay: `${delay}s`,
+      ...(accent && {
+        background: `linear-gradient(155deg, ${accent}14 0%, #171A22 100%)`,
+        borderTop: `2px solid ${accent}50`,
+      })
+    }}>
       <div className="pf-stat-card-shine" />
       <div className="pf-stat-header">
-        <div className="pf-stat-icon">{icon}</div>
-        <div className="pf-stat-label">{label}</div>
+        <div className="pf-stat-icon" style={accent ? { filter: `drop-shadow(0 0 6px ${accent}66)` } : {}}>{icon}</div>
+        <div className="pf-stat-label" style={accent ? { color: `${accent}cc` } : {}}>{label}</div>
       </div>
-      <div className="pf-stat-val">{val}</div>
+      <div className="pf-stat-val" style={valColor ? { color: valColor } : {}}>{val}</div>
       <div className="pf-stat-sub">{sub}</div>
       {secondary && <div className="pf-stat-secondary">{secondary}</div>}
-      {badge && <div className="pf-stat-badge">{badge}</div>}
+      {badge && <div className="pf-stat-badge" style={accent ? { color: accent, background: `${accent}14`, borderColor: `${accent}30` } : {}}>{badge}</div>}
     </div>
   )
 }
@@ -306,6 +320,7 @@ export default function ProfilePage() {
 
       <div className="pf-atmo" aria-hidden>
         <div className="pf-atmo-warm" />
+        <div className="pf-atmo-rank" style={{ background: `radial-gradient(circle, ${rank.color}20 0%, transparent 65%)` }} />
         <div className="pf-grid" />
       </div>
 
@@ -325,7 +340,10 @@ export default function ProfilePage() {
         {!loading && member && <>
 
           {/* ══ HERO ═══════════════════════════════════════════════════════════ */}
-          <section className="pf-hero">
+          <section className="pf-hero" style={{
+            background: `linear-gradient(165deg, ${rank.color}12 0%, #11131A 45%)`,
+            borderTop: `1px solid ${rank.color}33`,
+          }}>
             <div className="pf-hero-topline" />
 
             {/* Wanted Poster column */}
@@ -342,7 +360,7 @@ export default function ProfilePage() {
               </div>
 
               <div className="pf-avatar-wrap">
-                <div className="pf-avatar-ring-a" />
+                <div className="pf-avatar-ring-a" style={{ borderColor: `${rank.color}55` }} />
                 <div className="pf-avatar-ring-b" />
                 <div className="pf-avatar-inner">
                   {member.avatar_url
@@ -362,9 +380,12 @@ export default function ProfilePage() {
                 <div className="pf-prime-formatted">{fmtNum(member.berrys)} berries</div>
               </div>
 
-              <div className="pf-rank-pill">
+              <div className="pf-rank-pill" style={{
+                background: `${rank.color}10`,
+                borderColor: `${rank.color}40`,
+              }}>
                 <span>{rank.emoji}</span>
-                <span className="pf-rank-pill-name">{rank.rang}</span>
+                <span className="pf-rank-pill-name" style={{ color: rank.color }}>{rank.rang}</span>
                 <span className="pf-rank-pill-num">#{member.rank}</span>
               </div>
 
@@ -376,7 +397,7 @@ export default function ProfilePage() {
 
               <div className="pf-world-row">
                 <div className="pf-world-pos">
-                  <span className="pf-world-num">#{member.rank}</span>
+                  <span className="pf-world-num" style={{ color: rank.color }}>#{member.rank}</span>
                   <span className="pf-world-label">CLASSEMENT MONDIAL</span>
                 </div>
                 <div className="pf-world-sep" />
@@ -411,6 +432,8 @@ export default function ProfilePage() {
                   sub="heures en vocal"
                   secondary={nextRank ? `Objectif : ${nextRank.min}h — encore ${remaining.toFixed(1)}h` : 'Objectif atteint ✓'}
                   delay={0}
+                  accent='#5865F2'
+                  valColor='rgba(100,114,255,0.90)'
                 />
                 <StatCard
                   icon="🏆" label="CLASSEMENT"
@@ -418,6 +441,8 @@ export default function ProfilePage() {
                   sub={`/ ${member.total} membres`}
                   badge={`Top ${topPct}%`}
                   delay={0.07}
+                  accent='#C9A84C'
+                  valColor='#C9A84C'
                 />
                 <StatCard
                   icon="📦" label="INVENTAIRE"
@@ -425,6 +450,8 @@ export default function ProfilePage() {
                   sub="objets possédés"
                   secondary={!shopData?.inventory?.length ? 'Explore la boutique →' : undefined}
                   delay={0.14}
+                  accent='#34D399'
+                  valColor='rgba(52,211,153,0.85)'
                 />
               </div>
 
@@ -583,9 +610,15 @@ export default function ProfilePage() {
         .pf-atmo-warm {
           position: absolute; width: 600px; height: 600px;
           top: -10%; right: -5%; border-radius: 50%;
-          background: radial-gradient(circle, rgba(191,164,106,.03) 0%, transparent 65%);
-          filter: blur(90px);
+          background: radial-gradient(circle, rgba(191,164,106,.05) 0%, transparent 65%);
+          filter: blur(80px);
           animation: pfPulse 14s ease-in-out infinite;
+        }
+        .pf-atmo-rank {
+          position: absolute; width: 700px; height: 700px;
+          bottom: -5%; left: -8%; border-radius: 50%;
+          filter: blur(110px);
+          animation: pfPulse 18s 3s ease-in-out infinite;
         }
         .pf-grid {
           position: absolute; inset: 0;
@@ -639,12 +672,13 @@ export default function ProfilePage() {
           border-radius: 24px;
           border: 1px solid rgba(255,255,255,.08);
           background: #11131A;
-          box-shadow: 0 40px 90px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.05);
+          box-shadow: 0 40px 90px rgba(0,0,0,.65), inset 0 1px 0 rgba(255,255,255,.04);
           overflow: hidden; margin-bottom: 24px;
+          transition: background 0.6s ease;
         }
         .pf-hero-topline {
-          position: absolute; top: 0; left: 0; right: 0; height: 1px;
-          background: linear-gradient(90deg, transparent, rgba(191,164,106,.22) 30%, rgba(242,240,234,.08) 50%, rgba(191,164,106,.22) 70%, transparent);
+          position: absolute; top: 0; left: 0; right: 0; height: 2px;
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,.06) 20%, rgba(255,255,255,.12) 50%, rgba(255,255,255,.06) 80%, transparent);
         }
 
         /* Poster column */
