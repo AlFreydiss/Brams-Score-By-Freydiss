@@ -1203,8 +1203,8 @@ export default function BerryShop() {
       </div>
 
       {/* ═══ CATEGORY TABS ══════════════════════════════════════════════════ */}
-      <div style={{ maxWidth: 1120, margin: '0 auto 28px', padding: '0 20px', overflowX: 'auto' }}>
-        <div style={{ display: 'flex', gap: 6, padding: '2px 0' }}>
+      <div style={{ maxWidth: 1120, margin: '0 auto 28px', padding: '0 20px', overflowX: 'auto', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
+        <div style={{ display: 'flex', gap: 6, padding: '2px 0', width: 'max-content' }}>
           {DISPLAY_CATS.map(cat => (
             <button
               key={cat.key}
@@ -1266,12 +1266,14 @@ export default function BerryShop() {
       </div>}
 
       {/* ═══ PRESTIGE MILESTONES ═════════════════════════════════════════════ */}
-      <PrestigeMilestones balance={state.balance} />
+      {category !== 'Fonds' && <PrestigeMilestones balance={state.balance} />}
 
       {/* ═══ BERRY EARNING GUIDE ════════════════════════════════════════════ */}
-      <div ref={earnRef}>
-        <BerryEarningGuide />
-      </div>
+      {category !== 'Fonds' && (
+        <div ref={earnRef}>
+          <BerryEarningGuide />
+        </div>
+      )}
 
       {/* ═══ INVENTORY + HISTORY ════════════════════════════════════════════ */}
       {(state.inventory.length > 0 || state.transactions.length > 0) && (

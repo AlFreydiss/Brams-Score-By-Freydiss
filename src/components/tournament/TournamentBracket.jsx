@@ -147,7 +147,7 @@ function DesktopBracket({ rounds, currentMatchId }) {
               return (
                 <div key={match.id}>
                   <div style={{ position: 'absolute', left: x, top: y }}>
-                    <MatchCard match={match} isActive={isA} />
+                    <MatchCard match={match} isActive={isA} isMobile={false} />
                   </div>
 
                   {/* Connector line to next round */}

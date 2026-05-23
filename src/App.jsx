@@ -183,7 +183,7 @@ function EquippedOpeningBg() {
     <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none' }}>
       <div style={{
         position: 'absolute', inset: 0,
-        backgroundImage: `url(https://img.youtube.com/vi/${activeBg.ytId}/maxresdefault.jpg)`,
+        backgroundImage: `url(https://img.youtube.com/vi/${activeBg.ytId}/hqdefault.jpg)`,
         backgroundSize: 'cover', backgroundPosition: 'center',
         filter: 'blur(22px) brightness(0.45)',
         transform: 'scale(1.08)',
@@ -309,7 +309,6 @@ export default function App() {
     <>
       <WelcomeAnimation />
       <AMVBackground />
-      <EquippedOpeningBg />
       <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1, background: 'rgba(4,7,10,0.58)', pointerEvents: 'none' }} />
 
       <div style={{ position: 'relative', zIndex: 2, isolation: 'isolate' }}>
@@ -339,6 +338,7 @@ export default function App() {
     <OpeningBgProvider>
     <ThemeProvider>
       <GlobalStyles />
+      <EquippedOpeningBg />
       <Suspense fallback={
         <div style={{
           position: 'fixed', inset: 0, zIndex: 9999,
