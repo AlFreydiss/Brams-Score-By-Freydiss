@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ONE PIECE — ARCHIVES CONFIDENTIELLES</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cinzel:wght@400;600;700;900&family=Inter:wght@300;400;500;600;700;800&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: { extend: {
+        colors: { void:'#030308', abyss:'#060610', s1:'#0A0A14', s2:'#0F0F1C', s3:'#141420', bdim:'#111118', bmid:'#1A1A26' },
+        fontFamily: { display:['"Cinzel Decorative"','serif'], title:['Cinzel','serif'], body:['Inter','sans-serif'], ui:['Rajdhani','sans-serif'] }
+      }}
+    }
+  </script>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    body{background:#030308;color:#C8C8D8;font-family:'Inter',sans-serif;height:100vh;overflow:hidden}
+
+    ::-webkit-scrollbar{width:4px;height:4px}
+    ::-webkit-scrollbar-track{background:#06060E}
+    ::-webkit-scrollbar-thumb{background:#9F1239;border-radius:2px}
+    ::-webkit-scrollbar-thumb:hover{background:#BE123C}
+
+    /* ── Backgrounds ── */
+    .poneglyph-bg{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.03;background-image:repeating-linear-gradient(0deg,transparent,transparent 39px,#EAB308 39px,#EAB308 40px),repeating-linear-gradient(90deg,transparent,transparent 39px,#EAB308 39px,#EAB308 40px);background-size:40px 40px}
+    .poneglyph-bg::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 70% at 50% 50%,transparent 30%,#030308 100%)}
+    .noise-overlay{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:0.02;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");background-size:256px 256px}
+    .vignette{position:fixed;inset:0;z-index:1;pointer-events:none;background:radial-gradient(ellipse 100% 100% at 50% 100%,rgba(159,18,57,0.07) 0%,transparent 55%)}
+
+    /* ── Rarity CSS vars ── */
+    .rv-legendaire{--rc:#EAB308;--rg:rgba(234,179,8,0.4);--rb:rgba(234,179,8,0.06);--rs:rgba(234,179,8,0.15)}
+    .rv-mythique  {--rc:#A855F7;--rg:rgba(168,85,247,0.4);--rb:rgba(168,85,247,0.06);--rs:rgba(168,85,247,0.15)}
+    .rv-interdit  {--rc:#DC2626;--rg:rgba(220,38,38,0.5); --rb:rgba(220,38,38,0.1); --rs:rgba(220,38,38,0.2)}
+    .rv-epique    {--rc:#3B82F6;--rg:rgba(59,130,246,0.35);--rb:rgba(59,130,246,0.06);--rs:rgba(59,130,246,0.12)}
+    .rv-rare      {--rc:#10B981;--rg:rgba(16,185,129,0.35);--rb:rgba(16,185,129,0.06);--rs:rgba(16,185,129,0.12)}
+    .rv-secret    {--rc:#7C3AED;--rg:rgba(124,58,237,0.4); --rb:rgba(124,58,237,0.08);--rs:rgba(124,58,237,0.15)}
+    .rv-commun    {--rc:#555566;--rg:rgba(85,85,102,0.2);  --rb:rgba(85,85,102,0.04); --rs:rgba(85,85,102,0.08)}
+
+    /* ── Header ── */
+    #app-header{position:fixed;top:0;left:0;right:0;z-index:50;background:rgba(3,3,8,0.97);backdrop-filter:blur(20px);border-bottom:1px solid #0F0F1C}
+    .univ-tab-row{display:flex;align-items:center;height:34px;padding:0 16px;gap:2px;border-bottom:1px solid #0A0A12}
+    .logo-block{font-family:'Cinzel Decorative',serif;font-size:10px;letter-spacing:.2em;color:#9F1239;margin-right:16px;white-space:nowrap;opacity:.8}
+    .utab{font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:.15em;padding:4px 10px;border-radius:3px;border:1px solid transparent;color:#333;cursor:pointer;transition:all .15s;background:transparent;white-space:nowrap}
+    .utab:hover{color:#666;background:#0A0A14}
+    .utab.active{color:#E8E8E8;background:rgba(159,18,57,.12);border-color:rgba(159,18,57,.35);box-shadow:0 0 8px rgba(159,18,57,.2)}
+    .utab.locked{opacity:.3;cursor:default;pointer-events:none}
+    .brand-row{display:flex;align-items:center;height:48px;padding:0 20px;position:relative;overflow:hidden}
+    .brand-wm{position:absolute;left:50%;transform:translateX(-50%);font-family:'Cinzel Decorative',serif;font-size:42px;color:#fff;opacity:.018;letter-spacing:.3em;white-space:nowrap;pointer-events:none;user-select:none}
+    .brand-left{display:flex;align-items:center;gap:12px;z-index:1}
+    .brand-icon{width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(159,18,57,.4);border-radius:4px;background:rgba(159,18,57,.08);font-size:16px;box-shadow:0 0 10px rgba(159,18,57,.15)}
+    .brand-text .label{font-family:'Rajdhani',sans-serif;font-size:9px;letter-spacing:.3em;color:#9F1239;text-transform:uppercase}
+    .brand-text .title{font-family:'Cinzel Decorative',serif;font-size:13px;letter-spacing:.15em;color:#E8E8DC;line-height:1.1}
+    .brand-stats{display:flex;align-items:center;gap:8px;margin-left:20px;z-index:1}
+    .hstat{font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:600;letter-spacing:.1em;color:#333;padding:3px 10px;border:1px solid #111;border-radius:2px}
+    .hstat strong{color:#666;margin-right:4px}
+    .hstat.active-stat{border-color:rgba(16,185,129,.25);color:#10B981}
+    .section-tabs{display:flex;align-items:center;gap:2px;margin-left:auto;z-index:1}
+    .stab{font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:.15em;padding:6px 14px;border-radius:3px;border:1px solid transparent;color:#333;cursor:pointer;transition:all .15s;background:transparent;display:flex;align-items:center;gap:6px;text-transform:uppercase}
+    .stab:hover{color:#666;background:#0A0A14}
+    .stab.active{color:#E8E8E8;border-color:#1A1A24;background:#0A0A14}
+    .stab.active::after{content:'';display:block;width:4px;height:4px;border-radius:50%;background:#9F1239;box-shadow:0 0 6px #9F1239}
+    .header-line{height:1px;background:linear-gradient(90deg,transparent,#9F1239 20%,#EAB308 50%,#9F1239 80%,transparent);opacity:.5}
+
+    /* ── Sidebar ── */
+    #sidebar{position:fixed;left:0;top:84px;bottom:0;width:216px;background:rgba(4,4,12,.97);backdrop-filter:blur(12px);border-right:1px solid #0C0C16;z-index:40;display:flex;flex-direction:column;overflow:hidden}
+    .sb-univ{padding:16px 14px 12px;border-bottom:1px solid #0C0C14}
+    .sb-univ-inner{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:5px;background:linear-gradient(135deg,rgba(159,18,57,.1),rgba(159,18,57,.04));border:1px solid rgba(159,18,57,.2);box-shadow:0 0 12px rgba(159,18,57,.08) inset}
+    .sb-univ-icon{font-size:22px;flex-shrink:0}
+    .sb-univ-name{font-family:'Cinzel',serif;font-size:13px;color:#E0E0E8;letter-spacing:.06em}
+    .sb-univ-sub{font-family:'Rajdhani',sans-serif;font-size:9px;letter-spacing:.25em;color:#9F1239;text-transform:uppercase;margin-top:1px}
+    .sb-stats{display:flex;gap:6px;padding:10px 14px;border-bottom:1px solid #0C0C14}
+    .sb-stat{flex:1;background:#08080F;border:1px solid #0F0F18;border-radius:3px;padding:6px 8px;text-align:center}
+    .sb-stat-val{font-family:'Cinzel',serif;font-size:16px;color:#C0C0CC;display:block}
+    .sb-stat-lbl{font-family:'Rajdhani',sans-serif;font-size:8px;letter-spacing:.2em;color:#333;text-transform:uppercase}
+    .sb-search{padding:10px 14px;border-bottom:1px solid #0C0C14}
+    .sb-search-inner{position:relative}
+    .sb-search-inner svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:12px;height:12px;color:#2A2A36}
+    .sb-search-input{width:100%;background:#07070E;border:1px solid #0F0F18;color:#AAA;font-family:'Inter',sans-serif;font-size:12px;padding:7px 12px 7px 30px;border-radius:3px;outline:none;transition:border-color .2s}
+    .sb-search-input:focus{border-color:#1A1A26;box-shadow:0 0 0 2px rgba(159,18,57,.1)}
+    .sb-search-input::placeholder{color:#222230}
+    .sb-section-lbl{font-family:'Rajdhani',sans-serif;font-size:9px;font-weight:700;letter-spacing:.3em;color:#1E1E2A;text-transform:uppercase;padding:10px 14px 4px}
+    .sb-cats{flex:1;overflow-y:auto;padding:2px 10px}
+    .sbcat{width:100%;display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-radius:4px;border:1px solid transparent;cursor:pointer;transition:all .15s;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:500;color:#3A3A4A;background:transparent;text-align:left}
+    .sbcat:hover{background:#0A0A14;color:#777}
+    .sbcat.active{background:linear-gradient(135deg,rgba(159,18,57,.1),rgba(159,18,57,.04));color:#C8C8D0;border-color:rgba(159,18,57,.2);box-shadow:0 0 8px rgba(159,18,57,.06) inset}
+    .sbcat-count{font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;color:#1E1E28;transition:color .15s}
+    .sbcat.active .sbcat-count{color:#9F1239}
+    .sb-bottom{padding:10px 14px;border-top:1px solid #0C0C14;margin-top:auto}
+    .spoiler-toggle{width:100%;display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:4px;border:1px solid #0F0F18;cursor:pointer;transition:all .2s;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#2A2A38;background:transparent}
+    .spoiler-toggle:hover{border-color:#1A1A26;color:#555}
+    .spoiler-toggle.on{border-color:rgba(234,179,8,.3);color:#EAB308;background:rgba(234,179,8,.04)}
+    .sp-switch{width:28px;height:16px;background:#0F0F18;border-radius:8px;position:relative;transition:background .25s;margin-left:auto;flex-shrink:0}
+    .sp-switch.on{background:rgba(234,179,8,.25);border:1px solid #EAB308}
+    .sp-switch::after{content:'';position:absolute;top:2px;left:2px;width:11px;height:11px;border-radius:50%;background:#282838;transition:all .25s}
+    .sp-switch.on::after{left:13px;background:#EAB308;box-shadow:0 0 5px #EAB308}
+
+    /* ── Register Panel ── */
+    #register-panel{flex:1;overflow-y:auto;border-right:1px solid #0C0C14;display:flex;flex-direction:column;min-width:0}
+    .reg-filter-bar{position:sticky;top:0;z-index:20;background:rgba(3,3,8,.97);backdrop-filter:blur(12px);border-bottom:1px solid #0C0C14;padding:10px 16px;display:flex;flex-direction:column;gap:8px}
+    .reg-filter-row1{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .reg-filter-tabs{display:flex;align-items:center;gap:3px;flex-wrap:wrap}
+    .ftab{font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:4px 10px;border-radius:2px;border:1px solid #0F0F18;color:#2A2A38;cursor:pointer;transition:all .15s;background:transparent;display:flex;align-items:center;gap:4px;white-space:nowrap}
+    .ftab:hover{color:#555;border-color:#181820}
+    .ftab.active{color:var(--rc,#EAB308);border-color:var(--rc,#EAB308);background:var(--rb,rgba(234,179,8,.06));box-shadow:0 0 8px var(--rg,rgba(234,179,8,.2))}
+    .reg-count{font-family:'Rajdhani',sans-serif;font-size:10px;letter-spacing:.15em;color:#1E1E28;margin-left:auto;white-space:nowrap}
+    .reg-sort{display:flex;align-items:center;gap:4px}
+    .sort-btn{font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;border-radius:2px;border:1px solid #0F0F18;color:#222;cursor:pointer;transition:all .15s;background:transparent}
+    .sort-btn:hover{color:#444;border-color:#181820}
+    .sort-btn.active{color:#EAB308;border-color:rgba(234,179,8,.3)}
+    #register-rows{flex:1}
+    .reg-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;gap:8px}
+    .reg-empty-icon{font-size:2.5rem;opacity:.15}
+    .reg-empty-text{font-family:'Rajdhani',sans-serif;font-size:12px;letter-spacing:.2em;color:#1A1A24;text-transform:uppercase}
+
+    /* ── Archive Row ── */
+    .archive-row{position:relative;display:flex;align-items:center;gap:0;padding:0 14px 0 0;min-height:68px;border-bottom:1px solid #0A0A12;cursor:pointer;transition:transform .15s ease,background .15s ease;background:transparent;overflow:hidden}
+    .row-accent{width:3px;min-height:68px;flex-shrink:0;background:var(--rc,#1A1A24);opacity:.25;transition:opacity .15s,box-shadow .15s,width .15s;align-self:stretch}
+    .archive-row:hover{background:rgba(255,255,255,.015);transform:translateX(3px)}
+    .archive-row:hover .row-accent{opacity:.7;box-shadow:0 0 10px var(--rg,transparent)}
+    .archive-row.selected{background:var(--rb,rgba(255,255,255,.02))}
+    .archive-row.selected .row-accent{opacity:1;width:4px;box-shadow:0 0 14px var(--rc,transparent)}
+    .archive-row.classified-row{background:rgba(159,18,57,.03)}
+    .archive-row.classified-row:hover{background:rgba(159,18,57,.07)}
+    .row-num{font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:.1em;color:#18182A;width:44px;flex-shrink:0;padding-left:12px;text-align:left}
+    .row-emoji-cell{width:30px;flex-shrink:0;text-align:center;font-size:18px;opacity:.7;transition:opacity .15s}
+    .archive-row:hover .row-emoji-cell{opacity:1}
+    .row-body{flex:1;padding:10px 12px 10px 8px;min-width:0}
+    .row-name{font-family:'Cinzel',serif;font-size:14px;font-weight:700;color:#C8C8D8;letter-spacing:.05em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2}
+    .row-meta{font-family:'Rajdhani',sans-serif;font-size:11px;color:#3A3A4A;letter-spacing:.06em;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .row-meta .sep{color:#1E1E28;margin:0 4px}
+    .row-tags{font-family:'Rajdhani',sans-serif;font-size:9px;color:#1E1E2A;letter-spacing:.1em;margin-top:2px;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .row-right{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;padding:8px 0}
+    .rbadge{font-family:'Rajdhani',sans-serif;font-size:9px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;padding:3px 8px;border-radius:2px;border:1px solid var(--rc,#1A1A24);color:var(--rc,#444);background:var(--rb,rgba(0,0,0,.4));box-shadow:0 0 6px var(--rg,transparent);white-space:nowrap;transition:box-shadow .15s}
+    .archive-row:hover .rbadge{box-shadow:0 0 12px var(--rg,transparent)}
+    .archive-row.selected .rbadge{box-shadow:0 0 16px var(--rg,transparent)}
+    .fav-btn{width:20px;height:20px;display:flex;align-items:center;justify-content:center;border:none;background:none;cursor:pointer;color:#1A1A28;font-size:13px;transition:color .15s;padding:0}
+    .fav-btn:hover{color:#9F1239}
+    .fav-btn.active{color:#EAB308}
+
+    /* Classified row specifics */
+    .row-redacted{color:#2A0010 !important;letter-spacing:.2em;font-family:'Rajdhani',sans-serif !important;font-size:12px !important}
+    .classified-stamp{font-family:'Rajdhani',sans-serif;font-size:8px;font-weight:700;letter-spacing:.3em;color:#6B0018;text-transform:uppercase;margin-top:3px;display:flex;align-items:center;gap:5px}
+    .classified-stamp::before{content:'';display:inline-block;width:16px;height:1px;background:#6B0018}
+    .classified-stamp::after{content:'';display:inline-block;width:16px;height:1px;background:#6B0018}
+
+    /* ── Detail Panel ── */
+    #detail-panel{width:400px;flex-shrink:0;overflow-y:auto;background:rgba(4,4,12,.6);display:flex;flex-direction:column}
+    .detail-default{position:relative;overflow:hidden;height:100%;min-height:100%;padding:0}
+    .detail-classified-wm{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-35deg);font-family:'Cinzel Decorative',serif;font-size:52px;color:rgba(159,18,57,.05);letter-spacing:.3em;white-space:nowrap;pointer-events:none;z-index:0;user-select:none}
+    .detail-stamp-header{position:relative;z-index:1;padding:20px 20px 16px;border-bottom:1px solid #0C0C14}
+    .stamp-top-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+    .stamp-org{font-family:'Rajdhani',sans-serif;font-size:9px;font-weight:700;letter-spacing:.3em;color:#2A1010;text-transform:uppercase}
+    .stamp-access{font-family:'Rajdhani',sans-serif;font-size:9px;font-weight:700;letter-spacing:.2em;color:#9F1239;border:1px solid rgba(159,18,57,.3);padding:2px 8px;border-radius:2px}
+    .stamp-title{font-family:'Cinzel',serif;font-size:16px;letter-spacing:.25em;color:#9F1239;text-transform:uppercase;border:2px solid rgba(159,18,57,.3);padding:6px 16px;display:inline-block;border-radius:2px;background:rgba(159,18,57,.05);transform:rotate(-1deg);box-shadow:0 0 12px rgba(159,18,57,.1)}
+    .stamp-title-wrap{text-align:center}
+    .marine-coords{font-family:'Rajdhani',sans-serif;font-size:8px;letter-spacing:.15em;color:#12121E;text-transform:uppercase;text-align:center;margin-top:8px}
+    .feat-panel{position:relative;z-index:1;padding:20px}
+    .feat-emoji-wrap{text-align:center;margin-bottom:16px}
+    .feat-emoji-big{font-size:64px;display:block;filter:drop-shadow(0 0 24px var(--rc,#EAB308)) drop-shadow(0 0 8px var(--rc,#EAB308));animation:feFloat 5s ease-in-out infinite}
+    @keyframes feFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+    .feat-name{font-family:'Cinzel',serif;font-size:18px;font-weight:700;color:#E0E0EC;letter-spacing:.1em;text-align:center;line-height:1.2;margin-bottom:10px}
+    .feat-rarity-row{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px}
+    .feat-type-row{font-family:'Rajdhani',sans-serif;font-size:12px;letter-spacing:.1em;color:#3A3A4A;text-align:center;margin-bottom:16px}
+    .feat-divider{height:1px;background:linear-gradient(90deg,transparent,var(--rc,#EAB308),transparent);opacity:.3;margin:14px 0}
+    .feat-stats-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px}
+    .feat-stat{background:#07070F;border:1px solid #0D0D18;border-radius:3px;padding:8px 6px;text-align:center}
+    .feat-stat-lbl{font-family:'Rajdhani',sans-serif;font-size:8px;letter-spacing:.2em;color:#1E1E2A;text-transform:uppercase;margin-bottom:3px}
+    .feat-stat-val{font-family:'Cinzel',serif;font-size:13px;color:#888;font-weight:600}
+    .feat-desc{font-family:'Inter',sans-serif;font-size:12px;line-height:1.65;color:#3A3A4A;margin-bottom:18px;padding:12px;background:#06060E;border:1px solid #0C0C14;border-left:2px solid var(--rc,#EAB308);border-radius:3px}
+    .btn-open-dossier{width:100%;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;padding:10px 20px;border-radius:3px;border:1px solid var(--rc,#EAB308);color:var(--rc,#EAB308);background:var(--rb,rgba(234,179,8,.05));cursor:pointer;transition:all .25s;display:flex;align-items:center;justify-content:center;gap:8px;position:relative;overflow:hidden}
+    .btn-open-dossier::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,var(--rc,#EAB308),transparent);opacity:0;transition:opacity .25s}
+    .btn-open-dossier:hover{box-shadow:0 0 16px var(--rg,rgba(234,179,8,.3));color:#fff}
+    .btn-open-dossier:hover::before{opacity:.1}
+
+    /* ── Detail Selected ── */
+    .detail-selected{height:100%;display:flex;flex-direction:column}
+    .detail-hero{position:relative;min-height:160px;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0}
+    .detail-hero-bg{position:absolute;inset:0;opacity:.4}
+    .detail-hero-emoji{font-size:72px;position:relative;z-index:2;filter:drop-shadow(0 0 30px var(--rc,#EAB308)) drop-shadow(0 0 10px var(--rc,#EAB308))}
+    .detail-hero-scan{position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--rc,#9F1239),transparent);opacity:.6;animation:scanLine 3s linear infinite;z-index:3}
+    .detail-hero-num{position:absolute;top:12px;left:14px;z-index:4;font-family:'Rajdhani',sans-serif;font-size:9px;font-weight:700;letter-spacing:.25em;color:var(--rc,#EAB308);opacity:.7}
+    .detail-hero-corner-tl{position:absolute;top:0;left:0;width:20px;height:20px;border-top:1px solid var(--rc,#EAB308);border-left:1px solid var(--rc,#EAB308);opacity:.4;z-index:4}
+    .detail-hero-corner-br{position:absolute;bottom:0;right:0;width:20px;height:20px;border-bottom:1px solid var(--rc,#EAB308);border-right:1px solid var(--rc,#EAB308);opacity:.4;z-index:4}
+    .detail-hero-badge{position:absolute;top:12px;right:14px;z-index:4}
+    .detail-body{flex:1;padding:16px 18px;overflow-y:auto}
+    .detail-title-name{font-family:'Cinzel',serif;font-size:18px;font-weight:700;color:#E0E0EC;letter-spacing:.06em;line-height:1.2;margin-bottom:6px}
+    .detail-owner{font-family:'Rajdhani',sans-serif;font-size:12px;color:#3A3A4A;letter-spacing:.08em;margin-bottom:12px}
+    .detail-meta-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+    .dmeta{font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;border-radius:2px;border:1px solid #0F0F18;color:#2A2A38}
+    .detail-divider{height:1px;background:#0C0C14;margin:14px 0}
+    .detail-section-lbl{font-family:'Rajdhani',sans-serif;font-size:8px;font-weight:700;letter-spacing:.3em;color:#1A1A26;text-transform:uppercase;margin-bottom:6px}
+    .detail-desc{font-family:'Inter',sans-serif;font-size:12px;line-height:1.7;color:#4A4A5A;margin-bottom:14px}
+    .detail-lore-box{background:#06060E;border:1px solid #0C0C14;border-left:2px solid var(--rc,#EAB308);border-radius:3px;padding:12px;margin-bottom:14px}
+    .detail-lore-text{font-family:'Inter',sans-serif;font-size:11px;line-height:1.75;color:#383848}
+    .detail-stats-row{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px}
+    .dstat{background:#07070F;border:1px solid #0D0D18;border-radius:3px;padding:8px 10px;display:flex;justify-content:space-between;align-items:center}
+    .dstat-lbl{font-family:'Rajdhani',sans-serif;font-size:9px;letter-spacing:.15em;color:#1A1A26;text-transform:uppercase}
+    .dstat-val{font-family:'Cinzel',serif;font-size:13px;color:#666}
+    .detail-tags{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:14px}
+    .dtag{font-family:'Rajdhani',sans-serif;font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:2px 8px;border-radius:2px;border:1px solid var(--rc,#1A1A24);color:var(--rc,#333);background:var(--rb,rgba(0,0,0,.4))}
+    .detail-actions{display:flex;gap:6px;padding-top:4px}
+    .action-btn{flex:1;font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;padding:8px;border-radius:3px;border:1px solid #0F0F18;color:#333;cursor:pointer;transition:all .2s;background:transparent;display:flex;align-items:center;justify-content:center;gap:5px}
+    .action-btn:hover{border-color:#1A1A26;color:#666;background:#080810}
+    .action-btn.primary{border-color:var(--rc,#EAB308);color:var(--rc,#EAB308);background:var(--rb,rgba(234,179,8,.05))}
+    .action-btn.primary:hover{box-shadow:0 0 10px var(--rg,transparent)}
+    .detail-classified-view{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px 20px;text-align:center;position:relative;overflow:hidden}
+    .dcl-wm{position:absolute;font-family:'Cinzel Decorative',serif;font-size:60px;color:rgba(220,38,38,.04);letter-spacing:.3em;transform:rotate(-30deg);pointer-events:none;user-select:none}
+    .dcl-lock{font-size:52px;margin-bottom:16px;filter:drop-shadow(0 0 16px rgba(220,38,38,.4));animation:clPulse 2.5s ease-in-out infinite}
+    @keyframes clPulse{0%,100%{opacity:.7}50%{opacity:1}}
+    .dcl-scan{position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#9F1239,transparent);opacity:.5;animation:scanLine 3s linear infinite}
+    .dcl-title{font-family:'Cinzel',serif;font-size:20px;color:#9F1239;letter-spacing:.3em;margin-bottom:8px}
+    .dcl-level{font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:.4em;color:#3D0012;text-transform:uppercase;border:1px solid rgba(159,18,57,.2);padding:4px 16px;border-radius:2px;margin-bottom:16px}
+    .dcl-sep{width:80%;height:1px;background:linear-gradient(90deg,transparent,rgba(159,18,57,.3),transparent);margin:16px auto}
+    .dcl-text{font-family:'Inter',sans-serif;font-size:12px;line-height:1.7;color:#2A0010;max-width:280px}
+    .dcl-close{margin-top:20px;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;padding:8px 24px;border-radius:3px;border:1px solid rgba(159,18,57,.3);color:#9F1239;cursor:pointer;background:transparent;transition:all .2s}
+    .dcl-close:hover{background:rgba(159,18,57,.06);box-shadow:0 0 10px rgba(159,18,57,.2)}
+    .dcl-coord{font-family:'Rajdhani',sans-serif;font-size:8px;letter-spacing:.2em;color:#160008;text-transform:uppercase;margin-top:10px}
+
+    /* ── Classified row in register ── */
+    .cl-row-bar{position:absolute;top:0;bottom:0;left:0;width:100%;background:repeating-linear-gradient(45deg,transparent,transparent 10px,rgba(159,18,57,.03) 10px,rgba(159,18,57,.03) 11px);pointer-events:none}
+
+    /* ── Spoiler blur ── */
+    .spblur{filter:blur(7px);user-select:none;pointer-events:none;transition:filter .25s}
+
+    /* ── Animations ── */
+    @keyframes scanLine{0%{top:-2px}100%{top:102%}}
+    @keyframes rowReveal{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
+    .archive-row{animation:rowReveal .3s ease forwards}
+    @keyframes detailReveal{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+    .detail-selected,.detail-default{animation:detailReveal .35s ease forwards}
+
+    /* ── Power bar ── */
+    .power-bar-track{height:3px;background:#0A0A14;border-radius:2px;overflow:hidden;margin-top:4px}
+    .power-bar-fill{height:100%;border-radius:2px;transition:width .6s ease;background:var(--rc,#EAB308);box-shadow:0 0 6px var(--rc,#EAB308)}
+
+    /* ── Layout wrapper ── */
+    #layout{display:flex;height:calc(100vh - 84px);margin-top:84px;margin-left:216px;overflow:hidden}
+  </style>
+</head>
+<body>
+  <div class="poneglyph-bg"></div>
+  <div class="noise-overlay"></div>
+  <div class="vignette"></div>
+
+  <!-- ══════════════════════════════════════════
+       HEADER
+  ══════════════════════════════════════════ -->
+  <header id="app-header">
+    <!-- Row 1: Universe tabs -->
+    <div class="univ-tab-row">
+      <div class="logo-block">⚓ BRAMS ARCHIVES</div>
+      <button class="utab active">OP</button>
+      <button class="utab locked">NRT</button>
+      <button class="utab locked">DB</button>
+      <button class="utab locked">BL</button>
+      <button class="utab locked">FMA</button>
+      <button class="utab locked">MHA</button>
+      <button class="utab locked">TPN</button>
+      <button class="utab locked">DRS</button>
+      <div style="flex:1"></div>
+      <button style="padding:4px 8px;border:none;background:none;color:#222;cursor:pointer;transition:color .15s" title="Paramètres" onmouseover="this.style.color='#555'" onmouseout="this.style.color='#222'">
+        <i data-lucide="settings" style="width:13px;height:13px;display:block"></i>
+      </button>
+    </div>
+    <!-- Row 2: Brand + section tabs -->
+    <div class="brand-row">
+      <div class="brand-wm">ONE PIECE</div>
+      <div class="brand-left">
+        <div class="brand-icon">⚓</div>
+        <div class="brand-text">
+          <div class="label">Archives Confidentielles</div>
+          <div class="title">ONE PIECE</div>
+        </div>
+      </div>
+      <div class="brand-stats">
+        <div class="hstat active-stat"><strong id="stat-total">0</strong>Dossiers</div>
+        <div class="hstat"><strong id="stat-secrets">0</strong>Secrets</div>
+        <div class="hstat" style="color:#10B981;border-color:rgba(16,185,129,.2)">● ACTIF</div>
+      </div>
+      <div class="section-tabs">
+        <button class="stab active"><i data-lucide="folder" style="width:11px;height:11px"></i>FICHES</button>
+        <button class="stab"><i data-lucide="clock" style="width:11px;height:11px"></i>TIMELINE</button>
+        <button class="stab"><i data-lucide="archive" style="width:11px;height:11px"></i>ARCHIVES</button>
+        <button class="stab"><i data-lucide="settings-2" style="width:11px;height:11px"></i>OUTILS</button>
+      </div>
+    </div>
+    <div class="header-line"></div>
+  </header>
+
+  <!-- ══════════════════════════════════════════
+       SIDEBAR
+  ══════════════════════════════════════════ -->
+  <aside id="sidebar">
+    <!-- Universe info -->
+    <div class="sb-univ">
+      <div class="sb-univ-inner">
+        <div class="sb-univ-icon">🌊</div>
+        <div>
+          <div class="sb-univ-name">ONE PIECE</div>
+          <div class="sb-univ-sub">Archives Actives</div>
+        </div>
+      </div>
+    </div>
+    <!-- Stats -->
+    <div class="sb-stats">
+      <div class="sb-stat">
+        <span class="sb-stat-val" id="sb-total">0</span>
+        <span class="sb-stat-lbl">Fiches</span>
+      </div>
+      <div class="sb-stat">
+        <span class="sb-stat-val" id="sb-secrets">0</span>
+        <span class="sb-stat-lbl">Secrets</span>
+      </div>
+    </div>
+    <!-- Search -->
+    <div class="sb-search">
+      <div class="sb-search-inner">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="text" id="search-input" class="sb-search-input" placeholder="Rechercher un dossier..." />
+      </div>
+    </div>
+    <!-- Categories -->
+    <div class="sb-section-lbl">Dossiers</div>
+    <nav class="sb-cats" id="cat-nav">
+      <button class="sbcat active" data-cat="tout">Tout<span class="sbcat-count" id="cnt-tout">0</span></button>
+      <button class="sbcat" data-cat="fruit">Fruits du démon<span class="sbcat-count" id="cnt-fruit">0</span></button>
+      <button class="sbcat" data-cat="personnage">Personnages<span class="sbcat-count" id="cnt-personnage">0</span></button>
+      <button class="sbcat" data-cat="equipage">Équipages<span class="sbcat-count" id="cnt-equipage">0</span></button>
+      <button class="sbcat" data-cat="arc">Arcs<span class="sbcat-count" id="cnt-arc">0</span></button>
+      <button class="sbcat" data-cat="haki">Haki<span class="sbcat-count" id="cnt-haki">0</span></button>
+      <button class="sbcat" data-cat="ile">Îles<span class="sbcat-count" id="cnt-ile">0</span></button>
+      <button class="sbcat" data-cat="mystere">Mystères<span class="sbcat-count" id="cnt-mystere">0</span></button>
+      <button class="sbcat" data-cat="secret">Dossiers secrets<span class="sbcat-count" id="cnt-secret">0</span></button>
+    </nav>
+    <!-- Sort -->
+    <div class="sb-section-lbl" style="margin-top:4px">Tri</div>
+    <div style="padding:2px 10px 8px;display:flex;gap:4px;flex-wrap:wrap">
+      <button class="sort-btn active" data-sort="rarity">Rareté</button>
+      <button class="sort-btn" data-sort="alpha">A→Z</button>
+      <button class="sort-btn" data-sort="power">Puissance</button>
+    </div>
+    <!-- Spoiler -->
+    <div class="sb-bottom">
+      <button class="spoiler-toggle" id="spoiler-toggle">
+        <i data-lucide="eye-off" style="width:12px;height:12px;flex-shrink:0"></i>
+        Mode Spoiler
+        <div class="sp-switch" id="sp-switch"></div>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ══════════════════════════════════════════
+       MAIN LAYOUT
+  ══════════════════════════════════════════ -->
+  <div id="layout">
+    <!-- REGISTER PANEL -->
+    <div id="register-panel">
+      <div class="reg-filter-bar">
+        <div class="reg-filter-row1">
+          <div class="reg-filter-tabs" id="filter-tabs">
+            <button class="ftab active rv-legendaire" data-filter="tout" style="--rc:#EAB308;--rg:rgba(234,179,8,.3);--rb:rgba(234,179,8,.06)">
+              <i data-lucide="layers" style="width:10px;height:10px"></i>Tout
+            </button>
+            <button class="ftab rv-legendaire" data-filter="legendaire" style="--rc:#EAB308;--rg:rgba(234,179,8,.3);--rb:rgba(234,179,8,.06)">
+              <i data-lucide="crown" style="width:10px;height:10px"></i>Légendaire
+            </button>
+            <button class="ftab rv-mythique" data-filter="mythique" style="--rc:#A855F7;--rg:rgba(168,85,247,.3);--rb:rgba(168,85,247,.06)">
+              <i data-lucide="sparkles" style="width:10px;height:10px"></i>Mythique
+            </button>
+            <button class="ftab rv-interdit" data-filter="classifie" style="--rc:#DC2626;--rg:rgba(220,38,38,.35);--rb:rgba(220,38,38,.06)">
+              <i data-lucide="lock" style="width:10px;height:10px"></i>Interdit
+            </button>
+            <button class="ftab" data-filter="logia" style="--rc:#3B82F6;--rg:rgba(59,130,246,.3);--rb:rgba(59,130,246,.06)">
+              <i data-lucide="wind" style="width:10px;height:10px"></i>Logia
+            </button>
+            <button class="ftab" data-filter="paramecia" style="--rc:#10B981;--rg:rgba(16,185,129,.3);--rb:rgba(16,185,129,.06)">
+              <i data-lucide="zap" style="width:10px;height:10px"></i>Paramecia
+            </button>
+            <button class="ftab" data-filter="zoan" style="--rc:#F97316;--rg:rgba(249,115,22,.3);--rb:rgba(249,115,22,.06)">
+              <i data-lucide="paw-print" style="width:10px;height:10px"></i>Zoan
+            </button>
+          </div>
+          <span class="reg-count"><span id="result-count">0</span> RÉSULTATS</span>
+        </div>
+      </div>
+      <div id="register-rows"></div>
+    </div>
+
+    <!-- DETAIL PANEL -->
+    <div id="detail-panel">
+      <div id="detail-content"></div>
+    </div>
+  </div>
+
+  <script>
+  // ══════════════════════════════════════════════════════════
+  // DATA
+  // ══════════════════════════════════════════════════════════
+  const FRUITS = [
+    // ═══ LOGIA ═══
+    { id:1,  name:"Magu Magu no Mi",  type:"Logia",    rarity:"legendaire", category:"fruit",
+      user:"Sakazuki — Akainu", desc:"Le fruit le plus offensif de tous les Logia. Le magma incandescent dépasse même les flammes.",
+      tags:["Offensif","Amiral","Marine"], emoji:"🌋", classified:false, spoiler:false, power:97,
+      colors:["#7f1d1d","#450a0a","#030308"],
+      lore:"Sakazuki, amiral devenu Amiral en Chef, est réputé pour avoir tué Portgas D. Ace d'un coup. Son magma atteint 1200°C et consume les flammes elles-mêmes. Son principe de justice absolue — l'Élimination — est aussi brutal que son pouvoir." },
+    { id:2,  name:"Hie Hie no Mi",    type:"Logia",    rarity:"legendaire", category:"fruit",
+      user:"Kuzan — Aokiji", desc:"Transforme l'utilisateur en glace. Capable de geler des mers entières en quelques secondes.",
+      tags:["Contrôle","Zone","Ancien Amiral"], emoji:"🧊", classified:false, spoiler:false, power:93,
+      colors:["#0c4a6e","#0f172a","#030308"],
+      lore:"Kuzan a jadis gelé l'archipel de Punk Hazard lors de son affrontement de 10 jours contre Akainu. Il parcourt désormais le monde à bicyclette, lié mystérieusement à Barbe Noire." },
+    { id:3,  name:"Goro Goro no Mi",  type:"Logia",    rarity:"legendaire", category:"fruit",
+      user:"Enel", desc:"Maîtrise absolue de la foudre. Considéré comme l'un des Logia les plus puissants.",
+      tags:["Vitesse","Omniscience","Skypiea"], emoji:"⚡", classified:false, spoiler:false, power:91,
+      colors:["#713f12","#422006","#030308"],
+      lore:"Enel se proclamait dieu de Skypiea, capable de lire les ondes électriques dans un rayon de 6400 km. Sa défaite contre Luffy — dont le corps en caoutchouc annulait ses pouvoirs — reste l'une des surprises les plus mémorables." },
+    { id:4,  name:"Mera Mera no Mi",  type:"Logia",    rarity:"legendaire", category:"fruit",
+      user:"Portgas D. Ace → Sabo", desc:"Maîtrise du feu. Transforme l'utilisateur en flammes vives incandescentes.",
+      tags:["Feu","Révolutionnaire","Héritage"], emoji:"🔥", classified:false, spoiler:false, power:89,
+      colors:["#7c2d12","#431407","#030308"],
+      lore:"Fruit originel d'Ace, fils du Roi des Pirates, passé à Sabo lors du tournoi de Dressrosa. Sa flamme bleue «Hiken» est devenue emblème de liberté et de fraternité pour les Chapeaux de Paille." },
+    { id:5,  name:"Pika Pika no Mi",  type:"Logia",    rarity:"legendaire", category:"fruit",
+      user:"Borsalino — Kizaru", desc:"Transforme en lumière pure. Vitesse absolue, inégalée parmi tous les fruits connus.",
+      tags:["Vitesse Lumière","Amiral","Laser"], emoji:"☀️", classified:false, spoiler:false, power:95,
+      colors:["#713f12","#422006","#030308"],
+      lore:"Kizaru se déplace à la vitesse de la lumière — 300 000 km/s. Ses lasers peuvent percer des navires de guerre. Il est l'un des obstacles les plus redoutables jamais affrontés par les Chapeaux de Paille à Sabaody." },
+    { id:6,  name:"Suna Suna no Mi",  type:"Logia",    rarity:"legendaire", category:"fruit",
+      user:"Crocodile", desc:"Maîtrise du sable sec. Peut déshydrater tout être vivant d'un simple contact.",
+      tags:["Déshydratation","Shichibukai","Baroque Works"], emoji:"🏜️", classified:false, spoiler:false, power:86,
+      colors:["#78350f","#451a03","#030308"],
+      lore:"Ancien Warlord et chef de Baroque Works, Crocodile a failli détruire le Royaume d'Alabasta. Sa capacité à drainer l'eau du corps de ses victimes en fait un adversaire redoutable — vaincu deux fois par Luffy avec du sang et de l'eau." },
+    // ═══ PARAMECIA ═══
+    { id:7,  name:"Ope Ope no Mi",   type:"Paramecia", rarity:"legendaire", category:"fruit",
+      user:"Trafalgar D. Law", desc:"Crée une «Salle d'Opération» sphérique où l'utilisateur contrôle tout. Le fruit le plus précieux au monde.",
+      tags:["Médecin","ROOM","Immortalité"], emoji:"🏥", classified:false, spoiler:false, power:94,
+      colors:["#14532d","#052e16","#030308"],
+      lore:"Surnommé «le fruit du Démon le plus précieux au monde», l'Ope Ope peut conférer l'immortalité — au prix de la vie de l'utilisateur. Law l'a reçu de Corazón pour se soigner de la maladie de Flevance." },
+    { id:8,  name:"Gura Gura no Mi", type:"Paramecia", rarity:"legendaire", category:"fruit",
+      user:"Edward Newgate → Marshall D. Teach", desc:"Crée des tremblements de terre dans l'air et la mer. Capable de détruire le monde entier.",
+      tags:["Destruction","Yonko","Séisme"], emoji:"🌊", classified:false, spoiler:false, power:99,
+      colors:["#1e3a5f","#0f2040","#030308"],
+      lore:"Barbe Blanche utilisait ce fruit pour provoquer des tsunamis géants. À sa mort, Barbe Noire a absorbé son pouvoir — possédant ainsi deux fruits du Démon simultanément, défi à toutes les lois physiques connues." },
+    { id:9,  name:"Ito Ito no Mi",   type:"Paramecia", rarity:"legendaire", category:"fruit",
+      user:"Donquixote Doflamingo", desc:"Génère des fils capables de trancher l'acier et de contrôler les gens comme des marionnettes.",
+      tags:["Marionnettiste","Shichibukai","Dressrosa"], emoji:"🕸️", classified:false, spoiler:false, power:88,
+      colors:["#4a044e","#2d0030","#030308"],
+      lore:"Doflamingo, descendant des Célestes dragons devenu Warlord, a tissé sa toile sur Dressrosa pendant des décennies. Ses fils «Awakened» peuvent couvrir des îles entières, transformant tout en fils tranchants." },
+    { id:10, name:"Hana Hana no Mi", type:"Paramecia", rarity:"rare",      category:"fruit",
+      user:"Nico Robin", desc:"Fait éclore des copies de ses membres corporels sur n'importe quelle surface dans un large rayon.",
+      tags:["Archéologue","Chapeaux de Paille","Ohara"], emoji:"🌸", classified:false, spoiler:false, power:78,
+      colors:["#831843","#500724","#030308"],
+      lore:"Nico Robin, seule survivante d'Ohara, peut faire apparaître ses membres partout à portée. Son «Mil Fleur Gigantesco Mano» — issu de l'Éveil — crée des membres géants. Elle est la seule personne capable de lire les Ponéglyphes." },
+    { id:11, name:"Bara Bara no Mi", type:"Paramecia", rarity:"commun",     category:"fruit",
+      user:"Buggy le Clown", desc:"Sépare le corps en morceaux indépendants et flottants. Immunise contre les attaques tranchantes.",
+      tags:["Comique","Buggy Pirates","Impel Down"], emoji:"🤡", classified:false, spoiler:false, power:45,
+      colors:["#7f1d1d","#450a0a","#030308"],
+      lore:"Fruit accidentellement avalé par Buggy lors d'une tentative de vol d'un autre fruit à bord du vaisseau de Roger. Sa capacité à séparer son corps en parties volantes l'a paradoxalement sauvé d'innombrables situations." },
+    { id:12, name:"Bari Bari no Mi", type:"Paramecia", rarity:"rare",       category:"fruit",
+      user:"Bartolomeo", desc:"Crée des barrières indestructibles avec les doigts croisés. Aucune force connue ne peut les traverser.",
+      tags:["Défense","Supernovae","Dressrosa"], emoji:"🛡️", classified:false, spoiler:false, power:72,
+      colors:["#14532d","#052e16","#030308"],
+      lore:"Bartolomeo «le Cannibale», grand fan des Chapeaux de Paille, peut créer des barrières capables d'arrêter les attaques de géants et de Logia puissants. Ses barrières sont utilisées comme trampoline ou comme cage inviolable." },
+    // ═══ ZOAN ═══
+    { id:13, name:"Zo Zo no Mi, Modèle : Mammouth",  type:"Zoan", rarity:"epique", category:"fruit",
+      user:"Jack «la Sécheresse»", desc:"Transformation en mammouth antédiluvien. Force brute inégalée, régénération rapide.",
+      tags:["Ancien Zoan","Kaido","Beast Pirates"], emoji:"🦣", classified:false, spoiler:false, power:85,
+      colors:["#7c2d12","#431407","#030308"],
+      lore:"Jack est l'un des trois commandants en chef des Pirates aux Cents Bêtes. Son mammouth préhistorique lui confère une résistance terrifiante — il a résisté seul à deux amiraux de la Marine pendant des heures." },
+    { id:14, name:"Ryu Ryu no Mi, Modèle : Ptéranodon", type:"Zoan", rarity:"epique", category:"fruit",
+      user:"King «l'Ambition»", desc:"Transformation en ptérosaure antique de feu. L'une des créatures préhistoriques les plus redoutables.",
+      tags:["Ancien Zoan","All-Star","Lunaria"], emoji:"🦕", classified:false, spoiler:false, power:90,
+      colors:["#292524","#1c1917","#030308"],
+      lore:"King, commandant en chef des Pirates aux Cents Bêtes, est un Lunarian — race quasi-éteinte aux capacités de survie absolues. Son corps en feu combiné à la transformation préhistorique en fait l'un des guerriers les plus résistants." },
+    // ═══ MYTHIQUE ═══
+    { id:15, name:"Inu Inu no Mi, Modèle : Kyūbi no Kitsune", type:"Zoan", rarity:"mythique", category:"fruit",
+      user:"Catarina Devon", desc:"Permet de se transformer en renard à neuf queues légendaire. Peut copier parfaitement l'apparence de n'importe qui.",
+      tags:["Mythique","Barbe Noire","Dix Titres"], emoji:"🦊", classified:false, spoiler:false, power:88,
+      colors:["#7c2d12","#431407","#030308"],
+      lore:"Devon, capitaine des Titres de la flotte de Barbe Noire, possède le mythique fruit du Renard aux Neuf Queues. Sa capacité à imiter parfaitement la forme de n'importe quelle personne en fait le maître espion absolu." },
+    { id:16, name:"Hito Hito no Mi, Modèle : Nika", type:"Zoan", rarity:"mythique", category:"fruit",
+      user:"Monkey D. Luffy", desc:"Le fruit le plus puissant de l'histoire. Le Dieu du Soleil Nika — corps de caoutchouc et joie absolue. Éveil : Gear 5.",
+      tags:["Gear 5","Dieu du Soleil","Joyboy"], emoji:"☀️", classified:false, spoiler:true, power:100,
+      colors:["#7f1d1d","#450a0a","#030308"],
+      lore:"Fruit le plus dangereux pour le Gouvernement Mondial, classifié sous le nom trompeur de «Gomu Gomu no Mi» pendant des siècles. À l'Éveil, Luffy incarne Nika — le Dieu du Soleil — et transforme la réalité elle-même comme du caoutchouc." },
+    { id:17, name:"Tori Tori no Mi, Modèle : Phénix", type:"Zoan", rarity:"mythique", category:"fruit",
+      user:"Marco", desc:"Transformation en phénix légendaire. Régénération par les flammes bleues soignant tout type de blessure.",
+      tags:["Phénix","Barbe Blanche","Flotte"], emoji:"🦅", classified:false, spoiler:false, power:91,
+      colors:["#1e3a5f","#0f2040","#030308"],
+      lore:"Marco, ancien commandant de la flotte de Barbe Blanche, peut régénérer indéfiniment grâce aux flammes bleues de son phénix. Ces flammes guérissent également les alliés proches. Son corps ne peut être détruit tant qu'il reste de la vigueur en lui." },
+    { id:18, name:"Hebi Hebi no Mi, Modèle : Yamata no Orochi", type:"Zoan", rarity:"mythique", category:"fruit",
+      user:"Kurozumi Orochi", desc:"Transformation en dragon à huit têtes de la mythologie japonaise. Chaque tête est une conscience distincte.",
+      tags:["Mythique","Wano","Shogun"], emoji:"🐉", classified:false, spoiler:false, power:79,
+      colors:["#14532d","#052e16","#030308"],
+      lore:"L'ancien Shogun de Wano se transforme en l'hydre à huit têtes du mythe japonais. Même tranché, il peut régénérer chaque tête individuellement — le rendant quasi-immortel tant qu'une tête subsiste." },
+    { id:19, name:"Uo Uo no Mi, Modèle : Seiryū", type:"Zoan", rarity:"mythique", category:"fruit",
+      user:"Kaidou des Cents Bêtes", desc:"Transformation en dragon céleste azure légendaire. L'être vivant le plus fort du monde.",
+      tags:["Dragon","Yonko","Onigashima"], emoji:"🐲", classified:false, spoiler:false, power:98,
+      colors:["#1e3a5f","#0f2040","#030308"],
+      lore:"Kaido, surnommé «la Créature», est le seul à avoir survécu à toutes les exécutions tentées par la Marine. Sa forme de dragon peut voler, lancer des boules de flammes et déclencher des tornades." },
+    // ═══ CLASSIFIÉ / INTERDIT ═══
+    { id:20, name:"???", type:"???", rarity:"interdit", category:"secret",
+      user:"Im-sama", desc:"Dossier inaccessible — Niveau d'autorisation 5 requis.",
+      tags:["CLASSIFIÉ","Gouvernement Mondial","Im-sama"], emoji:"👁️", classified:true, spoiler:false, power:0,
+      colors:["#450a0a","#0d0007","#030308"],
+      lore:"Classifié par ordre direct du Trône Vide. Toute consultation non autorisée constitue un acte de trahison de niveau maximum." },
+    { id:21, name:"???", type:"???", rarity:"interdit", category:"secret",
+      user:"Inconnu", desc:"Fruit détecté par le réseau de renseignement. Localisation et nature : CLASSIFIÉ.",
+      tags:["CLASSIFIÉ","Niveau 5","Alerte Rouge"], emoji:"⚠️", classified:true, spoiler:false, power:0,
+      colors:["#450a0a","#0d0007","#030308"],
+      lore:"Classifié." },
+    // ═══ PERSONNAGES ═══
+    { id:22, name:"Roronoa Zoro", type:"Personnage", rarity:"epique", category:"personnage",
+      user:"Équipage des Chapeaux de Paille", desc:"Sabreur des Mugiwara. Ambition absolue : devenir le plus grand sabreur du monde. Maître du Santoryu.",
+      tags:["Sabre","Haki Armement","Mugiwara"], emoji:"⚔️", classified:false, spoiler:false, power:90,
+      colors:["#14532d","#052e16","#030308"],
+      lore:"Disciple de Koshiro et rival d'enfance de Kuina, Zoro a rejoint Luffy avec une promesse de devenir le meilleur. Sa bataille contre Mihawk à Baratie et son sacrifice à Thriller Bark ont forgé sa légende. Après Wano, il est le plus proche du titre de Meilleur Sabreur." },
+    { id:23, name:"Nico Robin", type:"Personnage", rarity:"epique", category:"personnage",
+      user:"Équipage des Chapeaux de Paille", desc:"Archéologue des Mugiwara. Seule survivante d'Ohara. Unique personne vivante sachant lire les Ponéglyphes.",
+      tags:["Archéologue","Ponéglyphe","Ohara"], emoji:"🌸", classified:false, spoiler:false, power:82,
+      colors:["#831843","#500724","#030308"],
+      lore:"Traquée par le Gouvernement Mondial depuis l'âge de 8 ans pour sa capacité à lire les Ponéglyphes, Robin est la clé du vrai Siècle du Vide. Son fruit Hana Hana no Mi et son Éveil «Gigantesco Mano» font d'elle une combattante redoutable." },
+    { id:24, name:"Shanks le Roux", type:"Personnage", rarity:"mythique", category:"personnage",
+      user:"Empereurs — Les Chevelus Rouges", desc:"L'un des quatre Empereurs de la mer. Mentor de Monkey D. Luffy. Son Haki des Rois est d'une puissance absolue.",
+      tags:["Yonko","Haki des Rois","Roger Pirates"], emoji:"⚓", classified:false, spoiler:false, power:98,
+      colors:["#7f1d1d","#450a0a","#030308"],
+      lore:"Ancien apprenti sur le navire du Roi des Pirates Gol D. Roger, Shanks est le seul Yonko sans fruit du Démon connu. Capable d'arrêter Barbe Blanche d'un seul regard, son Haki des Rois dépasse tout ce qui est mesuré." },
+    // ═══ ÎLES ═══
+    { id:25, name:"East Blue", type:"Île", rarity:"commun", category:"ile",
+      user:"Première mer", desc:"Mer la plus faible du monde. Berceau de Monkey D. Luffy, Roronoa Zoro, Nami, Usopp et Vinsmoke Sanji.",
+      tags:["Mer","Berceau","Départ"], emoji:"🗺️", classified:false, spoiler:false, power:20,
+      colors:["#1e3a5f","#0f2040","#030308"],
+      lore:"Malgré sa réputation de mer faible, l'East Blue a engendré les membres fondateurs de l'équipage des Chapeaux de Paille. De Fuschia Village à la ville d'Arlong, chaque île cache une histoire fondatrice." },
+    { id:26, name:"Alabasta", type:"Île", rarity:"rare", category:"ile",
+      user:"Grand Line — Arrière Ligne", desc:"Royaume du désert dirigé par les Nefertari depuis des générations. Théâtre de l'arc Baroque Works.",
+      tags:["Désert","Arc Majeur","Royauté"], emoji:"🏜️", classified:false, spoiler:false, power:55,
+      colors:["#78350f","#451a03","#030308"],
+      lore:"Alabasta fut le théâtre de la chute de Baroque Works et de la révélation sur les Ponéglyphes. Le roi Cobra et sa fille Vivi sont liés au mystère des vingt royaumes fondateurs." },
+    { id:27, name:"Water Seven", type:"Île", rarity:"epique", category:"ile",
+      user:"Grand Line", desc:"Cité de l'eau et siège des chantiers navals Galley-La. Arc Water Seven / Enies Lobby.",
+      tags:["Eau","Galley-La","Franky"], emoji:"🌊", classified:false, spoiler:false, power:65,
+      colors:["#1e3a5f","#0f2040","#030308"],
+      lore:"Ville construite sur l'eau et reliée par des canaux, Water Seven est le centre de la construction navale du monde. C'est ici que le Going Merry fut condamné et que Franky rejoignit les Mugiwara après la bataille d'Enies Lobby." },
+  ];
+
+  // ══════════════════════════════════════════════════════════
+  // META
+  // ══════════════════════════════════════════════════════════
+  const RARITY_META = {
+    legendaire:{ label:"LÉGENDAIRE", color:"#EAB308", bg:"rgba(234,179,8,.08)",  glow:"rgba(234,179,8,.4)",  order:1, cls:"rv-legendaire" },
+    mythique:  { label:"MYTHIQUE",   color:"#A855F7", bg:"rgba(168,85,247,.08)", glow:"rgba(168,85,247,.4)", order:2, cls:"rv-mythique"   },
+    interdit:  { label:"INTERDIT",   color:"#DC2626", bg:"rgba(220,38,38,.1)",   glow:"rgba(220,38,38,.5)",  order:0, cls:"rv-interdit"   },
+    epique:    { label:"ÉPIQUE",     color:"#3B82F6", bg:"rgba(59,130,246,.08)", glow:"rgba(59,130,246,.35)",order:3, cls:"rv-epique"     },
+    rare:      { label:"RARE",       color:"#10B981", bg:"rgba(16,185,129,.08)", glow:"rgba(16,185,129,.35)",order:4, cls:"rv-rare"       },
+    secret:    { label:"SECRET",     color:"#7C3AED", bg:"rgba(124,58,237,.08)", glow:"rgba(124,58,237,.4)", order:2, cls:"rv-secret"     },
+    commun:    { label:"COMMUN",     color:"#555566", bg:"rgba(85,85,102,.04)",  glow:"rgba(85,85,102,.2)",  order:5, cls:"rv-commun"     },
+  };
+  const TYPE_META = {
+    "Logia":    { color:"#3B82F6" }, "Paramecia":{ color:"#10B981" },
+    "Zoan":     { color:"#F97316" }, "Personnage":{ color:"#A855F7" },
+    "Île":      { color:"#0EA5E9" }, "???":      { color:"#9F1239" },
+  };
+
+  // ══════════════════════════════════════════════════════════
+  // STATE
+  // ══════════════════════════════════════════════════════════
+  let currentCat    = "tout";
+  let currentFilter = "tout";
+  let currentSort   = "rarity";
+  let spoilerMode   = false;
+  let searchQuery   = "";
+  let selectedId    = null;
+
+  // ══════════════════════════════════════════════════════════
+  // FILTER + SORT
+  // ══════════════════════════════════════════════════════════
+  function getFiltered() {
+    let list = [...FRUITS];
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter(f =>
+        f.name.toLowerCase().includes(q) ||
+        f.user.toLowerCase().includes(q) ||
+        f.tags.some(t => t.toLowerCase().includes(q)) ||
+        f.type.toLowerCase().includes(q)
+      );
+    }
+    if (currentCat !== "tout") {
+      if (currentCat === "secret") list = list.filter(f => f.classified);
+      else list = list.filter(f => f.category === currentCat);
+    }
+    if (currentFilter !== "tout") {
+      if (currentFilter === "logia")      list = list.filter(f => f.type === "Logia");
+      if (currentFilter === "paramecia")  list = list.filter(f => f.type === "Paramecia");
+      if (currentFilter === "zoan")       list = list.filter(f => f.type === "Zoan" && f.rarity !== "mythique");
+      if (currentFilter === "mythique")   list = list.filter(f => f.rarity === "mythique");
+      if (currentFilter === "legendaire") list = list.filter(f => f.rarity === "legendaire");
+      if (currentFilter === "classifie")  list = list.filter(f => f.classified);
+    }
+    if (currentSort === "rarity")  list.sort((a,b) => (RARITY_META[a.rarity]?.order||9) - (RARITY_META[b.rarity]?.order||9));
+    if (currentSort === "alpha")   list.sort((a,b) => a.name.localeCompare(b.name));
+    if (currentSort === "power")   list.sort((a,b) => b.power - a.power);
+    return list;
+  }
+
+  // ══════════════════════════════════════════════════════════
+  // BUILD ROW
+  // ══════════════════════════════════════════════════════════
+  function buildRow(fruit, index) {
+    const rm = RARITY_META[fruit.rarity] || RARITY_META.commun;
+    const isSelected = fruit.id === selectedId;
+    const isSpoilerHide = spoilerMode && fruit.spoiler;
+    const num = String(index + 1).padStart(4, '0');
+
+    if (fruit.classified) {
+      return `
+        <div class="archive-row rv-interdit classified-row ${isSelected ? 'selected' : ''}"
+             onclick="selectFruit(${fruit.id})"
+             style="animation-delay:${index*30}ms">
+          <div class="cl-row-bar"></div>
+          <div class="row-accent"></div>
+          <div class="row-num" style="color:#2A0010">#${num}</div>
+          <div class="row-emoji-cell" style="opacity:.3">🔒</div>
+          <div class="row-body">
+            <div class="row-name row-redacted">████ ████ ██ ██</div>
+            <div class="classified-stamp">CLASSIFIÉ — ACCÈS NIVEAU 5 REQUIS</div>
+            <div class="row-tags" style="color:#1A0008">Gouvernement Mondial · Dossier scellé</div>
+          </div>
+          <div class="row-right">
+            <span class="rbadge rv-interdit" style="--rc:#DC2626;--rg:rgba(220,38,38,.4);--rb:rgba(220,38,38,.08)">INTERDIT</span>
+          </div>
+        </div>`;
+    }
+
+    const nameShow = isSpoilerHide ? `<span class="spblur">${fruit.name}</span>` : fruit.name;
+    const userShow = isSpoilerHide ? `<span class="spblur">${fruit.user}</span>` : fruit.user;
+
+    return `
+      <div class="archive-row ${rm.cls} ${isSelected ? 'selected' : ''}"
+           onclick="selectFruit(${fruit.id})"
+           style="animation-delay:${index*30}ms;--rc:${rm.color};--rg:${rm.glow};--rb:${rm.bg}">
+        <div class="row-accent" style="background:${rm.color}"></div>
+        <div class="row-num">#${num}</div>
+        <div class="row-emoji-cell">${fruit.emoji}</div>
+        <div class="row-body">
+          <div class="row-name">${nameShow}</div>
+          <div class="row-meta">
+            <span style="color:${TYPE_META[fruit.type]?.color || '#666'}">${fruit.type}</span>
+            <span class="sep">·</span>
+            <span>${userShow}</span>
+          </div>
+          <div class="row-tags">${fruit.tags.slice(0,3).join(' · ')}</div>
+        </div>
+        <div class="row-right">
+          <span class="rbadge" style="--rc:${rm.color};--rg:${rm.glow};--rb:${rm.bg}">${rm.label}</span>
+          <button class="fav-btn" onclick="event.stopPropagation()" title="Favori">♡</button>
+        </div>
+      </div>`;
+  }
+
+  // ══════════════════════════════════════════════════════════
+  // RENDER REGISTER
+  // ══════════════════════════════════════════════════════════
+  function renderRegister() {
+    const list = getFiltered();
+    const el = document.getElementById('register-rows');
+    document.getElementById('result-count').textContent = list.length;
+
+    if (list.length === 0) {
+      el.innerHTML = `<div class="reg-empty"><div class="reg-empty-icon">📂</div><div class="reg-empty-text">Aucun dossier trouvé</div></div>`;
+    } else {
+      el.innerHTML = list.map((f,i) => buildRow(f,i)).join('');
+    }
+  }
+
+  // ══════════════════════════════════════════════════════════
+  // DETAIL PANEL
+  // ══════════════════════════════════════════════════════════
+  function renderDetailDefault() {
+    const feat = FRUITS.find(f => f.id === 4); // Mera Mera no Mi
+    const rm = RARITY_META[feat.rarity];
+    document.getElementById('detail-content').innerHTML = `
+      <div class="detail-default" style="--rc:${rm.color};--rg:${rm.glow};--rb:${rm.bg}">
+        <div class="detail-classified-wm">CLASSIFIED</div>
+        <div class="detail-stamp-header">
+          <div class="stamp-top-row">
+            <span class="stamp-org">Gouvernement Mondial — Division Renseignement</span>
+            <span class="stamp-access">NIVEAU A</span>
+          </div>
+          <div class="stamp-title-wrap">
+            <span class="stamp-title">DOSSIER PRIORITAIRE</span>
+          </div>
+          <div class="marine-coords">LAT: 34°12'N · LON: 128°47'E · SECT: GRAND-LINE-7 · REF: OP-ARCH-001</div>
+        </div>
+        <div class="feat-panel">
+          <div class="feat-emoji-wrap">
+            <span class="feat-emoji-big" style="--rc:${rm.color}">${feat.emoji}</span>
+          </div>
+          <div class="feat-name">${feat.name}</div>
+          <div class="feat-rarity-row">
+            <span class="rbadge" style="--rc:${rm.color};--rg:${rm.glow};--rb:${rm.bg};font-size:10px;padding:4px 12px;">${rm.label}</span>
+          </div>
+          <div class="feat-type-row">${feat.type} · Feu · Héritage</div>
+          <div class="feat-divider" style="--rc:${rm.color}"></div>
+          <div class="feat-stats-grid">
+            <div class="feat-stat">
+              <div class="feat-stat-lbl">Puissance</div>
+              <div class="feat-stat-val" style="color:${rm.color}">${feat.power}</div>
+            </div>
+            <div class="feat-stat">
+              <div class="feat-stat-lbl">Type</div>
+              <div class="feat-stat-val">Logia</div>
+            </div>
+            <div class="feat-stat">
+              <div class="feat-stat-lbl">Statut</div>
+              <div class="feat-stat-val" style="color:#10B981;font-size:10px">LIBRE</div>
+            </div>
+          </div>
+          <div class="feat-desc" style="--rc:${rm.color}">${feat.desc}</div>
+          <div class="power-bar-track" style="margin-bottom:16px">
+            <div class="power-bar-fill" style="--rc:${rm.color};width:${feat.power}%"></div>
+          </div>
+          <button class="btn-open-dossier" style="--rc:${rm.color};--rg:${rm.glow};--rb:${rm.bg}" onclick="selectFruit(4)">
+            <i data-lucide="folder-open" style="width:12px;height:12px"></i>
+            OUVRIR LE DOSSIER
+          </button>
+        </div>
+        <div style="padding:0 20px 16px">
+          <div style="height:1px;background:linear-gradient(90deg,transparent,rgba(234,179,8,.15),transparent);margin-bottom:10px"></div>
+          <div style="font-family:'Rajdhani',sans-serif;font-size:8px;letter-spacing:.25em;color:#10101A;text-transform:uppercase;text-align:center">
+            Sélectionnez un dossier dans le registre pour l'ouvrir
+          </div>
+        </div>
+      </div>`;
+    lucide.createIcons();
+  }
+
+  function renderDetailSelected(fruit) {
+    const rm = RARITY_META[fruit.rarity] || RARITY_META.commun;
+    const tm = TYPE_META[fruit.type] || { color:"#666" };
+    const isSpoilerHide = spoilerMode && fruit.spoiler;
+    const allFruits = getFiltered();
+    const idx = allFruits.findIndex(f => f.id === fruit.id);
+    const num = String(idx + 1).padStart(4, '0');
+
+    if (fruit.classified) {
+      document.getElementById('detail-content').innerHTML = `
+        <div class="detail-classified-view" style="--rc:#DC2626">
+          <div class="dcl-scan"></div>
+          <div class="dcl-wm">CLASSIFIED</div>
+          <div class="dcl-lock">🔒</div>
+          <div class="dcl-title">ACCÈS REFUSÉ</div>
+          <div class="dcl-level">NIVEAU D'AUTORISATION 5 REQUIS</div>
+          <div class="dcl-sep"></div>
+          <div class="dcl-text">Ce dossier est scellé par ordre du Trône Vide — Gouvernement Mondial. Toute tentative d'accès non autorisée constitue un acte de trahison passible d'élimination immédiate.</div>
+          <button class="dcl-close" onclick="clearSelection()">FERMER LE DOSSIER</button>
+          <div class="dcl-coord">REF: VOID-THRONE-CLASSIFIED · CLEARANCE: LEVEL-5 · STATUS: LOCKED</div>
+        </div>`;
+      lucide.createIcons();
+      return;
+    }
+
+    const nameDisplay = isSpoilerHide ? `<span class="spblur">${fruit.name}</span>` : fruit.name;
+    const userDisplay = isSpoilerHide ? `<span class="spblur">${fruit.user}</span>` : fruit.user;
+    const descDisplay = isSpoilerHide ? `<span class="spblur">${fruit.desc}</span>` : fruit.desc;
+    const loreDisplay = isSpoilerHide ? `<span class="spblur">${fruit.lore}</span>` : fruit.lore;
+
+    const gradBg = fruit.colors ? `radial-gradient(ellipse at 50% 100%, ${fruit.colors[0]}55 0%, ${fruit.colors[1]}33 50%, transparent 100%)` : '#0A0A14';
+
+    document.getElementById('detail-content').innerHTML = `
+      <div class="detail-selected" style="--rc:${rm.color};--rg:${rm.glow};--rb:${rm.bg}">
+        <div class="detail-hero">
+          <div class="detail-hero-bg" style="background:${gradBg}"></div>
+          <div class="detail-hero-scan" style="--rc:${rm.color}"></div>
+          <div class="detail-hero-corner-tl" style="--rc:${rm.color}"></div>
+          <div class="detail-hero-corner-br" style="--rc:${rm.color}"></div>
+          <div class="detail-hero-num">DOSSIER #${num}</div>
+          <div class="detail-hero-badge">
+            <span class="rbadge" style="--rc:${rm.color};--rg:${rm.glow};--rb:${rm.bg};font-size:10px;padding:4px 10px">${rm.label}</span>
+          </div>
+          <span class="detail-hero-emoji">${fruit.emoji}</span>
+        </div>
+        <div class="detail-body">
+          <div class="detail-title-name">${nameDisplay}</div>
+          <div class="detail-owner">${userDisplay}</div>
+          <div class="detail-meta-row">
+            <span class="dmeta" style="color:${tm.color};border-color:${tm.color}22">${fruit.type}</span>
+            ${fruit.spoiler ? `<span class="dmeta" style="color:#EAB308;border-color:rgba(234,179,8,.2)">SPOILER</span>` : ''}
+          </div>
+          <div style="margin-bottom:12px">
+            <div class="power-bar-track">
+              <div class="power-bar-fill" style="--rc:${rm.color};width:${fruit.power}%"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-top:4px">
+              <span style="font-family:'Rajdhani',sans-serif;font-size:9px;letter-spacing:.15em;color:#1A1A26;text-transform:uppercase">Puissance</span>
+              <span style="font-family:'Cinzel',serif;font-size:11px;color:${rm.color}">${fruit.power}/100</span>
+            </div>
+          </div>
+          <div class="detail-divider"></div>
+          <div class="detail-section-lbl">Description</div>
+          <div class="detail-desc">${descDisplay}</div>
+          <div class="detail-section-lbl">Notes d'archive</div>
+          <div class="detail-lore-box" style="--rc:${rm.color}">
+            <div class="detail-lore-text">${loreDisplay}</div>
+          </div>
+          <div class="detail-section-lbl">Tags</div>
+          <div class="detail-tags">
+            ${fruit.tags.map(t => `<span class="dtag" style="--rc:${rm.color};--rb:${rm.bg}">${t}</span>`).join('')}
+          </div>
+          <div class="detail-stats-row">
+            <div class="dstat"><span class="dstat-lbl">Type</span><span class="dstat-val" style="color:${tm.color};font-size:11px">${fruit.type}</span></div>
+            <div class="dstat"><span class="dstat-lbl">Catégorie</span><span class="dstat-val" style="font-size:11px">${fruit.category}</span></div>
+            <div class="dstat"><span class="dstat-lbl">Spoiler</span><span class="dstat-val" style="font-size:10px;color:${fruit.spoiler?'#EAB308':'#2A2A38'}">${fruit.spoiler ? 'OUI' : 'NON'}</span></div>
+            <div class="dstat"><span class="dstat-lbl">Statut</span><span class="dstat-val" style="font-size:10px;color:#10B981">ACCESSIBLE</span></div>
+          </div>
+          <div class="detail-divider"></div>
+          <div class="detail-actions">
+            <button class="action-btn primary" style="--rc:${rm.color};--rg:${rm.glow};--rb:${rm.bg}">
+              <i data-lucide="star" style="width:11px;height:11px"></i>Favori
+            </button>
+            <button class="action-btn" onclick="clearSelection()">
+              <i data-lucide="x" style="width:11px;height:11px"></i>Fermer
+            </button>
+          </div>
+          <div style="height:20px"></div>
+        </div>
+      </div>`;
+    lucide.createIcons();
+  }
+
+  // ══════════════════════════════════════════════════════════
+  // SELECT / CLEAR
+  // ══════════════════════════════════════════════════════════
+  function selectFruit(id) {
+    selectedId = id;
+    document.querySelectorAll('.archive-row').forEach(r => r.classList.remove('selected'));
+    const row = document.getElementById(`row-${id}`);
+    if (row) row.classList.add('selected');
+    const fruit = FRUITS.find(f => f.id === id);
+    if (fruit) renderDetailSelected(fruit);
+  }
+
+  function selectFruitById(id) {
+    selectedId = id;
+    renderRegister();
+    const fruit = FRUITS.find(f => f.id === id);
+    if (fruit) renderDetailSelected(fruit);
+  }
+
+  function clearSelection() {
+    selectedId = null;
+    renderRegister();
+    renderDetailDefault();
+  }
+
+  // ══════════════════════════════════════════════════════════
+  // CATEGORY COUNTS
+  // ══════════════════════════════════════════════════════════
+  function updateCounts() {
+    const cats = { tout:0, fruit:0, personnage:0, equipage:0, arc:0, haki:0, ile:0, mystere:0, secret:0 };
+    FRUITS.forEach(f => {
+      cats.tout++;
+      if (f.classified) cats.secret++;
+      else if (cats[f.category] !== undefined) cats[f.category]++;
+    });
+    Object.keys(cats).forEach(c => {
+      const el = document.getElementById(`cnt-${c}`);
+      if (el) el.textContent = cats[c];
+    });
+    document.getElementById('sb-total').textContent = cats.tout;
+    document.getElementById('sb-secrets').textContent = cats.secret;
+    document.getElementById('stat-total').textContent = cats.tout;
+    document.getElementById('stat-secrets').textContent = cats.secret;
+  }
+
+  // ══════════════════════════════════════════════════════════
+  // EVENTS
+  // ══════════════════════════════════════════════════════════
+  document.querySelectorAll('.sbcat').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.sbcat').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentCat = btn.dataset.cat;
+      selectedId = null;
+      renderRegister();
+      renderDetailDefault();
+    });
+  });
+
+  document.querySelectorAll('.ftab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.ftab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentFilter = btn.dataset.filter;
+      selectedId = null;
+      renderRegister();
+      renderDetailDefault();
+    });
+  });
+
+  document.querySelectorAll('.sort-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentSort = btn.dataset.sort;
+      renderRegister();
+    });
+  });
+
+  let searchTimer;
+  document.getElementById('search-input').addEventListener('input', e => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => {
+      searchQuery = e.target.value.trim();
+      selectedId = null;
+      renderRegister();
+      renderDetailDefault();
+    }, 180);
+  });
+
+  document.getElementById('spoiler-toggle').addEventListener('click', () => {
+    spoilerMode = !spoilerMode;
+    const sw = document.getElementById('sp-switch');
+    const btn = document.getElementById('spoiler-toggle');
+    sw.classList.toggle('on', spoilerMode);
+    btn.classList.toggle('on', spoilerMode);
+    renderRegister();
+    if (selectedId) {
+      const f = FRUITS.find(x => x.id === selectedId);
+      if (f) renderDetailSelected(f);
+    } else {
+      renderDetailDefault();
+    }
+  });
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') clearSelection();
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      const list = getFiltered();
+      const ci = list.findIndex(f => f.id === selectedId);
+      const ni = e.key === 'ArrowDown' ? ci + 1 : ci - 1;
+      if (ni >= 0 && ni < list.length) { e.preventDefault(); selectFruitById(list[ni].id); }
+    }
+  });
+
+  // ══════════════════════════════════════════════════════════
+  // INIT
+  // ══════════════════════════════════════════════════════════
+  window.addEventListener('DOMContentLoaded', () => {
+    updateCounts();
+    renderRegister();
+    renderDetailDefault();
+    lucide.createIcons();
+  });
+  </script>
+</body>
+</html>
