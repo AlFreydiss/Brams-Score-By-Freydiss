@@ -234,7 +234,7 @@ export default function Hero() {
         <div style={{
           display: 'grid',
           gridTemplateColumns: isNarrow ? '1fr' : '1fr minmax(340px, 420px)',
-          alignItems: 'start',
+          alignItems: 'center',
           gap: isNarrow ? 40 : 'clamp(64px, 7vw, 140px)',
         }}>
 
@@ -271,9 +271,10 @@ export default function Hero() {
             <p className="fade-up-2" style={{
               fontSize: 'clamp(13px,1.25vw,15px)',
               color: 'rgba(255,255,255,.56)', fontWeight: 440,
-              lineHeight: 1.78, marginBottom: 36, maxWidth: 480,
+              lineHeight: 1.78, marginBottom: 36, maxWidth: 500,
+              textWrap: 'balance',
             }}>
-              Une communauté anime connectée à Discord, avec classements, équipages, blind tests, wiki, événements et récompenses en berries.
+              Une communauté anime connectée à Discord — classements, équipages, blind tests, wiki, événements et récompenses en berries.
             </p>
 
             {/* CTA */}
@@ -325,8 +326,9 @@ export default function Hero() {
             {/* Séparateur gradient */}
             <div style={{
               height: 1,
-              background: 'linear-gradient(90deg, rgba(212,160,23,0.28) 0%, rgba(255,255,255,0.07) 50%, transparent 100%)',
-              marginBottom: 24,
+              background: 'linear-gradient(90deg, rgba(212,160,23,0.55) 0%, rgba(212,160,23,0.12) 45%, transparent 80%)',
+              marginBottom: 28,
+              marginTop: 8,
             }} />
 
             {/* Stats */}
@@ -373,7 +375,6 @@ export default function Hero() {
           } : {
             position: 'sticky',
             top: 112,
-            marginTop: 'clamp(0px, 2vw, 32px)',
           }}>
             {/* Aura derrière le sidebar */}
             {!isNarrow && <>
