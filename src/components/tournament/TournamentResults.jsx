@@ -1,58 +1,80 @@
+import { motion } from 'framer-motion'
 import { getVotePercents } from '../../lib/tournament.js'
 
-const GOLD = '#d4a017'
+const GOLD   = '#d4a017'
+const GOLD_L = '#f0c040'
 
-function ResultMatch({ match, voteCounts }) {
-  const p = getVotePercents(voteCounts, match.id)
+function ResultMatch({ match, voteCounts, index }) {
+  const p        = getVotePercents(voteCounts, match.id)
   const leftWon  = match.winnerId === match.left?.id
   const rightWon = match.winnerId === match.right?.id
 
-  function ParticipantRow({ participant, won, lost, pct, count }) {
-    return (
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: 10, padding: '9px 14px',
-        background: won ? 'rgba(212,160,23,.06)' : 'transparent',
-        opacity: lost ? 0.45 : 1,
-        borderRadius: 6,
-        minWidth: 0,
-      }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{
-            fontSize: 13, fontWeight: won ? 700 : 400,
-            color: won ? GOLD : 'rgba(255,255,255,.78)',
-            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-          }}>
-            {won && <span style={{ marginRight: 6 }}>✦</span>}
-            {participant?.title}
-          </div>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,.3)' }}>
-            {participant?.anime}
-          </div>
-        </div>
-        {p.total > 0 && (
-          <div style={{ textAlign: 'right', flexShrink: 0 }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: won ? GOLD : 'rgba(255,255,255,.4)' }}>
-              {pct}%
-            </div>
-            <div style={{ fontSize: 10, color: 'rgba(255,255,255,.2)' }}>
-              {count} votes
-            </div>
-          </div>
-        )}
-      </div>
-    )
-  }
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.04 }}
+      style={{
+        borderRadius: 12,
+        border: '1px solid rgba(255,255,255,.07)',
+        overflow: 'hidden',
+        background: 'rgba(255,255,255,.02)',
+      }}
+    >
+      <ResultRow participant={match.left}  won={leftWon}  lost={!leftWon && !!match.winnerId}  pct={p.left}  count={p.leftN}  total={p.total} />
+      <div style={{ height: 1, background: 'rgba(255,255,255,.05)' }} />
+      <ResultRow participant={match.right} won={rightWon} lost={!rightWon && !!match.winnerId} pct={p.right} count={p.rightN} total={p.total} />
+    </motion.div>
+  )
+}
 
+function ResultRow({ participant, won, lost, pct, count, total }) {
   return (
     <div style={{
-      borderRadius: 10,
-      border: '1px solid rgba(255,255,255,.07)',
-      overflow: 'hidden',
-      background: 'rgba(255,255,255,.02)',
+      display: 'flex', alignItems: 'center', gap: 12,
+      padding: '10px 16px',
+      background: won ? 'rgba(212,160,23,.05)' : 'transparent',
+      opacity: lost ? 0.42 : 1,
     }}>
-      <ParticipantRow participant={match.left}  won={leftWon}  lost={!leftWon}  pct={p.left}  count={p.leftN}  />
-      <div style={{ height: 1, background: 'rgba(255,255,255,.05)' }} />
-      <ParticipantRow participant={match.right} won={rightWon} lost={!rightWon} pct={p.right} count={p.rightN} />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{
+          fontSize: 13, fontWeight: won ? 700 : 400,
+          color: won ? GOLD : 'rgba(255,255,255,.78)',
+          display: 'flex', alignItems: 'center', gap: 6,
+          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+        }}>
+          {won && <span style={{ fontSize: 10, color: GOLD, flexShrink: 0 }}>✦</span>}
+          {participant?.title}
+        </div>
+        <div style={{ fontSize: 11, color: 'rgba(255,255,255,.3)', marginTop: 1 }}>
+          {participant?.anime}
+        </div>
+      </div>
+
+      {total > 0 && (
+        <div style={{ minWidth: 100, display: 'flex', flexDirection: 'column', gap: 4, flexShrink: 0 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
+            <span style={{ fontWeight: 700, color: won ? GOLD : 'rgba(255,255,255,.38)' }}>
+              {pct}%
+            </span>
+            <span style={{ color: 'rgba(255,255,255,.2)' }}>{count}v</span>
+          </div>
+          <div style={{ height: 3, borderRadius: 2, background: 'rgba(255,255,255,.07)', overflow: 'hidden' }}>
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${pct}%` }}
+              transition={{ delay: 0.2, duration: 0.7, ease: 'easeOut' }}
+              style={{
+                height: '100%',
+                background: won
+                  ? `linear-gradient(90deg, ${GOLD}, ${GOLD_L})`
+                  : 'rgba(255,255,255,.18)',
+                borderRadius: 2,
+              }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -64,14 +86,18 @@ export default function TournamentResults({ rounds, voteCounts, winner }) {
       closed: round.matches.filter(m => m.status === 'closed'),
     }))
     .filter(r => r.closed.length > 0)
-    .reverse() // most recent first
+    .reverse()
 
   if (completedRounds.length === 0) {
     return (
-      <div style={{ textAlign: 'center', padding: '60px 20px', color: 'rgba(255,255,255,.3)', fontSize: 14 }}>
-        Aucun duel terminé pour l'instant.
-        <br />
-        <span style={{ fontSize: 12, opacity: 0.6 }}>Vote dans l'onglet Duel pour commencer.</span>
+      <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+        <div style={{ fontSize: 32, marginBottom: 12, opacity: 0.3 }}>⚔</div>
+        <div style={{ color: 'rgba(255,255,255,.3)', fontSize: 14 }}>
+          Aucun duel terminé pour l'instant.
+        </div>
+        <div style={{ fontSize: 12, color: 'rgba(255,255,255,.18)', marginTop: 6 }}>
+          Vote dans l'onglet Duel pour commencer.
+        </div>
       </div>
     )
   }
@@ -79,42 +105,62 @@ export default function TournamentResults({ rounds, voteCounts, winner }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
 
-      {/* Final winner callout */}
       {winner && (
-        <div style={{
-          borderRadius: 14,
-          border: `1px solid ${GOLD}`,
-          background: 'rgba(212,160,23,0.07)',
-          padding: '24px 28px',
-          textAlign: 'center',
-        }}>
-          <div style={{ fontSize: 12, color: GOLD, letterSpacing: '0.12em', marginBottom: 8 }}>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.97 }}
+          animate={{ opacity: 1, scale: 1 }}
+          style={{
+            borderRadius: 16,
+            border: `1px solid ${GOLD}`,
+            background: 'rgba(212,160,23,.06)',
+            padding: 'clamp(20px,4vw,32px)',
+            textAlign: 'center',
+            boxShadow: `0 0 48px rgba(212,160,23,.07)`,
+          }}
+        >
+          <div style={{ fontSize: 28, marginBottom: 10 }}>🏆</div>
+          <div style={{ fontSize: 11, color: GOLD, letterSpacing: '0.15em', marginBottom: 10 }}>
             VAINQUEUR DU TOURNOI
           </div>
-          <div style={{ fontSize: 28, fontWeight: 800, color: GOLD, marginBottom: 4 }}>
+          <div style={{
+            fontSize: 'clamp(22px,4vw,32px)', fontWeight: 800,
+            background: `linear-gradient(135deg, ${GOLD_L}, ${GOLD})`,
+            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+            marginBottom: 6,
+          }}>
             {winner.title}
           </div>
-          <div style={{ fontSize: 14, color: 'rgba(255,255,255,.5)' }}>
+          <div style={{ fontSize: 13, color: 'rgba(255,255,255,.5)' }}>
             {winner.anime} · {winner.artist}
           </div>
-        </div>
+        </motion.div>
       )}
 
-      {completedRounds.map(round => (
+      {completedRounds.map((round, ri) => (
         <div key={round.id}>
           <div style={{
-            fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,.4)',
-            letterSpacing: '0.1em', marginBottom: 12,
-            display: 'flex', alignItems: 'center', gap: 10,
+            display: 'flex', alignItems: 'center', gap: 12,
+            marginBottom: 12,
           }}>
-            <span style={{ flex: 1, height: 1, background: 'rgba(255,255,255,.08)' }} />
-            {round.label.toUpperCase()}
-            <span style={{ flex: 1, height: 1, background: 'rgba(255,255,255,.08)' }} />
+            <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,.07)' }} />
+            <span style={{
+              fontSize: 11, fontWeight: 700,
+              color: 'rgba(255,255,255,.35)',
+              letterSpacing: '0.1em',
+            }}>
+              {round.label.toUpperCase()}
+            </span>
+            <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,.07)' }} />
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {round.closed.map(match => (
-              <ResultMatch key={match.id} match={match} voteCounts={voteCounts} />
+            {round.closed.map((match, mi) => (
+              <ResultMatch
+                key={match.id}
+                match={match}
+                voteCounts={voteCounts}
+                index={ri * 10 + mi}
+              />
             ))}
           </div>
         </div>
