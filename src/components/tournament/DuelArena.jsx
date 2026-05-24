@@ -4,8 +4,8 @@ import { getVotePercents } from '../../lib/tournament.js'
 import OSTDuelCard from './OSTDuelCard.jsx'
 import VSPanel     from './VSPanel.jsx'
 
-const PINK   = '#e91e8c'
-const PURPLE = '#9333ea'
+const PINK   = '#9d174d'
+const PURPLE = '#4c1d95'
 const PINK_L = '#f9a8d4'
 const GOLD   = PINK
 const GOLD_L = PINK_L
@@ -84,11 +84,11 @@ function VoteToast({ visible, winnerTitle }) {
             position: 'fixed', top: 72, left: '50%', transform: 'translateX(-50%)',
             zIndex: 800,
             background: 'rgba(10,11,16,0.98)',
-            border: `1px solid rgba(233,30,140,.48)`,
+            border: `1px solid rgba(157,23,77,.48)`,
             borderRadius: 14,
             padding: '12px 24px',
             display: 'flex', alignItems: 'center', gap: 12,
-            boxShadow: '0 8px 32px rgba(0,0,0,.65), 0 0 0 1px rgba(233,30,140,.07)',
+            boxShadow: '0 8px 32px rgba(0,0,0,.65), 0 0 0 1px rgba(157,23,77,.07)',
             backdropFilter: 'blur(16px)',
             whiteSpace: 'nowrap',
           }}
@@ -249,7 +249,7 @@ export default function DuelArena({
             {!isLastMatch ? (
               <motion.button
                 onClick={onNext}
-                whileHover={{ scale: 1.04, boxShadow: `0 10px 32px rgba(233,30,140,.38)` }}
+                whileHover={{ scale: 1.04, boxShadow: `0 10px 32px rgba(157,23,77,.38)` }}
                 whileTap={{ scale: 0.97 }}
                 style={{
                   padding: '14px 52px',
@@ -258,7 +258,7 @@ export default function DuelArena({
                   color: '#fff', fontWeight: 800, fontSize: 15,
                   cursor: 'pointer', letterSpacing: '0.04em',
                   fontFamily: "'Pirata One',cursive",
-                  boxShadow: `0 6px 24px rgba(233,30,140,.24)`,
+                  boxShadow: `0 6px 24px rgba(157,23,77,.24)`,
                 }}
               >
                 Duel suivant →
