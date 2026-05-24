@@ -18,7 +18,7 @@ const AWARDS = [
   { icon: '🏆', label: 'Manga en pleine explosion' },
 ]
 
-const COVER = 'https://www.nautiljon.com/images/anime/00/39/kaiju_no_8_22839.jpg'
+const COVER = 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaiju-no-8-thumbnails/S01E01.jpg'
 
 function loadProgress() {
   try { return JSON.parse(localStorage.getItem(`${NS}_vp`) || '{}') } catch { return {} }
