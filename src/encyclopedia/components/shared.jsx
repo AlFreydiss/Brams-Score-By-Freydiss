@@ -191,10 +191,11 @@ export function UniverseRail({ animes, activeId, entriesByAnime, onSelect, onClo
       </div>
       <motion.button
         className="arc-rail-close" type="button" onClick={onClose}
-        whileHover={{ scale: 1.1, color: T.red }} whileTap={{ scale: 0.9 }}
-        style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.textDim, fontSize: 16 }}
+        whileHover={{ color: '#fff' }} whileTap={{ scale: 0.95 }}
+        style={{ background: 'none', border: 'none', cursor: 'pointer' }}
       >
-        <X size={16} />
+        <X size={14} />
+        <span>Fermer</span>
       </motion.button>
     </nav>
   )

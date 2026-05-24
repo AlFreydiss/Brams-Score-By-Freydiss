@@ -87,6 +87,7 @@
 
 .arc-rail-universes {
   flex: 1;
+  min-width: 0;
   display: flex;
   align-items: stretch;
   overflow-x: auto;
@@ -152,16 +153,21 @@
 .arc-rail-close {
   display: flex;
   align-items: center;
+  gap: 6px;
   padding: 0 15px;
   border: 0;
   border-left: 1px solid rgba(255,255,255,0.05);
   background: transparent;
   color: rgba(255,255,255,0.36);
-  font-size: 16px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.10em;
   cursor: pointer;
+  flex-shrink: 0;
+  white-space: nowrap;
   transition: color 0.18s, background 0.18s;
 }
-.arc-rail-close:hover { color: #fff; background: rgba(255,255,255,0.04); }
+.arc-rail-close:hover { color: #fff; background: rgba(255,255,255,0.06); }
 
 /* ── Body ── */
 .arc-body {
