@@ -261,6 +261,9 @@ const AH_CSS = `
   @keyframes ahDrift   { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-7px)} }
   @keyframes ahSlideIn { from{opacity:0;transform:translateX(24px)} to{opacity:1;transform:none} }
 
+  .ah-chips-row { scrollbar-width:none; -ms-overflow-style:none; }
+  .ah-chips-row::-webkit-scrollbar { display:none; }
+
   .ah-card {
     transition: transform .28s cubic-bezier(.25,.46,.45,.94),
                 box-shadow .28s ease, border-color .22s ease;
@@ -498,9 +501,8 @@ function AnimeRail({ title, subtitle, accent = 'rgba(255,255,255,0.4)', animes, 
 
   return (
     <section style={{ marginBottom: 28 }} aria-label={title}>
-      {/* section header */}
+      {/* section header — même padding que les cartes pour alignement parfait */}
       <div style={{
-        maxWidth: 1400, margin: '0 auto',
         padding: `0 ${FADE_W}px 10px`,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
@@ -881,57 +883,63 @@ export default function AnimeHub({
           ) : (
             /* ── LIBRARY VIEW ─────────────────────────────────────────────── */
             <>
-              {/* hero compact */}
-              <div style={{ textAlign: 'center', padding: '20px 28px 14px', position: 'relative', overflow: 'hidden' }}>
+              {/* hero compact — titre + stats en 1 bloc dense */}
+              <div style={{ padding: `12px ${FADE_W}px 10px`, position: 'relative', overflow: 'hidden' }}>
                 <div style={{
                   position: 'absolute', inset: 0, pointerEvents: 'none',
-                  background: 'radial-gradient(ellipse 55% 70% at 50% 0%,rgba(139,92,246,0.045),transparent)',
+                  background: 'radial-gradient(ellipse 55% 55% at 50% 0%,rgba(139,92,246,0.04),transparent)',
                 }} />
-                <h1 style={{
-                  fontFamily: "'Pirata One',cursive", fontWeight: 900,
-                  fontSize: 'clamp(24px,3.8vw,42px)', color: '#fff',
-                  margin: '0 0 7px', lineHeight: 1.05, letterSpacing: '-.02em',
-                }}>
-                  Mes Animés
-                </h1>
-                <p style={{
-                  fontSize: 13, color: 'rgba(255,255,255,0.30)', maxWidth: 380,
-                  margin: '0 auto 12px', lineHeight: 1.55, fontWeight: 600,
-                }}>
-                  Scans, épisodes, suivis et découvertes de la communauté.
-                </p>
-                {/* stats pills */}
-                <div style={{ display: 'flex', gap: 7, justifyContent: 'center', flexWrap: 'wrap' }}>
-                  {[
-                    { label: 'Nouveautés', value: heroStats.nouveautes, dot: '#86efac' },
-                    { label: 'VF dispo',   value: heroStats.vf,         dot: '#c4b5fd' },
-                    { label: 'Complétés',  value: heroStats.complets,   dot: '#cbd5e1' },
-                  ].map(s => (
-                    <div key={s.label} style={{
-                      display: 'flex', alignItems: 'center', gap: 6, padding: '5px 12px',
-                      borderRadius: 100, background: 'rgba(255,255,255,0.04)',
-                      border: '1px solid rgba(255,255,255,0.07)',
-                      fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.42)',
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+                  <div>
+                    <h1 style={{
+                      fontFamily: "'Pirata One',cursive", fontWeight: 900,
+                      fontSize: 'clamp(22px,2.6vw,32px)', color: '#fff',
+                      margin: '0 0 4px', lineHeight: 1.05, letterSpacing: '-.02em',
                     }}>
-                      <div style={{ width: 5, height: 5, borderRadius: '50%', background: s.dot, flexShrink: 0 }} />
-                      <span style={{ fontWeight: 800, color: 'rgba(255,255,255,0.70)' }}>{s.value}</span>
-                      <span>{s.label}</span>
-                    </div>
-                  ))}
+                      Mes Animés
+                    </h1>
+                    <p style={{
+                      fontSize: 12, color: 'rgba(255,255,255,0.28)', margin: 0,
+                      lineHeight: 1.4, fontWeight: 500,
+                    }}>
+                      Scans, épisodes, suivis et découvertes de la communauté.
+                    </p>
+                  </div>
+                  {/* stats pills — ligne droite */}
+                  <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                    {[
+                      { label: 'Nouveautés', value: heroStats.nouveautes, dot: '#86efac' },
+                      { label: 'VF dispo',   value: heroStats.vf,         dot: '#c4b5fd' },
+                      { label: 'Complétés',  value: heroStats.complets,   dot: '#cbd5e1' },
+                    ].map(s => (
+                      <div key={s.label} style={{
+                        display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px',
+                        borderRadius: 100, background: 'rgba(255,255,255,0.04)',
+                        border: '1px solid rgba(255,255,255,0.07)',
+                        fontSize: 10.5, fontWeight: 700, color: 'rgba(255,255,255,0.38)',
+                        whiteSpace: 'nowrap',
+                      }}>
+                        <div style={{ width: 4.5, height: 4.5, borderRadius: '50%', background: s.dot, flexShrink: 0 }} />
+                        <span style={{ fontWeight: 800, color: 'rgba(255,255,255,0.65)' }}>{s.value}</span>
+                        <span>{s.label}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
 
-              {/* search + filters */}
-              <div style={{ maxWidth: 760, margin: '0 auto 14px', padding: '0 24px' }}>
+              {/* search + filters — bande horizontale compacte */}
+              <div style={{ padding: `0 ${FADE_W}px 10px` }}>
+                {/* search input */}
                 <div
                   className="ah-search"
                   style={{
-                    display: 'flex', alignItems: 'center', gap: 10,
+                    display: 'flex', alignItems: 'center', gap: 9,
                     background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)',
-                    borderRadius: 12, padding: '10px 14px',
+                    borderRadius: 10, padding: '8px 13px', marginBottom: 8,
                   }}
                 >
-                  <span style={{ color: 'rgba(255,255,255,0.32)', fontSize: 16, flexShrink: 0 }}>⌕</span>
+                  <span style={{ color: 'rgba(255,255,255,0.30)', fontSize: 15, flexShrink: 0 }}>⌕</span>
                   <input
                     value={query}
                     onChange={e => setQuery(e.target.value)}
@@ -939,7 +947,7 @@ export default function AnimeHub({
                     aria-label="Rechercher un animé"
                     style={{
                       width: '100%', background: 'transparent', border: 'none', outline: 'none',
-                      color: '#fff', fontSize: 13.5, fontWeight: 600, fontFamily: 'var(--body)',
+                      color: '#fff', fontSize: 13, fontWeight: 600, fontFamily: 'var(--body)',
                     }}
                   />
                   {(query || activeGenre !== 'all') && (
@@ -948,15 +956,21 @@ export default function AnimeHub({
                       onClick={() => { setQuery(''); setActiveGenre('all') }}
                       style={{
                         flexShrink: 0, border: '1px solid rgba(255,255,255,0.09)',
-                        background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.60)',
-                        borderRadius: 8, padding: '4px 10px', cursor: 'pointer', fontSize: 11, fontWeight: 800,
+                        background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.55)',
+                        borderRadius: 7, padding: '3px 9px', cursor: 'pointer', fontSize: 11, fontWeight: 800,
                       }}
                     >✕</button>
                   )}
+                  {/* count inline */}
+                  <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.18)', fontWeight: 700, flexShrink: 0, paddingLeft: 4 }}>
+                    {isFiltering
+                      ? `${visibleAnimes.length} rés.`
+                      : `${sortedAnimes.length} séries`}
+                  </span>
                 </div>
 
-                {/* genre chips */}
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 9, justifyContent: 'center' }}>
+                {/* genre chips — une seule ligne, scroll horizontal */}
+                <div className="ah-chips-row" style={{ display: 'flex', gap: 5, overflowX: 'auto', padding: '2px 0 4px' }}>
                   {genreOptions.map(genre => {
                     const active = activeGenre === genre
                     return (
@@ -965,23 +979,17 @@ export default function AnimeHub({
                         className="ah-pill"
                         onClick={() => setActiveGenre(genre)}
                         style={{
-                          border: `1px solid ${active ? 'rgba(255,255,255,0.28)' : 'rgba(255,255,255,0.08)'}`,
-                          background: active ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.03)',
-                          color: active ? '#fff' : 'rgba(255,255,255,0.42)',
-                          borderRadius: 999, padding: '5px 13px', cursor: 'pointer',
-                          fontSize: 12, fontWeight: 700,
+                          border: `1px solid ${active ? 'rgba(255,255,255,0.26)' : 'rgba(255,255,255,0.07)'}`,
+                          background: active ? 'rgba(255,255,255,0.09)' : 'rgba(255,255,255,0.02)',
+                          color: active ? '#fff' : 'rgba(255,255,255,0.38)',
+                          borderRadius: 999, padding: '4px 12px', cursor: 'pointer',
+                          fontSize: 11.5, fontWeight: 700, whiteSpace: 'nowrap', flexShrink: 0,
                         }}
                       >
                         {genre === 'all' ? 'Tous' : genre}
                       </button>
                     )
                   })}
-                </div>
-
-                <div style={{ marginTop: 8, textAlign: 'center', fontSize: 10.5, color: 'rgba(255,255,255,0.20)', fontWeight: 700 }}>
-                  {isFiltering
-                    ? `${visibleAnimes.length} résultat${visibleAnimes.length !== 1 ? 's' : ''}`
-                    : `${sortedAnimes.length} animés dans la bibliothèque`}
                 </div>
               </div>
 
