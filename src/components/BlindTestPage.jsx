@@ -135,75 +135,74 @@ function VolumeWidget({ volume, onChange, track, phase, videoRef }) {
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       style={{
-        position: 'fixed', bottom: 18, left: '50%',
+        position: 'fixed', bottom: 22, left: '50%',
         transform: 'translateX(-50%)',
         zIndex: 800,
         display: 'flex', flexDirection: 'column', alignItems: 'stretch',
-        gap: 10,
-        background: 'rgba(5,6,9,0.78)',
-        border: `1px solid ${hover ? 'rgba(212,160,23,0.28)' : 'rgba(255,255,255,0.06)'}`,
-        borderRadius: hover ? 18 : 99,
-        padding: hover ? '14px 20px' : '7px 14px',
+        gap: hover ? 10 : 0,
+        background: hover ? 'rgba(5,6,9,0.88)' : 'rgba(5,6,9,0.72)',
+        border: `1px solid ${hover ? 'rgba(212,160,23,0.30)' : 'rgba(212,160,23,0.14)'}`,
+        borderRadius: hover ? 20 : 99,
+        padding: hover ? '14px 20px' : '9px 20px',
         backdropFilter: 'blur(28px)',
         WebkitBackdropFilter: 'blur(28px)',
-        boxShadow: hover ? '0 8px 40px rgba(0,0,0,0.55), 0 0 0 1px rgba(212,160,23,0.08)' : 'none',
-        transition: 'opacity 0.35s ease, border-color 0.3s ease, border-radius 0.3s ease, padding 0.3s ease, box-shadow 0.3s ease',
-        opacity: hover ? 0.98 : 0.32,
+        boxShadow: hover
+          ? '0 10px 44px rgba(0,0,0,0.60), 0 0 0 1px rgba(212,160,23,0.10)'
+          : '0 4px 18px rgba(0,0,0,0.40)',
+        transition: 'opacity 0.3s ease, border-color 0.3s ease, border-radius 0.3s ease, padding 0.3s ease, box-shadow 0.3s ease, background 0.3s ease',
+        opacity: hover ? 0.99 : 0.72,
         cursor: 'default', userSelect: 'none',
-        minWidth: hover ? 320 : 0,
+        minWidth: hover ? 340 : 180,
       }}
     >
-      {/* Row 1: icon · titre · volume */}
+      {/* Row 1: icon · label · volume */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <button
           onClick={() => onChange(muted ? 0.7 : 0)}
           style={{
             background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-            color: muted ? 'rgba(255,255,255,0.32)' : GOLD,
-            fontSize: hover ? 16 : 14, lineHeight: 1,
-            transition: 'color 0.2s, font-size 0.2s',
-            flexShrink: 0,
+            color: muted ? 'rgba(255,255,255,0.35)' : GOLD,
+            fontSize: 16, lineHeight: 1,
+            transition: 'color 0.2s', flexShrink: 0,
           }}
         >{muted ? '♪' : '♫'}</button>
 
-        {hover && (
-          <>
-            <span style={{
-              flex: 1, fontSize: 11, fontWeight: 700,
-              color: phase === 'reveal' && track ? 'rgba(255,255,255,0.90)' : 'rgba(255,255,255,0.26)',
-              letterSpacing: phase === 'reveal' ? '0.01em' : '0.12em',
-              textTransform: phase === 'reveal' ? 'none' : 'uppercase',
-              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-            }}>
-              {phase === 'reveal' && track
-                ? `${track.title}${track.artist ? ` — ${track.artist}` : ''}`
-                : 'EN ÉCOUTE'}
-            </span>
+        <span style={{
+          flex: 1, fontSize: hover && phase === 'reveal' && track ? 12 : 10,
+          fontWeight: 700,
+          color: hover && phase === 'reveal' && track ? 'rgba(255,255,255,0.88)' : 'rgba(255,255,255,0.38)',
+          letterSpacing: hover && phase === 'reveal' && track ? '0.01em' : '0.14em',
+          textTransform: hover && phase === 'reveal' && track ? 'none' : 'uppercase',
+          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          transition: 'all 0.25s ease',
+        }}>
+          {hover && phase === 'reveal' && track
+            ? `${track.title}${track.artist ? ` — ${track.artist}` : ''}`
+            : 'Blind Test'}
+        </span>
 
-            {/* Volume */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-              <span style={{ fontSize: 10, color: muted ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.45)' }}>
-                {muted || volume === 0 ? '🔇' : volume < 0.5 ? '🔉' : '🔊'}
-              </span>
-              <input
-                type="range" min={0} max={1} step={0.02} value={muted ? 0 : volume}
-                onChange={e => onChange(Number(e.target.value))}
-                style={{
-                  width: 56, cursor: 'pointer', height: 3,
-                  appearance: 'none', WebkitAppearance: 'none',
-                  background: `linear-gradient(to right,${GOLD} ${volPct}%,rgba(255,255,255,0.13) ${volPct}%)`,
-                  borderRadius: 3, outline: 'none', border: 'none',
-                }}
-              />
-            </div>
-          </>
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+          <span style={{ fontSize: 11, color: muted ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.42)' }}>
+            {muted || volume === 0 ? '🔇' : volume < 0.5 ? '🔉' : '🔊'}
+          </span>
+          <input
+            type="range" min={0} max={1} step={0.02} value={muted ? 0 : volume}
+            onChange={e => onChange(Number(e.target.value))}
+            style={{
+              width: hover ? 62 : 44, cursor: 'pointer', height: 3,
+              appearance: 'none', WebkitAppearance: 'none',
+              background: `linear-gradient(to right,${GOLD} ${volPct}%,rgba(255,255,255,0.13) ${volPct}%)`,
+              borderRadius: 3, outline: 'none', border: 'none',
+              transition: 'width 0.3s ease',
+            }}
+          />
+        </div>
       </div>
 
-      {/* Row 2: seek bar (hover + isActive only) */}
+      {/* Row 2: seek bar (hover + isActive) */}
       {hover && isActive && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.38)', fontVariantNumeric: 'tabular-nums', minWidth: 28 }}>
+          <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.40)', fontVariantNumeric: 'tabular-nums', minWidth: 30 }}>
             {formatTime(currentTime)}
           </span>
           <input
@@ -215,13 +214,13 @@ function VolumeWidget({ volume, onChange, track, phase, videoRef }) {
               setCurrentTime(t)
             }}
             style={{
-              flex: 1, cursor: 'pointer', height: 4,
+              flex: 1, cursor: 'pointer', height: 5,
               appearance: 'none', WebkitAppearance: 'none',
               background: `linear-gradient(to right,${GOLD} ${seekPct}%,rgba(255,255,255,0.13) ${seekPct}%)`,
               borderRadius: 4, outline: 'none', border: 'none',
             }}
           />
-          <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.38)', fontVariantNumeric: 'tabular-nums', minWidth: 28, textAlign: 'right' }}>
+          <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.40)', fontVariantNumeric: 'tabular-nums', minWidth: 30, textAlign: 'right' }}>
             {formatTime(duration)}
           </span>
         </div>
