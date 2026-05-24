@@ -357,10 +357,10 @@ export default function VioletEvergardenPage({ onClose }) {
           <div style={{ flex:1,display:'flex',flexDirection:'column',overflow:'hidden' }}>
             <VideoPlayer
               videos={VIDEOS}
-              initialIndex={playerIdx}
+              startIdx={playerIdx}
               onClose={() => setPlayerIdx(null)}
-              onVideoChange={idx => markWatched(idx)}
-              embedded
+              color="#8b7cff"
+              storageKey={NS}
             />
           </div>
         ) : (
