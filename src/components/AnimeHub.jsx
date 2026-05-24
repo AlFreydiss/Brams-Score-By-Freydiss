@@ -22,7 +22,7 @@ const ANIMES = [
     subtitle: 'VF & VOSTFR · 13 épisodes',
     emoji: '💜',
     color: '#8b7cff',
-    coverImage: 'https://www.manga-news.com/public/images/dvd/violet-evergarden-anime-key.webp',
+    coverImage: 'https://wallpapercrafter.com/th800/433666-Anime-Violet-Evergarden-Phone-Wallpaper.png',
     coverPosition: 'center center',
     genres: ['Drame', 'Émotion', 'Josei'],
     description: "Violet, ancienne soldate, devient Auto Memory Doll pour comprendre les sentiments humains et le sens des mots qu'elle a reçus.",

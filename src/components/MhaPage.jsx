@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
+import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react'
 import VideoPlayer from './VideoPlayer.jsx'
 import VIDEOS_RAW from '../data/mha-videos.json'
 
@@ -42,6 +42,8 @@ const CSS = `
   @keyframes mhFadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
 
   .mh-ep-card {
+    content-visibility: auto;
+    contain-intrinsic-size: 0 260px;
     transition: transform .22s ease, box-shadow .22s ease, border-color .18s ease;
     cursor: pointer;
   }
@@ -88,7 +90,7 @@ function ProgressRing({ pct, size = 72, stroke = 5 }) {
   )
 }
 
-function EpCard({ video, index, watched, onPlay }) {
+const EpCard = memo(function EpCard({ video, index, watched, onPlay }) {
   const [imgErr, setImgErr] = useState(false)
   return (
     <div
@@ -136,7 +138,7 @@ function EpCard({ video, index, watched, onPlay }) {
       </div>
     </div>
   )
-}
+})
 
 function InfoPanel({ watchedCount, total, seasonKey, onResume, resumeEp }) {
   const pct = total > 0 ? Math.round((watchedCount / total) * 100) : 0
@@ -307,6 +309,8 @@ export default function MhaPage({ onClose }) {
     markWatched(globalIdx)
   }, [markWatched])
 
+  const playHandlers = useMemo(() => VIDEOS.map((_, i) => () => openPlayer(i)), [openPlayer])
+
   const seasonInfo = SEASONS.find(s => s.key === activeSeason)
 
   return (
@@ -442,7 +446,7 @@ export default function MhaPage({ onClose }) {
                       video={v}
                       index={i}
                       watched={!!progress[v.episode]?.completed}
-                      onPlay={() => openPlayer(VIDEOS.indexOf(v))}
+                      onPlay={playHandlers[VIDEOS.indexOf(v)]}
                     />
                   ))}
                 </div>

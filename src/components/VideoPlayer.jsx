@@ -627,6 +627,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
               ref={videoRef}
               key={video.src}
               preload="metadata"
+              poster={video.thumbnail || undefined}
               style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
               onPlay={onPlay}
               onPause={onPause}
@@ -1028,7 +1029,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
 
       {/* ── Bande épisodes ── */}
       {videos.length > 1 && (() => {
-        const hasThumbs = videos.some(v => v.thumbnail)
+        const hasThumbs = true
         return (
           <div style={{ flexShrink: 0, display: 'flex', gap: 6, padding: hasThumbs ? '8px 14px' : '7px 14px', background: 'rgba(8,9,11,0.84)', backdropFilter: 'blur(18px)', borderTop: '1px solid rgba(255,255,255,0.05)', overflowX: 'auto', scrollbarWidth: 'thin', alignItems: 'flex-start' }}>
             {videos.map((v, i) => (

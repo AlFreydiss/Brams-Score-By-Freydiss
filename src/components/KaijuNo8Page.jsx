@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
+import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react'
 import VideoPlayer from './VideoPlayer.jsx'
 import VIDEOS_RAW from '../data/kaiju-videos.json'
 
@@ -33,6 +33,8 @@ const CSS = `
   @keyframes k8FadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:none} }
 
   .k8-ep-card {
+    content-visibility: auto;
+    contain-intrinsic-size: 0 260px;
     transition: transform .22s ease, box-shadow .22s ease, border-color .18s ease;
     cursor: pointer;
   }
@@ -76,7 +78,7 @@ function ProgressRing({ pct, size = 72, stroke = 5 }) {
   )
 }
 
-function EpCard({ video, index, watched, onPlay }) {
+const EpCard = memo(function EpCard({ video, index, watched, onPlay }) {
   const [imgErr, setImgErr] = useState(false)
   const hasVF = video.audio?.some(a => a.label === 'VF' && !a.src === false || a.label === 'VF')
   return (
@@ -125,7 +127,7 @@ function EpCard({ video, index, watched, onPlay }) {
       </div>
     </div>
   )
-}
+})
 
 function InfoPanel({ watchedCount, total, lastWatchedIdx, onResume }) {
   const pct = total > 0 ? Math.round((watchedCount / total) * 100) : 0
@@ -282,6 +284,8 @@ export default function KaijuNo8Page({ onClose }) {
     markWatched(idx)
   }, [markWatched])
 
+  const playHandlers = useMemo(() => VIDEOS.map((_, i) => () => openPlayer(i)), [openPlayer])
+
   return (
     <>
       <style>{CSS}</style>
@@ -388,7 +392,7 @@ export default function KaijuNo8Page({ onClose }) {
                       video={v}
                       index={i}
                       watched={!!progress[v.episode]?.completed}
-                      onPlay={() => openPlayer(i)}
+                      onPlay={playHandlers[i]}
                     />
                   ))}
                 </div>

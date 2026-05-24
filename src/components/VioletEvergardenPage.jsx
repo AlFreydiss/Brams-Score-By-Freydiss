@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
+import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react'
 import VideoPlayer from './VideoPlayer.jsx'
 import VIDEOS_RAW from '../data/violet-evergarden-videos.json'
 
@@ -18,7 +18,7 @@ const AWARDS = [
   { icon: '💜', label: 'Chef-d\'œuvre émotionnel' },
 ]
 
-const COVER = 'https://www.manga-news.com/public/images/dvd/violet-evergarden-anime-key.webp'
+const COVER = 'https://wallpapercrafter.com/th800/433666-Anime-Violet-Evergarden-Phone-Wallpaper.png'
 
 // ─── localStorage helpers
 function loadProgress() {
@@ -36,6 +36,8 @@ const CSS = `
   @keyframes veSpin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
 
   .ve-ep-card {
+    content-visibility: auto;
+    contain-intrinsic-size: 0 260px;
     transition: transform .22s ease, box-shadow .22s ease, border-color .18s ease;
     cursor: pointer;
   }
@@ -88,7 +90,7 @@ function ProgressRing({ pct, size = 72, stroke = 5, color = COLOR }) {
 }
 
 // ─── Episode card
-function EpCard({ video, index, watched, onPlay }) {
+const EpCard = memo(function EpCard({ video, index, watched, onPlay }) {
   const [imgErr, setImgErr] = useState(false)
   return (
     <div
@@ -139,7 +141,7 @@ function EpCard({ video, index, watched, onPlay }) {
       </div>
     </div>
   )
-}
+})
 
 // ─── Left info panel
 function InfoPanel({ watchedCount, total, lastWatchedIdx, onResume }) {
@@ -160,7 +162,7 @@ function InfoPanel({ watchedCount, total, lastWatchedIdx, onResume }) {
       <div style={{ position:'relative', height:260, overflow:'hidden', flexShrink:0 }}>
         <img
           src={COVER} alt="Violet Evergarden"
-          style={{ width:'100%',height:'100%',objectFit:'cover',objectPosition:'center top',opacity:.75,filter:'saturate(1.2) brightness(.85)' }}
+          style={{ width:'100%',height:'100%',objectFit:'cover',objectPosition:'center 62%',opacity:.75,filter:'saturate(1.2) brightness(.85)' }}
         />
         {/* gradient */}
         <div style={{ position:'absolute',inset:0,background:'linear-gradient(180deg,rgba(0,0,0,.12) 0%,rgba(20,18,32,.98) 100%)' }} />
@@ -309,6 +311,8 @@ export default function VioletEvergardenPage({ onClose }) {
     markWatched(idx)
   }, [markWatched])
 
+  const playHandlers = useMemo(() => VIDEOS.map((_, i) => () => openPlayer(i)), [openPlayer])
+
   return (
     <>
       <style>{CSS}</style>
@@ -422,7 +426,7 @@ export default function VioletEvergardenPage({ onClose }) {
                       video={v}
                       index={i}
                       watched={!!progress[v.episode]?.completed}
-                      onPlay={() => openPlayer(i)}
+                      onPlay={playHandlers[i]}
                     />
                   ))}
                 </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
+import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react'
 import VideoPlayer from './VideoPlayer.jsx'
 import VIDEOS_RAW from '../data/vivy-videos.json'
 
@@ -33,6 +33,8 @@ const CSS = `
   @keyframes vyFadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:none} }
 
   .vy-ep-card {
+    content-visibility: auto;
+    contain-intrinsic-size: 0 260px;
     transition: transform .22s ease, box-shadow .22s ease, border-color .18s ease;
     cursor: pointer;
   }
@@ -76,7 +78,7 @@ function ProgressRing({ pct, size = 72, stroke = 5 }) {
   )
 }
 
-function EpCard({ video, index, watched, onPlay }) {
+const EpCard = memo(function EpCard({ video, index, watched, onPlay }) {
   const [imgErr, setImgErr] = useState(false)
   return (
     <div
@@ -121,7 +123,7 @@ function EpCard({ video, index, watched, onPlay }) {
       </div>
     </div>
   )
-}
+})
 
 function InfoPanel({ watchedCount, total, lastWatchedIdx, onResume }) {
   const pct = total > 0 ? Math.round((watchedCount / total) * 100) : 0
@@ -278,6 +280,8 @@ export default function VivyPage({ onClose }) {
     markWatched(idx)
   }, [markWatched])
 
+  const playHandlers = useMemo(() => VIDEOS.map((_, i) => () => openPlayer(i)), [openPlayer])
+
   return (
     <>
       <style>{CSS}</style>
@@ -384,7 +388,7 @@ export default function VivyPage({ onClose }) {
                       video={v}
                       index={i}
                       watched={!!progress[v.episode]?.completed}
-                      onPlay={() => openPlayer(i)}
+                      onPlay={playHandlers[i]}
                     />
                   ))}
                 </div>
