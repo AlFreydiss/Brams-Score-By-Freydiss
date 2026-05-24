@@ -103,39 +103,79 @@ function BTScanLine() {
   )
 }
 
-function VolumeWidget({ volume, onChange }) {
+function VolumeWidget({ volume, onChange, track, phase }) {
   const [hover, setHover] = useState(false)
-  const icon = volume === 0 ? '🔇' : volume < 0.4 ? '🔈' : volume < 0.75 ? '🔉' : '🔊'
+  const muted = volume === 0
+  const label = phase === 'reveal' && track ? track.title : phase === 'playing' ? 'En écoute...' : null
+
   return (
     <div
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
-      style={{ position: 'fixed', bottom: 28, right: 28, zIndex: 20, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}
+      style={{
+        position: 'fixed', bottom: 18, left: '50%',
+        transform: 'translateX(-50%)',
+        zIndex: 800,
+        display: 'flex', alignItems: 'center', gap: 0,
+        background: 'rgba(6,7,10,0.60)',
+        border: `1px solid ${hover ? 'rgba(212,160,23,0.18)' : 'rgba(255,255,255,0.05)'}`,
+        borderRadius: 99,
+        padding: '5px 9px',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        transition: 'opacity 0.35s ease, border-color 0.3s ease',
+        opacity: hover ? 0.96 : 0.28,
+        cursor: 'default',
+        userSelect: 'none',
+        whiteSpace: 'nowrap',
+      }}
     >
-      <AnimatePresence>
-        {hover && (
-          <motion.div
-            initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}
-            transition={{ duration: 0.15 }}
-          >
-            <input type="range" className="bt-vol" min={0} max={1} step={0.02} value={volume}
-              onChange={e => onChange(Number(e.target.value))} />
-          </motion.div>
-        )}
-      </AnimatePresence>
-      <motion.div
-        whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.94 }}
+      <button
+        onClick={() => onChange(muted ? 0.7 : 0)}
+        title={muted ? 'Activer le son' : 'Couper le son'}
         style={{
-          width: hover ? 44 : 36, height: hover ? 44 : 36,
-          background: 'rgba(7,9,14,0.90)', border: `1px solid rgba(255,255,255,${hover ? '0.22' : '0.10'})`,
-          borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: hover ? 20 : 15, cursor: 'pointer',
-          transition: 'all .18s ease',
-          boxShadow: hover ? `0 0 18px rgba(212,160,23,0.22)` : 'none',
+          background: 'none', border: 'none',
+          color: muted ? 'rgba(255,255,255,0.35)' : GOLD,
+          cursor: 'pointer', fontSize: 13,
+          padding: '0 6px', lineHeight: 1,
+          transition: 'color 0.2s',
+          display: 'flex', alignItems: 'center',
         }}
       >
-        {icon}
-      </motion.div>
+        {muted ? '♪' : '♫'}
+      </button>
+
+      <div style={{
+        overflow: 'hidden',
+        maxWidth: hover ? 200 : 0,
+        transition: 'max-width 0.3s ease',
+        display: 'flex', alignItems: 'center', gap: 8,
+      }}>
+        {label && (
+          <span style={{
+            fontSize: 9, color: 'rgba(255,255,255,0.28)',
+            letterSpacing: '0.10em', fontWeight: 600,
+            textTransform: 'uppercase', maxWidth: 120,
+            overflow: 'hidden', textOverflow: 'ellipsis',
+            paddingRight: 2,
+          }}>
+            {label}
+          </span>
+        )}
+        <input
+          type="range" min={0} max={1} step={0.02}
+          value={volume}
+          onChange={e => onChange(Number(e.target.value))}
+          style={{
+            width: 62, cursor: 'pointer',
+            appearance: 'none', WebkitAppearance: 'none',
+            height: 3,
+            background: `linear-gradient(to right, ${GOLD} ${volume * 100}%, rgba(255,255,255,0.14) ${volume * 100}%)`,
+            borderRadius: 3, outline: 'none', border: 'none',
+            accentColor: GOLD,
+          }}
+        />
+      </div>
     </div>
   )
 }
@@ -689,7 +729,7 @@ export default function BlindTestPage() {
 
       <BTStars />
       <BTScanLine />
-      <VolumeWidget volume={volume} onChange={v => { setVolume(v); if (videoRef.current) videoRef.current.volume = v }} />
+      <VolumeWidget volume={volume} onChange={v => { setVolume(v); if (videoRef.current) videoRef.current.volume = v }} track={activeTrack} phase={phase} />
 
       {/* Main content */}
       <div style={{ position: 'relative', zIndex: 5, maxWidth: 680, margin: '0 auto', padding: '64px 18px 120px' }}>

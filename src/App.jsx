@@ -152,7 +152,7 @@ function AMVBackground() {
             backdropFilter: 'blur(20px)',
             WebkitBackdropFilter: 'blur(20px)',
             transition: 'opacity 0.4s ease, border-color 0.35s ease',
-            opacity: hovered ? 0.94 : 0.15,
+            opacity: hovered ? 0.94 : 0.30,
             cursor: 'default',
             userSelect: 'none',
             whiteSpace: 'nowrap',
