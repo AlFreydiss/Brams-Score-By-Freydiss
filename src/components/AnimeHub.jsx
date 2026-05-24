@@ -210,6 +210,19 @@ const ANIMES = [
     stats: [{ label: 'Épisodes', value: '12' }, { label: 'Saison', value: '1' }, { label: 'Audio', value: 'VF + VO' }],
     action: '▶ Voir les épisodes', badge: 'MULTI',
   },
+  {
+    id: 'vivy',
+    title: "Vivy: Fluorite Eye's Song",
+    subtitle: 'VOSTFR · 13 épisodes',
+    emoji: '🎵',
+    color: '#00d4ff',
+    coverImage: 'https://cdn.myanimelist.net/images/anime/1081/110724.jpg',
+    coverPosition: 'center top',
+    genres: ['Science-fiction', 'Action', 'IA'],
+    description: "Vivy, une androïde chanteuse, est chargée d'une mission de 100 ans : empêcher une guerre apocalyptique entre humains et machines en altérant l'histoire.",
+    stats: [{ label: 'Épisodes', value: '13' }, { label: 'Studio', value: 'WIT' }, { label: 'Audio', value: 'VOSTFR' }],
+    action: '▶ Voir les épisodes', badge: 'VOSTFR',
+  },
 ]
 
 const SEARCH_ALIASES = {
@@ -228,6 +241,7 @@ const SEARCH_ALIASES = {
   mha:                 ['mha', 'my hero academia', 'boku no hero', 'deku', 'izuku'],
   fireforce:           ['fire force', 'enen no shouboutai', 'shinra'],
   bluelock:            ['blue lock', 'football', 'isagi', 'ego'],
+  vivy:                ['vivy', 'fluorite', 'eye song', 'ia', 'androide', 'wit studio', 'tappei', 'rezero'],
 }
 
 // ─── Utils ────────────────────────────────────────────────────────────────────
@@ -769,7 +783,7 @@ export default function AnimeHub({
   onClose,
   onOpenOnepiece, onOpenTpn, onOpenDrstone, onOpenJjk, onOpenKingdom,
   onOpenAot, onOpenKny, onOpenNnt, onOpenSl, onOpenDbs, onOpenViolet,
-  onOpenBc, onOpenMha, onOpenFireforce, onOpenBluelock, onOpenKaiju8,
+  onOpenBc, onOpenMha, onOpenFireforce, onOpenBluelock, onOpenKaiju8, onOpenVivy,
 }) {
   const [query,       setQuery]       = useState('')
   const [activeGenre, setActiveGenre] = useState('all')
@@ -786,7 +800,7 @@ export default function AnimeHub({
     kny: onOpenKny, nnt: onOpenNnt, sl: onOpenSl, dbs: onOpenDbs,
     'violet-evergarden': onOpenViolet,
     bc: onOpenBc, mha: onOpenMha, fireforce: onOpenFireforce,
-    bluelock: onOpenBluelock, kaiju8: onOpenKaiju8,
+    bluelock: onOpenBluelock, kaiju8: onOpenKaiju8, vivy: onOpenVivy,
   }
 
   const sortedAnimes = useMemo(() => {

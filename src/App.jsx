@@ -44,6 +44,7 @@ const FireForcePage   = lazy(() => import('./components/FireForcePage.jsx'))
 const BlueLockPage           = lazy(() => import('./components/BlueLockPage.jsx'))
 const VioletEvergardenPage   = lazy(() => import('./components/VioletEvergardenPage.jsx'))
 const KaijuNo8Page           = lazy(() => import('./components/KaijuNo8Page.jsx'))
+const VivyPage               = lazy(() => import('./components/VivyPage.jsx'))
 const FamilyTree3D    = lazy(() => import('./components/FamilyTree3D.jsx'))
 const BlobUploadPage  = lazy(() => import('./components/BlobUploadPage.jsx'))
 const WikiTheoryHub   = lazy(() => import('./components/WikiTheoryHub.jsx'))
@@ -267,6 +268,7 @@ export default function App() {
   const [bluelockOpen,     setBluelockOpen]      = useState(false)
   const [violetOpen,       setVioletOpen]        = useState(false)
   const [kaiju8Open,       setKaiju8Open]        = useState(false)
+  const [vivyOpen,         setVivyOpen]          = useState(false)
   const [treeOpen,         setTreeOpen]          = useState(false)
   const [uploadOpen,       setUploadOpen]        = useState(false)
 
@@ -338,7 +340,7 @@ export default function App() {
     }
   }, [])
 
-  const mediaOverlayOpen = scansOpen || animeHubOpen || onepieceOpen || tpnOpen || drstoneOpen || jjkOpen || kingdomOpen || aotOpen || knyOpen || nntOpen || slOpen || dbsOpen || bcOpen || mhaOpen || fireforcOpen || bluelockOpen || violetOpen || kaiju8Open
+  const mediaOverlayOpen = scansOpen || animeHubOpen || onepieceOpen || tpnOpen || drstoneOpen || jjkOpen || kingdomOpen || aotOpen || knyOpen || nntOpen || slOpen || dbsOpen || bcOpen || mhaOpen || fireforcOpen || bluelockOpen || violetOpen || kaiju8Open || vivyOpen
   const immersiveOverlayOpen = mediaOverlayOpen || encyclopedieOpen || treeOpen || uploadOpen
 
   const mainContent = (
@@ -459,6 +461,7 @@ export default function App() {
             onOpenBluelock={() => { setAnimeHubOpen(false); setBluelockOpen(true) }}
             onOpenViolet={() => { setAnimeHubOpen(false); setVioletOpen(true) }}
             onOpenKaiju8={() => { setAnimeHubOpen(false); setKaiju8Open(true) }}
+            onOpenVivy={() => { setAnimeHubOpen(false); setVivyOpen(true) }}
           />
         ) : (
           <AuthGuard onClose={() => setAnimeHubOpen(false)} feature="les animés & scans" />
@@ -480,6 +483,7 @@ export default function App() {
       {bluelockOpen  && <BlueLockPage  onClose={() => setBluelockOpen(false)} />}
       {violetOpen    && <VioletEvergardenPage onClose={() => setVioletOpen(false)} />}
       {kaiju8Open    && <KaijuNo8Page  onClose={() => setKaiju8Open(false)} />}
+      {vivyOpen      && <VivyPage      onClose={() => setVivyOpen(false)} />}
       {treeOpen      && <FamilyTree3D  onClose={() => setTreeOpen(false)} />}
       {scansOpen && (
         isAuthenticated
