@@ -103,10 +103,32 @@ function BTScanLine() {
   )
 }
 
-function VolumeWidget({ volume, onChange, track, phase }) {
-  const [hover, setHover] = useState(false)
-  const muted = volume === 0
-  const label = phase === 'reveal' && track ? track.title : phase === 'playing' ? 'En écoute...' : null
+function formatTime(s) {
+  const m = Math.floor(s / 60)
+  return `${m}:${Math.floor(s % 60).toString().padStart(2, '0')}`
+}
+
+function VolumeWidget({ volume, onChange, track, phase, videoRef }) {
+  const [hover,       setHover]       = useState(false)
+  const [currentTime, setCurrentTime] = useState(0)
+  const [duration,    setDuration]    = useState(90)
+
+  const muted    = volume === 0
+  const isActive = phase === 'playing' || phase === 'countdown' || phase === 'reveal'
+
+  useEffect(() => {
+    if (!isActive) return
+    const id = setInterval(() => {
+      const v = videoRef?.current
+      if (!v || isNaN(v.duration)) return
+      setCurrentTime(v.currentTime)
+      setDuration(Math.min(v.duration, 90))
+    }, 400)
+    return () => clearInterval(id)
+  }, [isActive, videoRef])
+
+  const seekPct = duration > 0 ? (currentTime / duration) * 100 : 0
+  const volPct  = muted ? 0 : volume * 100
 
   return (
     <div
@@ -116,66 +138,94 @@ function VolumeWidget({ volume, onChange, track, phase }) {
         position: 'fixed', bottom: 18, left: '50%',
         transform: 'translateX(-50%)',
         zIndex: 800,
-        display: 'flex', alignItems: 'center', gap: 0,
-        background: 'rgba(6,7,10,0.60)',
-        border: `1px solid ${hover ? 'rgba(212,160,23,0.18)' : 'rgba(255,255,255,0.05)'}`,
-        borderRadius: 99,
-        padding: '5px 9px',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        transition: 'opacity 0.35s ease, border-color 0.3s ease',
-        opacity: hover ? 0.96 : 0.28,
-        cursor: 'default',
-        userSelect: 'none',
-        whiteSpace: 'nowrap',
+        display: 'flex', flexDirection: 'column', alignItems: 'stretch',
+        gap: 10,
+        background: 'rgba(5,6,9,0.78)',
+        border: `1px solid ${hover ? 'rgba(212,160,23,0.28)' : 'rgba(255,255,255,0.06)'}`,
+        borderRadius: hover ? 18 : 99,
+        padding: hover ? '14px 20px' : '7px 14px',
+        backdropFilter: 'blur(28px)',
+        WebkitBackdropFilter: 'blur(28px)',
+        boxShadow: hover ? '0 8px 40px rgba(0,0,0,0.55), 0 0 0 1px rgba(212,160,23,0.08)' : 'none',
+        transition: 'opacity 0.35s ease, border-color 0.3s ease, border-radius 0.3s ease, padding 0.3s ease, box-shadow 0.3s ease',
+        opacity: hover ? 0.98 : 0.32,
+        cursor: 'default', userSelect: 'none',
+        minWidth: hover ? 320 : 0,
       }}
     >
-      <button
-        onClick={() => onChange(muted ? 0.7 : 0)}
-        title={muted ? 'Activer le son' : 'Couper le son'}
-        style={{
-          background: 'none', border: 'none',
-          color: muted ? 'rgba(255,255,255,0.35)' : GOLD,
-          cursor: 'pointer', fontSize: 13,
-          padding: '0 6px', lineHeight: 1,
-          transition: 'color 0.2s',
-          display: 'flex', alignItems: 'center',
-        }}
-      >
-        {muted ? '♪' : '♫'}
-      </button>
-
-      <div style={{
-        overflow: 'hidden',
-        maxWidth: hover ? 200 : 0,
-        transition: 'max-width 0.3s ease',
-        display: 'flex', alignItems: 'center', gap: 8,
-      }}>
-        {label && (
-          <span style={{
-            fontSize: 9, color: 'rgba(255,255,255,0.28)',
-            letterSpacing: '0.10em', fontWeight: 600,
-            textTransform: 'uppercase', maxWidth: 120,
-            overflow: 'hidden', textOverflow: 'ellipsis',
-            paddingRight: 2,
-          }}>
-            {label}
-          </span>
-        )}
-        <input
-          type="range" min={0} max={1} step={0.02}
-          value={volume}
-          onChange={e => onChange(Number(e.target.value))}
+      {/* Row 1: icon · titre · volume */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <button
+          onClick={() => onChange(muted ? 0.7 : 0)}
           style={{
-            width: 62, cursor: 'pointer',
-            appearance: 'none', WebkitAppearance: 'none',
-            height: 3,
-            background: `linear-gradient(to right, ${GOLD} ${volume * 100}%, rgba(255,255,255,0.14) ${volume * 100}%)`,
-            borderRadius: 3, outline: 'none', border: 'none',
-            accentColor: GOLD,
+            background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+            color: muted ? 'rgba(255,255,255,0.32)' : GOLD,
+            fontSize: hover ? 16 : 14, lineHeight: 1,
+            transition: 'color 0.2s, font-size 0.2s',
+            flexShrink: 0,
           }}
-        />
+        >{muted ? '♪' : '♫'}</button>
+
+        {hover && (
+          <>
+            <span style={{
+              flex: 1, fontSize: 11, fontWeight: 700,
+              color: phase === 'reveal' && track ? 'rgba(255,255,255,0.90)' : 'rgba(255,255,255,0.26)',
+              letterSpacing: phase === 'reveal' ? '0.01em' : '0.12em',
+              textTransform: phase === 'reveal' ? 'none' : 'uppercase',
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            }}>
+              {phase === 'reveal' && track
+                ? `${track.title}${track.artist ? ` — ${track.artist}` : ''}`
+                : 'EN ÉCOUTE'}
+            </span>
+
+            {/* Volume */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+              <span style={{ fontSize: 10, color: muted ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.45)' }}>
+                {muted || volume === 0 ? '🔇' : volume < 0.5 ? '🔉' : '🔊'}
+              </span>
+              <input
+                type="range" min={0} max={1} step={0.02} value={muted ? 0 : volume}
+                onChange={e => onChange(Number(e.target.value))}
+                style={{
+                  width: 56, cursor: 'pointer', height: 3,
+                  appearance: 'none', WebkitAppearance: 'none',
+                  background: `linear-gradient(to right,${GOLD} ${volPct}%,rgba(255,255,255,0.13) ${volPct}%)`,
+                  borderRadius: 3, outline: 'none', border: 'none',
+                }}
+              />
+            </div>
+          </>
+        )}
       </div>
+
+      {/* Row 2: seek bar (hover + isActive only) */}
+      {hover && isActive && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.38)', fontVariantNumeric: 'tabular-nums', minWidth: 28 }}>
+            {formatTime(currentTime)}
+          </span>
+          <input
+            type="range" min={0} max={Math.max(duration, 1)} step={0.5}
+            value={currentTime}
+            onChange={e => {
+              const t = Number(e.target.value)
+              if (videoRef?.current) videoRef.current.currentTime = t
+              setCurrentTime(t)
+            }}
+            style={{
+              flex: 1, cursor: 'pointer', height: 4,
+              appearance: 'none', WebkitAppearance: 'none',
+              background: `linear-gradient(to right,${GOLD} ${seekPct}%,rgba(255,255,255,0.13) ${seekPct}%)`,
+              borderRadius: 4, outline: 'none', border: 'none',
+            }}
+          />
+          <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.38)', fontVariantNumeric: 'tabular-nums', minWidth: 28, textAlign: 'right' }}>
+            {formatTime(duration)}
+          </span>
+        </div>
+      )}
     </div>
   )
 }
@@ -729,7 +779,7 @@ export default function BlindTestPage() {
 
       <BTStars />
       <BTScanLine />
-      <VolumeWidget volume={volume} onChange={v => { setVolume(v); if (videoRef.current) videoRef.current.volume = v }} track={activeTrack} phase={phase} />
+      <VolumeWidget volume={volume} onChange={v => { setVolume(v); if (videoRef.current) videoRef.current.volume = v }} track={activeTrack} phase={phase} videoRef={videoRef} />
 
       {/* Main content */}
       <div style={{ position: 'relative', zIndex: 5, maxWidth: 680, margin: '0 auto', padding: '64px 18px 120px' }}>
