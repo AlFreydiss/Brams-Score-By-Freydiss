@@ -500,7 +500,7 @@ function AnimeRail({ title, subtitle, accent = 'rgba(255,255,255,0.4)', animes, 
   if (!animes.length) return null
 
   return (
-    <section style={{ marginBottom: 28 }} aria-label={title}>
+    <div style={{ marginBottom: 28 }} role="region" aria-label={title}>
       {/* section header — même padding que les cartes pour alignement parfait */}
       <div style={{
         padding: `0 ${FADE_W}px 10px`,
@@ -576,7 +576,7 @@ function AnimeRail({ title, subtitle, accent = 'rgba(255,255,255,0.4)', animes, 
           ))}
         </div>
       </div>
-    </section>
+    </div>
   )
 }
 

@@ -2,97 +2,229 @@
   {
     "episode": 1,
     "title": "Le monstre du siècle",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaiju-no-8/S01E01.mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaiju-no-8/S01E01.mp4",
     "season": "S01",
     "arc": "Kaiju No. 8",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr"
+      },
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaiju-no-8-audio-jp/Ep01.m4a"
+      }
+    ],
     "subtitles": []
   },
   {
     "episode": 2,
     "title": "Le monstre n°8",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaiju-no-8/S01E02.mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaiju-no-8/S01E02.mp4",
     "season": "S01",
     "arc": "Kaiju No. 8",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr"
+      },
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaiju-no-8-audio-jp/Ep02.m4a"
+      }
+    ],
     "subtitles": []
   },
   {
     "episode": 3,
     "title": "Le secret de Kafka Hibino",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaiju-no-8/S01E03.mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaiju-no-8/S01E03.mp4",
     "season": "S01",
     "arc": "Kaiju No. 8",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr"
+      },
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaiju-no-8-audio-jp/Ep03.m4a"
+      }
+    ],
     "subtitles": []
   },
   {
     "episode": 4,
     "title": "Ce que je protège",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaiju-no-8/S01E04.mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaiju-no-8/S01E04.mp4",
     "season": "S01",
     "arc": "Kaiju No. 8",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr"
+      },
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaiju-no-8-audio-jp/Ep04.m4a"
+      }
+    ],
     "subtitles": []
   },
   {
     "episode": 5,
     "title": "Kikoru Shinomiya",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaiju-no-8/S01E05.mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaiju-no-8/S01E05.mp4",
     "season": "S01",
     "arc": "Kaiju No. 8",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr"
+      },
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaiju-no-8-audio-jp/Ep05.m4a"
+      }
+    ],
     "subtitles": []
   },
   {
     "episode": 6,
     "title": "L'exercice de déploiement",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaiju-no-8/S01E06.mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaiju-no-8/S01E06.mp4",
     "season": "S01",
     "arc": "Kaiju No. 8",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr"
+      },
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaiju-no-8-audio-jp/Ep06.m4a"
+      }
+    ],
     "subtitles": []
   },
   {
     "episode": 7,
     "title": "L'arme de classe F",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaiju-no-8/S01E07.mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaiju-no-8/S01E07.mp4",
     "season": "S01",
     "arc": "Kaiju No. 8",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr"
+      },
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaiju-no-8-audio-jp/Ep07.m4a"
+      }
+    ],
     "subtitles": []
   },
   {
     "episode": 8,
     "title": "La bête",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaiju-no-8/S01E08.mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaiju-no-8/S01E08.mp4",
     "season": "S01",
     "arc": "Kaiju No. 8",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr"
+      },
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaiju-no-8-audio-jp/Ep08.m4a"
+      }
+    ],
     "subtitles": []
   },
   {
     "episode": 9,
     "title": "Combattez comme des démons",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaiju-no-8/S01E09.mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaiju-no-8/S01E09.mp4",
     "season": "S01",
     "arc": "Kaiju No. 8",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr"
+      },
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaiju-no-8-audio-jp/Ep09.m4a"
+      }
+    ],
     "subtitles": []
   },
   {
     "episode": 10,
     "title": "Soshiro Hoshina",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaiju-no-8/S01E10.mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaiju-no-8/S01E10.mp4",
     "season": "S01",
     "arc": "Kaiju No. 8",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr"
+      },
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaiju-no-8-audio-jp/Ep10.m4a"
+      }
+    ],
     "subtitles": []
   },
   {
     "episode": 11,
     "title": "Armement complet",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaiju-no-8/S01E11.mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaiju-no-8/S01E11.mp4",
     "season": "S01",
     "arc": "Kaiju No. 8",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr"
+      },
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaiju-no-8-audio-jp/Ep11.m4a"
+      }
+    ],
     "subtitles": []
   },
   {
     "episode": 12,
     "title": "Kai Magnificat",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaiju-no-8/S01E12.mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaiju-no-8/S01E12.mp4",
     "season": "S01",
     "arc": "Kaiju No. 8",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr"
+      },
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaiju-no-8-audio-jp/Ep12.m4a"
+      }
+    ],
     "subtitles": []
   }
 ]
