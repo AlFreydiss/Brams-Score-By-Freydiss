@@ -32,6 +32,8 @@ const {
   R2_SECRET_ACCESS_KEY,
   R2_PUBLIC_URL = 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev',
   FFMPEG_PATH = 'C:\\Users\\Feydi\\Downloads\\TRCC-Setup-EN 2.1.4\\TRCC-Setup-EN\\TRCCCAP\\ffmpeg.exe',
+  OP_START = '',
+  OP_END = '',
 } = loadEnv()
 
 if (!CF_ACCOUNT_ID || !R2_BUCKET_NAME || !R2_ACCESS_KEY_ID || !R2_SECRET_ACCESS_KEY) {
@@ -41,6 +43,13 @@ if (!CF_ACCOUNT_ID || !R2_BUCKET_NAME || !R2_ACCESS_KEY_ID || !R2_SECRET_ACCESS_
 const localDir = path.join('F:', 'Brams-Score-By-Freydiss', 'brams-website', 'public', 'anime', 'One.Piece.Arc.Egghead.E1086-1155.VOSTFR.1080p.WEBRiP.x265-KAF')
 const keyPrefix = 'anime/op-egghead-subtitles'
 const tempDir = path.join(os.tmpdir(), 'brams-onepiece-subtitles')
+const specialFiles = [
+  {
+    episode: 1163,
+    name: '[KiyoshiiSubs] One Piece - 1163 [1080p][H.265 - 10Bit].mkv',
+    path: 'F:\\Brams-Score-By-Freydiss\\brams-website\\public\\anime\\[KiyoshiiSubs] One Piece - 1163 [1080p][H.265 - 10Bit].mkv',
+  },
+]
 
 const client = new S3Client({
   region: 'auto',
@@ -97,10 +106,17 @@ if (!fs.existsSync(FFMPEG_PATH)) {
 
 fs.mkdirSync(tempDir, { recursive: true })
 
-const files = fs.readdirSync(localDir)
+const start = OP_START ? Number(OP_START) : null
+const end = OP_END ? Number(OP_END) : null
+
+const files = [
+  ...fs.readdirSync(localDir)
   .filter(name => name.toLowerCase().endsWith('.mkv'))
-  .map(name => ({ name, episode: getEpisode(name), path: path.join(localDir, name) }))
+  .map(name => ({ name, episode: getEpisode(name), path: path.join(localDir, name) })),
+  ...specialFiles,
+]
   .filter(file => file.episode)
+  .filter(file => (start === null || file.episode >= start) && (end === null || file.episode <= end))
   .sort((a, b) => a.episode - b.episode)
 
 console.log(`Files: ${files.length}`)
