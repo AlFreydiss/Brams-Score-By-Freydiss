@@ -18,7 +18,7 @@ const AWARDS = [
   { icon: '✨', label: 'Anime de l\'année 2021' },
 ]
 
-const COVER = 'https://cdn.myanimelist.net/images/anime/1081/110724.jpg'
+const COVER = 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy/key-visual.jpg'
 
 function loadProgress() {
   try { return JSON.parse(localStorage.getItem(`${NS}_vp`) || '{}') } catch { return {} }

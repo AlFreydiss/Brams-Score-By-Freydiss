@@ -216,7 +216,7 @@ const ANIMES = [
     subtitle: 'VOSTFR · 13 épisodes',
     emoji: '🎵',
     color: '#00d4ff',
-    coverImage: 'https://cdn.myanimelist.net/images/anime/1081/110724.jpg',
+    coverImage: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy/key-visual.jpg',
     coverPosition: 'center top',
     genres: ['Science-fiction', 'Action', 'IA'],
     description: "Vivy, une androïde chanteuse, est chargée d'une mission de 100 ans : empêcher une guerre apocalyptique entre humains et machines en altérant l'histoire.",
