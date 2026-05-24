@@ -75,6 +75,35 @@ function shouldSkipAmbientVideo() {
   return false
 }
 
+function BottomVideoStrip() {
+  const videoRef = useRef(null)
+  return (
+    <div style={{
+      position: 'fixed', bottom: 0, left: 0, right: 0,
+      height: 180, zIndex: 0, pointerEvents: 'none', overflow: 'hidden',
+    }}>
+      {/* Fondu haut → transparent */}
+      <div style={{
+        position: 'absolute', top: 0, left: 0, right: 0, height: '60%',
+        background: 'linear-gradient(to bottom, rgba(4,7,10,1) 0%, transparent 100%)',
+        zIndex: 1,
+      }} />
+      <video
+        ref={videoRef}
+        autoPlay muted loop playsInline preload="metadata"
+        onLoadedMetadata={e => { e.target.currentTime = 90 }}
+        style={{
+          width: '100%', height: '100%',
+          objectFit: 'cover', objectPosition: 'center 60%',
+          opacity: 0.09,
+        }}
+      >
+        <source src="/bg-video.mp4" type="video/mp4" />
+      </video>
+    </div>
+  )
+}
+
 function AMVBackground() {
   const videoRef = useRef(null)
   const [videoEnabled, setVideoEnabled] = useState(false)
@@ -315,6 +344,7 @@ export default function App() {
     <>
       <WelcomeAnimation />
       <AMVBackground />
+      <BottomVideoStrip />
       <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1, background: 'rgba(4,7,10,0.58)', pointerEvents: 'none' }} />
 
       <div style={{ position: 'relative', zIndex: 2, isolation: 'isolate' }}>
