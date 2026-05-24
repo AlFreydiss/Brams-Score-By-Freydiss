@@ -433,8 +433,9 @@ export default function BlindTestPage() {
   const isPlaying = phase === 'playing' || phase === 'countdown' || phase === 'reveal'
   const activeTrack = track || LOCAL_TRACKS[0]
 
-  const overlayAlpha = phase === 'reveal' ? 0.50 : phase === 'playing' ? 0.93 : phase === 'countdown' ? 0.93 : 0.95
-  const videoBlur    = phase === 'reveal' ? 0 : 55
+  const isViolet     = activeTrack?.id === 've-op1'
+  const overlayAlpha = phase === 'reveal' ? 0.50 : phase === 'playing' ? (isViolet ? 0.93 : 0.97) : phase === 'countdown' ? (isViolet ? 0.93 : 0.97) : 0.95
+  const videoBlur    = phase === 'reveal' ? 0 : (isViolet ? 55 : 90)
   const videoOpacity = videoSnap ? 0 : (isPlaying ? 1 : 0)
 
   const barPct   = phase === 'playing' ? Math.max(0, 100 - (elapsed / ROUND_SECS) * 100) : 0
