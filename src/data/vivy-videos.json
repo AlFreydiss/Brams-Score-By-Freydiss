@@ -12,7 +12,13 @@
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-audio-jp/Ep01.m4a"
       }
     ],
-    "subtitles": [],
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-subtitles-fr/Ep01.fr.vtt"
+      }
+    ],
     "thumbnail": ""
   },
   {
@@ -28,7 +34,13 @@
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-audio-jp/Ep02.m4a"
       }
     ],
-    "subtitles": [],
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-subtitles-fr/Ep02.fr.vtt"
+      }
+    ],
     "thumbnail": ""
   },
   {
@@ -44,7 +56,13 @@
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-audio-jp/Ep03.m4a"
       }
     ],
-    "subtitles": [],
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-subtitles-fr/Ep03.fr.vtt"
+      }
+    ],
     "thumbnail": ""
   },
   {
@@ -60,7 +78,13 @@
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-audio-jp/Ep04.m4a"
       }
     ],
-    "subtitles": [],
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-subtitles-fr/Ep04.fr.vtt"
+      }
+    ],
     "thumbnail": ""
   },
   {
@@ -76,7 +100,13 @@
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-audio-jp/Ep05.m4a"
       }
     ],
-    "subtitles": [],
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-subtitles-fr/Ep05.fr.vtt"
+      }
+    ],
     "thumbnail": ""
   },
   {
@@ -92,7 +122,13 @@
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-audio-jp/Ep06.m4a"
       }
     ],
-    "subtitles": [],
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-subtitles-fr/Ep06.fr.vtt"
+      }
+    ],
     "thumbnail": ""
   },
   {
@@ -108,7 +144,13 @@
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-audio-jp/Ep07.m4a"
       }
     ],
-    "subtitles": [],
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-subtitles-fr/Ep07.fr.vtt"
+      }
+    ],
     "thumbnail": ""
   },
   {
@@ -124,7 +166,13 @@
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-audio-jp/Ep08.m4a"
       }
     ],
-    "subtitles": [],
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-subtitles-fr/Ep08.fr.vtt"
+      }
+    ],
     "thumbnail": ""
   },
   {
@@ -140,7 +188,13 @@
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-audio-jp/Ep09.m4a"
       }
     ],
-    "subtitles": [],
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-subtitles-fr/Ep09.fr.vtt"
+      }
+    ],
     "thumbnail": ""
   },
   {
@@ -156,7 +210,13 @@
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-audio-jp/Ep10.m4a"
       }
     ],
-    "subtitles": [],
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-subtitles-fr/Ep10.fr.vtt"
+      }
+    ],
     "thumbnail": ""
   },
   {
@@ -172,7 +232,13 @@
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-audio-jp/Ep11.m4a"
       }
     ],
-    "subtitles": [],
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-subtitles-fr/Ep11.fr.vtt"
+      }
+    ],
     "thumbnail": ""
   },
   {
@@ -188,7 +254,13 @@
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-audio-jp/Ep12.m4a"
       }
     ],
-    "subtitles": [],
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-subtitles-fr/Ep12.fr.vtt"
+      }
+    ],
     "thumbnail": ""
   },
   {
@@ -204,7 +276,13 @@
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-audio-jp/Ep13.m4a"
       }
     ],
-    "subtitles": [],
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-subtitles-fr/Ep13.fr.vtt"
+      }
+    ],
     "thumbnail": ""
   }
 ]
