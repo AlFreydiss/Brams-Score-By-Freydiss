@@ -486,8 +486,10 @@ export function calcBerries({ animeOk, titleOk, timeMs, streak }) {
 }
 
 // ── Pick random track (exclude last) ─────────────────────────────────────
-export function pickTrack(excludeId = null) {
-  const pool = LOCAL_TRACKS.filter(t => t.id !== excludeId)
+export function pickTrack(excludeIds = []) {
+  const excluded = new Set(Array.isArray(excludeIds) ? excludeIds : [excludeIds])
+  let pool = LOCAL_TRACKS.filter(t => !excluded.has(t.id))
+  if (pool.length === 0) pool = LOCAL_TRACKS  // tous joués → reset
   return pool[Math.floor(Math.random() * pool.length)]
 }
 
