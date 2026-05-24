@@ -194,7 +194,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   const [selectedAudioKey, setSelectedAudioKey] = useState(null)
   const [isBuffering,   setIsBuffering]   = useState(false)
   const [videoError,    setVideoError]    = useState(null)
-  const [subStyle,      setSubStyle]      = useState({ size: 19, color: '#ffffff', bg: true })
+  const [subStyle,      setSubStyle]      = useState({ size: 19, color: '#ffffff', bgOpacity: 0.72, shadow: true })
   const [nativeAudioTracks, setNativeAudioTracks] = useState([])
 
   const video   = videos[idx]
@@ -666,14 +666,14 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                 bottom: showCtrl ? 110 : 40,
                 left: '50%', transform: 'translateX(-50%)',
                 maxWidth: '84%', textAlign: 'center',
-                padding: subStyle.bg ? '4px 14px' : '0 14px',
-                background: subStyle.bg ? 'rgba(0,0,0,0.72)' : 'transparent',
+                padding: subStyle.bgOpacity > 0 ? '4px 14px' : '0 14px',
+                background: subStyle.bgOpacity > 0 ? `rgba(0,0,0,${subStyle.bgOpacity})` : 'transparent',
                 borderRadius: 6,
                 color: subStyle.color,
                 fontSize: subStyle.size,
                 fontWeight: 700,
                 lineHeight: 1.55,
-                textShadow: '0 1px 5px rgba(0,0,0,0.95), 0 2px 14px rgba(0,0,0,0.8)',
+                textShadow: subStyle.shadow ? '0 1px 5px rgba(0,0,0,0.95), 0 2px 14px rgba(0,0,0,0.8)' : 'none',
                 whiteSpace: 'pre-line',
                 transition: 'bottom .2s ease',
                 pointerEvents: 'none',
@@ -889,33 +889,54 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                         <>
                           <div style={{ margin: '4px 14px', height: 1, background: 'rgba(255,255,255,0.08)' }} />
                           <div style={{ padding: '4px 14px 2px', color: 'rgba(255,255,255,0.35)', fontSize: 9, fontWeight: 900, letterSpacing: '.12em', textTransform: 'uppercase' }}>Apparence</div>
+                          <style>{`.ve-sub-slider{width:100%;accent-color:${color};cursor:pointer;height:3px}`}</style>
 
-                          {/* Taille */}
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 14px' }}>
-                            <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, minWidth: 36 }}>Taille</span>
-                            {[{ label: 'A', size: 15 }, { label: 'A', size: 19 }, { label: 'A', size: 25 }].map(({ label, size }) => (
-                              <button key={size} onClick={() => setSubStyle(s => ({ ...s, size }))}
-                                style={{ flex: 1, padding: '4px 0', border: `1px solid ${subStyle.size === size ? color : 'rgba(255,255,255,0.15)'}`, borderRadius: 6, background: subStyle.size === size ? `${color}22` : 'transparent', color: subStyle.size === size ? color : 'rgba(255,255,255,0.7)', fontSize: size === 15 ? 11 : size === 19 ? 14 : 18, fontWeight: 700, cursor: 'pointer', lineHeight: 1 }}
-                              >{label}</button>
-                            ))}
+                          {/* Taille — slider libre 13→38 */}
+                          <div style={{ padding: '6px 14px 4px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
+                              <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: 10, fontWeight: 700 }}>Taille</span>
+                              <span style={{ color, fontSize: 10, fontWeight: 800 }}>{subStyle.size}px</span>
+                            </div>
+                            <input type="range" min="13" max="38" value={subStyle.size} className="ve-sub-slider"
+                              onChange={e => setSubStyle(s => ({ ...s, size: Number(e.target.value) }))} />
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 2 }}>
+                              <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.22)', fontWeight: 700 }}>A</span>
+                              <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.22)', fontWeight: 700 }}>A</span>
+                            </div>
                           </div>
 
                           {/* Couleur */}
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 14px' }}>
-                            <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, minWidth: 36 }}>Couleur</span>
-                            {[{ c: '#ffffff', label: 'Blanc' }, { c: '#ffe84d', label: 'Jaune' }, { c: '#7df3ff', label: 'Cyan' }].map(({ c, label }) => (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 14px' }}>
+                            <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: 10, fontWeight: 700, minWidth: 42 }}>Couleur</span>
+                            {[{ c: '#ffffff', label: 'Blanc' }, { c: '#ffe84d', label: 'Jaune' }, { c: '#7df3ff', label: 'Cyan' }, { c: '#ff8fab', label: 'Rose' }, { c: '#86efac', label: 'Vert' }].map(({ c, label }) => (
                               <button key={c} onClick={() => setSubStyle(s => ({ ...s, color: c }))} title={label}
-                                style={{ flex: 1, height: 22, borderRadius: 5, background: c, border: `2px solid ${subStyle.color === c ? '#fff' : 'transparent'}`, cursor: 'pointer', boxShadow: subStyle.color === c ? `0 0 0 1px ${color}` : 'none' }}
+                                style={{ flex: 1, height: 20, borderRadius: 4, background: c, border: `2px solid ${subStyle.color === c ? '#fff' : 'transparent'}`, cursor: 'pointer', boxShadow: subStyle.color === c ? `0 0 0 1px ${color}` : 'none' }}
                               />
                             ))}
                           </div>
 
-                          {/* Fond */}
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 14px 8px' }}>
-                            <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, minWidth: 36 }}>Fond</span>
-                            <button onClick={() => setSubStyle(s => ({ ...s, bg: !s.bg }))}
-                              style={{ flex: 1, padding: '4px 0', border: `1px solid ${subStyle.bg ? color : 'rgba(255,255,255,0.15)'}`, borderRadius: 6, background: subStyle.bg ? `${color}22` : 'transparent', color: subStyle.bg ? color : 'rgba(255,255,255,0.5)', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}
-                            >{subStyle.bg ? 'Activé' : 'Désactivé'}</button>
+                          {/* Fond — slider opacité 0→1 */}
+                          <div style={{ padding: '6px 14px 4px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
+                              <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: 10, fontWeight: 700 }}>Fond</span>
+                              <span style={{ color, fontSize: 10, fontWeight: 800 }}>
+                                {subStyle.bgOpacity === 0 ? 'Aucun' : `${Math.round(subStyle.bgOpacity * 100)}%`}
+                              </span>
+                            </div>
+                            <input type="range" min="0" max="1" step="0.05" value={subStyle.bgOpacity} className="ve-sub-slider"
+                              onChange={e => setSubStyle(s => ({ ...s, bgOpacity: Number(e.target.value) }))} />
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 2 }}>
+                              <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.22)', fontWeight: 700 }}>Transparent</span>
+                              <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.22)', fontWeight: 700 }}>Opaque</span>
+                            </div>
+                          </div>
+
+                          {/* Ombre */}
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '5px 14px 10px' }}>
+                            <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: 10, fontWeight: 700 }}>Ombre du texte</span>
+                            <button onClick={() => setSubStyle(s => ({ ...s, shadow: !s.shadow }))}
+                              style={{ padding: '3px 10px', border: `1px solid ${subStyle.shadow ? color : 'rgba(255,255,255,0.15)'}`, borderRadius: 6, background: subStyle.shadow ? `${color}22` : 'transparent', color: subStyle.shadow ? color : 'rgba(255,255,255,0.4)', fontSize: 10, fontWeight: 800, cursor: 'pointer' }}
+                            >{subStyle.shadow ? 'ON' : 'OFF'}</button>
                           </div>
                         </>
                       )}
