@@ -212,9 +212,11 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
     : nativeAudioTracks.length > 1
       ? nativeAudioTracks.map((t, i) => ({ type: 'native', key: `native-${i}`, label: t.label, nativeIdx: i, srclang: t.language }))
       : jsonExtTracks.length > 0
-        ? [{ type: 'embedded', key: 'embedded', label: jsonDefaultLabel ?? 'Original' }, ...jsonExtTracks]
-        : jsonDefaultLabel !== null
+        ? jsonDefaultLabel !== null
           ? [{ type: 'embedded', key: 'embedded', label: jsonDefaultLabel }, ...jsonExtTracks]
+          : jsonExtTracks
+        : jsonDefaultLabel !== null
+          ? [{ type: 'embedded', key: 'embedded', label: jsonDefaultLabel }]
           : []
   const showAudioBtn = audioMenuOptions.length > 1
   const currentAudioKey = selectedAudioKey ?? audioMenuOptions[0]?.key ?? null
@@ -386,6 +388,19 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
     if (extAudioRef.current) { extAudioRef.current.pause(); extAudioRef.current.src = '' }
     if (videoRef.current) videoRef.current.muted = false
   }, [idx, video?.defaultSubtitlesOff])
+
+  // Auto-activate first ext track when there is no embedded labeled track (e.g. VF-only mode)
+  useEffect(() => {
+    const first = audioMenuOptions[0]
+    if (first?.type === 'ext') {
+      extAudioActiveRef.current = true
+      setSelectedAudioKey(first.key)
+      setExtAudioSrc(first.src)
+      setExtAudioActive(true)
+      if (videoRef.current) videoRef.current.muted = true
+      setSubsOff(first.srclang === 'fr' || first.label?.toLowerCase().includes('vf'))
+    }
+  }, [idx]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Détection pistes audio natives (MKV multi-track VF/VO) ───────────────
   useEffect(() => {
