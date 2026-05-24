@@ -12,11 +12,51 @@ import {
   COMPLETED_TOURNAMENTS,
 } from '../data/tournament-hub-data.js'
 
-const BG    = '#07090e'
+const BG   = '#0a0a0b'
 const GOLD  = '#d4a017'
-const GOLD2 = '#f0c040'
+const GOLD2 = '#ffd700'
 
-// ── Hook: live OST tournament state from localStorage ──────────────────────
+const HUB_CSS = `
+  @keyframes htTwinkle { 0%,100%{opacity:.07} 50%{opacity:.50} }
+  @keyframes htScan    { 0%{top:-2px} 100%{top:100%} }
+  @keyframes htPulse   { 0%,100%{opacity:.5} 50%{opacity:.85} }
+`
+
+// ── Ambient background ─────────────────────────────────────────────────────
+function HTStars() {
+  const stars = useMemo(() => Array.from({ length: 55 }, (_, i) => ({
+    x: (i * 39.1 + 7) % 98, y: (i * 43.7 + 13) % 96,
+    size: i % 9 === 0 ? 2.5 : i % 4 === 0 ? 1.6 : 1,
+    dur: 2.8 + (i * 0.28) % 4.5, del: (i * 0.21) % 7,
+    gold: i % 13 === 0,
+  })), [])
+  return (
+    <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 1 }}>
+      {stars.map((s, i) => (
+        <div key={i} style={{
+          position: 'absolute', left: `${s.x}%`, top: `${s.y}%`,
+          width: s.size, height: s.size, borderRadius: '50%',
+          background: s.gold ? 'rgba(212,160,23,.55)' : 'rgba(255,255,255,.4)',
+          animation: `htTwinkle ${s.dur}s ${s.del}s ease-in-out infinite`,
+        }} />
+      ))}
+    </div>
+  )
+}
+
+function HTScanLine() {
+  return (
+    <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 1, overflow: 'hidden' }}>
+      <div style={{
+        position: 'absolute', left: 0, right: 0, height: 2,
+        background: 'linear-gradient(90deg,transparent,rgba(212,160,23,.06),rgba(212,160,23,.13),rgba(212,160,23,.06),transparent)',
+        animation: 'htScan 18s linear infinite',
+      }} />
+    </div>
+  )
+}
+
+// ── Hook: live OST state ────────────────────────────────────────────────────
 function useOSTState() {
   return useMemo(() => {
     const saved  = loadState(TOURNAMENT_CONFIG.id)
@@ -30,15 +70,15 @@ function useOSTState() {
 }
 
 // ── Section heading ────────────────────────────────────────────────────────
-function SectionHeading({ title, subtitle, id }) {
+function SectionHeading({ title, subtitle }) {
   return (
-    <div id={id} style={{ marginBottom: 28 }}>
+    <div style={{ marginBottom: 28 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: subtitle ? 10 : 0 }}>
         <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,.06)' }} />
         <h2 style={{
-          fontSize: 13, fontWeight: 700,
-          color: 'rgba(255,255,255,.38)',
-          letterSpacing: '0.14em', textTransform: 'uppercase',
+          fontSize: 11, fontWeight: 800,
+          color: 'rgba(255,255,255,.32)',
+          letterSpacing: '0.18em', textTransform: 'uppercase',
           margin: 0, flexShrink: 0,
         }}>
           {title}
@@ -47,9 +87,9 @@ function SectionHeading({ title, subtitle, id }) {
       </div>
       {subtitle && (
         <p style={{
-          textAlign: 'center', fontSize: 14,
-          color: 'rgba(255,255,255,.28)', margin: '8px 0 0',
-          lineHeight: 1.5,
+          textAlign: 'center', fontSize: 13,
+          color: 'rgba(255,255,255,.25)', margin: '8px 0 0',
+          lineHeight: 1.6,
         }}>
           {subtitle}
         </p>
@@ -62,14 +102,14 @@ function SectionHeading({ title, subtitle, id }) {
 function StatusBadge({ status }) {
   const styles = {
     active:  { bg: 'rgba(212,160,23,.14)', border: 'rgba(212,160,23,.35)', color: GOLD,                   label: 'En cours' },
-    soon:    { bg: 'rgba(255,255,255,.05)', border: 'rgba(255,255,255,.12)', color: 'rgba(255,255,255,.38)', label: 'Bientôt' },
+    soon:    { bg: 'rgba(255,255,255,.05)', border: 'rgba(255,255,255,.10)', color: 'rgba(255,255,255,.32)', label: 'Bientôt' },
     testing: { bg: 'rgba(99,102,241,.12)', border: 'rgba(99,102,241,.3)',  color: '#a5b4fc',              label: 'En test' },
   }
   const s = styles[status] || styles.soon
   return (
     <span style={{
-      fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase',
-      padding: '3px 9px', borderRadius: 6,
+      fontSize: 8, fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase',
+      padding: '3px 10px', borderRadius: 6,
       background: s.bg, border: `1px solid ${s.border}`, color: s.color,
     }}>
       {s.label}
@@ -77,11 +117,10 @@ function StatusBadge({ status }) {
   )
 }
 
-// ── Category card ──────────────────────────────────────────────────────────
+// ── Category card — BlindTest track card style ─────────────────────────────
 function CategoryCard({ cat, index }) {
-  const navigate    = useNavigate()
-  const isActive    = cat.status === 'active'
-  const borderColor = isActive ? 'rgba(212,160,23,.2)' : 'rgba(255,255,255,.07)'
+  const navigate = useNavigate()
+  const isActive = cat.status === 'active'
 
   function handleClick() {
     if (isActive && cat.route) navigate(cat.route)
@@ -89,41 +128,43 @@ function CategoryCard({ cat, index }) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12 }}
+      initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.04, duration: 0.3 }}
+      transition={{ delay: index * 0.045, duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
       onClick={handleClick}
-      style={{
-        borderRadius: 16,
-        border: `1px solid ${borderColor}`,
-        background: isActive ? 'rgba(212,160,23,.03)' : 'rgba(255,255,255,.025)',
-        padding: '22px 22px 20px',
-        cursor: isActive ? 'pointer' : 'default',
-        opacity: isActive ? 1 : 0.65,
-        display: 'flex', flexDirection: 'column', gap: 12,
-        transition: 'all 0.22s',
-        position: 'relative', overflow: 'hidden',
-      }}
       whileHover={isActive ? {
-        borderColor: 'rgba(212,160,23,.35)',
-        background: 'rgba(212,160,23,.055)',
-        y: -2,
+        y: -3,
+        transition: { duration: 0.18 },
       } : {}}
+      style={{
+        background: `linear-gradient(145deg,${cat.color}16 0%,rgba(10,10,11,0.97) 100%)`,
+        border: `1px solid ${cat.color}22`,
+        borderTop: `2px solid ${isActive ? cat.color + 'cc' : 'rgba(255,255,255,.10)'}`,
+        borderRadius: 14,
+        padding: '20px 20px 18px',
+        cursor: isActive ? 'pointer' : 'default',
+        opacity: isActive ? 1 : 0.62,
+        display: 'flex', flexDirection: 'column', gap: 10,
+        position: 'relative', overflow: 'hidden',
+        transition: 'border-color 0.2s',
+      }}
     >
-      {/* Left accent bar */}
-      <div style={{
-        position: 'absolute', left: 0, top: 0, bottom: 0, width: 3,
-        background: isActive ? cat.color : 'rgba(255,255,255,.08)',
-        borderRadius: '16px 0 0 16px',
-      }} />
-
-      {/* Top row: icon + status */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', paddingLeft: 8 }}>
+      {/* Ambient glow */}
+      {isActive && (
         <div style={{
-          fontSize: 22,
-          color: isActive ? cat.color : 'rgba(255,255,255,.3)',
-          lineHeight: 1,
-          filter: isActive ? `drop-shadow(0 0 8px ${cat.color}50)` : 'none',
+          position: 'absolute', top: -20, left: -20, right: -20,
+          height: 60, pointerEvents: 'none',
+          background: `radial-gradient(ellipse 80% 100% at 50% 0%, ${cat.color}18 0%, transparent 70%)`,
+        }} />
+      )}
+
+      {/* Top row */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative', zIndex: 1 }}>
+        <div style={{
+          fontSize: 20, lineHeight: 1,
+          color: isActive ? cat.color : 'rgba(255,255,255,.28)',
+          filter: isActive ? `drop-shadow(0 0 10px ${cat.color}88)` : 'none',
+          animation: isActive ? 'htPulse 3s ease-in-out infinite' : 'none',
         }}>
           {cat.icon}
         </div>
@@ -131,16 +172,23 @@ function CategoryCard({ cat, index }) {
       </div>
 
       {/* Content */}
-      <div style={{ paddingLeft: 8 }}>
+      <div style={{ position: 'relative', zIndex: 1 }}>
         <div style={{
-          fontSize: 16, fontWeight: 700,
-          color: isActive ? 'rgba(255,255,255,.92)' : 'rgba(255,255,255,.55)',
-          marginBottom: 6, lineHeight: 1.2,
+          fontSize: 8, fontWeight: 800, letterSpacing: '0.14em', textTransform: 'uppercase',
+          color: isActive ? cat.color : 'rgba(255,255,255,.2)',
+          marginBottom: 6,
+        }}>
+          {cat.tagline}
+        </div>
+        <div style={{
+          fontSize: 16, fontWeight: 800,
+          color: isActive ? 'rgba(255,255,255,.92)' : 'rgba(255,255,255,.48)',
+          marginBottom: 7, lineHeight: 1.2,
         }}>
           {cat.label}
         </div>
         <div style={{
-          fontSize: 12, color: 'rgba(255,255,255,.32)',
+          fontSize: 11, color: 'rgba(255,255,255,.28)',
           lineHeight: 1.55,
         }}>
           {cat.description}
@@ -149,15 +197,16 @@ function CategoryCard({ cat, index }) {
 
       {/* Footer */}
       <div style={{
-        paddingLeft: 8,
+        position: 'relative', zIndex: 1,
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        marginTop: 'auto',
+        marginTop: 'auto', paddingTop: 6,
+        borderTop: `1px solid ${isActive ? cat.color + '20' : 'rgba(255,255,255,.06)'}`,
       }}>
-        <span style={{ fontSize: 10, color: 'rgba(255,255,255,.22)', letterSpacing: '0.06em' }}>
+        <span style={{ fontSize: 9, color: 'rgba(255,255,255,.20)', letterSpacing: '0.06em' }}>
           {isActive ? `${cat.activeCount} tournoi actif` : 'Aucun tournoi actif'}
         </span>
         {isActive && (
-          <span style={{ fontSize: 11, color: GOLD, fontWeight: 700, letterSpacing: '0.04em' }}>
+          <span style={{ fontSize: 11, color: cat.color, fontWeight: 800, letterSpacing: '0.04em' }}>
             Entrer →
           </span>
         )}
@@ -166,77 +215,122 @@ function CategoryCard({ cat, index }) {
   )
 }
 
+// ── Progress ring ──────────────────────────────────────────────────────────
+function ProgressRing({ pct }) {
+  const R = 28, STROKE = 3
+  const C = 2 * Math.PI * R
+  const dash = C * (1 - pct / 100)
+  return (
+    <div style={{ position: 'relative', width: 70, height: 70, flexShrink: 0 }}>
+      <svg width="70" height="70" style={{ position: 'absolute', inset: 0, transform: 'rotate(-90deg)' }}>
+        <circle cx="35" cy="35" r={R} fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth={STROKE} />
+        <motion.circle
+          cx="35" cy="35" r={R} fill="none"
+          stroke={GOLD} strokeWidth={STROKE}
+          strokeLinecap="round"
+          strokeDasharray={C}
+          animate={{ strokeDashoffset: dash }}
+          transition={{ duration: 1, ease: 'easeOut' }}
+          style={{ filter: `drop-shadow(0 0 5px ${GOLD}88)` }}
+        />
+      </svg>
+      <div style={{
+        position: 'absolute', inset: 0,
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <span style={{ fontFamily: "'Pirata One',cursive", fontSize: 18, fontWeight: 900, color: GOLD2, lineHeight: 1 }}>
+          {pct}
+        </span>
+        <span style={{ fontSize: 7, fontWeight: 800, letterSpacing: '.12em', color: 'rgba(255,255,255,.3)', textTransform: 'uppercase', marginTop: 1 }}>%</span>
+      </div>
+    </div>
+  )
+}
+
 // ── Active tournament card ─────────────────────────────────────────────────
 function ActiveTournamentCard({ config, progress, currentRound, winner }) {
-  const navigate   = useNavigate()
-  const phaseName  = winner ? 'Terminé' : currentRound?.label ?? 'En cours'
+  const navigate  = useNavigate()
+  const phaseName = winner ? 'Terminé' : currentRound?.label ?? 'En cours'
   const isFinished = !!winner
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
       style={{
+        background: `linear-gradient(145deg, rgba(212,160,23,.07) 0%, rgba(10,10,11,0.97) 100%)`,
+        border: '1px solid rgba(212,160,23,.18)',
+        borderTop: `2px solid ${GOLD}99`,
         borderRadius: 18,
-        border: `1px solid rgba(212,160,23,.22)`,
-        background: 'rgba(212,160,23,.04)',
-        padding: 'clamp(20px,3vw,32px)',
+        padding: 'clamp(20px,3vw,36px)',
         position: 'relative', overflow: 'hidden',
       }}
     >
-      {/* Background glow */}
+      {/* Top ambient */}
       <div style={{
-        position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0,
-        background: 'radial-gradient(ellipse 60% 80% at 15% 50%, rgba(212,160,23,.05) 0%, transparent 60%)',
+        position: 'absolute', top: -30, left: -30, right: -30, height: 100,
+        background: `radial-gradient(ellipse 70% 100% at 50% 0%, rgba(212,160,23,.10) 0%, transparent 70%)`,
+        pointerEvents: 'none',
       }} />
 
-      <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'flex-start' }}>
+      <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexWrap: 'wrap', gap: 28, alignItems: 'flex-start' }}>
 
-        {/* Left: meta */}
+        {/* Left */}
         <div style={{ flex: '1 1 280px', minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
             <StatusBadge status={isFinished ? 'soon' : 'active'} />
             <span style={{
-              fontSize: 9, color: 'rgba(255,255,255,.3)',
-              background: 'rgba(255,255,255,.05)',
+              fontSize: 8, color: 'rgba(255,255,255,.28)',
+              background: 'rgba(255,255,255,.04)',
               border: '1px solid rgba(255,255,255,.08)',
-              borderRadius: 6, padding: '3px 9px',
-              letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 700,
+              borderRadius: 5, padding: '3px 9px',
+              letterSpacing: '0.10em', textTransform: 'uppercase', fontWeight: 800,
             }}>
               OST
             </span>
           </div>
 
           <h3 style={{
-            fontSize: 'clamp(20px,3vw,28px)',
-            fontWeight: 800, margin: '0 0 6px',
-            color: 'rgba(255,255,255,.94)', lineHeight: 1.15,
+            fontFamily: "'Pirata One',cursive",
+            fontSize: 'clamp(22px,3.5vw,34px)',
+            fontWeight: 900, margin: '0 0 8px',
+            color: 'rgba(255,255,255,.94)', lineHeight: 1.1,
           }}>
             {config.title}
           </h3>
 
           <p style={{
-            fontSize: 13, color: 'rgba(255,255,255,.38)',
-            margin: '0 0 18px', lineHeight: 1.55, maxWidth: 480,
+            fontSize: 13, color: 'rgba(255,255,255,.35)',
+            margin: '0 0 22px', lineHeight: 1.6, maxWidth: 480,
           }}>
             {winner
               ? `${winner.title} remporte le tournoi.`
-              : '32 OST cultes. Une seule restera dans le bracket. Vote duel après duel.'}
+              : config.description}
           </p>
 
-          {/* Stats row */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 20, marginBottom: 18 }}>
+          {/* Stats */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 18 }}>
             {[
               { label: 'Participants',  value: config.participants.length },
-              { label: 'Matchs joués', value: `${progress.done} / ${progress.total}` },
+              { label: 'Matchs joués', value: `${progress.done}/${progress.total}` },
               { label: 'Phase',         value: phaseName },
               { label: 'Format',        value: 'Élimination' },
             ].map(s => (
-              <div key={s.label}>
-                <div style={{ fontSize: 15, fontWeight: 700, color: 'rgba(255,255,255,.88)' }}>
+              <div key={s.label} style={{
+                padding: '10px 18px', borderRadius: 10,
+                background: 'rgba(255,255,255,.04)',
+                border: '1px solid rgba(255,255,255,.07)',
+                textAlign: 'center',
+              }}>
+                <div style={{
+                  fontFamily: "'Pirata One',cursive",
+                  fontSize: 20, fontWeight: 900,
+                  color: 'rgba(255,255,255,.88)', lineHeight: 1,
+                }}>
                   {s.value}
                 </div>
-                <div style={{ fontSize: 9, color: 'rgba(255,255,255,.28)', letterSpacing: '0.08em', textTransform: 'uppercase', marginTop: 3 }}>
+                <div style={{ fontSize: 8, color: 'rgba(255,255,255,.28)', letterSpacing: '0.10em', textTransform: 'uppercase', marginTop: 4 }}>
                   {s.label}
                 </div>
               </div>
@@ -244,74 +338,57 @@ function ActiveTournamentCard({ config, progress, currentRound, winner }) {
           </div>
         </div>
 
-        {/* Right: progress + CTAs */}
-        <div style={{ flex: '0 1 260px', display: 'flex', flexDirection: 'column', gap: 12, justifyContent: 'center' }}>
-          {/* Progress bar */}
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'rgba(255,255,255,.25)', marginBottom: 7, letterSpacing: '0.08em' }}>
-              <span>PROGRESSION</span>
-              <span>{progress.pct}%</span>
-            </div>
-            <div style={{ height: 4, borderRadius: 2, background: 'rgba(255,255,255,.07)', overflow: 'hidden' }}>
-              <motion.div
-                initial={false}
-                animate={{ width: `${progress.pct}%` }}
-                transition={{ duration: 0.8, ease: 'easeOut' }}
-                style={{ height: '100%', background: `linear-gradient(90deg, ${GOLD}, ${GOLD2})` }}
-              />
-            </div>
-          </div>
+        {/* Right: ring + CTAs */}
+        <div style={{ flex: '0 1 220px', display: 'flex', flexDirection: 'column', gap: 14, alignItems: 'center', justifyContent: 'center' }}>
+          <ProgressRing pct={progress.pct} />
 
-          {/* CTAs */}
           {!isFinished ? (
             <>
-              <button
+              <motion.button
                 onClick={() => navigate('/tournoi/ost')}
+                whileHover={{ scale: 1.03, boxShadow: `0 8px 28px rgba(212,160,23,.32)` }}
+                whileTap={{ scale: 0.97 }}
                 style={{
-                  padding: '12px 0', width: '100%',
-                  borderRadius: 12, border: `1px solid ${GOLD}`,
-                  background: 'rgba(212,160,23,.12)',
-                  color: GOLD, fontWeight: 700, fontSize: 13,
-                  cursor: 'pointer', letterSpacing: '0.04em',
-                  transition: 'all 0.2s',
-                }}
-                onMouseEnter={e => e.currentTarget.style.background = 'rgba(212,160,23,.22)'}
-                onMouseLeave={e => e.currentTarget.style.background = 'rgba(212,160,23,.12)'}
-              >
-                Participer au duel actuel
-              </button>
-              <button
-                onClick={() => navigate('/tournoi/ost')}
-                style={{
-                  padding: '10px 0', width: '100%',
-                  borderRadius: 12, border: '1px solid rgba(255,255,255,.1)',
-                  background: 'rgba(255,255,255,.03)',
-                  color: 'rgba(255,255,255,.55)', fontWeight: 600, fontSize: 12,
+                  width: '100%', padding: '13px 0',
+                  borderRadius: 12, border: 'none',
+                  background: `linear-gradient(135deg, ${GOLD}, #e5b83a)`,
+                  color: '#1a1200', fontWeight: 800, fontSize: 14,
                   cursor: 'pointer', letterSpacing: '0.03em',
-                  transition: 'all 0.2s',
+                  fontFamily: "'Pirata One',cursive",
                 }}
-                onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,.07)'}
-                onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,.03)'}
+              >
+                Participer au duel
+              </motion.button>
+              <motion.button
+                onClick={() => navigate('/tournoi/ost')}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.97 }}
+                style={{
+                  width: '100%', padding: '11px 0',
+                  borderRadius: 12, border: '1px solid rgba(255,255,255,.10)',
+                  background: 'rgba(255,255,255,.03)',
+                  color: 'rgba(255,255,255,.50)', fontWeight: 700, fontSize: 12,
+                  cursor: 'pointer', letterSpacing: '0.03em',
+                }}
               >
                 Voir le bracket
-              </button>
+              </motion.button>
             </>
           ) : (
-            <button
+            <motion.button
               onClick={() => navigate('/tournoi/ost')}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.97 }}
               style={{
-                padding: '12px 0', width: '100%',
+                width: '100%', padding: '13px 0',
                 borderRadius: 12, border: '1px solid rgba(255,255,255,.12)',
                 background: 'rgba(255,255,255,.04)',
-                color: 'rgba(255,255,255,.55)', fontWeight: 600, fontSize: 13,
-                cursor: 'pointer', letterSpacing: '0.03em',
-                transition: 'all 0.2s',
+                color: 'rgba(255,255,255,.55)', fontWeight: 700, fontSize: 13,
+                cursor: 'pointer',
               }}
-              onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,.08)'}
-              onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,.04)'}
             >
               Voir les résultats
-            </button>
+            </motion.button>
           )}
         </div>
       </div>
@@ -327,12 +404,13 @@ function UpcomingCard({ item, index }) {
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05 }}
+      transition={{ delay: index * 0.05, duration: 0.3 }}
       style={{
+        background: `linear-gradient(145deg, ${cat?.color ?? '#fff'}0c 0%, rgba(10,10,11,.97) 100%)`,
+        border: `1px solid ${cat?.color ?? '#fff'}18`,
+        borderTop: `2px solid rgba(255,255,255,.10)`,
         borderRadius: 14,
-        border: '1px solid rgba(255,255,255,.07)',
-        background: 'rgba(255,255,255,.025)',
-        padding: '20px 20px 18px',
+        padding: '18px 20px 16px',
         display: 'flex', flexDirection: 'column', gap: 10,
       }}
     >
@@ -344,44 +422,39 @@ function UpcomingCard({ item, index }) {
             </span>
           )}
           <span style={{
-            fontSize: 9, color: 'rgba(255,255,255,.3)',
-            background: 'rgba(255,255,255,.05)',
+            fontSize: 8, color: 'rgba(255,255,255,.28)',
+            background: 'rgba(255,255,255,.04)',
             border: '1px solid rgba(255,255,255,.08)',
             borderRadius: 5, padding: '2px 8px',
-            letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 700,
+            letterSpacing: '0.10em', textTransform: 'uppercase', fontWeight: 800,
           }}>
             {cat?.label ?? item.categoryId}
           </span>
         </div>
-        <span style={{
-          fontSize: 9, color: 'rgba(255,255,255,.25)',
-          letterSpacing: '0.06em', textTransform: 'uppercase',
-        }}>
+        <span style={{ fontSize: 9, color: 'rgba(255,255,255,.22)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
           {item.dateLabel}
         </span>
       </div>
 
       <div>
-        <div style={{ fontSize: 14, fontWeight: 700, color: 'rgba(255,255,255,.75)', marginBottom: 5, lineHeight: 1.2 }}>
+        <div style={{ fontSize: 14, fontWeight: 800, color: 'rgba(255,255,255,.72)', marginBottom: 5, lineHeight: 1.2 }}>
           {item.title}
         </div>
-        <div style={{ fontSize: 12, color: 'rgba(255,255,255,.28)', lineHeight: 1.5 }}>
+        <div style={{ fontSize: 11, color: 'rgba(255,255,255,.26)', lineHeight: 1.55 }}>
           {item.description}
         </div>
       </div>
 
-      <button
-        style={{
-          padding: '8px 14px',
-          borderRadius: 9, border: '1px solid rgba(255,255,255,.1)',
-          background: 'transparent',
-          color: 'rgba(255,255,255,.3)', fontSize: 11, fontWeight: 600,
-          cursor: 'not-allowed', letterSpacing: '0.03em',
-          alignSelf: 'flex-start',
-        }}
-      >
+      <span style={{
+        fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,.25)',
+        background: 'rgba(255,255,255,.04)',
+        border: '1px solid rgba(255,255,255,.08)',
+        borderRadius: 8, padding: '5px 12px',
+        letterSpacing: '0.06em', textTransform: 'uppercase',
+        alignSelf: 'flex-start',
+      }}>
         Bientôt disponible
-      </button>
+      </span>
     </motion.div>
   )
 }
@@ -393,108 +466,115 @@ function TournamentHero({ activeRef, categoriesRef }) {
   }
 
   return (
-    <div style={{
-      position: 'relative',
-      textAlign: 'center',
-      padding: 'clamp(48px,8vw,100px) 0 clamp(48px,6vw,72px)',
-    }}>
-      {/* Atmospheric glow */}
-      <div style={{
-        position: 'absolute', inset: '-80px -200px 0', zIndex: 0, pointerEvents: 'none',
-        background: 'radial-gradient(ellipse 80% 100% at 50% 0%, rgba(212,160,23,.08) 0%, transparent 55%)',
-      }} />
+    <div style={{ textAlign: 'center', padding: 'clamp(56px,9vw,110px) 0 clamp(48px,6vw,72px)' }}>
+      {/* Badge */}
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        style={{
+          display: 'inline-flex', alignItems: 'center', gap: 8,
+          background: 'rgba(212,160,23,.08)', border: '1px solid rgba(212,160,23,.26)',
+          borderRadius: 100, padding: '5px 18px', marginBottom: 22,
+        }}
+      >
+        <span style={{ fontSize: 8, color: GOLD, letterSpacing: '0.18em', textTransform: 'uppercase', fontWeight: 800 }}>
+          ✦ Événements communautaires
+        </span>
+      </motion.div>
 
-      <div style={{ position: 'relative', zIndex: 1 }}>
-        {/* Badge */}
-        <div style={{
-          display: 'inline-flex', alignItems: 'center', gap: 7,
-          background: 'rgba(212,160,23,.08)', border: '1px solid rgba(212,160,23,.2)',
-          borderRadius: 20, padding: '5px 16px', marginBottom: 20,
-        }}>
-          <span style={{ fontSize: 8, color: GOLD, letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 700 }}>
-            ✦ Événements communautaires
-          </span>
-        </div>
-
-        {/* Title */}
-        <h1 style={{
-          fontSize: 'clamp(44px,8vw,96px)',
+      {/* Pirata One title */}
+      <motion.h1
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.08, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+        style={{
+          fontFamily: "'Pirata One',cursive",
+          fontSize: 'clamp(56px,10vw,110px)',
           fontWeight: 900, margin: '0 0 16px',
           background: `linear-gradient(135deg, ${GOLD2} 0%, ${GOLD} 50%, rgba(191,164,106,.72) 100%)`,
           WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-          letterSpacing: '-0.025em', lineHeight: 0.95,
-        }}>
-          Tournois Brams
-        </h1>
+          letterSpacing: '-0.01em', lineHeight: 0.95,
+        }}
+      >
+        Tournois Brams
+      </motion.h1>
 
-        {/* Tagline */}
-        <p style={{
-          fontSize: 'clamp(16px,2.5vw,22px)',
-          color: 'rgba(255,255,255,.72)', fontWeight: 500,
-          margin: '0 0 16px', letterSpacing: '-0.005em',
-        }}>
-          Chaque vote fait avancer le bracket.
-        </p>
+      {/* Tagline */}
+      <motion.p
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.2 }}
+        style={{
+          fontSize: 'clamp(15px,2.2vw,20px)',
+          color: 'rgba(255,255,255,.65)', fontWeight: 500,
+          margin: '0 0 14px', letterSpacing: '-0.005em',
+        }}
+      >
+        Chaque vote fait avancer le bracket.
+      </motion.p>
 
-        {/* Description */}
-        <p style={{
-          fontSize: 14, color: 'rgba(255,255,255,.35)',
-          margin: '0 0 36px', maxWidth: 580, marginInline: 'auto',
-          lineHeight: 1.7,
-        }}>
-          Openings, OST, personnages, théories ou wiki battles : choisis ton tournoi et fais gagner tes favoris avec la communauté.
-        </p>
+      {/* Description */}
+      <motion.p
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.28 }}
+        style={{
+          fontSize: 13, color: 'rgba(255,255,255,.30)',
+          margin: '0 0 38px', maxWidth: 560, marginInline: 'auto',
+          lineHeight: 1.75,
+        }}
+      >
+        Openings, OST, personnages, théories ou wiki battles — choisis ton tournoi et fais gagner tes favoris avec la communauté.
+      </motion.p>
 
-        {/* CTAs */}
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 28 }}>
-          <button
-            onClick={() => scrollTo(activeRef)}
-            style={{
-              padding: '13px 32px', borderRadius: 12,
-              border: `1px solid ${GOLD}`,
-              background: 'rgba(212,160,23,.12)',
-              color: GOLD, fontWeight: 700, fontSize: 14,
-              cursor: 'pointer', letterSpacing: '0.03em',
-              transition: 'all 0.2s',
-            }}
-            onMouseEnter={e => e.currentTarget.style.background = 'rgba(212,160,23,.22)'}
-            onMouseLeave={e => e.currentTarget.style.background = 'rgba(212,160,23,.12)'}
-          >
-            Voir les tournois actifs
-          </button>
-          <button
-            onClick={() => scrollTo(categoriesRef)}
-            style={{
-              padding: '13px 32px', borderRadius: 12,
-              border: '1px solid rgba(255,255,255,.12)',
-              background: 'rgba(255,255,255,.04)',
-              color: 'rgba(255,255,255,.62)', fontWeight: 600, fontSize: 14,
-              cursor: 'pointer', letterSpacing: '0.03em',
-              transition: 'all 0.2s',
-            }}
-            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,.08)'}
-            onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,.04)'}
-          >
-            Explorer les catégories
-          </button>
-        </div>
+      {/* CTAs */}
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.34 }}
+        style={{ display: 'flex', justifyContent: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 30 }}
+      >
+        <motion.button
+          onClick={() => scrollTo(activeRef)}
+          whileHover={{ scale: 1.04, boxShadow: `0 10px 32px rgba(212,160,23,.38)` }}
+          whileTap={{ scale: 0.97 }}
+          style={{
+            padding: '14px 36px', borderRadius: 100,
+            border: 'none',
+            background: `linear-gradient(135deg, ${GOLD}, #e5b83a)`,
+            color: '#1a1200', fontWeight: 800, fontSize: 14,
+            cursor: 'pointer', letterSpacing: '0.04em',
+            fontFamily: "'Pirata One',cursive",
+            boxShadow: `0 6px 24px rgba(212,160,23,.24)`,
+          }}
+        >
+          Tournois actifs
+        </motion.button>
+        <motion.button
+          onClick={() => scrollTo(categoriesRef)}
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.97 }}
+          style={{
+            padding: '14px 36px', borderRadius: 100,
+            border: '1px solid rgba(255,255,255,.14)',
+            background: 'rgba(255,255,255,.04)',
+            color: 'rgba(255,255,255,.65)', fontWeight: 700, fontSize: 14,
+            cursor: 'pointer', letterSpacing: '0.03em',
+          }}
+        >
+          Explorer les arènes
+        </motion.button>
+      </motion.div>
 
-        {/* Microcopy */}
-        <div style={{
-          display: 'flex', justifyContent: 'center', alignItems: 'center',
-          gap: 8, flexWrap: 'wrap',
-        }}>
-          {['Votes communautaires', 'Bracket', 'Résultats', 'Récompenses en berries'].map((item, i, arr) => (
-            <span key={item} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 11, color: 'rgba(255,255,255,.22)', letterSpacing: '0.04em' }}>
-                {item}
-              </span>
-              {i < arr.length - 1 && (
-                <span style={{ fontSize: 8, color: 'rgba(255,255,255,.15)' }}>•</span>
-              )}
-            </span>
-          ))}
-        </div>
+      {/* Microcopy */}
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        {['Votes communautaires', 'Bracket', 'Résultats', 'Récompenses en berries'].map((item, i, arr) => (
+          <span key={item} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 10, color: 'rgba(255,255,255,.18)', letterSpacing: '0.04em' }}>{item}</span>
+            {i < arr.length - 1 && <span style={{ fontSize: 7, color: 'rgba(255,255,255,.12)' }}>•</span>}
+          </span>
+        ))}
       </div>
     </div>
   )
@@ -502,92 +582,97 @@ function TournamentHero({ activeRef, categoriesRef }) {
 
 // ── Main ───────────────────────────────────────────────────────────────────
 export default function TournamentHubPage() {
-  const ost          = useOSTState()
-  const activeRef    = useRef(null)
+  const ost           = useOSTState()
+  const activeRef     = useRef(null)
   const categoriesRef = useRef(null)
 
   return (
-    <div style={{ minHeight: '100vh', background: BG, fontFamily: 'inherit' }}>
-      <div style={{
-        maxWidth: 1440,
-        margin: '0 auto',
-        padding: '0 clamp(16px,4vw,56px) 96px',
-      }}>
+    <div style={{ minHeight: '100vh', background: BG, fontFamily: 'inherit', position: 'relative' }}>
+      <style>{HUB_CSS}</style>
 
-        {/* Hero */}
-        <TournamentHero activeRef={activeRef} categoriesRef={categoriesRef} />
+      {/* Fixed bg layers */}
+      <div style={{ position: 'fixed', inset: 0, background: BG, zIndex: 0 }} />
+      <HTStars />
+      <HTScanLine />
 
-        {/* ── Catégories ── */}
-        <div ref={categoriesRef} style={{ marginBottom: 72 }}>
-          <SectionHeading
-            title="Choisis ton arène"
-            subtitle="Chaque catégorie est un format de tournoi distinct. OST, openings, personnages, théories et plus encore."
-          />
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(270px, 1fr))',
-            gap: 14,
-          }}>
-            {TOURNAMENT_CATEGORIES.map((cat, i) => (
-              <CategoryCard key={cat.id} cat={cat} index={i} />
-            ))}
-          </div>
-        </div>
+      {/* Content */}
+      <div style={{ position: 'relative', zIndex: 2 }}>
+        <div style={{
+          maxWidth: 1440,
+          margin: '0 auto',
+          padding: '0 clamp(16px,4vw,56px) 100px',
+        }}>
 
-        {/* ── Tournois actifs ── */}
-        <div ref={activeRef} style={{ marginBottom: 72 }}>
-          <SectionHeading title="Tournois actifs" />
-          <ActiveTournamentCard
-            config={TOURNAMENT_CONFIG}
-            progress={ost.progress}
-            currentRound={ost.currentRound}
-            winner={ost.winner}
-          />
-        </div>
+          {/* Hero */}
+          <TournamentHero activeRef={activeRef} categoriesRef={categoriesRef} />
 
-        {/* ── À venir ── */}
-        <div style={{ marginBottom: 72 }}>
-          <SectionHeading
-            title="À venir"
-            subtitle="Les prochains tournois sont en préparation. Suis les annonces sur Brams."
-          />
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
-            gap: 12,
-          }}>
-            {UPCOMING_TOURNAMENTS.map((item, i) => (
-              <UpcomingCard key={item.id} item={item} index={i} />
-            ))}
-          </div>
-        </div>
-
-        {/* ── Archives (si tournois terminés) ── */}
-        {COMPLETED_TOURNAMENTS.length === 0 ? (
-          <div style={{ marginBottom: 40 }}>
-            <SectionHeading title="Archives" />
+          {/* ── Arènes ── */}
+          <div ref={categoriesRef} style={{ marginBottom: 76 }}>
+            <SectionHeading
+              title="Choisis ton arène"
+              subtitle="Chaque catégorie est un format de tournoi distinct. OST, openings, personnages, théories et plus encore."
+            />
             <div style={{
-              textAlign: 'center', padding: '40px 20px',
-              border: '1px solid rgba(255,255,255,.06)',
-              borderRadius: 14,
-              background: 'rgba(255,255,255,.018)',
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
+              gap: 12,
             }}>
-              <div style={{ fontSize: 28, marginBottom: 10, opacity: 0.2 }}>◎</div>
-              <div style={{ fontSize: 14, color: 'rgba(255,255,255,.25)' }}>
-                Aucun tournoi archivé pour l'instant.
-              </div>
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,.15)', marginTop: 6 }}>
-                Les tournois terminés apparaîtront ici avec leurs résultats.
-              </div>
+              {TOURNAMENT_CATEGORIES.map((cat, i) => (
+                <CategoryCard key={cat.id} cat={cat} index={i} />
+              ))}
             </div>
           </div>
-        ) : (
+
+          {/* ── Tournois actifs ── */}
+          <div ref={activeRef} style={{ marginBottom: 76 }}>
+            <SectionHeading title="Tournois actifs" />
+            <ActiveTournamentCard
+              config={TOURNAMENT_CONFIG}
+              progress={ost.progress}
+              currentRound={ost.currentRound}
+              winner={ost.winner}
+            />
+          </div>
+
+          {/* ── À venir ── */}
+          <div style={{ marginBottom: 76 }}>
+            <SectionHeading
+              title="À venir"
+              subtitle="Les prochains tournois sont en préparation. Suis les annonces sur Brams."
+            />
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(255px, 1fr))',
+              gap: 12,
+            }}>
+              {UPCOMING_TOURNAMENTS.map((item, i) => (
+                <UpcomingCard key={item.id} item={item} index={i} />
+              ))}
+            </div>
+          </div>
+
+          {/* ── Archives ── */}
           <div style={{ marginBottom: 40 }}>
             <SectionHeading title="Archives" />
-            {/* Completed tournament cards will render here */}
+            {COMPLETED_TOURNAMENTS.length === 0 ? (
+              <div style={{
+                textAlign: 'center', padding: '44px 20px',
+                border: '1px solid rgba(255,255,255,.06)',
+                borderRadius: 14,
+                background: 'rgba(255,255,255,.015)',
+              }}>
+                <div style={{ fontSize: 30, marginBottom: 12, opacity: 0.18 }}>◎</div>
+                <div style={{ fontSize: 13, color: 'rgba(255,255,255,.22)' }}>
+                  Aucun tournoi archivé pour l'instant.
+                </div>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,.14)', marginTop: 6 }}>
+                  Les tournois terminés apparaîtront ici avec leurs résultats.
+                </div>
+              </div>
+            ) : null}
           </div>
-        )}
 
+        </div>
       </div>
     </div>
   )

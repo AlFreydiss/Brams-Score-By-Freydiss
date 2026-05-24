@@ -18,11 +18,48 @@ import DuelArena         from './tournament/DuelArena.jsx'
 import TournamentBracket from './tournament/TournamentBracket.jsx'
 import TournamentResults from './tournament/TournamentResults.jsx'
 
-const BG    = '#07090e'
+const BG    = '#0a0a0b'
 const GOLD  = '#d4a017'
-const GOLD2 = '#f0c040'
+const GOLD2 = '#ffd700'
 
-const T_CSS = `@keyframes t_glow { 0%,100%{opacity:.5} 50%{opacity:1} }`
+const T_CSS = `
+  @keyframes t_glow    { 0%,100%{opacity:.5} 50%{opacity:1} }
+  @keyframes tTwinkle  { 0%,100%{opacity:.07} 50%{opacity:.50} }
+  @keyframes tScan     { 0%{top:-2px} 100%{top:100%} }
+`
+
+function TStars() {
+  const stars = Array.from({ length: 50 }, (_, i) => ({
+    x: (i * 37.3 + 11) % 98, y: (i * 41.9 + 17) % 96,
+    size: i % 9 === 0 ? 2.5 : i % 4 === 0 ? 1.6 : 1,
+    dur: 2.8 + (i * 0.28) % 4.5, del: (i * 0.21) % 7,
+    gold: i % 13 === 0,
+  }))
+  return (
+    <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 1 }}>
+      {stars.map((s, i) => (
+        <div key={i} style={{
+          position: 'absolute', left: `${s.x}%`, top: `${s.y}%`,
+          width: s.size, height: s.size, borderRadius: '50%',
+          background: s.gold ? 'rgba(212,160,23,.55)' : 'rgba(255,255,255,.4)',
+          animation: `tTwinkle ${s.dur}s ${s.del}s ease-in-out infinite`,
+        }} />
+      ))}
+    </div>
+  )
+}
+
+function TScanLine() {
+  return (
+    <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 1, overflow: 'hidden' }}>
+      <div style={{
+        position: 'absolute', left: 0, right: 0, height: 2,
+        background: 'linear-gradient(90deg,transparent,rgba(212,160,23,.06),rgba(212,160,23,.13),rgba(212,160,23,.06),transparent)',
+        animation: 'tScan 18s linear infinite',
+      }} />
+    </div>
+  )
+}
 
 // ── Version check ──────────────────────────────────────────────────────────
 const TOURNAMENT_VERSION = 'v2-ost'
@@ -46,22 +83,24 @@ function loadRoundsWithVersionCheck() {
 function Pill({ label, value, gold }) {
   return (
     <div style={{
-      padding: '10px 22px',
+      padding: '10px 20px',
       borderRadius: 12,
       background: gold ? 'rgba(212,160,23,.09)' : 'rgba(255,255,255,.04)',
       border: `1px solid ${gold ? 'rgba(212,160,23,.28)' : 'rgba(255,255,255,.08)'}`,
       textAlign: 'center', flexShrink: 0,
     }}>
       <div style={{
-        fontSize: 19, fontWeight: 800,
-        color: gold ? GOLD2 : 'rgba(255,255,255,.9)',
+        fontFamily: "'Pirata One',cursive",
+        fontSize: gold ? 22 : 20, fontWeight: 900,
+        color: gold ? GOLD2 : 'rgba(255,255,255,.88)',
         lineHeight: 1,
+        filter: gold ? `drop-shadow(0 0 8px ${GOLD}66)` : 'none',
       }}>
         {value}
       </div>
       <div style={{
-        fontSize: 9, color: 'rgba(255,255,255,.28)',
-        letterSpacing: '0.1em', textTransform: 'uppercase', marginTop: 5,
+        fontSize: 8, color: 'rgba(255,255,255,.26)',
+        letterSpacing: '0.12em', textTransform: 'uppercase', marginTop: 5,
       }}>
         {label}
       </div>
@@ -108,22 +147,35 @@ function TournamentHero({ config, progress, roundLabel, matchLabel }) {
       }} />
 
       <div style={{ position: 'relative', zIndex: 1 }}>
-        <div style={{
-          fontSize: 10, color: 'rgba(255,255,255,.25)',
-          letterSpacing: '0.2em', marginBottom: 14, textTransform: 'uppercase',
-        }}>
-          Brams Community · OST Tournament
-        </div>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.05 }}
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: 8, padding: '5px 18px',
+            borderRadius: 100, background: 'rgba(212,160,23,.10)', border: '1px solid rgba(212,160,23,.30)',
+            fontSize: 9, fontWeight: 800, letterSpacing: '.18em', color: GOLD,
+            textTransform: 'uppercase', marginBottom: 18,
+          }}
+        >
+          {'♪'} Best Anime OST
+        </motion.div>
 
-        <h1 style={{
-          fontSize: 'clamp(38px, 6.5vw, 80px)',
-          fontWeight: 900, margin: '0 0 14px',
-          background: `linear-gradient(135deg, ${GOLD2} 0%, ${GOLD} 50%, rgba(191,164,106,.75) 100%)`,
-          WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-          letterSpacing: '-0.02em', lineHeight: 1,
-        }}>
+        <motion.h1
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+          style={{
+            fontFamily: "'Pirata One',cursive",
+            fontSize: 'clamp(40px, 7vw, 88px)',
+            fontWeight: 900, margin: '0 0 14px',
+            background: `linear-gradient(135deg, ${GOLD2} 0%, ${GOLD} 50%, rgba(191,164,106,.75) 100%)`,
+            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+            letterSpacing: '-0.01em', lineHeight: 0.95,
+          }}
+        >
           {config.title}
-        </h1>
+        </motion.h1>
 
         <p style={{
           fontSize: 14, color: 'rgba(255,255,255,.33)',
@@ -415,14 +467,16 @@ export default function TournamentPage() {
   ))
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: BG,
-      fontFamily: 'inherit',
-    }}>
+    <div style={{ minHeight: '100vh', background: BG, fontFamily: 'inherit', position: 'relative' }}>
       <style>{T_CSS}</style>
 
+      {/* Fixed bg layers */}
+      <div style={{ position: 'fixed', inset: 0, background: BG, zIndex: 0 }} />
+      <TStars />
+      <TScanLine />
+
       {/* Inner container — wide */}
+      <div style={{ position: 'relative', zIndex: 2 }}>
       <div style={{
         maxWidth: 1440,
         margin: '0 auto',
@@ -517,6 +571,7 @@ export default function TournamentPage() {
             Réinitialiser le tournoi
           </button>
         </div>
+      </div>
       </div>
     </div>
   )

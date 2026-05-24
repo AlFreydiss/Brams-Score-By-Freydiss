@@ -5,7 +5,26 @@ import OSTDuelCard from './OSTDuelCard.jsx'
 import VSPanel     from './VSPanel.jsx'
 
 const GOLD   = '#d4a017'
-const GOLD_L = '#f0c040'
+const GOLD_L = '#ffd700'
+
+const ARENA_CSS = `
+  @keyframes arWave { 0%,100%{height:6px} 50%{height:28px} }
+`
+
+function ArenaWaveform({ color }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 3, height: 36, justifyContent: 'center' }}>
+      {Array.from({ length: 14 }).map((_, i) => (
+        <div key={i} style={{
+          width: 3, borderRadius: 2,
+          background: color || GOLD,
+          opacity: 0.55,
+          animation: `arWave ${0.5 + (i % 5) * 0.12}s ${i * 0.04}s ease-in-out infinite`,
+        }} />
+      ))}
+    </div>
+  )
+}
 
 // ── YouTube modal ──────────────────────────────────────────────────────────
 function YtPlayer({ ytId, onClose }) {
@@ -114,6 +133,7 @@ export default function DuelArena({
 
   return (
     <div style={{ position: 'relative' }}>
+      <style>{ARENA_CSS}</style>
 
       {/* Ambient glow from participant colors */}
       <div style={{
@@ -149,6 +169,13 @@ export default function DuelArena({
           />
         </div>
       </div>
+
+      {/* Waveform — music is playing indicator */}
+      {!hasVoted && (
+        <div style={{ position: 'relative', zIndex: 1, marginBottom: 18, textAlign: 'center' }}>
+          <ArenaWaveform color={match.left?.color ?? GOLD} />
+        </div>
+      )}
 
       {/* Cards row */}
       <div style={{
@@ -216,21 +243,22 @@ export default function DuelArena({
             )}
 
             {!isLastMatch ? (
-              <button
+              <motion.button
                 onClick={onNext}
+                whileHover={{ scale: 1.04, boxShadow: `0 10px 32px rgba(212,160,23,.38)` }}
+                whileTap={{ scale: 0.97 }}
                 style={{
                   padding: '14px 52px',
-                  borderRadius: 12, border: `1px solid ${GOLD}`,
-                  background: 'rgba(212,160,23,.1)',
-                  color: GOLD, fontWeight: 700, fontSize: 15,
+                  borderRadius: 100, border: 'none',
+                  background: `linear-gradient(135deg, ${GOLD}, #e5b83a)`,
+                  color: '#1a1200', fontWeight: 800, fontSize: 15,
                   cursor: 'pointer', letterSpacing: '0.04em',
-                  transition: 'background 0.2s',
+                  fontFamily: "'Pirata One',cursive",
+                  boxShadow: `0 6px 24px rgba(212,160,23,.24)`,
                 }}
-                onMouseEnter={e => e.currentTarget.style.background = 'rgba(212,160,23,.22)'}
-                onMouseLeave={e => e.currentTarget.style.background = 'rgba(212,160,23,.1)'}
               >
                 Duel suivant →
-              </button>
+              </motion.button>
             ) : (
               <div style={{
                 fontSize: 13, color: 'rgba(255,255,255,.35)',
