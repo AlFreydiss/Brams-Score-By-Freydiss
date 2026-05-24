@@ -2,11 +2,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import VideoPlayer from './VideoPlayer.jsx'
 import VIDEOS_RAW from '../data/violet-evergarden-videos.json'
 
-// ─── Strip VOSTFR (no m4a extracted yet — MKV codec not browser-compatible)
-const VIDEOS = VIDEOS_RAW.map(v => ({
-  ...v,
-  audio: (v.audio || []).filter(a => a.src),
-}))
+const VIDEOS = VIDEOS_RAW
 
 const COLOR  = '#8b7cff'
 const COLOR2 = '#c4b5fd'
@@ -226,7 +222,7 @@ function InfoPanel({ watchedCount, total, lastWatchedIdx, onResume }) {
           {[
             { label:'Épisodes', value:'13', dot:COLOR2 },
             { label:'Statut', value:'Terminé', dot:'#34d399' },
-            { label:'Audio', value:'VF', dot:'#fbbf24' },
+            { label:'Audio', value:'VF + JAP', dot:'#fbbf24' },
             { label:'Note', value:'★ 8.9', dot:'#f97316' },
           ].map(s => (
             <div key={s.label} style={{ padding:'10px 12px',borderRadius:12,background:'rgba(255,255,255,.04)',border:'1px solid rgba(255,255,255,.06)' }}>
