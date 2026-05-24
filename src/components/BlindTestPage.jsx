@@ -419,6 +419,7 @@ export default function BlindTestPage() {
   const [volume,       setVolume]       = useState(0.7)
   const [videoFailed,  setVideoFailed]  = useState(false)
   const [showConfetti, setShowConfetti] = useState(false)
+  const [videoSnap,    setVideoSnap]    = useState(false)
 
   const [roomCode,    setRoomCode]    = useState('')
   const [roomInput,   setRoomInput]   = useState('')
@@ -434,7 +435,7 @@ export default function BlindTestPage() {
 
   const overlayAlpha = phase === 'reveal' ? 0.50 : phase === 'playing' ? 0.93 : phase === 'countdown' ? 0.93 : 0.95
   const videoBlur    = phase === 'reveal' ? 0 : 55
-  const videoOpacity = isPlaying ? 1 : 0
+  const videoOpacity = videoSnap ? 0 : (isPlaying ? 1 : 0)
 
   const barPct   = phase === 'playing' ? Math.max(0, 100 - (elapsed / ROUND_SECS) * 100) : 0
   const barColor = barPct > 50 ? GREEN : barPct > 25 ? ORANGE : RED2
@@ -587,6 +588,9 @@ export default function BlindTestPage() {
     if (roomCode && roomRole !== 'host') { setRoomStatus('Attends le host pour lancer'); return }
     const t = pickTrack(playedIds)
     const newPlayed = [...playedIds, t.id]
+    // Snap vidéo à invisible instantanément pour éviter de deviner via le fond
+    setVideoSnap(true)
+    setTimeout(() => setVideoSnap(false), 80)
     setPlayedIds(newPlayed); setTrack(t); setLastTrackId(t.id)
     setAnimeGuess(''); setMcqSelected(null)
     setMcqChoices(pickMCQChoices(t, LOCAL_TRACKS))
@@ -643,7 +647,7 @@ export default function BlindTestPage() {
           objectFit: 'cover', zIndex: 1,
           filter: `blur(${videoBlur}px)`,
           opacity: videoOpacity,
-          transition: 'filter 1.4s ease, opacity 1.0s ease',
+          transition: videoSnap ? 'none' : 'filter 1.4s ease, opacity 1.0s ease',
           pointerEvents: 'none', willChange: 'filter, opacity',
           transform: 'scale(1.06)',
         }}
