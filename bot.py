@@ -274,24 +274,6 @@ _FREYDISS_TYPO_DELAY = 30
 _FREYDISS_PING_CD:   dict[str, float] = {}
 _FREYDISS_PING_DELAY = 45
 
-# ── VINN (soumise de Freydiss) ─────────────────────────────────────
-_VINN_ID         = 1233882334856614020
-_VINN_PING_CD:   dict[str, float] = {}
-_VINN_PING_DELAY = 45
-
-_VINN_PING_HYPE = [
-    f"😏 ah <@{_FREYDISS_ID}> ton @AbdosDeFreydiss est dans le chat... ta soumise préférée 😭💅",
-    f"👀 quelqu'un a tagué VINN... celle qui a mis **Al Freydiss** en display name... du dévouement ça 😤👑",
-    f"😂 `.c0ld19._` aka **Abdos de Freydiss** aka la fan n°1 de <@{_FREYDISS_ID}> 🫀",
-    f"💅 VINN taguée. Vous saviez qu'elle s'appelle littéralement **Abdos de Freydiss** ? Par choix ? 😭👑",
-    f"🔔 ping sur la soumise officielle de <@{_FREYDISS_ID}> — elle va répondre en moins de 2 secondes chrono 😏",
-    f"👑 ah `.c0ld19._`... celle qui porte le nom du roi sur son profil... respect à sa dévotion 🫡",
-    f"😭 VINN taguée. Quelqu'un a vérifié si elle avait pas mis une photo de <@{_FREYDISS_ID}> en fond aussi ? 💀",
-    f"🐐 son display name c'est **Abdos de Freydiss**... je dis ça je dis rien 👀💅",
-    f"😤 la voilà ! La soumise du roi <@{_FREYDISS_ID}> en personne — traitez-la bien elle a bon goût 👑",
-    f"💙 VINN dans le chat... la loyale... la dévouée... celle qui a tout compris sur <@{_FREYDISS_ID}> 😭🏴‍☠️",
-]
-
 # Toutes les variantes correctes du nom (insensible à la casse)
 _RE_FREYDISS_NAME = re.compile(
     r'\b(?:al\s*freydis+\d*|alfreydis+\d*|freydis+\d*|frey)\b',
@@ -893,7 +875,7 @@ def messages_in_period(messages, days, _now=None):
     cutoff = (_now or now_ts()) - days * 86400
     return sum(1 for ts in messages if ts >= cutoff)
 
-_CLEAN_CUTOFF_DAYS = 8
+_CLEAN_CUTOFF_DAYS = 31
 
 def clean_old_data(user, _now=None):
     cutoff = (_now or now_ts()) - _CLEAN_CUTOFF_DAYS * 86400
@@ -1111,7 +1093,6 @@ async def flush_dirty_loop():
         (_FREYDISS_DEF_CD,  _FREYDISS_DEF_DELAY),
         (_FREYDISS_TYPO_CD, _FREYDISS_TYPO_DELAY),
         (_FREYDISS_PING_CD, _FREYDISS_PING_DELAY),
-        (_VINN_PING_CD,     _VINN_PING_DELAY),
     ):
         expired_fr = [k for k, v in cd_dict.items() if _now_f - v > cd_delay * 3]
         for k in expired_fr:
@@ -2585,19 +2566,6 @@ async def on_message(message):
             pass
 
     elif message.author.id != _FREYDISS_ID:
-        # @mention de VINN → mettre Freydiss sur un piédestal
-        _vinn_pinged = (
-            any(m.id == _VINN_ID for m in message.mentions)
-            or f"<@{_VINN_ID}>" in message.content
-            or f"<@!{_VINN_ID}>" in message.content
-        )
-        if _vinn_pinged and now_f - _VINN_PING_CD.get(_cid, 0) >= _VINN_PING_DELAY:
-            _VINN_PING_CD[_cid] = now_f
-            try:
-                await message.channel.send(random.choice(_VINN_PING_HYPE))
-            except Exception:
-                pass
-
         # @mention directe de Freydiss → soumise mode
         _freydiss_pinged = (
             any(m.id == _FREYDISS_ID for m in message.mentions)
@@ -2982,6 +2950,49 @@ async def vocal_rank_loop():
                 print(f"[VOCAL_RANK] Erreur: {r}")
 
 # ─────────────────────────────────────────
+#  SYNC WEB (bot → Supabase via Vercel)
+# ─────────────────────────────────────────
+async def _sync_to_web():
+    site_url = os.environ.get("SITE_URL", "").rstrip("/")
+    secret   = os.environ.get("BOT_SYNC_SECRET", "")
+    if not site_url or not secret:
+        return
+    users = []
+    for guild in bot.guilds:
+        for member in guild.members:
+            if member.bot:
+                continue
+            uid  = str(member.id)
+            user = _CACHE.get(uid)
+            if not user:
+                continue
+            users.append({
+                "uid":              uid,
+                "username":         member.display_name,
+                "avatar_url":       str(member.display_avatar.url),
+                "berrys":           int(user.get("berrys", 0) or 0),
+                "vocal_seconds_7d": seconds_in_period(user.get("vocal_sessions", []), 7),
+                "messages_7d":      messages_in_period(user.get("messages", []), 7),
+                "rank":             user.get("last_rank"),
+            })
+    if not users:
+        return
+    # Supabase max 500 rows/batch — chunk if needed
+    for i in range(0, len(users), 500):
+        batch = users[i:i + 500]
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    f"{site_url}/api/sync-bot",
+                    json={"users": batch},
+                    headers={"Authorization": f"Bearer {secret}"},
+                    timeout=aiohttp.ClientTimeout(total=30),
+                ) as r:
+                    print(f"[SYNC] Web sync batch {i//500+1}: {r.status}, {len(batch)} membres")
+        except Exception as e:
+            print(f"[SYNC] Erreur web sync: {e}")
+
+# ─────────────────────────────────────────
 #  LOOP COMPLÈTE (tous membres, alertes, deranks)
 # ─────────────────────────────────────────
 @tasks.loop(minutes=10)
@@ -3039,6 +3050,8 @@ async def check_ranks_loop():
 
     elapsed = time.time() - tick
     print(f"[RANKS] check_ranks_loop : {total_members} membres en {elapsed:.1f}s")
+
+    asyncio.create_task(_sync_to_web())
 
 # ─────────────────────────────────────────
 #  COMMANDES SLASH
