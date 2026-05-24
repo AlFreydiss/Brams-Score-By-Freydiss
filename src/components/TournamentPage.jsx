@@ -19,8 +19,8 @@ import TournamentBracket from './tournament/TournamentBracket.jsx'
 import TournamentResults from './tournament/TournamentResults.jsx'
 
 const BG    = '#0a0a0b'
-const GOLD  = '#d4a017'
-const GOLD2 = '#ffd700'
+const GOLD  = '#e91e8c'
+const GOLD2 = '#f9a8d4'
 
 const T_CSS = `
   @keyframes t_glow    { 0%,100%{opacity:.5} 50%{opacity:1} }
@@ -41,7 +41,7 @@ function TStars() {
         <div key={i} style={{
           position: 'absolute', left: `${s.x}%`, top: `${s.y}%`,
           width: s.size, height: s.size, borderRadius: '50%',
-          background: s.gold ? 'rgba(212,160,23,.55)' : 'rgba(255,255,255,.4)',
+          background: s.gold ? 'rgba(233,30,140,.55)' : 'rgba(255,255,255,.4)',
           animation: `tTwinkle ${s.dur}s ${s.del}s ease-in-out infinite`,
         }} />
       ))}
@@ -54,7 +54,7 @@ function TScanLine() {
     <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 1, overflow: 'hidden' }}>
       <div style={{
         position: 'absolute', left: 0, right: 0, height: 2,
-        background: 'linear-gradient(90deg,transparent,rgba(212,160,23,.06),rgba(212,160,23,.13),rgba(212,160,23,.06),transparent)',
+        background: 'linear-gradient(90deg,transparent,rgba(233,30,140,.06),rgba(233,30,140,.13),rgba(233,30,140,.06),transparent)',
         animation: 'tScan 18s linear infinite',
       }} />
     </div>
@@ -85,8 +85,8 @@ function Pill({ label, value, gold }) {
     <div style={{
       padding: '10px 20px',
       borderRadius: 12,
-      background: gold ? 'rgba(212,160,23,.09)' : 'rgba(255,255,255,.04)',
-      border: `1px solid ${gold ? 'rgba(212,160,23,.28)' : 'rgba(255,255,255,.08)'}`,
+      background: gold ? 'rgba(233,30,140,.09)' : 'rgba(255,255,255,.04)',
+      border: `1px solid ${gold ? 'rgba(233,30,140,.28)' : 'rgba(255,255,255,.08)'}`,
       textAlign: 'center', flexShrink: 0,
     }}>
       <div style={{
@@ -143,7 +143,7 @@ function TournamentHero({ config, progress, roundLabel, matchLabel }) {
 
       <div style={{
         position: 'absolute', inset: '-40px -200px 0', zIndex: 0, pointerEvents: 'none',
-        background: 'radial-gradient(ellipse 80% 90% at 50% 0%, rgba(212,160,23,.07) 0%, transparent 55%)',
+        background: 'radial-gradient(ellipse 80% 90% at 50% 0%, rgba(233,30,140,.07) 0%, transparent 55%)',
       }} />
 
       <div style={{ position: 'relative', zIndex: 1 }}>
@@ -153,7 +153,7 @@ function TournamentHero({ config, progress, roundLabel, matchLabel }) {
           transition={{ delay: 0.05 }}
           style={{
             display: 'inline-flex', alignItems: 'center', gap: 8, padding: '5px 18px',
-            borderRadius: 100, background: 'rgba(212,160,23,.10)', border: '1px solid rgba(212,160,23,.30)',
+            borderRadius: 100, background: 'rgba(233,30,140,.10)', border: '1px solid rgba(233,30,140,.30)',
             fontSize: 9, fontWeight: 800, letterSpacing: '.18em', color: GOLD,
             textTransform: 'uppercase', marginBottom: 18,
           }}
@@ -240,8 +240,8 @@ function TournamentTabs({ active, onChange, roundLabel, matchLabel }) {
             <span style={{
               fontSize: 11, color: GOLD, fontWeight: 700,
               letterSpacing: '0.1em', textTransform: 'uppercase',
-              background: 'rgba(212,160,23,.08)',
-              border: '1px solid rgba(212,160,23,.2)',
+              background: 'rgba(233,30,140,.08)',
+              border: '1px solid rgba(233,30,140,.2)',
               borderRadius: 20, padding: '3px 14px',
             }}>
               {roundLabel}
@@ -271,9 +271,9 @@ function TournamentTabs({ active, onChange, roundLabel, matchLabel }) {
                 padding: '10px 28px',
                 borderRadius: 11, border: 'none', cursor: 'pointer',
                 fontSize: 13, fontWeight: 700,
-                background: active === tab.id ? 'rgba(212,160,23,.12)' : 'transparent',
+                background: active === tab.id ? 'rgba(233,30,140,.12)' : 'transparent',
                 color: active === tab.id ? GOLD : 'rgba(255,255,255,.38)',
-                outline: active === tab.id ? `1px solid rgba(212,160,23,.22)` : 'none',
+                outline: active === tab.id ? `1px solid rgba(233,30,140,.22)` : 'none',
                 transition: 'all 0.18s',
                 display: 'flex', alignItems: 'center', gap: 7,
               }}
@@ -317,7 +317,7 @@ function WinnerSection({ winner, onReset }) {
           borderRadius: 24,
           border: `1px solid ${GOLD}`,
           overflow: 'hidden',
-          boxShadow: `0 0 80px rgba(212,160,23,.1), 0 0 0 1px rgba(212,160,23,.12)`,
+          boxShadow: `0 0 80px rgba(233,30,140,.1), 0 0 0 1px rgba(233,30,140,.12)`,
           animation: 't_glow 3.5s ease-in-out infinite',
           maxWidth: 500, width: '100%',
         }}

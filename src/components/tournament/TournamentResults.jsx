@@ -1,8 +1,8 @@
 import { motion } from 'framer-motion'
 import { getVotePercents } from '../../lib/tournament.js'
 
-const GOLD   = '#d4a017'
-const GOLD_L = '#f0c040'
+const GOLD   = '#e91e8c'
+const GOLD_L = '#f9a8d4'
 
 function ResultMatch({ match, voteCounts, index }) {
   const p        = getVotePercents(voteCounts, match.id)
@@ -33,7 +33,7 @@ function ResultRow({ participant, won, lost, pct, count, total }) {
     <div style={{
       display: 'flex', alignItems: 'center', gap: 12,
       padding: '10px 16px',
-      background: won ? 'rgba(212,160,23,.05)' : 'transparent',
+      background: won ? 'rgba(233,30,140,.05)' : 'transparent',
       opacity: lost ? 0.42 : 1,
     }}>
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -112,10 +112,10 @@ export default function TournamentResults({ rounds, voteCounts, winner }) {
           style={{
             borderRadius: 16,
             border: `1px solid ${GOLD}`,
-            background: 'rgba(212,160,23,.06)',
+            background: 'rgba(233,30,140,.06)',
             padding: 'clamp(20px,4vw,32px)',
             textAlign: 'center',
-            boxShadow: `0 0 48px rgba(212,160,23,.07)`,
+            boxShadow: `0 0 48px rgba(233,30,140,.07)`,
           }}
         >
           <div style={{ fontSize: 28, marginBottom: 10 }}>🏆</div>

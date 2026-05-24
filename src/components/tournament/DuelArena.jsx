@@ -4,8 +4,8 @@ import { getVotePercents } from '../../lib/tournament.js'
 import OSTDuelCard from './OSTDuelCard.jsx'
 import VSPanel     from './VSPanel.jsx'
 
-const GOLD   = '#d4a017'
-const GOLD_L = '#ffd700'
+const GOLD   = '#e91e8c'
+const GOLD_L = '#f9a8d4'
 
 const ARENA_CSS = `
   @keyframes arWave { 0%,100%{height:6px} 50%{height:28px} }
@@ -80,11 +80,11 @@ function VoteToast({ visible, winnerTitle }) {
             position: 'fixed', top: 72, left: '50%', transform: 'translateX(-50%)',
             zIndex: 800,
             background: 'rgba(10,11,16,0.98)',
-            border: `1px solid rgba(212,160,23,.48)`,
+            border: `1px solid rgba(233,30,140,.48)`,
             borderRadius: 14,
             padding: '12px 24px',
             display: 'flex', alignItems: 'center', gap: 12,
-            boxShadow: '0 8px 32px rgba(0,0,0,.65), 0 0 0 1px rgba(212,160,23,.07)',
+            boxShadow: '0 8px 32px rgba(0,0,0,.65), 0 0 0 1px rgba(233,30,140,.07)',
             backdropFilter: 'blur(16px)',
             whiteSpace: 'nowrap',
           }}
@@ -245,16 +245,16 @@ export default function DuelArena({
             {!isLastMatch ? (
               <motion.button
                 onClick={onNext}
-                whileHover={{ scale: 1.04, boxShadow: `0 10px 32px rgba(212,160,23,.38)` }}
+                whileHover={{ scale: 1.04, boxShadow: `0 10px 32px rgba(233,30,140,.38)` }}
                 whileTap={{ scale: 0.97 }}
                 style={{
                   padding: '14px 52px',
                   borderRadius: 100, border: 'none',
-                  background: `linear-gradient(135deg, ${GOLD}, #e5b83a)`,
-                  color: '#1a1200', fontWeight: 800, fontSize: 15,
+                  background: `linear-gradient(135deg, ${GOLD}, #f06cb5)`,
+                  color: '#1a0011', fontWeight: 800, fontSize: 15,
                   cursor: 'pointer', letterSpacing: '0.04em',
                   fontFamily: "'Pirata One',cursive",
-                  boxShadow: `0 6px 24px rgba(212,160,23,.24)`,
+                  boxShadow: `0 6px 24px rgba(233,30,140,.24)`,
                 }}
               >
                 Duel suivant →

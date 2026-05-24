@@ -13,8 +13,8 @@ import {
 } from '../data/tournament-hub-data.js'
 
 const BG   = '#0a0a0b'
-const GOLD  = '#d4a017'
-const GOLD2 = '#ffd700'
+const GOLD  = '#e91e8c'
+const GOLD2 = '#f9a8d4'
 
 const HUB_CSS = `
   @keyframes htTwinkle { 0%,100%{opacity:.07} 50%{opacity:.50} }
@@ -36,7 +36,7 @@ function HTStars() {
         <div key={i} style={{
           position: 'absolute', left: `${s.x}%`, top: `${s.y}%`,
           width: s.size, height: s.size, borderRadius: '50%',
-          background: s.gold ? 'rgba(212,160,23,.55)' : 'rgba(255,255,255,.4)',
+          background: s.gold ? 'rgba(233,30,140,.55)' : 'rgba(255,255,255,.4)',
           animation: `htTwinkle ${s.dur}s ${s.del}s ease-in-out infinite`,
         }} />
       ))}
@@ -49,7 +49,7 @@ function HTScanLine() {
     <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 1, overflow: 'hidden' }}>
       <div style={{
         position: 'absolute', left: 0, right: 0, height: 2,
-        background: 'linear-gradient(90deg,transparent,rgba(212,160,23,.06),rgba(212,160,23,.13),rgba(212,160,23,.06),transparent)',
+        background: 'linear-gradient(90deg,transparent,rgba(233,30,140,.06),rgba(233,30,140,.13),rgba(233,30,140,.06),transparent)',
         animation: 'htScan 18s linear infinite',
       }} />
     </div>
@@ -101,7 +101,7 @@ function SectionHeading({ title, subtitle }) {
 // ── Status badge ───────────────────────────────────────────────────────────
 function StatusBadge({ status }) {
   const styles = {
-    active:  { bg: 'rgba(212,160,23,.14)', border: 'rgba(212,160,23,.35)', color: GOLD,                   label: 'En cours' },
+    active:  { bg: 'rgba(233,30,140,.14)', border: 'rgba(233,30,140,.35)', color: GOLD,                   label: 'En cours' },
     soon:    { bg: 'rgba(255,255,255,.05)', border: 'rgba(255,255,255,.10)', color: 'rgba(255,255,255,.32)', label: 'Bientôt' },
     testing: { bg: 'rgba(99,102,241,.12)', border: 'rgba(99,102,241,.3)',  color: '#a5b4fc',              label: 'En test' },
   }
@@ -259,8 +259,8 @@ function ActiveTournamentCard({ config, progress, currentRound, winner }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
       style={{
-        background: `linear-gradient(145deg, rgba(212,160,23,.07) 0%, rgba(10,10,11,0.97) 100%)`,
-        border: '1px solid rgba(212,160,23,.18)',
+        background: `linear-gradient(145deg, rgba(233,30,140,.07) 0%, rgba(10,10,11,0.97) 100%)`,
+        border: '1px solid rgba(233,30,140,.18)',
         borderTop: `2px solid ${GOLD}99`,
         borderRadius: 18,
         padding: 'clamp(20px,3vw,36px)',
@@ -270,7 +270,7 @@ function ActiveTournamentCard({ config, progress, currentRound, winner }) {
       {/* Top ambient */}
       <div style={{
         position: 'absolute', top: -30, left: -30, right: -30, height: 100,
-        background: `radial-gradient(ellipse 70% 100% at 50% 0%, rgba(212,160,23,.10) 0%, transparent 70%)`,
+        background: `radial-gradient(ellipse 70% 100% at 50% 0%, rgba(233,30,140,.10) 0%, transparent 70%)`,
         pointerEvents: 'none',
       }} />
 
@@ -346,13 +346,13 @@ function ActiveTournamentCard({ config, progress, currentRound, winner }) {
             <>
               <motion.button
                 onClick={() => navigate('/tournoi/ost')}
-                whileHover={{ scale: 1.03, boxShadow: `0 8px 28px rgba(212,160,23,.32)` }}
+                whileHover={{ scale: 1.03, boxShadow: `0 8px 28px rgba(233,30,140,.32)` }}
                 whileTap={{ scale: 0.97 }}
                 style={{
                   width: '100%', padding: '13px 0',
                   borderRadius: 12, border: 'none',
-                  background: `linear-gradient(135deg, ${GOLD}, #e5b83a)`,
-                  color: '#1a1200', fontWeight: 800, fontSize: 14,
+                  background: `linear-gradient(135deg, ${GOLD}, #f06cb5)`,
+                  color: '#1a0011', fontWeight: 800, fontSize: 14,
                   cursor: 'pointer', letterSpacing: '0.03em',
                   fontFamily: "'Pirata One',cursive",
                 }}
@@ -474,7 +474,7 @@ function TournamentHero({ activeRef, categoriesRef }) {
         transition={{ duration: 0.4 }}
         style={{
           display: 'inline-flex', alignItems: 'center', gap: 8,
-          background: 'rgba(212,160,23,.08)', border: '1px solid rgba(212,160,23,.26)',
+          background: 'rgba(233,30,140,.08)', border: '1px solid rgba(233,30,140,.26)',
           borderRadius: 100, padding: '5px 18px', marginBottom: 22,
         }}
       >
@@ -537,16 +537,16 @@ function TournamentHero({ activeRef, categoriesRef }) {
       >
         <motion.button
           onClick={() => scrollTo(activeRef)}
-          whileHover={{ scale: 1.04, boxShadow: `0 10px 32px rgba(212,160,23,.38)` }}
+          whileHover={{ scale: 1.04, boxShadow: `0 10px 32px rgba(233,30,140,.38)` }}
           whileTap={{ scale: 0.97 }}
           style={{
             padding: '14px 36px', borderRadius: 100,
             border: 'none',
-            background: `linear-gradient(135deg, ${GOLD}, #e5b83a)`,
-            color: '#1a1200', fontWeight: 800, fontSize: 14,
+            background: `linear-gradient(135deg, ${GOLD}, #f06cb5)`,
+            color: '#1a0011', fontWeight: 800, fontSize: 14,
             cursor: 'pointer', letterSpacing: '0.04em',
             fontFamily: "'Pirata One',cursive",
-            boxShadow: `0 6px 24px rgba(212,160,23,.24)`,
+            boxShadow: `0 6px 24px rgba(233,30,140,.24)`,
           }}
         >
           Tournois actifs
