@@ -363,7 +363,7 @@ export default function App() {
         <Footer />
       </div>
 
-      <ThemeToggle />
+      {!immersiveOverlayOpen && <ThemeToggle />}
       <AIChatWidget hidden={mediaOverlayOpen || encyclopedieOpen} />
       <AkainuGame />
 
