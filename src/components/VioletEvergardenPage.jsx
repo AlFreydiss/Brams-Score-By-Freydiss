@@ -110,7 +110,7 @@ function EpCard({ video, index, watched, onPlay }) {
           ? <img
               src={video.thumbnail} alt={video.title} loading="lazy"
               onError={() => setImgErr(true)}
-              style={{ position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',opacity:watched?.0.55:0.8 }}
+              style={{ position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',opacity: watched ? 0.55 : 0.8 }}
             />
           : <div style={{ position:'absolute',inset:0, background:`linear-gradient(135deg,rgba(139,124,255,.18),rgba(0,0,0,.9))`, display:'flex',alignItems:'center',justifyContent:'center' }}>
               <span style={{ fontFamily:"'Pirata One',cursive", fontSize:40, fontWeight:900, color:`rgba(139,124,255,.35)`, lineHeight:1 }}>{video.episode}</span>
