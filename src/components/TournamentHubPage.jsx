@@ -12,9 +12,16 @@ import {
   COMPLETED_TOURNAMENTS,
 } from '../data/tournament-hub-data.js'
 
-const BG   = '#0a0a0b'
-const GOLD  = '#e91e8c'
-const GOLD2 = '#f9a8d4'
+const BG      = '#0a0a0b'
+const PINK    = '#e91e8c'
+const PURPLE  = '#9333ea'
+const PINK_L  = '#f9a8d4'
+// gradient helpers
+const GRAD    = `linear-gradient(135deg, ${PINK}, ${PURPLE})`
+const GRAD_TXT = `linear-gradient(135deg, ${PINK_L} 0%, ${PINK} 45%, ${PURPLE} 100%)`
+// keep alias for compat with existing rgba references
+const GOLD  = PINK
+const GOLD2 = PINK_L
 
 const HUB_CSS = `
   @keyframes htTwinkle { 0%,100%{opacity:.07} 50%{opacity:.50} }
@@ -49,7 +56,7 @@ function HTScanLine() {
     <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 1, overflow: 'hidden' }}>
       <div style={{
         position: 'absolute', left: 0, right: 0, height: 2,
-        background: 'linear-gradient(90deg,transparent,rgba(233,30,140,.06),rgba(233,30,140,.13),rgba(233,30,140,.06),transparent)',
+        background: 'linear-gradient(90deg,transparent,rgba(233,30,140,.10),rgba(147,51,234,.14),rgba(233,30,140,.10),transparent)',
         animation: 'htScan 18s linear infinite',
       }} />
     </div>
@@ -223,15 +230,21 @@ function ProgressRing({ pct }) {
   return (
     <div style={{ position: 'relative', width: 70, height: 70, flexShrink: 0 }}>
       <svg width="70" height="70" style={{ position: 'absolute', inset: 0, transform: 'rotate(-90deg)' }}>
+        <defs>
+          <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor={PINK} />
+            <stop offset="100%" stopColor={PURPLE} />
+          </linearGradient>
+        </defs>
         <circle cx="35" cy="35" r={R} fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth={STROKE} />
         <motion.circle
           cx="35" cy="35" r={R} fill="none"
-          stroke={GOLD} strokeWidth={STROKE}
+          stroke="url(#ringGrad)" strokeWidth={STROKE}
           strokeLinecap="round"
           strokeDasharray={C}
           animate={{ strokeDashoffset: dash }}
           transition={{ duration: 1, ease: 'easeOut' }}
-          style={{ filter: `drop-shadow(0 0 5px ${GOLD}88)` }}
+          style={{ filter: `drop-shadow(0 0 6px ${PINK}88)` }}
         />
       </svg>
       <div style={{
@@ -351,8 +364,8 @@ function ActiveTournamentCard({ config, progress, currentRound, winner }) {
                 style={{
                   width: '100%', padding: '13px 0',
                   borderRadius: 12, border: 'none',
-                  background: `linear-gradient(135deg, ${GOLD}, #f06cb5)`,
-                  color: '#1a0011', fontWeight: 800, fontSize: 14,
+                  background: GRAD,
+                  color: '#fff', fontWeight: 800, fontSize: 14,
                   cursor: 'pointer', letterSpacing: '0.03em',
                   fontFamily: "'Pirata One',cursive",
                 }}
@@ -492,7 +505,7 @@ function TournamentHero({ activeRef, categoriesRef }) {
           fontFamily: "'Pirata One',cursive",
           fontSize: 'clamp(56px,10vw,110px)',
           fontWeight: 900, margin: '0 0 16px',
-          background: `linear-gradient(135deg, ${GOLD2} 0%, ${GOLD} 50%, rgba(191,164,106,.72) 100%)`,
+          background: GRAD_TXT,
           WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
           letterSpacing: '-0.01em', lineHeight: 0.95,
         }}

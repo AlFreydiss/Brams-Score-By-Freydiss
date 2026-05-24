@@ -18,9 +18,14 @@ import DuelArena         from './tournament/DuelArena.jsx'
 import TournamentBracket from './tournament/TournamentBracket.jsx'
 import TournamentResults from './tournament/TournamentResults.jsx'
 
-const BG    = '#0a0a0b'
-const GOLD  = '#e91e8c'
-const GOLD2 = '#f9a8d4'
+const BG     = '#0a0a0b'
+const PINK   = '#e91e8c'
+const PURPLE = '#9333ea'
+const PINK_L = '#f9a8d4'
+const GRAD   = `linear-gradient(135deg, ${PINK}, ${PURPLE})`
+const GRAD_TXT = `linear-gradient(135deg, ${PINK_L} 0%, ${PINK} 45%, ${PURPLE} 100%)`
+const GOLD   = PINK
+const GOLD2  = PINK_L
 
 const T_CSS = `
   @keyframes t_glow    { 0%,100%{opacity:.5} 50%{opacity:1} }
@@ -54,7 +59,7 @@ function TScanLine() {
     <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 1, overflow: 'hidden' }}>
       <div style={{
         position: 'absolute', left: 0, right: 0, height: 2,
-        background: 'linear-gradient(90deg,transparent,rgba(233,30,140,.06),rgba(233,30,140,.13),rgba(233,30,140,.06),transparent)',
+        background: 'linear-gradient(90deg,transparent,rgba(233,30,140,.10),rgba(147,51,234,.14),rgba(233,30,140,.10),transparent)',
         animation: 'tScan 18s linear infinite',
       }} />
     </div>
@@ -169,7 +174,7 @@ function TournamentHero({ config, progress, roundLabel, matchLabel }) {
             fontFamily: "'Pirata One',cursive",
             fontSize: 'clamp(40px, 7vw, 88px)',
             fontWeight: 900, margin: '0 0 14px',
-            background: `linear-gradient(135deg, ${GOLD2} 0%, ${GOLD} 50%, rgba(191,164,106,.75) 100%)`,
+            background: GRAD_TXT,
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
             letterSpacing: '-0.01em', lineHeight: 0.95,
           }}
@@ -211,7 +216,7 @@ function TournamentHero({ config, progress, roundLabel, matchLabel }) {
               initial={false}
               animate={{ width: `${progress.pct}%` }}
               transition={{ duration: 0.8, ease: 'easeOut' }}
-              style={{ height: '100%', background: `linear-gradient(90deg, ${GOLD}, ${GOLD2})` }}
+              style={{ height: '100%', background: GRAD }}
             />
           </div>
         </div>
@@ -353,7 +358,7 @@ function WinnerSection({ winner, onReset }) {
           <div style={{ fontSize: 48, marginBottom: 14 }}>🏆</div>
           <div style={{
             fontSize: 'clamp(22px, 4vw, 32px)', fontWeight: 900,
-            background: `linear-gradient(135deg, ${GOLD2}, ${GOLD})`,
+            background: GRAD_TXT,
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
             marginBottom: 8, lineHeight: 1.2,
           }}>

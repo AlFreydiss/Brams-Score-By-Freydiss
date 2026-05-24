@@ -4,8 +4,12 @@ import { getVotePercents } from '../../lib/tournament.js'
 import OSTDuelCard from './OSTDuelCard.jsx'
 import VSPanel     from './VSPanel.jsx'
 
-const GOLD   = '#e91e8c'
-const GOLD_L = '#f9a8d4'
+const PINK   = '#e91e8c'
+const PURPLE = '#9333ea'
+const PINK_L = '#f9a8d4'
+const GOLD   = PINK
+const GOLD_L = PINK_L
+const GRAD   = `linear-gradient(135deg, ${PINK}, ${PURPLE})`
 
 const ARENA_CSS = `
   @keyframes arWave { 0%,100%{height:6px} 50%{height:28px} }
@@ -165,7 +169,7 @@ export default function DuelArena({
             initial={false}
             animate={{ width: `${((matchNum - (hasVoted ? 0 : 1)) / totalMatchesInRound) * 100}%` }}
             transition={{ duration: 0.5 }}
-            style={{ height: '100%', background: `linear-gradient(90deg, ${GOLD}, ${GOLD_L})` }}
+            style={{ height: '100%', background: GRAD }}
           />
         </div>
       </div>
@@ -250,8 +254,8 @@ export default function DuelArena({
                 style={{
                   padding: '14px 52px',
                   borderRadius: 100, border: 'none',
-                  background: `linear-gradient(135deg, ${GOLD}, #f06cb5)`,
-                  color: '#1a0011', fontWeight: 800, fontSize: 15,
+                  background: GRAD,
+                  color: '#fff', fontWeight: 800, fontSize: 15,
                   cursor: 'pointer', letterSpacing: '0.04em',
                   fontFamily: "'Pirata One',cursive",
                   boxShadow: `0 6px 24px rgba(233,30,140,.24)`,
