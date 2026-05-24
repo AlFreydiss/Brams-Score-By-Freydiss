@@ -334,6 +334,74 @@ function TpnInfoPanel({ color, tab, readCount, chapterCount, watchedCount, episo
   )
 }
 
+function SeriesInfoPanel({ color, title, headerEmoji, videos, watchedCount, videoProgress, onResume }) {
+  const latest = videos[videos.length - 1] || null
+  const lastIdx = Number.isInteger(videoProgress?.lastIdx) ? videoProgress.lastIdx : Math.max(0, videos.length - 1)
+  const pct = videos.length > 0 ? Math.round((watchedCount / videos.length) * 100) : 0
+  const resumeLabel = videoProgress?.lastEpisode
+    ? `Reprendre — Ép. ${videoProgress.lastEpisode}`
+    : latest ? `Regarder — Ép. ${latest.episode}` : 'Regarder'
+
+  return (
+    <aside className="tpn-info-panel" style={{
+      position: 'sticky',
+      top: 18,
+      alignSelf: 'start',
+      borderRadius: 22,
+      overflow: 'hidden',
+      background: 'linear-gradient(180deg, rgba(22,23,27,0.92), rgba(12,13,16,0.96))',
+      border: `1px solid ${color}33`,
+      boxShadow: '0 24px 70px rgba(0,0,0,0.34), inset 0 1px 0 rgba(255,255,255,0.06)',
+      backdropFilter: 'blur(16px)',
+    }}>
+      <div style={{ position: 'relative', height: 210, overflow: 'hidden', background: '#0b0d10' }}>
+        {latest?.thumbnail && (
+          <img src={latest.thumbnail} alt={title} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.72, filter: 'brightness(0.9) saturate(1.12)' }} />
+        )}
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,0.08), rgba(12,13,16,0.96))' }} />
+        <div style={{ position: 'absolute', left: 18, right: 18, bottom: 18 }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '4px 9px', borderRadius: 999, background: `${color}22`, border: `1px solid ${color}44`, color, fontSize: 9, fontWeight: 900, letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 9 }}>
+            VOSTFR
+          </div>
+          <div style={{ fontFamily: 'var(--display)', fontSize: 28, lineHeight: 0.95, fontWeight: 900, color: '#fff', textShadow: '0 2px 18px rgba(0,0,0,0.8)' }}>{headerEmoji} {title}</div>
+          <div style={{ marginTop: 5, fontSize: 12, color: 'rgba(255,255,255,0.48)', fontWeight: 800 }}>{videos.length} épisodes · dernier Ép. {latest?.episode}</div>
+        </div>
+      </div>
+      <div style={{ padding: 18 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '74px 1fr', gap: 14, alignItems: 'center', marginBottom: 16 }}>
+          <div style={{ width: 70, height: 70, borderRadius: '50%', border: `5px solid ${color}55`, display: 'grid', placeItems: 'center', color: '#fff', fontFamily: 'var(--display)', fontSize: 18, fontWeight: 900 }}>{pct}%</div>
+          <div>
+            <div style={{ color: '#fff', fontSize: 14, fontWeight: 900, marginBottom: 6 }}>{watchedCount} / {videos.length} épisodes</div>
+            <div style={{ height: 6, borderRadius: 999, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+              <div style={{ width: `${pct}%`, height: '100%', borderRadius: 999, background: `linear-gradient(90deg, ${color}, #f8b45f)`, transition: 'width .5s ease' }} />
+            </div>
+            <div style={{ marginTop: 5, color: 'rgba(255,255,255,0.35)', fontSize: 11, fontWeight: 750 }}>En cours de visionnage</div>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => onResume(lastIdx)}
+          style={{ width: '100%', height: 44, borderRadius: 13, border: `1px solid ${color}55`, background: `linear-gradient(135deg, ${color}28, rgba(248,180,95,0.14))`, color: '#fff', fontSize: 13, fontWeight: 900, cursor: 'pointer', marginBottom: 14 }}
+        >
+          ▶ {resumeLabel}
+        </button>
+        <div style={{ display: 'grid', gap: 8 }}>
+          {[
+            ['Arc', latest?.season || 'Egghead'],
+            ['Audio', 'VOSTFR'],
+            ['Dernier', latest ? `Épisode ${latest.episode}` : '-'],
+          ].map(([label, value]) => (
+            <div key={label} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, padding: '9px 0', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+              <span style={{ color: 'rgba(255,255,255,0.34)', fontSize: 11, fontWeight: 850, textTransform: 'uppercase', letterSpacing: '.09em' }}>{label}</span>
+              <span style={{ color: '#fff', fontSize: 12, fontWeight: 800, textAlign: 'right' }}>{value}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </aside>
+  )
+}
+
 function TpnMusicControl({ videoRef, color }) {
   const [muted, setMuted] = useState(true)
   const [volume, setVolume] = useState(28)
@@ -454,6 +522,8 @@ export default function GenericMangaPage({ chaptersData, videosData, color, name
 
   const VIDEOS = videosData
   const isTpn = namespace === 'tpn'
+  const isOnePiece = namespace === 'onepiece'
+  const usesEpisodeLayout = isTpn || isOnePiece
 
   const [tab,          setTab]          = useState(() => videosData.length > 0 ? 'videos' : 'scans')
   const [reading,      setReading]      = useState(null)
@@ -602,7 +672,7 @@ export default function GenericMangaPage({ chaptersData, videosData, color, name
 
   return (
     <>
-      {isTpn && (
+      {usesEpisodeLayout && (
         <style>{`
           .tpn-content-grid {
             display: grid;
@@ -620,7 +690,7 @@ export default function GenericMangaPage({ chaptersData, videosData, color, name
         position: 'fixed',
         inset: 0,
         zIndex: 500,
-        background: isTpn
+        background: usesEpisodeLayout
           ? 'radial-gradient(circle at 18% 8%, rgba(108,92,231,0.18), transparent 34rem), radial-gradient(circle at 86% 22%, rgba(20,83,45,0.16), transparent 30rem), linear-gradient(135deg, #111315 0%, #17191d 48%, #111214 100%)'
           : 'var(--bg)',
         display: 'flex',
@@ -640,25 +710,28 @@ export default function GenericMangaPage({ chaptersData, videosData, color, name
             <source src="/tpn-opening.mp4" type="video/mp4" />
           </video>
         )}
-        {isTpn && <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: 'radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.22) 72%, rgba(0,0,0,0.42) 100%)' }} />}
-        <div style={{ flexShrink: 0, background: isTpn ? 'rgba(18,19,22,0.88)' : 'rgba(17,18,20,0.97)', backdropFilter: 'blur(20px)', borderBottom: '1px solid var(--border)', zIndex: 10 }}>
+        {usesEpisodeLayout && <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: 'radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.22) 72%, rgba(0,0,0,0.42) 100%)' }} />}
+        <div style={{ flexShrink: 0, background: usesEpisodeLayout ? 'rgba(18,19,22,0.88)' : 'rgba(17,18,20,0.97)', backdropFilter: 'blur(20px)', borderBottom: '1px solid var(--border)', zIndex: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '0 20px', minHeight: 64, flexWrap: 'wrap' }}>
             <button onClick={onClose}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, background: isTpn ? 'rgba(255,255,255,0.075)' : 'rgba(255,255,255,0.06)', border: '1px solid var(--border)', borderRadius: 10, color: '#fff', cursor: 'pointer', padding: '8px 14px', fontSize: 13, fontWeight: 800, flexShrink: 0, transition: 'background 0.15s' }}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, background: usesEpisodeLayout ? 'rgba(255,255,255,0.075)' : 'rgba(255,255,255,0.06)', border: '1px solid var(--border)', borderRadius: 10, color: '#fff', cursor: 'pointer', padding: '8px 14px', fontSize: 13, fontWeight: 800, flexShrink: 0, transition: 'background 0.15s' }}
               onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.12)'}
-              onMouseLeave={e => e.currentTarget.style.background = isTpn ? 'rgba(255,255,255,0.075)' : 'rgba(255,255,255,0.06)'}
+              onMouseLeave={e => e.currentTarget.style.background = usesEpisodeLayout ? 'rgba(255,255,255,0.075)' : 'rgba(255,255,255,0.06)'}
             >← Retour</button>
             <div style={{ width: 3, height: 32, borderRadius: 2, background: color, flexShrink: 0 }} />
             <div style={{ flex: 1, minWidth: 220 }}>
-              <div style={{ fontFamily: 'var(--display)', fontWeight: 900, fontSize: isTpn ? 19 : 16, color: '#fff', letterSpacing: isTpn ? '-.01em' : 0 }}>{headerEmoji} {title}</div>
-              {CHAPTERS.length > 0 && <div style={{ fontSize: isTpn ? 12 : 11, color: '#34d399', fontWeight: 800 }}>{isTpn ? topProgressLabel : `${readCount}/${CHAPTERS.length} chapitres lus`}</div>}
+              <div style={{ fontFamily: 'var(--display)', fontWeight: 900, fontSize: usesEpisodeLayout ? 19 : 16, color: '#fff', letterSpacing: usesEpisodeLayout ? '-.01em' : 0 }}>{headerEmoji} {title}</div>
+              {(CHAPTERS.length > 0 || VIDEOS.length > 0) && <div style={{ fontSize: usesEpisodeLayout ? 12 : 11, color: '#34d399', fontWeight: 800 }}>{usesEpisodeLayout ? topProgressLabel : `${readCount}/${CHAPTERS.length} chapitres lus`}</div>}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
               {tab === 'scans' && chaptersByArc && chaptersByArc.length > 1 && (
                 <ArcNav arcs={chaptersByArc} color={color} onJump={jumpToArc} />
               )}
               <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: 10, overflow: 'hidden', border: '1px solid var(--border)' }}>
-                {[['scans', '📖 Scans'], ['videos', '🎬 Épisodes']].map(([t, label]) => (
+                {[
+                  ...(CHAPTERS.length > 0 ? [['scans', '📖 Scans']] : []),
+                  ...(VIDEOS.length > 0 ? [['videos', '🎬 Épisodes']] : []),
+                ].map(([t, label]) => (
                   <button key={t} onClick={() => setTab(t)} style={{ height: 38, padding: '0 18px', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 700, background: tab === t ? `${color}28` : 'transparent', color: tab === t ? color : 'var(--muted)', borderRight: t === 'scans' ? '1px solid var(--border)' : 'none', transition: 'all 0.15s' }}>{label}</button>
                 ))}
               </div>
@@ -666,9 +739,9 @@ export default function GenericMangaPage({ chaptersData, videosData, color, name
           </div>
         </div>
 
-        <div ref={scrollRef} style={{ position: 'relative', zIndex: 1, flex: 1, overflowY: 'auto', padding: isTpn ? '24px 24px 30px' : '28px 20px' }}>
-          <div style={{ maxWidth: isTpn ? 1760 : tab === 'videos' ? 1280 : 1120, margin: '0 auto' }}>
-            <div className={isTpn ? 'tpn-content-grid' : undefined} style={{ display: isTpn ? undefined : 'block' }}>
+        <div ref={scrollRef} style={{ position: 'relative', zIndex: 1, flex: 1, overflowY: 'auto', padding: usesEpisodeLayout ? '24px 24px 30px' : '28px 20px' }}>
+          <div style={{ maxWidth: usesEpisodeLayout ? 1760 : tab === 'videos' ? 1280 : 1120, margin: '0 auto' }}>
+            <div className={usesEpisodeLayout ? 'tpn-content-grid' : undefined} style={{ display: usesEpisodeLayout ? undefined : 'block' }}>
               {isTpn && (
                 <TpnInfoPanel
                   color={color}
@@ -677,6 +750,17 @@ export default function GenericMangaPage({ chaptersData, videosData, color, name
                   chapterCount={CHAPTERS.length}
                   watchedCount={watchedCount}
                   episodeCount={VIDEOS.length}
+                  videoProgress={videoProgress}
+                  onResume={idx => setPlayerIdx(Math.max(0, Math.min(VIDEOS.length - 1, idx)))}
+                />
+              )}
+              {isOnePiece && (
+                <SeriesInfoPanel
+                  color={color}
+                  title={title}
+                  headerEmoji={headerEmoji}
+                  videos={VIDEOS}
+                  watchedCount={watchedCount}
                   videoProgress={videoProgress}
                   onResume={idx => setPlayerIdx(Math.max(0, Math.min(VIDEOS.length - 1, idx)))}
                 />
@@ -710,13 +794,13 @@ export default function GenericMangaPage({ chaptersData, videosData, color, name
                 ? <EmptyState icon="🎬" title="Épisodes bientôt disponibles" desc="Les épisodes seront ajoutés prochainement." />
                 : <>
                     {isTpn && <ArcFilter arcs={videoArcFilters} active={videoArc} onChange={setVideoArc} color={color} />}
-                    <div style={{ display: 'grid', gridTemplateColumns: isTpn ? 'repeat(auto-fit, minmax(min(100%, 285px), 1fr))' : 'repeat(auto-fill, minmax(300px, 1fr))', gap: isTpn ? 20 : 18 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: usesEpisodeLayout ? 'repeat(auto-fit, minmax(min(100%, 285px), 1fr))' : 'repeat(auto-fill, minmax(300px, 1fr))', gap: usesEpisodeLayout ? 20 : 18 }}>
                       {filteredVideos.map((v, i) => (
                         <VideoCard
                           key={`${v.episode}-${i}`}
                           video={v}
                           color={color}
-                          premium={isTpn}
+                          premium={usesEpisodeLayout}
                           onPlay={() => setPlayerIdx(VIDEOS.indexOf(v))}
                         />
                       ))}

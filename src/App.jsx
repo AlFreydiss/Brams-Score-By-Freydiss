@@ -445,7 +445,7 @@ export default function App() {
         isAuthenticated ? (
           <AnimeHub
             onClose={() => setAnimeHubOpen(false)}
-            onOpenOnepiece={() => { setAnimeHubOpen(false); setScansOpen(true) }}
+            onOpenOnepiece={() => { setAnimeHubOpen(false); setOnepieceOpen(true) }}
             onOpenTpn={() => { setAnimeHubOpen(false); setTpnOpen(true) }}
             onOpenDrstone={() => { setAnimeHubOpen(false); setDrstoneOpen(true) }}
             onOpenJjk={() => { setAnimeHubOpen(false); setJjkOpen(true) }}

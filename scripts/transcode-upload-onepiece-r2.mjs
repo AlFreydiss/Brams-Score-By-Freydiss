@@ -1,6 +1,6 @@
 /**
  * One Piece Egghead — MKV x265 VOSTFR → MP4 H264 via NVENC (GPU)
- * Episodes E1086-E1155 (70 épisodes)
+ * Episodes E1086-E1163
  * Subtitles VTT déjà sur R2, pas besoin de les re-uploader.
  * Met à jour src/data/onepiece-videos.js avec les nouveaux chemins .mp4
  */
@@ -44,7 +44,7 @@ const SOURCE_DIR = 'F:\\Brams-Score-By-Freydiss\\brams-website\\public\\anime\\O
 const KEY_PREFIX  = 'anime/op-egghead'
 const TEMP = path.join(os.tmpdir(), 'brams-onepiece')
 const EP_START = OP_START ? parseInt(OP_START) : 1086
-const EP_END   = OP_END   ? parseInt(OP_END)   : 1155
+const EP_END   = OP_END   ? parseInt(OP_END)   : 1163
 
 const client = new S3Client({
   region: 'auto',
@@ -67,11 +67,11 @@ async function exists(key) {
   catch { return false }
 }
 
-async function upload(localPath, key) {
+async function upload(localPath, key, contentType = 'video/mp4') {
   const size = fs.statSync(localPath).size
   const up = new Upload({
     client,
-    params: { Bucket: R2_BUCKET_NAME, Key: key, Body: fs.createReadStream(localPath), ContentType: 'video/mp4' },
+    params: { Bucket: R2_BUCKET_NAME, Key: key, Body: fs.createReadStream(localPath), ContentType: contentType },
     queueSize: 4, partSize: 10 * 1024 * 1024,
   })
   let last = -1
@@ -155,6 +155,7 @@ const EPISODE_TITLES = {
   1153:"Le bouleversement d'une ere ! Le fluide royal qui guide Luffy",
   1154:'La verite derriere le plan secret ! Vegapunk declare victoire',
   1155:"L'horizon promis ! En route vers Elbaph tant attendu",
+  1163:'Episode 1163',
 }
 
 const SUBTITLE_BASE = `${R2_PUBLIC_URL}/anime/op-egghead-subtitles`
@@ -163,9 +164,11 @@ const THUMB_BASE    = `${R2_PUBLIC_URL}/anime/op-egghead-thumbnails`
 // Fichiers source locaux
 const SPECIAL_SRC = {
   1120: 'One.Piece.E1120.v2.VOSTFR.1080p.WEBRiP.x265-KAF.mkv',
+  1163: 'F:\\Brams-Score-By-Freydiss\\brams-website\\public\\anime\\[KiyoshiiSubs] One Piece - 1163 [1080p][H.265 - 10Bit].mkv',
 }
-function srcFilename(ep) {
-  return SPECIAL_SRC[ep] || `One.Piece.E${ep}.VOSTFR.1080p.WEBRiP.x265-KAF.mkv`
+function srcPathFor(ep) {
+  const filename = SPECIAL_SRC[ep] || `One.Piece.E${ep}.VOSTFR.1080p.WEBRiP.x265-KAF.mkv`
+  return path.isAbsolute(filename) ? filename : path.join(SOURCE_DIR, filename)
 }
 
 async function main() {
@@ -173,10 +176,12 @@ async function main() {
   console.log(`\n=== One Piece Egghead — E${EP_START}-E${EP_END} ===\n`)
 
   for (let ep = EP_START; ep <= EP_END; ep++) {
-    const filename = srcFilename(ep)
-    const srcPath  = path.join(SOURCE_DIR, filename)
+    const srcPath  = srcPathFor(ep)
+    const filename = path.basename(srcPath)
     const key      = `${KEY_PREFIX}/E${ep}.mp4`
+    const thumbKey = `anime/op-egghead-thumbnails/E${ep}.jpg`
     const tmpMp4   = path.join(TEMP, `E${ep}.mp4`)
+    const tmpThumb = path.join(TEMP, `E${ep}.jpg`)
 
     if (!fs.existsSync(srcPath)) {
       console.log(`[E${ep}] Source manquante: ${filename}, skip.`)
@@ -225,6 +230,23 @@ async function main() {
       ])
     }
 
+    if (!(await exists(thumbKey))) {
+      console.log('  Génération miniature...')
+      await run('ffmpeg', [
+        '-y', '-hide_banner', '-loglevel', 'error',
+        '-ss', '00:08:00',
+        '-i', srcPath,
+        '-frames:v', '1',
+        '-vf', 'scale=480:270:force_original_aspect_ratio=increase,crop=480:270',
+        '-q:v', '3',
+        tmpThumb,
+      ])
+      await upload(tmpThumb, thumbKey, 'image/jpeg')
+      fs.unlinkSync(tmpThumb)
+    } else {
+      console.log('  Miniature déjà sur R2, skip.')
+    }
+
     const gb = (fs.statSync(tmpMp4).size / 1e9).toFixed(2)
     console.log(`  Upload MP4 (${gb} GB)...`)
     await upload(tmpMp4, key)
@@ -239,8 +261,12 @@ const THUMBNAIL_BASE_PATH = '${THUMB_BASE}'
 
 const EPISODE_TITLES = ${JSON.stringify(EPISODE_TITLES, null, 2)}
 
-export default Array.from({ length: 70 }, (_, index) => {
-  const episode = 1086 + index
+const EPISODES = [
+  ...Array.from({ length: 70 }, (_, index) => 1086 + index),
+  1163,
+]
+
+export default EPISODES.map((episode) => {
   return {
     episode,
     title: EPISODE_TITLES[episode] || \`Episode \${episode}\`,
