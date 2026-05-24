@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 
 // ─── Data ────────────────────────────────────────────────────────────────────
 
@@ -305,6 +305,12 @@ const AH_CSS = `
   .ah-grid-card:focus-visible { outline:2px solid rgba(212,160,23,.7); outline-offset:3px; }
   .ah-grid-img { transition:transform .4s ease; }
   .ah-grid-card:hover .ah-grid-img { transform:scale(1.055)!important; }
+
+  .ah-rail { scrollbar-width:none; -ms-overflow-style:none; }
+  .ah-rail::-webkit-scrollbar { display:none; }
+  .ah-rail:active { cursor:grabbing!important; }
+  .ah-arrow { transition:opacity .18s,background .18s; }
+  .ah-arrow:hover { background:rgba(255,255,255,.12)!important; }
 `
 
 // ─── Background atmosphere ────────────────────────────────────────────────────
@@ -411,10 +417,11 @@ function AnimeCarouselCard({ anime, onClick }) {
       onKeyDown={e => e.key === 'Enter' && onClick()}
       aria-label={anime.title}
       style={{
-        flexShrink:0, width:188, height:272, borderRadius:13, overflow:'hidden',
-        position:'relative', cursor:'pointer', background:'#0c0e14', marginRight:12,
-        border:'1px solid rgba(255,255,255,0.07)',
-        boxShadow:'0 3px 14px rgba(0,0,0,0.45)',
+        flexShrink:0, width:204, height:296, borderRadius:16, overflow:'hidden',
+        position:'relative', cursor:'pointer', background:'#0c0e14',
+        border:'1px solid rgba(255,255,255,0.08)',
+        boxShadow:'0 4px 20px rgba(0,0,0,0.55)',
+        scrollSnapAlign:'start',
       }}
     >
       <div style={{ position:'absolute', inset:0, overflow:'hidden' }}>
@@ -429,15 +436,16 @@ function AnimeCarouselCard({ anime, onClick }) {
           <FallbackCover anime={anime} />
         )}
       </div>
-      <div style={{ position:'absolute', inset:0, background:'linear-gradient(to bottom,rgba(0,0,0,0.12) 0%,transparent 38%,rgba(0,0,0,0.92) 100%)', zIndex:2, pointerEvents:'none' }} />
+      {/* gradient overlay — plus profond */}
+      <div style={{ position:'absolute', inset:0, background:'linear-gradient(to bottom,rgba(0,0,0,0.05) 0%,transparent 30%,rgba(0,0,0,0.55) 60%,rgba(0,0,0,0.96) 100%)', zIndex:2, pointerEvents:'none' }} />
       <BadgePill badge={anime.badge} pos="tl" />
-      <div style={{ position:'absolute', bottom:0, left:0, right:0, padding:'10px 13px 14px', zIndex:3 }}>
-        <div style={{ fontSize:12.5, fontWeight:800, color:'#EDEBE3', lineHeight:1.3, marginBottom:6, textShadow:'0 1px 8px rgba(0,0,0,0.95)' }}>
+      <div style={{ position:'absolute', bottom:0, left:0, right:0, padding:'12px 14px 15px', zIndex:3 }}>
+        <div style={{ fontSize:13, fontWeight:800, color:'#EDEBE3', lineHeight:1.25, marginBottom:7, textShadow:'0 1px 10px rgba(0,0,0,1)' }}>
           {anime.title}
         </div>
         <div style={{ display:'flex', gap:4, flexWrap:'wrap' }}>
           {anime.genres.slice(0,2).map(g => (
-            <span key={g} style={{ fontSize:9, fontWeight:700, background:'rgba(255,255,255,0.09)', color:'rgba(255,255,255,0.50)', border:'1px solid rgba(255,255,255,0.07)', borderRadius:100, padding:'2px 7px', whiteSpace:'nowrap' }}>
+            <span key={g} style={{ fontSize:9, fontWeight:700, background:'rgba(255,255,255,0.10)', color:'rgba(255,255,255,0.52)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:100, padding:'2px 8px', whiteSpace:'nowrap' }}>
               {g}
             </span>
           ))}
@@ -447,40 +455,97 @@ function AnimeCarouselCard({ anime, onClick }) {
   )
 }
 
-// ─── Section carousel row ─────────────────────────────────────────────────────
+// ─── Interactive rail (drag + arrows + snap) ──────────────────────────────────
 
-function SectionCarousel({ title, subtitle, accent, animes, direction, speed, onCardClick }) {
-  const [paused, setPaused] = useState(false)
-  const items = useMemo(() => [...animes, ...animes], [animes])
-  const cls   = direction === 'rtl' ? 'ah-mq-l' : 'ah-mq-r'
+function AnimeRail({ title, subtitle, accent, animes, onCardClick }) {
+  const railRef  = useRef(null)
+  const drag     = useRef({ on: false, x: 0, sl: 0, moved: false })
+  const [canL, setCanL] = useState(false)
+  const [canR, setCanR] = useState(true)
+
+  const sync = () => {
+    const el = railRef.current
+    if (!el) return
+    setCanL(el.scrollLeft > 8)
+    setCanR(el.scrollLeft < el.scrollWidth - el.clientWidth - 8)
+  }
+
+  useEffect(() => {
+    const el = railRef.current
+    if (!el) return
+    el.addEventListener('scroll', sync, { passive: true })
+    sync()
+    return () => el.removeEventListener('scroll', sync)
+  }, [])
+
+  const shift = dir => railRef.current?.scrollBy({ left: dir * 520, behavior: 'smooth' })
+
+  const onDown  = e => { drag.current = { on: true, x: e.pageX, sl: railRef.current.scrollLeft, moved: false } }
+  const onMove  = e => {
+    if (!drag.current.on) return
+    const dx = e.pageX - drag.current.x
+    if (Math.abs(dx) > 5) drag.current.moved = true
+    railRef.current.scrollLeft = drag.current.sl - dx
+  }
+  const onUp    = () => { drag.current.on = false }
+  const cardClick = id => { if (!drag.current.moved) onCardClick(id) }
+
+  const ArrowBtn = ({ dir }) => (
+    <button
+      className="ah-arrow"
+      onClick={() => shift(dir)}
+      aria-label={dir < 0 ? 'Précédent' : 'Suivant'}
+      style={{
+        width:32, height:32, borderRadius:'50%', border:'1px solid rgba(255,255,255,0.10)',
+        background:'rgba(255,255,255,0.06)', color:'rgba(255,255,255,0.72)',
+        cursor:'pointer', fontSize:20, lineHeight:1,
+        display:'flex', alignItems:'center', justifyContent:'center',
+        opacity:(dir < 0 ? canL : canR) ? 1 : 0.22,
+        flexShrink:0,
+      }}
+    >{dir < 0 ? '‹' : '›'}</button>
+  )
 
   return (
-    <section style={{ marginBottom:52 }} aria-label={title}>
-      <div style={{ maxWidth:1280, margin:'0 auto', padding:'0 32px', marginBottom:16, display:'flex', alignItems:'center', gap:10 }}>
-        {accent && <div style={{ width:3, height:16, borderRadius:2, background:accent, flexShrink:0 }} />}
-        <h3 style={{ fontSize:16, fontWeight:800, color:'#fff', margin:0, letterSpacing:'-.01em' }}>{title}</h3>
-        {subtitle && <span style={{ fontSize:12, color:'rgba(255,255,255,0.30)', fontWeight:600 }}>{subtitle}</span>}
+    <section style={{ marginBottom:36 }} aria-label={title}>
+      {/* Header */}
+      <div style={{ maxWidth:1320, margin:'0 auto', padding:'0 36px 12px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+          {accent && <div style={{ width:3, height:18, borderRadius:2, background:accent, flexShrink:0 }} />}
+          <h3 style={{ fontSize:16, fontWeight:800, color:'#fff', margin:0, letterSpacing:'-.01em' }}>{title}</h3>
+          {subtitle && <span style={{ fontSize:12, color:'rgba(255,255,255,0.28)', fontWeight:600 }}>{subtitle}</span>}
+        </div>
+        <div style={{ display:'flex', gap:6 }}>
+          <ArrowBtn dir={-1} /><ArrowBtn dir={1} />
+        </div>
       </div>
-      <div
-        onMouseEnter={() => setPaused(true)}
-        onMouseLeave={() => setPaused(false)}
-        style={{
-          overflow:'hidden',
-          WebkitMaskImage:'linear-gradient(to right,transparent 0%,black 9%,black 91%,transparent 100%)',
-          maskImage:'linear-gradient(to right,transparent 0%,black 9%,black 91%,transparent 100%)',
-          paddingBottom:6,
-        }}
-      >
+
+      {/* Scroll zone */}
+      <div style={{ position:'relative' }}>
+        {/* Edge fades */}
+        <div style={{ position:'absolute', left:0, top:0, bottom:8, width:56, zIndex:2, pointerEvents:'none',
+          background:'linear-gradient(to right,#07090e 0%,transparent 100%)' }} />
+        <div style={{ position:'absolute', right:0, top:0, bottom:8, width:56, zIndex:2, pointerEvents:'none',
+          background:'linear-gradient(to left,#07090e 0%,transparent 100%)' }} />
+
         <div
-          className={cls}
+          ref={railRef}
+          className="ah-rail"
+          onMouseDown={onDown}
+          onMouseMove={onMove}
+          onMouseUp={onUp}
+          onMouseLeave={onUp}
           style={{
-            display:'flex', paddingLeft:32, paddingTop:4, paddingBottom:8,
-            '--mq-dur':`${speed}s`,
-            animationPlayState: paused ? 'paused' : 'running',
+            display:'flex', gap:14,
+            overflowX:'auto',
+            scrollSnapType:'x mandatory',
+            padding:'6px 36px 14px',
+            cursor:'grab',
+            WebkitOverflowScrolling:'touch',
           }}
         >
-          {items.map((anime, i) => (
-            <AnimeCarouselCard key={`${anime.id}-${i}`} anime={anime} onClick={() => onCardClick(anime.id)} />
+          {animes.map(anime => (
+            <AnimeCarouselCard key={anime.id} anime={anime} onClick={() => cardClick(anime.id)} />
           ))}
         </div>
       </div>
@@ -654,54 +719,44 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
 
         <div style={{ position:'relative', zIndex:2, paddingBottom:80 }}>
 
-          {/* ── Hero ─────────────────────────────────────────────────────── */}
+          {/* ── Hero compact ──────────────────────────────────────────────── */}
           <div style={{
             position:'relative', overflow:'hidden',
-            padding:'56px 32px 48px',
-            background:'linear-gradient(180deg,rgba(14,12,22,0.6) 0%,transparent 100%)',
+            padding:'28px 32px 18px',
             textAlign:'center',
           }}>
             <div style={{
               position:'absolute', inset:0, pointerEvents:'none',
-              background:'radial-gradient(ellipse 70% 55% at 50% 0%,rgba(139,92,246,0.06),transparent)',
+              background:'radial-gradient(ellipse 60% 80% at 50% 0%,rgba(139,92,246,0.05),transparent)',
             }} />
-
-            <div style={{
-              display:'inline-flex', alignItems:'center', gap:7, marginBottom:20,
-              padding:'4px 16px', borderRadius:100,
-              background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.09)',
-              fontSize:10, fontWeight:800, letterSpacing:'.18em', color:'rgba(255,255,255,0.40)', textTransform:'uppercase',
-            }}>
-              Bibliothèque · Communauté Brams
-            </div>
 
             <h1 style={{
               fontFamily:"'Pirata One',cursive", fontWeight:900,
-              fontSize:'clamp(30px,5vw,54px)', color:'#fff',
-              margin:'0 0 12px', lineHeight:1.05, letterSpacing:'-.02em',
+              fontSize:'clamp(26px,4vw,44px)', color:'#fff',
+              margin:'0 0 8px', lineHeight:1.05, letterSpacing:'-.02em',
             }}>
               Mes Animés
             </h1>
 
-            <p style={{ fontSize:15, color:'rgba(255,255,255,0.36)', maxWidth:440, margin:'0 auto 28px', lineHeight:1.7 }}>
-              {heroStats.total} séries · Scans, épisodes et suivis de la communauté.
+            <p style={{ fontSize:13, color:'rgba(255,255,255,0.32)', maxWidth:400, margin:'0 auto 14px', lineHeight:1.6 }}>
+              Scans, épisodes, suivis et découvertes de la communauté.
             </p>
 
             {/* Mini stats */}
-            <div style={{ display:'flex', gap:10, justifyContent:'center', flexWrap:'wrap' }}>
+            <div style={{ display:'flex', gap:8, justifyContent:'center', flexWrap:'wrap' }}>
               {[
                 { label:'Nouveautés', value:heroStats.nouveautes, dot:'#86efac' },
                 { label:'VF dispo',   value:heroStats.vf,         dot:'#c4b5fd' },
                 { label:'Complétés',  value:heroStats.complets,   dot:'#cbd5e1' },
               ].map(s => (
                 <div key={s.label} style={{
-                  display:'flex', alignItems:'center', gap:7,
-                  padding:'6px 14px', borderRadius:100,
+                  display:'flex', alignItems:'center', gap:6,
+                  padding:'5px 12px', borderRadius:100,
                   background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.07)',
-                  fontSize:12, fontWeight:700, color:'rgba(255,255,255,0.5)',
+                  fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.45)',
                 }}>
-                  <div style={{ width:6, height:6, borderRadius:'50%', background:s.dot, flexShrink:0, animation:'ahPulse 2.5s ease-in-out infinite' }} />
-                  <span style={{ fontWeight:800, color:'rgba(255,255,255,0.75)' }}>{s.value}</span>
+                  <div style={{ width:5, height:5, borderRadius:'50%', background:s.dot, flexShrink:0 }} />
+                  <span style={{ fontWeight:800, color:'rgba(255,255,255,0.72)' }}>{s.value}</span>
                   <span>{s.label}</span>
                 </div>
               ))}
@@ -709,7 +764,7 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
           </div>
 
           {/* ── Search + filters ──────────────────────────────────────────── */}
-          <div style={{ maxWidth:780, margin:'0 auto 36px', padding:'0 28px' }}>
+          <div style={{ maxWidth:780, margin:'0 auto 18px', padding:'0 28px' }}>
             <div
               className="ah-search"
               style={{
@@ -735,7 +790,7 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
               )}
             </div>
 
-            <div style={{ display:'flex', flexWrap:'wrap', gap:6, marginTop:12, justifyContent:'center' }}>
+            <div style={{ display:'flex', flexWrap:'wrap', gap:6, marginTop:10, justifyContent:'center' }}>
               {genreOptions.map(genre => {
                 const active = activeGenre === genre
                 return (
@@ -785,31 +840,25 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
             </div>
           ) : (
             <>
-              <SectionCarousel
+              <AnimeRail
                 title="Tendances"
                 subtitle="Les séries les plus suivies"
                 accent="#e0524a"
                 animes={sections.tendances}
-                direction="ltr"
-                speed={88}
                 onCardClick={handleClick}
               />
-              <SectionCarousel
+              <AnimeRail
                 title="Nouveautés"
                 subtitle="Récemment ajoutées à la bibliothèque"
                 accent="#86efac"
                 animes={sections.nouveautes}
-                direction="rtl"
-                speed={120}
                 onCardClick={handleClick}
               />
-              <SectionCarousel
+              <AnimeRail
                 title="Collection complète"
                 subtitle={`${sortedAnimes.length} séries disponibles`}
                 accent="#c4b5fd"
                 animes={sections.collection}
-                direction="ltr"
-                speed={155}
                 onCardClick={handleClick}
               />
             </>
