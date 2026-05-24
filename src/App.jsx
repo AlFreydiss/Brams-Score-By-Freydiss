@@ -14,7 +14,6 @@ import AIChatWidget from './components/AIChatWidget.jsx'
 import Leaderboard from './components/Leaderboard.jsx'
 import JoinCTA from './components/JoinCTA.jsx'
 import Footer from './components/Footer.jsx'
-import BottomVideoStrip from './components/BottomVideoStrip.jsx'
 import Quiz from './components/Quiz.jsx'
 import HallOfFame from './components/HallOfFame.jsx'
 import QuoteSection from './components/QuoteSection.jsx'
@@ -133,49 +132,78 @@ function AMVBackground() {
         <source src="/bg-video.mp4" type="video/mp4" />
       </video>}
 
-      {/* Contrôle audio AMV */}
-      {videoEnabled && <div
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-        style={{
-          position: 'fixed', bottom: 90, left: 16, zIndex: 800,
-          display: 'flex', alignItems: 'center', gap: 8,
-          background: hovered ? 'rgba(14,14,16,0.85)' : 'transparent',
-          border: `1px solid ${hovered ? 'rgba(255,255,255,0.08)' : 'transparent'}`,
-          borderRadius: 12, padding: hovered ? '6px 10px' : '6px 6px',
-          backdropFilter: hovered ? 'blur(12px)' : 'none',
-          transition: 'all 0.2s',
-        }}
-      >
-        <button
-          onClick={toggle}
-          title={muted ? 'Activer le son AMV' : 'Couper le son AMV'}
+      {/* Lecteur ambiance discret */}
+      {videoEnabled && (
+        <div
+          onMouseEnter={() => setHovered(true)}
+          onMouseLeave={() => setHovered(false)}
           style={{
-            width: 28, height: 28, borderRadius: 7, flexShrink: 0,
-            background: 'transparent', border: 'none',
-            color: muted ? 'rgba(255,255,255,0.28)' : 'rgba(255,255,255,0.85)',
-            cursor: 'pointer', fontSize: 15,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            transition: 'color .2s',
+            position: 'fixed',
+            bottom: 18,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 800,
+            display: 'flex',
+            alignItems: 'center',
+            background: 'rgba(6,7,10,0.6)',
+            border: `1px solid ${hovered ? 'rgba(212,160,23,0.14)' : 'rgba(255,255,255,0.04)'}`,
+            borderRadius: 99,
+            padding: '4px 8px',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            transition: 'opacity 0.4s ease, border-color 0.35s ease',
+            opacity: hovered ? 0.94 : 0.15,
+            cursor: 'default',
+            userSelect: 'none',
+            whiteSpace: 'nowrap',
+            gap: 0,
           }}
         >
-          {muted || volume === 0 ? '🔇' : volume < 40 ? '🔉' : '🔊'}
-        </button>
-
-        {hovered && (
-          <input
-            type="range" min="0" max="100"
-            value={muted ? 0 : volume}
-            onChange={handleVolume}
+          <button
+            onClick={toggle}
+            title={muted ? 'Activer le son' : 'Couper le son'}
             style={{
-              width: 80, height: 4, cursor: 'pointer',
-              accentColor: '#d4a017', borderRadius: 4,
-              outline: 'none', border: 'none',
-              appearance: 'none', WebkitAppearance: 'none',
+              background: 'none', border: 'none',
+              color: muted ? 'rgba(255,255,255,0.32)' : '#c9a84c',
+              cursor: 'pointer', fontSize: 13,
+              padding: '0 6px',
+              lineHeight: 1,
+              transition: 'color 0.2s',
+              display: 'flex', alignItems: 'center',
             }}
-          />
-        )}
-      </div>}
+          >
+            {muted || volume === 0 ? '♪' : '♫'}
+          </button>
+
+          <div style={{
+            overflow: 'hidden',
+            maxWidth: hovered ? 150 : 0,
+            transition: 'max-width 0.3s ease',
+            display: 'flex', alignItems: 'center', gap: 8,
+          }}>
+            <span style={{
+              fontSize: 9, color: 'rgba(255,255,255,0.25)',
+              letterSpacing: '0.14em', fontWeight: 600,
+              textTransform: 'uppercase', paddingRight: 2,
+            }}>
+              Ambiance
+            </span>
+            <input
+              type="range" min="0" max="100"
+              value={muted ? 0 : volume}
+              onChange={handleVolume}
+              style={{
+                width: 58, cursor: 'pointer',
+                accentColor: '#c9a84c',
+                appearance: 'none', WebkitAppearance: 'none',
+                height: 3,
+                background: `linear-gradient(to right, #c9a84c ${muted ? 0 : volume}%, rgba(255,255,255,0.14) ${muted ? 0 : volume}%)`,
+                borderRadius: 3, outline: 'none', border: 'none',
+              }}
+            />
+          </div>
+        </div>
+      )}
     </>
   )
 }
@@ -317,7 +345,6 @@ export default function App() {
     <>
       <WelcomeAnimation />
       <AMVBackground />
-      <BottomVideoStrip />
       <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1, background: 'rgba(4,7,10,0.58)', pointerEvents: 'none' }} />
 
       <div style={{ position: 'relative', zIndex: 2, isolation: 'isolate' }}>
