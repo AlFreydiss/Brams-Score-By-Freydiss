@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import BottomVideoStrip from './BottomVideoStrip.jsx'
 import {
   motion, AnimatePresence,
   useMotionValue, useSpring, useTransform,
@@ -1174,6 +1175,7 @@ export default function BlindTestPage() {
 
         </AnimatePresence>
       </div>
+      <BottomVideoStrip />
     </div>
   )
 }
