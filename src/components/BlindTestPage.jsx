@@ -313,7 +313,8 @@ function RevealCard({ track, result, berries }) {
       <div style={{ fontFamily: "'Pirata One',cursive", fontSize: 'clamp(22px,4vw,36px)', color: '#fff', fontWeight: 900, marginBottom: 4, lineHeight: 1.1 }}>
         {track.title}
       </div>
-      <div style={{ fontSize: 15, color: 'rgba(255,255,255,0.55)', marginBottom: 18 }}>{track.anime}</div>
+      <div style={{ fontSize: 15, color: 'rgba(255,255,255,0.55)', marginBottom: 4 }}>{track.anime}</div>
+      {track.artist && <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.32)', marginBottom: 18 }}>par {track.artist}</div>}
 
       <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 16 }}>
         {result.animeOk && (
@@ -832,6 +833,7 @@ export default function BlindTestPage() {
                     </div>
                     <div style={{ fontSize: 11, fontWeight: 800, color: '#fff', marginBottom: 2, lineHeight: 1.3 }}>{t.anime}</div>
                     <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.32)' }}>{t.type} · {t.episode}</div>
+                    {t.artist && <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.22)', marginTop: 2 }}>{t.artist}</div>}
                   </motion.div>
                 ))}
               </motion.div>
