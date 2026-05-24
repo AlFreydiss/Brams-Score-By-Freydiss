@@ -171,50 +171,36 @@ export default function Hero() {
       position: 'relative', overflow: 'visible',
       paddingTop: isMobile ? 92 : 110, paddingBottom: isMobile ? 64 : 80,
     }}>
-      {/* Overlay directionnel principal */}
+      {/* Glow doré — derrière le titre, côté gauche */}
       <div style={{
-        position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
-        background: 'transparent',
+        position: 'absolute', top: '5%', left: '-5%', width: '55%', height: '80%',
+        zIndex: 0, pointerEvents: 'none',
+        background: 'radial-gradient(ellipse 70% 60% at 30% 40%, rgba(212,160,23,0.11) 0%, rgba(212,160,23,0.04) 50%, transparent 80%)',
+        filter: 'blur(20px)',
       }} />
-      {/* Overlay sombre uniforme */}
+      {/* Glow blurple — derrière le sidebar, côté droit */}
       <div style={{
-        position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
-        background: 'transparent',
+        position: 'absolute', top: '0%', right: '-8%', width: '52%', height: '90%',
+        zIndex: 0, pointerEvents: 'none',
+        background: 'radial-gradient(ellipse 70% 65% at 70% 35%, rgba(88,101,242,0.13) 0%, rgba(88,101,242,0.05) 50%, transparent 80%)',
+        filter: 'blur(30px)',
       }} />
-      {/* Glow radial doré derrière le titre */}
+      {/* Halo chaud bas-gauche */}
       <div style={{
-        position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
-        background: 'transparent',
-      }} />
-      {/* Glow violet principal derrière le dashboard */}
-      <div style={{
-        position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
-        background: 'transparent',
-      }} />
-      {/* Glow rouge chaud — coin bas droit */}
-      <div style={{
-        position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
-        background: 'transparent',
-      }} />
-      {/* Halo violet vif haut dashboard */}
-      <div style={{
-        position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
-        background: 'transparent',
-      }} />
-      {/* Aura dorée douce côté dashboard */}
-      <div style={{
-        position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
-        background: 'transparent',
+        position: 'absolute', bottom: '0%', left: '15%', width: '40%', height: '45%',
+        zIndex: 0, pointerEvents: 'none',
+        background: 'radial-gradient(ellipse 80% 80% at 40% 80%, rgba(224,82,74,0.07) 0%, transparent 70%)',
+        filter: 'blur(24px)',
       }} />
       {/* Vignette top */}
       <div style={{
-        position: 'absolute', top: 0, left: 0, right: 0, height: '28%', zIndex: 0, pointerEvents: 'none',
-        background: 'transparent',
+        position: 'absolute', top: 0, left: 0, right: 0, height: '22%', zIndex: 0, pointerEvents: 'none',
+        background: 'linear-gradient(180deg, rgba(8,9,13,0.70) 0%, transparent 100%)',
       }} />
-      {/* Vignette bottom — fade cinématique étendu vers la section suivante */}
+      {/* Vignette bottom */}
       <div style={{
-        position: 'absolute', bottom: 0, left: 0, right: 0, height: '38%', zIndex: 0, pointerEvents: 'none',
-        background: 'transparent',
+        position: 'absolute', bottom: 0, left: 0, right: 0, height: '32%', zIndex: 0, pointerEvents: 'none',
+        background: 'linear-gradient(0deg, rgba(8,9,13,0.85) 0%, transparent 100%)',
       }} />
 
       <StarField />

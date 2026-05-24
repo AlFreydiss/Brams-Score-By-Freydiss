@@ -248,12 +248,12 @@ section {
 }
 .hero-community {
   display: block;
-  color: #E0524A;
+  color: #d4a017;
 }
 .hero-community-glow {
   position: relative;
   display: inline-block;
-  transform: translate3d(14px, 0, 0);
+  transform: none;
 }
 .hero-community-glow::before {
   content: "";
@@ -622,7 +622,7 @@ section {
   text-shadow: 0 2px 20px rgba(0,0,0,.7);
 }
 .hero-community {
-  text-shadow: 0 2px 20px rgba(0,0,0,.6), 0 0 32px rgba(224,82,74,.25);
+  text-shadow: 0 2px 20px rgba(0,0,0,.6), 0 0 32px rgba(212,160,23,.30);
 }
 .hero-community-glow::after {
   content: "";
@@ -630,8 +630,8 @@ section {
   inset: -20% -14%;
   z-index: -1;
   background:
-    radial-gradient(ellipse at 50% 55%, rgba(237,246,255,.16), transparent 52%),
-    radial-gradient(ellipse at 44% 44%, rgba(255,117,58,.24), transparent 64%);
+    radial-gradient(ellipse at 50% 55%, rgba(212,160,23,.18), transparent 52%),
+    radial-gradient(ellipse at 44% 44%, rgba(232,184,74,.14), transparent 64%);
   filter: blur(20px);
   animation: smokeWake 12s ease-in-out infinite;
 }
@@ -715,7 +715,7 @@ section {
     margin-bottom: 16px;
   }
   .hero-community-glow {
-    transform: translate3d(6px, 0, 0);
+    transform: none;
   }
   .hero-rain,
   .hero-mist-b,
