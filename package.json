@@ -35,14 +35,14 @@
     "react-dom": "^18.3.1",
     "react-router-dom": "^7.15.1",
     "tailwindcss": "^4.3.0",
-    "three": "^0.170.0"
+    "three": "^0.170.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "vite": "^5.4.1"
   },
   "overrides": {
     "three-mesh-bvh": "^0.8.0"
   },
   "devDependencies": {
-    "@aws-sdk/lib-storage": "^3.1048.0",
-    "@vitejs/plugin-react": "^4.3.1",
-    "vite": "^5.4.1"
+    "@aws-sdk/lib-storage": "^3.1048.0"
   }
 }
