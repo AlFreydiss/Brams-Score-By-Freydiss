@@ -776,7 +776,18 @@ export default function BlindTestPage() {
               <motion.div
                 variants={{ visible: { transition: { staggerChildren: 0.04 } } }}
                 initial="hidden" animate="visible"
-                style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(140px,1fr))', gap: 10, marginBottom: 36, textAlign: 'left' }}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill,minmax(140px,1fr))',
+                  gap: 10,
+                  marginBottom: 36,
+                  textAlign: 'left',
+                  maxHeight: 340,
+                  overflowY: 'auto',
+                  paddingRight: 6,
+                  scrollbarWidth: 'thin',
+                  scrollbarColor: 'rgba(212,160,23,0.3) transparent',
+                }}
               >
                 {LOCAL_TRACKS.map((t) => (
                   <motion.div
