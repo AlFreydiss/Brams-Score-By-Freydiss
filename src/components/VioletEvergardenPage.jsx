@@ -162,7 +162,7 @@ function InfoPanel({ watchedCount, total, lastWatchedIdx, onResume }) {
       <div style={{ position:'relative', height:260, overflow:'hidden', flexShrink:0 }}>
         <img
           src={COVER} alt="Violet Evergarden"
-          style={{ width:'100%',height:'100%',objectFit:'cover',objectPosition:'center 42%',opacity:.75,filter:'saturate(1.2) brightness(.85)' }}
+          style={{ width:'100%',height:'100%',objectFit:'cover',objectPosition:'center 32%',opacity:.75,filter:'saturate(1.2) brightness(.85)' }}
         />
         {/* gradient */}
         <div style={{ position:'absolute',inset:0,background:'linear-gradient(180deg,rgba(0,0,0,.12) 0%,rgba(20,18,32,.98) 100%)' }} />

@@ -23,7 +23,7 @@ const ANIMES = [
     emoji: '💜',
     color: '#8b7cff',
     coverImage: 'https://img.goodfon.com/original/1080x1920/4/38/art-akiko-takase-violet-evergarden-violet-vverkh-v-vode.jpg',
-    coverPosition: 'center 42%',
+    coverPosition: 'center 32%',
     genres: ['Drame', 'Émotion', 'Josei'],
     description: "Violet, ancienne soldate, devient Auto Memory Doll pour comprendre les sentiments humains et le sens des mots qu'elle a reçus.",
     stats: [{ label: 'Épisodes', value: '13' }, { label: 'Audio', value: 'VF + JAP' }, { label: 'Statut', value: 'Disponible' }],
