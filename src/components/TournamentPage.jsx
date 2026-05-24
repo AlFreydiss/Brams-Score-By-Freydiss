@@ -13,7 +13,7 @@ import {
   resetTournament,
 } from '../lib/tournament.js'
 import { TOURNAMENT_CONFIG } from '../data/tournament-data.js'
-import TournamentDuel    from './tournament/TournamentDuel.jsx'
+import DuelArena         from './tournament/DuelArena.jsx'
 import TournamentBracket from './tournament/TournamentBracket.jsx'
 import TournamentResults from './tournament/TournamentResults.jsx'
 
@@ -21,17 +21,9 @@ const BG    = '#07090e'
 const GOLD  = '#d4a017'
 const GOLD2 = '#f0c040'
 
-const T_CSS = `
-  @keyframes t_glow    { 0%,100%{opacity:.5} 50%{opacity:1} }
-  @keyframes t_shimmer { 0%{background-position:200% center} 100%{background-position:-200% center} }
-`
+const T_CSS = `@keyframes t_glow { 0%,100%{opacity:.5} 50%{opacity:1} }`
 
-const TABS = [
-  { id: 'duel',    label: 'Duel',      icon: '⚔' },
-  { id: 'bracket', label: 'Bracket',   icon: '🏆' },
-  { id: 'results', label: 'Résultats', icon: '📊' },
-]
-
+// ── Version check ──────────────────────────────────────────────────────────
 const TOURNAMENT_VERSION = 'v2-ost'
 const VERSION_KEY = `brams_t_version_${TOURNAMENT_CONFIG.id}`
 
@@ -49,145 +41,168 @@ function loadRoundsWithVersionCheck() {
   return rounds
 }
 
-// ── Stats pill row ─────────────────────────────────────────────────────────
-function StatPill({ label, value, highlight }) {
+// ── Stats pill ─────────────────────────────────────────────────────────────
+function Pill({ label, value, gold }) {
   return (
     <div style={{
-      display: 'flex', flexDirection: 'column', alignItems: 'center',
-      padding: '10px 20px',
+      padding: '10px 22px',
       borderRadius: 12,
-      background: highlight ? 'rgba(212,160,23,.08)' : 'rgba(255,255,255,.03)',
-      border: `1px solid ${highlight ? 'rgba(212,160,23,.25)' : 'rgba(255,255,255,.07)'}`,
-      minWidth: 80,
+      background: gold ? 'rgba(212,160,23,.09)' : 'rgba(255,255,255,.04)',
+      border: `1px solid ${gold ? 'rgba(212,160,23,.28)' : 'rgba(255,255,255,.08)'}`,
+      textAlign: 'center', flexShrink: 0,
     }}>
       <div style={{
-        fontSize: 18, fontWeight: 800,
-        color: highlight ? GOLD2 : 'rgba(255,255,255,.9)',
+        fontSize: 19, fontWeight: 800,
+        color: gold ? GOLD2 : 'rgba(255,255,255,.9)',
         lineHeight: 1,
-      }}>{value}</div>
+      }}>
+        {value}
+      </div>
       <div style={{
-        fontSize: 10, color: 'rgba(255,255,255,.3)',
-        letterSpacing: '0.08em', textTransform: 'uppercase',
-        marginTop: 4,
-      }}>{label}</div>
+        fontSize: 9, color: 'rgba(255,255,255,.28)',
+        letterSpacing: '0.1em', textTransform: 'uppercase', marginTop: 5,
+      }}>
+        {label}
+      </div>
     </div>
   )
 }
 
-// ── Hero header ────────────────────────────────────────────────────────────
-function TournamentHeader({ config, progress, roundLabel }) {
+// ── Hero ───────────────────────────────────────────────────────────────────
+function TournamentHero({ config, progress, roundLabel, matchLabel }) {
   return (
-    <div style={{ textAlign: 'center', marginBottom: 40, position: 'relative', zIndex: 1 }}>
-      {/* Gold radial glow */}
+    <div style={{
+      position: 'relative', textAlign: 'center', paddingBottom: 44,
+    }}>
       <div style={{
-        position: 'absolute', inset: '-60px -100px', zIndex: -1,
-        background: 'radial-gradient(ellipse 65% 80% at 50% 0%, rgba(212,160,23,0.08) 0%, transparent 65%)',
-        pointerEvents: 'none',
+        position: 'absolute', inset: '-40px -200px 0', zIndex: 0, pointerEvents: 'none',
+        background: 'radial-gradient(ellipse 80% 90% at 50% 0%, rgba(212,160,23,.07) 0%, transparent 55%)',
       }} />
 
-      <div style={{
-        fontSize: 11, color: 'rgba(255,255,255,.28)',
-        letterSpacing: '0.18em', marginBottom: 10,
-        textTransform: 'uppercase',
-      }}>
-        Brams Community · {config.edition.toUpperCase()}
-      </div>
-
-      <h1 style={{
-        fontSize: 'clamp(28px, 5.5vw, 52px)',
-        fontWeight: 900, margin: '0 0 10px',
-        background: `linear-gradient(135deg, ${GOLD2} 0%, ${GOLD} 55%, rgba(191,164,106,0.75) 100%)`,
-        WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-        letterSpacing: '-0.015em', lineHeight: 1.05,
-      }}>
-        {config.title}
-      </h1>
-
-      <p style={{
-        fontSize: 14, color: 'rgba(255,255,255,.38)',
-        margin: '0 0 28px', maxWidth: 540, marginInline: 'auto',
-        lineHeight: 1.55,
-      }}>
-        {config.description}
-      </p>
-
-      {/* Stats pills */}
-      <div style={{
-        display: 'flex', justifyContent: 'center',
-        gap: 8, flexWrap: 'wrap', marginBottom: 24,
-      }}>
-        <StatPill label="Participants"   value={config.participants.length} />
-        <StatPill label="Format"         value="Élimination" />
-        <StatPill label="Matchs joués"   value={`${progress.done} / ${progress.total}`} />
-        <StatPill label="Phase"          value={roundLabel} highlight />
-      </div>
-
-      {/* Global progress bar */}
-      <div style={{ maxWidth: 380, margin: '0 auto' }}>
+      <div style={{ position: 'relative', zIndex: 1 }}>
         <div style={{
-          display: 'flex', justifyContent: 'space-between',
           fontSize: 10, color: 'rgba(255,255,255,.25)',
-          marginBottom: 7, letterSpacing: '0.06em',
+          letterSpacing: '0.2em', marginBottom: 14, textTransform: 'uppercase',
         }}>
-          <span>PROGRESSION GLOBALE</span>
-          <span>{progress.pct}%</span>
+          Brams Community · OST Tournament
         </div>
-        <div style={{ height: 3, borderRadius: 2, background: 'rgba(255,255,255,.06)', overflow: 'hidden' }}>
-          <motion.div
-            initial={false}
-            animate={{ width: `${progress.pct}%` }}
-            transition={{ duration: 0.7, ease: 'easeOut' }}
-            style={{
-              height: '100%',
-              background: `linear-gradient(90deg, ${GOLD}, ${GOLD2})`,
-            }}
-          />
+
+        <h1 style={{
+          fontSize: 'clamp(38px, 6.5vw, 80px)',
+          fontWeight: 900, margin: '0 0 14px',
+          background: `linear-gradient(135deg, ${GOLD2} 0%, ${GOLD} 50%, rgba(191,164,106,.75) 100%)`,
+          WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+          letterSpacing: '-0.02em', lineHeight: 1,
+        }}>
+          {config.title}
+        </h1>
+
+        <p style={{
+          fontSize: 14, color: 'rgba(255,255,255,.33)',
+          margin: '0 0 32px', maxWidth: 580, marginInline: 'auto', lineHeight: 1.65,
+        }}>
+          {config.description}
+        </p>
+
+        {/* Stats row */}
+        <div style={{
+          display: 'flex', justifyContent: 'center',
+          gap: 8, flexWrap: 'wrap', marginBottom: 26,
+        }}>
+          <Pill label="Participants"  value={config.participants.length} />
+          <Pill label="Format"        value="Élimination" />
+          <Pill label="Matchs joués"  value={`${progress.done} / ${progress.total}`} />
+          <Pill label="Phase"         value={roundLabel} gold />
+          {matchLabel && <Pill label="Duel"  value={matchLabel} />}
+        </div>
+
+        {/* Progress bar */}
+        <div style={{ maxWidth: 440, margin: '0 auto' }}>
+          <div style={{
+            display: 'flex', justifyContent: 'space-between',
+            fontSize: 9, color: 'rgba(255,255,255,.2)',
+            marginBottom: 8, letterSpacing: '0.09em',
+          }}>
+            <span>PROGRESSION GLOBALE</span>
+            <span>{progress.pct}%</span>
+          </div>
+          <div style={{ height: 3, borderRadius: 2, background: 'rgba(255,255,255,.06)', overflow: 'hidden' }}>
+            <motion.div
+              initial={false}
+              animate={{ width: `${progress.pct}%` }}
+              transition={{ duration: 0.8, ease: 'easeOut' }}
+              style={{ height: '100%', background: `linear-gradient(90deg, ${GOLD}, ${GOLD2})` }}
+            />
+          </div>
         </div>
       </div>
     </div>
   )
 }
 
-// ── Tab bar ────────────────────────────────────────────────────────────────
-function TabBar({ active, onChange, matchLabel }) {
+// ── Tabs ───────────────────────────────────────────────────────────────────
+const TABS = [
+  { id: 'duel',    label: 'Duel',     icon: '⚔' },
+  { id: 'bracket', label: 'Bracket',  icon: '🏆' },
+  { id: 'results', label: 'Résultats', icon: '📊' },
+]
+
+function TournamentTabs({ active, onChange, roundLabel, matchLabel }) {
   return (
-    <div style={{
-      display: 'flex', flexDirection: 'column',
-      alignItems: 'center', gap: 12, marginBottom: 32,
-    }}>
-      {matchLabel && (
+    <div style={{ marginBottom: 36 }}>
+      {/* Current round info strip */}
+      {(roundLabel || matchLabel) && (
         <div style={{
-          fontSize: 12, color: 'rgba(255,255,255,.3)',
-          letterSpacing: '0.06em',
+          display: 'flex', justifyContent: 'center', alignItems: 'center',
+          gap: 10, marginBottom: 16,
         }}>
-          {matchLabel}
+          {roundLabel && (
+            <span style={{
+              fontSize: 11, color: GOLD, fontWeight: 700,
+              letterSpacing: '0.1em', textTransform: 'uppercase',
+              background: 'rgba(212,160,23,.08)',
+              border: '1px solid rgba(212,160,23,.2)',
+              borderRadius: 20, padding: '3px 14px',
+            }}>
+              {roundLabel}
+            </span>
+          )}
+          {matchLabel && (
+            <span style={{ fontSize: 11, color: 'rgba(255,255,255,.28)' }}>
+              {matchLabel}
+            </span>
+          )}
         </div>
       )}
-      <div style={{
-        display: 'flex', gap: 4,
-        background: 'rgba(255,255,255,.03)',
-        border: '1px solid rgba(255,255,255,.07)',
-        borderRadius: 13, padding: 4,
-      }}>
-        {TABS.map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => onChange(tab.id)}
-            style={{
-              padding: '9px 22px',
-              borderRadius: 10, border: 'none', cursor: 'pointer',
-              fontSize: 13, fontWeight: 700,
-              background: active === tab.id ? 'rgba(212,160,23,.12)' : 'transparent',
-              color: active === tab.id ? GOLD : 'rgba(255,255,255,.4)',
-              outline: active === tab.id ? `1px solid rgba(212,160,23,.22)` : 'none',
-              transition: 'all 0.18s',
-              display: 'flex', alignItems: 'center', gap: 7,
-            }}
-          >
-            <span style={{ fontSize: 13 }}>{tab.icon}</span>
-            {tab.label}
-          </button>
-        ))}
+
+      {/* Tab bar */}
+      <div style={{ display: 'flex', justifyContent: 'center' }}>
+        <div style={{
+          display: 'flex', gap: 3,
+          background: 'rgba(255,255,255,.03)',
+          border: '1px solid rgba(255,255,255,.08)',
+          borderRadius: 14, padding: 4,
+        }}>
+          {TABS.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => onChange(tab.id)}
+              style={{
+                padding: '10px 28px',
+                borderRadius: 11, border: 'none', cursor: 'pointer',
+                fontSize: 13, fontWeight: 700,
+                background: active === tab.id ? 'rgba(212,160,23,.12)' : 'transparent',
+                color: active === tab.id ? GOLD : 'rgba(255,255,255,.38)',
+                outline: active === tab.id ? `1px solid rgba(212,160,23,.22)` : 'none',
+                transition: 'all 0.18s',
+                display: 'flex', alignItems: 'center', gap: 7,
+              }}
+            >
+              <span>{tab.icon}</span>
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   )
@@ -196,11 +211,19 @@ function TabBar({ active, onChange, matchLabel }) {
 // ── Winner section ─────────────────────────────────────────────────────────
 function WinnerSection({ winner, onReset }) {
   const [imgFailed, setImgFailed] = useState(false)
-  const ytOk  = winner?.ytId && !winner.ytId.startsWith('similar')
-  const thumb = ytOk && !imgFailed
+  const [imgState,  setImgState]  = useState('loading')
+  const ytOk   = winner?.ytId && !winner.ytId.startsWith('similar')
+  const thumb  = ytOk && !imgFailed
     ? `https://img.youtube.com/vi/${winner.ytId}/hqdefault.jpg`
     : null
   const accent = winner?.color || GOLD
+
+  function handleLoad(e) {
+    if (e.target.naturalWidth <= 120) setImgFailed(true)
+    else setImgState('ok')
+  }
+
+  const showThumb = !!thumb && imgState !== 'failed' && !imgFailed
 
   return (
     <div style={{ textAlign: 'center', padding: '20px 0 40px' }}>
@@ -213,27 +236,24 @@ function WinnerSection({ winner, onReset }) {
           position: 'relative',
           borderRadius: 24,
           border: `1px solid ${GOLD}`,
-          background: 'rgba(212,160,23,.06)',
-          padding: thumb ? 0 : '40px 52px',
-          marginBottom: 28,
           overflow: 'hidden',
           boxShadow: `0 0 80px rgba(212,160,23,.1), 0 0 0 1px rgba(212,160,23,.12)`,
           animation: 't_glow 3.5s ease-in-out infinite',
-          maxWidth: 480, width: '100%',
+          maxWidth: 500, width: '100%',
         }}
       >
-        {/* Thumbnail background */}
-        {thumb && (
+        {showThumb && (
           <>
             <img
               src={thumb}
+              onLoad={handleLoad}
               onError={() => setImgFailed(true)}
               alt=""
               style={{
                 position: 'absolute', inset: '-5%',
                 width: '110%', height: '110%',
                 objectFit: 'cover',
-                filter: 'blur(14px) brightness(0.28) saturate(1.3)',
+                filter: 'blur(16px) brightness(0.26) saturate(1.3)',
               }}
             />
             <div style={{
@@ -242,42 +262,41 @@ function WinnerSection({ winner, onReset }) {
             }} />
           </>
         )}
-
-        <div style={{
-          position: 'relative', zIndex: 1,
-          padding: '40px 52px',
-        }}>
-          <div style={{ fontSize: 44, marginBottom: 14 }}>🏆</div>
+        {!showThumb && (
           <div style={{
-            fontSize: 'clamp(20px, 4vw, 30px)',
-            fontWeight: 900,
-            background: `linear-gradient(135deg, ${GOLD2} 0%, ${GOLD} 100%)`,
+            position: 'absolute', inset: 0,
+            background: `radial-gradient(ellipse at 40% 35%, ${accent}55 0%, ${accent}18 40%, rgba(7,9,14,.98) 68%)`,
+          }} />
+        )}
+
+        <div style={{ position: 'relative', zIndex: 1, padding: '44px 56px' }}>
+          <div style={{ fontSize: 48, marginBottom: 14 }}>🏆</div>
+          <div style={{
+            fontSize: 'clamp(22px, 4vw, 32px)', fontWeight: 900,
+            background: `linear-gradient(135deg, ${GOLD2}, ${GOLD})`,
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
             marginBottom: 8, lineHeight: 1.2,
           }}>
             {winner.title}
           </div>
-          <div style={{ fontSize: 14, color: 'rgba(255,255,255,.55)', marginBottom: 4 }}>
+          <div style={{ fontSize: 14, color: 'rgba(255,255,255,.5)', marginBottom: 4 }}>
             {winner.anime}
           </div>
-          <div style={{ fontSize: 12, color: 'rgba(255,255,255,.3)' }}>
-            {winner.artist}
-          </div>
+          <div style={{ fontSize: 12, color: 'rgba(255,255,255,.28)' }}>{winner.artist}</div>
         </div>
       </motion.div>
 
-      <div style={{ fontSize: 14, color: 'rgba(255,255,255,.38)', marginBottom: 24 }}>
+      <div style={{ fontSize: 14, color: 'rgba(255,255,255,.35)', margin: '24px 0' }}>
         Le tournoi est terminé. La communauté a parlé.
       </div>
 
       <button
         onClick={onReset}
         style={{
-          padding: '10px 26px', borderRadius: 10,
+          padding: '10px 28px', borderRadius: 10,
           border: '1px solid rgba(255,255,255,.12)',
           background: 'rgba(255,255,255,.03)',
-          color: 'rgba(255,255,255,.38)',
-          fontSize: 12, cursor: 'pointer',
+          color: 'rgba(255,255,255,.35)', fontSize: 12, cursor: 'pointer',
           transition: 'all 0.2s',
         }}
         onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,.07)'}
@@ -292,7 +311,7 @@ function WinnerSection({ winner, onReset }) {
 function NoMatchReady() {
   return (
     <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-      <div style={{ fontSize: 32, marginBottom: 12, opacity: 0.25 }}>⚔</div>
+      <div style={{ fontSize: 32, marginBottom: 12, opacity: 0.2 }}>⚔</div>
       <div style={{ color: 'rgba(255,255,255,.28)', fontSize: 14 }}>
         En attente du prochain duel.
       </div>
@@ -300,7 +319,7 @@ function NoMatchReady() {
   )
 }
 
-// ── Main page ──────────────────────────────────────────────────────────────
+// ── Main ───────────────────────────────────────────────────────────────────
 export default function TournamentPage() {
   const [tab,           setTab]           = useState('duel')
   const [rounds,        setRounds]        = useState(() => loadRoundsWithVersionCheck())
@@ -309,9 +328,9 @@ export default function TournamentPage() {
   const [isMobile,      setIsMobile]      = useState(() => window.innerWidth < 768)
 
   useEffect(() => {
-    const handler = () => setIsMobile(window.innerWidth < 768)
-    window.addEventListener('resize', handler)
-    return () => window.removeEventListener('resize', handler)
+    const h = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', h)
+    return () => window.removeEventListener('resize', h)
   }, [])
 
   useEffect(() => {
@@ -328,19 +347,12 @@ export default function TournamentPage() {
     return round?.matches?.filter(m => m.left && m.right).length || 0
   }, [current, rounds])
 
-  const roundLabel = current
-    ? current.round.label
-    : winner
-      ? 'Terminé'
-      : 'En attente'
-
-  const matchLabel = current
-    ? `Duel ${current.match.position + 1} / ${totalMatchesInRound}`
-    : ''
+  const roundLabel = current ? current.round.label : winner ? 'Terminé' : 'En attente'
+  const matchLabel = current ? `${current.match.position + 1} / ${totalMatchesInRound}` : ''
 
   function handleVote(side) {
     if (!current) return
-    const matchId    = current.match.id
+    const matchId     = current.match.id
     const newPersonal = { ...personalVotes, [matchId]: side }
     setPersonalVotes(newPersonal)
     savePersonalVote(TOURNAMENT_CONFIG.id, matchId, side)
@@ -351,17 +363,13 @@ export default function TournamentPage() {
   function handleNext() {
     if (!current) return
     const matchId = current.match.id
-    const myVote  = personalVotes[matchId]
-    if (!myVote) return
-
+    if (!personalVotes[matchId]) return
     const percents  = getVotePercents(voteCounts, matchId)
     const winnerId  = percents.leftN >= percents.rightN
       ? current.match.left?.id
       : current.match.right?.id
-
     const newRounds = advanceWinner(rounds, matchId, winnerId)
     setRounds(newRounds)
-
     if (getWinner(newRounds)) setTab('results')
   }
 
@@ -382,29 +390,35 @@ export default function TournamentPage() {
     <div style={{
       minHeight: '100vh',
       background: BG,
-      padding: 'clamp(20px, 4vw, 64px) clamp(16px, 4vw, 48px)',
       fontFamily: 'inherit',
     }}>
       <style>{T_CSS}</style>
 
-      <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+      {/* Inner container — wide */}
+      <div style={{
+        maxWidth: 1440,
+        margin: '0 auto',
+        padding: 'clamp(24px, 4vw, 64px) clamp(16px, 4vw, 56px)',
+      }}>
 
-        <TournamentHeader
+        <TournamentHero
           config={TOURNAMENT_CONFIG}
           progress={progress}
           roundLabel={roundLabel}
+          matchLabel={matchLabel}
         />
 
-        <TabBar
+        <TournamentTabs
           active={tab}
           onChange={setTab}
-          matchLabel={matchLabel}
+          roundLabel={roundLabel}
+          matchLabel={matchLabel ? `Duel ${matchLabel}` : ''}
         />
 
         <AnimatePresence mode="wait">
           <motion.div
             key={tab}
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.18 }}
@@ -414,7 +428,7 @@ export default function TournamentPage() {
                 {winner ? (
                   <WinnerSection winner={winner} onReset={handleReset} />
                 ) : current ? (
-                  <TournamentDuel
+                  <DuelArena
                     round={current.round}
                     match={current.match}
                     totalMatchesInRound={totalMatchesInRound}
@@ -451,12 +465,12 @@ export default function TournamentPage() {
 
         {/* Footer */}
         <div style={{
-          marginTop: 64, paddingTop: 24,
+          marginTop: 72, paddingTop: 24,
           borderTop: '1px solid rgba(255,255,255,.05)',
           display: 'flex', justifyContent: 'space-between',
           alignItems: 'center', flexWrap: 'wrap', gap: 12,
         }}>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,.2)', lineHeight: 1.65 }}>
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,.18)', lineHeight: 1.7 }}>
             Les votes sont stockés localement dans ce navigateur.<br />
             Supabase peut être connecté pour des votes communautaires partagés.
           </div>
@@ -466,8 +480,7 @@ export default function TournamentPage() {
               padding: '7px 16px', borderRadius: 8,
               border: '1px solid rgba(255,255,255,.1)',
               background: 'rgba(255,255,255,.025)',
-              color: 'rgba(255,255,255,.28)',
-              fontSize: 11, cursor: 'pointer',
+              color: 'rgba(255,255,255,.25)', fontSize: 11, cursor: 'pointer',
               transition: 'all 0.2s',
             }}
             onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,.06)'}
