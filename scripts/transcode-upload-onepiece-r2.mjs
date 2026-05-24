@@ -1,6 +1,6 @@
 /**
  * One Piece Egghead — MKV x265 VOSTFR → MP4 H264 via NVENC (GPU)
- * Episodes E1086-E1163
+ * Episodes E1086-E1155
  * Subtitles VTT déjà sur R2, pas besoin de les re-uploader.
  * Met à jour src/data/onepiece-videos.js avec les nouveaux chemins .mp4
  */
@@ -44,7 +44,7 @@ const SOURCE_DIR = 'F:\\Brams-Score-By-Freydiss\\brams-website\\public\\anime\\O
 const KEY_PREFIX  = 'anime/op-egghead'
 const TEMP = path.join(os.tmpdir(), 'brams-onepiece')
 const EP_START = OP_START ? parseInt(OP_START) : 1086
-const EP_END   = OP_END   ? parseInt(OP_END)   : 1163
+const EP_END   = OP_END   ? parseInt(OP_END)   : 1155
 
 const client = new S3Client({
   region: 'auto',
@@ -155,7 +155,6 @@ const EPISODE_TITLES = {
   1153:"Le bouleversement d'une ere ! Le fluide royal qui guide Luffy",
   1154:'La verite derriere le plan secret ! Vegapunk declare victoire',
   1155:"L'horizon promis ! En route vers Elbaph tant attendu",
-  1163:'Episode 1163',
 }
 
 const SUBTITLE_BASE = `${R2_PUBLIC_URL}/anime/op-egghead-subtitles`
@@ -164,7 +163,6 @@ const THUMB_BASE    = `${R2_PUBLIC_URL}/anime/op-egghead-thumbnails`
 // Fichiers source locaux
 const SPECIAL_SRC = {
   1120: 'One.Piece.E1120.v2.VOSTFR.1080p.WEBRiP.x265-KAF.mkv',
-  1163: 'F:\\Brams-Score-By-Freydiss\\brams-website\\public\\anime\\[KiyoshiiSubs] One Piece - 1163 [1080p][H.265 - 10Bit].mkv',
 }
 function srcPathFor(ep) {
   const filename = SPECIAL_SRC[ep] || `One.Piece.E${ep}.VOSTFR.1080p.WEBRiP.x265-KAF.mkv`
@@ -263,7 +261,6 @@ const EPISODE_TITLES = ${JSON.stringify(EPISODE_TITLES, null, 2)}
 
 const EPISODES = [
   ...Array.from({ length: 70 }, (_, index) => 1086 + index),
-  1163,
 ]
 
 export default EPISODES.map((episode) => {
