@@ -213,6 +213,25 @@ const ANIMES = [
     stats: [{ label: 'Chapitres', value: '280+' }, { label: 'Épisodes', value: '24' }, { label: 'Statut', value: 'En cours' }],
     action: '▶ Accéder', badge: 'NOUVEAU',
   },
+  {
+    id: 'kaiju8',
+    title: 'Kaiju No. 8',
+    subtitle: 'Saison 1 · VF + VO',
+    emoji: '👾',
+    color: '#00bcd4',
+    colorDark: '#003d45',
+    coverImage: 'https://www.nautiljon.com/images/anime/00/39/kaiju_no_8_22839.jpg',
+    genres: ['Action', 'Monstres', 'Shōnen'],
+    description: "Kafka Hibino rêve d'intégrer les Forces de Défense. Un jour, il avale un petit kaiju et se transforme en monstre de classe dix. Le Kaiju n°8.",
+    stats: [
+      { label: 'Épisodes', value: '12' },
+      { label: 'Saison', value: '1' },
+      { label: 'Audio', value: 'VF + VO' },
+    ],
+    action: '▶ Regarder',
+    badge: 'MULTI',
+    badgeColor: '#00bcd4',
+  },
 ]
 
 const SEARCH_ALIASES = {
@@ -537,29 +556,28 @@ function AnimeGridCard({ anime, index, onClick }) {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrstone, onOpenJjk, onOpenKingdom, onOpenAot, onOpenKny, onOpenNnt, onOpenSl, onOpenDbs, onOpenViolet, onOpenBc, onOpenMha, onOpenFireforce, onOpenBluelock }) {
+export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrstone, onOpenJjk, onOpenKingdom, onOpenAot, onOpenKny, onOpenNnt, onOpenSl, onOpenDbs, onOpenViolet, onOpenBc, onOpenMha, onOpenFireforce, onOpenBluelock, onOpenKaiju8 }) {
   const [query,       setQuery]       = useState('')
   const [activeGenre, setActiveGenre] = useState('all')
-
   useEffect(() => {
     document.body.style.overflow = 'hidden'
     return () => { document.body.style.overflow = '' }
   }, [])
 
   const sortedAnimes = useMemo(() => {
-    const prio = { onepiece:0, 'violet-evergarden':1, jjk:2, sl:3, aot:4, kny:5 }
+    const prio = { onepiece:0, 'violet-evergarden':1, kaiju8:2, jjk:3, sl:4, aot:5, kny:6 }
     return [...ANIMES].sort((a, b) => (prio[a.id] ?? 10) - (prio[b.id] ?? 10))
   }, [])
 
   const sections = useMemo(() => ({
-    tendances:  sortedAnimes.filter(a => ['onepiece','jjk','sl','aot','kny','violet-evergarden'].includes(a.id)),
+    tendances:  sortedAnimes.filter(a => ['onepiece','jjk','sl','aot','kny','violet-evergarden','kaiju8'].includes(a.id)),
     nouveautes: sortedAnimes.filter(a => a.badge === 'NOUVEAU'),
     collection: sortedAnimes,
   }), [sortedAnimes])
 
   const heroStats = useMemo(() => ({
     total:     sortedAnimes.length,
-    vf:        sortedAnimes.filter(a => a.badge === 'VF + VOSTFR' || a.badge === 'VF + JAP').length,
+    vf:        sortedAnimes.filter(a => a.badge === 'VF + VOSTFR' || a.badge === 'VF + JAP' || a.badge === 'MULTI').length,
     nouveautes:sortedAnimes.filter(a => a.badge === 'NOUVEAU').length,
     complets:  sortedAnimes.filter(a => a.badge === 'COMPLET').length,
   }), [sortedAnimes])
@@ -588,6 +606,7 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
       kny: onOpenKny, nnt: onOpenNnt, sl: onOpenSl, dbs: onOpenDbs,
       'violet-evergarden': onOpenViolet,
       bc: onOpenBc, mha: onOpenMha, fireforce: onOpenFireforce, bluelock: onOpenBluelock,
+      kaiju8: onOpenKaiju8,
     }
     map[id]?.()
   }

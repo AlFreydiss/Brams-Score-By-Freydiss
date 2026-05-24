@@ -195,6 +195,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   const [isBuffering,   setIsBuffering]   = useState(false)
   const [videoError,    setVideoError]    = useState(null)
   const [subStyle,      setSubStyle]      = useState({ size: 19, color: '#ffffff', bg: true })
+  const [nativeAudioTracks, setNativeAudioTracks] = useState([])
 
   const video   = videos[idx]
   const isLocal = Boolean(video?.src)
@@ -208,11 +209,13 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   const jsonDefaultLabel = Array.isArray(video?.audio) ? (video.audio.find(a => !a.src)?.label ?? null) : null
   const audioMenuOptions = isHlsSource
     ? [...audioTracks.map(t => ({ type: 'hls', key: `hls-${t.index}`, label: t.label, hlsIdx: t.index, srclang: t.lang || '' })), ...jsonExtTracks]
-    : jsonExtTracks.length > 0
-      ? [{ type: 'embedded', key: 'embedded', label: jsonDefaultLabel ?? 'Original' }, ...jsonExtTracks]
-      : jsonDefaultLabel !== null
-        ? [{ type: 'embedded', key: 'embedded', label: jsonDefaultLabel }, ...jsonExtTracks]
-        : []
+    : nativeAudioTracks.length > 1
+      ? nativeAudioTracks.map((t, i) => ({ type: 'native', key: `native-${i}`, label: t.label, nativeIdx: i, srclang: t.language }))
+      : jsonExtTracks.length > 0
+        ? [{ type: 'embedded', key: 'embedded', label: jsonDefaultLabel ?? 'Original' }, ...jsonExtTracks]
+        : jsonDefaultLabel !== null
+          ? [{ type: 'embedded', key: 'embedded', label: jsonDefaultLabel }, ...jsonExtTracks]
+          : []
   const showAudioBtn = audioMenuOptions.length > 1
   const currentAudioKey = selectedAudioKey ?? audioMenuOptions[0]?.key ?? null
 
@@ -379,10 +382,31 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
     setSubsOff(Boolean(video?.defaultSubtitlesOff))
     extAudioActiveRef.current = false
     setExtAudioActive(false); setExtAudioSrc(null); setSelectedAudioKey(null)
-    setIsBuffering(false); setVideoError(null)
+    setIsBuffering(false); setVideoError(null); setNativeAudioTracks([])
     if (extAudioRef.current) { extAudioRef.current.pause(); extAudioRef.current.src = '' }
     if (videoRef.current) videoRef.current.muted = false
   }, [idx, video?.defaultSubtitlesOff])
+
+  // ── Détection pistes audio natives (MKV multi-track VF/VO) ───────────────
+  useEffect(() => {
+    const v = videoRef.current
+    if (!v || isHlsSource) return
+    const detect = () => {
+      const at = v.audioTracks
+      if (!at || at.length <= 1) return
+      const tracks = Array.from(at).map((t, i) => ({
+        language: t.language || '',
+        label: t.label || (
+          t.language === 'fre' || t.language === 'fr' ? 'VF' :
+          t.language === 'jpn' || t.language === 'ja' ? 'VO' :
+          `Audio ${i + 1}`
+        ),
+      }))
+      setNativeAudioTracks(tracks)
+    }
+    v.addEventListener('loadedmetadata', detect, { once: true })
+    return () => v.removeEventListener('loadedmetadata', detect)
+  }, [idx, isHlsSource])
 
   useEffect(() => {
     if (!storageKey || !videoRef.current || !video) return
@@ -523,6 +547,18 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
       setExtAudioActive(false); setExtAudioSrc(null)
       if (videoRef.current) { videoRef.current.muted = false; setVolume(videoRef.current.volume); setMuted(false) }
       setSubsOff(option.srclang === 'fr' || option.label?.toLowerCase().includes('vf'))
+    } else if (option.type === 'native') {
+      extAudioActiveRef.current = false
+      setExtAudioActive(false); setExtAudioSrc(null)
+      const v = videoRef.current
+      if (v?.audioTracks) {
+        for (let i = 0; i < v.audioTracks.length; i++) {
+          v.audioTracks[i].enabled = i === option.nativeIdx
+        }
+      }
+      if (v) { v.muted = false; setVolume(v.volume); setMuted(false) }
+      const lc = option.srclang?.toLowerCase() || option.label?.toLowerCase() || ''
+      setSubsOff(lc.includes('fre') || lc.includes('fr') || lc.includes('vf'))
     } else {
       extAudioActiveRef.current = false
       setExtAudioActive(false); setExtAudioSrc(null)
