@@ -85,7 +85,7 @@ export const OST_CATALOG = [
 export const TOURNAMENT_CONFIG = {
   id:          'best-anime-ost-2026',
   title:       'Best Anime OST 2026',
-  description: 'Le tournoi communautaire pour élire la meilleure OST anime de la décennie. BGM, insert songs, thèmes instrumentaux — les vrais classiques.',
+  description: '32 OST cultes. Une seule restera dans le bracket. Écoute, compare, vote — la communauté décide.',
   status:      'active',
   format:      'single_elimination',
   edition:     'Edition 1',
