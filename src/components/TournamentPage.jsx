@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   generateBracket,
@@ -70,10 +71,37 @@ function Pill({ label, value, gold }) {
 
 // ── Hero ───────────────────────────────────────────────────────────────────
 function TournamentHero({ config, progress, roundLabel, matchLabel }) {
+  const navigate = useNavigate()
   return (
     <div style={{
       position: 'relative', textAlign: 'center', paddingBottom: 44,
     }}>
+      {/* Breadcrumb */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 8,
+        marginBottom: 28, justifyContent: 'flex-start',
+      }}>
+        <button
+          onClick={() => navigate('/tournoi')}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+            fontSize: 11, color: 'rgba(255,255,255,.35)',
+            letterSpacing: '0.06em', fontWeight: 600,
+            transition: 'color 0.18s',
+          }}
+          onMouseEnter={e => e.currentTarget.style.color = 'rgba(255,255,255,.7)'}
+          onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,.35)'}
+        >
+          <span style={{ fontSize: 14, lineHeight: 1 }}>←</span>
+          Tournois
+        </button>
+        <span style={{ fontSize: 10, color: 'rgba(255,255,255,.14)' }}>/</span>
+        <span style={{ fontSize: 11, color: 'rgba(255,255,255,.5)', fontWeight: 600, letterSpacing: '0.06em' }}>
+          OST Arena
+        </span>
+      </div>
+
       <div style={{
         position: 'absolute', inset: '-40px -200px 0', zIndex: 0, pointerEvents: 'none',
         background: 'radial-gradient(ellipse 80% 90% at 50% 0%, rgba(212,160,23,.07) 0%, transparent 55%)',
