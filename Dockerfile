@@ -9,7 +9,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     zlib1g-dev \
     libfreetype6-dev \
     ffmpeg \
-    && ln -s /usr/local/bin/python3 /usr/local/bin/python \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
