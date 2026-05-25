@@ -331,7 +331,11 @@ export default function BlindTestRoomPage() {
   async function startRound() {
     const playedTrackIds = await fetchBlindTestRoomPlayedTrackIds(code)
     const excludedTrackIds = [...playedTrackIds, room?.current_track_id].filter(Boolean)
-    const nextTrack = pickTrack(excludedTrackIds)
+    const excludedAnime = [
+      ...playedTrackIds.map(id => getTrackById(id)?.anime),
+      track?.anime,
+    ].filter(Boolean)
+    const nextTrack = pickTrack(excludedTrackIds, { excludeAnime: excludedAnime })
     await updateBlindTestRoom(code, {
       status: 'playing',
       round: (room?.round || 0) + 1,

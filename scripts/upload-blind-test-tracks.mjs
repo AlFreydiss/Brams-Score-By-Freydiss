@@ -142,7 +142,50 @@ const TRACKS = [
     r2Key: 'blind-test/sao-wou-op2.mp4',
     label: 'SAO Alicization WoU OP2 - ANIMA',
   },
+  {
+    localPath: 'C:\\Users\\Feydi\\Downloads\\Parasyte The Maxim - Opening [4K 60FPS  Creditless  CC].mp4',
+    r2Key: 'blind-test/parasyte-op1.mp4',
+    label: 'Parasyte OP1 - Let Me Hear',
+  },
+  {
+    localPath: 'C:\\Users\\Feydi\\Downloads\\Vinland Saga - Opening 1 【MUKANJYO】 4K 60FPS Creditless  CC.mp4',
+    r2Key: 'blind-test/vinland-op1.mp4',
+    label: 'Vinland Saga OP1 - MUKANJYO',
+  },
+  {
+    localPath: 'C:\\Users\\Feydi\\Downloads\\DANDADAN OP  Opening 1「UHD 60FPS」.mp4',
+    r2Key: 'blind-test/dandadan-op1.mp4',
+    label: 'Dandadan OP1 - Otonoke',
+  },
+  {
+    localPath: 'C:\\Users\\Feydi\\Downloads\\「Creditless」The Apothecary Diaries OP  Opening 1「UHD 60FPS」.mp4',
+    r2Key: 'blind-test/apothecary-op1.mp4',
+    label: 'The Apothecary Diaries OP1 - Hana ni Natte',
+  },
+  {
+    localPath: 'C:\\Users\\Feydi\\Downloads\\Chainsaw Man - Opening  4K  HDR.mp4',
+    r2Key: 'blind-test/chainsaw-op1.mp4',
+    label: 'Chainsaw Man OP1 - KICK BACK',
+  },
+  {
+    localPath: 'C:\\Users\\Feydi\\Downloads\\Kakegurui - Opening 1 [4K 60FPS  Creditless  CC].mp4',
+    r2Key: 'blind-test/kakegurui-op1.mp4',
+    label: 'Kakegurui OP1 - Deal with the Devil',
+  },
+  {
+    localPath: 'C:\\Users\\Feydi\\Downloads\\Attack on Titan OP  Opening 7 - Creditless  4K  60fps  Lyrics.mp4',
+    r2Key: 'blind-test/aot-op7.mp4',
+    label: 'Attack on Titan OP7 - The Rumbling',
+  },
 ]
+
+const onlyKeys = (env.BLIND_TEST_UPLOAD_KEYS || '')
+  .split(',')
+  .map(key => key.trim())
+  .filter(Boolean)
+const SELECTED_TRACKS = onlyKeys.length > 0
+  ? TRACKS.filter(track => onlyKeys.includes(track.r2Key) || onlyKeys.includes(track.r2Key.replace(/^blind-test\//, '')))
+  : TRACKS
 
 async function uploadTrack({ localPath, r2Key, label }) {
   if (!fs.existsSync(localPath)) {
@@ -178,13 +221,13 @@ async function uploadTrack({ localPath, r2Key, label }) {
 }
 
 async function main() {
-  console.log('🎵 Blind Test Track Upload — 20 fichiers')
+  console.log(`🎵 Blind Test Track Upload — ${SELECTED_TRACKS.length}/${TRACKS.length} fichiers`)
   let ok = 0
-  for (const track of TRACKS) {
+  for (const track of SELECTED_TRACKS) {
     const success = await uploadTrack(track)
     if (success) ok++
   }
-  console.log(`\n✅ ${ok}/${TRACKS.length} fichiers uploadés.`)
+  console.log(`\n✅ ${ok}/${SELECTED_TRACKS.length} fichiers uploadés.`)
 }
 
 main().catch(console.error)

@@ -503,6 +503,7 @@ export default function BlindTestPage() {
   const [round,        setRound]        = useState(0)
   const [history,      setHistory]      = useState([])
   const [playedIds,    setPlayedIds]    = useState([])
+  const [playedAnimes, setPlayedAnimes] = useState([])
   const [countdown,    setCountdown]    = useState(3)
   const [guessEnabled, setGuessEnabled] = useState(false)
   const [volume,       setVolume]       = useState(0.7)
@@ -574,7 +575,7 @@ export default function BlindTestPage() {
     if (!v) return
     v.pause(); v.src = url; v.currentTime = 0; v.volume = volume; v.load()
     setVideoFailed(false)
-    v.play().then(() => v.pause()).catch(() => setVideoFailed(true))
+    v.play().then(() => v.pause()).catch(() => {})
   }
 
   function syncRoomPayload(roomRow) {
@@ -669,19 +670,20 @@ export default function BlindTestPage() {
     roomChannelRef.current = null
     setRoomCode(''); setRoomInput(''); setRoomRole('local')
     setRoomStatus('Mode solo'); setRoomSync('idle'); setRoomPlayers([])
-    setPhase('intro'); setTrack(null); setLastTrackId(null); setPlayedIds([])
+    setPhase('intro'); setTrack(null); setLastTrackId(null); setPlayedIds([]); setPlayedAnimes([])
     setCountdown(3); setGuessEnabled(false)
     window.history.replaceState({}, '', window.location.pathname)
   }
 
   function startGame() {
     if (roomCode && roomRole !== 'host') { setRoomStatus('Attends le host pour lancer'); return }
-    const t = pickTrack(playedIds)
+    const t = pickTrack(playedIds, { excludeAnime: playedAnimes })
     const newPlayed = [...playedIds, t.id]
+    const newPlayedAnimes = [...playedAnimes, t.anime]
     // Snap vidéo à invisible instantanément pour éviter de deviner via le fond
     setVideoSnap(true)
     setTimeout(() => setVideoSnap(false), 80)
-    setPlayedIds(newPlayed); setTrack(t); setLastTrackId(t.id)
+    setPlayedIds(newPlayed); setPlayedAnimes(newPlayedAnimes); setTrack(t); setLastTrackId(t.id)
     setAnimeGuess(''); setMcqSelected(null)
     setMcqChoices(pickMCQChoices(t, LOCAL_TRACKS))
     setTitleGuess(''); setResult(null); setBerries(0)
@@ -732,6 +734,8 @@ export default function BlindTestPage() {
       <video
         ref={videoRef} playsInline loop preload="auto"
         onError={() => setVideoFailed(true)}
+        onLoadedData={() => setVideoFailed(false)}
+        onCanPlay={() => setVideoFailed(false)}
         style={{
           position: 'fixed', inset: 0, width: '100%', height: '100%',
           objectFit: 'cover', zIndex: 1,
@@ -1244,7 +1248,7 @@ export default function BlindTestPage() {
 
               <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
                 <motion.button
-                  onClick={() => { setPhase('intro'); setTotalScore(0); setStreak(0); setMaxStreak(0); setRound(0); setHistory([]); setPlayedIds([]) }}
+                  onClick={() => { setPhase('intro'); setTotalScore(0); setStreak(0); setMaxStreak(0); setRound(0); setHistory([]); setPlayedIds([]); setPlayedAnimes([]) }}
                   whileHover={{ scale: 1.03, boxShadow: `0 8px 28px rgba(212,160,23,0.36)` }} whileTap={{ scale: 0.97 }}
                   style={{ padding: '13px 36px', borderRadius: 100, border: 'none', background: `linear-gradient(135deg,${GOLD},#e5b83a)`, color: '#1a1200', fontSize: 15, fontWeight: 800, cursor: 'pointer', letterSpacing: '.02em' }}
                 >

@@ -470,6 +470,97 @@ export const LOCAL_TRACKS = [
     emoji:      '🌌',
     aliases:    ['sword art online', 'sao', 'alicization', 'war of underworld', 'anima', 'reona', 'kirito', 'alice'],
   },
+  {
+    id: 'parasyte-op1',
+    anime:      'Parasyte: The Maxim',
+    title:      'Let Me Hear',
+    artist:     'Fear, and Loathing in Las Vegas',
+    type:       'OP',
+    episode:    'Opening 1',
+    url:        'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/blind-test/parasyte-op1.mp4',
+    difficulty: 'moyen',
+    color:      '#16a34a',
+    emoji:      '🧬',
+    aliases:    ['parasyte', 'kiseijuu', 'kiseiju', 'the maxim', 'let me hear', 'fear and loathing in las vegas'],
+  },
+  {
+    id: 'vinland-op1',
+    anime:      'Vinland Saga',
+    title:      'MUKANJYO',
+    artist:     'Survive Said The Prophet',
+    type:       'OP',
+    episode:    'Opening 1',
+    url:        'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/blind-test/vinland-op1.mp4',
+    difficulty: 'moyen',
+    color:      '#92400e',
+    emoji:      '🛡️',
+    aliases:    ['vinland saga', 'vinland', 'mukanjyo', 'survive said the prophet', 'thorfinn'],
+  },
+  {
+    id: 'dandadan-op1',
+    anime:      'Dandadan',
+    title:      'Otonoke',
+    artist:     'Creepy Nuts',
+    type:       'OP',
+    episode:    'Opening 1',
+    url:        'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/blind-test/dandadan-op1.mp4',
+    difficulty: 'facile',
+    color:      '#ec4899',
+    emoji:      '👻',
+    aliases:    ['dandadan', 'dan da dan', 'otonoke', 'creepy nuts', 'momo', 'okarun'],
+  },
+  {
+    id: 'apothecary-op1',
+    anime:      'The Apothecary Diaries',
+    title:      'Hana ni Natte',
+    artist:     'Ryokuoushoku Shakai',
+    type:       'OP',
+    episode:    'Opening 1',
+    url:        'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/blind-test/apothecary-op1.mp4',
+    difficulty: 'moyen',
+    color:      '#22c55e',
+    emoji:      '🌿',
+    aliases:    ['the apothecary diaries', 'apothecary diaries', 'kusuriya no hitorigoto', 'hana ni natte', 'maomao'],
+  },
+  {
+    id: 'chainsaw-op1',
+    anime:      'Chainsaw Man',
+    title:      'KICK BACK',
+    artist:     'Kenshi Yonezu',
+    type:       'OP',
+    episode:    'Opening 1',
+    url:        'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/blind-test/chainsaw-op1.mp4',
+    difficulty: 'facile',
+    color:      '#f97316',
+    emoji:      '🪚',
+    aliases:    ['chainsaw man', 'csm', 'kick back', 'kenshi yonezu', 'denji', 'makima', 'power'],
+  },
+  {
+    id: 'kakegurui-op1',
+    anime:      'Kakegurui',
+    title:      'Deal with the Devil',
+    artist:     'Tia',
+    type:       'OP',
+    episode:    'Opening 1',
+    url:        'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/blind-test/kakegurui-op1.mp4',
+    difficulty: 'moyen',
+    color:      '#dc2626',
+    emoji:      '🎲',
+    aliases:    ['kakegurui', 'deal with the devil', 'tia', 'yumeko', 'jabami'],
+  },
+  {
+    id: 'aot-op7',
+    anime:      'Attack on Titan',
+    title:      'The Rumbling',
+    artist:     'SiM',
+    type:       'OP',
+    episode:    'Opening 7',
+    url:        'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/blind-test/aot-op7.mp4',
+    difficulty: 'facile',
+    color:      '#78350f',
+    emoji:      '🌊',
+    aliases:    ['attack on titan', 'shingeki no kyojin', 'aot', 'snk', 'the rumbling', 'sim', 'eren'],
+  },
 ]
 
 // ── Answer matching ────────────────────────────────────────────────────────
@@ -480,6 +571,19 @@ function normalize(s) {
     .replace(/[^a-z0-9 ]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
+}
+
+function animeFamilyKey(anime) {
+  const value = normalize(anime)
+  if (!value) return ''
+  if (value.startsWith('sword art online')) return 'sword art online'
+  if (value.startsWith('dragon ball')) return 'dragon ball'
+  if (value.startsWith('fate')) return 'fate'
+  if (value.startsWith('naruto')) return 'naruto'
+  if (value.startsWith('attack on titan') || value.startsWith('shingeki no kyojin')) return 'attack on titan'
+  if (value.startsWith('fullmetal alchemist')) return 'fullmetal alchemist'
+  if (value.startsWith('jojo')) return 'jojo'
+  return value
 }
 
 function matchesAnime(guess, track) {
@@ -521,10 +625,16 @@ export function calcBerries({ animeOk, titleOk, timeMs, streak }) {
   return Math.round(base * speedMult * streakMult * 1000) // convert to berries scale
 }
 
-// ── Pick random track (exclude last) ─────────────────────────────────────
-export function pickTrack(excludeIds = []) {
+// ── Pick random track ────────────────────────────────────────────────────
+export function pickTrack(excludeIds = [], options = {}) {
   const excluded = new Set(Array.isArray(excludeIds) ? excludeIds : [excludeIds])
-  let pool = LOCAL_TRACKS.filter(t => !excluded.has(t.id))
+  const excludedAnime = new Set(
+    (options.excludeAnime || [])
+      .map(anime => animeFamilyKey(anime))
+      .filter(Boolean)
+  )
+  let pool = LOCAL_TRACKS.filter(t => !excluded.has(t.id) && !excludedAnime.has(animeFamilyKey(t.anime)))
+  if (pool.length === 0) pool = LOCAL_TRACKS.filter(t => !excluded.has(t.id))
   if (pool.length === 0) pool = LOCAL_TRACKS  // tous joués → reset
   return pool[Math.floor(Math.random() * pool.length)]
 }
