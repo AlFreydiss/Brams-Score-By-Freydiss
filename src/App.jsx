@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, lazy, Suspense } from 'react'
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, useNavigate } from 'react-router-dom'
 import GlobalStyles from './components/GlobalStyles.jsx'
 import { ThemeProvider } from './contexts/ThemeContext.jsx'
 import { useAuth } from './contexts/AuthContext.jsx'
@@ -189,6 +189,7 @@ function PageLayout({ children }) {
 
 export default function App() {
   const { isAuthenticated } = useAuth()
+  const navigate = useNavigate()
   const [scansOpen,        setScansOpen]        = useState(false)
   const [onepieceOpen,     setOnepieceOpen]     = useState(false)
 
@@ -386,7 +387,7 @@ export default function App() {
       {animeHubOpen && (
         isAuthenticated ? (
           <AnimeHub
-            onClose={() => setAnimeHubOpen(false)}
+            onClose={() => { setAnimeHubOpen(false); navigate('/') }}
             onOpenOnepiece={() => { setAnimeHubOpen(false); setOnepieceOpen(true) }}
             onOpenTpn={() => { setAnimeHubOpen(false); setTpnOpen(true) }}
             onOpenDrstone={() => { setAnimeHubOpen(false); setDrstoneOpen(true) }}
@@ -408,22 +409,22 @@ export default function App() {
           <AuthGuard onClose={() => setAnimeHubOpen(false)} feature="les animés & scans" />
         )
       )}
-      {onepieceOpen && <OnePiecePage onClose={() => setOnepieceOpen(false)} />}
-      {tpnOpen     && <TpnPage     onClose={() => setTpnOpen(false)} />}
-      {drstoneOpen && <DrStonePage onClose={() => setDrstoneOpen(false)} />}
-      {jjkOpen     && <JjkPage     onClose={() => setJjkOpen(false)} />}
-      {kingdomOpen && <KingdomPage onClose={() => setKingdomOpen(false)} />}
-      {aotOpen     && <AotPage     onClose={() => setAotOpen(false)} />}
-      {knyOpen     && <KnyPage     onClose={() => setKnyOpen(false)} />}
-      {nntOpen     && <NntPage     onClose={() => setNntOpen(false)} />}
-      {slOpen      && <SlPage      onClose={() => setSlOpen(false)} />}
-      {dbsOpen     && <DbsPage     onClose={() => setDbsOpen(false)} />}
-      {violetOpen  && <VioletEvergardenPage onClose={() => setVioletOpen(false)} />}
-      {vivyOpen    && <VivyPage             onClose={() => setVivyOpen(false)} />}
-      {bcOpen        && <BcPage        onClose={() => setBcOpen(false)} />}
-      {mhaOpen       && <MhaPage       onClose={() => setMhaOpen(false)} />}
-      {fireforcOpen  && <FireForcePage onClose={() => setFireforcOpen(false)} />}
-      {bluelockOpen  && <BlueLockPage  onClose={() => setBluelockOpen(false)} />}
+      {onepieceOpen && <OnePiecePage onClose={() => { setOnepieceOpen(false); setAnimeHubOpen(true) }} />}
+      {tpnOpen     && <TpnPage     onClose={() => { setTpnOpen(false);     setAnimeHubOpen(true) }} />}
+      {drstoneOpen && <DrStonePage onClose={() => { setDrstoneOpen(false); setAnimeHubOpen(true) }} />}
+      {jjkOpen     && <JjkPage     onClose={() => { setJjkOpen(false);     setAnimeHubOpen(true) }} />}
+      {kingdomOpen && <KingdomPage onClose={() => { setKingdomOpen(false); setAnimeHubOpen(true) }} />}
+      {aotOpen     && <AotPage     onClose={() => { setAotOpen(false);     setAnimeHubOpen(true) }} />}
+      {knyOpen     && <KnyPage     onClose={() => { setKnyOpen(false);     setAnimeHubOpen(true) }} />}
+      {nntOpen     && <NntPage     onClose={() => { setNntOpen(false);     setAnimeHubOpen(true) }} />}
+      {slOpen      && <SlPage      onClose={() => { setSlOpen(false);      setAnimeHubOpen(true) }} />}
+      {dbsOpen     && <DbsPage     onClose={() => { setDbsOpen(false);     setAnimeHubOpen(true) }} />}
+      {violetOpen  && <VioletEvergardenPage onClose={() => { setVioletOpen(false); setAnimeHubOpen(true) }} />}
+      {vivyOpen    && <VivyPage             onClose={() => { setVivyOpen(false);   setAnimeHubOpen(true) }} />}
+      {bcOpen        && <BcPage        onClose={() => { setBcOpen(false);       setAnimeHubOpen(true) }} />}
+      {mhaOpen       && <MhaPage       onClose={() => { setMhaOpen(false);      setAnimeHubOpen(true) }} />}
+      {fireforcOpen  && <FireForcePage onClose={() => { setFireforcOpen(false); setAnimeHubOpen(true) }} />}
+      {bluelockOpen  && <BlueLockPage  onClose={() => { setBluelockOpen(false); setAnimeHubOpen(true) }} />}
       {treeOpen      && <FamilyTree3D  onClose={() => setTreeOpen(false)} />}
       {scansOpen && (
         isAuthenticated

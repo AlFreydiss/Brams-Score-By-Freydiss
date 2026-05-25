@@ -663,7 +663,7 @@ function ComingSoonCard({ index }) {
 
 export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrstone, onOpenJjk, onOpenKingdom, onOpenAot, onOpenKny, onOpenNnt, onOpenSl, onOpenDbs, onOpenViolet, onOpenVivy, onOpenBc, onOpenMha, onOpenFireforce, onOpenBluelock }) {
   const [query, setQuery] = useState('')
-  const [activeGenre, setActiveGenre] = useState('all')
+  const [selectedGenres, setSelectedGenres] = useState(new Set())
 
   const sortedAnimes = useMemo(() => {
     const priority = { onepiece: 0, 'violet-evergarden': 1, vivy: 2 }
@@ -673,19 +673,28 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
   const genreOptions = useMemo(() => {
     const genres = new Set()
     sortedAnimes.forEach(anime => (anime.genres || []).forEach(genre => genres.add(genre)))
-    return ['all', ...Array.from(genres).sort((a, b) => a.localeCompare(b, 'fr'))]
+    return Array.from(genres).sort((a, b) => a.localeCompare(b, 'fr'))
   }, [sortedAnimes])
+
+  const toggleGenre = (genre) => {
+    setSelectedGenres(prev => {
+      const next = new Set(prev)
+      if (next.has(genre)) next.delete(genre)
+      else next.add(genre)
+      return next
+    })
+  }
 
   const visibleAnimes = useMemo(() => {
     const needle = normalizeText(query).trim()
     return sortedAnimes.filter(anime => {
-      const genreMatch = activeGenre === 'all' || anime.genres?.includes(activeGenre)
+      const genreMatch = selectedGenres.size === 0 || anime.genres?.some(g => selectedGenres.has(g))
       const textMatch = !needle || searchableText(anime).includes(needle)
       return genreMatch && textMatch
     })
-  }, [activeGenre, query, sortedAnimes])
+  }, [selectedGenres, query, sortedAnimes])
 
-  const isFiltering = query.trim() !== '' || activeGenre !== 'all'
+  const isFiltering = query.trim() !== '' || selectedGenres.size > 0
   const marqueeRows = useMemo(() => [
     { animes: sortedAnimes.slice(0, 5),   direction: 'rtl', speed: 66 },
     { animes: sortedAnimes.slice(5, 10),  direction: 'ltr', speed: 70 },
@@ -797,7 +806,7 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
                 {(query || activeGenre !== 'all') && (
                   <button
                     type="button"
-                    onClick={() => { setQuery(''); setActiveGenre('all') }}
+                    onClick={() => { setQuery(''); setSelectedGenres(new Set()) }}
                     style={{
                       flexShrink:0,
                       border:'1px solid rgba(255,255,255,0.10)',
@@ -815,28 +824,36 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
                 )}
               </div>
 
-              <div style={{ display:'flex', flexWrap:'wrap', gap:8, marginTop:12, justifyContent:'center' }}>
+              <div style={{ display:'flex', flexWrap:'wrap', gap:7, marginTop:12, justifyContent:'center', alignItems:'center' }}>
+                <button
+                  type="button"
+                  onClick={() => setSelectedGenres(new Set())}
+                  style={{
+                    border:`1px solid ${selectedGenres.size === 0 ? 'rgba(224,82,74,0.65)' : 'rgba(255,255,255,0.10)'}`,
+                    background: selectedGenres.size === 0 ? 'rgba(224,82,74,0.18)' : 'rgba(255,255,255,0.045)',
+                    color: selectedGenres.size === 0 ? '#fff' : 'rgba(255,255,255,0.58)',
+                    borderRadius:999, padding:'7px 14px', cursor:'pointer', fontSize:12, fontWeight:800, transition:'all .18s',
+                  }}
+                >
+                  Tous
+                </button>
                 {genreOptions.map(genre => {
-                  const active = activeGenre === genre
-                  const label = genre === 'all' ? 'Tous' : genre
+                  const active = selectedGenres.has(genre)
                   return (
                     <button
                       key={genre}
                       type="button"
-                      onClick={() => setActiveGenre(genre)}
+                      onClick={() => toggleGenre(genre)}
                       style={{
-                        border:`1px solid ${active ? 'rgba(224,82,74,0.65)' : 'rgba(255,255,255,0.10)'}`,
-                        background:active ? 'rgba(224,82,74,0.18)' : 'rgba(255,255,255,0.045)',
-                        color:active ? '#fff' : 'rgba(255,255,255,0.58)',
-                        borderRadius:999,
-                        padding:'7px 13px',
-                        cursor:'pointer',
-                        fontSize:12,
-                        fontWeight:800,
-                        transition:'all .18s',
+                        border:`1px solid ${active ? 'rgba(224,82,74,0.55)' : 'rgba(255,255,255,0.10)'}`,
+                        background: active ? 'rgba(224,82,74,0.16)' : 'rgba(255,255,255,0.045)',
+                        color: active ? '#fff' : 'rgba(255,255,255,0.58)',
+                        borderRadius:999, padding:'6px 12px', cursor:'pointer', fontSize:11.5, fontWeight:800,
+                        transition:'all .18s', display:'flex', alignItems:'center', gap:5,
                       }}
                     >
-                      {label}
+                      {active && <span style={{ fontSize:9, color:'rgba(224,82,74,0.9)' }}>✓</span>}
+                      {genre}
                     </button>
                   )
                 })}
