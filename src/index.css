@@ -1811,6 +1811,42 @@ option { background: #100a04; }
   width: 15px;
   height: 15px;
 }
+.nav-boutique-btn,
+.nav-soutenir-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .03em;
+  cursor: pointer;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: background .18s, border-color .18s, transform .14s;
+}
+.nav-boutique-btn {
+  background: rgba(191,164,106,.10);
+  border: 1px solid rgba(191,164,106,.28);
+  color: #BFA46A;
+}
+.nav-boutique-btn:hover {
+  background: rgba(191,164,106,.18);
+  border-color: rgba(191,164,106,.5);
+  transform: translateY(-1px);
+}
+.nav-soutenir-btn {
+  background: rgba(100,180,100,.08);
+  border: 1px solid rgba(100,180,100,.22);
+  color: #7ecc7e;
+}
+.nav-soutenir-btn:hover {
+  background: rgba(100,180,100,.16);
+  border-color: rgba(100,180,100,.42);
+  transform: translateY(-1px);
+}
 .nav-login-premium {
   min-height: 36px;
   display: inline-flex;

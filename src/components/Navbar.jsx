@@ -86,6 +86,8 @@ function BrandMark({ onClick }) {
   )
 }
 
+const LEETCHI_URL = 'https://www.leetchi.com/fr/c/brams-score-by-freydiss-1073815?utm_source=copylink&utm_medium=social_sharing'
+
 function BoutiqueButton() {
   const navigate = useNavigate()
   return (
@@ -94,9 +96,24 @@ function BoutiqueButton() {
       className="nav-boutique-btn"
       aria-label="Boutique Berry"
     >
-      <span style={{ fontSize: 14 }}>🛒</span>
+      <span style={{ fontSize: 13 }}>🛒</span>
       Boutique
     </button>
+  )
+}
+
+function SoutenirButton() {
+  return (
+    <a
+      href={LEETCHI_URL}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="nav-soutenir-btn"
+      aria-label="Soutenir le projet"
+    >
+      <span style={{ fontSize: 13 }}>💛</span>
+      Soutenir
+    </a>
   )
 }
 
@@ -274,6 +291,7 @@ export default function Navbar() {
           </div>
 
           <div className="nav-zone-status hide-mobile">
+            <SoutenirButton />
             <BoutiqueButton />
             <SocialLinks />
           </div>
