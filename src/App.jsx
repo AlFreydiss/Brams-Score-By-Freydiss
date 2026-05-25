@@ -51,7 +51,8 @@ const StaffPanel         = lazy(() => import('./components/StaffPanel.jsx'))
 const BlindTestPage      = lazy(() => import('./components/BlindTestPage.jsx'))
 const BlindTestLeaderboard = lazy(() => import('./components/BlindTestLeaderboard.jsx'))
 const TierListPage       = lazy(() => import('./components/TierListPage.jsx'))
-const TournoiPage        = lazy(() => import('./components/TournoiPage.jsx'))
+const TournamentHubPage  = lazy(() => import('./components/TournamentHubPage.jsx'))
+const TournamentPage     = lazy(() => import('./components/TournamentPage.jsx'))
 const ProfilePageYonkou  = lazy(() => import('./components/ProfilePageYonkou.jsx'))
 const BotFeatures        = lazy(() => import('./components/BotFeatures.jsx'))
 const Quiz               = lazy(() => import('./components/Quiz.jsx'))
@@ -374,7 +375,9 @@ export default function App() {
         <Route path="/tier-list" element={<PageLayout><TierListPage /></PageLayout>} />
 
         {/* Tournoi */}
-        <Route path="/tournoi" element={<PageLayout><TournoiPage /></PageLayout>} />
+        <Route path="/tournoi"     element={<PageLayout><TournamentHubPage /></PageLayout>} />
+        <Route path="/tournoi/ost" element={<PageLayout><TournamentPage    /></PageLayout>} />
+        <Route path="/tournoi-ost" element={<PageLayout><TournamentPage    /></PageLayout>} />
 
         {/* Profil Yonkou — Next-Gen 3D */}
         <Route path="/profil-yonkou" element={<ProfilePageYonkou />} />
