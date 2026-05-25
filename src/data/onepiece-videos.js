@@ -72,11 +72,13 @@ const EPISODE_TITLES = {
   "1152": "L'heritage de son pere et de sa mere ! Le Nika Punch de Bonney",
   "1153": "Le bouleversement d'une ere ! Le fluide royal qui guide Luffy",
   "1154": "La verite derriere le plan secret ! Vegapunk declare victoire",
-  "1155": "L'horizon promis ! En route vers Elbaph tant attendu"
+  "1155": "L'horizon promis ! En route vers Elbaph tant attendu",
+  "1163": "Episode 1163"
 }
 
 const EPISODES = [
   ...Array.from({ length: 70 }, (_, index) => 1086 + index),
+  1163,
 ]
 
 export default EPISODES.map((episode) => {
@@ -87,7 +89,7 @@ export default EPISODES.map((episode) => {
     thumbnail: `${THUMBNAIL_BASE_PATH}/E${episode}.jpg`,
     season: 'Egghead',
     arc: 'Arc Egghead',
-    subtitles: [
+    subtitles: episode === 1163 ? [] : [
       {
         label: 'Français',
         srclang: 'fr',
