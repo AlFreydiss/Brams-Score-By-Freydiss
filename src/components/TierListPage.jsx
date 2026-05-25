@@ -29,14 +29,14 @@ const G = {
 
 // ── Default tiers ──────────────────────────────────────────────────────────────
 const DEFAULT_TIERS = [
-  { id:'god',   label:'GOD',   color:'#d4a017', bg:'linear-gradient(135deg,#2a1f00,#4a3800)' },
-  { id:'s',     label:'S',     color:'#a0445c', bg:'linear-gradient(135deg,#241017,#4a1b2a)' },
-  { id:'a',     label:'A',     color:'#BFA46A', bg:'linear-gradient(135deg,#2b2112,#55401c)' },
-  { id:'b',     label:'B',     color:'#4a86b8', bg:'linear-gradient(135deg,#152330,#21384c)' },
-  { id:'c',     label:'C',     color:'#7b6aa8', bg:'linear-gradient(135deg,#1c1728,#31284b)' },
-  { id:'d',     label:'D',     color:'#6b8098', bg:'linear-gradient(135deg,#18202a,#263544)' },
-  { id:'f',     label:'F',     color:'#b44a58', bg:'linear-gradient(135deg,#281317,#4b1b22)' },
-  { id:'trash', label:'TRASH', color:'#5a6570', bg:'linear-gradient(135deg,#161c22,#27313a)' },
+  { id:'god',   label:'GOD',   color:'#f5c842', bg:'linear-gradient(135deg,#7a5200,#c08800)' },
+  { id:'s',     label:'S',     color:'#ff5577', bg:'linear-gradient(135deg,#880020,#cc1840)' },
+  { id:'a',     label:'A',     color:'#e8a030', bg:'linear-gradient(135deg,#7a4400,#bc7000)' },
+  { id:'b',     label:'B',     color:'#4aa0e8', bg:'linear-gradient(135deg,#0e3870,#1a609a)' },
+  { id:'c',     label:'C',     color:'#9060d8', bg:'linear-gradient(135deg,#301068,#5020a8)' },
+  { id:'d',     label:'D',     color:'#6898c0', bg:'linear-gradient(135deg,#182a40,#2a4868)' },
+  { id:'f',     label:'F',     color:'#e84055', bg:'linear-gradient(135deg,#780010,#c01030)' },
+  { id:'trash', label:'TRASH', color:'#7a8898', bg:'linear-gradient(135deg,#222c36,#364858)' },
 ]
 
 const TIER_COLORS = [
@@ -588,8 +588,7 @@ function SavedListCard({ list, onLoad, onDelete, onDuplicate }) {
       </div>
       <div style={{ display:'flex', borderTop:`1px solid ${G.border}` }}>
         <button onClick={() => onLoad(list)} style={listAction}>Ouvrir</button>
-        <button onClick={() => onDuplicate(list)} style={listAction}><Copy size={11}/></button>
-        <button onClick={() => onDelete(list.id)} style={{ ...listAction, color:'#a0445c' }}><Trash2 size={11}/></button>
+        <button onClick={() => onDelete(list.id)} style={{ ...listAction, color:'#a0445c', borderRight:'none' }}><Trash2 size={11}/></button>
       </div>
     </motion.div>
   )
@@ -848,12 +847,12 @@ export default function TierListPage() {
   ]
 
   return (
-    <div style={{ position:'relative', minHeight:'100vh', background:G.bg, color:G.text, fontFamily:"'Inter',system-ui,sans-serif" }}>
+    <div style={{ position:'relative', minHeight:'100vh', background:G.bg, color:G.text, fontFamily:"'Inter',system-ui,sans-serif", paddingTop:72 }}>
       <style>{CSS}</style>
 
       {/* ── Studio Header ── */}
       <header style={{
-        position:'sticky', top:0, zIndex:50,
+        position:'sticky', top:72, zIndex:50,
         background:'rgba(8,9,13,.95)', backdropFilter:'blur(24px)',
         borderBottom:`1px solid ${G.border}`,
         padding:'0 20px',
@@ -998,7 +997,7 @@ export default function TierListPage() {
             // Type selector
             <motion.div key="selector" initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
               style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
-                minHeight:'calc(100vh - 60px)', padding:'24px 20px' }}>
+                minHeight:'calc(100vh - 132px)', padding:'24px 20px' }}>
               <div style={{ maxWidth:900, width:'100%' }}>
                 <div style={{ textAlign:'center', marginBottom:36 }}>
                   <div style={{ fontSize:11, fontWeight:800, letterSpacing:'.22em', color:G.gold,
