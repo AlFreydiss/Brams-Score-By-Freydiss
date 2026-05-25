@@ -606,6 +606,17 @@ export async function fetchBlindTestRoomAnswers(code, round) {
   return data || []
 }
 
+export async function fetchBlindTestRoomPlayedTrackIds(code) {
+  if (!supabase || !code) return []
+  const { data, error } = await supabase
+    .from('blind_test_room_answers')
+    .select('track_id')
+    .eq('room_code', code.toUpperCase())
+    .not('track_id', 'is', null)
+  if (error) return []
+  return [...new Set((data || []).map(row => row.track_id).filter(Boolean))]
+}
+
 export async function updateBlindTestRoom(code, patch) {
   if (!supabase || !code) return null
   const { data, error } = await supabase

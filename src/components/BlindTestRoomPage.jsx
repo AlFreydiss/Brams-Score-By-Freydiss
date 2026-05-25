@@ -7,6 +7,7 @@ import {
   createBlindTestRoom,
   fetchBlindTestRoom,
   fetchBlindTestRoomAnswers,
+  fetchBlindTestRoomPlayedTrackIds,
   fetchBlindTestRoomPlayers,
   getTrackById,
   joinBlindTestRoom,
@@ -328,7 +329,9 @@ export default function BlindTestRoomPage() {
   }
 
   async function startRound() {
-    const nextTrack = pickTrack(room?.current_track_id)
+    const playedTrackIds = await fetchBlindTestRoomPlayedTrackIds(code)
+    const excludedTrackIds = [...playedTrackIds, room?.current_track_id].filter(Boolean)
+    const nextTrack = pickTrack(excludedTrackIds)
     await updateBlindTestRoom(code, {
       status: 'playing',
       round: (room?.round || 0) + 1,
