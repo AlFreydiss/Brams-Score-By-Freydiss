@@ -1,7 +1,8 @@
 import GenericMangaPage from './GenericMangaPage.jsx'
 import VIDEOS from '../data/onepiece-videos.js'
+import { MANGA_ARCS } from '../data/manga-arcs.js'
 
-const EMOJIS = ['J', 'L', 'Z', 'N', 'S', 'U', 'R', 'F', 'B', 'C']
+const EMOJIS = ['🏴‍☠️', '⚓', '🌊', '⚔️', '🍖', '🎩', '🗺️', '🔥', '💎', '🌑', '👑', '🔮', '🎭', '💀', '🌸', '⛵', '🐉', '🌀', '🏝️', '🌟']
 
 export default function OnePiecePage({ onClose }) {
   return (
@@ -9,11 +10,11 @@ export default function OnePiecePage({ onClose }) {
       chaptersData={[]}
       videosData={VIDEOS}
       color="#e0524a"
-      namespace="onepiece"
-      title="One Piece - Arc Egghead"
-      headerEmoji="OP"
+      namespace="one-piece"
+      title="One Piece"
+      headerEmoji="🏴‍☠️"
       emojiList={EMOJIS}
-      arcsData={[]}
+      arcsData={MANGA_ARCS?.onepiece || []}
       onClose={onClose}
     />
   )

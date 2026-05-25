@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
-import Hls from 'hls.js'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { useAuth } from '../contexts/AuthContext.jsx'
 
 function fmt(sec) {
   const t = Math.max(0, Math.floor(sec || 0))
@@ -11,31 +11,15 @@ function fmt(sec) {
   return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`
 }
 
-const R2_BASE = 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/'
-
 function encSrc(src) {
   return src.split('/').map((seg, i) => i === 0 ? seg : encodeURIComponent(seg)).join('/')
-}
-
-function proxySub(src) {
-  if (!src) return src
-  if (src.startsWith(R2_BASE)) return `/api/subtitles/r2?url=${encodeURIComponent(src)}`
-  return src
-}
-
-function proxyHls(src) {
-  if (!src) return src
-  // Route R2 HLS through server-side proxy to bypass CORS
-  if (src.startsWith(R2_BASE) && src.split('?')[0].endsWith('.m3u8'))
-    return `/api/hls?url=${encodeURIComponent(src)}`
-  return src
 }
 
 function sourceType(src = '') {
   const clean = src.split('?')[0].toLowerCase()
   if (clean.endsWith('.mp4')) return 'video/mp4'
   if (clean.endsWith('.webm')) return 'video/webm'
-  if (clean.endsWith('.mkv')) return 'video/mp4'
+  if (clean.endsWith('.mkv')) return 'video/x-matroska'
   if (clean.endsWith('.m3u8')) return 'application/x-mpegURL'
   return 'video/mp4'
 }
@@ -50,10 +34,60 @@ function saveVideoProgress(storageKey, progress) {
   try { localStorage.setItem(storageKey, JSON.stringify(progress)) } catch {}
 }
 
-function safePlay(video) {
-  if (!video) return
-  const promise = video.play()
-  if (promise?.catch) promise.catch(() => {})
+const VIDEO_PREFS_KEY = 'brams_video_preferences'
+const DEFAULT_SUBTITLE_STYLE = {
+  size: 19,
+  background: 0.72,
+  color: '#ffffff',
+  outline: true,
+  weight: 600,
+  bottom: 110,
+}
+
+function videoPrefsKey(userId) {
+  return userId ? `${VIDEO_PREFS_KEY}_${userId}` : VIDEO_PREFS_KEY
+}
+
+function loadVideoPreferences(userId) {
+  try {
+    const prefs = JSON.parse(localStorage.getItem(videoPrefsKey(userId)) || 'null') || {
+      audioLang: 'ja',
+      subtitlesOff: false,
+      subtitleLang: 'fr',
+    }
+    return {
+      audioLang: prefs.audioLang || 'ja',
+      subtitlesOff: Boolean(prefs.subtitlesOff),
+      subtitleLang: prefs.subtitleLang || 'fr',
+      subtitleStyle: { ...DEFAULT_SUBTITLE_STYLE, ...(prefs.subtitleStyle || {}) },
+    }
+  } catch {
+    return { audioLang: 'ja', subtitlesOff: false, subtitleLang: 'fr', subtitleStyle: DEFAULT_SUBTITLE_STYLE }
+  }
+}
+
+function saveVideoPreferences(userId, prefs) {
+  try { localStorage.setItem(videoPrefsKey(userId), JSON.stringify(prefs)) } catch {}
+}
+
+function langMatches(value = '', target = '') {
+  const v = String(value).toLowerCase()
+  const t = String(target).toLowerCase()
+  if (!v || !t) return false
+  if (v === t || v.startsWith(`${t}-`)) return true
+  if (t === 'ja') return ['jpn', 'japanese', 'japonais', 'jp'].some(x => v.includes(x))
+  if (t === 'fr') return ['fre', 'fra', 'french', 'francais', 'français', 'vf'].some(x => v.includes(x))
+  return false
+}
+
+function findTrackIndex(tracks, preferredLang, fallbackIndex = 0) {
+  if (!tracks?.length) return fallbackIndex
+  const found = tracks.findIndex(track => (
+    langMatches(track.srclang, preferredLang) ||
+    langMatches(track.language, preferredLang) ||
+    langMatches(track.label, preferredLang)
+  ))
+  return found >= 0 ? found : Math.min(fallbackIndex, tracks.length - 1)
 }
 
 function cleanCueText(text) {
@@ -71,6 +105,7 @@ function cleanCueText(text) {
     })
     .join('\n')
 }
+
 
 const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2]
 
@@ -151,23 +186,44 @@ function ProgressBar({ currentTime, duration, buffered, onSeek, color }) {
 }
 
 function EpisodeMiniThumb({ video, color }) {
+  const [ready, setReady] = useState(false)
   if (video.thumbnail) {
-    return <img src={video.thumbnail} alt={`Ep.${video.episode}`} loading="lazy" decoding="async" style={{ width: 96, height: 54, objectFit: "cover", display: "block" }} />
+    return <img src={video.thumbnail} alt={`Ep.${video.episode}`} style={{ width: 96, height: 54, objectFit: 'cover', display: 'block' }} />
+  }
+  if (!video.src) {
+    return <div style={{ width: 96, height: 54, background: 'rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>▶</div>
   }
   return (
-    <div style={{ position: 'relative', width: 96, height: 54, background: `radial-gradient(circle at 28% 18%, ${color}42, transparent 35%), linear-gradient(135deg, rgba(25,25,30,0.96), rgba(5,5,8,0.98))`, overflow: 'hidden', display: 'grid', placeItems: 'center', color: '#fff', fontSize: 18, fontWeight: 900 }}>
-      ▶
+    <div style={{ position: 'relative', width: 96, height: 54, background: `${color}18`, overflow: 'hidden' }}>
+      <video
+        src={encSrc(video.src)}
+        muted
+        playsInline
+        preload="metadata"
+        onLoadedMetadata={e => {
+          const duration = Number.isFinite(e.currentTarget.duration) ? e.currentTarget.duration : 0
+          try { e.currentTarget.currentTime = duration > 0 ? Math.max(2, duration * 0.5) : 2 } catch {}
+        }}
+        onSeeked={() => setReady(true)}
+        onLoadedData={() => setReady(true)}
+        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', opacity: ready ? 0.86 : 0, filter: 'brightness(1.16) saturate(1.12) contrast(1.08)' }}
+      />
+      <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', background: ready ? 'rgba(0,0,0,0.08)' : `linear-gradient(135deg, ${color}30, rgba(0,0,0,0.75))`, color: '#fff', fontSize: 18, fontWeight: 900 }}>
+        {!ready && '▶'}
+      </div>
     </div>
   )
 }
+
+// ── Composant principal ───────────────────────────────────────────────────────
 export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce7', storageKey = null, onProgressUpdate = null }) {
+  const { userId } = useAuth()
   const videoRef     = useRef(null)
+  const audioRef     = useRef(null)
   const containerRef = useRef(null)
   const hideTimer    = useRef(null)
   const lastSaveRef  = useRef(0)
-  const hlsRef           = useRef(null)
-  const extAudioRef      = useRef(null)
-  const extAudioActiveRef = useRef(false)
+  const pendingSourceRef = useRef(null)
 
   const [idx,          setIdx]         = useState(startIdx)
   const [playing,      setPlaying]     = useState(false)
@@ -187,39 +243,21 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   const [showSpdMenu,  setShowSpdMenu] = useState(false)
   const [showQualityMenu, setShowQualityMenu] = useState(false)
   const [qualityLabel, setQualityLabel] = useState('AUTO')
-  const [audioTracks, setAudioTracks] = useState([])
-  const [audioTrackIdx, setAudioTrackIdx] = useState(-1)
-  const [extAudioSrc,   setExtAudioSrc]   = useState(null)
-  const [extAudioActive, setExtAudioActive] = useState(false)
-  const [selectedAudioKey, setSelectedAudioKey] = useState(null)
-  const [isBuffering,   setIsBuffering]   = useState(false)
-  const [videoError,    setVideoError]    = useState(null)
-  const [subStyle,      setSubStyle]      = useState({ size: 19, color: '#ffffff', bgOpacity: 0.72, shadow: true })
-  const [nativeAudioTracks, setNativeAudioTracks] = useState([])
+  const [audioIdx,     setAudioIdx]    = useState(0)
+  const [audioTrackState, setAudioTrackState] = useState('pending')
+  const [subtitleStyle, setSubtitleStyle] = useState(() => loadVideoPreferences(userId).subtitleStyle)
+  const [mediaSrc, setMediaSrc] = useState(videos[startIdx]?.src || '')
 
   const video   = videos[idx]
   const isLocal = Boolean(video?.src)
   const hasSubs = Array.isArray(video?.subtitles) && video.subtitles.length > 0
-  const isHlsSource = Boolean(video?.src && video.src.split('?')[0].toLowerCase().endsWith('.m3u8'))
-
-  // Audio options: merge HLS tracks + external JSON tracks (m4a VF etc.)
-  const jsonExtTracks = Array.isArray(video?.audio)
-    ? video.audio.filter(a => a.src).map((a, i) => ({ type: 'ext', key: `ext-${i}`, label: a.label || 'Audio ext.', src: a.src, srclang: a.srclang || '' }))
-    : []
-  const jsonDefaultLabel = Array.isArray(video?.audio) ? (video.audio.find(a => !a.src)?.label ?? null) : null
-  const audioMenuOptions = isHlsSource
-    ? [...audioTracks.map(t => ({ type: 'hls', key: `hls-${t.index}`, label: t.label, hlsIdx: t.index, srclang: t.lang || '' })), ...jsonExtTracks]
-    : nativeAudioTracks.length > 1
-      ? nativeAudioTracks.map((t, i) => ({ type: 'native', key: `native-${i}`, label: t.label, nativeIdx: i, srclang: t.language }))
-      : jsonExtTracks.length > 0
-        ? jsonDefaultLabel !== null
-          ? [{ type: 'embedded', key: 'embedded', label: jsonDefaultLabel }, ...jsonExtTracks]
-          : jsonExtTracks
-        : jsonDefaultLabel !== null
-          ? [{ type: 'embedded', key: 'embedded', label: jsonDefaultLabel }]
-          : []
-  const showAudioBtn = audioMenuOptions.length > 1
-  const currentAudioKey = selectedAudioKey ?? audioMenuOptions[0]?.key ?? null
+  const audioOptions = useMemo(() => (
+    Array.isArray(video?.audio) && video.audio.length > 0 ? video.audio : []
+  ), [video])
+  const hasAudioChoices = audioOptions.length > 1
+  const selectedAudio = hasAudioChoices ? audioOptions[audioIdx] : null
+  const usesVariantSource = Boolean(selectedAudio?.mediaSrc)
+  const usesExternalAudio = Boolean(selectedAudio?.src && !selectedAudio?.mediaSrc)
 
   const persistProgress = useCallback((patch = {}) => {
     if (!storageKey || !video) return
@@ -257,88 +295,95 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
 
   useEffect(() => { showControls() }, [playing])
 
-  // Keep controls visible while any menu is open
-  useEffect(() => {
-    if (showSubMenu || showAudioMenu || showSpdMenu || showQualityMenu) {
-      clearTimeout(hideTimer.current)
-      setShowCtrl(true)
-    }
-  }, [showSubMenu, showAudioMenu, showSpdMenu, showQualityMenu])
-
   useEffect(() => {
     const onKey = e => {
-      if (e.key === 'Escape') setShowQualityMenu(false)
+      if (e.key === 'Escape') {
+        setShowQualityMenu(false)
+        setShowAudioMenu(false)
+        setShowSubMenu(false)
+        setShowSpdMenu(false)
+      }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
-  useEffect(() => {
+  const updatePreferences = useCallback((patch) => {
+    const next = { ...loadVideoPreferences(userId), ...patch }
+    saveVideoPreferences(userId, next)
+    return next
+  }, [userId])
+
+  const chooseSubtitle = useCallback((nextSubIdx, off) => {
+    setSubIdx(nextSubIdx)
+    setSubsOff(off)
+    const selected = video?.subtitles?.[nextSubIdx]
+    updatePreferences({
+      subtitlesOff: off,
+      subtitleLang: selected?.srclang || selected?.label || 'fr',
+    })
+  }, [updatePreferences, video?.subtitles])
+
+  const updateSubtitleStyle = useCallback((patch) => {
+    setSubtitleStyle(prev => {
+      const nextStyle = { ...prev, ...patch }
+      updatePreferences({ subtitleStyle: nextStyle })
+      return nextStyle
+    })
+  }, [updatePreferences])
+
+  const applyAudioPreference = useCallback((nextAudioIdx) => {
     const v = videoRef.current
-    if (!v || !isHlsSource || !video?.src) {
-      setAudioTracks([])
-      setAudioTrackIdx(-1)
-      return
+    const external = audioOptions[nextAudioIdx]?.src
+    const variantSrc = audioOptions[nextAudioIdx]?.mediaSrc
+    if (variantSrc) {
+      setAudioTrackState('ready')
+      return true
+    }
+    if (external) {
+      if (v) v.muted = true
+      setAudioTrackState('external')
+      return true
     }
 
-    const src = proxyHls(video.src) || encSrc(video.src)
-    hlsRef.current?.destroy()
-    hlsRef.current = null
+    if (v) v.muted = muted
 
-    if (Hls.isSupported()) {
-      const hls = new Hls({ enableWorker: true })
-      hlsRef.current = hls
-
-      const syncAudioTracks = () => {
-        setAudioTracks(hls.audioTracks.map((track, index) => ({
-          index,
-          label: track.name || track.lang || `Audio ${index + 1}`,
-          lang: track.lang || '',
-        })))
-        setAudioTrackIdx(hls.audioTrack)
-      }
-
-      hls.loadSource(src)
-      hls.attachMedia(v)
-      hls.on(Hls.Events.AUDIO_TRACKS_UPDATED, syncAudioTracks)
-      hls.on(Hls.Events.AUDIO_TRACK_SWITCHED, (_, data) => setAudioTrackIdx(data.id))
-
-      return () => {
-        hls.destroy()
-        if (hlsRef.current === hls) hlsRef.current = null
-        setAudioTracks([])
-        setAudioTrackIdx(-1)
-      }
+    const nativeTracks = v?.audioTracks
+    if (!nativeTracks || !nativeTracks.length) {
+      setAudioTrackState(hasAudioChoices ? 'unsupported' : 'none')
+      return false
     }
 
-    if (v.canPlayType('application/vnd.apple.mpegurl')) {
-      v.src = src
+    for (let i = 0; i < nativeTracks.length; i++) {
+      nativeTracks[i].enabled = i === nextAudioIdx
     }
+    setAudioTrackState('ready')
+    return true
+  }, [audioOptions, hasAudioChoices, muted])
 
-    return () => {
-      v.removeAttribute('src')
-      v.load()
-      setAudioTracks([])
-      setAudioTrackIdx(-1)
+  const chooseAudio = useCallback((nextAudioIdx) => {
+    setAudioIdx(nextAudioIdx)
+    const selected = audioOptions[nextAudioIdx]
+    const nextSource = selected?.mediaSrc || video?.src || ''
+    if (selected?.mediaSrc) {
+      const v = videoRef.current
+      const currentTime = v?.currentTime || 0
+      const wasPlaying = Boolean(v && !v.paused)
+      pendingSourceRef.current = { time: currentTime, play: wasPlaying, src: nextSource }
+      setMediaSrc(nextSource)
+      setAudioTrackState('ready')
+    } else {
+      applyAudioPreference(nextAudioIdx)
+      setMediaSrc(nextSource)
     }
-  }, [isHlsSource, video?.src])
+    updatePreferences({
+      audioLang: selected?.srclang || selected?.language || selected?.label || 'ja',
+    })
+  }, [applyAudioPreference, audioOptions, updatePreferences, video?.src])
 
-  // ── Audio externe (m4a VF) — init + sync ─────────────────────────────────
   useEffect(() => {
-    const ea = extAudioRef.current
-    if (!ea) return
-    if (!extAudioActive || !extAudioSrc) {
-      ea.pause(); ea.src = ''; return
-    }
-    ea.src = encSrc(extAudioSrc)
-    ea.volume = volume
-    ea.muted = muted
-    ea.playbackRate = speed
-    const syncTime = () => { if (videoRef.current) ea.currentTime = videoRef.current.currentTime }
-    ea.addEventListener('loadedmetadata', syncTime, { once: true })
-    if (videoRef.current && !videoRef.current.paused) ea.play().catch(() => {})
-    return () => ea.removeEventListener('loadedmetadata', syncTime)
-  }, [extAudioSrc, extAudioActive]) // eslint-disable-line react-hooks/exhaustive-deps
+    setSubtitleStyle(loadVideoPreferences(userId).subtitleStyle)
+  }, [userId])
 
   // ── Sous-titres — polling RAF sur activeCues ────────────────────────────
   useEffect(() => {
@@ -350,12 +395,35 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
 
     const setupTrack = () => {
       const tracks = v.textTracks
-      const want = !subsOff && subIdx < tracks.length
+      // Disable ALL tracks first (embedded MKV tracks included)
       for (let i = 0; i < tracks.length; i++) {
-        tracks[i].mode = want && i === subIdx ? 'hidden' : 'disabled'
+        tracks[i].mode = 'disabled'
       }
-      activeTrack = want ? tracks[subIdx] : null
-      if (!want) setCueText('')
+      if (subsOff || !hasSubs) { activeTrack = null; setCueText(''); return }
+
+      const targetSub = video?.subtitles?.[subIdx]
+      if (!targetSub) { activeTrack = null; setCueText(''); return }
+
+      // Find the external VTT track — prefer LAST match because
+      // embedded MKV tracks appear first, React-injected <track> elements last.
+      let bestIdx = -1
+      for (let i = 0; i < tracks.length; i++) {
+        const t = tracks[i]
+        const labelMatch = t.label && targetSub.label && t.label === targetSub.label
+        const langMatch  = t.language && targetSub.srclang && (
+          t.language === targetSub.srclang ||
+          t.language.startsWith(targetSub.srclang + '-')
+        )
+        if (labelMatch || langMatch) bestIdx = i
+      }
+
+      if (bestIdx >= 0) {
+        tracks[bestIdx].mode = 'hidden'
+        activeTrack = tracks[bestIdx]
+      } else {
+        activeTrack = null
+        setCueText('')
+      }
     }
 
     const tick = () => {
@@ -380,48 +448,20 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
 
   // ── Réinitialiser état au changement d'épisode ───────────────────────────
   useEffect(() => {
+    const prefs = loadVideoPreferences(userId)
+    const nextSubIdx = findTrackIndex(video?.subtitles || [], prefs.subtitleLang || 'fr', 0)
+    const preferredAudioLang = video?.preferredAudioLang || prefs.audioLang || 'ja'
+    const nextAudioIdx = findTrackIndex(audioOptions, preferredAudioLang, 0)
+
     setCurrentTime(0); setDuration(0); setBuffered(0); setPlaying(false); setCueText('')
-    setSubsOff(Boolean(video?.defaultSubtitlesOff))
-    extAudioActiveRef.current = false
-    setExtAudioActive(false); setExtAudioSrc(null); setSelectedAudioKey(null)
-    setIsBuffering(false); setVideoError(null); setNativeAudioTracks([])
-    if (extAudioRef.current) { extAudioRef.current.pause(); extAudioRef.current.src = '' }
-    if (videoRef.current) videoRef.current.muted = false
-  }, [idx, video?.defaultSubtitlesOff])
-
-  // Auto-activate first ext track when there is no embedded labeled track (e.g. VF-only mode)
-  useEffect(() => {
-    const first = audioMenuOptions[0]
-    if (first?.type === 'ext') {
-      extAudioActiveRef.current = true
-      setSelectedAudioKey(first.key)
-      setExtAudioSrc(first.src)
-      setExtAudioActive(true)
-      if (videoRef.current) videoRef.current.muted = true
-      setSubsOff(first.srclang === 'fr' || first.label?.toLowerCase().includes('vf'))
-    }
-  }, [idx]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // ── Détection pistes audio natives (MKV multi-track VF/VO) ───────────────
-  useEffect(() => {
-    const v = videoRef.current
-    if (!v || isHlsSource) return
-    const detect = () => {
-      const at = v.audioTracks
-      if (!at || at.length <= 1) return
-      const tracks = Array.from(at).map((t, i) => ({
-        language: t.language || '',
-        label: t.label || (
-          t.language === 'fre' || t.language === 'fr' ? 'VF' :
-          t.language === 'jpn' || t.language === 'ja' ? 'VO' :
-          `Audio ${i + 1}`
-        ),
-      }))
-      setNativeAudioTracks(tracks)
-    }
-    v.addEventListener('loadedmetadata', detect, { once: true })
-    return () => v.removeEventListener('loadedmetadata', detect)
-  }, [idx, isHlsSource])
+    setSubIdx(nextSubIdx)
+    setSubsOff(hasSubs ? Boolean(prefs.subtitlesOff) : true)
+    setAudioIdx(nextAudioIdx)
+    setSubtitleStyle(prefs.subtitleStyle)
+    setAudioTrackState(hasAudioChoices ? 'pending' : 'none')
+    setMediaSrc(audioOptions[nextAudioIdx]?.mediaSrc || video?.src || '')
+    pendingSourceRef.current = null
+  }, [idx, hasAudioChoices, hasSubs, audioOptions, video?.subtitles, userId, video?.src])
 
   useEffect(() => {
     if (!storageKey || !videoRef.current || !video) return
@@ -442,7 +482,6 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   // ── Appliquer la vitesse ─────────────────────────────────────────────────
   useEffect(() => {
     if (videoRef.current) videoRef.current.playbackRate = speed
-    if (extAudioRef.current) extAudioRef.current.playbackRate = speed
   }, [speed])
 
   // ── Fullscreen ───────────────────────────────────────────────────────────
@@ -465,13 +504,15 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
       const v = videoRef.current
       switch (e.key) {
         case 'Escape':      onClose(); break
-        case ' ':           e.preventDefault(); if (!e.repeat && v) (v.paused ? safePlay(v) : v.pause()); break
+        case ' ':           e.preventDefault(); v && (v.paused ? v.play() : v.pause()); break
         case 'ArrowLeft':   e.preventDefault(); v && (v.currentTime = Math.max(0, v.currentTime - 5)); break
         case 'ArrowRight':  e.preventDefault(); v && (v.currentTime = Math.min(v.duration, v.currentTime + 5)); break
         case 'ArrowUp':     e.preventDefault(); v && (v.volume = Math.min(1, v.volume + 0.1)); break
         case 'ArrowDown':   e.preventDefault(); v && (v.volume = Math.max(0, v.volume - 0.1)); break
         case 'f': case 'F': toggleFullscreen(); break
-        case 'm': case 'M': v && (v.muted = !v.muted); break
+        case 'm': case 'M':
+          if (v) v.muted = !v.muted
+          break
         default: break
       }
     }
@@ -481,22 +522,10 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
 
   // ── Handlers vidéo ───────────────────────────────────────────────────────
   const onPlay     = () => {
-    setPlaying(true); setIsBuffering(false)
-    if (extAudioActiveRef.current && extAudioRef.current && videoRef.current) {
-      extAudioRef.current.currentTime = videoRef.current.currentTime
-      extAudioRef.current.play().catch(() => {})
-    }
+    setPlaying(true)
   }
   const onPause    = () => {
     setPlaying(false); setShowCtrl(true); clearTimeout(hideTimer.current)
-    if (extAudioRef.current) extAudioRef.current.pause()
-  }
-  const onWaiting  = () => setIsBuffering(true)
-  const onCanPlay  = () => setIsBuffering(false)
-  const onVideoErr = () => setVideoError('Impossible de lire ce fichier — vérifiez que le codec est supporté (H.264/AAC) ou que l\'URL est accessible.')
-  const onSeeked   = () => {
-    if (extAudioActive && extAudioRef.current && videoRef.current)
-      extAudioRef.current.currentTime = videoRef.current.currentTime
   }
   const onTimeUpd  = () => {
     const v = videoRef.current; if (!v) return
@@ -513,13 +542,8 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   }
   const onDurChg   = () => { if (videoRef.current) setDuration(videoRef.current.duration || 0) }
   const onVolChg   = () => {
-    // Use ref (not state) to avoid stale closure when switching audio tracks
-    if (extAudioActiveRef.current && extAudioRef.current?.src) {
-      setVolume(extAudioRef.current.volume); setMuted(extAudioRef.current.muted)
-    } else {
-      const v = videoRef.current; if (!v) return
-      setVolume(v.volume); setMuted(v.muted)
-    }
+    const v = videoRef.current; if (!v) return
+    setVolume(v.volume); setMuted(v.muted)
   }
   const onMetaChg = () => {
     const v = videoRef.current; if (!v) return
@@ -530,64 +554,43 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
     else if (h >= 720) setQualityLabel('720p')
     else if (h > 0) setQualityLabel(`${h}p`)
     else setQualityLabel('SD')
+    const pending = pendingSourceRef.current
+    if (pending && pending.src && v.currentSrc !== encSrc(pending.src)) return
+    if (pending && Number.isFinite(pending.time)) {
+      try { v.currentTime = pending.time } catch {}
+      if (pending.play) v.play().catch(() => {})
+      pendingSourceRef.current = null
+    }
+    if (!usesVariantSource) applyAudioPreference(audioIdx)
   }
 
   const togglePlay = () => {
     const v = videoRef.current; if (!v) return
-    v.paused ? safePlay(v) : v.pause()
+    v.paused ? v.play() : v.pause()
   }
 
   const handleVolume = e => {
+    const v = videoRef.current; if (!v) return
     const val = parseFloat(e.target.value)
-    if (extAudioActive && extAudioRef.current) {
-      extAudioRef.current.volume = val; extAudioRef.current.muted = val === 0
-      setVolume(val); setMuted(val === 0)
+    v.volume = val
+    if (usesExternalAudio && audioRef.current) {
+      audioRef.current.volume = val
+      audioRef.current.muted = val === 0
+      v.muted = true
+      setVolume(val)
+      setMuted(val === 0)
     } else {
-      const v = videoRef.current; if (!v) return
-      v.volume = val; v.muted = val === 0
+      v.muted = val === 0
     }
-  }
-
-  const selectAudio = (option) => {
-    setSelectedAudioKey(option.key)
-    if (option.type === 'ext') {
-      extAudioActiveRef.current = true
-      setExtAudioSrc(option.src); setExtAudioActive(true)
-      if (videoRef.current) videoRef.current.muted = true
-      // Keep current volume for ext audio - will sync when ext audio loads
-      setSubsOff(option.srclang === 'fr' || option.label?.toLowerCase().includes('vf'))
-    } else if (option.type === 'hls') {
-      extAudioActiveRef.current = false
-      if (hlsRef.current) hlsRef.current.audioTrack = option.hlsIdx
-      setExtAudioActive(false); setExtAudioSrc(null)
-      if (videoRef.current) { videoRef.current.muted = false; setVolume(videoRef.current.volume); setMuted(false) }
-      setSubsOff(option.srclang === 'fr' || option.label?.toLowerCase().includes('vf'))
-    } else if (option.type === 'native') {
-      extAudioActiveRef.current = false
-      setExtAudioActive(false); setExtAudioSrc(null)
-      const v = videoRef.current
-      if (v?.audioTracks) {
-        for (let i = 0; i < v.audioTracks.length; i++) {
-          v.audioTracks[i].enabled = i === option.nativeIdx
-        }
-      }
-      if (v) { v.muted = false; setVolume(v.volume); setMuted(false) }
-      const lc = option.srclang?.toLowerCase() || option.label?.toLowerCase() || ''
-      setSubsOff(lc.includes('fre') || lc.includes('fr') || lc.includes('vf'))
-    } else {
-      extAudioActiveRef.current = false
-      setExtAudioActive(false); setExtAudioSrc(null)
-      if (videoRef.current) { videoRef.current.muted = false; setVolume(videoRef.current.volume); setMuted(false) }
-      setSubsOff(false)
-    }
-    setShowAudioMenu(false)
   }
 
   const seek = useCallback((t) => {
-    if (videoRef.current) videoRef.current.currentTime = Math.max(0, Math.min(t, duration))
+    const nextTime = Math.max(0, Math.min(t, duration))
+    if (videoRef.current) videoRef.current.currentTime = nextTime
   }, [duration])
 
   const volIcon = muted || volume === 0 ? '🔇' : volume < 0.5 ? '🔉' : '🔊'
+  const audioLabel = hasAudioChoices ? (audioOptions[audioIdx]?.label ?? 'Audio') : 'AUTO'
   const subLabel = subsOff ? 'OFF' : hasSubs ? (video.subtitles[subIdx]?.label ?? 'CC') : 'N/A'
   const qualityHint = isLocal ? qualityLabel : 'AUTO'
 
@@ -625,40 +628,56 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
           <>
             <video
               ref={videoRef}
-              key={video.src}
-              preload="metadata"
-              poster={video.thumbnail || undefined}
+              key={mediaSrc}
+              crossOrigin={hasSubs ? 'anonymous' : undefined}
               style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
               onPlay={onPlay}
               onPause={onPause}
-              onSeeked={onSeeked}
-              onWaiting={onWaiting}
-              onCanPlay={onCanPlay}
               onTimeUpdate={onTimeUpd}
               onDurationChange={onDurChg}
               onVolumeChange={onVolChg}
               onLoadedMetadata={onMetaChg}
-              onError={onVideoErr}
               onEnded={() => {
+                if (audioRef.current) audioRef.current.pause()
                 persistProgress({ time: videoRef.current?.duration || duration || 0, duration: videoRef.current?.duration || duration || 0, completed: true })
-                if (extAudioRef.current) extAudioRef.current.pause()
                 if (idx < videos.length - 1) setIdx(i => i + 1)
               }}
             >
-              {!isHlsSource && (
-                <source
-                  src={encSrc(video.src)}
-                  type={sourceType(video.src)}
-                />
-              )}
-              {/* Pistes de sous-titres — proxifiées via /api/subtitles/r2 pour éviter CORS R2 */}
+              <source
+                src={encSrc(mediaSrc)}
+                type={sourceType(mediaSrc)}
+              />
+              {/* Pistes de sous-titres (lues via TextTrack API, mode hidden) */}
               {hasSubs && video.subtitles.map((sub, i) => (
-                <track key={i} kind="subtitles" src={proxySub(sub.src)} srcLang={sub.srclang || 'fr'} label={sub.label} />
+                <track key={i} kind="subtitles" src={sub.src} srcLang={sub.srclang || 'fr'} label={sub.label} />
               ))}
             </video>
-
-            {/* Audio externe (VF m4a synchronisé) */}
-            <audio ref={extAudioRef} style={{ display: 'none' }} />
+            {selectedAudio?.src && !selectedAudio?.mediaSrc && (
+              <audio
+                ref={audioRef}
+                key={selectedAudio.src}
+                src={selectedAudio.src}
+                preload="auto"
+                crossOrigin="anonymous"
+                onCanPlay={() => {
+                  const v = videoRef.current
+                  const a = audioRef.current
+                  if (!v || !a || v.paused) return
+                  a.currentTime = v.currentTime || 0
+                  a.volume = volume
+                  a.muted = muted
+                  a.play().catch(() => {})
+                }}
+                onLoadedData={() => {
+                  const v = videoRef.current
+                  const a = audioRef.current
+                  if (!v || !a) return
+                  a.currentTime = v.currentTime || 0
+                  a.volume = volume
+                  a.muted = muted
+                }}
+              />
+            )}
 
             {/* ── Sous-titres overlay ── */}
             {cueText && !subsOff && (
@@ -666,15 +685,15 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                 position: 'absolute',
                 bottom: showCtrl ? 110 : 40,
                 left: '50%', transform: 'translateX(-50%)',
-                maxWidth: '84%', textAlign: 'center',
-                padding: subStyle.bgOpacity > 0 ? '4px 14px' : '0 14px',
-                background: subStyle.bgOpacity > 0 ? `rgba(0,0,0,${subStyle.bgOpacity})` : 'transparent',
+                maxWidth: '82%', textAlign: 'center',
+                padding: '5px 16px',
+                background: `rgba(0,0,0,${subtitleStyle.background})`,
                 borderRadius: 6,
-                color: subStyle.color,
-                fontSize: subStyle.size,
-                fontWeight: 700,
+                color: subtitleStyle.color,
+                fontSize: subtitleStyle.size,
+                fontWeight: subtitleStyle.weight,
                 lineHeight: 1.55,
-                textShadow: subStyle.shadow ? '0 1px 5px rgba(0,0,0,0.95), 0 2px 14px rgba(0,0,0,0.8)' : 'none',
+                textShadow: subtitleStyle.outline ? '0 1px 6px rgba(0,0,0,0.9), 0 2px 12px rgba(0,0,0,0.7)' : 'none',
                 whiteSpace: 'pre-line',
                 transition: 'bottom .2s ease',
                 pointerEvents: 'none',
@@ -684,52 +703,12 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
               </div>
             )}
 
-            {/* ── Spinner buffering ── */}
-            {isBuffering && !videoError && (
-              <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 8, pointerEvents: 'none', gap: 14 }}>
-                <style>{`@keyframes vp-spin{to{transform:rotate(360deg)}}`}</style>
-                <div style={{ width: 52, height: 52, borderRadius: '50%', border: `3px solid rgba(255,255,255,0.12)`, borderTopColor: color, animation: 'vp-spin 0.7s linear infinite' }} />
-                <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, fontWeight: 600, letterSpacing: '.06em' }}>Chargement…</span>
-              </div>
-            )}
-
-            {/* ── Erreur vidéo ── */}
-            {videoError && (
-              <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 8, padding: 32, pointerEvents: 'none', gap: 12 }}>
-                <div style={{ fontSize: 36 }}>⚠️</div>
-                <div style={{ color: '#fff', fontSize: 14, fontWeight: 700 }}>Erreur de lecture</div>
-                <div style={{ color: 'rgba(255,255,255,0.55)', fontSize: 12, textAlign: 'center', maxWidth: 380 }}>{videoError}</div>
-              </div>
-            )}
-
-            {/* ── Boutons persistants CC + AUDIO (toujours visibles quand contrôles masqués) ── */}
-            {!showCtrl && (
-              <div style={{ position: 'absolute', bottom: 14, right: 14, display: 'flex', gap: 7, zIndex: 9 }} onClick={e => e.stopPropagation()}>
-                {showAudioBtn && (
-                  <div style={{ position: 'relative' }}>
-                    <button onClick={() => { setShowAudioMenu(s => !s); setShowSubMenu(false); setShowCtrl(true) }}
-                      style={{ background: extAudioActive ? `${color}33` : 'rgba(0,0,0,0.6)', border: `1px solid ${extAudioActive ? color + '66' : 'rgba(255,255,255,0.25)'}`, borderRadius: 8, color: extAudioActive ? color : 'rgba(255,255,255,0.85)', fontSize: 11, fontWeight: 900, padding: '5px 10px', cursor: 'pointer', backdropFilter: 'blur(8px)', letterSpacing: '.05em' }}>
-                      🎵 {audioMenuOptions.find(o => o.key === currentAudioKey)?.label || 'AUDIO'}
-                    </button>
-                  </div>
-                )}
-                {hasSubs && (
-                  <div style={{ position: 'relative' }}>
-                    <button onClick={() => { setShowSubMenu(s => !s); setShowAudioMenu(false); setShowCtrl(true) }}
-                      style={{ background: subsOff ? 'rgba(0,0,0,0.6)' : `${color}33`, border: `1px solid ${subsOff ? 'rgba(255,255,255,0.25)' : color + '66'}`, borderRadius: 8, color: subsOff ? 'rgba(255,255,255,0.5)' : color, fontSize: 11, fontWeight: 900, padding: '5px 10px', cursor: 'pointer', backdropFilter: 'blur(8px)', letterSpacing: '.05em' }}>
-                      CC {subLabel}
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-
             {/* Indicateur de qualité */}
             <div style={{
               position: 'absolute',
               top: 12,
               right: 12,
-              display: 'none',
+              display: 'inline-flex',
               alignItems: 'center',
               gap: 8,
               padding: '8px 11px',
@@ -800,11 +779,15 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
 
                 {/* Volume */}
                 <Btn onClick={() => {
-                  if (extAudioActive && extAudioRef.current) {
-                    extAudioRef.current.muted = !extAudioRef.current.muted
-                    setMuted(extAudioRef.current.muted)
-                  } else {
-                    const v = videoRef.current; if (v) v.muted = !v.muted
+                  const v = videoRef.current
+                  const a = audioRef.current
+                  const nextMuted = !muted
+                  if (usesExternalAudio) {
+                    if (a) a.muted = nextMuted
+                    if (v) v.muted = true
+                    setMuted(nextMuted)
+                  } else if (v) {
+                    v.muted = nextMuted
                   }
                 }} title="Muet (M)">
                   {volIcon}
@@ -824,43 +807,10 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
 
                 <div style={{ flex: 1 }} />
 
-                {showAudioBtn && (
-                  <div style={{ position: 'relative' }}>
-                    <button
-                      onClick={e => { e.stopPropagation(); setShowAudioMenu(s => !s); setShowSubMenu(false); setShowSpdMenu(false); setShowQualityMenu(false) }}
-                      title="Piste audio"
-                      style={{
-                        background: extAudioActive ? `${color}22` : 'rgba(255,255,255,0.07)',
-                        border: `1px solid ${extAudioActive ? color + '55' : 'rgba(255,255,255,0.15)'}`,
-                        borderRadius: 7,
-                        color: extAudioActive ? color : 'rgba(255,255,255,0.88)',
-                        fontSize: 11,
-                        fontWeight: 900,
-                        padding: '4px 9px',
-                        cursor: 'pointer',
-                        letterSpacing: '0.05em',
-                      }}
-                    >AUDIO {audioMenuOptions.find(o => o.key === currentAudioKey)?.label || 'AUTO'}</button>
-                    {showAudioMenu && (
-                      <div style={{ position: 'absolute', bottom: 'calc(100% + 6px)', right: 0, background: 'rgba(14,15,17,0.98)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, minWidth: 150, padding: '5px 0', boxShadow: '0 12px 40px rgba(0,0,0,0.7)', backdropFilter: 'blur(16px)', zIndex: 20 }}
-                        onClick={e => e.stopPropagation()}
-                      >
-                        {audioMenuOptions.map(option => (
-                          <button key={option.key} onClick={() => selectAudio(option)}
-                            style={{ width: '100%', padding: '8px 14px', background: option.key === currentAudioKey ? `${color}22` : 'none', border: 'none', cursor: 'pointer', textAlign: 'left', color: option.key === currentAudioKey ? color : '#fff', fontSize: 13, fontWeight: option.key === currentAudioKey ? 800 : 600, transition: 'background .12s' }}
-                            onMouseEnter={e => { if (option.key !== currentAudioKey) e.currentTarget.style.background = 'rgba(255,255,255,0.07)' }}
-                            onMouseLeave={e => { if (option.key !== currentAudioKey) e.currentTarget.style.background = 'none' }}
-                          >{option.label}</button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-
                 {/* Sous-titres */}
                 <div style={{ position: 'relative' }}>
                   <button
-                    onClick={e => { e.stopPropagation(); setShowSubMenu(s => !s); setShowAudioMenu(false); setShowSpdMenu(false); setShowQualityMenu(false) }}
+                    onClick={e => { e.stopPropagation(); setShowSubMenu(s => !s); setShowSpdMenu(false); setShowAudioMenu(false); setShowQualityMenu(false) }}
                     title="Sous-titres"
                     style={{
                       background: subsOff ? 'transparent' : `${color}22`,
@@ -871,76 +821,82 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                     }}
                   >CC {subLabel}</button>
                   {showSubMenu && hasSubs && (
-                    <div style={{ position: 'absolute', bottom: 'calc(100% + 6px)', right: 0, background: 'rgba(14,15,17,0.98)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, minWidth: 200, padding: '6px 0 4px', boxShadow: '0 12px 40px rgba(0,0,0,0.7)', backdropFilter: 'blur(16px)', zIndex: 20 }}
+                    <div style={{ position: 'absolute', bottom: 'calc(100% + 6px)', right: 0, background: 'rgba(14,15,17,0.98)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, minWidth: 160, padding: '5px 0', boxShadow: '0 12px 40px rgba(0,0,0,0.7)', backdropFilter: 'blur(16px)', zIndex: 20 }}
                       onClick={e => e.stopPropagation()}
                     >
-                      {/* Piste selection */}
-                      {[{ label: '🚫 Désactivés', off: true },
-                        ...video.subtitles.map((sub, i) => ({ label: sub.label, i }))
-                      ].map((item, key) => (
-                        <button key={key} onClick={() => { item.off ? setSubsOff(true) : (setSubIdx(item.i), setSubsOff(false)); setShowSubMenu(false) }}
-                          style={{ width: '100%', padding: '7px 14px', background: item.off ? (subsOff ? `${color}18` : 'none') : (!subsOff && subIdx === item.i ? `${color}18` : 'none'), border: 'none', cursor: 'pointer', textAlign: 'left', color: item.off ? (subsOff ? color : '#fff') : (!subsOff && subIdx === item.i ? color : '#fff'), fontSize: 13, fontWeight: 600, transition: 'background .12s' }}
+                      {[{ label: '🚫 Désactivés', action: () => chooseSubtitle(subIdx, true) },
+                        ...video.subtitles.map((sub, i) => ({ label: sub.label, action: () => chooseSubtitle(i, false) }))
+                      ].map((item, i) => (
+                        <button key={i} onClick={() => { item.action(); setShowSubMenu(false) }}
+                          style={{ width: '100%', padding: '8px 14px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', color: '#fff', fontSize: 13, fontWeight: 600, transition: 'background .12s' }}
                           onMouseEnter={e => e.currentTarget.style.background = `${color}18`}
-                          onMouseLeave={e => e.currentTarget.style.background = item.off ? (subsOff ? `${color}18` : 'none') : (!subsOff && subIdx === item.i ? `${color}18` : 'none')}
+                          onMouseLeave={e => e.currentTarget.style.background = 'none'}
                         >{item.label}</button>
                       ))}
+                      <div style={{ height: 1, margin: '5px 0', background: 'rgba(255,255,255,0.08)' }} />
+                      <div style={{ padding: '7px 14px 5px', color: 'rgba(255,255,255,0.42)', fontSize: 10, fontWeight: 900, letterSpacing: '.12em', textTransform: 'uppercase' }}>
+                        Apparence
+                      </div>
+                      {[
+                        ['A-', () => updateSubtitleStyle({ size: Math.max(14, subtitleStyle.size - 2) })],
+                        ['A+', () => updateSubtitleStyle({ size: Math.min(34, subtitleStyle.size + 2) })],
+                        ['Fond -', () => updateSubtitleStyle({ background: Math.max(0, Number((subtitleStyle.background - 0.12).toFixed(2))) })],
+                        ['Fond +', () => updateSubtitleStyle({ background: Math.min(0.95, Number((subtitleStyle.background + 0.12).toFixed(2))) })],
+                        [subtitleStyle.outline ? 'Contour ON' : 'Contour OFF', () => updateSubtitleStyle({ outline: !subtitleStyle.outline })],
+                        [subtitleStyle.weight >= 800 ? 'Texte normal' : 'Texte gras', () => updateSubtitleStyle({ weight: subtitleStyle.weight >= 800 ? 600 : 800 })],
+                      ].map(([label, action]) => (
+                        <button key={label} onClick={action}
+                          style={{ width: '50%', display: 'inline-block', padding: '7px 10px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'center', color: '#fff', fontSize: 12, fontWeight: 700 }}
+                          onMouseEnter={e => e.currentTarget.style.background = `${color}18`}
+                          onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                        >{label}</button>
+                      ))}
+                      <div style={{ display: 'flex', gap: 5, padding: '6px 10px 8px' }}>
+                        {['#ffffff', '#ffe66d', '#8be9ff'].map(c => (
+                          <button key={c} onClick={() => updateSubtitleStyle({ color: c })}
+                            title={c}
+                            style={{ flex: 1, height: 22, borderRadius: 5, border: `1px solid ${subtitleStyle.color === c ? color : 'rgba(255,255,255,0.2)'}`, background: c, cursor: 'pointer' }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
 
-                      {/* Séparateur + style subs */}
-                      {!subsOff && (
-                        <>
-                          <div style={{ margin: '4px 14px', height: 1, background: 'rgba(255,255,255,0.08)' }} />
-                          <div style={{ padding: '4px 14px 2px', color: 'rgba(255,255,255,0.35)', fontSize: 9, fontWeight: 900, letterSpacing: '.12em', textTransform: 'uppercase' }}>Apparence</div>
-                          <style>{`.ve-sub-slider{width:100%;accent-color:${color};cursor:pointer;height:3px}`}</style>
-
-                          {/* Taille — slider libre 13→38 */}
-                          <div style={{ padding: '6px 14px 4px' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
-                              <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: 10, fontWeight: 700 }}>Taille</span>
-                              <span style={{ color, fontSize: 10, fontWeight: 800 }}>{subStyle.size}px</span>
-                            </div>
-                            <input type="range" min="13" max="38" value={subStyle.size} className="ve-sub-slider"
-                              onChange={e => setSubStyle(s => ({ ...s, size: Number(e.target.value) }))} />
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 2 }}>
-                              <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.22)', fontWeight: 700 }}>A</span>
-                              <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.22)', fontWeight: 700 }}>A</span>
-                            </div>
-                          </div>
-
-                          {/* Couleur */}
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 14px' }}>
-                            <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: 10, fontWeight: 700, minWidth: 42 }}>Couleur</span>
-                            {[{ c: '#ffffff', label: 'Blanc' }, { c: '#ffe84d', label: 'Jaune' }, { c: '#7df3ff', label: 'Cyan' }, { c: '#ff8fab', label: 'Rose' }, { c: '#86efac', label: 'Vert' }].map(({ c, label }) => (
-                              <button key={c} onClick={() => setSubStyle(s => ({ ...s, color: c }))} title={label}
-                                style={{ flex: 1, height: 20, borderRadius: 4, background: c, border: `2px solid ${subStyle.color === c ? '#fff' : 'transparent'}`, cursor: 'pointer', boxShadow: subStyle.color === c ? `0 0 0 1px ${color}` : 'none' }}
-                              />
-                            ))}
-                          </div>
-
-                          {/* Fond — slider opacité 0→1 */}
-                          <div style={{ padding: '6px 14px 4px' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
-                              <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: 10, fontWeight: 700 }}>Fond</span>
-                              <span style={{ color, fontSize: 10, fontWeight: 800 }}>
-                                {subStyle.bgOpacity === 0 ? 'Aucun' : `${Math.round(subStyle.bgOpacity * 100)}%`}
-                              </span>
-                            </div>
-                            <input type="range" min="0" max="1" step="0.05" value={subStyle.bgOpacity} className="ve-sub-slider"
-                              onChange={e => setSubStyle(s => ({ ...s, bgOpacity: Number(e.target.value) }))} />
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 2 }}>
-                              <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.22)', fontWeight: 700 }}>Transparent</span>
-                              <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.22)', fontWeight: 700 }}>Opaque</span>
-                            </div>
-                          </div>
-
-                          {/* Ombre */}
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '5px 14px 10px' }}>
-                            <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: 10, fontWeight: 700 }}>Ombre du texte</span>
-                            <button onClick={() => setSubStyle(s => ({ ...s, shadow: !s.shadow }))}
-                              style={{ padding: '3px 10px', border: `1px solid ${subStyle.shadow ? color : 'rgba(255,255,255,0.15)'}`, borderRadius: 6, background: subStyle.shadow ? `${color}22` : 'transparent', color: subStyle.shadow ? color : 'rgba(255,255,255,0.4)', fontSize: 10, fontWeight: 800, cursor: 'pointer' }}
-                            >{subStyle.shadow ? 'ON' : 'OFF'}</button>
-                          </div>
-                        </>
+                {/* Audio */}
+                <div style={{ position: 'relative' }}>
+                  <button
+                    onClick={e => { e.stopPropagation(); setShowAudioMenu(s => !s); setShowSubMenu(false); setShowSpdMenu(false); setShowQualityMenu(false) }}
+                    title="Audio"
+                    style={{
+                      background: hasAudioChoices ? `${color}18` : 'transparent',
+                      border: `1px solid ${hasAudioChoices ? color + '44' : 'rgba(255,255,255,0.15)'}`,
+                      borderRadius: 7,
+                      color: hasAudioChoices ? color : 'rgba(255,255,255,0.4)',
+                      fontSize: 11,
+                      fontWeight: 800,
+                      padding: '4px 9px',
+                      cursor: hasAudioChoices ? 'pointer' : 'default',
+                      letterSpacing: '0.05em',
+                      transition: 'all .15s',
+                    }}
+                  >AU {audioLabel}</button>
+                  {showAudioMenu && hasAudioChoices && (
+                    <div style={{ position: 'absolute', bottom: 'calc(100% + 6px)', right: 0, background: 'rgba(14,15,17,0.98)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, minWidth: 168, padding: '5px 0', boxShadow: '0 12px 40px rgba(0,0,0,0.7)', backdropFilter: 'blur(16px)', zIndex: 20 }}
+                      onClick={e => e.stopPropagation()}
+                    >
+                      {audioTrackState === 'unsupported' && !selectedAudio?.mediaSrc && (
+                        <div style={{ padding: '8px 14px', color: 'rgba(255,255,255,0.45)', fontSize: 11, lineHeight: 1.4 }}>
+                          Changement audio non supporté par ce navigateur.
+                        </div>
                       )}
+                      {audioOptions.map((track, i) => (
+                        <button key={`${track.label || 'audio'}-${i}`} onClick={() => { chooseAudio(i); setShowAudioMenu(false) }}
+                          style={{ width: '100%', padding: '8px 14px', background: i === audioIdx ? `${color}22` : 'none', border: 'none', cursor: 'pointer', textAlign: 'left', color: i === audioIdx ? color : '#fff', fontSize: 13, fontWeight: i === audioIdx ? 800 : 600, transition: 'background .12s' }}
+                          onMouseEnter={e => { if (i !== audioIdx) e.currentTarget.style.background = `${color}18` }}
+                          onMouseLeave={e => { if (i !== audioIdx) e.currentTarget.style.background = 'none' }}
+                        >{track.label || `Audio ${i + 1}`}</button>
+                      ))}
                     </div>
                   )}
                 </div>
@@ -948,7 +904,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                 {/* Vitesse */}
                 <div style={{ position: 'relative' }}>
                   <button
-                    onClick={e => { e.stopPropagation(); setShowSpdMenu(s => !s); setShowAudioMenu(false); setShowSubMenu(false) }}
+                    onClick={e => { e.stopPropagation(); setShowSpdMenu(s => !s); setShowSubMenu(false); setShowAudioMenu(false); setShowQualityMenu(false) }}
                     title="Vitesse de lecture"
                     style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 7, color: 'rgba(255,255,255,0.85)', fontSize: 11, fontWeight: 800, padding: '4px 9px', cursor: 'pointer', letterSpacing: '0.05em' }}
                   >{speed}×</button>
@@ -969,7 +925,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
 
                 <div style={{ position: 'relative' }}>
                   <button
-                    onClick={e => { e.stopPropagation(); setShowQualityMenu(q => !q); setShowAudioMenu(false); setShowSpdMenu(false); setShowSubMenu(false) }}
+                    onClick={e => { e.stopPropagation(); setShowQualityMenu(q => !q); setShowSpdMenu(false); setShowSubMenu(false); setShowAudioMenu(false) }}
                     title="Qualité vidéo"
                     style={{ background: 'rgba(100,217,139,0.10)', border: '1px solid rgba(100,217,139,0.28)', borderRadius: 7, color: '#64d98b', fontSize: 11, fontWeight: 900, padding: '4px 9px', cursor: 'pointer', letterSpacing: '0.05em' }}
                   >{qualityHint}</button>
@@ -1029,7 +985,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
 
       {/* ── Bande épisodes ── */}
       {videos.length > 1 && (() => {
-        const hasThumbs = true
+        const hasThumbs = videos.some(v => v.thumbnail || v.src)
         return (
           <div style={{ flexShrink: 0, display: 'flex', gap: 6, padding: hasThumbs ? '8px 14px' : '7px 14px', background: 'rgba(8,9,11,0.84)', backdropFilter: 'blur(18px)', borderTop: '1px solid rgba(255,255,255,0.05)', overflowX: 'auto', scrollbarWidth: 'thin', alignItems: 'flex-start' }}>
             {videos.map((v, i) => (
@@ -1040,7 +996,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
               >
                 {hasThumbs ? (
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <EpisodeMiniThumb video={v} color={color} active={Math.abs(i - idx) <= 4} />
+                    <EpisodeMiniThumb video={v} color={color} />
                     <div style={{ padding: '4px 6px', fontSize: 11, fontWeight: 700, textAlign: 'center', whiteSpace: 'nowrap' }}>
                       {v.season && <span style={{ opacity: 0.55, marginRight: 3 }}>S{v.season} ·</span>}Ép.{v.episode}
                     </div>
