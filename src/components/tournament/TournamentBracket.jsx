@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 
-const GOLD       = '#d4a017'
+const GOLD       = '#e91e8c'
 const CARD_H     = 72
 const CARD_W     = 200
 const GAP        = 12
@@ -21,10 +21,10 @@ function MatchCard({ match, isActive, isMobile }) {
   const [imgR, setImgR] = useState(false)
 
   const borderColor = isActive ? GOLD
-    : match.status === 'closed' ? 'rgba(212,160,23,0.25)'
+    : match.status === 'closed' ? 'rgba(233,30,140,0.25)'
     : 'rgba(255,255,255,0.07)'
 
-  const bg = isActive ? 'rgba(212,160,23,0.07)'
+  const bg = isActive ? 'rgba(233,30,140,0.07)'
     : 'rgba(255,255,255,0.025)'
 
   function Slot({ participant, isWinner, isLoser, imgFailed, setImgFailed }) {
@@ -38,7 +38,7 @@ function MatchCard({ match, isActive, isMobile }) {
         padding: '6px 8px',
         opacity: isLoser ? 0.3 : 1,
         borderRadius: 6,
-        background: isWinner ? 'rgba(212,160,23,0.1)' : 'transparent',
+        background: isWinner ? 'rgba(233,30,140,0.1)' : 'transparent',
         transition: 'all 0.2s',
         minWidth: 0,
       }}>
@@ -83,7 +83,7 @@ function MatchCard({ match, isActive, isMobile }) {
       border: `1px solid ${borderColor}`,
       background: bg,
       overflow: 'hidden',
-      boxShadow: isActive ? `0 0 0 1px rgba(212,160,23,.15), 0 4px 20px rgba(212,160,23,.08)` : 'none',
+      boxShadow: isActive ? `0 0 0 1px rgba(233,30,140,.15), 0 4px 20px rgba(233,30,140,.08)` : 'none',
       transition: 'all 0.3s',
     }}>
       <Slot
@@ -106,7 +106,7 @@ function MatchCard({ match, isActive, isMobile }) {
           textAlign: 'center', fontSize: 9,
           color: GOLD, padding: '3px 0 4px',
           letterSpacing: '0.08em', fontWeight: 700,
-          background: 'rgba(212,160,23,.05)',
+          background: 'rgba(233,30,140,.05)',
         }}>VOTE EN COURS</div>
       )}
     </div>
@@ -147,7 +147,7 @@ function DesktopBracket({ rounds, currentMatchId }) {
               return (
                 <div key={match.id}>
                   <div style={{ position: 'absolute', left: x, top: y }}>
-                    <MatchCard match={match} isActive={isA} />
+                    <MatchCard match={match} isActive={isA} isMobile={false} />
                   </div>
 
                   {/* Connector line to next round */}
@@ -181,7 +181,7 @@ function ConnectorLine({ x1, y1, x2, y2, active }) {
       <path
         d={d}
         fill="none"
-        stroke={active ? `rgba(212,160,23,0.4)` : `rgba(255,255,255,0.07)`}
+        stroke={active ? `rgba(233,30,140,0.4)` : `rgba(255,255,255,0.07)`}
         strokeWidth={1.5}
       />
     </svg>
@@ -205,7 +205,7 @@ function MobileBracket({ rounds, currentMatchId }) {
         return (
           <div key={round.id} style={{
             borderRadius: 12,
-            border: `1px solid ${isCur ? 'rgba(212,160,23,.3)' : 'rgba(255,255,255,.07)'}`,
+            border: `1px solid ${isCur ? 'rgba(233,30,140,.3)' : 'rgba(255,255,255,.07)'}`,
             overflow: 'hidden',
           }}>
             <button
@@ -213,7 +213,7 @@ function MobileBracket({ rounds, currentMatchId }) {
               style={{
                 width: '100%', padding: '12px 16px',
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                background: isCur ? 'rgba(212,160,23,.06)' : 'rgba(255,255,255,.02)',
+                background: isCur ? 'rgba(233,30,140,.06)' : 'rgba(255,255,255,.02)',
                 border: 'none', cursor: 'pointer',
               }}
             >
@@ -238,7 +238,7 @@ function MobileBracket({ rounds, currentMatchId }) {
             {isExpand && (
               <div style={{ padding: '8px 12px 12px', display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {round.matches.map(match => (
-                  <div key={match.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 8, background: match.id === currentMatchId ? 'rgba(212,160,23,.06)' : 'rgba(255,255,255,.02)', border: `1px solid ${match.id === currentMatchId ? 'rgba(212,160,23,.25)' : 'rgba(255,255,255,.06)'}` }}>
+                  <div key={match.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 8, background: match.id === currentMatchId ? 'rgba(233,30,140,.06)' : 'rgba(255,255,255,.02)', border: `1px solid ${match.id === currentMatchId ? 'rgba(233,30,140,.25)' : 'rgba(255,255,255,.06)'}` }}>
                     <MobileMatchRow match={match} isActive={match.id === currentMatchId} />
                   </div>
                 ))}
@@ -258,7 +258,7 @@ function MobileMatchRow({ match, isActive }) {
         flex: 1, minWidth: 0, opacity: isLoser ? 0.3 : 1,
         padding: '2px 4px',
         borderRadius: 4,
-        background: isWinner ? 'rgba(212,160,23,.08)' : 'transparent',
+        background: isWinner ? 'rgba(233,30,140,.08)' : 'transparent',
       }}>
         <div style={{ fontSize: 12, fontWeight: isWinner ? 700 : 400, color: isWinner ? GOLD : 'rgba(255,255,255,.78)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {p?.title || <span style={{ color: 'rgba(255,255,255,.2)' }}>TBD</span>}
