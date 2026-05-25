@@ -695,11 +695,15 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
   }, [selectedGenres, query, sortedAnimes])
 
   const isFiltering = query.trim() !== '' || selectedGenres.size > 0
-  const marqueeRows = useMemo(() => [
-    { animes: sortedAnimes.slice(0, 5),   direction: 'rtl', speed: 66 },
-    { animes: sortedAnimes.slice(5, 10),  direction: 'ltr', speed: 70 },
-    { animes: sortedAnimes.slice(10, 15), direction: 'rtl', speed: 64 },
-  ], [sortedAnimes])
+  const marqueeRows = useMemo(() => {
+    const a = sortedAnimes
+    const half = Math.ceil(a.length / 2)
+    return [
+      { animes: a,                    direction: 'rtl', speed: 66 },
+      { animes: [...a].reverse(),     direction: 'ltr', speed: 70 },
+      { animes: a.slice(half).concat(a.slice(0, half)), direction: 'rtl', speed: 64 },
+    ]
+  }, [sortedAnimes])
 
   useEffect(() => {
     document.body.style.overflow = 'hidden'
