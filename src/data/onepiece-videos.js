@@ -89,7 +89,7 @@ export default EPISODES.map((episode) => {
     thumbnail: `${THUMBNAIL_BASE_PATH}/E${episode}.jpg`,
     season: 'Egghead',
     arc: 'Arc Egghead',
-    subtitles: episode === 1163 ? [] : [
+    subtitles: [
       {
         label: 'Français',
         srclang: 'fr',

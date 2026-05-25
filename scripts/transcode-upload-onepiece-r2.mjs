@@ -35,7 +35,7 @@ function loadEnv() {
 
 const { CF_ACCOUNT_ID, R2_BUCKET_NAME, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY,
   R2_PUBLIC_URL = 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev',
-  OP_START = '', OP_END = '' } = loadEnv()
+  OP_START = '', OP_END = '', OP_FORCE = '' } = loadEnv()
 
 if (!CF_ACCOUNT_ID || !R2_BUCKET_NAME || !R2_ACCESS_KEY_ID || !R2_SECRET_ACCESS_KEY)
   throw new Error('Missing R2 env vars')
@@ -45,6 +45,7 @@ const KEY_PREFIX  = 'anime/op-egghead'
 const TEMP = path.join(os.tmpdir(), 'brams-onepiece')
 const EP_START = OP_START ? parseInt(OP_START) : 1086
 const EP_END   = OP_END   ? parseInt(OP_END)   : 1163
+const FORCE_UPLOAD = OP_FORCE === '1' || OP_FORCE.toLowerCase() === 'true'
 
 const client = new S3Client({
   region: 'auto',
@@ -164,7 +165,7 @@ const THUMB_BASE    = `${R2_PUBLIC_URL}/anime/op-egghead-thumbnails`
 // Fichiers source locaux
 const SPECIAL_SRC = {
   1120: 'One.Piece.E1120.v2.VOSTFR.1080p.WEBRiP.x265-KAF.mkv',
-  1163: 'F:\\Brams-Score-By-Freydiss\\brams-website\\public\\anime\\[KiyoshiiSubs] One Piece - 1163 [1080p][H.265 - 10Bit].mkv',
+  1163: 'F:\\Brams-Score-By-Freydiss-new\\public\\anime\\[Kaerizaki-Fansub]_One_Piece_1163_[VOSTFR][FHD_1080p][HEVC_x265][10Bit].mkv',
 }
 function srcPathFor(ep) {
   const filename = SPECIAL_SRC[ep] || `One.Piece.E${ep}.VOSTFR.1080p.WEBRiP.x265-KAF.mkv`
@@ -190,7 +191,7 @@ async function main() {
 
     console.log(`[E${ep}] ${filename}`)
 
-    if (await exists(key)) {
+    if (!FORCE_UPLOAD && await exists(key)) {
       console.log('  MP4 déjà sur R2, skip.')
       continue
     }
@@ -230,7 +231,7 @@ async function main() {
       ])
     }
 
-    if (!(await exists(thumbKey))) {
+    if (FORCE_UPLOAD || !(await exists(thumbKey))) {
       console.log('  Génération miniature...')
       await run('ffmpeg', [
         '-y', '-hide_banner', '-loglevel', 'error',
@@ -274,7 +275,7 @@ export default EPISODES.map((episode) => {
     thumbnail: \`\${THUMBNAIL_BASE_PATH}/E\${episode}.jpg\`,
     season: 'Egghead',
     arc: 'Arc Egghead',
-    subtitles: episode === 1163 ? [] : [
+    subtitles: [
       {
         label: 'Français',
         srclang: 'fr',

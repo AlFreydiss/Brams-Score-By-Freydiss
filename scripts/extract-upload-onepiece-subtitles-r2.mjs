@@ -46,8 +46,8 @@ const tempDir = path.join(os.tmpdir(), 'brams-onepiece-subtitles')
 const specialFiles = [
   {
     episode: 1163,
-    name: '[KiyoshiiSubs] One Piece - 1163 [1080p][H.265 - 10Bit].mkv',
-    path: 'F:\\Brams-Score-By-Freydiss\\brams-website\\public\\anime\\[KiyoshiiSubs] One Piece - 1163 [1080p][H.265 - 10Bit].mkv',
+    name: '[Kaerizaki-Fansub]_One_Piece_1163_[VOSTFR][FHD_1080p][HEVC_x265][10Bit].mkv',
+    path: 'F:\\Brams-Score-By-Freydiss-new\\public\\anime\\[Kaerizaki-Fansub]_One_Piece_1163_[VOSTFR][FHD_1080p][HEVC_x265][10Bit].mkv',
   },
 ]
 
