@@ -7,7 +7,7 @@ import { Reader } from './MangaReader.jsx'
 const EMOJIS = ['🏴‍☠️','⚔️','📜','💥','🌊','🔥','👑','🌀','🛡️','⚡','🌋','🗡️','☀️','🔴','🏔️','🤝','💰','⛈️','🎯','🌸','💎','🌑','⚕️','💫','🌺','🦁','⚓']
 
 const CHAPTERS = CHAPTERS_DATA.map((ch, i) => ({
-  num:   ch.num,
+  num:   parseInt(ch.num, 10),
   title: ch.title || `Chapitre ${ch.num}`,
   emoji: EMOJIS[i % EMOJIS.length],
   pages: ch.pages,
