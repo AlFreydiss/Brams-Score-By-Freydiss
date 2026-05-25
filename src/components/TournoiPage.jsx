@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { supabase } from '../lib/supabaseClient.js'
 import { useAuth } from '../contexts/AuthContext.jsx'
 
 const G = {
@@ -89,7 +88,7 @@ function MatchCard({ matchup, onVote, userVote }) {
               onClick={() => !matchup.done && char.name !== '???' && onVote(matchup.id, side)}
               disabled={matchup.done || char.name === '???'}
               style={{
-                width: '100%', background: 'none', border: 'none', cursor: matchup.done || char.name === '???' ? 'default' : 'pointer',
+                width: '100%', cursor: matchup.done || char.name === '???' ? 'default' : 'pointer',
                 padding: '8px 10px', borderRadius: 9, textAlign: 'left',
                 background: isWinner ? 'rgba(191,164,106,.08)' : voted ? 'rgba(191,164,106,.05)' : 'transparent',
                 border: `1px solid ${isWinner ? G.goldBorder : voted ? 'rgba(191,164,106,.2)' : 'transparent'}`,
