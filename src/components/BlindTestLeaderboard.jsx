@@ -31,12 +31,10 @@ export default function BlindTestLeaderboard() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const [rows, setRows]   = useState(null)
-  const [error, setError] = useState(false)
 
   useEffect(() => {
     fetchBlindTestLeaderboard(30).then(data => {
-      if (data === null) setError(true)
-      else setRows(data)
+      setRows(Array.isArray(data) ? data : [])
     })
   }, [])
 
@@ -69,16 +67,7 @@ export default function BlindTestLeaderboard() {
         </div>
 
         {/* Leaderboard table */}
-        {error ? (
-          <div style={{ textAlign:'center', padding:'60px 20px', background:'rgba(255,255,255,0.02)', border:'1px solid rgba(255,255,255,0.07)', borderRadius:16 }}>
-            <div style={{ fontSize:36, marginBottom:14 }}>🏗️</div>
-            <div style={{ fontSize:15, fontWeight:700, color:'rgba(255,255,255,0.55)', marginBottom:8 }}>Classement en cours d'installation</div>
-            <div style={{ fontSize:13, color:'rgba(255,255,255,0.30)', lineHeight:1.6 }}>
-              La table <code style={{ background:'rgba(255,255,255,0.07)', padding:'2px 7px', borderRadius:5, fontSize:12 }}>blind_test_scores</code> n'existe pas encore dans Supabase.
-              <br />Joue d'abord pour te faire connaître !
-            </div>
-          </div>
-        ) : rows === null ? (
+        {rows === null ? (
           <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
             {Array.from({ length: 5 }).map((_, i) => (
               <div key={i} style={{ height:64, borderRadius:12, background:'rgba(255,255,255,0.03)', animation:'btFadeUp 1.5s ease-in-out infinite' }} />
@@ -88,7 +77,7 @@ export default function BlindTestLeaderboard() {
           <div style={{ textAlign:'center', padding:'60px 20px', background:'rgba(255,255,255,0.02)', border:'1px solid rgba(255,255,255,0.07)', borderRadius:16 }}>
             <div style={{ fontSize:52, marginBottom:14 }}>🎵</div>
             <div style={{ fontSize:15, fontWeight:700, color:'rgba(255,255,255,0.55)', marginBottom:8 }}>Aucun score pour l'instant</div>
-            <div style={{ fontSize:13, color:'rgba(255,255,255,0.30)' }}>Sois le premier à jouer et dominer le classement !</div>
+            <div style={{ fontSize:13, color:'rgba(255,255,255,0.30)' }}>Joue une partie pour lancer le Hall of Fame.</div>
             <button onClick={() => navigate('/blind-test')} style={{ marginTop:20, padding:'11px 26px', borderRadius:100, border:'none', background:`linear-gradient(135deg,${GOLD},#e5b83a)`, color:'#1a1200', fontSize:13, fontWeight:800, cursor:'pointer' }}>
               Jouer maintenant
             </button>
@@ -99,6 +88,7 @@ export default function BlindTestLeaderboard() {
               const isMe = user && row.user_id === user.id
               const medal = MEDAL[i]
               const topGold = i === 0 ? GOLD : i === 1 ? '#9ca3af' : i === 2 ? '#cd7f32' : null
+              const profileHref = row.user_id ? `/u/${row.user_id}` : null
               return (
                 <div key={row.user_id} style={{
                   display:'flex', alignItems:'center', gap:14, padding:'14px 18px',
@@ -117,14 +107,28 @@ export default function BlindTestLeaderboard() {
                   ) : (
                     <div style={{ width:36, height:36, borderRadius:'50%', background:'rgba(212,160,23,0.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:14, flexShrink:0 }}>🏴‍☠️</div>
                   )}
-                  <div style={{ flex:1, minWidth:0 }}>
+                  <button
+                    onClick={() => profileHref && navigate(profileHref)}
+                    disabled={!profileHref}
+                    title={profileHref ? 'Ouvrir le profil' : 'Profil indisponible'}
+                    style={{
+                      flex:1, minWidth:0, textAlign:'left',
+                      background:'none', border:'none', padding:0,
+                      cursor: profileHref ? 'pointer' : 'default',
+                    }}
+                  >
                     <div style={{ fontSize:14, fontWeight:700, color: isMe ? GOLD : '#fff', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
                       {row.display_name || 'Pirate Anonyme'}{isMe ? ' (toi)' : ''}
                     </div>
                     <div style={{ fontSize:11, color:'rgba(255,255,255,0.35)' }}>
                       {row.games_played} partie{row.games_played > 1 ? 's' : ''} · Streak max {row.streak_max}
                     </div>
-                  </div>
+                    {profileHref && (
+                      <div style={{ fontSize:10, marginTop:4, color:'rgba(255,211,145,0.58)', fontWeight:700 }}>
+                        Voir le profil
+                      </div>
+                    )}
+                  </button>
                   <div style={{ textAlign:'right', flexShrink:0 }}>
                     <div style={{ fontFamily:"'Pirata One',cursive", fontSize:20, fontWeight:900, color:topGold || GOLD }}>
                       {Number(row.score).toLocaleString('fr-FR')}

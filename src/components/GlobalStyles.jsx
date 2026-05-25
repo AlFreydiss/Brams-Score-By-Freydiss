@@ -110,7 +110,7 @@ const CSS = `
     -webkit-text-fill-color: unset !important;
     -webkit-background-clip: unset !important;
     background-clip: unset !important;
-    color: #ff4e4e;
+    color: #f5f2ec;
     text-shadow:
       0 1px 0 rgba(0,0,0,.70),
       0 4px 16px rgba(0,0,0,.55),
@@ -125,9 +125,10 @@ const CSS = `
   }
   .hero-community {
     display: block;
-    /* Force Pirata One — OnePiece n'a pas tous les glyphes ASCII (i, t, y…) */
-    font-family: 'Pirata One', cursive;
-    background: linear-gradient(135deg, #b86a0a 0%, #e8a820 25%, #f5c842 50%, #d4900a 75%, #b86a0a 100%);
+    font-family: Georgia, 'Times New Roman', serif;
+    font-weight: 800;
+    letter-spacing: .018em;
+    background: linear-gradient(135deg, #ffd36a 0%, #f4b942 35%, #fff0c5 58%, #d89222 100%);
     background-size: 300% 300%;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;

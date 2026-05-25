@@ -672,7 +672,9 @@ export async function fetchBlindTestLeaderboard(limit = 20) {
       .order('score', { ascending: false })
       .limit(limit)
     return data ?? null
-  } catch { return null }
+  } catch {
+    return []
+  }
 }
 
 export async function upsertBlindTestScore({ userId, displayName, avatarUrl, score, streakMax, gamesPlayed }) {

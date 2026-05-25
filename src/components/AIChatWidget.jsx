@@ -23,6 +23,7 @@ export default function AIChatWidget({ hidden = false }) {
   const [loading, setLoading] = useState(false)
   const [unread, setUnread] = useState(0)
   const [shaking, setShaking] = useState(false)
+  const [notice, setNotice] = useState('')
   const bottomRef = useRef(null)
   const inputRef = useRef(null)
 
@@ -46,6 +47,12 @@ export default function AIChatWidget({ hidden = false }) {
     if (open) bottomRef.current?.scrollIntoView({ behavior:'smooth' })
   }, [history, loading, open])
 
+  useEffect(() => {
+    if (!notice) return
+    const t = setTimeout(() => setNotice(''), 4200)
+    return () => clearTimeout(t)
+  }, [notice])
+
   async function send(text) {
     const msg = (text ?? input).trim()
     if (!msg || loading) return
@@ -53,6 +60,7 @@ export default function AIChatWidget({ hidden = false }) {
     const newHistory = [...history, { role:'user', text:msg }]
     setHistory(newHistory)
     setLoading(true)
+    setNotice('')
     try {
       const res = await fetch('/api/chat', {
         method:'POST',
@@ -62,26 +70,29 @@ export default function AIChatWidget({ hidden = false }) {
       })
       let data
       try { data = await res.json() } catch { data = {} }
-      let reply
       if (res.status === 429) {
-        reply = "🕐 Je reçois trop de messages en ce moment. Réessaie dans quelques secondes !"
+        setNotice('Pause courte. Réessaie dans quelques secondes.')
+        return
       } else if (res.status === 503) {
-        reply = "⚡ L'IA est temporairement occupée. Retente dans un instant !"
+        setNotice("L'IA est temporairement occupée. Retente dans un instant.")
+        return
       } else if (res.status === 400) {
-        reply = "❌ Message invalide."
+        setNotice('Message invalide.')
+        return
       } else if (!res.ok) {
-        reply = "⚠️ Erreur serveur, réessaie dans un instant !"
+        setNotice('Erreur serveur, réessaie dans un instant.')
+        return
       } else {
-        reply = data.reply || "🤕 Quelque chose a raté, réessaie !"
+        const reply = data.reply || "Quelque chose a raté, réessaie."
+        setHistory(h => [...h, { role:'model', text: reply }])
+        if (!open) setUnread(u => u + 1)
       }
-      setHistory(h => [...h, { role:'model', text: reply }])
-      if (!open) setUnread(u => u + 1)
     } catch (err) {
       const isTimeout = err?.name === 'TimeoutError' || err?.name === 'AbortError'
-      setHistory(h => [...h, { role:'model', text: isTimeout
-        ? '⏱️ Réponse trop lente, réessaie !'
-        : '⚠️ Erreur inattendue, réessaie dans un instant !'
-      }])
+      setNotice(isTimeout
+        ? 'Réponse trop lente. Réessaie.'
+        : 'Erreur inattendue. Réessaie dans un instant.'
+      )
     } finally {
       setLoading(false)
     }
@@ -95,9 +106,9 @@ export default function AIChatWidget({ hidden = false }) {
       <div style={{
         position:'fixed', bottom:90, right:24, zIndex:900,
         width:360, maxWidth:'calc(100vw - 48px)',
-        background:'rgba(14,15,17,.96)', backdropFilter:'blur(20px)',
-        border:'1px solid rgba(224,82,74,.2)', borderRadius:20,
-        boxShadow:'0 24px 60px rgba(0,0,0,.6), 0 0 40px rgba(224,82,74,.08)',
+        background:'rgba(10,11,14,.96)', backdropFilter:'blur(22px)',
+        border:'1px solid rgba(160,68,92,.20)', borderRadius:20,
+        boxShadow:'0 24px 60px rgba(0,0,0,.62), 0 0 26px rgba(160,68,92,.08)',
         display:'flex', flexDirection:'column',
         maxHeight: open ? 520 : 0,
         opacity: open ? 1 : 0,
@@ -108,19 +119,19 @@ export default function AIChatWidget({ hidden = false }) {
         {/* Header */}
         <div style={{
           padding:'16px 18px', borderBottom:'1px solid rgba(255,255,255,.06)',
-          background:'linear-gradient(90deg, rgba(224,82,74,.1), rgba(155,89,182,.06))',
+          background:'linear-gradient(90deg, rgba(160,68,92,.12), rgba(123,106,168,.06))',
           display:'flex', alignItems:'center', gap:12, flexShrink:0,
         }}>
-          <div style={{ width:36, height:36, borderRadius:10, background:'linear-gradient(135deg,#e0524a,#9b59b6)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:17 }}>🏴‍☠️</div>
+          <div style={{ width:36, height:36, borderRadius:10, background:'linear-gradient(135deg,#9b4b5e,#6d587f)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:17 }}>🏴‍☠️</div>
           <div style={{ flex:1 }}>
             <div style={{ fontWeight:700, fontSize:14, color:'#fff' }}>Brams Score IA</div>
-            <div style={{ fontSize:11, color:'#22c55e', display:'flex', alignItems:'center', gap:4 }}>
-              <span style={{ width:6, height:6, borderRadius:'50%', background:'#22c55e', display:'inline-block', boxShadow:'0 0 6px #22c55e', animation:'pulse 2s infinite' }} />
+            <div style={{ fontSize:11, color:'#5fd38d', display:'flex', alignItems:'center', gap:4 }}>
+              <span style={{ width:6, height:6, borderRadius:'50%', background:'#5fd38d', display:'inline-block', boxShadow:'0 0 6px rgba(95,211,141,.6)', animation:'pulse 2s infinite' }} />
               En ligne
             </div>
           </div>
           {history.length > 0 && (
-            <button onClick={() => setHistory([])} style={{ fontSize:11, color:'var(--muted)', background:'rgba(255,255,255,.04)', border:'1px solid rgba(255,255,255,.06)', borderRadius:6, padding:'3px 8px', cursor:'pointer' }}>
+            <button onClick={() => setHistory([])} style={{ fontSize:11, color:'rgba(255,255,255,.58)', background:'rgba(255,255,255,.04)', border:'1px solid rgba(255,255,255,.06)', borderRadius:6, padding:'3px 8px', cursor:'pointer' }}>
               Effacer
             </button>
           )}
@@ -130,18 +141,18 @@ export default function AIChatWidget({ hidden = false }) {
         {/* Messages */}
         <div style={{ flex:1, overflowY:'auto', padding:'14px 14px 8px' }}>
           {history.length === 0 && (
-            <div style={{ textAlign:'center', padding:'24px 10px' }}>
-              <div style={{ fontSize:32, marginBottom:10 }}>🏴‍☠️</div>
-              <p style={{ color:'var(--muted)', fontSize:13, marginBottom:16 }}>Pose-moi n'importe quelle question sur One Piece ou le serveur Brams !</p>
-              <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
-                {SUGGESTIONS.map(s => (
-                  <button key={s} onClick={() => send(s)} style={{
-                    background:'rgba(224,82,74,.08)', border:'1px solid rgba(224,82,74,.2)',
+              <div style={{ textAlign:'center', padding:'24px 10px' }}>
+                <div style={{ fontSize:32, marginBottom:10 }}>🏴‍☠️</div>
+                <p style={{ color:'var(--muted)', fontSize:13, marginBottom:16 }}>Pose-moi n'importe quelle question sur One Piece ou le serveur Brams !</p>
+                <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+                  {SUGGESTIONS.map(s => (
+                    <button key={s} onClick={() => send(s)} style={{
+                    background:'rgba(160,68,92,.08)', border:'1px solid rgba(160,68,92,.20)',
                     borderRadius:10, padding:'8px 12px', fontSize:12, color:'rgba(255,255,255,.7)',
                     cursor:'pointer', textAlign:'left', transition:'all .15s',
                   }}
-                    onMouseEnter={e=>{e.currentTarget.style.background='rgba(224,82,74,.18)';e.currentTarget.style.color='#fff'}}
-                    onMouseLeave={e=>{e.currentTarget.style.background='rgba(224,82,74,.08)';e.currentTarget.style.color='rgba(255,255,255,.7)'}}
+                    onMouseEnter={e=>{e.currentTarget.style.background='rgba(160,68,92,.16)';e.currentTarget.style.color='#fff'}}
+                    onMouseLeave={e=>{e.currentTarget.style.background='rgba(160,68,92,.08)';e.currentTarget.style.color='rgba(255,255,255,.7)'}}
                   >💬 {s}</button>
                 ))}
               </div>
@@ -150,12 +161,12 @@ export default function AIChatWidget({ hidden = false }) {
           {history.map((m, i) => (
             <div key={i} style={{ display:'flex', justifyContent:m.role==='user'?'flex-end':'flex-start', marginBottom:8 }}>
               {m.role === 'model' && (
-                <div style={{ width:26, height:26, borderRadius:8, background:'linear-gradient(135deg,#e0524a,#9b59b6)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, flexShrink:0, marginRight:8, marginTop:2 }}>🏴‍☠️</div>
+                <div style={{ width:26, height:26, borderRadius:8, background:'linear-gradient(135deg,#9b4b5e,#6d587f)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, flexShrink:0, marginRight:8, marginTop:2 }}>🏴‍☠️</div>
               )}
               <div style={{
                 maxWidth:'80%', padding:'9px 13px',
                 borderRadius: m.role==='user' ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
-                background: m.role==='user' ? 'var(--accent)' : 'rgba(255,255,255,.06)',
+                background: m.role==='user' ? 'var(--accent)' : 'rgba(255,255,255,.055)',
                 border: m.role==='user' ? 'none' : '1px solid rgba(255,255,255,.07)',
                 fontSize:13, lineHeight:1.6, color:'#fff', whiteSpace:'pre-wrap', wordBreak:'break-word',
               }}>{m.text}</div>
@@ -165,6 +176,20 @@ export default function AIChatWidget({ hidden = false }) {
             <div style={{ display:'flex', gap:8, marginBottom:8 }}>
               <div style={{ width:26, height:26, borderRadius:8, background:'linear-gradient(135deg,#e0524a,#9b59b6)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13 }}>🏴‍☠️</div>
               <TypingDots />
+            </div>
+          )}
+          {notice && (
+            <div style={{
+              margin:'0 0 8px',
+              padding:'8px 12px',
+              borderRadius:10,
+              background:'rgba(160,68,92,.10)',
+              border:'1px solid rgba(160,68,92,.22)',
+              color:'rgba(255,255,255,.82)',
+              fontSize:12,
+              lineHeight:1.45,
+            }}>
+              {notice}
             </div>
           )}
           <div ref={bottomRef} />
@@ -180,11 +205,11 @@ export default function AIChatWidget({ hidden = false }) {
             placeholder="Pose ta question…"
             maxLength={500}
             style={{ flex:1, background:'rgba(255,255,255,.05)', border:'1px solid rgba(255,255,255,.08)', borderRadius:10, padding:'9px 14px', fontSize:13, color:'#fff', outline:'none', fontFamily:'var(--body)' }}
-            onFocus={e=>e.target.style.borderColor='rgba(224,82,74,.4)'}
+            onFocus={e=>e.target.style.borderColor='rgba(160,68,92,.40)'}
             onBlur={e=>e.target.style.borderColor='rgba(255,255,255,.08)'}
           />
           <button onClick={() => send()} disabled={!input.trim()||loading}
-            style={{ width:38, height:38, borderRadius:10, flexShrink:0, background:input.trim()&&!loading?'var(--accent)':'rgba(255,255,255,.06)', border:'none', color:'#fff', fontSize:16, cursor:input.trim()&&!loading?'pointer':'not-allowed', display:'flex', alignItems:'center', justifyContent:'center', transition:'background .15s' }}>
+            style={{ width:38, height:38, borderRadius:10, flexShrink:0, background:input.trim()&&!loading?'linear-gradient(135deg, #9b4b5e, #6d587f)':'rgba(255,255,255,.06)', border:'none', color:'#fff', fontSize:16, cursor:input.trim()&&!loading?'pointer':'not-allowed', display:'flex', alignItems:'center', justifyContent:'center', transition:'background .15s' }}>
             →
           </button>
         </div>
@@ -196,20 +221,20 @@ export default function AIChatWidget({ hidden = false }) {
         style={{
           position:'fixed', bottom:24, right:24, zIndex:901,
           width:58, height:58, borderRadius:'50%',
-          background:'linear-gradient(135deg, #e0524a, #9b59b6)',
-          border:'2px solid rgba(224,82,74,0.35)',
+          background:'linear-gradient(135deg, #9b4b5e, #6d587f)',
+          border:'2px solid rgba(160,68,92,0.35)',
           cursor:'pointer',
           display:'flex', alignItems:'center', justifyContent:'center', fontSize:26,
-          boxShadow:'0 8px 32px rgba(224,82,74,.5), 0 0 0 0 rgba(224,82,74,0)',
+          boxShadow:'0 8px 32px rgba(160,68,92,.42), 0 0 0 0 rgba(160,68,92,0)',
           animation: shaking ? 'shake 0.7s ease' : open ? 'none' : 'floatAI 3s ease-in-out infinite',
           transition:'box-shadow .2s',
         }}
-        onMouseEnter={e=>{e.currentTarget.style.boxShadow='0 12px 40px rgba(224,82,74,.7), 0 0 24px rgba(224,82,74,.3)';e.currentTarget.style.transform='scale(1.1)'}}
-        onMouseLeave={e=>{e.currentTarget.style.boxShadow='0 8px 32px rgba(224,82,74,.5), 0 0 0 0 rgba(224,82,74,0)';e.currentTarget.style.transform='scale(1)'}}
+        onMouseEnter={e=>{e.currentTarget.style.boxShadow='0 12px 40px rgba(160,68,92,.62), 0 0 22px rgba(160,68,92,.24)';e.currentTarget.style.transform='scale(1.1)'}}
+        onMouseLeave={e=>{e.currentTarget.style.boxShadow='0 8px 32px rgba(160,68,92,.42), 0 0 0 0 rgba(160,68,92,0)';e.currentTarget.style.transform='scale(1)'}}
       >
         {open ? '✕' : '🏴‍☠️'}
         {!open && unread > 0 && (
-          <span style={{ position:'absolute', top:0, right:0, width:20, height:20, borderRadius:'50%', background:'var(--accent)', border:'2px solid #0e0f11', fontSize:11, fontWeight:700, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center' }}>{unread}</span>
+          <span style={{ position:'absolute', top:0, right:0, width:20, height:20, borderRadius:'50%', background:'#9b4b5e', border:'2px solid #0e0f11', fontSize:11, fontWeight:700, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center' }}>{unread}</span>
         )}
       </button>
     </>

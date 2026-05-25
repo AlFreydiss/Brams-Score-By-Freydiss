@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { fetchTheories } from '../lib/wiki.js'
 import { useAuth } from '../contexts/AuthContext.jsx'
 
-const GOLD   = '#d4a017'
-const VIOLET = '#a29bfe'
+const GOLD   = '#b08a3a'
+const VIOLET = '#7b3f45'
 
 const TH_CSS = `
   @keyframes thFadeUp  { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:none} }
@@ -17,7 +17,7 @@ function THStars() {
   const stars = useMemo(() => Array.from({ length: 48 }, (_, i) => ({
     x:(i*38.9+11)%98, y:(i*44.1+7)%96, size:i%9===0?2.5:i%4===0?1.6:1,
     dur:2.9+(i*0.27)%4.5, del:(i*0.22)%7,
-    col: i%11===0 ? 'rgba(162,155,254,.60)' : i%13===0 ? 'rgba(212,160,23,.60)' : null,
+    col: i%11===0 ? 'rgba(123,63,69,.55)' : i%13===0 ? 'rgba(176,138,58,.58)' : null,
   })), [])
   return (
     <div style={{ position:'fixed', inset:0, pointerEvents:'none', zIndex:0 }}>
@@ -36,7 +36,7 @@ function THStars() {
 function THScanLine() {
   return (
     <div style={{ position:'fixed', inset:0, pointerEvents:'none', zIndex:1, overflow:'hidden' }}>
-      <div style={{ position:'absolute', left:0, right:0, height:2, background:'linear-gradient(90deg,transparent,rgba(162,155,254,.07),rgba(162,155,254,.16),rgba(162,155,254,.07),transparent)', animation:'thScan 18s linear infinite' }} />
+      <div style={{ position:'absolute', left:0, right:0, height:2, background:'linear-gradient(90deg,transparent,rgba(123,63,69,.08),rgba(176,138,58,.14),rgba(123,63,69,.08),transparent)', animation:'thScan 18s linear infinite' }} />
     </div>
   )
 }
@@ -51,11 +51,11 @@ const LIMIT = 12
 
 // Category colors
 const CAT_COLORS = {
-  'Personnages':     '#e0524a',
-  'Arcs':            '#d4a017',
-  'Fruits du Démon': '#8b5cf6',
-  'Lieux':           '#0ea5e9',
-  'Organisations':   '#10b981',
+  'Personnages':     '#7b3f45',
+  'Arcs':            '#b08a3a',
+  'Fruits du Démon': '#6d5f8f',
+  'Lieux':           '#587084',
+  'Organisations':   '#5f766a',
   'Autre':           '#6b7280',
   'Tous':            GOLD,
 }
@@ -177,7 +177,7 @@ export default function TheoriesHome() {
           <div style={{ textAlign:'center', marginBottom:52 }}>
             <div style={{
               display:'inline-flex', alignItems:'center', gap:8, padding:'5px 18px', borderRadius:100,
-              background:'rgba(162,155,254,0.10)', border:'1px solid rgba(162,155,254,0.28)',
+              background:'rgba(123,63,69,0.10)', border:'1px solid rgba(123,63,69,0.28)',
               fontSize:10, fontWeight:800, letterSpacing:'.22em', color:VIOLET, textTransform:'uppercase', marginBottom:20,
             }}>
               🔮 Forum Théories
@@ -194,9 +194,9 @@ export default function TheoriesHome() {
                 onClick={() => navigate('/theories/new')}
                 style={{
                   padding:'12px 28px', borderRadius:100, border:'none',
-                  background:`linear-gradient(135deg,${VIOLET},#8b7ff0)`, color:'#fff',
+                background:`linear-gradient(135deg,#6a4147,#8b6d3d)`, color:'#f4f1ec',
                   fontSize:13, fontWeight:800, cursor:'pointer', transition:'all .18s', letterSpacing:'.04em',
-                  boxShadow:`0 6px 24px rgba(162,155,254,0.28)`,
+                  boxShadow:`0 6px 24px rgba(123,63,69,0.24)`,
                 }}
                 onMouseEnter={e => { e.currentTarget.style.opacity='.88'; e.currentTarget.style.transform='translateY(-1px)' }}
                 onMouseLeave={e => { e.currentTarget.style.opacity='1'; e.currentTarget.style.transform='none' }}

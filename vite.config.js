@@ -89,6 +89,7 @@ const pruneHeavyPublicAssets = {
 export default defineConfig({
   plugins: [react(), animePlugin, pruneHeavyPublicAssets],
   build: {
+    emptyOutDir: false,
     target:               'es2020',
     chunkSizeWarningLimit: 3000,
     cssCodeSplit:         true,

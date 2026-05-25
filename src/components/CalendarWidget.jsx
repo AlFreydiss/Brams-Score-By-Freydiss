@@ -207,13 +207,13 @@ function EventCard({ event, delay }) {
 
   return (
     <div className="evt-border" style={{ animationDelay: `${delay}s`, animation: `widgetSlide .55s ${delay}s ease-out both` }}>
-      <div style={{ background: 'rgba(13,14,16,.95)', borderRadius: 13, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 11 }}>
-        <div style={{ flexShrink: 0, width: 42, height: 42, borderRadius: 10, background: 'rgba(224,82,74,.12)', border: '1px solid rgba(224,82,74,.28)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ background: 'rgba(13,14,16,.95)', borderRadius: 13, padding: '11px 14px', display: 'flex', alignItems: 'center', gap: 15 }}>
+        <div style={{ flexShrink: 0, width: 42, height: 42, borderRadius: 10, background: 'rgba(224,82,74,.12)', border: '1px solid rgba(224,82,74,.28)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginRight: 2 }}>
           <span style={{ fontSize: 15, fontWeight: 800, color: 'var(--accent)', lineHeight: 1 }}>{day}</span>
           <span style={{ fontSize: 8, fontWeight: 700, color: 'rgba(224,82,74,.65)', letterSpacing: '.06em', marginTop: 1 }}>{mon}</span>
         </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: '#fff', marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{event.title}</div>
+        <div style={{ flex: 1, minWidth: 0, paddingLeft: 2 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#fff', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{event.title}</div>
           <div style={{ fontSize: 10, color: 'var(--accent)', fontWeight: 600 }}>{countdown}</div>
         </div>
       </div>

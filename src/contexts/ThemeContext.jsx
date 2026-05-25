@@ -2,25 +2,25 @@ import { createContext, useContext, useState, useEffect } from 'react'
 
 const THEMES = {
   dark: {
-    '--bg':'#111214','--surface':'#18191c','--card':'#1e2024','--card2':'#242629',
-    '--border':'rgba(255,255,255,0.06)','--accent':'#e0524a',
+    '--bg':'#0e1013','--surface':'#15181d','--card':'#1b2026','--card2':'#21272e',
+    '--border':'rgba(176,138,58,0.12)','--accent':'#7b3f45',
     '--text':'#e8e9ea','--muted':'#7c7f8a',
-    '--overlay-bg':'rgba(14,14,16,0.72)',
-    '--success':'#22c55e',
+    '--overlay-bg':'rgba(10,12,15,0.74)',
+    '--success':'#3f7f5f',
   },
   light: {
-    '--bg':'#fdf8f1','--surface':'#fff9f2','--card':'#fffcf9','--card2':'#f5eedd',
-    '--border':'rgba(160,120,80,0.14)','--accent':'#c94535',
+    '--bg':'#f7f2eb','--surface':'#fffaf4','--card':'#fffdf9','--card2':'#f2e9da',
+    '--border':'rgba(129,92,64,0.14)','--accent':'#8b4a41',
     '--text':'#18203c','--muted':'#5a6280',
-    '--overlay-bg':'rgba(253,248,241,0.94)',
-    '--success':'#16a34a',
+    '--overlay-bg':'rgba(247,242,235,0.94)',
+    '--success':'#3f7f5f',
   },
   colorful: {
-    '--bg':'#020b12','--surface':'#051620','--card':'#071e2e','--card2':'#0b2538',
-    '--border':'rgba(0,200,175,0.20)','--accent':'#00c8b0',
-    '--text':'#dff8f5','--muted':'#5aabaa',
-    '--overlay-bg':'rgba(2,11,18,0.86)',
-    '--success':'#00e5b8',
+    '--bg':'#091014','--surface':'#101a21','--card':'#13212a','--card2':'#172831',
+    '--border':'rgba(176,138,58,0.14)','--accent':'#8a5d64',
+    '--text':'#e7ebee','--muted':'#8a96a0',
+    '--overlay-bg':'rgba(9,16,20,0.86)',
+    '--success':'#3f7f5f',
   },
 }
 

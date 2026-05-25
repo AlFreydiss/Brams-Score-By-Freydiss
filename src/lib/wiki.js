@@ -60,26 +60,54 @@ export async function fetchWikiRevisions(pageId) {
 
 export async function createWikiPage({ slug, title, category_id, content, infobox, cover_image, author_id, author_name }) {
   if (!supabase) return { error: 'No client' }
-  // Save revision before insert
-  const { data, error } = await supabase.from('wiki_pages').insert({
-    slug, title, category_id, content, infobox: infobox ?? {}, cover_image,
-    author_id, author_name, status: 'pending',
-  }).select().single()
-  if (!error && data) {
-    await supabase.from('wiki_revisions').insert({ page_id: data.id, content, infobox: infobox ?? {}, author_id, author_name, summary: 'Création initiale' })
+  const payload = {
+    slug,
+    title,
+    category_id,
+    content,
+    infobox: infobox ?? {},
+    cover_image,
+    author_id,
+    author_name,
+    status: 'pending',
   }
-  return { data, error }
+
+  const { error } = await supabase.from('wiki_pages').insert(payload)
+  if (error) return { data: null, error }
+
+  let data = null
+  const lookup = await supabase
+    .from('wiki_pages')
+    .select('id,slug,title')
+    .eq('slug', slug)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (!lookup.error && lookup.data) {
+    data = lookup.data
+    await supabase.from('wiki_revisions').insert({
+      page_id: data.id,
+      content,
+      infobox: infobox ?? {},
+      author_id,
+      author_name,
+      summary: 'Création initiale',
+    })
+  }
+
+  return { data, error: null }
 }
 
 export async function updateWikiPage({ id, content, infobox, cover_image, author_id, author_name, summary }) {
   if (!supabase) return { error: 'No client' }
-  const { data, error } = await supabase.from('wiki_pages')
+  const { error } = await supabase.from('wiki_pages')
     .update({ content, infobox: infobox ?? {}, cover_image, updated_at: new Date().toISOString(), status: 'pending' })
-    .eq('id', id).select().single()
-  if (!error && data) {
+    .eq('id', id)
+  if (!error) {
     await supabase.from('wiki_revisions').insert({ page_id: id, content, infobox: infobox ?? {}, author_id, author_name, summary: summary || 'Modification' })
   }
-  return { data, error }
+  return { data: null, error }
 }
 
 // ── Theories ─────────────────────────────────────────────────────────────────
@@ -116,10 +144,17 @@ export async function fetchTheory(id) {
 
 export async function createTheory({ title, content, category, tags, author_id, author_name, cover_image }) {
   if (!supabase) return { error: 'No client' }
-  const { data, error } = await supabase.from('theories').insert({
-    title, content, category, tags: tags ?? [], author_id, author_name, cover_image, status: 'pending',
-  }).select().single()
-  return { data, error }
+  const { error } = await supabase.from('theories').insert({
+    title,
+    content,
+    category,
+    tags: tags ?? [],
+    author_id,
+    author_name,
+    cover_image,
+    status: 'pending',
+  })
+  return { data: null, error }
 }
 
 // ── Votes ────────────────────────────────────────────────────────────────────
@@ -165,10 +200,14 @@ export async function fetchComments(theoryId) {
 
 export async function postComment({ theory_id, parent_id, content, author_id, author_name }) {
   if (!supabase) return { error: 'No client' }
-  const { data, error } = await supabase.from('theory_comments').insert({
-    theory_id, parent_id: parent_id ?? null, content, author_id, author_name,
-  }).select().single()
-  return { data, error }
+  const { error } = await supabase.from('theory_comments').insert({
+    theory_id,
+    parent_id: parent_id ?? null,
+    content,
+    author_id,
+    author_name,
+  })
+  return { data: null, error }
 }
 
 // ── User profile ─────────────────────────────────────────────────────────────

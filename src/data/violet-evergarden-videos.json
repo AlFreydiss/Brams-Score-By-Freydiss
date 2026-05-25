@@ -2,19 +2,20 @@
   {
     "episode": 1,
     "title": "Episode 1",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden/[Refrain] Violet Evergarden - 01 VF VOSTFR [1080p].mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-jp/Ep001.mp4",
     "season": "S01",
     "arc": "Violet Evergarden",
     "audio": [
       {
-        "label": "VOSTFR",
+        "label": "Japonais",
         "srclang": "ja",
-        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-audio-jp/Ep001.m4a"
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-jp/Ep001.mp4"
       },
       {
         "label": "VF",
         "srclang": "fr",
-        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-audio-fr/Ep001.m4a"
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-vf/Ep001.mp4"
       }
     ],
     "subtitles": [
@@ -29,19 +30,20 @@
   {
     "episode": 2,
     "title": "Episode 2",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden/[Refrain] Violet Evergarden - 02 VF VOSTFR [1080p].mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-jp/Ep002.mp4",
     "season": "S01",
     "arc": "Violet Evergarden",
     "audio": [
       {
-        "label": "VOSTFR",
+        "label": "Japonais",
         "srclang": "ja",
-        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-audio-jp/Ep002.m4a"
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-jp/Ep002.mp4"
       },
       {
         "label": "VF",
         "srclang": "fr",
-        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-audio-fr/Ep002.m4a"
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-vf/Ep002.mp4"
       }
     ],
     "subtitles": [
@@ -56,19 +58,20 @@
   {
     "episode": 3,
     "title": "Episode 3",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden/[Refrain] Violet Evergarden - 03 VF VOSTFR [1080p].mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-jp/Ep003.mp4",
     "season": "S01",
     "arc": "Violet Evergarden",
     "audio": [
       {
-        "label": "VOSTFR",
+        "label": "Japonais",
         "srclang": "ja",
-        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-audio-jp/Ep003.m4a"
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-jp/Ep003.mp4"
       },
       {
         "label": "VF",
         "srclang": "fr",
-        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-audio-fr/Ep003.m4a"
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-vf/Ep003.mp4"
       }
     ],
     "subtitles": [
@@ -83,19 +86,20 @@
   {
     "episode": 4,
     "title": "Episode 4",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden/[Refrain] Violet Evergarden - 04 VF VOSTFR [1080p].mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-jp/Ep004.mp4",
     "season": "S01",
     "arc": "Violet Evergarden",
     "audio": [
       {
-        "label": "VOSTFR",
+        "label": "Japonais",
         "srclang": "ja",
-        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-audio-jp/Ep004.m4a"
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-jp/Ep004.mp4"
       },
       {
         "label": "VF",
         "srclang": "fr",
-        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-audio-fr/Ep004.m4a"
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-vf/Ep004.mp4"
       }
     ],
     "subtitles": [
@@ -110,19 +114,20 @@
   {
     "episode": 5,
     "title": "Episode 5",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden/[Refrain] Violet Evergarden - 05 VF VOSTFR [1080p].mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-jp/Ep005.mp4",
     "season": "S01",
     "arc": "Violet Evergarden",
     "audio": [
       {
-        "label": "VOSTFR",
+        "label": "Japonais",
         "srclang": "ja",
-        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-audio-jp/Ep005.m4a"
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-jp/Ep005.mp4"
       },
       {
         "label": "VF",
         "srclang": "fr",
-        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-audio-fr/Ep005.m4a"
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-vf/Ep005.mp4"
       }
     ],
     "subtitles": [
@@ -137,19 +142,20 @@
   {
     "episode": 6,
     "title": "Episode 6",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden/[Refrain] Violet Evergarden - 06 VF VOSTFR [1080p].mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-jp/Ep006.mp4",
     "season": "S01",
     "arc": "Violet Evergarden",
     "audio": [
       {
-        "label": "VOSTFR",
+        "label": "Japonais",
         "srclang": "ja",
-        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-audio-jp/Ep006.m4a"
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-jp/Ep006.mp4"
       },
       {
         "label": "VF",
         "srclang": "fr",
-        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-audio-fr/Ep006.m4a"
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-vf/Ep006.mp4"
       }
     ],
     "subtitles": [
@@ -164,19 +170,20 @@
   {
     "episode": 7,
     "title": "Episode 7",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden/[Refrain] Violet Evergarden - 07 VF VOSTFR [1080p].mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-jp/Ep007.mp4",
     "season": "S01",
     "arc": "Violet Evergarden",
     "audio": [
       {
-        "label": "VOSTFR",
+        "label": "Japonais",
         "srclang": "ja",
-        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-audio-jp/Ep007.m4a"
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-jp/Ep007.mp4"
       },
       {
         "label": "VF",
         "srclang": "fr",
-        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-audio-fr/Ep007.m4a"
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-vf/Ep007.mp4"
       }
     ],
     "subtitles": [
@@ -191,19 +198,20 @@
   {
     "episode": 8,
     "title": "Episode 8",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden/[Refrain] Violet Evergarden - 08 VF VOSTFR [1080p].mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-jp/Ep008.mp4",
     "season": "S01",
     "arc": "Violet Evergarden",
     "audio": [
       {
-        "label": "VOSTFR",
+        "label": "Japonais",
         "srclang": "ja",
-        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-audio-jp/Ep008.m4a"
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-jp/Ep008.mp4"
       },
       {
         "label": "VF",
         "srclang": "fr",
-        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-audio-fr/Ep008.m4a"
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-vf/Ep008.mp4"
       }
     ],
     "subtitles": [
@@ -218,19 +226,20 @@
   {
     "episode": 9,
     "title": "Episode 9",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden/[Refrain] Violet Evergarden - 09 VF VOSTFR [1080p].mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-jp/Ep009.mp4",
     "season": "S01",
     "arc": "Violet Evergarden",
     "audio": [
       {
-        "label": "VOSTFR",
+        "label": "Japonais",
         "srclang": "ja",
-        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-audio-jp/Ep009.m4a"
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-jp/Ep009.mp4"
       },
       {
         "label": "VF",
         "srclang": "fr",
-        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-audio-fr/Ep009.m4a"
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-vf/Ep009.mp4"
       }
     ],
     "subtitles": [
@@ -245,19 +254,20 @@
   {
     "episode": 10,
     "title": "Episode 10",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden/[Refrain] Violet Evergarden - 10 VF VOSTFR [1080p].mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-jp/Ep010.mp4",
     "season": "S01",
     "arc": "Violet Evergarden",
     "audio": [
       {
-        "label": "VOSTFR",
+        "label": "Japonais",
         "srclang": "ja",
-        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-audio-jp/Ep010.m4a"
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-jp/Ep010.mp4"
       },
       {
         "label": "VF",
         "srclang": "fr",
-        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-audio-fr/Ep010.m4a"
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-vf/Ep010.mp4"
       }
     ],
     "subtitles": [
@@ -272,19 +282,20 @@
   {
     "episode": 11,
     "title": "Episode 11",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden/[Refrain] Violet Evergarden - 11 VF VOSTFR [1080p].mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-jp/Ep011.mp4",
     "season": "S01",
     "arc": "Violet Evergarden",
     "audio": [
       {
-        "label": "VOSTFR",
+        "label": "Japonais",
         "srclang": "ja",
-        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-audio-jp/Ep011.m4a"
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-jp/Ep011.mp4"
       },
       {
         "label": "VF",
         "srclang": "fr",
-        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-audio-fr/Ep011.m4a"
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-vf/Ep011.mp4"
       }
     ],
     "subtitles": [
@@ -299,19 +310,20 @@
   {
     "episode": 12,
     "title": "Episode 12",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden/[Refrain] Violet Evergarden - 12 VF VOSTFR [1080p].mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-jp/Ep012.mp4",
     "season": "S01",
     "arc": "Violet Evergarden",
     "audio": [
       {
-        "label": "VOSTFR",
+        "label": "Japonais",
         "srclang": "ja",
-        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-audio-jp/Ep012.m4a"
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-jp/Ep012.mp4"
       },
       {
         "label": "VF",
         "srclang": "fr",
-        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-audio-fr/Ep012.m4a"
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-vf/Ep012.mp4"
       }
     ],
     "subtitles": [
@@ -326,19 +338,20 @@
   {
     "episode": 13,
     "title": "Episode 13",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden/[Refrain] Violet Evergarden - 13 VF VOSTFR [1080p].mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-jp/Ep013.mp4",
     "season": "S01",
     "arc": "Violet Evergarden",
     "audio": [
       {
-        "label": "VOSTFR",
+        "label": "Japonais",
         "srclang": "ja",
-        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-audio-jp/Ep013.m4a"
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-jp/Ep013.mp4"
       },
       {
         "label": "VF",
         "srclang": "fr",
-        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-audio-fr/Ep013.m4a"
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-vf/Ep013.mp4"
       }
     ],
     "subtitles": [

@@ -6,6 +6,9 @@ import { md } from '../lib/markdown.js'
 
 const CATEGORIES = ['Personnages', 'Arcs', 'Fruits du Démon', 'Lieux', 'Organisations', 'Autre']
 
+const GOLD = '#b08a3a'
+const BROWN = '#7b3f45'
+
 const inputStyle = {
   width: '100%', boxSizing: 'border-box',
   padding: '11px 14px', borderRadius: 8,
@@ -13,7 +16,7 @@ const inputStyle = {
   color: '#fff', fontSize: 14, outline: 'none',
   transition: 'border-color .15s', fontFamily: 'inherit',
 }
-const focus = (e) => e.target.style.borderColor = 'rgba(212,160,23,0.6)'
+const focus = (e) => e.target.style.borderColor = 'rgba(176,138,58,0.6)'
 const blur  = (e) => e.target.style.borderColor = 'rgba(255,255,255,0.12)'
 const labelStyle = {
   display: 'block', fontSize: 11, fontWeight: 700,
@@ -47,7 +50,7 @@ export default function TheoryEditor() {
       <div style={{ fontFamily: "'Pirata One', cursive", fontSize: 26, color: '#fff' }}>Connexion requise</div>
       <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.4)', marginBottom: 8 }}>Tu dois être connecté pour proposer une théorie.</div>
       <div style={{ display: 'flex', gap: 12 }}>
-        <button onClick={() => document.dispatchEvent(new CustomEvent('open-auth-modal'))} style={{ padding: '10px 22px', borderRadius: 9, border: 'none', background: '#d4a017', color: '#1a1f2e', cursor: 'pointer', fontSize: 13, fontWeight: 800 }}>Se connecter</button>
+        <button onClick={() => document.dispatchEvent(new CustomEvent('open-auth-modal'))} style={{ padding: '10px 22px', borderRadius: 9, border: 'none', background: 'linear-gradient(135deg,#8e6d31,#b08a3a)', color: '#1a1f2e', cursor: 'pointer', fontSize: 13, fontWeight: 800 }}>Se connecter</button>
         <button onClick={() => navigate('/theories')} style={{ padding: '10px 22px', borderRadius: 9, border: '1px solid rgba(255,255,255,0.15)', background: 'transparent', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>← Retour</button>
       </div>
     </div>
@@ -60,7 +63,7 @@ export default function TheoryEditor() {
       <div style={{ fontSize: 15, color: 'rgba(255,255,255,0.45)', textAlign: 'center', maxWidth: 400, lineHeight: 1.6 }}>
         Ta théorie est en attente de modération. Elle sera publiée après validation d'un admin.
       </div>
-      <button onClick={() => navigate('/theories')} style={{ padding: '11px 26px', borderRadius: 10, border: 'none', background: '#d4a017', color: '#1a1f2e', cursor: 'pointer', fontSize: 14, fontWeight: 800 }}>
+      <button onClick={() => navigate('/theories')} style={{ padding: '11px 26px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#8e6d31,#b08a3a)', color: '#1a1f2e', cursor: 'pointer', fontSize: 14, fontWeight: 800 }}>
         Voir les théories
       </button>
     </div>
@@ -91,7 +94,7 @@ export default function TheoryEditor() {
 
         <div style={{ marginBottom: 32 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, marginBottom: 12 }}>
-            <Link to="/theories" style={{ color: '#d4a017', textDecoration: 'none', fontWeight: 600 }}>Théories</Link>
+            <Link to="/theories" style={{ color: GOLD, textDecoration: 'none', fontWeight: 600 }}>Théories</Link>
             <span style={{ color: 'rgba(255,255,255,0.3)' }}>›</span>
             <span style={{ color: 'rgba(255,255,255,0.5)' }}>Proposer</span>
           </div>
@@ -129,7 +132,7 @@ export default function TheoryEditor() {
           <div style={{ marginBottom: 18 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
               <label style={{ ...labelStyle, marginBottom: 0 }}>Contenu * (Markdown)</label>
-              <button type="button" onClick={() => setPreview(v => !v)} style={{ background: preview ? 'rgba(212,160,23,0.15)' : 'rgba(255,255,255,0.06)', border: `1px solid ${preview ? 'rgba(212,160,23,0.4)' : 'rgba(255,255,255,0.1)'}`, borderRadius: 6, color: preview ? '#d4a017' : 'rgba(255,255,255,0.5)', cursor: 'pointer', padding: '4px 12px', fontSize: 12, fontWeight: 700 }}>
+              <button type="button" onClick={() => setPreview(v => !v)} style={{ background: preview ? 'rgba(176,138,58,0.15)' : 'rgba(255,255,255,0.06)', border: `1px solid ${preview ? 'rgba(176,138,58,0.4)' : 'rgba(255,255,255,0.1)'}`, borderRadius: 6, color: preview ? GOLD : 'rgba(255,255,255,0.5)', cursor: 'pointer', padding: '4px 12px', fontSize: 12, fontWeight: 700 }}>
                 {preview ? '✏️ Éditer' : '👁 Aperçu'}
               </button>
             </div>
@@ -143,7 +146,7 @@ export default function TheoryEditor() {
           {/* RGPD Consent */}
           <div style={{ marginBottom: 22, padding: '16px 18px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10 }}>
             <label style={{ display: 'flex', alignItems: 'flex-start', gap: 12, cursor: 'pointer' }}>
-              <input type="checkbox" checked={rgpd} onChange={e => setRgpd(e.target.checked)} style={{ width: 17, height: 17, marginTop: 2, accentColor: '#d4a017', flexShrink: 0 }} />
+              <input type="checkbox" checked={rgpd} onChange={e => setRgpd(e.target.checked)} style={{ width: 17, height: 17, marginTop: 2, accentColor: GOLD, flexShrink: 0 }} />
               <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.6 }}>
                 J'accepte que mon pseudo et le contenu de cette théorie soient publiquement visibles sur ce site.
                 Ce contenu sera modéré avant publication et peut être refusé ou supprimé s'il ne respecte pas les règles.{' '}
@@ -153,13 +156,13 @@ export default function TheoryEditor() {
           </div>
 
           {error && (
-            <div style={{ background: 'rgba(224,82,74,0.1)', border: '1px solid rgba(224,82,74,0.3)', borderRadius: 8, padding: '12px 16px', fontSize: 13, color: '#ff8a7a', marginBottom: 16 }}>
+          <div style={{ background: 'rgba(123,63,69,0.10)', border: '1px solid rgba(123,63,69,0.28)', borderRadius: 8, padding: '12px 16px', fontSize: 13, color: '#e8a0a8', marginBottom: 16 }}>
               {error}
             </div>
           )}
 
           <div style={{ display: 'flex', gap: 12 }}>
-            <button type="submit" disabled={loading || submitLock} style={{ padding: '12px 28px', borderRadius: 10, border: 'none', background: (loading || submitLock) ? 'rgba(212,160,23,0.35)' : '#d4a017', color: '#1a1f2e', fontSize: 14, fontWeight: 800, cursor: (loading || submitLock) ? 'not-allowed' : 'pointer' }}>
+            <button type="submit" disabled={loading || submitLock} style={{ padding: '12px 28px', borderRadius: 10, border: 'none', background: (loading || submitLock) ? 'rgba(176,138,58,0.35)' : 'linear-gradient(135deg,#8e6d31,#b08a3a)', color: '#1a1f2e', fontSize: 14, fontWeight: 800, cursor: (loading || submitLock) ? 'not-allowed' : 'pointer' }}>
               {loading ? 'Envoi...' : 'Soumettre la théorie'}
             </button>
             <button type="button" onClick={() => navigate('/theories')} style={{ padding: '12px 20px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.12)', background: 'transparent', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontSize: 14, fontWeight: 600 }}>

@@ -1,20 +1,7 @@
-node_modules/
-dist/
-.git/
-.env
-.env.local
-.env.*.local
-*.log
-
-# Local agent/runtime state
-.agents/
-.claude-flow/
-.codex/
-.grok/
-.swarm/
-.aider*
-AGENTS.md
-
-# Heavy local media. Anime episodes are served from remote storage in data files.
-public/anime/
-*.mkv
+node_modules
+dist
+.git
+.vercel
+public/Violet Evergarden
+public/anime
+src/encyclopedia/**/*.map

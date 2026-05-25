@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { fetchWikiCategories, fetchWikiPages } from '../lib/wiki.js'
 import { useAuth } from '../contexts/AuthContext.jsx'
 
-const GOLD   = '#d4a017'
-const ACCENT = '#e0524a'
+const GOLD   = '#b08a3a'
+const ACCENT = '#7b3f45'
 
 const WH_CSS = `
   @keyframes whFadeUp  { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:none} }
@@ -30,7 +30,7 @@ function WHStars() {
         <div key={i} style={{
           position:'absolute', left:`${s.x}%`, top:`${s.y}%`,
           width:s.size, height:s.size, borderRadius:'50%',
-          background: s.gold ? 'rgba(212,160,23,.70)' : s.red ? 'rgba(224,82,74,.55)' : 'rgba(255,255,255,.50)',
+          background: s.gold ? 'rgba(176,138,58,.68)' : s.red ? 'rgba(123,63,69,.56)' : 'rgba(236,229,220,.50)',
           animation:`whTwinkle ${s.dur}s ${s.del}s ease-in-out infinite`,
         }} />
       ))}
@@ -43,7 +43,7 @@ function WHScanLine() {
     <div style={{ position:'fixed', inset:0, pointerEvents:'none', zIndex:1, overflow:'hidden' }}>
       <div style={{
         position:'absolute', left:0, right:0, height:2,
-        background:'linear-gradient(90deg,transparent,rgba(212,160,23,.06),rgba(212,160,23,.14),rgba(212,160,23,.06),transparent)',
+        background:'linear-gradient(90deg,transparent,rgba(176,138,58,.06),rgba(123,63,69,.14),rgba(176,138,58,.06),transparent)',
         animation:'whScan 18s linear infinite',
       }} />
     </div>
@@ -229,7 +229,7 @@ export default function WikiHome() {
             <div style={{
               display:'inline-flex', alignItems:'center', gap:8,
               padding:'5px 18px', borderRadius:100,
-              background:'rgba(212,160,23,0.10)', border:'1px solid rgba(212,160,23,0.28)',
+              background:'rgba(176,138,58,0.10)', border:'1px solid rgba(176,138,58,0.28)',
               fontSize:10, fontWeight:800, letterSpacing:'.22em', color:GOLD, textTransform:'uppercase',
               marginBottom:20, animation:'whFadeUp .4s ease both',
             }}>
@@ -283,11 +283,11 @@ export default function WikiHome() {
                   color:'#fff', fontSize:15, outline:'none',
                   transition:'border-color .15s, box-shadow .15s', fontFamily:'inherit',
                 }}
-                onFocus={e => { e.target.style.borderColor='rgba(212,160,23,0.5)'; e.target.style.boxShadow='0 0 0 3px rgba(212,160,23,0.08)' }}
+                onFocus={e => { e.target.style.borderColor='rgba(176,138,58,0.5)'; e.target.style.boxShadow='0 0 0 3px rgba(176,138,58,0.08)' }}
                 onBlur={e  => { e.target.style.borderColor='rgba(255,255,255,0.12)'; e.target.style.boxShadow='none' }}
               />
               {searching && (
-                <div style={{ position:'absolute', right:16, top:'50%', transform:'translateY(-50%)', width:16, height:16, border:'2px solid rgba(212,160,23,0.3)', borderTopColor:GOLD, borderRadius:'50%', animation:'whSpin 0.75s linear infinite' }} />
+                <div style={{ position:'absolute', right:16, top:'50%', transform:'translateY(-50%)', width:16, height:16, border:'2px solid rgba(176,138,58,0.3)', borderTopColor:GOLD, borderRadius:'50%', animation:'whSpin 0.75s linear infinite' }} />
               )}
               {search && !searching && (
                 <button onClick={() => setSearch('')} style={{ position:'absolute', right:14, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', color:'rgba(255,255,255,0.35)', cursor:'pointer', fontSize:16, lineHeight:1 }}>✕</button>
@@ -302,7 +302,7 @@ export default function WikiHome() {
                   background:`linear-gradient(135deg,${GOLD},#e5b83a)`,
                   color:'#1a1200', fontSize:13, fontWeight:800, cursor:'pointer',
                   transition:'all .18s', letterSpacing:'.04em',
-                  boxShadow:`0 6px 24px rgba(212,160,23,0.28)`,
+                  boxShadow:`0 6px 24px rgba(176,138,58,0.28)`,
                   animation:'whFadeUp .4s .14s ease both',
                 }}
                 onMouseEnter={e => { e.currentTarget.style.opacity='.88'; e.currentTarget.style.transform='translateY(-1px)' }}
@@ -347,15 +347,15 @@ export default function WikiHome() {
                       style={{
                         display:'inline-flex', alignItems:'center', gap:6,
                         padding:'9px 18px', borderRadius:100,
-                        border:`1px solid ${active ? c+'55' : 'rgba(255,255,255,0.09)'}`,
-                        background: active ? `${c}14` : 'rgba(255,255,255,0.03)',
-                        color: active ? c : 'rgba(255,255,255,0.40)',
+                        border:`1px solid ${active ? 'rgba(176,138,58,0.45)' : 'rgba(255,255,255,0.09)'}`,
+                        background: active ? 'rgba(123,63,69,0.14)' : 'rgba(255,255,255,0.03)',
+                        color: active ? '#e7ddd2' : 'rgba(236,229,220,0.44)',
                         fontSize:12, fontWeight:700, cursor:'pointer',
                         transition:'all .18s',
-                        boxShadow: active ? `0 0 18px ${c}18` : 'none',
+                        boxShadow: active ? '0 0 18px rgba(123,63,69,0.16)' : 'none',
                       }}
-                      onMouseEnter={e => { if (!active) { e.currentTarget.style.borderColor='rgba(255,255,255,0.18)'; e.currentTarget.style.color='rgba(255,255,255,0.70)' } }}
-                      onMouseLeave={e => { if (!active) { e.currentTarget.style.borderColor='rgba(255,255,255,0.09)'; e.currentTarget.style.color='rgba(255,255,255,0.40)' } }}
+                      onMouseEnter={e => { if (!active) { e.currentTarget.style.borderColor='rgba(176,138,58,0.22)'; e.currentTarget.style.color='rgba(244,241,236,0.72)' } }}
+                      onMouseLeave={e => { if (!active) { e.currentTarget.style.borderColor='rgba(255,255,255,0.09)'; e.currentTarget.style.color='rgba(236,229,220,0.44)' } }}
                     >
                       <span>{t.icon}</span>
                       <span>{t.label}</span>

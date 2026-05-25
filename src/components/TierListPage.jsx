@@ -10,20 +10,19 @@ import {
 import {
   Star, Search, Download, RotateCcw,
   X, Edit3, Check, Trash2, Crown, ArrowLeft,
-  Shuffle, Save, FolderOpen, XCircle,
 } from 'lucide-react'
 
 // ── Tiers config ─────────────────────────────────────────────────────────────
 
 const TIERS = [
-  { id:'top10', label:'TOP 10', color:'#ff4d6d', bg:'linear-gradient(135deg,#3d0d18,#7a1a2e)', glow:'rgba(255,77,109,.50)', icon:<Crown size={13}/> },
-  { id:'s',     label:'S',      color:'#fbbf24', bg:'linear-gradient(135deg,#3a2700,#7a5200)', glow:'rgba(251,191,36,.50)', icon:'⭐' },
-  { id:'a',     label:'A',      color:'#4ade80', bg:'linear-gradient(135deg,#0a3d1a,#157030)', glow:'rgba(74,222,128,.44)', icon:'•' },
-  { id:'b',     label:'B',      color:'#60a5fa', bg:'linear-gradient(135deg,#0d2644,#1a4a80)', glow:'rgba(96,165,250,.44)', icon:'•' },
-  { id:'c',     label:'C',      color:'#c084fc', bg:'linear-gradient(135deg,#1e0c38,#3c1870)', glow:'rgba(192,132,252,.44)', icon:'•' },
-  { id:'d',     label:'D',      color:'#fb923c', bg:'linear-gradient(135deg,#3d1600,#7a3000)', glow:'rgba(251,146,60,.44)', icon:'•' },
-  { id:'f',     label:'F',      color:'#f87171', bg:'linear-gradient(135deg,#3d0c0c,#7a1818)', glow:'rgba(248,113,113,.44)', icon:'•' },
-  { id:'trash', label:'TRASH',  color:'#9ca3af', bg:'linear-gradient(135deg,#1a2028,#2e3742)', glow:'rgba(156,163,175,.28)', icon:<Trash2 size={12}/> },
+  { id:'top10', label:'TOP 10', color:'#a0445c', bg:'linear-gradient(135deg,#241017,#4a1b2a)', glow:'rgba(160,68,92,.35)',  icon:<Crown size={13}/> },
+  { id:'s',     label:'S',      color:'#b6913d', bg:'linear-gradient(135deg,#2b2112,#55401c)', glow:'rgba(182,145,61,.30)',  icon:'⭐' },
+  { id:'a',     label:'A',      color:'#6b8098', bg:'linear-gradient(135deg,#18202a,#263544)', glow:'rgba(107,128,152,.28)', icon:'•' },
+  { id:'b',     label:'B',      color:'#4a86b8', bg:'linear-gradient(135deg,#152330,#21384c)', glow:'rgba(74,134,184,.28)',icon:'•' },
+  { id:'c',     label:'C',      color:'#7b6aa8', bg:'linear-gradient(135deg,#1c1728,#31284b)', glow:'rgba(123,106,168,.28)',icon:'•' },
+  { id:'d',     label:'D',      color:'#b86a42', bg:'linear-gradient(135deg,#261715,#4a2a22)', glow:'rgba(184,106,66,.28)',icon:'•' },
+  { id:'f',     label:'F',      color:'#b44a58', bg:'linear-gradient(135deg,#281317,#4b1b22)', glow:'rgba(180,74,88,.28)', icon:'•' },
+  { id:'trash', label:'TRASH',  color:'#6e7b86', bg:'linear-gradient(135deg,#161c22,#27313a)', glow:'rgba(110,123,134,.22)',icon:<Trash2 size={12}/> },
 ]
 
 // ── Datasets ──────────────────────────────────────────────────────────────────
@@ -660,50 +659,38 @@ function ItemCard({ itemId, allById, compact=false, isDragOverlay=false }) {
 
 // ── Tier row ──────────────────────────────────────────────────────────────────
 
-function TierRow({ tier, items, allById, onClearTier }) {
+function TierRow({ tier, items, allById }) {
   const { isOver, setNodeRef } = useDroppable({ id: tier.id })
   return (
     <div style={{
       display:'flex', alignItems:'stretch',
-      borderBottom:'1px solid rgba(255,255,255,.05)', minHeight:88,
+      borderBottom:'1px solid rgba(255,255,255,.05)', minHeight:96,
       background: isOver ? 'rgba(255,255,255,.04)' : 'transparent',
       transition:'background .2s',
     }}>
       <div style={{
-        width:72, flexShrink:0, background:tier.bg,
-        display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:2,
+        width:76, flexShrink:0, background:tier.bg,
+        display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:3,
         boxShadow: isOver ? `0 0 22px ${tier.glow}` : 'none',
         transition:'box-shadow .25s', position:'relative', overflow:'hidden',
       }}>
         <div style={{ position:'absolute', top:0, bottom:0, width:1, left:0, background:`linear-gradient(to bottom,transparent,${tier.color}88,transparent)` }}/>
-        <span style={{ fontSize: typeof tier.icon === 'string' ? 14 : 11, lineHeight:1 }}>{tier.icon}</span>
+        <span style={{ fontSize: typeof tier.icon === 'string' ? 16 : 12, lineHeight:1 }}>{tier.icon}</span>
         <span style={{
-          fontSize: tier.label.length>2 ? 9 : 20, fontWeight:900, color:'#fff', lineHeight:1,
+          fontSize: tier.label.length>2 ? 10 : 22, fontWeight:900, color:'#fff', lineHeight:1,
           textShadow:`0 0 18px ${tier.glow}`, letterSpacing: tier.label.length>2 ? '.04em' : '-.01em',
           fontFamily:'serif',
         }}>{tier.label}</span>
-        {items.length > 0 && (
-          <span style={{ fontSize:9, color:`${tier.color}aa`, fontWeight:700, marginTop:1 }}>{items.length}</span>
-        )}
-        {items.length > 0 && onClearTier && (
-          <button onClick={() => onClearTier(tier.id)} title="Vider ce tier"
-            style={{ position:'absolute', top:4, right:4, background:'none', border:'none', cursor:'pointer',
-              color:'rgba(255,255,255,.25)', padding:0, lineHeight:1, transition:'color .15s' }}
-            onMouseEnter={e=>e.currentTarget.style.color='rgba(255,100,100,.7)'}
-            onMouseLeave={e=>e.currentTarget.style.color='rgba(255,255,255,.25)'}>
-            <XCircle size={11}/>
-          </button>
-        )}
       </div>
       <div ref={setNodeRef} style={{
-        flex:1, display:'flex', flexWrap:'wrap', gap:5, padding:'7px 10px',
-        alignContent:'flex-start', alignItems:'flex-start', minHeight:88,
+        flex:1, display:'flex', flexWrap:'wrap', gap:6, padding:'8px 12px',
+        alignContent:'flex-start', alignItems:'flex-start', minHeight:96,
         outline: isOver ? `2px dashed ${tier.color}88` : '2px dashed transparent',
         outlineOffset:-4, borderRadius:4, transition:'outline .2s', position:'relative',
       }}>
         {items.length===0 && !isOver && (
           <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center',
-            color:'rgba(255,255,255,.10)', fontSize:11, pointerEvents:'none' }}>
+            color:'rgba(255,255,255,.10)', fontSize:12, pointerEvents:'none' }}>
             Glisse ici
           </div>
         )}
@@ -758,8 +745,8 @@ function ItemPool({ items, allById, favorites, onToggleFav, search, onSearch, ge
         </div>
       </div>
       <div ref={setNodeRef} style={{
-        display:'flex', flexWrap:'wrap', gap:6, padding:'8px 12px',
-        overflowY:'auto', maxHeight:180,
+        display:'flex', flexWrap:'wrap', gap:7, padding:'9px 13px',
+        overflowY:'auto', maxHeight:250,
         outline: isOver ? '2px dashed rgba(255,255,255,.22)' : '2px dashed transparent',
         outlineOffset:-4, borderRadius:6,
         scrollbarWidth:'thin', scrollbarColor:'rgba(255,255,255,.1) transparent',
@@ -883,17 +870,6 @@ export default function TierListPage() {
 
   const reset = () => { if (selectedType) { setBoard(initBoard(selectedType.items)); setFavorites([]); setToast('🔄 Reset !') } }
 
-  const clearTier = (tierId) => {
-    setBoard(prev => {
-      const next = { ...prev }
-      const removed = next[tierId] || []
-      next[tierId] = []
-      next.pool = [...(next.pool || []), ...removed]
-      return next
-    })
-    setToast('🧹 Tier vidé !')
-  }
-
   const randomize = () => {
     if (!selectedType) return
     const all = [...selectedType.items.map(a=>a.id)].sort(()=>Math.random()-.5)
@@ -930,15 +906,14 @@ export default function TierListPage() {
             <TypeSelector key="select" onSelect={handleTypeSelect}/>
           ) : (
             <motion.div key="tierlist" initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }}
-              transition={{ duration:.35 }}
-              style={{ position:'fixed', inset:0, top:72, display:'flex', flexDirection:'column', overflow:'hidden', zIndex:10 }}>
+              transition={{ duration:.35 }} style={{ display:'flex', flexDirection:'column', flex:1 }}>
 
               {/* Toolbar */}
               <header style={{
-                flexShrink:0, zIndex:50,
-                background:'rgba(8,8,16,.92)', backdropFilter:'blur(24px)',
+                position:'sticky', top:72, zIndex:50,
+                background:'rgba(8,8,16,.84)', backdropFilter:'blur(24px)',
                 borderBottom:'1px solid rgba(255,255,255,.07)',
-                padding:'0 16px', display:'flex', alignItems:'center', gap:10, height:54, flexWrap:'nowrap',
+                padding:'0 16px', display:'flex', alignItems:'center', gap:10, height:54, flexWrap:'wrap',
               }}>
                 {/* Back */}
                 <motion.button whileHover={{scale:1.06}} whileTap={{scale:.96}}
@@ -977,23 +952,19 @@ export default function TierListPage() {
                 </div>
 
                 {/* Actions */}
-                <div style={{ display:'flex', gap:6 }}>
+                <div style={{ display:'flex', gap:8 }}>
                   {[
-                    {icon:<Shuffle size={12}/>,   label:'Aléatoire', action:randomize, col:'#c084fc', filled:false},
-                    {icon:<Save size={12}/>,       label:'Sauver',    action:save,     col:'#4ade80', filled:false},
-                    {icon:<FolderOpen size={12}/>, label:'Charger',   action:load,     col:'#60a5fa', filled:false},
-                    {icon:<Download size={12}/>,   label:'PNG',       action:exportPng,col:'#fbbf24', filled:true},
-                    {icon:<RotateCcw size={12}/>,  label:'Reset',     action:reset,    col:'#f87171', filled:false},
+                    {icon:<Download size={12}/>, label:'PNG',   action:exportPng, col:'#b6913d', filled:true},
+                    {icon:<RotateCcw size={12}/>,label:'Reset', action:reset,     col:'#a0445c', filled:false},
                   ].map(b => (
                     <motion.button key={b.label} onClick={b.action} whileHover={{scale:1.05,y:-1}} whileTap={{scale:.96}}
-                      title={b.label}
-                      style={{ display:'flex',alignItems:'center',gap:5,padding:'5px 10px',borderRadius:8,
+                      style={{ display:'flex',alignItems:'center',gap:5,padding:'6px 12px',borderRadius:10,
                         background:b.filled ? `${b.col}18` : 'rgba(255,255,255,.04)',
                         border:`1px solid ${b.filled ? b.col + '35' : 'rgba(255,255,255,.10)'}`,
-                        color:b.filled ? b.col : 'rgba(255,255,255,.65)',
+                        color:b.filled ? b.col : 'rgba(255,255,255,.78)',
                         fontSize:11,fontWeight:700,cursor:'pointer',whiteSpace:'nowrap' }}>
                       {b.icon}
-                      <span style={{ display: window.innerWidth < 860 ? 'none' : 'inline' }}>{b.label}</span>
+                      <span style={{ display: window.innerWidth < 700 ? 'none' : 'inline' }}>{b.label}</span>
                     </motion.button>
                   ))}
                 </div>
@@ -1003,24 +974,19 @@ export default function TierListPage() {
               <DndContext sensors={sensors} collisionDetection={closestCenter}
                 onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
 
-                {/* Tier board — scrollable middle section */}
-                <div style={{ flex:1, overflowY:'auto', minHeight:0,
-                  scrollbarWidth:'thin', scrollbarColor:'rgba(255,255,255,.1) transparent' }}>
-                  <div ref={boardRef} style={{ background:'rgba(8,8,16,.45)', backdropFilter:'blur(12px)' }}>
-                    {board && TIERS.map(tier => (
-                      <TierRow key={tier.id} tier={tier} items={board[tier.id]||[]} allById={allById} onClearTier={clearTier}/>
-                    ))}
-                  </div>
+                {/* Tier board */}
+                <div ref={boardRef} style={{ background:'rgba(8,8,16,.45)', backdropFilter:'blur(12px)', borderBottom:'1px solid rgba(255,255,255,.05)' }}>
+                  {board && TIERS.map(tier => (
+                    <TierRow key={tier.id} tier={tier} items={board[tier.id]||[]} allById={allById}/>
+                  ))}
                 </div>
 
-                {/* Pool — pinned at bottom, always visible */}
+                {/* Pool */}
                 {board && (
-                  <div style={{ flexShrink:0 }}>
-                    <ItemPool items={board.pool||[]} allById={allById}
-                      favorites={favorites} onToggleFav={id=>setFavorites(p=>p.includes(id)?p.filter(f=>f!==id):[...p,id])}
-                      search={search} onSearch={setSearch} genre={genre} onGenre={setGenre}
-                      currentType={selectedType}/>
-                  </div>
+                  <ItemPool items={board.pool||[]} allById={allById}
+                    favorites={favorites} onToggleFav={id=>setFavorites(p=>p.includes(id)?p.filter(f=>f!==id):[...p,id])}
+                    search={search} onSearch={setSearch} genre={genre} onGenre={setGenre}
+                    currentType={selectedType}/>
                 )}
 
                 <DragOverlay>

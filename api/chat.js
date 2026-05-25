@@ -11,7 +11,15 @@ function isValidKey(k) {
 
 function getKeys() {
   return Object.entries(process.env)
-    .filter(([k]) => k === 'GEMINI_API_KEY' || k.startsWith('GEMINI_API_KEY_'))
+    .filter(([k]) =>
+      k === 'GEMINI_API_KEY'
+      || k === 'GOOGLE_GEMINI_API_KEY'
+      || k === 'GEMINI_KEY'
+      || k === 'GOOGLE_API_KEY'
+      || k.startsWith('GEMINI_API_KEY_')
+      || k.startsWith('GOOGLE_GEMINI_API_KEY_')
+      || k.startsWith('GEMINI_KEY_')
+    )
     .map(([, v]) => v?.trim())
     .filter(isValidKey)
 }
@@ -125,31 +133,33 @@ export default async function handler(req, res) {
     .map(m => ({ role: m.role === 'user' ? 'user' : 'model', parts: [{ text: m.text }] }))
 
   try {
-    // Grok Codex Mode (Max Performance) - Priorité absolue
-    const reply = await tryXAI(message.trim(), chatHistory)
-    return res.status(200).json({ reply })
-  } catch (xaiErr) {
-    console.error('[chat] xai primary failed, falling back:', xaiErr?.message)
+    const reply = await tryWithRotation(message.trim(), chatHistory)
+    return res.status(200).json({ reply, provider: 'gemini' })
+  } catch (geminiErr) {
+    console.error('[chat] gemini primary failed, falling back:', geminiErr?.message)
 
     try {
-      const reply = await tryWithRotation(message.trim(), chatHistory)
-      return res.status(200).json({ reply })
-    } catch (err) {
-      const isRateLimit = err?.status === 429
-        || String(err?.message).includes('quota')
-        || String(err?.message).includes('RESOURCE_EXHAUSTED')
-        || err?.message === 'no_valid_keys'
+      const reply = await tryXAI(message.trim(), chatHistory)
+      return res.status(200).json({ reply, provider: 'xai' })
+    } catch (xaiErr) {
+      console.error('[chat] xai fallback failed:', xaiErr?.message)
 
-      if (isRateLimit) {
-        try {
-          const reply = await tryGroq(message.trim(), chatHistory)
-          return res.status(200).json({ reply })
-        } catch (groqErr) {
-          console.error('[chat] groq fallback failed:', groqErr?.message)
-        }
+      try {
+        const reply = await tryGroq(message.trim(), chatHistory)
+        return res.status(200).json({ reply, provider: 'groq' })
+      } catch (groqErr) {
+        console.error('[chat] groq fallback failed:', groqErr?.message)
       }
 
-      console.error('[chat]', err?.message || err)
+      const isRateLimit = geminiErr?.status === 429
+        || String(geminiErr?.message).includes('quota')
+        || String(geminiErr?.message).includes('RESOURCE_EXHAUSTED')
+        || geminiErr?.message === 'no_valid_keys'
+        || xaiErr?.status === 429
+        || String(xaiErr?.message).includes('rate')
+        || String(xaiErr?.message).includes('quota')
+
+      console.error('[chat]', geminiErr?.message || geminiErr)
       if (isRateLimit) return res.status(429).json({ error: 'Je reçois trop de messages en ce moment, réessaie dans quelques secondes !' })
       return res.status(503).json({ error: 'Service unavailable' })
     }

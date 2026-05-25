@@ -3,45 +3,48 @@ import { useLocation } from 'react-router-dom'
 import WikiHome from './WikiHome.jsx'
 import TheoriesHome from './TheoriesHome.jsx'
 
-const GOLD   = '#d4a017'
-const VIOLET = '#a29bfe'
-const BLUE   = '#74b9ff'
+const GOLD   = '#b08a3a'
+const VIOLET = '#6d5f8f'
+const BLUE   = '#587084'
+const BROWN  = '#7b3f45'
 
 const TABS = [
-  { id: 'wiki',     label: 'Wiki',     icon: '📖', color: GOLD        },
-  { id: 'theories', label: 'Théories', icon: '🔮', color: VIOLET      },
-  { id: 'upcoming', label: 'À venir',  icon: '🚀', color: '#34d399'   },
+  { id: 'wiki',     label: 'Wiki',     icon: '📖', color: GOLD  },
+  { id: 'theories', label: 'Théories', icon: '🔮', color: BROWN },
+  { id: 'upcoming', label: 'À venir',  icon: '🚀', color: BLUE  },
 ]
 
 const UPCOMING = [
-  { icon: '🗳️', title: 'Débats communautaires',      desc: 'Votez et débattez en temps réel sur les grandes questions du lore One Piece.',                status: 'planned', color: '#5865f2' },
-  { icon: '📊', title: 'Sondages lore',               desc: 'Participez à des sondages hebdomadaires sur les théories en cours dans le manga.',             status: 'planned', color: '#06b6d4' },
+  { icon: '🎵', title: 'Blind Tests musicaux',       desc: 'Testez votre connaissance des OST One Piece et autres mangas en direct dans le salon vocal.', status: 'dev',     color: VIOLET },
+  { icon: '🗳️', title: 'Débats communautaires',      desc: 'Votez et débattez en temps réel sur les grandes questions du lore One Piece.',                status: 'planned', color: BLUE },
+  { icon: '📊', title: 'Sondages lore',               desc: 'Participez à des sondages hebdomadaires sur les théories en cours dans le manga.',             status: 'planned', color: '#5f7484' },
   { icon: '🏆', title: 'Quiz Wiki',                   desc: 'Des quiz basés sur les articles du wiki pour tester vos connaissances.',                        status: 'planned', color: GOLD      },
-  { icon: '🎙️', title: 'Sessions lore vocales',      desc: 'Sessions vocales dédiées aux analyses, débats et théories avec la communauté.',                 status: 'planned', color: '#e0524a' },
-  { icon: '🔗', title: 'Liens Wiki ↔ Théories',      desc: 'Références croisées automatiques entre articles de lore et théories communautaires.',            status: 'planned', color: '#34d399' },
+  { icon: '🎙️', title: 'Sessions lore vocales',      desc: 'Sessions vocales dédiées aux analyses, débats et théories avec la communauté.',                 status: 'planned', color: BROWN },
+  { icon: '🔗', title: 'Liens Wiki ↔ Théories',      desc: 'Références croisées automatiques entre articles de lore et théories communautaires.',            status: 'planned', color: '#5f766a' },
 ]
 
 const STATUS_STYLE = {
-  dev:     { label: '🔄 En cours', color: '#fdcb6e', bg: 'rgba(253,203,110,0.12)', border: 'rgba(253,203,110,0.28)' },
-  planned: { label: '📅 Prévu',   color: BLUE,      bg: 'rgba(116,185,255,0.08)', border: 'rgba(116,185,255,0.20)' },
+  dev:     { label: '🔄 En cours', color: GOLD, bg: 'rgba(176,138,58,0.12)', border: 'rgba(176,138,58,0.28)' },
+  planned: { label: '📅 Prévu',   color: BLUE, bg: 'rgba(88,112,132,0.10)', border: 'rgba(88,112,132,0.22)' },
 }
+
 
 function UpcomingTab() {
   return (
     <div style={{ padding: '60px 20px 100px' }}>
       <div style={{ maxWidth: 860, margin: '0 auto' }}>
         <div style={{ textAlign: 'center', marginBottom: 48 }}>
-          <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.28em', color: GOLD, textTransform: 'uppercase', marginBottom: 12 }}>
+          <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.28em', color: BROWN, textTransform: 'uppercase', marginBottom: 12 }}>
             Développement actif
           </div>
           <h2 style={{
             fontFamily: 'var(--display)', fontWeight: 900,
             fontSize: 'clamp(28px,5vw,46px)',
-            color: '#fff', margin: '0 0 12px',
+          color: '#f4f1ec', margin: '0 0 12px',
           }}>
             Bientôt dans Brams
           </h2>
-          <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.35)', maxWidth: 440, margin: '0 auto', lineHeight: 1.7 }}>
+          <p style={{ fontSize: 14, color: 'rgba(236,229,220,0.44)', maxWidth: 440, margin: '0 auto', lineHeight: 1.7 }}>
             Fonctionnalités en développement ou planifiées pour les prochaines semaines.
           </p>
         </div>
@@ -122,14 +125,14 @@ export default function WikiTheoryHub() {
                   display: 'inline-flex', alignItems: 'center', gap: 7,
                   padding: '10px 20px', borderRadius: 100,
                   border: `1px solid ${active ? `${tab.color}55` : 'rgba(255,255,255,0.09)'}`,
-                  background: active ? `${tab.color}14` : 'rgba(255,255,255,0.03)',
-                  color: active ? tab.color : 'rgba(255,255,255,0.40)',
+                  background: active ? `${tab.color}16` : 'rgba(255,255,255,0.03)',
+                  color: active ? tab.color : 'rgba(236,229,220,0.44)',
                   fontSize: 13, fontWeight: 700, cursor: 'pointer',
                   transition: 'all .18s',
                   boxShadow: active ? `0 0 20px ${tab.color}18` : 'none',
                 }}
-                onMouseEnter={e => { if (!active) { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.18)'; e.currentTarget.style.color = 'rgba(255,255,255,0.72)' } }}
-                onMouseLeave={e => { if (!active) { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.09)'; e.currentTarget.style.color = 'rgba(255,255,255,0.40)' } }}
+                onMouseEnter={e => { if (!active) { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.18)'; e.currentTarget.style.color = 'rgba(244,241,236,0.74)' } }}
+                onMouseLeave={e => { if (!active) { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.09)'; e.currentTarget.style.color = 'rgba(236,229,220,0.44)' } }}
               >
                 <span>{tab.icon}</span>
                 <span>{tab.label}</span>

@@ -4,8 +4,8 @@ import { fetchWikiPage, fetchWikiCategories, createWikiPage, updateWikiPage } fr
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { md } from '../lib/markdown.js'
 
-const GOLD  = '#d4a017'
-const RED   = '#e0524a'
+const GOLD  = '#b08a3a'
+const RED   = '#7b3f45'
 
 const WE_CSS = `
   @keyframes weFadeUp  { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:none} }
@@ -26,7 +26,7 @@ function WEStars() {
         <div key={i} style={{
           position:'absolute', left:`${s.x}%`, top:`${s.y}%`,
           width:s.size, height:s.size, borderRadius:'50%',
-          background: s.gold ? 'rgba(212,160,23,.65)' : 'rgba(255,255,255,.50)',
+          background: s.gold ? 'rgba(176,138,58,.65)' : 'rgba(236,229,220,.50)',
           animation:`weTwinkle ${s.dur}s ${s.del}s ease-in-out infinite`,
         }} />
       ))}
@@ -39,7 +39,7 @@ function WEScanLine() {
     <div style={{ position:'fixed', inset:0, pointerEvents:'none', zIndex:1, overflow:'hidden' }}>
       <div style={{
         position:'absolute', left:0, right:0, height:2,
-        background:'linear-gradient(90deg,transparent,rgba(212,160,23,.06),rgba(212,160,23,.14),rgba(212,160,23,.06),transparent)',
+        background:'linear-gradient(90deg,transparent,rgba(176,138,58,.06),rgba(123,63,69,.14),rgba(176,138,58,.06),transparent)',
         animation:'weScan 18s linear infinite',
       }} />
     </div>
@@ -80,7 +80,7 @@ function FocusInput({ style, ...props }) {
   return (
     <input
       style={{ ...inputBase, ...style }}
-      onFocus={e => { e.target.style.borderColor='rgba(212,160,23,0.55)'; e.target.style.boxShadow='0 0 0 3px rgba(212,160,23,0.09)' }}
+      onFocus={e => { e.target.style.borderColor='rgba(176,138,58,0.55)'; e.target.style.boxShadow='0 0 0 3px rgba(176,138,58,0.09)' }}
       onBlur={e  => { e.target.style.borderColor='rgba(255,255,255,0.12)'; e.target.style.boxShadow='none' }}
       {...props}
     />
@@ -91,7 +91,7 @@ function FocusTextarea({ style, ...props }) {
   return (
     <textarea
       style={{ ...inputBase, resize:'vertical', lineHeight:1.65, fontFamily:'monospace', fontSize:13, ...style }}
-      onFocus={e => { e.target.style.borderColor='rgba(212,160,23,0.55)'; e.target.style.boxShadow='0 0 0 3px rgba(212,160,23,0.09)' }}
+      onFocus={e => { e.target.style.borderColor='rgba(176,138,58,0.55)'; e.target.style.boxShadow='0 0 0 3px rgba(176,138,58,0.09)' }}
       onBlur={e  => { e.target.style.borderColor='rgba(255,255,255,0.12)'; e.target.style.boxShadow='none' }}
       {...props}
     />
@@ -185,7 +185,7 @@ export default function WikiEditor() {
         <div style={{ fontFamily:"'Pirata One',cursive", fontSize:32, color:'#fff' }}>Connexion requise</div>
         <div style={{ fontSize:14, color:'rgba(255,255,255,0.40)', lineHeight:1.7 }}>Tu dois être connecté pour proposer un article.</div>
         <div style={{ display:'flex', gap:12, marginTop:8 }}>
-          <button onClick={() => document.dispatchEvent(new CustomEvent('open-auth-modal'))} style={{ padding:'12px 26px', borderRadius:100, border:'none', background:`linear-gradient(135deg,${GOLD},#e5b83a)`, color:'#1a1200', cursor:'pointer', fontSize:13, fontWeight:800 }}>
+          <button onClick={() => document.dispatchEvent(new CustomEvent('open-auth-modal'))} style={{ padding:'12px 26px', borderRadius:100, border:'none', background:`linear-gradient(135deg,#8e6d31,#b08a3a)`, color:'#1a1200', cursor:'pointer', fontSize:13, fontWeight:800 }}>
             Se connecter
           </button>
           <button onClick={() => navigate('/wiki')} style={{ padding:'12px 22px', borderRadius:100, border:'1px solid rgba(255,255,255,0.14)', background:'rgba(255,255,255,0.04)', color:'rgba(255,255,255,0.60)', cursor:'pointer', fontSize:13, fontWeight:600 }}>
@@ -199,7 +199,7 @@ export default function WikiEditor() {
   if (loadingPage) return (
     <Shell>
       <div style={{ minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column', gap:14 }}>
-        <div style={{ width:38, height:38, border:'3px solid rgba(212,160,23,0.2)', borderTopColor:GOLD, borderRadius:'50%', animation:'weSpin .75s linear infinite' }} />
+        <div style={{ width:38, height:38, border:'3px solid rgba(176,138,58,0.2)', borderTopColor:GOLD, borderRadius:'50%', animation:'weSpin .75s linear infinite' }} />
         <div style={{ fontSize:13, color:'rgba(255,255,255,0.30)' }}>Chargement…</div>
       </div>
     </Shell>
@@ -214,7 +214,7 @@ export default function WikiEditor() {
         <div style={{ fontSize:14, color:'rgba(255,255,255,0.45)', maxWidth:400, lineHeight:1.7 }}>
           Ton article a été soumis pour modération. Un admin le publiera prochainement.
         </div>
-        <button onClick={() => navigate('/wiki')} style={{ padding:'12px 28px', borderRadius:100, border:'none', background:`linear-gradient(135deg,${GOLD},#e5b83a)`, color:'#1a1200', cursor:'pointer', fontSize:13, fontWeight:800 }}>
+        <button onClick={() => navigate('/wiki')} style={{ padding:'12px 28px', borderRadius:100, border:'none', background:`linear-gradient(135deg,#8e6d31,#b08a3a)`, color:'#1a1200', cursor:'pointer', fontSize:13, fontWeight:800 }}>
           Retour au Wiki
         </button>
       </div>
@@ -236,7 +236,7 @@ export default function WikiEditor() {
           </div>
           <div style={{
             display:'inline-flex', alignItems:'center', gap:8, padding:'5px 16px', borderRadius:100,
-            background:'rgba(212,160,23,0.10)', border:'1px solid rgba(212,160,23,0.28)',
+            background:'rgba(176,138,58,0.10)', border:'1px solid rgba(176,138,58,0.28)',
             fontSize:10, fontWeight:800, letterSpacing:'.22em', color:GOLD, textTransform:'uppercase', marginBottom:18,
           }}>
             ✍️ {isEdit ? 'Modification' : 'Contribution'}
@@ -412,11 +412,11 @@ export default function WikiEditor() {
               disabled={loading}
               style={{
                 padding:'13px 30px', borderRadius:100, border:'none',
-                background: loading ? 'rgba(212,160,23,0.40)' : `linear-gradient(135deg,${GOLD},#e5b83a)`,
+                background: loading ? 'rgba(176,138,58,0.40)' : `linear-gradient(135deg,#8e6d31,#b08a3a)`,
                 color:'#1a1200', fontSize:13, fontWeight:800,
                 cursor: loading ? 'not-allowed' : 'pointer',
                 letterSpacing:'.04em',
-                boxShadow: loading ? 'none' : `0 6px 24px rgba(212,160,23,0.28)`,
+                boxShadow: loading ? 'none' : `0 6px 24px rgba(176,138,58,0.28)`,
                 transition:'all .18s',
               }}
             >

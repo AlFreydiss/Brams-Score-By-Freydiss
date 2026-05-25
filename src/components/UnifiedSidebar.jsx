@@ -343,7 +343,7 @@ export default function UnifiedSidebar() {
         .hub-tab-btn.bt-tab.active { border-bottom-color:#d4a017; color:#f0be46; background:rgba(212,160,23,.09); }
 
         .hub-event-card {
-          display:flex; align-items:center; gap:16px; padding:14px 16px;
+          display:flex; align-items:center; gap:16px; padding:13px 16px;
           background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08);
           border-left:3px solid var(--ec); border-radius:12px;
           transition:background .18s, transform .18s, box-shadow .18s;
@@ -354,26 +354,25 @@ export default function UnifiedSidebar() {
           box-shadow:0 8px 24px rgba(0,0,0,.3), 0 0 0 1px rgba(255,255,255,.06);
         }
         .hub-event-date {
-          flex-shrink:0; width:48px; height:48px; border-radius:10px;
+          flex-shrink:0; width:46px; height:46px; border-radius:10px;
           background:color-mix(in srgb, var(--ec) 14%, transparent);
           border:1px solid color-mix(in srgb, var(--ec) 30%, transparent);
-          display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+          display:flex; flex-direction:column; align-items:center; justify-content:center;
           box-shadow:0 4px 14px color-mix(in srgb, var(--ec) 15%, transparent);
         }
-        .hub-event-day { font-size:17px; font-weight:900; color:var(--ec); line-height:1; }
-        .hub-event-mon { font-size:8.5px; font-weight:800; color:color-mix(in srgb, var(--ec) 75%, transparent); letter-spacing:.06em; }
-        .hub-event-body { flex:1; min-width:0; display:flex; flex-direction:column; gap:5px; }
-        .hub-event-title { font-size:12.5px; font-weight:700; color:rgba(255,255,255,.9); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; line-height:1.3; }
-        .hub-event-countdown { font-size:10.5px; font-weight:700; display:inline-flex; align-items:center; gap:5px; line-height:1; }
+        .hub-event-day { font-size:16px; font-weight:900; color:var(--ec); line-height:1; }
+        .hub-event-mon { font-size:8px; font-weight:800; color:color-mix(in srgb, var(--ec) 75%, transparent); letter-spacing:.06em; margin-top:1px; }
+        .hub-event-body { flex:1; min-width:0; padding-left:2px; }
+        .hub-event-title { font-size:12.5px; font-weight:700; color:rgba(255,255,255,.9); margin-bottom:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .hub-event-countdown { font-size:10.5px; font-weight:700; display:inline-flex; align-items:center; gap:5px; }
         .hub-event-dot { width:5px; height:5px; border-radius:50%; box-shadow:0 0 6px currentColor; flex-shrink:0; }
         .hub-event-status {
           flex-shrink:0; font-size:8px; font-weight:800; letter-spacing:.08em;
-          padding:4px 9px; border-radius:999px; border:1px solid; white-space:nowrap;
-          align-self:center;
+          padding:3px 8px; border-radius:999px; border:1px solid; white-space:nowrap;
         }
 
         .hub-schedule-row {
-          display:flex; align-items:center; gap:12px; padding:9px 16px;
+          display:flex; align-items:center; gap:12; padding:9px 16px;
           transition:background .15s; border-left:2px solid transparent;
         }
         .hub-schedule-row.today-row { background:rgba(212,160,23,.07); border-left-color:#d4a017; }
@@ -408,7 +407,7 @@ export default function UnifiedSidebar() {
         }
 
         .hub-bt-stat {
-          display:flex; flex-direction:column; align-items:center; gap:5px;
+          display:flex; flex-direction:column; align-items:center; gap:5;
           padding:12px 8px; border-radius:12px;
           background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.07);
           transition:background .2s, transform .2s;
@@ -429,7 +428,7 @@ export default function UnifiedSidebar() {
         borderRadius:22, overflow:'hidden',
         animation:'hubIn .5s .1s cubic-bezier(.22,1,.36,1) both',
         boxShadow:'0 40px 100px rgba(0,0,0,.7), 0 0 80px rgba(88,101,242,.07), 0 0 0 1px rgba(255,255,255,.05) inset, 0 1px 0 rgba(255,255,255,.14) inset',
-        maxHeight:860,
+        maxHeight:780,
       }}>
 
         {/* ── Header ────────────────────────────────────────────────────────── */}
@@ -495,24 +494,14 @@ export default function UnifiedSidebar() {
 
           {/* ── Calendrier ── */}
           {tab === 'calendrier' && (
-            <div style={{ padding:'18px 18px 24px', animation:'hubIn .2s ease-out both' }}>
+            <div style={{ padding:'16px 18px', animation:'hubIn .2s ease-out both' }}>
               <MiniCalendar events={EVENTS} />
               {upcoming.length > 0 && (
-                <div style={{
-                  marginTop: 32,
-                  paddingTop: 20,
-                  borderTop: '1px solid rgba(255,255,255,.06)',
-                }}>
-                  <div style={{
-                    fontSize: 10, fontWeight: 800,
-                    color: 'rgba(255,255,255,.38)',
-                    letterSpacing: '.14em',
-                    marginBottom: 14,
-                    textTransform: 'uppercase',
-                  }}>
-                    Prochains événements
+                <div style={{ marginTop:20 }}>
+                  <div style={{ fontSize:9, fontWeight:800, color:'rgba(255,255,255,.38)', letterSpacing:'.14em', marginBottom:10 }}>
+                    PROCHAINS ÉVÉNEMENTS
                   </div>
-                  <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+                  <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
                     {upcoming.map(ev => <EventCard key={ev.id} event={ev} />)}
                   </div>
                 </div>
