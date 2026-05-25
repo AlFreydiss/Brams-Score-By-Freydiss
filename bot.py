@@ -274,22 +274,23 @@ _FREYDISS_TYPO_DELAY = 30
 _FREYDISS_PING_CD:   dict[str, float] = {}
 _FREYDISS_PING_DELAY = 45
 
-# ── VINN (soumise de Freydiss) ─────────────────────────────────────
-_VINN_ID         = 1233882334856614020
-_VINN_PING_CD:   dict[str, float] = {}
-_VINN_PING_DELAY = 45
-
-_VINN_PING_HYPE = [
-    f"😏 ah <@{_FREYDISS_ID}> ton @AbdosDeFreydiss est dans le chat... ta soumise préférée 😭💅",
-    f"👀 quelqu'un a tagué VINN... celle qui a mis **Al Freydiss** en display name... du dévouement ça 😤👑",
-    f"😂 `.c0ld19._` aka **Abdos de Freydiss** aka la fan n°1 de <@{_FREYDISS_ID}> 🫀",
-    f"💅 VINN taguée. Vous saviez qu'elle s'appelle littéralement **Abdos de Freydiss** ? Par choix ? 😭👑",
-    f"🔔 ping sur la soumise officielle de <@{_FREYDISS_ID}> — elle va répondre en moins de 2 secondes chrono 😏",
-    f"👑 ah `.c0ld19._`... celle qui porte le nom du roi sur son profil... respect à sa dévotion 🫡",
-    f"😭 VINN taguée. Quelqu'un a vérifié si elle avait pas mis une photo de <@{_FREYDISS_ID}> en fond aussi ? 💀",
-    f"🐐 son display name c'est **Abdos de Freydiss**... je dis ça je dis rien 👀💅",
-    f"😤 la voilà ! La soumise du roi <@{_FREYDISS_ID}> en personne — traitez-la bien elle a bon goût 👑",
-    f"💙 VINN dans le chat... la loyale... la dévouée... celle qui a tout compris sur <@{_FREYDISS_ID}> 😭🏴‍☠️",
+# Quand quelqu'un @mentionne Amel
+_AMEL_ID = 1495896013037113366
+_AMEL_PING_CD: dict[str, float] = {}
+_AMEL_PING_DELAY = 45
+_AMEL_PING_HYPE = [
+    "Amel mentionnee... attention, c'est son tout, son bebe d'amour, sa cherie.",
+    "On vient de taguer Amel. Respectez la reine, c'est tout pour Freydiss.",
+    "Amel dans le chat ? C'est son bebe d'amour, sa femme, sa preferee.",
+    "Ping Amel detecte. Brams Score confirme : c'est son tout.",
+    "Vous avez mentionne Amel... la cherie officielle, le tresor de Freydiss.",
+    "Amel taguee. Le serveur se calme, on parle de son coeur la.",
+    "C'est Amel que vous venez de mentionner ? Son bebe, son amour, son tout.",
+    "Alerte Amel : sa femme, sa cherie, sa reine. Faites attention.",
+    "Amel mentionnee. Meme Brams Score sait que c'est son tout.",
+    "On parle d'Amel la ? C'est pas n'importe qui, c'est son bebe d'amour.",
+    "Tag valide : Amel, la cherie de Freydiss, son tresor.",
+    "Amel apparait dans les mentions. Respect maximum pour sa reine.",
 ]
 
 # Toutes les variantes correctes du nom (insensible à la casse)
@@ -1111,7 +1112,7 @@ async def flush_dirty_loop():
         (_FREYDISS_DEF_CD,  _FREYDISS_DEF_DELAY),
         (_FREYDISS_TYPO_CD, _FREYDISS_TYPO_DELAY),
         (_FREYDISS_PING_CD, _FREYDISS_PING_DELAY),
-        (_VINN_PING_CD,     _VINN_PING_DELAY),
+        (_AMEL_PING_CD, _AMEL_PING_DELAY),
     ):
         expired_fr = [k for k, v in cd_dict.items() if _now_f - v > cd_delay * 3]
         for k in expired_fr:
@@ -2569,8 +2570,24 @@ async def on_message(message):
                 except Exception:
                     pass
 
-    # ── Culte Freydiss ───────────────────────────────────────────────
+    # ── Culte Amel ──────────────────────────────────────────────────
     _cid = str(message.channel.id)
+    _amel_pinged = (
+        any(m.id == _AMEL_ID for m in message.mentions)
+        or f"<@{_AMEL_ID}>" in message.content
+        or f"<@!{_AMEL_ID}>" in message.content
+    )
+    if (
+        _amel_pinged
+        and now_f - _AMEL_PING_CD.get(_cid, 0) >= _AMEL_PING_DELAY
+    ):
+        _AMEL_PING_CD[_cid] = now_f
+        try:
+            await message.channel.send(random.choice(_AMEL_PING_HYPE))
+        except Exception:
+            pass
+
+    # ── Culte Freydiss ───────────────────────────────────────────────
     _has_correct_name = bool(_RE_FREYDISS_NAME.search(message.content))
 
     # Freydiss parle lui-même → hommage
@@ -2585,19 +2602,6 @@ async def on_message(message):
             pass
 
     elif message.author.id != _FREYDISS_ID:
-        # @mention de VINN → mettre Freydiss sur un piédestal
-        _vinn_pinged = (
-            any(m.id == _VINN_ID for m in message.mentions)
-            or f"<@{_VINN_ID}>" in message.content
-            or f"<@!{_VINN_ID}>" in message.content
-        )
-        if _vinn_pinged and now_f - _VINN_PING_CD.get(_cid, 0) >= _VINN_PING_DELAY:
-            _VINN_PING_CD[_cid] = now_f
-            try:
-                await message.channel.send(random.choice(_VINN_PING_HYPE))
-            except Exception:
-                pass
-
         # @mention directe de Freydiss → soumise mode
         _freydiss_pinged = (
             any(m.id == _FREYDISS_ID for m in message.mentions)
