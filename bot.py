@@ -274,22 +274,17 @@ _FREYDISS_TYPO_DELAY = 30
 _FREYDISS_PING_CD:   dict[str, float] = {}
 _FREYDISS_PING_DELAY = 45
 
-# ── VINN (soumise de Freydiss) ─────────────────────────────────────
+# ── VINN ───────────────────────────────────────────────────────────
 _VINN_ID         = 1233882334856614020
 _VINN_PING_CD:   dict[str, float] = {}
 _VINN_PING_DELAY = 45
 
 _VINN_PING_HYPE = [
-    f"😏 ah <@{_FREYDISS_ID}> ton @AbdosDeFreydiss est dans le chat... ta soumise préférée 😭💅",
-    f"👀 quelqu'un a tagué VINN... celle qui a mis **Al Freydiss** en display name... du dévouement ça 😤👑",
-    f"😂 `.c0ld19._` aka **Abdos de Freydiss** aka la fan n°1 de <@{_FREYDISS_ID}> 🫀",
-    f"💅 VINN taguée. Vous saviez qu'elle s'appelle littéralement **Abdos de Freydiss** ? Par choix ? 😭👑",
-    f"🔔 ping sur la soumise officielle de <@{_FREYDISS_ID}> — elle va répondre en moins de 2 secondes chrono 😏",
-    f"👑 ah `.c0ld19._`... celle qui porte le nom du roi sur son profil... respect à sa dévotion 🫡",
-    f"😭 VINN taguée. Quelqu'un a vérifié si elle avait pas mis une photo de <@{_FREYDISS_ID}> en fond aussi ? 💀",
-    f"🐐 son display name c'est **Abdos de Freydiss**... je dis ça je dis rien 👀💅",
-    f"😤 la voilà ! La soumise du roi <@{_FREYDISS_ID}> en personne — traitez-la bien elle a bon goût 👑",
-    f"💙 VINN dans le chat... la loyale... la dévouée... celle qui a tout compris sur <@{_FREYDISS_ID}> 😭🏴‍☠️",
+    "🔔 VINN a été mentionnée.",
+    "👀 VINN dans le chat.",
+    "✨ Mention de VINN détectée.",
+    "📣 VINN est appelée.",
+    "💬 On parle de VINN ici.",
 ]
 
 # Toutes les variantes correctes du nom (insensible à la casse)
