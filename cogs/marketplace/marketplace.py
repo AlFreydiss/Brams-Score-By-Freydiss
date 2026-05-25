@@ -60,9 +60,9 @@ class MarketplaceCog(commands.Cog):
     async def cog_unload(self):
         self._expire_check.cancel()
 
-    # ── /vendre ───────────────────────────────────────────────────
+    # ── /vendre_annonce ────────────────────────────────────────────
 
-    @app_commands.command(name="vendre", description="Publier une annonce dans le marketplace 🏪")
+    @app_commands.command(name="vendre_annonce", description="Publier une annonce dans le marketplace 🏪")
     @app_commands.guilds(*GUILD_IDS)
     async def vendre(self, interaction: discord.Interaction):
         await interaction.response.send_message(

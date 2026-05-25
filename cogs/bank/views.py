@@ -708,7 +708,7 @@ class PillageView(discord.ui.View):
         self.guild_id = guild_id
         self._target: discord.Member | None = None
 
-    @discord.ui.user_select(placeholder="Choisis ta cible...", min_values=1, max_values=1, row=0)
+    @discord.ui.select(cls=discord.ui.UserSelect, placeholder="Choisis ta cible...", min_values=1, max_values=1, row=0)
     async def cible_select(self, i: discord.Interaction, select: discord.ui.UserSelect):
         if not is_owner(self.uid, i):
             await deny(i); return

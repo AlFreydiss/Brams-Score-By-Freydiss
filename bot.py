@@ -1906,13 +1906,6 @@ async def on_ready():
     print(f"[BOT] Connecte : {bot.user}")
     init_db()
 
-    # Charge le cog marketplace (idempotent)
-    if not bot.cogs.get("MarketplaceCog"):
-        try:
-            await bot.load_extension("cogs.marketplace.marketplace")
-            print("[BOT] Cog marketplace chargé")
-        except Exception as e:
-            print(f"[BOT] Erreur chargement marketplace: {e}")
     if _HTTP is None or _HTTP.closed:
         _HTTP = aiohttp.ClientSession()
 
@@ -7890,7 +7883,7 @@ async def setup_hook():
         return
     _COMMANDS_SYNCED = True
     # Chargement des cogs
-    for ext in ("cogs.duel", "cogs.profiles", "cogs.crews", "cogs.banque", "cogs.bank", "cogs.jeux", "cogs.info", "cogs.onboarding_welcome", "cogs.onboarding", "cogs.support.tickets", "cogs.annonces", "cogs.piscine"):
+    for ext in ("cogs.duel", "cogs.profiles", "cogs.crews", "cogs.banque", "cogs.bank", "cogs.jeux", "cogs.info", "cogs.onboarding_welcome", "cogs.onboarding", "cogs.support.tickets", "cogs.annonces", "cogs.piscine", "cogs.marketplace.marketplace"):
         try:
             await bot.load_extension(ext)
             print(f"[COG] {ext} chargé ✅")
@@ -7905,5 +7898,11 @@ async def setup_hook():
         except Exception as e:
             print(f"[SYNC] Erreur sync {gid}: {e}")
 
+
+if not TOKEN:
+    raise SystemExit("DISCORD_TOKEN manquant: configure la variable sur Railway.")
+
+if not SUPABASE_URL:
+    raise SystemExit("SUPABASE_URL manquant: configure la variable sur Railway.")
 
 bot.run(TOKEN)

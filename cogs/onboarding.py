@@ -2,11 +2,12 @@ import os
 import json
 import asyncio
 import secrets
+from datetime import datetime, timezone
 
+import aiohttp
 import discord
 from discord import app_commands
 from discord.ext import commands, tasks
-from supabase import create_client, Client
 
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
@@ -28,29 +29,57 @@ class Onboarding(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         if SUPABASE_URL and SUPABASE_SERVICE_KEY:
-            self.supa: Client | None = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+            self.enabled = True
             self.poll_responses.start()
         else:
-            self.supa = None
+            self.enabled = False
             print("[onboarding] SUPABASE_URL/SUPABASE_SERVICE_KEY manquants — cog désactivé")
 
     def cog_unload(self):
-        if self.supa:
+        if self.enabled:
             self.poll_responses.cancel()
+
+    async def _rest(self, method: str, table: str, *, params: dict | None = None, json_body=None):
+        if not self.enabled:
+            raise RuntimeError("Supabase onboarding non configuré")
+        base = SUPABASE_URL.rstrip("/")
+        headers = {
+            "apikey": SUPABASE_SERVICE_KEY,
+            "Authorization": f"Bearer {SUPABASE_SERVICE_KEY}",
+            "Content-Type": "application/json",
+        }
+        if method.upper() in {"POST", "PATCH"}:
+            headers["Prefer"] = "return=minimal"
+        timeout = aiohttp.ClientTimeout(total=12)
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with session.request(
+                method,
+                f"{base}/rest/v1/{table}",
+                headers=headers,
+                params=params,
+                json=json_body,
+            ) as resp:
+                if resp.status >= 400:
+                    body = await resp.text()
+                    raise RuntimeError(f"HTTP {resp.status}: {body[:300]}")
+                if resp.status == 204:
+                    return None
+                text = await resp.text()
+                return json.loads(text) if text else None
 
     # ------------------------------------------------------------------
     # Helper interne : génère un token et envoie le lien en DM
     # ------------------------------------------------------------------
     async def _send_onboarding_dm(self, user: discord.User | discord.Member, guild_id: int) -> bool:
-        if not self.supa:
+        if not self.enabled:
             return False
         token = secrets.token_urlsafe(16)
         try:
-            self.supa.table("onboarding_tokens").insert({
-                "token": token,
-                "discord_user_id": str(user.id),
-                "guild_id": str(guild_id),
-            }).execute()
+            await self._rest("POST", "onboarding_tokens", json_body={
+                    "token": token,
+                    "discord_user_id": str(user.id),
+                    "guild_id": str(guild_id),
+                })
         except Exception as e:
             print(f"[onboarding] erreur insert token: {e}")
             return False
@@ -89,7 +118,7 @@ class Onboarding(commands.Cog):
         description="Modifie tes centres d'intérêt (reçois un nouveau lien en DM).",
     )
     async def modifier_onboarding_cmd(self, interaction: discord.Interaction):
-        if not self.supa:
+        if not self.enabled:
             await interaction.response.send_message(
                 "❌ L'onboarding n'est pas configuré sur ce bot.", ephemeral=True
             )
@@ -101,11 +130,11 @@ class Onboarding(commands.Cog):
         else:
             token = secrets.token_urlsafe(16)
             try:
-                self.supa.table("onboarding_tokens").insert({
+                await self._rest("POST", "onboarding_tokens", json_body={
                     "token": token,
                     "discord_user_id": str(interaction.user.id),
                     "guild_id": str(interaction.guild_id),
-                }).execute()
+                })
                 link = f"{ONBOARDING_URL}/?token={token}"
                 await interaction.followup.send(
                     f"⚠️ Tes DMs sont fermés. Voici ton lien : {link}", ephemeral=True
@@ -119,19 +148,17 @@ class Onboarding(commands.Cog):
     @tasks.loop(seconds=10)
     async def poll_responses(self):
         try:
-            res = (
-                self.supa.table("onboarding_responses")
-                .select("*")
-                .eq("processed", False)
-                .order("submitted_at")
-                .limit(20)
-                .execute()
-            )
+            rows = await self._rest("GET", "onboarding_responses", params={
+                "select": "*",
+                "processed": "is.false",
+                "order": "submitted_at.asc",
+                "limit": "20",
+            })
         except Exception as e:
             print(f"[onboarding] erreur de polling: {e}")
             return
 
-        for row in res.data or []:
+        for row in rows or []:
             await self._handle_response(row)
 
     @poll_responses.before_loop
@@ -199,9 +226,15 @@ class Onboarding(commands.Cog):
             print(f"[onboarding] erreur save profiles: {e}")
 
         try:
-            self.supa.table("onboarding_responses").update(
-                {"processed": True, "processed_at": "now()"}
-            ).eq("id", row["id"]).execute()
+            await self._rest(
+                "PATCH",
+                "onboarding_responses",
+                params={"id": f"eq.{row['id']}"},
+                json_body={
+                    "processed": True,
+                    "processed_at": datetime.now(timezone.utc).isoformat(),
+                },
+            )
         except Exception as e:
             print(f"[onboarding] erreur update processed: {e}")
 
