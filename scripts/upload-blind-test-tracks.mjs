@@ -177,6 +177,61 @@ const TRACKS = [
     r2Key: 'blind-test/aot-op7.mp4',
     label: 'Attack on Titan OP7 - The Rumbling',
   },
+  {
+    localPath: 'C:\\Users\\Feydi\\Downloads\\My Hero Academia - Opening 6 [4K 60FPS  Creditless  CC].mp4',
+    r2Key: 'blind-test/mha-op6.mp4',
+    label: 'My Hero Academia OP6 - Polaris',
+  },
+  {
+    localPath: 'C:\\Users\\Feydi\\Downloads\\Mirai NikkiFuture Diary - Opening 1 - HD - With Lyrics.mp4',
+    r2Key: 'blind-test/mirai-nikki-op1.mp4',
+    label: 'Future Diary OP1 - Kuusou Mesorogiwi',
+  },
+  {
+    localPath: 'C:\\Users\\Feydi\\Downloads\\Jujutsu Kaisen - Opening 1 v1 [4K 60FPS  Creditless  CC].mp4',
+    r2Key: 'blind-test/jjk-op1.mp4',
+    label: 'Jujutsu Kaisen OP1 - Kaikai Kitan',
+  },
+  {
+    localPath: "C:\\Users\\Feydi\\Downloads\\JoJo's Bizarre Adventure - Opening 10 v1 [4K 60FPS _ Creditless _ CC].mp4",
+    r2Key: 'blind-test/jojo-op10.mp4',
+    label: "JoJo's Bizarre Adventure OP10 - Traitor's Requiem",
+  },
+  {
+    localPath: 'C:\\Users\\Feydi\\Downloads\\Naruto Shippuden Op_ Opening 14 [4K 60 FSP].mp4',
+    r2Key: 'blind-test/ns-op14.mp4',
+    label: 'Naruto Shippuden OP14 - Tsuki no Ookisa',
+  },
+  {
+    localPath: 'C:\\Users\\Feydi\\Downloads\\Kaguya-sama_ Love is War - Opening 1 [4K 60FPS _ Creditless _ CC].mp4',
+    r2Key: 'blind-test/kaguya-op1.mp4',
+    label: 'Kaguya-sama OP1 - Love Dramatic',
+  },
+  {
+    localPath: 'C:\\Users\\Feydi\\Downloads\\Levius OP _ Wit and Love.mp4',
+    r2Key: 'blind-test/levius-op1.mp4',
+    label: 'Levius OP1 - Wit and Love',
+  },
+  {
+    localPath: 'C:\\Users\\Feydi\\Downloads\\Carole & Tuesday OP.mp4',
+    r2Key: 'blind-test/carole-tuesday-op1.mp4',
+    label: 'Carole & Tuesday OP1 - Kiss Me',
+  },
+  {
+    localPath: 'C:\\Users\\Feydi\\Downloads\\「Creditless」No Game No Life OP _ Opening「UHD 60FPS」.mp4',
+    r2Key: 'blind-test/ngnl-op1.mp4',
+    label: 'No Game No Life OP1 - This game',
+  },
+  {
+    localPath: 'C:\\Users\\Feydi\\Downloads\\One Piece OP 13 - One Day _ 4K-24FPS _ Creditless.mp4',
+    r2Key: 'blind-test/op-op13.mp4',
+    label: 'One Piece OP13 - One Day',
+  },
+  {
+    localPath: 'C:\\Users\\Feydi\\Downloads\\「Creditless」Beastars OP _ Opening 1「UHD 60FPS」.mp4',
+    r2Key: 'blind-test/beastars-op1.mp4',
+    label: 'Beastars OP1 - Wild Side',
+  },
 ]
 
 const onlyKeys = (env.BLIND_TEST_UPLOAD_KEYS || '')
