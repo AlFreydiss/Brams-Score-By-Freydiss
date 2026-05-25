@@ -1,4 +1,11 @@
-discord.py>=2.3.0
-flask>=3.0.0
-matplotlib>=3.8.0
-python-dotenv>=1.0.0
+discord.py[voice]
+yt-dlp
+pymongo[srv]
+flask
+pillow
+matplotlib
+aiohttp
+psycopg2-binary
+litellm
+aiosqlite
+supabase

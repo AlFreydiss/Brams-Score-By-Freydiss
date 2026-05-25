@@ -1,0 +1,1136 @@
+import discord
+from discord.ext import commands, tasks
+from discord import app_commands
+import json
+import os
+import io
+import math
+import aiohttp
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+import matplotlib.image as mpimg
+from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageEnhance
+from datetime import datetime, timedelta, timezone
+from collections import defaultdict
+
+# Chemin vers l'image de fond
+BG_IMAGE_PATH = "background.jpeg"
+
+def add_background(fig, alpha=0.18):
+    """Ajoute l'image de fond Goku sur toute la figure avec opacité réduite."""
+    if not os.path.exists(BG_IMAGE_PATH):
+        return
+    try:
+        img = mpimg.imread(BG_IMAGE_PATH)
+        # Axe qui couvre toute la figure
+        bg_ax = fig.add_axes([0, 0, 1, 1], zorder=0)
+        bg_ax.imshow(img, aspect="auto", extent=[0, 1, 0, 1],
+                     transform=bg_ax.transAxes, alpha=alpha)
+        bg_ax.axis("off")
+    except Exception:
+        pass
+
+# ─────────────────────────────────────────
+#  CONFIG — modifie ici
+# ─────────────────────────────────────────
+TOKEN = "COLLE_TON_TOKEN_ICI"
+DATA_FILE = "data.json"
+ANNOUNCE_CHANNEL = "rappel-rank"   # salon pour les annonces de rank
+ALERT_HOURS_THRESHOLD = 5.0        # alerte MP si < 5h de marge avant de perdre le rank
+
+RANKS = [
+    (70, "Yonkou"),
+    (40, "Amiral"),
+    (25, "Shichibukai"),
+    (10, "Pirate"),
+]
+
+# ─────────────────────────────────────────
+#  UTILITAIRES
+# ─────────────────────────────────────────
+def now_ts():
+    return datetime.now(timezone.utc).timestamp()
+
+def load_data():
+    if not os.path.exists(DATA_FILE):
+        return {}
+    with open(DATA_FILE, "r") as f:
+        return json.load(f)
+
+def save_data(data):
+    with open(DATA_FILE, "w") as f:
+        json.dump(data, f, indent=2)
+
+def get_user(data, uid: str):
+    if uid not in data:
+        data[uid] = {
+            "vocal_sessions": [],
+            "join_time": None,
+            "messages": [],
+            "last_rank": None,
+            "alerted": False,
+        }
+    # migration anciens profils
+    for key in ["last_rank", "alerted"]:
+        if key not in data[uid]:
+            data[uid][key] = None if key == "last_rank" else False
+    return data[uid]
+
+def seconds_in_period(sessions, days):
+    cutoff = now_ts() - days * 86400
+    total = 0
+    for s in sessions:
+        start = max(s["start"], cutoff)
+        end = s["end"]
+        if end < cutoff:
+            continue
+        total += end - start
+    return total
+
+def messages_in_period(messages, days):
+    cutoff = now_ts() - days * 86400
+    return sum(1 for ts in messages if ts >= cutoff)
+
+def clean_old_data(user):
+    cutoff = now_ts() - 14 * 86400
+    user["vocal_sessions"] = [s for s in user["vocal_sessions"] if s["end"] >= cutoff]
+    user["messages"] = [ts for ts in user["messages"] if ts >= cutoff]
+
+def format_duration(seconds):
+    h = int(seconds // 3600)
+    m = int((seconds % 3600) // 60)
+    return f"{h}h {m}min"
+
+def get_rank_for_hours(hours):
+    for threshold, role_name in RANKS:
+        if hours >= threshold:
+            return role_name
+    return None
+
+def get_next_rank(hours):
+    for threshold, role_name in reversed(RANKS):
+        if hours < threshold:
+            return threshold, role_name
+    return None, None
+
+def get_current_rank_threshold(hours):
+    """Retourne le seuil du rank actuel."""
+    for threshold, role_name in RANKS:
+        if hours >= threshold:
+            return threshold, role_name
+    return None, None
+
+# ─────────────────────────────────────────
+#  BOT
+# ─────────────────────────────────────────
+intents = discord.Intents.default()
+intents.voice_states = True
+intents.members = True
+intents.message_content = True
+intents.messages = True
+
+bot = commands.Bot(command_prefix="!", intents=intents)
+
+# ─────────────────────────────────────────
+#  RANK UPDATE + ANNONCES
+# ─────────────────────────────────────────
+async def update_rank(member: discord.Member, hours_7d: float, announce=True):
+    guild = member.guild
+    data = load_data()
+    uid = str(member.id)
+    user = get_user(data, uid)
+
+    new_rank = get_rank_for_hours(hours_7d)
+    old_rank = user.get("last_rank")
+    rank_names = [r for _, r in RANKS]
+
+    # Mise à jour des rôles
+    roles_to_remove = [r for r in member.roles if r.name in rank_names]
+    if roles_to_remove:
+        await member.remove_roles(*roles_to_remove)
+
+    if new_rank:
+        role = discord.utils.get(guild.roles, name=new_rank)
+        if role:
+            await member.add_roles(role)
+
+    # Annonce si montée de rank
+    if announce and new_rank != old_rank and new_rank is not None:
+        rank_order = {r: i for i, (_, r) in enumerate(reversed(RANKS))}
+        old_order = rank_order.get(old_rank, -1)
+        new_order = rank_order.get(new_rank, -1)
+        if new_order > old_order:
+            channel = discord.utils.get(guild.text_channels, name=ANNOUNCE_CHANNEL)
+            if channel:
+                rank_emojis = {
+                    "Pirate": "🏴‍☠️",
+                    "Shichibukai": "⚔️",
+                    "Amiral": "🪖",
+                    "Yonkou": "👑",
+                }
+                emoji = rank_emojis.get(new_rank, "🎖️")
+                embed = discord.Embed(
+                    title=f"{emoji} Nouveau rank débloqué !",
+                    description=f"{member.mention} vient d'atteindre le rang **{new_rank}** avec **{hours_7d:.1f}h** de vocal cette semaine !",
+                    color=discord.Color.gold()
+                )
+                embed.set_thumbnail(url=member.display_avatar.url)
+                await channel.send(embed=embed)
+
+    user["last_rank"] = new_rank
+    save_data(data)
+
+async def check_alert(member: discord.Member, hours_7d: float):
+    """Envoie une alerte MP si proche de perdre son rank."""
+    data = load_data()
+    uid = str(member.id)
+    user = get_user(data, uid)
+
+    threshold, current_rank = get_current_rank_threshold(hours_7d)
+    if current_rank is None:
+        user["alerted"] = False
+        save_data(data)
+        return
+
+    # Calcul du temps restant avant de tomber sous le seuil
+    # Les sessions les plus vieilles (>7j) vont expirer
+    cutoff_7d = now_ts() - 7 * 86400
+    sessions = user.get("vocal_sessions", [])
+
+    # Secondes qui vont expirer dans les prochaines 24h
+    expiring_soon = 0
+    for s in sessions:
+        if cutoff_7d <= s["end"] <= cutoff_7d + 86400:
+            expiring_soon += s["end"] - max(s["start"], cutoff_7d)
+
+    hours_expiring = expiring_soon / 3600
+    future_hours = hours_7d - hours_expiring
+
+    will_lose_rank = future_hours < threshold
+    already_alerted = user.get("alerted", False)
+
+    if will_lose_rank and not already_alerted:
+        user["alerted"] = True
+        save_data(data)
+        try:
+            embed = discord.Embed(
+                title="⚠️ Tu vas perdre ton rank !",
+                description=(
+                    f"Attention **{member.display_name}** !\n\n"
+                    f"Tu risques de perdre ton rang **{current_rank}** dans les prochaines 24h.\n"
+                    f"Il te faut encore **{hours_expiring:.1f}h** de vocal pour le garder !\n\n"
+                    f"Connecte-toi vite sur le serveur 🎙️"
+                ),
+                color=discord.Color.red()
+            )
+            await member.send(embed=embed)
+        except discord.Forbidden:
+            pass
+    elif not will_lose_rank:
+        user["alerted"] = False
+        save_data(data)
+
+# ─────────────────────────────────────────
+#  GRAPHIQUES
+# ─────────────────────────────────────────
+def make_activity_graph(vocal_by_day, msg_by_day, title="Activité des 7 derniers jours"):
+    """Génère un graphique d'activité vocal + messages."""
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 6), facecolor="#2b2d31")
+    fig.suptitle(title, color="white", fontsize=14, fontweight="bold")
+    add_background(fig, alpha=0.18)
+
+    days = []
+    for i in range(6, -1, -1):
+        d = datetime.now(timezone.utc) - timedelta(days=i)
+        days.append(d.strftime("%d/%m"))
+
+    vocal_hours = [vocal_by_day.get(d, 0) / 3600 for d in days]
+    msg_counts  = [msg_by_day.get(d, 0) for d in days]
+
+    # Graphique vocal
+    ax1.set_facecolor("#313338")
+    bars1 = ax1.bar(days, vocal_hours, color="#5865f2", alpha=0.85, width=0.6)
+    ax1.set_ylabel("Heures", color="white")
+    ax1.set_title("🎙️ Temps vocal (h)", color="#5865f2", fontsize=11)
+    ax1.tick_params(colors="white")
+    for spine in ax1.spines.values():
+        spine.set_edgecolor("#4f545c")
+    for bar, val in zip(bars1, vocal_hours):
+        if val > 0:
+            ax1.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.05,
+                     f"{val:.1f}h", ha="center", va="bottom", color="white", fontsize=8)
+
+    # Graphique messages
+    ax2.set_facecolor("#313338")
+    bars2 = ax2.bar(days, msg_counts, color="#57f287", alpha=0.85, width=0.6)
+    ax2.set_ylabel("Messages", color="white")
+    ax2.set_title("💬 Messages", color="#57f287", fontsize=11)
+    ax2.tick_params(colors="white")
+    for spine in ax2.spines.values():
+        spine.set_edgecolor("#4f545c")
+    for bar, val in zip(bars2, msg_counts):
+        if val > 0:
+            ax2.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.3,
+                     str(val), ha="center", va="bottom", color="white", fontsize=8)
+
+    plt.tight_layout()
+    buf = io.BytesIO()
+    plt.savefig(buf, format="png", bbox_inches="tight", dpi=120)
+    buf.seek(0)
+    plt.close()
+    return buf
+
+def make_peak_hours_graph(hour_counts):
+    """Génère un graphique des heures de pointe."""
+    fig, ax = plt.subplots(figsize=(12, 4), facecolor="#2b2d31")
+    ax.set_facecolor("#313338")
+    add_background(fig, alpha=0.18)
+
+    hours_labels = [f"{h}h" for h in range(24)]
+    values = [hour_counts.get(h, 0) for h in range(24)]
+    colors = ["#5865f2" if v == max(values) else "#4f545c" for v in values]
+
+    bars = ax.bar(hours_labels, values, color=colors, alpha=0.9, width=0.7)
+    ax.set_title("🕐 Heures de pointe du serveur (7 derniers jours)", color="white", fontsize=13, fontweight="bold")
+    ax.set_xlabel("Heure (UTC)", color="white")
+    ax.set_ylabel("Minutes d'activité vocale", color="white")
+    ax.tick_params(colors="white", labelsize=8)
+    for spine in ax.spines.values():
+        spine.set_edgecolor("#4f545c")
+
+    plt.tight_layout()
+    buf = io.BytesIO()
+    plt.savefig(buf, format="png", bbox_inches="tight", dpi=120)
+    buf.seek(0)
+    plt.close()
+    return buf
+
+# ─────────────────────────────────────────
+#  EVENTS
+# ─────────────────────────────────────────
+@bot.event
+async def on_ready():
+    print(f"✅ Bot connecté : {bot.user}")
+    check_ranks_loop.start()
+    try:
+        synced = await bot.tree.sync()
+        print(f"📡 {len(synced)} commandes slash synchronisées")
+    except Exception as e:
+        print(f"Erreur sync: {e}")
+
+@bot.event
+async def on_message(message):
+    if message.author.bot:
+        return
+    data = load_data()
+    uid = str(message.author.id)
+    user = get_user(data, uid)
+    user["messages"].append(now_ts())
+    clean_old_data(user)
+    save_data(data)
+    await bot.process_commands(message)
+
+@bot.event
+async def on_voice_state_update(member, before, after):
+    if member.bot:
+        return
+
+    data = load_data()
+    uid = str(member.id)
+    user = get_user(data, uid)
+
+    if before.channel is None and after.channel is not None:
+        user["join_time"] = now_ts()
+        save_data(data)
+
+    elif before.channel is not None and after.channel is None:
+        if user["join_time"]:
+            start = user["join_time"]
+            end = now_ts()
+            user["vocal_sessions"].append({
+                "start": start,
+                "end": end,
+                "channel": str(before.channel.id)
+            })
+            user["join_time"] = None
+            clean_old_data(user)
+            save_data(data)
+
+            seconds_7d = seconds_in_period(user["vocal_sessions"], 7)
+            hours_7d = seconds_7d / 3600
+            await update_rank(member, hours_7d)
+
+# ─────────────────────────────────────────
+#  LOOP HORAIRE — ranks + alertes
+# ─────────────────────────────────────────
+@tasks.loop(hours=1)
+async def check_ranks_loop():
+    data = load_data()
+    for guild in bot.guilds:
+        for member in guild.members:
+            if member.bot:
+                continue
+            uid = str(member.id)
+            user = get_user(data, uid)
+            clean_old_data(user)
+            seconds_7d = seconds_in_period(user["vocal_sessions"], 7)
+            hours_7d = seconds_7d / 3600
+            await update_rank(member, hours_7d, announce=True)
+            await check_alert(member, hours_7d)
+    save_data(data)
+    print("🔄 Vérification horaire des ranks effectuée.")
+
+# ─────────────────────────────────────────
+#  COMMANDES SLASH
+# ─────────────────────────────────────────
+
+# /stats — stats perso
+@bot.tree.command(name="stats", description="Tes stats vocales et messages avec graphique")
+async def stats(interaction: discord.Interaction):
+    await interaction.response.defer(ephemeral=True)
+    data = load_data()
+    uid = str(interaction.user.id)
+    user = get_user(data, uid)
+
+    s1d  = seconds_in_period(user["vocal_sessions"], 1)
+    s7d  = seconds_in_period(user["vocal_sessions"], 7)
+    s14d = seconds_in_period(user["vocal_sessions"], 14)
+    m1d  = messages_in_period(user["messages"], 1)
+    m7d  = messages_in_period(user["messages"], 7)
+    m14d = messages_in_period(user["messages"], 14)
+
+    hours_7d = s7d / 3600
+    rank_actuel = get_rank_for_hours(hours_7d) or "Aucun"
+    next_thresh, next_rank = get_next_rank(hours_7d)
+
+    # Graphique perso
+    vocal_by_day = defaultdict(float)
+    msg_by_day   = defaultdict(int)
+    for s in user["vocal_sessions"]:
+        day = datetime.fromtimestamp(s["end"], tz=timezone.utc).strftime("%d/%m")
+        vocal_by_day[day] += s["end"] - s["start"]
+    for ts in user["messages"]:
+        day = datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%d/%m")
+        msg_by_day[day] += 1
+
+    graph_buf = make_activity_graph(vocal_by_day, msg_by_day, f"Activité de {interaction.user.display_name}")
+
+    embed = discord.Embed(title="📊 Tes statistiques", color=discord.Color.gold())
+    embed.set_author(name=interaction.user.display_name, icon_url=interaction.user.display_avatar.url)
+    embed.add_field(
+        name="🎙️ Temps vocal",
+        value=f"**Aujourd'hui :** {format_duration(s1d)}\n**7j :** {format_duration(s7d)}\n**14j :** {format_duration(s14d)}",
+        inline=True
+    )
+    embed.add_field(
+        name="💬 Messages",
+        value=f"**Aujourd'hui :** {m1d}\n**7j :** {m7d}\n**14j :** {m14d}",
+        inline=True
+    )
+    embed.add_field(name="\u200b", value="\u200b", inline=False)
+    embed.add_field(name="🎖️ Rank actuel (7j)", value=rank_actuel, inline=True)
+    if next_rank:
+        embed.add_field(name="⬆️ Prochain rank", value=f"{next_rank} (encore {next_thresh - hours_7d:.1f}h)", inline=True)
+    else:
+        embed.add_field(name="👑", value="Rang maximum !", inline=True)
+    embed.set_image(url="attachment://graph.png")
+    embed.set_footer(text="7 derniers jours glissants")
+
+    await interaction.followup.send(embed=embed, file=discord.File(graph_buf, "graph.png"), ephemeral=True)
+
+
+# /top — classement
+@bot.tree.command(name="top", description="Top 5 vocal et messages")
+@app_commands.describe(periode="Période")
+@app_commands.choices(periode=[
+    app_commands.Choice(name="Aujourd'hui", value="1"),
+    app_commands.Choice(name="7 derniers jours", value="7"),
+    app_commands.Choice(name="14 derniers jours", value="14"),
+])
+async def top(interaction: discord.Interaction, periode: app_commands.Choice[str]):
+    await interaction.response.defer()
+    data = load_data()
+    guild = interaction.guild
+    days = int(periode.value)
+
+    vocal_list, msg_list = [], []
+    vocal_by_day, msg_by_day = defaultdict(float), defaultdict(int)
+
+    for uid, udata in data.items():
+        member = guild.get_member(int(uid))
+        if not member or member.bot:
+            continue
+        sec  = seconds_in_period(udata.get("vocal_sessions", []), days)
+        msgs = messages_in_period(udata.get("messages", []), days)
+        vocal_list.append((member.display_name, sec))
+        msg_list.append((member.display_name, msgs))
+        for s in udata.get("vocal_sessions", []):
+            day = datetime.fromtimestamp(s["end"], tz=timezone.utc).strftime("%d/%m")
+            vocal_by_day[day] += s["end"] - s["start"]
+        for ts in udata.get("messages", []):
+            day = datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%d/%m")
+            msg_by_day[day] += 1
+
+    vocal_list.sort(key=lambda x: x[1], reverse=True)
+    msg_list.sort(key=lambda x: x[1], reverse=True)
+    medals = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"]
+
+    def build_top(lst, formatter):
+        return "\n".join(
+            f"{medals[i]} **{n}** — {formatter(v)}" for i, (n, v) in enumerate(lst[:5])
+        ) or "Aucune donnée"
+
+    graph_buf = make_activity_graph(vocal_by_day, msg_by_day, f"Activité serveur — {periode.name}")
+
+    embed = discord.Embed(title=f"🏆 Top 5 — {periode.name}", color=discord.Color.blurple())
+    embed.add_field(name="🎙️ Vocal", value=build_top(vocal_list, format_duration), inline=True)
+    embed.add_field(name="💬 Messages", value=build_top(msg_list, lambda x: f"{x} msg"), inline=True)
+    embed.set_image(url="attachment://graph.png")
+
+    await interaction.followup.send(embed=embed, file=discord.File(graph_buf, "graph.png"))
+
+
+# /serveur — stats globales + top salons + heures de pointe
+@bot.tree.command(name="serveur", description="Stats globales du serveur")
+async def serveur(interaction: discord.Interaction):
+    await interaction.response.defer()
+    data = load_data()
+    guild = interaction.guild
+
+    total_vocal_7d = 0
+    total_msg_7d   = 0
+    membres_actifs = 0
+    channel_usage  = defaultdict(float)   # channel_id → secondes
+    hour_usage     = defaultdict(float)   # heure (0-23) → minutes
+
+    for uid, udata in data.items():
+        member = guild.get_member(int(uid))
+        if not member or member.bot:
+            continue
+        sec  = seconds_in_period(udata.get("vocal_sessions", []), 7)
+        msgs = messages_in_period(udata.get("messages", []), 7)
+        total_vocal_7d += sec
+        total_msg_7d   += msgs
+        if sec > 0 or msgs > 0:
+            membres_actifs += 1
+
+        for s in udata.get("vocal_sessions", []):
+            cutoff = now_ts() - 7 * 86400
+            if s["end"] < cutoff:
+                continue
+            duration = s["end"] - max(s["start"], cutoff)
+            ch_id = s.get("channel")
+            if ch_id:
+                channel_usage[ch_id] += duration
+
+            # Heures de pointe
+            start_dt = datetime.fromtimestamp(max(s["start"], cutoff), tz=timezone.utc)
+            end_dt   = datetime.fromtimestamp(s["end"], tz=timezone.utc)
+            current  = start_dt
+            while current < end_dt:
+                next_hour = current.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+                chunk = min(next_hour, end_dt) - current
+                hour_usage[current.hour] += chunk.total_seconds() / 60
+                current = next_hour
+
+    # Top 5 salons vocaux
+    top_channels = sorted(channel_usage.items(), key=lambda x: x[1], reverse=True)[:5]
+    salon_lines = []
+    medals = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"]
+    for i, (ch_id, secs) in enumerate(top_channels):
+        ch = guild.get_channel(int(ch_id))
+        name = ch.name if ch else f"Salon supprimé"
+        salon_lines.append(f"{medals[i]} **{name}** — {format_duration(secs)}")
+
+    # Heure de pointe
+    peak_hour = max(hour_usage, key=hour_usage.get) if hour_usage else 0
+    peak_val  = hour_usage.get(peak_hour, 0)
+
+    # Graphique heures de pointe
+    graph_buf = make_peak_hours_graph(hour_usage)
+
+    embed = discord.Embed(
+        title=f"🌍 Stats du serveur — {guild.name}",
+        color=discord.Color.og_blurple()
+    )
+    embed.set_thumbnail(url=guild.icon.url if guild.icon else None)
+    embed.add_field(name="👥 Membres actifs (7j)", value=str(membres_actifs), inline=True)
+    embed.add_field(name="🎙️ Total vocal (7j)", value=format_duration(total_vocal_7d), inline=True)
+    embed.add_field(name="💬 Total messages (7j)", value=str(total_msg_7d), inline=True)
+    embed.add_field(
+        name="🏠 Top salons vocaux (7j)",
+        value="\n".join(salon_lines) if salon_lines else "Aucune donnée",
+        inline=False
+    )
+    embed.add_field(
+        name="🕐 Heure de pointe",
+        value=f"**{peak_hour}h00 – {peak_hour+1}h00 UTC** ({peak_val:.0f} min d'activité)",
+        inline=False
+    )
+    embed.set_image(url="attachment://peaks.png")
+    embed.set_footer(text="Basé sur les 7 derniers jours glissants")
+
+    await interaction.followup.send(embed=embed, file=discord.File(graph_buf, "peaks.png"))
+
+
+# /tout — tout en une commande
+@bot.tree.command(name="tout", description="Tout voir : tes stats + serveur + classement")
+async def tout(interaction: discord.Interaction):
+    await interaction.response.defer(ephemeral=True)
+    data = load_data()
+    guild = interaction.guild
+    uid = str(interaction.user.id)
+    user = get_user(data, uid)
+
+    # Stats perso
+    s7d  = seconds_in_period(user["vocal_sessions"], 7)
+    m7d  = messages_in_period(user["messages"], 7)
+    hours_7d = s7d / 3600
+    rank_actuel = get_rank_for_hours(hours_7d) or "Aucun"
+
+    # Stats serveur
+    total_vocal_7d, total_msg_7d, membres_actifs = 0, 0, 0
+    vocal_list, msg_list = [], []
+
+    for u_id, udata in data.items():
+        member = guild.get_member(int(u_id))
+        if not member or member.bot:
+            continue
+        sec  = seconds_in_period(udata.get("vocal_sessions", []), 7)
+        msgs = messages_in_period(udata.get("messages", []), 7)
+        total_vocal_7d += sec
+        total_msg_7d   += msgs
+        if sec > 0 or msgs > 0:
+            membres_actifs += 1
+        vocal_list.append((member.display_name, sec))
+        msg_list.append((member.display_name, msgs))
+
+    vocal_list.sort(key=lambda x: x[1], reverse=True)
+    msg_list.sort(key=lambda x: x[1], reverse=True)
+    medals = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"]
+
+    def build_top(lst, formatter):
+        return "\n".join(
+            f"{medals[i]} **{n}** — {formatter(v)}" for i, (n, v) in enumerate(lst[:5])
+        ) or "Aucune donnée"
+
+    # Graphique perso
+    vocal_by_day = defaultdict(float)
+    msg_by_day   = defaultdict(int)
+    for s in user["vocal_sessions"]:
+        day = datetime.fromtimestamp(s["end"], tz=timezone.utc).strftime("%d/%m")
+        vocal_by_day[day] += s["end"] - s["start"]
+    for ts in user["messages"]:
+        day = datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%d/%m")
+        msg_by_day[day] += 1
+
+    graph_buf = make_activity_graph(vocal_by_day, msg_by_day, f"Ton activité — {interaction.user.display_name}")
+
+    embed = discord.Embed(title="📋 Vue complète", color=discord.Color.gold())
+    embed.set_author(name=interaction.user.display_name, icon_url=interaction.user.display_avatar.url)
+
+    embed.add_field(name="🎙️ Ton vocal (7j)", value=format_duration(s7d), inline=True)
+    embed.add_field(name="💬 Tes messages (7j)", value=str(m7d), inline=True)
+    embed.add_field(name="🎖️ Ton rank", value=rank_actuel, inline=True)
+
+    embed.add_field(name="\u200b", value="**— Serveur (7j) —**", inline=False)
+    embed.add_field(name="👥 Membres actifs", value=str(membres_actifs), inline=True)
+    embed.add_field(name="🎙️ Total vocal", value=format_duration(total_vocal_7d), inline=True)
+    embed.add_field(name="💬 Total messages", value=str(total_msg_7d), inline=True)
+
+    embed.add_field(name="🏆 Top vocal (7j)", value=build_top(vocal_list, format_duration), inline=True)
+    embed.add_field(name="🏆 Top messages (7j)", value=build_top(msg_list, lambda x: f"{x} msg"), inline=True)
+    embed.set_image(url="attachment://graph.png")
+
+    await interaction.followup.send(embed=embed, file=discord.File(graph_buf, "graph.png"), ephemeral=True)
+
+
+# /addheures — admin
+@bot.tree.command(name="addheures", description="[ADMIN] Ajouter des heures vocales à un membre")
+@app_commands.checks.has_permissions(administrator=True)
+async def addheures(interaction: discord.Interaction, membre: discord.Member, heures: float):
+    data = load_data()
+    uid = str(membre.id)
+    user = get_user(data, uid)
+    now = now_ts()
+    user["vocal_sessions"].append({"start": now - heures * 3600, "end": now, "channel": None})
+    clean_old_data(user)
+    save_data(data)
+    seconds_7d = seconds_in_period(user["vocal_sessions"], 7)
+    hours_7d = seconds_7d / 3600
+    await update_rank(membre, hours_7d)
+    await interaction.response.send_message(
+        f"✅ +{heures}h ajoutées à {membre.mention} → {hours_7d:.1f}h sur 7j", ephemeral=True
+    )
+
+# /forcerank — admin
+@bot.tree.command(name="forcerank", description="[ADMIN] Recalculer le rank d'un membre")
+@app_commands.checks.has_permissions(administrator=True)
+async def forcerank(interaction: discord.Interaction, membre: discord.Member):
+    data = load_data()
+    uid = str(membre.id)
+    user = get_user(data, uid)
+    seconds_7d = seconds_in_period(user.get("vocal_sessions", []), 7)
+    hours_7d = seconds_7d / 3600
+    await update_rank(membre, hours_7d)
+    await interaction.response.send_message(
+        f"✅ Rank recalculé pour {membre.mention} ({hours_7d:.1f}h/7j)", ephemeral=True
+    )
+
+# ─────────────────────────────────────────
+#  CITATIONS ONE PIECE
+# ─────────────────────────────────────────
+import random
+
+# Citations avec URL d'image du perso
+CITATIONS = [
+    ("Je vais devenir le Roi des Pirates !", "Monkey D. Luffy", "https://i.imgur.com/1ZkKlEz.png"),
+    ("Un homme qui abandonne ses rêves n'est pas digne d'être pirate !", "Monkey D. Luffy", "https://i.imgur.com/1ZkKlEz.png"),
+    ("Si tu n'essaies pas, tu as déjà perdu.", "Roronoa Zoro", "https://i.imgur.com/8v3KZYQ.png"),
+    ("Rien ne se passe comme prévu dans ce monde. C'est pour ça que c'est amusant.", "Trafalgar Law", "https://i.imgur.com/kQqvPvK.png"),
+    ("La marine protège le monde. Nous sommes la justice absolue.", "Akainu", "https://i.imgur.com/9tqzpVN.png"),
+    ("Je n'ai pas besoin d'un bras si je peux tenir mon sabre.", "Roronoa Zoro", "https://i.imgur.com/8v3KZYQ.png"),
+    ("Peu importe le danger, je n'abandonnerai jamais mes amis !", "Monkey D. Luffy", "https://i.imgur.com/1ZkKlEz.png"),
+    ("Vis bien. Meurs bien. Et si tu dois mourir, assure-toi d'y croire jusqu'à la fin.", "Whitebeard", "https://i.imgur.com/pXqZvYw.png"),
+    ("Le vrai pouvoir ne vient pas de la force, mais de la volonté.", "Shanks", "https://i.imgur.com/QZmKlRt.png"),
+    ("Un rêve ne se réalise jamais par hasard.", "Nico Robin", "https://i.imgur.com/vNmKpXz.png"),
+    ("Seuls ceux qui ont connu la vraie faiblesse peuvent devenir vraiment forts.", "Usopp", "https://i.imgur.com/tYkMpQr.png"),
+    ("Je ne me bats pas pour ma gloire. Je me bats pour ceux qui croient en moi.", "Roronoa Zoro", "https://i.imgur.com/8v3KZYQ.png"),
+    ("La vie, c'est une aventure !", "Monkey D. Luffy", "https://i.imgur.com/1ZkKlEz.png"),
+    ("Il n'y a pas de honte à tomber. La honte c'est de ne pas se relever.", "Roronoa Zoro", "https://i.imgur.com/8v3KZYQ.png"),
+    ("Même si je dois en mourir, je ne fuirai jamais.", "Portgas D. Ace", "https://i.imgur.com/mNkZpYv.png"),
+    ("Un homme vit pour protéger ce qui lui est cher.", "Whitebeard", "https://i.imgur.com/pXqZvYw.png"),
+    ("Les monstres ne pleurent pas.", "Roronoa Zoro", "https://i.imgur.com/8v3KZYQ.png"),
+    ("Je préfère mourir que d'abandonner ce en quoi je crois.", "Portgas D. Ace", "https://i.imgur.com/mNkZpYv.png"),
+]
+
+async def generate_citation_image(quote, author, char_img_url):
+    """Génère une image PNG avec le perso en fond et la citation dessus."""
+    W, H = 800, 400
+    BLACK  = (15, 15, 15)
+    GOLD   = (212, 175, 55)
+    WHITE  = (255, 255, 255)
+    GRAY   = (200, 200, 200)
+
+    img = Image.new("RGB", (W, H), BLACK)
+
+    # ── Fond Sakura japonais ──
+    sakura_bg = generate_sakura_background(W, H, opacity=0.15)
+    base = Image.new("RGB", (W, H), BLACK)
+    base.paste(sakura_bg, (0, 0), sakura_bg)
+    img = base
+    draw = ImageDraw.Draw(img)
+
+    # ── Télécharge l'image du perso ──
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(char_img_url) as resp:
+                char_bytes = await resp.read()
+        char_img = Image.open(io.BytesIO(char_bytes)).convert("RGBA")
+        # Redimensionne en gardant ratio, hauteur = H
+        ratio = H / char_img.height
+        new_w = int(char_img.width * ratio)
+        char_img = char_img.resize((new_w, H), Image.LANCZOS)
+        # Opacité réduite pour la lisibilité
+        r, g, b, a = char_img.split()
+        a = a.point(lambda x: int(x * 0.35))
+        char_img.putalpha(a)
+        # Position à droite
+        paste_x = W - new_w if new_w < W else 0
+        img.paste(char_img, (paste_x, 0), char_img)
+    except:
+        pass
+
+    # ── Dégradé noir à gauche pour lisibilité ──
+    gradient = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    gd = ImageDraw.Draw(gradient)
+    for x in range(W):
+        alpha = max(0, int(255 * (1 - x / (W * 0.75))))
+        gd.line([(x, 0), (x, H)], fill=(0, 0, 0, alpha))
+    img.paste(gradient, (0, 0), gradient)
+
+    draw = ImageDraw.Draw(img)
+
+    # ── Fonts ──
+    try:
+        font_quote  = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Oblique.ttf", 22)
+        font_author = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 20)
+        font_small  = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 13)
+    except:
+        font_quote = font_author = font_small = ImageFont.load_default()
+
+    # ── Ligne déco gauche ──
+    draw.rectangle([30, 40, 35, H-40], fill=GOLD)
+
+    # ── Guillemets géants ──
+    try:
+        font_big = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 90)
+    except:
+        font_big = ImageFont.load_default()
+    draw.text((45, 10), "\u201c", font=font_big, fill=GOLD)
+
+    # ── Citation (wrap automatique) ──
+    max_chars = 35
+    words = quote.split()
+    lines = []
+    current = ""
+    for word in words:
+        if len(current) + len(word) + 1 <= max_chars:
+            current += (" " if current else "") + word
+        else:
+            lines.append(current)
+            current = word
+    if current:
+        lines.append(current)
+
+    quote_y = 90
+    for line in lines:
+        draw.text((55, quote_y), line, font=font_quote, fill=WHITE)
+        quote_y += 30
+
+    # ── Auteur ──
+    draw.text((55, quote_y + 15), f"— {author}", font=font_author, fill=GOLD)
+
+    # ── Footer ──
+    draw.text((55, H - 30), "☠️ One Piece • Brams Community", font=font_small, fill=GRAY)
+
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    buf.seek(0)
+    return buf
+
+# ─────────────────────────────────────────
+#  CALCUL DE LA PRIME (bounty)
+# ─────────────────────────────────────────
+def calculate_prime(hours_7d, hours_14d, messages_7d):
+    """Calcule la prime en Berry selon l'activité."""
+    base = hours_7d * 1_000_000
+    bonus_14d = (hours_14d - hours_7d) * 500_000
+    bonus_msg = messages_7d * 10_000
+    total = int(base + bonus_14d + bonus_msg)
+    return max(total, 0)
+
+def format_prime(berries):
+    if berries >= 1_000_000_000:
+        return f"{berries/1_000_000_000:.1f} Md de Berry"
+    elif berries >= 1_000_000:
+        return f"{berries/1_000_000:.1f} M de Berry"
+    elif berries >= 1_000:
+        return f"{berries/1_000:.0f} K de Berry"
+    return f"{berries} Berry"
+
+# ─────────────────────────────────────────
+#  /chercher — stats complètes d'un membre
+# ─────────────────────────────────────────
+@bot.tree.command(name="chercher", description="Voir toutes les stats d'un membre")
+@app_commands.describe(membre="Le membre à inspecter")
+async def chercher(interaction: discord.Interaction, membre: discord.Member):
+    data = load_data()
+    uid = str(membre.id)
+    user = get_user(data, uid)
+
+    s1d  = seconds_in_period(user["vocal_sessions"], 1)
+    s7d  = seconds_in_period(user["vocal_sessions"], 7)
+    s14d = seconds_in_period(user["vocal_sessions"], 14)
+    m1d  = messages_in_period(user["messages"], 1)
+    m7d  = messages_in_period(user["messages"], 7)
+    m14d = messages_in_period(user["messages"], 14)
+
+    hours_7d  = s7d / 3600
+    hours_14d = s14d / 3600
+    rank_actuel = get_rank_for_hours(hours_7d) or "Aucun"
+    prime = calculate_prime(hours_7d, hours_14d, m7d)
+
+    next_thresh, next_rank = get_next_rank(hours_7d)
+    if next_rank:
+        manque = next_thresh - hours_7d
+        next_str = f"{next_rank} (encore {manque:.1f}h)"
+    else:
+        next_str = "👑 Rang maximum !"
+
+    embed = discord.Embed(
+        title=f"🔍 Fiche de {membre.display_name}",
+        color=discord.Color.gold()
+    )
+    embed.set_thumbnail(url=membre.display_avatar.url)
+
+    embed.add_field(
+        name="🎙️ Temps vocal",
+        value=f"**Aujourd'hui :** {format_duration(s1d)}\n**7j :** {format_duration(s7d)}\n**14j :** {format_duration(s14d)}",
+        inline=True
+    )
+    embed.add_field(
+        name="💬 Messages",
+        value=f"**Aujourd'hui :** {m1d}\n**7j :** {m7d}\n**14j :** {m14d}",
+        inline=True
+    )
+    embed.add_field(name="\u200b", value="\u200b", inline=False)
+    embed.add_field(name="🎖️ Rank actuel", value=rank_actuel, inline=True)
+    embed.add_field(name="⬆️ Prochain rank", value=next_str, inline=True)
+    embed.add_field(name="💰 Prime", value=format_prime(prime), inline=True)
+    embed.set_footer(text="Basé sur les 7 derniers jours glissants")
+
+    await interaction.response.send_message(embed=embed)
+
+
+# ─────────────────────────────────────────
+#  FOND SAKURA JAPONAIS
+# ─────────────────────────────────────────
+def draw_sakura_petal(draw, cx, cy, size, angle, color, alpha_img, alpha_val):
+    """Dessine un pétale de sakura."""
+    import math
+    pts = []
+    for i in range(5):
+        a = math.radians(angle + i * 72)
+        px = cx + math.cos(a) * size
+        py = cy + math.sin(a) * size
+        pts.append((px, py))
+        a2 = math.radians(angle + i * 72 + 36)
+        px2 = cx + math.cos(a2) * size * 0.4
+        py2 = cy + math.sin(a2) * size * 0.4
+        pts.append((px2, py2))
+    draw.polygon(pts, fill=color)
+
+def generate_sakura_background(W, H, opacity=0.30):
+    """Génère un fond japonais sakura en RGBA avec opacité."""
+    import math
+    # Fond dégradé rose pâle → blanc
+    bg = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(bg)
+
+    # Dégradé vertical rose pâle
+    for y in range(H):
+        ratio = y / H
+        r = int(255 * 1.0)
+        g = int((230 + (255-230) * ratio))
+        b = int((235 + (255-235) * ratio))
+        a = int(255 * opacity)
+        draw.line([(0, y), (W, y)], fill=(r, g, b, a))
+
+    # Branches d'arbre (lignes courbes)
+    branch_draw = ImageDraw.Draw(bg)
+    branches = [
+        [(0, H), (W//4, H*2//3), (W//3, H//2), (W//2, H//3)],
+        [(W, H), (W*3//4, H*2//3), (W*2//3, H//2), (W//2, H//3)],
+        [(W//4, H), (W//3, H*3//4), (W//2, H//2)],
+    ]
+    for branch in branches:
+        for i in range(len(branch)-1):
+            x1, y1 = branch[i]
+            x2, y2 = branch[i+1]
+            branch_draw.line(
+                [(x1, y1), (x2, y2)],
+                fill=(101, 60, 20, int(255 * opacity * 1.5)),
+                width=max(1, int(4 * (1 - i/len(branch))))
+            )
+
+    # Pétales de sakura éparpillés
+    petal_layer = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    pd = ImageDraw.Draw(petal_layer)
+    colors_petals = [
+        (255, 182, 193),
+        (255, 160, 180),
+        (255, 200, 210),
+        (240, 150, 170),
+    ]
+    rnd2 = random
+    for _ in range(60):
+        cx = rnd2.randint(0, W)
+        cy = rnd2.randint(0, H)
+        size = rnd2.randint(6, 18)
+        angle = rnd2.randint(0, 360)
+        color = rnd2.choice(colors_petals) + (int(255 * opacity * 2),)
+        draw_sakura_petal(pd, cx, cy, size, angle, color, petal_layer, int(255*opacity))
+
+    bg = Image.alpha_composite(bg, petal_layer)
+    return bg
+
+# ─────────────────────────────────────────
+#  GÉNÉRATEUR IMAGE WANTED
+# ─────────────────────────────────────────
+async def generate_wanted_image(membre, bounty_str, rank, vocal_7d, vocal_14d, msg_7d, msg_14d, next_rank_str):
+    """Génère une vraie image PNG style avis de recherche One Piece."""
+
+    W, H = 520, 720
+    GOLD       = (212, 175, 55)
+    DARK_GOLD  = (139, 110, 30)
+    CREAM      = (255, 248, 220)
+    BROWN      = (101, 67, 33)
+    BLACK      = (20, 15, 10)
+    RED        = (180, 30, 30)
+    WHITE      = (255, 255, 255)
+
+    img = Image.new("RGB", (W, H), CREAM)
+
+    # ── Fond Sakura japonais ──
+    sakura_bg = generate_sakura_background(W, H, opacity=0.25)
+    base = Image.new("RGB", (W, H), CREAM)
+    base.paste(sakura_bg, (0, 0), sakura_bg)
+    img = base
+
+    draw = ImageDraw.Draw(img)
+
+    # ── Fond texturé (bruit léger) ──
+    import random as rnd
+    for _ in range(6000):
+        x = rnd.randint(0, W-1)
+        y = rnd.randint(0, H-1)
+        v = rnd.randint(200, 240)
+        img.putpixel((x, y), (v, v, int(v*0.85)))
+
+    # ── Bordure dorée épaisse ──
+    for t in range(10):
+        draw.rectangle([t, t, W-1-t, H-1-t], outline=GOLD if t % 2 == 0 else DARK_GOLD)
+
+    # ── Titre WANTED ──
+    try:
+        font_title  = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 72)
+        font_sub    = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 22)
+        font_normal = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 18)
+        font_name   = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 30)
+        font_bounty = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 26)
+        font_small  = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 15)
+    except:
+        font_title = font_sub = font_normal = font_name = font_bounty = font_small = ImageFont.load_default()
+
+    # Bande noire titre
+    draw.rectangle([12, 12, W-13, 95], fill=BLACK)
+    # Texte WANTED centré
+    draw.text((W//2, 55), "WANTED", font=font_title, fill=GOLD, anchor="mm")
+
+    # Sous-titre DEAD OR ALIVE
+    draw.rectangle([12, 96, W-13, 128], fill=RED)
+    draw.text((W//2, 112), "DEAD  OR  ALIVE", font=font_sub, fill=WHITE, anchor="mm")
+
+    # ── Photo du membre (avatar) ──
+    avatar_size = 260
+    avatar_y = 138
+    avatar_x = (W - avatar_size) // 2
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(str(membre.display_avatar.replace(size=256))) as resp:
+                avatar_bytes = await resp.read()
+        avatar_img = Image.open(io.BytesIO(avatar_bytes)).convert("RGB")
+        avatar_img = avatar_img.resize((avatar_size, avatar_size), Image.LANCZOS)
+        # Légère désaturation style vieilli
+        enhancer = ImageEnhance.Color(avatar_img)
+        avatar_img = enhancer.enhance(0.75)
+        img.paste(avatar_img, (avatar_x, avatar_y))
+    except:
+        # Carré gris si avatar indisponible
+        draw.rectangle([avatar_x, avatar_y, avatar_x+avatar_size, avatar_y+avatar_size], fill=(180,170,150))
+        draw.text((W//2, avatar_y + avatar_size//2), "?", font=font_title, fill=BROWN, anchor="mm")
+
+    # Cadre doré autour de l'avatar
+    for t in range(3):
+        draw.rectangle([avatar_x-t, avatar_y-t,
+                        avatar_x+avatar_size+t, avatar_y+avatar_size+t], outline=DARK_GOLD)
+
+    # ── Nom du membre ──
+    name_y = avatar_y + avatar_size + 12
+    draw.rectangle([12, name_y, W-13, name_y+42], fill=BLACK)
+    name_display = membre.display_name.upper()
+    if len(name_display) > 18:
+        name_display = name_display[:17] + "."
+    draw.text((W//2, name_y+21), name_display, font=font_name, fill=GOLD, anchor="mm")
+
+    # ── Séparateur ──
+    sep_y = name_y + 48
+    draw.line([(20, sep_y), (W-20, sep_y)], fill=DARK_GOLD, width=2)
+
+    # ── Prime ──
+    prime_y = sep_y + 10
+    draw.text((W//2, prime_y + 14), "PRIME :", font=font_sub, fill=BROWN, anchor="mm")
+    draw.text((W//2, prime_y + 44), bounty_str, font=font_bounty, fill=RED, anchor="mm")
+
+    # ── Séparateur ──
+    sep2_y = prime_y + 66
+    draw.line([(20, sep2_y), (W-20, sep2_y)], fill=DARK_GOLD, width=2)
+
+    # ── Stats ──
+    stats_y = sep2_y + 10
+    rank_label = f"RANG : {rank.upper()}"
+    draw.text((W//2, stats_y + 14), rank_label, font=font_sub, fill=BROWN, anchor="mm")
+
+    next_label = f"Prochain : {next_rank_str}"
+    draw.text((W//2, stats_y + 36), next_label, font=font_small, fill=BROWN, anchor="mm")
+
+    # Ligne vocal / messages
+    draw.line([(20, stats_y+52), (W-20, stats_y+52)], fill=DARK_GOLD, width=1)
+    draw.text((30, stats_y+60),  f"Vocal  7j : {vocal_7d}", font=font_small, fill=BLACK)
+    draw.text((30, stats_y+78),  f"Vocal 14j : {vocal_14d}", font=font_small, fill=BLACK)
+    draw.text((W//2+10, stats_y+60), f"Messages  7j : {msg_7d}", font=font_small, fill=BLACK)
+    draw.text((W//2+10, stats_y+78), f"Messages 14j : {msg_14d}", font=font_small, fill=BLACK)
+
+    # ── Pied de page ──
+    draw.line([(20, H-45), (W-20, H-45)], fill=DARK_GOLD, width=2)
+    draw.text((W//2, H-28), "Gouvernement Mondial • Brams Community", font=font_small, fill=BROWN, anchor="mm")
+
+    # ── Vieillissement final ──
+    img = img.filter(ImageFilter.SMOOTH)
+
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    buf.seek(0)
+    return buf
+
+
+# ─────────────────────────────────────────
+#  /wanted — vraie image PNG
+# ─────────────────────────────────────────
+@bot.tree.command(name="wanted", description="Génère une vraie fiche WANTED One Piece")
+@app_commands.describe(membre="Le membre à mettre sur la fiche wanted")
+async def wanted(interaction: discord.Interaction, membre: discord.Member = None):
+    if membre is None:
+        membre = interaction.user
+
+    await interaction.response.defer()
+
+    data = load_data()
+    uid = str(membre.id)
+    user = get_user(data, uid)
+
+    s7d  = seconds_in_period(user["vocal_sessions"], 7)
+    s14d = seconds_in_period(user["vocal_sessions"], 14)
+    m7d  = messages_in_period(user["messages"], 7)
+    m14d = messages_in_period(user["messages"], 14)
+    hours_7d  = s7d / 3600
+    hours_14d = s14d / 3600
+    bounty    = calculate_prime(hours_7d, hours_14d, m7d)
+    rank_actuel = get_rank_for_hours(hours_7d) or "Sans rang"
+
+    next_thresh, next_rank = get_next_rank(hours_7d)
+    next_str = f"{next_rank} ({next_thresh - hours_7d:.1f}h)" if next_rank else "MAX"
+
+    img_buf = await generate_wanted_image(
+        membre      = membre,
+        bounty_str  = format_prime(bounty),
+        rank        = rank_actuel,
+        vocal_7d    = format_duration(s7d),
+        vocal_14d   = format_duration(s14d),
+        msg_7d      = str(m7d),
+        msg_14d     = str(m14d),
+        next_rank_str = next_str,
+    )
+
+    await interaction.followup.send(file=discord.File(img_buf, filename="wanted.png"))
+
+
+# ─────────────────────────────────────────
+#  /citation — citation One Piece en image PNG
+# ─────────────────────────────────────────
+@bot.tree.command(name="citation", description="Affiche une citation One Piece avec le personnage")
+async def citation(interaction: discord.Interaction):
+    await interaction.response.defer()
+    quote, author, char_url = random.choice(CITATIONS)
+    img_buf = await generate_citation_image(quote, author, char_url)
+    await interaction.followup.send(file=discord.File(img_buf, filename="citation.png"))
+
+
+# ─────────────────────────────────────────
+#  LANCEMENT
+# ─────────────────────────────────────────
+bot.run(TOKEN)

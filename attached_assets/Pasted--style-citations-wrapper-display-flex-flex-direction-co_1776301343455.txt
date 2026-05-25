@@ -1,0 +1,83 @@
+<style>
+.citations-wrapper { display: flex; flex-direction: column; gap: 20px; padding: 1.5rem 0; }
+.citation-card {
+  position: relative;
+  border-radius: 12px;
+  border: 0.5px solid rgba(0,0,0,0.1);
+  background: white;
+  overflow: hidden;
+  padding: 1.25rem 1.25rem 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.citation-card .char-bg {
+  position: absolute;
+  right: 10px;
+  bottom: 5px;
+  font-size: 52px;
+  line-height: 1;
+  pointer-events: none;
+  opacity: 0.10;
+  user-select: none;
+}
+.citation-card .char-name {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.citation-card .citation-text {
+  font-size: 15px;
+  line-height: 1.6;
+  font-style: italic;
+  position: relative;
+  z-index: 1;
+}
+.citation-card .citation-text::before { content: '\201C'; font-size: 22px; line-height: 0; vertical-align: -6px; margin-right: 3px; opacity: 0.5; }
+.citation-card .citation-text::after  { content: '\201D'; font-size: 22px; line-height: 0; vertical-align: -6px; margin-left:  3px; opacity: 0.5; }
+</style>
+
+<div class="citations-wrapper">
+
+  <!-- Zoro — vert -->
+  <div class="citation-card">
+    <div style="position:absolute;left:0;top:0;bottom:0;width:5px;background:#22c55e;border-radius:4px 0 0 4px;"></div>
+    <div class="char-bg">⚔️</div>
+    <div class="char-name" style="color:#22c55e;">Roronoa Zoro</div>
+    <div class="citation-text">Je vais devenir le meilleur épéiste du monde, sinon je mourrai à la tâche.</div>
+  </div>
+
+  <!-- Luffy — orange -->
+  <div class="citation-card">
+    <div style="position:absolute;left:0;top:0;bottom:0;width:5px;background:#f97316;border-radius:4px 0 0 4px;"></div>
+    <div class="char-bg">🍖</div>
+    <div class="char-name" style="color:#f97316;">Monkey D. Luffy</div>
+    <div class="citation-text">Je serai le roi des pirates !</div>
+  </div>
+
+  <!-- Nami — jaune -->
+  <div class="citation-card">
+    <div style="position:absolute;left:0;top:0;bottom:0;width:5px;background:#eab308;border-radius:4px 0 0 4px;"></div>
+    <div class="char-bg">🗺️</div>
+    <div class="char-name" style="color:#eab308;">Nami</div>
+    <div class="citation-text">Mes rêves valent bien quelques mensonges.</div>
+  </div>
+
+  <!-- Law — bleu -->
+  <div class="citation-card">
+    <div style="position:absolute;left:0;top:0;bottom:0;width:5px;background:#3b82f6;border-radius:4px 0 0 4px;"></div>
+    <div class="char-bg">🔵</div>
+    <div class="char-name" style="color:#3b82f6;">Trafalgar Law</div>
+    <div class="citation-text">Je ne suis pas un héros. Je suis un chirurgien du destin.</div>
+  </div>
+
+  <!-- Ace — rouge -->
+  <div class="citation-card">
+    <div style="position:absolute;left:0;top:0;bottom:0;width:5px;background:#ef4444;border-radius:4px 0 0 4px;"></div>
+    <div class="char-bg">🔥</div>
+    <div class="char-name" style="color:#ef4444;">Portgas D. Ace</div>
+    <div class="citation-text">Je vis, donc je combats !</div>
+  </div>
+
+</div>

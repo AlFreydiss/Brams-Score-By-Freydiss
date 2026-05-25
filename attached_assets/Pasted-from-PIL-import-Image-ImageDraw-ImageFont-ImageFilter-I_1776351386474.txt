@@ -1,0 +1,141 @@
+from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageEnhance
+import os
+
+# ── Config ──────────────────────────────────────────────────────────────────
+INPUT_IMAGE   = "/mnt/user-data/uploads/doffy_gif.gif"
+OUTPUT_IMAGE  = "/mnt/user-data/outputs/brams_card.png"
+CARD_W        = 420
+OPACITY       = 0.72          # opacité de la photo (0.0 → 1.0)
+PSEUDO        = "Doflamingo"  # ← change ici
+GRADE         = "Shichibukai" # ← change ici
+GOLD          = (200, 168, 75)
+GOLD_DIM      = (200, 168, 75, 160)
+WHITE_CREAM   = (240, 230, 200)
+BG_COLOR      = (10, 10, 15)
+
+FONT_SERIF    = "/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf"
+FONT_SANS     = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+
+os.makedirs(os.path.dirname(OUTPUT_IMAGE), exist_ok=True)
+
+# ── Charger & préparer la photo ──────────────────────────────────────────────
+src = Image.open(INPUT_IMAGE).convert("RGBA")
+src = src.resize((CARD_W, CARD_W), Image.LANCZOS)
+
+# Appliquer opacité
+r, g, b, a = src.split()
+a = a.point(lambda x: int(x * OPACITY))
+src = Image.merge("RGBA", (r, g, b, a))
+
+# ── Dégradé bas (fondu vers bg) ──────────────────────────────────────────────
+grad = Image.new("RGBA", (CARD_W, CARD_W), (0, 0, 0, 0))
+draw_grad = ImageDraw.Draw(grad)
+for i in range(CARD_W):
+    ratio = max(0, (i - CARD_W * 0.45) / (CARD_W * 0.55))
+    alpha = int(ratio * 255)
+    draw_grad.line([(0, i), (CARD_W, i)], fill=(*BG_COLOR, alpha))
+
+photo_layer = Image.alpha_composite(src, grad)
+
+# ── Dimensions totale carte ───────────────────────────────────────────────────
+BOTTOM_H = 120
+CARD_H   = CARD_W + BOTTOM_H
+card     = Image.new("RGBA", (CARD_W, CARD_H), (*BG_COLOR, 255))
+card.paste(photo_layer, (0, 0), photo_layer)
+draw     = ImageDraw.Draw(card, "RGBA")
+
+# ── Bordure or + double cadre ────────────────────────────────────────────────
+draw.rectangle([0, 0, CARD_W-1, CARD_H-1], outline=(*GOLD, 255), width=2)
+draw.rectangle([6, 6, CARD_W-7, CARD_H-7], outline=(*GOLD, 70), width=1)
+
+# ── Coins décoratifs ─────────────────────────────────────────────────────────
+def corner(d, x, y, size=28, flip_x=False, flip_y=False):
+    sx = -1 if flip_x else 1
+    sy = -1 if flip_y else 1
+    d.line([(x, y), (x + sx*size, y)], fill=GOLD, width=2)
+    d.line([(x, y), (x, y + sy*size)], fill=GOLD, width=2)
+
+corner(draw, 10, 10)
+corner(draw, CARD_W-10, 10,  flip_x=True)
+corner(draw, 10, CARD_H-10, flip_y=True)
+corner(draw, CARD_W-10, CARD_H-10, flip_x=True, flip_y=True)
+
+# ── Ligne séparatrice or ──────────────────────────────────────────────────────
+sep_y = CARD_W
+for x in range(CARD_W):
+    ratio = 1 - abs(x / CARD_W - 0.5) * 2
+    alpha = int(ratio * 220)
+    draw.point((x, sep_y), fill=(*GOLD, alpha))
+
+# ── Grade "Shichibukai" sur la photo ─────────────────────────────────────────
+grade_y  = CARD_W - 100
+try:
+    font_grade = ImageFont.truetype(FONT_SERIF, 28)
+    font_label = ImageFont.truetype(FONT_SANS, 11)
+except:
+    font_grade = ImageFont.load_default()
+    font_label = ImageFont.load_default()
+
+# Fond semi-transparent sous le grade
+draw.rectangle([0, grade_y - 40, CARD_W, grade_y + 40], fill=(10, 10, 15, 160))
+
+# Ligne ornementale haut
+line_y1 = grade_y - 28
+mid     = CARD_W // 2
+draw.line([(40, line_y1), (mid - 12, line_y1)], fill=(*GOLD, 140), width=1)
+draw.line([(mid + 12, line_y1), (CARD_W - 40, line_y1)], fill=(*GOLD, 140), width=1)
+draw.rectangle([mid-5, line_y1-4, mid+5, line_y1+4], fill=GOLD)  # diamant simulé
+
+# Texte "Grade obtenu"
+label_bbox = draw.textbbox((0, 0), "— GRADE OBTENU —", font=font_label)
+lw = label_bbox[2] - label_bbox[0]
+draw.text(((CARD_W - lw) / 2, grade_y - 18), "— GRADE OBTENU —",
+          font=font_label, fill=(*GOLD, 170))
+
+# Texte grade principal
+gb = draw.textbbox((0, 0), GRADE.upper(), font=font_grade)
+gw = gb[2] - gb[0]
+
+# Légère ombre dorée
+draw.text(((CARD_W - gw) / 2 + 1, grade_y + 2), GRADE.upper(),
+          font=font_grade, fill=(*GOLD, 60))
+draw.text(((CARD_W - gw) / 2, grade_y), GRADE.upper(),
+          font=font_grade, fill=(245, 217, 122))
+
+# Ligne ornementale bas
+line_y2 = grade_y + 38
+draw.line([(60, line_y2), (mid - 10, line_y2)], fill=(*GOLD, 110), width=1)
+draw.line([(mid + 10, line_y2), (CARD_W - 60, line_y2)], fill=(*GOLD, 110), width=1)
+
+# ── Section bas : Brams Community + pseudo ───────────────────────────────────
+try:
+    font_community = ImageFont.truetype(FONT_SERIF, 12)
+    font_pseudo    = ImageFont.truetype(FONT_SERIF, 24)
+except:
+    font_community = ImageFont.load_default()
+    font_pseudo    = ImageFont.load_default()
+
+# "Brams Community"
+community_text = "BRAMS  COMMUNITY"
+cb = draw.textbbox((0, 0), community_text, font=font_community)
+cw = cb[2] - cb[0]
+draw.text(((CARD_W - cw) / 2, CARD_W + 14), community_text,
+          font=font_community, fill=(*GOLD, 210))
+
+# Divider
+div_y = CARD_W + 38
+draw.line([(50, div_y), (mid - 10, div_y)], fill=(*GOLD, 90), width=1)
+draw.line([(mid + 10, div_y), (CARD_W - 50, div_y)], fill=(*GOLD, 90), width=1)
+draw.ellipse([mid-4, div_y-4, mid+4, div_y+4], fill=(*GOLD, 160))
+
+# Pseudo
+pb = draw.textbbox((0, 0), PSEUDO, font=font_pseudo)
+pw = pb[2] - pb[0]
+draw.text(((CARD_W - pw) / 2, CARD_W + 50), PSEUDO,
+          font=font_pseudo, fill=WHITE_CREAM)
+
+# ── Sauvegarder ───────────────────────────────────────────────────────────────
+card_rgb = card.convert("RGB")
+card_rgb.save(OUTPUT_IMAGE, "PNG", quality=95)
+print(f"✅ Carte générée : {OUTPUT_IMAGE}")
+print(f"   Taille : {CARD_W}x{CARD_H}px")

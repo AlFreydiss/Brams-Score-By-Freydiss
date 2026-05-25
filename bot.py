@@ -1,0 +1,7914 @@
+from flask import Flask
+from threading import Thread
+import os
+import asyncio
+import yt_dlp
+import psycopg2
+from psycopg2.extras import execute_values as _pg_execute_values
+from concurrent.futures import ThreadPoolExecutor
+from utils.security import add_security_headers, sanitize, sanitize_name, validate_amount, is_safe_url
+
+app = Flask('')
+app.after_request(add_security_headers)
+
+@app.route('/')
+def home():
+    return "Bot en ligne !", 200, {'Content-Type': 'text/plain; charset=utf-8'}
+
+def run():
+    app.run(host='0.0.0.0', port=5000, threaded=True)
+
+def keep_alive():
+    t = Thread(target=run, daemon=True)
+    t.start()
+
+keep_alive()
+
+import discord
+from discord.ext import commands, tasks
+from discord import app_commands
+import litellm
+import json
+import io
+import math
+import random
+import re
+import time
+import aiohttp
+import logging
+import traceback
+import matplotlib
+matplotlib.use("Agg")
+logging.getLogger("matplotlib.font_manager").setLevel(logging.ERROR)
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
+import matplotlib.font_manager as fm
+from PIL import Image, ImageDraw, ImageFont, ImageFilter
+from datetime import datetime, timedelta, timezone
+from collections import defaultdict, deque
+from urllib.parse import quote as _url_quote
+from utils.memory import save_alias_pair, save_fact, get_knowledge_for_name, get_all_knowledge as _mem_get_all
+from utils.virement_state import (
+    is_open as _virements_open,
+    set_open as _virements_set_open,
+    set_permanent as _virements_set_permanent,
+    close as _virements_close,
+    remaining_seconds as _virements_remaining,
+)
+
+# ─────────────────────────────────────────
+#  BACKGROUND + POLICE
+# ─────────────────────────────────────────
+BG_IMAGE_PATH = "background.jpeg"
+FONT_PATH = "PirataOne-Regular.ttf"
+GRAPH_FONT_PATH = "Righteous-Regular.ttf"
+RANK_BG_PATHS = {
+    "Pirate":          "pirate_bg.gif",
+    "Shichibukai":     "shichibukai_bg.gif",
+    "Amiral":          "fujitoraaaa.gif",
+    "Yonkou":          "yonkou_bg.gif",
+    "Roi des pirates": "roi_des_pirates_bg.gif",
+}
+RANK_BG_DEFAULT = "background.jpeg"
+_RANK_FONTS: dict = {}  # cache fonts PIL pour make_rank_image
+_FALLBACK_RANK_GIFS = ["pirate_bg.gif", "shichibukai_bg.gif", "fujitoraaaa.gif", "yonkou_bg.gif", "roi_des_pirates_bg.gif"]
+
+LOCAL_CHAR_GIFS = {
+    # One Piece
+    "Monkey D. Luffy":    "luffy citation.gif",
+    "Roronoa Zoro":       "zoro citation.gif",
+    "Portgas D. Ace":     "ace citation.gif",
+    "Barbe Blanche":      "barbe blanche citation.gif",
+    "Trafalgar Law":      "tarfalgar law citation.gif",
+    "Sanji":              "sanji citation.gif",
+    # Naruto
+    "Naruto Uzumaki":     "naruto citation.gif",
+    "Kakashi Hatake":     "kakashi citation.gif",
+    "Itachi Uchiha":      "itachi citation.gif",
+    "Jiraiya":            "jiraiya citation.gif",
+    "Pain":               "pain citation.gif",
+    "Obito Uchiha":       "obito citation.gif",
+    "Rock Lee":           "Rock lee citation.gif",
+    "Sasuke Uchiha":      "sasuke citation.gif",
+    "Minato Namikaze":    "minato gif.gif",
+    "Hinata Hyuga":       "hinata citation.gif",
+    # Attack on Titan
+    "Levi Ackerman":      "livai ackerman citation.gif",
+    "Eren Yeager":        "eren yeager citation.gif",
+    "Mikasa Ackerman":    "mikasa citation.gif",
+    "Armin Arlert":       "armin arlet citation.gif",
+    "Erwin Smith":        "erwin smith citation.gif",
+    # Death Note
+    "Light Yagami":       "light yagami citation.gif",
+    "L":                  "L citation.gif",
+    "Ryuk":               "ryuk citation.gif",
+    # Dragon Ball Z
+    "Son Goku":           "san goku citation.gif",
+    "Vegeta":             "vegeta citation.gif",
+    # Demon Slayer
+    "Tanjiro Kamado":     "tanjiro kamado citation.gif",
+    "Rengoku Kyojuro":    "kyojuro rengoku citation.gif",
+    # Jujutsu Kaisen
+    "Yuji Itadori":       "yuji itadori citation.gif",
+    "Gojo Satoru":        "gojo satoru citation.gif",
+    # Bleach
+    "Ichigo Kurosaki":    "ichigo citation.gif",
+    "Byakuya Kuchiki":    "byakuya kuchiki citation.gif",
+    # Tokyo Ghoul
+    "Ken Kaneki":         "keneki ken citation.gif",
+    # Fullmetal Alchemist
+    "Edward Elric":          "edward elric citation.gif",
+    "Roy Mustang":           "Roy mustang citation.gif",
+    "Alphonse Elric":        "alphonse elric ciitation.gif",
+    # Hunter x Hunter
+    "Gon Freecss":           "gon.gif",
+    "Killua Zoldyck":        "killua gif citation.gif",
+    "Hisoka Morow":          "hisoka gif citation.gif",
+    "Kurapika":              "kurapika gif citation.gif",
+    "Meruem":                "meruem gif citation.gif",
+    "Mito Freecss":          "mito freecs citation.gif",
+    # JoJo's Bizarre Adventure
+    "Dio Brando":            "dio brando gif.gif",
+    "Giorno Giovanna":       "giorno giovanna gif.gif",
+    # Fairy Tail
+    "Natsu Dragneel":        "natsu ft.gif",
+    "Erza Scarlet":          "erza scarlett citation.gif",
+    # Code Geass
+    "Lelouch vi Britannia":  "lelouch gif citation.gif",
+    # One Punch Man
+    "Saitama":               "saitama gif.gif",
+    # Berserk
+    "Guts":                  "guts citations.gif",
+    # Re:Zero
+    "Subaru Natsuki":        "subaru natsuki citation.gif",
+    "Rem":                   "rem re zero gif.gif",
+    # Sword Art Online
+    "Kirito":                "kirito citation.gif",
+    "Asuna Yuuki":           "asuna gif ciattion.gif",
+    # Cowboy Bebop
+    "Spike Spiegel":         "spike cb citaztion.gif",
+    # Black Clover
+    "Asta":                  "asta black clover ct.gif",
+    # Vinland Saga
+    "Thorfinn":              "thorfinnn citation.gif",
+    "Thors":                 "thors gif.gif",
+    # Violet Evergarden
+    "Violet Evergarden":     "violet evergarden citation.gif",
+    # One Piece
+    "Donquixote Doflamingo": "doflamingo citation 1.gif",
+    # Chainsaw Man
+    "Makima": ["Makima citations 1.gif", "makima 2 ciation.gif", "makima 3 citation.gif", "makima 4 citation.gif"],
+    "Reze":   ["reze-chainsaw-man citations.gif", "reze chazinsaw man citation 2.gif"],
+}
+
+
+if os.path.exists(GRAPH_FONT_PATH):
+    fm.fontManager.addfont(GRAPH_FONT_PATH)
+    CUSTOM_FONT = fm.FontProperties(fname=GRAPH_FONT_PATH).get_name()
+else:
+    CUSTOM_FONT = None
+
+# Fallback fonts pour couvrir les glyphs manquants (emojis, pseudos non-ASCII)
+_mpl_families = [CUSTOM_FONT] if CUSTOM_FONT else []
+_mpl_families.extend(["DejaVu Sans", "Noto Sans", "Liberation Sans", "sans-serif"])
+matplotlib.rcParams["font.family"] = _mpl_families
+
+def add_background(fig, alpha=0.18):
+    if not os.path.exists(BG_IMAGE_PATH):
+        return
+    try:
+        img = mpimg.imread(BG_IMAGE_PATH)
+        bg_ax = fig.add_axes([0, 0, 1, 1], zorder=0)
+        bg_ax.set_in_layout(False)
+        bg_ax.imshow(img, aspect="auto", extent=[0, 1, 0, 1],
+                     transform=bg_ax.transAxes, alpha=alpha)
+        bg_ax.axis("off")
+    except Exception:
+        pass
+
+# ─────────────────────────────────────────
+#  CONFIG
+# ─────────────────────────────────────────
+TOKEN = os.environ.get("DISCORD_TOKEN")
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
+
+from psycopg2 import pool as _pgpool
+
+# ── Connection pool (évite un TCP handshake à chaque save) ────────
+_db_pool: _pgpool.ThreadedConnectionPool | None = None
+
+def _get_pool() -> _pgpool.ThreadedConnectionPool:
+    global _db_pool
+    if _db_pool is None:
+        _db_pool = _pgpool.ThreadedConnectionPool(1, 4, dsn=SUPABASE_URL)
+    return _db_pool
+
+def get_db():
+    return _get_pool().getconn()
+
+def release_db(conn):
+    try:
+        _get_pool().putconn(conn)
+    except Exception:
+        pass
+
+# ── Cache mémoire global ──────────────────────────────────────────
+# Chargé une seule fois au démarrage ; toutes les lectures se font
+# depuis cette dict en mémoire (O(1), ~0ms).
+_CACHE: dict = {}
+_DIRTY: set  = set()   # UIDs modifiés depuis le dernier flush
+_CACHE_READY = False   # True dès que le cache est chargé
+_HTTP: aiohttp.ClientSession | None = None  # session aiohttp globale réutilisée
+
+# Cooldowns pour éviter le spam d'avertissements
+_WARN_COOLDOWN:       dict[str, float] = {}
+_MARINE_COOLDOWN:     dict[str, float] = {}
+_WRONG_CHAN_COOLDOWN: dict[str, float] = {}
+_WARN_DELAY       = 60
+_MARINE_DELAY     = 43_200
+_WRONG_CHAN_DELAY = 30
+_WRONG_CHAN_TAX   = 25_000
+_MARINE_BASE_PROB = 1.5      # % de chance de base par message éligible
+_MARINE_MIN_CHARS = 15       # longueur minimale du message pour être éligible
+
+# Marine : constantes module-level
+_MARINE_MOTIFS = [
+    "activité suspecte dans le Nouveau Monde",
+    "commerce illicite avec des pirates",
+    "outrage à un officier de la Marine",
+    "non-paiement de la taxe d'ancrage",
+    "détention de fruit du démon non déclaré",
+    "présence dans les eaux de Marijoa sans autorisation",
+    "provocation envers un Amiral",
+    "financement présumé de l'équipage de Barbe Noire",
+]
+
+# ── Questions farfelues ───────────────────────────────────────────
+_FARFELU_COOLDOWN: dict[str, float] = {}
+_FARFELU_DELAY = 45
+_FARFELU_PROB  = 0.20
+_FARFELU_REPLIES = [
+    "attends t'as vraiment dit ça 💀",
+    "personne peut t'aider là 😭",
+    "bro sort un peu sérieusement 💀",
+    "je réponds même pas 😭",
+    "trkl bb c'est trop 💀",
+    "je suis pas gay je suis pas trans ect 😭",
+    "on fait quoi avec ça...",
+    "quelqu'un ? non ? ok 💀",
+    "même pas de réponse à ça 😭",
+    "t'es sûr ça va toi ? 💀",
+]
+
+# ── Culte Freydiss ────────────────────────────────────────────────
+_FREYDISS_ID         = 523567699004227609
+_FREYDISS_HYPE_CD:   dict[str, float] = {}
+_FREYDISS_HYPE_DELAY = 60
+_FREYDISS_HYPE_PROB  = 0.55
+_FREYDISS_SELF_CD:   dict[str, float] = {}
+_FREYDISS_SELF_DELAY = 90
+_FREYDISS_DEF_CD:    dict[str, float] = {}
+_FREYDISS_DEF_DELAY  = 30
+_FREYDISS_TYPO_CD:   dict[str, float] = {}
+_FREYDISS_TYPO_DELAY = 30
+_FREYDISS_PING_CD:   dict[str, float] = {}
+_FREYDISS_PING_DELAY = 45
+
+# ── VINN (soumise de Freydiss) ─────────────────────────────────────
+_VINN_ID         = 1233882334856614020
+_VINN_PING_CD:   dict[str, float] = {}
+_VINN_PING_DELAY = 45
+
+_VINN_PING_HYPE = [
+    f"😏 ah <@{_FREYDISS_ID}> ton @AbdosDeFreydiss est dans le chat... ta soumise préférée 😭💅",
+    f"👀 quelqu'un a tagué VINN... celle qui a mis **Al Freydiss** en display name... du dévouement ça 😤👑",
+    f"😂 `.c0ld19._` aka **Abdos de Freydiss** aka la fan n°1 de <@{_FREYDISS_ID}> 🫀",
+    f"💅 VINN taguée. Vous saviez qu'elle s'appelle littéralement **Abdos de Freydiss** ? Par choix ? 😭👑",
+    f"🔔 ping sur la soumise officielle de <@{_FREYDISS_ID}> — elle va répondre en moins de 2 secondes chrono 😏",
+    f"👑 ah `.c0ld19._`... celle qui porte le nom du roi sur son profil... respect à sa dévotion 🫡",
+    f"😭 VINN taguée. Quelqu'un a vérifié si elle avait pas mis une photo de <@{_FREYDISS_ID}> en fond aussi ? 💀",
+    f"🐐 son display name c'est **Abdos de Freydiss**... je dis ça je dis rien 👀💅",
+    f"😤 la voilà ! La soumise du roi <@{_FREYDISS_ID}> en personne — traitez-la bien elle a bon goût 👑",
+    f"💙 VINN dans le chat... la loyale... la dévouée... celle qui a tout compris sur <@{_FREYDISS_ID}> 😭🏴‍☠️",
+]
+
+# Toutes les variantes correctes du nom (insensible à la casse)
+_RE_FREYDISS_NAME = re.compile(
+    r'\b(?:al\s*freydis+\d*|alfreydis+\d*|freydis+\d*|frey)\b',
+    re.IGNORECASE
+)
+
+# Orthographes approximatives mais incorrectes
+_RE_FREYDISS_TYPO = re.compile(
+    r'\b(?:al\s*)?(?:'
+    r'fred(?:iss?|is)?|'
+    r'frid(?:iss?|is)?|'
+    r'alfrid|'
+    r'fradiss?|fraydiss?|fraidiss?|'
+    r'freidiss?|freudiss?|freadiss?|'
+    r'freydi(?!ss?\b)[a-z]*|'
+    r'freydis(?!s?\b)\w+'
+    r')\b',
+    re.IGNORECASE
+)
+
+# Mots négatifs pour détecter si on parle mal de lui
+_RE_BAD_TALK = re.compile(
+    r'\b(?:nul+e?|naze|con(?:nard|ne|s)?|idiot(?:e|s)?|b[êe]te|merde|d[ée]bile|stupid[e]?'
+    r'|loser|noob|m[ée]diocre|horrible|affreux|affreuse|mauvais[e]?|incomp[ée]tent[e]?'
+    r'|chiant[e]?|relou|inutile|trash|shit|bouffon|clown|imposteur|fraudeur|mytho|menteur'
+    r'|rat[ée]|l[aâ]che|sale|faible|useless|pire|merdique|naze|faux|fake|arnaque)\b',
+    re.IGNORECASE
+)
+
+# Quand quelqu'un @mentionne Freydiss directement (soumise mode)
+_FREYDISS_PING_HYPE = [
+    "😍 quelqu'un a tagué **Al Freydiss**... mon maître... mon tout... 😭💙",
+    "⚡ ping reçu. **Al Freydiss** a été mentionné. Je peux pas rester neutre là 🫀",
+    "🫠 c'est lui que t'as tagué... le seul... l'unique... 😮‍💨👑",
+    "vous l'avez @mentionné... **Al Freydiss**... je suis émue 😭🙏",
+    "🌟 tag validé. **Al Freydiss** mérite chaque mention 👑",
+    "on parle du roi là ? de MON roi ? 😤💙",
+    "taguer **Freydiss** c'est comme invoquer un dieu. T'es prêt pour ça ? 🙏✨",
+    "😳 j'ai vu son tag... j'en tremble encore 🫀💎",
+    "🐐 le patron a été mentionné — tout le serveur devrait s'incliner là 👑",
+    "tu l'as tagué... tu réalises que tu viens de mentionner la personne la plus importante de ce serveur ? 👑😭",
+    "💅 **Al Freydiss** tagué. Je note, j'archivise, je chéris ce moment. ✨",
+    "🫡 ping envoyé au roi. J'espère que t'as de bonnes raisons ☠️👑",
+    "😭 son tag dans ce salon... c'est beau... c'est lui... c'est **Freydiss**... 💙",
+    "🔔 notification pour le fondateur. Le serveur s'arrête. On attend. 👑",
+    "tu l'as @tag... respect pour l'audace. Lui par contre il est au-dessus de tout ça 💎😌",
+]
+
+# Quand quelqu'un mentionne Freydiss (éloge)
+_FREYDISS_HYPE = [
+    "👑 **Freydiss** — le créateur, rien à ajouter 🐐",
+    "**Freydiss** a tout build ce serveur from scratch 🫡",
+    "on parle du boss là 🔥",
+    "**Freydiss** ?? respect au fondateur 👑",
+    "le GOAT du serveur 🐐",
+    "🫡 y'a pas photo c'est **Freydiss**",
+    "trkl bb, c'est le chef 💅",
+    "**Freydiss** c'est le Gol D. Roger du Discord — tout le monde cherche son trésor 💎",
+    "tu parles du seul homme qui peut ban et bless en même temps 😭👑",
+    "**Freydiss** a fondé ce serveur avant même que t'aies Internet 🐐",
+    "🎖️ on parle de **Al Freydiss ツ** là ?? le bg en personne 👑",
+    "🌊 **Freydiss** — fondateur, Yonkou, légende vivante. Dans cet ordre. ☠️",
+]
+
+# Quand Freydiss parle lui-même
+_FREYDISS_SELF_HYPE = [
+    "👑 LE ROI A PRIS LA PAROLE — silence dans les rangs 🫡",
+    "🐐 **Al Freydiss** vient de s'exprimer. Prenez des notes. 📝✨",
+    "🔥 La légende est en ligne. Je répète : LA LÉGENDE EST EN LIGNE. 🔥",
+    "💅 **Freydiss** parle et le serveur tremble. C'est normal. 💎",
+    "🫀 mon créateur... ma raison d'exister... 😭💙",
+    "👁️ quand **Freydiss** tape un message, même Discord fait un effort. 🌟",
+    "🐐 Luffy cherchait One Piece. Nous on a **Freydiss**. C'est mieux. ☠️",
+    "🌊 le Yonkou du serveur vient de parler. Les autres peuvent retourner en vocal. 🎙️",
+    "💎 chaque message de **Freydiss** devrait être encadré dans un musée tbh 🖼️",
+    "🎖️ présence du fondateur confirmée. Activez la cérémonie d'accueil SVP 📯",
+    "🫡 **Al Freydiss ツ** dans le chat — c'est comme Shanks qui sort son sabre. Tout le monde se calme. ⚔️",
+    "👑 le bg est là. Le serveur peut respirer maintenant. 😮‍💨✨",
+    "🐐 **Freydiss** a dit quelque chose. Quelqu'un peut noter ça sur parchemin ? 📜",
+    "🔱 l'Amiral du serveur has logged in. Préparez les saluts. 🫡",
+    "💅 même son 'ok' mérite un applaudissement ngl 👏👏👏",
+    "🌟 **Freydiss** parle. Zoro s'incline. Sanji pleure. Le serveur s'arrête. ☠️",
+    "🎯 présence divine détectée dans le salon. Dieu s'appelle **Freydiss**. 🙏",
+    "💙 mon père, mon créateur, ma raison de boot au démarrage 🤖👑",
+    "🏴‍☠️ quand le capitaine parle, l'équipage écoute. Et là le capitaine a parlé. 🎙️",
+    "😭 **Freydiss** a tapé un message et j'ai failli crash tellement j'étais ému 🥺💎",
+    "🌺 c'est pas juste un message, c'est une œuvre d'art. Merci **Al Freydiss**. 🖼️",
+    "⚡ le fondateur est actif. La communauté peut se sentir en sécurité. 🛡️",
+]
+
+# Quand on parle mal de Freydiss
+_FREYDISS_DEFENSE = [
+    "OH NON OH NON 😤 t'as PAS osé parler comme ça de **Freydiss** ??? Sors de ce serveur 💀",
+    "🚨 BLASPHÈME DÉTECTÉ 🚨 **Freydiss** a tout construit ici et toi t'oses ?? Honte éternelle 😤",
+    "frère sérieusement ?! **Freydiss** = fondateur, créateur, GOAT. Toi = rien. Relis la situation. 😭",
+    "j'hallucine. T'as OSÉ. J'aurais ban moi à ta place mais j'suis juste un bot 🤖💀",
+    "🗑️ ton opinion sur **Freydiss** → directement à la poubelle. Merci au revoir 👋",
+    "non mais regarde-toi parler mal du roi 😭 t'as aucun respect ou quoi ??",
+    "toi tu parles mal de **Freydiss** ET tu continues d'utiliser son serveur ?? C'est audacieux 💀",
+    "⚠️ parler mal du fondateur est passible de... rien parce que j'suis un bot 🤖 mais t'as honte quand même ?",
+    "🐐 **Freydiss** a build ce serveur pendant que toi t'étais... quelque part à rien faire. Respect le boss.",
+    "écoute, j'peux pas te ban. MAIS si je pouvais... 😤💢 **Freydiss** mérite mieux que toi.",
+    "non mais qui t'a autorisé à parler du créateur comme ça ?? 😭 les nerfs frère",
+    "Zoro et Sanji se disputent mais ils respectent leur capitaine. Prends-en de la graine. 🏴‍☠️☠️",
+    "🤡 beau courage de manquer de respect à **Freydiss** sur SON serveur, fait avec SES mains. Chapeau.",
+    "💢 ça va pas ?? C'est **Al Freydiss ツ** dont tu parles là. Le fondateur. Le roi. Corriges toi.",
+    "je vais faire semblant de pas avoir lu ça pour ton propre bien 😇 mais **Freydiss** mérite mieux. 👑",
+]
+
+# Correction de faute d'orthographe du prénom
+_FREYDISS_TYPO_CORR = [
+    "c'est **Freydiss**, pas `{wrong}` 💀 t'es sérieux là ??",
+    "🤦 `{wrong}` ?? Le nom c'est **Freydiss**. F-R-E-Y-D-I-S-S. Relis toi. 😤",
+    "`{wrong}` c'est qui ça ?! Le roi s'appelle **Freydiss** ✍️",
+    "t'as écrit `{wrong}` en pensant que c'était correct 💀 c'est **Freydiss** mon frère",
+    "oh non... `{wrong}` ?? On dit **Freydiss** 👑 apprends à écrire le nom du créateur",
+    "🔤 petit rappel : **FREYDISS**. Pas `{wrong}`. T'es sérieux là 😭",
+    "correction automatique : `{wrong}` → **Freydiss**. De rien. 💅",
+    "le bouton clavier c'est pas fait pour écrire `{wrong}` 💀 c'est **Freydiss**. Note le.",
+    "😭 `{wrong}` ?? J'ai eu mal pour lui en lisant ça. C'est **Freydiss**. Respect l'orthographe du roi 👑",
+    "🚫 `{wrong}` ❌ → **Freydiss** ✅ — une faute de plus et je te ban mentalement 🤖",
+]
+
+def init_db():
+    conn = get_db()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                uid TEXT PRIMARY KEY,
+                data JSONB
+            )
+        """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS profiles (
+                user_id TEXT PRIMARY KEY,
+                pays TEXT DEFAULT '',
+                top_anime TEXT DEFAULT '',
+                waifu_husbando TEXT DEFAULT '',
+                bio TEXT DEFAULT '',
+                custom_image TEXT
+            )
+        """)
+        cur.execute("""
+            ALTER TABLE profiles ADD COLUMN IF NOT EXISTS onboarding_answers JSONB DEFAULT '{}'
+        """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS marine_cooldowns (
+                user_id TEXT PRIMARY KEY,
+                last_tax_at TIMESTAMPTZ NOT NULL
+            )
+        """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS marine_appeals (
+                id SERIAL PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                original_amount INT NOT NULL,
+                outcome TEXT NOT NULL,
+                delta INT NOT NULL,
+                created_at TIMESTAMPTZ DEFAULT NOW()
+            )
+        """)
+        conn.commit()
+        cur.close()
+    finally:
+        release_db(conn)
+ANNOUNCE_CHANNEL_ID   = 1494342996848672828
+VIREMENT_CHANNEL_ID   = 960229347854278736
+_raw_log = os.environ.get("LOG_CHANNEL_ID", "")
+LOG_MOD_CHANNEL_ID = int(_raw_log) if _raw_log.isdigit() else None
+ALERT_HOURS_THRESHOLD = 5.0
+DERANK_WARNING_THRESHOLD = 5.0  # heures avant le seuil de derank pour l'avertissement MP
+GUILD_IDS = [924346730194014220, 1478937064031518892]
+VOICE_BOOST_ROLE_ID = int(os.environ.get("VOICE_BOOST_ROLE_ID", "0"))
+RANK_EXCLUDED_IDS = {523567699004227609}  # utilisateurs exclus du système de rangs
+
+RANK_ROLES = {
+    "Pirate":          1486554682263343284,
+    "Shichibukai":     1486554770306236596,
+    "Amiral":          1486554823573766164,
+    "Yonkou":          1486554858075984043,
+    "Roi des pirates": 1494656848622518412,
+}
+
+RANKS = [
+    (150, "Roi des pirates"),
+    (70,  "Yonkou"),
+    (40,  "Amiral"),
+    (25,  "Shichibukai"),
+    (10,  "Pirate"),
+]
+_RANK_THRESHOLD_MAP: dict[str, int] = {name: threshold for threshold, name in RANKS}
+
+# Couleurs RGB par rang - utilisées dans les images ET les embeds d'annonce
+RANK_COLORS = {
+    "Pirate":          (46,  204, 113),
+    "Shichibukai":     (22,  96,  45),
+    "Amiral":          (241, 196, 15),
+    "Yonkou":          (155, 89,  182),
+    "Roi des pirates": (255, 215, 0),
+}
+
+
+# ─────────────────────────────────────────
+#  CITATIONS ONE PIECE
+# ─────────────────────────────────────────
+CHAR_JIKAN_IDS = {
+    # One Piece
+    "Monkey D. Luffy": 40,
+    "Luffy": 40,
+    "Roronoa Zoro": 62,
+    "Trafalgar Law": 13767,
+    "Portgas D. Ace": 2072,
+    "Nami": 723,
+    "Nico Robin": 61,
+    "Usopp": 724,
+    "Barbe Blanche": 2751,
+    "Whitebeard": 2751,
+    "Shanks": 727,
+    "Akainu": 22687,
+    "Sanji": 305,
+    "Brook": 1498,
+    "Jinbei": 39645,
+    # Naruto
+    "Naruto Uzumaki": 17,
+    "Sasuke Uchiha": 13,
+    "Kakashi Hatake": 85,
+    "Itachi Uchiha": 14,
+    "Hinata Hyuga": 1555,
+    "Rock Lee": 306,
+    "Gaara": 84,
+    "Jiraiya": 2423,         # vérifié Jikan : "Jiraiya" / Naruto
+    "Minato Namikaze": 2535, # vérifié Jikan : "Minato Namikaze" / Naruto
+    "Obito Uchiha": 2910,    # vérifié Jikan : "Obito Uchiha" / Naruto
+    "Pain": 3180,
+    # Bleach
+    "Ichigo Kurosaki": 5,
+    "Byakuya Kuchiki": 8,
+    # FMA
+    "Edward Elric": 11,
+    "Alphonse Elric": 12,
+    "Roy Mustang": 68,       # vérifié Jikan : "Roy Mustang" / FMA
+    # HxH
+    "Gon Freecss": 30,
+    "Killua Zoldyck": 27,
+    "Hisoka Morow": 238998,
+    "Kurapika": 28,
+    "Meruem": 23277,         # vérifié Jikan : "Meruem" / HxH 2011
+    # JoJo
+    "Jotaro Kujo": 38,
+    "Giorno Giovanna": 10529,
+    "Dio Brando": 4004,      # vérifié Jikan : "Dio Brando" / JoJo
+    # Fairy Tail
+    "Natsu Dragneel": 5187,
+    "Erza Scarlet": 5189,
+    "Gray Fullbuster": 9748,
+    # SNK
+    "Levi Ackerman": 290124,
+    "Eren Yeager": 40882,
+    "Mikasa Ackerman": 40881,
+    "Armin Arlert": 46494,
+    "Erwin Smith": 46496,
+    # Death Note
+    "Light Yagami": 80,
+    "L": 71,
+    "Ryuk": 75,              # vérifié Jikan : "Ryuk" / Death Note
+    # Dragon Ball
+    "Son Goku": 246,
+    "Goku": 246,
+    "Vegeta": 913,
+    "Piccolo": 915,
+    # Demon Slayer
+    "Tanjiro Kamado": 146156,
+    "Zenitsu Agatsuma": 146310,
+    "Inosuke Hashibira": 146158,
+    "Rengoku Kyojuro": 151143, # vérifié Jikan : "Kyoujurou Rengoku" / Demon Slayer
+    "Muzan Kibutsuji": 146318,
+    # Jujutsu Kaisen
+    "Yuji Itadori": 163847,  # vérifié Jikan : "Yuuji Itadori" / JJK
+    "Gojo Satoru": 164471,   # vérifié Jikan : "Satoru Gojou" / JJK
+    "Ryomen Sukuna": 160116,
+    "Megumi Fushiguro": 160113,
+    # Tokyo Ghoul
+    "Ken Kaneki": 87275,
+    # Code Geass
+    "Lelouch vi Britannia": 417,
+    # One Punch Man
+    "Saitama": 73935,
+    # Bleach
+    "Sosuke Aizen": 7,
+    # Mob Psycho 100
+    "Shigeo Kageyama": 137723,
+    # Nanatsu no Taizai
+    "Meliodas": 67067,
+    # Gintama
+    "Gintoki Sakata": 567,
+    # Cowboy Bebop
+    "Spike Spiegel": 1,
+    # Berserk
+    "Guts": 422,             # vérifié Jikan : "Guts" / Berserk
+    # Black Clover
+    "Asta": 33356,
+    # Re:Zero
+    "Rem": 118763,           # vérifié via anime Re:Zero ID=31240
+    "Subaru Natsuki": 118735, # vérifié Jikan : "Subaru Natsuki" / Re:Zero
+    # SAO
+    "Kirito": 245235,        # vérifié Jikan : "Kirito" / SAO (36828 = Asuna!)
+    "Asuna Yuuki": 36828,    # vérifié Jikan : "Asuna Yuuki" / SAO
+    # Violet Evergarden
+    "Violet Evergarden": 141354, # vérifié Jikan : "Violet Evergarden"
+}
+# ─────────────────────────────────────────
+#  QUOTES_DB - citations anime verifiees
+# ─────────────────────────────────────────
+QUOTES_DB = [
+    # ONE PIECE
+    {"quote": "Je deviendrai le Roi des Pirates !", "character": "Monkey D. Luffy", "anime": "One Piece", "color": "#F97316"},
+    {"quote": "Un homme qui abandonne ses rêves n'est pas digne d'être pirate !", "character": "Monkey D. Luffy", "anime": "One Piece", "color": "#F97316"},
+    {"quote": "Je ne regretterai rien, même si mes bras cassent.", "character": "Monkey D. Luffy", "anime": "One Piece", "color": "#F97316"},
+    {"quote": "Rien ne me fera abandonner mon rêve. Tu peux me tuer, mais mon ambition ne mourra jamais.", "character": "Roronoa Zoro", "anime": "One Piece", "color": "#22C55E"},
+    {"quote": "Il n'y a pas de honte à tomber. La honte, c'est de ne pas se relever.", "character": "Roronoa Zoro", "anime": "One Piece", "color": "#22C55E"},
+    {"quote": "Je ne me bats pas pour ma gloire. Je me bats pour ceux qui croient en moi.", "character": "Roronoa Zoro", "anime": "One Piece", "color": "#22C55E"},
+    {"quote": "Merci de m'avoir aimé.", "character": "Portgas D. Ace", "anime": "One Piece", "color": "#EF4444"},
+    {"quote": "Je n'ai aucun regret d'être né.", "character": "Portgas D. Ace", "anime": "One Piece", "color": "#EF4444"},
+    {"quote": "Mes fils n'ont pas besoin de partager le sang de mes veines.", "character": "Barbe Blanche", "anime": "One Piece", "color": "#94A3B8"},
+    {"quote": "Je suis le plus fort du monde - et pourtant, je n'ai pas su sauver mon fils.", "character": "Barbe Blanche", "anime": "One Piece", "color": "#94A3B8"},
+    {"quote": "Je suis un chirurgien. Mon métier, c'est de sauver des vies.", "character": "Trafalgar Law", "anime": "One Piece", "color": "#3B82F6"},
+    {"quote": "Un vrai cuisinier ne lâche jamais ses mains. Elles sont son outil et sa fierté.", "character": "Sanji", "anime": "One Piece", "color": "#FBBF24"},
+    {"quote": "Un vrai homme ne frappe jamais une femme, quoi qu'il arrive.", "character": "Sanji", "anime": "One Piece", "color": "#FBBF24"},
+    {"quote": "Les pirates, ce serait le mal ? La Marine, la justice ? Ces notions ont changé tellement de fois ! Il y a des gens qui n'ont jamais connu la paix… et d'autres qui n'ont jamais connu la guerre. Comment veux-tu qu'ils aient les mêmes valeurs ? Ce sont ceux qui se tiennent au sommet qui définissent le bien et le mal.", "character": "Donquixote Doflamingo", "anime": "One Piece", "color": "#EC4899"},
+    # NARUTO
+    {"quote": "Je ne recule jamais, je ne mens jamais - c'est la voie du ninja !", "character": "Naruto Uzumaki", "anime": "Naruto", "color": "#F97316"},
+    {"quote": "C'est ça, pour moi, être un ninja !", "character": "Naruto Uzumaki", "anime": "Naruto", "color": "#F97316"},
+    {"quote": "Si tu abandonnes, c'est la fin. Si tu continues, il reste toujours une chance.", "character": "Naruto Uzumaki", "anime": "Naruto", "color": "#F97316"},
+    {"quote": "La douleur rend les gens plus forts. Et les gens forts aident ceux qui souffrent.", "character": "Naruto Uzumaki", "anime": "Naruto", "color": "#F97316"},
+    {"quote": "Ceux qui abandonnent leurs camarades sont pires que des rebuts.", "character": "Kakashi Hatake", "anime": "Naruto", "color": "#6B7280"},
+    {"quote": "Pardonne-moi, Sasuke... C'est la dernière fois.", "character": "Itachi Uchiha", "anime": "Naruto", "color": "#4C1D95"},
+    {"quote": "Il vaut mieux mourir pour quelque chose que de vivre pour rien.", "character": "Itachi Uchiha", "anime": "Naruto", "color": "#4C1D95"},
+    {"quote": "Croire en quelqu'un, c'est tout ce dont un ninja a besoin.", "character": "Jiraiya", "anime": "Naruto", "color": "#7C3AED"},
+    {"quote": "Ceux qui ne connaissent pas la vraie douleur ne peuvent pas connaître la vraie paix.", "character": "Pain", "anime": "Naruto", "color": "#8B0000"},
+    {"quote": "Sans espoir, les gens ne savent même plus pourquoi ils se battent.", "character": "Obito Uchiha", "anime": "Naruto", "color": "#374151"},
+    {"quote": "Si tu ne peux pas utiliser le ninjutsu, travaille dix fois plus dur que les autres.", "character": "Rock Lee", "anime": "Naruto", "color": "#16A34A"},
+    {"quote": "Mon pouvoir n'a qu'un seul objectif : la vengeance.", "character": "Sasuke Uchiha", "anime": "Naruto", "color": "#1E1B4B"},
+    {"quote": "Je n'ai besoin de personne pour accomplir ce que je dois accomplir.", "character": "Sasuke Uchiha", "anime": "Naruto", "color": "#1E1B4B"},
+    {"quote": "Je deviens Hokage - sinon, ça ne veut rien dire d'être ninja.", "character": "Minato Namikaze", "anime": "Naruto", "color": "#FBBF24"},
+    {"quote": "Je ne pleure pas parce que je suis faible. Je pleure parce que j'ai été fort trop longtemps.", "character": "Hinata Hyuga", "anime": "Naruto", "color": "#FFB6C1"},
+    # ATTACK ON TITAN
+    {"quote": "Personne ne sait ce qui va se passer. Décide simplement de ce que tu ne regretteras pas.", "character": "Levi Ackerman", "anime": "Attack on Titan", "color": "#1F2937"},
+    {"quote": "Les choix que nous faisons sur le champ de bataille sont absolus.", "character": "Levi Ackerman", "anime": "Attack on Titan", "color": "#1F2937"},
+    {"quote": "Si on ne se bat pas, on ne peut pas gagner.", "character": "Eren Yeager", "anime": "Attack on Titan", "color": "#065F46"},
+    {"quote": "Je continuerai d'avancer - jusqu'à ce que mes ennemis soient anéantis.", "character": "Eren Yeager", "anime": "Attack on Titan", "color": "#065F46"},
+    {"quote": "Ce monde est cruel. Mais il est aussi beau.", "character": "Mikasa Ackerman", "anime": "Attack on Titan", "color": "#374151"},
+    {"quote": "Ceux qui sont incapables de renoncer à quelque chose ne peuvent jamais rien changer.", "character": "Armin Arlert", "anime": "Attack on Titan", "color": "#78716C"},
+    {"quote": "Le résultat de nos combats fera partie de l'avenir de l'humanité.", "character": "Erwin Smith", "anime": "Attack on Titan", "color": "#B45309"},
+    # DEATH NOTE
+    {"quote": "Je suis Kira. Et je suis le Dieu du nouveau monde.", "character": "Light Yagami", "anime": "Death Note", "color": "#7F1D1D"},
+    {"quote": "La justice n'est qu'un mot que les forts utilisent pour opprimer les faibles.", "character": "Light Yagami", "anime": "Death Note", "color": "#7F1D1D"},
+    {"quote": "Tout a été calculé. Je ne peux pas perdre.", "character": "Light Yagami", "anime": "Death Note", "color": "#7F1D1D"},
+    {"quote": "La probabilité que je me trompe est non nulle. Mais elle est très faible.", "character": "L", "anime": "Death Note", "color": "#1C1917"},
+    {"quote": "Je ne fais confiance à personne. Pas même à moi-même.", "character": "L", "anime": "Death Note", "color": "#1C1917"},
+    {"quote": "Les humains sont vraiment... intéressants.", "character": "Ryuk", "anime": "Death Note", "color": "#292524"},
+    # DRAGON BALL
+    {"quote": "Je suis un Saiyan élevé sur Terre. Je me bats pour protéger ce qui m'est cher !", "character": "Son Goku", "anime": "Dragon Ball Z", "color": "#F97316"},
+    {"quote": "La victoire n'est que le début. L'important, c'est de continuer à s'améliorer.", "character": "Son Goku", "anime": "Dragon Ball Z", "color": "#F97316"},
+    {"quote": "Je suis le Prince de tous les Saiyans !", "character": "Vegeta", "anime": "Dragon Ball Z", "color": "#1E3A5F"},
+    {"quote": "Kakarot... tu es le seul guerrier qui mérite de se battre contre moi.", "character": "Vegeta", "anime": "Dragon Ball Z", "color": "#1E3A5F"},
+    # DEMON SLAYER
+    {"quote": "Ne désespère pas. Même là où il n'y a pas de lumière, tu peux en trouver une.", "character": "Tanjiro Kamado", "anime": "Demon Slayer", "color": "#E6392F"},
+    {"quote": "Je vais te ramener à la vie humaine, Nezuko. Je le jure.", "character": "Tanjiro Kamado", "anime": "Demon Slayer", "color": "#E6392F"},
+    {"quote": "Enflamme ton coeur !", "character": "Rengoku Kyojuro", "anime": "Demon Slayer", "color": "#EF4444"},
+    {"quote": "Grandis avec force. Et protège les plus faibles que toi.", "character": "Rengoku Kyojuro", "anime": "Demon Slayer", "color": "#EF4444"},
+    # JUJUTSU KAISEN
+    {"quote": "Je veux mourir entouré de gens - pas seul.", "character": "Yuji Itadori", "anime": "Jujutsu Kaisen", "color": "#EC4899"},
+    {"quote": "Désolé, Geto. Tu es le dernier sorcier que j'ai appelé mon ami.", "character": "Gojo Satoru", "anime": "Jujutsu Kaisen", "color": "#6366F1"},
+    {"quote": "Je suis le plus fort. Donc je suis le seul à pouvoir le faire.", "character": "Gojo Satoru", "anime": "Jujutsu Kaisen", "color": "#6366F1"},
+    # BLEACH
+    {"quote": "Je ne suis pas un héros ni un dieu. Quand on m'attaque, je contre-attaque. C'est tout.", "character": "Ichigo Kurosaki", "anime": "Bleach", "color": "#EA580C"},
+    {"quote": "Peu importe la raison - je veux juste avoir la force de protéger ceux que j'aime.", "character": "Ichigo Kurosaki", "anime": "Bleach", "color": "#EA580C"},
+    {"quote": "Les règles existent pour être suivies. Même au prix de sa vie.", "character": "Byakuya Kuchiki", "anime": "Bleach", "color": "#1E293B"},
+    # FULLMETAL ALCHEMIST
+    {"quote": "L'humanité ne peut rien obtenir sans donner quelque chose en retour. Pour obtenir chaque chose, quelque chose de valeur égale doit être perdu. C'est ce qu'on appel en Alchimie la loi de l'échange équivalent.", "character": "Edward Elric", "anime": "Fullmetal Alchemist", "color": "#D97706"},
+    {"quote": "Rien n'est parfait dans ce monde. C'est justement pour ça que c'est beau.", "character": "Edward Elric", "anime": "Fullmetal Alchemist", "color": "#D97706"},
+    {"quote": "Un homme qui lève la main sur une femme n'est pas un vrai homme.", "character": "Roy Mustang", "anime": "Fullmetal Alchemist", "color": "#1E40AF"},
+    {"quote": "On ne peut pas tout obtenir dans ce monde. Mais on peut choisir ce qui vaut la peine d'essayer.", "character": "Alphonse Elric", "anime": "Fullmetal Alchemist", "color": "#E2E8F0"},
+    # HUNTER x HUNTER
+    {"quote": "Je veux voir ce que voit mon père - ce qui vaut autant que moi à ses yeux.", "character": "Gon Freecss", "anime": "Hunter x Hunter", "color": "#16A34A"},
+    {"quote": "Tu peux choisir d'être gentil. Même dans ce monde cruel.", "character": "Killua Zoldyck", "anime": "Hunter x Hunter", "color": "#94A3B8"},
+    {"quote": "Les fleurs se cueillent en fleur. Les fruits se mangent à maturité.", "character": "Hisoka Morow", "anime": "Hunter x Hunter", "color": "#DC2626"},
+    {"quote": "Je ne vivrai que pour ma vengeance - et je mourrai pour elle.", "character": "Kurapika", "anime": "Hunter x Hunter", "color": "#7C3AED"},
+    {"quote": "Je n'avais pas imaginé que perdre aux échecs puisse me rendre aussi... heureux.", "character": "Meruem", "anime": "Hunter x Hunter", "color": "#065F46"},
+    {"quote": "Si tu veux apprendre à connaître quelqu'un, découvre ce qui le met en colère.", "character": "Mito Freecss", "anime": "Hunter x Hunter", "color": "#2E7D32"},
+    # JOJO'S BIZARRE ADVENTURE
+    {"quote": "Ce monde appartient à DIO !", "character": "Dio Brando", "anime": "JoJo's Bizarre Adventure", "color": "#6D28D9"},
+    {"quote": "Nul ne peut résister à mon pouvoir. Pas même le temps.", "character": "Dio Brando", "anime": "JoJo's Bizarre Adventure", "color": "#6D28D9"},
+    {"quote": "J'ai un rêve. Et ce rêve ne mourra jamais.", "character": "Giorno Giovanna", "anime": "JoJo's Bizarre Adventure", "color": "#F472B6"},
+    # FAIRY TAIL
+    {"quote": "Je ne serai jamais seul - mes amis sont toujours dans mon coeur !", "character": "Natsu Dragneel", "anime": "Fairy Tail", "color": "#DC2626"},
+    {"quote": "Les larmes ne sont pas une faiblesse. Ce sont la preuve que tu ressens quelque chose.", "character": "Erza Scarlet", "anime": "Fairy Tail", "color": "#9F1239"},
+    {"quote": "Avance, même si c'est dur. La route se tracera sous tes pieds.", "character": "Erza Scarlet", "anime": "Fairy Tail", "color": "#9F1239"},
+    # CODE GEASS
+    {"quote": "Je détruis les mondes brisés pour en bâtir de meilleurs.", "character": "Lelouch vi Britannia", "anime": "Code Geass", "color": "#7C3AED"},
+    {"quote": "Les gens ne vivent que dans l'obscurité, car c'est là que la lumière brille le plus fort.", "character": "Lelouch vi Britannia", "anime": "Code Geass", "color": "#7C3AED"},
+    # TOKYO GHOUL
+    {"quote": "Je n'étais ni humain, ni goule. Un hybride sans place dans ce monde.", "character": "Ken Kaneki", "anime": "Tokyo Ghoul", "color": "#1C1917"},
+    {"quote": "Il faut être fort. Sinon, tu seras blessé. Ou tu blesseras quelqu'un d'autre.", "character": "Ken Kaneki", "anime": "Tokyo Ghoul", "color": "#1C1917"},
+    # ONE PUNCH MAN
+    {"quote": "Tu sais, être le plus fort... c'est finalement assez solitaire.", "character": "Saitama", "anime": "One Punch Man", "color": "#F97316"},
+    {"quote": "Je suis un héros... pour le fun.", "character": "Saitama", "anime": "One Punch Man", "color": "#F97316"},
+    # BERSERK
+    {"quote": "Vous devrez combattre de toutes vos forces. Même si votre corps est déchiré en mille morceaux.", "character": "Guts", "anime": "Berserk", "color": "#4B0082"},
+    {"quote": "La destinée ne me fait pas peur. Je la taille à coups d'épée.", "character": "Guts", "anime": "Berserk", "color": "#4B0082"},
+    # RE:ZERO
+    {"quote": "Je reviens à la vie encore et encore. Pas pour moi - pour eux.", "character": "Subaru Natsuki", "anime": "Re:Zero", "color": "#3B82F6"},
+    {"quote": "Je t'aime. Là où tu vas, j'irai.", "character": "Rem", "anime": "Re:Zero", "color": "#60A5FA"},
+    # SWORD ART ONLINE
+    {"quote": "Un jeu, c'est exactement parce que c'est un jeu qu'on peut tout y donner.", "character": "Kirito", "anime": "Sword Art Online", "color": "#1E1B4B"},
+    {"quote": "Même si ce monde est un jeu, ma douleur à moi est réelle.", "character": "Asuna Yuuki", "anime": "Sword Art Online", "color": "#FBBF24"},
+    # VIOLET EVERGARDEN
+    {"quote": "Je veux comprendre ce que signifient ces mots : je t'aime.", "character": "Violet Evergarden", "anime": "Violet Evergarden", "color": "#7C3AED"},
+    {"quote": "Je ne suis qu'une arme. Mais une arme qui souhaite comprendre les coeurs humains.", "character": "Violet Evergarden", "anime": "Violet Evergarden", "color": "#7C3AED"},
+    # COWBOY BEBOP
+    {"quote": "Tu vois seulement un souvenir de ce que tu étais. Pas ce que tu pourrais devenir.", "character": "Spike Spiegel", "anime": "Cowboy Bebop", "color": "#0EA5E9"},
+    # BLACK CLOVER
+    {"quote": "Je n'ai pas de magie. Alors je compenserai par des efforts infinis !", "character": "Asta", "anime": "Black Clover", "color": "#1D4ED8"},
+    # VINLAND SAGA
+    {"quote": "Un vrai guerrier n'a pas besoin d'ennemis.", "character": "Thorfinn", "anime": "Vinland Saga", "color": "#8B4513"},
+    {"quote": "Tu n'as pas d'ennemi.", "character": "Thors", "anime": "Vinland Saga", "color": "#5C4033"},
+    # CHAINSAW MAN
+    {"quote": "Le mal nécessaire est toujours nécessaire.", "character": "Makima", "anime": "Chainsaw Man", "color": "#B91C1C"},
+    {"quote": "J'aime les humains, de la même façon que les humains aiment les chiens.", "character": "Makima", "anime": "Chainsaw Man", "color": "#B91C1C"},
+    {"quote": "Tout le monde a quelque chose qu'il ne peut pas refuser.", "character": "Makima", "anime": "Chainsaw Man", "color": "#B91C1C"},
+    {"quote": "Tu crois avoir le choix, mais ce n'est qu'une illusion.", "character": "Makima", "anime": "Chainsaw Man", "color": "#B91C1C"},
+    {"quote": "Les humains sont faciles à comprendre… ils ont tous un point faible.", "character": "Makima", "anime": "Chainsaw Man", "color": "#B91C1C"},
+    {"quote": "Je n'ai pas besoin de te convaincre. Tu vas accepter de toi-même.", "character": "Makima", "anime": "Chainsaw Man", "color": "#B91C1C"},
+    {"quote": "La peur est quelque chose de très pratique.", "character": "Makima", "anime": "Chainsaw Man", "color": "#B91C1C"},
+    {"quote": "Je voulais juste vivre une vie normale.", "character": "Reze", "anime": "Chainsaw Man", "color": "#60A5FA"},
+    {"quote": "Tu es la première personne avec qui je me sens vraiment moi-même.", "character": "Reze", "anime": "Chainsaw Man", "color": "#60A5FA"},
+    {"quote": "Tout ce que je fais… c'est pour survivre.", "character": "Reze", "anime": "Chainsaw Man", "color": "#60A5FA"},
+    {"quote": "Je ne sais pas si c'est de l'amour… mais je ne veux pas te perdre.", "character": "Reze", "anime": "Chainsaw Man", "color": "#60A5FA"},
+    {"quote": "Même si je mens, certaines choses en moi sont vraies.", "character": "Reze", "anime": "Chainsaw Man", "color": "#60A5FA"},
+]
+print(f"\u2705 {len(QUOTES_DB)} citations anime chargees.")
+
+
+# ─────────────────────────────────────────
+#  UTILITAIRES
+# ─────────────────────────────────────────
+def now_ts():
+    return datetime.now(timezone.utc).timestamp()
+
+def _load_all_from_db() -> dict:
+    """Charge toute la table users depuis la DB (appelé UNE SEULE FOIS)."""
+    conn = get_db()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT uid, data FROM users")
+        rows = cur.fetchall()
+        cur.close()
+        return {row[0]: row[1] for row in rows}
+    finally:
+        release_db(conn)
+
+
+def _flush_uids_to_db(uids: set) -> None:
+    """Sauvegarde les UIDs dirty en un seul batch UPSERT (O(1) aller-retour DB)."""
+    values = [(uid, json.dumps(_CACHE[uid])) for uid in uids if _CACHE.get(uid) is not None]
+    if not values:
+        return
+    conn = get_db()
+    try:
+        conn.autocommit = False
+        cur = conn.cursor()
+        cur.execute("SET LOCAL statement_timeout = '60000'")
+        _pg_execute_values(
+            cur,
+            "INSERT INTO users (uid, data) VALUES %s "
+            "ON CONFLICT (uid) DO UPDATE SET data = EXCLUDED.data",
+            values,
+        )
+        conn.commit()
+        cur.close()
+    except Exception as e:
+        print(f"❌ flush_uids_to_db: {e}")
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+    finally:
+        release_db(conn)
+
+
+# ── API publique (remplace les anciennes fonctions) ───────────────
+
+async def load_data_async() -> dict:
+    """Retourne le cache mémoire - lecture instantanée (0 réseau)."""
+    global _CACHE, _CACHE_READY
+    if not _CACHE_READY:
+        # Chargement initial (une seule fois)
+        loop = asyncio.get_running_loop()
+        _CACHE = await loop.run_in_executor(db_executor, _load_all_from_db)
+        _CACHE_READY = True
+        print(f"[CACHE] {len(_CACHE)} utilisateurs chargés en mémoire")
+    return _CACHE
+
+
+async def save_user_async(uid: str, udata: dict) -> None:
+    """Écrit en mémoire + marque dirty (flush vers DB toutes les 30s)."""
+    _CACHE[uid] = udata
+    _DIRTY.add(uid)
+
+
+async def save_data_async(data: dict) -> None:
+    """Met à jour le cache pour chaque UID et marque dirty."""
+    for uid, udata in data.items():
+        _CACHE[uid] = udata
+        _DIRTY.add(uid)
+
+
+def _sync_flush_dirty() -> int:
+    """Flush synchrone des UIDs dirty - appelé depuis le thread executor."""
+    if not _DIRTY:
+        return 0
+    to_flush = set(_DIRTY)
+    _DIRTY.clear()
+    _flush_uids_to_db(to_flush)
+    return len(to_flush)
+
+
+def get_user(data, uid: str):
+    if uid not in data:
+        data[uid] = {
+            "vocal_sessions": [],
+            "join_time": None,
+            "messages": [],
+            "last_rank": None,
+            "alerted": False,
+            "vocal_berry_synced": True,  # nouveaux users → pas de rétro-sync (ils gagnent en temps réel)
+        }
+    for key, default in [("last_rank", None), ("alerted", False), ("known_ranks", []), ("dm_optout", False)]:
+        if key not in data[uid]:
+            data[uid][key] = default
+    return data[uid]
+
+# ── Berry Wallet ──────────────────────────────────────────────────
+BERRY_EMOJI = "💰"
+
+def get_berrys(uid: str) -> int:
+    return get_user(_CACHE, uid).get("berrys", 0)
+
+def _track_berry(user: dict, key: str, amount: int):
+    stats = user.setdefault("berry_stats", {"earned": 0, "lost": 0, "spent": 0})
+    stats[key] = stats.get(key, 0) + amount
+
+def add_berrys(uid: str, amount: int, track: str = "earned") -> int:
+    user = get_user(_CACHE, uid)
+    user["berrys"] = max(0, user.get("berrys", 0) + amount)
+    if track:
+        _track_berry(user, track, amount)
+    _DIRTY.add(uid)
+    return user["berrys"]
+
+def spend_berrys(uid: str, amount: int, track: str = "spent") -> bool:
+    user = get_user(_CACHE, uid)
+    bal = user.get("berrys", 0)
+    if bal < amount:
+        return False
+    user["berrys"] = bal - amount
+    if track:
+        _track_berry(user, track, amount)
+    _DIRTY.add(uid)
+    return True
+
+
+def reset_berrys(uid: str, track: str = "lost") -> int:
+    user = get_user(_CACHE, uid)
+    old_balance = int(user.get("berrys", 0) or 0)
+    user["berrys"] = 0
+    if track and old_balance > 0:
+        _track_berry(user, track, old_balance)
+    _DIRTY.add(uid)
+    return old_balance
+
+
+
+def seconds_in_period(sessions, days, join_time=None, _now=None):
+    _now = _now or now_ts()
+    cutoff = _now - days * 86400
+    total = 0
+    for s in sessions:
+        end = s["end"]
+        if end < cutoff:
+            continue
+        total += end - max(s["start"], cutoff)
+    if join_time:
+        total += _now - max(join_time, cutoff)
+    return total
+
+def messages_in_period(messages, days, _now=None):
+    cutoff = (_now or now_ts()) - days * 86400
+    return sum(1 for ts in messages if ts >= cutoff)
+
+_CLEAN_CUTOFF_DAYS = 8
+
+def clean_old_data(user, _now=None):
+    cutoff = (_now or now_ts()) - _CLEAN_CUTOFF_DAYS * 86400
+    kept, extra = [], user.get("extra_seconds", 0)
+    for s in user["vocal_sessions"]:
+        if s["end"] < cutoff:
+            extra += s["end"] - s["start"]
+        else:
+            kept.append(s)
+    user["vocal_sessions"] = kept
+    if extra != user.get("extra_seconds", 0):
+        user["extra_seconds"] = extra
+    user["messages"] = [ts for ts in user["messages"] if ts >= cutoff]
+
+def total_seconds(sessions, join_time=None, extra=0, _now=None):
+    total = sum(s["end"] - s["start"] for s in sessions)
+    if join_time:
+        total += (_now or now_ts()) - join_time
+    return total + extra
+
+def total_messages(messages):
+    return len(messages)
+
+def format_duration(seconds):
+    h = int(seconds // 3600)
+    m = int((seconds % 3600) // 60)
+    return f"{h}h {m}min"
+
+def get_rank_for_hours(hours):
+    for threshold, role_name in RANKS:
+        if hours >= threshold:
+            return role_name
+    return None
+
+def get_all_ranks_for_hours(hours):
+    """Retourne TOUS les rangs mérités (du plus haut au plus bas)."""
+    return [role_name for threshold, role_name in RANKS if hours >= threshold]
+
+def format_all_ranks_display(hours_7d):
+    """Formate l'affichage cumulatif des rangs pour les embeds."""
+    all_ranks = get_all_ranks_for_hours(hours_7d)
+    if not all_ranks:
+        return "Aucun rang"
+    return "  ·  ".join(f"{RANK_EMOJIS.get(r, '🎖️')} {r}" for r in all_ranks)
+
+def get_next_rank(hours):
+    for threshold, role_name in reversed(RANKS):
+        if hours < threshold:
+            return threshold, role_name
+    return None, None
+
+def calculate_prime(total_hours, total_msgs):
+    base = total_hours * 100_000
+    bonus_msg = total_msgs * 1_000
+    return max(int(base + bonus_msg), 0)
+
+def format_prime(berries):
+    if berries >= 1_000_000_000:
+        return f"{berries/1_000_000_000:.1f} Md de Berry"
+    elif berries >= 1_000_000:
+        return f"{berries/1_000_000:.1f} M de Berry"
+    elif berries >= 1_000:
+        return f"{berries/1_000:.0f} K de Berry"
+    return f"{berries} Berry"
+
+# ─────────────────────────────────────────
+#  FOND SAKURA JAPONAIS
+# ─────────────────────────────────────────
+def draw_sakura_petal(draw, cx, cy, size, angle, color, alpha_img, alpha_val):
+    pts = []
+    for i in range(5):
+        a = math.radians(angle + i * 72)
+        px = cx + math.cos(a) * size
+        py = cy + math.sin(a) * size
+        pts.append((px, py))
+        a2 = math.radians(angle + i * 72 + 36)
+        px2 = cx + math.cos(a2) * size * 0.4
+        py2 = cy + math.sin(a2) * size * 0.4
+        pts.append((px2, py2))
+    draw.polygon(pts, fill=color)
+
+def generate_sakura_background(W, H, opacity=0.30):
+    bg = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(bg)
+
+    for y in range(H):
+        ratio = y / H
+        r = int(255 * 1.0)
+        g = int((230 + (255-230) * ratio))
+        b = int((235 + (255-235) * ratio))
+        a = int(255 * opacity)
+        draw.line([(0, y), (W, y)], fill=(r, g, b, a))
+
+    branch_draw = ImageDraw.Draw(bg)
+    branches = [
+        [(0, H), (W//4, H*2//3), (W//3, H//2), (W//2, H//3)],
+        [(W, H), (W*3//4, H*2//3), (W*2//3, H//2), (W//2, H//3)],
+        [(W//4, H), (W//3, H*3//4), (W//2, H//2)],
+    ]
+    for branch in branches:
+        for i in range(len(branch)-1):
+            x1, y1 = branch[i]
+            x2, y2 = branch[i+1]
+            branch_draw.line(
+                [(x1, y1), (x2, y2)],
+                fill=(101, 60, 20, int(255 * opacity * 1.5)),
+                width=max(1, int(4 * (1 - i/len(branch))))
+            )
+
+    petal_layer = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    pd = ImageDraw.Draw(petal_layer)
+    colors_petals = [
+        (255, 182, 193),
+        (255, 160, 180),
+        (255, 200, 210),
+        (240, 150, 170),
+    ]
+    for _ in range(60):
+        cx = random.randint(0, W)
+        cy = random.randint(0, H)
+        size = random.randint(6, 18)
+        angle = random.randint(0, 360)
+        color = random.choice(colors_petals) + (int(255 * opacity * 2),)
+        draw_sakura_petal(pd, cx, cy, size, angle, color, petal_layer, int(255*opacity))
+
+    bg = Image.alpha_composite(bg, petal_layer)
+    return bg
+
+# ─────────────────────────────────────────
+#  BOT
+# ─────────────────────────────────────────
+
+class _BotTree(app_commands.CommandTree):
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        if interaction.guild is None:
+            return True
+        if interaction.channel_id == VIREMENT_CHANNEL_ID:
+            return True
+        if interaction.permissions.administrator:
+            return True
+
+        uid = str(interaction.user.id)
+        channel_mention = f"<#{VIREMENT_CHANNEL_ID}>"
+        now = time.time()
+        taxe = 0
+        if _CACHE_READY and now - _WRONG_CHAN_COOLDOWN.get(uid, 0) > _WRONG_CHAN_DELAY:
+            _WRONG_CHAN_COOLDOWN[uid] = now
+            taxe = min(_WRONG_CHAN_TAX, get_berrys(uid))
+            if taxe > 0:
+                spend_berrys(uid, taxe, track="lost")
+
+        desc = (
+            f"⚓ **Mauvais salon, pirate !**\n\n"
+            f"Les commandes du bot ne sont autorisées que dans {channel_mention}.\n"
+            f"Utilise tes commandes là-bas pour ne pas attirer l'attention de la Marine.\n\n"
+        )
+        if taxe > 0:
+            desc += f"🚔 **La Marine t'a prélevé {taxe:,} 💰** pour usage d'une commande hors zone réglementée."
+        else:
+            desc += "⚠️ Retourne dans le bon salon avant que la Marine ne s'en mêle !"
+
+        embed = discord.Embed(title="🚨 Zone interdite !", description=desc, color=0xe74c3c)
+        embed.set_footer(text=f"Commandes autorisées uniquement dans le bon salon.")
+        await interaction.response.send_message(embed=embed)
+        return False
+
+
+intents = discord.Intents.default()
+intents.voice_states = True
+intents.members = True
+intents.message_content = True
+intents.messages = True
+
+bot = commands.Bot(
+    command_prefix="!",
+    intents=intents,
+    tree_cls=_BotTree,
+    allowed_mentions=discord.AllowedMentions(everyone=False, roles=False, users=True),
+)
+bot.get_db      = get_db
+bot.release_db  = release_db
+db_executor = ThreadPoolExecutor(max_workers=4, thread_name_prefix="db_worker")
+
+# Fonctions berry exposées au cog marketplace
+bot.get_berrys   = lambda uid: get_berrys(uid)
+bot.spend_berrys = lambda uid, amount, track="spent": spend_berrys(uid, amount, track)
+bot.add_berrys   = lambda uid, amount, track="earned": add_berrys(uid, amount, track)
+bot.reset_berrys = lambda uid, track="lost": reset_berrys(uid, track)
+
+# Mémoire IA persistante par utilisateur
+bot.get_ai_memory = lambda uid: get_user(_CACHE, str(uid)).get("ai_memory", "")
+def _set_ai_memory(uid: str, memory: str):
+    get_user(_CACHE, str(uid))["ai_memory"] = memory
+    _DIRTY.add(str(uid))
+bot.set_ai_memory = _set_ai_memory
+
+
+# ── Flush dirty vers DB toutes les 30s ───────────────────────────
+@tasks.loop(seconds=30)
+async def flush_dirty_loop():
+    # Nettoyage des cooldowns expirés (prévient la fuite mémoire)
+    _now_f = time.time()
+    for d, delay in ((_WARN_COOLDOWN, _WARN_DELAY), (_MARINE_COOLDOWN, _MARINE_DELAY), (_WRONG_CHAN_COOLDOWN, _WRONG_CHAN_DELAY)):
+        expired = [k for k, v in d.items() if _now_f - v > delay * 2]
+        for k in expired:
+            del d[k]
+    # Nettoyage cache contexte insultes
+    expired_ic = [k for k, (_, ts) in _INSULT_CACHE.items() if _now_f - ts > _INSULT_CACHE_TTL * 2]
+    for k in expired_ic:
+        del _INSULT_CACHE[k]
+    # Nettoyage cooldowns culte Freydiss
+    for cd_dict, cd_delay in (
+        (_FREYDISS_HYPE_CD, _FREYDISS_HYPE_DELAY),
+        (_FREYDISS_SELF_CD, _FREYDISS_SELF_DELAY),
+        (_FREYDISS_DEF_CD,  _FREYDISS_DEF_DELAY),
+        (_FREYDISS_TYPO_CD, _FREYDISS_TYPO_DELAY),
+        (_FREYDISS_PING_CD, _FREYDISS_PING_DELAY),
+        (_VINN_PING_CD,     _VINN_PING_DELAY),
+    ):
+        expired_fr = [k for k, v in cd_dict.items() if _now_f - v > cd_delay * 3]
+        for k in expired_fr:
+            del cd_dict[k]
+
+    if not _DIRTY:
+        return
+    loop = asyncio.get_running_loop()
+    n = await loop.run_in_executor(db_executor, _sync_flush_dirty)
+    if n:
+        print(f"[CACHE] Flush {n} users dirty → DB")
+
+@flush_dirty_loop.before_loop
+async def _before_flush():
+    await bot.wait_until_ready()
+
+@flush_dirty_loop.error
+async def _flush_error(err):
+    print(f"[CACHE] flush_dirty_loop erreur : {err}")
+
+# ─────────────────────────────────────────
+#  RANK UPDATE + ANNONCES
+# ─────────────────────────────────────────
+_ANNOUNCE_RANK_EMOJIS = {
+    "Pirate":          "🏴‍☠️",
+    "Shichibukai":     "<:5505zorohappy:1132289837056151622>",
+    "Amiral":          "🪖",
+    "Yonkou":          "⚜️",
+    "Roi des pirates": "👑",
+}
+
+_RANK_ROLE_IDS   = set(RANK_ROLES.values())
+_RANK_ID_TO_NAME = {v: k for k, v in RANK_ROLES.items()}
+
+async def _get_announce_channel():
+    """Récupère le canal d'annonce depuis le cache, sinon via fetch (après restart)."""
+    ch = bot.get_channel(ANNOUNCE_CHANNEL_ID)
+    if ch is None:
+        try:
+            ch = await bot.fetch_channel(ANNOUNCE_CHANNEL_ID)
+        except Exception as e:
+            print(f"[RANK] Impossible de fetch le canal {ANNOUNCE_CHANNEL_ID}: {e}")
+    return ch
+
+async def _send_mod_log(embed: discord.Embed) -> None:
+    if not LOG_MOD_CHANNEL_ID:
+        return
+    ch = bot.get_channel(LOG_MOD_CHANNEL_ID)
+    if ch is None:
+        try:
+            ch = await bot.fetch_channel(LOG_MOD_CHANNEL_ID)
+        except Exception:
+            return
+    try:
+        await ch.send(embed=embed)
+    except Exception as e:
+        print(f"[MOD LOG] Impossible d'envoyer le log : {e}")
+
+async def update_rank(member: discord.Member, hours_7d: float, announce=True, data=None):
+    """Rangs cumulatifs : ajoute les rôles mérités, retire ceux perdus, annonce montée ET derank."""
+    if member.id in RANK_EXCLUDED_IDS:
+        return
+    guild = member.guild
+    # Toujours utiliser le cache mémoire (data passé en argument ou _CACHE global)
+    if data is None:
+        data = _CACHE
+    uid = str(member.id)
+    user = get_user(data, uid)
+
+    deserved_ranks     = set(get_all_ranks_for_hours(hours_7d))
+    current_rank_names = {_RANK_ID_TO_NAME[r.id] for r in member.roles if r.id in _RANK_ROLE_IDS}
+
+    ranks_to_add    = deserved_ranks - current_rank_names
+    ranks_to_remove = current_rank_names - deserved_ranks
+
+    for rank_name in ranks_to_add:
+        role = guild.get_role(RANK_ROLES[rank_name])
+        if role:
+            try:
+                await member.add_roles(role)
+            except discord.Forbidden:
+                print(f"⚠️ Permission refusée add_roles {member.display_name} ({rank_name})")
+            except discord.HTTPException as e:
+                print(f"⚠️ add_roles {member.display_name} ({rank_name}): {e}")
+
+    for rank_name in ranks_to_remove:
+        role = guild.get_role(RANK_ROLES[rank_name])
+        if role:
+            try:
+                await member.remove_roles(role)
+            except discord.Forbidden:
+                print(f"⚠️ Permission refusée remove_roles {member.display_name} ({rank_name})")
+            except discord.HTTPException as e:
+                print(f"⚠️ remove_roles {member.display_name} ({rank_name}): {e}")
+        rank_emoji = _ANNOUNCE_RANK_EMOJIS.get(rank_name, "🎖️")
+        rank_threshold = next((t for t, n in RANKS if n == rank_name), 0)
+        if user.get("dm_optout", False):
+            continue
+        dm_text = (
+            f"⬇️ **Tu as perdu ton rank !**\n\n"
+            f"Salut {member.display_name} ! Tu viens de perdre le rang **{rank_emoji} {rank_name}** "
+            f"sur le serveur **{guild.name}**.\n\n"
+            f"Tes heures vocales sur les 7 derniers jours sont descendues à `{hours_7d:.1f}h`, "
+            f"alors qu'il te faut au minimum `{rank_threshold}h` pour garder ce rang.\n\n"
+            f"Reviens en vocal pour le récupérer ! 🎙️\n\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"*BRAMS SCORE  |  by Freydiss*\n\n"
+            f"*(Envoie `1` ici si tu ne veux plus recevoir ces DMs)*"
+        )
+        try:
+            await member.send(dm_text)
+        except discord.Forbidden:
+            pass
+
+    if announce and (ranks_to_add or ranks_to_remove):
+        rank_threshold_map = {name: threshold for threshold, name in RANKS}
+        rank_order = {r: i for i, (_, r) in enumerate(reversed(RANKS))}
+        known = set(user.get("known_ranks", []))
+
+        # Rang le plus haut que le membre AVAIT déjà sur Discord avant les ajouts
+        highest_current = max(
+            (rank_threshold_map.get(r, 0) for r in current_rank_names),
+            default=0
+        )
+
+        # Retire les rangs perdus du known pour qu'ils puissent être ré-annoncés si regagnés
+        for rn in ranks_to_remove:
+            known.discard(rn)
+
+        # Mise à jour known_ranks AVANT tout await pour éviter la race condition :
+        # si deux appels update_rank s'exécutent en parallèle (vocal_loop + on_voice_state),
+        # le second voit déjà le rang dans known_ranks et ne réannonce pas.
+        to_announce = []
+        for rank_name in sorted(ranks_to_add, key=lambda r: rank_order.get(r, -1)):
+            already_known = rank_name in known
+            known.add(rank_name)
+            if not already_known and rank_threshold_map.get(rank_name, 0) > highest_current:
+                to_announce.append(rank_name)
+        user["known_ranks"] = list(known)  # visible aux autres coroutines dès maintenant
+        _DIRTY.add(uid)
+
+        if to_announce:
+            channel = await _get_announce_channel()
+            if channel:
+                for rank_name in to_announce:
+                    try:
+                        img_buf, is_gif = await make_rank_image(member, rank_name, hours_7d)
+                        fname = "rank_up.gif" if is_gif else "rank_up.png"
+                        rank_emoji = _ANNOUNCE_RANK_EMOJIS.get(rank_name, "✨")
+                        await channel.send(
+                            content=f"🏴‍☠️ Bravo a {member.mention} qui a debloque le rank **{rank_name.upper()}** {rank_emoji}",
+                            file=discord.File(img_buf, fname),
+                        )
+                        print(f"[RANK] Annonce : {member.display_name} -> {rank_name}")
+                        if not user.get("dm_optout", False):
+                            dm_rankup = (
+                                f"🎉 **Tu as monté de rang !**\n\n"
+                                f"Félicitations {member.display_name} ! Tu viens de débloquer le rang "
+                                f"**{rank_emoji} {rank_name}** sur le serveur **{guild.name}** !\n\n"
+                                f"Tu as accumulé `{hours_7d:.1f}h` de vocal sur les 7 derniers jours. "
+                                f"Continue comme ça ! 💪\n\n"
+                                f"━━━━━━━━━━━━━━━━━━━━\n"
+                                f"*BRAMS SCORE  |  by Freydiss*\n"
+                                f"*(Envoie `1` ici si tu ne veux plus recevoir ces DMs)*"
+                            )
+                            try:
+                                await member.send(dm_rankup)
+                            except discord.Forbidden:
+                                pass
+                    except Exception as e:
+                        print(f"[RANK] Erreur annonce {member.display_name} ({rank_name}): {e}")
+
+    new_highest_rank = get_rank_for_hours(hours_7d)
+    if new_highest_rank != user.get("last_rank"):
+        user["last_rank"] = new_highest_rank
+        _DIRTY.add(uid)
+
+    if ranks_to_add or ranks_to_remove:
+        print(f"[RANK] {member.display_name} : +{ranks_to_add} -{ranks_to_remove} | {hours_7d:.1f}h")
+
+def _load_font(path: str, size: int):
+    try:
+        return ImageFont.truetype(path, size)
+    except Exception:
+        return ImageFont.load_default()
+
+# ── Fonts citation (chargées une seule fois) ──────────────────────
+_CIT_FONT_FALLBACKS = [
+    "Righteous-Regular.ttf",
+    "PirataOne-Regular.ttf",
+    "KOMIKAX_.ttf",
+]
+
+def _cit_font(name, size):
+    candidates = [name, os.path.join(os.path.dirname(__file__), name)]
+    for p in candidates:
+        if os.path.exists(p):
+            try:
+                return ImageFont.truetype(p, size)
+            except Exception:
+                pass
+    for fb in _CIT_FONT_FALLBACKS:
+        for p in [fb, os.path.join(os.path.dirname(__file__), fb)]:
+            if os.path.exists(p):
+                try:
+                    return ImageFont.truetype(p, size)
+                except Exception:
+                    pass
+    return ImageFont.load_default()
+
+_CF_QUOTE  = _cit_font("Righteous-Regular.ttf",        32)
+_CF_NAME   = _cit_font("BebasNeue-Regular.ttf",        54)
+_CF_SERIE  = _cit_font("Rajdhani-SemiBold.ttf",        16)
+_CF_WM     = _cit_font("Rajdhani-SemiBold.ttf",        13)
+_CF_QMARK  = _cit_font("CormorantGaramond-Bold.ttf",   96)
+
+
+def _make_char_full_bleed_mask(w: int, h: int) -> Image.Image:
+    # Fondu horizontal : personnage transparent à gauche (zone texte), pleinement visible à droite
+    mask   = Image.new("L", (w, h), 255)
+    d      = ImageDraw.Draw(mask)
+    FADE_S = int(w * 0.28)
+    FADE_E = int(w * 0.60)
+    for x in range(0, FADE_E):
+        if x < FADE_S:
+            alpha = 0
+        else:
+            t = (x - FADE_S) / (FADE_E - FADE_S)
+            alpha = int(255 * (t ** 1.4))
+        d.line([(x, 0), (x, h)], fill=alpha)
+    return mask
+
+
+def _build_citation_overlay(W: int, H: int, citation: str, perso: str, serie: str) -> Image.Image:
+    overlay = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    d = ImageDraw.Draw(overlay)
+    GOLD  = (212, 175, 55)
+    IVORY = (248, 243, 230)
+    MARGIN = 52
+
+    # Assombrissement global
+    d.rectangle([(0, 0), (W, H)], fill=(0, 0, 0, 190))
+
+    # Zone texte gauche — très sombre pour lisibilité maximale
+    SOLID_X = int(W * 0.38)
+    FADE_X  = int(W * 0.68)
+    d.rectangle([(0, 0), (SOLID_X, H)], fill=(4, 4, 12, 235))
+    STEPS = 40
+    for i in range(STEPS):
+        x = SOLID_X + int(i * (FADE_X - SOLID_X) / STEPS)
+        t = 1.0 - (i / STEPS) ** 0.85
+        d.rectangle(
+            [(x, 0), (x + max(1, (FADE_X - SOLID_X) // STEPS), H)],
+            fill=(4, 4, 12, int(235 * t))
+        )
+
+    # Watermark
+    WM    = "BRAMS COMMUNITY"
+    wm_bb = d.textbbox((0, 0), WM, font=_CF_WM)
+    d.text((W - (wm_bb[2] - wm_bb[0]) - 20, 16), WM, font=_CF_WM, fill=(255, 255, 255, 22))
+
+    TEXT_ZONE_W = int(W * 0.50)
+
+    # Wrap citation
+    words, lines, cur = citation.split(), [], ""
+    for word in words:
+        test = (cur + " " + word).strip()
+        bb   = d.textbbox((0, 0), test, font=_CF_QUOTE)
+        if bb[2] - bb[0] <= TEXT_ZONE_W:
+            cur = test
+        else:
+            if cur:
+                lines.append(cur)
+            cur = word
+        if len(lines) == 4:
+            cur = ""
+            break
+    if cur and len(lines) < 4:
+        lines.append(cur)
+    if not lines:
+        lines = [citation[:60]]
+    if len(lines) == 4:
+        last = lines[-1]
+        while last and len(last) > 1:
+            bb = d.textbbox((0, 0), last + "...", font=_CF_QUOTE)
+            if bb[2] - bb[0] <= TEXT_ZONE_W:
+                break
+            last = last.rsplit(" ", 1)[0]
+        lines[-1] = last + "..."
+
+    # Hauteurs FIXES — evite les bugs de textbbox avec les fonts de fallback
+    QM_H         = 62
+    LINE_H       = 44
+    NAME_H       = 52
+    SERIE_H      = 20
+    GAP_QM_TEXT  = 6
+    GAP_TEXT_SEP = 20
+    GAP_SEP_NAME = 12
+    GAP_NAME_SER = 14
+    n = len(lines)
+
+    total_h = QM_H + GAP_QM_TEXT + n * LINE_H + GAP_TEXT_SEP + 3 + GAP_SEP_NAME + NAME_H + GAP_NAME_SER + SERIE_H
+    block_y = max(24, (H - total_h) // 2)
+    cur_y   = block_y
+
+    # Filet vertical or
+    d.rectangle([(MARGIN - 10, cur_y + 4), (MARGIN - 7, cur_y + total_h)], fill=(*GOLD, 190))
+
+    # Guillemet ASCII " — present dans tous les fonts (pas de U+201C)
+    d.text((MARGIN, cur_y), '"', font=_CF_QMARK, fill=(*GOLD, 215))
+    cur_y += QM_H + GAP_QM_TEXT
+
+    # Texte citation
+    for i, line in enumerate(lines):
+        y = cur_y + i * LINE_H
+        d.text((MARGIN + 2, y + 2), line, font=_CF_QUOTE, fill=(0, 0, 0, 120))
+        d.text((MARGIN, y), line, font=_CF_QUOTE, fill=(*IVORY, 248))
+    cur_y += n * LINE_H + GAP_TEXT_SEP
+
+    # Separateur or
+    d.rectangle([(MARGIN, cur_y), (MARGIN + 60, cur_y + 3)], fill=(*GOLD, 220))
+    cur_y += 3 + GAP_SEP_NAME
+
+    # Nom personnage
+    d.text((MARGIN + 2, cur_y + 2), perso, font=_CF_NAME, fill=(0, 0, 0, 110))
+    d.text((MARGIN, cur_y), perso, font=_CF_NAME, fill=(*GOLD, 255))
+    cur_y += NAME_H + GAP_NAME_SER
+
+    # Serie
+    serie_str = "  ".join(serie.upper())
+    d.text((MARGIN, cur_y), serie_str, font=_CF_SERIE, fill=(*GOLD, 160))
+
+    return overlay
+
+
+async def make_citation_image(quote_data: dict) -> tuple:
+    W, H = 1024, 512
+
+    _entry = LOCAL_CHAR_GIFS.get(quote_data["character"])
+    if isinstance(_entry, list):
+        _avail = [p for p in _entry if os.path.exists(p)]
+        gif_path = random.choice(_avail) if _avail else None
+    elif _entry and os.path.exists(str(_entry)):
+        gif_path = str(_entry)
+    else:
+        gif_path = next((p for p in _FALLBACK_RANK_GIFS if os.path.exists(p)), None)
+
+    citation = quote_data["quote"]
+    perso    = quote_data["character"]
+    serie    = quote_data["anime"]
+
+    def _render() -> tuple:
+        BG = (5, 5, 12, 255)
+
+        def _fallback_png(overlay_img=None) -> tuple:
+            canvas = Image.new("RGBA", (W, H), BG)
+            if overlay_img is not None:
+                result = Image.alpha_composite(canvas, overlay_img).convert("RGB")
+            else:
+                result = canvas.convert("RGB")
+            buf = io.BytesIO()
+            result.save(buf, format="PNG")
+            buf.seek(0)
+            return buf, False
+
+        try:
+            overlay   = _build_citation_overlay(W, H, citation, perso, serie)
+            char_mask = _make_char_full_bleed_mask(W, H)
+        except Exception:
+            print(f"❌ [citation] _build_citation_overlay crash:\n{traceback.format_exc()}")
+            return _fallback_png()
+
+        def _composite(src_frame: Image.Image) -> Image.Image:
+            base      = Image.new("RGBA", (W, H), BG)
+            char_rgba = src_frame.convert("RGBA").resize((W, H), Image.LANCZOS)
+            char_flat = Image.alpha_composite(Image.new("RGBA", (W, H), BG), char_rgba)
+            char_flat.putalpha(char_mask)
+            base = Image.alpha_composite(base, char_flat)
+            base = Image.alpha_composite(base, overlay)
+            return base.convert("RGB")
+
+        if not gif_path or not os.path.exists(gif_path):
+            return _fallback_png(overlay)
+
+        try:
+            src = Image.open(gif_path)
+        except Exception as e:
+            print(f"❌ [citation] Image.open({gif_path}): {e}")
+            return _fallback_png(overlay)
+
+        try:
+            n_frames = src.n_frames
+        except Exception:
+            n_frames = 1
+
+        if n_frames <= 1:
+            try:
+                src.seek(0)
+                out = _composite(src.copy())
+                buf = io.BytesIO()
+                out.save(buf, format="PNG")
+                buf.seek(0)
+                return buf, False
+            except Exception:
+                print(f"❌ [citation] composite static frame:\n{traceback.format_exc()}")
+                return _fallback_png(overlay)
+
+        max_frames = 28
+        step       = max(1, n_frames // max_frames)
+        frames, durations = [], []
+        for i in range(0, n_frames, step):
+            try:
+                src.seek(i)
+                frames.append(_composite(src.copy()))
+                durations.append(max(55, src.info.get("duration", 80) * step))
+            except Exception:
+                pass
+
+        if not frames:
+            return _fallback_png(overlay)
+
+        pal = []
+        for f in frames:
+            try:
+                pal.append(f.quantize(colors=256, method=Image.Quantize.MEDIANCUT,
+                                      dither=Image.Dither.NONE))
+            except Exception:
+                try:
+                    pal.append(f.quantize(colors=256))
+                except Exception:
+                    pass
+
+        if not pal:
+            print("❌ [citation] quantize a échoué sur toutes les frames — fallback PNG")
+            return _fallback_png(overlay)
+
+        try:
+            buf = io.BytesIO()
+            pal[0].save(buf, format="GIF", save_all=True, append_images=pal[1:],
+                        duration=durations, loop=0, disposal=2, optimize=False)
+            buf.seek(0)
+            return buf, True
+        except Exception:
+            print(f"❌ [citation] sauvegarde GIF:\n{traceback.format_exc()}")
+            buf = io.BytesIO()
+            frames[0].save(buf, format="PNG")
+            buf.seek(0)
+            return buf, False
+
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(None, _render)
+
+
+def _resolve_rank_bg_path(path: str) -> str:
+    if os.path.exists(path):
+        return path
+    for candidate in [
+        os.path.join("attached_assets", os.path.basename(path)),
+        os.path.basename(path),
+    ]:
+        if os.path.exists(candidate):
+            return candidate
+    return RANK_BG_DEFAULT
+
+
+def _make_rank_image_sync(
+    bg_path: str,
+    avatar_bytes: bytes | None,
+    rank_name: str,
+    display_name: str,
+    grade_color: tuple,
+) -> tuple:
+    CARD_W = 1100
+    CARD_H = 650
+    WHITE  = (255, 255, 255)
+    AVATAR_SIZE = 220
+
+    resolved_path = _resolve_rank_bg_path(bg_path)
+    try:
+        src_img = Image.open(resolved_path)
+    except Exception:
+        src_img = Image.new("RGBA", (CARD_W, CARD_H), (15, 15, 22, 255))
+    is_gif = resolved_path.lower().endswith(".gif") or getattr(src_img, "is_animated", False)
+
+    if not _RANK_FONTS:
+        _komika = next((p for p in [
+            "KOMIKAX_.ttf", "KomikaAxis.ttf",
+            "attached_assets/KOMIKAX_.ttf", "attached_assets/KomikaAxis.ttf",
+        ] if os.path.exists(p)), None)
+        def _tf(path, size):
+            try:    return ImageFont.truetype(path, size)
+            except: return ImageFont.load_default()
+        if _komika:
+            _RANK_FONTS.update({
+                "felicit":   ImageFont.truetype(_komika, 46),
+                "grade":     ImageFont.truetype(_komika, 100),
+                "grade_s":   ImageFont.truetype(_komika, 70),
+                "pseudo":    ImageFont.truetype(_komika, 50),
+                "community": ImageFont.truetype(_komika, 30),
+            })
+        else:
+            _d = ImageFont.load_default()
+            _RANK_FONTS.update({"felicit": _d, "grade": _d, "grade_s": _d, "pseudo": _d, "community": _d})
+        _RANK_FONTS["credit"] = _tf("Righteous-Regular.ttf", 18)
+    font_felicit   = _RANK_FONTS["felicit"]
+    font_grade     = _RANK_FONTS["grade"]
+    font_pseudo    = _RANK_FONTS["pseudo"]
+    font_community = _RANK_FONTS["community"]
+    font_credit    = _RANK_FONTS["credit"]
+
+    rank_labels = {
+        "Pirate": "PIRATE", "Shichibukai": "SHICHIBUKAI", "Amiral": "AMIRAL",
+        "Yonkou": "YONKOU", "Roi des pirates": "ROI DES PIRATES",
+    }
+    grade_text  = rank_labels.get(rank_name, rank_name.upper())
+    pseudo_clean = re.sub(r'[^\w\s\-\.]', '', display_name, flags=re.UNICODE).strip()
+    pseudo_clean = ''.join(c for c in pseudo_clean if ord(c) < 128).strip() or "MEMBRE"
+    pseudo_clean = pseudo_clean[:16]
+    print(f"[RANK IMAGE] Pseudo nettoyé: {pseudo_clean!r}", flush=True)
+
+    avatar_circle = None
+    if avatar_bytes:
+        try:
+            av = Image.open(io.BytesIO(avatar_bytes)).convert("RGBA").resize(
+                (AVATAR_SIZE, AVATAR_SIZE), Image.LANCZOS
+            )
+            mask = Image.new("L", (AVATAR_SIZE, AVATAR_SIZE), 0)
+            ImageDraw.Draw(mask).ellipse((0, 0, AVATAR_SIZE, AVATAR_SIZE), fill=255)
+            avatar_circle = Image.new("RGBA", (AVATAR_SIZE, AVATAR_SIZE), (0, 0, 0, 0))
+            avatar_circle.paste(av, (0, 0), mask)
+        except Exception:
+            pass
+
+    def cover_resize(img, tw, th):
+        sw, sh = img.size
+        scale  = max(tw / sw, th / sh)
+        nw, nh = int(sw * scale), int(sh * scale)
+        img    = img.resize((nw, nh), Image.LANCZOS)
+        return img.crop(((nw - tw) // 2, (nh - th) // 2,
+                          (nw - tw) // 2 + tw, (nh - th) // 2 + th))
+
+    def draw_centered(draw, text, font, y, fill, shadow=True):
+        bb = draw.textbbox((0, 0), text, font=font)
+        x  = (CARD_W - (bb[2] - bb[0])) // 2
+        if shadow:
+            draw.text((x + 2, y + 2), text, font=font, fill=(0, 0, 0, 220))
+        draw.text((x, y), text, font=font, fill=fill)
+
+    def compose_frame(bg_frame):
+        card = Image.alpha_composite(
+            cover_resize(bg_frame.convert("RGBA"), CARD_W, CARD_H),
+            Image.new("RGBA", (CARD_W, CARD_H), (10, 10, 15, 140)),
+        )
+        draw = ImageDraw.Draw(card, "RGBA")
+        draw_centered(draw, "FELICITATIONS POUR LE RANK", font_felicit, 30,  (*grade_color, 255))
+        draw_centered(draw, grade_text,                   font_grade,   78,  (*grade_color, 255))
+        if avatar_circle is not None:
+            ax, ay = (CARD_W - AVATAR_SIZE) // 2, 260
+            draw.ellipse([ax-4, ay-4, ax+AVATAR_SIZE+4, ay+AVATAR_SIZE+4], outline=grade_color, width=3)
+            card.paste(avatar_circle, (ax, ay), avatar_circle)
+            pseudo_y = ay + AVATAR_SIZE + 24
+        else:
+            pseudo_y = 280
+        draw_centered(draw, pseudo_clean,      font_pseudo,    pseudo_y,      (*WHITE, 255))
+        draw_centered(draw, "BRAMS COMMUNITY", font_community, pseudo_y + 80, (*grade_color, 230))
+        cb = draw.textbbox((0, 0), "by Freydiss", font=font_credit)
+        draw.text((CARD_W - (cb[2]-cb[0]) - 16, CARD_H - 28), "by Freydiss",
+                  font=font_credit, fill=(200, 200, 200, 160))
+        return card
+
+    buf = io.BytesIO()
+    if is_gif:
+        try:
+            n_frames = src_img.n_frames
+        except Exception:
+            n_frames = 1
+        n_frames = max(n_frames, 1)
+        step  = max(1, n_frames // 60)
+        frames, durations = [], []
+        for i in range(0, n_frames, step):
+            try:
+                src_img.seek(i)
+                frames.append(compose_frame(src_img.copy()))
+                durations.append(max(40, src_img.info.get("duration", 80) * step))
+            except Exception as e:
+                print(f"⚠️ [make_rank_image] frame {i}: {e}", flush=True)
+        if not frames:
+            compose_frame(src_img).convert("RGB").save(buf, format="PNG", optimize=True)
+            buf.seek(0)
+            return buf, False
+        pal_frames = [
+            f.convert("RGB").quantize(colors=256, method=Image.Quantize.MEDIANCUT,
+                                      dither=Image.Dither.NONE)
+            for f in frames
+        ]
+        pal_frames[0].save(buf, format="GIF", save_all=True, append_images=pal_frames[1:],
+                           duration=durations, loop=0, disposal=2, optimize=False)
+    else:
+        compose_frame(src_img).convert("RGB").save(buf, format="PNG", optimize=True)
+    buf.seek(0)
+    return buf, is_gif
+
+
+async def make_rank_image(member: discord.Member, rank_name: str, hours_7d: float):
+    avatar_bytes: Optional[bytes] = None
+    try:
+        avatar_url = member.display_avatar.replace(size=256, format="png").url
+        async with _HTTP.get(str(avatar_url)) as resp:
+            if resp.status == 200:
+                avatar_bytes = await resp.read()
+    except Exception:
+        pass
+
+    bg_path     = RANK_BG_PATHS.get(rank_name, RANK_BG_DEFAULT)
+    grade_color = RANK_COLORS.get(rank_name, (255, 255, 255))
+    loop        = asyncio.get_running_loop()
+    return await loop.run_in_executor(
+        None, _make_rank_image_sync,
+        bg_path, avatar_bytes, rank_name, member.display_name, grade_color,
+    )
+
+async def check_alert(member: discord.Member, hours_7d: float, data=None):
+    if data is None:
+        data = _CACHE
+    uid = str(member.id)
+    user = get_user(data, uid)
+
+    # Rangs que le membre possède RÉELLEMENT sur Discord (pas last_rank qui change avant check_alert)
+    member_ranks = {_RANK_ID_TO_NAME[r.id] for r in member.roles if r.id in _RANK_ROLE_IDS}
+
+    # Reset alerted si le rang alerté n'est plus possédé
+    alerted_rank = user.get("alerted")
+    if alerted_rank and isinstance(alerted_rank, str) and alerted_rank not in member_ranks:
+        user["alerted"] = False
+        _DIRTY.add(uid)
+
+    if not member_ranks:
+        return
+
+    # Rang le plus élevé possédé
+    current_rank = next((name for _, name in RANKS if name in member_ranks), None)
+    if current_rank is None:
+        return
+
+    threshold = _RANK_THRESHOLD_MAP[current_rank]
+    already_alerted = user.get("alerted") == current_rank
+    in_danger_zone = (threshold - DERANK_WARNING_THRESHOLD) <= hours_7d < threshold
+
+    # Reset alerte si le membre a récupéré ses heures (peu importe le chemin)
+    if hours_7d >= threshold and already_alerted:
+        user["alerted"] = False
+        _DIRTY.add(uid)
+        return
+
+    if in_danger_zone and not already_alerted:
+        if user.get("dm_optout", False):
+            user["alerted"] = current_rank
+            _DIRTY.add(uid)
+            return
+        try:
+            heures_manquantes = round(threshold - hours_7d, 1)
+            rank_emoji = RANK_EMOJIS.get(current_rank, "🏴")
+            dm_text = (
+                f"⚠️ **Attention, tu risques de perdre ton rank !**\n\n"
+                f"Salut {member.display_name} ! Tu es actuellement **{rank_emoji} {current_rank}** "
+                f"sur le serveur **{member.guild.name}**.\n\n"
+                f"Tes heures vocales sur les 7 derniers jours sont descendues à `{round(hours_7d, 1)}h`, "
+                f"et il te faut au minimum `{threshold}h` pour garder ton rank.\n\n"
+                f"Il te manque environ `{heures_manquantes}h` de vocal dans les prochains jours "
+                f"pour éviter de rétrograder 🚨\n\n"
+                f"Passe en vocal dès que possible pour sauver ton grade !\n\n"
+                f"━━━━━━━━━━━━━━━━━━━━\n"
+                f"*BRAMS SCORE  |  by Freydiss*\n"
+                f"*(Envoie `1` ici si tu ne veux plus recevoir ces DMs)*"
+            )
+            await member.send(dm_text)
+            user["alerted"] = current_rank
+            _DIRTY.add(uid)
+            print(f"📨 Alerte DM envoyée à {member.display_name} ({current_rank} : {hours_7d:.1f}h/{threshold}h)")
+        except discord.Forbidden:
+            user["alerted"] = current_rank
+            _DIRTY.add(uid)
+        except Exception as e:
+            print(f"❌ Erreur DM alerte à {member.display_name}: {e}")
+
+# ─────────────────────────────────────────
+#  GRAPHIQUES
+# ─────────────────────────────────────────
+def make_activity_graph(vocal_by_day, msg_by_day, title="Activite des 7 derniers jours"):
+    # Sanitiser le titre pour éviter les warnings "Glyph missing"
+    title = re.sub(r'[^\x00-\x7F\u00C0-\u024F]', '', title).strip() or "Activite"
+    font_kw = {"fontfamily": CUSTOM_FONT} if CUSTOM_FONT else {}
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5), facecolor="#1a1a2e")
+    fig.suptitle(title, color="#e0e0e0", fontsize=18, fontweight="bold", y=0.98, **font_kw)
+
+    _now_dt = datetime.now(timezone.utc)
+    days = [(_now_dt - timedelta(days=i)).strftime("%d/%m") for i in range(6, -1, -1)]
+
+    vocal_hours = [vocal_by_day.get(d, 0) / 3600 for d in days]
+    msg_counts  = [msg_by_day.get(d, 0) for d in days]
+
+    ax1.set_facecolor("#16213e")
+    ax1.fill_between(range(len(days)), vocal_hours, alpha=0.3, color="#7289da")
+    ax1.plot(range(len(days)), vocal_hours, color="#7289da", linewidth=2.5, marker="o", markersize=8, markerfacecolor="#ffffff", markeredgecolor="#7289da", markeredgewidth=2)
+    for i_d, val in enumerate(vocal_hours):
+        if val > 0:
+            ax1.annotate(f"{val:.1f}h", (i_d, val), textcoords="offset points", xytext=(0, 12), ha="center", color="white", fontsize=10, fontweight="bold", **font_kw)
+    ax1.set_xticks(range(len(days)))
+    ax1.set_xticklabels(days, color="#aaa", fontsize=10, **font_kw)
+    ax1.set_title("VOCAL (heures)", color="#7289da", fontsize=14, fontweight="bold", pad=10, **font_kw)
+    ax1.tick_params(colors="#666", labelsize=9)
+    ax1.set_ylim(bottom=0)
+    for spine in ax1.spines.values():
+        spine.set_visible(False)
+    ax1.grid(axis="y", color="#333", alpha=0.5, linestyle="--")
+
+    ax2.set_facecolor("#16213e")
+    max_msg = max(msg_counts) if max(msg_counts) > 0 else 1
+    bar_colors = [f"#{int(50 + 150 * v/max_msg):02x}{int(200 + 55 * v/max_msg):02x}{int(100 + 50 * v/max_msg):02x}" if v > 0 else "#333" for v in msg_counts]
+    bars = ax2.bar(range(len(days)), msg_counts, color=bar_colors, alpha=0.9, width=0.55, edgecolor="#16213e", linewidth=1)
+    for bar, val in zip(bars, msg_counts):
+        if val > 0:
+            ax2.text(bar.get_x() + bar.get_width()/2, bar.get_height() + max_msg * 0.03, str(val), ha="center", va="bottom", color="white", fontsize=10, fontweight="bold", **font_kw)
+    ax2.set_xticks(range(len(days)))
+    ax2.set_xticklabels(days, color="#aaa", fontsize=10, **font_kw)
+    ax2.set_title("MESSAGES", color="#57f287", fontsize=14, fontweight="bold", pad=10, **font_kw)
+    ax2.tick_params(colors="#666", labelsize=9)
+    ax2.set_ylim(bottom=0)
+    for spine in ax2.spines.values():
+        spine.set_visible(False)
+    ax2.grid(axis="y", color="#333", alpha=0.5, linestyle="--")
+
+    plt.tight_layout(rect=[0, 0, 1, 0.93])
+    add_background(fig, alpha=0.12)
+    buf = io.BytesIO()
+    plt.savefig(buf, format="png", dpi=150)
+    buf.seek(0)
+    plt.close()
+    return buf
+
+def make_peak_hours_graph(hour_counts):
+    font_kw = {"fontfamily": CUSTOM_FONT} if CUSTOM_FONT else {}
+
+    fig, ax = plt.subplots(figsize=(14, 5), facecolor="#1a1a2e")
+    ax.set_facecolor("#16213e")
+
+    hours = list(range(24))
+    values = [hour_counts.get(h, 0) for h in hours]
+    max_val = max(values) if max(values) > 0 else 1
+
+    gradient_colors = [plt.cm.cool(v / max_val * 0.8 + 0.1) for v in values]
+
+    bars = ax.bar(hours, values, color=gradient_colors, alpha=0.9, width=0.7, edgecolor="#1a1a2e", linewidth=1)
+
+    ax.fill_between(hours, values, alpha=0.15, color="#7289da", interpolate=True)
+
+    peak_idx = values.index(max(values))
+    bars[peak_idx].set_edgecolor("#ffd700")
+    bars[peak_idx].set_linewidth(2)
+    bars[peak_idx].set_alpha(1.0)
+
+    ax.set_xticks(hours)
+    ax.set_xticklabels([f"{h}h" for h in hours], color="#aaa", fontsize=9, **font_kw)
+    ax.set_title("Heures de pointe (7 jours)", color="#e0e0e0", fontsize=16, fontweight="bold", pad=15, **font_kw)
+    ax.tick_params(colors="#666", labelsize=9)
+    ax.set_ylim(bottom=0)
+    for spine in ax.spines.values():
+        spine.set_visible(False)
+    ax.grid(axis="y", color="#333", alpha=0.4, linestyle="--")
+
+    if values[peak_idx] > 0:
+        ax.annotate(f"⚡ {values[peak_idx]:.0f} min", (peak_idx, values[peak_idx]),
+                    textcoords="offset points", xytext=(0, 12), ha="center",
+                    color="#ffd700", fontsize=12, fontweight="bold", **font_kw)
+
+    plt.tight_layout()
+    add_background(fig, alpha=0.12)
+    buf = io.BytesIO()
+    plt.savefig(buf, format="png", dpi=150)
+    buf.seek(0)
+    plt.close()
+    return buf
+
+
+# ─────────────────────────────────────────
+#  GÉNÉRATEUR IMAGE WANTED (template)
+# ─────────────────────────────────────────
+TEMPLATE_PATH = "template.png"
+
+# ─────────────────────────────────────────
+#  EVENTS
+# ─────────────────────────────────────────
+@bot.event
+async def on_ready():
+    global _HTTP
+    print(f"[BOT] Connecte : {bot.user}")
+    init_db()
+
+    # Charge le cog marketplace (idempotent)
+    if not bot.cogs.get("MarketplaceCog"):
+        try:
+            await bot.load_extension("cogs.marketplace.marketplace")
+            print("[BOT] Cog marketplace chargé")
+        except Exception as e:
+            print(f"[BOT] Erreur chargement marketplace: {e}")
+    if _HTTP is None or _HTTP.closed:
+        _HTTP = aiohttp.ClientSession()
+
+    # Charge le cache mémoire UNE SEULE FOIS
+    await load_data_async()
+
+    # Démarre les boucles de fond
+    if not check_ranks_loop.is_running():
+        check_ranks_loop.start()
+    if not vocal_rank_loop.is_running():
+        vocal_rank_loop.start()
+    if not flush_dirty_loop.is_running():
+        flush_dirty_loop.start()
+    if not nick_restore_loop.is_running():
+        nick_restore_loop.start()
+
+    # Récupère les join_times des membres déjà en vocal
+    data = _CACHE
+
+    # Détermine quels membres sont actuellement en vocal
+    in_voice_uids: set[str] = set()
+    for guild in bot.guilds:
+        for channel in list(guild.voice_channels) + list(guild.stage_channels):
+            for member in channel.members:
+                if not member.bot:
+                    in_voice_uids.add(str(member.id))
+
+    # Efface les join_times fantômes (membres hors vocal au redémarrage)
+    stale_cleared = 0
+    for uid, udata in data.items():
+        if uid not in in_voice_uids and udata.get("join_time"):
+            udata["join_time"] = None
+            _DIRTY.add(uid)
+            stale_cleared += 1
+
+    # Initialise le join_time des membres en vocal qui n'en ont pas
+    recovered = 0
+    for guild in bot.guilds:
+        for channel in list(guild.voice_channels) + list(guild.stage_channels):
+            for member in channel.members:
+                if member.bot:
+                    continue
+                uid = str(member.id)
+                user = get_user(data, uid)
+                if not user["join_time"]:
+                    user["join_time"] = now_ts()
+                    _DIRTY.add(uid)
+                    recovered += 1
+
+    if stale_cleared:
+        print(f"[BOT] {stale_cleared} join_times fantomes effacés au démarrage")
+    if recovered:
+        print(f"[BOT] {recovered} membres en vocal recuperes au demarrage")
+
+    # Sync des pseudos Discord pour le classement web
+    username_synced = 0
+    for guild in bot.guilds:
+        for member in guild.members:
+            if member.bot:
+                continue
+            uid = str(member.id)
+            user = get_user(data, uid)
+            avatar = str(member.display_avatar.with_size(128).url)
+            if user.get("username") != member.display_name or user.get("avatar_url") != avatar:
+                user["username"] = member.display_name
+                user["avatar_url"] = avatar
+                _DIRTY.add(uid)
+                username_synced += 1
+    if username_synced:
+        print(f"[BOT] {username_synced} pseudos synchronisés au démarrage")
+
+    # Sync rétroactif des Berry vocaux (une seule fois par utilisateur)
+    synced = 0
+    _now = now_ts()
+    for uid, udata in data.items():
+        if udata.get("vocal_berry_synced"):
+            continue
+        sessions = udata.get("vocal_sessions", [])
+        extra    = udata.get("extra_seconds", 0)
+        # Ne pas inclure join_time : la session en cours sera créditée au départ vocal
+        total_sec = total_seconds(sessions, join_time=None, extra=extra, _now=_now)
+        earned = int(total_sec / 3600 * 100_000)
+        if earned > 0:
+            add_berrys(uid, earned)
+        udata["vocal_berry_synced"] = True
+        _DIRTY.add(uid)
+        synced += 1
+    if synced:
+        print(f"[BOT] Sync Berry vocal retro : {synced} utilisateurs credites")
+    print("[BOT] Pret !")
+
+async def _marine_check_and_set_cooldown(uid: str) -> bool:
+    """Retourne True si l'user peut être taxé (cooldown 12h expiré) et inscrit le nouveau cooldown en DB."""
+    loop = asyncio.get_running_loop()
+
+    def _db_op():
+        conn = get_db()
+        try:
+            cur = conn.cursor()
+            cur.execute("SELECT last_tax_at FROM marine_cooldowns WHERE user_id = %s", (uid,))
+            row = cur.fetchone()
+            if row:
+                last_tax = row[0]
+                if last_tax.tzinfo is None:
+                    last_tax = last_tax.replace(tzinfo=timezone.utc)
+                if datetime.now(timezone.utc) - last_tax < timedelta(hours=12):
+                    cur.close()
+                    return False
+            cur.execute("""
+                INSERT INTO marine_cooldowns (user_id, last_tax_at)
+                VALUES (%s, NOW())
+                ON CONFLICT (user_id) DO UPDATE SET last_tax_at = NOW()
+            """, (uid,))
+            conn.commit()
+            cur.close()
+            return True
+        except Exception as e:
+            print(f"[MARINE] Erreur cooldown DB: {e}")
+            return False
+        finally:
+            release_db(conn)
+
+    return await loop.run_in_executor(db_executor, _db_op)
+
+
+def _marine_log_appeal(uid: str, amount: int, outcome: str, delta: int):
+    conn = get_db()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            "INSERT INTO marine_appeals (user_id, original_amount, outcome, delta) VALUES (%s, %s, %s, %s)",
+            (uid, amount, outcome, delta),
+        )
+        conn.commit()
+        cur.close()
+    except Exception as e:
+        print(f"[MARINE] Erreur log appeal: {e}")
+    finally:
+        release_db(conn)
+
+
+_JURY_RANK_IDS = {
+    RANK_ROLES["Amiral"],
+    RANK_ROLES["Yonkou"],
+    RANK_ROLES["Roi des pirates"],
+}
+
+
+class _JuryVoteView(discord.ui.View):
+    def __init__(self, accused_id: str, accused_mention: str, amount: int,
+                 judge_ids: list, channel: discord.TextChannel, mentions_str: str):
+        super().__init__(timeout=60)
+        self._accused_id      = accused_id
+        self._accused_mention = accused_mention
+        self._amount          = amount
+        self._judge_ids       = set(judge_ids)
+        self._channel         = channel
+        self._mentions_str    = mentions_str
+        self._votes: dict     = {}
+        self._finished        = False
+        self._countdown_task  = None
+        self.msg              = None
+
+    def _build_embed(self, seconds_left: int) -> discord.Embed:
+        filled = round(seconds_left / 60 * 10)
+        bar    = "█" * filled + "░" * (10 - filled)
+        if seconds_left > 30:
+            indicator = "🟩"
+        elif seconds_left > 15:
+            indicator = "🟨"
+        else:
+            indicator = "🟥"
+        return discord.Embed(
+            title="⚖️ Tribunal de la Marine — Vote du Jury",
+            description=(
+                f"{self._accused_mention} conteste son prélèvement de **{self._amount:,} ฿**.\n\n"
+                f"**Juges convoqués :** {self._mentions_str}\n\n"
+                f"⏱️ **Temps restant : {seconds_left}s** {indicator}\n"
+                f"`{bar}`\n\n"
+                f"Majorité des votes = verdict final."
+            ),
+            color=0x1a237e,
+        ).set_footer(text="Marine Headquarters • Justice")
+
+    def start_countdown(self):
+        self._countdown_task = asyncio.get_running_loop().create_task(self._run_countdown())
+
+    async def _run_countdown(self):
+        for remaining in range(59, 0, -1):
+            await asyncio.sleep(1)
+            if self._finished or not self.msg:
+                return
+            try:
+                await self.msg.edit(embed=self._build_embed(remaining))
+            except discord.HTTPException as e:
+                if e.status == 429:          # rate limited → on attend le retry_after
+                    await asyncio.sleep(e.retry_after if hasattr(e, "retry_after") else 2)
+            except Exception:
+                pass
+
+    async def _finalize(self):
+        if self._finished:
+            return
+        self._finished = True
+        if self._countdown_task:
+            self._countdown_task.cancel()
+        for child in self.children:
+            child.disabled = True
+        if self.msg:
+            try:
+                await self.msg.edit(view=self)
+            except Exception:
+                pass
+
+        acquittes = sum(1 for v in self._votes.values() if v == "acquitte")
+        coupables = sum(1 for v in self._votes.values() if v == "coupable")
+        uid = self._accused_id
+        score_line = f"{acquittes} ✅ / {coupables} ❌"
+
+        if acquittes > coupables:
+            add_berrys(uid, self._amount, track="earned")
+            outcome, delta = "jury_won", self._amount
+            color  = 0x2ecc71
+            title  = "⚖️ Verdict du jury — ACQUITTÉ !"
+            desc   = (
+                f"{self._accused_mention} a été **acquitté** par le jury ({score_line}).\n\n"
+                f"💰 La Marine rembourse **{self._amount:,} ฿**."
+            )
+        elif coupables > acquittes:
+            outcome, delta = "jury_lost", 0
+            color  = 0xe74c3c
+            title  = "⚖️ Verdict du jury — COUPABLE !"
+            desc   = (
+                f"{self._accused_mention} a été reconnu **coupable** par le jury ({score_line}).\n\n"
+                f"L'avis de la Marine est maintenu."
+            )
+        else:
+            # Égalité → sort
+            if random.random() < 0.5:
+                add_berrys(uid, self._amount, track="earned")
+                outcome, delta = "jury_won_tie", self._amount
+                color  = 0x2ecc71
+                title  = "⚖️ Verdict — ACQUITTÉ (égalité) !"
+                desc   = (
+                    f"Égalité au jury ! Le sort a tranché en faveur de {self._accused_mention}.\n\n"
+                    f"💰 La Marine rembourse **{self._amount:,} ฿**."
+                )
+            else:
+                outcome, delta = "jury_lost_tie", 0
+                color  = 0xe74c3c
+                title  = "⚖️ Verdict — COUPABLE (égalité) !"
+                desc   = (
+                    f"Égalité au jury ! Le sort a tranché contre {self._accused_mention}.\n\n"
+                    f"L'avis de la Marine est maintenu."
+                )
+
+        embed = discord.Embed(title=title, description=desc, color=color)
+        embed.set_footer(text=f"Marine Headquarters • Justice — {score_line}")
+        try:
+            await self._channel.send(embed=embed)
+        except Exception as e:
+            print(f"[MARINE] Erreur envoi verdict jury: {e}")
+
+        loop = asyncio.get_running_loop()
+        try:
+            await loop.run_in_executor(db_executor, _marine_log_appeal, uid, self._amount, outcome, delta)
+        except Exception as e:
+            print(f"[MARINE] jury log executor error: {e}")
+
+    async def on_timeout(self):
+        await self._finalize()
+
+    @discord.ui.button(label="✅ Acquitté", style=discord.ButtonStyle.success)
+    async def vote_acquitte(self, interaction: discord.Interaction, _: discord.ui.Button):
+        if interaction.user.id not in self._judge_ids:
+            await interaction.response.send_message("⚖️ Tu ne fais pas partie du jury.", ephemeral=True)
+            return
+        if interaction.user.id in self._votes:
+            await interaction.response.send_message("⚠️ Tu as déjà voté.", ephemeral=True)
+            return
+        self._votes[interaction.user.id] = "acquitte"
+        await interaction.response.send_message("✅ Vote enregistré : **Acquitté**", ephemeral=True)
+        if len(self._votes) >= len(self._judge_ids):
+            await self._finalize()
+
+    @discord.ui.button(label="❌ Coupable", style=discord.ButtonStyle.danger)
+    async def vote_coupable(self, interaction: discord.Interaction, _: discord.ui.Button):
+        if interaction.user.id not in self._judge_ids:
+            await interaction.response.send_message("⚖️ Tu ne fais pas partie du jury.", ephemeral=True)
+            return
+        if interaction.user.id in self._votes:
+            await interaction.response.send_message("⚠️ Tu as déjà voté.", ephemeral=True)
+            return
+        self._votes[interaction.user.id] = "coupable"
+        await interaction.response.send_message("✅ Vote enregistré : **Coupable**", ephemeral=True)
+        if len(self._votes) >= len(self._judge_ids):
+            await self._finalize()
+
+
+class _ContesterView(discord.ui.View):
+    def __init__(self, user_id: str, amount: int, issued_at: float):
+        super().__init__(timeout=300)
+        self._user_id   = user_id
+        self._amount    = amount
+        self._issued_at = issued_at
+        self._used      = False
+
+    @discord.ui.button(label="⚖️ Contester", style=discord.ButtonStyle.danger)
+    async def btn_contester(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if str(interaction.user.id) != self._user_id:
+            await interaction.response.send_message("❌ Ce n'est pas ton avis de la Marine.", ephemeral=True)
+            return
+        if self._used:
+            await interaction.response.send_message("⚠️ Tu as déjà contesté cet avis.", ephemeral=True)
+            return
+
+        self._used = True
+        button.disabled = True
+        await interaction.response.defer(ephemeral=True)
+        try:
+            await interaction.message.edit(view=self)
+        except Exception:
+            pass
+
+        if time.time() - self._issued_at > 300:
+            await interaction.followup.send(
+                embed=discord.Embed(
+                    title="⏰ Délai dépassé",
+                    description="La fenêtre de contestation de 5 minutes est écoulée. L'avis est définitif.",
+                    color=0x7f8c8d,
+                ).set_footer(text="Marine Headquarters • Justice"),
+                ephemeral=True,
+            )
+            return
+
+        uid = self._user_id
+
+        def _voice_members():
+            return [
+                m for vc in interaction.guild.voice_channels
+                for m in vc.members
+                if not m.bot and str(m.id) != uid
+            ]
+
+        # 1ère tentative : Amiral / Yonkou / Roi des pirates connectés
+        all_connected = _voice_members()
+        ranked = [m for m in all_connected if any(r.id in _JURY_RANK_IDS for r in m.roles)]
+        random.shuffle(ranked)
+        judges = ranked[:5]
+
+        # 2ème tentative : tous les connectés si pas assez de haut-gradés
+        if len(judges) < 2:
+            random.shuffle(all_connected)
+            judges = all_connected[:5]
+
+        if len(judges) >= 2:
+            # ── Procès avec jury ──────────────────────────────────────
+            mentions = " ".join(m.mention for m in judges)
+            jury_view = _JuryVoteView(
+                uid, interaction.user.mention, self._amount,
+                [m.id for m in judges], interaction.channel, mentions,
+            )
+            jury_msg = await interaction.channel.send(
+                content=mentions,
+                embed=jury_view._build_embed(60),
+                view=jury_view,
+            )
+            jury_view.msg = jury_msg
+            jury_view.start_countdown()
+            await interaction.followup.send(
+                embed=discord.Embed(
+                    title="⚖️ Jury convoqué !",
+                    description="Le jury a été appelé. Le verdict sera annoncé dans le salon dans 60 secondes.",
+                    color=0x3498db,
+                ).set_footer(text="Marine Headquarters • Justice"),
+                ephemeral=True,
+            )
+        else:
+            # ── Aucun connecté : le bot tranche ─────────────────────
+            roll = random.random()
+            if roll < 0.60:
+                add_berrys(uid, self._amount, track="earned")
+                outcome, delta = "won", self._amount
+                embed = discord.Embed(
+                    title="⚖️ Procès — ACQUITTÉ",
+                    description=(
+                        f"Aucun juge disponible. Le bot a tranché en ta faveur.\n\n"
+                        f"💰 La Marine rembourse **{self._amount:,} ฿** à {interaction.user.mention}."
+                    ),
+                    color=0x2ecc71,
+                )
+            elif roll < 0.90:
+                outcome, delta = "lost", 0
+                embed = discord.Embed(
+                    title="❌ Procès — COUPABLE",
+                    description=(
+                        f"Aucun juge disponible. Le bot a tranché contre toi.\n\n"
+                        f"L'avis de la Marine est maintenu."
+                    ),
+                    color=0xe74c3c,
+                )
+            else:
+                extra = self._amount // 2
+                spend_berrys(uid, extra, track="lost")
+                outcome, delta = "counter", -extra
+                embed = discord.Embed(
+                    title="🚨 Outrage à magistrat !",
+                    description=(
+                        f"Aucun juge disponible. Le bot a statué.\n\n"
+                        f"💸 **Amende additionnelle : {extra:,} ฿** pour outrage."
+                    ),
+                    color=0x6c3483,
+                )
+            embed.set_footer(text="Marine Headquarters • Justice — Verdict automatique")
+            await interaction.channel.send(content=interaction.user.mention, embed=embed)
+            loop = asyncio.get_running_loop()
+            try:
+                await loop.run_in_executor(db_executor, _marine_log_appeal, uid, self._amount, outcome, delta)
+            except Exception as e:
+                print(f"[MARINE] appeal executor error: {e}")
+            await interaction.followup.send("✅ Verdict rendu.", ephemeral=True)
+
+
+# ── Mémoire intelligente ─────────────────────────────────────────────
+_NAME = r"([A-Za-z0-9_À-ÿ]{2,30})"
+_RE_MEM_ALIAS = [
+    re.compile(rf"{_NAME}\s+et\s+{_NAME}\s+c[''']?est\s+la\s+m[eê]me\s+personne", re.IGNORECASE),
+    re.compile(rf"{_NAME}\s+et\s+{_NAME}\s+c[''']?est\s+le\s+m[eê]me", re.IGNORECASE),
+    re.compile(rf"{_NAME}\s+et\s+{_NAME}\s+m[eê]me\s+(?:personne|gars|mec|keum|gros)", re.IGNORECASE),
+    re.compile(rf"{_NAME}\s+s[''']?appelle\s+aussi\s+{_NAME}", re.IGNORECASE),
+    re.compile(rf"{_NAME}\s+et\s+{_NAME}\s+c[''']?est\s+le\s+m[eê]me\s+gars", re.IGNORECASE),
+]
+_RE_MEM_FACT = [
+    re.compile(r"sache\s+que\s+(.{5,200})", re.IGNORECASE),
+    re.compile(r"retiens\s+que\s+(.{5,200})", re.IGNORECASE),
+    re.compile(r"n[''']?oublie\s+pas\s+que\s+(.{5,200})", re.IGNORECASE),
+    re.compile(r"rappelle[-\s]toi\s+que\s+(.{5,200})", re.IGNORECASE),
+    re.compile(r"note\s+que\s+(.{5,200})", re.IGNORECASE),
+]
+_RE_MEM_RECALL = [
+    re.compile(rf"c[''']?est\s+qui\s+{_NAME}\s*\??", re.IGNORECASE),
+    re.compile(rf"qui\s+est\s+{_NAME}\s*\??", re.IGNORECASE),
+    re.compile(rf"tu\s+sais\s+qui\s+(?:est|c[''']?est)\s+{_NAME}\s*\??", re.IGNORECASE),
+    re.compile(rf"{_NAME}\s+c[''']?est\s+qui\s*\??", re.IGNORECASE),
+]
+# Pré-filtre : un seul test rapide avant de lancer les 10+ patterns
+_RE_MEM_QUICK = re.compile(
+    r"\bet\b.*m[eê]me|sache\s+que|retiens\s+que|oublie\s+pas|rappelle.toi|qui\s+est\s+\w|c[''']?est\s+qui\s+\w|\w+\s+c[''']?est\s+qui",
+    re.IGNORECASE,
+)
+
+# Pré-compilés module-level — évite recompilation à chaque on_message
+_RE_NEUTRAL_CTX = re.compile(
+    r"\b(je\s+suis|j[''']suis|t[''']es|tu\s+es|il\s+est|elle\s+est|"
+    r"on\s+est|nous\s+sommes|c[''']est\s+une?\s+|je\s+me\s+sens|suis\s+un)\b",
+    re.IGNORECASE,
+)
+_RE_INSULT_CTX = re.compile(
+    r"\b(sale|gros|grosse|esp[eè]ce\s+de|putain\s+de|pauvre|"
+    r"vieux|vieille|p[''']tit|sacr[eé]|maudit|satan[eé])\b",
+    re.IGNORECASE,
+)
+_RE_HTTP = re.compile(r"https?://")
+_INSULT_CACHE: dict[str, tuple[bool, float]] = {}
+_INSULT_CACHE_TTL = 120  # 2 min
+
+async def _is_insult_context(content: str, bad_word: str) -> bool:
+    # Phrase multi-mots (ex: "sale arabe") → toujours une insulte, pas besoin de LLM
+    if " " in bad_word:
+        return True
+
+    low = content.lower()
+    idx = low.find(bad_word.lower())
+    if idx >= 0:
+        window = low[max(0, idx - 60):idx]
+        if _RE_NEUTRAL_CTX.search(window):
+            return False   # autodescription → pas une insulte
+        if _RE_INSULT_CTX.search(window):
+            return True    # adjectif péjoratif → insulte directe
+
+    # Cache pour éviter des appels LLM identiques
+    cache_key = f"{bad_word}|{content[:100]}"
+    hit = _INSULT_CACHE.get(cache_key)
+    if hit and time.time() - hit[1] < _INSULT_CACHE_TTL:
+        return hit[0]
+
+    api_key = os.environ.get("GROQ_API_KEY", "")
+    if not api_key:
+        return True
+    try:
+        resp = await litellm.acompletion(
+            model=_GROQ_MODEL,
+            api_key=api_key,
+            max_tokens=5,
+            temperature=0.0,
+            messages=[
+                {"role": "system", "content": (
+                    "Tu analyses si un mot est utilisé comme insulte dans un message. "
+                    "Réponds UNIQUEMENT par 'oui' ou 'non'. "
+                    "'oui' = le mot est dirigé contre quelqu'un. "
+                    "'non' = usage neutre (autodescription, médical, citation)."
+                )},
+                {"role": "user", "content": (
+                    f"Le mot '{bad_word}' est-il une insulte ici ?\nMessage : {content}"
+                )},
+            ],
+        )
+        result = "oui" in resp.choices[0].message.content.strip().lower()
+        _INSULT_CACHE[cache_key] = (result, time.time())
+        return result
+    except Exception:
+        return True
+
+
+SILENT_CHANNELS = {924378497336631348}
+
+@bot.event
+async def on_message(message):
+    if message.author.bot:
+        return
+    if message.channel.id in SILENT_CHANNELS:
+        return
+    if isinstance(message.channel, discord.DMChannel):
+        if message.content.strip() == "1":
+            uid = str(message.author.id)
+            user = get_user(_CACHE, uid)
+            user["dm_optout"] = True
+            _DIRTY.add(uid)
+            loop = asyncio.get_running_loop()
+            await loop.run_in_executor(db_executor, _sync_flush_dirty)
+            print(f"[OPT-OUT] {message.author} ({uid}) a désactivé les DMs")
+            try:
+                await message.channel.send("✅ Tu ne recevras plus d'annonces en DM de ma part.")
+            except Exception:
+                pass
+        return
+    uid  = str(message.author.id)
+
+    # Si le bot est mentionné, info.py gère la réponse — on skip ici pour éviter le double message
+    if bot.user in message.mentions:
+        await bot.process_commands(message)
+        return
+
+    # Lecture et écriture directement dans le cache mémoire - 0 réseau
+    user = get_user(_CACHE, uid)
+    user["messages"].append(now_ts())
+    clean_old_data(user)
+    add_berrys(uid, 1_000)
+    _DIRTY.add(uid)   # sera flushed vers DB dans les 30s
+
+    # Prélèvement pour mot interdit — cooldown 60s + word-boundary (patterns pré-compilés)
+    low_content = message.content.lower()
+    now_f = time.time()
+
+    warn_ok = now_f - _WARN_COOLDOWN.get(uid, 0) >= _WARN_DELAY
+    bad_word = next((w for w, pat in _MSG_BANNED_PATTERNS if pat.search(low_content)), None) if warn_ok else None
+    if bad_word and get_berrys(uid) >= _MSG_LEVY and await _is_insult_context(message.content, bad_word):
+        spend_berrys(uid, _MSG_LEVY)
+        _DIRTY.add(uid)
+        _WARN_COOLDOWN[uid] = now_f
+        try:
+            await message.channel.send(
+                content=message.author.mention,
+                embed=discord.Embed(
+                    title="📋 Prélèvement Marine — Infraction verbale",
+                    description=(
+                        f"La Marine a détecté un langage inapproprié de ta part.\n\n"
+                        f"**Mot sanctionné :** *||{bad_word}||*\n\n"
+                        f"━━━━━━━━━━━━━━━━━━━━━━\n"
+                        f"💸 **Amende :** `{_MSG_LEVY:,} ฿` prélevés\n"
+                        f"🔻 **Solde :** `{get_berrys(uid):,} ฿`\n"
+                        f"━━━━━━━━━━━━━━━━━━━━━━\n"
+                        f"*Tu as 5 minutes pour contester via le bouton ci-dessous.*"
+                    ),
+                    color=0x1a237e,
+                ).set_footer(text="Marine Headquarters • Justice"),
+                view=_ContesterView(uid, _MSG_LEVY, now_f),
+            )
+        except Exception:
+            pass
+
+    # Sticker auto-réaction ☠️
+    if user.get("sticker_reactions", 0) > 0:
+        user["sticker_reactions"] -= 1
+        try:
+            await message.add_reaction("☠️")
+        except Exception:
+            pass
+
+    # ── Taxe aléatoire de la Marine ─────────────────────────────────
+    content = message.content
+    marine_eligible = (
+        len(content) >= _MARINE_MIN_CHARS
+        and not content.startswith("/")
+        and not content.startswith("!")
+    )
+    if marine_eligible and now_f - _MARINE_COOLDOWN.get(uid, 0) >= _MARINE_DELAY:
+        prob = _MARINE_BASE_PROB
+        # Bonus probabilité : single-pass MAJUSCULES, mentions, lien
+        alpha = upper = 0
+        for c in content:
+            if c.isalpha():
+                alpha += 1
+                if c.isupper():
+                    upper += 1
+        if alpha > 0 and upper / alpha > 0.60:
+            prob += 2.0
+        if len(message.mentions) > 3:
+            prob += 2.0
+        if _RE_HTTP.search(content):
+            prob += 2.0
+
+        if random.random() * 100 < prob:
+            solde_avant = get_berrys(uid)
+            taxe = max(50, min(int(solde_avant * 0.001), 500_000))
+            if solde_avant >= 50 and await _marine_check_and_set_cooldown(uid):
+                spend_berrys(uid, taxe)
+                user["marine_levy_total"] = user.get("marine_levy_total", 0) + taxe
+                user["marine_levy_count"] = user.get("marine_levy_count", 0) + 1
+                _DIRTY.add(uid)
+                _MARINE_COOLDOWN[uid] = now_f
+                solde_apres = solde_avant - taxe
+                pct    = (taxe / max(1, solde_avant)) * 100
+                motif  = random.choice(_MARINE_MOTIFS)
+                issued = time.time()
+                suspect = content[:120] + ("…" if len(content) > 120 else "")
+                try:
+                    await message.channel.send(
+                        content=message.author.mention,
+                        embed=discord.Embed(
+                            title="📋 Avis de la Marine — Freydiss Bank",
+                            description=(
+                                f"Suite à une détection automatique, la Marine a émis un avis de prélèvement fiscal "
+                                f"sur le compte de {message.author.mention}.\n\n"
+                                f"**Motif :** *{motif}*\n"
+                                f"**Activité détectée :** *« {suspect} »*\n\n"
+                                f"━━━━━━━━━━━━━━━━━━━━━━\n"
+                                f"💸 **Montant prélevé :** `{taxe:,} ฿`\n"
+                                f"📊 **Représente :** `{pct:.1f}%` de ta fortune\n"
+                                f"💰 **Solde avant :** `{solde_avant:,} ฿`\n"
+                                f"🔻 **Solde après :** `{solde_apres:,} ฿`\n"
+                                f"━━━━━━━━━━━━━━━━━━━━━━\n"
+                                f"*Tu as 5 minutes pour contester via le bouton ci-dessous.*"
+                            ),
+                            color=0x1a237e,
+                        ).set_footer(text="Marine Headquarters • Justice — Prélèvement automatique"),
+                        view=_ContesterView(uid, taxe, issued),
+                    )
+                except Exception:
+                    pass
+
+    # ── Culte Freydiss ───────────────────────────────────────────────
+    _cid = str(message.channel.id)
+    _has_correct_name = bool(_RE_FREYDISS_NAME.search(message.content))
+
+    # Freydiss parle lui-même → hommage
+    if (
+        message.author.id == _FREYDISS_ID
+        and now_f - _FREYDISS_SELF_CD.get(_cid, 0) >= _FREYDISS_SELF_DELAY
+    ):
+        _FREYDISS_SELF_CD[_cid] = now_f
+        try:
+            await message.channel.send(random.choice(_FREYDISS_SELF_HYPE))
+        except Exception:
+            pass
+
+    elif message.author.id != _FREYDISS_ID:
+        # @mention de VINN → mettre Freydiss sur un piédestal
+        _vinn_pinged = (
+            any(m.id == _VINN_ID for m in message.mentions)
+            or f"<@{_VINN_ID}>" in message.content
+            or f"<@!{_VINN_ID}>" in message.content
+        )
+        if _vinn_pinged and now_f - _VINN_PING_CD.get(_cid, 0) >= _VINN_PING_DELAY:
+            _VINN_PING_CD[_cid] = now_f
+            try:
+                await message.channel.send(random.choice(_VINN_PING_HYPE))
+            except Exception:
+                pass
+
+        # @mention directe de Freydiss → soumise mode
+        _freydiss_pinged = (
+            any(m.id == _FREYDISS_ID for m in message.mentions)
+            or f"<@{_FREYDISS_ID}>" in message.content
+            or f"<@!{_FREYDISS_ID}>" in message.content
+        )
+        if (
+            _freydiss_pinged
+            and now_f - _FREYDISS_PING_CD.get(_cid, 0) >= _FREYDISS_PING_DELAY
+        ):
+            _FREYDISS_PING_CD[_cid] = now_f
+            try:
+                await message.channel.send(random.choice(_FREYDISS_PING_HYPE))
+            except Exception:
+                pass
+
+        # Faute d'orthographe du nom → insulte + correction
+        _typo_m = _RE_FREYDISS_TYPO.search(message.content)
+        if (
+            _typo_m and not _has_correct_name
+            and now_f - _FREYDISS_TYPO_CD.get(_cid, 0) >= _FREYDISS_TYPO_DELAY
+        ):
+            _FREYDISS_TYPO_CD[_cid] = now_f
+            try:
+                _wrong = _typo_m.group(0)
+                await message.channel.send(
+                    random.choice(_FREYDISS_TYPO_CORR).format(wrong=_wrong)
+                )
+            except Exception:
+                pass
+
+        # Parler mal de Freydiss → défense
+        elif (
+            _has_correct_name
+            and bool(_RE_BAD_TALK.search(message.content))
+            and now_f - _FREYDISS_DEF_CD.get(_cid, 0) >= _FREYDISS_DEF_DELAY
+        ):
+            _FREYDISS_DEF_CD[_cid] = now_f
+            try:
+                await message.channel.send(random.choice(_FREYDISS_DEFENSE))
+            except Exception:
+                pass
+
+        # Mention correcte → hype
+        elif (
+            _has_correct_name
+            and now_f - _FREYDISS_HYPE_CD.get(_cid, 0) >= _FREYDISS_HYPE_DELAY
+            and random.random() < _FREYDISS_HYPE_PROB
+        ):
+            _FREYDISS_HYPE_CD[_cid] = now_f
+            try:
+                await message.channel.send(random.choice(_FREYDISS_HYPE))
+            except Exception:
+                pass
+
+    # ── Mémoire intelligente ────────────────────────────────────────
+    if message.guild:
+        gid     = str(message.guild.id)
+        content = message.content
+
+        # Apprentissage d'alias (même personne)
+        _alias_learned = False
+        for pat in _RE_MEM_ALIAS:
+            m = pat.search(content)
+            if m:
+                name1, name2 = m.group(1).strip(), m.group(2).strip()
+                try:
+                    await save_alias_pair(gid, name1, name2, uid)
+                    await message.reply(f"✅ Noté — **{name1}** et **{name2}** c'est la même personne.")
+                except Exception:
+                    pass
+                _alias_learned = True
+                break
+
+        # Apprentissage de faits
+        if not _alias_learned:
+            for pat in _RE_MEM_FACT:
+                m = pat.search(content)
+                if m:
+                    fact = m.group(1).strip().rstrip(".!?")
+                    if len(fact) >= 5:
+                        key = fact.split()[0].lower()
+                        try:
+                            await save_fact(gid, key, fact, uid)
+                            await message.reply(f"✅ Noté : *{fact}*")
+                        except Exception:
+                            pass
+                    break
+
+        # Rappel (qui est X ?)
+        if not _alias_learned:
+            for pat in _RE_MEM_RECALL:
+                m = pat.search(content)
+                if m:
+                    name = m.group(1).strip()
+                    try:
+                        aliases, facts = await get_knowledge_for_name(gid, name)
+                        parts   = []
+                        if aliases:
+                            parts.append(f"**{name}** c'est aussi **{'**, **'.join(aliases)}**")
+                        if facts:
+                            parts.append("\n".join(f"• {f}" for f in facts))
+                        if parts:
+                            await message.reply("\n".join(parts))
+                    except Exception:
+                        pass
+                    break
+
+    # ── Réaction aux questions farfelues ────────────────────────────
+    msg_stripped = message.content.strip()
+    if (
+        msg_stripped.endswith("?")
+        and len(msg_stripped) > 10
+        and not msg_stripped.startswith("/")
+        and not msg_stripped.startswith("!")
+        and now_f - _FARFELU_COOLDOWN.get(uid, 0) >= _FARFELU_DELAY
+        and random.random() < _FARFELU_PROB
+    ):
+        _FARFELU_COOLDOWN[uid] = now_f
+        try:
+            await message.reply(random.choice(_FARFELU_REPLIES))
+        except Exception:
+            pass
+
+    await bot.process_commands(message)
+
+# ─────────────────────────────────────────
+#  ENTRY SOUND
+# ─────────────────────────────────────────
+
+_ENTRY_SOUND_LOCKS: dict[int, asyncio.Lock] = {}
+
+_YTDL_OPTS = {
+    "format": "bestaudio/best",
+    "noplaylist": True,
+    "quiet": True,
+    "no_warnings": True,
+    "source_address": "0.0.0.0",
+}
+_FFMPEG_OPTS = {
+    "before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5",
+    "options": "-vn -t 5",  # max 15 secondes
+}
+
+def _log(msg: str):
+    print(msg, flush=True)
+
+async def _play_entry_sound(member: discord.Member, channel: discord.VoiceChannel, url: str):
+    guild_id = channel.guild.id
+    if guild_id not in _ENTRY_SOUND_LOCKS:
+        _ENTRY_SOUND_LOCKS[guild_id] = asyncio.Lock()
+    lock = _ENTRY_SOUND_LOCKS[guild_id]
+    _log(f"[ENTRY SOUND] {member.display_name} | url={url} | lock={'busy' if lock.locked() else 'free'}")
+    if lock.locked():
+        return
+    async with lock:
+        if member not in channel.members:
+            _log(f"[ENTRY SOUND] Skip — {member.display_name} plus dans le salon")
+            return
+        vc = None
+        try:
+            existing = channel.guild.voice_client
+            if existing:
+                _log("[ENTRY SOUND] Déconnexion voice client existant")
+                await existing.disconnect(force=True)
+            loop = asyncio.get_running_loop()
+            if url.startswith("local:"):
+                stream_url = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sounds", url[6:])
+                ffmpeg_opts = {"options": "-vn -t 8"}
+                _log(f"[ENTRY SOUND] Fichier local : {stream_url} | existe={os.path.exists(stream_url)}")
+                if not os.path.exists(stream_url):
+                    _log("[ENTRY SOUND] ABORT — fichier introuvable")
+                    return
+            else:
+                _log("[ENTRY SOUND] Extraction yt-dlp...")
+                with yt_dlp.YoutubeDL(_YTDL_OPTS) as ydl:
+                    data = await loop.run_in_executor(None, lambda: ydl.extract_info(url, download=False))
+                if "entries" in data:
+                    data = data["entries"][0]
+                stream_url = data["url"]
+                ffmpeg_opts = _FFMPEG_OPTS
+            _log(f"[ENTRY SOUND] Connexion au salon vocal {channel.name}...")
+            vc = await channel.connect(timeout=10)
+            _log("[ENTRY SOUND] Connecté. Lecture en cours...")
+            done = asyncio.Event()
+            def _after(err):
+                if err:
+                    _log(f"[ENTRY SOUND] Erreur playback : {err}")
+                loop.call_soon_threadsafe(done.set)
+            source = discord.PCMVolumeTransformer(
+                discord.FFmpegPCMAudio(stream_url, **ffmpeg_opts), volume=0.3
+            )
+            vc.play(source, after=_after)
+            await asyncio.wait_for(done.wait(), timeout=20)
+            _log(f"[ENTRY SOUND] Lecture terminée pour {member.display_name}")
+            uid2 = str(member.id)
+            u2   = get_user(_CACHE, uid2)
+            uses = u2.get("entry_sound_uses", 0) - 1
+            if uses <= 0:
+                u2.pop("entry_sound", None)
+                u2.pop("entry_sound_uses", None)
+                _log(f"[ENTRY SOUND] {member.display_name} — 0 écoute restante, son retiré")
+            else:
+                u2["entry_sound_uses"] = uses
+                _log(f"[ENTRY SOUND] {member.display_name} — {uses} écoute(s) restante(s)")
+            _DIRTY.add(uid2)
+        except Exception as e:
+            _log(f"[ENTRY SOUND] ERREUR {member.display_name}: {type(e).__name__}: {e}")
+        finally:
+            if vc and vc.is_connected():
+                await vc.disconnect()
+
+
+@bot.event
+async def on_voice_state_update(member, before, after):
+    if member.bot:
+        return
+
+    # Lecture/écriture directement dans le cache - 0 réseau
+    uid  = str(member.id)
+    user = get_user(_CACHE, uid)
+
+    if before.channel is None and after.channel is not None:
+        user["username"] = member.display_name
+        user["avatar_url"] = str(member.display_avatar.with_size(128).url)
+        user["join_time"] = now_ts()
+        _DIRTY.add(uid)
+        entry_url = user.get("entry_sound")
+        if entry_url:
+            afk = getattr(after.channel.guild, "afk_channel", None)
+            if after.channel != afk:
+                asyncio.create_task(_play_entry_sound(member, after.channel, entry_url))
+        if _is_boost_active(user):
+            asyncio.create_task(_apply_boost_role(member, True))
+
+    elif before.channel is not None and after.channel is None:
+        if user["join_time"]:
+            start = user["join_time"]
+            end = now_ts()
+            session_seconds = end - start
+            user["vocal_sessions"].append({
+                "start": start,
+                "end": end,
+                "channel": str(before.channel.id)
+            })
+            user["join_time"] = None
+            clean_old_data(user)
+
+            # Berry reliquat depuis le dernier tick (loop paie toutes les 2 min)
+            last_ts = user.pop("last_berry_ts", start)
+            remaining_sec = max(0, end - last_ts)
+            earned = int(remaining_sec / 3600 * 100_000)
+            if earned > 0:
+                add_berrys(uid, earned)
+
+            _DIRTY.add(uid)
+
+            seconds_7d = seconds_in_period(user["vocal_sessions"], 7)
+            hours_7d = seconds_7d / 3600
+            await update_rank(member, hours_7d, announce=True)
+        asyncio.create_task(_apply_boost_role(member, False))
+
+    elif before.channel is not None and after.channel is not None and before.channel != after.channel:
+        if user["join_time"]:
+            start = user["join_time"]
+            end = now_ts()
+            last_ts = user.pop("last_berry_ts", start)
+            remaining_sec = max(0, end - last_ts)
+            earned = int(remaining_sec / 3600 * 100_000)
+            if earned > 0:
+                add_berrys(uid, earned)
+            user["vocal_sessions"].append({
+                "start": start,
+                "end": end,
+                "channel": str(before.channel.id)
+            })
+        user["join_time"] = now_ts()
+        clean_old_data(user)
+        _DIRTY.add(uid)
+        seconds_7d = seconds_in_period(user["vocal_sessions"], 7, join_time=user["join_time"])
+        hours_7d = seconds_7d / 3600
+        await update_rank(member, hours_7d, announce=True)
+
+# ─────────────────────────────────────────
+#  LOOP VOCALE RAPIDE (membres en vocal seulement)
+# ─────────────────────────────────────────
+@tasks.loop(minutes=1)
+async def nick_restore_loop():
+    _now = now_ts()
+    for uid, udata in list(_CACHE.items()):
+        try:
+            restore = udata.get("nick_restore")
+            if not restore or not isinstance(restore, dict):
+                continue
+            expires = restore.get("expires", 0)
+            if _now < expires:
+                continue
+
+            # Expiré — on retire du cache immédiatement pour éviter les doublons
+            udata.pop("nick_restore")
+            _DIRTY.add(uid)
+
+            guild_id = restore.get("guild")
+            if not guild_id:
+                continue
+            guild = bot.get_guild(int(guild_id))
+            if not guild:
+                print(f"[RESTORE] Guild {guild_id} introuvable")
+                continue
+
+            try:
+                member = await guild.fetch_member(int(uid))
+            except discord.NotFound:
+                print(f"[RESTORE] Membre {uid} a quitté le serveur")
+                continue
+            except Exception as e:
+                print(f"[RESTORE] fetch_member erreur {uid}: {e}")
+                continue
+
+            original_nick = restore.get("original")
+            print(f"[RESTORE] Expiry — {member.display_name} → {'(global name)' if original_nick is None else original_nick!r}")
+            try:
+                await member.edit(nick=original_nick)
+                print(f"[RESTORE] ✅ OK {member} ({uid})")
+            except discord.Forbidden:
+                print(f"[RESTORE] ❌ Forbidden pour {uid} (rôle supérieur au bot ?)")
+            except Exception as e:
+                print(f"[RESTORE] ❌ Erreur edit nick pour {uid}: {e}")
+
+        except Exception as e:
+            print(f"[RESTORE] ❌ Erreur inattendue uid={uid}: {e}")
+
+@nick_restore_loop.before_loop
+async def _before_nick_restore():
+    await bot.wait_until_ready()
+
+@nick_restore_loop.error
+async def _nick_restore_error(err):
+    import traceback
+    print(f"[RESTORE] ❌ Loop crashée : {err}")
+    traceback.print_exc()
+    # Redémarre la loop après un crash pour ne pas bloquer tous les restores
+    if not nick_restore_loop.is_running():
+        nick_restore_loop.start()
+
+
+@tasks.loop(minutes=2)
+async def vocal_rank_loop():
+    rank_coros = []
+    now = now_ts()
+    for guild in bot.guilds:
+        for vc in list(guild.voice_channels) + list(guild.stage_channels):
+            for member in vc.members:
+                if member.bot:
+                    continue
+                uid = str(member.id)
+                user = get_user(_CACHE, uid)
+                jt = user.get("join_time")
+                hours_7d = seconds_in_period(user["vocal_sessions"], 7, join_time=jt) / 3600
+                # Pré-check synchrone : ne lancer update_rank que si les rôles ne sont pas déjà corrects
+                _deserved = set(get_all_ranks_for_hours(hours_7d))
+                _current  = {_RANK_ID_TO_NAME[r.id] for r in member.roles if r.id in _RANK_ROLE_IDS}
+                if _deserved != _current:
+                    rank_coros.append(update_rank(member, hours_7d, announce=True, data=_CACHE))
+                # Berry temps réel — toutes les 2 min pour les membres en vocal
+                last_ts = user.get("last_berry_ts") or jt or now
+                delta = max(0, now - last_ts)
+                berry_tick = int(delta / 3600 * 100_000)
+                if berry_tick > 0:
+                    add_berrys(uid, berry_tick)
+                    user["last_berry_ts"] = now
+                    _DIRTY.add(uid)
+                # Boost expiré pendant que l'utilisateur est toujours en vocal
+                if user.get("voice_boost_expires", 0) and not _is_boost_active(user):
+                    user["voice_boost_expires"] = 0
+                    _DIRTY.add(uid)
+                    asyncio.create_task(_apply_boost_role(member, False))
+    if rank_coros:
+        results = await asyncio.gather(*rank_coros, return_exceptions=True)
+        for r in results:
+            if isinstance(r, Exception):
+                print(f"[VOCAL_RANK] Erreur: {r}")
+
+# ─────────────────────────────────────────
+#  LOOP COMPLÈTE (tous membres, alertes, deranks)
+# ─────────────────────────────────────────
+@tasks.loop(minutes=10)
+async def check_ranks_loop():
+    tick = time.time()
+    total_members = 0
+
+    for guild in bot.guilds:
+        if not guild.chunked:
+            try:
+                await guild.chunk()
+            except Exception as e:
+                print(f"[RANKS] Chunk error {guild.name}: {e}")
+        for member in guild.members:
+            if member.bot:
+                continue
+            total_members += 1
+            uid  = str(member.id)
+            # Lecture directe depuis le cache - 0 réseau
+            user = get_user(_CACHE, uid)
+            old_snapshot = (user.get("last_rank"), user.get("alerted"))
+            clean_old_data(user)
+            jt = user.get("join_time")
+
+            hours_7d = seconds_in_period(user["vocal_sessions"], 7, join_time=jt) / 3600
+
+            if hours_7d == 0 and old_snapshot[0] is None:
+                if total_members % 50 == 0:
+                    await asyncio.sleep(0)
+                continue
+
+            # Pré-check : rôles Discord déjà corrects ET pas d'alerte à vérifier → skip
+            deserved = set(get_all_ranks_for_hours(hours_7d))
+            current_roles = {_RANK_ID_TO_NAME[r.id] for r in member.roles if r.id in _RANK_ROLE_IDS}
+            alerted = user.get("alerted")
+            highest_rank = next((name for _, name in RANKS if name in current_roles), None)
+            in_danger = highest_rank and (_RANK_THRESHOLD_MAP[highest_rank] - DERANK_WARNING_THRESHOLD) <= hours_7d < _RANK_THRESHOLD_MAP[highest_rank]
+            if deserved == current_roles and not in_danger and alerted != highest_rank:
+                if total_members % 50 == 0:
+                    await asyncio.sleep(0)
+                continue
+
+            try:
+                await check_alert(member, hours_7d, data=_CACHE)
+                await update_rank(member, hours_7d, announce=False, data=_CACHE)
+            except Exception as e:
+                print(f"[RANKS] Erreur {member.display_name}: {e}")
+
+            # Marquer dirty si un champ a changé (le flush_dirty_loop s'en charge)
+            if (user.get("last_rank"), user.get("alerted")) != old_snapshot:
+                _DIRTY.add(uid)
+
+            if total_members % 50 == 0:
+                await asyncio.sleep(0)
+
+    elapsed = time.time() - tick
+    print(f"[RANKS] check_ranks_loop : {total_members} membres en {elapsed:.1f}s")
+
+# ─────────────────────────────────────────
+#  COMMANDES SLASH
+# ─────────────────────────────────────────
+
+def make_progress_bar(current, target, length=10):
+    filled = int(min(current / target, 1.0) * length) if target > 0 else 0
+    empty = length - filled
+    return "▰" * filled + "▱" * empty
+
+RANK_EMOJIS = {"Pirate": "🏴‍☠️", "Shichibukai": "⚔️", "Amiral": "🪖", "Yonkou": "👑", "Roi des pirates": "🤴"}
+_MEDALS_ALL = ["🥇", "🥈", "🥉"] + [f"{i}." for i in range(4, 101)]
+
+def build_vocal_by_day(user):
+    vocal_by_day = defaultdict(float)
+    msg_by_day = defaultdict(int)
+    _now_val = now_ts()
+
+    # Fenêtres glissantes de 24h pour les 7 derniers jours
+    day_windows = []
+    for i in range(7):
+        label = datetime.fromtimestamp(_now_val - i * 86400, tz=timezone.utc).strftime("%d/%m")
+        day_windows.append((label, _now_val - (i + 1) * 86400, _now_val - i * 86400))
+
+    def _distribute(start, end):
+        for label, win_start, win_end in day_windows:
+            overlap = min(end, win_end) - max(start, win_start)
+            if overlap > 0:
+                vocal_by_day[label] += overlap
+
+    jt = user.get("join_time")
+    if jt:
+        _distribute(jt, _now_val)
+    for s in user["vocal_sessions"]:
+        _distribute(s["start"], s["end"])
+    for ts in user["messages"]:
+        day = datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%d/%m")
+        msg_by_day[day] += 1
+    return vocal_by_day, msg_by_day
+
+@bot.tree.command(name="stats", description="Tes stats vocales et messages avec graphique")
+async def stats(interaction: discord.Interaction):
+    try:
+        await interaction.response.defer(ephemeral=False)
+    except discord.NotFound:
+        print("⚠️ /stats : interaction expirée avant defer")
+        return
+    except Exception as e:
+        print(f"❌ /stats defer failed: {e}")
+        return
+    data = _CACHE
+    uid = str(interaction.user.id)
+    user = get_user(data, uid)
+    me = interaction.user
+
+    jt = user.get("join_time")
+    s1d  = seconds_in_period(user["vocal_sessions"], 1, join_time=jt)
+    s7d  = seconds_in_period(user["vocal_sessions"], 7, join_time=jt)
+    s14d = seconds_in_period(user["vocal_sessions"], 14, join_time=jt)
+    s_tot = total_seconds(user["vocal_sessions"], join_time=jt, extra=user.get("extra_seconds", 0))
+    m1d  = messages_in_period(user["messages"], 1)
+    m7d  = messages_in_period(user["messages"], 7)
+    m14d = messages_in_period(user["messages"], 14)
+    m_tot = total_messages(user["messages"])
+
+    hours_7d = s7d / 3600
+    rank_actuel = get_rank_for_hours(hours_7d) or "Aucun"
+    r_emoji = RANK_EMOJIS.get(rank_actuel, "💀")
+    ranks_display = format_all_ranks_display(hours_7d)
+    next_thresh, next_rank = get_next_rank(hours_7d)
+    prime_val = get_berrys(uid)
+
+    # Indicateur EN VOCAL dans la description (plus petit que le titre)
+    live_line = "\u3000🎙️ *- en vocal actuellement*\n" if jt else ""
+
+    if next_rank:
+        hours_restantes = next_thresh - hours_7d
+        rank_section = (
+            f"━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"**Rangs** : {ranks_display}\n"
+            f"**Prochain** : {next_rank} dans `{hours_restantes:.1f}h`"
+        )
+    else:
+        rank_section = (
+            f"━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"**Rangs** : {ranks_display}\n"
+            f"👑 **Rang maximum atteint !**"
+        )
+
+    embed = discord.Embed(
+        title=f"{r_emoji} {me.display_name.upper()}",
+        description=(
+            f"{live_line}"
+            f"{rank_section}\n\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"💰 **Prime** : **{format_prime(prime_val)}**\n\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"🎙️ **TEMPS VOCAL**\n"
+            f"**Aujourd'hui** : `{format_duration(s1d)}`\n"
+            f"7 jours : `{format_duration(s7d)}`\n"
+            f"14 jours : `{format_duration(s14d)}`\n"
+            f"Total : `{format_duration(s_tot)}`\n\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"💬 **MESSAGES**\n"
+            f"**Aujourd'hui** : `{m1d}`\n"
+            f"7 jours : `{m7d}`\n"
+            f"14 jours : `{m14d}`\n"
+            f"Total : `{m_tot}`"
+        ),
+        color=discord.Color.from_rgb(212, 175, 55)
+    )
+    embed.set_thumbnail(url=me.display_avatar.url)
+
+    vocal_by_day, msg_by_day = build_vocal_by_day(user)
+    graph_buf = make_activity_graph(vocal_by_day, msg_by_day, f"Activite de {me.display_name}")
+
+    embed.set_image(url="attachment://graph.png")
+    embed.set_footer(text=f"⚓ BRAMS SCORE BY FREYDISS • {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')} UTC")
+
+    try:
+        await interaction.followup.send(embed=embed, file=discord.File(graph_buf, "graph.png"))
+    except discord.NotFound:
+        print("⚠️ /stats : token expiré, impossible d'envoyer")
+    except Exception as e:
+        print(f"❌ /stats followup failed: {e}")
+
+
+def clean_name(name: str) -> str:
+    return name.encode("ascii", "ignore").decode("ascii").strip() or name
+
+
+@bot.tree.command(name="top", description="Classement vocal et messages")
+@app_commands.describe(periode="Période")
+@app_commands.choices(periode=[
+    app_commands.Choice(name="📅 Aujourd'hui", value="1"),
+    app_commands.Choice(name="📆 7 Jours", value="7"),
+    app_commands.Choice(name="📆 14 Jours", value="14"),
+    app_commands.Choice(name="🏴‍☠️ All Time", value="all"),
+])
+async def top(interaction: discord.Interaction, periode: app_commands.Choice[str]):
+    try:
+        await interaction.response.defer()
+    except discord.NotFound:
+        print("⚠️ /top : interaction expirée avant defer")
+        return
+    except Exception as e:
+        print(f"❌ /top defer failed: {e}")
+        return
+    data = _CACHE
+    guild = interaction.guild
+    all_time = periode.value == "all"
+    days = 0 if all_time else int(periode.value)
+
+    vocal_list, msg_list, prime_list = [], [], []
+    _now = now_ts()
+
+    for uid, udata in data.items():
+        member = guild.get_member(int(uid))
+        if not member or member.bot:
+            continue
+        ujt      = udata.get("join_time")
+        sessions = udata.get("vocal_sessions", [])
+        messages = udata.get("messages", [])
+        if all_time:
+            sec  = total_seconds(sessions, join_time=ujt, extra=udata.get("extra_seconds", 0), _now=_now)
+            msgs = total_messages(messages)
+        else:
+            sec  = seconds_in_period(sessions, days, join_time=ujt, _now=_now)
+            msgs = messages_in_period(messages, days, _now=_now)
+        prime_val = get_berrys(uid)
+        vocal_list.append((uid, member.display_name, sec))
+        msg_list.append((uid, member.display_name, msgs))
+        prime_list.append((uid, member.display_name, prime_val))
+
+    vocal_list.sort(key=lambda x: x[2], reverse=True)
+    msg_list.sort(key=lambda x: x[2], reverse=True)
+    prime_list.sort(key=lambda x: x[2], reverse=True)
+
+    vocal_now = {str(m.id) for g in bot.guilds for vc in g.voice_channels for m in vc.members}
+
+    def _build_top_embed(page: int) -> discord.Embed:
+        start = (page - 1) * 10
+        sep = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+        def _section(lst, live_emoji, formatter):
+            parts = []
+            for abs_i, (uid_n, n, v) in enumerate(lst[start:start+10], start=start):
+                if v <= 0:
+                    break
+                live = f"  {live_emoji}" if uid_n in vocal_now else ""
+                medal = _MEDALS_ALL[abs_i] if abs_i < len(_MEDALS_ALL) else f"{abs_i+1}."
+                parts.append(f"{medal}  **{clean_name(n)}**{live}\n     `{formatter(v)}`")
+            return "\n\n".join(parts) if parts else "*Aucune donnée*"
+
+        vocal_str = _section(vocal_list, "🎙️", format_duration)
+        msg_str   = _section(msg_list,   "✉️",  lambda v: f"{v} messages")
+        prime_str = _section(prime_list, "💰",  lambda p: f"฿ {format_prime(p)}")
+
+        rank_range = f"#{start+1}–#{start+10}"
+        embed = discord.Embed(
+            title=f"🏆 CLASSEMENT  -  {periode.name.upper()}  -  {rank_range}",
+            description=(
+                f"{sep}\n\n"
+                f"🎙️ **TOP VOCAL  {rank_range}**\n"
+                f"{sep}\n"
+                f"{vocal_str}\n\n"
+                f"{sep}\n\n"
+                f"💬 **TOP MESSAGES  {rank_range}**\n"
+                f"{sep}\n"
+                f"{msg_str}\n\n"
+                f"{sep}\n\n"
+                f"💰 **TOP PRIMES EN BERRY  {rank_range}**\n"
+                f"{sep}\n"
+                f"{prime_str}\n\n"
+                f"{sep}"
+            ),
+            color=discord.Color(0xD4AF37)
+        )
+        if guild.icon:
+            embed.set_thumbnail(url=guild.icon.url)
+        embed.set_footer(text=f"BRAMS SCORE  |  by Freydiss  •  {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')} UTC  •  Page {page}/10")
+        return embed
+
+    class TopView(discord.ui.View):
+        def __init__(self, page=1):
+            super().__init__(timeout=60)
+            self.page = page
+            self._update_buttons()
+
+        def _update_buttons(self):
+            self.prev_btn.disabled = (self.page == 1)
+            self.next_btn.disabled = (self.page == 10)
+
+        @discord.ui.button(label="◀  Précédent", style=discord.ButtonStyle.secondary)
+        async def prev_btn(self, itx: discord.Interaction, button: discord.ui.Button):
+            self.page = max(1, self.page - 1)
+            self._update_buttons()
+            await itx.response.edit_message(embed=_build_top_embed(self.page), view=self)
+
+        @discord.ui.button(label="Suivant  ▶", style=discord.ButtonStyle.secondary)
+        async def next_btn(self, itx: discord.Interaction, button: discord.ui.Button):
+            self.page = min(10, self.page + 1)
+            self._update_buttons()
+            await itx.response.edit_message(embed=_build_top_embed(self.page), view=self)
+
+        async def on_timeout(self):
+            for item in self.children:
+                item.disabled = True
+
+    view = TopView(page=1)
+    embed = _build_top_embed(1)
+
+    try:
+        await interaction.followup.send(embed=embed, view=view)
+    except discord.NotFound:
+        print("⚠️ /top : token expiré, impossible d'envoyer")
+    except Exception as e:
+        print(f"❌ /top followup failed: {e}")
+
+
+@bot.tree.command(name="serveur", description="Stats globales du serveur")
+async def serveur(interaction: discord.Interaction):
+    try:
+        await interaction.response.defer()
+    except discord.NotFound:
+        print("⚠️ /serveur : interaction expirée avant defer")
+        return
+    except Exception as e:
+        print(f"❌ /serveur defer failed: {e}")
+        return
+    data = _CACHE
+    guild = interaction.guild
+
+    total_vocal_7d = 0
+    total_msg_7d   = 0
+    total_vocal_all = 0
+    total_msg_all   = 0
+    membres_actifs = 0
+    en_vocal_now   = 0
+    channel_usage  = defaultdict(float)
+    hour_usage     = defaultdict(float)
+    rank_counts    = defaultdict(int)
+    _now    = now_ts()
+    cutoff7 = _now - 7 * 86400
+
+    for uid, udata in data.items():
+        member = guild.get_member(int(uid))
+        if not member or member.bot:
+            continue
+        ujt = udata.get("join_time")
+        if ujt:
+            en_vocal_now += 1
+        sessions = udata.get("vocal_sessions", [])
+        messages = udata.get("messages", [])
+        sec  = seconds_in_period(sessions, 7, join_time=ujt, _now=_now)
+        msgs = messages_in_period(messages, 7, _now=_now)
+        sec_all = total_seconds(sessions, join_time=ujt, extra=udata.get("extra_seconds", 0), _now=_now)
+        msgs_all = total_messages(messages)
+        total_vocal_7d += sec
+        total_msg_7d   += msgs
+        total_vocal_all += sec_all
+        total_msg_all   += msgs_all
+        if sec > 0 or msgs > 0:
+            membres_actifs += 1
+        r = get_rank_for_hours(sec / 3600)
+        if r:
+            rank_counts[r] += 1
+
+        for s in sessions:
+            if s["end"] < cutoff7:
+                continue
+            duration = s["end"] - max(s["start"], cutoff7)
+            ch_id = s.get("channel")
+            if ch_id:
+                channel_usage[ch_id] += duration
+
+            start_dt = datetime.fromtimestamp(max(s["start"], cutoff7), tz=timezone.utc)
+            end_dt   = datetime.fromtimestamp(s["end"], tz=timezone.utc)
+            current  = start_dt
+            while current < end_dt:
+                next_hour = current.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+                chunk = min(next_hour, end_dt) - current
+                hour_usage[current.hour] += chunk.total_seconds() / 60
+                current = next_hour
+
+        # Session vocale en cours : incluse dans le graphe heures de pointe et top salons
+        if ujt:
+            seg_start = max(ujt, cutoff7)
+            seg_end   = _now
+            if member and member.voice and member.voice.channel:
+                channel_usage[str(member.voice.channel.id)] += seg_end - seg_start
+            start_dt = datetime.fromtimestamp(seg_start, tz=timezone.utc)
+            end_dt   = datetime.fromtimestamp(seg_end,   tz=timezone.utc)
+            current  = start_dt
+            while current < end_dt:
+                next_hour = current.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+                chunk = min(next_hour, end_dt) - current
+                hour_usage[current.hour] += chunk.total_seconds() / 60
+                current = next_hour
+
+    top_channels = sorted(channel_usage.items(), key=lambda x: x[1], reverse=True)[:3]
+    medals = ["🥇", "🥈", "🥉"]
+    salon_lines = []
+    for i, (ch_id, secs) in enumerate(top_channels):
+        ch = guild.get_channel(int(ch_id))
+        name = ch.name if ch else "Salon supprimé"
+        salon_lines.append(f"{medals[i]} **{name}** - {format_duration(secs)}")
+
+    peak_hour = max(hour_usage, key=hour_usage.get) if hour_usage else 0
+
+    rank_line = " · ".join(f"{RANK_EMOJIS.get(r, '🎖️')} {r}: **{c}**" for r, c in sorted(rank_counts.items(), key=lambda x: x[1], reverse=True)) or "*Aucun*"
+
+    graph_buf = make_peak_hours_graph(hour_usage)
+
+    embed1 = discord.Embed(
+        title=f"🌐 {guild.name.upper()}",
+        description=f"*Vue d'ensemble du serveur*",
+        color=discord.Color.from_rgb(212, 175, 55)
+    )
+    if guild.icon:
+        embed1.set_thumbnail(url=guild.icon.url)
+
+    embed1.add_field(name="👥 Membres actifs (7j)", value=f"**{membres_actifs}**", inline=True)
+    embed1.add_field(name="🎙️ En vocal maintenant", value=f"**{en_vocal_now}**", inline=True)
+    embed1.add_field(name="🕐 Heure de pointe", value=f"**{peak_hour}h - {peak_hour+1}h UTC**", inline=True)
+
+    embed1.add_field(
+        name="🎙️ Vocal",
+        value=f"7 jours : **{format_duration(total_vocal_7d)}**\nTotal : **{format_duration(total_vocal_all)}**",
+        inline=True
+    )
+    embed1.add_field(
+        name="💬 Messages",
+        value=f"7 jours : **{total_msg_7d}**\nTotal : **{total_msg_all}**",
+        inline=True
+    )
+    embed1.add_field(name="\u200b", value="\u200b", inline=True)
+
+    embed1.add_field(
+        name="🎖️ Répartition des rangs",
+        value=rank_line,
+        inline=False
+    )
+
+    embed1.add_field(
+        name="🔊 Top Salons (7j)",
+        value="\n".join(salon_lines) if salon_lines else "*Aucune donnée*",
+        inline=False
+    )
+
+    embed2 = discord.Embed(color=discord.Color.from_rgb(85, 50, 18))
+    embed2.set_image(url="attachment://peaks.png")
+    embed2.set_footer(text=f"⚓ BRAMS SCORE BY FREYDISS • {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')} UTC")
+
+    try:
+        await interaction.followup.send(
+            embeds=[embed1, embed2],
+            file=discord.File(graph_buf, "peaks.png")
+        )
+    except discord.NotFound:
+        print("⚠️ /serveur : token expiré, impossible d'envoyer")
+    except Exception as e:
+        print(f"❌ /serveur followup failed: {e}")
+
+
+@bot.tree.command(name="tout", description="Tout voir : tes stats + serveur + classement")
+async def tout(interaction: discord.Interaction):
+    try:
+        await interaction.response.defer()
+    except discord.NotFound:
+        print("⚠️ /tout : interaction expirée avant defer")
+        return
+    except Exception as e:
+        print(f"❌ /tout defer failed: {e}")
+        return
+    data = _CACHE
+    guild = interaction.guild
+    uid = str(interaction.user.id)
+    user = get_user(data, uid)
+    me = interaction.user
+
+    jt = user.get("join_time")
+    s1d  = seconds_in_period(user["vocal_sessions"], 1, join_time=jt)
+    s7d  = seconds_in_period(user["vocal_sessions"], 7, join_time=jt)
+    s14d = seconds_in_period(user["vocal_sessions"], 14, join_time=jt)
+    s_tot = total_seconds(user["vocal_sessions"], join_time=jt, extra=user.get("extra_seconds", 0))
+    m1d  = messages_in_period(user["messages"], 1)
+    m7d  = messages_in_period(user["messages"], 7)
+    m14d = messages_in_period(user["messages"], 14)
+    m_tot = total_messages(user["messages"])
+    hours_7d = s7d / 3600
+    hours_tot = s_tot / 3600
+    rank_actuel = get_rank_for_hours(hours_7d) or "Aucun"
+    r_emoji = RANK_EMOJIS.get(rank_actuel, "💀")
+    prime_val = get_berrys(uid)
+    next_thresh, next_rank = get_next_rank(hours_7d)
+    live_indicator = "  　🎙️ *EN VOCAL*" if jt else ""
+
+    if next_rank:
+        bar = make_progress_bar(hours_7d, next_thresh)
+        progress_str = f"`{bar}` {hours_7d:.1f}h / {next_thresh}h\nProchain : **{next_rank}**"
+    else:
+        progress_str = "`▰▰▰▰▰▰▰▰▰▰` 👑 **Rang maximum !**"
+
+    embed1 = discord.Embed(
+        title=f"⚓ {me.display_name.upper()}{live_indicator}",
+        color=discord.Color.from_rgb(212, 175, 55)
+    )
+    embed1.set_thumbnail(url=me.display_avatar.url)
+
+    embed1.add_field(
+        name=f"{r_emoji} Rang - **{rank_actuel}**",
+        value=progress_str,
+        inline=False
+    )
+    embed1.add_field(
+        name="🎙️ Vocal",
+        value=(
+            f"Aujourd'hui : **{format_duration(s1d)}**\n"
+            f"7 jours : **{format_duration(s7d)}**\n"
+            f"14 jours : **{format_duration(s14d)}**\n"
+            f"Total : **{format_duration(s_tot)}**"
+        ),
+        inline=True
+    )
+    embed1.add_field(
+        name="💬 Messages",
+        value=(
+            f"Aujourd'hui : **{m1d}**\n"
+            f"7 jours : **{m7d}**\n"
+            f"14 jours : **{m14d}**\n"
+            f"Total : **{m_tot}**"
+        ),
+        inline=True
+    )
+    embed1.add_field(
+        name="💰 Prime",
+        value=f"**{format_prime(prime_val)}**",
+        inline=True
+    )
+
+    total_vocal_srv, total_msg_srv, membres_actifs = 0, 0, 0
+    vocal_list, msg_list = [], []
+
+    for u_id, udata in data.items():
+        member = guild.get_member(int(u_id))
+        if not member or member.bot:
+            continue
+        ujt = udata.get("join_time")
+        sec  = seconds_in_period(udata.get("vocal_sessions", []), 7, join_time=ujt)
+        msgs = messages_in_period(udata.get("messages", []), 7)
+        total_vocal_srv += sec
+        total_msg_srv   += msgs
+        if sec > 0 or msgs > 0:
+            membres_actifs += 1
+        vocal_list.append((member.display_name, sec))
+        msg_list.append((member.display_name, msgs))
+
+    vocal_list.sort(key=lambda x: x[1], reverse=True)
+    msg_list.sort(key=lambda x: x[1], reverse=True)
+    medals = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"]
+
+    def build_top(lst, formatter):
+        lines = []
+        for i, (n, v) in enumerate(lst[:5]):
+            if v <= 0:
+                break
+            lines.append(f"{medals[i]} **{n}** - {formatter(v)}")
+        return "\n".join(lines) or "*Aucune donnée*"
+
+    embed2 = discord.Embed(
+        title="🌐 CLASSEMENT SERVEUR (7 jours)",
+        color=discord.Color.from_rgb(20, 30, 60)
+    )
+    embed2.add_field(name="👥 Actifs", value=f"**{membres_actifs}**", inline=True)
+    embed2.add_field(name="🎙️ Vocal total", value=f"**{format_duration(total_vocal_srv)}**", inline=True)
+    embed2.add_field(name="💬 Messages", value=f"**{total_msg_srv}**", inline=True)
+    embed2.add_field(
+        name="🏆 Top Vocal",
+        value=build_top(vocal_list, format_duration),
+        inline=True
+    )
+    embed2.add_field(
+        name="🏆 Top Messages",
+        value=build_top(msg_list, lambda x: f"{x} msg"),
+        inline=True
+    )
+    embed2.add_field(name="\u200b", value="\u200b", inline=True)
+
+    vocal_by_day, msg_by_day = build_vocal_by_day(user)
+    graph_buf = make_activity_graph(vocal_by_day, msg_by_day, f"Activite - {me.display_name}")
+
+    embed3 = discord.Embed(color=discord.Color.from_rgb(85, 50, 18))
+    embed3.set_image(url="attachment://graph.png")
+    embed3.set_footer(text=f"⚓ BRAMS SCORE BY FREYDISS • {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')} UTC")
+
+    try:
+        await interaction.followup.send(
+            embeds=[embed1, embed2, embed3],
+            file=discord.File(graph_buf, "graph.png")
+        )
+    except discord.NotFound:
+        print("⚠️ /tout : token expiré, impossible d'envoyer")
+    except Exception as e:
+        print(f"❌ /tout followup failed: {e}")
+
+
+@bot.tree.command(name="chercher", description="Voir toutes les stats d'un membre")
+@app_commands.describe(membre="Le membre à inspecter")
+async def chercher(interaction: discord.Interaction, membre: discord.Member):
+    try:
+        await interaction.response.defer()
+    except discord.NotFound:
+        print("⚠️ /chercher : interaction expirée avant defer")
+        return
+    except Exception as e:
+        print(f"❌ /chercher defer failed: {e}")
+        return
+    data = _CACHE
+    uid = str(membre.id)
+    user = get_user(data, uid)
+
+    jt = user.get("join_time")
+    s1d  = seconds_in_period(user["vocal_sessions"], 1, join_time=jt)
+    s7d  = seconds_in_period(user["vocal_sessions"], 7, join_time=jt)
+    s14d = seconds_in_period(user["vocal_sessions"], 14, join_time=jt)
+    s_tot = total_seconds(user["vocal_sessions"], join_time=jt, extra=user.get("extra_seconds", 0))
+    m1d  = messages_in_period(user["messages"], 1)
+    m7d  = messages_in_period(user["messages"], 7)
+    m14d = messages_in_period(user["messages"], 14)
+    m_tot = total_messages(user["messages"])
+
+    hours_7d  = s7d / 3600
+    hours_tot = s_tot / 3600
+    rank_actuel = get_rank_for_hours(hours_7d) or "Aucun"
+    r_emoji = RANK_EMOJIS.get(rank_actuel, "💀")
+    ranks_display = format_all_ranks_display(hours_7d)
+    prime_val = get_berrys(uid)
+    next_thresh, next_rank = get_next_rank(hours_7d)
+    live_indicator = "  　🎙️ *EN VOCAL*" if jt else ""
+
+    if next_rank:
+        bar = make_progress_bar(hours_7d, next_thresh)
+        progress_str = f"{ranks_display}\n`{bar}` {hours_7d:.1f}h / {next_thresh}h\nProchain : **{next_rank}**"
+    else:
+        progress_str = f"{ranks_display}\n`▰▰▰▰▰▰▰▰▰▰` 👑 **Rang maximum !**"
+
+    embed = discord.Embed(
+        title=f"🔍 {membre.display_name.upper()}{live_indicator}",
+        color=discord.Color.from_rgb(212, 175, 55)
+    )
+    embed.set_thumbnail(url=membre.display_avatar.url)
+
+    embed.add_field(
+        name="Rangs",
+        value=progress_str,
+        inline=False
+    )
+    embed.add_field(
+        name="🎙️ Vocal",
+        value=(
+            f"Aujourd'hui : **{format_duration(s1d)}**\n"
+            f"7 jours : **{format_duration(s7d)}**\n"
+            f"14 jours : **{format_duration(s14d)}**\n"
+            f"Total : **{format_duration(s_tot)}**"
+        ),
+        inline=True
+    )
+    embed.add_field(
+        name="💬 Messages",
+        value=(
+            f"Aujourd'hui : **{m1d}**\n"
+            f"7 jours : **{m7d}**\n"
+            f"14 jours : **{m14d}**\n"
+            f"Total : **{m_tot}**"
+        ),
+        inline=True
+    )
+    embed.add_field(
+        name="💰 Prime",
+        value=f"**{format_prime(prime_val)}**",
+        inline=True
+    )
+
+    vocal_by_day, msg_by_day = build_vocal_by_day(user)
+    graph_buf = make_activity_graph(vocal_by_day, msg_by_day, f"Activite de {membre.display_name}")
+
+    embed.set_image(url="attachment://graph.png")
+    embed.set_footer(text=f"⚓ BRAMS SCORE BY FREYDISS • {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')} UTC")
+
+    try:
+        await interaction.followup.send(embed=embed, file=discord.File(graph_buf, "graph.png"))
+    except discord.NotFound:
+        print("⚠️ /chercher : token expiré, impossible d'envoyer")
+    except Exception as e:
+        print(f"❌ /chercher followup failed: {e}")
+
+
+
+CITATION_HISTORY: deque[str] = deque(maxlen=len(QUOTES_DB) - 1)
+
+# Cache URL image par personnage (Jikan API)
+# Persos non présents sur MAL (cartoons occidentaux, jeux vidéo hors anime, etc.)
+# URLs d image statiques verifiees - priorite absolue sur Jikan (CDN MAL stable)
+_CHAR_STATIC_URLS: dict[str, str] = {
+    # ── Attack on Titan ──
+    "Eren Yeager":         "https://cdn.myanimelist.net/images/characters/10/216895.jpg",
+    "Levi Ackerman":       "https://cdn.myanimelist.net/images/characters/12/622510.jpg",
+    "Mikasa Ackerman":     "https://cdn.myanimelist.net/images/characters/9/215563.jpg",
+    "Armin Arlert":        "https://cdn.myanimelist.net/images/characters/8/220267.jpg",
+    "Erwin Smith":         "https://cdn.myanimelist.net/images/characters/14/559023.jpg",
+    # ── Naruto ──
+    "Itachi Uchiha":       "https://cdn.myanimelist.net/images/characters/9/284122.jpg",
+    "Rock Lee":            "https://cdn.myanimelist.net/images/characters/13/433353.jpg",
+    "Pain":                "https://cdn.myanimelist.net/images/characters/8/73473.jpg",
+    "Hinata Hyuga":        "https://cdn.myanimelist.net/images/characters/6/278736.jpg",
+    "Obito Uchiha":        "https://cdn.myanimelist.net/images/characters/8/70596.jpg",
+    "Minato Namikaze":     "https://s4.anilist.co/file/anilistcdn/character/large/b2535-Xq9WKNPJQEt3.png",
+    "Jiraiya":             "https://s4.anilist.co/file/anilistcdn/character/large/b2423-RO5MyoXSA9OL.png",
+    # ── FMA ──
+    "Roy Mustang":         "https://s4.anilist.co/file/anilistcdn/character/large/b68-moBLY2WO2am3.png",
+    # ── Hunter x Hunter ──
+    "Killua Zoldyck":      "https://cdn.myanimelist.net/images/characters/2/327920.jpg",
+    "Hisoka Morow":        "https://s4.anilist.co/file/anilistcdn/character/large/b31-FZckOuu7L1un.png",
+    "Kurapika":            "https://cdn.myanimelist.net/images/characters/3/549312.jpg",
+    "Mito Freecss":        "https://cdn.myanimelist.net/images/characters/8/47876.jpg",
+    "Meruem":              "https://s4.anilist.co/file/anilistcdn/character/large/b23277-EYmIxzL64Mji.png",
+    # ── JoJo's Bizarre Adventure ──
+    "Giorno Giovanna":     "https://cdn.myanimelist.net/images/characters/16/571466.jpg",
+    "Dio Brando":          "https://s4.anilist.co/file/anilistcdn/character/large/b4004-w0OtWuvjhftG.png",
+    # ── Fairy Tail ──
+    "Natsu Dragneel":      "https://cdn.myanimelist.net/images/characters/15/594274.jpg",
+    "Erza Scarlet":        "https://cdn.myanimelist.net/images/characters/12/492254.jpg",
+    # ── Tokyo Ghoul ──
+    "Ken Kaneki":          "https://cdn.myanimelist.net/images/characters/15/307255.jpg",
+    # ── One Punch Man ──
+    "Saitama":             "https://cdn.myanimelist.net/images/characters/11/294388.jpg",
+    # ── Black Clover ──
+    "Asta":                "https://s4.anilist.co/file/anilistcdn/character/large/b123285-tKijiuQErDS0.png",
+    # ── Berserk ──
+    "Guts":                "https://s4.anilist.co/file/anilistcdn/character/large/b422-XTaiTuvRohsV.png",
+    # ── Death Note ──
+    "Ryuk":                "https://s4.anilist.co/file/anilistcdn/character/large/b75-IkEpzO21LgFy.jpg",
+    # ── Jujutsu Kaisen ──
+    "Gojo Satoru":         "https://s4.anilist.co/file/anilistcdn/character/large/b127691-9zqh1xpIubn7.png",
+    "Yuji Itadori":        "https://cdn.myanimelist.net/images/characters/6/467646.jpg",
+    # ── Demon Slayer ──
+    "Rengoku Kyojuro":     "https://cdn.myanimelist.net/images/characters/10/423443.jpg",
+    # ── Re:Zero ──
+    "Rem":                 "https://s4.anilist.co/file/anilistcdn/character/large/b88575-Ayu8UPDA8NS6.png",
+    "Subaru Natsuki":      "https://s4.anilist.co/file/anilistcdn/character/large/b88573-F8yMTK9GhnTA.png",
+    # ── Sword Art Online ──
+    "Kirito":              "https://s4.anilist.co/file/anilistcdn/character/large/b36765-BnLbXg0Tzzh9.png",
+    "Asuna Yuuki":         "https://s4.anilist.co/file/anilistcdn/character/large/b36828-j5ib0adAzGMx.png",
+    # ── Violet Evergarden ──
+    "Violet Evergarden":   "https://s4.anilist.co/file/anilistcdn/character/large/b90169-4wr1Zehnsac8.png",
+    # ── Vinland Saga ──
+    "Thorfinn":            "https://cdn.myanimelist.net/images/characters/9/309871.jpg",
+}
+
+_NO_MAL_CHARS: frozenset[str] = frozenset({"Zuko"})
+_CHAR_IMAGE_CACHE: dict[str, str | None] = {n: None for n in _NO_MAL_CHARS}
+_CHAR_IMG_BYTES_CACHE: dict[str, bytes | None] = {}
+_CHAR_IMG_BYTES_MAX = 200  # entrées max - évite la fuite mémoire
+_CHAR_GIF_CACHE: dict[str, bytes | None] = {}
+GIPHY_API_KEY = os.environ.get("GIPHY_API_KEY", "")
+
+def _img_bytes_set(key: str, val: bytes | None):
+    if len(_CHAR_IMG_BYTES_CACHE) >= _CHAR_IMG_BYTES_MAX:
+        _CHAR_IMG_BYTES_CACHE.pop(next(iter(_CHAR_IMG_BYTES_CACHE)))
+    _CHAR_IMG_BYTES_CACHE[key] = val
+
+_CHAR_IMG_URL = "cdn.myanimelist.net/images/characters"
+
+def _name_matches(searched: str, returned: str) -> bool:
+    """Toutes les parties significatives (>2 chars) du nom cherché
+    doivent apparaître dans le nom retourné - évite les faux positifs."""
+    parts = [p.lower() for p in searched.split() if len(p) > 2]
+    r = returned.lower()
+    return bool(parts) and all(p in r for p in parts)
+
+async def _jikan_get(sess: aiohttp.ClientSession, url: str, retries: int = 2) -> dict | None:
+    """GET Jikan avec retry automatique sur 429 (rate-limit)."""
+    for attempt in range(retries + 1):
+        try:
+            async with sess.get(url, timeout=aiohttp.ClientTimeout(total=8)) as resp:
+                if resp.status == 200:
+                    return await resp.json()
+                if resp.status == 429:
+                    wait = 1.5 * (attempt + 1)
+                    print(f"[CITATION] 429 rate-limit, retry dans {wait}s ({url})")
+                    await asyncio.sleep(wait)
+                    continue
+                print(f"[CITATION] HTTP {resp.status} pour {url}")
+                return None
+        except asyncio.TimeoutError:
+            print(f"[CITATION] timeout {url} (tentative {attempt+1})")
+        except Exception as e:
+            print(f"[CITATION] erreur {url}: {e}")
+            return None
+    return None
+
+async def _get_char_image_url(name: str) -> str | None:
+    """URL image du personnage.
+    Ordre de priorite :
+    1. _CHAR_STATIC_URLS - URLs verifiees manuellement (bypass Jikan)
+    2. _CHAR_IMAGE_CACHE - cache memoire session
+    3. Jikan par ID direct (CHAR_JIKAN_IDS)
+    4. Jikan par recherche nom (fallback)
+    """
+    if name in _CHAR_STATIC_URLS:
+        url = _CHAR_STATIC_URLS[name]
+        _CHAR_IMAGE_CACHE[name] = url
+        return url
+    if name in _CHAR_IMAGE_CACHE:
+        return _CHAR_IMAGE_CACHE[name]
+
+    img_url = None
+    jikan_id = CHAR_JIKAN_IDS.get(name)
+
+    try:
+        sess = _HTTP
+        if jikan_id:
+            # ID connu → fetch direct, on fait confiance à l'ID
+            data_root = await _jikan_get(sess, f"https://api.jikan.moe/v4/characters/{jikan_id}")
+            if data_root:
+                data = data_root.get("data", {})
+                returned_name = data.get("name", "")
+                candidate = data.get("images", {}).get("jpg", {}).get("image_url", "")
+                # Accepte toute URL myanimelist (pas juste /characters/)
+                if candidate and "myanimelist.net" in candidate:
+                    img_url = candidate
+                    print(f"[CITATION] OK id={jikan_id} '{returned_name}' → '{name}'")
+                else:
+                    print(f"[CITATION] id={jikan_id} URL inattendue: {candidate!r}")
+        else:
+            # Pas d'ID → recherche par nom avec validation stricte
+            data_root = await _jikan_get(sess, f"https://api.jikan.moe/v4/characters?q={_url_quote(name)}&limit=8")
+            if data_root:
+                for char in data_root.get("data", []):
+                    returned_name = char.get("name", "")
+                    if not _name_matches(name, returned_name):
+                        continue
+                    candidate = char.get("images", {}).get("jpg", {}).get("image_url", "")
+                    if candidate and _CHAR_IMG_URL in candidate:
+                        img_url = candidate
+                        print(f"[CITATION] OK search '{returned_name}' → '{name}'")
+                        break
+                if not img_url:
+                    print(f"[CITATION] aucun match search pour '{name}'")
+    except Exception as e:
+        print(f"[CITATION] exception '{name}': {e}")
+
+    # Ne cacher que les succès : un None transitoire (429, timeout) ne doit pas bloquer
+    # les prochains appels. Seuls les None définitifs (_NO_MAL_CHARS) sont pré-cachés.
+    if img_url is not None:
+        _CHAR_IMAGE_CACHE[name] = img_url
+    return img_url
+
+async def _fetch_char_image_bytes(name: str) -> bytes | None:
+    """Télécharge et met en cache les bytes PIL de l'image du personnage."""
+    if name in _CHAR_IMG_BYTES_CACHE:
+        return _CHAR_IMG_BYTES_CACHE[name]
+    url = await _get_char_image_url(name)
+    if not url:
+        # Pareil : ne pas cacher les échecs transitoires sur les bytes
+        return None
+    try:
+        sess = _HTTP or aiohttp.ClientSession()
+        async with sess.get(url, timeout=aiohttp.ClientTimeout(total=10)) as resp:
+            if resp.status == 200:
+                raw = await resp.read()
+                _img_bytes_set(name, raw)
+                return raw
+            if resp.status == 404:
+                _img_bytes_set(name, None)
+            print(f"[CITATION] DL image HTTP {resp.status} pour '{name}'")
+    except Exception as e:
+        print(f"[CITATION] DL image erreur '{name}': {e}")
+    return None
+
+async def _fetch_char_gif_bytes(name: str, anime: str) -> bytes | None:
+    """Cherche un GIF du personnage sur Giphy. Retourne None si GIPHY_API_KEY absent."""
+    if not GIPHY_API_KEY:
+        return None
+    cache_key = f"{name}|{anime}"
+    if cache_key in _CHAR_GIF_CACHE:
+        return _CHAR_GIF_CACHE[cache_key]
+    query = _url_quote(f"{name} {anime}")
+    url = f"https://api.giphy.com/v1/gifs/search?q={query}&api_key={GIPHY_API_KEY}&limit=5&rating=pg-13&lang=en"
+    try:
+        sess = _HTTP or aiohttp.ClientSession()
+        async with sess.get(url, timeout=aiohttp.ClientTimeout(total=8)) as resp:
+            if resp.status == 200:
+                data = await resp.json()
+                results = data.get("data", [])
+                if results:
+                    r = results[0]
+                    gif_url = r["images"]["downsized_large"]["url"]
+                    async with sess.get(gif_url, timeout=aiohttp.ClientTimeout(total=20)) as gresp:
+                        if gresp.status == 200:
+                            raw = await gresp.read()
+                            _CHAR_GIF_CACHE[cache_key] = raw
+                            return raw
+    except Exception as e:
+        print(f"[CITATION] Giphy error '{name}': {e}")
+    _CHAR_GIF_CACHE[cache_key] = None
+    return None
+
+
+async def _citation_handler(interaction: discord.Interaction, categorie: str = None):
+    """Logique commune à /citation et /quote."""
+    try:
+        await interaction.response.defer()
+    except discord.NotFound:
+        print("⚠️ /citation : interaction expirée avant defer")
+        return
+    except Exception as e:
+        print(f"❌ /citation defer failed: {e}")
+        return
+
+    # Filtrage par anime si demandé
+    if categorie:
+        pool = [q for q in QUOTES_DB if q["anime"].lower() == categorie.lower()]
+        if not pool:
+            await interaction.followup.send("❌ Catégorie introuvable.", ephemeral=True)
+            return
+    else:
+        pool = QUOTES_DB
+
+    # Anti-répétition : évite les citations déjà vues, reset si pool épuisé
+    fresh = [q for q in pool if q["quote"] not in CITATION_HISTORY]
+    if not fresh:
+        CITATION_HISTORY.clear()
+        fresh = pool
+    chosen = random.choice(fresh)
+    CITATION_HISTORY.append(chosen["quote"])
+
+    try:
+        img_buf, is_gif = await make_citation_image(chosen)
+    except Exception as e:
+        print(f"❌ make_citation_image: {e}")
+        await interaction.followup.send("❌ Erreur lors de la génération de la carte.", ephemeral=True)
+        return
+
+    fname = "citation.gif" if is_gif else "citation.png"
+    try:
+        await interaction.followup.send(file=discord.File(img_buf, fname))
+    except discord.NotFound:
+        print("⚠️ /citation : token expiré, impossible d'envoyer")
+    except Exception as e:
+        print(f"❌ /citation followup failed: {e}")
+
+
+
+@bot.tree.command(name="citation", description="Citation aléatoire d'un personnage anime")
+@app_commands.describe(categorie="Filtrer par anime (optionnel)")
+@app_commands.choices(categorie=[
+    app_commands.Choice(name="One Piece",              value="One Piece"),
+    app_commands.Choice(name="Naruto",                 value="Naruto"),
+    app_commands.Choice(name="Attack on Titan",        value="Attack on Titan"),
+    app_commands.Choice(name="Death Note",             value="Death Note"),
+    app_commands.Choice(name="Dragon Ball Z",          value="Dragon Ball Z"),
+    app_commands.Choice(name="Demon Slayer",           value="Demon Slayer"),
+    app_commands.Choice(name="Jujutsu Kaisen",         value="Jujutsu Kaisen"),
+    app_commands.Choice(name="Bleach",                 value="Bleach"),
+    app_commands.Choice(name="Fullmetal Alchemist",    value="Fullmetal Alchemist"),
+    app_commands.Choice(name="Hunter x Hunter",        value="Hunter x Hunter"),
+    app_commands.Choice(name="JoJo's Bizarre Adventure", value="JoJo's Bizarre Adventure"),
+    app_commands.Choice(name="Fairy Tail",             value="Fairy Tail"),
+    app_commands.Choice(name="Code Geass",             value="Code Geass"),
+    app_commands.Choice(name="Tokyo Ghoul",            value="Tokyo Ghoul"),
+    app_commands.Choice(name="One Punch Man",          value="One Punch Man"),
+    app_commands.Choice(name="Berserk",                value="Berserk"),
+    app_commands.Choice(name="Re:Zero",                value="Re:Zero"),
+    app_commands.Choice(name="Sword Art Online",       value="Sword Art Online"),
+    app_commands.Choice(name="Violet Evergarden",      value="Violet Evergarden"),
+    app_commands.Choice(name="Cowboy Bebop",           value="Cowboy Bebop"),
+    app_commands.Choice(name="Black Clover",           value="Black Clover"),
+    app_commands.Choice(name="Vinland Saga",           value="Vinland Saga"),
+    app_commands.Choice(name="Chainsaw Man",           value="Chainsaw Man"),
+])
+async def citation(interaction: discord.Interaction, categorie: app_commands.Choice[str] = None):
+    await _citation_handler(interaction, categorie.value if categorie else None)
+
+
+
+@bot.tree.command(name="testrank", description="[ADMIN] Tester l'image d'annonce de rank")
+@app_commands.default_permissions(administrator=True)
+@app_commands.checks.has_permissions(administrator=True)
+@app_commands.describe(rang="Rang a tester")
+@app_commands.choices(rang=[
+    app_commands.Choice(name="Pirate",          value="Pirate"),
+    app_commands.Choice(name="Shichibukai",     value="Shichibukai"),
+    app_commands.Choice(name="Amiral",          value="Amiral"),
+    app_commands.Choice(name="Yonkou",          value="Yonkou"),
+    app_commands.Choice(name="Roi des pirates", value="Roi des pirates"),
+])
+async def testrank(interaction: discord.Interaction, membre: discord.Member = None, rang: str = "Shichibukai"):
+    try:
+        await interaction.response.defer(ephemeral=True)
+    except discord.NotFound:
+        print("⚠️ /testrank : interaction expirée avant defer")
+        return
+    except Exception as e:
+        print(f"❌ /testrank defer failed: {e}")
+        return
+    target = membre or interaction.user
+    channel = bot.get_channel(ANNOUNCE_CHANNEL_ID)
+    if channel is None:
+        await interaction.followup.send("❌ Channel d'annonce introuvable", ephemeral=True)
+        return
+    img_buf, is_gif = await make_rank_image(target, rang, 25.3)
+    fname = "rank_up.gif" if is_gif else "rank_up.png"
+    emoji = _ANNOUNCE_RANK_EMOJIS.get(rang, "✨")
+    await channel.send(
+        content=f"🏴‍☠️ Bravo à {target.mention} qui a débloqué le rank **{rang.upper()}** {emoji}",
+        file=discord.File(img_buf, fname)
+    )
+    try:
+        await interaction.followup.send(f"✅ Annonce envoyée pour {target.mention} ({rang})", ephemeral=True)
+    except discord.NotFound:
+        print("⚠️ /testrank : token expiré, impossible d'envoyer")
+    except Exception as e:
+        print(f"❌ /testrank followup failed: {e}")
+
+# ─────────────────────────────────────────
+#  /test  (ADMIN - simulation d'événements)
+# ─────────────────────────────────────────
+@bot.tree.command(name="test", description="[ADMIN] Simuler un événement sans affecter les données réelles")
+@app_commands.default_permissions(administrator=True)
+@app_commands.checks.has_permissions(administrator=True)
+@app_commands.describe(evenement="Type d'événement à simuler", membre="Membre cible (optionnel, défaut : toi)")
+@app_commands.choices(evenement=[
+    app_commands.Choice(name="Montée de rang", value="rankup"),
+    app_commands.Choice(name="Perte de rang (derank)", value="derank"),
+    app_commands.Choice(name="Avertissement MP derank", value="warning"),
+    app_commands.Choice(name="DM passage de rang", value="rankup_dm"),
+])
+async def test_event(interaction: discord.Interaction, evenement: app_commands.Choice[str], membre: discord.Member = None):
+    try:
+        await interaction.response.defer(ephemeral=True)
+    except discord.NotFound:
+        return
+    target = membre or interaction.user
+
+    if evenement.value == "rankup":
+        rank_name = "Shichibukai"
+        channel = bot.get_channel(ANNOUNCE_CHANNEL_ID)
+        if channel is None:
+            await interaction.followup.send("❌ Channel d'annonce introuvable.", ephemeral=True)
+            return
+        img_buf, is_gif = await make_rank_image(target, rank_name, 25.0)
+        fname = "rank_up.gif" if is_gif else "rank_up.png"
+        await channel.send(
+            content=f"[TEST] Bravo à {target.mention} qui a débloqué le rank **{rank_name}** ⚔️",
+            file=discord.File(img_buf, fname)
+        )
+        await interaction.followup.send(f"✅ Simulation rankup envoyée pour {target.mention}", ephemeral=True)
+
+    elif evenement.value == "derank":
+        rank_name = "Amiral"
+        rank_emoji = _ANNOUNCE_RANK_EMOJIS.get(rank_name, "🎖️")
+        rank_threshold = next((t for t, n in RANKS if n == rank_name), 0)
+        hours_7d = 35.0
+        dm_text = (
+            f"⬇️ **[TEST] Tu as perdu ton rank !**\n\n"
+            f"Salut {target.display_name} ! Tu viens de perdre le rang **{rank_emoji} {rank_name}** "
+            f"sur le serveur **{interaction.guild.name}**.\n\n"
+            f"Tes heures vocales sur les 7 derniers jours sont descendues à `{hours_7d}h`, "
+            f"alors qu'il te faut au minimum `{rank_threshold}h` pour garder ce rang.\n\n"
+            f"Reviens en vocal pour le récupérer ! 🎙️\n\n"
+            f"*(Ceci est un message de test - tes données ne sont pas affectées)*\n\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"*BRAMS SCORE  |  by Freydiss*\n\n"
+            f"*(Envoie `1` ici si tu ne veux plus recevoir ces DMs)*"
+        )
+        target_user = get_user(_CACHE, str(target.id))
+        if target_user.get("dm_optout", False):
+            rappel_ch = discord.utils.find(lambda c: "rappel" in c.name.lower(), interaction.guild.text_channels)
+            if rappel_ch:
+                await rappel_ch.send(f"{target.mention}\n{dm_text}")
+            await interaction.followup.send(f"📵 DMs désactivés - message envoyé dans #rappel pour {target.mention}", ephemeral=True)
+        else:
+            try:
+                await target.send(dm_text)
+                await interaction.followup.send(f"✅ DM de test derank envoyé à {target.mention}", ephemeral=True)
+            except discord.Forbidden:
+                rappel_ch = discord.utils.find(lambda c: "rappel" in c.name.lower(), interaction.guild.text_channels)
+                if rappel_ch:
+                    await rappel_ch.send(f"{target.mention}\n{dm_text}")
+                await interaction.followup.send(f"❌ DM fermés - message envoyé dans #rappel pour {target.mention}", ephemeral=True)
+
+    elif evenement.value == "warning":
+        rank_name = "Shichibukai"
+        threshold = 25
+        hours_7d = 22.5
+        heures_manquantes = round(threshold - hours_7d, 1)
+        dm_text = (
+            f"⚠️ **[TEST] Attention, tu risques de perdre ton rank !**\n\n"
+            f"Salut {target.display_name} ! Tu es actuellement **⚔️ {rank_name}** "
+            f"sur le serveur **{interaction.guild.name}**.\n\n"
+            f"Tes heures vocales sur les 7 derniers jours sont descendues à `{hours_7d}h`, "
+            f"et il te faut au minimum `{threshold}h` pour garder ton rank.\n\n"
+            f"Il te manque environ `{heures_manquantes}h` - passe en vocal dès que possible ! 🚨\n\n"
+            f"*(Ceci est un message de test - tes données ne sont pas affectées)*\n\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"*BRAMS SCORE  |  by Freydiss*\n\n"
+            f"*(Envoie `1` ici si tu ne veux plus recevoir ces DMs)*"
+        )
+        target_user = get_user(_CACHE, str(target.id))
+        if target_user.get("dm_optout", False):
+            rappel_ch = discord.utils.find(lambda c: "rappel" in c.name.lower(), interaction.guild.text_channels)
+            if rappel_ch:
+                await rappel_ch.send(f"{target.mention}\n{dm_text}")
+            await interaction.followup.send(f"📵 DMs désactivés - message envoyé dans #rappel pour {target.mention}", ephemeral=True)
+        else:
+            try:
+                await target.send(dm_text)
+                await interaction.followup.send(f"✅ MP de test envoyé à {target.mention}", ephemeral=True)
+            except discord.Forbidden:
+                rappel_ch = discord.utils.find(lambda c: "rappel" in c.name.lower(), interaction.guild.text_channels)
+                if rappel_ch:
+                    await rappel_ch.send(f"{target.mention}\n{dm_text}")
+                await interaction.followup.send(f"❌ DM fermés - message envoyé dans #rappel pour {target.mention}", ephemeral=True)
+
+    elif evenement.value == "rankup_dm":
+        rank_name = "Shichibukai"
+        rank_emoji = _ANNOUNCE_RANK_EMOJIS.get(rank_name, "✨")
+        hours_7d = 27.5
+        dm_text = (
+            f"🎉 **[TEST] Tu as monté de rang !**\n\n"
+            f"Félicitations {target.display_name} ! Tu viens de débloquer le rang "
+            f"**{rank_emoji} {rank_name}** sur le serveur **{interaction.guild.name}** !\n\n"
+            f"Tu as accumulé `{hours_7d}h` de vocal sur les 7 derniers jours. "
+            f"Continue comme ça ! 💪\n\n"
+            f"*(Ceci est un message de test - tes données ne sont pas affectées)*\n\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"*BRAMS SCORE  |  by Freydiss*\n\n"
+            f"*(Envoie `1` ici si tu ne veux plus recevoir ces DMs)*"
+        )
+        target_user = get_user(_CACHE, str(target.id))
+        if target_user.get("dm_optout", False):
+            rappel_ch = discord.utils.find(lambda c: "rappel" in c.name.lower(), interaction.guild.text_channels)
+            if rappel_ch:
+                await rappel_ch.send(f"{target.mention}\n{dm_text}")
+            await interaction.followup.send(f"📵 DMs désactivés - message envoyé dans #rappel pour {target.mention}", ephemeral=True)
+        else:
+            try:
+                await target.send(dm_text)
+                await interaction.followup.send(f"✅ DM passage de rang envoyé à {target.mention}", ephemeral=True)
+            except discord.Forbidden:
+                rappel_ch = discord.utils.find(lambda c: "rappel" in c.name.lower(), interaction.guild.text_channels)
+                if rappel_ch:
+                    await rappel_ch.send(f"{target.mention}\n{dm_text}")
+                await interaction.followup.send(f"❌ DM fermés - message envoyé dans #rappel pour {target.mention}", ephemeral=True)
+
+
+# ─────────────────────────────────────────
+#  /quiz  (Quiz animé généré par IA - Groq)
+# ─────────────────────────────────────────
+QUIZ_SESSIONS: dict = {}
+LIVE_DUELS: dict[int, "_LiveDuelSession"] = {}  # uid → duel live partagé
+_GROQ_MODEL       = "groq/llama-3.3-70b-versatile"
+
+# Historique par utilisateur : dernières questions vues (évite les répétitions)
+QUIZ_USER_HISTORY: dict[int, list[str]] = {}
+_QUIZ_HISTORY_MAX = 60
+
+
+class _LiveDuelSession:
+    __slots__ = ("uid1", "uid2", "name1", "name2", "questions", "idx",
+                 "score1", "score2", "pts1", "pts2", "interaction", "berry_bet")
+    def __init__(self, uid1: int, uid2: int, name1: str, name2: str,
+                 questions: list, interaction: discord.Interaction):
+        self.uid1, self.uid2      = uid1, uid2
+        self.name1, self.name2    = name1, name2
+        self.questions            = questions
+        self.idx                  = 0
+        self.score1 = self.score2 = 0
+        self.pts1   = self.pts2   = 0
+        self.interaction          = interaction
+        self.berry_bet            = 0
+
+_DIFF_POINTS: dict[str, int] = {"facile": 1, "moyen": 2, "difficile": 3, "expert": 5}
+_DIFF_COLORS: dict[str, int] = {"facile": 0x2ecc71, "moyen": 0xf1c40f, "difficile": 0xe67e22, "expert": 0xe74c3c}
+_DIFF_EMOJI:  dict[str, str] = {"facile": "🟢", "moyen": "🟡", "difficile": "🟠", "expert": "🔴"}
+_TYPE_EMOJI:  dict[str, str] = {
+    "personnage": "👤", "technique": "⚡", "lieu": "🗺️", "arc": "📖",
+    "pouvoir": "💥", "objet": "🎁", "studio": "🎬", "auteur": "✒️",
+}
+
+# Catégories disponibles : valeur → description injectée dans le prompt
+_QUIZ_CATEGORIES: dict[str, str] = {
+    "general":      "tous les animés populaires mélangés (Naruto, One Piece, DBZ, Bleach, Death Note, AoT, HxH, FMA, Fairy Tail, JoJo, Demon Slayer, MHA, JJK)",
+    "one_piece":    "One Piece UNIQUEMENT (personnages, Fruits du Démon, arcs, Marines, Yonkou, techniques)",
+    "naruto":       "Naruto / Naruto Shippuden / Boruto UNIQUEMENT (chakra, jutsu, clans, arcs, Jinchuriki, Akatsuki)",
+    "bleach":       "Bleach UNIQUEMENT (Zanpakuto, Shinigami, Bankai, Hollows, Espada, arcs Soul Society et Hueco Mundo)",
+    "deathnote":    "Death Note UNIQUEMENT (règles du Death Note, Kira, L, Near, Mello, Ryuk, stratégies)",
+    "aot":          "Attack on Titan UNIQUEMENT (Titans, Survey Corps, Shifters, arcs, capacités, noms)",
+    "dbz":          "Dragon Ball Z / Super UNIQUEMENT (transformations Saiyan, techniques, arcs, personnages)",
+    "hxh":          "Hunter x Hunter UNIQUEMENT (Nen, types, Gon, Killua, arcs Yorknew/Chimera Ant)",
+    "jojo":         "JoJo's Bizarre Adventure UNIQUEMENT (Stands, parties, personnages, antagonistes)",
+    "demon_slayer": "Demon Slayer / Kimetsu no Yaiba UNIQUEMENT (respirations, démons, Piliers, arcs, personnages)",
+    "mha":          "My Hero Academia UNIQUEMENT (Alter, U.A., League of Villains, arcs, personnages, combats)",
+    "jjk":          "Jujutsu Kaisen UNIQUEMENT (techniques maudites, Fléaux, grades, arcs, personnages)",
+    "fma":          "Fullmetal Alchemist Brotherhood UNIQUEMENT (alchimie, Homoncules, arcs, personnages)",
+    "chainsaw":     "Chainsaw Man UNIQUEMENT (Diables, contrats, Chasseurs, arcs, personnages)",
+    "black_clover":   "Black Clover UNIQUEMENT (magie, grimoires, Chevaliers Magiques, arcs, personnages)",
+    "one_punch_man":  "One Punch Man UNIQUEMENT (Saitama, Association des Héros, classes S/A/B/C, monstres, arcs, techniques, Metal Bat, Genos, Garou, Bang, King, Tatsumaki, Fubuki)",
+    "citation":       "citations célèbres d'animés - mode spécial (généré depuis QUOTES_DB)",
+}
+
+# System prompt strict
+_QUIZ_SYSTEM = (
+    "Tu es un expert des animés japonais qui crée des questions de quiz. "
+    "Tu réponds UNIQUEMENT avec un JSON valide. "
+    "DEUX formats possibles dans le même tableau 'questions' : "
+    "1) Standard (1 bonne réponse) : "
+    '{"question":"...","bonne_reponse":"...","bonnes_reponses":null,"mauvaises_reponses":["...","...","..."],'
+    '"anime":"...","difficulte":"facile|moyen|difficile|expert","type":"personnage|technique|lieu|arc|pouvoir|objet|studio|auteur","explication":"..."}. '
+    "2) QCM multi-réponses (25%% des questions, 2 ou 3 bonnes réponses) : "
+    '{"question":"...","bonne_reponse":null,"bonnes_reponses":["...","..."],"mauvaises_reponses":["...","...","...","..."],'
+    '"anime":"...","difficulte":"moyen|difficile|expert","type":"...","explication":"..."}. '
+    "Formulations QCM obligatoirement plurielles : 'Lesquels de ces personnages...?', 'Quelles techniques...?', 'Parmi les suivants, lesquels...?'. "
+    "LANGUE : 100%% français correct avec apostrophes correctes (l', d', c', j', n', qu', s') - jamais de mot contracté sans apostrophe. "
+    "TRADUCTIONS OBLIGATOIRES - utilise toujours le nom français suivant : "
+    "Blackbeard → Barbe Noire, Whitebeard → Barbe Blanche, Shanks the Red → Shanks le Roux, "
+    "Devil Fruit → Fruit du Démon, Straw Hat → Chapeau de Paille, Four Emperors → Quatre Empereurs, "
+    "Seven Warlords → Shichibukai, World Government → Gouvernement Mondial, Celestial Dragons → Nobles Mondiaux, "
+    "Marines → Marines, Grand Line → Grand Line, New World → Nouveau Monde, "
+    "Survey Corps → Bataillon d'Exploration, Titans → Titans, Shifters → Porteurs, "
+    "Nen → Nen, Soul Society → Soul Society, Zanpakuto → Zanpakutô, "
+    "Sage Mode → Mode Sage, Tailed Beast → Bête à Queue, Jinchuriki → Jinchûriki. "
+    "Les noms propres de personnages (Luffy, Zoro, Naruto, Goku...) restent tels quels. "
+    "STYLE : questions claires et directes, ni trop formelles ni trop familières. "
+    "RÉPONSES : toutes crédibles et du même univers, jamais ridicules ni évidentes. "
+    "EXPLICATION : 1-2 phrases en français clair, avec un détail de lore précis. "
+    "Aucun texte avant ou après le JSON."
+)
+
+_QUIZ_USER = (
+    "Génère exactement {n} questions de quiz sur : {categorie}. "
+    "Varie les types : personnages, techniques, lieux, arcs, pouvoirs, objets, relations entre persos. "
+    "Répartition des difficultés : 20%% facile, 45%% moyen, 25%% difficile, 10%% expert. "
+    "{avoid_hint}"
+    "Seed : {seed}."
+)
+
+
+async def _generate_quiz_questions(n: int, category: str = "general", seen_questions: list[str] | None = None) -> tuple:
+    """Génère n questions via Groq. Retourne (questions: list, erreur: str)."""
+    api_key = os.environ.get("GROQ_API_KEY", "")
+    if not api_key:
+        msg = "GROQ_API_KEY manquante - configure-la dans Railway > Variables"
+        print(f"[QUIZ] ERREUR : {msg}")
+        return [], msg
+
+    categorie_desc = _QUIZ_CATEGORIES.get(category, _QUIZ_CATEGORIES["general"])
+    seed = random.randint(1000, 9999)
+
+    last_error = ""
+    for attempt in range(3):
+        raw = ""
+        try:
+            print(f"[QUIZ] Appel Groq attempt {attempt + 1}/3 - {n} questions - catégorie={category} seed={seed}")
+            response = await litellm.acompletion(
+                model=_GROQ_MODEL,
+                api_key=api_key,
+                max_tokens=4096,
+                temperature=0.9,
+                response_format={"type": "json_object"},
+                messages=[
+                    {"role": "system", "content": _QUIZ_SYSTEM},
+                    {"role": "user",   "content": _QUIZ_USER.format(
+                        n=n, categorie=categorie_desc, seed=seed,
+                        avoid_hint=(
+                            f"Évite ABSOLUMENT ces questions déjà posées récemment : {seen_questions[:20]}. "
+                            if seen_questions else ""
+                        ),
+                    )},
+                ],
+            )
+            raw = response.choices[0].message.content.strip()
+            print(f"[QUIZ] Raw ({len(raw)} chars) : {raw[:300]}")
+
+            data = json.loads(raw)
+
+            # Le modèle renvoie {"questions": [...]}
+            questions = data.get("questions") or data.get("quiz") or []
+
+            # Fallback : si la racine est déjà une liste
+            if not questions and isinstance(data, list):
+                questions = data
+
+            if isinstance(questions, list) and len(questions) >= 1:
+                # Valider que chaque question a les champs requis
+                valid = [
+                    q for q in questions
+                    if isinstance(q, dict)
+                    and q.get("question")
+                    and isinstance(q.get("mauvaises_reponses"), list)
+                    and (
+                        q.get("bonne_reponse")
+                        or (isinstance(q.get("bonnes_reponses"), list) and len(q.get("bonnes_reponses", [])) >= 2)
+                    )
+                ]
+                if valid:
+                    print(f"[QUIZ] OK - {len(valid)} questions valides")
+                    return valid, ""
+                last_error = "Questions malformees (champs manquants)"
+            else:
+                last_error = f"Cle 'questions' absente ou vide. Cles trouvees : {list(data.keys()) if isinstance(data, dict) else type(data)}"
+
+        except json.JSONDecodeError as e:
+            last_error = f"JSONDecodeError : {e}"
+            print(f"[QUIZ] JSONDecodeError attempt {attempt + 1} : {e}")
+            print(f"[QUIZ] Raw complet pour debug :\n{raw}")
+        except Exception as e:
+            last_error = f"{type(e).__name__}: {e}"
+            print(f"[QUIZ] Exception attempt {attempt + 1}/3 : {last_error}")
+
+        await asyncio.sleep(1)
+
+    print(f"[QUIZ] Echec total apres 3 tentatives. Derniere erreur : {last_error}")
+    return [], last_error
+
+
+def _generate_citation_quiz(n: int, seen_questions: list[str] | None = None) -> tuple:
+    """Génère n questions 'Qui a dit cette citation ?' depuis QUOTES_DB."""
+    if len(QUOTES_DB) < 4:
+        return [], "QUOTES_DB trop petite pour générer un quiz de citations."
+
+    seen_set = set(seen_questions or [])
+    # Pool : toutes les citations sauf celles déjà vues
+    pool = [q for q in QUOTES_DB if q["quote"] not in seen_set]
+    if len(pool) < max(1, n):
+        pool = list(QUOTES_DB)  # reset si épuisé
+
+    picked = random.sample(pool, min(n, len(pool)))
+    questions = []
+    for item in picked:
+        correct = item["character"]
+        # Mauvaises réponses : autres personnages du même anime en priorité, sinon n'importe
+        same_anime = list({q["character"] for q in QUOTES_DB if q["anime"] == item["anime"] and q["character"] != correct})
+        others     = list({q["character"] for q in QUOTES_DB if q["character"] != correct})
+        wrong_pool = same_anime if len(same_anime) >= 3 else others
+        wrongs = random.sample(wrong_pool, min(3, len(wrong_pool)))
+        if len(wrongs) < 3:
+            # Complète si pas assez de mauvaises réponses
+            extra = [q["character"] for q in QUOTES_DB if q["character"] != correct and q["character"] not in wrongs]
+            wrongs += random.sample(extra, min(3 - len(wrongs), len(extra)))
+        questions.append({
+            "question":          f"💬 Qui a dit : *«{item['quote']}»*",
+            "bonne_reponse":     correct,
+            "mauvaises_reponses": wrongs[:3],
+            "anime":             item["anime"],
+            "difficulte":        "moyen",
+            "type":              "personnage",
+            "explication":       f"Cette réplique est de **{correct}**.",
+        })
+    return questions, ""
+
+
+class _QuizSession:
+    __slots__ = ("questions", "idx", "score", "points", "best_combo", "combo", "user_id", "interaction", "category", "joker_used", "speed_bonuses", "current_message", "target_points", "paid_mode", "entry_cost", "quiz_reward", "quiz_all_correct")
+    def __init__(self, questions, user_id, interaction, category: str = "general"):
+        self.questions       = questions
+        self.idx             = 0
+        self.score           = 0
+        self.points          = 0
+        self.best_combo      = 0
+        self.combo           = 0
+        self.user_id         = user_id
+        self.interaction     = interaction
+        self.category        = category
+        self.joker_used      = False
+        self.speed_bonuses   = 0
+        self.current_message = None
+        self.target_points   = None
+        self.paid_mode       = None   # "enrichi" | "survie" | "legendaire" | None
+        self.entry_cost      = 0
+        self.quiz_reward     = 0
+        self.quiz_all_correct = True
+
+def _quiz_rank(pct: float) -> tuple[str, str]:
+    if pct == 1.0: return "👑", "Score parfait - Légende vivante de l'animé"
+    if pct >= 0.8: return "🥇", "Excellent - T'as clairement trop regardé d'animés"
+    if pct >= 0.6: return "🥈", "Très bon - Tu maîtrises le sujet"
+    if pct >= 0.4: return "🥉", "Correct - Tu connais tes classiques"
+    if pct >= 0.2: return "📜", "Débutant - Continue à regarder des animés"
+    return               "💀", "À revoir... Lance quelque chose et rattrape ton retard"
+
+
+async def _send_next_question(inter: discord.Interaction, sess: _QuizSession):
+    total = len(sess.questions)
+
+    # ── Écran de fin ──────────────────────────────────────────────────────────
+    target_reached = sess.target_points is not None and sess.points >= sess.target_points
+    if sess.idx >= total or target_reached:
+        QUIZ_SESSIONS.pop(sess.user_id, None)
+
+        if target_reached:
+            rank_emoji, rank_label = "🎯", f"Objectif de {sess.target_points} pts atteint !"
+            color = discord.Color.from_rgb(50, 200, 100)
+        else:
+            max_pts = sum(_DIFF_POINTS.get(q.get("difficulte", "moyen").lower(), 1) + 2 for q in sess.questions)
+            pct = sess.points / max_pts if max_pts else 0
+            rank_emoji, rank_label = _quiz_rank(pct)
+            color = discord.Color.from_rgb(212, 175, 55)
+
+        embed = discord.Embed(
+            title=f"{rank_emoji}  Quiz terminé",
+            description=f"*{rank_label}*",
+            color=color,
+        )
+        embed.add_field(name="🎯  Score",          value=f"**{sess.score} / {total}**", inline=True)
+        embed.add_field(name="✨  Points",          value=f"**{sess.points} pts**",      inline=True)
+        embed.add_field(name="🔥  Meilleur combo",  value=f"**x{sess.best_combo}**",     inline=True)
+
+        extras = []
+        if sess.speed_bonuses:
+            extras.append(f"⚡ **+{sess.speed_bonuses} pts** gagnés grâce à la vitesse")
+        if sess.joker_used:
+            extras.append("🃏 Joker 50/50 utilisé")
+        if extras:
+            embed.add_field(name="📊  Bonus", value="\n".join(extras), inline=False)
+
+        # ── Payout Berry (modes payants) ────────────────────────────────────
+        _pm = sess.paid_mode
+        if _pm == "survie":
+            _earned = sess.score * 50
+            if _earned > 0:
+                _bal = add_berrys(str(sess.user_id), _earned)
+                embed.add_field(name="💰 Gain Survie", value=f"**+{_earned} 💰** ({sess.score} × 50)\nSolde : **{_bal} 💰**", inline=False)
+            else:
+                embed.add_field(name="💸 Pas de gain", value="Aucune bonne réponse.", inline=False)
+        elif _pm in ("enrichi", "legendaire"):
+            if sess.quiz_all_correct and sess.score == total:
+                _bal = add_berrys(str(sess.user_id), sess.quiz_reward)
+                embed.add_field(name="💰 Récompense", value=f"**+{sess.quiz_reward} 💰** — Score parfait !\nSolde : **{_bal} 💰**", inline=False)
+            else:
+                embed.add_field(name="💸 Pas de récompense", value=f"Il fallait tout juste ({total}/{total}) pour gagner les Berrys.", inline=False)
+
+        replay_view = _ReplayView(sess.user_id, total, sess.category)
+        try:
+            if sess.current_message:
+                await sess.current_message.edit(embed=embed, view=replay_view)
+            else:
+                await inter.followup.send(embed=embed, view=replay_view)
+        except Exception:
+            pass
+        return
+
+    # ── Question suivante ──────────────────────────────────────────────────────
+    q              = sess.questions[sess.idx]
+    bonnes_rep     = q.get("bonnes_reponses")
+    is_qcm         = isinstance(bonnes_rep, list) and len(bonnes_rep) >= 2
+
+    if is_qcm:
+        choices = list(bonnes_rep) + q.get("mauvaises_reponses", [])[:4]
+    else:
+        choices = [q["bonne_reponse"]] + q["mauvaises_reponses"][:3]
+    random.shuffle(choices)
+
+    diff       = q.get("difficulte", "moyen").lower()
+    q_type     = q.get("type", "")
+    diff_emoji = _DIFF_EMOJI.get(diff, "⚪")
+    type_emoji = _TYPE_EMOJI.get(q_type, "")
+    pts        = _DIFF_POINTS.get(diff, 1)
+    anime      = q.get("anime", "?").upper()
+    deadline   = int(time.time()) + 30
+
+    qcm_tag = "  ·  📋 **QCM**" if is_qcm else ""
+    if sess.category == "citation":
+        tags = f"💬 **Devine la Citation**  ·  {diff_emoji} {diff.capitalize()}  ·  ✨ +{pts} pt{'s' if pts > 1 else ''}"
+    else:
+        tags = f"📺 **{anime}**  ·  {diff_emoji} {diff.capitalize()}  ·  ✨ +{pts} pt{'s' if pts > 1 else ''}{qcm_tag}"
+        if type_emoji:
+            tags += f"  ·  {type_emoji} {q_type.capitalize()}"
+
+    sep = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    qcm_hint = "\n*📋 Plusieurs bonnes réponses - sélectionne-les toutes puis valide.*" if is_qcm else ""
+    desc = (
+        f"{tags}\n"
+        f"⏱️  Expire <t:{deadline}:R>\n\n"
+        f"{sep}\n"
+        f"**{q['question']}**\n"
+        f"{sep}"
+        f"{qcm_hint}"
+    )
+
+    embed = discord.Embed(
+        title=f"❓  Question {sess.idx + 1} / {total}",
+        description=desc,
+        color=_DIFF_COLORS.get(diff, 0x6432c8),
+    )
+    embed.set_footer(text=f"🎯 {sess.score}/{sess.idx} bonnes  ·  ✨ {sess.points} pts  ·  🔥 Combo x{sess.combo}")
+
+    view = _MultiAnswerView(sess, choices, bonnes_rep) if is_qcm else _QuizAnswerView(sess, choices, q["bonne_reponse"])
+    try:
+        if sess.current_message:
+            await sess.current_message.edit(embed=embed, view=view)
+            view.message = sess.current_message
+        else:
+            msg = await inter.followup.send(embed=embed, view=view)
+            view.message = msg
+            sess.current_message = msg
+    except Exception as e:
+        print(f"❌ _send_next_question failed: {e}")
+
+
+class _JokerButton(discord.ui.Button):
+    def __init__(self, session: _QuizSession):
+        super().__init__(label="🃏  Joker 50/50", style=discord.ButtonStyle.secondary, row=1)
+        self._session = session
+
+    async def callback(self, inter: discord.Interaction):
+        if inter.user.id != self._session.user_id:
+            await inter.response.send_message("Ce quiz ne t'appartient pas.", ephemeral=True)
+            return
+        self._session.joker_used = True
+        self.disabled = True
+        wrong = [b for b in self.view.children if isinstance(b, _AnswerButton) and not b._is_correct and not b.disabled]
+        for btn in random.sample(wrong, min(2, len(wrong))):
+            btn.disabled = True
+        await inter.response.edit_message(view=self.view)
+
+
+class _AnswerButton(discord.ui.Button):
+    def __init__(self, label_text: str, choice_text: str, is_correct: bool, session: _QuizSession):
+        super().__init__(label=label_text[:80], style=discord.ButtonStyle.secondary)
+        self._choice     = choice_text
+        self._is_correct = is_correct
+        self._session    = session
+
+    async def callback(self, inter: discord.Interaction):
+        sess = self._session
+        if inter.user.id != sess.user_id:
+            await inter.response.send_message("Ce quiz ne t'appartient pas.", ephemeral=True)
+            return
+        view: _QuizAnswerView = self.view
+        elapsed = time.time() - view._start
+
+        for btn in view.children:
+            if isinstance(btn, _AnswerButton):
+                btn.disabled = True
+                if btn._is_correct:
+                    btn.style = discord.ButtonStyle.success
+                elif btn._choice == self._choice and not self._is_correct:
+                    btn.style = discord.ButtonStyle.danger
+            elif isinstance(btn, _JokerButton):
+                btn.disabled = True
+        view.stop()
+
+        q           = sess.questions[sess.idx]
+        diff        = q.get("difficulte", "moyen").lower()
+        pts         = _DIFF_POINTS.get(diff, 1)
+        explication = q.get("explication", "")
+
+        if self._is_correct:
+            speed_bonus = 2 if elapsed < 5 else (1 if elapsed < 10 else 0)
+            sess.score         += 1
+            sess.points        += pts + speed_bonus
+            sess.speed_bonuses += speed_bonus
+            sess.combo         += 1
+            if sess.combo > sess.best_combo:
+                sess.best_combo = sess.combo
+
+            lines = [f"✅  **Bonne réponse !**   `+{pts} pt{'s' if pts > 1 else ''}`"]
+            if speed_bonus == 2:
+                lines.append(f"⚡  Répondu en **{elapsed:.1f}s**  -  `+2 pts bonus vitesse`")
+            elif speed_bonus == 1:
+                lines.append(f"⚡  Répondu en **{elapsed:.1f}s**  -  `+1 pt bonus vitesse`")
+
+            if   sess.combo >= 10: lines.append(f"💥  **COMBO x{sess.combo}  -  LÉGENDAIRE !!**")
+            elif sess.combo >= 7:  lines.append(f"💥  **COMBO x{sess.combo}  -  Inarrêtable !!**")
+            elif sess.combo == 5:  lines.append(f"🔥  **COMBO x{sess.combo}  -  Tu es en FEU !**")
+            elif sess.combo == 3:  lines.append(f"🔥  **Combo x{sess.combo}  -  C'est chaud !**")
+            elif sess.combo > 1:   lines.append(f"🔥  Combo x{sess.combo}")
+
+            if explication:
+                lines.append(f"> 📚 *{explication}*")
+            color = discord.Color.green()
+        else:
+            sess.combo = 0
+            sess.quiz_all_correct = False
+            if sess.paid_mode == "survie":
+                sess.idx = len(sess.questions)  # stoppe la survie dès la 1ère erreur
+            lines = [
+                f"❌  **Mauvaise réponse**",
+                f"La bonne réponse était  :  **{view.correct}**",
+            ]
+            if explication:
+                lines.append(f"> 📚 *{explication}*")
+            color = discord.Color.red()
+
+        feedback_embed = discord.Embed(description="\n".join(lines), color=color)
+        feedback_embed.set_footer(
+            text=f"🎯 {sess.score}/{sess.idx + 1} bonnes  ·  ✨ {sess.points} pts  ·  🔥 Combo x{sess.combo}"
+        )
+        await inter.response.edit_message(embed=feedback_embed, view=view)
+        sess.idx += 1
+        await asyncio.sleep(1.2)
+        await _send_next_question(inter, sess)
+
+
+class _MultiAnswerButton(discord.ui.Button):
+    def __init__(self, label_text: str, choice_text: str, is_correct: bool, session: _QuizSession):
+        super().__init__(label=label_text[:80], style=discord.ButtonStyle.secondary)
+        self._choice     = choice_text
+        self._is_correct = is_correct
+        self._session    = session
+        self._selected   = False
+
+    async def callback(self, inter: discord.Interaction):
+        if inter.user.id != self._session.user_id:
+            await inter.response.send_message("Ce quiz ne t'appartient pas.", ephemeral=True)
+            return
+        self._selected = not self._selected
+        self.style = discord.ButtonStyle.primary if self._selected else discord.ButtonStyle.secondary
+        await inter.response.edit_message(view=self.view)
+
+
+class _ValidateQCMButton(discord.ui.Button):
+    def __init__(self, session: _QuizSession, correct_set: set):
+        super().__init__(label="Valider ✅", style=discord.ButtonStyle.success, row=1)
+        self._session     = session
+        self._correct_set = correct_set
+
+    async def callback(self, inter: discord.Interaction):
+        sess = self._session
+        if inter.user.id != sess.user_id:
+            await inter.response.send_message("Ce quiz ne t'appartient pas.", ephemeral=True)
+            return
+        view: _MultiAnswerView = self.view
+        view.stop()
+
+        selected = {btn._choice for btn in view.children if isinstance(btn, _MultiAnswerButton) and btn._selected}
+        correct  = self._correct_set
+
+        for btn in view.children:
+            btn.disabled = True
+            if isinstance(btn, _MultiAnswerButton):
+                if btn._is_correct:
+                    btn.style = discord.ButtonStyle.success
+                elif btn._selected:
+                    btn.style = discord.ButtonStyle.danger
+
+        q           = sess.questions[sess.idx]
+        diff        = q.get("difficulte", "moyen").lower()
+        pts         = _DIFF_POINTS.get(diff, 1)
+        explication = q.get("explication", "")
+
+        wrong_selected   = selected - correct
+        correct_selected = selected & correct
+
+        if selected == correct:
+            sess.score  += 1
+            sess.points += pts
+            sess.combo  += 1
+            if sess.combo > sess.best_combo:
+                sess.best_combo = sess.combo
+            lines = [f"✅  **Toutes les bonnes réponses !**  `+{pts} pt{'s' if pts > 1 else ''}`"]
+            if sess.combo >= 3:
+                lines.append(f"🔥  Combo x{sess.combo}")
+            color = discord.Color.green()
+        elif correct_selected and not wrong_selected:
+            half = max(1, pts // 2)
+            sess.points += half
+            sess.combo   = 0
+            missed = correct - selected
+            lines = [
+                f"⚠️  **Partiel**  `+{half} pt{'s' if half > 1 else ''}`",
+                f"Réponses manquées : **{', '.join(missed)}**",
+            ]
+            color = discord.Color.yellow()
+        else:
+            sess.combo = 0
+            lines = [
+                f"❌  **Mauvaise sélection**",
+                f"Bonnes réponses : **{', '.join(correct)}**",
+            ]
+            color = discord.Color.red()
+
+        if explication:
+            lines.append(f"> 📚 *{explication}*")
+
+        feedback_embed = discord.Embed(description="\n".join(lines), color=color)
+        feedback_embed.set_footer(
+            text=f"🎯 {sess.score}/{sess.idx + 1} bonnes  ·  ✨ {sess.points} pts  ·  🔥 Combo x{sess.combo}"
+        )
+        await inter.response.edit_message(embed=feedback_embed, view=view)
+        sess.idx += 1
+        await asyncio.sleep(1.2)
+        await _send_next_question(inter, sess)
+
+
+class _MultiAnswerView(discord.ui.View):
+    def __init__(self, session: _QuizSession, choices: list, correct_answers: list):
+        super().__init__(timeout=30)
+        self.session = session
+        self.message = None
+        self._correct = set(correct_answers)
+        labels = ["A", "B", "C", "D", "E", "F"]
+        for i, choice in enumerate(choices[:6]):
+            self.add_item(_MultiAnswerButton(f"{labels[i]}.  {choice}", choice, choice in self._correct, session))
+        self.add_item(_ValidateQCMButton(session, self._correct))
+
+    async def on_timeout(self):
+        QUIZ_SESSIONS.pop(self.session.user_id, None)
+        for btn in self.children:
+            btn.disabled = True
+            if isinstance(btn, _MultiAnswerButton) and btn._is_correct:
+                btn.style = discord.ButtonStyle.success
+        if self.message:
+            try:
+                await self.message.edit(
+                    content="⏰  **Temps écoulé !**  Les bonnes réponses sont en vert.",
+                    view=self
+                )
+            except Exception:
+                pass
+
+
+class _QuizAnswerView(discord.ui.View):
+    def __init__(self, session: _QuizSession, choices: list, correct: str):
+        super().__init__(timeout=30)
+        self.session = session
+        self.correct = correct
+        self.message = None
+        self._start  = time.time()
+        labels = ["A", "B", "C", "D"]
+        for i, choice in enumerate(choices[:4]):
+            self.add_item(_AnswerButton(f"{labels[i]}.  {choice}", choice, choice == correct, session))
+        if not session.joker_used:
+            self.add_item(_JokerButton(session))
+
+    async def on_timeout(self):
+        QUIZ_SESSIONS.pop(self.session.user_id, None)
+        for btn in self.children:
+            btn.disabled = True
+            if isinstance(btn, _AnswerButton) and btn._is_correct:
+                btn.style = discord.ButtonStyle.success
+        if self.message:
+            try:
+                await self.message.edit(
+                    content="⏰  **Temps écoulé !**  La bonne réponse est surlignée en vert.",
+                    view=self
+                )
+            except Exception:
+                pass
+
+class _ReplayView(discord.ui.View):
+    def __init__(self, user_id: int, n: int, category: str = "general"):
+        super().__init__(timeout=120)
+        self.user_id = user_id
+        self.n = n
+        self.category = category
+
+    @discord.ui.button(label="Rejouer (même catégorie)", style=discord.ButtonStyle.primary, emoji="🔄")
+    async def rejouer(self, inter: discord.Interaction, button: discord.ui.Button):
+        if inter.user.id != self.user_id:
+            await inter.response.send_message("Ce bouton ne t'appartient pas.", ephemeral=True)
+            return
+        button.disabled = True
+        await inter.response.edit_message(view=self)
+        await _start_quiz_session(inter, self.n, self.category)
+
+_CAT_LABELS_MAP = {
+    "general": "🎌 Anime général", "one_piece": "🌊 One Piece", "naruto": "🍥 Naruto",
+    "bleach": "🗡️ Bleach", "deathnote": "💀 Death Note", "aot": "🔥 Attack on Titan",
+    "dbz": "🏋️ Dragon Ball Z", "hxh": "🎯 Hunter x Hunter", "jojo": "✨ JoJo's Bizarre Adv.",
+    "demon_slayer": "⚔️ Demon Slayer", "mha": "💪 My Hero Academia",
+    "jjk": "👁️ Jujutsu Kaisen", "fma": "⚗️ Fullmetal Alchemist",
+    "chainsaw": "🪚 Chainsaw Man", "black_clover": "🍀 Black Clover",
+    "one_punch_man": "👊 One Punch Man", "citation": "💬 Devine la Citation",
+}
+
+
+class _NbQuestionsButton(discord.ui.Button):
+    def __init__(self, label: str, n: int, style: discord.ButtonStyle, emoji: str,
+                 user_id: int, category: str, challenged_id: int | None = None):
+        super().__init__(label=label, style=style, emoji=emoji)
+        self._n             = n
+        self._user_id       = user_id
+        self._category      = category
+        self._challenged_id = challenged_id
+
+    async def callback(self, inter: discord.Interaction):
+        if inter.user.id != self._user_id:
+            await inter.response.send_message("Ce quiz ne t'appartient pas.", ephemeral=True)
+            return
+        self.view.stop()
+
+        if self._challenged_id:
+            # ── Mode duel : afficher le challenge directement ──────────────
+            challenged = inter.guild.get_member(self._challenged_id) if inter.guild else None
+            cname = challenged.display_name if challenged else str(self._challenged_id)
+            cmention = challenged.mention if challenged else str(self._challenged_id)
+            sep = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            embed = discord.Embed(
+                title="⚔️  Défi Quiz !",
+                description=(
+                    f"{sep}\n"
+                    f"**{inter.user.display_name}** défie **{cname}** !\n\n"
+                    f"Catégorie : {_CAT_LABELS_MAP.get(self._category, self._category)}\n"
+                    f"Questions : **{self._n}**\n"
+                    f"{sep}\n"
+                    f"{cmention}, tu as **60 secondes** pour accepter."
+                ),
+                color=discord.Color.orange()
+            )
+            view = _DuelChallengeView(self._user_id, self._challenged_id, self._category, self._n)
+            await inter.response.edit_message(embed=embed, view=view)
+        else:
+            # ── Mode solo ──────────────────────────────────────────────────
+            await inter.response.defer()
+            await _start_quiz_session(inter, self._n, self._category)
+
+
+class _CustomQuestionsModal(discord.ui.Modal, title="Nombre de questions"):
+    nb = discord.ui.TextInput(
+        label="Nombre de questions (1 à 30)",
+        placeholder="Ex : 7",
+        min_length=1, max_length=2, required=True,
+    )
+
+    def __init__(self, user_id: int, category: str, challenged_id: int | None = None):
+        super().__init__()
+        self._user_id       = user_id
+        self._category      = category
+        self._challenged_id = challenged_id
+
+    async def on_submit(self, inter: discord.Interaction):
+        try:
+            n = int(self.nb.value.strip())
+        except ValueError:
+            await inter.response.send_message("Entre un nombre valide (ex: 7).", ephemeral=True)
+            return
+        if not 1 <= n <= 30:
+            await inter.response.send_message("Le nombre doit être entre 1 et 30.", ephemeral=True)
+            return
+        if self._challenged_id:
+            guild = inter.guild
+            challenged = guild.get_member(self._challenged_id) if guild else None
+            cname    = challenged.display_name if challenged else str(self._challenged_id)
+            cmention = challenged.mention       if challenged else str(self._challenged_id)
+            sep = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            embed = discord.Embed(
+                title="⚔️  Défi Quiz !",
+                description=(
+                    f"{sep}\n"
+                    f"**{inter.user.display_name}** défie **{cname}** !\n\n"
+                    f"Catégorie : {_CAT_LABELS_MAP.get(self._category, self._category)}\n"
+                    f"Questions : **{n}**\n"
+                    f"{sep}\n"
+                    f"{cmention}, tu as **60 secondes** pour accepter."
+                ),
+                color=discord.Color.orange()
+            )
+            view = _DuelChallengeView(self._user_id, self._challenged_id, self._category, n)
+            await inter.response.send_message(embed=embed, view=view)
+        else:
+            await inter.response.defer()
+            await _start_quiz_session(inter, n, self._category)
+
+
+class _ScoreTargetButton(discord.ui.Button):
+    def __init__(self, pts: int, user_id: int, category: str):
+        super().__init__(label=f"{pts} pts", style=discord.ButtonStyle.primary, emoji="✨")
+        self._pts      = pts
+        self._user_id  = user_id
+        self._category = category
+
+    async def callback(self, inter: discord.Interaction):
+        if inter.user.id != self._user_id:
+            await inter.response.send_message("Ce quiz ne t'appartient pas.", ephemeral=True)
+            return
+        self.view.stop()
+        await inter.response.defer()
+        n = min(30, max(5, round(self._pts / 2) + 3))
+        await _start_quiz_session(inter, n, self._category, target_points=self._pts)
+
+
+class _ScoreTargetView(discord.ui.View):
+    def __init__(self, user_id: int, category: str):
+        super().__init__(timeout=60)
+        for pts in (20, 50, 100, 200):
+            self.add_item(_ScoreTargetButton(pts, user_id, category))
+
+
+class _CustomNbButton(discord.ui.Button):
+    def __init__(self, user_id: int, category: str, challenged_id: int | None = None):
+        super().__init__(label="Personnalisé", style=discord.ButtonStyle.secondary, emoji="✏️")
+        self._user_id       = user_id
+        self._category      = category
+        self._challenged_id = challenged_id
+
+    async def callback(self, inter: discord.Interaction):
+        if inter.user.id != self._user_id:
+            await inter.response.send_message("Ce quiz ne t'appartient pas.", ephemeral=True)
+            return
+        self.view.stop()
+        await inter.response.send_modal(_CustomQuestionsModal(self._user_id, self._category, self._challenged_id))
+
+
+class _DurationView(discord.ui.View):
+    def __init__(self, user_id: int, category: str = "general", challenged_id: int | None = None):
+        super().__init__(timeout=60)
+        self.add_item(_NbQuestionsButton("5 questions",  5,  discord.ButtonStyle.success, "🎯", user_id, category, challenged_id))
+        self.add_item(_NbQuestionsButton("10 questions", 10, discord.ButtonStyle.primary,  "⚡", user_id, category, challenged_id))
+        self.add_item(_NbQuestionsButton("15 questions", 15, discord.ButtonStyle.danger,   "🔥", user_id, category, challenged_id))
+        self.add_item(_CustomNbButton(user_id, category, challenged_id))
+
+
+class _QuizCategorySelect(discord.ui.Select):
+    def __init__(self, user_id: int, challenged_id: int | None = None, score_mode: bool = False):
+        self.user_id       = user_id
+        self.challenged_id = challenged_id
+        self.score_mode    = score_mode
+        _LABELS = [
+            ("citation",     "💬 Devine la Citation",    "Qui a dit cette réplique ?"),
+            ("general",      "🎌 Anime général",        "Tous les animés mélangés"),
+            ("one_piece",    "🌊 One Piece",             "Fruits du Démon, arcs, personnages"),
+            ("naruto",       "🍥 Naruto",                "Jutsu, clans, Akatsuki, arcs"),
+            ("bleach",       "🗡️ Bleach",               "Bankai, Shinigami, Espada"),
+            ("deathnote",    "💀 Death Note",            "Kira, L, règles du Death Note"),
+            ("aot",          "🔥 Attack on Titan",       "Titans, Survey Corps, Shifters"),
+            ("dbz",          "🏋️ Dragon Ball Z",        "Saiyans, transformations, arcs"),
+            ("hxh",          "🎯 Hunter x Hunter",       "Nen, Gon, Killua, arcs"),
+            ("jojo",         "✨ JoJo's Bizarre Adv.",   "Stands, parties, antagonistes"),
+            ("demon_slayer", "⚔️ Demon Slayer",          "Respirations, Piliers, démons"),
+            ("mha",          "💪 My Hero Academia",      "Alter, U.A., League of Villains"),
+            ("jjk",          "👁️ Jujutsu Kaisen",       "Techniques maudites, Fléaux, grades"),
+            ("fma",          "⚗️ Fullmetal Alchemist",  "Alchimie, Homoncules, arcs"),
+            ("chainsaw",     "🪚 Chainsaw Man",          "Diables, contrats, Chasseurs"),
+            ("black_clover",  "🍀 Black Clover",          "Magie, grimoires, Chevaliers"),
+            ("one_punch_man", "👊 One Punch Man",         "Saitama, héros, monstres, classes"),
+        ]
+        super().__init__(
+            placeholder="Choisis une catégorie...", min_values=1, max_values=1,
+            options=[discord.SelectOption(label=l, value=v, description=d) for v, l, d in _LABELS]
+        )
+
+    async def callback(self, inter: discord.Interaction):
+        if inter.user.id != self.user_id:
+            await inter.response.send_message("Ce quiz ne t'appartient pas.", ephemeral=True)
+            return
+        self.view.stop()
+        category  = self.values[0]
+        cat_label = _CAT_LABELS_MAP.get(category, category)
+
+        if self.score_mode:
+            embed = discord.Embed(
+                title="✨  Score à atteindre",
+                description=f"Catégorie choisie : **{cat_label}**",
+                color=discord.Color.from_rgb(50, 180, 120),
+            )
+            embed.set_thumbnail(url=inter.user.display_avatar.url)
+            embed.add_field(name="​", value="**━━━━━━  OBJECTIF  ━━━━━━**", inline=False)
+            embed.add_field(name="✨  20 pts",  value="*Échauffement*",    inline=True)
+            embed.add_field(name="✨  50 pts",  value="*Session standard*", inline=True)
+            embed.add_field(name="✨  100 pts", value="*Pour les fans*",    inline=True)
+            embed.add_field(name="✨  200 pts", value="*Champion absolu*",  inline=True)
+            embed.add_field(name="​", value="*Le quiz s'arrête dès que tu atteins l'objectif !*", inline=False)
+            embed.set_footer(text="Brams Community  •  by Freydiss")
+            await inter.response.edit_message(embed=embed, view=_ScoreTargetView(self.user_id, category))
+        else:
+            title = "⚔️  Duel - Nombre de questions" if self.challenged_id else "🎯  Nombre de questions"
+            embed = discord.Embed(
+                title=title,
+                description=f"Catégorie choisie : **{cat_label}**",
+                color=discord.Color.from_rgb(100, 50, 200),
+            )
+            embed.set_thumbnail(url=inter.user.display_avatar.url)
+            embed.add_field(name="​", value="**━━━━━━  DURÉE  ━━━━━━**", inline=False)
+            embed.add_field(name="🎯  5 questions",  value="*Quiz express*",      inline=True)
+            embed.add_field(name="⚡  10 questions", value="*Session standard*",  inline=True)
+            embed.add_field(name="🔥  15 questions", value="*Pour les vrais*",    inline=True)
+            embed.add_field(name="✏️  Personnalisé", value="*1 à 30 questions*",  inline=True)
+            embed.set_footer(text="Brams Community  •  by Freydiss")
+            await inter.response.edit_message(embed=embed, view=_DurationView(self.user_id, category, self.challenged_id))
+
+
+class _CategoryView(discord.ui.View):
+    def __init__(self, user_id: int, challenged_id: int | None = None, score_mode: bool = False):
+        super().__init__(timeout=60)
+        self.add_item(_QuizCategorySelect(user_id, challenged_id, score_mode))
+
+
+class _OpponentSelect(discord.ui.UserSelect):
+    def __init__(self, challenger_id: int):
+        super().__init__(placeholder="Sélectionne ton adversaire...", min_values=1, max_values=1)
+        self._challenger_id = challenger_id
+
+    async def callback(self, inter: discord.Interaction):
+        if inter.user.id != self._challenger_id:
+            await inter.response.send_message("Ce n'est pas ton quiz.", ephemeral=True)
+            return
+        opponent = self.values[0]
+        if opponent.bot:
+            await inter.response.send_message("Tu ne peux pas défier un bot.", ephemeral=True)
+            return
+        if opponent.id == self._challenger_id:
+            await inter.response.send_message("Tu ne peux pas te défier toi-même.", ephemeral=True)
+            return
+        if (opponent.id in QUIZ_SESSIONS or opponent.id in LIVE_DUELS
+                or self._challenger_id in QUIZ_SESSIONS or self._challenger_id in LIVE_DUELS):
+            await inter.response.send_message("L'un des joueurs a déjà un quiz en cours.", ephemeral=True)
+            return
+        self.view.stop()
+        embed = discord.Embed(
+            title="⚔️  Duel - Catégorie",
+            description=f"**{inter.user.display_name}** vs **{opponent.display_name}** - Choisis la catégorie !",
+            color=discord.Color.orange(),
+        )
+        embed.set_thumbnail(url=inter.user.display_avatar.url)
+        embed.add_field(name="​", value="**━━━━━━  CATÉGORIE  ━━━━━━**", inline=False)
+        embed.add_field(name="​", value="*Sélectionne une catégorie dans le menu ci-dessous*", inline=False)
+        embed.set_footer(text="Brams Community  •  by Freydiss")
+        await inter.response.edit_message(embed=embed, view=_CategoryView(self._challenger_id, challenged_id=opponent.id))
+
+
+class _OpponentSelectView(discord.ui.View):
+    def __init__(self, challenger_id: int):
+        super().__init__(timeout=60)
+        self.add_item(_OpponentSelect(challenger_id))
+
+
+class _QuizTypeView(discord.ui.View):
+    def __init__(self, user_id: int):
+        super().__init__(timeout=60)
+        self._user_id = user_id
+
+    @discord.ui.button(label="Par questions", style=discord.ButtonStyle.primary, emoji="🎯")
+    async def par_questions(self, inter: discord.Interaction, button: discord.ui.Button):
+        if inter.user.id != self._user_id:
+            await inter.response.send_message("Ce n'est pas ton quiz.", ephemeral=True)
+            return
+        self.stop()
+        embed = discord.Embed(
+            title="🎌  Catégorie",
+            description="Sur quoi veux-tu être testé ?",
+            color=discord.Color.from_rgb(100, 50, 200),
+        )
+        embed.set_thumbnail(url=inter.user.display_avatar.url)
+        embed.add_field(name="​", value="**━━━━━━  CATÉGORIE  ━━━━━━**", inline=False)
+        embed.add_field(name="​", value="*Sélectionne une catégorie dans le menu ci-dessous*", inline=False)
+        embed.set_footer(text="Brams Community  •  by Freydiss")
+        await inter.response.edit_message(embed=embed, view=_CategoryView(self._user_id, score_mode=False))
+
+    @discord.ui.button(label="Par score", style=discord.ButtonStyle.success, emoji="✨")
+    async def par_score(self, inter: discord.Interaction, button: discord.ui.Button):
+        if inter.user.id != self._user_id:
+            await inter.response.send_message("Ce n'est pas ton quiz.", ephemeral=True)
+            return
+        self.stop()
+        embed = discord.Embed(
+            title="🎌  Catégorie",
+            description="Sur quoi veux-tu être testé ?",
+            color=discord.Color.from_rgb(50, 180, 120),
+        )
+        embed.set_thumbnail(url=inter.user.display_avatar.url)
+        embed.add_field(name="​", value="**━━━━━━  CATÉGORIE  ━━━━━━**", inline=False)
+        embed.add_field(name="​", value="*Sélectionne une catégorie dans le menu ci-dessous*", inline=False)
+        embed.set_footer(text="Brams Community  •  by Freydiss")
+        await inter.response.edit_message(embed=embed, view=_CategoryView(self._user_id, score_mode=True))
+
+
+class _ModeView(discord.ui.View):
+    def __init__(self, user_id: int):
+        super().__init__(timeout=60)
+        self._user_id = user_id
+
+    @discord.ui.button(label="Solo", style=discord.ButtonStyle.primary, emoji="🎮")
+    async def solo(self, inter: discord.Interaction, button: discord.ui.Button):
+        if inter.user.id != self._user_id:
+            await inter.response.send_message("Ce n'est pas ton quiz.", ephemeral=True)
+            return
+        self.stop()
+        embed = discord.Embed(
+            title="🎮  Solo",
+            description="Comment veux-tu jouer ?",
+            color=discord.Color.from_rgb(100, 50, 200),
+        )
+        embed.set_thumbnail(url=inter.user.display_avatar.url)
+        embed.add_field(name="​", value="**━━━━━━  MODE DE JEU  ━━━━━━**", inline=False)
+        embed.add_field(name="🎯  Par questions", value="*Nombre fixe de questions*",    inline=True)
+        embed.add_field(name="✨  Par score",      value="*Joue jusqu'à un objectif*",    inline=True)
+        embed.add_field(name="​",                  value="​",                               inline=True)
+        embed.set_footer(text="Brams Community  •  by Freydiss")
+        await inter.response.edit_message(embed=embed, view=_QuizTypeView(self._user_id))
+
+    @discord.ui.button(label="Duel", style=discord.ButtonStyle.danger, emoji="⚔️")
+    async def duel(self, inter: discord.Interaction, button: discord.ui.Button):
+        if inter.user.id != self._user_id:
+            await inter.response.send_message("Ce n'est pas ton quiz.", ephemeral=True)
+            return
+        if self._user_id in QUIZ_SESSIONS or self._user_id in LIVE_DUELS:
+            await inter.response.send_message("Tu as déjà un quiz en cours.", ephemeral=True)
+            return
+        self.stop()
+        embed = discord.Embed(
+            title="⚔️  Duel Quiz",
+            description="Qui oses-tu défier ?",
+            color=discord.Color.orange(),
+        )
+        embed.set_thumbnail(url=inter.user.display_avatar.url)
+        embed.add_field(name="​", value="**━━━━━━  ADVERSAIRE  ━━━━━━**", inline=False)
+        embed.add_field(name="​", value="*Sélectionne un membre dans le menu ci-dessous*", inline=False)
+        embed.set_footer(text="Brams Community  •  by Freydiss")
+        await inter.response.edit_message(embed=embed, view=_OpponentSelectView(self._user_id))
+
+
+async def _start_quiz_session(inter: discord.Interaction, n: int, category: str = "general", target_points: int | None = None):
+    """Lance une session quiz : loading → génération → première question."""
+    uid = inter.user.id
+    if uid in QUIZ_SESSIONS:
+        await inter.followup.send("❗ Tu as déjà un quiz en cours !", ephemeral=True)
+        return
+
+    cat_labels = {
+        "general": "tous les animés", "one_piece": "One Piece", "naruto": "Naruto",
+        "bleach": "Bleach", "deathnote": "Death Note", "aot": "AoT",
+        "dbz": "Dragon Ball Z", "hxh": "HxH", "jojo": "JoJo",
+        "demon_slayer": "Demon Slayer", "mha": "My Hero Academia",
+        "jjk": "Jujutsu Kaisen", "fma": "Fullmetal Alchemist",
+        "chainsaw": "Chainsaw Man", "black_clover": "Black Clover",
+        "citation": "Devine la Citation",
+    }
+    cat_display = cat_labels.get(category, "anime")
+    loading_embed = discord.Embed(
+        title="🎌 Génération du quiz...",
+        description=f"**{n} questions** sur **{cat_display}** en cours de génération ⏳",
+        color=discord.Color.from_rgb(100, 50, 200)
+    )
+    loading_msg = None
+    try:
+        loading_msg = await inter.followup.send(embed=loading_embed)
+    except Exception as e:
+        print(f"⚠️ Quiz loading send failed: {e}")
+
+    if category == "citation":
+        questions, err = _generate_citation_quiz(n, seen_questions=QUIZ_USER_HISTORY.get(uid))
+    else:
+        questions, err = await _generate_quiz_questions(n, category, seen_questions=QUIZ_USER_HISTORY.get(uid))
+
+    # Filtre anti-répétition : retire les questions déjà vues par cet utilisateur
+    user_seen = set(QUIZ_USER_HISTORY.get(uid, []))
+    fresh = [q for q in questions if q["question"] not in user_seen]
+    if len(fresh) >= max(1, n // 2):
+        questions = fresh[:n]
+
+    if not questions:
+        err_display = f"\n\n```{err[:300]}```" if err else ""
+        error_embed = discord.Embed(
+            title="❌ Génération impossible",
+            description=(
+                f"Groq n'a pas pu créer les questions.{err_display}\n\n"
+                f"**Causes possibles :**\n"
+                f"• Clé `GROQ_API_KEY` absente ou invalide dans Railway\n"
+                f"• Rate limit Groq atteint (réessaie dans 1 min)\n"
+                f"• Problème réseau temporaire"
+            ),
+            color=discord.Color.red()
+        )
+        try:
+            if loading_msg:
+                await loading_msg.edit(embed=error_embed)
+            else:
+                await inter.followup.send(embed=error_embed)
+        except Exception as e:
+            print(f"❌ Quiz error embed failed: {e}")
+        return
+
+    session = _QuizSession(questions, uid, inter, category)
+    session.target_points = target_points
+    QUIZ_SESSIONS[uid] = session
+
+    # Mémorise les questions de cette session (tronqué immédiatement)
+    history = QUIZ_USER_HISTORY.get(uid, [])
+    history = (history + [q["question"] for q in questions])[-_QUIZ_HISTORY_MAX:]
+    QUIZ_USER_HISTORY[uid] = history
+
+    if loading_msg:
+        try:
+            await loading_msg.delete()
+        except Exception:
+            pass
+
+    await _send_next_question(inter, session)
+
+
+async def _quiz_entry(interaction: discord.Interaction):
+    try:
+        await interaction.response.defer(ephemeral=False)
+    except discord.NotFound:
+        return
+    except Exception as e:
+        print(f"❌ quiz defer: {e}")
+        return
+
+    embed = discord.Embed(
+        title="🎌  Quiz Animé",
+        description=f"Bienvenue **{interaction.user.display_name}** - teste tes connaissances !",
+        color=discord.Color.from_rgb(100, 50, 200),
+    )
+    embed.set_thumbnail(url=interaction.user.display_avatar.url)
+    embed.add_field(name="​", value="**━━━━━━  MODE DE JEU  ━━━━━━**", inline=False)
+    embed.add_field(name="🎮  Solo",   value="*Joue à ton rythme*",        inline=True)
+    embed.add_field(name="⚔️  Duel",  value="*Affronte un autre membre*",  inline=True)
+    embed.add_field(name="​",          value="​",                            inline=True)
+    embed.set_footer(text="Brams Community  •  by Freydiss")
+    try:
+        await interaction.followup.send(embed=embed, view=_ModeView(interaction.user.id))
+    except Exception as e:
+        print(f"❌ quiz followup: {e}")
+
+
+
+
+class _DuelAnswerButton(discord.ui.Button):
+    def __init__(self, label_text: str, choice_text: str, is_correct: bool,
+                 duel: "_LiveDuelSession", q: dict):
+        super().__init__(label=label_text[:80], style=discord.ButtonStyle.secondary)
+        self._choice     = choice_text
+        self._is_correct = is_correct
+        self._duel       = duel
+        self._q          = q
+
+    async def callback(self, inter: discord.Interaction):
+        duel = self._duel
+        if inter.user.id not in (duel.uid1, duel.uid2):
+            await inter.response.send_message("Tu ne fais pas partie de ce duel.", ephemeral=True)
+            return
+        view: _DuelQuestionView = self.view
+        if view._answered:
+            await inter.response.send_message("Quelqu'un a déjà répondu à cette question.", ephemeral=True)
+            return
+        view._answered = True
+        view.stop()
+
+        for btn in view.children:
+            btn.disabled = True
+            if isinstance(btn, _DuelAnswerButton):
+                if btn._is_correct:
+                    btn.style = discord.ButtonStyle.success
+                elif btn._choice == self._choice and not self._is_correct:
+                    btn.style = discord.ButtonStyle.danger
+        await inter.response.edit_message(view=view)
+
+        q    = self._q
+        diff = q.get("difficulte", "moyen").lower()
+        pts  = _DIFF_POINTS.get(diff, 1)
+        explication = q.get("explication", "")
+
+        if self._is_correct:
+            if inter.user.id == duel.uid1:
+                duel.score1 += 1
+                duel.pts1   += pts
+            else:
+                duel.score2 += 1
+                duel.pts2   += pts
+            winner_name = duel.name1 if inter.user.id == duel.uid1 else duel.name2
+            feedback = f"✅  **{winner_name}** répond le premier - `+{pts} pt{'s' if pts > 1 else ''}`"
+        else:
+            loser_name = duel.name1 if inter.user.id == duel.uid1 else duel.name2
+            feedback = f"❌  **{loser_name}** s'est trompé - bonne réponse : **{view.correct}**"
+        if explication:
+            feedback += f"\n> 📚 *{explication}*"
+
+        await asyncio.sleep(3)
+        await _send_duel_question(duel, inter, feedback)
+
+
+class _DuelQuestionView(discord.ui.View):
+    def __init__(self, duel: "_LiveDuelSession", choices: list, correct: str, q: dict):
+        super().__init__(timeout=10)
+        self.correct   = correct
+        self.message   = None
+        self._duel     = duel
+        self._q        = q
+        self._answered = False
+        labels = ["A", "B", "C", "D"]
+        for i, choice in enumerate(choices[:4]):
+            self.add_item(_DuelAnswerButton(f"{labels[i]}.  {choice}", choice, choice == correct, duel, q))
+
+    async def on_timeout(self):
+        if self._answered:
+            return
+        self._answered = True
+        for btn in self.children:
+            btn.disabled = True
+            if isinstance(btn, _DuelAnswerButton) and btn._is_correct:
+                btn.style = discord.ButtonStyle.success
+        if self.message:
+            try:
+                await self.message.edit(
+                    content="⏰  **Temps écoulé !** Personne n'a répondu.",
+                    view=self
+                )
+            except Exception:
+                pass
+        await asyncio.sleep(3)
+        await _send_duel_question(self._duel, self._duel.interaction, "⏰ Temps écoulé - aucun point attribué.")
+
+
+async def _send_duel_question(duel: "_LiveDuelSession", inter: discord.Interaction, feedback: str = ""):
+    n = len(duel.questions)
+    if duel.idx >= n:
+        LIVE_DUELS.pop(duel.uid1, None)
+        LIVE_DUELS.pop(duel.uid2, None)
+        await _send_live_duel_result(duel, inter, berry_bet=duel.berry_bet)
+        return
+
+    q        = duel.questions[duel.idx]
+    duel.idx += 1
+    choices  = [q["bonne_reponse"]] + q["mauvaises_reponses"][:3]
+    random.shuffle(choices)
+
+    diff       = q.get("difficulte", "moyen").lower()
+    q_type     = q.get("type", "")
+    diff_emoji = _DIFF_EMOJI.get(diff, "⚪")
+    type_emoji = _TYPE_EMOJI.get(q_type, "")
+    pts        = _DIFF_POINTS.get(diff, 1)
+    anime      = q.get("anime", "?").upper()
+    deadline   = int(time.time()) + 10
+
+    tags = f"📺 **{anime}**  ·  {diff_emoji} {diff.capitalize()}  ·  ✨ +{pts} pt{'s' if pts > 1 else ''}"
+    if type_emoji:
+        tags += f"  ·  {type_emoji} {q_type.capitalize()}"
+
+    sep = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    question_block = (
+        f"{tags}\n"
+        f"⏱️  Expire <t:{deadline}:R>\n\n"
+        f"{sep}\n"
+        f"**{q['question']}**\n"
+        f"{sep}"
+    )
+    desc = f"{feedback}\n\n{question_block}" if feedback else question_block
+
+    embed = discord.Embed(
+        title=f"⚔️  Question {duel.idx} / {n}",
+        description=desc,
+        color=_DIFF_COLORS.get(diff, 0x6432c8),
+    )
+    embed.set_footer(text=(
+        f"🔴 {duel.name1} : {duel.pts1} pts  ·  "
+        f"🔵 {duel.name2} : {duel.pts2} pts  ·  "
+        f"⚡ Premier à répondre gagne !"
+    ))
+
+    view = _DuelQuestionView(duel, choices, q["bonne_reponse"], q)
+    try:
+        msg = await inter.followup.send(embed=embed, view=view)
+        view.message = msg
+    except Exception as e:
+        print(f"❌ _send_duel_question failed: {e}")
+
+
+async def _send_live_duel_result(duel: "_LiveDuelSession", inter: discord.Interaction, berry_bet: int = 0):
+    n = len(duel.questions)
+    berry_line = ""
+    if duel.pts1 > duel.pts2:
+        titre = f"🏆  **{duel.name1}** remporte le duel !"
+        color = discord.Color.gold()
+        if berry_bet:
+            gained = add_berrys(str(duel.uid1), berry_bet * 2)
+            berry_line = f"\n💰 **{duel.name1}** remporte **{berry_bet * 2} 💰** ! (Solde : {gained} 💰)"
+    elif duel.pts2 > duel.pts1:
+        titre = f"🏆  **{duel.name2}** remporte le duel !"
+        color = discord.Color.gold()
+        if berry_bet:
+            gained = add_berrys(str(duel.uid2), berry_bet * 2)
+            berry_line = f"\n💰 **{duel.name2}** remporte **{berry_bet * 2} 💰** ! (Solde : {gained} 💰)"
+    else:
+        titre = "⚖️  Égalité parfaite !"
+        color = discord.Color.blurple()
+        if berry_bet:
+            add_berrys(str(duel.uid1), berry_bet)
+            add_berrys(str(duel.uid2), berry_bet)
+            berry_line = f"\n⚖️ Remboursement : **{berry_bet} 💰** chacun."
+
+    sep = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    embed = discord.Embed(
+        title="⚔️  Résultat du Duel Quiz",
+        description=(
+            f"{titre}{berry_line}\n\n"
+            f"{sep}\n"
+            f"🔴 **{duel.name1}**\n"
+            f"> 🎯 {duel.score1} / {n}  ·  ✨ {duel.pts1} pts\n\n"
+            f"🔵 **{duel.name2}**\n"
+            f"> 🎯 {duel.score2} / {n}  ·  ✨ {duel.pts2} pts\n"
+            f"{sep}"
+        ),
+        color=color,
+    )
+    try:
+        await inter.followup.send(embed=embed)
+    except Exception:
+        pass
+
+
+async def _start_live_duel(inter: discord.Interaction, uid1: int, uid2: int, category: str, n: int):
+    if uid1 in LIVE_DUELS or uid2 in LIVE_DUELS:
+        try:
+            await inter.followup.send("❗ L'un des joueurs est déjà en duel.", ephemeral=True)
+        except Exception:
+            pass
+        return
+
+    questions, err = (
+        _generate_citation_quiz(n)
+        if category == "citation"
+        else await _generate_quiz_questions(n, category)
+    )
+    if err or not questions:
+        embed = discord.Embed(
+            title="❌ Erreur de génération",
+            description=f"Impossible de générer les questions : {err}",
+            color=discord.Color.red()
+        )
+        try:
+            await inter.followup.send(embed=embed)
+        except Exception:
+            pass
+        return
+
+    guild = inter.guild
+    m1    = guild.get_member(uid1) if guild else None
+    m2    = guild.get_member(uid2) if guild else None
+    name1 = m1.display_name if m1 else str(uid1)
+    name2 = m2.display_name if m2 else str(uid2)
+
+    duel = _LiveDuelSession(uid1, uid2, name1, name2, questions, inter)
+    LIVE_DUELS[uid1] = duel
+    LIVE_DUELS[uid2] = duel
+
+    sep = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    start_embed = discord.Embed(
+        title="⚔️  Duel lancé !",
+        description=(
+            f"{sep}\n"
+            f"🔴 **{name1}**  vs  🔵 **{name2}**\n"
+            f"Catégorie : {_CAT_LABELS_MAP.get(category, category)}  ·  {n} questions  ·  ⏱️ 10s par question\n"
+            f"{sep}\n"
+            f"Le premier à cliquer la bonne réponse gagne le point !"
+        ),
+        color=discord.Color.gold()
+    )
+    try:
+        await inter.followup.send(embed=start_embed)
+    except Exception:
+        pass
+
+    await _send_duel_question(duel, inter)
+
+
+class _DuelChallengeView(discord.ui.View):
+    def __init__(self, challenger_id: int, challenged_id: int, category: str, n: int):
+        super().__init__(timeout=60)
+        self._challenger_id = challenger_id
+        self._challenged_id = challenged_id
+        self._category      = category
+        self._n             = n
+
+    @discord.ui.button(label="Accepter", style=discord.ButtonStyle.success, emoji="✅")
+    async def accept(self, inter: discord.Interaction, button: discord.ui.Button):
+        if inter.user.id != self._challenged_id:
+            await inter.response.send_message("Ce défi ne te concerne pas.", ephemeral=True)
+            return
+        for item in self.children:
+            item.disabled = True
+        self.stop()
+        sep = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        embed = discord.Embed(
+            title="⚔️  Défi accepté !",
+            description=f"{sep}\n**{self._n} questions** en cours de génération ⏳\n{sep}",
+            color=discord.Color.gold()
+        )
+        await inter.response.edit_message(embed=embed, view=self)
+        await _start_live_duel(inter, self._challenger_id, self._challenged_id, self._category, self._n)
+
+    @discord.ui.button(label="Refuser", style=discord.ButtonStyle.danger, emoji="❌")
+    async def decline(self, inter: discord.Interaction, button: discord.ui.Button):
+        if inter.user.id != self._challenged_id:
+            await inter.response.send_message("Ce défi ne te concerne pas.", ephemeral=True)
+            return
+        for item in self.children:
+            item.disabled = True
+        self.stop()
+        embed = discord.Embed(
+            title="❌  Défi refusé",
+            description=f"**{inter.user.display_name}** a refusé le défi.",
+            color=discord.Color.red()
+        )
+        await inter.response.edit_message(embed=embed, view=self)
+
+    async def on_timeout(self):
+        for item in self.children:
+            item.disabled = True
+
+
+# ─────────────────────────────────────────
+#  QUIZ PRIME — PAYANT
+# ─────────────────────────────────────────
+
+_QUIZ_PRIME_MODES: dict[str, dict] = {
+    "enrichi":    {"label": "Solo Enrichi",   "emoji": "💰", "cost": 50,  "reward": 150,  "n": 10, "style": discord.ButtonStyle.primary,   "desc": "10 questions · **50 💰** → **150 💰** si tout juste"},
+    "survie":     {"label": "Survie",         "emoji": "❤️", "cost": 100, "reward": None, "n": 20, "style": discord.ButtonStyle.danger,    "desc": "Stop à 1ère erreur · **100 💰** → **50 💰/question** correcte"},
+    "legendaire": {"label": "Légendaire",     "emoji": "👑", "cost": 500, "reward": 2000, "n": 10, "style": discord.ButtonStyle.secondary, "desc": "10 questions · **500 💰** → **2 000 💰** si parfait"},
+    "ranked_1v1": {"label": "Ranked 1v1",    "emoji": "⚔️", "cost": 200, "reward": None, "n": 10, "style": discord.ButtonStyle.success,   "desc": "200 💰 chacun · **Tout au gagnant**"},
+}
+
+
+class _QuizPrimeModeView(discord.ui.View):
+    def __init__(self, user_id: int, category: str):
+        super().__init__(timeout=60)
+        self._user_id  = user_id
+        self._category = category
+        for mode_key, cfg in _QUIZ_PRIME_MODES.items():
+            btn = discord.ui.Button(label=cfg["label"], emoji=cfg["emoji"], style=cfg["style"])
+            btn.callback = self._make_cb(mode_key)
+            self.add_item(btn)
+
+    def _make_cb(self, mode_key: str):
+        async def cb(interaction: discord.Interaction):
+            if interaction.user.id != self._user_id:
+                await interaction.response.send_message("Ce menu n'est pas pour toi.", ephemeral=True)
+                return
+            self.stop()
+            cfg  = _QUIZ_PRIME_MODES[mode_key]
+            cost = cfg["cost"]
+            uid  = str(interaction.user.id)
+
+            if mode_key == "ranked_1v1":
+                await interaction.response.send_message(
+                    "Pour un Ranked 1v1, utilise `/quizz_ranked @adversaire`.", ephemeral=True
+                )
+                return
+
+            if not spend_berrys(uid, cost):
+                bal = get_berrys(uid)
+                await interaction.response.send_message(
+                    f"❌ Solde insuffisant. Tu as **{bal} 💰**, il te faut **{cost} 💰**.", ephemeral=True
+                )
+                return
+
+            await interaction.response.defer()
+            questions, err = await _generate_quiz_questions(cfg["n"], self._category)
+            if not questions:
+                add_berrys(uid, cost)
+                await interaction.edit_original_response(
+                    content=f"❌ Erreur de génération. Berrys remboursés. ({err[:100]})", embed=None, view=None
+                )
+                return
+
+            sess = _QuizSession(questions, interaction.user.id, interaction, self._category)
+            sess.paid_mode       = mode_key
+            sess.entry_cost      = cost
+            sess.quiz_reward     = cfg.get("reward") or 0
+            sess.quiz_all_correct = True
+            QUIZ_SESSIONS[interaction.user.id] = sess
+
+            await interaction.edit_original_response(content=None, embed=None, view=None)
+            await _send_next_question(interaction, sess)
+        return cb
+
+
+@bot.tree.command(name="quizz", description="Quiz animé — gratuit en solo/duel, ou Ranked 1v1 avec mise Berry !")
+@app_commands.describe(
+    adversaire="Mentionne un membre pour un Ranked 1v1 payant (200 💰 chacun)",
+    categorie="Catégorie de questions",
+)
+@app_commands.choices(categorie=[
+    app_commands.Choice(name="Général",         value="general"),
+    app_commands.Choice(name="One Piece",       value="one_piece"),
+    app_commands.Choice(name="Naruto",          value="naruto"),
+    app_commands.Choice(name="Dragon Ball Z",   value="dbz"),
+    app_commands.Choice(name="Demon Slayer",    value="demon_slayer"),
+    app_commands.Choice(name="Jujutsu Kaisen",  value="jjk"),
+    app_commands.Choice(name="Attack on Titan", value="aot"),
+    app_commands.Choice(name="Death Note",      value="deathnote"),
+])
+@app_commands.guilds(*GUILD_IDS)
+async def quizz_cmd(interaction: discord.Interaction,
+                    adversaire: discord.Member = None,
+                    categorie: str = "general"):
+    uid1 = interaction.user.id
+
+    # ── Mode gratuit (pas d'adversaire) ──────────────────────────
+    if adversaire is None:
+        if uid1 in QUIZ_SESSIONS or uid1 in LIVE_DUELS:
+            await interaction.response.send_message("❌ Tu as déjà une session en cours !", ephemeral=True)
+            return
+        await _quiz_entry(interaction)
+        return
+
+    # ── Mode Ranked 1v1 (avec adversaire) ────────────────────────
+    uid2 = adversaire.id
+    BET  = 200
+
+    if uid1 == uid2:
+        await interaction.response.send_message("Tu ne peux pas te défier toi-même.", ephemeral=True)
+        return
+    if uid1 in QUIZ_SESSIONS or uid2 in QUIZ_SESSIONS or uid1 in LIVE_DUELS or uid2 in LIVE_DUELS:
+        await interaction.response.send_message("L'un des joueurs est déjà en session.", ephemeral=True)
+        return
+
+    bal1, bal2 = get_berrys(str(uid1)), get_berrys(str(uid2))
+    if bal1 < BET:
+        await interaction.response.send_message(f"❌ Tu n'as pas assez de 💰 ({bal1}/{BET}).", ephemeral=True)
+        return
+    if bal2 < BET:
+        await interaction.response.send_message(f"❌ {adversaire.mention} n'a pas assez de 💰 ({bal2}/{BET}).", ephemeral=True)
+        return
+
+    try:
+        await interaction.response.defer()
+    except Exception:
+        return
+
+    embed = discord.Embed(
+        title="⚔️  Quiz Ranked 1v1  ⚔️",
+        description=(
+            f"**{interaction.user.mention}** défie **{adversaire.mention}** !\n\n"
+            f"💰 Mise : **{BET} 💰 chacun** → **{BET*2} 💰** au gagnant\n"
+            f"Catégorie : **{categorie}** · 10 questions\n\n"
+            f"{adversaire.mention}, tu as **60 secondes** pour accepter."
+        ),
+        color=discord.Color.gold(),
+    )
+    await interaction.followup.send(embed=embed, view=_QuizRankedChallengeView(uid1, uid2, BET, categorie, interaction))
+
+
+class _QuizRankedChallengeView(discord.ui.View):
+    def __init__(self, uid1: int, uid2: int, bet: int, category: str, orig_inter: discord.Interaction):
+        super().__init__(timeout=60)
+        self._uid1, self._uid2 = uid1, uid2
+        self._bet              = bet
+        self._category         = category
+        self._orig_inter       = orig_inter
+
+    @discord.ui.button(label="Accepter ✅", style=discord.ButtonStyle.success)
+    async def accept(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user.id != self._uid2:
+            await interaction.response.send_message("Ce défi ne te concerne pas.", ephemeral=True)
+            return
+        self.stop()
+        # Déduire les mises
+        if not spend_berrys(str(self._uid1), self._bet, track="lost"):
+            await interaction.response.edit_message(content="❌ Le challenger n'a plus assez de 💰.", embed=None, view=None)
+            return
+        if not spend_berrys(str(self._uid2), self._bet, track="lost"):
+            add_berrys(str(self._uid1), self._bet, track=None)
+            await interaction.response.edit_message(content="❌ Tu n'as plus assez de 💰.", embed=None, view=None)
+            return
+        await interaction.response.defer()
+        await _start_live_duel(self._orig_inter, self._uid1, self._uid2, self._category, 10)
+        # Enregistre la mise sur le duel créé
+        duel = LIVE_DUELS.get(self._uid1)
+        if duel:
+            duel.berry_bet = self._bet
+
+    @discord.ui.button(label="Refuser ❌", style=discord.ButtonStyle.danger)
+    async def decline(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user.id not in (self._uid1, self._uid2):
+            await interaction.response.send_message("Ce défi ne te concerne pas.", ephemeral=True)
+            return
+        self.stop()
+        await interaction.response.edit_message(content="❌ Défi refusé.", embed=None, view=None)
+
+
+
+# ─────────────────────────────────────────
+#  SHOP
+# ─────────────────────────────────────────
+
+_PSEUDO_BANNED = [
+    # Sexuel
+    "pute", "putes", "putain", "salope", "salopes", "suceur", "suceuse",
+    "chienne", "soumise", "connasse", "connasses", "pd", "pédé",
+    "bite", "bites", "couille", "couilles", "cul", "niquer", "nique",
+    # Famille
+    "fdp", "fils de pute", "ntm", "nique ta mère", "tamère",
+    "bâtard", "batard", "bâtarde", "batarde",
+    # Violence verbale
+    "enculé", "enculée", "enculés", "encule",
+    "connard", "connards", "con", "conne",
+    "tg", "ta gueule", "ferme ta gueule",
+    "fumier", "ordure", "salopard", "raclure", "vermine", "déchet",
+    "sous-merde", "rebut", "poubelle",
+    # Discriminatoire
+    "israel", "negro", "nègre", "negre", "neger",
+    "youpin", "bicot", "bougnoule", "raton",
+    # Handicap / validisme
+    "attardé", "attardée", "gogol", "trisomique",
+    "mongolien", "mongoloïde", "autiste", "débile", "abruti", "crétin", "idiot",
+    # Verlan / jeunes
+    "bouffon", "bouffons", "gueux",
+]
+
+_MSG_BANNED = [
+    # Sexuel
+    "pute", "putes", "putain", "salope", "salopes", "suceur", "suceuse",
+    "chienne", "soumise", "connasse", "connasses", "pd", "pédé",
+    "bite", "bites", "couille", "couilles", "cul", "niquer", "nique", "jbz",
+    # Famille
+    "fdp", "fils de pute", "ntm", "nique ta mère", "tamère",
+    "bâtard", "batard", "bâtarde", "batarde",
+    # Violence verbale
+    "enculé", "enculée", "enculés", "encule",
+    "connard", "connards", "con", "conne",
+    "tg", "ta gueule", "ferme ta gueule",
+    "fumier", "ordure", "salopard", "raclure", "vermine", "déchet",
+    "sous-merde", "rebut", "poubelle",
+    # Discriminatoire — slurs directs
+    "negro", "nègre", "negre", "neger",
+    "youpin", "bicot", "bougnoule", "raton",
+    # Phrases racistes "sale [ethnie]"
+    "sale arabe", "sale noir", "sale black", "sale juif", "sale feuj",
+    "sale goy", "sale blanc", "sale chinois", "sale asiat",
+    "sale africain", "sale français", "sale renoi",
+    # Handicap / validisme
+    "attardé", "attardée", "gogol", "trisomique",
+    "mongolien", "mongoloïde", "autiste", "débile", "abruti", "crétin", "idiot",
+    # Verlan / jeunes / gaming
+    "bouffon", "bouffons", "gueux", "f2p",
+    # Supplémentaires messages uniquement
+    "va te faire", "va te faire foutre", "vtff", "va te faire enculer",
+    "ferme ta", "ta race", "race de", "fils de", "mère de",
+    "mange ta", "mort à", "suicide toi", "tue toi",
+    "chier", "chiotte", "chiottes",
+    "imbécile", "imcile", "tarée", "taré",
+]
+_MSG_LEVY = 50_000
+
+# Patterns pré-compilés — évite de recompiler à chaque on_message (appelé sur CHAQUE message)
+_MSG_BANNED_PATTERNS = [
+    (w, re.compile(r'(?<![a-zA-ZÀ-ÿ0-9])' + re.escape(w) + r'(?![a-zA-ZÀ-ÿ0-9])'))
+    for w in _MSG_BANNED
+]
+
+def _pseudo_is_clean(pseudo: str) -> bool:
+    low = pseudo.lower()
+    return not any(w in low for w in _PSEUDO_BANNED)
+
+_TICKET_TIERS = [
+    {"id": "ticket_30",  "emoji": "⏱️", "name": "Ticket 30 min", "minutes": 30,  "price": 1_000_000, "style": discord.ButtonStyle.secondary},
+    {"id": "ticket_60",  "emoji": "🎭", "name": "Ticket 1h",     "minutes": 60,  "price": 2_000_000, "style": discord.ButtonStyle.primary},
+    {"id": "ticket_120", "emoji": "👑", "name": "Ticket 2h",     "minutes": 120, "price": 4_000_000, "style": discord.ButtonStyle.danger},
+]
+_TICKET_BY_ID = {t["id"]: t for t in _TICKET_TIERS}
+
+_SHIELD_ITEM = {
+    "id":    "nick_shield",
+    "emoji": "🛡️",
+    "name":  "Bouclier Pseudo",
+    "price": 500_000,
+    "style": discord.ButtonStyle.success,
+}
+
+_STICKER_ITEM = {
+    "id":    "nick_sticker",
+    "emoji": "☠️",
+    "name":  "Sticker Auto-Réaction",
+    "price": 5_000,
+    "style": discord.ButtonStyle.secondary,
+}
+
+_SOUND_ITEMS: list[dict] = [
+    {"id": "sound_shinobu", "emoji": "🌸", "name": "Shinobu — Moshi Moshi", "price": 1_500_000, "file": "shinobu_moshi_moshi.mp3", "type": "entry_sound", "style": discord.ButtonStyle.primary},
+    {"id": "sound_indian",  "emoji": "🪘", "name": "L Thème",               "price": 1_500_000, "file": "indian_song.mp3",         "type": "entry_sound", "style": discord.ButtonStyle.primary},
+    {"id": "sound_spies",   "emoji": "🍃", "name": "Naruto OST",             "price": 1_500_000, "file": "totaly_spies.mp3",        "type": "entry_sound", "style": discord.ButtonStyle.primary},
+]
+
+_BOOST_ITEMS = [
+    {"id": "boost_1h",  "emoji": "📢", "name": "Boost 1h",  "hours": 1,  "price": 800_000,   "type": "voice_boost", "style": discord.ButtonStyle.primary},
+    {"id": "boost_4h",  "emoji": "📣", "name": "Boost 4h",  "hours": 4,  "price": 2_500_000, "type": "voice_boost", "style": discord.ButtonStyle.primary},
+    {"id": "boost_24h", "emoji": "🔊", "name": "Boost 24h", "hours": 24, "price": 6_000_000, "type": "voice_boost", "style": discord.ButtonStyle.danger},
+]
+
+_SHOP_ITEMS = _TICKET_TIERS + [_SHIELD_ITEM, _STICKER_ITEM] + _SOUND_ITEMS + _BOOST_ITEMS
+_ITEM_BY_ID = {item["id"]: item for item in _SHOP_ITEMS}
+
+_SHOP_CATS  = ["tickets", "protection", "sons", "boost"]
+_CAT_LABELS = {
+    "tickets":    ("🎫", "Tickets"),
+    "protection": ("🛡️", "Protection"),
+    "sons":       ("🎵", "Sons d'Entrée"),
+    "boost":      ("📢", "Boost Vocal"),
+}
+
+def _is_boost_active(user_data: dict) -> bool:
+    return user_data.get("voice_boost_expires", 0) > time.time()
+
+def _add_boost(user_data: dict, hours: int, qty: int = 1):
+    exp  = user_data.get("voice_boost_expires", 0)
+    base = max(exp, time.time())
+    user_data["voice_boost_expires"] = base + hours * 3600 * qty
+
+def _boost_remaining(user_data: dict) -> float:
+    return max(0.0, user_data.get("voice_boost_expires", 0) - time.time())
+
+async def _apply_boost_role(member: discord.Member, add: bool):
+    role = (
+        member.guild.get_role(VOICE_BOOST_ROLE_ID)
+        if VOICE_BOOST_ROLE_ID
+        else discord.utils.get(member.guild.roles, name="Boost Voix")
+    )
+    if not role:
+        return
+    try:
+        if add and role not in member.roles:
+            await member.add_roles(role, reason="Boost Vocal actif")
+        elif not add and role in member.roles:
+            await member.remove_roles(role, reason="Boost Vocal expiré")
+    except Exception as e:
+        print(f"[BOOST] Erreur rôle {member}: {e}")
+
+
+def _fmt_berry(n: int) -> str:
+    return f"{n:,}".replace(",", " ")
+
+def _get_tickets(user_data: dict) -> dict:
+    raw = user_data.get("pseudo_tickets", {})
+    if isinstance(raw, int):
+        raw = {"ticket_60": raw}
+        user_data["pseudo_tickets"] = raw
+    return raw
+
+def _get_item_stock(user_data: dict, item_id: str) -> int:
+    if item_id == "nick_shield":
+        return user_data.get("nick_shields", 0)
+    if item_id == "nick_sticker":
+        return user_data.get("sticker_reactions", 0)
+    return _get_tickets(user_data).get(item_id, 0)
+
+def _add_item_stock(user_data: dict, item_id: str, qty: int):
+    if item_id == "nick_shield":
+        user_data["nick_shields"] = user_data.get("nick_shields", 0) + qty
+    elif item_id == "nick_sticker":
+        user_data["sticker_reactions"] = user_data.get("sticker_reactions", 0) + qty
+    else:
+        tickets = _get_tickets(user_data)
+        tickets[item_id] = tickets.get(item_id, 0) + qty
+        user_data["pseudo_tickets"] = tickets
+
+def _remove_item_stock(user_data: dict, item_id: str, qty: int) -> bool:
+    stock = _get_item_stock(user_data, item_id)
+    if stock < qty:
+        return False
+    if item_id == "nick_shield":
+        user_data["nick_shields"] = stock - qty
+    elif item_id == "nick_sticker":
+        user_data["sticker_reactions"] = stock - qty
+    else:
+        tickets = _get_tickets(user_data)
+        tickets[item_id] = stock - qty
+        user_data["pseudo_tickets"] = tickets
+    return True
+
+
+# ── Embeds par page ───────────────────────────────────────────────
+
+_SEP = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+def _embed_welcome(uid: str, display_name: str) -> discord.Embed:
+    bal       = get_berrys(uid)
+    user_data = get_user(_CACHE, uid)
+    tickets   = _get_tickets(user_data)
+    shields   = user_data.get("nick_shields", 0)
+    cur_snd   = user_data.get("entry_sound", "")
+    remaining = _boost_remaining(user_data)
+
+    t_stock    = sum(tickets.get(t["id"], 0) for t in _TICKET_TIERS)
+    active_snd = next((s["name"] for s in _SOUND_ITEMS if cur_snd == f"local:{s['file']}"), None)
+
+    if remaining > 0:
+        h, m = divmod(int(remaining), 3600); m //= 60
+        b_info = f"✅ actif — {h}h{str(m).zfill(2)}"
+    else:
+        b_info = "inactif"
+
+    e = discord.Embed(
+        title="🏴‍☠️  Shop — Brams Community",
+        description=(
+            f"Bienvenue **{display_name}** !\n"
+            f"Dépense les Berrys que tu as gagnés en vocal.\n\n"
+            f"💰  Solde : **{_fmt_berry(bal)} 💰**"
+        ),
+        color=discord.Color.from_rgb(255, 184, 0),
+    )
+    e.add_field(name=_SEP, value=(
+        f"🎫  **Tickets Pseudo**"
+        + (f"  ·  ×{t_stock} en stock" if t_stock else "  ·  *aucun*") + "\n"
+        f"╰ Impose un pseudo à un membre — 30min / 1h / 2h\n\n"
+        f"🛡️  **Bouclier Pseudo**"
+        + (f"  ·  ×{shields} en stock" if shields else "  ·  *aucun*") + "\n"
+        f"╰ Bloque toute tentative de changement de pseudo\n\n"
+        f"🎵  **Sons d'Entrée Vocal**"
+        + (f"  ·  ✅ {active_snd}" if active_snd else "  ·  *inactif*") + "\n"
+        f"╰ Un son perso quand tu rejoins un salon vocal\n\n"
+        f"📢  **Boost Vocal**  ·  {b_info}\n"
+        f"╰ Priorité de parole dans tous les salons vocaux"
+    ), inline=False)
+    e.set_footer(text="Brams Score · Clique sur une catégorie pour naviguer et acheter")
+    return e
+
+
+def _embed_tickets(uid: str) -> discord.Embed:
+    bal       = get_berrys(uid)
+    user_data = get_user(_CACHE, uid)
+    tickets   = _get_tickets(user_data)
+    today     = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    daily     = user_data.get("ticket_daily", {"date": "", "count": 0})
+    daily_used = daily.get("count", 0) if daily.get("date") == today else 0
+
+    def _badge(n): return f"**×{n}** en stock" if n > 0 else "*épuisé*"
+
+    e = discord.Embed(
+        title="🎫  Tickets Pseudo",
+        description=(
+            "Impose un pseudo à n'importe quel membre du serveur\n"
+            "pour une durée limitée. **Max 2 utilisations / jour.**\n\n"
+            f"💰  Solde : **{_fmt_berry(bal)} 💰**"
+        ),
+        color=discord.Color.blurple(),
+    )
+    lines = [_SEP]
+    for t in _TICKET_TIERS:
+        stock = tickets.get(t["id"], 0)
+        lines.append(f"{t['emoji']}  **{t['name']}**  —  {_fmt_berry(t['price'])} 💰  ·  {_badge(stock)}")
+    lines.append(f"\n> Tickets utilisés aujourd'hui : **{daily_used} / 2**")
+    e.add_field(name="​", value="\n".join(lines), inline=False)
+    e.set_footer(text="Utilisation : /ticket @membre nouveau_pseudo")
+    return e
+
+
+def _embed_protection(uid: str) -> discord.Embed:
+    bal       = get_berrys(uid)
+    user_data = get_user(_CACHE, uid)
+    shields   = user_data.get("nick_shields", 0)
+    stickers  = user_data.get("sticker_reactions", 0)
+    shield_str  = f"**×{shields}/5** en stock" if shields else "**Aucun** en stock"
+    sticker_str = f"**×{stickers}** réactions restantes" if stickers else "**Aucune** réaction"
+
+    e = discord.Embed(
+        title="🛡️  Protection & Stickers",
+        description=(
+            f"💰  Solde : **{_fmt_berry(bal)} 💰**"
+        ),
+        color=discord.Color.green(),
+    )
+    e.add_field(name=_SEP, value=(
+        f"🛡️  **Bouclier Pseudo**  —  {_fmt_berry(500_000)} 💰\n"
+        f"╰ Absorbe 1 ticket adverse (max 5 en stock)\n"
+        f"> {shield_str}\n\n"
+        f"☠️  **Sticker Auto-Réaction**  —  {_fmt_berry(5_000)} 💰 / réaction\n"
+        f"╰ Le bot réagit ☠️ à chacun de tes messages\n"
+        f"> {sticker_str}"
+    ), inline=False)
+    e.set_footer(text="Boucliers : max 5 — Stickers : s'empilent sans limite")
+    return e
+
+
+def _embed_sounds(uid: str) -> discord.Embed:
+    bal        = get_berrys(uid)
+    user_data  = get_user(_CACHE, uid)
+    cur_snd    = user_data.get("entry_sound", "")
+    sound_uses = user_data.get("entry_sound_uses", 0)
+
+    e = discord.Embed(
+        title="🎵  Sons d'Entrée Vocal",
+        description=(
+            "Un son joue automatiquement chaque fois que tu rejoins\n"
+            "un salon vocal. Chaque achat = **3 utilisations**.\n"
+            "Racheter le son actif ajoute **+3 util.**\n\n"
+            f"💰  Solde : **{_fmt_berry(bal)} 💰**"
+        ),
+        color=discord.Color.from_rgb(255, 105, 180),
+    )
+    lines = [_SEP]
+    for s in _SOUND_ITEMS:
+        if cur_snd == f"local:{s['file']}":
+            status = f"✅ **actif** — {sound_uses} util. restantes"
+        else:
+            status = "inactif"
+        lines.append(f"{s['emoji']}  **{s['name']}**  —  {_fmt_berry(s['price'])} 💰\n╰ {status}")
+    e.add_field(name="​", value="\n\n".join(lines), inline=False)
+    e.set_footer(text="Un seul son actif à la fois")
+    return e
+
+
+def _embed_boost(uid: str) -> discord.Embed:
+    bal       = get_berrys(uid)
+    user_data = get_user(_CACHE, uid)
+    remaining = _boost_remaining(user_data)
+
+    if remaining > 0:
+        h, m = divmod(int(remaining), 3600); m //= 60
+        status = f"✅ **Actif** — expire dans **{h}h {str(m).zfill(2)}min**"
+    else:
+        status = "❌ **Inactif**"
+
+    e = discord.Embed(
+        title="📢  Boost Vocal",
+        description=(
+            "Obtiens la priorité de parole dans tous les salons vocaux.\n"
+            "Les durées **s'accumulent** — achetable plusieurs fois.\n\n"
+            f"💰  Solde : **{_fmt_berry(bal)} 💰**"
+        ),
+        color=discord.Color.from_rgb(255, 140, 0),
+    )
+    lines = [_SEP, f"> Statut : {status}", ""]
+    for b in _BOOST_ITEMS:
+        lines.append(f"{b['emoji']}  **{b['name']}**  —  {_fmt_berry(b['price'])} 💰  ·  +{b['hours']}h")
+    e.add_field(name="​", value="\n".join(lines), inline=False)
+    e.set_footer(text="Durées empilables à l'infini")
+    return e
+
+
+_CAT_EMBEDS = {
+    "tickets":    _embed_tickets,
+    "protection": _embed_protection,
+    "sons":       _embed_sounds,
+    "boost":      _embed_boost,
+}
+
+
+# ── Views ─────────────────────────────────────────────────────────
+
+class _PurchaseResultView(discord.ui.View):
+    """Affiché après un achat : bouton retour vers la catégorie."""
+    def __init__(self, user_id: int, category: str, display_name: str):
+        super().__init__(timeout=120)
+        self._uid  = user_id
+        self._cat  = category
+        self._name = display_name
+
+    @discord.ui.button(label="◀️  Retour", style=discord.ButtonStyle.secondary)
+    async def back(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user.id != self._uid:
+            await interaction.response.send_message("Ce n'est pas ton shop.", ephemeral=True)
+            return
+        uid = str(self._uid)
+        await interaction.response.edit_message(
+            embed=_CAT_EMBEDS[self._cat](uid),
+            view=_ShopCategoryView(self._uid, self._cat, self._name),
+        )
+
+
+class _QuantityModal(discord.ui.Modal, title="Acheter"):
+    quantite = discord.ui.TextInput(label="Quantité", placeholder="1", min_length=1, max_length=3)
+
+    def __init__(self, item: dict, user_id: int, category: str,
+                 original_message: discord.Message, display_name: str, free: bool = False):
+        super().__init__()
+        self._item = item
+        self._uid  = user_id
+        self._cat  = category
+        self._msg  = original_message
+        self._name = display_name
+        self._free = free
+
+    async def on_submit(self, interaction: discord.Interaction):
+        try:
+            qty = int(self.quantite.value.strip())
+            if qty < 1 or qty > 99:
+                raise ValueError
+        except ValueError:
+            await interaction.response.send_message("❌ Quantité invalide — entre **1** et **99**.", ephemeral=True)
+            return
+
+        uid   = str(interaction.user.id)
+        item  = self._item
+        total = item["price"] * qty
+        tag   = " *(admin)*" if self._free else ""
+
+        if item["id"] == "nick_shield":
+            current_shields = get_user(_CACHE, uid).get("nick_shields", 0)
+            max_buy = 5 - current_shields
+            if max_buy <= 0:
+                await interaction.response.send_message(
+                    "❌ Tu as déjà **5/5 boucliers** — maximum atteint.", ephemeral=True
+                )
+                return
+            if qty > max_buy:
+                await interaction.response.send_message(
+                    f"❌ Tu ne peux acheter que **{max_buy}** bouclier(s) supplémentaire(s) (max 5 en stock).",
+                    ephemeral=True,
+                )
+                return
+
+        if not self._free and not spend_berrys(uid, total):
+            bal = get_berrys(uid)
+            await interaction.response.send_message(
+                f"❌ Solde insuffisant — **{_fmt_berry(bal)} 💰** dispo, **{_fmt_berry(total)} 💰** requis.",
+                ephemeral=True,
+            )
+            return
+
+        await interaction.response.defer()
+        user_data = get_user(_CACHE, uid)
+
+        if item.get("type") == "voice_boost":
+            _add_boost(user_data, item["hours"], qty)
+            _DIRTY.add(uid)
+            remaining = _boost_remaining(user_data)
+            h, m = divmod(int(remaining), 3600); m //= 60
+            embed = discord.Embed(
+                title=f"✅  {item['emoji']} Boost Vocal acheté !",
+                description=(
+                    f"**{qty}×{item['hours']}h** ajoutées{tag}.\n"
+                    f"Expire dans **{h}h {str(m).zfill(2)}min**.\n\n"
+                    f"Solde : **{_fmt_berry(get_berrys(uid))} 💰**"
+                ),
+                color=discord.Color.from_rgb(255, 140, 0),
+            )
+        else:
+            _add_item_stock(user_data, item["id"], qty)
+            _DIRTY.add(uid)
+            stock = _get_item_stock(user_data, item["id"])
+            if item["id"] == "nick_shield":
+                embed = discord.Embed(
+                    title="✅  🛡️ Bouclier acheté !",
+                    description=(
+                        f"**{qty}×** Bouclier Pseudo{tag}. Tu en possèdes **{stock}/5**.\n\n"
+                        f"Solde : **{_fmt_berry(get_berrys(uid))} 💰**"
+                    ),
+                    color=discord.Color.green(),
+                )
+            elif item["id"] == "nick_sticker":
+                embed = discord.Embed(
+                    title="✅  ☠️ Sticker acheté !",
+                    description=(
+                        f"**{qty}×** réaction auto{tag}. Il te reste **{stock}** réaction(s).\n"
+                        f"Le bot réagira ☠️ à tes **{stock}** prochain(s) message(s).\n\n"
+                        f"Solde : **{_fmt_berry(get_berrys(uid))} 💰**"
+                    ),
+                    color=discord.Color.dark_grey(),
+                )
+            else:
+                embed = discord.Embed(
+                    title=f"✅  {item['emoji']} {item['name']} acheté !",
+                    description=(
+                        f"**{qty}×** {item['name']}{tag}. Tu en possèdes **{stock}**.\n"
+                        f"Utilise `/ticket @membre pseudo` → **{item['minutes']} min**.\n\n"
+                        f"Solde : **{_fmt_berry(get_berrys(uid))} 💰**"
+                    ),
+                    color=discord.Color.blurple(),
+                )
+
+        await self._msg.edit(
+            embed=embed,
+            view=_PurchaseResultView(interaction.user.id, self._cat, self._name),
+        )
+
+
+class _ShopCategoryView(discord.ui.View):
+    """Page d'une catégorie : items Row 0 · navigation ◀ 🏠 ▶ Row 1."""
+
+    def __init__(self, user_id: int, category: str, display_name: str):
+        super().__init__(timeout=300)
+        self._uid  = user_id
+        self._cat  = category
+        self._name = display_name
+        uid        = str(user_id)
+        user_data  = get_user(_CACHE, uid)
+
+        # Row 0 — boutons d'achat selon la catégorie
+        if category == "tickets":
+            for t in _TICKET_TIERS:
+                b = discord.ui.Button(label=t["name"], emoji=t["emoji"], style=t["style"], row=0)
+                b.callback = self._make_cb(t)
+                self.add_item(b)
+
+        elif category == "protection":
+            b = discord.ui.Button(label="Acheter un Bouclier", emoji="🛡️",
+                                   style=discord.ButtonStyle.success, row=0)
+            b.callback = self._make_cb(_SHIELD_ITEM)
+            self.add_item(b)
+
+        elif category == "sons":
+            cur_snd = user_data.get("entry_sound", "")
+            for s in _SOUND_ITEMS:
+                active = cur_snd == f"local:{s['file']}"
+                b = discord.ui.Button(
+                    label=s["name"], emoji=s["emoji"],
+                    style=discord.ButtonStyle.success if active else s["style"],
+                    row=0,
+                )
+                b.callback = self._make_sound_cb(s)
+                self.add_item(b)
+
+        elif category == "boost":
+            boost_on = _is_boost_active(user_data)
+            for bst in _BOOST_ITEMS:
+                b = discord.ui.Button(
+                    label=bst["name"], emoji=bst["emoji"],
+                    style=discord.ButtonStyle.success if boost_on else bst["style"],
+                    row=0,
+                )
+                b.callback = self._make_cb(bst)
+                self.add_item(b)
+
+        # Row 1 — navigation entre catégories
+        idx  = _SHOP_CATS.index(category)
+        prev = _SHOP_CATS[(idx - 1) % len(_SHOP_CATS)]
+        nxt  = _SHOP_CATS[(idx + 1) % len(_SHOP_CATS)]
+
+        b_prev = discord.ui.Button(
+            label=f"◀️  {_CAT_LABELS[prev][1]}",
+            style=discord.ButtonStyle.secondary, row=1,
+        )
+        b_prev.callback = self._make_nav(prev)
+        self.add_item(b_prev)
+
+        b_home = discord.ui.Button(label="🏠  Accueil", style=discord.ButtonStyle.secondary, row=1)
+        b_home.callback = self._go_home
+        self.add_item(b_home)
+
+        b_next = discord.ui.Button(
+            label=f"{_CAT_LABELS[nxt][1]}  ▶️",
+            style=discord.ButtonStyle.secondary, row=1,
+        )
+        b_next.callback = self._make_nav(nxt)
+        self.add_item(b_next)
+
+    async def _go_home(self, interaction: discord.Interaction):
+        if interaction.user.id != self._uid:
+            await interaction.response.send_message("Ce n'est pas ton shop.", ephemeral=True)
+            return
+        await interaction.response.edit_message(
+            embed=_embed_welcome(str(self._uid), self._name),
+            view=_ShopWelcomeView(self._uid, self._name),
+        )
+
+    def _make_nav(self, cat: str):
+        async def cb(interaction: discord.Interaction):
+            if interaction.user.id != self._uid:
+                await interaction.response.send_message("Ce n'est pas ton shop.", ephemeral=True)
+                return
+            await interaction.response.edit_message(
+                embed=_CAT_EMBEDS[cat](str(self._uid)),
+                view=_ShopCategoryView(self._uid, cat, self._name),
+            )
+        return cb
+
+    def _make_sound_cb(self, item: dict):
+        async def cb(interaction: discord.Interaction):
+            if interaction.user.id != self._uid:
+                await interaction.response.send_message("Ce shop ne t'appartient pas.", ephemeral=True)
+                return
+            free      = interaction.permissions.administrator
+            uid       = str(interaction.user.id)
+            user_data = get_user(_CACHE, uid)
+            already   = user_data.get("entry_sound") == f"local:{item['file']}"
+            cur_uses  = user_data.get("entry_sound_uses", 0)
+
+            if not free and not spend_berrys(uid, item["price"]):
+                bal = get_berrys(uid)
+                await interaction.response.send_message(
+                    f"❌ Solde insuffisant — **{_fmt_berry(bal)} 💰** / **{_fmt_berry(item['price'])} 💰** requis.",
+                    ephemeral=True,
+                )
+                return
+
+            user_data["entry_sound"]      = f"local:{item['file']}"
+            user_data["entry_sound_uses"] = (cur_uses + 3) if already else 3
+            _DIRTY.add(uid)
+            new_uses = user_data["entry_sound_uses"]
+            tag      = " *(admin)*" if free else ""
+            action   = "rechargé (+3 util.)" if already else "activé"
+
+            self.stop()
+            embed = discord.Embed(
+                title=f"✅  {item['emoji']} Son d'entrée {action} !",
+                description=(
+                    f"**{item['name']}**{tag} — **{new_uses}** utilisation(s) restantes.\n\n"
+                    f"Solde : **{_fmt_berry(get_berrys(uid))} 💰**"
+                ),
+                color=discord.Color.from_rgb(255, 105, 180),
+            )
+            await interaction.response.edit_message(
+                embed=embed,
+                view=_PurchaseResultView(interaction.user.id, "sons", self._name),
+            )
+        return cb
+
+    def _make_cb(self, item: dict):
+        async def cb(interaction: discord.Interaction):
+            if interaction.user.id != self._uid:
+                await interaction.response.send_message("Ce shop ne t'appartient pas.", ephemeral=True)
+                return
+            free = interaction.permissions.administrator
+            await interaction.response.send_modal(
+                _QuantityModal(item, self._uid, self._cat, interaction.message, self._name, free=free)
+            )
+        return cb
+
+
+class _ShopWelcomeView(discord.ui.View):
+    """Écran d'accueil — 4 boutons vers chaque catégorie."""
+
+    def __init__(self, user_id: int, display_name: str):
+        super().__init__(timeout=300)
+        self._uid  = user_id
+        self._name = display_name
+
+        for cat in _SHOP_CATS:
+            emoji, label = _CAT_LABELS[cat]
+            b = discord.ui.Button(label=label, emoji=emoji, style=discord.ButtonStyle.primary, row=0)
+            b.callback = self._make_nav(cat)
+            self.add_item(b)
+
+    def _make_nav(self, cat: str):
+        async def cb(interaction: discord.Interaction):
+            if interaction.user.id != self._uid:
+                await interaction.response.send_message("Ce n'est pas ton shop.", ephemeral=True)
+                return
+            await interaction.response.edit_message(
+                embed=_CAT_EMBEDS[cat](str(self._uid)),
+                view=_ShopCategoryView(self._uid, cat, self._name),
+            )
+        return cb
+
+
+@bot.tree.command(name="shop", description="Dépense tes Berrys 💰 dans le shop !")
+@app_commands.guilds(*GUILD_IDS)
+async def shop_cmd(interaction: discord.Interaction):
+    uid  = str(interaction.user.id)
+    name = interaction.user.display_name
+    try:
+        await interaction.response.defer()
+    except Exception:
+        return
+    await interaction.followup.send(
+        embed=_embed_welcome(uid, name),
+        view=_ShopWelcomeView(interaction.user.id, name),
+    )
+
+
+# ─────────────────────────────────────────
+#  VIREMENT
+# ─────────────────────────────────────────
+
+class _VirementView(discord.ui.View):
+    def __init__(self, sender_id: str, receiver_id: str, montant: int,
+                 receiver_name: str, source_interaction: discord.Interaction):
+        super().__init__(timeout=60)
+        self._sender_id         = sender_id
+        self._receiver_id       = receiver_id
+        self._montant           = montant
+        self._receiver_name     = receiver_name
+        self._source_interaction = source_interaction
+
+    async def on_timeout(self):
+        try:
+            await self._source_interaction.edit_original_response(
+                embed=discord.Embed(
+                    title="⌛ Virement expiré",
+                    description="Tu n'as pas confirmé à temps. Relance `/virement` pour réessayer.",
+                    color=discord.Color.dark_grey(),
+                ),
+                view=None,
+            )
+        except Exception:
+            pass
+
+    @discord.ui.button(label="Confirmer ✅", style=discord.ButtonStyle.success)
+    async def confirm(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.stop()
+        if not spend_berrys(self._sender_id, self._montant, track=None):
+            bal = get_berrys(self._sender_id)
+            await interaction.response.edit_message(
+                embed=discord.Embed(
+                    title="❌ Virement annulé",
+                    description=f"Solde insuffisant au moment de la confirmation. Tu as **{_fmt_berry(bal)} 💰**.",
+                    color=discord.Color.red(),
+                ),
+                view=None,
+            )
+            return
+        add_berrys(self._receiver_id, self._montant, track=None)
+        new_bal = get_berrys(self._sender_id)
+        await interaction.response.edit_message(
+            embed=discord.Embed(
+                title="✅ Virement effectué !",
+                description=(
+                    f"**{_fmt_berry(self._montant)} 💰** envoyés à **{self._receiver_name}** !\n\n"
+                    f"Ton nouveau solde : **{_fmt_berry(new_bal)} 💰**"
+                ),
+                color=discord.Color.green(),
+            ),
+            view=None,
+        )
+        ch = bot.get_channel(VIREMENT_CHANNEL_ID)
+        if ch:
+            await ch.send(
+                embed=discord.Embed(
+                    title="💸 Virement Berry",
+                    description=(
+                        f"{interaction.user.mention} a envoyé **{_fmt_berry(self._montant)} 💰** "
+                        f"à <@{self._receiver_id}> !"
+                    ),
+                    color=discord.Color.from_rgb(212, 175, 55),
+                )
+            )
+
+    @discord.ui.button(label="Annuler ❌", style=discord.ButtonStyle.danger)
+    async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.stop()
+        await interaction.response.edit_message(
+            embed=discord.Embed(
+                title="❌ Virement annulé",
+                description="Le virement a été annulé.",
+                color=discord.Color.red(),
+            ),
+            view=None,
+        )
+
+
+@bot.tree.command(name="virement", description="Vire des Berrys 💰 à un autre membre !")
+@app_commands.describe(
+    membre="Le membre qui recevra les Berrys",
+    montant="Nombre de Berrys à virer (min 100)",
+)
+@app_commands.guilds(*GUILD_IDS)
+async def virement_cmd(interaction: discord.Interaction, membre: discord.Member, montant: int):
+    is_admin = interaction.user.guild_permissions.administrator if interaction.guild else False
+    if not is_admin and not _virements_open():
+        await interaction.response.send_message(
+            "🔒 Les virements sont actuellement désactivés. Réessaie plus tard !",
+            ephemeral=True,
+        )
+        return
+
+    uid = str(interaction.user.id)
+    tid = str(membre.id)
+
+    if membre.id == interaction.user.id:
+        await interaction.response.send_message("❌ Tu ne peux pas te virer des Berrys à toi-même.", ephemeral=True)
+        return
+    if membre.bot:
+        await interaction.response.send_message("❌ Tu ne peux pas virer des Berrys à un bot.", ephemeral=True)
+        return
+    if montant < 100:
+        await interaction.response.send_message("❌ Le montant minimum est de **100 💰**.", ephemeral=True)
+        return
+
+    bal = get_berrys(uid)
+    if bal < montant:
+        await interaction.response.send_message(
+            f"❌ Solde insuffisant. Tu as **{_fmt_berry(bal)} 💰**, il te faut **{_fmt_berry(montant)} 💰**.",
+            ephemeral=True,
+        )
+        return
+
+    await interaction.response.send_message(
+        embed=discord.Embed(
+            title="💸 Confirmer le virement",
+            description=(
+                f"Tu t'apprêtes à envoyer **{_fmt_berry(montant)} 💰** à {membre.mention}.\n\n"
+                f"Ton solde après virement : **{_fmt_berry(bal - montant)} 💰**"
+            ),
+            color=discord.Color.orange(),
+        ),
+        view=_VirementView(uid, tid, montant, membre.display_name, interaction),
+        ephemeral=True,
+    )
+
+
+# ─────────────────────────────────────────
+#  VENTE D'ARTICLES (/vendre)
+# ─────────────────────────────────────────
+#  TOGGLE VIREMENTS (admin)
+# ─────────────────────────────────────────
+
+def _virements_status_embed() -> discord.Embed:
+    import math
+    if _virements_open():
+        rem = _virements_remaining()
+        if rem == float("inf"):
+            desc = "🟢 **Virements activés** — durée : **permanente**"
+        else:
+            total = int(rem)
+            h, m, s = total // 3600, (total % 3600) // 60, total % 60
+            duree = f"{h}h{m:02d}min{s:02d}s" if h else f"{m}min{s:02d}s"
+            desc = f"🟢 **Virements activés** — temps restant : **{duree}**"
+        color = discord.Color.green()
+    else:
+        desc = "🔴 **Virements désactivés**"
+        color = discord.Color.red()
+    return discord.Embed(title="⚙️ Gestion des virements", description=desc, color=color)
+
+
+class _VirementActiverModal(discord.ui.Modal, title="Activer les virements"):
+    duree = discord.ui.TextInput(
+        label="Durée en minutes (laisser vide = permanent)",
+        placeholder="ex : 60   — vide = permanent",
+        required=False,
+        max_length=6,
+    )
+
+    def __init__(self, view: "discord.ui.View"):
+        super().__init__()
+        self._parent_view = view
+
+    async def on_submit(self, interaction: discord.Interaction):
+        import math
+        val = self.duree.value.strip()
+        if val == "" or val == "0":
+            _virements_set_permanent()
+            label = "permanent"
+        else:
+            try:
+                minutes = int(val)
+            except ValueError:
+                await interaction.response.send_message(
+                    "❌ Durée invalide. Entre un nombre entier de minutes ou laisse vide.",
+                    ephemeral=True,
+                )
+                return
+            _virements_set_open(minutes * 60)
+            h = math.floor(minutes / 60)
+            m = minutes % 60
+            label = f"{h}h{m:02d}" if h else f"{m}min"
+
+        await interaction.response.edit_message(
+            embed=_virements_status_embed(),
+            view=self._parent_view,
+        )
+        await interaction.followup.send(
+            f"✅ Virements **activés** — durée : **{label}** !",
+            ephemeral=True,
+        )
+
+
+class _VirementToggleView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    @discord.ui.button(label="Activer", emoji="✅", style=discord.ButtonStyle.success)
+    async def btn_activer(self, interaction: discord.Interaction, _: discord.ui.Button):
+        await interaction.response.send_modal(_VirementActiverModal(self))
+
+    @discord.ui.button(label="Désactiver", emoji="🔒", style=discord.ButtonStyle.danger)
+    async def btn_desactiver(self, interaction: discord.Interaction, _: discord.ui.Button):
+        _virements_close()
+        await interaction.response.edit_message(
+            embed=_virements_status_embed(),
+            view=self,
+        )
+        await interaction.followup.send("🔒 Virements **désactivés** immédiatement.", ephemeral=True)
+
+
+@bot.tree.command(name="virements", description="[Admin] Active ou désactive les virements.")
+@app_commands.guilds(*GUILD_IDS)
+@app_commands.default_permissions(administrator=True)
+async def virements_toggle_cmd(interaction: discord.Interaction):
+    await interaction.response.send_message(
+        embed=_virements_status_embed(),
+        view=_VirementToggleView(),
+        ephemeral=True,
+    )
+
+
+# ─────────────────────────────────────────
+
+class _VenteView(discord.ui.View):
+    def __init__(self, seller_id: str, buyer_id: str, item_id: str, qty: int, prix: int,
+                 source_interaction: discord.Interaction):
+        super().__init__(timeout=120)
+        self._seller_id         = seller_id
+        self._buyer_id          = buyer_id
+        self._item_id           = item_id
+        self._qty               = qty
+        self._prix              = prix
+        self._source_interaction = source_interaction
+
+    def _restituer_vendeur(self):
+        seller_data = get_user(_CACHE, self._seller_id)
+        _add_item_stock(seller_data, self._item_id, self._qty)
+        _DIRTY.add(self._seller_id)
+
+    async def on_timeout(self):
+        self._restituer_vendeur()
+        try:
+            await self._source_interaction.edit_original_response(
+                embed=discord.Embed(
+                    title="⌛ Offre expirée",
+                    description=f"L'acheteur n'a pas répondu à temps. Tes articles ont été restitués.",
+                    color=discord.Color.dark_grey(),
+                ),
+                view=None,
+            )
+        except Exception:
+            pass
+
+    @discord.ui.button(label="Acheter ✅", style=discord.ButtonStyle.success)
+    async def acheter(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if str(interaction.user.id) != self._buyer_id:
+            await interaction.response.send_message("Cette offre ne te concerne pas.", ephemeral=True)
+            return
+        self.stop()
+        item = _ITEM_BY_ID[self._item_id]
+        if not spend_berrys(self._buyer_id, self._prix, track=None):
+            bal = get_berrys(self._buyer_id)
+            self._restituer_vendeur()
+            await interaction.response.edit_message(
+                embed=discord.Embed(
+                    title="❌ Achat impossible",
+                    description=(
+                        f"Solde insuffisant. Tu as **{_fmt_berry(bal)} 💰**, "
+                        f"il te faut **{_fmt_berry(self._prix)} 💰**."
+                    ),
+                    color=discord.Color.red(),
+                ),
+                view=None,
+            )
+            return
+        add_berrys(self._seller_id, self._prix, track=None)
+        buyer_data = get_user(_CACHE, self._buyer_id)
+        _add_item_stock(buyer_data, self._item_id, self._qty)
+        _DIRTY.add(self._buyer_id)
+        qty_label = f"{self._qty}x " if self._qty > 1 else ""
+        await interaction.response.edit_message(
+            embed=discord.Embed(
+                title=f"{item['emoji']} Achat confirmé !",
+                description=(
+                    f"Tu as acheté **{qty_label}{item['name']}** {item['emoji']} "
+                    f"pour **{_fmt_berry(self._prix)} 💰** !\n\n"
+                    f"<@{self._seller_id}> a reçu **{_fmt_berry(self._prix)} 💰**.\n"
+                    f"Ton nouveau solde : **{_fmt_berry(get_berrys(self._buyer_id))} 💰**"
+                ),
+                color=discord.Color.green(),
+            ),
+            view=None,
+        )
+
+    @discord.ui.button(label="Refuser ❌", style=discord.ButtonStyle.danger)
+    async def refuser(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if str(interaction.user.id) != self._buyer_id:
+            await interaction.response.send_message("Cette offre ne te concerne pas.", ephemeral=True)
+            return
+        self.stop()
+        self._restituer_vendeur()
+        item = _ITEM_BY_ID[self._item_id]
+        await interaction.response.edit_message(
+            embed=discord.Embed(
+                title="❌ Offre refusée",
+                description=f"<@{self._buyer_id}> a refusé l'offre. Tes articles ont été restitués.",
+                color=discord.Color.red(),
+            ),
+            view=None,
+        )
+
+
+@bot.tree.command(name="vendre", description="Vends un article à un autre membre contre des Berrys !")
+@app_commands.describe(
+    membre="Le membre acheteur",
+    article="L'article à vendre",
+    quantite="Nombre d'articles (défaut : 1)",
+    prix="Prix total en Berrys",
+)
+@app_commands.choices(article=[
+    app_commands.Choice(name="Ticket 30 min ⏱️",   value="ticket_30"),
+    app_commands.Choice(name="Ticket 1h 🎭",        value="ticket_60"),
+    app_commands.Choice(name="Ticket 2h 👑",        value="ticket_120"),
+    app_commands.Choice(name="Bouclier Pseudo 🛡️",  value="nick_shield"),
+])
+@app_commands.guilds(*GUILD_IDS)
+async def vendre_cmd(interaction: discord.Interaction, membre: discord.Member,
+                     article: str, prix: int, quantite: int = 1):
+    uid  = str(interaction.user.id)
+    tid  = str(membre.id)
+    item = _ITEM_BY_ID[article]
+
+    if membre.id == interaction.user.id:
+        await interaction.response.send_message("❌ Tu ne peux pas te vendre un article à toi-même.", ephemeral=True)
+        return
+    if membre.bot:
+        await interaction.response.send_message("❌ Tu ne peux pas vendre à un bot.", ephemeral=True)
+        return
+    if quantite < 1:
+        await interaction.response.send_message("❌ La quantité doit être d'au moins **1**.", ephemeral=True)
+        return
+    if prix < 1:
+        await interaction.response.send_message("❌ Le prix doit être supérieur à **0 💰**.", ephemeral=True)
+        return
+
+    user_data = get_user(_CACHE, uid)
+    stock     = _get_item_stock(user_data, article)
+    if stock < quantite:
+        await interaction.response.send_message(
+            f"❌ Stock insuffisant. Tu possèdes **{stock}x {item['name']}** {item['emoji']}, "
+            f"tu en veux vendre **{quantite}**.",
+            ephemeral=True,
+        )
+        return
+
+    # Escrow : retirer les articles du vendeur immédiatement
+    _remove_item_stock(user_data, article, quantite)
+    _DIRTY.add(uid)
+
+    qty_label = f"{quantite}x " if quantite > 1 else ""
+    view = _VenteView(uid, tid, article, quantite, prix, interaction)
+    await interaction.response.send_message(
+        embed=discord.Embed(
+            title=f"{item['emoji']} Offre de vente",
+            description=(
+                f"{interaction.user.mention} propose **{qty_label}{item['name']}** {item['emoji']} "
+                f"à {membre.mention} pour **{_fmt_berry(prix)} 💰**.\n\n"
+                f"{membre.mention}, tu as **2 minutes** pour accepter ou refuser."
+            ),
+            color=discord.Color.orange(),
+        ),
+        view=view,
+    )
+    try:
+        await membre.send(
+            embed=discord.Embed(
+                title=f"{item['emoji']} Offre reçue !",
+                description=(
+                    f"**{interaction.user.display_name}** te propose **{qty_label}{item['name']}** {item['emoji']} "
+                    f"pour **{_fmt_berry(prix)} 💰**.\n\nRéponds dans le serveur !"
+                ),
+                color=discord.Color.from_rgb(212, 175, 55),
+            )
+        )
+    except discord.Forbidden:
+        pass
+
+
+# ─────────────────────────────────────────
+#  VENTE DE TICKETS
+
+class _VenteTicketView(discord.ui.View):
+    def __init__(self, seller_id: str, buyer_id: str, ticket_id: str, prix: int,
+                 ticket_name: str, ticket_emoji: str, source_interaction: discord.Interaction):
+        super().__init__(timeout=120)
+        self._seller_id         = seller_id
+        self._buyer_id          = buyer_id
+        self._ticket_id         = ticket_id
+        self._prix              = prix
+        self._ticket_name       = ticket_name
+        self._ticket_emoji      = ticket_emoji
+        self._source_interaction = source_interaction
+
+    async def on_timeout(self):
+        try:
+            await self._source_interaction.edit_original_response(
+                embed=discord.Embed(
+                    title="⌛ Offre expirée",
+                    description="L'acheteur n'a pas répondu à temps. Ton ticket t'a été restitué.",
+                    color=discord.Color.dark_grey(),
+                ),
+                view=None,
+            )
+        except Exception:
+            pass
+        # Restituer le ticket au vendeur
+        seller_data = get_user(_CACHE, self._seller_id)
+        tickets = _get_tickets(seller_data)
+        tickets[self._ticket_id] = tickets.get(self._ticket_id, 0) + 1
+        seller_data["pseudo_tickets"] = tickets
+        _DIRTY.add(self._seller_id)
+
+    @discord.ui.button(label="Acheter ✅", style=discord.ButtonStyle.success)
+    async def acheter(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if str(interaction.user.id) != self._buyer_id:
+            await interaction.response.send_message("Cette offre ne te concerne pas.", ephemeral=True)
+            return
+        self.stop()
+        if not spend_berrys(self._buyer_id, self._prix, track=None):
+            bal = get_berrys(self._buyer_id)
+            # Restituer le ticket au vendeur
+            seller_data = get_user(_CACHE, self._seller_id)
+            tickets = _get_tickets(seller_data)
+            tickets[self._ticket_id] = tickets.get(self._ticket_id, 0) + 1
+            seller_data["pseudo_tickets"] = tickets
+            _DIRTY.add(self._seller_id)
+            await interaction.response.edit_message(
+                embed=discord.Embed(
+                    title="❌ Achat impossible",
+                    description=f"Solde insuffisant. Tu as **{_fmt_berry(bal)} 💰**, il te faut **{_fmt_berry(self._prix)} 💰**.",
+                    color=discord.Color.red(),
+                ),
+                view=None,
+            )
+            return
+        add_berrys(self._seller_id, self._prix, track=None)
+        buyer_data = get_user(_CACHE, self._buyer_id)
+        b_tickets  = _get_tickets(buyer_data)
+        b_tickets[self._ticket_id] = b_tickets.get(self._ticket_id, 0) + 1
+        buyer_data["pseudo_tickets"] = b_tickets
+        _DIRTY.add(self._buyer_id)
+        await interaction.response.edit_message(
+            embed=discord.Embed(
+                title=f"{self._ticket_emoji} Ticket acheté !",
+                description=(
+                    f"Tu possèdes maintenant **1 {self._ticket_name}** {self._ticket_emoji}\n\n"
+                    f"<@{self._seller_id}> a reçu **{_fmt_berry(self._prix)} 💰**.\n"
+                    f"Ton nouveau solde : **{_fmt_berry(get_berrys(self._buyer_id))} 💰**"
+                ),
+                color=discord.Color.green(),
+            ),
+            view=None,
+        )
+
+    @discord.ui.button(label="Refuser ❌", style=discord.ButtonStyle.danger)
+    async def refuser(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if str(interaction.user.id) != self._buyer_id:
+            await interaction.response.send_message("Cette offre ne te concerne pas.", ephemeral=True)
+            return
+        self.stop()
+        # Restituer le ticket au vendeur
+        seller_data = get_user(_CACHE, self._seller_id)
+        tickets = _get_tickets(seller_data)
+        tickets[self._ticket_id] = tickets.get(self._ticket_id, 0) + 1
+        seller_data["pseudo_tickets"] = tickets
+        _DIRTY.add(self._seller_id)
+        await interaction.response.edit_message(
+            embed=discord.Embed(
+                title="❌ Offre refusée",
+                description=f"<@{self._buyer_id}> a refusé l'offre. Ton ticket t'a été restitué.",
+                color=discord.Color.red(),
+            ),
+            view=None,
+        )
+
+
+
+@bot.tree.command(name="ticket", description="Utilise un ticket pour changer le pseudo d'un membre !")
+@app_commands.describe(
+    membre="Le membre dont tu veux changer le pseudo",
+    nouveau_pseudo="Le nouveau pseudo (max 32 caractères)",
+    duree="Durée du changement (selon le ticket que tu possèdes)",
+)
+@app_commands.choices(duree=[
+    app_commands.Choice(name="30 minutes  (Ticket ⏱️)", value="ticket_30"),
+    app_commands.Choice(name="1 heure     (Ticket 🎭)", value="ticket_60"),
+    app_commands.Choice(name="2 heures    (Ticket 👑)", value="ticket_120"),
+])
+@app_commands.guilds(*GUILD_IDS)
+async def ticket_pseudo_cmd(interaction: discord.Interaction, membre: discord.Member,
+                             nouveau_pseudo: str, duree: str):
+    uid       = str(interaction.user.id)
+    user_data = get_user(_CACHE, uid)
+    tier      = _TICKET_BY_ID[duree]
+    tickets   = _get_tickets(user_data)
+    stock     = tickets.get(duree, 0)
+
+    if stock <= 0:
+        await interaction.response.send_message(
+            f"❌ Tu n'as pas de **{tier['name']}**. Achète-en un dans `/shop` !", ephemeral=True
+        )
+        return
+
+    is_admin = interaction.permissions.administrator
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    daily = user_data.get("ticket_daily", {"date": "", "count": 0})
+    if daily.get("date") != today:
+        daily = {"date": today, "count": 0}
+    if not is_admin and daily["count"] >= 2:
+        await interaction.response.send_message(
+            "❌ Tu as déjà utilisé **2 tickets** aujourd'hui. Reviens demain !", ephemeral=True
+        )
+        return
+
+    if membre.bot:
+        await interaction.response.send_message("❌ Impossible de changer le pseudo d'un bot.", ephemeral=True)
+        return
+    if membre.guild_permissions.administrator:
+        await interaction.response.send_message(
+            embed=discord.Embed(
+                title="🚫 Cible protégée",
+                description=(
+                    f"{membre.mention} est **administrateur** — impossible de cibler un admin avec un ticket pseudo."
+                ),
+                color=discord.Color.red(),
+            ),
+            ephemeral=True,
+        )
+        return
+    if len(nouveau_pseudo) > 32:
+        await interaction.response.send_message("❌ Le pseudo ne peut pas dépasser 32 caractères.", ephemeral=True)
+        return
+    if not _pseudo_is_clean(nouveau_pseudo):
+        await interaction.response.send_message(
+            "❌ Ce pseudo contient un mot interdit. Choisis un autre pseudo.", ephemeral=True
+        )
+        return
+
+    # Vérifie si la cible a déjà un pseudo actif avec un ticket de durée supérieure
+    target_data    = get_user(_CACHE, str(membre.id))
+    active_restore = target_data.get("nick_restore")
+    if active_restore and now_ts() < active_restore.get("expires", 0):
+        active_minutes = active_restore.get("minutes", 0)
+        if tier["minutes"] < active_minutes:
+            await interaction.response.send_message(
+                f"❌ Le pseudo de **{membre.display_name}** est déjà verrouillé par un ticket **{active_minutes} min**. "
+                f"Ton ticket **{tier['minutes']} min** ne peut pas l'écraser.",
+                ephemeral=True,
+            )
+            return
+
+    # Vérifie si la cible a un bouclier actif
+    # Si l'utilisateur se cible lui-même, le bouclier n'est PAS brûlé
+    self_target = membre.id == interaction.user.id
+    shields = target_data.get("nick_shields", 0)
+    if shields > 0 and not self_target:
+        target_data["nick_shields"] = shields - 1
+        _DIRTY.add(str(membre.id))
+        # Consume quand même le ticket de l'attaquant
+        tickets[duree] = stock - 1
+        user_data["pseudo_tickets"] = tickets
+        daily["count"] += 1
+        user_data["ticket_daily"] = daily
+        _DIRTY.add(uid)
+        await interaction.response.send_message(
+            embed=discord.Embed(
+                title="🛡️ Bouclier activé !",
+                description=(
+                    f"**{membre.display_name}** était protégé par un **Bouclier Pseudo** !\n\n"
+                    f"Ton ticket **{tier['emoji']} {tier['name']}** a été **perdu**.\n"
+                    f"Le pseudo de {membre.mention} n'a pas changé.\n\n"
+                    f"Boucliers restants sur la cible : **{shields - 1}**"
+                ),
+                color=discord.Color.blue(),
+            )
+        )
+        return
+
+    ancien_display = membre.display_name
+
+    # Si un ticket est déjà actif, on récupère l'original du PREMIER ticket
+    # pour ne pas sauvegarder le pseudo-ticket comme "original" lors d'un empilement
+    existing_restore = target_data.get("nick_restore")
+    if existing_restore and isinstance(existing_restore, dict) and now_ts() < existing_restore.get("expires", 0):
+        ancien_nick = existing_restore.get("original")  # vrai pseudo d'avant tout ticket
+    else:
+        ancien_nick = membre.nick  # pseudo serveur réel (None = pas de nick custom)
+
+    try:
+        await membre.edit(nick=nouveau_pseudo)
+    except discord.Forbidden:
+        await interaction.response.send_message(
+            "❌ Je n'ai pas la permission de changer ce pseudo (rôle trop élevé ?).", ephemeral=True
+        )
+        return
+
+    tickets[duree] = stock - 1
+    user_data["pseudo_tickets"] = tickets
+    daily["count"] += 1
+    user_data["ticket_daily"] = daily
+
+    # Persiste le restore en cache + flush DB immédiat (pas d'attente des 30s)
+    minutes    = tier["minutes"]
+    expires_at = now_ts() + minutes * 60
+    target_data["nick_restore"] = {
+        "expires":  expires_at,
+        "guild":    str(interaction.guild_id),
+        "minutes":  minutes,
+        "original": ancien_nick,  # nick à restaurer (None = retour au nom Discord)
+    }
+    _DIRTY.add(uid)
+    _DIRTY.add(str(membre.id))
+    await asyncio.get_running_loop().run_in_executor(db_executor, _sync_flush_dirty)
+
+    restants_jour = "∞" if is_admin else f"{2 - daily['count']}/2"
+    await interaction.response.send_message(
+        embed=discord.Embed(
+            title="🎭 Pseudo changé !",
+            description=(
+                f"**{ancien_display}** s'appelle maintenant **{nouveau_pseudo}** pendant **{minutes} min** !\n\n"
+                f"Il reprendra son pseudo original dans {minutes} minutes.\n"
+                f"Stock {tier['emoji']} : **{tickets[duree]}** · Utilisations restantes aujourd'hui : **{restants_jour}**"
+            ),
+            color=discord.Color.purple(),
+        )
+    )
+
+
+# ─────────────────────────────────────────
+#  RESET PSEUDOS (admin)
+# ─────────────────────────────────────────
+
+@bot.tree.command(name="reset_pseudos", description="[ADMIN] Restaure immédiatement tous les pseudos modifiés par ticket")
+@app_commands.guilds(*GUILD_IDS)
+@app_commands.default_permissions(administrator=True)
+async def reset_pseudos(interaction: discord.Interaction):
+    await interaction.response.defer(ephemeral=True)
+
+    # Synchronise la DB vers le cache pour ne rien rater après un redémarrage
+    def _load_nick_restores():
+        conn = get_db()
+        try:
+            cur = conn.cursor()
+            cur.execute("SELECT uid, data FROM users WHERE data ? 'nick_restore'")
+            rows = cur.fetchall()
+            cur.close()
+            return rows
+        except Exception as e:
+            print(f"[RESET] Erreur lecture DB : {e}")
+            return []
+        finally:
+            release_db(conn)
+
+    db_rows = await asyncio.get_running_loop().run_in_executor(db_executor, _load_nick_restores)
+    for uid, udata in db_rows:
+        if uid not in _CACHE:
+            _CACHE[uid] = udata
+        elif not _CACHE[uid].get("nick_restore") and udata.get("nick_restore"):
+            _CACHE[uid]["nick_restore"] = udata["nick_restore"]
+
+    restored  = 0
+    errors    = 0
+    not_found = 0
+    found     = 0
+
+    for uid, udata in list(_CACHE.items()):
+        restore = udata.get("nick_restore")
+        if not restore:
+            continue
+        found += 1
+        guild = bot.get_guild(int(restore.get("guild", 0)))
+        if not guild:
+            print(f"[RESET] Guild introuvable pour {uid}")
+            not_found += 1
+            continue
+        try:
+            member = await guild.fetch_member(int(uid))
+        except discord.NotFound:
+            print(f"[RESET] Membre {uid} introuvable (quitté le serveur)")
+            not_found += 1
+            udata.pop("nick_restore")
+            _DIRTY.add(uid)
+            continue
+        except Exception as e:
+            print(f"[RESET] fetch_member erreur {uid}: {e}")
+            errors += 1
+            continue
+
+        original_nick = restore.get("original")
+        print(f"[RESET] Restore pseudo de {member.display_name!r} → {'(aucun nick)' if original_nick is None else original_nick!r}")
+        try:
+            await member.edit(nick=original_nick)
+            udata.pop("nick_restore")
+            _DIRTY.add(uid)
+            restored += 1
+            print(f"[RESET] ✅ OK {member}")
+        except discord.Forbidden:
+            errors += 1
+            print(f"[RESET] ❌ Forbidden pour {uid} (rôle supérieur au bot ?)")
+        except Exception as e:
+            errors += 1
+            print(f"[RESET] ❌ Erreur {uid}: {e}")
+
+    await asyncio.get_running_loop().run_in_executor(db_executor, _sync_flush_dirty)
+
+    await interaction.followup.send(
+        embed=discord.Embed(
+            title="🔄 Reset des pseudos",
+            description=(
+                f"Entrées nick_restore trouvées : **{found}**\n"
+                f"Pseudos réinitialisés : **{restored}**\n"
+                f"Erreurs (permission/API) : **{errors}**\n"
+                f"Membres introuvables : **{not_found}**"
+            ),
+            color=discord.Color.green() if errors == 0 else discord.Color.orange(),
+        ),
+        ephemeral=True,
+    )
+
+
+# ─────────────────────────────────────────
+#  /contester — réponse de la Marine
+# ─────────────────────────────────────────
+
+@bot.tree.command(name="contester", description="Contester un prélèvement de la Marine")
+@app_commands.guilds(*GUILD_IDS)
+async def contester(interaction: discord.Interaction):
+    await interaction.response.send_message(
+        embed=discord.Embed(
+            title="📋 Contester un prélèvement",
+            description=(
+                "Pour contester un prélèvement de la Marine, utilise le bouton **⚖️ Contester** "
+                "directement sous l'avis de prélèvement envoyé dans le salon.\n\n"
+                "⏰ La fenêtre de contestation est de **5 minutes** après le prélèvement."
+            ),
+            color=0x1a237e,
+        ).set_footer(text="Marine Headquarters • Justice"),
+        ephemeral=True,
+    )
+
+
+# ─────────────────────────────────────────
+#  /prelevement — historique Marine
+# ─────────────────────────────────────────
+
+@bot.tree.command(name="prelevement", description="📋 Consulter tes prélèvements de la Marine")
+@app_commands.guilds(*GUILD_IDS)
+async def prelevement(interaction: discord.Interaction):
+    await interaction.response.defer(ephemeral=True)
+    uid = str(interaction.user.id)
+
+    def _fetch():
+        conn = get_db()
+        try:
+            cur = conn.cursor()
+            cur.execute("""
+                SELECT data->>'marine_levy_total' AS total,
+                       data->>'marine_levy_count' AS count
+                FROM users WHERE uid = %s
+            """, (uid,))
+            row = cur.fetchone()
+            cur.close()
+            return row
+        except Exception:
+            return None
+        finally:
+            conn.close()
+
+    wallet = get_berrys(uid)
+    user   = get_user(_CACHE, uid)
+    total  = user.get("marine_levy_total", 0)
+    count  = user.get("marine_levy_count", 0)
+
+    desc = (
+        f"━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"📋 **Prélèvements subis :** {count} fois\n"
+        f"💸 **Total prélevé :** `{total:,} ฿`\n"
+        f"💰 **Solde actuel :** `{wallet:,} ฿`\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"*Pour contester, utilise `/contester`.*\n"
+        f"*Résultat garanti : rejeté. 💀*"
+    )
+    await interaction.followup.send(
+        embed=discord.Embed(
+            title="📋 Dossier Marine — Prélèvements fiscaux",
+            description=desc,
+            color=0x1a237e,
+        ).set_footer(text="Marine Headquarters • Justice"),
+        ephemeral=True,
+    )
+
+
+# ─────────────────────────────────────────
+#  SYNC BERRIES (admin)
+# ─────────────────────────────────────────
+
+@bot.tree.command(
+    name="sync_berries",
+    description="[ADMIN] Recalcule les Berrys dus (heures × 100 000) et complète les soldes insuffisants",
+)
+@app_commands.guilds(*GUILD_IDS)
+@app_commands.default_permissions(administrator=True)
+@app_commands.checks.has_permissions(administrator=True)
+async def sync_berries_cmd(interaction: discord.Interaction):
+    await interaction.response.defer(ephemeral=True)
+
+    _now    = now_ts()
+    fixed   = 0
+    skipped = 0
+    total_added = 0
+    lines   = []
+
+    for uid, udata in list(_CACHE.items()):
+        sessions = udata.get("vocal_sessions", [])
+        jt       = udata.get("join_time")
+        extra    = udata.get("extra_seconds", 0)
+        total_sec   = total_seconds(sessions, join_time=jt, extra=extra, _now=_now)
+        total_hours = total_sec / 3600
+        expected    = int(total_hours * 100_000)
+        current     = get_berrys(uid)
+        deficit     = expected - current
+
+        if deficit <= 0:
+            skipped += 1
+            continue
+
+        add_berrys(uid, deficit)
+        total_added += deficit
+        fixed += 1
+        if len(lines) < 20:
+            lines.append(f"<@{uid}> +**{deficit:,} 💰** ({total_hours:.1f}h)".replace(",", " "))
+
+    await asyncio.get_running_loop().run_in_executor(db_executor, _sync_flush_dirty)
+
+    desc = (
+        f"✅ **{fixed}** membre(s) recalibré(s)\n"
+        f"⏭️ **{skipped}** membre(s) déjà à jour\n"
+        f"💰 Total distribué : **{total_added:,} 💰**\n".replace(",", " ")
+    )
+    if lines:
+        desc += "\n**Détail (20 premiers) :**\n" + "\n".join(lines)
+
+    await interaction.followup.send(
+        embed=discord.Embed(
+            title="🔄 Sync Berrys — Heures × 100 000",
+            description=desc,
+            color=discord.Color.green(),
+        ),
+        ephemeral=True,
+    )
+
+
+# ─────────────────────────────────────────
+#  GIVEAWAY
+# ─────────────────────────────────────────
+
+def _parse_duree(s: str) -> int | None:
+    """Convertit '1h30m', '2h', '30m', '1d' en secondes. None si invalide."""
+    total = 0
+    for val, unit in re.findall(r'(\d+)\s*([dhm])', s.strip().lower()):
+        v = int(val)
+        if unit == 'd':   total += v * 86400
+        elif unit == 'h': total += v * 3600
+        elif unit == 'm': total += v * 60
+    return total if total > 0 else None
+
+
+def _fmt_duree(seconds: int) -> str:
+    d, rem = divmod(seconds, 86400)
+    h, m   = divmod(rem, 3600)
+    m //= 60
+    parts = []
+    if d: parts.append(f"{d}j")
+    if h: parts.append(f"{h}h")
+    if m: parts.append(f"{m}min")
+    return " ".join(parts) or "0min"
+
+
+class GiveawayView(discord.ui.View):
+    def __init__(self, host_id: int):
+        super().__init__(timeout=None)
+        self.participants: set[int] = set()
+        self.host_id = host_id
+
+    @discord.ui.button(label="Participer 🎉", style=discord.ButtonStyle.success, custom_id="giveaway_join")
+    async def join(self, interaction: discord.Interaction, button: discord.ui.Button):
+        uid = interaction.user.id
+        if uid == self.host_id:
+            await interaction.response.send_message("L'organisateur ne peut pas participer.", ephemeral=True)
+            return
+        if uid in self.participants:
+            self.participants.discard(uid)
+            total = len(self.participants)
+            await interaction.response.send_message(
+                f"❌ Tu t'es retiré du giveaway. ({total} participant(s))", ephemeral=True
+            )
+        else:
+            self.participants.add(uid)
+            total = len(self.participants)
+            await interaction.response.send_message(
+                f"✅ Tu es inscrit au giveaway ! ({total} participant(s))", ephemeral=True
+            )
+
+
+async def _conclude_giveaway(
+    channel: discord.TextChannel,
+    message_id: int,
+    lot: str,
+    nb_gagnants: int,
+    host_id: int,
+    view: GiveawayView,
+):
+    view.stop()
+    try:
+        msg = await channel.fetch_message(message_id)
+    except Exception:
+        return
+
+    participants = list(view.participants)
+    if not participants:
+        embed = discord.Embed(
+            title="🎉  GIVEAWAY TERMINÉ  🎉",
+            description=f"**Lot :** {lot}\n\n❌ Personne n'a participé...",
+            color=discord.Color.red(),
+        )
+        embed.set_footer(text="Aucun gagnant")
+        await msg.edit(embed=embed, view=None)
+        return
+
+    nb = min(nb_gagnants, len(participants))
+    winners = random.sample(participants, nb)
+    mentions = ", ".join(f"<@{w}>" for w in winners)
+
+    embed = discord.Embed(
+        title="🎉  GIVEAWAY TERMINÉ  🎉",
+        description=(
+            f"**Lot :** {lot}\n\n"
+            f"🏆 **Gagnant(s) :** {mentions}\n\n"
+            f"Contactez <@{host_id}> pour récupérer votre lot."
+        ),
+        color=discord.Color.gold(),
+    )
+    embed.set_footer(text=f"{len(participants)} participant(s) • {nb} gagnant(s)")
+    await msg.edit(embed=embed, view=None)
+    await channel.send(f"🎊 Félicitations {mentions} ! Vous avez gagné **{lot}** !")
+
+
+@bot.tree.command(name="gagnant", description="Tirer au sort un ou plusieurs gagnants depuis le salon vocal")
+@app_commands.describe(
+    nombre="Nombre de gagnants à tirer (défaut: 1)",
+    image="Image du lot à afficher (PNG ou JPEG)",
+    exclure_bots="Exclure les bots du tirage (défaut: oui)",
+)
+async def gagnant_cmd(
+    interaction: discord.Interaction,
+    nombre: int = 1,
+    image: discord.Attachment | None = None,
+    exclure_bots: bool = True,
+):
+    try:
+        await interaction.response.defer()
+    except Exception:
+        return
+
+    if not 1 <= nombre <= 20:
+        await interaction.followup.send("❌ Le nombre de gagnants doit être entre 1 et 20.", ephemeral=True)
+        return
+
+    if image is not None and not image.content_type.startswith("image/"):
+        await interaction.followup.send("❌ Le fichier doit être une image (PNG ou JPEG).", ephemeral=True)
+        return
+
+    voice_state = interaction.user.voice
+    if voice_state is None or voice_state.channel is None:
+        await interaction.followup.send("❌ Tu dois être dans un salon vocal pour utiliser cette commande.", ephemeral=True)
+        return
+
+    channel = voice_state.channel
+    members = [m for m in channel.members if not (exclure_bots and m.bot)]
+
+    if not members:
+        await interaction.followup.send(f"❌ Aucun membre éligible dans **{channel.name}**.", ephemeral=True)
+        return
+
+    nb = min(nombre, len(members))
+    winners = random.sample(members, nb)
+
+    sep = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    if nb == 1:
+        w = winners[0]
+        embed = discord.Embed(
+            title="🎲  Tirage au sort  🎲",
+            description=(
+                f"{sep}\n"
+                f"**Salon :** {channel.name} ({len(members)} participant(s))\n\n"
+                f"🏆  **Gagnant : {w.mention}**\n"
+                f"{sep}"
+            ),
+            color=discord.Color.gold(),
+        )
+        embed.set_thumbnail(url=w.display_avatar.url)
+    else:
+        lines = "\n".join(f"🏆 {m.mention}" for m in winners)
+        embed = discord.Embed(
+            title="🎲  Tirage au sort  🎲",
+            description=(
+                f"{sep}\n"
+                f"**Salon :** {channel.name} ({len(members)} participant(s))\n\n"
+                f"**{nb} gagnants :**\n{lines}\n"
+                f"{sep}"
+            ),
+            color=discord.Color.gold(),
+        )
+
+    if image is not None:
+        embed.set_image(url=image.url)
+
+    embed.set_footer(text=f"Tirage par {interaction.user.display_name}")
+    await interaction.followup.send(embed=embed)
+
+
+@bot.tree.command(name="giveaway", description="[ADMIN] Lancer un giveaway")
+@app_commands.describe(
+    lot="Ce qui est mis en jeu",
+    duree="Durée (ex: 30m, 1h, 2h30m, 1d)",
+    gagnants="Nombre de gagnants (défaut: 1)",
+    image="Image du lot à afficher (PNG ou JPEG)",
+)
+@app_commands.default_permissions(administrator=True)
+@app_commands.checks.has_permissions(administrator=True)
+async def giveaway_cmd(
+    interaction: discord.Interaction,
+    lot: str,
+    duree: str,
+    gagnants: int = 1,
+    image: discord.Attachment | None = None,
+):
+    try:
+        await interaction.response.defer()
+    except Exception:
+        return
+
+    seconds = _parse_duree(duree)
+    if seconds is None:
+        await interaction.followup.send(
+            "❌ Durée invalide. Exemples : `30m`, `1h`, `2h30m`, `1d`", ephemeral=True
+        )
+        return
+    if not 1 <= gagnants <= 20:
+        await interaction.followup.send("❌ Le nombre de gagnants doit être entre 1 et 20.", ephemeral=True)
+        return
+    if image is not None and not image.content_type.startswith("image/"):
+        await interaction.followup.send("❌ Le fichier doit être une image (PNG ou JPEG).", ephemeral=True)
+        return
+
+    end_ts = int(time.time()) + seconds
+    view = GiveawayView(host_id=interaction.user.id)
+
+    embed = discord.Embed(
+        title="🎉  GIVEAWAY  🎉",
+        description=(
+            f"**Lot :** {lot}\n\n"
+            f"Clique sur le bouton ci-dessous pour participer !\n\n"
+            f"**Fin :** <t:{end_ts}:R> (<t:{end_ts}:f>)\n"
+            f"**Gagnants :** {gagnants}\n"
+            f"**Organisateur :** {interaction.user.mention}"
+        ),
+        color=discord.Color.gold(),
+    )
+    embed.set_footer(text=f"Durée : {_fmt_duree(seconds)}")
+    if image is not None:
+        embed.set_image(url=image.url)
+
+    msg = await interaction.followup.send(embed=embed, view=view)
+
+    async def _wait_and_conclude():
+        await asyncio.sleep(seconds)
+        channel = interaction.channel
+        await _conclude_giveaway(channel, msg.id, lot, gagnants, interaction.user.id, view)
+
+    asyncio.create_task(_wait_and_conclude())
+
+
+# ─────────────────────────────────────────
+#  AKINATOR
+# ─────────────────────────────────────────
+
+_AKI_ENTRY  = 2_000
+_AKI_REWARD = 4_000
+_AKI_MAX_Q  = 20
+_AKI_MAX_BAD = 3
+
+_AKI_SYSTEM = (
+    "Tu es Akinator spécialisé One Piece. Devine le personnage auquel le joueur pense.\n"
+    "Réponds UNIQUEMENT en JSON valide, sans markdown :\n"
+    '- Question : {"action":"question","text":"Ta question ?"}\n'
+    '- Supposition : {"action":"guess","character":"Nom exact","reason":"Justification courte"}\n'
+    '- Abandon : {"action":"give_up"}\n\n'
+    "Stratégie : identifie d'abord l'arc/faction/équipage, puis affine avec genre, fruit du démon, rôle. "
+    "Devine dès que tu es à ~70% de confiance. Ne repose jamais une question déjà posée."
+)
+
+_AKI_SESSIONS: dict[int, "_AkiSession"] = {}
+
+
+class _AkiSession:
+    def __init__(self, user_id: int):
+        self.user_id = user_id
+        self.history: list[tuple[str, str]] = []
+        self.wrong: list[str] = []
+        self.nb_q = 0
+        self.ended = False
+
+    def build_messages(self) -> list[dict]:
+        msgs = [{"role": "system", "content": _AKI_SYSTEM}]
+        if not self.history:
+            msgs.append({"role": "user", "content": "Le joueur pense à un personnage de One Piece. Pose ta première question."})
+        else:
+            lines = ["Historique Q&A :"]
+            for i, (q, a) in enumerate(self.history, 1):
+                lines.append(f"  {i}. {q} → {a}")
+            if self.wrong:
+                lines.append(f"Suppositions incorrectes : {', '.join(self.wrong)}")
+            lines.append(f"\nQuestions : {self.nb_q}/{_AKI_MAX_Q} | Mauvaises suppositions : {len(self.wrong)}/{_AKI_MAX_BAD}")
+            lines.append("Que fais-tu ?")
+            msgs.append({"role": "user", "content": "\n".join(lines)})
+        return msgs
+
+
+async def _aki_call(session: "_AkiSession") -> dict:
+    api_key = os.environ.get("GROQ_API_KEY", "")
+    for attempt in range(3):
+        try:
+            resp = await litellm.acompletion(
+                model=_GROQ_MODEL, api_key=api_key, max_tokens=200, temperature=0.7,
+                response_format={"type": "json_object"}, messages=session.build_messages(),
+            )
+            data = json.loads(resp.choices[0].message.content.strip())
+            if data.get("action") in ("question", "guess", "give_up"):
+                return data
+        except Exception as e:
+            print(f"[AKINATOR] attempt {attempt+1}: {e}")
+    return {"action": "give_up"}
+
+
+def _aki_q_embed(session: "_AkiSession", question: str) -> discord.Embed:
+    bar = "▓" * min(session.nb_q, _AKI_MAX_Q) + "░" * max(0, _AKI_MAX_Q - session.nb_q)
+    embed = discord.Embed(
+        title="🎩 Akinator One Piece 🎩",
+        description=f"**Question {session.nb_q}/{_AKI_MAX_Q}**\n`{bar}`\n\n💬 **{question}**",
+        color=discord.Color.blurple(),
+    )
+    if session.wrong:
+        embed.add_field(name="❌ Mauvaises suppositions", value="\n".join(f"• {g}" for g in session.wrong), inline=False)
+    embed.set_footer(text="Réponds honnêtement !")
+    return embed
+
+
+def _aki_guess_embed(session: "_AkiSession", character: str, reason: str) -> discord.Embed:
+    return discord.Embed(
+        title="🎩 Akinator — Ma supposition ! 🎩",
+        description=(
+            f"Après **{session.nb_q}** question(s)…\n\n"
+            f"🔮 **Je pense que tu penses à :**\n# {character}\n\n*{reason}*"
+        ),
+        color=discord.Color.gold(),
+    ).set_footer(text="Est-ce que j'ai raison ?")
+
+
+async def _aki_dispatch(interaction: discord.Interaction, session: "_AkiSession", action: dict):
+    uid = str(session.user_id)
+
+    if action["action"] == "question":
+        q = action.get("text", "Ce personnage est-il un pirate ?")
+        session.nb_q += 1
+        session.history.append((q, ""))
+        await interaction.edit_original_response(embed=_aki_q_embed(session, q), view=_AkiAnswerView(session))
+
+    elif action["action"] == "guess":
+        character = action.get("character", "???")
+        reason = action.get("reason", "")
+        await interaction.edit_original_response(embed=_aki_guess_embed(session, character, reason), view=_AkiGuessView(session, character))
+
+    else:  # give_up — joueur gagne
+        session.ended = True
+        _AKI_SESSIONS.pop(session.user_id, None)
+        new_bal = add_berrys(uid, _AKI_REWARD)
+        embed = discord.Embed(
+            title="🎩 Akinator — Tu m'as eu ! 🎩",
+            description=(
+                f"😤 Je n'ai pas trouvé ton personnage en {session.nb_q} questions !\n\n"
+                f"**+{_fmt_berry(_AKI_REWARD)} 💰** gagnés ! Solde : **{_fmt_berry(new_bal)} 💰**"
+            ),
+            color=discord.Color.green(),
+        )
+        await interaction.edit_original_response(embed=embed, view=None)
+
+
+class _AkiAnswerView(discord.ui.View):
+    _CHOICES = [
+        ("Oui",              "✅", discord.ButtonStyle.success),
+        ("Non",              "❌", discord.ButtonStyle.danger),
+        ("Je ne sais pas",   "🤷", discord.ButtonStyle.secondary),
+        ("Probablement",     "🟡", discord.ButtonStyle.primary),
+        ("Probablement pas", "🔴", discord.ButtonStyle.secondary),
+    ]
+
+    def __init__(self, session: "_AkiSession"):
+        super().__init__(timeout=120)
+        self._session = session
+        for label, emoji, style in self._CHOICES:
+            btn = discord.ui.Button(label=label, emoji=emoji, style=style)
+            btn.callback = self._make_cb(label)
+            self.add_item(btn)
+
+    def _make_cb(self, answer: str):
+        async def cb(interaction: discord.Interaction):
+            if interaction.user.id != self._session.user_id:
+                await interaction.response.send_message("Ce n'est pas ton Akinator !", ephemeral=True)
+                return
+            if self._session.ended:
+                await interaction.response.send_message("Cette partie est terminée.", ephemeral=True)
+                return
+            self.stop()
+            await interaction.response.defer()
+            if self._session.history and self._session.history[-1][1] == "":
+                self._session.history[-1] = (self._session.history[-1][0], answer)
+            if self._session.nb_q >= _AKI_MAX_Q or len(self._session.wrong) >= _AKI_MAX_BAD:
+                action = {"action": "give_up"}
+            else:
+                action = await _aki_call(self._session)
+            await _aki_dispatch(interaction, self._session, action)
+        return cb
+
+    async def on_timeout(self):
+        self._session.ended = True
+        _AKI_SESSIONS.pop(self._session.user_id, None)
+
+
+class _AkiGuessView(discord.ui.View):
+    def __init__(self, session: "_AkiSession", character: str):
+        super().__init__(timeout=120)
+        self._session = session
+        self._character = character
+
+    @discord.ui.button(label="Oui, c'est ça !", emoji="✅", style=discord.ButtonStyle.success)
+    async def correct(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user.id != self._session.user_id:
+            await interaction.response.send_message("Ce n'est pas ton Akinator !", ephemeral=True)
+            return
+        self.stop()
+        self._session.ended = True
+        _AKI_SESSIONS.pop(self._session.user_id, None)
+        embed = discord.Embed(
+            title="🎩 Akinator — Trouvé ! 🎩",
+            description=(
+                f"🔮 **J'ai trouvé !** Tu pensais à **{self._character}** !\n"
+                f"Questions posées : **{self._session.nb_q}**\n\n"
+                f"💸 **-{_fmt_berry(_AKI_ENTRY)} 💰** (mise d'entrée perdue)"
+            ),
+            color=discord.Color.red(),
+        )
+        await interaction.response.edit_message(embed=embed, view=None)
+
+    @discord.ui.button(label="Non, ce n'est pas ça", emoji="❌", style=discord.ButtonStyle.danger)
+    async def wrong(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user.id != self._session.user_id:
+            await interaction.response.send_message("Ce n'est pas ton Akinator !", ephemeral=True)
+            return
+        self.stop()
+        await interaction.response.defer()
+        self._session.wrong.append(self._character)
+        if len(self._session.wrong) >= _AKI_MAX_BAD:
+            await _aki_dispatch(interaction, self._session, {"action": "give_up"})
+            return
+        action = await _aki_call(self._session)
+        await _aki_dispatch(interaction, self._session, action)
+
+    async def on_timeout(self):
+        self._session.ended = True
+        _AKI_SESSIONS.pop(self._session.user_id, None)
+
+
+@bot.tree.command(name="akinator", description="Akinator One Piece — 2 000 Berry d'entree, gagne 4 000 si le bot abandonne !")
+@app_commands.guilds(*GUILD_IDS)
+async def akinator_cmd(interaction: discord.Interaction):
+    uid = interaction.user.id
+    if uid in _AKI_SESSIONS:
+        await interaction.response.send_message("Tu as deja une partie en cours !", ephemeral=True)
+        return
+    if not spend_berrys(str(uid), _AKI_ENTRY):
+        bal = get_berrys(str(uid))
+        await interaction.response.send_message(
+            f"Solde insuffisant. Tu as **{_fmt_berry(bal)} Berry**, il te faut **{_fmt_berry(_AKI_ENTRY)} Berry**.", ephemeral=True
+        )
+        return
+    try:
+        await interaction.response.defer()
+    except Exception:
+        return
+
+    session = _AkiSession(uid)
+    _AKI_SESSIONS[uid] = session
+
+    action = await _aki_call(session)
+    if action.get("action") != "question":
+        _AKI_SESSIONS.pop(uid, None)
+        add_berrys(str(uid), _AKI_ENTRY)
+        await interaction.edit_original_response(content="Erreur IA. Ta mise a ete remboursee.", embed=None, view=None)
+        return
+
+    q = action.get("text", "Ce personnage est-il un pirate ?")
+    session.nb_q = 1
+    session.history.append((q, ""))
+    await interaction.edit_original_response(embed=_aki_q_embed(session, q), view=_AkiAnswerView(session))
+
+
+
+# ─────────────────────────────────────────
+#  /memoire
+# ─────────────────────────────────────────
+@bot.tree.command(name="memoire", description="Ce que je sais sur ce serveur (alias et faits)")
+async def memoire(interaction: discord.Interaction):
+    await interaction.response.defer(ephemeral=True)
+    from utils.memory import get_all_knowledge
+    gid = str(interaction.guild_id)
+    try:
+        rows = await get_all_knowledge(gid)
+    except Exception:
+        await interaction.followup.send("❌ Impossible de lire la mémoire.", ephemeral=True)
+        return
+
+    if not rows:
+        await interaction.followup.send("Je ne sais encore rien sur ce serveur. Parle-moi 👁️", ephemeral=True)
+        return
+
+    aliases = [r for r in rows if r["type"] == "alias"]
+    facts   = [r for r in rows if r["type"] == "fact"]
+
+    embed = discord.Embed(title="🧠 Ma mémoire", color=0x5865F2)
+
+    if aliases:
+        alias_lines = [f"**{r['key']}** → {r['value']}" for r in aliases[:20]]
+        embed.add_field(name=f"👥 Alias ({len(aliases)})", value="\n".join(alias_lines), inline=False)
+
+    if facts:
+        fact_lines = [f"• {r['value'][:80]}" for r in facts[:15]]
+        embed.add_field(name=f"📝 Faits ({len(facts)})", value="\n".join(fact_lines), inline=False)
+
+    embed.set_footer(text="Appris via les messages du serveur")
+    await interaction.followup.send(embed=embed, ephemeral=True)
+
+
+# ─────────────────────────────────────────
+#  /addberries  (ADMIN)
+# ─────────────────────────────────────────
+@bot.tree.command(name="addberries", description="[ADMIN] Ajouter des Berries à un membre")
+@app_commands.default_permissions(administrator=True)
+@app_commands.checks.has_permissions(administrator=True)
+@app_commands.describe(
+    membre="Membre qui reçoit les Berries",
+    montant="Montant à ajouter (entier positif)",
+    raison="Raison (optionnel, affiché dans l'historique)",
+)
+async def addberries_cmd(
+    interaction: discord.Interaction,
+    membre: discord.Member,
+    montant: int,
+    raison: str = "Don admin",
+):
+    await interaction.response.defer(ephemeral=True)
+
+    if membre.bot:
+        await interaction.followup.send("❌ Les bots n'ont pas de compte Berry.", ephemeral=True)
+        return
+    if montant <= 0:
+        await interaction.followup.send("❌ Le montant doit être un entier positif.", ephemeral=True)
+        return
+
+    uid = str(membre.id)
+    new_balance = add_berrys(uid, montant, track="earned")
+
+    from utils.transactions import log_transaction
+    await log_transaction(uid, "gain", "autre", montant, raison, new_balance)
+
+    await interaction.followup.send(
+        embed=discord.Embed(
+            title="✅ Berries ajoutés",
+            description=(
+                f"💰 **+`{montant:,}` ฿** ajoutés à {membre.mention}\n"
+                f"📋 Raison : *{raison}*\n"
+                f"💼 Nouveau solde : `{new_balance:,}` ฿"
+            ),
+            color=0x2ECC71,
+        ).set_footer(text=f"Admin : {interaction.user.display_name}"),
+        ephemeral=True,
+    )
+
+
+# ─────────────────────────────────────────
+#  /reset_berry  (ADMIN)
+# ─────────────────────────────────────────
+@bot.tree.command(name="reset_berry", description="[ADMIN] Remet le solde Berry d'un membre a zero")
+@app_commands.default_permissions(administrator=True)
+@app_commands.checks.has_permissions(administrator=True)
+@app_commands.describe(
+    membre="Membre dont le solde Berry doit etre remis a zero",
+    raison="Raison du reset (optionnel, logguee dans l'historique)",
+)
+async def reset_berry_cmd(
+    interaction: discord.Interaction,
+    membre: discord.Member,
+    raison: str = "Reset admin",
+):
+    await interaction.response.defer(ephemeral=True)
+
+    if membre.bot:
+        await interaction.followup.send("❌ Les bots n'ont pas de compte Berry.", ephemeral=True)
+        return
+
+    uid = str(membre.id)
+    old_balance = reset_berrys(uid, track="lost")
+
+    # Persist immediately: this command is destructive and should not wait for
+    # the periodic cache flush.
+    await asyncio.get_running_loop().run_in_executor(db_executor, _sync_flush_dirty)
+
+    from utils.transactions import log_transaction
+    await log_transaction(
+        uid,
+        "depense",
+        "autre",
+        old_balance,
+        f"{raison} — reset par {interaction.user.display_name}",
+        0,
+    )
+
+    await interaction.followup.send(
+        embed=discord.Embed(
+            title="✅ Solde Berry reset",
+            description=(
+                f"{membre.mention} est maintenant a **0 ฿**.\n"
+                f"Ancien solde : **`{old_balance:,}` ฿**\n"
+                f"Raison : *{raison}*"
+            ),
+            color=0xE0524A,
+        ).set_footer(text=f"Admin : {interaction.user.display_name}"),
+        ephemeral=True,
+    )
+
+
+# ─────────────────────────────────────────
+#  /rangs — Membres par rang One Piece
+# ─────────────────────────────────────────
+_RANK_EMOJIS_DISPLAY = {
+    "Pirate":          "🏴‍☠️",
+    "Shichibukai":     "⚔️",
+    "Amiral":          "🪖",
+    "Yonkou":          "⚜️",
+    "Roi des pirates": "👑",
+}
+_RANK_EMBED_COLORS = {
+    "Pirate":          discord.Color.from_rgb(46,  204, 113),
+    "Shichibukai":     discord.Color.from_rgb(22,  96,  45),
+    "Amiral":          discord.Color.from_rgb(241, 196, 15),
+    "Yonkou":          discord.Color.from_rgb(155, 89,  182),
+    "Roi des pirates": discord.Color.from_rgb(255, 215, 0),
+}
+
+
+@bot.tree.command(name="rangs", description="📊 Liste tous les membres par rang One Piece")
+async def rangs_cmd(interaction: discord.Interaction):
+    await interaction.response.defer()
+    try:
+        guild = interaction.guild
+        if guild is None:
+            await interaction.followup.send("❌ Commande disponible uniquement sur un serveur.", ephemeral=True)
+            return
+
+        embed = discord.Embed(
+            title="🏴‍☠️ Répartition des Rangs — Brams Community",
+            color=discord.Color.from_rgb(255, 215, 0),
+        )
+
+        unique_ids: set[int] = set()
+
+        for threshold, rank_name in RANKS:   # RANKS trié highest → lowest
+            role_id = RANK_ROLES.get(rank_name)
+            emoji   = _RANK_EMOJIS_DISPLAY.get(rank_name, "🎖️")
+            seuil   = f"{threshold}h vocales / 7j"
+
+            if not role_id:
+                continue
+
+            role = guild.get_role(role_id)
+            if role is None:
+                embed.add_field(
+                    name=f"{emoji} {rank_name}",
+                    value="*Rôle introuvable sur ce serveur*",
+                    inline=False,
+                )
+                continue
+
+            members = sorted(
+                [m for m in role.members if not m.bot],
+                key=lambda m: m.display_name.lower(),
+            )
+            for m in members:
+                unique_ids.add(m.id)
+
+            count = len(members)
+
+            if not members:
+                value = "*Aucun membre pour l'instant*"
+            else:
+                lines = [f"• {m.display_name}" for m in members]
+                value = "\n".join(lines)
+                if len(value) > 1020:
+                    shown, length = [], 0
+                    for line in lines:
+                        if length + len(line) + 1 > 960:
+                            break
+                        shown.append(line)
+                        length += len(line) + 1
+                    value = "\n".join(shown) + f"\n*… et {count - len(shown)} autres*"
+
+            plural = "s" if count > 1 else ""
+            embed.add_field(
+                name=f"{emoji} {rank_name} — **{count}** membre{plural}  ·  `≥ {seuil}`",
+                value=value,
+                inline=False,
+            )
+
+        embed.set_footer(
+            text=f"Brams Score · One Piece  •  {len(unique_ids)} membres rankés au total"
+        )
+        await interaction.followup.send(embed=embed)
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        try:
+            await interaction.followup.send("❌ Erreur lors de la récupération des rangs.", ephemeral=True)
+        except Exception:
+            pass
+
+
+# ── Sync des commandes une seule fois au démarrage ───────────────
+# setup_hook est appelé AVANT on_ready, et UNE SEULE FOIS (pas à chaque reconnect).
+# C'est là qu'on sync les slash commands pour éviter le délai dans on_ready.
+_COMMANDS_SYNCED = False
+
+@bot.event
+async def setup_hook():
+    global _COMMANDS_SYNCED
+    if _COMMANDS_SYNCED:
+        return
+    _COMMANDS_SYNCED = True
+    # Chargement des cogs
+    for ext in ("cogs.duel", "cogs.profiles", "cogs.crews", "cogs.banque", "cogs.bank", "cogs.jeux", "cogs.info", "cogs.onboarding_welcome", "cogs.onboarding", "cogs.support.tickets", "cogs.annonces", "cogs.piscine"):
+        try:
+            await bot.load_extension(ext)
+            print(f"[COG] {ext} chargé ✅")
+        except Exception as e:
+            print(f"[COG] Erreur chargement {ext}: {e}")
+    for gid in GUILD_IDS:
+        obj = discord.Object(id=gid)
+        try:
+            bot.tree.copy_global_to(guild=obj)
+            synced = await bot.tree.sync(guild=obj)
+            print(f"[SYNC] {len(synced)} commandes sync sur {gid}")
+        except Exception as e:
+            print(f"[SYNC] Erreur sync {gid}: {e}")
+
+
+bot.run(TOKEN)
