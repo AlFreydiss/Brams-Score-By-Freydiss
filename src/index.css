@@ -1638,6 +1638,7 @@ option { background: #100a04; }
 .nav-zone-status,
 .nav-zone-user {
   justify-content: flex-end;
+  gap: 8px;
 }
 .nav-brand-premium {
   display: inline-flex;
@@ -1780,8 +1781,8 @@ option { background: #100a04; }
   display: flex;
   align-items: center;
   gap: 4px;
-  margin-left: 6px;
-  padding-left: 8px;
+  margin-left: 12px;
+  padding-left: 12px;
   border-left: 1px solid rgba(255,255,255,.06);
 }
 .nav-social-premium,

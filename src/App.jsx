@@ -51,6 +51,7 @@ const StaffPanel         = lazy(() => import('./components/StaffPanel.jsx'))
 const BlindTestPage      = lazy(() => import('./components/BlindTestPage.jsx'))
 const BlindTestLeaderboard = lazy(() => import('./components/BlindTestLeaderboard.jsx'))
 const TierListPage       = lazy(() => import('./components/TierListPage.jsx'))
+const TournoiPage        = lazy(() => import('./components/TournoiPage.jsx'))
 const ProfilePageYonkou  = lazy(() => import('./components/ProfilePageYonkou.jsx'))
 const BotFeatures        = lazy(() => import('./components/BotFeatures.jsx'))
 const Quiz               = lazy(() => import('./components/Quiz.jsx'))
@@ -370,6 +371,9 @@ export default function App() {
 
         {/* Tier List */}
         <Route path="/tier-list" element={<PageLayout><TierListPage /></PageLayout>} />
+
+        {/* Tournoi */}
+        <Route path="/tournoi" element={<PageLayout><TournoiPage /></PageLayout>} />
 
         {/* Profil Yonkou — Next-Gen 3D */}
         <Route path="/profil-yonkou" element={<ProfilePageYonkou />} />
