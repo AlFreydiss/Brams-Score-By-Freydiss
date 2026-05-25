@@ -151,6 +151,7 @@ const TEMPLATES = [
 // ── Helpers ────────────────────────────────────────────────────────────────────
 const STORAGE_KEY = 'brams_tier_studio_v1'
 const DRAFT_KEY = 'brams_tier_studio_draft_v1'
+const DRAFT_HISTORY_KEY = 'brams_tier_studio_draft_history_v1'
 
 function loadSavedLists() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]') } catch { return [] }
@@ -161,12 +162,32 @@ function saveLists(lists) {
 function loadDraft() {
   try {
     const draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null')
-    if (!draft?.typeId || !draft?.board || !Array.isArray(draft?.tiers)) return null
-    return draft
+    if (draft?.typeId && draft?.board && Array.isArray(draft?.tiers)) return draft
+    const history = JSON.parse(localStorage.getItem(DRAFT_HISTORY_KEY) || '[]')
+    const backup = Array.isArray(history)
+      ? history.find(d => d?.typeId && d?.board && Array.isArray(d?.tiers))
+      : null
+    return backup || null
   } catch { return null }
 }
 function saveDraft(draft) {
-  try { localStorage.setItem(DRAFT_KEY, JSON.stringify(draft)); return true } catch { return false }
+  try {
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(draft))
+    const history = JSON.parse(localStorage.getItem(DRAFT_HISTORY_KEY) || '[]')
+    const signature = JSON.stringify({
+      title:draft.title,
+      typeId:draft.typeId,
+      tiers:draft.tiers,
+      board:draft.board,
+      customItems:draft.customItems,
+      favorites:draft.favorites,
+    })
+    if (!Array.isArray(history) || history[0]?._signature !== signature) {
+      const next = [{ ...draft, _signature:signature, backupAt:Date.now() }, ...(Array.isArray(history) ? history : [])].slice(0, 12)
+      localStorage.setItem(DRAFT_HISTORY_KEY, JSON.stringify(next))
+    }
+    return true
+  } catch { return false }
 }
 function clearDraft() {
   try { localStorage.removeItem(DRAFT_KEY) } catch {}
@@ -651,6 +672,7 @@ export default function TierListPage() {
   const [showTemplates, setShowTemplates] = useState(false)
   const boardRef = useRef(null)
   const titleRef = useRef(null)
+  const latestDraftRef = useRef(null)
 
   // ── My Lists state
   const [savedLists, setSavedLists] = useState(loadSavedLists)
@@ -660,26 +682,53 @@ export default function TierListPage() {
     setToast(`Brouillon restauré : "${initialDraft.title || 'Ma Tier List'}"`)
   }, [])
 
-  useEffect(() => {
-    if (!selectedType || !board) {
-      setDraftSaved(false)
-      return
+  const buildDraft = useCallback((overrides = {}) => {
+    if (!selectedType || !board) return null
+    return {
+      title,
+      typeId: selectedType.id,
+      tiers,
+      board,
+      customItems,
+      favorites,
+      updatedAt: Date.now(),
+      ...overrides,
     }
-    setDraftSaved(false)
-    const timer = setTimeout(() => {
-      const ok = saveDraft({
-        title,
-        typeId: selectedType.id,
-        tiers,
-        board,
-        customItems,
-        favorites,
-        updatedAt: Date.now(),
-      })
-      setDraftSaved(ok)
-    }, 250)
-    return () => clearTimeout(timer)
   }, [selectedType, tiers, board, customItems, favorites, title])
+
+  const persistDraft = useCallback((overrides = {}) => {
+    const draft = buildDraft(overrides)
+    latestDraftRef.current = draft
+    if (!draft) {
+      setDraftSaved(false)
+      return false
+    }
+    const ok = saveDraft(draft)
+    setDraftSaved(ok)
+    return ok
+  }, [buildDraft])
+
+  useEffect(() => {
+    persistDraft()
+  }, [persistDraft])
+
+  useEffect(() => {
+    const flushDraft = () => {
+      const draft = latestDraftRef.current || buildDraft()
+      if (draft) saveDraft({ ...draft, updatedAt:Date.now() })
+    }
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') flushDraft()
+    }
+    window.addEventListener('pagehide', flushDraft)
+    window.addEventListener('beforeunload', flushDraft)
+    document.addEventListener('visibilitychange', onVisibilityChange)
+    return () => {
+      window.removeEventListener('pagehide', flushDraft)
+      window.removeEventListener('beforeunload', flushDraft)
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+    }
+  }, [buildDraft])
 
   // ── allById (official + custom)
   const allById = useMemo(() => {
@@ -710,13 +759,12 @@ export default function TierListPage() {
     if (!validContainers.includes(dest)) return
     const src = findContainer(active.id)
     if (!src || src === dest) return
-    setBoard(prev => {
-      const next = {}
-      for (const k of Object.keys(prev))
-        next[k] = k === src ? prev[k].filter(id => id !== active.id)
-          : k === dest ? [...prev[k], active.id] : [...prev[k]]
-      return next
-    })
+    const next = {}
+    for (const k of Object.keys(board))
+      next[k] = k === src ? board[k].filter(id => id !== active.id)
+        : k === dest ? [...board[k], active.id] : [...board[k]]
+    setBoard(next)
+    persistDraft({ board:next })
     if (tiers.find(t => t.id === dest)?.label === 'GOD' || tiers.find(t => t.id === dest)?.id === 'god') fireConfetti()
     setSaved(false)
   }
@@ -733,6 +781,16 @@ export default function TierListPage() {
     setSearch('')
     setGenre('Tous')
     setSaved(false)
+    const ok = saveDraft({
+      title:`Ma Tier List ${type.icon} ${type.label}`,
+      typeId:type.id,
+      tiers,
+      board:newBoard,
+      customItems,
+      favorites:[],
+      updatedAt:Date.now(),
+    })
+    setDraftSaved(ok)
   }
 
   // ── Tier row operations
