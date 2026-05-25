@@ -803,7 +803,7 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
                     fontFamily:'var(--body)',
                   }}
                 />
-                {(query || activeGenre !== 'all') && (
+                {(query || selectedGenres.size > 0) && (
                   <button
                     type="button"
                     onClick={() => { setQuery(''); setSelectedGenres(new Set()) }}
