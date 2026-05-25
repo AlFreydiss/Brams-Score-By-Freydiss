@@ -150,12 +150,26 @@ const TEMPLATES = [
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 const STORAGE_KEY = 'brams_tier_studio_v1'
+const DRAFT_KEY = 'brams_tier_studio_draft_v1'
 
 function loadSavedLists() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]') } catch { return [] }
 }
 function saveLists(lists) {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(lists)) } catch {}
+}
+function loadDraft() {
+  try {
+    const draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null')
+    if (!draft?.typeId || !draft?.board || !Array.isArray(draft?.tiers)) return null
+    return draft
+  } catch { return null }
+}
+function saveDraft(draft) {
+  try { localStorage.setItem(DRAFT_KEY, JSON.stringify(draft)); return true } catch { return false }
+}
+function clearDraft() {
+  try { localStorage.removeItem(DRAFT_KEY) } catch {}
 }
 
 function initBoard(tiers, items) {
@@ -613,22 +627,26 @@ const CSS = `
 
 // ── Main Export ───────────────────────────────────────────────────────────────
 export default function TierListPage() {
+  const initialDraftRef = useRef(loadDraft())
+  const initialDraft = initialDraftRef.current
+
   // ── Tab
   const [tab, setTab] = useState('studio')
 
   // ── Studio state
-  const [selectedType, setSelectedType] = useState(null)
-  const [tiers, setTiers]     = useState(DEFAULT_TIERS)
-  const [board, setBoard]     = useState(null)
-  const [customItems, setCustomItems] = useState([])
-  const [favorites, setFavorites]   = useState([])
-  const [title, setTitle]     = useState('Ma Tier List')
+  const [selectedType, setSelectedType] = useState(() => initialDraft?.typeId ? TIER_TYPES.find(t => t.id === initialDraft.typeId) || null : null)
+  const [tiers, setTiers]     = useState(() => initialDraft?.tiers || DEFAULT_TIERS)
+  const [board, setBoard]     = useState(() => initialDraft?.board || null)
+  const [customItems, setCustomItems] = useState(() => initialDraft?.customItems || [])
+  const [favorites, setFavorites]   = useState(() => initialDraft?.favorites || [])
+  const [title, setTitle]     = useState(() => initialDraft?.title || 'Ma Tier List')
   const [editTitle, setEditTitle] = useState(false)
   const [tmpTitle, setTmpTitle]   = useState(title)
   const [search, setSearch]   = useState('')
   const [genre, setGenre]     = useState('Tous')
   const [activeId, setActiveId]   = useState(null)
   const [saved, setSaved]     = useState(false)
+  const [draftSaved, setDraftSaved] = useState(Boolean(initialDraft))
   const [toast, setToast]     = useState(null)
   const [showTemplates, setShowTemplates] = useState(false)
   const boardRef = useRef(null)
@@ -636,6 +654,32 @@ export default function TierListPage() {
 
   // ── My Lists state
   const [savedLists, setSavedLists] = useState(loadSavedLists)
+
+  useEffect(() => {
+    if (!initialDraft) return
+    setToast(`Brouillon restauré : "${initialDraft.title || 'Ma Tier List'}"`)
+  }, [])
+
+  useEffect(() => {
+    if (!selectedType || !board) {
+      setDraftSaved(false)
+      return
+    }
+    setDraftSaved(false)
+    const timer = setTimeout(() => {
+      const ok = saveDraft({
+        title,
+        typeId: selectedType.id,
+        tiers,
+        board,
+        customItems,
+        favorites,
+        updatedAt: Date.now(),
+      })
+      setDraftSaved(ok)
+    }, 250)
+    return () => clearTimeout(timer)
+  }, [selectedType, tiers, board, customItems, favorites, title])
 
   // ── allById (official + custom)
   const allById = useMemo(() => {
@@ -904,9 +948,9 @@ export default function TierListPage() {
               {editTitle ? (
                 <div style={{ display:'flex', alignItems:'center', gap:5 }}>
                   <input ref={titleRef} value={tmpTitle} onChange={e => setTmpTitle(e.target.value)}
-                    onKeyDown={e => { if (e.key==='Enter'){setTitle(tmpTitle);setEditTitle(false)} if (e.key==='Escape') setEditTitle(false) }}
+                    onKeyDown={e => { if (e.key==='Enter'){setTitle(tmpTitle);setEditTitle(false);setSaved(false)} if (e.key==='Escape') setEditTitle(false) }}
                     style={{ ...miniInput, width:180, fontSize:13, fontWeight:800 }}/>
-                  <button onClick={() => { setTitle(tmpTitle); setEditTitle(false) }}
+                  <button onClick={() => { setTitle(tmpTitle); setEditTitle(false); setSaved(false) }}
                     style={{ ...actionBtn, padding:'4px 8px' }}><Check size={12}/></button>
                 </div>
               ) : (
@@ -919,8 +963,8 @@ export default function TierListPage() {
               )}
 
               {/* Auto-save indicator */}
-              <div style={{ fontSize:9.5, color: saved ? '#34d399' : G.muted, fontWeight:700, minWidth:64 }}>
-                {saved ? '✓ Sauvegardé' : '● Non sauvé'}
+              <div style={{ fontSize:9.5, color: saved || draftSaved ? '#34d399' : G.muted, fontWeight:700, minWidth:82 }}>
+                {saved ? '✓ Sauvegardé' : draftSaved ? '✓ Auto-sauvé' : '● Sauvegarde...'}
               </div>
 
               {/* Action buttons */}
