@@ -213,6 +213,26 @@ const ANIMES = [
     badgeColor: '#8b7cff',
   },
   {
+    id: 'vivy',
+    title: "Vivy: Fluorite Eye's Song",
+    subtitle: 'IA · Chant · 100 ans',
+    emoji: '🎵',
+    color: '#00d4ff',
+    colorDark: '#003d52',
+    coverImage: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy/key-visual.jpg',
+    coverPosition: 'center top',
+    genres: ['Science-fiction', 'Action', 'Drame'],
+    description: "Vivy est une IA chanteuse chargée d'une mission de 100 ans pour empêcher une guerre apocalyptique entre humains et machines.",
+    stats: [
+      { label: 'Épisodes', value: '13' },
+      { label: 'Studio', value: 'WIT' },
+      { label: 'Statut', value: 'Disponible' },
+    ],
+    action: '▶ Regarder',
+    badge: 'DISPONIBLE',
+    badgeColor: '#00d4ff',
+  },
+  {
     id: 'bc',
     title: 'Black Clover',
     subtitle: 'La magie du trèfle noir',
@@ -305,6 +325,7 @@ const SEARCH_ALIASES = {
   sl: ['solo leveling', 'sung jinwoo', 'jinwoo', 'manhwa'],
   dbs: ['dbs', 'dragon ball', 'dragon ball super', 'goku', 'vegeta'],
   'violet-evergarden': ['violet', 'violet evergarden', 'vostfr', 'vf', 'auto memory doll', 'doll'],
+  vivy: ['vivy', 'fluorite', "fluorite eye's song", 'ia', 'matsumoto', 'wit studio'],
   bc: ['black clover', 'asta', 'yuno', 'trefle', 'magie'],
   mha: ['mha', 'my hero academia', 'boku no hero academia', 'bnha', 'deku', 'izuku'],
   fireforce: ['fire force', 'enen no shouboutai', 'shouboutai', 'shinra'],
@@ -640,12 +661,12 @@ function ComingSoonCard({ index }) {
   )
 }
 
-export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrstone, onOpenJjk, onOpenKingdom, onOpenAot, onOpenKny, onOpenNnt, onOpenSl, onOpenDbs, onOpenViolet, onOpenBc, onOpenMha, onOpenFireforce, onOpenBluelock }) {
+export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrstone, onOpenJjk, onOpenKingdom, onOpenAot, onOpenKny, onOpenNnt, onOpenSl, onOpenDbs, onOpenViolet, onOpenVivy, onOpenBc, onOpenMha, onOpenFireforce, onOpenBluelock }) {
   const [query, setQuery] = useState('')
   const [activeGenre, setActiveGenre] = useState('all')
 
   const sortedAnimes = useMemo(() => {
-    const priority = { onepiece: 0, 'violet-evergarden': 1 }
+    const priority = { onepiece: 0, 'violet-evergarden': 1, vivy: 2 }
     return [...ANIMES].sort((a, b) => (priority[a.id] ?? 10) - (priority[b.id] ?? 10))
   }, [])
 
@@ -682,6 +703,7 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
       jjk: onOpenJjk, kingdom: onOpenKingdom, aot: onOpenAot,
       kny: onOpenKny, nnt: onOpenNnt, sl: onOpenSl, dbs: onOpenDbs,
       'violet-evergarden': onOpenViolet,
+      vivy: onOpenVivy,
       bc: onOpenBc, mha: onOpenMha, fireforce: onOpenFireforce, bluelock: onOpenBluelock,
     }
     map[id]?.()

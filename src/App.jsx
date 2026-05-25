@@ -29,6 +29,7 @@ const NntPage         = lazy(() => import('./components/NntPage.jsx'))
 const SlPage          = lazy(() => import('./components/SlPage.jsx'))
 const DbsPage         = lazy(() => import('./components/DbsPage.jsx'))
 const VioletEvergardenPage = lazy(() => import('./components/VioletEvergardenPage.jsx'))
+const VivyPage             = lazy(() => import('./components/VivyPage.jsx'))
 const BcPage          = lazy(() => import('./components/BcPage.jsx'))
 const MhaPage         = lazy(() => import('./components/MhaPage.jsx'))
 const FireForcePage   = lazy(() => import('./components/FireForcePage.jsx'))
@@ -208,6 +209,7 @@ export default function App() {
   const [slOpen,           setSlOpen]            = useState(false)
   const [dbsOpen,          setDbsOpen]           = useState(false)
   const [violetOpen,       setVioletOpen]        = useState(false)
+  const [vivyOpen,         setVivyOpen]          = useState(false)
   const [bcOpen,           setBcOpen]            = useState(false)
   const [mhaOpen,          setMhaOpen]           = useState(false)
   const [fireforcOpen,     setFireforcOpen]      = useState(false)
@@ -229,6 +231,7 @@ export default function App() {
     const fnSl       = () => setSlOpen(true)
     const fnDbs      = () => setDbsOpen(true)
     const fnViolet   = () => setVioletOpen(true)
+    const fnVivy     = () => setVivyOpen(true)
     const fnBc         = () => setBcOpen(true)
     const fnMha        = () => setMhaOpen(true)
     const fnFireforce  = () => setFireforcOpen(true)
@@ -248,6 +251,7 @@ export default function App() {
     document.addEventListener('open-sl',           fnSl)
     document.addEventListener('open-dbs',          fnDbs)
     document.addEventListener('open-violet-evergarden', fnViolet)
+    document.addEventListener('open-vivy',              fnVivy)
     document.addEventListener('open-bc',           fnBc)
     document.addEventListener('open-mha',          fnMha)
     document.addEventListener('open-fireforce',    fnFireforce)
@@ -268,6 +272,7 @@ export default function App() {
       document.removeEventListener('open-sl',           fnSl)
       document.removeEventListener('open-dbs',          fnDbs)
       document.removeEventListener('open-violet-evergarden', fnViolet)
+      document.removeEventListener('open-vivy',              fnVivy)
       document.removeEventListener('open-bc',           fnBc)
       document.removeEventListener('open-mha',          fnMha)
       document.removeEventListener('open-fireforce',    fnFireforce)
@@ -277,7 +282,7 @@ export default function App() {
     }
   }, [])
 
-  const mediaOverlayOpen = scansOpen || animeHubOpen || tpnOpen || drstoneOpen || jjkOpen || kingdomOpen || aotOpen || knyOpen || nntOpen || slOpen || dbsOpen || violetOpen || bcOpen || mhaOpen || fireforcOpen || bluelockOpen
+  const mediaOverlayOpen = scansOpen || animeHubOpen || tpnOpen || drstoneOpen || jjkOpen || kingdomOpen || aotOpen || knyOpen || nntOpen || slOpen || dbsOpen || violetOpen || vivyOpen || bcOpen || mhaOpen || fireforcOpen || bluelockOpen
   const immersiveOverlayOpen = mediaOverlayOpen || encyclopedieOpen || treeOpen || uploadOpen
 
   const mainContent = (
@@ -389,6 +394,7 @@ export default function App() {
             onOpenSl={() => { setAnimeHubOpen(false); setSlOpen(true) }}
             onOpenDbs={() => { setAnimeHubOpen(false); setDbsOpen(true) }}
             onOpenViolet={() => { setAnimeHubOpen(false); setVioletOpen(true) }}
+            onOpenVivy={() => { setAnimeHubOpen(false); setVivyOpen(true) }}
             onOpenBc={() => { setAnimeHubOpen(false); setBcOpen(true) }}
             onOpenMha={() => { setAnimeHubOpen(false); setMhaOpen(true) }}
             onOpenFireforce={() => { setAnimeHubOpen(false); setFireforcOpen(true) }}
@@ -409,6 +415,7 @@ export default function App() {
       {slOpen      && <SlPage      onClose={() => setSlOpen(false)} />}
       {dbsOpen     && <DbsPage     onClose={() => setDbsOpen(false)} />}
       {violetOpen  && <VioletEvergardenPage onClose={() => setVioletOpen(false)} />}
+      {vivyOpen    && <VivyPage             onClose={() => setVivyOpen(false)} />}
       {bcOpen        && <BcPage        onClose={() => setBcOpen(false)} />}
       {mhaOpen       && <MhaPage       onClose={() => setMhaOpen(false)} />}
       {fireforcOpen  && <FireForcePage onClose={() => setFireforcOpen(false)} />}

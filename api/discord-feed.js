@@ -26,9 +26,9 @@ function normalizeMessage(message) {
 
 export default async function handler(req, res) {
   const token = process.env.DISCORD_BOT_TOKEN || process.env.DISCORD_TOKEN || ''
-  const channelId = process.env.DISCORD_ANNOUNCEMENTS_CHANNEL_ID || process.env.DISCORD_CHANNEL_ID || ''
+  const channelId = process.env.DISCORD_ANNOUNCEMENTS_CHANNEL_ID || process.env.DISCORD_CHANNEL_ID || '924378497336631348'
 
-  if (!token || !channelId) {
+  if (!token) {
     json(res, 200, [], 's-maxage=300, stale-while-revalidate=600')
     return
   }
