@@ -11,8 +11,17 @@ import {
   Star, Search, Download, RotateCcw, X, Edit3, Check,
   Trash2, Crown, ArrowLeft, Plus, Shuffle, Save, Copy,
   Eye, EyeOff, ChevronDown, Palette, Grid, List,
-  Upload, Link as LinkIcon, BookOpen, Layers,
+  Upload, Link as LinkIcon, BookOpen, Layers, Heart, Users,
 } from 'lucide-react'
+import { useAuth } from '../contexts/AuthContext.jsx'
+import {
+  autosaveTierList,
+  fetchCloudDraft,
+  fetchCommunityTierLists,
+  fetchMyCloudTierLists,
+  publishTierList,
+  toggleTierListLike,
+} from '../lib/tierlists.js'
 
 // ── Palette ───────────────────────────────────────────────────────────────────
 const G = {
@@ -153,6 +162,7 @@ const STORAGE_KEY = 'brams_tier_studio_v1'
 const DRAFT_KEY = 'brams_tier_studio_draft_v1'
 const DRAFT_HISTORY_KEY = 'brams_tier_studio_draft_history_v1'
 const DRAFT_SAVE_DELAY = 500
+const CLOUD_SAVE_DELAY = 1800
 const DRAFT_BACKUP_INTERVAL = 30000
 const DRAFT_HISTORY_LIMIT = 3
 const CUSTOM_IMAGE_MAX_SIDE = 520
@@ -255,6 +265,22 @@ function saveDraft(draft) {
 }
 function clearDraft() {
   try { localStorage.removeItem(DRAFT_KEY) } catch {}
+}
+
+function toSharePayload({ title, selectedType, tiers, board, customItems, favorites }) {
+  return {
+    title,
+    emoji: selectedType?.icon || '📋',
+    category: selectedType?.label || 'Custom',
+    tierCount: tiers.length,
+    tierLabels: tiers.map(t => t.label),
+    tierColors: tiers.map(t => t.color),
+    tiers,
+    board,
+    customItems,
+    favorites,
+    typeId: selectedType?.id,
+  }
 }
 
 function compressImageFile(file) {
@@ -724,6 +750,60 @@ function SavedListCard({ list, onLoad, onDelete, onDuplicate }) {
   )
 }
 
+function CommunityListCard({ list, onLoad, onLike }) {
+  return (
+    <motion.div
+      initial={{ opacity:0, y:12 }} animate={{ opacity:1, y:0 }}
+      style={{
+        background:G.card, border:`1px solid ${G.border}`,
+        borderRadius:16, overflow:'hidden',
+        display:'flex', flexDirection:'column',
+        transition:'border-color .2s',
+      }}
+      className="saved-list-card"
+    >
+      <div style={{ padding:'14px 16px 10px', flex:1 }}>
+        <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:10, marginBottom:8 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+            <span style={{ fontSize:20 }}>{list.emoji || '📋'}</span>
+            <div>
+              <div style={{ fontSize:13.5, fontWeight:800, color:G.text }}>{list.title}</div>
+              <div style={{ fontSize:10.5, color:G.muted }}>
+                par {list.authorName || 'Pirate Brams'} · {list.category || 'Custom'}
+              </div>
+            </div>
+          </div>
+          <button onClick={() => onLike(list)} style={{
+            display:'flex', alignItems:'center', gap:4, padding:'4px 8px',
+            borderRadius:999, background:list.liked ? 'rgba(160,68,92,.18)' : 'rgba(255,255,255,.05)',
+            border:`1px solid ${list.liked ? '#a0445c55' : G.border}`,
+            color:list.liked ? '#ff6f91' : G.muted,
+            cursor:'pointer', fontSize:10.5, fontWeight:800,
+          }}>
+            <Heart size={11} fill={list.liked ? 'currentColor' : 'none'}/> {list.likes || 0}
+          </button>
+        </div>
+        <div style={{ display:'flex', gap:3, flexWrap:'wrap' }}>
+          {(list.tierLabels||[]).slice(0,6).map((label, i) => (
+            <span key={i} style={{
+              fontSize:9, fontWeight:800, padding:'1px 6px', borderRadius:100,
+              background:`${list.tierColors?.[i]||G.gold}14`,
+              border:`1px solid ${list.tierColors?.[i]||G.gold}33`,
+              color: list.tierColors?.[i]||G.gold,
+            }}>{label}</span>
+          ))}
+        </div>
+        <div style={{ fontSize:10, color:G.muted, marginTop:10 }}>
+          Publiée le {new Date(list.savedAt || Date.now()).toLocaleDateString('fr-FR')}
+        </div>
+      </div>
+      <div style={{ display:'flex', borderTop:`1px solid ${G.border}` }}>
+        <button onClick={() => onLoad(list)} style={{ ...listAction, borderRight:'none' }}>Ouvrir dans le studio</button>
+      </div>
+    </motion.div>
+  )
+}
+
 const listAction = {
   flex:1, padding:'8px 4px', background:'none', border:'none', cursor:'pointer',
   color:'rgba(255,255,255,.5)', fontSize:11, fontWeight:700,
@@ -743,6 +823,7 @@ const CSS = `
 
 // ── Main Export ───────────────────────────────────────────────────────────────
 export default function TierListPage() {
+  const { userId, discordId, displayName } = useAuth()
   const initialDraftRef = useRef(loadDraft())
   const initialDraft = initialDraftRef.current
 
@@ -769,14 +850,59 @@ export default function TierListPage() {
   const titleRef = useRef(null)
   const latestDraftRef = useRef(null)
   const draftTimerRef = useRef(null)
+  const cloudTimerRef = useRef(null)
+  const cloudRestoreRef = useRef(false)
 
   // ── My Lists state
   const [savedLists, setSavedLists] = useState(loadSavedLists)
+  const [communityLists, setCommunityLists] = useState([])
+  const [cloudLists, setCloudLists] = useState([])
+  const [communityLoading, setCommunityLoading] = useState(false)
+  const [cloudSaved, setCloudSaved] = useState(false)
+  const [publishing, setPublishing] = useState(false)
 
   useEffect(() => {
     if (!initialDraft) return
     setToast(`Brouillon restauré : "${initialDraft.title || 'Ma Tier List'}"`)
   }, [])
+
+  const refreshCommunity = useCallback(async () => {
+    setCommunityLoading(true)
+    try {
+      const [community, mine] = await Promise.all([
+        fetchCommunityTierLists(),
+        fetchMyCloudTierLists().catch(() => []),
+      ])
+      setCommunityLists(community)
+      setCloudLists(mine)
+    } catch (err) {
+      setToast(err?.message || 'Communauté indisponible')
+    } finally {
+      setCommunityLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    refreshCommunity()
+  }, [refreshCommunity, userId, discordId])
+
+  useEffect(() => {
+    if (initialDraft || cloudRestoreRef.current) return
+    cloudRestoreRef.current = true
+    fetchCloudDraft().then(draft => {
+      if (!draft) return
+      const type = TIER_TYPES.find(t => t.id === draft.typeId)
+      if (type) setSelectedType(type)
+      setTiers(draft.tiers || DEFAULT_TIERS)
+      setBoard(draft.board || null)
+      setCustomItems(draft.customItems || [])
+      setFavorites(draft.favorites || [])
+      setTitle(draft.title || 'Ma Tier List')
+      setDraftSaved(true)
+      setCloudSaved(true)
+      setToast(`Brouillon cloud restauré : "${draft.title || 'Ma Tier List'}"`)
+    }).catch(() => {})
+  }, [initialDraft, userId, discordId])
 
   const buildDraft = useCallback((overrides = {}) => {
     if (!selectedType || !board) return null
@@ -788,6 +914,14 @@ export default function TierListPage() {
       customItems,
       favorites,
       updatedAt: Date.now(),
+      ...overrides,
+    }
+  }, [selectedType, tiers, board, customItems, favorites, title])
+
+  const buildShareList = useCallback((overrides = {}) => {
+    if (!selectedType || !board) return null
+    return {
+      ...toSharePayload({ title, selectedType, tiers, board, customItems, favorites }),
       ...overrides,
     }
   }, [selectedType, tiers, board, customItems, favorites, title])
@@ -828,6 +962,29 @@ export default function TierListPage() {
   useEffect(() => {
     queueDraftSave()
   }, [queueDraftSave])
+
+  useEffect(() => {
+    const list = buildShareList()
+    if (!list) {
+      setCloudSaved(false)
+      return
+    }
+    setCloudSaved(false)
+    if (cloudTimerRef.current) clearTimeout(cloudTimerRef.current)
+    cloudTimerRef.current = setTimeout(async () => {
+      try {
+        await autosaveTierList(list)
+        setCloudSaved(true)
+      } catch {
+        setCloudSaved(false)
+      } finally {
+        cloudTimerRef.current = null
+      }
+    }, CLOUD_SAVE_DELAY)
+    return () => {
+      if (cloudTimerRef.current) clearTimeout(cloudTimerRef.current)
+    }
+  }, [buildShareList, userId, discordId])
 
   useEffect(() => {
     const flushDraft = () => {
@@ -997,6 +1154,28 @@ export default function TierListPage() {
     setToast('✅ Tier list sauvegardée !')
   }
 
+  const shareList = async () => {
+    const list = buildShareList()
+    if (!list) {
+      setToast('Crée une tier list avant de partager')
+      return
+    }
+    setPublishing(true)
+    try {
+      await autosaveTierList(list)
+      const result = await publishTierList(list)
+      setCommunityLists(prev => [result.list, ...prev.filter(item => item.id !== result.list.id)])
+      setCloudSaved(true)
+      setTab('community')
+      setToast(`Publié dans la communauté par ${displayName || 'toi'}`)
+      fireConfetti()
+    } catch (err) {
+      setToast(err?.message || 'Partage impossible')
+    } finally {
+      setPublishing(false)
+    }
+  }
+
   const loadList = (list) => {
     const type = TIER_TYPES.find(t => t.id === list.typeId)
     if (type) setSelectedType(type)
@@ -1017,6 +1196,19 @@ export default function TierListPage() {
       updatedAt:Date.now(),
     }
     setToast(`📂 "${list.title}" chargée`)
+  }
+
+  const likeCommunityList = async (list) => {
+    try {
+      const result = await toggleTierListLike(list.id)
+      setCommunityLists(prev => prev.map(item => item.id === list.id ? {
+        ...item,
+        liked: result.liked,
+        likes: result.likes,
+      } : item))
+    } catch (err) {
+      setToast(err?.message || 'Like impossible')
+    }
   }
 
   const deleteList = (id) => {
@@ -1085,9 +1277,11 @@ export default function TierListPage() {
     if (!board) return 0
     return tiers.reduce((s, t) => s + (board[t.id]?.length || 0), 0)
   }, [board, tiers])
+  const myPublishedLists = useMemo(() => cloudLists.filter(list => list.published), [cloudLists])
 
   const TABS = [
     { id:'studio',   label:'Créer',       icon:<Layers size={13}/> },
+    { id:'community',label:'CommunautÃ©',  icon:<Users size={13}/> },
     { id:'mylists',  label:'Mes Listes',  icon:<BookOpen size={13}/> },
     { id:'templates',label:'Templates',   icon:<Grid size={13}/> },
   ]
@@ -1165,8 +1359,8 @@ export default function TierListPage() {
               )}
 
               {/* Auto-save indicator */}
-              <div style={{ fontSize:9.5, color: saved || draftSaved ? '#34d399' : G.muted, fontWeight:700, minWidth:82 }}>
-                {saved ? '✓ Sauvegardé' : draftSaved ? '✓ Auto-sauvé' : '● Sauvegarde...'}
+              <div style={{ fontSize:9.5, color: saved || draftSaved || cloudSaved ? '#34d399' : G.muted, fontWeight:700, minWidth:108 }}>
+                {cloudSaved ? '✓ Auto-sauvé cloud' : saved ? '✓ Sauvegardé' : draftSaved ? '✓ Auto-sauvé' : '● Sauvegarde...'}
               </div>
 
               {/* Action buttons */}
@@ -1175,6 +1369,7 @@ export default function TierListPage() {
                 { icon:<RotateCcw size={11}/>, label:'Reset',  fn:reset,     c:G.rose },
                 { icon:<Download size={11}/>, label:'PNG',     fn:exportPng, c:G.gold },
                 { icon:<Save size={11}/>,     label:'Sauv.',   fn:saveList,  c:'#34d399' },
+                { icon:<Users size={11}/>,    label:publishing ? '...' : 'Partager', fn:shareList, c:'#4a86b8' },
               ].map(b => (
                 <button key={b.label} onClick={b.fn} style={{
                   display:'flex', alignItems:'center', gap:4, padding:'5px 10px', borderRadius:8,
@@ -1366,13 +1561,62 @@ export default function TierListPage() {
         </AnimatePresence>
       )}
 
+      {/* ── Tab: COMMUNITY ── */}
+      {tab === 'community' && (
+        <div style={{ maxWidth:1200, margin:'0 auto', padding:'28px 20px' }}>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:24, gap:14 }}>
+            <div>
+              <h2 style={{ margin:0, fontSize:22, fontWeight:900, letterSpacing:'-.02em' }}>Tier Lists Communauté</h2>
+              <div style={{ fontSize:12, color:G.muted, marginTop:4 }}>
+                {communityLists.length} publication{communityLists.length !== 1 && 's'} visible{communityLists.length !== 1 && 's'} · likes en direct
+              </div>
+            </div>
+            <div style={{ display:'flex', gap:8 }}>
+              <button onClick={refreshCommunity} style={{ ...actionBtn }}>
+                <RotateCcw size={12}/> Actualiser
+              </button>
+              <button onClick={shareList} disabled={publishing || !selectedType} style={{ ...actionBtn, opacity:publishing || !selectedType ? .55 : 1 }}>
+                <Users size={12}/> {publishing ? 'Publication...' : 'Partager ma liste'}
+              </button>
+            </div>
+          </div>
+
+          {communityLoading ? (
+            <div style={{ padding:'48px 20px', textAlign:'center', color:G.muted, fontSize:13 }}>Chargement de la communauté...</div>
+          ) : communityLists.length === 0 ? (
+            <div style={{
+              textAlign:'center', padding:'64px 20px',
+              background:G.card, border:`1px solid ${G.border}`, borderRadius:20,
+            }}>
+              <div style={{ fontSize:40, marginBottom:16 }}>⚔️</div>
+              <h3 style={{ margin:'0 0 8px', color:G.text }}>Aucune tier list publiée</h3>
+              <p style={{ margin:'0 0 20px', color:G.muted, fontSize:13 }}>Crée une liste puis clique sur Partager pour lancer la communauté.</p>
+              <button onClick={() => setTab('studio')} style={{ ...actionBtn, margin:'0 auto', padding:'8px 20px' }}>
+                Créer une tier list
+              </button>
+            </div>
+          ) : (
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))', gap:14 }}>
+              {communityLists.map(list => (
+                <CommunityListCard
+                  key={list.id}
+                  list={list}
+                  onLoad={loadList}
+                  onLike={likeCommunityList}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ── Tab: MY LISTS ── */}
       {tab === 'mylists' && (
         <div style={{ maxWidth:1200, margin:'0 auto', padding:'28px 20px' }}>
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:24 }}>
             <div>
               <h2 style={{ margin:0, fontSize:22, fontWeight:900, letterSpacing:'-.02em' }}>Mes Tier Lists</h2>
-              <div style={{ fontSize:12, color:G.muted, marginTop:4 }}>{savedLists.length} liste{savedLists.length !== 1 && 's'} sauvegardée{savedLists.length !== 1 && 's'}</div>
+              <div style={{ fontSize:12, color:G.muted, marginTop:4 }}>{savedLists.length} locale{savedLists.length !== 1 && 's'} · {myPublishedLists.length} partagée{myPublishedLists.length !== 1 && 's'}</div>
             </div>
             <button onClick={() => { setSelectedType(null); setTab('studio') }} style={{ ...actionBtn }}>
               <Plus size={12}/> Nouvelle liste
