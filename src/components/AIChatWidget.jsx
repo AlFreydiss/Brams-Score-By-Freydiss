@@ -1,7 +1,21 @@
 import { useState, useRef, useEffect } from 'react'
 
+function normalizeIntent(text) {
+  return text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+}
+
+function isAnimeScanRequest(text) {
+  const normalized = normalizeIntent(text)
+  return /\b(anime|animes|anim|episode|episodes|scan|scans|manga|lecture|lire)\b/.test(normalized)
+    && !/\b(fruit|rang|grade|shanks)\b/.test(normalized)
+}
+
 const SUGGESTIONS = [
   'Quel est le fruit du démon le plus puissant ?',
+  'Je cherche des animes et scans',
   'Comment monter de rang sur Brams ?',
   'Qui peut battre Shanks ?',
 ]
@@ -59,6 +73,19 @@ export default function AIChatWidget({ hidden = false }) {
     setInput('')
     const newHistory = [...history, { role:'user', text:msg }]
     setHistory(newHistory)
+
+    if (isAnimeScanRequest(msg)) {
+      setHistory([...newHistory, {
+        role:'model',
+        text:"J'ouvre la page Animes & Scans du site. Tu vas y trouver les episodes et les scans disponibles.",
+      }])
+      setOpen(false)
+      setTimeout(() => {
+        document.dispatchEvent(new CustomEvent('open-anime-hub'))
+      }, 120)
+      return
+    }
+
     setLoading(true)
     setNotice('')
     try {
