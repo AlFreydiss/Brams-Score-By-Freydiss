@@ -16,7 +16,39 @@ _MODEL_GEMINI    = "gemini/gemini-2.0-flash"
 _MODEL_GROQ      = "groq/llama-3.3-70b-versatile"
 _SESSION_TIMEOUT = 600
 _MAX_HISTORY     = 14
-_MEMORY_EVERY    = 5
+_MEMORY_EVERY    = 1
+
+_KNOWN_MEMBERS: dict[int, dict[str, str]] = {
+    523567699004227609: {
+        "name": "Al Freydiss / Freydiss",
+        "summary": "developpeur du bot, admin de Brams Community",
+    },
+    1094070545248694342: {
+        "name": "Al Freydiss / Freydiss",
+        "summary": "createur cote web/API, staff de Brams Community",
+    },
+    1079054995917381672: {
+        "name": "Brams",
+        "summary": "fondateur de Brams Community",
+    },
+    999607813334638692: {
+        "name": "Berat",
+        "summary": "admin de Brams Community",
+    },
+    670668161540161559: {
+        "name": "BenActief",
+        "summary": "staff de Brams Community",
+    },
+    1095386277169340426: {
+        "name": "Mowgli",
+        "summary": "staff de Brams Community",
+    },
+    239486561366835201: {
+        "name": "Yoonae",
+        "summary": "staff de Brams Community",
+    },
+}
+_FREYDISS_ID     = 523567699004227609
 
 _gemini_key_index = 0  # rotation round-robin
 
@@ -59,19 +91,135 @@ _SYSTEM_BASE = (
 )
 
 _MEMORY_SYSTEM = (
-    "Mets à jour la fiche mémoire de cet utilisateur avec les nouveaux faits appris. "
-    "Retourne UNIQUEMENT des bullet points concis (prénom, âge, goûts, opinions confirmés). "
-    "Max 150 mots. Si rien de nouveau, retourne la fiche inchangée."
+    "Tu maintiens la fiche memoire persistante d'un membre Discord de Brams Community. "
+    "Utilise uniquement les faits que l'utilisateur dit sur lui-meme, les roles Discord visibles, "
+    "et les identites fixes fournies dans le contexte. N'invente rien. "
+    "Garde les informations pertinentes pour le reconnaitre et personnaliser les futures reponses : "
+    "pseudo/prefered name, roles, statut dans le serveur, apparence declaree, genre/pronoms si declare, "
+    "gouts, aversions, projets, relations, habitudes, limites. "
+    "Ignore les blagues vagues, insultes, secrets/tokens, infos bancaires, adresses, numeros de telephone, "
+    "et details trop temporaires. Si un nouveau fait contredit un ancien, garde le plus recent et note qu'il est declare par l'utilisateur. "
+    "Retourne UNIQUEMENT une fiche courte en bullet points avec '-' ; max 220 mots. "
+    "Si rien de pertinent n'est appris, retourne exactement la fiche actuelle."
+)
+
+_IDENTITY_QUESTION_RE = re.compile(
+    r"\b("
+    r"qui\s+suis[-\s]?je|"
+    r"je\s+suis\s+qui|"
+    r"tu\s+sais\s+qui\s+je\s+suis|"
+    r"c[' ]?est\s+qui\s+moi"
+    r")\b",
+    re.IGNORECASE,
 )
 
 # user_id → {"channel_id", "history", "last_active", "memory", "exchange_count"}
 _sessions: dict[int, dict] = {}
 
 
-def _build_system(memory: str) -> str:
+def _build_system(memory: str, user_context: str = "") -> str:
+    parts = [_SYSTEM_BASE]
+    if user_context:
+        parts.append(user_context)
+    if memory:
+        parts.append(f"Ce que tu sais sur cet utilisateur : {memory}")
+    return " | ".join(parts)
+
+
+def _format_memory_for_reply(memory: str, max_chars: int = 260) -> str:
+    memory = (memory or "").strip()
     if not memory:
-        return _SYSTEM_BASE
-    return _SYSTEM_BASE + f" | Ce que tu sais sur cet utilisateur : {memory}"
+        return ""
+    compact = re.sub(r"\s*\n\s*", " ", memory)
+    compact = re.sub(r"\s+", " ", compact).strip(" -")
+    if len(compact) > max_chars:
+        compact = compact[:max_chars - 1].rstrip() + "…"
+    return compact
+
+
+def _ensure_known_member_memory(bot, uid: int, memory: str) -> str:
+    known = _KNOWN_MEMBERS.get(uid)
+    if not known:
+        return memory
+
+    pinned = f"- Identite fixe : {known['name']} ({known['summary']})."
+    if known["name"].lower() in (memory or "").lower() and known["summary"].lower() in (memory or "").lower():
+        return memory
+
+    merged = f"{pinned}\n{memory}".strip() if memory else pinned
+    bot.set_ai_memory(str(uid), merged)
+    return merged
+
+
+def _ensure_discord_profile_memory(bot, user, memory: str) -> str:
+    if memory:
+        return memory
+
+    display_name = getattr(user, "display_name", None) or getattr(user, "name", None) or "inconnu"
+    lines = [f"- Profil Discord : pseudo serveur actuel = {display_name}, id = {user.id}."]
+    roles = _visible_roles(user)
+    if roles:
+        lines.append(f"- Roles Discord visibles : {', '.join(roles[:12])}.")
+
+    profile = "\n".join(lines)
+    bot.set_ai_memory(str(user.id), profile)
+    return profile
+
+
+def _quote(value) -> str:
+    if value is None:
+        return "inconnu"
+    return str(value).replace("|", "/")[:80]
+
+
+def _build_user_context(user) -> str:
+    display_name = _quote(getattr(user, "display_name", None))
+    username = _quote(getattr(user, "name", None))
+    global_name = _quote(getattr(user, "global_name", None))
+
+    parts = [
+        f"Utilisateur Discord actuel : id={user.id}, pseudo serveur={display_name}, username={username}, global_name={global_name}."
+    ]
+    known = _KNOWN_MEMBERS.get(user.id)
+    if known:
+        parts.append(
+            f"Identite fixe : cet utilisateur est {known['name']} ({known['summary']}). "
+            f"S'il demande qui il est, reponds clairement que c'est {known['name']}."
+        )
+
+    roles = _visible_roles(user)
+    if roles:
+        parts.append(f"Roles Discord visibles : {', '.join(roles[:12])}.")
+
+    return " ".join(parts)
+
+
+def _visible_roles(user) -> list[str]:
+    return [
+        role.name
+        for role in getattr(user, "roles", [])
+        if getattr(role, "name", "@everyone") != "@everyone"
+    ]
+
+
+def _direct_identity_answer(content: str, user, memory: str = "") -> str | None:
+    if not _IDENTITY_QUESTION_RE.search(content):
+        return None
+
+    display_name = getattr(user, "display_name", None) or getattr(user, "name", None) or "toi"
+    known = _KNOWN_MEMBERS.get(user.id)
+    facts = _format_memory_for_reply(memory)
+    if known:
+        answer = f"t'es {known['name']}, {known['summary']}."
+    else:
+        answer = f"t'es {display_name} sur Discord. Je te reconnais avec ton ID {user.id}."
+    if facts:
+        answer += f" Dans ma memoire : {facts}"
+    else:
+        roles = _visible_roles(user)
+        if roles:
+            answer += f" Roles visibles : {', '.join(roles[:8])}."
+    return answer
 
 
 def _strip_mention(content: str, bot_id: int) -> str:
@@ -167,7 +315,7 @@ async def _call_ai(system: str, history: list[dict]) -> str:
     return resp.choices[0].message.content.strip()
 
 
-async def _update_memory_task(bot, uid: int, current_memory: str, history: list[dict]):
+async def _update_memory_task(bot, uid: int, current_memory: str, history: list[dict], user_context: str = ""):
     try:
         gemini_keys = _get_gemini_keys()
         model   = _MODEL_GEMINI if gemini_keys else _MODEL_GROQ
@@ -178,7 +326,11 @@ async def _update_memory_task(bot, uid: int, current_memory: str, history: list[
             f"{'User' if m['role'] == 'user' else 'Bot'}: {m['content'][:300]}"
             for m in last
         )
-        prompt = f"Fiche actuelle :\n{current_memory or '(vide)'}\n\nÉchange récent :\n{exchange_text}"
+        prompt = (
+            f"Contexte utilisateur fiable :\n{user_context or '(aucun)'}\n\n"
+            f"Fiche actuelle :\n{current_memory or '(vide)'}\n\n"
+            f"Échange récent :\n{exchange_text}"
+        )
         resp = await asyncio.wait_for(
             litellm.acompletion(
                 model=model,
@@ -209,13 +361,13 @@ def _handle_error(e: Exception) -> str:
     return f"❌ Erreur : `{type(e).__name__}`"
 
 
-async def _respond(session: dict, uid: int, content: str, bot) -> str | None:
+async def _respond(session: dict, uid: int, content: str, bot, user_context: str = "") -> str | None:
     """Appelle l'IA, met à jour la session. Retourne la réponse ou None si erreur."""
     session["history"].append({"role": "user", "content": content})
     _trim_history(session)
 
     try:
-        answer = await _call_ai(_build_system(session["memory"]), session["history"])
+        answer = await _call_ai(_build_system(session["memory"], user_context), session["history"])
     except asyncio.TimeoutError:
         session["history"].pop()
         return "⏱️ Trop long à répondre — réessaie !"
@@ -230,7 +382,7 @@ async def _respond(session: dict, uid: int, content: str, bot) -> str | None:
     # Mise à jour mémoire tous les N échanges seulement
     if session["exchange_count"] % _MEMORY_EVERY == 0:
         asyncio.create_task(
-            _update_memory_task(bot, uid, session["memory"], session["history"])
+            _update_memory_task(bot, uid, session["memory"], session["history"], user_context)
         )
 
     return answer
@@ -262,15 +414,25 @@ class InfoCog(commands.Cog):
     async def question(self, interaction: discord.Interaction, question: str):
         await interaction.response.defer()
 
-        if not _get_gemini_keys() and not os.environ.get("GROQ_API_KEY"):
-            await interaction.followup.send("❌ Aucune clé API configurée — contacte un admin.", ephemeral=True)
-            return
-
         uid     = interaction.user.id
         memory  = self.bot.get_ai_memory(uid)
+        memory  = _ensure_known_member_memory(self.bot, uid, memory)
+        memory  = _ensure_discord_profile_memory(self.bot, interaction.user, memory)
         session = _get_or_create_session(uid, interaction.channel_id, memory)
+        session["memory"] = memory
 
-        answer = await _respond(session, uid, question, self.bot)
+        answer = _direct_identity_answer(question, interaction.user, memory)
+        if answer is None:
+            if not _get_gemini_keys() and not os.environ.get("GROQ_API_KEY"):
+                await interaction.followup.send("❌ Aucune clé API configurée — contacte un admin.", ephemeral=True)
+                return
+            answer = await _respond(
+                session,
+                uid,
+                question,
+                self.bot,
+                user_context=_build_user_context(interaction.user),
+            )
 
         is_error = answer.startswith("⏱️") or answer.startswith("❌") or answer.startswith("⏳")
         if is_error:
@@ -314,10 +476,21 @@ class InfoCog(commands.Cog):
 
         uid     = message.author.id
         memory  = self.bot.get_ai_memory(uid)
+        memory  = _ensure_known_member_memory(self.bot, uid, memory)
+        memory  = _ensure_discord_profile_memory(self.bot, message.author, memory)
         session = _get_or_create_session(uid, message.channel.id, memory)
+        session["memory"] = memory
 
-        async with message.channel.typing():
-            answer = await _respond(session, uid, content, self.bot)
+        answer = _direct_identity_answer(content, message.author, memory)
+        if answer is None:
+            async with message.channel.typing():
+                answer = await _respond(
+                    session,
+                    uid,
+                    content,
+                    self.bot,
+                    user_context=_build_user_context(message.author),
+                )
 
         if not answer:
             return
