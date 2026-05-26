@@ -152,45 +152,137 @@ const TEMPLATES = [
 const STORAGE_KEY = 'brams_tier_studio_v1'
 const DRAFT_KEY = 'brams_tier_studio_draft_v1'
 const DRAFT_HISTORY_KEY = 'brams_tier_studio_draft_history_v1'
+const DRAFT_SAVE_DELAY = 500
+const DRAFT_BACKUP_INTERVAL = 30000
+const DRAFT_HISTORY_LIMIT = 3
+const CUSTOM_IMAGE_MAX_SIDE = 520
+const CUSTOM_IMAGE_QUALITY = 0.72
+let lastDraftBackupAt = 0
 
 function loadSavedLists() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]') } catch { return [] }
 }
 function saveLists(lists) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(lists)) } catch {}
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(lists))
+    return true
+  } catch {
+    try {
+      const trimmed = Array.isArray(lists) ? lists.slice(0, Math.max(1, lists.length - 1)) : []
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed))
+      return true
+    } catch { return false }
+  }
+}
+function normalizeDraft(draft) {
+  if (!draft?.typeId || !draft?.board || !Array.isArray(draft?.tiers)) return null
+  const type = TIER_TYPES.find(t => t.id === draft.typeId) || TIER_TYPES[0]
+  const tierIds = new Set(draft.tiers.map(t => t.id))
+  const knownIds = new Set([
+    ...(type?.items || []).map(item => item.id),
+    ...(Array.isArray(draft.customItems) ? draft.customItems : []).map(item => item.id),
+  ])
+  const used = new Set()
+  const board = {}
+
+  for (const tier of draft.tiers) {
+    const ids = Array.isArray(draft.board[tier.id]) ? draft.board[tier.id] : []
+    board[tier.id] = ids.filter(id => knownIds.has(id) && !used.has(id) && used.add(id))
+  }
+
+  const pool = Array.isArray(draft.board.pool) ? draft.board.pool : []
+  board.pool = pool.filter(id => knownIds.has(id) && !used.has(id) && used.add(id))
+
+  for (const item of type?.items || []) {
+    if (!used.has(item.id)) board.pool.push(item.id)
+  }
+  for (const item of Array.isArray(draft.customItems) ? draft.customItems : []) {
+    if (!used.has(item.id)) board.pool.push(item.id)
+  }
+
+  return {
+    ...draft,
+    board,
+    tiers: draft.tiers.filter(t => tierIds.has(t.id)),
+    customItems: Array.isArray(draft.customItems) ? draft.customItems : [],
+    favorites: Array.isArray(draft.favorites) ? draft.favorites.filter(id => knownIds.has(id)) : [],
+  }
 }
 function loadDraft() {
   try {
-    const draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null')
-    if (draft?.typeId && draft?.board && Array.isArray(draft?.tiers)) return draft
+    const draft = normalizeDraft(JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null'))
+    if (draft) return draft
     const history = JSON.parse(localStorage.getItem(DRAFT_HISTORY_KEY) || '[]')
-    const backup = Array.isArray(history)
-      ? history.find(d => d?.typeId && d?.board && Array.isArray(d?.tiers))
-      : null
-    return backup || null
+    if (!Array.isArray(history)) return null
+    for (const entry of history) {
+      const backup = normalizeDraft(entry)
+      if (backup) return backup
+    }
+    return null
   } catch { return null }
 }
 function saveDraft(draft) {
   try {
-    localStorage.setItem(DRAFT_KEY, JSON.stringify(draft))
+    const safeDraft = normalizeDraft({ ...draft, updatedAt:Date.now() })
+    if (!safeDraft) return false
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(safeDraft))
+    const now = Date.now()
+    if (now - lastDraftBackupAt < DRAFT_BACKUP_INTERVAL) return true
     const history = JSON.parse(localStorage.getItem(DRAFT_HISTORY_KEY) || '[]')
     const signature = JSON.stringify({
-      title:draft.title,
-      typeId:draft.typeId,
-      tiers:draft.tiers,
-      board:draft.board,
-      customItems:draft.customItems,
-      favorites:draft.favorites,
+      title:safeDraft.title,
+      typeId:safeDraft.typeId,
+      tiers:safeDraft.tiers,
+      board:safeDraft.board,
+      customItems:safeDraft.customItems?.map(item => [item.id, item.name, item.sub, item.img?.length]),
+      favorites:safeDraft.favorites,
     })
     if (!Array.isArray(history) || history[0]?._signature !== signature) {
-      const next = [{ ...draft, _signature:signature, backupAt:Date.now() }, ...(Array.isArray(history) ? history : [])].slice(0, 12)
+      const next = [{ ...safeDraft, _signature:signature, backupAt:now }, ...(Array.isArray(history) ? history : [])].slice(0, DRAFT_HISTORY_LIMIT)
       localStorage.setItem(DRAFT_HISTORY_KEY, JSON.stringify(next))
+      lastDraftBackupAt = now
     }
     return true
-  } catch { return false }
+  } catch {
+    try {
+      localStorage.removeItem(DRAFT_HISTORY_KEY)
+      const safeDraft = normalizeDraft({ ...draft, updatedAt:Date.now() })
+      if (!safeDraft) return false
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(safeDraft))
+      return true
+    } catch { return false }
+  }
 }
 function clearDraft() {
   try { localStorage.removeItem(DRAFT_KEY) } catch {}
+}
+
+function compressImageFile(file) {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file)
+    const image = new Image()
+    image.onload = () => {
+      const scale = Math.min(1, CUSTOM_IMAGE_MAX_SIDE / Math.max(image.width, image.height))
+      const canvas = document.createElement('canvas')
+      canvas.width = Math.max(1, Math.round(image.width * scale))
+      canvas.height = Math.max(1, Math.round(image.height * scale))
+      const ctx = canvas.getContext('2d')
+      ctx.drawImage(image, 0, 0, canvas.width, canvas.height)
+      canvas.toBlob((blob) => {
+        URL.revokeObjectURL(url)
+        if (!blob) return resolve(null)
+        const reader = new FileReader()
+        reader.onload = ev => resolve(ev.target.result)
+        reader.onerror = () => resolve(null)
+        reader.readAsDataURL(blob)
+      }, 'image/webp', CUSTOM_IMAGE_QUALITY)
+    }
+    image.onerror = () => {
+      URL.revokeObjectURL(url)
+      resolve(null)
+    }
+    image.src = url
+  })
 }
 
 function initBoard(tiers, items) {
@@ -233,6 +325,9 @@ const ItemCard = memo(function ItemCard({ itemId, allById, compact=false, isDrag
         userSelect:'none',
         transform: isDragOverlay ? 'rotate(2deg) scale(1.06)' : undefined,
         transition: isDragOverlay ? undefined : 'box-shadow .18s',
+        contain:'layout paint style',
+        contentVisibility: isDragOverlay ? 'visible' : 'auto',
+        containIntrinsicSize:`${W}px ${H}px`,
       }}
       className="tier-item-card"
     >
@@ -245,6 +340,7 @@ const ItemCard = memo(function ItemCard({ itemId, allById, compact=false, isDrag
         <img
           src={item?.img || fallbackImg(item?.name)} alt={item?.name}
           onError={() => setErr(true)}
+          loading="lazy" decoding="async" fetchPriority="low"
           style={{ width:'100%', height:'100%', objectFit:'cover', display:'block', pointerEvents:'none' }}
           draggable={false}
         />
@@ -435,15 +531,14 @@ function ItemPool({ items, allById, customItems, onAddCustom, favorites, onToggl
     })
   }, [allItemsInPool, favorites, search, genre, poolTab, customItems])
 
-  const handleFile = (e) => {
+  const handleFile = async (e) => {
     const file = e.target.files?.[0]
     if (!file) return
-    const reader = new FileReader()
-    reader.onload = ev => {
-      onAddCustom({ img: ev.target.result, name: nameInput || file.name.replace(/\.\w+$/,''), sub: subInput || 'Custom' })
-      setAddMode(null); setNameInput(''); setSubInput('')
-    }
-    reader.readAsDataURL(file)
+    const compressed = await compressImageFile(file)
+    if (!compressed) return
+    onAddCustom({ img: compressed, name: nameInput || file.name.replace(/\.\w+$/,''), sub: subInput || 'Custom' })
+    setAddMode(null); setNameInput(''); setSubInput('')
+    if (fileRef.current) fileRef.current.value = ''
   }
 
   const handleUrl = () => {
@@ -673,6 +768,7 @@ export default function TierListPage() {
   const boardRef = useRef(null)
   const titleRef = useRef(null)
   const latestDraftRef = useRef(null)
+  const draftTimerRef = useRef(null)
 
   // ── My Lists state
   const [savedLists, setSavedLists] = useState(loadSavedLists)
@@ -696,7 +792,11 @@ export default function TierListPage() {
     }
   }, [selectedType, tiers, board, customItems, favorites, title])
 
-  const persistDraft = useCallback((overrides = {}) => {
+  const flushDraftNow = useCallback((overrides = {}) => {
+    if (draftTimerRef.current) {
+      clearTimeout(draftTimerRef.current)
+      draftTimerRef.current = null
+    }
     const draft = buildDraft(overrides)
     latestDraftRef.current = draft
     if (!draft) {
@@ -708,14 +808,35 @@ export default function TierListPage() {
     return ok
   }, [buildDraft])
 
+  const queueDraftSave = useCallback((overrides = {}) => {
+    const draft = buildDraft(overrides)
+    latestDraftRef.current = draft
+    if (!draft) {
+      setDraftSaved(false)
+      return false
+    }
+    setDraftSaved(false)
+    if (draftTimerRef.current) clearTimeout(draftTimerRef.current)
+    draftTimerRef.current = setTimeout(() => {
+      const ok = latestDraftRef.current ? saveDraft(latestDraftRef.current) : false
+      setDraftSaved(ok)
+      draftTimerRef.current = null
+    }, DRAFT_SAVE_DELAY)
+    return true
+  }, [buildDraft])
+
   useEffect(() => {
-    persistDraft()
-  }, [persistDraft])
+    queueDraftSave()
+  }, [queueDraftSave])
 
   useEffect(() => {
     const flushDraft = () => {
+      if (draftTimerRef.current) {
+        clearTimeout(draftTimerRef.current)
+        draftTimerRef.current = null
+      }
       const draft = latestDraftRef.current || buildDraft()
-      if (draft) saveDraft({ ...draft, updatedAt:Date.now() })
+      if (draft) setDraftSaved(saveDraft({ ...draft, updatedAt:Date.now() }))
     }
     const onVisibilityChange = () => {
       if (document.visibilityState === 'hidden') flushDraft()
@@ -727,6 +848,7 @@ export default function TierListPage() {
       window.removeEventListener('pagehide', flushDraft)
       window.removeEventListener('beforeunload', flushDraft)
       document.removeEventListener('visibilitychange', onVisibilityChange)
+      flushDraft()
     }
   }, [buildDraft])
 
@@ -764,7 +886,7 @@ export default function TierListPage() {
       next[k] = k === src ? board[k].filter(id => id !== active.id)
         : k === dest ? [...board[k], active.id] : [...board[k]]
     setBoard(next)
-    persistDraft({ board:next })
+    queueDraftSave({ board:next })
     if (tiers.find(t => t.id === dest)?.label === 'GOD' || tiers.find(t => t.id === dest)?.id === 'god') fireConfetti()
     setSaved(false)
   }
@@ -865,8 +987,13 @@ export default function TierListPage() {
     }
     const updated = [item, ...savedLists]
     setSavedLists(updated)
-    saveLists(updated)
+    if (!saveLists(updated)) {
+      setSavedLists(savedLists)
+      setToast('Sauvegarde pleine: images trop lourdes')
+      return
+    }
     setSaved(true)
+    flushDraftNow()
     setToast('✅ Tier list sauvegardée !')
   }
 
@@ -880,13 +1007,26 @@ export default function TierListPage() {
     setTitle(list.title)
     setSaved(true)
     setTab('studio')
+    latestDraftRef.current = {
+      title:list.title,
+      typeId:list.typeId,
+      tiers:list.tiers || DEFAULT_TIERS,
+      board:list.board || null,
+      customItems:list.customItems || [],
+      favorites:list.favorites || [],
+      updatedAt:Date.now(),
+    }
     setToast(`📂 "${list.title}" chargée`)
   }
 
   const deleteList = (id) => {
     const updated = savedLists.filter(l => l.id !== id)
     setSavedLists(updated)
-    saveLists(updated)
+    if (!saveLists(updated)) {
+      setSavedLists(savedLists)
+      setToast('Sauvegarde pleine')
+      return
+    }
     setToast('🗑️ Supprimé')
   }
 
@@ -894,7 +1034,11 @@ export default function TierListPage() {
     const copy = { ...list, id: uid(), title: `${list.title} (copie)`, savedAt: Date.now() }
     const updated = [copy, ...savedLists]
     setSavedLists(updated)
-    saveLists(updated)
+    if (!saveLists(updated)) {
+      setSavedLists(savedLists)
+      setToast('Sauvegarde pleine')
+      return
+    }
     setToast('📋 Dupliqué')
   }
 
