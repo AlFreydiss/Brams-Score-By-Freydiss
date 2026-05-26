@@ -40,3 +40,7 @@ commande
 __pycache__/
 **/__pycache__/
 *.pyc
+
+.dev.vars*
+!.dev.vars.example
+!.env.example
