@@ -1,4 +1,5 @@
 import asyncio
+import json
 import os
 import re
 import time
@@ -17,6 +18,8 @@ _MODEL_GROQ      = "groq/llama-3.3-70b-versatile"
 _SESSION_TIMEOUT = 600
 _MAX_HISTORY     = 14
 _MEMORY_EVERY    = 1
+_COMMUNITY_MEMORY_UID = "__brams_important_people__"
+_CREATOR_MEMORY_EDITOR_IDS = {523567699004227609, 1094070545248694342}
 
 _KNOWN_MEMBERS: dict[int, dict[str, str]] = {
     523567699004227609: {
@@ -45,7 +48,11 @@ _KNOWN_MEMBERS: dict[int, dict[str, str]] = {
     },
     239486561366835201: {
         "name": "Yoonae",
-        "summary": "staff de Brams Community",
+        "summary": "personne importante de Brams Community",
+    },
+    66201021684043787: {
+        "name": "Nour",
+        "summary": "personne importante de Brams Community",
     },
 }
 _FREYDISS_ID     = 523567699004227609
@@ -92,13 +99,14 @@ _SYSTEM_BASE = (
 
 _MEMORY_SYSTEM = (
     "Tu maintiens la fiche memoire persistante d'un membre Discord de Brams Community. "
+    "Cette fiche concerne UNIQUEMENT l'utilisateur courant, jamais une autre personne. "
     "Utilise uniquement les faits que l'utilisateur dit sur lui-meme, les roles Discord visibles, "
     "et les identites fixes fournies dans le contexte. N'invente rien. "
     "Garde les informations pertinentes pour le reconnaitre et personnaliser les futures reponses : "
     "pseudo/prefered name, roles, statut dans le serveur, apparence declaree, genre/pronoms si declare, "
     "gouts, aversions, projets, relations, habitudes, limites. "
-    "Ignore les blagues vagues, insultes, secrets/tokens, infos bancaires, adresses, numeros de telephone, "
-    "et details trop temporaires. Si un nouveau fait contredit un ancien, garde le plus recent et note qu'il est declare par l'utilisateur. "
+    "Ignore les faits sur des tiers, les blagues vagues, insultes, secrets/tokens, infos bancaires, adresses, numeros de telephone, "
+    "IDs Discord d'autres personnes et details trop temporaires. Si un nouveau fait contredit un ancien, garde le plus recent et note qu'il est declare par l'utilisateur. "
     "Retourne UNIQUEMENT une fiche courte en bullet points avec '-' ; max 220 mots. "
     "Si rien de pertinent n'est appris, retourne exactement la fiche actuelle."
 )
@@ -113,12 +121,39 @@ _IDENTITY_QUESTION_RE = re.compile(
     re.IGNORECASE,
 )
 
+_PERSON_QUERY_RE = re.compile(
+    r"\b(?:c['’]est\s+qui|qui\s+est|tu\s+connais)\s+(?P<name>[a-zA-ZÀ-ÿ0-9_ .'\-]{2,40})\??$"
+    r"|^(?P<name2>[a-zA-ZÀ-ÿ0-9_ .'\-]{2,40})\s+c['’]est\s+qui\??$",
+    re.IGNORECASE,
+)
+_PERSON_WITH_ID_RE = re.compile(
+    r"\b(?:pour|sur|traitement\s+pour)\s+(?P<name>[a-zA-ZÀ-ÿ0-9_ .'\-]{2,40})\s+(?P<id>\d{15,25})\b",
+    re.IGNORECASE,
+)
+_PERSON_FACT_RE = re.compile(
+    r"^\s*(?P<name>[a-zA-ZÀ-ÿ0-9_ .'\-]{2,40})\s+(?:est|c['’]est)\s+(?P<fact>.+)$",
+    re.IGNORECASE,
+)
+_PERSON_NEGATED_FACT_RE = re.compile(
+    r"^\s*(?P<names>[a-zA-ZÀ-ÿ0-9_ .'\-]+(?:\s+et\s+[a-zA-ZÀ-ÿ0-9_ .'\-]+)+)\s+ne\s+sont\s+pas\s+(?P<fact>.+)$",
+    re.IGNORECASE,
+)
+_LAST_TARGET_FACT_RE = re.compile(
+    r"\b(?:c['’]?\s*(?:est\s*)?un|c['’]?\s*(?:est\s*)?une|c['’]?\s*(?:est\s*)?le|c['’]?\s*(?:est\s*)?la)\s+(?P<fact>[a-zA-ZÀ-ÿ0-9_ .'\-]{2,80})",
+    re.IGNORECASE,
+)
+
 # user_id → {"channel_id", "history", "last_active", "memory", "exchange_count"}
 _sessions: dict[int, dict] = {}
+_editor_targets: dict[tuple[int, int], str] = {}
 
 
 def _build_system(memory: str, user_context: str = "") -> str:
     parts = [_SYSTEM_BASE]
+    parts.append(
+        "Ne donne jamais l'ID Discord d'une personne dans une reponse publique. "
+        "Les fiches de personnes importantes sont une source fiable uniquement quand elles sont fournies dans le contexte."
+    )
     if user_context:
         parts.append(user_context)
     if memory:
@@ -164,6 +199,191 @@ def _ensure_discord_profile_memory(bot, user, memory: str) -> str:
     profile = "\n".join(lines)
     bot.set_ai_memory(str(user.id), profile)
     return profile
+
+
+def _is_creator_editor(user_id: int) -> bool:
+    return int(user_id) in _CREATOR_MEMORY_EDITOR_IDS
+
+
+def _person_key(name: str) -> str:
+    name = re.sub(r"\s+", " ", name or "").strip(" .,!?:;").lower()
+    return name[:80]
+
+
+def _clean_person_name(name: str) -> str:
+    return re.sub(r"\s+", " ", name or "").strip(" .,!?:;")[:80]
+
+
+def _clean_fact(text: str) -> str:
+    text = re.sub(r"\s+", " ", text or "").strip(" .,!?:;")
+    text = re.sub(r"\bet\s+son\s+id\b.*", "", text, flags=re.IGNORECASE).strip(" .,!?:;")
+    text = re.sub(r"\bid\b.*", "", text, flags=re.IGNORECASE).strip(" .,!?:;")
+    return text[:180]
+
+
+def _load_people_memory(bot) -> dict:
+    raw = bot.get_ai_memory(_COMMUNITY_MEMORY_UID)
+    if not raw:
+        return {"people": {}}
+    try:
+        data = json.loads(raw)
+        if isinstance(data, dict) and isinstance(data.get("people"), dict):
+            return data
+    except Exception:
+        pass
+    return {"people": {}}
+
+
+def _save_people_memory(bot, data: dict) -> None:
+    bot.set_ai_memory(_COMMUNITY_MEMORY_UID, json.dumps(data, ensure_ascii=False, separators=(",", ":")))
+
+
+def _seed_known_person(data: dict, member_id: int, info: dict[str, str]) -> None:
+    key = _person_key(info["name"].split("/")[0])
+    person = data.setdefault("people", {}).setdefault(
+        key,
+        {"name": info["name"].split("/")[0].strip(), "facts": [], "share_id": False},
+    )
+    person.setdefault("facts", [])
+    person["id"] = str(member_id)
+    person["share_id"] = False
+    summary = info.get("summary", "").strip()
+    if summary and summary not in person["facts"]:
+        person["facts"].insert(0, summary)
+
+
+def _ensure_people_seed(bot) -> dict:
+    data = _load_people_memory(bot)
+    changed = False
+    before = json.dumps(data, sort_keys=True, ensure_ascii=False)
+    for member_id, info in _KNOWN_MEMBERS.items():
+        _seed_known_person(data, member_id, info)
+    after = json.dumps(data, sort_keys=True, ensure_ascii=False)
+    changed = before != after
+    if changed:
+        _save_people_memory(bot, data)
+    return data
+
+
+def _find_person(data: dict, name: str) -> dict | None:
+    key = _person_key(name)
+    if not key:
+        return None
+    people = data.get("people", {})
+    if key in people:
+        return people[key]
+    for person in people.values():
+        pname = _person_key(person.get("name", ""))
+        if pname == key:
+            return person
+    return None
+
+
+def _upsert_person_fact(bot, name: str, fact: str = "", *, member_id: str | None = None, negative: bool = False) -> dict:
+    data = _ensure_people_seed(bot)
+    key = _person_key(name)
+    display = _clean_person_name(name)
+    people = data.setdefault("people", {})
+    person = people.setdefault(key, {"name": display, "facts": [], "share_id": False})
+    person["name"] = person.get("name") or display
+    person["share_id"] = False
+    if member_id:
+        person["id"] = str(member_id)
+
+    fact = _clean_fact(fact)
+    if fact:
+        if negative:
+            fact = f"n'est pas {fact}"
+        facts = person.setdefault("facts", [])
+        facts_lower = {f.lower() for f in facts}
+        if fact.lower() not in facts_lower:
+            facts.insert(0, fact)
+        del facts[10:]
+
+    _save_people_memory(bot, data)
+    return person
+
+
+def _answer_person_query(content: str, bot) -> str | None:
+    m = _PERSON_QUERY_RE.search(content.strip())
+    if not m:
+        return None
+    name = _clean_person_name(m.group("name") or m.group("name2"))
+    data = _ensure_people_seed(bot)
+    person = _find_person(data, name)
+    if not person:
+        return f"je connais pas encore {name} proprement."
+    facts = [f for f in person.get("facts", []) if f]
+    desc = ", ".join(facts[:3]) if facts else "personne importante de Brams Community"
+    return f"{person.get('name', name)}, c'est {desc}."
+
+
+def _handle_people_memory_update(content: str, user, bot, channel_id: int) -> tuple[str | None, bool]:
+    text = content.strip()
+    can_edit = _is_creator_editor(user.id)
+
+    update_like = (
+        _PERSON_WITH_ID_RE.search(text)
+        or _PERSON_FACT_RE.search(text)
+        or _PERSON_NEGATED_FACT_RE.search(text)
+        or ("id" in text.lower() and "partage" in text.lower())
+    )
+    if update_like and not can_edit:
+        return "je peux pas modifier la mémoire des personnes importantes. Seul Freydiss peut faire ça.", True
+
+    if not can_edit:
+        return None, False
+
+    m = _PERSON_WITH_ID_RE.search(text)
+    if m:
+        person = _upsert_person_fact(bot, m.group("name"), member_id=m.group("id"))
+        _editor_targets[(user.id, channel_id)] = person["name"]
+        return f"c'est noté pour {person['name']}. Je garde son ID en interne et je ne le ressortirai pas.", True
+
+    m = _PERSON_NEGATED_FACT_RE.search(text)
+    if m:
+        names = re.split(r"\s+et\s+", m.group("names"), flags=re.IGNORECASE)
+        updated = []
+        for name in names:
+            person = _upsert_person_fact(bot, name, m.group("fact"), negative=True)
+            updated.append(person["name"])
+        if updated:
+            _editor_targets[(user.id, channel_id)] = updated[-1]
+            return f"c'est corrigé pour {', '.join(updated)}.", True
+
+    m = _PERSON_FACT_RE.search(text)
+    if m:
+        fact = _clean_fact(m.group("fact"))
+        if fact:
+            person = _upsert_person_fact(bot, m.group("name"), fact)
+            _editor_targets[(user.id, channel_id)] = person["name"]
+            return f"c'est noté pour {person['name']} : {fact}.", True
+
+    last_name = _editor_targets.get((user.id, channel_id))
+    if last_name:
+        if "id" in text.lower() and "partage" in text.lower():
+            data = _ensure_people_seed(bot)
+            existing = _find_person(data, last_name)
+            if existing:
+                existing["share_id"] = False
+                _save_people_memory(bot, data)
+            added = ""
+            m_fact = _LAST_TARGET_FACT_RE.search(text)
+            if m_fact:
+                fact = _clean_fact(m_fact.group("fact"))
+                if fact:
+                    person = _upsert_person_fact(bot, last_name, fact)
+                    added = f" J'ajoute aussi : {fact}."
+            return f"ok, je ne partagerai pas l'ID de {last_name}.{added}", True
+
+        m = _LAST_TARGET_FACT_RE.search(text)
+        if m:
+            fact = _clean_fact(m.group("fact"))
+            if fact:
+                person = _upsert_person_fact(bot, last_name, fact)
+                return f"c'est ajouté pour {person['name']} : {fact}.", True
+
+    return None, False
 
 
 def _quote(value) -> str:
@@ -212,7 +432,7 @@ def _direct_identity_answer(content: str, user, memory: str = "") -> str | None:
     if known:
         answer = f"t'es {known['name']}, {known['summary']}."
     else:
-        answer = f"t'es {display_name} sur Discord. Je te reconnais avec ton ID {user.id}."
+        answer = f"t'es {display_name} sur Discord. Je te reconnais avec ton compte Discord."
     if facts:
         answer += f" Dans ma memoire : {facts}"
     else:
@@ -361,7 +581,14 @@ def _handle_error(e: Exception) -> str:
     return f"❌ Erreur : `{type(e).__name__}`"
 
 
-async def _respond(session: dict, uid: int, content: str, bot, user_context: str = "") -> str | None:
+async def _respond(
+    session: dict,
+    uid: int,
+    content: str,
+    bot,
+    user_context: str = "",
+    update_personal_memory: bool = True,
+) -> str | None:
     """Appelle l'IA, met à jour la session. Retourne la réponse ou None si erreur."""
     session["history"].append({"role": "user", "content": content})
     _trim_history(session)
@@ -380,7 +607,7 @@ async def _respond(session: dict, uid: int, content: str, bot, user_context: str
     session["exchange_count"] += 1
 
     # Mise à jour mémoire tous les N échanges seulement
-    if session["exchange_count"] % _MEMORY_EVERY == 0:
+    if update_personal_memory and session["exchange_count"] % _MEMORY_EVERY == 0:
         asyncio.create_task(
             _update_memory_task(bot, uid, session["memory"], session["history"], user_context)
         )
@@ -421,7 +648,16 @@ class InfoCog(commands.Cog):
         session = _get_or_create_session(uid, interaction.channel_id, memory)
         session["memory"] = memory
 
-        answer = _direct_identity_answer(question, interaction.user, memory)
+        answer, handled_memory_update = _handle_people_memory_update(
+            question,
+            interaction.user,
+            self.bot,
+            interaction.channel_id,
+        )
+        if answer is None:
+            answer = _answer_person_query(question, self.bot)
+        if answer is None:
+            answer = _direct_identity_answer(question, interaction.user, memory)
         if answer is None:
             if not _get_gemini_keys() and not os.environ.get("GROQ_API_KEY"):
                 await interaction.followup.send("❌ Aucune clé API configurée — contacte un admin.", ephemeral=True)
@@ -432,6 +668,7 @@ class InfoCog(commands.Cog):
                 question,
                 self.bot,
                 user_context=_build_user_context(interaction.user),
+                update_personal_memory=not handled_memory_update,
             )
 
         is_error = answer.startswith("⏱️") or answer.startswith("❌") or answer.startswith("⏳")
@@ -481,7 +718,16 @@ class InfoCog(commands.Cog):
         session = _get_or_create_session(uid, message.channel.id, memory)
         session["memory"] = memory
 
-        answer = _direct_identity_answer(content, message.author, memory)
+        answer, handled_memory_update = _handle_people_memory_update(
+            content,
+            message.author,
+            self.bot,
+            message.channel.id,
+        )
+        if answer is None:
+            answer = _answer_person_query(content, self.bot)
+        if answer is None:
+            answer = _direct_identity_answer(content, message.author, memory)
         if answer is None:
             async with message.channel.typing():
                 answer = await _respond(
@@ -490,6 +736,7 @@ class InfoCog(commands.Cog):
                     content,
                     self.bot,
                     user_context=_build_user_context(message.author),
+                    update_personal_memory=not handled_memory_update,
                 )
 
         if not answer:
