@@ -46,5 +46,27 @@ export const TOURNAMENT_CONFIG = {
   format:      'single_elimination',
   edition:     'Edition 1',
   startDate:   '2026-05-24',
+  categoryLabel:'OST Arena',
+  route:        '/tournoi/ost',
+  version:      'v2-ost',
   participants: OST_CATALOG, // 32 participants
+}
+
+export const OPENING_TOURNAMENT_CONFIG = {
+  id:          'best-anime-opening-2026',
+  title:       'Best Anime Opening 2026',
+  description: '32 openings deja presents dans le Blind Test. Lance les extraits, compare en 1v1, et fais avancer le meilleur opening.',
+  status:      'active',
+  format:      'single_elimination',
+  edition:     'Edition 1',
+  startDate:   '2026-05-27',
+  categoryLabel:'Openings',
+  route:        '/tournoi/openings',
+  version:      'v1-opening',
+  participants: OST_CATALOG,
+}
+
+export const TOURNAMENT_CONFIGS = {
+  ost: TOURNAMENT_CONFIG,
+  opening: OPENING_TOURNAMENT_CONFIG,
 }

@@ -13,12 +13,12 @@ import {
   getVotePercents,
   resetTournament,
 } from '../lib/tournament.js'
-import { TOURNAMENT_CONFIG } from '../data/tournament-data.js'
+import { TOURNAMENT_CONFIGS } from '../data/tournament-data.js'
 import DuelArena         from './tournament/DuelArena.jsx'
 import TournamentBracket from './tournament/TournamentBracket.jsx'
 import TournamentResults from './tournament/TournamentResults.jsx'
 
-const BG      = '#0a0a0b'
+const BG      = '#020203'
 const PINK    = '#9d174d'
 const PURPLE  = '#4c1d95'
 const PINK_L  = '#db2777'
@@ -32,7 +32,37 @@ const T_CSS = `
   @keyframes t_glow    { 0%,100%{opacity:.5} 50%{opacity:1} }
   @keyframes tTwinkle  { 0%,100%{opacity:.07} 50%{opacity:.50} }
   @keyframes tScan     { 0%{top:-2px} 100%{top:100%} }
+  @keyframes tGridMove { 0%{transform:translate3d(0,0,0)} 100%{transform:translate3d(-72px,72px,0)} }
+  @keyframes tShadowSweep { 0%{transform:translateX(-35%) skewX(-12deg); opacity:.10} 50%{opacity:.22} 100%{transform:translateX(135%) skewX(-12deg); opacity:.10} }
 `
+
+function TDarkBackdrop() {
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden', background: BG }}>
+      <div style={{
+        position: 'absolute', inset: '-20%',
+        background: [
+          'linear-gradient(115deg, transparent 0%, rgba(157,23,77,.08) 46%, rgba(76,29,149,.06) 50%, transparent 55%)',
+          'repeating-linear-gradient(90deg, rgba(255,255,255,.025) 0 1px, transparent 1px 72px)',
+          'repeating-linear-gradient(0deg, rgba(255,255,255,.018) 0 1px, transparent 1px 72px)',
+          'linear-gradient(180deg, rgba(0,0,0,.20), rgba(0,0,0,.78))',
+        ].join(','),
+        opacity: 0.62,
+        animation: 'tGridMove 26s linear infinite',
+      }} />
+      <div style={{
+        position: 'absolute', top: 0, bottom: 0, width: '34%',
+        background: 'linear-gradient(90deg, transparent, rgba(219,39,119,.09), rgba(255,255,255,.025), transparent)',
+        filter: 'blur(10px)',
+        animation: 'tShadowSweep 11s ease-in-out infinite',
+      }} />
+      <div style={{
+        position: 'absolute', inset: 0,
+        background: 'linear-gradient(180deg, rgba(0,0,0,.45) 0%, rgba(2,2,3,.78) 42%, rgba(0,0,0,.96) 100%)',
+      }} />
+    </div>
+  )
+}
 
 function TStars() {
   const stars = Array.from({ length: 50 }, (_, i) => ({
@@ -68,20 +98,22 @@ function TScanLine() {
 }
 
 // ── Version check ──────────────────────────────────────────────────────────
-const TOURNAMENT_VERSION = 'v2-ost'
-const VERSION_KEY = `brams_t_version_${TOURNAMENT_CONFIG.id}`
-
-function loadRoundsWithVersionCheck() {
-  const savedVersion = localStorage.getItem(VERSION_KEY)
-  if (savedVersion !== TOURNAMENT_VERSION) {
-    resetTournament(TOURNAMENT_CONFIG.id)
-    localStorage.setItem(VERSION_KEY, TOURNAMENT_VERSION)
-    const { rounds } = generateBracket(TOURNAMENT_CONFIG.participants)
+function loadRoundsWithVersionCheck(config) {
+  const versionKey = `brams_t_version_${config.id}`
+  const version = config.version || 'v1'
+  const savedVersion = localStorage.getItem(versionKey)
+  if (savedVersion !== version) {
+    resetTournament(config.id)
+    localStorage.setItem(versionKey, version)
+    const { rounds } = generateBracket(config.participants)
     return rounds
   }
-  const saved = loadState(TOURNAMENT_CONFIG.id)
-  if (saved) return saved
-  const { rounds } = generateBracket(TOURNAMENT_CONFIG.participants)
+  const saved = loadState(config.id)
+  if (saved) {
+    if (getCurrentMatch(saved) || getWinner(saved)) return saved
+    resetTournament(config.id)
+  }
+  const { rounds } = generateBracket(config.participants)
   return rounds
 }
 
@@ -143,7 +175,7 @@ function TournamentHero({ config, progress, roundLabel, matchLabel }) {
         </button>
         <span style={{ fontSize: 10, color: 'rgba(255,255,255,.14)' }}>/</span>
         <span style={{ fontSize: 11, color: 'rgba(255,255,255,.5)', fontWeight: 600, letterSpacing: '0.06em' }}>
-          OST Arena
+          {config.categoryLabel}
         </span>
       </div>
 
@@ -394,23 +426,39 @@ function WinnerSection({ winner, onReset }) {
   )
 }
 
-function NoMatchReady() {
+function NoMatchReady({ onReset }) {
   return (
     <div style={{ textAlign: 'center', padding: '60px 20px' }}>
       <div style={{ fontSize: 32, marginBottom: 12, opacity: 0.2 }}>⚔</div>
-      <div style={{ color: 'rgba(255,255,255,.28)', fontSize: 14 }}>
+      <div style={{ color: 'rgba(255,255,255,.28)', fontSize: 14, marginBottom: 18 }}>
         En attente du prochain duel.
       </div>
+      <button
+        onClick={onReset}
+        style={{
+          padding: '10px 20px',
+          borderRadius: 10,
+          border: '1px solid rgba(157,23,77,.35)',
+          background: 'rgba(157,23,77,.12)',
+          color: GOLD2,
+          fontSize: 12,
+          fontWeight: 800,
+          cursor: 'pointer',
+        }}
+      >
+        Lancer le tournoi solo
+      </button>
     </div>
   )
 }
 
 // ── Main ───────────────────────────────────────────────────────────────────
-export default function TournamentPage() {
+export default function TournamentPage({ tournamentId = 'ost' }) {
+  const config = TOURNAMENT_CONFIGS[tournamentId] || TOURNAMENT_CONFIGS.ost
   const [tab,           setTab]           = useState('duel')
-  const [rounds,        setRounds]        = useState(() => loadRoundsWithVersionCheck())
-  const [personalVotes, setPersonalVotes] = useState(() => loadPersonalVotes(TOURNAMENT_CONFIG.id))
-  const [voteCounts,    setVoteCounts]    = useState(() => loadVoteCounts(TOURNAMENT_CONFIG.id))
+  const [rounds,        setRounds]        = useState(() => loadRoundsWithVersionCheck(config))
+  const [personalVotes, setPersonalVotes] = useState(() => loadPersonalVotes(config.id))
+  const [voteCounts,    setVoteCounts]    = useState(() => loadVoteCounts(config.id))
   const [isMobile,      setIsMobile]      = useState(() => window.innerWidth < 768)
 
   useEffect(() => {
@@ -420,8 +468,15 @@ export default function TournamentPage() {
   }, [])
 
   useEffect(() => {
-    saveState(TOURNAMENT_CONFIG.id, rounds)
-  }, [rounds])
+    setRounds(loadRoundsWithVersionCheck(config))
+    setPersonalVotes(loadPersonalVotes(config.id))
+    setVoteCounts(loadVoteCounts(config.id))
+    setTab('duel')
+  }, [config.id])
+
+  useEffect(() => {
+    saveState(config.id, rounds)
+  }, [rounds, config.id])
 
   const current  = useMemo(() => getCurrentMatch(rounds), [rounds])
   const progress = useMemo(() => getTournamentProgress(rounds), [rounds])
@@ -441,8 +496,8 @@ export default function TournamentPage() {
     const matchId     = current.match.id
     const newPersonal = { ...personalVotes, [matchId]: side }
     setPersonalVotes(newPersonal)
-    savePersonalVote(TOURNAMENT_CONFIG.id, matchId, side)
-    const newVC = addVoteCount(TOURNAMENT_CONFIG.id, matchId, side)
+    savePersonalVote(config.id, matchId, side)
+    const newVC = addVoteCount(config.id, matchId, side)
     setVoteCounts({ ...newVC })
   }
 
@@ -460,8 +515,8 @@ export default function TournamentPage() {
   }
 
   function handleReset() {
-    resetTournament(TOURNAMENT_CONFIG.id)
-    const { rounds: fresh } = generateBracket(TOURNAMENT_CONFIG.participants)
+    resetTournament(config.id)
+    const { rounds: fresh } = generateBracket(config.participants)
     setRounds(fresh)
     setPersonalVotes({})
     setVoteCounts({})
@@ -477,7 +532,7 @@ export default function TournamentPage() {
       <style>{T_CSS}</style>
 
       {/* Fixed bg layers */}
-      <div style={{ position: 'fixed', inset: 0, background: BG, zIndex: 0 }} />
+      <TDarkBackdrop />
       <TStars />
       <TScanLine />
 
@@ -486,11 +541,11 @@ export default function TournamentPage() {
       <div style={{
         maxWidth: 1440,
         margin: '0 auto',
-        padding: 'clamp(24px, 4vw, 64px) clamp(16px, 4vw, 56px)',
+        padding: 'clamp(88px, 9vw, 124px) clamp(16px, 4vw, 56px) clamp(24px, 4vw, 64px)',
       }}>
 
         <TournamentHero
-          config={TOURNAMENT_CONFIG}
+          config={config}
           progress={progress}
           roundLabel={roundLabel}
           matchLabel={matchLabel}
@@ -528,7 +583,7 @@ export default function TournamentPage() {
                     isMobile={isMobile}
                   />
                 ) : (
-                  <NoMatchReady />
+                  <NoMatchReady onReset={handleReset} />
                 )}
               </>
             )}

@@ -5,3 +5,5 @@ dist
 public/Violet Evergarden
 public/anime
 src/encyclopedia/**/*.map
+api/seed-shop-backgrounds.js
+api/sync-bot.js

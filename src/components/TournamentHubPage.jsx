@@ -5,7 +5,7 @@ import {
   loadState, getTournamentProgress, getCurrentMatch,
   generateBracket, getWinner,
 } from '../lib/tournament.js'
-import { TOURNAMENT_CONFIG } from '../data/tournament-data.js'
+import { TOURNAMENT_CONFIG, OPENING_TOURNAMENT_CONFIG } from '../data/tournament-data.js'
 import {
   TOURNAMENT_CATEGORIES,
   UPCOMING_TOURNAMENTS,
@@ -62,17 +62,17 @@ function HTScanLine() {
   )
 }
 
-// ── Hook: live OST state ────────────────────────────────────────────────────
-function useOSTState() {
+// ── Hook: live tournament state ─────────────────────────────────────────────
+function useTournamentState(config) {
   return useMemo(() => {
-    const saved  = loadState(TOURNAMENT_CONFIG.id)
-    const rounds = saved || generateBracket(TOURNAMENT_CONFIG.participants).rounds
+    const saved  = loadState(config.id)
+    const rounds = saved || generateBracket(config.participants).rounds
     return {
       progress:     getTournamentProgress(rounds),
       currentRound: getCurrentMatch(rounds)?.round ?? null,
       winner:       getWinner(rounds),
     }
-  }, [])
+  }, [config])
 }
 
 // ── Section heading ────────────────────────────────────────────────────────
@@ -262,6 +262,7 @@ function ProgressRing({ pct }) {
 // ── Active tournament card ─────────────────────────────────────────────────
 function ActiveTournamentCard({ config, progress, currentRound, winner }) {
   const navigate  = useNavigate()
+  const route = config.route || '/tournoi/ost'
   const phaseName = winner ? 'Terminé' : currentRound?.label ?? 'En cours'
   const isFinished = !!winner
 
@@ -299,7 +300,7 @@ function ActiveTournamentCard({ config, progress, currentRound, winner }) {
               borderRadius: 5, padding: '3px 9px',
               letterSpacing: '0.10em', textTransform: 'uppercase', fontWeight: 800,
             }}>
-              OST
+              {config.categoryLabel || 'Tournoi'}
             </span>
           </div>
 
@@ -357,7 +358,7 @@ function ActiveTournamentCard({ config, progress, currentRound, winner }) {
           {!isFinished ? (
             <>
               <motion.button
-                onClick={() => navigate('/tournoi/ost')}
+                onClick={() => navigate(route)}
                 whileHover={{ scale: 1.03, boxShadow: `0 8px 28px rgba(157,23,77,.32)` }}
                 whileTap={{ scale: 0.97 }}
                 style={{
@@ -372,7 +373,7 @@ function ActiveTournamentCard({ config, progress, currentRound, winner }) {
                 Participer au duel
               </motion.button>
               <motion.button
-                onClick={() => navigate('/tournoi/ost')}
+                onClick={() => navigate(route)}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.97 }}
                 style={{
@@ -388,7 +389,7 @@ function ActiveTournamentCard({ config, progress, currentRound, winner }) {
             </>
           ) : (
             <motion.button
-              onClick={() => navigate('/tournoi/ost')}
+              onClick={() => navigate(route)}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.97 }}
               style={{
@@ -594,7 +595,8 @@ function TournamentHero({ activeRef, categoriesRef }) {
 
 // ── Main ───────────────────────────────────────────────────────────────────
 export default function TournamentHubPage() {
-  const ost           = useOSTState()
+  const ost           = useTournamentState(TOURNAMENT_CONFIG)
+  const opening       = useTournamentState(OPENING_TOURNAMENT_CONFIG)
   const activeRef     = useRef(null)
   const categoriesRef = useRef(null)
 
@@ -638,12 +640,20 @@ export default function TournamentHubPage() {
           {/* ── Tournois actifs ── */}
           <div ref={activeRef} style={{ marginBottom: 76 }}>
             <SectionHeading title="Tournois actifs" />
-            <ActiveTournamentCard
-              config={TOURNAMENT_CONFIG}
-              progress={ost.progress}
-              currentRound={ost.currentRound}
-              winner={ost.winner}
-            />
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 14 }}>
+              <ActiveTournamentCard
+                config={OPENING_TOURNAMENT_CONFIG}
+                progress={opening.progress}
+                currentRound={opening.currentRound}
+                winner={opening.winner}
+              />
+              <ActiveTournamentCard
+                config={TOURNAMENT_CONFIG}
+                progress={ost.progress}
+                currentRound={ost.currentRound}
+                winner={ost.winner}
+              />
+            </div>
           </div>
 
           {/* ── À venir ── */}

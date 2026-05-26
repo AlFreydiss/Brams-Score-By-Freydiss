@@ -1,6 +1,14 @@
 {
   "rewrites": [
     {
+      "source": "/api/seed-shop-backgrounds",
+      "destination": "/api/bot-tools?tool=seed-shop-backgrounds"
+    },
+    {
+      "source": "/api/sync-bot",
+      "destination": "/api/bot-tools?tool=sync-bot"
+    },
+    {
       "source": "/((?!api/|assets/|blind-test/.*\\.mp4|.*\\..*).*)",
       "destination": "/index.html"
     }

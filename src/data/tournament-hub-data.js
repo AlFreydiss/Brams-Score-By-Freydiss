@@ -17,9 +17,9 @@ export const TOURNAMENT_CATEGORIES = [
     tagline: 'L\'opening qui mérite la finale.',
     description: 'Les openings les plus iconiques s\'affrontent jusqu\'à la finale.',
     icon: '▶',
-    route: null,
-    status: 'soon',
-    activeCount: 0,
+    route: '/tournoi/openings',
+    status: 'active',
+    activeCount: 1,
     color: '#6366f1',
   },
   {
@@ -103,13 +103,6 @@ export const TOURNAMENT_CATEGORIES = [
 
 // ── Upcoming tournaments ───────────────────────────────────────────────────
 export const UPCOMING_TOURNAMENTS = [
-  {
-    id: 'best-opening-2026',
-    categoryId: 'opening',
-    title: 'Best Anime Opening 2026',
-    description: '32 candidats déjà sélectionnés. Découvrez bientôt le bracket.',
-    dateLabel: 'Prochainement',
-  },
   {
     id: 'best-character-op',
     categoryId: 'character',

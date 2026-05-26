@@ -377,8 +377,10 @@ export default function App() {
 
         {/* Tournoi */}
         <Route path="/tournoi"     element={<PageLayout><TournamentHubPage /></PageLayout>} />
-        <Route path="/tournoi/ost" element={<PageLayout><TournamentPage    /></PageLayout>} />
-        <Route path="/tournoi-ost" element={<PageLayout><TournamentPage    /></PageLayout>} />
+        <Route path="/tournoi/ost" element={<PageLayout><TournamentPage tournamentId="ost" /></PageLayout>} />
+        <Route path="/tournoi-ost" element={<PageLayout><TournamentPage tournamentId="ost" /></PageLayout>} />
+        <Route path="/tournoi/openings" element={<PageLayout><TournamentPage tournamentId="opening" /></PageLayout>} />
+        <Route path="/tournoi/opening" element={<PageLayout><TournamentPage tournamentId="opening" /></PageLayout>} />
         <Route path="/akinator"    element={<PageLayout><AkinatorPage      /></PageLayout>} />
 
         {/* Profil Yonkou — Next-Gen 3D */}
