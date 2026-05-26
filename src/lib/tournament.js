@@ -29,30 +29,34 @@ export function getRoundShort(size) {
 // Returns: { rounds: Round[], voteCounts: { [matchId]: { left:0, right:0 } } }
 export function generateBracket(participants) {
   const n = participants.length
-  if (!isPow2(n) || n < 4) throw new Error('participants must be power of 2, min 4')
+  if (n < 2) throw new Error('participants must be min 2')
 
   const rounds = []
-  let roundSize = n
+  let roundSize = nextPow2(Math.max(n, 4))
+  const slots = [...participants, ...Array.from({ length: roundSize - n }, () => null)]
 
   while (roundSize >= 2) {
     const matchCount = roundSize / 2
-    const isFirst = roundSize === n
+    const isFirst = roundSize === slots.length
     const matches = []
 
     for (let i = 0; i < matchCount; i++) {
       let left = null, right = null
       if (isFirst) {
-        left  = { ...participants[i * 2],     votes: 0 }
-        right = { ...participants[i * 2 + 1], votes: 0 }
+        const leftParticipant = slots[i * 2]
+        const rightParticipant = slots[i * 2 + 1]
+        left  = leftParticipant  ? { ...leftParticipant, votes: 0 } : null
+        right = rightParticipant ? { ...rightParticipant, votes: 0 } : null
       }
-      const isPendingInFirstRound = isFirst && i > 0
       matches.push({
         id:        `r${roundSize}_m${i}`,
         position:  i,
         roundSize,
-        status:    isFirst && i === 0 ? 'voting' : 'pending',
+        status:    'pending',
         left,
         right,
+        leftReady: isFirst,
+        rightReady: isFirst,
         winnerId:  null,
       })
     }
@@ -68,6 +72,9 @@ export function generateBracket(participants) {
     roundSize = roundSize / 2
   }
 
+  closeByes(rounds)
+  openNextPlayable(rounds)
+
   const voteCounts = {}
   for (const round of rounds) {
     for (const m of round.matches) {
@@ -78,7 +85,63 @@ export function generateBracket(participants) {
   return { rounds, voteCounts }
 }
 
-function isPow2(n) { return n > 0 && (n & (n - 1)) === 0 }
+function nextPow2(n) {
+  let size = 1
+  while (size < n) size *= 2
+  return size
+}
+
+function placeWinner(rounds, ri, mi, winnerParticipant) {
+  const nextRi = ri + 1
+  if (nextRi >= rounds.length) return
+  const nextMi = Math.floor(mi / 2)
+  const slot = mi % 2 === 0 ? 'left' : 'right'
+  const nextMatch = rounds[nextRi].matches[nextMi]
+  if (winnerParticipant) {
+    nextMatch[slot] = { ...winnerParticipant, votes: 0 }
+  }
+  nextMatch[`${slot}Ready`] = true
+}
+
+function closeByes(rounds) {
+  let changed = true
+  while (changed) {
+    changed = false
+    for (let ri = 0; ri < rounds.length; ri++) {
+      for (let mi = 0; mi < rounds[ri].matches.length; mi++) {
+        const match = rounds[ri].matches[mi]
+        if (match.status !== 'pending') continue
+        const leftReady = match.leftReady ?? false
+        const rightReady = match.rightReady ?? false
+        const winner = match.left && !match.right && rightReady
+          ? match.left
+          : !match.left && match.right && leftReady
+            ? match.right
+            : null
+        const emptyResolved = !match.left && !match.right && leftReady && rightReady
+        if (!winner && !emptyResolved) continue
+        match.status = 'closed'
+        match.winnerId = winner?.id || null
+        placeWinner(rounds, ri, mi, winner)
+        changed = true
+      }
+    }
+  }
+}
+
+function openNextPlayable(rounds, afterRi = 0, afterMi = -1) {
+  if (getCurrentMatch(rounds)) return
+  for (let ri = afterRi; ri < rounds.length; ri++) {
+    const startMi = ri === afterRi ? afterMi + 1 : 0
+    for (let mi = startMi; mi < rounds[ri].matches.length; mi++) {
+      const match = rounds[ri].matches[mi]
+      if (match.status === 'pending' && match.left && match.right && match.leftReady && match.rightReady) {
+        match.status = 'voting'
+        return
+      }
+    }
+  }
+}
 
 // Returns the currently active { round, match } or null if tournament is done.
 export function getCurrentMatch(rounds) {
@@ -125,27 +188,9 @@ export function advanceWinner(rounds, matchId, winnerId) {
 
   if (!winnerParticipant || ri === -1) return r
 
-  // Place winner in next round slot
-  const nextRi = ri + 1
-  if (nextRi < r.length) {
-    const nextMi   = Math.floor(mi / 2)
-    const slot     = mi % 2 === 0 ? 'left' : 'right'
-    r[nextRi].matches[nextMi][slot] = { ...winnerParticipant, votes: 0 }
-  }
-
-  // Open next match: prefer next match in same round, else first of next round
-  const nextInRound = r[ri].matches[mi + 1]
-  if (nextInRound && nextInRound.status === 'pending') {
-    nextInRound.status = 'voting'
-  } else if (!nextInRound) {
-    // Round complete — open next round's first match if both slots are ready
-    if (nextRi < r.length) {
-      const first = r[nextRi].matches[0]
-      if (first && first.left && first.right && first.status === 'pending') {
-        first.status = 'voting'
-      }
-    }
-  }
+  placeWinner(r, ri, mi, winnerParticipant)
+  closeByes(r)
+  openNextPlayable(r, ri, mi)
 
   return r
 }

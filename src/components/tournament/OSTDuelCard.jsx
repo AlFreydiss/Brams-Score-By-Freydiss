@@ -17,11 +17,13 @@ function MusicIcon({ color }) {
 export default function OSTDuelCard({
   participant, side, voted, isWinner, isLoser,
   votePercent, voteCount, hasVoted, onVote, onListen,
-  showResult, isMobile,
+  isListening, showResult, isMobile,
 }) {
   const [imgState, setImgState] = useState('loading') // 'loading' | 'ok' | 'failed'
 
   const ytOk    = participant?.ytId && !participant.ytId.startsWith('similar')
+  const mediaUrl = participant?.mediaUrl || participant?.url || null
+  const canListen = !!mediaUrl || ytOk
   const thumbUrl = ytOk
     ? `https://img.youtube.com/vi/${participant.ytId}/hqdefault.jpg`
     : null
@@ -115,6 +117,30 @@ export default function OSTDuelCard({
         {isLoser && (
           <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,.5)' }} />
         )}
+
+        {isListening && mediaUrl && (
+          <>
+            <video
+              key={mediaUrl}
+              src={mediaUrl}
+              autoPlay
+              playsInline
+              loop
+              style={{
+                position: 'absolute', inset: '-4%',
+                width: '108%', height: '108%',
+                objectFit: 'cover',
+                opacity: 0.46,
+                filter: 'blur(10px) brightness(.62) saturate(1.25)',
+                transform: 'scale(1.03)',
+              }}
+            />
+            <div style={{
+              position: 'absolute', inset: 0,
+              background: `linear-gradient(180deg, ${accent}18 0%, rgba(5,7,12,.58) 58%, rgba(5,7,12,.92) 100%)`,
+            }} />
+          </>
+        )}
       </div>
 
       {/* ── Content ── */}
@@ -132,30 +158,37 @@ export default function OSTDuelCard({
             letterSpacing: '0.1em', fontWeight: 700, textTransform: 'uppercase',
             backdropFilter: 'blur(4px)',
           }}>
-            {participant.type === 'insert' ? 'INSERT' : 'BGM'}
+            {participant.type === 'insert' ? 'INSERT' : participant.type || 'BGM'}
           </span>
 
-          {ytOk && (
+          {canListen && (
             <button
-              onClick={e => { e.stopPropagation(); onListen(participant.ytId) }}
+              onClick={e => { e.stopPropagation(); onListen(side, participant) }}
               style={{
-                background: 'rgba(0,0,0,.68)', border: '1px solid rgba(255,255,255,.22)',
+                background: isListening ? 'rgba(212,160,23,.20)' : 'rgba(0,0,0,.68)',
+                border: `1px solid ${isListening ? 'rgba(212,160,23,.58)' : 'rgba(255,255,255,.22)'}`,
                 borderRadius: 20, padding: '6px 14px',
-                color: 'rgba(255,255,255,.88)', fontSize: 12,
+                color: isListening ? GOLD_L : 'rgba(255,255,255,.88)', fontSize: 12,
                 cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
                 backdropFilter: 'blur(8px)', fontWeight: 600,
                 transition: 'all 0.2s',
               }}
-              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,.14)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,.4)' }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(0,0,0,.68)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,.22)' }}
+              onMouseEnter={e => {
+                e.currentTarget.style.background = isListening ? 'rgba(212,160,23,.28)' : 'rgba(255,255,255,.14)'
+                e.currentTarget.style.borderColor = isListening ? 'rgba(212,160,23,.72)' : 'rgba(255,255,255,.4)'
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.background = isListening ? 'rgba(212,160,23,.20)' : 'rgba(0,0,0,.68)'
+                e.currentTarget.style.borderColor = isListening ? 'rgba(212,160,23,.58)' : 'rgba(255,255,255,.22)'
+              }}
             >
-              <span style={{ fontSize: 10 }}>▶</span> Écouter
+              <span style={{ fontSize: 10 }}>{isListening ? '■' : '▶'}</span> {isListening ? 'Stop' : 'Écouter'}
             </button>
           )}
         </div>
 
         {/* Center music icon for gradient fallback */}
-        {!showImg && imgState !== 'loading' && (
+        {!showImg && (imgState !== 'loading' || !thumbUrl) && (
           <div style={{
             flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
             paddingTop: 20,
@@ -163,7 +196,7 @@ export default function OSTDuelCard({
             <MusicIcon color={accent} />
           </div>
         )}
-        {(showImg || imgState === 'loading') && <div style={{ flex: 1 }} />}
+        {(showImg || (imgState === 'loading' && thumbUrl)) && <div style={{ flex: 1 }} />}
 
         {/* Bottom info */}
         <div style={{ padding: isMobile ? '0 16px 18px' : '0 22px 22px' }}>
@@ -248,7 +281,7 @@ export default function OSTDuelCard({
               onMouseEnter={e => { e.currentTarget.style.background = 'rgba(212,160,23,.24)'; e.currentTarget.style.borderColor = GOLD }}
               onMouseLeave={e => { e.currentTarget.style.background = 'rgba(212,160,23,.1)'; e.currentTarget.style.borderColor = 'rgba(212,160,23,.4)' }}
             >
-              Voter pour cette OST
+              Voter pour cet opening
             </button>
           )}
         </div>

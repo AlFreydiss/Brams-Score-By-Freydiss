@@ -116,6 +116,7 @@ export default function DuelArena({
   personalVotes, onVote, onNext, isLastMatch, isMobile,
 }) {
   const [ytOpen, setYtOpen] = useState(null)
+  const [listeningSide, setListeningSide] = useState(null)
   const [showToast, setToast] = useState(false)
 
   const voted      = personalVotes?.[match.id] || null
@@ -130,9 +131,20 @@ export default function DuelArena({
   const matchNum     = match.position + 1
 
   function handleVote(side) {
+    setListeningSide(null)
     onVote(side)
     setToast(true)
     setTimeout(() => setToast(false), 3000)
+  }
+
+  function handleListen(side, participant) {
+    if (participant?.mediaUrl) {
+      setYtOpen(null)
+      setListeningSide(current => current === side ? null : side)
+      return
+    }
+    setListeningSide(null)
+    setYtOpen(participant?.ytId || null)
   }
 
   return (
@@ -199,7 +211,8 @@ export default function DuelArena({
           voteCount={percents.leftN}
           hasVoted={hasVoted}
           onVote={handleVote}
-          onListen={setYtOpen}
+          onListen={handleListen}
+          isListening={listeningSide === 'left'}
           showResult={showResult}
           isMobile={isMobile}
         />
@@ -222,7 +235,8 @@ export default function DuelArena({
           voteCount={percents.rightN}
           hasVoted={hasVoted}
           onVote={handleVote}
-          onListen={setYtOpen}
+          onListen={handleListen}
+          isListening={listeningSide === 'right'}
           showResult={showResult}
           isMobile={isMobile}
         />

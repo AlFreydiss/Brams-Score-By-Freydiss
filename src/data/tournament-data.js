@@ -1,3 +1,5 @@
+import { LOCAL_TRACKS } from '../lib/blindTest.js'
+
 // ── OST Participants catalog ───────────────────────────────────────────────
 // ytId: YouTube video ID for playback embed. Verify/update IDs as needed.
 // color: accent color for the card (used when thumbnail fails to load).
@@ -37,6 +39,17 @@ export const OST_CATALOG = [
   { id:'yoi-op1',      title:'History Maker',            anime:'Yuri!!! on Ice',             artist:'Dean Fujioka',           ytId:'rFOVBVMJhgY', color:'#1d4ed8' },
 ]
 
+export const BLIND_TEST_OPENING_CATALOG = LOCAL_TRACKS.map((track) => ({
+  id: track.id,
+  title: track.title,
+  anime: track.anime,
+  artist: track.artist || track.episode || 'Blind Test',
+  type: track.type || 'OP',
+  episode: track.episode,
+  mediaUrl: track.url,
+  color: track.color || '#6366f1',
+}))
+
 // ── Initial tournament configuration ─────────────────────────────────────
 export const TOURNAMENT_CONFIG = {
   id:          'best-anime-ost-2026',
@@ -55,15 +68,15 @@ export const TOURNAMENT_CONFIG = {
 export const OPENING_TOURNAMENT_CONFIG = {
   id:          'best-anime-opening-2026',
   title:       'Best Anime Opening 2026',
-  description: '32 openings deja presents dans le Blind Test. Lance les extraits, compare en 1v1, et fais avancer le meilleur opening.',
+  description: `${BLIND_TEST_OPENING_CATALOG.length} openings du Blind Test. Lance les extraits, compare en 1v1, et fais avancer le meilleur opening.`,
   status:      'active',
   format:      'single_elimination',
   edition:     'Edition 1',
   startDate:   '2026-05-27',
   categoryLabel:'Openings',
   route:        '/tournoi/openings',
-  version:      'v1-opening',
-  participants: OST_CATALOG,
+  version:      'v2-opening-blind-test',
+  participants: BLIND_TEST_OPENING_CATALOG,
 }
 
 export const TOURNAMENT_CONFIGS = {
