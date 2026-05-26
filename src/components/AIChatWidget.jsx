@@ -71,16 +71,16 @@ export default function AIChatWidget({ hidden = false }) {
       let data
       try { data = await res.json() } catch { data = {} }
       if (res.status === 429) {
-        setNotice('Pause courte. Réessaie dans quelques secondes.')
+        setNotice(data.error || 'Pause courte. Réessaie dans quelques secondes.')
         return
       } else if (res.status === 503) {
-        setNotice("L'IA est temporairement occupée. Retente dans un instant.")
+        setNotice(data.error || "L'IA est temporairement occupée. Retente dans un instant.")
         return
       } else if (res.status === 400) {
-        setNotice('Message invalide.')
+        setNotice(data.error || 'Message invalide.')
         return
       } else if (!res.ok) {
-        setNotice('Erreur serveur, réessaie dans un instant.')
+        setNotice(data.error || 'Erreur serveur, réessaie dans un instant.')
         return
       } else {
         const reply = data.reply || "Quelque chose a raté, réessaie."

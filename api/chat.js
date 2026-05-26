@@ -5,6 +5,9 @@ Tu réponds en français avec passion pour One Piece.
 Rangs du serveur : Pirate → Shichibukai → Amiral → Yonkou, attribués automatiquement selon l'activité vocale et messages des 7 derniers jours.
 Réponds en 2-4 phrases max sauf si on te demande un détail approfondi.`
 
+const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile'
+const XAI_MODEL = process.env.XAI_MODEL || 'grok-code-fast-1'
+
 function isValidKey(k) {
   return typeof k === 'string' && /^AIzaSy[A-Za-z0-9_-]{30,}$/.test(k.trim())
 }
@@ -69,7 +72,7 @@ async function tryGroq(message, chatHistory) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'llama-3.1-8b-instant',
+      model: GROQ_MODEL,
       messages,
       max_tokens: 300,
       temperature: 0.7,
@@ -102,7 +105,7 @@ async function tryXAI(message, chatHistory) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'grok-code-fast-1',
+      model: XAI_MODEL,
       messages,
       max_tokens: 400,
       temperature: 0.7,
@@ -118,8 +121,45 @@ async function tryXAI(message, chatHistory) {
   return data.choices[0].message.content
 }
 
+function classifyError(err) {
+  const msg = String(err?.message || err || '').toLowerCase()
+  if (
+    msg.includes('no_valid_keys')
+    || msg.includes('no_groq_key')
+    || msg.includes('no_xai_key')
+    || msg.includes('api key not valid')
+    || msg.includes('invalid api key')
+    || msg.includes('401')
+    || msg.includes('403')
+  ) return 'config'
+
+  if (
+    err?.status === 429
+    || msg.includes('429')
+    || msg.includes('quota')
+    || msg.includes('resource_exhausted')
+    || msg.includes('rate limit')
+    || msg.includes('rate_limit')
+    || msg.includes('too many requests')
+  ) return 'rate_limit'
+
+  return 'provider_error'
+}
+
+async function runProvider(name, fn, errors) {
+  try {
+    const reply = await fn()
+    return { reply, provider: name }
+  } catch (err) {
+    errors.push({ provider: name, kind: classifyError(err), message: err?.message || String(err) })
+    console.error(`[chat] ${name} failed:`, err?.message || err)
+    return null
+  }
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
+  res.setHeader('Cache-Control', 'no-store')
 
   const { message, history = [] } = req.body || {}
   if (!message || typeof message !== 'string' || !message.trim()) {
@@ -132,36 +172,39 @@ export default async function handler(req, res) {
     .slice(-10)
     .map(m => ({ role: m.role === 'user' ? 'user' : 'model', parts: [{ text: m.text }] }))
 
-  try {
-    const reply = await tryWithRotation(message.trim(), chatHistory)
-    return res.status(200).json({ reply, provider: 'gemini' })
-  } catch (geminiErr) {
-    console.error('[chat] gemini primary failed, falling back:', geminiErr?.message)
+  const trimmed = message.trim()
+  const errors = []
+  const providers = [
+    ['gemini', () => tryWithRotation(trimmed, chatHistory)],
+    ['groq', () => tryGroq(trimmed, chatHistory)],
+    ['xai', () => tryXAI(trimmed, chatHistory)],
+  ]
 
-    try {
-      const reply = await tryXAI(message.trim(), chatHistory)
-      return res.status(200).json({ reply, provider: 'xai' })
-    } catch (xaiErr) {
-      console.error('[chat] xai fallback failed:', xaiErr?.message)
-
-      try {
-        const reply = await tryGroq(message.trim(), chatHistory)
-        return res.status(200).json({ reply, provider: 'groq' })
-      } catch (groqErr) {
-        console.error('[chat] groq fallback failed:', groqErr?.message)
-      }
-
-      const isRateLimit = geminiErr?.status === 429
-        || String(geminiErr?.message).includes('quota')
-        || String(geminiErr?.message).includes('RESOURCE_EXHAUSTED')
-        || geminiErr?.message === 'no_valid_keys'
-        || xaiErr?.status === 429
-        || String(xaiErr?.message).includes('rate')
-        || String(xaiErr?.message).includes('quota')
-
-      console.error('[chat]', geminiErr?.message || geminiErr)
-      if (isRateLimit) return res.status(429).json({ error: 'Je reçois trop de messages en ce moment, réessaie dans quelques secondes !' })
-      return res.status(503).json({ error: 'Service unavailable' })
-    }
+  for (const [name, fn] of providers) {
+    const result = await runProvider(name, fn, errors)
+    if (result?.reply) return res.status(200).json(result)
   }
+
+  const kinds = new Set(errors.map(e => e.kind))
+  const allConfig = errors.length > 0 && [...kinds].every(k => k === 'config')
+  const hasRateLimit = kinds.has('rate_limit')
+
+  if (allConfig) {
+    return res.status(503).json({
+      error: "L'IA du site n'a pas de clé API valide configurée. Ajoute GEMINI_API_KEY ou GROQ_API_KEY dans les variables du déploiement.",
+      code: 'ai_not_configured',
+    })
+  }
+
+  if (hasRateLimit) {
+    return res.status(429).json({
+      error: 'Je reçois trop de messages en ce moment, réessaie dans quelques secondes !',
+      code: 'ai_rate_limited',
+    })
+  }
+
+  return res.status(503).json({
+    error: "L'IA est temporairement indisponible. Réessaie dans un instant.",
+    code: 'ai_unavailable',
+  })
 }
