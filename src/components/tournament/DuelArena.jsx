@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { getVotePercents } from '../../lib/tournament.js'
 import OSTDuelCard from './OSTDuelCard.jsx'
@@ -8,64 +9,238 @@ const PINK   = '#9d174d'
 const PURPLE = '#4c1d95'
 const PINK_L = '#f9a8d4'
 const GOLD   = PINK
-const GOLD_L = PINK_L
 const GRAD   = `linear-gradient(135deg, ${PINK}, ${PURPLE})`
 
 const ARENA_CSS = `
-  @keyframes arWave { 0%,100%{height:6px} 50%{height:28px} }
+  @keyframes arWave { 0%,100%{height:5px} 50%{height:30px} }
+  @keyframes arWaveIdle { 0%,100%{height:4px} 50%{height:8px} }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:14px; height:14px; border-radius:50%; cursor:pointer; }
+  input[type=range]::-webkit-slider-runnable-track { height:4px; border-radius:2px; }
 `
 
-function ArenaWaveform({ color }) {
+function ArenaWaveform({ color, active }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 3, height: 36, justifyContent: 'center' }}>
       {Array.from({ length: 14 }).map((_, i) => (
         <div key={i} style={{
           width: 3, borderRadius: 2,
           background: color || GOLD,
-          opacity: 0.55,
-          animation: `arWave ${0.5 + (i % 5) * 0.12}s ${i * 0.04}s ease-in-out infinite`,
+          opacity: active ? 0.75 : 0.22,
+          animation: active
+            ? `arWave ${0.45 + (i % 5) * 0.12}s ${i * 0.04}s ease-in-out infinite`
+            : `arWaveIdle ${1.8 + (i % 3) * 0.4}s ${i * 0.08}s ease-in-out infinite`,
         }} />
       ))}
     </div>
   )
 }
 
-// ── YouTube modal ──────────────────────────────────────────────────────────
-function YtPlayer({ ytId, onClose }) {
-  if (!ytId || ytId.startsWith('similar')) return null
+// ── Page background overlay ────────────────────────────────────────────────
+function PlayingBgOverlay({ ytId, color }) {
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      style={{
-        position: 'fixed', inset: 0, zIndex: 900,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: 'rgba(0,0,0,.9)',
-      }}
-      onClick={onClose}
+      transition={{ duration: 1.4 }}
+      style={{ position: 'fixed', inset: 0, zIndex: 1, pointerEvents: 'none', overflow: 'hidden' }}
     >
-      <div onClick={e => e.stopPropagation()} style={{ position: 'relative', width: '90vw', maxWidth: 800 }}>
-        <div style={{ aspectRatio: '16/9', width: '100%' }}>
-          <iframe
-            width="100%" height="100%"
-            src={`https://www.youtube.com/embed/${ytId}?autoplay=1`}
-            allow="autoplay; encrypted-media"
-            allowFullScreen
-            style={{ border: 'none', borderRadius: 12, display: 'block' }}
-          />
-        </div>
-        <button
-          onClick={onClose}
+      {ytId ? (
+        <img
+          src={`https://img.youtube.com/vi/${ytId}/hqdefault.jpg`}
+          alt=""
           style={{
-            position: 'absolute', top: -18, right: -18,
-            width: 36, height: 36, borderRadius: '50%',
-            background: '#1a1a22', border: `1px solid rgba(255,255,255,.22)`,
-            color: '#fff', cursor: 'pointer', fontSize: 18,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            position: 'absolute', inset: '-10%',
+            width: '120%', height: '120%',
+            objectFit: 'cover',
+            filter: 'blur(55px) brightness(0.18) saturate(2)',
           }}
-        >×</button>
+        />
+      ) : (
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: `radial-gradient(ellipse at 50% 35%, ${color}45 0%, ${color}20 45%, transparent 70%)`,
+        }} />
+      )}
+      <div style={{
+        position: 'absolute', inset: 0,
+        background: `radial-gradient(ellipse at 50% 45%, ${color}28 0%, transparent 60%)`,
+      }} />
+    </motion.div>
+  )
+}
+
+function fmt(s) {
+  const m = Math.floor(s / 60), sec = Math.floor(s % 60)
+  return `${m}:${sec.toString().padStart(2, '0')}`
+}
+
+// ── Mini player — mp4 (audioUrl) ou YouTube (ytId) ────────────────────────
+function MiniPlayer({ ytId, audioUrl, color, title, anime, onStop }) {
+  const iframeRef  = useRef(null)
+  const videoRef   = useRef(null)
+  const timerRef   = useRef(null)
+  const startRef   = useRef(Date.now())
+  const [volume,  setVolume]  = useState(80)
+  const [elapsed, setElapsed] = useState(0)
+  const LIMIT = 90
+
+  // Auto-stop après 90s
+  useEffect(() => {
+    timerRef.current = setTimeout(onStop, LIMIT * 1000)
+    return () => clearTimeout(timerRef.current)
+  }, [onStop])
+
+  // Tick progress bar — seulement pour YouTube (le mp4 utilise onTimeUpdate)
+  useEffect(() => {
+    if (audioUrl) return
+    const iv = setInterval(() => setElapsed(Math.min(LIMIT, (Date.now() - startRef.current) / 1000)), 250)
+    return () => clearInterval(iv)
+  }, [audioUrl])
+
+  // Volume HTML5 video
+  useEffect(() => {
+    if (videoRef.current) videoRef.current.volume = volume / 100
+  }, [volume])
+
+  // Volume YouTube iframe
+  useEffect(() => {
+    if (!audioUrl && iframeRef.current) {
+      const t = setTimeout(() => {
+        iframeRef.current?.contentWindow?.postMessage(JSON.stringify({
+          event: 'command', func: 'setVolume', args: [volume],
+        }), '*')
+      }, 600)
+      return () => clearTimeout(t)
+    }
+  }, [volume, audioUrl])
+
+  const pct    = (elapsed / LIMIT) * 100
+  const volPct = volume + '%'
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 18 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 10 }}
+      transition={{ duration: 0.28, ease: 'easeOut' }}
+      style={{
+        position: 'relative', zIndex: 2,
+        marginTop: 18,
+        background: 'rgba(6,7,11,0.97)',
+        border: `1px solid ${color}30`,
+        borderRadius: 16,
+        padding: '14px 20px',
+        display: 'flex', alignItems: 'center', gap: 18,
+        backdropFilter: 'blur(24px)',
+        boxShadow: `0 0 60px ${color}10, 0 8px 40px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.03)`,
+        overflow: 'hidden',
+      }}
+    >
+      {/* bottom accent line */}
+      <div style={{
+        position: 'absolute', bottom: 0, left: 0, right: 0, height: 2,
+        background: `linear-gradient(90deg, transparent 0%, ${color}55 40%, ${color}55 60%, transparent 100%)`,
+      }} />
+
+      {/* Lecteur vidéo / iframe */}
+      <div style={{ borderRadius: 10, overflow: 'hidden', flexShrink: 0, boxShadow: '0 4px 20px rgba(0,0,0,.6)' }}>
+        {audioUrl ? (
+          <video
+            ref={videoRef}
+            src={audioUrl}
+            autoPlay
+            width={192} height={108}
+            onTimeUpdate={e => {
+              setElapsed(e.target.currentTime)
+              if (e.target.currentTime >= LIMIT) onStop()
+            }}
+            onEnded={onStop}
+            style={{ display: 'block', objectFit: 'cover' }}
+          />
+        ) : (
+          <iframe
+            ref={iframeRef}
+            width="192" height="108"
+            src={`https://www.youtube.com/embed/${ytId}?autoplay=1&start=15&end=105&enablejsapi=1&controls=1&fs=0&modestbranding=1&rel=0`}
+            allow="autoplay; encrypted-media"
+            style={{ border: 'none', display: 'block' }}
+            title={title}
+          />
+        )}
       </div>
+
+      {/* Info + progress + volume */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 9, color: 'rgba(255,255,255,.3)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4 }}>
+          {anime}
+        </div>
+        <div style={{
+          fontSize: 15, fontWeight: 800, color: 'rgba(255,255,255,.92)',
+          marginBottom: 10, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+        }}>
+          {title}
+        </div>
+
+        {/* Barre de progression / seek */}
+        <div style={{ marginBottom: 10 }}>
+          <input
+            type="range" min="0" max={LIMIT} step="0.5" value={elapsed}
+            onChange={e => {
+              const t = Number(e.target.value)
+              setElapsed(t)
+              if (audioUrl && videoRef.current) videoRef.current.currentTime = t
+            }}
+            style={{
+              width: '100%', height: 4, cursor: 'pointer',
+              WebkitAppearance: 'none', appearance: 'none',
+              outline: 'none', borderRadius: 2, marginBottom: 3, display: 'block',
+              background: `linear-gradient(90deg, ${color} ${pct}%, rgba(255,255,255,.12) ${pct}%)`,
+              accentColor: color,
+            }}
+          />
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, color: 'rgba(255,255,255,.22)' }}>
+            <span>{fmt(elapsed)}</span>
+            <span>1:30</span>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontSize: 14, opacity: 0.42, flexShrink: 0 }}>
+            {volume === 0 ? '🔇' : volume < 40 ? '🔉' : '🔊'}
+          </span>
+          <input
+            type="range" min="0" max="100" value={volume}
+            onChange={e => setVolume(Number(e.target.value))}
+            style={{
+              flex: 1, height: 4, cursor: 'pointer',
+              WebkitAppearance: 'none', appearance: 'none',
+              outline: 'none', borderRadius: 2,
+              background: `linear-gradient(90deg, ${color} ${volPct}, rgba(255,255,255,.12) ${volPct})`,
+              accentColor: color,
+            }}
+          />
+          <span style={{ fontSize: 10, color: 'rgba(255,255,255,.25)', minWidth: 26, textAlign: 'right' }}>
+            {volume}
+          </span>
+        </div>
+      </div>
+
+      {/* Stop */}
+      <button
+        onClick={onStop}
+        style={{
+          flexShrink: 0, padding: '11px 20px', borderRadius: 10,
+          border: '1px solid rgba(255,255,255,.12)',
+          background: 'rgba(255,255,255,.04)',
+          color: 'rgba(255,255,255,.6)', fontSize: 12, fontWeight: 700,
+          cursor: 'pointer', transition: 'all 0.2s', letterSpacing: '0.04em',
+        }}
+        onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,.1)'}
+        onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,.04)'}
+      >
+        ■ Stop
+      </button>
     </motion.div>
   )
 }
@@ -85,19 +260,15 @@ function VoteToast({ visible, winnerTitle }) {
             zIndex: 800,
             background: 'rgba(10,11,16,0.98)',
             border: `1px solid rgba(157,23,77,.48)`,
-            borderRadius: 14,
-            padding: '12px 24px',
+            borderRadius: 14, padding: '12px 24px',
             display: 'flex', alignItems: 'center', gap: 12,
             boxShadow: '0 8px 32px rgba(0,0,0,.65), 0 0 0 1px rgba(157,23,77,.07)',
-            backdropFilter: 'blur(16px)',
-            whiteSpace: 'nowrap',
+            backdropFilter: 'blur(16px)', whiteSpace: 'nowrap',
           }}
         >
           <span style={{ color: GOLD, fontSize: 15 }}>✦</span>
           <div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: GOLD }}>
-              Ton vote a été enregistré
-            </div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: GOLD }}>Ton vote a été enregistré</div>
             {winnerTitle && (
               <div style={{ fontSize: 11, color: 'rgba(255,255,255,.42)', marginTop: 1 }}>
                 {winnerTitle} mène pour l'instant
@@ -115,8 +286,7 @@ export default function DuelArena({
   round, match, totalMatchesInRound, voteCounts,
   personalVotes, onVote, onNext, isLastMatch, isMobile,
 }) {
-  const [ytOpen, setYtOpen] = useState(null)
-  const [listeningSide, setListeningSide] = useState(null)
+  const [playing, setPlaying] = useState(null) // { side, ytId, color, title, anime }
   const [showToast, setToast] = useState(false)
 
   const voted      = personalVotes?.[match.id] || null
@@ -124,57 +294,72 @@ export default function DuelArena({
   const showResult = match.status === 'closed' || hasVoted
   const percents   = getVotePercents(voteCounts, match.id)
   const winnerSide = showResult
-    ? (percents.leftN >= percents.rightN ? 'left' : 'right')
-    : null
+    ? (percents.leftN >= percents.rightN ? 'left' : 'right') : null
   const winnerTitle  = winnerSide === 'left' ? match.left?.title : match.right?.title
   const qualifiesFor = round.size > 2 ? nextRoundLabel(round.size) : null
   const matchNum     = match.position + 1
 
+  // Stop player on match change
+  useEffect(() => { setPlaying(null) }, [match.id])
+
   function handleVote(side) {
-    setListeningSide(null)
     onVote(side)
     setToast(true)
     setTimeout(() => setToast(false), 3000)
   }
 
-  function handleListen(side, participant) {
-    if (participant?.mediaUrl) {
-      setYtOpen(null)
-      setListeningSide(current => current === side ? null : side)
-      return
-    }
-    setListeningSide(null)
-    setYtOpen(participant?.ytId || null)
+  function handleListen(side) {
+    if (playing?.side === side) { setPlaying(null); return }
+    const p = side === 'left' ? match.left : match.right
+    const ytOk = p?.ytId && !p.ytId.startsWith('similar')
+    if (!p || (!ytOk && !p.audioUrl)) return
+    setPlaying({
+      side,
+      ytId:     ytOk ? p.ytId : null,
+      audioUrl: p.audioUrl || null,
+      color:    p.color || GOLD,
+      title:    p.title,
+      anime:    p.anime,
+    })
   }
 
   return (
     <div style={{ position: 'relative' }}>
       <style>{ARENA_CSS}</style>
 
-      {/* Ambient glow from participant colors */}
-      <div style={{
-        position: 'absolute', inset: 0, zIndex: 0,
-        pointerEvents: 'none', overflow: 'hidden',
-      }}>
+      {/* Page background overlay — portal vers document.body pour éviter le stacking context du motion.div */}
+      {typeof document !== 'undefined' && createPortal(
+        <AnimatePresence>
+          {playing && <PlayingBgOverlay key={playing.ytId || playing.audioUrl} ytId={playing.ytId} color={playing.color} />}
+        </AnimatePresence>,
+        document.body
+      )}
+
+      {/* Ambient glow — more visible */}
+      <div style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
         {match.left?.color && (
           <div style={{
-            position: 'absolute', left: '-2%', top: '5%',
-            width: '40%', height: '90%', borderRadius: '50%',
-            background: match.left.color, opacity: 0.042,
-            filter: 'blur(90px)',
+            position: 'absolute', left: '-8%', top: '-10%',
+            width: '55%', height: '120%', borderRadius: '50%',
+            background: match.left.color,
+            opacity: playing?.side === 'left' ? 0.13 : 0.08,
+            filter: 'blur(80px)',
+            transition: 'opacity 0.9s ease',
           }} />
         )}
         {match.right?.color && (
           <div style={{
-            position: 'absolute', right: '-2%', top: '5%',
-            width: '40%', height: '90%', borderRadius: '50%',
-            background: match.right.color, opacity: 0.042,
-            filter: 'blur(90px)',
+            position: 'absolute', right: '-8%', top: '-10%',
+            width: '55%', height: '120%', borderRadius: '50%',
+            background: match.right.color,
+            opacity: playing?.side === 'right' ? 0.13 : 0.08,
+            filter: 'blur(80px)',
+            transition: 'opacity 0.9s ease',
           }} />
         )}
       </div>
 
-      {/* Round progress bar (thin, top) */}
+      {/* Round progress bar */}
       <div style={{ position: 'relative', zIndex: 1, marginBottom: 18 }}>
         <div style={{ height: 2, borderRadius: 1, background: 'rgba(255,255,255,.05)', overflow: 'hidden' }}>
           <motion.div
@@ -186,10 +371,10 @@ export default function DuelArena({
         </div>
       </div>
 
-      {/* Waveform — music is playing indicator */}
+      {/* Waveform */}
       {!hasVoted && (
         <div style={{ position: 'relative', zIndex: 1, marginBottom: 18, textAlign: 'center' }}>
-          <ArenaWaveform color={match.left?.color ?? GOLD} />
+          <ArenaWaveform color={playing?.color ?? match.left?.color ?? GOLD} active={!!playing} />
         </div>
       )}
 
@@ -211,8 +396,9 @@ export default function DuelArena({
           voteCount={percents.leftN}
           hasVoted={hasVoted}
           onVote={handleVote}
-          onListen={handleListen}
-          isListening={listeningSide === 'left'}
+          onListen={() => handleListen('left')}
+          isPlaying={playing?.side === 'left'}
+          otherIsPlaying={playing !== null && playing.side !== 'left'}
           showResult={showResult}
           isMobile={isMobile}
         />
@@ -235,12 +421,28 @@ export default function DuelArena({
           voteCount={percents.rightN}
           hasVoted={hasVoted}
           onVote={handleVote}
-          onListen={handleListen}
-          isListening={listeningSide === 'right'}
+          onListen={() => handleListen('right')}
+          isPlaying={playing?.side === 'right'}
+          otherIsPlaying={playing !== null && playing.side !== 'right'}
           showResult={showResult}
           isMobile={isMobile}
         />
       </div>
+
+      {/* Mini player */}
+      <AnimatePresence>
+        {playing && (
+          <MiniPlayer
+            key={playing.ytId || playing.audioUrl}
+            ytId={playing.ytId}
+            audioUrl={playing.audioUrl}
+            color={playing.color}
+            title={playing.title}
+            anime={playing.anime}
+            onStop={() => setPlaying(null)}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Post-vote */}
       <AnimatePresence>
@@ -266,10 +468,8 @@ export default function DuelArena({
                 whileHover={{ scale: 1.04, boxShadow: `0 10px 32px rgba(157,23,77,.38)` }}
                 whileTap={{ scale: 0.97 }}
                 style={{
-                  padding: '14px 52px',
-                  borderRadius: 100, border: 'none',
-                  background: GRAD,
-                  color: '#fff', fontWeight: 800, fontSize: 15,
+                  padding: '14px 52px', borderRadius: 100, border: 'none',
+                  background: GRAD, color: '#fff', fontWeight: 800, fontSize: 15,
                   cursor: 'pointer', letterSpacing: '0.04em',
                   fontFamily: "'Pirata One',cursive",
                   boxShadow: `0 6px 24px rgba(157,23,77,.24)`,
@@ -299,10 +499,6 @@ export default function DuelArena({
       )}
 
       <VoteToast visible={showToast} winnerTitle={winnerSide ? winnerTitle : null} />
-
-      <AnimatePresence>
-        {ytOpen && <YtPlayer ytId={ytOpen} onClose={() => setYtOpen(null)} />}
-      </AnimatePresence>
     </div>
   )
 }
