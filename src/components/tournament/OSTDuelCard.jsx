@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 
 const GOLD   = '#d4a017'
@@ -11,8 +11,16 @@ export default function OSTDuelCard({
   showResult, isMobile,
 }) {
   const [imgState, setImgState] = useState('loading')
+  const videoRef = useRef(null)
 
   useEffect(() => { setImgState('loading') }, [participant?.id])
+
+  function handleFullscreen() {
+    const el = videoRef.current
+    if (!el) return
+    if (el.requestFullscreen) el.requestFullscreen()
+    else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen()
+  }
 
   if (!participant) {
     return (
@@ -90,6 +98,7 @@ export default function OSTDuelCard({
         {/* Vidéo pleine carte quand en lecture */}
         {isPlaying && participant?.audioUrl && (
           <video
+            ref={videoRef}
             key={participant.audioUrl}
             src={participant.audioUrl}
             autoPlay muted loop playsInline
@@ -144,40 +153,59 @@ export default function OSTDuelCard({
         {/* Top bar */}
         <div style={{ padding: '13px 14px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{
-            fontSize: 9, padding: '3px 9px', borderRadius: 6,
+            fontSize: 9, padding: '3px 10px', borderRadius: 6,
             background: 'rgba(0,0,0,.5)', backdropFilter: 'blur(8px)',
-            color: 'rgba(255,255,255,.35)',
+            color: isPlaying ? accent : 'rgba(255,255,255,.35)',
             letterSpacing: '0.12em', fontWeight: 700, textTransform: 'uppercase',
-          }}>OP</span>
+            border: `1px solid ${isPlaying ? accent + '60' : 'transparent'}`,
+            transition: 'all 0.3s',
+          }}>OPENING</span>
 
-          {canPlay && (
-            <button
-              onClick={e => { e.stopPropagation(); onListen() }}
-              style={{
-                background: isPlaying ? `${a35}` : 'rgba(0,0,0,.5)',
-                backdropFilter: 'blur(8px)',
-                border: `1px solid ${isPlaying ? accent : 'rgba(255,255,255,.18)'}`,
-                borderRadius: 20, padding: '4px 12px',
-                color: isPlaying ? accent : 'rgba(255,255,255,.55)',
-                fontSize: 10, cursor: 'pointer',
-                display: 'flex', alignItems: 'center', gap: 5,
-                fontWeight: 700, letterSpacing: '0.06em',
-                transition: 'all 0.2s',
-              }}
-            >
-              <span style={{ fontSize: 9 }}>{isPlaying ? '■' : '▶'}</span>
-              {isPlaying ? 'Stop' : 'Play'}
-            </button>
-          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            {canPlay && (
+              <button
+                onClick={e => { e.stopPropagation(); onListen() }}
+                style={{
+                  background: 'rgba(0,0,0,.5)', backdropFilter: 'blur(8px)',
+                  border: `1px solid ${isPlaying ? accent : 'rgba(255,255,255,.18)'}`,
+                  borderRadius: 20, padding: '4px 12px',
+                  color: isPlaying ? accent : 'rgba(255,255,255,.55)',
+                  fontSize: 10, cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', gap: 5,
+                  fontWeight: 700, letterSpacing: '0.06em',
+                  transition: 'all 0.2s',
+                }}
+              >
+                <span style={{ fontSize: 9 }}>{isPlaying ? '■' : '▶'}</span>
+                {isPlaying ? 'Stop' : 'Voir'}
+              </button>
+            )}
+            {isPlaying && (
+              <button
+                onClick={e => { e.stopPropagation(); handleFullscreen() }}
+                title="Plein écran"
+                style={{
+                  background: 'rgba(0,0,0,.5)', backdropFilter: 'blur(8px)',
+                  border: '1px solid rgba(255,255,255,.18)',
+                  borderRadius: 20, padding: '4px 9px',
+                  color: 'rgba(255,255,255,.5)',
+                  fontSize: 11, cursor: 'pointer',
+                  display: 'flex', alignItems: 'center',
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = 'rgba(255,255,255,.4)' }}
+                onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,.5)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,.18)' }}
+              >⛶</button>
+            )}
+          </div>
         </div>
 
-        {/* Zone centrale — emoji + waveform */}
+        {/* Zone centrale — emoji quand pas en lecture */}
         <div style={{
           flex: 1,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          flexDirection: 'column', gap: 14, paddingBottom: 8,
+          paddingBottom: 8,
         }}>
-          {/* Emoji grand quand pas en lecture et pas de thumbnail */}
           {!isPlaying && !showThumb && participant.emoji && (
             <span style={{
               fontSize: isMobile ? 52 : 68,
@@ -187,22 +215,6 @@ export default function OSTDuelCard({
             }}>
               {participant.emoji}
             </span>
-          )}
-
-          {/* Waveform animée quand en lecture */}
-          {isPlaying && (
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: 36 }}>
-              {Array.from({ length: 14 }).map((_, i) => (
-                <div key={i} style={{
-                  width: 3, borderRadius: 2,
-                  background: `linear-gradient(180deg, #fff, ${accent})`,
-                  opacity: 0.85,
-                  height: `${25 + (i % 6) * 14}%`,
-                  minHeight: 4,
-                  animation: `arWave ${0.38 + (i % 6) * 0.11}s ${i * 0.038}s ease-in-out infinite`,
-                }} />
-              ))}
-            </div>
           )}
         </div>
 

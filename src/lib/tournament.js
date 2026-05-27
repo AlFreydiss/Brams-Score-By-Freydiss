@@ -31,9 +31,16 @@ export function generateBracket(participants) {
   const n = participants.length
   if (n < 2) throw new Error('participants must be min 2')
 
+  // Tirage aléatoire Fisher-Yates
+  const shuffled = [...participants]
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+  }
+
   const rounds = []
   let roundSize = nextPow2(Math.max(n, 4))
-  const slots = [...participants, ...Array.from({ length: roundSize - n }, () => null)]
+  const slots = [...shuffled, ...Array.from({ length: roundSize - n }, () => null)]
 
   while (roundSize >= 2) {
     const matchCount = roundSize / 2

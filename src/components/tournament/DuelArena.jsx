@@ -380,22 +380,21 @@ export default function DuelArena({
         </div>
       </div>
 
-      {/* Waveform */}
-      {!hasVoted && (
-        <div style={{ position: 'relative', zIndex: 1, marginBottom: 18, textAlign: 'center' }}>
-          <ArenaWaveform color={playing?.color ?? match.left?.color ?? GOLD} active={!!playing} />
-        </div>
-      )}
+      {/* Waveform centrale — couleur de l'opening en cours */}
+      <div style={{ position: 'relative', zIndex: 1, marginBottom: 20, textAlign: 'center' }}>
+        <ArenaWaveform color={playing?.color ?? match.left?.color ?? GOLD} active={!!playing} />
+      </div>
 
       {/* Cards row */}
       <div style={{
         position: 'relative', zIndex: 1,
         display: 'flex',
         flexDirection: isMobile ? 'column' : 'row',
-        gap: isMobile ? 0 : 14,
+        gap: isMobile ? 12 : 16,
         alignItems: 'stretch',
         overflow: 'hidden',
         minWidth: 0,
+        padding: isMobile ? '0 4px' : '0 8px',
       }}>
         <OSTDuelCard
           key={match.left?.id}
