@@ -36,7 +36,7 @@ function ArenaWaveform({ color, active }) {
 }
 
 // ── Page background overlay ────────────────────────────────────────────────
-function PlayingBgOverlay({ ytId, color }) {
+function PlayingBgOverlay({ ytId, audioUrl, color }) {
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -56,15 +56,24 @@ function PlayingBgOverlay({ ytId, color }) {
             filter: 'blur(55px) brightness(0.18) saturate(2)',
           }}
         />
-      ) : (
-        <div style={{
-          position: 'absolute', inset: 0,
-          background: `radial-gradient(ellipse at 50% 35%, ${color}45 0%, ${color}20 45%, transparent 70%)`,
-        }} />
-      )}
+      ) : audioUrl ? (
+        <video
+          src={audioUrl}
+          autoPlay
+          muted
+          loop
+          playsInline
+          style={{
+            position: 'absolute', inset: '-10%',
+            width: '120%', height: '120%',
+            objectFit: 'cover',
+            filter: 'blur(55px) brightness(0.18) saturate(2)',
+          }}
+        />
+      ) : null}
       <div style={{
         position: 'absolute', inset: 0,
-        background: `radial-gradient(ellipse at 50% 45%, ${color}28 0%, transparent 60%)`,
+        background: 'linear-gradient(180deg, rgba(0,0,0,.45) 0%, rgba(2,2,3,.6) 100%)',
       }} />
     </motion.div>
   )
@@ -330,7 +339,7 @@ export default function DuelArena({
       {/* Page background overlay — portal vers document.body pour éviter le stacking context du motion.div */}
       {typeof document !== 'undefined' && createPortal(
         <AnimatePresence>
-          {playing && <PlayingBgOverlay key={playing.ytId || playing.audioUrl} ytId={playing.ytId} color={playing.color} />}
+          {playing && <PlayingBgOverlay key={playing.ytId || playing.audioUrl} ytId={playing.ytId} audioUrl={playing.audioUrl} color={playing.color} />}
         </AnimatePresence>,
         document.body
       )}
