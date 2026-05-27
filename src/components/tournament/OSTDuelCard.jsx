@@ -9,6 +9,7 @@ export default function OSTDuelCard({
   votePercent, voteCount, hasVoted, onVote, onListen,
   isPlaying, otherIsPlaying,
   showResult, isMobile,
+  videoSyncRef,
 }) {
   const [imgState, setImgState] = useState('loading')
   const videoRef = useRef(null)
@@ -75,8 +76,8 @@ export default function OSTDuelCard({
           : isWinner
             ? `0 0 0 1px rgba(212,160,23,.2), 0 16px 64px rgba(212,160,23,.1)`
             : 'none',
-        opacity: otherIsPlaying ? 0.45 : 1,
-        transition: 'border-color .35s, box-shadow .35s, opacity .4s',
+        opacity: otherIsPlaying ? 0.82 : 1,
+        transition: 'border-color .35s, box-shadow .35s, opacity .5s',
       }}
       whileHover={!hasVoted ? { scale: 1.012 } : {}}
       transition={{ duration: 0.18 }}
@@ -95,10 +96,13 @@ export default function OSTDuelCard({
           />
         )}
 
-        {/* Vidéo pleine carte quand en lecture */}
+        {/* Vidéo pleine carte quand en lecture — ref partagée avec le player pour sync seek */}
         {isPlaying && participant?.audioUrl && (
           <video
-            ref={videoRef}
+            ref={el => {
+              videoRef.current = el
+              if (videoSyncRef) videoSyncRef.current = el
+            }}
             key={participant.audioUrl}
             src={participant.audioUrl}
             autoPlay muted loop playsInline

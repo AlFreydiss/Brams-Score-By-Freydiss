@@ -48,7 +48,7 @@ function fmt(s) {
 }
 
 // ── Compact audio strip ────────────────────────────────────────────────────
-function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop }) {
+function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop, onSeek }) {
   const iframeRef = useRef(null)
   const videoRef  = useRef(null)
   const timerRef  = useRef(null)
@@ -84,6 +84,13 @@ function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop }) {
   const pct    = (elapsed / LIMIT) * 100
   const volPct = volume + '%'
 
+  function handleSeek(rawValue) {
+    const t = Number(rawValue)
+    setElapsed(t)
+    if (audioUrl && videoRef.current) videoRef.current.currentTime = t
+    onSeek?.(t)
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -107,7 +114,7 @@ function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop }) {
         background: `linear-gradient(90deg, transparent, ${color}45, ${color}45, transparent)`,
       }} />
 
-      {/* Audio element caché — fournit le son */}
+      {/* Audio element caché — source de vérité pour l'audio */}
       {audioUrl ? (
         <video ref={videoRef} src={audioUrl} autoPlay width={0} height={0}
           onTimeUpdate={e => { setElapsed(e.target.currentTime); if (e.target.currentTime >= LIMIT) onStop() }}
@@ -143,11 +150,7 @@ function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop }) {
       <div style={{ flex: 1, minWidth: 0 }}>
         <input
           type="range" min="0" max={LIMIT} step="0.5" value={elapsed}
-          onChange={e => {
-            const t = Number(e.target.value)
-            setElapsed(t)
-            if (audioUrl && videoRef.current) videoRef.current.currentTime = t
-          }}
+          onChange={e => handleSeek(e.target.value)}
           style={{
             width: '100%', height: 3, cursor: 'pointer',
             WebkitAppearance: 'none', appearance: 'none',
@@ -241,6 +244,12 @@ export default function DuelArena({
 }) {
   const [playing, setPlaying] = useState(null)
   const [showToast, setToast] = useState(false)
+  // Ref vers la <video> de fond de la card active — pour sync imperative au seek
+  const cardBgVideoRef = useRef(null)
+
+  function handleCardBgSeek(t) {
+    if (cardBgVideoRef.current) cardBgVideoRef.current.currentTime = t
+  }
 
   const voted      = personalVotes?.[match.id] || null
   const hasVoted   = !!voted
@@ -337,6 +346,7 @@ export default function DuelArena({
           otherIsPlaying={playing !== null && playing.side !== 'left'}
           showResult={showResult}
           isMobile={isMobile}
+          videoSyncRef={playing?.side === 'left' ? cardBgVideoRef : null}
         />
 
         <VSPanel
@@ -366,6 +376,7 @@ export default function DuelArena({
           otherIsPlaying={playing !== null && playing.side !== 'right'}
           showResult={showResult}
           isMobile={isMobile}
+          videoSyncRef={playing?.side === 'right' ? cardBgVideoRef : null}
         />
       </div>
 
@@ -380,6 +391,7 @@ export default function DuelArena({
             title={playing.title}
             anime={playing.anime}
             onStop={() => setPlaying(null)}
+            onSeek={handleCardBgSeek}
           />
         )}
       </AnimatePresence>
