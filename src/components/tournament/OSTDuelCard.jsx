@@ -23,6 +23,16 @@ export default function OSTDuelCard({
     }
   }, [isPlaying])
 
+  // Pause la preview de l'autre card quand un opening est en cours d'écoute
+  useEffect(() => {
+    if (!videoRef.current) return
+    if (otherIsPlaying) {
+      videoRef.current.pause()
+    } else {
+      videoRef.current.play().catch(() => {})
+    }
+  }, [otherIsPlaying])
+
   function handleFullscreen() {
     const el = videoRef.current
     if (!el) return
