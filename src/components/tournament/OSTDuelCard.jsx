@@ -165,42 +165,81 @@ export default function OSTDuelCard({
           )}
         </div>
 
-        {/* ── Thumbnail visible au centre de la carte ── */}
+        {/* ── Centre de la carte ── */}
         <div style={{
           flex: 1,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           padding: isMobile ? '12px 20px' : '16px 28px',
         }}>
           {showThumb ? (
-            <div style={{
-              width: '100%', maxWidth: isMobile ? 260 : 340,
-              aspectRatio: '16/9',
-              borderRadius: 10, overflow: 'hidden',
-              boxShadow: `0 8px 32px rgba(0,0,0,.75), 0 0 0 1px ${accent}30`,
-              opacity: isLoser ? 0.45 : 1,
-              transition: 'opacity 0.4s',
-            }}>
+            <div
+              style={{
+                width: '100%', maxWidth: isMobile ? 260 : 340,
+                aspectRatio: '16/9', position: 'relative',
+                borderRadius: 10, overflow: 'hidden',
+                boxShadow: `0 8px 32px rgba(0,0,0,.75), 0 0 0 1px ${accent}30`,
+                opacity: isLoser ? 0.45 : 1,
+                transition: 'opacity 0.4s',
+              }}
+            >
               <img
                 src={thumbUrl}
                 alt={participant.title}
                 style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
               />
-            </div>
-          ) : (
-            <div style={{
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
-              opacity: isLoser ? 0.35 : 0.8,
-            }}>
-              <MusicIcon color={accent} />
-              {!thumbUrl && (
-                <div style={{
-                  fontSize: 10, color: accentA70,
-                  letterSpacing: '0.08em', textTransform: 'uppercase',
-                  fontWeight: 700,
-                }}>
-                  {participant.anime}
-                </div>
+              {canPlay && (
+                <button
+                  onClick={e => { e.stopPropagation(); onListen() }}
+                  style={{
+                    position: 'absolute', inset: 0,
+                    background: isPlaying ? 'rgba(0,0,0,.55)' : 'rgba(0,0,0,.35)',
+                    border: 'none', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    transition: 'background 0.2s',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,0,0,.55)' }}
+                  onMouseLeave={e => { e.currentTarget.style.background = isPlaying ? 'rgba(0,0,0,.55)' : 'rgba(0,0,0,.35)' }}
+                >
+                  <span style={{
+                    fontSize: 42, color: isPlaying ? accent : '#fff',
+                    textShadow: `0 0 24px ${accent}`,
+                    filter: 'drop-shadow(0 2px 8px rgba(0,0,0,.8))',
+                  }}>
+                    {isPlaying ? '■' : '▶'}
+                  </span>
+                </button>
               )}
+            </div>
+          ) : canPlay ? (
+            <button
+              onClick={e => { e.stopPropagation(); onListen() }}
+              style={{
+                background: isPlaying ? accentA40 : accentA15,
+                border: `2px solid ${isPlaying ? accent : accentA70}`,
+                borderRadius: '50%',
+                width: isMobile ? 80 : 100,
+                height: isMobile ? 80 : 100,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer',
+                boxShadow: isPlaying ? `0 0 40px ${accentA40}, 0 0 80px ${accentA15}` : `0 0 20px ${accentA15}`,
+                transition: 'all 0.3s',
+                opacity: isLoser ? 0.35 : 1,
+              }}
+              onMouseEnter={e => { if (!isPlaying) { e.currentTarget.style.background = accentA40; e.currentTarget.style.boxShadow = `0 0 30px ${accentA40}` } }}
+              onMouseLeave={e => { if (!isPlaying) { e.currentTarget.style.background = accentA15; e.currentTarget.style.boxShadow = `0 0 20px ${accentA15}` } }}
+            >
+              <span style={{
+                fontSize: isMobile ? 32 : 40,
+                color: accent,
+                marginLeft: isPlaying ? 0 : 4,
+                filter: `drop-shadow(0 0 8px ${accent})`,
+              }}>
+                {isPlaying ? '■' : '▶'}
+              </span>
+            </button>
+          ) : (
+            <div style={{ opacity: isLoser ? 0.35 : 0.5 }}>
+              <MusicIcon color={accent} />
             </div>
           )}
         </div>
