@@ -12,28 +12,11 @@ const GOLD   = PINK
 const GRAD   = `linear-gradient(135deg, ${PINK}, ${PURPLE})`
 
 const ARENA_CSS = `
-  @keyframes arWave { 0%,100%{height:5px} 50%{height:30px} }
-  @keyframes arWaveIdle { 0%,100%{height:4px} 50%{height:8px} }
-  input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:14px; height:14px; border-radius:50%; cursor:pointer; }
-  input[type=range]::-webkit-slider-runnable-track { height:4px; border-radius:2px; }
+  @keyframes arWave { 0%,100%{height:5px} 50%{height:28px} }
+  @keyframes arWaveIdle { 0%,100%{height:3px} 50%{height:7px} }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:12px; height:12px; border-radius:50%; cursor:pointer; }
+  input[type=range]::-webkit-slider-runnable-track { height:3px; border-radius:2px; }
 `
-
-function ArenaWaveform({ color, active }) {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 3, height: 36, justifyContent: 'center' }}>
-      {Array.from({ length: 14 }).map((_, i) => (
-        <div key={i} style={{
-          width: 3, borderRadius: 2,
-          background: color || GOLD,
-          opacity: active ? 0.75 : 0.22,
-          animation: active
-            ? `arWave ${0.45 + (i % 5) * 0.12}s ${i * 0.04}s ease-in-out infinite`
-            : `arWaveIdle ${1.8 + (i % 3) * 0.4}s ${i * 0.08}s ease-in-out infinite`,
-        }} />
-      ))}
-    </div>
-  )
-}
 
 // ── Page background overlay ────────────────────────────────────────────────
 function PlayingBgOverlay({ ytId, audioUrl, color }) {
@@ -46,35 +29,15 @@ function PlayingBgOverlay({ ytId, audioUrl, color }) {
       style={{ position: 'fixed', inset: 0, zIndex: 1, pointerEvents: 'none', overflow: 'hidden' }}
     >
       {ytId ? (
-        <img
-          src={`https://img.youtube.com/vi/${ytId}/hqdefault.jpg`}
-          alt=""
-          style={{
-            position: 'absolute', inset: '-10%',
-            width: '120%', height: '120%',
-            objectFit: 'cover',
-            filter: 'blur(52px) brightness(0.2) saturate(2)',
-          }}
+        <img src={`https://img.youtube.com/vi/${ytId}/hqdefault.jpg`} alt=""
+          style={{ position: 'absolute', inset: '-10%', width: '120%', height: '120%', objectFit: 'cover', filter: 'blur(52px) brightness(0.18) saturate(1.8)' }}
         />
       ) : audioUrl ? (
-        <video
-          src={audioUrl}
-          autoPlay
-          muted
-          loop
-          playsInline
-          style={{
-            position: 'absolute', inset: '-10%',
-            width: '120%', height: '120%',
-            objectFit: 'cover',
-            filter: 'blur(52px) brightness(0.2) saturate(2)',
-          }}
+        <video src={audioUrl} autoPlay muted loop playsInline
+          style={{ position: 'absolute', inset: '-10%', width: '120%', height: '120%', objectFit: 'cover', filter: 'blur(52px) brightness(0.18) saturate(1.8)' }}
         />
       ) : null}
-      <div style={{
-        position: 'absolute', inset: 0,
-        background: 'linear-gradient(180deg, rgba(0,0,0,.45) 0%, rgba(2,2,3,.6) 100%)',
-      }} />
+      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,.55) 0%, rgba(2,2,3,.65) 100%)' }} />
     </motion.div>
   )
 }
@@ -84,41 +47,35 @@ function fmt(s) {
   return `${m}:${sec.toString().padStart(2, '0')}`
 }
 
-// ── Mini player — mp4 (audioUrl) ou YouTube (ytId) ────────────────────────
-function MiniPlayer({ ytId, audioUrl, color, title, anime, onStop }) {
-  const iframeRef  = useRef(null)
-  const videoRef   = useRef(null)
-  const timerRef   = useRef(null)
-  const startRef   = useRef(Date.now())
+// ── Compact audio strip ────────────────────────────────────────────────────
+function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop }) {
+  const iframeRef = useRef(null)
+  const videoRef  = useRef(null)
+  const timerRef  = useRef(null)
+  const startRef  = useRef(Date.now())
   const [volume,  setVolume]  = useState(80)
   const [elapsed, setElapsed] = useState(0)
   const LIMIT = 90
 
-  // Auto-stop après 90s
   useEffect(() => {
     timerRef.current = setTimeout(onStop, LIMIT * 1000)
     return () => clearTimeout(timerRef.current)
   }, [onStop])
 
-  // Tick progress bar — seulement pour YouTube (le mp4 utilise onTimeUpdate)
   useEffect(() => {
     if (audioUrl) return
     const iv = setInterval(() => setElapsed(Math.min(LIMIT, (Date.now() - startRef.current) / 1000)), 250)
     return () => clearInterval(iv)
   }, [audioUrl])
 
-  // Volume HTML5 video
   useEffect(() => {
     if (videoRef.current) videoRef.current.volume = volume / 100
   }, [volume])
 
-  // Volume YouTube iframe
   useEffect(() => {
     if (!audioUrl && iframeRef.current) {
       const t = setTimeout(() => {
-        iframeRef.current?.contentWindow?.postMessage(JSON.stringify({
-          event: 'command', func: 'setVolume', args: [volume],
-        }), '*')
+        iframeRef.current?.contentWindow?.postMessage(JSON.stringify({ event: 'command', func: 'setVolume', args: [volume] }), '*')
       }, 600)
       return () => clearTimeout(t)
     }
@@ -129,124 +86,111 @@ function MiniPlayer({ ytId, audioUrl, color, title, anime, onStop }) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 18 }}
+      initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 10 }}
-      transition={{ duration: 0.28, ease: 'easeOut' }}
+      exit={{ opacity: 0, y: 8 }}
+      transition={{ duration: 0.22, ease: 'easeOut' }}
       style={{
-        position: 'relative', zIndex: 2,
-        marginTop: 18,
-        background: 'rgba(6,7,11,0.97)',
-        border: `1px solid ${color}30`,
-        borderRadius: 16,
-        padding: '14px 20px',
-        display: 'flex', alignItems: 'center', gap: 18,
-        backdropFilter: 'blur(24px)',
-        boxShadow: `0 0 60px ${color}10, 0 8px 40px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.03)`,
-        overflow: 'hidden',
+        position: 'relative', zIndex: 2, marginTop: 14,
+        background: 'rgba(8,9,14,0.96)',
+        border: `1px solid rgba(255,255,255,.07)`,
+        borderTop: `1px solid ${color}25`,
+        borderRadius: 14,
+        padding: '10px 16px',
+        display: 'flex', alignItems: 'center', gap: 14,
+        backdropFilter: 'blur(20px)',
       }}
     >
-      {/* bottom accent line */}
+      {/* Accent line top */}
       <div style={{
-        position: 'absolute', bottom: 0, left: 0, right: 0, height: 2,
-        background: `linear-gradient(90deg, transparent 0%, ${color}55 40%, ${color}55 60%, transparent 100%)`,
+        position: 'absolute', top: 0, left: 0, right: 0, height: 1,
+        background: `linear-gradient(90deg, transparent, ${color}45, ${color}45, transparent)`,
       }} />
 
-      {/* Lecteur vidéo / iframe */}
-      <div style={{ borderRadius: 10, overflow: 'hidden', flexShrink: 0, boxShadow: '0 4px 20px rgba(0,0,0,.6)' }}>
-        {audioUrl ? (
-          <video
-            ref={videoRef}
-            src={audioUrl}
-            autoPlay
-            width={192} height={108}
-            onTimeUpdate={e => {
-              setElapsed(e.target.currentTime)
-              if (e.target.currentTime >= LIMIT) onStop()
-            }}
-            onEnded={onStop}
-            style={{ display: 'block', objectFit: 'cover' }}
-          />
-        ) : (
-          <iframe
-            ref={iframeRef}
-            width="192" height="108"
-            src={`https://www.youtube.com/embed/${ytId}?autoplay=1&start=15&end=105&enablejsapi=1&controls=1&fs=0&modestbranding=1&rel=0`}
-            allow="autoplay; encrypted-media"
-            style={{ border: 'none', display: 'block' }}
-            title={title}
-          />
-        )}
-      </div>
+      {/* Audio element caché — fournit le son */}
+      {audioUrl ? (
+        <video ref={videoRef} src={audioUrl} autoPlay width={0} height={0}
+          onTimeUpdate={e => { setElapsed(e.target.currentTime); if (e.target.currentTime >= LIMIT) onStop() }}
+          onEnded={onStop}
+          style={{ position: 'absolute', opacity: 0, pointerEvents: 'none' }}
+        />
+      ) : (
+        <iframe ref={iframeRef} width={0} height={0}
+          src={`https://www.youtube.com/embed/${ytId}?autoplay=1&start=15&end=105&enablejsapi=1&controls=0`}
+          allow="autoplay; encrypted-media"
+          style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', border: 'none' }}
+          title={title}
+        />
+      )}
 
-      {/* Info + progress + volume */}
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 9, color: 'rgba(255,255,255,.3)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4 }}>
-          {anime}
-        </div>
-        <div style={{
-          fontSize: 15, fontWeight: 800, color: 'rgba(255,255,255,.92)',
-          marginBottom: 10, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-        }}>
+      {/* Dot coloré */}
+      <div style={{
+        width: 8, height: 8, borderRadius: '50%',
+        background: color, flexShrink: 0,
+        boxShadow: `0 0 8px ${color}`,
+        animation: 'arWaveIdle 1.4s ease-in-out infinite',
+      }} />
+
+      {/* Title compact */}
+      <div style={{ flexShrink: 0, minWidth: 0, maxWidth: 180 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,.85)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {title}
         </div>
+        <div style={{ fontSize: 9, color: 'rgba(255,255,255,.3)', marginTop: 1 }}>{anime}</div>
+      </div>
 
-        {/* Barre de progression / seek */}
-        <div style={{ marginBottom: 10 }}>
-          <input
-            type="range" min="0" max={LIMIT} step="0.5" value={elapsed}
-            onChange={e => {
-              const t = Number(e.target.value)
-              setElapsed(t)
-              if (audioUrl && videoRef.current) videoRef.current.currentTime = t
-            }}
-            style={{
-              width: '100%', height: 4, cursor: 'pointer',
-              WebkitAppearance: 'none', appearance: 'none',
-              outline: 'none', borderRadius: 2, marginBottom: 3, display: 'block',
-              background: `linear-gradient(90deg, ${color} ${pct}%, rgba(255,255,255,.12) ${pct}%)`,
-              accentColor: color,
-            }}
-          />
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, color: 'rgba(255,255,255,.22)' }}>
-            <span>{fmt(elapsed)}</span>
-            <span>1:30</span>
-          </div>
-        </div>
+      {/* Timeline */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <input
+          type="range" min="0" max={LIMIT} step="0.5" value={elapsed}
+          onChange={e => {
+            const t = Number(e.target.value)
+            setElapsed(t)
+            if (audioUrl && videoRef.current) videoRef.current.currentTime = t
+          }}
+          style={{
+            width: '100%', height: 3, cursor: 'pointer',
+            WebkitAppearance: 'none', appearance: 'none',
+            outline: 'none', borderRadius: 2, display: 'block',
+            background: `linear-gradient(90deg, ${color} ${pct}%, rgba(255,255,255,.1) ${pct}%)`,
+            accentColor: color,
+          }}
+        />
+      </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 14, opacity: 0.42, flexShrink: 0 }}>
-            {volume === 0 ? '🔇' : volume < 40 ? '🔉' : '🔊'}
-          </span>
-          <input
-            type="range" min="0" max="100" value={volume}
-            onChange={e => setVolume(Number(e.target.value))}
-            style={{
-              flex: 1, height: 4, cursor: 'pointer',
-              WebkitAppearance: 'none', appearance: 'none',
-              outline: 'none', borderRadius: 2,
-              background: `linear-gradient(90deg, ${color} ${volPct}, rgba(255,255,255,.12) ${volPct})`,
-              accentColor: color,
-            }}
-          />
-          <span style={{ fontSize: 10, color: 'rgba(255,255,255,.25)', minWidth: 26, textAlign: 'right' }}>
-            {volume}
-          </span>
-        </div>
+      {/* Time */}
+      <div style={{ fontSize: 9, color: 'rgba(255,255,255,.22)', flexShrink: 0, minWidth: 32 }}>
+        {fmt(elapsed)}
+      </div>
+
+      {/* Volume */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+        <span style={{ fontSize: 11, opacity: 0.35 }}>{volume === 0 ? '🔇' : '🔊'}</span>
+        <input
+          type="range" min="0" max="100" value={volume}
+          onChange={e => setVolume(Number(e.target.value))}
+          style={{
+            width: 64, height: 3, cursor: 'pointer',
+            WebkitAppearance: 'none', appearance: 'none',
+            outline: 'none', borderRadius: 2,
+            background: `linear-gradient(90deg, ${color} ${volPct}, rgba(255,255,255,.1) ${volPct})`,
+            accentColor: color,
+          }}
+        />
       </div>
 
       {/* Stop */}
       <button
         onClick={onStop}
         style={{
-          flexShrink: 0, padding: '11px 20px', borderRadius: 10,
-          border: '1px solid rgba(255,255,255,.12)',
+          flexShrink: 0, padding: '5px 14px', borderRadius: 8,
+          border: '1px solid rgba(255,255,255,.1)',
           background: 'rgba(255,255,255,.04)',
-          color: 'rgba(255,255,255,.6)', fontSize: 12, fontWeight: 700,
-          cursor: 'pointer', transition: 'all 0.2s', letterSpacing: '0.04em',
+          color: 'rgba(255,255,255,.55)', fontSize: 11, fontWeight: 700,
+          cursor: 'pointer', transition: 'all 0.18s', letterSpacing: '0.04em',
         }}
-        onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,.1)'}
-        onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,.04)'}
+        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,.09)'; e.currentTarget.style.color = '#fff' }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,.04)'; e.currentTarget.style.color = 'rgba(255,255,255,.55)' }}
       >
         ■ Stop
       </button>
@@ -260,7 +204,7 @@ function VoteToast({ visible, winnerTitle }) {
     <AnimatePresence>
       {visible && (
         <motion.div
-          initial={{ opacity: 0, y: -18, scale: 0.9 }}
+          initial={{ opacity: 0, y: -16, scale: 0.92 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: -10 }}
           transition={{ type: 'spring', stiffness: 340, damping: 28 }}
@@ -268,19 +212,19 @@ function VoteToast({ visible, winnerTitle }) {
             position: 'fixed', top: 72, left: '50%', transform: 'translateX(-50%)',
             zIndex: 800,
             background: 'rgba(10,11,16,0.98)',
-            border: `1px solid rgba(157,23,77,.48)`,
-            borderRadius: 14, padding: '12px 24px',
-            display: 'flex', alignItems: 'center', gap: 12,
-            boxShadow: '0 8px 32px rgba(0,0,0,.65), 0 0 0 1px rgba(157,23,77,.07)',
+            border: `1px solid rgba(157,23,77,.4)`,
+            borderRadius: 12, padding: '10px 22px',
+            display: 'flex', alignItems: 'center', gap: 10,
+            boxShadow: '0 8px 32px rgba(0,0,0,.65)',
             backdropFilter: 'blur(16px)', whiteSpace: 'nowrap',
           }}
         >
-          <span style={{ color: GOLD, fontSize: 15 }}>✦</span>
+          <span style={{ color: GOLD, fontSize: 13 }}>✦</span>
           <div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: GOLD }}>Ton vote a été enregistré</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: GOLD }}>Vote enregistré</div>
             {winnerTitle && (
-              <div style={{ fontSize: 11, color: 'rgba(255,255,255,.42)', marginTop: 1 }}>
-                {winnerTitle} mène pour l'instant
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,.38)', marginTop: 1 }}>
+                {winnerTitle} mène
               </div>
             )}
           </div>
@@ -295,20 +239,19 @@ export default function DuelArena({
   round, match, totalMatchesInRound, voteCounts,
   personalVotes, onVote, onNext, isLastMatch, isMobile,
 }) {
-  const [playing, setPlaying] = useState(null) // { side, ytId, color, title, anime }
+  const [playing, setPlaying] = useState(null)
   const [showToast, setToast] = useState(false)
 
   const voted      = personalVotes?.[match.id] || null
   const hasVoted   = !!voted
   const showResult = match.status === 'closed' || hasVoted
   const percents   = getVotePercents(voteCounts, match.id)
-  const winnerSide = showResult
-    ? (percents.leftN >= percents.rightN ? 'left' : 'right') : null
+  const winnerSide = showResult ? (percents.leftN >= percents.rightN ? 'left' : 'right') : null
   const winnerTitle  = winnerSide === 'left' ? match.left?.title : match.right?.title
   const qualifiesFor = round.size > 2 ? nextRoundLabel(round.size) : null
   const matchNum     = match.position + 1
+  const roundLabel   = getRoundLabel(round.size)
 
-  // Stop player on match change
   useEffect(() => { setPlaying(null) }, [match.id])
 
   function handleVote(side) {
@@ -336,7 +279,7 @@ export default function DuelArena({
     <div style={{ position: 'relative' }}>
       <style>{ARENA_CSS}</style>
 
-      {/* Page background overlay — portal vers document.body pour éviter le stacking context du motion.div */}
+      {/* Background overlay page */}
       {typeof document !== 'undefined' && createPortal(
         <AnimatePresence>
           {playing && <PlayingBgOverlay key={playing.ytId || playing.audioUrl} ytId={playing.ytId} audioUrl={playing.audioUrl} color={playing.color} />}
@@ -344,57 +287,39 @@ export default function DuelArena({
         document.body
       )}
 
-      {/* Ambient glow — more visible */}
+      {/* Ambient glow subtil */}
       <div style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
         {match.left?.color && (
           <div style={{
-            position: 'absolute', left: '-8%', top: '-10%',
-            width: '55%', height: '120%', borderRadius: '50%',
+            position: 'absolute', left: '-5%', top: '-5%',
+            width: '48%', height: '110%', borderRadius: '50%',
             background: match.left.color,
-            opacity: playing?.side === 'left' ? 0.13 : 0.08,
-            filter: 'blur(80px)',
-            transition: 'opacity 0.9s ease',
+            opacity: playing?.side === 'left' ? 0.1 : 0.055,
+            filter: 'blur(90px)',
+            transition: 'opacity 1s ease',
           }} />
         )}
         {match.right?.color && (
           <div style={{
-            position: 'absolute', right: '-8%', top: '-10%',
-            width: '55%', height: '120%', borderRadius: '50%',
+            position: 'absolute', right: '-5%', top: '-5%',
+            width: '48%', height: '110%', borderRadius: '50%',
             background: match.right.color,
-            opacity: playing?.side === 'right' ? 0.13 : 0.08,
-            filter: 'blur(80px)',
-            transition: 'opacity 0.9s ease',
+            opacity: playing?.side === 'right' ? 0.1 : 0.055,
+            filter: 'blur(90px)',
+            transition: 'opacity 1s ease',
           }} />
         )}
       </div>
 
-      {/* Round progress bar */}
-      <div style={{ position: 'relative', zIndex: 1, marginBottom: 18 }}>
-        <div style={{ height: 2, borderRadius: 1, background: 'rgba(255,255,255,.05)', overflow: 'hidden' }}>
-          <motion.div
-            initial={false}
-            animate={{ width: `${((matchNum - (hasVoted ? 0 : 1)) / totalMatchesInRound) * 100}%` }}
-            transition={{ duration: 0.5 }}
-            style={{ height: '100%', background: GRAD }}
-          />
-        </div>
-      </div>
-
-      {/* Waveform centrale — couleur de l'opening en cours */}
-      <div style={{ position: 'relative', zIndex: 1, marginBottom: 20, textAlign: 'center' }}>
-        <ArenaWaveform color={playing?.color ?? match.left?.color ?? GOLD} active={!!playing} />
-      </div>
-
-      {/* Cards row */}
+      {/* Grille duel : 46% / 96px / 46% */}
       <div style={{
         position: 'relative', zIndex: 1,
-        display: 'flex',
-        flexDirection: isMobile ? 'column' : 'row',
-        gap: isMobile ? 12 : 16,
+        display: isMobile ? 'flex' : 'grid',
+        gridTemplateColumns: '1fr 96px 1fr',
+        flexDirection: isMobile ? 'column' : undefined,
+        gap: isMobile ? 10 : 0,
         alignItems: 'stretch',
-        overflow: 'hidden',
         minWidth: 0,
-        padding: isMobile ? '0 4px' : '0 8px',
       }}>
         <OSTDuelCard
           key={match.left?.id}
@@ -420,6 +345,9 @@ export default function DuelArena({
           qualifiesFor={qualifiesFor}
           matchNum={matchNum}
           totalMatches={totalMatchesInRound}
+          roundLabel={roundLabel}
+          playingColor={playing?.color}
+          isPlaying={!!playing}
         />
 
         <OSTDuelCard
@@ -441,10 +369,10 @@ export default function DuelArena({
         />
       </div>
 
-      {/* Mini player */}
+      {/* Compact audio strip */}
       <AnimatePresence>
         {playing && (
-          <MiniPlayer
+          <CompactPlayer
             key={playing.ytId || playing.audioUrl}
             ytId={playing.ytId}
             audioUrl={playing.audioUrl}
@@ -465,10 +393,10 @@ export default function DuelArena({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
             transition={{ delay: 0.4 }}
-            style={{ position: 'relative', zIndex: 1, marginTop: 30, textAlign: 'center' }}
+            style={{ position: 'relative', zIndex: 1, marginTop: 28, textAlign: 'center' }}
           >
             {winnerSide && (
-              <div style={{ fontSize: 14, color: 'rgba(255,255,255,.38)', marginBottom: 20 }}>
+              <div style={{ fontSize: 13, color: 'rgba(255,255,255,.35)', marginBottom: 18 }}>
                 <span style={{ color: GOLD, fontWeight: 700 }}>{winnerTitle}</span>
                 {' '}rejoint {qualifiesFor || 'la victoire finale'}.
               </div>
@@ -477,22 +405,22 @@ export default function DuelArena({
             {!isLastMatch ? (
               <motion.button
                 onClick={onNext}
-                whileHover={{ scale: 1.04, boxShadow: `0 10px 32px rgba(157,23,77,.38)` }}
+                whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
                 style={{
-                  padding: '14px 52px', borderRadius: 100, border: 'none',
-                  background: GRAD, color: '#fff', fontWeight: 800, fontSize: 15,
+                  padding: '13px 48px', borderRadius: 100, border: 'none',
+                  background: GRAD, color: '#fff', fontWeight: 800, fontSize: 14,
                   cursor: 'pointer', letterSpacing: '0.04em',
                   fontFamily: "'Pirata One',cursive",
-                  boxShadow: `0 6px 24px rgba(157,23,77,.24)`,
+                  boxShadow: `0 6px 24px rgba(157,23,77,.22)`,
                 }}
               >
                 Duel suivant →
               </motion.button>
             ) : (
               <div style={{
-                fontSize: 13, color: 'rgba(255,255,255,.35)',
-                padding: '13px 26px',
+                fontSize: 13, color: 'rgba(255,255,255,.32)',
+                padding: '12px 24px',
                 background: 'rgba(255,255,255,.03)',
                 border: '1px solid rgba(255,255,255,.07)',
                 borderRadius: 10, display: 'inline-block',
@@ -505,7 +433,7 @@ export default function DuelArena({
       </AnimatePresence>
 
       {!hasVoted && round.size === 2 && (
-        <div style={{ textAlign: 'center', marginTop: 20, fontSize: 13, color: GOLD, opacity: 0.5, position: 'relative', zIndex: 1 }}>
+        <div style={{ textAlign: 'center', marginTop: 18, fontSize: 12, color: GOLD, opacity: 0.45, position: 'relative', zIndex: 1 }}>
           C'est la Finale — un seul vainqueur.
         </div>
       )}
@@ -523,4 +451,15 @@ function nextRoundLabel(sz) {
   if (n === 8)  return 'les Quarts de finale'
   if (n === 16) return 'les 16e de finale'
   return `les ${n}e de finale`
+}
+
+function getRoundLabel(size) {
+  if (size === 2)   return 'Finale'
+  if (size === 4)   return 'Demi-finales'
+  if (size === 8)   return 'Quarts de finale'
+  if (size === 16)  return '16e de finale'
+  if (size === 32)  return '32e de finale'
+  if (size === 64)  return '64e de finale'
+  if (size === 128) return '128e de finale'
+  return `Tour de ${size}`
 }
