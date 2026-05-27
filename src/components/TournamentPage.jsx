@@ -105,7 +105,7 @@ function loadRoundsWithVersionCheck(config) {
   if (savedVersion !== version) {
     resetTournament(config.id)
     localStorage.setItem(versionKey, version)
-    const { rounds } = generateBracket(config.participants)
+    const { rounds } = generateBracket(config.participants, config.id)
     return rounds
   }
   const saved = loadState(config.id)
@@ -113,7 +113,7 @@ function loadRoundsWithVersionCheck(config) {
     if (getCurrentMatch(saved) || getWinner(saved)) return saved
     resetTournament(config.id)
   }
-  const { rounds } = generateBracket(config.participants)
+  const { rounds } = generateBracket(config.participants, config.id)
   return rounds
 }
 
@@ -515,7 +515,7 @@ export default function TournamentPage({ tournamentId = 'ost' }) {
 
   function handleReset() {
     resetTournament(config.id)
-    const { rounds: fresh } = generateBracket(config.participants)
+    const { rounds: fresh } = generateBracket(config.participants, config.id)
     setRounds(fresh)
     setPersonalVotes({})
     setVoteCounts({})

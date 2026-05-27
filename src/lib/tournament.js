@@ -26,16 +26,34 @@ export function getRoundShort(size) {
 
 // Generate a full bracket from a list of participant objects.
 // participants: array of { id, title, anime, artist, ytId, color }
+// tournamentId: if provided, shuffle order is persisted so bracket stays stable across refreshes
 // Returns: { rounds: Round[], voteCounts: { [matchId]: { left:0, right:0 } } }
-export function generateBracket(participants) {
+export function generateBracket(participants, tournamentId) {
   const n = participants.length
   if (n < 2) throw new Error('participants must be min 2')
 
-  // Tirage aléatoire Fisher-Yates
-  const shuffled = [...participants]
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+  let shuffled = null
+
+  if (tournamentId) {
+    try {
+      const saved = JSON.parse(localStorage.getItem(shuffleKey(tournamentId)) || 'null')
+      if (Array.isArray(saved) && saved.length === n) {
+        const byId = Object.fromEntries(participants.map(p => [p.id, p]))
+        const restored = saved.map(id => byId[id]).filter(Boolean)
+        if (restored.length === n) shuffled = restored
+      }
+    } catch {}
+  }
+
+  if (!shuffled) {
+    shuffled = [...participants]
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+    }
+    if (tournamentId) {
+      try { localStorage.setItem(shuffleKey(tournamentId), JSON.stringify(shuffled.map(p => p.id))) } catch {}
+    }
   }
 
   const rounds = []
@@ -218,8 +236,9 @@ export function getTournamentProgress(rounds) {
 
 // ── LocalStorage persistence ───────────────────────────────────────────────
 
-const lsKey   = id => `brams_t_state_${id}`
-const voteKey = id => `brams_t_votes_${id}`
+const lsKey      = id => `brams_t_state_${id}`
+const voteKey    = id => `brams_t_votes_${id}`
+const shuffleKey = id => `brams_t_shuffle_${id}`
 
 export function loadState(tournamentId) {
   try { return JSON.parse(localStorage.getItem(lsKey(tournamentId)) || 'null') }
@@ -279,5 +298,6 @@ export function resetTournament(tournamentId) {
     localStorage.removeItem(lsKey(tournamentId))
     localStorage.removeItem(voteKey(tournamentId))
     localStorage.removeItem(`brams_t_vc_${tournamentId}`)
+    localStorage.removeItem(shuffleKey(tournamentId))
   } catch {}
 }
