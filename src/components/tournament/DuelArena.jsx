@@ -30,14 +30,14 @@ function PlayingBgOverlay({ ytId, audioUrl, color }) {
     >
       {ytId ? (
         <img src={`https://img.youtube.com/vi/${ytId}/hqdefault.jpg`} alt=""
-          style={{ position: 'absolute', inset: '-10%', width: '120%', height: '120%', objectFit: 'cover', filter: 'blur(52px) brightness(0.18) saturate(1.8)' }}
+          style={{ position: 'absolute', inset: '-10%', width: '120%', height: '120%', objectFit: 'cover', filter: 'blur(28px) brightness(0.28) saturate(1.6)' }}
         />
       ) : audioUrl ? (
         <video src={audioUrl} autoPlay muted loop playsInline
-          style={{ position: 'absolute', inset: '-10%', width: '120%', height: '120%', objectFit: 'cover', filter: 'blur(52px) brightness(0.18) saturate(1.8)' }}
+          style={{ position: 'absolute', inset: '-10%', width: '120%', height: '120%', objectFit: 'cover', filter: 'blur(28px) brightness(0.28) saturate(1.6)' }}
         />
       ) : null}
-      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,.55) 0%, rgba(2,2,3,.65) 100%)' }} />
+      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,.38) 0%, rgba(2,2,3,.48) 100%)' }} />
     </motion.div>
   )
 }
@@ -201,6 +201,22 @@ function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop, onSeek }) 
   )
 }
 
+// ── Flash d'entrée nouveau duel ────────────────────────────────────────────
+function MatchFlash() {
+  return (
+    <motion.div
+      initial={{ opacity: 1 }}
+      animate={{ opacity: 0 }}
+      transition={{ duration: 0.55, ease: 'easeOut' }}
+      style={{
+        position: 'absolute', inset: 0, zIndex: 50, pointerEvents: 'none',
+        background: 'radial-gradient(ellipse 75% 55% at 50% 38%, rgba(255,255,255,.11) 0%, transparent 62%)',
+        borderRadius: 4,
+      }}
+    />
+  )
+}
+
 // ── Vote toast ─────────────────────────────────────────────────────────────
 function VoteToast({ visible, winnerTitle }) {
   return (
@@ -285,8 +301,15 @@ export default function DuelArena({
   }
 
   return (
-    <div style={{ position: 'relative' }}>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0, y: -14, transition: { duration: 0.17, ease: 'easeIn' } }}
+      transition={{ duration: 0.22 }}
+      style={{ position: 'relative' }}
+    >
       <style>{ARENA_CSS}</style>
+      <MatchFlash />
 
       {/* Background overlay page */}
       {typeof document !== 'undefined' && createPortal(
@@ -330,54 +353,78 @@ export default function DuelArena({
         alignItems: 'stretch',
         minWidth: 0,
       }}>
-        <OSTDuelCard
-          key={match.left?.id}
-          participant={match.left}
-          side="left"
-          voted={voted}
-          isWinner={showResult && winnerSide === 'left'}
-          isLoser={showResult && winnerSide === 'right'}
-          votePercent={percents.left}
-          voteCount={percents.leftN}
-          hasVoted={hasVoted}
-          onVote={handleVote}
-          onListen={() => handleListen('left')}
-          isPlaying={playing?.side === 'left'}
-          otherIsPlaying={playing !== null && playing.side !== 'left'}
-          showResult={showResult}
-          isMobile={isMobile}
-          videoSyncRef={playing?.side === 'left' ? cardBgVideoRef : null}
-        />
+        {/* Card gauche — entre depuis la gauche */}
+        <motion.div
+          initial={{ x: isMobile ? 0 : -90, y: isMobile ? -36 : 0, opacity: 0 }}
+          animate={{ x: 0, y: 0, opacity: 1 }}
+          transition={{ type: 'spring', stiffness: 280, damping: 26, delay: 0.06 }}
+          style={{ minWidth: 0, display: 'flex', flexDirection: 'column' }}
+        >
+          <OSTDuelCard
+            key={match.left?.id}
+            participant={match.left}
+            side="left"
+            voted={voted}
+            isWinner={showResult && winnerSide === 'left'}
+            isLoser={showResult && winnerSide === 'right'}
+            votePercent={percents.left}
+            voteCount={percents.leftN}
+            hasVoted={hasVoted}
+            onVote={handleVote}
+            onListen={() => handleListen('left')}
+            isPlaying={playing?.side === 'left'}
+            otherIsPlaying={playing !== null && playing.side !== 'left'}
+            showResult={showResult}
+            isMobile={isMobile}
+            videoSyncRef={playing?.side === 'left' ? cardBgVideoRef : null}
+          />
+        </motion.div>
 
-        <VSPanel
-          hasVoted={hasVoted}
-          isMobile={isMobile}
-          qualifiesFor={qualifiesFor}
-          matchNum={matchNum}
-          totalMatches={totalMatchesInRound}
-          roundLabel={roundLabel}
-          playingColor={playing?.color}
-          isPlaying={!!playing}
-        />
+        {/* VS panel — pop depuis le centre */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.55 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ type: 'spring', stiffness: 360, damping: 22, delay: 0.13 }}
+          style={{ display: 'flex', flexDirection: 'column', flexShrink: 0 }}
+        >
+          <VSPanel
+            hasVoted={hasVoted}
+            isMobile={isMobile}
+            qualifiesFor={qualifiesFor}
+            matchNum={matchNum}
+            totalMatches={totalMatchesInRound}
+            roundLabel={roundLabel}
+            playingColor={playing?.color}
+            isPlaying={!!playing}
+          />
+        </motion.div>
 
-        <OSTDuelCard
-          key={match.right?.id}
-          participant={match.right}
-          side="right"
-          voted={voted}
-          isWinner={showResult && winnerSide === 'right'}
-          isLoser={showResult && winnerSide === 'left'}
-          votePercent={percents.right}
-          voteCount={percents.rightN}
-          hasVoted={hasVoted}
-          onVote={handleVote}
-          onListen={() => handleListen('right')}
-          isPlaying={playing?.side === 'right'}
-          otherIsPlaying={playing !== null && playing.side !== 'right'}
-          showResult={showResult}
-          isMobile={isMobile}
-          videoSyncRef={playing?.side === 'right' ? cardBgVideoRef : null}
-        />
+        {/* Card droite — entre depuis la droite */}
+        <motion.div
+          initial={{ x: isMobile ? 0 : 90, y: isMobile ? 36 : 0, opacity: 0 }}
+          animate={{ x: 0, y: 0, opacity: 1 }}
+          transition={{ type: 'spring', stiffness: 280, damping: 26, delay: 0.09 }}
+          style={{ minWidth: 0, display: 'flex', flexDirection: 'column' }}
+        >
+          <OSTDuelCard
+            key={match.right?.id}
+            participant={match.right}
+            side="right"
+            voted={voted}
+            isWinner={showResult && winnerSide === 'right'}
+            isLoser={showResult && winnerSide === 'left'}
+            votePercent={percents.right}
+            voteCount={percents.rightN}
+            hasVoted={hasVoted}
+            onVote={handleVote}
+            onListen={() => handleListen('right')}
+            isPlaying={playing?.side === 'right'}
+            otherIsPlaying={playing !== null && playing.side !== 'right'}
+            showResult={showResult}
+            isMobile={isMobile}
+            videoSyncRef={playing?.side === 'right' ? cardBgVideoRef : null}
+          />
+        </motion.div>
       </div>
 
       {/* Compact audio strip */}
@@ -451,7 +498,7 @@ export default function DuelArena({
       )}
 
       <VoteToast visible={showToast} winnerTitle={winnerSide ? winnerTitle : null} />
-    </div>
+    </motion.div>
   )
 }
 

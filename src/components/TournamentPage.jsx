@@ -569,20 +569,25 @@ export default function TournamentPage({ tournamentId = 'ost' }) {
               <>
                 {winner ? (
                   <WinnerSection winner={winner} onReset={handleReset} />
-                ) : current ? (
-                  <DuelArena
-                    round={current.round}
-                    match={current.match}
-                    totalMatchesInRound={totalMatchesInRound}
-                    voteCounts={voteCounts}
-                    personalVotes={personalVotes}
-                    onVote={handleVote}
-                    onNext={handleNext}
-                    isLastMatch={isLastMatch}
-                    isMobile={isMobile}
-                  />
                 ) : (
-                  <NoMatchReady onReset={handleReset} />
+                  <AnimatePresence mode="wait">
+                    {current ? (
+                      <DuelArena
+                        key={current.match.id}
+                        round={current.round}
+                        match={current.match}
+                        totalMatchesInRound={totalMatchesInRound}
+                        voteCounts={voteCounts}
+                        personalVotes={personalVotes}
+                        onVote={handleVote}
+                        onNext={handleNext}
+                        isLastMatch={isLastMatch}
+                        isMobile={isMobile}
+                      />
+                    ) : (
+                      <NoMatchReady key="no-match" onReset={handleReset} />
+                    )}
+                  </AnimatePresence>
                 )}
               </>
             )}
