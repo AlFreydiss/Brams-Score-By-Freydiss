@@ -21,6 +21,7 @@ import {
   fetchMyCloudTierLists,
   publishTierList,
   toggleTierListLike,
+  getTierListClientId,
 } from '../lib/tierlists.js'
 
 // ── Palette ───────────────────────────────────────────────────────────────────
@@ -162,7 +163,7 @@ const STORAGE_KEY = 'brams_tier_studio_v1'
 const DRAFT_KEY = 'brams_tier_studio_draft_v1'
 const DRAFT_HISTORY_KEY = 'brams_tier_studio_draft_history_v1'
 const DRAFT_SAVE_DELAY = 500
-const CLOUD_SAVE_DELAY = 1800
+const CLOUD_SAVE_DELAY = 900
 const DRAFT_BACKUP_INTERVAL = 30000
 const DRAFT_HISTORY_LIMIT = 3
 const CUSTOM_IMAGE_MAX_SIDE = 520
@@ -852,6 +853,7 @@ export default function TierListPage() {
   const draftTimerRef = useRef(null)
   const cloudTimerRef = useRef(null)
   const cloudRestoreRef = useRef(false)
+  const latestShareListRef = useRef(null)
 
   // ── My Lists state
   const [savedLists, setSavedLists] = useState(loadSavedLists)
@@ -965,6 +967,7 @@ export default function TierListPage() {
 
   useEffect(() => {
     const list = buildShareList()
+    latestShareListRef.current = list
     if (!list) {
       setCloudSaved(false)
       return
@@ -987,27 +990,45 @@ export default function TierListPage() {
   }, [buildShareList, userId, discordId])
 
   useEffect(() => {
-    const flushDraft = () => {
+    const flushLocal = () => {
       if (draftTimerRef.current) {
         clearTimeout(draftTimerRef.current)
         draftTimerRef.current = null
       }
-      const draft = latestDraftRef.current || buildDraft()
-      if (draft) setDraftSaved(saveDraft({ ...draft, updatedAt:Date.now() }))
+      const draft = latestDraftRef.current
+      if (draft) saveDraft({ ...draft, updatedAt: Date.now() })
     }
+    const flushCloud = () => {
+      if (cloudTimerRef.current) {
+        clearTimeout(cloudTimerRef.current)
+        cloudTimerRef.current = null
+      }
+      const list = latestShareListRef.current
+      if (!list) return
+      const clientId = getTierListClientId()
+      try {
+        fetch('/api/tierlists?action=autosave', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Client-Id': clientId },
+          body: JSON.stringify({ clientId, list }),
+          keepalive: true,
+        }).catch(() => {})
+      } catch {}
+    }
+    const flushAll = () => { flushLocal(); flushCloud() }
     const onVisibilityChange = () => {
-      if (document.visibilityState === 'hidden') flushDraft()
+      if (document.visibilityState === 'hidden') flushAll()
     }
-    window.addEventListener('pagehide', flushDraft)
-    window.addEventListener('beforeunload', flushDraft)
+    window.addEventListener('pagehide', flushAll)
+    window.addEventListener('beforeunload', flushLocal)
     document.addEventListener('visibilitychange', onVisibilityChange)
     return () => {
-      window.removeEventListener('pagehide', flushDraft)
-      window.removeEventListener('beforeunload', flushDraft)
+      window.removeEventListener('pagehide', flushAll)
+      window.removeEventListener('beforeunload', flushLocal)
       document.removeEventListener('visibilitychange', onVisibilityChange)
-      flushDraft()
+      flushLocal()
     }
-  }, [buildDraft])
+  }, [])
 
   // ── allById (official + custom)
   const allById = useMemo(() => {
