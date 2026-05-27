@@ -16,6 +16,13 @@ export default function OSTDuelCard({
 
   useEffect(() => { setImgState('loading') }, [participant?.id])
 
+  // Quand la lecture démarre, reset la vidéo de fond à 0 pour rester synchro avec le player audio
+  useEffect(() => {
+    if (isPlaying && videoRef.current) {
+      videoRef.current.currentTime = 0
+    }
+  }, [isPlaying])
+
   function handleFullscreen() {
     const el = videoRef.current
     if (!el) return
@@ -96,8 +103,8 @@ export default function OSTDuelCard({
           />
         )}
 
-        {/* Vidéo pleine carte quand en lecture — ref partagée avec le player pour sync seek */}
-        {isPlaying && participant?.audioUrl && (
+        {/* Vidéo de fond — preview (opacité réduite) quand inactive, plein quand en lecture */}
+        {participant?.audioUrl && (
           <video
             ref={el => {
               videoRef.current = el
@@ -110,14 +117,17 @@ export default function OSTDuelCard({
               position: 'absolute', inset: 0,
               width: '100%', height: '100%',
               objectFit: 'cover',
-              opacity: isLoser ? 0.12 : 0.78,
-              transition: 'opacity 0.5s',
+              opacity: isLoser
+                ? (isPlaying ? 0.12 : 0.07)
+                : isPlaying ? 0.78 : 0.38,
+              filter: isPlaying ? 'none' : 'saturate(1.3) brightness(0.85)',
+              transition: 'opacity 0.5s, filter 0.5s',
             }}
           />
         )}
 
-        {/* Thumbnail quand pas en lecture */}
-        {!isPlaying && showThumb && (
+        {/* Thumbnail YouTube quand pas de audioUrl */}
+        {!participant?.audioUrl && !isPlaying && showThumb && (
           <img
             src={thumbUrl}
             alt=""
@@ -131,8 +141,8 @@ export default function OSTDuelCard({
           />
         )}
 
-        {/* Gradient couleur quand pas de media visuel */}
-        {(!isPlaying || !participant?.audioUrl) && !showThumb && (
+        {/* Gradient couleur uniquement si aucun media disponible */}
+        {!participant?.audioUrl && !showThumb && (
           <div style={{
             position: 'absolute', inset: 0,
             background: isLoser
@@ -210,7 +220,7 @@ export default function OSTDuelCard({
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           paddingBottom: 8,
         }}>
-          {!isPlaying && !showThumb && participant.emoji && (
+          {!isPlaying && !showThumb && !participant?.audioUrl && participant.emoji && (
             <span style={{
               fontSize: isMobile ? 52 : 68,
               lineHeight: 1,
