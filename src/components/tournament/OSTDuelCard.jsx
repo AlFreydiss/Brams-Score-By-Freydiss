@@ -87,10 +87,26 @@ export default function OSTDuelCard({
       transition={{ duration: 0.2 }}
       onClick={!hasVoted ? () => onVote(side) : undefined}
     >
-      {/* ── Background flou pleine carte ── */}
+      {/* ── Background pleine carte ── */}
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 0 }}>
-        {/* Image YouTube floutée en bg */}
-        {thumbUrl && (
+        {/* Vidéo plein fond quand en lecture */}
+        {isPlaying && participant?.audioUrl && (
+          <video
+            key={participant.audioUrl}
+            src={participant.audioUrl}
+            autoPlay muted loop playsInline
+            style={{
+              position: 'absolute', top: '-5%', left: '-5%',
+              width: '110%', height: '110%',
+              objectFit: 'cover',
+              filter: isLoser ? 'brightness(0.18)' : 'brightness(0.72) saturate(1.2)',
+              transition: 'filter 0.5s ease',
+            }}
+          />
+        )}
+
+        {/* Thumbnail YouTube quand pas en lecture */}
+        {!isPlaying && thumbUrl && (
           <img
             src={thumbUrl}
             onLoad={handleImgLoad}
@@ -100,29 +116,26 @@ export default function OSTDuelCard({
               position: 'absolute', top: '-5%', left: '-5%',
               width: '110%', height: '110%',
               objectFit: 'cover',
-              filter: `blur(10px) brightness(${isLoser ? 0.18 : isPlaying ? 0.5 : 0.38}) saturate(1.6)`,
-              transition: 'filter 0.5s ease',
+              filter: `brightness(${isLoser ? 0.18 : 0.55}) saturate(1.3)`,
               display: imgState === 'failed' ? 'none' : 'block',
             }}
           />
         )}
 
-        {/* Gradient couleur quand pas de thumbnail */}
-        {!thumbUrl && (
+        {/* Gradient couleur quand pas de media */}
+        {!isPlaying && !thumbUrl && (
           <div style={{
             position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
             background: isLoser
               ? `radial-gradient(ellipse at 50% 40%, ${accentA15} 0%, transparent 70%)`
-              : isPlaying
-                ? `radial-gradient(ellipse at 50% 40%, ${accentA70} 0%, ${accentA40} 35%, ${accentA15} 65%, transparent 85%)`
-                : `radial-gradient(ellipse at 50% 40%, ${accentA40} 0%, ${accentA15} 45%, transparent 75%)`,
+              : `radial-gradient(ellipse at 50% 40%, ${accentA40} 0%, ${accentA15} 45%, transparent 75%)`,
           }} />
         )}
 
         {/* Dégradé sombre en bas pour lisibilité */}
         <div style={{
           position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-          background: 'linear-gradient(180deg, rgba(8,9,14,.25) 0%, transparent 30%, rgba(8,9,14,.7) 62%, rgba(8,9,14,.98) 100%)',
+          background: 'linear-gradient(180deg, rgba(8,9,14,.3) 0%, transparent 35%, rgba(8,9,14,.75) 58%, rgba(8,9,14,.98) 100%)',
         }} />
 
         {isWinner && <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'linear-gradient(180deg, rgba(212,160,23,.1) 0%, transparent 40%)' }} />}
@@ -164,77 +177,8 @@ export default function OSTDuelCard({
           )}
         </div>
 
-        {/* ── Centre de la carte — écran opening ── */}
-        <div style={{
-          flex: 1,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          padding: isMobile ? '10px 16px' : '12px 20px',
-        }}>
-          <div style={{
-            width: '100%',
-            aspectRatio: '16/9',
-            borderRadius: 10, overflow: 'hidden', position: 'relative',
-            boxShadow: isPlaying
-              ? `0 0 0 2px ${accent}, 0 8px 32px rgba(0,0,0,.7)`
-              : `0 0 0 1px ${accentA40}, 0 6px 24px rgba(0,0,0,.6)`,
-            opacity: isLoser ? 0.38 : 1,
-            transition: 'opacity 0.4s, box-shadow 0.4s',
-            background: '#08090e',
-          }}>
-            {/* Fond : video si playing, sinon thumbnail ou gradient coloré */}
-            {isPlaying && participant?.audioUrl ? (
-              <video
-                key={participant.audioUrl}
-                src={participant.audioUrl}
-                autoPlay muted loop playsInline
-                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
-              />
-            ) : showThumb ? (
-              <img
-                src={thumbUrl}
-                alt={participant.title}
-                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-              />
-            ) : (
-              <div style={{
-                position: 'absolute', inset: 0,
-                background: `radial-gradient(ellipse at 50% 40%, ${accentA40} 0%, ${accentA15} 55%, #08090e 100%)`,
-              }} />
-            )}
-
-            {/* Overlay sombre pour lisibilité */}
-            <div style={{
-              position: 'absolute', inset: 0,
-              background: isPlaying
-                ? 'linear-gradient(180deg, rgba(0,0,0,.1) 0%, rgba(0,0,0,.55) 100%)'
-                : 'linear-gradient(180deg, rgba(0,0,0,.2) 0%, rgba(0,0,0,.65) 100%)',
-            }} />
-
-            {/* Contenu centré */}
-            <div style={{
-              position: 'absolute', inset: 0,
-              display: 'flex', flexDirection: 'column',
-              alignItems: 'center', justifyContent: 'center', gap: 6,
-            }}>
-              {participant.emoji && (
-                <span style={{ fontSize: isMobile ? 28 : 36, filter: 'drop-shadow(0 2px 8px rgba(0,0,0,.8))' }}>
-                  {participant.emoji}
-                </span>
-              )}
-              {isPlaying && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                  {Array.from({ length: 8 }).map((_, i) => (
-                    <div key={i} style={{
-                      width: 3, borderRadius: 2, background: accent,
-                      height: 4 + (i % 3) * 8,
-                      animation: `arWave ${0.5 + (i % 4) * 0.1}s ${i * 0.05}s ease-in-out infinite`,
-                    }} />
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+        {/* Espace vide pour pousser le bas vers le bas */}
+        <div style={{ flex: 1 }} />
 
         {/* Bottom info */}
         <div style={{ padding: isMobile ? '0 16px 16px' : '0 20px 20px' }}>

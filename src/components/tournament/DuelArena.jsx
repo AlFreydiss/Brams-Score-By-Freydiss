@@ -53,7 +53,7 @@ function PlayingBgOverlay({ ytId, audioUrl, color }) {
             position: 'absolute', inset: '-10%',
             width: '120%', height: '120%',
             objectFit: 'cover',
-            filter: 'blur(40px) brightness(0.22) saturate(2)',
+            filter: 'blur(52px) brightness(0.2) saturate(2)',
           }}
         />
       ) : audioUrl ? (
@@ -67,7 +67,7 @@ function PlayingBgOverlay({ ytId, audioUrl, color }) {
             position: 'absolute', inset: '-10%',
             width: '120%', height: '120%',
             objectFit: 'cover',
-            filter: 'blur(40px) brightness(0.22) saturate(2)',
+            filter: 'blur(52px) brightness(0.2) saturate(2)',
           }}
         />
       ) : null}
@@ -394,6 +394,8 @@ export default function DuelArena({
         flexDirection: isMobile ? 'column' : 'row',
         gap: isMobile ? 0 : 14,
         alignItems: 'stretch',
+        overflow: 'hidden',
+        minWidth: 0,
       }}>
         <OSTDuelCard
           participant={match.left}
