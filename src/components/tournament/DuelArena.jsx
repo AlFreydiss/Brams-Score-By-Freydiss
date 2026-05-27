@@ -398,6 +398,7 @@ export default function DuelArena({
         minWidth: 0,
       }}>
         <OSTDuelCard
+          key={match.left?.id}
           participant={match.left}
           side="left"
           voted={voted}
@@ -423,6 +424,7 @@ export default function DuelArena({
         />
 
         <OSTDuelCard
+          key={match.right?.id}
           participant={match.right}
           side="right"
           voted={voted}
