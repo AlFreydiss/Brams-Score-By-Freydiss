@@ -46,7 +46,8 @@ export const BLIND_TEST_OPENING_CATALOG = LOCAL_TRACKS.map((track) => ({
   artist: track.artist || track.episode || 'Blind Test',
   type: track.type || 'OP',
   episode: track.episode,
-  mediaUrl: track.url,
+  audioUrl: track.url,
+  ytId: track.ytId || null,
   color: track.color || '#6366f1',
 }))
 
