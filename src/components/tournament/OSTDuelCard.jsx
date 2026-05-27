@@ -100,7 +100,7 @@ export default function OSTDuelCard({
               position: 'absolute', top: '-5%', left: '-5%',
               width: '110%', height: '110%',
               objectFit: 'cover',
-              filter: `blur(18px) brightness(${isLoser ? 0.18 : isPlaying ? 0.45 : 0.32}) saturate(1.6)`,
+              filter: `blur(10px) brightness(${isLoser ? 0.18 : isPlaying ? 0.5 : 0.38}) saturate(1.6)`,
               transition: 'filter 0.5s ease',
               display: imgState === 'failed' ? 'none' : 'block',
             }}
@@ -133,13 +133,12 @@ export default function OSTDuelCard({
       <div style={{ position: 'relative', zIndex: 1, flex: 1, display: 'flex', flexDirection: 'column' }}>
 
         {/* Top bar */}
-        <div style={{ padding: '14px 16px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div style={{ padding: '12px 14px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{
             fontSize: 9, padding: '3px 9px', borderRadius: 6,
             background: 'rgba(255,255,255,.08)',
             color: 'rgba(255,255,255,.38)',
             letterSpacing: '0.1em', fontWeight: 700, textTransform: 'uppercase',
-            backdropFilter: 'blur(4px)',
           }}>
             OP
           </span>
@@ -148,100 +147,93 @@ export default function OSTDuelCard({
             <button
               onClick={e => { e.stopPropagation(); onListen() }}
               style={{
-                background: isPlaying ? `${accent}30` : 'rgba(0,0,0,.65)',
-                border: isPlaying ? `1px solid ${accent}70` : '1px solid rgba(255,255,255,.2)',
-                borderRadius: 20, padding: '5px 13px',
-                color: isPlaying ? accent : 'rgba(255,255,255,.85)', fontSize: 11,
-                cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
-                backdropFilter: 'blur(8px)', fontWeight: 600,
-                transition: 'all 0.2s',
+                background: 'none', border: 'none',
+                color: isPlaying ? accent : 'rgba(255,255,255,.45)',
+                fontSize: 13, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: 5,
+                padding: '2px 6px', borderRadius: 6,
+                transition: 'color 0.2s',
+                fontWeight: 600,
               }}
-              onMouseEnter={e => { if (!isPlaying) { e.currentTarget.style.background = 'rgba(255,255,255,.14)' } }}
-              onMouseLeave={e => { if (!isPlaying) { e.currentTarget.style.background = 'rgba(0,0,0,.65)' } }}
+              onMouseEnter={e => { e.currentTarget.style.color = accent }}
+              onMouseLeave={e => { if (!isPlaying) e.currentTarget.style.color = 'rgba(255,255,255,.45)' }}
             >
-              <span style={{ fontSize: 10 }}>{isPlaying ? '■' : '▶'}</span>
-              {isPlaying ? 'En cours' : 'Écouter'}
+              <span style={{ fontSize: 11 }}>{isPlaying ? '■' : '▶'}</span>
+              <span style={{ fontSize: 10, letterSpacing: '0.04em' }}>{isPlaying ? 'Stop' : 'Play'}</span>
             </button>
           )}
         </div>
 
-        {/* ── Centre de la carte ── */}
+        {/* ── Centre de la carte — écran opening ── */}
         <div style={{
           flex: 1,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          padding: isMobile ? '12px 20px' : '16px 28px',
+          padding: isMobile ? '10px 16px' : '12px 20px',
         }}>
-          {showThumb ? (
-            <div
-              style={{
-                width: '100%', maxWidth: isMobile ? 260 : 340,
-                aspectRatio: '16/9', position: 'relative',
-                borderRadius: 10, overflow: 'hidden',
-                boxShadow: `0 8px 32px rgba(0,0,0,.75), 0 0 0 1px ${accent}30`,
-                opacity: isLoser ? 0.45 : 1,
-                transition: 'opacity 0.4s',
-              }}
-            >
+          <div style={{
+            width: '100%',
+            aspectRatio: '16/9',
+            borderRadius: 10, overflow: 'hidden', position: 'relative',
+            boxShadow: isPlaying
+              ? `0 0 0 2px ${accent}, 0 8px 32px rgba(0,0,0,.7)`
+              : `0 0 0 1px ${accentA40}, 0 6px 24px rgba(0,0,0,.6)`,
+            opacity: isLoser ? 0.38 : 1,
+            transition: 'opacity 0.4s, box-shadow 0.4s',
+            background: '#08090e',
+          }}>
+            {/* Fond : video si playing, sinon thumbnail ou gradient coloré */}
+            {isPlaying && participant?.audioUrl ? (
+              <video
+                key={participant.audioUrl}
+                src={participant.audioUrl}
+                autoPlay muted loop playsInline
+                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+            ) : showThumb ? (
               <img
                 src={thumbUrl}
                 alt={participant.title}
-                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
               />
-              {canPlay && (
-                <button
-                  onClick={e => { e.stopPropagation(); onListen() }}
-                  style={{
-                    position: 'absolute', inset: 0,
-                    background: isPlaying ? 'rgba(0,0,0,.55)' : 'rgba(0,0,0,.35)',
-                    border: 'none', cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    transition: 'background 0.2s',
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,0,0,.55)' }}
-                  onMouseLeave={e => { e.currentTarget.style.background = isPlaying ? 'rgba(0,0,0,.55)' : 'rgba(0,0,0,.35)' }}
-                >
-                  <span style={{
-                    fontSize: 42, color: isPlaying ? accent : '#fff',
-                    textShadow: `0 0 24px ${accent}`,
-                    filter: 'drop-shadow(0 2px 8px rgba(0,0,0,.8))',
-                  }}>
-                    {isPlaying ? '■' : '▶'}
-                  </span>
-                </button>
+            ) : (
+              <div style={{
+                position: 'absolute', inset: 0,
+                background: `radial-gradient(ellipse at 50% 40%, ${accentA40} 0%, ${accentA15} 55%, #08090e 100%)`,
+              }} />
+            )}
+
+            {/* Overlay sombre pour lisibilité */}
+            <div style={{
+              position: 'absolute', inset: 0,
+              background: isPlaying
+                ? 'linear-gradient(180deg, rgba(0,0,0,.1) 0%, rgba(0,0,0,.55) 100%)'
+                : 'linear-gradient(180deg, rgba(0,0,0,.2) 0%, rgba(0,0,0,.65) 100%)',
+            }} />
+
+            {/* Contenu centré */}
+            <div style={{
+              position: 'absolute', inset: 0,
+              display: 'flex', flexDirection: 'column',
+              alignItems: 'center', justifyContent: 'center', gap: 6,
+            }}>
+              {participant.emoji && (
+                <span style={{ fontSize: isMobile ? 28 : 36, filter: 'drop-shadow(0 2px 8px rgba(0,0,0,.8))' }}>
+                  {participant.emoji}
+                </span>
+              )}
+              {isPlaying && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <div key={i} style={{
+                      width: 3, borderRadius: 2, background: accent,
+                      height: 4 + (i % 3) * 8,
+                      animation: `arWave ${0.5 + (i % 4) * 0.1}s ${i * 0.05}s ease-in-out infinite`,
+                    }} />
+                  ))}
+                </div>
               )}
             </div>
-          ) : canPlay ? (
-            <button
-              onClick={e => { e.stopPropagation(); onListen() }}
-              style={{
-                background: isPlaying ? accentA40 : accentA15,
-                border: `2px solid ${isPlaying ? accent : accentA70}`,
-                borderRadius: '50%',
-                width: isMobile ? 80 : 100,
-                height: isMobile ? 80 : 100,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                cursor: 'pointer',
-                boxShadow: isPlaying ? `0 0 40px ${accentA40}, 0 0 80px ${accentA15}` : `0 0 20px ${accentA15}`,
-                transition: 'all 0.3s',
-                opacity: isLoser ? 0.35 : 1,
-              }}
-              onMouseEnter={e => { if (!isPlaying) { e.currentTarget.style.background = accentA40; e.currentTarget.style.boxShadow = `0 0 30px ${accentA40}` } }}
-              onMouseLeave={e => { if (!isPlaying) { e.currentTarget.style.background = accentA15; e.currentTarget.style.boxShadow = `0 0 20px ${accentA15}` } }}
-            >
-              <span style={{
-                fontSize: isMobile ? 32 : 40,
-                color: accent,
-                marginLeft: isPlaying ? 0 : 4,
-                filter: `drop-shadow(0 0 8px ${accent})`,
-              }}>
-                {isPlaying ? '■' : '▶'}
-              </span>
-            </button>
-          ) : (
-            <div style={{ opacity: isLoser ? 0.35 : 0.5 }}>
-              <MusicIcon color={accent} />
-            </div>
-          )}
+          </div>
         </div>
 
         {/* Bottom info */}

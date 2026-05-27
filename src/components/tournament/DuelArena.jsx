@@ -53,7 +53,7 @@ function PlayingBgOverlay({ ytId, audioUrl, color }) {
             position: 'absolute', inset: '-10%',
             width: '120%', height: '120%',
             objectFit: 'cover',
-            filter: 'blur(55px) brightness(0.18) saturate(2)',
+            filter: 'blur(40px) brightness(0.22) saturate(2)',
           }}
         />
       ) : audioUrl ? (
@@ -67,7 +67,7 @@ function PlayingBgOverlay({ ytId, audioUrl, color }) {
             position: 'absolute', inset: '-10%',
             width: '120%', height: '120%',
             objectFit: 'cover',
-            filter: 'blur(55px) brightness(0.18) saturate(2)',
+            filter: 'blur(40px) brightness(0.22) saturate(2)',
           }}
         />
       ) : null}

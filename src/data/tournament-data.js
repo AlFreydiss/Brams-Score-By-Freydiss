@@ -49,6 +49,7 @@ export const BLIND_TEST_OPENING_CATALOG = LOCAL_TRACKS.map((track) => ({
   audioUrl: track.url,
   ytId: track.ytId || null,
   color: track.color || '#6366f1',
+  emoji: track.emoji || null,
 }))
 
 // ── Initial tournament configuration ─────────────────────────────────────

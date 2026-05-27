@@ -260,8 +260,7 @@ function TournamentHero({ config, progress, roundLabel, matchLabel }) {
 
 // ── Tabs ───────────────────────────────────────────────────────────────────
 const TABS = [
-  { id: 'duel',    label: 'Duel',     icon: '⚔' },
-  { id: 'bracket', label: 'Bracket',  icon: '🏆' },
+  { id: 'duel',    label: 'Duel',      icon: '⚔' },
   { id: 'results', label: 'Résultats', icon: '📊' },
 ]
 
@@ -613,10 +612,7 @@ export default function TournamentPage({ tournamentId = 'ost' }) {
           display: 'flex', justifyContent: 'space-between',
           alignItems: 'center', flexWrap: 'wrap', gap: 12,
         }}>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,.18)', lineHeight: 1.7 }}>
-            Les votes sont stockés localement dans ce navigateur.<br />
-            Supabase peut être connecté pour des votes communautaires partagés.
-          </div>
+          <div />
           <button
             onClick={() => { if (confirm('Réinitialiser le tournoi ? Tous les votes seront perdus.')) handleReset() }}
             style={{
