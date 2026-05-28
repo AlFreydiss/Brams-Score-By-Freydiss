@@ -42,10 +42,19 @@ export async function fetchLeaderboard(limit = 10, period = 'week') {
 }
 
 export async function fetchMembersByRank(minH, maxH = 99999) {
-  if (!supabase) return null
+  if (!supabase) return false
+  // Essai RPC dédié, sinon fallback sur top_classement filtré par heures vocales
+  // (évite que le modal reste bloqué sur "Chargement…" si members_by_rank est absent).
   const { data, error } = await supabase.rpc('members_by_rank', { p_min_h: minH, p_max_h: maxH })
-  if (error) { console.error('[members_by_rank]', error); return null }
-  return data
+  if (!error && Array.isArray(data)) return data
+
+  console.error('[members_by_rank] RPC échec, fallback top_classement', error?.message)
+  const board = await callTopClassement(500, 'week')
+  if (board.error || !Array.isArray(board.data)) return false
+  return board.data.filter(m => {
+    const h = parseFloat(m.vocal_h || 0)
+    return h >= minH && h < maxH
+  })
 }
 
 export async function fetchStats() {
