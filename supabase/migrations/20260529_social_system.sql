@@ -12,7 +12,7 @@
 -- ── Pré-requis : _resolve_discord_id() (défini dans 20260529_fix_discord_resolution.sql)
 -- On le redéfinit ici en filet de sécurité au cas où cette migration tourne seule.
 CREATE OR REPLACE FUNCTION _resolve_discord_id()
-RETURNS text LANGUAGE plpgsql SECURITY DEFINER AS $$
+RETURNS text LANGUAGE plpgsql SECURITY DEFINER STABLE AS $$
 DECLARE v_discord_id text;
 BEGIN
   SELECT COALESCE(
@@ -388,7 +388,14 @@ BEGIN
 
   SELECT id INTO v_conv FROM conversations WHERE dm_key = v_key;
   IF v_conv IS NULL THEN
-    INSERT INTO conversations (type, dm_key) VALUES ('dm', v_key) RETURNING id INTO v_conv;
+    -- ON CONFLICT : si un appel concurrent a créé la conversation entre-temps,
+    -- on récupère la sienne au lieu de planter sur la contrainte UNIQUE(dm_key).
+    INSERT INTO conversations (type, dm_key) VALUES ('dm', v_key)
+    ON CONFLICT (dm_key) DO NOTHING
+    RETURNING id INTO v_conv;
+    IF v_conv IS NULL THEN
+      SELECT id INTO v_conv FROM conversations WHERE dm_key = v_key;
+    END IF;
     INSERT INTO conversation_participants (conversation_id, user_id) VALUES (v_conv, v_me), (v_conv, p_target)
     ON CONFLICT (conversation_id, user_id) DO NOTHING;
   END IF;
