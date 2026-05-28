@@ -788,6 +788,11 @@ async def load_data_async() -> dict:
         loop = asyncio.get_running_loop()
         _CACHE = await loop.run_in_executor(db_executor, _load_all_from_db)
         _CACHE_READY = True
+        # Les déductions boutique web en attente sont DÉJÀ reflétées dans users.data
+        # (la boutique déduit en DB), donc dans le _CACHE qu'on vient de charger.
+        # On les marque appliquées SANS re-déduire → évite le double décompte
+        # après un redémarrage du bot.
+        await loop.run_in_executor(db_executor, _baseline_pending_berry_sync)
         print(f"[CACHE] {len(_CACHE)} utilisateurs chargés en mémoire")
     return _CACHE
 
@@ -844,6 +849,35 @@ def _apply_berry_sync_for_uids(uids: set) -> None:
             print(f"[BERRY_SYNC] {len(ids_to_mark)} déduction(s) web appliquée(s)")
     except Exception as e:
         print(f"[BERRY_SYNC] {e}")
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+    finally:
+        release_db(conn)
+
+
+def _baseline_pending_berry_sync() -> None:
+    """Au démarrage : marque les berry_sync en attente comme appliquées SANS
+    re-déduire. Leur déduction est déjà dans users.data (la boutique web déduit
+    en DB), donc déjà reflétée dans le _CACHE qu'on vient de charger. Sans ça, un
+    redémarrage entre l'achat et le flush provoquerait un double décompte."""
+    conn = get_db()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT EXISTS(SELECT 1 FROM information_schema.tables "
+            "WHERE table_name='berry_sync' AND table_schema='public')"
+        )
+        if not cur.fetchone()[0]:
+            return
+        cur.execute("UPDATE berry_sync SET applied = true WHERE applied = false")
+        n = cur.rowcount
+        conn.commit()
+        if n:
+            print(f"[BERRY_SYNC] {n} déduction(s) web déjà reflétée(s) en DB au démarrage — marquées appliquées (pas de re-déduction)")
+    except Exception as e:
+        print(f"[BERRY_SYNC] baseline: {e}")
         try:
             conn.rollback()
         except Exception:
