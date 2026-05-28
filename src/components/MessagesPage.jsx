@@ -165,7 +165,7 @@ const iconBtn = {
 
 // ── Vue conversation ───────────────────────────────────────────────────────
 function ChatView({ conversationId, meta, onBack, isMobile, refreshList }) {
-  const { discordId } = useAuth()
+  const { discordId, displayName, avatarUrl } = useAuth()
   const { refreshCounts } = useSocial()
   const [messages, setMessages] = useState([])
   const [loading, setLoading]   = useState(true)
@@ -221,6 +221,32 @@ function ChatView({ conversationId, meta, onBack, isMobile, refreshList }) {
     return () => { unsub(); clearTimeout(reactionTimer.current) }
   }, [conversationId, discordId, scrollToBottom, refreshCounts])
 
+  // Polling de secours : rafraîchit la fenêtre récente toutes les 4s pour que les
+  // nouveaux messages (et réactions) apparaissent même si le Realtime est coupé.
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      if (document.hidden) return
+      const recent = await getMessages(conversationId)
+      if (!recent.length) return
+      setMessages(prev => {
+        const known = new Map(prev.map(m => [m.id, m]))
+        let changed = false
+        for (const m of recent) {
+          const existing = known.get(m.id)
+          if (!existing) { known.set(m.id, m); changed = true }
+          else if (JSON.stringify(existing.reactions) !== JSON.stringify(m.reactions)
+                || existing.content !== m.content || existing.deleted_at !== m.deleted_at) {
+            known.set(m.id, { ...existing, ...m }); changed = true
+          }
+        }
+        if (!changed) return prev
+        const merged = Array.from(known.values()).sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+        return merged
+      })
+    }, 4000)
+    return () => clearInterval(interval)
+  }, [conversationId])
+
   async function loadOlder() {
     if (!hasMore || messages.length === 0) return
     const oldest = messages[0].created_at
@@ -248,6 +274,17 @@ function ChatView({ conversationId, meta, onBack, isMobile, refreshList }) {
     } else {
       const res = await sendTextMessage(conversationId, text, replyTo?.id || null)
       if (res?.ok === false) { setSending(false); return }
+      // Affichage optimiste : on ajoute le message tout de suite (ne dépend plus
+      // du Realtime). Le dédoublonnage par id évite les doublons si Realtime arrive ensuite.
+      if (res?.message_id) {
+        setMessages(prev => dedupeById([...prev, {
+          id: res.message_id, sender_id: discordId, content: text, type: 'text',
+          created_at: new Date().toISOString(), reactions: [],
+          sender_username: displayName, sender_avatar: avatarUrl,
+          reply_to_id: replyTo?.id || null,
+        }]))
+        scrollToBottom(true)
+      }
       setReplyTo(null)
       refreshList()
     }
