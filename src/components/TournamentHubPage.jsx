@@ -631,7 +631,7 @@ export default function TournamentHubPage() {
               gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
               gap: 12,
             }}>
-              {TOURNAMENT_CATEGORIES.map((cat, i) => (
+              {TOURNAMENT_CATEGORIES.filter(c => c.status === 'active').map((cat, i) => (
                 <CategoryCard key={cat.id} cat={cat} index={i} />
               ))}
             </div>
