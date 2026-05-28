@@ -130,7 +130,13 @@ export function AuthProvider({ children }) {
     return { data, error }
   }, [])
 
-  const signOut = useCallback(async () => { await signOutUser() }, [])
+  const signOut = useCallback(async () => {
+    await signOutUser()
+    setUser(null); setSession(null); userRef.current = null
+    // Rechargement propre vers l'accueil : garantit un état déconnecté net,
+    // peu importe les éventuels soucis de propagation d'état React.
+    window.location.assign('/')
+  }, [])
 
   const discordId = resolveDiscordId(user)
 

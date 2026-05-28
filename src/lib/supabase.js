@@ -148,7 +148,14 @@ export async function signInWithEmail(email, password) {
 
 export async function signOutUser() {
   if (!supabase) return
-  await supabase.auth.signOut()
+  // scope 'local' : pas de round-trip serveur (qui pouvait hang/échouer avec les
+  // tokens ES256 et laisser l'utilisateur "connecté"). On purge tout localement.
+  try { await supabase.auth.signOut({ scope: 'local' }) } catch {}
+  try {
+    Object.keys(localStorage)
+      .filter(k => k.includes('supabase') || k.startsWith('sb-'))
+      .forEach(k => localStorage.removeItem(k))
+  } catch {}
 }
 
 export async function getSession() {
