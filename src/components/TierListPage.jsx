@@ -862,6 +862,7 @@ export default function TierListPage() {
 
   // ── My Lists state
   const [savedLists, setSavedLists] = useState([])
+  const [editingListId, setEditingListId] = useState(null) // liste locale en cours d'édition (null = nouvelle)
   const [communityLists, setCommunityLists] = useState([])
   const [cloudLists, setCloudLists] = useState([])
   const [communityLoading, setCommunityLoading] = useState(false)
@@ -1165,10 +1166,28 @@ export default function TierListPage() {
     setToast(`✅ Template "${tpl.name}" appliqué`)
   }
 
+  // ── Nouvelle liste : reset complet du studio (permet de créer une 2e liste
+  // sans que l'ancienne ne revienne via le brouillon).
+  const resetStudio = () => {
+    if (draftTimerRef.current) { clearTimeout(draftTimerRef.current); draftTimerRef.current = null }
+    setEditingListId(null)
+    setSelectedType(null)
+    setTiers(DEFAULT_TIERS)
+    setBoard(null)
+    setCustomItems([])
+    setFavorites([])
+    setTitle('Ma Tier List')
+    setSearch(''); setGenre('Tous')
+    setSaved(false)
+    latestDraftRef.current = null
+    initialDraftRef.current = null
+    clearDraftIDB()           // purge le brouillon stocké → plus de restauration de l'ancienne liste
+    setTab('studio')
+  }
+
   // ── Save / Load
   const saveList = () => {
-    const item = {
-      id: uid(),
+    const base = {
       title,
       emoji: selectedType?.icon || '📋',
       category: selectedType?.label || 'Custom',
@@ -1179,12 +1198,22 @@ export default function TierListPage() {
       typeId: selectedType?.id,
       savedAt: Date.now(),
     }
-    const updated = [item, ...savedLists]
+    let updated
+    if (editingListId && savedLists.some(l => l.id === editingListId)) {
+      // On édite une liste existante → on la met à jour (pas de doublon)
+      updated = savedLists.map(l => l.id === editingListId ? { ...l, ...base, id: editingListId } : l)
+      setToast('✅ Tier list mise à jour !')
+    } else {
+      // Nouvelle liste → nouvel id
+      const id = uid()
+      setEditingListId(id)
+      updated = [{ id, ...base }, ...savedLists]
+      setToast('✅ Tier list sauvegardée !')
+    }
     setSavedLists(updated)
     saveListsIDB(updated)
     setSaved(true)
     flushDraftNow()
-    setToast('✅ Tier list sauvegardée !')
   }
 
   const shareList = async () => {
@@ -1217,6 +1246,7 @@ export default function TierListPage() {
     setCustomItems(list.customItems || [])
     setFavorites(list.favorites || [])
     setTitle(list.title)
+    setEditingListId(list.id || null) // édite cette liste → la sauvegarde la met à jour
     setSaved(true)
     setTab('studio')
     latestDraftRef.current = {
@@ -1656,7 +1686,7 @@ export default function TierListPage() {
               <h2 style={{ margin:0, fontSize:22, fontWeight:900, letterSpacing:'-.02em' }}>Mes Tier Lists</h2>
               <div style={{ fontSize:12, color:G.muted, marginTop:4 }}>{savedLists.length} locale{savedLists.length !== 1 && 's'} · {myPublishedLists.length} partagée{myPublishedLists.length !== 1 && 's'}</div>
             </div>
-            <button onClick={() => { setSelectedType(null); setTab('studio') }} style={{ ...actionBtn }}>
+            <button onClick={resetStudio} style={{ ...actionBtn }}>
               <Plus size={12}/> Nouvelle liste
             </button>
           </div>
