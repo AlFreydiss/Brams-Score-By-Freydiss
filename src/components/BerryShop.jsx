@@ -636,10 +636,11 @@ function OpeningBgCard({ item, bg, owned, balance, busy, isEquipped, isPreviewin
           <video
             src={bg.videoUrl}
             autoPlay muted loop playsInline
+            poster={ytThumb || undefined}
             style={{
               width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 30%',
-              filter: 'blur(2px) brightness(0.55)',
-              transform: 'scale(1.06)',
+              filter: 'blur(1px) brightness(0.52)',
+              transform: 'scale(1.08)',
             }}
           />
         ) : ytThumb ? (
@@ -649,12 +650,12 @@ function OpeningBgCard({ item, bg, owned, balance, busy, isEquipped, isPreviewin
             onError={e => { e.currentTarget.style.display = 'none' }}
             style={{
               width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 30%',
-              filter: 'blur(3px) brightness(0.6)',
-              transform: 'scale(1.06)',
+              filter: 'blur(2px) brightness(0.55)',
+              transform: 'scale(1.08)',
             }}
           />
         ) : (
-          <div style={{ width: '100%', height: '100%', background: bg?.dominantColor || '#1a1a2e' }} />
+          <div style={{ width: '100%', height: '100%', background: `linear-gradient(160deg, ${bg?.dominantColor || '#1a1a2e'}, rgba(0,0,0,.8))` }} />
         )}
         {/* Color overlay */}
         <div style={{
@@ -1330,8 +1331,6 @@ export default function BerryShop() {
           ))}
         </div>
       )}
-
-      <AdminShop isAdmin={isAdmin} />
 
       {/* ═══ MODAL ══════════════════════════════════════════════════════════ */}
       {selectedItem && (

@@ -238,20 +238,30 @@ function FreydissMascot({ size = 100, pulse = true, mood = 'idle' }) {
           <span style={{ fontSize: size * 0.55, lineHeight:1 }}>{moodEmoji}</span>
         ) : (
           <svg width={size*.8} height={size*.8} viewBox="0 0 80 80" style={{ overflow:'visible' }}>
-            {/* Cheveux longs dorés */}
-            <ellipse cx="40" cy="19" rx="21" ry="13" fill="#d4a017" />
-            <rect x="17" y="18" width="7" height="34" rx="3.5" fill="#d4a017" />
-            <rect x="56" y="18" width="7" height="34" rx="3.5" fill="#d4a017" />
-            {/* Chapeau pirate */}
-            <rect x="21" y="8" width="38" height="15" rx="5" fill="#0f0f1a" />
-            <rect x="16" y="19" width="48" height="5" rx="2.5" fill="#1a1a2e" />
-            {/* Skull sur le chapeau */}
-            <ellipse cx="40" cy="16" rx="5.5" ry="5" fill="white" opacity=".92" />
-            <circle cx="37.8" cy="15.2" r="1.4" fill="#0f0f1a" />
-            <circle cx="42.2" cy="15.2" r="1.4" fill="#0f0f1a" />
-            <rect x="37" y="18.5" width="6" height="1.5" rx=".75" fill="#0f0f1a" />
-            {/* Visage */}
-            <ellipse cx="40" cy="38" rx="17" ry="19" fill="#ffcba4" />
+            {/* Cheveux longs noirs bouclés — afro style (inspiré Freydiss) */}
+            {/* Masse principale afro */}
+            <ellipse cx="40" cy="20" rx="25" ry="18" fill="#0d0805" />
+            {/* Boucles sur le dessus */}
+            <circle cx="22" cy="17" r="9" fill="#120a06" />
+            <circle cx="30" cy="10" r="10" fill="#0d0805" />
+            <circle cx="40" cy="8"  r="11" fill="#110a06" />
+            <circle cx="50" cy="10" r="10" fill="#0d0805" />
+            <circle cx="58" cy="17" r="9"  fill="#120a06" />
+            {/* Mèches longues qui tombent — style bouclé */}
+            <path d="M18 28 Q10 44 14 60 Q16 66 13 72" stroke="#0d0805" strokeWidth="8" fill="none" strokeLinecap="round" />
+            <path d="M62 28 Q70 44 66 60 Q64 66 67 72" stroke="#0d0805" strokeWidth="8" fill="none" strokeLinecap="round" />
+            <path d="M14 34 Q6  50 10 64" stroke="#150b07" strokeWidth="5" fill="none" strokeLinecap="round" />
+            <path d="M66 34 Q74 50 70 64" stroke="#150b07" strokeWidth="5" fill="none" strokeLinecap="round" />
+            {/* Bandana pirate rouge sur le front */}
+            <rect x="16" y="26" width="48" height="8" rx="3" fill="#9d174d" />
+            <ellipse cx="40" cy="26" rx="5" ry="3" fill="#7b0f3a" />
+            {/* Skull tiny sur le bandana */}
+            <ellipse cx="40" cy="27" rx="3.5" ry="3" fill="white" opacity=".9" />
+            <circle cx="38.5" cy="26.5" r=".9" fill="#0f0f1a" />
+            <circle cx="41.5" cy="26.5" r=".9" fill="#0f0f1a" />
+            <rect x="38" y="28.5" width="4" height="1" rx=".5" fill="#0f0f1a" />
+            {/* Visage — teinte medium (inspiré Freydiss) */}
+            <ellipse cx="40" cy="38" rx="17" ry="19" fill="#c8864a" />
             {/* Yeux */}
             {eyeL ? (
               <>

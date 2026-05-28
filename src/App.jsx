@@ -296,7 +296,7 @@ export default function App() {
       <AMVBackground />
       <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1, background: 'rgba(4,7,10,0.58)', pointerEvents: 'none' }} />
 
-      <div style={{ position: 'relative', zIndex: 2, isolation: 'isolate' }}>
+      <div style={{ position: 'relative', zIndex: 2, isolation: 'isolate', background: '#08090D' }}>
         <Navbar />
         <Hero />
         <QuoteSection />
@@ -310,11 +310,11 @@ export default function App() {
         <DeferredSection minHeight={460}><Contact /></DeferredSection>
         <DeferredSection minHeight={420}><JoinCTA /></DeferredSection>
         <Footer />
+        <DeferredSection minHeight={0}><AkainuGame /></DeferredSection>
       </div>
 
       <ThemeToggle />
       <AIChatWidget hidden={mediaOverlayOpen || encyclopedieOpen} />
-      <DeferredSection minHeight={760}><AkainuGame /></DeferredSection>
 
     </>
   )

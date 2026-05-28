@@ -301,16 +301,35 @@ export async function fetchBerryShopState(discordId) {
     return { balance: 0, items: FALLBACK_ITEMS, inventory: [], transactions: [], preview: true }
   }
 
-  const [{ data: balanceData }, { data: items }, { data: inventory }, { data: transactions }] = await Promise.all([
-    supabase.rpc('get_berry_balance'),
+  // Lire le solde — essai RPC d'abord, fallback direct sur users.data
+  let balance = 0
+  try {
+    const { data: rpcData, error: rpcErr } = await supabase.rpc('get_berry_balance')
+    if (!rpcErr && rpcData != null) {
+      balance = Number(rpcData)
+    } else {
+      // Fallback : lecture directe dans la table users (si RLS le permet)
+      const { data: userData } = await supabase
+        .from('users').select('data').eq('uid', discordId).maybeSingle()
+      balance = Number(userData?.data?.berrys ?? 0)
+    }
+  } catch {
+    try {
+      const { data: userData } = await supabase
+        .from('users').select('data').eq('uid', discordId).maybeSingle()
+      balance = Number(userData?.data?.berrys ?? 0)
+    } catch { balance = 0 }
+  }
+
+  const [{ data: items }, { data: inventory }, { data: transactions }] = await Promise.all([
     supabase.from('shop_items').select('*').eq('active', true).order('price', { ascending: true }),
     supabase.from('user_inventory').select('*, shop_items(*)').eq('discord_id', discordId).order('acquired_at', { ascending: false }),
     supabase.from('shop_transactions').select('*, shop_items(name, rarity, category)').eq('discord_id', discordId).order('created_at', { ascending: false }).limit(20),
   ])
 
   return {
-    balance: Number(balanceData || 0),
-    items: items?.length ? items : FALLBACK_ITEMS,
+    balance,
+    items: items?.length ? [...items, ...OPENING_BG_SHOP_ITEMS.filter(bg => !items.find(i => i.id === bg.id))] : FALLBACK_ITEMS,
     inventory: inventory || [],
     transactions: transactions || [],
     preview: false,

@@ -226,9 +226,11 @@ section {
   font-family: 'Inter', system-ui, sans-serif;
   font-size: clamp(56px, 7.2vw, 96px);
   font-weight: 900;
-  line-height: .86;
+  line-height: 1.0;
+  padding-bottom: 8px;
   color: #fff7ea;
   letter-spacing: -.02em;
+  overflow: visible;
 }
 .hero-title-premium::before {
   content: "";
