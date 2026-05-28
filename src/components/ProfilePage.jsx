@@ -726,14 +726,15 @@ export default function ProfilePage() {
   useEffect(() => {
     let ignore = false
     setLoading(true)
-    Promise.all([fetchMemberProfile(discordId), fetchBerryShopState(discordId)])
-      .then(([profile, shop]) => {
-        if (ignore) return
-        setMember(profile)
-        setShopData(shop)
-        setLoading(false)
-      })
+    setShopData(null)
+    // Profil affiché dès que les infos de base arrivent (ne bloque plus sur la boutique).
+    fetchMemberProfile(discordId)
+      .then(profile => { if (!ignore) { setMember(profile); setLoading(false) } })
       .catch(() => { if (!ignore) setLoading(false) })
+    // Données boutique (solde + inventaire) chargées en parallèle, sans bloquer l'affichage.
+    fetchBerryShopState(discordId)
+      .then(shop => { if (!ignore) setShopData(shop) })
+      .catch(() => {})
     return () => { ignore = true }
   }, [discordId])
 
