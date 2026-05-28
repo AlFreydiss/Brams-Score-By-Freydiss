@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import { Routes, Route, useNavigate } from 'react-router-dom'
 import GlobalStyles from './components/GlobalStyles.jsx'
 import { ThemeProvider } from './contexts/ThemeContext.jsx'
+import { OpeningBgProvider } from './contexts/OpeningBgContext.jsx'
 import { useAuth } from './contexts/AuthContext.jsx'
 import WelcomeAnimation from './components/WelcomeAnimation.jsx'
 import AuthGuard from './components/AuthGuard.jsx'
@@ -320,6 +321,7 @@ export default function App() {
 
   return (
     <ThemeProvider>
+      <OpeningBgProvider>
       <GlobalStyles />
       <Suspense fallback={
         <div style={{
@@ -446,6 +448,7 @@ export default function App() {
         </div>
       )}
       </Suspense>
+      </OpeningBgProvider>
     </ThemeProvider>
   )
 }
