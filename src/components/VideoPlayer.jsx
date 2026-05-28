@@ -59,7 +59,15 @@ function loadVideoPreferences(userId) {
       audioLang: prefs.audioLang || 'ja',
       subtitlesOff: Boolean(prefs.subtitlesOff),
       subtitleLang: prefs.subtitleLang || 'fr',
-      subtitleStyle: { ...DEFAULT_SUBTITLE_STYLE, ...(prefs.subtitleStyle || {}) },
+      subtitleStyle: (() => {
+      const saved = prefs.subtitleStyle || {}
+      return {
+        ...DEFAULT_SUBTITLE_STYLE,
+        ...saved,
+        // ignorer un background cassé (0 ou trop faible) issu d'un ancien localStorage
+        background: (saved.background != null && saved.background >= 0.3) ? saved.background : DEFAULT_SUBTITLE_STYLE.background,
+      }
+    })(),
     }
   } catch {
     return { audioLang: 'ja', subtitlesOff: false, subtitleLang: 'fr', subtitleStyle: DEFAULT_SUBTITLE_STYLE }
@@ -838,10 +846,10 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                         Apparence
                       </div>
                       {[
-                        ['A-', () => updateSubtitleStyle({ size: Math.max(14, subtitleStyle.size - 2) })],
-                        ['A+', () => updateSubtitleStyle({ size: Math.min(34, subtitleStyle.size + 2) })],
-                        ['Fond -', () => updateSubtitleStyle({ background: Math.max(0, Number((subtitleStyle.background - 0.12).toFixed(2))) })],
-                        ['Fond +', () => updateSubtitleStyle({ background: Math.min(0.95, Number((subtitleStyle.background + 0.12).toFixed(2))) })],
+                        ['A−', () => updateSubtitleStyle({ size: Math.max(14, subtitleStyle.size - 4) })],
+                        ['A+', () => updateSubtitleStyle({ size: Math.min(44, subtitleStyle.size + 4) })],
+                        ['Fond −', () => updateSubtitleStyle({ background: Math.max(0.3, Number((subtitleStyle.background - 0.15).toFixed(2))) })],
+                        ['Fond +', () => updateSubtitleStyle({ background: Math.min(0.95, Number((subtitleStyle.background + 0.15).toFixed(2))) })],
                         [subtitleStyle.outline ? 'Contour ON' : 'Contour OFF', () => updateSubtitleStyle({ outline: !subtitleStyle.outline })],
                         [subtitleStyle.weight >= 800 ? 'Texte normal' : 'Texte gras', () => updateSubtitleStyle({ weight: subtitleStyle.weight >= 800 ? 600 : 800 })],
                       ].map(([label, action]) => (
