@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext.jsx'
 import { fetchBerryShopState, RARITY_STYLES } from '../lib/berryShop.js'
 import { fetchMemberProfile } from '../lib/supabase.js'
 import Navbar from './Navbar.jsx'
+import RelationshipActions from './social/RelationshipActions.jsx'
 
 // ── Constants ──────────────────────────────────────────────────────────────
 const RANK_MAP = [
@@ -838,6 +839,12 @@ export default function ProfilePage() {
 
               <h1 className="pf-name">{displayName}</h1>
               {quote && <p className="pf-quote">"{quote}"</p>}
+
+              {!isOwnProfile && (
+                <div style={{ margin: '14px 0 4px' }}>
+                  <RelationshipActions targetId={discordId} />
+                </div>
+              )}
 
               <div className="pf-stats">
                 <div className="pf-stat">

@@ -3,7 +3,9 @@ import { Routes, Route, useNavigate } from 'react-router-dom'
 import GlobalStyles from './components/GlobalStyles.jsx'
 import { ThemeProvider } from './contexts/ThemeContext.jsx'
 import { OpeningBgProvider } from './contexts/OpeningBgContext.jsx'
+import { SocialProvider } from './contexts/SocialContext.jsx'
 import { useAuth } from './contexts/AuthContext.jsx'
+import NotificationToast from './components/social/NotificationToast.jsx'
 import WelcomeAnimation from './components/WelcomeAnimation.jsx'
 import AuthGuard from './components/AuthGuard.jsx'
 import Navbar from './components/Navbar.jsx'
@@ -56,6 +58,8 @@ const TournamentHubPage  = lazy(() => import('./components/TournamentHubPage.jsx
 const TournamentPage     = lazy(() => import('./components/TournamentPage.jsx'))
 const AkinatorPage       = lazy(() => import('./components/AkinatorPage.jsx'))
 const ProfilePageYonkou  = lazy(() => import('./components/ProfilePageYonkou.jsx'))
+const FriendsPage        = lazy(() => import('./components/FriendsPage.jsx'))
+const MessagesPage       = lazy(() => import('./components/MessagesPage.jsx'))
 const BotFeatures        = lazy(() => import('./components/BotFeatures.jsx'))
 const Quiz               = lazy(() => import('./components/Quiz.jsx'))
 const HallOfFame         = lazy(() => import('./components/HallOfFame.jsx'))
@@ -322,7 +326,9 @@ export default function App() {
   return (
     <ThemeProvider>
       <OpeningBgProvider>
+      <SocialProvider>
       <GlobalStyles />
+      <NotificationToast />
       <Suspense fallback={
         <div style={{
           position: 'fixed', inset: 0, zIndex: 9999,
@@ -362,6 +368,11 @@ export default function App() {
         {/* Boutique Berry connectee Discord */}
         <Route path="/boutique" element={<PageLayout><BerryShop /></PageLayout>} />
         <Route path="/shop" element={<PageLayout><BerryShop /></PageLayout>} />
+
+        {/* Systeme social — amis & messagerie */}
+        <Route path="/amis" element={<FriendsPage />} />
+        <Route path="/messages" element={<MessagesPage />} />
+        <Route path="/messages/:conversationId" element={<MessagesPage />} />
 
         {/* Jeu social deduction pirate */}
         <Route path="/brams-traitor" element={<BramsTraitorPage />} />
@@ -448,6 +459,7 @@ export default function App() {
         </div>
       )}
       </Suspense>
+      </SocialProvider>
       </OpeningBgProvider>
     </ThemeProvider>
   )

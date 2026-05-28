@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom'
 import AboutModal from './AboutModal.jsx'
 import AuthModal from './AuthModal.jsx'
 import { useAuth } from '../contexts/AuthContext.jsx'
+import { useSocial } from '../contexts/SocialContext.jsx'
 
 const NAV_LINKS = [
   { label: 'Rangs',           href: '#rangs',      action: null,           gated: false, isRoute: false },
@@ -126,8 +127,43 @@ function LoginButton({ onClick }) {
   )
 }
 
+function CountBadge({ count, color = '#d4a017' }) {
+  if (!count) return null
+  return (
+    <span style={{
+      position: 'absolute', top: -5, right: -5, minWidth: 17, height: 17, padding: '0 4px',
+      borderRadius: 9, background: color, color: '#0b0c0e', fontSize: 10, fontWeight: 800,
+      display: 'inline-flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1,
+    }}>
+      {count > 9 ? '9+' : count}
+    </span>
+  )
+}
+
+function MessagesButton() {
+  const navigate = useNavigate()
+  const { counts } = useSocial()
+  const total = (counts.messages || 0)
+  return (
+    <button
+      onClick={() => navigate('/messages')}
+      aria-label="Messages"
+      style={{
+        position: 'relative', width: 38, height: 38, borderRadius: 10, cursor: 'pointer',
+        background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+        color: 'rgba(255,255,255,0.75)', fontSize: 16, display: 'inline-flex',
+        alignItems: 'center', justifyContent: 'center',
+      }}
+    >
+      💬
+      <CountBadge count={total} />
+    </button>
+  )
+}
+
 function UserMenu({ displayName, avatarUrl, discordId, berryCount, onSignOut }) {
   const navigate = useNavigate()
+  const { counts } = useSocial()
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
   const initials = (displayName || 'BC').slice(0, 2).toUpperCase()
@@ -162,6 +198,8 @@ function UserMenu({ displayName, avatarUrl, discordId, berryCount, onSignOut }) 
           </div>
           {[
             { label: '⚔ Mon Profil',  path: discordId ? `/u/${discordId}` : null },
+            { label: '💬 Messages',    path: '/messages', badge: counts.messages },
+            { label: '👥 Amis',        path: '/amis',     badge: counts.friend_requests },
             { label: 'Équipages',     path: '/equipage'  },
             { label: 'Wiki',          path: '/wiki'      },
             { label: 'Théories',      path: '/theories'  },
@@ -179,8 +217,14 @@ function UserMenu({ displayName, avatarUrl, discordId, berryCount, onSignOut }) 
                 else navigate(item.path)
               }}
               className="nav-user-row"
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
             >
-              {item.label}
+              <span>{item.label}</span>
+              {item.badge > 0 && (
+                <span style={{ background: '#d4a017', color: '#0b0c0e', fontSize: 10, fontWeight: 800, borderRadius: 9, padding: '1px 6px' }}>
+                  {item.badge > 9 ? '9+' : item.badge}
+                </span>
+              )}
             </button>
           ))}
           <button onClick={() => { setOpen(false); onSignOut() }} className="nav-user-row danger">
@@ -294,6 +338,7 @@ export default function Navbar() {
           <div className="nav-zone-status hide-mobile">
             <SoutenirButton />
             <BoutiqueButton />
+            {isAuthenticated && <MessagesButton />}
             <SocialLinks />
           </div>
 
