@@ -312,12 +312,12 @@ function IdleScreen({ onStart }) {
         background:`linear-gradient(135deg, ${PINK_L} 0%, ${PINK_M} 50%, #a78bfa 100%)`,
         WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent',
         marginBottom:14, lineHeight:1.15,
-      }}>Je vais deviner votre personnage !</h1>
+      }}>Je vais deviner à quoi vous pensez !</h1>
 
       <p style={{ fontSize:16, color:MUTED, lineHeight:1.7, marginBottom:36 }}>
-        Pensez à un personnage de <strong style={{ color:PINK_L }}>One Piece</strong>.<br/>
-        Répondez honnêtement à mes questions — je trouverai qui c'est<br/>
-        en moins de <strong style={{ color:PINK_L }}>20 coups</strong>.
+        Pensez à <strong style={{ color:PINK_L }}>n'importe qui ou n'importe quoi</strong> :<br/>
+        perso d'anime, célébrité, héros de film, animal, objet…<br/>
+        Répondez honnêtement — le génie trouvera.
       </p>
 
       <button onClick={onStart} style={{
@@ -332,14 +332,14 @@ function IdleScreen({ onStart }) {
       >✨ Je suis prêt !</button>
 
       <p style={{ fontSize:12, color:'rgba(240,232,248,.25)', marginTop:20 }}>
-        {CHARS.length} personnages · {QUESTIONS.length} questions disponibles
+        Propulsé par l'IA · tous les domaines · questions illimitées
       </p>
     </motion.div>
   )
 }
 
-function AskingScreen({ question, qCount, remaining, total, onAnswer }) {
-  const pct = Math.max(4, Math.round((1 - remaining / total) * 100))
+function AskingScreen({ question, qCount, loading, onAnswer }) {
+  const pct = Math.min(92, 8 + qCount * 6)
   return (
     <motion.div initial={{ opacity:0, x:30 }} animate={{ opacity:1, x:0 }} exit={{ opacity:0, x:-30 }}
       transition={{ duration:.25 }}
@@ -352,7 +352,7 @@ function AskingScreen({ question, qCount, remaining, total, onAnswer }) {
             Question {qCount + 1}
           </span>
           <span style={{ fontSize:12, fontWeight:700, color:PINK_L }}>
-            {remaining} suspect{remaining > 1 ? 's' : ''} restant{remaining > 1 ? 's' : ''}
+            {loading ? 'le génie réfléchit…' : 'réponds honnêtement'}
           </span>
         </div>
         <div style={{ height:5, background:'rgba(255,255,255,.06)', borderRadius:3, overflow:'hidden' }}>
@@ -382,16 +382,16 @@ function AskingScreen({ question, qCount, remaining, total, onAnswer }) {
       </div>
 
       {/* Answer grid */}
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, opacity: loading ? 0.5 : 1, pointerEvents: loading ? 'none' : 'auto' }}>
         {ANSWERS.map(a => (
-          <button key={a.key} onClick={() => onAnswer(a.key)} style={{
+          <button key={a.key} disabled={loading} onClick={() => onAnswer(a.key)} style={{
             padding:'15px 12px', borderRadius:14,
             background:a.bg, border:`1px solid ${a.border}`,
-            color:a.color, cursor:'pointer',
+            color:a.color, cursor: loading ? 'not-allowed' : 'pointer',
             fontSize:15, fontWeight:800, letterSpacing:'.02em',
             transition:'all .15s', fontFamily:'var(--body)',
           }}
-          onMouseEnter={e => { e.currentTarget.style.transform='scale(1.035)'; e.currentTarget.style.filter='brightness(1.12)' }}
+          onMouseEnter={e => { if (loading) return; e.currentTarget.style.transform='scale(1.035)'; e.currentTarget.style.filter='brightness(1.12)' }}
           onMouseLeave={e => { e.currentTarget.style.transform='scale(1)'; e.currentTarget.style.filter='brightness(1)' }}
           >{a.label}</button>
         ))}
@@ -538,91 +538,114 @@ function LostScreen({ onReplay }) {
   )
 }
 
+function ThinkingScreen({ error, onRetry }) {
+  return (
+    <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+      style={{ textAlign:'center', maxWidth:480, padding:'0 16px' }}>
+      <div style={{ marginBottom:24, animation:'akFloat 2.6s ease-in-out infinite' }}>
+        <FreydissMascot size={92} mood="thinking" />
+      </div>
+      {error ? (
+        <>
+          <p style={{ color:'#f87171', fontSize:15, marginBottom:18 }}>{error}</p>
+          <button onClick={onRetry} style={{
+            padding:'12px 36px', borderRadius:100, background:GRAD, border:'none',
+            cursor:'pointer', fontSize:15, fontWeight:800, color:'#fff', fontFamily:'var(--body)',
+          }}>↺ Réessayer</button>
+        </>
+      ) : (
+        <p style={{ color:PINK_L, fontSize:17, fontWeight:700, fontFamily:'var(--display)' }}>
+          Le génie réfléchit<span style={{ animation:'akStar 1s infinite' }}>…</span>
+        </p>
+      )}
+    </motion.div>
+  )
+}
+
 // ── Main page ──────────────────────────────────────────────────────────────
 
 const PHASE = { IDLE:'idle', ASKING:'asking', GUESSING:'guessing', WIN:'win', LOST:'lost' }
 
+const ANSWER_MAP = { yes:'oui', no:'non', maybe:'peut-être / probablement', dunno:'je ne sais pas' }
+const MAX_QUESTIONS = 30
+
 export default function AkinatorPage() {
   const navigate = useNavigate()
   const [phase,     setPhase]     = useState(PHASE.IDLE)
-  const [remaining, setRemaining] = useState(CHARS)
-  const [asked,     setAsked]     = useState(new Set())
-  const [currentQ,  setCurrentQ]  = useState(null)
+  const [history,   setHistory]   = useState([])    // [{question, answer}]
+  const [rejected,  setRejected]  = useState([])    // noms déjà proposés et rejetés
+  const [currentQ,  setCurrentQ]  = useState(null)  // texte de la question courante
   const [qCount,    setQCount]    = useState(0)
-  const [guess,     setGuess]     = useState(null)
+  const [guess,     setGuess]     = useState(null)  // {name, emoji, domain}
+  const [loading,   setLoading]   = useState(false)
+  const [error,     setError]     = useState(null)
 
   const stars = useMemo(() => Array.from({ length:45 }, (_, i) => ({
     id:i, x:(i*13.7+7)%100, y:(i*23.1+3)%100,
     size:0.5+(i%4)*0.4, dur:2+(i%5), del:(i*.3)%4,
   })), [])
 
-  const startGame = useCallback(() => {
-    const pool = CHARS
-    const first = pickQuestion(pool, new Set())
-    setPhase(PHASE.ASKING)
-    setRemaining(pool)
-    setAsked(new Set())
-    setQCount(0)
-    setGuess(null)
-    setCurrentQ(first)
-  }, [])
-
-  const handleAnswer = useCallback((answer) => {
-    if (!currentQ) return
-    const newAsked = new Set(asked)
-    newAsked.add(currentQ.id)
-    const newRem = filterChars(remaining, currentQ.id, answer)
-    const actual = newRem.length > 0 ? newRem : remaining
-    const newQ   = qCount + 1
-
-    setAsked(newAsked)
-    setQCount(newQ)
-
-    if (actual.length <= 2 || newQ >= 20) {
-      setGuess(actual[0])
-      setRemaining(actual)
-      setPhase(PHASE.GUESSING)
-    } else {
-      const next = pickQuestion(actual, newAsked)
-      if (!next) {
-        setGuess(actual[0])
-        setRemaining(actual)
+  // Appelle le génie IA : pose la prochaine question ou propose une devinette.
+  const askAI = useCallback(async (nextHistory, nextRejected) => {
+    setLoading(true); setError(null)
+    try {
+      const res = await fetch('/api/akinator', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ history: nextHistory, rejected: nextRejected }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.action) {
+        setError(data.error || "Le génie n'a pas répondu — réessaie.")
+        return
+      }
+      if (data.action === 'guess') {
+        setGuess({ name: data.text, emoji: '🔮', domain: data.domain || null })
         setPhase(PHASE.GUESSING)
       } else {
-        setRemaining(actual)
-        setCurrentQ(next)
+        setCurrentQ(data.text)
+        setPhase(PHASE.ASKING)
       }
+    } catch {
+      setError('Connexion au génie impossible — réessaie.')
+    } finally {
+      setLoading(false)
     }
-  }, [currentQ, remaining, asked, qCount])
+  }, [])
+
+  const startGame = useCallback(() => {
+    setHistory([]); setRejected([]); setQCount(0); setGuess(null); setCurrentQ(null); setError(null)
+    setPhase(PHASE.ASKING)
+    askAI([], [])
+  }, [askAI])
+
+  const handleAnswer = useCallback((answerKey) => {
+    if (!currentQ || loading) return
+    const entry = { question: currentQ, answer: ANSWER_MAP[answerKey] || answerKey }
+    const nextHistory = [...history, entry]
+    setHistory(nextHistory)
+    setQCount(c => c + 1)
+    setCurrentQ(null)
+    askAI(nextHistory, rejected)
+  }, [currentQ, loading, history, rejected, askAI])
 
   const handleGuessRight = useCallback(() => setPhase(PHASE.WIN), [])
 
   const handleGuessWrong = useCallback(() => {
-    const rest = remaining.filter(c => c.id !== guess?.id)
-    if (rest.length === 0) {
-      setPhase(PHASE.LOST)
-    } else {
-      // Continue asking with reduced pool
-      const next = pickQuestion(rest, asked)
-      if (!next || rest.length === 1) {
-        setGuess(rest[0])
-        setRemaining(rest)
-        setPhase(PHASE.GUESSING)
-      } else {
-        setRemaining(rest)
-        setCurrentQ(next)
-        setPhase(PHASE.ASKING)
-      }
-    }
-  }, [guess, remaining, asked])
+    if (loading) return
+    const nextRejected = guess ? [...rejected, guess.name] : rejected
+    const nextHistory = [...history, { question: `Est-ce ${guess?.name} ?`, answer: 'non' }]
+    setRejected(nextRejected)
+    setHistory(nextHistory)
+    setGuess(null)
+    if (qCount >= MAX_QUESTIONS) { setPhase(PHASE.LOST); return }
+    setPhase(PHASE.ASKING)
+    askAI(nextHistory, nextRejected)
+  }, [loading, guess, rejected, history, qCount, askAI])
 
   const reset = useCallback(() => {
     setPhase(PHASE.IDLE)
-    setRemaining(CHARS)
-    setAsked(new Set())
-    setQCount(0)
-    setGuess(null)
-    setCurrentQ(null)
+    setHistory([]); setRejected([]); setQCount(0); setGuess(null); setCurrentQ(null); setError(null)
   }, [])
 
   return (
@@ -676,7 +699,7 @@ export default function AkinatorPage() {
             fontFamily:'var(--display)', fontWeight:900, fontSize:18,
             background:`linear-gradient(135deg, ${PINK_L} 0%, ${PINK_M} 50%, #c084fc 100%)`,
             WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent',
-          }}>🔮 Akinator One Piece</span>
+          }}>🔮 Akinator IA</span>
         </div>
 
         <div style={{ minWidth:88, display:'flex', justifyContent:'flex-end' }}>
@@ -697,8 +720,9 @@ export default function AkinatorPage() {
       <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', padding:24, position:'relative', zIndex:2 }}>
         <AnimatePresence mode="wait">
           {phase === PHASE.IDLE     && <IdleScreen     key="idle"                  onStart={startGame} />}
-          {phase === PHASE.ASKING   && currentQ        && <AskingScreen key={`q-${currentQ.id}`} question={currentQ} qCount={qCount} remaining={remaining.length} total={CHARS.length} onAnswer={handleAnswer} />}
-          {phase === PHASE.GUESSING && guess           && <GuessingScreen key={`g-${guess.id}`}  guess={guess}       qCount={qCount} onRight={handleGuessRight} onWrong={handleGuessWrong} />}
+          {phase === PHASE.ASKING && currentQ && !error && <AskingScreen key={`q-${qCount}`} question={{ text: currentQ }} qCount={qCount} loading={loading} onAnswer={handleAnswer} />}
+          {phase === PHASE.ASKING && (!currentQ || error) && <ThinkingScreen key="thinking" error={error} onRetry={startGame} />}
+          {phase === PHASE.GUESSING && guess           && <GuessingScreen key={`g-${qCount}`}  guess={guess}       qCount={qCount} onRight={handleGuessRight} onWrong={handleGuessWrong} />}
           {phase === PHASE.WIN      && guess           && <WinScreen  key="win"  guess={guess} qCount={qCount} onReplay={reset} />}
           {phase === PHASE.LOST                        && <LostScreen key="lost"                                                 onReplay={reset} />}
         </AnimatePresence>
