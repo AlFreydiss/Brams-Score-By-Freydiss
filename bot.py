@@ -7707,6 +7707,7 @@ async def addberries_cmd(
 
     uid = str(membre.id)
     new_balance = add_berrys(uid, montant, track="earned")
+    await asyncio.get_running_loop().run_in_executor(db_executor, _sync_flush_dirty)
 
     from utils.transactions import log_transaction
     await log_transaction(uid, "gain", "autre", montant, raison, new_balance)
