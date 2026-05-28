@@ -31,7 +31,9 @@ export default function Leaderboard() {
   const [allRows,    setAllRows]    = useState(null)
   const [loading,    setLoading]    = useState(true)
   const [page,       setPage]       = useState(0)
-  const [period,     setPeriod]     = useState(() => localStorage.getItem('lb_period') || 'All-time')
+  // Défaut 'Semaine' : les rangs Discord sont basés sur les heures vocales /7j,
+  // donc le classement par semaine est cohérent avec les vrais rôles.
+  const [period,     setPeriod]     = useState(() => localStorage.getItem('lb_period_v2') || 'Semaine')
   const [rangFilter, setRangFilter] = useState('Tous')
   const [showRangs,  setShowRangs]  = useState(false)
   const [ref, inView] = useInView()
@@ -52,7 +54,7 @@ export default function Leaderboard() {
     return () => { ignore = true }
   }, [period])
 
-  const handlePeriod = (p) => { setPeriod(p); localStorage.setItem('lb_period', p); setPage(0) }
+  const handlePeriod = (p) => { setPeriod(p); localStorage.setItem('lb_period_v2', p); setPage(0) }
 
   const rawRows = useMemo(() =>
     allRows
