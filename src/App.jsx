@@ -300,21 +300,25 @@ export default function App() {
       <AMVBackground />
       <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1, background: 'rgba(4,7,10,0.58)', pointerEvents: 'none' }} />
 
-      <div style={{ position: 'relative', zIndex: 2, isolation: 'isolate', background: '#08090D' }}>
+      {/* Hero transparent → l'AMV en fond reste visible. Le reste des sections
+          a un fond opaque #08090D (corrige le débordement footer sans masquer l'AMV). */}
+      <div style={{ position: 'relative', zIndex: 2, isolation: 'isolate' }}>
         <Navbar />
         <Hero />
-        <QuoteSection />
-        <Ranks />
-        <DeferredSection minHeight={760}><BotFeatures /></DeferredSection>
-        <DeferredSection minHeight={520}><Quiz /></DeferredSection>
-        <DeferredSection minHeight={520}><HallOfFame /></DeferredSection>
-        <DeferredSection minHeight={520}><EquipageSection /></DeferredSection>
-        <DeferredSection minHeight={480}><NousSoutenir /></DeferredSection>
-        <DeferredSection minHeight={540}><Leaderboard /></DeferredSection>
-        <DeferredSection minHeight={460}><Contact /></DeferredSection>
-        <DeferredSection minHeight={420}><JoinCTA /></DeferredSection>
-        <Footer />
-        <DeferredSection minHeight={0}><AkainuGame /></DeferredSection>
+        <div style={{ background: '#08090D' }}>
+          <QuoteSection />
+          <Ranks />
+          <DeferredSection minHeight={760}><BotFeatures /></DeferredSection>
+          <DeferredSection minHeight={520}><Quiz /></DeferredSection>
+          <DeferredSection minHeight={520}><HallOfFame /></DeferredSection>
+          <DeferredSection minHeight={520}><EquipageSection /></DeferredSection>
+          <DeferredSection minHeight={480}><NousSoutenir /></DeferredSection>
+          <DeferredSection minHeight={540}><Leaderboard /></DeferredSection>
+          <DeferredSection minHeight={460}><Contact /></DeferredSection>
+          <DeferredSection minHeight={420}><JoinCTA /></DeferredSection>
+          <Footer />
+          <DeferredSection minHeight={0}><AkainuGame /></DeferredSection>
+        </div>
       </div>
 
       <ThemeToggle />
