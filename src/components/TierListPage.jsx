@@ -21,6 +21,7 @@ import {
   fetchMyCloudTierLists,
   publishTierList,
   toggleTierListLike,
+  deleteCommunityTierList,
   getTierListClientId,
 } from '../lib/tierlists.js'
 import {
@@ -744,7 +745,7 @@ function SavedListCard({ list, onLoad, onDelete, onDuplicate }) {
   )
 }
 
-function CommunityListCard({ list, onLoad, onLike }) {
+function CommunityListCard({ list, onLoad, onLike, isOwner, onDelete }) {
   return (
     <motion.div
       initial={{ opacity:0, y:12 }} animate={{ opacity:1, y:0 }}
@@ -767,15 +768,27 @@ function CommunityListCard({ list, onLoad, onLike }) {
               </div>
             </div>
           </div>
-          <button onClick={() => onLike(list)} style={{
-            display:'flex', alignItems:'center', gap:4, padding:'4px 8px',
-            borderRadius:999, background:list.liked ? 'rgba(160,68,92,.18)' : 'rgba(255,255,255,.05)',
-            border:`1px solid ${list.liked ? '#a0445c55' : G.border}`,
-            color:list.liked ? '#ff6f91' : G.muted,
-            cursor:'pointer', fontSize:10.5, fontWeight:800,
-          }}>
-            <Heart size={11} fill={list.liked ? 'currentColor' : 'none'}/> {list.likes || 0}
-          </button>
+          <div style={{ display:'flex', gap:6, alignItems:'center', flexShrink:0 }}>
+            {isOwner && (
+              <button onClick={() => onDelete(list)} title="Supprimer ma publication" style={{
+                display:'flex', alignItems:'center', padding:'4px 7px',
+                borderRadius:999, background:'rgba(160,68,92,.12)',
+                border:'1px solid rgba(160,68,92,.3)',
+                color:'#a0445c', cursor:'pointer', fontSize:11,
+              }}>
+                <Trash2 size={11}/>
+              </button>
+            )}
+            <button onClick={() => onLike(list)} style={{
+              display:'flex', alignItems:'center', gap:4, padding:'4px 8px',
+              borderRadius:999, background:list.liked ? 'rgba(160,68,92,.18)' : 'rgba(255,255,255,.05)',
+              border:`1px solid ${list.liked ? '#a0445c55' : G.border}`,
+              color:list.liked ? '#ff6f91' : G.muted,
+              cursor:'pointer', fontSize:10.5, fontWeight:800,
+            }}>
+              <Heart size={11} fill={list.liked ? 'currentColor' : 'none'}/> {list.likes || 0}
+            </button>
+          </div>
         </div>
         <div style={{ display:'flex', gap:3, flexWrap:'wrap' }}>
           {(list.tierLabels||[]).slice(0,6).map((label, i) => (
@@ -1231,6 +1244,17 @@ export default function TierListPage() {
     }
   }
 
+  const deleteCommunityList = async (list) => {
+    if (!window.confirm(`Supprimer "${list.title}" de la communauté ? Cette action est irréversible.`)) return
+    try {
+      await deleteCommunityTierList(list.id)
+      setCommunityLists(prev => prev.filter(item => item.id !== list.id))
+      setToast('🗑️ Liste supprimée')
+    } catch (err) {
+      setToast(err?.message || 'Suppression impossible')
+    }
+  }
+
   const deleteList = (id) => {
     const updated = savedLists.filter(l => l.id !== id)
     setSavedLists(updated)
@@ -1615,6 +1639,8 @@ export default function TierListPage() {
                   list={list}
                   onLoad={loadList}
                   onLike={likeCommunityList}
+                  isOwner={Boolean(discordId && list.authorDiscordId && discordId === list.authorDiscordId)}
+                  onDelete={deleteCommunityList}
                 />
               ))}
             </div>

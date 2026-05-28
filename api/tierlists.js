@@ -209,6 +209,16 @@ export default async function handler(req, res) {
       return json(res, 200, { published: true, list: mapRow(rows[0]) })
     }
 
+    if (action === 'delete') {
+      const listId = String(body.id || body.listId || '')
+      if (!/^[0-9a-f-]{20,}$/i.test(listId)) return json(res, 400, { error: 'ID invalide' })
+      const existing = await db(`tier_lists?select=id,owner_id&id=eq.${encodeURIComponent(listId)}&limit=1`)
+      if (!existing?.length) return json(res, 404, { error: 'Liste introuvable' })
+      if (existing[0].owner_id !== viewer.id) return json(res, 403, { error: 'Non autorisé — tu ne peux supprimer que tes propres listes' })
+      await db(`tier_lists?id=eq.${encodeURIComponent(listId)}`, { method: 'DELETE' })
+      return json(res, 200, { deleted: true })
+    }
+
     if (action === 'like') {
       const listId = String(body.id || body.listId || '')
       if (!/^[0-9a-f-]{20,}$/i.test(listId)) return json(res, 400, { error: 'ID invalide' })

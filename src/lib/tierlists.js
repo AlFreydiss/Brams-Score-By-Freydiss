@@ -69,6 +69,13 @@ export async function publishTierList(list) {
   })
 }
 
+export async function deleteCommunityTierList(id) {
+  return request('/api/tierlists?action=delete', {
+    method: 'POST',
+    body: JSON.stringify({ clientId: getTierListClientId(), id }),
+  })
+}
+
 export async function toggleTierListLike(id) {
   return request('/api/tierlists?action=like', {
     method: 'POST',

@@ -848,7 +848,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                       {[
                         ['A−', () => updateSubtitleStyle({ size: Math.max(14, subtitleStyle.size - 4) })],
                         ['A+', () => updateSubtitleStyle({ size: Math.min(44, subtitleStyle.size + 4) })],
-                        ['Fond −', () => updateSubtitleStyle({ background: Math.max(0.3, Number((subtitleStyle.background - 0.15).toFixed(2))) })],
+                        ['Fond −', () => updateSubtitleStyle({ background: Math.max(0, Number((subtitleStyle.background - 0.15).toFixed(2))) })],
                         ['Fond +', () => updateSubtitleStyle({ background: Math.min(0.95, Number((subtitleStyle.background + 0.15).toFixed(2))) })],
                         [subtitleStyle.outline ? 'Contour ON' : 'Contour OFF', () => updateSubtitleStyle({ outline: !subtitleStyle.outline })],
                         [subtitleStyle.weight >= 800 ? 'Texte normal' : 'Texte gras', () => updateSubtitleStyle({ weight: subtitleStyle.weight >= 800 ? 600 : 800 })],

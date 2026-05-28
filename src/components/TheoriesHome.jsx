@@ -1,131 +1,251 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { fetchTheories } from '../lib/wiki.js'
 import { useAuth } from '../contexts/AuthContext.jsx'
 
-const GOLD   = '#b08a3a'
-const VIOLET = '#7b3f45'
+const G = {
+  bg:      '#08090D',
+  card:    'rgba(13,14,20,0.97)',
+  border:  'rgba(255,255,255,0.07)',
+  gold:    '#BFA46A',
+  muted:   'rgba(232,228,222,0.38)',
+  text:    '#e8e4de',
+  violet:  '#7b3f45',
+}
 
 const TH_CSS = `
-  @keyframes thFadeUp  { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:none} }
-  @keyframes thTwinkle { 0%,100%{opacity:.10} 50%{opacity:.65} }
-  @keyframes thScan    { 0%{top:-2px} 100%{top:100%} }
-  @keyframes thPulse   { 0%,100%{opacity:.04} 50%{opacity:.09} }
+  @keyframes thFadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:none} }
+  @keyframes thPulse  { 0%,100%{opacity:.04} 50%{opacity:.09} }
+  .th-card:hover { border-color: rgba(191,164,106,.22) !important; background: rgba(16,17,24,0.98) !important; }
+  .th-vote-btn:hover { background: rgba(191,164,106,.12) !important; }
+  .th-vote-up:hover  { color: #34d399 !important; }
+  .th-vote-dn:hover  { color: #f87171 !important; }
 `
-
-function THStars() {
-  const stars = useMemo(() => Array.from({ length: 48 }, (_, i) => ({
-    x:(i*38.9+11)%98, y:(i*44.1+7)%96, size:i%9===0?2.5:i%4===0?1.6:1,
-    dur:2.9+(i*0.27)%4.5, del:(i*0.22)%7,
-    col: i%11===0 ? 'rgba(123,63,69,.55)' : i%13===0 ? 'rgba(176,138,58,.58)' : null,
-  })), [])
-  return (
-    <div style={{ position:'fixed', inset:0, pointerEvents:'none', zIndex:0 }}>
-      {stars.map((s, i) => (
-        <div key={i} style={{
-          position:'absolute', left:`${s.x}%`, top:`${s.y}%`,
-          width:s.size, height:s.size, borderRadius:'50%',
-          background:s.col ?? 'rgba(255,255,255,.5)',
-          animation:`thTwinkle ${s.dur}s ${s.del}s ease-in-out infinite`,
-        }} />
-      ))}
-    </div>
-  )
-}
-
-function THScanLine() {
-  return (
-    <div style={{ position:'fixed', inset:0, pointerEvents:'none', zIndex:1, overflow:'hidden' }}>
-      <div style={{ position:'absolute', left:0, right:0, height:2, background:'linear-gradient(90deg,transparent,rgba(123,63,69,.08),rgba(176,138,58,.14),rgba(123,63,69,.08),transparent)', animation:'thScan 18s linear infinite' }} />
-    </div>
-  )
-}
 
 const CATEGORIES = ['Tous', 'Personnages', 'Arcs', 'Fruits du Démon', 'Lieux', 'Organisations', 'Autre']
 const SORTS = [
-  { id:'recent', label:'Récent',    icon:'🕐' },
-  { id:'top',    label:'Top votes', icon:'🔥' },
-  { id:'hot',    label:'Hot',       icon:'💬' },
+  { id: 'recent', label: 'Récent', icon: '🕐' },
+  { id: 'top',    label: 'Top',    icon: '🔥' },
+  { id: 'hot',    label: 'Hot',    icon: '💬' },
 ]
-const LIMIT = 12
+const LIMIT = 15
 
-// Category colors
 const CAT_COLORS = {
-  'Personnages':     '#7b3f45',
+  'Personnages':     '#9b4d55',
   'Arcs':            '#b08a3a',
-  'Fruits du Démon': '#6d5f8f',
-  'Lieux':           '#587084',
-  'Organisations':   '#5f766a',
+  'Fruits du Démon': '#7060a0',
+  'Lieux':           '#4d7080',
+  'Organisations':   '#4d7060',
   'Autre':           '#6b7280',
-  'Tous':            GOLD,
+  'Tous':            '#BFA46A',
 }
 
-function ScoreBar({ up, down }) {
-  const total = up + down
-  const pct = total === 0 ? 50 : Math.round((up / total) * 100)
+function relativeTime(iso) {
+  if (!iso) return ''
+  const diff = (Date.now() - new Date(iso).getTime()) / 1000
+  if (diff < 60)  return 'à l\'instant'
+  if (diff < 3600) return `il y a ${Math.floor(diff / 60)}min`
+  if (diff < 86400) return `il y a ${Math.floor(diff / 3600)}h`
+  if (diff < 604800) return `il y a ${Math.floor(diff / 86400)}j`
+  return new Date(iso).toLocaleDateString('fr-FR')
+}
+
+function Avatar({ name, avatarUrl, size = 38 }) {
+  const [err, setErr] = useState(false)
+  const initials = (name || 'P').slice(0, 2).toUpperCase()
+  const seed = (name || 'P').charCodeAt(0) % 6
+  const colors = ['#7b3f45','#b08a3a','#7060a0','#4d7080','#4d7060','#6b7280']
+  if (avatarUrl && !err) {
+    return <img src={avatarUrl} alt={name} onError={() => setErr(true)} style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+  }
   return (
-    <div style={{ height:3, background:'rgba(255,255,255,0.07)', borderRadius:2, overflow:'hidden', marginTop:8 }}>
-      <div style={{ height:'100%', width:`${pct}%`, background:'linear-gradient(90deg,#2ECC71,#34d399)', transition:'width .3s', boxShadow:'0 0 6px rgba(34,197,94,0.40)' }} />
+    <div style={{
+      width: size, height: size, borderRadius: '50%', flexShrink: 0,
+      background: colors[seed], display: 'flex', alignItems: 'center', justifyContent: 'center',
+      fontSize: size * 0.38, fontWeight: 800, color: 'rgba(255,255,255,0.9)',
+    }}>{initials}</div>
+  )
+}
+
+function TheoryPost({ theory, index, onClick, onVote, myVote }) {
+  const c = CAT_COLORS[theory.category] || G.gold
+  const up   = theory.votes_up   || 0
+  const down = theory.votes_down || 0
+  const score = up - down
+  const excerpt = theory.content
+    ? theory.content.replace(/<[^>]*>/g, '').slice(0, 200)
+    : ''
+
+  return (
+    <div
+      className="th-card"
+      onClick={onClick}
+      style={{
+        background: G.card,
+        border: `1px solid ${G.border}`,
+        borderRadius: 14,
+        padding: '16px 20px',
+        cursor: 'pointer',
+        transition: 'all .18s',
+        animation: `thFadeUp .35s ${Math.min(index * 0.04, 0.4)}s ease both`,
+        display: 'flex',
+        gap: 14,
+      }}
+    >
+      {/* Left: avatar */}
+      <div style={{ flexShrink: 0, paddingTop: 2 }}>
+        <Avatar name={theory.author_name} avatarUrl={theory.author_avatar} size={40} />
+      </div>
+
+      {/* Right: content */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 13, fontWeight: 800, color: G.text }}>
+            {theory.author_name || 'Pirate Brams'}
+          </span>
+          <span style={{ fontSize: 11, color: G.muted }}>·</span>
+          <span style={{ fontSize: 11, color: G.muted }}>{relativeTime(theory.created_at)}</span>
+          <span style={{
+            marginLeft: 'auto',
+            fontSize: 9, fontWeight: 800, letterSpacing: '.08em',
+            padding: '2px 8px', borderRadius: 100,
+            background: `${c}14`, color: c, border: `1px solid ${c}30`,
+            textTransform: 'uppercase', flexShrink: 0,
+          }}>
+            {theory.category}
+          </span>
+        </div>
+
+        {/* Title */}
+        <div style={{ fontSize: 15, fontWeight: 800, color: '#fff', marginBottom: 6, lineHeight: 1.35 }}>
+          {theory.title}
+        </div>
+
+        {/* Excerpt */}
+        {excerpt && (
+          <div style={{ fontSize: 13, color: 'rgba(232,228,222,0.52)', lineHeight: 1.6, marginBottom: 10, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' }}>
+            {excerpt}{excerpt.length >= 200 ? '...' : ''}
+          </div>
+        )}
+
+        {/* Tags */}
+        {(theory.tags || []).length > 0 && (
+          <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 10 }}>
+            {(theory.tags || []).slice(0, 3).map(tag => (
+              <span key={tag} style={{ fontSize: 10, padding: '1px 7px', borderRadius: 100, background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.32)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                #{tag}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Cover image */}
+        {theory.cover_image && (
+          <div style={{ borderRadius: 10, overflow: 'hidden', marginBottom: 10, maxHeight: 180 }}>
+            <img src={theory.cover_image} alt="" style={{ width: '100%', objectFit: 'cover', display: 'block', maxHeight: 180 }} />
+          </div>
+        )}
+
+        {/* Footer actions */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 4 }} onClick={e => e.stopPropagation()}>
+          {/* Upvote */}
+          <button
+            className="th-vote-btn th-vote-up"
+            onClick={e => { e.stopPropagation(); onVote(theory.id, 'up') }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 5,
+              padding: '5px 11px', borderRadius: 999, border: 'none',
+              background: myVote === 'up' ? 'rgba(52,211,153,0.14)' : 'rgba(255,255,255,0.04)',
+              color: myVote === 'up' ? '#34d399' : G.muted,
+              fontSize: 12, fontWeight: 700, cursor: 'pointer', transition: 'all .15s',
+            }}
+          >
+            ▲ {up}
+          </button>
+
+          {/* Downvote */}
+          <button
+            className="th-vote-btn th-vote-dn"
+            onClick={e => { e.stopPropagation(); onVote(theory.id, 'down') }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 5,
+              padding: '5px 11px', borderRadius: 999, border: 'none',
+              background: myVote === 'down' ? 'rgba(248,113,113,0.14)' : 'rgba(255,255,255,0.04)',
+              color: myVote === 'down' ? '#f87171' : G.muted,
+              fontSize: 12, fontWeight: 700, cursor: 'pointer', transition: 'all .15s',
+            }}
+          >
+            ▼ {down}
+          </button>
+
+          {/* Score */}
+          <span style={{ fontSize: 12, fontWeight: 800, marginLeft: 2, color: score > 0 ? '#34d399' : score < 0 ? '#f87171' : G.muted }}>
+            {score > 0 ? `+${score}` : score}
+          </span>
+
+          {/* Comments */}
+          <button
+            onClick={e => { e.stopPropagation(); }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 5,
+              padding: '5px 11px', borderRadius: 999, border: 'none',
+              background: 'rgba(255,255,255,0.04)', color: G.muted,
+              fontSize: 12, fontWeight: 700, cursor: 'pointer', marginLeft: 4,
+            }}
+          >
+            💬 {theory.comments_count || 0}
+          </button>
+
+          {/* Lire */}
+          <button
+            onClick={onClick}
+            style={{
+              marginLeft: 'auto', padding: '5px 14px', borderRadius: 999,
+              border: `1px solid ${G.gold}33`, background: 'transparent',
+              color: G.gold, fontSize: 11, fontWeight: 700, cursor: 'pointer',
+              transition: 'all .15s',
+            }}
+          >
+            Lire →
+          </button>
+        </div>
+      </div>
     </div>
   )
 }
 
-function TheoryCard({ theory, index, onClick }) {
-  const [hov, setHov] = useState(false)
-  const c = CAT_COLORS[theory.category] || GOLD
-  const score = (theory.votes_up || 0) - (theory.votes_down || 0)
-
+function ComposeBox({ onPost }) {
+  const navigate = useNavigate()
+  const { isAuthenticated } = useAuth()
+  if (!isAuthenticated) return null
   return (
     <div
-      onClick={onClick}
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
+      onClick={() => navigate('/theories/new')}
       style={{
-        background:`linear-gradient(160deg,${c}0c 0%,rgba(7,9,14,0.97) 100%)`,
-        border:`1px solid ${hov ? c+'45' : c+'18'}`,
-        borderTop:`3px solid ${hov ? c : c+'aa'}`,
-        borderRadius:14, overflow:'hidden', cursor:'pointer',
-        transition:'all .22s ease',
-        transform: hov ? 'translateY(-5px)' : 'none',
-        boxShadow: hov ? `0 12px 36px ${c}20` : 'none',
-        animation:`thFadeUp .4s ${Math.min(index * 0.06, 0.48)}s ease both`,
+        background: G.card, border: `1px solid ${G.border}`,
+        borderRadius: 14, padding: '14px 18px',
+        display: 'flex', alignItems: 'center', gap: 12,
+        cursor: 'pointer', marginBottom: 12,
+        transition: 'border-color .18s',
       }}
+      onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(191,164,106,.28)'}
+      onMouseLeave={e => e.currentTarget.style.borderColor = G.border}
     >
-      {theory.cover_image && (
-        <div style={{ overflow:'hidden', height:120 }}>
-          <img src={theory.cover_image} alt={theory.title} style={{ width:'100%', height:'100%', objectFit:'cover', display:'block', transition:'transform .35s', transform: hov ? 'scale(1.05)' : 'scale(1)' }} />
-        </div>
-      )}
-      <div style={{ padding:'16px 18px' }}>
-        {/* Category + tags */}
-        <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:10, flexWrap:'wrap' }}>
-          <span style={{ fontSize:9, fontWeight:800, letterSpacing:'.10em', padding:'2px 9px', borderRadius:100, background:`${c}18`, color:c, border:`1px solid ${c}35`, textTransform:'uppercase' }}>
-            {theory.category}
-          </span>
-          {(theory.tags || []).slice(0, 2).map(tag => (
-            <span key={tag} style={{ fontSize:9, padding:'2px 8px', borderRadius:100, background:'rgba(255,255,255,0.04)', color:'rgba(255,255,255,0.35)', border:'1px solid rgba(255,255,255,0.07)' }}>
-              #{tag}
-            </span>
-          ))}
-        </div>
-
-        {/* Title */}
-        <div style={{ fontFamily:"'Pirata One',cursive", fontSize:15, fontWeight:900, color:'#fff', marginBottom:8, lineHeight:1.3 }}>{theory.title}</div>
-
-        {/* Score bar */}
-        <ScoreBar up={theory.votes_up || 0} down={theory.votes_down || 0} />
-
-        {/* Footer */}
-        <div style={{ display:'flex', alignItems:'center', marginTop:10, fontSize:11, color:'rgba(255,255,255,0.32)' }}>
-          <span style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:110 }}>✍️ {theory.author_name}</span>
-          <span style={{ marginLeft:'auto', display:'flex', gap:10, flexShrink:0 }}>
-            <span style={{ color: score > 0 ? '#34d399' : score < 0 ? '#f87171' : 'rgba(255,255,255,0.35)', fontWeight:700 }}>
-              {score > 0 ? `+${score}` : score}
-            </span>
-            <span>💬 {theory.comments_count || 0}</span>
-          </span>
-        </div>
+      <div style={{
+        flex: 1, padding: '10px 16px', borderRadius: 999,
+        background: 'rgba(255,255,255,0.04)', border: `1px solid ${G.border}`,
+        color: 'rgba(232,228,222,0.32)', fontSize: 14,
+      }}>
+        Partage une théorie One Piece...
       </div>
+      <button style={{
+        background: G.gold, border: 'none', borderRadius: 999,
+        padding: '9px 20px', fontSize: 13, fontWeight: 800,
+        color: '#08090D', cursor: 'pointer', flexShrink: 0,
+      }}>
+        Publier
+      </button>
     </div>
   )
 }
@@ -139,6 +259,9 @@ export default function TheoriesHome() {
   const [sort,     setSort]     = useState('recent')
   const [page,     setPage]     = useState(0)
   const [hasMore,  setHasMore]  = useState(true)
+  const [myVotes,  setMyVotes]  = useState(() => {
+    try { return JSON.parse(localStorage.getItem('brams_theory_votes') || '{}') } catch { return {} }
+  })
 
   useEffect(() => {
     document.title = 'Théories — Brams Community'
@@ -147,7 +270,7 @@ export default function TheoriesHome() {
 
   useEffect(() => {
     setLoading(true); setPage(0)
-    fetchTheories({ category, sort, limit:LIMIT, offset:0 }).then(data => {
+    fetchTheories({ category, sort, limit: LIMIT, offset: 0 }).then(data => {
       setTheories(data)
       setHasMore(data.length === LIMIT)
       setLoading(false)
@@ -156,149 +279,155 @@ export default function TheoriesHome() {
 
   async function loadMore() {
     const nextPage = page + 1
-    const data = await fetchTheories({ category, sort, limit:LIMIT, offset:nextPage * LIMIT })
+    const data = await fetchTheories({ category, sort, limit: LIMIT, offset: nextPage * LIMIT })
     setTheories(prev => [...prev, ...data])
     setHasMore(data.length === LIMIT)
     setPage(nextPage)
   }
 
-  const activeColor = CAT_COLORS[category] || GOLD
+  const handleVote = useCallback((id, dir) => {
+    if (!isAuthenticated) {
+      document.dispatchEvent(new CustomEvent('open-auth-modal'))
+      return
+    }
+    setMyVotes(prev => {
+      const current = prev[id]
+      const next = { ...prev }
+      if (current === dir) {
+        delete next[id]
+        setTheories(ts => ts.map(t => t.id === id ? {
+          ...t,
+          votes_up:   dir === 'up'   ? Math.max(0, (t.votes_up   || 0) - 1) : t.votes_up,
+          votes_down: dir === 'down' ? Math.max(0, (t.votes_down || 0) - 1) : t.votes_down,
+        } : t))
+      } else {
+        next[id] = dir
+        setTheories(ts => ts.map(t => t.id === id ? {
+          ...t,
+          votes_up:   dir === 'up'   ? (t.votes_up   || 0) + 1 : current === 'up'   ? Math.max(0, (t.votes_up   || 0) - 1) : t.votes_up,
+          votes_down: dir === 'down' ? (t.votes_down || 0) + 1 : current === 'down' ? Math.max(0, (t.votes_down || 0) - 1) : t.votes_down,
+        } : t))
+      }
+      try { localStorage.setItem('brams_theory_votes', JSON.stringify(next)) } catch {}
+      return next
+    })
+  }, [isAuthenticated])
 
   return (
-    <div style={{ minHeight:'100vh', paddingTop:80, position:'relative' }}>
+    <div style={{ minHeight: '100vh', background: G.bg, color: G.text, paddingTop: 80 }}>
       <style>{TH_CSS}</style>
-      <THStars />
-      <THScanLine />
 
-      <div style={{ position:'relative', zIndex:2 }}>
-        <div style={{ maxWidth:1120, margin:'0 auto', padding:'40px 24px 100px' }}>
+      <div style={{ maxWidth: 680, margin: '0 auto', padding: '28px 16px 100px' }}>
 
-          {/* ── Hero ── */}
-          <div style={{ textAlign:'center', marginBottom:52 }}>
-            <div style={{
-              display:'inline-flex', alignItems:'center', gap:8, padding:'5px 18px', borderRadius:100,
-              background:'rgba(123,63,69,0.10)', border:'1px solid rgba(123,63,69,0.28)',
-              fontSize:10, fontWeight:800, letterSpacing:'.22em', color:VIOLET, textTransform:'uppercase', marginBottom:20,
-            }}>
-              🔮 Forum Théories
-            </div>
-            <h1 style={{ fontFamily:"'Pirata One',cursive", fontSize:'clamp(42px,7vw,78px)', color:'#fff', margin:'0 0 16px', lineHeight:1, letterSpacing:'-.02em' }}>
-              Théories
+        {/* ── Header ── */}
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+            <h1 style={{ margin: 0, fontSize: 22, fontWeight: 900, letterSpacing: '-.02em' }}>
+              🔮 Théories
             </h1>
-            <p style={{ fontSize:15, color:'rgba(255,255,255,0.42)', maxWidth:500, margin:'0 auto 32px', lineHeight:1.75 }}>
-              Partage tes théories, vote pour les meilleures, débats avec la communauté One Piece.
-            </p>
-
-            {isAuthenticated ? (
-              <button
-                onClick={() => navigate('/theories/new')}
-                style={{
-                  padding:'12px 28px', borderRadius:100, border:'none',
-                background:`linear-gradient(135deg,#6a4147,#8b6d3d)`, color:'#f4f1ec',
-                  fontSize:13, fontWeight:800, cursor:'pointer', transition:'all .18s', letterSpacing:'.04em',
-                  boxShadow:`0 6px 24px rgba(123,63,69,0.24)`,
-                }}
-                onMouseEnter={e => { e.currentTarget.style.opacity='.88'; e.currentTarget.style.transform='translateY(-1px)' }}
-                onMouseLeave={e => { e.currentTarget.style.opacity='1'; e.currentTarget.style.transform='none' }}
-              >
-                + Proposer une théorie
-              </button>
-            ) : (
+            {!isAuthenticated && (
               <button
                 onClick={() => document.dispatchEvent(new CustomEvent('open-auth-modal'))}
-                style={{ padding:'12px 28px', borderRadius:100, border:`1px solid ${VIOLET}40`, background:`${VIOLET}0d`, color:VIOLET, fontSize:13, fontWeight:700, cursor:'pointer', transition:'all .18s' }}
-                onMouseEnter={e => e.currentTarget.style.background=`${VIOLET}18`}
-                onMouseLeave={e => e.currentTarget.style.background=`${VIOLET}0d`}
+                style={{ padding: '7px 16px', borderRadius: 999, border: `1px solid ${G.gold}44`, background: 'transparent', color: G.gold, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
               >
-                Se connecter pour proposer →
+                Se connecter
               </button>
             )}
           </div>
+          <div style={{ fontSize: 12, color: G.muted }}>Partage, vote, débats — One Piece theories community</div>
+        </div>
 
-          {/* ── Filters ── */}
-          <div style={{ marginBottom:32 }}>
-            {/* Category pills */}
-            <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:14 }}>
-              {CATEGORIES.map(cat => {
-                const active = category === cat
-                const c = CAT_COLORS[cat] || GOLD
-                return (
-                  <button key={cat} onClick={() => setCategory(cat)} style={{
-                    display:'inline-flex', alignItems:'center', gap:5,
-                    padding:'9px 18px', borderRadius:100,
-                    border:`1px solid ${active ? c+'55' : 'rgba(255,255,255,0.09)'}`,
-                    background: active ? `${c}14` : 'rgba(255,255,255,0.03)',
-                    color: active ? c : 'rgba(255,255,255,0.42)',
-                    fontSize:12, fontWeight:700, cursor:'pointer', transition:'all .18s', whiteSpace:'nowrap',
-                    boxShadow: active ? `0 0 18px ${c}18` : 'none',
-                  }}>
-                    {cat}
-                  </button>
-                )
-              })}
-            </div>
+        {/* ── Compose box ── */}
+        <ComposeBox />
 
-            {/* Sort + separator */}
-            <div style={{ display:'flex', gap:6, alignItems:'center' }}>
-              {SORTS.map(s => (
-                <button key={s.id} onClick={() => setSort(s.id)} style={{
-                  display:'inline-flex', alignItems:'center', gap:5,
-                  padding:'7px 14px', borderRadius:10,
-                  border:`1px solid ${sort===s.id ? 'rgba(162,155,254,0.40)' : 'rgba(255,255,255,0.07)'}`,
-                  background: sort===s.id ? 'rgba(162,155,254,0.12)' : 'transparent',
-                  color: sort===s.id ? VIOLET : 'rgba(255,255,255,0.40)',
-                  fontSize:12, fontWeight:700, cursor:'pointer', transition:'all .15s',
-                }}>
-                  <span>{s.icon}</span><span>{s.label}</span>
-                </button>
-              ))}
-              <div style={{ marginLeft:'auto', fontSize:11, color:'rgba(255,255,255,0.25)', fontWeight:600 }}>
-                {theories.length} théorie{theories.length !== 1 ? 's' : ''}
-              </div>
-            </div>
+        {/* ── Filters ── */}
+        <div style={{ marginBottom: 16 }}>
+          {/* Sort tabs */}
+          <div style={{ display: 'flex', gap: 0, borderBottom: `1px solid ${G.border}`, marginBottom: 12 }}>
+            {SORTS.map(s => (
+              <button key={s.id} onClick={() => setSort(s.id)} style={{
+                flex: 1, padding: '10px 0', border: 'none',
+                background: 'transparent', cursor: 'pointer',
+                color: sort === s.id ? G.gold : G.muted,
+                fontSize: 13, fontWeight: 700,
+                borderBottom: `2px solid ${sort === s.id ? G.gold : 'transparent'}`,
+                transition: 'all .15s',
+              }}>
+                {s.icon} {s.label}
+              </button>
+            ))}
           </div>
 
-          {/* Tab separator */}
-          <div style={{ height:1, background:`linear-gradient(90deg,transparent,${activeColor}35,transparent)`, marginBottom:32, transition:'background .4s' }} />
+          {/* Category pills */}
+          <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+            {CATEGORIES.map(cat => {
+              const active = category === cat
+              const c = CAT_COLORS[cat] || G.gold
+              return (
+                <button key={cat} onClick={() => setCategory(cat)} style={{
+                  padding: '5px 13px', borderRadius: 999,
+                  border: `1px solid ${active ? c + '55' : 'rgba(255,255,255,0.08)'}`,
+                  background: active ? `${c}14` : 'transparent',
+                  color: active ? c : G.muted,
+                  fontSize: 11, fontWeight: 700, cursor: 'pointer', transition: 'all .15s',
+                }}>
+                  {cat}
+                </button>
+              )
+            })}
+          </div>
+        </div>
 
-          {/* ── Grid ── */}
-          {loading ? (
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(270px,1fr))', gap:14 }}>
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} style={{ height:200, borderRadius:14, background:'rgba(255,255,255,0.03)', animation:'thPulse 1.5s ease-in-out infinite' }} />
+        {/* ── Feed ── */}
+        {loading ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} style={{ height: 140, borderRadius: 14, background: 'rgba(255,255,255,0.03)', animation: 'thPulse 1.5s ease-in-out infinite' }} />
+            ))}
+          </div>
+        ) : theories.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '80px 0', color: G.muted, fontSize: 15 }}>
+            <div style={{ fontSize: 48, marginBottom: 16, opacity: .4 }}>🔮</div>
+            Aucune théorie dans cette catégorie. Sois le premier !
+            {isAuthenticated && (
+              <div style={{ marginTop: 20 }}>
+                <button onClick={() => navigate('/theories/new')} style={{ padding: '10px 24px', borderRadius: 999, border: `1px solid ${G.gold}44`, background: `${G.gold}10`, color: G.gold, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+                  + Proposer une théorie
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {theories.map((t, i) => (
+                <TheoryPost
+                  key={t.id}
+                  theory={t}
+                  index={i}
+                  onClick={() => navigate(`/theories/${t.id}`)}
+                  onVote={handleVote}
+                  myVote={myVotes[t.id]}
+                />
               ))}
             </div>
-          ) : theories.length === 0 ? (
-            <div style={{ textAlign:'center', padding:'80px 0', color:'rgba(255,255,255,0.25)', fontSize:15 }}>
-              <div style={{ fontSize:48, marginBottom:16, opacity:.4 }}>🔮</div>
-              Aucune théorie dans cette catégorie. Sois le premier !
-            </div>
-          ) : (
-            <>
-              <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(270px,1fr))', gap:14 }}>
-                {theories.map((t, i) => (
-                  <TheoryCard key={t.id} theory={t} index={i} onClick={() => navigate(`/theories/${t.id}`)} />
-                ))}
+            {hasMore && (
+              <div style={{ textAlign: 'center', marginTop: 24 }}>
+                <button onClick={loadMore} style={{
+                  padding: '10px 28px', borderRadius: 999,
+                  border: `1px solid ${G.border}`, background: 'transparent',
+                  color: G.muted, fontSize: 13, fontWeight: 700, cursor: 'pointer',
+                  transition: 'all .15s',
+                }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = G.gold; e.currentTarget.style.color = G.gold }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = G.border; e.currentTarget.style.color = G.muted }}
+                >
+                  Charger plus
+                </button>
               </div>
-              {hasMore && (
-                <div style={{ textAlign:'center', marginTop:36 }}>
-                  <button
-                    onClick={loadMore}
-                    style={{
-                      padding:'12px 32px', borderRadius:100,
-                      border:`1px solid ${VIOLET}40`, background:`${VIOLET}0d`,
-                      color:VIOLET, fontSize:13, fontWeight:700, cursor:'pointer', transition:'all .18s',
-                    }}
-                    onMouseEnter={e => e.currentTarget.style.background=`${VIOLET}18`}
-                    onMouseLeave={e => e.currentTarget.style.background=`${VIOLET}0d`}
-                  >
-                    Voir plus →
-                  </button>
-                </div>
-              )}
-            </>
-          )}
-        </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   )

@@ -1,6 +1,86 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext.jsx'
+
+// ── Confetti ──────────────────────────────────────────────────────────────────
+const CONFETTI_COLORS = ['#BFA46A','#f9a8d4','#a78bfa','#6ee7b7','#fbbf24','#f87171','#60a5fa']
+function Confetti() {
+  const canvasRef = useRef(null)
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    canvas.width = window.innerWidth
+    canvas.height = window.innerHeight
+    const particles = Array.from({ length: 120 }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * -canvas.height,
+      w: 8 + Math.random() * 8,
+      h: 4 + Math.random() * 5,
+      color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
+      vx: (Math.random() - 0.5) * 3,
+      vy: 2 + Math.random() * 3,
+      angle: Math.random() * Math.PI * 2,
+      spin: (Math.random() - 0.5) * 0.15,
+    }))
+    let running = true
+    function loop() {
+      if (!running) return
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      particles.forEach(p => {
+        ctx.save()
+        ctx.translate(p.x, p.y)
+        ctx.rotate(p.angle)
+        ctx.fillStyle = p.color
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h)
+        ctx.restore()
+        p.x += p.vx; p.y += p.vy; p.angle += p.spin
+        if (p.y > canvas.height) { p.y = -10; p.x = Math.random() * canvas.width }
+      })
+      requestAnimationFrame(loop)
+    }
+    loop()
+    return () => { running = false }
+  }, [])
+  return <canvas ref={canvasRef} style={{ position:'fixed', inset:0, pointerEvents:'none', zIndex:999 }} />
+}
+
+function WinnerScreen({ winner, onClose }) {
+  return (
+    <div style={{
+      position:'fixed', inset:0, zIndex:998,
+      background:'rgba(8,9,13,0.92)', backdropFilter:'blur(8px)',
+      display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+      padding:24,
+    }}>
+      <Confetti />
+      <div style={{
+        position:'relative', zIndex:1000, textAlign:'center',
+        background:'rgba(14,15,22,0.97)', border:`2px solid ${G.goldBorder}`,
+        borderRadius:24, padding:'48px 56px', maxWidth:480,
+        boxShadow:`0 0 80px rgba(191,164,106,0.18), 0 24px 80px rgba(0,0,0,0.7)`,
+      }}>
+        <div style={{ fontSize:56, marginBottom:8 }}>{winner.emoji}</div>
+        <div style={{ fontSize:11, color:G.gold, fontWeight:900, letterSpacing:'.16em', textTransform:'uppercase', marginBottom:12 }}>
+          🏆 Champion du Tournoi
+        </div>
+        <h2 style={{ margin:'0 0 6px', fontSize:32, fontWeight:900, color:G.text, letterSpacing:'-.01em' }}>
+          {winner.name}
+        </h2>
+        <div style={{ fontSize:13, color:G.muted, marginTop:8 }}>
+          Choisi par la communauté Brams
+        </div>
+        <button onClick={onClose} style={{
+          marginTop:32, background:G.gold, border:'none', borderRadius:10,
+          padding:'11px 28px', fontSize:13, fontWeight:800, color:'#08090D',
+          cursor:'pointer', letterSpacing:'.03em',
+        }}>
+          Voir le bracket complet
+        </button>
+      </div>
+    </div>
+  )
+}
 
 const G = {
   bg: '#08090D',
@@ -172,6 +252,10 @@ export default function TournoiPage() {
   const [tab, setTab] = useState('bracket') // bracket | palmares | creer
   const [toast, setToast] = useState(null)
   const [bracket, setBracket] = useState(MOCK_BRACKET)
+  const [showWinner, setShowWinner] = useState(true)
+
+  const finalMatch = bracket[bracket.length - 1]?.matchups[0]
+  const finalWinner = finalMatch?.done && finalMatch.winner ? finalMatch[finalMatch.winner] : null
 
   useEffect(() => {
     const saved = localStorage.getItem('brams_tournoi_votes')
@@ -217,6 +301,9 @@ export default function TournoiPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: G.bg, color: G.text, paddingTop: 80 }}>
+      {finalWinner && showWinner && (
+        <WinnerScreen winner={finalWinner} onClose={() => setShowWinner(false)} />
+      )}
       {/* Hero */}
       <div style={{
         background: `linear-gradient(135deg, rgba(191,164,106,.06) 0%, transparent 60%)`,
