@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fonds d'Openings — Brams Community</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Pirata+One&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; background: #08090D; color: #e8e4de; margin: 0; }
+
+    /* Grid background */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background-image:
+        repeating-linear-gradient(90deg, rgba(255,255,255,.025) 0 1px, transparent 1px 72px),
+        repeating-linear-gradient(0deg,  rgba(255,255,255,.018) 0 1px, transparent 1px 72px);
+    }
+
+    @keyframes shimmer {
+      0%   { left: -100%; }
+      60%  { left: 130%; }
+      100% { left: 130%; }
+    }
+    @keyframes glow {
+      0%, 100% { opacity: .55; }
+      50%       { opacity: .90; }
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50%       { transform: translateY(-6px); }
+    }
+    @keyframes pulse-badge {
+      0%, 100% { box-shadow: 0 0 8px currentColor; }
+      50%       { box-shadow: 0 0 18px currentColor; }
+    }
+
+    .card {
+      position: relative; overflow: hidden;
+      border-radius: 18px;
+      background: rgba(13,14,20,0.97);
+      border: 1px solid rgba(255,255,255,.07);
+      transition: transform .22s ease, border-color .22s ease, box-shadow .22s ease;
+      cursor: pointer;
+    }
+    .card:hover {
+      transform: translateY(-6px) scale(1.012);
+      border-color: var(--accent, rgba(255,255,255,.18));
+      box-shadow: 0 24px 60px rgba(0,0,0,.55), 0 0 0 1px var(--accent, rgba(255,255,255,.08));
+    }
+    .card .shimmer {
+      position: absolute; top: 0; bottom: 0; width: 40%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.06), transparent);
+      animation: shimmer 3.8s 0.6s ease-in-out infinite;
+    }
+    .card:hover .shimmer { animation-duration: 2.2s; }
+
+    .thumb-wrap {
+      position: relative; height: 180px; overflow: hidden;
+    }
+    .thumb-wrap img {
+      width: 100%; height: 100%;
+      object-fit: cover; object-position: center 30%;
+      filter: saturate(1.3) brightness(0.72);
+      transition: filter .35s, transform .35s;
+    }
+    .card:hover .thumb-wrap img {
+      filter: saturate(1.5) brightness(0.82);
+      transform: scale(1.06);
+    }
+    .thumb-wrap::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(180deg, transparent 40%, rgba(13,14,20,.92) 100%);
+    }
+
+    .rarity-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 9px; border-radius: 6px;
+      font-size: 9px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase;
+      border: 1px solid currentColor;
+      backdrop-filter: blur(8px);
+      animation: pulse-badge 2.5s ease-in-out infinite;
+    }
+
+    .preview-btn {
+      width: 100%; padding: 10px; border-radius: 10px;
+      font-size: 12px; font-weight: 700; letter-spacing: .04em;
+      cursor: pointer; border: none; transition: all .18s;
+    }
+    .preview-btn:hover { filter: brightness(1.15); transform: translateY(-1px); }
+
+    .insufficient {
+      font-size: 11px; font-weight: 700;
+      padding: 6px 10px; border-radius: 8px;
+      background: rgba(255,255,255,.03);
+      border: 1px solid rgba(255,255,255,.06);
+      text-align: center; margin-top: 8px;
+    }
+
+    /* Nav */
+    nav { position: sticky; top: 0; z-index: 100; backdrop-filter: blur(18px); border-bottom: 1px solid rgba(255,255,255,.07); }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: #08090D; } ::-webkit-scrollbar-thumb { background: rgba(191,164,106,.3); border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<!-- ── Navbar ──────────────────────────────────────────────────────────────── -->
+<nav class="bg-[rgba(8,9,13,0.88)]">
+  <div class="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
+    <div class="flex items-center gap-8">
+      <span class="font-['Pirata_One'] text-xl text-[#BFA46A] tracking-wide">Brams</span>
+      <div class="hidden md:flex gap-6 text-[13px] font-semibold text-white/40">
+        <a href="#" class="hover:text-white/80 transition-colors">Rangs</a>
+        <a href="#" class="hover:text-white/80 transition-colors">Classement</a>
+        <a href="#" class="hover:text-white/80 transition-colors">Équipages</a>
+        <a href="#" class="hover:text-white/80 transition-colors">Wiki & Théories</a>
+        <a href="#" class="hover:text-white/80 transition-colors">Tier List</a>
+        <a href="#" class="text-[#BFA46A] border-b border-[#BFA46A]/50">Boutique</a>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <button class="text-[12px] font-bold px-4 py-1.5 rounded-lg border border-[#BFA46A]/40 text-[#BFA46A] hover:bg-[#BFA46A]/10 transition-all">❤️ Soutenir</button>
+      <div class="w-8 h-8 rounded-full bg-[#BFA46A]/20 border border-[#BFA46A]/30 flex items-center justify-center text-xs font-bold text-[#BFA46A]">F</div>
+    </div>
+  </div>
+</nav>
+
+<!-- ── Main ────────────────────────────────────────────────────────────────── -->
+<main class="relative z-10 max-w-7xl mx-auto px-6 py-12">
+
+  <!-- Header section -->
+  <div class="mb-10">
+    <div class="flex items-center gap-3 mb-3">
+      <span class="text-[10px] font-black tracking-[.2em] text-[#BFA46A] uppercase">Boutique · Fonds d'Openings</span>
+      <span class="text-[9px] font-black tracking-[.12em] px-2 py-0.5 rounded-md uppercase text-white"
+        style="background: linear-gradient(135deg,#ec4899,#a855f7); box-shadow: 0 0 14px rgba(236,72,153,.45); animation: glow 2s ease-in-out infinite;">
+        ✦ Nouveauté
+      </span>
+    </div>
+    <h1 class="text-4xl md:text-5xl font-black mb-3" style="font-family:'Pirata One',cursive;">
+      Fonds d'Openings
+    </h1>
+    <p class="text-white/40 text-[14px] max-w-xl leading-relaxed">
+      Équipe ton profil avec le fond d'opening de ton anime préféré.
+      Chaque fond est unique et visible sur tout le site une fois équipé.
+    </p>
+    <!-- Wallet mock -->
+    <div class="mt-5 inline-flex items-center gap-3 px-4 py-2 rounded-xl border border-[#BFA46A]/25 bg-[#BFA46A]/08">
+      <span class="text-[#BFA46A] text-lg">💰</span>
+      <div>
+        <div class="text-[10px] text-white/35 font-bold tracking-widest uppercase">Ton solde</div>
+        <div class="text-[15px] font-black text-[#BFA46A]">350 000 ฿</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Category filter pills -->
+  <div class="flex gap-2 flex-wrap mb-8">
+    <button class="px-4 py-2 rounded-lg text-[11px] font-bold border border-[#BFA46A]/40 bg-[#BFA46A]/10 text-[#BFA46A] transition-all">⚔️ Tous</button>
+    <button class="px-4 py-2 rounded-lg text-[11px] font-bold border border-white/08 text-white/35 hover:text-white/60 hover:border-white/20 transition-all">Légendaire</button>
+    <button class="px-4 py-2 rounded-lg text-[11px] font-bold border border-white/08 text-white/35 hover:text-white/60 hover:border-white/20 transition-all">Mythique</button>
+    <button class="px-4 py-2 rounded-lg text-[11px] font-bold border border-white/08 text-white/35 hover:text-white/60 hover:border-white/20 transition-all">Secret</button>
+    <button class="px-4 py-2 rounded-lg text-[11px] font-bold border border-white/08 text-white/35 hover:text-white/60 hover:border-white/20 transition-all">Épique</button>
+    <button class="px-4 py-2 rounded-lg text-[11px] font-bold border border-white/08 text-white/35 hover:text-white/60 hover:border-white/20 transition-all">Rare</button>
+    <button class="px-4 py-2 rounded-lg text-[11px] font-bold border border-white/08 text-white/35 hover:text-white/60 hover:border-white/20 transition-all">Commun</button>
+  </div>
+
+  <!-- Grid 3 colonnes -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5" id="cards-grid"></div>
+
+</main>
+
+<!-- ── Preview modal ───────────────────────────────────────────────────────── -->
+<div id="modal" class="fixed inset-0 z-[999] hidden items-center justify-center p-4" style="background:rgba(0,0,0,.85); backdrop-filter:blur(12px);">
+  <div class="relative max-w-lg w-full rounded-2xl overflow-hidden border border-white/10" id="modal-inner">
+    <button onclick="closeModal()" class="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-black/60 border border-white/15 text-white/60 hover:text-white flex items-center justify-center text-sm transition-all">✕</button>
+    <div class="relative h-52 overflow-hidden">
+      <img id="modal-img" src="" alt="" class="w-full h-full object-cover" style="object-position:center 30%; filter:brightness(.75) saturate(1.3);" />
+      <div class="absolute inset-0" style="background:linear-gradient(180deg,transparent 35%,rgba(8,9,13,.95) 100%);"></div>
+      <span id="modal-badge" class="absolute top-3 left-3 rarity-badge"></span>
+    </div>
+    <div class="p-6" style="background:rgba(13,14,20,.98);">
+      <div id="modal-anime" class="text-[10px] font-bold tracking-[.12em] uppercase text-white/35 mb-1"></div>
+      <h2 id="modal-title" class="text-2xl font-black mb-1"></h2>
+      <div id="modal-artist" class="text-[12px] text-white/30 italic mb-4"></div>
+      <p id="modal-desc" class="text-[13px] text-white/50 leading-relaxed mb-5"></p>
+      <div class="flex items-center justify-between mb-4">
+        <div class="text-[22px] font-black text-[#BFA46A]" id="modal-price"></div>
+        <div class="text-[11px] text-white/30">Solde : <span class="text-[#BFA46A] font-bold">350 000 ฿</span></div>
+      </div>
+      <div id="modal-insufficient" class="insufficient text-red-400/70 mb-3 hidden"></div>
+      <button id="modal-buy-btn" class="preview-btn text-[#08090D] font-black" style="background:linear-gradient(135deg,#BFA46A,#d4a017);">
+        Acheter ce fond
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+const BALANCE = 350_000
+
+const RARITY = {
+  Secret:     { color: '#e8d5a3', glow: 'rgba(232,213,163,.45)', stars: '★★★★★', label: 'Secret'     },
+  Mythique:   { color: '#ec4899', glow: 'rgba(236,72,153,.40)',  stars: '★★★★★', label: 'Mythique'   },
+  Legendaire: { color: '#d4a017', glow: 'rgba(212,160,23,.35)',  stars: '★★★★',  label: 'Légendaire' },
+  Epique:     { color: '#8b5cf6', glow: 'rgba(139,92,246,.30)',  stars: '★★★',   label: 'Épique'     },
+  Rare:       { color: '#3b82f6', glow: 'rgba(59,130,246,.28)',  stars: '★★',    label: 'Rare'       },
+  Commun:     { color: '#6b7280', glow: 'rgba(107,114,128,.22)', stars: '★',     label: 'Commun'     },
+}
+
+const ITEMS = [
+  { id:'bg-the-rumbling', title:'Fond : The Rumbling',          anime:'Attack on Titan Final', artist:'SiM',             rarity:'Secret',     price:6_000_000, ytId:'3tBi5RFBj7Y', desc:"La fin du monde en fond. Réservé aux rares qui ont tenu jusqu'au bout.", color:'#3a0c0c' },
+  { id:'bg-unravel',      title:'Fond : Unravel',               anime:'Tokyo Ghoul',           artist:'TK from 凛として時雨', rarity:'Secret',     price:5_000_000, ytId:'vStHmc6oOCo', desc:"Un fond sombre et fragmenté. Porté uniquement par les nakamas qui ont tout compris.", color:'#2d0a4a' },
+  { id:'bg-gurenge',      title:'Fond : Gurenge',               anime:'Demon Slayer',          artist:'LiSA',            rarity:'Mythique',   price:2_500_000, ytId:'pManX5H7PGs', desc:"Flammes et lames. L'ouverture qui a lancé une ère nouvelle.", color:'#5a0a10' },
+  { id:'bg-kaikai-kitan', title:'Fond : Kaikai Kitan',          anime:'Jujutsu Kaisen',        artist:'Eve',             rarity:'Mythique',   price:2_500_000, ytId:'wQCOAt0nMPU', desc:"Les malédictions comme décor. Une ambiance unique et redoutable.", color:'#0a1a3a' },
+  { id:'bg-we-are',       title:'Fond : We Are!',               anime:'One Piece',             artist:'Hiroshi Kitadani',rarity:'Legendaire', price:1_500_000, ytId:'qvKAAppHaHnw', desc:"Le grand voyage des nakamas. Fond culte pour les vrais fans de One Piece.", color:'#0a2a5a' },
+  { id:'bg-again',        title:'Fond : Again',                 anime:'FMA: Brotherhood',      artist:'YUI',             rarity:'Legendaire', price:1_500_000, ytId:'fIRCVHBEFg8', desc:"Alchimie et métal. L'opening parfait d'une des meilleures séries.", color:'#4a1a04' },
+  { id:'bg-cruel-angel',  title:"Fond : A Cruel Angel's Thesis",anime:'Neon Genesis Evangelion',artist:'Yoko Takahashi', rarity:'Legendaire', price:1_500_000, ytId:'JlP1pWFruCU', desc:"L'opening mythique. Un morceau de légende pour un fond qui force le respect.", color:'#1a1050' },
+  { id:'bg-hacking-gate', title:'Fond : Hacking to the Gate',   anime:'Steins;Gate',           artist:'Kanako Itou',     rarity:'Legendaire', price:1_500_000, ytId:'GTFK9TIFhbk', desc:"El Psy Kongroo. Pour les voyageurs du temps et les nostalgiques du future.", color:'#042040' },
+  { id:'bg-blue-bird',    title:'Fond : Blue Bird',             anime:'Naruto',                artist:'Ikimono-gakari',  rarity:'Epique',     price:900_000,   ytId:'GKnLBnl8s7E', desc:"L'oiseau bleu de Sasuke. Nostalgie garantie pour chaque fan de Naruto.", color:'#062040' },
+  { id:'bg-silhouette',   title:'Fond : Silhouette',            anime:'Naruto Shippuden',      artist:'KANA-BOON',       rarity:'Epique',     price:900_000,   ytId:'XHiQl-u1qEU', desc:"La course vers un but. Silhouettes et ambiance chaude de Konoha.", color:'#3a2008' },
+  { id:'bg-haruka-mirai', title:'Fond : Haruka Mirai',          anime:'Black Clover',          artist:'KANA-BOON',       rarity:'Epique',     price:900_000,   ytId:'zJmBEJZpMRE', desc:"L'énergie brute d'Asta. Pour ceux qui n'abandonnent jamais.", color:'#062818' },
+  { id:'bg-colors',       title:'Fond : Colors',                anime:'Code Geass',            artist:'FLOW',            rarity:'Rare',       price:600_000,   ytId:'UCo4FE5xhT0', desc:"L'échiquier de Lelouch. Stratégie et trahison comme toile de fond.", color:'#2a1a04' },
+  { id:'bg-99',           title:'Fond : 99',                    anime:'Mob Psycho 100',        artist:'MOB CHOIR',       rarity:'Rare',       price:600_000,   ytId:'wqbmMhzYA3M', desc:"100% — Une explosion d'énergie psychique comme ambiance.", color:'#0a2a0a' },
+  { id:'bg-connect',      title:'Fond : Connect',               anime:'Puella Magi Madoka',    artist:'ClariS',          rarity:'Rare',       price:600_000,   ytId:'hFf3HfJkVN8', desc:"L'illusion de la magie. Derrière la douceur, quelque chose de bien plus sombre.", color:'#300a30' },
+  { id:'bg-tank',         title:'Fond : Tank!',                 anime:'Cowboy Bebop',          artist:'The Seatbelts',   rarity:'Rare',       price:600_000,   ytId:'J3QnHHGQyiY', desc:"Jazz, espace et mélancolie. L'un des openings les plus cultes de l'histoire.", color:'#1a1208' },
+  { id:'bg-crossing-field',title:'Fond : crossing field',       anime:'Sword Art Online',      artist:'LiSA',            rarity:'Commun',     price:400_000,   ytId:'u9K7B8UQRiw', desc:"L'ouverture qui a lancé une génération. Simple, efficace, mémorable.", color:'#0a1428' },
+]
+
+function fmt(n) {
+  if (n >= 1_000_000) return `${(n/1_000_000).toFixed(1).replace('.0','')} M ฿`
+  if (n >= 1_000)     return `${Math.round(n/1_000)} K ฿`
+  return `${n} ฿`
+}
+
+function thumb(ytId) {
+  return `https://img.youtube.com/vi/${ytId}/maxresdefault.jpg`
+}
+
+function buildCard(item, delay) {
+  const r   = RARITY[item.rarity]
+  const canAfford = BALANCE >= item.price
+  const missing   = item.price - BALANCE
+
+  return `
+  <div class="card" style="--accent:${r.color}; animation:float ${3 + delay * 0.4}s ease-in-out infinite; animation-delay:${delay * 0.15}s;"
+       onclick="openModal('${item.id}')">
+    <div class="shimmer"></div>
+
+    <!-- Thumbnail -->
+    <div class="thumb-wrap" style="background:${item.color}40;">
+      <img src="${thumb(item.ytId)}"
+           onerror="this.src='https://img.youtube.com/vi/${item.ytId}/hqdefault.jpg'"
+           alt="${item.title}" loading="lazy" />
+      <!-- Rarity badge -->
+      <div class="absolute top-3 left-3 z-10">
+        <span class="rarity-badge" style="color:${r.color}; background:${r.color}18; border-color:${r.color}55;">
+          ${r.stars} ${r.label}
+        </span>
+      </div>
+      <!-- Play icon overlay -->
+      <div class="absolute inset-0 flex items-center justify-center z-10 opacity-0 hover:opacity-100 transition-opacity duration-200">
+        <div class="w-12 h-12 rounded-full flex items-center justify-center text-lg"
+             style="background:${r.color}cc; box-shadow:0 0 24px ${r.glow}; backdrop-filter:blur(4px);">▶</div>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div class="p-5">
+      <div class="text-[9px] font-bold tracking-[.12em] uppercase mb-1" style="color:${r.color}aa;">${item.anime}</div>
+      <h3 class="text-[15px] font-black leading-tight mb-1 text-white/95">${item.title}</h3>
+      <div class="text-[11px] italic mb-3" style="color:rgba(255,255,255,.28);">${item.artist}</div>
+      <p class="text-[12px] leading-relaxed mb-4 line-clamp-2" style="color:rgba(255,255,255,.42);">${item.desc}</p>
+
+      <!-- Price row -->
+      <div class="flex items-center justify-between mb-3">
+        <div class="text-[18px] font-black" style="color:${r.color};">${fmt(item.price)}</div>
+        <div class="text-[9px] font-bold uppercase tracking-[.08em] px-2 py-0.5 rounded-full"
+             style="background:${r.color}14; color:${r.color}; border:1px solid ${r.color}30;">
+          ${item.rarity}
+        </div>
+      </div>
+
+      <!-- CTA -->
+      <button class="preview-btn" style="background:linear-gradient(135deg,${r.color}28,${r.color}14); border:1px solid ${r.color}45; color:${r.color};"
+              onclick="event.stopPropagation();openModal('${item.id}')">
+        Aperçu
+      </button>
+
+      ${!canAfford ? `
+      <div class="insufficient" style="color:rgba(248,113,113,.65);">
+        💸 Insuffisant — manque ${fmt(missing)}
+      </div>` : `
+      <div class="insufficient" style="color:rgba(52,211,153,.65);">
+        ✓ Achat possible
+      </div>`}
+    </div>
+
+    <!-- Bottom accent line -->
+    <div class="absolute bottom-0 left-0 right-0 h-[2px]"
+         style="background:linear-gradient(90deg,transparent,${r.color}55,transparent);"></div>
+  </div>`
+}
+
+// Render grid
+document.getElementById('cards-grid').innerHTML = ITEMS.map((item, i) => buildCard(item, i)).join('')
+
+// Modal
+function openModal(id) {
+  const item = ITEMS.find(i => i.id === id)
+  if (!item) return
+  const r = RARITY[item.rarity]
+  const canAfford = BALANCE >= item.price
+  const missing = item.price - BALANCE
+
+  document.getElementById('modal-img').src = thumb(item.ytId)
+  document.getElementById('modal-img').onerror = function() { this.src = `https://img.youtube.com/vi/${item.ytId}/hqdefault.jpg` }
+  document.getElementById('modal-badge').textContent = `${r.stars} ${r.label}`
+  document.getElementById('modal-badge').style.color = r.color
+  document.getElementById('modal-badge').style.borderColor = r.color + '55'
+  document.getElementById('modal-badge').style.background = r.color + '18'
+  document.getElementById('modal-anime').textContent = item.anime
+  document.getElementById('modal-title').textContent = item.title
+  document.getElementById('modal-artist').textContent = item.artist
+  document.getElementById('modal-desc').textContent = item.desc
+  document.getElementById('modal-price').textContent = fmt(item.price)
+  document.getElementById('modal-inner').style.borderColor = r.color + '33'
+
+  const insuffEl = document.getElementById('modal-insufficient')
+  if (!canAfford) {
+    insuffEl.textContent = `💸 Insuffisant — il te manque ${fmt(missing)}`
+    insuffEl.classList.remove('hidden')
+  } else {
+    insuffEl.classList.add('hidden')
+  }
+
+  const btn = document.getElementById('modal-buy-btn')
+  if (canAfford) {
+    btn.style.background = `linear-gradient(135deg,${r.color},${r.color}cc)`
+    btn.style.color = '#08090D'
+    btn.style.opacity = '1'
+    btn.style.cursor = 'pointer'
+    btn.textContent = 'Acheter ce fond'
+  } else {
+    btn.style.background = 'rgba(255,255,255,.06)'
+    btn.style.color = 'rgba(255,255,255,.2)'
+    btn.style.opacity = '.7'
+    btn.style.cursor = 'not-allowed'
+    btn.textContent = 'Solde insuffisant'
+  }
+
+  const modal = document.getElementById('modal')
+  modal.classList.remove('hidden')
+  modal.classList.add('flex')
+}
+
+function closeModal() {
+  const modal = document.getElementById('modal')
+  modal.classList.add('hidden')
+  modal.classList.remove('flex')
+}
+
+document.getElementById('modal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeModal()
+})
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal() })
+</script>
+</body>
+</html>

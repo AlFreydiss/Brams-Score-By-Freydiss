@@ -115,6 +115,44 @@ const CHARS = [
     attrs:{m:0,pir:1,mar:0,rev:0,df:0,par:0,log:0,zo:0,hak:0,cq:0,sh:0,yk:0,wl:0,adm:0,sw:0,bl:1,bh:0,rh:0,al:1,bb:0,cap:0,old:0,gnt:0,cyb:0}},
   { id:'killer',     name:'Killer',                emoji:'🗡️',  color:'#fbbf24',
     attrs:{m:1,pir:1,mar:0,rev:0,df:0,par:0,log:0,zo:0,hak:1,cq:0,sh:0,yk:0,wl:0,adm:0,sw:1,bl:1,bh:0,rh:0,al:1,bb:1,cap:0,old:0,gnt:0,cyb:0}},
+  { id:'garp',       name:'Monkey D. Garp',        emoji:'👊',  color:'#94a3b8',
+    attrs:{m:1,pir:0,mar:1,rev:0,df:0,par:0,log:0,zo:0,hak:1,cq:0,sh:0,yk:0,wl:0,adm:0,sw:0,bl:0,bh:0,rh:0,al:1,bb:0,cap:0,old:1,gnt:1,cyb:0}},
+  { id:'dragon',     name:'Monkey D. Dragon',      emoji:'🐲',  color:'#22c55e',
+    attrs:{m:1,pir:0,mar:0,rev:1,df:0,par:0,log:0,zo:0,hak:1,cq:1,sh:0,yk:0,wl:0,adm:0,sw:0,bl:0,bh:1,rh:0,al:1,bb:1,cap:1,old:0,gnt:0,cyb:0}},
+  { id:'hancock',    name:'Boa Hancock',            emoji:'🐍',  color:'#ec4899',
+    attrs:{m:0,pir:1,mar:0,rev:0,df:1,par:1,log:0,zo:0,hak:1,cq:0,sh:0,yk:0,wl:1,adm:0,sw:0,bl:0,bh:1,rh:0,al:1,bb:1,cap:1,old:0,gnt:0,cyb:0}},
+  { id:'doflamingo', name:'Donquixote Doflamingo',  emoji:'🦩',  color:'#f472b6',
+    attrs:{m:1,pir:1,mar:0,rev:0,df:1,par:1,log:0,zo:0,hak:1,cq:1,sh:0,yk:0,wl:1,adm:0,sw:0,bl:1,bh:0,rh:0,al:1,bb:1,cap:1,old:0,gnt:0,cyb:0}},
+  { id:'mihawk',     name:'Dracule Mihawk',         emoji:'🦅',  color:'#fbbf24',
+    attrs:{m:1,pir:0,mar:0,rev:0,df:0,par:0,log:0,zo:0,hak:1,cq:0,sh:0,yk:0,wl:1,adm:0,sw:1,bl:0,bh:1,rh:0,al:1,bb:1,cap:0,old:0,gnt:0,cyb:0}},
+  { id:'crocodile',  name:'Crocodile',              emoji:'🐊',  color:'#78716c',
+    attrs:{m:1,pir:1,mar:0,rev:0,df:1,par:0,log:1,zo:0,hak:0,cq:0,sh:0,yk:0,wl:1,adm:0,sw:0,bl:0,bh:1,rh:0,al:1,bb:1,cap:1,old:0,gnt:0,cyb:0}},
+  { id:'kizaru',     name:'Borsalino (Kizaru)',     emoji:'⚡',  color:'#fef08a',
+    attrs:{m:1,pir:0,mar:1,rev:0,df:1,par:0,log:1,zo:0,hak:1,cq:0,sh:0,yk:0,wl:0,adm:1,sw:0,bl:0,bh:1,rh:0,al:1,bb:0,cap:0,old:1,gnt:0,cyb:0}},
+  { id:'aokiji',     name:'Kuzan (Aokiji)',          emoji:'🧊',  color:'#93c5fd',
+    attrs:{m:1,pir:0,mar:1,rev:0,df:1,par:0,log:1,zo:0,hak:1,cq:0,sh:0,yk:0,wl:0,adm:1,sw:0,bl:0,bh:1,rh:0,al:1,bb:0,cap:0,old:0,gnt:1,cyb:0}},
+  { id:'akainu',     name:'Sakazuki (Akainu)',       emoji:'🌋',  color:'#ef4444',
+    attrs:{m:1,pir:0,mar:1,rev:0,df:1,par:0,log:1,zo:0,hak:1,cq:1,sh:0,yk:0,wl:0,adm:1,sw:0,bl:0,bh:1,rh:0,al:1,bb:0,cap:0,old:0,gnt:0,cyb:0}},
+  { id:'katakuri',   name:'Charlotte Katakuri',     emoji:'🍩',  color:'#a78bfa',
+    attrs:{m:1,pir:1,mar:0,rev:0,df:1,par:1,log:0,zo:0,hak:1,cq:1,sh:0,yk:0,wl:0,adm:0,sw:0,bl:0,bh:0,rh:0,al:1,bb:1,cap:0,old:0,gnt:1,cyb:0}},
+  { id:'yamato',     name:'Yamato',                 emoji:'🐺',  color:'#60a5fa',
+    attrs:{m:0,pir:1,mar:0,rev:0,df:1,par:0,log:0,zo:1,hak:1,cq:1,sh:0,yk:0,wl:0,adm:0,sw:1,bl:0,bh:0,rh:0,al:1,bb:1,cap:0,old:0,gnt:1,cyb:0}},
+  { id:'rayleigh',   name:'Silvers Rayleigh',       emoji:'⚓',  color:'#d4a017',
+    attrs:{m:1,pir:1,mar:0,rev:0,df:0,par:0,log:0,zo:0,hak:1,cq:1,sh:0,yk:0,wl:0,adm:0,sw:1,bl:0,bh:0,rh:0,al:1,bb:1,cap:0,old:1,gnt:0,cyb:0}},
+  { id:'vivi',       name:'Nefertari Vivi',         emoji:'🦆',  color:'#38bdf8',
+    attrs:{m:0,pir:1,mar:0,rev:0,df:0,par:0,log:0,zo:0,hak:0,cq:0,sh:1,yk:0,wl:0,adm:0,sw:0,bl:1,bh:0,rh:0,al:1,bb:0,cap:0,old:0,gnt:0,cyb:0}},
+  { id:'coby',       name:'Coby',                  emoji:'🔵',  color:'#7dd3fc',
+    attrs:{m:1,pir:0,mar:1,rev:0,df:0,par:0,log:0,zo:0,hak:1,cq:0,sh:0,yk:0,wl:0,adm:0,sw:0,bl:0,bh:0,rh:1,al:1,bb:0,cap:0,old:0,gnt:0,cyb:0}},
+  { id:'smoker',     name:'Smoker',                emoji:'💨',  color:'#e2e8f0',
+    attrs:{m:1,pir:0,mar:1,rev:0,df:1,par:0,log:1,zo:0,hak:1,cq:0,sh:0,yk:0,wl:0,adm:0,sw:0,bl:0,bh:0,rh:0,al:1,bb:0,cap:0,old:0,gnt:0,cyb:0}},
+  { id:'buggy',      name:'Buggy',                 emoji:'🤡',  color:'#ef4444',
+    attrs:{m:1,pir:1,mar:0,rev:0,df:1,par:1,log:0,zo:0,hak:0,cq:0,sh:0,yk:1,wl:1,adm:0,sw:0,bl:0,bh:0,rh:0,al:1,bb:1,cap:1,old:0,gnt:0,cyb:0}},
+  { id:'lucci',      name:'Rob Lucci',              emoji:'🐆',  color:'#1e293b',
+    attrs:{m:1,pir:0,mar:0,rev:0,df:1,par:0,log:0,zo:1,hak:1,cq:0,sh:0,yk:0,wl:0,adm:0,sw:0,bl:0,bh:1,rh:0,al:1,bb:1,cap:0,old:0,gnt:0,cyb:0}},
+  { id:'ivankov',    name:'Emporio Ivankov',        emoji:'🦋',  color:'#d946ef',
+    attrs:{m:1,pir:0,mar:0,rev:1,df:1,par:1,log:0,zo:0,hak:0,cq:0,sh:0,yk:0,wl:0,adm:0,sw:0,bl:0,bh:0,rh:0,al:1,bb:0,cap:0,old:0,gnt:1,cyb:0}},
+  { id:'koala',      name:'Koala',                  emoji:'🐨',  color:'#86efac',
+    attrs:{m:0,pir:0,mar:0,rev:1,df:0,par:0,log:0,zo:0,hak:1,cq:0,sh:0,yk:0,wl:0,adm:0,sw:0,bl:1,bh:0,rh:0,al:1,bb:0,cap:0,old:0,gnt:0,cyb:0}},
 ]
 
 // ── Questions ─────────────────────────────────────────────────────────────
@@ -182,17 +220,72 @@ const ANSWERS = [
 
 // ── Sub-components ─────────────────────────────────────────────────────────
 
-function OrbGlow({ size = 100, pulse = true }) {
+// ── Mascotte Freydiss ─────────────────────────────────────────────────────────
+function FreydissMascot({ size = 100, pulse = true, mood = 'idle' }) {
+  const eyeL = mood === 'thinking' ? 'M31 36 Q34 33 37 36' : null
+  const eyeR = mood === 'thinking' ? 'M43 36 Q46 33 49 36' : null
+  const moodEmoji = mood === 'found' ? '😏' : mood === 'lost' ? '😤' : null
   return (
-    <div style={{
-      width: size, height: size, borderRadius: '50%',
-      background: GRAD,
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontSize: size * 0.45,
-      animation: pulse ? 'akPulse 2.5s ease-in-out infinite' : 'none',
-      boxShadow: `0 0 ${size*.4}px rgba(157,23,77,.5), 0 0 ${size*.8}px rgba(76,29,149,.25)`,
-      flexShrink: 0,
-    }}>🔮</div>
+    <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:6, flexShrink:0 }}>
+      <div style={{
+        width: size, height: size, borderRadius: '50%', position: 'relative',
+        background: `linear-gradient(135deg, #9d174d 0%, #4c1d95 100%)`,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        animation: pulse ? 'akPulse 2.8s ease-in-out infinite' : 'none',
+        boxShadow: `0 0 ${size*.35}px rgba(157,23,77,.55), 0 0 ${size*.7}px rgba(76,29,149,.28), inset 0 1px 0 rgba(255,255,255,.15)`,
+      }}>
+        {moodEmoji ? (
+          <span style={{ fontSize: size * 0.55, lineHeight:1 }}>{moodEmoji}</span>
+        ) : (
+          <svg width={size*.8} height={size*.8} viewBox="0 0 80 80" style={{ overflow:'visible' }}>
+            {/* Cheveux longs dorés */}
+            <ellipse cx="40" cy="19" rx="21" ry="13" fill="#d4a017" />
+            <rect x="17" y="18" width="7" height="34" rx="3.5" fill="#d4a017" />
+            <rect x="56" y="18" width="7" height="34" rx="3.5" fill="#d4a017" />
+            {/* Chapeau pirate */}
+            <rect x="21" y="8" width="38" height="15" rx="5" fill="#0f0f1a" />
+            <rect x="16" y="19" width="48" height="5" rx="2.5" fill="#1a1a2e" />
+            {/* Skull sur le chapeau */}
+            <ellipse cx="40" cy="16" rx="5.5" ry="5" fill="white" opacity=".92" />
+            <circle cx="37.8" cy="15.2" r="1.4" fill="#0f0f1a" />
+            <circle cx="42.2" cy="15.2" r="1.4" fill="#0f0f1a" />
+            <rect x="37" y="18.5" width="6" height="1.5" rx=".75" fill="#0f0f1a" />
+            {/* Visage */}
+            <ellipse cx="40" cy="38" rx="17" ry="19" fill="#ffcba4" />
+            {/* Yeux */}
+            {eyeL ? (
+              <>
+                <path d={eyeL} stroke="#4c1d95" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
+                <path d={eyeR} stroke="#4c1d95" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
+              </>
+            ) : (
+              <>
+                <ellipse cx="33.5" cy="36.5" rx="3.8" ry="3.8" fill="white" />
+                <ellipse cx="46.5" cy="36.5" rx="3.8" ry="3.8" fill="white" />
+                <circle cx="34.5" cy="37.2" r="2.2" fill="#4c1d95" />
+                <circle cx="47.5" cy="37.2" r="2.2" fill="#4c1d95" />
+                <circle cx="35.2" cy="36.5" r=".9" fill="white" />
+                <circle cx="48.2" cy="36.5" r=".9" fill="white" />
+              </>
+            )}
+            {/* Joues */}
+            <ellipse cx="27" cy="41.5" rx="5" ry="3" fill="rgba(255,120,120,.28)" />
+            <ellipse cx="53" cy="41.5" rx="5" ry="3" fill="rgba(255,120,120,.28)" />
+            {/* Sourire */}
+            <path d="M32 46 Q40 52 48 46" stroke="#c07070" strokeWidth="2.2" fill="none" strokeLinecap="round" />
+            {/* Étincelles */}
+            <text x="61" y="22" fontSize="9" fill="#f59e0b" opacity=".85">✦</text>
+            <text x="10" y="28" fontSize="7" fill="#f9a8d4" opacity=".75">✦</text>
+            <text x="64" y="42" fontSize="6" fill="#f9a8d4" opacity=".6">✧</text>
+          </svg>
+        )}
+      </div>
+      <div style={{
+        fontSize: size * 0.115, fontWeight:800, letterSpacing:'.08em',
+        color:'rgba(249,168,212,.7)', textTransform:'uppercase',
+        fontFamily:'var(--display)',
+      }}>Freydiss</div>
+    </div>
   )
 }
 
@@ -201,7 +294,7 @@ function IdleScreen({ onStart }) {
     <motion.div initial={{ opacity:0, y:24 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, y:-16 }}
       style={{ textAlign:'center', maxWidth:580, padding:'0 16px' }}>
       <div style={{ marginBottom:36, animation:'akFloat 3.5s ease-in-out infinite' }}>
-        <OrbGlow size={130} />
+        <FreydissMascot size={130} />
       </div>
 
       <h1 style={{
@@ -260,7 +353,7 @@ function AskingScreen({ question, qCount, remaining, total, onAnswer }) {
       {/* Orb + Question card */}
       <div style={{ textAlign:'center', marginBottom:28 }}>
         <div style={{ display:'flex', justifyContent:'center', marginBottom:22, animation:'akFloat 3s ease-in-out infinite' }}>
-          <OrbGlow size={70} />
+          <FreydissMascot size={70} mood="thinking" />
         </div>
 
         <div style={{

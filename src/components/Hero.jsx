@@ -197,10 +197,15 @@ export default function Hero() {
         position: 'absolute', top: 0, left: 0, right: 0, height: '22%', zIndex: 0, pointerEvents: 'none',
         background: 'linear-gradient(180deg, rgba(8,9,13,0.70) 0%, transparent 100%)',
       }} />
-      {/* Vignette bottom */}
+      {/* Vignette bottom — fondu long pour éviter la coupure entre sections */}
       <div style={{
-        position: 'absolute', bottom: 0, left: 0, right: 0, height: '32%', zIndex: 0, pointerEvents: 'none',
-        background: 'linear-gradient(0deg, rgba(8,9,13,0.85) 0%, transparent 100%)',
+        position: 'absolute', bottom: 0, left: 0, right: 0, height: '55%', zIndex: 0, pointerEvents: 'none',
+        background: 'linear-gradient(0deg, rgba(8,9,13,1) 0%, rgba(8,9,13,0.92) 20%, rgba(8,9,13,0.55) 55%, transparent 100%)',
+      }} />
+      {/* Vignette côtés — masque les bords du personnage */}
+      <div style={{
+        position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
+        background: 'linear-gradient(90deg, rgba(8,9,13,0.75) 0%, transparent 20%, transparent 80%, rgba(8,9,13,0.75) 100%)',
       }} />
 
       <StarField />

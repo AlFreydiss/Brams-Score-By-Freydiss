@@ -632,15 +632,25 @@ function OpeningBgCard({ item, bg, owned, balance, busy, isEquipped, isPreviewin
     >
       {/* Thumbnail */}
       <div style={{ height: 168, position: 'relative', overflow: 'hidden' }}>
-        {ytThumb ? (
+        {bg?.videoUrl ? (
+          <video
+            src={bg.videoUrl}
+            autoPlay muted loop playsInline
+            style={{
+              width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 30%',
+              filter: 'blur(2px) brightness(0.55)',
+              transform: 'scale(1.06)',
+            }}
+          />
+        ) : ytThumb ? (
           <img
             src={ytThumb}
             alt={item.name}
+            onError={e => { e.currentTarget.style.display = 'none' }}
             style={{
-              width: '100%', height: '100%', objectFit: 'cover',
+              width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 30%',
               filter: 'blur(3px) brightness(0.6)',
               transform: 'scale(1.06)',
-              transition: 'filter 0.3s',
             }}
           />
         ) : (
