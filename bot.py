@@ -812,6 +812,13 @@ def _apply_berry_sync_for_uids(uids: set) -> None:
     conn = get_db()
     try:
         cur = conn.cursor()
+        # Vérifie que la table berry_sync existe avant de requêter
+        cur.execute(
+            "SELECT EXISTS(SELECT 1 FROM information_schema.tables "
+            "WHERE table_name='berry_sync' AND table_schema='public')"
+        )
+        if not cur.fetchone()[0]:
+            return  # Table pas encore créée — on skip silencieusement
         cur.execute(
             "SELECT id, discord_id, deduction FROM berry_sync "
             "WHERE applied = false AND discord_id = ANY(%s) "
@@ -834,9 +841,9 @@ def _apply_berry_sync_for_uids(uids: set) -> None:
                 (ids_to_mark,)
             )
             conn.commit()
-            print(f"[BERRY_SYNC] {len(ids_to_mark)} déduction(s) web appliquée(s) depuis la boutique")
+            print(f"[BERRY_SYNC] {len(ids_to_mark)} déduction(s) web appliquée(s)")
     except Exception as e:
-        print(f"[BERRY_SYNC] Erreur : {e}")
+        print(f"[BERRY_SYNC] {e}")
         try:
             conn.rollback()
         except Exception:
