@@ -908,6 +908,12 @@ export default function TierListPage() {
     refreshCommunity()
   }, [refreshCommunity, userId, discordId])
 
+  // Données toujours fraîches : on resynchronise en ouvrant Communauté / Mes listes
+  // (plus besoin d'actualiser la page pour voir les changements).
+  useEffect(() => {
+    if (tab === 'community' || tab === 'mylists') refreshCommunity()
+  }, [tab, refreshCommunity])
+
   useEffect(() => {
     if (initialDraftRef.current || cloudRestoreRef.current) return
     cloudRestoreRef.current = true
@@ -1231,6 +1237,7 @@ export default function TierListPage() {
       setTab('community')
       setToast(`Publié dans la communauté par ${displayName || 'toi'}`)
       fireConfetti()
+      refreshCommunity() // resynchronise communauté + mes listes publiées sans refresh manuel
     } catch (err) {
       setToast(err?.message || 'Partage impossible')
     } finally {
