@@ -20,7 +20,7 @@
     "@react-three/fiber": "^8.18.0",
     "@react-three/postprocessing": "^2.16.3",
     "@react-three/rapier": "^1.5.0",
-    "@supabase/supabase-js": "^2.45.0",
+    "@supabase/supabase-js": "^2.106.2",
     "@tailwindcss/postcss": "^4.3.0",
     "@use-gesture/react": "^10.3.1",
     "@vercel/blob": "^2.3.3",

@@ -309,7 +309,6 @@ export default function App() {
           <QuoteSection />
           <Ranks />
           <DeferredSection minHeight={760}><BotFeatures /></DeferredSection>
-          <DeferredSection minHeight={520}><Quiz /></DeferredSection>
           <DeferredSection minHeight={520}><HallOfFame /></DeferredSection>
           <DeferredSection minHeight={520}><EquipageSection /></DeferredSection>
           <DeferredSection minHeight={480}><NousSoutenir /></DeferredSection>

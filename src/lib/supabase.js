@@ -9,6 +9,11 @@ export const supabase = url && key ? createClient(url, key, {
     persistSession:     true,
     autoRefreshToken:   true,
     flowType:           'implicit',
+    // Verrou no-op : court-circuite navigator.locks qui pouvait se bloquer et
+    // faire hanger TOUS les appels client (getSession jamais résolu → blind test,
+    // théories, boutique, classement figés). Trade-off accepté : pas de
+    // coordination du refresh token entre onglets (sans impact réel ici).
+    lock: (_name, _acquireTimeout, fn) => fn(),
   },
 }) : null
 
