@@ -786,8 +786,18 @@ function OpeningBgSection({ inventory, balance, onPurchase, busy }) {
     <div style={{ maxWidth: 1120, margin: '0 auto', padding: '0 20px 80px' }}>
       {/* Section header */}
       <div style={{ marginBottom: 36, animation: 'bsFadeUp .5s ease' }}>
-        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.2em', color: GOLD, textTransform: 'uppercase', marginBottom: 12 }}>
-          Boutique · Fonds d&apos;Openings
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.2em', color: GOLD, textTransform: 'uppercase' }}>
+            Boutique · Fonds d&apos;Openings
+          </span>
+          <span style={{
+            fontSize: 9, fontWeight: 900, letterSpacing: '.12em',
+            padding: '3px 8px', borderRadius: 6,
+            background: 'linear-gradient(135deg, #ec4899, #a855f7)',
+            color: '#fff', textTransform: 'uppercase',
+            boxShadow: '0 0 14px rgba(236,72,153,0.45)',
+            animation: 'bsGlow 2s ease-in-out infinite',
+          }}>✦ Nouveauté</span>
         </div>
         <h2 style={{ fontSize: 'clamp(28px,5vw,48px)', fontWeight: 900, color: '#fff', margin: '0 0 10px', lineHeight: 1.1 }}>
           Fonds d&apos;Openings
@@ -1221,6 +1231,15 @@ export default function BerryShop() {
             >
               <span>{cat.icon}</span>
               <span>{cat.label}</span>
+              {cat.key === 'Fonds' && (
+                <span style={{
+                  fontSize: 8, fontWeight: 900, letterSpacing: '.10em',
+                  padding: '1px 5px', borderRadius: 4,
+                  background: '#ec4899', color: '#fff',
+                  textTransform: 'uppercase', lineHeight: 1.4,
+                  animation: 'bsGlow 2s ease-in-out infinite',
+                }}>NEW</span>
+              )}
             </button>
           ))}
         </div>

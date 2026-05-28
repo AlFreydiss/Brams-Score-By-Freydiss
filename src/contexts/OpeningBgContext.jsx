@@ -13,21 +13,23 @@ export function OpeningBgProvider({ children }) {
   // Charger le fond équipé depuis Supabase au login
   useEffect(() => {
     if (!supabase) return
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (!session) return
-      try {
-        const { data } = await supabase.rpc('get_my_inventory')
-        if (!Array.isArray(data)) return
-        const equipped = data.find(item => item.reward_type === 'opening_background' && item.equipped)
-        if (equipped) {
-          setEquippedBgId(equipped.item_id)
-          setEquippedIdState(equipped.item_id)
-        }
-      } catch {
-        // fallback localStorage déjà chargé
-      }
-    })
-    return () => subscription?.unsubscribe()
+    let subscription
+    try {
+      const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
+        if (!session) return
+        try {
+          const { data: inv } = await supabase.rpc('get_my_inventory')
+          if (!Array.isArray(inv)) return
+          const equipped = inv.find(item => item.reward_type === 'opening_background' && item.equipped)
+          if (equipped) {
+            setEquippedBgId(equipped.item_id)
+            setEquippedIdState(equipped.item_id)
+          }
+        } catch { /* fallback localStorage */ }
+      })
+      subscription = data?.subscription
+    } catch { /* supabase non initialisé */ }
+    return () => { try { subscription?.unsubscribe() } catch {} }
   }, [])
 
   const equip = useCallback(async (id) => {
