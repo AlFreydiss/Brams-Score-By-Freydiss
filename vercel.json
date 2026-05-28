@@ -12,6 +12,14 @@
       "destination": "/api/bot-tools?tool=sync-bot"
     },
     {
+      "source": "/api/akinator",
+      "destination": "/api/bot-tools?tool=akinator"
+    },
+    {
+      "source": "/api/r2-presign",
+      "destination": "/api/bot-tools?tool=r2-presign"
+    },
+    {
       "source": "/((?!api/|assets/|blind-test/.*\\.mp4|.*\\..*).*)",
       "destination": "/index.html"
     }

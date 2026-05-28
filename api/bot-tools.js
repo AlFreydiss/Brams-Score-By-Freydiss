@@ -1,3 +1,13 @@
+// Routeur multi-outils — regroupe plusieurs endpoints en UNE seule fonction
+// serverless (limite Hobby Vercel = 12 fonctions). Chaque outil gère sa propre auth.
+//   ?tool=seed-shop-backgrounds  (GET,  secret)
+//   ?tool=sync-bot               (POST, Bearer BOT_SYNC_SECRET)
+//   ?tool=akinator               (POST, public — devine IA)
+//   ?tool=r2-presign             (POST, x-upload-secret — URL présignée R2)
+import { GoogleGenerativeAI } from '@google/generative-ai'
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
+
 const SUPABASE_URL = 'https://zeqetrmulqndxugfbojd.supabase.co'
 
 const BACKGROUNDS = [
@@ -32,29 +42,16 @@ function getServiceHeaders() {
 
 async function seedShopBackgrounds(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'GET only' })
-
   const secret = process.env.SEED_SECRET || process.env.BOT_SYNC_SECRET
   if (!secret || req.query.secret !== secret) {
     return res.status(401).json({ error: 'Non autorise - ?secret=SEED_SECRET requis' })
   }
-
   try {
     const r = await fetch(`${SUPABASE_URL}/rest/v1/shop_items?on_conflict=id`, {
-      method: 'POST',
-      headers: getServiceHeaders(),
-      body: JSON.stringify(BACKGROUNDS),
+      method: 'POST', headers: getServiceHeaders(), body: JSON.stringify(BACKGROUNDS),
     })
-
-    if (!r.ok) {
-      const err = await r.text()
-      return res.status(502).json({ error: `Supabase: ${r.status} - ${err}` })
-    }
-
-    return res.status(200).json({
-      ok: true,
-      seeded: BACKGROUNDS.length,
-      message: `${BACKGROUNDS.length} fonds upsertes dans shop_items.`,
-    })
+    if (!r.ok) return res.status(502).json({ error: `Supabase: ${r.status} - ${await r.text()}` })
+    return res.status(200).json({ ok: true, seeded: BACKGROUNDS.length })
   } catch (e) {
     return res.status(500).json({ error: e.message })
   }
@@ -64,63 +61,166 @@ async function syncBot(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type')
-
   if (req.method === 'OPTIONS') { res.status(204).end(); return }
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   const secret = process.env.BOT_SYNC_SECRET
   if (!secret) return res.status(503).json({ error: 'BOT_SYNC_SECRET non configure' })
-
-  const authHeader = req.headers['authorization'] || ''
-  if (authHeader !== `Bearer ${secret}`) {
+  if ((req.headers['authorization'] || '') !== `Bearer ${secret}`) {
     return res.status(401).json({ error: 'Non autorise' })
   }
-
   const { users } = req.body || {}
-  if (!Array.isArray(users) || users.length === 0) {
-    return res.status(400).json({ error: 'Payload invalide - users[] requis' })
-  }
-  if (users.length > 500) {
-    return res.status(400).json({ error: 'Trop d utilisateurs par batch (max 500)' })
-  }
+  if (!Array.isArray(users) || users.length === 0) return res.status(400).json({ error: 'Payload invalide - users[] requis' })
+  if (users.length > 500) return res.status(400).json({ error: 'Trop d utilisateurs par batch (max 500)' })
 
   const rows = users.map(u => ({
     uid: String(u.uid),
     data: {
-      username: u.username || null,
-      avatar_url: u.avatar_url || null,
-      berrys: Number(u.berrys ?? 0),
-      vocal_seconds_7d: Number(u.vocal_seconds_7d ?? 0),
+      username: u.username || null, avatar_url: u.avatar_url || null,
+      berrys: Number(u.berrys ?? 0), vocal_seconds_7d: Number(u.vocal_seconds_7d ?? 0),
       vocal_h: Number((u.vocal_seconds_7d ?? 0) / 3600).toFixed(2),
-      messages_7d: Number(u.messages_7d ?? 0),
-      rank: u.rank || null,
+      messages_7d: Number(u.messages_7d ?? 0), rank: u.rank || null,
       synced_at: new Date().toISOString(),
     },
   }))
-
   try {
     const r = await fetch(`${SUPABASE_URL}/rest/v1/users?on_conflict=uid`, {
-      method: 'POST',
-      headers: getServiceHeaders(),
-      body: JSON.stringify(rows),
+      method: 'POST', headers: getServiceHeaders(), body: JSON.stringify(rows),
     })
-
-    if (!r.ok) {
-      const err = await r.text()
-      console.error('[sync-bot] Supabase error', r.status, err)
-      return res.status(502).json({ error: `Supabase: ${r.status}` })
-    }
-
+    if (!r.ok) { console.error('[sync-bot]', r.status, await r.text()); return res.status(502).json({ error: `Supabase: ${r.status}` }) }
     return res.status(200).json({ ok: true, synced: rows.length })
   } catch (e) {
-    console.error('[sync-bot]', e.message)
     return res.status(500).json({ error: e.message })
+  }
+}
+
+// ── Akinator IA (devine tous domaines) ────────────────────────────────────────
+const AK_SYSTEM = `Tu es un génie devin, façon Akinator, mais BEAUCOUP plus perspicace.
+L'utilisateur pense à quelque chose ou quelqu'un — N'IMPORTE QUEL DOMAINE :
+personnage d'anime/manga, film, série, jeu vidéo, célébrité réelle, sportif, musicien,
+personnage historique, animal, objet, lieu, concept… Tu ne te limites pas à One Piece.
+Règles :
+- Pose UNE seule question fermée (oui/non) à la fois, en français, courte et naturelle.
+- Sois STRATÉGIQUE : chaque question élimine ~la moitié des possibilités. Commence large puis affine.
+- Tiens compte des réponses, ne te répète pas, ne re-pose pas une question tranchée.
+- Réponses possibles : "oui", "non", "je ne sais pas", "probablement", "probablement pas".
+- Quand tu es raisonnablement sûr (ou après ~20 questions), DEVINE un nom précis.
+- Si une proposition est rejetée, affine puis re-devine.
+Réponds UNIQUEMENT par un objet JSON valide, sans texte autour, sans balises :
+{"action":"question","text":"<question>","confidence":<0..1>}
+ou {"action":"guess","text":"<nom précis>","domain":"<domaine>","confidence":<0..1>}`
+
+function akBuildPrompt(history, rejected) {
+  const lines = history.map((h, i) => `Q${i + 1}: ${h.question}\nR${i + 1}: ${h.answer}`).join('\n')
+  let p = history.length ? `Historique :\n${lines}\n\n` : `Aucune question encore. Pose ta toute première question (la plus discriminante).\n\n`
+  if (rejected?.length) p += `Propositions DÉJÀ rejetées (ne pas re-proposer) : ${rejected.join(', ')}.\n\n`
+  return p + `Donne le prochain coup (question ou guess) en JSON strict.`
+}
+function akValidKey(k) { return typeof k === 'string' && /^AIzaSy[A-Za-z0-9_-]{30,}$/.test(k.trim()) }
+function akGeminiKeys() {
+  return Object.entries(process.env)
+    .filter(([k]) => k === 'GEMINI_API_KEY' || k === 'GOOGLE_GEMINI_API_KEY' || k === 'GEMINI_KEY' || k === 'GOOGLE_API_KEY' || k.startsWith('GEMINI_API_KEY_') || k.startsWith('GOOGLE_GEMINI_API_KEY_') || k.startsWith('GEMINI_KEY_'))
+    .map(([, v]) => v?.trim()).filter(akValidKey)
+}
+function akParse(text) {
+  if (!text) return null
+  const cleaned = text.replace(/```json/gi, '').replace(/```/g, '').trim()
+  const m = cleaned.match(/\{[\s\S]*\}/)
+  if (!m) return null
+  try { return JSON.parse(m[0]) } catch { return null }
+}
+async function akGemini(prompt) {
+  const keys = akGeminiKeys()
+  if (!keys.length) throw new Error('no_gemini_key')
+  const start = Math.floor(Math.random() * keys.length)
+  for (let i = 0; i < keys.length; i++) {
+    const key = keys[(start + i) % keys.length]
+    try {
+      const model = new GoogleGenerativeAI(key).getGenerativeModel({
+        model: 'gemini-2.0-flash', systemInstruction: AK_SYSTEM,
+        generationConfig: { responseMimeType: 'application/json', temperature: 0.6 },
+      })
+      return (await model.generateContent(prompt)).response.text()
+    } catch (err) {
+      const is429 = err?.status === 429 || /quota|RESOURCE_EXHAUSTED|429/.test(String(err?.message))
+      if (is429 && i < keys.length - 1) continue
+      throw err
+    }
+  }
+}
+async function akOpenAICompat(url, key, model, prompt) {
+  if (!key) throw new Error('no_key')
+  const r = await fetch(url, {
+    method: 'POST', headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model, messages: [{ role: 'system', content: AK_SYSTEM }, { role: 'user', content: prompt }], max_tokens: 300, temperature: 0.6, response_format: { type: 'json_object' } }),
+  })
+  if (!r.ok) throw new Error(`${r.status}: ${await r.text()}`)
+  return (await r.json()).choices?.[0]?.message?.content
+}
+async function akinator(req, res) {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
+  res.setHeader('Cache-Control', 'no-store')
+  const { history = [], rejected = [] } = req.body || {}
+  if (!Array.isArray(history) || history.length > 40) return res.status(400).json({ error: 'Historique invalide' })
+  const prompt = akBuildPrompt(history.slice(-30), Array.isArray(rejected) ? rejected.slice(-20) : [])
+  const providers = [
+    () => akGemini(prompt),
+    () => akOpenAICompat('https://api.groq.com/openai/v1/chat/completions', process.env.GROQ_API_KEY, process.env.GROQ_MODEL || 'llama-3.3-70b-versatile', prompt),
+    () => akOpenAICompat('https://api.x.ai/v1/chat/completions', process.env.XAI_API_KEY, process.env.XAI_MODEL || 'grok-2-1212', prompt),
+  ]
+  for (const fn of providers) {
+    try {
+      const parsed = akParse(await fn())
+      if (parsed && (parsed.action === 'question' || parsed.action === 'guess') && typeof parsed.text === 'string' && parsed.text.trim()) {
+        return res.status(200).json({
+          action: parsed.action, text: parsed.text.trim().slice(0, 200),
+          domain: typeof parsed.domain === 'string' ? parsed.domain.slice(0, 60) : null,
+          confidence: typeof parsed.confidence === 'number' ? Math.max(0, Math.min(1, parsed.confidence)) : null,
+        })
+      }
+    } catch (err) { console.error('[akinator]', err?.message || err) }
+  }
+  return res.status(503).json({ error: "L'IA est indisponible (clé manquante ou quota).", code: 'ai_unavailable' })
+}
+
+// ── R2 presign (upload direct Cloudflare R2) ──────────────────────────────────
+const R2_PUBLIC_BASE = (process.env.R2_PUBLIC_BASE || 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev').replace(/\/+$/, '')
+function r2SanitizeKey(name) {
+  return String(name).replace(/\\/g, '/').split('/').map(s => s.replace(/[^a-zA-Z0-9._-]/g, '_')).filter(Boolean).join('/')
+}
+async function r2Presign(req, res) {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
+  const ACCOUNT_ID = process.env.R2_ACCOUNT_ID, ACCESS_KEY = process.env.R2_ACCESS_KEY_ID
+  const SECRET_KEY = process.env.R2_SECRET_ACCESS_KEY, BUCKET = process.env.R2_BUCKET
+  const UPLOAD_SECRET = process.env.R2_UPLOAD_SECRET || process.env.UPLOAD_SECRET || ''
+  if (!ACCOUNT_ID || !ACCESS_KEY || !SECRET_KEY || !BUCKET) {
+    return res.status(500).json({ error: 'R2 non configuré — R2_ACCOUNT_ID / R2_ACCESS_KEY_ID / R2_SECRET_ACCESS_KEY / R2_BUCKET manquants dans Vercel.' })
+  }
+  if (UPLOAD_SECRET && req.headers['x-upload-secret'] !== UPLOAD_SECRET) {
+    return res.status(403).json({ error: "Secret d'upload invalide." })
+  }
+  const { filename, contentType, series, size } = req.body || {}
+  if (!filename || typeof filename !== 'string') return res.status(400).json({ error: 'filename requis' })
+  if (size && Number(size) > 5 * 1024 * 1024 * 1024) return res.status(400).json({ error: 'Fichier trop volumineux (max 5 Go)' })
+  const key = (series ? r2SanitizeKey(series) + '/' : '') + r2SanitizeKey(filename)
+  const client = new S3Client({
+    region: 'auto', endpoint: `https://${ACCOUNT_ID}.r2.cloudflarestorage.com`,
+    credentials: { accessKeyId: ACCESS_KEY, secretAccessKey: SECRET_KEY },
+  })
+  try {
+    const uploadUrl = await getSignedUrl(client, new PutObjectCommand({ Bucket: BUCKET, Key: key, ContentType: contentType || 'application/octet-stream' }), { expiresIn: 3600 })
+    return res.status(200).json({ uploadUrl, publicUrl: `${R2_PUBLIC_BASE}/${key}`, key })
+  } catch (err) {
+    console.error('[r2-presign]', err?.message || err)
+    return res.status(500).json({ error: err?.message || 'presign_failed' })
   }
 }
 
 export default async function handler(req, res) {
   const tool = String(req.query.tool || '')
   if (tool === 'seed-shop-backgrounds') return seedShopBackgrounds(req, res)
-  if (tool === 'sync-bot') return syncBot(req, res)
+  if (tool === 'sync-bot')              return syncBot(req, res)
+  if (tool === 'akinator')              return akinator(req, res)
+  if (tool === 'r2-presign')            return r2Presign(req, res)
   return res.status(404).json({ error: 'Unknown bot tool' })
 }
