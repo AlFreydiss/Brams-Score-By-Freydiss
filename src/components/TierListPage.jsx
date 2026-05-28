@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { toPng } from 'html-to-image'
 import confetti from 'canvas-confetti'
 import {
-  DndContext, DragOverlay, closestCenter,
+  DndContext, DragOverlay, closestCenter, pointerWithin, rectIntersection,
   PointerSensor, TouchSensor, useSensor, useSensors,
   useDroppable, useDraggable,
 } from '@dnd-kit/core'
@@ -1073,6 +1073,17 @@ export default function TierListPage() {
     return null
   }, [board])
 
+  // Détection de collision basée sur le pointeur : permet de déposer dans la
+  // DERNIÈRE rangée (closestCenter laissait le pool, juste en dessous, "voler" le
+  // drop car son centre était plus proche). Fallbacks pour les bords.
+  const collisionStrategy = useCallback((args) => {
+    const pointer = pointerWithin(args)
+    if (pointer.length) return pointer
+    const rect = rectIntersection(args)
+    if (rect.length) return rect
+    return closestCenter(args)
+  }, [])
+
   const handleDragStart = ({ active }) => setActiveId(active.id)
 
   const handleDragEnd = ({ active, over }) => {
@@ -1566,7 +1577,7 @@ export default function TierListPage() {
             <motion.div key="editor" initial={{ opacity:0 }} animate={{ opacity:1 }}
               style={{ display:'flex', flexDirection:'column' }}>
 
-              <DndContext sensors={sensors} collisionDetection={closestCenter}
+              <DndContext sensors={sensors} collisionDetection={collisionStrategy}
                 onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
 
                 {/* Board */}
