@@ -70,7 +70,7 @@ export default function Leaderboard() {
   const display    = rows.slice(page * PER_PAGE, page * PER_PAGE + PER_PAGE)
 
   return (
-    <section id="classement" style={{ background:'transparent', position:'relative' }}>
+    <section style={{ background:'transparent', position:'relative' }}>
       <div className="orb" style={{ width:400, height:400, top:'10%', left:'-5%', background:'rgba(155,89,182,.06)', pointerEvents:'none' }} />
 
       <div className="container" ref={ref}>

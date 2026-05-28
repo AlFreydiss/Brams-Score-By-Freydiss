@@ -70,10 +70,12 @@ const Contact            = lazy(() => import('./components/Contact.jsx'))
 const JoinCTA            = lazy(() => import('./components/JoinCTA.jsx'))
 const AkainuGame         = lazy(() => import('./components/AkainuGame.jsx'))
 
-function DeferredSection({ children, minHeight = 420, style = {}, threshold = 0.18 }) {
+function DeferredSection({ children, minHeight = 420, style = {}, threshold = 0.18, id }) {
   const [ref, inView] = useInView(threshold)
+  // id sur le wrapper (toujours présent) → les ancres de scroll (#classement…)
+  // fonctionnent même avant que la section deferred ne soit rendue.
   return (
-    <div ref={ref} style={{ minHeight, ...style }}>
+    <div ref={ref} id={id} style={{ minHeight, ...style }}>
       {inView ? (
         <Suspense fallback={<div style={{ minHeight }} />}>
           {children}
@@ -312,7 +314,7 @@ export default function App() {
           <DeferredSection minHeight={520}><HallOfFame /></DeferredSection>
           <DeferredSection minHeight={520}><EquipageSection /></DeferredSection>
           <DeferredSection minHeight={480}><NousSoutenir /></DeferredSection>
-          <DeferredSection minHeight={540}><Leaderboard /></DeferredSection>
+          <DeferredSection id="classement" minHeight={540}><Leaderboard /></DeferredSection>
           <DeferredSection minHeight={460}><Contact /></DeferredSection>
           <DeferredSection minHeight={420}><JoinCTA /></DeferredSection>
           <Footer />
