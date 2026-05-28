@@ -6,7 +6,7 @@ const GOLD_L = '#f0c040'
 
 export default function OSTDuelCard({
   participant, side, voted, isWinner, isLoser,
-  votePercent, voteCount, hasVoted, onVote, onListen,
+  votePercent, voteCount, hasVoted, onVote, onListen, onWatch,
   isPlaying, otherIsPlaying,
   showResult, isMobile,
   videoSyncRef,
@@ -139,14 +139,15 @@ export default function OSTDuelCard({
         {/* Thumbnail YouTube quand pas de audioUrl */}
         {!participant?.audioUrl && !isPlaying && showThumb && (
           <img
-            src={thumbUrl}
+            src={`https://img.youtube.com/vi/${participant.ytId}/maxresdefault.jpg`}
             alt=""
+            onError={e => { e.currentTarget.src = thumbUrl }}
             style={{
-              position: 'absolute', top: '-5%', left: '-5%',
-              width: '110%', height: '110%',
-              objectFit: 'cover',
-              opacity: isLoser ? 0.1 : 0.5,
-              filter: 'saturate(1.4)',
+              position: 'absolute', top: '-8%', left: '-5%',
+              width: '110%', height: '116%',
+              objectFit: 'cover', objectPosition: 'center 30%',
+              opacity: isLoser ? 0.08 : 0.48,
+              filter: 'saturate(1.3) brightness(0.9)',
             }}
           />
         )}
@@ -186,40 +187,43 @@ export default function OSTDuelCard({
           }}>OPENING</span>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            {canPlay && (
+            {/* Bouton Lecteur vidéo complet */}
+            {ytOk && (
               <button
-                onClick={e => { e.stopPropagation(); onListen() }}
+                onClick={e => { e.stopPropagation(); onWatch?.() }}
+                title="Voir l'opening en plein écran"
                 style={{
                   background: 'rgba(0,0,0,.5)', backdropFilter: 'blur(8px)',
-                  border: `1px solid ${isPlaying ? accent : 'rgba(255,255,255,.18)'}`,
+                  border: `1px solid ${accent}55`,
                   borderRadius: 20, padding: '4px 12px',
-                  color: isPlaying ? accent : 'rgba(255,255,255,.55)',
+                  color: accent,
                   fontSize: 10, cursor: 'pointer',
                   display: 'flex', alignItems: 'center', gap: 5,
                   fontWeight: 700, letterSpacing: '0.06em',
                   transition: 'all 0.2s',
                 }}
               >
-                <span style={{ fontSize: 9 }}>{isPlaying ? '■' : '▶'}</span>
-                {isPlaying ? 'Stop' : 'Voir'}
+                <span style={{ fontSize: 11 }}>⛶</span> Voir
               </button>
             )}
-            {isPlaying && (
+            {/* Bouton écoute audio */}
+            {canPlay && (
               <button
-                onClick={e => { e.stopPropagation(); handleFullscreen() }}
-                title="Plein écran"
+                onClick={e => { e.stopPropagation(); onListen() }}
                 style={{
                   background: 'rgba(0,0,0,.5)', backdropFilter: 'blur(8px)',
-                  border: '1px solid rgba(255,255,255,.18)',
-                  borderRadius: 20, padding: '4px 9px',
-                  color: 'rgba(255,255,255,.5)',
-                  fontSize: 11, cursor: 'pointer',
-                  display: 'flex', alignItems: 'center',
+                  border: `1px solid ${isPlaying ? accent : 'rgba(255,255,255,.18)'}`,
+                  borderRadius: 20, padding: '4px 10px',
+                  color: isPlaying ? accent : 'rgba(255,255,255,.55)',
+                  fontSize: 10, cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', gap: 4,
+                  fontWeight: 700, letterSpacing: '0.06em',
                   transition: 'all 0.2s',
                 }}
-                onMouseEnter={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = 'rgba(255,255,255,.4)' }}
-                onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,.5)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,.18)' }}
-              >⛶</button>
+              >
+                <span style={{ fontSize: 9 }}>{isPlaying ? '■' : '▶'}</span>
+                {isPlaying ? 'Stop' : ''}
+              </button>
             )}
           </div>
         </div>

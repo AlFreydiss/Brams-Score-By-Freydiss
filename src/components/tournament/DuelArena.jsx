@@ -1,9 +1,10 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, lazy, Suspense } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { getVotePercents } from '../../lib/tournament.js'
 import OSTDuelCard from './OSTDuelCard.jsx'
 import VSPanel     from './VSPanel.jsx'
+const VideoPlayer = lazy(() => import('../VideoPlayer.jsx'))
 
 const PINK   = '#9d174d'
 const PURPLE = '#4c1d95'
@@ -29,12 +30,25 @@ function PlayingBgOverlay({ ytId, audioUrl, color }) {
       style={{ position: 'fixed', inset: 0, zIndex: 1, pointerEvents: 'none', overflow: 'hidden' }}
     >
       {ytId ? (
-        <img src={`https://img.youtube.com/vi/${ytId}/hqdefault.jpg`} alt=""
-          style={{ position: 'absolute', inset: '-10%', width: '120%', height: '120%', objectFit: 'cover', filter: 'blur(28px) brightness(0.28) saturate(1.6)' }}
+        <img
+          src={`https://img.youtube.com/vi/${ytId}/maxresdefault.jpg`}
+          alt=""
+          onError={e => { e.currentTarget.src = `https://img.youtube.com/vi/${ytId}/sddefault.jpg` }}
+          style={{
+            position: 'absolute', inset: '-15%',
+            width: '130%', height: '130%',
+            objectFit: 'cover', objectPosition: 'center 35%',
+            filter: 'blur(38px) brightness(0.22) saturate(1.8)',
+          }}
         />
       ) : audioUrl ? (
         <video src={audioUrl} autoPlay muted loop playsInline
-          style={{ position: 'absolute', inset: '-10%', width: '120%', height: '120%', objectFit: 'cover', filter: 'blur(28px) brightness(0.28) saturate(1.6)' }}
+          style={{
+            position: 'absolute', inset: '-15%',
+            width: '130%', height: '130%',
+            objectFit: 'cover', objectPosition: 'center center',
+            filter: 'blur(38px) brightness(0.22) saturate(1.8)',
+          }}
         />
       ) : null}
       <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,.38) 0%, rgba(2,2,3,.48) 100%)' }} />
@@ -258,9 +272,9 @@ export default function DuelArena({
   round, match, totalMatchesInRound, voteCounts,
   personalVotes, onVote, onNext, isLastMatch, isMobile,
 }) {
-  const [playing, setPlaying] = useState(null)
-  const [showToast, setToast] = useState(false)
-  // Ref vers la <video> de fond de la card active — pour sync imperative au seek
+  const [playing,   setPlaying]  = useState(null)
+  const [watching,  setWatching] = useState(null)
+  const [showToast, setToast]    = useState(false)
   const cardBgVideoRef = useRef(null)
 
   function handleCardBgSeek(t) {
@@ -298,6 +312,14 @@ export default function DuelArena({
       title:    p.title,
       anime:    p.anime,
     })
+  }
+
+  function handleWatch(side) {
+    const p = side === 'left' ? match.left : match.right
+    const ytOk = p?.ytId && !p.ytId.startsWith('similar')
+    if (!p || !ytOk) return
+    setPlaying(null)
+    setWatching({ ytId: p.ytId, title: p.title, anime: p.anime, color: p.color || GOLD })
   }
 
   return (
@@ -372,6 +394,7 @@ export default function DuelArena({
             hasVoted={hasVoted}
             onVote={handleVote}
             onListen={() => handleListen('left')}
+            onWatch={() => handleWatch('left')}
             isPlaying={playing?.side === 'left'}
             otherIsPlaying={playing !== null && playing.side !== 'left'}
             showResult={showResult}
@@ -418,6 +441,7 @@ export default function DuelArena({
             hasVoted={hasVoted}
             onVote={handleVote}
             onListen={() => handleListen('right')}
+            onWatch={() => handleWatch('right')}
             isPlaying={playing?.side === 'right'}
             otherIsPlaying={playing !== null && playing.side !== 'right'}
             showResult={showResult}
@@ -498,6 +522,19 @@ export default function DuelArena({
       )}
 
       <VoteToast visible={showToast} winnerTitle={winnerSide ? winnerTitle : null} />
+
+      {/* VideoPlayer portal — ouvert quand l'utilisateur clique "Voir l'opening" */}
+      {watching && typeof document !== 'undefined' && createPortal(
+        <Suspense fallback={null}>
+          <VideoPlayer
+            videos={[{ id: watching.ytId, title: `${watching.title} — ${watching.anime}`, episode: 1 }]}
+            startIdx={0}
+            onClose={() => setWatching(null)}
+            color={watching.color}
+          />
+        </Suspense>,
+        document.body
+      )}
     </motion.div>
   )
 }
