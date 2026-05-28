@@ -341,6 +341,19 @@ export async function fetchAdminShopData() {
   return { items: items || [], transactions: transactions || [] }
 }
 
+export async function equipShopItem(itemId) {
+  if (!supabase) return { error: { message: 'Supabase non configuré.' } }
+  const { data, error } = await supabase.rpc('equip_shop_item', { p_item_id: itemId })
+  return { data, error }
+}
+
+export async function fetchMyInventory() {
+  if (!supabase) return []
+  const { data, error } = await supabase.rpc('get_my_inventory')
+  if (error) return []
+  return Array.isArray(data) ? data : []
+}
+
 export async function upsertShopItem(item) {
   if (!supabase) return { error: { message: 'Supabase non configuré.' } }
 
