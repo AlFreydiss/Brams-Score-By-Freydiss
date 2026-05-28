@@ -805,12 +805,54 @@ async def save_data_async(data: dict) -> None:
         _DIRTY.add(uid)
 
 
+def _apply_berry_sync_for_uids(uids: set) -> None:
+    """Applique les déductions web (achats boutique) avant de flusher vers la DB."""
+    if not uids:
+        return
+    conn = get_db()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT id, discord_id, deduction FROM berry_sync "
+            "WHERE applied = false AND discord_id = ANY(%s) "
+            "ORDER BY created_at ASC",
+            (list(uids),)
+        )
+        rows = cur.fetchall()
+        if not rows:
+            return
+        ids_to_mark = []
+        for sync_id, discord_id, deduction in rows:
+            uid = str(discord_id)
+            if uid in _CACHE:
+                current = int(_CACHE[uid].get("berrys", 0) or 0)
+                _CACHE[uid]["berrys"] = max(0, current - int(deduction))
+                ids_to_mark.append(sync_id)
+        if ids_to_mark:
+            cur.execute(
+                "UPDATE berry_sync SET applied = true WHERE id = ANY(%s)",
+                (ids_to_mark,)
+            )
+            conn.commit()
+            print(f"[BERRY_SYNC] {len(ids_to_mark)} déduction(s) web appliquée(s) depuis la boutique")
+    except Exception as e:
+        print(f"[BERRY_SYNC] Erreur : {e}")
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+    finally:
+        release_db(conn)
+
+
 def _sync_flush_dirty() -> int:
     """Flush synchrone des UIDs dirty - appelé depuis le thread executor."""
     if not _DIRTY:
         return 0
     to_flush = set(_DIRTY)
     _DIRTY.clear()
+    # Applique les déductions boutique web avant d'écraser la DB
+    _apply_berry_sync_for_uids(to_flush)
     _flush_uids_to_db(to_flush)
     return len(to_flush)
 
