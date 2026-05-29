@@ -752,8 +752,15 @@ export default function ProfilePage() {
   const quote        = RANK_QUOTES[rank.rang] || ''
 
   const wallet = useMemo(() => {
-    if (shopData && !shopData.preview) return shopData.balance || 0
-    return member?.berrys || 0
+    const memberB = parseInt(member?.berrys ?? 0, 10) || 0
+    if (shopData && !shopData.preview) {
+      const bal = parseInt(shopData.balance ?? 0, 10) || 0
+      // get_berry_balance() renvoie 0 si la résolution du discord_id échoue.
+      // Dans ce cas (bal 0 mais classement positif) on garde la valeur du
+      // classement, résolue par uid → évite d'afficher 0 à tort.
+      return bal > 0 ? bal : memberB
+    }
+    return memberB
   }, [member, shopData])
 
   const auraFactors = useMemo(() => {

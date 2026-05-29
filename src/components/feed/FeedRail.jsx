@@ -9,10 +9,10 @@ export default function FeedRail({ stats }) {
   return (
     <div style={{ position: 'sticky', top: 16 }}>
       <div style={card}>
-        <div style={{ fontSize: 15, fontWeight: 900, color: T.text, marginBottom: 8 }}>Bienvenue sur Le Fil 🏴‍☠️</div>
+        <div style={{ fontSize: 15, fontWeight: 900, color: T.text, marginBottom: 8 }}>Bienvenue sur le réseau de la communauté Brams ! 🏴‍☠️</div>
         <p style={{ margin: 0, fontSize: 13, color: T.textDim, lineHeight: 1.65 }}>
-          Le réseau de la communauté Brams. Partage tes théories, tes hot takes, tes fan arts.
-          Like, réponds, repost — et reste respectueux entre nakamas.
+          Partage tes théories, balance tes hot takes, montre tes fan arts et échange avec les autres nakamas.
+          Like, réponds, repost, découvre de nouveaux avis — et surtout, garde une bonne vibe dans la communauté.
         </p>
       </div>
 
