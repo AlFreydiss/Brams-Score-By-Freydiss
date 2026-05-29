@@ -67,6 +67,14 @@ export async function getFeedStats() {
   } catch { return { posts: 0 } }
 }
 
+// ── Stories (éphémères 24h) ───────────────────────────────────────────────────
+export const createStory = (mediaUrl) => rpc('create_story', { p_media_url: mediaUrl })
+export const deleteStory = (storyId)  => rpc('delete_story', { p_story: storyId })
+export async function listActiveStories() {
+  const r = await rpc('list_active_stories')
+  return r?.ok ? (r.authors || []) : []
+}
+
 // Realtime : nouveaux posts racines du fil. Renvoie une fonction d'unsubscribe.
 export function subscribeFeed(onInsert) {
   if (!supabase) return () => {}

@@ -6,6 +6,7 @@ import PostComposer from './feed/PostComposer.jsx'
 import PostCard from './feed/PostCard.jsx'
 import QuoteModal from './feed/QuoteModal.jsx'
 import FeedRail from './feed/FeedRail.jsx'
+import StoriesBar from './feed/StoriesBar.jsx'
 import { T } from './social/socialStyles.js'
 
 const COL = { flex: '1 1 600px', maxWidth: 600, minWidth: 0, minHeight: '100vh', borderLeft: `1px solid ${T.border}`, borderRight: `1px solid ${T.border}` }
@@ -86,6 +87,8 @@ export default function FeedPage() {
                 style={{ width: '100%', padding: '9px 14px', borderRadius: 999, fontSize: 13, background: T.surface, border: `1px solid ${T.border}`, color: T.text, outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }} />
             </form>
           </div>
+
+          <StoriesBar />
 
           {isAuthenticated ? <PostComposer onPosted={onPosted} /> : (
             <div style={{ padding: '18px 16px', borderBottom: `1px solid ${T.border}`, color: T.textDim, fontSize: 14, textAlign: 'center' }}>
