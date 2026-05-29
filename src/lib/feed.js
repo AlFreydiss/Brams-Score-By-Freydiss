@@ -39,6 +39,17 @@ export async function getUserPosts(userId, before = null, limit = 20) {
   return r?.ok ? (r.posts || []) : []
 }
 
+// Stats publiques du fil (nombre de posts racines) — count direct, sans RPC.
+export async function getFeedStats() {
+  if (!supabase) return { posts: 0 }
+  try {
+    const { count } = await supabase.from('posts')
+      .select('id', { count: 'exact', head: true })
+      .is('deleted_at', null).is('reply_to', null)
+    return { posts: count || 0 }
+  } catch { return { posts: 0 } }
+}
+
 // Realtime : nouveaux posts racines du fil. Renvoie une fonction d'unsubscribe.
 export function subscribeFeed(onInsert) {
   if (!supabase) return () => {}

@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useAuth } from '../contexts/AuthContext.jsx'
-import { getFeed, getPost, subscribeFeed } from '../lib/feed.js'
+import { getFeed, getPost, getFeedStats, subscribeFeed } from '../lib/feed.js'
 import PostComposer from './feed/PostComposer.jsx'
 import PostCard from './feed/PostCard.jsx'
 import QuoteModal from './feed/QuoteModal.jsx'
+import FeedRail from './feed/FeedRail.jsx'
 import { T } from './social/socialStyles.js'
 
-const COL = { maxWidth: 600, margin: '0 auto', minHeight: '100vh', borderLeft: `1px solid ${T.border}`, borderRight: `1px solid ${T.border}` }
+const COL = { flex: '1 1 600px', maxWidth: 600, minWidth: 0, minHeight: '100vh', borderLeft: `1px solid ${T.border}`, borderRight: `1px solid ${T.border}` }
 
 // Met à jour un post dans la liste (gère aussi l'original d'un repost).
 function patch(posts, id, partial) {
@@ -24,6 +25,7 @@ export default function FeedPage() {
   const [hasMore, setHasMore] = useState(true)
   const [newCount, setNewCount] = useState(0)
   const [quoteTarget, setQuoteTarget] = useState(null)
+  const [stats, setStats] = useState({ posts: 0 })
   const loadingMore = useRef(false)
   const seen = useRef(new Set())
 
@@ -32,6 +34,7 @@ export default function FeedPage() {
     const list = await getFeed(null)
     seen.current = new Set(list.map(p => p.id))
     setPosts(list); setHasMore(list.length >= 20); setNewCount(0); setLoading(false)
+    getFeedStats().then(setStats)
   }, [])
   useEffect(() => { reload() }, [reload])
 
@@ -70,7 +73,8 @@ export default function FeedPage() {
 
   return (
     <div onScroll={onScroll} style={{ height: 'calc(100vh - 72px)', marginTop: 72, overflowY: 'auto', background: T.bg }}>
-      <div>
+      <style>{`@media (max-width: 1000px){ .feed-rail{ display:none !important } }`}</style>
+      <div style={{ display: 'flex', gap: 28, maxWidth: 952, margin: '0 auto', alignItems: 'flex-start' }}>
         <div style={COL}>
           <div style={{ position: 'sticky', top: 0, zIndex: 5, padding: '16px 16px 12px', background: 'rgba(8,9,13,0.82)', backdropFilter: 'blur(12px)', borderBottom: `1px solid ${T.border}` }}>
             <h1 style={{ margin: 0, fontSize: 21, fontWeight: 900, color: T.text }}>Le Fil 🏴‍☠️</h1>
@@ -103,6 +107,9 @@ export default function FeedPage() {
             </>
           )}
         </div>
+        <aside className="feed-rail" style={{ width: 300, flexShrink: 0, paddingTop: 16 }}>
+          <FeedRail stats={stats} />
+        </aside>
       </div>
       <QuoteModal quote={quoteTarget} onClose={() => setQuoteTarget(null)} onPosted={onPosted} />
     </div>
