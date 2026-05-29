@@ -22,7 +22,9 @@ export default function CallOverlay() {
     if (miniVideo.current && remote) miniVideo.current.srcObject = remote
     const localShown = call.screenOn ? getScreen() : getLocal()
     if (localVideo.current && localShown) localVideo.current.srcObject = localShown
-  }, [call, call?.hasRemote, call?.screenOn, getRemote, getLocal, getScreen])
+  // minimized : re-branche les flux sur les nouveaux éléments média quand on
+  // bascule plein écran ↔ réduit (sinon l'audio/vidéo coupe au changement de vue).
+  }, [call, call?.hasRemote, call?.screenOn, minimized, getRemote, getLocal, getScreen])
 
   // Durée
   useEffect(() => {
