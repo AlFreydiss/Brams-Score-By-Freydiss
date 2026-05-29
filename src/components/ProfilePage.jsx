@@ -5,6 +5,7 @@ import { fetchBerryShopState, RARITY_STYLES } from '../lib/berryShop.js'
 import { fetchMemberProfile } from '../lib/supabase.js'
 import Navbar from './Navbar.jsx'
 import RelationshipActions from './social/RelationshipActions.jsx'
+import ProfilePosts from './feed/ProfilePosts.jsx'
 
 // ── Constants ──────────────────────────────────────────────────────────────
 const RANK_MAP = [
@@ -25,6 +26,7 @@ const RANK_QUOTES = {
 }
 const TABS = [
   { key: 'stats',        label: "Vue d'ensemble" },
+  { key: 'posts',        label: 'Posts' },
   { key: 'inventaire',   label: 'Inventaire' },
   { key: 'historique',   label: 'Historique' },
   { key: 'achievements', label: 'Succès' },
@@ -1062,6 +1064,9 @@ export default function ProfilePage() {
                 <a className="pf-btn pf-btn-ghost pf-crew-cta" href="/equipage">Explorer →</a>
               </div>
             </>)}
+
+            {/* Posts du membre dans le Fil */}
+            {tab === 'posts' && <ProfilePosts userId={discordId} />}
 
             {/* Inventaire */}
             {tab === 'inventaire' && (
