@@ -11,6 +11,7 @@ import {
   listFriends, listFriendRequests, respondFriendRequest, cancelFriendRequest,
   getOrCreateDm, blockUser, uploadAttachment, sendImageMessage,
   sendGifMessage, sendVoiceMessage, joinTyping,
+  pinMessage, unpinMessage, listPinnedMessages,
 } from '../lib/social.js'
 import { btn, avatar, T } from './social/socialStyles.js'
 import GifPicker from './social/GifPicker.jsx'
@@ -234,9 +235,10 @@ function Empty({ icon, children }) {
 }
 
 // ── Bulle de message ─────────────────────────────────────────────────────────
-function MessageBubble({ msg, mine, grouped, onReact, onReply, onEdit, onDelete }) {
+function MessageBubble({ msg, mine, grouped, onReact, onReply, onEdit, onDelete, onPin, onUnpin }) {
   const [menu, setMenu] = useState(false)
   const deleted = !!msg.deleted_at
+  const pinned = !!msg.pinned_at
   const reactions = useMemo(() => {
     const map = {}
     for (const r of (msg.reactions || [])) map[r.emoji] = (map[r.emoji] || 0) + 1
@@ -244,8 +246,9 @@ function MessageBubble({ msg, mine, grouped, onReact, onReply, onEdit, onDelete 
   }, [msg.reactions])
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: mine ? 'flex-end' : 'flex-start', marginTop: grouped ? 2 : 12 }}
+    <div id={`msg-${msg.id}`} style={{ display: 'flex', flexDirection: 'column', alignItems: mine ? 'flex-end' : 'flex-start', marginTop: grouped ? 2 : 12, scrollMarginTop: 80, borderRadius: 12 }}
       onMouseLeave={() => setMenu(false)}>
+      {pinned && !deleted && <span style={{ fontSize: 10, color: T.gold, fontWeight: 700, padding: '0 6px 2px', display: 'flex', alignItems: 'center', gap: 3 }}>📌 Épinglé</span>}
       <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, maxWidth: '80%', flexDirection: mine ? 'row-reverse' : 'row' }}>
         <div style={{ position: 'relative' }} onMouseEnter={() => setMenu(true)}>
           <div style={{
@@ -279,6 +282,7 @@ function MessageBubble({ msg, mine, grouped, onReact, onReply, onEdit, onDelete 
             }}>
               {QUICK_EMOJIS.slice(0, 4).map(e => <button key={e} onClick={() => onReact(msg.id, e)} style={iconBtn}>{e}</button>)}
               <button onClick={() => onReply(msg)} style={iconBtn} title="Répondre">↩</button>
+              <button onClick={() => pinned ? onUnpin(msg.id) : onPin(msg.id)} style={{ ...iconBtn, color: pinned ? T.gold : T.textDim }} title={pinned ? 'Désépingler' : 'Épingler'}>📌</button>
               {mine && msg.type === 'text' && <button onClick={() => onEdit(msg)} style={iconBtn} title="Modifier">✎</button>}
               {mine && <button onClick={() => onDelete(msg.id)} style={iconBtn} title="Supprimer">🗑</button>}
             </div>
@@ -297,6 +301,39 @@ function MessageBubble({ msg, mine, grouped, onReact, onReply, onEdit, onDelete 
         </div>
       )}
       {!grouped && <span style={{ fontSize: 10, color: T.textFaint, marginTop: 4, padding: '0 4px' }}>{timeLabel(msg.created_at)}</span>}
+    </div>
+  )
+}
+
+// ── Panneau des messages épinglés ────────────────────────────────────────────
+function pinPreview(m) {
+  if (m.type === 'gif') return '🖼️ GIF'
+  if (m.type === 'voice') return '🎤 Message vocal'
+  if (m.type === 'image') return '🖼️ Image'
+  return m.content || 'Message'
+}
+function PinnedPanel({ pinned, onJump, onUnpin, onClose }) {
+  return (
+    <div style={{ position: 'absolute', top: 44, right: 0, zIndex: 25, width: 320, maxHeight: 360, overflowY: 'auto', background: '#16171d', border: `1px solid ${T.border}`, borderRadius: 12, padding: 6, boxShadow: '0 14px 40px rgba(0,0,0,.55)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 10px 8px' }}>
+        <span style={{ fontSize: 13, fontWeight: 800, color: T.text }}>📌 Messages épinglés</span>
+        <button onClick={onClose} style={iconBtn}>✕</button>
+      </div>
+      {pinned.length === 0 ? (
+        <div style={{ padding: '24px 16px', textAlign: 'center', color: T.textFaint, fontSize: 12.5, lineHeight: 1.6 }}>
+          Aucun message épinglé.<br />Survole un message puis clique 📌 pour l'épingler.
+        </div>
+      ) : pinned.map(m => (
+        <div key={m.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '8px 10px', borderRadius: 9 }}
+          onMouseEnter={e => e.currentTarget.style.background = T.surface}
+          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+          <button onClick={() => onJump(m.id)} style={{ flex: 1, minWidth: 0, textAlign: 'left', border: 'none', background: 'transparent', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: T.gold, marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.sender_username || `Pirate #${String(m.sender_id || '').slice(-5)}`}</div>
+            <div style={{ fontSize: 12.5, color: T.textDim, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word' }}>{pinPreview(m)}</div>
+          </button>
+          <button onClick={() => onUnpin(m.id)} title="Désépingler" style={{ ...iconBtn, flexShrink: 0, fontSize: 12 }}>✕</button>
+        </div>
+      ))}
     </div>
   )
 }
@@ -325,6 +362,8 @@ function ChatView({ conversationId, meta, onBack, isMobile, refreshList }) {
   const [recSec, setRecSec]     = useState(0)
   const [typingName, setTypingName] = useState(null)
   const [seenByPeer, setSeenByPeer] = useState(false)
+  const [pinned, setPinned]     = useState([])
+  const [pinnedOpen, setPinnedOpen] = useState(false)
   const scrollRef = useRef(null)
   const bottomRef = useRef(null)
   const reactionTimer = useRef(null)
@@ -499,6 +538,45 @@ function ChatView({ conversationId, meta, onBack, isMobile, refreshList }) {
     return () => clearInterval(iv)
   }, [conversationId])
 
+  // Messages épinglés (chargés à l'ouverture + après chaque pin/unpin).
+  const refreshPinned = useCallback(() => {
+    listPinnedMessages(conversationId).then(p => setPinned(Array.isArray(p) ? p : []))
+  }, [conversationId])
+  useEffect(() => { setPinnedOpen(false); refreshPinned() }, [conversationId, refreshPinned])
+
+  const handlePin = useCallback(async (messageId) => {
+    setMessages(prev => prev.map(m => m.id === messageId ? { ...m, pinned_at: new Date().toISOString() } : m))
+    const res = await pinMessage(messageId)
+    if (res?.ok === false) { setMessages(prev => prev.map(m => m.id === messageId ? { ...m, pinned_at: null } : m)); if (res.error) alert(res.error) }
+    refreshPinned()
+  }, [refreshPinned])
+  const handleUnpin = useCallback(async (messageId) => {
+    setMessages(prev => prev.map(m => m.id === messageId ? { ...m, pinned_at: null } : m))
+    setPinned(prev => prev.filter(m => m.id !== messageId))
+    await unpinMessage(messageId)
+    refreshPinned()
+  }, [refreshPinned])
+
+  // Saute au message épinglé : scroll + flash. S'il n'est pas dans la fenêtre
+  // chargée (trop ancien), on charge des messages plus anciens jusqu'à le trouver.
+  const jumpToMessage = useCallback(async (messageId) => {
+    setPinnedOpen(false)
+    for (let i = 0; i < 6; i++) {
+      const el = document.getElementById(`msg-${messageId}`)
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        el.style.transition = 'background .3s'
+        el.style.background = 'rgba(212,160,23,0.18)'
+        setTimeout(() => { el.style.background = 'transparent' }, 1100)
+        return
+      }
+      const more = await getMessages(conversationId, messages[0]?.created_at)
+      if (!more.length) break
+      setMessages(prev => dedupeById([...more, ...prev]))
+      await new Promise(r => requestAnimationFrame(r))
+    }
+  }, [conversationId, messages])
+
   async function loadOlder() {
     if (!hasMore || !messages.length) return
     const el = scrollRef.current, prevH = el?.scrollHeight || 0
@@ -598,6 +676,11 @@ function ChatView({ conversationId, meta, onBack, isMobile, refreshList }) {
         <div style={{ display: 'flex', gap: 6, position: 'relative' }}>
           <HeaderAction label="📞" onClick={() => meta?.other_id && startCall({ id: meta.other_id, name: meta.other_username, avatar: meta.other_avatar }, 'audio')} />
           <HeaderAction label="🎥" onClick={() => meta?.other_id && startCall({ id: meta.other_id, name: meta.other_username, avatar: meta.other_avatar }, 'video')} />
+          <span style={{ position: 'relative', display: 'inline-flex' }}>
+            <HeaderAction label="📌" onClick={() => setPinnedOpen(o => !o)} />
+            {pinned.length > 0 && <span style={{ position: 'absolute', top: -3, right: -3, minWidth: 15, height: 15, padding: '0 3px', borderRadius: 8, background: T.gold, color: '#0b0c0e', fontSize: 9.5, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>{pinned.length}</span>}
+            {pinnedOpen && <PinnedPanel pinned={pinned} onJump={jumpToMessage} onUnpin={handleUnpin} onClose={() => setPinnedOpen(false)} />}
+          </span>
           {meta?.other_id && <HeaderAction label="👤" onClick={() => navigate(`/u/${meta.other_id}`)} />}
           <HeaderAction label="⋯" onClick={() => setMenuOpen(o => !o)} />
           {menuOpen && (
@@ -628,7 +711,7 @@ function ChatView({ conversationId, meta, onBack, isMobile, refreshList }) {
             {hasMore && <div style={{ textAlign: 'center', padding: 8 }}><button onClick={loadOlder} style={{ ...btn('ghost'), fontSize: 12, padding: '5px 12px' }}>Charger plus</button></div>}
             {rendered.map(item => item.sep
               ? <div key={item.id} style={{ textAlign: 'center', margin: '16px 0 8px' }}><span style={{ fontSize: 11, color: T.textFaint, background: T.surface, padding: '4px 14px', borderRadius: 12, border: `1px solid ${T.border}` }}>{item.sep}</span></div>
-              : <MessageBubble key={item.id} msg={item.msg} mine={item.msg.sender_id === discordId} grouped={item.grouped} onReact={handleReact} onReply={setReplyTo} onEdit={(m) => { setEditing(m); setInput(m.content || '') }} onDelete={handleDelete} />)}
+              : <MessageBubble key={item.id} msg={item.msg} mine={item.msg.sender_id === discordId} grouped={item.grouped} onReact={handleReact} onReply={setReplyTo} onEdit={(m) => { setEditing(m); setInput(m.content || '') }} onDelete={handleDelete} onPin={handlePin} onUnpin={handleUnpin} />)}
             {seenByPeer && messages.length > 0 && messages[messages.length - 1].sender_id === discordId && (
               <div style={{ textAlign: 'right', fontSize: 10, color: T.textFaint, padding: '3px 6px 0' }}>Vu ✓✓</div>
             )}

@@ -54,6 +54,14 @@ export const sendMessageRpc    = (args)              => rpc('send_message', args
 export const editMessage       = (messageId, content)=> rpc('edit_message', { p_message: messageId, p_content: content })
 export const deleteMessage     = (messageId)         => rpc('delete_message', { p_message: messageId })
 export const toggleReaction    = (messageId, emoji)  => rpc('toggle_reaction', { p_message: messageId, p_emoji: emoji })
+export const pinMessage        = (messageId)         => rpc('pin_message', { p_message: messageId })
+export const unpinMessage      = (messageId)         => rpc('unpin_message', { p_message: messageId })
+
+export async function listPinnedMessages(conversationId) {
+  const r = await rpc('list_pinned_messages', { p_conversation: conversationId })
+  if (r?.ok) return r.messages || []
+  return []
+}
 
 export async function listConversations() {
   const r = await rpc('list_conversations')
