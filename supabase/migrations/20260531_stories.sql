@@ -11,7 +11,8 @@ CREATE TABLE IF NOT EXISTS stories (
   created_at timestamptz NOT NULL DEFAULT now(),
   expires_at timestamptz NOT NULL DEFAULT now() + interval '24 hours'
 );
-CREATE INDEX IF NOT EXISTS stories_active_idx ON stories(expires_at) WHERE expires_at > now();
+-- NB : pas de predicate "WHERE expires_at > now()" (now() n'est pas IMMUTABLE → erreur 42P17 sur l'index).
+CREATE INDEX IF NOT EXISTS stories_active_idx ON stories(expires_at);
 CREATE INDEX IF NOT EXISTS stories_author_idx ON stories(author_id, created_at);
 
 ALTER TABLE stories ENABLE ROW LEVEL SECURITY;
