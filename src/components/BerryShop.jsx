@@ -323,30 +323,51 @@ function ShopCard({ item, balance, onClick, index }) {
   const stockCritical = item.stock !== null && item.stock <= 3
   const icon = CAT_ICONS[item.category] || '🏴‍☠️'
   const [hov, setHov] = useState(false)
+  const [tilt, setTilt] = useState({ rx: 0, ry: 0, mx: 50, my: 50 })
+  const ref = useRef(null)
   const isLegendaryPlus = ['Legendaire', 'Mythique'].includes(item.rarity)
+  const isHolo = ['Legendaire', 'Mythique', 'Secret'].includes(item.rarity)
+
+  function onMove(e) {
+    const el = ref.current; if (!el) return
+    const b = el.getBoundingClientRect()
+    const px = (e.clientX - b.left) / b.width, py = (e.clientY - b.top) / b.height
+    setTilt({ ry: (px - 0.5) * 11, rx: -(py - 0.5) * 11, mx: px * 100, my: py * 100 })
+  }
 
   return (
     <div
+      ref={ref}
       onClick={() => onClick(item)}
       onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
+      onMouseMove={onMove}
+      onMouseLeave={() => { setHov(false); setTilt({ rx: 0, ry: 0, mx: 50, my: 50 }) }}
       style={{
         position:'relative', cursor:'pointer', borderRadius:12, padding:18,
         background:`linear-gradient(160deg, ${r.color}0c 0%, ${r.color}04 40%, rgba(7,9,14,0.97) 100%)`,
         border:`1px solid ${hov ? r.color+'40' : 'rgba(255,255,255,0.07)'}`,
         borderTop:`3px solid ${hov ? r.color : r.color+'cc'}`,
         boxShadow: hov
-          ? `0 20px 44px ${r.color}28, 0 4px 16px rgba(0,0,0,0.5)`
+          ? `0 24px 50px ${r.color}30, 0 4px 16px rgba(0,0,0,0.5)`
           : isLegendaryPlus
             ? `0 4px 20px rgba(0,0,0,0.45), 0 0 24px ${r.color}10`
             : '0 2px 10px rgba(0,0,0,0.3)',
-        transition:'all 0.22s ease',
-        transform: hov ? 'translateY(-4px)' : 'translateY(0)',
+        transition:'box-shadow .22s ease, border-color .22s ease, transform .13s ease',
+        transform: hov
+          ? `perspective(820px) rotateX(${tilt.rx}deg) rotateY(${tilt.ry}deg) translateY(-5px) scale(1.015)`
+          : 'perspective(820px) translateY(0)',
+        transformStyle:'preserve-3d',
         animation:`bsFadeUp .45s ${Math.min(index * 0.05, 0.4)}s ease both`,
         display:'flex', flexDirection:'column', overflow:'hidden',
-        ...(isLegendaryPlus && { animation: `bsFadeUp .45s ${Math.min(index * 0.05, 0.4)}s ease both, bsRarePulse 4s ease-in-out infinite`, '--rc': r.color+'22' }),
+        ...(isLegendaryPlus && !hov && { animation: `bsFadeUp .45s ${Math.min(index * 0.05, 0.4)}s ease both, bsRarePulse 4s ease-in-out infinite`, '--rc': r.color+'22' }),
       }}
     >
+      {/* Sheen holographique qui suit le curseur (hautes raretés) */}
+      {isHolo && hov && (
+        <div style={{ position:'absolute', inset:0, borderRadius:12, pointerEvents:'none', zIndex:3,
+          background:`radial-gradient(circle at ${tilt.mx}% ${tilt.my}%, ${r.color}3a 0%, transparent 42%), linear-gradient(115deg, transparent 32%, rgba(255,255,255,0.13) 48%, transparent 62%)`,
+          mixBlendMode:'screen' }} />
+      )}
 
       {/* Top row */}
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14 }}>
@@ -448,6 +469,85 @@ function PurchaseReveal({ item, onClose }) {
         <button onClick={onClose} style={{ marginTop:22, padding:'13px 36px', borderRadius:12, background:`linear-gradient(135deg, ${r.color}, ${r.color}cc)`, border:'none', color:'#0b0c0e', fontSize:14, fontWeight:800, cursor:'pointer', letterSpacing:'.03em', boxShadow:`0 10px 30px ${r.color}44` }}>
           Continuer ⚔️
         </button>
+      </div>
+    </div>
+  )
+}
+
+// ─── Objet du jour (compte à rebours) ────────────────────────────────────────
+
+function ItemOfDay({ inventory, balance, onBuy }) {
+  const pool = OPENING_BG_SHOP_ITEMS
+  const item = useMemo(() => pool[Math.floor(Date.now() / 86400000) % pool.length], [])
+  const [left, setLeft] = useState('')
+  useEffect(() => {
+    const tick = () => {
+      const now = new Date(), end = new Date(now); end.setHours(24, 0, 0, 0)
+      const s = Math.max(0, Math.floor((end - now) / 1000))
+      setLeft(`${String(Math.floor(s / 3600)).padStart(2,'0')}:${String(Math.floor(s % 3600 / 60)).padStart(2,'0')}:${String(s % 60).padStart(2,'0')}`)
+    }
+    tick(); const id = setInterval(tick, 1000); return () => clearInterval(id)
+  }, [])
+  if (!item) return null
+  const r = RARITY[item.rarity] || RARITY.Legendaire
+  const owned = inventory?.some(i => i.item_id === item.id)
+  const canAfford = balance >= Number(item.price)
+  return (
+    <div style={{ maxWidth:1120, margin:'0 auto 28px', padding:'0 20px' }}>
+      <div style={{ position:'relative', overflow:'hidden', borderRadius:18, padding:'24px 26px', display:'flex', gap:22, alignItems:'center', flexWrap:'wrap',
+        background:`linear-gradient(135deg, ${r.color}1c 0%, rgba(8,9,13,0.98) 60%)`, border:`1px solid ${r.color}40`, borderTop:`3px solid ${r.color}`, boxShadow:`0 16px 50px ${r.color}1e` }}>
+        <div style={{ position:'absolute', top:-70, right:-30, width:240, height:200, background:`radial-gradient(circle, ${r.color}30, transparent 65%)`, pointerEvents:'none' }} />
+        <div style={{ fontSize:60, lineHeight:1, filter:`drop-shadow(0 0 22px ${r.color}77)`, animation:'bsDrift 5s ease-in-out infinite' }}>{CAT_ICONS[item.category] || '🏴‍☠️'}</div>
+        <div style={{ flex:'1 1 240px', minWidth:0 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:8 }}>
+            <span style={{ fontSize:10.5, fontWeight:900, letterSpacing:'.18em', textTransform:'uppercase', color:r.color }}>🔥 Objet du jour</span>
+            <RarityBadge rarity={item.rarity} />
+          </div>
+          <div style={{ fontSize:'clamp(18px,2.4vw,24px)', fontWeight:900, color:'#fff', marginBottom:4 }}>{item.name}</div>
+          <div style={{ fontSize:12.5, color:'rgba(255,255,255,0.5)', lineHeight:1.5, marginBottom:10, maxWidth:440 }}>{item.description}</div>
+          <div style={{ fontSize:11, color:'rgba(255,255,255,0.45)', fontWeight:700 }}>⏳ Renouvelé dans <span style={{ color:r.color, fontVariantNumeric:'tabular-nums' }}>{left}</span></div>
+        </div>
+        <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:10 }}>
+          <div style={{ display:'flex', alignItems:'baseline', gap:5 }}><span>🪙</span><span style={{ fontSize:22, fontWeight:900, color:r.color }}>{fmt(item.price)}</span></div>
+          <button disabled={owned} onClick={() => !owned && onBuy(item)} style={{ padding:'11px 24px', borderRadius:11, border:'none', cursor: owned ? 'default' : 'pointer', fontSize:13, fontWeight:800, letterSpacing:'.02em',
+            background: owned ? 'rgba(255,255,255,0.06)' : `linear-gradient(135deg, ${r.color}, ${r.color}cc)`, color: owned ? 'rgba(255,255,255,0.4)' : '#0b0c0e', boxShadow: owned ? 'none' : `0 8px 24px ${r.color}44` }}>
+            {owned ? '✓ Déjà possédé' : canAfford ? '✦ Acquérir' : 'Solde insuffisant'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Progression de collection ────────────────────────────────────────────────
+
+function CollectionProgress({ inventory }) {
+  const total = OPENING_BG_SHOP_ITEMS.length
+  const ownedIds = new Set((inventory || []).map(i => i.item_id))
+  const owned = OPENING_BG_SHOP_ITEMS.filter(b => ownedIds.has(b.id)).length
+  const pct = total ? Math.round((owned / total) * 100) : 0
+  const byRarity = RARITY_ORDER.map(rk => {
+    const items = OPENING_BG_SHOP_ITEMS.filter(b => b.rarity === rk)
+    if (!items.length) return null
+    return { rk, owned: items.filter(b => ownedIds.has(b.id)).length, total: items.length, color: RARITY[rk].color }
+  }).filter(Boolean)
+  return (
+    <div style={{ maxWidth:1120, margin:'0 auto 28px', padding:'0 20px' }}>
+      <div style={{ borderRadius:16, padding:'18px 22px', background:'linear-gradient(160deg, rgba(212,160,23,0.06), rgba(8,9,13,0.97))', border:'1px solid rgba(212,160,23,0.18)' }}>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12, flexWrap:'wrap', gap:8 }}>
+          <span style={{ fontSize:12, fontWeight:800, letterSpacing:'.12em', textTransform:'uppercase', color:GOLD }}>🏆 Ma collection de fonds</span>
+          <span style={{ fontSize:13, fontWeight:900, color:'#fff' }}>{owned} / {total} <span style={{ color:'rgba(255,255,255,0.4)', fontWeight:700 }}>· {pct}%</span></span>
+        </div>
+        <div style={{ height:8, borderRadius:99, background:'rgba(255,255,255,0.06)', overflow:'hidden', marginBottom:14 }}>
+          <div style={{ height:'100%', width:`${pct}%`, borderRadius:99, background:'linear-gradient(90deg, #d4a017, #ffd36a)', boxShadow:'0 0 12px rgba(212,160,23,0.5)', transition:'width .6s ease' }} />
+        </div>
+        <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+          {byRarity.map(b => (
+            <span key={b.rk} style={{ fontSize:10.5, fontWeight:800, padding:'4px 11px', borderRadius:99, color:b.color, background:`${b.color}14`, border:`1px solid ${b.color}33` }}>
+              {RARITY[b.rk].label} {b.owned}/{b.total}
+            </span>
+          ))}
+        </div>
       </div>
     </div>
   )
@@ -1223,6 +1323,10 @@ export default function BerryShop() {
           />
         </div>
       </div>
+
+      {/* ═══ OBJET DU JOUR + COLLECTION ═════════════════════════════════════ */}
+      <ItemOfDay inventory={state.inventory} balance={state.balance} onBuy={item => setSelectedItem(item)} />
+      <CollectionProgress inventory={state.inventory} />
 
       {/* ═══ CATEGORY TABS ══════════════════════════════════════════════════ */}
       <div style={{ maxWidth: 1120, margin: '0 auto 28px', padding: '0 20px', overflowX: 'auto', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
