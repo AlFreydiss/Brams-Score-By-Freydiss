@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, lazy, Suspense } from 'react'
-import { Routes, Route, useNavigate } from 'react-router-dom'
+import { Routes, Route, useNavigate, Navigate } from 'react-router-dom'
 import GlobalStyles from './components/GlobalStyles.jsx'
 import { ThemeProvider } from './contexts/ThemeContext.jsx'
 import { OpeningBgProvider, useOpeningBg } from './contexts/OpeningBgContext.jsx'
@@ -43,11 +43,8 @@ const BlueLockPage    = lazy(() => import('./components/BlueLockPage.jsx'))
 const OnePiecePage    = lazy(() => import('./components/OnePiecePage.jsx'))
 const FamilyTree3D    = lazy(() => import('./components/FamilyTree3D.jsx'))
 const BlobUploadPage  = lazy(() => import('./components/BlobUploadPage.jsx'))
-const WikiTheoryHub   = lazy(() => import('./components/WikiTheoryHub.jsx'))
-const WikiArticle     = lazy(() => import('./components/WikiArticle.jsx'))
-const WikiEditor      = lazy(() => import('./components/WikiEditor.jsx'))
-const TheoryDetail       = lazy(() => import('./components/TheoryDetail.jsx'))
-const TheoryEditor       = lazy(() => import('./components/TheoryEditor.jsx'))
+const FeedPage        = lazy(() => import('./components/FeedPage.jsx'))
+const PostThreadPage  = lazy(() => import('./components/PostThreadPage.jsx'))
 const ConstellationPage  = lazy(() => import('./components/ConstellationPage.jsx'))
 const CrewHQPage         = lazy(() => import('./components/crew-hq/CrewHQPage.jsx'))
 const DevilFruitPage     = lazy(() => import('./components/devil-fruit/DevilFruitPage.jsx'))
@@ -365,14 +362,14 @@ export default function App() {
         {/* Profil utilisateur */}
         <Route path="/u/:discordId" element={<ProfilePage />} />
 
-        {/* Wiki & Théories — Hub unifié */}
-        <Route path="/wiki"           element={<PageLayout><WikiTheoryHub /></PageLayout>} />
-        <Route path="/theories"       element={<PageLayout><WikiTheoryHub /></PageLayout>} />
-        <Route path="/wiki/new"       element={<PageLayout><WikiEditor    /></PageLayout>} />
-        <Route path="/wiki/:slug/edit"element={<PageLayout><WikiEditor    /></PageLayout>} />
-        <Route path="/wiki/:slug"     element={<PageLayout><WikiArticle   /></PageLayout>} />
-        <Route path="/theories/new"   element={<PageLayout><TheoryEditor  /></PageLayout>} />
-        <Route path="/theories/:id"   element={<PageLayout><TheoryDetail  /></PageLayout>} />
+        {/* Le Fil (réseau social) — remplace Wiki/Théories */}
+        <Route path="/fil"            element={<PageLayout><FeedPage /></PageLayout>} />
+        <Route path="/fil/:postId"    element={<PageLayout><PostThreadPage /></PageLayout>} />
+        {/* Redirections des anciens liens Wiki/Théories vers le Fil */}
+        <Route path="/wiki"           element={<Navigate to="/fil" replace />} />
+        <Route path="/wiki/*"         element={<Navigate to="/fil" replace />} />
+        <Route path="/theories"       element={<Navigate to="/fil" replace />} />
+        <Route path="/theories/*"     element={<Navigate to="/fil" replace />} />
 
         {/* Constellation Équipages */}
         <Route path="/equipage" element={<PageLayout><ConstellationPage /></PageLayout>} />

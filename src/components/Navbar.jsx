@@ -9,7 +9,7 @@ const NAV_LINKS = [
   { label: 'Rangs',           href: '#rangs',      action: null,           gated: false, isRoute: false },
   { label: 'Classement',      href: '#classement', action: null,           gated: false, isRoute: false },
   { label: 'Équipages',       href: '/equipage',   action: null,           gated: false, isRoute: true  },
-  { label: 'Wiki & Théories', href: '/wiki',       action: null,           gated: false, isRoute: true  },
+  { label: 'Le Fil',          href: '/fil',        action: null,           gated: false, isRoute: true  },
   { label: 'Blind Test',      href: '/blind-test', action: null,           gated: false, isRoute: true  },
   { label: 'Tier List',       href: '/tier-list',   action: null,           gated: false, isRoute: true  },
   { label: 'Tournoi',         href: '/tournoi',     action: null,           gated: false, isRoute: true  },
