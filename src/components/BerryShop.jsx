@@ -605,7 +605,7 @@ function SectionHeading({ eyebrow, title, subtitle, color = GOLD }) {
 function OpeningBgCard({ item, bg, owned, balance, busy, isEquipped, isPreviewing, previewCountdown, onEquip, onUnequip, onPreview, onPurchase }) {
   const r = RARITY[item.rarity] || RARITY.Commun
   const canAfford = balance >= Number(item.price)
-  const ytThumb = bg ? `https://img.youtube.com/vi/${bg.ytId}/hqdefault.jpg` : null
+  const ytThumb = bg ? `https://img.youtube.com/vi/${bg.ytId}/maxresdefault.jpg` : null
   const [hover, setHover] = useState(false)
 
   return (
@@ -613,151 +613,60 @@ function OpeningBgCard({ item, bg, owned, balance, busy, isEquipped, isPreviewin
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       style={{
-        position: 'relative', borderRadius: 16, overflow: 'hidden',
-        border: isEquipped
-          ? `2px solid ${r.color}`
-          : isPreviewing
-            ? `1px solid ${r.color}90`
-            : `1px solid rgba(255,255,255,0.07)`,
-        boxShadow: isEquipped
-          ? `0 0 28px ${r.color}45, 0 8px 40px rgba(0,0,0,0.55)`
-          : hover
-            ? `0 8px 40px rgba(0,0,0,0.50)`
-            : '0 4px 20px rgba(0,0,0,0.40)',
-        background: '#0a0c12',
-        transition: 'all 0.22s',
-        transform: hover ? 'translateY(-3px)' : 'none',
-        animation: 'bsFadeUp .45s ease both',
+        position: 'relative', borderRadius: 18, overflow: 'hidden',
+        border: isEquipped ? `1.5px solid ${r.color}` : isPreviewing ? `1px solid ${r.color}80` : `1px solid rgba(255,255,255,0.08)`,
+        boxShadow: isEquipped ? `0 0 0 1px ${r.color}40, 0 14px 44px rgba(0,0,0,0.5)` : hover ? `0 16px 48px rgba(0,0,0,0.5)` : '0 6px 24px rgba(0,0,0,0.4)',
+        background: '#0b0d13', transition: 'transform .22s, box-shadow .22s, border-color .22s',
+        transform: hover ? 'translateY(-4px)' : 'none', animation: 'bsFadeUp .45s ease both',
       }}
     >
-      {/* Thumbnail */}
-      <div style={{ height: 168, position: 'relative', overflow: 'hidden' }}>
-        {bg?.videoUrl ? (
-          <video
-            src={bg.videoUrl}
-            autoPlay muted loop playsInline
-            poster={ytThumb || undefined}
-            style={{
-              width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 30%',
-              filter: 'blur(1px) brightness(0.52)',
-              transform: 'scale(1.08)',
-            }}
-          />
-        ) : ytThumb ? (
-          <img
-            src={ytThumb}
-            alt={item.name}
-            onError={e => { e.currentTarget.style.display = 'none' }}
-            style={{
-              width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 30%',
-              filter: 'blur(2px) brightness(0.55)',
-              transform: 'scale(1.08)',
-            }}
-          />
+      {/* Visuel — image bien visible */}
+      <div style={{ height: 200, position: 'relative', overflow: 'hidden', background: bg?.dominantColor || '#14141f' }}>
+        {ytThumb ? (
+          <img src={ytThumb} alt={item.name}
+            onError={e => { if (bg && !e.currentTarget.dataset.fb) { e.currentTarget.dataset.fb = '1'; e.currentTarget.src = `https://img.youtube.com/vi/${bg.ytId}/hqdefault.jpg` } }}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 28%', filter: `brightness(${hover ? 0.92 : 0.82}) saturate(1.15)`, transform: hover ? 'scale(1.06)' : 'scale(1.02)', transition: 'transform .35s, filter .25s' }} />
         ) : (
-          <div style={{ width: '100%', height: '100%', background: `linear-gradient(160deg, ${bg?.dominantColor || '#1a1a2e'}, rgba(0,0,0,.8))` }} />
+          <div style={{ width: '100%', height: '100%', background: `linear-gradient(160deg, ${bg?.dominantColor || '#1a1a2e'}, rgba(0,0,0,.85))` }} />
         )}
-        {/* Color overlay */}
-        <div style={{
-          position: 'absolute', inset: 0,
-          background: bg
-            ? `linear-gradient(180deg, ${bg.overlayStart} 0%, ${bg.overlayEnd} 100%)`
-            : 'rgba(0,0,0,0.55)',
-          opacity: 0.75,
-        }} />
+        {/* Gradient bas (lisibilité) + teinte rareté subtile en haut */}
+        <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(180deg, ${r.color}14 0%, transparent 28%, transparent 45%, rgba(8,9,13,0.96) 100%)` }} />
 
-        {/* Top-right: rarity */}
-        <div style={{ position: 'absolute', top: 10, right: 10 }}>
-          <RarityBadge rarity={item.rarity} />
-        </div>
+        <div style={{ position: 'absolute', top: 11, right: 11 }}><RarityBadge rarity={item.rarity} /></div>
+        {isEquipped && <div style={{ position: 'absolute', top: 11, left: 11, background: r.color, color: '#0b0c0e', borderRadius: 7, padding: '3px 10px', fontSize: 9.5, fontWeight: 900, letterSpacing: '.1em' }}>✓ ÉQUIPÉ</div>}
+        {isPreviewing && !isEquipped && previewCountdown != null && <div style={{ position: 'absolute', top: 11, left: 11, background: 'rgba(212,160,23,0.22)', border: '1px solid rgba(212,160,23,0.6)', borderRadius: 7, padding: '3px 10px', fontSize: 9.5, fontWeight: 800, color: '#f0c14b' }}>APERÇU {previewCountdown}s</div>}
 
-        {/* Status badge top-left */}
-        {isEquipped && (
-          <div style={{
-            position: 'absolute', top: 10, left: 10,
-            background: `${r.color}22`, border: `1px solid ${r.color}60`,
-            borderRadius: 6, padding: '3px 9px',
-            fontSize: 9, fontWeight: 800, color: r.color, letterSpacing: '.1em', textTransform: 'uppercase',
-          }}>ÉQUIPÉ</div>
-        )}
-        {isPreviewing && !isEquipped && previewCountdown != null && (
-          <div style={{
-            position: 'absolute', top: 10, left: 10,
-            background: 'rgba(212,160,23,0.18)', border: '1px solid rgba(212,160,23,0.55)',
-            borderRadius: 6, padding: '3px 9px',
-            fontSize: 9, fontWeight: 800, color: '#d4a017', letterSpacing: '.1em',
-          }}>APERÇU {previewCountdown}s</div>
-        )}
-
-        {/* Bottom overlay text */}
-        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '28px 14px 12px', background: 'linear-gradient(0deg, rgba(0,0,0,0.75) 0%, transparent 100%)' }}>
-          <div style={{ fontSize: 15, fontWeight: 800, color: '#fff', lineHeight: 1.2, marginBottom: 3 }}>{item.name}</div>
-          <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.55)' }}>{bg?.anime}{bg?.artist ? ` · ${bg.artist}` : ''}</div>
+        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '0 16px 14px' }}>
+          <div style={{ fontSize: 17, fontWeight: 800, color: '#fff', lineHeight: 1.15, marginBottom: 4, textShadow: '0 2px 12px rgba(0,0,0,.8)' }}>{bg?.opTitle || item.name}</div>
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.62)', fontWeight: 600 }}>{bg?.anime}{bg?.artist ? ` · ${bg.artist}` : ''}</div>
         </div>
       </div>
 
-      {/* Bottom panel */}
-      <div style={{ padding: '12px 14px' }}>
-        {/* Description */}
-        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.38)', lineHeight: 1.55, marginBottom: 12, minHeight: 34 }}>
-          {item.description}
-        </div>
+      {/* Panel */}
+      <div style={{ padding: '13px 16px 15px' }}>
+        <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.46)', lineHeight: 1.55, marginBottom: 13, minHeight: 36 }}>{item.description}</div>
 
-        {/* Price + actions */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-          <div style={{ fontSize: 13, fontWeight: 800, color: GOLD, letterSpacing: '-.01em' }}>
-            {owned ? <span style={{ fontSize: 11, color: '#22c55e', fontWeight: 700 }}>✓ Possédé</span> : `${fmtK(item.price)} 🪙`}
-          </div>
-          {/* Preview button */}
-          <button
-            onClick={onPreview}
-            style={{
-              padding: '5px 12px', borderRadius: 8,
-              background: isPreviewing ? 'rgba(212,160,23,0.15)' : 'rgba(255,255,255,0.06)',
-              border: isPreviewing ? '1px solid rgba(212,160,23,0.40)' : '1px solid rgba(255,255,255,0.10)',
-              color: isPreviewing ? '#d4a017' : 'rgba(255,255,255,0.55)',
-              fontSize: 11, fontWeight: 700, cursor: 'pointer',
-              transition: 'all 0.15s',
-            }}
-          >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 11 }}>
+          {owned
+            ? <span style={{ fontSize: 12, color: '#34d399', fontWeight: 800 }}>✓ Possédé</span>
+            : <span style={{ fontSize: 15, fontWeight: 900, color: canAfford ? GOLD : 'rgba(255,255,255,0.4)', letterSpacing: '-.01em' }}>🪙 {fmtK(item.price)}</span>}
+          <button onClick={onPreview} style={{ padding: '6px 13px', borderRadius: 9, background: isPreviewing ? 'rgba(212,160,23,0.16)' : 'rgba(255,255,255,0.06)', border: isPreviewing ? '1px solid rgba(212,160,23,0.45)' : '1px solid rgba(255,255,255,0.12)', color: isPreviewing ? '#f0c14b' : 'rgba(255,255,255,0.7)', fontSize: 11.5, fontWeight: 700, cursor: 'pointer', transition: 'all .15s' }}>
             {isPreviewing && previewCountdown != null ? `${previewCountdown}s` : '▶ Aperçu'}
           </button>
         </div>
 
-        {/* Equip / Buy */}
         {owned ? (
-          <button
-            onClick={isEquipped ? onUnequip : onEquip}
-            style={{
-              width: '100%', padding: '10px', borderRadius: 10,
-              background: isEquipped ? 'rgba(255,255,255,0.05)' : `linear-gradient(135deg, ${r.color}28, ${r.color}14)`,
-              border: isEquipped ? '1px solid rgba(255,255,255,0.12)' : `1px solid ${r.color}50`,
-              color: isEquipped ? 'rgba(255,255,255,0.45)' : r.color,
-              fontSize: 12, fontWeight: 700, cursor: 'pointer',
-              transition: 'all 0.15s', letterSpacing: '.02em',
-            }}
-          >
-            {isEquipped ? '✕ Déséquiper' : `✦ Équiper`}
+          <button onClick={isEquipped ? onUnequip : onEquip} style={{ width: '100%', padding: '11px', borderRadius: 11, background: isEquipped ? 'rgba(255,255,255,0.05)' : `linear-gradient(135deg, ${r.color}, ${r.color}c0)`, border: isEquipped ? '1px solid rgba(255,255,255,0.14)' : 'none', color: isEquipped ? 'rgba(255,255,255,0.55)' : '#0b0c0e', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', transition: 'all .15s' }}>
+            {isEquipped ? '✕ Déséquiper' : '✦ Équiper ce fond'}
+          </button>
+        ) : canAfford ? (
+          <button onClick={onPurchase} disabled={busy} style={{ width: '100%', padding: '11px', borderRadius: 11, background: `linear-gradient(135deg, ${r.color}, ${r.color}c0)`, border: 'none', color: '#0b0c0e', fontSize: 12.5, fontWeight: 800, cursor: busy ? 'wait' : 'pointer', opacity: busy ? 0.6 : 1, transition: 'all .15s' }}>
+            {busy ? '⏳ Achat…' : `Acheter — 🪙 ${fmtK(item.price)}`}
           </button>
         ) : (
-          <button
-            onClick={onPurchase}
-            disabled={!canAfford || busy}
-            style={{
-              width: '100%', padding: '10px', borderRadius: 10,
-              background: canAfford ? `linear-gradient(135deg, ${r.color}28, ${r.color}14)` : 'rgba(255,255,255,0.04)',
-              border: canAfford ? `1px solid ${r.color}50` : '1px solid rgba(255,255,255,0.08)',
-              color: canAfford ? r.color : 'rgba(255,255,255,0.22)',
-              fontSize: 12, fontWeight: 700,
-              cursor: canAfford && !busy ? 'pointer' : 'not-allowed',
-              opacity: busy ? 0.6 : 1,
-              transition: 'all 0.15s', letterSpacing: '.02em',
-            }}
-          >
-            {busy ? '⏳…'
-              : canAfford ? `Acheter — ${fmtK(item.price)} 🪙`
-              : `Insuffisant · ${fmtK(Number(item.price) - balance)} manquant`}
-          </button>
+          <div style={{ textAlign: 'center', padding: '9px', borderRadius: 11, background: 'rgba(255,255,255,0.03)', border: '1px dashed rgba(255,255,255,0.12)', fontSize: 11.5, fontWeight: 700, color: 'rgba(255,255,255,0.45)' }}>
+            Il te manque <span style={{ color: GOLD }}>🪙 {fmtK(Number(item.price) - balance)}</span>
+          </div>
         )}
       </div>
     </div>
@@ -769,86 +678,108 @@ function OpeningBgCard({ item, bg, owned, balance, busy, isEquipped, isPreviewin
 function OpeningBgSection({ inventory, balance, onPurchase, busy }) {
   const { equippedId, previewId, equip, unequip, preview } = useOpeningBg()
   const [previewCountdown, setPreviewCountdown] = useState(null)
+  const [tab, setTab] = useState('all')        // all | owned | affordable
+  const [rarity, setRarity] = useState('Tous')
+  const [search, setSearch] = useState('')
+  const [sort, setSort] = useState('rarity')   // rarity | price_desc | price_asc
   const countdownRef = useRef(null)
 
   function startPreview(bgId) {
     clearInterval(countdownRef.current)
     preview(bgId, 8000)
     setPreviewCountdown(8)
-    countdownRef.current = setInterval(() => {
-      setPreviewCountdown(n => {
-        if (n <= 1) { clearInterval(countdownRef.current); return null }
-        return n - 1
-      })
-    }, 1000)
+    countdownRef.current = setInterval(() => setPreviewCountdown(n => { if (n <= 1) { clearInterval(countdownRef.current); return null } return n - 1 }), 1000)
   }
-
   useEffect(() => () => clearInterval(countdownRef.current), [])
 
-  const items = OPENING_BG_SHOP_ITEMS.map(item => {
-    const bg = OPENING_BACKGROUNDS.find(b => b.shopItemId === item.id) || null
-    const owned = inventory.some(inv => inv.item_id === item.id)
-    return { ...item, bg, owned }
+  const items = OPENING_BG_SHOP_ITEMS.map(item => ({
+    ...item,
+    bg: OPENING_BACKGROUNDS.find(b => b.shopItemId === item.id) || null,
+    owned: inventory.some(inv => inv.item_id === item.id),
+  }))
+  const ownedCount = items.filter(i => i.owned).length
+  const equippedItem = items.find(i => i.id === equippedId)
+
+  const RARITIES = ['Tous', 'Secret', 'Mythique', 'Legendaire', 'Epique', 'Rare', 'Commun']
+  const filtered = items.filter(i => {
+    if (tab === 'owned' && !i.owned) return false
+    if (tab === 'affordable' && (i.owned || balance < Number(i.price))) return false
+    if (rarity !== 'Tous' && i.rarity !== rarity) return false
+    const q = search.trim().toLowerCase()
+    if (q && !(`${i.name} ${i.bg?.opTitle || ''} ${i.bg?.anime || ''}`.toLowerCase().includes(q))) return false
+    return true
+  }).sort((a, b) => {
+    if (sort === 'price_desc') return Number(b.price) - Number(a.price)
+    if (sort === 'price_asc') return Number(a.price) - Number(b.price)
+    return RARITY_ORDER.indexOf(b.rarity) - RARITY_ORDER.indexOf(a.rarity)
   })
 
-  const sorted = [...items].sort((a, b) => RARITY_ORDER.indexOf(b.rarity) - RARITY_ORDER.indexOf(a.rarity))
+  const chip = (active) => ({ padding: '7px 14px', borderRadius: 999, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', border: '1px solid', background: active ? 'rgba(212,160,23,0.16)' : 'rgba(255,255,255,0.04)', borderColor: active ? 'rgba(212,160,23,0.4)' : 'rgba(255,255,255,0.1)', color: active ? GOLD : 'rgba(255,255,255,0.6)' })
 
   return (
-    <div style={{ maxWidth: 1120, margin: '0 auto', padding: '0 20px 80px' }}>
-      {/* Section header */}
-      <div style={{ marginBottom: 36, animation: 'bsFadeUp .5s ease' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.2em', color: GOLD, textTransform: 'uppercase' }}>
-            Boutique · Fonds d&apos;Openings
-          </span>
-          <span style={{
-            fontSize: 9, fontWeight: 900, letterSpacing: '.12em',
-            padding: '3px 8px', borderRadius: 6,
-            background: 'linear-gradient(135deg, #ec4899, #a855f7)',
-            color: '#fff', textTransform: 'uppercase',
-            boxShadow: '0 0 14px rgba(236,72,153,0.45)',
-            animation: 'bsGlow 2s ease-in-out infinite',
-          }}>✦ Nouveauté</span>
-        </div>
-        <h2 style={{ fontSize: 'clamp(28px,5vw,48px)', fontWeight: 900, color: '#fff', margin: '0 0 10px', lineHeight: 1.1 }}>
-          Fonds d&apos;Openings
-        </h2>
-        <p style={{ fontSize: 13.5, color: 'rgba(255,255,255,0.42)', maxWidth: 560, lineHeight: 1.65 }}>
-          Équipe un fond d&apos;opening sur le site. La miniature YouTube floutée s&apos;affiche en ambiance sur toutes les pages.
-          Utilise le bouton <strong style={{ color: 'rgba(255,255,255,0.70)' }}>Aperçu</strong> pour tester 8 secondes sans acheter.
-        </p>
-      </div>
-
-      {/* Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))', gap: 20 }}>
-        {sorted.map((item, i) => (
-          <div key={item.id} style={{ animationDelay: `${i * 0.04}s` }}>
-            <OpeningBgCard
-              item={item}
-              bg={item.bg}
-              owned={item.owned}
-              balance={balance}
-              busy={busy}
-              isEquipped={equippedId === item.id}
-              isPreviewing={previewId === item.id}
-              previewCountdown={previewId === item.id ? previewCountdown : null}
-              onEquip={() => equip(item.id)}
-              onUnequip={unequip}
-              onPreview={() => startPreview(item.id)}
-              onPurchase={() => onPurchase(item)}
-            />
+    <div style={{ maxWidth: 1180, margin: '0 auto', padding: '0 20px 80px' }}>
+      {/* HERO */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) auto', gap: 22, alignItems: 'center', marginBottom: 28, padding: '26px 28px', borderRadius: 22, background: 'linear-gradient(135deg, rgba(212,160,23,0.07), rgba(155,108,255,0.06))', border: '1px solid rgba(255,255,255,0.08)', animation: 'bsFadeUp .5s ease' }}>
+        <div style={{ minWidth: 0 }}>
+          <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.2em', color: GOLD, textTransform: 'uppercase' }}>Boutique · Cosmétiques</span>
+          <h2 style={{ fontSize: 'clamp(26px,4vw,40px)', fontWeight: 900, color: '#fff', margin: '6px 0 8px', lineHeight: 1.05 }}>Fonds d&apos;Openings</h2>
+          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', maxWidth: 520, lineHeight: 1.6, margin: '0 0 16px' }}>
+            Équipe un opening culte en arrière-plan et donne une identité à tout ton site.
+          </p>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            {[
+              { l: 'Solde', v: `🪙 ${fmtK(balance)}` },
+              { l: 'Possédés', v: `${ownedCount} / ${items.length}` },
+              { l: 'Équipé', v: equippedItem ? (equippedItem.bg?.opTitle || equippedItem.name) : '—' },
+            ].map(s => (
+              <div key={s.l} style={{ padding: '8px 14px', borderRadius: 12, background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                <div style={{ fontSize: 9, fontWeight: 800, color: 'rgba(255,255,255,0.3)', letterSpacing: '.08em', textTransform: 'uppercase' }}>{s.l}</div>
+                <div style={{ fontSize: 14, fontWeight: 900, color: '#fff', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.v}</div>
+              </div>
+            ))}
           </div>
-        ))}
+        </div>
+        {/* Mini preview du fond équipé */}
+        {equippedItem?.bg && (
+          <div style={{ width: 220, height: 124, borderRadius: 14, overflow: 'hidden', border: `1px solid ${(RARITY[equippedItem.rarity] || RARITY.Commun).color}55`, flexShrink: 0, position: 'relative' }} className="hide-mobile">
+            <img src={`https://img.youtube.com/vi/${equippedItem.bg.ytId}/hqdefault.jpg`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.8) saturate(1.1)' }} />
+            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '14px 10px 8px', background: 'linear-gradient(0deg, rgba(0,0,0,.85), transparent)', fontSize: 10, fontWeight: 800, color: '#fff' }}>✓ Fond actif</div>
+          </div>
+        )}
       </div>
 
-      {/* Note */}
-      <div style={{ marginTop: 36, padding: '14px 18px', borderRadius: 12, background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-        <span style={{ fontSize: 16, flexShrink: 0 }}>💡</span>
-        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.38)', lineHeight: 1.65 }}>
-          L&apos;achat est vérifié côté serveur. Les fonds équipés sont sauvegardés localement dans ton navigateur.
-          Un seul fond peut être actif à la fois.
-        </div>
+      {/* FILTRES */}
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', marginBottom: 24 }}>
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher un opening, un anime…"
+          style={{ flex: '1 1 220px', minWidth: 180, padding: '9px 14px', borderRadius: 999, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', fontSize: 13, outline: 'none', fontFamily: 'inherit' }} />
+        {[['all', 'Tous'], ['owned', 'Mes fonds'], ['affordable', 'Abordables']].map(([k, l]) => (
+          <button key={k} onClick={() => setTab(k)} style={chip(tab === k)}>{l}</button>
+        ))}
+        <select value={rarity} onChange={e => setRarity(e.target.value)} style={{ padding: '8px 12px', borderRadius: 999, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.7)', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+          {RARITIES.map(rr => <option key={rr} value={rr} style={{ background: '#15161b' }}>{rr === 'Tous' ? 'Toutes raretés' : rr}</option>)}
+        </select>
+        <select value={sort} onChange={e => setSort(e.target.value)} style={{ padding: '8px 12px', borderRadius: 999, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.7)', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+          <option value="rarity" style={{ background: '#15161b' }}>Par rareté</option>
+          <option value="price_desc" style={{ background: '#15161b' }}>Prix décroissant</option>
+          <option value="price_asc" style={{ background: '#15161b' }}>Prix croissant</option>
+        </select>
       </div>
+
+      {/* GRILLE */}
+      {filtered.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '56px 20px', color: 'rgba(255,255,255,0.35)', fontSize: 14 }}>Aucun fond ne correspond à ces filtres.</div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 20 }}>
+          {filtered.map((item, i) => (
+            <div key={item.id} style={{ animationDelay: `${i * 0.03}s` }}>
+              <OpeningBgCard item={item} bg={item.bg} owned={item.owned} balance={balance} busy={busy}
+                isEquipped={equippedId === item.id} isPreviewing={previewId === item.id}
+                previewCountdown={previewId === item.id ? previewCountdown : null}
+                onEquip={() => equip(item.id)} onUnequip={unequip} onPreview={() => startPreview(item.id)} onPurchase={() => onPurchase(item)} />
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
