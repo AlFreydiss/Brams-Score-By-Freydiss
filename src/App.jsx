@@ -46,6 +46,7 @@ const BlobUploadPage  = lazy(() => import('./components/BlobUploadPage.jsx'))
 const FeedPage        = lazy(() => import('./components/FeedPage.jsx'))
 const PostThreadPage  = lazy(() => import('./components/PostThreadPage.jsx'))
 const FeedSearchPage  = lazy(() => import('./components/FeedSearchPage.jsx'))
+const BookmarksPage   = lazy(() => import('./components/BookmarksPage.jsx'))
 const ConstellationPage  = lazy(() => import('./components/ConstellationPage.jsx'))
 const CrewHQPage         = lazy(() => import('./components/crew-hq/CrewHQPage.jsx'))
 const DevilFruitPage     = lazy(() => import('./components/devil-fruit/DevilFruitPage.jsx'))
@@ -366,6 +367,7 @@ export default function App() {
         {/* Le Fil (réseau social) — remplace Wiki/Théories */}
         <Route path="/fil"            element={<PageLayout><FeedPage /></PageLayout>} />
         <Route path="/fil/recherche"  element={<PageLayout><FeedSearchPage /></PageLayout>} />
+        <Route path="/fil/signets"    element={<PageLayout><BookmarksPage /></PageLayout>} />
         <Route path="/fil/:postId"    element={<PageLayout><PostThreadPage /></PageLayout>} />
         {/* Redirections des anciens liens Wiki/Théories vers le Fil */}
         <Route path="/wiki"           element={<Navigate to="/fil" replace />} />

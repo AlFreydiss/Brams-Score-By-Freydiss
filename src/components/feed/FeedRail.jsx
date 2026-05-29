@@ -27,6 +27,7 @@ export default function FeedRail({ stats }) {
       <div style={{ ...card, marginBottom: 0 }}>
         <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', color: T.textFaint, marginBottom: 6 }}>Explorer</div>
         {[
+          { to: '/fil/signets', icon: '🔖', label: 'Mes signets' },
           { to: '/', icon: '🏆', label: 'Classement' },
           { to: '/equipage', icon: '⚓', label: 'Équipages' },
           { to: '/tier-list', icon: '📊', label: 'Tier List' },

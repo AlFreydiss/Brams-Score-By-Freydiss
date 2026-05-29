@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext.jsx'
-import { toggleLike, deletePost, createPost, editPost } from '../../lib/feed.js'
+import { toggleLike, deletePost, createPost, editPost, toggleBookmark } from '../../lib/feed.js'
 import { btn, avatar, T } from '../social/socialStyles.js'
 
 const TOKEN_RE = /(https?:\/\/[^\s]+|#[\p{L}0-9_]+)/gu
@@ -69,6 +69,14 @@ export default function PostCard({ post, embedded = false, disableNav = false, o
     onChange?.(main.id, { liked, like_count: (main.like_count || 0) + (liked ? 1 : -1) })
     const res = await toggleLike(main.id)
     if (res?.ok === false) onChange?.(main.id, { liked: main.liked, like_count: main.like_count })
+  }
+  async function bookmark(e) {
+    e.stopPropagation()
+    if (!discordId) { navigate('/messages'); return }
+    const next = !main.bookmarked
+    onChange?.(main.id, { bookmarked: next })
+    const res = await toggleBookmark(main.id)
+    if (res?.ok === false) onChange?.(main.id, { bookmarked: main.bookmarked })
   }
   async function doRepost(e) {
     e.stopPropagation(); setRepostMenu(false); setBusy(true)
@@ -145,6 +153,8 @@ export default function PostCard({ post, embedded = false, disableNav = false, o
               </div>
               <button onClick={like} style={{ ...actionStyle, color: main.liked ? T.red : T.textFaint }}
                 onMouseEnter={e => { e.currentTarget.style.color = T.red }} onMouseLeave={e => { e.currentTarget.style.color = main.liked ? T.red : T.textFaint }}>{main.liked ? '❤️' : '🤍'} {main.like_count || 0}</button>
+              <button onClick={bookmark} title={main.bookmarked ? 'Retirer des signets' : 'Enregistrer'} style={{ ...actionStyle, marginLeft: 'auto', color: main.bookmarked ? T.gold : T.textFaint }}
+                onMouseEnter={e => { e.currentTarget.style.color = T.gold }} onMouseLeave={e => { e.currentTarget.style.color = main.bookmarked ? T.gold : T.textFaint }}>{main.bookmarked ? '🔖' : '📑'}</button>
             </div>
           )}
         </>}

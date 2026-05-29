@@ -23,6 +23,12 @@ export const createPost = ({ content = null, mediaUrl = null, replyTo = null, re
 export const deletePost = (postId)  => rpc('delete_post', { p_post: postId })
 export const editPost   = (postId, content) => rpc('edit_post', { p_post: postId, p_content: content })
 export const toggleLike = (postId)  => rpc('toggle_like', { p_post: postId })
+export const toggleBookmark = (postId) => rpc('toggle_bookmark', { p_post: postId })
+
+export async function getMyBookmarks(before = null, limit = 20) {
+  const r = await rpc('get_my_bookmarks', { p_before: before, p_limit: limit })
+  return r?.ok ? (r.posts || []) : []
+}
 
 export async function getFeed(before = null, limit = 20) {
   const r = await rpc('get_feed', { p_before: before, p_limit: limit })
