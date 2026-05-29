@@ -320,6 +320,7 @@ function ChatView({ conversationId, meta, onBack, isMobile, refreshList }) {
   const [recSec, setRecSec]     = useState(0)
   const [call, setCall]         = useState(null)   // { type: 'audio'|'video' }
   const [typingName, setTypingName] = useState(null)
+  const [seenByPeer, setSeenByPeer] = useState(false)
   const scrollRef = useRef(null)
   const bottomRef = useRef(null)
   const reactionTimer = useRef(null)
@@ -331,16 +332,22 @@ function ChatView({ conversationId, meta, onBack, isMobile, refreshList }) {
   const typingClear = useRef(null)
   const lastTypingSent = useRef(0)
 
-  // Indicateur "écrit…" : rejoint le canal broadcast de la conversation.
+  // Canal temps réel : "écrit…" + accusé de lecture "Vu".
   useEffect(() => {
-    const ch = joinTyping(conversationId, (p) => {
-      setTypingName(p?.name || 'Quelqu\'un')
-      clearTimeout(typingClear.current)
-      typingClear.current = setTimeout(() => setTypingName(null), 3000)
-    })
+    setSeenByPeer(false)
+    const ch = joinTyping(conversationId,
+      (p) => { setTypingName(p?.name || 'Quelqu\'un'); clearTimeout(typingClear.current); typingClear.current = setTimeout(() => setTypingName(null), 3000) },
+      () => setSeenByPeer(true),   // le pair a lu (DM 1-1, self:false → forcément l'autre)
+    )
     typingRef.current = ch
     return () => { ch.unsubscribe(); clearTimeout(typingClear.current); setTypingName(null) }
   }, [conversationId])
+
+  // Marque lu + prévient le pair (broadcast "seen") → affiche "Vu" chez lui.
+  const markRead = useCallback(() => {
+    markConversationRead(conversationId).then(refreshCounts)
+    try { typingRef.current?.seen(discordId) } catch {}
+  }, [conversationId, refreshCounts, discordId])
 
   function notifyTyping() {
     const now = Date.now()
@@ -449,14 +456,14 @@ function ChatView({ conversationId, meta, onBack, isMobile, refreshList }) {
       if (!active) return
       setMessages(msgs); setHasMore(msgs.length >= 30); setLoading(false)
       scrollToBottom()
-      markConversationRead(conversationId).then(refreshCounts)
+      markRead()
     })
     return () => { active = false }
   }, [conversationId, scrollToBottom, refreshCounts])
 
   useEffect(() => {
     const unsub = subscribeToConversation(conversationId, {
-      onInsert: (m) => { setMessages(prev => dedupeById([...prev, m])); scrollToBottom(true); if (m.sender_id !== discordId) markConversationRead(conversationId).then(refreshCounts) },
+      onInsert: (m) => { setMessages(prev => dedupeById([...prev, m])); scrollToBottom(true); if (m.sender_id !== discordId) markRead() },
       onUpdate: (m) => setMessages(prev => prev.map(x => x.id === m.id ? { ...x, ...m } : x)),
       onReaction: () => {
         clearTimeout(reactionTimer.current)
@@ -506,7 +513,7 @@ function ChatView({ conversationId, meta, onBack, isMobile, refreshList }) {
     if (sending) return
     const text = input.trim()
     if (!text && !attach?.file && !editing) return
-    setSending(true); setEmojiOpen(false)
+    setSending(true); setEmojiOpen(false); setSeenByPeer(false)
 
     // 1) Pièce jointe (image) → upload R2 puis message
     if (attach?.file) {
@@ -615,6 +622,9 @@ function ChatView({ conversationId, meta, onBack, isMobile, refreshList }) {
             {rendered.map(item => item.sep
               ? <div key={item.id} style={{ textAlign: 'center', margin: '16px 0 8px' }}><span style={{ fontSize: 11, color: T.textFaint, background: T.surface, padding: '4px 14px', borderRadius: 12, border: `1px solid ${T.border}` }}>{item.sep}</span></div>
               : <MessageBubble key={item.id} msg={item.msg} mine={item.msg.sender_id === discordId} grouped={item.grouped} onReact={handleReact} onReply={setReplyTo} onEdit={(m) => { setEditing(m); setInput(m.content || '') }} onDelete={handleDelete} />)}
+            {seenByPeer && messages.length > 0 && messages[messages.length - 1].sender_id === discordId && (
+              <div style={{ textAlign: 'right', fontSize: 10, color: T.textFaint, padding: '3px 6px 0' }}>Vu ✓✓</div>
+            )}
             <div ref={bottomRef} />
           </>}
       </div>

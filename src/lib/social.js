@@ -153,14 +153,19 @@ export function subscribeToConversation(conversationId, { onInsert, onUpdate, on
   return () => { try { supabase.removeChannel(channel) } catch {} }
 }
 
-// Canal "typing" (broadcast Realtime) pour l'indicateur "X écrit…".
-// Renvoie { send(from, name), unsubscribe() }. self:false → on ne reçoit pas ses propres events.
-export function joinTyping(conversationId, onTyping) {
-  if (!supabase || !conversationId) return { send: () => {}, unsubscribe: () => {} }
+// Canal temps réel de la conversation (broadcast) : typing "X écrit…" + accusés
+// de lecture "Vu". self:false → on ne reçoit pas ses propres events.
+// Renvoie { send(from,name), seen(from), unsubscribe() }.
+export function joinTyping(conversationId, onTyping, onSeen) {
+  if (!supabase || !conversationId) return { send: () => {}, seen: () => {}, unsubscribe: () => {} }
   const channel = supabase.channel(`typing:${conversationId}`, { config: { broadcast: { self: false } } })
-  channel.on('broadcast', { event: 'typing' }, ({ payload }) => onTyping?.(payload)).subscribe()
+  channel
+    .on('broadcast', { event: 'typing' }, ({ payload }) => onTyping?.(payload))
+    .on('broadcast', { event: 'seen' }, ({ payload }) => onSeen?.(payload))
+    .subscribe()
   return {
     send: (from, name) => { try { channel.send({ type: 'broadcast', event: 'typing', payload: { from, name } }) } catch {} },
+    seen: (from) => { try { channel.send({ type: 'broadcast', event: 'seen', payload: { from } }) } catch {} },
     unsubscribe: () => { try { supabase.removeChannel(channel) } catch {} },
   }
 }
