@@ -502,8 +502,16 @@ export default function MessagesPage() {
   const load = useCallback(async () => {
     if (!isAuthenticated) { setLoading(false); return }
     setLoading(true)
-    const [c, f, r] = await Promise.all([listConversations(), listFriends(), listFriendRequests()])
-    setConversations(c); setFriends(f); setRequests(r); setLoading(false)
+    try {
+      const [c, f, r] = await Promise.all([listConversations(), listFriends(), listFriendRequests()])
+      setConversations(Array.isArray(c) ? c : [])
+      setFriends(Array.isArray(f) ? f : [])
+      setRequests(r && typeof r === 'object' ? r : { incoming: [], outgoing: [] })
+    } catch (e) {
+      console.error('[messages] load', e)
+    } finally {
+      setLoading(false) // toujours, même si une requête échoue → plus de blocage "Chargement…"
+    }
   }, [isAuthenticated])
   useEffect(() => { load() }, [load])
 

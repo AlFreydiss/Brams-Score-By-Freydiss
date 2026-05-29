@@ -9,12 +9,19 @@ function noClient() {
 
 async function rpc(fn, args = {}) {
   if (!supabase) return noClient()
-  const { data, error } = await supabase.rpc(fn, args)
-  if (error) {
-    console.error(`[social] ${fn}`, error.message)
-    return { ok: false, error: error.message }
+  try {
+    const { data, error } = await supabase.rpc(fn, args)
+    if (error) {
+      console.error(`[social] ${fn}`, error.message)
+      return { ok: false, error: error.message }
+    }
+    return data
+  } catch (e) {
+    // Ne JAMAIS propager une exception : sinon un Promise.all parent rejette et
+    // l'UI reste bloquée sur "Chargement…" (bug clic Messages).
+    console.error(`[social] ${fn} (throw)`, e?.message || e)
+    return { ok: false, error: e?.message || 'rpc_failed' }
   }
-  return data
 }
 
 // ── Amis / blocage ──────────────────────────────────────────────────────────
