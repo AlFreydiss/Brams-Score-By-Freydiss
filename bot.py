@@ -886,6 +886,49 @@ def _baseline_pending_berry_sync() -> None:
         release_db(conn)
 
 
+# ── Annonce Discord des achats boutique web ────────────────────────────────
+# Watermark : on n'annonce que les achats postérieurs au démarrage du bot
+# (baseline au 1er tick), comme _baseline_pending_berry_sync pour les déductions.
+_LAST_SHOP_TX = None
+
+
+def _fetch_new_web_purchases():
+    """Renvoie les achats boutique web (shop_transactions) postérieurs au watermark.
+    Lignes : (id, discord_id, price, created_at, item_name). [] si rien/table absente."""
+    global _LAST_SHOP_TX
+    conn = get_db()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT EXISTS(SELECT 1 FROM information_schema.tables "
+            "WHERE table_name='shop_transactions' AND table_schema='public')"
+        )
+        if not cur.fetchone()[0]:
+            return []  # boutique web pas encore migrée
+        if _LAST_SHOP_TX is None:
+            # 1er tick : on cale le watermark sur le dernier achat existant (pas
+            # d'annonce rétroactive des achats faits avant le démarrage du bot).
+            cur.execute("SELECT COALESCE(max(created_at), now()) FROM shop_transactions")
+            _LAST_SHOP_TX = cur.fetchone()[0]
+            return []
+        cur.execute(
+            "SELECT t.id, t.discord_id, t.price, t.created_at, COALESCE(s.name, 'un article') "
+            "FROM shop_transactions t LEFT JOIN shop_items s ON s.id = t.item_id "
+            "WHERE t.status = 'completed' AND t.created_at > %s "
+            "ORDER BY t.created_at ASC LIMIT 50",
+            (_LAST_SHOP_TX,)
+        )
+        rows = cur.fetchall()
+        if rows:
+            _LAST_SHOP_TX = max(r[3] for r in rows)
+        return rows
+    except Exception as e:
+        print(f"[SHOP_ANNOUNCE] fetch: {e}")
+        return []
+    finally:
+        release_db(conn)
+
+
 def _sync_flush_dirty() -> int:
     """Flush synchrone des UIDs dirty - appelé depuis le thread executor."""
     if not _DIRTY:
@@ -1209,6 +1252,50 @@ async def _before_flush():
 @flush_dirty_loop.error
 async def _flush_error(err):
     print(f"[CACHE] flush_dirty_loop erreur : {err}")
+
+
+@tasks.loop(seconds=20)
+async def web_purchase_announce_loop():
+    """Annonce sur Discord les achats faits sur la boutique web (synchro web → bot)."""
+    loop = asyncio.get_running_loop()
+    rows = await loop.run_in_executor(db_executor, _fetch_new_web_purchases)
+    if not rows:
+        return
+    ch = await _get_announce_channel()
+    for _tx_id, discord_id, price, _created_at, item_name in rows:
+        uid = str(discord_id)
+        price_str = f"{int(price or 0):,}".replace(",", " ")
+        # Annonce publique dans le canal d'annonce
+        if ch is not None:
+            try:
+                await ch.send(embed=discord.Embed(
+                    title="🛒 Boutique — Nouvel achat",
+                    description=f"<@{uid}> vient d'acquérir **{item_name}** pour **{price_str} ฿** sur le site ! 🏴‍☠️",
+                    color=discord.Color.gold(),
+                ))
+            except Exception as e:
+                print(f"[SHOP_ANNOUNCE] annonce: {e}")
+        # DM de confirmation à l'acheteur (silencieux si DM fermés)
+        try:
+            member = bot.get_user(int(uid)) or await bot.fetch_user(int(uid))
+            if member is not None:
+                await member.send(embed=discord.Embed(
+                    title="✅ Achat confirmé",
+                    description=f"Tu as acheté **{item_name}** pour **{price_str} ฿** sur brams.community. Profite bien, nakama !",
+                    color=discord.Color.green(),
+                ))
+        except Exception:
+            pass
+
+
+@web_purchase_announce_loop.before_loop
+async def _before_shop_announce():
+    await bot.wait_until_ready()
+
+
+@web_purchase_announce_loop.error
+async def _shop_announce_error(err):
+    print(f"[SHOP_ANNOUNCE] loop erreur : {err}")
 
 # ─────────────────────────────────────────
 #  RANK UPDATE + ANNONCES
@@ -2002,6 +2089,8 @@ async def on_ready():
         vocal_rank_loop.start()
     if not flush_dirty_loop.is_running():
         flush_dirty_loop.start()
+    if not web_purchase_announce_loop.is_running():
+        web_purchase_announce_loop.start()
     if not nick_restore_loop.is_running():
         nick_restore_loop.start()
 
