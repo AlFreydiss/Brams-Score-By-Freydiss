@@ -301,24 +301,23 @@ export async function fetchBerryShopState(discordId) {
     return { balance: 0, items: FALLBACK_ITEMS, inventory: [], transactions: [], preview: true }
   }
 
-  // Lire le solde — essai RPC d'abord, fallback direct sur users.data
+  // Lire le solde. Le RPC get_berry_balance peut renvoyer 0 si la résolution
+  // discord_id côté serveur échoue (auth.users metadata incomplet). Dans ce cas
+  // on lit directement la table users (source de vérité, maj par le bot) — d'où
+  // l'ancien bug "toujours 0" : le 0 du RPC était pris pour argent comptant.
   let balance = 0
   try {
-    const { data: rpcData, error: rpcErr } = await supabase.rpc('get_berry_balance')
-    if (!rpcErr && rpcData != null) {
-      balance = Number(rpcData)
-    } else {
-      // Fallback : lecture directe dans la table users (si RLS le permet)
-      const { data: userData } = await supabase
-        .from('users').select('data').eq('uid', discordId).maybeSingle()
-      balance = Number(userData?.data?.berrys ?? 0)
-    }
-  } catch {
+    const { data: rpcData } = await supabase.rpc('get_berry_balance')
+    balance = Number(rpcData) || 0
+  } catch { /* RPC absent ou erreur — on tente la lecture directe ci-dessous */ }
+
+  if (balance <= 0 && discordId) {
     try {
       const { data: userData } = await supabase
-        .from('users').select('data').eq('uid', discordId).maybeSingle()
-      balance = Number(userData?.data?.berrys ?? 0)
-    } catch { balance = 0 }
+        .from('users').select('data').eq('uid', String(discordId)).maybeSingle()
+      const direct = Number(userData?.data?.berrys ?? 0)
+      if (direct > 0) balance = direct
+    } catch { /* RLS bloque — on garde 0 */ }
   }
 
   const [{ data: items }, { data: inventory }, { data: transactions }] = await Promise.all([
