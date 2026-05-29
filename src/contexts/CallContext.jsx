@@ -19,8 +19,10 @@ export function CallProvider({ children }) {
   const [call, setCall] = useState(null)
   // call: { phase:'incoming'|'outgoing'|'active'|'ended', peer:{id,name,avatar}, type:'audio'|'video', muted, camOff, callId }
   const pcRef = useRef(null)
-  const localRef = useRef(null)      // MediaStream local
+  const localRef = useRef(null)      // MediaStream local (caméra+micro)
   const remoteRef = useRef(null)     // MediaStream distant
+  const screenRef = useRef(null)     // MediaStream partage d'écran
+  const camTrackRef = useRef(null)   // piste caméra mémorisée pendant le partage
   const inboxRef = useRef(null)      // canal call:<moi>
   const peerChanRef = useRef(null)   // canal call:<peer> (pour envoyer)
   const pendingIce = useRef([])
@@ -51,6 +53,9 @@ export function CallProvider({ children }) {
     pcRef.current = null
     try { localRef.current?.getTracks().forEach(t => t.stop()) } catch {}
     localRef.current = null
+    try { screenRef.current?.getTracks().forEach(t => t.stop()) } catch {}
+    screenRef.current = null
+    camTrackRef.current = null
     remoteRef.current = null
     pendingIce.current = []
     offerRef.current = null
@@ -76,7 +81,9 @@ export function CallProvider({ children }) {
       setCall(prev => prev ? { ...prev, hasRemote: true } : prev)
     }
     pc.onconnectionstatechange = () => {
-      if (['failed', 'disconnected', 'closed'].includes(pc.connectionState)) endCall(false)
+      const st = pc.connectionState
+      setCall(prev => prev ? { ...prev, connState: st } : prev)
+      if (['failed', 'disconnected', 'closed'].includes(st)) endCall(false)
     }
     pcRef.current = pc
     return pc
@@ -149,6 +156,38 @@ export function CallProvider({ children }) {
     setCall(prev => prev ? { ...prev, camOff: next } : prev)
   }, [])
 
+  // ── Partage d'écran (V2) ──────────────────────────────────────────────────────
+  // Remplace la piste vidéo envoyée par l'écran (replaceTrack → pas de renégo).
+  // Au stop (bouton navigateur ou re-clic), on revient sur la caméra.
+  const stopScreen = useCallback(() => {
+    const pc = pcRef.current
+    const sender = pc?.getSenders().find(s => s.track && s.track.kind === 'video')
+    const cam = camTrackRef.current
+    if (sender && cam) { try { sender.replaceTrack(cam) } catch {} }
+    try { screenRef.current?.getTracks().forEach(t => t.stop()) } catch {}
+    screenRef.current = null
+    camTrackRef.current = null
+    setCall(prev => prev ? { ...prev, screenOn: false } : prev)
+  }, [])
+
+  const toggleScreenShare = useCallback(async () => {
+    const pc = pcRef.current
+    if (!pc) return
+    if (callRef.current?.screenOn) { stopScreen(); return }
+    const sender = pc.getSenders().find(s => s.track && s.track.kind === 'video')
+    if (!sender) return   // appel audio sans piste vidéo → partage non supporté en V2
+    let ds
+    try { ds = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false }) }
+    catch { return }      // annulé par l'utilisateur
+    const screenTrack = ds.getVideoTracks()[0]
+    if (!screenTrack) return
+    camTrackRef.current = sender.track   // mémorise la caméra pour le retour
+    screenRef.current = ds
+    try { await sender.replaceTrack(screenTrack) } catch {}
+    screenTrack.onended = () => stopScreen()   // l'utilisateur stoppe via la barre du navigateur
+    setCall(prev => prev ? { ...prev, screenOn: true } : prev)
+  }, [stopScreen])
+
   // ── Réception des signaux ───────────────────────────────────────────────────
   useEffect(() => {
     if (!supabase || !discordId) return
@@ -184,7 +223,7 @@ export function CallProvider({ children }) {
   useEffect(() => () => cleanup(), [cleanup])
 
   return (
-    <Ctx.Provider value={{ call, startCall, acceptCall, declineCall, endCall, toggleMute, toggleCam, getLocal: () => localRef.current, getRemote: () => remoteRef.current }}>
+    <Ctx.Provider value={{ call, startCall, acceptCall, declineCall, endCall, toggleMute, toggleCam, toggleScreenShare, getLocal: () => localRef.current, getRemote: () => remoteRef.current, getScreen: () => screenRef.current }}>
       {children}
     </Ctx.Provider>
   )
@@ -192,6 +231,6 @@ export function CallProvider({ children }) {
 
 export function useCall() {
   const ctx = useContext(Ctx)
-  if (!ctx) return { call: null, startCall: () => {}, acceptCall: () => {}, declineCall: () => {}, endCall: () => {}, toggleMute: () => {}, toggleCam: () => {}, getLocal: () => null, getRemote: () => null }
+  if (!ctx) return { call: null, startCall: () => {}, acceptCall: () => {}, declineCall: () => {}, endCall: () => {}, toggleMute: () => {}, toggleCam: () => {}, toggleScreenShare: () => {}, getLocal: () => null, getRemote: () => null, getScreen: () => null }
   return ctx
 }
