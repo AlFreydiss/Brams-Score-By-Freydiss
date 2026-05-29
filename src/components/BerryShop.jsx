@@ -6,6 +6,8 @@ import {
   RARITY_STYLES,
   fetchBerryShopState,
   purchaseShopItem,
+  openMysteryBox,
+  MYSTERY_BOX_COST,
   upsertShopItem,
   fetchAdminShopData,
   SHOP_CATEGORIES,
@@ -553,6 +555,37 @@ function CollectionProgress({ inventory }) {
   )
 }
 
+// ─── Coffre Mystère (gacha) ───────────────────────────────────────────────────
+
+function MysteryBoxCard({ balance, busy, onOpen }) {
+  const canAfford = balance >= MYSTERY_BOX_COST
+  return (
+    <div style={{ maxWidth:1120, margin:'0 auto 28px', padding:'0 20px' }}>
+      <div style={{ position:'relative', overflow:'hidden', borderRadius:18, padding:'26px', display:'flex', gap:22, alignItems:'center', flexWrap:'wrap',
+        background:'linear-gradient(135deg, rgba(168,85,247,0.16) 0%, rgba(236,72,153,0.10) 40%, rgba(8,9,13,0.98) 100%)',
+        border:'1px solid rgba(168,85,247,0.40)', borderTop:'3px solid #a855f7', boxShadow:'0 18px 55px rgba(168,85,247,0.22)' }}>
+        <style>{`@keyframes boxWobble{0%,100%{transform:rotate(-5deg) translateY(0)}25%{transform:rotate(5deg) translateY(-4px)}50%{transform:rotate(-3deg)}75%{transform:rotate(4deg) translateY(-2px)}} @keyframes boxShake{10%,90%{transform:translateX(-2px) rotate(-3deg)}20%,80%{transform:translateX(3px) rotate(4deg)}30%,50%,70%{transform:translateX(-5px) rotate(-6deg)}40%,60%{transform:translateX(5px) rotate(6deg)}}`}</style>
+        <div style={{ position:'absolute', top:-80, left:'30%', width:280, height:240, background:'radial-gradient(circle, rgba(168,85,247,0.35), transparent 65%)', pointerEvents:'none' }} />
+        <div style={{ fontSize:72, lineHeight:1, filter:'drop-shadow(0 0 26px rgba(168,85,247,0.7))', animation: busy ? 'boxShake .5s ease-in-out infinite' : 'boxWobble 3.5s ease-in-out infinite' }}>🎁</div>
+        <div style={{ flex:'1 1 240px', minWidth:0 }}>
+          <div style={{ fontSize:10.5, fontWeight:900, letterSpacing:'.2em', textTransform:'uppercase', color:'#c084fc', marginBottom:7 }}>✦ Coffre Mystère</div>
+          <div style={{ fontSize:'clamp(20px,2.6vw,26px)', fontWeight:900, color:'#fff', marginBottom:6 }}>Tente ta chance, nakama</div>
+          <div style={{ fontSize:13, color:'rgba(255,255,255,0.55)', lineHeight:1.55, maxWidth:460 }}>
+            Un fond d'opening <strong style={{ color:'#fff' }}>aléatoire</strong> que tu ne possèdes pas — du Commun au <span style={{ color:'#e8d5a3', fontWeight:700 }}>Secret</span>. Plus c'est rare, plus c'est dur à tomber.
+          </div>
+        </div>
+        <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:10 }}>
+          <div style={{ display:'flex', alignItems:'baseline', gap:5 }}><span>🪙</span><span style={{ fontSize:22, fontWeight:900, color:'#c084fc' }}>{fmt(MYSTERY_BOX_COST)}</span></div>
+          <button disabled={!canAfford || busy} onClick={onOpen} style={{ padding:'13px 30px', borderRadius:12, border:'none', cursor: (!canAfford||busy) ? 'not-allowed':'pointer', fontSize:14, fontWeight:800, letterSpacing:'.02em',
+            background: canAfford ? 'linear-gradient(135deg, #a855f7, #ec4899)' : 'rgba(255,255,255,0.06)', color: canAfford ? '#fff' : 'rgba(255,255,255,0.35)', boxShadow: canAfford ? '0 10px 30px rgba(168,85,247,0.45)' : 'none', opacity: busy ? 0.7 : 1 }}>
+            {busy ? '🎲 Ouverture…' : canAfford ? '🎁 Ouvrir le coffre' : 'Solde insuffisant'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── RewardModal ──────────────────────────────────────────────────────────────
 
 function RewardModal({ item, balance, busy, message, onClose, onConfirm }) {
@@ -1031,6 +1064,7 @@ export default function BerryShop() {
   const [showLimited, setShowLimited] = useState(false)
   const [selectedItem, setSelectedItem] = useState(null)
   const [revealItem, setRevealItem] = useState(null)
+  const [boxBusy, setBoxBusy] = useState(false)
   const [busy, setBusy]     = useState(false)
   const [message, setMessage] = useState(null)
   const earnRef = useRef(null)
@@ -1093,6 +1127,20 @@ export default function BerryShop() {
     setBusy(false)
     // Révélation épique au lieu d'un simple message
     setSelectedItem(null); setMessage(null); setRevealItem(item)
+  }
+
+  async function openBox() {
+    if (boxBusy) return
+    setBoxBusy(true)
+    const { data, error } = await openMysteryBox()
+    // petit délai pour laisser l'animation de secousse respirer
+    await new Promise(r => setTimeout(r, 650))
+    setBoxBusy(false)
+    if (error) { alert(error.message); return }
+    if (data?.ok === false) { alert(data.error || 'Coffre indisponible.'); return }
+    setState(c => ({ ...c, balance: Number(data.balance ?? c.balance) }))
+    fetchBerryShopState(discordId).then(setState)
+    if (data?.item) setRevealItem(data.item)   // révélation épique du gain
   }
 
   if (!isAuthenticated) {
@@ -1324,7 +1372,8 @@ export default function BerryShop() {
         </div>
       </div>
 
-      {/* ═══ OBJET DU JOUR + COLLECTION ═════════════════════════════════════ */}
+      {/* ═══ COFFRE MYSTÈRE + OBJET DU JOUR + COLLECTION ════════════════════ */}
+      <MysteryBoxCard balance={state.balance} busy={boxBusy} onOpen={openBox} />
       <ItemOfDay inventory={state.inventory} balance={state.balance} onBuy={item => setSelectedItem(item)} />
       <CollectionProgress inventory={state.inventory} />
 

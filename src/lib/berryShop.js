@@ -350,6 +350,15 @@ export async function purchaseShopItem(itemId) {
   return { data, error }
 }
 
+export const MYSTERY_BOX_COST = 1200000
+export async function openMysteryBox() {
+  if (!supabase) return { error: { message: 'Supabase non configuré.' } }
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: { message: 'Connexion requise.' } }
+  const { data, error } = await supabase.rpc('open_mystery_box')
+  return { data, error }
+}
+
 export async function fetchAdminShopData() {
   if (!supabase) return { items: [], transactions: [] }
   const [{ data: items }, { data: transactions }] = await Promise.all([
