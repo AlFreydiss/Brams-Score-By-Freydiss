@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import Navbar from './Navbar.jsx'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { useSocial } from '../contexts/SocialContext.jsx'
+import { useCall } from '../contexts/CallContext.jsx'
 import { useMediaQuery } from '../hooks/useMediaQuery.js'
 import {
   listConversations, getMessages, sendTextMessage, markConversationRead,
@@ -13,7 +14,6 @@ import {
 } from '../lib/social.js'
 import { btn, avatar, T } from './social/socialStyles.js'
 import GifPicker from './social/GifPicker.jsx'
-import CallModal from './social/CallModal.jsx'
 
 const QUICK_EMOJIS = ['👍', '❤️', '😂', '🔥', '😮', '😢']
 const EMOJI_SET = ['😀','😂','🤣','😊','😍','😎','🤔','😏','😅','😭','😱','🥺','😤','😡','🥶','🤯','🙄','😴','🤤','🤑','🤩','🥳','😈','👀','💀','🔥','✨','💯','🎉','❤️','🧡','💛','💚','💙','💜','🖤','👍','👎','👏','🙏','🤝','💪','🫶','🤙','✌️','🤞','🫡','👑','⚔️','🏴‍☠️','🍿','⚓','🌊','💰','🎵','😼','👋']
@@ -301,6 +301,7 @@ function MessageBubble({ msg, mine, grouped, onReact, onReply, onEdit, onDelete 
 function ChatView({ conversationId, meta, onBack, isMobile, refreshList }) {
   const { discordId, displayName, avatarUrl } = useAuth()
   const { refreshCounts, isOnline } = useSocial()
+  const { startCall } = useCall()
   const navigate = useNavigate()
   const [messages, setMessages] = useState([])
   const [loading, setLoading]   = useState(true)
@@ -318,7 +319,6 @@ function ChatView({ conversationId, meta, onBack, isMobile, refreshList }) {
   const [dragOver, setDragOver] = useState(false)
   const [recording, setRecording] = useState(false)
   const [recSec, setRecSec]     = useState(0)
-  const [call, setCall]         = useState(null)   // { type: 'audio'|'video' }
   const [typingName, setTypingName] = useState(null)
   const [seenByPeer, setSeenByPeer] = useState(false)
   const scrollRef = useRef(null)
@@ -589,8 +589,8 @@ function ChatView({ conversationId, meta, onBack, isMobile, refreshList }) {
           </span>
         </div>
         <div style={{ display: 'flex', gap: 6, position: 'relative' }}>
-          <HeaderAction label="📞" onClick={() => setCall({ type: 'audio' })} />
-          <HeaderAction label="🎥" onClick={() => setCall({ type: 'video' })} />
+          <HeaderAction label="📞" onClick={() => meta?.other_id && startCall({ id: meta.other_id, name: meta.other_username, avatar: meta.other_avatar }, 'audio')} />
+          <HeaderAction label="🎥" onClick={() => meta?.other_id && startCall({ id: meta.other_id, name: meta.other_username, avatar: meta.other_avatar }, 'video')} />
           {meta?.other_id && <HeaderAction label="👤" onClick={() => navigate(`/u/${meta.other_id}`)} />}
           <HeaderAction label="⋯" onClick={() => setMenuOpen(o => !o)} />
           {menuOpen && (
@@ -710,8 +710,6 @@ function ChatView({ conversationId, meta, onBack, isMobile, refreshList }) {
           </>
         )}
       </div>
-
-      <CallModal open={!!call} type={call?.type} peer={{ name: meta?.other_username, avatar: meta?.other_avatar }} onClose={() => setCall(null)} />
     </div>
   )
 }

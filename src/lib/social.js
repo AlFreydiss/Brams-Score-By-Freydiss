@@ -10,15 +10,19 @@ function noClient() {
 async function rpc(fn, args = {}) {
   if (!supabase) return noClient()
   try {
-    const { data, error } = await supabase.rpc(fn, args)
+    // Timeout : si le RPC ne répond pas en 12s (client supabase coincé), on
+    // abandonne au lieu de laisser l'UI bloquée sur les skeletons à vie.
+    const { data, error } = await Promise.race([
+      supabase.rpc(fn, args),
+      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 12000)),
+    ])
     if (error) {
       console.error(`[social] ${fn}`, error.message)
       return { ok: false, error: error.message }
     }
     return data
   } catch (e) {
-    // Ne JAMAIS propager une exception : sinon un Promise.all parent rejette et
-    // l'UI reste bloquée sur "Chargement…" (bug clic Messages).
+    // Ne JAMAIS propager : sinon un Promise.all parent rejette et l'UI reste bloquée.
     console.error(`[social] ${fn} (throw)`, e?.message || e)
     return { ok: false, error: e?.message || 'rpc_failed' }
   }

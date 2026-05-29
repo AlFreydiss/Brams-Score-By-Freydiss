@@ -4,8 +4,10 @@ import GlobalStyles from './components/GlobalStyles.jsx'
 import { ThemeProvider } from './contexts/ThemeContext.jsx'
 import { OpeningBgProvider } from './contexts/OpeningBgContext.jsx'
 import { SocialProvider } from './contexts/SocialContext.jsx'
+import { CallProvider } from './contexts/CallContext.jsx'
 import { useAuth } from './contexts/AuthContext.jsx'
 import NotificationToast from './components/social/NotificationToast.jsx'
+import CallOverlay from './components/social/CallOverlay.jsx'
 import WelcomeAnimation from './components/WelcomeAnimation.jsx'
 import AuthGuard from './components/AuthGuard.jsx'
 import Navbar from './components/Navbar.jsx'
@@ -332,8 +334,10 @@ export default function App() {
     <ThemeProvider>
       <OpeningBgProvider>
       <SocialProvider>
+      <CallProvider>
       <GlobalStyles />
       <NotificationToast />
+      <CallOverlay />
       <Suspense fallback={
         <div style={{
           position: 'fixed', inset: 0, zIndex: 9999,
@@ -464,6 +468,7 @@ export default function App() {
         </div>
       )}
       </Suspense>
+      </CallProvider>
       </SocialProvider>
       </OpeningBgProvider>
     </ThemeProvider>
