@@ -124,6 +124,22 @@ export async function uploadAttachment(file, onProgress) {
   } catch (e) { return { error: e?.message || 'Upload échoué' } }
 }
 
+// ── Staff chat ────────────────────────────────────────────────────────────────
+export const staffSendMessage   = (content)        => rpc('staff_send_message', { p_content: content })
+export const staffDeleteMessage = (id)             => rpc('staff_delete_message', { p_id: id })
+export async function staffListMessages(before = null, limit = 50) {
+  const r = await rpc('staff_list_messages', { p_before: before, p_limit: limit })
+  return r?.ok ? (r.messages || []) : []
+}
+export function subscribeStaffChat(onInsert, onDelete) {
+  if (!supabase) return () => {}
+  const channel = supabase.channel('staff-chat')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'staff_messages' }, p => onInsert?.(p.new))
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'staff_messages' }, p => onDelete?.(p.old))
+    .subscribe()
+  return () => { try { supabase.removeChannel(channel) } catch {} }
+}
+
 // ── Notifications ─────────────────────────────────────────────────────────────
 export async function listNotifications(limit = 30) {
   const r = await rpc('list_notifications', { p_limit: limit })

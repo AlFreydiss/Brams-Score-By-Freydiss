@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext.jsx'
 import { isStaff, isCreator, CREATOR_DISCORD_ID } from '../lib/roles.js'
 import { supabase } from '../lib/supabase.js'
 import Navbar from './Navbar.jsx'
+import StaffChat from './social/StaffChat.jsx'
 
 function timeAgo(iso) {
   const m = Math.floor((Date.now() - new Date(iso)) / 60000)
@@ -257,6 +258,7 @@ export default function StaffPanel() {
             {/* Tabs */}
             <div style={{ display: 'flex', gap: 4, marginBottom: 20, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 4 }}>
               {[
+                { id: 'chat',     label: 'QG Staff',                              icon: '🛡️' },
                 { id: 'theories', label: `Théories (${pending.theories.length})`, icon: '📜' },
                 { id: 'wiki',     label: `Wiki (${pending.pages.length})`,         icon: '📖' },
               ].map(t => (
@@ -272,11 +274,13 @@ export default function StaffPanel() {
               ))}
             </div>
 
-            {loading && (
+            {loading && tab !== 'chat' && (
               <div style={{ textAlign: 'center', padding: 40, color: 'rgba(255,255,255,0.35)', fontSize: 14 }}>
                 Chargement…
               </div>
             )}
+
+            {tab === 'chat' && <StaffChat />}
 
             {!loading && tab === 'theories' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

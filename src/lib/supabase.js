@@ -48,12 +48,10 @@ export async function fetchLeaderboard(limit = 10, period = 'week') {
 
 export async function fetchMembersByRank(minH, maxH = 99999) {
   if (!supabase) return false
-  // Essai RPC dédié, sinon fallback sur top_classement filtré par heures vocales
-  // (évite que le modal reste bloqué sur "Chargement…" si members_by_rank est absent).
-  const { data, error } = await supabase.rpc('members_by_rank', { p_min_h: minH, p_max_h: maxH })
-  if (!error && Array.isArray(data)) return data
-
-  console.error('[members_by_rank] RPC échec, fallback top_classement', error?.message)
+  // IMPORTANT : on utilise la MÊME source que le Classement vocal principal
+  // (/api/leaderboard via callTopClassement, période semaine) filtrée par heures,
+  // pour que le modal de rang affiche exactement les mêmes chiffres/membres.
+  // (Avant : members_by_rank RPC calculait différemment → incohérence.)
   const board = await callTopClassement(500, 'week')
   if (board.error || !Array.isArray(board.data)) return false
   return board.data.filter(m => {
