@@ -63,6 +63,12 @@ export async function listPinnedMessages(conversationId) {
   return []
 }
 
+export async function searchMessages(conversationId, query) {
+  const r = await rpc('search_messages', { p_conversation: conversationId, p_query: query })
+  if (r?.ok) return r.messages || []
+  return []
+}
+
 export async function listConversations() {
   const r = await rpc('list_conversations')
   return Array.isArray(r) ? r : []

@@ -11,7 +11,7 @@ import {
   listFriends, listFriendRequests, respondFriendRequest, cancelFriendRequest,
   getOrCreateDm, blockUser, uploadAttachment, sendImageMessage,
   sendGifMessage, sendVoiceMessage, joinTyping,
-  pinMessage, unpinMessage, listPinnedMessages,
+  pinMessage, unpinMessage, listPinnedMessages, searchMessages,
 } from '../lib/social.js'
 import { btn, avatar, T } from './social/socialStyles.js'
 import GifPicker from './social/GifPicker.jsx'
@@ -60,6 +60,22 @@ function RichText({ text }) {
   return parts.map((p, i) => URL_RE.test(p)
     ? <a key={i} href={p} target="_blank" rel="noopener noreferrer" style={{ color: T.gold, wordBreak: 'break-all' }}>{p}</a>
     : <span key={i}>{p}</span>)
+}
+
+// Surligne (insensible à la casse) le terme recherché dans un extrait clampé.
+function Highlight({ text, term }) {
+  const clamp = { fontSize: 12.5, color: T.textDim, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word', lineHeight: 1.4 }
+  const t = (term || '').trim()
+  if (!t) return <div style={clamp}>{text}</div>
+  const esc = t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const parts = String(text).split(new RegExp(`(${esc})`, 'ig'))
+  return (
+    <div style={clamp}>
+      {parts.map((p, i) => p.toLowerCase() === t.toLowerCase()
+        ? <mark key={i} style={{ background: 'rgba(212,160,23,0.32)', color: T.text, borderRadius: 3, padding: '0 1px' }}>{p}</mark>
+        : <span key={i}>{p}</span>)}
+    </div>
+  )
 }
 
 const iconBtn = {
@@ -364,6 +380,10 @@ function ChatView({ conversationId, meta, onBack, isMobile, refreshList }) {
   const [seenByPeer, setSeenByPeer] = useState(false)
   const [pinned, setPinned]     = useState([])
   const [pinnedOpen, setPinnedOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState([])
+  const [searching, setSearching] = useState(false)
   const scrollRef = useRef(null)
   const bottomRef = useRef(null)
   const reactionTimer = useRef(null)
@@ -586,6 +606,22 @@ function ChatView({ conversationId, meta, onBack, isMobile, refreshList }) {
     }
   }, [conversationId, messages])
 
+  // Reset recherche au changement de conversation.
+  useEffect(() => { setSearchOpen(false); setSearchQuery(''); setSearchResults([]) }, [conversationId])
+
+  // Recherche serveur débouncée (les messages sont paginés → pas de filtre local).
+  useEffect(() => {
+    const q = searchQuery.trim()
+    if (!searchOpen || q.length < 2) { setSearchResults([]); setSearching(false); return }
+    setSearching(true)
+    let active = true
+    const t = setTimeout(async () => {
+      const res = await searchMessages(conversationId, q)
+      if (active) { setSearchResults(Array.isArray(res) ? res : []); setSearching(false) }
+    }, 300)
+    return () => { active = false; clearTimeout(t) }
+  }, [searchQuery, searchOpen, conversationId])
+
   async function loadOlder() {
     if (!hasMore || !messages.length) return
     const el = scrollRef.current, prevH = el?.scrollHeight || 0
@@ -683,6 +719,7 @@ function ChatView({ conversationId, meta, onBack, isMobile, refreshList }) {
           </span>
         </div>
         <div style={{ display: 'flex', gap: 6, position: 'relative' }}>
+          <HeaderAction label="🔍" onClick={() => setSearchOpen(o => !o)} />
           <HeaderAction label="📞" onClick={() => meta?.other_id && startCall({ id: meta.other_id, name: meta.other_username, avatar: meta.other_avatar }, 'audio')} />
           <HeaderAction label="🎥" onClick={() => meta?.other_id && startCall({ id: meta.other_id, name: meta.other_username, avatar: meta.other_avatar }, 'video')} />
           <span style={{ position: 'relative', display: 'inline-flex' }}>
@@ -700,6 +737,40 @@ function ChatView({ conversationId, meta, onBack, isMobile, refreshList }) {
           )}
         </div>
       </div>
+
+      {/* Barre de recherche dans la conversation */}
+      {searchOpen && (
+        <div style={{ flexShrink: 0, borderBottom: `1px solid ${T.border}`, background: T.panel }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px' }}>
+            <span style={{ fontSize: 14, color: T.textFaint }}>🔍</span>
+            <input autoFocus value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Escape') { setSearchOpen(false); setSearchQuery('') } }}
+              placeholder="Rechercher dans la conversation…"
+              style={{ flex: 1, padding: '8px 12px', borderRadius: 10, fontSize: 13, background: T.surface, border: `1px solid ${T.border}`, color: T.text, outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }} />
+            <button onClick={() => { setSearchOpen(false); setSearchQuery('') }} style={iconBtn}>✕</button>
+          </div>
+          {searchQuery.trim().length >= 2 && (
+            <div style={{ maxHeight: 280, overflowY: 'auto', padding: '0 8px 10px' }}>
+              {searching ? <div style={{ padding: '16px', textAlign: 'center', color: T.textFaint, fontSize: 12.5 }}>Recherche…</div>
+                : searchResults.length === 0 ? <div style={{ padding: '20px 16px', textAlign: 'center', color: T.textFaint, fontSize: 12.5 }}>Aucun résultat pour « {searchQuery.trim()} ».</div>
+                : <>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: T.textFaint, padding: '4px 10px 6px' }}>{searchResults.length} résultat{searchResults.length > 1 ? 's' : ''}</div>
+                  {searchResults.map(m => (
+                    <button key={m.id} onClick={() => jumpToMessage(m.id)} style={{ width: '100%', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 2, padding: '8px 10px', borderRadius: 9, border: 'none', background: 'transparent', cursor: 'pointer', fontFamily: 'inherit' }}
+                      onMouseEnter={e => e.currentTarget.style.background = T.surface}
+                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+                        <span style={{ fontSize: 11.5, fontWeight: 700, color: m.sender_id === discordId ? T.gold : T.violet, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.sender_id === discordId ? 'Toi' : (m.sender_username || `Pirate #${String(m.sender_id || '').slice(-5)}`)}</span>
+                        <span style={{ fontSize: 10, color: T.textFaint, flexShrink: 0 }}>{new Date(m.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</span>
+                      </div>
+                      <Highlight text={m.content || ''} term={searchQuery.trim()} />
+                    </button>
+                  ))}
+                </>}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Drag overlay */}
       {dragOver && (
