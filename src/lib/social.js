@@ -79,6 +79,47 @@ export function sendGifMessage(conversationId, gifUrl) {
   })
 }
 
+export function sendImageMessage(conversationId, url, replyTo = null) {
+  return sendMessageRpc({ p_conversation: conversationId, p_type: 'image', p_media_url: url, p_reply_to: replyTo })
+}
+
+export function sendVoiceMessage(conversationId, url, durationSec) {
+  return sendMessageRpc({ p_conversation: conversationId, p_type: 'voice', p_media_url: url, p_voice_duration: Math.round(durationSec || 0) })
+}
+
+// Upload d'une pièce jointe vers R2 via /api/r2-presign (autorisé par le JWT
+// Supabase de l'utilisateur). Renvoie { url } (publique R2) ou { error }.
+export async function uploadAttachment(file, onProgress) {
+  if (!supabase) return { error: 'Supabase non configuré' }
+  if (!file) return { error: 'Fichier manquant' }
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.access_token) return { error: 'Connexion requise pour envoyer un fichier' }
+  let presign
+  try {
+    const res = await fetch('/api/r2-presign', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify({ filename: file.name || 'fichier', contentType: file.type || 'application/octet-stream', size: file.size }),
+    })
+    presign = await res.json()
+    if (!res.ok || !presign.uploadUrl) return { error: presign.error || 'Préparation upload échouée' }
+  } catch (e) { return { error: e?.message || 'Réseau' } }
+
+  // PUT avec suivi de progression
+  try {
+    await new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest()
+      xhr.open('PUT', presign.uploadUrl)
+      xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream')
+      xhr.upload.onprogress = e => { if (e.lengthComputable && onProgress) onProgress(Math.round((e.loaded / e.total) * 100)) }
+      xhr.onload = () => (xhr.status >= 200 && xhr.status < 300) ? resolve() : reject(new Error(`R2 ${xhr.status}`))
+      xhr.onerror = () => reject(new Error('Upload échoué'))
+      xhr.send(file)
+    })
+    return { url: presign.publicUrl }
+  } catch (e) { return { error: e?.message || 'Upload échoué' } }
+}
+
 // ── Notifications ─────────────────────────────────────────────────────────────
 export async function listNotifications(limit = 30) {
   const r = await rpc('list_notifications', { p_limit: limit })

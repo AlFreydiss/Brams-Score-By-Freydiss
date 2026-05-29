@@ -8,12 +8,16 @@ import {
   listConversations, getMessages, sendTextMessage, markConversationRead,
   editMessage, deleteMessage, toggleReaction, subscribeToConversation,
   listFriends, listFriendRequests, respondFriendRequest, cancelFriendRequest,
-  getOrCreateDm, blockUser,
+  getOrCreateDm, blockUser, uploadAttachment, sendImageMessage,
 } from '../lib/social.js'
 import { btn, avatar, T } from './social/socialStyles.js'
 
 const QUICK_EMOJIS = ['👍', '❤️', '😂', '🔥', '😮', '😢']
+const EMOJI_SET = ['😀','😂','🤣','😊','😍','😎','🤔','😏','😅','😭','😱','🥺','😤','😡','🥶','🤯','🙄','😴','🤤','🤑','🤩','🥳','😈','👀','💀','🔥','✨','💯','🎉','❤️','🧡','💛','💚','💙','💜','🖤','👍','👎','👏','🙏','🤝','💪','🫶','🤙','✌️','🤞','🫡','👑','⚔️','🏴‍☠️','🍿','⚓','🌊','💰','🎵','😼','👋']
 const URL_RE = /(https?:\/\/[^\s]+)/g
+const MAX_ATTACH = 30 * 1024 * 1024
+const ALLOWED_IMG = ['image/png', 'image/jpeg', 'image/webp', 'image/gif']
+function humanSize(b) { return b > 1e6 ? `${(b / 1e6).toFixed(1)} Mo` : `${Math.round(b / 1e3)} Ko` }
 
 // ── Helpers date ──────────────────────────────────────────────────────────────
 function dayLabel(iso) {
@@ -58,6 +62,11 @@ const iconBtn = {
   border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 14,
   padding: '4px 6px', borderRadius: 7, color: T.textDim, fontFamily: 'inherit',
   display: 'inline-flex', alignItems: 'center', justifyContent: 'center', transition: 'background .12s, color .12s',
+}
+const composerIcon = {
+  width: 38, height: 44, borderRadius: 10, border: 'none', background: 'transparent',
+  cursor: 'pointer', fontSize: 18, color: T.textDim, flexShrink: 0,
+  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
 }
 function HeaderAction({ label, onClick, disabled, danger }) {
   return (
@@ -298,9 +307,31 @@ function ChatView({ conversationId, meta, onBack, isMobile, refreshList }) {
   const [sending, setSending]   = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [showScrollBtn, setShowScrollBtn] = useState(false)
+  const [emojiOpen, setEmojiOpen] = useState(false)
+  const [attach, setAttach]     = useState(null)   // { file, preview, error }
+  const [uploadPct, setUploadPct] = useState(0)
+  const [dragOver, setDragOver] = useState(false)
   const scrollRef = useRef(null)
   const bottomRef = useRef(null)
   const reactionTimer = useRef(null)
+  const fileInputRef = useRef(null)
+
+  // ── Pièces jointes ──────────────────────────────────────────────────────────
+  function acceptFile(file) {
+    if (!file) return
+    if (file.size > MAX_ATTACH) { setAttach({ error: `Fichier trop lourd (max 30 Mo)` }); return }
+    if (!ALLOWED_IMG.includes(file.type)) { setAttach({ error: 'Format image non supporté (png/jpg/webp/gif)' }); return }
+    setAttach({ file, preview: URL.createObjectURL(file) })
+  }
+  function onPickFile(e) { acceptFile(e.target.files?.[0]); e.target.value = '' }
+  function onPaste(e) {
+    const item = [...(e.clipboardData?.items || [])].find(i => i.type.startsWith('image/'))
+    if (item) { const f = item.getAsFile(); if (f) { e.preventDefault(); acceptFile(f) } }
+  }
+  function onDrop(e) {
+    e.preventDefault(); setDragOver(false)
+    const f = e.dataTransfer?.files?.[0]; if (f) acceptFile(f)
+  }
 
   const scrollToBottom = useCallback((smooth = false) => {
     requestAnimationFrame(() => bottomRef.current?.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto' }))
@@ -367,23 +398,38 @@ function ChatView({ conversationId, meta, onBack, isMobile, refreshList }) {
   }
 
   async function handleSend() {
+    if (sending) return
     const text = input.trim()
-    if (!text || sending) return
-    setSending(true)
+    if (!text && !attach?.file && !editing) return
+    setSending(true); setEmojiOpen(false)
+
+    // 1) Pièce jointe (image) → upload R2 puis message
+    if (attach?.file) {
+      setUploadPct(1)
+      const up = await uploadAttachment(attach.file, setUploadPct)
+      if (up.error) { setAttach({ error: up.error }); setUploadPct(0); setSending(false); return }
+      const res = await sendImageMessage(conversationId, up.url, replyTo?.id || null)
+      if (res?.message_id) {
+        setMessages(prev => dedupeById([...prev, { id: res.message_id, sender_id: discordId, type: 'image', media_url: up.url, created_at: new Date().toISOString(), reactions: [], reply_to_id: replyTo?.id || null }]))
+        scrollToBottom(true)
+      }
+      setAttach(null); setUploadPct(0); setReplyTo(null); refreshList()
+    }
+
+    // 2) Texte (ou édition)
     if (editing) {
       const res = await editMessage(editing.id, text)
       if (res?.ok) setMessages(prev => prev.map(m => m.id === editing.id ? { ...m, content: text, edited_at: new Date().toISOString() } : m))
-      setEditing(null)
-    } else {
+      setEditing(null); setInput('')
+    } else if (text) {
       const res = await sendTextMessage(conversationId, text, replyTo?.id || null)
-      if (res?.ok === false) { setSending(false); return }
       if (res?.message_id) {
         setMessages(prev => dedupeById([...prev, { id: res.message_id, sender_id: discordId, content: text, type: 'text', created_at: new Date().toISOString(), reactions: [], sender_username: displayName, sender_avatar: avatarUrl, reply_to_id: replyTo?.id || null }]))
         scrollToBottom(true)
       }
-      setReplyTo(null); refreshList()
+      setReplyTo(null); setInput(''); refreshList()
     }
-    setInput(''); setSending(false)
+    setSending(false)
   }
 
   async function handleReact(messageId, emoji) {
@@ -442,8 +488,19 @@ function ChatView({ conversationId, meta, onBack, isMobile, refreshList }) {
         </div>
       </div>
 
+      {/* Drag overlay */}
+      {dragOver && (
+        <div style={{ position: 'absolute', inset: 0, zIndex: 30, background: 'rgba(8,9,13,0.85)', border: `2px dashed ${T.gold}`, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.gold, fontSize: 16, fontWeight: 700, pointerEvents: 'none' }}>
+          📎 Dépose ton image ici
+        </div>
+      )}
+
       {/* Messages */}
-      <div ref={scrollRef} onScroll={onScroll} style={{ flex: 1, overflowY: 'auto', padding: '14px 18px', background: 'radial-gradient(ellipse 80% 50% at 50% 0%, rgba(155,108,255,0.03), transparent 70%)' }}>
+      <div ref={scrollRef} onScroll={onScroll}
+        onDragOver={e => { e.preventDefault(); if (!dragOver) setDragOver(true) }}
+        onDragLeave={e => { if (e.currentTarget === e.target) setDragOver(false) }}
+        onDrop={onDrop}
+        style={{ flex: 1, overflowY: 'auto', padding: '14px 18px', background: 'radial-gradient(ellipse 80% 50% at 50% 0%, rgba(155,108,255,0.03), transparent 70%)' }}>
         {loading ? <div style={{ padding: 30, color: T.textFaint, fontSize: 13, textAlign: 'center' }}>Chargement…</div>
           : messages.length === 0 ? <div style={{ padding: '48px 20px', color: T.textFaint, fontSize: 14, textAlign: 'center' }}>Début de votre conversation. Dis bonjour 👋</div>
           : <>
@@ -468,15 +525,55 @@ function ChatView({ conversationId, meta, onBack, isMobile, refreshList }) {
         </div>
       )}
 
-      {/* Composer (Phase 1 : texte premium ; emoji/GIF/image/vocal en Phase 2-3) */}
-      <div style={{ display: 'flex', gap: 8, padding: '12px 16px', borderTop: `1px solid ${T.border}`, flexShrink: 0, alignItems: 'flex-end', background: T.panel }}>
+      {/* Aperçu pièce jointe */}
+      {attach && (
+        <div style={{ padding: '8px 16px', borderTop: `1px solid ${T.border}`, background: T.surface }}>
+          {attach.error ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: T.red }}>
+              ⚠️ {attach.error}
+              <button onClick={() => setAttach(null)} style={iconBtn}>✕</button>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <img src={attach.preview} alt="" style={{ width: 52, height: 52, borderRadius: 10, objectFit: 'cover', border: `1px solid ${T.border}` }} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, color: T.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{attach.file.name}</div>
+                <div style={{ fontSize: 11, color: T.textFaint }}>{humanSize(attach.file.size)}{uploadPct > 0 && ` · envoi ${uploadPct}%`}</div>
+                {uploadPct > 0 && <div style={{ height: 3, background: T.surface2, borderRadius: 2, marginTop: 4, overflow: 'hidden' }}><div style={{ height: '100%', width: `${uploadPct}%`, background: T.gold, transition: 'width .2s' }} /></div>}
+              </div>
+              <button onClick={() => setAttach(null)} disabled={uploadPct > 0} style={{ ...iconBtn, fontSize: 16 }}>✕</button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Emoji picker */}
+      {emojiOpen && (
+        <div style={{ borderTop: `1px solid ${T.border}`, background: T.surface, padding: '10px 14px', maxHeight: 180, overflowY: 'auto' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(34px, 1fr))', gap: 2 }}>
+            {EMOJI_SET.map(e => (
+              <button key={e} onClick={() => { setInput(v => v + e) }} style={{ fontSize: 20, padding: 4, border: 'none', background: 'transparent', cursor: 'pointer', borderRadius: 7 }}
+                onMouseEnter={ev => ev.currentTarget.style.background = T.surface2}
+                onMouseLeave={ev => ev.currentTarget.style.background = 'transparent'}>{e}</button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Composer */}
+      <div style={{ display: 'flex', gap: 6, padding: '10px 14px', borderTop: `1px solid ${T.border}`, flexShrink: 0, alignItems: 'flex-end', background: T.panel }}>
+        <input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={onPickFile} style={{ display: 'none' }} />
+        <button onClick={() => fileInputRef.current?.click()} title="Joindre une image" style={composerIcon}>📎</button>
+        <button onClick={() => setEmojiOpen(o => !o)} title="Emoji" style={{ ...composerIcon, color: emojiOpen ? T.gold : T.textDim }}>😊</button>
+        <button title="GIF — Phase 3" disabled style={{ ...composerIcon, opacity: 0.4, cursor: 'not-allowed', fontSize: 11, fontWeight: 800 }}>GIF</button>
+        <button title="Vocal — Phase 3" disabled style={{ ...composerIcon, opacity: 0.4, cursor: 'not-allowed' }}>🎤</button>
         <textarea
-          value={input} onChange={e => setInput(e.target.value)}
+          value={input} onChange={e => setInput(e.target.value)} onPaste={onPaste}
           onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() } }}
           placeholder="Écris un message…" rows={1}
           style={{ flex: 1, resize: 'none', maxHeight: 140, padding: '11px 15px', borderRadius: 14, background: T.surface, border: `1px solid ${T.border}`, color: T.text, fontSize: 14, fontFamily: 'inherit', outline: 'none', lineHeight: 1.4, boxSizing: 'border-box' }}
         />
-        <button onClick={handleSend} disabled={sending || !input.trim()} style={{ ...btn('gold'), padding: '11px 18px', height: 44, opacity: (sending || !input.trim()) ? 0.5 : 1 }}>
+        <button onClick={handleSend} disabled={sending || (!input.trim() && !attach?.file && !editing)} style={{ ...btn('gold'), padding: '11px 16px', height: 44, opacity: (sending || (!input.trim() && !attach?.file && !editing)) ? 0.5 : 1 }}>
           {editing ? '✓' : '➤'}
         </button>
       </div>

@@ -188,6 +188,14 @@ const R2_PUBLIC_BASE = (process.env.R2_PUBLIC_BASE || 'https://pub-d5e23a54185c4
 function r2SanitizeKey(name) {
   return String(name).replace(/\\/g, '/').split('/').map(s => s.replace(/[^a-zA-Z0-9._-]/g, '_')).filter(Boolean).join('/')
 }
+// Types autorisés pour les pièces jointes DM (uploads par utilisateur connecté)
+const R2_DM_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'audio/webm', 'audio/mpeg', 'audio/ogg', 'audio/mp4', 'video/webm', 'application/pdf']
+const R2_ANON = process.env.SUPABASE_ANON_KEY
+  || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InplcWV0cm11bHFuZHh1Z2Zib2pkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzNzUxNzksImV4cCI6MjA5MTk1MTE3OX0.HQbMRJnT_FAFfA8kYi-DYgjOuPnGpQU5zkeRAGb8Qso'
+function r2ResolveDiscord(user) {
+  const d = user?.identities?.find(i => i.provider === 'discord')
+  return d?.identity_data?.provider_id || d?.identity_data?.sub || user?.user_metadata?.provider_id || user?.id || 'anon'
+}
 async function r2Presign(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
   const ACCOUNT_ID = process.env.R2_ACCOUNT_ID, ACCESS_KEY = process.env.R2_ACCESS_KEY_ID
@@ -196,13 +204,32 @@ async function r2Presign(req, res) {
   if (!ACCOUNT_ID || !ACCESS_KEY || !SECRET_KEY || !BUCKET) {
     return res.status(500).json({ error: 'R2 non configuré — R2_ACCOUNT_ID / R2_ACCESS_KEY_ID / R2_SECRET_ACCESS_KEY / R2_BUCKET manquants dans Vercel.' })
   }
-  if (UPLOAD_SECRET && req.headers['x-upload-secret'] !== UPLOAD_SECRET) {
-    return res.status(403).json({ error: "Secret d'upload invalide." })
-  }
   const { filename, contentType, series, size } = req.body || {}
   if (!filename || typeof filename !== 'string') return res.status(400).json({ error: 'filename requis' })
-  if (size && Number(size) > 5 * 1024 * 1024 * 1024) return res.status(400).json({ error: 'Fichier trop volumineux (max 5 Go)' })
-  const key = (series ? r2SanitizeKey(series) + '/' : '') + r2SanitizeKey(filename)
+
+  // Deux modes d'autorisation :
+  //  1) Admin : header x-upload-secret (page /blob-upload) → upload libre.
+  //  2) Utilisateur connecté : JWT Supabase (Authorization Bearer) → pièce jointe
+  //     DM, clé scopée dm/<discord_id>/, types restreints, max 30 Mo.
+  let keyPrefix = ''
+  const adminOk = UPLOAD_SECRET && req.headers['x-upload-secret'] === UPLOAD_SECRET
+  if (adminOk) {
+    keyPrefix = series ? r2SanitizeKey(series) + '/' : ''
+    if (size && Number(size) > 5 * 1024 * 1024 * 1024) return res.status(400).json({ error: 'Fichier trop volumineux (max 5 Go)' })
+  } else {
+    const token = (req.headers['authorization'] || '').replace(/^Bearer\s+/i, '').trim()
+    if (!token) return res.status(403).json({ error: 'Authentification requise.' })
+    let user
+    try {
+      const r = await fetch(`${SUPABASE_URL}/auth/v1/user`, { headers: { Authorization: `Bearer ${token}`, apikey: R2_ANON } })
+      if (!r.ok) return res.status(401).json({ error: 'Session invalide.' })
+      user = await r.json()
+    } catch { return res.status(500).json({ error: 'Vérification auth impossible.' }) }
+    if (contentType && !R2_DM_TYPES.includes(contentType)) return res.status(400).json({ error: 'Type de fichier non autorisé.' })
+    if (size && Number(size) > 30 * 1024 * 1024) return res.status(400).json({ error: 'Fichier trop volumineux (max 30 Mo).' })
+    keyPrefix = `dm/${r2SanitizeKey(String(r2ResolveDiscord(user)))}/`
+  }
+  const key = keyPrefix + Date.now() + '-' + r2SanitizeKey(filename)
   const client = new S3Client({
     region: 'auto', endpoint: `https://${ACCOUNT_ID}.r2.cloudflarestorage.com`,
     credentials: { accessKeyId: ACCESS_KEY, secretAccessKey: SECRET_KEY },
