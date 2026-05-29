@@ -4,7 +4,7 @@ import { useAuth } from '../../contexts/AuthContext.jsx'
 import { toggleLike, deletePost, createPost, editPost } from '../../lib/feed.js'
 import { btn, avatar, T } from '../social/socialStyles.js'
 
-const URL_RE = /(https?:\/\/[^\s]+)/g
+const TOKEN_RE = /(https?:\/\/[^\s]+|#[\p{L}0-9_]+)/gu
 function timeAgo(iso) {
   const s = (Date.now() - new Date(iso).getTime()) / 1000
   if (s < 60) return "à l'instant"
@@ -15,9 +15,11 @@ function timeAgo(iso) {
 }
 function RichText({ text }) {
   if (!text) return null
-  return String(text).split(URL_RE).map((p, i) => URL_RE.test(p)
-    ? <a key={i} href={p} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ color: T.gold, wordBreak: 'break-all' }}>{p}</a>
-    : <span key={i}>{p}</span>)
+  return String(text).split(TOKEN_RE).map((p, i) => {
+    if (/^https?:\/\//.test(p)) return <a key={i} href={p} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ color: T.gold, wordBreak: 'break-all' }}>{p}</a>
+    if (/^#[\p{L}0-9_]+$/u.test(p)) return <Link key={i} to={`/fil/recherche?q=${encodeURIComponent(p)}`} onClick={e => e.stopPropagation()} style={{ color: T.violet, fontWeight: 600, textDecoration: 'none' }}>{p}</Link>
+    return <span key={i}>{p}</span>
+  })
 }
 function Avatar({ url, name, size = 44 }) {
   return <span style={avatar(size)}>{url ? <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (name || '?').slice(0, 2).toUpperCase()}</span>

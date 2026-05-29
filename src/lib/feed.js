@@ -39,6 +39,11 @@ export async function getUserPosts(userId, before = null, limit = 20) {
   return r?.ok ? (r.posts || []) : []
 }
 
+export async function searchPosts(query, limit = 30) {
+  const r = await rpc('search_posts', { p_query: query, p_limit: limit })
+  return r?.ok ? (r.posts || []) : []
+}
+
 // Stats publiques du fil (nombre de posts racines) — count direct, sans RPC.
 export async function getFeedStats() {
   if (!supabase) return { posts: 0 }

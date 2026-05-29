@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { getFeed, getPost, getFeedStats, subscribeFeed } from '../lib/feed.js'
 import PostComposer from './feed/PostComposer.jsx'
@@ -20,6 +21,8 @@ function patch(posts, id, partial) {
 
 export default function FeedPage() {
   const { isAuthenticated, discordId } = useAuth()
+  const navigate = useNavigate()
+  const [search, setSearch] = useState('')
   const [posts, setPosts] = useState([])
   const [loading, setLoading] = useState(true)
   const [hasMore, setHasMore] = useState(true)
@@ -76,8 +79,12 @@ export default function FeedPage() {
       <style>{`@media (max-width: 1000px){ .feed-rail{ display:none !important } }`}</style>
       <div style={{ display: 'flex', gap: 28, maxWidth: 952, margin: '0 auto', alignItems: 'flex-start' }}>
         <div style={COL}>
-          <div style={{ position: 'sticky', top: 0, zIndex: 5, padding: '16px 16px 12px', background: 'rgba(8,9,13,0.82)', backdropFilter: 'blur(12px)', borderBottom: `1px solid ${T.border}` }}>
-            <h1 style={{ margin: 0, fontSize: 21, fontWeight: 900, color: T.text }}>Le Fil 🏴‍☠️</h1>
+          <div style={{ position: 'sticky', top: 0, zIndex: 5, padding: '14px 16px 12px', background: 'rgba(8,9,13,0.82)', backdropFilter: 'blur(12px)', borderBottom: `1px solid ${T.border}` }}>
+            <h1 style={{ margin: '0 0 10px', fontSize: 21, fontWeight: 900, color: T.text }}>Le Fil 🏴‍☠️</h1>
+            <form onSubmit={e => { e.preventDefault(); const q = search.trim(); if (q.length >= 2) navigate(`/fil/recherche?q=${encodeURIComponent(q)}`) }}>
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 Rechercher dans le fil (#hashtag, mot-clé…)"
+                style={{ width: '100%', padding: '9px 14px', borderRadius: 999, fontSize: 13, background: T.surface, border: `1px solid ${T.border}`, color: T.text, outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }} />
+            </form>
           </div>
 
           {isAuthenticated ? <PostComposer onPosted={onPosted} /> : (
