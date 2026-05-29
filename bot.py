@@ -745,7 +745,10 @@ def _load_all_from_db() -> dict:
         cur.execute("SELECT uid, data FROM users")
         rows = cur.fetchall()
         cur.close()
-        return {row[0]: row[1] for row in rows}
+        # On ne garde que les vrais comptes (uid = ID Discord numérique). Les lignes
+        # techniques (ex. '__brams_important_people__' écrite par le web) ne sont pas
+        # des utilisateurs et faisaient planter toute boucle int(uid) (/top, /serveur…).
+        return {row[0]: row[1] for row in rows if str(row[0]).isdigit()}
     finally:
         release_db(conn)
 

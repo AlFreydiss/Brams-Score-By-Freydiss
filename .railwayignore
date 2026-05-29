@@ -1,0 +1,7 @@
+.git
+brams-website
+__pycache__
+*.pyc
+*.zip
+top_berries
+.claude
