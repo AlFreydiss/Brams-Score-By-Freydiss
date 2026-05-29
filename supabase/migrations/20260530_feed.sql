@@ -43,6 +43,16 @@ DO $$ BEGIN
   END IF;
 END $$;
 
+-- ── Realtime : ajoute posts à la publication (pastille "nouveaux posts" du fil).
+--    Safe si la publication n'existe pas ou si la table y est déjà.
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'supabase_realtime')
+     AND NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname='supabase_realtime' AND tablename='posts') THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE posts;
+  END IF;
+EXCEPTION WHEN others THEN NULL;
+END $$;
+
 -- ── Enrichit un post en jsonb : auteur, compteurs, liké-par-moi, original (repost).
 CREATE OR REPLACE FUNCTION _enrich_post(p_id uuid, p_me text)
 RETURNS jsonb LANGUAGE sql SECURITY DEFINER STABLE SET search_path = public, pg_temp AS $$
