@@ -362,5 +362,35 @@
       }
     ],
     "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-thumbnails/Ep013.jpg"
+  },
+  {
+    "episode": 101,
+    "title": "Violet Evergarden: The Movie",
+    "kind": "film",
+    "badge": "VF/VOSTFR",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden/the-movie.mp4",
+    "season": "Film",
+    "arc": "Film",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden/the-movie.mp4"
+      },
+      {
+        "label": "VOSTFR (Japonais)",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden/the-movie.mp4"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden/the-movie.fr.vtt"
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-thumbnails/Ep013.jpg"
   }
 ]
