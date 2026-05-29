@@ -2,7 +2,8 @@ import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import { Routes, Route, useNavigate } from 'react-router-dom'
 import GlobalStyles from './components/GlobalStyles.jsx'
 import { ThemeProvider } from './contexts/ThemeContext.jsx'
-import { OpeningBgProvider } from './contexts/OpeningBgContext.jsx'
+import { OpeningBgProvider, useOpeningBg } from './contexts/OpeningBgContext.jsx'
+import EquippedOpeningBackground from './components/social/EquippedOpeningBackground.jsx'
 import { SocialProvider } from './contexts/SocialContext.jsx'
 import { CallProvider } from './contexts/CallContext.jsx'
 import { useAuth } from './contexts/AuthContext.jsx'
@@ -89,6 +90,7 @@ function DeferredSection({ children, minHeight = 420, style = {}, threshold = 0.
   )
 }
 function AMVBackground() {
+  const { activeBg } = useOpeningBg()
   const videoRef = useRef(null)
   const [muted, setMuted]     = useState(true)
   const [volume, setVolume]   = useState(40)
@@ -104,6 +106,10 @@ function AMVBackground() {
     const timer = window.setTimeout(() => setEnabled(true), 250)
     return () => window.clearTimeout(timer)
   }, [])
+
+  // Si un fond d'opening est équipé, on laisse la place au fond global équipé
+  // (EquippedOpeningBackground) au lieu de la vidéo AMV.
+  if (activeBg) return null
 
   if (!enabled) {
     return <div style={{ position: 'fixed', inset: 0, zIndex: 0, background: '#05070a', pointerEvents: 'none' }} />
@@ -336,6 +342,7 @@ export default function App() {
       <SocialProvider>
       <CallProvider>
       <GlobalStyles />
+      <EquippedOpeningBackground />
       <NotificationToast />
       <CallOverlay />
       <Suspense fallback={

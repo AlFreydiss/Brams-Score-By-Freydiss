@@ -98,7 +98,8 @@ export default function RelationshipActions({ targetId }) {
         {/* blocked_me : aucune action — on n'expose rien */}
 
         {state !== 'blocked_by_me' && state !== 'blocked_me' && (
-          <button style={btn('ghost')} disabled={busy} onClick={() => run(() => blockUser(targetId))} title="Bloquer">
+          <button style={btn('ghost')} disabled={busy} title="Bloquer"
+            onClick={() => { if (window.confirm('Êtes-vous sûr de vouloir bloquer cette personne ? Vous ne pourrez plus vous envoyer de messages.')) run(() => blockUser(targetId)) }}>
             🚫
           </button>
         )}
