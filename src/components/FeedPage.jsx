@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext.jsx'
 import { getFeed, getPost, subscribeFeed } from '../lib/feed.js'
 import PostComposer from './feed/PostComposer.jsx'
 import PostCard from './feed/PostCard.jsx'
+import QuoteModal from './feed/QuoteModal.jsx'
 import { T } from './social/socialStyles.js'
 
 const COL = { maxWidth: 600, margin: '0 auto', minHeight: '100vh', borderLeft: `1px solid ${T.border}`, borderRight: `1px solid ${T.border}` }
@@ -22,6 +23,7 @@ export default function FeedPage() {
   const [loading, setLoading] = useState(true)
   const [hasMore, setHasMore] = useState(true)
   const [newCount, setNewCount] = useState(0)
+  const [quoteTarget, setQuoteTarget] = useState(null)
   const loadingMore = useRef(false)
   const seen = useRef(new Set())
 
@@ -95,13 +97,14 @@ export default function FeedPage() {
             </div>
           ) : (
             <>
-              {posts.map(p => <PostCard key={p.id} post={p} onChange={onChange} onDeleted={onDeleted} />)}
+              {posts.map(p => <PostCard key={p.id} post={p} onChange={onChange} onDeleted={onDeleted} onQuote={setQuoteTarget} />)}
               {hasMore && <div style={{ padding: 20, textAlign: 'center', color: T.textFaint, fontSize: 13 }}>Chargement…</div>}
               {!hasMore && <div style={{ padding: 28, textAlign: 'center', color: T.textFaint, fontSize: 12 }}>Tu as tout vu 🏁</div>}
             </>
           )}
         </div>
       </div>
+      <QuoteModal quote={quoteTarget} onClose={() => setQuoteTarget(null)} onPosted={onPosted} />
     </div>
   )
 }

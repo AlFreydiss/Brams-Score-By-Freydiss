@@ -6,8 +6,9 @@ import { btn, avatar, T } from '../social/socialStyles.js'
 const MAX = 500
 const ALLOWED_IMG = ['image/png', 'image/jpeg', 'image/webp', 'image/gif']
 
-// Composer de post / réponse. onPosted(newPostId) après succès.
-export default function PostComposer({ replyTo = null, onPosted, placeholder, autoFocus = false }) {
+// Composer de post / réponse / citation. onPosted(newPostId) après succès.
+// quote : post original cité (repost avec commentaire).
+export default function PostComposer({ replyTo = null, quote = null, onPosted, placeholder, autoFocus = false }) {
   const { isAuthenticated, displayName, avatarUrl } = useAuth()
   const [text, setText] = useState('')
   const [attach, setAttach] = useState(null)   // { file, preview } | { error }
@@ -27,7 +28,7 @@ export default function PostComposer({ replyTo = null, onPosted, placeholder, au
   async function submit() {
     if (busy) return
     const content = text.trim()
-    if (!content && !attach?.file) return
+    if (!content && !attach?.file && !quote) return
     setBusy(true)
     try {
       let mediaUrl = null
@@ -36,7 +37,7 @@ export default function PostComposer({ replyTo = null, onPosted, placeholder, au
         if (up.error) { setAttach({ error: up.error }); setBusy(false); return }
         mediaUrl = up.url
       }
-      const res = await createPost({ content: content || null, mediaUrl, replyTo })
+      const res = await createPost({ content: content || null, mediaUrl, replyTo, repostOf: quote?.id || null })
       if (res?.ok) { setText(''); setAttach(null); onPosted?.(res.post_id) }
       else if (res?.error) alert(res.error)
     } finally { setBusy(false) }
@@ -50,10 +51,19 @@ export default function PostComposer({ replyTo = null, onPosted, placeholder, au
         <textarea
           value={text} onChange={e => setText(e.target.value)} autoFocus={autoFocus}
           onKeyDown={e => { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') submit() }}
-          placeholder={placeholder || (replyTo ? 'Poste ta réponse…' : 'Quoi de neuf, nakama ?')}
-          rows={replyTo ? 2 : 3}
+          placeholder={placeholder || (quote ? 'Ajoute un commentaire…' : replyTo ? 'Poste ta réponse…' : 'Quoi de neuf, nakama ?')}
+          rows={replyTo || quote ? 2 : 3}
           style={{ width: '100%', resize: 'none', background: 'transparent', border: 'none', outline: 'none', color: T.text, fontSize: 16, fontFamily: 'inherit', lineHeight: 1.45, boxSizing: 'border-box' }}
         />
+        {quote && (
+          <div style={{ border: `1px solid ${T.border}`, borderRadius: 14, padding: '10px 12px', marginTop: 4 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
+              <span style={avatar(20)}>{quote.author_avatar ? <img src={quote.author_avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (quote.author_username || '?').slice(0, 2).toUpperCase()}</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: T.text }}>{quote.author_username || `Pirate #${String(quote.author_id || '').slice(-5)}`}</span>
+            </div>
+            <div style={{ fontSize: 13, color: T.textDim, lineHeight: 1.45, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{quote.content || (quote.media_url ? '🖼️ Image' : '')}</div>
+          </div>
+        )}
         {attach?.preview && (
           <div style={{ position: 'relative', display: 'inline-block', marginTop: 8 }}>
             <img src={attach.preview} alt="" style={{ maxWidth: 220, maxHeight: 220, borderRadius: 12, border: `1px solid ${T.border}` }} />
@@ -68,8 +78,8 @@ export default function PostComposer({ replyTo = null, onPosted, placeholder, au
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <span style={{ fontSize: 12, color: over ? T.red : T.textFaint, fontVariantNumeric: 'tabular-nums' }}>{text.length}/{MAX}</span>
-            <button onClick={submit} disabled={busy || over || (!text.trim() && !attach?.file)} style={{ ...btn('gold'), padding: '8px 18px', opacity: (busy || over || (!text.trim() && !attach?.file)) ? 0.5 : 1 }}>
-              {busy ? '…' : (replyTo ? 'Répondre' : 'Poster')}
+            <button onClick={submit} disabled={busy || over || (!text.trim() && !attach?.file && !quote)} style={{ ...btn('gold'), padding: '8px 18px', opacity: (busy || over || (!text.trim() && !attach?.file && !quote)) ? 0.5 : 1 }}>
+              {busy ? '…' : (quote ? 'Citer' : replyTo ? 'Répondre' : 'Poster')}
             </button>
           </div>
         </div>

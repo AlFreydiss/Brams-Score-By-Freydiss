@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { getPost } from '../lib/feed.js'
 import PostComposer from './feed/PostComposer.jsx'
 import PostCard from './feed/PostCard.jsx'
+import QuoteModal from './feed/QuoteModal.jsx'
 import { T } from './social/socialStyles.js'
 
 const COL = { maxWidth: 600, margin: '0 auto', minHeight: '100vh', borderLeft: `1px solid ${T.border}`, borderRight: `1px solid ${T.border}` }
@@ -18,6 +19,7 @@ export default function PostThreadPage() {
   const [replies, setReplies] = useState([])
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
+  const [quoteTarget, setQuoteTarget] = useState(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -43,14 +45,15 @@ export default function PostThreadPage() {
           {loading ? <div style={{ padding: '48px 16px', textAlign: 'center', color: T.textFaint }}>Chargement…</div>
             : notFound ? <div style={{ padding: '60px 24px', textAlign: 'center', color: T.textFaint }}>Ce post n'existe plus.</div>
             : <>
-              <PostCard post={post} disableNav onChange={changePost} onDeleted={() => navigate('/fil')} />
+              <PostCard post={post} disableNav onChange={changePost} onDeleted={() => navigate('/fil')} onQuote={setQuoteTarget} />
               <PostComposer replyTo={post.repost_of && post.original ? post.original.id : post.id} onPosted={onPosted} autoFocus={false} />
               {replies.length === 0
                 ? <div style={{ padding: '36px 16px', textAlign: 'center', color: T.textFaint, fontSize: 13 }}>Aucune réponse. Lance la discussion 🗣️</div>
-                : replies.map(r => <PostCard key={r.id} post={r} onChange={changeReply} onDeleted={(id) => setReplies(prev => prev.filter(x => x.id !== id))} />)}
+                : replies.map(r => <PostCard key={r.id} post={r} onChange={changeReply} onDeleted={(id) => setReplies(prev => prev.filter(x => x.id !== id))} onQuote={setQuoteTarget} />)}
             </>}
         </div>
       </div>
+      <QuoteModal quote={quoteTarget} onClose={() => setQuoteTarget(null)} onPosted={onPosted} />
     </div>
   )
 }
