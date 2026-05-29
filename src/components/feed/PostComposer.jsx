@@ -19,7 +19,8 @@ function detectMention(value, caret) {
 export default function PostComposer({ replyTo = null, quote = null, onPosted, placeholder, autoFocus = false }) {
   const { isAuthenticated, displayName, avatarUrl } = useAuth()
   const [text, setText] = useState('')
-  const [attach, setAttach] = useState(null)
+  const [attachments, setAttachments] = useState([])   // [{ file, preview }] — jusqu'à 4
+  const [attachErr, setAttachErr] = useState(null)
   const [busy, setBusy] = useState(false)
   const [mention, setMention] = useState(null)     // { start, query } | null
   const [suggestions, setSuggestions] = useState([])
@@ -66,27 +67,36 @@ export default function PostComposer({ replyTo = null, quote = null, onPosted, p
   }
 
   function pickFile(e) {
-    const f = e.target.files?.[0]; e.target.value = ''
-    if (!f) return
-    if (!ALLOWED_IMG.includes(f.type)) { setAttach({ error: 'Format image non supporté' }); return }
-    if (f.size > 30 * 1024 * 1024) { setAttach({ error: 'Image trop lourde (max 30 Mo)' }); return }
-    setAttach({ file: f, preview: URL.createObjectURL(f) })
+    const files = [...(e.target.files || [])]; e.target.value = ''
+    setAttachErr(null)
+    const next = [...attachments]
+    for (const f of files) {
+      if (next.length >= 4) { setAttachErr('4 images maximum'); break }
+      if (!ALLOWED_IMG.includes(f.type)) { setAttachErr('Format image non supporté'); continue }
+      if (f.size > 30 * 1024 * 1024) { setAttachErr('Image trop lourde (max 30 Mo)'); continue }
+      next.push({ file: f, preview: URL.createObjectURL(f) })
+    }
+    setAttachments(next)
   }
 
   async function submit() {
     if (busy) return
     const content = text.trim()
-    if (!content && !attach?.file && !quote) return
+    if (!content && !attachments.length && !quote) return
     setBusy(true)
     try {
-      let mediaUrl = null
-      if (attach?.file) {
-        const up = await uploadAttachment(attach.file)
-        if (up.error) { setAttach({ error: up.error }); setBusy(false); return }
-        mediaUrl = up.url
+      let mediaUrls = null
+      if (attachments.length) {
+        const urls = []
+        for (const a of attachments) {
+          const up = await uploadAttachment(a.file)
+          if (up.error) { setAttachErr(up.error); setBusy(false); return }
+          urls.push(up.url)
+        }
+        mediaUrls = urls
       }
-      const res = await createPost({ content: content || null, mediaUrl, replyTo, repostOf: quote?.id || null })
-      if (res?.ok) { setText(''); setAttach(null); setMention(null); setSuggestions([]); onPosted?.(res.post_id) }
+      const res = await createPost({ content: content || null, mediaUrls, replyTo, repostOf: quote?.id || null })
+      if (res?.ok) { setText(''); setAttachments([]); setAttachErr(null); setMention(null); setSuggestions([]); onPosted?.(res.post_id) }
       else if (res?.error) alert(res.error)
     } finally { setBusy(false) }
   }
@@ -124,21 +134,25 @@ export default function PostComposer({ replyTo = null, quote = null, onPosted, p
             <div style={{ fontSize: 13, color: T.textDim, lineHeight: 1.45, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{quote.content || (quote.media_url ? '🖼️ Image' : '')}</div>
           </div>
         )}
-        {attach?.preview && (
-          <div style={{ position: 'relative', display: 'inline-block', marginTop: 8 }}>
-            <img src={attach.preview} alt="" style={{ maxWidth: 220, maxHeight: 220, borderRadius: 12, border: `1px solid ${T.border}` }} />
-            <button onClick={() => setAttach(null)} style={{ position: 'absolute', top: 6, right: 6, width: 26, height: 26, borderRadius: '50%', border: 'none', background: 'rgba(0,0,0,.7)', color: '#fff', cursor: 'pointer', fontSize: 13 }}>✕</button>
+        {attachments.length > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
+            {attachments.map((a, i) => (
+              <div key={i} style={{ position: 'relative' }}>
+                <img src={a.preview} alt="" style={{ width: 96, height: 96, objectFit: 'cover', borderRadius: 12, border: `1px solid ${T.border}` }} />
+                <button onClick={() => setAttachments(prev => prev.filter((_, j) => j !== i))} style={{ position: 'absolute', top: 4, right: 4, width: 24, height: 24, borderRadius: '50%', border: 'none', background: 'rgba(0,0,0,.7)', color: '#fff', cursor: 'pointer', fontSize: 12 }}>✕</button>
+              </div>
+            ))}
           </div>
         )}
-        {attach?.error && <div style={{ fontSize: 12, color: T.red, marginTop: 6 }}>⚠️ {attach.error}</div>}
+        {attachErr && <div style={{ fontSize: 12, color: T.red, marginTop: 6 }}>⚠️ {attachErr}</div>}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={pickFile} style={{ display: 'none' }} />
-            <button onClick={() => fileRef.current?.click()} title="Image" style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 18, color: T.gold, padding: 4, borderRadius: 8 }}>🖼️</button>
+            <input ref={fileRef} type="file" multiple accept="image/png,image/jpeg,image/webp,image/gif" onChange={pickFile} style={{ display: 'none' }} />
+            <button onClick={() => fileRef.current?.click()} title="Images (jusqu'à 4)" style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 18, color: T.gold, padding: 4, borderRadius: 8 }}>🖼️</button>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <span style={{ fontSize: 12, color: over ? T.red : T.textFaint, fontVariantNumeric: 'tabular-nums' }}>{text.length}/{MAX}</span>
-            <button onClick={submit} disabled={busy || over || (!text.trim() && !attach?.file && !quote)} style={{ ...btn('gold'), padding: '8px 18px', opacity: (busy || over || (!text.trim() && !attach?.file && !quote)) ? 0.5 : 1 }}>
+            <button onClick={submit} disabled={busy || over || (!text.trim() && !attachments.length && !quote)} style={{ ...btn('gold'), padding: '8px 18px', opacity: (busy || over || (!text.trim() && !attachments.length && !quote)) ? 0.5 : 1 }}>
               {busy ? '…' : (quote ? 'Citer' : replyTo ? 'Répondre' : 'Poster')}
             </button>
           </div>

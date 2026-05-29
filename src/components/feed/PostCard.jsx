@@ -31,6 +31,22 @@ function Avatar({ url, name, size = 44 }) {
   return <span style={avatar(size)}>{url ? <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (name || '?').slice(0, 2).toUpperCase()}</span>
 }
 
+// Galerie : 1 image plein cadre, 2-4 en grille (3 = la 1re en pleine largeur).
+function MediaGallery({ urls, compact }) {
+  const list = (urls || []).slice(0, 4)
+  if (list.length === 0) return null
+  const cap = compact ? 220 : 420
+  if (list.length === 1) return <img src={list[0]} alt="" style={{ maxWidth: '100%', maxHeight: cap, borderRadius: compact ? 10 : 14, marginTop: 8, border: `1px solid ${T.border}`, display: 'block' }} />
+  const cell = list.length === 2 ? (compact ? 130 : 200) : (compact ? 100 : 150)
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3, marginTop: 8, borderRadius: compact ? 10 : 14, overflow: 'hidden', border: `1px solid ${T.border}` }}>
+      {list.map((u, i) => (
+        <img key={i} src={u} alt="" style={{ width: '100%', height: cell, objectFit: 'cover', gridColumn: (list.length === 3 && i === 0) ? 'span 2' : 'auto' }} />
+      ))}
+    </div>
+  )
+}
+
 // Bloc original cité / reposté (lecture seule).
 function Embedded({ p, onClick }) {
   const deleted = !!p?.deleted_at
@@ -43,7 +59,7 @@ function Embedded({ p, onClick }) {
       </div>
       {deleted ? <span style={{ fontSize: 14, color: T.textFaint, fontStyle: 'italic' }}>Post supprimé</span> : <>
         {p.content && <div style={{ fontSize: 14, color: T.text, lineHeight: 1.5, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}><RichText text={p.content} mentions={p.mentions} /></div>}
-        {p.media_url && <img src={p.media_url} alt="" style={{ maxWidth: '100%', maxHeight: 240, borderRadius: 10, marginTop: 8, border: `1px solid ${T.border}` }} />}
+        <MediaGallery urls={p.media_urls?.length ? p.media_urls : (p.media_url ? [p.media_url] : [])} compact />
       </>}
     </div>
   )
@@ -140,7 +156,7 @@ export default function PostCard({ post, embedded = false, disableNav = false, o
           ) : (
             main.content && <div style={{ fontSize: 15, color: T.text, lineHeight: 1.5, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}><RichText text={main.content} mentions={main.mentions} /></div>
           )}
-          {!editing && main.media_url && <img src={main.media_url} alt="" style={{ maxWidth: '100%', maxHeight: 420, borderRadius: 14, marginTop: 10, border: `1px solid ${T.border}` }} />}
+          {!editing && <MediaGallery urls={main.media_urls?.length ? main.media_urls : (main.media_url ? [main.media_url] : [])} />}
           {quoted && <Embedded p={quoted} onClick={(e) => { e.stopPropagation(); navigate(`/fil/${quoted.id}`) }} />}
 
           {!editing && (

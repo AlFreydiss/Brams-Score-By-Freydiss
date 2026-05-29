@@ -18,8 +18,8 @@ async function rpc(fn, args = {}) {
   }
 }
 
-export const createPost = ({ content = null, mediaUrl = null, replyTo = null, repostOf = null } = {}) =>
-  rpc('create_post', { p_content: content, p_media_url: mediaUrl, p_reply_to: replyTo, p_repost_of: repostOf })
+export const createPost = ({ content = null, mediaUrl = null, mediaUrls = null, replyTo = null, repostOf = null } = {}) =>
+  rpc('create_post', { p_content: content, p_media_url: mediaUrl, p_media_urls: mediaUrls, p_reply_to: replyTo, p_repost_of: repostOf })
 export const deletePost = (postId)  => rpc('delete_post', { p_post: postId })
 export const editPost   = (postId, content) => rpc('edit_post', { p_post: postId, p_content: content })
 export const toggleLike = (postId)  => rpc('toggle_like', { p_post: postId })
