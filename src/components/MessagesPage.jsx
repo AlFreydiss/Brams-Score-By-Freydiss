@@ -89,6 +89,7 @@ function HeaderAction({ label, onClick, disabled, danger }) {
 
 // ── Sidebar : liste conversations / amis / demandes ──────────────────────────
 function ConversationList({ conversations, friends, requests, activeId, tab, setTab, search, setSearch, loading, onSelect, onOpenFriend, onRespond, navigate, isMobile }) {
+  const { isOnline } = useSocial()
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
     if (!q) return conversations
@@ -145,7 +146,7 @@ function ConversationList({ conversations, friends, requests, activeId, tab, set
           const active = c.conversation_id === activeId
           return (
             <button key={c.conversation_id} onClick={() => onSelect(c.conversation_id)} style={convItemStyle(active)}>
-              <Avatar url={c.other_avatar} name={c.other_username} size={44} online={false} />
+              <Avatar url={c.other_avatar} name={c.other_username} size={44} online={isOnline(c.other_id)} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center' }}>
                   <span style={{ fontSize: 14, fontWeight: 700, color: T.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -169,7 +170,7 @@ function ConversationList({ conversations, friends, requests, activeId, tab, set
           <Empty icon="👥">Aucun ami pour l'instant.<br /><Link to="/amis" style={{ color: T.gold, textDecoration: 'none' }}>Trouver des membres</Link></Empty>
         ) : friends.map(f => (
           <button key={f.user_id} onClick={() => onOpenFriend(f.user_id)} style={convItemStyle(false)}>
-            <Avatar url={f.avatar_url} name={f.username} size={44} online={false} />
+            <Avatar url={f.avatar_url} name={f.username} size={44} online={isOnline(f.user_id)} />
             <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
               <div style={{ fontSize: 14, fontWeight: 700, color: T.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.username || `Pirate #${String(f.user_id).slice(-5)}`}</div>
               <div style={{ fontSize: 12, color: T.textFaint }}>Envoyer un message</div>
@@ -299,7 +300,7 @@ function MessageBubble({ msg, mine, grouped, onReact, onReply, onEdit, onDelete 
 // ── Vue conversation ───────────────────────────────────────────────────────
 function ChatView({ conversationId, meta, onBack, isMobile, refreshList }) {
   const { discordId, displayName, avatarUrl } = useAuth()
-  const { refreshCounts } = useSocial()
+  const { refreshCounts, isOnline } = useSocial()
   const navigate = useNavigate()
   const [messages, setMessages] = useState([])
   const [loading, setLoading]   = useState(true)
@@ -571,12 +572,14 @@ function ChatView({ conversationId, meta, onBack, isMobile, refreshList }) {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderBottom: `1px solid ${T.border}`, flexShrink: 0, background: T.panel, backdropFilter: 'blur(8px)' }}>
         {isMobile && <button onClick={onBack} style={{ ...iconBtn, fontSize: 22 }}>‹</button>}
-        <Avatar url={meta?.other_avatar} name={meta?.other_username} size={40} online={false} />
+        <Avatar url={meta?.other_avatar} name={meta?.other_username} size={40} online={isOnline(meta?.other_id)} />
         <div style={{ minWidth: 0, flex: 1 }}>
           <Link to={meta?.other_id ? `/u/${meta.other_id}` : '#'} style={{ fontSize: 15, fontWeight: 700, color: T.text, textDecoration: 'none', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {meta?.other_username || 'Conversation'}
           </Link>
-          <span style={{ fontSize: 11, color: typingName ? T.violet : T.textFaint }}>{typingName ? 'écrit…' : 'Hors ligne'}</span>
+          <span style={{ fontSize: 11, color: typingName ? T.violet : (isOnline(meta?.other_id) ? T.online : T.textFaint) }}>
+            {typingName ? 'écrit…' : (isOnline(meta?.other_id) ? 'En ligne' : 'Hors ligne')}
+          </span>
         </div>
         <div style={{ display: 'flex', gap: 6, position: 'relative' }}>
           <HeaderAction label="📞" onClick={() => setCall({ type: 'audio' })} />

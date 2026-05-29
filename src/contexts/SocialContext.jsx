@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
 import { useAuth } from './AuthContext.jsx'
 import { unreadCounts, subscribeToNotifications } from '../lib/social.js'
+import { supabase } from '../lib/supabase.js'
 
 const Ctx = createContext(null)
 
@@ -10,7 +11,19 @@ export function SocialProvider({ children }) {
   const { discordId, isAuthenticated } = useAuth()
   const [counts, setCounts] = useState(ZERO)
   const [toast, setToast]   = useState(null)
+  const [onlineIds, setOnlineIds] = useState(() => new Set())
   const toastTimer = useRef(null)
+
+  // Présence en ligne : un seul canal global, chacun "track" sa présence.
+  useEffect(() => {
+    if (!supabase || !discordId) { setOnlineIds(new Set()); return }
+    const channel = supabase.channel('presence:lobby', { config: { presence: { key: String(discordId) } } })
+    channel
+      .on('presence', { event: 'sync' }, () => setOnlineIds(new Set(Object.keys(channel.presenceState()))))
+      .subscribe(async (status) => { if (status === 'SUBSCRIBED') { try { await channel.track({ at: Date.now() }) } catch {} } })
+    return () => { try { supabase.removeChannel(channel) } catch {} }
+  }, [discordId])
+  const isOnline = useCallback((id) => onlineIds.has(String(id)), [onlineIds])
 
   const refreshCounts = useCallback(async () => {
     if (!isAuthenticated) { setCounts(ZERO); return }
@@ -47,7 +60,7 @@ export function SocialProvider({ children }) {
   useEffect(() => () => clearTimeout(toastTimer.current), [])
 
   return (
-    <Ctx.Provider value={{ counts, refreshCounts, toast, dismissToast: () => setToast(null) }}>
+    <Ctx.Provider value={{ counts, refreshCounts, toast, dismissToast: () => setToast(null), onlineIds, isOnline }}>
       {children}
     </Ctx.Provider>
   )
@@ -55,6 +68,6 @@ export function SocialProvider({ children }) {
 
 export function useSocial() {
   const ctx = useContext(Ctx)
-  if (!ctx) return { counts: ZERO, refreshCounts: () => {}, toast: null, dismissToast: () => {} }
+  if (!ctx) return { counts: ZERO, refreshCounts: () => {}, toast: null, dismissToast: () => {}, onlineIds: new Set(), isOnline: () => false }
   return ctx
 }
