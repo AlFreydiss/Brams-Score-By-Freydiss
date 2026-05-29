@@ -4,7 +4,7 @@ import { useAuth } from '../../contexts/AuthContext.jsx'
 import { toggleLike, deletePost, createPost, editPost, toggleBookmark } from '../../lib/feed.js'
 import { btn, avatar, T } from '../social/socialStyles.js'
 
-const TOKEN_RE = /(https?:\/\/[^\s]+|#[\p{L}0-9_]+)/gu
+const TOKEN_RE = /(https?:\/\/[^\s]+|#[\p{L}0-9_]+|@[A-Za-z0-9_.]{2,32})/gu
 function timeAgo(iso) {
   const s = (Date.now() - new Date(iso).getTime()) / 1000
   if (s < 60) return "à l'instant"
@@ -13,11 +13,17 @@ function timeAgo(iso) {
   if (s < 604800) return `${Math.floor(s / 86400)} j`
   return new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
 }
-function RichText({ text }) {
+function RichText({ text, mentions }) {
   if (!text) return null
+  const mmap = {}
+  for (const m of (mentions || [])) if (m?.username) mmap[m.username.toLowerCase()] = m.uid
   return String(text).split(TOKEN_RE).map((p, i) => {
     if (/^https?:\/\//.test(p)) return <a key={i} href={p} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ color: T.gold, wordBreak: 'break-all' }}>{p}</a>
     if (/^#[\p{L}0-9_]+$/u.test(p)) return <Link key={i} to={`/fil/recherche?q=${encodeURIComponent(p)}`} onClick={e => e.stopPropagation()} style={{ color: T.violet, fontWeight: 600, textDecoration: 'none' }}>{p}</Link>
+    if (/^@[A-Za-z0-9_.]{2,32}$/.test(p)) {
+      const uid = mmap[p.slice(1).toLowerCase()]
+      if (uid) return <Link key={i} to={`/u/${uid}`} onClick={e => e.stopPropagation()} style={{ color: T.violet, fontWeight: 600, textDecoration: 'none' }}>{p}</Link>
+    }
     return <span key={i}>{p}</span>
   })
 }
@@ -36,7 +42,7 @@ function Embedded({ p, onClick }) {
         <span style={{ fontSize: 12, color: T.textFaint }}>· {timeAgo(p.created_at)}</span>
       </div>
       {deleted ? <span style={{ fontSize: 14, color: T.textFaint, fontStyle: 'italic' }}>Post supprimé</span> : <>
-        {p.content && <div style={{ fontSize: 14, color: T.text, lineHeight: 1.5, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}><RichText text={p.content} /></div>}
+        {p.content && <div style={{ fontSize: 14, color: T.text, lineHeight: 1.5, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}><RichText text={p.content} mentions={p.mentions} /></div>}
         {p.media_url && <img src={p.media_url} alt="" style={{ maxWidth: '100%', maxHeight: 240, borderRadius: 10, marginTop: 8, border: `1px solid ${T.border}` }} />}
       </>}
     </div>
@@ -132,7 +138,7 @@ export default function PostCard({ post, embedded = false, disableNav = false, o
               </div>
             </div>
           ) : (
-            main.content && <div style={{ fontSize: 15, color: T.text, lineHeight: 1.5, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}><RichText text={main.content} /></div>
+            main.content && <div style={{ fontSize: 15, color: T.text, lineHeight: 1.5, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}><RichText text={main.content} mentions={main.mentions} /></div>
           )}
           {!editing && main.media_url && <img src={main.media_url} alt="" style={{ maxWidth: '100%', maxHeight: 420, borderRadius: 14, marginTop: 10, border: `1px solid ${T.border}` }} />}
           {quoted && <Embedded p={quoted} onClick={(e) => { e.stopPropagation(); navigate(`/fil/${quoted.id}`) }} />}
