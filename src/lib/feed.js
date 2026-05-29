@@ -50,6 +50,20 @@ export async function searchPosts(query, limit = 30) {
   return r?.ok ? (r.posts || []) : []
 }
 
+// Aperçu OpenGraph d'un lien (via /api/og). Renvoie {title,description,image,site,url} ou null.
+const _ogCache = new Map()
+export async function fetchLinkPreview(url) {
+  if (_ogCache.has(url)) return _ogCache.get(url)
+  let result = null
+  try {
+    const r = await fetch(`/api/og?url=${encodeURIComponent(url)}`)
+    const j = await r.json()
+    result = j?.ok ? j : null
+  } catch { result = null }
+  _ogCache.set(url, result)
+  return result
+}
+
 // Autocomplete @mentions : utilisateurs dont le pseudo commence par query.
 export async function searchUsers(query, limit = 6) {
   const r = await rpc('search_users', { p_query: query, p_limit: limit })

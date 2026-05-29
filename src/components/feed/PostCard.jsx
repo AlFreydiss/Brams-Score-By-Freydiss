@@ -1,8 +1,26 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext.jsx'
-import { toggleLike, deletePost, createPost, editPost, toggleBookmark } from '../../lib/feed.js'
+import { toggleLike, deletePost, createPost, editPost, toggleBookmark, fetchLinkPreview } from '../../lib/feed.js'
 import { btn, avatar, T } from '../social/socialStyles.js'
+
+// Aperçu d'un lien (carte OG). Silencieux si pas de métadonnées.
+function LinkPreview({ url }) {
+  const [data, setData] = useState(null)
+  useEffect(() => { let on = true; fetchLinkPreview(url).then(d => { if (on) setData(d) }); return () => { on = false } }, [url])
+  if (!data) return null
+  return (
+    <a href={data.url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
+      style={{ display: 'block', marginTop: 10, border: `1px solid ${T.border}`, borderRadius: 14, overflow: 'hidden', textDecoration: 'none', background: 'rgba(255,255,255,0.02)' }}>
+      {data.image && <img src={data.image} alt="" style={{ width: '100%', maxHeight: 200, objectFit: 'cover', display: 'block' }} />}
+      <div style={{ padding: '10px 12px' }}>
+        <div style={{ fontSize: 10.5, fontWeight: 700, color: T.textFaint, textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 3 }}>{data.site}</div>
+        <div style={{ fontSize: 13.5, fontWeight: 700, color: T.text, lineHeight: 1.35, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{data.title}</div>
+        {data.description && <div style={{ fontSize: 12, color: T.textDim, marginTop: 3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{data.description}</div>}
+      </div>
+    </a>
+  )
+}
 
 const TOKEN_RE = /(https?:\/\/[^\s]+|#[\p{L}0-9_]+|@[A-Za-z0-9_.]{2,32})/gu
 function timeAgo(iso) {
@@ -81,6 +99,8 @@ export default function PostCard({ post, embedded = false, disableNav = false, o
   const mineRow = post.author_id === discordId
   const canEdit = !post.repost_of && mineRow && !post.deleted_at
   const deleted = !!main?.deleted_at
+  const hasMedia = !!(main.media_urls?.length || main.media_url)
+  const firstUrl = (!deleted && main.content) ? (main.content.match(/https?:\/\/[^\s]+/)?.[0] || null) : null
 
   if (embedded) return <Embedded p={post} />
 
@@ -157,6 +177,7 @@ export default function PostCard({ post, embedded = false, disableNav = false, o
             main.content && <div style={{ fontSize: 15, color: T.text, lineHeight: 1.5, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}><RichText text={main.content} mentions={main.mentions} /></div>
           )}
           {!editing && <MediaGallery urls={main.media_urls?.length ? main.media_urls : (main.media_url ? [main.media_url] : [])} />}
+          {!editing && firstUrl && !hasMedia && !quoted && <LinkPreview url={firstUrl} />}
           {quoted && <Embedded p={quoted} onClick={(e) => { e.stopPropagation(); navigate(`/fil/${quoted.id}`) }} />}
 
           {!editing && (

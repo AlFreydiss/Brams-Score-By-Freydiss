@@ -243,11 +243,61 @@ async function r2Presign(req, res) {
   }
 }
 
+// ── Aperçu de lien (OpenGraph) ────────────────────────────────────────────────
+function ogMeta(html, prop) {
+  const re = new RegExp(`<meta[^>]+(?:property|name)=["']${prop}["'][^>]*>`, 'i')
+  const tag = html.match(re)?.[0]
+  return tag ? (tag.match(/content=["']([^"']*)["']/i)?.[1] || null) : null
+}
+function decodeEntities(s) {
+  if (!s) return s
+  return s.replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+          .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&nbsp;/g, ' ').trim()
+}
+function isUnsafeHost(host) {
+  const h = (host || '').toLowerCase()
+  return !h || h === 'localhost' || h.endsWith('.local') || h === '0.0.0.0'
+    || /^127\./.test(h) || /^10\./.test(h) || /^192\.168\./.test(h)
+    || /^169\.254\./.test(h) || /^172\.(1[6-9]|2\d|3[01])\./.test(h) || h === '::1'
+}
+async function ogPreview(req, res) {
+  const raw = String(req.query.url || '')
+  let u
+  try { u = new URL(raw) } catch { return res.status(400).json({ error: 'URL invalide' }) }
+  if (!/^https?:$/.test(u.protocol) || isUnsafeHost(u.hostname)) {
+    return res.status(400).json({ error: 'URL non autorisée' })
+  }
+  try {
+    const ctrl = new AbortController()
+    const t = setTimeout(() => ctrl.abort(), 6000)
+    const r = await fetch(u.toString(), {
+      signal: ctrl.signal, redirect: 'follow',
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; BramsBot/1.0; +https://brams.community)', 'Accept': 'text/html' },
+    })
+    clearTimeout(t)
+    if (!r.ok || !String(r.headers.get('content-type') || '').includes('text/html')) {
+      return res.status(200).json({ ok: false })
+    }
+    const html = (await r.text()).slice(0, 600_000)
+    const title = decodeEntities(ogMeta(html, 'og:title') || ogMeta(html, 'twitter:title') || html.match(/<title[^>]*>([^<]*)<\/title>/i)?.[1] || '')
+    const description = decodeEntities(ogMeta(html, 'og:description') || ogMeta(html, 'twitter:description') || ogMeta(html, 'description') || '')
+    let image = ogMeta(html, 'og:image') || ogMeta(html, 'twitter:image') || null
+    if (image && image.startsWith('/')) { try { image = new URL(image, u.origin).toString() } catch { image = null } }
+    const site = decodeEntities(ogMeta(html, 'og:site_name') || u.hostname.replace(/^www\./, ''))
+    if (!title && !image) return res.status(200).json({ ok: false })
+    res.setHeader('Cache-Control', 'public, s-maxage=86400, stale-while-revalidate=604800')
+    return res.status(200).json({ ok: true, title, description, image, site, url: u.toString() })
+  } catch {
+    return res.status(200).json({ ok: false })
+  }
+}
+
 export default async function handler(req, res) {
   const tool = String(req.query.tool || '')
   if (tool === 'seed-shop-backgrounds') return seedShopBackgrounds(req, res)
   if (tool === 'sync-bot')              return syncBot(req, res)
   if (tool === 'akinator')              return akinator(req, res)
   if (tool === 'r2-presign')            return r2Presign(req, res)
+  if (tool === 'og')                    return ogPreview(req, res)
   return res.status(404).json({ error: 'Unknown bot tool' })
 }

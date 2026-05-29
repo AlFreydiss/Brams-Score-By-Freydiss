@@ -21,6 +21,10 @@
       "destination": "/api/bot-tools?tool=r2-presign"
     },
     {
+      "source": "/api/og",
+      "destination": "/api/bot-tools?tool=og"
+    },
+    {
       "source": "/((?!api/|assets/|blind-test/.*\\.mp4|.*\\..*).*)",
       "destination": "/index.html"
     }
