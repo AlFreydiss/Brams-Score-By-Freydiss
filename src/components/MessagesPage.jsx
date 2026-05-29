@@ -249,12 +249,16 @@ function MessageBubble({ msg, mine, grouped, onReact, onReply, onEdit, onDelete 
       <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, maxWidth: '80%', flexDirection: mine ? 'row-reverse' : 'row' }}>
         <div style={{ position: 'relative' }} onMouseEnter={() => setMenu(true)}>
           <div style={{
-            padding: msg.type === 'gif' || msg.type === 'image' ? 4 : '9px 13px',
+            padding: msg.type === 'gif' || msg.type === 'image' ? 4 : (msg.type === 'voice' ? 6 : '9px 13px'),
             borderRadius: 16,
             borderTopLeftRadius: !mine && grouped ? 6 : 16,
             borderTopRightRadius: mine && grouped ? 6 : 16,
-            background: deleted ? T.surface : (mine ? T.mineBg : T.theirBg),
-            border: `1px solid ${mine ? T.mineBorder : T.theirBorder}`,
+            // Vocaux : pas de fond doré (le lecteur audio est blanc) → neutre pour les
+            // miens, teinte bleue pour ceux de l'autre.
+            background: deleted ? T.surface
+              : msg.type === 'voice' ? (mine ? 'rgba(255,255,255,0.05)' : 'rgba(91,141,239,0.15)')
+              : (mine ? T.mineBg : T.theirBg),
+            border: `1px solid ${deleted ? T.border : msg.type === 'voice' ? (mine ? T.border : 'rgba(91,141,239,0.3)') : (mine ? T.mineBorder : T.theirBorder)}`,
             color: deleted ? T.textFaint : T.text, fontSize: 14, lineHeight: 1.5,
             wordBreak: 'break-word', fontStyle: deleted ? 'italic' : 'normal', overflow: 'hidden',
           }}>
@@ -514,34 +518,37 @@ function ChatView({ conversationId, meta, onBack, isMobile, refreshList }) {
     const text = input.trim()
     if (!text && !attach?.file && !editing) return
     setSending(true); setEmojiOpen(false); setSeenByPeer(false)
-
-    // 1) Pièce jointe (image) → upload R2 puis message
-    if (attach?.file) {
-      setUploadPct(1)
-      const up = await uploadAttachment(attach.file, setUploadPct)
-      if (up.error) { setAttach({ error: up.error }); setUploadPct(0); setSending(false); return }
-      const res = await sendImageMessage(conversationId, up.url, replyTo?.id || null)
-      if (res?.message_id) {
-        setMessages(prev => dedupeById([...prev, { id: res.message_id, sender_id: discordId, type: 'image', media_url: up.url, created_at: new Date().toISOString(), reactions: [], reply_to_id: replyTo?.id || null }]))
-        scrollToBottom(true)
+    try {
+      // 1) Pièce jointe (image) → upload R2 puis message
+      if (attach?.file) {
+        setUploadPct(1)
+        const up = await uploadAttachment(attach.file, setUploadPct)
+        if (up.error) { setAttach({ error: up.error }); setUploadPct(0); return }
+        const res = await sendImageMessage(conversationId, up.url, replyTo?.id || null)
+        if (res?.message_id) {
+          setMessages(prev => dedupeById([...prev, { id: res.message_id, sender_id: discordId, type: 'image', media_url: up.url, created_at: new Date().toISOString(), reactions: [], reply_to_id: replyTo?.id || null }]))
+          scrollToBottom(true)
+        }
+        setAttach(null); setUploadPct(0); setReplyTo(null); refreshList()
       }
-      setAttach(null); setUploadPct(0); setReplyTo(null); refreshList()
-    }
-
-    // 2) Texte (ou édition)
-    if (editing) {
-      const res = await editMessage(editing.id, text)
-      if (res?.ok) setMessages(prev => prev.map(m => m.id === editing.id ? { ...m, content: text, edited_at: new Date().toISOString() } : m))
-      setEditing(null); setInput('')
-    } else if (text) {
-      const res = await sendTextMessage(conversationId, text, replyTo?.id || null)
-      if (res?.message_id) {
-        setMessages(prev => dedupeById([...prev, { id: res.message_id, sender_id: discordId, content: text, type: 'text', created_at: new Date().toISOString(), reactions: [], sender_username: displayName, sender_avatar: avatarUrl, reply_to_id: replyTo?.id || null }]))
-        scrollToBottom(true)
+      // 2) Texte (ou édition)
+      if (editing) {
+        const res = await editMessage(editing.id, text)
+        if (res?.ok) setMessages(prev => prev.map(m => m.id === editing.id ? { ...m, content: text, edited_at: new Date().toISOString() } : m))
+        setEditing(null); setInput('')
+      } else if (text) {
+        const res = await sendTextMessage(conversationId, text, replyTo?.id || null)
+        if (res?.message_id) {
+          setMessages(prev => dedupeById([...prev, { id: res.message_id, sender_id: discordId, content: text, type: 'text', created_at: new Date().toISOString(), reactions: [], sender_username: displayName, sender_avatar: avatarUrl, reply_to_id: replyTo?.id || null }]))
+          scrollToBottom(true)
+        }
+        setReplyTo(null); setInput(''); refreshList()
       }
-      setReplyTo(null); setInput(''); refreshList()
+    } catch (e) {
+      console.error('[messages] send', e)
+    } finally {
+      setSending(false)   // TOUJOURS → plus de blocage "peut plus envoyer" après un échec
     }
-    setSending(false)
   }
 
   async function handleReact(messageId, emoji) {
@@ -624,6 +631,14 @@ function ChatView({ conversationId, meta, onBack, isMobile, refreshList }) {
               : <MessageBubble key={item.id} msg={item.msg} mine={item.msg.sender_id === discordId} grouped={item.grouped} onReact={handleReact} onReply={setReplyTo} onEdit={(m) => { setEditing(m); setInput(m.content || '') }} onDelete={handleDelete} />)}
             {seenByPeer && messages.length > 0 && messages[messages.length - 1].sender_id === discordId && (
               <div style={{ textAlign: 'right', fontSize: 10, color: T.textFaint, padding: '3px 6px 0' }}>Vu ✓✓</div>
+            )}
+            {typingName && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10 }}>
+                <div style={{ padding: '11px 15px', borderRadius: 16, background: T.theirBg, border: `1px solid ${T.theirBorder}`, display: 'flex', gap: 4, alignItems: 'center' }}>
+                  {[0, 1, 2].map(i => <span key={i} style={{ width: 6, height: 6, borderRadius: '50%', background: T.textDim, animation: `typingDot 1.1s ${i * 0.16}s infinite` }} />)}
+                </div>
+                <span style={{ fontSize: 11, color: T.textFaint }}>{typingName} écrit…</span>
+              </div>
             )}
             <div ref={bottomRef} />
           </>}
@@ -761,7 +776,7 @@ export default function MessagesPage() {
   return (
     <div style={{ minHeight: '100vh', background: T.bg }}>
       <Navbar />
-      <style>{`@keyframes pulse { 0%,100%{opacity:.4} 50%{opacity:.8} }`}</style>
+      <style>{`@keyframes pulse { 0%,100%{opacity:.4} 50%{opacity:.8} } @keyframes typingDot { 0%,60%,100%{transform:translateY(0);opacity:.4} 30%{transform:translateY(-4px);opacity:1} }`}</style>
       <div style={{ maxWidth: 1180, margin: '0 auto', padding: isMobile ? '64px 0 0' : '76px 16px 20px', height: isMobile ? '100vh' : 'calc(100vh - 16px)' }}>
         <div style={{ display: 'flex', height: '100%', borderRadius: isMobile ? 0 : 18, overflow: 'hidden', border: isMobile ? 'none' : `1px solid ${T.border}`, background: 'rgba(255,255,255,0.012)' }}>
           {showSidebar && (
