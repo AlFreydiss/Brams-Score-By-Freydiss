@@ -1,8 +1,19 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext.jsx'
-import { toggleLike, deletePost, createPost, editPost, toggleBookmark, fetchLinkPreview } from '../../lib/feed.js'
+import { toggleLike, deletePost, createPost, editPost, toggleBookmark, fetchLinkPreview, togglePostReaction } from '../../lib/feed.js'
 import { btn, avatar, T } from '../social/socialStyles.js'
+
+const QUICK_REACTIONS = ['❤️', '🔥', '😂', '😮', '😢', '👏', '💯', '🙌']
+function applyReaction(reactions, emoji) {
+  const list = (reactions || []).map(r => ({ ...r }))
+  const i = list.findIndex(r => r.emoji === emoji)
+  if (i >= 0) {
+    if (list[i].mine) { list[i].count -= 1; list[i].mine = false; if (list[i].count <= 0) list.splice(i, 1) }
+    else { list[i].count += 1; list[i].mine = true }
+  } else list.push({ emoji, count: 1, mine: true })
+  return list
+}
 
 // Aperçu d'un lien (carte OG). Silencieux si pas de métadonnées.
 function LinkPreview({ url }) {
@@ -94,6 +105,7 @@ export default function PostCard({ post, embedded = false, disableNav = false, o
   const quoted = (isRepost && post.content) ? post.original : null   // original cité (quote-repost)
   const [busy, setBusy] = useState(false)
   const [repostMenu, setRepostMenu] = useState(false)
+  const [reactPicker, setReactPicker] = useState(false)
   const [editing, setEditing] = useState(false)
   const [editText, setEditText] = useState(post.content || '')
   const mineRow = post.author_id === discordId
@@ -111,6 +123,14 @@ export default function PostCard({ post, embedded = false, disableNav = false, o
     onChange?.(main.id, { liked, like_count: (main.like_count || 0) + (liked ? 1 : -1) })
     const res = await toggleLike(main.id)
     if (res?.ok === false) onChange?.(main.id, { liked: main.liked, like_count: main.like_count })
+  }
+  async function react(emoji, e) {
+    e?.stopPropagation()
+    setReactPicker(false)
+    if (!discordId) { navigate('/messages'); return }
+    onChange?.(main.id, { reactions: applyReaction(main.reactions, emoji) })
+    const res = await togglePostReaction(main.id, emoji)
+    if (res?.ok === false) onChange?.(main.id, { reactions: main.reactions })
   }
   async function bookmark(e) {
     e.stopPropagation()
@@ -180,10 +200,27 @@ export default function PostCard({ post, embedded = false, disableNav = false, o
           {!editing && firstUrl && !hasMedia && !quoted && <LinkPreview url={firstUrl} />}
           {quoted && <Embedded p={quoted} onClick={(e) => { e.stopPropagation(); navigate(`/fil/${quoted.id}`) }} />}
 
+          {!editing && main.reactions?.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 10 }} onClick={e => e.stopPropagation()}>
+              {main.reactions.map(r => (
+                <button key={r.emoji} onClick={(e) => react(r.emoji, e)} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12.5, padding: '3px 9px', borderRadius: 999, cursor: 'pointer', fontFamily: 'inherit', background: r.mine ? 'rgba(212,160,23,0.14)' : T.surface, border: `1px solid ${r.mine ? T.borderHi : T.border}`, color: r.mine ? T.gold : T.textDim }}>{r.emoji} {r.count}</button>
+              ))}
+            </div>
+          )}
+
           {!editing && (
             <div style={{ display: 'flex', gap: 18, marginTop: 10, position: 'relative' }}>
               <button onClick={(e) => { e.stopPropagation(); navigate(`/fil/${main.id}`) }} style={actionStyle}
                 onMouseEnter={e => { e.currentTarget.style.color = T.blue }} onMouseLeave={e => { e.currentTarget.style.color = T.textFaint }}>💬 {main.reply_count || 0}</button>
+              <div style={{ position: 'relative' }} onClick={e => e.stopPropagation()}>
+                <button onClick={() => setReactPicker(o => !o)} title="Réagir" style={actionStyle}
+                  onMouseEnter={e => { e.currentTarget.style.color = T.gold }} onMouseLeave={e => { e.currentTarget.style.color = T.textFaint }}>😀</button>
+                {reactPicker && (
+                  <div style={{ position: 'absolute', bottom: 32, left: 0, zIndex: 10, display: 'flex', gap: 2, background: '#16171d', border: `1px solid ${T.border}`, borderRadius: 12, padding: 5, boxShadow: '0 10px 30px rgba(0,0,0,.5)' }}>
+                    {QUICK_REACTIONS.map(em => <button key={em} onClick={(e) => react(em, e)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 19, padding: '2px 5px', borderRadius: 7 }}>{em}</button>)}
+                  </div>
+                )}
+              </div>
               <div style={{ position: 'relative' }} onClick={e => e.stopPropagation()}>
                 <button onClick={() => setRepostMenu(o => !o)} disabled={busy} style={actionStyle}
                   onMouseEnter={e => { e.currentTarget.style.color = T.green }} onMouseLeave={e => { e.currentTarget.style.color = T.textFaint }}>🔁 {main.repost_count || 0}</button>

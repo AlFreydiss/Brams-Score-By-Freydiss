@@ -24,6 +24,7 @@ export const deletePost = (postId)  => rpc('delete_post', { p_post: postId })
 export const editPost   = (postId, content) => rpc('edit_post', { p_post: postId, p_content: content })
 export const toggleLike = (postId)  => rpc('toggle_like', { p_post: postId })
 export const toggleBookmark = (postId) => rpc('toggle_bookmark', { p_post: postId })
+export const togglePostReaction = (postId, emoji) => rpc('toggle_post_reaction', { p_post: postId, p_emoji: emoji })
 
 export async function getMyBookmarks(before = null, limit = 20) {
   const r = await rpc('get_my_bookmarks', { p_before: before, p_limit: limit })
