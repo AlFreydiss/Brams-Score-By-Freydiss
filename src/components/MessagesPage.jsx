@@ -9,8 +9,10 @@ import {
   editMessage, deleteMessage, toggleReaction, subscribeToConversation,
   listFriends, listFriendRequests, respondFriendRequest, cancelFriendRequest,
   getOrCreateDm, blockUser, uploadAttachment, sendImageMessage,
+  sendGifMessage, sendVoiceMessage,
 } from '../lib/social.js'
 import { btn, avatar, T } from './social/socialStyles.js'
+import GifPicker from './social/GifPicker.jsx'
 
 const QUICK_EMOJIS = ['👍', '❤️', '😂', '🔥', '😮', '😢']
 const EMOJI_SET = ['😀','😂','🤣','😊','😍','😎','🤔','😏','😅','😭','😱','🥺','😤','😡','🥶','🤯','🙄','😴','🤤','🤑','🤩','🥳','😈','👀','💀','🔥','✨','💯','🎉','❤️','🧡','💛','💚','💙','💜','🖤','👍','👎','👏','🙏','🤝','💪','🫶','🤙','✌️','🤞','🫡','👑','⚔️','🏴‍☠️','🍿','⚓','🌊','💰','🎵','😼','👋']
@@ -308,13 +310,19 @@ function ChatView({ conversationId, meta, onBack, isMobile, refreshList }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [showScrollBtn, setShowScrollBtn] = useState(false)
   const [emojiOpen, setEmojiOpen] = useState(false)
+  const [gifOpen, setGifOpen]   = useState(false)
   const [attach, setAttach]     = useState(null)   // { file, preview, error }
   const [uploadPct, setUploadPct] = useState(0)
   const [dragOver, setDragOver] = useState(false)
+  const [recording, setRecording] = useState(false)
+  const [recSec, setRecSec]     = useState(0)
   const scrollRef = useRef(null)
   const bottomRef = useRef(null)
   const reactionTimer = useRef(null)
   const fileInputRef = useRef(null)
+  const recRef = useRef(null)       // MediaRecorder
+  const recChunks = useRef([])
+  const recTimer = useRef(null)
 
   // ── Pièces jointes ──────────────────────────────────────────────────────────
   function acceptFile(file) {
@@ -332,6 +340,59 @@ function ChatView({ conversationId, meta, onBack, isMobile, refreshList }) {
     e.preventDefault(); setDragOver(false)
     const f = e.dataTransfer?.files?.[0]; if (f) acceptFile(f)
   }
+
+  // ── GIF ───────────────────────────────────────────────────────────────────
+  async function handleSendGif(url) {
+    setGifOpen(false)
+    const res = await sendGifMessage(conversationId, url)
+    if (res?.message_id) {
+      setMessages(prev => dedupeById([...prev, { id: res.message_id, sender_id: discordId, type: 'gif', gif_url: url, created_at: new Date().toISOString(), reactions: [] }]))
+      scrollToBottom(true)
+    }
+    refreshList()
+  }
+
+  // ── Vocaux ──────────────────────────────────────────────────────────────────
+  async function startRecording() {
+    if (recording) return
+    if (!navigator.mediaDevices?.getUserMedia) { alert('Micro non disponible sur ce navigateur'); return }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const mr = new MediaRecorder(stream, { mimeType: MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : '' })
+      recChunks.current = []
+      mr.ondataavailable = e => { if (e.data.size) recChunks.current.push(e.data) }
+      mr.onstop = () => stream.getTracks().forEach(t => t.stop())
+      recRef.current = mr; mr.start()
+      setRecording(true); setRecSec(0)
+      recTimer.current = setInterval(() => setRecSec(s => { if (s >= 120) { stopRecording(true) } return s + 1 }), 1000)
+    } catch { alert('Permission micro refusée') }
+  }
+  function stopRecording(send) {
+    clearInterval(recTimer.current)
+    const mr = recRef.current
+    if (!mr) { setRecording(false); return }
+    mr.onstop = async () => {
+      mr.stream?.getTracks?.().forEach(t => t.stop())
+      setRecording(false)
+      if (!send) return
+      const blob = new Blob(recChunks.current, { type: 'audio/webm' })
+      if (blob.size < 800) return
+      const dur = recSec
+      const file = new File([blob], `vocal-${Date.now()}.webm`, { type: 'audio/webm' })
+      setUploadPct(1)
+      const up = await uploadAttachment(file, setUploadPct)
+      setUploadPct(0)
+      if (up.error) { alert(up.error); return }
+      const res = await sendVoiceMessage(conversationId, up.url, dur)
+      if (res?.message_id) {
+        setMessages(prev => dedupeById([...prev, { id: res.message_id, sender_id: discordId, type: 'voice', media_url: up.url, voice_duration: dur, created_at: new Date().toISOString(), reactions: [] }]))
+        scrollToBottom(true)
+      }
+      refreshList()
+    }
+    try { mr.stop() } catch { setRecording(false) }
+  }
+  useEffect(() => () => { clearInterval(recTimer.current); try { recRef.current?.stop() } catch {} }, [])
 
   const scrollToBottom = useCallback((smooth = false) => {
     requestAnimationFrame(() => bottomRef.current?.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto' }))
@@ -560,22 +621,37 @@ function ChatView({ conversationId, meta, onBack, isMobile, refreshList }) {
         </div>
       )}
 
+      {/* GIF picker */}
+      {gifOpen && <GifPicker onSelect={handleSendGif} />}
+
       {/* Composer */}
       <div style={{ display: 'flex', gap: 6, padding: '10px 14px', borderTop: `1px solid ${T.border}`, flexShrink: 0, alignItems: 'flex-end', background: T.panel }}>
-        <input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={onPickFile} style={{ display: 'none' }} />
-        <button onClick={() => fileInputRef.current?.click()} title="Joindre une image" style={composerIcon}>📎</button>
-        <button onClick={() => setEmojiOpen(o => !o)} title="Emoji" style={{ ...composerIcon, color: emojiOpen ? T.gold : T.textDim }}>😊</button>
-        <button title="GIF — Phase 3" disabled style={{ ...composerIcon, opacity: 0.4, cursor: 'not-allowed', fontSize: 11, fontWeight: 800 }}>GIF</button>
-        <button title="Vocal — Phase 3" disabled style={{ ...composerIcon, opacity: 0.4, cursor: 'not-allowed' }}>🎤</button>
-        <textarea
-          value={input} onChange={e => setInput(e.target.value)} onPaste={onPaste}
-          onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() } }}
-          placeholder="Écris un message…" rows={1}
-          style={{ flex: 1, resize: 'none', maxHeight: 140, padding: '11px 15px', borderRadius: 14, background: T.surface, border: `1px solid ${T.border}`, color: T.text, fontSize: 14, fontFamily: 'inherit', outline: 'none', lineHeight: 1.4, boxSizing: 'border-box' }}
-        />
-        <button onClick={handleSend} disabled={sending || (!input.trim() && !attach?.file && !editing)} style={{ ...btn('gold'), padding: '11px 16px', height: 44, opacity: (sending || (!input.trim() && !attach?.file && !editing)) ? 0.5 : 1 }}>
-          {editing ? '✓' : '➤'}
-        </button>
+        {recording ? (
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 12, padding: '8px 12px', borderRadius: 14, background: T.surface, border: `1px solid ${T.border}` }}>
+            <span style={{ width: 10, height: 10, borderRadius: '50%', background: T.red, animation: 'pulse 1s infinite', flexShrink: 0 }} />
+            <span style={{ fontSize: 14, fontWeight: 700, color: T.text, fontVariantNumeric: 'tabular-nums' }}>{String(Math.floor(recSec / 60)).padStart(2, '0')}:{String(recSec % 60).padStart(2, '0')}</span>
+            <span style={{ flex: 1, fontSize: 12, color: T.textFaint }}>Enregistrement… (max 2 min)</span>
+            <button onClick={() => stopRecording(false)} style={{ ...btn('ghost'), padding: '8px 12px', fontSize: 12 }}>Annuler</button>
+            <button onClick={() => stopRecording(true)} style={{ ...btn('gold'), padding: '8px 14px', fontSize: 12 }}>Envoyer ➤</button>
+          </div>
+        ) : (
+          <>
+            <input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={onPickFile} style={{ display: 'none' }} />
+            <button onClick={() => fileInputRef.current?.click()} title="Joindre une image" style={composerIcon}>📎</button>
+            <button onClick={() => { setEmojiOpen(o => !o); setGifOpen(false) }} title="Emoji" style={{ ...composerIcon, color: emojiOpen ? T.gold : T.textDim }}>😊</button>
+            <button onClick={() => { setGifOpen(o => !o); setEmojiOpen(false) }} title="GIF" style={{ ...composerIcon, color: gifOpen ? T.gold : T.textDim, fontSize: 11, fontWeight: 800 }}>GIF</button>
+            <button onClick={startRecording} title="Message vocal" style={composerIcon}>🎤</button>
+            <textarea
+              value={input} onChange={e => setInput(e.target.value)} onPaste={onPaste}
+              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() } }}
+              placeholder="Écris un message…" rows={1}
+              style={{ flex: 1, resize: 'none', maxHeight: 140, padding: '11px 15px', borderRadius: 14, background: T.surface, border: `1px solid ${T.border}`, color: T.text, fontSize: 14, fontFamily: 'inherit', outline: 'none', lineHeight: 1.4, boxSizing: 'border-box' }}
+            />
+            <button onClick={handleSend} disabled={sending || (!input.trim() && !attach?.file && !editing)} style={{ ...btn('gold'), padding: '11px 16px', height: 44, opacity: (sending || (!input.trim() && !attach?.file && !editing)) ? 0.5 : 1 }}>
+              {editing ? '✓' : '➤'}
+            </button>
+          </>
+        )}
       </div>
     </div>
   )
