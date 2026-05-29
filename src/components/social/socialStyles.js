@@ -15,6 +15,15 @@ export const T = {
   green:     '#34d399',
   red:       '#e0524a',
   blue:      '#5b8def',
+  violet:    '#9b6cff',
+  violetSoft:'rgba(155,108,255,0.14)',
+  online:    '#3fb950',
+  // Bulles de message
+  mineBg:    'linear-gradient(135deg, rgba(212,160,23,0.20), rgba(191,164,106,0.14))',
+  mineBorder:'rgba(212,160,23,0.26)',
+  theirBg:   'rgba(255,255,255,0.045)',
+  theirBorder:'rgba(255,255,255,0.07)',
+  panel:     'rgba(15,16,21,0.72)',
   radius:    12,
 }
 
