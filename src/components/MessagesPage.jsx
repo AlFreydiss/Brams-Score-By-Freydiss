@@ -13,6 +13,7 @@ import {
 } from '../lib/social.js'
 import { btn, avatar, T } from './social/socialStyles.js'
 import GifPicker from './social/GifPicker.jsx'
+import CallModal from './social/CallModal.jsx'
 
 const QUICK_EMOJIS = ['👍', '❤️', '😂', '🔥', '😮', '😢']
 const EMOJI_SET = ['😀','😂','🤣','😊','😍','😎','🤔','😏','😅','😭','😱','🥺','😤','😡','🥶','🤯','🙄','😴','🤤','🤑','🤩','🥳','😈','👀','💀','🔥','✨','💯','🎉','❤️','🧡','💛','💚','💙','💜','🖤','👍','👎','👏','🙏','🤝','💪','🫶','🤙','✌️','🤞','🫡','👑','⚔️','🏴‍☠️','🍿','⚓','🌊','💰','🎵','😼','👋']
@@ -316,6 +317,7 @@ function ChatView({ conversationId, meta, onBack, isMobile, refreshList }) {
   const [dragOver, setDragOver] = useState(false)
   const [recording, setRecording] = useState(false)
   const [recSec, setRecSec]     = useState(0)
+  const [call, setCall]         = useState(null)   // { type: 'audio'|'video' }
   const scrollRef = useRef(null)
   const bottomRef = useRef(null)
   const reactionTimer = useRef(null)
@@ -339,6 +341,25 @@ function ChatView({ conversationId, meta, onBack, isMobile, refreshList }) {
   function onDrop(e) {
     e.preventDefault(); setDragOver(false)
     const f = e.dataTransfer?.files?.[0]; if (f) acceptFile(f)
+  }
+
+  // ── Capture d'écran ──────────────────────────────────────────────────────────
+  async function captureScreen() {
+    if (!navigator.mediaDevices?.getDisplayMedia) { setAttach({ error: 'Capture non disponible sur ce navigateur' }); return }
+    try {
+      const stream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 1 }, audio: false })
+      const video = document.createElement('video')
+      video.srcObject = stream; video.muted = true
+      await video.play()
+      await new Promise(r => setTimeout(r, 250))
+      const canvas = document.createElement('canvas')
+      canvas.width = video.videoWidth || 1280; canvas.height = video.videoHeight || 720
+      canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height)
+      stream.getTracks().forEach(t => t.stop())
+      canvas.toBlob(blob => {
+        if (blob) acceptFile(new File([blob], `capture-${Date.now()}.png`, { type: 'image/png' }))
+      }, 'image/png', 0.92)
+    } catch { /* annulé par l'utilisateur — silencieux */ }
   }
 
   // ── GIF ───────────────────────────────────────────────────────────────────
@@ -536,8 +557,8 @@ function ChatView({ conversationId, meta, onBack, isMobile, refreshList }) {
           <span style={{ fontSize: 11, color: T.textFaint }}>Hors ligne</span>
         </div>
         <div style={{ display: 'flex', gap: 6, position: 'relative' }}>
-          <HeaderAction label="📞" disabled />
-          <HeaderAction label="🎥" disabled />
+          <HeaderAction label="📞" onClick={() => setCall({ type: 'audio' })} />
+          <HeaderAction label="🎥" onClick={() => setCall({ type: 'video' })} />
           {meta?.other_id && <HeaderAction label="👤" onClick={() => navigate(`/u/${meta.other_id}`)} />}
           <HeaderAction label="⋯" onClick={() => setMenuOpen(o => !o)} />
           {menuOpen && (
@@ -640,6 +661,7 @@ function ChatView({ conversationId, meta, onBack, isMobile, refreshList }) {
             <button onClick={() => fileInputRef.current?.click()} title="Joindre une image" style={composerIcon}>📎</button>
             <button onClick={() => { setEmojiOpen(o => !o); setGifOpen(false) }} title="Emoji" style={{ ...composerIcon, color: emojiOpen ? T.gold : T.textDim }}>😊</button>
             <button onClick={() => { setGifOpen(o => !o); setEmojiOpen(false) }} title="GIF" style={{ ...composerIcon, color: gifOpen ? T.gold : T.textDim, fontSize: 11, fontWeight: 800 }}>GIF</button>
+            <button onClick={captureScreen} title="Capture d'écran" style={composerIcon}>🖥️</button>
             <button onClick={startRecording} title="Message vocal" style={composerIcon}>🎤</button>
             <textarea
               value={input} onChange={e => setInput(e.target.value)} onPaste={onPaste}
@@ -653,6 +675,8 @@ function ChatView({ conversationId, meta, onBack, isMobile, refreshList }) {
           </>
         )}
       </div>
+
+      <CallModal open={!!call} type={call?.type} peer={{ name: meta?.other_username, avatar: meta?.other_avatar }} onClose={() => setCall(null)} />
     </div>
   )
 }
