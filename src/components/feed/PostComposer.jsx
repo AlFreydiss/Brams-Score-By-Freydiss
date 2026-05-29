@@ -109,7 +109,7 @@ export default function PostComposer({ replyTo = null, quote = null, onPosted, p
         <div style={{ position: 'relative' }}>
           <textarea
             ref={taRef} value={text} onChange={onChangeText} onKeyDown={onKeyDown} autoFocus={autoFocus}
-            placeholder={placeholder || (quote ? 'Ajoute un commentaire…' : replyTo ? 'Poste ta réponse…' : 'Quoi de neuf, nakama ?')}
+            placeholder={placeholder || (quote ? 'Ajoute un commentaire…' : replyTo ? 'Poste ta réponse…' : 'Quoi de neuf ?')}
             rows={replyTo || quote ? 2 : 3}
             style={{ width: '100%', resize: 'none', background: 'transparent', border: 'none', outline: 'none', color: T.text, fontSize: 16, fontFamily: 'inherit', lineHeight: 1.45, boxSizing: 'border-box' }}
           />
