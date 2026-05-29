@@ -44,6 +44,22 @@ const DEFAULT_SUBTITLE_STYLE = {
   bottom: 110,
 }
 
+// Style des sous-titres = préférence d'APPAREIL, stockée sous UNE clé globale
+// (indépendante du compte et de la page) → on règle une fois, c'est identique
+// sur tous les players (One Piece, Violet Evergarden, etc.).
+const SUB_STYLE_KEY = 'brams_subtitle_style_v1'
+function loadSubStyle() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(SUB_STYLE_KEY) || 'null') || {}
+    return {
+      ...DEFAULT_SUBTITLE_STYLE,
+      ...saved,
+      background: (saved.background != null && saved.background >= 0.3) ? saved.background : DEFAULT_SUBTITLE_STYLE.background,
+    }
+  } catch { return { ...DEFAULT_SUBTITLE_STYLE } }
+}
+function saveSubStyle(style) { try { localStorage.setItem(SUB_STYLE_KEY, JSON.stringify(style)) } catch {} }
+
 function videoPrefsKey(userId) {
   return userId ? `${VIDEO_PREFS_KEY}_${userId}` : VIDEO_PREFS_KEY
 }
@@ -59,15 +75,7 @@ function loadVideoPreferences(userId) {
       audioLang: prefs.audioLang || 'ja',
       subtitlesOff: Boolean(prefs.subtitlesOff),
       subtitleLang: prefs.subtitleLang || 'fr',
-      subtitleStyle: (() => {
-      const saved = prefs.subtitleStyle || {}
-      return {
-        ...DEFAULT_SUBTITLE_STYLE,
-        ...saved,
-        // ignorer un background cassé (0 ou trop faible) issu d'un ancien localStorage
-        background: (saved.background != null && saved.background >= 0.3) ? saved.background : DEFAULT_SUBTITLE_STYLE.background,
-      }
-    })(),
+      subtitleStyle: loadSubStyle(), // global → identique partout
     }
   } catch {
     return { audioLang: 'ja', subtitlesOff: false, subtitleLang: 'fr', subtitleStyle: DEFAULT_SUBTITLE_STYLE }
@@ -335,7 +343,8 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   const updateSubtitleStyle = useCallback((patch) => {
     setSubtitleStyle(prev => {
       const nextStyle = { ...prev, ...patch }
-      updatePreferences({ subtitleStyle: nextStyle })
+      saveSubStyle(nextStyle)              // clé globale → appliqué partout
+      updatePreferences({ subtitleStyle: nextStyle }) // compat ancienne pref par-user
       return nextStyle
     })
   }, [updatePreferences])
