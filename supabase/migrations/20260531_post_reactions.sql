@@ -5,6 +5,11 @@
 --  (cette définition de _enrich_post conserve TOUS les champs précédents).
 -- ═══════════════════════════════════════════════════════════════════════════
 
+-- Garde-fous : colonnes référencées par _enrich_post (au cas où feed_multi_image /
+-- feed_mentions n'auraient pas encore été appliqués). Idempotent.
+ALTER TABLE posts ADD COLUMN IF NOT EXISTS media_urls jsonb;
+ALTER TABLE posts ADD COLUMN IF NOT EXISTS mentions   jsonb NOT NULL DEFAULT '[]'::jsonb;
+
 CREATE TABLE IF NOT EXISTS post_reactions (
   id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   post_id    uuid NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
