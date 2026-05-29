@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, useRef } from 'react'
+import confetti from 'canvas-confetti'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { STAFF_DISCORD_IDS } from '../lib/roles.js'
 import {
@@ -380,6 +381,73 @@ function ShopCard({ item, balance, onClick, index }) {
         }}>
           {item.stock === 0 ? 'Épuisé' : canAfford ? 'Acquérir' : `−${fmtK(Number(item.price) - balance)}`}
         </span>
+      </div>
+    </div>
+  )
+}
+
+// ─── Révélation d'achat épique (style ouverture de pack) ──────────────────────
+
+function celebrate(color) {
+  if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
+  const colors = [color, '#ffd36a', '#ffffff']
+  // Gros burst central
+  confetti({ particleCount: 140, spread: 100, startVelocity: 48, origin: { y: 0.42 }, colors, scalar: 1.1 })
+  // Canons latéraux pendant ~900ms
+  const end = Date.now() + 900
+  ;(function frame() {
+    confetti({ particleCount: 5, angle: 60, spread: 65, origin: { x: 0, y: 0.6 }, colors })
+    confetti({ particleCount: 5, angle: 120, spread: 65, origin: { x: 1, y: 0.6 }, colors })
+    if (Date.now() < end) requestAnimationFrame(frame)
+  })()
+}
+
+function PurchaseReveal({ item, onClose }) {
+  if (!item) return null
+  const r = RARITY[item.rarity] || RARITY.Legendaire
+  const icon = CAT_ICONS[item.category] || '🏴‍☠️'
+
+  useEffect(() => {
+    celebrate(r.color)
+    const fn = e => { if (e.key === 'Escape' || e.key === 'Enter') onClose() }
+    window.addEventListener('keydown', fn)
+    return () => window.removeEventListener('keydown', fn)
+  }, [])
+
+  return (
+    <div onClick={onClose} style={{ position:'fixed', inset:0, zIndex:9500, display:'flex', alignItems:'center', justifyContent:'center', padding:24, background:'radial-gradient(ellipse 70% 60% at 50% 45%, rgba(0,0,0,0.82), rgba(0,0,0,0.94))', backdropFilter:'blur(14px)' }}>
+      <style>{`
+        @keyframes revPop { 0%{ opacity:0; transform:scale(.6) rotate(-6deg) } 60%{ opacity:1; transform:scale(1.06) rotate(1.5deg) } 100%{ transform:scale(1) rotate(0) } }
+        @keyframes revRays { from{ transform:translate(-50%,-50%) rotate(0) } to{ transform:translate(-50%,-50%) rotate(360deg) } }
+        @keyframes revGlow { 0%,100%{ opacity:.55; transform:translate(-50%,-50%) scale(1) } 50%{ opacity:.9; transform:translate(-50%,-50%) scale(1.12) } }
+        @keyframes revEyebrow { 0%{ opacity:0; transform:translateY(8px) } 100%{ opacity:1; transform:none } }
+        @media (prefers-reduced-motion: reduce){ .rev-rays{ animation:none !important } }
+      `}</style>
+
+      {/* Rayons rotatifs aux couleurs de la rareté */}
+      <div className="rev-rays" style={{ position:'absolute', left:'50%', top:'45%', width:900, height:900, pointerEvents:'none', transform:'translate(-50%,-50%)', animation:'revRays 18s linear infinite', background:`conic-gradient(from 0deg, transparent 0deg, ${r.color}22 12deg, transparent 24deg, transparent 36deg, ${r.color}18 48deg, transparent 60deg)`, maskImage:'radial-gradient(circle, #000 30%, transparent 70%)', WebkitMaskImage:'radial-gradient(circle, #000 30%, transparent 70%)' }} />
+      {/* Halo central pulsant */}
+      <div style={{ position:'absolute', left:'50%', top:'45%', width:420, height:420, pointerEvents:'none', borderRadius:'50%', background:`radial-gradient(circle, ${r.color}40 0%, ${r.color}12 45%, transparent 70%)`, animation:'revGlow 3s ease-in-out infinite' }} />
+
+      <div onClick={e => e.stopPropagation()} style={{ position:'relative', width:'100%', maxWidth:380, textAlign:'center', animation:'revPop .55s cubic-bezier(.34,1.56,.64,1) both' }}>
+        <div style={{ fontSize:12, fontWeight:900, letterSpacing:'.32em', textTransform:'uppercase', color:r.color, marginBottom:18, animation:'revEyebrow .4s .3s both' }}>✦ Débloqué ✦</div>
+
+        <div style={{
+          position:'relative', borderRadius:24, padding:'40px 28px 30px',
+          background:`linear-gradient(160deg, rgba(16,18,26,0.96), rgba(8,10,15,1))`,
+          border:`1px solid ${r.color}66`, borderTop:`2px solid ${r.color}`,
+          boxShadow:`0 30px 90px rgba(0,0,0,0.7), 0 0 70px ${r.color}33, inset 0 1px 0 rgba(255,255,255,.06)`,
+        }}>
+          <div style={{ marginBottom:16 }}><RarityBadge rarity={item.rarity} size="lg" /></div>
+          <div style={{ fontSize:80, lineHeight:1, marginBottom:18, filter:`drop-shadow(0 0 26px ${r.color})` }}>{icon}</div>
+          <div style={{ fontSize:'clamp(22px,5vw,30px)', fontWeight:900, color:'#fff', lineHeight:1.15, marginBottom:8 }}>{item.name}</div>
+          <div style={{ fontSize:13, color:'rgba(255,255,255,0.55)', lineHeight:1.6, marginBottom:6 }}>{item.description}</div>
+          <div style={{ fontSize:12, fontWeight:700, color:r.color, marginTop:14 }}>✓ Ajouté à ton profil</div>
+        </div>
+
+        <button onClick={onClose} style={{ marginTop:22, padding:'13px 36px', borderRadius:12, background:`linear-gradient(135deg, ${r.color}, ${r.color}cc)`, border:'none', color:'#0b0c0e', fontSize:14, fontWeight:800, cursor:'pointer', letterSpacing:'.03em', boxShadow:`0 10px 30px ${r.color}44` }}>
+          Continuer ⚔️
+        </button>
       </div>
     </div>
   )
@@ -862,6 +930,7 @@ export default function BerryShop() {
   const [showAffordable, setShowAffordable] = useState(false)
   const [showLimited, setShowLimited] = useState(false)
   const [selectedItem, setSelectedItem] = useState(null)
+  const [revealItem, setRevealItem] = useState(null)
   const [busy, setBusy]     = useState(false)
   const [message, setMessage] = useState(null)
   const earnRef = useRef(null)
@@ -919,10 +988,11 @@ export default function BerryShop() {
       setState(c => ({ ...c, balance:Number(data.balance ?? c.balance) }))
       setBusy(false); return
     }
-    setMessage({ type:'success', text:'✓ Achat validé. Récompense ajoutée à ton profil.' })
     setState(c => ({ ...c, balance:Number(data?.balance ?? c.balance - item.price) }))
     fetchBerryShopState(discordId).then(setState)
     setBusy(false)
+    // Révélation épique au lieu d'un simple message
+    setSelectedItem(null); setMessage(null); setRevealItem(item)
   }
 
   if (!isAuthenticated) {
@@ -1274,6 +1344,7 @@ export default function BerryShop() {
           onConfirm={confirmPurchase}
         />
       )}
+      <PurchaseReveal item={revealItem} onClose={() => setRevealItem(null)} />
       </div>
     </div>
   )
