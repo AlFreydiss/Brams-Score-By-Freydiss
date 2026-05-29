@@ -9,7 +9,7 @@ import {
   editMessage, deleteMessage, toggleReaction, subscribeToConversation,
   listFriends, listFriendRequests, respondFriendRequest, cancelFriendRequest,
   getOrCreateDm, blockUser, uploadAttachment, sendImageMessage,
-  sendGifMessage, sendVoiceMessage,
+  sendGifMessage, sendVoiceMessage, joinTyping,
 } from '../lib/social.js'
 import { btn, avatar, T } from './social/socialStyles.js'
 import GifPicker from './social/GifPicker.jsx'
@@ -318,6 +318,7 @@ function ChatView({ conversationId, meta, onBack, isMobile, refreshList }) {
   const [recording, setRecording] = useState(false)
   const [recSec, setRecSec]     = useState(0)
   const [call, setCall]         = useState(null)   // { type: 'audio'|'video' }
+  const [typingName, setTypingName] = useState(null)
   const scrollRef = useRef(null)
   const bottomRef = useRef(null)
   const reactionTimer = useRef(null)
@@ -325,6 +326,27 @@ function ChatView({ conversationId, meta, onBack, isMobile, refreshList }) {
   const recRef = useRef(null)       // MediaRecorder
   const recChunks = useRef([])
   const recTimer = useRef(null)
+  const typingRef = useRef(null)    // canal typing
+  const typingClear = useRef(null)
+  const lastTypingSent = useRef(0)
+
+  // Indicateur "écrit…" : rejoint le canal broadcast de la conversation.
+  useEffect(() => {
+    const ch = joinTyping(conversationId, (p) => {
+      setTypingName(p?.name || 'Quelqu\'un')
+      clearTimeout(typingClear.current)
+      typingClear.current = setTimeout(() => setTypingName(null), 3000)
+    })
+    typingRef.current = ch
+    return () => { ch.unsubscribe(); clearTimeout(typingClear.current); setTypingName(null) }
+  }, [conversationId])
+
+  function notifyTyping() {
+    const now = Date.now()
+    if (now - lastTypingSent.current < 1800) return
+    lastTypingSent.current = now
+    typingRef.current?.send(discordId, displayName)
+  }
 
   // ── Pièces jointes ──────────────────────────────────────────────────────────
   function acceptFile(file) {
@@ -554,7 +576,7 @@ function ChatView({ conversationId, meta, onBack, isMobile, refreshList }) {
           <Link to={meta?.other_id ? `/u/${meta.other_id}` : '#'} style={{ fontSize: 15, fontWeight: 700, color: T.text, textDecoration: 'none', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {meta?.other_username || 'Conversation'}
           </Link>
-          <span style={{ fontSize: 11, color: T.textFaint }}>Hors ligne</span>
+          <span style={{ fontSize: 11, color: typingName ? T.violet : T.textFaint }}>{typingName ? 'écrit…' : 'Hors ligne'}</span>
         </div>
         <div style={{ display: 'flex', gap: 6, position: 'relative' }}>
           <HeaderAction label="📞" onClick={() => setCall({ type: 'audio' })} />
@@ -664,7 +686,7 @@ function ChatView({ conversationId, meta, onBack, isMobile, refreshList }) {
             <button onClick={captureScreen} title="Capture d'écran" style={composerIcon}>🖥️</button>
             <button onClick={startRecording} title="Message vocal" style={composerIcon}>🎤</button>
             <textarea
-              value={input} onChange={e => setInput(e.target.value)} onPaste={onPaste}
+              value={input} onChange={e => { setInput(e.target.value); notifyTyping() }} onPaste={onPaste}
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() } }}
               placeholder="Écris un message…" rows={1}
               style={{ flex: 1, resize: 'none', maxHeight: 140, padding: '11px 15px', borderRadius: 14, background: T.surface, border: `1px solid ${T.border}`, color: T.text, fontSize: 14, fontFamily: 'inherit', outline: 'none', lineHeight: 1.4, boxSizing: 'border-box' }}
