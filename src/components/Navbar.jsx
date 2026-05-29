@@ -4,6 +4,7 @@ import AboutModal from './AboutModal.jsx'
 import AuthModal from './AuthModal.jsx'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { useSocial } from '../contexts/SocialContext.jsx'
+import NotificationBell from './social/NotificationBell.jsx'
 
 const NAV_LINKS = [
   { label: 'Rangs',           href: '#rangs',      action: null,           gated: false, isRoute: false },
@@ -332,6 +333,7 @@ export default function Navbar() {
           <div className="nav-zone-status hide-mobile">
             <SoutenirButton />
             <BoutiqueButton />
+            {isAuthenticated && <NotificationBell />}
             {isAuthenticated && <MessagesButton />}
             <SocialLinks />
           </div>
