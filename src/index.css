@@ -253,11 +253,18 @@ section {
   font-family: Georgia, 'Times New Roman', serif;
   font-weight: 800;
   letter-spacing: .018em;
-  background: linear-gradient(135deg, #ffd36a 0%, #f4b942 35%, #fff0c5 58%, #d89222 100%);
+  /* Dégradé or avec une bande de lumière centrale, élargi pour le shimmer animé */
+  background: linear-gradient(100deg, #d89222 0%, #f4b942 22%, #fff0c5 40%, #fff7e2 48%, #fff0c5 56%, #f4b942 74%, #d89222 100%);
+  background-size: 220% auto;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
   color: transparent;
+  animation: bramsShimmer 5s linear infinite;
+}
+@keyframes bramsShimmer {
+  0%   { background-position: 220% center; }
+  100% { background-position: 0% center; }
 }
 .hero-community-glow {
   position: relative;
