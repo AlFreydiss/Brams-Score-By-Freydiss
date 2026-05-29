@@ -3389,23 +3389,31 @@ async def top(interaction: discord.Interaction, periode: app_commands.Choice[str
     vocal_list, msg_list, prime_list = [], [], []
     _now = now_ts()
 
-    for uid, udata in data.items():
-        member = guild.get_member(int(uid))
-        if not member or member.bot:
+    for uid, udata in list(data.items()):
+        # Une entrée corrompue (uid non numérique, données vocales malformées) ne
+        # doit pas faire planter toute la commande → on saute l'entrée.
+        try:
+            if not str(uid).isdigit():
+                continue
+            member = guild.get_member(int(uid))
+            if not member or member.bot:
+                continue
+            ujt      = udata.get("join_time")
+            sessions = udata.get("vocal_sessions", [])
+            messages = udata.get("messages", [])
+            if all_time:
+                sec  = total_seconds(sessions, join_time=ujt, extra=udata.get("extra_seconds", 0), _now=_now)
+                msgs = total_messages(messages)
+            else:
+                sec  = seconds_in_period(sessions, days, join_time=ujt, _now=_now)
+                msgs = messages_in_period(messages, days, _now=_now)
+            prime_val = get_berrys(uid)
+            vocal_list.append((uid, member.display_name, sec))
+            msg_list.append((uid, member.display_name, msgs))
+            prime_list.append((uid, member.display_name, prime_val))
+        except Exception as e:
+            print(f"[/top] entrée ignorée uid={uid}: {e}")
             continue
-        ujt      = udata.get("join_time")
-        sessions = udata.get("vocal_sessions", [])
-        messages = udata.get("messages", [])
-        if all_time:
-            sec  = total_seconds(sessions, join_time=ujt, extra=udata.get("extra_seconds", 0), _now=_now)
-            msgs = total_messages(messages)
-        else:
-            sec  = seconds_in_period(sessions, days, join_time=ujt, _now=_now)
-            msgs = messages_in_period(messages, days, _now=_now)
-        prime_val = get_berrys(uid)
-        vocal_list.append((uid, member.display_name, sec))
-        msg_list.append((uid, member.display_name, msgs))
-        prime_list.append((uid, member.display_name, prime_val))
 
     vocal_list.sort(key=lambda x: x[2], reverse=True)
     msg_list.sort(key=lambda x: x[2], reverse=True)
@@ -3482,15 +3490,20 @@ async def top(interaction: discord.Interaction, periode: app_commands.Choice[str
             for item in self.children:
                 item.disabled = True
 
-    view = TopView(page=1)
-    embed = _build_top_embed(1)
-
     try:
+        view = TopView(page=1)
+        embed = _build_top_embed(1)
         await interaction.followup.send(embed=embed, view=view)
     except discord.NotFound:
         print("⚠️ /top : token expiré, impossible d'envoyer")
     except Exception as e:
-        print(f"❌ /top followup failed: {e}")
+        # Construction/envoi échoués → on répond quand même pour ne pas laisser
+        # l'interaction bloquée sur « réfléchit… ».
+        print(f"❌ /top a échoué: {e}")
+        try:
+            await interaction.followup.send("⚠️ Le classement n'a pas pu être généré, réessaie.", ephemeral=True)
+        except Exception:
+            pass
 
 
 @bot.tree.command(name="serveur", description="Stats globales du serveur")
