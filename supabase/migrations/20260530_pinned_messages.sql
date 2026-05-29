@@ -18,7 +18,7 @@ CREATE INDEX IF NOT EXISTS messages_pinned_idx
 -- Max 50 épinglés par conversation (comme Discord). Un message supprimé ne peut
 -- pas être épinglé. Notifie l'autre participant (info, pas spam : seulement à l'épingle).
 CREATE OR REPLACE FUNCTION pin_message(p_message uuid)
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER AS $$
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp AS $$
 DECLARE
   v_me text := _resolve_discord_id();
   v_conv uuid;
@@ -41,6 +41,10 @@ BEGIN
     RETURN jsonb_build_object('ok', true, 'pinned_at', v_already);   -- déjà épinglé : no-op
   END IF;
 
+  -- Verrou sur la conversation : sérialise les pins concurrents pour que le
+  -- contrôle de la limite des 50 soit atomique (deux pins simultanés ne peuvent
+  -- pas lire count<50 puis insérer tous les deux).
+  PERFORM 1 FROM conversations WHERE id = v_conv FOR UPDATE;
   SELECT count(*) INTO v_count FROM messages
     WHERE conversation_id = v_conv AND pinned_at IS NOT NULL;
   IF v_count >= 50 THEN
@@ -64,7 +68,7 @@ $$;
 
 -- ── Désépingler ──────────────────────────────────────────────────────────────
 CREATE OR REPLACE FUNCTION unpin_message(p_message uuid)
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER AS $$
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp AS $$
 DECLARE v_me text := _resolve_discord_id(); v_conv uuid;
 BEGIN
   IF v_me IS NULL THEN RETURN '{"ok":false,"error":"Non authentifié"}'::jsonb; END IF;
@@ -81,7 +85,7 @@ $$;
 -- ── Liste des épinglés d'une conversation ────────────────────────────────────
 -- Même forme de lignes que get_messages (pour réutiliser le rendu côté front).
 CREATE OR REPLACE FUNCTION list_pinned_messages(p_conversation uuid)
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER STABLE AS $$
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER STABLE SET search_path = public, pg_temp AS $$
 DECLARE v_me text := _resolve_discord_id(); v_result jsonb;
 BEGIN
   IF v_me IS NULL THEN RETURN '{"ok":false,"error":"Non authentifié"}'::jsonb; END IF;
@@ -110,7 +114,7 @@ $$;
 
 -- ── get_messages enrichi : expose pinned_at / pinned_by (pastille inline) ─────
 CREATE OR REPLACE FUNCTION get_messages(p_conversation uuid, p_before timestamptz DEFAULT NULL, p_limit int DEFAULT 30)
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER STABLE AS $$
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER STABLE SET search_path = public, pg_temp AS $$
 DECLARE v_me text := _resolve_discord_id(); v_result jsonb; v_lim int;
 BEGIN
   IF v_me IS NULL THEN RETURN '{"ok":false,"error":"Non authentifié"}'::jsonb; END IF;

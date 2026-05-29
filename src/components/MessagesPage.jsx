@@ -530,7 +530,7 @@ function ChatView({ conversationId, meta, onBack, isMobile, refreshList }) {
         for (const m of recent) {
           const ex = known.get(m.id)
           if (!ex) { known.set(m.id, m); changed = true }
-          else if (JSON.stringify(ex.reactions) !== JSON.stringify(m.reactions) || ex.content !== m.content || ex.deleted_at !== m.deleted_at) { known.set(m.id, { ...ex, ...m }); changed = true }
+          else if (JSON.stringify(ex.reactions) !== JSON.stringify(m.reactions) || ex.content !== m.content || ex.deleted_at !== m.deleted_at || ex.pinned_at !== m.pinned_at) { known.set(m.id, { ...ex, ...m }); changed = true }
         }
         return changed ? Array.from(known.values()).sort((a, b) => new Date(a.created_at) - new Date(b.created_at)) : prev
       })
@@ -542,7 +542,14 @@ function ChatView({ conversationId, meta, onBack, isMobile, refreshList }) {
   const refreshPinned = useCallback(() => {
     listPinnedMessages(conversationId).then(p => setPinned(Array.isArray(p) ? p : []))
   }, [conversationId])
-  useEffect(() => { setPinnedOpen(false); refreshPinned() }, [conversationId, refreshPinned])
+  // Au changement de conversation : reset + chargement gardé (une réponse en
+  // retard d'une conv précédente ne doit pas écraser les épinglés de la courante).
+  useEffect(() => {
+    let active = true
+    setPinnedOpen(false); setPinned([])
+    listPinnedMessages(conversationId).then(p => { if (active) setPinned(Array.isArray(p) ? p : []) })
+    return () => { active = false }
+  }, [conversationId])
 
   const handlePin = useCallback(async (messageId) => {
     setMessages(prev => prev.map(m => m.id === messageId ? { ...m, pinned_at: new Date().toISOString() } : m))
@@ -561,7 +568,8 @@ function ChatView({ conversationId, meta, onBack, isMobile, refreshList }) {
   // chargée (trop ancien), on charge des messages plus anciens jusqu'à le trouver.
   const jumpToMessage = useCallback(async (messageId) => {
     setPinnedOpen(false)
-    for (let i = 0; i < 6; i++) {
+    let before = messages[0]?.created_at   // curseur local : progresse vers le passé à chaque page
+    for (let i = 0; i < 8; i++) {
       const el = document.getElementById(`msg-${messageId}`)
       if (el) {
         el.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -570,8 +578,9 @@ function ChatView({ conversationId, meta, onBack, isMobile, refreshList }) {
         setTimeout(() => { el.style.background = 'transparent' }, 1100)
         return
       }
-      const more = await getMessages(conversationId, messages[0]?.created_at)
+      const more = await getMessages(conversationId, before)
       if (!more.length) break
+      before = more[0]?.created_at   // get_messages renvoie en ordre croissant → [0] = le plus ancien
       setMessages(prev => dedupeById([...more, ...prev]))
       await new Promise(r => requestAnimationFrame(r))
     }
