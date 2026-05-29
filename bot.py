@@ -886,6 +886,40 @@ def _baseline_pending_berry_sync() -> None:
         release_db(conn)
 
 
+def _clear_pending_berry_sync(uid: str) -> int:
+    """Marque les déductions boutique en attente d'UN membre comme appliquées,
+    SANS déduire. Appelé par /addberries et /reset_berry : une opération admin est
+    autoritaire sur le solde, donc une vieille déduction web ne doit pas grignoter
+    le don ensuite. Renvoie le nombre de lignes purgées."""
+    conn = get_db()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT EXISTS(SELECT 1 FROM information_schema.tables "
+            "WHERE table_name='berry_sync' AND table_schema='public')"
+        )
+        if not cur.fetchone()[0]:
+            return 0
+        cur.execute(
+            "UPDATE berry_sync SET applied = true WHERE applied = false AND discord_id = %s",
+            (str(uid),)
+        )
+        n = cur.rowcount
+        conn.commit()
+        if n:
+            print(f"[BERRY_SYNC] {n} déduction(s) en attente purgée(s) pour {uid} (opération admin autoritaire)")
+        return n
+    except Exception as e:
+        print(f"[BERRY_SYNC] clear({uid}): {e}")
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+        return 0
+    finally:
+        release_db(conn)
+
+
 # ── Annonce Discord des achats boutique web ────────────────────────────────
 # Watermark : on n'annonce que les achats postérieurs au démarrage du bot
 # (baseline au 1er tick), comme _baseline_pending_berry_sync pour les déductions.
@@ -7879,7 +7913,11 @@ async def addberries_cmd(
 
     uid = str(membre.id)
     new_balance = add_berrys(uid, montant, track="earned")
-    await asyncio.get_running_loop().run_in_executor(db_executor, _sync_flush_dirty)
+    _loop = asyncio.get_running_loop()
+    # Purge les déductions web en attente AVANT le flush : un don admin est
+    # autoritaire et ne doit pas être grignoté par une vieille déduction boutique.
+    await _loop.run_in_executor(db_executor, _clear_pending_berry_sync, uid)
+    await _loop.run_in_executor(db_executor, _sync_flush_dirty)
 
     from utils.transactions import log_transaction
     await log_transaction(uid, "gain", "autre", montant, raison, new_balance)
@@ -7923,8 +7961,11 @@ async def reset_berry_cmd(
     old_balance = reset_berrys(uid, track="lost")
 
     # Persist immediately: this command is destructive and should not wait for
-    # the periodic cache flush.
-    await asyncio.get_running_loop().run_in_executor(db_executor, _sync_flush_dirty)
+    # the periodic cache flush. On purge aussi les déductions web en attente :
+    # un reset à 0 doit repartir d'une ardoise propre.
+    _loop = asyncio.get_running_loop()
+    await _loop.run_in_executor(db_executor, _clear_pending_berry_sync, uid)
+    await _loop.run_in_executor(db_executor, _sync_flush_dirty)
 
     from utils.transactions import log_transaction
     await log_transaction(
