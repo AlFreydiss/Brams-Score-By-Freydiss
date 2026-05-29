@@ -70,6 +70,11 @@ export async function getFeedStats() {
 // ── Stories (éphémères 24h) ───────────────────────────────────────────────────
 export const createStory = (mediaUrl) => rpc('create_story', { p_media_url: mediaUrl })
 export const deleteStory = (storyId)  => rpc('delete_story', { p_story: storyId })
+export const markStorySeen = (storyId) => rpc('mark_story_seen', { p_story: storyId })
+export async function listStoryViewers(storyId) {
+  const r = await rpc('list_story_viewers', { p_story: storyId })
+  return r?.ok ? (r.viewers || []) : []
+}
 export async function listActiveStories() {
   const r = await rpc('list_active_stories')
   return r?.ok ? (r.authors || []) : []

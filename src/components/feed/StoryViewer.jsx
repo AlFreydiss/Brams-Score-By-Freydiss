@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '../../contexts/AuthContext.jsx'
-import { deleteStory } from '../../lib/feed.js'
+import { deleteStory, markStorySeen, listStoryViewers } from '../../lib/feed.js'
 import { avatar, T } from '../social/socialStyles.js'
 
 function timeAgo(iso) {
@@ -18,6 +18,16 @@ export default function StoryViewer({ authors, startIndex = 0, onClose, onDelete
   const author = authors[ai]
   const stories = author?.stories || []
   const story = stories[si]
+  const [viewers, setViewers] = useState(null)   // panneau viewers (auteur)
+
+  // Marque la story vue dès qu'elle s'affiche.
+  useEffect(() => { setViewers(null); if (story?.id) markStorySeen(story.id) }, [story?.id])
+
+  async function openViewers(e) {
+    e.stopPropagation()
+    const list = await listStoryViewers(story.id)
+    setViewers(list)
+  }
 
   const next = useCallback(() => {
     if (si < stories.length - 1) setSi(si + 1)
@@ -77,6 +87,32 @@ export default function StoryViewer({ authors, startIndex = 0, onClose, onDelete
         {/* Zones de tap (sous l'en-tête en z-index) */}
         <button onClick={prev} aria-label="Précédent" style={{ position: 'absolute', left: 0, top: 60, bottom: 0, width: '35%', background: 'transparent', border: 'none', cursor: 'pointer', zIndex: 2 }} />
         <button onClick={next} aria-label="Suivant" style={{ position: 'absolute', right: 0, top: 60, bottom: 0, width: '35%', background: 'transparent', border: 'none', cursor: 'pointer', zIndex: 2 }} />
+
+        {/* Compteur de vues (auteur uniquement) */}
+        {mine && (
+          <button onClick={openViewers} style={{ position: 'absolute', bottom: 16, left: 0, right: 0, margin: '0 auto', width: 'fit-content', display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(0,0,0,.55)', border: 'none', borderRadius: 999, padding: '7px 16px', color: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 700, zIndex: 4 }}>
+            👁 {story.views || 0} vue{(story.views || 0) > 1 ? 's' : ''}
+          </button>
+        )}
+
+        {/* Panneau viewers */}
+        {viewers !== null && (
+          <div onClick={e => e.stopPropagation()} style={{ position: 'absolute', bottom: 0, left: 0, right: 0, maxHeight: '55%', background: '#0d0e13', borderTop: `1px solid ${T.border}`, borderRadius: '18px 18px 0 0', zIndex: 5, display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: `1px solid ${T.border}` }}>
+              <span style={{ fontSize: 14, fontWeight: 800, color: T.text }}>👁 {viewers.length} vue{viewers.length > 1 ? 's' : ''}</span>
+              <button onClick={() => setViewers(null)} style={{ border: 'none', background: 'transparent', color: T.textDim, cursor: 'pointer', fontSize: 16 }}>✕</button>
+            </div>
+            <div style={{ overflowY: 'auto', padding: 8 }}>
+              {viewers.length === 0 ? <div style={{ padding: '24px', textAlign: 'center', color: T.textFaint, fontSize: 13 }}>Personne pour l'instant.</div>
+                : viewers.map(v => (
+                  <div key={v.uid} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px' }}>
+                    <span style={avatar(34)}>{v.avatar ? <img src={v.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (v.username || '?').slice(0, 2).toUpperCase()}</span>
+                    <span style={{ fontSize: 14, fontWeight: 600, color: T.text }}>{v.username || `Pirate #${String(v.uid).slice(-5)}`}</span>
+                  </div>
+                ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
