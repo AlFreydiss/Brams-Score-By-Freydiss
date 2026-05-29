@@ -50,6 +50,12 @@ export async function searchPosts(query, limit = 30) {
   return r?.ok ? (r.posts || []) : []
 }
 
+// Autocomplete @mentions : utilisateurs dont le pseudo commence par query.
+export async function searchUsers(query, limit = 6) {
+  const r = await rpc('search_users', { p_query: query, p_limit: limit })
+  return Array.isArray(r) ? r : []
+}
+
 // Stats publiques du fil (nombre de posts racines) — count direct, sans RPC.
 export async function getFeedStats() {
   if (!supabase) return { posts: 0 }
