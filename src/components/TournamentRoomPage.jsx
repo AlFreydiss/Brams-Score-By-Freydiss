@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { TOURNAMENT_CONFIGS } from '../data/tournament-data.js'
 import { generateBracket, getCurrentMatch, advanceWinner, getWinner, getTournamentProgress } from '../lib/tournament.js'
-import RoomArena from './tournament/RoomArena.jsx'
+import DuelArena from './tournament/DuelArena.jsx'
 import {
   createTournamentRoom, fetchTournamentRoom, joinTournamentRoom,
   fetchTournamentRoomPlayers, fetchTournamentRoomVotes, castTournamentVote,
@@ -42,7 +42,6 @@ export default function TournamentRoomPage() {
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 768)
   const [notFound, setNotFound] = useState(false)
   const [publicRooms, setPublicRooms] = useState([])
-  const [copied, setCopied] = useState(false)
   const resolvingRef = useRef(false)
   const autoJoinRef = useRef(false)
 
@@ -175,11 +174,6 @@ export default function TournamentRoomPage() {
   }
 
   function leave() { setParams({}); setCode(''); setRoom(null); setNotFound(false); autoJoinRef.current = false }
-
-  function copyLink() {
-    navigator.clipboard?.writeText(`${window.location.origin}/tournoi/salon?code=${code}`)
-    setCopied(true); window.setTimeout(() => setCopied(false), 1600)
-  }
 
   // ── Vues ─────────────────────────────────────────────────────────────────
   const wrap = { position: 'relative', minHeight: '100vh', background: BG, color: '#fff', paddingTop: 84, paddingBottom: 60, fontFamily: "'Inter',system-ui,sans-serif", overflowX: 'hidden' }
@@ -391,86 +385,140 @@ export default function TournamentRoomPage() {
 
   return (
     <div style={wrap}>
-      {/* Fond subtil (gradients radiaux doux) */}
-      <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none',
-        background: `radial-gradient(1100px 600px at 18% -6%, rgba(157,23,77,.10), transparent 60%), radial-gradient(900px 600px at 96% 8%, rgba(76,29,149,.12), transparent 62%)` }} />
-
-      {room.status === 'playing' && current ? (
-        // ── ARÈNE DE DUEL ──
-        <div style={{ position: 'relative', zIndex: 2, padding: '0 clamp(12px,3vw,40px)' }}>
-          {!amIInRoom && (
-            <div style={{ width: 'min(1320px,100%)', margin: '0 auto 14px', display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderRadius: 12, background: CARD, border: `1px solid ${BORDER}`, flexWrap: 'wrap' }}>
-              <span style={{ fontSize: 13, color: 'rgba(255,255,255,.7)' }}>Rejoins pour voter dans ce salon.</span>
-              {ident.guest && <input value={guestName} onChange={e => setGuestName(e.target.value)} placeholder="Ton pseudo" style={{ ...field, maxWidth: 180, width: 'auto' }} maxLength={20} />}
-              <button onClick={ensureJoined} style={{ ...btn(), marginLeft: 'auto' }}>Rejoindre</button>
-            </div>
-          )}
-          <RoomArena
-            code={code} copied={copied} onLeave={leave} onCopyLink={copyLink}
-            match={current.match} roundLabel={current.round.label}
-            matchNum={current.match.position + 1} totalMatches={current.round.matches.length}
-            progress={progress} leftN={leftN} rightN={rightN} totalV={totalV}
-            myVote={myVote} onVote={(side) => { if (amIInRoom && !myVote) vote(side) }} canVote={amIInRoom}
-            players={players} votes={votes} rounds={rounds} isMobile={isMobile}
-          />
-        </div>
-      ) : (
-        // ── LOBBY / FIN ──
-        <div style={{ ...inner, position: 'relative', zIndex: 2 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 18, flexWrap: 'wrap' }}>
-            <button onClick={leave} style={{ ...btn('rgba(255,255,255,.06)'), padding: '8px 14px', fontSize: 12 }}>← Quitter</button>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(157,23,77,.15)', border: `1px solid ${PINK}55`, borderRadius: 10, padding: '8px 14px' }}>
-              <span style={{ fontSize: 11, color: 'rgba(255,255,255,.5)' }}>CODE</span>
-              <strong style={{ fontSize: 18, letterSpacing: '.2em', color: PINK_L }}>{code}</strong>
-              <button onClick={copyLink} style={{ ...btn('rgba(255,255,255,.08)'), padding: '4px 10px', fontSize: 11, color: copied ? '#34d399' : undefined }}>{copied ? '✓ Copié' : 'Copier le lien'}</button>
-            </div>
-            <div style={{ marginLeft: 'auto', fontSize: 13, color: 'rgba(255,255,255,.55)' }}>
-              👥 {players.length} · {progress.done}/{progress.total} duels
-            </div>
+      <div style={inner}>
+        {/* Topbar salon */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 18, flexWrap: 'wrap' }}>
+          <button onClick={leave} style={{ ...btn('rgba(255,255,255,.06)'), padding: '8px 14px', fontSize: 12 }}>← Quitter</button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(157,23,77,.15)', border: `1px solid ${PINK}55`, borderRadius: 10, padding: '8px 14px' }}>
+            <span style={{ fontSize: 11, color: 'rgba(255,255,255,.5)' }}>CODE</span>
+            <strong style={{ fontSize: 18, letterSpacing: '.2em', color: PINK_L }}>{code}</strong>
+            <button onClick={() => navigator.clipboard?.writeText(`${window.location.origin}/tournoi/salon?code=${code}`)}
+              style={{ ...btn('rgba(255,255,255,.08)'), padding: '4px 10px', fontSize: 11 }}>Copier le lien</button>
           </div>
-
-          {!amIInRoom && (
-            <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 14, padding: 18, marginBottom: 16 }}>
-              <div style={{ marginBottom: 10, fontWeight: 700 }}>Rejoins ce salon pour participer</div>
-              {ident.guest && <input value={guestName} onChange={e => setGuestName(e.target.value)} placeholder="Ton pseudo" style={{ ...field, marginBottom: 10 }} maxLength={20} />}
-              <button onClick={ensureJoined} style={btn()}>Rejoindre</button>
-            </div>
-          )}
-
-          {room.status === 'lobby' && (
-            <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 16, padding: 22 }}>
-              <h2 style={{ margin: '0 0 4px', fontSize: 20, fontWeight: 900 }}>Salle d'attente</h2>
-              <p style={{ color: 'rgba(255,255,255,.5)', margin: '0 0 18px', fontSize: 13 }}>
-                {room.tournament_id === 'ost' ? 'Best Anime OST' : 'Best Anime Opening'} · {(rounds?.[0]?.matches?.length || 0) * 2} participants
-              </p>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 22 }}>
-                {players.map(p => (
-                  <div key={p.user_id} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,.05)', border: `1px solid ${BORDER}`, borderRadius: 999, padding: '6px 14px 6px 8px' }}>
-                    <span style={{ width: 26, height: 26, borderRadius: '50%', background: GRAD, display: 'grid', placeItems: 'center', fontSize: 12, fontWeight: 800 }}>{(p.display_name || '?')[0].toUpperCase()}</span>
-                    <span style={{ fontSize: 13, fontWeight: 600 }}>{p.display_name}{p.is_host && ' 👑'}</span>
-                  </div>
-                ))}
-              </div>
-              {isHost ? (
-                <button onClick={startTournament} style={{ ...btn(), width: '100%' }} disabled={players.length < 1}>Démarrer le tournoi 🏁</button>
-              ) : (
-                <div style={{ textAlign: 'center', color: 'rgba(255,255,255,.5)', fontSize: 14 }}>En attente que l'hôte démarre…</div>
-              )}
-            </div>
-          )}
-
-          {room.status === 'done' && winner && (
-            <div style={{ textAlign: 'center', background: CARD, border: `1px solid ${PINK}55`, borderRadius: 20, padding: '40px 24px' }}>
-              <div style={{ fontSize: 13, letterSpacing: '.2em', color: PINK_L, fontWeight: 800, marginBottom: 14 }}>🏆 VAINQUEUR DU SALON</div>
-              <img src={`https://img.youtube.com/vi/${winner.ytId}/hqdefault.jpg`} alt="" style={{ width: 220, borderRadius: 14, border: `2px solid ${winner.color || PINK}`, marginBottom: 16 }} />
-              <h2 style={{ margin: '0 0 4px', fontSize: 26, fontWeight: 900 }}>{winner.title}</h2>
-              <div style={{ color: 'rgba(255,255,255,.6)' }}>{winner.anime} · {winner.artist}</div>
-              <button onClick={leave} style={{ ...btn(), marginTop: 24 }}>Nouveau salon</button>
-            </div>
-          )}
+          <div style={{ marginLeft: 'auto', fontSize: 13, color: 'rgba(255,255,255,.55)' }}>
+            👥 {players.length} · {progress.done}/{progress.total} duels
+          </div>
         </div>
-      )}
+
+        {!amIInRoom && (
+          <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 14, padding: 18, marginBottom: 16 }}>
+            <div style={{ marginBottom: 10, fontWeight: 700 }}>Rejoins ce salon pour participer</div>
+            {ident.guest && <input value={guestName} onChange={e => setGuestName(e.target.value)} placeholder="Ton pseudo" style={{ ...field, marginBottom: 10 }} maxLength={20} />}
+            <button onClick={ensureJoined} style={btn()}>Rejoindre</button>
+          </div>
+        )}
+
+        {/* LOBBY */}
+        {room.status === 'lobby' && (
+          <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 16, padding: 22 }}>
+            <h2 style={{ margin: '0 0 4px', fontSize: 20, fontWeight: 900 }}>Salle d'attente</h2>
+            <p style={{ color: 'rgba(255,255,255,.5)', margin: '0 0 18px', fontSize: 13 }}>
+              {room.tournament_id === 'ost' ? 'Best Anime OST' : 'Best Anime Opening'} · {(rounds?.[0]?.matches?.length || 0) * 2} participants
+            </p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 22 }}>
+              {players.map(p => (
+                <div key={p.user_id} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,.05)', border: `1px solid ${BORDER}`, borderRadius: 999, padding: '6px 14px 6px 8px' }}>
+                  <span style={{ width: 26, height: 26, borderRadius: '50%', background: GRAD, display: 'grid', placeItems: 'center', fontSize: 12, fontWeight: 800 }}>{(p.display_name || '?')[0].toUpperCase()}</span>
+                  <span style={{ fontSize: 13, fontWeight: 600 }}>{p.display_name}{p.is_host && ' 👑'}</span>
+                </div>
+              ))}
+            </div>
+            {isHost ? (
+              <button onClick={startTournament} style={{ ...btn(), width: '100%' }} disabled={players.length < 1}>Démarrer le tournoi 🏁</button>
+            ) : (
+              <div style={{ textAlign: 'center', color: 'rgba(255,255,255,.5)', fontSize: 14 }}>En attente que l'hôte démarre…</div>
+            )}
+          </div>
+        )}
+
+        {/* DUEL EN COURS — pleine largeur : chaque opening remplit sa moitié d'écran */}
+        {room.status === 'playing' && current && (
+          <div style={{ position: 'relative', width: '100vw', marginLeft: 'calc(50% - 50vw)', padding: '0 clamp(12px,3vw,48px)', boxSizing: 'border-box' }}>
+            <DuelArena
+              key={current.match.id}
+              round={current.round}
+              match={current.match}
+              totalMatchesInRound={current.round.matches.length}
+              voteCounts={{ [current.match.id]: { left: leftN, right: rightN } }}
+              personalVotes={{ [current.match.id]: myVote }}
+              onVote={(side) => { if (amIInRoom && !myVote) vote(side) }}
+              onNext={() => {}}
+              isLastMatch={false}
+              isMobile={isMobile}
+              multiplayer
+              multiplayerStatus={`${totalV}/${players.length} ont voté · ${myVote ? 'en attente des autres…' : 'à toi de voter !'}`}
+            />
+            {/* Panneau votes : flottant en haut à droite (desktop) / en dessous (mobile) */}
+            {isMobile ? (
+              <div style={{ marginTop: 16 }}>
+                <VotersPanel players={players} votes={votes} match={current.match} isMobile />
+              </div>
+            ) : (
+              <div style={{ position: 'absolute', top: 0, right: 'clamp(12px,3vw,48px)', zIndex: 5 }}>
+                <VotersPanel players={players} votes={votes} match={current.match} isMobile={false} />
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* FIN */}
+        {room.status === 'done' && winner && (
+          <div style={{ textAlign: 'center', background: CARD, border: `1px solid ${PINK}55`, borderRadius: 20, padding: '40px 24px' }}>
+            <div style={{ fontSize: 13, letterSpacing: '.2em', color: PINK_L, fontWeight: 800, marginBottom: 14 }}>🏆 VAINQUEUR DU SALON</div>
+            <img src={`https://img.youtube.com/vi/${winner.ytId}/hqdefault.jpg`} alt="" style={{ width: 220, borderRadius: 14, border: `2px solid ${winner.color || PINK}`, marginBottom: 16 }} />
+            <h2 style={{ margin: '0 0 4px', fontSize: 26, fontWeight: 900 }}>{winner.title}</h2>
+            <div style={{ color: 'rgba(255,255,255,.6)' }}>{winner.anime} · {winner.artist}</div>
+            <button onClick={leave} style={{ ...btn(), marginTop: 24 }}>Nouveau salon</button>
+          </div>
+        )}
+      </div>
     </div>
+  )
+}
+
+// ── Panneau des votants (qui a voté quoi, en temps réel) ───────────────────────
+function VotersPanel({ players, votes, match, isMobile }) {
+  const voteBy = {}
+  for (const v of votes) voteBy[String(v.user_id)] = v.side
+  const votedCount = players.filter(p => voteBy[String(p.user_id)]).length
+  return (
+    <aside style={{
+      width: isMobile ? '100%' : 248, flexShrink: 0,
+      background: 'rgba(12,13,20,0.55)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)',
+      border: '1px solid rgba(255,255,255,.10)', borderRadius: 16, padding: 16,
+      boxShadow: '0 12px 40px rgba(0,0,0,.35)',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+        <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.12em', color: PINK_L, textTransform: 'uppercase' }}>Votes</span>
+        <span style={{ fontSize: 12, color: 'rgba(255,255,255,.5)' }}>{votedCount}/{players.length}</span>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+        {players.map(p => {
+          const side = voteBy[String(p.user_id)]
+          const choice = side === 'left' ? match.left : side === 'right' ? match.right : null
+          const col = choice?.color || PINK_L
+          return (
+            <div key={p.user_id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{
+                width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
+                display: 'grid', placeItems: 'center', fontSize: 11, fontWeight: 800, color: '#fff',
+                background: side ? `${col}33` : 'rgba(255,255,255,.06)',
+                border: `1.5px solid ${side ? col : 'rgba(255,255,255,.12)'}`,
+              }}>{(p.display_name || '?')[0].toUpperCase()}</span>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ fontSize: 12.5, fontWeight: 600, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {p.display_name}{p.is_host ? ' 👑' : ''}
+                </div>
+                <div style={{ fontSize: 10.5, color: side ? col : 'rgba(255,255,255,.32)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {side ? `▸ ${choice?.title || '—'}` : 'en attente…'}
+                </div>
+              </div>
+              <span style={{ flexShrink: 0, fontSize: 13, color: side ? '#34d399' : 'rgba(255,255,255,.25)' }}>{side ? '✓' : '⏳'}</span>
+            </div>
+          )
+        })}
+      </div>
+    </aside>
   )
 }
 
