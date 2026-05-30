@@ -58,6 +58,7 @@ const BlindTestLeaderboard = lazy(() => import('./components/BlindTestLeaderboar
 const TierListPage       = lazy(() => import('./components/TierListPage.jsx'))
 const TournamentHubPage  = lazy(() => import('./components/TournamentHubPage.jsx'))
 const TournamentPage     = lazy(() => import('./components/TournamentPage.jsx'))
+const TournamentRoomPage = lazy(() => import('./components/TournamentRoomPage.jsx'))
 const AkinatorPage       = lazy(() => import('./components/AkinatorPage.jsx'))
 const ProfilePageYonkou  = lazy(() => import('./components/ProfilePageYonkou.jsx'))
 const FriendsPage        = lazy(() => import('./components/FriendsPage.jsx'))
@@ -419,7 +420,8 @@ export default function App() {
         <Route path="/tier-list" element={<PageLayout><TierListPage /></PageLayout>} />
 
         {/* Tournoi */}
-        <Route path="/tournoi"     element={<PageLayout><TournamentHubPage /></PageLayout>} />
+        <Route path="/tournoi"       element={<PageLayout><TournamentHubPage /></PageLayout>} />
+        <Route path="/tournoi/salon" element={<PageLayout><TournamentRoomPage /></PageLayout>} />
         <Route path="/tournoi/ost" element={<PageLayout><TournamentPage tournamentId="ost" /></PageLayout>} />
         <Route path="/tournoi-ost" element={<PageLayout><TournamentPage tournamentId="ost" /></PageLayout>} />
         <Route path="/tournoi/openings" element={<PageLayout><TournamentPage tournamentId="opening" /></PageLayout>} />

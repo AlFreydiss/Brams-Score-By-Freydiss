@@ -474,6 +474,7 @@ function UpcomingCard({ item, index }) {
 
 // ── Hero ───────────────────────────────────────────────────────────────────
 function TournamentHero({ activeRef, categoriesRef }) {
+  const navigate = useNavigate()
   function scrollTo(ref) {
     ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
@@ -577,6 +578,21 @@ function TournamentHero({ activeRef, categoriesRef }) {
           }}
         >
           Explorer les arènes
+        </motion.button>
+        <motion.button
+          onClick={() => navigate('/tournoi/salon')}
+          whileHover={{ scale: 1.04, boxShadow: `0 10px 32px rgba(76,29,149,.4)` }}
+          whileTap={{ scale: 0.97 }}
+          style={{
+            padding: '14px 36px', borderRadius: 100,
+            border: '1px solid rgba(124,58,237,.45)',
+            background: 'linear-gradient(135deg, rgba(124,58,237,.22), rgba(157,23,77,.18))',
+            color: '#e9d5ff', fontWeight: 800, fontSize: 14,
+            cursor: 'pointer', letterSpacing: '0.03em',
+            display: 'inline-flex', alignItems: 'center', gap: 8,
+          }}
+        >
+          🟣 Mode multi — Salon en ligne
         </motion.button>
       </motion.div>
 
