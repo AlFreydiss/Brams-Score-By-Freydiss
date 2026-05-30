@@ -35,30 +35,36 @@ function saveVideoProgress(storageKey, progress) {
 }
 
 const VIDEO_PREFS_KEY = 'brams_video_preferences'
+// Défaut voulu : gros texte, sans fond, contour + ombre (lisible sur l'image).
 const DEFAULT_SUBTITLE_STYLE = {
-  size: 19,
-  background: 0.72,
+  size: 30,
+  background: 0,
   color: '#ffffff',
   outline: true,
-  weight: 600,
+  weight: 700,
   bottom: 110,
 }
 
-// Style des sous-titres = préférence d'APPAREIL, stockée sous UNE clé globale
-// (indépendante du compte et de la page) → on règle une fois, c'est identique
-// sur tous les players (One Piece, Violet Evergarden, etc.).
+// Style des sous-titres = préférence PAR MEMBRE (chacun garde le sien), stockée
+// par userId. Migration depuis l'ancienne clé d'appareil si le membre n'a encore
+// rien personnalisé. Hors connexion → clé d'appareil de secours.
 const SUB_STYLE_KEY = 'brams_subtitle_style_v1'
-function loadSubStyle() {
+function subStyleKey(userId) { return userId ? `${SUB_STYLE_KEY}_${userId}` : SUB_STYLE_KEY }
+function loadSubStyle(userId) {
   try {
-    const saved = JSON.parse(localStorage.getItem(SUB_STYLE_KEY) || 'null') || {}
+    // pref du membre en priorité, sinon ancienne clé d'appareil (migration), sinon défaut
+    const raw = localStorage.getItem(subStyleKey(userId))
+      || (userId ? localStorage.getItem(SUB_STYLE_KEY) : null)
+    const saved = JSON.parse(raw || 'null') || {}
     return {
       ...DEFAULT_SUBTITLE_STYLE,
       ...saved,
-      background: (saved.background != null && saved.background >= 0.3) ? saved.background : DEFAULT_SUBTITLE_STYLE.background,
+      // 0 = sans fond doit être respecté (plus de plancher forcé)
+      background: typeof saved.background === 'number' ? saved.background : DEFAULT_SUBTITLE_STYLE.background,
     }
   } catch { return { ...DEFAULT_SUBTITLE_STYLE } }
 }
-function saveSubStyle(style) { try { localStorage.setItem(SUB_STYLE_KEY, JSON.stringify(style)) } catch {} }
+function saveSubStyle(userId, style) { try { localStorage.setItem(subStyleKey(userId), JSON.stringify(style)) } catch {} }
 
 function videoPrefsKey(userId) {
   return userId ? `${VIDEO_PREFS_KEY}_${userId}` : VIDEO_PREFS_KEY
@@ -75,7 +81,7 @@ function loadVideoPreferences(userId) {
       audioLang: prefs.audioLang || 'ja',
       subtitlesOff: Boolean(prefs.subtitlesOff),
       subtitleLang: prefs.subtitleLang || 'fr',
-      subtitleStyle: loadSubStyle(), // global → identique partout
+      subtitleStyle: loadSubStyle(userId), // par membre
     }
   } catch {
     return { audioLang: 'ja', subtitlesOff: false, subtitleLang: 'fr', subtitleStyle: DEFAULT_SUBTITLE_STYLE }
@@ -343,11 +349,11 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   const updateSubtitleStyle = useCallback((patch) => {
     setSubtitleStyle(prev => {
       const nextStyle = { ...prev, ...patch }
-      saveSubStyle(nextStyle)              // clé globale → appliqué partout
-      updatePreferences({ subtitleStyle: nextStyle }) // compat ancienne pref par-user
+      saveSubStyle(userId, nextStyle)                  // par membre → chacun garde le sien
+      updatePreferences({ subtitleStyle: nextStyle })  // copie dans les prefs du membre
       return nextStyle
     })
-  }, [updatePreferences])
+  }, [updatePreferences, userId])
 
   const applyAudioPreference = useCallback((nextAudioIdx) => {
     const v = videoRef.current
@@ -710,7 +716,9 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                 fontSize: subtitleStyle.size,
                 fontWeight: subtitleStyle.weight,
                 lineHeight: 1.55,
-                textShadow: subtitleStyle.outline ? '0 1px 6px rgba(0,0,0,0.9), 0 2px 12px rgba(0,0,0,0.7)' : 'none',
+                textShadow: subtitleStyle.outline
+                  ? '-1.5px -1.5px 0 #000, 1.5px -1.5px 0 #000, -1.5px 1.5px 0 #000, 1.5px 1.5px 0 #000, 0 2px 10px rgba(0,0,0,0.95)'
+                  : '0 1px 4px rgba(0,0,0,0.85)',
                 whiteSpace: 'pre-line',
                 transition: 'bottom .2s ease',
                 pointerEvents: 'none',

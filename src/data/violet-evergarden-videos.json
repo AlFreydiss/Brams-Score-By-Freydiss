@@ -373,15 +373,15 @@
     "arc": "Film",
     "audio": [
       {
-        "label": "VF",
-        "srclang": "fr",
+        "label": "Japonais",
+        "srclang": "ja",
         "default": true,
         "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden/the-movie.mp4"
       },
       {
-        "label": "VOSTFR (Japonais)",
-        "srclang": "ja",
-        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden/the-movie.mp4"
+        "label": "VF",
+        "srclang": "fr",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden/the-movie.vf.mp4"
       }
     ],
     "subtitles": [
