@@ -113,8 +113,12 @@ function ConversationList({ conversations, friends, requests, activeId, tab, set
     return conversations.filter(c => (c.other_username || '').toLowerCase().includes(q))
   }, [conversations, search])
 
+  const unreadN = useMemo(() => conversations.filter(c => Number(c.unread) > 0).length, [conversations])
+  const displayConvs = tab === 'unread' ? filtered.filter(c => Number(c.unread) > 0) : filtered
+
   const TABS = [
     { id: 'all', label: 'Tous' },
+    { id: 'unread', label: 'Non lus', badge: unreadN },
     { id: 'friends', label: 'Amis' },
     { id: 'requests', label: 'Demandes', badge: requests.incoming?.length || 0 },
   ]
@@ -156,10 +160,12 @@ function ConversationList({ conversations, friends, requests, activeId, tab, set
       <div style={{ flex: 1, overflowY: 'auto', padding: '4px 8px 12px' }}>
         {loading && <div style={{ padding: 16 }}>{[0, 1, 2].map(i => <Skeleton key={i} />)}</div>}
 
-        {/* ── Tous : conversations ── */}
-        {!loading && tab === 'all' && (filtered.length === 0 ? (
-          <Empty icon="💬">Aucune conversation.<br /><Link to="#" onClick={e => { e.preventDefault(); setTab('friends') }} style={{ color: T.gold, textDecoration: 'none' }}>Ajoute un ami</Link> pour commencer.</Empty>
-        ) : filtered.map(c => {
+        {/* ── Tous / Non lus : conversations ── */}
+        {!loading && (tab === 'all' || tab === 'unread') && (displayConvs.length === 0 ? (
+          tab === 'unread'
+            ? <Empty icon="✅">Aucun message non lu.</Empty>
+            : <Empty icon="💬">Aucune conversation.<br /><Link to="#" onClick={e => { e.preventDefault(); setTab('friends') }} style={{ color: T.gold, textDecoration: 'none' }}>Ajoute un ami</Link> pour commencer.</Empty>
+        ) : displayConvs.map(c => {
           const active = c.conversation_id === activeId
           return (
             <button key={c.conversation_id} onClick={() => onSelect(c.conversation_id)} style={convItemStyle(active)}>
