@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, lazy, Suspense } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import confetti from 'canvas-confetti'
 import { getVotePercents } from '../../lib/tournament.js'
 import OSTDuelCard from './OSTDuelCard.jsx'
 import VSPanel     from './VSPanel.jsx'
@@ -67,9 +68,9 @@ function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop, onSeek }) 
   const videoRef  = useRef(null)
   const timerRef  = useRef(null)
   const startRef  = useRef(Date.now())
-  const [volume,  setVolume]  = useState(80)
+  const [volume,  setVolume]  = useState(100)
   const [elapsed, setElapsed] = useState(0)
-  const LIMIT = 90
+  const LIMIT = 600   // openings jouables en entier (plus de coupure à 1m30)
 
   useEffect(() => {
     timerRef.current = setTimeout(onStop, LIMIT * 1000)
@@ -293,6 +294,21 @@ export default function DuelArena({
 
   useEffect(() => { setPlaying(null) }, [match.id])
 
+  // Finale gagnée → champion + confettis
+  const isChampion = showResult && !!winnerSide && round.size === 2
+  useEffect(() => {
+    if (!isChampion) return
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) return
+    const colors = ['#f9a8d4', '#9d174d', '#ffd36a', '#ffffff']
+    confetti({ particleCount: 170, spread: 105, startVelocity: 52, origin: { y: 0.4 }, colors, scalar: 1.1 })
+    const end = Date.now() + 1600
+    ;(function frame() {
+      confetti({ particleCount: 6, angle: 60, spread: 70, origin: { x: 0, y: 0.7 }, colors })
+      confetti({ particleCount: 6, angle: 120, spread: 70, origin: { x: 1, y: 0.7 }, colors })
+      if (Date.now() < end) requestAnimationFrame(frame)
+    })()
+  }, [isChampion])
+
   function handleVote(side) {
     onVote(side)
     setToast(true)
@@ -478,7 +494,18 @@ export default function DuelArena({
             transition={{ delay: 0.4 }}
             style={{ position: 'relative', zIndex: 1, marginTop: 28, textAlign: 'center' }}
           >
-            {winnerSide && (
+            {isChampion ? (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }}
+                transition={{ type: 'spring', stiffness: 220, damping: 16 }}
+                style={{ marginBottom: 22, padding: '26px 28px', borderRadius: 20, background: 'linear-gradient(160deg, rgba(249,168,212,.12), rgba(8,9,13,.96))', border: `1px solid ${PINK_L}55`, borderTop: `3px solid ${PINK_L}` }}
+              >
+                <div style={{ fontSize: 44, marginBottom: 6, filter: 'drop-shadow(0 0 22px rgba(249,168,212,.7))' }}>👑</div>
+                <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: '.26em', textTransform: 'uppercase', color: PINK_L, marginBottom: 8 }}>Champion du tournoi</div>
+                <div style={{ fontSize: 'clamp(24px,5vw,34px)', fontWeight: 900, color: '#fff', fontFamily: "'Pirata One',cursive", lineHeight: 1.1 }}>{winnerTitle}</div>
+                <div style={{ fontSize: 13, color: 'rgba(255,255,255,.5)', marginTop: 6 }}>remporte le Blind Test 🏆</div>
+              </motion.div>
+            ) : winnerSide && (
               <div style={{ fontSize: 13, color: 'rgba(255,255,255,.35)', marginBottom: 18 }}>
                 <span style={{ color: GOLD, fontWeight: 700 }}>{winnerTitle}</span>
                 {' '}rejoint {qualifiesFor || 'la victoire finale'}.
