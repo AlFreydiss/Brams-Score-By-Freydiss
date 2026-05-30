@@ -460,128 +460,60 @@ function DefaultInspectionPanel({ entries }) {
 
   if (!featured) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', padding: 40, textAlign: 'center' }}>
-        <div style={{ fontSize: 48, marginBottom: 16, opacity: 0.3 }}>☠</div>
-        <div style={{ fontSize: 14, fontWeight: 700, color: T.textMid }}>Archives Confidentielles</div>
-        <div style={{ fontSize: 12, color: T.textDim, marginTop: 6 }}>Aucun dossier disponible.</div>
+      <div className="arc-inspection-empty">
+        <div className="arc-inspection-emblem">☠</div>
+        <div className="arc-inspection-prompt">Archives Confidentielles</div>
+        <div className="arc-inspection-hint">Aucun dossier disponible.</div>
       </div>
     )
   }
 
   const cfg = rarityConfig[featured.rarity] || rarityConfig.common
   const statEntries = Object.entries(featured.stats || {}).slice(0, 5)
+  const rarityVars = { '--rarity-color': cfg.accent, '--rarity-glow': hexToRgba(cfg.accent, 0.5) }
 
   return (
-    <div style={{ height: '100%', overflow: 'hidden', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+    <div className="arc-insp-default" style={rarityVars}>
+      <div className="arc-insp-default-wm" aria-hidden>CLASSIFIÉ</div>
 
-      {/* Sticky classified stamp header */}
-      <div style={{
-        flexShrink: 0, padding: '14px 20px 12px',
-        background: `linear-gradient(160deg, ${hexToRgba(cfg.accent, 0.16)}, ${hexToRgba(cfg.accent, 0.05)}, transparent)`,
-        borderBottom: `1px solid ${hexToRgba(cfg.accent, 0.18)}`,
-        position: 'relative', overflow: 'hidden',
-      }}>
-        {/* Watermark */}
-        <div style={{
-          position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%) rotate(-20deg)',
-          fontSize: 72, fontWeight: 900, color: hexToRgba(cfg.accent, 0.05),
-          fontFamily: 'serif', userSelect: 'none', whiteSpace: 'nowrap', pointerEvents: 'none', letterSpacing: '.08em',
-        }}>CLASSIFIÉ</div>
-
-        {/* Animated scanner line */}
-        <motion.div
-          animate={{ top: ['0%', '100%', '0%'] }}
-          transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
-          style={{
-            position: 'absolute', left: 0, right: 0, height: 1,
-            background: `linear-gradient(90deg, transparent, ${hexToRgba(cfg.accent, 0.55)}, transparent)`,
-            pointerEvents: 'none',
-          }}
-        />
-
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-            <motion.div
-              animate={{ opacity: [1, 0.3, 1] }}
-              transition={{ duration: 1.6, repeat: Infinity }}
-              style={{ width: 6, height: 6, borderRadius: '50%', background: T.red, boxShadow: `0 0 8px ${T.red}` }}
-            />
-            <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: '.18em', color: T.red, textTransform: 'uppercase' }}>
-              Gouvernement Mondial · Division Renseignement
-            </span>
-          </div>
-          <span style={{ fontSize: 8, fontWeight: 700, color: T.textDim, letterSpacing: '.12em' }}>
-            ACCÈS NIV.5
-          </span>
-        </div>
-
-        {/* Featured entry identity */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <motion.div
-            animate={{ boxShadow: [`0 0 18px ${hexToRgba(cfg.accent, 0.25)}`, `0 0 36px ${hexToRgba(cfg.accent, 0.50)}`, `0 0 18px ${hexToRgba(cfg.accent, 0.25)}`] }}
-            transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
-            style={{
-              flexShrink: 0, width: 64, height: 64, borderRadius: '50%',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background: `radial-gradient(circle at 35% 35%, ${hexToRgba(cfg.accent, 0.30)}, ${hexToRgba(cfg.accent, 0.08)})`,
-              border: `2px solid ${hexToRgba(cfg.accent, 0.50)}`,
-              fontSize: 30,
-            }}
-          >
-            {cfg.icon}
-          </motion.div>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.20em', color: T.textDim, textTransform: 'uppercase', marginBottom: 4 }}>
-              Dossier prioritaire
-            </div>
-            <div style={{ fontSize: 17, fontWeight: 900, color: T.text, lineHeight: 1.2, marginBottom: 6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {featured.name}
-            </div>
-            <RarityBadge rarity={featured.rarity} size="sm" />
-          </div>
-        </div>
+      {/* Tampon prioritaire */}
+      <div className="arc-insp-default-stamp">
+        <span className="arc-insp-default-org">Gouvernement Mondial · Division Renseignement</span>
+        <span className="arc-insp-default-title-stamp">Dossier Prioritaire</span>
+        <span className="arc-insp-default-access">Accès Niv.5</span>
       </div>
 
-      {/* Scrollable body */}
-      <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.08) transparent' }}>
-        {/* Stats */}
-        {statEntries.length > 0 && (
-          <div style={{ padding: '16px 20px 0' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12, fontSize: 10, fontWeight: 800, letterSpacing: '.14em', color: T.textDim, textTransform: 'uppercase' }}>
-              <Zap size={11} color={T.orange} /> Indices de capacité
-            </div>
-            {statEntries.map(([key, val], i) => (
-              <StatBar key={key} label={statLabel(key)} value={val} color={cfg.accent} index={i} />
-            ))}
-          </div>
-        )}
-
-        {featured.description && (
-          <div style={{ padding: '12px 20px', fontSize: 12, color: T.textDim, lineHeight: 1.70, borderTop: `1px solid ${T.border}` }}>
-            {featured.description.slice(0, 200)}…
-          </div>
-        )}
-
-        {featured.subtitle && !featured.description && (
-          <div style={{ padding: '12px 20px', fontSize: 12, color: T.textDim, lineHeight: 1.65 }}>
-            {featured.subtitle}
-          </div>
-        )}
-
-        {/* CTA */}
-        <div style={{
-          margin: '12px 20px 20px',
-          padding: '14px 16px',
-          borderRadius: 10,
-          background: 'rgba(255,255,255,0.02)',
-          border: `1px dashed rgba(255,255,255,0.09)`,
-          textAlign: 'center',
-        }}>
-          <ChevronRight size={16} style={{ color: T.textDim, marginBottom: 6, display: 'block', margin: '0 auto 8px' }} />
-          <div style={{ fontSize: 11, fontWeight: 700, color: T.textMid, marginBottom: 3 }}>Sélectionner un dossier</div>
-          <div style={{ fontSize: 10, color: T.textDim }}>Cliquez sur une ligne pour consulter l'archive complète</div>
-        </div>
+      {/* Identité du dossier vedette */}
+      <div className="arc-insp-default-hero">
+        <span className="arc-insp-default-icon">{cfg.icon}</span>
+        <div className="arc-insp-default-name">{featured.name}</div>
+        <span className="arc-insp-default-sub">{rarityLabels[featured.rarity] || featured.rarity}</span>
       </div>
+
+      {/* Stats */}
+      {statEntries.length > 0 && (
+        <div className="arc-insp-default-stats">
+          {statEntries.map(([key, val]) => {
+            const pct = Math.max(0, Math.min(100, Number(val) || 0))
+            return (
+              <div className="arc-insp-default-stat" key={key}>
+                <span>{statLabel(key)}</span>
+                <div className="arc-insp-default-stat-bar"><div style={{ width: `${pct}%` }} /></div>
+                <span>{val}</span>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {(featured.description || featured.subtitle) && (
+        <p className="arc-insp-default-desc">
+          {featured.description ? `${featured.description.slice(0, 200)}…` : featured.subtitle}
+        </p>
+      )}
+
+      <div className="arc-insp-default-hint">Sélectionnez un dossier pour consulter l'archive complète</div>
+      <div className="arc-insp-default-coords">⌖ Archives Brams · Accès classifié</div>
     </div>
   )
 }
@@ -590,216 +522,119 @@ function DefaultInspectionPanel({ entries }) {
 function ArchiveInspection({ entry, index, isFavorite, spoilerSafe, revealed, onReveal, onToggleFavorite, onTagClick }) {
   const cfg = rarityConfig[entry.rarity] || rarityConfig.common
   const hidden = isSpoilerHiddenArc(entry, spoilerSafe, revealed)
-  const catIcon = CATEGORY_ICONS[entry.category] || '·'
+  const rarityVars = { '--rarity-color': cfg.accent, '--rarity-glow': hexToRgba(cfg.accent, 0.5) }
 
   return (
-    <div style={{ height: '100%', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-      {/* Header */}
-      <div style={{
-        position: 'relative', overflow: 'hidden',
-        padding: '22px 20px 20px',
-        background: `linear-gradient(155deg, ${hexToRgba(cfg.accent, 0.20)}, ${hexToRgba(cfg.accent, 0.06)}, transparent 70%)`,
-        borderBottom: `1px solid ${hexToRgba(cfg.accent, 0.22)}`,
-        flexShrink: 0,
-      }}>
-        {/* Scanline */}
-        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px)', pointerEvents: 'none' }} />
-
-        {/* Gov row */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-            <Shield size={12} color={T.red} />
-            <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: '.14em', color: T.textDim, textTransform: 'uppercase' }}>
-              Gouvernement Mondial · Naval
-            </span>
+    <div className="arc-insp-card" style={rarityVars}>
+      <div className="arc-insp-card-header">
+        <div className="arc-insp-band" aria-hidden />
+        <div className="arc-insp-head">
+          <div className="arc-insp-meta">
+            <span className="arc-insp-file-id">{fmtId(index >= 0 ? index : 0)} · {(entry.category || '').replace(/-/g, ' ').toUpperCase()}</span>
+            <RarityBadge rarity={entry.rarity} />
           </div>
-          <RarityBadge rarity={entry.rarity} />
-        </div>
-
-        {/* Central icon */}
-        <div style={{ textAlign: 'center', marginBottom: 16 }}>
-          <motion.div
-            initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: 'spring', stiffness: 200, damping: 18 }}
-            style={{
-              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-              width: 90, height: 90, borderRadius: '50%', position: 'relative',
-              background: `radial-gradient(circle at 35% 35%, ${hexToRgba(cfg.accent, 0.30)}, ${hexToRgba(cfg.accent, 0.08)})`,
-              border: `2px solid ${hexToRgba(cfg.accent, 0.50)}`,
-              boxShadow: `0 0 40px ${hexToRgba(cfg.accent, 0.35)}, inset 0 0 24px ${hexToRgba(cfg.accent, 0.12)}`,
-              fontSize: 42,
-            }}
-          >
-            {cfg.icon}
-            <span style={{ position: 'absolute', bottom: 6, right: 6, fontSize: 16 }}>{catIcon}</span>
-          </motion.div>
-        </div>
-
-        {/* Name block */}
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 10, color: T.textDim, marginBottom: 6, fontVariantNumeric: 'tabular-nums' }}>
-            {fmtId(index >= 0 ? index : 0)} · {(entry.category || '').replace(/-/g, ' ').toUpperCase()}
-          </div>
-          <h2 style={{ margin: '0 0 6px', fontFamily: 'var(--display, serif)', fontSize: 'clamp(16px,2vw,22px)', fontWeight: 900, color: hidden ? 'transparent' : T.text, lineHeight: 1.15, textShadow: hidden ? 'none' : `0 0 30px ${hexToRgba(cfg.accent, 0.25)}` }}>
-            {hidden ? <span style={{ background: T.red, borderRadius: 4, display: 'inline-block', width: '70%', height: '1.1em' }} /> : entry.name}
-          </h2>
-          {entry.subtitle && !hidden && <div style={{ fontSize: 12, color: T.textDim }}>{entry.subtitle}</div>}
-          {entry.knownUser && !hidden && (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, marginTop: 8, fontSize: 12, color: T.textMid }}>
-              <Eye size={12} color={cfg.accent} /> {entry.knownUser}
-            </div>
+          <h2 className="arc-insp-name">{hidden ? '████████' : entry.name}</h2>
+          {!hidden && (entry.subtitle || entry.knownUser) && (
+            <div className="arc-insp-sub">{entry.subtitle || entry.knownUser}</div>
           )}
         </div>
       </div>
 
-      {/* Body */}
       {hidden ? (
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 24px', textAlign: 'center' }}>
-          {/* Animated scanner */}
-          <motion.div
-            animate={{ opacity: [0.4, 1, 0.4] }}
-            transition={{ duration: 1.4, repeat: Infinity }}
-            style={{ fontSize: 36, marginBottom: 16 }}
-          >🔒</motion.div>
-
-          <div style={{ fontSize: 14, fontWeight: 800, color: T.red, letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 8 }}>
-            ACCÈS RESTREINT
-          </div>
-          <div style={{ fontSize: 12, color: T.textDim, marginBottom: 24, lineHeight: 1.6 }}>
-            Archive classifiée — Spoiler majeur détecté.<br />Autorisation requise.
-          </div>
-
-          {/* Redacted bars */}
-          <div style={{ width: '100%', marginBottom: 24 }}>
-            {[100, 75, 88, 60, 92].map((w, i) => (
-              <motion.div
-                key={i}
-                animate={{ opacity: [0.4, 0.7, 0.4] }}
-                transition={{ duration: 1.2, delay: i * 0.15, repeat: Infinity }}
-                style={{ height: 10, borderRadius: 4, background: `linear-gradient(90deg, ${T.red}, rgba(201,31,46,0.3))`, width: `${w}%`, marginBottom: 8 }}
-              />
-            ))}
-          </div>
-
-          <motion.button
-            type="button" onClick={() => onReveal(entry.id)}
-            whileHover={{ scale: 1.04, boxShadow: `0 0 24px ${T.redSoft}` }}
-            whileTap={{ scale: 0.97 }}
-            style={{
-              padding: '12px 28px', borderRadius: 10, border: `1px solid ${hexToRgba(T.red, 0.45)}`,
-              background: T.redSoft, color: T.red, fontSize: 13, fontWeight: 800,
-              cursor: 'pointer', letterSpacing: '.06em', display: 'flex', alignItems: 'center', gap: 8,
-            }}
-          >
-            <EyeOff size={14} /> Déclassifier le dossier
-          </motion.button>
+        <div className="arc-insp-classified">
+          <div className="arc-insp-class-scan" aria-hidden />
+          <div className="arc-insp-class-icon">🔒</div>
+          <div className="arc-insp-class-stamp">Accès Restreint</div>
+          <div className="arc-insp-class-hint">Archive classifiée — spoiler majeur détecté. Autorisation requise.</div>
+          <button className="arc-insp-reveal-btn" type="button" onClick={() => onReveal(entry.id)}>
+            Déclassifier le dossier
+          </button>
         </div>
       ) : (
-        <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '16px 20px 16px 20px', scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.08) transparent' }}>
-
-          {/* Description */}
+        <div className="arc-insp-body">
+          {/* Rapport */}
           {entry.description && (
-            <Section icon={<BookOpen size={13} />} title="Rapport de situation">
-              <p style={{ margin: 0, fontSize: 13, color: T.textMid, lineHeight: 1.70 }}>{entry.description}</p>
-            </Section>
+            <div className="arc-insp-section">
+              <div className="arc-insp-section-title">Rapport de situation</div>
+              <p className="arc-insp-desc">{entry.description}</p>
+            </div>
           )}
 
           {/* Stats */}
           {!!Object.keys(entry.stats || {}).length && (
-            <Section icon={<Zap size={13} color={T.orange} />} title="Indices de capacité">
-              {Object.entries(entry.stats).map(([key, value], i) => (
-                <StatBar key={key} label={statLabel(key)} value={value} color={cfg.accent} index={i} />
-              ))}
-            </Section>
+            <div className="arc-insp-section">
+              <div className="arc-insp-section-title">Indices de capacité</div>
+              <div className="arc-insp-stats">
+                {Object.entries(entry.stats).map(([key, value]) => {
+                  const pct = Math.max(0, Math.min(100, Number(value) || 0))
+                  return (
+                    <div className="arc-insp-stat-row" key={key}>
+                      <span className="arc-insp-stat-label">{statLabel(key)}</span>
+                      <div className="arc-insp-stat-bar"><div className="arc-insp-stat-fill" style={{ width: `${pct}%` }} /></div>
+                      <span className="arc-insp-stat-val">{value}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
           )}
 
-          {/* Strengths / Weaknesses */}
+          {/* Forces / Faiblesses */}
           {entry.strengths && (
-            <Section icon={<Swords size={13} />} title="Analyse tactique">
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                <div style={{ padding: '12px 14px', borderRadius: 10, background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.20)' }}>
-                  <div style={{ fontSize: 10, fontWeight: 800, color: '#22c55e', letterSpacing: '.10em', marginBottom: 8 }}>⊕ FORCES</div>
-                  <ul style={{ margin: 0, padding: '0 0 0 14px', listStyle: 'disc' }}>
-                    {(entry.strengths || []).map(s => <li key={s} style={{ fontSize: 11, color: T.textMid, marginBottom: 4, lineHeight: 1.5 }}>{s}</li>)}
-                  </ul>
+            <div className="arc-insp-section">
+              <div className="arc-insp-section-title">Analyse tactique</div>
+              <div className="arc-insp-cols">
+                <div className="arc-insp-col">
+                  <div className="arc-insp-col-title" style={{ color: '#34d399' }}>⊕ Forces</div>
+                  <ul>{(entry.strengths || []).map(s => <li key={s}>{s}</li>)}</ul>
                 </div>
-                <div style={{ padding: '12px 14px', borderRadius: 10, background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.20)' }}>
-                  <div style={{ fontSize: 10, fontWeight: 800, color: '#ef4444', letterSpacing: '.10em', marginBottom: 8 }}>⊖ FAIBLESSES</div>
-                  <ul style={{ margin: 0, padding: '0 0 0 14px', listStyle: 'disc' }}>
-                    {(entry.weaknesses || []).map(w => <li key={w} style={{ fontSize: 11, color: T.textMid, marginBottom: 4, lineHeight: 1.5 }}>{w}</li>)}
-                  </ul>
+                <div className="arc-insp-col">
+                  <div className="arc-insp-col-title" style={{ color: '#f87171' }}>⊖ Faiblesses</div>
+                  <ul>{(entry.weaknesses || []).map(w => <li key={w}>{w}</li>)}</ul>
                 </div>
               </div>
-            </Section>
+            </div>
           )}
 
-          {/* Awakening */}
+          {/* Éveil */}
           {entry.awakening && (
-            <Section icon={<Star size={13} color={T.gold} />} title="Éveil · Classification spéciale">
-              <div style={{
-                padding: '12px 14px', borderRadius: 10,
-                background: hexToRgba(T.gold, 0.07), border: `1px solid ${hexToRgba(T.gold, 0.22)}`,
-                fontSize: 12, color: T.textMid, lineHeight: 1.65,
-              }}>
-                {entry.awakening}
-              </div>
-            </Section>
+            <div className="arc-insp-section">
+              <div className="arc-insp-section-title">Éveil · Classification spéciale</div>
+              <div className="arc-insp-awakening">{entry.awakening}</div>
+            </div>
           )}
 
           {/* Tags */}
           {!!(entry.tags || []).length && (
-            <Section icon={<Tag size={13} />} title="Mots-clés d'archive">
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            <div className="arc-insp-section">
+              <div className="arc-insp-section-title">Mots-clés d'archive</div>
+              <div className="arc-insp-tags">
                 {(entry.tags || []).map(tag => (
-                  <motion.span
+                  <span
                     key={tag}
-                    whileHover={{ scale: 1.06 }}
-                    onClick={() => onTagClick?.(tag)}
+                    className="arc-insp-tag"
                     role="button" tabIndex={0}
+                    onClick={() => onTagClick?.(tag)}
                     onKeyDown={e => { if (e.key === 'Enter') onTagClick?.(tag) }}
-                    style={{
-                      padding: '4px 12px', borderRadius: 100, cursor: 'pointer',
-                      background: 'rgba(255,255,255,0.06)', border: `1px solid ${T.border}`,
-                      fontSize: 11, color: T.textMid, fontWeight: 600,
-                      transition: 'background .14s, border-color .14s',
-                    }}
                   >
                     {tag}
-                  </motion.span>
+                  </span>
                 ))}
               </div>
-            </Section>
+            </div>
           )}
         </div>
       )}
 
       {/* Footer */}
-      <div style={{
-        padding: '12px 20px', borderTop: `1px solid ${T.border}`,
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        background: T.surface, flexShrink: 0,
-      }}>
-        <motion.button
+      <div className="arc-insp-footer">
+        <button
+          className={`arc-insp-btn${isFavorite ? ' is-active' : ''}`}
           type="button"
           onClick={() => onToggleFavorite(entry.slug)}
-          whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 7,
-            padding: '8px 16px', borderRadius: 8,
-            border: `1px solid ${isFavorite ? 'rgba(244,63,94,0.40)' : T.border}`,
-            background: isFavorite ? 'rgba(244,63,94,0.10)' : 'rgba(255,255,255,0.04)',
-            color: isFavorite ? '#f43f5e' : T.textDim,
-            fontSize: 12, fontWeight: 700, cursor: 'pointer', transition: 'all .15s',
-          }}
         >
-          <Heart size={13} fill={isFavorite ? '#f43f5e' : 'none'} />
-          {isFavorite ? 'Favori' : 'Ajouter'}
-        </motion.button>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 11, color: T.textDim, fontVariantNumeric: 'tabular-nums' }}>{fmtId(index >= 0 ? index : 0)}</span>
-          <span style={{ fontSize: 11, fontWeight: 700, color: cfg.accent }}>{rarityLabels[entry.rarity]}</span>
-        </div>
+          {isFavorite ? '♥ Favori' : '♡ Ajouter aux favoris'}
+        </button>
       </div>
     </div>
   )
