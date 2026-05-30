@@ -844,9 +844,10 @@ def _apply_berry_sync_for_uids(uids: set) -> None:
                 _CACHE[uid]["berrys"] = max(0, current - int(deduction))
                 ids_to_mark.append(sync_id)
         if ids_to_mark:
+            # berry_sync.id est de type uuid → cast explicite (sinon "operator does not exist: uuid = text")
             cur.execute(
-                "UPDATE berry_sync SET applied = true WHERE id = ANY(%s)",
-                (ids_to_mark,)
+                "UPDATE berry_sync SET applied = true WHERE id = ANY(%s::uuid[])",
+                ([str(i) for i in ids_to_mark],)
             )
             conn.commit()
             print(f"[BERRY_SYNC] {len(ids_to_mark)} déduction(s) web appliquée(s)")
