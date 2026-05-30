@@ -2,13 +2,17 @@
 import { RANK_QUOTES, fmtB } from '../../lib/profileTokens.js'
 import { CountUp } from './shared.jsx'
 import RelationshipActions from '../social/RelationshipActions.jsx'
+import OpeningBgMedia from '../social/OpeningBgMedia.jsx'
+import { getBgById } from '../../data/opening-backgrounds.js'
 
 export default function ProfileHero({ data, copied, onShare, onEdit }) {
   const {
     member, rank, nextRank, remaining, pct, hours, wallet, aura,
-    achievements, postsCount, shopData, settings,
+    achievements, postsCount, shopData, settings, equippedBg,
     isOwnProfile, profileIsCreator, profileIsStaff, myId,
   } = data
+
+  const heroBg = getBgById(equippedBg)
 
   const displayName = member?.username || `Pirate #${String(member?.uid || '').slice(-4)}`
   const quote = settings?.quote || RANK_QUOTES[rank.rang] || ''
@@ -32,7 +36,9 @@ export default function ProfileHero({ data, copied, onShare, onEdit }) {
       {/* ═══ HERO ═══ */}
       <section className="pfx-hero">
         <div className="pfx-hero-bg" aria-hidden>
+          {/* Fallback (dégradé teinté rang) toujours dessous, visible si pas de média ou échec. */}
           <div className="pfx-hero-bg-fallback" />
+          {heroBg && <OpeningBgMedia bg={heroBg} className="pfx-hero-bg-media" />}
         </div>
         <div className="pfx-hero-overlay" aria-hidden />
         <div className="pfx-hero-grain" aria-hidden />
