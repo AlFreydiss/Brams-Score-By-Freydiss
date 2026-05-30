@@ -275,8 +275,9 @@ function VoteToast({ visible, winnerTitle }) {
 export default function DuelArena({
   round, match, totalMatchesInRound, voteCounts,
   personalVotes, onVote, onNext, isLastMatch, isMobile,
-  multiplayer = false, multiplayerStatus = null,
+  multiplayer = false, multiplayerStatus = null, vertical = false,
 }) {
+  const stacked = isMobile || vertical // dispo verticale (openings empilés haut/bas)
   const [playing,   setPlaying]  = useState(null)
   const [watching,  setWatching] = useState(null)
   const [showToast, setToast]    = useState(false)
@@ -390,16 +391,16 @@ export default function DuelArena({
       {/* Grille duel : 46% / 96px / 46% */}
       <div style={{
         position: 'relative', zIndex: 1,
-        display: isMobile ? 'flex' : 'grid',
+        display: stacked ? 'flex' : 'grid',
         gridTemplateColumns: '1fr 96px 1fr',
-        flexDirection: isMobile ? 'column' : undefined,
-        gap: isMobile ? 10 : 0,
+        flexDirection: stacked ? 'column' : undefined,
+        gap: stacked ? 10 : 0,
         alignItems: 'stretch',
         minWidth: 0,
       }}>
         {/* Card gauche — entre depuis la gauche */}
         <motion.div
-          initial={{ x: isMobile ? 0 : -90, y: isMobile ? -36 : 0, opacity: 0 }}
+          initial={{ x: stacked ? 0 : -90, y: stacked ? -36 : 0, opacity: 0 }}
           animate={{ x: 0, y: 0, opacity: 1 }}
           transition={{ type: 'spring', stiffness: 280, damping: 26, delay: 0.06 }}
           style={{ minWidth: 0, display: 'flex', flexDirection: 'column' }}
@@ -420,7 +421,7 @@ export default function DuelArena({
             isPlaying={playing?.side === 'left'}
             otherIsPlaying={playing !== null && playing.side !== 'left'}
             showResult={showResult}
-            isMobile={isMobile}
+            isMobile={stacked}
             vivid={multiplayer}
             videoSyncRef={playing?.side === 'left' ? cardBgVideoRef : null}
           />
@@ -435,7 +436,7 @@ export default function DuelArena({
         >
           <VSPanel
             hasVoted={hasVoted}
-            isMobile={isMobile}
+            isMobile={stacked}
             qualifiesFor={qualifiesFor}
             matchNum={matchNum}
             totalMatches={totalMatchesInRound}
@@ -447,7 +448,7 @@ export default function DuelArena({
 
         {/* Card droite — entre depuis la droite */}
         <motion.div
-          initial={{ x: isMobile ? 0 : 90, y: isMobile ? 36 : 0, opacity: 0 }}
+          initial={{ x: stacked ? 0 : 90, y: stacked ? 36 : 0, opacity: 0 }}
           animate={{ x: 0, y: 0, opacity: 1 }}
           transition={{ type: 'spring', stiffness: 280, damping: 26, delay: 0.09 }}
           style={{ minWidth: 0, display: 'flex', flexDirection: 'column' }}
@@ -468,7 +469,7 @@ export default function DuelArena({
             isPlaying={playing?.side === 'right'}
             otherIsPlaying={playing !== null && playing.side !== 'right'}
             showResult={showResult}
-            isMobile={isMobile}
+            isMobile={stacked}
             vivid={multiplayer}
             videoSyncRef={playing?.side === 'right' ? cardBgVideoRef : null}
           />

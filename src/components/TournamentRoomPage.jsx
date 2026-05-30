@@ -431,33 +431,40 @@ export default function TournamentRoomPage() {
           </div>
         )}
 
-        {/* DUEL EN COURS — pleine largeur : chaque opening remplit sa moitié d'écran */}
+        {/* DUEL EN COURS — openings empilés (haut / bas) + sidebar votes */}
         {room.status === 'playing' && current && (
-          <div style={{ position: 'relative', width: '100vw', marginLeft: 'calc(50% - 50vw)', padding: '0 clamp(12px,3vw,48px)', boxSizing: 'border-box' }}>
-            <DuelArena
-              key={current.match.id}
-              round={current.round}
-              match={current.match}
-              totalMatchesInRound={current.round.matches.length}
-              voteCounts={{ [current.match.id]: { left: leftN, right: rightN } }}
-              personalVotes={{ [current.match.id]: myVote }}
-              onVote={(side) => { if (amIInRoom && !myVote) vote(side) }}
-              onNext={() => {}}
-              isLastMatch={false}
-              isMobile={isMobile}
-              multiplayer
-              multiplayerStatus={`${totalV}/${players.length} ont voté · ${myVote ? 'en attente des autres…' : 'à toi de voter !'}`}
-            />
-            {/* Panneau votes : flottant en haut à droite (desktop) / en dessous (mobile) */}
-            {isMobile ? (
-              <div style={{ marginTop: 16 }}>
-                <VotersPanel players={players} votes={votes} match={current.match} isMobile />
+          <div>
+            {/* Petit header joli : round + numéro de duel */}
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '7px 16px', borderRadius: 999, background: 'rgba(157,23,77,.12)', border: `1px solid ${PINK}44` }}>
+                <span style={{ width: 7, height: 7, borderRadius: '50%', background: PINK_L, boxShadow: `0 0 8px ${PINK_L}`, animation: 'troom-pulse 2s ease-in-out infinite' }} />
+                <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.12em', textTransform: 'uppercase', color: PINK_L }}>{current.round.label}</span>
+                <span style={{ width: 1, height: 14, background: 'rgba(255,255,255,.15)' }} />
+                <span style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,.55)' }}>Duel {current.match.position + 1}/{current.round.matches.length}</span>
               </div>
-            ) : (
-              <div style={{ position: 'absolute', top: 0, right: 'clamp(12px,3vw,48px)', zIndex: 5 }}>
-                <VotersPanel players={players} votes={votes} match={current.match} isMobile={false} />
+            </div>
+            <style>{`@keyframes troom-pulse{0%,100%{opacity:.5}50%{opacity:1}}`}</style>
+
+            <div style={{ display: 'flex', gap: 18, alignItems: 'flex-start', justifyContent: 'center', flexDirection: isMobile ? 'column' : 'row' }}>
+              <div style={{ flex: '1 1 0', minWidth: 0, maxWidth: 760, width: '100%' }}>
+                <DuelArena
+                  key={current.match.id}
+                  round={current.round}
+                  match={current.match}
+                  totalMatchesInRound={current.round.matches.length}
+                  voteCounts={{ [current.match.id]: { left: leftN, right: rightN } }}
+                  personalVotes={{ [current.match.id]: myVote }}
+                  onVote={(side) => { if (amIInRoom && !myVote) vote(side) }}
+                  onNext={() => {}}
+                  isLastMatch={false}
+                  isMobile={isMobile}
+                  vertical
+                  multiplayer
+                  multiplayerStatus={`${totalV}/${players.length} ont voté · ${myVote ? 'en attente des autres…' : 'à toi de voter !'}`}
+                />
               </div>
-            )}
+              <VotersPanel players={players} votes={votes} match={current.match} isMobile={isMobile} />
+            </div>
           </div>
         )}
 
