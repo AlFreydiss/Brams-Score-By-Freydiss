@@ -421,7 +421,7 @@ export default function DuelArena({
             isPlaying={playing?.side === 'left'}
             otherIsPlaying={playing !== null && playing.side !== 'left'}
             showResult={showResult}
-            isMobile={stacked}
+            isMobile={isMobile}
             vivid={multiplayer}
             videoSyncRef={playing?.side === 'left' ? cardBgVideoRef : null}
           />
@@ -469,7 +469,7 @@ export default function DuelArena({
             isPlaying={playing?.side === 'right'}
             otherIsPlaying={playing !== null && playing.side !== 'right'}
             showResult={showResult}
-            isMobile={stacked}
+            isMobile={isMobile}
             vivid={multiplayer}
             videoSyncRef={playing?.side === 'right' ? cardBgVideoRef : null}
           />

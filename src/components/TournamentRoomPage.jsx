@@ -441,6 +441,8 @@ export default function TournamentRoomPage() {
         {/* DUEL EN COURS — openings empilés (haut / bas) + sidebar votes */}
         {room.status === 'playing' && current && (
           <div>
+            {/* Ambiance de fond : collage flouté des 2 openings (recouvert quand on en joue un) */}
+            <DuelAmbient left={current.match.left} right={current.match.right} />
             {/* Petit header joli : round + numéro de duel */}
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '7px 16px', borderRadius: 999, background: 'rgba(157,23,77,.12)', border: `1px solid ${PINK}44` }}>
@@ -453,8 +455,8 @@ export default function TournamentRoomPage() {
             <style>{ARENA_KEYFRAMES}</style>
 
             <div style={{ display: 'flex', gap: 18, alignItems: 'flex-start', justifyContent: 'center', flexDirection: isMobile ? 'column' : 'row' }}>
-              {/* Duel (fond sombre sobre, sans backdrop énergétique) */}
-              <div style={{ flex: '1 1 0', minWidth: 0, maxWidth: 760, width: '100%' }}>
+              {/* Duel agrandi (cartes taille desktop, empilées) */}
+              <div style={{ flex: '1 1 0', minWidth: 0, maxWidth: 900, width: '100%' }}>
                 <DuelArena
                   key={current.match.id}
                   round={current.round}
@@ -491,6 +493,23 @@ export default function TournamentRoomPage() {
           </div>
         )}
       </div>
+    </div>
+  )
+}
+
+// ── Ambiance de fond : collage flouté des 2 openings (quand aucun ne joue) ────
+function DuelAmbient({ left, right }) {
+  const tile = (p, pos) => p?.ytId ? (
+    <img src={`https://img.youtube.com/vi/${p.ytId}/hqdefault.jpg`} alt="" style={{
+      position: 'absolute', left: 0, right: 0, height: '58%', objectFit: 'cover',
+      filter: 'blur(38px) saturate(1.15) brightness(.5)', opacity: 0.42, ...pos,
+    }} />
+  ) : null
+  return (
+    <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+      {tile(left, { top: 0 })}
+      {tile(right, { bottom: 0 })}
+      <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(70% 42% at 50% 0%, ${hexA(left?.color, 0.16)}, transparent 72%), radial-gradient(70% 42% at 50% 100%, ${hexA(right?.color, 0.16)}, transparent 72%), linear-gradient(180deg, rgba(8,7,11,.62), rgba(8,7,11,.84))` }} />
     </div>
   )
 }
