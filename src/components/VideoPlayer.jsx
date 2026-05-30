@@ -570,12 +570,17 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   }
   const onMetaChg = () => {
     const v = videoRef.current; if (!v) return
+    // Qualité = hauteur "16:9 équivalente" : pour un film large (ex. 1920x804,
+    // ratio cinéma), juger sur la seule hauteur sous-estime (804→720p alors que
+    // c'est du 1080p). On déduit la hauteur 16:9 à partir de la largeur.
     const h = Number(v.videoHeight || 0)
-    if (h >= 2160) setQualityLabel('4K')
-    else if (h >= 1440) setQualityLabel('1440p')
-    else if (h >= 1080) setQualityLabel('1080p')
-    else if (h >= 720) setQualityLabel('720p')
-    else if (h > 0) setQualityLabel(`${h}p`)
+    const w = Number(v.videoWidth || 0)
+    const q = Math.max(h, Math.round(w * 9 / 16))
+    if (q >= 2160) setQualityLabel('4K')
+    else if (q >= 1440) setQualityLabel('1440p')
+    else if (q >= 1080) setQualityLabel('1080p')
+    else if (q >= 720) setQualityLabel('720p')
+    else if (q > 0) setQualityLabel(`${q}p`)
     else setQualityLabel('SD')
     const pending = pendingSourceRef.current
     if (pending && pending.src && v.currentSrc !== encSrc(pending.src)) return
