@@ -542,14 +542,40 @@ export default function BlindTestPage() {
     }
   }, [])
 
+  // Bip de décompte synthétisé (Web Audio, aucun asset). Respecte le volume.
+  const audioCtxRef = useRef(null)
+  const lastBeepRef = useRef(null)
+  const playBeep = (freq, duration = 0.1, gainMul = 1) => {
+    if (volume <= 0) return
+    try {
+      if (!audioCtxRef.current) audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)()
+      const ctx = audioCtxRef.current
+      if (ctx.state === 'suspended') ctx.resume()
+      const osc = ctx.createOscillator()
+      const g = ctx.createGain()
+      osc.type = 'sine'
+      osc.frequency.value = freq
+      osc.connect(g); g.connect(ctx.destination)
+      const now = ctx.currentTime
+      const peak = 0.22 * gainMul * Math.min(1, volume)
+      g.gain.setValueAtTime(0.0001, now)
+      g.gain.exponentialRampToValueAtTime(peak, now + 0.01)
+      g.gain.exponentialRampToValueAtTime(0.0001, now + duration)
+      osc.start(now)
+      osc.stop(now + duration + 0.02)
+    } catch {}
+  }
+
   useEffect(() => {
-    if (phase !== 'countdown') return
+    if (phase !== 'countdown') { lastBeepRef.current = null; return }
     if (countdown <= 0) {
+      if (lastBeepRef.current !== 'go') { playBeep(960, 0.30, 1.4); lastBeepRef.current = 'go' } // « GO ! » aigu
       videoRef.current?.play().catch(() => {})
       setPhase('playing'); setStartTime(Date.now()); setElapsed(0)
       if (roomCode && roomRole === 'host') publishRoomState('playing')
       return
     }
+    if (lastBeepRef.current !== countdown) { playBeep(620, 0.12, 1); lastBeepRef.current = countdown } // tic 3/2/1
     const t = setTimeout(() => setCountdown(v => v - 1), 1000)
     return () => clearTimeout(t)
   }, [phase, countdown, roomCode, roomRole])
