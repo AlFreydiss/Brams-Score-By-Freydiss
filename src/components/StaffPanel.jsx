@@ -241,76 +241,7 @@ export default function StaffPanel() {
               </div>
             )}
 
-            {/* Stats */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginBottom: 32 }}>
-              {[
-                { label: 'En attente', value: total,                    color: '#d4a017' },
-                { label: 'Théories',   value: pending.theories.length,  color: '#a29bfe' },
-                { label: 'Wiki',       value: pending.pages.length,     color: '#74b9ff' },
-              ].map(s => (
-                <div key={s.label} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: '16px 20px' }}>
-                  <div style={{ fontSize: 28, fontWeight: 800, color: s.color, lineHeight: 1 }}>{s.value}</div>
-                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.38)', marginTop: 4, fontWeight: 600, letterSpacing: '.06em', textTransform: 'uppercase' }}>{s.label}</div>
-                </div>
-              ))}
-            </div>
-
-            {/* Tabs */}
-            <div style={{ display: 'flex', gap: 4, marginBottom: 20, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 4 }}>
-              {[
-                { id: 'chat',     label: 'QG Staff',                              icon: '🛡️' },
-                { id: 'theories', label: `Théories (${pending.theories.length})`, icon: '📜' },
-                { id: 'wiki',     label: `Wiki (${pending.pages.length})`,         icon: '📖' },
-              ].map(t => (
-                <button key={t.id} onClick={() => setTab(t.id)} style={{
-                  flex: 1, padding: '9px 16px', borderRadius: 9, border: 'none', cursor: 'pointer',
-                  background: tab === t.id ? 'rgba(212,160,23,0.18)' : 'transparent',
-                  color: tab === t.id ? '#d4a017' : 'rgba(255,255,255,0.4)',
-                  fontWeight: 700, fontSize: 12, transition: 'all .15s',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                }}>
-                  <span>{t.icon}</span><span>{t.label}</span>
-                </button>
-              ))}
-            </div>
-
-            {loading && tab !== 'chat' && (
-              <div style={{ textAlign: 'center', padding: 40, color: 'rgba(255,255,255,0.35)', fontSize: 14 }}>
-                Chargement…
-              </div>
-            )}
-
-            {tab === 'chat' && <StaffChat />}
-
-            {!loading && tab === 'theories' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {pending.theories.length === 0
-                  ? <div style={{ textAlign: 'center', padding: '40px 20px', color: 'rgba(255,255,255,0.25)', fontSize: 14 }}>✓ Aucune théorie en attente</div>
-                  : pending.theories.map(t => (
-                      <PendingCard key={t.id} item={t} table="theories" onAction={handleAction} actioning={actioning} />
-                    ))
-                }
-              </div>
-            )}
-
-            {!loading && tab === 'wiki' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {pending.pages.length === 0
-                  ? <div style={{ textAlign: 'center', padding: '40px 20px', color: 'rgba(255,255,255,0.25)', fontSize: 14 }}>✓ Aucune page wiki en attente</div>
-                  : pending.pages.map(p => (
-                      <PendingCard key={p.id} item={p} table="wiki_pages" onAction={handleAction} actioning={actioning} />
-                    ))
-                }
-              </div>
-            )}
-
-            {/* Info service role key */}
-            {!notice && (
-              <div style={{ marginTop: 40, padding: '12px 16px', borderRadius: 10, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', fontSize: 11, color: 'rgba(255,255,255,0.22)', lineHeight: 1.6 }}>
-                Les modérations passent par l'API serveur <code style={{ color: 'rgba(255,255,255,0.4)' }}>/api/moderate</code>.
-                Pour un bypass RLS garanti, configure <code style={{ color: 'rgba(255,255,255,0.4)' }}>SUPABASE_SERVICE_ROLE_KEY</code> dans les variables Vercel.
-              </div>
-            )}
+            <StaffChat />
           </>
         )}
       </div>
