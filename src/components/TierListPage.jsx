@@ -852,6 +852,11 @@ export default function TierListPage() {
   const [draftSaved, setDraftSaved] = useState(false)
   const [toast, setToast]     = useState(null)
   const [showTemplates, setShowTemplates] = useState(false)
+  const [showMenu, setShowMenu] = useState(false)
+  const [hideHint, setHideHint] = useState(() => {
+    try { return localStorage.getItem('tl_hint_dismissed') === '1' } catch { return false }
+  })
+  const dismissHint = () => { setHideHint(true); try { localStorage.setItem('tl_hint_dismissed', '1') } catch {} }
   const boardRef = useRef(null)
   const titleRef = useRef(null)
   const latestDraftRef = useRef(null)
@@ -1447,42 +1452,58 @@ export default function TierListPage() {
                 {cloudSaved ? '✓ Auto-sauvé cloud' : saved ? '✓ Sauvegardé' : draftSaved ? '✓ Auto-sauvé' : '● Sauvegarde...'}
               </div>
 
-              {/* Action buttons */}
+              {/* Actions principales — seules les 3 essentielles restent visibles */}
               {[
-                { icon:<Shuffle size={11}/>, label:'Shuffle',  fn:randomize, c:'#7b6aa8' },
-                { icon:<RotateCcw size={11}/>, label:'Reset',  fn:reset,     c:G.rose },
-                { icon:<Download size={11}/>, label:'PNG',     fn:exportPng, c:G.gold },
-                { icon:<Save size={11}/>,     label:'Sauv.',   fn:saveList,  c:'#34d399' },
+                { icon:<Download size={11}/>, label:'PNG',      fn:exportPng, c:G.gold },
+                { icon:<Save size={11}/>,     label:'Sauver',   fn:saveList,  c:'#34d399' },
                 { icon:<Users size={11}/>,    label:publishing ? '...' : 'Partager', fn:shareList, c:'#4a86b8' },
               ].map(b => (
                 <button key={b.label} onClick={b.fn} style={{
-                  display:'flex', alignItems:'center', gap:4, padding:'5px 10px', borderRadius:8,
+                  display:'flex', alignItems:'center', gap:4, padding:'6px 12px', borderRadius:8,
                   background:`${b.c}12`, border:`1px solid ${b.c}30`,
-                  color:b.c, cursor:'pointer', fontSize:10.5, fontWeight:700,
+                  color:b.c, cursor:'pointer', fontSize:11, fontWeight:700,
                   transition:'background .15s, border-color .15s',
                 }}>
                   {b.icon} {b.label}
                 </button>
               ))}
 
-              {/* Templates toggle */}
-              <button onClick={() => setShowTemplates(v => !v)} style={{
-                display:'flex', alignItems:'center', gap:4, padding:'5px 10px', borderRadius:8,
-                background: showTemplates ? 'rgba(191,164,106,.16)' : 'rgba(255,255,255,.05)',
-                border:`1px solid ${showTemplates ? G.gold+'44' : G.border}`,
-                color: showTemplates ? G.gold : G.muted, cursor:'pointer', fontSize:10.5, fontWeight:700,
-              }}>
-                <Grid size={11}/> Templates <ChevronDown size={10} style={{ transform: showTemplates ? 'rotate(180deg)' : undefined, transition:'transform .2s' }}/>
-              </button>
-
-              {/* Change type */}
-              <button onClick={() => setSelectedType(null)} style={{
-                display:'flex', alignItems:'center', gap:4, padding:'5px 10px', borderRadius:8,
-                background:'rgba(255,255,255,.05)', border:`1px solid ${G.border}`,
-                color:G.muted, cursor:'pointer', fontSize:10.5, fontWeight:700,
-              }}>
-                <ArrowLeft size={11}/> Changer
-              </button>
+              {/* Menu « ⋯ » — actions secondaires regroupées (désencombre le bandeau) */}
+              <div style={{ position:'relative' }}>
+                <button onClick={() => setShowMenu(v => !v)} aria-label="Plus d'actions" style={{
+                  display:'flex', alignItems:'center', justifyContent:'center', width:32, height:30, borderRadius:8,
+                  background: showMenu ? 'rgba(255,255,255,.10)' : 'rgba(255,255,255,.05)',
+                  border:`1px solid ${G.border}`, color:G.text, cursor:'pointer', fontSize:16, fontWeight:700, lineHeight:1,
+                }}>⋯</button>
+                {showMenu && (
+                  <>
+                    <div onClick={() => setShowMenu(false)} style={{ position:'fixed', inset:0, zIndex:55 }} />
+                    <div style={{
+                      position:'absolute', top:'calc(100% + 8px)', right:0, zIndex:60,
+                      background:'#14151c', border:`1px solid ${G.border}`, borderRadius:12,
+                      padding:6, minWidth:210, boxShadow:'0 14px 36px rgba(0,0,0,.55)',
+                      display:'flex', flexDirection:'column', gap:2,
+                    }}>
+                      {[
+                        { icon:<Grid size={13}/>,      label:'Templates de tiers',   fn:() => setShowTemplates(v => !v) },
+                        { icon:<Shuffle size={13}/>,   label:'Mélanger au hasard',   fn:randomize },
+                        { icon:<RotateCcw size={13}/>, label:'Réinitialiser',        fn:reset, danger:true },
+                        { icon:<ArrowLeft size={13}/>, label:'Changer de catégorie', fn:() => setSelectedType(null) },
+                      ].map(m => (
+                        <button key={m.label} onClick={() => { m.fn(); setShowMenu(false) }} style={{
+                          display:'flex', alignItems:'center', gap:9, padding:'9px 11px', borderRadius:8,
+                          border:'none', background:'transparent', cursor:'pointer', textAlign:'left',
+                          color: m.danger ? G.rose : G.text, fontSize:12.5, fontWeight:600, transition:'background .12s',
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,.06)'}
+                        onMouseLeave={e => e.currentTarget.style.background='transparent'}>
+                          {m.icon} {m.label}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -1576,6 +1597,28 @@ export default function TierListPage() {
             // Tier editor
             <motion.div key="editor" initial={{ opacity:0 }} animate={{ opacity:1 }}
               style={{ display:'flex', flexDirection:'column' }}>
+
+              {/* Bannière d'aide — explique le principe en une phrase (masquable) */}
+              {!hideHint && (
+                <div style={{
+                  maxWidth:1600, margin:'0 auto', width:'100%',
+                  display:'flex', alignItems:'center', gap:12, padding:'11px 18px',
+                  background:`linear-gradient(90deg, ${G.gold}14, transparent)`,
+                  borderBottom:`1px solid ${G.border}`, fontSize:12.5, color:G.text,
+                }}>
+                  <span style={{ fontSize:16 }}>👇</span>
+                  <span style={{ flex:1, lineHeight:1.4 }}>
+                    <strong style={{ color:G.gold }}>Comment faire :</strong> glisse les éléments depuis la zone du bas
+                    vers une ligne de tier (S, A, B…). Tu peux renommer/colorer chaque tier, et tout est
+                    <strong> sauvegardé automatiquement</strong>. Plus d'options dans le menu <strong>⋯</strong>.
+                  </span>
+                  <button onClick={dismissHint} aria-label="Masquer l'aide" style={{
+                    flexShrink:0, width:26, height:26, borderRadius:7, cursor:'pointer',
+                    background:'rgba(255,255,255,.06)', border:`1px solid ${G.border}`, color:G.muted,
+                    display:'flex', alignItems:'center', justifyContent:'center',
+                  }}><X size={13}/></button>
+                </div>
+              )}
 
               <DndContext sensors={sensors} collisionDetection={collisionStrategy}
                 onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
