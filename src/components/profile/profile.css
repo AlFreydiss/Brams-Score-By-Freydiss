@@ -99,6 +99,15 @@
   background: conic-gradient(from 135deg,
     var(--rank), color-mix(in srgb, var(--rank) 35%, #fff) 38%, var(--rank) 68%, color-mix(in srgb, var(--rank) 55%, #000) 100%);
   box-shadow: 0 0 0 1px rgba(0,0,0,0.55), 0 18px 50px color-mix(in srgb, var(--rank) 28%, transparent);
+  animation: pfxPop .8s cubic-bezier(.34,1.4,.5,1) .1s both;
+}
+/* Aura vivante : un éclat qui orbite lentement le long de l'anneau. */
+.pfx-avatar-ring::after {
+  content: ''; position: absolute; inset: -1px; border-radius: 50%; pointer-events: none;
+  background: conic-gradient(from 0deg, transparent 0 62%, color-mix(in srgb, var(--rank) 40%, #fff) 80%, #fff 88%, transparent 100%);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 7px), #000 calc(100% - 6px));
+          mask: radial-gradient(farthest-side, transparent calc(100% - 7px), #000 calc(100% - 6px));
+  opacity: .85; animation: pfxSpin 6s linear infinite;
 }
 .pfx-avatar-inner {
   width: 100%; height: 100%; border-radius: 50%; overflow: hidden;
@@ -408,9 +417,60 @@
 /* Skeleton */
 .pfx-sk { border-radius: 20px; background: linear-gradient(100deg, rgba(255,255,255,0.04) 30%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 70%); background-size: 200% 100%; animation: pfxShimmer 1.4s infinite; }
 
+/* ═══════════ Cascade d'entrée cinématique ═══════════ */
+/* Le hero monte (pfxRise) ; ses éléments internes se révèlent en escalier. */
+.pfx-eyebrow      { animation: pfxSlideUp .6s ease-out .22s both; }
+.pfx-name         { animation: pfxRevealName .8s cubic-bezier(.22,1,.36,1) .28s both; }
+.pfx-badges       { animation: pfxSlideUp .6s ease-out .42s both; }
+.pfx-badges .pfx-badge { animation: pfxPop .5s cubic-bezier(.34,1.4,.5,1) both; }
+.pfx-badges .pfx-badge:nth-child(1) { animation-delay: .48s; }
+.pfx-badges .pfx-badge:nth-child(2) { animation-delay: .55s; }
+.pfx-badges .pfx-badge:nth-child(3) { animation-delay: .62s; }
+.pfx-badges .pfx-badge:nth-child(4) { animation-delay: .69s; }
+.pfx-quote, .pfx-bio { animation: pfxSlideUp .6s ease-out .5s both; }
+.pfx-actions      { animation: pfxSlideUp .6s ease-out .58s both; }
+.pfx-actions .pfx-btn { animation: pfxPop .5s cubic-bezier(.34,1.4,.5,1) both; }
+.pfx-actions .pfx-btn:nth-child(1) { animation-delay: .62s; }
+.pfx-actions .pfx-btn:nth-child(2) { animation-delay: .69s; }
+.pfx-actions .pfx-btn:nth-child(3) { animation-delay: .76s; }
+.pfx-rank-chip    { animation: pfxSlideUp .6s ease-out .5s both; }
+.pfx-hero-summary { animation: pfxSlideUp .75s cubic-bezier(.22,1,.36,1) .4s both; }
+.pfx-hero-foot    { animation: pfxFade .7s ease-out .62s both; }
+
+/* Stagger des stats (cascade gauche → droite). */
+.pfx-stat:nth-child(1) { animation-delay: .46s; }
+.pfx-stat:nth-child(2) { animation-delay: .52s; }
+.pfx-stat:nth-child(3) { animation-delay: .58s; }
+.pfx-stat:nth-child(4) { animation-delay: .64s; }
+.pfx-stat:nth-child(5) { animation-delay: .70s; }
+.pfx-stat:nth-child(6) { animation-delay: .76s; }
+.pfx-stat:nth-child(7) { animation-delay: .82s; }
+.pfx-stat:nth-child(8) { animation-delay: .88s; }
+
+/* Stagger des panneaux dans les onglets. */
+.pfx-grid .pfx-panel:nth-child(1) { animation-delay: .04s; }
+.pfx-grid .pfx-panel:nth-child(2) { animation-delay: .10s; }
+.pfx-grid .pfx-panel:nth-child(3) { animation-delay: .16s; }
+.pfx-grid .pfx-panel:nth-child(4) { animation-delay: .22s; }
+.pfx-grid .pfx-panel:nth-child(5) { animation-delay: .28s; }
+.pfx-grid .pfx-panel:nth-child(6) { animation-delay: .34s; }
+
+/* Stagger succès / objets / transactions (les premiers, le reste suit naturellement). */
+.pfx-ach:nth-child(-n+8), .pfx-item:nth-child(-n+8), .pfx-tx:nth-child(-n+10) { animation-delay: calc((var(--i, 0)) * 1ms); }
+.pfx-ach-row .pfx-ach:nth-child(1), .pfx-ach-grid .pfx-ach:nth-child(1), .pfx-item-grid .pfx-item:nth-child(1) { animation-delay: .03s; }
+.pfx-ach-row .pfx-ach:nth-child(2), .pfx-ach-grid .pfx-ach:nth-child(2), .pfx-item-grid .pfx-item:nth-child(2) { animation-delay: .09s; }
+.pfx-ach-row .pfx-ach:nth-child(3), .pfx-ach-grid .pfx-ach:nth-child(3), .pfx-item-grid .pfx-item:nth-child(3) { animation-delay: .15s; }
+.pfx-ach-row .pfx-ach:nth-child(4), .pfx-ach-grid .pfx-ach:nth-child(4), .pfx-item-grid .pfx-item:nth-child(4) { animation-delay: .21s; }
+.pfx-ach-row .pfx-ach:nth-child(5), .pfx-ach-grid .pfx-ach:nth-child(5), .pfx-item-grid .pfx-item:nth-child(5) { animation-delay: .27s; }
+.pfx-ach-row .pfx-ach:nth-child(6), .pfx-ach-grid .pfx-ach:nth-child(6), .pfx-item-grid .pfx-item:nth-child(6) { animation-delay: .33s; }
+
 /* ═══════════ Animations ═══════════ */
 @keyframes pfxRise    { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: none; } }
 @keyframes pfxFade    { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes pfxSlideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+@keyframes pfxPop     { 0% { opacity: 0; transform: scale(.82); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes pfxRevealName { 0% { opacity: 0; transform: translateY(20px) scale(.97); letter-spacing: .04em; } 100% { opacity: 1; transform: none; letter-spacing: -.025em; } }
+@keyframes pfxSpin    { to { transform: rotate(360deg); } }
 @keyframes pfxShimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
 @keyframes pfxShine   { 0% { transform: translateX(-100%); } 55%,100% { transform: translateX(100%); } }
 @keyframes pfxDot     { 0%,100% { box-shadow: 0 0 0 0 rgba(52,211,153,0.5); } 60% { box-shadow: 0 0 0 7px rgba(52,211,153,0); } }
@@ -446,7 +506,9 @@
 
 @media (prefers-reduced-motion: reduce) {
   .pfx-hero, .pfx-panel, .pfx-ach, .pfx-item, .pfx-tx, .pfx-tabpanel, .pfx-stat,
-  .pfx-aura-fill, .pfx-factor-fill, .pfx-prog-fill, .pfx-prog-fill::after, .pfx-avatar-dot, .pfx-sk {
+  .pfx-aura-fill, .pfx-factor-fill, .pfx-prog-fill, .pfx-prog-fill::after, .pfx-avatar-dot, .pfx-sk,
+  .pfx-avatar-ring, .pfx-avatar-ring::after, .pfx-eyebrow, .pfx-name, .pfx-badges, .pfx-badge,
+  .pfx-quote, .pfx-bio, .pfx-actions, .pfx-btn, .pfx-rank-chip, .pfx-hero-summary, .pfx-hero-foot {
     animation: none !important; transition: none !important;
   }
 }
