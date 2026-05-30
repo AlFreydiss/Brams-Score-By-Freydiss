@@ -914,9 +914,6 @@ export default function ProfilePage() {
                 <a className="pf-btn pf-btn-discord" href="https://discord.gg/v3Ddhtbz" target="_blank" rel="noopener noreferrer">
                   Discord
                 </a>
-                <button className="pf-btn pf-btn-ghost" type="button" onClick={copyId}>
-                  Copier l'ID
-                </button>
               </div>
             </div>
           </section>
