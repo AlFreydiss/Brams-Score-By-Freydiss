@@ -1299,20 +1299,10 @@ async def web_purchase_announce_loop():
     rows = await loop.run_in_executor(db_executor, _fetch_new_web_purchases)
     if not rows:
         return
-    ch = await _get_announce_channel()
+    # Plus d'annonce publique dans le salon rappel-rank (ça le polluait) → DM uniquement.
     for _tx_id, discord_id, price, _created_at, item_name in rows:
         uid = str(discord_id)
         price_str = f"{int(price or 0):,}".replace(",", " ")
-        # Annonce publique dans le canal d'annonce
-        if ch is not None:
-            try:
-                await ch.send(embed=discord.Embed(
-                    title="🛒 Boutique — Nouvel achat",
-                    description=f"<@{uid}> vient d'acquérir **{item_name}** pour **{price_str} ฿** sur le site ! 🏴‍☠️",
-                    color=discord.Color.gold(),
-                ))
-            except Exception as e:
-                print(f"[SHOP_ANNOUNCE] annonce: {e}")
         # DM de confirmation à l'acheteur (silencieux si DM fermés)
         try:
             member = bot.get_user(int(uid)) or await bot.fetch_user(int(uid))
