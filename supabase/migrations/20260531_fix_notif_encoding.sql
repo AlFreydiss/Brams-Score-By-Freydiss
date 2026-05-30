@@ -24,3 +24,58 @@ BEGIN
   RETURN jsonb_build_object('ok', true, 'liked', true);
 END;
 $$;
+
+-- ── Notifs d'amis (accents corrigés) ─────────────────────────────────────────
+CREATE OR REPLACE FUNCTION send_friend_request(p_target text)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE v_me text := _resolve_discord_id(); v_existing friendships%ROWTYPE;
+BEGIN
+  IF v_me IS NULL THEN RETURN '{"ok":false,"error":"Non authentifié"}'::jsonb; END IF;
+  IF p_target IS NULL OR p_target = '' THEN RETURN '{"ok":false,"error":"Cible invalide"}'::jsonb; END IF;
+  IF p_target = v_me THEN RETURN '{"ok":false,"error":"Tu ne peux pas t''ajouter toi-même"}'::jsonb; END IF;
+  IF _is_blocked(v_me, p_target) THEN RETURN '{"ok":false,"error":"Action impossible (blocage)"}'::jsonb; END IF;
+  SELECT * INTO v_existing FROM friendships
+   WHERE (requester_id = v_me AND addressee_id = p_target) OR (requester_id = p_target AND addressee_id = v_me);
+  IF FOUND THEN
+    IF v_existing.status = 'accepted' THEN RETURN '{"ok":false,"error":"Vous êtes déjà amis"}'::jsonb; END IF;
+    IF v_existing.requester_id = p_target THEN
+      UPDATE friendships SET status = 'accepted', updated_at = now() WHERE id = v_existing.id;
+      PERFORM _notify(p_target, 'friend_accepted', 'Demande acceptée',
+        'Votre demande d''ami a été acceptée', '/amis', jsonb_build_object('user_id', v_me));
+      RETURN '{"ok":true,"status":"friends"}'::jsonb;
+    END IF;
+    RETURN '{"ok":false,"error":"Demande déjà envoyée"}'::jsonb;
+  END IF;
+  INSERT INTO friendships (requester_id, addressee_id, status) VALUES (v_me, p_target, 'pending');
+  PERFORM _notify(p_target, 'friend_request', 'Nouvelle demande d''ami',
+    'Vous avez reçu une demande d''ami', '/amis', jsonb_build_object('user_id', v_me));
+  RETURN '{"ok":true,"status":"pending_sent"}'::jsonb;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION respond_friend_request(p_request_id uuid, p_accept boolean)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE v_me text := _resolve_discord_id(); v_req friendships%ROWTYPE;
+BEGIN
+  IF v_me IS NULL THEN RETURN '{"ok":false,"error":"Non authentifié"}'::jsonb; END IF;
+  SELECT * INTO v_req FROM friendships WHERE id = p_request_id;
+  IF NOT FOUND THEN RETURN '{"ok":false,"error":"Demande introuvable"}'::jsonb; END IF;
+  IF v_req.addressee_id <> v_me THEN RETURN '{"ok":false,"error":"Cette demande ne t''est pas adressée"}'::jsonb; END IF;
+  IF v_req.status <> 'pending' THEN RETURN '{"ok":false,"error":"Demande déjà traitée"}'::jsonb; END IF;
+  IF p_accept THEN
+    UPDATE friendships SET status = 'accepted', updated_at = now() WHERE id = p_request_id;
+    PERFORM _notify(v_req.requester_id, 'friend_accepted', 'Demande acceptée',
+      'Votre demande d''ami a été acceptée', '/amis', jsonb_build_object('user_id', v_me));
+    RETURN '{"ok":true,"status":"friends"}'::jsonb;
+  ELSE
+    DELETE FROM friendships WHERE id = p_request_id;
+    RETURN '{"ok":true,"status":"none"}'::jsonb;
+  END IF;
+END;
+$$;
+
+-- Corrige aussi les notifications DÉJÀ enregistrées (accents cassés en base)
+UPDATE notifications SET
+  title = replace(replace(replace(replace(replace(title,'Ã©','é'),'Ã¨','è'),'Ã ','à'),'Ã§','ç'),'Ã´','ô'),
+  body  = replace(replace(replace(replace(replace(body, 'Ã©','é'),'Ã¨','è'),'Ã ','à'),'Ã§','ç'),'Ã´','ô')
+WHERE title LIKE '%Ã%' OR body LIKE '%Ã%';
