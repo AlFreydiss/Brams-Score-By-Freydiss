@@ -445,43 +445,6 @@ function TierRow({ tier, items, allById, onRename, onColorChange, onDelete, onAd
           </span>
         )}
 
-        {/* Row actions */}
-        <div className="tier-row-actions" style={{
-          position:'absolute', right:'-32px', top:0, bottom:0,
-          display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
-          gap:2, zIndex:10, opacity:0, pointerEvents:'none',
-          transition:'opacity .15s',
-        }}>
-          <button onClick={() => { setTmpLabel(tier.label); setEditing(true) }}
-            title="Renommer" style={iconBtn('#BFA46A')}><Edit3 size={10}/></button>
-          <button onClick={() => setShowColorPicker(v => !v)}
-            title="Couleur" style={iconBtn(tier.color)}><Palette size={10}/></button>
-          <button onClick={() => onAddAbove(tier.id)}
-            title="Ajouter au-dessus" style={iconBtn('#4a86b8')}><Plus size={10}/></button>
-          <button onClick={() => onDelete(tier.id)}
-            title="Supprimer" style={iconBtn('#a0445c')}><Trash2 size={10}/></button>
-        </div>
-
-        {/* Color picker dropdown */}
-        {showColorPicker && (
-          <div style={{
-            position:'absolute', right:'-120px', top:0, zIndex:100,
-            background:'rgba(10,12,20,.98)', border:`1px solid ${G.border}`,
-            borderRadius:12, padding:10, boxShadow:'0 12px 40px rgba(0,0,0,.7)',
-          }}>
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:5 }}>
-              {TIER_COLORS.map(c => (
-                <button key={c} onClick={() => { onColorChange(tier.id, c); setShowColorPicker(false) }}
-                  style={{
-                    width:20, height:20, borderRadius:4, background:c, border:'none', cursor:'pointer',
-                    outline: tier.color === c ? `2px solid #fff` : 'none',
-                    outlineOffset:1,
-                  }}
-                />
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Drop zone */}
@@ -501,6 +464,35 @@ function TierRow({ tier, items, allById, onRename, onColorChange, onDelete, onAd
           </div>
         )}
         {items.map(id => <ItemCard key={id} itemId={id} allById={allById} compact/>)}
+      </div>
+
+      {/* Actions de la ligne — colonne dédiée à droite, révélée au survol.
+          Ne déborde plus sur l'image des items (avant : position absolute right:-32px). */}
+      <div className="tier-row-actions" style={{
+        position:'relative', width:36, flexShrink:0,
+        display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:4,
+        opacity:0, pointerEvents:'none', transition:'opacity .15s',
+        borderLeft:'1px solid rgba(255,255,255,.05)',
+      }}>
+        <button onClick={() => { setTmpLabel(tier.label); setEditing(true) }} title="Renommer" style={iconBtn('#BFA46A')}><Edit3 size={10}/></button>
+        <button onClick={() => setShowColorPicker(v => !v)} title="Couleur" style={iconBtn(tier.color)}><Palette size={10}/></button>
+        <button onClick={() => onAddAbove(tier.id)} title="Ajouter au-dessus" style={iconBtn('#4a86b8')}><Plus size={10}/></button>
+        <button onClick={() => onDelete(tier.id)} title="Supprimer" style={iconBtn('#a0445c')}><Trash2 size={10}/></button>
+
+        {showColorPicker && (
+          <div style={{
+            position:'absolute', right:42, top:'50%', transform:'translateY(-50%)', zIndex:100,
+            background:'rgba(10,12,20,.98)', border:`1px solid ${G.border}`,
+            borderRadius:12, padding:10, boxShadow:'0 12px 40px rgba(0,0,0,.7)',
+          }}>
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:5 }}>
+              {TIER_COLORS.map(c => (
+                <button key={c} onClick={() => { onColorChange(tier.id, c); setShowColorPicker(false) }}
+                  style={{ width:20, height:20, borderRadius:4, background:c, border:'none', cursor:'pointer', outline: tier.color === c ? `2px solid #fff` : 'none', outlineOffset:1 }} />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -1370,7 +1362,7 @@ export default function TierListPage() {
 
   const TABS = [
     { id:'studio',   label:'Créer',       icon:<Layers size={13}/> },
-    { id:'community',label:'CommunautÃ©',  icon:<Users size={13}/> },
+    { id:'community',label:'Communauté',  icon:<Users size={13}/> },
     { id:'mylists',  label:'Mes Listes',  icon:<BookOpen size={13}/> },
     { id:'templates',label:'Templates',   icon:<Grid size={13}/> },
   ]
