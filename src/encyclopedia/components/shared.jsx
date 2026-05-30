@@ -147,56 +147,40 @@ function ClassifiedParticles() {
 }
 
 // ─── Universe Rail ───────────────────────────────────────────────────────────
+// Recâblé sur le design system CSS (.arc-rail-*) : accent par univers piloté par
+// la variable --anime-accent ; hover/active/soulignement gérés en CSS.
 export function UniverseRail({ animes, activeId, entriesByAnime, onSelect, onClose }) {
   return (
-    <nav className="arc-rail" aria-label="Sélection univers" style={{ background: T.bg, borderBottom: `1px solid ${T.border}` }}>
-      <div className="arc-rail-brand" style={{ color: T.textMid }}>
-        <span style={{ color: T.red, fontSize: 16 }}>☠</span>
-        <span style={{ fontWeight: 800, letterSpacing: '.12em', fontSize: 11 }}>BRAMS ARCHIVES</span>
-        <span style={{ color: T.border2 }}>·</span>
-        <span style={{ color: T.textDim, fontSize: 10, letterSpacing: '.18em' }}>CLASSIFIÉ</span>
+    <nav className="arc-rail" aria-label="Sélection univers">
+      <div className="arc-rail-brand">
+        <span className="arc-rail-brand-skull">☠</span>
+        <span className="arc-rail-name">BRAMS ARCHIVES</span>
+        <span className="arc-rail-brand-sep">·</span>
+        <span className="arc-rail-brand-sub">CLASSIFIÉ</span>
       </div>
       <div className="arc-rail-universes">
         {animes.map(anime => {
           const active = anime.id === activeId
           const accent = anime.theme?.accent || '#fff'
           return (
-            <motion.button
+            <button
               key={anime.id}
               type="button"
               onClick={() => onSelect(anime.id)}
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.97 }}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 6,
-                padding: '6px 12px', borderRadius: 8, border: 'none', cursor: 'pointer',
-                background: active ? hexToRgba(accent, 0.14) : 'transparent',
-                borderBottom: active ? `2px solid ${accent}` : '2px solid transparent',
-                color: active ? accent : T.textDim,
-                fontSize: 12, fontWeight: 700, transition: 'color .15s',
-              }}
+              className={`arc-rail-btn${active ? ' is-active' : ''}`}
+              style={{ '--anime-accent': accent }}
             >
-              <span>{anime.emoji || '·'}</span>
+              <span className="arc-rail-emoji">{anime.emoji || '·'}</span>
               <span>{anime.shortName || anime.name.split(' ')[0].toUpperCase()}</span>
-              <span style={{
-                fontSize: 10, padding: '1px 6px', borderRadius: 100,
-                background: active ? hexToRgba(accent, 0.22) : 'rgba(255,255,255,0.07)',
-                color: active ? accent : T.textDim, fontWeight: 800,
-              }}>
-                {entriesByAnime[anime.id] || 0}
-              </span>
-            </motion.button>
+              <span className="arc-rail-count">{entriesByAnime[anime.id] || 0}</span>
+            </button>
           )
         })}
       </div>
-      <motion.button
-        className="arc-rail-close" type="button" onClick={onClose}
-        whileHover={{ color: '#fff' }} whileTap={{ scale: 0.95 }}
-        style={{ background: 'none', border: 'none', cursor: 'pointer' }}
-      >
-        <X size={14} />
+      <button className="arc-rail-close" type="button" onClick={onClose}>
+        <X size={13} />
         <span>Fermer</span>
-      </motion.button>
+      </button>
     </nav>
   )
 }
@@ -209,115 +193,68 @@ export function ControlPanel({
 }) {
   const visible = (categories || []).filter(c => !['world-map', 'coming-soon', 'comparator'].includes(c.id))
   const allCount = categoryCounts.all ?? entryCount
-  const accent = anime?.theme?.accent || T.red
+  void secretCount
 
   return (
-    <aside className="arc-panel" style={{ background: T.surface, borderRight: `1px solid ${T.border}` }}>
-      {/* Classification badge */}
-      <div style={{ padding: '16px 14px 12px' }}>
-        <div style={{
-          display: 'inline-flex', alignItems: 'center', gap: 6,
-          padding: '4px 10px', borderRadius: 6,
-          background: T.redSoft, border: `1px solid rgba(201,31,46,0.30)`,
-          fontSize: 9, fontWeight: 800, letterSpacing: '.18em', color: T.red, textTransform: 'uppercase', marginBottom: 12,
-        }}>
-          <span style={{ width: 5, height: 5, borderRadius: '50%', background: T.red, display: 'inline-block', boxShadow: `0 0 6px ${T.red}` }} />
-          NIVEAU 5 — RESTREINT
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-          <Shield size={14} color={accent} />
-          <h2 style={{ margin: 0, fontSize: 15, fontWeight: 900, color: T.text, letterSpacing: '-.01em' }}>{anime.name}</h2>
-        </div>
+    <aside className="arc-panel">
+      {/* Bloc de classification */}
+      <div className="arc-classification">
+        <div className="arc-clearance-badge"><span className="arc-clearance-dot" /> Niveau 5 — Restreint</div>
+        <h2 className="arc-anime-title">{anime.name}</h2>
         {anime.description && (
-          <p style={{ margin: '4px 0 0', fontSize: 11, color: T.textDim, lineHeight: 1.55, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' }}>
-            {anime.description.slice(0, 130)}
-          </p>
+          <p className="arc-anime-tagline">{anime.description.slice(0, 120)}</p>
         )}
       </div>
 
-      {/* Search */}
-      <div style={{ padding: '0 14px 14px' }}>
-        <div style={{ position: 'relative' }}>
-          <Search size={13} style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: T.textDim }} />
+      {/* Recherche */}
+      <div className="arc-panel-search">
+        <div className="arc-search-wrap">
+          <Search className="arc-search-icon" size={13} />
           <input
             className="arc-search-input"
             value={query}
             onChange={e => onQueryChange(e.target.value)}
             placeholder="Interroger les archives…"
-            style={{
-              width: '100%', padding: '9px 12px 9px 32px', borderRadius: 10, boxSizing: 'border-box',
-              background: T.surface2, border: `1px solid ${T.border}`, color: T.text,
-              fontSize: 12, outline: 'none', fontFamily: 'inherit',
-            }}
           />
         </div>
       </div>
 
-      {/* Folder nav */}
-      <div style={{ padding: '0 14px 8px', fontSize: 9, fontWeight: 800, letterSpacing: '.18em', color: T.textDim, textTransform: 'uppercase' }}>
-        Registre de dossiers
-      </div>
-
-      <nav style={{ padding: '0 8px' }}>
+      {/* Registre de dossiers */}
+      <div className="arc-panel-label">Registre de dossiers</div>
+      <nav className="arc-folder-nav">
         {[{ id: 'all', label: 'Tout consulter', icon: '📁', count: allCount }, ...visible.map(c => ({ ...c, count: categoryCounts[c.id] || 0, icon: CATEGORY_ICONS[c.id] || '·' }))].map(cat => {
           const active = activeCategory === cat.id
           return (
-            <motion.button
+            <button
               key={cat.id}
               type="button"
               onClick={() => onCategoryChange(cat.id)}
-              whileHover={{ x: active ? 0 : 3 }}
-              style={{
-                width: '100%', display: 'flex', alignItems: 'center', gap: 8,
-                padding: '8px 10px', borderRadius: 9, border: 'none', cursor: 'pointer', textAlign: 'left',
-                background: active ? hexToRgba(accent, 0.12) : 'transparent',
-                marginBottom: 2, transition: 'background .15s',
-              }}
+              className={`arc-folder-btn${active ? ' is-active' : ''}`}
             >
-              {active && (
-                <motion.span
-                  layoutId="folderBar"
-                  style={{ position: 'absolute', left: 8, width: 3, height: 22, borderRadius: 2, background: accent }}
-                />
-              )}
+              <span className="arc-folder-marker" />
               <span style={{ fontSize: 14 }}>{cat.icon}</span>
-              <span style={{ flex: 1, fontSize: 12, fontWeight: active ? 700 : 500, color: active ? T.text : T.textMid }}>{cat.label}</span>
-              <span style={{
-                fontSize: 10, padding: '1px 7px', borderRadius: 100, fontWeight: 700,
-                background: active ? hexToRgba(accent, 0.20) : 'rgba(255,255,255,0.06)',
-                color: active ? accent : T.textDim,
-              }}>{cat.count}</span>
-            </motion.button>
+              <span className="arc-folder-name">{cat.label}</span>
+              <span className="arc-folder-count">{cat.count}</span>
+            </button>
           )
         })}
       </nav>
 
-      {/* Spoiler toggle */}
-      <div style={{ margin: '12px 14px 0', padding: '12px 14px', borderRadius: 12, background: T.surface2, border: `1px solid ${T.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          {spoilerSafe ? <Lock size={13} color={T.red} /> : <EyeOff size={13} color={T.textDim} />}
-          <div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: T.text }}>Mode Spoiler</div>
-            <div style={{ fontSize: 10, color: T.textDim }}>Censure les dossiers</div>
-          </div>
+      {/* Mode spoiler */}
+      <div className="arc-spoiler-block">
+        <div className="arc-spoiler-info">
+          <span className="arc-spoiler-label">Mode Spoiler</span>
+          <span className="arc-spoiler-desc">Censure les dossiers sensibles</span>
         </div>
-        <motion.button
+        <button
           type="button"
           onClick={onSpoilerToggle}
-          whileTap={{ scale: 0.95 }}
-          style={{
-            width: 40, height: 22, borderRadius: 100, border: 'none', cursor: 'pointer', flexShrink: 0,
-            background: spoilerSafe ? T.red : 'rgba(255,255,255,0.12)',
-            position: 'relative', transition: 'background .2s',
-          }}
+          className={`arc-spoiler-switch${spoilerSafe ? ' is-on' : ''}`}
+          aria-pressed={spoilerSafe}
+          aria-label="Basculer le mode spoiler"
         >
-          <motion.span
-            animate={{ x: spoilerSafe ? 19 : 2 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 24 }}
-            style={{ position: 'absolute', top: 3, left: 0, width: 16, height: 16, borderRadius: '50%', background: '#fff', display: 'block' }}
-          />
-        </motion.button>
+          <span />
+        </button>
       </div>
     </aside>
   )
@@ -325,85 +262,51 @@ export function ControlPanel({
 
 // ─── Archive Hero + Tabs ─────────────────────────────────────────────────────
 export function ArchiveHero({ anime, activeTab, tabs, onTabChange, onClose, entryCount = 0, favoritesCount = 0, classifiedCount = 0, legendaryCount = 0 }) {
-  const accent = anime?.theme?.accent || T.red
-
   return (
-    <div className="arc-hero" style={{ background: T.surface, borderBottom: `1px solid ${T.border}`, padding: '0 24px' }}>
-      {/* Watermark */}
-      <div className="arc-hero-watermark" style={{ color: hexToRgba(accent, 0.04), fontWeight: 900, userSelect: 'none' }}>{anime.name}</div>
+    <div className="arc-hero">
+      <div className="arc-hero-scanline" aria-hidden />
+      <div className="arc-hero-watermark" aria-hidden>{anime.name}</div>
 
-      {/* Identity */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 0 10px' }}>
-        <div>
-          <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: '.20em', color: T.red, textTransform: 'uppercase', marginBottom: 3 }}>
-            ⛨ Gouvernement Mondial · Archives Restreintes
-          </div>
-          <h1 style={{ margin: 0, fontFamily: 'var(--display, serif)', fontSize: 'clamp(20px,2.5vw,30px)', fontWeight: 900, color: T.text, letterSpacing: '-.01em', lineHeight: 1 }}>
-            {anime.name}
-          </h1>
-        </div>
-
-        {/* Vline */}
-        <div style={{ width: 1, height: 40, background: T.border2, margin: '0 8px' }} />
-
-        {/* Stats chips — hero display */}
-        {[
-          { val: entryCount,     label: 'Dossiers',     color: T.text    },
-          { val: legendaryCount, label: 'Légendaires',  color: T.gold    },
-          { val: classifiedCount,label: 'Classifiés',   color: T.red     },
-          { val: favoritesCount, label: 'Favoris',      color: T.orange  },
-        ].map(s => (
-          <motion.div
-            key={s.label}
-            whileHover={{ scale: 1.05 }}
-            style={{ textAlign: 'center', padding: '6px 14px' }}
-          >
-            <div style={{ fontSize: 24, fontWeight: 900, color: s.color, lineHeight: 1, fontFamily: 'var(--display, serif)' }}>{s.val}</div>
-            <div style={{ fontSize: 9, fontWeight: 800, color: T.textDim, letterSpacing: '.12em', textTransform: 'uppercase', marginTop: 2 }}>{s.label}</div>
-          </motion.div>
-        ))}
-
-        <div style={{ flex: 1 }} />
-
-        {/* Tabs */}
-        <div style={{ display: 'flex', gap: 4 }} role="tablist">
-          {tabs.map(tab => {
-            const active = activeTab === tab.id
-            return (
-              <motion.button
-                key={tab.id}
-                type="button"
-                role="tab"
-                aria-selected={active}
-                onClick={() => onTabChange(tab.id)}
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 6,
-                  padding: '8px 16px', borderRadius: 8,
-                  border: `1px solid ${active ? hexToRgba(accent, 0.45) : T.border}`,
-                  background: active ? hexToRgba(accent, 0.14) : 'transparent',
-                  color: active ? accent : T.textDim,
-                  fontSize: 12, fontWeight: 700, cursor: 'pointer',
-                  boxShadow: active ? `0 0 16px ${hexToRgba(accent, 0.20)}` : 'none',
-                  transition: 'color .15s, background .15s',
-                }}
-              >
-                <span>{tab.icon}</span>
-                <span>{tab.label}</span>
-              </motion.button>
-            )
-          })}
-        </div>
-
-        <motion.button
-          type="button" onClick={onClose}
-          whileHover={{ scale: 1.1, color: T.red }} whileTap={{ scale: 0.9 }}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.textDim, marginLeft: 8 }}
-        >
-          <X size={18} />
-        </motion.button>
+      {/* Identité */}
+      <div className="arc-hero-identity">
+        <span className="arc-hero-badge">⛨ Gouvernement Mondial</span>
+        <span className="arc-hero-pre">Archives Restreintes</span>
+        <h1 className="arc-hero-title">{anime.name}</h1>
       </div>
+
+      <div className="arc-hero-vline" aria-hidden />
+
+      {/* Stats */}
+      <div className="arc-hero-chips">
+        <div className="arc-hero-chip"><strong>{entryCount}</strong><span>Dossiers</span></div>
+        <div className="arc-hero-chip arc-hero-chip--gold"><strong>{legendaryCount}</strong><span>Légendaires</span></div>
+        <div className="arc-hero-chip arc-hero-chip--red"><strong>{classifiedCount}</strong><span>Classifiés</span></div>
+        <div className="arc-hero-chip arc-hero-chip--fav"><strong>{favoritesCount}</strong><span>Favoris</span></div>
+      </div>
+
+      {/* Onglets */}
+      <div className="arc-hero-tabs" role="tablist">
+        {tabs.map(tab => {
+          const active = activeTab === tab.id
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              onClick={() => onTabChange(tab.id)}
+              className={`arc-tab-btn${active ? ' is-active' : ''}`}
+            >
+              <span>{tab.icon}</span>
+              <span>{tab.label}</span>
+            </button>
+          )
+        })}
+      </div>
+
+      <button className="arc-hero-close" type="button" onClick={onClose} aria-label="Fermer les archives">
+        <X size={16} />
+      </button>
     </div>
   )
 }
@@ -418,46 +321,30 @@ export function ArchiveRegister({
   return (
     <div className="arc-fiches-layout">
       {/* LEFT: file register */}
-      <div className="arc-register" style={{ background: T.bg }}>
-        {/* Header */}
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '12px 18px', borderBottom: `1px solid ${T.border}`,
-          background: T.surface,
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#22c55e', boxShadow: '0 0 8px #22c55e88', display: 'inline-block' }} />
-            <span style={{ fontSize: 11, fontWeight: 800, color: T.text, letterSpacing: '.06em' }}>Registre d'Archives Actif</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <AnimatePresence>
-              {activeTag && (
-                <motion.button
-                  initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
-                  type="button" onClick={onClearTag}
-                  style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 100, border: `1px solid ${T.orange}55`, background: hexToRgba(T.orange, 0.10), color: T.orange, fontSize: 11, fontWeight: 700, cursor: 'pointer' }}
-                >
-                  <Tag size={10} /> {activeTag} <X size={10} />
-                </motion.button>
-              )}
-            </AnimatePresence>
-            <span style={{ fontSize: 11, color: T.textDim, fontWeight: 600 }}>{entries.length} dossier{entries.length > 1 ? 's' : ''}</span>
-          </div>
-        </div>
+      <div className="arc-register">
+        {/* En-tête réduit : visible uniquement quand un filtre par tag est actif. */}
+        <AnimatePresence>
+          {activeTag && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+              style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)', overflow: 'hidden' }}
+            >
+              <button className="arc-active-tag" type="button" onClick={onClearTag}>
+                <Tag size={10} /> {activeTag} <X size={10} />
+              </button>
+              <span className="arc-register-count">{entries.length} dossier{entries.length > 1 ? 's' : ''}</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {!entries.length ? (
-          <div style={{ textAlign: 'center', padding: '60px 20px', color: T.textDim }}>
-            <div style={{ fontSize: 40, marginBottom: 14 }}>🔐</div>
-            <strong style={{ display: 'block', color: T.textMid, marginBottom: 6 }}>Aucun dossier trouvé</strong>
-            <span style={{ fontSize: 12 }}>Modifiez les filtres ou la recherche.</span>
+          <div className="arc-register-empty">
+            <div className="arc-register-empty-icon">🔐</div>
+            <strong>Aucun dossier trouvé</strong>
+            <span>Modifiez les filtres ou la recherche.</span>
           </div>
         ) : (
-          <motion.div
-            className="arc-rows-list"
-            variants={{ visible: { transition: { staggerChildren: 0.035 } } }}
-            initial="hidden"
-            animate="visible"
-          >
+          <div className="arc-rows-list">
             {entries.map((entry, i) => (
               <ArchiveRow
                 key={entry.id}
@@ -472,7 +359,7 @@ export function ArchiveRegister({
                 onTagClick={onTagClick}
               />
             ))}
-          </motion.div>
+          </div>
         )}
       </div>
 
@@ -504,118 +391,63 @@ export function ArchiveRegister({
 }
 
 // ─── Archive Row ─────────────────────────────────────────────────────────────
+// Recâblé sur .arc-row : couleur de rareté pilotée par --rarity-color/--rarity-glow,
+// hover/active gérés en CSS (la couche override v2 aplatit la ligne).
 function ArchiveRow({ entry, index, isActive, isFavorite, spoilerSafe, revealed, onSelect, onToggleFavorite }) {
   const cfg = rarityConfig[entry.rarity] || rarityConfig.common
   const hidden = isSpoilerHiddenArc(entry, spoilerSafe, revealed)
-  const [hovered, setHovered] = useState(false)
 
   return (
-    <motion.div
-      variants={{
-        hidden: { opacity: 0, x: -12 },
-        visible: { opacity: 1, x: 0, transition: { duration: 0.32, ease: [0.22, 1, 0.36, 1] } },
-      }}
-      whileHover={{ x: 3 }}
-      onHoverStart={() => setHovered(true)}
-      onHoverEnd={() => setHovered(false)}
-      onClick={() => onSelect(entry)}
+    <div
+      className={`arc-row${isActive ? ' is-active' : ''}${hidden ? ' is-classified' : ''}`}
+      style={{ '--rarity-color': cfg.accent, '--rarity-glow': hexToRgba(cfg.accent, 0.5) }}
       role="button"
       tabIndex={0}
+      onClick={() => onSelect(entry)}
       onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') onSelect(entry) }}
       aria-label={hidden ? 'Dossier classifié' : `Ouvrir dossier ${entry.name}`}
-      style={{
-        position: 'relative', cursor: 'pointer',
-        display: 'grid', gridTemplateColumns: '52px 1fr auto 36px',
-        alignItems: 'center', gap: 0,
-        padding: '0 18px',
-        minHeight: 66,
-        background: isActive
-          ? `linear-gradient(90deg, ${hexToRgba(cfg.accent, 0.10)}, ${hexToRgba(cfg.accent, 0.04)})`
-          : hovered
-          ? `linear-gradient(90deg, rgba(255,255,255,0.025), transparent)`
-          : 'transparent',
-        borderBottom: `1px solid ${T.border}`,
-        transition: 'background .18s',
-        boxShadow: isActive ? `inset 3px 0 0 ${cfg.accent}` : hovered ? `inset 2px 0 0 ${hexToRgba(cfg.accent, 0.5)}` : 'none',
-      }}
     >
-      {/* Particles on classified hover */}
-      {hidden && hovered && <ClassifiedParticles />}
+      <span className="arc-row-bar" aria-hidden />
 
-      {/* Ref + icon */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <span style={{ fontSize: 10, fontWeight: 700, color: T.textDim, fontVariantNumeric: 'tabular-nums' }}>{fmtId(index)}</span>
-        {!hidden && (
-          <span style={{ fontSize: 13 }}>{CATEGORY_ICONS[entry.category] || '·'}</span>
-        )}
+      {/* Référence + icône catégorie */}
+      <div className="arc-row-id">
+        <span className="arc-row-num">{fmtId(index)}</span>
+        {!hidden && <span className="arc-row-cat-icon">{CATEGORY_ICONS[entry.category] || '·'}</span>}
       </div>
 
-      {/* Name / classified */}
-      <div style={{ padding: '0 10px', overflow: 'hidden' }}>
+      {/* Nom / classifié */}
+      <div className="arc-row-info">
         {hidden ? (
           <>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
-              <motion.div
-                animate={hovered ? { opacity: [0.6, 1, 0.6] } : { opacity: 0.7 }}
-                transition={{ duration: 0.8, repeat: hovered ? Infinity : 0 }}
-                style={{
-                  fontSize: 12, fontWeight: 800, letterSpacing: '.10em',
-                  color: T.red, fontFamily: 'monospace',
-                  textShadow: `0 0 10px ${T.red}88`,
-                }}
-              >
-                ██████████ CLASSIFIÉ ██████████
-              </motion.div>
-            </div>
-            <div style={{ fontSize: 10, color: 'rgba(201,31,46,0.55)', letterSpacing: '.08em', fontWeight: 600 }}>
-              ACCÈS RESTREINT — GOUVERNEMENT MONDIAL
-            </div>
+            <span className="arc-row-classified-name">██████ CLASSIFIÉ ██████</span>
+            <span className="arc-row-classified-sub">Accès restreint — Gouvernement Mondial</span>
           </>
         ) : (
           <>
-            <div style={{ fontSize: 13, fontWeight: 700, color: T.text, marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{entry.name}</div>
-            <div style={{ fontSize: 11, color: T.textDim, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {entry.subtitle || entry.category}
-              {entry.knownUser ? ` · ${entry.knownUser}` : ''}
-            </div>
+            <span className="arc-row-name">{entry.name}</span>
+            <span className="arc-row-sub">
+              {entry.subtitle || entry.category}{entry.knownUser ? ` · ${entry.knownUser}` : ''}
+            </span>
           </>
         )}
       </div>
 
-      {/* Rarity badge */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <motion.div
-          whileHover={{ scale: 1.06 }}
-          style={{
-            display: 'inline-flex', alignItems: 'center', gap: 5,
-            padding: '4px 12px', borderRadius: 100,
-            background: `linear-gradient(135deg, ${hexToRgba(cfg.accent, 0.16)}, ${hexToRgba(cfg.accent, 0.06)})`,
-            border: `1px solid ${hexToRgba(cfg.accent, 0.38)}`,
-            color: cfg.accent, fontSize: 10, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase',
-            boxShadow: isActive || hovered ? `0 0 14px ${hexToRgba(cfg.accent, 0.28)}` : 'none',
-            transition: 'box-shadow .2s',
-          }}
-        >
-          <span>{cfg.icon}</span>
-          <span>{rarityLabels[entry.rarity] || entry.rarity}</span>
-        </motion.div>
+      {/* Rareté */}
+      <div className="arc-row-rarity">
+        <span className="arc-row-rarity-icon">{cfg.icon}</span>
+        <span className="arc-row-rarity-label">{rarityLabels[entry.rarity] || entry.rarity}</span>
       </div>
 
-      {/* Fav button */}
-      <motion.button
+      {/* Favori */}
+      <button
+        className={`arc-row-fav${isFavorite ? ' is-active' : ''}`}
         type="button"
         onClick={e => { e.stopPropagation(); onToggleFavorite(entry.slug) }}
-        whileHover={{ scale: 1.2 }} whileTap={{ scale: 0.85 }}
         aria-label={isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}
-        style={{
-          background: 'none', border: 'none', cursor: 'pointer', padding: 6,
-          color: isFavorite ? '#f43f5e' : T.textDim, fontSize: 14,
-          transition: 'color .15s',
-        }}
       >
-        <Heart size={14} fill={isFavorite ? '#f43f5e' : 'none'} />
-      </motion.button>
-    </motion.div>
+        <Heart size={14} fill={isFavorite ? 'currentColor' : 'none'} />
+      </button>
+    </div>
   )
 }
 
