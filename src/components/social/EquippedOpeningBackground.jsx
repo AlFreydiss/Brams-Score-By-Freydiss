@@ -8,7 +8,21 @@ import OpeningBgMedia from './OpeningBgMedia.jsx'
 // chaque page — et la re-décoder à chaque survol de card boutique — faisait
 // ramer tout le site. La vidéo animée ne joue plus que dans la bannière du hero
 // profil (contenue, instance unique, blur léger), via OpeningBgMedia sans stillOnly.
-const MEDIA_STYLE = { position: 'absolute', inset: '-4%', width: '108%', height: '108%', objectFit: 'cover', filter: 'blur(9px) saturate(1.12) brightness(0.72)', transform: 'scale(1.06)' }
+//
+// PERF SCROLL : le flou est appliqué via downscale — l'image est rendue à 30% de
+// la taille puis agrandie au GPU (scale 3.5). Du coup blur(3px) sur 30% de pixels
+// ≈ blur(10px) visuel mais ~11× moins coûteux à rasteriser. Crucial car la Navbar
+// (backdrop-filter) ré-échantillonne cette couche fixe à chaque frame de scroll —
+// un blur(9px) plein écran ici faisait saccader tout le site. willChange isole la
+// couche pour qu'elle ne se re-rasterise pas pendant le scroll.
+const MEDIA_STYLE = {
+  position: 'absolute', top: 0, left: 0,
+  width: '30%', height: '30%',
+  transformOrigin: 'top left', transform: 'scale(3.5)',
+  objectFit: 'cover',
+  filter: 'blur(3px) saturate(1.12) brightness(0.72)',
+  willChange: 'transform',
+}
 
 export default function EquippedOpeningBackground() {
   const { activeBg } = useOpeningBg()
