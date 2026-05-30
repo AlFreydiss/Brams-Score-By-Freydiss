@@ -38,7 +38,9 @@ export default function TournamentRoomPage() {
   const [busy, setBusy]       = useState(false)
   const [err, setErr]         = useState('')
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 768)
+  const [notFound, setNotFound] = useState(false)
   const resolvingRef = useRef(false)
+  const autoJoinRef = useRef(false)
 
   useEffect(() => {
     const f = () => setIsMobile(window.innerWidth < 768)
@@ -60,6 +62,8 @@ export default function TournamentRoomPage() {
   const refresh = useCallback(async (c = code) => {
     if (!c) return
     const r = await fetchTournamentRoom(c)
+    if (!r) { setNotFound(true); setRoom(null); return }
+    setNotFound(false)
     setRoom(r)
     setPlayers(await fetchTournamentRoomPlayers(c))
     const cur = r?.rounds ? getCurrentMatch(r.rounds) : null
@@ -74,6 +78,20 @@ export default function TournamentRoomPage() {
     return () => { unsub(); clearInterval(ping) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [code])
+
+  // ── Auto-join : ouvrir un lien ?code= ou entrer un code t'inscrit direct ────
+  // (avant : on tombait sur l'écran "Créer/Rejoindre" et on créait une 2e room).
+  useEffect(() => {
+    if (!room || !code) { autoJoinRef.current = false; return }
+    const name = ident.guest ? guestName.trim() : ident.name
+    if (!name) return // invité sans pseudo : on attend qu'il en saisisse un
+    if (players.some(p => String(p.user_id) === ident.userId)) return
+    if (autoJoinRef.current) return
+    autoJoinRef.current = true
+    joinTournamentRoom({ code, userId: ident.userId, displayName: name, avatarUrl: null })
+      .then(() => refresh(code))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [room, players, code])
 
   // ── Hôte : résout à la majorité quand tout le monde a voté ──────────────────
   useEffect(() => {
@@ -143,7 +161,7 @@ export default function TournamentRoomPage() {
     await castTournamentVote({ code, matchId: current.match.id, userId: ident.userId, side })
   }
 
-  function leave() { setParams({}); setCode(''); setRoom(null) }
+  function leave() { setParams({}); setCode(''); setRoom(null); setNotFound(false); autoJoinRef.current = false }
 
   // ── Vues ─────────────────────────────────────────────────────────────────
   const wrap = { position: 'relative', minHeight: '100vh', background: BG, color: '#fff', paddingTop: 84, paddingBottom: 60, fontFamily: "'Inter',system-ui,sans-serif" }
@@ -153,8 +171,8 @@ export default function TournamentRoomPage() {
   const btn = (bg = GRAD) => ({ padding: '12px 22px', borderRadius: 12, border: 'none', background: bg, color: '#fff', fontWeight: 800, fontSize: 14, cursor: 'pointer' })
   const field = { width: '100%', boxSizing: 'border-box', padding: '12px 14px', borderRadius: 11, background: 'rgba(255,255,255,.05)', border: `1px solid ${BORDER}`, color: '#fff', fontSize: 14, fontFamily: 'inherit' }
 
-  // 1) Pas de salon → écran créer / rejoindre
-  if (!code || !room) {
+  // 1) Aucun code → écran créer / rejoindre
+  if (!code) {
     return (
       <div style={wrap}>
         <div style={{ ...inner, maxWidth: 560 }}>
@@ -198,7 +216,35 @@ export default function TournamentRoomPage() {
     )
   }
 
-  // Si on a un code mais qu'on n'est pas encore inscrit comme joueur
+  // 2) Code présent mais salon introuvable
+  if (notFound) {
+    return (
+      <div style={wrap}>
+        <div style={{ ...inner, maxWidth: 480, textAlign: 'center', paddingTop: 80 }}>
+          <div style={{ fontSize: 40, marginBottom: 12 }}>🔍</div>
+          <h2 style={{ fontSize: 22, fontWeight: 900, margin: '0 0 8px' }}>Salon introuvable</h2>
+          <p style={{ color: 'rgba(255,255,255,.55)', margin: '0 0 22px', fontSize: 14 }}>
+            Le code <strong style={{ color: PINK_L }}>{code}</strong> ne correspond à aucun salon (il a peut-être été fermé).
+          </p>
+          <button onClick={leave} style={btn()}>Créer ou rejoindre un autre salon</button>
+        </div>
+      </div>
+    )
+  }
+
+  // 3) Code présent, chargement du salon en cours
+  if (!room) {
+    return (
+      <div style={wrap}>
+        <div style={{ ...inner, maxWidth: 480, textAlign: 'center', paddingTop: 90, color: 'rgba(255,255,255,.55)' }}>
+          <div style={{ fontSize: 30, marginBottom: 10 }}>⏳</div>
+          Connexion au salon <strong style={{ color: PINK_L }}>{code}</strong>…
+        </div>
+      </div>
+    )
+  }
+
+  // 4) Dans le salon
   const amIInRoom = players.some(p => String(p.user_id) === ident.userId)
 
   return (
