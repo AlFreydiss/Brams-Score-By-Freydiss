@@ -2,6 +2,12 @@
 -- À coller dans Supabase → SQL Editor → Run
 -- Même modèle que blind-test-multiplayer : RLS publique + realtime.
 
+-- Recrée proprement (au cas où une ancienne table au schéma différent existe déjà).
+-- Données de salon transitoires uniquement → aucune perte importante.
+drop table if exists public.tournament_room_votes   cascade;
+drop table if exists public.tournament_room_players  cascade;
+drop table if exists public.tournament_rooms         cascade;
+
 create table if not exists public.tournament_rooms (
   code           text primary key,
   host_user_id   text not null,
@@ -62,3 +68,7 @@ exception when duplicate_object then null; end $$;
 do $$ begin
   alter publication supabase_realtime add table public.tournament_room_votes;
 exception when duplicate_object then null; end $$;
+
+-- Force PostgREST à recharger son cache de schéma (sinon "Could not find the
+-- 'code' column ... in the schema cache" tant que le cache n'est pas rafraîchi).
+notify pgrst, 'reload schema';
