@@ -2,8 +2,11 @@ import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react'
 import VideoPlayer from './VideoPlayer.jsx'
 import VIDEOS_RAW from '../data/violet-evergarden-videos.json'
 
-// Audio français préféré (comme l'ancienne page)
-const VIDEOS = VIDEOS_RAW.map(v => ({ ...v, preferredAudioLang: 'fr' }))
+// VOSTFR par défaut : on ne force RIEN ici. Le player applique la préférence
+// sauvegardée du membre (par compte), et à défaut son défaut 'ja' (audio) +
+// 'fr' (sous-titres) → japonais + sous-titres FR. Forcer 'fr' ici écrasait à la
+// fois le défaut JA et le choix de chaque membre. Voir loadVideoPreferences().
+const VIDEOS = VIDEOS_RAW
 
 const COLOR  = '#8b7cff'
 const COLOR2 = '#b8a8ff'
@@ -92,7 +95,7 @@ const EpCard = memo(function EpCard({ video, index, watched, onPlay }) {
           <div style={{ width:40,height:40,borderRadius:'50%',background:`rgba(139,124,255,.82)`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,backdropFilter:'blur(6px)',boxShadow:`0 4px 18px rgba(139,124,255,.45)` }}>▶</div>
         </div>
         {watched && <div style={{ position:'absolute',top:8,right:8, width:22,height:22,borderRadius:'50%',background:'rgba(52,211,153,.18)',border:'1px solid rgba(52,211,153,.5)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,color:'#34d399',fontWeight:900 }}>✓</div>}
-        <div style={{ position:'absolute',bottom:8,left:8, fontSize:9,fontWeight:800,background:'rgba(139,124,255,.18)',color:COLOR2,border:`1px solid rgba(139,124,255,.28)`,borderRadius:100,padding:'2px 7px' }}>{video.badge || 'VF'}</div>
+        <div style={{ position:'absolute',bottom:8,left:8, fontSize:9,fontWeight:800,background:'rgba(139,124,255,.18)',color:COLOR2,border:`1px solid rgba(139,124,255,.28)`,borderRadius:100,padding:'2px 7px' }}>{video.badge || 'VOSTFR'}</div>
       </div>
       <div style={{ padding:'10px 13px 13px' }}>
         <div style={{ fontSize:9.5,fontWeight:800,color:COLOR2,letterSpacing:'.1em',marginBottom:4 }}>{video.kind === 'film' ? 'FILM' : `ÉPISODE ${video.episode}`}</div>
@@ -144,7 +147,7 @@ function InfoPanel({ watchedCount, total, lastWatchedIdx, onResume }) {
           {[
             { label:'Épisodes', value:String(VIDEOS.filter(v=>v.kind!=='film').length), dot:COLOR2 },
             { label:'Films', value:String(VIDEOS.filter(v=>v.kind==='film').length), dot:'#34d399' },
-            { label:'Audio', value:'VF', dot:'#fbbf24' },
+            { label:'Audio', value:'VOSTFR', dot:'#fbbf24' },
             { label:'Note', value:'★ 8.6', dot:'#f97316' },
           ].map(s => (
             <div key={s.label} style={{ padding:'10px 12px',borderRadius:12,background:'rgba(255,255,255,.04)',border:'1px solid rgba(255,255,255,.06)' }}>
@@ -254,7 +257,7 @@ export default function VioletEvergardenPage({ onClose }) {
                 <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20 }}>
                   <div>
                     <h3 style={{ margin:'0 0 3px',fontSize:18,fontWeight:900,color:'#fff',letterSpacing:'-.01em' }}>Épisodes</h3>
-                    <div style={{ fontSize:11,color:'rgba(255,255,255,.32)',fontWeight:600 }}>Saison 1 · {episodes.length} épisodes · VF</div>
+                    <div style={{ fontSize:11,color:'rgba(255,255,255,.32)',fontWeight:600 }}>Saison 1 · {episodes.length} épisodes · VOSTFR</div>
                   </div>
                   <div style={{ display:'flex',alignItems:'center',gap:6,padding:'6px 14px',borderRadius:999,background:'rgba(139,124,255,.08)',border:'1px solid rgba(139,124,255,.18)' }}>
                     <div style={{ width:6,height:6,borderRadius:'50%',background:watchedCount===VIDEOS.length?'#34d399':COLOR,animation:watchedCount<VIDEOS.length&&watchedCount>0?'vePulse 2s infinite':'none' }} />
