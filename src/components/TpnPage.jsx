@@ -50,8 +50,9 @@ const EpCard = memo(function EpCard({ video, index, watched, onPlay }) {
     <div className="tp-ep-card" role="button" tabIndex={0} onClick={onPlay} onKeyDown={e => e.key === 'Enter' && onPlay()}
       style={{ borderRadius: 14, overflow: 'hidden', background: 'rgba(14,12,24,.92)', border: `1px solid ${watched ? 'rgba(108,92,231,.28)' : 'rgba(255,255,255,.07)'}`, animation: `tpFadeUp .3s ${index * 0.04}s ease-out both`, position: 'relative' }}>
       <div style={{ position: 'relative', paddingTop: '57%', background: `linear-gradient(135deg, rgba(108,92,231,.16), rgba(0,0,0,.92))`, overflow: 'hidden' }}>
+        <img src={COVER} alt="" loading="lazy" decoding="async" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 18%', opacity: watched ? 0.32 : 0.5, filter: 'saturate(1.1) brightness(.8)' }} />
         <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <span style={{ fontFamily: "'Pirata One',cursive", fontSize: 46, fontWeight: 900, color: 'rgba(108,92,231,.35)', lineHeight: 1 }}>{video.episode}</span>
+          <span style={{ fontFamily: "'Pirata One',cursive", fontSize: 46, fontWeight: 900, color: 'rgba(255,255,255,.5)', lineHeight: 1, textShadow: '0 2px 12px rgba(0,0,0,.7)' }}>{video.episode}</span>
         </div>
         <div className="tp-play-btn" style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: watched ? 0.5 : 0.78 }}>
           <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(108,92,231,.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, boxShadow: '0 4px 18px rgba(108,92,231,.45)' }}>▶</div>

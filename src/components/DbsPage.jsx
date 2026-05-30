@@ -109,16 +109,13 @@ const EpCard = memo(function EpCard({ video, index, watched, onPlay }) {
       }}
     >
       <div style={{ position: 'relative', paddingTop: '57%', background: '#0c0800', overflow: 'hidden' }}>
-        {video.thumbnail && !imgErr
-          ? <img
-              src={video.thumbnail} alt={video.title} loading="lazy" decoding="async"
-              onError={() => setImgErr(true)}
-              style={{ position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',opacity: watched ? 0.5 : 0.85 }}
-            />
-          : <div style={{ position:'absolute',inset:0, background:`linear-gradient(135deg,rgba(200,100,10,.18),rgba(0,0,0,.92))`, display:'flex',alignItems:'center',justifyContent:'center' }}>
-              <span style={{ fontFamily:"'Pirata One',cursive", fontSize:38, fontWeight:900, color:`rgba(245,127,23,.32)`, lineHeight:1 }}>{video.episode}</span>
-            </div>
-        }
+        {/* Pas de vignette par épisode (flux HLS) → key visual de la série assombri,
+            ça donne une vraie carte premium au lieu d'un bouton play sur fond vide. */}
+        <img
+          src={(video.thumbnail && !imgErr) ? video.thumbnail : COVER} alt={video.title} loading="lazy" decoding="async"
+          onError={() => setImgErr(true)}
+          style={{ position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',objectPosition:'center 18%',opacity: watched ? 0.4 : 0.62, filter:'saturate(1.15) brightness(.8)' }}
+        />
         <div style={{ position:'absolute',inset:'40% 0 0', background:'linear-gradient(180deg,transparent,rgba(0,0,0,.70))', pointerEvents:'none' }} />
         <div className="dbs-play-btn" style={{
           position:'absolute',inset:0, display:'flex',alignItems:'center',justifyContent:'center',
