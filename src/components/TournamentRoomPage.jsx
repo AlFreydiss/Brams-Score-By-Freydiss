@@ -21,32 +21,7 @@ const hexA = (c, a) => {
   return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`
 }
 
-const ARENA_KEYFRAMES = `
-@keyframes troom-pulse{0%,100%{opacity:.5}50%{opacity:1}}
-@keyframes troom-float{0%{transform:translateY(0);opacity:0}15%{opacity:.6}85%{opacity:.6}100%{transform:translateY(-60px);opacity:0}}
-@keyframes troom-breath{0%,100%{opacity:.55}50%{opacity:.9}}
-`
-
-// Fond d'arène : énergie haut (couleur opening 1) vs bas (opening 2) + particules sobres.
-function DuelBackdrop({ topColor, bottomColor }) {
-  const particles = useMemo(() => Array.from({ length: 14 }, (_, i) => ({
-    x: (i * 37 + 11) % 100, y: (i * 53 + 9) % 100,
-    dur: 7 + (i * 0.8) % 6, del: (i * 0.6) % 5, size: i % 4 === 0 ? 3 : 2, top: i % 2 === 0,
-  })), [])
-  return (
-    <div aria-hidden style={{ position: 'absolute', inset: '-40px 0', zIndex: 0, pointerEvents: 'none', overflow: 'hidden', borderRadius: 24 }}>
-      <div style={{ position: 'absolute', inset: 0, animation: 'troom-breath 9s ease-in-out infinite',
-        background: `radial-gradient(70% 36% at 50% 2%, ${hexA(topColor, 0.20)}, transparent 72%),
-                     radial-gradient(70% 36% at 50% 98%, ${hexA(bottomColor, 0.20)}, transparent 72%),
-                     radial-gradient(46% 14% at 50% 50%, rgba(255,255,255,.07), transparent 70%)` }} />
-      {particles.map((p, i) => (
-        <span key={i} style={{ position: 'absolute', left: `${p.x}%`, top: `${p.y}%`, width: p.size, height: p.size, borderRadius: '50%',
-          background: p.top ? hexA(topColor, 0.9) : hexA(bottomColor, 0.9), boxShadow: `0 0 6px ${p.top ? topColor : bottomColor}`,
-          animation: `troom-float ${p.dur}s ${p.del}s ease-in-out infinite` }} />
-      ))}
-    </div>
-  )
-}
+const ARENA_KEYFRAMES = `@keyframes troom-pulse{0%,100%{opacity:.5}50%{opacity:1}}`
 
 function getIdentity(auth) {
   const id = auth?.discordId || auth?.userId
@@ -478,26 +453,23 @@ export default function TournamentRoomPage() {
             <style>{ARENA_KEYFRAMES}</style>
 
             <div style={{ display: 'flex', gap: 18, alignItems: 'flex-start', justifyContent: 'center', flexDirection: isMobile ? 'column' : 'row' }}>
-              {/* Arène : duel + fond énergétique bleu(haut) vs rouge(bas) */}
-              <div style={{ position: 'relative', flex: '1 1 0', minWidth: 0, maxWidth: 760, width: '100%' }}>
-                <DuelBackdrop topColor={current.match.left?.color || '#3b82f6'} bottomColor={current.match.right?.color || '#ef4444'} />
-                <div style={{ position: 'relative', zIndex: 1 }}>
-                  <DuelArena
-                    key={current.match.id}
-                    round={current.round}
-                    match={current.match}
-                    totalMatchesInRound={current.round.matches.length}
-                    voteCounts={{ [current.match.id]: { left: leftN, right: rightN } }}
-                    personalVotes={{ [current.match.id]: myVote }}
-                    onVote={(side) => { if (amIInRoom && !myVote) vote(side) }}
-                    onNext={() => {}}
-                    isLastMatch={false}
-                    isMobile={isMobile}
-                    vertical
-                    multiplayer
-                    multiplayerStatus={`${totalV}/${players.length} ont voté · ${myVote ? 'en attente des autres…' : 'à toi de voter !'}`}
-                  />
-                </div>
+              {/* Duel (fond sombre sobre, sans backdrop énergétique) */}
+              <div style={{ flex: '1 1 0', minWidth: 0, maxWidth: 760, width: '100%' }}>
+                <DuelArena
+                  key={current.match.id}
+                  round={current.round}
+                  match={current.match}
+                  totalMatchesInRound={current.round.matches.length}
+                  voteCounts={{ [current.match.id]: { left: leftN, right: rightN } }}
+                  personalVotes={{ [current.match.id]: myVote }}
+                  onVote={(side) => { if (amIInRoom && !myVote) vote(side) }}
+                  onNext={() => {}}
+                  isLastMatch={false}
+                  isMobile={isMobile}
+                  vertical
+                  multiplayer
+                  multiplayerStatus={`${totalV}/${players.length} ont voté · ${myVote ? 'en attente des autres…' : 'à toi de voter !'}`}
+                />
               </div>
               {/* Sidebar : votes + mini-bracket */}
               <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'column', gap: 14, width: isMobile ? '100%' : 'auto' }}>
