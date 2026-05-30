@@ -3,8 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { TOURNAMENT_CONFIGS } from '../data/tournament-data.js'
 import { generateBracket, getCurrentMatch, advanceWinner, getWinner, getTournamentProgress } from '../lib/tournament.js'
-import OSTDuelCard from './tournament/OSTDuelCard.jsx'
-import VSPanel from './tournament/VSPanel.jsx'
+import DuelArena from './tournament/DuelArena.jsx'
 import {
   createTournamentRoom, fetchTournamentRoom, joinTournamentRoom,
   fetchTournamentRoomPlayers, fetchTournamentRoomVotes, castTournamentVote,
@@ -250,11 +249,19 @@ export default function TournamentRoomPage() {
 
         {/* DUEL EN COURS */}
         {room.status === 'playing' && current && (
-          <DuelView
-            match={current.match} roundLabel={current.round.label}
-            myVote={myVote} leftN={leftN} rightN={rightN} totalV={totalV}
-            playersCount={players.length} onVote={vote}
-            canVote={amIInRoom} isHost={isHost} isMobile={isMobile}
+          <DuelArena
+            key={current.match.id}
+            round={current.round}
+            match={current.match}
+            totalMatchesInRound={current.round.matches.length}
+            voteCounts={{ [current.match.id]: { left: leftN, right: rightN } }}
+            personalVotes={{ [current.match.id]: myVote }}
+            onVote={(side) => { if (amIInRoom && !myVote) vote(side) }}
+            onNext={() => {}}
+            isLastMatch={false}
+            isMobile={isMobile}
+            multiplayer
+            multiplayerStatus={`${totalV}/${players.length} ont voté · ${myVote ? 'en attente des autres…' : 'à toi de voter !'}`}
           />
         )}
 
@@ -273,58 +280,3 @@ export default function TournamentRoomPage() {
   )
 }
 
-// ── Vue d'un duel — réutilise les cartes premium du mode solo (OSTDuelCard) ────
-function DuelView({ match, roundLabel, myVote, leftN, rightN, totalV, playersCount, onVote, canVote, isHost, isMobile }) {
-  const [playing, setPlaying] = useState(null) // 'left' | 'right' | null : opening écouté
-  const total = leftN + rightN
-  const pct = side => total ? Math.round(((side === 'left' ? leftN : rightN) / total) * 100) : 0
-  const showResult = !!myVote   // une fois ton vote posé, on révèle les barres (comme en solo)
-  const playSide = side => setPlaying(p => (p === side ? null : side))
-  const watch = p => { if (p?.ytId) window.open(`https://www.youtube.com/watch?v=${p.ytId}`, '_blank', 'noopener') }
-  const playingP = playing === 'left' ? match.left : playing === 'right' ? match.right : null
-
-  return (
-    <div>
-      {/* Lecteur audio caché (YouTube) pour l'opening en cours d'écoute */}
-      {playingP?.ytId && (
-        <iframe
-          key={playingP.ytId}
-          title="audio"
-          src={`https://www.youtube.com/embed/${playingP.ytId}?autoplay=1`}
-          allow="autoplay; encrypted-media"
-          style={{ position: 'fixed', width: 1, height: 1, left: -9999, top: -9999, opacity: 0, pointerEvents: 'none', border: 0 }}
-        />
-      )}
-
-      <div style={{ display: 'flex', alignItems: 'stretch', gap: isMobile ? 0 : 12, flexDirection: isMobile ? 'column' : 'row' }}>
-        <OSTDuelCard
-          participant={match.left} side="left"
-          voted={myVote} hasVoted={!!myVote}
-          votePercent={pct('left')} voteCount={leftN}
-          onVote={() => { if (canVote && !myVote) onVote('left') }}
-          onListen={() => playSide('left')} onWatch={() => watch(match.left)}
-          isPlaying={playing === 'left'} otherIsPlaying={playing === 'right'}
-          showResult={showResult} isMobile={isMobile}
-        />
-        <VSPanel
-          hasVoted={!!myVote} isMobile={isMobile} roundLabel={roundLabel}
-          playingColor={playingP?.color} isPlaying={!!playing}
-        />
-        <OSTDuelCard
-          participant={match.right} side="right"
-          voted={myVote} hasVoted={!!myVote}
-          votePercent={pct('right')} voteCount={rightN}
-          onVote={() => { if (canVote && !myVote) onVote('right') }}
-          onListen={() => playSide('right')} onWatch={() => watch(match.right)}
-          isPlaying={playing === 'right'} otherIsPlaying={playing === 'left'}
-          showResult={showResult} isMobile={isMobile}
-        />
-      </div>
-
-      <div style={{ textAlign: 'center', marginTop: 18, fontSize: 13, color: 'rgba(255,255,255,.55)' }}>
-        {totalV}/{playersCount} ont voté{myVote ? '' : ' · à toi de voter !'}
-        {isHost && totalV >= playersCount && playersCount > 0 && ' · résolution…'}
-      </div>
-    </div>
-  )
-}

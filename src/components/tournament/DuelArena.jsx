@@ -275,6 +275,7 @@ function VoteToast({ visible, winnerTitle }) {
 export default function DuelArena({
   round, match, totalMatchesInRound, voteCounts,
   personalVotes, onVote, onNext, isLastMatch, isMobile,
+  multiplayer = false, multiplayerStatus = null,
 }) {
   const [playing,   setPlaying]  = useState(null)
   const [watching,  setWatching] = useState(null)
@@ -298,7 +299,9 @@ export default function DuelArena({
   useEffect(() => { setPlaying(null) }, [match.id])
 
   // Finale gagnée → champion + confettis
-  const isChampion = showResult && !!winnerSide && round.size === 2
+  // En multi, le champion/confettis ne se déclenchent pas localement après TON vote :
+  // c'est l'hôte qui résout, et l'écran vainqueur du salon gère la célébration.
+  const isChampion = showResult && !!winnerSide && round.size === 2 && !multiplayer
   useEffect(() => {
     if (!isChampion) return
     if (window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) return
@@ -497,6 +500,18 @@ export default function DuelArena({
             transition={{ delay: 0.4 }}
             style={{ position: 'relative', zIndex: 1, marginTop: 28, textAlign: 'center' }}
           >
+            {multiplayer ? (
+              // Multi : l'hôte avance automatiquement à la majorité → statut d'attente.
+              <div style={{
+                fontSize: 13, color: 'rgba(255,255,255,.5)', fontWeight: 600,
+                padding: '12px 24px',
+                background: 'rgba(255,255,255,.03)',
+                border: '1px solid rgba(255,255,255,.07)',
+                borderRadius: 10, display: 'inline-block',
+              }}>
+                {multiplayerStatus}
+              </div>
+            ) : (<>
             {isChampion ? (
               <motion.div
                 initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }}
@@ -541,6 +556,7 @@ export default function DuelArena({
                 Tous les duels de ce round sont terminés.
               </div>
             )}
+            </>)}
           </motion.div>
         )}
       </AnimatePresence>
