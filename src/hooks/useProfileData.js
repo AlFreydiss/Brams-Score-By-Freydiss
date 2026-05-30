@@ -1,0 +1,92 @@
+// ── Orchestrateur de données de la page profil ──────────────────────────────
+// Charge member + boutique + perso en parallèle, dérive rang/aura/succès/perms.
+// Réutilise les fetchers existants — ne touche pas à la logique berries/Discord.
+import { useEffect, useMemo, useState, useCallback } from 'react'
+import { fetchMemberProfile } from '../lib/supabase.js'
+import { fetchBerryShopState } from '../lib/berryShop.js'
+import { getProfileSettings } from '../lib/profile.js'
+import { getUserPosts } from '../lib/feed.js'
+import { useAuth } from '../contexts/AuthContext.jsx'
+import { isCreator, isStaff } from '../lib/roles.js'
+import {
+  getRank, getNextRank, computeAura, getAuraTier, ACHIEVEMENTS,
+} from '../lib/profileTokens.js'
+
+export function useProfileData(discordId) {
+  const { discordId: myId, userId: myUserId, isAuthenticated } = useAuth()
+
+  const [member,     setMember]     = useState(null)
+  const [shopData,   setShopData]   = useState(null)
+  const [settings,   setSettings]   = useState(null)
+  const [postsCount, setPostsCount] = useState(null)
+  const [loading,    setLoading]    = useState(true)
+  const [error,      setError]      = useState(null)
+
+  const load = useCallback(() => {
+    let ignore = false
+    setLoading(true); setError(null)
+    setMember(null); setShopData(null); setSettings(null); setPostsCount(null)
+
+    // member = source de vérité affichage (bloque le rendu principal)
+    fetchMemberProfile(discordId)
+      .then(p => { if (ignore) return; if (!p) setError('not_found'); setMember(p); setLoading(false) })
+      .catch(() => { if (!ignore) { setError('error'); setLoading(false) } })
+
+    // boutique + perso + posts en parallèle, sans bloquer l'affichage
+    fetchBerryShopState(discordId).then(s => { if (!ignore) setShopData(s) }).catch(() => {})
+    getProfileSettings(discordId).then(s => { if (!ignore) setSettings(s) }).catch(() => {})
+    getUserPosts(discordId).then(p => { if (!ignore) setPostsCount(Array.isArray(p) ? p.length : 0) }).catch(() => {})
+
+    return () => { ignore = true }
+  }, [discordId])
+
+  useEffect(() => load(), [load])
+
+  const hours    = Number.parseFloat(member?.vocal_h || 0)
+  const rank     = getRank(hours)
+  const nextRank = getNextRank(rank)
+  const remaining = nextRank ? Math.max(0, nextRank.min - hours) : 0
+  const pct = useMemo(() => {
+    if (!nextRank) return 100
+    return Math.min(100, Math.max(0, ((hours - rank.min) / (nextRank.min - rank.min)) * 100))
+  }, [hours, rank, nextRank])
+
+  // Solde : get_berry_balance peut renvoyer 0 si la résolution discord échoue →
+  // on retombe sur la valeur du classement (résolue par uid). Logique conservée.
+  const wallet = useMemo(() => {
+    const memberB = parseInt(member?.berrys ?? 0, 10) || 0
+    if (shopData && !shopData.preview) {
+      const bal = parseInt(shopData.balance ?? 0, 10) || 0
+      return bal > 0 ? bal : memberB
+    }
+    return memberB
+  }, [member, shopData])
+
+  const auraFactors = useMemo(() => computeAura(member, shopData, hours, rank), [member, shopData, hours, rank])
+  const aura     = auraFactors.total
+  const auraTier = getAuraTier(aura)
+
+  const achievements = useMemo(() => {
+    if (!member) return []
+    return ACHIEVEMENTS.map(a => ({ ...a, unlocked: a.check(member, shopData, hours) }))
+  }, [member, shopData, hours])
+
+  const equippedBg = useMemo(() => {
+    const eq = shopData?.inventory?.find(i => i?.equipped && i?.shop_items?.reward_type === 'opening_background')
+    return eq?.item_id || null
+  }, [shopData])
+
+  const isOwnProfile    = String(myId) === String(discordId)
+  const profileIsCreator = isCreator(discordId)
+  const profileIsStaff   = isStaff(discordId)
+
+  return {
+    // état
+    member, shopData, settings, setSettings, postsCount, loading, error, reload: load,
+    // dérivés
+    hours, rank, nextRank, remaining, pct, wallet,
+    aura, auraTier, auraFactors, achievements, equippedBg,
+    // identité / permissions
+    isOwnProfile, isAuthenticated, myId, myUserId, profileIsCreator, profileIsStaff,
+  }
+}
