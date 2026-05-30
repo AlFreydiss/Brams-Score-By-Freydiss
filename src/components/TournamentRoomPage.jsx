@@ -8,6 +8,7 @@ import {
   createTournamentRoom, fetchTournamentRoom, joinTournamentRoom,
   fetchTournamentRoomPlayers, fetchTournamentRoomVotes, castTournamentVote,
   updateTournamentRoom, subscribeTournamentRoom, touchTournamentPlayer,
+  fetchRecentTournamentRooms,
 } from '../lib/tournamentRooms.js'
 
 const BG = '#0a0a0b', PINK = '#9d174d', PURPLE = '#4c1d95', PINK_L = '#f9a8d4'
@@ -40,8 +41,17 @@ export default function TournamentRoomPage() {
   const [err, setErr]         = useState('')
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 768)
   const [notFound, setNotFound] = useState(false)
+  const [publicRooms, setPublicRooms] = useState([])
   const resolvingRef = useRef(false)
   const autoJoinRef = useRef(false)
+
+  // Salons récents pour la colonne droite (uniquement sur l'accueil du salon).
+  useEffect(() => {
+    if (code) return
+    let ignore = false
+    fetchRecentTournamentRooms(6).then(r => { if (!ignore) setPublicRooms(r) })
+    return () => { ignore = true }
+  }, [code])
 
   useEffect(() => {
     const f = () => setIsMobile(window.innerWidth < 768)
@@ -110,6 +120,7 @@ export default function TournamentRoomPage() {
       current_match: nextCur?.match.id || null,
       status: getWinner(next) ? 'done' : 'playing',
     }).then(() => { resolvingRef.current = false; refresh(code) })
+      .catch(() => { resolvingRef.current = false })
   }, [isHost, current, totalV, players.length, leftN, rightN, room?.status, rounds, code, refresh])
 
   // ── Actions ─────────────────────────────────────────────────────────────────
@@ -172,96 +183,170 @@ export default function TournamentRoomPage() {
   const btn = (bg = GRAD) => ({ padding: '12px 22px', borderRadius: 12, border: 'none', background: bg, color: '#fff', fontWeight: 800, fontSize: 14, cursor: 'pointer' })
   const field = { width: '100%', boxSizing: 'border-box', padding: '12px 14px', borderRadius: 11, background: 'rgba(255,255,255,.05)', border: `1px solid ${BORDER}`, color: '#fff', fontSize: 14, fontFamily: 'inherit' }
 
-  // 1) Aucun code → écran créer / rejoindre (premium)
+  // 1) Aucun code → vraie page "Salon de tournoi" (2 colonnes, premium sobre)
   if (!code) {
-    const cardStyle = {
-      background: 'linear-gradient(165deg, rgba(24,17,30,.92), rgba(12,10,16,.94))',
+    const panel = {
+      background: 'linear-gradient(165deg, #1a1623, #131019)',
       border: `1px solid ${BORDER}`, borderTop: '1px solid rgba(255,255,255,.10)',
-      borderRadius: 18, padding: 22, boxShadow: '0 24px 70px rgba(0,0,0,.45)',
+      borderRadius: 18, padding: 22, boxShadow: '0 24px 70px rgba(0,0,0,.4)',
     }
-    const numBadge = n => (
-      <span style={{ width: 26, height: 26, borderRadius: 9, background: GRAD, display: 'grid', placeItems: 'center', fontSize: 13, fontWeight: 900, flexShrink: 0 }}>{n}</span>
+    const TID_META = {
+      ost:     { emoji: '🎵', desc: 'Duel musical basé sur les bandes-son les plus marquantes.' },
+      opening: { emoji: '🎬', desc: 'Vote opening contre opening jusqu’au champion final.' },
+    }
+    const stat = (val, lbl) => (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: '0 18px' }}>
+        <span style={{ fontSize: 17, fontWeight: 900, color: PINK_L }}>{val}</span>
+        <span style={{ fontSize: 10, color: 'rgba(255,255,255,.42)', letterSpacing: '.08em', textTransform: 'uppercase', fontWeight: 700 }}>{lbl}</span>
+      </div>
     )
+    const sectionTitle = t => (
+      <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,.5)', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span style={{ width: 6, height: 6, borderRadius: '50%', background: PINK, boxShadow: `0 0 8px ${PINK}` }} />{t}
+      </div>
+    )
+    const recent = publicRooms.filter(r => r.status !== 'done').slice(0, 5)
+
     return (
       <div style={wrap}>
-        {/* Ambient backdrop pink/purple */}
-        <div aria-hidden style={{
-          position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none',
-          background: `radial-gradient(900px 520px at 18% -5%, rgba(157,23,77,.18), transparent 60%),
-                       radial-gradient(820px 520px at 92% 12%, rgba(76,29,149,.20), transparent 60%),
-                       radial-gradient(760px 620px at 50% 115%, rgba(157,23,77,.10), transparent 60%)`,
-        }} />
-        <div style={{ ...inner, maxWidth: 600 }}>
-          <button onClick={() => navigate('/tournoi')} style={{ ...btn('rgba(255,255,255,.06)'), padding: '8px 14px', fontSize: 12, marginBottom: 26 }}>← Tournoi</button>
+        <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none',
+          background: `radial-gradient(1000px 560px at 14% -8%, rgba(157,23,77,.13), transparent 60%),
+                       radial-gradient(900px 560px at 96% 4%, rgba(76,29,149,.16), transparent 62%)` }} />
+        <div style={{ ...inner, maxWidth: 1200 }}>
+          <button onClick={() => navigate('/tournoi')} style={{ ...btn('rgba(255,255,255,.06)'), padding: '8px 14px', fontSize: 12, marginBottom: 22 }}>← Tournoi</button>
 
-          {/* Hero */}
-          <div style={{ textAlign: 'center', marginBottom: 30 }}>
-            <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: 7, marginBottom: 14,
-              padding: '5px 14px', borderRadius: 999, fontSize: 10.5, fontWeight: 800, letterSpacing: '.16em',
-              textTransform: 'uppercase', color: PINK_L,
-              background: 'rgba(157,23,77,.14)', border: `1px solid ${PINK}55`,
-            }}>🟣 Mode multi · Temps réel</div>
-            <h1 style={{ fontSize: 'clamp(28px,5vw,40px)', fontWeight: 900, margin: '0 0 10px', letterSpacing: '-.02em', background: GRAD_TXT, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              Salon de tournoi
+          {/* HERO compact */}
+          <div style={{ marginBottom: 26 }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, marginBottom: 14, padding: '5px 13px', borderRadius: 999, fontSize: 10.5, fontWeight: 800, letterSpacing: '.16em', textTransform: 'uppercase', color: PINK_L, background: 'rgba(157,23,77,.13)', border: `1px solid ${PINK}44` }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: PINK_L, boxShadow: `0 0 8px ${PINK_L}` }} />Mode multi · temps réel
+            </div>
+            <h1 style={{ fontSize: 'clamp(30px,4.4vw,46px)', fontWeight: 900, margin: '0 0 10px', letterSpacing: '-.025em', lineHeight: 1.05, background: GRAD_TXT, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              Crée ton salon de tournoi
             </h1>
-            <p style={{ color: 'rgba(255,255,255,.55)', margin: '0 auto', fontSize: 14, lineHeight: 1.6, maxWidth: 420 }}>
-              Crée un salon, partage le code, et votez les duels <strong style={{ color: 'rgba(255,255,255,.8)' }}>ensemble en temps réel</strong>. Le bracket avance à la majorité.
+            <p style={{ color: 'rgba(255,255,255,.6)', margin: '0 0 18px', fontSize: 15, lineHeight: 1.6, maxWidth: 560 }}>
+              Invite tes potes, votez en live, et laissez la majorité couronner le meilleur opening ou OST.
             </p>
+            <div style={{ display: 'inline-flex', alignItems: 'center', padding: '8px 6px', borderRadius: 12, background: 'rgba(255,255,255,.03)', border: `1px solid ${BORDER}` }}>
+              {stat('2', 'Modes')}
+              <div style={{ width: 1, height: 26, background: 'rgba(255,255,255,.08)' }} />
+              {stat('Live', 'Votes')}
+              <div style={{ width: 1, height: 26, background: 'rgba(255,255,255,.08)' }} />
+              {stat('Auto', 'Bracket')}
+            </div>
           </div>
 
-          {ident.guest && (
-            <input value={guestName} onChange={e => setGuestName(e.target.value)} placeholder="Choisis ton pseudo" style={{ ...field, marginBottom: 16, textAlign: 'center', fontWeight: 700 }} maxLength={20} />
-          )}
+          {/* GRILLE 2 colonnes */}
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.15fr 0.85fr', gap: 18, alignItems: 'start' }}>
 
-          {/* Créer */}
-          <div style={{ ...cardStyle, marginBottom: 16 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-              {numBadge(1)}<span style={{ fontWeight: 800, fontSize: 15 }}>Créer un salon</span>
+            {/* ── GAUCHE : créer / rejoindre ── */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div style={panel}>
+                {sectionTitle('Choisis ton tournoi')}
+                {ident.guest && (
+                  <input value={guestName} onChange={e => setGuestName(e.target.value)} placeholder="Choisis ton pseudo" style={{ ...field, marginBottom: 14, fontWeight: 700 }} maxLength={20} />
+                )}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 18 }}>
+                  {Object.entries(TOURNAMENT_CONFIGS).map(([id, cfg]) => {
+                    const active = tid === id
+                    const meta = TID_META[id] || { emoji: '🏆', desc: '' }
+                    return (
+                      <button key={id} onClick={() => setTid(id)} aria-pressed={active} style={{
+                        display: 'flex', flexDirection: 'column', gap: 7, padding: 16, borderRadius: 15, cursor: 'pointer', textAlign: 'left',
+                        border: `1px solid ${active ? PINK : BORDER}`,
+                        background: active ? 'linear-gradient(160deg, rgba(157,23,77,.20), rgba(76,29,149,.12))' : '#201c2a',
+                        boxShadow: active ? '0 10px 30px rgba(157,23,77,.22)' : 'none',
+                        transition: 'border-color .18s, background .18s',
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <span style={{ fontSize: 24 }}>{meta.emoji}</span>
+                          <span style={{ width: 18, height: 18, borderRadius: '50%', border: `2px solid ${active ? PINK_L : 'rgba(255,255,255,.18)'}`, display: 'grid', placeItems: 'center' }}>
+                            {active && <span style={{ width: 8, height: 8, borderRadius: '50%', background: PINK_L }} />}
+                          </span>
+                        </div>
+                        <span style={{ fontSize: 14.5, fontWeight: 800, color: '#fff', lineHeight: 1.2 }}>{cfg.title || id}</span>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: active ? PINK_L : 'rgba(255,255,255,.4)' }}>{cfg.participants?.length || 0} participants</span>
+                        <span style={{ fontSize: 11.5, color: 'rgba(255,255,255,.45)', lineHeight: 1.5 }}>{meta.desc}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+                <button onClick={handleCreate} disabled={busy || !tid} style={{ ...btn(), width: '100%', padding: 14, fontSize: 15, boxShadow: (busy || !tid) ? 'none' : '0 10px 30px rgba(157,23,77,.3)', opacity: (busy || !tid) ? .55 : 1, cursor: (busy || !tid) ? 'default' : 'pointer' }}>
+                  {busy ? '⏳ Création…' : '⚔️  Créer un salon privé'}
+                </button>
+                <p style={{ textAlign: 'center', fontSize: 11.5, color: 'rgba(255,255,255,.35)', margin: '10px 0 0' }}>Un code sera généré automatiquement.</p>
+              </div>
+
+              <form onSubmit={handleJoin} style={panel}>
+                {sectionTitle('Tu as déjà un code ?')}
+                <p style={{ fontSize: 12.5, color: 'rgba(255,255,255,.5)', margin: '-6px 0 14px' }}>Rejoins un salon existant et vote avec les autres.</p>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <input value={joinCode} onChange={e => setJoinCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))} placeholder="CODE" maxLength={6} autoComplete="off"
+                    style={{ ...field, flex: 1, textTransform: 'uppercase', letterSpacing: '.4em', fontWeight: 900, fontSize: 20, textAlign: 'center', padding: 14 }} />
+                  <button type="submit" disabled={busy || !joinCode.trim()} style={{ ...btn(), padding: '0 22px', opacity: (busy || !joinCode.trim()) ? .55 : 1 }}>Rejoindre</button>
+                </div>
+                {err && <p style={{ color: '#f87171', margin: '12px 0 0', fontSize: 12.5 }}>⚠ {err}</p>}
+              </form>
             </div>
-            <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
-              {Object.entries(TOURNAMENT_CONFIGS).map(([id, cfg]) => {
-                const active = tid === id
-                const emoji = id === 'ost' ? '🎵' : '🎬'
-                return (
-                  <button key={id} onClick={() => setTid(id)} style={{
-                    flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 5,
-                    padding: '14px 16px', borderRadius: 14, cursor: 'pointer', textAlign: 'left',
-                    border: `1px solid ${active ? PINK : BORDER}`,
-                    background: active ? 'linear-gradient(135deg, rgba(157,23,77,.24), rgba(76,29,149,.16))' : 'rgba(255,255,255,.025)',
-                    boxShadow: active ? '0 8px 28px rgba(157,23,77,.25)' : 'none',
-                    transition: 'all .18s',
-                  }}>
-                    <span style={{ fontSize: 22 }}>{emoji}</span>
-                    <span style={{ fontSize: 13.5, fontWeight: 800, color: active ? '#fff' : 'rgba(255,255,255,.82)', lineHeight: 1.2 }}>{cfg.title || id}</span>
-                    <span style={{ fontSize: 11, color: active ? PINK_L : 'rgba(255,255,255,.38)' }}>{cfg.participants?.length || 0} participants</span>
-                  </button>
-                )
-              })}
+
+            {/* ── DROITE : aperçu / explication / salons ── */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div style={panel}>
+                {sectionTitle('Aperçu du bracket')}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+                  {[['Opening A', 'Opening B'], ['Opening C', 'Opening D']].map((pair, i) => (
+                    <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                      {pair.map((n, j) => (
+                        <div key={j} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '8px 11px', borderRadius: 9, background: '#201c2a', border: `1px solid ${BORDER}` }}>
+                          <span style={{ width: 5, height: 5, borderRadius: '50%', background: j === 0 ? PINK : 'rgba(255,255,255,.22)' }} />
+                          <span style={{ fontSize: 12, color: 'rgba(255,255,255,.6)' }}>{n}</span>
+                        </div>
+                      ))}
+                      {i === 0 && <div style={{ textAlign: 'center', fontSize: 10, color: 'rgba(255,255,255,.25)' }}>⌄ demi-finale ⌄</div>}
+                    </div>
+                  ))}
+                </div>
+                <p style={{ fontSize: 11.5, color: 'rgba(255,255,255,.32)', margin: '14px 0 0', lineHeight: 1.5 }}>Le bracket réel apparaîtra ici une fois le salon créé.</p>
+              </div>
+
+              <div style={panel}>
+                {sectionTitle('Comment ça marche')}
+                {[
+                  ['Crée un salon', 'Choisis OST ou Opening, un code privé est généré.'],
+                  ['Partage le code', 'Tes potes rejoignent en un clic via le code ou le lien.'],
+                  ['Votez jusqu’au champion', 'Chaque duel avance à la majorité des votes.'],
+                ].map(([t, d], i) => (
+                  <div key={i} style={{ display: 'flex', gap: 12, marginBottom: i < 2 ? 14 : 0 }}>
+                    <span style={{ width: 24, height: 24, flexShrink: 0, borderRadius: 8, background: GRAD, display: 'grid', placeItems: 'center', fontSize: 12, fontWeight: 900 }}>{i + 1}</span>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: '#fff' }}>{t}</div>
+                      <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,.45)', lineHeight: 1.5, marginTop: 2 }}>{d}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div style={panel}>
+                {sectionTitle('Salons actifs')}
+                {recent.length === 0 ? (
+                  <p style={{ fontSize: 12.5, color: 'rgba(255,255,255,.35)', margin: 0 }}>Aucun salon public pour le moment.</p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {recent.map(r => (
+                      <button key={r.code} onClick={() => { setJoinCode(r.code); setParams({ code: r.code }); setCode(r.code) }} style={{
+                        display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', borderRadius: 10, cursor: 'pointer', textAlign: 'left',
+                        background: '#201c2a', border: `1px solid ${BORDER}`, color: '#fff',
+                      }}>
+                        <span style={{ fontSize: 16 }}>{r.tournament_id === 'ost' ? '🎵' : '🎬'}</span>
+                        <span style={{ flex: 1, fontWeight: 800, letterSpacing: '.14em', fontSize: 13, color: PINK_L }}>{r.code}</span>
+                        <span style={{ fontSize: 10, fontWeight: 700, color: r.status === 'lobby' ? '#34d399' : 'rgba(255,255,255,.4)', textTransform: 'uppercase', letterSpacing: '.06em' }}>{r.status === 'lobby' ? 'Ouvert' : 'En cours'}</span>
+                        <span style={{ fontSize: 12, color: 'rgba(255,255,255,.4)' }}>→</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
-            <button onClick={handleCreate} disabled={busy} style={{ ...btn(), width: '100%', boxShadow: '0 10px 30px rgba(157,23,77,.32)', opacity: busy ? .6 : 1 }}>
-              {busy ? 'Création…' : '⚔️  Créer le salon'}
-            </button>
           </div>
-
-          {/* Séparateur */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '4px 0 16px', color: 'rgba(255,255,255,.25)', fontSize: 11, fontWeight: 700, letterSpacing: '.14em' }}>
-            <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,.08)' }} />OU<div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,.08)' }} />
-          </div>
-
-          {/* Rejoindre */}
-          <form onSubmit={handleJoin} style={cardStyle}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-              {numBadge(2)}<span style={{ fontWeight: 800, fontSize: 15 }}>Rejoindre avec un code</span>
-            </div>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <input value={joinCode} onChange={e => setJoinCode(e.target.value.toUpperCase())} placeholder="CODE" maxLength={6}
-                style={{ ...field, flex: 1, textTransform: 'uppercase', letterSpacing: '.32em', fontWeight: 900, fontSize: 18, textAlign: 'center', padding: '14px' }} />
-              <button type="submit" disabled={busy} style={{ ...btn('rgba(255,255,255,.08)'), border: `1px solid ${BORDER}`, opacity: busy ? .6 : 1 }}>Rejoindre →</button>
-            </div>
-          </form>
-
-          {err && <p style={{ color: '#f87171', marginTop: 16, fontSize: 13, textAlign: 'center' }}>{err}</p>}
         </div>
       </div>
     )

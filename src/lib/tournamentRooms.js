@@ -53,6 +53,17 @@ export async function joinTournamentRoom({ code, userId, displayName, avatarUrl 
   return { error: error?.message || null, room }
 }
 
+// Salons récents (pour la colonne "Salons actifs" de la page d'accueil du salon).
+export async function fetchRecentTournamentRooms(limit = 6) {
+  if (!supabase) return []
+  const { data } = await supabase
+    .from('tournament_rooms')
+    .select('code, tournament_id, status, created_at')
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  return data || []
+}
+
 export async function fetchTournamentRoomPlayers(code) {
   if (!supabase) return []
   const { data } = await supabase
