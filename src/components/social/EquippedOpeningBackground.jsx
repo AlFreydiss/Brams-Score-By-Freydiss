@@ -7,7 +7,7 @@ import OpeningBgMedia from './OpeningBgMedia.jsx'
 const MEDIA_STYLE = { position: 'absolute', inset: '-4%', width: '108%', height: '108%', objectFit: 'cover', filter: 'blur(9px) saturate(1.12) brightness(0.72)', transform: 'scale(1.06)' }
 
 export default function EquippedOpeningBackground() {
-  const { activeBg } = useOpeningBg()
+  const { activeBg, ambientStill } = useOpeningBg()
   if (!activeBg) return null
 
   const start = activeBg.overlayStart || 'rgba(8,9,13,0.74)'
@@ -15,7 +15,7 @@ export default function EquippedOpeningBackground() {
 
   return (
     <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden', background: activeBg.dominantColor || '#06070b' }}>
-      <OpeningBgMedia bg={activeBg} style={MEDIA_STYLE} />
+      <OpeningBgMedia bg={activeBg} style={MEDIA_STYLE} stillOnly={ambientStill} />
       {/* Gradient premium */}
       <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(180deg, ${start} 0%, ${end} 100%)` }} />
       {/* Teinte subtile */}

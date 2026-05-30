@@ -12,6 +12,10 @@ export function OpeningBgProvider({ children }) {
   // undefined = pas d'override (on retombe sur le fond équipé du visiteur),
   // null = forcer AUCUN fond, string = forcer ce fond précis.
   const [overrideId, setOverrideIdState] = useState(undefined)
+  // ambientStill : quand true, le fond GLOBAL n'anime plus la vidéo et affiche une
+  // image figée (la page profil l'active car son hero joue déjà la vidéo → évite
+  // un double décodage du même mp4).
+  const [ambientStill, setAmbientStill] = useState(false)
   const previewTimer = useRef(null)
 
   // Charger le fond équipé depuis Supabase au login
@@ -74,7 +78,7 @@ export function OpeningBgProvider({ children }) {
   const activeBg = getBgById(effectiveId)
 
   return (
-    <Ctx.Provider value={{ equippedId, previewId, activeBg, equip, unequip, preview, cancelPreview, setOverride, clearOverride }}>
+    <Ctx.Provider value={{ equippedId, previewId, activeBg, equip, unequip, preview, cancelPreview, setOverride, clearOverride, ambientStill, setAmbientStill }}>
       {children}
     </Ctx.Provider>
   )

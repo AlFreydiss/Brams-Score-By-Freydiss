@@ -30,7 +30,7 @@ export default function ProfilePage() {
   const navigate = useNavigate()
   const data = useProfileData(discordId)
   const { member, settings, setSettings, loading, error, isOwnProfile, equippedBg } = data
-  const { activeBg, setOverride, clearOverride } = useOpeningBg()
+  const { activeBg, setOverride, clearOverride, setAmbientStill } = useOpeningBg()
 
   const [tab,       setTab]       = useState('stats')
   const [copied,    setCopied]    = useState(false)
@@ -48,6 +48,14 @@ export default function ProfilePage() {
     if (isOwnProfile) return
     setOverride(equippedBg || null)
   }, [isOwnProfile, equippedBg, discordId, setOverride])
+
+  // Le hero joue déjà la vidéo du fond équipé → on fige le fond global plein
+  // écran (image floutée) tant qu'on est sur le profil, pour ne décoder qu'une
+  // seule vidéo. Réactivé en quittant la page.
+  useEffect(() => {
+    setAmbientStill(true)
+    return () => setAmbientStill(false)
+  }, [setAmbientStill])
 
   const share = () => {
     navigator.clipboard?.writeText(window.location.href)
