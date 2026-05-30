@@ -1,4 +1,5 @@
 // ── Hero du profil : avatar, identité, badges, stats, progression de rang ────
+import { useState, useEffect } from 'react'
 import { RANK_QUOTES, fmtB } from '../../lib/profileTokens.js'
 import { CountUp } from './shared.jsx'
 import RelationshipActions from '../social/RelationshipActions.jsx'
@@ -13,6 +14,14 @@ export default function ProfileHero({ data, copied, onShare, onEdit }) {
   } = data
 
   const heroBg = getBgById(equippedBg)
+
+  // Remplissage cinématique de la barre de rang : part de 0 puis rejoint pct
+  // (la transition CSS .pfx-prog-fill fait le reste).
+  const [fillW, setFillW] = useState(0)
+  useEffect(() => {
+    const t = setTimeout(() => setFillW(pct), 280)
+    return () => clearTimeout(t)
+  }, [pct])
 
   const displayName = member?.username || `Pirate #${String(member?.uid || '').slice(-4)}`
   const quote = settings?.quote || RANK_QUOTES[rank.rang] || ''
@@ -127,7 +136,7 @@ export default function ProfileHero({ data, copied, onShare, onEdit }) {
           )}
         </div>
         <div className="pfx-prog-track">
-          <div className="pfx-prog-fill" style={{ width: `${pct}%`, '--ac': nextRank?.color || rank.color }} />
+          <div className="pfx-prog-fill" style={{ width: `${fillW}%`, '--ac': nextRank?.color || rank.color }} />
         </div>
       </div>
     </>
