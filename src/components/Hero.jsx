@@ -185,13 +185,6 @@ export default function Hero() {
         background: 'radial-gradient(ellipse 70% 65% at 70% 35%, rgba(88,101,242,0.13) 0%, rgba(88,101,242,0.05) 50%, transparent 80%)',
         filter: 'blur(30px)',
       }} />
-      {/* Halo chaud bas-gauche */}
-      <div style={{
-        position: 'absolute', bottom: '0%', left: '15%', width: '40%', height: '45%',
-        zIndex: 0, pointerEvents: 'none',
-        background: 'radial-gradient(ellipse 80% 80% at 40% 80%, rgba(224,82,74,0.07) 0%, transparent 70%)',
-        filter: 'blur(24px)',
-      }} />
       {/* Vignette top */}
       <div style={{
         position: 'absolute', top: 0, left: 0, right: 0, height: '22%', zIndex: 0, pointerEvents: 'none',
@@ -209,17 +202,6 @@ export default function Hero() {
       }} />
 
       <StarField />
-
-      {/* ── Atmospheric layers (CSS classes defined in index.css) ── */}
-      <div className="hero-atmosphere">
-        <div className="hero-depth-wash" />
-        <div className="hero-rain" />
-        <div className="hero-mist" />
-        <div className="hero-mist hero-mist-b" />
-        <div className="hero-haki" />
-        <div className="hero-haki-line" />
-        <div className="hero-haki-line hero-haki-line-b" />
-      </div>
 
       <div style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: 1560, margin: '0 auto', padding: isMobile ? '0 20px' : '0 clamp(32px, 4vw, 72px)' }}>
         <div style={{
@@ -265,7 +247,7 @@ export default function Hero() {
               lineHeight: 1.78, marginBottom: 36, maxWidth: 500,
               textWrap: 'balance',
             }}>
-              Une communauté anime connectée à Discord — classements, équipages, blind tests, wiki, événements et récompenses en berries.
+              Une communauté anime connectée à Discord — classements, équipages, blind tests, le fil, événements et récompenses en berries.
             </p>
 
             {/* CTA */}
@@ -353,7 +335,7 @@ export default function Hero() {
                 <HeroFeatureCard icon="⚓" title="Équipages" desc="Rejoins un crew, progresse avec tes nakamas." accent="rgba(212,160,23" />
                 <HeroFeatureCard icon="📊" title="Classements" desc="Monte dans les rangs et marque ton nom." accent="rgba(88,101,242" />
                 <HeroFeatureCard icon="🎵" title="Blind Test" desc="Teste ta mémoire sur les openings anime." accent="rgba(52,211,153" />
-                <HeroFeatureCard icon="📖" title="Wiki & Théories" desc="Partage tes idées, débats et analyses." accent="rgba(224,82,74" />
+                <HeroFeatureCard icon="📖" title="Le Fil" desc="Poste, réagis, débats et partage tes théories." accent="rgba(224,82,74" />
                 <HeroFeatureCard icon="🛒" title="Boutique" desc="Utilise tes berries pour débloquer des récompenses." accent="rgba(168,85,247" />
                 <HeroFeatureCard icon="🎉" title="Événements" desc="Participe aux soirées, tournois et défis." accent="rgba(234,179,8" />
               </div>
