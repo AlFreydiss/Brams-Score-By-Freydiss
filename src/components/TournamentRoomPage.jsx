@@ -252,6 +252,8 @@ export default function TournamentRoomPage() {
         {/* DUEL EN COURS */}
         {room.status === 'playing' && current && (
           <div style={{ display: 'flex', gap: 18, alignItems: 'flex-start', justifyContent: 'center', flexDirection: isMobile ? 'column' : 'row' }}>
+            {/* Espace symétrique à gauche : compense le panneau de droite → duel parfaitement centré */}
+            {!isMobile && <div style={{ width: 248, flexShrink: 0 }} aria-hidden />}
             <div style={{ flex: '1 1 0', minWidth: 0, maxWidth: 900, width: '100%' }}>
               <DuelArena
                 key={current.match.id}
@@ -295,7 +297,9 @@ function VotersPanel({ players, votes, match, isMobile }) {
   return (
     <aside style={{
       width: isMobile ? '100%' : 248, flexShrink: 0,
-      background: CARD, border: `1px solid ${BORDER}`, borderRadius: 16, padding: 16,
+      background: 'rgba(12,13,20,0.55)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)',
+      border: '1px solid rgba(255,255,255,.10)', borderRadius: 16, padding: 16,
+      boxShadow: '0 12px 40px rgba(0,0,0,.35)',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
         <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.12em', color: PINK_L, textTransform: 'uppercase' }}>Votes</span>
