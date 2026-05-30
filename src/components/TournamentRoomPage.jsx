@@ -146,8 +146,10 @@ export default function TournamentRoomPage() {
   function leave() { setParams({}); setCode(''); setRoom(null) }
 
   // ── Vues ─────────────────────────────────────────────────────────────────
-  const wrap = { minHeight: '100vh', background: BG, color: '#fff', paddingTop: 84, paddingBottom: 60, fontFamily: "'Inter',system-ui,sans-serif" }
-  const inner = { width: 'min(960px, calc(100% - 32px))', margin: '0 auto' }
+  const wrap = { position: 'relative', minHeight: '100vh', background: BG, color: '#fff', paddingTop: 84, paddingBottom: 60, fontFamily: "'Inter',system-ui,sans-serif" }
+  // zIndex:2 → le contenu reste AU-DESSUS du fond plein écran (PlayingBgOverlay,
+  // portail fixe en z1 dans le body) quand on écoute un opening.
+  const inner = { position: 'relative', zIndex: 2, width: 'min(1180px, calc(100% - 32px))', margin: '0 auto' }
   const btn = (bg = GRAD) => ({ padding: '12px 22px', borderRadius: 12, border: 'none', background: bg, color: '#fff', fontWeight: 800, fontSize: 14, cursor: 'pointer' })
   const field = { width: '100%', boxSizing: 'border-box', padding: '12px 14px', borderRadius: 11, background: 'rgba(255,255,255,.05)', border: `1px solid ${BORDER}`, color: '#fff', fontSize: 14, fontFamily: 'inherit' }
 
@@ -249,20 +251,25 @@ export default function TournamentRoomPage() {
 
         {/* DUEL EN COURS */}
         {room.status === 'playing' && current && (
-          <DuelArena
-            key={current.match.id}
-            round={current.round}
-            match={current.match}
-            totalMatchesInRound={current.round.matches.length}
-            voteCounts={{ [current.match.id]: { left: leftN, right: rightN } }}
-            personalVotes={{ [current.match.id]: myVote }}
-            onVote={(side) => { if (amIInRoom && !myVote) vote(side) }}
-            onNext={() => {}}
-            isLastMatch={false}
-            isMobile={isMobile}
-            multiplayer
-            multiplayerStatus={`${totalV}/${players.length} ont voté · ${myVote ? 'en attente des autres…' : 'à toi de voter !'}`}
-          />
+          <div style={{ display: 'flex', gap: 18, alignItems: 'flex-start', justifyContent: 'center', flexDirection: isMobile ? 'column' : 'row' }}>
+            <div style={{ flex: '1 1 0', minWidth: 0, maxWidth: 900, width: '100%' }}>
+              <DuelArena
+                key={current.match.id}
+                round={current.round}
+                match={current.match}
+                totalMatchesInRound={current.round.matches.length}
+                voteCounts={{ [current.match.id]: { left: leftN, right: rightN } }}
+                personalVotes={{ [current.match.id]: myVote }}
+                onVote={(side) => { if (amIInRoom && !myVote) vote(side) }}
+                onNext={() => {}}
+                isLastMatch={false}
+                isMobile={isMobile}
+                multiplayer
+                multiplayerStatus={`${totalV}/${players.length} ont voté · ${myVote ? 'en attente des autres…' : 'à toi de voter !'}`}
+              />
+            </div>
+            <VotersPanel players={players} votes={votes} match={current.match} isMobile={isMobile} />
+          </div>
         )}
 
         {/* FIN */}
@@ -277,6 +284,50 @@ export default function TournamentRoomPage() {
         )}
       </div>
     </div>
+  )
+}
+
+// ── Panneau des votants (qui a voté quoi, en temps réel) ───────────────────────
+function VotersPanel({ players, votes, match, isMobile }) {
+  const voteBy = {}
+  for (const v of votes) voteBy[String(v.user_id)] = v.side
+  const votedCount = players.filter(p => voteBy[String(p.user_id)]).length
+  return (
+    <aside style={{
+      width: isMobile ? '100%' : 248, flexShrink: 0,
+      background: CARD, border: `1px solid ${BORDER}`, borderRadius: 16, padding: 16,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+        <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.12em', color: PINK_L, textTransform: 'uppercase' }}>Votes</span>
+        <span style={{ fontSize: 12, color: 'rgba(255,255,255,.5)' }}>{votedCount}/{players.length}</span>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+        {players.map(p => {
+          const side = voteBy[String(p.user_id)]
+          const choice = side === 'left' ? match.left : side === 'right' ? match.right : null
+          const col = choice?.color || PINK_L
+          return (
+            <div key={p.user_id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{
+                width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
+                display: 'grid', placeItems: 'center', fontSize: 11, fontWeight: 800, color: '#fff',
+                background: side ? `${col}33` : 'rgba(255,255,255,.06)',
+                border: `1.5px solid ${side ? col : 'rgba(255,255,255,.12)'}`,
+              }}>{(p.display_name || '?')[0].toUpperCase()}</span>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ fontSize: 12.5, fontWeight: 600, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {p.display_name}{p.is_host ? ' 👑' : ''}
+                </div>
+                <div style={{ fontSize: 10.5, color: side ? col : 'rgba(255,255,255,.32)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {side ? `▸ ${choice?.title || '—'}` : 'en attente…'}
+                </div>
+              </div>
+              <span style={{ flexShrink: 0, fontSize: 13, color: side ? '#34d399' : 'rgba(255,255,255,.25)' }}>{side ? '✓' : '⏳'}</span>
+            </div>
+          )
+        })}
+      </div>
+    </aside>
   )
 }
 
