@@ -216,7 +216,7 @@ export default function AnimeEncyclopediaPage({ onClose }) {
             legendaryCount={baseEntries.filter(e => e.rarity === 'legendary' || e.rarity === 'mythic').length}
           />
 
-          <div className="arc-content">
+          <div className="arc-content" key={activeTab}>
             {activeTab === 'fiches' && (
               <ArchiveRegister
                 entries={filteredEntries}

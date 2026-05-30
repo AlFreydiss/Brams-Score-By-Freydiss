@@ -3713,3 +3713,26 @@ input[type="text"], input[type="search"] {
 
 /* Timeline page */
 .arc-content > div[style] { min-height: 0 !important; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Ouverture cinématique de l'overlay + transition d'onglets (refonte v2).
+   Les conteneurs se révèlent en cascade quand l'encyclopédie s'ouvre ; le
+   contenu rejoue son entrée à chaque changement d'onglet (via key={activeTab}).
+   ═══════════════════════════════════════════════════════════════════════════ */
+@keyframes encShellIn   { from { opacity: 0; transform: scale(.986); } to { opacity: 1; transform: none; } }
+@keyframes encRailIn    { from { opacity: 0; transform: translateY(-100%); } to { opacity: 1; transform: none; } }
+@keyframes encPanelIn   { from { opacity: 0; transform: translateX(-26px); } to { opacity: 1; transform: none; } }
+@keyframes encHeroIn    { from { opacity: 0; transform: translateY(-16px); } to { opacity: 1; transform: none; } }
+@keyframes encContentIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+
+.arc-shell            { animation: encShellIn   .45s cubic-bezier(.22,1,.36,1) both; }
+.arc-rail             { animation: encRailIn    .50s cubic-bezier(.22,1,.36,1) both; }
+.arc-body .arc-panel  { animation: encPanelIn   .55s cubic-bezier(.22,1,.36,1) .06s both; }
+.arc-board .arc-hero  { animation: encHeroIn    .55s cubic-bezier(.22,1,.36,1) .12s both; }
+.arc-content          { animation: encContentIn .40s cubic-bezier(.22,1,.36,1) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .arc-shell, .arc-rail, .arc-body .arc-panel, .arc-board .arc-hero, .arc-content {
+    animation: none !important;
+  }
+}

@@ -230,22 +230,10 @@ export function ControlPanel({
           <h2 style={{ margin: 0, fontSize: 15, fontWeight: 900, color: T.text, letterSpacing: '-.01em' }}>{anime.name}</h2>
         </div>
         {anime.description && (
-          <p style={{ margin: '4px 0 12px', fontSize: 11, color: T.textDim, lineHeight: 1.55, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
-            {anime.description.slice(0, 90)}
+          <p style={{ margin: '4px 0 0', fontSize: 11, color: T.textDim, lineHeight: 1.55, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' }}>
+            {anime.description.slice(0, 130)}
           </p>
         )}
-
-        <div style={{ display: 'flex', gap: 8 }}>
-          {[
-            { val: entryCount, label: 'Dossiers', color: T.text },
-            { val: secretCount, label: 'Classifiés', color: T.red },
-          ].map(s => (
-            <div key={s.label} style={{ flex: 1, textAlign: 'center', padding: '8px 6px', borderRadius: 8, background: T.surface2, border: `1px solid ${T.border}` }}>
-              <div style={{ fontSize: 20, fontWeight: 900, color: s.color, lineHeight: 1 }}>{s.val}</div>
-              <div style={{ fontSize: 9, color: T.textDim, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', marginTop: 2 }}>{s.label}</div>
-            </div>
-          ))}
-        </div>
       </div>
 
       {/* Search */}
