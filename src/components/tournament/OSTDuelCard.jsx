@@ -10,6 +10,7 @@ export default function OSTDuelCard({
   isPlaying, otherIsPlaying,
   showResult, isMobile,
   videoSyncRef,
+  vivid = false, // multi split-screen : chaque carte montre SA miniature en plein, pas d'assombrissement
 }) {
   const [imgState, setImgState] = useState('loading')
   const videoRef = useRef(null)
@@ -93,7 +94,7 @@ export default function OSTDuelCard({
           : isWinner
             ? `0 0 0 1px rgba(212,160,23,.2), 0 16px 64px rgba(212,160,23,.1)`
             : 'none',
-        opacity: otherIsPlaying ? 0.82 : 1,
+        opacity: (otherIsPlaying && !vivid) ? 0.82 : 1,
         transition: 'border-color .35s, box-shadow .35s, opacity .5s',
       }}
       whileHover={!hasVoted ? { scale: 1.012 } : {}}
@@ -136,8 +137,8 @@ export default function OSTDuelCard({
           />
         )}
 
-        {/* Thumbnail YouTube quand pas de audioUrl */}
-        {!participant?.audioUrl && !isPlaying && showThumb && (
+        {/* Thumbnail YouTube quand pas de audioUrl (toujours visible en mode vivid) */}
+        {!participant?.audioUrl && (vivid || !isPlaying) && showThumb && (
           <img
             src={`https://img.youtube.com/vi/${participant.ytId}/maxresdefault.jpg`}
             alt=""
@@ -146,7 +147,7 @@ export default function OSTDuelCard({
               position: 'absolute', top: '-8%', left: '-5%',
               width: '110%', height: '116%',
               objectFit: 'cover', objectPosition: 'center 30%',
-              opacity: isLoser ? 0.08 : 0.48,
+              opacity: vivid ? (isLoser ? 0.32 : 0.66) : (isLoser ? 0.08 : 0.48),
               filter: 'saturate(1.3) brightness(0.9)',
             }}
           />
