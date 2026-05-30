@@ -250,9 +250,8 @@ section {
 }
 .hero-community {
   display: block;
-  font-family: Georgia, 'Times New Roman', serif;
-  font-weight: 800;
-  letter-spacing: .018em;
+  font-weight: 900;
+  letter-spacing: -.02em;
   /* Dégradé or avec une bande de lumière centrale, élargi pour le shimmer animé */
   background: linear-gradient(100deg, #d89222 0%, #f4b942 22%, #fff0c5 40%, #fff7e2 48%, #fff0c5 56%, #f4b942 74%, #d89222 100%);
   background-size: 220% auto;
@@ -269,7 +268,8 @@ section {
 .hero-community-glow {
   position: relative;
   display: inline-block;
-  transform: translate3d(14px, 0, 0);
+  /* aligné à gauche sous "Brams" — plus de décalage horizontal */
+  transform: translate3d(0, 0, 0);
 }
 .hero-community-glow::before {
   content: "";
@@ -731,7 +731,7 @@ section {
     margin-bottom: 16px;
   }
   .hero-community-glow {
-    transform: translate3d(6px, 0, 0);
+    transform: translate3d(0, 0, 0);
   }
   .hero-rain,
   .hero-mist-b,

@@ -26,6 +26,7 @@ export default function FeedPage() {
   const [search, setSearch] = useState('')
   const [posts, setPosts] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [hasMore, setHasMore] = useState(true)
   const [newCount, setNewCount] = useState(0)
   const [quoteTarget, setQuoteTarget] = useState(null)
@@ -34,8 +35,9 @@ export default function FeedPage() {
   const seen = useRef(new Set())
 
   const reload = useCallback(async () => {
-    setLoading(true)
-    const list = await getFeed(null)
+    setLoading(true); setError(null)
+    const { posts: list, error: err } = await getFeed(null)
+    if (err) { setError(err); setLoading(false); return }
     seen.current = new Set(list.map(p => p.id))
     setPosts(list); setHasMore(list.length >= 20); setNewCount(0); setLoading(false)
     getFeedStats().then(setStats)
@@ -57,7 +59,7 @@ export default function FeedPage() {
   async function loadMore() {
     if (loadingMore.current || !hasMore || !posts.length) return
     loadingMore.current = true
-    const older = await getFeed(posts[posts.length - 1].created_at)
+    const { posts: older } = await getFeed(posts[posts.length - 1].created_at)
     older.forEach(p => seen.current.add(p.id))
     setPosts(prev => [...prev, ...older.filter(o => !prev.some(p => p.id === o.id))])
     setHasMore(older.length >= 20)
@@ -104,6 +106,17 @@ export default function FeedPage() {
 
           {loading ? (
             <div style={{ padding: '48px 16px', textAlign: 'center', color: T.textFaint }}>Chargement du fil…</div>
+          ) : error ? (
+            <div style={{ padding: '52px 24px', textAlign: 'center', color: T.textFaint, fontSize: 14, lineHeight: 1.7 }}>
+              <div style={{ fontSize: 40, marginBottom: 12, opacity: 0.5 }}>⚠️</div>
+              Le fil n'a pas pu se charger.<br />
+              <span style={{ fontSize: 12, color: T.textFaint, opacity: 0.8 }}>{error}</span>
+              <div>
+                <button onClick={reload} style={{ marginTop: 18, padding: '10px 22px', borderRadius: 999, border: `1px solid ${T.border}`, background: 'rgba(212,160,23,0.10)', color: T.gold, fontWeight: 700, cursor: 'pointer', fontSize: 13, fontFamily: 'inherit' }}>
+                  ↻ Réessayer
+                </button>
+              </div>
+            </div>
           ) : posts.length === 0 ? (
             <div style={{ padding: '60px 24px', textAlign: 'center', color: T.textFaint, fontSize: 14, lineHeight: 1.7 }}>
               <div style={{ fontSize: 40, marginBottom: 12, opacity: 0.5 }}>🪶</div>

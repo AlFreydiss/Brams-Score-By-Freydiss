@@ -31,9 +31,12 @@ export async function getMyBookmarks(before = null, limit = 20) {
   return r?.ok ? (r.posts || []) : []
 }
 
+// Renvoie { posts, error } : error non-null = échec RPC (migration manquante,
+// timeout, erreur SQL) → la page peut l'afficher au lieu de tourner dans le vide.
 export async function getFeed(before = null, limit = 20) {
   const r = await rpc('get_feed', { p_before: before, p_limit: limit })
-  return r?.ok ? (r.posts || []) : []
+  if (r?.ok) return { posts: r.posts || [], error: null }
+  return { posts: [], error: r?.error || 'Chargement impossible' }
 }
 
 export async function getPost(postId) {
