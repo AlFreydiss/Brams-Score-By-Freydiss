@@ -1399,6 +1399,10 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True, da
                 print(f"⚠️ Permission refusée remove_roles {member.display_name} ({rank_name})")
             except discord.HTTPException as e:
                 print(f"⚠️ remove_roles {member.display_name} ({rank_name}): {e}")
+        # Pas de DM de derank lors d'un resync silencieux (announce=False) — évite
+        # de spammer tout le serveur en DM pendant une réconciliation en masse.
+        if not announce:
+            continue
         rank_emoji = _ANNOUNCE_RANK_EMOJIS.get(rank_name, "🎖️")
         rank_threshold = next((t for t, n in RANKS if n == rank_name), 0)
         if user.get("dm_optout", False):
@@ -7936,6 +7940,79 @@ async def addberries_cmd(
                 f"💰 **+`{montant:,}` ฿** ajoutés à {membre.mention}\n"
                 f"📋 Raison : *{raison}*\n"
                 f"💼 Nouveau solde : `{new_balance:,}` ฿"
+            ),
+            color=0x2ECC71,
+        ).set_footer(text=f"Admin : {interaction.user.display_name}"),
+        ephemeral=True,
+    )
+
+
+# ─────────────────────────────────────────
+#  /resync_vocal  (ADMIN)  — réaligne site ↔ Discord
+# ─────────────────────────────────────────
+@bot.tree.command(name="resync_vocal", description="[ADMIN] Resynchronise heures vocales, rôles et classement du site")
+@app_commands.guilds(*GUILD_IDS)
+@app_commands.default_permissions(administrator=True)
+@app_commands.checks.has_permissions(administrator=True)
+async def resync_vocal_cmd(interaction: discord.Interaction):
+    """Recalcule les heures 7j de TOUS les membres, réaligne les rôles Discord et
+    réécrit tout le monde dans Supabase — pour que le classement du site corresponde
+    exactement à Discord (corrige les données périmées). Silencieux (aucune annonce/DM)."""
+    await interaction.response.defer(ephemeral=True)
+    _now = now_ts()
+    checked = 0
+    voice_fixed = 0
+    role_errors = 0
+
+    for gid in GUILD_IDS:
+        guild = bot.get_guild(gid)
+        if not guild:
+            continue
+
+        # 1) Membres en vocal sans join_time (ex. après un redémarrage du bot) :
+        #    on initialise leur session en cours pour ne pas perdre de temps.
+        for vc in guild.voice_channels:
+            for m in vc.members:
+                if m.bot:
+                    continue
+                u = get_user(_CACHE, str(m.id))
+                if not u.get("join_time"):
+                    u["join_time"] = _now
+                    _DIRTY.add(str(m.id))
+                    voice_fixed += 1
+
+        # 2) Tous les membres : rafraîchit l'identité, recalcule 7j, réaligne les rôles.
+        for member in guild.members:
+            if member.bot:
+                continue
+            uid = str(member.id)
+            user = get_user(_CACHE, uid)
+            user["username"] = member.display_name
+            user["avatar_url"] = str(member.display_avatar.with_size(128).url)
+            jt = user.get("join_time")
+            hours_7d = seconds_in_period(user.get("vocal_sessions", []), 7, join_time=jt, _now=_now) / 3600
+            try:
+                await update_rank(member, hours_7d, announce=False)
+            except Exception as e:
+                role_errors += 1
+                print(f"[RESYNC] update_rank {member.display_name}: {e}")
+            _DIRTY.add(uid)
+            checked += 1
+            if checked % 25 == 0:
+                await asyncio.sleep(0)  # yield pour ne pas bloquer la gateway
+
+    # 3) Flush immédiat vers Supabase → le site reflète l'état réel tout de suite.
+    flushed = await asyncio.get_running_loop().run_in_executor(db_executor, _sync_flush_dirty)
+
+    await interaction.followup.send(
+        embed=discord.Embed(
+            title="✅ Resync vocal terminé",
+            description=(
+                f"👥 **{checked}** membres recalculés\n"
+                f"🎙️ **{voice_fixed}** sessions en cours réinitialisées\n"
+                f"💾 **{flushed}** écrits dans Supabase (classement du site)\n"
+                + (f"⚠️ {role_errors} erreur(s) de rôle — voir logs\n" if role_errors else "")
+                + "\nLe classement du site, Supabase et les rôles Discord sont maintenant alignés."
             ),
             color=0x2ECC71,
         ).set_footer(text=f"Admin : {interaction.user.display_name}"),
