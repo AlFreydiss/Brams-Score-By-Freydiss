@@ -13,7 +13,11 @@
 
 /* ── Anti-artifact global ── */
 html {
-  overflow-x: hidden;
+  /* clip (et non hidden) : empêche DÉFINITIVEMENT toute barre de défilement
+     horizontale. `overflow-x: hidden` seul est recalculé en `auto` par le
+     navigateur quand overflow-y reste visible → la barre revenait. `clip` ne
+     crée pas de conteneur de scroll (ne casse pas position:sticky) et clippe pour de bon. */
+  overflow-x: clip;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
@@ -62,11 +66,13 @@ body {
   color: var(--text);
   font-family: var(--body);
   line-height: 1.6;
-  overflow-x: hidden;
+  overflow-x: clip;
+  max-width: 100vw;
   margin: 0;
   padding: 0;
   -webkit-overflow-scrolling: touch;
 }
+#root { overflow-x: clip; max-width: 100vw; }
 a { color: inherit; text-decoration: none; }
 ::selection { background: rgba(224,82,74,.3); }
 ::-webkit-scrollbar { width: 5px; }
