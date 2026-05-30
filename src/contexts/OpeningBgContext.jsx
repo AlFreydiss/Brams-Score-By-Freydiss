@@ -8,6 +8,10 @@ const Ctx = createContext(null)
 export function OpeningBgProvider({ children }) {
   const [equippedId, setEquippedIdState] = useState(() => getEquippedBgId())
   const [previewId,  setPreviewId]       = useState(null)
+  // override : fond imposé par la vue courante (ex. profil d'un autre membre).
+  // undefined = pas d'override (on retombe sur le fond équipé du visiteur),
+  // null = forcer AUCUN fond, string = forcer ce fond précis.
+  const [overrideId, setOverrideIdState] = useState(undefined)
   const previewTimer = useRef(null)
 
   // Charger le fond équipé depuis Supabase au login
@@ -58,12 +62,19 @@ export function OpeningBgProvider({ children }) {
     setPreviewId(null)
   }, [])
 
+  // setOverride(id) : id string = imposer ce fond, null = forcer aucun fond.
+  // clearOverride() : revenir au fond équipé du visiteur.
+  const setOverride   = useCallback((id) => setOverrideIdState(id), [])
+  const clearOverride = useCallback(() => setOverrideIdState(undefined), [])
+
   useEffect(() => () => clearTimeout(previewTimer.current), [])
 
-  const activeBg = getBgById(previewId || equippedId)
+  // Précédence : preview (survol boutique) > override (vue courante) > fond équipé.
+  const effectiveId = previewId || (overrideId !== undefined ? overrideId : equippedId)
+  const activeBg = getBgById(effectiveId)
 
   return (
-    <Ctx.Provider value={{ equippedId, previewId, activeBg, equip, unequip, preview, cancelPreview }}>
+    <Ctx.Provider value={{ equippedId, previewId, activeBg, equip, unequip, preview, cancelPreview, setOverride, clearOverride }}>
       {children}
     </Ctx.Provider>
   )

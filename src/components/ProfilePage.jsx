@@ -718,7 +718,7 @@ export default function ProfilePage() {
   const { discordId } = useParams()
   const navigate      = useNavigate()
   const { discordId: myId } = useAuth()
-  const { activeBg } = useOpeningBg()   // fond d'opening équipé → s'affiche derrière le profil
+  const { activeBg, setOverride, clearOverride } = useOpeningBg()   // fond d'opening équipé → s'affiche derrière le profil
   const [member,   setMember]   = useState(null)
   const [shopData, setShopData] = useState(null)
   const [loading,  setLoading]  = useState(true)
@@ -754,6 +754,24 @@ export default function ProfilePage() {
   const isOwnProfile = String(myId) === String(discordId)
   const displayName  = member?.username || `Pirate #${String(member?.uid || '').slice(-4)}`
   const quote        = RANK_QUOTES[rank.rang] || ''
+
+  // Fond derrière le profil : sur SON profil on garde le fond du visiteur (activeBg
+  // suit equip/preview en direct) ; sur le profil d'un AUTRE on impose SON fond équipé.
+  // On coupe le fond du visiteur dès l'arrivée (null) pour éviter qu'il flashe, puis on
+  // applique le fond de la cible une fois l'inventaire chargé.
+  useEffect(() => {
+    if (isOwnProfile) { clearOverride(); return }
+    setOverride(null)
+    return () => clearOverride()
+  }, [isOwnProfile, discordId, setOverride, clearOverride])
+
+  useEffect(() => {
+    if (isOwnProfile || !shopData?.inventory) return
+    const eq = shopData.inventory.find(
+      i => i?.equipped && i?.shop_items?.reward_type === 'opening_background'
+    )
+    setOverride(eq ? eq.item_id : null)
+  }, [isOwnProfile, shopData, discordId, setOverride])
 
   const wallet = useMemo(() => {
     const memberB = parseInt(member?.berrys ?? 0, 10) || 0
