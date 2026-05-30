@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, lazy, Suspense } from 'react'
-import { Routes, Route, useNavigate, Navigate } from 'react-router-dom'
+import { Routes, Route, useNavigate, Navigate, useLocation } from 'react-router-dom'
 import GlobalStyles from './components/GlobalStyles.jsx'
 import { ThemeProvider } from './contexts/ThemeContext.jsx'
 import { OpeningBgProvider, useOpeningBg } from './contexts/OpeningBgContext.jsx'
@@ -234,6 +234,18 @@ export default function App() {
   const [bluelockOpen,     setBluelockOpen]      = useState(false)
   const [treeOpen,         setTreeOpen]          = useState(false)
   const [uploadOpen,       setUploadOpen]        = useState(false)
+
+  // Ferme tous les overlays anime/média quand on change de page (sinon un overlay
+  // ouvert reste affiché par-dessus la nouvelle route — ex. DBS par-dessus Messages —
+  // et donne l'impression qu'il faut actualiser).
+  const location = useLocation()
+  useEffect(() => {
+    setScansOpen(false); setOnepieceOpen(false); setEncyclopedieOpen(false); setAnimeHubOpen(false)
+    setTpnOpen(false); setDrstoneOpen(false); setJjkOpen(false); setKingdomOpen(false)
+    setAotOpen(false); setKnyOpen(false); setNntOpen(false); setSlOpen(false); setDbsOpen(false)
+    setVioletOpen(false); setVivyOpen(false); setBcOpen(false); setMhaOpen(false)
+    setFireforcOpen(false); setBluelockOpen(false); setTreeOpen(false); setUploadOpen(false)
+  }, [location.pathname])
 
   useEffect(() => {
     const fnScans    = () => setScansOpen(true)
