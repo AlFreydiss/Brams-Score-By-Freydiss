@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { TOURNAMENT_CONFIGS } from '../data/tournament-data.js'
@@ -15,6 +15,38 @@ const BG = '#0a0a0b', PINK = '#9d174d', PURPLE = '#4c1d95', PINK_L = '#f9a8d4'
 const GRAD = `linear-gradient(135deg, ${PINK}, ${PURPLE})`
 const GRAD_TXT = `linear-gradient(135deg, ${PINK_L} 0%, ${PINK} 48%, ${PURPLE} 100%)`
 const CARD = 'rgba(18,14,24,.92)', BORDER = 'rgba(255,255,255,.08)'
+
+const hexA = (c, a) => {
+  const n = parseInt(String(c || '#9d174d').replace('#', ''), 16)
+  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`
+}
+
+const ARENA_KEYFRAMES = `
+@keyframes troom-pulse{0%,100%{opacity:.5}50%{opacity:1}}
+@keyframes troom-float{0%{transform:translateY(0);opacity:0}15%{opacity:.6}85%{opacity:.6}100%{transform:translateY(-60px);opacity:0}}
+@keyframes troom-breath{0%,100%{opacity:.55}50%{opacity:.9}}
+`
+
+// Fond d'arène : énergie haut (couleur opening 1) vs bas (opening 2) + particules sobres.
+function DuelBackdrop({ topColor, bottomColor }) {
+  const particles = useMemo(() => Array.from({ length: 14 }, (_, i) => ({
+    x: (i * 37 + 11) % 100, y: (i * 53 + 9) % 100,
+    dur: 7 + (i * 0.8) % 6, del: (i * 0.6) % 5, size: i % 4 === 0 ? 3 : 2, top: i % 2 === 0,
+  })), [])
+  return (
+    <div aria-hidden style={{ position: 'absolute', inset: '-40px 0', zIndex: 0, pointerEvents: 'none', overflow: 'hidden', borderRadius: 24 }}>
+      <div style={{ position: 'absolute', inset: 0, animation: 'troom-breath 9s ease-in-out infinite',
+        background: `radial-gradient(70% 36% at 50% 2%, ${hexA(topColor, 0.20)}, transparent 72%),
+                     radial-gradient(70% 36% at 50% 98%, ${hexA(bottomColor, 0.20)}, transparent 72%),
+                     radial-gradient(46% 14% at 50% 50%, rgba(255,255,255,.07), transparent 70%)` }} />
+      {particles.map((p, i) => (
+        <span key={i} style={{ position: 'absolute', left: `${p.x}%`, top: `${p.y}%`, width: p.size, height: p.size, borderRadius: '50%',
+          background: p.top ? hexA(topColor, 0.9) : hexA(bottomColor, 0.9), boxShadow: `0 0 6px ${p.top ? topColor : bottomColor}`,
+          animation: `troom-float ${p.dur}s ${p.del}s ease-in-out infinite` }} />
+      ))}
+    </div>
+  )
+}
 
 function getIdentity(auth) {
   const id = auth?.discordId || auth?.userId
@@ -443,27 +475,35 @@ export default function TournamentRoomPage() {
                 <span style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,.55)' }}>Duel {current.match.position + 1}/{current.round.matches.length}</span>
               </div>
             </div>
-            <style>{`@keyframes troom-pulse{0%,100%{opacity:.5}50%{opacity:1}}`}</style>
+            <style>{ARENA_KEYFRAMES}</style>
 
             <div style={{ display: 'flex', gap: 18, alignItems: 'flex-start', justifyContent: 'center', flexDirection: isMobile ? 'column' : 'row' }}>
-              <div style={{ flex: '1 1 0', minWidth: 0, maxWidth: 760, width: '100%' }}>
-                <DuelArena
-                  key={current.match.id}
-                  round={current.round}
-                  match={current.match}
-                  totalMatchesInRound={current.round.matches.length}
-                  voteCounts={{ [current.match.id]: { left: leftN, right: rightN } }}
-                  personalVotes={{ [current.match.id]: myVote }}
-                  onVote={(side) => { if (amIInRoom && !myVote) vote(side) }}
-                  onNext={() => {}}
-                  isLastMatch={false}
-                  isMobile={isMobile}
-                  vertical
-                  multiplayer
-                  multiplayerStatus={`${totalV}/${players.length} ont voté · ${myVote ? 'en attente des autres…' : 'à toi de voter !'}`}
-                />
+              {/* Arène : duel + fond énergétique bleu(haut) vs rouge(bas) */}
+              <div style={{ position: 'relative', flex: '1 1 0', minWidth: 0, maxWidth: 760, width: '100%' }}>
+                <DuelBackdrop topColor={current.match.left?.color || '#3b82f6'} bottomColor={current.match.right?.color || '#ef4444'} />
+                <div style={{ position: 'relative', zIndex: 1 }}>
+                  <DuelArena
+                    key={current.match.id}
+                    round={current.round}
+                    match={current.match}
+                    totalMatchesInRound={current.round.matches.length}
+                    voteCounts={{ [current.match.id]: { left: leftN, right: rightN } }}
+                    personalVotes={{ [current.match.id]: myVote }}
+                    onVote={(side) => { if (amIInRoom && !myVote) vote(side) }}
+                    onNext={() => {}}
+                    isLastMatch={false}
+                    isMobile={isMobile}
+                    vertical
+                    multiplayer
+                    multiplayerStatus={`${totalV}/${players.length} ont voté · ${myVote ? 'en attente des autres…' : 'à toi de voter !'}`}
+                  />
+                </div>
               </div>
-              <VotersPanel players={players} votes={votes} match={current.match} isMobile={isMobile} />
+              {/* Sidebar : votes + mini-bracket */}
+              <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'column', gap: 14, width: isMobile ? '100%' : 'auto' }}>
+                <VotersPanel players={players} votes={votes} match={current.match} isMobile={isMobile} />
+                <BracketPanel rounds={rounds} currentId={current.match.id} isMobile={isMobile} />
+              </div>
             </div>
           </div>
         )}
@@ -480,6 +520,55 @@ export default function TournamentRoomPage() {
         )}
       </div>
     </div>
+  )
+}
+
+// ── Mini-bracket du tournoi (parcours vers la finale) ─────────────────────────
+function BracketPanel({ rounds, currentId, isMobile }) {
+  if (!rounds?.length) return null
+  return (
+    <aside style={{
+      width: isMobile ? '100%' : 248, flexShrink: 0,
+      background: 'rgba(12,13,20,0.55)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)',
+      border: '1px solid rgba(255,255,255,.10)', borderRadius: 16, padding: 16,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+        <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.12em', color: PINK_L, textTransform: 'uppercase' }}>🏆 Bracket</span>
+        <span style={{ fontSize: 11, color: 'rgba(255,255,255,.4)' }}>vers la finale</span>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {rounds.map(r => {
+          const playable = r.matches.filter(m => m.left && m.right)
+          const total = playable.length
+          const done = playable.filter(m => m.status === 'closed').length
+          const isCurrent = r.matches.some(m => m.id === currentId)
+          const allDone = total > 0 && done === total
+          const isFinal = r.size === 2
+          const pct = total ? Math.round((done / total) * 100) : 0
+          const accent = isFinal ? '#d4a017' : PINK
+          return (
+            <div key={r.id} style={{
+              display: 'flex', alignItems: 'center', gap: 10, padding: '8px 11px', borderRadius: 10,
+              border: `1px solid ${isCurrent ? accent : 'rgba(255,255,255,.06)'}`,
+              background: isCurrent ? hexA(accent, 0.14) : 'rgba(255,255,255,.02)',
+              boxShadow: isCurrent ? `0 0 16px ${hexA(accent, 0.22)}` : 'none',
+              animation: isCurrent ? 'troom-pulse 2.4s ease-in-out infinite' : 'none',
+            }}>
+              <span style={{ fontSize: 13, width: 16, textAlign: 'center' }}>{isFinal ? '👑' : allDone ? '✓' : isCurrent ? '⚔️' : '•'}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5 }}>
+                  <strong style={{ color: isCurrent ? '#fff' : allDone ? 'rgba(255,255,255,.6)' : 'rgba(255,255,255,.45)', fontWeight: 700 }}>{r.short}</strong>
+                  <span style={{ color: allDone ? '#34d399' : 'rgba(255,255,255,.35)', fontWeight: 700 }}>{done}/{total}</span>
+                </div>
+                <div style={{ height: 3, borderRadius: 99, background: 'rgba(255,255,255,.08)', overflow: 'hidden', marginTop: 4 }}>
+                  <div style={{ width: `${pct}%`, height: '100%', background: allDone ? '#34d399' : accent, transition: 'width .5s' }} />
+                </div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </aside>
   )
 }
 
