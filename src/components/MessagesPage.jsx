@@ -893,6 +893,62 @@ function ChatView({ conversationId, meta, onBack, isMobile, refreshList }) {
 }
 const menuItemStyle = { display: 'block', width: '100%', textAlign: 'left', padding: '8px 12px', borderRadius: 7, border: 'none', background: 'transparent', color: T.text, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }
 
+// ── Écran d'accueil messagerie (aucune conversation sélectionnée) ─────────────
+function EmptyMessages({ friends, requests, onOpenFriend, onTab, navigate }) {
+  const incoming = requests?.incoming?.length || 0
+  const suggestions = (friends || []).slice(0, 4)
+  const actions = [
+    { icon: '✍️', label: 'Nouveau message', desc: 'Écris à un nakama', onClick: () => onTab('friends') },
+    { icon: '📥', label: 'Voir les demandes', desc: incoming ? `${incoming} en attente` : 'Aucune en attente', onClick: () => onTab('requests'), badge: incoming },
+    { icon: '🧭', label: 'Trouver un ami', desc: 'Explorer les membres', onClick: () => navigate('/amis') },
+  ]
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', padding: 32, gap: 22, textAlign: 'center' }}>
+      <div style={{ position: 'relative' }}>
+        <div style={{ position: 'absolute', inset: -18, borderRadius: '50%', background: 'radial-gradient(circle, rgba(155,108,255,0.18), transparent 70%)' }} />
+        <div style={{ position: 'relative', width: 78, height: 78, borderRadius: '50%', background: T.violetSoft, border: `1px solid ${T.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36 }}>💬</div>
+      </div>
+      <div>
+        <div style={{ fontSize: 21, fontWeight: 800, color: T.text, marginBottom: 6 }}>Ta messagerie Brams</div>
+        <div style={{ fontSize: 13.5, color: T.textDim, lineHeight: 1.6, maxWidth: 360 }}>Discute avec tes nakamas, réponds aux demandes et lance de nouvelles conversations.</div>
+      </div>
+
+      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center', maxWidth: 560 }}>
+        {actions.map(a => (
+          <button key={a.label} onClick={a.onClick} style={{ position: 'relative', width: 168, textAlign: 'left', padding: '14px 16px', borderRadius: 14, background: T.surface, border: `1px solid ${T.border}`, cursor: 'pointer', fontFamily: 'inherit', transition: 'all .15s' }}
+            onMouseEnter={e => { e.currentTarget.style.background = T.surface2; e.currentTarget.style.borderColor = T.borderHi; e.currentTarget.style.transform = 'translateY(-2px)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = T.surface; e.currentTarget.style.borderColor = T.border; e.currentTarget.style.transform = 'none' }}>
+            <div style={{ fontSize: 22, marginBottom: 8 }}>{a.icon}</div>
+            <div style={{ fontSize: 13.5, fontWeight: 700, color: T.text }}>{a.label}</div>
+            <div style={{ fontSize: 11.5, color: T.textFaint, marginTop: 2 }}>{a.desc}</div>
+            {a.badge > 0 && <span style={{ position: 'absolute', top: 12, right: 12, minWidth: 18, height: 18, padding: '0 5px', borderRadius: 9, background: T.gold, color: '#0b0c0e', fontSize: 11, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{a.badge}</span>}
+          </button>
+        ))}
+      </div>
+
+      {suggestions.length > 0 && (
+        <div style={{ width: '100%', maxWidth: 420, marginTop: 6 }}>
+          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.1em', textTransform: 'uppercase', color: T.textFaint, marginBottom: 10 }}>Suggestions</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {suggestions.map(f => (
+              <button key={f.user_id} onClick={() => onOpenFriend(f.user_id)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '9px 12px', borderRadius: 12, background: T.surface, border: `1px solid ${T.border}`, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }}
+                onMouseEnter={e => e.currentTarget.style.background = T.surface2}
+                onMouseLeave={e => e.currentTarget.style.background = T.surface}>
+                <Avatar url={f.avatar_url} name={f.username} size={38} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13.5, fontWeight: 700, color: T.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.username || `Pirate #${String(f.user_id).slice(-5)}`}</div>
+                  <div style={{ fontSize: 11.5, color: T.textFaint }}>Envoyer un message</div>
+                </div>
+                <span style={{ color: T.gold, fontSize: 16 }}>💬</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────
 export default function MessagesPage() {
   const { conversationId } = useParams()
@@ -940,7 +996,7 @@ export default function MessagesPage() {
     <div style={{ minHeight: '100vh', background: T.bg }}>
       <Navbar />
       <style>{`@keyframes pulse { 0%,100%{opacity:.4} 50%{opacity:.8} } @keyframes typingDot { 0%,60%,100%{transform:translateY(0);opacity:.4} 30%{transform:translateY(-4px);opacity:1} }`}</style>
-      <div style={{ maxWidth: 1180, margin: '0 auto', padding: isMobile ? '64px 0 0' : '76px 16px 20px', height: isMobile ? '100vh' : 'calc(100vh - 16px)' }}>
+      <div style={{ maxWidth: 1320, margin: '0 auto', padding: isMobile ? '64px 0 0' : '76px 16px 20px', height: isMobile ? '100vh' : 'calc(100vh - 16px)' }}>
         <div style={{ display: 'flex', height: '100%', borderRadius: isMobile ? 0 : 18, overflow: 'hidden', border: isMobile ? 'none' : `1px solid ${T.border}`, background: 'rgba(255,255,255,0.012)' }}>
           {showSidebar && (
             <div style={{ width: isMobile ? '100%' : 340, flexShrink: 0, borderRight: isMobile ? 'none' : `1px solid ${T.border}`, background: T.panel }}>
@@ -956,11 +1012,7 @@ export default function MessagesPage() {
             <div style={{ flex: 1, minWidth: 0 }}>
               {conversationId
                 ? <ChatView conversationId={conversationId} meta={activeMeta} isMobile={isMobile} onBack={() => navigate('/messages')} refreshList={load} />
-                : <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: T.textFaint, fontSize: 14, textAlign: 'center', padding: 24, gap: 10 }}>
-                    <div style={{ fontSize: 44, opacity: 0.4 }}>💬</div>
-                    <div style={{ fontSize: 16, color: T.textDim, fontWeight: 600 }}>Ta messagerie Brams</div>
-                    <div>Choisis une conversation à gauche<br />ou <Link to="/amis" style={{ color: T.gold, textDecoration: 'none' }}>ajoute un ami</Link> pour commencer.</div>
-                  </div>}
+                : <EmptyMessages friends={friends} requests={requests} onOpenFriend={openFriend} onTab={setTab} navigate={navigate} />}
             </div>
           )}
         </div>
