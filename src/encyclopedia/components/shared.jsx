@@ -1,9 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
-import {
-  motion, AnimatePresence,
-  useMotionValue, useSpring, useTransform,
-} from 'framer-motion'
-import { Shield, Lock, Star, Eye, EyeOff, Heart, Tag, Zap, BookOpen, Swords, ChevronRight, Search, X } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Heart, Tag, Search, X } from 'lucide-react'
 import { rarityLabels, rarityConfig } from '../data/rarityStyles'
 
 // ─── Design tokens ──────────────────────────────────────────────────────────
@@ -90,59 +86,6 @@ export function SectionTitle({ label, text }) {
       <span>{label}</span>
       {text && <p>{text}</p>}
     </header>
-  )
-}
-
-// ─── Animated stat bar ───────────────────────────────────────────────────────
-function StatBar({ label, value, color, index = 0 }) {
-  return (
-    <div style={{ marginBottom: 10 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
-        <span style={{ fontSize: 11, fontWeight: 600, color: T.textDim, letterSpacing: '.04em' }}>{label}</span>
-        <span style={{ fontSize: 12, fontWeight: 800, color: color || T.orange, fontVariantNumeric: 'tabular-nums' }}>{value}</span>
-      </div>
-      <div style={{ height: 4, background: 'rgba(255,255,255,0.06)', borderRadius: 100, overflow: 'hidden' }}>
-        <motion.div
-          initial={{ width: 0 }}
-          animate={{ width: `${Math.max(0, Math.min(100, Number(value) || 0))}%` }}
-          transition={{ duration: 0.9, delay: index * 0.08, ease: [0.22, 1, 0.36, 1] }}
-          style={{
-            height: '100%', borderRadius: 100,
-            background: color
-              ? `linear-gradient(90deg, ${hexToRgba(color, 0.7)}, ${color})`
-              : `linear-gradient(90deg, ${T.orange}99, ${T.orange})`,
-            boxShadow: `0 0 8px ${color || T.orange}55`,
-          }}
-        />
-      </div>
-    </div>
-  )
-}
-
-// ─── Classified red particles ────────────────────────────────────────────────
-function ClassifiedParticles() {
-  const particles = Array.from({ length: 8 }, (_, i) => ({
-    x: 10 + (i * 11.5) % 90,
-    dur: 1.2 + (i * 0.3) % 1.4,
-    del: (i * 0.18) % 1.2,
-    size: 2 + (i % 3),
-  }))
-  return (
-    <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden', borderRadius: 12 }}>
-      {particles.map((p, i) => (
-        <motion.div
-          key={i}
-          animate={{ y: [0, -28, 0], opacity: [0, 0.7, 0] }}
-          transition={{ duration: p.dur, delay: p.del, repeat: Infinity, ease: 'easeInOut' }}
-          style={{
-            position: 'absolute', bottom: 6, left: `${p.x}%`,
-            width: p.size, height: p.size, borderRadius: '50%',
-            background: T.red,
-            boxShadow: `0 0 6px ${T.red}`,
-          }}
-        />
-      ))}
-    </div>
   )
 }
 
@@ -636,19 +579,6 @@ function ArchiveInspection({ entry, index, isFavorite, spoilerSafe, revealed, on
           {isFavorite ? '♥ Favori' : '♡ Ajouter aux favoris'}
         </button>
       </div>
-    </div>
-  )
-}
-
-// Section wrapper
-function Section({ icon, title, children }) {
-  return (
-    <div style={{ marginBottom: 18 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 10, paddingBottom: 8, borderBottom: `1px solid ${T.border}` }}>
-        <span style={{ color: T.textDim }}>{icon}</span>
-        <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.14em', color: T.textDim, textTransform: 'uppercase' }}>{title}</span>
-      </div>
-      {children}
     </div>
   )
 }
