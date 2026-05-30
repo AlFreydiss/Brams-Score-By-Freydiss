@@ -165,7 +165,7 @@ export default function TournamentRoomPage() {
   function leave() { setParams({}); setCode(''); setRoom(null); setNotFound(false); autoJoinRef.current = false }
 
   // ── Vues ─────────────────────────────────────────────────────────────────
-  const wrap = { position: 'relative', minHeight: '100vh', background: BG, color: '#fff', paddingTop: 84, paddingBottom: 60, fontFamily: "'Inter',system-ui,sans-serif" }
+  const wrap = { position: 'relative', minHeight: '100vh', background: BG, color: '#fff', paddingTop: 84, paddingBottom: 60, fontFamily: "'Inter',system-ui,sans-serif", overflowX: 'hidden' }
   // zIndex:2 → le contenu reste AU-DESSUS du fond plein écran (PlayingBgOverlay,
   // portail fixe en z1 dans le body) quand on écoute un opening.
   const inner = { position: 'relative', zIndex: 2, width: 'min(1180px, calc(100% - 32px))', margin: '0 auto' }
@@ -346,28 +346,33 @@ export default function TournamentRoomPage() {
           </div>
         )}
 
-        {/* DUEL EN COURS */}
+        {/* DUEL EN COURS — pleine largeur : chaque opening remplit sa moitié d'écran */}
         {room.status === 'playing' && current && (
-          <div style={{ display: 'flex', gap: 18, alignItems: 'flex-start', justifyContent: 'center', flexDirection: isMobile ? 'column' : 'row' }}>
-            {/* Espace symétrique à gauche : compense le panneau de droite → duel parfaitement centré */}
-            {!isMobile && <div style={{ width: 248, flexShrink: 0 }} aria-hidden />}
-            <div style={{ flex: '1 1 0', minWidth: 0, maxWidth: 900, width: '100%' }}>
-              <DuelArena
-                key={current.match.id}
-                round={current.round}
-                match={current.match}
-                totalMatchesInRound={current.round.matches.length}
-                voteCounts={{ [current.match.id]: { left: leftN, right: rightN } }}
-                personalVotes={{ [current.match.id]: myVote }}
-                onVote={(side) => { if (amIInRoom && !myVote) vote(side) }}
-                onNext={() => {}}
-                isLastMatch={false}
-                isMobile={isMobile}
-                multiplayer
-                multiplayerStatus={`${totalV}/${players.length} ont voté · ${myVote ? 'en attente des autres…' : 'à toi de voter !'}`}
-              />
-            </div>
-            <VotersPanel players={players} votes={votes} match={current.match} isMobile={isMobile} />
+          <div style={{ position: 'relative', width: '100vw', marginLeft: 'calc(50% - 50vw)', padding: '0 clamp(12px,3vw,48px)', boxSizing: 'border-box' }}>
+            <DuelArena
+              key={current.match.id}
+              round={current.round}
+              match={current.match}
+              totalMatchesInRound={current.round.matches.length}
+              voteCounts={{ [current.match.id]: { left: leftN, right: rightN } }}
+              personalVotes={{ [current.match.id]: myVote }}
+              onVote={(side) => { if (amIInRoom && !myVote) vote(side) }}
+              onNext={() => {}}
+              isLastMatch={false}
+              isMobile={isMobile}
+              multiplayer
+              multiplayerStatus={`${totalV}/${players.length} ont voté · ${myVote ? 'en attente des autres…' : 'à toi de voter !'}`}
+            />
+            {/* Panneau votes : flottant en haut à droite (desktop) / en dessous (mobile) */}
+            {isMobile ? (
+              <div style={{ marginTop: 16 }}>
+                <VotersPanel players={players} votes={votes} match={current.match} isMobile />
+              </div>
+            ) : (
+              <div style={{ position: 'absolute', top: 0, right: 'clamp(12px,3vw,48px)', zIndex: 5 }}>
+                <VotersPanel players={players} votes={votes} match={current.match} isMobile={false} />
+              </div>
+            )}
           </div>
         )}
 
