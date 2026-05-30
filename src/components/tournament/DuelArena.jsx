@@ -70,6 +70,7 @@ function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop, onSeek }) 
   const startRef  = useRef(Date.now())
   const [volume,  setVolume]  = useState(100)
   const [elapsed, setElapsed] = useState(0)
+  const [duration, setDuration] = useState(0)
   const LIMIT = 600   // openings jouables en entier (plus de coupure à 1m30)
 
   useEffect(() => {
@@ -96,7 +97,7 @@ function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop, onSeek }) 
     }
   }, [volume, audioUrl])
 
-  const pct    = (elapsed / LIMIT) * 100
+  const pct    = (elapsed / (duration || LIMIT)) * 100
   const volPct = volume + '%'
 
   function handleSeek(rawValue) {
@@ -132,13 +133,14 @@ function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop, onSeek }) 
       {/* Audio element caché — source de vérité pour l'audio */}
       {audioUrl ? (
         <video ref={videoRef} src={audioUrl} autoPlay width={0} height={0}
+          onLoadedMetadata={e => setDuration(e.target.duration || 0)}
           onTimeUpdate={e => { setElapsed(e.target.currentTime); if (e.target.currentTime >= LIMIT) onStop() }}
           onEnded={onStop}
           style={{ position: 'absolute', opacity: 0, pointerEvents: 'none' }}
         />
       ) : (
         <iframe ref={iframeRef} width={0} height={0}
-          src={`https://www.youtube.com/embed/${ytId}?autoplay=1&start=15&end=105&enablejsapi=1&controls=0`}
+          src={`https://www.youtube.com/embed/${ytId}?autoplay=1&start=0&enablejsapi=1&controls=0`}
           allow="autoplay; encrypted-media"
           style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', border: 'none' }}
           title={title}
@@ -161,16 +163,17 @@ function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop, onSeek }) 
         <div style={{ fontSize: 9, color: 'rgba(255,255,255,.3)', marginTop: 1 }}>{anime}</div>
       </div>
 
-      {/* Timeline */}
-      <div style={{ flex: 1, minWidth: 0 }}>
+      {/* Timeline — barre épaisse cliquable partout (clic = saut à la position) */}
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center' }}>
         <input
-          type="range" min="0" max={LIMIT} step="0.5" value={elapsed}
+          type="range" min="0" max={duration || LIMIT} step="0.1" value={elapsed}
           onChange={e => handleSeek(e.target.value)}
+          aria-label="Position dans l'opening"
           style={{
-            width: '100%', height: 3, cursor: 'pointer',
+            width: '100%', height: 14, cursor: 'pointer',
             WebkitAppearance: 'none', appearance: 'none',
-            outline: 'none', borderRadius: 2, display: 'block',
-            background: `linear-gradient(90deg, ${color} ${pct}%, rgba(255,255,255,.1) ${pct}%)`,
+            outline: 'none', borderRadius: 8, display: 'block',
+            background: `linear-gradient(90deg, ${color} ${pct}%, rgba(255,255,255,.12) ${pct}%)`,
             accentColor: color,
           }}
         />
