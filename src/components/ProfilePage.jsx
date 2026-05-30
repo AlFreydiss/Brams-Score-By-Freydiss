@@ -6,6 +6,7 @@ import { fetchMemberProfile } from '../lib/supabase.js'
 import Navbar from './Navbar.jsx'
 import RelationshipActions from './social/RelationshipActions.jsx'
 import ProfilePosts from './feed/ProfilePosts.jsx'
+import { useOpeningBg } from '../contexts/OpeningBgContext.jsx'
 
 // ── Constants ──────────────────────────────────────────────────────────────
 const RANK_MAP = [
@@ -717,6 +718,7 @@ export default function ProfilePage() {
   const { discordId } = useParams()
   const navigate      = useNavigate()
   const { discordId: myId } = useAuth()
+  const { activeBg } = useOpeningBg()   // fond d'opening équipé → s'affiche derrière le profil
   const [member,   setMember]   = useState(null)
   const [shopData, setShopData] = useState(null)
   const [loading,  setLoading]  = useState(true)
@@ -797,7 +799,7 @@ export default function ProfilePage() {
   const copyId   = () => { navigator.clipboard.writeText(String(member?.uid || discordId)); setCopied(true); window.setTimeout(() => setCopied(false), 1800) }
 
   return (
-    <div className={`pf-shell${immersive ? ' pf-immersive' : ''}`} style={{ '--rank': rank.color }}>
+    <div className={`pf-shell${immersive ? ' pf-immersive' : ''}`} style={{ '--rank': rank.color, ...(activeBg ? { background: 'transparent' } : {}) }}>
       {!immersive && <Navbar />}
       <style>{CSS}</style>
 
