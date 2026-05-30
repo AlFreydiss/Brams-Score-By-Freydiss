@@ -56,12 +56,16 @@ export default function Leaderboard() {
 
   const handlePeriod = (p) => { setPeriod(p); localStorage.setItem('lb_period_v2', p); setPage(0) }
 
-  const rawRows = useMemo(() =>
-    allRows
-      ? allRows.map((r, i) => ({ ...r, pos: i+1, vocal_h: parseFloat(r.vocal_h||0), berrys: parseInt(r.berrys||0) }))
-      : [],
-    [allRows]
-  )
+  // Tri garanti côté client par heures décroissantes (puis berrys) — filet de
+  // sécurité si le RPC renvoie un ordre incorrect. La position (pos) est calculée
+  // APRÈS le tri pour que le rang affiché soit toujours juste.
+  const rawRows = useMemo(() => {
+    if (!allRows) return []
+    return [...allRows]
+      .map(r => ({ ...r, vocal_h: parseFloat(r.vocal_h || 0), berrys: parseInt(r.berrys || 0) || 0 }))
+      .sort((a, b) => b.vocal_h - a.vocal_h || b.berrys - a.berrys)
+      .map((r, i) => ({ ...r, pos: i + 1 }))
+  }, [allRows])
 
   const rows = useMemo(() =>
     rangFilter === 'Tous' ? rawRows : rawRows.filter(r => getRank(r.vocal_h).rang === rangFilter),
