@@ -3,6 +3,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { TOURNAMENT_CONFIGS } from '../data/tournament-data.js'
 import { generateBracket, getCurrentMatch, advanceWinner, getWinner, getTournamentProgress } from '../lib/tournament.js'
+import OSTDuelCard from './tournament/OSTDuelCard.jsx'
+import VSPanel from './tournament/VSPanel.jsx'
 import {
   createTournamentRoom, fetchTournamentRoom, joinTournamentRoom,
   fetchTournamentRoomPlayers, fetchTournamentRoomVotes, castTournamentVote,
@@ -36,8 +38,14 @@ export default function TournamentRoomPage() {
   const [tid, setTid]         = useState('ost')
   const [busy, setBusy]       = useState(false)
   const [err, setErr]         = useState('')
-  const [listenSide, setListenSide] = useState(null) // 'left'|'right' : iframe chargée
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 768)
   const resolvingRef = useRef(false)
+
+  useEffect(() => {
+    const f = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', f)
+    return () => window.removeEventListener('resize', f)
+  }, [])
 
   const rounds  = room?.rounds || null
   const current = rounds ? getCurrentMatch(rounds) : null
@@ -246,8 +254,7 @@ export default function TournamentRoomPage() {
             match={current.match} roundLabel={current.round.label}
             myVote={myVote} leftN={leftN} rightN={rightN} totalV={totalV}
             playersCount={players.length} onVote={vote}
-            listenSide={listenSide} setListenSide={setListenSide}
-            canVote={amIInRoom} isHost={isHost}
+            canVote={amIInRoom} isHost={isHost} isMobile={isMobile}
           />
         )}
 
@@ -266,53 +273,54 @@ export default function TournamentRoomPage() {
   )
 }
 
-// ── Vue d'un duel ────────────────────────────────────────────────────────────
-function DuelView({ match, roundLabel, myVote, leftN, rightN, totalV, playersCount, onVote, listenSide, setListenSide, canVote, isHost }) {
-  const PINK = '#9d174d', PINK_L = '#f9a8d4', GRAD = 'linear-gradient(135deg, #9d174d, #4c1d95)'
-  const pct = side => totalV ? Math.round(((side === 'left' ? leftN : rightN) / totalV) * 100) : 0
-
-  const Card = ({ p, side }) => {
-    if (!p) return <div style={{ flex: 1 }} />
-    const voted = myVote === side
-    const listening = listenSide === side
-    return (
-      <div style={{ flex: 1, minWidth: 0, background: 'rgba(18,14,24,.92)', border: `1px solid ${voted ? p.color || PINK : 'rgba(255,255,255,.08)'}`, borderRadius: 16, overflow: 'hidden', boxShadow: voted ? `0 0 24px ${(p.color || PINK)}55` : 'none' }}>
-        <div style={{ position: 'relative', aspectRatio: '16/9', background: '#000' }}>
-          {listening ? (
-            <iframe title={p.title} src={`https://www.youtube.com/embed/${p.ytId}?autoplay=1`} allow="autoplay; encrypted-media" style={{ width: '100%', height: '100%', border: 0 }} />
-          ) : (
-            <>
-              <img src={`https://img.youtube.com/vi/${p.ytId}/hqdefault.jpg`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: .8 }} />
-              <button onClick={() => setListenSide(side)} style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', background: 'rgba(0,0,0,.35)', border: 'none', cursor: 'pointer', color: '#fff', fontSize: 38 }}>▶</button>
-            </>
-          )}
-        </div>
-        <div style={{ padding: 14 }}>
-          <div style={{ fontSize: 16, fontWeight: 800, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.title}</div>
-          <div style={{ fontSize: 12, color: 'rgba(255,255,255,.55)', marginBottom: 12 }}>{p.anime} · {p.artist}</div>
-          <button onClick={() => onVote(side)} disabled={!!myVote || !canVote}
-            style={{ width: '100%', padding: '11px', borderRadius: 11, border: 'none', cursor: myVote || !canVote ? 'default' : 'pointer', fontWeight: 800,
-              background: voted ? (p.color || PINK) : myVote ? 'rgba(255,255,255,.06)' : GRAD,
-              color: '#fff', opacity: !canVote ? .5 : 1 }}>
-            {voted ? '✓ Ton vote' : 'Voter'}
-          </button>
-          <div style={{ marginTop: 10, height: 6, borderRadius: 4, background: 'rgba(255,255,255,.08)', overflow: 'hidden' }}>
-            <div style={{ width: `${pct(side)}%`, height: '100%', background: p.color || PINK, transition: 'width .4s' }} />
-          </div>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,.5)', marginTop: 4 }}>{side === 'left' ? leftN : rightN} vote(s) · {pct(side)}%</div>
-        </div>
-      </div>
-    )
-  }
+// ── Vue d'un duel — réutilise les cartes premium du mode solo (OSTDuelCard) ────
+function DuelView({ match, roundLabel, myVote, leftN, rightN, totalV, playersCount, onVote, canVote, isHost, isMobile }) {
+  const [playing, setPlaying] = useState(null) // 'left' | 'right' | null : opening écouté
+  const total = leftN + rightN
+  const pct = side => total ? Math.round(((side === 'left' ? leftN : rightN) / total) * 100) : 0
+  const showResult = !!myVote   // une fois ton vote posé, on révèle les barres (comme en solo)
+  const playSide = side => setPlaying(p => (p === side ? null : side))
+  const watch = p => { if (p?.ytId) window.open(`https://www.youtube.com/watch?v=${p.ytId}`, '_blank', 'noopener') }
+  const playingP = playing === 'left' ? match.left : playing === 'right' ? match.right : null
 
   return (
     <div>
-      <div style={{ textAlign: 'center', marginBottom: 16, fontSize: 13, fontWeight: 800, letterSpacing: '.16em', color: PINK_L }}>{roundLabel}</div>
-      <div style={{ display: 'flex', gap: 14, alignItems: 'stretch' }}>
-        <Card p={match.left} side="left" />
-        <div style={{ display: 'grid', placeItems: 'center', fontWeight: 900, color: PINK_L, fontSize: 20 }}>VS</div>
-        <Card p={match.right} side="right" />
+      {/* Lecteur audio caché (YouTube) pour l'opening en cours d'écoute */}
+      {playingP?.ytId && (
+        <iframe
+          key={playingP.ytId}
+          title="audio"
+          src={`https://www.youtube.com/embed/${playingP.ytId}?autoplay=1`}
+          allow="autoplay; encrypted-media"
+          style={{ position: 'fixed', width: 1, height: 1, left: -9999, top: -9999, opacity: 0, pointerEvents: 'none', border: 0 }}
+        />
+      )}
+
+      <div style={{ display: 'flex', alignItems: 'stretch', gap: isMobile ? 0 : 12, flexDirection: isMobile ? 'column' : 'row' }}>
+        <OSTDuelCard
+          participant={match.left} side="left"
+          voted={myVote} hasVoted={!!myVote}
+          votePercent={pct('left')} voteCount={leftN}
+          onVote={() => { if (canVote && !myVote) onVote('left') }}
+          onListen={() => playSide('left')} onWatch={() => watch(match.left)}
+          isPlaying={playing === 'left'} otherIsPlaying={playing === 'right'}
+          showResult={showResult} isMobile={isMobile}
+        />
+        <VSPanel
+          hasVoted={!!myVote} isMobile={isMobile} roundLabel={roundLabel}
+          playingColor={playingP?.color} isPlaying={!!playing}
+        />
+        <OSTDuelCard
+          participant={match.right} side="right"
+          voted={myVote} hasVoted={!!myVote}
+          votePercent={pct('right')} voteCount={rightN}
+          onVote={() => { if (canVote && !myVote) onVote('right') }}
+          onListen={() => playSide('right')} onWatch={() => watch(match.right)}
+          isPlaying={playing === 'right'} otherIsPlaying={playing === 'left'}
+          showResult={showResult} isMobile={isMobile}
+        />
       </div>
+
       <div style={{ textAlign: 'center', marginTop: 18, fontSize: 13, color: 'rgba(255,255,255,.55)' }}>
         {totalV}/{playersCount} ont voté{myVote ? '' : ' · à toi de voter !'}
         {isHost && totalV >= playersCount && playersCount > 0 && ' · résolution…'}
