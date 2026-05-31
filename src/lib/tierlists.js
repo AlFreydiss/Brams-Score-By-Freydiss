@@ -31,10 +31,22 @@ async function authHeaders() {
 
 async function request(path, options = {}) {
   const headers = await authHeaders()
-  const response = await fetch(path, {
-    ...options,
-    headers: { ...headers, ...(options.headers || {}) },
-  })
+  // Timeout dur : sans ça, une requête lente/bloquée laisse la page en
+  // "Chargement…" indéfiniment (ex. payload trop lourd ou API qui ne répond pas).
+  const ctrl = new AbortController()
+  const timer = setTimeout(() => ctrl.abort(), 30000)
+  let response
+  try {
+    response = await fetch(path, {
+      ...options,
+      headers: { ...headers, ...(options.headers || {}) },
+      signal: ctrl.signal,
+    })
+  } catch (e) {
+    clearTimeout(timer)
+    throw new Error(e?.name === 'AbortError' ? 'Délai dépassé — réessaie.' : 'Réseau indisponible — réessaie.')
+  }
+  clearTimeout(timer)
   const data = await response.json().catch(() => ({}))
   if (!response.ok) {
     // Messages lisibles : on n'expose ni le code HTTP brut ni l'erreur Postgres.

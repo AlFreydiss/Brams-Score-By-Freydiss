@@ -300,10 +300,7 @@ function compressImageToBlob(file) {
 // On n'embarque JAMAIS l'image en base64 dans la tier list : 120 images base64
 // font un JSON de plusieurs Mo qui dépasse la limite de body Vercel (413) et fait
 // échouer l'écriture Postgres. Stocker l'URL garde le payload minuscule.
-async function uploadCustomImage(file) {
-  const blob = await compressImageToBlob(file)
-  if (!blob) throw new Error('unreadable')
-
+async function uploadBlobToR2(blob, baseName = 'image') {
   let token = null
   try {
     const { data } = supabase ? await supabase.auth.getSession() : { data: null }
@@ -312,19 +309,54 @@ async function uploadCustomImage(file) {
   // L'endpoint r2-presign exige un compte connecté : les invités collent une URL.
   if (!token) { const e = new Error('login_required'); e.code = 'login_required'; throw e }
 
-  const base = (file.name || 'image').replace(/\.\w+$/, '') || 'image'
+  const ct = blob.type || 'image/webp'
+  const ext = ct.includes('png') ? 'png' : ct.includes('jpeg') ? 'jpg' : ct.includes('gif') ? 'gif' : 'webp'
+  const base = String(baseName).replace(/\.\w+$/, '') || 'image'
   const presign = await fetch('/api/r2-presign', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ filename: `tierlist-${base}.webp`, contentType: 'image/webp', size: blob.size }),
+    body: JSON.stringify({ filename: `tierlist-${base}.${ext}`, contentType: ct, size: blob.size }),
   })
   const info = await presign.json().catch(() => ({}))
   if (!presign.ok) throw new Error(info.error || `presign ${presign.status}`)
-
   if (!info.uploadUrl || !info.publicUrl) throw new Error('presign incomplet')
-  const put = await fetch(info.uploadUrl, { method: 'PUT', headers: { 'Content-Type': 'image/webp' }, body: blob })
+  const put = await fetch(info.uploadUrl, { method: 'PUT', headers: { 'Content-Type': ct }, body: blob })
   if (!put.ok) throw new Error(`upload R2 ${put.status}`)
   return info.publicUrl
+}
+
+async function uploadCustomImage(file) {
+  const blob = await compressImageToBlob(file)
+  if (!blob) throw new Error('unreadable')
+  return uploadBlobToR2(blob, file.name || 'image')
+}
+
+// Migre les images custom encore en base64 (data:) vers R2 et renvoie la liste
+// avec des URLs. Indispensable pour pouvoir sauvegarder/publier les grosses tier
+// lists (des centaines d'images base64 dépassent la limite de body → 413).
+async function migrateCustomItemsToR2(items, onProgress) {
+  if (!Array.isArray(items)) return items
+  const heavy = items.filter(it => typeof it?.img === 'string' && it.img.startsWith('data:'))
+  if (!heavy.length) return items
+  let done = 0
+  const out = []
+  for (const it of items) {
+    if (typeof it?.img === 'string' && it.img.startsWith('data:')) {
+      try {
+        const blob = await (await fetch(it.img)).blob()
+        const url = await uploadBlobToR2(blob, it.name || 'item')
+        out.push({ ...it, img: url })
+      } catch (e) {
+        if (e?.code === 'login_required') throw e   // inutile de continuer sans session
+        out.push(it)                                 // échec ponctuel : on garde l'original
+      }
+      done++
+      onProgress?.(done, heavy.length)
+    } else {
+      out.push(it)
+    }
+  }
+  return out
 }
 
 function initBoard(tiers, items) {
@@ -338,6 +370,20 @@ function uid() { return Math.random().toString(36).slice(2) }
 function fallbackImg(name) {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="80" height="112"><rect width="80" height="112" rx="8" fill="#1a1a28"/><text x="40" y="64" text-anchor="middle" fill="rgba(255,255,255,0.35)" font-family="Arial" font-size="10">${(name||'').slice(0,8)}</text></svg>`
   return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`
+}
+
+// Dégradé de fond d'un tier à partir de sa couleur : opaque et riche (comme les
+// tiers par défaut), PAS une version délavée à faible opacité (#colorXX).
+function darken(hex, factor) {
+  const n = parseInt(String(hex).replace('#', ''), 16)
+  if (Number.isNaN(n)) return hex
+  const r = Math.round(((n >> 16) & 255) * factor)
+  const g = Math.round(((n >> 8) & 255) * factor)
+  const b = Math.round((n & 255) * factor)
+  return `rgb(${r},${g},${b})`
+}
+function tierBg(color) {
+  return `linear-gradient(135deg, ${darken(color, 0.45)}, ${darken(color, 0.78)})`
 }
 
 function fireConfetti() {
@@ -445,11 +491,11 @@ function TierRow({ tier, items, allById, onRename, onColorChange, onDelete, onAd
             onChange={e => setTmpLabel(e.target.value.toUpperCase())}
             onBlur={confirmRename}
             onKeyDown={e => { if (e.key === 'Enter') confirmRename(); if (e.key === 'Escape') setEditing(false) }}
-            maxLength={8}
+            maxLength={24}
             style={{
-              width:58, textAlign:'center', background:'rgba(0,0,0,.6)',
+              width:70, textAlign:'center', background:'rgba(0,0,0,.6)',
               border:`1px solid ${tier.color}`, borderRadius:6,
-              color:'#fff', fontSize:13, fontWeight:900, outline:'none', padding:'3px 4px',
+              color:'#fff', fontSize:12, fontWeight:900, outline:'none', padding:'3px 4px',
             }}
           />
         ) : (
@@ -457,11 +503,13 @@ function TierRow({ tier, items, allById, onRename, onColorChange, onDelete, onAd
             onDoubleClick={() => { setTmpLabel(tier.label); setEditing(true) }}
             title="Double-clic pour renommer"
             style={{
-              fontSize: tier.label.length > 3 ? 10 : 20,
-              fontWeight:900, color:'#fff', lineHeight:1,
-              fontFamily:'serif', letterSpacing: tier.label.length > 3 ? '.05em' : '-.01em',
+              fontSize: tier.label.length <= 2 ? 20 : tier.label.length <= 5 ? 14 : tier.label.length <= 10 ? 11 : 9,
+              fontWeight:900, color:'#fff', lineHeight:1.1,
+              fontFamily:'serif', letterSpacing: tier.label.length > 3 ? '.02em' : '-.01em',
               textShadow:`0 0 20px ${tier.color}88`,
-              cursor:'text', padding:'2px 4px',
+              cursor:'text', padding:'2px 5px', textAlign:'center',
+              whiteSpace:'normal', wordBreak:'break-word', overflowWrap:'anywhere',
+              maxWidth:'100%',
             }}
           >
             {tier.label}
@@ -1168,10 +1216,7 @@ export default function TierListPage() {
     setSaved(false)
   }
   const handleColorChange = (tierId, color) => {
-    setTiers(ts => ts.map(t => t.id === tierId ? {
-      ...t, color,
-      bg: `linear-gradient(135deg,${color}18,${color}32)`,
-    } : t))
+    setTiers(ts => ts.map(t => t.id === tierId ? { ...t, color, bg: tierBg(color) } : t))
     setSaved(false)
   }
   const handleDeleteRow = (tierId) => {
@@ -1269,13 +1314,30 @@ export default function TierListPage() {
   }
 
   const shareList = async () => {
-    const list = buildShareList()
-    if (!list) {
+    if (!selectedType || !board) {
       setToast('Crée une tier list avant de partager')
       return
     }
     setPublishing(true)
     try {
+      // Migre les images base64 vers R2 avant publication, sinon une grosse tier
+      // list (centaines d'images) dépasse la limite de body → "trop lourde".
+      let items = customItems
+      const heavy = customItems.filter(it => typeof it?.img === 'string' && it.img.startsWith('data:'))
+      if (heavy.length) {
+        setToast(`📤 Hébergement des images… 0/${heavy.length}`)
+        items = await migrateCustomItemsToR2(customItems, (d, t) => setToast(`📤 Hébergement des images… ${d}/${t}`))
+        setCustomItems(items)
+        // Si des images n'ont pas pu être hébergées, on NE publie pas (sinon 413
+        // ou publication avec du base64). Les migrées sont conservées → retry reprend.
+        const stillHeavy = items.filter(it => typeof it?.img === 'string' && it.img.startsWith('data:'))
+        if (stillHeavy.length) {
+          setToast(`⚠ ${stillHeavy.length} image(s) non hébergées — réessaie le partage`)
+          return
+        }
+      }
+      const list = buildShareList({ customItems: items })
+      if (!list) { setToast('Crée une tier list avant de partager'); return }
       await autosaveTierList(list)
       const result = await publishTierList(list)
       setCommunityLists(prev => [result.list, ...prev.filter(item => item.id !== result.list.id)])
@@ -1285,7 +1347,8 @@ export default function TierListPage() {
       fireConfetti()
       refreshCommunity() // resynchronise communauté + mes listes publiées sans refresh manuel
     } catch (err) {
-      setToast(err?.message || 'Partage impossible')
+      if (err?.code === 'login_required') setToast('🔒 Connecte-toi pour partager (les images doivent être hébergées)')
+      else setToast(err?.message || 'Partage impossible')
     } finally {
       setPublishing(false)
     }
@@ -1482,11 +1545,10 @@ export default function TierListPage() {
                 {cloudSaved ? '✓ Auto-sauvé cloud' : saved ? '✓ Sauvegardé' : draftSaved ? '✓ Auto-sauvé' : '● Sauvegarde...'}
               </div>
 
-              {/* Actions principales — seules les 3 essentielles restent visibles */}
+              {/* Actions secondaires discrètes */}
               {[
-                { icon:<Download size={11}/>, label:'PNG',      fn:exportPng, c:G.gold },
-                { icon:<Save size={11}/>,     label:'Sauver',   fn:saveList,  c:'#34d399' },
-                { icon:<Users size={11}/>,    label:publishing ? '...' : 'Partager', fn:shareList, c:'#4a86b8' },
+                { icon:<Download size={11}/>, label:'PNG',    fn:exportPng, c:G.gold },
+                { icon:<Save size={11}/>,     label:'Sauver', fn:saveList,  c:'#34d399' },
               ].map(b => (
                 <button key={b.label} onClick={b.fn} style={{
                   display:'flex', alignItems:'center', gap:4, padding:'6px 12px', borderRadius:8,
@@ -1497,6 +1559,20 @@ export default function TierListPage() {
                   {b.icon} {b.label}
                 </button>
               ))}
+
+              {/* CTA principal — Partager avec la communauté : jaune brillant, en évidence */}
+              <button onClick={shareList} disabled={publishing}
+                onMouseEnter={e => { if (!publishing) e.currentTarget.style.transform = 'translateY(-1px)' }}
+                onMouseLeave={e => { e.currentTarget.style.transform = 'none' }}
+                style={{
+                  display:'flex', alignItems:'center', gap:6, padding:'8px 16px', borderRadius:9,
+                  background:'linear-gradient(135deg,#ffd84d,#f0a500)', border:'1px solid #ffe27a',
+                  color:'#1a1200', cursor: publishing ? 'default' : 'pointer', fontSize:12, fontWeight:900,
+                  letterSpacing:'.01em', boxShadow:'0 6px 20px rgba(240,165,0,.4)', opacity: publishing ? .7 : 1,
+                  transition:'transform .15s, opacity .15s', whiteSpace:'nowrap',
+                }}>
+                <Users size={13}/> {publishing ? 'Publication…' : 'Partager avec la communauté'}
+              </button>
 
               {/* Menu « ⋯ » — actions secondaires regroupées (désencombre le bandeau) */}
               <div style={{ position:'relative' }}>
@@ -1733,8 +1809,16 @@ export default function TierListPage() {
               <button onClick={refreshCommunity} style={{ ...actionBtn }}>
                 <RotateCcw size={12}/> Actualiser
               </button>
-              <button onClick={shareList} disabled={publishing || !selectedType} style={{ ...actionBtn, opacity:publishing || !selectedType ? .55 : 1 }}>
-                <Users size={12}/> {publishing ? 'Publication...' : 'Partager ma liste'}
+              <button onClick={shareList} disabled={publishing || !selectedType}
+                title={!selectedType ? 'Ouvre/crée une tier list dans Créer d’abord' : 'Publier ta tier list'}
+                style={{
+                  display:'flex', alignItems:'center', gap:6, padding:'8px 16px', borderRadius:9,
+                  background:'linear-gradient(135deg,#ffd84d,#f0a500)', border:'1px solid #ffe27a',
+                  color:'#1a1200', cursor: (publishing || !selectedType) ? 'default' : 'pointer',
+                  fontSize:12, fontWeight:900, boxShadow:'0 6px 20px rgba(240,165,0,.4)',
+                  opacity:(publishing || !selectedType) ? .5 : 1, whiteSpace:'nowrap',
+                }}>
+                <Users size={13}/> {publishing ? 'Publication…' : 'Partager avec la communauté'}
               </button>
             </div>
           </div>
