@@ -45,6 +45,12 @@ import matplotlib.image as mpimg
 import matplotlib.font_manager as fm
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 from datetime import datetime, timedelta, timezone
+try:
+    from zoneinfo import ZoneInfo
+    PARIS_TZ = ZoneInfo("Europe/Paris")
+except Exception:
+    # Fallback si tzdata absent : UTC+1 fixe (le jour calendaire reste cohérent à 1h près).
+    PARIS_TZ = timezone(timedelta(hours=1))
 from collections import defaultdict, deque
 from urllib.parse import quote as _url_quote
 from utils.memory import save_alias_pair, save_fact, get_knowledge_for_name, get_all_knowledge as _mem_get_all
@@ -737,6 +743,12 @@ print(f"\u2705 {len(QUOTES_DB)} citations anime chargees.")
 def now_ts():
     return datetime.now(timezone.utc).timestamp()
 
+def start_of_today_ts(_now=None):
+    """Timestamp du dernier minuit en heure de Paris (pour le 'Aujourd'hui' calendaire)."""
+    now_dt = datetime.fromtimestamp(_now or now_ts(), tz=PARIS_TZ)
+    midnight = now_dt.replace(hour=0, minute=0, second=0, microsecond=0)
+    return midnight.timestamp()
+
 def _load_all_from_db() -> dict:
     """Charge toute la table users depuis la DB (appelé UNE SEULE FOIS)."""
     conn = get_db()
@@ -1035,9 +1047,9 @@ def reset_berrys(uid: str, track: str = "lost") -> int:
 
 
 
-def seconds_in_period(sessions, days, join_time=None, _now=None):
+def seconds_since(sessions, cutoff, join_time=None, _now=None):
+    """Secondes vocales accumulées depuis un timestamp `cutoff` (borne basse)."""
     _now = _now or now_ts()
-    cutoff = _now - days * 86400
     total = 0
     for s in sessions:
         end = s["end"]
@@ -1048,9 +1060,15 @@ def seconds_in_period(sessions, days, join_time=None, _now=None):
         total += _now - max(join_time, cutoff)
     return total
 
-def messages_in_period(messages, days, _now=None):
-    cutoff = (_now or now_ts()) - days * 86400
+def seconds_in_period(sessions, days, join_time=None, _now=None):
+    _now = _now or now_ts()
+    return seconds_since(sessions, _now - days * 86400, join_time, _now)
+
+def messages_since(messages, cutoff):
     return sum(1 for ts in messages if ts >= cutoff)
+
+def messages_in_period(messages, days, _now=None):
+    return messages_since(messages, (_now or now_ts()) - days * 86400)
 
 # Rétention des sessions vocales détaillées. DOIT rester > à la plus large fenêtre
 # affichée dans /stats (14 jours), sinon seconds_in_period(…, 14) ne voit plus les
@@ -2135,27 +2153,32 @@ async def on_ready():
     if not nick_restore_loop.is_running():
         nick_restore_loop.start()
 
-    # Récupère les join_times des membres déjà en vocal
+    # Récupération des sessions vocales au redémarrage.
     data = _CACHE
 
-    # Détermine quels membres sont actuellement en vocal
-    in_voice_uids: set[str] = set()
-    for guild in bot.guilds:
-        for channel in list(guild.voice_channels) + list(guild.stage_channels):
-            for member in channel.members:
-                if not member.bot:
-                    in_voice_uids.add(str(member.id))
-
-    # Efface les join_times fantômes (membres hors vocal au redémarrage)
-    stale_cleared = 0
+    # Récupération des sessions en cours au redémarrage.
+    # Pour tout membre ayant un join_time persisté, on CLÔTURE la session jusqu'à
+    # sa dernière présence confirmée (voice_seen), jamais jusqu'à maintenant : ça
+    # évite de compter le downtime du bot — ou le temps "parti puis revenu" — comme
+    # du vocal (sur-comptage qui faussait les rangs). Puis, s'il est encore en vocal,
+    # on ouvre une session neuve (join_time = maintenant).
+    _now = now_ts()
+    closed = recovered = 0
     for uid, udata in data.items():
-        if uid not in in_voice_uids and udata.get("join_time"):
-            udata["join_time"] = None
-            _DIRTY.add(uid)
-            stale_cleared += 1
+        jt = udata.get("join_time")
+        if not jt:
+            continue
+        end = udata.get("voice_seen") or jt
+        if end > jt:
+            udata.setdefault("vocal_sessions", []).append({"start": jt, "end": end})
+            closed += 1
+        udata["join_time"] = None
+        # Purge le marqueur Berry : sinon le prochain tick paierait le downtime
+        # (delta = now - last_berry_ts ancien). Un futur join repartira de join_time.
+        udata.pop("last_berry_ts", None)
+        _DIRTY.add(uid)
 
-    # Initialise le join_time des membres en vocal qui n'en ont pas
-    recovered = 0
+    # Membres actuellement en vocal : (ré)ouvre une session propre à partir de maintenant.
     for guild in bot.guilds:
         for channel in list(guild.voice_channels) + list(guild.stage_channels):
             for member in channel.members:
@@ -2163,15 +2186,16 @@ async def on_ready():
                     continue
                 uid = str(member.id)
                 user = get_user(data, uid)
-                if not user["join_time"]:
-                    user["join_time"] = now_ts()
-                    _DIRTY.add(uid)
-                    recovered += 1
+                user["join_time"] = _now
+                user["voice_seen"] = _now
+                user["last_berry_ts"] = _now  # paie les Berry à partir de maintenant, pas du downtime
+                _DIRTY.add(uid)
+                recovered += 1
 
-    if stale_cleared:
-        print(f"[BOT] {stale_cleared} join_times fantomes effacés au démarrage")
+    if closed:
+        print(f"[BOT] {closed} sessions vocales clôturées au démarrage (jusqu'à voice_seen)")
     if recovered:
-        print(f"[BOT] {recovered} membres en vocal recuperes au demarrage")
+        print(f"[BOT] {recovered} membres en vocal: session neuve ouverte")
 
     # Sync des pseudos Discord pour le classement web
     username_synced = 0
@@ -3025,6 +3049,7 @@ async def on_voice_state_update(member, before, after):
         user["username"] = member.display_name
         user["avatar_url"] = str(member.display_avatar.with_size(128).url)
         user["join_time"] = now_ts()
+        user["voice_seen"] = user["join_time"]
         _DIRTY.add(uid)
         entry_url = user.get("entry_sound")
         if entry_url:
@@ -3076,6 +3101,7 @@ async def on_voice_state_update(member, before, after):
                 "channel": str(before.channel.id)
             })
         user["join_time"] = now_ts()
+        user["voice_seen"] = user["join_time"]
         clean_old_data(user)
         _DIRTY.add(uid)
         seconds_7d = seconds_in_period(user["vocal_sessions"], 7, join_time=user["join_time"])
@@ -3157,6 +3183,10 @@ async def vocal_rank_loop():
                 uid = str(member.id)
                 user = get_user(_CACHE, uid)
                 jt = user.get("join_time")
+                # Heartbeat : dernière présence vocale confirmée. Sert à créditer
+                # proprement la session en cours si le bot redémarre (cf. on_ready).
+                user["voice_seen"] = now
+                _DIRTY.add(uid)
                 hours_7d = seconds_in_period(user["vocal_sessions"], 7, join_time=jt) / 3600
                 # Pré-check synchrone : ne lancer update_rank que si les rôles ne sont pas déjà corrects
                 _deserved = set(get_all_ranks_for_hours(hours_7d))
@@ -3296,11 +3326,11 @@ async def stats(interaction: discord.Interaction):
     me = interaction.user
 
     jt = user.get("join_time")
-    s1d  = seconds_in_period(user["vocal_sessions"], 1, join_time=jt)
+    s1d  = seconds_since(user["vocal_sessions"], start_of_today_ts(), join_time=jt)
     s7d  = seconds_in_period(user["vocal_sessions"], 7, join_time=jt)
     s14d = seconds_in_period(user["vocal_sessions"], 14, join_time=jt)
     s_tot = total_seconds(user["vocal_sessions"], join_time=jt, extra=user.get("extra_seconds", 0))
-    m1d  = messages_in_period(user["messages"], 1)
+    m1d  = messages_since(user["messages"], start_of_today_ts())
     m7d  = messages_in_period(user["messages"], 7)
     m14d = messages_in_period(user["messages"], 14)
     m_tot = total_messages(user["messages"], user.get("extra_messages", 0))
@@ -3411,6 +3441,11 @@ async def top(interaction: discord.Interaction, periode: app_commands.Choice[str
             if all_time:
                 sec  = total_seconds(sessions, join_time=ujt, extra=udata.get("extra_seconds", 0), _now=_now)
                 msgs = total_messages(messages, udata.get("extra_messages", 0))
+            elif days == 1:
+                # "Aujourd'hui" = jour calendaire Paris (cohérent avec /stats), pas 24h glissantes.
+                cutoff = start_of_today_ts(_now)
+                sec  = seconds_since(sessions, cutoff, join_time=ujt, _now=_now)
+                msgs = messages_since(messages, cutoff)
             else:
                 sec  = seconds_in_period(sessions, days, join_time=ujt, _now=_now)
                 msgs = messages_in_period(messages, days, _now=_now)
@@ -3675,11 +3710,11 @@ async def tout(interaction: discord.Interaction):
     me = interaction.user
 
     jt = user.get("join_time")
-    s1d  = seconds_in_period(user["vocal_sessions"], 1, join_time=jt)
+    s1d  = seconds_since(user["vocal_sessions"], start_of_today_ts(), join_time=jt)
     s7d  = seconds_in_period(user["vocal_sessions"], 7, join_time=jt)
     s14d = seconds_in_period(user["vocal_sessions"], 14, join_time=jt)
     s_tot = total_seconds(user["vocal_sessions"], join_time=jt, extra=user.get("extra_seconds", 0))
-    m1d  = messages_in_period(user["messages"], 1)
+    m1d  = messages_since(user["messages"], start_of_today_ts())
     m7d  = messages_in_period(user["messages"], 7)
     m14d = messages_in_period(user["messages"], 14)
     m_tot = total_messages(user["messages"], user.get("extra_messages", 0))
@@ -3816,11 +3851,11 @@ async def chercher(interaction: discord.Interaction, membre: discord.Member):
     user = get_user(data, uid)
 
     jt = user.get("join_time")
-    s1d  = seconds_in_period(user["vocal_sessions"], 1, join_time=jt)
+    s1d  = seconds_since(user["vocal_sessions"], start_of_today_ts(), join_time=jt)
     s7d  = seconds_in_period(user["vocal_sessions"], 7, join_time=jt)
     s14d = seconds_in_period(user["vocal_sessions"], 14, join_time=jt)
     s_tot = total_seconds(user["vocal_sessions"], join_time=jt, extra=user.get("extra_seconds", 0))
-    m1d  = messages_in_period(user["messages"], 1)
+    m1d  = messages_since(user["messages"], start_of_today_ts())
     m7d  = messages_in_period(user["messages"], 7)
     m14d = messages_in_period(user["messages"], 14)
     m_tot = total_messages(user["messages"], user.get("extra_messages", 0))
