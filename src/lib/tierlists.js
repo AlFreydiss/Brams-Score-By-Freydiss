@@ -36,7 +36,18 @@ async function request(path, options = {}) {
     headers: { ...headers, ...(options.headers || {}) },
   })
   const data = await response.json().catch(() => ({}))
-  if (!response.ok) throw new Error(data.error || `Erreur ${response.status}`)
+  if (!response.ok) {
+    // Messages lisibles : on n'expose ni le code HTTP brut ni l'erreur Postgres.
+    const friendly =
+      response.status === 413 ? 'Tier list trop lourde à sauvegarder — réduis le nombre d’images custom.'
+      : response.status === 401 ? 'Connexion requise pour cette action.'
+      : response.status === 403 ? (data.error || 'Action non autorisée.')
+      : response.status >= 500 ? (data.error || 'Service momentanément indisponible, réessaie.')
+      : (data.error || 'Action impossible, réessaie.')
+    const err = new Error(friendly)
+    err.status = response.status
+    throw err
+  }
   return data
 }
 

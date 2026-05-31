@@ -24,6 +24,7 @@ import {
   deleteCommunityTierList,
   getTierListClientId,
 } from '../lib/tierlists.js'
+import { supabase } from '../lib/supabase.js'
 import {
   loadSavedListsIDB,
   saveListsIDB,
@@ -276,32 +277,54 @@ function toSharePayload({ title, selectedType, tiers, board, customItems, favori
   }
 }
 
-function compressImageFile(file) {
+function compressImageToBlob(file) {
   return new Promise((resolve) => {
     const url = URL.createObjectURL(file)
     const image = new Image()
     image.onload = () => {
-      const scale = Math.min(1, CUSTOM_IMAGE_MAX_SIDE / Math.max(image.width, image.height))
-      const canvas = document.createElement('canvas')
-      canvas.width = Math.max(1, Math.round(image.width * scale))
-      canvas.height = Math.max(1, Math.round(image.height * scale))
-      const ctx = canvas.getContext('2d')
-      ctx.drawImage(image, 0, 0, canvas.width, canvas.height)
-      canvas.toBlob((blob) => {
-        URL.revokeObjectURL(url)
-        if (!blob) return resolve(null)
-        const reader = new FileReader()
-        reader.onload = ev => resolve(ev.target.result)
-        reader.onerror = () => resolve(null)
-        reader.readAsDataURL(blob)
-      }, 'image/webp', CUSTOM_IMAGE_QUALITY)
+      try {
+        const scale = Math.min(1, CUSTOM_IMAGE_MAX_SIDE / Math.max(image.width, image.height))
+        const canvas = document.createElement('canvas')
+        canvas.width = Math.max(1, Math.round(image.width * scale))
+        canvas.height = Math.max(1, Math.round(image.height * scale))
+        canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height)
+        canvas.toBlob((blob) => { URL.revokeObjectURL(url); resolve(blob) }, 'image/webp', CUSTOM_IMAGE_QUALITY)
+      } catch { URL.revokeObjectURL(url); resolve(null) }
     }
-    image.onerror = () => {
-      URL.revokeObjectURL(url)
-      resolve(null)
-    }
+    image.onerror = () => { URL.revokeObjectURL(url); resolve(null) }
     image.src = url
   })
+}
+
+// Upload une image custom sur R2 et renvoie son URL publique.
+// On n'embarque JAMAIS l'image en base64 dans la tier list : 120 images base64
+// font un JSON de plusieurs Mo qui dépasse la limite de body Vercel (413) et fait
+// échouer l'écriture Postgres. Stocker l'URL garde le payload minuscule.
+async function uploadCustomImage(file) {
+  const blob = await compressImageToBlob(file)
+  if (!blob) throw new Error('unreadable')
+
+  let token = null
+  try {
+    const { data } = supabase ? await supabase.auth.getSession() : { data: null }
+    token = data?.session?.access_token || null
+  } catch {}
+  // L'endpoint r2-presign exige un compte connecté : les invités collent une URL.
+  if (!token) { const e = new Error('login_required'); e.code = 'login_required'; throw e }
+
+  const base = (file.name || 'image').replace(/\.\w+$/, '') || 'image'
+  const presign = await fetch('/api/r2-presign', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ filename: `tierlist-${base}.webp`, contentType: 'image/webp', size: blob.size }),
+  })
+  const info = await presign.json().catch(() => ({}))
+  if (!presign.ok) throw new Error(info.error || `presign ${presign.status}`)
+
+  if (!info.uploadUrl || !info.publicUrl) throw new Error('presign incomplet')
+  const put = await fetch(info.uploadUrl, { method: 'PUT', headers: { 'Content-Type': 'image/webp' }, body: blob })
+  if (!put.ok) throw new Error(`upload R2 ${put.status}`)
+  return info.publicUrl
 }
 
 function initBoard(tiers, items) {
@@ -507,7 +530,7 @@ function iconBtn(color) {
 }
 
 // ── Pool ──────────────────────────────────────────────────────────────────────
-function ItemPool({ items, allById, customItems, onAddCustom, favorites, onToggleFav, search, onSearch, genre, onGenre, currentType }) {
+function ItemPool({ items, allById, customItems, onAddCustom, onNotify, favorites, onToggleFav, search, onSearch, genre, onGenre, currentType }) {
   const { isOver, setNodeRef } = useDroppable({ id:'pool' })
   const [poolTab, setPoolTab] = useState('all')
   const [addMode, setAddMode] = useState(null)
@@ -542,16 +565,28 @@ function ItemPool({ items, allById, customItems, onAddCustom, favorites, onToggl
     })
   }, [allItemsInPool, favorites, search, genre, poolTab, customItems])
 
+  const [uploading, setUploading] = useState(false)
   const handleFile = async (e) => {
     const files = Array.from(e.target.files || [])
-    if (!files.length) return
-    for (const file of files) {
-      const compressed = await compressImageFile(file)
-      if (!compressed) continue
-      onAddCustom({ img: compressed, name: file.name.replace(/\.\w+$/,''), sub: subInput || 'Custom' })
-    }
-    setAddMode(null); setNameInput(''); setSubInput('')
     if (fileRef.current) fileRef.current.value = ''
+    if (!files.length) return
+    setUploading(true)
+    let added = 0
+    for (const file of files) {
+      try {
+        const url = await uploadCustomImage(file)
+        onAddCustom({ img: url, name: file.name.replace(/\.\w+$/,''), sub: subInput || 'Custom' })
+        added++
+      } catch (err) {
+        if (err?.code === 'login_required') {
+          onNotify?.('🔒 Connecte-toi pour uploader des images (ou colle une URL via l’onglet URL)')
+          break
+        }
+        onNotify?.(`❌ Upload échoué : ${file.name}`)
+      }
+    }
+    setUploading(false)
+    if (added) { setAddMode(null); setNameInput(''); setSubInput('') }
   }
 
   const handleUrl = () => {
@@ -624,7 +659,10 @@ function ItemPool({ items, allById, customItems, onAddCustom, favorites, onToggl
               </>}
               {addMode === 'file' && <>
                 <input ref={fileRef} type="file" accept="image/*" multiple onChange={handleFile} style={{ display:'none' }}/>
-                <button onClick={() => fileRef.current?.click()} style={actionBtn}><Upload size={10}/> Choisir (plusieurs)</button>
+                <button onClick={() => !uploading && fileRef.current?.click()} disabled={uploading}
+                  style={{ ...actionBtn, opacity: uploading ? 0.6 : 1, cursor: uploading ? 'wait' : 'pointer' }}>
+                  <Upload size={10}/> {uploading ? 'Upload…' : 'Choisir (plusieurs)'}
+                </button>
               </>}
             </div>
           </motion.div>
@@ -1663,6 +1701,7 @@ export default function TierListPage() {
                     allById={allById}
                     customItems={customItems}
                     onAddCustom={handleAddCustom}
+                    onNotify={setToast}
                     favorites={favorites}
                     onToggleFav={id => setFavorites(p => p.includes(id) ? p.filter(f => f !== id) : [...p, id])}
                     search={search} onSearch={setSearch}
