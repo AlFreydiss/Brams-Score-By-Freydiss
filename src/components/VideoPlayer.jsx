@@ -545,6 +545,9 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
         if (p && Number.isFinite(p.time)) { try { v.currentTime = p.time } catch {} }
         if (p?.play) v.play().catch(() => {})
       })
+      // Les pistes audio (VF/JP) peuvent arriver après le manifest → on réapplique
+      // dès qu'elles sont connues (sinon l'UI restait sur "non supporté").
+      hls.on(Hls.Events.AUDIO_TRACKS_UPDATED, () => applyAudioPreference(audioIdx))
       hls.on(Hls.Events.ERROR, (_e, data) => {
         if (!data?.fatal) return
         if (data.type === Hls.ErrorTypes.NETWORK_ERROR) hls.startLoad()
