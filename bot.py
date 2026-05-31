@@ -2156,29 +2156,47 @@ async def on_ready():
     # Récupération des sessions vocales au redémarrage.
     data = _CACHE
 
-    # Récupération des sessions en cours au redémarrage.
-    # Pour tout membre ayant un join_time persisté, on CLÔTURE la session jusqu'à
-    # sa dernière présence confirmée (voice_seen), jamais jusqu'à maintenant : ça
-    # évite de compter le downtime du bot — ou le temps "parti puis revenu" — comme
-    # du vocal (sur-comptage qui faussait les rangs). Puis, s'il est encore en vocal,
-    # on ouvre une session neuve (join_time = maintenant).
+    # Récupération des sessions en cours au redémarrage — objectif : NE PAS perdre
+    # d'heures (sous-comptage signalé) tout en évitant de compter une longue coupure.
+    #   • Toujours en vocal + coupure COURTE (≤ CONTINUITY_MAX) → présence continue :
+    #     on garde join_time tel quel → le bref temps de restart reste compté (0 perte).
+    #   • Parti pendant la coupure, OU coupure LONGUE → on clôture la session jusqu'à
+    #     la dernière présence confirmée (voice_seen) : ni perte, ni comptage du downtime.
+    #   • En vocal sans session ouverte → on ouvre à partir de maintenant.
     _now = now_ts()
-    closed = recovered = 0
+    CONTINUITY_MAX = 15 * 60  # un déploiement/restart normal dure < 15 min
+
+    in_voice_uids = set()
+    for guild in bot.guilds:
+        for channel in list(guild.voice_channels) + list(guild.stage_channels):
+            for member in channel.members:
+                if not member.bot:
+                    in_voice_uids.add(str(member.id))
+
+    kept = closed = opened = 0
     for uid, udata in data.items():
         jt = udata.get("join_time")
         if not jt:
             continue
-        end = udata.get("voice_seen") or jt
-        if end > jt:
-            udata.setdefault("vocal_sessions", []).append({"start": jt, "end": end})
-            closed += 1
-        udata["join_time"] = None
-        # Purge le marqueur Berry : sinon le prochain tick paierait le downtime
-        # (delta = now - last_berry_ts ancien). Un futur join repartira de join_time.
-        udata.pop("last_berry_ts", None)
-        _DIRTY.add(uid)
+        seen = udata.get("voice_seen") or jt
+        if uid in in_voice_uids and (_now - seen) <= CONTINUITY_MAX:
+            udata["voice_seen"] = _now   # présence continue : on ne touche pas join_time
+            kept += 1
+            _DIRTY.add(uid)
+        else:
+            if seen > jt:
+                udata.setdefault("vocal_sessions", []).append({"start": jt, "end": seen})
+                closed += 1
+            # Paie le reliquat Berry du temps réellement compté (last_berry_ts → seen),
+            # comme au départ vocal, AVANT de purger le marqueur (sinon sous-paiement).
+            last_ts = udata.pop("last_berry_ts", jt)
+            earned = int(max(0, seen - last_ts) / 3600 * 100_000)
+            if earned > 0:
+                add_berrys(uid, earned)
+            udata["join_time"] = None
+            _DIRTY.add(uid)
 
-    # Membres actuellement en vocal : (ré)ouvre une session propre à partir de maintenant.
+    # Membres en vocal qui n'ont PAS de session ouverte → on en ouvre une maintenant.
     for guild in bot.guilds:
         for channel in list(guild.voice_channels) + list(guild.stage_channels):
             for member in channel.members:
@@ -2186,16 +2204,19 @@ async def on_ready():
                     continue
                 uid = str(member.id)
                 user = get_user(data, uid)
-                user["join_time"] = _now
-                user["voice_seen"] = _now
-                user["last_berry_ts"] = _now  # paie les Berry à partir de maintenant, pas du downtime
-                _DIRTY.add(uid)
-                recovered += 1
+                if not user.get("join_time"):
+                    user["join_time"] = _now
+                    user["voice_seen"] = _now
+                    user["last_berry_ts"] = _now
+                    opened += 1
+                    _DIRTY.add(uid)
 
+    if kept:
+        print(f"[BOT] {kept} sessions vocales continuées (coupure courte, 0 perte)")
     if closed:
-        print(f"[BOT] {closed} sessions vocales clôturées au démarrage (jusqu'à voice_seen)")
-    if recovered:
-        print(f"[BOT] {recovered} membres en vocal: session neuve ouverte")
+        print(f"[BOT] {closed} sessions vocales clôturées (parti/longue coupure)")
+    if opened:
+        print(f"[BOT] {opened} nouvelles sessions vocales ouvertes")
 
     # Sync des pseudos Discord pour le classement web
     username_synced = 0
@@ -7984,6 +8005,59 @@ async def addberries_cmd(
                 f"💰 **+`{montant:,}` ฿** ajoutés à {membre.mention}\n"
                 f"📋 Raison : *{raison}*\n"
                 f"💼 Nouveau solde : `{new_balance:,}` ฿"
+            ),
+            color=0x2ECC71,
+        ).set_footer(text=f"Admin : {interaction.user.display_name}"),
+        ephemeral=True,
+    )
+
+
+@bot.tree.command(name="addheures", description="[ADMIN] Ajouter des heures vocales à un membre (corrige les compteurs)")
+@app_commands.default_permissions(administrator=True)
+@app_commands.checks.has_permissions(administrator=True)
+@app_commands.describe(
+    membre="Membre à qui ajouter des heures",
+    heures="Nombre d'heures à ajouter (ex: 2.5)",
+)
+async def addheures_cmd(interaction: discord.Interaction, membre: discord.Member, heures: float):
+    # defer IMMÉDIAT : sinon les écritures DB ci-dessous dépassent les 3s d'acquittement
+    # Discord → "L'application ne répond pas" (le bug de l'ancienne commande orpheline).
+    await interaction.response.defer(ephemeral=True)
+    if membre.bot:
+        await interaction.followup.send("❌ Les bots n'ont pas de stats.", ephemeral=True); return
+    if heures <= 0:
+        await interaction.followup.send("❌ Le nombre d'heures doit être positif.", ephemeral=True); return
+
+    uid = str(membre.id)
+    user = get_user(_CACHE, uid)
+    now = now_ts()
+    secs = int(heures * 3600)
+    # Enregistrée comme une vraie session terminée maintenant → compte dans
+    # Aujourd'hui / 7j / 14j / Total et impacte le rang, comme du vocal réel.
+    user.setdefault("vocal_sessions", []).append({"start": now - secs, "end": now, "channel": None})
+    clean_old_data(user)
+    _DIRTY.add(uid)
+
+    # Berries équivalents (même taux que le vocal temps réel : 100 000 / heure)
+    add_berrys(uid, int(heures * 100_000), track="earned")
+
+    # Persiste tout de suite (cache → DB) : Discord ET le classement du site à jour.
+    loop = asyncio.get_running_loop()
+    await loop.run_in_executor(db_executor, _sync_flush_dirty)
+
+    hours_7d = seconds_in_period(user["vocal_sessions"], 7, join_time=user.get("join_time")) / 3600
+    try:
+        await update_rank(membre, hours_7d, announce=False, data=_CACHE)
+    except Exception as e:
+        print(f"[addheures] update_rank: {e}")
+
+    await interaction.followup.send(
+        embed=discord.Embed(
+            title="✅ Heures ajoutées",
+            description=(
+                f"⏱️ **+{heures:g}h** ajoutées à {membre.mention}\n"
+                f"📊 Total 7 jours : `{hours_7d:.1f}h`\n"
+                f"💰 +{int(heures * 100_000):,} ฿".replace(',', ' ')
             ),
             color=0x2ECC71,
         ).set_footer(text=f"Admin : {interaction.user.display_name}"),
