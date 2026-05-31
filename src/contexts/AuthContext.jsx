@@ -67,16 +67,23 @@ export function AuthProvider({ children }) {
         window.history.replaceState({}, document.title, window.location.pathname)
       }
 
-      // Lecture session APRÈS échange (ou directement si pas de code)
-      const { data, error } = await supabase.auth.getSession()
-      if (error) console.error('[auth] getSession erreur:', error.message)
-      console.log('[auth] getSession →', data?.session?.user?.id ?? 'null')
-
-      if (!mounted) return
-      setSession(data.session ?? null)
-      setUser(data.session?.user ?? null)
-      userRef.current = data.session?.user ?? null
-      setLoading(false)
+      // Lecture session APRÈS échange (ou directement si pas de code).
+      // try/finally : setLoading(false) DOIT toujours s'exécuter — si getSession()
+      // throw, l'app restait bloquée en "chargement" (le Fil ne chargeait jamais).
+      try {
+        const { data, error } = await supabase.auth.getSession()
+        if (error) console.error('[auth] getSession erreur:', error.message)
+        console.log('[auth] getSession →', data?.session?.user?.id ?? 'null')
+        if (mounted) {
+          setSession(data.session ?? null)
+          setUser(data.session?.user ?? null)
+          userRef.current = data.session?.user ?? null
+        }
+      } catch (e) {
+        console.error('[auth] getSession throw:', e?.message || e)
+      } finally {
+        if (mounted) setLoading(false)
+      }
     }
 
     init()
