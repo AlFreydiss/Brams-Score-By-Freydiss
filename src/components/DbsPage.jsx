@@ -72,6 +72,16 @@ const CSS = `
 
   .dbs-ch-card { transition: transform .2s ease, box-shadow .2s ease, border-color .18s ease; cursor: pointer; }
   .dbs-ch-card:hover { transform: translateY(-3px) !important; box-shadow: 0 10px 28px rgba(245,127,23,.18) !important; }
+
+  /* Layout responsive : hero/infos en colonne fixe sur desktop, EMPILÉ sur mobile.
+     Avant, la grille 310px+contenu restait sur petit écran → le fond du hero et les
+     épisodes se chevauchaient dans une colonne minuscule. */
+  .dbs-layout { display: grid; grid-template-columns: 310px minmax(0,1fr); gap: 22px; align-items: start; }
+  @media (max-width: 880px) {
+    .dbs-layout { grid-template-columns: 1fr; gap: 16px; }
+    .dbs-aside { position: static !important; }
+    .dbs-hero { height: 200px !important; }
+  }
 `
 
 function ProgressRing({ pct, size = 72, stroke = 5 }) {
@@ -145,7 +155,7 @@ function InfoPanel({ watchedCount, total, lastWatchedIdx, onResume }) {
   const [coverErr, setCoverErr] = useState(false)
 
   return (
-    <aside style={{
+    <aside className="dbs-aside" style={{
       position: 'sticky', top: 0, alignSelf: 'start',
       display: 'flex', flexDirection: 'column', gap: 0,
       borderRadius: 22, overflow: 'hidden',
@@ -154,7 +164,7 @@ function InfoPanel({ watchedCount, total, lastWatchedIdx, onResume }) {
       boxShadow: '0 24px 70px rgba(0,0,0,.44),inset 0 1px 0 rgba(255,255,255,.04)',
       backdropFilter: 'blur(20px)',
     }}>
-      <div style={{ position:'relative', height:260, overflow:'hidden', flexShrink:0 }}>
+      <div className="dbs-hero" style={{ position:'relative', height:260, overflow:'hidden', flexShrink:0 }}>
         <img
           src={coverErr ? COVER_FALLBACK : COVER}
           onError={() => setCoverErr(true)}
@@ -236,7 +246,7 @@ function InfoPanel({ watchedCount, total, lastWatchedIdx, onResume }) {
 function ScanInfoPanel({ readCount, total }) {
   const pct = total > 0 ? Math.round((readCount / total) * 100) : 0
   return (
-    <aside style={{
+    <aside className="dbs-aside" style={{
       position: 'sticky', top: 0, alignSelf: 'start',
       borderRadius: 22, overflow: 'hidden',
       background: 'linear-gradient(180deg,rgba(12,8,2,.96),rgba(8,5,1,.99))',
@@ -396,7 +406,7 @@ export default function DbsPage({ onClose }) {
           <div style={{ maxWidth:1600,margin:'0 auto' }}>
 
             {tab === 'videos' ? (
-              <div style={{ display:'grid',gridTemplateColumns:'310px minmax(0,1fr)',gap:22,alignItems:'start' }}>
+              <div className="dbs-layout">
                 <InfoPanel
                   watchedCount={watchedCount}
                   total={VIDEOS.length}
@@ -425,7 +435,7 @@ export default function DbsPage({ onClose }) {
               </div>
             ) : (
               /* ── Scans tab ── */
-              <div style={{ display:'grid',gridTemplateColumns:'310px minmax(0,1fr)',gap:22,alignItems:'start' }}>
+              <div className="dbs-layout">
                 <ScanInfoPanel readCount={readCount} total={CHAPTERS.length} />
                 <div>
                   <div style={{ marginBottom:18 }}>
