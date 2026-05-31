@@ -24,6 +24,12 @@ function sourceType(src = '') {
   return 'video/mp4'
 }
 
+// HLS (.m3u8) : seul Safari le lit nativement. Sur Chrome/Edge/Firefox il faut
+// hls.js (MSE), sinon la vidéo ne charge jamais — d'où les épisodes MHA "infinis".
+const isHlsSrc = (s = '') => /\.m3u8(\?|#|$)/i.test(s)
+const NATIVE_HLS = typeof document !== 'undefined'
+  && !!document.createElement('video').canPlayType('application/vnd.apple.mpegurl')
+
 function loadVideoProgress(storageKey) {
   if (!storageKey) return null
   try { return JSON.parse(localStorage.getItem(storageKey) || 'null') } catch { return null }
@@ -246,6 +252,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   const hideTimer    = useRef(null)
   const lastSaveRef  = useRef(0)
   const pendingSourceRef = useRef(null)
+  const hlsRef = useRef(null)
 
   const [idx,          setIdx]         = useState(startIdx)
   const [playing,      setPlaying]     = useState(false)
@@ -370,6 +377,20 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
     }
 
     if (v) v.muted = muted
+
+    // hls.js actif : on bascule la piste audio du master (VF/JP) via son API,
+    // car v.audioTracks natif n'est pas alimenté hors Safari.
+    const hls = hlsRef.current
+    if (hls && Array.isArray(hls.audioTracks) && hls.audioTracks.length) {
+      const target = audioOptions[nextAudioIdx]
+      const lang = String(target?.srclang || target?.language || '').toLowerCase()
+      let ti = hls.audioTracks.findIndex(t => String(t.lang || '').toLowerCase() === lang)
+      if (ti < 0 && lang) ti = hls.audioTracks.findIndex(t => String(t.name || '').toLowerCase().includes(lang))
+      if (ti < 0) ti = Math.min(nextAudioIdx, hls.audioTracks.length - 1)
+      if (hls.audioTrack !== ti) hls.audioTrack = ti
+      setAudioTrackState('ready')
+      return true
+    }
 
     const nativeTracks = v?.audioTracks
     if (!nativeTracks || !nativeTracks.length) {
@@ -506,6 +527,38 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   useEffect(() => {
     if (videoRef.current) videoRef.current.playbackRate = speed
   }, [speed])
+
+  // ── Lecture HLS via hls.js (Chrome/Edge/Firefox — pas de HLS natif) ───────
+  useEffect(() => {
+    const v = videoRef.current
+    if (!isLocal || !v || !mediaSrc || !isHlsSrc(mediaSrc) || NATIVE_HLS) return
+    let hls = null, cancelled = false
+    import('hls.js').then(({ default: Hls }) => {
+      if (cancelled || !Hls.isSupported()) return
+      hls = new Hls({ enableWorker: true, maxBufferLength: 30, backBufferLength: 30, startLevel: -1 })
+      hlsRef.current = hls
+      hls.attachMedia(v)
+      hls.on(Hls.Events.MEDIA_ATTACHED, () => hls.loadSource(encSrc(mediaSrc)))
+      hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        applyAudioPreference(audioIdx)
+        const p = pendingSourceRef.current
+        if (p && Number.isFinite(p.time)) { try { v.currentTime = p.time } catch {} }
+        if (p?.play) v.play().catch(() => {})
+      })
+      hls.on(Hls.Events.ERROR, (_e, data) => {
+        if (!data?.fatal) return
+        if (data.type === Hls.ErrorTypes.NETWORK_ERROR) hls.startLoad()
+        else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) hls.recoverMediaError()
+        else { try { hls.destroy() } catch {} if (hlsRef.current === hls) hlsRef.current = null }
+      })
+    }).catch(() => {})
+    return () => {
+      cancelled = true
+      if (hls) { try { hls.destroy() } catch {} }
+      if (hlsRef.current === hls) hlsRef.current = null
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mediaSrc, isLocal])
 
   // ── Fullscreen ───────────────────────────────────────────────────────────
   useEffect(() => {
@@ -671,10 +724,14 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                 if (idx < videos.length - 1) setIdx(i => i + 1)
               }}
             >
-              <source
-                src={encSrc(mediaSrc)}
-                type={sourceType(mediaSrc)}
-              />
+              {/* Source native seulement si hls.js ne pilote pas (mp4, ou HLS sur Safari).
+                  Sinon hls.js attache la vidéo via MSE et un <source> .m3u8 ferait planter. */}
+              {!(isHlsSrc(mediaSrc) && !NATIVE_HLS) && (
+                <source
+                  src={encSrc(mediaSrc)}
+                  type={sourceType(mediaSrc)}
+                />
+              )}
               {/* Pistes de sous-titres (lues via TextTrack API, mode hidden) */}
               {hasSubs && video.subtitles.map((sub, i) => (
                 <track key={i} kind="subtitles" src={sub.src} srcLang={sub.srclang || 'fr'} label={sub.label} />
