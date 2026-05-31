@@ -1,2624 +1,2762 @@
-﻿[
-    {
-        "episode":  1,
-        "title":  "Episode 1",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E001/master.m3u8",
-        "season":  "S01",
-        "arc":  "Entree a U.A.",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  2,
-        "title":  "Episode 2",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E002/master.m3u8",
-        "season":  "S01",
-        "arc":  "Entree a U.A.",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  3,
-        "title":  "Episode 3",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E003/master.m3u8",
-        "season":  "S01",
-        "arc":  "Entree a U.A.",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  4,
-        "title":  "Episode 4",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E004/master.m3u8",
-        "season":  "S01",
-        "arc":  "Entree a U.A.",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  5,
-        "title":  "Episode 5",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E005/master.m3u8",
-        "season":  "S01",
-        "arc":  "Entree a U.A.",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  6,
-        "title":  "Episode 6",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E006/master.m3u8",
-        "season":  "S01",
-        "arc":  "Entree a U.A.",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  7,
-        "title":  "Episode 7",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E007/master.m3u8",
-        "season":  "S01",
-        "arc":  "Entree a U.A.",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  8,
-        "title":  "Episode 8",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E008/master.m3u8",
-        "season":  "S01",
-        "arc":  "Entree a U.A.",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  9,
-        "title":  "Episode 9",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E009/master.m3u8",
-        "season":  "S01",
-        "arc":  "Entree a U.A.",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  10,
-        "title":  "Episode 10",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E010/master.m3u8",
-        "season":  "S01",
-        "arc":  "Entree a U.A.",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  11,
-        "title":  "Episode 11",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E011/master.m3u8",
-        "season":  "S01",
-        "arc":  "Entree a U.A.",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  12,
-        "title":  "Episode 12",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E012/master.m3u8",
-        "season":  "S01",
-        "arc":  "Entree a U.A.",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  13,
-        "title":  "Episode 13",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E013/master.m3u8",
-        "season":  "S01",
-        "arc":  "Entree a U.A.",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  1,
-        "title":  "Episode 1",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E001/master.m3u8",
-        "season":  "S02",
-        "arc":  "Tournoi Sports Festival",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  2,
-        "title":  "Episode 2",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E002/master.m3u8",
-        "season":  "S02",
-        "arc":  "Tournoi Sports Festival",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  3,
-        "title":  "Episode 3",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E003/master.m3u8",
-        "season":  "S02",
-        "arc":  "Tournoi Sports Festival",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  4,
-        "title":  "Episode 4",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E004/master.m3u8",
-        "season":  "S02",
-        "arc":  "Tournoi Sports Festival",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  5,
-        "title":  "Episode 5",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E005/master.m3u8",
-        "season":  "S02",
-        "arc":  "Tournoi Sports Festival",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  6,
-        "title":  "Episode 6",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E006/master.m3u8",
-        "season":  "S02",
-        "arc":  "Tournoi Sports Festival",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  7,
-        "title":  "Episode 7",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E007/master.m3u8",
-        "season":  "S02",
-        "arc":  "Tournoi Sports Festival",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  8,
-        "title":  "Episode 8",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E008/master.m3u8",
-        "season":  "S02",
-        "arc":  "Tournoi Sports Festival",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  9,
-        "title":  "Episode 9",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E009/master.m3u8",
-        "season":  "S02",
-        "arc":  "Tournoi Sports Festival",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  10,
-        "title":  "Episode 10",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E010/master.m3u8",
-        "season":  "S02",
-        "arc":  "Tournoi Sports Festival",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  11,
-        "title":  "Episode 11",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E011/master.m3u8",
-        "season":  "S02",
-        "arc":  "Tournoi Sports Festival",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  12,
-        "title":  "Episode 12",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E012/master.m3u8",
-        "season":  "S02",
-        "arc":  "Tournoi Sports Festival",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  13,
-        "title":  "Episode 13",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E013/master.m3u8",
-        "season":  "S02",
-        "arc":  "Tournoi Sports Festival",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  14,
-        "title":  "Episode 14",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E014/master.m3u8",
-        "season":  "S02",
-        "arc":  "Tournoi Sports Festival",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  15,
-        "title":  "Episode 15",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E015/master.m3u8",
-        "season":  "S02",
-        "arc":  "Tournoi Sports Festival",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  16,
-        "title":  "Episode 16",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E016/master.m3u8",
-        "season":  "S02",
-        "arc":  "Tournoi Sports Festival",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  17,
-        "title":  "Episode 17",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E017/master.m3u8",
-        "season":  "S02",
-        "arc":  "Tournoi Sports Festival",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  18,
-        "title":  "Episode 18",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E018/master.m3u8",
-        "season":  "S02",
-        "arc":  "Tournoi Sports Festival",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  19,
-        "title":  "Episode 19",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E019/master.m3u8",
-        "season":  "S02",
-        "arc":  "Tournoi Sports Festival",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  20,
-        "title":  "Episode 20",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E020/master.m3u8",
-        "season":  "S02",
-        "arc":  "Tournoi Sports Festival",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  21,
-        "title":  "Episode 21",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E021/master.m3u8",
-        "season":  "S02",
-        "arc":  "Tournoi Sports Festival",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  22,
-        "title":  "Episode 22",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E022/master.m3u8",
-        "season":  "S02",
-        "arc":  "Tournoi Sports Festival",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  23,
-        "title":  "Episode 23",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E023/master.m3u8",
-        "season":  "S02",
-        "arc":  "Tournoi Sports Festival",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  24,
-        "title":  "Episode 24",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E024/master.m3u8",
-        "season":  "S02",
-        "arc":  "Tournoi Sports Festival",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  25,
-        "title":  "Episode 25",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E025/master.m3u8",
-        "season":  "S02",
-        "arc":  "Tournoi Sports Festival",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  1,
-        "title":  "Episode 1",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E001/master.m3u8",
-        "season":  "S03",
-        "arc":  "Licence Hero",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  2,
-        "title":  "Episode 2",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E002/master.m3u8",
-        "season":  "S03",
-        "arc":  "Licence Hero",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  3,
-        "title":  "Episode 3",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E003/master.m3u8",
-        "season":  "S03",
-        "arc":  "Licence Hero",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  4,
-        "title":  "Episode 4",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E004/master.m3u8",
-        "season":  "S03",
-        "arc":  "Licence Hero",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  5,
-        "title":  "Episode 5",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E005/master.m3u8",
-        "season":  "S03",
-        "arc":  "Licence Hero",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  6,
-        "title":  "Episode 6",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E006/master.m3u8",
-        "season":  "S03",
-        "arc":  "Licence Hero",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  7,
-        "title":  "Episode 7",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E007/master.m3u8",
-        "season":  "S03",
-        "arc":  "Licence Hero",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  8,
-        "title":  "Episode 8",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E008/master.m3u8",
-        "season":  "S03",
-        "arc":  "Licence Hero",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  9,
-        "title":  "Episode 9",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E009/master.m3u8",
-        "season":  "S03",
-        "arc":  "Licence Hero",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  10,
-        "title":  "Episode 10",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E010/master.m3u8",
-        "season":  "S03",
-        "arc":  "Licence Hero",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  11,
-        "title":  "Episode 11",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E011/master.m3u8",
-        "season":  "S03",
-        "arc":  "Licence Hero",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  12,
-        "title":  "Episode 12",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E012/master.m3u8",
-        "season":  "S03",
-        "arc":  "Licence Hero",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  13,
-        "title":  "Episode 13",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E013/master.m3u8",
-        "season":  "S03",
-        "arc":  "Licence Hero",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  14,
-        "title":  "Episode 14",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E014/master.m3u8",
-        "season":  "S03",
-        "arc":  "Licence Hero",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  15,
-        "title":  "Episode 15",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E015/master.m3u8",
-        "season":  "S03",
-        "arc":  "Licence Hero",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  16,
-        "title":  "Episode 16",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E016/master.m3u8",
-        "season":  "S03",
-        "arc":  "Licence Hero",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  17,
-        "title":  "Episode 17",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E017/master.m3u8",
-        "season":  "S03",
-        "arc":  "Licence Hero",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  18,
-        "title":  "Episode 18",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E018/master.m3u8",
-        "season":  "S03",
-        "arc":  "Licence Hero",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  19,
-        "title":  "Episode 19",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E019/master.m3u8",
-        "season":  "S03",
-        "arc":  "Licence Hero",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  20,
-        "title":  "Episode 20",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E020/master.m3u8",
-        "season":  "S03",
-        "arc":  "Licence Hero",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  21,
-        "title":  "Episode 21",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E021/master.m3u8",
-        "season":  "S03",
-        "arc":  "Licence Hero",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  22,
-        "title":  "Episode 22",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E022/master.m3u8",
-        "season":  "S03",
-        "arc":  "Licence Hero",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  23,
-        "title":  "Episode 23",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E023/master.m3u8",
-        "season":  "S03",
-        "arc":  "Licence Hero",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  24,
-        "title":  "Episode 24",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E024/master.m3u8",
-        "season":  "S03",
-        "arc":  "Licence Hero",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  25,
-        "title":  "Episode 25",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E025/master.m3u8",
-        "season":  "S03",
-        "arc":  "Licence Hero",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  1,
-        "title":  "Episode 1",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E001/master.m3u8",
-        "season":  "S04",
-        "arc":  "Overhaul",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  2,
-        "title":  "Episode 2",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E002/master.m3u8",
-        "season":  "S04",
-        "arc":  "Overhaul",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  3,
-        "title":  "Episode 3",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E003/master.m3u8",
-        "season":  "S04",
-        "arc":  "Overhaul",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  4,
-        "title":  "Episode 4",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E004/master.m3u8",
-        "season":  "S04",
-        "arc":  "Overhaul",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  5,
-        "title":  "Episode 5",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E005/master.m3u8",
-        "season":  "S04",
-        "arc":  "Overhaul",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  6,
-        "title":  "Episode 6",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E006/master.m3u8",
-        "season":  "S04",
-        "arc":  "Overhaul",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  7,
-        "title":  "Episode 7",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E007/master.m3u8",
-        "season":  "S04",
-        "arc":  "Overhaul",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  8,
-        "title":  "Episode 8",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E008/master.m3u8",
-        "season":  "S04",
-        "arc":  "Overhaul",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  9,
-        "title":  "Episode 9",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E009/master.m3u8",
-        "season":  "S04",
-        "arc":  "Overhaul",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  10,
-        "title":  "Episode 10",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E010/master.m3u8",
-        "season":  "S04",
-        "arc":  "Overhaul",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  11,
-        "title":  "Episode 11",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E011/master.m3u8",
-        "season":  "S04",
-        "arc":  "Overhaul",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  12,
-        "title":  "Episode 12",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E012/master.m3u8",
-        "season":  "S04",
-        "arc":  "Overhaul",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  13,
-        "title":  "Episode 13",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E013/master.m3u8",
-        "season":  "S04",
-        "arc":  "Overhaul",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  14,
-        "title":  "Episode 14",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E014/master.m3u8",
-        "season":  "S04",
-        "arc":  "Overhaul",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  15,
-        "title":  "Episode 15",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E015/master.m3u8",
-        "season":  "S04",
-        "arc":  "Overhaul",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  16,
-        "title":  "Episode 16",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E016/master.m3u8",
-        "season":  "S04",
-        "arc":  "Overhaul",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  17,
-        "title":  "Episode 17",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E017/master.m3u8",
-        "season":  "S04",
-        "arc":  "Overhaul",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  18,
-        "title":  "Episode 18",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E018/master.m3u8",
-        "season":  "S04",
-        "arc":  "Overhaul",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  19,
-        "title":  "Episode 19",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E019/master.m3u8",
-        "season":  "S04",
-        "arc":  "Overhaul",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  20,
-        "title":  "Episode 20",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E020/master.m3u8",
-        "season":  "S04",
-        "arc":  "Overhaul",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  21,
-        "title":  "Episode 21",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E021/master.m3u8",
-        "season":  "S04",
-        "arc":  "Overhaul",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  22,
-        "title":  "Episode 22",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E022/master.m3u8",
-        "season":  "S04",
-        "arc":  "Overhaul",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  23,
-        "title":  "Episode 23",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E023/master.m3u8",
-        "season":  "S04",
-        "arc":  "Overhaul",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  24,
-        "title":  "Episode 24",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E024/master.m3u8",
-        "season":  "S04",
-        "arc":  "Overhaul",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  25,
-        "title":  "Episode 25",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E025/master.m3u8",
-        "season":  "S04",
-        "arc":  "Overhaul",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  1,
-        "title":  "Episode 1",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E001/master.m3u8",
-        "season":  "S05",
-        "arc":  "Liberation Paranormale",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  2,
-        "title":  "Episode 2",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E002/master.m3u8",
-        "season":  "S05",
-        "arc":  "Liberation Paranormale",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  3,
-        "title":  "Episode 3",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E003/master.m3u8",
-        "season":  "S05",
-        "arc":  "Liberation Paranormale",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  4,
-        "title":  "Episode 4",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E004/master.m3u8",
-        "season":  "S05",
-        "arc":  "Liberation Paranormale",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  5,
-        "title":  "Episode 5",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E005/master.m3u8",
-        "season":  "S05",
-        "arc":  "Liberation Paranormale",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  6,
-        "title":  "Episode 6",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E006/master.m3u8",
-        "season":  "S05",
-        "arc":  "Liberation Paranormale",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  7,
-        "title":  "Episode 7",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E007/master.m3u8",
-        "season":  "S05",
-        "arc":  "Liberation Paranormale",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  8,
-        "title":  "Episode 8",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E008/master.m3u8",
-        "season":  "S05",
-        "arc":  "Liberation Paranormale",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  9,
-        "title":  "Episode 9",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E009/master.m3u8",
-        "season":  "S05",
-        "arc":  "Liberation Paranormale",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  10,
-        "title":  "Episode 10",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E010/master.m3u8",
-        "season":  "S05",
-        "arc":  "Liberation Paranormale",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  11,
-        "title":  "Episode 11",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E011/master.m3u8",
-        "season":  "S05",
-        "arc":  "Liberation Paranormale",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  12,
-        "title":  "Episode 12",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E012/master.m3u8",
-        "season":  "S05",
-        "arc":  "Liberation Paranormale",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  13,
-        "title":  "Episode 13",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E013/master.m3u8",
-        "season":  "S05",
-        "arc":  "Liberation Paranormale",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  14,
-        "title":  "Episode 14",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E014/master.m3u8",
-        "season":  "S05",
-        "arc":  "Liberation Paranormale",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  15,
-        "title":  "Episode 15",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E015/master.m3u8",
-        "season":  "S05",
-        "arc":  "Liberation Paranormale",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  16,
-        "title":  "Episode 16",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E016/master.m3u8",
-        "season":  "S05",
-        "arc":  "Liberation Paranormale",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  17,
-        "title":  "Episode 17",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E017/master.m3u8",
-        "season":  "S05",
-        "arc":  "Liberation Paranormale",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  18,
-        "title":  "Episode 18",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E018/master.m3u8",
-        "season":  "S05",
-        "arc":  "Liberation Paranormale",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  19,
-        "title":  "Episode 19",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E019/master.m3u8",
-        "season":  "S05",
-        "arc":  "Liberation Paranormale",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  20,
-        "title":  "Episode 20",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E020/master.m3u8",
-        "season":  "S05",
-        "arc":  "Liberation Paranormale",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  21,
-        "title":  "Episode 21",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E021/master.m3u8",
-        "season":  "S05",
-        "arc":  "Liberation Paranormale",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  22,
-        "title":  "Episode 22",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E022/master.m3u8",
-        "season":  "S05",
-        "arc":  "Liberation Paranormale",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  23,
-        "title":  "Episode 23",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E023/master.m3u8",
-        "season":  "S05",
-        "arc":  "Liberation Paranormale",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  24,
-        "title":  "Episode 24",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E024/master.m3u8",
-        "season":  "S05",
-        "arc":  "Liberation Paranormale",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  25,
-        "title":  "Episode 25",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E025/master.m3u8",
-        "season":  "S05",
-        "arc":  "Liberation Paranormale",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  1,
-        "title":  "Episode 1",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E001/master.m3u8",
-        "season":  "S06",
-        "arc":  "War Arc",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  2,
-        "title":  "Episode 2",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E002/master.m3u8",
-        "season":  "S06",
-        "arc":  "War Arc",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  3,
-        "title":  "Episode 3",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E003/master.m3u8",
-        "season":  "S06",
-        "arc":  "War Arc",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  4,
-        "title":  "Episode 4",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E004/master.m3u8",
-        "season":  "S06",
-        "arc":  "War Arc",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  5,
-        "title":  "Episode 5",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E005/master.m3u8",
-        "season":  "S06",
-        "arc":  "War Arc",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  6,
-        "title":  "Episode 6",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E006/master.m3u8",
-        "season":  "S06",
-        "arc":  "War Arc",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  7,
-        "title":  "Episode 7",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E007/master.m3u8",
-        "season":  "S06",
-        "arc":  "War Arc",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  8,
-        "title":  "Episode 8",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E008/master.m3u8",
-        "season":  "S06",
-        "arc":  "War Arc",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  9,
-        "title":  "Episode 9",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E009/master.m3u8",
-        "season":  "S06",
-        "arc":  "War Arc",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  10,
-        "title":  "Episode 10",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E010/master.m3u8",
-        "season":  "S06",
-        "arc":  "War Arc",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  11,
-        "title":  "Episode 11",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E011/master.m3u8",
-        "season":  "S06",
-        "arc":  "War Arc",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  12,
-        "title":  "Episode 12",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E012/master.m3u8",
-        "season":  "S06",
-        "arc":  "War Arc",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  13,
-        "title":  "Episode 13",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E013/master.m3u8",
-        "season":  "S06",
-        "arc":  "War Arc",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  14,
-        "title":  "Episode 14",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E014/master.m3u8",
-        "season":  "S06",
-        "arc":  "War Arc",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  15,
-        "title":  "Episode 15",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E015/master.m3u8",
-        "season":  "S06",
-        "arc":  "War Arc",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  16,
-        "title":  "Episode 16",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E016/master.m3u8",
-        "season":  "S06",
-        "arc":  "War Arc",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  17,
-        "title":  "Episode 17",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E017/master.m3u8",
-        "season":  "S06",
-        "arc":  "War Arc",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  18,
-        "title":  "Episode 18",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E018/master.m3u8",
-        "season":  "S06",
-        "arc":  "War Arc",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  19,
-        "title":  "Episode 19",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E019/master.m3u8",
-        "season":  "S06",
-        "arc":  "War Arc",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  20,
-        "title":  "Episode 20",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E020/master.m3u8",
-        "season":  "S06",
-        "arc":  "War Arc",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  21,
-        "title":  "Episode 21",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E021/master.m3u8",
-        "season":  "S06",
-        "arc":  "War Arc",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  22,
-        "title":  "Episode 22",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E022/master.m3u8",
-        "season":  "S06",
-        "arc":  "War Arc",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  23,
-        "title":  "Episode 23",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E023/master.m3u8",
-        "season":  "S06",
-        "arc":  "War Arc",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  24,
-        "title":  "Episode 24",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E024/master.m3u8",
-        "season":  "S06",
-        "arc":  "War Arc",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    },
-    {
-        "episode":  25,
-        "title":  "Episode 25",
-        "src":  "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E025/master.m3u8",
-        "season":  "S06",
-        "arc":  "War Arc",
-        "audio":  [
-                      {
-                          "label":  "VF",
-                          "srclang":  "fr",
-                          "default":  true
-                      },
-                      {
-                          "label":  "Japonais",
-                          "srclang":  "ja"
-                      }
-                  ],
-        "defaultSubtitlesOff":  true
-    }
+[
+  {
+    "episode": 1,
+    "title": "Episode 1",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E001/master.m3u8",
+    "season": "S01",
+    "arc": "Entree a U.A.",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E001/thumb.jpg"
+  },
+  {
+    "episode": 2,
+    "title": "Episode 2",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E002/master.m3u8",
+    "season": "S01",
+    "arc": "Entree a U.A.",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E002/thumb.jpg"
+  },
+  {
+    "episode": 3,
+    "title": "Episode 3",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E003/master.m3u8",
+    "season": "S01",
+    "arc": "Entree a U.A.",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E003/thumb.jpg"
+  },
+  {
+    "episode": 4,
+    "title": "Episode 4",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E004/master.m3u8",
+    "season": "S01",
+    "arc": "Entree a U.A.",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E004/thumb.jpg"
+  },
+  {
+    "episode": 5,
+    "title": "Episode 5",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E005/master.m3u8",
+    "season": "S01",
+    "arc": "Entree a U.A.",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E005/thumb.jpg"
+  },
+  {
+    "episode": 6,
+    "title": "Episode 6",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E006/master.m3u8",
+    "season": "S01",
+    "arc": "Entree a U.A.",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E006/thumb.jpg"
+  },
+  {
+    "episode": 7,
+    "title": "Episode 7",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E007/master.m3u8",
+    "season": "S01",
+    "arc": "Entree a U.A.",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E007/thumb.jpg"
+  },
+  {
+    "episode": 8,
+    "title": "Episode 8",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E008/master.m3u8",
+    "season": "S01",
+    "arc": "Entree a U.A.",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E008/thumb.jpg"
+  },
+  {
+    "episode": 9,
+    "title": "Episode 9",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E009/master.m3u8",
+    "season": "S01",
+    "arc": "Entree a U.A.",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E009/thumb.jpg"
+  },
+  {
+    "episode": 10,
+    "title": "Episode 10",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E010/master.m3u8",
+    "season": "S01",
+    "arc": "Entree a U.A.",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E010/thumb.jpg"
+  },
+  {
+    "episode": 11,
+    "title": "Episode 11",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E011/master.m3u8",
+    "season": "S01",
+    "arc": "Entree a U.A.",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E011/thumb.jpg"
+  },
+  {
+    "episode": 12,
+    "title": "Episode 12",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E012/master.m3u8",
+    "season": "S01",
+    "arc": "Entree a U.A.",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E012/thumb.jpg"
+  },
+  {
+    "episode": 13,
+    "title": "Episode 13",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E013/master.m3u8",
+    "season": "S01",
+    "arc": "Entree a U.A.",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E013/thumb.jpg"
+  },
+  {
+    "episode": 1,
+    "title": "Episode 1",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E001/master.m3u8",
+    "season": "S02",
+    "arc": "Tournoi Sports Festival",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E001/thumb.jpg"
+  },
+  {
+    "episode": 2,
+    "title": "Episode 2",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E002/master.m3u8",
+    "season": "S02",
+    "arc": "Tournoi Sports Festival",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E002/thumb.jpg"
+  },
+  {
+    "episode": 3,
+    "title": "Episode 3",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E003/master.m3u8",
+    "season": "S02",
+    "arc": "Tournoi Sports Festival",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E003/thumb.jpg"
+  },
+  {
+    "episode": 4,
+    "title": "Episode 4",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E004/master.m3u8",
+    "season": "S02",
+    "arc": "Tournoi Sports Festival",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E004/thumb.jpg"
+  },
+  {
+    "episode": 5,
+    "title": "Episode 5",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E005/master.m3u8",
+    "season": "S02",
+    "arc": "Tournoi Sports Festival",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E005/thumb.jpg"
+  },
+  {
+    "episode": 6,
+    "title": "Episode 6",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E006/master.m3u8",
+    "season": "S02",
+    "arc": "Tournoi Sports Festival",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E006/thumb.jpg"
+  },
+  {
+    "episode": 7,
+    "title": "Episode 7",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E007/master.m3u8",
+    "season": "S02",
+    "arc": "Tournoi Sports Festival",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E007/thumb.jpg"
+  },
+  {
+    "episode": 8,
+    "title": "Episode 8",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E008/master.m3u8",
+    "season": "S02",
+    "arc": "Tournoi Sports Festival",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E008/thumb.jpg"
+  },
+  {
+    "episode": 9,
+    "title": "Episode 9",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E009/master.m3u8",
+    "season": "S02",
+    "arc": "Tournoi Sports Festival",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E009/thumb.jpg"
+  },
+  {
+    "episode": 10,
+    "title": "Episode 10",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E010/master.m3u8",
+    "season": "S02",
+    "arc": "Tournoi Sports Festival",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E010/thumb.jpg"
+  },
+  {
+    "episode": 11,
+    "title": "Episode 11",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E011/master.m3u8",
+    "season": "S02",
+    "arc": "Tournoi Sports Festival",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E011/thumb.jpg"
+  },
+  {
+    "episode": 12,
+    "title": "Episode 12",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E012/master.m3u8",
+    "season": "S02",
+    "arc": "Tournoi Sports Festival",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E012/thumb.jpg"
+  },
+  {
+    "episode": 13,
+    "title": "Episode 13",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E013/master.m3u8",
+    "season": "S02",
+    "arc": "Tournoi Sports Festival",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E013/thumb.jpg"
+  },
+  {
+    "episode": 14,
+    "title": "Episode 14",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E014/master.m3u8",
+    "season": "S02",
+    "arc": "Tournoi Sports Festival",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E014/thumb.jpg"
+  },
+  {
+    "episode": 15,
+    "title": "Episode 15",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E015/master.m3u8",
+    "season": "S02",
+    "arc": "Tournoi Sports Festival",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E015/thumb.jpg"
+  },
+  {
+    "episode": 16,
+    "title": "Episode 16",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E016/master.m3u8",
+    "season": "S02",
+    "arc": "Tournoi Sports Festival",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E016/thumb.jpg"
+  },
+  {
+    "episode": 17,
+    "title": "Episode 17",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E017/master.m3u8",
+    "season": "S02",
+    "arc": "Tournoi Sports Festival",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E017/thumb.jpg"
+  },
+  {
+    "episode": 18,
+    "title": "Episode 18",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E018/master.m3u8",
+    "season": "S02",
+    "arc": "Tournoi Sports Festival",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E018/thumb.jpg"
+  },
+  {
+    "episode": 19,
+    "title": "Episode 19",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E019/master.m3u8",
+    "season": "S02",
+    "arc": "Tournoi Sports Festival",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E019/thumb.jpg"
+  },
+  {
+    "episode": 20,
+    "title": "Episode 20",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E020/master.m3u8",
+    "season": "S02",
+    "arc": "Tournoi Sports Festival",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E020/thumb.jpg"
+  },
+  {
+    "episode": 21,
+    "title": "Episode 21",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E021/master.m3u8",
+    "season": "S02",
+    "arc": "Tournoi Sports Festival",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E021/thumb.jpg"
+  },
+  {
+    "episode": 22,
+    "title": "Episode 22",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E022/master.m3u8",
+    "season": "S02",
+    "arc": "Tournoi Sports Festival",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E022/thumb.jpg"
+  },
+  {
+    "episode": 23,
+    "title": "Episode 23",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E023/master.m3u8",
+    "season": "S02",
+    "arc": "Tournoi Sports Festival",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E023/thumb.jpg"
+  },
+  {
+    "episode": 24,
+    "title": "Episode 24",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E024/master.m3u8",
+    "season": "S02",
+    "arc": "Tournoi Sports Festival",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E024/thumb.jpg"
+  },
+  {
+    "episode": 25,
+    "title": "Episode 25",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E025/master.m3u8",
+    "season": "S02",
+    "arc": "Tournoi Sports Festival",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E025/thumb.jpg"
+  },
+  {
+    "episode": 1,
+    "title": "Episode 1",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E001/master.m3u8",
+    "season": "S03",
+    "arc": "Licence Hero",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E001/thumb.jpg"
+  },
+  {
+    "episode": 2,
+    "title": "Episode 2",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E002/master.m3u8",
+    "season": "S03",
+    "arc": "Licence Hero",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E002/thumb.jpg"
+  },
+  {
+    "episode": 3,
+    "title": "Episode 3",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E003/master.m3u8",
+    "season": "S03",
+    "arc": "Licence Hero",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E003/thumb.jpg"
+  },
+  {
+    "episode": 4,
+    "title": "Episode 4",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E004/master.m3u8",
+    "season": "S03",
+    "arc": "Licence Hero",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E004/thumb.jpg"
+  },
+  {
+    "episode": 5,
+    "title": "Episode 5",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E005/master.m3u8",
+    "season": "S03",
+    "arc": "Licence Hero",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E005/thumb.jpg"
+  },
+  {
+    "episode": 6,
+    "title": "Episode 6",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E006/master.m3u8",
+    "season": "S03",
+    "arc": "Licence Hero",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E006/thumb.jpg"
+  },
+  {
+    "episode": 7,
+    "title": "Episode 7",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E007/master.m3u8",
+    "season": "S03",
+    "arc": "Licence Hero",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E007/thumb.jpg"
+  },
+  {
+    "episode": 8,
+    "title": "Episode 8",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E008/master.m3u8",
+    "season": "S03",
+    "arc": "Licence Hero",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E008/thumb.jpg"
+  },
+  {
+    "episode": 9,
+    "title": "Episode 9",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E009/master.m3u8",
+    "season": "S03",
+    "arc": "Licence Hero",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E009/thumb.jpg"
+  },
+  {
+    "episode": 10,
+    "title": "Episode 10",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E010/master.m3u8",
+    "season": "S03",
+    "arc": "Licence Hero",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E010/thumb.jpg"
+  },
+  {
+    "episode": 11,
+    "title": "Episode 11",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E011/master.m3u8",
+    "season": "S03",
+    "arc": "Licence Hero",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E011/thumb.jpg"
+  },
+  {
+    "episode": 12,
+    "title": "Episode 12",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E012/master.m3u8",
+    "season": "S03",
+    "arc": "Licence Hero",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E012/thumb.jpg"
+  },
+  {
+    "episode": 13,
+    "title": "Episode 13",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E013/master.m3u8",
+    "season": "S03",
+    "arc": "Licence Hero",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E013/thumb.jpg"
+  },
+  {
+    "episode": 14,
+    "title": "Episode 14",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E014/master.m3u8",
+    "season": "S03",
+    "arc": "Licence Hero",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E014/thumb.jpg"
+  },
+  {
+    "episode": 15,
+    "title": "Episode 15",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E015/master.m3u8",
+    "season": "S03",
+    "arc": "Licence Hero",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E015/thumb.jpg"
+  },
+  {
+    "episode": 16,
+    "title": "Episode 16",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E016/master.m3u8",
+    "season": "S03",
+    "arc": "Licence Hero",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E016/thumb.jpg"
+  },
+  {
+    "episode": 17,
+    "title": "Episode 17",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E017/master.m3u8",
+    "season": "S03",
+    "arc": "Licence Hero",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E017/thumb.jpg"
+  },
+  {
+    "episode": 18,
+    "title": "Episode 18",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E018/master.m3u8",
+    "season": "S03",
+    "arc": "Licence Hero",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E018/thumb.jpg"
+  },
+  {
+    "episode": 19,
+    "title": "Episode 19",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E019/master.m3u8",
+    "season": "S03",
+    "arc": "Licence Hero",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E019/thumb.jpg"
+  },
+  {
+    "episode": 20,
+    "title": "Episode 20",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E020/master.m3u8",
+    "season": "S03",
+    "arc": "Licence Hero",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E020/thumb.jpg"
+  },
+  {
+    "episode": 21,
+    "title": "Episode 21",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E021/master.m3u8",
+    "season": "S03",
+    "arc": "Licence Hero",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E021/thumb.jpg"
+  },
+  {
+    "episode": 22,
+    "title": "Episode 22",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E022/master.m3u8",
+    "season": "S03",
+    "arc": "Licence Hero",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E022/thumb.jpg"
+  },
+  {
+    "episode": 23,
+    "title": "Episode 23",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E023/master.m3u8",
+    "season": "S03",
+    "arc": "Licence Hero",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E023/thumb.jpg"
+  },
+  {
+    "episode": 24,
+    "title": "Episode 24",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E024/master.m3u8",
+    "season": "S03",
+    "arc": "Licence Hero",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E024/thumb.jpg"
+  },
+  {
+    "episode": 25,
+    "title": "Episode 25",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E025/master.m3u8",
+    "season": "S03",
+    "arc": "Licence Hero",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E025/thumb.jpg"
+  },
+  {
+    "episode": 1,
+    "title": "Episode 1",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E001/master.m3u8",
+    "season": "S04",
+    "arc": "Overhaul",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E001/thumb.jpg"
+  },
+  {
+    "episode": 2,
+    "title": "Episode 2",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E002/master.m3u8",
+    "season": "S04",
+    "arc": "Overhaul",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E002/thumb.jpg"
+  },
+  {
+    "episode": 3,
+    "title": "Episode 3",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E003/master.m3u8",
+    "season": "S04",
+    "arc": "Overhaul",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E003/thumb.jpg"
+  },
+  {
+    "episode": 4,
+    "title": "Episode 4",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E004/master.m3u8",
+    "season": "S04",
+    "arc": "Overhaul",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E004/thumb.jpg"
+  },
+  {
+    "episode": 5,
+    "title": "Episode 5",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E005/master.m3u8",
+    "season": "S04",
+    "arc": "Overhaul",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E005/thumb.jpg"
+  },
+  {
+    "episode": 6,
+    "title": "Episode 6",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E006/master.m3u8",
+    "season": "S04",
+    "arc": "Overhaul",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E006/thumb.jpg"
+  },
+  {
+    "episode": 7,
+    "title": "Episode 7",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E007/master.m3u8",
+    "season": "S04",
+    "arc": "Overhaul",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E007/thumb.jpg"
+  },
+  {
+    "episode": 8,
+    "title": "Episode 8",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E008/master.m3u8",
+    "season": "S04",
+    "arc": "Overhaul",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E008/thumb.jpg"
+  },
+  {
+    "episode": 9,
+    "title": "Episode 9",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E009/master.m3u8",
+    "season": "S04",
+    "arc": "Overhaul",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E009/thumb.jpg"
+  },
+  {
+    "episode": 10,
+    "title": "Episode 10",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E010/master.m3u8",
+    "season": "S04",
+    "arc": "Overhaul",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E010/thumb.jpg"
+  },
+  {
+    "episode": 11,
+    "title": "Episode 11",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E011/master.m3u8",
+    "season": "S04",
+    "arc": "Overhaul",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E011/thumb.jpg"
+  },
+  {
+    "episode": 12,
+    "title": "Episode 12",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E012/master.m3u8",
+    "season": "S04",
+    "arc": "Overhaul",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E012/thumb.jpg"
+  },
+  {
+    "episode": 13,
+    "title": "Episode 13",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E013/master.m3u8",
+    "season": "S04",
+    "arc": "Overhaul",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E013/thumb.jpg"
+  },
+  {
+    "episode": 14,
+    "title": "Episode 14",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E014/master.m3u8",
+    "season": "S04",
+    "arc": "Overhaul",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E014/thumb.jpg"
+  },
+  {
+    "episode": 15,
+    "title": "Episode 15",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E015/master.m3u8",
+    "season": "S04",
+    "arc": "Overhaul",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E015/thumb.jpg"
+  },
+  {
+    "episode": 16,
+    "title": "Episode 16",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E016/master.m3u8",
+    "season": "S04",
+    "arc": "Overhaul",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E016/thumb.jpg"
+  },
+  {
+    "episode": 17,
+    "title": "Episode 17",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E017/master.m3u8",
+    "season": "S04",
+    "arc": "Overhaul",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E017/thumb.jpg"
+  },
+  {
+    "episode": 18,
+    "title": "Episode 18",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E018/master.m3u8",
+    "season": "S04",
+    "arc": "Overhaul",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E018/thumb.jpg"
+  },
+  {
+    "episode": 19,
+    "title": "Episode 19",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E019/master.m3u8",
+    "season": "S04",
+    "arc": "Overhaul",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E019/thumb.jpg"
+  },
+  {
+    "episode": 20,
+    "title": "Episode 20",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E020/master.m3u8",
+    "season": "S04",
+    "arc": "Overhaul",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E020/thumb.jpg"
+  },
+  {
+    "episode": 21,
+    "title": "Episode 21",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E021/master.m3u8",
+    "season": "S04",
+    "arc": "Overhaul",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E021/thumb.jpg"
+  },
+  {
+    "episode": 22,
+    "title": "Episode 22",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E022/master.m3u8",
+    "season": "S04",
+    "arc": "Overhaul",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E022/thumb.jpg"
+  },
+  {
+    "episode": 23,
+    "title": "Episode 23",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E023/master.m3u8",
+    "season": "S04",
+    "arc": "Overhaul",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E023/thumb.jpg"
+  },
+  {
+    "episode": 24,
+    "title": "Episode 24",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E024/master.m3u8",
+    "season": "S04",
+    "arc": "Overhaul",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E024/thumb.jpg"
+  },
+  {
+    "episode": 25,
+    "title": "Episode 25",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E025/master.m3u8",
+    "season": "S04",
+    "arc": "Overhaul",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E025/thumb.jpg"
+  },
+  {
+    "episode": 1,
+    "title": "Episode 1",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E001/master.m3u8",
+    "season": "S05",
+    "arc": "Liberation Paranormale",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E001/thumb.jpg"
+  },
+  {
+    "episode": 2,
+    "title": "Episode 2",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E002/master.m3u8",
+    "season": "S05",
+    "arc": "Liberation Paranormale",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E002/thumb.jpg"
+  },
+  {
+    "episode": 3,
+    "title": "Episode 3",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E003/master.m3u8",
+    "season": "S05",
+    "arc": "Liberation Paranormale",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E003/thumb.jpg"
+  },
+  {
+    "episode": 4,
+    "title": "Episode 4",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E004/master.m3u8",
+    "season": "S05",
+    "arc": "Liberation Paranormale",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E004/thumb.jpg"
+  },
+  {
+    "episode": 5,
+    "title": "Episode 5",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E005/master.m3u8",
+    "season": "S05",
+    "arc": "Liberation Paranormale",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E005/thumb.jpg"
+  },
+  {
+    "episode": 6,
+    "title": "Episode 6",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E006/master.m3u8",
+    "season": "S05",
+    "arc": "Liberation Paranormale",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E006/thumb.jpg"
+  },
+  {
+    "episode": 7,
+    "title": "Episode 7",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E007/master.m3u8",
+    "season": "S05",
+    "arc": "Liberation Paranormale",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E007/thumb.jpg"
+  },
+  {
+    "episode": 8,
+    "title": "Episode 8",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E008/master.m3u8",
+    "season": "S05",
+    "arc": "Liberation Paranormale",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E008/thumb.jpg"
+  },
+  {
+    "episode": 9,
+    "title": "Episode 9",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E009/master.m3u8",
+    "season": "S05",
+    "arc": "Liberation Paranormale",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E009/thumb.jpg"
+  },
+  {
+    "episode": 10,
+    "title": "Episode 10",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E010/master.m3u8",
+    "season": "S05",
+    "arc": "Liberation Paranormale",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E010/thumb.jpg"
+  },
+  {
+    "episode": 11,
+    "title": "Episode 11",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E011/master.m3u8",
+    "season": "S05",
+    "arc": "Liberation Paranormale",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E011/thumb.jpg"
+  },
+  {
+    "episode": 12,
+    "title": "Episode 12",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E012/master.m3u8",
+    "season": "S05",
+    "arc": "Liberation Paranormale",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E012/thumb.jpg"
+  },
+  {
+    "episode": 13,
+    "title": "Episode 13",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E013/master.m3u8",
+    "season": "S05",
+    "arc": "Liberation Paranormale",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E013/thumb.jpg"
+  },
+  {
+    "episode": 14,
+    "title": "Episode 14",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E014/master.m3u8",
+    "season": "S05",
+    "arc": "Liberation Paranormale",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E014/thumb.jpg"
+  },
+  {
+    "episode": 15,
+    "title": "Episode 15",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E015/master.m3u8",
+    "season": "S05",
+    "arc": "Liberation Paranormale",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E015/thumb.jpg"
+  },
+  {
+    "episode": 16,
+    "title": "Episode 16",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E016/master.m3u8",
+    "season": "S05",
+    "arc": "Liberation Paranormale",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E016/thumb.jpg"
+  },
+  {
+    "episode": 17,
+    "title": "Episode 17",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E017/master.m3u8",
+    "season": "S05",
+    "arc": "Liberation Paranormale",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E017/thumb.jpg"
+  },
+  {
+    "episode": 18,
+    "title": "Episode 18",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E018/master.m3u8",
+    "season": "S05",
+    "arc": "Liberation Paranormale",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E018/thumb.jpg"
+  },
+  {
+    "episode": 19,
+    "title": "Episode 19",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E019/master.m3u8",
+    "season": "S05",
+    "arc": "Liberation Paranormale",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E019/thumb.jpg"
+  },
+  {
+    "episode": 20,
+    "title": "Episode 20",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E020/master.m3u8",
+    "season": "S05",
+    "arc": "Liberation Paranormale",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E020/thumb.jpg"
+  },
+  {
+    "episode": 21,
+    "title": "Episode 21",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E021/master.m3u8",
+    "season": "S05",
+    "arc": "Liberation Paranormale",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E021/thumb.jpg"
+  },
+  {
+    "episode": 22,
+    "title": "Episode 22",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E022/master.m3u8",
+    "season": "S05",
+    "arc": "Liberation Paranormale",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E022/thumb.jpg"
+  },
+  {
+    "episode": 23,
+    "title": "Episode 23",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E023/master.m3u8",
+    "season": "S05",
+    "arc": "Liberation Paranormale",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E023/thumb.jpg"
+  },
+  {
+    "episode": 24,
+    "title": "Episode 24",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E024/master.m3u8",
+    "season": "S05",
+    "arc": "Liberation Paranormale",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E024/thumb.jpg"
+  },
+  {
+    "episode": 25,
+    "title": "Episode 25",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E025/master.m3u8",
+    "season": "S05",
+    "arc": "Liberation Paranormale",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E025/thumb.jpg"
+  },
+  {
+    "episode": 1,
+    "title": "Episode 1",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E001/master.m3u8",
+    "season": "S06",
+    "arc": "War Arc",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E001/thumb.jpg"
+  },
+  {
+    "episode": 2,
+    "title": "Episode 2",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E002/master.m3u8",
+    "season": "S06",
+    "arc": "War Arc",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E002/thumb.jpg"
+  },
+  {
+    "episode": 3,
+    "title": "Episode 3",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E003/master.m3u8",
+    "season": "S06",
+    "arc": "War Arc",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E003/thumb.jpg"
+  },
+  {
+    "episode": 4,
+    "title": "Episode 4",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E004/master.m3u8",
+    "season": "S06",
+    "arc": "War Arc",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E004/thumb.jpg"
+  },
+  {
+    "episode": 5,
+    "title": "Episode 5",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E005/master.m3u8",
+    "season": "S06",
+    "arc": "War Arc",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E005/thumb.jpg"
+  },
+  {
+    "episode": 6,
+    "title": "Episode 6",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E006/master.m3u8",
+    "season": "S06",
+    "arc": "War Arc",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E006/thumb.jpg"
+  },
+  {
+    "episode": 7,
+    "title": "Episode 7",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E007/master.m3u8",
+    "season": "S06",
+    "arc": "War Arc",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E007/thumb.jpg"
+  },
+  {
+    "episode": 8,
+    "title": "Episode 8",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E008/master.m3u8",
+    "season": "S06",
+    "arc": "War Arc",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E008/thumb.jpg"
+  },
+  {
+    "episode": 9,
+    "title": "Episode 9",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E009/master.m3u8",
+    "season": "S06",
+    "arc": "War Arc",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E009/thumb.jpg"
+  },
+  {
+    "episode": 10,
+    "title": "Episode 10",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E010/master.m3u8",
+    "season": "S06",
+    "arc": "War Arc",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E010/thumb.jpg"
+  },
+  {
+    "episode": 11,
+    "title": "Episode 11",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E011/master.m3u8",
+    "season": "S06",
+    "arc": "War Arc",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E011/thumb.jpg"
+  },
+  {
+    "episode": 12,
+    "title": "Episode 12",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E012/master.m3u8",
+    "season": "S06",
+    "arc": "War Arc",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E012/thumb.jpg"
+  },
+  {
+    "episode": 13,
+    "title": "Episode 13",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E013/master.m3u8",
+    "season": "S06",
+    "arc": "War Arc",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E013/thumb.jpg"
+  },
+  {
+    "episode": 14,
+    "title": "Episode 14",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E014/master.m3u8",
+    "season": "S06",
+    "arc": "War Arc",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E014/thumb.jpg"
+  },
+  {
+    "episode": 15,
+    "title": "Episode 15",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E015/master.m3u8",
+    "season": "S06",
+    "arc": "War Arc",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E015/thumb.jpg"
+  },
+  {
+    "episode": 16,
+    "title": "Episode 16",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E016/master.m3u8",
+    "season": "S06",
+    "arc": "War Arc",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E016/thumb.jpg"
+  },
+  {
+    "episode": 17,
+    "title": "Episode 17",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E017/master.m3u8",
+    "season": "S06",
+    "arc": "War Arc",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E017/thumb.jpg"
+  },
+  {
+    "episode": 18,
+    "title": "Episode 18",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E018/master.m3u8",
+    "season": "S06",
+    "arc": "War Arc",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E018/thumb.jpg"
+  },
+  {
+    "episode": 19,
+    "title": "Episode 19",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E019/master.m3u8",
+    "season": "S06",
+    "arc": "War Arc",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E019/thumb.jpg"
+  },
+  {
+    "episode": 20,
+    "title": "Episode 20",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E020/master.m3u8",
+    "season": "S06",
+    "arc": "War Arc",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E020/thumb.jpg"
+  },
+  {
+    "episode": 21,
+    "title": "Episode 21",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E021/master.m3u8",
+    "season": "S06",
+    "arc": "War Arc",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E021/thumb.jpg"
+  },
+  {
+    "episode": 22,
+    "title": "Episode 22",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E022/master.m3u8",
+    "season": "S06",
+    "arc": "War Arc",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E022/thumb.jpg"
+  },
+  {
+    "episode": 23,
+    "title": "Episode 23",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E023/master.m3u8",
+    "season": "S06",
+    "arc": "War Arc",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E023/thumb.jpg"
+  },
+  {
+    "episode": 24,
+    "title": "Episode 24",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E024/master.m3u8",
+    "season": "S06",
+    "arc": "War Arc",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E024/thumb.jpg"
+  },
+  {
+    "episode": 25,
+    "title": "Episode 25",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E025/master.m3u8",
+    "season": "S06",
+    "arc": "War Arc",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "Japonais",
+        "srclang": "ja"
+      }
+    ],
+    "defaultSubtitlesOff": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E025/thumb.jpg"
+  }
 ]

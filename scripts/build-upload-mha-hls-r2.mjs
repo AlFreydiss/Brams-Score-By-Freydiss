@@ -64,10 +64,12 @@ const CT = {
   '.mp4': 'video/mp4',
 }
 
-function run(cmd, args, label = '') {
+function run(cmd, args, label = '', cwd = undefined) {
   return new Promise((resolve, reject) => {
     if (label) process.stdout.write(`  ${label}...`)
-    const child = spawn(cmd, args, { stdio: ['ignore', 'ignore', 'pipe'] })
+    // cwd = outDir : ffmpeg écrit -hls_fmp4_init_filename (nom nu) dans le CWD.
+    // Sans ça, les *_init.mp4 atterrissaient hors du dossier uploadé → flux illisible.
+    const child = spawn(cmd, args, { stdio: ['ignore', 'ignore', 'pipe'], cwd })
     let stderr = ''
     child.stderr.on('data', chunk => { stderr += chunk })
     child.on('error', reject)
@@ -140,7 +142,7 @@ async function buildHls(srcPath, outDir) {
     '-hls_fmp4_init_filename', 'video_init.mp4',
     '-hls_segment_filename', path.join(outDir, 'video_%05d.m4s'),
     path.join(outDir, 'video.m3u8'),
-  ], 'Transcode vidéo NVENC')
+  ], 'Transcode vidéo NVENC', outDir)
 
   // Audio FR (stream 0:a:0)
   await run('ffmpeg', [
@@ -153,7 +155,7 @@ async function buildHls(srcPath, outDir) {
     '-hls_fmp4_init_filename', 'audio-fr_init.mp4',
     '-hls_segment_filename', path.join(outDir, 'audio-fr_%05d.m4s'),
     path.join(outDir, 'audio-fr.m3u8'),
-  ], 'Audio FR')
+  ], 'Audio FR', outDir)
 
   // Audio JP (stream 0:a:1)
   await run('ffmpeg', [
@@ -166,7 +168,7 @@ async function buildHls(srcPath, outDir) {
     '-hls_fmp4_init_filename', 'audio-ja_init.mp4',
     '-hls_segment_filename', path.join(outDir, 'audio-ja_%05d.m4s'),
     path.join(outDir, 'audio-ja.m3u8'),
-  ], 'Audio JP')
+  ], 'Audio JP', outDir)
 
   writeMaster(outDir)
 }
