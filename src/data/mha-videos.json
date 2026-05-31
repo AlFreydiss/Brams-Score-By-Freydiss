@@ -17,7 +17,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E001/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E001/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E001/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 2,
@@ -37,7 +44,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E002/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E002/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E002/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 3,
@@ -57,7 +71,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E003/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E003/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E003/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 4,
@@ -77,7 +98,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E004/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E004/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E004/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 5,
@@ -97,7 +125,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E005/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E005/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E005/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 6,
@@ -117,7 +152,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E006/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E006/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E006/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 7,
@@ -137,7 +179,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E007/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E007/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E007/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 8,
@@ -157,7 +206,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E008/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E008/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E008/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 9,
@@ -177,7 +233,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E009/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E009/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E009/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 10,
@@ -197,7 +260,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E010/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E010/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E010/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 11,
@@ -217,7 +287,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E011/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E011/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E011/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 12,
@@ -237,7 +314,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E012/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E012/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E012/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 13,
@@ -257,7 +341,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E013/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E013/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E013/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 1,
@@ -277,7 +368,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E001/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E001/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E001/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 2,
@@ -297,7 +395,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E002/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E002/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E002/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 3,
@@ -317,7 +422,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E003/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E003/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E003/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 4,
@@ -337,7 +449,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E004/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E004/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E004/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 5,
@@ -357,7 +476,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E005/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E005/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E005/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 6,
@@ -377,7 +503,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E006/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E006/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E006/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 7,
@@ -397,7 +530,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E007/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E007/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E007/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 8,
@@ -417,7 +557,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E008/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E008/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E008/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 9,
@@ -437,7 +584,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E009/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E009/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E009/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 10,
@@ -457,7 +611,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E010/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E010/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E010/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 11,
@@ -477,7 +638,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E011/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E011/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E011/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 12,
@@ -497,7 +665,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E012/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E012/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E012/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 13,
@@ -517,7 +692,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E013/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E013/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E013/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 14,
@@ -537,7 +719,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E014/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E014/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E014/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 15,
@@ -557,7 +746,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E015/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E015/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E015/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 16,
@@ -577,7 +773,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E016/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E016/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E016/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 17,
@@ -597,7 +800,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E017/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E017/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E017/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 18,
@@ -617,7 +827,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E018/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E018/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E018/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 19,
@@ -637,7 +854,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E019/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E019/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E019/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 20,
@@ -657,7 +881,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E020/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E020/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E020/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 21,
@@ -677,7 +908,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E021/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E021/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E021/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 22,
@@ -697,7 +935,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E022/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E022/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E022/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 23,
@@ -717,7 +962,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E023/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E023/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E023/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 24,
@@ -737,7 +989,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E024/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E024/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E024/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 25,
@@ -757,7 +1016,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E025/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E025/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E025/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 1,
@@ -777,7 +1043,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E001/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E001/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E001/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 2,
@@ -797,7 +1070,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E002/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E002/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E002/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 3,
@@ -817,7 +1097,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E003/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E003/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E003/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 4,
@@ -837,7 +1124,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E004/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E004/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E004/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 5,
@@ -857,7 +1151,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E005/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E005/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E005/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 6,
@@ -877,7 +1178,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E006/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E006/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E006/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 7,
@@ -897,7 +1205,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E007/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E007/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E007/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 8,
@@ -917,7 +1232,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E008/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E008/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E008/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 9,
@@ -937,7 +1259,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E009/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E009/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E009/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 10,
@@ -957,7 +1286,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E010/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E010/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E010/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 11,
@@ -977,7 +1313,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E011/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E011/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E011/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 12,
@@ -997,7 +1340,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E012/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E012/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E012/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 13,
@@ -1017,7 +1367,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E013/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E013/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E013/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 14,
@@ -1037,7 +1394,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E014/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E014/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E014/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 15,
@@ -1057,7 +1421,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E015/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E015/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E015/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 16,
@@ -1077,7 +1448,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E016/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E016/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E016/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 17,
@@ -1097,7 +1475,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E017/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E017/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E017/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 18,
@@ -1117,7 +1502,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E018/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E018/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E018/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 19,
@@ -1137,7 +1529,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E019/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E019/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E019/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 20,
@@ -1157,7 +1556,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E020/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E020/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E020/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 21,
@@ -1177,7 +1583,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E021/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E021/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E021/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 22,
@@ -1197,7 +1610,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E022/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E022/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E022/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 23,
@@ -1217,7 +1637,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E023/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E023/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E023/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 24,
@@ -1237,7 +1664,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E024/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E024/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E024/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 25,
@@ -1257,7 +1691,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E025/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E025/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E025/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 1,
@@ -1277,7 +1718,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E001/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E001/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E001/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 2,
@@ -1297,7 +1745,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E002/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E002/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E002/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 3,
@@ -1317,7 +1772,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E003/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E003/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E003/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 4,
@@ -1337,7 +1799,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E004/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E004/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E004/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 5,
@@ -1357,7 +1826,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E005/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E005/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E005/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 6,
@@ -1377,7 +1853,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E006/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E006/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E006/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 7,
@@ -1397,7 +1880,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E007/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E007/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E007/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 8,
@@ -1417,7 +1907,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E008/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E008/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E008/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 9,
@@ -1437,7 +1934,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E009/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E009/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E009/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 10,
@@ -1457,7 +1961,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E010/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E010/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E010/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 11,
@@ -1477,7 +1988,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E011/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E011/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E011/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 12,
@@ -1497,7 +2015,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E012/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E012/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E012/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 13,
@@ -1517,7 +2042,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E013/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E013/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E013/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 14,
@@ -1537,7 +2069,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E014/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E014/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E014/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 15,
@@ -1557,7 +2096,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E015/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E015/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E015/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 16,
@@ -1577,7 +2123,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E016/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E016/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E016/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 17,
@@ -1597,7 +2150,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E017/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E017/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E017/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 18,
@@ -1617,7 +2177,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E018/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E018/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E018/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 19,
@@ -1637,7 +2204,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E019/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E019/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E019/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 20,
@@ -1657,7 +2231,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E020/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E020/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E020/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 21,
@@ -1677,7 +2258,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E021/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E021/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E021/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 22,
@@ -1697,7 +2285,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E022/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E022/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E022/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 23,
@@ -1717,7 +2312,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E023/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E023/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E023/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 24,
@@ -1737,7 +2339,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E024/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E024/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E024/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 25,
@@ -1757,7 +2366,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E025/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E025/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E025/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 1,
@@ -1777,7 +2393,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E001/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E001/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E001/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 2,
@@ -1797,7 +2420,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E002/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E002/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E002/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 3,
@@ -1817,7 +2447,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E003/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E003/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E003/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 4,
@@ -1837,7 +2474,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E004/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E004/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E004/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 5,
@@ -1857,7 +2501,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E005/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E005/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E005/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 6,
@@ -1877,7 +2528,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E006/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E006/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E006/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 7,
@@ -1897,7 +2555,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E007/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E007/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E007/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 8,
@@ -1917,7 +2582,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E008/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E008/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E008/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 9,
@@ -1937,7 +2609,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E009/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E009/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E009/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 10,
@@ -1957,7 +2636,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E010/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E010/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E010/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 11,
@@ -1977,7 +2663,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E011/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E011/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E011/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 12,
@@ -1997,7 +2690,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E012/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E012/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E012/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 13,
@@ -2017,7 +2717,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E013/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E013/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E013/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 14,
@@ -2037,7 +2744,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E014/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E014/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E014/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 15,
@@ -2057,7 +2771,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E015/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E015/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E015/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 16,
@@ -2077,7 +2798,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E016/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E016/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E016/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 17,
@@ -2097,7 +2825,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E017/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E017/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E017/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 18,
@@ -2117,7 +2852,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E018/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E018/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E018/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 19,
@@ -2137,7 +2879,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E019/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E019/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E019/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 20,
@@ -2157,7 +2906,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E020/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E020/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E020/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 21,
@@ -2177,7 +2933,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E021/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E021/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E021/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 22,
@@ -2197,7 +2960,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E022/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E022/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E022/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 23,
@@ -2217,7 +2987,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E023/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E023/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E023/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 24,
@@ -2237,7 +3014,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E024/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E024/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E024/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 25,
@@ -2257,7 +3041,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E025/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E025/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E025/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 1,
@@ -2277,7 +3068,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E001/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E001/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E001/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 2,
@@ -2297,7 +3095,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E002/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E002/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E002/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 3,
@@ -2317,7 +3122,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E003/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E003/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E003/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 4,
@@ -2337,7 +3149,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E004/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E004/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E004/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 5,
@@ -2357,7 +3176,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E005/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E005/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E005/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 6,
@@ -2377,7 +3203,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E006/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E006/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E006/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 7,
@@ -2397,7 +3230,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E007/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E007/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E007/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 8,
@@ -2417,7 +3257,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E008/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E008/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E008/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 9,
@@ -2437,7 +3284,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E009/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E009/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E009/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 10,
@@ -2457,7 +3311,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E010/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E010/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E010/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 11,
@@ -2477,7 +3338,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E011/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E011/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E011/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 12,
@@ -2497,7 +3365,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E012/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E012/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E012/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 13,
@@ -2517,7 +3392,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E013/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E013/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E013/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 14,
@@ -2537,7 +3419,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E014/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E014/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E014/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 15,
@@ -2557,7 +3446,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E015/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E015/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E015/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 16,
@@ -2577,7 +3473,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E016/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E016/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E016/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 17,
@@ -2597,7 +3500,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E017/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E017/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E017/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 18,
@@ -2617,7 +3527,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E018/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E018/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E018/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 19,
@@ -2637,7 +3554,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E019/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E019/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E019/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 20,
@@ -2657,7 +3581,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E020/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E020/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E020/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 21,
@@ -2677,7 +3608,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E021/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E021/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E021/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 22,
@@ -2697,7 +3635,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E022/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E022/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E022/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 23,
@@ -2717,7 +3662,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E023/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E023/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E023/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 24,
@@ -2737,7 +3689,14 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E024/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E024/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E024/sub-fr.vtt"
+      }
+    ]
   },
   {
     "episode": 25,
@@ -2757,6 +3716,13 @@
       }
     ],
     "defaultSubtitlesOff": true,
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E025/thumb.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E025/thumb.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E025/sub-fr.vtt"
+      }
+    ]
   }
 ]
