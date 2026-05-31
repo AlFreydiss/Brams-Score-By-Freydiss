@@ -149,15 +149,34 @@ export default async function handler(req, res) {
     const viewer = await resolveUser(req, body)
     const voterId = viewer.id
 
+    // Vues de liste allégées : on EXCLUT les champs lourds (tiers/board/custom_items/
+    // favorites, qui contiennent les images) — les cartes n'en ont pas besoin et
+    // ça évitait de transférer plusieurs Mo. Le détail est chargé via action=get.
+    const LIST_COLS = 'id,title,emoji,category,type_id,tier_count,tier_labels,tier_colors,author_name,author_avatar,owner_id,owner_discord_id,published,visibility,created_at,updated_at'
+
     if (req.method === 'GET' && action === 'public') {
-      const rows = await db('tier_lists?select=*&published=eq.true&visibility=eq.public&order=updated_at.desc&limit=80')
+      const rows = await db(`tier_lists?select=${LIST_COLS}&published=eq.true&visibility=eq.public&order=updated_at.desc&limit=80`)
       return json(res, 200, { lists: await attachLikes(Array.isArray(rows) ? rows : [], voterId) })
     }
 
     if (req.method === 'GET' && action === 'mine') {
       if (!viewer.id) return json(res, 401, { error: 'Connexion requise' })
-      const rows = await db(`tier_lists?select=*&owner_id=eq.${encodeURIComponent(viewer.id)}&order=updated_at.desc&limit=80`)
+      const rows = await db(`tier_lists?select=${LIST_COLS}&owner_id=eq.${encodeURIComponent(viewer.id)}&order=updated_at.desc&limit=80`)
       return json(res, 200, { lists: await attachLikes(Array.isArray(rows) ? rows : [], voterId) })
+    }
+
+    if (req.method === 'GET' && action === 'get') {
+      const id = String(req.query.id || '')
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) return json(res, 400, { error: 'ID invalide' })
+      const rows = await db(`tier_lists?select=*&id=eq.${encodeURIComponent(id)}&limit=1`)
+      if (!rows?.length) return json(res, 404, { error: 'Liste introuvable' })
+      const row = rows[0]
+      // Sécurité : on ne sert le détail que d'une liste publique OU possédée par le
+      // demandeur (sinon un UUID connu donnerait accès à un draft/liste privée d'autrui).
+      const isPublic = row.published === true && row.visibility === 'public'
+      if (!isPublic && row.owner_id !== viewer.id) return json(res, 403, { error: 'Accès non autorisé' })
+      // Détail complet (board/tiers/custom_items/favorites) pour l'ouverture en studio.
+      return json(res, 200, { list: mapRow(row) })
     }
 
     if (req.method === 'GET' && action === 'draft') {

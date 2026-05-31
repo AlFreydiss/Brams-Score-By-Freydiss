@@ -18,6 +18,7 @@ import {
   autosaveTierList,
   fetchCloudDraft,
   fetchCommunityTierLists,
+  fetchTierList,
   fetchMyCloudTierLists,
   publishTierList,
   toggleTierListLike,
@@ -1354,27 +1355,42 @@ export default function TierListPage() {
     }
   }
 
-  const loadList = (list) => {
-    const type = TIER_TYPES.find(t => t.id === list.typeId)
+  const loadList = async (list) => {
+    // Les listes communauté/cloud arrivent allégées (sans board/customItems pour
+    // un chargement de page rapide) → on récupère le détail complet à l'ouverture.
+    let full = list
+    const isLight = !list.board || Object.keys(list.board).length === 0
+    const looksRemote = typeof list.id === 'string' && /^[0-9a-f-]{20,}$/i.test(list.id)
+    if (isLight && looksRemote) {
+      setToast(`⏳ Ouverture de "${list.title}"…`)
+      try {
+        const fetched = await fetchTierList(list.id)
+        if (fetched) full = { ...list, ...fetched }
+      } catch (err) {
+        setToast(err?.message || 'Ouverture impossible')
+        return
+      }
+    }
+    const type = TIER_TYPES.find(t => t.id === full.typeId)
     if (type) setSelectedType(type)
-    setTiers(list.tiers || DEFAULT_TIERS)
-    setBoard(list.board || null)
-    setCustomItems(list.customItems || [])
-    setFavorites(list.favorites || [])
-    setTitle(list.title)
-    setEditingListId(list.id || null) // édite cette liste → la sauvegarde la met à jour
+    setTiers(full.tiers || DEFAULT_TIERS)
+    setBoard(full.board || null)
+    setCustomItems(full.customItems || [])
+    setFavorites(full.favorites || [])
+    setTitle(full.title)
+    setEditingListId(full.id || null) // édite cette liste → la sauvegarde la met à jour
     setSaved(true)
     setTab('studio')
     latestDraftRef.current = {
-      title:list.title,
-      typeId:list.typeId,
-      tiers:list.tiers || DEFAULT_TIERS,
-      board:list.board || null,
-      customItems:list.customItems || [],
-      favorites:list.favorites || [],
+      title:full.title,
+      typeId:full.typeId,
+      tiers:full.tiers || DEFAULT_TIERS,
+      board:full.board || null,
+      customItems:full.customItems || [],
+      favorites:full.favorites || [],
       updatedAt:Date.now(),
     }
-    setToast(`📂 "${list.title}" chargée`)
+    setToast(`📂 "${full.title}" chargée`)
   }
 
   const likeCommunityList = async (list) => {

@@ -68,6 +68,13 @@ export async function fetchCommunityTierLists() {
   return data.lists || []
 }
 
+// Récupère UNE liste complète (avec board/tiers/customItems/favorites).
+// Les vues de liste (public/mine) sont allégées : on charge le détail à l'ouverture.
+export async function fetchTierList(id) {
+  const data = await request(`/api/tierlists?action=get&id=${encodeURIComponent(id)}`)
+  return data.list || null
+}
+
 export async function fetchMyCloudTierLists() {
   const data = await request('/api/tierlists?action=mine')
   return data.lists || []
