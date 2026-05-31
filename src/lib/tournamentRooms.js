@@ -53,14 +53,16 @@ export async function joinTournamentRoom({ code, userId, displayName, avatarUrl 
   return { error: error?.message || null, room }
 }
 
-// Salons récents (pour la colonne "Salons actifs" de la page d'accueil du salon).
+// Salons récents (pour la section "Salons en direct" de l'accueil du salon).
+// Throw sur erreur Supabase pour que l'UI distingue "vide" (ok) de "erreur".
 export async function fetchRecentTournamentRooms(limit = 6) {
   if (!supabase) return []
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('tournament_rooms')
     .select('code, tournament_id, status, created_at')
     .order('created_at', { ascending: false })
     .limit(limit)
+  if (error) throw new Error(error.message || 'fetch_rooms_failed')
   return data || []
 }
 

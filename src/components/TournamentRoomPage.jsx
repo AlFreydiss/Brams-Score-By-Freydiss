@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { motion } from 'framer-motion'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { TOURNAMENT_CONFIGS } from '../data/tournament-data.js'
@@ -16,12 +17,33 @@ const GRAD = `linear-gradient(135deg, ${PINK}, ${PURPLE})`
 const GRAD_TXT = `linear-gradient(135deg, ${PINK_L} 0%, ${PINK} 48%, ${PURPLE} 100%)`
 const CARD = 'rgba(18,14,24,.92)', BORDER = 'rgba(255,255,255,.08)'
 
+// Landing "Salon multi-tournoi" — palette resserrée : noir profond + charbon,
+// magenta en accent uniquement, glow minimal (pas de RGB, purple quasi absent).
+const MAGENTA = '#e0457b', MAGENTA_D = '#b1245a', INK = '#9aa0ad'
+const SURFACE = 'linear-gradient(168deg, #16141b 0%, #100f14 100%)'
+const SURFACE_FLAT = '#161419'
+const HAIR = 'rgba(255,255,255,.07)', HAIR_TOP = 'rgba(255,255,255,.10)'
+const CTA = `linear-gradient(135deg, ${MAGENTA}, ${MAGENTA_D})`
+const TXT = '#f4f3f6', TXT_MUTED = 'rgba(244,243,246,.55)', TXT_FAINT = 'rgba(244,243,246,.34)'
+const ease = [0.22, 0.61, 0.36, 1]
+
 const hexA = (c, a) => {
   const n = parseInt(String(c || '#9d174d').replace('#', ''), 16)
   return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`
 }
 
 const ARENA_KEYFRAMES = `@keyframes troom-pulse{0%,100%{opacity:.5}50%{opacity:1}}`
+
+// Animations du lobby : pulse live très subtil, halo lent, shimmer des skeletons.
+const LOBBY_KEYFRAMES = `
+@keyframes tl-livedot{0%,100%{transform:scale(1);opacity:.85}50%{transform:scale(1.25);opacity:1}}
+@keyframes tl-livering{0%{transform:scale(.8);opacity:.5}100%{transform:scale(2.4);opacity:0}}
+@keyframes tl-shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+@keyframes tl-bar{from{width:0}}
+@keyframes tl-spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion: reduce){
+  *[data-tl-anim]{animation:none!important}
+}`
 
 function getIdentity(auth) {
   const id = auth?.discordId || auth?.userId
@@ -47,21 +69,36 @@ export default function TournamentRoomPage() {
   const [busy, setBusy]       = useState(false)
   const [err, setErr]         = useState('')
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 768)
+  const [isNarrow, setIsNarrow] = useState(typeof window !== 'undefined' && window.innerWidth < 1024)
   const [notFound, setNotFound] = useState(false)
   const [publicRooms, setPublicRooms] = useState([])
+  const [roomsLoading, setRoomsLoading] = useState(true)
+  const [roomsError, setRoomsError] = useState(false)
   const resolvingRef = useRef(false)
   const autoJoinRef = useRef(false)
 
-  // Salons récents pour la colonne droite (uniquement sur l'accueil du salon).
+  // Salons récents pour la section "Salons en direct" (uniquement sur l'accueil).
+  const loadRooms = useCallback(() => {
+    setRoomsLoading(true); setRoomsError(false)
+    return fetchRecentTournamentRooms(8)
+      .then(r => setPublicRooms(Array.isArray(r) ? r : []))
+      .catch(() => setRoomsError(true))
+      .finally(() => setRoomsLoading(false))
+  }, [])
+
   useEffect(() => {
     if (code) return
     let ignore = false
-    fetchRecentTournamentRooms(6).then(r => { if (!ignore) setPublicRooms(r) })
+    setRoomsLoading(true); setRoomsError(false)
+    fetchRecentTournamentRooms(8)
+      .then(r => { if (!ignore) setPublicRooms(Array.isArray(r) ? r : []) })
+      .catch(() => { if (!ignore) setRoomsError(true) })
+      .finally(() => { if (!ignore) setRoomsLoading(false) })
     return () => { ignore = true }
   }, [code])
 
   useEffect(() => {
-    const f = () => setIsMobile(window.innerWidth < 768)
+    const f = () => { setIsMobile(window.innerWidth < 768); setIsNarrow(window.innerWidth < 1024) }
     window.addEventListener('resize', f)
     return () => window.removeEventListener('resize', f)
   }, [])
@@ -190,198 +227,211 @@ export default function TournamentRoomPage() {
   const btn = (bg = GRAD) => ({ padding: '12px 22px', borderRadius: 12, border: 'none', background: bg, color: '#fff', fontWeight: 800, fontSize: 14, cursor: 'pointer' })
   const field = { width: '100%', boxSizing: 'border-box', padding: '12px 14px', borderRadius: 11, background: 'rgba(255,255,255,.05)', border: `1px solid ${BORDER}`, color: '#fff', fontSize: 14, fontFamily: 'inherit' }
 
-  // 1) Aucun code → vraie page "Salon de tournoi" (2 colonnes, premium sobre)
+  // 1) Aucun code → lobby premium "Salon multi-tournoi"
   if (!code) {
-    const panel = {
-      background: 'linear-gradient(165deg, #1a1623, #131019)',
-      border: `1px solid ${BORDER}`, borderTop: '1px solid rgba(255,255,255,.10)',
-      borderRadius: 18, padding: 22, boxShadow: '0 24px 70px rgba(0,0,0,.4)',
+    const recent = publicRooms.filter(r => r.status !== 'done')
+    const liveCount = recent.length
+    const openRoom = (c) => { setErr(''); setJoinCode(c); setParams({ code: c }); setCode(c) }
+
+    const fadeUp = {
+      hidden: { opacity: 0, y: 14 },
+      show: (i = 0) => ({ opacity: 1, y: 0, transition: { duration: 0.5, delay: 0.05 * i, ease } }),
     }
-    const TID_META = {
-      ost:     { emoji: '🎵', desc: 'Duel musical basé sur les bandes-son les plus marquantes.' },
-      opening: { emoji: '🎬', desc: 'Vote opening contre opening jusqu’au champion final.' },
+    const card = {
+      background: SURFACE, border: `1px solid ${HAIR}`, borderTop: `1px solid ${HAIR_TOP}`,
+      borderRadius: 18, padding: 22, boxShadow: '0 20px 60px rgba(0,0,0,.38)',
     }
-    const stat = (val, lbl) => (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: '0 18px' }}>
-        <span style={{ fontSize: 17, fontWeight: 900, color: PINK_L }}>{val}</span>
-        <span style={{ fontSize: 10, color: 'rgba(255,255,255,.42)', letterSpacing: '.08em', textTransform: 'uppercase', fontWeight: 700 }}>{lbl}</span>
-      </div>
+    const label = (t) => (
+      <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.13em', textTransform: 'uppercase', color: TXT_FAINT, marginBottom: 14 }}>{t}</div>
     )
-    const sectionTitle = t => (
-      <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,.5)', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span style={{ width: 6, height: 6, borderRadius: '50%', background: PINK, boxShadow: `0 0 8px ${PINK}` }} />{t}
-      </div>
-    )
-    const recent = publicRooms.filter(r => r.status !== 'done').slice(0, 5)
 
     return (
       <div style={wrap}>
+        <style>{LOBBY_KEYFRAMES}</style>
+        {/* Fond : halo magenta unique, très diffus, charbon en bas. Pas de RGB. */}
         <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none',
-          background: `radial-gradient(1000px 560px at 14% -8%, rgba(157,23,77,.13), transparent 60%),
-                       radial-gradient(900px 560px at 96% 4%, rgba(76,29,149,.16), transparent 62%)` }} />
-        <div style={{ ...inner, maxWidth: 1200 }}>
-          <button onClick={() => navigate('/tournoi')} style={{ ...btn('rgba(255,255,255,.06)'), padding: '8px 14px', fontSize: 12, marginBottom: 22 }}>← Tournoi</button>
+          background: `radial-gradient(1100px 620px at 78% -10%, rgba(224,69,123,.10), transparent 58%),
+                       radial-gradient(900px 500px at 8% 2%, rgba(224,69,123,.05), transparent 60%),
+                       linear-gradient(180deg, transparent 60%, rgba(0,0,0,.5))` }} />
 
-          {/* HERO compact */}
-          <div style={{ marginBottom: 26 }}>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, marginBottom: 14, padding: '5px 13px', borderRadius: 999, fontSize: 10.5, fontWeight: 800, letterSpacing: '.16em', textTransform: 'uppercase', color: PINK_L, background: 'rgba(157,23,77,.13)', border: `1px solid ${PINK}44` }}>
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: PINK_L, boxShadow: `0 0 8px ${PINK_L}` }} />Mode multi · temps réel
-            </div>
-            <h1 style={{ fontSize: 'clamp(30px,4.4vw,46px)', fontWeight: 900, margin: '0 0 10px', letterSpacing: '-.025em', lineHeight: 1.05, background: GRAD_TXT, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              Crée ton salon de tournoi
-            </h1>
-            <p style={{ color: 'rgba(255,255,255,.6)', margin: '0 0 18px', fontSize: 15, lineHeight: 1.6, maxWidth: 560 }}>
-              Invite tes potes, votez en live, et laissez la majorité couronner le meilleur opening ou OST.
-            </p>
-            <div style={{ display: 'inline-flex', alignItems: 'center', padding: '8px 6px', borderRadius: 12, background: 'rgba(255,255,255,.03)', border: `1px solid ${BORDER}` }}>
-              {stat('2', 'Modes')}
-              <div style={{ width: 1, height: 26, background: 'rgba(255,255,255,.08)' }} />
-              {stat('Live', 'Votes')}
-              <div style={{ width: 1, height: 26, background: 'rgba(255,255,255,.08)' }} />
-              {stat('Auto', 'Bracket')}
-            </div>
-          </div>
+        <div style={{ ...inner, maxWidth: 1180 }}>
+          {/* Retour — discret, intégré */}
+          <motion.button
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}
+            onClick={() => navigate('/tournoi')}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,.06)'; e.currentTarget.style.color = TXT }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = TXT_MUTED }}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '7px 13px 7px 10px', marginBottom: 24,
+              borderRadius: 10, border: `1px solid ${HAIR}`, background: 'transparent', color: TXT_MUTED,
+              fontSize: 12.5, fontWeight: 700, cursor: 'pointer', transition: 'background .18s, color .18s', fontFamily: 'inherit' }}>
+            <span style={{ fontSize: 14, lineHeight: 1 }}>←</span> Tournoi
+          </motion.button>
 
-          {/* GRILLE 2 colonnes */}
-          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.15fr 0.85fr', gap: 18, alignItems: 'start' }}>
+          {/* ════ HERO ════ */}
+          <motion.div initial="hidden" animate="show"
+            style={{ display: 'grid', gridTemplateColumns: isNarrow ? '1fr' : '1.05fr 0.95fr', gap: isNarrow ? 28 : 36, alignItems: 'center', marginBottom: 40 }}>
 
-            {/* ── GAUCHE : créer / rejoindre ── */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              <div style={panel}>
-                {sectionTitle('Choisis ton tournoi')}
-                {ident.guest && (
-                  <input value={guestName} onChange={e => setGuestName(e.target.value)} placeholder="Choisis ton pseudo" style={{ ...field, marginBottom: 14, fontWeight: 700 }} maxLength={20} />
-                )}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 18 }}>
-                  {Object.entries(TOURNAMENT_CONFIGS).map(([id, cfg]) => {
-                    const active = tid === id
-                    const meta = TID_META[id] || { emoji: '🏆', desc: '' }
-                    return (
-                      <button key={id} onClick={() => setTid(id)} aria-pressed={active} style={{
-                        display: 'flex', flexDirection: 'column', gap: 7, padding: 16, borderRadius: 15, cursor: 'pointer', textAlign: 'left',
-                        border: `1px solid ${active ? PINK : BORDER}`,
-                        background: active ? 'linear-gradient(160deg, rgba(157,23,77,.20), rgba(76,29,149,.12))' : '#201c2a',
-                        boxShadow: active ? '0 10px 30px rgba(157,23,77,.22)' : 'none',
-                        transition: 'border-color .18s, background .18s',
-                      }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <span style={{ fontSize: 24 }}>{meta.emoji}</span>
-                          <span style={{ width: 18, height: 18, borderRadius: '50%', border: `2px solid ${active ? PINK_L : 'rgba(255,255,255,.18)'}`, display: 'grid', placeItems: 'center' }}>
-                            {active && <span style={{ width: 8, height: 8, borderRadius: '50%', background: PINK_L }} />}
-                          </span>
-                        </div>
-                        <span style={{ fontSize: 14.5, fontWeight: 800, color: '#fff', lineHeight: 1.2 }}>{cfg.title || id}</span>
-                        <span style={{ fontSize: 11, fontWeight: 700, color: active ? PINK_L : 'rgba(255,255,255,.4)' }}>{cfg.participants?.length || 0} participants</span>
-                        <span style={{ fontSize: 11.5, color: 'rgba(255,255,255,.45)', lineHeight: 1.5 }}>{meta.desc}</span>
-                      </button>
-                    )
-                  })}
-                </div>
-                <button onClick={handleCreate} disabled={busy || !tid} style={{ ...btn(), width: '100%', padding: 14, fontSize: 15, boxShadow: (busy || !tid) ? 'none' : '0 10px 30px rgba(157,23,77,.3)', opacity: (busy || !tid) ? .55 : 1, cursor: (busy || !tid) ? 'default' : 'pointer' }}>
-                  {busy ? '⏳ Création…' : '⚔️  Créer un salon privé'}
-                </button>
-                <p style={{ textAlign: 'center', fontSize: 11.5, color: 'rgba(255,255,255,.35)', margin: '10px 0 0' }}>Un code sera généré automatiquement.</p>
-              </div>
+            {/* Gauche : accroche */}
+            <div>
+              <motion.div custom={0} variants={fadeUp}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 9, marginBottom: 18, padding: '6px 14px', borderRadius: 999,
+                  fontSize: 10.5, fontWeight: 800, letterSpacing: '.16em', textTransform: 'uppercase', color: PINK_L,
+                  background: 'rgba(224,69,123,.10)', border: `1px solid rgba(224,69,123,.28)` }}>
+                <LiveDot />Mode multi · temps réel
+              </motion.div>
 
-              <form onSubmit={handleJoin} style={panel}>
-                {sectionTitle('Tu as déjà un code ?')}
-                <p style={{ fontSize: 12.5, color: 'rgba(255,255,255,.5)', margin: '-6px 0 14px' }}>Rejoins un salon existant et vote avec les autres.</p>
-                <div style={{ display: 'flex', gap: 10 }}>
-                  <input value={joinCode} onChange={e => setJoinCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))} placeholder="CODE" maxLength={6} autoComplete="off"
-                    style={{ ...field, flex: 1, textTransform: 'uppercase', letterSpacing: '.4em', fontWeight: 900, fontSize: 20, textAlign: 'center', padding: 14 }} />
-                  <button type="submit" disabled={busy || !joinCode.trim()} style={{ ...btn(), padding: '0 22px', opacity: (busy || !joinCode.trim()) ? .55 : 1 }}>Rejoindre</button>
-                </div>
-                {err && <p style={{ color: '#f87171', margin: '12px 0 0', fontSize: 12.5 }}>⚠ {err}</p>}
-              </form>
+              <motion.h1 custom={1} variants={fadeUp}
+                style={{ fontSize: 'clamp(32px,4.8vw,52px)', fontWeight: 900, margin: '0 0 16px', letterSpacing: '-.03em', lineHeight: 1.04, color: TXT }}>
+                Crée ton salon<br /><span style={{ background: `linear-gradient(100deg, ${MAGENTA}, ${PINK_L})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>multi-tournoi</span>
+              </motion.h1>
+
+              <motion.p custom={2} variants={fadeUp}
+                style={{ color: TXT_MUTED, margin: '0 0 26px', fontSize: 16, lineHeight: 1.6, maxWidth: 480 }}>
+                Invite tes potes, choisis ton mode, votez en direct et laissez le bracket couronner le meilleur opening ou OST.
+              </motion.p>
+
+              <motion.div custom={3} variants={fadeUp} style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+                {[['🏆', 'Bracket automatique'], ['⚡', 'Vote en direct'], ['🔗', 'Partage instantané']].map(([ic, t]) => (
+                  <span key={t} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 14px', borderRadius: 11,
+                    background: SURFACE_FLAT, border: `1px solid ${HAIR}`, fontSize: 12.5, fontWeight: 700, color: 'rgba(244,243,246,.7)' }}>
+                    <span style={{ fontSize: 14 }}>{ic}</span>{t}
+                  </span>
+                ))}
+              </motion.div>
             </div>
 
-            {/* ── DROITE : aperçu / explication / salons ── */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              <div style={panel}>
-                {sectionTitle('Aperçu du bracket')}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-                  {[['Opening A', 'Opening B'], ['Opening C', 'Opening D']].map((pair, i) => (
-                    <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                      {pair.map((n, j) => (
-                        <div key={j} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '8px 11px', borderRadius: 9, background: '#201c2a', border: `1px solid ${BORDER}` }}>
-                          <span style={{ width: 5, height: 5, borderRadius: '50%', background: j === 0 ? PINK : 'rgba(255,255,255,.22)' }} />
-                          <span style={{ fontSize: 12, color: 'rgba(255,255,255,.6)' }}>{n}</span>
-                        </div>
-                      ))}
-                      {i === 0 && <div style={{ textAlign: 'center', fontSize: 10, color: 'rgba(255,255,255,.25)' }}>⌄ demi-finale ⌄</div>}
-                    </div>
-                  ))}
-                </div>
-                <p style={{ fontSize: 11.5, color: 'rgba(255,255,255,.32)', margin: '14px 0 0', lineHeight: 1.5 }}>Le bracket réel apparaîtra ici une fois le salon créé.</p>
-              </div>
+            {/* Droite : preview live du salon (fictif, illustratif) */}
+            <motion.div custom={2} variants={fadeUp}>
+              <LobbyPreview tid={tid} />
+            </motion.div>
+          </motion.div>
 
-              <div style={panel}>
-                {sectionTitle('Comment ça marche')}
-                {[
-                  ['Crée un salon', 'Choisis OST ou Opening, un code privé est généré.'],
-                  ['Partage le code', 'Tes potes rejoignent en un clic via le code ou le lien.'],
-                  ['Votez jusqu’au champion', 'Chaque duel avance à la majorité des votes.'],
-                ].map(([t, d], i) => (
-                  <div key={i} style={{ display: 'flex', gap: 12, marginBottom: i < 2 ? 14 : 0 }}>
-                    <span style={{ width: 24, height: 24, flexShrink: 0, borderRadius: 8, background: GRAD, display: 'grid', placeItems: 'center', fontSize: 12, fontWeight: 900 }}>{i + 1}</span>
-                    <div>
-                      <div style={{ fontSize: 13, fontWeight: 800, color: '#fff' }}>{t}</div>
-                      <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,.45)', lineHeight: 1.5, marginTop: 2 }}>{d}</div>
-                    </div>
-                  </div>
+          {/* ════ ZONE D'ACTION ════ */}
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.4fr 1fr', gap: 18, alignItems: 'stretch', marginBottom: 42 }}>
+
+            {/* Créer un salon — action primaire */}
+            <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, ease }}
+              style={{ ...card, display: 'flex', flexDirection: 'column' }}>
+              {label('Créer un salon')}
+              {ident.guest && (
+                <input value={guestName} onChange={e => setGuestName(e.target.value)} placeholder="Choisis ton pseudo"
+                  style={{ ...field, marginBottom: 14, fontWeight: 700 }} maxLength={20} />
+              )}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 18 }}>
+                {Object.entries(TOURNAMENT_CONFIGS).map(([id, c]) => (
+                  <ModeCard key={id} id={id} cfg={c} active={tid === id} onSelect={() => setTid(id)} />
                 ))}
               </div>
+              <button onClick={handleCreate} disabled={busy} aria-busy={busy}
+                onMouseEnter={e => { if (!busy) e.currentTarget.style.transform = 'translateY(-1px)' }}
+                onMouseLeave={e => { e.currentTarget.style.transform = 'none' }}
+                style={{ ...btn(CTA), width: '100%', padding: 15, fontSize: 15, marginTop: 'auto',
+                  boxShadow: busy ? 'none' : '0 10px 28px rgba(224,69,123,.28)', opacity: busy ? .6 : 1,
+                  cursor: busy ? 'default' : 'pointer', transition: 'transform .15s, opacity .15s' }}>
+                {busy ? '⏳ Création…' : 'Créer un salon'}
+              </button>
+              <p style={{ textAlign: 'center', fontSize: 11.5, color: TXT_FAINT, margin: '11px 0 0' }}>
+                Un code privé est généré automatiquement.
+              </p>
+            </motion.div>
 
-              <div style={panel}>
-                {sectionTitle('Salons actifs')}
-                {recent.length === 0 ? (
-                  <p style={{ fontSize: 12.5, color: 'rgba(255,255,255,.35)', margin: 0 }}>Aucun salon public pour le moment.</p>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    {recent.map(r => (
-                      <button key={r.code} onClick={() => { setJoinCode(r.code); setParams({ code: r.code }); setCode(r.code) }} style={{
-                        display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', borderRadius: 10, cursor: 'pointer', textAlign: 'left',
-                        background: '#201c2a', border: `1px solid ${BORDER}`, color: '#fff',
-                      }}>
-                        <span style={{ fontSize: 16 }}>{r.tournament_id === 'ost' ? '🎵' : '🎬'}</span>
-                        <span style={{ flex: 1, fontWeight: 800, letterSpacing: '.14em', fontSize: 13, color: PINK_L }}>{r.code}</span>
-                        <span style={{ fontSize: 10, fontWeight: 700, color: r.status === 'lobby' ? '#34d399' : 'rgba(255,255,255,.4)', textTransform: 'uppercase', letterSpacing: '.06em' }}>{r.status === 'lobby' ? 'Ouvert' : 'En cours'}</span>
-                        <span style={{ fontSize: 12, color: 'rgba(255,255,255,.4)' }}>→</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
+            {/* Rejoindre avec un code — action secondaire */}
+            <motion.form onSubmit={handleJoin} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: 0.06, ease }}
+              style={{ ...card, background: SURFACE_FLAT, display: 'flex', flexDirection: 'column' }}>
+              {label('Rejoindre avec un code')}
+              <p style={{ fontSize: 12.5, color: TXT_MUTED, margin: '-4px 0 16px', lineHeight: 1.5 }}>
+                Tes potes t'ont envoyé un code ? Entre-le pour voter avec eux.
+              </p>
+              <input value={joinCode} onChange={e => setJoinCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
+                placeholder="CODE" maxLength={6} autoComplete="off" aria-label="Code du salon"
+                style={{ ...field, textTransform: 'uppercase', letterSpacing: '.4em', fontWeight: 900, fontSize: 22, textAlign: 'center', padding: 15, marginBottom: 12 }} />
+              <button type="submit" disabled={busy || !joinCode.trim()}
+                style={{ ...btn('rgba(255,255,255,.07)'), width: '100%', padding: 13, fontSize: 14, border: `1px solid ${HAIR_TOP}`,
+                  opacity: (busy || !joinCode.trim()) ? .5 : 1, cursor: (busy || !joinCode.trim()) ? 'default' : 'pointer' }}>
+                Rejoindre
+              </button>
+              {err && <p role="alert" style={{ color: '#f3849b', margin: '12px 0 0', fontSize: 12.5, textAlign: 'center' }}>⚠ {err}</p>}
+            </motion.form>
           </div>
+
+          {/* ════ SALONS EN DIRECT ════ */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+            <h2 style={{ fontSize: 15, fontWeight: 800, color: TXT, margin: 0, letterSpacing: '-.01em' }}>Salons en direct</h2>
+            {!roomsLoading && !roomsError && liveCount > 0 && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: 11.5, fontWeight: 700, color: PINK_L,
+                padding: '3px 10px', borderRadius: 999, background: 'rgba(224,69,123,.10)', border: '1px solid rgba(224,69,123,.24)' }}>
+                <LiveDot size={5} />{liveCount}
+              </span>
+            )}
+            <button onClick={loadRooms} disabled={roomsLoading} title="Rafraîchir"
+              style={{ marginLeft: 'auto', background: 'transparent', border: `1px solid ${HAIR}`, borderRadius: 9, color: TXT_MUTED,
+                padding: '6px 11px', fontSize: 12, fontWeight: 700, cursor: roomsLoading ? 'default' : 'pointer', opacity: roomsLoading ? .5 : 1, fontFamily: 'inherit' }}>
+              ↻ Actualiser
+            </button>
+          </div>
+
+          {roomsLoading ? (
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(240px, 1fr))', gap: 12 }}>
+              {[0, 1, 2].map(i => <RoomSkeleton key={i} />)}
+            </div>
+          ) : roomsError ? (
+            <div style={{ ...card, textAlign: 'center', padding: '34px 24px' }}>
+              <div style={{ fontSize: 26, marginBottom: 10, opacity: .8 }}>📡</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: TXT, marginBottom: 6 }}>Impossible de charger les salons</div>
+              <p style={{ fontSize: 12.5, color: TXT_MUTED, margin: '0 0 16px' }}>Vérifie ta connexion et réessaie.</p>
+              <button onClick={loadRooms} style={{ ...btn(CTA), padding: '9px 18px', fontSize: 13 }}>Réessayer</button>
+            </div>
+          ) : liveCount === 0 ? (
+            <div style={{ ...card, textAlign: 'center', padding: '40px 24px', borderStyle: 'dashed' }}>
+              <div style={{ fontSize: 30, marginBottom: 12, opacity: .85 }}>🎧</div>
+              <div style={{ fontSize: 15, fontWeight: 800, color: TXT, marginBottom: 6 }}>Aucun salon en direct</div>
+              <p style={{ fontSize: 13, color: TXT_MUTED, margin: '0 auto 18px', maxWidth: 340, lineHeight: 1.55 }}>
+                Sois le premier à lancer un salon — choisis un mode et invite tes potes.
+              </p>
+              <button onClick={handleCreate} disabled={busy} style={{ ...btn(CTA), padding: '10px 20px', fontSize: 13.5, opacity: busy ? .6 : 1 }}>
+                Créer le premier salon
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(240px, 1fr))', gap: 12 }}>
+              {recent.map(r => <LiveRoomCard key={r.code} room={r} onOpen={openRoom} />)}
+            </div>
+          )}
         </div>
       </div>
     )
   }
 
-  // 2) Code présent mais salon introuvable
+  // 2) Code présent mais salon introuvable — état erreur propre
   if (notFound) {
     return (
       <div style={wrap}>
-        <div style={{ ...inner, maxWidth: 480, textAlign: 'center', paddingTop: 80 }}>
-          <div style={{ fontSize: 40, marginBottom: 12 }}>🔍</div>
-          <h2 style={{ fontSize: 22, fontWeight: 900, margin: '0 0 8px' }}>Salon introuvable</h2>
-          <p style={{ color: 'rgba(255,255,255,.55)', margin: '0 0 22px', fontSize: 14 }}>
-            Le code <strong style={{ color: PINK_L }}>{code}</strong> ne correspond à aucun salon (il a peut-être été fermé).
+        <style>{LOBBY_KEYFRAMES}</style>
+        <motion.div role="alert" aria-live="assertive" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, ease }}
+          style={{ ...inner, maxWidth: 440, textAlign: 'center', paddingTop: 90 }}>
+          <div style={{ width: 64, height: 64, margin: '0 auto 18px', borderRadius: 18, display: 'grid', placeItems: 'center', fontSize: 28,
+            background: SURFACE_FLAT, border: `1px solid ${HAIR}` }}>🔍</div>
+          <h2 style={{ fontSize: 22, fontWeight: 900, margin: '0 0 8px', color: TXT }}>Salon introuvable</h2>
+          <p style={{ color: TXT_MUTED, margin: '0 0 24px', fontSize: 14, lineHeight: 1.55 }}>
+            Le code <strong style={{ color: PINK_L, letterSpacing: '.1em' }}>{code}</strong> ne correspond à aucun salon — il a peut-être été fermé.
           </p>
-          <button onClick={leave} style={btn()}>Créer ou rejoindre un autre salon</button>
-        </div>
+          <button onClick={leave} style={{ ...btn(CTA), boxShadow: '0 10px 28px rgba(224,69,123,.26)' }}>Créer ou rejoindre un salon</button>
+        </motion.div>
       </div>
     )
   }
 
-  // 3) Code présent, chargement du salon en cours
+  // 3) Code présent, chargement du salon en cours — état loading propre
   if (!room) {
     return (
       <div style={wrap}>
-        <div style={{ ...inner, maxWidth: 480, textAlign: 'center', paddingTop: 90, color: 'rgba(255,255,255,.55)' }}>
-          <div style={{ fontSize: 30, marginBottom: 10 }}>⏳</div>
-          Connexion au salon <strong style={{ color: PINK_L }}>{code}</strong>…
+        <style>{LOBBY_KEYFRAMES}</style>
+        <div style={{ ...inner, maxWidth: 440, textAlign: 'center', paddingTop: 100 }}>
+          <span data-tl-anim style={{ display: 'inline-block', width: 34, height: 34, marginBottom: 16, borderRadius: '50%',
+            border: `3px solid ${HAIR_TOP}`, borderTopColor: MAGENTA, animation: 'tl-spin .8s linear infinite' }} />
+          <div style={{ color: TXT_MUTED, fontSize: 14 }}>
+            Connexion au salon <strong style={{ color: PINK_L, letterSpacing: '.1em' }}>{code}</strong>…
+          </div>
         </div>
       </div>
     )
@@ -441,8 +491,6 @@ export default function TournamentRoomPage() {
         {/* DUEL EN COURS — openings empilés (haut / bas) + sidebar votes */}
         {room.status === 'playing' && current && (
           <div>
-            {/* Ambiance de fond : collage flouté des 2 openings (recouvert quand on en joue un) */}
-            <DuelAmbient left={current.match.left} right={current.match.right} />
             {/* Petit header joli : round + numéro de duel */}
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '7px 16px', borderRadius: 999, background: 'rgba(157,23,77,.12)', border: `1px solid ${PINK}44` }}>
@@ -606,6 +654,183 @@ function VotersPanel({ players, votes, match, isMobile }) {
         })}
       </div>
     </aside>
+  )
+}
+
+// ════════════════ Lobby premium — composants ════════════════
+
+const TID_META = {
+  ost:     { emoji: '🎵', tag: 'OST', desc: 'Duel musical sur les bandes-son les plus marquantes.' },
+  opening: { emoji: '🎬', tag: 'Opening', desc: 'Opening contre opening jusqu’au champion.' },
+}
+const tidEmoji = (id) => TID_META[id]?.emoji || '🏆'
+
+// Point "live" : pastille magenta avec halo qui pulse, très subtil.
+function LiveDot({ size = 6 }) {
+  return (
+    <span style={{ position: 'relative', width: size, height: size, display: 'inline-block', flexShrink: 0 }}>
+      <span data-tl-anim style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: MAGENTA, animation: 'tl-livering 2.4s ease-out infinite' }} />
+      <span data-tl-anim style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: PINK_L, animation: 'tl-livedot 2.4s ease-in-out infinite' }} />
+    </span>
+  )
+}
+
+// Carte de sélection de mode (OST / Opening) — hover premium, transition douce.
+function ModeCard({ id, cfg, active, onSelect }) {
+  const [hover, setHover] = useState(false)
+  const meta = TID_META[id] || { emoji: '🏆', desc: '' }
+  return (
+    <button onClick={onSelect} aria-pressed={active} type="button"
+      onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
+      style={{
+        display: 'flex', flexDirection: 'column', gap: 8, padding: 15, borderRadius: 14, cursor: 'pointer', textAlign: 'left',
+        border: `1px solid ${active ? MAGENTA : (hover ? HAIR_TOP : HAIR)}`,
+        background: active ? 'rgba(224,69,123,.10)' : SURFACE_FLAT,
+        boxShadow: active ? '0 8px 24px rgba(224,69,123,.16)' : 'none',
+        transform: hover && !active ? 'translateY(-1px)' : 'none',
+        transition: 'border-color .18s, background .18s, transform .15s, box-shadow .18s', fontFamily: 'inherit',
+      }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span style={{ fontSize: 22 }}>{meta.emoji}</span>
+        <span style={{ width: 17, height: 17, borderRadius: '50%', border: `2px solid ${active ? MAGENTA : 'rgba(255,255,255,.20)'}`, display: 'grid', placeItems: 'center', transition: 'border-color .18s' }}>
+          {active && <span style={{ width: 8, height: 8, borderRadius: '50%', background: MAGENTA }} />}
+        </span>
+      </div>
+      <span style={{ fontSize: 14, fontWeight: 800, color: TXT, lineHeight: 1.2 }}>{cfg.title || id}</span>
+      <span style={{ fontSize: 11, fontWeight: 700, color: active ? PINK_L : TXT_FAINT }}>{cfg.participants?.length || 0} participants</span>
+      <span style={{ fontSize: 11.5, color: TXT_MUTED, lineHeight: 1.5 }}>{meta.desc}</span>
+    </button>
+  )
+}
+
+// Aperçu fictif d'un salon live (illustratif) — réagit au mode choisi.
+function LobbyPreview({ tid }) {
+  const cfg = TOURNAMENT_CONFIGS[tid] || {}
+  const parts = cfg.participants || []
+  const left = parts[0] || { title: 'Gurenge', anime: 'Demon Slayer' }
+  const right = parts[1] || { title: 'Unravel', anime: 'Tokyo Ghoul' }
+  const voters = ['Kaito', 'Mira', 'Sora', 'Reki', 'Yuna']
+  const votedSides = ['left', 'right', 'left', 'left', null] // 4/5 ont voté, 3-1
+  const leftN = votedSides.filter(s => s === 'left').length
+  const rightN = votedSides.filter(s => s === 'right').length
+  const total = leftN + rightN
+  const leftPct = total ? Math.round((leftN / total) * 100) : 50
+
+  const row = (name, side, i) => (
+    <div key={name} style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+      <span style={{ width: 24, height: 24, borderRadius: '50%', flexShrink: 0, display: 'grid', placeItems: 'center', fontSize: 10.5, fontWeight: 800, color: '#fff',
+        background: side ? 'rgba(224,69,123,.18)' : 'rgba(255,255,255,.06)', border: `1.5px solid ${side ? 'rgba(224,69,123,.5)' : 'rgba(255,255,255,.12)'}` }}>
+        {name[0]}
+      </span>
+      <span style={{ flex: 1, fontSize: 12, color: 'rgba(244,243,246,.7)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}{i === 0 ? ' 👑' : ''}</span>
+      <span style={{ fontSize: 12, color: side ? '#34d399' : TXT_FAINT }}>{side ? '✓' : '⋯'}</span>
+    </div>
+  )
+
+  return (
+    <motion.div key={tid} initial={{ opacity: 0, scale: 0.99 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4, ease }}
+      style={{ background: SURFACE, border: `1px solid ${HAIR}`, borderTop: `1px solid ${HAIR_TOP}`, borderRadius: 20, padding: 18,
+        boxShadow: '0 28px 70px rgba(0,0,0,.45)' }}>
+      {/* En-tête salon */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+        <span style={{ fontSize: 18 }}>{tidEmoji(tid)}</span>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 13, fontWeight: 800, color: TXT, lineHeight: 1.1 }}>{cfg.title || 'Tournoi'}</div>
+          <div style={{ fontSize: 10.5, color: TXT_FAINT, letterSpacing: '.18em', fontWeight: 700 }}>SALON · BRAMS42</div>
+        </div>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 10, fontWeight: 800, letterSpacing: '.12em', color: PINK_L,
+          padding: '4px 9px', borderRadius: 999, background: 'rgba(224,69,123,.12)', border: '1px solid rgba(224,69,123,.3)' }}>
+          <LiveDot size={5} />LIVE
+        </span>
+      </div>
+
+      {/* Duel en cours */}
+      <div style={{ background: SURFACE_FLAT, border: `1px solid ${HAIR}`, borderRadius: 13, padding: 13, marginBottom: 12 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, fontWeight: 800, letterSpacing: '.1em', textTransform: 'uppercase', color: TXT_FAINT, marginBottom: 9 }}>
+          <span>Vote en cours</span><span style={{ color: PINK_L }}>{total}/5</span>
+        </div>
+        {[[left, leftN, true], [right, rightN, false]].map(([t, n, lead], i) => (
+          <div key={i} style={{ marginBottom: i === 0 ? 8 : 0 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: lead ? TXT : 'rgba(244,243,246,.6)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '75%' }}>{t.title}</span>
+              <span style={{ fontSize: 11, fontWeight: 800, color: lead ? PINK_L : TXT_FAINT }}>{n}</span>
+            </div>
+            <div style={{ height: 5, borderRadius: 99, background: 'rgba(255,255,255,.06)', overflow: 'hidden' }}>
+              <div data-tl-anim style={{ height: '100%', borderRadius: 99, width: `${i === 0 ? leftPct : 100 - leftPct}%`,
+                background: lead ? CTA : 'rgba(255,255,255,.18)', animation: 'tl-bar .8s ease', transition: 'width .5s' }} />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Participants + mini bracket */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
+        {voters.map((n, i) => row(n, votedSides[i], i))}
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, paddingTop: 12, borderTop: `1px solid ${HAIR}` }}>
+        <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.1em', textTransform: 'uppercase', color: TXT_FAINT, marginRight: 4 }}>Bracket</span>
+        {['8e', '4e', '½', 'F'].map((r, i) => (
+          <span key={r} style={{ flex: 1, height: 4, borderRadius: 99, background: i === 0 ? CTA : (i === 1 ? 'rgba(224,69,123,.4)' : 'rgba(255,255,255,.08)') }} />
+        ))}
+        <span style={{ fontSize: 11 }}>👑</span>
+      </div>
+    </motion.div>
+  )
+}
+
+// Statuts d'un salon — tous les états prévus (data réelle = lobby/playing).
+const ROOM_STATUS = {
+  lobby:   { label: 'Ouvert',    color: '#46c08a', live: false, joinable: true },
+  playing: { label: 'En cours',  color: MAGENTA,   live: true,  joinable: true },
+  full:    { label: 'Complet',   color: TXT_FAINT, live: false, joinable: false },
+  private: { label: 'Privé',     color: '#d6a23e', live: false, joinable: true },
+  done:    { label: 'Terminé',   color: TXT_FAINT, live: false, joinable: false },
+}
+
+function LiveRoomCard({ room, onOpen }) {
+  const [hover, setHover] = useState(false)
+  const meta = ROOM_STATUS[room.status] || ROOM_STATUS.lobby
+  const disabled = meta.joinable === false
+  return (
+    <button type="button" disabled={disabled} onClick={() => !disabled && onOpen(room.code)}
+      onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 12, padding: 14, borderRadius: 14, textAlign: 'left', width: '100%',
+        background: SURFACE_FLAT, border: `1px solid ${hover && !disabled ? HAIR_TOP : HAIR}`, color: TXT,
+        cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? .6 : 1,
+        transform: hover && !disabled ? 'translateY(-2px)' : 'none',
+        boxShadow: hover && !disabled ? '0 12px 30px rgba(0,0,0,.32)' : 'none',
+        transition: 'transform .16s, border-color .16s, box-shadow .16s', fontFamily: 'inherit',
+      }}>
+      <span style={{ width: 38, height: 38, flexShrink: 0, borderRadius: 11, display: 'grid', placeItems: 'center', fontSize: 18,
+        background: 'rgba(255,255,255,.04)', border: `1px solid ${HAIR}` }}>{tidEmoji(room.tournament_id)}</span>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontWeight: 900, letterSpacing: '.16em', fontSize: 14, color: PINK_L }}>{room.code}</div>
+        <div style={{ fontSize: 11, color: TXT_FAINT, marginTop: 1 }}>{room.tournament_id === 'ost' ? 'Best Anime OST' : 'Best Anime Opening'}</div>
+      </div>
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 10, fontWeight: 800, letterSpacing: '.07em', textTransform: 'uppercase',
+        color: meta.color, padding: '4px 9px', borderRadius: 999, background: 'rgba(255,255,255,.04)', border: `1px solid ${HAIR}` }}>
+        {meta.live ? <LiveDot size={5} /> : <span style={{ width: 5, height: 5, borderRadius: '50%', background: meta.color }} />}
+        {meta.label}
+      </span>
+    </button>
+  )
+}
+
+function RoomSkeleton() {
+  const shimmer = {
+    background: 'linear-gradient(90deg, rgba(255,255,255,.04) 25%, rgba(255,255,255,.09) 37%, rgba(255,255,255,.04) 63%)',
+    backgroundSize: '200% 100%', animation: 'tl-shimmer 1.4s ease-in-out infinite',
+  }
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 14, borderRadius: 14, background: SURFACE_FLAT, border: `1px solid ${HAIR}` }}>
+      <div data-tl-anim style={{ ...shimmer, width: 38, height: 38, borderRadius: 11, flexShrink: 0 }} />
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 7 }}>
+        <div data-tl-anim style={{ ...shimmer, width: '55%', height: 11, borderRadius: 6 }} />
+        <div data-tl-anim style={{ ...shimmer, width: '80%', height: 9, borderRadius: 6 }} />
+      </div>
+      <div data-tl-anim style={{ ...shimmer, width: 56, height: 18, borderRadius: 999 }} />
+    </div>
   )
 }
 
