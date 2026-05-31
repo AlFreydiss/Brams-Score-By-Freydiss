@@ -1052,7 +1052,10 @@ def messages_in_period(messages, days, _now=None):
     cutoff = (_now or now_ts()) - days * 86400
     return sum(1 for ts in messages if ts >= cutoff)
 
-_CLEAN_CUTOFF_DAYS = 8
+# Rétention des sessions vocales détaillées. DOIT rester > à la plus large fenêtre
+# affichée dans /stats (14 jours), sinon seconds_in_period(…, 14) ne voit plus les
+# jours 9→14 (purgés dans extra_seconds) et le "14 jours" est tronqué silencieusement.
+_CLEAN_CUTOFF_DAYS = 15
 
 def clean_old_data(user, _now=None):
     cutoff = (_now or now_ts()) - _CLEAN_CUTOFF_DAYS * 86400
@@ -1065,7 +1068,13 @@ def clean_old_data(user, _now=None):
     user["vocal_sessions"] = kept
     if extra != user.get("extra_seconds", 0):
         user["extra_seconds"] = extra
-    user["messages"] = [ts for ts in user["messages"] if ts >= cutoff]
+    # Les messages purgés sont accumulés dans extra_messages (comme extra_seconds
+    # pour le vocal) sinon le "Total" messages ne serait que la fenêtre de rétention.
+    msgs_kept = [ts for ts in user["messages"] if ts >= cutoff]
+    purged = len(user["messages"]) - len(msgs_kept)
+    if purged:
+        user["extra_messages"] = user.get("extra_messages", 0) + purged
+    user["messages"] = msgs_kept
 
 def total_seconds(sessions, join_time=None, extra=0, _now=None):
     total = sum(s["end"] - s["start"] for s in sessions)
@@ -1073,8 +1082,8 @@ def total_seconds(sessions, join_time=None, extra=0, _now=None):
         total += (_now or now_ts()) - join_time
     return total + extra
 
-def total_messages(messages):
-    return len(messages)
+def total_messages(messages, extra=0):
+    return len(messages) + extra
 
 def format_duration(seconds):
     h = int(seconds // 3600)
@@ -3294,7 +3303,7 @@ async def stats(interaction: discord.Interaction):
     m1d  = messages_in_period(user["messages"], 1)
     m7d  = messages_in_period(user["messages"], 7)
     m14d = messages_in_period(user["messages"], 14)
-    m_tot = total_messages(user["messages"])
+    m_tot = total_messages(user["messages"], user.get("extra_messages", 0))
 
     hours_7d = s7d / 3600
     rank_actuel = get_rank_for_hours(hours_7d) or "Aucun"
@@ -3401,7 +3410,7 @@ async def top(interaction: discord.Interaction, periode: app_commands.Choice[str
             messages = udata.get("messages", [])
             if all_time:
                 sec  = total_seconds(sessions, join_time=ujt, extra=udata.get("extra_seconds", 0), _now=_now)
-                msgs = total_messages(messages)
+                msgs = total_messages(messages, udata.get("extra_messages", 0))
             else:
                 sec  = seconds_in_period(sessions, days, join_time=ujt, _now=_now)
                 msgs = messages_in_period(messages, days, _now=_now)
@@ -3541,7 +3550,7 @@ async def serveur(interaction: discord.Interaction):
         sec  = seconds_in_period(sessions, 7, join_time=ujt, _now=_now)
         msgs = messages_in_period(messages, 7, _now=_now)
         sec_all = total_seconds(sessions, join_time=ujt, extra=udata.get("extra_seconds", 0), _now=_now)
-        msgs_all = total_messages(messages)
+        msgs_all = total_messages(messages, udata.get("extra_messages", 0))
         total_vocal_7d += sec
         total_msg_7d   += msgs
         total_vocal_all += sec_all
@@ -3673,7 +3682,7 @@ async def tout(interaction: discord.Interaction):
     m1d  = messages_in_period(user["messages"], 1)
     m7d  = messages_in_period(user["messages"], 7)
     m14d = messages_in_period(user["messages"], 14)
-    m_tot = total_messages(user["messages"])
+    m_tot = total_messages(user["messages"], user.get("extra_messages", 0))
     hours_7d = s7d / 3600
     hours_tot = s_tot / 3600
     rank_actuel = get_rank_for_hours(hours_7d) or "Aucun"
@@ -3814,7 +3823,7 @@ async def chercher(interaction: discord.Interaction, membre: discord.Member):
     m1d  = messages_in_period(user["messages"], 1)
     m7d  = messages_in_period(user["messages"], 7)
     m14d = messages_in_period(user["messages"], 14)
-    m_tot = total_messages(user["messages"])
+    m_tot = total_messages(user["messages"], user.get("extra_messages", 0))
 
     hours_7d  = s7d / 3600
     hours_tot = s_tot / 3600
