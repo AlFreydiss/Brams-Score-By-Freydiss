@@ -200,11 +200,13 @@ async function main() {
 
       console.log(`\n[${season}E${epPad}] ${filename}`)
 
-      // Vérifie si la version multi-audio (fmp4) est déjà buildée
-      // On cherche video_init.mp4 qui n'existe que dans les builds NVENC
-      const multiKey = `${KEY_PREFIX}/${r2Key}/video_init.mp4`
-      if (await exists(multiKey)) {
-        console.log('  Déjà sur R2 (multi-audio fmp4), skip.')
+      // Idempotence alignée sur l'audit : on skippe si video.m3u8 est déjà sur R2.
+      // (video_init.mp4 n'existe pas sur les anciens builds TS qui marchent
+      //  pourtant — l'audit teste video.m3u8, on s'aligne dessus pour ne rebuild
+      //  que les épisodes réellement 404.)
+      const videoKey = `${KEY_PREFIX}/${r2Key}/video.m3u8`
+      if (await exists(videoKey)) {
+        console.log('  Déjà sur R2 (video.m3u8 présent), skip.')
         continue
       }
 
