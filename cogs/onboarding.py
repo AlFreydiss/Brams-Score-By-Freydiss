@@ -1,4 +1,5 @@
 import os
+import re
 import json
 import asyncio
 import secrets
@@ -10,7 +11,23 @@ from discord import app_commands
 from discord.ext import commands, tasks
 
 
-SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
+def _rest_base(raw: str) -> str:
+    """Normalise en URL REST Supabase (https://<ref>.supabase.co).
+
+    Sur Railway, SUPABASE_URL contient souvent la DSN Postgres
+    (postgresql://postgres.<ref>:...@...pooler.supabase.com:5432/postgres) :
+    l'utiliser tel quel pour des appels HTTP échouait toutes les 10s (spam +
+    DB sollicitée pour rien). On en extrait le ref projet."""
+    raw = (raw or "").strip().rstrip("/")
+    if raw.startswith("http"):
+        return raw
+    # Ref projet dans le userinfo (//postgres.<ref>:pass@...) ou le host (db.<ref>.supabase.co)
+    m = re.search(r"//postgres\.([a-z0-9]{16,})[:@]", raw) or re.search(r"(?:db|@)\.?([a-z0-9]{16,})\.supabase", raw)
+    return f"https://{m.group(1)}.supabase.co" if m else ""
+
+
+# On préfère une URL REST explicite, sinon on dérive depuis ce qui est fourni.
+SUPABASE_URL = _rest_base(os.environ.get("SUPABASE_REST_URL") or os.environ.get("SUPABASE_URL", ""))
 SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "")
 ONBOARDING_URL = os.environ.get("ONBOARDING_URL", "https://example.netlify.app")
 
