@@ -102,8 +102,12 @@ export default function UndercoverPage() {
     if (!code) return
     refresh(code)
     const unsub = subscribeRoom(code, () => refresh(code))
+    // Polling de secours (2.5s) EN PLUS du temps réel : garantit que les arrivées
+    // de joueurs et les changements d'état sont visibles sans recharger, même si
+    // l'abonnement Postgres Changes ne délivre pas (RLS/autorisation realtime).
+    const poll = setInterval(() => refresh(code), 2500)
     const ping = setInterval(() => userId && touchPlayer(code, userId), 25000)
-    return () => { unsub(); clearInterval(ping) }
+    return () => { unsub(); clearInterval(poll); clearInterval(ping) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [code, userId])
 
@@ -115,12 +119,15 @@ export default function UndercoverPage() {
     return () => { ignore = true }
   }, [code, userId, g?.phase, g?.round])
 
+  // (Ré)inscrit TA présence à chaque (re)chargement dès que salon + auth sont prêts.
+  // Sans le garde `amIn` : un refresh ne doit jamais t'éjecter — l'upsert est
+  // idempotent, donc si tu y es déjà ça ne fait rien, et sinon ça te remet dedans.
   useEffect(() => {
-    if (!room || !code || amIn || autoJoinRef.current || !isAuthenticated) return
+    if (!room || !code || !isAuthenticated || !userId || autoJoinRef.current) return
     autoJoinRef.current = true
     joinRoom({ code, userId, displayName, avatarUrl }).then(() => refresh(code))
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [room, players, code, isAuthenticated])
+  }, [room, code, isAuthenticated, userId])
 
   const alive = g?.alive || []
   const myWord = secret?.word || null
