@@ -267,7 +267,7 @@ _FARFELU_REPLIES = [
 ]
 
 # ── Culte Freydiss ────────────────────────────────────────────────
-_FREYDISS_ID         = 523567699004227609
+_FREYDISS_ID         = 1094070545248694342
 _FREYDISS_HYPE_CD:   dict[str, float] = {}
 _FREYDISS_HYPE_DELAY = 60
 _FREYDISS_HYPE_PROB  = 0.55
@@ -527,7 +527,7 @@ ALERT_HOURS_THRESHOLD = 5.0
 DERANK_WARNING_THRESHOLD = 5.0  # heures avant le seuil de derank pour l'avertissement MP
 GUILD_IDS = [924346730194014220, 1478937064031518892]
 VOICE_BOOST_ROLE_ID = int(os.environ.get("VOICE_BOOST_ROLE_ID", "0"))
-RANK_EXCLUDED_IDS = {523567699004227609}  # utilisateurs exclus du système de rangs
+RANK_EXCLUDED_IDS = {1094070545248694342}  # utilisateurs exclus du système de rangs
 
 RANK_ROLES = {
     "Pirate":          1486554682263343284,
