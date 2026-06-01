@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { ArrowRight, ClipboardList, Film, LockKeyhole, LogIn, Music2, Radio, Trophy, Users } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { TOURNAMENT_CONFIGS } from '../data/tournament-data.js'
 import { generateBracket, getCurrentMatch, advanceWinner, getWinner, getTournamentProgress } from '../lib/tournament.js'
@@ -41,6 +42,8 @@ const LOBBY_KEYFRAMES = `
 @keyframes tl-shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
 @keyframes tl-bar{from{width:0}}
 @keyframes tl-spin{to{transform:rotate(360deg)}}
+@keyframes tl-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes tl-softline{0%{transform:translateX(-18%);opacity:.18}50%{opacity:.34}100%{transform:translateX(18%);opacity:.18}}
 @media (prefers-reduced-motion: reduce){
   *[data-tl-anim]{animation:none!important}
 }`
@@ -77,9 +80,14 @@ export default function TournamentRoomPage() {
   const resolvingRef = useRef(false)
   const autoJoinRef = useRef(false)
   const refreshing = useRef(false)
+  const refreshQueuedRef = useRef(false)
   const lastRealtimeRef = useRef(0)
   const revealTimerRef = useRef(null)
-  useEffect(() => () => clearTimeout(revealTimerRef.current), [])
+  const revealWatchdogRef = useRef(null)
+  useEffect(() => () => {
+    clearTimeout(revealTimerRef.current)
+    clearTimeout(revealWatchdogRef.current)
+  }, [])
 
   // Salons récents pour la section "Salons en direct" (uniquement sur l'accueil).
   const loadRooms = useCallback(() => {
@@ -119,7 +127,11 @@ export default function TournamentRoomPage() {
 
   // ── Chargement / refetch ──────────────────────────────────────────────────
   const refresh = useCallback(async (c = code) => {
-    if (!c || refreshing.current) return   // anti refresh-en-vol (realtime + poll)
+    if (!c) return
+    if (refreshing.current) {
+      refreshQueuedRef.current = true
+      return
+    }
     refreshing.current = true
     try {
       const [r, pl] = await Promise.all([fetchTournamentRoom(c), fetchTournamentRoomPlayers(c)])
@@ -127,7 +139,15 @@ export default function TournamentRoomPage() {
       const cur = r?.rounds ? getCurrentMatch(r.rounds) : null
       const vt = cur ? await fetchTournamentRoomVotes(c, cur.match.id) : []
       setNotFound(false); setRoom(r); setPlayers(pl); setVotes(vt)
-    } finally { refreshing.current = false }
+    } catch {
+      // Le polling/realtime ne doit jamais s'arreter sur une erreur reseau.
+    } finally {
+      refreshing.current = false
+    }
+    if (refreshQueuedRef.current) {
+      refreshQueuedRef.current = false
+      return refresh(c)
+    }
   }, [code])
 
   useEffect(() => {
@@ -140,12 +160,22 @@ export default function TournamentRoomPage() {
     const tick = () => {
       if (stop) return
       const recentRT = Date.now() - lastRealtimeRef.current < 20000
-      const delay = document.hidden ? 30000 : recentRT ? 12000 : 3000
+      const delay = document.hidden ? 15000 : recentRT ? 5000 : 2000
       timer = setTimeout(async () => { await refresh(code); tick() }, delay)
     }
     tick()
+    const syncOnFocus = () => { if (!document.hidden) refresh(code) }
+    window.addEventListener('focus', syncOnFocus)
+    document.addEventListener('visibilitychange', syncOnFocus)
     const ping = setInterval(() => touchTournamentPlayer(code, ident.userId), 25000)
-    return () => { stop = true; clearTimeout(timer); unsub(); clearInterval(ping) }
+    return () => {
+      stop = true
+      clearTimeout(timer)
+      unsub()
+      clearInterval(ping)
+      window.removeEventListener('focus', syncOnFocus)
+      document.removeEventListener('visibilitychange', syncOnFocus)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [code])
 
@@ -178,17 +208,40 @@ export default function TournamentRoomPage() {
     // Phase 1 — RÉVÉLATION : on reste sur le duel résolu (status 'reveal') ~2,4s
     // pour montrer le gagnant au centre, PUIS on enchaîne direct sur le duel suivant.
     updateTournamentRoom(code, { rounds: next, current_match: matchId, status: 'reveal' })
-      .then(() => {
+      .then(({ error }) => {
+        if (error) throw new Error(error)
         refresh(code)
         clearTimeout(revealTimerRef.current)
         revealTimerRef.current = setTimeout(() => {
           updateTournamentRoom(code, { current_match: nextCur?.match.id || null, status: done ? 'done' : 'playing' })
-            .then(() => { resolvingRef.current = false; refresh(code) })
+            .then(({ error }) => {
+              if (error) throw new Error(error)
+              resolvingRef.current = false
+              refresh(code)
+            })
             .catch(() => { resolvingRef.current = false })
         }, 2400)
       })
       .catch(() => { resolvingRef.current = false })
   }, [isHost, current, totalV, players.length, leftN, rightN, room?.status, rounds, code, refresh])
+
+  // Filet de sécurité : si le timer de révélation est throttlé/perdu, le salon
+  // ne doit jamais rester bloqué sur "Duel suivant…".
+  useEffect(() => {
+    clearTimeout(revealWatchdogRef.current)
+    if (room?.status !== 'reveal' || !rounds) return
+    revealWatchdogRef.current = setTimeout(async () => {
+      const nextCur = getCurrentMatch(rounds)
+      const done = getWinner(rounds)
+      const { error } = await updateTournamentRoom(code, {
+        current_match: nextCur?.match.id || null,
+        status: done ? 'done' : 'playing',
+      })
+      resolvingRef.current = false
+      if (!error) refresh(code)
+    }, isHost ? 4200 : 7000)
+    return () => clearTimeout(revealWatchdogRef.current)
+  }, [isHost, room?.status, room?.current_match, rounds, code, refresh])
 
   // ── Actions ─────────────────────────────────────────────────────────────────
   async function handleCreate() {
@@ -236,8 +289,23 @@ export default function TournamentRoomPage() {
 
   async function vote(side) {
     if (myVote || !current) return
-    setVotes(v => [...v, { user_id: ident.userId, side }]) // optimiste
-    await castTournamentVote({ code, matchId: current.match.id, userId: ident.userId, side })
+    const matchId = current.match.id
+    setErr('')
+    setVotes(v => v.some(x => String(x.user_id) === ident.userId)
+      ? v
+      : [...v, { user_id: ident.userId, side }]) // optimiste
+    let error = null
+    try {
+      ;({ error } = await castTournamentVote({ code, matchId, userId: ident.userId, side }))
+    } catch {
+      error = 'network'
+    }
+    if (error) {
+      setVotes(v => v.filter(x => String(x.user_id) !== ident.userId))
+      setErr('Vote non enregistré. Réessaie dans quelques secondes.')
+      return
+    }
+    await refresh(code)
   }
 
   function leave() { setParams({}); setCode(''); setRoom(null); setNotFound(false); autoJoinRef.current = false }
@@ -253,32 +321,58 @@ export default function TournamentRoomPage() {
   // 1) Aucun code → lobby premium "Salon multi-tournoi"
   if (!code) {
     const recent = publicRooms.filter(r => r.status !== 'done')
-    const liveCount = recent.length
     const openRoom = (c) => { setErr(''); setJoinCode(c); setParams({ code: c }); setCode(c) }
+    const jumpTo = (id) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    const activeCfg = TOURNAMENT_CONFIGS[tid] || TOURNAMENT_CONFIGS.ost
+    const createDisabled = busy || (ident.guest && !guestName.trim())
+    const joinDisabled = busy || !joinCode.trim() || (ident.guest && !guestName.trim())
 
     const fadeUp = {
-      hidden: { opacity: 0, y: 14 },
-      show: (i = 0) => ({ opacity: 1, y: 0, transition: { duration: 0.5, delay: 0.05 * i, ease } }),
+      hidden: { opacity: 0, y: 18 },
+      show: (i = 0) => ({ opacity: 1, y: 0, transition: { duration: 0.55, delay: 0.06 * i, ease } }),
     }
-    const card = {
-      background: SURFACE, border: `1px solid ${HAIR}`, borderTop: `1px solid ${HAIR_TOP}`,
-      borderRadius: 18, padding: 22, boxShadow: '0 20px 60px rgba(0,0,0,.38)',
+    const panel = {
+      position: 'relative', overflow: 'hidden',
+      background: 'linear-gradient(160deg, rgba(31,29,38,.86), rgba(16,16,22,.92))',
+      border: '1px solid rgba(255,255,255,.085)',
+      borderTop: '1px solid rgba(255,255,255,.14)',
+      borderRadius: 22,
+      boxShadow: '0 26px 70px rgba(0,0,0,.36)',
+      backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)',
     }
     const label = (t) => (
-      <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.13em', textTransform: 'uppercase', color: TXT_FAINT, marginBottom: 14 }}>{t}</div>
+      <div style={{ fontSize: 11.5, fontWeight: 900, letterSpacing: '.14em', textTransform: 'uppercase', color: 'rgba(246,218,232,.58)', marginBottom: 14 }}>{t}</div>
     )
+    const heroButton = (primary = false) => ({
+      minHeight: 46, padding: '0 18px', borderRadius: 13,
+      border: primary ? '1px solid rgba(236,96,143,.32)' : '1px solid rgba(255,255,255,.10)',
+      background: primary
+        ? 'linear-gradient(135deg, rgba(219,64,119,.96), rgba(144,76,126,.92))'
+        : 'rgba(255,255,255,.045)',
+      color: primary ? '#fff' : 'rgba(246,243,248,.78)',
+      fontSize: 13.5, fontWeight: 850, cursor: 'pointer',
+      display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 9,
+      boxShadow: primary ? '0 14px 34px rgba(160,54,102,.22)' : 'none',
+      fontFamily: 'inherit', transition: 'transform .18s, border-color .18s, background .18s',
+    })
 
     return (
-      <div style={wrap}>
+      <div style={{ ...wrap, background: '#08090d', paddingTop: isMobile ? 82 : 92, paddingBottom: 44 }}>
         <style>{LOBBY_KEYFRAMES}</style>
-        {/* Fond : halo magenta unique, très diffus, charbon en bas. Pas de RGB. */}
+        {/* Fond premium sobre : gradients larges + grain léger, sans gros vide plat. */}
         <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none',
-          background: `radial-gradient(1100px 620px at 78% -10%, rgba(224,69,123,.10), transparent 58%),
-                       radial-gradient(900px 500px at 8% 2%, rgba(224,69,123,.05), transparent 60%),
-                       linear-gradient(180deg, transparent 60%, rgba(0,0,0,.5))` }} />
+          background: `radial-gradient(900px 520px at 70% 7%, rgba(116,76,118,.18), transparent 62%),
+                       radial-gradient(720px 460px at 18% 22%, rgba(188,78,124,.10), transparent 65%),
+                       radial-gradient(820px 520px at 74% 82%, rgba(191,143,85,.08), transparent 62%),
+                       linear-gradient(180deg, #0a0b10 0%, #08090d 54%, #06070a 100%)` }} />
+        <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', opacity: .15,
+          backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,.22) 1px, transparent 0)',
+          backgroundSize: '22px 22px' }} />
+        <div aria-hidden data-tl-anim style={{ position: 'fixed', left: '9%', right: '9%', top: isMobile ? 116 : 132, height: 1, zIndex: 0,
+          background: 'linear-gradient(90deg, transparent, rgba(255,255,255,.16), rgba(216,111,151,.20), transparent)',
+          animation: 'tl-softline 9s ease-in-out infinite' }} />
 
-        <div style={{ ...inner, maxWidth: 1180 }}>
-          {/* Retour — discret, intégré */}
+        <main style={{ ...inner, maxWidth: 1280 }}>
           <motion.button
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}
             onClick={() => navigate('/tournoi')}
@@ -290,94 +384,153 @@ export default function TournamentRoomPage() {
             <span style={{ fontSize: 14, lineHeight: 1 }}>←</span> Tournoi
           </motion.button>
 
-          {/* ════ HERO ════ */}
           <motion.div initial="hidden" animate="show"
-            style={{ display: 'grid', gridTemplateColumns: isNarrow ? '1fr' : '1.05fr 0.95fr', gap: isNarrow ? 28 : 36, alignItems: 'center', marginBottom: 40 }}>
+            style={{
+              display: 'grid',
+              gridTemplateColumns: isNarrow ? '1fr' : 'minmax(0,1.04fr) minmax(390px,.82fr)',
+              gap: isNarrow ? 24 : 38,
+              alignItems: 'center',
+              minHeight: isMobile ? 'auto' : 'min(620px, calc(100vh - 170px))',
+              padding: isMobile ? '10px 0 24px' : '18px 0 32px',
+            }}>
 
-            {/* Gauche : accroche */}
-            <div>
+            <div style={{ maxWidth: 650 }}>
               <motion.div custom={0} variants={fadeUp}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 9, marginBottom: 18, padding: '6px 14px', borderRadius: 999,
-                  fontSize: 10.5, fontWeight: 800, letterSpacing: '.16em', textTransform: 'uppercase', color: PINK_L,
-                  background: 'rgba(224,69,123,.10)', border: `1px solid rgba(224,69,123,.28)` }}>
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 9, marginBottom: 20, padding: '7px 14px', borderRadius: 999,
+                  fontSize: 11, fontWeight: 850, letterSpacing: '.15em', textTransform: 'uppercase', color: 'rgba(251,207,232,.86)',
+                  background: 'rgba(187,80,123,.10)', border: '1px solid rgba(236,132,176,.24)' }}>
                 <LiveDot />Mode multi · temps réel
               </motion.div>
 
               <motion.h1 custom={1} variants={fadeUp}
-                style={{ fontSize: 'clamp(32px,4.8vw,52px)', fontWeight: 900, margin: '0 0 16px', letterSpacing: '-.03em', lineHeight: 1.04, color: TXT }}>
+                style={{ fontSize: 'clamp(42px,6.2vw,82px)', fontWeight: 950, margin: '0 0 18px', letterSpacing: '-.035em', lineHeight: .94, color: TXT }}>
                 Crée ton salon<br /><span style={{ background: `linear-gradient(100deg, ${MAGENTA}, ${PINK_L})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>multi-tournoi</span>
               </motion.h1>
 
               <motion.p custom={2} variants={fadeUp}
-                style={{ color: TXT_MUTED, margin: '0 0 26px', fontSize: 16, lineHeight: 1.6, maxWidth: 480 }}>
-                Invite tes potes, choisis ton mode, votez en direct et laissez le bracket couronner le meilleur opening ou OST.
+                style={{ color: 'rgba(244,243,246,.66)', margin: '0 0 26px', fontSize: 'clamp(15.5px,1.5vw,18px)', lineHeight: 1.7, maxWidth: 560 }}>
+                Invite tes potes, lance un bracket privé, votez en direct et couronnez le meilleur opening ou OST.
               </motion.p>
 
-              <motion.div custom={3} variants={fadeUp} style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-                {[['🏆', 'Bracket automatique'], ['⚡', 'Vote en direct'], ['🔗', 'Partage instantané']].map(([ic, t]) => (
-                  <span key={t} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 14px', borderRadius: 11,
-                    background: SURFACE_FLAT, border: `1px solid ${HAIR}`, fontSize: 12.5, fontWeight: 700, color: 'rgba(244,243,246,.7)' }}>
-                    <span style={{ fontSize: 14 }}>{ic}</span>{t}
+              <motion.div custom={3} variants={fadeUp} style={{ display: 'flex', flexWrap: 'wrap', gap: 9, marginBottom: 24 }}>
+                {[[Trophy, 'Bracket automatique'], [Radio, 'Votes en direct'], [LockKeyhole, 'Code privé instantané']].map(([Icon, t]) => (
+                  <span key={t} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, minHeight: 34, padding: '0 13px', borderRadius: 999,
+                    background: 'rgba(255,255,255,.045)', border: '1px solid rgba(255,255,255,.075)', fontSize: 12.5, fontWeight: 760, color: 'rgba(244,243,246,.72)' }}>
+                    <Icon size={14} strokeWidth={2.1} />{t}
                   </span>
                 ))}
               </motion.div>
+
+              <motion.div custom={4} variants={fadeUp} style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
+                <button type="button" onClick={() => jumpTo('create-room-panel')} style={heroButton(true)}
+                  onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)' }}
+                  onMouseLeave={e => { e.currentTarget.style.transform = 'none' }}>
+                  Créer un salon <ArrowRight size={16} />
+                </button>
+                <button type="button" onClick={() => jumpTo('join-room-panel')} style={heroButton(false)}
+                  onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,.18)' }}
+                  onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.borderColor = 'rgba(255,255,255,.10)' }}>
+                  <LogIn size={16} /> Rejoindre un salon
+                </button>
+              </motion.div>
+              <motion.p custom={5} variants={fadeUp} style={{ margin: '16px 0 0', color: 'rgba(244,243,246,.42)', fontSize: 12.5, fontWeight: 650 }}>
+                Aucun setup compliqué. Le code est généré automatiquement.
+              </motion.p>
             </div>
 
-            {/* Droite : preview live du salon (fictif, illustratif) */}
-            <motion.div custom={2} variants={fadeUp}>
+            <motion.div custom={2} variants={fadeUp} data-tl-anim style={{ animation: isMobile ? 'none' : 'tl-float 7s ease-in-out infinite' }}>
               <LobbyPreview tid={tid} />
             </motion.div>
           </motion.div>
 
-          {/* ════ ZONE D'ACTION ════ */}
-          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.4fr 1fr', gap: 18, alignItems: 'stretch', marginBottom: 42 }}>
+          <div aria-hidden style={{ height: 1, margin: isMobile ? '0 0 18px' : '0 0 24px',
+            background: 'linear-gradient(90deg, transparent, rgba(255,255,255,.12), transparent)' }} />
 
-            {/* Créer un salon — action primaire */}
-            <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, ease }}
-              style={{ ...card, display: 'flex', flexDirection: 'column' }}>
-              {label('Créer un salon')}
+          <section style={{
+            display: 'grid',
+            gridTemplateColumns: isMobile ? '1fr' : 'minmax(0,1.26fr) minmax(330px,.74fr)',
+            gap: 18,
+            alignItems: 'stretch',
+            marginBottom: 18,
+          }}>
+
+            <motion.div id="create-room-panel" initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, ease }}
+              style={{ ...panel, padding: isMobile ? 18 : 22, display: 'flex', flexDirection: 'column' }}>
+              <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: 'radial-gradient(520px 220px at 16% 0%, rgba(236,96,143,.10), transparent 65%)' }} />
+              <div style={{ position: 'relative' }}>
+              {label('Choisis un mode')}
               {ident.guest && (
                 <input value={guestName} onChange={e => setGuestName(e.target.value)} placeholder="Choisis ton pseudo"
-                  style={{ ...field, marginBottom: 14, fontWeight: 700 }} maxLength={20} />
+                  style={{ ...field, marginBottom: 14, fontWeight: 750, minHeight: 46, borderRadius: 13 }} maxLength={20} />
               )}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 18 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12, marginBottom: 18 }}>
                 {Object.entries(TOURNAMENT_CONFIGS).map(([id, c]) => (
                   <ModeCard key={id} id={id} cfg={c} active={tid === id} onSelect={() => setTid(id)} />
                 ))}
               </div>
-              <button onClick={handleCreate} disabled={busy} aria-busy={busy}
-                onMouseEnter={e => { if (!busy) e.currentTarget.style.transform = 'translateY(-1px)' }}
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr auto', gap: 12, alignItems: 'center', marginBottom: 14 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'rgba(244,243,246,.58)', fontSize: 12.5, lineHeight: 1.45 }}>
+                  <ClipboardList size={18} color="rgba(246,218,232,.62)" />
+                  <span>{activeCfg.participants?.length || 0} participants · bracket privé · votes synchronisés</span>
+                </div>
+                <span style={{ justifySelf: isMobile ? 'start' : 'end', color: 'rgba(255,255,255,.38)', fontSize: 11.5, fontWeight: 750 }}>Code privé généré automatiquement</span>
+              </div>
+              <button onClick={handleCreate} disabled={createDisabled} aria-busy={busy}
+                onMouseEnter={e => { if (!createDisabled) e.currentTarget.style.transform = 'translateY(-2px)' }}
                 onMouseLeave={e => { e.currentTarget.style.transform = 'none' }}
-                style={{ ...btn(CTA), width: '100%', padding: 15, fontSize: 15, marginTop: 'auto',
-                  boxShadow: busy ? 'none' : '0 10px 28px rgba(224,69,123,.28)', opacity: busy ? .6 : 1,
-                  cursor: busy ? 'default' : 'pointer', transition: 'transform .15s, opacity .15s' }}>
-                {busy ? '⏳ Création…' : 'Créer un salon'}
+                style={{ ...btn('linear-gradient(135deg, rgba(219,64,119,.98), rgba(140,80,126,.95))'), width: '100%', minHeight: 50, padding: 0, fontSize: 15.5, marginTop: 'auto',
+                  boxShadow: createDisabled ? 'none' : '0 16px 38px rgba(160,54,102,.26)', opacity: createDisabled ? .55 : 1,
+                  cursor: createDisabled ? 'default' : 'pointer', transition: 'transform .16s, opacity .16s, box-shadow .16s', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 9 }}>
+                {busy ? 'Création…' : 'Créer mon salon'} {!busy && <ArrowRight size={17} />}
               </button>
-              <p style={{ textAlign: 'center', fontSize: 11.5, color: TXT_FAINT, margin: '11px 0 0' }}>
-                Un code privé est généré automatiquement.
-              </p>
+              {err && <p role="alert" style={{ color: '#f49ab1', margin: '12px 0 0', fontSize: 12.5, textAlign: 'center' }}>{err}</p>}
+              </div>
             </motion.div>
 
-            {/* Rejoindre avec un code — action secondaire */}
-            <motion.form onSubmit={handleJoin} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: 0.06, ease }}
-              style={{ ...card, background: SURFACE_FLAT, display: 'flex', flexDirection: 'column' }}>
+            <motion.form id="join-room-panel" onSubmit={handleJoin} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: 0.06, ease }}
+              style={{ ...panel, padding: isMobile ? 18 : 22, display: 'flex', flexDirection: 'column' }}>
               {label('Rejoindre avec un code')}
-              <p style={{ fontSize: 12.5, color: TXT_MUTED, margin: '-4px 0 16px', lineHeight: 1.5 }}>
-                Tes potes t'ont envoyé un code ? Entre-le pour voter avec eux.
+              <p style={{ fontSize: 13.5, color: 'rgba(244,243,246,.58)', margin: '-3px 0 16px', lineHeight: 1.55 }}>
+                Entre le code envoyé par ton pote pour rejoindre son vote.
               </p>
+              {ident.guest && (
+                <input value={guestName} onChange={e => setGuestName(e.target.value)} placeholder="Ton pseudo"
+                  style={{ ...field, marginBottom: 12, fontWeight: 750, minHeight: 46, borderRadius: 13 }} maxLength={20} />
+              )}
               <input value={joinCode} onChange={e => setJoinCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
-                placeholder="CODE" maxLength={6} autoComplete="off" aria-label="Code du salon"
-                style={{ ...field, textTransform: 'uppercase', letterSpacing: '.4em', fontWeight: 900, fontSize: 22, textAlign: 'center', padding: 15, marginBottom: 12 }} />
-              <button type="submit" disabled={busy || !joinCode.trim()}
-                style={{ ...btn('rgba(255,255,255,.07)'), width: '100%', padding: 13, fontSize: 14, border: `1px solid ${HAIR_TOP}`,
-                  opacity: (busy || !joinCode.trim()) ? .5 : 1, cursor: (busy || !joinCode.trim()) ? 'default' : 'pointer' }}>
-                Rejoindre
+                placeholder="BRAMS42" maxLength={6} autoComplete="off" aria-label="Code du salon"
+                style={{ ...field, textTransform: 'uppercase', letterSpacing: '.36em', fontWeight: 950, fontSize: 21, textAlign: 'center', minHeight: 54, padding: '0 15px', marginBottom: 12, borderRadius: 14, background: 'rgba(255,255,255,.055)' }} />
+              <button type="submit" disabled={joinDisabled}
+                onMouseEnter={e => { if (!joinDisabled) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,.2)' } }}
+                onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.borderColor = HAIR_TOP }}
+                style={{ ...btn('rgba(255,255,255,.065)'), width: '100%', minHeight: 48, padding: 0, fontSize: 14.5, border: `1px solid ${HAIR_TOP}`,
+                  opacity: joinDisabled ? .5 : 1, cursor: joinDisabled ? 'default' : 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'transform .16s, border-color .16s, opacity .16s' }}>
+                {busy ? 'Connexion…' : 'Rejoindre'} {!busy && <LogIn size={16} />}
               </button>
-              {err && <p role="alert" style={{ color: '#f3849b', margin: '12px 0 0', fontSize: 12.5, textAlign: 'center' }}>⚠ {err}</p>}
+              {err && <p role="alert" style={{ color: '#f49ab1', margin: '12px 0 0', fontSize: 12.5, textAlign: 'center' }}>{err}</p>}
+              <div style={{ marginTop: 18, paddingTop: 16, borderTop: '1px solid rgba(255,255,255,.075)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, color: 'rgba(244,243,246,.45)', fontSize: 11.5, fontWeight: 850, letterSpacing: '.12em', textTransform: 'uppercase' }}>
+                  <Users size={14} /> Salons live
+                </div>
+                <div style={{ display: 'grid', gap: 8 }}>
+                  {roomsLoading ? (
+                    <>
+                      <RoomSkeleton />
+                      <RoomSkeleton />
+                    </>
+                  ) : roomsError ? (
+                    <div style={{ color: 'rgba(244,243,246,.42)', fontSize: 12.5, lineHeight: 1.45 }}>Impossible de charger les salons actifs pour le moment.</div>
+                  ) : recent.length ? (
+                    recent.slice(0, 2).map(r => <LiveRoomCard key={r.code} room={r} onOpen={openRoom} />)
+                  ) : (
+                    <div style={{ color: 'rgba(244,243,246,.42)', fontSize: 12.5, lineHeight: 1.45 }}>Aucun salon public actif. Crée le tien et partage le code.</div>
+                  )}
+                </div>
+              </div>
             </motion.form>
-          </div>
+          </section>
 
-        </div>
+        </main>
       </div>
     )
   }
@@ -436,6 +589,21 @@ export default function TournamentRoomPage() {
             👥 {players.length} · {progress.done}/{progress.total} duels
           </div>
         </div>
+
+        {err && (
+          <div role="alert" style={{
+            margin: '-4px 0 16px',
+            padding: '10px 14px',
+            borderRadius: 12,
+            border: '1px solid rgba(244,154,177,.28)',
+            background: 'rgba(157,23,77,.13)',
+            color: '#ffd1dc',
+            fontSize: 12.5,
+            fontWeight: 700,
+          }}>
+            {err}
+          </div>
+        )}
 
         {!amIInRoom && (
           <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 14, padding: 18, marginBottom: 16 }}>
@@ -572,11 +740,13 @@ function WinnerReveal({ winner }) {
 
 // ── Ambiance de fond : collage flouté des 2 openings (quand aucun ne joue) ────
 function DuelAmbient({ left, right }) {
-  // Deux moitiés plein écran (haut/bas) qui se rejoignent au centre : le fond de
-  // l'opening remplit TOUTE la fenêtre, bord à bord — fini la zone noire à droite.
+  const leftColor = left?.color || PINK
+  const rightColor = right?.color || PINK
   const tile = (p, pos) => p?.ytId ? (
     <img src={`https://img.youtube.com/vi/${p.ytId}/hqdefault.jpg`} alt="" style={{
-      position: 'absolute', left: '-4%', right: '-4%', width: '108%', height: '52%', objectFit: 'cover',
+      position: 'absolute', left: 0, width: '100%', height: '52%', objectFit: 'cover',
+      maxWidth: 'none', maxHeight: 'none',
+      transform: 'scale(1.16)',
       filter: 'blur(26px) saturate(1.3) brightness(.74)', opacity: 0.62, ...pos,
     }} />
   ) : null
@@ -584,7 +754,7 @@ function DuelAmbient({ left, right }) {
     <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
       {tile(left, { top: 0 })}
       {tile(right, { bottom: 0 })}
-      <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(72% 44% at 50% 0%, ${hexA(left?.color, 0.2)}, transparent 70%), radial-gradient(72% 44% at 50% 100%, ${hexA(right?.color, 0.2)}, transparent 70%), linear-gradient(180deg, rgba(8,7,11,.48), rgba(8,7,11,.42) 50%, rgba(8,7,11,.66)), radial-gradient(60% 50% at 50% 50%, rgba(8,7,11,.34), transparent 75%)` }} />
+      <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(72% 44% at 50% 0%, ${hexA(leftColor, 0.2)}, transparent 70%), radial-gradient(72% 44% at 50% 100%, ${hexA(rightColor, 0.2)}, transparent 70%), radial-gradient(58% 90% at 100% 52%, ${hexA(rightColor, 0.26)}, transparent 74%), radial-gradient(46% 90% at 0% 52%, ${hexA(leftColor, 0.2)}, transparent 72%), linear-gradient(180deg, rgba(8,7,11,.48), rgba(8,7,11,.42) 50%, rgba(8,7,11,.62)), radial-gradient(60% 50% at 50% 50%, rgba(8,7,11,.28), transparent 75%)` }} />
     </div>
   )
 }
@@ -690,8 +860,8 @@ function VotersPanel({ players, votes, match, isMobile, voteStatus }) {
 // ════════════════ Lobby premium — composants ════════════════
 
 const TID_META = {
-  ost:     { emoji: '🎵', tag: 'OST', desc: 'Duel musical sur les bandes-son les plus marquantes.' },
-  opening: { emoji: '🎬', tag: 'Opening', desc: 'Opening contre opening jusqu’au champion.' },
+  ost:     { emoji: '🎵', icon: Music2, accent: '#bfa46a', tag: 'OST', desc: 'Bandes-son, inserts et thèmes marquants.' },
+  opening: { emoji: '🎬', icon: Film, accent: '#d86f9f', tag: 'Opening', desc: 'Openings du blind test, duel après duel.' },
 }
 const tidEmoji = (id) => TID_META[id]?.emoji || '🏆'
 
@@ -708,27 +878,38 @@ function LiveDot({ size = 6 }) {
 // Carte de sélection de mode (OST / Opening) — hover premium, transition douce.
 function ModeCard({ id, cfg, active, onSelect }) {
   const [hover, setHover] = useState(false)
-  const meta = TID_META[id] || { emoji: '🏆', desc: '' }
+  const meta = TID_META[id] || { icon: Trophy, accent: MAGENTA, desc: '' }
+  const Icon = meta.icon || Trophy
+  const accent = meta.accent || MAGENTA
   return (
     <button onClick={onSelect} aria-pressed={active} type="button"
       onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
       style={{
-        display: 'flex', flexDirection: 'column', gap: 8, padding: 15, borderRadius: 14, cursor: 'pointer', textAlign: 'left',
-        border: `1px solid ${active ? MAGENTA : (hover ? HAIR_TOP : HAIR)}`,
-        background: active ? 'rgba(224,69,123,.10)' : SURFACE_FLAT,
-        boxShadow: active ? '0 8px 24px rgba(224,69,123,.16)' : 'none',
-        transform: hover && !active ? 'translateY(-1px)' : 'none',
-        transition: 'border-color .18s, background .18s, transform .15s, box-shadow .18s', fontFamily: 'inherit',
+        position: 'relative', overflow: 'hidden',
+        display: 'flex', flexDirection: 'column', gap: 10, minHeight: 150,
+        padding: 16, borderRadius: 18, cursor: 'pointer', textAlign: 'left',
+        border: `1px solid ${active ? `${accent}88` : (hover ? 'rgba(255,255,255,.16)' : 'rgba(255,255,255,.08)')}`,
+        background: active
+          ? `linear-gradient(160deg, ${hexA(accent, 0.18)}, rgba(255,255,255,.045))`
+          : 'rgba(255,255,255,.035)',
+        boxShadow: active ? `0 16px 38px ${hexA(accent, 0.16)}` : 'none',
+        transform: hover ? 'translateY(-2px)' : 'none',
+        transition: 'border-color .18s, background .18s, transform .15s, box-shadow .18s',
+        fontFamily: 'inherit',
       }}>
+      <span aria-hidden style={{ position: 'absolute', inset: 0, background: `radial-gradient(220px 120px at 15% 0%, ${hexA(accent, active ? 0.16 : 0.08)}, transparent 65%)`, pointerEvents: 'none' }} />
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ fontSize: 22 }}>{meta.emoji}</span>
-        <span style={{ width: 17, height: 17, borderRadius: '50%', border: `2px solid ${active ? MAGENTA : 'rgba(255,255,255,.20)'}`, display: 'grid', placeItems: 'center', transition: 'border-color .18s' }}>
-          {active && <span style={{ width: 8, height: 8, borderRadius: '50%', background: MAGENTA }} />}
+        <span style={{ width: 38, height: 38, borderRadius: 13, display: 'grid', placeItems: 'center', color: active ? accent : 'rgba(244,243,246,.56)',
+          background: active ? hexA(accent, 0.14) : 'rgba(255,255,255,.045)', border: `1px solid ${active ? hexA(accent, 0.34) : 'rgba(255,255,255,.08)'}` }}>
+          <Icon size={18} strokeWidth={2.1} />
+        </span>
+        <span style={{ width: 18, height: 18, borderRadius: '50%', border: `2px solid ${active ? accent : 'rgba(255,255,255,.18)'}`, display: 'grid', placeItems: 'center', transition: 'border-color .18s' }}>
+          {active && <span style={{ width: 8, height: 8, borderRadius: '50%', background: accent }} />}
         </span>
       </div>
-      <span style={{ fontSize: 14, fontWeight: 800, color: TXT, lineHeight: 1.2 }}>{cfg.title || id}</span>
-      <span style={{ fontSize: 11, fontWeight: 700, color: active ? PINK_L : TXT_FAINT }}>{cfg.participants?.length || 0} participants</span>
-      <span style={{ fontSize: 11.5, color: TXT_MUTED, lineHeight: 1.5 }}>{meta.desc}</span>
+      <span style={{ position: 'relative', fontSize: 15, fontWeight: 900, color: TXT, lineHeight: 1.2 }}>{cfg.title || id}</span>
+      <span style={{ position: 'relative', fontSize: 12, fontWeight: 800, color: active ? accent : 'rgba(244,243,246,.42)' }}>{cfg.participants?.length || 0} participants</span>
+      <span style={{ position: 'relative', fontSize: 12.2, color: 'rgba(244,243,246,.55)', lineHeight: 1.5 }}>{meta.desc}</span>
     </button>
   )
 }
@@ -739,6 +920,9 @@ function LobbyPreview({ tid }) {
   const parts = cfg.participants || []
   const left = parts[0] || { title: 'Gurenge', anime: 'Demon Slayer' }
   const right = parts[1] || { title: 'Unravel', anime: 'Tokyo Ghoul' }
+  const meta = TID_META[tid] || TID_META.opening
+  const Icon = meta.icon || Trophy
+  const accent = meta.accent || MAGENTA
   const voters = ['Kaito', 'Mira', 'Sora', 'Reki', 'Yuna']
   const votedSides = ['left', 'right', 'left', 'left', null] // 4/5 ont voté, 3-1
   const leftN = votedSides.filter(s => s === 'left').length
@@ -747,62 +931,76 @@ function LobbyPreview({ tid }) {
   const leftPct = total ? Math.round((leftN / total) * 100) : 50
 
   const row = (name, side, i) => (
-    <div key={name} style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-      <span style={{ width: 24, height: 24, borderRadius: '50%', flexShrink: 0, display: 'grid', placeItems: 'center', fontSize: 10.5, fontWeight: 800, color: '#fff',
-        background: side ? 'rgba(224,69,123,.18)' : 'rgba(255,255,255,.06)', border: `1.5px solid ${side ? 'rgba(224,69,123,.5)' : 'rgba(255,255,255,.12)'}` }}>
+    <div key={name} style={{ display: 'flex', alignItems: 'center', gap: 10, minHeight: 28 }}>
+      <span style={{ width: 26, height: 26, borderRadius: '50%', flexShrink: 0, display: 'grid', placeItems: 'center', fontSize: 10.5, fontWeight: 850, color: '#fff',
+        background: side ? hexA(accent, 0.18) : 'rgba(255,255,255,.055)', border: `1.5px solid ${side ? hexA(accent, 0.5) : 'rgba(255,255,255,.12)'}` }}>
         {name[0]}
       </span>
-      <span style={{ flex: 1, fontSize: 12, color: 'rgba(244,243,246,.7)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}{i === 0 ? ' 👑' : ''}</span>
-      <span style={{ fontSize: 12, color: side ? '#34d399' : TXT_FAINT }}>{side ? '✓' : '⋯'}</span>
+      <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, color: 'rgba(244,243,246,.72)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: 700 }}>{name}{i === 0 ? ' · hôte' : ''}</span>
+      <span style={{ fontSize: 12, color: side ? '#54d89c' : 'rgba(244,243,246,.30)' }}>{side ? '✓' : '…'}</span>
     </div>
   )
 
   return (
     <motion.div key={tid} initial={{ opacity: 0, scale: 0.99 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4, ease }}
-      style={{ background: SURFACE, border: `1px solid ${HAIR}`, borderTop: `1px solid ${HAIR_TOP}`, borderRadius: 20, padding: 18,
-        boxShadow: '0 28px 70px rgba(0,0,0,.45)' }}>
-      {/* En-tête salon */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-        <span style={{ fontSize: 18 }}>{tidEmoji(tid)}</span>
+      style={{
+        position: 'relative', overflow: 'hidden',
+        background: 'linear-gradient(160deg, rgba(32,30,40,.84), rgba(14,15,21,.93))',
+        border: '1px solid rgba(255,255,255,.10)',
+        borderTop: '1px solid rgba(255,255,255,.16)',
+        borderRadius: 24, padding: 18,
+        boxShadow: '0 32px 82px rgba(0,0,0,.46)',
+        backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+      }}>
+      <div aria-hidden style={{ position: 'absolute', inset: 0, background: `radial-gradient(420px 220px at 20% -10%, ${hexA(accent, 0.16)}, transparent 64%), radial-gradient(360px 180px at 100% 16%, rgba(255,255,255,.055), transparent 62%)` }} />
+      <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+        <span style={{ width: 40, height: 40, flexShrink: 0, display: 'grid', placeItems: 'center', borderRadius: 14, color: accent,
+          background: hexA(accent, 0.12), border: `1px solid ${hexA(accent, 0.32)}` }}>
+          <Icon size={19} strokeWidth={2.2} />
+        </span>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 13, fontWeight: 800, color: TXT, lineHeight: 1.1 }}>{cfg.title || 'Tournoi'}</div>
-          <div style={{ fontSize: 10.5, color: TXT_FAINT, letterSpacing: '.18em', fontWeight: 700 }}>SALON · BRAMS42</div>
+          <div style={{ fontSize: 14, fontWeight: 900, color: TXT, lineHeight: 1.1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{cfg.title || 'Tournoi'}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4, fontSize: 10.5, color: 'rgba(244,243,246,.42)', letterSpacing: '.14em', fontWeight: 850 }}>
+            <span>SALON</span><span style={{ color: accent }}>BRAMS42</span>
+          </div>
         </div>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 10, fontWeight: 800, letterSpacing: '.12em', color: PINK_L,
-          padding: '4px 9px', borderRadius: 999, background: 'rgba(224,69,123,.12)', border: '1px solid rgba(224,69,123,.3)' }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 10, fontWeight: 900, letterSpacing: '.12em', color: accent,
+          padding: '5px 10px', borderRadius: 999, background: hexA(accent, 0.10), border: `1px solid ${hexA(accent, 0.32)}` }}>
           <LiveDot size={5} />LIVE
         </span>
       </div>
 
-      {/* Duel en cours */}
-      <div style={{ background: SURFACE_FLAT, border: `1px solid ${HAIR}`, borderRadius: 13, padding: 13, marginBottom: 12 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, fontWeight: 800, letterSpacing: '.1em', textTransform: 'uppercase', color: TXT_FAINT, marginBottom: 9 }}>
-          <span>Vote en cours</span><span style={{ color: PINK_L }}>{total}/5</span>
+      <div style={{ position: 'relative', background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.075)', borderRadius: 16, padding: 14, marginBottom: 12 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10.5, fontWeight: 900, letterSpacing: '.1em', textTransform: 'uppercase', color: 'rgba(244,243,246,.42)', marginBottom: 10 }}>
+          <span>Vote en cours</span><span style={{ color: accent }}>{total}/5 votants</span>
         </div>
         {[[left, leftN, true], [right, rightN, false]].map(([t, n, lead], i) => (
-          <div key={i} style={{ marginBottom: i === 0 ? 8 : 0 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
-              <span style={{ fontSize: 12, fontWeight: 700, color: lead ? TXT : 'rgba(244,243,246,.6)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '75%' }}>{t.title}</span>
-              <span style={{ fontSize: 11, fontWeight: 800, color: lead ? PINK_L : TXT_FAINT }}>{n}</span>
+          <div key={i} style={{ marginBottom: i === 0 ? 10 : 0 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, marginBottom: 5 }}>
+              <span style={{ fontSize: 12.5, fontWeight: 850, color: lead ? TXT : 'rgba(244,243,246,.58)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '78%' }}>{t.title}</span>
+              <span style={{ fontSize: 11.5, fontWeight: 900, color: lead ? accent : 'rgba(244,243,246,.35)' }}>{n}</span>
             </div>
-            <div style={{ height: 5, borderRadius: 99, background: 'rgba(255,255,255,.06)', overflow: 'hidden' }}>
+            <div style={{ height: 6, borderRadius: 99, background: 'rgba(255,255,255,.07)', overflow: 'hidden' }}>
               <div data-tl-anim style={{ height: '100%', borderRadius: 99, width: `${i === 0 ? leftPct : 100 - leftPct}%`,
-                background: lead ? CTA : 'rgba(255,255,255,.18)', animation: 'tl-bar .8s ease', transition: 'width .5s' }} />
+                background: lead ? `linear-gradient(90deg, ${accent}, ${hexA(accent, 0.72)})` : 'rgba(255,255,255,.20)', animation: 'tl-bar .8s ease', transition: 'width .5s' }} />
             </div>
           </div>
         ))}
       </div>
 
-      {/* Participants + mini bracket */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
+      <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '0 0 9px', color: 'rgba(244,243,246,.42)', fontSize: 10.5, fontWeight: 900, letterSpacing: '.1em', textTransform: 'uppercase' }}>
+        <span>Participants connectés</span>
+        <span>{voters.length}</span>
+      </div>
+      <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 7, marginBottom: 14 }}>
         {voters.map((n, i) => row(n, votedSides[i], i))}
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, paddingTop: 12, borderTop: `1px solid ${HAIR}` }}>
-        <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.1em', textTransform: 'uppercase', color: TXT_FAINT, marginRight: 4 }}>Bracket</span>
+      <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 7, paddingTop: 13, borderTop: '1px solid rgba(255,255,255,.08)' }}>
+        <span style={{ fontSize: 10.5, fontWeight: 900, letterSpacing: '.1em', textTransform: 'uppercase', color: 'rgba(244,243,246,.42)', marginRight: 4 }}>Bracket</span>
         {['8e', '4e', '½', 'F'].map((r, i) => (
-          <span key={r} style={{ flex: 1, height: 4, borderRadius: 99, background: i === 0 ? CTA : (i === 1 ? 'rgba(224,69,123,.4)' : 'rgba(255,255,255,.08)') }} />
+          <span key={r} title={r} style={{ flex: 1, height: 4, borderRadius: 99, background: i === 0 ? accent : (i === 1 ? hexA(accent, 0.42) : 'rgba(255,255,255,.09)') }} />
         ))}
-        <span style={{ fontSize: 11 }}>👑</span>
+        <Trophy size={13} color={accent} />
       </div>
     </motion.div>
   )

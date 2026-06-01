@@ -369,6 +369,7 @@ function WinnerSection({ winner, onReset }) {
               style={{
                 position: 'absolute', inset: '-5%',
                 width: '110%', height: '110%',
+                maxWidth: 'none', maxHeight: 'none',
                 objectFit: 'cover',
                 filter: 'blur(16px) brightness(0.26) saturate(1.3)',
               }}

@@ -19,20 +19,20 @@ export default function OSTDuelCard({
 
   // Quand la lecture démarre, reset la vidéo de fond à 0 pour rester synchro avec le player audio
   useEffect(() => {
-    if (isPlaying && videoRef.current) {
-      videoRef.current.currentTime = 0
-    }
+    const video = videoRef.current
+    if (!video) return
+    video.muted = !isPlaying
+    if (isPlaying) video.currentTime = 0
+    video.play().catch(() => {})
   }, [isPlaying])
 
   // Pause la preview de l'autre card quand un opening est en cours d'écoute
   useEffect(() => {
-    if (!videoRef.current) return
-    if (otherIsPlaying) {
-      videoRef.current.pause()
-    } else {
-      videoRef.current.play().catch(() => {})
-    }
-  }, [otherIsPlaying])
+    const video = videoRef.current
+    if (!video) return
+    if (!isPlaying) video.muted = true
+    video.play().catch(() => {})
+  }, [otherIsPlaying, isPlaying])
 
   function handleFullscreen() {
     const el = videoRef.current
@@ -58,6 +58,7 @@ export default function OSTDuelCard({
   const canPlay  = ytOk || !!participant?.audioUrl
   const thumbUrl = ytOk ? `https://img.youtube.com/vi/${participant.ytId}/hqdefault.jpg` : null
   const showThumb = !!thumbUrl && imgState === 'ok'
+  const showInlineYoutube = isPlaying && ytOk && !participant?.audioUrl
   const accent   = participant?.color || GOLD
   const myVote   = voted === side
 
@@ -123,22 +124,56 @@ export default function OSTDuelCard({
             }}
             key={participant.audioUrl}
             src={participant.audioUrl}
-            autoPlay muted loop playsInline
+            autoPlay
+            muted={!isPlaying}
+            loop={!isPlaying}
+            playsInline
+            preload={isPlaying ? 'auto' : 'metadata'}
             style={{
               position: 'absolute', inset: 0,
               width: '100%', height: '100%',
+              maxWidth: 'none', maxHeight: 'none',
               objectFit: 'cover',
               opacity: isLoser
                 ? (isPlaying ? 0.12 : 0.07)
-                : isPlaying ? 0.78 : 0.38,
+                : isPlaying ? 0.9 : 0.48,
               filter: isPlaying ? 'none' : 'saturate(1.3) brightness(0.85)',
               transition: 'opacity 0.5s, filter 0.5s',
             }}
           />
         )}
 
+        {/* Lecteur visuel YouTube dans la carte active.
+            Le son reste gere par le player compact pour garder volume/seek/stop. */}
+        {showInlineYoutube && (
+          <div style={{
+            position: 'absolute',
+            inset: 0,
+            overflow: 'hidden',
+            background: '#05060a',
+          }}>
+            <iframe
+              key={`${participant.ytId}-inline`}
+              src={`https://www.youtube-nocookie.com/embed/${participant.ytId}?autoplay=1&mute=1&controls=0&playsinline=1&modestbranding=1&rel=0&loop=1&playlist=${participant.ytId}`}
+              title={`${participant.title || 'Opening'} visual`}
+              allow="autoplay; encrypted-media; picture-in-picture"
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: '50%',
+                width: '177.78%',
+                height: '100%',
+                transform: 'translateX(-50%)',
+                border: 'none',
+                pointerEvents: 'none',
+                opacity: isLoser ? 0.16 : 0.86,
+              }}
+            />
+          </div>
+        )}
+
         {/* Thumbnail YouTube quand pas de audioUrl (toujours visible en mode vivid) */}
-        {!participant?.audioUrl && (vivid || !isPlaying) && showThumb && (
+        {!showInlineYoutube && !participant?.audioUrl && showThumb && (
           <img
             src={`https://img.youtube.com/vi/${participant.ytId}/maxresdefault.jpg`}
             alt=""
@@ -146,6 +181,7 @@ export default function OSTDuelCard({
             style={{
               position: 'absolute', top: '-8%', left: '-5%',
               width: '110%', height: '116%',
+              maxWidth: 'none', maxHeight: 'none',
               objectFit: 'cover', objectPosition: 'center 30%',
               opacity: vivid ? (isLoser ? 0.32 : 0.66) : (isLoser ? 0.08 : 0.48),
               filter: 'saturate(1.3) brightness(0.9)',
@@ -166,7 +202,9 @@ export default function OSTDuelCard({
         {/* Dégradé sombre : transparent en haut → opaque en bas */}
         <div style={{
           position: 'absolute', inset: 0,
-          background: 'linear-gradient(180deg, rgba(6,7,12,.05) 0%, rgba(6,7,12,.08) 25%, rgba(6,7,12,.55) 52%, rgba(6,7,12,.95) 100%)',
+          background: showInlineYoutube || isPlaying
+            ? 'linear-gradient(180deg, rgba(6,7,12,.02) 0%, rgba(6,7,12,.05) 28%, rgba(6,7,12,.34) 58%, rgba(6,7,12,.86) 100%)'
+            : 'linear-gradient(180deg, rgba(6,7,12,.05) 0%, rgba(6,7,12,.08) 25%, rgba(6,7,12,.55) 52%, rgba(6,7,12,.95) 100%)',
         }} />
 
         {isWinner && <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(212,160,23,.07) 0%, transparent 50%)' }} />}

@@ -78,6 +78,7 @@ export default function UndercoverPage() {
   const actedRef = useRef('')
   const autoJoinRef = useRef(false)
   const refreshing = useRef(false)    // anti refresh-en-vol simultané (realtime + poll)
+  const refreshQueuedRef = useRef(false)
   const lastRealtimeRef = useRef(0)   // dernier event realtime → ralentit le poll
   const isMobile = vw < 720, isNarrow = vw < 1000
 
@@ -93,13 +94,23 @@ export default function UndercoverPage() {
   useEffect(() => { if (!code) return; const t = setInterval(() => setNow(Date.now()), 250); return () => clearInterval(t) }, [code])
 
   const refresh = useCallback(async (c = code) => {
-    if (!c || refreshing.current) return   // évite 2 refresh simultanés (realtime + poll)
+    if (!c) return
+    if (refreshing.current) {
+      refreshQueuedRef.current = true
+      return
+    }
     refreshing.current = true
     try {
       const [r, pl, vt] = await Promise.all([fetchRoom(c), fetchPlayers(c), fetchAllVotes(c)])
       if (!r || r._wrongType) { setNotFound(true); setRoom(null); return }
       setNotFound(false); setRoom(r); setPlayers(pl); setVotes(vt)
+    } catch {
+      // Le realtime/polling ne doit jamais mourir sur une erreur reseau ponctuelle.
     } finally { refreshing.current = false }
+    if (refreshQueuedRef.current) {
+      refreshQueuedRef.current = false
+      return refresh(c)
+    }
   }, [code])
 
   useEffect(() => {
@@ -113,12 +124,22 @@ export default function UndercoverPage() {
     const tick = () => {
       if (stop) return
       const recentRT = Date.now() - lastRealtimeRef.current < 20000
-      const delay = document.hidden ? 30000 : recentRT ? 12000 : 3000
+      const delay = document.hidden ? 15000 : recentRT ? 5000 : 2000
       timer = setTimeout(async () => { await refresh(code); tick() }, delay)
     }
     tick()
+    const syncOnFocus = () => { if (!document.hidden) refresh(code) }
+    window.addEventListener('focus', syncOnFocus)
+    document.addEventListener('visibilitychange', syncOnFocus)
     const ping = setInterval(() => userId && touchPlayer(code, userId), 25000)
-    return () => { stop = true; clearTimeout(timer); unsub(); clearInterval(ping) }
+    return () => {
+      stop = true
+      clearTimeout(timer)
+      unsub()
+      clearInterval(ping)
+      window.removeEventListener('focus', syncOnFocus)
+      document.removeEventListener('visibilitychange', syncOnFocus)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [code, userId])
 
@@ -127,6 +148,7 @@ export default function UndercoverPage() {
     let ignore = false
     supabase.from('undercover_secrets').select('role,word').eq('room_code', code).eq('user_id', String(userId)).maybeSingle()
       .then(({ data }) => { if (!ignore) setSecret(data || null) })
+      .catch(() => { if (!ignore) setSecret(null) })
     return () => { ignore = true }
   }, [code, userId, g?.phase, g?.round])
 
@@ -136,7 +158,16 @@ export default function UndercoverPage() {
   useEffect(() => {
     if (!room || !code || !isAuthenticated || !userId || autoJoinRef.current) return
     autoJoinRef.current = true
-    joinRoom({ code, userId, displayName, avatarUrl }).then(() => refresh(code))
+    joinRoom({ code, userId, displayName, avatarUrl })
+      .then(({ error }) => {
+        if (error) {
+          autoJoinRef.current = false
+          setErr(error)
+          return
+        }
+        refresh(code)
+      })
+      .catch(() => { autoJoinRef.current = false; setErr('Connexion au salon impossible') })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [room, code, isAuthenticated, userId])
 
@@ -186,7 +217,10 @@ export default function UndercoverPage() {
     if (speakerDone || timedOut) {
       actedRef.current = key
       // si l'écriture échoue/timeout, on réautorise un retry (sinon tour bloqué)
-      advanceTurn(g).then(r => { if (r?.error) actedRef.current = '' })
+      advanceTurn(g).then(r => {
+        if (r?.error) actedRef.current = ''
+        else refresh(code)
+      }).catch(() => { actedRef.current = '' })
     }
   }, [isHost, g, votes, currentUid, now, advanceTurn])
 
@@ -196,7 +230,13 @@ export default function UndercoverPage() {
     if (actedRef.current === key) return
     const allVoted = alive.length > 0 && alive.every(u => elimVotes.some(v => String(v.user_id) === u))
     const timedOut = g.voteDeadline && now >= new Date(g.voteDeadline).getTime()
-    if (allVoted || timedOut) { actedRef.current = key; callApi('uc_resolve').then(ok => { if (!ok) actedRef.current = '' }) }
+    if (allVoted || timedOut) {
+      actedRef.current = key
+      callApi('uc_resolve').then(ok => {
+        if (!ok) actedRef.current = ''
+        else refresh(code)
+      }).catch(() => { actedRef.current = '' })
+    }
   }, [isHost, g, elimVotes, alive, now, callApi])
 
   async function handleCreate() {
@@ -232,11 +272,39 @@ export default function UndercoverPage() {
     if (error) { setErr(error === 'introuvable' ? 'Salon introuvable' : error); return }
     setParams({ code: c }); setCode(c)
   }
-  async function startGame() { if (players.length < 3) return; setErr(''); await callApi('uc_assign') }
-  function startDescribing() { updateRoom(code, { rounds: { ...g, phase: 'describing', turnDeadline: new Date(Date.now() + TURN_SECONDS * 1000).toISOString() } }) }
-  function sendClue() { const t = clue.trim(); if (!t || !myTurn || myClueThisTurn) return; setClue(''); submitClue({ code, round: g.round, pass: g.pass, userId, clue: t }) }
-  function voteElim(targetUid) { if (myElimVote || !alive.includes(String(userId))) return; castElimVote({ code, round: g.round, userId, targetUid }) }
-  function replay() { if (isHost) updateRoom(code, { status: 'lobby', rounds: { phase: 'lobby' } }) }
+  async function startGame() {
+    if (players.length < 3 || busy) return
+    setErr(''); setBusy(true)
+    const ok = await callApi('uc_assign')
+    setBusy(false)
+    if (ok) refresh(code)
+  }
+  async function startDescribing() {
+    setErr('')
+    const { error } = await updateRoom(code, { rounds: { ...g, phase: 'describing', turnDeadline: new Date(Date.now() + TURN_SECONDS * 1000).toISOString() } })
+    if (error) { setErr(error); return }
+    refresh(code)
+  }
+  async function sendClue() {
+    const t = clue.trim()
+    if (!t || !myTurn || myClueThisTurn) return
+    setClue('')
+    const { error } = await submitClue({ code, round: g.round, pass: g.pass, userId, clue: t })
+    if (error) { setErr(error); return }
+    refresh(code)
+  }
+  async function voteElim(targetUid) {
+    if (myElimVote || !alive.includes(String(userId))) return
+    const { error } = await castElimVote({ code, round: g.round, userId, targetUid })
+    if (error) { setErr(error); return }
+    refresh(code)
+  }
+  async function replay() {
+    if (!isHost) return
+    const { error } = await updateRoom(code, { status: 'lobby', rounds: { phase: 'lobby' } })
+    if (error) { setErr(error); return }
+    refresh(code)
+  }
   function leave() { setParams({}); setCode(''); setRoom(null); setNotFound(false); autoJoinRef.current = false }
 
   // ── Styles ──
@@ -496,7 +564,10 @@ export default function UndercoverPage() {
         {!amIn && (
           <div style={{ ...card, padding: 22, marginBottom: 16 }}>
             <div style={{ marginBottom: 10, fontWeight: 700 }}>Rejoins cette clairière</div>
-            <button onClick={() => joinRoom({ code, userId, displayName, avatarUrl }).then(() => refresh(code))} style={cta()}>Rejoindre</button>
+            <button onClick={() => joinRoom({ code, userId, displayName, avatarUrl })
+              .then(({ error }) => error ? setErr(error) : refresh(code))
+              .catch(() => setErr('Connexion au salon impossible'))}
+              style={cta()}>Rejoindre</button>
           </div>
         )}
         <div style={{ ...card, padding: 24 }}>

@@ -22,37 +22,70 @@ const ARENA_CSS = `
 
 // ── Page background overlay ────────────────────────────────────────────────
 function PlayingBgOverlay({ ytId, audioUrl, color }) {
+  const c = color || GOLD
+  const thumb = ytId ? `https://img.youtube.com/vi/${ytId}/maxresdefault.jpg` : null
+  const fallbackThumb = ytId ? `https://img.youtube.com/vi/${ytId}/sddefault.jpg` : null
+  const media = {
+    position: 'absolute', inset: 0,
+    width: '100%', height: '100%',
+    maxWidth: 'none', maxHeight: 'none',
+    objectFit: 'cover',
+  }
+  const onThumbError = e => {
+    if (fallbackThumb && e.currentTarget.src !== fallbackThumb) e.currentTarget.src = fallbackThumb
+  }
+  const imageLayer = (style) => thumb ? (
+    <img src={thumb} alt="" onError={onThumbError} style={{ ...media, ...style }} />
+  ) : null
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 1.4 }}
-      style={{ position: 'fixed', inset: 0, zIndex: 1, pointerEvents: 'none', overflow: 'hidden' }}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 1, pointerEvents: 'none', overflow: 'hidden',
+        background: `radial-gradient(90% 100% at 50% 45%, ${c}30, rgba(8,9,14,.72) 56%, rgba(8,9,14,.92) 100%)`,
+      }}
     >
       {ytId ? (
-        <img
-          src={`https://img.youtube.com/vi/${ytId}/maxresdefault.jpg`}
-          alt=""
-          onError={e => { e.currentTarget.src = `https://img.youtube.com/vi/${ytId}/sddefault.jpg` }}
-          style={{
-            position: 'absolute', inset: '-15%',
-            width: '130%', height: '130%',
-            objectFit: 'cover', objectPosition: 'center 35%',
-            filter: 'blur(22px) brightness(0.5) saturate(1.55)',
-          }}
-        />
+        <>
+          {imageLayer({
+            objectPosition: 'left 35%',
+            transform: 'scale(1.9) translateX(-19%)',
+            filter: 'blur(54px) brightness(0.74) saturate(1.55)',
+            opacity: 0.42,
+          })}
+          {imageLayer({
+            objectPosition: 'right 35%',
+            transform: 'scale(1.9) translateX(19%)',
+            filter: 'blur(54px) brightness(0.78) saturate(1.65)',
+            opacity: 0.5,
+          })}
+          {imageLayer({
+            objectPosition: 'center 35%',
+            transform: 'scale(1.16)',
+            filter: 'blur(20px) brightness(0.62) saturate(1.45)',
+            opacity: 0.72,
+          })}
+        </>
       ) : audioUrl ? (
         <video src={audioUrl} autoPlay muted loop playsInline
           style={{
-            position: 'absolute', inset: '-15%',
-            width: '130%', height: '130%',
-            objectFit: 'cover', objectPosition: 'center center',
-            filter: 'blur(22px) brightness(0.5) saturate(1.55)',
+            ...media,
+            objectPosition: 'center center',
+            transform: 'scale(1.18)',
+            filter: 'blur(24px) brightness(0.62) saturate(1.45)',
+            opacity: 0.72,
           }}
         />
       ) : null}
-      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,.3) 0%, rgba(2,2,3,.34) 50%, rgba(2,2,3,.5) 100%), radial-gradient(58% 48% at 50% 46%, rgba(2,2,3,.28), transparent 78%)' }} />
+      <div style={{ position: 'absolute', inset: 0, background:
+        `radial-gradient(64% 100% at 100% 50%, ${c}4a, transparent 74%),`
+        + `radial-gradient(64% 100% at 0% 50%, ${c}32, transparent 74%),`
+        + `linear-gradient(90deg, rgba(8,9,14,.18), transparent 38%, ${c}18 100%)` }} />
+      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,.24) 0%, rgba(2,2,3,.26) 50%, rgba(2,2,3,.44) 100%), radial-gradient(62% 52% at 50% 46%, rgba(2,2,3,.22), transparent 82%)' }} />
     </motion.div>
   )
 }
@@ -63,14 +96,18 @@ function fmt(s) {
 }
 
 // ── Compact audio strip ────────────────────────────────────────────────────
-function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop, onSeek }) {
+function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop, onSeek, mediaRef }) {
   const iframeRef = useRef(null)
   const videoRef  = useRef(null)
   const timerRef  = useRef(null)
   const startRef  = useRef(Date.now())
+  const stopRef   = useRef(onStop)
   const [volume,  setVolume]  = useState(100)
   const [elapsed, setElapsed] = useState(0)
   const [duration, setDuration] = useState(0)
+  const getMedia = () => (audioUrl && mediaRef?.current) ? mediaRef.current : videoRef.current
+
+  useEffect(() => { stopRef.current = onStop }, [onStop])
   const LIMIT = 600   // openings jouables en entier (plus de coupure à 1m30)
 
   useEffect(() => {
@@ -85,8 +122,42 @@ function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop, onSeek }) 
   }, [audioUrl])
 
   useEffect(() => {
-    if (videoRef.current) videoRef.current.volume = volume / 100
-  }, [volume])
+    const media = getMedia()
+    if (!media) return
+    media.volume = volume / 100
+    if (audioUrl && mediaRef?.current) media.muted = false
+  }, [volume, audioUrl, mediaRef])
+
+  useEffect(() => {
+    if (!audioUrl || !mediaRef) return
+    let disposed = false
+    let cleanup = () => {}
+    const raf = requestAnimationFrame(() => {
+      const media = mediaRef.current
+      if (!media || disposed) return
+      const loaded = () => setDuration(media.duration || 0)
+      const time = () => {
+        const t = media.currentTime || 0
+        setElapsed(t)
+        if (t >= LIMIT) stopRef.current?.()
+      }
+      const ended = () => stopRef.current?.()
+      media.addEventListener('loadedmetadata', loaded)
+      media.addEventListener('timeupdate', time)
+      media.addEventListener('ended', ended)
+      media.muted = false
+      media.volume = volume / 100
+      media.play().catch(() => {})
+      loaded()
+      time()
+      cleanup = () => {
+        media.removeEventListener('loadedmetadata', loaded)
+        media.removeEventListener('timeupdate', time)
+        media.removeEventListener('ended', ended)
+      }
+    })
+    return () => { disposed = true; cancelAnimationFrame(raf); cleanup() }
+  }, [audioUrl, mediaRef, ytId])
 
   useEffect(() => {
     if (!audioUrl && iframeRef.current) {
@@ -103,7 +174,8 @@ function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop, onSeek }) 
   function handleSeek(rawValue) {
     const t = Number(rawValue)
     setElapsed(t)
-    if (audioUrl && videoRef.current) videoRef.current.currentTime = t
+    const media = getMedia()
+    if (audioUrl && media) media.currentTime = t
     onSeek?.(t)
   }
 
@@ -131,21 +203,21 @@ function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop, onSeek }) 
       }} />
 
       {/* Audio element caché — source de vérité pour l'audio */}
-      {audioUrl ? (
+      {audioUrl && !mediaRef ? (
         <video ref={videoRef} src={audioUrl} autoPlay width={0} height={0}
           onLoadedMetadata={e => setDuration(e.target.duration || 0)}
           onTimeUpdate={e => { setElapsed(e.target.currentTime); if (e.target.currentTime >= LIMIT) onStop() }}
           onEnded={onStop}
           style={{ position: 'absolute', opacity: 0, pointerEvents: 'none' }}
         />
-      ) : (
+      ) : !audioUrl ? (
         <iframe ref={iframeRef} width={0} height={0}
           src={`https://www.youtube.com/embed/${ytId}?autoplay=1&start=0&enablejsapi=1&controls=0`}
           allow="autoplay; encrypted-media"
           style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', border: 'none' }}
           title={title}
         />
-      )}
+      ) : null}
 
       {/* Dot coloré */}
       <div style={{
@@ -488,6 +560,7 @@ export default function DuelArena({
             anime={playing.anime}
             onStop={() => setPlaying(null)}
             onSeek={handleCardBgSeek}
+            mediaRef={playing.audioUrl ? cardBgVideoRef : null}
           />
         )}
       </AnimatePresence>
