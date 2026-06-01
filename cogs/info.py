@@ -66,6 +66,18 @@ _VIOLET_GIF_FILES = [
     "violet-mirror.gif",
     "violet-citation.gif",
 ]
+_VIOLET_GIF_URLS = [
+    "https://tenor.com/view/violet-evergarden-gif-20467146",
+    "https://tenor.com/view/violet-evergarden-crying-gif-12390396",
+    "https://tenor.com/view/violet-evergarden-crying-violet-evergarden-the-movie-violet-evergarden-violet-crying-gif-21668802",
+    "https://tenor.com/view/anime-kyoto-animation-violet-evergarden-gif-14649065",
+    "https://giphy.com/gifs/oCF97eKqerLC3iRMiG",
+    "https://giphy.com/gifs/violet-evergarden-WOrdTY884aHw2Yfbpr/",
+    "https://tenor.com/view/violet-evergarden-gif-24940943",
+    "https://tenor.com/view/violet-evergarden-violet-gilbert-major-gilbert-bougainvillea-gif-26788874",
+    "https://tenor.com/view/kyoto-animation-anime-violet-evergarden-kyo-ani-gif-22460573",
+    "https://tenor.com/view/violet-evergarden-benedict-blue-gif-21464734",
+]
 _RE_VIOLET_BEST_ANIME = re.compile(
     r"\b(?:"
     r"quel\s+est\s+le\s+meilleur\s+anime(?:\s+(?:du\s+monde|de\s+tous\s+les\s+temps))?|"
@@ -103,22 +115,25 @@ _VIOLET_BEST_REPLIES = [
 ]
 
 
-def _violet_best_gif_path() -> str | None:
+def _violet_best_gif_source() -> str | None:
     candidates = [os.path.join(_VIOLET_GIF_DIR, name) for name in _VIOLET_GIF_FILES]
     available = [path for path in candidates if os.path.exists(path)]
+    available.extend(_VIOLET_GIF_URLS)
     return random.choice(available) if available else None
 
 
 async def _reply_violet_best_anime(message: discord.Message) -> bool:
-    gif_path = _violet_best_gif_path()
+    gif_source = _violet_best_gif_source()
     reply = random.choice(_VIOLET_BEST_REPLIES)
     try:
-        if gif_path:
+        if gif_source and not gif_source.startswith("http"):
             await message.reply(
                 reply,
-                file=discord.File(gif_path, filename=os.path.basename(gif_path)),
+                file=discord.File(gif_source, filename=os.path.basename(gif_source)),
                 mention_author=False,
             )
+        elif gif_source:
+            await message.reply(f"{reply}\n{gif_source}", mention_author=False)
         else:
             await message.reply(reply, mention_author=False)
         return True

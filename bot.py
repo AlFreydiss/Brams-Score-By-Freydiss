@@ -290,6 +290,18 @@ _VIOLET_GIF_FILES    = [
     "violet-mirror.gif",
     "violet-citation.gif",
 ]
+_VIOLET_GIF_URLS = [
+    "https://tenor.com/view/violet-evergarden-gif-20467146",
+    "https://tenor.com/view/violet-evergarden-crying-gif-12390396",
+    "https://tenor.com/view/violet-evergarden-crying-violet-evergarden-the-movie-violet-evergarden-violet-crying-gif-21668802",
+    "https://tenor.com/view/anime-kyoto-animation-violet-evergarden-gif-14649065",
+    "https://giphy.com/gifs/oCF97eKqerLC3iRMiG",
+    "https://giphy.com/gifs/violet-evergarden-WOrdTY884aHw2Yfbpr/",
+    "https://tenor.com/view/violet-evergarden-gif-24940943",
+    "https://tenor.com/view/violet-evergarden-violet-gilbert-major-gilbert-bougainvillea-gif-26788874",
+    "https://tenor.com/view/kyoto-animation-anime-violet-evergarden-kyo-ani-gif-22460573",
+    "https://tenor.com/view/violet-evergarden-benedict-blue-gif-21464734",
+]
 _RE_VIOLET_GIF_TRIGGER = re.compile(
     r"\b(?:violet(?:\s+evergarden)?|evergarden|sincerely|auto\s*memory\s*doll)\b",
     re.IGNORECASE,
@@ -372,28 +384,31 @@ _RE_BAD_TALK = re.compile(
     re.IGNORECASE
 )
 
-def _choose_violet_gif_path() -> str | None:
+def _choose_violet_gif_source() -> str | None:
     candidates = [
         os.path.join(_VIOLET_GIF_DIR, name)
         for name in _VIOLET_GIF_FILES
     ]
     candidates.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "violet evergarden citation.gif"))
     available = [path for path in candidates if os.path.exists(path)]
+    available.extend(_VIOLET_GIF_URLS)
     return random.choice(available) if available else None
 
 def _is_violet_best_anime_request(content: str) -> bool:
     return bool(_RE_VIOLET_BEST_ANIME.search(content))
 
 async def _reply_violet_best_anime(message) -> bool:
-    gif_path = _choose_violet_gif_path()
+    gif_source = _choose_violet_gif_source()
     reply = random.choice(_VIOLET_BEST_REPLIES)
     try:
-        if gif_path:
+        if gif_source and not gif_source.startswith("http"):
             await message.reply(
                 reply,
-                file=discord.File(gif_path, filename=os.path.basename(gif_path)),
+                file=discord.File(gif_source, filename=os.path.basename(gif_source)),
                 mention_author=False,
             )
+        elif gif_source:
+            await message.reply(f"{reply}\n{gif_source}", mention_author=False)
         else:
             await message.reply(reply, mention_author=False)
         return True
@@ -404,11 +419,11 @@ async def _reply_violet_best_anime(message) -> bool:
 def _reserve_violet_gif(channel_key: str, now_f: float) -> str | None:
     if now_f - _VIOLET_GIF_CD.get(channel_key, 0) < _VIOLET_GIF_DELAY:
         return None
-    gif_path = _choose_violet_gif_path()
-    if not gif_path:
+    gif_source = _choose_violet_gif_source()
+    if not gif_source:
         return None
     _VIOLET_GIF_CD[channel_key] = now_f
-    return gif_path
+    return gif_source
 
 async def _send_text_with_optional_violet_gif(
     channel,
@@ -420,7 +435,10 @@ async def _send_text_with_optional_violet_gif(
     gif_path = _reserve_violet_gif(channel_key, now_f) if include_violet else None
     if gif_path:
         try:
-            await channel.send(text, file=discord.File(gif_path, filename=os.path.basename(gif_path)))
+            if gif_path.startswith("http"):
+                await channel.send(f"{text}\n{gif_path}")
+            else:
+                await channel.send(text, file=discord.File(gif_path, filename=os.path.basename(gif_path)))
             return True
         except Exception as exc:
             print(f"[VIOLET GIF] envoi avec texte impossible: {exc}")
@@ -432,7 +450,10 @@ async def _send_violet_gif_only(message, channel_key: str, now_f: float) -> bool
     if not gif_path:
         return False
     try:
-        await message.channel.send(file=discord.File(gif_path, filename=os.path.basename(gif_path)))
+        if gif_path.startswith("http"):
+            await message.channel.send(gif_path)
+        else:
+            await message.channel.send(file=discord.File(gif_path, filename=os.path.basename(gif_path)))
         return True
     except Exception as exc:
         print(f"[VIOLET GIF] envoi impossible: {exc}")
