@@ -18,6 +18,7 @@ export function genRoomCode(len = 4) {
 
 export async function createUndercoverRoom({ hostUserId, displayName, avatarUrl }) {
   if (!supabase) return { error: 'supabase' }
+  if (!hostUserId) return { error: 'non connecté' }   // sinon salon sans hôte → ingérable
   for (let attempt = 0; attempt < 5; attempt++) {
     const code = genRoomCode()
     const { error } = await supabase.from('tournament_rooms').insert({

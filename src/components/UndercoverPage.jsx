@@ -178,14 +178,25 @@ export default function UndercoverPage() {
   }, [isHost, g, elimVotes, alive, now, callApi])
 
   async function handleCreate() {
+    if (busy) return
+    if (!userId) { setErr('Connexion en cours, réessaie dans un instant…'); return }
     setErr(''); setBusy(true)
     const { code: c, error } = await createUndercoverRoom({ hostUserId: userId, displayName, avatarUrl })
     setBusy(false)
-    if (error) { setErr('Création impossible : ' + error); return }
+    if (error || !c) { setErr('Création impossible : ' + (error || 'inconnue')); return }
+    // Optimiste : on affiche le lobby tout de suite (le host est déjà inséré côté
+    // serveur) sans attendre le 1er refresh realtime → plus de "bug" au démarrage.
+    autoJoinRef.current = true
+    setNotFound(false)
+    setRoom({ code: c, host_user_id: String(userId), tournament_id: 'undercover', status: 'lobby', rounds: { phase: 'lobby' } })
+    setPlayers([{ user_id: String(userId), display_name: displayName || 'Hôte', avatar_url: avatarUrl || null, is_host: true }])
+    setVotes([])
     setParams({ code: c }); setCode(c)
   }
   async function handleJoin(e) {
-    e?.preventDefault?.(); setErr(''); setBusy(true)
+    e?.preventDefault?.(); if (busy) return
+    if (!userId) { setErr('Connexion en cours, réessaie dans un instant…'); return }
+    setErr(''); setBusy(true)
     const c = joinCode.trim().toUpperCase()
     if (!c) { setErr('Entre un code'); setBusy(false); return }
     const { error } = await joinRoom({ code: c, userId, displayName, avatarUrl })
@@ -295,7 +306,7 @@ export default function UndercoverPage() {
                 ))}
               </motion.div>
               <motion.div variants={{ hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } }} style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                <button onClick={handleCreate} disabled={busy} onMouseEnter={e => { if (!busy) e.currentTarget.style.transform = 'translateY(-2px)' }} onMouseLeave={e => e.currentTarget.style.transform = 'none'}
+                <button onClick={handleCreate} disabled={busy || !userId} onMouseEnter={e => { if (!busy) e.currentTarget.style.transform = 'translateY(-2px)' }} onMouseLeave={e => e.currentTarget.style.transform = 'none'}
                   style={{ ...cta(), padding: '15px 28px', fontSize: 15.5, boxShadow: `0 14px 34px ${hexA(C.emerald, .32)}`, opacity: busy ? .6 : 1, transition: 'transform .15s' }}>
                   {busy ? '⏳ Création…' : '🌱 Créer une partie'}
                 </button>
@@ -373,7 +384,7 @@ export default function UndercoverPage() {
                   </div>
                 ))}
               </div>
-              <button onClick={handleCreate} disabled={busy} onMouseEnter={e => { if (!busy) e.currentTarget.style.transform = 'translateY(-2px)' }} onMouseLeave={e => e.currentTarget.style.transform = 'none'}
+              <button onClick={handleCreate} disabled={busy || !userId} onMouseEnter={e => { if (!busy) e.currentTarget.style.transform = 'translateY(-2px)' }} onMouseLeave={e => e.currentTarget.style.transform = 'none'}
                 style={{ ...cta(), width: '100%', padding: 16, fontSize: 15.5, marginTop: 'auto', boxShadow: busy ? 'none' : `0 14px 34px ${hexA(C.emerald, .3)}`, opacity: busy ? .6 : 1, transition: 'transform .15s' }}>
                 {busy ? '⏳ Création…' : '🌱 Créer le salon'}
               </button>
