@@ -78,6 +78,8 @@ export default function TournamentRoomPage() {
   const autoJoinRef = useRef(false)
   const refreshing = useRef(false)
   const lastRealtimeRef = useRef(0)
+  const revealTimerRef = useRef(null)
+  useEffect(() => () => clearTimeout(revealTimerRef.current), [])
 
   // Salons récents pour la section "Salons en direct" (uniquement sur l'accueil).
   const loadRooms = useCallback(() => {
@@ -172,11 +174,19 @@ export default function TournamentRoomPage() {
     const winnerId = winSide === 'left' ? current.match.left?.id : current.match.right?.id
     const next = advanceWinner(rounds, matchId, winnerId)
     const nextCur = getCurrentMatch(next)
-    updateTournamentRoom(code, {
-      rounds: next,
-      current_match: nextCur?.match.id || null,
-      status: getWinner(next) ? 'done' : 'playing',
-    }).then(() => { resolvingRef.current = false; refresh(code) })
+    const done = getWinner(next)
+    // Phase 1 — RÉVÉLATION : on reste sur le duel résolu (status 'reveal') ~4,5s
+    // pour montrer le gagnant au centre, PUIS on passe au duel suivant.
+    updateTournamentRoom(code, { rounds: next, current_match: matchId, status: 'reveal' })
+      .then(() => {
+        refresh(code)
+        clearTimeout(revealTimerRef.current)
+        revealTimerRef.current = setTimeout(() => {
+          updateTournamentRoom(code, { current_match: nextCur?.match.id || null, status: done ? 'done' : 'playing' })
+            .then(() => { resolvingRef.current = false; refresh(code) })
+            .catch(() => { resolvingRef.current = false })
+        }, 4500)
+      })
       .catch(() => { resolvingRef.current = false })
   }, [isHost, current, totalV, players.length, leftN, rightN, room?.status, rounds, code, refresh])
 
@@ -458,6 +468,14 @@ export default function TournamentRoomPage() {
           </div>
         )}
 
+        {/* RÉVÉLATION DU GAGNANT — affiché au centre entre deux duels */}
+        {room.status === 'reveal' && (() => {
+          let rm = null
+          for (const r of (rounds || [])) for (const m of (r.matches || [])) if (m.id === room.current_match) rm = m
+          const w = rm && rm.winnerId ? (rm.left?.id === rm.winnerId ? rm.left : rm.right) : null
+          return <WinnerReveal winner={w} />
+        })()}
+
         {/* DUEL EN COURS — openings empilés (haut / bas) + sidebar votes */}
         {room.status === 'playing' && current && (
           <div>
@@ -516,6 +534,29 @@ export default function TournamentRoomPage() {
         )}
       </div>
     </div>
+  )
+}
+
+// ── Révélation du gagnant d'un duel (centré, entre deux duels) ────────────────
+function WinnerReveal({ winner }) {
+  if (!winner) return null
+  const col = winner.color || PINK
+  const ytOk = winner.ytId && !String(winner.ytId).startsWith('similar')
+  return (
+    <>
+      <DuelAmbient left={winner} right={winner} />
+      <motion.div initial={{ opacity: 0, scale: 0.92, y: 14 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ duration: 0.5, ease }}
+        style={{ position: 'relative', zIndex: 2, maxWidth: 460, margin: '32px auto 0', textAlign: 'center' }}>
+        <div style={{ fontSize: 12.5, fontWeight: 900, letterSpacing: '.24em', color: PINK_L, marginBottom: 16 }}>🏆 VAINQUEUR DU DUEL</div>
+        {ytOk && (
+          <img src={`https://img.youtube.com/vi/${winner.ytId}/hqdefault.jpg`} alt=""
+            style={{ width: '100%', maxWidth: 420, borderRadius: 18, border: `2px solid ${col}`, boxShadow: `0 26px 70px ${hexA(col, 0.45)}` }} />
+        )}
+        <h2 style={{ margin: '18px 0 4px', fontSize: 'clamp(24px,4vw,32px)', fontWeight: 900, letterSpacing: '-.02em', color: '#fff' }}>{winner.title}</h2>
+        <div style={{ color: 'rgba(255,255,255,.6)', fontSize: 14 }}>{winner.anime}{winner.artist ? ` · ${winner.artist}` : ''}</div>
+        <div style={{ marginTop: 18, fontSize: 12, color: TXT_FAINT }}>Duel suivant dans un instant…</div>
+      </motion.div>
+    </>
   )
 }
 
