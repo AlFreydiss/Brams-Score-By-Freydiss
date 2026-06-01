@@ -1,6 +1,12 @@
 -- Blind Test multijoueur
 -- A coller dans Supabase -> SQL Editor -> Run
 
+-- Salons transitoires : on recrée proprement pour éviter les conflits avec
+-- l'ancien schéma `room_code/phase/track_id` de /blind-test.
+drop table if exists public.blind_test_room_answers cascade;
+drop table if exists public.blind_test_room_players cascade;
+drop table if exists public.blind_test_rooms cascade;
+
 create table if not exists public.blind_test_rooms (
   code text primary key,
   host_user_id text not null,
@@ -78,3 +84,5 @@ begin
   alter publication supabase_realtime add table public.blind_test_room_answers;
 exception when duplicate_object then null;
 end $$;
+
+notify pgrst, 'reload schema';

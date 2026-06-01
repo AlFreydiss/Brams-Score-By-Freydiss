@@ -479,6 +479,8 @@ function TpnHeroClean({ title, tab, readCount, chapterCount, watchedCount, episo
 function VideoCard({ video, onPlay, color, premium = false }) {
   const [hovered, setHovered] = useState(false)
   const thumb = video.thumbnail || (video.id ? `https://img.youtube.com/vi/${video.id}/mqdefault.jpg` : null)
+  const episodeLabel = video.episodeLabel || (video.kind === 'film' ? 'Film' : video.kind === 'ova' ? 'OAV' : video.episode)
+  const typeLabel = video.kind === 'film' || video.kind === 'ova' ? String(episodeLabel).toUpperCase() : `EPISODE ${episodeLabel}`
   return (
     <div onClick={onPlay} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
       style={{
@@ -504,7 +506,7 @@ function VideoCard({ video, onPlay, color, premium = false }) {
       </div>
       <div style={{ padding: premium ? '14px 16px 16px' : '12px 16px' }}>
         {video.arc && <div style={{ fontSize: premium ? 10 : 9, fontWeight: 850, color: premium ? '#8f86ff' : `${color}bb`, letterSpacing: '0.11em', textTransform: 'uppercase', marginBottom: 6 }}>⬥ {premium ? tpnArcLabel(video.arc) : video.arc}</div>}
-        <div style={{ fontSize: premium ? 11 : 10, fontWeight: 850, color, letterSpacing: '0.08em', marginBottom: 5 }}>ÉPISODE {video.episode}</div>
+        <div style={{ fontSize: premium ? 11 : 10, fontWeight: 850, color, letterSpacing: '0.08em', marginBottom: 5 }}>{typeLabel}</div>
         <div style={{ fontSize: premium ? 15 : 14, fontWeight: 800, color: '#fff', lineHeight: 1.28 }}>{video.title}</div>
       </div>
     </div>
@@ -721,7 +723,7 @@ export default function GenericMangaPage({ chaptersData, videosData, color, name
             <div style={{ width: 3, height: 32, borderRadius: 2, background: color, flexShrink: 0 }} />
             <div style={{ flex: 1, minWidth: 220 }}>
               <div style={{ fontFamily: 'var(--display)', fontWeight: 900, fontSize: usesEpisodeLayout ? 19 : 16, color: '#fff', letterSpacing: usesEpisodeLayout ? '-.01em' : 0 }}>{headerEmoji} {title}</div>
-              {(CHAPTERS.length > 0 || VIDEOS.length > 0) && <div style={{ fontSize: usesEpisodeLayout ? 12 : 11, color: '#34d399', fontWeight: 800 }}>{usesEpisodeLayout ? topProgressLabel : `${readCount}/${CHAPTERS.length} chapitres lus`}</div>}
+              {(CHAPTERS.length > 0 || VIDEOS.length > 0) && <div style={{ fontSize: usesEpisodeLayout ? 12 : 11, color: '#34d399', fontWeight: 800 }}>{tab === 'videos' ? topProgressLabel : `${readCount}/${CHAPTERS.length} chapitres lus`}</div>}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
               {tab === 'scans' && chaptersByArc && chaptersByArc.length > 1 && (

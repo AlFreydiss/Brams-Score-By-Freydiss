@@ -81,6 +81,8 @@ function ProgressRing({ pct, size = 72, stroke = 5 }) {
 
 const EpCard = memo(function EpCard({ video, index, watched, onPlay }) {
   const [imgErr, setImgErr] = useState(false)
+  const cardLabel = video.kind === 'film' ? 'FILM' : video.kind === 'ova' ? 'OAV' : `EPISODE ${video.episode}`
+  const fallbackLabel = video.kind === 'ova' ? 'OAV' : video.kind === 'film' ? 'FILM' : video.episode
   return (
     <div className="ve-ep-card" role="button" tabIndex={0} onClick={onPlay} onKeyDown={e => e.key === 'Enter' && onPlay()}
       style={{ borderRadius: 14, overflow: 'hidden', background: 'rgba(14,12,24,.92)', border: `1px solid ${watched ? 'rgba(139,124,255,.28)' : 'rgba(255,255,255,.07)'}`, animation: `veFadeUp .3s ${index * 0.04}s ease-out both`, position: 'relative' }}>
@@ -89,7 +91,7 @@ const EpCard = memo(function EpCard({ video, index, watched, onPlay }) {
           ? <img src={video.thumbnail} alt={video.title} loading="lazy" onError={() => setImgErr(true)}
               style={{ position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',opacity: watched ? 0.5 : 0.82 }} />
           : <div style={{ position:'absolute',inset:0, background:`linear-gradient(135deg,rgba(139,124,255,.14),rgba(0,0,0,.9))`, display:'flex',alignItems:'center',justifyContent:'center' }}>
-              <span style={{ fontFamily:"'Pirata One',cursive", fontSize:40, fontWeight:900, color:`rgba(139,124,255,.28)`, lineHeight:1 }}>{video.episode}</span>
+              <span style={{ fontFamily:"'Pirata One',cursive", fontSize:40, fontWeight:900, color:`rgba(139,124,255,.28)`, lineHeight:1 }}>{fallbackLabel}</span>
             </div>}
         <div style={{ position:'absolute',inset:'40% 0 0', background:'linear-gradient(180deg,transparent,rgba(0,0,0,.65))', pointerEvents:'none' }} />
         <div className="ve-play-btn" style={{ position:'absolute',inset:0, display:'flex',alignItems:'center',justifyContent:'center', opacity: watched ? 0.5 : 0.78 }}>
@@ -99,7 +101,7 @@ const EpCard = memo(function EpCard({ video, index, watched, onPlay }) {
         <div style={{ position:'absolute',bottom:8,left:8, fontSize:9,fontWeight:800,background:'rgba(139,124,255,.18)',color:COLOR2,border:`1px solid rgba(139,124,255,.28)`,borderRadius:100,padding:'2px 7px' }}>{video.badge || 'VOSTFR'}</div>
       </div>
       <div style={{ padding:'10px 13px 13px' }}>
-        <div style={{ fontSize:9.5,fontWeight:800,color:COLOR2,letterSpacing:'.1em',marginBottom:4 }}>{video.kind === 'film' ? 'FILM' : `ÉPISODE ${video.episode}`}</div>
+        <div style={{ fontSize:9.5,fontWeight:800,color:COLOR2,letterSpacing:'.1em',marginBottom:4 }}>{cardLabel}</div>
         <div style={{ fontSize:13.5,fontWeight:700,color:watched?'rgba(255,255,255,.45)':'#EDEBE3',lineHeight:1.28 }}>{video.title}</div>
       </div>
     </div>
@@ -146,9 +148,10 @@ function InfoPanel({ watchedCount, total, lastWatchedIdx, onResume }) {
 
         <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:8 }}>
           {[
-            { label:'Épisodes', value:String(VIDEOS.filter(v=>v.kind!=='film').length), dot:COLOR2 },
+            { label:'Épisodes', value:String(VIDEOS.filter(v=>!v.kind).length), dot:COLOR2 },
+            { label:'OAV', value:String(VIDEOS.filter(v=>v.kind==='ova').length), dot:'#fbbf24' },
             { label:'Films', value:String(VIDEOS.filter(v=>v.kind==='film').length), dot:'#34d399' },
-            { label:'Audio', value:'VOSTFR', dot:'#fbbf24' },
+            { label:'Audio', value:'VF + VO', dot:'#f97316' },
             { label:'Note', value:'★ 8.6', dot:'#f97316' },
           ].map(s => (
             <div key={s.label} style={{ padding:'10px 12px',borderRadius:12,background:'rgba(255,255,255,.04)',border:'1px solid rgba(255,255,255,.06)' }}>
@@ -197,7 +200,7 @@ export default function VioletEvergardenPage({ onClose }) {
     return () => window.removeEventListener('keydown', fn)
   }, [playerIdx, onClose])
 
-  const keyOf = (v) => v.kind === 'film' ? `film-${v.episode}` : v.episode
+  const keyOf = (v) => v.progressKey || v.id || (v.kind === 'film' ? `film-${v.episode}` : v.kind === 'ova' ? `ova-${v.episode}` : v.episode)
   const markWatched = useCallback((idx) => {
     setProgress(prev => {
       const v = VIDEOS[idx]; if (!v) return prev
@@ -212,7 +215,8 @@ export default function VioletEvergardenPage({ onClose }) {
   const openPlayer = useCallback((idx) => { setPlayerIdx(idx); markWatched(idx) }, [markWatched])
   const playHandlers = useMemo(() => VIDEOS.map((_, i) => () => openPlayer(i)), [openPlayer])
 
-  const episodes = VIDEOS.map((v, i) => ({ v, i })).filter(x => x.v.kind !== 'film')
+  const episodes = VIDEOS.map((v, i) => ({ v, i })).filter(x => !x.v.kind)
+  const ovas = VIDEOS.map((v, i) => ({ v, i })).filter(x => x.v.kind === 'ova')
   const films = VIDEOS.map((v, i) => ({ v, i })).filter(x => x.v.kind === 'film')
 
   return (
@@ -231,7 +235,7 @@ export default function VioletEvergardenPage({ onClose }) {
           <div style={{ position:'absolute',left:'50%',transform:'translateX(-50%)',display:'flex',alignItems:'center',gap:10 }}>
             <span style={{ fontSize:17,animation:'veFloat 6s ease-in-out infinite' }}>✉</span>
             <span style={{ fontFamily:"'Pirata One',cursive",fontSize:17,fontWeight:900,color:'#fff',letterSpacing:'-.01em' }}>
-              {playerIdx !== null ? (VIDEOS[playerIdx]?.kind === 'film' ? VIDEOS[playerIdx]?.title : `Épisode ${VIDEOS[playerIdx]?.episode}`) : 'Violet Evergarden'}
+              {playerIdx !== null ? (VIDEOS[playerIdx]?.kind === 'film' || VIDEOS[playerIdx]?.kind === 'ova' ? VIDEOS[playerIdx]?.title : `Épisode ${VIDEOS[playerIdx]?.episode}`) : 'Violet Evergarden'}
             </span>
           </div>
           <div style={{ display:'flex',alignItems:'center',gap:8 }}>
@@ -259,7 +263,7 @@ export default function VioletEvergardenPage({ onClose }) {
                 <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20 }}>
                   <div>
                     <h3 style={{ margin:'0 0 3px',fontSize:18,fontWeight:900,color:'#fff',letterSpacing:'-.01em' }}>Épisodes</h3>
-                    <div style={{ fontSize:11,color:'rgba(255,255,255,.32)',fontWeight:600 }}>Saison 1 · {episodes.length} épisodes · VOSTFR</div>
+                    <div style={{ fontSize:11,color:'rgba(255,255,255,.32)',fontWeight:600 }}>Saison 1 · {episodes.length} épisodes · VF + VO</div>
                   </div>
                   <div style={{ display:'flex',alignItems:'center',gap:6,padding:'6px 14px',borderRadius:999,background:'rgba(139,124,255,.08)',border:'1px solid rgba(139,124,255,.18)' }}>
                     <div style={{ width:6,height:6,borderRadius:'50%',background:watchedCount===VIDEOS.length?'#34d399':COLOR,animation:watchedCount<VIDEOS.length&&watchedCount>0?'vePulse 2s infinite':'none' }} />
@@ -271,6 +275,17 @@ export default function VioletEvergardenPage({ onClose }) {
                     <EpCard key={keyOf(v)} video={v} index={i} watched={!!progress[keyOf(v)]?.completed} onPlay={playHandlers[i]} />
                   ))}
                 </div>
+
+                {ovas.length > 0 && (
+                  <>
+                    <h3 style={{ margin:'34px 0 16px',fontSize:18,fontWeight:900,color:'#fff',letterSpacing:'-.01em' }}>OAV</h3>
+                    <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(240px,1fr))', gap:14 }}>
+                      {ovas.map(({ v, i }) => (
+                        <EpCard key={keyOf(v)} video={v} index={i} watched={!!progress[keyOf(v)]?.completed} onPlay={playHandlers[i]} />
+                      ))}
+                    </div>
+                  </>
+                )}
 
                 {films.length > 0 && (
                   <>

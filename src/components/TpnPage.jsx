@@ -48,14 +48,43 @@ function ProgressRing({ pct, size = 72, stroke = 5 }) {
 
 const EpCard = memo(function EpCard({ video, index, watched, onPlay }) {
   const [imgErr, setImgErr] = useState(false)
+  const [imgReady, setImgReady] = useState(false)
+  const showImage = Boolean(video.thumbnail && !imgErr)
   return (
     <div className="tp-ep-card" role="button" tabIndex={0} onClick={onPlay} onKeyDown={e => e.key === 'Enter' && onPlay()}
       style={{ borderRadius: 14, overflow: 'hidden', background: 'rgba(14,12,24,.92)', border: `1px solid ${watched ? 'rgba(108,92,231,.28)' : 'rgba(255,255,255,.07)'}`, animation: `tpFadeUp .3s ${index * 0.04}s ease-out both`, position: 'relative' }}>
       <div style={{ position: 'relative', paddingTop: '57%', background: `linear-gradient(135deg, rgba(108,92,231,.16), rgba(0,0,0,.92))`, overflow: 'hidden' }}>
-        {video.thumbnail && !imgErr && (
-          <img src={video.thumbnail} alt="" loading="lazy" decoding="async" onError={() => setImgErr(true)} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', opacity: watched ? 0.4 : 0.62, filter: 'saturate(1.1) brightness(.82)' }} />
+        {showImage && (
+          <img
+            src={video.thumbnail}
+            alt=""
+            loading="eager"
+            decoding="async"
+            onLoad={() => setImgReady(true)}
+            onError={() => { setImgErr(true); setImgReady(false) }}
+            style={{
+              position: 'absolute',
+              inset: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              objectPosition: 'center',
+              opacity: imgReady ? (watched ? 0.4 : 0.74) : 0,
+              filter: 'saturate(1.08) brightness(.82)',
+              transition: 'opacity .18s ease',
+            }}
+          />
         )}
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          opacity: imgReady ? 0 : 1,
+          background: 'radial-gradient(circle at 50% 35%, rgba(108,92,231,.22), transparent 52%), linear-gradient(135deg, rgba(25,20,48,.92), rgba(5,4,12,.98))',
+          transition: 'opacity .18s ease',
+        }}>
           <span style={{ fontFamily: "'Pirata One',cursive", fontSize: 46, fontWeight: 900, color: 'rgba(255,255,255,.5)', lineHeight: 1, textShadow: '0 2px 12px rgba(0,0,0,.7)' }}>{video.episode}</span>
         </div>
         <div className="tp-play-btn" style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: watched ? 0.5 : 0.78 }}>

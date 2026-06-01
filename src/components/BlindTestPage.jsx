@@ -8,6 +8,8 @@ import { useAuth } from '../contexts/AuthContext.jsx'
 import { supabase } from '../lib/supabase.js'
 import {
   LOCAL_TRACKS, pickTrack, checkAnswer, calcBerries,
+  createBlindTestRoom, fetchBlindTestRoom, fetchBlindTestRoomPlayers,
+  joinBlindTestRoom, updateBlindTestRoom,
   upsertBlindTestScore, logSession,
 } from '../lib/blindTest.js'
 
@@ -21,7 +23,6 @@ const GREEN  = '#22c55e'
 const BG     = '#0a0a0b'
 
 const ROOM_QUERY = 'room'
-const ROOM_TABLE = 'blind_test_rooms'
 const ROUND_SECS = 30
 const GUESS_DELAY = 5
 
@@ -54,18 +55,32 @@ function pickMCQChoices(correctTrack, allTracks) {
     .slice(0, 3)
   return [correctTrack.anime, ...wrong].sort(() => Math.random() - 0.5)
 }
-function makeRoomCode() { return Math.random().toString(36).slice(2, 8).toUpperCase() }
 function getRoomFromUrl() { return (new URLSearchParams(window.location.search).get(ROOM_QUERY) || '').trim().toUpperCase() }
 function roomUrl(code) { const u = new URL(window.location.href); u.searchParams.set(ROOM_QUERY, code); return u.toString() }
-function normalizeRoom(row) {
-  return {
-    room_code:     row?.room_code     || '',
-    track_id:      row?.track_id      || null,
-    phase:         row?.phase         || 'lobby',
-    round:         Number(row?.round  || 0),
-    last_track_id: row?.last_track_id || null,
-    started_at:    row?.started_at    || null,
+function normalizeRoomCode(value) { return (value || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6) }
+function getBlindGuestId() {
+  const key = 'brams_blind_guest_id'
+  let id = localStorage.getItem(key)
+  if (!id) {
+    id = `guest_${crypto.randomUUID?.() || Math.random().toString(36).slice(2)}`
+    localStorage.setItem(key, id)
   }
+  return id
+}
+function normalizeRoom(row) {
+  const status = row?.status || row?.phase || 'waiting'
+  return {
+    room_code:     row?.code || row?.room_code || '',
+    track_id:      row?.current_track_id || row?.track_id || null,
+    phase:         status === 'waiting' ? 'lobby' : status,
+    round:         Number(row?.round || 0),
+    last_track_id: row?.last_track_id || row?.current_track_id || row?.track_id || null,
+    started_at:    row?.started_at || null,
+    host_user_id:  row?.host_user_id || null,
+  }
+}
+function roomSignature(room) {
+  return [room?.phase || '', room?.track_id || '', room?.round || 0, room?.started_at || ''].join('|')
 }
 
 // ─── Sub-components ────────────────────────────────────────────────────────
@@ -483,7 +498,11 @@ export default function BlindTestPage() {
   const { isAuthenticated, user, displayName, avatarUrl } = useAuth()
   const videoRef       = useRef(null)
   const roomChannelRef = useRef(null)
-  const roomGuardRef   = useRef(false)
+  const roomSignatureRef = useRef('')
+  const roomRoundRef   = useRef(0)
+  const roomRefreshingRef = useRef(false)
+  const roomRefreshQueuedRef = useRef(null)
+  const roomLastRealtimeRef = useRef(0)
   const titleRef       = useRef(null)
 
   const [phase,        setPhase]        = useState('intro')
@@ -520,6 +539,8 @@ export default function BlindTestPage() {
   const [roomPlayers, setRoomPlayers] = useState([])
 
   const roomLink  = roomCode ? roomUrl(roomCode) : ''
+  const roomUserId = useMemo(() => user?.id || getBlindGuestId(), [user?.id])
+  const roomDisplayName = displayName || `Invite ${String(roomUserId).slice(-4)}`
   const isPlaying = phase === 'playing' || phase === 'countdown' || phase === 'reveal'
   const activeTrack = track || LOCAL_TRACKS[0]
 
@@ -541,6 +562,36 @@ export default function BlindTestPage() {
       if (videoRef.current) { videoRef.current.pause(); videoRef.current.src = '' }
     }
   }, [])
+
+  useEffect(() => {
+    if (!roomCode || !supabase) return
+    let stop = false
+    let timer
+    const c = normalizeRoomCode(roomCode)
+    const tick = () => {
+      if (stop) return
+      const recentRealtime = Date.now() - roomLastRealtimeRef.current < 20000
+      const delay = document.hidden ? 15000 : recentRealtime ? 5000 : 2000
+      timer = setTimeout(async () => {
+        await refreshRoom(c)
+        tick()
+      }, delay)
+    }
+    tick()
+    const syncOnFocus = () => { if (!document.hidden) refreshRoom(c) }
+    window.addEventListener('focus', syncOnFocus)
+    document.addEventListener('visibilitychange', syncOnFocus)
+    const ping = setInterval(() => {
+      joinBlindTestRoom({ code: c, userId: roomUserId, displayName: roomDisplayName, avatarUrl }).catch(() => {})
+    }, 25000)
+    return () => {
+      stop = true
+      clearTimeout(timer)
+      clearInterval(ping)
+      window.removeEventListener('focus', syncOnFocus)
+      document.removeEventListener('visibilitychange', syncOnFocus)
+    }
+  }, [roomCode, roomUserId, roomDisplayName, avatarUrl])
 
   // Bip de décompte synthétisé (Web Audio, aucun asset). Respecte le volume.
   const audioCtxRef = useRef(null)
@@ -608,92 +659,220 @@ export default function BlindTestPage() {
     const room = normalizeRoom(roomRow)
     if (!room.room_code) return
     setRoomCode(room.room_code); setRoomInput(room.room_code)
-    setRoomStatus(room.phase === 'lobby' ? `Salle ${room.room_code}` : `Salle ${room.room_code} ✓`)
+    setRoomStatus(room.phase === 'lobby' ? `Salle ${room.room_code}` : `Salle ${room.room_code} live`)
     setRoomSync('live')
-    if (!room.track_id) return
+    roomRoundRef.current = room.round || roomRoundRef.current
+
+    const signature = roomSignature(room)
+    if (signature === roomSignatureRef.current) return
+    roomSignatureRef.current = signature
+
+    if (!room.track_id) {
+      if (room.phase === 'lobby') {
+        setPhase('intro')
+        setTrack(null)
+        setCountdown(3)
+        setGuessEnabled(false)
+      }
+      return
+    }
+
     const nextTrack = LOCAL_TRACKS.find(t => t.id === room.track_id)
     if (!nextTrack) return
-    roomGuardRef.current = true
+
     loadVideo(nextTrack.url)
     setTrack(nextTrack); setLastTrackId(room.last_track_id || nextTrack.id)
-    setAnimeGuess(''); setMcqSelected(null)
+    if (room.phase !== 'reveal') {
+      setAnimeGuess(''); setMcqSelected(null)
+      setTitleGuess(''); setResult(null); setBerries(0)
+    } else {
+      setResult(prev => (track?.id === nextTrack.id && prev) ? prev : checkAnswer('', '', nextTrack))
+      setBerries(prev => (track?.id === nextTrack.id ? prev : 0))
+    }
     setMcqChoices(pickMCQChoices(nextTrack, LOCAL_TRACKS))
-    setTitleGuess(''); setResult(null); setBerries(0)
+
+    const started = room.started_at ? Date.parse(room.started_at) : Date.now()
+    const elapsedSeconds = Math.max(0, Math.floor((Date.now() - started) / 1000))
+
     if (room.phase === 'countdown') {
-      const started = room.started_at ? Date.parse(room.started_at) : Date.now()
-      const remaining = Math.max(0, 3 - Math.floor((Date.now() - started) / 1000))
-      setCountdown(remaining); setGuessEnabled(false); setPhase('countdown')
+      const remaining = Math.max(0, 3 - elapsedSeconds)
+      setStartTime(started + 3000)
+      setCountdown(remaining)
+      setElapsed(0)
+      setGuessEnabled(false)
+      setPhase(remaining > 0 ? 'countdown' : 'playing')
     } else if (room.phase === 'playing') {
-      setPhase('playing'); setStartTime(Date.now()); setElapsed(0); setCountdown(0); setGuessEnabled(false)
+      const playingElapsed = Math.max(0, elapsedSeconds)
+      setStartTime(Date.now() - playingElapsed * 1000)
+      setElapsed(playingElapsed)
+      setCountdown(0)
+      setGuessEnabled(playingElapsed >= GUESS_DELAY)
+      if (videoRef.current) {
+        try { videoRef.current.currentTime = Math.min(playingElapsed, ROUND_SECS) } catch {}
+        videoRef.current.play().catch(() => {})
+      }
+      setPhase(playingElapsed >= ROUND_SECS ? 'reveal' : 'playing')
     } else if (room.phase === 'reveal') {
+      setCountdown(0)
+      setGuessEnabled(false)
       setPhase('reveal')
     }
   }
 
+  async function refreshRoom(nextCode = roomCode) {
+    const c = normalizeRoomCode(nextCode)
+    if (!c || !supabase) return
+    if (roomRefreshingRef.current) {
+      roomRefreshQueuedRef.current = c
+      return
+    }
+    roomRefreshingRef.current = true
+    try {
+      const [roomRow, playerRows] = await Promise.all([
+        fetchBlindTestRoom(c),
+        fetchBlindTestRoomPlayers(c),
+      ])
+      if (!roomRow) {
+        setRoomStatus(`Salle ${c} introuvable`)
+        setRoomSync('error')
+        return
+      }
+      syncRoomPayload(roomRow)
+      setRoomRole(roomRow.host_user_id === roomUserId ? 'host' : 'guest')
+      setRoomPlayers(playerRows)
+      if (!playerRows.some(player => String(player.user_id) === String(roomUserId))) {
+        await joinBlindTestRoom({ code: c, userId: roomUserId, displayName: roomDisplayName, avatarUrl })
+        setRoomPlayers(await fetchBlindTestRoomPlayers(c))
+      }
+    } catch (e) {
+      setRoomSync('error')
+      setRoomStatus(e.message || 'Synchronisation impossible')
+    } finally {
+      roomRefreshingRef.current = false
+    }
+    if (roomRefreshQueuedRef.current) {
+      const queued = roomRefreshQueuedRef.current
+      roomRefreshQueuedRef.current = null
+      await refreshRoom(queued)
+    }
+  }
+
   async function joinRoom(code) {
-    const nextCode = (code || roomInput || '').trim().toUpperCase()
+    const nextCode = normalizeRoomCode(code || roomInput)
     if (!nextCode) { setRoomStatus('Code manquant'); return }
-    setRoomInput(nextCode); setRoomCode(nextCode); setRoomRole('guest')
+    setRoomInput(nextCode); setRoomCode(nextCode)
     setRoomStatus(`Connexion ${nextCode}...`); setRoomSync('loading')
     window.history.replaceState({}, '', roomUrl(nextCode))
     if (!supabase) { setRoomStatus('Supabase non configuré'); setRoomSync('error'); return }
-    const { data } = await supabase.from(ROOM_TABLE).select('*').eq('room_code', nextCode).maybeSingle()
-    if (!data) { setRoomStatus(`Salle ${nextCode} introuvable`); setRoomSync('error'); return }
-    syncRoomPayload(data); subscribeRoom(nextCode)
+    try {
+      const roomRow = await fetchBlindTestRoom(nextCode)
+      if (!roomRow) { setRoomStatus(`Salle ${nextCode} introuvable`); setRoomSync('error'); return }
+      setRoomRole(roomRow.host_user_id === roomUserId ? 'host' : 'guest')
+      await joinBlindTestRoom({ code: nextCode, userId: roomUserId, displayName: roomDisplayName, avatarUrl })
+      syncRoomPayload(roomRow)
+      subscribeRoom(nextCode)
+      await refreshRoom(nextCode)
+    } catch (e) {
+      setRoomStatus(e.message || 'Impossible de rejoindre la salle')
+      setRoomSync('error')
+    }
   }
 
   async function createRoom() {
-    const nextCode = makeRoomCode()
-    setRoomRole('host'); setRoomCode(nextCode); setRoomInput(nextCode)
-    setRoomStatus(`Salle ${nextCode} créée`); setRoomSync('saving')
-    window.history.replaceState({}, '', roomUrl(nextCode))
+    setRoomStatus('Création de la salle...')
+    setRoomSync('saving')
     if (!supabase) { setRoomStatus('Supabase non configuré'); setRoomSync('error'); return }
-    await supabase.from(ROOM_TABLE).upsert({
-      room_code: nextCode, phase: 'lobby', round: 0,
-      track_id: null, last_track_id: null, started_at: null,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: 'room_code' })
-    subscribeRoom(nextCode); setRoomSync('saved')
+    try {
+      const nextCode = await createBlindTestRoom({
+        hostUserId: roomUserId,
+        displayName: roomDisplayName,
+        avatarUrl,
+      })
+      setRoomRole('host'); setRoomCode(nextCode); setRoomInput(nextCode)
+      setRoomStatus(`Salle ${nextCode} créée`); setRoomSync('saved')
+      window.history.replaceState({}, '', roomUrl(nextCode))
+      roomSignatureRef.current = ''
+      subscribeRoom(nextCode)
+      await refreshRoom(nextCode)
+    } catch (e) {
+      setRoomStatus(e.message || 'Impossible de créer la salle')
+      setRoomSync('error')
+    }
   }
 
   function subscribeRoom(code) {
     roomChannelRef.current?.unsubscribe?.()
     if (!supabase) return
-    const myId   = user?.id || 'anon-' + Math.random().toString(36).slice(2, 8)
-    const myName = displayName || 'Joueur'
+    const c = normalizeRoomCode(code)
     const channel = supabase
-      .channel(`brams-bt-${code}`)
+      .channel(`brams-bt-${c}`)
       .on('presence', { event: 'sync' }, () => {
         const state = channel.presenceState()
-        setRoomPlayers(Object.values(state).flat())
+        const livePlayers = Object.values(state).flat()
+        if (!livePlayers.length) return
+        setRoomPlayers(prev => {
+          const byId = new Map(prev.map(player => [String(player.user_id), player]))
+          livePlayers.forEach(player => {
+            const id = String(player.user_id || player.userId)
+            byId.set(id, {
+              ...(byId.get(id) || {}),
+              user_id: id,
+              display_name: player.display_name || player.displayName || 'Joueur',
+              avatar_url: player.avatar_url || player.avatarUrl || null,
+            })
+          })
+          return Array.from(byId.values())
+        })
       })
-      .on('postgres_changes', {
-        event: '*', schema: 'public', table: ROOM_TABLE, filter: `room_code=eq.${code}`
-      }, payload => {
-        if (roomGuardRef.current) { roomGuardRef.current = false; return }
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'blind_test_rooms', filter: `code=eq.${c}` }, payload => {
+        roomLastRealtimeRef.current = Date.now()
         syncRoomPayload(payload.new || payload.old)
+        refreshRoom(c)
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'blind_test_room_players', filter: `room_code=eq.${c}` }, () => {
+        roomLastRealtimeRef.current = Date.now()
+        refreshRoom(c)
       })
       .subscribe(async status => {
-        if (status === 'SUBSCRIBED')
-          await channel.track({ userId: myId, displayName: myName, avatarUrl: avatarUrl || null })
+        if (status === 'SUBSCRIBED') {
+          await channel.track({
+            user_id: roomUserId,
+            display_name: roomDisplayName,
+            avatar_url: avatarUrl || null,
+          })
+        }
       })
     roomChannelRef.current = channel
   }
 
-  async function publishRoomState(nextPhase, nextTrack = track, nextRound = round, nextLastId = lastTrackId) {
+  async function publishRoomState(nextPhase, nextTrack = track, nextRound = roomRoundRef.current || round, nextLastId = lastTrackId) {
     if (!roomCode || roomRole !== 'host' || !supabase) return
-    roomGuardRef.current = true
-    await supabase.from(ROOM_TABLE).upsert({
-      room_code: roomCode, phase: nextPhase, round: nextRound,
-      track_id: nextTrack?.id || null, last_track_id: nextLastId || null,
-      started_at: new Date().toISOString(), updated_at: new Date().toISOString(),
-    }, { onConflict: 'room_code' })
-    setRoomSync('saved')
+    const status = nextPhase === 'lobby' ? 'waiting' : nextPhase
+    const startedAt = nextPhase === 'countdown' || nextPhase === 'playing'
+      ? new Date().toISOString()
+      : undefined
+    try {
+      const updated = await updateBlindTestRoom(roomCode, {
+        status,
+        round: nextRound,
+        current_track_id: nextTrack?.id || null,
+        ...(startedAt ? { started_at: startedAt } : {}),
+      })
+      if (nextLastId) setLastTrackId(nextLastId)
+      if (updated) syncRoomPayload(updated)
+      setRoomSync('saved')
+    } catch (e) {
+      setRoomSync('error')
+      setRoomStatus(e.message || 'Enregistrement impossible')
+    }
   }
 
   async function leaveRoom() {
     roomChannelRef.current?.unsubscribe?.()
     roomChannelRef.current = null
+    roomSignatureRef.current = ''
+    roomRoundRef.current = 0
+    roomRefreshQueuedRef.current = null
     setRoomCode(''); setRoomInput(''); setRoomRole('local')
     setRoomStatus('Mode solo'); setRoomSync('idle'); setRoomPlayers([])
     setPhase('intro'); setTrack(null); setLastTrackId(null); setPlayedIds([]); setPlayedAnimes([])
@@ -706,6 +885,8 @@ export default function BlindTestPage() {
     const t = pickTrack(playedIds, { excludeAnime: playedAnimes })
     const newPlayed = [...playedIds, t.id]
     const newPlayedAnimes = [...playedAnimes, t.anime]
+    const nextRoomRound = roomCode ? (roomRoundRef.current || round) + 1 : round + 1
+    roomRoundRef.current = nextRoomRound
     // Snap vidéo à invisible instantanément pour éviter de deviner via le fond
     setVideoSnap(true)
     setTimeout(() => setVideoSnap(false), 80)
@@ -715,11 +896,15 @@ export default function BlindTestPage() {
     setTitleGuess(''); setResult(null); setBerries(0)
     setCountdown(3); setGuessEnabled(false)
     loadVideo(t.url)
-    if (roomCode && roomRole === 'host') void publishRoomState('countdown', t, round + 1, t.id)
+    if (roomCode && roomRole === 'host') void publishRoomState('countdown', t, nextRoomRound, t.id)
     setPhase('countdown')
   }
 
-  function handleTimeout() { if (phase !== 'playing') return; submitGuess(true) }
+  function handleTimeout() {
+    if (phase !== 'playing') return
+    if (roomCode && roomRole === 'host') void publishRoomState('reveal')
+    submitGuess(true)
+  }
 
   function submitGuess(timeout = false) {
     if (phase !== 'playing' && !timeout) return

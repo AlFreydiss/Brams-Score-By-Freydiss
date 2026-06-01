@@ -915,18 +915,24 @@ function makeRoomCode() {
 export async function createBlindTestRoom({ hostUserId, displayName, avatarUrl, difficultyId = 'easy' }) {
   if (!supabase) throw new Error('Supabase non initialise.')
 
-  const code = makeRoomCode()
-  const { error } = await supabase.from('blind_test_rooms').insert({
-    code,
-    host_user_id: hostUserId,
-    status: 'waiting',
-    difficulty_id: difficultyId,
-    round: 0,
-  })
-  if (error) throw error
-
-  await joinBlindTestRoom({ code, userId: hostUserId, displayName, avatarUrl })
-  return code
+  let lastError = null
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const code = makeRoomCode()
+    const { error } = await supabase.from('blind_test_rooms').insert({
+      code,
+      host_user_id: String(hostUserId),
+      status: 'waiting',
+      difficulty_id: difficultyId,
+      round: 0,
+    })
+    if (!error) {
+      await joinBlindTestRoom({ code, userId: hostUserId, displayName, avatarUrl })
+      return code
+    }
+    lastError = error
+    if (!String(error.message || '').toLowerCase().includes('duplicate')) break
+  }
+  throw lastError || new Error('Impossible de creer la room.')
 }
 
 export async function fetchBlindTestRoom(code) {
@@ -935,7 +941,7 @@ export async function fetchBlindTestRoom(code) {
     .from('blind_test_rooms')
     .select('*')
     .eq('code', code.toUpperCase())
-    .single()
+    .maybeSingle()
   if (error) return null
   return data
 }

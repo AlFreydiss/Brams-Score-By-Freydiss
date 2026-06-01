@@ -36,6 +36,8 @@ const SlPage          = lazy(() => import('./components/SlPage.jsx'))
 const DbsPage         = lazy(() => import('./components/DbsPage.jsx'))
 const VioletEvergardenPage = lazy(() => import('./components/VioletEvergardenPage.jsx'))
 const VivyPage             = lazy(() => import('./components/VivyPage.jsx'))
+const LovePrismPage        = lazy(() => import('./components/LovePrismPage.jsx'))
+const CaroleTuesdayPage    = lazy(() => import('./components/CaroleTuesdayPage.jsx'))
 const BcPage          = lazy(() => import('./components/BcPage.jsx'))
 const MhaPage         = lazy(() => import('./components/MhaPage.jsx'))
 const FireForcePage   = lazy(() => import('./components/FireForcePage.jsx'))
@@ -230,6 +232,8 @@ export default function App() {
   const [dbsOpen,          setDbsOpen]           = useState(false)
   const [violetOpen,       setVioletOpen]        = useState(false)
   const [vivyOpen,         setVivyOpen]          = useState(false)
+  const [lovePrismOpen,    setLovePrismOpen]     = useState(false)
+  const [caroleTuesdayOpen,setCaroleTuesdayOpen] = useState(false)
   const [bcOpen,           setBcOpen]            = useState(false)
   const [mhaOpen,          setMhaOpen]           = useState(false)
   const [fireforcOpen,     setFireforcOpen]      = useState(false)
@@ -245,7 +249,7 @@ export default function App() {
     setScansOpen(false); setOnepieceOpen(false); setEncyclopedieOpen(false); setAnimeHubOpen(false)
     setTpnOpen(false); setDrstoneOpen(false); setJjkOpen(false); setKingdomOpen(false)
     setAotOpen(false); setKnyOpen(false); setNntOpen(false); setSlOpen(false); setDbsOpen(false)
-    setVioletOpen(false); setVivyOpen(false); setBcOpen(false); setMhaOpen(false)
+    setVioletOpen(false); setVivyOpen(false); setLovePrismOpen(false); setCaroleTuesdayOpen(false); setBcOpen(false); setMhaOpen(false)
     setFireforcOpen(false); setBluelockOpen(false); setTreeOpen(false); setUploadOpen(false)
   }, [location.pathname])
 
@@ -264,6 +268,8 @@ export default function App() {
     const fnDbs      = () => setDbsOpen(true)
     const fnViolet   = () => setVioletOpen(true)
     const fnVivy     = () => setVivyOpen(true)
+    const fnLovePrism = () => setLovePrismOpen(true)
+    const fnCaroleTuesday = () => setCaroleTuesdayOpen(true)
     const fnBc         = () => setBcOpen(true)
     const fnMha        = () => setMhaOpen(true)
     const fnFireforce  = () => setFireforcOpen(true)
@@ -284,6 +290,8 @@ export default function App() {
     document.addEventListener('open-dbs',          fnDbs)
     document.addEventListener('open-violet-evergarden', fnViolet)
     document.addEventListener('open-vivy',              fnVivy)
+    document.addEventListener('open-love-prism',         fnLovePrism)
+    document.addEventListener('open-carole-tuesday',     fnCaroleTuesday)
     document.addEventListener('open-bc',           fnBc)
     document.addEventListener('open-mha',          fnMha)
     document.addEventListener('open-fireforce',    fnFireforce)
@@ -305,6 +313,8 @@ export default function App() {
       document.removeEventListener('open-dbs',          fnDbs)
       document.removeEventListener('open-violet-evergarden', fnViolet)
       document.removeEventListener('open-vivy',              fnVivy)
+      document.removeEventListener('open-love-prism',         fnLovePrism)
+      document.removeEventListener('open-carole-tuesday',     fnCaroleTuesday)
       document.removeEventListener('open-bc',           fnBc)
       document.removeEventListener('open-mha',          fnMha)
       document.removeEventListener('open-fireforce',    fnFireforce)
@@ -314,7 +324,7 @@ export default function App() {
     }
   }, [])
 
-  const mediaOverlayOpen = scansOpen || animeHubOpen || tpnOpen || drstoneOpen || jjkOpen || kingdomOpen || aotOpen || knyOpen || nntOpen || slOpen || dbsOpen || violetOpen || vivyOpen || bcOpen || mhaOpen || fireforcOpen || bluelockOpen
+  const mediaOverlayOpen = scansOpen || animeHubOpen || tpnOpen || drstoneOpen || jjkOpen || kingdomOpen || aotOpen || knyOpen || nntOpen || slOpen || dbsOpen || violetOpen || vivyOpen || lovePrismOpen || caroleTuesdayOpen || bcOpen || mhaOpen || fireforcOpen || bluelockOpen
   const immersiveOverlayOpen = mediaOverlayOpen || encyclopedieOpen || treeOpen || uploadOpen
 
   const mainContent = (
@@ -454,6 +464,8 @@ export default function App() {
             onOpenDbs={() => { setAnimeHubOpen(false); setDbsOpen(true) }}
             onOpenViolet={() => { setAnimeHubOpen(false); setVioletOpen(true) }}
             onOpenVivy={() => { setAnimeHubOpen(false); setVivyOpen(true) }}
+            onOpenLovePrism={() => { setAnimeHubOpen(false); setLovePrismOpen(true) }}
+            onOpenCaroleTuesday={() => { setAnimeHubOpen(false); setCaroleTuesdayOpen(true) }}
             onOpenBc={() => { setAnimeHubOpen(false); setBcOpen(true) }}
             onOpenMha={() => { setAnimeHubOpen(false); setMhaOpen(true) }}
             onOpenFireforce={() => { setAnimeHubOpen(false); setFireforcOpen(true) }}
@@ -475,6 +487,8 @@ export default function App() {
       {dbsOpen     && <DbsPage     onClose={() => { setDbsOpen(false);     setAnimeHubOpen(true) }} />}
       {violetOpen  && <VioletEvergardenPage onClose={() => { setVioletOpen(false); setAnimeHubOpen(true) }} />}
       {vivyOpen    && <VivyPage             onClose={() => { setVivyOpen(false);   setAnimeHubOpen(true) }} />}
+      {lovePrismOpen && <LovePrismPage      onClose={() => { setLovePrismOpen(false); setAnimeHubOpen(true) }} />}
+      {caroleTuesdayOpen && <CaroleTuesdayPage onClose={() => { setCaroleTuesdayOpen(false); setAnimeHubOpen(true) }} />}
       {bcOpen        && <BcPage        onClose={() => { setBcOpen(false);       setAnimeHubOpen(true) }} />}
       {mhaOpen       && <MhaPage       onClose={() => { setMhaOpen(false);      setAnimeHubOpen(true) }} />}
       {fireforcOpen  && <FireForcePage onClose={() => { setFireforcOpen(false); setAnimeHubOpen(true) }} />}

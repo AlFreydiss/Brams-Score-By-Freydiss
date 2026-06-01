@@ -70,7 +70,7 @@ const ANIMES = [
     description: "Yuji Itadori avale un doigt de Ryomen Sukuna, le roi des Fléaux. Condamné à mort, il rejoint l'École de sorcellerie de Jujutsu pour trouver les doigts restants.",
     stats: [
       { label: 'Chapitres', value: '263' },
-      { label: 'Épisodes', value: '48' },
+      { label: 'Épisodes', value: '47 + film' },
       { label: 'Statut', value: 'Disponible' },
     ],
     action: '▶ Accéder',
@@ -108,7 +108,7 @@ const ANIMES = [
     description: "Eren Yeager découvre que les murs qui protègent l'humanité cachent un secret bien plus sombre que les Titans eux-mêmes.",
     stats: [
       { label: 'Chapitres', value: '81' },
-      { label: 'Épisodes', value: '87' },
+      { label: 'Épisodes', value: '38' },
       { label: 'Statut', value: 'Disponible' },
     ],
     action: '▶ Accéder',
@@ -205,7 +205,7 @@ const ANIMES = [
     description: "Violet, ancienne soldate, devient Auto Memory Doll pour comprendre les sentiments humains et le sens des mots qu'elle a recus.",
     stats: [
       { label: 'Chapitres', value: '0' },
-      { label: 'Episodes', value: '13' },
+      { label: 'Episodes', value: '13 + OAV' },
       { label: 'Statut', value: 'Disponible' },
     ],
     action: '▶ Acceder',
@@ -231,6 +231,46 @@ const ANIMES = [
     action: '▶ Regarder',
     badge: 'DISPONIBLE',
     badgeColor: '#00d4ff',
+  },
+  {
+    id: 'love-prism',
+    title: 'Love Through A Prism',
+    subtitle: 'Saison 1 MULTi',
+    emoji: '♪',
+    color: '#ec4899',
+    colorDark: '#5b1038',
+    coverImage: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism-hls/S01E001/thumb.jpg',
+    coverPosition: 'center center',
+    genres: ['Romance', 'Musique', 'Drame'],
+    description: 'Saison 1 en VF et japonais, avec sous-titres selon les pistes disponibles.',
+    stats: [
+      { label: 'Episodes', value: '20' },
+      { label: 'Audio', value: 'VF + VO' },
+      { label: 'Statut', value: 'Disponible' },
+    ],
+    action: '▶ Regarder',
+    badge: 'NOUVEAU',
+    badgeColor: '#ec4899',
+  },
+  {
+    id: 'carole-tuesday',
+    title: 'Carole & Tuesday',
+    subtitle: 'Japonais + sous-titres',
+    emoji: '♫',
+    color: '#14b8a6',
+    colorDark: '#064e46',
+    coverImage: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E001/thumb.jpg',
+    coverPosition: 'center center',
+    genres: ['Musique', 'Drame', 'Science-fiction'],
+    description: 'Carole et Tuesday poursuivent leur reve musical sur Mars. Lecture en japonais avec sous-titres francais et anglais.',
+    stats: [
+      { label: 'Episodes', value: '24' },
+      { label: 'Audio', value: 'Japonais' },
+      { label: 'Sous-titres', value: 'FR + EN' },
+    ],
+    action: '▶ Regarder',
+    badge: 'NOUVEAU',
+    badgeColor: '#14b8a6',
   },
   {
     id: 'bc',
@@ -326,6 +366,8 @@ const SEARCH_ALIASES = {
   dbs: ['dbs', 'dragon ball', 'dragon ball super', 'goku', 'vegeta'],
   'violet-evergarden': ['violet', 'violet evergarden', 'vostfr', 'vf', 'auto memory doll', 'doll'],
   vivy: ['vivy', 'fluorite', "fluorite eye's song", 'ia', 'matsumoto', 'wit studio'],
+  'love-prism': ['love through a prism', 'prism', 'romance', 'musique'],
+  'carole-tuesday': ['carole', 'tuesday', 'carole and tuesday', 'carole & tuesday', 'ct', 'music'],
   bc: ['black clover', 'asta', 'yuno', 'trefle', 'magie'],
   mha: ['mha', 'my hero academia', 'boku no hero academia', 'bnha', 'deku', 'izuku'],
   fireforce: ['fire force', 'enen no shouboutai', 'shouboutai', 'shinra'],
@@ -661,7 +703,7 @@ function ComingSoonCard({ index }) {
   )
 }
 
-export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrstone, onOpenJjk, onOpenKingdom, onOpenAot, onOpenKny, onOpenNnt, onOpenSl, onOpenDbs, onOpenViolet, onOpenVivy, onOpenBc, onOpenMha, onOpenFireforce, onOpenBluelock }) {
+export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrstone, onOpenJjk, onOpenKingdom, onOpenAot, onOpenKny, onOpenNnt, onOpenSl, onOpenDbs, onOpenViolet, onOpenVivy, onOpenLovePrism, onOpenCaroleTuesday, onOpenBc, onOpenMha, onOpenFireforce, onOpenBluelock }) {
   const [query, setQuery] = useState('')
   const [selectedGenres, setSelectedGenres] = useState(new Set())
 
@@ -717,6 +759,8 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
       kny: onOpenKny, nnt: onOpenNnt, sl: onOpenSl, dbs: onOpenDbs,
       'violet-evergarden': onOpenViolet,
       vivy: onOpenVivy,
+      'love-prism': onOpenLovePrism,
+      'carole-tuesday': onOpenCaroleTuesday,
       bc: onOpenBc, mha: onOpenMha, fireforce: onOpenFireforce, bluelock: onOpenBluelock,
     }
     map[id]?.()

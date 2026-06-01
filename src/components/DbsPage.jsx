@@ -377,9 +377,11 @@ export default function DbsPage({ onClose }) {
     <>
       <style>{CSS}</style>
       <div style={{
-        position:'fixed',inset:0,zIndex:500,
-        background:'radial-gradient(circle at 10% 8%,rgba(200,100,10,.12),transparent 28rem),radial-gradient(circle at 88% 85%,rgba(180,80,5,.09),transparent 24rem),linear-gradient(135deg,#0c0700 0%,#10090200 55%,#080500 100%)',
+        position:'fixed',inset:0,zIndex:700,
+        background:'radial-gradient(circle at 10% 8%,rgba(200,100,10,.12),transparent 28rem),radial-gradient(circle at 88% 85%,rgba(180,80,5,.09),transparent 24rem),linear-gradient(135deg,#0c0700 0%,#100902 55%,#080500 100%)',
         display:'flex',flexDirection:'column',
+        overflow:'hidden',
+        isolation:'isolate',
       }}>
         <AnimeBackdrop motifs={ANIME_MOTIFS.dbs} color={COLOR} color2={COLOR2} />
         {/* ── Navbar ── */}
