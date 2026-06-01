@@ -32,6 +32,7 @@ export default function FeedRail({ stats }) {
           { to: '/equipage', icon: '⚓', label: 'Équipages' },
           { to: '/tier-list', icon: '📊', label: 'Tier List' },
           { to: '/tournoi', icon: '⚔️', label: 'Tournoi' },
+          { to: '/undercover', icon: '🕵️', label: 'Undercover' },
         ].map(l => (
           <Link key={l.to} to={l.to} style={linkRow}
             onMouseEnter={e => e.currentTarget.style.background = T.surface2}
