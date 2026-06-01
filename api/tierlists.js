@@ -11,7 +11,10 @@ const UC_PAIRS = [
 const ucPickPair = () => { const p = UC_PAIRS[Math.floor(Math.random() * UC_PAIRS.length)]; return Math.random() < 0.5 ? { civil: p[0], undercover: p[1] } : { civil: p[1], undercover: p[0] } }
 const ucCountFor = n => (n <= 6 ? 1 : n <= 9 ? 2 : 3)
 const ucShuffle = a => { const r = [...a]; for (let i = r.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[r[i], r[j]] = [r[j], r[i]] } return r }
-const UC_TURN_MS = 30000
+// Durée d'un tour selon le mode choisi par l'hôte : vocal = on parle en Discord
+// (tour court), écrit = on tape l'indice dans l'app (un peu plus de temps).
+const UC_TURN_MS = { voice: 7000, text: 10000 }
+const ucTurnMs = mode => UC_TURN_MS[mode] || UC_TURN_MS.text
 
 function dbHeaders(extra = {}) {
   return {
@@ -178,12 +181,13 @@ export default async function handler(req, res) {
         if (uids.length < 3) return json(res, 400, { error: '3 joueurs minimum' })
         const ucCount = ucCountFor(uids.length)
         const words = ucPickPair()
+        const mode = body.mode === 'text' ? 'text' : 'voice'
         const rows = uids.map((u, i) => ({ room_code: code, user_id: u, role: i < ucCount ? 'undercover' : 'civil', word: i < ucCount ? words.undercover : words.civil }))
         await db(`undercover_secrets?room_code=eq.${code}`, { method: 'DELETE' })
         // upsert (merge-duplicates) : si une ligne (room_code,user_id) subsiste —
         // ré-assignation, double-clic, course — on écrase au lieu de planter en 409.
         await db('undercover_secrets', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' }, body: JSON.stringify(rows) })
-        const rounds = { phase: 'reveal', round: 1, pass: 1, undercoverCount: ucCount, alive: uids, eliminated: [], turnOrder: ucShuffle(uids), turnIdx: 0, turnDeadline: null, winner: null }
+        const rounds = { phase: 'reveal', round: 1, pass: 1, mode, undercoverCount: ucCount, alive: uids, eliminated: [], turnOrder: ucShuffle(uids), turnIdx: 0, turnDeadline: null, winner: null }
         await db(`tournament_rooms?code=eq.${code}`, { method: 'PATCH', body: JSON.stringify({ status: 'playing', rounds, updated_at: new Date().toISOString() }) })
         return json(res, 200, { ok: true })
       }
@@ -210,7 +214,7 @@ export default async function handler(req, res) {
         const uc = (secrets || []).find(s => s.role === 'undercover')?.word || '?'
         patch = { phase: 'ended', winner: aliveUC.length === 0 ? 'civils' : 'undercover', reveal: { roles: roleOf, words: { civil: civ, undercover: uc } } }
       } else {
-        patch = { phase: 'describing', round: g.round + 1, pass: 1, turnIdx: 0, turnOrder: ucShuffle(newAlive), turnDeadline: new Date(Date.now() + UC_TURN_MS).toISOString() }
+        patch = { phase: 'describing', round: g.round + 1, pass: 1, turnIdx: 0, turnOrder: ucShuffle(newAlive), turnDeadline: new Date(Date.now() + ucTurnMs(g.mode)).toISOString() }
       }
       const rounds = { ...g, ...patch, alive: newAlive, eliminated, lastEliminated: { uid: out, role } }
       await db(`tournament_rooms?code=eq.${code}`, { method: 'PATCH', body: JSON.stringify({ rounds, updated_at: new Date().toISOString() }) })

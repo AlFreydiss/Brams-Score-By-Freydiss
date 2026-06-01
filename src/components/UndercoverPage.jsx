@@ -19,7 +19,10 @@ const C = {
 }
 const hexA = (hex, a) => { const n = parseInt(hex.slice(1), 16); return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})` }
 const CTA_BG = `linear-gradient(135deg, ${C.emeraldL}, #2f6b40)`
-const TURN_SECONDS = 30
+// Durée d'un tour selon le mode : vocal = on décrit à l'oral en Discord (tour
+// court, on enchaîne vite), écrit = on tape l'indice dans l'app.
+const MODE_SECONDS = { voice: 7, text: 10 }
+const turnSecondsFor = g => MODE_SECONDS[g?.mode] || MODE_SECONDS.text
 const ease = [0.22, 0.61, 0.36, 1]
 const shuffle = a => { const r = [...a]; for (let i = r.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[r[i], r[j]] = [r[j], r[i]] } return r }
 
@@ -72,6 +75,7 @@ export default function UndercoverPage() {
   const [err, setErr] = useState('')
   const [notFound, setNotFound] = useState(false)
   const [clue, setClue] = useState('')
+  const [mode, setMode] = useState('voice')   // choix de l'hôte au lobby : 'voice' | 'text'
   const [now, setNow] = useState(Date.now())
   const [secret, setSecret] = useState(null)
   const [vw, setVw] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200)
@@ -173,6 +177,8 @@ export default function UndercoverPage() {
 
   const alive = g?.alive || []
   const myWord = secret?.word || null
+  const turnSec = turnSecondsFor(g)
+  const isVoice = g?.mode === 'voice'
   const currentUid = g?.turnOrder?.[g?.turnIdx] ?? null
   const myTurn = g?.phase === 'describing' && String(currentUid) === String(userId)
   const secsLeft = g?.turnDeadline ? Math.max(0, Math.ceil((new Date(g.turnDeadline).getTime() - now) / 1000)) : 0
@@ -185,12 +191,12 @@ export default function UndercoverPage() {
   const elimVotes = useMemo(() => votes.filter(v => g && v.match_id === `elim:${g.round}`), [votes, g])
   const myElimVote = elimVotes.find(v => String(v.user_id) === String(userId))?.side || null
 
-  const callApi = useCallback(async (action) => {
+  const callApi = useCallback(async (action, extra = {}) => {
     try {
       const { data } = await supabase.auth.getSession()
       const token = data?.session?.access_token
       const r = await fetch(`/api/tierlists?action=${action}`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ code }),
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ code, ...extra }),
       })
       const j = await r.json().catch(() => ({}))
       if (!r.ok) { setErr(j.error || 'Erreur serveur'); return false }
@@ -204,7 +210,7 @@ export default function UndercoverPage() {
     if (turnIdx >= turnOrder.length) { turnIdx = 0; pass += 1 }
     const patch = pass > 2
       ? { phase: 'voting', voteDeadline: new Date(Date.now() + 45000).toISOString() }
-      : { phase: 'describing', turnIdx, pass, turnDeadline: new Date(Date.now() + TURN_SECONDS * 1000).toISOString() }
+      : { phase: 'describing', turnIdx, pass, turnDeadline: new Date(Date.now() + turnSecondsFor(curG) * 1000).toISOString() }
     return updateRoom(code, { rounds: { ...curG, ...patch } })
   }, [code])
 
@@ -275,13 +281,13 @@ export default function UndercoverPage() {
   async function startGame() {
     if (players.length < 3 || busy) return
     setErr(''); setBusy(true)
-    const ok = await callApi('uc_assign')
+    const ok = await callApi('uc_assign', { mode })
     setBusy(false)
     if (ok) refresh(code)
   }
   async function startDescribing() {
     setErr('')
-    const { error } = await updateRoom(code, { rounds: { ...g, phase: 'describing', turnDeadline: new Date(Date.now() + TURN_SECONDS * 1000).toISOString() } })
+    const { error } = await updateRoom(code, { rounds: { ...g, phase: 'describing', turnDeadline: new Date(Date.now() + turnSecondsFor(g) * 1000).toISOString() } })
     if (error) { setErr(error); return }
     refresh(code)
   }
@@ -290,6 +296,14 @@ export default function UndercoverPage() {
     if (!t || !myTurn || myClueThisTurn) return
     setClue('')
     const { error } = await submitClue({ code, round: g.round, pass: g.pass, userId, clue: t })
+    if (error) { setErr(error); return }
+    refresh(code)
+  }
+  // Mode vocal : on ne tape pas d'indice, on le dit à l'oral. Ce marqueur signale
+  // « j'ai parlé » → l'hôte enchaîne sur le joueur suivant sans attendre les 7s.
+  async function markSpoke() {
+    if (!myTurn || myClueThisTurn) return
+    const { error } = await submitClue({ code, round: g.round, pass: g.pass, userId, clue: '🎙️' })
     if (error) { setErr(error); return }
     refresh(code)
   }
@@ -552,7 +566,7 @@ export default function UndercoverPage() {
         <strong style={{ fontSize: 17, letterSpacing: '.2em', color: C.emeraldL }}>{code}</strong>
         <button onClick={() => navigator.clipboard?.writeText(`${window.location.origin}/undercover?code=${code}`)} style={{ ...cta('rgba(255,255,255,.06)'), padding: '4px 10px', fontSize: 11, color: C.txt }}>Copier le lien</button>
       </div>
-      <div style={{ marginLeft: 'auto', fontSize: 13, color: C.muted }}>👥 {players.length}{g.undercoverCount ? ` · 🏴‍☠️ ${g.undercoverCount} pirate${g.undercoverCount > 1 ? 's' : ''}` : ''}</div>
+      <div style={{ marginLeft: 'auto', fontSize: 13, color: C.muted }}>👥 {players.length}{g.undercoverCount ? ` · 🏴‍☠️ ${g.undercoverCount} pirate${g.undercoverCount > 1 ? 's' : ''}` : ''}{g.mode ? ` · ${g.mode === 'voice' ? '🎙️ Vocal' : '⌨️ Écrit'}` : ''}</div>
     </div>
   )
 
@@ -580,6 +594,22 @@ export default function UndercoverPage() {
               </div>
             ))}
           </div>
+          {isHost && (
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.13em', textTransform: 'uppercase', color: C.faint, marginBottom: 9 }}>Mode de jeu</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                {[['voice', '🎙️ Vocal', 'On décrit à l’oral · 7s / tour'], ['text', '⌨️ Écrit', 'On tape l’indice · 10s / tour']].map(([m, label, sub]) => {
+                  const on = mode === m
+                  return (
+                    <button key={m} onClick={() => setMode(m)} style={{ textAlign: 'left', padding: '12px 14px', borderRadius: 12, cursor: 'pointer', fontFamily: 'inherit', background: on ? hexA(C.emerald, .16) : 'rgba(255,255,255,.03)', border: `1px solid ${on ? C.emerald : C.hair}`, color: C.txt }}>
+                      <div style={{ fontSize: 14, fontWeight: 800 }}>{label}</div>
+                      <div style={{ fontSize: 11.5, color: on ? C.emeraldL : C.faint, marginTop: 2 }}>{sub}</div>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
           {err && <p role="alert" style={{ color: '#e08a6f', fontSize: 12.5, marginBottom: 10 }}>⚠ {err}</p>}
           {isHost
             ? <button onClick={startGame} disabled={players.length < 3} style={{ ...cta(), width: '100%', opacity: players.length < 3 ? .5 : 1 }}>{players.length < 3 ? `Encore ${3 - players.length} joueur(s)…` : '🌱 Démarrer la partie'}</button>
@@ -620,15 +650,22 @@ export default function UndercoverPage() {
             {avatar(currentUid, 30)}<span style={{ fontSize: 16, fontWeight: 800 }}>{myTurn ? 'À toi de décrire !' : `Au tour de ${nameByUid[currentUid] || '…'}`}</span>
           </div>
           <div style={{ height: 6, borderRadius: 99, background: 'rgba(255,255,255,.06)', overflow: 'hidden', maxWidth: 320, margin: '0 auto' }}>
-            <div style={{ height: '100%', width: `${(secsLeft / TURN_SECONDS) * 100}%`, background: secsLeft <= 8 ? '#d98a5a' : `linear-gradient(90deg, ${C.emerald}, ${C.sage})`, transition: 'width .3s linear' }} />
+            <div style={{ height: '100%', width: `${(secsLeft / turnSec) * 100}%`, background: secsLeft <= 3 ? '#d98a5a' : `linear-gradient(90deg, ${C.emerald}, ${C.sage})`, transition: 'width .3s linear' }} />
           </div>
-          <div style={{ fontSize: 22, fontWeight: 900, marginTop: 8, color: secsLeft <= 8 ? '#d98a5a' : C.txt }}>{secsLeft}s</div>
-          {myTurn && (
-            <div style={{ display: 'flex', gap: 8, maxWidth: 420, margin: '14px auto 0' }}>
-              <input value={clue} onChange={e => setClue(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') sendClue() }} placeholder="Ton indice (sans dire le perso)…" aria-label="Ton indice" maxLength={40} disabled={myClueThisTurn} style={{ ...field, flex: 1, opacity: myClueThisTurn ? .5 : 1 }} autoFocus />
-              <button onClick={sendClue} disabled={!clue.trim() || myClueThisTurn} style={{ ...cta(), padding: '0 20px', opacity: (!clue.trim() || myClueThisTurn) ? .5 : 1 }}>{myClueThisTurn ? '✓' : 'Dire'}</button>
-            </div>
-          )}
+          <div style={{ fontSize: 22, fontWeight: 900, marginTop: 8, color: secsLeft <= 3 ? '#d98a5a' : C.txt }}>{secsLeft}s</div>
+          {myTurn && (isVoice
+            ? (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, margin: '14px auto 0', maxWidth: 420 }}>
+                <div style={{ fontSize: 13, color: C.muted }}>🎙️ Décris ton perso à l’oral, puis valide.</div>
+                <button onClick={markSpoke} disabled={myClueThisTurn} style={{ ...cta(), padding: '11px 26px', opacity: myClueThisTurn ? .5 : 1 }}>{myClueThisTurn ? '✓ C’est noté' : 'J’ai parlé →'}</button>
+              </div>
+            )
+            : (
+              <div style={{ display: 'flex', gap: 8, maxWidth: 420, margin: '14px auto 0' }}>
+                <input value={clue} onChange={e => setClue(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') sendClue() }} placeholder="Ton indice (sans dire le perso)…" aria-label="Ton indice" maxLength={40} disabled={myClueThisTurn} style={{ ...field, flex: 1, opacity: myClueThisTurn ? .5 : 1 }} autoFocus />
+                <button onClick={sendClue} disabled={!clue.trim() || myClueThisTurn} style={{ ...cta(), padding: '0 20px', opacity: (!clue.trim() || myClueThisTurn) ? .5 : 1 }}>{myClueThisTurn ? '✓' : 'Dire'}</button>
+              </div>
+            ))}
           {myWord && <div style={{ marginTop: 14, fontSize: 12, color: C.faint }}>Ton perso : <b style={{ color: C.emeraldL }}>{myWord}</b></div>}
         </div>
         <div style={{ ...card, padding: 22 }}>

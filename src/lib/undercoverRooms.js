@@ -53,8 +53,12 @@ export async function createUndercoverRoom({ hostUserId, displayName, avatarUrl 
 
 export async function fetchRoom(code) {
   if (!supabase) return null
-  const { data } = await supabase.from('tournament_rooms').select('*')
-    .eq('code', code.toUpperCase()).maybeSingle()
+  // withTimeout : si la requête se bloque (refresh de token, réseau), on REJETTE
+  // au lieu de pendre indéfiniment. Crucial — un fetch qui ne se résout jamais
+  // laissait le verrou `refreshing` à true → realtime + polling devenaient des
+  // no-op → page figée jusqu'au rechargement manuel.
+  const { data } = await withTimeout(supabase.from('tournament_rooms').select('*')
+    .eq('code', code.toUpperCase()).maybeSingle())
   // Garde-fou : un code peut exister côté Tournoi — on ne sert que les salons undercover.
   return data && data.tournament_id === 'undercover' ? data : (data ? { ...data, _wrongType: true } : null)
 }
@@ -76,15 +80,15 @@ export async function joinRoom({ code, userId, displayName, avatarUrl }) {
 
 export async function fetchPlayers(code) {
   if (!supabase) return []
-  const { data } = await supabase.from('tournament_room_players').select('*')
-    .eq('room_code', code.toUpperCase()).order('joined_at', { ascending: true })
+  const { data } = await withTimeout(supabase.from('tournament_room_players').select('*')
+    .eq('room_code', code.toUpperCase()).order('joined_at', { ascending: true }))
   return data || []
 }
 
 export async function fetchAllVotes(code) {
   if (!supabase) return []
-  const { data } = await supabase.from('tournament_room_votes')
-    .select('match_id, user_id, side').eq('room_code', code.toUpperCase())
+  const { data } = await withTimeout(supabase.from('tournament_room_votes')
+    .select('match_id, user_id, side').eq('room_code', code.toUpperCase()))
   return data || []
 }
 
@@ -123,10 +127,20 @@ export async function touchPlayer(code, userId) {
 export function subscribeRoom(code, onChange) {
   if (!supabase) return () => {}
   const c = code.toUpperCase()
-  const ch = supabase.channel(`ucroom_${c}`)
+  let ch, retry, closed = false
+  const build = () => supabase.channel(`ucroom_${c}_${Date.now()}`)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'tournament_rooms', filter: `code=eq.${c}` }, onChange)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'tournament_room_players', filter: `room_code=eq.${c}` }, onChange)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'tournament_room_votes', filter: `room_code=eq.${c}` }, onChange)
-    .subscribe()
-  return () => { try { supabase.removeChannel(ch) } catch {} }
+    .subscribe((status) => {
+      // Le websocket peut tomber après une longue inactivité (onglet en arrière-plan,
+      // veille de l'écran). Sans réabonnement, le temps réel meurt définitivement et
+      // l'écran ne bouge plus qu'au rechargement. On reconstruit le canal.
+      if (!closed && (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED')) {
+        clearTimeout(retry)
+        retry = setTimeout(() => { if (closed) return; try { supabase.removeChannel(ch) } catch {}; ch = build() }, 2000)
+      }
+    })
+  ch = build()
+  return () => { closed = true; clearTimeout(retry); try { supabase.removeChannel(ch) } catch {} }
 }
