@@ -2,6 +2,17 @@ const SUPABASE_URL = process.env.SUPABASE_REST_URL || process.env.VITE_SUPABASE_
 const ANON_KEY = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || ''
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ANON_KEY
 
+// ── Undercover (fusionné ici pour rester sous la limite de 12 functions Vercel) ──
+const UC_PAIRS = [
+  ['Broly', 'Zoro'], ['Vegeta', 'Sasuke'], ['Goku', 'Luffy'], ['Kaneki', 'Shinichi'],
+  ['Senku', 'Lawliet (L)'], ['Naruto', 'Asta'], ['Itachi', 'Madara'], ['Gojo', 'Kakashi'],
+  ['Eren', 'Lelouch'], ['Saitama', 'Mob'], ['Light', 'Johan'], ['Ichigo', 'Natsu'],
+]
+const ucPickPair = () => { const p = UC_PAIRS[Math.floor(Math.random() * UC_PAIRS.length)]; return Math.random() < 0.5 ? { civil: p[0], undercover: p[1] } : { civil: p[1], undercover: p[0] } }
+const ucCountFor = n => (n <= 6 ? 1 : n <= 9 ? 2 : 3)
+const ucShuffle = a => { const r = [...a]; for (let i = r.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[r[i], r[j]] = [r[j], r[i]] } return r }
+const UC_TURN_MS = 30000
+
 function dbHeaders(extra = {}) {
   return {
     'Content-Type': 'application/json',
@@ -148,6 +159,61 @@ export default async function handler(req, res) {
   try {
     const viewer = await resolveUser(req, body)
     const voterId = viewer.id
+
+    // ── Undercover : assign/resolve (secrets gérés côté serveur, hôte vérifié) ──
+    if (action === 'uc_assign' || action === 'uc_resolve') {
+      if (req.method !== 'POST') return json(res, 405, { error: 'Method not allowed' })
+      if (!viewer.authenticated || !viewer.id) return json(res, 401, { error: 'Connexion requise' })
+      const code = String(body.code || '').toUpperCase()
+      if (!/^[A-Z0-9]{3,8}$/.test(code)) return json(res, 400, { error: 'Code invalide' })
+      const rooms = await db(`tournament_rooms?select=*&code=eq.${code}&limit=1`)
+      const room = rooms?.[0]
+      if (!room || room.tournament_id !== 'undercover') return json(res, 404, { error: 'Salon introuvable' })
+      if (String(room.host_user_id) !== String(viewer.id)) return json(res, 403, { error: 'Seul l’hôte peut faire ça' })
+      const g = room.rounds || {}
+
+      if (action === 'uc_assign') {
+        const players = await db(`tournament_room_players?select=user_id&room_code=eq.${code}`)
+        const uids = ucShuffle((players || []).map(p => String(p.user_id)))
+        if (uids.length < 3) return json(res, 400, { error: '3 joueurs minimum' })
+        const ucCount = ucCountFor(uids.length)
+        const words = ucPickPair()
+        const rows = uids.map((u, i) => ({ room_code: code, user_id: u, role: i < ucCount ? 'undercover' : 'civil', word: i < ucCount ? words.undercover : words.civil }))
+        await db(`undercover_secrets?room_code=eq.${code}`, { method: 'DELETE' })
+        await db('undercover_secrets', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(rows) })
+        const rounds = { phase: 'reveal', round: 1, pass: 1, undercoverCount: ucCount, alive: uids, eliminated: [], turnOrder: ucShuffle(uids), turnIdx: 0, turnDeadline: null, winner: null }
+        await db(`tournament_rooms?code=eq.${code}`, { method: 'PATCH', body: JSON.stringify({ status: 'playing', rounds, updated_at: new Date().toISOString() }) })
+        return json(res, 200, { ok: true })
+      }
+
+      // uc_resolve
+      if (g.phase !== 'voting') return json(res, 409, { error: 'Pas en phase de vote' })
+      const alive = g.alive || []
+      const evotes = await db(`tournament_room_votes?select=user_id,side&room_code=eq.${code}&match_id=eq.elim:${g.round}`)
+      const secrets = await db(`undercover_secrets?select=user_id,role,word&room_code=eq.${code}`)
+      const roleOf = Object.fromEntries((secrets || []).map(s => [String(s.user_id), s.role]))
+      const tally = {}
+      for (const v of (evotes || [])) if (alive.includes(String(v.user_id)) && alive.includes(String(v.side))) tally[v.side] = (tally[v.side] || 0) + 1
+      const max = Math.max(0, ...Object.values(tally))
+      const top = Object.keys(tally).filter(k => tally[k] === max)
+      const out = top.length ? top[Math.floor(Math.random() * top.length)] : alive[Math.floor(Math.random() * alive.length)]
+      const role = roleOf[out] || 'civil'
+      const newAlive = alive.filter(u => u !== out)
+      const eliminated = [...(g.eliminated || []), { uid: out, role, round: g.round }]
+      const aliveUC = newAlive.filter(u => roleOf[u] === 'undercover')
+      const aliveCiv = newAlive.filter(u => roleOf[u] !== 'undercover')
+      let patch
+      if (aliveUC.length === 0 || aliveUC.length >= aliveCiv.length) {
+        const civ = (secrets || []).find(s => s.role === 'civil')?.word || '?'
+        const uc = (secrets || []).find(s => s.role === 'undercover')?.word || '?'
+        patch = { phase: 'ended', winner: aliveUC.length === 0 ? 'civils' : 'undercover', reveal: { roles: roleOf, words: { civil: civ, undercover: uc } } }
+      } else {
+        patch = { phase: 'describing', round: g.round + 1, pass: 1, turnIdx: 0, turnOrder: ucShuffle(newAlive), turnDeadline: new Date(Date.now() + UC_TURN_MS).toISOString() }
+      }
+      const rounds = { ...g, ...patch, alive: newAlive, eliminated, lastEliminated: { uid: out, role } }
+      await db(`tournament_rooms?code=eq.${code}`, { method: 'PATCH', body: JSON.stringify({ rounds, updated_at: new Date().toISOString() }) })
+      return json(res, 200, { ok: true })
+    }
 
     // Vues de liste allégées : on EXCLUT les champs lourds (tiers/board/custom_items/
     // favorites, qui contiennent les images) — les cartes n'en ont pas besoin et

@@ -106,7 +106,7 @@ export default function UndercoverPage() {
     try {
       const { data } = await supabase.auth.getSession()
       const token = data?.session?.access_token
-      const r = await fetch(`/api/undercover?action=${action}`, {
+      const r = await fetch(`/api/tierlists?action=${action}`, {
         method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ code }),
       })
@@ -145,7 +145,7 @@ export default function UndercoverPage() {
     if (actedRef.current === key) return
     const allVoted = alive.length > 0 && alive.every(u => elimVotes.some(v => String(v.user_id) === u))
     const timedOut = g.voteDeadline && now >= new Date(g.voteDeadline).getTime()
-    if (allVoted || timedOut) { actedRef.current = key; callApi('resolve') }
+    if (allVoted || timedOut) { actedRef.current = key; callApi('uc_resolve') }
   }, [isHost, g, elimVotes, alive, now, callApi])
 
   // ── Actions ──
@@ -167,7 +167,7 @@ export default function UndercoverPage() {
   }
   async function startGame() {
     if (players.length < 3) return
-    setErr(''); await callApi('assign')
+    setErr(''); await callApi('uc_assign')
   }
   function startDescribing() {
     updateRoom(code, { rounds: { ...g, phase: 'describing', turnDeadline: new Date(Date.now() + TURN_SECONDS * 1000).toISOString() } })
