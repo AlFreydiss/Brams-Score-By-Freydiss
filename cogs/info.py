@@ -2,6 +2,7 @@ import asyncio
 import json
 import os
 import re
+import random
 import time
 import discord
 import litellm
@@ -56,6 +57,55 @@ _KNOWN_MEMBERS: dict[int, dict[str, str]] = {
     },
 }
 _FREYDISS_ID     = 523567699004227609
+_VIOLET_GIF_DIR  = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets", "violet_gifs")
+_VIOLET_GIF_FILES = [
+    "violet-blue-sky.gif",
+    "violet-eye.gif",
+    "violet-rain.gif",
+    "violet-revelation.gif",
+    "violet-mirror.gif",
+]
+_RE_VIOLET_BEST_ANIME = re.compile(
+    r"\b(?:"
+    r"quel\s+est\s+le\s+meilleur\s+anime(?:\s+(?:du\s+monde|de\s+tous\s+les\s+temps))?|"
+    r"c[''’]?(?:est)?\s*quoi\s+le\s+meilleur\s+anime(?:\s+(?:du\s+monde|de\s+tous\s+les\s+temps))?|"
+    r"best\s+anime(?:\s+(?:of\s+all\s+time|in\s+the\s+world))?|"
+    r"what(?:'s|\s+is)\s+the\s+best\s+anime(?:\s+(?:of\s+all\s+time|in\s+the\s+world))?"
+    r")\b",
+    re.IGNORECASE,
+)
+_VIOLET_BEST_REPLY = (
+    "Violet Evergarden.\n\n"
+    "Parce que c'est l'un des rares animés qui ne se contente pas d'être beau : il est précis, sincère et construit avec une vraie retenue. "
+    "Chaque épisode a une intention claire, chaque silence compte, chaque lettre dit quelque chose de plus grand que le dialogue lui-même. "
+    "L'animation n'est jamais là pour faire joli gratuitement : elle sert l'émotion, elle la guide, elle la laisse respirer.\n\n"
+    "Violet est aussi un personnage qui évolue pour de vrai. On ne la suit pas juste pour ses scènes fortes, mais pour la manière dont elle apprend le langage, le deuil, la guerre, la tendresse et le sens des mots. "
+    "L'anime prend un sujet simple en apparence et le traite avec une élégance rare, sans surjouer, sans bruit inutile, sans effet facile. "
+    "C'est justement pour ça qu'il reste au-dessus : il touche fort sans forcer, et il reste en tête longtemps après le générique."
+)
+
+
+def _violet_best_gif_path() -> str | None:
+    candidates = [os.path.join(_VIOLET_GIF_DIR, name) for name in _VIOLET_GIF_FILES]
+    available = [path for path in candidates if os.path.exists(path)]
+    return random.choice(available) if available else None
+
+
+async def _reply_violet_best_anime(message: discord.Message) -> bool:
+    gif_path = _violet_best_gif_path()
+    try:
+        if gif_path:
+            await message.reply(
+                _VIOLET_BEST_REPLY,
+                file=discord.File(gif_path, filename=os.path.basename(gif_path)),
+                mention_author=False,
+            )
+        else:
+            await message.reply(_VIOLET_BEST_REPLY, mention_author=False)
+        return True
+    except Exception as exc:
+        print(f"[VIOLET BEST] envoi impossible: {exc}")
+        return False
 
 _gemini_key_index = 0  # rotation round-robin
 
@@ -709,6 +759,10 @@ class InfoCog(commands.Cog):
 
         content = _strip_mention(message.content, self.bot.user.id)
         if not content:
+            return
+
+        if _RE_VIOLET_BEST_ANIME.search(content):
+            await _reply_violet_best_anime(message)
             return
 
         uid     = message.author.id

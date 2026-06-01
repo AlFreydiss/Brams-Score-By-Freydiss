@@ -293,6 +293,24 @@ _RE_VIOLET_GIF_TRIGGER = re.compile(
     r"\b(?:violet(?:\s+evergarden)?|evergarden|sincerely|auto\s*memory\s*doll)\b",
     re.IGNORECASE,
 )
+_RE_VIOLET_BEST_ANIME = re.compile(
+    r"\b(?:"
+    r"quel\s+est\s+le\s+meilleur\s+anime(?:\s+(?:du\s+monde|de\s+tous\s+les\s+temps))?|"
+    r"c[''’]?(?:est)?\s*quoi\s+le\s+meilleur\s+anime(?:\s+(?:du\s+monde|de\s+tous\s+les\s+temps))?|"
+    r"best\s+anime(?:\s+(?:of\s+all\s+time|in\s+the\s+world))?|"
+    r"what(?:'s|\s+is)\s+the\s+best\s+anime(?:\s+(?:of\s+all\s+time|in\s+the\s+world))?"
+    r")\b",
+    re.IGNORECASE,
+)
+_VIOLET_BEST_REPLY = (
+    "Violet Evergarden.\n\n"
+    "Parce que c'est l'un des rares animés qui ne se contente pas d'être beau : il est précis, sincère et construit avec une vraie retenue. "
+    "Chaque épisode a une intention claire, chaque silence compte, chaque lettre dit quelque chose de plus grand que le dialogue lui-même. "
+    "L'animation n'est jamais là pour faire joli gratuitement : elle sert l'émotion, elle la guide, elle la laisse respirer.\n\n"
+    "Violet est aussi un personnage qui évolue pour de vrai. On ne la suit pas juste pour ses scènes fortes, mais pour la manière dont elle apprend le langage, le deuil, la guerre, la tendresse et le sens des mots. "
+    "L'anime prend un sujet simple en apparence et le traite avec une élégance rare, sans surjouer, sans bruit inutile, sans effet facile. "
+    "C'est justement pour ça qu'il reste au-dessus : il touche fort sans forcer, et il reste en tête longtemps après le générique."
+)
 
 # ── VINN ───────────────────────────────────────────────────────────
 _VINN_ID         = 1233882334856614020
@@ -344,6 +362,25 @@ def _choose_violet_gif_path() -> str | None:
     candidates.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "violet evergarden citation.gif"))
     available = [path for path in candidates if os.path.exists(path)]
     return random.choice(available) if available else None
+
+def _is_violet_best_anime_request(content: str) -> bool:
+    return bool(_RE_VIOLET_BEST_ANIME.search(content))
+
+async def _reply_violet_best_anime(message) -> bool:
+    gif_path = _choose_violet_gif_path()
+    try:
+        if gif_path:
+            await message.reply(
+                _VIOLET_BEST_REPLY,
+                file=discord.File(gif_path, filename=os.path.basename(gif_path)),
+                mention_author=False,
+            )
+        else:
+            await message.reply(_VIOLET_BEST_REPLY, mention_author=False)
+        return True
+    except Exception as exc:
+        print(f"[VIOLET BEST] envoi impossible: {exc}")
+        return False
 
 def _reserve_violet_gif(channel_key: str, now_f: float) -> str | None:
     if now_f - _VIOLET_GIF_CD.get(channel_key, 0) < _VIOLET_GIF_DELAY:
@@ -2994,6 +3031,11 @@ async def on_message(message):
             await _send_violet_gif_only(message, _cid, now_f)
         except Exception:
             pass
+
+    if _is_violet_best_anime_request(message.content):
+        await _reply_violet_best_anime(message)
+        await bot.process_commands(message)
+        return
 
     # ── Mémoire intelligente ────────────────────────────────────────
     if message.guild:
