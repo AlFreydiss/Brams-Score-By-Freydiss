@@ -279,6 +279,20 @@ _FREYDISS_TYPO_CD:   dict[str, float] = {}
 _FREYDISS_TYPO_DELAY = 30
 _FREYDISS_PING_CD:   dict[str, float] = {}
 _FREYDISS_PING_DELAY = 45
+_VIOLET_GIF_CD:      dict[str, float] = {}
+_VIOLET_GIF_DELAY    = 45
+_VIOLET_GIF_DIR      = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "violet_gifs")
+_VIOLET_GIF_FILES    = [
+    "violet-blue-sky.gif",
+    "violet-eye.gif",
+    "violet-rain.gif",
+    "violet-revelation.gif",
+    "violet-mirror.gif",
+]
+_RE_VIOLET_GIF_TRIGGER = re.compile(
+    r"\b(?:violet(?:\s+evergarden)?|evergarden|sincerely|auto\s*memory\s*doll)\b",
+    re.IGNORECASE,
+)
 
 # ── VINN ───────────────────────────────────────────────────────────
 _VINN_ID         = 1233882334856614020
@@ -321,6 +335,52 @@ _RE_BAD_TALK = re.compile(
     r'|rat[ée]|l[aâ]che|sale|faible|useless|pire|merdique|naze|faux|fake|arnaque)\b',
     re.IGNORECASE
 )
+
+def _choose_violet_gif_path() -> str | None:
+    candidates = [
+        os.path.join(_VIOLET_GIF_DIR, name)
+        for name in _VIOLET_GIF_FILES
+    ]
+    candidates.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "violet evergarden citation.gif"))
+    available = [path for path in candidates if os.path.exists(path)]
+    return random.choice(available) if available else None
+
+def _reserve_violet_gif(channel_key: str, now_f: float) -> str | None:
+    if now_f - _VIOLET_GIF_CD.get(channel_key, 0) < _VIOLET_GIF_DELAY:
+        return None
+    gif_path = _choose_violet_gif_path()
+    if not gif_path:
+        return None
+    _VIOLET_GIF_CD[channel_key] = now_f
+    return gif_path
+
+async def _send_text_with_optional_violet_gif(
+    channel,
+    text: str,
+    channel_key: str,
+    now_f: float,
+    include_violet: bool,
+) -> bool:
+    gif_path = _reserve_violet_gif(channel_key, now_f) if include_violet else None
+    if gif_path:
+        try:
+            await channel.send(text, file=discord.File(gif_path, filename=os.path.basename(gif_path)))
+            return True
+        except Exception as exc:
+            print(f"[VIOLET GIF] envoi avec texte impossible: {exc}")
+    await channel.send(text)
+    return False
+
+async def _send_violet_gif_only(message, channel_key: str, now_f: float) -> bool:
+    gif_path = _reserve_violet_gif(channel_key, now_f)
+    if not gif_path:
+        return False
+    try:
+        await message.channel.send(file=discord.File(gif_path, filename=os.path.basename(gif_path)))
+        return True
+    except Exception as exc:
+        print(f"[VIOLET GIF] envoi impossible: {exc}")
+        return False
 
 # Quand quelqu'un @mentionne Freydiss directement (soumise mode)
 _FREYDISS_PING_HYPE = [
@@ -2818,6 +2878,17 @@ async def on_message(message):
     # ── Culte Freydiss ───────────────────────────────────────────────
     _cid = str(message.channel.id)
     _has_correct_name = bool(_RE_FREYDISS_NAME.search(message.content))
+    _freydiss_pinged = (
+        any(m.id == _FREYDISS_ID for m in message.mentions)
+        or f"<@{_FREYDISS_ID}>" in message.content
+        or f"<@!{_FREYDISS_ID}>" in message.content
+    )
+    _violet_triggered = (
+        _has_correct_name
+        or _freydiss_pinged
+        or bool(_RE_VIOLET_GIF_TRIGGER.search(message.content))
+    )
+    _violet_gif_sent = False
 
     # Freydiss parle lui-même → hommage
     if (
@@ -2826,7 +2897,13 @@ async def on_message(message):
     ):
         _FREYDISS_SELF_CD[_cid] = now_f
         try:
-            await message.channel.send(random.choice(_FREYDISS_SELF_HYPE))
+            _violet_gif_sent = await _send_text_with_optional_violet_gif(
+                message.channel,
+                random.choice(_FREYDISS_SELF_HYPE),
+                _cid,
+                now_f,
+                _violet_triggered,
+            )
         except Exception:
             pass
 
@@ -2845,18 +2922,19 @@ async def on_message(message):
                 pass
 
         # @mention directe de Freydiss → soumise mode
-        _freydiss_pinged = (
-            any(m.id == _FREYDISS_ID for m in message.mentions)
-            or f"<@{_FREYDISS_ID}>" in message.content
-            or f"<@!{_FREYDISS_ID}>" in message.content
-        )
         if (
             _freydiss_pinged
             and now_f - _FREYDISS_PING_CD.get(_cid, 0) >= _FREYDISS_PING_DELAY
         ):
             _FREYDISS_PING_CD[_cid] = now_f
             try:
-                await message.channel.send(random.choice(_FREYDISS_PING_HYPE))
+                _violet_gif_sent = await _send_text_with_optional_violet_gif(
+                    message.channel,
+                    random.choice(_FREYDISS_PING_HYPE),
+                    _cid,
+                    now_f,
+                    True,
+                )
             except Exception:
                 pass
 
@@ -2883,7 +2961,13 @@ async def on_message(message):
         ):
             _FREYDISS_DEF_CD[_cid] = now_f
             try:
-                await message.channel.send(random.choice(_FREYDISS_DEFENSE))
+                _violet_gif_sent = await _send_text_with_optional_violet_gif(
+                    message.channel,
+                    random.choice(_FREYDISS_DEFENSE),
+                    _cid,
+                    now_f,
+                    True,
+                )
             except Exception:
                 pass
 
@@ -2895,9 +2979,21 @@ async def on_message(message):
         ):
             _FREYDISS_HYPE_CD[_cid] = now_f
             try:
-                await message.channel.send(random.choice(_FREYDISS_HYPE))
+                _violet_gif_sent = await _send_text_with_optional_violet_gif(
+                    message.channel,
+                    random.choice(_FREYDISS_HYPE),
+                    _cid,
+                    now_f,
+                    True,
+                )
             except Exception:
                 pass
+
+    if _violet_triggered and not _violet_gif_sent:
+        try:
+            await _send_violet_gif_only(message, _cid, now_f)
+        except Exception:
+            pass
 
     # ── Mémoire intelligente ────────────────────────────────────────
     if message.guild:
