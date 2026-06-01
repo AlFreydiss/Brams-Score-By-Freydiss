@@ -118,6 +118,18 @@ function findTrackIndex(tracks, preferredLang, fallbackIndex = 0) {
   return found >= 0 ? found : Math.min(fallbackIndex, tracks.length - 1)
 }
 
+function progressKeyFor(video, idx) {
+  return String(video?.progressKey || video?.id || (video?.episode ?? idx + 1))
+}
+
+function videoDisplayLabel(video) {
+  if (!video) return ''
+  if (video.episodeLabel) return video.episodeLabel
+  if (video.kind === 'film') return 'Film'
+  if (video.kind === 'ova') return 'OAV'
+  return `Episode ${video.episode}`
+}
+
 function cleanCueText(text) {
   const seen = new Set()
   return String(text || '')
@@ -291,7 +303,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   const persistProgress = useCallback((patch = {}) => {
     if (!storageKey || !video) return
     const previous = loadVideoProgress(storageKey) || { episodes: {} }
-    const episodeKey = String(video.episode ?? idx + 1)
+    const episodeKey = progressKeyFor(video, idx)
     const nextEpisode = {
       ...(previous.episodes?.[episodeKey] || {}),
       idx,
@@ -451,6 +463,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
       // Find the external VTT track — prefer LAST match because
       // embedded MKV tracks appear first, React-injected <track> elements last.
       let bestIdx = -1
+      let exactIdx = -1
       for (let i = 0; i < tracks.length; i++) {
         const t = tracks[i]
         const labelMatch = t.label && targetSub.label && t.label === targetSub.label
@@ -458,8 +471,10 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
           t.language === targetSub.srclang ||
           t.language.startsWith(targetSub.srclang + '-')
         )
-        if (labelMatch || langMatch) bestIdx = i
+        if (labelMatch) exactIdx = i
+        else if (langMatch) bestIdx = i
       }
+      if (exactIdx >= 0) bestIdx = exactIdx
 
       if (bestIdx >= 0) {
         tracks[bestIdx].mode = 'hidden'
@@ -510,7 +525,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   useEffect(() => {
     if (!storageKey || !videoRef.current || !video) return
     const saved = loadVideoProgress(storageKey)
-    const savedEpisode = saved?.episodes?.[String(video.episode ?? idx + 1)]
+    const savedEpisode = saved?.episodes?.[progressKeyFor(video, idx)]
     if (!savedEpisode?.time || savedEpisode.completed) return
     const v = videoRef.current
     const resume = () => {
@@ -677,6 +692,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   const audioLabel = hasAudioChoices ? (audioOptions[audioIdx]?.label ?? 'Audio') : 'AUTO'
   const subLabel = subsOff ? 'OFF' : hasSubs ? (video.subtitles[subIdx]?.label ?? 'CC') : 'N/A'
   const qualityHint = isLocal ? qualityLabel : 'AUTO'
+  const episodeLabel = videoDisplayLabel(video)
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 1200, background: '#000', display: 'flex', flexDirection: 'column' }}>
@@ -689,7 +705,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
         >✕ Fermer</button>
 
         <div style={{ flex: 1, textAlign: 'center', overflow: 'hidden' }}>
-          <span style={{ fontWeight: 700, color: '#fff', fontSize: 14 }}>Épisode {video?.episode}</span>
+          <span style={{ fontWeight: 700, color: '#fff', fontSize: 14 }}>{episodeLabel}</span>
           {video?.title && <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: 13, marginLeft: 8 }}>— {video.title}</span>}
         </div>
 
