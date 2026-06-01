@@ -199,11 +199,14 @@ export default function UndercoverPage() {
     if (busy) return
     if (!userId) { setErr('Connexion en cours, réessaie dans un instant…'); return }
     setErr(''); setBusy(true)
-    const { code: c, error } = await createUndercoverRoom({ hostUserId: userId, displayName, avatarUrl })
-    setBusy(false)
+    let res
+    try { res = await createUndercoverRoom({ hostUserId: userId, displayName, avatarUrl }) }
+    catch (e) { res = { error: e?.message || 'erreur' } }
+    finally { setBusy(false) }   // le bouton se débloque TOUJOURS
+    const { code: c, error } = res || {}
     if (error || !c) { setErr('Création impossible : ' + (error || 'inconnue')); return }
     // Optimiste : on affiche le lobby tout de suite (le host est déjà inséré côté
-    // serveur) sans attendre le 1er refresh realtime → plus de "bug" au démarrage.
+    // serveur) sans attendre le 1er refresh realtime.
     autoJoinRef.current = true
     setNotFound(false)
     setRoom({ code: c, host_user_id: String(userId), tournament_id: 'undercover', status: 'lobby', rounds: { phase: 'lobby' } })
@@ -214,11 +217,14 @@ export default function UndercoverPage() {
   async function handleJoin(e) {
     e?.preventDefault?.(); if (busy) return
     if (!userId) { setErr('Connexion en cours, réessaie dans un instant…'); return }
-    setErr(''); setBusy(true)
     const c = joinCode.trim().toUpperCase()
-    if (!c) { setErr('Entre un code'); setBusy(false); return }
-    const { error } = await joinRoom({ code: c, userId, displayName, avatarUrl })
-    setBusy(false)
+    if (!c) { setErr('Entre un code'); return }
+    setErr(''); setBusy(true)
+    let res
+    try { res = await joinRoom({ code: c, userId, displayName, avatarUrl }) }
+    catch (e) { res = { error: e?.message || 'erreur' } }
+    finally { setBusy(false) }
+    const { error } = res || {}
     if (error) { setErr(error === 'introuvable' ? 'Salon introuvable' : error); return }
     setParams({ code: c }); setCode(c)
   }

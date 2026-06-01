@@ -16,26 +16,39 @@ export function genRoomCode(len = 4) {
   return s
 }
 
+// Garde-fou anti-hang : une requête Supabase peut rester bloquée (refresh de token
+// d'auth, réseau) et figer l'UI ("Création…" à l'infini). On borne à 10s.
+function withTimeout(promise, ms = 10000) {
+  return Promise.race([promise, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))])
+}
+
 export async function createUndercoverRoom({ hostUserId, displayName, avatarUrl }) {
   if (!supabase) return { error: 'supabase' }
   if (!hostUserId) return { error: 'non connecté' }   // sinon salon sans hôte → ingérable
-  for (let attempt = 0; attempt < 5; attempt++) {
-    const code = genRoomCode()
-    const { error } = await supabase.from('tournament_rooms').insert({
-      code, host_user_id: String(hostUserId), tournament_id: 'undercover',
-      status: 'lobby', rounds: { phase: 'lobby' }, current_match: null,
-    })
-    if (!error) {
-      await supabase.from('tournament_room_players').upsert({
-        room_code: code, user_id: String(hostUserId),
-        display_name: displayName, avatar_url: avatarUrl, is_host: true,
-        last_seen: new Date().toISOString(),
-      }, { onConflict: 'room_code,user_id' })
-      return { code, error: null }
+  try {
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const code = genRoomCode()
+      const { error } = await withTimeout(supabase.from('tournament_rooms').insert({
+        code, host_user_id: String(hostUserId), tournament_id: 'undercover',
+        status: 'lobby', rounds: { phase: 'lobby' }, current_match: null,
+      }))
+      if (!error) {
+        // L'ajout du joueur ne doit pas bloquer la création : on tente, sans figer.
+        try {
+          await withTimeout(supabase.from('tournament_room_players').upsert({
+            room_code: code, user_id: String(hostUserId),
+            display_name: displayName, avatar_url: avatarUrl, is_host: true,
+            last_seen: new Date().toISOString(),
+          }, { onConflict: 'room_code,user_id' }))
+        } catch {}
+        return { code, error: null }
+      }
+      if (!String(error.message || '').includes('duplicate')) return { error: error.message }
     }
-    if (!String(error.message || '').includes('duplicate')) return { error: error.message }
+    return { error: 'code_collision' }
+  } catch (e) {
+    return { error: e?.message === 'timeout' ? 'Délai dépassé, réessaie' : (e?.message || 'erreur') }
   }
-  return { error: 'code_collision' }
 }
 
 export async function fetchRoom(code) {
@@ -48,14 +61,17 @@ export async function fetchRoom(code) {
 
 export async function joinRoom({ code, userId, displayName, avatarUrl }) {
   if (!supabase) return { error: 'supabase' }
-  const room = await fetchRoom(code)
-  if (!room) return { error: 'introuvable' }
-  if (room._wrongType) return { error: 'introuvable' }
-  const { error } = await supabase.from('tournament_room_players').upsert({
-    room_code: code.toUpperCase(), user_id: String(userId),
-    display_name: displayName, avatar_url: avatarUrl, last_seen: new Date().toISOString(),
-  }, { onConflict: 'room_code,user_id' })
-  return { error: error?.message || null, room }
+  try {
+    const room = await fetchRoom(code)
+    if (!room || room._wrongType) return { error: 'introuvable' }
+    const { error } = await withTimeout(supabase.from('tournament_room_players').upsert({
+      room_code: code.toUpperCase(), user_id: String(userId),
+      display_name: displayName, avatar_url: avatarUrl, last_seen: new Date().toISOString(),
+    }, { onConflict: 'room_code,user_id' }))
+    return { error: error?.message || null, room }
+  } catch (e) {
+    return { error: e?.message === 'timeout' ? 'Délai dépassé, réessaie' : (e?.message || 'erreur') }
+  }
 }
 
 export async function fetchPlayers(code) {
