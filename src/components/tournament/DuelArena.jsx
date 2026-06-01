@@ -39,7 +39,7 @@ function PlayingBgOverlay({ ytId, audioUrl, color }) {
             position: 'absolute', inset: '-15%',
             width: '130%', height: '130%',
             objectFit: 'cover', objectPosition: 'center 35%',
-            filter: 'blur(20px) brightness(0.34) saturate(1.7)',
+            filter: 'blur(22px) brightness(0.5) saturate(1.55)',
           }}
         />
       ) : audioUrl ? (
@@ -48,11 +48,11 @@ function PlayingBgOverlay({ ytId, audioUrl, color }) {
             position: 'absolute', inset: '-15%',
             width: '130%', height: '130%',
             objectFit: 'cover', objectPosition: 'center center',
-            filter: 'blur(20px) brightness(0.34) saturate(1.7)',
+            filter: 'blur(22px) brightness(0.5) saturate(1.55)',
           }}
         />
       ) : null}
-      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,.38) 0%, rgba(2,2,3,.48) 100%)' }} />
+      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,.3) 0%, rgba(2,2,3,.34) 50%, rgba(2,2,3,.5) 100%), radial-gradient(58% 48% at 50% 46%, rgba(2,2,3,.28), transparent 78%)' }} />
     </motion.div>
   )
 }

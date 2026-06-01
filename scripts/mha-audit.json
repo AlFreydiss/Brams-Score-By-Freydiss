@@ -1,0 +1,654 @@
+{
+  "total": 138,
+  "brokenCount": 72,
+  "broken": [
+    {
+      "key": "S03E023",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 200,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S03E024",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S03E025",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S04E001",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S04E002",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S04E003",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S04E004",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S04E005",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S04E006",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S04E007",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S04E008",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S04E009",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S04E010",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S04E011",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S04E012",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S04E013",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S04E014",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S04E015",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S04E016",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S04E017",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S04E018",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S04E019",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S04E020",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S04E021",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S04E022",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S04E023",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S04E024",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S04E025",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S05E001",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S05E002",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S05E003",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S05E004",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S05E005",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S05E006",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S05E007",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S05E008",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S05E009",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S05E010",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S05E011",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S05E012",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S05E013",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S05E014",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S05E015",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S05E016",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S05E017",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S05E018",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S05E019",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S05E020",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S05E021",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S05E022",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S05E023",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S05E024",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S05E025",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S06E001",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S06E002",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S06E003",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S06E004",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S06E005",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S06E006",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S06E007",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S06E008",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S06E009",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S06E010",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S06E011",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S06E012",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S06E013",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S06E014",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S06E015",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S06E016",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S06E017",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S06E018",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    },
+    {
+      "key": "S06E019",
+      "st": {
+        "master.m3u8": 200,
+        "video.m3u8": 404,
+        "audio-fr.m3u8": 404,
+        "audio-ja.m3u8": 404
+      }
+    }
+  ]
+}

@@ -175,8 +175,8 @@ export default function TournamentRoomPage() {
     const next = advanceWinner(rounds, matchId, winnerId)
     const nextCur = getCurrentMatch(next)
     const done = getWinner(next)
-    // Phase 1 — RÉVÉLATION : on reste sur le duel résolu (status 'reveal') ~4,5s
-    // pour montrer le gagnant au centre, PUIS on passe au duel suivant.
+    // Phase 1 — RÉVÉLATION : on reste sur le duel résolu (status 'reveal') ~2,4s
+    // pour montrer le gagnant au centre, PUIS on enchaîne direct sur le duel suivant.
     updateTournamentRoom(code, { rounds: next, current_match: matchId, status: 'reveal' })
       .then(() => {
         refresh(code)
@@ -185,7 +185,7 @@ export default function TournamentRoomPage() {
           updateTournamentRoom(code, { current_match: nextCur?.match.id || null, status: done ? 'done' : 'playing' })
             .then(() => { resolvingRef.current = false; refresh(code) })
             .catch(() => { resolvingRef.current = false })
-        }, 4500)
+        }, 2400)
       })
       .catch(() => { resolvingRef.current = false })
   }, [isHost, current, totalV, players.length, leftN, rightN, room?.status, rounds, code, refresh])
@@ -545,16 +545,23 @@ function WinnerReveal({ winner }) {
   return (
     <>
       <DuelAmbient left={winner} right={winner} />
-      <motion.div initial={{ opacity: 0, scale: 0.92, y: 14 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ duration: 0.5, ease }}
-        style={{ position: 'relative', zIndex: 2, maxWidth: 460, margin: '32px auto 0', textAlign: 'center' }}>
-        <div style={{ fontSize: 12.5, fontWeight: 900, letterSpacing: '.24em', color: PINK_L, marginBottom: 16 }}>🏆 VAINQUEUR DU DUEL</div>
+      <motion.div initial={{ opacity: 0, scale: 0.94, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.97 }}
+        transition={{ type: 'spring', stiffness: 320, damping: 26 }}
+        style={{ position: 'relative', zIndex: 2, maxWidth: 470, margin: 'min(7vh,64px) auto 0', textAlign: 'center' }}>
+        <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 9, padding: '6px 16px', borderRadius: 999, marginBottom: 18,
+                   background: hexA(col, 0.16), border: `1px solid ${hexA(col, 0.5)}`, boxShadow: `0 0 26px ${hexA(col, 0.3)}` }}>
+          <span style={{ fontSize: 13 }}>🏆</span>
+          <span style={{ fontSize: 12, fontWeight: 900, letterSpacing: '.22em', color: '#fff' }}>VAINQUEUR DU DUEL</span>
+        </motion.div>
         {ytOk && (
-          <img src={`https://img.youtube.com/vi/${winner.ytId}/hqdefault.jpg`} alt=""
-            style={{ width: '100%', maxWidth: 420, borderRadius: 18, border: `2px solid ${col}`, boxShadow: `0 26px 70px ${hexA(col, 0.45)}` }} />
+          <motion.img initial={{ scale: 1.04 }} animate={{ scale: 1 }} transition={{ duration: 0.5, ease }}
+            src={`https://img.youtube.com/vi/${winner.ytId}/hqdefault.jpg`} alt=""
+            style={{ display: 'block', width: '100%', maxWidth: 430, margin: '0 auto', borderRadius: 18, border: `2px solid ${col}`, boxShadow: `0 28px 80px ${hexA(col, 0.5)}, 0 0 0 6px ${hexA(col, 0.08)}` }} />
         )}
-        <h2 style={{ margin: '18px 0 4px', fontSize: 'clamp(24px,4vw,32px)', fontWeight: 900, letterSpacing: '-.02em', color: '#fff' }}>{winner.title}</h2>
-        <div style={{ color: 'rgba(255,255,255,.6)', fontSize: 14 }}>{winner.anime}{winner.artist ? ` · ${winner.artist}` : ''}</div>
-        <div style={{ marginTop: 18, fontSize: 12, color: TXT_FAINT }}>Duel suivant dans un instant…</div>
+        <h2 style={{ margin: '20px 0 5px', fontSize: 'clamp(26px,4.4vw,36px)', fontWeight: 900, letterSpacing: '-.02em', color: '#fff', textShadow: '0 4px 28px rgba(0,0,0,.6)' }}>{winner.title}</h2>
+        <div style={{ color: 'rgba(255,255,255,.7)', fontSize: 14.5, fontWeight: 600 }}>{winner.anime}{winner.artist ? ` · ${winner.artist}` : ''}</div>
+        <div style={{ marginTop: 16, fontSize: 11.5, fontWeight: 700, letterSpacing: '.14em', textTransform: 'uppercase', color: TXT_FAINT }}>Duel suivant…</div>
       </motion.div>
     </>
   )
@@ -562,17 +569,19 @@ function WinnerReveal({ winner }) {
 
 // ── Ambiance de fond : collage flouté des 2 openings (quand aucun ne joue) ────
 function DuelAmbient({ left, right }) {
+  // Deux moitiés plein écran (haut/bas) qui se rejoignent au centre : le fond de
+  // l'opening remplit TOUTE la fenêtre, bord à bord — fini la zone noire à droite.
   const tile = (p, pos) => p?.ytId ? (
     <img src={`https://img.youtube.com/vi/${p.ytId}/hqdefault.jpg`} alt="" style={{
-      position: 'absolute', left: 0, right: 0, height: '58%', objectFit: 'cover',
-      filter: 'blur(22px) saturate(1.25) brightness(.6)', opacity: 0.5, ...pos,
+      position: 'absolute', left: '-4%', right: '-4%', width: '108%', height: '52%', objectFit: 'cover',
+      filter: 'blur(26px) saturate(1.3) brightness(.74)', opacity: 0.62, ...pos,
     }} />
   ) : null
   return (
     <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
       {tile(left, { top: 0 })}
       {tile(right, { bottom: 0 })}
-      <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(70% 42% at 50% 0%, ${hexA(left?.color, 0.16)}, transparent 72%), radial-gradient(70% 42% at 50% 100%, ${hexA(right?.color, 0.16)}, transparent 72%), linear-gradient(180deg, rgba(8,7,11,.62), rgba(8,7,11,.84))` }} />
+      <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(72% 44% at 50% 0%, ${hexA(left?.color, 0.2)}, transparent 70%), radial-gradient(72% 44% at 50% 100%, ${hexA(right?.color, 0.2)}, transparent 70%), linear-gradient(180deg, rgba(8,7,11,.48), rgba(8,7,11,.42) 50%, rgba(8,7,11,.66)), radial-gradient(60% 50% at 50% 50%, rgba(8,7,11,.34), transparent 75%)` }} />
     </div>
   )
 }
