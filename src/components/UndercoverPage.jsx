@@ -34,6 +34,19 @@ const UC_FX = `
 @media (prefers-reduced-motion: reduce){ [data-fx]{animation:none!important} }
 `
 
+const CARD = { background: `linear-gradient(168deg, ${C.surface}, ${C.bg2})`, border: `1px solid ${C.hair}`, borderTop: `1px solid ${C.hairTop}`, borderRadius: 20, boxShadow: '0 24px 70px rgba(0,0,0,.45)' }
+
+// Carte définie AU NIVEAU MODULE (identité stable) : si elle était définie dans le
+// rendu, chaque re-render (tic d'horloge) la recréait → remontage → l'anim
+// d'apparition rejouait en boucle = clignotement.
+function Card({ children, style, delay = 0, hover = true, ...rest }) {
+  return (
+    <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay, ease }}
+      whileHover={hover ? { y: -3, borderColor: C.hairTop, boxShadow: `0 26px 60px rgba(0,0,0,.5), 0 0 0 1px ${hexA(C.emerald, .12)}` } : undefined}
+      style={{ ...CARD, ...style }} {...rest}>{children}</motion.div>
+  )
+}
+
 function LiveDot({ size = 7, color = '#7BE0A0' }) {
   return (
     <span style={{ position: 'relative', width: size, height: size, display: 'inline-block', flexShrink: 0 }}>
@@ -73,7 +86,9 @@ export default function UndercoverPage() {
   const nameByUid = useMemo(() => Object.fromEntries(players.map(p => [String(p.user_id), p.display_name || '?'])), [players])
 
   useEffect(() => { const f = () => setVw(window.innerWidth); window.addEventListener('resize', f); return () => window.removeEventListener('resize', f) }, [])
-  useEffect(() => { const t = setInterval(() => setNow(Date.now()), 250); return () => clearInterval(t) }, [])
+  // Tic d'horloge UNIQUEMENT en partie (pour les chronos). Sur la landing, pas de
+  // re-render inutile (et donc aucun risque de clignotement des cartes).
+  useEffect(() => { if (!code) return; const t = setInterval(() => setNow(Date.now()), 250); return () => clearInterval(t) }, [code])
 
   const refresh = useCallback(async (c = code) => {
     if (!c) return
@@ -188,7 +203,7 @@ export default function UndercoverPage() {
   // ── Styles ──
   const wrap = { position: 'relative', minHeight: '100vh', background: C.bg, color: C.txt, paddingTop: 92, paddingBottom: 72, fontFamily: "'Inter',system-ui,sans-serif", overflowX: 'hidden' }
   const inner = { position: 'relative', zIndex: 1, width: 'min(1080px, calc(100% - 30px))', margin: '0 auto' }
-  const card = { background: `linear-gradient(168deg, ${C.surface}, ${C.bg2})`, border: `1px solid ${C.hair}`, borderTop: `1px solid ${C.hairTop}`, borderRadius: 20, boxShadow: '0 24px 70px rgba(0,0,0,.45)' }
+  const card = CARD
   const cta = (bg = CTA_BG) => ({ padding: '14px 24px', borderRadius: 13, border: 'none', background: bg, color: '#f3fff5', fontWeight: 900, fontSize: 14.5, cursor: 'pointer', fontFamily: 'inherit' })
   const field = { width: '100%', boxSizing: 'border-box', padding: '12px 14px', borderRadius: 11, background: C.surfaceFlat, border: `1px solid ${C.hair}`, color: C.txt, fontSize: 14, fontFamily: 'inherit', outline: 'none' }
   const kicker = t => <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.14em', textTransform: 'uppercase', color: C.faint, marginBottom: 14 }}>{t}</div>
@@ -248,14 +263,6 @@ export default function UndercoverPage() {
       ['♾️', 'Rejouabilité infinie', 'Personnages tirés au hasard, rôles cachés : jamais deux fois pareil.'],
       ['🫂', 'Entre potes', 'Le mode social parfait pour la communauté Brams, en vocal ou à distance.'],
     ]
-    // hover géré par Framer (whileHover) pour ne pas entrer en conflit avec l'anim
-    // d'apparition (whileInView écrit aussi sur `transform`).
-    const Card = ({ children, style, delay = 0, hover = true, ...rest }) => (
-      <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: .5, delay, ease }}
-        whileHover={hover ? { y: -3, borderColor: C.hairTop, boxShadow: `0 26px 60px rgba(0,0,0,.5), 0 0 0 1px ${hexA(C.emerald, .12)}` } : undefined}
-        style={{ ...card, ...style }} {...rest}>{children}</motion.div>
-    )
-
     return (
       <div className="uc-page" style={wrap}>{ambient}
         <div style={inner}>
@@ -270,8 +277,9 @@ export default function UndercoverPage() {
                 <LiveDot size={6} /> Multijoueur • Social • Temps réel
               </motion.div>
               <motion.h1 variants={{ hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } }}
-                style={{ fontSize: 'clamp(40px,6.4vw,70px)', fontWeight: 900, margin: '0 0 18px', letterSpacing: '-.035em', lineHeight: .98 }}>
-                Undercover<br /><span style={{ background: `linear-gradient(100deg, ${C.emeraldL}, ${C.sage} 70%, ${C.bronze})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Anime</span>
+                style={{ fontSize: 'clamp(44px,7.2vw,78px)', fontWeight: 900, margin: '0 0 18px', letterSpacing: '-.04em', lineHeight: .92 }}>
+                <span style={{ display: 'block', color: '#eef4ee' }}>Undercover</span>
+                <span style={{ display: 'block', background: `linear-gradient(100deg, ${C.emeraldL} 0%, ${C.sage} 52%, ${C.bronze} 100%)`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', filter: `drop-shadow(0 4px 36px ${hexA(C.emerald, .30)})` }}>Anime</span>
               </motion.h1>
               <motion.p variants={{ hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } }}
                 style={{ color: 'rgba(233,239,233,.78)', margin: '0 0 14px', fontSize: 'clamp(16px,2vw,19px)', lineHeight: 1.55, maxWidth: 540, fontWeight: 500 }}>
