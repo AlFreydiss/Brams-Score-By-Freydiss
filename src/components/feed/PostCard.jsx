@@ -1,39 +1,54 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import {
+  Bookmark, Copy, Flag, Heart, MessageCircle, MoreHorizontal, Pencil,
+  Repeat2, Share2, SmilePlus, Trash2, X,
+} from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext.jsx'
 import { toggleLike, deletePost, createPost, editPost, toggleBookmark, fetchLinkPreview, togglePostReaction } from '../../lib/feed.js'
+import { isCreator, isStaff } from '../../lib/roles.js'
 import { btn, avatar, T } from '../social/socialStyles.js'
 
 const QUICK_REACTIONS = ['❤️', '🔥', '😂', '😮', '😢', '👏', '💯', '🙌']
+const TOKEN_RE = /(https?:\/\/[^\s]+|#[\p{L}0-9_]+|@[A-Za-z0-9_.]{2,32}|\|\|[^|]+\|\|)/gu
+
 function applyReaction(reactions, emoji) {
   const list = (reactions || []).map(r => ({ ...r }))
   const i = list.findIndex(r => r.emoji === emoji)
   if (i >= 0) {
-    if (list[i].mine) { list[i].count -= 1; list[i].mine = false; if (list[i].count <= 0) list.splice(i, 1) }
-    else { list[i].count += 1; list[i].mine = true }
+    if (list[i].mine) {
+      list[i].count -= 1
+      list[i].mine = false
+      if (list[i].count <= 0) list.splice(i, 1)
+    } else {
+      list[i].count += 1
+      list[i].mine = true
+    }
   } else list.push({ emoji, count: 1, mine: true })
   return list
 }
 
-// Aperçu d'un lien (carte OG). Silencieux si pas de métadonnées.
 function LinkPreview({ url }) {
   const [data, setData] = useState(null)
-  useEffect(() => { let on = true; fetchLinkPreview(url).then(d => { if (on) setData(d) }); return () => { on = false } }, [url])
+  useEffect(() => {
+    let on = true
+    fetchLinkPreview(url).then(d => { if (on) setData(d) })
+    return () => { on = false }
+  }, [url])
   if (!data) return null
   return (
     <a href={data.url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
-      style={{ display: 'block', marginTop: 10, border: `1px solid ${T.border}`, borderRadius: 14, overflow: 'hidden', textDecoration: 'none', background: 'rgba(255,255,255,0.02)' }}>
-      {data.image && <img src={data.image} alt="" style={{ width: '100%', maxHeight: 200, objectFit: 'cover', display: 'block' }} />}
+      style={{ display: 'block', marginTop: 10, border: `1px solid ${T.border}`, borderRadius: 8, overflow: 'hidden', textDecoration: 'none', background: 'rgba(255,255,255,0.02)' }}>
+      {data.image && <img src={data.image} alt="" loading="lazy" style={{ width: '100%', maxHeight: 220, objectFit: 'cover', display: 'block' }} />}
       <div style={{ padding: '10px 12px' }}>
-        <div style={{ fontSize: 10.5, fontWeight: 700, color: T.textFaint, textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 3 }}>{data.site}</div>
-        <div style={{ fontSize: 13.5, fontWeight: 700, color: T.text, lineHeight: 1.35, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{data.title}</div>
+        <div style={{ fontSize: 10.5, fontWeight: 800, color: T.textFaint, textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 3 }}>{data.site}</div>
+        <div style={{ fontSize: 13.5, fontWeight: 800, color: T.text, lineHeight: 1.35, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{data.title}</div>
         {data.description && <div style={{ fontSize: 12, color: T.textDim, marginTop: 3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{data.description}</div>}
       </div>
     </a>
   )
 }
 
-const TOKEN_RE = /(https?:\/\/[^\s]+|#[\p{L}0-9_]+|@[A-Za-z0-9_.]{2,32})/gu
 function timeAgo(iso) {
   const s = (Date.now() - new Date(iso).getTime()) / 1000
   if (s < 60) return "à l'instant"
@@ -42,88 +57,132 @@ function timeAgo(iso) {
   if (s < 604800) return `${Math.floor(s / 86400)} j`
   return new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
 }
+
+function Avatar({ url, name, size = 44 }) {
+  return <span style={avatar(size)}>{url ? <img src={url} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (name || '?').slice(0, 2).toUpperCase()}</span>
+}
+
+function RoleBadge({ userId }) {
+  if (isCreator(userId)) return <span className="feed-role-badge">Fondateur</span>
+  if (isStaff(userId)) return <span className="feed-role-badge">Staff</span>
+  return null
+}
+
+function Spoiler({ text }) {
+  const [shown, setShown] = useState(false)
+  return (
+    <button type="button" onClick={e => { e.stopPropagation(); setShown(v => !v) }} className={`feed-spoiler ${shown ? '' : 'is-hidden'}`}>
+      {text}
+    </button>
+  )
+}
+
 function RichText({ text, mentions }) {
   if (!text) return null
   const mmap = {}
   for (const m of (mentions || [])) if (m?.username) mmap[m.username.toLowerCase()] = m.uid
-  return String(text).split(TOKEN_RE).map((p, i) => {
-    if (/^https?:\/\//.test(p)) return <a key={i} href={p} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ color: T.gold, wordBreak: 'break-all' }}>{p}</a>
-    if (/^#[\p{L}0-9_]+$/u.test(p)) return <Link key={i} to={`/fil/recherche?q=${encodeURIComponent(p)}`} onClick={e => e.stopPropagation()} style={{ color: T.violet, fontWeight: 600, textDecoration: 'none' }}>{p}</Link>
-    if (/^@[A-Za-z0-9_.]{2,32}$/.test(p)) {
-      const uid = mmap[p.slice(1).toLowerCase()]
-      if (uid) return <Link key={i} to={`/u/${uid}`} onClick={e => e.stopPropagation()} style={{ color: T.violet, fontWeight: 600, textDecoration: 'none' }}>{p}</Link>
-    }
-    return <span key={i}>{p}</span>
-  })
-}
-function Avatar({ url, name, size = 44 }) {
-  return <span style={avatar(size)}>{url ? <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (name || '?').slice(0, 2).toUpperCase()}</span>
+  return (
+    <div className="feed-rich-text">
+      {String(text).split(TOKEN_RE).map((p, i) => {
+        if (!p) return null
+        if (/^\|\|[^|]+\|\|$/.test(p)) return <Spoiler key={i} text={p.slice(2, -2)} />
+        if (/^https?:\/\//.test(p)) return <a key={i} href={p} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}>{p}</a>
+        if (/^#[\p{L}0-9_]+$/u.test(p)) return <Link key={i} to={`/fil/recherche?q=${encodeURIComponent(p)}`} onClick={e => e.stopPropagation()}>{p}</Link>
+        if (/^@[A-Za-z0-9_.]{2,32}$/.test(p)) {
+          const uid = mmap[p.slice(1).toLowerCase()]
+          if (uid) return <Link key={i} to={`/u/${uid}`} onClick={e => e.stopPropagation()}>{p}</Link>
+        }
+        return <span key={i}>{p}</span>
+      })}
+    </div>
+  )
 }
 
-// Galerie : 1 image plein cadre, 2-4 en grille (3 = la 1re en pleine largeur).
-function MediaGallery({ urls, compact }) {
+function MediaGallery({ urls, compact, onOpen }) {
   const list = (urls || []).slice(0, 4)
   if (list.length === 0) return null
-  const cap = compact ? 220 : 420
-  if (list.length === 1) return <img src={list[0]} alt="" style={{ maxWidth: '100%', maxHeight: cap, borderRadius: compact ? 10 : 14, marginTop: 8, border: `1px solid ${T.border}`, display: 'block' }} />
-  const cell = list.length === 2 ? (compact ? 130 : 200) : (compact ? 100 : 150)
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3, marginTop: 8, borderRadius: compact ? 10 : 14, overflow: 'hidden', border: `1px solid ${T.border}` }}>
+    <div className={`feed-media-grid count-${list.length}`} style={compact ? { maxWidth: 320 } : null}>
       {list.map((u, i) => (
-        <img key={i} src={u} alt="" style={{ width: '100%', height: cell, objectFit: 'cover', gridColumn: (list.length === 3 && i === 0) ? 'span 2' : 'auto' }} />
+        <button key={`${u}-${i}`} type="button" onClick={e => { e.stopPropagation(); onOpen?.(u) }} className="feed-media-button" aria-label="Ouvrir le média">
+          <img src={u} alt="" loading="lazy" className="feed-media-image" style={compact ? { maxHeight: 220 } : null} />
+        </button>
       ))}
     </div>
   )
 }
 
-// Bloc original cité / reposté (lecture seule).
-function Embedded({ p, onClick }) {
+function Embedded({ p, onClick, onOpenMedia }) {
   const deleted = !!p?.deleted_at
   return (
-    <div onClick={onClick} style={{ border: `1px solid ${T.border}`, borderRadius: 14, padding: '10px 12px', marginTop: 8, cursor: onClick ? 'pointer' : 'default' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+    <div onClick={onClick} className="feed-card" style={{ padding: '10px 12px', marginTop: 10, marginBottom: 0, cursor: onClick ? 'pointer' : 'default' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7 }}>
         <Avatar url={p.author_avatar} name={p.author_username} size={22} />
-        <span style={{ fontSize: 13, fontWeight: 700, color: T.text }}>{p.author_username || `Pirate #${String(p.author_id || '').slice(-5)}`}</span>
+        <span style={{ fontSize: 13, fontWeight: 800, color: T.text }}>{p.author_username || `Pirate #${String(p.author_id || '').slice(-5)}`}</span>
         <span style={{ fontSize: 12, color: T.textFaint }}>· {timeAgo(p.created_at)}</span>
       </div>
-      {deleted ? <span style={{ fontSize: 14, color: T.textFaint, fontStyle: 'italic' }}>Post supprimé</span> : <>
-        {p.content && <div style={{ fontSize: 14, color: T.text, lineHeight: 1.5, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}><RichText text={p.content} mentions={p.mentions} /></div>}
-        <MediaGallery urls={p.media_urls?.length ? p.media_urls : (p.media_url ? [p.media_url] : [])} compact />
-      </>}
+      {deleted ? <span style={{ fontSize: 14, color: T.textFaint, fontStyle: 'italic' }}>Post supprimé</span> : (
+        <>
+          <RichText text={p.content} mentions={p.mentions} />
+          <MediaGallery urls={p.media_urls?.length ? p.media_urls : (p.media_url ? [p.media_url] : [])} compact onOpen={onOpenMedia} />
+        </>
+      )}
     </div>
   )
 }
 
-const actionStyle = { display: 'inline-flex', alignItems: 'center', gap: 6, border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 13, color: T.textFaint, fontFamily: 'inherit', padding: '4px 8px', borderRadius: 8 }
+function Counter({ children, active, className = '', ...props }) {
+  return (
+    <button type="button" className={`feed-post-action ${active ? className : ''}`} {...props}>
+      {children}
+    </button>
+  )
+}
 
 export default function PostCard({ post, embedded = false, disableNav = false, onChange, onDeleted, onQuote }) {
   const { discordId } = useAuth()
   const navigate = useNavigate()
   const isRepost = !!post.repost_of && !!post.original
   const isPureRepost = isRepost && !post.content
-  const main = isPureRepost ? post.original : post   // post qu'on affiche/actionne en principal
-  const quoted = (isRepost && post.content) ? post.original : null   // original cité (quote-repost)
+  const main = isPureRepost ? post.original : post
+  const quoted = (isRepost && post.content) ? post.original : null
   const [busy, setBusy] = useState(false)
+  const [menu, setMenu] = useState(false)
   const [repostMenu, setRepostMenu] = useState(false)
   const [reactPicker, setReactPicker] = useState(false)
   const [editing, setEditing] = useState(false)
+  const [expanded, setExpanded] = useState(false)
+  const [mediaModal, setMediaModal] = useState(null)
   const [editText, setEditText] = useState(post.content || '')
   const mineRow = post.author_id === discordId
   const canEdit = !post.repost_of && mineRow && !post.deleted_at
   const deleted = !!main?.deleted_at
-  const hasMedia = !!(main.media_urls?.length || main.media_url)
+  const urls = main.media_urls?.length ? main.media_urls : (main.media_url ? [main.media_url] : [])
+  const hasMedia = urls.length > 0
   const firstUrl = (!deleted && main.content) ? (main.content.match(/https?:\/\/[^\s]+/)?.[0] || null) : null
+  const longText = (main.content || '').length > 360
+  const visibleText = longText && !expanded ? `${main.content.slice(0, 360)}...` : main.content
 
-  if (embedded) return <Embedded p={post} />
+  useEffect(() => {
+    if (!mediaModal) return
+    const onKey = (e) => { if (e.key === 'Escape') setMediaModal(null) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [mediaModal])
+
+  const postUrl = useMemo(() => `${window.location.origin}/fil/${main.id}`, [main.id])
+
+  if (embedded) return <Embedded p={post} onOpenMedia={setMediaModal} />
 
   async function like(e) {
     e.stopPropagation()
     if (!discordId) { navigate('/messages'); return }
     const liked = !main.liked
-    onChange?.(main.id, { liked, like_count: (main.like_count || 0) + (liked ? 1 : -1) })
+    onChange?.(main.id, { liked, like_count: Math.max(0, (main.like_count || 0) + (liked ? 1 : -1)) })
     const res = await toggleLike(main.id)
     if (res?.ok === false) onChange?.(main.id, { liked: main.liked, like_count: main.like_count })
   }
+
   async function react(emoji, e) {
     e?.stopPropagation()
     setReactPicker(false)
@@ -132,6 +191,7 @@ export default function PostCard({ post, embedded = false, disableNav = false, o
     const res = await togglePostReaction(main.id, emoji)
     if (res?.ok === false) onChange?.(main.id, { reactions: main.reactions })
   }
+
   async function bookmark(e) {
     e.stopPropagation()
     if (!discordId) { navigate('/messages'); return }
@@ -140,19 +200,25 @@ export default function PostCard({ post, embedded = false, disableNav = false, o
     const res = await toggleBookmark(main.id)
     if (res?.ok === false) onChange?.(main.id, { bookmarked: main.bookmarked })
   }
+
   async function doRepost(e) {
-    e.stopPropagation(); setRepostMenu(false); setBusy(true)
+    e.stopPropagation()
+    setRepostMenu(false)
+    setBusy(true)
     const res = await createPost({ repostOf: main.id })
     setBusy(false)
     if (res?.ok) onChange?.(main.id, { repost_count: (main.repost_count || 0) + 1 })
     else if (res?.error) alert(res.error)
   }
+
   async function remove(e) {
     e.stopPropagation()
+    setMenu(false)
     if (!window.confirm(isPureRepost ? 'Annuler ton repost ?' : 'Supprimer ce post ?')) return
     const res = await deletePost(post.id)
     if (res?.ok) onDeleted?.(post.id)
   }
+
   async function saveEdit(e) {
     e?.stopPropagation()
     const t = editText.trim()
@@ -161,86 +227,128 @@ export default function PostCard({ post, embedded = false, disableNav = false, o
     if (res?.ok) { onChange?.(post.id, { content: t, edited_at: res.edited_at || new Date().toISOString() }); setEditing(false) }
     else if (res?.error) alert(res.error)
   }
+
+  async function copyLink(e) {
+    e.stopPropagation()
+    setMenu(false)
+    try { await navigator.clipboard.writeText(postUrl) } catch {}
+  }
+
+  async function sharePost(e) {
+    e.stopPropagation()
+    setMenu(false)
+    if (navigator.share) {
+      try { await navigator.share({ title: 'Post Brams Community', url: postUrl }) } catch {}
+    } else {
+      try { await navigator.clipboard.writeText(postUrl) } catch {}
+    }
+  }
+
   const goThread = () => { if (!disableNav && !deleted) navigate(`/fil/${main.id}`) }
 
   return (
-    <article onClick={goThread} style={{ display: 'flex', gap: 12, padding: '14px 16px', borderBottom: `1px solid ${T.border}`, cursor: disableNav || deleted ? 'default' : 'pointer' }}>
-      <div style={{ flexShrink: 0 }}>
-        <Link to={`/u/${main.author_id}`} onClick={e => e.stopPropagation()}><Avatar url={main.author_avatar} name={main.author_username} /></Link>
-      </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        {isPureRepost && <div style={{ fontSize: 12, color: T.textFaint, fontWeight: 600, marginBottom: 4 }}>🔁 {mineRow ? 'Tu as' : `${post.author_username || 'Quelqu’un'} a`} reposté</div>}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
-          <Link to={`/u/${main.author_id}`} onClick={e => e.stopPropagation()} style={{ fontSize: 15, fontWeight: 800, color: T.text, textDecoration: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {main.author_username || `Pirate #${String(main.author_id || '').slice(-5)}`}
-          </Link>
-          <span style={{ fontSize: 13, color: T.textFaint, flexShrink: 0 }}>· {timeAgo(main.created_at)}{main.edited_at ? ' · modifié' : ''}</span>
-          {(mineRow || (!isRepost && main.author_id === discordId)) && (
-            <div style={{ marginLeft: 'auto', display: 'flex', gap: 2 }} onClick={e => e.stopPropagation()}>
-              {canEdit && !editing && <button onClick={() => { setEditText(post.content || ''); setEditing(true) }} title="Modifier" style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: T.textFaint, fontSize: 13, padding: 4 }}>✏️</button>}
-              <button onClick={remove} title="Supprimer" style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: T.textFaint, fontSize: 13, padding: 4 }}>🗑</button>
-            </div>
-          )}
+    <>
+      <article onClick={goThread} className={`feed-post-card ${disableNav || deleted ? 'is-disabled' : ''}`}>
+        <div style={{ flexShrink: 0 }}>
+          <Link to={`/u/${main.author_id}`} onClick={e => e.stopPropagation()}><Avatar url={main.author_avatar} name={main.author_username} /></Link>
         </div>
 
-        {deleted ? <div style={{ fontSize: 15, color: T.textFaint, fontStyle: 'italic' }}>Post supprimé</div> : <>
-          {editing ? (
-            <div onClick={e => e.stopPropagation()}>
-              <textarea value={editText} onChange={e => setEditText(e.target.value)} rows={3} autoFocus
-                style={{ width: '100%', resize: 'none', background: T.surface, border: `1px solid ${T.border}`, borderRadius: 10, color: T.text, fontSize: 15, fontFamily: 'inherit', padding: 10, boxSizing: 'border-box', outline: 'none' }} />
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 6 }}>
-                <button onClick={() => setEditing(false)} style={{ ...btn('ghost'), padding: '6px 14px', fontSize: 12 }}>Annuler</button>
-                <button onClick={saveEdit} disabled={editText.trim().length > 500} style={{ ...btn('gold'), padding: '6px 16px', fontSize: 12 }}>Enregistrer</button>
-              </div>
-            </div>
-          ) : (
-            main.content && <div style={{ fontSize: 15, color: T.text, lineHeight: 1.5, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}><RichText text={main.content} mentions={main.mentions} /></div>
-          )}
-          {!editing && <MediaGallery urls={main.media_urls?.length ? main.media_urls : (main.media_url ? [main.media_url] : [])} />}
-          {!editing && firstUrl && !hasMedia && !quoted && <LinkPreview url={firstUrl} />}
-          {quoted && <Embedded p={quoted} onClick={(e) => { e.stopPropagation(); navigate(`/fil/${quoted.id}`) }} />}
-
-          {!editing && main.reactions?.length > 0 && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 10 }} onClick={e => e.stopPropagation()}>
-              {main.reactions.map(r => (
-                <button key={r.emoji} onClick={(e) => react(r.emoji, e)} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12.5, padding: '3px 9px', borderRadius: 999, cursor: 'pointer', fontFamily: 'inherit', background: r.mine ? 'rgba(212,160,23,0.14)' : T.surface, border: `1px solid ${r.mine ? T.borderHi : T.border}`, color: r.mine ? T.gold : T.textDim }}>{r.emoji} {r.count}</button>
-              ))}
+        <div className="feed-post-content">
+          {isPureRepost && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 7, color: T.textFaint, fontSize: 12, fontWeight: 800, marginBottom: 6 }}>
+              <Repeat2 size={14} /> {mineRow ? 'Tu as reposté' : `${post.author_username || 'Quelqu’un'} a reposté`}
             </div>
           )}
 
-          {!editing && (
-            <div style={{ display: 'flex', gap: 18, marginTop: 10, position: 'relative' }}>
-              <button onClick={(e) => { e.stopPropagation(); navigate(`/fil/${main.id}`) }} style={actionStyle}
-                onMouseEnter={e => { e.currentTarget.style.color = T.blue }} onMouseLeave={e => { e.currentTarget.style.color = T.textFaint }}>💬 {main.reply_count || 0}</button>
-              <div style={{ position: 'relative' }} onClick={e => e.stopPropagation()}>
-                <button onClick={() => setReactPicker(o => !o)} title="Réagir" style={actionStyle}
-                  onMouseEnter={e => { e.currentTarget.style.color = T.gold }} onMouseLeave={e => { e.currentTarget.style.color = T.textFaint }}>😀</button>
-                {reactPicker && (
-                  <div style={{ position: 'absolute', bottom: 32, left: 0, zIndex: 10, display: 'flex', gap: 2, background: '#16171d', border: `1px solid ${T.border}`, borderRadius: 12, padding: 5, boxShadow: '0 10px 30px rgba(0,0,0,.5)' }}>
-                    {QUICK_REACTIONS.map(em => <button key={em} onClick={(e) => react(em, e)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 19, padding: '2px 5px', borderRadius: 7 }}>{em}</button>)}
-                  </div>
-                )}
-              </div>
-              <div style={{ position: 'relative' }} onClick={e => e.stopPropagation()}>
-                <button onClick={() => setRepostMenu(o => !o)} disabled={busy} style={actionStyle}
-                  onMouseEnter={e => { e.currentTarget.style.color = T.green }} onMouseLeave={e => { e.currentTarget.style.color = T.textFaint }}>🔁 {main.repost_count || 0}</button>
-                {repostMenu && (
-                  <div style={{ position: 'absolute', bottom: 32, left: 0, zIndex: 10, background: '#16171d', border: `1px solid ${T.border}`, borderRadius: 10, padding: 4, minWidth: 150, boxShadow: '0 10px 30px rgba(0,0,0,.5)' }}>
-                    <button onClick={doRepost} style={menuItem}>🔁 Reposter</button>
-                    {onQuote && <button onClick={() => { setRepostMenu(false); onQuote(main) }} style={menuItem}>✍️ Citer</button>}
-                  </div>
-                )}
-              </div>
-              <button onClick={like} style={{ ...actionStyle, color: main.liked ? T.red : T.textFaint }}
-                onMouseEnter={e => { e.currentTarget.style.color = T.red }} onMouseLeave={e => { e.currentTarget.style.color = main.liked ? T.red : T.textFaint }}>{main.liked ? '❤️' : '🤍'} {main.like_count || 0}</button>
-              <button onClick={bookmark} title={main.bookmarked ? 'Retirer des signets' : 'Enregistrer'} style={{ ...actionStyle, marginLeft: 'auto', color: main.bookmarked ? T.gold : T.textFaint }}
-                onMouseEnter={e => { e.currentTarget.style.color = T.gold }} onMouseLeave={e => { e.currentTarget.style.color = main.bookmarked ? T.gold : T.textFaint }}>{main.bookmarked ? '🔖' : '📑'}</button>
+          <div className="feed-post-top">
+            <Link to={`/u/${main.author_id}`} onClick={e => e.stopPropagation()} className="feed-post-author">
+              {main.author_username || `Pirate #${String(main.author_id || '').slice(-5)}`}
+            </Link>
+            <RoleBadge userId={main.author_id} />
+            <span className="feed-post-meta">· {timeAgo(main.created_at)}{main.edited_at ? ' · modifié' : ''}</span>
+
+            <div className="feed-post-menu" onClick={e => e.stopPropagation()}>
+              <button type="button" className="feed-icon-button" onClick={() => setMenu(v => !v)} aria-label="Options du post"><MoreHorizontal size={17} /></button>
+              {menu && (
+                <div className="feed-post-menu-panel">
+                  <button type="button" className="feed-post-menu-item" onClick={copyLink}><Copy size={15} /> Copier le lien</button>
+                  <button type="button" className="feed-post-menu-item" onClick={sharePost}><Share2 size={15} /> Partager</button>
+                  {canEdit && <button type="button" className="feed-post-menu-item" onClick={() => { setEditText(post.content || ''); setEditing(true); setMenu(false) }}><Pencil size={15} /> Modifier</button>}
+                  <button type="button" className="feed-post-menu-item" disabled title="Signalement: RPC modération à ajouter"><Flag size={15} /> Signaler</button>
+                  {mineRow && <button type="button" className="feed-post-menu-item is-danger" onClick={remove}><Trash2 size={15} /> Supprimer</button>}
+                </div>
+              )}
             </div>
+          </div>
+
+          {deleted ? <div style={{ fontSize: 15, color: T.textFaint, fontStyle: 'italic' }}>Post supprimé</div> : (
+            <>
+              {editing ? (
+                <div onClick={e => e.stopPropagation()}>
+                  <textarea value={editText} onChange={e => setEditText(e.target.value)} rows={3} autoFocus
+                    style={{ width: '100%', resize: 'vertical', background: T.surface, border: `1px solid ${T.border}`, borderRadius: 8, color: T.text, fontSize: 15, fontFamily: 'inherit', padding: 10, boxSizing: 'border-box', outline: 'none' }} />
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 8 }}>
+                    <button type="button" onClick={() => setEditing(false)} style={{ ...btn('ghost'), borderRadius: 8, padding: '6px 14px', fontSize: 12 }}>Annuler</button>
+                    <button type="button" onClick={saveEdit} disabled={editText.trim().length > 500} style={{ ...btn('gold'), borderRadius: 8, padding: '6px 16px', fontSize: 12 }}>Enregistrer</button>
+                  </div>
+                </div>
+              ) : (
+                visibleText && <RichText text={visibleText} mentions={main.mentions} />
+              )}
+
+              {!editing && longText && (
+                <button type="button" onClick={e => { e.stopPropagation(); setExpanded(v => !v) }} className="feed-post-menu-item" style={{ width: 'auto', marginTop: 5, paddingLeft: 0, color: T.gold }}>
+                  {expanded ? 'Voir moins' : 'Voir plus'}
+                </button>
+              )}
+
+              {!editing && <MediaGallery urls={urls} onOpen={setMediaModal} />}
+              {!editing && firstUrl && !hasMedia && !quoted && <LinkPreview url={firstUrl} />}
+              {quoted && <Embedded p={quoted} onClick={(e) => { e.stopPropagation(); navigate(`/fil/${quoted.id}`) }} onOpenMedia={setMediaModal} />}
+
+              {!editing && main.reactions?.length > 0 && (
+                <div className="feed-reactions" onClick={e => e.stopPropagation()}>
+                  {main.reactions.map(r => (
+                    <button key={r.emoji} type="button" onClick={(e) => react(r.emoji, e)} className={`feed-reaction-pill ${r.mine ? 'is-mine' : ''}`}>{r.emoji} {r.count}</button>
+                  ))}
+                </div>
+              )}
+
+              {!editing && (
+                <div className="feed-actions" onClick={e => e.stopPropagation()}>
+                  <Counter onClick={(e) => { e.stopPropagation(); navigate(`/fil/${main.id}`) }}><MessageCircle size={17} /> {main.reply_count || 0}</Counter>
+                  <div style={{ position: 'relative' }}>
+                    <Counter onClick={() => setReactPicker(o => !o)}><SmilePlus size={17} /></Counter>
+                    {reactPicker && (
+                      <div className="feed-react-menu">
+                        {QUICK_REACTIONS.map(em => <button key={em} type="button" onClick={(e) => react(em, e)}>{em}</button>)}
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ position: 'relative' }}>
+                    <Counter onClick={() => setRepostMenu(o => !o)} disabled={busy}><Repeat2 size={17} /> {main.repost_count || 0}</Counter>
+                    {repostMenu && (
+                      <div className="feed-repost-menu">
+                        <button type="button" onClick={doRepost} className="feed-post-menu-item"><Repeat2 size={15} /> Reposter</button>
+                        {onQuote && <button type="button" onClick={() => { setRepostMenu(false); onQuote(main) }} className="feed-post-menu-item"><Pencil size={15} /> Citer</button>}
+                      </div>
+                    )}
+                  </div>
+                  <Counter onClick={like} active={main.liked} className="is-liked"><Heart size={17} fill={main.liked ? 'currentColor' : 'none'} /> {main.like_count || 0}</Counter>
+                  <Counter onClick={bookmark} active={main.bookmarked} className="is-bookmarked" style={{ marginLeft: 'auto' }}><Bookmark size={17} fill={main.bookmarked ? 'currentColor' : 'none'} /></Counter>
+                </div>
+              )}
+            </>
           )}
-        </>}
-      </div>
-    </article>
+        </div>
+      </article>
+
+      {mediaModal && (
+        <div className="feed-modal-backdrop" onClick={() => setMediaModal(null)} role="dialog" aria-modal="true" aria-label="Aperçu du média">
+          <button type="button" onClick={() => setMediaModal(null)} className="feed-icon-button" aria-label="Fermer" style={{ position: 'fixed', top: 18, right: 18, background: 'rgba(0,0,0,.45)' }}><X size={20} /></button>
+          <img src={mediaModal} alt="" className="feed-modal-image" onClick={e => e.stopPropagation()} />
+        </div>
+      )}
+    </>
   )
 }
-
-const menuItem = { display: 'block', width: '100%', textAlign: 'left', padding: '8px 12px', borderRadius: 7, border: 'none', background: 'transparent', color: T.text, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }

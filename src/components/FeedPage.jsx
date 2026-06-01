@@ -1,33 +1,58 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import {
+  Anchor, BarChart3, Bookmark, Compass, Flame, Home,
+  Image as ImageIcon, MessageCircle, Radio, Search, Swords, Trophy, Users,
+} from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { getFeed, getPost, getFeedStats, subscribeFeed } from '../lib/feed.js'
+import { listFriends } from '../lib/social.js'
 import PostComposer from './feed/PostComposer.jsx'
 import PostCard from './feed/PostCard.jsx'
 import QuoteModal from './feed/QuoteModal.jsx'
 import FeedRail from './feed/FeedRail.jsx'
 import StoriesBar from './feed/StoriesBar.jsx'
 import { T } from './social/socialStyles.js'
+import './feed/feedPremium.css'
 
-const COL = { flex: '1 1 600px', maxWidth: 600, minWidth: 0, minHeight: '100vh', borderLeft: `1px solid ${T.border}`, borderRight: `1px solid ${T.border}`, background: 'rgba(10,11,16,0.55)', backdropFilter: 'blur(2px)' }
+const TAB_ITEMS = [
+  { id: 'for-you', label: 'Pour toi', icon: Home },
+  { id: 'following', label: 'Suivis', icon: Users },
+  { id: 'trending', label: 'Tendances', icon: Flame },
+  { id: 'media', label: 'Médias', icon: ImageIcon },
+  { id: 'polls', label: 'Sondages', icon: BarChart3, disabled: true },
+  { id: 'mine', label: 'Mes posts', icon: Bookmark },
+]
 
-// Animations + responsive du Fil.
-const FX = `
-@keyframes feed-shimmer { 0%{background-position:-180% 0} 100%{background-position:180% 0} }
-@keyframes feed-pulse { 0%,100%{transform:scale(1);opacity:.85} 50%{transform:scale(1.35);opacity:1} }
-@keyframes feed-ring { 0%{transform:scale(.7);opacity:.55} 100%{transform:scale(2.6);opacity:0} }
-@keyframes feed-fadein { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
-@media (max-width: 1000px){ .feed-rail{ display:none !important } }
-@media (prefers-reduced-motion: reduce){ [data-fx]{animation:none !important} }
-`
+const QUICK_LINKS = [
+  { to: '/fil/signets', label: 'Mes signets', icon: Bookmark },
+  { to: '/', label: 'Classement', icon: Trophy },
+  { to: '/equipage', label: 'Équipages', icon: Anchor },
+  { to: '/tier-list', label: 'Tier List', icon: BarChart3 },
+  { to: '/tournoi', label: 'Tournoi', icon: Swords },
+  { to: '/undercover', label: 'Undercover', icon: Compass },
+]
 
-// Met à jour un post dans la liste (gère aussi l'original d'un repost).
 function patch(posts, id, partial) {
   return posts.map(p => {
     if (p.id === id) return { ...p, ...partial }
     if (p.original?.id === id) return { ...p, original: { ...p.original, ...partial } }
     return p
   })
+}
+
+function hasMedia(post) {
+  const main = post?.original && post?.repost_of && !post?.content ? post.original : post
+  return !!(main?.media_urls?.length || main?.media_url)
+}
+
+function score(post) {
+  const main = post?.original && post?.repost_of && !post?.content ? post.original : post
+  return Number(main?.like_count || 0) * 3 + Number(main?.reply_count || 0) * 4 + Number(main?.repost_count || 0) * 5
+}
+
+function getPostText(post) {
+  return [post?.content, post?.original?.content].filter(Boolean).join(' ')
 }
 
 function LiveDot() {
@@ -40,17 +65,64 @@ function LiveDot() {
 }
 
 function SkeletonPost() {
-  const sh = { background: 'linear-gradient(90deg, rgba(255,255,255,.04) 25%, rgba(255,255,255,.09) 37%, rgba(255,255,255,.04) 63%)', backgroundSize: '200% 100%', animation: 'feed-shimmer 1.5s ease-in-out infinite' }
+  const sh = {
+    background: 'linear-gradient(90deg, rgba(255,255,255,.04) 25%, rgba(255,255,255,.09) 37%, rgba(255,255,255,.04) 63%)',
+    backgroundSize: '200% 100%',
+    animation: 'feed-shimmer 1.5s ease-in-out infinite',
+  }
   return (
-    <div style={{ display: 'flex', gap: 12, padding: '16px', borderBottom: `1px solid ${T.border}` }}>
+    <div style={{ display: 'flex', gap: 12, padding: '17px 18px', borderBottom: `1px solid ${T.border}` }}>
       <div data-fx style={{ ...sh, width: 44, height: 44, borderRadius: '50%', flexShrink: 0 }} />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 9, paddingTop: 4 }}>
-        <div data-fx style={{ ...sh, width: '42%', height: 11, borderRadius: 6 }} />
+        <div data-fx style={{ ...sh, width: '38%', height: 11, borderRadius: 6 }} />
         <div data-fx style={{ ...sh, width: '92%', height: 10, borderRadius: 6 }} />
-        <div data-fx style={{ ...sh, width: '70%', height: 10, borderRadius: 6 }} />
-        <div data-fx style={{ ...sh, width: 160, height: 90, borderRadius: 12, marginTop: 4 }} />
+        <div data-fx style={{ ...sh, width: '68%', height: 10, borderRadius: 6 }} />
+        <div data-fx style={{ ...sh, width: '56%', height: 104, borderRadius: 8, marginTop: 4 }} />
       </div>
     </div>
+  )
+}
+
+function FeedNav({ activeTab, onTab }) {
+  return (
+    <aside className="feed-left">
+      <div className="feed-card">
+        <div className="feed-kicker">Navigation</div>
+        <div className="feed-nav-list">
+          {TAB_ITEMS.map(item => {
+            const Icon = item.icon
+            return (
+              <button
+                key={item.id}
+                type="button"
+                disabled={item.disabled}
+                title={item.disabled ? 'Sondages: backend à ajouter avant activation' : item.label}
+                onClick={() => !item.disabled && onTab(item.id)}
+                className={`feed-nav-button ${activeTab === item.id ? 'is-active' : ''}`}
+              >
+                <Icon size={17} />
+                <span>{item.label}</span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      <div className="feed-card">
+        <div className="feed-kicker">Accès rapides</div>
+        <div className="feed-nav-list">
+          {QUICK_LINKS.map(item => {
+            const Icon = item.icon
+            return (
+              <Link key={item.to} to={item.to} className="feed-nav-link">
+                <Icon size={17} />
+                <span>{item.label}</span>
+              </Link>
+            )
+          })}
+        </div>
+      </div>
+    </aside>
   )
 }
 
@@ -58,7 +130,8 @@ export default function FeedPage() {
   const { isAuthenticated, discordId, loading: authLoading } = useAuth()
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
-  const [searchFocus, setSearchFocus] = useState(false)
+  const [activeTab, setActiveTab] = useState('for-you')
+  const [friendIds, setFriendIds] = useState(() => new Set())
   const [posts, setPosts] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -68,50 +141,129 @@ export default function FeedPage() {
   const [stats, setStats] = useState({ posts: 0 })
   const loadingMore = useRef(false)
   const seen = useRef(new Set())
+  const refreshTimer = useRef(null)
 
   const reload = useCallback(async () => {
-    setLoading(true); setError(null)
+    setLoading(true)
+    setError(null)
     const { posts: list, error: err } = await getFeed(null)
     if (err) { setError(err); setLoading(false); return }
     seen.current = new Set(list.map(p => p.id))
-    setPosts(list); setHasMore(list.length >= 20); setNewCount(0); setLoading(false)
+    setPosts(list)
+    setHasMore(list.length >= 20)
+    setNewCount(0)
+    setLoading(false)
     getFeedStats().then(setStats)
   }, [])
 
-  // On attend que l'auth soit résolue avant le 1er chargement : sinon getFeed part
-  // en anonyme avant la restauration de session → le fil restait vide tant qu'on
-  // n'actualisait pas. Se recharge aussi à la connexion/déconnexion (discordId).
+  const scheduleReload = useCallback((delay = 150) => {
+    if (refreshTimer.current) clearTimeout(refreshTimer.current)
+    refreshTimer.current = setTimeout(() => {
+      refreshTimer.current = null
+      reload()
+    }, delay)
+  }, [reload])
+
+  const refreshStats = useCallback(async () => {
+    const next = await getFeedStats()
+    setStats(next)
+  }, [])
+
+  useEffect(() => {
+    if (!isAuthenticated) { setFriendIds(new Set()); return }
+    let alive = true
+    listFriends().then(list => {
+      if (!alive) return
+      setFriendIds(new Set((Array.isArray(list) ? list : []).map(f => String(f.user_id))))
+    }).catch(() => {
+      if (alive) setFriendIds(new Set())
+    })
+    return () => { alive = false }
+  }, [isAuthenticated])
+
+  const feedMeta = useMemo(() => {
+    const today = new Date().toLocaleDateString('fr-FR')
+    const todayPosts = posts.filter(p => new Date(p.created_at).toLocaleDateString('fr-FR') === today).length
+    const activeMembers = new Set(posts.map(p => String(p.author_id || '')).filter(Boolean)).size
+    const tagMap = new Map()
+    const authorMap = new Map()
+
+    for (const post of posts) {
+      const text = getPostText(post)
+      for (const match of text.matchAll(/#[\p{L}0-9_]+/gu)) {
+        const tag = match[0].toLowerCase()
+        tagMap.set(tag, (tagMap.get(tag) || 0) + 1)
+      }
+      const author = post.author_username || (post.author_id ? `#${String(post.author_id).slice(-5)}` : null)
+      if (author) authorMap.set(author, (authorMap.get(author) || 0) + 1)
+    }
+
+    const trends = [...tagMap.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5).map(([tag, count]) => ({ tag, count }))
+    const activeAuthors = [...authorMap.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5).map(([name, count]) => ({ name, count }))
+    return { todayPosts, activeMembers, trends, activeAuthors }
+  }, [posts])
+
+  const visiblePosts = useMemo(() => {
+    if (activeTab === 'following') return posts.filter(p => friendIds.has(String(p.author_id)))
+    if (activeTab === 'trending') return [...posts].sort((a, b) => score(b) - score(a))
+    if (activeTab === 'media') return posts.filter(hasMedia)
+    if (activeTab === 'mine') return posts.filter(p => String(p.author_id) === String(discordId))
+    return posts
+  }, [activeTab, discordId, friendIds, posts])
+
   useEffect(() => { if (!authLoading) reload() }, [authLoading, discordId, reload])
 
-  // Realtime : un nouveau post racine d'un autre → pastille "nouveaux posts".
   useEffect(() => {
-    const unsub = subscribeFeed((row) => {
-      if (row.reply_to || row.repost_of) { /* réponses/reposts : ignorés ici */ }
-      if (!row.reply_to && row.author_id !== discordId && !seen.current.has(row.id)) {
-        seen.current.add(row.id)
+    const onFocus = () => scheduleReload(80)
+    const onVisible = () => { if (!document.hidden) scheduleReload(80) }
+    window.addEventListener('focus', onFocus)
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      window.removeEventListener('focus', onFocus)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
+  }, [scheduleReload])
+
+  useEffect(() => {
+    const unsub = subscribeFeed(({ type, row, old }) => {
+      const target = row || old
+      if (!target) return
+      if (type === 'INSERT' && !target.reply_to && !target.repost_of && target.author_id !== discordId && !seen.current.has(target.id)) {
+        seen.current.add(target.id)
         setNewCount(n => n + 1)
+        scheduleReload(1200)
+        return
+      }
+      if (type === 'UPDATE' || type === 'DELETE') {
+        scheduleReload(120)
+        refreshStats()
       }
     })
     return unsub
-  }, [discordId])
+  }, [discordId, refreshStats, scheduleReload])
 
-  // Polling de secours (12s) : si le realtime ne délivre pas, on détecte quand même
-  // les nouveaux posts et on affiche la pastille — sans toucher au scroll en cours.
   useEffect(() => {
     if (loading) return
     const t = setInterval(async () => {
       if (document.hidden) return
-      const { posts: list, error } = await getFeed(null)
-      if (error || !Array.isArray(list)) return
+      const { posts: list, error: err } = await getFeed(null)
+      if (err || !Array.isArray(list)) return
       let n = 0
-      for (const p of list) { if (!p.reply_to && p.author_id !== discordId && !seen.current.has(p.id)) n++ }
+      for (const p of list) {
+        if (!p.reply_to && !p.repost_of && p.author_id !== discordId && !seen.current.has(p.id)) n += 1
+      }
       if (n > 0) setNewCount(c => Math.max(c, n))
-    }, 12000)
+      refreshStats()
+    }, 45000)
     return () => clearInterval(t)
-  }, [discordId, loading])
+  }, [discordId, loading, refreshStats])
+
+  useEffect(() => () => {
+    if (refreshTimer.current) clearTimeout(refreshTimer.current)
+  }, [])
 
   async function loadMore() {
-    if (loadingMore.current || !hasMore || !posts.length) return
+    if (activeTab !== 'for-you' || loadingMore.current || !hasMore || !posts.length) return
     loadingMore.current = true
     const { posts: older } = await getFeed(posts[posts.length - 1].created_at)
     older.forEach(p => seen.current.add(p.id))
@@ -119,6 +271,7 @@ export default function FeedPage() {
     setHasMore(older.length >= 20)
     loadingMore.current = false
   }
+
   function onScroll(e) {
     const el = e.currentTarget
     if (el.scrollHeight - el.scrollTop - el.clientHeight < 600) loadMore()
@@ -126,57 +279,80 @@ export default function FeedPage() {
 
   const onChange = (id, partial) => setPosts(prev => patch(prev, id, partial))
   const onDeleted = (rowId) => setPosts(prev => prev.filter(p => p.id !== rowId))
+
   async function onPosted(newId) {
     const r = await getPost(newId)
-    if (r?.post) { seen.current.add(r.post.id); setPosts(prev => [r.post, ...prev.filter(p => p.id !== r.post.id)]) }
+    if (r?.post) {
+      seen.current.add(r.post.id)
+      setPosts(prev => [r.post, ...prev.filter(p => p.id !== r.post.id)])
+      refreshStats()
+    }
   }
 
-  return (
-    <div onScroll={onScroll} style={{ position: 'relative', height: 'calc(100vh - 72px)', marginTop: 72, overflowY: 'auto', background: T.bg }}>
-      <style>{FX}</style>
-      {/* Fond ambiant : halos or + violet très diffus, donne de la profondeur (plus plat). */}
-      <div aria-hidden style={{ position: 'fixed', inset: 0, top: 72, zIndex: 0, pointerEvents: 'none',
-        background: `radial-gradient(900px 480px at 22% -6%, rgba(212,160,23,.10), transparent 60%),
-                     radial-gradient(820px 520px at 88% 8%, rgba(155,108,255,.09), transparent 62%),
-                     radial-gradient(700px 700px at 50% 120%, rgba(212,160,23,.05), transparent 60%)` }} />
+  const activeLabel = TAB_ITEMS.find(t => t.id === activeTab)?.label || 'Pour toi'
+  const mediaCount = posts.filter(hasMedia).length
 
-      <div style={{ position: 'relative', zIndex: 1, display: 'flex', gap: 28, maxWidth: 952, margin: '0 auto', alignItems: 'flex-start' }}>
-        <div style={COL}>
-          {/* ── Header premium ── */}
-          <div style={{ position: 'sticky', top: 0, zIndex: 5, padding: '16px 16px 13px', background: 'rgba(8,9,13,0.78)', backdropFilter: 'blur(16px)', borderBottom: `1px solid ${T.border}` }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 11, marginBottom: 12 }}>
-              <h1 style={{ margin: 0, fontSize: 24, fontWeight: 900, letterSpacing: '-.02em',
-                background: `linear-gradient(95deg, ${T.gold}, ${T.goldSoft} 60%, #ffe9a8)`,
-                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                Le Fil
-              </h1>
-              <span style={{ fontSize: 17 }}>🏴‍☠️</span>
-              <span style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: 10, fontWeight: 800, letterSpacing: '.14em', textTransform: 'uppercase', color: T.gold, padding: '4px 10px', borderRadius: 999, background: 'rgba(212,160,23,0.10)', border: `1px solid ${T.borderHi}` }}>
-                <LiveDot /> En direct
-              </span>
+  return (
+    <div onScroll={onScroll} className="feed-shell">
+      <div className="feed-layout">
+        <FeedNav activeTab={activeTab} onTab={setActiveTab} />
+
+        <main className="feed-main" aria-label="Fil de la communauté Brams">
+          <header className="feed-header">
+            <div className="feed-title-row">
+              <h1 className="feed-title">Le Fil</h1>
+              <span className="feed-live-badge"><LiveDot /> En direct</span>
             </div>
-            <form onSubmit={e => { e.preventDefault(); const q = search.trim(); if (q.length >= 2) navigate(`/fil/recherche?q=${encodeURIComponent(q)}`) }}>
-              <input value={search} onChange={e => setSearch(e.target.value)}
-                onFocus={() => setSearchFocus(true)} onBlur={() => setSearchFocus(false)}
-                placeholder="🔍 Rechercher dans le fil (#hashtag, mot-clé…)"
-                style={{ width: '100%', padding: '11px 16px', borderRadius: 999, fontSize: 13,
-                  background: searchFocus ? 'rgba(255,255,255,0.05)' : T.surface,
-                  border: `1px solid ${searchFocus ? T.borderHi : T.border}`, color: T.text, outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box',
-                  boxShadow: searchFocus ? '0 0 0 3px rgba(212,160,23,0.10)' : 'none', transition: 'border-color .18s, box-shadow .18s, background .18s' }} />
+
+            <div className="feed-summary-row" aria-label="Résumé du fil">
+              <span className="feed-stat-pill"><MessageCircle size={14} /><strong>{feedMeta.todayPosts}</strong> aujourd'hui</span>
+              <span className="feed-stat-pill"><Users size={14} /><strong>{feedMeta.activeMembers}</strong> actifs</span>
+              <span className="feed-stat-pill"><ImageIcon size={14} /><strong>{mediaCount}</strong> médias</span>
+              <span className="feed-stat-pill"><Radio size={14} /><strong>{(stats?.posts ?? 0).toLocaleString('fr-FR')}</strong> total</span>
+            </div>
+
+            <form className="feed-search-row" onSubmit={e => { e.preventDefault(); const q = search.trim(); if (q.length >= 2) navigate(`/fil/recherche?q=${encodeURIComponent(q)}`) }}>
+              <Search size={16} />
+              <input
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="feed-search-input"
+                placeholder="Rechercher un hashtag, un membre, un anime..."
+                aria-label="Rechercher dans le fil"
+              />
             </form>
-          </div>
+
+            <nav className="feed-tabs" aria-label="Filtres du fil">
+              {TAB_ITEMS.map(item => {
+                const Icon = item.icon
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    disabled={item.disabled}
+                    title={item.disabled ? 'Sondages: backend à ajouter avant activation' : item.label}
+                    onClick={() => !item.disabled && setActiveTab(item.id)}
+                    className={`feed-chip ${activeTab === item.id ? 'is-active' : ''}`}
+                  >
+                    <Icon size={14} />
+                    {item.label}
+                  </button>
+                )
+              })}
+            </nav>
+          </header>
 
           <StoriesBar />
 
           {isAuthenticated ? <PostComposer onPosted={onPosted} /> : (
-            <div style={{ padding: '20px 16px', borderBottom: `1px solid ${T.border}`, color: T.textDim, fontSize: 14, textAlign: 'center' }}>
+            <div className="feed-empty" style={{ paddingTop: 24, paddingBottom: 24 }}>
               Connecte-toi pour publier dans le fil.
             </div>
           )}
 
           {newCount > 0 && (
-            <button onClick={reload} style={{ width: '100%', padding: '12px', border: 'none', borderBottom: `1px solid ${T.border}`, background: 'rgba(212,160,23,0.10)', color: T.gold, fontWeight: 800, cursor: 'pointer', fontSize: 13, fontFamily: 'inherit' }}>
-              ↑ {newCount} nouveau{newCount > 1 ? 'x' : ''} post{newCount > 1 ? 's' : ''}
+            <button type="button" onClick={reload} className="feed-new-button">
+              Voir {newCount} nouveau{newCount > 1 ? 'x' : ''} post{newCount > 1 ? 's' : ''}
             </button>
           )}
 
@@ -185,32 +361,36 @@ export default function FeedPage() {
               <SkeletonPost /><SkeletonPost /><SkeletonPost />
             </div>
           ) : error ? (
-            <div style={{ padding: '52px 24px', textAlign: 'center', color: T.textFaint, fontSize: 14, lineHeight: 1.7 }}>
-              <div style={{ fontSize: 40, marginBottom: 12, opacity: 0.5 }}>⚠️</div>
+            <div className="feed-error">
               Le fil n'a pas pu se charger.<br />
-              <span style={{ fontSize: 12, color: T.textFaint, opacity: 0.8 }}>{error}</span>
+              <span style={{ fontSize: 12, color: T.textFaint }}>{error}</span>
               <div>
-                <button onClick={reload} style={{ marginTop: 18, padding: '10px 22px', borderRadius: 999, border: `1px solid ${T.borderHi}`, background: 'rgba(212,160,23,0.12)', color: T.gold, fontWeight: 800, cursor: 'pointer', fontSize: 13, fontFamily: 'inherit' }}>
-                  ↻ Réessayer
+                <button type="button" onClick={reload} className="feed-chip" style={{ marginTop: 18 }}>
+                  Réessayer
                 </button>
               </div>
             </div>
           ) : posts.length === 0 ? (
-            <div style={{ padding: '64px 24px', textAlign: 'center', color: T.textFaint, fontSize: 14, lineHeight: 1.7 }}>
-              <div style={{ fontSize: 46, marginBottom: 14, filter: 'grayscale(.2)' }}>🪶</div>
-              <div style={{ color: T.text, fontWeight: 800, fontSize: 16, marginBottom: 6 }}>Le fil est vide</div>
-              Sois le premier à poster, nakama !
+            <div className="feed-empty">
+              <div className="feed-empty-title">Le fil est vide</div>
+              Sois le premier à lancer une discussion.
+            </div>
+          ) : visiblePosts.length === 0 ? (
+            <div className="feed-empty">
+              <div className="feed-empty-title">Aucun post dans “{activeLabel}”</div>
+              Change de filtre ou reviens quand il y aura plus d'activité.
             </div>
           ) : (
             <>
-              {posts.map(p => <PostCard key={p.id} post={p} onChange={onChange} onDeleted={onDeleted} onQuote={setQuoteTarget} />)}
-              {hasMore && <div style={{ padding: 20, textAlign: 'center', color: T.textFaint, fontSize: 13 }}>Chargement…</div>}
-              {!hasMore && <div style={{ padding: 28, textAlign: 'center', color: T.textFaint, fontSize: 12 }}>Tu as tout vu 🏁</div>}
+              {visiblePosts.map(p => <PostCard key={p.id} post={p} onChange={onChange} onDeleted={onDeleted} onQuote={setQuoteTarget} />)}
+              {hasMore && activeTab === 'for-you' && <div style={{ padding: 20, textAlign: 'center', color: T.textFaint, fontSize: 13 }}>Chargement...</div>}
+              {!hasMore && <div style={{ padding: 28, textAlign: 'center', color: T.textFaint, fontSize: 12 }}>Tu as tout vu</div>}
             </>
           )}
-        </div>
-        <aside className="feed-rail" style={{ width: 300, flexShrink: 0, paddingTop: 16 }}>
-          <FeedRail stats={stats} />
+        </main>
+
+        <aside className="feed-right">
+          <FeedRail stats={stats} meta={feedMeta} trends={feedMeta.trends} activeAuthors={feedMeta.activeAuthors} />
         </aside>
       </div>
       <QuoteModal quote={quoteTarget} onClose={() => setQuoteTarget(null)} onPosted={onPosted} />

@@ -19,7 +19,10 @@ export const supabase = url && key ? createClient(url, key, {
 
 async function callTopClassement(limit, period = 'week') {
   try {
-    const response = await fetch(`/api/leaderboard?limit=${encodeURIComponent(limit)}&period=${encodeURIComponent(period)}`)
+    const response = await fetch(
+      `/api/leaderboard?limit=${encodeURIComponent(limit)}&period=${encodeURIComponent(period)}&_=${Date.now()}`,
+      { cache: 'no-store' }
+    )
     if (response.ok) {
       return { data: await response.json(), error: null }
     }

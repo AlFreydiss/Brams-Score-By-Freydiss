@@ -18,10 +18,24 @@ function NewMembersCounter() {
   const [count, setCount] = useState(null)
 
   useEffect(() => {
-    fetch('/api/stats/new-members?period=7d')
-      .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d?.count != null) setCount(d.count) })
-      .catch(() => {})
+    let stop = false
+    const load = () => {
+      fetch(`/api/stats/new-members?period=7d&_=${Date.now()}`, { cache: 'no-store' })
+        .then(r => r.ok ? r.json() : null)
+        .then(d => { if (!stop && d?.count != null) setCount(d.count) })
+        .catch(() => {})
+    }
+    load()
+    const id = setInterval(load, 30000)
+    const onFocus = () => { if (!document.hidden) load() }
+    window.addEventListener('focus', onFocus)
+    document.addEventListener('visibilitychange', onFocus)
+    return () => {
+      stop = true
+      clearInterval(id)
+      window.removeEventListener('focus', onFocus)
+      document.removeEventListener('visibilitychange', onFocus)
+    }
   }, [])
 
   if (count === null) return null

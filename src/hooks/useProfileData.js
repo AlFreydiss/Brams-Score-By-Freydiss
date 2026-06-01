@@ -1,7 +1,7 @@
 // ── Orchestrateur de données de la page profil ──────────────────────────────
 // Charge member + boutique + perso en parallèle, dérive rang/aura/succès/perms.
 // Réutilise les fetchers existants — ne touche pas à la logique berries/Discord.
-import { useEffect, useMemo, useState, useCallback } from 'react'
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react'
 import { fetchMemberProfile } from '../lib/supabase.js'
 import { fetchBerryShopState } from '../lib/berryShop.js'
 import { getProfileSettings } from '../lib/profile.js'
@@ -21,6 +21,7 @@ export function useProfileData(discordId) {
   const [postsCount, setPostsCount] = useState(null)
   const [loading,    setLoading]    = useState(true)
   const [error,      setError]      = useState(null)
+  const refreshTimer = useRef(null)
 
   const load = useCallback(() => {
     let ignore = false
@@ -41,6 +42,27 @@ export function useProfileData(discordId) {
   }, [discordId])
 
   useEffect(() => load(), [load])
+
+  useEffect(() => {
+    const onFocus = () => {
+      if (refreshTimer.current) clearTimeout(refreshTimer.current)
+      refreshTimer.current = setTimeout(load, 100)
+    }
+    const onVisible = () => {
+      if (!document.hidden) onFocus()
+    }
+    window.addEventListener('focus', onFocus)
+    document.addEventListener('visibilitychange', onVisible)
+    const t = setInterval(() => {
+      if (!document.hidden) onFocus()
+    }, 60000)
+    return () => {
+      window.removeEventListener('focus', onFocus)
+      document.removeEventListener('visibilitychange', onVisible)
+      clearInterval(t)
+      if (refreshTimer.current) clearTimeout(refreshTimer.current)
+    }
+  }, [load])
 
   const hours    = Number.parseFloat(member?.vocal_h || 0)
   const rank     = getRank(hours)

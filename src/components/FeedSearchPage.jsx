@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { searchPosts } from '../lib/feed.js'
 import PostCard from './feed/PostCard.jsx'
@@ -19,6 +19,7 @@ export default function FeedSearchPage() {
   const [posts, setPosts] = useState([])
   const [loading, setLoading] = useState(true)
   const [quoteTarget, setQuoteTarget] = useState(null)
+  const refreshTimer = useRef(null)
 
   const load = useCallback(async () => {
     if (q.length < 2) { setPosts([]); setLoading(false); return }
@@ -26,7 +27,38 @@ export default function FeedSearchPage() {
     const list = await searchPosts(q)
     setPosts(Array.isArray(list) ? list : []); setLoading(false)
   }, [q])
+
+  const scheduleLoad = useCallback((delay = 150) => {
+    if (refreshTimer.current) clearTimeout(refreshTimer.current)
+    refreshTimer.current = setTimeout(() => {
+      refreshTimer.current = null
+      load()
+    }, delay)
+  }, [load])
+
   useEffect(() => { load() }, [load])
+
+  useEffect(() => {
+    const onFocus = () => scheduleLoad(100)
+    const onVisible = () => { if (!document.hidden) scheduleLoad(100) }
+    window.addEventListener('focus', onFocus)
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      window.removeEventListener('focus', onFocus)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
+  }, [scheduleLoad])
+
+  useEffect(() => {
+    const t = setInterval(() => {
+      if (!document.hidden) scheduleLoad(0)
+    }, 45000)
+    return () => clearInterval(t)
+  }, [scheduleLoad])
+
+  useEffect(() => () => {
+    if (refreshTimer.current) clearTimeout(refreshTimer.current)
+  }, [])
 
   const onChange = (id, partial) => setPosts(prev => patch(prev, id, partial))
   const onDeleted = (rowId) => setPosts(prev => prev.filter(p => p.id !== rowId))

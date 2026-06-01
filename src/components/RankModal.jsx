@@ -10,9 +10,33 @@ export default function RankModal({ rank, onClose }) {
   const [page, setPage] = useState(0)
 
   useEffect(() => {
+    let ignore = false
+    let timer = null
+    const load = () => {
+      fetchMembersByRank(rank.minH, rank.maxH).then(data => {
+        if (!ignore) setMembers(data)
+      })
+    }
     setMembers(null)
     setPage(0)
-    fetchMembersByRank(rank.minH, rank.maxH).then(setMembers)
+    load()
+    const loop = () => {
+      clearTimeout(timer)
+      timer = setTimeout(() => {
+        load()
+        loop()
+      }, document.hidden ? 30000 : 20000)
+    }
+    loop()
+    const onFocus = () => { if (!document.hidden) load() }
+    window.addEventListener('focus', onFocus)
+    document.addEventListener('visibilitychange', onFocus)
+    return () => {
+      ignore = true
+      clearTimeout(timer)
+      window.removeEventListener('focus', onFocus)
+      document.removeEventListener('visibilitychange', onFocus)
+    }
   }, [rank])
 
   useEffect(() => {

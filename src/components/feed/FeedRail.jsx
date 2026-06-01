@@ -1,46 +1,99 @@
 import { Link } from 'react-router-dom'
-import { T } from '../social/socialStyles.js'
+import { Anchor, BarChart3, Bookmark, Compass, Flame, Hash, Swords, Trophy, Users } from 'lucide-react'
 
-const card = { background: T.surface, border: `1px solid ${T.border}`, borderRadius: 16, padding: 16, marginBottom: 16 }
-const linkRow = { display: 'flex', alignItems: 'center', gap: 10, padding: '9px 10px', borderRadius: 10, color: T.text, textDecoration: 'none', fontSize: 14, fontWeight: 600, transition: 'background .12s' }
+const QUICK_LINKS = [
+  { to: '/fil/signets', icon: Bookmark, label: 'Mes signets' },
+  { to: '/', icon: Trophy, label: 'Classement' },
+  { to: '/equipage', icon: Anchor, label: 'Équipages' },
+  { to: '/tier-list', icon: BarChart3, label: 'Tier List' },
+  { to: '/tournoi', icon: Swords, label: 'Tournoi' },
+  { to: '/undercover', icon: Compass, label: 'Undercover' },
+]
 
-// Volet latéral droit du Fil : présentation + stat réelle + liens rapides.
-export default function FeedRail({ stats }) {
+function Stat({ value, label }) {
   return (
-    <div style={{ position: 'sticky', top: 16 }}>
-      <div style={card}>
-        <div style={{ fontSize: 15, fontWeight: 900, color: T.text, marginBottom: 8 }}>Bienvenue sur le réseau de la communauté Brams ! 🏴‍☠️</div>
-        <p style={{ margin: 0, fontSize: 13, color: T.textDim, lineHeight: 1.65 }}>
-          Partage tes théories, balance tes hot takes, montre tes fan arts et échange avec les autres nakamas.
-          Like, réponds, repost, découvre de nouveaux avis — et surtout, garde une bonne vibe dans la communauté.
-        </p>
-      </div>
-
-      <div style={card}>
-        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', color: T.textFaint, marginBottom: 10 }}>Le Fil en chiffres</div>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-          <span style={{ fontSize: 28, fontWeight: 900, color: T.gold, fontVariantNumeric: 'tabular-nums' }}>{(stats?.posts ?? 0).toLocaleString('fr-FR')}</span>
-          <span style={{ fontSize: 13, color: T.textDim, fontWeight: 600 }}>post{(stats?.posts ?? 0) > 1 ? 's' : ''} publié{(stats?.posts ?? 0) > 1 ? 's' : ''}</span>
-        </div>
-      </div>
-
-      <div style={{ ...card, marginBottom: 0 }}>
-        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', color: T.textFaint, marginBottom: 6 }}>Explorer</div>
-        {[
-          { to: '/fil/signets', icon: '🔖', label: 'Mes signets' },
-          { to: '/', icon: '🏆', label: 'Classement' },
-          { to: '/equipage', icon: '⚓', label: 'Équipages' },
-          { to: '/tier-list', icon: '📊', label: 'Tier List' },
-          { to: '/tournoi', icon: '⚔️', label: 'Tournoi' },
-          { to: '/undercover', icon: '🕵️', label: 'Undercover' },
-        ].map(l => (
-          <Link key={l.to} to={l.to} style={linkRow}
-            onMouseEnter={e => e.currentTarget.style.background = T.surface2}
-            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-            <span style={{ fontSize: 16 }}>{l.icon}</span>{l.label}
-          </Link>
-        ))}
-      </div>
+    <div>
+      <div style={{ color: '#d4a017', fontSize: 24, fontWeight: 900, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{value}</div>
+      <div style={{ marginTop: 5, color: 'rgba(255,255,255,0.48)', fontSize: 11, fontWeight: 700 }}>{label}</div>
     </div>
+  )
+}
+
+export default function FeedRail({ stats, meta, trends = [], activeAuthors = [] }) {
+  return (
+    <>
+      <section className="feed-card">
+        <div className="feed-card-title">Bienvenue dans Brams Network</div>
+        <p style={{ margin: 0, color: 'rgba(255,255,255,0.58)', fontSize: 13, lineHeight: 1.65 }}>
+          Le fil centralise les théories, fan arts, débats, reposts et réactions de la communauté.
+        </p>
+      </section>
+
+      <section className="feed-card">
+        <div className="feed-kicker">Aujourd'hui</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 12 }}>
+          <Stat value={meta?.todayPosts ?? 0} label="posts" />
+          <Stat value={meta?.activeMembers ?? 0} label="actifs" />
+          <Stat value={(stats?.posts ?? 0).toLocaleString('fr-FR')} label="total" />
+        </div>
+      </section>
+
+      <section className="feed-card">
+        <div className="feed-kicker">Tendances</div>
+        {trends.length === 0 ? (
+          <div style={{ color: 'rgba(255,255,255,0.38)', fontSize: 13, lineHeight: 1.5 }}>Aucun hashtag actif sur les posts chargés.</div>
+        ) : (
+          <div className="feed-nav-list">
+            {trends.map(t => (
+              <Link key={t.tag} to={`/fil/recherche?q=${encodeURIComponent(t.tag)}`} className="feed-nav-link">
+                <Hash size={16} />
+                <span style={{ flex: 1 }}>{t.tag.replace(/^#/, '')}</span>
+                <span style={{ color: 'rgba(255,255,255,0.38)', fontSize: 12 }}>{t.count}</span>
+              </Link>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="feed-card">
+        <div className="feed-kicker">Membres actifs</div>
+        {activeAuthors.length === 0 ? (
+          <div style={{ color: 'rgba(255,255,255,0.38)', fontSize: 13 }}>Aucune activité récente.</div>
+        ) : (
+          <div className="feed-nav-list">
+            {activeAuthors.map(a => (
+              <div key={a.name} className="feed-nav-link" style={{ cursor: 'default' }}>
+                <Users size={16} />
+                <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</span>
+                <span style={{ color: 'rgba(255,255,255,0.38)', fontSize: 12 }}>{a.count}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="feed-card">
+        <div className="feed-kicker">Explorer</div>
+        <div className="feed-nav-list">
+          {QUICK_LINKS.map(item => {
+            const Icon = item.icon
+            return (
+              <Link key={item.to} to={item.to} className="feed-nav-link">
+                <Icon size={16} />
+                <span>{item.label}</span>
+              </Link>
+            )
+          })}
+        </div>
+      </section>
+
+      <section className="feed-card">
+        <div className="feed-kicker">Signal live</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'rgba(255,255,255,0.58)', fontSize: 13 }}>
+          <Flame size={16} color="#d4a017" />
+          Les mises à jour arrivent en realtime avec polling de secours.
+        </div>
+      </section>
+    </>
   )
 }

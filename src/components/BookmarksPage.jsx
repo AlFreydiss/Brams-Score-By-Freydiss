@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { getMyBookmarks } from '../lib/feed.js'
@@ -19,6 +19,7 @@ export default function BookmarksPage() {
   const [loading, setLoading] = useState(true)
   const [hasMore, setHasMore] = useState(true)
   const [quoteTarget, setQuoteTarget] = useState(null)
+  const refreshTimer = useRef(null)
 
   const load = useCallback(async () => {
     if (!isAuthenticated) { setLoading(false); return }
@@ -26,7 +27,38 @@ export default function BookmarksPage() {
     const list = await getMyBookmarks(null)
     setPosts(Array.isArray(list) ? list : []); setHasMore(list.length >= 20); setLoading(false)
   }, [isAuthenticated])
+
+  const scheduleLoad = useCallback((delay = 150) => {
+    if (refreshTimer.current) clearTimeout(refreshTimer.current)
+    refreshTimer.current = setTimeout(() => {
+      refreshTimer.current = null
+      load()
+    }, delay)
+  }, [load])
+
   useEffect(() => { load() }, [load])
+
+  useEffect(() => {
+    const onFocus = () => scheduleLoad(100)
+    const onVisible = () => { if (!document.hidden) scheduleLoad(100) }
+    window.addEventListener('focus', onFocus)
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      window.removeEventListener('focus', onFocus)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
+  }, [scheduleLoad])
+
+  useEffect(() => {
+    const t = setInterval(() => {
+      if (!document.hidden) scheduleLoad(0)
+    }, 45000)
+    return () => clearInterval(t)
+  }, [scheduleLoad])
+
+  useEffect(() => () => {
+    if (refreshTimer.current) clearTimeout(refreshTimer.current)
+  }, [])
 
   async function loadMore() {
     if (!hasMore || !posts.length) return

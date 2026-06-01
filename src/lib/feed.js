@@ -60,7 +60,7 @@ export async function fetchLinkPreview(url) {
   if (_ogCache.has(url)) return _ogCache.get(url)
   let result = null
   try {
-    const r = await fetch(`/api/og?url=${encodeURIComponent(url)}`)
+    const r = await fetch(`/api/og?url=${encodeURIComponent(url)}&_=${Date.now()}`, { cache: 'no-store' })
     const j = await r.json()
     result = j?.ok ? j : null
   } catch { result = null }
@@ -98,11 +98,13 @@ export async function listActiveStories() {
   return r?.ok ? (r.authors || []) : []
 }
 
-// Realtime : nouveaux posts racines du fil. Renvoie une fonction d'unsubscribe.
-export function subscribeFeed(onInsert) {
+// Realtime : changements sur les posts du fil. Renvoie une fonction d'unsubscribe.
+export function subscribeFeed(onChange) {
   if (!supabase) return () => {}
   const channel = supabase.channel('feed:global')
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'posts' }, p => onInsert?.(p.new))
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'posts' }, p => onChange?.({ type: 'INSERT', row: p.new, old: p.old || null }))
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'posts' }, p => onChange?.({ type: 'UPDATE', row: p.new, old: p.old || null }))
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'posts' }, p => onChange?.({ type: 'DELETE', row: p.new || null, old: p.old || null }))
     .subscribe()
   return () => { try { supabase.removeChannel(channel) } catch {} }
 }

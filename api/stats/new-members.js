@@ -40,7 +40,7 @@ export default async function handler(req, res) {
   const days = PERIOD_DAYS[period] || 7
 
   if (!API_KEY) {
-    res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=600')
+    res.setHeader('Cache-Control', 'no-store')
     res.status(200).json({ count: 0, period })
     return
   }
@@ -58,7 +58,7 @@ export default async function handler(req, res) {
     })
 
     if (!response.ok) {
-      res.setHeader('Cache-Control', 's-maxage=120, stale-while-revalidate=300')
+      res.setHeader('Cache-Control', 'no-store')
       res.status(200).json({ count: 0, period })
       return
     }
@@ -69,10 +69,10 @@ export default async function handler(req, res) {
       ? users.filter(user => joinedAtSeconds(user?.data || {}) >= cutoff).length
       : 0
 
-    res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=600')
+    res.setHeader('Cache-Control', 'no-store')
     res.status(200).json({ count, period })
   } catch {
-    res.setHeader('Cache-Control', 's-maxage=120, stale-while-revalidate=300')
+    res.setHeader('Cache-Control', 'no-store')
     res.status(200).json({ count: 0, period })
   }
 }

@@ -105,6 +105,15 @@ export function sendVoiceMessage(conversationId, url, durationSec) {
   return sendMessageRpc({ p_conversation: conversationId, p_type: 'voice', p_media_url: url, p_voice_duration: Math.round(durationSec || 0) })
 }
 
+export function logCallEvent(conversationId, status, durationSec = 0, callId = null) {
+  return rpc('log_call_event', {
+    p_conversation: conversationId,
+    p_status: status,
+    p_duration: Math.max(0, Math.round(durationSec || 0)),
+    p_call_id: callId,
+  })
+}
+
 // Upload d'une pièce jointe vers R2 via /api/r2-presign (autorisé par le JWT
 // Supabase de l'utilisateur). Renvoie { url } (publique R2) ou { error }.
 export async function uploadAttachment(file, onProgress) {

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { getUserPosts } from '../../lib/feed.js'
 import PostCard from './PostCard.jsx'
 import QuoteModal from './QuoteModal.jsx'
@@ -14,13 +14,45 @@ export default function ProfilePosts({ userId }) {
   const [loading, setLoading] = useState(true)
   const [hasMore, setHasMore] = useState(true)
   const [quoteTarget, setQuoteTarget] = useState(null)
+  const refreshTimer = useRef(null)
 
   const load = useCallback(async () => {
     setLoading(true)
     const list = await getUserPosts(userId)
     setPosts(Array.isArray(list) ? list : []); setHasMore(list.length >= 20); setLoading(false)
   }, [userId])
+
+  const scheduleLoad = useCallback((delay = 150) => {
+    if (refreshTimer.current) clearTimeout(refreshTimer.current)
+    refreshTimer.current = setTimeout(() => {
+      refreshTimer.current = null
+      load()
+    }, delay)
+  }, [load])
+
   useEffect(() => { load() }, [load])
+
+  useEffect(() => {
+    const onFocus = () => scheduleLoad(100)
+    const onVisible = () => { if (!document.hidden) scheduleLoad(100) }
+    window.addEventListener('focus', onFocus)
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      window.removeEventListener('focus', onFocus)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
+  }, [scheduleLoad])
+
+  useEffect(() => {
+    const t = setInterval(() => {
+      if (!document.hidden) scheduleLoad(0)
+    }, 45000)
+    return () => clearInterval(t)
+  }, [scheduleLoad])
+
+  useEffect(() => () => {
+    if (refreshTimer.current) clearTimeout(refreshTimer.current)
+  }, [])
 
   async function loadMore() {
     if (!hasMore || !posts.length) return

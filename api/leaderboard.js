@@ -101,9 +101,10 @@ export default async function handler(req, res) {
       .sort((a, b) => (b.vocal_h - a.vocal_h) || (b.berrys - a.berrys))
       .slice(0, limit)
 
-    res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=300')
+    res.setHeader('Cache-Control', 'no-store')
     res.status(200).json(rows)
   } catch (error) {
+    res.setHeader('Cache-Control', 'no-store')
     res.status(500).json({ error: error?.message || 'leaderboard_failed' })
   }
 }

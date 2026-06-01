@@ -84,6 +84,7 @@ export default function UndercoverPage() {
   const refreshing = useRef(false)    // anti refresh-en-vol simultané (realtime + poll)
   const refreshQueuedRef = useRef(false)
   const lastRealtimeRef = useRef(0)   // dernier event realtime → ralentit le poll
+  const refreshTimerRef = useRef(null)
   const isMobile = vw < 720, isNarrow = vw < 1000
 
   const g = room?.rounds || null
@@ -117,28 +118,38 @@ export default function UndercoverPage() {
     }
   }, [code])
 
+  const scheduleRefresh = useCallback((c = code, delay = 150) => {
+    if (!c) return
+    clearTimeout(refreshTimerRef.current)
+    refreshTimerRef.current = setTimeout(() => refresh(c), delay)
+  }, [code, refresh])
+
   useEffect(() => {
     if (!code) return
     let stop = false, timer
     refresh(code)
-    const unsub = subscribeRoom(code, () => { lastRealtimeRef.current = Date.now(); refresh(code) })
+    const unsub = subscribeRoom(code, () => {
+      lastRealtimeRef.current = Date.now()
+      scheduleRefresh(code, 120)
+    })
     // Polling de secours ADAPTATIF (en plus du temps réel) : pause en arrière-plan,
     // ralentit quand le realtime délivre, rapide sinon → tout reste live sans
     // recharger, à coût réseau maîtrisé.
     const tick = () => {
       if (stop) return
       const recentRT = Date.now() - lastRealtimeRef.current < 20000
-      const delay = document.hidden ? 15000 : recentRT ? 5000 : 2000
+      const delay = document.hidden ? 12000 : recentRT ? 3000 : 1200
       timer = setTimeout(async () => { await refresh(code); tick() }, delay)
     }
     tick()
-    const syncOnFocus = () => { if (!document.hidden) refresh(code) }
+    const syncOnFocus = () => { if (!document.hidden) scheduleRefresh(code, 80) }
     window.addEventListener('focus', syncOnFocus)
     document.addEventListener('visibilitychange', syncOnFocus)
     const ping = setInterval(() => userId && touchPlayer(code, userId), 25000)
     return () => {
       stop = true
       clearTimeout(timer)
+      clearTimeout(refreshTimerRef.current)
       unsub()
       clearInterval(ping)
       window.removeEventListener('focus', syncOnFocus)
@@ -169,7 +180,7 @@ export default function UndercoverPage() {
           setErr(error)
           return
         }
-        refresh(code)
+        scheduleRefresh(code, 150)
       })
       .catch(() => { autoJoinRef.current = false; setErr('Connexion au salon impossible') })
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -263,6 +274,7 @@ export default function UndercoverPage() {
     setPlayers([{ user_id: String(userId), display_name: displayName || 'Hôte', avatar_url: avatarUrl || null, is_host: true }])
     setVotes([])
     setParams({ code: c }); setCode(c)
+    scheduleRefresh(c, 250)
   }
   async function handleJoin(e) {
     e?.preventDefault?.(); if (busy) return
@@ -277,19 +289,20 @@ export default function UndercoverPage() {
     const { error } = res || {}
     if (error) { setErr(error === 'introuvable' ? 'Salon introuvable' : error); return }
     setParams({ code: c }); setCode(c)
+    scheduleRefresh(c, 200)
   }
   async function startGame() {
     if (players.length < 3 || busy) return
     setErr(''); setBusy(true)
     const ok = await callApi('uc_assign', { mode })
     setBusy(false)
-    if (ok) refresh(code)
+    if (ok) scheduleRefresh(code, 180)
   }
   async function startDescribing() {
     setErr('')
     const { error } = await updateRoom(code, { rounds: { ...g, phase: 'describing', turnDeadline: new Date(Date.now() + turnSecondsFor(g) * 1000).toISOString() } })
     if (error) { setErr(error); return }
-    refresh(code)
+    scheduleRefresh(code, 120)
   }
   async function sendClue() {
     const t = clue.trim()
@@ -297,7 +310,7 @@ export default function UndercoverPage() {
     setClue('')
     const { error } = await submitClue({ code, round: g.round, pass: g.pass, userId, clue: t })
     if (error) { setErr(error); return }
-    refresh(code)
+    scheduleRefresh(code, 120)
   }
   // Mode vocal : on ne tape pas d'indice, on le dit à l'oral. Ce marqueur signale
   // « j'ai parlé » → l'hôte enchaîne sur le joueur suivant sans attendre les 7s.
@@ -305,19 +318,19 @@ export default function UndercoverPage() {
     if (!myTurn || myClueThisTurn) return
     const { error } = await submitClue({ code, round: g.round, pass: g.pass, userId, clue: '🎙️' })
     if (error) { setErr(error); return }
-    refresh(code)
+    scheduleRefresh(code, 120)
   }
   async function voteElim(targetUid) {
     if (myElimVote || !alive.includes(String(userId))) return
     const { error } = await castElimVote({ code, round: g.round, userId, targetUid })
     if (error) { setErr(error); return }
-    refresh(code)
+    scheduleRefresh(code, 120)
   }
   async function replay() {
     if (!isHost) return
     const { error } = await updateRoom(code, { status: 'lobby', rounds: { phase: 'lobby' } })
     if (error) { setErr(error); return }
-    refresh(code)
+    scheduleRefresh(code, 120)
   }
   function leave() { setParams({}); setCode(''); setRoom(null); setNotFound(false); autoJoinRef.current = false }
 

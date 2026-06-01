@@ -19,6 +19,8 @@ public/blind-test/*.mp4
 # Claude Flow runtime data
 .claude-flow/data/
 .claude-flow/logs/
+.swarm/
+ruvector.db
 
 # Environment variables
 .env

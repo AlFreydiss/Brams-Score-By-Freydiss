@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getPost } from '../lib/feed.js'
+import { getPost, subscribeFeed } from '../lib/feed.js'
 import PostComposer from './feed/PostComposer.jsx'
 import PostCard from './feed/PostCard.jsx'
 import QuoteModal from './feed/QuoteModal.jsx'
@@ -20,18 +20,62 @@ export default function PostThreadPage() {
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
   const [quoteTarget, setQuoteTarget] = useState(null)
+  const refreshTimer = useRef(null)
 
   const load = useCallback(async () => {
     setLoading(true)
+    setNotFound(false)
     const r = await getPost(postId)
     if (!r?.post) { setNotFound(true); setLoading(false); return }
     setPost(r.post); setReplies(r.replies || []); setLoading(false)
   }, [postId])
+
+  const scheduleLoad = useCallback((delay = 150) => {
+    if (refreshTimer.current) clearTimeout(refreshTimer.current)
+    refreshTimer.current = setTimeout(() => {
+      refreshTimer.current = null
+      load()
+    }, delay)
+  }, [load])
+
   useEffect(() => { load() }, [load])
+
+  useEffect(() => {
+    const onFocus = () => scheduleLoad(100)
+    const onVisible = () => { if (!document.hidden) scheduleLoad(100) }
+    window.addEventListener('focus', onFocus)
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      window.removeEventListener('focus', onFocus)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
+  }, [scheduleLoad])
+
+  useEffect(() => {
+    const unsub = subscribeFeed(({ type, row, old }) => {
+      const target = row || old
+      if (!target) return
+      const threadId = String(postId)
+      const matchesThread = String(target.id) === threadId || String(target.reply_to || '') === threadId || String(old?.reply_to || '') === threadId
+      if (matchesThread || type === 'DELETE') scheduleLoad(120)
+    })
+    return unsub
+  }, [postId, scheduleLoad])
+
+  useEffect(() => {
+    const t = setInterval(() => {
+      if (!document.hidden) scheduleLoad(0)
+    }, 45000)
+    return () => clearInterval(t)
+  }, [scheduleLoad])
+
+  useEffect(() => () => {
+    if (refreshTimer.current) clearTimeout(refreshTimer.current)
+  }, [])
 
   const changePost = (id, partial) => setPost(prev => prev && (prev.id === id ? { ...prev, ...partial } : prev))
   const changeReply = (id, partial) => setReplies(prev => patch(prev, id, partial))
-  const onPosted = () => load()   // recharge le thread (nouvelle réponse)
+  const onPosted = () => scheduleLoad(120)   // recharge le thread (nouvelle réponse)
 
   return (
     <div style={{ height: 'calc(100vh - 72px)', marginTop: 72, overflowY: 'auto', background: T.bg }}>

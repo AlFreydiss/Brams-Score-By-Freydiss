@@ -158,11 +158,19 @@ export default function Hero() {
   const [stats, setStats] = useState(null)
 
   useEffect(() => {
-    fetchStats().then(s => { if (s) setStats(s) })
-    const id = setInterval(() => {
-      fetchStats().then(s => { if (s) setStats(s) })
-    }, 60000)
-    return () => clearInterval(id)
+    let stop = false
+    const load = () => fetchStats().then(s => { if (!stop && s) setStats(s) })
+    load()
+    const id = setInterval(load, 15000)
+    const onFocus = () => { if (!document.hidden) load() }
+    window.addEventListener('focus', onFocus)
+    document.addEventListener('visibilitychange', onFocus)
+    return () => {
+      stop = true
+      clearInterval(id)
+      window.removeEventListener('focus', onFocus)
+      document.removeEventListener('visibilitychange', onFocus)
+    }
   }, [])
 
   return (

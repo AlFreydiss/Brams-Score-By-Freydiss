@@ -40,18 +40,37 @@ export default function Leaderboard() {
 
   useEffect(() => {
     let ignore = false
-    setLoading(true)
-    fetchLeaderboard(100, PERIOD_CONFIG[period]?.rpc || 'week')
-      .then(data => {
+    let timer = null
+    const load = async () => {
+      setLoading(true)
+      try {
+        const data = await fetchLeaderboard(100, PERIOD_CONFIG[period]?.rpc || 'week')
         if (!ignore) {
           setAllRows(data || [])
           setLoading(false)
         }
-      })
-      .catch(() => {
+      } catch {
         if (!ignore) setLoading(false)
-      })
-    return () => { ignore = true }
+      }
+    }
+    const loop = () => {
+      clearTimeout(timer)
+      timer = setTimeout(async () => {
+        await load()
+        loop()
+      }, document.hidden ? 30000 : 15000)
+    }
+    load()
+    loop()
+    const onFocus = () => { if (!document.hidden) load() }
+    window.addEventListener('focus', onFocus)
+    document.addEventListener('visibilitychange', onFocus)
+    return () => {
+      ignore = true
+      clearTimeout(timer)
+      window.removeEventListener('focus', onFocus)
+      document.removeEventListener('visibilitychange', onFocus)
+    }
   }, [period])
 
   const handlePeriod = (p) => { setPeriod(p); localStorage.setItem('lb_period_v2', p); setPage(0) }

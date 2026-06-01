@@ -179,7 +179,7 @@ function ConversationList({ conversations, friends, requests, activeId, tab, set
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center', marginTop: 2 }}>
                   <span style={{ fontSize: 12, color: Number(c.unread) > 0 ? T.text : T.textFaint, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {c.last_type === 'gif' ? '🖼️ GIF' : c.last_type === 'voice' ? '🎤 Vocal' : c.last_type === 'image' ? '🖼️ Image' : (c.last_content || 'Conversation démarrée')}
+                    {c.last_type === 'gif' ? '🖼️ GIF' : c.last_type === 'voice' ? '🎤 Vocal' : c.last_type === 'image' ? '🖼️ Image' : c.last_type === 'call' ? '📞 Appel' : (c.last_content || 'Conversation démarrée')}
                   </span>
                   {Number(c.unread) > 0 && <span style={{ background: T.gold, color: '#0b0c0e', fontSize: 11, fontWeight: 800, borderRadius: 10, padding: '1px 7px', flexShrink: 0 }}>{c.unread}</span>}
                 </div>
@@ -292,6 +292,7 @@ function MessageBubble({ msg, mine, grouped, onReact, onReply, onEdit, onDelete,
               : msg.type === 'gif' ? <img src={msg.gif_url} alt="gif" style={{ maxWidth: 240, borderRadius: 12, display: 'block' }} />
               : msg.type === 'image' ? <img src={msg.media_url} alt="image" style={{ maxWidth: 280, maxHeight: 320, borderRadius: 12, display: 'block' }} />
               : msg.type === 'voice' ? <audio src={msg.media_url} controls style={{ height: 36, maxWidth: 240 }} />
+              : msg.type === 'call' ? <span>{msg.content || 'Appel'}{msg.voice_duration > 0 ? ` · ${Math.floor(msg.voice_duration / 60)}:${String(msg.voice_duration % 60).padStart(2, '0')}` : ''}</span>
               : <RichText text={msg.content} />}
             {msg.edited_at && !deleted && <span style={{ fontSize: 10, color: T.textFaint, marginLeft: 6 }}>(modifié)</span>}
           </div>
@@ -332,6 +333,7 @@ function pinPreview(m) {
   if (m.type === 'gif') return '🖼️ GIF'
   if (m.type === 'voice') return '🎤 Message vocal'
   if (m.type === 'image') return '🖼️ Image'
+  if (m.type === 'call') return m.content || '📞 Appel'
   return m.content || 'Message'
 }
 function PinnedPanel({ pinned, onJump, onUnpin, onClose }) {
@@ -726,8 +728,8 @@ function ChatView({ conversationId, meta, onBack, isMobile, refreshList }) {
         </div>
         <div style={{ display: 'flex', gap: 6, position: 'relative' }}>
           <HeaderAction label="🔍" onClick={() => setSearchOpen(o => !o)} />
-          <HeaderAction label="📞" onClick={() => meta?.other_id && startCall({ id: meta.other_id, name: meta.other_username, avatar: meta.other_avatar }, 'audio')} />
-          <HeaderAction label="🎥" onClick={() => meta?.other_id && startCall({ id: meta.other_id, name: meta.other_username, avatar: meta.other_avatar }, 'video')} />
+          <HeaderAction label="📞" onClick={() => meta?.other_id && startCall({ id: meta.other_id, name: meta.other_username, avatar: meta.other_avatar, conversationId }, 'audio')} />
+          <HeaderAction label="🎥" onClick={() => meta?.other_id && startCall({ id: meta.other_id, name: meta.other_username, avatar: meta.other_avatar, conversationId }, 'video')} />
           <span style={{ position: 'relative', display: 'inline-flex' }}>
             <HeaderAction label="📌" onClick={() => setPinnedOpen(o => !o)} />
             {pinned.length > 0 && <span style={{ position: 'absolute', top: -3, right: -3, minWidth: 15, height: 15, padding: '0 3px', borderRadius: 8, background: T.gold, color: '#0b0c0e', fontSize: 9.5, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>{pinned.length}</span>}

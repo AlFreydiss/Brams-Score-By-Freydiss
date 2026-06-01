@@ -1,37 +1,60 @@
 import { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react'
 import { useAuth } from './AuthContext.jsx'
 import { supabase } from '../lib/supabase.js'
+import { logCallEvent } from '../lib/social.js'
 
-// ── Appels WebRTC réels (audio + vidéo) ──────────────────────────────────────
-// Signaling via Supabase Realtime broadcast. Chaque user écoute sa "boîte"
-// call:<discordId>. Pour appeler B, on envoie sur call:<B> ; B répond sur call:<A>.
-// STUN public Google (pas de TURN → peut échouer derrière NAT symétrique strict).
-const ICE = { iceServers: [
-  { urls: 'stun:stun.l.google.com:19302' },
-  { urls: 'stun:stun1.l.google.com:19302' },
-] }
+const ICE = {
+  iceServers: [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' },
+  ],
+}
 
+const CALL_TIMEOUT_MS = 45000
+const TERMINAL_CLEAR_MS = 1200
 const Ctx = createContext(null)
 const rid = () => Math.random().toString(36).slice(2, 10)
 
+function mediaErrorMessage(error, type) {
+  const name = error?.name || ''
+  if (name === 'NotAllowedError' || name === 'SecurityError') {
+    return type === 'video' ? 'Permission caméra/micro refusée.' : 'Permission micro refusée.'
+  }
+  if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
+    return type === 'video' ? 'Caméra ou micro introuvable.' : 'Micro introuvable.'
+  }
+  return 'Impossible de démarrer le média.'
+}
+
 export function CallProvider({ children }) {
   const { discordId, displayName, avatarUrl } = useAuth()
-  const [call, setCall] = useState(null)
-  // call: { phase:'incoming'|'outgoing'|'active'|'ended', peer:{id,name,avatar}, type:'audio'|'video', muted, camOff, callId }
+  const [call, setCallState] = useState(null)
   const pcRef = useRef(null)
-  const localRef = useRef(null)      // MediaStream local (caméra+micro)
-  const remoteRef = useRef(null)     // MediaStream distant
-  const screenRef = useRef(null)     // MediaStream partage d'écran
-  const camTrackRef = useRef(null)   // piste caméra mémorisée pendant le partage
-  const inboxRef = useRef(null)      // canal call:<moi>
-  const peerChanRef = useRef(null)   // canal call:<peer> (pour envoyer)
+  const localRef = useRef(null)
+  const remoteRef = useRef(null)
+  const screenRef = useRef(null)
+  const camTrackRef = useRef(null)
+  const inboxRef = useRef(null)
+  const peerChanRef = useRef(null)
   const pendingIce = useRef([])
-  const offerRef = useRef(null)      // offre reçue (côté appelé, avant accept)
+  const offerRef = useRef(null)
+  const timeoutRef = useRef(null)
   const callRef = useRef(null)
+
+  const setCall = useCallback((next) => {
+    callRef.current = typeof next === 'function' ? next(callRef.current) : next
+    setCallState(callRef.current)
+  }, [])
+
   useEffect(() => { callRef.current = call }, [call])
 
-  // ── Envoi de signal vers un pair ────────────────────────────────────────────
+  const clearCallTimer = useCallback(() => {
+    clearTimeout(timeoutRef.current)
+    timeoutRef.current = null
+  }, [])
+
   const ensurePeerChannel = useCallback((peerId) => {
+    if (!supabase || !peerId) return null
     if (peerChanRef.current?._peer === peerId) return peerChanRef.current
     try { if (peerChanRef.current) supabase.removeChannel(peerChanRef.current) } catch {}
     const ch = supabase.channel(`call:${peerId}`, { config: { broadcast: { self: false } } })
@@ -40,15 +63,17 @@ export function CallProvider({ children }) {
     peerChanRef.current = ch
     return ch
   }, [])
+
   const signal = useCallback((peerId, payload) => {
     const ch = ensurePeerChannel(peerId)
+    if (!ch) return
     const send = () => { try { ch.send({ type: 'broadcast', event: 'signal', payload }) } catch {} }
-    // petit délai si le canal n'est pas encore SUBSCRIBED
-    send(); setTimeout(send, 250)
+    send()
+    setTimeout(send, 250)
   }, [ensurePeerChannel])
 
-  // ── Nettoyage ────────────────────────────────────────────────────────────────
   const cleanup = useCallback(() => {
+    clearCallTimer()
     try { pcRef.current?.close() } catch {}
     pcRef.current = null
     try { localRef.current?.getTracks().forEach(t => t.stop()) } catch {}
@@ -61,85 +86,136 @@ export function CallProvider({ children }) {
     offerRef.current = null
     try { if (peerChanRef.current) supabase.removeChannel(peerChanRef.current) } catch {}
     peerChanRef.current = null
+  }, [clearCallTimer])
+
+  const logTerminal = useCallback((c, status) => {
+    if (!c?.initiator || !c?.conversationId) return
+    const duration = c.startedAt ? Math.max(0, Math.round((Date.now() - c.startedAt) / 1000)) : 0
+    logCallEvent(c.conversationId, status, duration, c.callId).catch(() => {})
   }, [])
 
-  const endCall = useCallback((notifyPeer = true) => {
+  const finishCall = useCallback((status = 'ended', notifyPeer = true, error = null) => {
     const c = callRef.current
-    if (notifyPeer && c?.peer?.id) signal(c.peer.id, { kind: 'end', from: discordId, callId: c.callId })
+    if (!c) return
+    if (notifyPeer && c.peer?.id) {
+      const kind = status === 'rejected' ? 'decline' : status === 'missed' ? 'missed' : 'end'
+      signal(c.peer.id, { kind, from: discordId, callId: c.callId })
+    }
+    logTerminal(c, status)
     cleanup()
-    setCall(prev => prev ? { ...prev, phase: 'ended' } : null)
-    setTimeout(() => setCall(null), 700)
-  }, [signal, cleanup, discordId])
+    setCall({ ...c, phase: status, error })
+    setTimeout(() => {
+      if (callRef.current?.callId === c.callId) setCall(null)
+    }, TERMINAL_CLEAR_MS)
+  }, [cleanup, discordId, logTerminal, setCall, signal])
 
-  // ── Construit la RTCPeerConnection ────────────────────────────────────────────
+  const scheduleTimeout = useCallback((callId) => {
+    clearCallTimer()
+    timeoutRef.current = setTimeout(() => {
+      const c = callRef.current
+      if (!c || c.callId !== callId || !['incoming', 'outgoing'].includes(c.phase)) return
+      finishCall('missed', true)
+    }, CALL_TIMEOUT_MS)
+  }, [clearCallTimer, finishCall])
+
   const buildPc = useCallback((peerId, callId) => {
     const pc = new RTCPeerConnection(ICE)
     pc.onicecandidate = e => { if (e.candidate) signal(peerId, { kind: 'ice', from: discordId, callId, candidate: e.candidate }) }
     pc.ontrack = e => {
       remoteRef.current = e.streams[0]
-      // notifie l'UI qu'un flux distant est dispo (re-render)
       setCall(prev => prev ? { ...prev, hasRemote: true } : prev)
     }
     pc.onconnectionstatechange = () => {
       const st = pc.connectionState
       setCall(prev => prev ? { ...prev, connState: st } : prev)
-      if (['failed', 'disconnected', 'closed'].includes(st)) endCall(false)
+      if (st === 'failed') finishCall('failed', false, 'Connexion WebRTC interrompue.')
     }
     pcRef.current = pc
     return pc
-  }, [signal, discordId, endCall])
+  }, [discordId, finishCall, setCall, signal])
 
   const getMedia = useCallback(async (type) => {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: type === 'video' })
-    localRef.current = stream
-    return stream
+    if (!navigator.mediaDevices?.getUserMedia) throw new Error('media_devices_unavailable')
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: type === 'video' })
+      localRef.current = stream
+      return { stream, type, warning: null }
+    } catch (error) {
+      if (type === 'video') {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+          localRef.current = stream
+          return { stream, type: 'audio', warning: 'Caméra indisponible, appel audio lancé.' }
+        } catch (audioError) {
+          throw audioError
+        }
+      }
+      throw error
+    }
   }, [])
 
-  // ── Démarrer un appel (appelant) ──────────────────────────────────────────────
   const startCall = useCallback(async (peer, type = 'audio') => {
-    if (callRef.current) return
-    if (!discordId || !peer?.id) return
+    if (callRef.current || !discordId || !peer?.id) return
     const callId = rid()
-    setCall({ phase: 'outgoing', peer, type, muted: false, camOff: type !== 'video', callId })
+    const base = {
+      phase: 'outgoing',
+      peer,
+      type,
+      muted: false,
+      camOff: type !== 'video',
+      callId,
+      conversationId: peer.conversationId || null,
+      initiator: true,
+      startedAt: null,
+      error: null,
+    }
+    setCall(base)
+    scheduleTimeout(callId)
+
     try {
-      const stream = await getMedia(type)
+      const media = await getMedia(type)
       const pc = buildPc(peer.id, callId)
-      stream.getTracks().forEach(t => pc.addTrack(t, stream))
+      media.stream.getTracks().forEach(t => pc.addTrack(t, media.stream))
       const offer = await pc.createOffer()
       await pc.setLocalDescription(offer)
-      signal(peer.id, { kind: 'invite', from: discordId, fromName: displayName, fromAvatar: avatarUrl, type, callId, sdp: offer })
-    } catch (e) {
-      console.error('[call] start', e)
-      endCall(false)
+      setCall(prev => prev ? { ...prev, type: media.type, camOff: media.type !== 'video', mediaWarning: media.warning } : prev)
+      signal(peer.id, {
+        kind: 'invite',
+        from: discordId,
+        fromName: displayName,
+        fromAvatar: avatarUrl,
+        type: media.type,
+        callId,
+        conversationId: peer.conversationId || null,
+        sdp: offer,
+      })
+    } catch (error) {
+      finishCall('failed', false, mediaErrorMessage(error, type))
     }
-  }, [discordId, displayName, avatarUrl, getMedia, buildPc, signal, endCall])
+  }, [avatarUrl, buildPc, discordId, displayName, finishCall, getMedia, scheduleTimeout, setCall, signal])
 
-  // ── Accepter (appelé) ──────────────────────────────────────────────────────────
   const acceptCall = useCallback(async () => {
     const c = callRef.current
     if (!c || c.phase !== 'incoming' || !offerRef.current) return
     try {
-      const stream = await getMedia(c.type)
+      const media = await getMedia(c.type)
       const pc = buildPc(c.peer.id, c.callId)
-      stream.getTracks().forEach(t => pc.addTrack(t, stream))
+      media.stream.getTracks().forEach(t => pc.addTrack(t, media.stream))
       await pc.setRemoteDescription(new RTCSessionDescription(offerRef.current))
       const answer = await pc.createAnswer()
       await pc.setLocalDescription(answer)
       for (const cand of pendingIce.current) { try { await pc.addIceCandidate(cand) } catch {} }
       pendingIce.current = []
-      signal(c.peer.id, { kind: 'answer', from: discordId, callId: c.callId, sdp: answer })
-      setCall(prev => prev ? { ...prev, phase: 'active' } : prev)
-    } catch (e) {
-      console.error('[call] accept', e)
-      endCall(true)
+      clearCallTimer()
+      signal(c.peer.id, { kind: 'answer', from: discordId, callId: c.callId, type: media.type, sdp: answer })
+      setCall(prev => prev ? { ...prev, phase: 'active', type: media.type, camOff: media.type !== 'video', mediaWarning: media.warning, startedAt: Date.now() } : prev)
+    } catch (error) {
+      finishCall('failed', true, mediaErrorMessage(error, c.type))
     }
-  }, [getMedia, buildPc, signal, discordId, endCall])
+  }, [buildPc, clearCallTimer, discordId, finishCall, getMedia, setCall, signal])
 
-  const declineCall = useCallback(() => {
-    const c = callRef.current
-    if (c?.peer?.id) signal(c.peer.id, { kind: 'decline', from: discordId, callId: c.callId })
-    cleanup(); setCall(null)
-  }, [signal, cleanup, discordId])
+  const declineCall = useCallback(() => finishCall('rejected', true), [finishCall])
+  const endCall = useCallback((notifyPeer = true) => finishCall('ended', notifyPeer), [finishCall])
 
   const toggleMute = useCallback(() => {
     const s = localRef.current
@@ -147,18 +223,16 @@ export function CallProvider({ children }) {
     const next = !callRef.current?.muted
     s.getAudioTracks().forEach(t => { t.enabled = !next })
     setCall(prev => prev ? { ...prev, muted: next } : prev)
-  }, [])
+  }, [setCall])
+
   const toggleCam = useCallback(() => {
     const s = localRef.current
     if (!s) return
     const next = !callRef.current?.camOff
     s.getVideoTracks().forEach(t => { t.enabled = !next })
     setCall(prev => prev ? { ...prev, camOff: next } : prev)
-  }, [])
+  }, [setCall])
 
-  // ── Partage d'écran (V2) ──────────────────────────────────────────────────────
-  // Remplace la piste vidéo envoyée par l'écran (replaceTrack → pas de renégo).
-  // Au stop (bouton navigateur ou re-clic), on revient sur la caméra.
   const stopScreen = useCallback(() => {
     const pc = pcRef.current
     const sender = pc?.getSenders().find(s => s.track && s.track.kind === 'video')
@@ -168,57 +242,91 @@ export function CallProvider({ children }) {
     screenRef.current = null
     camTrackRef.current = null
     setCall(prev => prev ? { ...prev, screenOn: false } : prev)
-  }, [])
+  }, [setCall])
 
   const toggleScreenShare = useCallback(async () => {
     const pc = pcRef.current
     if (!pc) return
     if (callRef.current?.screenOn) { stopScreen(); return }
     const sender = pc.getSenders().find(s => s.track && s.track.kind === 'video')
-    if (!sender) return   // appel audio sans piste vidéo → partage non supporté en V2
+    if (!sender) {
+      setCall(prev => prev ? { ...prev, mediaWarning: "Le partage d'écran demande un appel vidéo." } : prev)
+      return
+    }
     let ds
     try { ds = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false }) }
-    catch { return }      // annulé par l'utilisateur
+    catch { return }
     const screenTrack = ds.getVideoTracks()[0]
     if (!screenTrack) return
-    camTrackRef.current = sender.track   // mémorise la caméra pour le retour
+    camTrackRef.current = sender.track
     screenRef.current = ds
     try { await sender.replaceTrack(screenTrack) } catch {}
-    screenTrack.onended = () => stopScreen()   // l'utilisateur stoppe via la barre du navigateur
+    screenTrack.onended = () => stopScreen()
     setCall(prev => prev ? { ...prev, screenOn: true } : prev)
-  }, [stopScreen])
+  }, [setCall, stopScreen])
 
-  // ── Réception des signaux ───────────────────────────────────────────────────
   useEffect(() => {
     if (!supabase || !discordId) return
     const ch = supabase.channel(`call:${discordId}`, { config: { broadcast: { self: false } } })
     ch.on('broadcast', { event: 'signal' }, async ({ payload: p }) => {
       const c = callRef.current
       if (p.kind === 'invite') {
-        if (c) { signal(p.from, { kind: 'busy', from: discordId, callId: p.callId }); return } // déjà en appel
+        if (c) { signal(p.from, { kind: 'busy', from: discordId, callId: p.callId }); return }
         offerRef.current = p.sdp
-        setCall({ phase: 'incoming', peer: { id: p.from, name: p.fromName, avatar: p.fromAvatar }, type: p.type || 'audio', muted: false, camOff: (p.type !== 'video'), callId: p.callId })
+        const incoming = {
+          phase: 'incoming',
+          peer: { id: p.from, name: p.fromName, avatar: p.fromAvatar, conversationId: p.conversationId || null },
+          type: p.type || 'audio',
+          muted: false,
+          camOff: p.type !== 'video',
+          callId: p.callId,
+          conversationId: p.conversationId || null,
+          initiator: false,
+          startedAt: null,
+          error: null,
+        }
+        setCall(incoming)
+        scheduleTimeout(p.callId)
       } else if (p.kind === 'answer') {
         if (pcRef.current && c?.callId === p.callId) {
           try {
             await pcRef.current.setRemoteDescription(new RTCSessionDescription(p.sdp))
             for (const cand of pendingIce.current) { try { await pcRef.current.addIceCandidate(cand) } catch {} }
             pendingIce.current = []
-            setCall(prev => prev ? { ...prev, phase: 'active' } : prev)
-          } catch (e) { console.error('[call] answer', e) }
+            clearCallTimer()
+            setCall(prev => prev ? { ...prev, phase: 'active', type: p.type || prev.type, startedAt: Date.now() } : prev)
+          } catch {
+            finishCall('failed', false, 'Réponse WebRTC invalide.')
+          }
         }
       } else if (p.kind === 'ice') {
         if (c?.callId === p.callId) {
           if (pcRef.current?.remoteDescription) { try { await pcRef.current.addIceCandidate(p.candidate) } catch {} }
           else pendingIce.current.push(p.candidate)
         }
-      } else if (p.kind === 'end' || p.kind === 'decline' || p.kind === 'busy') {
-        if (c && (!p.callId || c.callId === p.callId)) endCall(false)
+      } else if (p.kind === 'end') {
+        if (c && (!p.callId || c.callId === p.callId)) finishCall('ended', false)
+      } else if (p.kind === 'decline') {
+        if (c && c.callId === p.callId) finishCall('rejected', false)
+      } else if (p.kind === 'busy') {
+        if (c && c.callId === p.callId) finishCall('busy', false)
+      } else if (p.kind === 'missed') {
+        if (c && c.callId === p.callId) finishCall('missed', false)
       }
     }).subscribe()
     inboxRef.current = ch
     return () => { try { supabase.removeChannel(ch) } catch {} }
-  }, [discordId, signal, endCall])
+  }, [clearCallTimer, discordId, finishCall, scheduleTimeout, setCall, signal])
+
+  useEffect(() => {
+    const onBeforeUnload = () => {
+      const c = callRef.current
+      if (c?.peer?.id) signal(c.peer.id, { kind: 'end', from: discordId, callId: c.callId })
+      cleanup()
+    }
+    window.addEventListener('beforeunload', onBeforeUnload)
+    return () => window.removeEventListener('beforeunload', onBeforeUnload)
+  }, [cleanup, discordId, signal])
 
   useEffect(() => () => cleanup(), [cleanup])
 
