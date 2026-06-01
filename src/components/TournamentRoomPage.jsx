@@ -545,24 +545,27 @@ function WinnerReveal({ winner }) {
   return (
     <>
       <DuelAmbient left={winner} right={winner} />
-      <motion.div initial={{ opacity: 0, scale: 0.94, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.97 }}
-        transition={{ type: 'spring', stiffness: 320, damping: 26 }}
-        style={{ position: 'relative', zIndex: 2, maxWidth: 470, margin: 'min(7vh,64px) auto 0', textAlign: 'center' }}>
-        <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
-          style={{ display: 'inline-flex', alignItems: 'center', gap: 9, padding: '6px 16px', borderRadius: 999, marginBottom: 18,
-                   background: hexA(col, 0.16), border: `1px solid ${hexA(col, 0.5)}`, boxShadow: `0 0 26px ${hexA(col, 0.3)}` }}>
-          <span style={{ fontSize: 13 }}>🏆</span>
-          <span style={{ fontSize: 12, fontWeight: 900, letterSpacing: '.22em', color: '#fff' }}>VAINQUEUR DU DUEL</span>
+      {/* Conteneur plein écran qui centre parfaitement le vainqueur au milieu */}
+      <div style={{ position: 'fixed', inset: 0, zIndex: 5, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 20px', pointerEvents: 'none' }}>
+        <motion.div initial={{ opacity: 0, scale: 0.94, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.97 }}
+          transition={{ type: 'spring', stiffness: 320, damping: 26 }}
+          style={{ width: '100%', maxWidth: 470, textAlign: 'center' }}>
+          <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 9, padding: '6px 16px', borderRadius: 999, marginBottom: 18,
+                     background: hexA(col, 0.16), border: `1px solid ${hexA(col, 0.5)}`, boxShadow: `0 0 26px ${hexA(col, 0.3)}` }}>
+            <span style={{ fontSize: 13 }}>🏆</span>
+            <span style={{ fontSize: 12, fontWeight: 900, letterSpacing: '.22em', color: '#fff' }}>VAINQUEUR DU DUEL</span>
+          </motion.div>
+          {ytOk && (
+            <motion.img initial={{ scale: 1.04 }} animate={{ scale: 1 }} transition={{ duration: 0.5, ease }}
+              src={`https://img.youtube.com/vi/${winner.ytId}/hqdefault.jpg`} alt=""
+              style={{ display: 'block', width: '100%', maxWidth: 430, margin: '0 auto', borderRadius: 18, border: `2px solid ${col}`, boxShadow: `0 28px 80px ${hexA(col, 0.5)}, 0 0 0 6px ${hexA(col, 0.08)}` }} />
+          )}
+          <h2 style={{ margin: '20px 0 5px', fontSize: 'clamp(26px,4.4vw,36px)', fontWeight: 900, letterSpacing: '-.02em', color: '#fff', textShadow: '0 4px 28px rgba(0,0,0,.6)' }}>{winner.title}</h2>
+          <div style={{ color: 'rgba(255,255,255,.7)', fontSize: 14.5, fontWeight: 600 }}>{winner.anime}{winner.artist ? ` · ${winner.artist}` : ''}</div>
+          <div style={{ marginTop: 16, fontSize: 11.5, fontWeight: 700, letterSpacing: '.14em', textTransform: 'uppercase', color: TXT_FAINT }}>Duel suivant…</div>
         </motion.div>
-        {ytOk && (
-          <motion.img initial={{ scale: 1.04 }} animate={{ scale: 1 }} transition={{ duration: 0.5, ease }}
-            src={`https://img.youtube.com/vi/${winner.ytId}/hqdefault.jpg`} alt=""
-            style={{ display: 'block', width: '100%', maxWidth: 430, margin: '0 auto', borderRadius: 18, border: `2px solid ${col}`, boxShadow: `0 28px 80px ${hexA(col, 0.5)}, 0 0 0 6px ${hexA(col, 0.08)}` }} />
-        )}
-        <h2 style={{ margin: '20px 0 5px', fontSize: 'clamp(26px,4.4vw,36px)', fontWeight: 900, letterSpacing: '-.02em', color: '#fff', textShadow: '0 4px 28px rgba(0,0,0,.6)' }}>{winner.title}</h2>
-        <div style={{ color: 'rgba(255,255,255,.7)', fontSize: 14.5, fontWeight: 600 }}>{winner.anime}{winner.artist ? ` · ${winner.artist}` : ''}</div>
-        <div style={{ marginTop: 16, fontSize: 11.5, fontWeight: 700, letterSpacing: '.14em', textTransform: 'uppercase', color: TXT_FAINT }}>Duel suivant…</div>
-      </motion.div>
+      </div>
     </>
   )
 }
