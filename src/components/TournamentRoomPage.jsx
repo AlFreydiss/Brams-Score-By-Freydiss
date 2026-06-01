@@ -76,6 +76,8 @@ export default function TournamentRoomPage() {
   const [roomsError, setRoomsError] = useState(false)
   const resolvingRef = useRef(false)
   const autoJoinRef = useRef(false)
+  const refreshing = useRef(false)
+  const lastRealtimeRef = useRef(0)
 
   // Salons récents pour la section "Salons en direct" (uniquement sur l'accueil).
   const loadRooms = useCallback(() => {
@@ -115,25 +117,33 @@ export default function TournamentRoomPage() {
 
   // ── Chargement / refetch ──────────────────────────────────────────────────
   const refresh = useCallback(async (c = code) => {
-    if (!c) return
-    const r = await fetchTournamentRoom(c)
-    if (!r) { setNotFound(true); setRoom(null); return }
-    setNotFound(false)
-    setRoom(r)
-    setPlayers(await fetchTournamentRoomPlayers(c))
-    const cur = r?.rounds ? getCurrentMatch(r.rounds) : null
-    setVotes(cur ? await fetchTournamentRoomVotes(c, cur.match.id) : [])
+    if (!c || refreshing.current) return   // anti refresh-en-vol (realtime + poll)
+    refreshing.current = true
+    try {
+      const [r, pl] = await Promise.all([fetchTournamentRoom(c), fetchTournamentRoomPlayers(c)])
+      if (!r) { setNotFound(true); setRoom(null); return }
+      const cur = r?.rounds ? getCurrentMatch(r.rounds) : null
+      const vt = cur ? await fetchTournamentRoomVotes(c, cur.match.id) : []
+      setNotFound(false); setRoom(r); setPlayers(pl); setVotes(vt)
+    } finally { refreshing.current = false }
   }, [code])
 
   useEffect(() => {
     if (!code) return
+    let stop = false, timer
     refresh(code)
-    const unsub = subscribeTournamentRoom(code, () => refresh(code))
-    // Polling de secours (2.5s) en plus du realtime : joueurs/votes/état toujours
-    // à jour sans recharger, même si l'abonnement Postgres Changes ne délivre pas.
-    const poll = setInterval(() => refresh(code), 2500)
+    const unsub = subscribeTournamentRoom(code, () => { lastRealtimeRef.current = Date.now(); refresh(code) })
+    // Polling de secours ADAPTATIF : pause en arrière-plan, ralentit quand le
+    // realtime délivre, rapide sinon → live sans recharger, coût réseau maîtrisé.
+    const tick = () => {
+      if (stop) return
+      const recentRT = Date.now() - lastRealtimeRef.current < 20000
+      const delay = document.hidden ? 30000 : recentRT ? 12000 : 3000
+      timer = setTimeout(async () => { await refresh(code); tick() }, delay)
+    }
+    tick()
     const ping = setInterval(() => touchTournamentPlayer(code, ident.userId), 25000)
-    return () => { unsub(); clearInterval(poll); clearInterval(ping) }
+    return () => { stop = true; clearTimeout(timer); unsub(); clearInterval(ping) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [code])
 

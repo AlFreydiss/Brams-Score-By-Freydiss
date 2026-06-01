@@ -77,6 +77,8 @@ export default function UndercoverPage() {
   const [vw, setVw] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200)
   const actedRef = useRef('')
   const autoJoinRef = useRef(false)
+  const refreshing = useRef(false)    // anti refresh-en-vol simultané (realtime + poll)
+  const lastRealtimeRef = useRef(0)   // dernier event realtime → ralentit le poll
   const isMobile = vw < 720, isNarrow = vw < 1000
 
   const g = room?.rounds || null
@@ -91,23 +93,32 @@ export default function UndercoverPage() {
   useEffect(() => { if (!code) return; const t = setInterval(() => setNow(Date.now()), 250); return () => clearInterval(t) }, [code])
 
   const refresh = useCallback(async (c = code) => {
-    if (!c) return
-    const r = await fetchRoom(c)
-    if (!r || r._wrongType) { setNotFound(true); setRoom(null); return }
-    setNotFound(false); setRoom(r)
-    setPlayers(await fetchPlayers(c)); setVotes(await fetchAllVotes(c))
+    if (!c || refreshing.current) return   // évite 2 refresh simultanés (realtime + poll)
+    refreshing.current = true
+    try {
+      const [r, pl, vt] = await Promise.all([fetchRoom(c), fetchPlayers(c), fetchAllVotes(c)])
+      if (!r || r._wrongType) { setNotFound(true); setRoom(null); return }
+      setNotFound(false); setRoom(r); setPlayers(pl); setVotes(vt)
+    } finally { refreshing.current = false }
   }, [code])
 
   useEffect(() => {
     if (!code) return
+    let stop = false, timer
     refresh(code)
-    const unsub = subscribeRoom(code, () => refresh(code))
-    // Polling de secours (2.5s) EN PLUS du temps réel : garantit que les arrivées
-    // de joueurs et les changements d'état sont visibles sans recharger, même si
-    // l'abonnement Postgres Changes ne délivre pas (RLS/autorisation realtime).
-    const poll = setInterval(() => refresh(code), 2500)
+    const unsub = subscribeRoom(code, () => { lastRealtimeRef.current = Date.now(); refresh(code) })
+    // Polling de secours ADAPTATIF (en plus du temps réel) : pause en arrière-plan,
+    // ralentit quand le realtime délivre, rapide sinon → tout reste live sans
+    // recharger, à coût réseau maîtrisé.
+    const tick = () => {
+      if (stop) return
+      const recentRT = Date.now() - lastRealtimeRef.current < 20000
+      const delay = document.hidden ? 30000 : recentRT ? 12000 : 3000
+      timer = setTimeout(async () => { await refresh(code); tick() }, delay)
+    }
+    tick()
     const ping = setInterval(() => userId && touchPlayer(code, userId), 25000)
-    return () => { unsub(); clearInterval(poll); clearInterval(ping) }
+    return () => { stop = true; clearTimeout(timer); unsub(); clearInterval(ping) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [code, userId])
 
