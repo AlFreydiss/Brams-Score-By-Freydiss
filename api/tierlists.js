@@ -180,7 +180,9 @@ export default async function handler(req, res) {
         const words = ucPickPair()
         const rows = uids.map((u, i) => ({ room_code: code, user_id: u, role: i < ucCount ? 'undercover' : 'civil', word: i < ucCount ? words.undercover : words.civil }))
         await db(`undercover_secrets?room_code=eq.${code}`, { method: 'DELETE' })
-        await db('undercover_secrets', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(rows) })
+        // upsert (merge-duplicates) : si une ligne (room_code,user_id) subsiste —
+        // ré-assignation, double-clic, course — on écrase au lieu de planter en 409.
+        await db('undercover_secrets', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' }, body: JSON.stringify(rows) })
         const rounds = { phase: 'reveal', round: 1, pass: 1, undercoverCount: ucCount, alive: uids, eliminated: [], turnOrder: ucShuffle(uids), turnIdx: 0, turnDeadline: null, winner: null }
         await db(`tournament_rooms?code=eq.${code}`, { method: 'PATCH', body: JSON.stringify({ status: 'playing', rounds, updated_at: new Date().toISOString() }) })
         return json(res, 200, { ok: true })

@@ -367,49 +367,6 @@ export default function TournamentRoomPage() {
             </motion.form>
           </div>
 
-          {/* ════ SALONS EN DIRECT ════ */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-            <h2 style={{ fontSize: 15, fontWeight: 800, color: TXT, margin: 0, letterSpacing: '-.01em' }}>Salons en direct</h2>
-            {!roomsLoading && !roomsError && liveCount > 0 && (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: 11.5, fontWeight: 700, color: PINK_L,
-                padding: '3px 10px', borderRadius: 999, background: 'rgba(224,69,123,.10)', border: '1px solid rgba(224,69,123,.24)' }}>
-                <LiveDot size={5} />{liveCount}
-              </span>
-            )}
-            <button onClick={loadRooms} disabled={roomsLoading} title="Rafraîchir"
-              style={{ marginLeft: 'auto', background: 'transparent', border: `1px solid ${HAIR}`, borderRadius: 9, color: TXT_MUTED,
-                padding: '6px 11px', fontSize: 12, fontWeight: 700, cursor: roomsLoading ? 'default' : 'pointer', opacity: roomsLoading ? .5 : 1, fontFamily: 'inherit' }}>
-              ↻ Actualiser
-            </button>
-          </div>
-
-          {roomsLoading ? (
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(240px, 1fr))', gap: 12 }}>
-              {[0, 1, 2].map(i => <RoomSkeleton key={i} />)}
-            </div>
-          ) : roomsError ? (
-            <div style={{ ...card, textAlign: 'center', padding: '34px 24px' }}>
-              <div style={{ fontSize: 26, marginBottom: 10, opacity: .8 }}>📡</div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: TXT, marginBottom: 6 }}>Impossible de charger les salons</div>
-              <p style={{ fontSize: 12.5, color: TXT_MUTED, margin: '0 0 16px' }}>Vérifie ta connexion et réessaie.</p>
-              <button onClick={loadRooms} style={{ ...btn(CTA), padding: '9px 18px', fontSize: 13 }}>Réessayer</button>
-            </div>
-          ) : liveCount === 0 ? (
-            <div style={{ ...card, textAlign: 'center', padding: '40px 24px', borderStyle: 'dashed' }}>
-              <div style={{ fontSize: 30, marginBottom: 12, opacity: .85 }}>🎧</div>
-              <div style={{ fontSize: 15, fontWeight: 800, color: TXT, marginBottom: 6 }}>Aucun salon en direct</div>
-              <p style={{ fontSize: 13, color: TXT_MUTED, margin: '0 auto 18px', maxWidth: 340, lineHeight: 1.55 }}>
-                Sois le premier à lancer un salon — choisis un mode et invite tes potes.
-              </p>
-              <button onClick={handleCreate} disabled={busy} style={{ ...btn(CTA), padding: '10px 20px', fontSize: 13.5, opacity: busy ? .6 : 1 }}>
-                Créer le premier salon
-              </button>
-            </div>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(240px, 1fr))', gap: 12 }}>
-              {recent.map(r => <LiveRoomCard key={r.code} room={r} onOpen={openRoom} />)}
-            </div>
-          )}
         </div>
       </div>
     )

@@ -2,16 +2,29 @@ import { useState, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 
-// ── Design tokens (palette Tournoi) ───────────────────────────────────────
-const BG     = '#07090e'
-const PINK   = '#9d174d'
-const PURPLE = '#4c1d95'
-const PINK_L = '#f9a8d4'
-const PINK_M = '#db2777'
-const GRAD   = `linear-gradient(135deg, ${PINK} 0%, ${PURPLE} 100%)`
-const GLASS  = 'rgba(16,10,30,0.82)'
-const TEXT   = '#f0e8f8'
-const MUTED  = 'rgba(240,232,248,0.45)'
+// ── Design tokens — DA "forêt secrète" (vert/végétal premium, comme Undercover) ──
+const BG     = '#0B0F0C'
+const PINK   = '#4C9A5F'   // (noms conservés pour limiter le diff) = vert émeraude
+const PURPLE = '#2f6b40'   // = vert forêt profond
+const PINK_L = '#7BAA6D'   // = sauge clair (accent texte)
+const PINK_M = '#5BAE72'   // = émeraude clair
+const GRAD   = `linear-gradient(135deg, ${PINK_M} 0%, ${PURPLE} 100%)`
+const GLASS  = 'rgba(21,28,24,0.86)'
+const TEXT   = '#e9efe9'
+const MUTED  = 'rgba(233,239,233,0.50)'
+const hexA = (hex, a) => { const n = parseInt(hex.slice(1), 16); return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})` }
+const LEAF_URI = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cg fill='none' stroke='%237BAA6D' stroke-width='1.2' opacity='0.5'%3E%3Cpath d='M20 60 Q40 20 60 60 Q40 100 20 60 Z'/%3E%3Cpath d='M40 60 Q60 40 60 60'/%3E%3Cpath d='M70 30 Q95 5 115 30 Q95 60 70 30 Z'/%3E%3Cpath d='M85 30 Q100 18 100 30'/%3E%3C/g%3E%3C/svg%3E"
+const AKI_FX = `@keyframes aki-float{0%{transform:translateY(8px);opacity:0}12%{opacity:.5}88%{opacity:.4}100%{transform:translateY(-90px);opacity:0}}@keyframes aki-breathe{0%,100%{opacity:.5}50%{opacity:.85}}@media (prefers-reduced-motion:reduce){[data-fx]{animation:none!important}}`
+const AkiAmbient = () => (
+  <>
+    <style>{AKI_FX}</style>
+    <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', background: `radial-gradient(1000px 580px at 80% -10%, ${hexA(PINK, .16)}, transparent 60%), radial-gradient(820px 500px at 8% 6%, ${hexA(PINK_L, .09)}, transparent 62%), radial-gradient(700px 700px at 50% 122%, ${hexA(PINK, .06)}, transparent 60%), linear-gradient(180deg, ${BG}, #0E1511 70%, ${BG})` }} />
+    <div data-fx aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', opacity: .035, backgroundImage: `url("${LEAF_URI}")`, backgroundSize: '160px', animation: 'aki-breathe 9s ease-in-out infinite' }} />
+    <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+      {[...Array(8)].map((_, i) => <span key={i} data-fx style={{ position: 'absolute', left: `${10 + i * 11}%`, bottom: -10, width: 4 + (i % 3), height: 4 + (i % 3), borderRadius: '50%', background: hexA(PINK_L, .5), filter: 'blur(.5px)', animation: `aki-float ${11 + (i % 5) * 2}s linear ${i * 1.3}s infinite` }} />)}
+    </div>
+  </>
+)
 
 // ── Characters database ────────────────────────────────────────────────────
 // m=homme | pir=pirate | mar=marine | rev=révolutionnaire
@@ -229,10 +242,10 @@ function FreydissMascot({ size = 100, pulse = true, mood = 'idle' }) {
     <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:6, flexShrink:0 }}>
       <div style={{
         width: size, height: size, borderRadius: '50%', position: 'relative',
-        background: `linear-gradient(135deg, #9d174d 0%, #4c1d95 100%)`,
+        background: `linear-gradient(135deg, #4C9A5F 0%, #2f6b40 100%)`,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         animation: pulse ? 'akPulse 2.8s ease-in-out infinite' : 'none',
-        boxShadow: `0 0 ${size*.35}px rgba(157,23,77,.55), 0 0 ${size*.7}px rgba(76,29,149,.28), inset 0 1px 0 rgba(255,255,255,.15)`,
+        boxShadow: `0 0 ${size*.35}px rgba(76,154,95,.55), 0 0 ${size*.7}px rgba(47,107,64,.28), inset 0 1px 0 rgba(255,255,255,.15)`,
       }}>
         {moodEmoji ? (
           <span style={{ fontSize: size * 0.55, lineHeight:1 }}>{moodEmoji}</span>
@@ -253,7 +266,7 @@ function FreydissMascot({ size = 100, pulse = true, mood = 'idle' }) {
             <path d="M14 34 Q6  50 10 64" stroke="#150b07" strokeWidth="5" fill="none" strokeLinecap="round" />
             <path d="M66 34 Q74 50 70 64" stroke="#150b07" strokeWidth="5" fill="none" strokeLinecap="round" />
             {/* Bandana pirate rouge sur le front */}
-            <rect x="16" y="26" width="48" height="8" rx="3" fill="#9d174d" />
+            <rect x="16" y="26" width="48" height="8" rx="3" fill="#4C9A5F" />
             <ellipse cx="40" cy="26" rx="5" ry="3" fill="#7b0f3a" />
             {/* Skull tiny sur le bandana */}
             <ellipse cx="40" cy="27" rx="3.5" ry="3" fill="white" opacity=".9" />
@@ -265,15 +278,15 @@ function FreydissMascot({ size = 100, pulse = true, mood = 'idle' }) {
             {/* Yeux */}
             {eyeL ? (
               <>
-                <path d={eyeL} stroke="#4c1d95" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
-                <path d={eyeR} stroke="#4c1d95" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
+                <path d={eyeL} stroke="#2f6b40" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
+                <path d={eyeR} stroke="#2f6b40" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
               </>
             ) : (
               <>
                 <ellipse cx="33.5" cy="36.5" rx="3.8" ry="3.8" fill="white" />
                 <ellipse cx="46.5" cy="36.5" rx="3.8" ry="3.8" fill="white" />
-                <circle cx="34.5" cy="37.2" r="2.2" fill="#4c1d95" />
-                <circle cx="47.5" cy="37.2" r="2.2" fill="#4c1d95" />
+                <circle cx="34.5" cy="37.2" r="2.2" fill="#2f6b40" />
+                <circle cx="47.5" cy="37.2" r="2.2" fill="#2f6b40" />
                 <circle cx="35.2" cy="36.5" r=".9" fill="white" />
                 <circle cx="48.2" cy="36.5" r=".9" fill="white" />
               </>
@@ -292,7 +305,7 @@ function FreydissMascot({ size = 100, pulse = true, mood = 'idle' }) {
       </div>
       <div style={{
         fontSize: size * 0.115, fontWeight:800, letterSpacing:'.08em',
-        color:'rgba(249,168,212,.7)', textTransform:'uppercase',
+        color:'rgba(123,170,109,.7)', textTransform:'uppercase',
         fontFamily:'var(--display)',
       }}>Freydiss</div>
     </div>
@@ -324,11 +337,11 @@ function IdleScreen({ onStart }) {
         padding:'16px 52px', borderRadius:100,
         background: GRAD, border:'none', cursor:'pointer',
         fontSize:18, fontWeight:800, color:'#fff',
-        boxShadow:`0 8px 32px rgba(157,23,77,.45)`,
+        boxShadow:`0 8px 32px rgba(76,154,95,.45)`,
         transition:'all .2s', fontFamily:'var(--body)',
       }}
-      onMouseEnter={e => { e.currentTarget.style.transform='scale(1.05)'; e.currentTarget.style.boxShadow=`0 14px 44px rgba(157,23,77,.65)` }}
-      onMouseLeave={e => { e.currentTarget.style.transform='scale(1)'; e.currentTarget.style.boxShadow=`0 8px 32px rgba(157,23,77,.45)` }}
+      onMouseEnter={e => { e.currentTarget.style.transform='scale(1.05)'; e.currentTarget.style.boxShadow=`0 14px 44px rgba(76,154,95,.65)` }}
+      onMouseLeave={e => { e.currentTarget.style.transform='scale(1)'; e.currentTarget.style.boxShadow=`0 8px 32px rgba(76,154,95,.45)` }}
       >✨ Je suis prêt !</button>
 
       <p style={{ fontSize:12, color:'rgba(240,232,248,.25)', marginTop:20 }}>
@@ -368,10 +381,10 @@ function AskingScreen({ question, qCount, loading, onAnswer }) {
 
         <div style={{
           background: GLASS,
-          border:`1px solid rgba(157,23,77,.22)`,
+          border:`1px solid rgba(76,154,95,.22)`,
           borderRadius:22, padding:'30px 36px',
           backdropFilter:'blur(24px)',
-          boxShadow:`0 24px 64px rgba(0,0,0,.45), inset 0 1px 0 rgba(249,168,212,.07)`,
+          boxShadow:`0 24px 64px rgba(0,0,0,.45), inset 0 1px 0 rgba(123,170,109,.07)`,
         }}>
           <p style={{
             fontSize:'clamp(17px,3vw,22px)', fontWeight:700,
@@ -412,10 +425,10 @@ function GuessingScreen({ guess, qCount, onRight, onWrong }) {
       {/* Character card */}
       <div style={{
         width:200, height:240, borderRadius:22, margin:'0 auto 28px',
-        background:`linear-gradient(145deg, rgba(157,23,77,.28) 0%, rgba(76,29,149,.38) 100%)`,
-        border:`2px solid rgba(157,23,77,.45)`,
+        background:`linear-gradient(145deg, rgba(76,154,95,.28) 0%, rgba(47,107,64,.38) 100%)`,
+        border:`2px solid rgba(76,154,95,.45)`,
         display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
-        boxShadow:`0 24px 70px rgba(157,23,77,.3), 0 0 120px rgba(76,29,149,.18)`,
+        boxShadow:`0 24px 70px rgba(76,154,95,.3), 0 0 120px rgba(47,107,64,.18)`,
         animation:'akPulse 2.5s ease-in-out infinite',
         backdropFilter:'blur(10px)',
         padding:'20px 16px',
@@ -493,7 +506,7 @@ function WinScreen({ guess, qCount, onReplay }) {
         padding:'14px 44px', borderRadius:100,
         background: GRAD, border:'none', cursor:'pointer',
         fontSize:16, fontWeight:800, color:'#fff',
-        boxShadow:`0 8px 32px rgba(157,23,77,.45)`,
+        boxShadow:`0 8px 32px rgba(76,154,95,.45)`,
         transition:'all .2s', fontFamily:'var(--body)',
       }}
       onMouseEnter={e => e.currentTarget.style.transform='scale(1.05)'}
@@ -528,7 +541,7 @@ function LostScreen({ onReplay }) {
         padding:'14px 44px', borderRadius:100,
         background: GRAD, border:'none', cursor:'pointer',
         fontSize:16, fontWeight:800, color:'#fff',
-        boxShadow:`0 8px 32px rgba(157,23,77,.45)`,
+        boxShadow:`0 8px 32px rgba(76,154,95,.45)`,
         transition:'all .2s', fontFamily:'var(--body)',
       }}
       onMouseEnter={e => e.currentTarget.style.transform='scale(1.05)'}
@@ -652,7 +665,7 @@ export default function AkinatorPage() {
     <div style={{ position:'fixed', inset:0, zIndex:500, background:BG, display:'flex', flexDirection:'column', overflow:'hidden' }}>
       <style>{`
         @keyframes akStar   { 0%,100%{opacity:.25;transform:scale(1)} 50%{opacity:.9;transform:scale(1.6)} }
-        @keyframes akPulse  { 0%,100%{box-shadow:0 0 30px rgba(157,23,77,.4),0 0 60px rgba(76,29,149,.2)} 50%{box-shadow:0 0 55px rgba(157,23,77,.7),0 0 110px rgba(76,29,149,.4)} }
+        @keyframes akPulse  { 0%,100%{box-shadow:0 0 30px rgba(76,154,95,.4),0 0 60px rgba(47,107,64,.2)} 50%{box-shadow:0 0 55px rgba(76,154,95,.7),0 0 110px rgba(47,107,64,.4)} }
         @keyframes akFloat  { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-9px)} }
       `}</style>
 
@@ -662,7 +675,7 @@ export default function AkinatorPage() {
           <div key={s.id} style={{
             position:'absolute', left:`${s.x}%`, top:`${s.y}%`,
             width:s.size, height:s.size, borderRadius:'50%',
-            background:'rgba(249,168,212,.55)',
+            background:'rgba(123,170,109,.55)',
             animation:`akStar ${s.dur}s ${s.del}s ease-in-out infinite`,
           }}/>
         ))}
@@ -671,27 +684,29 @@ export default function AkinatorPage() {
       {/* Gradient ambiance */}
       <div style={{
         position:'absolute', inset:0, pointerEvents:'none',
-        background:`radial-gradient(ellipse at 50% 0%, rgba(157,23,77,.14) 0%, transparent 55%),
-                   radial-gradient(ellipse at 80% 100%, rgba(76,29,149,.1) 0%, transparent 50%)`,
+        background:`radial-gradient(ellipse at 50% 0%, rgba(76,154,95,.14) 0%, transparent 55%),
+                   radial-gradient(ellipse at 80% 100%, rgba(47,107,64,.1) 0%, transparent 50%)`,
       }}/>
+      {/* Texture feuilles très discrète (DA forêt) */}
+      <div aria-hidden style={{ position:'absolute', inset:0, pointerEvents:'none', opacity:.04, backgroundImage:`url("${LEAF_URI}")`, backgroundSize:'150px' }}/>
 
       {/* Navbar */}
       <div style={{
         flexShrink:0, height:62, display:'flex', alignItems:'center',
         padding:'0 24px', gap:16,
-        borderBottom:`1px solid rgba(157,23,77,.18)`,
-        background:'rgba(7,9,14,.92)', backdropFilter:'blur(22px)',
+        borderBottom:`1px solid rgba(76,154,95,.18)`,
+        background:'rgba(11,15,12,.92)', backdropFilter:'blur(22px)',
         position:'relative', zIndex:10,
       }}>
         <button onClick={() => navigate('/')} style={{
           display:'flex', alignItems:'center', gap:7,
-          background:'rgba(157,23,77,.1)', border:`1px solid rgba(157,23,77,.28)`,
+          background:'rgba(76,154,95,.1)', border:`1px solid rgba(76,154,95,.28)`,
           borderRadius:10, color:PINK_L, cursor:'pointer',
           padding:'7px 14px', fontSize:13, fontWeight:700,
           transition:'all .16s',
         }}
-        onMouseEnter={e => e.currentTarget.style.background='rgba(157,23,77,.22)'}
-        onMouseLeave={e => e.currentTarget.style.background='rgba(157,23,77,.1)'}
+        onMouseEnter={e => e.currentTarget.style.background='rgba(76,154,95,.22)'}
+        onMouseLeave={e => e.currentTarget.style.background='rgba(76,154,95,.1)'}
         >← Retour</button>
 
         <div style={{ flex:1, textAlign:'center' }}>
@@ -705,12 +720,12 @@ export default function AkinatorPage() {
         <div style={{ minWidth:88, display:'flex', justifyContent:'flex-end' }}>
           {phase !== PHASE.IDLE && (
             <button onClick={reset} style={{
-              background:'transparent', border:`1px solid rgba(157,23,77,.22)`,
+              background:'transparent', border:`1px solid rgba(76,154,95,.22)`,
               borderRadius:8, color:MUTED, cursor:'pointer',
               padding:'6px 12px', fontSize:12, fontWeight:600, transition:'all .14s',
             }}
-            onMouseEnter={e => { e.currentTarget.style.color=PINK_L; e.currentTarget.style.borderColor='rgba(157,23,77,.5)' }}
-            onMouseLeave={e => { e.currentTarget.style.color=MUTED; e.currentTarget.style.borderColor='rgba(157,23,77,.22)' }}
+            onMouseEnter={e => { e.currentTarget.style.color=PINK_L; e.currentTarget.style.borderColor='rgba(76,154,95,.5)' }}
+            onMouseLeave={e => { e.currentTarget.style.color=MUTED; e.currentTarget.style.borderColor='rgba(76,154,95,.22)' }}
             >↺ Rejouer</button>
           )}
         </div>

@@ -103,10 +103,14 @@ export const castElimVote = ({ code, round, userId, targetUid }) =>
 
 export async function updateRoom(code, patch) {
   if (!supabase) return { error: 'supabase' }
-  const { error } = await supabase.from('tournament_rooms')
-    .update({ ...patch, updated_at: new Date().toISOString() })
-    .eq('code', code.toUpperCase())
-  return { error: error?.message || null }
+  try {
+    const { error } = await withTimeout(supabase.from('tournament_rooms')
+      .update({ ...patch, updated_at: new Date().toISOString() })
+      .eq('code', code.toUpperCase()))
+    return { error: error?.message || null }
+  } catch (e) {
+    return { error: e?.message || 'timeout' }   // l'appelant peut relancer
+  }
 }
 
 export async function touchPlayer(code, userId) {

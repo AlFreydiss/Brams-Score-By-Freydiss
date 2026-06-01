@@ -183,7 +183,11 @@ export default function UndercoverPage() {
     if (actedRef.current === key) return
     const speakerDone = votes.some(v => v.match_id === `clue:${g.round}:${g.pass}` && String(v.user_id) === String(currentUid))
     const timedOut = g.turnDeadline && now >= new Date(g.turnDeadline).getTime()
-    if (speakerDone || timedOut) { actedRef.current = key; advanceTurn(g) }
+    if (speakerDone || timedOut) {
+      actedRef.current = key
+      // si l'écriture échoue/timeout, on réautorise un retry (sinon tour bloqué)
+      advanceTurn(g).then(r => { if (r?.error) actedRef.current = '' })
+    }
   }, [isHost, g, votes, currentUid, now, advanceTurn])
 
   useEffect(() => {
@@ -192,7 +196,7 @@ export default function UndercoverPage() {
     if (actedRef.current === key) return
     const allVoted = alive.length > 0 && alive.every(u => elimVotes.some(v => String(v.user_id) === u))
     const timedOut = g.voteDeadline && now >= new Date(g.voteDeadline).getTime()
-    if (allVoted || timedOut) { actedRef.current = key; callApi('uc_resolve') }
+    if (allVoted || timedOut) { actedRef.current = key; callApi('uc_resolve').then(ok => { if (!ok) actedRef.current = '' }) }
   }, [isHost, g, elimVotes, alive, now, callApi])
 
   async function handleCreate() {
@@ -289,8 +293,8 @@ export default function UndercoverPage() {
     const RULES = [['👥', '3+ joueurs'], ['⏱️', '30s par tour'], ['🔒', 'Code privé'], ['🗳️', 'Vote final'], ['🎭', 'Persos aléatoires']]
     const STEPS = [
       ['🎴', 'Un personnage secret', 'Chaque joueur reçoit en privé un personnage anime, visible de lui seul.'],
-      ['🌿', 'Le même… sauf un', "Les civils partagent le même perso. L'intrus en a un proche, mais différent."],
-      ['🗳️', 'Démasquez l\'intrus', 'Décrivez, doutez, bluffez — puis votez pour éliminer le suspect, manche après manche.'],
+      ['🌿', 'Le même… sauf un', "Les marines partagent le même perso. Le pirate en a un proche, mais différent."],
+      ['🗳️', 'Démasquez le pirate', 'Décrivez, doutez, bluffez — puis votez pour éliminer le suspect, manche après manche.'],
     ]
     const VALUES = [
       ['🍃', 'Bluff & déduction', 'Lis entre les lignes, sème le doute, garde ton sang-froid.'],
@@ -318,7 +322,7 @@ export default function UndercoverPage() {
               </motion.h1>
               <motion.p variants={{ hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } }}
                 style={{ color: 'rgba(233,239,233,.78)', margin: '0 0 14px', fontSize: 'clamp(16px,2vw,19px)', lineHeight: 1.55, maxWidth: 540, fontWeight: 500 }}>
-                Un intrus s'est glissé parmi vous. Décrivez, bluffez, semez le doute… et démasquez-le avant qu'il ne soit trop tard.
+                Un pirate s'est glissé parmi les marines. Décrivez, bluffez, semez le doute… et démasquez-le avant qu'il ne soit trop tard.
               </motion.p>
               <motion.p variants={{ hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } }}
                 style={{ color: C.muted, margin: '0 0 24px', fontSize: 14, lineHeight: 1.6, maxWidth: 500 }}>
@@ -480,7 +484,7 @@ export default function UndercoverPage() {
         <strong style={{ fontSize: 17, letterSpacing: '.2em', color: C.emeraldL }}>{code}</strong>
         <button onClick={() => navigator.clipboard?.writeText(`${window.location.origin}/undercover?code=${code}`)} style={{ ...cta('rgba(255,255,255,.06)'), padding: '4px 10px', fontSize: 11, color: C.txt }}>Copier le lien</button>
       </div>
-      <div style={{ marginLeft: 'auto', fontSize: 13, color: C.muted }}>👥 {players.length}{g.undercoverCount ? ` · 🕵️ ${g.undercoverCount} intrus` : ''}</div>
+      <div style={{ marginLeft: 'auto', fontSize: 13, color: C.muted }}>👥 {players.length}{g.undercoverCount ? ` · 🏴‍☠️ ${g.undercoverCount} pirate${g.undercoverCount > 1 ? 's' : ''}` : ''}</div>
     </div>
   )
 
@@ -523,7 +527,7 @@ export default function UndercoverPage() {
           <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.18em', textTransform: 'uppercase', color: C.faint, marginBottom: 14 }}>Ton personnage secret</div>
           <div style={{ fontSize: 'clamp(34px,7vw,54px)', fontWeight: 900, letterSpacing: '-.02em', lineHeight: 1, marginBottom: 14, background: `linear-gradient(100deg, ${C.emeraldL}, ${C.sage}, ${C.bronze})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{myWord || '…'}</div>
           <p style={{ color: C.muted, fontSize: 14, lineHeight: 1.6, margin: 0 }}>Garde-le secret. Décris-le sans le nommer.</p>
-          <p style={{ color: C.faint, fontSize: 12, marginTop: 12 }}>Tu ne sais pas si tu es civil ou intrus 🌿</p>
+          <p style={{ color: C.faint, fontSize: 12, marginTop: 12 }}>Tu ne sais pas si tu es marin ou pirate 🏴‍☠️</p>
         </motion.div>
         <div style={{ marginTop: 16, textAlign: 'center' }}>
           {isHost ? <button onClick={startDescribing} style={cta()}>Lancer les descriptions →</button> : <span style={{ color: C.muted, fontSize: 13 }}>En attente que l'hôte lance…</span>}
@@ -583,7 +587,7 @@ export default function UndercoverPage() {
       <div className="uc-page" style={wrap}>{ambient}<div style={{ ...inner, maxWidth: 600 }}>
         {topbar}
         <div style={{ ...card, padding: 24 }}>
-          <h2 style={{ margin: '0 0 4px', fontSize: 20, fontWeight: 900 }}>Qui est l'intrus ? 🕵️</h2>
+          <h2 style={{ margin: '0 0 4px', fontSize: 20, fontWeight: 900 }}>Qui est le pirate ? 🏴‍☠️</h2>
           <p style={{ color: C.muted, margin: '0 0 6px', fontSize: 13 }}>Votez pour éliminer un suspect. {voteSecs}s</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 14 }}>
             {alive.map(u => {
@@ -611,14 +615,14 @@ export default function UndercoverPage() {
       <div className="uc-page" style={wrap}>{ambient}<div style={{ ...inner, maxWidth: 560 }}>
         {topbar}
         <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .5, ease }} style={{ ...card, textAlign: 'center', padding: '38px 26px', borderColor: ucWin ? hexA(C.bronze, .45) : hexA(C.emerald, .4) }}>
-          <div style={{ fontSize: 44, marginBottom: 10 }}>{ucWin ? '🕵️' : '🌿'}</div>
-          <h2 style={{ margin: '0 0 8px', fontSize: 26, fontWeight: 900 }}>{ucWin ? "Les intrus l'emportent !" : 'Les civils gagnent !'}</h2>
-          <p style={{ color: C.muted, margin: '0 0 18px' }}>Civils : <b style={{ color: C.txt }}>{reveal.words.civil}</b> · Intrus : <b style={{ color: C.bronze }}>{reveal.words.undercover}</b></p>
+          <div style={{ fontSize: 44, marginBottom: 10 }}>{ucWin ? '🏴‍☠️' : '🌿'}</div>
+          <h2 style={{ margin: '0 0 8px', fontSize: 26, fontWeight: 900 }}>{ucWin ? "Les pirates l'emportent !" : 'Les marines gagnent !'}</h2>
+          <p style={{ color: C.muted, margin: '0 0 18px' }}>Marines : <b style={{ color: C.txt }}>{reveal.words.civil}</b> · Pirate : <b style={{ color: C.bronze }}>{reveal.words.undercover}</b></p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, textAlign: 'left', marginBottom: 22 }}>
             {Object.keys(reveal.roles).map(u => (
               <div key={u} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 10, background: 'rgba(255,255,255,.03)', border: `1px solid ${C.hair}` }}>
                 {avatar(u, 28)}<span style={{ flex: 1, fontWeight: 700 }}>{nameByUid[u] || '?'}</span>
-                <span style={{ fontSize: 12, fontWeight: 800, color: reveal.roles[u] === 'undercover' ? C.bronze : C.muted }}>{reveal.roles[u] === 'undercover' ? '🕵️ Intrus' : 'Civil'}</span>
+                <span style={{ fontSize: 12, fontWeight: 800, color: reveal.roles[u] === 'undercover' ? C.bronze : C.muted }}>{reveal.roles[u] === 'undercover' ? '🏴‍☠️ Pirate' : 'Marin'}</span>
               </div>
             ))}
           </div>
