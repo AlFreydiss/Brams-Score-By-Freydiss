@@ -42,7 +42,10 @@ export default function AnimeBackdrop({ motifs = ['🌿'], color = '#6c5ce7', co
   }, [motifs, color, count, glyphOpacity])
 
   return (
-    <div aria-hidden style={{ position: 'absolute', inset: 0, zIndex: 0, overflow: 'hidden', pointerEvents: 'none' }}>
+    // zIndex -1 : un enfant `position:absolute` à z:0 peindrait AU-DESSUS du contenu
+    // non-positionné (la grille d'épisodes). À -1 il reste derrière le contenu tout
+    // en passant au-dessus du dégradé de fond du conteneur racine.
+    <div aria-hidden style={{ position: 'absolute', inset: 0, zIndex: -1, overflow: 'hidden', pointerEvents: 'none' }}>
       <style>{FX}</style>
       <div className="abd-aurora" style={{ position: 'absolute', top: '-20%', left: '-10%', width: '70%', height: '80%', background: `radial-gradient(circle, ${color}, transparent 62%)`, filter: 'blur(60px)', opacity: .8, animation: `abd-aurora-a 24s ease-in-out infinite`, willChange: 'transform' }} />
       <div className="abd-aurora" style={{ position: 'absolute', bottom: '-25%', right: '-12%', width: '66%', height: '78%', background: `radial-gradient(circle, ${color2}, transparent 64%)`, filter: 'blur(70px)', opacity: .55, animation: `abd-aurora-b 30s ease-in-out infinite`, willChange: 'transform' }} />
