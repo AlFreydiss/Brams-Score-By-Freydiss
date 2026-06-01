@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react'
 import VideoPlayer from './VideoPlayer.jsx'
+import AnimeBackdrop, { ANIME_MOTIFS } from './AnimeBackdrop.jsx'
 import VIDEOS_RAW from '../data/tpn-videos.json'
 
 const VIDEOS = VIDEOS_RAW
@@ -46,11 +47,14 @@ function ProgressRing({ pct, size = 72, stroke = 5 }) {
 }
 
 const EpCard = memo(function EpCard({ video, index, watched, onPlay }) {
+  const [imgErr, setImgErr] = useState(false)
   return (
     <div className="tp-ep-card" role="button" tabIndex={0} onClick={onPlay} onKeyDown={e => e.key === 'Enter' && onPlay()}
       style={{ borderRadius: 14, overflow: 'hidden', background: 'rgba(14,12,24,.92)', border: `1px solid ${watched ? 'rgba(108,92,231,.28)' : 'rgba(255,255,255,.07)'}`, animation: `tpFadeUp .3s ${index * 0.04}s ease-out both`, position: 'relative' }}>
       <div style={{ position: 'relative', paddingTop: '57%', background: `linear-gradient(135deg, rgba(108,92,231,.16), rgba(0,0,0,.92))`, overflow: 'hidden' }}>
-        <img src={COVER} alt="" loading="lazy" decoding="async" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 18%', opacity: watched ? 0.32 : 0.5, filter: 'saturate(1.1) brightness(.8)' }} />
+        {video.thumbnail && !imgErr && (
+          <img src={video.thumbnail} alt="" loading="lazy" decoding="async" onError={() => setImgErr(true)} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', opacity: watched ? 0.4 : 0.62, filter: 'saturate(1.1) brightness(.82)' }} />
+        )}
         <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <span style={{ fontFamily: "'Pirata One',cursive", fontSize: 46, fontWeight: 900, color: 'rgba(255,255,255,.5)', lineHeight: 1, textShadow: '0 2px 12px rgba(0,0,0,.7)' }}>{video.episode}</span>
         </div>
@@ -74,7 +78,7 @@ function InfoPanel({ watchedCount, total, lastWatchedIdx, onResume }) {
   return (
     <aside style={{ position: 'sticky', top: 0, alignSelf: 'start', display: 'flex', flexDirection: 'column', borderRadius: 22, overflow: 'hidden', background: 'linear-gradient(180deg,rgba(16,12,30,.96),rgba(10,8,20,.99))', border: '1px solid rgba(108,92,231,.18)', boxShadow: '0 24px 70px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.04)', backdropFilter: 'blur(20px)' }}>
       <div style={{ position: 'relative', height: 260, overflow: 'hidden', flexShrink: 0 }}>
-        <img src={COVER} alt="The Promised Neverland" onError={e => { e.currentTarget.style.display = 'none' }} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top', opacity: .72, filter: 'saturate(1.1) brightness(.85)' }} />
+        <img src={VIDEOS.find(v => v.thumbnail)?.thumbnail || COVER} alt="The Promised Neverland" onError={e => { e.currentTarget.style.display = 'none' }} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', opacity: .72, filter: 'saturate(1.1) brightness(.85)' }} />
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg,rgba(0,0,0,.1) 0%,rgba(16,12,30,.98) 100%)' }} />
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '0 18px 20px' }}>
           <div style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: '.18em', color: COLOR2, textTransform: 'uppercase', marginBottom: 6 }}>🌿 MYSTÈRE · SURVIE · ÉVASION</div>
@@ -150,6 +154,7 @@ export default function TpnPage({ onClose }) {
     <>
       <style>{CSS}</style>
       <div style={{ position: 'fixed', inset: 0, zIndex: 500, background: 'radial-gradient(circle at 18% 12%,rgba(108,92,231,.10),transparent 32rem),radial-gradient(circle at 84% 80%,rgba(80,60,170,.08),transparent 28rem),linear-gradient(135deg,#0e0a1a 0%,#100c1c 55%,#0a0814 100%)', display: 'flex', flexDirection: 'column' }}>
+        <AnimeBackdrop motifs={ANIME_MOTIFS.tpn} color={COLOR} color2={COLOR2} />
         <div style={{ flexShrink: 0, height: 62, padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(14,10,26,.96)', backdropFilter: 'blur(24px)', borderBottom: '1px solid rgba(108,92,231,.10)', zIndex: 10, position: 'relative' }}>
           <button onClick={playerIdx !== null ? () => setPlayerIdx(null) : onClose} style={{ display: 'flex', alignItems: 'center', gap: 7, background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.09)', borderRadius: 10, color: 'rgba(255,255,255,.72)', cursor: 'pointer', padding: '8px 16px', fontSize: 12.5, fontWeight: 800, fontFamily: 'var(--body)' }}>← {playerIdx !== null ? 'Épisodes' : 'Retour'}</button>
           <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', gap: 10 }}>

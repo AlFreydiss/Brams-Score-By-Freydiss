@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react'
 import VideoPlayer from './VideoPlayer.jsx'
+import AnimeBackdrop, { ANIME_MOTIFS } from './AnimeBackdrop.jsx'
 import VIDEOS_RAW from '../data/vivy-videos.json'
 
 const VIDEOS = VIDEOS_RAW
@@ -290,6 +291,7 @@ export default function VivyPage({ onClose }) {
         background:'radial-gradient(circle at 18% 12%,rgba(0,180,220,.10),transparent 32rem),radial-gradient(circle at 84% 80%,rgba(0,120,160,.08),transparent 28rem),linear-gradient(135deg,#060e1a 0%,#0a1118 55%,#060c14 100%)',
         display:'flex',flexDirection:'column',
       }}>
+        <AnimeBackdrop motifs={ANIME_MOTIFS.vivy} color={COLOR} color2={COLOR2} />
         {/* Navbar */}
         <div style={{
           flexShrink:0,height:62,padding:'0 24px',

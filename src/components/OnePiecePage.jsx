@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react'
 import VideoPlayer from './VideoPlayer.jsx'
+import AnimeBackdrop, { ANIME_MOTIFS } from './AnimeBackdrop.jsx'
 import VIDEOS_RAW from '../data/onepiece-videos.js'
 
 const VIDEOS = VIDEOS_RAW
@@ -252,7 +253,7 @@ export default function OnePiecePage({ onClose }) {
     <>
       <style>{CSS}</style>
       <div style={{ position:'fixed',inset:0,zIndex:500,background:'radial-gradient(circle at 18% 12%,rgba(224,82,74,.10),transparent 32rem),radial-gradient(circle at 84% 80%,rgba(180,40,30,.07),transparent 28rem),linear-gradient(135deg,#100604 0%,#0e0a08 55%,#0a0604 100%)',display:'flex',flexDirection:'column' }}>
-
+        <AnimeBackdrop motifs={ANIME_MOTIFS.onepiece} color={COLOR} color2={COLOR2} />
         {/* Navbar */}
         <div style={{ flexShrink:0,height:62,padding:'0 24px',display:'flex',alignItems:'center',justifyContent:'space-between',background:'rgba(16,6,4,.96)',backdropFilter:'blur(24px)',borderBottom:'1px solid rgba(224,82,74,.10)',zIndex:10,position:'relative' }}>
           <button onClick={playerIdx !== null ? () => setPlayerIdx(null) : onClose}

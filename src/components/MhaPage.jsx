@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react'
 import VideoPlayer from './VideoPlayer.jsx'
+import AnimeBackdrop, { ANIME_MOTIFS } from './AnimeBackdrop.jsx'
 import VIDEOS_RAW from '../data/mha-videos.json'
 
 const VIDEOS = VIDEOS_RAW
@@ -321,6 +322,7 @@ export default function MhaPage({ onClose }) {
         background:'radial-gradient(circle at 16% 12%,rgba(20,80,180,.10),transparent 30rem),radial-gradient(circle at 84% 82%,rgba(10,50,140,.08),transparent 26rem),linear-gradient(135deg,#06080e 0%,#080b12 55%,#040610 100%)',
         display:'flex',flexDirection:'column',
       }}>
+        <AnimeBackdrop motifs={ANIME_MOTIFS.mha} color={COLOR} color2={COLOR2} />
         {/* Navbar */}
         <div style={{
           flexShrink:0,height:62,padding:'0 24px',

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react'
 import VideoPlayer from './VideoPlayer.jsx'
+import AnimeBackdrop, { ANIME_MOTIFS } from './AnimeBackdrop.jsx'
 import { Reader } from './MangaReader.jsx'
 import VIDEOS_RAW from '../data/dbs-videos.json'
 import CHAPTERS_RAW from '../data/dbs-chapters.json'
@@ -380,7 +381,7 @@ export default function DbsPage({ onClose }) {
         background:'radial-gradient(circle at 10% 8%,rgba(200,100,10,.12),transparent 28rem),radial-gradient(circle at 88% 85%,rgba(180,80,5,.09),transparent 24rem),linear-gradient(135deg,#0c0700 0%,#10090200 55%,#080500 100%)',
         display:'flex',flexDirection:'column',
       }}>
-
+        <AnimeBackdrop motifs={ANIME_MOTIFS.dbs} color={COLOR} color2={COLOR2} />
         {/* ── Navbar ── */}
         <div style={{ flexShrink:0, background:'rgba(14,9,2,.95)', backdropFilter:'blur(20px)', borderBottom:'1px solid rgba(245,127,23,.12)', zIndex:10 }}>
           <div style={{ display:'flex',alignItems:'center',gap:12,padding:'0 20px',minHeight:64,flexWrap:'wrap' }}>

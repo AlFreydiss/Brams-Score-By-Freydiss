@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react'
 import VideoPlayer from './VideoPlayer.jsx'
+import AnimeBackdrop, { ANIME_MOTIFS } from './AnimeBackdrop.jsx'
 import VIDEOS_RAW from '../data/violet-evergarden-videos.json'
 
 // VOSTFR par défaut : on ne force RIEN ici. Le player applique la préférence
@@ -218,6 +219,7 @@ export default function VioletEvergardenPage({ onClose }) {
     <>
       <style>{CSS}</style>
       <div style={{ position:'fixed',inset:0,zIndex:500, background:'radial-gradient(circle at 18% 12%,rgba(139,124,255,.10),transparent 32rem),radial-gradient(circle at 84% 80%,rgba(110,90,200,.08),transparent 28rem),linear-gradient(135deg,#0e0a1a 0%,#100c1c 55%,#0a0814 100%)', display:'flex',flexDirection:'column' }}>
+        <AnimeBackdrop motifs={ANIME_MOTIFS.violet} color={COLOR} color2={COLOR2} />
         {/* Navbar */}
         <div style={{ flexShrink:0,height:62,padding:'0 24px', display:'flex',alignItems:'center',justifyContent:'space-between', background:'rgba(14,10,26,.96)',backdropFilter:'blur(24px)', borderBottom:'1px solid rgba(139,124,255,.10)',zIndex:10, position:'relative' }}>
           <button onClick={playerIdx !== null ? () => setPlayerIdx(null) : onClose}
