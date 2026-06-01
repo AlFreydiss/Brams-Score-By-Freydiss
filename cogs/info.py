@@ -64,6 +64,7 @@ _VIOLET_GIF_FILES = [
     "violet-rain.gif",
     "violet-revelation.gif",
     "violet-mirror.gif",
+    "violet-citation.gif",
 ]
 _RE_VIOLET_BEST_ANIME = re.compile(
     r"\b(?:"
@@ -74,15 +75,32 @@ _RE_VIOLET_BEST_ANIME = re.compile(
     r")\b",
     re.IGNORECASE,
 )
-_VIOLET_BEST_REPLY = (
-    "Violet Evergarden.\n\n"
-    "Parce que c'est l'un des rares animés qui ne se contente pas d'être beau : il est précis, sincère et construit avec une vraie retenue. "
-    "Chaque épisode a une intention claire, chaque silence compte, chaque lettre dit quelque chose de plus grand que le dialogue lui-même. "
-    "L'animation n'est jamais là pour faire joli gratuitement : elle sert l'émotion, elle la guide, elle la laisse respirer.\n\n"
-    "Violet est aussi un personnage qui évolue pour de vrai. On ne la suit pas juste pour ses scènes fortes, mais pour la manière dont elle apprend le langage, le deuil, la guerre, la tendresse et le sens des mots. "
-    "L'anime prend un sujet simple en apparence et le traite avec une élégance rare, sans surjouer, sans bruit inutile, sans effet facile. "
-    "C'est justement pour ça qu'il reste au-dessus : il touche fort sans forcer, et il reste en tête longtemps après le générique."
-)
+_VIOLET_BEST_REPLIES = [
+    (
+        "Violet Evergarden.\n\n"
+        "Parce que c'est l'un des rares animés qui ne se contente pas d'être beau : il est précis, sincère et construit avec une vraie retenue. "
+        "Chaque épisode a une intention claire, chaque silence compte, chaque lettre dit quelque chose de plus grand que le dialogue lui-même. "
+        "L'animation n'est jamais là pour faire joli gratuitement : elle sert l'émotion, elle la guide, elle la laisse respirer.\n\n"
+        "Violet est aussi un personnage qui évolue pour de vrai. On ne la suit pas juste pour ses scènes fortes, mais pour la manière dont elle apprend le langage, le deuil, la guerre, la tendresse et le sens des mots. "
+        "L'anime prend un sujet simple en apparence et le traite avec une élégance rare, sans surjouer, sans bruit inutile, sans effet facile. "
+        "C'est justement pour ça qu'il reste au-dessus : il touche fort sans forcer, et il reste en tête longtemps après le générique."
+    ),
+    (
+        "Violet Evergarden.\n\n"
+        "C'est un anime qui a une vraie maîtrise de son rythme. Il ne cherche pas à en faire trop, il ne force jamais son émotion, et c'est justement ce contrôle qui le rend puissant. "
+        "L'écriture des lettres, la mise en scène, la musique, les regards, tout travaille dans le même sens. Tu sens que chaque détail a été pensé pour toucher juste.\n\n"
+        "Et surtout, Violet n'est pas juste un personnage stylé : c'est une progression humaine complète. "
+        "On la voit apprendre à comprendre les autres, puis à se comprendre elle-même. "
+        "Peu d'animes arrivent à faire aussi beau, aussi propre et aussi bouleversant sans se disperser."
+    ),
+    (
+        "Violet Evergarden.\n\n"
+        "Parce que c'est le genre d'anime qui reste élégant du début à la fin. Pas de remplissage inutile, pas de bruit pour masquer le vide, juste une direction claire et une émotion parfaitement tenue. "
+        "Quand un épisode frappe, il frappe pour de vrai, parce qu'il a préparé son impact avec précision.\n\n"
+        "Le fond est aussi fort que la forme : deuil, guerre, langage, mémoire, amour, tout est traité avec une justesse rare. "
+        "C'est beau sans être creux, triste sans être manipulateur, et marquant sans forcer. C'est exactement pour ça que Violet Evergarden passe devant les autres."
+    ),
+]
 
 
 def _violet_best_gif_path() -> str | None:
@@ -93,15 +111,16 @@ def _violet_best_gif_path() -> str | None:
 
 async def _reply_violet_best_anime(message: discord.Message) -> bool:
     gif_path = _violet_best_gif_path()
+    reply = random.choice(_VIOLET_BEST_REPLIES)
     try:
         if gif_path:
             await message.reply(
-                _VIOLET_BEST_REPLY,
+                reply,
                 file=discord.File(gif_path, filename=os.path.basename(gif_path)),
                 mention_author=False,
             )
         else:
-            await message.reply(_VIOLET_BEST_REPLY, mention_author=False)
+            await message.reply(reply, mention_author=False)
         return True
     except Exception as exc:
         print(f"[VIOLET BEST] envoi impossible: {exc}")
