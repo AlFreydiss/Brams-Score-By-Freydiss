@@ -95,6 +95,21 @@ export default function FeedPage() {
     return unsub
   }, [discordId])
 
+  // Polling de secours (12s) : si le realtime ne délivre pas, on détecte quand même
+  // les nouveaux posts et on affiche la pastille — sans toucher au scroll en cours.
+  useEffect(() => {
+    if (loading) return
+    const t = setInterval(async () => {
+      if (document.hidden) return
+      const { posts: list, error } = await getFeed(null)
+      if (error || !Array.isArray(list)) return
+      let n = 0
+      for (const p of list) { if (!p.reply_to && p.author_id !== discordId && !seen.current.has(p.id)) n++ }
+      if (n > 0) setNewCount(c => Math.max(c, n))
+    }, 12000)
+    return () => clearInterval(t)
+  }, [discordId, loading])
+
   async function loadMore() {
     if (loadingMore.current || !hasMore || !posts.length) return
     loadingMore.current = true

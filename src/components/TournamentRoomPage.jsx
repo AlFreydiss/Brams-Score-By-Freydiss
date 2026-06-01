@@ -129,8 +129,11 @@ export default function TournamentRoomPage() {
     if (!code) return
     refresh(code)
     const unsub = subscribeTournamentRoom(code, () => refresh(code))
+    // Polling de secours (2.5s) en plus du realtime : joueurs/votes/état toujours
+    // à jour sans recharger, même si l'abonnement Postgres Changes ne délivre pas.
+    const poll = setInterval(() => refresh(code), 2500)
     const ping = setInterval(() => touchTournamentPlayer(code, ident.userId), 25000)
-    return () => { unsub(); clearInterval(ping) }
+    return () => { unsub(); clearInterval(poll); clearInterval(ping) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [code])
 
