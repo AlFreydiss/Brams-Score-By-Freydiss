@@ -461,6 +461,9 @@ export default function TournamentRoomPage() {
         {/* DUEL EN COURS — openings empilés (haut / bas) + sidebar votes */}
         {room.status === 'playing' && current && (
           <div>
+            {/* Fond persistant : collage flouté des 2 openings du duel → remplit toute
+                la page (fini la zone noire à droite), même quand aucun ne joue. */}
+            <DuelAmbient left={current.match.left} right={current.match.right} />
             {/* Petit header joli : round + numéro de duel */}
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '7px 16px', borderRadius: 999, background: 'rgba(157,23,77,.12)', border: `1px solid ${PINK}44` }}>
@@ -488,12 +491,13 @@ export default function TournamentRoomPage() {
                   isMobile={isMobile}
                   vertical
                   multiplayer
-                  multiplayerStatus={`${totalV}/${players.length} ont voté · ${myVote ? 'en attente des autres…' : 'à toi de voter !'}`}
+                  multiplayerStatus={null}
                 />
               </div>
               {/* Sidebar : votes + mini-bracket */}
               <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'column', gap: 14, width: isMobile ? '100%' : 'auto' }}>
-                <VotersPanel players={players} votes={votes} match={current.match} isMobile={isMobile} />
+                <VotersPanel players={players} votes={votes} match={current.match} isMobile={isMobile}
+                  voteStatus={`${totalV}/${players.length} ont voté · ${myVote ? 'en attente des autres…' : 'à toi de voter !'}`} />
                 <BracketPanel rounds={rounds} currentId={current.match.id} isMobile={isMobile} />
               </div>
             </div>
@@ -520,7 +524,7 @@ function DuelAmbient({ left, right }) {
   const tile = (p, pos) => p?.ytId ? (
     <img src={`https://img.youtube.com/vi/${p.ytId}/hqdefault.jpg`} alt="" style={{
       position: 'absolute', left: 0, right: 0, height: '58%', objectFit: 'cover',
-      filter: 'blur(38px) saturate(1.15) brightness(.5)', opacity: 0.42, ...pos,
+      filter: 'blur(22px) saturate(1.25) brightness(.6)', opacity: 0.5, ...pos,
     }} />
   ) : null
   return (
@@ -582,7 +586,7 @@ function BracketPanel({ rounds, currentId, isMobile }) {
 }
 
 // ── Panneau des votants (qui a voté quoi, en temps réel) ───────────────────────
-function VotersPanel({ players, votes, match, isMobile }) {
+function VotersPanel({ players, votes, match, isMobile, voteStatus }) {
   const voteBy = {}
   for (const v of votes) voteBy[String(v.user_id)] = v.side
   const votedCount = players.filter(p => voteBy[String(p.user_id)]).length
@@ -593,10 +597,13 @@ function VotersPanel({ players, votes, match, isMobile }) {
       border: '1px solid rgba(255,255,255,.10)', borderRadius: 16, padding: 16,
       boxShadow: '0 12px 40px rgba(0,0,0,.35)',
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: voteStatus ? 8 : 14 }}>
         <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.12em', color: PINK_L, textTransform: 'uppercase' }}>Votes</span>
         <span style={{ fontSize: 12, color: 'rgba(255,255,255,.5)' }}>{votedCount}/{players.length}</span>
       </div>
+      {voteStatus && (
+        <div style={{ fontSize: 11, color: 'rgba(255,255,255,.5)', textAlign: 'center', padding: '6px 8px', marginBottom: 12, borderRadius: 8, background: 'rgba(255,255,255,.04)', border: `1px solid rgba(255,255,255,.07)` }}>{voteStatus}</div>
+      )}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
         {players.map(p => {
           const side = voteBy[String(p.user_id)]

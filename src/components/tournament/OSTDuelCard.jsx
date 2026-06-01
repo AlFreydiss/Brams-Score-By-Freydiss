@@ -212,18 +212,21 @@ export default function OSTDuelCard({
               <button
                 onClick={e => { e.stopPropagation(); onListen() }}
                 style={{
-                  background: 'rgba(0,0,0,.5)', backdropFilter: 'blur(8px)',
-                  border: `1px solid ${isPlaying ? accent : 'rgba(255,255,255,.18)'}`,
-                  borderRadius: 20, padding: '4px 10px',
-                  color: isPlaying ? accent : 'rgba(255,255,255,.55)',
-                  fontSize: 10, cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', gap: 4,
-                  fontWeight: 700, letterSpacing: '0.06em',
+                  background: isPlaying ? hexToRgba(accent, 0.18) : 'rgba(0,0,0,.55)', backdropFilter: 'blur(8px)',
+                  border: `1.5px solid ${isPlaying ? accent : 'rgba(255,255,255,.28)'}`,
+                  borderRadius: 24, padding: '9px 18px',
+                  color: isPlaying ? accent : '#fff',
+                  fontSize: 13, cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', gap: 7,
+                  fontWeight: 800, letterSpacing: '0.04em',
+                  boxShadow: isPlaying ? `0 4px 18px ${hexToRgba(accent, 0.35)}` : '0 4px 14px rgba(0,0,0,.4)',
                   transition: 'all 0.2s',
                 }}
+                onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.06)' }}
+                onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)' }}
               >
-                <span style={{ fontSize: 9 }}>{isPlaying ? '■' : '▶'}</span>
-                {isPlaying ? 'Stop' : ''}
+                <span style={{ fontSize: 15 }}>{isPlaying ? '■' : '▶'}</span>
+                {isPlaying ? 'Stop' : 'Écouter'}
               </button>
             )}
           </div>
