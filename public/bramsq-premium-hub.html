@@ -1,0 +1,1648 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bramsq • La communauté anime &amp; manga d'exception</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&amp;family=Playfair+Display:wght@700&amp;display=swap');
+        
+        :root {
+            --accent: #a78bfa;
+        }
+        
+        body {
+            font-family: 'Inter', system_ui, -apple-system, sans-serif;
+        }
+        
+        .premium-font {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+        }
+
+        .glass {
+            background: rgba(255,255,255,0.04);
+            backdrop-filter: blur(24px);
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .luxury-shadow {
+            box-shadow: 0 10px 30px -15px rgb(0 0 0 / 0.3),
+                        0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+
+        .section-header {
+            font-size: 1.35rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            color: #f1f1f3;
+        }
+
+        .anime-card {
+            transition: transform 0.4s cubic-bezier(0.23, 1.0, 0.32, 1), 
+                        box-shadow 0.4s cubic-bezier(0.23, 1.0, 0.32, 1),
+                        border-color 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .anime-card:hover {
+            transform: translateY(-8px) scale(1.015);
+            box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.4);
+            border-color: rgba(167, 139, 250, 0.15);
+        }
+
+        .anime-card .cover {
+            transition: transform 0.6s cubic-bezier(0.23, 1.0, 0.32, 1);
+        }
+        
+        .anime-card:hover .cover {
+            transform: scale(1.08);
+        }
+
+        .glass-overlay {
+            background: linear-gradient(to top, rgba(17, 17, 20, 0.92) 15%, transparent 55%);
+            opacity: 0;
+            transition: opacity 0.35s cubic-bezier(0.23, 1.0, 0.32, 1);
+        }
+        
+        .anime-card:hover .glass-overlay {
+            opacity: 1;
+        }
+
+        .nav-item {
+            transition: all 0.2s cubic-bezier(0.23, 1.0, 0.32, 1);
+        }
+        
+        .nav-item:hover {
+            color: #a78bfa;
+            transform: translateX(3px);
+        }
+        
+        .nav-item.active {
+            color: #a78bfa;
+            background: rgba(167, 139, 250, 0.08);
+            border-radius: 8px;
+        }
+
+        .genre-pill {
+            transition: all 0.2s cubic-bezier(0.23, 1.0, 0.32, 1);
+            font-weight: 500;
+            font-size: 0.75rem;
+            letter-spacing: -.01em;
+        }
+        
+        .genre-pill.active {
+            background-color: #a78bfa;
+            color: white;
+            border-color: #a78bfa;
+            box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.15);
+        }
+
+        .horizontal-scroll {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        
+        .horizontal-scroll::-webkit-scrollbar {
+            display: none;
+        }
+
+        .premium-card {
+            transition: all 0.4s cubic-bezier(0.23, 1.0, 0.32, 1);
+        }
+
+        .luxury-hover {
+            transition: all 0.3s cubic-bezier(0.23, 1.0, 0.32, 1);
+        }
+
+        .luxury-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 25px -8px rgb(0 0 0 / 0.25);
+        }
+
+        .cinematic-hero {
+            background: linear-gradient(to bottom, rgba(10,10,15,0.15) 0%, rgba(10,10,15,0.65) 100%);
+        }
+
+        .subtle-glow {
+            box-shadow: 0 0 12px rgba(167, 139, 250, 0.25);
+        }
+
+        .anime-grid {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255,255,255,0.08) transparent;
+        }
+
+        .modal {
+            animation: modalEnter 0.4s cubic-bezier(0.23, 1.0, 0.32, 1) backwards;
+        }
+
+        @keyframes modalEnter {
+            from {
+                opacity: 0;
+                transform: scale(0.96) translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .section-fade {
+            animation: sectionFade 0.7s cubic-bezier(0.23, 1.0, 0.32, 1) backwards;
+        }
+
+        .premium-stat {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .elegant-scrollbar::-webkit-scrollbar {
+            height: 5px;
+        }
+        
+        .elegant-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+        }
+        
+        .bramsq-accent {
+            color: #a78bfa;
+        }
+        
+        .card-hover-overlay {
+            transition: all 0.35s cubic-bezier(0.23, 1.0, 0.32, 1);
+        }
+        
+        .mini-progress {
+            box-shadow: 0 0 0 1px rgba(255,255,255,0.1);
+        }
+    </style>
+</head>
+<body class="bg-[#0a0a0f] text-white">
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <div class="w-72 bg-[#0a0a0f] border-r border-white/10 flex flex-col fixed h-full z-50">
+            <!-- Logo -->
+            <div class="px-8 pt-8 pb-6">
+                <div class="flex items-center gap-x-3">
+                    <div class="w-9 h-9 rounded-2xl bg-gradient-to-br from-[#a78bfa] to-violet-500 flex items-center justify-center shadow-inner">
+                        <span class="text-white font-bold text-3xl tracking-tighter">B</span>
+                    </div>
+                    <div>
+                        <span class="premium-font text-3xl font-semibold tracking-tighter">Bramsq</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Navigation -->
+            <div class="px-3 flex-1">
+                <nav class="space-y-1">
+                    <a href="#" class="nav-item active flex items-center gap-x-3 px-4 py-3 text-sm font-medium">
+                        <i class="w-5 text-center fa-solid fa-home"></i>
+                        <span>Accueil</span>
+                    </a>
+                    <a href="#" class="nav-item flex items-center gap-x-3 px-4 py-3 text-sm font-medium text-white/70 hover:text-white">
+                        <i class="w-5 text-center fa-solid fa-compass"></i>
+                        <span>Découvrir</span>
+                    </a>
+                    <a href="#" class="nav-item flex items-center gap-x-3 px-4 py-3 text-sm font-medium text-white/70 hover:text-white">
+                        <i class="w-5 text-center fa-solid fa-chart-line"></i>
+                        <span>Top Charts</span>
+                    </a>
+                    <a href="#" class="nav-item flex items-center gap-x-3 px-4 py-3 text-sm font-medium text-white/70 hover:text-white">
+                        <i class="w-5 text-center fa-solid fa-book"></i>
+                        <span>Ma Bibliothèque</span>
+                    </a>
+                    <a href="#" class="nav-item flex items-center gap-x-3 px-4 py-3 text-sm font-medium text-white/70 hover:text-white">
+                        <i class="w-5 text-center fa-solid fa-users"></i>
+                        <span>Communauté</span>
+                    </a>
+                    <a href="#" class="nav-item flex items-center gap-x-3 px-4 py-3 text-sm font-medium text-white/70 hover:text-white">
+                        <i class="w-5 text-center fa-solid fa-comments"></i>
+                        <span>Forums</span>
+                    </a>
+                </nav>
+                
+                <!-- Communauté en direct -->
+                <div class="mt-8 px-4">
+                    <div class="flex items-center justify-between mb-3 px-1">
+                        <div class="text-xs font-semibold tracking-widest text-white/50">COMMUNAUTÉ EN DIRECT</div>
+                    </div>
+                    <div class="glass rounded-3xl p-4">
+                        <div class="flex items-center gap-x-3">
+                            <div class="flex -space-x-1">
+                                <div class="w-6 h-6 rounded-full bg-zinc-700 ring-1 ring-[#0a0a0f] overflow-hidden"><img src="https://picsum.photos/id/1005/24/24" class="w-full h-full object-cover"></div>
+                                <div class="w-6 h-6 rounded-full bg-zinc-700 ring-1 ring-[#0a0a0f] overflow-hidden"><img src="https://picsum.photos/id/1011/24/24" class="w-full h-full object-cover"></div>
+                                <div class="w-6 h-6 rounded-full bg-zinc-700 ring-1 ring-[#0a0a0f] overflow-hidden"><img src="https://picsum.photos/id/1009/24/24" class="w-full h-full object-cover"></div>
+                            </div>
+                            <div>
+                                <div class="text-sm font-semibold">12 847</div>
+                                <div class="text-[10px] text-white/50 -mt-0.5">membres en ligne</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- User -->
+            <div class="p-4 border-t border-white/10 mt-auto">
+                <div class="flex items-center gap-x-3 px-2">
+                    <div class="w-9 h-9 rounded-2xl overflow-hidden ring-2 ring-white/10">
+                        <img src="https://picsum.photos/id/1005/36/36" alt="Avatar" class="w-full h-full object-cover">
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="font-semibold text-sm">Léna Moreau</div>
+                        <div class="flex items-center gap-x-1.5">
+                            <div class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
+                            <span class="text-emerald-400 text-xs font-medium">En ligne</span>
+                        </div>
+                    </div>
+                    <button onclick="showUserMenu()" class="text-white/40 hover:text-white/70 transition-colors">
+                        <i class="fa-solid fa-ellipsis-vertical"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="flex-1 ml-72 flex flex-col">
+            
+            <!-- Topbar -->
+            <div class="h-[72px] border-b border-white/10 bg-[#0a0a0f]/80 backdrop-blur-2xl flex items-center px-8 z-40">
+                <div class="flex items-center justify-between w-full max-w-[1280px] mx-auto">
+                    <!-- Search -->
+                    <div class="flex-1 max-w-md relative group">
+                        <div class="glass flex items-center px-5 rounded-3xl h-11 border border-white/10 focus-within:border-white/20 transition-colors">
+                            <i class="fa-solid fa-search text-white/40 mr-3"></i>
+                            <input 
+                                id="search-input"
+                                type="text" 
+                                placeholder="Rechercher un anime, un manga..." 
+                                class="flex-1 bg-transparent border-none focus:outline-none text-sm placeholder:text-white/40"
+                                oninput="filterContent()"
+                                onfocus="showSearchSuggestions()"
+                            >
+                        </div>
+                        
+                        <!-- Live suggestions -->
+                        <div id="search-suggestions" class="hidden absolute top-12 left-0 w-full glass border border-white/10 rounded-3xl py-2 shadow-2xl z-50">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center gap-x-4">
+                        <!-- Notifications -->
+                        <div class="relative cursor-pointer" onclick="showNotifications()">
+                            <div class="w-10 h-10 flex items-center justify-center text-white/70 hover:text-white transition-colors">
+                                <i class="fa-solid fa-bell text-xl"></i>
+                            </div>
+                            <div class="absolute top-1.5 right-1.5 w-4 h-4 bg-[#a78bfa] text-[9px] flex items-center justify-center rounded-full font-bold ring-2 ring-[#0a0a0f]">7</div>
+                        </div>
+                        
+                        <!-- User avatar -->
+                        <div onclick="showUserMenu()" class="flex items-center gap-x-2 cursor-pointer">
+                            <div class="w-9 h-9 rounded-2xl overflow-hidden ring-2 ring-white/10">
+                                <img src="https://picsum.photos/id/1005/36/36" alt="Léna Moreau" class="w-full h-full object-cover">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Hero -->
+            <div class="h-[460px] relative flex items-end px-8 pb-9" 
+                 style="background-image: url('https://picsum.photos/id/1016/2000/1200'); background-size: cover; background-position: center;">
+                <div class="absolute inset-0 bg-gradient-to-b from-black/10 via-[#0a0a0f]/70 to-[#0a0a0f]"></div>
+                <div class="absolute inset-0 bg-gradient-to-r from-[#0a0a0f]/60 via-transparent to-transparent"></div>
+                
+                <div class="relative z-10 max-w-lg">
+                    <div class="flex items-center gap-x-2 mb-4">
+                        <div class="px-3 py-1 rounded-full bg-white/5 text-xs font-medium border border-white/10 flex items-center gap-x-1.5">
+                            <div class="w-1.5 h-1.5 bg-[#a78bfa] rounded-full animate-pulse"></div>
+                            <span class="text-white/70 text-[10px] font-semibold tracking-widest">SAISON 2026</span>
+                        </div>
+                    </div>
+                    
+                    <h1 class="premium-font text-6xl font-bold leading-none tracking-tighter mb-3">Bienvenue sur<br>Bramsq</h1>
+                    <p class="text-xl text-white/70 max-w-sm mb-7">La communauté anime &amp; manga d'exception. Curatée pour les vrais passionnés.</p>
+                    
+                    <div class="flex items-center gap-x-3">
+                        <button onclick="scrollToGallery()" 
+                                class="px-8 py-3.5 rounded-3xl bg-white text-black font-semibold text-sm flex items-center gap-x-2 hover:bg-white/90 transition-all active:scale-[0.985]">
+                            <span>Explorer maintenant</span>
+                        </button>
+                        
+                        <button onclick="showHeroTrailer()" 
+                                class="px-6 py-3.5 rounded-3xl glass border border-white/20 hover:bg-white/5 transition-all flex items-center gap-x-2 text-sm font-semibold">
+                            <i class="fa-solid fa-play mr-1"></i>
+                            <span>Voir la vidéo</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="absolute bottom-8 right-8 flex items-center gap-x-2 text-xs">
+                    <div class="px-3 py-1 rounded-2xl bg-black/40 border border-white/10 text-white/60 text-[10px] flex items-center gap-x-1.5 backdrop-blur-md">
+                        <i class="fa-solid fa-globe"></i>
+                        <span>248 392 membres</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Main Content -->
+            <div class="flex-1 overflow-auto px-8 py-8 max-w-[1280px] mx-auto w-full">
+                
+                <!-- Stats bar -->
+                <div class="flex items-center justify-between mb-8">
+                    <div class="flex items-center gap-x-8 text-sm">
+                        <div>
+                            <span class="font-semibold text-lg">248 392</span>
+                            <span class="text-white/40 ml-1">membres</span>
+                        </div>
+                        <div>
+                            <span class="font-semibold text-lg">1.4M</span>
+                            <span class="text-white/40 ml-1">discussions</span>
+                        </div>
+                        <div>
+                            <span class="font-semibold text-lg">87 412</span>
+                            <span class="text-white/40 ml-1">œuvres notées</span>
+                        </div>
+                    </div>
+                    
+                    <div class="text-xs px-3 py-1.5 rounded-3xl bg-white/5 border border-white/10 text-white/60 flex items-center">
+                        <i class="fa-solid fa-globe mr-2"></i>
+                        <span>87 pays représentés</span>
+                    </div>
+                </div>
+                
+                <!-- Filters -->
+                <div class="mb-7">
+                    <div class="flex items-center justify-between mb-3">
+                        <div>
+                            <span class="font-semibold text-xl">Explorez la collection</span>
+                        </div>
+                        <button onclick="resetFilters()" 
+                                class="text-xs px-4 py-2 flex items-center gap-x-2 text-white/60 hover:text-white transition-colors">
+                            <i class="fa-solid fa-undo text-xs"></i>
+                            <span class="font-medium">Réinitialiser</span>
+                        </button>
+                    </div>
+                    
+                    <!-- Genre pills -->
+                    <div class="flex flex-wrap gap-2" id="genre-pills">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+                
+                <!-- Top de la semaine -->
+                <div class="mb-10">
+                    <div class="flex items-baseline justify-between mb-4 px-1">
+                        <div>
+                            <span class="section-header">Top de la semaine</span>
+                            <span class="ml-3 text-xs px-2 py-1 bg-white/5 text-white/50 rounded-2xl font-medium">Semaine 6</span>
+                        </div>
+                        <button onclick="showAllTopWeek()" class="text-xs text-white/50 hover:text-white flex items-center gap-x-1 transition-colors">
+                            Voir tout <i class="fa-solid fa-arrow-right ml-1 text-xs"></i>
+                        </button>
+                    </div>
+                    
+                    <div id="top-week" class="flex gap-4 overflow-x-auto pb-4 elegant-scrollbar snap-x snap-mandatory">
+                        <!-- Populated dynamically by JS -->
+                    </div>
+                </div>
+                
+                <!-- Les plus aimés -->
+                <div class="mb-10">
+                    <div class="flex items-baseline justify-between mb-4 px-1">
+                        <span class="section-header">Les plus aimés</span>
+                        <button onclick="showAllLoved()" class="text-xs text-white/50 hover:text-white flex items-center gap-x-1 transition-colors">
+                            Voir tout <i class="fa-solid fa-arrow-right ml-1 text-xs"></i>
+                        </button>
+                    </div>
+                    
+                    <div id="most-loved" class="flex gap-4 overflow-x-auto pb-4 elegant-scrollbar snap-x snap-mandatory">
+                        <!-- Populated dynamically by JS -->
+                    </div>
+                </div>
+                
+                <!-- Nouveautés de la saison -->
+                <div class="mb-10">
+                    <div class="flex items-baseline justify-between mb-4 px-1">
+                        <span class="section-header">Nouveautés de la saison</span>
+                        <button onclick="showAllNew()" class="text-xs text-white/50 hover:text-white flex items-center gap-x-1 transition-colors">
+                            Voir tout <i class="fa-solid fa-arrow-right ml-1 text-xs"></i>
+                        </button>
+                    </div>
+                    
+                    <div id="new-season" class="flex gap-4 overflow-x-auto pb-4 elegant-scrollbar snap-x snap-mandatory">
+                        <!-- Populated dynamically by JS -->
+                    </div>
+                </div>
+                
+                <!-- Galerie complète -->
+                <div>
+                    <div class="flex items-center justify-between mb-4 px-1">
+                        <div class="flex items-center gap-x-3">
+                            <span class="section-header">Galerie complète</span>
+                            <span id="gallery-count" class="text-xs px-3 py-1 bg-white/5 text-white/60 rounded-3xl font-medium">243 œuvres</span>
+                        </div>
+                    </div>
+                    
+                    <div id="gallery-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+    
+    <!-- Detail Modal -->
+    <div id="detail-modal" onclick="if (event.target.id === 'detail-modal') closeModal()" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[999] flex items-center justify-center p-5">
+        <div onclick="event.stopImmediatePropagation()" class="glass w-full max-w-5xl rounded-3xl overflow-hidden border border-white/10 shadow-2xl max-h-[92vh] flex flex-col">
+            
+            <!-- Modal Header -->
+            <div class="px-8 pt-7 pb-5 flex items-center justify-between border-b border-white/10 bg-[#111114]">
+                <div class="flex items-center gap-x-3">
+                    <div id="modal-badge" class="px-3 py-1 text-xs font-semibold rounded-3xl flex items-center"></div>
+                </div>
+                <button onclick="closeModal()" class="w-9 h-9 flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 rounded-2xl transition-colors">
+                    <i class="fa-solid fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <div class="flex flex-col lg:flex-row flex-1 overflow-hidden">
+                
+                <!-- Poster -->
+                <div class="lg:w-2/5 xl:w-5/12 p-6 lg:p-8 flex-shrink-0">
+                    <div class="aspect-[3/4] w-full rounded-3xl overflow-hidden shadow-xl border border-white/10 relative">
+                        <img id="modal-poster" class="w-full h-full object-cover" alt="">
+                        <div class="absolute inset-0 bg-gradient-to-b from-transparent via-black/30 to-black/70"></div>
+                        
+                        <!-- Score on poster -->
+                        <div class="absolute bottom-5 left-5 flex items-center gap-x-1.5">
+                            <div class="flex items-center bg-black/60 backdrop-blur-md px-3 py-1 rounded-3xl">
+                                <i class="fa-solid fa-star text-amber-400 mr-1.5 text-sm"></i>
+                                <span id="modal-score" class="font-semibold text-lg"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Content -->
+                <div class="flex-1 px-8 pb-8 pt-2 lg:pt-8 overflow-auto">
+                    <div>
+                        <div id="modal-title" class="premium-font text-4xl font-bold leading-none tracking-tighter"></div>
+                        <div id="modal-original" class="text-white/50 mt-1 text-lg"></div>
+                    </div>
+                    
+                    <div class="flex items-center gap-x-3 mt-4">
+                        <div class="flex items-center text-sm">
+                            <span id="modal-year" class="font-medium"></span>
+                            <span class="mx-2 text-white/20">•</span>
+                            <span id="modal-type" class="text-white/70"></span>
+                        </div>
+                        
+                        <div class="px-3 py-0.5 bg-white/5 text-xs rounded-3xl font-medium flex items-center" id="modal-status"></div>
+                    </div>
+                    
+                    <div class="mt-5">
+                        <div class="flex items-center gap-x-1 text-sm mb-1">
+                            <span class="font-medium">Épisodes</span>
+                            <span id="modal-episodes" class="text-white/60 font-light"></span>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6">
+                        <div class="text-xs uppercase tracking-wider text-white/40 mb-2 font-semibold">Synopsis</div>
+                        <div id="modal-synopsis" class="text-white/90 leading-relaxed text-[0.95rem]"></div>
+                    </div>
+                    
+                    <div class="mt-7">
+                        <div class="text-xs uppercase tracking-wider text-white/40 mb-2.5 font-semibold">Genres</div>
+                        <div id="modal-genres" class="flex flex-wrap gap-1.5">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                    
+                    <!-- Community Reviews -->
+                    <div class="mt-8 pt-6 border-t border-white/10">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="text-xs uppercase tracking-wider text-white/40 font-semibold">Avis de la communauté</div>
+                            <div class="text-xs px-3 py-1 bg-white/5 rounded-3xl text-white/60">4.8/5 (2.4k avis)</div>
+                        </div>
+                        
+                        <div class="space-y-4" id="modal-reviews">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                    
+                    <!-- Actions -->
+                    <div class="mt-8 flex flex-wrap gap-3">
+                        <button onclick="watchTrailer()" 
+                                class="flex-1 min-w-[150px] px-7 py-3.5 rounded-3xl bg-white text-black font-semibold text-sm flex items-center justify-center gap-x-2 hover:bg-white/90 active:scale-[0.985] transition-all">
+                            <i class="fa-solid fa-play mr-1"></i>
+                            <span>Bande-annonce</span>
+                        </button>
+                        
+                        <button onclick="toggleFavoriteFromModal()" id="modal-fav-btn"
+                                class="flex-1 min-w-[150px] px-7 py-3.5 rounded-3xl glass border border-white/20 text-sm font-semibold flex items-center justify-center gap-x-2 hover:bg-white/5 active:scale-[0.985] transition-all">
+                            <i class="fa-solid fa-heart mr-1.5"></i>
+                            <span id="modal-fav-text">Ajouter à ma liste</span>
+                        </button>
+                        
+                        <button onclick="rateAnime()" 
+                                class="px-6 py-3.5 rounded-3xl glass border border-white/20 text-sm font-semibold flex items-center justify-center gap-x-2 hover:bg-white/5 active:scale-[0.985] transition-all">
+                            <i class="fa-solid fa-star"></i>
+                            <span>Noter</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Toast -->
+    <div id="toast" class="hidden fixed bottom-6 right-6 glass border border-white/10 px-5 py-3 rounded-3xl shadow-2xl flex items-center gap-x-3 z-[999]">
+        <div class="text-sm font-medium" id="toast-message"></div>
+    </div>
+    
+    <script>
+        // Tailwind configuration
+        function initializeTailwind() {
+            document.documentElement.style.setProperty('--accent', '#a78bfa');
+            
+            tailwind.config = {
+                theme: {
+                    extend: {
+                        fontFamily: {
+                            'premium': ['Inter', 'system-ui', 'sans-serif']
+                        }
+                    }
+                }
+            };
+        }
+        
+        // Data - 23 premium anime/manga
+        let animes = [
+            {
+                id: 1,
+                titre: "Solo Leveling",
+                titreOriginal: "Na Honjaman Level Up",
+                poster: "https://picsum.photos/seed/solo-leveling/300/400",
+                score: 9.4,
+                genres: ["Action", "Fantasy", "Aventure"],
+                année: 2024,
+                type: "Anime",
+                episodes: 12,
+                statut: "Terminé",
+                synopsisCourt: "Sung Jin-Woo devient le chasseur le plus puissant du monde.",
+                synopsisLong: "Dans un monde où des portails relient la Terre à des donjons remplis de monstres, Sung Jin-Woo, le plus faible des chasseurs, découvre un système qui lui permet de devenir infiniment plus fort.",
+                isNew: true,
+                userProgress: 100
+            },
+            {
+                id: 2,
+                titre: "Jujutsu Kaisen",
+                titreOriginal: "Jujutsu Kaisen",
+                poster: "https://picsum.photos/seed/jujutsu-kaisen/300/400",
+                score: 9.1,
+                genres: ["Action", "Surnaturel", "Drame"],
+                année: 2020,
+                type: "Anime",
+                episodes: 47,
+                statut: "En cours",
+                synopsisCourt: "Yuji Itadori rejoint l'école de sorcellerie pour combattre les fléaux.",
+                synopsisLong: "Yuji Itadori avale un doigt de Ryomen Sukuna et devient l'hôte du roi des fléaux. Il intègre alors l'école de sorcellerie de Jujutsu pour apprendre à contrôler ce pouvoir et protéger l'humanité.",
+                isNew: false,
+                userProgress: 87
+            },
+            {
+                id: 3,
+                titre: "L'Attaque des Titans",
+                titreOriginal: "Shingeki no Kyojin",
+                poster: "https://picsum.photos/seed/attack-titan/300/400",
+                score: 9.6,
+                genres: ["Action", "Drame", "Surnaturel"],
+                année: 2013,
+                type: "Anime",
+                episodes: 89,
+                statut: "Terminé",
+                synopsisCourt: "Eren Yeager jure de détruire tous les Titans qui ont dévoré sa mère.",
+                synopsisLong: "Dans un monde où l'humanité vit terrée derrière d'immenses murailles pour échapper aux Titans, Eren Yeager jure de les exterminer tous après la chute du mur Maria.",
+                isNew: false,
+                userProgress: 100
+            },
+            {
+                id: 4,
+                titre: "Demon Slayer",
+                titreOriginal: "Kimetsu no Yaiba",
+                poster: "https://picsum.photos/seed/demon-slayer/300/400",
+                score: 9.0,
+                genres: ["Action", "Surnaturel", "Aventure"],
+                année: 2019,
+                type: "Anime",
+                episodes: 55,
+                statut: "En cours",
+                synopsisCourt: "Tanjiro devient chasseur de démons pour sauver sa sœur Nezuko.",
+                synopsisLong: "Après le massacre de sa famille, Tanjiro Kamado décide de devenir un chasseur de démons pour sauver sa sœur transformée en démon et venger ses proches.",
+                isNew: false,
+                userProgress: 64
+            },
+            {
+                id: 5,
+                titre: "Frieren",
+                titreOriginal: "Sousou no Frieren",
+                poster: "https://picsum.photos/seed/frieren/300/400",
+                score: 9.3,
+                genres: ["Drame", "Fantasy", "Aventure"],
+                année: 2023,
+                type: "Anime",
+                episodes: 28,
+                statut: "Terminé",
+                synopsisCourt: "L'elfe Frieren part en voyage pour comprendre les humains.",
+                synopsisLong: "Dix ans après avoir vaincu le roi démon avec ses compagnons, l'elfe Frieren décide de partir à l'aventure pour comprendre la valeur du temps et des liens humains.",
+                isNew: true,
+                userProgress: 42
+            },
+            {
+                id: 6,
+                titre: "Spy × Family",
+                titreOriginal: "Spy × Family",
+                poster: "https://picsum.photos/seed/spy-family/300/400",
+                score: 8.8,
+                genres: ["Action", "Comédie", "Drame"],
+                année: 2022,
+                type: "Anime",
+                episodes: 37,
+                statut: "En cours",
+                synopsisCourt: "Un espion, une tueuse et une télépathe forment une famille.",
+                synopsisLong: "L'agent Twilight doit former une fausse famille pour accomplir sa mission. Il adopte une petite fille télépathe et épouse une tueuse à gages sans le savoir.",
+                isNew: false,
+                userProgress: 91
+            },
+            {
+                id: 7,
+                titre: "Chainsaw Man",
+                titreOriginal: "Chainsaw Man",
+                poster: "https://picsum.photos/seed/chainsaw-man/300/400",
+                score: 8.9,
+                genres: ["Action", "Surnaturel", "Drame"],
+                année: 2022,
+                type: "Anime",
+                episodes: 12,
+                statut: "Terminé",
+                synopsisCourt: "Denji devient le Chasseur de Démons à la tronçonneuse.",
+                synopsisLong: "Après avoir vendu son âme à un démon pour survivre, Denji devient le Chainsaw Man et doit maintenant combattre les démons tout en essayant de vivre une vie normale.",
+                isNew: false,
+                userProgress: 100
+            },
+            {
+                id: 8,
+                titre: "Violet Evergarden",
+                titreOriginal: "Violet Evergarden",
+                poster: "https://picsum.photos/seed/violet-evergarden/300/400",
+                score: 9.2,
+                genres: ["Drame", "Romance", "Slice of Life"],
+                année: 2018,
+                type: "Anime",
+                episodes: 13,
+                statut: "Terminé",
+                synopsisCourt: "Une ancienne soldat apprend à comprendre les émotions humaines.",
+                synopsisLong: "Violet Evergarden, une jeune femme qui a perdu ses bras au combat, devient une Auto Memory Doll pour écrire des lettres et découvrir la signification des mots qu'elle a reçus.",
+                isNew: false,
+                userProgress: 78
+            },
+            {
+                id: 9,
+                titre: "Kaiju No. 8",
+                titreOriginal: "Kaiju No. 8",
+                poster: "https://picsum.photos/seed/kaiju-no8/300/400",
+                score: 8.7,
+                genres: ["Action", "Science-Fiction", "Aventure"],
+                année: 2024,
+                type: "Anime",
+                episodes: 12,
+                statut: "Terminé",
+                synopsisCourt: "Kafka Hibino se transforme en Kaiju et rejoint la force de défense.",
+                synopsisLong: "Kafka Hibino, un homme de 32 ans qui rêve de rejoindre la force de défense contre les Kaiju, se transforme en Kaiju après avoir été infecté par un parasite mystérieux.",
+                isNew: true,
+                userProgress: 55
+            },
+            {
+                id: 10,
+                titre: "Les Carnets de l'Apothicaire",
+                titreOriginal: "Kusuriya no Hitorigoto",
+                poster: "https://picsum.photos/seed/apothecary-diaries/300/400",
+                score: 9.0,
+                genres: ["Drame", "Mystère", "Romance"],
+                année: 2023,
+                type: "Anime",
+                episodes: 24,
+                statut: "En cours",
+                synopsisCourt: "Maomao résout des mystères dans le palais impérial.",
+                synopsisLong: "Maomao, une jeune apothicaire, est emmenée de force au palais impérial où elle utilise ses connaissances médicales pour résoudre des intrigues et des empoisonnements.",
+                isNew: false,
+                userProgress: 69
+            },
+            {
+                id: 11,
+                titre: "One Piece",
+                titreOriginal: "One Piece",
+                poster: "https://picsum.photos/seed/one-piece/300/400",
+                score: 9.5,
+                genres: ["Action", "Aventure", "Comédie"],
+                année: 1999,
+                type: "Anime",
+                episodes: 1100,
+                statut: "En cours",
+                synopsisCourt: "Monkey D. Luffy cherche le One Piece pour devenir le roi des pirates.",
+                synopsisLong: "Monkey D. Luffy rêve de devenir le roi des pirates en trouvant le légendaire trésor One Piece. Il part en mer avec son équipage pour vivre les plus grandes aventures.",
+                isNew: false,
+                userProgress: 34
+            },
+            {
+                id: 12,
+                titre: "My Hero Academia",
+                titreOriginal: "Boku no Hero Academia",
+                poster: "https://picsum.photos/seed/my-hero-academia/300/400",
+                score: 8.5,
+                genres: ["Action", "Science-Fiction", "Aventure"],
+                année: 2016,
+                type: "Anime",
+                episodes: 138,
+                statut: "Terminé",
+                synopsisCourt: "Izuku Midoriya devient le plus grand héros du monde.",
+                synopsisLong: "Dans un monde où 80% de la population possède des super-pouvoirs, Izuku Midoriya, un adolescent sans pouvoir, hérite du One For All de son idole et entre à l'école des héros.",
+                isNew: false,
+                userProgress: 100
+            },
+            {
+                id: 13,
+                titre: "Blue Lock",
+                titreOriginal: "Blue Lock",
+                poster: "https://picsum.photos/seed/blue-lock/300/400",
+                score: 8.6,
+                genres: ["Sport", "Drame", "Action"],
+                année: 2022,
+                type: "Anime",
+                episodes: 24,
+                statut: "Terminé",
+                synopsisCourt: "Un programme extrême pour créer le meilleur buteur du monde.",
+                synopsisLong: "Après une défaite humiliante en Coupe du monde, le Japon lance le projet Blue Lock : enfermer 300 jeunes attaquants dans un centre pour créer le meilleur buteur égoïste du monde.",
+                isNew: false,
+                userProgress: 81
+            },
+            {
+                id: 14,
+                titre: "Fire Force",
+                titreOriginal: "Enen no Shouboutai",
+                poster: "https://picsum.photos/seed/fire-force/300/400",
+                score: 8.3,
+                genres: ["Action", "Surnaturel", "Science-Fiction"],
+                année: 2019,
+                type: "Anime",
+                episodes: 48,
+                statut: "Terminé",
+                synopsisCourt: "Shinra combat les Infernaux avec la 8e brigade des pompiers.",
+                synopsisLong: "Dans un monde où des humains s'enflamment spontanément, Shinra Kusakabe intègre la 8e brigade des pompiers spéciaux pour comprendre les mystères de la combustion.",
+                isNew: false,
+                userProgress: 76
+            },
+            {
+                id: 15,
+                titre: "Black Clover",
+                titreOriginal: "Black Clover",
+                poster: "https://picsum.photos/seed/black-clover/300/400",
+                score: 8.1,
+                genres: ["Action", "Fantasy", "Aventure"],
+                année: 2017,
+                type: "Anime",
+                episodes: 170,
+                statut: "Terminé",
+                synopsisCourt: "Asta, un jeune sans magie, rêve de devenir le Roi Mage.",
+                synopsisLong: "Dans un monde où la magie est tout, Asta, un orphelin sans aucun pouvoir magique, se bat avec son épée anti-magie pour prouver sa valeur et devenir le Roi Mage.",
+                isNew: false,
+                userProgress: 93
+            },
+            {
+                id: 16,
+                titre: "Rent a Girlfriend",
+                titreOriginal: "Kanojo, Okarishimasu",
+                poster: "https://picsum.photos/seed/rent-girlfriend/300/400",
+                score: 7.6,
+                genres: ["Romance", "Comédie", "Drame"],
+                année: 2020,
+                type: "Anime",
+                episodes: 36,
+                statut: "En cours",
+                synopsisCourt: "Kazuya loue une petite amie pour oublier son ex.",
+                synopsisLong: "Après une rupture douloureuse, Kazuya Kinoshita loue une petite amie sur une application. Ce qui devait être une simple transaction se transforme en une histoire beaucoup plus complexe.",
+                isNew: false,
+                userProgress: 49
+            },
+            {
+                id: 17,
+                titre: "Bunny Girl Senpai",
+                titreOriginal: "Seishun Buta Yarou",
+                poster: "https://picsum.photos/seed/bunny-girl/300/400",
+                score: 8.4,
+                genres: ["Romance", "Drame", "Surnaturel"],
+                année: 2018,
+                type: "Anime",
+                episodes: 13,
+                statut: "Terminé",
+                synopsisCourt: "Sakuta aide les filles touchées par le syndrome de la puberté.",
+                synopsisLong: "Sakuta Azusagawa rencontre une mystérieuse fille portant des oreilles de lapin. Il découvre qu'elle est victime du syndrome de la puberté, une maladie qui affecte les adolescents.",
+                isNew: false,
+                userProgress: 100
+            },
+            {
+                id: 18,
+                titre: "Dr. Stone",
+                titreOriginal: "Dr. Stone",
+                poster: "https://picsum.photos/seed/dr-stone/300/400",
+                score: 8.8,
+                genres: ["Science-Fiction", "Aventure", "Action"],
+                année: 2019,
+                type: "Anime",
+                episodes: 57,
+                statut: "Terminé",
+                synopsisCourt: "Senku reconstruit la civilisation grâce à la science.",
+                synopsisLong: "Des millénaires après que toute l'humanité a été pétrifiée, le génie Senku Ishigami se réveille et décide de reconstruire la civilisation en utilisant la science.",
+                isNew: false,
+                userProgress: 67
+            },
+            {
+                id: 19,
+                titre: "The Promised Neverland",
+                titreOriginal: "Yakusoku no Neverland",
+                poster: "https://picsum.photos/seed/promised-neverland/300/400",
+                score: 8.7,
+                genres: ["Thriller", "Mystère", "Drame"],
+                année: 2019,
+                type: "Anime",
+                episodes: 23,
+                statut: "Terminé",
+                synopsisCourt: "Des orphelins découvrent l'horrible vérité sur leur foyer.",
+                synopsisLong: "Emma, Norman et Ray vivent dans un orphelinat idyllique jusqu'au jour où ils découvrent que leur foyer n'est qu'une ferme d'élevage pour des démons.",
+                isNew: false,
+                userProgress: 100
+            },
+            {
+                id: 20,
+                titre: "Dragon Ball Super",
+                titreOriginal: "Dragon Ball Super",
+                poster: "https://picsum.photos/seed/dragon-ball-super/300/400",
+                score: 8.2,
+                genres: ["Action", "Aventure", "Science-Fiction"],
+                année: 2015,
+                type: "Anime",
+                episodes: 131,
+                statut: "Terminé",
+                synopsisCourt: "Goku continue de repousser ses limites contre de nouveaux ennemis.",
+                synopsisLong: "Après la défaite de Majin Buu, Goku et ses amis affrontent de nouveaux ennemis venus d'autres univers, repoussant toujours plus loin les limites du possible.",
+                isNew: false,
+                userProgress: 88
+            },
+            {
+                id: 21,
+                titre: "Violet Evergarden: Le Film",
+                titreOriginal: "Violet Evergarden: The Movie",
+                poster: "https://picsum.photos/seed/violet-movie/300/400",
+                score: 9.1,
+                genres: ["Drame", "Romance", "Slice of Life"],
+                année: 2020,
+                type: "Film",
+                episodes: 1,
+                statut: "Terminé",
+                synopsisCourt: "Violet continue sa quête pour comprendre les sentiments humains.",
+                synopsisLong: "Dans ce film qui conclut la série, Violet Evergarden poursuit son voyage en tant qu'Auto Memory Doll tout en cherchant à comprendre la signification des mots qu'elle a reçus.",
+                isNew: false,
+                userProgress: 95
+            },
+            {
+                id: 22,
+                titre: "The Apothecary Diaries S2",
+                titreOriginal: "Kusuriya no Hitorigoto",
+                poster: "https://picsum.photos/seed/apothecary-s2/300/400",
+                score: 9.1,
+                genres: ["Drame", "Mystère", "Romance"],
+                année: 2025,
+                type: "Anime",
+                episodes: 24,
+                statut: "En cours",
+                synopsisCourt: "Maomao continue d'enquêter dans le palais impérial.",
+                synopsisLong: "La deuxième saison suit Maomao alors qu'elle approfondit ses enquêtes dans le palais impérial et découvre de nouveaux mystères politiques et médicaux.",
+                isNew: true,
+                userProgress: 23
+            },
+            {
+                id: 23,
+                titre: "Love Through A Prism",
+                titreOriginal: "Love Through A Prism",
+                poster: "https://picsum.photos/seed/love-prism/300/400",
+                score: 8.0,
+                genres: ["Romance", "Drame", "Science-Fiction"],
+                année: 2024,
+                type: "Anime",
+                episodes: 12,
+                statut: "Terminé",
+                synopsisCourt: "Deux âmes connectées à travers des dimensions parallèles.",
+                synopsisLong: "Dans un monde où les émotions peuvent être amplifiées par des prismes mystérieux, deux jeunes gens se retrouvent liés à travers des réalités alternatives.",
+                isNew: false,
+                userProgress: 100
+            }
+        ]
+        
+        let favorites = JSON.parse(localStorage.getItem('bramsq_favorites')) || []
+        let activeGenres = new Set()
+        
+        // Initialize Tailwind and app
+        function init() {
+            initializeTailwind()
+            renderGenrePills()
+            renderHorizontalSections()
+            renderGallery(animes)
+            setupKeyboardShortcuts()
+            updateFavoriteButtons()
+            
+            // Initial search suggestions
+            const searchInput = document.getElementById('search-input')
+            searchInput.addEventListener('focus', showSearchSuggestions)
+            
+            // Demo: show welcome toast after a delay
+            setTimeout(() => {
+                showToast("Bienvenue sur Bramsq. Votre bibliothèque est prête.")
+            }, 5200)
+        }
+        
+        function initializeTailwind() {
+            // Already handled by script tag + inline styles
+        }
+        
+        // Render genre pills
+        function renderGenrePills() {
+            const container = document.getElementById('genre-pills')
+            container.innerHTML = ''
+            
+            const allGenres = new Set()
+            animes.forEach(anime => {
+                anime.genres.forEach(g => allGenres.add(g))
+            })
+            
+            const sortedGenres = Array.from(allGenres).sort()
+            
+            sortedGenres.forEach(genre => {
+                const pill = document.createElement('button')
+                pill.className = `genre-pill px-4 py-1.5 text-xs rounded-3xl border border-white/10 hover:border-white/30 bg-white/5 text-white/80 flex-shrink-0 ${activeGenres.has(genre) ? 'active !bg-[#a78bfa] !text-white !border-[#a78bfa]' : ''}`
+                pill.textContent = genre
+                
+                pill.onclick = () => {
+                    if (activeGenres.has(genre)) {
+                        activeGenres.delete(genre)
+                    } else {
+                        activeGenres.add(genre)
+                    }
+                    updateGenrePills()
+                    filterContent()
+                }
+                
+                container.appendChild(pill)
+            })
+        }
+        
+        function updateGenrePills() {
+            const pills = document.querySelectorAll('#genre-pills button')
+            pills.forEach(pill => {
+                const genre = pill.textContent
+                if (activeGenres.has(genre)) {
+                    pill.classList.add('active', '!bg-[#a78bfa]', '!text-white', '!border-[#a78bfa]')
+                    pill.classList.remove('bg-white/5', 'text-white/80')
+                } else {
+                    pill.classList.remove('active', '!bg-[#a78bfa]', '!text-white', '!border-[#a78bfa]')
+                    pill.classList.add('bg-white/5', 'text-white/80')
+                }
+            })
+        }
+        
+        // Render horizontal sections
+        function renderHorizontalSections() {
+            // Top de la semaine (sorted by score)
+            const topWeek = [...animes].sort((a, b) => b.score - a.score).slice(0, 8)
+            renderHorizontalCards('top-week', topWeek, true)
+            
+            // Les plus aimés (highest progress or score)
+            const mostLoved = [...animes].sort((a, b) => {
+                const progressA = a.userProgress || 0
+                const progressB = b.userProgress || 0
+                return progressB - progressA || b.score - a.score
+            }).slice(0, 8)
+            renderHorizontalCards('most-loved', mostLoved)
+            
+            // Nouveautés de la saison
+            const newSeason = animes.filter(a => a.isNew).slice(0, 8)
+            renderHorizontalCards('new-season', newSeason)
+        }
+        
+        function renderHorizontalCards(containerId, animeList, showRank = false) {
+            const container = document.getElementById(containerId)
+            container.innerHTML = ''
+            
+            animeList.forEach((anime, index) => {
+                const card = createAnimeCard(anime, true, showRank ? index + 1 : null)
+                container.appendChild(card)
+            })
+        }
+        
+        // Create a single anime card (used everywhere)
+        function createAnimeCard(anime, isHorizontal = false, rank = null) {
+            const card = document.createElement('div')
+            card.className = `anime-card bg-[#111114] border border-white/10 rounded-3xl overflow-hidden flex-shrink-0 cursor-pointer group ${isHorizontal ? 'w-[178px]' : 'w-full'}` 
+            
+            const progress = anime.userProgress || Math.floor(Math.random() * 100)
+            const isFav = favorites.includes(anime.id)
+            
+            let rankHTML = ''
+            if (rank) {
+                rankHTML = `
+                    <div class="absolute top-3 left-3 z-20 w-6 h-6 flex items-center justify-center">
+                        <div class="w-6 h-6 bg-gradient-to-br from-[#a78bfa] to-violet-400 text-[10px] font-bold flex items-center justify-center rounded-full shadow-inner">
+                            #${rank}
+                        </div>
+                    </div>
+                `
+            }
+            
+            const newBadge = anime.isNew ? 
+                `<div class="absolute top-3 right-3 z-20 px-2 py-0.5 text-[9px] font-bold tracking-wider bg-white/90 text-black rounded-full flex items-center justify-center" style="font-size: 8.5px; padding-top: 1px;">
+                    NOUVEAU
+                </div>` : ''
+            
+            card.innerHTML = `
+                <div class="relative">
+                    <!-- Cover -->
+                    <div class="relative aspect-[3/4] overflow-hidden">
+                        <img src="${anime.poster}" class="cover w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.07]" alt="${anime.titre}">
+                        
+                        <!-- Gradient overlay -->
+                        <div class="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/70"></div>
+                        
+                        ${rankHTML}
+                        ${newBadge}
+                        
+                        <!-- Mini progress ring (premium touch on hub cards) -->
+                        <div class="absolute bottom-2.5 right-2.5 z-30">
+                            <div class="w-8 h-8 relative flex items-center justify-center">
+                                <svg class="w-8 h-8 -rotate-90" viewBox="0 0 36 36">
+                                    <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="3"></path>
+                                    <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" 
+                                          stroke="#a78bfa" stroke-width="3" stroke-dasharray="${progress}, 100"></path>
+                                </svg>
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <span class="text-[8.5px] font-bold text-white/90">${progress}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Info -->
+                    <div class="p-3.5">
+                        <div class="flex items-start justify-between gap-x-2">
+                            <div class="flex-1 min-w-0">
+                                <div class="font-semibold text-[13.5px] leading-tight tracking-[-0.01em] line-clamp-1">${anime.titre}</div>
+                                <div class="text-[10px] text-white/50 mt-px">${anime.année}</div>
+                            </div>
+                            
+                            <div class="flex items-center gap-x-1 text-right flex-shrink-0">
+                                <i class="fa-solid fa-star text-amber-400 text-[10px]"></i>
+                                <span class="font-semibold text-sm">${anime.score}</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Genres -->
+                        <div class="flex gap-1 mt-2 flex-wrap">
+                            ${anime.genres.slice(0, 2).map(g => 
+                                `<span class="text-[9.5px] px-2 py-px bg-white/5 text-white/70 rounded-full">${g}</span>`
+                            ).join('')}
+                        </div>
+                        
+                        <!-- Action row -->
+                        <div class="flex items-center justify-between mt-3">
+                            <button onclick="event.stopImmediatePropagation(); addToFavorites(${anime.id}, this)" 
+                                    class="flex items-center text-xs gap-x-1 transition-colors ${isFav ? 'text-[#a78bfa]' : 'text-white/60 hover:text-white/90'}">
+                                <i class="fa-solid fa-heart ${isFav ? 'text-[#a78bfa]' : ''}"></i>
+                            </button>
+                            
+                            <div class="text-[9.5px] text-white/40 font-light">${anime.episodes} ép.</div>
+                        </div>
+                    </div>
+                </div>
+            `
+            
+            // Click to open modal
+            card.onclick = () => showModal(anime)
+            
+            return card
+        }
+        
+        // Render full gallery
+        function renderGallery(filteredAnimes) {
+            const container = document.getElementById('gallery-grid')
+            container.innerHTML = ''
+            
+            if (filteredAnimes.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full py-10 text-center text-white/40">
+                        <i class="fa-solid fa-search text-2xl mb-3 opacity-40"></i>
+                        <div>Aucun résultat trouvé.</div>
+                    </div>
+                `
+                return
+            }
+            
+            filteredAnimes.forEach(anime => {
+                const card = createAnimeCard(anime, false)
+                container.appendChild(card)
+            })
+            
+            // Update count
+            document.getElementById('gallery-count').textContent = `${filteredAnimes.length} œuvres`
+        }
+        
+        // Filter content (search + genres)
+        function filterContent() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase().trim()
+            
+            let filtered = animes
+            
+            // Search filter
+            if (searchTerm.length > 0) {
+                filtered = filtered.filter(anime => 
+                    anime.titre.toLowerCase().includes(searchTerm) || 
+                    anime.titreOriginal.toLowerCase().includes(searchTerm) ||
+                    anime.genres.some(g => g.toLowerCase().includes(searchTerm))
+                )
+            }
+            
+            // Genre filter
+            if (activeGenres.size > 0) {
+                filtered = filtered.filter(anime => 
+                    anime.genres.some(g => activeGenres.has(g))
+                )
+            }
+            
+            renderGallery(filtered)
+        }
+        
+        function resetFilters() {
+            activeGenres.clear()
+            document.getElementById('search-input').value = ''
+            
+            // Reset pills
+            const pills = document.querySelectorAll('#genre-pills button')
+            pills.forEach(p => p.classList.remove('active', '!bg-[#a78bfa]', '!text-white', '!border-[#a78bfa]'))
+            
+            renderGallery(animes)
+        }
+        
+        // Show modal
+        function showModal(anime) {
+            const modal = document.getElementById('detail-modal')
+            
+            // Fill content
+            document.getElementById('modal-poster').src = anime.poster
+            document.getElementById('modal-title').innerHTML = anime.titre
+            document.getElementById('modal-original').innerHTML = anime.titreOriginal
+            document.getElementById('modal-year').innerHTML = anime.année
+            document.getElementById('modal-type').innerHTML = anime.type
+            document.getElementById('modal-episodes').innerHTML = `${anime.episodes} épisodes`
+            document.getElementById('modal-synopsis').innerHTML = anime.synopsisLong
+            
+            // Score
+            document.getElementById('modal-score').innerHTML = `${anime.score} <span class="text-xs font-normal text-white/50">/10</span>`
+            
+            // Status
+            const statusEl = document.getElementById('modal-status')
+            statusEl.innerHTML = anime.statut
+            statusEl.className = `px-3 py-0.5 text-xs rounded-3xl font-medium flex items-center ${anime.statut === 'Terminé' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'}`
+            
+            // Genres
+            const genresContainer = document.getElementById('modal-genres')
+            genresContainer.innerHTML = ''
+            anime.genres.forEach(genre => {
+                const span = document.createElement('span')
+                span.className = `px-3 py-1 text-xs rounded-3xl bg-white/5 border border-white/10`
+                span.textContent = genre
+                genresContainer.appendChild(span)
+            })
+            
+            // Reviews (fake but premium)
+            const reviewsContainer = document.getElementById('modal-reviews')
+            reviewsContainer.innerHTML = `
+                <div class="flex gap-3">
+                    <div class="w-7 h-7 flex-shrink-0 rounded-full overflow-hidden"><img src="https://picsum.photos/id/1005/28/28" class="w-full h-full object-cover"></div>
+                    <div class="flex-1">
+                        <div class="flex items-center justify-between">
+                            <div><span class="font-medium text-sm">Sofia Laurent</span> <span class="text-[10px] text-white/40 ml-1">il y a 2 jours</span></div>
+                            <div class="flex text-amber-400 text-xs"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star-half-stroke"></i></div>
+                        </div>
+                        <div class="text-xs text-white/70 mt-0.5 leading-snug">"Une des meilleures œuvres de l'année. L'animation est à couper le souffle."</div>
+                    </div>
+                </div>
+                
+                <div class="flex gap-3">
+                    <div class="w-7 h-7 flex-shrink-0 rounded-full overflow-hidden"><img src="https://picsum.photos/id/1009/28/28" class="w-full h-full object-cover"></div>
+                    <div class="flex-1">
+                        <div class="flex items-center justify-between">
+                            <div><span class="font-medium text-sm">Kaito Nakamura</span> <span class="text-[10px] text-white/40 ml-1">il y a 1 semaine</span></div>
+                            <div class="flex text-amber-400 text-xs"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+                        </div>
+                        <div class="text-xs text-white/70 mt-0.5 leading-snug">"Histoire profondément émouvante. Les thèmes abordés sont traités avec une maturité rare."</div>
+                    </div>
+                </div>
+            `
+            
+            // Favorite button state
+            const favBtn = document.getElementById('modal-fav-btn')
+            const favText = document.getElementById('modal-fav-text')
+            const isFav = favorites.includes(anime.id)
+            
+            favBtn.onclick = () => toggleFavoriteFromModal(anime.id, favBtn, favText)
+            
+            if (isFav) {
+                favBtn.classList.add('!bg-[#a78bfa]/10', '!border-[#a78bfa]/30')
+                favText.innerHTML = `<i class="fa-solid fa-heart mr-1.5 text-[#a78bfa]"></i> Dans ma liste`
+            } else {
+                favBtn.classList.remove('!bg-[#a78bfa]/10', '!border-[#a78bfa]/30')
+                favText.innerHTML = `<i class="fa-solid fa-heart mr-1.5"></i> Ajouter à ma liste`
+            }
+            
+            // Show modal
+            modal.classList.remove('hidden')
+            modal.style.display = 'flex'
+            
+            // Store current anime for actions
+            modal.dataset.currentAnimeId = anime.id
+        }
+        
+        function closeModal() {
+            const modal = document.getElementById('detail-modal')
+            modal.style.display = 'none'
+            modal.classList.add('hidden')
+        }
+        
+        function watchTrailer() {
+            const modal = document.getElementById('detail-modal')
+            const animeId = parseInt(modal.dataset.currentAnimeId)
+            const anime = animes.find(a => a.id === animeId)
+            
+            closeModal()
+            
+            // Fake trailer experience
+            showToast(`Bande-annonce de "${anime.titre}" en cours de lecture...`)
+            
+            setTimeout(() => {
+                const toast = document.createElement('div')
+                toast.className = `fixed bottom-6 right-6 glass border border-white/10 px-5 py-3 rounded-3xl shadow-2xl flex items-center gap-x-3 z-[999] max-w-xs`
+                toast.innerHTML = `
+                    <div class="flex items-center gap-x-3">
+                        <div>
+                            <div class="font-medium text-sm">Bande-annonce terminée</div>
+                            <div class="text-xs text-white/50">Merci d'avoir regardé</div>
+                        </div>
+                    </div>
+                `
+                document.body.appendChild(toast)
+                
+                setTimeout(() => {
+                    toast.style.transition = 'all 0.3s ease'
+                    toast.style.opacity = '0'
+                    setTimeout(() => toast.remove(), 300)
+                }, 2200)
+            }, 4200)
+        }
+        
+        function toggleFavoriteFromModal(animeId, btn, textEl) {
+            if (!animeId) {
+                animeId = parseInt(document.getElementById('detail-modal').dataset.currentAnimeId)
+            }
+            
+            const index = favorites.indexOf(animeId)
+            const isAdding = index === -1
+            
+            if (isAdding) {
+                favorites.push(animeId)
+                if (btn) {
+                    btn.classList.add('!bg-[#a78bfa]/10', '!border-[#a78bfa]/30')
+                    textEl.innerHTML = `<i class="fa-solid fa-heart mr-1.5 text-[#a78bfa]"></i> Dans ma liste`
+                }
+                showToast("Ajouté à votre bibliothèque")
+            } else {
+                favorites.splice(index, 1)
+                if (btn) {
+                    btn.classList.remove('!bg-[#a78bfa]/10', '!border-[#a78bfa]/30')
+                    textEl.innerHTML = `<i class="fa-solid fa-heart mr-1.5"></i> Ajouter à ma liste`
+                }
+                showToast("Retiré de votre bibliothèque")
+            }
+            
+            localStorage.setItem('bramsq_favorites', JSON.stringify(favorites))
+            updateFavoriteButtons()
+            
+            // Refresh gallery if open
+            const searchTerm = document.getElementById('search-input').value
+            if (searchTerm || activeGenres.size > 0) {
+                filterContent()
+            } else {
+                renderGallery(animes)
+            }
+        }
+        
+        function addToFavorites(animeId, heartElement) {
+            event.stopImmediatePropagation()
+            
+            const index = favorites.indexOf(animeId)
+            const isAdding = index === -1
+            
+            if (isAdding) {
+                favorites.push(animeId)
+                heartElement.innerHTML = `<i class="fa-solid fa-heart text-[#a78bfa]"></i>`
+                showToast("Ajouté à votre bibliothèque")
+            } else {
+                favorites.splice(index, 1)
+                heartElement.innerHTML = `<i class="fa-solid fa-heart"></i>`
+                showToast("Retiré de votre bibliothèque")
+            }
+            
+            localStorage.setItem('bramsq_favorites', JSON.stringify(favorites))
+            
+            // Refresh all visible cards
+            renderGallery(animes)
+            renderHorizontalSections()
+        }
+        
+        function updateFavoriteButtons() {
+            // Update any existing heart icons in the DOM
+            document.querySelectorAll('.anime-card').forEach(card => {
+                // This is handled during render, so we re-render key sections
+            })
+        }
+        
+        function showToast(message) {
+            const toast = document.getElementById('toast')
+            const messageEl = document.getElementById('toast-message')
+            
+            messageEl.textContent = message
+            toast.style.display = 'flex'
+            toast.classList.remove('hidden')
+            
+            setTimeout(() => {
+                toast.style.transition = 'all 0.3s cubic-bezier(0.23, 1.0, 0.32, 1)'
+                toast.style.opacity = '0'
+                
+                setTimeout(() => {
+                    toast.style.opacity = '1'
+                    toast.style.transition = ''
+                    toast.style.display = 'none'
+                    toast.classList.add('hidden')
+                }, 280)
+            }, 2600)
+        }
+        
+        function showNotifications() {
+            showToast("Vous avez 7 nouvelles notifications")
+        }
+        
+        function showUserMenu() {
+            const menu = document.createElement('div')
+            menu.className = `fixed bottom-20 right-6 glass border border-white/10 rounded-3xl shadow-2xl w-56 py-2 z-[999] text-sm`
+            menu.innerHTML = `
+                <div class="px-4 py-2.5 border-b border-white/10">
+                    <div class="font-medium">Léna Moreau</div>
+                    <div class="text-xs text-white/50">Membre depuis 2022</div>
+                </div>
+                <div class="py-1">
+                    <a href="#" class="px-4 py-2.5 hover:bg-white/5 flex items-center gap-x-2 text-sm"><i class="fa-solid fa-user w-4"></i> Profil</a>
+                    <a href="#" class="px-4 py-2.5 hover:bg-white/5 flex items-center gap-x-2 text-sm"><i class="fa-solid fa-cog w-4"></i> Paramètres</a>
+                    <a href="#" class="px-4 py-2.5 hover:bg-white/5 flex items-center gap-x-2 text-sm"><i class="fa-solid fa-history w-4"></i> Historique</a>
+                </div>
+                <div class="border-t border-white/10 pt-1">
+                    <a href="#" onclick="this.closest('.fixed').remove()" class="px-4 py-2.5 hover:bg-white/5 flex items-center gap-x-2 text-sm text-red-400"><i class="fa-solid fa-sign-out-alt w-4"></i> Se déconnecter</a>
+                </div>
+            `
+            document.body.appendChild(menu)
+            
+            setTimeout(() => {
+                document.addEventListener('click', function handler(e) {
+                    if (!menu.contains(e.target)) {
+                        menu.remove()
+                        document.removeEventListener('click', handler)
+                    }
+                }, { once: true })
+            }, 10)
+        }
+        
+        function showHeroTrailer() {
+            showToast("Ouverture de la bande-annonce officielle de Bramsq...")
+            
+            setTimeout(() => {
+                const videoModal = document.createElement('div')
+                videoModal.className = `fixed inset-0 bg-black/90 flex items-center justify-center z-[1000]`
+                videoModal.innerHTML = `
+                    <div class="max-w-4xl w-full px-5">
+                        <div class="flex justify-between items-center mb-4 px-1">
+                            <div class="font-semibold">Bande-annonce officielle 2026</div>
+                            <button class="text-white/70 hover:text-white text-xl" onclick="this.closest('.fixed').remove()">×</button>
+                        </div>
+                        <div class="aspect-video bg-zinc-900 rounded-3xl flex items-center justify-center border border-white/10">
+                            <div class="text-center">
+                                <div class="mx-auto w-16 h-16 rounded-full bg-white/10 flex items-center justify-center mb-3">
+                                    <i class="fa-solid fa-play text-3xl ml-0.5 text-white/80"></i>
+                                </div>
+                                <div class="text-sm text-white/60">Vidéo de démonstration • 1:42</div>
+                            </div>
+                        </div>
+                        <div class="text-center mt-3 text-xs text-white/40">Cette vidéo est une simulation pour la démonstration premium.</div>
+                    </div>
+                `
+                document.body.appendChild(videoModal)
+            }, 900)
+        }
+        
+        function scrollToGallery() {
+            document.getElementById('gallery-grid').scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'center' 
+            })
+        }
+        
+        function rateAnime() {
+            const modal = document.getElementById('detail-modal')
+            const animeId = parseInt(modal.dataset.currentAnimeId)
+            const anime = animes.find(a => a.id === animeId)
+            
+            closeModal()
+            
+            setTimeout(() => {
+                const ratingDiv = document.createElement('div')
+                ratingDiv.className = `fixed bottom-6 right-6 glass border border-white/10 px-6 py-5 rounded-3xl shadow-2xl z-[999] w-72`
+                ratingDiv.innerHTML = `
+                    <div class="font-semibold mb-3 text-sm">Noter "${anime.titre}"</div>
+                    
+                    <div class="flex justify-between text-2xl mb-4 px-1">
+                        <i class="fa-solid fa-star text-amber-400 cursor-pointer hover:scale-125 transition-transform" onclick="submitRating(5, this)"></i>
+                        <i class="fa-solid fa-star text-amber-400 cursor-pointer hover:scale-125 transition-transform" onclick="submitRating(4, this)"></i>
+                        <i class="fa-solid fa-star text-amber-400 cursor-pointer hover:scale-125 transition-transform" onclick="submitRating(3, this)"></i>
+                        <i class="fa-solid fa-star text-amber-400 cursor-pointer hover:scale-125 transition-transform" onclick="submitRating(2, this)"></i>
+                        <i class="fa-solid fa-star text-amber-400 cursor-pointer hover:scale-125 transition-transform" onclick="submitRating(1, this)"></i>
+                    </div>
+                    
+                    <div class="text-xs text-white/50">Merci pour votre avis. Il aide la communauté.</div>
+                `
+                document.body.appendChild(ratingDiv)
+                
+                setTimeout(() => {
+                    ratingDiv.onclick = (e) => {
+                        if (e.target.tagName === 'I') return
+                        ratingDiv.remove()
+                    }
+                }, 200)
+            }, 600)
+        }
+        
+        function submitRating(score, starElement) {
+            const container = starElement.parentElement.parentElement
+            container.innerHTML = `
+                <div class="text-center py-2">
+                    <div class="text-emerald-400">Merci ! Note enregistrée : ${score}/5</div>
+                    <div class="text-[10px] text-white/50 mt-1">Votre contribution a été prise en compte.</div>
+                </div>
+            `
+            
+            setTimeout(() => {
+                container.style.transition = 'all 0.3s ease'
+                container.style.opacity = '0'
+                setTimeout(() => container.remove(), 300)
+            }, 1800)
+        }
+        
+        // Keyboard shortcuts
+        function setupKeyboardShortcuts() {
+            document.addEventListener('keydown', function(e) {
+                if (e.key === '/' && document.activeElement.tagName === 'BODY') {
+                    e.preventDefault()
+                    const search = document.getElementById('search-input')
+                    search.focus()
+                    search.select()
+                }
+                
+                if (e.key === 'Escape') {
+                    const modal = document.getElementById('detail-modal')
+                    if (!modal.classList.contains('hidden') && modal.style.display !== 'none') {
+                        closeModal()
+                    } else {
+                        // Close suggestions if open
+                        const suggestions = document.getElementById('search-suggestions')
+                        if (suggestions) suggestions.classList.add('hidden')
+                    }
+                }
+            })
+            
+            // "/" focus hint
+            console.log('%c[Bramsq] Appuyez sur "/" pour rechercher', 'color:#555')
+        }
+        
+        function filterContent() {
+            // Called from search input
+            const searchTerm = document.getElementById('search-input').value.toLowerCase().trim()
+            
+            let filtered = animes
+            
+            if (searchTerm.length > 0) {
+                filtered = filtered.filter(anime => 
+                    anime.titre.toLowerCase().includes(searchTerm) || 
+                    anime.titreOriginal.toLowerCase().includes(searchTerm) ||
+                    anime.genres.some(g => g.toLowerCase().includes(searchTerm))
+                )
+            }
+            
+            if (activeGenres.size > 0) {
+                filtered = filtered.filter(anime => 
+                    anime.genres.some(g => activeGenres.has(g))
+                )
+            }
+            
+            renderGallery(filtered)
+        }
+        
+        // Bonus: Show all buttons for horizontal sections
+        function showAllTopWeek() {
+            const topWeek = [...animes].sort((a, b) => b.score - a.score)
+            renderGallery(topWeek)
+            document.getElementById('gallery-grid').scrollIntoView({ behavior: 'smooth' })
+        }
+        
+        function showAllLoved() {
+            const loved = [...animes].sort((a, b) => (b.userProgress || 0) - (a.userProgress || 0))
+            renderGallery(loved)
+            document.getElementById('gallery-grid').scrollIntoView({ behavior: 'smooth' })
+        }
+        
+        function showAllNew() {
+            const news = animes.filter(a => a.isNew)
+            renderGallery(news)
+            document.getElementById('gallery-grid').scrollIntoView({ behavior: 'smooth' })
+        }
+        
+        // Initialize everything
+        window.onload = function() {
+            init()
+            
+            // Make sure favorites are reflected
+            setTimeout(() => {
+                const favs = document.querySelectorAll('.fa-heart')
+                favs.forEach(el => {
+                    const card = el.closest('.anime-card')
+                    if (card) {
+                        const id = parseInt(card.getAttribute('data-id')) || 0
+                        if (favorites.includes(id)) {
+                            el.classList.add('text-[#a78bfa]')
+                        }
+                    }
+                })
+            }, 1200)
+            
+            // Easter egg: press "b" for Bramsq mode
+            document.addEventListener('keypress', function(e) {
+                if (e.key.toLowerCase() === 'b') {
+                    document.body.style.transition = 'filter 0.8s ease'
+                    document.body.style.filter = 'saturate(1.3) contrast(1.05)'
+                    setTimeout(() => {
+                        document.body.style.filter = 'none'
+                    }, 1400)
+                }
+            })
+            
+            console.log('%c[Bramsq] Interface premium chargée avec succès.', 'color:#666')
+        }
+        
+        // Expose some functions for console testing (dev only)
+        window.Bramsq = {
+            showModal: (id) => {
+                const anime = animes.find(a => a.id === id)
+                if (anime) showModal(anime)
+            },
+            resetFavorites: () => {
+                localStorage.removeItem('bramsq_favorites')
+                favorites = []
+                location.reload()
+            }
+        }
+    </script>
+</body>
+</html>
