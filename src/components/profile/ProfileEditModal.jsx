@@ -37,8 +37,9 @@ export default function ProfileEditModal({ data, settings, onClose, onSaved }) {
   const [error,      setError]      = useState(null)
   const [equipBusy,  setEquipBusy]  = useState(null)
 
-  // Fonds d'opening possédés (équipables).
-  const bgItems = (shopData?.inventory || []).filter(i => i?.shop_items?.reward_type === 'opening_background')
+  // Fonds d'opening possédés ET disponibles (vidéo R2 présente dans le catalogue).
+  const bgItems = (shopData?.inventory || []).filter(i =>
+    i?.shop_items?.reward_type === 'opening_background' && getBgById(i.item_id)?.videoUrl)
   const equippedItemId = bgItems.find(i => i.equipped)?.item_id || null
 
   async function onBanner(e) {

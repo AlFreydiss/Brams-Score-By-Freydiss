@@ -55,6 +55,7 @@ export default function ProfilePage() {
   const [editing,     setEditing]     = useState(false)
   const [avatarOpen,  setAvatarOpen]  = useState(false)
   const [followModal, setFollowModal] = useState(null) // 'followers' | 'following' | null
+  const [soundOn,     setSoundOn]     = useState(false) // son du fond d'opening
 
   // Masque le fond global (le profil rend le sien) tant qu'on est sur la page.
   useEffect(() => {
@@ -73,9 +74,15 @@ export default function ProfilePage() {
           bloqué). Rendu par le profil lui-même → fiable, indépendant du global. */}
       {heroBg && (
         <div className="pfx-page-bg" aria-hidden>
-          <OpeningBgMedia bg={heroBg} className="pfx-page-bg-media" />
+          <OpeningBgMedia bg={heroBg} className="pfx-page-bg-media" muted={!soundOn} />
           <div className="pfx-page-bg-veil" />
         </div>
+      )}
+      {heroBg && (
+        <button type="button" className="pfx-sound-toggle" onClick={() => setSoundOn(s => !s)}
+          title={soundOn ? 'Couper le son' : 'Activer le son'} aria-label="Son du fond">
+          {soundOn ? '🔊' : '🔇'}
+        </button>
       )}
 
       <Navbar />

@@ -561,11 +561,22 @@
   position: relative; border-radius: 22px; overflow: hidden;
   isolation: isolate; animation: pfxRise .5s cubic-bezier(.22,1,.36,1) both;
 }
-/* Voile doux pour la lisibilité du texte par-dessus la vidéo (côté gauche). */
+/* Voile léger : laisse VOIR le fond animé dans le hero, juste un soupçon de
+   contraste sous le texte (le veil plein écran assure déjà la lisibilité). */
 .pfx-ig-scrim {
   position: absolute; inset: 0; z-index: 0; pointer-events: none;
-  background: linear-gradient(100deg, rgba(8,9,13,0.82) 0%, rgba(8,9,13,0.55) 42%, rgba(8,9,13,0.12) 78%, transparent 100%);
+  background: linear-gradient(100deg, rgba(8,9,13,0.34) 0%, rgba(8,9,13,0.14) 45%, transparent 75%);
 }
+
+/* Bouton son du fond d'opening (flottant bas-droite) */
+.pfx-sound-toggle {
+  position: fixed; right: 18px; bottom: 18px; z-index: 30;
+  width: 46px; height: 46px; border-radius: 50%; cursor: pointer; font-size: 19px;
+  border: 1px solid var(--line-2); background: rgba(10,12,16,0.7); backdrop-filter: blur(10px);
+  display: flex; align-items: center; justify-content: center;
+  transition: background .18s, transform .15s;
+}
+.pfx-sound-toggle:hover { background: rgba(10,12,16,0.9); transform: scale(1.06); }
 .pfx-ig-backdrop { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
 .pfx-ig-backdrop-fallback {
   position: absolute; inset: 0;

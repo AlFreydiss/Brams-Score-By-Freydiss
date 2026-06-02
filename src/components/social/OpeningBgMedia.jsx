@@ -8,7 +8,7 @@ import { useState, useEffect, useRef } from 'react'
 // flou) que pour la bannière du hero (net). Rend `null` si aucun média valide.
 // stillOnly : ignore videoUrl et affiche une image figée (évite un 2e décodage
 // vidéo quand un autre élément joue déjà la même vidéo).
-export default function OpeningBgMedia({ bg, className, style, stillOnly = false }) {
+export default function OpeningBgMedia({ bg, className, style, stillOnly = false, muted = true }) {
   const [imgSrc, setImgSrc] = useState(null)
   const [fallback, setFallback] = useState(false)
   const [videoFailed, setVideoFailed] = useState(false)
@@ -22,6 +22,14 @@ export default function OpeningBgMedia({ bg, className, style, stillOnly = false
     if (bg.ytId) { setImgSrc(`https://img.youtube.com/vi/${bg.ytId}/maxresdefault.jpg`); return }
     setImgSrc(null)
   }, [bg])
+
+  // Synchronise le mute quand l'utilisateur (dé)active le son sans remonter la vidéo.
+  useEffect(() => {
+    const el = videoRef.current
+    if (!el) return
+    el.muted = muted
+    if (!muted) { const p = el.play?.(); if (p?.catch) p.catch(() => {}) }
+  }, [muted])
 
   if (!bg) return null
   const useVideo = Boolean(bg.videoUrl) && !videoFailed && !stillOnly
@@ -38,13 +46,13 @@ export default function OpeningBgMedia({ bg, className, style, stillOnly = false
       ref={el => {
         videoRef.current = el
         // React n'applique pas toujours `muted` sur le DOM → l'autoplay est alors
-        // bloqué et la vidéo reste un cadre noir. On force le mute puis play().
-        if (el) { el.muted = true; el.defaultMuted = true; const p = el.play?.(); if (p?.catch) p.catch(() => {}) }
+        // bloqué et la vidéo reste un cadre noir. On force l'état muet voulu + play().
+        if (el) { el.muted = muted; el.defaultMuted = muted; const p = el.play?.(); if (p?.catch) p.catch(() => {}) }
       }}
       className={className}
       src={bg.videoUrl}
-      autoPlay muted loop playsInline preload="auto"
-      onLoadedData={e => { e.currentTarget.muted = true; const p = e.currentTarget.play?.(); if (p?.catch) p.catch(() => {}) }}
+      autoPlay muted={muted} loop playsInline preload="auto"
+      onLoadedData={e => { e.currentTarget.muted = muted; const p = e.currentTarget.play?.(); if (p?.catch) p.catch(() => {}) }}
       onError={() => setVideoFailed(true)}
       style={style}
     />
