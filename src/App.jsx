@@ -271,6 +271,14 @@ export default function App() {
   const onOpenMhaFromMon = () => { setMonUniversOpen(false); setReturnToMon(true); setMhaOpen(true) }
   const onOpenOnepieceFromMon = () => { setMonUniversOpen(false); setReturnToMon(true); setOnepieceOpen(true) }
 
+  // Fermeture d'une page média : si on y est arrivé depuis Mon Univers, on y retourne ;
+  // sinon on retombe sur AnimeHub (et jamais sur le hero/home).
+  const closeMedia = (setter) => () => {
+    setter(false)
+    if (returnToMon) { setReturnToMon(false); setMonUniversOpen(true) }
+    else setAnimeHubOpen(true)
+  }
+
   // Ferme tous les overlays anime/média quand on change de page (sinon un overlay
   // ouvert reste affiché par-dessus la nouvelle route — ex. DBS par-dessus Messages —
   // et donne l'impression qu'il faut actualiser).
@@ -519,26 +527,26 @@ export default function App() {
           <AuthGuard onClose={() => setAnimeHubOpen(false)} feature="les animés & scans" />
         )
       )}
-      {onepieceOpen && <OnePiecePage onClose={() => { setOnepieceOpen(false); setAnimeHubOpen(true) }} />}
-      {tpnOpen     && <TpnPage     onClose={() => { setTpnOpen(false);     setAnimeHubOpen(true) }} />}
-      {drstoneOpen && <DrStonePage onClose={() => { setDrstoneOpen(false); setAnimeHubOpen(true) }} />}
-      {jjkOpen     && <JjkPage     onClose={() => { setJjkOpen(false);     setAnimeHubOpen(true) }} />}
-      {kingdomOpen && <KingdomPage onClose={() => { setKingdomOpen(false); setAnimeHubOpen(true) }} />}
-      {aotOpen     && <AotPage     onClose={() => { setAotOpen(false);     setAnimeHubOpen(true) }} />}
-      {knyOpen     && <KnyPage     onClose={() => { setKnyOpen(false);     setAnimeHubOpen(true) }} />}
-      {nntOpen     && <NntPage     onClose={() => { setNntOpen(false);     setAnimeHubOpen(true) }} />}
-      {slOpen      && <SlPage      onClose={() => { setSlOpen(false);      setAnimeHubOpen(true) }} />}
-      {dbsOpen     && <DbsPage     onClose={() => { setDbsOpen(false);     setAnimeHubOpen(true) }} />}
-      {violetOpen  && <VioletEvergardenPage onClose={() => { setVioletOpen(false); setAnimeHubOpen(true) }} />}
-      {vivyOpen    && <VivyPage             onClose={() => { setVivyOpen(false);   setAnimeHubOpen(true) }} />}
-      {lovePrismOpen && <LovePrismPage      onClose={() => { setLovePrismOpen(false); setAnimeHubOpen(true) }} />}
-      {caroleTuesdayOpen && <CaroleTuesdayPage onClose={() => { setCaroleTuesdayOpen(false); setAnimeHubOpen(true) }} />}
-      {bunnyGirlOpen && <BunnyGirlPage onClose={() => { setBunnyGirlOpen(false); setAnimeHubOpen(true) }} />}
-      {rentGirlOpen && <RentAGirlfriendPage onClose={() => { setRentGirlOpen(false); setAnimeHubOpen(true) }} />}
-      {bcOpen        && <BcPage        onClose={() => { setBcOpen(false);       setAnimeHubOpen(true) }} />}
-      {mhaOpen       && <MhaPage       onClose={() => { setMhaOpen(false);      setAnimeHubOpen(true) }} />}
-      {fireforcOpen  && <FireForcePage onClose={() => { setFireforcOpen(false); if (returnToMon) { setReturnToMon(false); setMonUniversOpen(true) } else setAnimeHubOpen(true) }} />}
-      {bluelockOpen  && <BlueLockPage  onClose={() => { setBluelockOpen(false); if (returnToMon) { setReturnToMon(false); setMonUniversOpen(true) } else setAnimeHubOpen(true) }} />}
+      {onepieceOpen && <OnePiecePage onClose={closeMedia(setOnepieceOpen)} />}
+      {tpnOpen     && <TpnPage     onClose={closeMedia(setTpnOpen)} />}
+      {drstoneOpen && <DrStonePage onClose={closeMedia(setDrstoneOpen)} />}
+      {jjkOpen     && <JjkPage     onClose={closeMedia(setJjkOpen)} />}
+      {kingdomOpen && <KingdomPage onClose={closeMedia(setKingdomOpen)} />}
+      {aotOpen     && <AotPage     onClose={closeMedia(setAotOpen)} />}
+      {knyOpen     && <KnyPage     onClose={closeMedia(setKnyOpen)} />}
+      {nntOpen     && <NntPage     onClose={closeMedia(setNntOpen)} />}
+      {slOpen      && <SlPage      onClose={closeMedia(setSlOpen)} />}
+      {dbsOpen     && <DbsPage     onClose={closeMedia(setDbsOpen)} />}
+      {violetOpen  && <VioletEvergardenPage onClose={closeMedia(setVioletOpen)} />}
+      {vivyOpen    && <VivyPage             onClose={closeMedia(setVivyOpen)} />}
+      {lovePrismOpen && <LovePrismPage      onClose={closeMedia(setLovePrismOpen)} />}
+      {caroleTuesdayOpen && <CaroleTuesdayPage onClose={closeMedia(setCaroleTuesdayOpen)} />}
+      {bunnyGirlOpen && <BunnyGirlPage onClose={closeMedia(setBunnyGirlOpen)} />}
+      {rentGirlOpen && <RentAGirlfriendPage onClose={closeMedia(setRentGirlOpen)} />}
+      {bcOpen        && <BcPage        onClose={closeMedia(setBcOpen)} />}
+      {mhaOpen       && <MhaPage       onClose={closeMedia(setMhaOpen)} />}
+      {fireforcOpen  && <FireForcePage onClose={closeMedia(setFireforcOpen)} />}
+      {bluelockOpen  && <BlueLockPage  onClose={closeMedia(setBluelockOpen)} />}
       {monUniversOpen && (
         <MonUniversPage 
           onClose={() => setMonUniversOpen(false)}
