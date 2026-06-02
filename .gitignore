@@ -26,3 +26,6 @@ ruvector.db
 .env
 .env.local
 .env.*.local
+
+# Local scans (large, uploaded to Supabase)
+public/scans/
