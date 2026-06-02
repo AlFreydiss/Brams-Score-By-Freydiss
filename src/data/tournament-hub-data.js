@@ -28,9 +28,9 @@ export const TOURNAMENT_CATEGORIES = [
     tagline: 'Nostalgie, ambiance, émotion.',
     description: 'Vote pour les endings qui t\'ont marqué. Les plus nostalgiques gagnent.',
     icon: '◀',
-    route: null,
-    status: 'soon',
-    activeCount: 0,
+    route: '/tournoi/endings',
+    status: 'active',
+    activeCount: 1,
     color: '#0891b2',
   },
   {

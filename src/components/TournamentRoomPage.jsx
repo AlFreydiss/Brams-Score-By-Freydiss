@@ -409,7 +409,7 @@ export default function TournamentRoomPage() {
 
               <motion.p custom={2} variants={fadeUp}
                 style={{ color: 'rgba(244,243,246,.66)', margin: '0 0 26px', fontSize: 'clamp(15.5px,1.5vw,18px)', lineHeight: 1.7, maxWidth: 560 }}>
-                Invite tes potes, lance un bracket privé, votez en direct et couronnez le meilleur opening ou OST.
+                Invite tes potes, lance un bracket privé, votez en direct et couronnez le meilleur opening, ending ou OST.
               </motion.p>
 
               <motion.div custom={3} variants={fadeUp} style={{ display: 'flex', flexWrap: 'wrap', gap: 9, marginBottom: 24 }}>
@@ -618,7 +618,7 @@ export default function TournamentRoomPage() {
           <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 16, padding: 22 }}>
             <h2 style={{ margin: '0 0 4px', fontSize: 20, fontWeight: 900 }}>Salle d'attente</h2>
             <p style={{ color: 'rgba(255,255,255,.5)', margin: '0 0 18px', fontSize: 13 }}>
-              {room.tournament_id === 'ost' ? 'Best Anime OST' : 'Best Anime Opening'} · {(rounds?.[0]?.matches?.length || 0) * 2} participants
+              {getTournamentRoomTitle(room.tournament_id)} · {(rounds?.[0]?.matches?.length || 0) * 2} participants
             </p>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 22 }}>
               {players.map(p => (
@@ -862,8 +862,13 @@ function VotersPanel({ players, votes, match, isMobile, voteStatus }) {
 const TID_META = {
   ost:     { emoji: '🎵', icon: Music2, accent: '#bfa46a', tag: 'OST', desc: 'Bandes-son, inserts et thèmes marquants.' },
   opening: { emoji: '🎬', icon: Film, accent: '#d86f9f', tag: 'Opening', desc: 'Openings du blind test, duel après duel.' },
+  ending:  { emoji: '🌙', icon: Radio, accent: '#0891b2', tag: 'Ending', desc: 'Endings du blind test, emotion et nostalgie.' },
 }
 const tidEmoji = (id) => TID_META[id]?.emoji || '🏆'
+
+function getTournamentRoomTitle(tournamentId) {
+  return TOURNAMENT_CONFIGS[tournamentId]?.title || 'Tournoi Brams'
+}
 
 // Point "live" : pastille magenta avec halo qui pulse, très subtil.
 function LiveDot({ size = 6 }) {
@@ -875,7 +880,7 @@ function LiveDot({ size = 6 }) {
   )
 }
 
-// Carte de sélection de mode (OST / Opening) — hover premium, transition douce.
+// Carte de sélection de mode (OST / Opening / Ending) — hover premium, transition douce.
 function ModeCard({ id, cfg, active, onSelect }) {
   const [hover, setHover] = useState(false)
   const meta = TID_META[id] || { icon: Trophy, accent: MAGENTA, desc: '' }
@@ -1034,7 +1039,7 @@ function LiveRoomCard({ room, onOpen }) {
         background: 'rgba(255,255,255,.04)', border: `1px solid ${HAIR}` }}>{tidEmoji(room.tournament_id)}</span>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontWeight: 900, letterSpacing: '.16em', fontSize: 14, color: PINK_L }}>{room.code}</div>
-        <div style={{ fontSize: 11, color: TXT_FAINT, marginTop: 1 }}>{room.tournament_id === 'ost' ? 'Best Anime OST' : 'Best Anime Opening'}</div>
+        <div style={{ fontSize: 11, color: TXT_FAINT, marginTop: 1 }}>{getTournamentRoomTitle(room.tournament_id)}</div>
       </div>
       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 10, fontWeight: 800, letterSpacing: '.07em', textTransform: 'uppercase',
         color: meta.color, padding: '4px 9px', borderRadius: 999, background: 'rgba(255,255,255,.04)', border: `1px solid ${HAIR}` }}>

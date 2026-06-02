@@ -5,7 +5,7 @@ import {
   loadState, getTournamentProgress, getCurrentMatch,
   generateBracket, getWinner,
 } from '../lib/tournament.js'
-import { TOURNAMENT_CONFIG, OPENING_TOURNAMENT_CONFIG } from '../data/tournament-data.js'
+import { TOURNAMENT_CONFIG, OPENING_TOURNAMENT_CONFIG, ENDING_TOURNAMENT_CONFIG } from '../data/tournament-data.js'
 import {
   TOURNAMENT_CATEGORIES,
   UPCOMING_TOURNAMENTS,
@@ -539,7 +539,7 @@ function TournamentHero({ activeRef, categoriesRef }) {
           lineHeight: 1.75,
         }}
       >
-        Openings, OST, personnages, théories ou wiki battles — choisis ton tournoi et fais gagner tes favoris avec la communauté.
+        Openings, endings, OST, personnages, théories ou wiki battles — choisis ton tournoi et fais gagner tes favoris avec la communauté.
       </motion.p>
 
       {/* CTAs */}
@@ -613,6 +613,7 @@ function TournamentHero({ activeRef, categoriesRef }) {
 export default function TournamentHubPage() {
   const ost           = useTournamentState(TOURNAMENT_CONFIG)
   const opening       = useTournamentState(OPENING_TOURNAMENT_CONFIG)
+  const ending        = useTournamentState(ENDING_TOURNAMENT_CONFIG)
   const activeRef     = useRef(null)
   const categoriesRef = useRef(null)
 
@@ -640,7 +641,7 @@ export default function TournamentHubPage() {
           <div ref={categoriesRef} style={{ marginBottom: 76 }}>
             <SectionHeading
               title="Choisis ton arène"
-              subtitle="Chaque catégorie est un format de tournoi distinct. OST, openings, personnages, théories et plus encore."
+              subtitle="Chaque catégorie est un format de tournoi distinct. OST, openings, endings, personnages, théories et plus encore."
             />
             <div style={{
               display: 'grid',
@@ -662,6 +663,12 @@ export default function TournamentHubPage() {
                 progress={opening.progress}
                 currentRound={opening.currentRound}
                 winner={opening.winner}
+              />
+              <ActiveTournamentCard
+                config={ENDING_TOURNAMENT_CONFIG}
+                progress={ending.progress}
+                currentRound={ending.currentRound}
+                winner={ending.winner}
               />
               <ActiveTournamentCard
                 config={TOURNAMENT_CONFIG}

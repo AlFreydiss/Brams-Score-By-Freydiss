@@ -60,7 +60,7 @@ export async function fetchRecentTournamentRooms(limit = 6) {
   const { data, error } = await supabase
     .from('tournament_rooms')
     .select('code, tournament_id, status, created_at')
-    .in('tournament_id', ['ost', 'opening'])  // exclut les salons Undercover (mêmes tables)
+    .in('tournament_id', ['ost', 'opening', 'ending'])  // exclut les salons Undercover (mêmes tables)
     .order('created_at', { ascending: false })
     .limit(limit)
   if (error) throw new Error(error.message || 'fetch_rooms_failed')

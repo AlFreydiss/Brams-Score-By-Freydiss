@@ -39,7 +39,7 @@ export const OST_CATALOG = [
   { id:'yoi-op1',      title:'History Maker',            anime:'Yuri!!! on Ice',             artist:'Dean Fujioka',           ytId:'rFOVBVMJhgY', color:'#1d4ed8' },
 ]
 
-export const BLIND_TEST_OPENING_CATALOG = LOCAL_TRACKS.map((track) => ({
+const toBlindTestParticipant = (track) => ({
   id: track.id,
   title: track.title,
   anime: track.anime,
@@ -50,7 +50,15 @@ export const BLIND_TEST_OPENING_CATALOG = LOCAL_TRACKS.map((track) => ({
   ytId: track.ytId || null,
   color: track.color || '#6366f1',
   emoji: track.emoji || null,
-}))
+})
+
+export const BLIND_TEST_OPENING_CATALOG = LOCAL_TRACKS
+  .filter((track) => (track.type || 'OP') === 'OP')
+  .map(toBlindTestParticipant)
+
+export const BLIND_TEST_ENDING_CATALOG = LOCAL_TRACKS
+  .filter((track) => track.type === 'ED')
+  .map(toBlindTestParticipant)
 
 // ── Initial tournament configuration ─────────────────────────────────────
 export const TOURNAMENT_CONFIG = {
@@ -81,7 +89,22 @@ export const OPENING_TOURNAMENT_CONFIG = {
   participants: BLIND_TEST_OPENING_CATALOG,
 }
 
+export const ENDING_TOURNAMENT_CONFIG = {
+  id:          'best-anime-ending-2026',
+  title:       'Best Anime Ending 2026',
+  description: `${BLIND_TEST_ENDING_CATALOG.length} endings du Blind Test. Ambiance, nostalgie, emotion: fais avancer le meilleur ending.`,
+  status:      'active',
+  format:      'single_elimination',
+  edition:     'Edition 1',
+  startDate:   '2026-06-02',
+  categoryLabel:'Endings',
+  route:        '/tournoi/endings',
+  version:      'v1-ending-blind-test',
+  participants: BLIND_TEST_ENDING_CATALOG,
+}
+
 export const TOURNAMENT_CONFIGS = {
   ost: TOURNAMENT_CONFIG,
   opening: OPENING_TOURNAMENT_CONFIG,
+  ending: ENDING_TOURNAMENT_CONFIG,
 }
