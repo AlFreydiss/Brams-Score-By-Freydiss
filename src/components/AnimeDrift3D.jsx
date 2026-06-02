@@ -42,7 +42,7 @@ export default function AnimeDrift3D({ images = [] }) {
               opacity: 0.05 + depth * 0.09,
               filter: `blur(${(1 - depth) * 2.2}px) saturate(0.65) brightness(0.85) hue-rotate(200deg)`,
               boxShadow: '0 24px 70px rgba(0,0,0,0.45)',
-              animation: `${i % 2 ? 'ahFloatB' : 'ahFloatA'} ${24 + r(4) * 24}s ease-in-out ${(-r(5) * 30).toFixed(1)}s infinite`,
+              animation: `${i % 2 ? 'ahFloatB' : 'ahFloatA'} ${11 + r(4) * 9}s ease-in-out ${(-r(5) * 18).toFixed(1)}s infinite`,
               willChange: 'transform',
             }}
           />

@@ -30,6 +30,9 @@ export function useProfileData(discordId) {
   // clignote toutes les 60s ou à chaque retour d'onglet. silent=false = 1er rendu.
   const load = useCallback((silent = false) => {
     let ignore = false
+    // Filet de sécurité : le skeleton ne doit JAMAIS rester bloqué (bug "faut
+    // réactualiser"). Si rien n'a résolu en 9s, on sort de l'écran de chargement.
+    const safety = setTimeout(() => { if (!ignore) setLoading(false) }, 9000)
     setError(null)
     if (!silent) {
       setLoading(true)
@@ -47,7 +50,7 @@ export function useProfileData(discordId) {
     getUserPosts(discordId).then(p => { if (!ignore) setPostsCount(Array.isArray(p) ? p.length : 0) }).catch(() => {})
     getFollowState(discordId).then(f => { if (!ignore && f?.ok !== false) setFollowStats(f) }).catch(() => {})
 
-    return () => { ignore = true }
+    return () => { ignore = true; clearTimeout(safety) }
   }, [discordId])
 
   useEffect(() => load(false), [load])

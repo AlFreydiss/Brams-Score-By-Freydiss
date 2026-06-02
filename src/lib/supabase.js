@@ -17,6 +17,16 @@ export const supabase = url && key ? createClient(url, key, {
   },
 }) : null
 
+// Garde-fou anti-blocage : si un appel Supabase ne répond pas (client coincé
+// après un refresh de token, réseau lent), on résout en erreur au lieu de hanger
+// pour toujours → l'UI sort du skeleton (retry possible) au lieu de "faut F5".
+function withTimeout(promise, ms = 7000) {
+  return Promise.race([
+    Promise.resolve(promise),
+    new Promise((resolve) => setTimeout(() => resolve({ data: null, error: { message: 'timeout' } }), ms)),
+  ])
+}
+
 async function callTopClassement(limit, period = 'week') {
   try {
     const response = await fetch(
@@ -79,13 +89,11 @@ export async function fetchMemberProfile(discordId) {
 
   // ── 1. Leaderboard RPC (gives vocal_h + rank) ──────────────────────────────
   let board = null
-  const rpc1 = await supabase.rpc('top_classement', { p_limit: 500, p_period: 'week' })
-  console.log('[profile] rpc1', { err: rpc1.error?.message, rows: rpc1.data?.length })
+  const rpc1 = await withTimeout(supabase.rpc('top_classement', { p_limit: 500, p_period: 'week' }))
   if (!rpc1.error && rpc1.data?.length) {
     board = rpc1.data
   } else {
-    const rpc2 = await supabase.rpc('top_classement', { p_limit: 500 })
-    console.log('[profile] rpc2 (legacy)', { err: rpc2.error?.message, rows: rpc2.data?.length })
+    const rpc2 = await withTimeout(supabase.rpc('top_classement', { p_limit: 500 }))
     if (!rpc2.error && rpc2.data?.length) board = rpc2.data
   }
 
@@ -99,13 +107,9 @@ export async function fetchMemberProfile(discordId) {
   }
 
   // ── 2. Direct users table lookup ────────────────────────────────────────────
-  console.log('[profile] falling back to direct users table query')
-  const { data: user, error: userErr } = await supabase
-    .from('users')
-    .select('uid, data')
-    .eq('uid', id)
-    .maybeSingle()
-  console.log('[profile] direct query', { err: userErr?.message, found: !!user })
+  const { data: user } = await withTimeout(
+    supabase.from('users').select('uid, data').eq('uid', id).maybeSingle()
+  )
 
   if (!user) return null
   const d = user.data || {}
