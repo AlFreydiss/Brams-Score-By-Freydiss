@@ -94,7 +94,7 @@ const EpCard = memo(function EpCard({ video, index, watched, onPlay }) {
   )
 })
 
-function InfoPanel({ watchedCount, total, lastWatchedIdx, onResume, chapterCount }) {
+function InfoPanel({ watchedCount, total, lastWatchedIdx, onResume, chapterCount, episodeCount }) {
   const pct = total > 0 ? Math.round((watchedCount / total) * 100) : 0
   const nextVideo = VIDEOS[lastWatchedIdx] || VIDEOS[0]
   return (
@@ -128,7 +128,7 @@ function InfoPanel({ watchedCount, total, lastWatchedIdx, onResume, chapterCount
 
         <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:8 }}>
           {[
-            { label:'Épisodes', value:'0', dot:COLOR2 },
+            { label:'Épisodes', value:String(episodeCount ?? 0), dot:COLOR2 },
             { label:'Chapitres', value:'81', dot:'#fbbf24' },
             { label:'OAV', value:'0', dot:'#34d399' },
             { label:'Audio', value:'VF + VO', dot:'#f97316' },
@@ -236,34 +236,74 @@ export default function AotPage({ onClose }) {
             <style>{`
               .aot-layout { display: grid; grid-template-columns: 310px minmax(0,1fr); gap: 28px; max-width: 1480px; margin: 0 auto; align-items: start; }
               @media (max-width: 900px) { .aot-layout { grid-template-columns: 1fr; } }
+              .aot-ep-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(196px,1fr)); gap: 14px; }
             `}</style>
             <div className="aot-layout">
-              <InfoPanel watchedCount={watchedCount} total={VIDEOS.length} lastWatchedIdx={resumeIdx} onResume={() => openPlayer(resumeIdx)} chapterCount={chapterCount} />
+              <InfoPanel watchedCount={watchedCount} total={VIDEOS.length} lastWatchedIdx={resumeIdx} onResume={() => openPlayer(resumeIdx)} chapterCount={chapterCount} episodeCount={episodes.length} />
               <div>
                 <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20 }}>
                   <div>
                     <h3 style={{ margin:'0 0 3px',fontSize:18,fontWeight:900,color:'#fff',letterSpacing:'-.01em' }}>Épisodes</h3>
-                    <div style={{ fontSize:11,color:'rgba(255,255,255,.32)',fontWeight:600 }}>Bientôt disponible • Scans manga : {chapterCount} chapitres</div>
+                    <div style={{ fontSize:11,color:'rgba(255,255,255,.32)',fontWeight:600 }}>
+                      {episodes.length > 0 ? `${episodes.length} épisodes • VOSTFR / VF • Scans manga : ${chapterCount} ch.` : `Bientôt disponible • Scans manga : ${chapterCount} chapitres`}
+                    </div>
                   </div>
                   <div style={{ display:'flex',alignItems:'center',gap:6,padding:'6px 14px',borderRadius:999,background:'rgba(244,63,94,.08)',border:'1px solid rgba(244,63,94,.18)' }}>
                     <div style={{ width:6,height:6,borderRadius:'50%',background:COLOR }} />
-                    <span style={{ fontSize:11,fontWeight:800,color:COLOR2 }}>Scans actifs</span>
+                    <span style={{ fontSize:11,fontWeight:800,color:COLOR2 }}>{episodes.length > 0 ? 'En ligne' : 'Scans actifs'}</span>
                   </div>
                 </div>
 
-                <div style={{ padding: '24px', borderRadius: 16, background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.06)', textAlign: 'center' }}>
-                  <div style={{ fontSize: 48, marginBottom: 12 }}>📖</div>
-                  <div style={{ fontSize: 20, fontWeight: 900, color: '#fff', marginBottom: 8 }}>81 chapitres de scans</div>
-                  <div style={{ color: 'rgba(255,255,255,.5)', marginBottom: 16 }}>L'Attaque des Titans - L'épopée complète est disponible via la section Scans du site.</div>
-                  <div style={{ fontSize: 13, color: 'rgba(244,63,94,.8)' }}>Bientôt : expérience dédiée avec grille de chapitres ici.</div>
-                </div>
+                {episodes.length > 0 ? (
+                  <>
+                    {(() => {
+                      const groups = []
+                      for (const e of episodes) {
+                        const label = e.v.arc || e.v.season || 'Épisodes'
+                        const g = groups[groups.length - 1]
+                        if (!g || g.label !== label) groups.push({ label, items: [e] })
+                        else g.items.push(e)
+                      }
+                      return groups.map(g => (
+                        <div key={g.label} style={{ marginBottom:30 }}>
+                          <div style={{ display:'flex',alignItems:'center',gap:12,margin:'4px 0 16px' }}>
+                            <span style={{ fontFamily:"'Pirata One',cursive",fontSize:20,fontWeight:900,color:'#fff',letterSpacing:'-.01em' }}>{g.label}</span>
+                            <span style={{ fontSize:11,fontWeight:800,color:COLOR2,background:'rgba(244,63,94,.1)',border:'1px solid rgba(244,63,94,.22)',borderRadius:999,padding:'2px 9px' }}>{g.items.length} ép.</span>
+                            <div style={{ flex:1,height:1,background:'linear-gradient(to right,rgba(244,63,94,.25),transparent)' }} />
+                          </div>
+                          <div className="aot-ep-grid">
+                            {g.items.map(({ v, i }) => (
+                              <EpCard key={keyOf(v)} video={v} index={i} watched={!!progress[keyOf(v)]?.completed} onPlay={playHandlers[i]} />
+                            ))}
+                          </div>
+                        </div>
+                      ))
+                    })()}
 
-                <div style={{ marginTop:28,padding:'14px 18px',borderRadius:12,background:'rgba(255,255,255,.03)',border:'1px solid rgba(255,255,255,.05)',display:'flex',alignItems:'center',gap:10 }}>
-                  <span style={{ fontSize:16 }}>🗡️</span>
-                  <span style={{ fontSize:12,color:'rgba(255,255,255,.38)',fontWeight:600,lineHeight:1.5 }}>
-                    L'Attaque des Titans (Shingeki no Kyojin) — une œuvre culte de Hajime Isayama, adaptée par MAPPA.
-                  </span>
-                </div>
+                    <div style={{ marginTop:6,padding:'14px 18px',borderRadius:12,background:'rgba(255,255,255,.03)',border:'1px solid rgba(255,255,255,.05)',display:'flex',alignItems:'center',gap:10 }}>
+                      <span style={{ fontSize:16 }}>🗡️</span>
+                      <span style={{ fontSize:12,color:'rgba(255,255,255,.38)',fontWeight:600,lineHeight:1.5 }}>
+                        L'Attaque des Titans (Shingeki no Kyojin) — œuvre culte de Hajime Isayama. Scans manga complets via la section Scans.
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div style={{ padding: '24px', borderRadius: 16, background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.06)', textAlign: 'center' }}>
+                      <div style={{ fontSize: 48, marginBottom: 12 }}>📖</div>
+                      <div style={{ fontSize: 20, fontWeight: 900, color: '#fff', marginBottom: 8 }}>81 chapitres de scans</div>
+                      <div style={{ color: 'rgba(255,255,255,.5)', marginBottom: 16 }}>L'Attaque des Titans - L'épopée complète est disponible via la section Scans du site.</div>
+                      <div style={{ fontSize: 13, color: 'rgba(244,63,94,.8)' }}>Bientôt : expérience dédiée avec grille de chapitres ici.</div>
+                    </div>
+
+                    <div style={{ marginTop:28,padding:'14px 18px',borderRadius:12,background:'rgba(255,255,255,.03)',border:'1px solid rgba(255,255,255,.05)',display:'flex',alignItems:'center',gap:10 }}>
+                      <span style={{ fontSize:16 }}>🗡️</span>
+                      <span style={{ fontSize:12,color:'rgba(255,255,255,.38)',fontWeight:600,lineHeight:1.5 }}>
+                        L'Attaque des Titans (Shingeki no Kyojin) — une œuvre culte de Hajime Isayama, adaptée par MAPPA.
+                      </span>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
