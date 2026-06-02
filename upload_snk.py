@@ -20,8 +20,8 @@ sys.stdout.reconfigure(encoding='utf-8')
 
 # ── Config R2 (identique à upload_r2.py) ──────────────────────────────────────
 ACCOUNT_ID = '166b8357e5229b31a88cf104058ed5ee'
-ACCESS_KEY = '4f39550055d95fe0f9999e5011c91d68'
-SECRET_KEY = 'dc832c19090b450439e85e03290339127957047fc61c447a179e5e2def52ba93'
+ACCESS_KEY = 'b6623ff28dad38c5013cce52ca385723'
+SECRET_KEY = '51f32c44071f4b7fffdfbdd50aeef93e791ca6128a05e6221915fc5ab6e61e0e'
 BUCKET     = 'bramscore'
 PUBLIC_URL = 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev'
 
