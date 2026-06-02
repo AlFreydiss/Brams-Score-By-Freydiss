@@ -518,8 +518,38 @@ const AH_CSS = `
   @keyframes ahPulse   { 0%,100% { opacity:.06 } 50% { opacity:.14 } }
   @keyframes ahMarqueeL { from { transform:translateX(0) } to { transform:translateX(-50%) } }
   @keyframes ahMarqueeR { from { transform:translateX(-50%) } to { transform:translateX(0) } }
+  @keyframes ahShimmer { 0% { background-position: -200% 0 } 100% { background-position: 200% 0 } }
+  @keyframes ahHeartPop { 0% { transform: scale(0.6); } 40% { transform: scale(1.4); } 70% { transform: scale(0.95); } 100% { transform: scale(1); } }
+  @keyframes ahScanSlow { 0% { top:-4px } 100% { top:110% } }
   .ah-mq-l { animation: ahMarqueeL var(--mq-dur, 60s) linear infinite; will-change:transform; }
   .ah-mq-r { animation: ahMarqueeR var(--mq-dur, 66s) linear infinite; will-change:transform; }
+  .ah-shimmer { position: relative; overflow: hidden; }
+  .ah-shimmer::after {
+    content: '';
+    position: absolute; top: 0; left: 0; width: 40%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent);
+    background-size: 200% 100%;
+    animation: ahShimmer 2.2s infinite;
+    pointer-events: none;
+  }
+  .heart-pop { animation: ahHeartPop 0.45s cubic-bezier(0.23,1,0.32,1) both; }
+  .anime-glass {
+    background: rgba(17,17,20,0.88);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .anime-glow { box-shadow: 0 0 0 1px rgba(167,139,250,0.15), 0 10px 40px -10px rgba(0,0,0,0.6); }
+  .cinema-label {
+    position: relative;
+    display: inline-block;
+    letter-spacing: .18em;
+  }
+  .cinema-label::after {
+    content: '';
+    position: absolute; left: 0; bottom: -3px; width: 100%; height: 1px;
+    background: linear-gradient(to right, transparent, #a78bfa, transparent);
+    opacity: .35;
+  }
   @media (prefers-reduced-motion: reduce) {
     .ah-mq-l, .ah-mq-r { animation: none !important; }
   }
@@ -590,22 +620,31 @@ function AmbientOrbs() {
 
 function AnimeMarqueeCard({ anime, onClick, onOpenMonUnivers, isFav = false, toggleFav }) {
   const [hov, setHov] = useState(false)
+  const [heartAnim, setHeartAnim] = useState(false)
   const c = anime.color
+  const doFav = (e) => {
+    if (typeof toggleFav === 'function') {
+      toggleFav(anime.id, e)
+      setHeartAnim(true)
+      setTimeout(() => setHeartAnim(false), 450)
+    }
+  }
   return (
     <div
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
       onClick={onClick}
+      className="ah-shimmer"
       style={{
         flexShrink:0, width:188, height:268, borderRadius:14, overflow:'hidden',
         position:'relative', cursor:'pointer',
         background:`linear-gradient(165deg, ${anime.colorDark} 0%, #101114 100%)`,
         border:`1px solid ${hov ? c+'4a' : 'rgba(255,255,255,0.06)'}`,
-        transform: hov ? 'scale(1.025) translateY(-4px)' : 'scale(1) translateY(0)',
-        boxShadow: hov ? `0 18px 38px rgba(0,0,0,0.48), 0 0 0 1px ${c}14` : '0 4px 14px rgba(0,0,0,0.30)',
-        transition:'transform 0.35s ease, box-shadow 0.35s ease, border-color 0.28s ease, filter 0.35s ease, background 0.35s ease',
+        transform: hov ? 'scale(1.03) translateY(-6px)' : 'scale(1) translateY(0)',
+        boxShadow: hov ? `0 22px 48px rgba(0,0,0,0.55), 0 0 0 1px ${c}22, 0 0 22px ${c}11` : '0 4px 14px rgba(0,0,0,0.30)',
+        transition:'transform 0.4s cubic-bezier(0.23,1,0.32,1), box-shadow 0.4s cubic-bezier(0.23,1,0.32,1), border-color 0.28s ease',
         marginRight:12,
-        filter: hov ? 'saturate(1.03) brightness(1.04)' : 'saturate(.90) brightness(.98)',
+        filter: hov ? 'saturate(1.08) brightness(1.05)' : 'saturate(.92) brightness(.97)',
       }}
     >
       {anime.coverImage && (
@@ -615,18 +654,26 @@ function AnimeMarqueeCard({ anime, onClick, onOpenMonUnivers, isFav = false, tog
           style={{
             position:'absolute', inset:0, width:'100%', height:'100%',
             objectFit:'cover', objectPosition: anime.coverPosition || 'center top',
-            transform: hov ? 'scale(1.05)' : 'scale(1)',
-            filter: hov ? 'brightness(1.06) contrast(1.02)' : 'brightness(.95) contrast(1)',
-            transition:'transform 0.4s ease, filter 0.4s ease',
+            transform: hov ? 'scale(1.08)' : 'scale(1)',
+            filter: hov ? 'brightness(1.08) contrast(1.05) saturate(1.1)' : 'brightness(.94) contrast(1)',
+            transition:'transform 0.45s cubic-bezier(0.23,1,0.32,1), filter 0.4s ease',
           }}
         />
       )}
-      <div style={{ position:'absolute', inset:0, background:'linear-gradient(to bottom, transparent 30%, rgba(0,0,0,0.84) 100%)', zIndex:1 }} />
+      <div style={{ position:'absolute', inset:0, background:'linear-gradient(to bottom, transparent 26%, rgba(0,0,0,0.88) 100%)', zIndex:1 }} />
       <div style={{
         position:'absolute', inset:0,
-        background:`linear-gradient(to bottom, ${c}20 0%, transparent 50%)`,
-        zIndex:2, opacity: hov ? 1 : 0, transition:'opacity 0.28s',
+        background:`linear-gradient(to bottom, ${c}18 0%, transparent 48%)`,
+        zIndex:2, opacity: hov ? 1 : 0, transition:'opacity 0.3s cubic-bezier(0.23,1,0.32,1)',
       }} />
+
+      {/* Anime play hint on hover center */}
+      {hov && (
+        <div style={{ position:'absolute', top:'42%', left:'50%', transform:'translate(-50%,-50%)', zIndex:4, width:42, height:42, borderRadius:'50%', background:'rgba(0,0,0,0.45)', border:'1px solid rgba(255,255,255,0.35)', display:'flex', alignItems:'center', justifyContent:'center', backdropFilter:'blur(6px)' }}>
+          <div style={{ width:0, height:0, borderTop:'7px solid transparent', borderBottom:'7px solid transparent', borderLeft:'11px solid #fff', marginLeft:2 }} />
+        </div>
+      )}
+
       <div style={{
         position:'absolute', top:10, right:10, zIndex:4,
         fontSize:7.5, fontWeight:850, letterSpacing:'.14em', textTransform:'uppercase',
@@ -637,10 +684,11 @@ function AnimeMarqueeCard({ anime, onClick, onOpenMonUnivers, isFav = false, tog
         {anime.badge}
       </div>
 
-      {/* Heart fav for marquee cards too - matches premium standalone */}
+      {/* Heart fav - anime pop + premium standalone sync */}
       <button
-        onClick={(e) => { if (typeof toggleFav === 'function') toggleFav(anime.id, e) }}
-        style={{ position:'absolute', top:10, left:10, zIndex:5, width:22, height:22, borderRadius:999, display:'flex', alignItems:'center', justifyContent:'center', background: isFav ? 'rgba(167,139,250,0.95)' : 'rgba(0,0,0,0.55)', border: isFav ? '1px solid #a78bfa' : '1px solid rgba(255,255,255,0.25)', color: isFav ? '#fff' : 'rgba(255,255,255,0.9)', fontSize:11, cursor:'pointer', transition:'all .2s' }}
+        onClick={doFav}
+        className={heartAnim ? 'heart-pop' : ''}
+        style={{ position:'absolute', top:10, left:10, zIndex:5, width:24, height:24, borderRadius:999, display:'flex', alignItems:'center', justifyContent:'center', background: isFav ? 'rgba(167,139,250,0.95)' : 'rgba(0,0,0,0.55)', border: isFav ? '1px solid #a78bfa' : '1px solid rgba(255,255,255,0.25)', color: isFav ? '#fff' : 'rgba(255,255,255,0.9)', fontSize:12, cursor:'pointer', transition:'all .2s', boxShadow: isFav ? '0 0 0 3px rgba(167,139,250,0.2)' : 'none' }}
         title={isFav ? 'Retirer des favoris' : 'Ajouter aux favoris Bramsq'}
       >
         ♥
@@ -657,7 +705,7 @@ function AnimeMarqueeCard({ anime, onClick, onOpenMonUnivers, isFav = false, tog
         </div>
       </div>
 
-      {/* Small dual ProgressRing (video + chapter) on poster/cover, bottom-right. Clickable to Mon Univers. Perf: data precomputed for visible. */}
+      {/* Stylish dual ProgressRing mini (poster minia + rings) - anime glow on hover */}
       {anime._video && (
         <div
           onClick={(e) => {
@@ -672,16 +720,16 @@ function AnimeMarqueeCard({ anime, onClick, onOpenMonUnivers, isFav = false, tog
             zIndex: 6,
             cursor: 'pointer',
             borderRadius: '50%',
-            boxShadow: '0 3px 10px rgba(0,0,0,0.55)',
-            transition: 'transform .18s ease, box-shadow .18s',
+            boxShadow: hov ? '0 0 0 2px rgba(167,139,250,0.25), 0 6px 16px rgba(0,0,0,0.6)' : '0 3px 10px rgba(0,0,0,0.55)',
+            transition: 'transform .18s cubic-bezier(0.23,1,0.32,1), box-shadow .18s',
           }}
-          onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.08)' }}
+          onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.12)' }}
           onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)' }}
         >
           <ProgressRing
             videoPct={anime._video.pct}
             chapterPct={anime._chapter ? anime._chapter.pct : 0}
-            size={34}
+            size={36}
             color={c}
           />
         </div>
@@ -724,7 +772,15 @@ function AnimeMarqueeRow({ animes, direction, speed, onCardClick, onOpenMonUnive
 
 function AnimeCard({ anime, index, onClick, onOpenMonUnivers, isFav = false, toggleFav }) {
   const [hov, setHov] = useState(false)
+  const [heartAnim, setHeartAnim] = useState(false)
   const c = anime.color
+  const doFav = (e) => {
+    if (typeof toggleFav === 'function') {
+      toggleFav(anime.id, e)
+      setHeartAnim(true)
+      setTimeout(() => setHeartAnim(false), 450)
+    }
+  }
   const fallbackCover = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
     <svg xmlns="http://www.w3.org/2000/svg" width="458" height="687" viewBox="0 0 458 687">
       <defs>
@@ -744,15 +800,16 @@ function AnimeCard({ anime, index, onClick, onOpenMonUnivers, isFav = false, tog
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
       onClick={onClick}
+      className="ah-shimmer"
       style={{
         position:'relative',
         borderRadius:20, overflow:'hidden',
         background:`linear-gradient(175deg, ${c}14 0%, rgba(14,14,18,0.97) 100%)`,
         border:`1px solid ${hov ? c+'55' : c+'1e'}`,
         borderTop:`3px solid ${hov ? c : c+'aa'}`,
-        transition:'all 0.38s ease',
-        transform: hov ? 'translateY(-10px)' : 'translateY(0)',
-        boxShadow: hov ? `0 28px 70px ${c}28, 0 0 0 1px ${c}18` : `0 4px 18px ${c}0a`,
+        transition:'all 0.42s cubic-bezier(0.23,1,0.32,1)',
+        transform: hov ? 'translateY(-12px) scale(1.01)' : 'translateY(0)',
+        boxShadow: hov ? `0 32px 80px ${c}33, 0 0 0 1px ${c}22, 0 0 28px ${c}11` : `0 4px 18px ${c}0a`,
         cursor:'pointer',
         animation:`ahFadeUp 0.55s ${index * 0.07}s ease-out both`,
       }}
@@ -795,10 +852,18 @@ function AnimeCard({ anime, index, onClick, onOpenMonUnivers, isFav = false, tog
           {anime.badge}
         </div>
 
-        {/* Heart fav - synced with bramsq premium standalone LS */}
+        {/* Anime play hint center on hover (mode anime stylé) */}
+        {hov && (
+          <div style={{ position:'absolute', top:'46%', left:'50%', transform:'translate(-50%,-50%)', zIndex:4, width:54, height:54, borderRadius:'50%', background:'rgba(0,0,0,0.42)', border:'1.5px solid rgba(255,255,255,0.4)', display:'flex', alignItems:'center', justifyContent:'center', backdropFilter:'blur(8px)' }}>
+            <div style={{ width:0, height:0, borderTop:'9px solid transparent', borderBottom:'9px solid transparent', borderLeft:'14px solid #fff', marginLeft:3 }} />
+          </div>
+        )}
+
+        {/* Heart fav - anime pop + premium standalone sync */}
         <button
-          onClick={(e) => { if (typeof toggleFav === 'function') toggleFav(anime.id, e) }}
-          style={{ position:'absolute', top:12, left:12, zIndex:3, width:28, height:28, borderRadius:999, display:'flex', alignItems:'center', justifyContent:'center', background: isFav ? 'rgba(167,139,250,0.9)' : 'rgba(0,0,0,0.45)', border: isFav ? '1px solid #a78bfa' : '1px solid rgba(255,255,255,0.2)', color: isFav ? '#fff' : 'rgba(255,255,255,0.85)', cursor:'pointer', transition:'all .2s', fontSize:13 }}
+          onClick={doFav}
+          className={heartAnim ? 'heart-pop' : ''}
+          style={{ position:'absolute', top:12, left:12, zIndex:3, width:30, height:30, borderRadius:999, display:'flex', alignItems:'center', justifyContent:'center', background: isFav ? 'rgba(167,139,250,0.92)' : 'rgba(0,0,0,0.45)', border: isFav ? '1px solid #a78bfa' : '1px solid rgba(255,255,255,0.2)', color: isFav ? '#fff' : 'rgba(255,255,255,0.85)', cursor:'pointer', transition:'all .2s', fontSize:14, boxShadow: isFav ? '0 0 0 4px rgba(167,139,250,0.18)' : 'none' }}
           title={isFav ? 'Retirer des favoris' : 'Ajouter aux favoris Bramsq'}
         >
           ♥
@@ -844,16 +909,20 @@ function AnimeCard({ anime, index, onClick, onOpenMonUnivers, isFav = false, tog
         )}
       </div>
 
-      {/* Info body */}
-      <div style={{ padding:'22px 22px 20px' }}>
+      {/* Info body - anime premium glass + hover lift */}
+      <div style={{ 
+        padding:'22px 22px 20px',
+        background: hov ? 'rgba(255,255,255,0.015)' : 'transparent',
+        transition: 'background .3s ease'
+      }}>
         <div style={{ marginBottom:12 }}>
-          <div style={{ fontFamily:'var(--display)', fontWeight:800, fontSize:19, color:'#fff', marginBottom:3, letterSpacing:'-.01em' }}>{anime.title}</div>
+          <div style={{ fontFamily:'var(--display)', fontWeight:800, fontSize:19, color:'#fff', marginBottom:3, letterSpacing:'-.01em', textShadow: hov ? '0 1px 6px rgba(0,0,0,0.5)' : 'none' }}>{anime.title}</div>
           <div style={{ fontSize:12, color:c, fontWeight:600 }}>{anime.subtitle}</div>
         </div>
 
         <div style={{ display:'flex', gap:5, flexWrap:'wrap', marginBottom:14 }}>
           {anime.genres.map(g => (
-            <span key={g} style={{ fontSize:11, fontWeight:700, background:`${c}18`, color:c, border:`1px solid ${c}33`, borderRadius:100, padding:'2px 10px' }}>{g}</span>
+            <span key={g} style={{ fontSize:11, fontWeight:700, background: hov ? `${c}28` : `${c}18`, color:c, border:`1px solid ${c}33`, borderRadius:100, padding:'2px 10px', transition:'background .2s' }}>{g}</span>
           ))}
         </div>
 
@@ -873,12 +942,13 @@ function AnimeCard({ anime, index, onClick, onOpenMonUnivers, isFav = false, tog
           background: hov ? c : `${c}20`,
           color: hov ? '#fff' : c,
           fontWeight:800, fontSize:14, cursor:'pointer',
-          transition:'all 0.32s',
+          transition:'all 0.32s cubic-bezier(0.23,1,0.32,1)',
           fontFamily:'var(--body)',
           boxShadow: hov ? `0 8px 24px ${c}44` : 'none',
           letterSpacing:'.02em',
+          display:'flex', alignItems:'center', justifyContent:'center', gap:6
         }}>
-          {anime.action}
+          <span>{anime.action}</span> <span style={{ fontSize:13, opacity: hov ? 0.9 : 0.6 }}>▶</span>
         </button>
       </div>
     </div>
@@ -1027,20 +1097,23 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
     <div style={{ position:'fixed', inset:0, zIndex:500, background:'#07090e', display:'flex', flexDirection:'column' }}>
       <style>{AH_CSS}</style>
 
-      {/* ── Header ── */}
+      {/* ── Header ── (barre anime stylée gauche + boutons premium) */}
       <div style={{
         flexShrink:0, padding:'0 24px', height:72,
         display:'flex', alignItems:'center', justifyContent:'space-between',
-        background:'rgba(7,9,14,0.96)', backdropFilter:'blur(20px)',
+        background:'linear-gradient(90deg, rgba(167,139,250,0.03) 0%, rgba(7,9,14,0.96) 12%, rgba(7,9,14,0.96) 100%)',
+        backdropFilter:'blur(24px)',
         borderBottom:'1px solid rgba(255,255,255,0.07)', zIndex:10,
         position:'relative',
       }}>
+        {/* Left accent anime bar + logo */}
         <div style={{ display:'flex', alignItems:'center', gap:14 }}>
+          <div style={{ width:3, height:38, borderRadius:2, background:'linear-gradient(to bottom, #a78bfa, #e0524a)', boxShadow:'0 0 8px rgba(167,139,250,0.6)', marginRight:4 }} />
           <div style={{ fontSize:28, filter:'drop-shadow(0 0 14px rgba(224,82,74,0.6))', animation:'ahDrift 5s ease-in-out infinite' }}>🎌</div>
           <div>
-            <div style={{ fontFamily:"'Pirata One', cursive", fontWeight:900, fontSize:22, color:'#fff', letterSpacing:'-.01em', lineHeight:1 }}>Hub des Animés</div>
+            <div style={{ fontFamily:"'Pirata One', cursive", fontWeight:900, fontSize:22, color:'#fff', letterSpacing:'-.01em', lineHeight:1, textShadow:'0 2px 12px rgba(0,0,0,0.6)' }}>Hub des Animés</div>
             <div style={{ fontSize:11, color:'rgba(255,255,255,0.32)', marginTop:3, fontWeight:600, letterSpacing:'.04em' }}>
-              {visibleAnimes.length} séries disponibles
+              {visibleAnimes.length} séries disponibles <span style={{ color:'#a78bfa', fontWeight:700 }}>•</span> <span style={{ color:'rgba(167,139,250,0.85)' }}>🔴 12.8k en ligne</span>
             </div>
           </div>
         </div>
@@ -1212,7 +1285,7 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
             </div>
           ) : (
             <div>
-              <div style={{ textAlign:'center', marginBottom:18, padding:'0 24px', fontSize:10.5, color:'rgba(255,255,255,0.18)', fontWeight:700, letterSpacing:'.12em', textTransform:'uppercase' }}>
+              <div className="cinema-label" style={{ textAlign:'center', marginBottom:18, padding:'0 24px', fontSize:10.5, color:'rgba(255,255,255,0.22)', fontWeight:800, letterSpacing:'.18em', textTransform:'uppercase', textShadow:'0 1px 4px rgba(0,0,0,0.4)' }}>
                 Galerie cinématique · survole pour pause · clique pour accéder
               </div>
               {marqueeRows.map((row, i) => (
