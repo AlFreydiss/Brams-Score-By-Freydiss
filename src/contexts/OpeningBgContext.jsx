@@ -18,6 +18,8 @@ export function OpeningBgProvider({ children }) {
   // Par défaut le fond global est figé (perf : pas de décodage vidéo plein écran
   // sur chaque page). Le profil l'active en mode animé (setAmbientStill(false)).
   const [ambientStill, setAmbientStill] = useState(true)
+  // hideAmbient : le profil masque le fond global et rend le sien (fiable).
+  const [hideAmbient, setHideAmbient] = useState(false)
   const previewTimer = useRef(null)
 
   // Charger le fond équipé depuis Supabase au login
@@ -80,7 +82,7 @@ export function OpeningBgProvider({ children }) {
   const activeBg = getBgById(effectiveId)
 
   return (
-    <Ctx.Provider value={{ equippedId, previewId, activeBg, equip, unequip, preview, cancelPreview, setOverride, clearOverride, ambientStill, setAmbientStill }}>
+    <Ctx.Provider value={{ equippedId, previewId, activeBg, equip, unequip, preview, cancelPreview, setOverride, clearOverride, ambientStill, setAmbientStill, hideAmbient, setHideAmbient }}>
       {children}
     </Ctx.Provider>
   )

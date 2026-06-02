@@ -33,8 +33,8 @@ const VIDEO_STYLE = {
 }
 
 export default function EquippedOpeningBackground() {
-  const { activeBg, ambientStill } = useOpeningBg()
-  if (!activeBg) return null
+  const { activeBg, ambientStill, hideAmbient } = useOpeningBg()
+  if (!activeBg || hideAmbient) return null
 
   const start = activeBg.overlayStart || 'rgba(8,9,13,0.74)'
   const end   = activeBg.overlayEnd   || 'rgba(6,7,11,0.94)'

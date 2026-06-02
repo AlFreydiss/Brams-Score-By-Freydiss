@@ -9,6 +9,8 @@ import './profile/profile.css'
 import { useProfileData } from '../hooks/useProfileData.js'
 import Navbar from './Navbar.jsx'
 import { useOpeningBg } from '../contexts/OpeningBgContext.jsx'
+import OpeningBgMedia from './social/OpeningBgMedia.jsx'
+import { getBgById } from '../data/opening-backgrounds.js'
 import ProfileHero from './profile/ProfileHero.jsx'
 import ProfileStories from './profile/ProfileStories.jsx'
 import ProfileAura from './profile/ProfileAura.jsx'
@@ -28,7 +30,11 @@ export default function ProfilePage() {
   const [params, setParams] = useSearchParams()
   const data = useProfileData(discordId)
   const { member, settings, setSettings, loading, error, isOwnProfile, equippedBg } = data
-  const { activeBg, setOverride, clearOverride, setAmbientStill } = useOpeningBg()
+  const { setHideAmbient } = useOpeningBg()
+
+  // Fond d'opening du profil affiché (animé, plein écran). On le rend NOUS-MÊMES
+  // (fiable) et on masque le fond global le temps qu'on est sur le profil.
+  const heroBg = getBgById(equippedBg)
 
   // Onglets — Sauvegardés réservé à mon profil (signets privés).
   const tabs = useMemo(() => [
@@ -50,24 +56,11 @@ export default function ProfilePage() {
   const [avatarOpen,  setAvatarOpen]  = useState(false)
   const [followModal, setFollowModal] = useState(null) // 'followers' | 'following' | null
 
-  // Fond derrière le profil : sur SON profil on garde le fond du visiteur ; sur
-  // celui d'un AUTRE on impose son fond d'opening équipé.
+  // Masque le fond global (le profil rend le sien) tant qu'on est sur la page.
   useEffect(() => {
-    if (isOwnProfile) { clearOverride(); return }
-    setOverride(null)
-    return () => clearOverride()
-  }, [isOwnProfile, discordId, setOverride, clearOverride])
-  useEffect(() => {
-    if (isOwnProfile) return
-    setOverride(equippedBg || null)
-  }, [isOwnProfile, equippedBg, discordId, setOverride])
-
-  // Sur le profil, le fond d'opening équipé s'anime EN PLEIN ÉCRAN derrière le
-  // contenu (le header est transparent). On réactive le mode figé en quittant.
-  useEffect(() => {
-    setAmbientStill(false)
-    return () => setAmbientStill(true)
-  }, [setAmbientStill])
+    setHideAmbient(true)
+    return () => setHideAmbient(false)
+  }, [setHideAmbient])
 
   const share = () => {
     navigator.clipboard?.writeText(window.location.href)
@@ -75,7 +68,16 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className={`pfx-shell${activeBg ? ' pfx-transparent' : ''}`} style={{ '--rank': data.rank.color }}>
+    <div className={`pfx-shell${heroBg ? ' pfx-transparent' : ''}`} style={{ '--rank': data.rank.color }}>
+      {/* Fond d'opening du profil : vidéo animée plein écran (poster si autoplay
+          bloqué). Rendu par le profil lui-même → fiable, indépendant du global. */}
+      {heroBg && (
+        <div className="pfx-page-bg" aria-hidden>
+          <OpeningBgMedia bg={heroBg} className="pfx-page-bg-media" />
+          <div className="pfx-page-bg-veil" />
+        </div>
+      )}
+
       <Navbar />
 
       <main className="pfx-wrap pfx-wrap-ig">
