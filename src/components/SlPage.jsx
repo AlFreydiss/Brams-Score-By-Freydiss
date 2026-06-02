@@ -243,7 +243,7 @@ export default function SlPage({ onClose }) {
                 <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20 }}>
                   <div>
                     <h3 style={{ margin:'0 0 3px',fontSize:18,fontWeight:900,color:'#fff',letterSpacing:'-.01em' }}>Épisodes</h3>
-                    <div style={{ fontSize:11,color:'rgba(255,255,255,.32)',fontWeight:600 }}>Bientôt disponible • Scans manga : {chapterCount} chapitres</div>
+                    <div style={{ fontSize:11,color:'rgba(255,255,255,.32)',fontWeight:600 }}>Scans manga : {chapterCount} chapitres • grille interactive ci-dessous</div>
                   </div>
                   <div style={{ display:'flex',alignItems:'center',gap:6,padding:'6px 14px',borderRadius:999,background:'rgba(25,118,210,.08)',border:'1px solid rgba(25,118,210,.18)' }}>
                     <div style={{ width:6,height:6,borderRadius:'50%',background:COLOR }} />
