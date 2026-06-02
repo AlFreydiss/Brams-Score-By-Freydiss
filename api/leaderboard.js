@@ -10,6 +10,10 @@ const PERIOD_DAYS = {
   '30d': 30,
 }
 
+// Durée max d'une session vocale "live" extrapolée (16h). Au-delà, c'est
+// quasi sûrement un join_time fantôme (session jamais fermée) → on ne compte pas.
+const MAX_LIVE_SESSION = 16 * 3600
+
 function secondsInPeriod(sessions = [], days, joinTime, now) {
   const cutoff = now - days * 86400
   let total = 0
@@ -21,8 +25,11 @@ function secondsInPeriod(sessions = [], days, joinTime, now) {
     total += Math.max(0, Math.min(end, now) - Math.max(start, cutoff))
   }
 
+  // Session live en cours (join_time sans end). On plafonne à MAX_LIVE_SESSION :
+  // sinon un join_time resté ouvert (membre parti sans que le bot ferme la session)
+  // compterait toute la fenêtre (jusqu'à 168h/semaine) → tout le monde "Roi des pirates".
   const jt = Number(joinTime || 0)
-  if (jt > 0) total += Math.max(0, now - Math.max(jt, cutoff))
+  if (jt > 0) total += Math.min(Math.max(0, now - Math.max(jt, cutoff)), MAX_LIVE_SESSION)
   return total
 }
 
@@ -37,7 +44,7 @@ function totalSeconds(sessions = [], joinTime, extraSeconds, now) {
   }
 
   const jt = Number(joinTime || 0)
-  if (jt > 0) total += Math.max(0, now - jt)
+  if (jt > 0) total += Math.min(Math.max(0, now - jt), MAX_LIVE_SESSION)
   return total
 }
 
