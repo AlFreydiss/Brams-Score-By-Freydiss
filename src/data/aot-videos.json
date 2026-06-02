@@ -1,1 +1,372 @@
-[]
+[
+  {
+    "episode": 1,
+    "title": "Saison 3 — Épisode 1",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S03E01.mkv",
+    "season": "S03",
+    "arc": "Saison 3",
+    "badge": "MULTI",
+    "preferredAudioLang": "fr",
+    "progressKey": "s3-1"
+  },
+  {
+    "episode": 2,
+    "title": "Saison 3 — Épisode 2",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S03E02.mkv",
+    "season": "S03",
+    "arc": "Saison 3",
+    "badge": "MULTI",
+    "preferredAudioLang": "fr",
+    "progressKey": "s3-2"
+  },
+  {
+    "episode": 3,
+    "title": "Saison 3 — Épisode 3",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S03E03.mkv",
+    "season": "S03",
+    "arc": "Saison 3",
+    "badge": "MULTI",
+    "preferredAudioLang": "fr",
+    "progressKey": "s3-3"
+  },
+  {
+    "episode": 4,
+    "title": "Saison 3 — Épisode 4",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S03E04.mkv",
+    "season": "S03",
+    "arc": "Saison 3",
+    "badge": "MULTI",
+    "preferredAudioLang": "fr",
+    "progressKey": "s3-4"
+  },
+  {
+    "episode": 5,
+    "title": "Saison 3 — Épisode 5",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S03E05.mkv",
+    "season": "S03",
+    "arc": "Saison 3",
+    "badge": "MULTI",
+    "preferredAudioLang": "fr",
+    "progressKey": "s3-5"
+  },
+  {
+    "episode": 6,
+    "title": "Saison 3 — Épisode 6",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S03E06.mkv",
+    "season": "S03",
+    "arc": "Saison 3",
+    "badge": "MULTI",
+    "preferredAudioLang": "fr",
+    "progressKey": "s3-6"
+  },
+  {
+    "episode": 7,
+    "title": "Saison 3 — Épisode 7",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S03E07.mkv",
+    "season": "S03",
+    "arc": "Saison 3",
+    "badge": "MULTI",
+    "preferredAudioLang": "fr",
+    "progressKey": "s3-7"
+  },
+  {
+    "episode": 8,
+    "title": "Saison 3 — Épisode 8",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S03E08.mkv",
+    "season": "S03",
+    "arc": "Saison 3",
+    "badge": "MULTI",
+    "preferredAudioLang": "fr",
+    "progressKey": "s3-8"
+  },
+  {
+    "episode": 9,
+    "title": "Saison 3 — Épisode 9",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S03E09.mkv",
+    "season": "S03",
+    "arc": "Saison 3",
+    "badge": "MULTI",
+    "preferredAudioLang": "fr",
+    "progressKey": "s3-9"
+  },
+  {
+    "episode": 10,
+    "title": "Saison 3 — Épisode 10",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S03E10.mkv",
+    "season": "S03",
+    "arc": "Saison 3",
+    "badge": "MULTI",
+    "preferredAudioLang": "fr",
+    "progressKey": "s3-10"
+  },
+  {
+    "episode": 11,
+    "title": "Saison 3 — Épisode 11",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S03E11.mkv",
+    "season": "S03",
+    "arc": "Saison 3",
+    "badge": "MULTI",
+    "preferredAudioLang": "fr",
+    "progressKey": "s3-11"
+  },
+  {
+    "episode": 12,
+    "title": "Saison 3 — Épisode 12",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S03E12.mkv",
+    "season": "S03",
+    "arc": "Saison 3",
+    "badge": "MULTI",
+    "preferredAudioLang": "fr",
+    "progressKey": "s3-12"
+  },
+  {
+    "episode": 13,
+    "title": "Saison 3 — Épisode 13",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S03E13.mkv",
+    "season": "S03",
+    "arc": "Saison 3",
+    "badge": "MULTI",
+    "preferredAudioLang": "fr",
+    "progressKey": "s3-13"
+  },
+  {
+    "episode": 14,
+    "title": "Saison 3 — Épisode 14",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S03E14.mkv",
+    "season": "S03",
+    "arc": "Saison 3",
+    "badge": "MULTI",
+    "preferredAudioLang": "fr",
+    "progressKey": "s3-14"
+  },
+  {
+    "episode": 15,
+    "title": "Saison 3 — Épisode 15",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S03E15.mkv",
+    "season": "S03",
+    "arc": "Saison 3",
+    "badge": "MULTI",
+    "preferredAudioLang": "fr",
+    "progressKey": "s3-15"
+  },
+  {
+    "episode": 16,
+    "title": "Saison 3 — Épisode 16",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S03E16.mkv",
+    "season": "S03",
+    "arc": "Saison 3",
+    "badge": "MULTI",
+    "preferredAudioLang": "fr",
+    "progressKey": "s3-16"
+  },
+  {
+    "episode": 17,
+    "title": "Saison 3 — Épisode 17",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S03E17.mkv",
+    "season": "S03",
+    "arc": "Saison 3",
+    "badge": "MULTI",
+    "preferredAudioLang": "fr",
+    "progressKey": "s3-17"
+  },
+  {
+    "episode": 18,
+    "title": "Saison 3 — Épisode 18",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S03E18.mkv",
+    "season": "S03",
+    "arc": "Saison 3",
+    "badge": "MULTI",
+    "preferredAudioLang": "fr",
+    "progressKey": "s3-18"
+  },
+  {
+    "episode": 19,
+    "title": "Saison 3 — Épisode 19",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S03E19.mkv",
+    "season": "S03",
+    "arc": "Saison 3",
+    "badge": "MULTI",
+    "preferredAudioLang": "fr",
+    "progressKey": "s3-19"
+  },
+  {
+    "episode": 20,
+    "title": "Saison 3 — Épisode 20",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S03E20.mkv",
+    "season": "S03",
+    "arc": "Saison 3",
+    "badge": "MULTI",
+    "preferredAudioLang": "fr",
+    "progressKey": "s3-20"
+  },
+  {
+    "episode": 21,
+    "title": "Saison 3 — Épisode 21",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S03E21.mkv",
+    "season": "S03",
+    "arc": "Saison 3",
+    "badge": "MULTI",
+    "preferredAudioLang": "fr",
+    "progressKey": "s3-21"
+  },
+  {
+    "episode": 22,
+    "title": "Saison 3 — Épisode 22",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S03E22.mkv",
+    "season": "S03",
+    "arc": "Saison 3",
+    "badge": "MULTI",
+    "preferredAudioLang": "fr",
+    "progressKey": "s3-22"
+  },
+  {
+    "episode": 1,
+    "title": "Saison 4 — Épisode 1",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S04E01.mp4",
+    "season": "S04",
+    "arc": "Saison 4",
+    "badge": "VOSTFR",
+    "preferredAudioLang": "ja",
+    "progressKey": "s4-1"
+  },
+  {
+    "episode": 2,
+    "title": "Saison 4 — Épisode 2",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S04E02.mp4",
+    "season": "S04",
+    "arc": "Saison 4",
+    "badge": "VOSTFR",
+    "preferredAudioLang": "ja",
+    "progressKey": "s4-2"
+  },
+  {
+    "episode": 3,
+    "title": "Saison 4 — Épisode 3",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S04E03.mp4",
+    "season": "S04",
+    "arc": "Saison 4",
+    "badge": "VOSTFR",
+    "preferredAudioLang": "ja",
+    "progressKey": "s4-3"
+  },
+  {
+    "episode": 4,
+    "title": "Saison 4 — Épisode 4",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S04E04.mp4",
+    "season": "S04",
+    "arc": "Saison 4",
+    "badge": "VOSTFR",
+    "preferredAudioLang": "ja",
+    "progressKey": "s4-4"
+  },
+  {
+    "episode": 6,
+    "title": "Saison 4 — Épisode 6",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S04E06.mp4",
+    "season": "S04",
+    "arc": "Saison 4",
+    "badge": "VOSTFR",
+    "preferredAudioLang": "ja",
+    "progressKey": "s4-6"
+  },
+  {
+    "episode": 7,
+    "title": "Saison 4 — Épisode 7",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S04E07.mp4",
+    "season": "S04",
+    "arc": "Saison 4",
+    "badge": "VOSTFR",
+    "preferredAudioLang": "ja",
+    "progressKey": "s4-7"
+  },
+  {
+    "episode": 8,
+    "title": "Saison 4 — Épisode 8",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S04E08.mp4",
+    "season": "S04",
+    "arc": "Saison 4",
+    "badge": "VOSTFR",
+    "preferredAudioLang": "ja",
+    "progressKey": "s4-8"
+  },
+  {
+    "episode": 9,
+    "title": "Saison 4 — Épisode 9",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S04E09.mp4",
+    "season": "S04",
+    "arc": "Saison 4",
+    "badge": "VOSTFR",
+    "preferredAudioLang": "ja",
+    "progressKey": "s4-9"
+  },
+  {
+    "episode": 10,
+    "title": "Saison 4 — Épisode 10",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S04E10.mp4",
+    "season": "S04",
+    "arc": "Saison 4",
+    "badge": "VOSTFR",
+    "preferredAudioLang": "ja",
+    "progressKey": "s4-10"
+  },
+  {
+    "episode": 11,
+    "title": "Saison 4 — Épisode 11",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S04E11.mp4",
+    "season": "S04",
+    "arc": "Saison 4",
+    "badge": "VOSTFR",
+    "preferredAudioLang": "ja",
+    "progressKey": "s4-11"
+  },
+  {
+    "episode": 12,
+    "title": "Saison 4 — Épisode 12",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S04E12.mp4",
+    "season": "S04",
+    "arc": "Saison 4",
+    "badge": "VOSTFR",
+    "preferredAudioLang": "ja",
+    "progressKey": "s4-12"
+  },
+  {
+    "episode": 13,
+    "title": "Saison 4 — Épisode 13",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S04E13.mp4",
+    "season": "S04",
+    "arc": "Saison 4",
+    "badge": "VOSTFR",
+    "preferredAudioLang": "ja",
+    "progressKey": "s4-13"
+  },
+  {
+    "episode": 14,
+    "title": "Saison 4 — Épisode 14",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S04E14.mp4",
+    "season": "S04",
+    "arc": "Saison 4",
+    "badge": "VOSTFR",
+    "preferredAudioLang": "ja",
+    "progressKey": "s4-14"
+  },
+  {
+    "episode": 15,
+    "title": "Saison 4 — Épisode 15",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S04E15.mp4",
+    "season": "S04",
+    "arc": "Saison 4",
+    "badge": "VOSTFR",
+    "preferredAudioLang": "ja",
+    "progressKey": "s4-15"
+  },
+  {
+    "episode": 16,
+    "title": "Saison 4 — Épisode 16",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S04E16.mp4",
+    "season": "S04",
+    "arc": "Saison 4",
+    "badge": "VOSTFR",
+    "preferredAudioLang": "ja",
+    "progressKey": "s4-16"
+  }
+]
