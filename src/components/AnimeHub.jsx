@@ -61,6 +61,25 @@ const ANIMES = [
     badgeColor: '#6c5ce7',
   },
   {
+    id: 'fate-zero',
+    title: 'Fate/Zero',
+    subtitle: '4e Guerre du Saint-Graal',
+    emoji: '⚔️',
+    color: '#c8a44d',
+    colorDark: '#4a3a14',
+    coverImage: '',
+    genres: ['Action', 'Surnaturel', 'Drame', 'Seinen'],
+    description: "Sept mages, sept Servants, une guerre à mort pour le Saint-Graal qui exauce tous les vœux. Préquelle de Fate/stay night, signée ufotable.",
+    stats: [
+      { label: 'Saisons', value: '2' },
+      { label: 'Épisodes', value: '25' },
+      { label: 'Statut', value: 'Disponible' },
+    ],
+    action: '▶ Regarder',
+    badge: 'NOUVEAU',
+    badgeColor: '#c8a44d',
+  },
+  {
     id: 'drstone',
     title: 'Dr. Stone',
     subtitle: 'Science & Survie',
@@ -1236,7 +1255,7 @@ function Carousel({ children }) {
   )
 }
 
-export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrstone, onOpenJjk, onOpenKingdom, onOpenAot, onOpenKny, onOpenNnt, onOpenSl, onOpenDbs, onOpenViolet, onOpenVivy, onOpenLovePrism, onOpenCaroleTuesday, onOpenBunnyGirl, onOpenRentGirlfriend, onOpenBc, onOpenMha, onOpenFireforce, onOpenBluelock, onOpenMonUnivers }) {
+export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrstone, onOpenJjk, onOpenKingdom, onOpenAot, onOpenKny, onOpenNnt, onOpenSl, onOpenDbs, onOpenViolet, onOpenVivy, onOpenLovePrism, onOpenCaroleTuesday, onOpenBunnyGirl, onOpenRentGirlfriend, onOpenBc, onOpenMha, onOpenFireforce, onOpenBluelock, onOpenFateZero, onOpenMonUnivers }) {
   const [query, setQuery] = useState('')
   const [selectedGenres, setSelectedGenres] = useState(new Set())
   const [searchFocus, setSearchFocus] = useState(false)
@@ -1397,6 +1416,7 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
       'bunny-girl': onOpenBunnyGirl,
       'rent-girlfriend': onOpenRentGirlfriend,
       bc: onOpenBc, mha: onOpenMha, fireforce: onOpenFireforce, bluelock: onOpenBluelock,
+      'fate-zero': onOpenFateZero,
     }
     map[id]?.()
   }

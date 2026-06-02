@@ -45,6 +45,7 @@ const BcPage          = lazy(() => import('./components/BcPage.jsx'))
 const MhaPage         = lazy(() => import('./components/MhaPage.jsx'))
 const FireForcePage   = lazy(() => import('./components/FireForcePage.jsx'))
 const BlueLockPage    = lazy(() => import('./components/BlueLockPage.jsx'))
+const FateZeroPage    = lazy(() => import('./components/FateZeroPage.jsx'))
 const MonUniversPage  = lazy(() => import('./components/MonUniversPage.jsx'))
 const OnePiecePage    = lazy(() => import('./components/OnePiecePage.jsx'))
 const FamilyTree3D    = lazy(() => import('./components/FamilyTree3D.jsx'))
@@ -244,6 +245,7 @@ export default function App() {
   const [mhaOpen,          setMhaOpen]           = useState(false)
   const [fireforcOpen,     setFireforcOpen]      = useState(false)
   const [bluelockOpen,     setBluelockOpen]      = useState(false)
+  const [fateZeroOpen,     setFateZeroOpen]      = useState(false)
   const [monUniversOpen,   setMonUniversOpen]    = useState(false)
   const [returnToMon,      setReturnToMon]       = useState(false)
   const [treeOpen,         setTreeOpen]          = useState(false)
@@ -253,6 +255,7 @@ export default function App() {
   const onOpenAotFromMon = () => { setMonUniversOpen(false); setReturnToMon(true); setAotOpen(true) }
   const onOpenFireforceFromMon = () => { setMonUniversOpen(false); setReturnToMon(true); setFireforcOpen(true) }
   const onOpenBluelockFromMon = () => { setMonUniversOpen(false); setReturnToMon(true); setBluelockOpen(true) }
+  const onOpenFateZeroFromMon = () => { setMonUniversOpen(false); setReturnToMon(true); setFateZeroOpen(true) }
   const onOpenBunnyGirlFromMon = () => { setMonUniversOpen(false); setReturnToMon(true); setBunnyGirlOpen(true) }
   const onOpenRentGirlfriendFromMon = () => { setMonUniversOpen(false); setReturnToMon(true); setRentGirlOpen(true) }
   const onOpenTpnFromMon = () => { setMonUniversOpen(false); setReturnToMon(true); setTpnOpen(true) }
@@ -288,7 +291,7 @@ export default function App() {
     setTpnOpen(false); setDrstoneOpen(false); setJjkOpen(false); setKingdomOpen(false)
     setAotOpen(false); setKnyOpen(false); setNntOpen(false); setSlOpen(false); setDbsOpen(false)
     setVioletOpen(false); setVivyOpen(false); setLovePrismOpen(false); setCaroleTuesdayOpen(false); setBunnyGirlOpen(false); setRentGirlOpen(false); setBcOpen(false); setMhaOpen(false)
-    setFireforcOpen(false); setBluelockOpen(false); setMonUniversOpen(false); setTreeOpen(false); setUploadOpen(false)
+    setFireforcOpen(false); setBluelockOpen(false); setFateZeroOpen(false); setMonUniversOpen(false); setTreeOpen(false); setUploadOpen(false)
   }, [location.pathname])
 
   useEffect(() => {
@@ -371,7 +374,7 @@ export default function App() {
     }
   }, [])
 
-  const mediaOverlayOpen = scansOpen || animeHubOpen || tpnOpen || drstoneOpen || jjkOpen || kingdomOpen || aotOpen || knyOpen || nntOpen || slOpen || dbsOpen || violetOpen || vivyOpen || lovePrismOpen || caroleTuesdayOpen || bunnyGirlOpen || rentGirlOpen || bcOpen || mhaOpen || fireforcOpen || bluelockOpen || monUniversOpen
+  const mediaOverlayOpen = scansOpen || animeHubOpen || tpnOpen || drstoneOpen || jjkOpen || kingdomOpen || aotOpen || knyOpen || nntOpen || slOpen || dbsOpen || violetOpen || vivyOpen || lovePrismOpen || caroleTuesdayOpen || bunnyGirlOpen || rentGirlOpen || bcOpen || mhaOpen || fireforcOpen || bluelockOpen || fateZeroOpen || monUniversOpen
   const immersiveOverlayOpen = mediaOverlayOpen || encyclopedieOpen || treeOpen || uploadOpen
 
   const mainContent = (
@@ -521,6 +524,7 @@ export default function App() {
             onOpenMha={() => { setAnimeHubOpen(false); setMhaOpen(true) }}
             onOpenFireforce={() => { setAnimeHubOpen(false); setFireforcOpen(true) }}
             onOpenBluelock={() => { setAnimeHubOpen(false); setBluelockOpen(true) }}
+            onOpenFateZero={() => { setAnimeHubOpen(false); setFateZeroOpen(true) }}
             onOpenMonUnivers={() => { setAnimeHubOpen(false); setMonUniversOpen(true) }}
           />
         ) : (
@@ -547,10 +551,11 @@ export default function App() {
       {mhaOpen       && <MhaPage       onClose={closeMedia(setMhaOpen)} />}
       {fireforcOpen  && <FireForcePage onClose={closeMedia(setFireforcOpen)} />}
       {bluelockOpen  && <BlueLockPage  onClose={closeMedia(setBluelockOpen)} />}
+      {fateZeroOpen  && <FateZeroPage  onClose={closeMedia(setFateZeroOpen)} />}
       {monUniversOpen && (
         <MonUniversPage 
           onClose={() => setMonUniversOpen(false)}
-          onOpenAot={onOpenAotFromMon} onOpenFireforce={onOpenFireforceFromMon} onOpenBluelock={onOpenBluelockFromMon}
+          onOpenAot={onOpenAotFromMon} onOpenFireforce={onOpenFireforceFromMon} onOpenBluelock={onOpenBluelockFromMon} onOpenFateZero={onOpenFateZeroFromMon}
           onOpenBunnyGirl={onOpenBunnyGirlFromMon} onOpenRentGirlfriend={onOpenRentGirlfriendFromMon}
           onOpenTpn={onOpenTpnFromMon} onOpenDrstone={onOpenDrstoneFromMon} onOpenJjk={onOpenJjkFromMon}
           onOpenKingdom={onOpenKingdomFromMon} onOpenKny={onOpenKnyFromMon} onOpenNnt={onOpenNntFromMon}
