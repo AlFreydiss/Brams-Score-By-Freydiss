@@ -23,7 +23,7 @@ async function getIceConfig() {
   if (cachedIce) return cachedIce
   cachedIce = BASE_ICE
   try {
-    const res = await fetch('/api/turn-credentials', { cache: 'no-store' })
+    const res = await fetch('/api/bot-tools?tool=turn-credentials', { cache: 'no-store' })
     if (!res.ok) return cachedIce
     const data = await res.json()
     const extra = Array.isArray(data?.iceServers) ? data.iceServers.filter(s => s?.urls) : []

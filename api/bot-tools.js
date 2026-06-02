@@ -4,6 +4,7 @@
 //   ?tool=sync-bot               (POST, Bearer BOT_SYNC_SECRET)
 //   ?tool=akinator               (POST, public — devine IA)
 //   ?tool=r2-presign             (POST, x-upload-secret — URL présignée R2)
+//   ?tool=turn-credentials       (GET, public — ICE/TURN sans exposer les secrets)
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
@@ -292,6 +293,33 @@ async function ogPreview(req, res) {
   }
 }
 
+function splitTurnUrls(value) {
+  return String(value || '')
+    .split(',')
+    .map(v => v.trim())
+    .filter(Boolean)
+    .filter(v => /^(stun|turn|turns):/i.test(v))
+}
+
+function turnCredentials(req, res) {
+  if (req.method !== 'GET') return res.status(405).json({ ok: false, error: 'GET only' })
+  res.setHeader('Cache-Control', 'no-store, max-age=0')
+
+  const urls = splitTurnUrls(process.env.TURN_URLS || process.env.TURN_URL)
+  const username = process.env.TURN_USERNAME || process.env.TURN_USER || ''
+  const credential = process.env.TURN_CREDENTIAL || process.env.TURN_PASSWORD || process.env.TURN_PASS || ''
+
+  if (urls.length === 0) return res.status(200).json({ ok: true, iceServers: [] })
+
+  const iceServers = urls.map(url => {
+    if (/^stun:/i.test(url)) return { urls: url }
+    if (!username || !credential) return null
+    return { urls: url, username, credential }
+  }).filter(Boolean)
+
+  return res.status(200).json({ ok: true, iceServers })
+}
+
 export default async function handler(req, res) {
   const tool = String(req.query.tool || '')
   if (tool === 'seed-shop-backgrounds') return seedShopBackgrounds(req, res)
@@ -299,5 +327,6 @@ export default async function handler(req, res) {
   if (tool === 'akinator')              return akinator(req, res)
   if (tool === 'r2-presign')            return r2Presign(req, res)
   if (tool === 'og')                    return ogPreview(req, res)
+  if (tool === 'turn-credentials')      return turnCredentials(req, res)
   return res.status(404).json({ error: 'Unknown bot tool' })
 }

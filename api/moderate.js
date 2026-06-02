@@ -2,7 +2,7 @@
 // Utilise SUPABASE_SERVICE_ROLE_KEY pour bypasser le RLS Supabase.
 // Sans cette variable, les updates peuvent être bloqués silencieusement par RLS.
 
-import { requireStaff } from './_staff.js'
+import { requireStaff } from '../server/_staff.js'
 
 const SUPABASE_URL = 'https://zeqetrmulqndxugfbojd.supabase.co'
 

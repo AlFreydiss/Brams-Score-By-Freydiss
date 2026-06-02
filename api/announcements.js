@@ -1,4 +1,4 @@
-import { ANNOUNCEMENTS } from './_announcementsData.js'
+import { ANNOUNCEMENTS } from '../server/_announcementsData.js'
 
 export default function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store')

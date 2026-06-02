@@ -1,7 +1,7 @@
 // api/shop-admin.js — Gestion admin de la boutique (create/update items)
 // Protégé côté serveur : seuls les staff peuvent modifier les items boutique.
 
-import { requireStaff } from './_staff.js'
+import { requireStaff } from '../server/_staff.js'
 
 const SUPABASE_URL  = 'https://zeqetrmulqndxugfbojd.supabase.co'
 
