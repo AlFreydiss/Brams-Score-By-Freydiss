@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 // Rend le média d'un fond d'opening pour un objet `bg` du catalogue.
 // Priorité : vidéo R2 animée (videoUrl) > image (imageUrl) > miniature YouTube
@@ -12,6 +12,7 @@ export default function OpeningBgMedia({ bg, className, style, stillOnly = false
   const [imgSrc, setImgSrc] = useState(null)
   const [fallback, setFallback] = useState(false)
   const [videoFailed, setVideoFailed] = useState(false)
+  const videoRef = useRef(null)
 
   useEffect(() => {
     setFallback(false)
@@ -26,11 +27,24 @@ export default function OpeningBgMedia({ bg, className, style, stillOnly = false
   const useVideo = Boolean(bg.videoUrl) && !videoFailed && !stillOnly
   if (!useVideo && !imgSrc) return null
 
+  // Poster = image d'attente : si l'autoplay est bloqué, on voit ça au lieu d'un
+  // cadre noir.
+  const poster = bg.imageUrl || (bg.ytId ? `https://img.youtube.com/vi/${bg.ytId}/maxresdefault.jpg` : undefined)
+
   return useVideo ? (
     <video
+      key={bg.videoUrl}
+      poster={poster}
+      ref={el => {
+        videoRef.current = el
+        // React n'applique pas toujours `muted` sur le DOM → l'autoplay est alors
+        // bloqué et la vidéo reste un cadre noir. On force le mute puis play().
+        if (el) { el.muted = true; el.defaultMuted = true; const p = el.play?.(); if (p?.catch) p.catch(() => {}) }
+      }}
       className={className}
       src={bg.videoUrl}
       autoPlay muted loop playsInline preload="auto"
+      onLoadedData={e => { e.currentTarget.muted = true; const p = e.currentTarget.play?.(); if (p?.catch) p.catch(() => {}) }}
       onError={() => setVideoFailed(true)}
       style={style}
     />
