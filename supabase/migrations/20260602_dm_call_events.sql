@@ -30,12 +30,12 @@ BEGIN
   END IF;
 
   v_content := CASE p_status
-    WHEN 'started'  THEN 'Appel démarré'
-    WHEN 'missed'   THEN 'Appel manqué'
-    WHEN 'rejected' THEN 'Appel refusé'
-    WHEN 'busy'     THEN 'Correspondant occupé'
+    WHEN 'started'  THEN 'Appel demarre'
+    WHEN 'missed'   THEN 'Appel manque'
+    WHEN 'rejected' THEN 'Appel refuse'
+    WHEN 'busy'     THEN 'Correspondant occupe'
     WHEN 'failed'   THEN 'Appel impossible'
-    ELSE 'Appel terminé'
+    ELSE 'Appel termine'
   END;
 
   INSERT INTO messages (conversation_id, sender_id, content, type, voice_duration)

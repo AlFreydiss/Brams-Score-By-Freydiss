@@ -5,6 +5,7 @@ import { useSocial } from '../../contexts/SocialContext.jsx'
 import {
   getRelationship, sendFriendRequest, respondFriendRequest, cancelFriendRequest,
   removeFriend, blockUser, unblockUser, getOrCreateDm,
+  getFollowState, followUser, unfollowUser,
 } from '../../lib/social.js'
 import { btn, T } from './socialStyles.js'
 
@@ -15,13 +16,15 @@ export default function RelationshipActions({ targetId }) {
   const { refreshCounts } = useSocial()
   const navigate = useNavigate()
   const [rel, setRel]       = useState(null)   // { state, request_id? }
+  const [follow, setFollow] = useState(null)
   const [busy, setBusy]     = useState(false)
   const [error, setError]   = useState(null)
 
   const load = useCallback(async () => {
     if (!targetId) return
-    const r = await getRelationship(targetId)
+    const [r, f] = await Promise.all([getRelationship(targetId), getFollowState(targetId)])
     setRel(r)
+    if (f?.ok !== false) setFollow(f)
   }, [targetId])
 
   useEffect(() => { load() }, [load])
@@ -47,12 +50,27 @@ export default function RelationshipActions({ targetId }) {
     else setError(res?.error || 'Impossible d\'ouvrir la conversation')
   }
 
+  async function toggleFollow() {
+    const currentlyFollowing = !!follow?.following
+    setBusy(true); setError(null)
+    const res = await (currentlyFollowing ? unfollowUser(targetId) : followUser(targetId))
+    setBusy(false)
+    if (res?.ok === false) { setError(res.error || 'Erreur'); return }
+    await load()
+  }
+
   const state = rel.state
   const row = { display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <div style={row}>
+        {state !== 'blocked_by_me' && state !== 'blocked_me' && (
+          <button style={btn(follow?.following ? 'ghost' : 'gold')} disabled={busy || !follow} onClick={toggleFollow}>
+            {follow?.following ? '✓ Suivi' : '＋ Suivre'}
+          </button>
+        )}
+
         {state === 'none' && (
           <button style={btn('gold')} disabled={busy} onClick={() => run(() => sendFriendRequest(targetId))}>
             ＋ Ajouter en ami

@@ -17,6 +17,32 @@ function labelFor(call, duration, connecting) {
   return 'Appel terminé'
 }
 
+async function playRingTone(kind) {
+  const AudioCtx = window.AudioContext || window.webkitAudioContext
+  if (!AudioCtx) return
+  let ctx
+  try {
+    ctx = new AudioCtx()
+    if (ctx.state === 'suspended') await ctx.resume()
+
+    const gain = ctx.createGain()
+    gain.gain.setValueAtTime(0.0001, ctx.currentTime)
+    gain.gain.exponentialRampToValueAtTime(kind === 'incoming' ? 0.12 : 0.07, ctx.currentTime + 0.02)
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.22)
+    gain.connect(ctx.destination)
+
+    const osc = ctx.createOscillator()
+    osc.type = 'sine'
+    osc.frequency.setValueAtTime(kind === 'incoming' ? 880 : 520, ctx.currentTime)
+    osc.connect(gain)
+    osc.start()
+    osc.stop(ctx.currentTime + 0.24)
+    osc.onended = () => { try { ctx.close() } catch {} }
+  } catch {
+    try { ctx?.close() } catch {}
+  }
+}
+
 export default function CallOverlay() {
   const { call, acceptCall, declineCall, endCall, toggleMute, toggleCam, toggleScreenShare, getRemote, getLocal, getScreen } = useCall()
   const remoteAudio = useRef(null)
@@ -43,6 +69,25 @@ export default function CallOverlay() {
   }, [call?.phase])
 
   useEffect(() => { if (!call) setMinimized(false) }, [call])
+
+  useEffect(() => {
+    if (call?.phase !== 'incoming' && call?.phase !== 'outgoing') return
+    let stopped = false
+    const ring = () => {
+      if (stopped) return
+      playRingTone(call.phase)
+      if (call.phase === 'incoming') {
+        try { navigator.vibrate?.([160, 70, 160]) } catch {}
+      }
+    }
+    ring()
+    const iv = setInterval(ring, call.phase === 'incoming' ? 1400 : 2200)
+    return () => {
+      stopped = true
+      clearInterval(iv)
+      try { navigator.vibrate?.(0) } catch {}
+    }
+  }, [call?.phase])
 
   if (!call) return null
   const { phase, peer, type, muted, camOff, screenOn, connState, error, mediaWarning } = call

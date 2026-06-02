@@ -292,7 +292,7 @@ function MessageBubble({ msg, mine, grouped, onReact, onReply, onEdit, onDelete,
               : msg.type === 'gif' ? <img src={msg.gif_url} alt="gif" style={{ maxWidth: 240, borderRadius: 12, display: 'block' }} />
               : msg.type === 'image' ? <img src={msg.media_url} alt="image" style={{ maxWidth: 280, maxHeight: 320, borderRadius: 12, display: 'block' }} />
               : msg.type === 'voice' ? <audio src={msg.media_url} controls style={{ height: 36, maxWidth: 240 }} />
-              : msg.type === 'call' ? <span>{msg.content || 'Appel'}{msg.voice_duration > 0 ? ` · ${Math.floor(msg.voice_duration / 60)}:${String(msg.voice_duration % 60).padStart(2, '0')}` : ''}</span>
+              : msg.type === 'call' ? <span>{formatCallContent(msg)}</span>
               : <RichText text={msg.content} />}
             {msg.edited_at && !deleted && <span style={{ fontSize: 10, color: T.textFaint, marginLeft: 6 }}>(modifié)</span>}
           </div>
@@ -329,11 +329,30 @@ function MessageBubble({ msg, mine, grouped, onReact, onReply, onEdit, onDelete,
 }
 
 // ── Panneau des messages épinglés ────────────────────────────────────────────
+function normalizeCallText(content) {
+  const raw = String(content || 'Appel')
+  const fixed = raw
+    .replaceAll('dÃ©marrÃ©', 'démarré')
+    .replaceAll('manquÃ©', 'manqué')
+    .replaceAll('refusÃ©', 'refusé')
+    .replaceAll('occupÃ©', 'occupé')
+    .replaceAll('terminÃ©', 'terminé')
+    .replaceAll('Ã©', 'é')
+  return fixed || 'Appel'
+}
+
+function formatCallContent(msg) {
+  const text = normalizeCallText(msg?.content)
+  const sec = Math.max(0, Number(msg?.voice_duration || 0))
+  if (!sec) return text
+  return `${text} · ${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`
+}
+
 function pinPreview(m) {
   if (m.type === 'gif') return '🖼️ GIF'
   if (m.type === 'voice') return '🎤 Message vocal'
   if (m.type === 'image') return '🖼️ Image'
-  if (m.type === 'call') return m.content || '📞 Appel'
+  if (m.type === 'call') return formatCallContent(m)
   return m.content || 'Message'
 }
 function PinnedPanel({ pinned, onJump, onUnpin, onClose }) {

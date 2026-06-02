@@ -6,7 +6,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { getFeed, getPost, getFeedStats, subscribeFeed } from '../lib/feed.js'
-import { listFriends } from '../lib/social.js'
+import { listFollowing } from '../lib/social.js'
 import PostComposer from './feed/PostComposer.jsx'
 import PostCard from './feed/PostCard.jsx'
 import QuoteModal from './feed/QuoteModal.jsx'
@@ -131,7 +131,7 @@ export default function FeedPage() {
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const [activeTab, setActiveTab] = useState('for-you')
-  const [friendIds, setFriendIds] = useState(() => new Set())
+  const [followingIds, setFollowingIds] = useState(() => new Set())
   const [posts, setPosts] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -170,13 +170,13 @@ export default function FeedPage() {
   }, [])
 
   useEffect(() => {
-    if (!isAuthenticated) { setFriendIds(new Set()); return }
+    if (!isAuthenticated) { setFollowingIds(new Set()); return }
     let alive = true
-    listFriends().then(list => {
+    listFollowing().then(list => {
       if (!alive) return
-      setFriendIds(new Set((Array.isArray(list) ? list : []).map(f => String(f.user_id))))
+      setFollowingIds(new Set((Array.isArray(list) ? list : []).map(f => String(f.user_id))))
     }).catch(() => {
-      if (alive) setFriendIds(new Set())
+      if (alive) setFollowingIds(new Set())
     })
     return () => { alive = false }
   }, [isAuthenticated])
@@ -204,12 +204,12 @@ export default function FeedPage() {
   }, [posts])
 
   const visiblePosts = useMemo(() => {
-    if (activeTab === 'following') return posts.filter(p => friendIds.has(String(p.author_id)))
+    if (activeTab === 'following') return posts.filter(p => followingIds.has(String(p.author_id)) || String(p.author_id) === String(discordId))
     if (activeTab === 'trending') return [...posts].sort((a, b) => score(b) - score(a))
     if (activeTab === 'media') return posts.filter(hasMedia)
     if (activeTab === 'mine') return posts.filter(p => String(p.author_id) === String(discordId))
     return posts
-  }, [activeTab, discordId, friendIds, posts])
+  }, [activeTab, discordId, followingIds, posts])
 
   useEffect(() => { if (!authLoading) reload() }, [authLoading, discordId, reload])
 

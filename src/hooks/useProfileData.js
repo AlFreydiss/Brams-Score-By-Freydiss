@@ -6,6 +6,7 @@ import { fetchMemberProfile } from '../lib/supabase.js'
 import { fetchBerryShopState } from '../lib/berryShop.js'
 import { getProfileSettings } from '../lib/profile.js'
 import { getUserPosts } from '../lib/feed.js'
+import { getFollowState } from '../lib/social.js'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { isCreator, isStaff } from '../lib/roles.js'
 import {
@@ -19,6 +20,7 @@ export function useProfileData(discordId) {
   const [shopData,   setShopData]   = useState(null)
   const [settings,   setSettings]   = useState(null)
   const [postsCount, setPostsCount] = useState(null)
+  const [followStats,setFollowStats]= useState(null)
   const [loading,    setLoading]    = useState(true)
   const [error,      setError]      = useState(null)
   const refreshTimer = useRef(null)
@@ -26,7 +28,7 @@ export function useProfileData(discordId) {
   const load = useCallback(() => {
     let ignore = false
     setLoading(true); setError(null)
-    setMember(null); setShopData(null); setSettings(null); setPostsCount(null)
+    setMember(null); setShopData(null); setSettings(null); setPostsCount(null); setFollowStats(null)
 
     // member = source de vérité affichage (bloque le rendu principal)
     fetchMemberProfile(discordId)
@@ -37,6 +39,7 @@ export function useProfileData(discordId) {
     fetchBerryShopState(discordId).then(s => { if (!ignore) setShopData(s) }).catch(() => {})
     getProfileSettings(discordId).then(s => { if (!ignore) setSettings(s) }).catch(() => {})
     getUserPosts(discordId).then(p => { if (!ignore) setPostsCount(Array.isArray(p) ? p.length : 0) }).catch(() => {})
+    getFollowState(discordId).then(f => { if (!ignore && f?.ok !== false) setFollowStats(f) }).catch(() => {})
 
     return () => { ignore = true }
   }, [discordId])
@@ -104,7 +107,7 @@ export function useProfileData(discordId) {
 
   return {
     // état
-    member, shopData, settings, setSettings, postsCount, loading, error, reload: load,
+    member, shopData, settings, setSettings, postsCount, followStats, loading, error, reload: load,
     // dérivés
     hours, rank, nextRank, remaining, pct, wallet,
     aura, auraTier, auraFactors, achievements, equippedBg,

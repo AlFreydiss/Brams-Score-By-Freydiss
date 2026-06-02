@@ -11,7 +11,7 @@ function timeAgo(iso) {
 }
 
 // Visionneuse plein écran type Insta : barres de progression + auto-défilement 5s.
-export default function StoryViewer({ authors, startIndex = 0, onClose, onDeleted }) {
+export default function StoryViewer({ authors, startIndex = 0, onClose, onDeleted, onSeen }) {
   const { discordId } = useAuth()
   const [ai, setAi] = useState(startIndex)   // index auteur
   const [si, setSi] = useState(0)            // index story dans l'auteur
@@ -21,7 +21,13 @@ export default function StoryViewer({ authors, startIndex = 0, onClose, onDelete
   const [viewers, setViewers] = useState(null)   // panneau viewers (auteur)
 
   // Marque la story vue dès qu'elle s'affiche.
-  useEffect(() => { setViewers(null); if (story?.id) markStorySeen(story.id) }, [story?.id])
+  useEffect(() => {
+    setViewers(null)
+    if (!story?.id) return
+    let alive = true
+    markStorySeen(story.id).then(() => { if (alive) onSeen?.(story.id) }).catch(() => {})
+    return () => { alive = false }
+  }, [story?.id, onSeen])
 
   async function openViewers(e) {
     e.stopPropagation()
@@ -81,7 +87,12 @@ export default function StoryViewer({ authors, startIndex = 0, onClose, onDelete
 
         {/* Image */}
         <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <img src={story.media_url} alt="" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+          <img
+            src={story.media_url}
+            alt=""
+            onError={next}
+            style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+          />
         </div>
 
         {/* Zones de tap (sous l'en-tête en z-index) */}

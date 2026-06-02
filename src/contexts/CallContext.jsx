@@ -3,7 +3,7 @@ import { useAuth } from './AuthContext.jsx'
 import { supabase } from '../lib/supabase.js'
 import { logCallEvent } from '../lib/social.js'
 
-const ICE = {
+const BASE_ICE = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
@@ -12,8 +12,25 @@ const ICE = {
 
 const CALL_TIMEOUT_MS = 45000
 const TERMINAL_CLEAR_MS = 1200
+const TERMINAL_PHASES = new Set(['ended', 'missed', 'rejected', 'busy', 'failed'])
+const LOGGED_TERMINAL_STATUSES = new Set(['missed', 'rejected', 'ended'])
 const Ctx = createContext(null)
 const rid = () => Math.random().toString(36).slice(2, 10)
+
+let cachedIce = null
+
+async function getIceConfig() {
+  if (cachedIce) return cachedIce
+  cachedIce = BASE_ICE
+  try {
+    const res = await fetch('/api/turn-credentials', { cache: 'no-store' })
+    if (!res.ok) return cachedIce
+    const data = await res.json()
+    const extra = Array.isArray(data?.iceServers) ? data.iceServers.filter(s => s?.urls) : []
+    if (extra.length > 0) cachedIce = { iceServers: [...BASE_ICE.iceServers, ...extra] }
+  } catch {}
+  return cachedIce
+}
 
 function mediaErrorMessage(error, type) {
   const name = error?.name || ''
@@ -67,7 +84,9 @@ export function CallProvider({ children }) {
   const signal = useCallback((peerId, payload) => {
     const ch = ensurePeerChannel(peerId)
     if (!ch) return
-    const send = () => { try { ch.send({ type: 'broadcast', event: 'signal', payload }) } catch {} }
+    const target = String(peerId)
+    const scopedPayload = { ...payload, to: payload?.to || target }
+    const send = () => { try { ch.send({ type: 'broadcast', event: 'signal', payload: scopedPayload }) } catch {} }
     send()
     setTimeout(send, 250)
   }, [ensurePeerChannel])
@@ -90,6 +109,8 @@ export function CallProvider({ children }) {
 
   const logTerminal = useCallback((c, status) => {
     if (!c?.initiator || !c?.conversationId) return
+    if (!LOGGED_TERMINAL_STATUSES.has(status)) return
+    if (status === 'ended' && !c.startedAt) return
     const duration = c.startedAt ? Math.max(0, Math.round((Date.now() - c.startedAt) / 1000)) : 0
     logCallEvent(c.conversationId, status, duration, c.callId).catch(() => {})
   }, [])
@@ -118,8 +139,8 @@ export function CallProvider({ children }) {
     }, CALL_TIMEOUT_MS)
   }, [clearCallTimer, finishCall])
 
-  const buildPc = useCallback((peerId, callId) => {
-    const pc = new RTCPeerConnection(ICE)
+  const buildPc = useCallback(async (peerId, callId) => {
+    const pc = new RTCPeerConnection(await getIceConfig())
     pc.onicecandidate = e => { if (e.candidate) signal(peerId, { kind: 'ice', from: discordId, callId, candidate: e.candidate }) }
     pc.ontrack = e => {
       remoteRef.current = e.streams[0]
@@ -156,6 +177,26 @@ export function CallProvider({ children }) {
 
   const startCall = useCallback(async (peer, type = 'audio') => {
     if (callRef.current || !discordId || !peer?.id) return
+    const peerId = String(peer.id)
+    if (peerId === String(discordId)) {
+      const callId = rid()
+      setCall({
+        phase: 'failed',
+        peer,
+        type,
+        muted: false,
+        camOff: type !== 'video',
+        callId,
+        conversationId: peer.conversationId || null,
+        initiator: true,
+        startedAt: null,
+        error: "Impossible d'appeler cette conversation.",
+      })
+      setTimeout(() => {
+        if (callRef.current?.callId === callId) setCall(null)
+      }, TERMINAL_CLEAR_MS)
+      return
+    }
     const callId = rid()
     const base = {
       phase: 'outgoing',
@@ -174,12 +215,12 @@ export function CallProvider({ children }) {
 
     try {
       const media = await getMedia(type)
-      const pc = buildPc(peer.id, callId)
+      const pc = await buildPc(peerId, callId)
       media.stream.getTracks().forEach(t => pc.addTrack(t, media.stream))
       const offer = await pc.createOffer()
       await pc.setLocalDescription(offer)
       setCall(prev => prev ? { ...prev, type: media.type, camOff: media.type !== 'video', mediaWarning: media.warning } : prev)
-      signal(peer.id, {
+      signal(peerId, {
         kind: 'invite',
         from: discordId,
         fromName: displayName,
@@ -199,7 +240,7 @@ export function CallProvider({ children }) {
     if (!c || c.phase !== 'incoming' || !offerRef.current) return
     try {
       const media = await getMedia(c.type)
-      const pc = buildPc(c.peer.id, c.callId)
+      const pc = await buildPc(c.peer.id, c.callId)
       media.stream.getTracks().forEach(t => pc.addTrack(t, media.stream))
       await pc.setRemoteDescription(new RTCSessionDescription(offerRef.current))
       const answer = await pc.createAnswer()
@@ -269,9 +310,16 @@ export function CallProvider({ children }) {
     if (!supabase || !discordId) return
     const ch = supabase.channel(`call:${discordId}`, { config: { broadcast: { self: false } } })
     ch.on('broadcast', { event: 'signal' }, async ({ payload: p }) => {
+      if (!p || String(p.from || '') === String(discordId)) return
+      if (p.to && String(p.to) !== String(discordId)) return
       const c = callRef.current
       if (p.kind === 'invite') {
-        if (c) { signal(p.from, { kind: 'busy', from: discordId, callId: p.callId }); return }
+        if (c) {
+          const sameCall = c.callId === p.callId && String(c.peer?.id || '') === String(p.from)
+          if (sameCall || TERMINAL_PHASES.has(c.phase)) return
+          signal(p.from, { kind: 'busy', from: discordId, callId: p.callId })
+          return
+        }
         offerRef.current = p.sdp
         const incoming = {
           phase: 'incoming',
@@ -289,6 +337,7 @@ export function CallProvider({ children }) {
         scheduleTimeout(p.callId)
       } else if (p.kind === 'answer') {
         if (pcRef.current && c?.callId === p.callId) {
+          if (pcRef.current.remoteDescription) return
           try {
             await pcRef.current.setRemoteDescription(new RTCSessionDescription(p.sdp))
             for (const cand of pendingIce.current) { try { await pcRef.current.addIceCandidate(cand) } catch {} }
@@ -309,7 +358,7 @@ export function CallProvider({ children }) {
       } else if (p.kind === 'decline') {
         if (c && c.callId === p.callId) finishCall('rejected', false)
       } else if (p.kind === 'busy') {
-        if (c && c.callId === p.callId) finishCall('busy', false)
+        if (c && c.callId === p.callId && c.phase === 'outgoing') finishCall('busy', false)
       } else if (p.kind === 'missed') {
         if (c && c.callId === p.callId) finishCall('missed', false)
       }

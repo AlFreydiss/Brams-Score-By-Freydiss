@@ -12,9 +12,26 @@ export default function StoriesBar() {
   const [viewerIdx, setViewerIdx] = useState(null)
   const [uploading, setUploading] = useState(false)
   const fileRef = useRef(null)
+  const refreshRef = useRef(null)
 
   const load = useCallback(() => { listActiveStories().then(a => setAuthors(Array.isArray(a) ? a : [])) }, [])
   useEffect(() => { load() }, [load])
+  useEffect(() => {
+    const schedule = () => {
+      clearTimeout(refreshRef.current)
+      refreshRef.current = setTimeout(load, 120)
+    }
+    const onVisible = () => { if (!document.hidden) schedule() }
+    window.addEventListener('focus', schedule)
+    document.addEventListener('visibilitychange', onVisible)
+    const iv = setInterval(() => { if (!document.hidden) load() }, 30000)
+    return () => {
+      window.removeEventListener('focus', schedule)
+      document.removeEventListener('visibilitychange', onVisible)
+      clearInterval(iv)
+      clearTimeout(refreshRef.current)
+    }
+  }, [load])
 
   async function onPick(e) {
     const f = e.target.files?.[0]; e.target.value = ''
@@ -41,7 +58,7 @@ export default function StoriesBar() {
   )
 
   return (
-    <div style={{ display: 'flex', gap: 14, padding: '14px 16px', borderBottom: `1px solid ${T.border}`, overflowX: 'auto' }}>
+    <div className="stories-scroll" style={{ display: 'flex', gap: 14, padding: '14px 16px', borderBottom: `1px solid ${T.border}`, overflowX: 'auto' }}>
       <style>{`.stories-scroll::-webkit-scrollbar{display:none}`}</style>
       {isAuthenticated && (
         <button onClick={() => fileRef.current?.click()} disabled={uploading}
@@ -64,7 +81,7 @@ export default function StoriesBar() {
       ))}
 
       {viewerIdx !== null && (
-        <StoryViewer authors={authors} startIndex={viewerIdx} onClose={() => setViewerIdx(null)} onDeleted={load} />
+        <StoryViewer authors={authors} startIndex={viewerIdx} onClose={() => setViewerIdx(null)} onDeleted={load} onSeen={load} />
       )}
     </div>
   )

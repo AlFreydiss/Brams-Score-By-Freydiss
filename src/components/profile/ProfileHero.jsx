@@ -9,7 +9,7 @@ import { getBgById } from '../../data/opening-backgrounds.js'
 export default function ProfileHero({ data, copied, onShare, onEdit }) {
   const {
     member, rank, nextRank, remaining, pct, hours, wallet, aura,
-    achievements, postsCount, shopData, settings, equippedBg,
+    achievements, postsCount, followStats, shopData, settings, equippedBg,
     isOwnProfile, profileIsCreator, profileIsStaff, myId,
   } = data
 
@@ -37,6 +37,8 @@ export default function ProfileHero({ data, copied, onShare, onEdit }) {
     { ic: '🗃', val: invCount,                            lbl: 'Objets' },
     { ic: '🎯', val: unlocked,                            lbl: 'Succès' },
     { ic: '📝', val: postsCount == null ? '…' : postsCount, lbl: 'Posts' },
+    { ic: '👥', val: followStats?.followers_count ?? '…', lbl: 'Abonnés' },
+    { ic: '➜',  val: followStats?.following_count ?? '…', lbl: 'Suivis' },
     { ic: '🛒', val: txCount,                             lbl: 'Achats' },
   ]
 

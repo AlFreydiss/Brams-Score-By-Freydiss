@@ -36,6 +36,19 @@ export const removeFriend         = (target)        => rpc('remove_friend', { p_
 export const blockUser            = (target)        => rpc('block_user', { p_target: String(target) })
 export const unblockUser          = (target)        => rpc('unblock_user', { p_target: String(target) })
 export const getRelationship      = (target)        => rpc('get_relationship', { p_target: String(target) })
+export const followUser           = (target)        => rpc('follow_user', { p_target: String(target) })
+export const unfollowUser         = (target)        => rpc('unfollow_user', { p_target: String(target) })
+export const getFollowState       = (target)        => rpc('get_follow_state', { p_target: String(target) })
+
+export async function listFollowing() {
+  const r = await rpc('list_following')
+  return Array.isArray(r) ? r : []
+}
+
+export async function listFollowers(userId = null) {
+  const r = await rpc('list_followers', { p_user: userId ? String(userId) : null })
+  return Array.isArray(r) ? r : []
+}
 
 export async function listFriends() {
   const r = await rpc('list_friends')
