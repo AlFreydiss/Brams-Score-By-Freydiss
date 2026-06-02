@@ -60,7 +60,7 @@ export default function Footer() {
             Made with ⚓ by <strong style={{ color: 'rgba(255,255,255,0.35)' }}>Freydiss</strong> · © {new Date().getFullYear()} Brams Community
           </span>
           <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.18)', letterSpacing: '.04em' }}>
-            Tous droits réservés · Fan site non officiel
+            Tous droits réservés
           </span>
         </div>
       </div>

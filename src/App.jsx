@@ -11,6 +11,7 @@ import NotificationToast from './components/social/NotificationToast.jsx'
 import CallOverlay from './components/social/CallOverlay.jsx'
 import WelcomeAnimation from './components/WelcomeAnimation.jsx'
 import AuthGuard from './components/AuthGuard.jsx'
+import ComingSoon from './components/ComingSoon.jsx'
 import Navbar from './components/Navbar.jsx'
 import Hero from './components/Hero.jsx'
 import Ranks from './components/Ranks.jsx'
@@ -438,9 +439,9 @@ export default function App() {
         <Route path="/theories"       element={<Navigate to="/fil" replace />} />
         <Route path="/theories/*"     element={<Navigate to="/fil" replace />} />
 
-        {/* Constellation Équipages */}
-        <Route path="/equipage" element={<PageLayout><ConstellationPage /></PageLayout>} />
-        <Route path="/equipage/:crewId" element={<CrewHQPage />} />
+        {/* Équipages — verrouillé "Bientôt" pour tout le monde */}
+        <Route path="/equipage" element={<PageLayout><ComingSoon title="Équipages" /></PageLayout>} />
+        <Route path="/equipage/:crewId" element={<PageLayout><ComingSoon title="Équipages" /></PageLayout>} />
 
         {/* Encyclopédie Fruits du Démon */}
         <Route path="/fruits-du-demon" element={<PageLayout><DevilFruitPage /></PageLayout>} />
@@ -556,7 +557,7 @@ export default function App() {
           ? <ScansPage onClose={() => setScansOpen(false)} />
           : <AuthGuard onClose={() => setScansOpen(false)} feature="les scans One Piece" />
       )}
-      {encyclopedieOpen && <EncyclopediePage onClose={() => setEncyclopedieOpen(false)} />}
+      {encyclopedieOpen && <ComingSoon title="Encyclopédie" onClose={() => setEncyclopedieOpen(false)} />}
       {uploadOpen && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: '#0b0c0e', overflowY: 'auto' }}>
           <button onClick={() => setUploadOpen(false)} style={{ position: 'fixed', top: 16, right: 16, zIndex: 10000, background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, color: '#fff', padding: '8px 16px', cursor: 'pointer', fontSize: 14 }}>✕ Fermer</button>
