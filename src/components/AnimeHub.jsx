@@ -1196,7 +1196,7 @@ function RailItem({ label, icon, count, active, onClick }) {
 // ── En-tête de section premium (icône + titre + compteur + action optionnelle) ──
 function SectionHeader({ icon, title, count, accent = 'rgba(139,92,246,0.22)', action }) {
   return (
-    <div style={{ display:'flex', alignItems:'center', gap:11, marginBottom:14 }}>
+    <div style={{ display:'flex', alignItems:'center', gap:11, marginBottom:9 }}>
       <span style={{ fontSize:17 }}>{icon}</span>
       <h3 style={{ margin:0, fontSize:16.5, fontWeight:800, color:'#f4f4f5', letterSpacing:'-.01em' }}>{title}</h3>
       {count != null && (
@@ -1212,7 +1212,7 @@ function SectionHeader({ icon, title, count, accent = 'rgba(139,92,246,0.22)', a
 function Carousel({ children }) {
   return (
     <div className="elegant-scrollbar" style={{
-      display:'flex', gap:4, overflowX:'auto', overflowY:'hidden', paddingBottom:8,
+      display:'flex', gap:4, overflowX:'auto', overflowY:'hidden', paddingBottom:4,
       scrollSnapType:'x proximity',
       WebkitMaskImage:'linear-gradient(to right, black calc(100% - 48px), transparent)',
       maskImage:'linear-gradient(to right, black calc(100% - 48px), transparent)',
@@ -1604,7 +1604,7 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
           </div>
 
           {/* ── Bloc principal : sidebar + sections, ou grille filtrée ── */}
-          <div style={{ maxWidth:1360, margin:'26px auto 0', padding:'0 32px' }}>
+          <div style={{ maxWidth:1360, margin:'16px auto 0', padding:'0 32px' }}>
             {isFiltering ? (
               visibleAnimesWithProgress.length === 0 ? (
                 <div style={{ textAlign:'center', padding:'64px 20px' }}>
@@ -1665,7 +1665,7 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
                 <div style={{ minWidth:0 }}>
 
                   {/* Top du moment — numéroté */}
-                  <section id="top-du-moment" style={{ marginBottom:24, scrollMarginTop:16 }}>
+                  <section id="top-du-moment" style={{ marginBottom:14, scrollMarginTop:16 }}>
                     <SectionHeader icon="🔥" title="Top du moment" count={topWeekAnimes.length} accent="rgba(220,38,38,0.30)" />
                     <Carousel>
                       {topWeekAnimes.slice(0, 8).map((anime, i) => (
@@ -1679,7 +1679,7 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
 
                   {/* Continuer à regarder */}
                   {continueWatching.length > 0 && (
-                    <section id="continuer" style={{ marginBottom:24, scrollMarginTop:16 }}>
+                    <section id="continuer" style={{ marginBottom:14, scrollMarginTop:16 }}>
                       <SectionHeader icon="▶" title="Continuer à regarder" count={continueWatching.length} />
                       <Carousel>
                         {continueWatching.map(anime => (
@@ -1693,7 +1693,7 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
 
                   {/* Nouveautés de la saison */}
                   {newSeasonAnimes.length > 0 && (
-                    <section id="nouveautes" style={{ marginBottom:24, scrollMarginTop:16 }}>
+                    <section id="nouveautes" style={{ marginBottom:14, scrollMarginTop:16 }}>
                       <SectionHeader icon="🆕" title="Nouveautés de la saison" count={newSeasonAnimes.length} accent="rgba(139,92,246,0.30)" />
                       <Carousel>
                         {newSeasonAnimes.map(anime => (
@@ -1707,7 +1707,7 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
 
                   {/* Sections par genre */}
                   {genreSections.map(section => (
-                    <section key={section.id} id={section.id} style={{ marginBottom:24, scrollMarginTop:16 }}>
+                    <section key={section.id} id={section.id} style={{ marginBottom:14, scrollMarginTop:16 }}>
                       <SectionHeader icon={section.icon} title={section.label} count={section.items.length} />
                       <Carousel>
                         {section.items.map(anime => (
