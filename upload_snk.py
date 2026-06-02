@@ -27,8 +27,23 @@ sys.stdout.reconfigure(encoding='utf-8')
 
 # ── Config R2 (identique à upload_r2.py) ──────────────────────────────────────
 ACCOUNT_ID = '166b8357e5229b31a88cf104058ed5ee'
-ACCESS_KEY = 'b6623ff28dad38c5013cce52ca385723'
-SECRET_KEY = '51f32c44071f4b7fffdfbdd50aeef93e791ca6128a05e6221915fc5ab6e61e0e'
+# Clés R2 lues depuis .env.upload (gitignoré) — JAMAIS en clair dans un fichier suivi
+# (les clés hardcodées ont déjà été révoquées une fois pour exposition GitHub).
+def _load_env_upload():
+    env = {}
+    p = Path(__file__).parent / '.env.upload'
+    if p.exists():
+        for line in p.read_text(encoding='utf-8').splitlines():
+            line = line.strip()
+            if line and not line.startswith('#') and '=' in line:
+                k, v = line.split('=', 1)
+                env[k.strip()] = v.strip()
+    return env
+_env = _load_env_upload()
+ACCESS_KEY = _env.get('R2_ACCESS_KEY', '')
+SECRET_KEY = _env.get('R2_SECRET_KEY', '')
+if not ACCESS_KEY or not SECRET_KEY:
+    sys.exit('❌ Clés R2 manquantes : crée .env.upload avec R2_ACCESS_KEY=… et R2_SECRET_KEY=…')
 BUCKET     = 'bramscore'
 PUBLIC_URL = 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev'
 
