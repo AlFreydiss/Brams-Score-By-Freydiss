@@ -241,7 +241,6 @@ export default function MonUniversPage({
           </div>
         </div>
         <div style={{ display:'flex', gap:10, alignItems:'center' }}>
-          <button onClick={() => window.open('/bramsq-premium-hub.html', '_blank')} style={{ padding:'8px 14px', borderRadius:10, background:'rgba(167,139,250,0.12)', border:'1px solid rgba(167,139,250,0.35)', color:'#a78bfa', fontWeight:800, fontSize:12, cursor:'pointer', transition:'all .15s' }} onMouseEnter={e=>{e.currentTarget.style.background='rgba(167,139,250,0.22)';e.currentTarget.style.color='#fff'}} onMouseLeave={e=>{e.currentTarget.style.background='rgba(167,139,250,0.12)';e.currentTarget.style.color='#a78bfa'}}>✨ HUB PREMIUM</button>
           <button onClick={onClose} style={{ padding:'8px 18px', borderRadius:10, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', color:'rgba(255,255,255,0.8)', fontWeight:700, fontSize:13, cursor:'pointer' }}>← Retour</button>
         </div>
       </div>

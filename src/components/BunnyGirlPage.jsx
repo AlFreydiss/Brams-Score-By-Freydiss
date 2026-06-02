@@ -4,6 +4,7 @@ import { ProgressRing } from './ProgressRing.jsx'
 import AnimeBackdrop, { ANIME_MOTIFS } from './AnimeBackdrop.jsx'
 import VIDEOS_RAW from '../data/bunny-girl-videos.json'
 import CHAPTERS from '../data/bunny-girl-chapters.json'
+import SeasonDivider from './SeasonDivider.jsx'
 
 const VIDEOS = VIDEOS_RAW
 
@@ -251,9 +252,13 @@ export default function BunnyGirlPage({ onClose }) {
                   </div>
                 </div>
                 <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))', gap:14 }}>
-                  {episodes.map(({ v, i }) => (
-                    <EpCard key={keyOf(v)} video={v} index={i} watched={!!progress[keyOf(v)]?.completed} onPlay={playHandlers[i]} />
-                  ))}
+                  {episodes.flatMap(({ v, i }, idx) => {
+                    const prev = episodes[idx - 1]?.v
+                    const els = []
+                    if (v.arc && v.arc !== prev?.arc) els.push(<SeasonDivider key={`sep-${v.arc}`} label={v.arc} color={COLOR} />)
+                    els.push(<EpCard key={keyOf(v)} video={v} index={i} watched={!!progress[keyOf(v)]?.completed} onPlay={playHandlers[i]} />)
+                    return els
+                  })}
                 </div>
 
                 {ovas.length > 0 && (

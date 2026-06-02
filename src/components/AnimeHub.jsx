@@ -1228,6 +1228,7 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
   const [searchFocus, setSearchFocus] = useState(false)
   const [activeCat, setActiveCat] = useState('top-du-moment')
   const [showAllCount, setShowAllCount] = useState(14)
+  const [statusFilter, setStatusFilter] = useState('all') // all | fav | encours | nouveautes
 
   // Favorites synced with standalone premium hub (bramsq_favs) for hearts on cards
   const [favs, setFavs] = useState(() => {
@@ -1290,9 +1291,16 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
     return sortedAnimes.filter(anime => {
       const genreMatch = selectedGenres.size === 0 || anime.genres?.some(g => selectedGenres.has(g))
       const textMatch = !needle || searchableText(anime).includes(needle)
-      return genreMatch && textMatch
+      let statusMatch = true
+      if (statusFilter === 'fav') statusMatch = favs.has(anime.id)
+      else if (statusFilter === 'nouveautes') statusMatch = anime.badge === 'NOUVEAU' || anime.badge === 'À JOUR'
+      else if (statusFilter === 'encours') {
+        const v = computeVideo(anime.id, rawProgress)
+        statusMatch = v && v.pct > 0 && v.pct < 100
+      }
+      return genreMatch && textMatch && statusMatch
     })
-  }, [selectedGenres, query, sortedAnimes])
+  }, [selectedGenres, query, sortedAnimes, statusFilter, favs, rawProgress])
 
   // Enriched for visible cards only (perf: compute progress once for what's rendered in grid)
   const visibleAnimesWithProgress = useMemo(() => {
