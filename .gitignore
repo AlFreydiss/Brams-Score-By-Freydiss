@@ -29,3 +29,6 @@ ruvector.db
 
 # Local scans (large, uploaded to Supabase)
 public/scans/
+
+# Claude Code local config
+CLAUDE.local.md

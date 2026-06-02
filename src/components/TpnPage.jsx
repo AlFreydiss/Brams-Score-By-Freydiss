@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react'
 import VideoPlayer from './VideoPlayer.jsx'
+import { ProgressRing } from './ProgressRing.jsx'
 import AnimeBackdrop, { ANIME_MOTIFS } from './AnimeBackdrop.jsx'
 import VIDEOS_RAW from '../data/tpn-videos.json'
 
@@ -36,15 +37,7 @@ const CSS = `
   .tp-cta:hover { background: rgba(108,92,231,.22) !important; transform: translateY(-1px); box-shadow: 0 8px 28px rgba(108,92,231,.25); }
 `
 
-function ProgressRing({ pct, size = 72, stroke = 5 }) {
-  const r = (size - stroke * 2) / 2, circ = 2 * Math.PI * r, offset = circ - (pct / 100) * circ
-  return (
-    <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
-      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="rgba(255,255,255,.07)" strokeWidth={stroke} />
-      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={COLOR} strokeWidth={stroke} strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round" style={{ transition: 'stroke-dashoffset .6s ease' }} />
-    </svg>
-  )
-}
+
 
 const EpCard = memo(function EpCard({ video, index, watched, onPlay }) {
   const [imgErr, setImgErr] = useState(false)
@@ -117,13 +110,7 @@ function InfoPanel({ watchedCount, total, lastWatchedIdx, onResume }) {
       </div>
       <div style={{ padding: '18px 18px 22px', display: 'flex', flexDirection: 'column', gap: 18 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <div style={{ position: 'relative', flexShrink: 0 }}>
-            <ProgressRing pct={pct} />
-            <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-              <span style={{ fontFamily: 'var(--display)', fontWeight: 900, fontSize: 15, color: '#fff', lineHeight: 1 }}>{pct}%</span>
-              <span style={{ fontSize: 8, color: 'rgba(255,255,255,.36)', fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', marginTop: 1 }}>vu</span>
-            </div>
-          </div>
+          <ProgressRing pct={pct} posterSrc={COVER} color={COLOR} />
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 12, fontWeight: 800, color: 'rgba(255,255,255,.65)', marginBottom: 4 }}>{watchedCount} / {total} épisodes</div>
             <div style={{ height: 5, borderRadius: 999, background: 'rgba(255,255,255,.07)', overflow: 'hidden' }}>

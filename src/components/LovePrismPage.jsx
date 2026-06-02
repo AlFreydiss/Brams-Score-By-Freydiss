@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react'
 import VideoPlayer from './VideoPlayer.jsx'
+import { ProgressRing } from './ProgressRing.jsx'
 import AnimeBackdrop, { ANIME_MOTIFS } from './AnimeBackdrop.jsx'
 import VIDEOS_RAW from '../data/love-prism-videos.json'
 
@@ -61,20 +62,6 @@ const CSS = `
   .lp-scroll::-webkit-scrollbar-thumb { background: rgba(236,72,153,.2); border-radius: 4px; }
 `
 
-function ProgressRing({ pct, size = 72, stroke = 5 }) {
-  const r = (size - stroke * 2) / 2
-  const circ = 2 * Math.PI * r
-  const offset = circ - (pct / 100) * circ
-  return (
-    <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
-      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="rgba(255,255,255,.07)" strokeWidth={stroke} />
-      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={COLOR} strokeWidth={stroke}
-        strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round"
-        style={{ transition: 'stroke-dashoffset .6s ease' }} />
-    </svg>
-  )
-}
-
 const EpCard = memo(function EpCard({ video, index, watched, onPlay }) {
   const [imgErr, setImgErr] = useState(false)
   const cardLabel = video.kind === 'film' ? 'FILM' : video.kind === 'ova' ? 'OAV' : `EPISODE ${video.episode}`
@@ -110,7 +97,7 @@ function InfoPanel({ watchedCount, total, lastWatchedIdx, onResume }) {
   return (
     <aside style={{ position: 'sticky', top: 0, alignSelf: 'start', display: 'flex', flexDirection: 'column', borderRadius: 22, overflow: 'hidden', background: 'linear-gradient(180deg,rgba(16,12,30,.96),rgba(10,8,20,.99))', border: '1px solid rgba(236,72,153,.18)', boxShadow: '0 24px 70px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.04)', backdropFilter: 'blur(20px)' }}>
       <div style={{ position:'relative', height:260, overflow:'hidden', flexShrink:0 }}>
-        <img src={COVER} alt="Love Prism" style={{ width:'100%',height:'100%',objectFit:'cover',objectPosition:'center 20%',opacity:.72,filter:'saturate(1.2) brightness(.9)' }} />
+        <img src={COVER} alt="Love Prism" style={{ width:'100%',height:'100%',objectFit:'cover',objectPosition:'center 15%',opacity:.72,filter:'saturate(1.1) brightness(.88)' }} />
         <div style={{ position:'absolute',inset:0,background:'linear-gradient(180deg,rgba(0,0,0,.1) 0%,rgba(16,12,30,.98) 100%)' }} />
         <div style={{ position:'absolute',bottom:0,left:0,right:0,padding:'0 18px 20px' }}>
           <div style={{ fontSize:9.5,fontWeight:800,letterSpacing:'.18em',color:COLOR2,textTransform:'uppercase',marginBottom:6 }}>💖 AMOUR • LUMIÈRE • RÉVÉLATIONS</div>
@@ -121,13 +108,7 @@ function InfoPanel({ watchedCount, total, lastWatchedIdx, onResume }) {
 
       <div style={{ padding:'18px 18px 22px', display:'flex', flexDirection:'column', gap:18 }}>
         <div style={{ display:'flex',alignItems:'center',gap:14 }}>
-          <div style={{ position:'relative',flexShrink:0 }}>
-            <ProgressRing pct={pct} />
-            <div style={{ position:'absolute',inset:0,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center' }}>
-              <span style={{ fontFamily:"var(--display)",fontWeight:900,fontSize:15,color:'#fff',lineHeight:1 }}>{pct}%</span>
-              <span style={{ fontSize:8,color:'rgba(255,255,255,.36)',fontWeight:700,letterSpacing:'.06em',textTransform:'uppercase',marginTop:1 }}>vu</span>
-            </div>
-          </div>
+          <ProgressRing pct={pct} posterSrc={COVER} color={COLOR} />
           <div style={{ flex:1 }}>
             <div style={{ fontSize:12,fontWeight:800,color:'rgba(255,255,255,.65)',marginBottom:4 }}>{watchedCount} / {total} vidéos</div>
             <div style={{ height:5,borderRadius:999,background:'rgba(255,255,255,.07)',overflow:'hidden' }}>

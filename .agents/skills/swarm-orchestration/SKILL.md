@@ -1,8 +1,5 @@
 ---
 name: swarm-orchestration
-version: "1.0.0"
-author: rUv
-tags: [swarm, orchestration]
 description: >
   Multi-agent swarm coordination for complex tasks. Uses hierarchical topology with specialized agents to break down and execute complex work across multiple files and modules.
   Use when: 3+ files need changes, new feature implementation, cross-module refactoring, API changes with tests, security-related changes, performance optimization across codebase, database schema changes.
@@ -36,12 +33,12 @@ Multi-agent swarm coordination for complex tasks. Uses hierarchical topology wit
 Start a new swarm with hierarchical topology (anti-drift)
 
 ```bash
-npx ruflo swarm init --topology hierarchical --max-agents 8 --strategy specialized
+npx @claude-flow/cli swarm init --topology hierarchical --max-agents 8 --strategy specialized
 ```
 
 **Example:**
 ```bash
-npx ruflo swarm init --topology hierarchical --max-agents 6 --strategy specialized
+npx @claude-flow/cli swarm init --topology hierarchical --max-agents 6 --strategy specialized
 ```
 
 ### Route Task

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react'
 import VideoPlayer from './VideoPlayer.jsx'
+import { ProgressRing } from './ProgressRing.jsx'
 import AnimeBackdrop, { ANIME_MOTIFS } from './AnimeBackdrop.jsx'
 import VIDEOS_RAW from '../data/onepiece-videos.js'
 
@@ -53,20 +54,6 @@ const CSS = `
   .op-scroll::-webkit-scrollbar-thumb { background: rgba(224,82,74,.2); border-radius: 4px; }
 `
 
-function ProgressRing({ pct, size = 72, stroke = 5 }) {
-  const r = (size - stroke * 2) / 2
-  const circ = 2 * Math.PI * r
-  const offset = circ - (pct / 100) * circ
-  return (
-    <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
-      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="rgba(255,255,255,.07)" strokeWidth={stroke} />
-      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={COLOR} strokeWidth={stroke}
-        strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round"
-        style={{ transition: 'stroke-dashoffset .6s ease' }} />
-    </svg>
-  )
-}
-
 const EpCard = memo(function EpCard({ video, index, watched, onPlay }) {
   const [imgErr, setImgErr] = useState(false)
   const canPlay = Boolean(video.src)
@@ -81,11 +68,11 @@ const EpCard = memo(function EpCard({ video, index, watched, onPlay }) {
         animation: `opFadeUp .3s ${Math.min(index, 20) * 0.03}s ease-out both`,
         opacity: canPlay ? 1 : 0.45,
       }}>
-      <div style={{ position:'relative', paddingTop:'57%', background:'#120806', overflow:'hidden' }}>
+      <div style={{ position:'relative', paddingTop:'57%', background:'#0a0814', overflow:'hidden' }}>
         {video.thumbnail && !imgErr
           ? <img src={video.thumbnail} alt={video.title} loading="lazy" onError={() => setImgErr(true)}
-              style={{ position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',opacity:watched?0.5:0.85 }} />
-          : <div style={{ position:'absolute',inset:0,background:'linear-gradient(135deg,rgba(224,82,74,.14),rgba(0,0,0,.9))',display:'flex',alignItems:'center',justifyContent:'center' }}>
+              style={{ position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',opacity:watched?0.5:0.82 }} />
+          : <div style={{ position:'absolute',inset:0,background:'linear-gradient(135deg,rgba(224,82,74,.12),rgba(0,0,0,.9))',display:'flex',alignItems:'center',justifyContent:'center' }}>
               <span style={{ fontFamily:"'Pirata One',cursive",fontSize:36,fontWeight:900,color:'rgba(224,82,74,.28)' }}>{video.episode}</span>
             </div>
         }
@@ -124,7 +111,7 @@ function InfoPanel({ watchedCount, availableCount, resumeIdx, onResume }) {
       backdropFilter:'blur(20px)',
     }}>
       <div style={{ position:'relative',height:268,overflow:'hidden',flexShrink:0 }}>
-        <img src={COVER} alt="One Piece" style={{ width:'100%',height:'100%',objectFit:'cover',objectPosition:'center top',opacity:.7,filter:'saturate(1.2) brightness(.85)' }} />
+        <img src={COVER} alt="One Piece" style={{ width:'100%',height:'100%',objectFit:'cover',objectPosition:'center 15%',opacity:.72,filter:'saturate(1.1) brightness(.88)' }} />
         <div style={{ position:'absolute',inset:0,background:'linear-gradient(180deg,rgba(0,0,0,.1) 0%,rgba(20,8,6,.98) 100%)' }} />
         <div style={{ position:'absolute',bottom:0,left:0,right:0,padding:'0 18px 20px' }}>
           <div style={{ fontSize:9,fontWeight:800,letterSpacing:'.18em',color:COLOR2,textTransform:'uppercase',marginBottom:6 }}>🏴‍☠️ AVENTURE · PIRATES · GRAND LINE</div>
@@ -135,13 +122,7 @@ function InfoPanel({ watchedCount, availableCount, resumeIdx, onResume }) {
 
       <div style={{ padding:'18px 18px 22px',display:'flex',flexDirection:'column',gap:16 }}>
         <div style={{ display:'flex',alignItems:'center',gap:14 }}>
-          <div style={{ position:'relative',flexShrink:0 }}>
-            <ProgressRing pct={pct} />
-            <div style={{ position:'absolute',inset:0,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center' }}>
-              <span style={{ fontWeight:900,fontSize:15,color:'#fff',lineHeight:1 }}>{pct}%</span>
-              <span style={{ fontSize:8,color:'rgba(255,255,255,.36)',fontWeight:700,letterSpacing:'.06em',textTransform:'uppercase',marginTop:1 }}>vu</span>
-            </div>
-          </div>
+          <ProgressRing pct={pct} posterSrc={COVER} color={COLOR} />
           <div style={{ flex:1 }}>
             <div style={{ fontSize:12,fontWeight:800,color:'rgba(255,255,255,.65)',marginBottom:4 }}>{watchedCount} / {availableCount} épisodes</div>
             <div style={{ height:5,borderRadius:999,background:'rgba(255,255,255,.07)',overflow:'hidden' }}>

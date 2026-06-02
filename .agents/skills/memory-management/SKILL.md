@@ -1,8 +1,5 @@
 ---
 name: memory-management
-version: "1.0.0"
-author: rUv
-tags: [memory, management]
 description: >
   AgentDB memory system with HNSW vector search. Provides 150x-12,500x faster pattern retrieval, persistent storage, and semantic search capabilities for learning and knowledge management.
   Use when: need to store successful patterns, searching for similar solutions, semantic lookup of past work, learning from previous tasks, sharing knowledge between agents, building knowledge base.

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react'
 import VideoPlayer from './VideoPlayer.jsx'
+import { ProgressRing } from './ProgressRing.jsx'
 import AnimeBackdrop, { ANIME_MOTIFS } from './AnimeBackdrop.jsx'
 import { Reader } from './MangaReader.jsx'
 import VIDEOS_RAW from '../data/dbs-videos.json'
@@ -85,24 +86,6 @@ const CSS = `
   }
 `
 
-function ProgressRing({ pct, size = 72, stroke = 5 }) {
-  const r = (size - stroke * 2) / 2
-  const circ = 2 * Math.PI * r
-  const offset = circ - (pct / 100) * circ
-  return (
-    <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
-      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="rgba(255,255,255,.07)" strokeWidth={stroke} />
-      <circle
-        cx={size/2} cy={size/2} r={r} fill="none"
-        stroke={COLOR} strokeWidth={stroke}
-        strokeDasharray={circ} strokeDashoffset={offset}
-        strokeLinecap="round"
-        style={{ transition: 'stroke-dashoffset .6s ease' }}
-      />
-    </svg>
-  )
-}
-
 const EpCard = memo(function EpCard({ video, index, watched, onPlay }) {
   const [imgErr, setImgErr] = useState(false)
   return (
@@ -170,7 +153,7 @@ function InfoPanel({ watchedCount, total, lastWatchedIdx, onResume }) {
           src={coverErr ? COVER_FALLBACK : COVER}
           onError={() => setCoverErr(true)}
           alt="Dragon Ball Super"
-          style={{ width:'100%',height:'100%',objectFit:'cover',objectPosition:'center top',opacity:.75,filter:'saturate(1.3) brightness(.82)' }}
+          style={{ width:'100%',height:'100%',objectFit:'cover',objectPosition:'center 15%',opacity:.72,filter:'saturate(1.1) brightness(.88)' }}
         />
         <div style={{ position:'absolute',inset:0,background:'linear-gradient(180deg,rgba(0,0,0,.08) 0%,rgba(12,8,2,.98) 100%)' }} />
         <div style={{ position:'absolute',bottom:0,left:0,right:0,padding:'0 18px 20px' }}>
@@ -187,13 +170,7 @@ function InfoPanel({ watchedCount, total, lastWatchedIdx, onResume }) {
       <div style={{ padding:'18px 18px 22px', display:'flex', flexDirection:'column', gap:18 }}>
 
         <div style={{ display:'flex',alignItems:'center',gap:14 }}>
-          <div style={{ position:'relative',flexShrink:0 }}>
-            <ProgressRing pct={pct} />
-            <div style={{ position:'absolute',inset:0,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center' }}>
-              <span style={{ fontFamily:"var(--display)",fontWeight:900,fontSize:15,color:'#fff',lineHeight:1 }}>{pct}%</span>
-              <span style={{ fontSize:8,color:'rgba(255,255,255,.36)',fontWeight:700,letterSpacing:'.06em',textTransform:'uppercase',marginTop:1 }}>vu</span>
-            </div>
-          </div>
+          <ProgressRing pct={pct} posterSrc={COVER} color={COLOR} />
           <div style={{ flex:1 }}>
             <div style={{ fontSize:12,fontWeight:800,color:'rgba(255,255,255,.65)',marginBottom:4 }}>
               {watchedCount} / {total} épisodes
@@ -263,13 +240,7 @@ function ScanInfoPanel({ readCount, total }) {
         <div style={{ fontSize:11,color:'rgba(255,255,255,.4)',marginTop:4 }}>{total} chapitres disponibles</div>
       </div>
       <div style={{ display:'flex',alignItems:'center',gap:14 }}>
-        <div style={{ position:'relative',flexShrink:0 }}>
-          <ProgressRing pct={pct} />
-          <div style={{ position:'absolute',inset:0,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center' }}>
-            <span style={{ fontFamily:"var(--display)",fontWeight:900,fontSize:15,color:'#fff',lineHeight:1 }}>{pct}%</span>
-            <span style={{ fontSize:8,color:'rgba(255,255,255,.36)',fontWeight:700,letterSpacing:'.06em',textTransform:'uppercase',marginTop:1 }}>lu</span>
-          </div>
-        </div>
+        <ProgressRing pct={pct} posterSrc={COVER} color={COLOR} />
         <div style={{ flex:1 }}>
           <div style={{ fontSize:12,fontWeight:800,color:'rgba(255,255,255,.65)',marginBottom:4 }}>{readCount} / {total} chapitres</div>
           <div style={{ height:5,borderRadius:999,background:'rgba(255,255,255,.07)',overflow:'hidden' }}>
