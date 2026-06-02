@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react'
 import VideoPlayer from './VideoPlayer.jsx'
 import { ProgressRing } from './ProgressRing.jsx'
 import AnimeBackdrop, { ANIME_MOTIFS } from './AnimeBackdrop.jsx'
+import { Reader } from './MangaReader.jsx'
 import VIDEOS_RAW from '../data/sl-videos.json'
 import CHAPTERS from '../data/sl-chapters.json'
 
@@ -28,6 +29,12 @@ function loadProgress() {
 }
 function saveProgress(p) {
   try { localStorage.setItem(`${NS}_vp`, JSON.stringify(p)) } catch {}
+}
+function loadScanProgress() {
+  try { return JSON.parse(localStorage.getItem(`${NS}_progress`) || '{}') } catch { return {} }
+}
+function saveScanProgress(p) {
+  try { localStorage.setItem(`${NS}_progress`, JSON.stringify(p)) } catch {}
 }
 
 const CSS = `
@@ -171,6 +178,8 @@ function InfoPanel({ watchedCount, total, lastWatchedIdx, onResume, chapterCount
 export default function SlPage({ onClose }) {
   const [playerIdx, setPlayerIdx] = useState(null)
   const [progress, setProgress]   = useState(loadProgress)
+  const [scanProg, setScanProg]   = useState(loadScanProgress)
+  const [reading, setReading]     = useState(null)
   const scrollRef = useRef(null)
 
   useEffect(() => { document.body.style.overflow = 'hidden'; return () => { document.body.style.overflow = '' } }, [])
@@ -251,12 +260,34 @@ export default function SlPage({ onClose }) {
                   </div>
                 </div>
 
-                <div style={{ padding: '24px', borderRadius: 16, background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.06)', textAlign: 'center' }}>
-                  <div style={{ fontSize: 48, marginBottom: 12 }}>👤</div>
-                  <div style={{ fontSize: 20, fontWeight: 900, color: '#fff', marginBottom: 8 }}>{chapterCount} chapitres de scans</div>
-                  <div style={{ color: 'rgba(255,255,255,.5)', marginBottom: 16 }}>Solo Leveling - L'ascension de Sung Jin-Woo est disponible via la section Scans.</div>
-                  <div style={{ fontSize: 13, color: 'rgba(25,118,210,.8)' }}>Bientôt : expérience dédiée avec grille de chapitres ici.</div>
+                <div style={{ marginBottom: 8, fontSize: 12, color: 'rgba(255,255,255,.45)', fontWeight: 600, letterSpacing: '.02em' }}>Scans manga — {chapterCount} chapitres • clique pour lire</div>
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(68px,1fr))', gap:8, maxHeight:220, overflowY:'auto', paddingRight:4 }}>
+                  {CHAPTERS.slice(0, Math.min(60, CHAPTERS.length)).map((ch, i) => {
+                    const st = scanProg[ch.num] || (ch.read ? 'read' : null)
+                    const done = st === 'read'
+                    return (
+                      <button key={i} onClick={() => setReading(i)} style={{ fontSize:11, padding:'8px 6px', borderRadius:8, background: done ? 'rgba(52,211,153,0.15)' : 'rgba(255,255,255,0.04)', border: done ? '1px solid #34d399' : '1px solid rgba(255,255,255,0.1)', color: done ? '#34d399' : '#fff', cursor:'pointer' }}>
+                        #{ch.num || (i+1)} {done ? '✓' : ''}
+                      </button>
+                    )
+                  })}
                 </div>
+                {reading !== null && CHAPTERS[reading] && (
+                  <div style={{ position:'fixed', inset:0, zIndex:9999, background:'#0a0814' }}>
+                    <Reader
+                      chapter={CHAPTERS[reading]}
+                      chapterIndex={reading}
+                      onClose={() => setReading(null)}
+                      onPrevChapter={() => setReading(Math.max(0, reading-1))}
+                      onNextChapter={() => setReading(Math.min(CHAPTERS.length-1, reading+1))}
+                      totalChapters={CHAPTERS.length}
+                      onFinish={() => { const p = {...scanProg, [CHAPTERS[reading].num]: 'read'}; setScanProg(p); try{localStorage.setItem(`${NS}_progress`, JSON.stringify(p))}catch{} }}
+                      isRead={scanProg[CHAPTERS[reading]?.num] === 'read'}
+                      namespace={NS}
+                      themeColor={COLOR}
+                    />
+                  </div>
+                )}
 
                 <div style={{ marginTop:28,padding:'14px 18px',borderRadius:12,background:'rgba(255,255,255,.03)',border:'1px solid rgba(255,255,255,.05)',display:'flex',alignItems:'center',gap:10 }}>
                   <span style={{ fontSize:16 }}>💎</span>
