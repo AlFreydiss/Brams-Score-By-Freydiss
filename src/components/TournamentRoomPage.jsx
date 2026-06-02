@@ -98,16 +98,24 @@ export default function TournamentRoomPage() {
       .finally(() => setRoomsLoading(false))
   }, [])
 
+  // Liste "Salons en direct" : chargée à l'arrivée PUIS rafraîchie en continu
+  // (sinon un salon créé/fermé n'apparaît/disparaît jamais sans recharger la page).
   useEffect(() => {
     if (code) return
     let ignore = false
-    setRoomsLoading(true); setRoomsError(false)
-    fetchRecentTournamentRooms(8)
-      .then(r => { if (!ignore) setPublicRooms(Array.isArray(r) ? r : []) })
-      .catch(() => { if (!ignore) setRoomsError(true) })
-      .finally(() => { if (!ignore) setRoomsLoading(false) })
-    return () => { ignore = true }
-  }, [code])
+    const tick = () => { if (!ignore) loadRooms() }
+    tick()
+    const iv = setInterval(() => { if (!document.hidden) tick() }, 6000)
+    const onFocus = () => { if (!document.hidden) tick() }
+    document.addEventListener('visibilitychange', onFocus)
+    window.addEventListener('focus', onFocus)
+    return () => {
+      ignore = true
+      clearInterval(iv)
+      document.removeEventListener('visibilitychange', onFocus)
+      window.removeEventListener('focus', onFocus)
+    }
+  }, [code, loadRooms])
 
   useEffect(() => {
     const f = () => { setIsMobile(window.innerWidth < 768); setIsNarrow(window.innerWidth < 1024) }
