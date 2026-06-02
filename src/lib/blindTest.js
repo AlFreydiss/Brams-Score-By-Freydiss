@@ -1,7 +1,100 @@
 import { supabase } from './supabase.js'
 
 // ── Local tracks (always available, no DB needed) ──────────────────────────
+// type: 'OP' (opening) ou 'ED' (ending) — sert à séparer Blind Test / Tournois.
 export const LOCAL_TRACKS = [
+  // ═══ ENDINGS ═══
+  {
+    id: 'fz-ed1', anime: 'Fate/Zero', title: 'Memoria', artist: 'Kalafina', type: 'ED', episode: 'Ending 1',
+    url: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/blind-test/fz-ed1.mp4',
+    difficulty: 'difficile', color: '#3b2f6b', emoji: '🌙',
+    aliases: ['fate zero', 'fate/zero', 'memoria', 'fate'],
+  },
+  {
+    id: 'op-ed15', anime: 'One Piece', title: 'Dear friends', artist: 'TRIPLANE', type: 'ED', episode: 'Ending 15',
+    url: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/blind-test/op-ed15.mp4',
+    difficulty: 'difficile', color: '#d97706', emoji: '🏴‍☠️',
+    aliases: ['one piece', 'dear friends', 'op'],
+  },
+  {
+    id: 'bleach-ed12', anime: 'Bleach', title: 'Hitohira no Hanabira', artist: 'Stereopony', type: 'ED', episode: 'Ending',
+    url: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/blind-test/bleach-ed12.mp4',
+    difficulty: 'moyen', color: '#0e7490', emoji: '⚔️',
+    aliases: ['bleach', 'hitohira no hanabira', 'stereopony'],
+  },
+  {
+    id: 'bleach-ed5', anime: 'Bleach', title: 'Life', artist: 'YUI', type: 'ED', episode: 'Ending 5',
+    url: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/blind-test/bleach-ed5.mp4',
+    difficulty: 'moyen', color: '#0e7490', emoji: '⚔️',
+    aliases: ['bleach', 'life', 'yui'],
+  },
+  {
+    id: 'bleach-ed1', anime: 'Bleach', title: 'Life is Like a Boat', artist: 'Rie fu', type: 'ED', episode: 'Ending 1',
+    url: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/blind-test/bleach-ed1.mp4',
+    difficulty: 'facile', color: '#0e7490', emoji: '⚔️',
+    aliases: ['bleach', 'life is like a boat', 'rie fu'],
+  },
+  {
+    id: 'vinland-ed1', anime: 'Vinland Saga', title: 'Torches', artist: 'Aimer', type: 'ED', episode: 'Ending 1',
+    url: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/blind-test/vinland-ed1.mp4',
+    difficulty: 'moyen', color: '#1f6f54', emoji: '🪓',
+    aliases: ['vinland saga', 'torches', 'aimer', 'vinland'],
+  },
+  {
+    id: 'vinland-ed2', anime: 'Vinland Saga', title: 'Drown', artist: 'survive said the prophet', type: 'ED', episode: 'Ending 2',
+    url: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/blind-test/vinland-ed2.mp4',
+    difficulty: 'difficile', color: '#1f6f54', emoji: '🪓',
+    aliases: ['vinland saga', 'drown', 'vinland'],
+  },
+  {
+    id: 'dn-ed1', anime: 'Death Note', title: 'Alumina', artist: 'Nightmare', type: 'ED', episode: 'Ending 1',
+    url: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/blind-test/dn-ed1.mp4',
+    difficulty: 'moyen', color: '#0f172a', emoji: '📓',
+    aliases: ['death note', 'alumina', 'nightmare'],
+  },
+  {
+    id: 'ylia-ed2', anime: 'Your Lie in April', title: 'Orange', artist: '7!!', type: 'ED', episode: 'Ending 2',
+    url: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/blind-test/ylia-ed2.mp4',
+    difficulty: 'difficile', color: '#be4f8a', emoji: '🎹',
+    aliases: ['your lie in april', 'orange', 'shigatsu wa kimi no uso', 'kimi no uso'],
+  },
+  {
+    id: 'tr-ed1', anime: 'Tokyo Revengers', title: 'Koko de Iki o Shite', artist: 'eill', type: 'ED', episode: 'Ending 1',
+    url: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/blind-test/tr-ed1.mp4',
+    difficulty: 'difficile', color: '#6d28d9', emoji: '🕰️',
+    aliases: ['tokyo revengers', 'koko de iki o shite', 'tokyo revenger'],
+  },
+  {
+    id: 'fmab-ed1', anime: 'FMA: Brotherhood', title: 'Uso', artist: 'SID', type: 'ED', episode: 'Ending 1',
+    url: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/blind-test/fmab-ed1.mp4',
+    difficulty: 'moyen', color: '#b45309', emoji: '⚗️',
+    aliases: ['fullmetal alchemist', 'fma', 'brotherhood', 'uso', 'fullmetal alchemist brotherhood'],
+  },
+  {
+    id: 'hxh-ed2', anime: 'Hunter x Hunter 2011', title: 'HUNTING FOR YOUR DREAM', artist: 'Galneryus', type: 'ED', episode: 'Ending 2',
+    url: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/blind-test/hxh-ed2.mp4',
+    difficulty: 'difficile', color: '#065f46', emoji: '🗡️',
+    aliases: ['hunter x hunter', 'hxh', 'hunting for your dream', 'hunter hunter'],
+  },
+  {
+    id: 'hxh-ed5', anime: 'Hunter x Hunter 2011', title: 'Hyouriittai', artist: 'Yuzu', type: 'ED', episode: 'Ending 5',
+    url: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/blind-test/hxh-ed5.mp4',
+    difficulty: 'difficile', color: '#065f46', emoji: '🗡️',
+    aliases: ['hunter x hunter', 'hxh', 'hyouriittai', 'hunter hunter'],
+  },
+  {
+    id: 'mha-ed2', anime: 'My Hero Academia', title: 'Datte Atashi no Hero', artist: 'LiSA', type: 'ED', episode: 'Ending 2',
+    url: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/blind-test/mha-ed2.mp4',
+    difficulty: 'moyen', color: '#1e40af', emoji: '💥',
+    aliases: ['my hero academia', 'mha', 'boku no hero', 'datte atashi no hero'],
+  },
+  {
+    id: 'aot-ed7', anime: 'Attack on Titan', title: 'Akuma no Ko', artist: 'Ai Higuchi', type: 'ED', episode: 'Ending 7',
+    url: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/blind-test/aot-ed7.mp4',
+    difficulty: 'moyen', color: '#7f1d1d', emoji: '⚔️',
+    aliases: ['attack on titan', 'snk', 'shingeki no kyojin', "l'attaque des titans", 'aot', 'akuma no ko'],
+  },
+  // ═══ OPENINGS ═══
   {
     id: 'aot-s2-op',
     anime:      'Attack on Titan S2',
