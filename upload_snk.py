@@ -10,11 +10,18 @@ puis génère aot-videos.json directement dans le repo du site (brams-web-clone)
 Reprise possible : un fichier déjà présent sur R2 (même clé + même taille) est sauté.
 Lancer :  python upload_snk.py
 """
-import sys, json, re
+import sys, json, re, subprocess, tempfile
 from pathlib import Path
 import boto3
 from botocore.config import Config
 from botocore.exceptions import ClientError
+
+# Dossier temp pour les fichiers S3 remuxés (MKV → MP4/M4A/VTT)
+TMP = Path(tempfile.gettempdir()) / 'snk_s3_remux'
+TMP.mkdir(parents=True, exist_ok=True)
+
+def ff(args):
+    subprocess.run(['ffmpeg', '-y', '-hide_banner', '-loglevel', 'error', *args], check=True)
 
 sys.stdout.reconfigure(encoding='utf-8')
 
@@ -47,7 +54,10 @@ TRANSFER = boto3.s3.transfer.TransferConfig(
 )
 
 def content_type(path: Path) -> str:
-    return {'.mkv': 'video/x-matroska', '.mp4': 'video/mp4'}.get(path.suffix.lower(), 'application/octet-stream')
+    return {
+        '.mkv': 'video/x-matroska', '.mp4': 'video/mp4',
+        '.m4a': 'audio/mp4', '.vtt': 'text/vtt; charset=utf-8',
+    }.get(path.suffix.lower(), 'application/octet-stream')
 
 def already_uploaded(key: str, size: int) -> bool:
     try:
@@ -82,19 +92,40 @@ def main():
 
     entries = []
 
-    print('\n🗡️  Saison 3 (MKV multi-audio VOSTFR/VF)…')
+    print('\n🗡️  Saison 3 (MKV → MP4 lisible navigateur : VF par défaut + VOSTFR .m4a + sous-titres .vtt)…')
     for ep, f in collect(S3_DIR, '.mkv'):
-        key = f'anime/aot/S03E{ep:02d}.mkv'
-        url = upload(f, key)
+        mp4 = TMP / f'S03E{ep:02d}.mp4'      # vidéo H264 + audio VF (fre) par défaut → lit partout
+        m4a = TMP / f'S03E{ep:02d}-ja.m4a'   # piste audio VO japonaise séparée (VOSTFR)
+        vtt = TMP / f'S03E{ep:02d}-fr.vtt'   # sous-titres FR "Complets" (1er flux sub)
+        if not mp4.exists():
+            ff(['-i', str(f), '-map', '0:v:0', '-map', '0:a:m:language:fre', '-c', 'copy', '-movflags', '+faststart', str(mp4)])
+        if not m4a.exists():
+            ff(['-i', str(f), '-map', '0:a:m:language:jpn', '-c', 'copy', str(m4a)])
+        if not vtt.exists():
+            ff(['-i', str(f), '-map', '0:s:0', '-c:s', 'webvtt', str(vtt)])
+        url_mp4 = upload(mp4, f'anime/aot/S03E{ep:02d}.mp4')
+        url_m4a = upload(m4a, f'anime/aot/S03E{ep:02d}-ja.m4a')
+        url_vtt = upload(vtt, f'anime/aot/S03E{ep:02d}-fr.vtt')
+        # libère le disque temp (13 Go sinon)
+        for tmpf in (mp4, m4a):
+            try: tmpf.unlink()
+            except OSError: pass
         entries.append({
             'episode': ep,
             'title': f'Saison 3 — Épisode {ep}',
-            'src': url,
+            'src': url_mp4,
             'season': 'S03',
             'arc': 'Saison 3',
             'badge': 'MULTI',
             'preferredAudioLang': 'fr',
             'progressKey': f's3-{ep}',   # unique inter-saisons (sinon S03E01/S04E01 partagent la clé)
+            'audio': [
+                {'label': 'VF', 'srclang': 'fr'},                       # piste native du MP4 (défaut)
+                {'label': 'VOSTFR', 'srclang': 'ja', 'src': url_m4a},   # piste séparée (pattern Kaiju)
+            ],
+            'subtitles': [
+                {'label': 'Français', 'srclang': 'fr', 'src': url_vtt},
+            ],
         })
 
     print('\n🗡️  Saison 4 (MP4 VOSTFR)…')
