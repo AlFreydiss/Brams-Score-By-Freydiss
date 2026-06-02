@@ -94,6 +94,7 @@ def main():
             'arc': 'Saison 3',
             'badge': 'MULTI',
             'preferredAudioLang': 'fr',
+            'progressKey': f's3-{ep}',   # unique inter-saisons (sinon S03E01/S04E01 partagent la clé)
         })
 
     print('\n🗡️  Saison 4 (MP4 VOSTFR)…')
@@ -108,6 +109,7 @@ def main():
             'arc': 'Saison 4',
             'badge': 'VOSTFR',
             'preferredAudioLang': 'ja',
+            'progressKey': f's4-{ep}',
         })
 
     OUT_JSON.parent.mkdir(parents=True, exist_ok=True)
