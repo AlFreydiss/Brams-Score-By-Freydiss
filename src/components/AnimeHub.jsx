@@ -1509,7 +1509,7 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
         {/* Étoiles très subtiles (le fond bleu + le 3D font le reste) */}
         <AHStars />
 
-        <div style={{ position:'relative', zIndex:2, padding:'20px 0 64px' }}>
+        <div style={{ position:'relative', zIndex:2, padding:'12px 0 40px' }}>
           <div style={{ maxWidth:1360, margin:'0 auto', padding:'0 32px' }}>
 
             {/* ── Hero compact horizontal (titre à gauche, stats à droite) ── */}
@@ -1548,7 +1548,7 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
             </div>
 
             {/* ── Recherche ── */}
-            <div style={{ maxWidth:740, margin:'0 auto 12px', position:'relative' }}>
+            <div style={{ maxWidth:740, margin:'0 0 10px', position:'relative' }}>
               <span style={{ position:'absolute', left:16, top:'50%', transform:'translateY(-50%)', fontSize:17, color:'rgba(139,92,246,0.55)', pointerEvents:'none' }}>⌕</span>
               <input
                 value={query}
@@ -1582,7 +1582,7 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
             </div>
 
             {/* ── Filtres (compacts) ── */}
-            <div style={{ display:'flex', flexWrap:'wrap', alignItems:'center', justifyContent:'center', gap:7, maxWidth:940, margin:'0 auto' }}>
+            <div style={{ display:'flex', flexWrap:'wrap', alignItems:'center', justifyContent:'flex-start', gap:7, maxWidth:940, margin:0 }}>
               <FilterPill label="Tous" active={selectedGenres.size === 0} onClick={() => setSelectedGenres(new Set())} />
               {displayGenres.map(genre => (
                 <FilterPill key={genre} label={genre} active={selectedGenres.has(genre)} onClick={() => toggleGenre(genre)} />
@@ -1604,7 +1604,7 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
           </div>
 
           {/* ── Bloc principal : sidebar + sections, ou grille filtrée ── */}
-          <div style={{ maxWidth:1360, margin:'16px auto 0', padding:'0 32px' }}>
+          <div style={{ maxWidth:1360, margin:'10px auto 0', padding:'0 32px' }}>
             {isFiltering ? (
               visibleAnimesWithProgress.length === 0 ? (
                 <div style={{ textAlign:'center', padding:'64px 20px' }}>
@@ -1665,7 +1665,7 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
                 <div style={{ minWidth:0 }}>
 
                   {/* Top du moment — numéroté */}
-                  <section id="top-du-moment" style={{ marginBottom:14, scrollMarginTop:16 }}>
+                  <section id="top-du-moment" style={{ marginBottom:10, scrollMarginTop:16 }}>
                     <SectionHeader icon="🔥" title="Top du moment" count={topWeekAnimes.length} accent="rgba(220,38,38,0.30)" />
                     <Carousel>
                       {topWeekAnimes.slice(0, 8).map((anime, i) => (
@@ -1679,7 +1679,7 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
 
                   {/* Continuer à regarder */}
                   {continueWatching.length > 0 && (
-                    <section id="continuer" style={{ marginBottom:14, scrollMarginTop:16 }}>
+                    <section id="continuer" style={{ marginBottom:10, scrollMarginTop:16 }}>
                       <SectionHeader icon="▶" title="Continuer à regarder" count={continueWatching.length} />
                       <Carousel>
                         {continueWatching.map(anime => (
@@ -1693,7 +1693,7 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
 
                   {/* Nouveautés de la saison */}
                   {newSeasonAnimes.length > 0 && (
-                    <section id="nouveautes" style={{ marginBottom:14, scrollMarginTop:16 }}>
+                    <section id="nouveautes" style={{ marginBottom:10, scrollMarginTop:16 }}>
                       <SectionHeader icon="🆕" title="Nouveautés de la saison" count={newSeasonAnimes.length} accent="rgba(139,92,246,0.30)" />
                       <Carousel>
                         {newSeasonAnimes.map(anime => (
@@ -1707,7 +1707,7 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
 
                   {/* Sections par genre */}
                   {genreSections.map(section => (
-                    <section key={section.id} id={section.id} style={{ marginBottom:14, scrollMarginTop:16 }}>
+                    <section key={section.id} id={section.id} style={{ marginBottom:10, scrollMarginTop:16 }}>
                       <SectionHeader icon={section.icon} title={section.label} count={section.items.length} />
                       <Carousel>
                         {section.items.map(anime => (
