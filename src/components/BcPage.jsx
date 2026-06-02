@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react'
 import VideoPlayer from './VideoPlayer.jsx'
 import { ProgressRing } from './ProgressRing.jsx'
 import AnimeBackdrop, { ANIME_MOTIFS } from './AnimeBackdrop.jsx'
+import { Reader } from './MangaReader.jsx'
 import VIDEOS_RAW from '../data/bc-videos.json'
 import CHAPTERS from '../data/bc-chapters.json'
 
@@ -28,6 +29,12 @@ function loadProgress() {
 }
 function saveProgress(p) {
   try { localStorage.setItem(`${NS}_vp`, JSON.stringify(p)) } catch {}
+}
+function loadScanProgress() {
+  try { return JSON.parse(localStorage.getItem(`${NS}_progress`) || '{}') } catch { return {} }
+}
+function saveScanProgress(p) {
+  try { localStorage.setItem(`${NS}_progress`, JSON.stringify(p)) } catch {}
 }
 
 const CSS = `
@@ -171,6 +178,7 @@ function InfoPanel({ watchedCount, total, lastWatchedIdx, onResume, chapterCount
 export default function BcPage({ onClose }) {
   const [playerIdx, setPlayerIdx] = useState(null)
   const [progress, setProgress]   = useState(loadProgress)
+  const [scanProg, setScanProg]   = useState(loadScanProgress)
   const scrollRef = useRef(null)
 
   useEffect(() => { document.body.style.overflow = 'hidden'; return () => { document.body.style.overflow = '' } }, [])
@@ -251,12 +259,13 @@ export default function BcPage({ onClose }) {
                   </div>
                 </div>
 
-                <div style={{ padding: '24px', borderRadius: 16, background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.06)', textAlign: 'center' }}>
-                  <div style={{ fontSize: 48, marginBottom: 12 }}>🍀</div>
-                  <div style={{ fontSize: 20, fontWeight: 900, color: '#fff', marginBottom: 8 }}>{chapterCount} chapitres de scans</div>
-                  <div style={{ color: 'rgba(255,255,255,.5)', marginBottom: 16 }}>Black Clover - L'histoire d'Asta et du trèfle noir est disponible via la section Scans.</div>
-                  <div style={{ fontSize: 13, color: 'rgba(56,142,60,.8)' }}>Bientôt : expérience dédiée avec grille de chapitres ici.</div>
-                </div>
+                <div style={{ marginBottom: 12, fontSize: 12, color: 'rgba(255,255,255,.45)', fontWeight: 600, letterSpacing: '.02em' }}>Scans manga — {chapterCount} chapitres</div>
+                <Reader
+                  chapters={CHAPTERS}
+                  ns={NS}
+                  color={COLOR}
+                  onProgressUpdate={(p) => { setScanProg(p); /* Reader persists to LS */ }}
+                />
 
                 <div style={{ marginTop:28,padding:'14px 18px',borderRadius:12,background:'rgba(255,255,255,.03)',border:'1px solid rgba(255,255,255,.05)',display:'flex',alignItems:'center',gap:10 }}>
                   <span style={{ fontSize:16 }}>🍀</span>

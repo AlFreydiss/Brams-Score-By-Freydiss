@@ -588,7 +588,7 @@ function AmbientOrbs() {
   )
 }
 
-function AnimeMarqueeCard({ anime, onClick, onOpenMonUnivers }) {
+function AnimeMarqueeCard({ anime, onClick, onOpenMonUnivers, isFav = false, toggleFav }) {
   const [hov, setHov] = useState(false)
   const c = anime.color
   return (
@@ -636,6 +636,16 @@ function AnimeMarqueeCard({ anime, onClick, onOpenMonUnivers }) {
       }}>
         {anime.badge}
       </div>
+
+      {/* Heart fav for marquee cards too - matches premium standalone */}
+      <button
+        onClick={(e) => { if (typeof toggleFav === 'function') toggleFav(anime.id, e) }}
+        style={{ position:'absolute', top:10, left:10, zIndex:5, width:22, height:22, borderRadius:999, display:'flex', alignItems:'center', justifyContent:'center', background: isFav ? 'rgba(167,139,250,0.95)' : 'rgba(0,0,0,0.55)', border: isFav ? '1px solid #a78bfa' : '1px solid rgba(255,255,255,0.25)', color: isFav ? '#fff' : 'rgba(255,255,255,0.9)', fontSize:11, cursor:'pointer', transition:'all .2s' }}
+        title={isFav ? 'Retirer des favoris' : 'Ajouter aux favoris Bramsq'}
+      >
+        ♥
+      </button>
+
       <div style={{ position:'absolute', bottom:0, left:0, right:0, padding:'10px 12px 12px', zIndex:3 }}>
         <div style={{ fontSize:12, fontWeight:800, color:'#F2F0EA', lineHeight:1.25, marginBottom:5, textShadow:'0 1px 8px rgba(0,0,0,0.95)' }}>
           {anime.title}
@@ -680,7 +690,7 @@ function AnimeMarqueeCard({ anime, onClick, onOpenMonUnivers }) {
   )
 }
 
-function AnimeMarqueeRow({ animes, direction, speed, onCardClick, onOpenMonUnivers }) {
+function AnimeMarqueeRow({ animes, direction, speed, onCardClick, onOpenMonUnivers, favs, toggleFav }) {
   const [paused, setPaused] = useState(false)
   const items = [...animes, ...animes]
   const cls = direction === 'rtl' ? 'ah-mq-l' : 'ah-mq-r'
@@ -705,14 +715,14 @@ function AnimeMarqueeRow({ animes, direction, speed, onCardClick, onOpenMonUnive
         }}
       >
         {items.map((anime, i) => (
-          <AnimeMarqueeCard key={`${anime.id}-${i}`} anime={anime} onClick={() => onCardClick(anime.id)} onOpenMonUnivers={onOpenMonUnivers} />
+          <AnimeMarqueeCard key={`${anime.id}-${i}`} anime={anime} onClick={() => onCardClick(anime.id)} onOpenMonUnivers={onOpenMonUnivers} isFav={favs && favs.has(anime.id)} toggleFav={toggleFav} />
         ))}
       </div>
     </div>
   )
 }
 
-function AnimeCard({ anime, index, onClick, onOpenMonUnivers }) {
+function AnimeCard({ anime, index, onClick, onOpenMonUnivers, isFav = false, toggleFav }) {
   const [hov, setHov] = useState(false)
   const c = anime.color
   const fallbackCover = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
@@ -784,6 +794,15 @@ function AnimeCard({ anime, index, onClick, onOpenMonUnivers }) {
         <div style={{ position:'absolute', top:12, right:12, zIndex:2, fontSize:10, fontWeight:800, letterSpacing:'.08em', background:`${anime.badgeColor}dd`, color:'#fff', borderRadius:100, padding:'3px 10px', backdropFilter:'blur(6px)' }}>
           {anime.badge}
         </div>
+
+        {/* Heart fav - synced with bramsq premium standalone LS */}
+        <button
+          onClick={(e) => { if (typeof toggleFav === 'function') toggleFav(anime.id, e) }}
+          style={{ position:'absolute', top:12, left:12, zIndex:3, width:28, height:28, borderRadius:999, display:'flex', alignItems:'center', justifyContent:'center', background: isFav ? 'rgba(167,139,250,0.9)' : 'rgba(0,0,0,0.45)', border: isFav ? '1px solid #a78bfa' : '1px solid rgba(255,255,255,0.2)', color: isFav ? '#fff' : 'rgba(255,255,255,0.85)', cursor:'pointer', transition:'all .2s', fontSize:13 }}
+          title={isFav ? 'Retirer des favoris' : 'Ajouter aux favoris Bramsq'}
+        >
+          ♥
+        </button>
 
         {/* Subtitle on cover */}
         {anime.coverImage && (
@@ -886,6 +905,21 @@ function ComingSoonCard({ index }) {
 export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrstone, onOpenJjk, onOpenKingdom, onOpenAot, onOpenKny, onOpenNnt, onOpenSl, onOpenDbs, onOpenViolet, onOpenVivy, onOpenLovePrism, onOpenCaroleTuesday, onOpenBunnyGirl, onOpenRentGirlfriend, onOpenBc, onOpenMha, onOpenFireforce, onOpenBluelock, onOpenMonUnivers }) {
   const [query, setQuery] = useState('')
   const [selectedGenres, setSelectedGenres] = useState(new Set())
+
+  // Favorites synced with standalone premium hub (bramsq_favs) for hearts on cards
+  const [favs, setFavs] = useState(() => {
+    try { return new Set(JSON.parse(localStorage.getItem('bramsq_favs') || '[]')) } catch { return new Set() }
+  })
+  const toggleFav = (id, e) => {
+    if (e) e.stopPropagation()
+    setFavs(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      try { localStorage.setItem('bramsq_favs', JSON.stringify(Array.from(next))) } catch {}
+      return next
+    })
+  }
 
   // Progress state: load once, refresh on interval/storage like MonUniversPage. Compute derived only for visible.
   const [rawProgress, setRawProgress] = useState(() => loadAllProgress())
@@ -1020,6 +1054,14 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
             🌌 MON UNIVERS
           </button>
           <button
+            onClick={() => window.open('/bramsq-premium-hub.html', '_blank')}
+            style={{ display:'flex', alignItems:'center', gap:6, background:'rgba(167,139,250,0.12)', border:'1px solid rgba(167,139,250,0.35)', borderRadius:10, color:'#a78bfa', cursor:'pointer', padding:'8px 14px', fontSize:12, fontWeight:800, transition:'all .18s', letterSpacing:'.02em' }}
+            onMouseEnter={e => { e.currentTarget.style.background='rgba(167,139,250,0.22)'; e.currentTarget.style.color='#fff' }}
+            onMouseLeave={e => { e.currentTarget.style.background='rgba(167,139,250,0.12)'; e.currentTarget.style.color='#a78bfa' }}
+          >
+            ✨ HUB PREMIUM
+          </button>
+          <button
             onClick={onClose}
             style={{ display:'flex', alignItems:'center', gap:7, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.10)', borderRadius:10, color:'rgba(255,255,255,0.75)', cursor:'pointer', padding:'9px 18px', fontSize:13, fontWeight:700, transition:'all .18s' }}
             onMouseEnter={e => { e.currentTarget.style.background='rgba(255,255,255,0.10)'; e.currentTarget.style.color='#fff' }}
@@ -1057,6 +1099,34 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
               <p style={{ fontSize:15, color:'rgba(255,255,255,0.38)', maxWidth:480, margin:'0 auto', lineHeight:1.75 }}>
                 Scans, épisodes, suivis — tout au même endroit pour la communauté Brams.
               </p>
+            </div>
+
+            {/* Cinematic premium hero banner - inspired 1:1 from standalone bramsq-premium-hub.html (460px luxury, glass, #a78bfa) */}
+            <div style={{
+              height: 320, position:'relative', borderRadius:20, overflow:'hidden', margin:'0 0 32px', display:'flex', alignItems:'flex-end',
+              backgroundImage: "url('https://picsum.photos/id/1016/1400/900')", backgroundSize:'cover', backgroundPosition:'center',
+              boxShadow: '0 20px 60px -15px rgba(0,0,0,0.6)'
+            }}>
+              <div style={{ position:'absolute', inset:0, background:'linear-gradient(to bottom, rgba(10,10,15,0.1) 10%, rgba(10,10,15,0.75) 55%, #07090e 92%)' }} />
+              <div style={{ position:'absolute', inset:0, background:'linear-gradient(to right, rgba(10,10,15,0.55) 0%, transparent 45%)' }} />
+              <div style={{ position:'relative', zIndex:2, padding:'28px 32px', maxWidth:520 }}>
+                <div style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'4px 14px', borderRadius:999, background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.12)', fontSize:10, fontWeight:700, letterSpacing:'.18em', color:'#a78bfa', marginBottom:12 }}>
+                  <div style={{ width:5, height:5, background:'#a78bfa', borderRadius:'50%', animation:'ahPulse 2s infinite' }} /> SAISON 2026
+                </div>
+                <h1 style={{ fontFamily:"'Playfair Display', Georgia, serif", fontSize: 'clamp(28px, 4.2vw, 42px)', fontWeight:800, lineHeight:0.96, letterSpacing:'-0.025em', marginBottom:10, color:'#fff' }}>
+                  Bienvenue sur<br />Bramsq
+                </h1>
+                <p style={{ color:'rgba(255,255,255,0.7)', fontSize:14, maxWidth:340, marginBottom:16, lineHeight:1.45 }}>
+                  La communauté anime &amp; manga d'exception. Curatée pour les vrais passionnés.
+                </p>
+                <div style={{ display:'flex', gap:10 }}>
+                  <button onClick={() => { const el = document.querySelector('.ah-gallery'); if (el) el.scrollIntoView({behavior:'smooth', block:'start'}) }} style={{ padding:'10px 22px', borderRadius:999, background:'#fff', color:'#111', fontWeight:700, fontSize:12, border:'none', cursor:'pointer' }}>Explorer la galerie</button>
+                  <button onClick={() => window.open('/bramsq-premium-hub.html', '_blank')} style={{ padding:'10px 18px', borderRadius:999, background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.2)', color:'#fff', fontWeight:600, fontSize:12, cursor:'pointer', display:'flex', alignItems:'center', gap:6 }}>Version standalone premium →</button>
+                </div>
+              </div>
+              <div style={{ position:'absolute', bottom:14, right:18, zIndex:2, fontSize:10, padding:'4px 10px', borderRadius:999, background:'rgba(0,0,0,0.45)', border:'1px solid rgba(255,255,255,0.1)', color:'rgba(255,255,255,0.6)' }}>
+                248k membres · 87 pays
+              </div>
             </div>
 
             {/* ── Filters Section: large secondary search + premium multi-select genre pills (violet accent) ── */}
@@ -1147,11 +1217,11 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
 
           {/* Marquee gallery (default) or filtered grid — outside maxWidth container for true full-bleed */}
           {isFiltering ? (
-            <div style={{ maxWidth:1080, margin:'0 auto', padding:'0 24px' }}>
+            <div style={{ maxWidth:1080, margin:'0 auto', padding:'0 24px' }} className="ah-gallery">
               {visibleAnimes.length > 0 ? (
                 <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(300px, 1fr))', gap:20 }}>
                   {visibleAnimesWithProgress.map((anime, i) => (
-                    <AnimeCard key={anime.id} anime={anime} index={i} onClick={() => handleClick(anime.id)} onOpenMonUnivers={onOpenMonUnivers} />
+                    <AnimeCard key={anime.id} anime={anime} index={i} onClick={() => handleClick(anime.id)} onOpenMonUnivers={onOpenMonUnivers} isFav={favs.has(anime.id)} toggleFav={toggleFav} />
                   ))}
                 </div>
               ) : (
@@ -1181,6 +1251,8 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
                   speed={row.speed}
                   onCardClick={handleClick}
                   onOpenMonUnivers={onOpenMonUnivers}
+                  favs={favs}
+                  toggleFav={toggleFav}
                 />
               ))}
             </div>
