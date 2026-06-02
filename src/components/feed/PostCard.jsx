@@ -5,7 +5,7 @@ import {
   Repeat2, Share2, SmilePlus, Trash2, X,
 } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext.jsx'
-import { toggleLike, deletePost, createPost, editPost, toggleBookmark, fetchLinkPreview, togglePostReaction } from '../../lib/feed.js'
+import { toggleLike, deletePost, createPost, editPost, toggleBookmark, fetchLinkPreview, togglePostReaction, reportPost } from '../../lib/feed.js'
 import { isCreator, isStaff } from '../../lib/roles.js'
 import { btn, avatar, T } from '../social/socialStyles.js'
 
@@ -154,6 +154,9 @@ export default function PostCard({ post, embedded = false, disableNav = false, o
   const [expanded, setExpanded] = useState(false)
   const [mediaModal, setMediaModal] = useState(null)
   const [editText, setEditText] = useState(post.content || '')
+  const [reportOpen, setReportOpen] = useState(false)
+  const [reportReason, setReportReason] = useState('')
+  const [reportState, setReportState] = useState(null)  // null | 'sending' | 'done' | error string
   const mineRow = post.author_id === discordId
   const canEdit = !post.repost_of && mineRow && !post.deleted_at
   const deleted = !!main?.deleted_at
@@ -228,6 +231,16 @@ export default function PostCard({ post, embedded = false, disableNav = false, o
     else if (res?.error) alert(res.error)
   }
 
+  async function submitReport() {
+    if (!discordId) { navigate('/messages'); return }
+    const reason = reportReason.trim()
+    if (!reason) { setReportState('Indique une raison'); return }
+    setReportState('sending')
+    const res = await reportPost(main.id, reason)
+    if (res?.ok) { setReportState('done'); setTimeout(() => { setReportOpen(false); setReportReason(''); setReportState(null) }, 1400) }
+    else setReportState(res?.error || 'Échec du signalement')
+  }
+
   async function copyLink(e) {
     e.stopPropagation()
     setMenu(false)
@@ -274,7 +287,7 @@ export default function PostCard({ post, embedded = false, disableNav = false, o
                   <button type="button" className="feed-post-menu-item" onClick={copyLink}><Copy size={15} /> Copier le lien</button>
                   <button type="button" className="feed-post-menu-item" onClick={sharePost}><Share2 size={15} /> Partager</button>
                   {canEdit && <button type="button" className="feed-post-menu-item" onClick={() => { setEditText(post.content || ''); setEditing(true); setMenu(false) }}><Pencil size={15} /> Modifier</button>}
-                  <button type="button" className="feed-post-menu-item" disabled title="Signalement: RPC modération à ajouter"><Flag size={15} /> Signaler</button>
+                  {!mineRow && <button type="button" className="feed-post-menu-item" onClick={() => { setMenu(false); setReportOpen(true) }}><Flag size={15} /> Signaler</button>}
                   {mineRow && <button type="button" className="feed-post-menu-item is-danger" onClick={remove}><Trash2 size={15} /> Supprimer</button>}
                 </div>
               )}
@@ -347,6 +360,34 @@ export default function PostCard({ post, embedded = false, disableNav = false, o
         <div className="feed-modal-backdrop" onClick={() => setMediaModal(null)} role="dialog" aria-modal="true" aria-label="Aperçu du média">
           <button type="button" onClick={() => setMediaModal(null)} className="feed-icon-button" aria-label="Fermer" style={{ position: 'fixed', top: 18, right: 18, background: 'rgba(0,0,0,.45)' }}><X size={20} /></button>
           <img src={mediaModal} alt="" className="feed-modal-image" onClick={e => e.stopPropagation()} />
+        </div>
+      )}
+
+      {reportOpen && (
+        <div className="feed-modal-backdrop" onClick={() => setReportOpen(false)} role="dialog" aria-modal="true" aria-label="Signaler ce post"
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: 'min(440px, 100%)', background: '#111214', border: `1px solid ${T.border}`, borderRadius: 16, padding: 22 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+              <Flag size={18} color="#e0524a" />
+              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: T.text }}>Signaler ce post</h3>
+            </div>
+            <p style={{ fontSize: 12.5, color: T.textFaint, margin: '0 0 14px' }}>Explique pourquoi au staff. Faux signalements = sanction.</p>
+            <textarea autoFocus value={reportReason} onChange={e => { setReportReason(e.target.value); if (typeof reportState === 'string' && reportState !== 'sending' && reportState !== 'done') setReportState(null) }}
+              placeholder="Ex : spam, insulte, contenu choquant…" rows={3} maxLength={500}
+              style={{ width: '100%', boxSizing: 'border-box', resize: 'none', padding: '11px 14px', borderRadius: 12, background: T.surface, border: `1px solid ${T.border}`, color: T.text, fontSize: 14, fontFamily: 'inherit', outline: 'none', lineHeight: 1.45 }} />
+            {typeof reportState === 'string' && reportState !== 'sending' && (
+              <div style={{ marginTop: 10, fontSize: 12.5, fontWeight: 700, color: reportState === 'done' ? '#34d399' : '#e0524a' }}>
+                {reportState === 'done' ? '✓ Signalement envoyé au staff' : `✕ ${reportState}`}
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
+              <button type="button" onClick={() => setReportOpen(false)} style={{ padding: '8px 16px', borderRadius: 10, border: `1px solid ${T.border}`, background: 'transparent', color: T.textFaint, fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>Annuler</button>
+              <button type="button" onClick={submitReport} disabled={reportState === 'sending' || reportState === 'done' || !reportReason.trim()}
+                style={{ padding: '8px 16px', borderRadius: 10, border: '1px solid rgba(224,82,74,0.4)', background: 'rgba(224,82,74,0.12)', color: '#e0524a', fontWeight: 800, fontSize: 13, cursor: 'pointer', opacity: (reportState === 'sending' || reportState === 'done' || !reportReason.trim()) ? 0.5 : 1 }}>
+                {reportState === 'sending' ? 'Envoi…' : 'Signaler'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </>

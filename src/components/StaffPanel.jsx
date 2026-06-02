@@ -1,9 +1,8 @@
-import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { fetchPending } from '../lib/wiki.js'
+import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '../contexts/AuthContext.jsx'
-import { isStaff, isCreator, CREATOR_DISCORD_ID } from '../lib/roles.js'
-import { supabase } from '../lib/supabase.js'
+import { isStaff, isCreator } from '../lib/roles.js'
+import { listPostReports, resolvePostReport } from '../lib/feed.js'
+import { T } from './social/socialStyles.js'
 import Navbar from './Navbar.jsx'
 import StaffChat from './social/StaffChat.jsx'
 
@@ -16,77 +15,94 @@ function timeAgo(iso) {
   return `il y a ${Math.floor(h / 24)}j`
 }
 
-function PendingCard({ item, table, onAction, actioning }) {
-  const key  = `${table}-${item.id}`
-  const busy = actioning === key
+function ReportCard({ r, onResolve, busy }) {
+  const excerpt = r.post_deleted
+    ? '— post déjà supprimé —'
+    : (r.post_content ? (r.post_content.length > 220 ? r.post_content.slice(0, 220) + '…' : r.post_content) : (r.post_media_url ? '🖼️ (média seul)' : '—'))
   return (
-    <div
-      style={{
-        background: 'rgba(255,255,255,0.03)',
-        border: '1px solid rgba(255,255,255,0.08)',
-        borderRadius: 12, padding: '16px 18px',
-        display: 'flex', alignItems: 'center', gap: 14,
-        transition: 'border-color .15s',
-      }}
-      onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(212,160,23,0.25)'}
-      onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'}
-    >
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 14, fontWeight: 700, color: '#fff', marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {item.title}
-        </div>
-        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.38)' }}>
-          ✍️ {item.author_name} · {timeAgo(item.created_at)}
-        </div>
+    <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 12, padding: 16 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, marginBottom: 8 }}>
+        <span style={{ fontSize: 12.5, color: T.textFaint }}>
+          🚩 <strong style={{ color: T.text }}>{r.reporter_name}</strong> · {timeAgo(r.created_at)}
+        </span>
+        {r.report_count > 1 && (
+          <span style={{ fontSize: 10.5, fontWeight: 800, color: '#e0524a', background: 'rgba(224,82,74,0.12)', border: '1px solid rgba(224,82,74,0.3)', borderRadius: 6, padding: '2px 7px' }}>
+            {r.report_count} signalements
+          </span>
+        )}
       </div>
-      <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-        <button
-          disabled={busy}
-          onClick={() => onAction(table, item.id, 'published')}
-          style={{
-            padding: '6px 14px', borderRadius: 8,
-            border: '1px solid rgba(52,211,153,0.35)',
-            background: 'rgba(52,211,153,0.10)', color: '#34d399',
-            fontSize: 11, fontWeight: 700,
-            cursor: busy ? 'not-allowed' : 'pointer',
-            opacity: busy ? 0.5 : 1, transition: 'all .15s',
-          }}
-          onMouseEnter={e => !busy && (e.currentTarget.style.background = 'rgba(52,211,153,0.20)')}
-          onMouseLeave={e => (e.currentTarget.style.background = 'rgba(52,211,153,0.10)')}
-        >
-          ✓ Publier
+
+      <div style={{ fontSize: 13, fontWeight: 700, color: '#e0524a', marginBottom: 8, wordBreak: 'break-word' }}>« {r.reason} »</div>
+
+      <div style={{ background: 'rgba(0,0,0,0.25)', border: `1px solid ${T.border}`, borderRadius: 10, padding: '10px 12px', marginBottom: 12 }}>
+        <div style={{ fontSize: 11, color: T.textFaint, marginBottom: 4 }}>Post de <strong style={{ color: T.text }}>{r.post_author_name}</strong></div>
+        <div style={{ fontSize: 13.5, color: r.post_deleted ? T.textFaint : T.text, lineHeight: 1.5, wordBreak: 'break-word', fontStyle: r.post_deleted ? 'italic' : 'normal' }}>{excerpt}</div>
+      </div>
+
+      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+        <button disabled={busy} onClick={() => onResolve(r.id, 'dismiss')}
+          style={{ padding: '7px 14px', borderRadius: 9, border: `1px solid ${T.border}`, background: 'transparent', color: T.textFaint, fontSize: 12, fontWeight: 700, cursor: busy ? 'not-allowed' : 'pointer', opacity: busy ? 0.5 : 1 }}>
+          Rejeter le signalement
         </button>
-        <button
-          disabled={busy}
-          onClick={() => onAction(table, item.id, 'rejected')}
-          style={{
-            padding: '6px 14px', borderRadius: 8,
-            border: '1px solid rgba(224,82,74,0.35)',
-            background: 'rgba(224,82,74,0.08)', color: '#e0524a',
-            fontSize: 11, fontWeight: 700,
-            cursor: busy ? 'not-allowed' : 'pointer',
-            opacity: busy ? 0.5 : 1, transition: 'all .15s',
-          }}
-          onMouseEnter={e => !busy && (e.currentTarget.style.background = 'rgba(224,82,74,0.18)')}
-          onMouseLeave={e => (e.currentTarget.style.background = 'rgba(224,82,74,0.08)')}
-        >
-          ✕ Rejeter
-        </button>
+        {!r.post_deleted && (
+          <button disabled={busy} onClick={() => onResolve(r.id, 'delete_post')}
+            style={{ padding: '7px 14px', borderRadius: 9, border: '1px solid rgba(224,82,74,0.4)', background: 'rgba(224,82,74,0.12)', color: '#e0524a', fontSize: 12, fontWeight: 800, cursor: busy ? 'not-allowed' : 'pointer', opacity: busy ? 0.5 : 1 }}>
+            🗑 Supprimer le post
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function ReportsPanel() {
+  const [reports, setReports] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError]     = useState(null)
+  const [busyId, setBusyId]   = useState(null)
+
+  const load = useCallback(async () => {
+    const { reports, error } = await listPostReports('open')
+    setReports(reports); setError(error); setLoading(false)
+  }, [])
+
+  useEffect(() => { load() }, [load])
+
+  async function onResolve(id, action) {
+    if (action === 'delete_post' && !window.confirm('Supprimer définitivement ce post du Fil ?')) return
+    setBusyId(id)
+    const res = await resolvePostReport(id, action)
+    setBusyId(null)
+    if (res?.ok) setReports(prev => prev.filter(r => r.id !== id))
+    else alert(res?.error || 'Action échouée')
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: 'min(620px, 70vh)', borderRadius: 16, overflow: 'hidden', border: `1px solid ${T.border}`, background: T.panel }}>
+      <div style={{ padding: '14px 18px', borderBottom: `1px solid ${T.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontSize: 18 }}>🚩</span>
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 800, color: T.text }}>Signalements</div>
+            <div style={{ fontSize: 11, color: T.textFaint }}>{loading ? 'Chargement…' : `${reports.length} en attente`}</div>
+          </div>
+        </div>
+        <button onClick={() => { setLoading(true); load() }} title="Rafraîchir"
+          style={{ border: `1px solid ${T.border}`, background: 'transparent', color: T.textFaint, borderRadius: 9, padding: '6px 10px', fontSize: 12, cursor: 'pointer' }}>↻</button>
+      </div>
+
+      <div style={{ flex: 1, overflowY: 'auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {loading ? <div style={{ padding: 30, textAlign: 'center', color: T.textFaint, fontSize: 13 }}>Chargement…</div>
+          : error ? <div style={{ padding: 30, textAlign: 'center', color: '#e0524a', fontSize: 13 }}>✕ {error}<br /><span style={{ color: T.textFaint, fontSize: 11 }}>(migration 20260601_post_reports.sql lancée ?)</span></div>
+          : reports.length === 0 ? <div style={{ padding: '48px 20px', textAlign: 'center', color: T.textFaint, fontSize: 14 }}>✨<br />Aucun signalement en attente.</div>
+          : reports.map(r => <ReportCard key={r.id} r={r} onResolve={onResolve} busy={busyId === r.id} />)}
       </div>
     </div>
   )
 }
 
 export default function StaffPanel() {
-  const navigate   = useNavigate()
   const { isAuthenticated, discordId, displayName, userId } = useAuth()
-  const [pending,   setPending]   = useState({ pages: [], theories: [] })
-  const [loading,   setLoading]   = useState(true)
-  const [actioning, setActioning] = useState(null)
-  const [tab,       setTab]       = useState('theories')
-  const [notice,    setNotice]    = useState(null)
-
-  // Vérification du rôle depuis roles.js — source unique
   const userIsStaff   = isAuthenticated && isStaff(discordId, userId)
   const userIsCreator = isAuthenticated && isCreator(discordId)
 
@@ -95,79 +111,15 @@ export default function StaffPanel() {
     return () => { document.title = 'Brams Community' }
   }, [])
 
-  useEffect(() => {
-    if (!isAuthenticated || !userIsStaff) return
-    fetchPending().then(data => { setPending(data); setLoading(false) })
-  }, [isAuthenticated, userIsStaff])
-
-  async function handleAction(table, id, status) {
-    const key = `${table}-${id}`
-    setActioning(key)
-    setNotice(null)
-
-    // Récupérer le token JWT de la session Supabase
-    let token
-    try {
-      const { data: { session } } = await supabase.auth.getSession()
-      token = session?.access_token
-    } catch {
-      token = null
-    }
-
-    if (!token) {
-      setNotice({ ok: false, text: '✕ Session expirée — reconnecte-toi' })
-      setActioning(null)
-      setTimeout(() => setNotice(null), 5000)
-      return
-    }
-
-    try {
-      const resp = await fetch('/api/moderate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ table, id, status }),
-      })
-
-      const result = await resp.json()
-
-      if (!resp.ok || !result.success) {
-        // Modération échouée — NE PAS retirer l'item de la liste
-        setNotice({ ok: false, text: `✕ Erreur : ${result.error || 'Modération échouée'}` })
-        setActioning(null)
-        setTimeout(() => setNotice(null), 6000)
-        return
-      }
-
-      // Succès confirmé côté serveur → retirer de la liste locale
-      setPending(prev => ({
-        pages:    table === 'wiki_pages' ? prev.pages.filter(p => p.id !== id)    : prev.pages,
-        theories: table === 'theories'   ? prev.theories.filter(t => t.id !== id) : prev.theories,
-      }))
-      setNotice({ ok: true, text: status === 'published' ? '✓ Publié avec succès' : '✕ Rejeté et archivé' })
-      setTimeout(() => setNotice(null), 2500)
-
-    } catch (err) {
-      setNotice({ ok: false, text: `✕ Erreur réseau : ${err.message}` })
-      setTimeout(() => setNotice(null), 6000)
-    }
-
-    setActioning(null)
-  }
-
-  const total = pending.pages.length + pending.theories.length
-
   return (
-    <div style={{ minHeight: '100vh', background: '#0b0c0e' }}>
+    <div style={{ minHeight: '100vh', background: '#08090D' }}>
       <Navbar />
 
-      <div style={{ maxWidth: 860, margin: '0 auto', padding: '100px 24px 60px' }}>
+      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '100px 24px 60px' }}>
 
         {/* Header */}
-        <div style={{ marginBottom: 40 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.15em', color: '#d4a017', textTransform: 'uppercase', marginBottom: 12 }}>
+        <div style={{ marginBottom: 32 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.15em', color: T.gold, textTransform: 'uppercase', marginBottom: 12 }}>
             Modération
           </div>
           <h1 style={{ fontFamily: "'Pirata One', cursive", fontSize: 'clamp(32px,5vw,52px)', color: '#fff', marginBottom: 10, lineHeight: 1.1 }}>
@@ -175,22 +127,15 @@ export default function StaffPanel() {
           </h1>
           {isAuthenticated && (
             <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)' }}>
-              Connecté en tant que{' '}
-              <strong style={{ color: '#d4a017' }}>{displayName}</strong>
+              Connecté en tant que <strong style={{ color: T.gold }}>{displayName}</strong>
               {userIsCreator && (
-                <span style={{ marginLeft: 8, background: 'rgba(255,215,0,0.15)', color: '#FFD700', border: '1px solid rgba(255,215,0,0.35)', borderRadius: 6, padding: '2px 8px', fontSize: 11, fontWeight: 700 }}>
-                  CRÉATEUR
-                </span>
+                <span style={{ marginLeft: 8, background: 'rgba(255,215,0,0.15)', color: '#FFD700', border: '1px solid rgba(255,215,0,0.35)', borderRadius: 6, padding: '2px 8px', fontSize: 11, fontWeight: 700 }}>CRÉATEUR</span>
               )}
               {userIsStaff && !userIsCreator && (
-                <span style={{ marginLeft: 8, background: 'rgba(212,160,23,0.15)', color: '#d4a017', border: '1px solid rgba(212,160,23,0.3)', borderRadius: 6, padding: '2px 8px', fontSize: 11, fontWeight: 700 }}>
-                  STAFF
-                </span>
+                <span style={{ marginLeft: 8, background: 'rgba(212,160,23,0.15)', color: T.gold, border: '1px solid rgba(212,160,23,0.3)', borderRadius: 6, padding: '2px 8px', fontSize: 11, fontWeight: 700 }}>STAFF</span>
               )}
               {!userIsStaff && (
-                <span style={{ marginLeft: 8, background: 'rgba(224,82,74,0.12)', color: '#e0524a', border: '1px solid rgba(224,82,74,0.25)', borderRadius: 6, padding: '2px 8px', fontSize: 11, fontWeight: 700 }}>
-                  VISITEUR
-                </span>
+                <span style={{ marginLeft: 8, background: 'rgba(224,82,74,0.12)', color: '#e0524a', border: '1px solid rgba(224,82,74,0.25)', borderRadius: 6, padding: '2px 8px', fontSize: 11, fontWeight: 700 }}>VISITEUR</span>
               )}
             </p>
           )}
@@ -198,15 +143,11 @@ export default function StaffPanel() {
 
         {/* Non connecté */}
         {!isAuthenticated && (
-          <div style={{ textAlign: 'center', padding: '60px 20px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16 }}>
+          <div style={{ textAlign: 'center', padding: '60px 20px', background: T.surface, border: `1px solid ${T.border}`, borderRadius: 16 }}>
             <div style={{ fontSize: 48, marginBottom: 16 }}>🔒</div>
-            <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 15, marginBottom: 24 }}>
-              Connecte-toi pour accéder au panel staff.
-            </p>
-            <button
-              onClick={() => document.dispatchEvent(new CustomEvent('open-auth-modal'))}
-              style={{ padding: '10px 24px', borderRadius: 10, background: 'linear-gradient(135deg,#d4a017,#e8b84a)', color: '#1a1a1a', fontWeight: 700, fontSize: 14, border: 'none', cursor: 'pointer' }}
-            >
+            <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 15, marginBottom: 24 }}>Connecte-toi pour accéder au panel staff.</p>
+            <button onClick={() => document.dispatchEvent(new CustomEvent('open-auth-modal'))}
+              style={{ padding: '10px 24px', borderRadius: 10, background: 'linear-gradient(135deg,#d4a017,#e8b84a)', color: '#1a1a1a', fontWeight: 700, fontSize: 14, border: 'none', cursor: 'pointer' }}>
               Se connecter
             </button>
           </div>
@@ -214,35 +155,19 @@ export default function StaffPanel() {
 
         {/* Connecté mais pas staff */}
         {isAuthenticated && !userIsStaff && (
-          <div style={{ textAlign: 'center', padding: '60px 20px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(224,82,74,0.2)', borderRadius: 16 }}>
+          <div style={{ textAlign: 'center', padding: '60px 20px', background: T.surface, border: '1px solid rgba(224,82,74,0.2)', borderRadius: 16 }}>
             <div style={{ fontSize: 48, marginBottom: 16 }}>⛔</div>
-            <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 15, marginBottom: 8 }}>
-              Accès réservé au staff Brams Community.
-            </p>
-            <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: 12 }}>
-              ID Discord : {discordId || userId || '—'}
-            </p>
+            <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 15, marginBottom: 8 }}>Accès réservé au staff Brams Community.</p>
+            <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: 12 }}>ID Discord : {discordId || userId || '—'}</p>
           </div>
         )}
 
-        {/* Contenu staff */}
+        {/* Contenu staff — 2 colonnes desktop, empilé mobile */}
         {isAuthenticated && userIsStaff && (
-          <>
-            {/* Notice */}
-            {notice && (
-              <div style={{
-                marginBottom: 16, padding: '10px 16px', borderRadius: 10,
-                background: notice.ok ? 'rgba(52,211,153,0.15)' : 'rgba(224,82,74,0.15)',
-                border: `1px solid ${notice.ok ? 'rgba(52,211,153,0.3)' : 'rgba(224,82,74,0.3)'}`,
-                color: notice.ok ? '#34d399' : '#e0524a',
-                fontWeight: 700, fontSize: 13,
-              }}>
-                {notice.text}
-              </div>
-            )}
-
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: 20, alignItems: 'start' }}>
+            <ReportsPanel />
             <StaffChat />
-          </>
+          </div>
         )}
       </div>
     </div>

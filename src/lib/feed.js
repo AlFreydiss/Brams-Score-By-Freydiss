@@ -26,6 +26,14 @@ export const toggleLike = (postId)  => rpc('toggle_like', { p_post: postId })
 export const toggleBookmark = (postId) => rpc('toggle_bookmark', { p_post: postId })
 export const togglePostReaction = (postId, emoji) => rpc('toggle_post_reaction', { p_post: postId, p_emoji: emoji })
 
+// ── Signalements (migration 20260601_post_reports.sql) ────────────────────────
+export const reportPost = (postId, reason) => rpc('report_post', { p_post: postId, p_reason: reason })
+export async function listPostReports(status = 'open') {
+  const r = await rpc('list_post_reports', { p_status: status })
+  return r?.ok ? { reports: r.reports || [], error: null } : { reports: [], error: r?.error || 'Chargement impossible' }
+}
+export const resolvePostReport = (reportId, action) => rpc('resolve_post_report', { p_report: reportId, p_action: action })
+
 export async function getMyBookmarks(before = null, limit = 20) {
   const r = await rpc('get_my_bookmarks', { p_before: before, p_limit: limit })
   return r?.ok ? (r.posts || []) : []
