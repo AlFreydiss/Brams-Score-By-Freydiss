@@ -3,6 +3,7 @@ import VideoPlayer from './VideoPlayer.jsx'
 import { ProgressRing } from './ProgressRing.jsx'
 import AnimeBackdrop, { ANIME_MOTIFS } from './AnimeBackdrop.jsx'
 import VIDEOS_RAW from '../data/onepiece-videos.js'
+import SeasonDivider from './SeasonDivider.jsx'
 
 const VIDEOS = VIDEOS_RAW
 
@@ -293,9 +294,13 @@ export default function OnePiecePage({ onClose }) {
                 )}
 
                 <div style={{ display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(190px,1fr))',gap:12 }}>
-                  {filteredVideos.map((v,i)=>(
-                    <EpCard key={v.episode} video={v} index={i} watched={!!progress[v.episode]?.completed} onPlay={playHandlers[VIDEOS.indexOf(v)]} />
-                  ))}
+                  {filteredVideos.flatMap((v,i)=>{
+                    const prev = filteredVideos[i-1]
+                    const els = []
+                    if (v.arc && v.arc !== prev?.arc) els.push(<SeasonDivider key={`sep-${v.arc}`} label={v.arc} color={COLOR} />)
+                    els.push(<EpCard key={v.episode} video={v} index={i} watched={!!progress[v.episode]?.completed} onPlay={playHandlers[VIDEOS.indexOf(v)]} />)
+                    return els
+                  })}
                 </div>
 
                 <div style={{ marginTop:28,padding:'14px 18px',borderRadius:12,background:'rgba(255,255,255,.03)',border:'1px solid rgba(255,255,255,.05)',display:'flex',alignItems:'center',gap:10 }}>
