@@ -18,6 +18,12 @@ const VISIBILITY = [
   { v: 'private', label: 'Privé',   desc: 'Toi uniquement' },
 ]
 
+const DM_PRIVACY = [
+  { v: 'everyone', label: 'Tous',   desc: 'Tout le monde peut te DM' },
+  { v: 'friends',  label: 'Amis',   desc: 'Seulement tes amis (suivi mutuel)' },
+  { v: 'nobody',   label: 'Fermé',  desc: 'Personne ne peut te DM' },
+]
+
 export default function ProfileEditModal({ data, settings, onClose, onSaved }) {
   const shopData = data?.shopData
   const [bio,        setBio]        = useState(settings?.bio || '')
@@ -25,6 +31,7 @@ export default function ProfileEditModal({ data, settings, onClose, onSaved }) {
   const [link,       setLink]       = useState(settings?.link || '')
   const [banner,     setBanner]     = useState(settings?.banner_url || '')
   const [visibility, setVisibility] = useState(settings?.visibility || 'public')
+  const [dmPrivacy,  setDmPrivacy]  = useState(settings?.dm_privacy || 'friends')
   const [saving,     setSaving]     = useState(false)
   const [uploading,  setUploading]  = useState(false)
   const [error,      setError]      = useState(null)
@@ -52,12 +59,12 @@ export default function ProfileEditModal({ data, settings, onClose, onSaved }) {
     const res = await equipShopItem(itemId)
     setEquipBusy(null)
     if (res?.error || res?.data?.ok === false) { setError(res?.error?.message || 'Équipement impossible'); return }
-    data?.reload?.()   // rafraîchit l'inventaire + le fond du header
+    data?.refresh?.()   // rafraîchit l'inventaire + le fond du header (sans skeleton)
   }
 
   const save = async () => {
     setSaving(true); setError(null)
-    const patch = { bio, quote, link, banner_url: banner, visibility }
+    const patch = { bio, quote, link, banner_url: banner, visibility, dm_privacy: dmPrivacy }
     const { data: res, error } = await updateProfileSettings(patch)
     setSaving(false)
     if (error || res?.ok === false) { setError(error?.message || res?.error || 'Échec de la sauvegarde.'); return }
@@ -108,6 +115,18 @@ export default function ProfileEditModal({ data, settings, onClose, onSaved }) {
                 {VISIBILITY.map(o => (
                   <button key={o.v} type="button" title={o.desc}
                     className={`pfx-vis${visibility === o.v ? ' active' : ''}`} onClick={() => setVisibility(o.v)}>
+                    {o.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="pfx-field">
+              <label>Qui peut m'envoyer un message</label>
+              <div className="pfx-vis-row">
+                {DM_PRIVACY.map(o => (
+                  <button key={o.v} type="button" title={o.desc}
+                    className={`pfx-vis${dmPrivacy === o.v ? ' active' : ''}`} onClick={() => setDmPrivacy(o.v)}>
                     {o.label}
                   </button>
                 ))}

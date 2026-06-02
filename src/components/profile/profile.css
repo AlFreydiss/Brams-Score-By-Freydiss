@@ -561,12 +561,13 @@
     linear-gradient(165deg, #12141b 0%, #0b0d12 100%);
 }
 .pfx-ig-backdrop-media {
-  position: absolute; inset: -6%; width: 112%; height: 112%;
-  object-fit: cover; filter: saturate(0.95) brightness(0.34) blur(2px); transform: scale(1.04);
+  position: absolute; inset: -4%; width: 108%; height: 108%;
+  object-fit: cover; filter: saturate(1.05) brightness(0.62); transform: scale(1.03);
 }
+/* Voile dégradé : laisse voir la vidéo en haut, assombrit le bas pour la lisibilité. */
 .pfx-ig-backdrop-veil {
   position: absolute; inset: 0;
-  background: linear-gradient(180deg, rgba(10,12,16,0.62), rgba(10,12,16,0.88));
+  background: linear-gradient(180deg, rgba(10,12,16,0.32) 0%, rgba(10,12,16,0.62) 60%, rgba(10,12,16,0.9) 100%);
 }
 .pfx-ig-inner {
   position: relative; z-index: 1;

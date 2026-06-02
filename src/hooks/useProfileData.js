@@ -25,18 +25,24 @@ export function useProfileData(discordId) {
   const [error,      setError]      = useState(null)
   const refreshTimer = useRef(null)
 
-  const load = useCallback(() => {
+  // load(silent) : silent=true rafraîchit les données EN PLACE sans repasser par
+  // l'écran de chargement (pas de setLoading/clear) → plus de skeleton qui
+  // clignote toutes les 60s ou à chaque retour d'onglet. silent=false = 1er rendu.
+  const load = useCallback((silent = false) => {
     let ignore = false
-    setLoading(true); setError(null)
-    setMember(null); setShopData(null); setSettings(null); setPostsCount(null); setFollowStats(null)
+    setError(null)
+    if (!silent) {
+      setLoading(true)
+      setMember(null); setShopData(null); setSettings(null); setPostsCount(null); setFollowStats(null)
+    }
 
-    // member = source de vérité affichage (bloque le rendu principal)
+    // member = source de vérité affichage (bloque le rendu principal au 1er chargement)
     fetchMemberProfile(discordId)
-      .then(p => { if (ignore) return; if (!p) setError('not_found'); setMember(p); setLoading(false) })
-      .catch(() => { if (!ignore) { setError('error'); setLoading(false) } })
+      .then(p => { if (ignore) return; if (!p && !silent) setError('not_found'); if (p || !silent) setMember(p); setLoading(false) })
+      .catch(() => { if (!ignore && !silent) { setError('error'); setLoading(false) } })
 
     // boutique + perso + posts en parallèle, sans bloquer l'affichage
-    fetchBerryShopState(discordId).then(s => { if (!ignore) setShopData(s) }).catch(() => {})
+    fetchBerryShopState(discordId).then(s => { if (!ignore && s) setShopData(s) }).catch(() => {})
     getProfileSettings(discordId).then(s => { if (!ignore) setSettings(s) }).catch(() => {})
     getUserPosts(discordId).then(p => { if (!ignore) setPostsCount(Array.isArray(p) ? p.length : 0) }).catch(() => {})
     getFollowState(discordId).then(f => { if (!ignore && f?.ok !== false) setFollowStats(f) }).catch(() => {})
@@ -44,7 +50,7 @@ export function useProfileData(discordId) {
     return () => { ignore = true }
   }, [discordId])
 
-  useEffect(() => load(), [load])
+  useEffect(() => load(false), [load])
 
   // Rafraîchit UNIQUEMENT l'état de suivi (sans recharger tout le profil) — pour
   // l'optimistic follow/unfollow depuis le header ou la modale.
@@ -53,9 +59,10 @@ export function useProfileData(discordId) {
   }, [discordId])
 
   useEffect(() => {
+    // Rafraîchissements d'arrière-plan : TOUJOURS silencieux (jamais de skeleton).
     const onFocus = () => {
       if (refreshTimer.current) clearTimeout(refreshTimer.current)
-      refreshTimer.current = setTimeout(load, 100)
+      refreshTimer.current = setTimeout(() => load(true), 150)
     }
     const onVisible = () => {
       if (!document.hidden) onFocus()
@@ -63,8 +70,8 @@ export function useProfileData(discordId) {
     window.addEventListener('focus', onFocus)
     document.addEventListener('visibilitychange', onVisible)
     const t = setInterval(() => {
-      if (!document.hidden) onFocus()
-    }, 60000)
+      if (!document.hidden) load(true)
+    }, 90000)
     return () => {
       window.removeEventListener('focus', onFocus)
       document.removeEventListener('visibilitychange', onVisible)
@@ -113,7 +120,8 @@ export function useProfileData(discordId) {
 
   return {
     // état
-    member, shopData, settings, setSettings, postsCount, followStats, setFollowStats, refreshFollow, loading, error, reload: load,
+    member, shopData, settings, setSettings, postsCount, followStats, setFollowStats, refreshFollow, loading, error,
+    reload: () => load(false), refresh: () => load(true),
     // dérivés
     hours, rank, nextRank, remaining, pct, wallet,
     aura, auraTier, auraFactors, achievements, equippedBg,

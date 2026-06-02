@@ -28,6 +28,7 @@ export async function updateProfileSettings(patch = {}) {
     p_link:                 patch.link ?? null,
     p_visibility:           patch.visibility ?? null,
     p_social_links:         patch.social_links ?? null,
+    p_dm_privacy:           patch.dm_privacy ?? null,
   })
   return { data, error }
 }
