@@ -806,7 +806,7 @@ function SectionHeading({ eyebrow, title, subtitle, color = GOLD }) {
 function OpeningBgCard({ item, bg, owned, balance, busy, isEquipped, isPreviewing, previewCountdown, onEquip, onUnequip, onPreview, onPurchase }) {
   const r = RARITY[item.rarity] || RARITY.Commun
   const canAfford = balance >= Number(item.price)
-  const ytThumb = bg ? `https://img.youtube.com/vi/${bg.ytId}/maxresdefault.jpg` : null
+  const ytThumb = bg ? `https://img.youtube.com/vi/${bg.ytId}/hqdefault.jpg` : null
   const [hover, setHover] = useState(false)
 
   return (

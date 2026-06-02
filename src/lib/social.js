@@ -23,7 +23,10 @@ async function rpc(fn, args = {}) {
     return data
   } catch (e) {
     // Ne JAMAIS propager : sinon un Promise.all parent rejette et l'UI reste bloquée.
-    console.error(`[social] ${fn} (throw)`, e?.message || e)
+    // Un timeout réseau est transitoire et déjà géré par le fallback → simple warn,
+    // pas une erreur rouge qui pollue la console.
+    if (e?.message === 'timeout') console.warn(`[social] ${fn} : réseau lent, ignoré (fallback utilisé)`)
+    else console.error(`[social] ${fn} (throw)`, e?.message || e)
     return { ok: false, error: e?.message || 'rpc_failed' }
   }
 }

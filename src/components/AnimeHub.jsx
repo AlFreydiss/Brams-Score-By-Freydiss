@@ -1,5 +1,9 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react'
 import { ProgressRing } from './ProgressRing.jsx'
+
+// Fond 3D (posters d'animés qui vagabondent) — chargé à part pour ne pas
+// alourdir le chunk, et silencieux si WebGL indisponible.
+const AnimeDrift3D = lazy(() => import('./AnimeDrift3D.jsx'))
 import AOT_VIDEOS from '../data/aot-videos.json'
 import BUNNY_VIDEOS from '../data/bunny-girl-videos.json'
 import CAROLE_TUESDAY_VIDEOS from '../data/carole-tuesday-videos.json'
@@ -1435,16 +1439,32 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
     if (el) el.scrollIntoView({ behavior:'smooth', block:'start' });
   };
 
+  // Posters pour le fond 3D qui vagabonde
+  const driftImages = useMemo(
+    () => sortedAnimes.map(a => a.coverImage).filter(Boolean),
+    [sortedAnimes]
+  );
+
   return (
-    <div style={{ position:'fixed', inset:0, zIndex:500, background:'#0b0d12', display:'flex', flexDirection:'column' }}>
+    <div style={{
+      position:'fixed', inset:0, zIndex:500, display:'flex', flexDirection:'column',
+      background:'radial-gradient(1100px 820px at 72% 82%, rgba(46,96,179,0.22), transparent 60%), radial-gradient(820px 620px at 28% -5%, rgba(34,54,120,0.20), transparent 55%), linear-gradient(180deg, #0a0f1c 0%, #070a13 60%, #05070f 100%)',
+    }}>
       <style>{AH_CSS}</style>
+
+      {/* Fond 3D : posters d'animés qui vagabondent (derrière tout, non cliquable) */}
+      <div style={{ position:'absolute', inset:0, zIndex:0, pointerEvents:'none' }}>
+        <Suspense fallback={null}>
+          <AnimeDrift3D images={driftImages} />
+        </Suspense>
+      </div>
 
       {/* ── Header compact sticky ── */}
       <div style={{
         flexShrink:0, padding:'0 24px', height:60,
         display:'flex', alignItems:'center', justifyContent:'space-between',
-        background:'rgba(11,13,18,0.82)', backdropFilter:'blur(20px)',
-        borderBottom:'1px solid rgba(255,255,255,0.07)', zIndex:10, position:'relative',
+        background:'rgba(9,14,26,0.78)', backdropFilter:'blur(20px)',
+        borderBottom:'1px solid rgba(120,150,230,0.10)', zIndex:10, position:'relative',
       }}>
         <div style={{ display:'flex', alignItems:'center', gap:12 }}>
           <div style={{ width:3, height:30, borderRadius:2, background:'linear-gradient(to bottom, #8b5cf6, #dc2626)' }} />
@@ -1477,11 +1497,9 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
       </div>
 
       {/* ── Content ── */}
-      <div style={{ flex:1, overflowY:'auto', position:'relative' }}>
-        {/* Atmospheric layers */}
-        <AmbientOrbs />
+      <div style={{ flex:1, overflowY:'auto', overflowX:'hidden', position:'relative', zIndex:1 }}>
+        {/* Étoiles très subtiles (le fond bleu + le 3D font le reste) */}
         <AHStars />
-        <AHScanLine />
 
         <div style={{ position:'relative', zIndex:2, padding:'20px 0 64px' }}>
           <div style={{ maxWidth:1360, margin:'0 auto', padding:'0 32px' }}>

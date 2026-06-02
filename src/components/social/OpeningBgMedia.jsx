@@ -19,7 +19,7 @@ export default function OpeningBgMedia({ bg, className, style, stillOnly = false
     setVideoFailed(false)
     if (!bg) { setImgSrc(null); return }
     if (bg.imageUrl) { setImgSrc(bg.imageUrl); return }
-    if (bg.ytId) { setImgSrc(`https://img.youtube.com/vi/${bg.ytId}/maxresdefault.jpg`); return }
+    if (bg.ytId) { setImgSrc(`https://img.youtube.com/vi/${bg.ytId}/hqdefault.jpg`); return }
     setImgSrc(null)
   }, [bg])
 
@@ -37,7 +37,7 @@ export default function OpeningBgMedia({ bg, className, style, stillOnly = false
 
   // Poster = image d'attente : si l'autoplay est bloqué, on voit ça au lieu d'un
   // cadre noir.
-  const poster = bg.imageUrl || (bg.ytId ? `https://img.youtube.com/vi/${bg.ytId}/maxresdefault.jpg` : undefined)
+  const poster = bg.imageUrl || (bg.ytId ? `https://img.youtube.com/vi/${bg.ytId}/hqdefault.jpg` : undefined)
 
   return useVideo ? (
     <video

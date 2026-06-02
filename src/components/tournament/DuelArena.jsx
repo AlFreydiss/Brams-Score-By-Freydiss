@@ -23,7 +23,7 @@ const ARENA_CSS = `
 // ── Page background overlay ────────────────────────────────────────────────
 function PlayingBgOverlay({ ytId, audioUrl, color }) {
   const c = color || GOLD
-  const thumb = ytId ? `https://img.youtube.com/vi/${ytId}/maxresdefault.jpg` : null
+  const thumb = ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : null
   const fallbackThumb = ytId ? `https://img.youtube.com/vi/${ytId}/sddefault.jpg` : null
   const media = {
     position: 'absolute', inset: 0,

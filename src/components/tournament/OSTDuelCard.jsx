@@ -175,7 +175,7 @@ export default function OSTDuelCard({
         {/* Thumbnail YouTube quand pas de audioUrl (toujours visible en mode vivid) */}
         {!showInlineYoutube && !participant?.audioUrl && showThumb && (
           <img
-            src={`https://img.youtube.com/vi/${participant.ytId}/maxresdefault.jpg`}
+            src={`https://img.youtube.com/vi/${participant.ytId}/hqdefault.jpg`}
             alt=""
             onError={e => { e.currentTarget.src = thumbUrl }}
             style={{
