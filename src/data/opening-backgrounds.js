@@ -140,11 +140,12 @@ export const OPENING_BACKGROUNDS = [
     rarity:         'Epique',
     price:          900000,
     ytId:           'GKnLBnl8s7E',
+    videoUrl:       'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/blind-test/ns-op3.mp4',
     dominantColor:  '#062040',
     overlayStart:   'rgba(6,32,64,0.70)',
     overlayEnd:     'rgba(2,12,28,0.82)',
     description:    "L'oiseau bleu de Sasuke. Nostalgie garantie pour chaque fan de Naruto.",
-    label:          'Fond',
+    label:          'Fond animé',
   },
   {
     id:             'bg-silhouette',

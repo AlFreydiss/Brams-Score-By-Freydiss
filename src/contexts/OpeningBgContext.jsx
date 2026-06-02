@@ -15,7 +15,9 @@ export function OpeningBgProvider({ children }) {
   // ambientStill : quand true, le fond GLOBAL n'anime plus la vidéo et affiche une
   // image figée (la page profil l'active car son hero joue déjà la vidéo → évite
   // un double décodage du même mp4).
-  const [ambientStill, setAmbientStill] = useState(false)
+  // Par défaut le fond global est figé (perf : pas de décodage vidéo plein écran
+  // sur chaque page). Le profil l'active en mode animé (setAmbientStill(false)).
+  const [ambientStill, setAmbientStill] = useState(true)
   const previewTimer = useRef(null)
 
   // Charger le fond équipé depuis Supabase au login

@@ -137,6 +137,12 @@ export default function ProfileEditModal({ data, settings, onClose, onSaved }) {
               <div className="pfx-field">
                 <label>Fond d'opening équipé</label>
                 <div className="pfx-bg-picker">
+                  <button type="button" disabled={!!equipBusy}
+                    className={`pfx-bg-opt${!equippedItemId ? ' active' : ''}`}
+                    onClick={() => equippedItemId && equip(equippedItemId)}>
+                    <span>Hero par défaut</span>
+                    {!equippedItemId && <em>✓</em>}
+                  </button>
                   {bgItems.map(i => {
                     const bg = getBgById(i.item_id)
                     const on = i.item_id === equippedItemId

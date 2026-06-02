@@ -15,7 +15,8 @@ import OpeningBgMedia from './OpeningBgMedia.jsx'
 // (backdrop-filter) ré-échantillonne cette couche fixe à chaque frame de scroll —
 // un blur(9px) plein écran ici faisait saccader tout le site. willChange isole la
 // couche pour qu'elle ne se re-rasterise pas pendant le scroll.
-const MEDIA_STYLE = {
+// Image figée (perf) : downscale 30% puis scale GPU → blur peu coûteux.
+const STILL_STYLE = {
   position: 'absolute', top: 0, left: 0,
   width: '30%', height: '30%',
   transformOrigin: 'top left', transform: 'scale(3.5)',
@@ -23,9 +24,16 @@ const MEDIA_STYLE = {
   filter: 'blur(3px) saturate(1.12) brightness(0.72)',
   willChange: 'transform',
 }
+// Vidéo animée plein écran (profil) : cover net, léger flou pour la lisibilité.
+const VIDEO_STYLE = {
+  position: 'absolute', inset: 0,
+  width: '100%', height: '100%',
+  objectFit: 'cover',
+  filter: 'saturate(1.08) brightness(0.7) blur(1px)',
+}
 
 export default function EquippedOpeningBackground() {
-  const { activeBg } = useOpeningBg()
+  const { activeBg, ambientStill } = useOpeningBg()
   if (!activeBg) return null
 
   const start = activeBg.overlayStart || 'rgba(8,9,13,0.74)'
@@ -33,7 +41,7 @@ export default function EquippedOpeningBackground() {
 
   return (
     <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden', background: activeBg.dominantColor || '#06070b' }}>
-      <OpeningBgMedia bg={activeBg} style={MEDIA_STYLE} stillOnly />
+      <OpeningBgMedia bg={activeBg} style={ambientStill ? STILL_STYLE : VIDEO_STYLE} stillOnly={ambientStill} />
       {/* Gradient premium */}
       <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(180deg, ${start} 0%, ${end} 100%)` }} />
       {/* Teinte subtile */}

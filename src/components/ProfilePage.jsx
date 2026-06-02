@@ -62,11 +62,11 @@ export default function ProfilePage() {
     setOverride(equippedBg || null)
   }, [isOwnProfile, equippedBg, discordId, setOverride])
 
-  // Le header joue déjà la vidéo du fond équipé → on fige le fond global plein
-  // écran (image floutée) tant qu'on est sur le profil (un seul décodage vidéo).
+  // Sur le profil, le fond d'opening équipé s'anime EN PLEIN ÉCRAN derrière le
+  // contenu (le header est transparent). On réactive le mode figé en quittant.
   useEffect(() => {
-    setAmbientStill(true)
-    return () => setAmbientStill(false)
+    setAmbientStill(false)
+    return () => setAmbientStill(true)
   }, [setAmbientStill])
 
   const share = () => {

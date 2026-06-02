@@ -6,16 +6,13 @@ import { fmtB, fmtNum } from '../../lib/profileTokens.js'
 import { CountUp } from './shared.jsx'
 import ProfileActions from './ProfileActions.jsx'
 import FollowersPreview from './FollowersPreview.jsx'
-import OpeningBgMedia from '../social/OpeningBgMedia.jsx'
-import { getBgById } from '../../data/opening-backgrounds.js'
 
 export default function ProfileHero({ data, copied, onShare, onEdit, onAvatar, onShowFollowers, onShowFollowing }) {
   const {
-    member, rank, aura, auraTier, postsCount, followStats, settings, equippedBg,
+    member, rank, aura, auraTier, postsCount, followStats, settings,
     isOwnProfile, profileIsCreator, profileIsStaff,
   } = data
 
-  const heroBg = getBgById(equippedBg)
   const bannerUrl = settings?.banner_url || null
   const displayName = member?.username || `Pirate #${String(member?.uid || '').slice(-4)}`
   const link = settings?.link || null
@@ -30,14 +27,12 @@ export default function ProfileHero({ data, copied, onShare, onEdit, onAvatar, o
 
   return (
     <section className="pfx-ig-hero" style={{ '--rank': rank.color }}>
-      {/* Backdrop : fond d'opening animé équipé (toujours), assombri pour lisibilité */}
-      <div className="pfx-ig-backdrop" aria-hidden>
-        <div className="pfx-ig-backdrop-fallback" />
-        {heroBg && <OpeningBgMedia bg={heroBg} className="pfx-ig-backdrop-media" />}
-        <div className="pfx-ig-backdrop-veil" />
-      </div>
+      {/* Le fond d'opening animé est rendu EN PLEIN ÉCRAN derrière la page
+          (EquippedOpeningBackground). Le hero est transparent ; un voile doux
+          assure juste la lisibilité du texte. */}
+      <div className="pfx-ig-scrim" aria-hidden />
 
-      {/* Bannière custom : bandeau séparé en haut (n'écrase pas le fond animé) */}
+      {/* Bannière custom : bandeau image optionnel en haut */}
       {bannerUrl && (
         <div className="pfx-ig-banner" aria-hidden>
           <img src={bannerUrl} alt="" />

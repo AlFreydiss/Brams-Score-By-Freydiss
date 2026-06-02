@@ -546,12 +546,15 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 .pfx-wrap-ig { width: min(935px, calc(100% - 32px)); padding-top: 18px; }
 
-/* ── Header ── */
+/* ── Header (transparent : le fond animé plein écran se voit derrière) ── */
 .pfx-ig-hero {
   position: relative; border-radius: 22px; overflow: hidden;
-  border: 1px solid var(--line); border-top-color: rgba(255,255,255,0.12);
-  box-shadow: 0 30px 90px rgba(0,0,0,0.5);
   isolation: isolate; animation: pfxRise .5s cubic-bezier(.22,1,.36,1) both;
+}
+/* Voile doux pour la lisibilité du texte par-dessus la vidéo (côté gauche). */
+.pfx-ig-scrim {
+  position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background: linear-gradient(100deg, rgba(8,9,13,0.82) 0%, rgba(8,9,13,0.55) 42%, rgba(8,9,13,0.12) 78%, transparent 100%);
 }
 .pfx-ig-backdrop { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
 .pfx-ig-backdrop-fallback {
