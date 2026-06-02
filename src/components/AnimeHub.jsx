@@ -972,6 +972,163 @@ function ComingSoonCard({ index }) {
   )
 }
 
+// Excellent unified premium card for horiz sections + gallery (blend of premium HTML + base hub style)
+// Glassmorphism hover overlay, mini dual rings with poster minia, rank/NOUVEAU, heart, synopsis on overlay
+function BramsqHubCard({ anime, rank = null, onClick, onOpenMonUnivers, isFav = false, toggleFav, isHorizontal = false }) {
+  const [hov, setHov] = useState(false)
+  const c = anime.color
+  const size = isHorizontal ? 28 : 34
+  const cardWidth = isHorizontal ? 170 : 220
+  const cardHeight = isHorizontal ? 240 : 310
+
+  const doFav = (e) => {
+    if (typeof toggleFav === 'function') {
+      toggleFav(anime.id, e)
+    }
+  }
+
+  return (
+    <div
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      onClick={onClick}
+      style={{
+        flexShrink: 0,
+        width: cardWidth,
+        height: cardHeight,
+        borderRadius: 14,
+        overflow: 'hidden',
+        position: 'relative',
+        cursor: 'pointer',
+        background: `linear-gradient(165deg, ${anime.colorDark} 0%, #101114 100%)`,
+        border: `1px solid ${hov ? c + '4a' : 'rgba(255,255,255,0.06)'}`,
+        transform: hov ? 'scale(1.02) translateY(-4px)' : 'scale(1)',
+        boxShadow: hov ? `0 20px 45px rgba(0,0,0,0.5), 0 0 0 1px ${c}18` : '0 6px 20px rgba(0,0,0,0.35)',
+        transition: 'transform 0.35s cubic-bezier(0.23,1,0.32,1), box-shadow 0.35s cubic-bezier(0.23,1,0.32,1)',
+        marginRight: isHorizontal ? 12 : 0,
+        scrollSnapAlign: isHorizontal ? 'start' : 'none'
+      }}
+    >
+      {/* Poster */}
+      {anime.coverImage && (
+        <img
+          src={anime.coverImage}
+          alt={anime.title}
+          onError={e => { e.currentTarget.style.display = 'none' }}
+          style={{
+            position: 'absolute', inset: 0, width: '100%', height: '100%',
+            objectFit: 'cover', objectPosition: 'center top',
+            transform: hov ? 'scale(1.06)' : 'scale(1)',
+            transition: 'transform 0.4s cubic-bezier(0.23,1,0.32,1)'
+          }}
+        />
+      )}
+
+      {/* Base gradient */}
+      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 28%, rgba(0,0,0,0.85) 100%)', zIndex: 1 }} />
+
+      {/* Color accent rim on hover */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        background: `linear-gradient(to bottom, ${c}15 0%, transparent 45%)`,
+        zIndex: 2, opacity: hov ? 1 : 0, transition: 'opacity 0.25s'
+      }} />
+
+      {/* Rank or NOUVEAU badge top right */}
+      <div style={{
+        position: 'absolute', top: 8, right: 8, zIndex: 4,
+        fontSize: isHorizontal ? 7 : 9, fontWeight: 800, letterSpacing: '.1em',
+        background: rank ? '#111' : (anime.badgeColor || c) + 'dd',
+        color: '#fff', borderRadius: 999, padding: isHorizontal ? '1px 5px' : '2px 7px',
+        border: `1px solid ${c}44`, backdropFilter: 'blur(8px)'
+      }}>
+        {rank ? `#${rank}` : anime.badge}
+      </div>
+
+      {/* Heart */}
+      <button
+        onClick={doFav}
+        style={{
+          position: 'absolute', top: 8, left: 8, zIndex: 5,
+          width: isHorizontal ? 20 : 24, height: isHorizontal ? 20 : 24, borderRadius: 999,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: isFav ? 'rgba(167,139,250,0.9)' : 'rgba(0,0,0,0.5)',
+          border: isFav ? '1px solid #a78bfa' : '1px solid rgba(255,255,255,0.25)',
+          color: isFav ? '#fff' : 'rgba(255,255,255,0.85)',
+          fontSize: isHorizontal ? 10 : 12, cursor: 'pointer', transition: 'all .2s'
+        }}
+        title={isFav ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+      >
+        ♥
+      </button>
+
+      {/* Mini dual ProgressRing with poster minia style */}
+      {anime._video && (
+        <div
+          onClick={(e) => { e.stopPropagation(); if (onOpenMonUnivers) onOpenMonUnivers() }}
+          title="Voir dans Mon Univers"
+          style={{
+            position: 'absolute', bottom: isHorizontal ? 8 : 10, right: isHorizontal ? 8 : 10, zIndex: 6,
+            borderRadius: '50%', cursor: 'pointer',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
+            transition: 'transform .15s'
+          }}
+          onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'}
+          onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+        >
+          <ProgressRing
+            videoPct={anime._video.pct}
+            chapterPct={anime._chapter ? anime._chapter.pct : 0}
+            size={size}
+            color={c}
+            posterSrc={anime.coverImage}
+          />
+        </div>
+      )}
+
+      {/* Base bottom info */}
+      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: isHorizontal ? '8px 10px' : '12px 14px', zIndex: 3 }}>
+        <div style={{ fontSize: isHorizontal ? 11 : 13, fontWeight: 800, color: '#F2F0EA', lineHeight: 1.2, marginBottom: 3, textShadow: '0 1px 6px rgba(0,0,0,0.9)' }}>
+          {anime.title}
+        </div>
+        <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
+          {(anime.genres || []).slice(0, 2).map(g => (
+            <span key={g} style={{ fontSize: isHorizontal ? 8 : 9, fontWeight: 700, background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.7)', borderRadius: 99, padding: '1px 5px' }}>{g}</span>
+          ))}
+        </div>
+      </div>
+
+      {/* Premium glass hover overlay (title + score + short synopsis + heart) */}
+      <div className="anime-glass" style={{
+        position: 'absolute', inset: 0, zIndex: 7,
+        background: 'linear-gradient(to top, rgba(17,17,20,0.94) 12%, rgba(17,17,20,0.6) 45%, transparent 70%)',
+        opacity: hov ? 1 : 0,
+        transition: 'opacity 0.3s cubic-bezier(0.23,1,0.32,1)',
+        padding: isHorizontal ? '10px 10px 8px' : '14px 14px 12px',
+        display: 'flex', flexDirection: 'column', justifyContent: 'flex-end'
+      }}>
+        <div style={{ fontSize: isHorizontal ? 12 : 14, fontWeight: 800, color: '#fff', marginBottom: 4, lineHeight: 1.15 }}>
+          {anime.title}
+        </div>
+        <div style={{ fontSize: isHorizontal ? 9 : 11, color: '#a78bfa', fontWeight: 700, marginBottom: 6 }}>
+          ★ {anime._score ? anime._score.toFixed(1) : '8.5'}
+        </div>
+        <div style={{ fontSize: isHorizontal ? 9 : 10, color: 'rgba(255,255,255,0.75)', lineHeight: 1.3, marginBottom: 8 }}>
+          {anime._synopsis}
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.6)' }}>
+            {(anime.genres || []).slice(0,2).join(' · ')}
+          </div>
+          <button onClick={doFav} style={{ fontSize: 13, color: isFav ? '#a78bfa' : 'rgba(255,255,255,0.6)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+            ♥
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrstone, onOpenJjk, onOpenKingdom, onOpenAot, onOpenKny, onOpenNnt, onOpenSl, onOpenDbs, onOpenViolet, onOpenVivy, onOpenLovePrism, onOpenCaroleTuesday, onOpenBunnyGirl, onOpenRentGirlfriend, onOpenBc, onOpenMha, onOpenFireforce, onOpenBluelock, onOpenMonUnivers }) {
   const [query, setQuery] = useState('')
   const [selectedGenres, setSelectedGenres] = useState(new Set())
@@ -1100,6 +1257,52 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
     const randomAnime = sortedAnimes[randomIndex]
     handleClick(randomAnime.id)
   }
+
+  // Premium + base blend data: scores for "top", progress for "loved", badge for "new"
+  const ANIME_SCORES = {
+    onepiece: 9.2, aot: 9.6, sl: 9.4, jjk: 9.1, fireforce: 8.8, bluelock: 8.9,
+    'bunny-girl': 8.7, 'rent-girlfriend': 7.8, tpn: 8.5, drstone: 8.6, kingdom: 8.3,
+    kny: 9.0, nnt: 7.9, dbs: 8.0, 'violet-evergarden': 9.3, vivy: 8.4,
+    'love-prism': 7.5, 'carole-tuesday': 8.1, bc: 8.2, mha: 8.0
+  };
+
+  const allAnimesWithExtras = useMemo(() => {
+    return sortedAnimes.map(anime => {
+      const ns = anime.id;
+      const video = computeVideo(ns, rawProgress);
+      const hasCh = HAS_CHAPTERS.has(ns);
+      const chapter = hasCh ? computeChapter(ns, rawProgress) : { read: 0, total: 0, pct: 0 };
+      const score = ANIME_SCORES[ns] || 8.5;
+      const isNew = anime.badge === 'NOUVEAU' || anime.badge === 'À JOUR';
+      const synopsis = (anime.description || anime.subtitle || '').slice(0, 110) + '...';
+      return {
+        ...anime,
+        _video: video,
+        _chapter: chapter,
+        _hasChapters: hasCh,
+        _score: score,
+        _isNew: isNew,
+        _synopsis: synopsis
+      };
+    });
+  }, [sortedAnimes, rawProgress]);
+
+  const topWeekAnimes = useMemo(() => {
+    return [...allAnimesWithExtras]
+      .sort((a, b) => b._score - a._score)
+      .slice(0, 8)
+      .map((a, i) => ({ ...a, _rank: i + 1 }));
+  }, [allAnimesWithExtras]);
+
+  const mostLovedAnimes = useMemo(() => {
+    return [...allAnimesWithExtras]
+      .sort((a, b) => (b._video.pct + b._chapter.pct) - (a._video.pct + a._chapter.pct))
+      .slice(0, 8);
+  }, [allAnimesWithExtras]);
+
+  const newSeasonAnimes = useMemo(() => {
+    return allAnimesWithExtras.filter(a => a._isNew).slice(0, 8);
+  }, [allAnimesWithExtras]);
 
   return (
     <div style={{ position:'fixed', inset:0, zIndex:500, background:'#07090e', display:'flex', flexDirection:'column' }}>
@@ -1268,7 +1471,73 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
 
           </div>
 
-          {/* Marquee gallery (default) or filtered grid — outside maxWidth container for true full-bleed */}
+          {/* Premium + base blend: 3 horizontal curated sections (premium style: rank/NOUVEAU, mini dual rings with poster minia, glass hover overlay with title/score/synopsis/heart) */}
+          <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 24px 20px' }}>
+            {/* Top de la semaine */}
+            <div style={{ marginBottom: 28 }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 6, padding: '0 4px' }}>
+                <span style={{ fontSize: '1.25rem', fontWeight: 600, color: '#f1f1f3', letterSpacing: '-0.01em' }}>Top de la semaine</span>
+                <span style={{ fontSize: 9, padding: '1px 6px', background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)', borderRadius: 999 }}>Semaine 6</span>
+              </div>
+              <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 6, scrollSnapType: 'x mandatory' }} className="elegant-scrollbar">
+                {topWeekAnimes.map(anime => (
+                  <BramsqHubCard
+                    key={anime.id}
+                    anime={anime}
+                    rank={anime._rank}
+                    onClick={() => handleClick(anime.id)}
+                    onOpenMonUnivers={onOpenMonUnivers}
+                    isFav={favs.has(anime.id)}
+                    toggleFav={toggleFav}
+                    isHorizontal={true}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Les plus aimés */}
+            <div style={{ marginBottom: 28 }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 6, padding: '0 4px' }}>
+                <span style={{ fontSize: '1.25rem', fontWeight: 600, color: '#f1f1f3', letterSpacing: '-0.01em' }}>Les plus aimés</span>
+              </div>
+              <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 6, scrollSnapType: 'x mandatory' }} className="elegant-scrollbar">
+                {mostLovedAnimes.map(anime => (
+                  <BramsqHubCard
+                    key={anime.id}
+                    anime={anime}
+                    onClick={() => handleClick(anime.id)}
+                    onOpenMonUnivers={onOpenMonUnivers}
+                    isFav={favs.has(anime.id)}
+                    toggleFav={toggleFav}
+                    isHorizontal={true}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Nouveautés de la saison */}
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 6, padding: '0 4px' }}>
+                <span style={{ fontSize: '1.25rem', fontWeight: 600, color: '#f1f1f3', letterSpacing: '-0.01em' }}>Nouveautés de la saison</span>
+                <span style={{ fontSize: 9, padding: '1px 6px', background: 'rgba(167,139,250,0.15)', color: '#a78bfa', borderRadius: 999 }}>Saison 2026</span>
+              </div>
+              <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 6, scrollSnapType: 'x mandatory' }} className="elegant-scrollbar">
+                {newSeasonAnimes.map(anime => (
+                  <BramsqHubCard
+                    key={anime.id}
+                    anime={anime}
+                    onClick={() => handleClick(anime.id)}
+                    onOpenMonUnivers={onOpenMonUnivers}
+                    isFav={favs.has(anime.id)}
+                    toggleFav={toggleFav}
+                    isHorizontal={true}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Marquee gallery (base cinematic) or filtered grid — full-bleed for the "base" feel blended with premium above */}
           {isFiltering ? (
             <div style={{ maxWidth:1080, margin:'0 auto', padding:'0 24px' }} className="ah-gallery">
               {visibleAnimes.length > 0 ? (
