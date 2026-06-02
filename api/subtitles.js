@@ -1,5 +1,10 @@
+// Fonction unique regroupant les 2 endpoints sous-titres (limite 12 fonctions Hobby).
+//  - /api/subtitles/onepiece  → rewrite → /api/subtitles?kind=onepiece  (recherche Wyzie + conversion VTT)
+//  - /api/subtitles/r2        → rewrite → /api/subtitles?kind=r2        (proxy CORS d'un .vtt sur R2)
+
 const WYZIE_BASE = 'https://sub.wyzie.io/search'
 const DEFAULT_SHOW_ID = 'tt0388629'
+const R2_BASE = 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/'
 
 function escapeHtml(value) {
   return String(value || '')
@@ -11,7 +16,7 @@ function escapeHtml(value) {
 function srtToVtt(text) {
   const normalized = String(text || '')
     .replace(/\r/g, '')
-    .replace(/^\uFEFF/, '')
+    .replace(/^﻿/, '')
     .replace(/^WEBVTT[^\n]*\n/i, '')
 
   const body = normalized
@@ -38,7 +43,7 @@ function srtToVtt(text) {
 function assToVtt(text) {
   const normalized = String(text || '')
     .replace(/\r/g, '')
-    .replace(/^\uFEFF/, '')
+    .replace(/^﻿/, '')
 
   const dialogueLines = normalized
     .split('\n')
@@ -84,7 +89,28 @@ async function fetchSubtitleFile(url) {
   return await response.text()
 }
 
-export default async function handler(req, res) {
+// ── /api/subtitles/r2 : proxy CORS d'un sous-titre déjà hébergé sur R2 ────────
+async function handleR2(req, res) {
+  const { url } = req.query
+  if (!url || !url.startsWith(R2_BASE)) {
+    res.status(400).json({ error: 'invalid_url' })
+    return
+  }
+  try {
+    const r = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } })
+    if (!r.ok) { res.status(r.status).end(); return }
+    const text = await r.text()
+    res.setHeader('Content-Type', 'text/vtt; charset=utf-8')
+    res.setHeader('Access-Control-Allow-Origin', '*')
+    res.setHeader('Cache-Control', 'public, max-age=86400, s-maxage=86400')
+    res.status(200).send(text)
+  } catch (err) {
+    res.status(500).json({ error: err?.message || 'fetch_failed' })
+  }
+}
+
+// ── /api/subtitles/onepiece : recherche Wyzie + conversion → VTT ──────────────
+async function handleOnepiece(req, res) {
   const episode = Number.parseInt(req.query.episode || '', 10)
   if (!Number.isFinite(episode) || episode < 1086) {
     res.status(400).json({ error: 'invalid_episode' })
@@ -147,4 +173,11 @@ export default async function handler(req, res) {
     res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=1800')
     res.status(500).json({ error: error?.message || 'subtitle_fetch_failed' })
   }
+}
+
+export default async function handler(req, res) {
+  // 'r2' si kind=r2 ou si un paramètre url est fourni ; sinon recherche Wyzie One Piece.
+  const kind = String(req.query.kind || (req.query.url ? 'r2' : 'onepiece'))
+  if (kind === 'r2') return handleR2(req, res)
+  return handleOnepiece(req, res)
 }

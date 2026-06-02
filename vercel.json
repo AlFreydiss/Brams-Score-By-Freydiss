@@ -25,6 +25,14 @@
       "destination": "/api/bot-tools?tool=og"
     },
     {
+      "source": "/api/subtitles/onepiece",
+      "destination": "/api/subtitles?kind=onepiece"
+    },
+    {
+      "source": "/api/subtitles/r2",
+      "destination": "/api/subtitles?kind=r2"
+    },
+    {
       "source": "/((?!api/|assets/|blind-test/.*\\.mp4|.*\\..*).*)",
       "destination": "/index.html"
     }
