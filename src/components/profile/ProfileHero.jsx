@@ -5,6 +5,7 @@
 import { fmtB, fmtNum } from '../../lib/profileTokens.js'
 import { CountUp } from './shared.jsx'
 import ProfileActions from './ProfileActions.jsx'
+import FollowersPreview from './FollowersPreview.jsx'
 import OpeningBgMedia from '../social/OpeningBgMedia.jsx'
 import { getBgById } from '../../data/opening-backgrounds.js'
 
@@ -29,14 +30,19 @@ export default function ProfileHero({ data, copied, onShare, onEdit, onAvatar, o
 
   return (
     <section className="pfx-ig-hero" style={{ '--rank': rank.color }}>
-      {/* Backdrop : bannière custom ou fond d'opening, fortement assombri */}
+      {/* Backdrop : fond d'opening animé équipé (toujours), assombri pour lisibilité */}
       <div className="pfx-ig-backdrop" aria-hidden>
         <div className="pfx-ig-backdrop-fallback" />
-        {bannerUrl
-          ? <img src={bannerUrl} alt="" className="pfx-ig-backdrop-media" />
-          : heroBg && <OpeningBgMedia bg={heroBg} className="pfx-ig-backdrop-media" />}
+        {heroBg && <OpeningBgMedia bg={heroBg} className="pfx-ig-backdrop-media" />}
         <div className="pfx-ig-backdrop-veil" />
       </div>
+
+      {/* Bannière custom : bandeau séparé en haut (n'écrase pas le fond animé) */}
+      {bannerUrl && (
+        <div className="pfx-ig-banner" aria-hidden>
+          <img src={bannerUrl} alt="" />
+        </div>
+      )}
 
       <div className="pfx-ig-inner">
         {/* Avatar */}
@@ -97,6 +103,11 @@ export default function ProfileHero({ data, copied, onShare, onEdit, onAvatar, o
             </div>
           </div>
         </div>
+
+        {/* Colonne droite : qui suit ce profil (remplit l'espace, voir abonnés) */}
+        <aside className="pfx-ig-aside">
+          <FollowersPreview targetId={member?.uid} count={followStats?.followers_count} onOpen={onShowFollowers} />
+        </aside>
       </div>
     </section>
   )
