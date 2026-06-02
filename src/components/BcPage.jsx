@@ -179,6 +179,7 @@ export default function BcPage({ onClose }) {
   const [playerIdx, setPlayerIdx] = useState(null)
   const [progress, setProgress]   = useState(loadProgress)
   const [scanProg, setScanProg]   = useState(loadScanProgress)
+  const [reading, setReading]     = useState(null)
   const scrollRef = useRef(null)
 
   useEffect(() => { document.body.style.overflow = 'hidden'; return () => { document.body.style.overflow = '' } }, [])
@@ -259,13 +260,34 @@ export default function BcPage({ onClose }) {
                   </div>
                 </div>
 
-                <div style={{ marginBottom: 12, fontSize: 12, color: 'rgba(255,255,255,.45)', fontWeight: 600, letterSpacing: '.02em' }}>Scans manga — {chapterCount} chapitres</div>
-                <Reader
-                  chapters={CHAPTERS}
-                  ns={NS}
-                  color={COLOR}
-                  onProgressUpdate={(p) => { setScanProg(p); /* Reader persists to LS */ }}
-                />
+                <div style={{ marginBottom: 8, fontSize: 12, color: 'rgba(255,255,255,.45)', fontWeight: 600, letterSpacing: '.02em' }}>Scans manga — {chapterCount} chapitres • clique pour lire</div>
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(68px,1fr))', gap:8, maxHeight:220, overflowY:'auto', paddingRight:4 }}>
+                  {CHAPTERS.slice(0, Math.min(60, CHAPTERS.length)).map((ch, i) => {
+                    const st = scanProg[ch.num] || (ch.read ? 'read' : null)
+                    const done = st === 'read'
+                    return (
+                      <button key={i} onClick={() => setReading(i)} style={{ fontSize:11, padding:'8px 6px', borderRadius:8, background: done ? 'rgba(52,211,153,0.15)' : 'rgba(255,255,255,0.04)', border: done ? '1px solid #34d399' : '1px solid rgba(255,255,255,0.1)', color: done ? '#34d399' : '#fff', cursor:'pointer' }}>
+                        #{ch.num || (i+1)} {done ? '✓' : ''}
+                      </button>
+                    )
+                  })}
+                </div>
+                {reading !== null && CHAPTERS[reading] && (
+                  <div style={{ position:'fixed', inset:0, zIndex:9999, background:'#0a0814' }}>
+                    <Reader
+                      chapter={CHAPTERS[reading]}
+                      chapterIndex={reading}
+                      onClose={() => setReading(null)}
+                      onPrevChapter={() => setReading(Math.max(0, reading-1))}
+                      onNextChapter={() => setReading(Math.min(CHAPTERS.length-1, reading+1))}
+                      totalChapters={CHAPTERS.length}
+                      onFinish={() => { /* can mark */ const p = {...scanProg, [CHAPTERS[reading].num]: 'read'}; setScanProg(p); try{localStorage.setItem(`${NS}_progress`, JSON.stringify(p))}catch{} }}
+                      isRead={scanProg[CHAPTERS[reading]?.num] === 'read'}
+                      namespace={NS}
+                      themeColor={COLOR}
+                    />
+                  </div>
+                )}
 
                 <div style={{ marginTop:28,padding:'14px 18px',borderRadius:12,background:'rgba(255,255,255,.03)',border:'1px solid rgba(255,255,255,.05)',display:'flex',alignItems:'center',gap:10 }}>
                   <span style={{ fontSize:16 }}>🍀</span>
