@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { ProgressRing } from './ProgressRing.jsx'
 import AOT_VIDEOS from '../data/aot-videos.json'
 import BUNNY_VIDEOS from '../data/bunny-girl-videos.json'
@@ -510,30 +510,6 @@ function computeChapter(ns, all) {
   return { read, total, pct }
 }
 
-// Scores for premium hub sections/ranks (sourced/adapted to match standalone design + current data)
-const ANIME_SCORES = {
-  onepiece: 9.2,
-  tpn: 8.7,
-  drstone: 8.8,
-  jjk: 9.1,
-  kingdom: 8.9,
-  aot: 9.6,
-  kny: 9.0,
-  nnt: 8.1,
-  sl: 9.4,
-  dbs: 8.2,
-  'violet-evergarden': 9.2,
-  vivy: 8.6,
-  'love-prism': 8.0,
-  'bunny-girl': 8.4,
-  'rent-girlfriend': 7.8,
-  'carole-tuesday': 8.3,
-  bc: 8.5,
-  mha: 8.6,
-  fireforce: 8.2,
-  bluelock: 8.8,
-}
-
 const AH_CSS = `
   @keyframes ahFadeUp  { from { opacity:0; transform:translateY(24px) } to { opacity:1; transform:none } }
   @keyframes ahTwinkle { 0%,100% { opacity:.12 } 50% { opacity:.65 } }
@@ -547,75 +523,6 @@ const AH_CSS = `
   @media (prefers-reduced-motion: reduce) {
     .ah-mq-l, .ah-mq-r { animation: none !important; }
   }
-
-  /* Bramsq Premium Standalone Hub styles - exact match glassmorphism #0a0a0f/#111114/#a78bfa, Playfair, cubic-bezier */
-  .premium-font {
-    font-family: 'Playfair Display', Georgia, serif;
-    font-weight: 700;
-    letter-spacing: -0.025em;
-  }
-  .glass {
-    background: rgba(255,255,255,0.04);
-    backdrop-filter: blur(24px);
-    border: 1px solid rgba(255,255,255,0.08);
-  }
-  .luxury-shadow {
-    box-shadow: 0 10px 30px -15px rgb(0 0 0 / 0.3),
-                0 4px 6px -1px rgb(0 0 0 / 0.1);
-  }
-  .section-header {
-    font-size: 1.35rem;
-    font-weight: 600;
-    letter-spacing: -0.02em;
-    color: #f1f1f3;
-  }
-  .anime-card {
-    transition: transform 0.4s cubic-bezier(0.23, 1.0, 0.32, 1), 
-                box-shadow 0.4s cubic-bezier(0.23, 1.0, 0.32, 1),
-                border-color 0.3s ease;
-    position: relative;
-    overflow: hidden;
-  }
-  .anime-card:hover {
-    transform: translateY(-8px) scale(1.015);
-    box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.4);
-    border-color: rgba(167, 139, 250, 0.15);
-  }
-  .anime-card .cover {
-    transition: transform 0.6s cubic-bezier(0.23, 1.0, 0.32, 1);
-  }
-  .anime-card:hover .cover {
-    transform: scale(1.08);
-  }
-  .glass-overlay {
-    background: linear-gradient(to top, rgba(17, 17, 20, 0.92) 15%, transparent 55%);
-    opacity: 0;
-    transition: opacity 0.35s cubic-bezier(0.23, 1.0, 0.32, 1);
-    pointer-events: none;
-  }
-  .anime-card:hover .glass-overlay {
-    opacity: 1;
-  }
-  .horizontal-scroll {
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-  }
-  .horizontal-scroll::-webkit-scrollbar {
-    display: none;
-  }
-  .cinematic-hero {
-    background: linear-gradient(to bottom, rgba(10,10,15,0.15) 0%, rgba(10,10,15,0.65) 100%);
-  }
-  .premium-stat {
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.06);
-  }
-  .bramsq-accent { color: #a78bfa; }
-  .mini-progress {
-    box-shadow: 0 0 0 1px rgba(255,255,255,0.1);
-  }
-  .elegant-scrollbar::-webkit-scrollbar { height: 5px; }
-  .elegant-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 20px; }
 `
 
 // Ambient colored orbs drift in background
@@ -995,149 +902,9 @@ function ComingSoonCard({ index }) {
   )
 }
 
-// Bramsq Premium standalone matching card for horiz snap sections + gallery
-// Uses dual mini ProgressRing (video+chapter) + poster minia capable, glass-overlay on hover with title/score/synopsis/heart (bramsq_favs), rank/NOUVEAU, luxury cubic hover scale+glass, #111114 glassmorphism
-function BramsqHubCard({ anime, isHorizontal = true, rank = null, onClick, onOpenMonUnivers, isFav = false, toggleFav }) {
-  const [hov, setHov] = useState(false)
-  const c = anime.color || '#a78bfa'
-  const w = isHorizontal ? 178 : '100%'
-  const progress = Math.round( ((anime._video?.pct || 0) + (anime._chapter?.pct || 0)) / 2 ) || Math.floor((anime._score || 8.5) * 10)
-  const synopsis = anime._synopsis || anime.description || 'Chef-d\'œuvre de la communauté Bramsq.'
-  const displayTitle = anime.title || anime.titre
-  const year = anime.année || (anime.subtitle ? '2024' : '2024')
-  const score = anime._score || 8.5
-  const isNouveau = anime._isNew || (anime.badge || '').toUpperCase().includes('NOUVEAU')
-
-  return (
-    <div
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
-      onClick={onClick}
-      className="anime-card bg-[#111114] border border-white/10 rounded-3xl overflow-hidden flex-shrink-0 cursor-pointer group"
-      style={{ width: w, borderColor: hov ? 'rgba(167,139,250,0.15)' : 'rgba(255,255,255,0.10)' }}
-    >
-      <div className="relative">
-        {/* Cover */}
-        <div className="relative aspect-[3/4] overflow-hidden bg-[#0a0a0f]">
-          {anime.coverImage ? (
-            <img
-              src={anime.coverImage}
-              alt={displayTitle}
-              className="cover w-full h-full object-cover"
-              onError={e => { e.currentTarget.style.display = 'none' }}
-              style={{ transform: hov ? 'scale(1.07)' : 'scale(1)' }}
-            />
-          ) : (
-            <div style={{ height: '100%', background: `linear-gradient(135deg, ${c}33, #111114)`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:42, color: c }}>{anime.emoji || '🎌'}</div>
-          )}
-          <div style={{ position:'absolute', inset:0, background:'linear-gradient(to bottom, rgba(0,0,0,0.08) 20%, rgba(0,0,0,0.65) 70%)' }} />
-
-          {/* Rank badge #1 etc for top-week */}
-          {rank && (
-            <div className="absolute top-3 left-3 z-20 w-6 h-6 flex items-center justify-center">
-              <div style={{ width:24, height:24, background:'linear-gradient(135deg, #a78bfa, #7c3aed)', color:'#fff', fontSize:10, fontWeight:800, display:'flex', alignItems:'center', justifyContent:'center', borderRadius:'50%', boxShadow:'0 2px 6px rgba(0,0,0,0.5)' }}>
-                #{rank}
-              </div>
-            </div>
-          )}
-
-          {/* NOUVEAU pill */}
-          {isNouveau && (
-            <div className="absolute top-3 right-3 z-20 px-2 py-0.5 text-[9px] font-bold tracking-wider bg-white/90 text-black rounded-full flex items-center justify-center" style={{ fontSize: '8.5px', paddingTop:1 }}>
-              NOUVEAU
-            </div>
-          )}
-
-          {/* Mini dual ProgressRing (video+chapter) using shared component + poster minia support */}
-          {anime._video && (
-            <div
-              onClick={(e) => { e.stopPropagation(); if (onOpenMonUnivers) onOpenMonUnivers() }}
-              title="Progression détaillée — Mon Univers"
-              style={{ position:'absolute', bottom:10, right:10, zIndex:30, borderRadius:'50%', cursor:'pointer' }}
-            >
-              <ProgressRing
-                videoPct={anime._video.pct}
-                chapterPct={anime._chapter ? anime._chapter.pct : 0}
-                size={isHorizontal ? 28 : 34}
-                color={c}
-                posterSrc={anime.coverImage || null}
-              />
-            </div>
-          )}
-
-          {/* Hover glass-overlay showing title/score/synopsis/heart fav (exact per task, using bramsq_favs) */}
-          <div className="glass-overlay absolute inset-0 z-10 flex flex-col justify-end p-3 text-[11px]">
-            <div style={{ color:'#fff', fontWeight:700, fontSize:13, lineHeight:1.15, marginBottom:2 }}>{displayTitle}</div>
-            <div style={{ display:'flex', alignItems:'center', gap:4, marginBottom:4 }}>
-              <span style={{ color:'#facc15', fontSize:10 }}>★</span>
-              <span style={{ fontWeight:600 }}>{score}</span>
-              <span style={{ color:'rgba(255,255,255,0.5)', fontSize:9 }}>· {year}</span>
-            </div>
-            <div style={{ color:'rgba(255,255,255,0.85)', fontSize:9.5, lineHeight:1.25, marginBottom:6, display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical', overflow:'hidden' }}>
-              {synopsis}
-            </div>
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-              <button
-                onClick={(e) => { if (typeof toggleFav === 'function') toggleFav(anime.id, e) }}
-                style={{ background: isFav ? 'rgba(167,139,250,0.9)' : 'rgba(255,255,255,0.1)', color: isFav ? '#fff' : '#ddd', border:'1px solid rgba(255,255,255,0.2)', borderRadius:999, padding:'1px 7px', fontSize:10, display:'flex', alignItems:'center', gap:3 }}
-                title={isFav ? 'Retirer des favoris Bramsq' : 'Ajouter aux favoris'}
-              >
-                <span>♥</span> <span style={{ fontSize:9 }}>{isFav ? 'FAV' : 'fav'}</span>
-              </button>
-              <span style={{ color:'rgba(255,255,255,0.45)', fontSize:9 }}>{anime.stats?.[0]?.value || (anime.episodes || 12)} ép.</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Bottom info bar (non-overlay) */}
-        <div className="p-3" style={{ background:'#111114' }}>
-          <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:6 }}>
-            <div style={{ flex:1, minWidth:0 }}>
-              <div style={{ fontWeight:700, fontSize:13, lineHeight:1.1, color:'#f1f1f3', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{displayTitle}</div>
-              <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)', marginTop:1 }}>{year}</div>
-            </div>
-            <div style={{ display:'flex', alignItems:'center', gap:3, fontSize:12, flexShrink:0 }}>
-              <span style={{ color:'#facc15' }}>★</span>
-              <span style={{ fontWeight:600, color:'#f1f1f3' }}>{score}</span>
-            </div>
-          </div>
-          <div style={{ display:'flex', gap:4, marginTop:5, flexWrap:'wrap' }}>
-            {(anime.genres || []).slice(0,2).map(g => (
-              <span key={g} style={{ fontSize:9, padding:'0 5px', background:'rgba(255,255,255,0.06)', color:'rgba(255,255,255,0.7)', borderRadius:999 }}>{g}</span>
-            ))}
-          </div>
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginTop:6 }}>
-            <button
-              onClick={(e) => { if (typeof toggleFav === 'function') toggleFav(anime.id, e) }}
-              style={{ fontSize:10, color: isFav ? '#a78bfa' : 'rgba(255,255,255,0.55)', display:'flex', alignItems:'center', gap:3 }}
-              title={isFav ? 'Retirer' : 'Favori Bramsq (bramsq_favs)'}
-            >
-              ♥
-            </button>
-            <span style={{ fontSize:9, color:'rgba(255,255,255,0.4)' }}>{(anime.episodes || anime.stats?.find(s=>s.label.toLowerCase().includes('ép'))?.value || '12')} ép.</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrstone, onOpenJjk, onOpenKingdom, onOpenAot, onOpenKny, onOpenNnt, onOpenSl, onOpenDbs, onOpenViolet, onOpenVivy, onOpenLovePrism, onOpenCaroleTuesday, onOpenBunnyGirl, onOpenRentGirlfriend, onOpenBc, onOpenMha, onOpenFireforce, onOpenBluelock, onOpenMonUnivers }) {
   const [query, setQuery] = useState('')
   const [selectedGenres, setSelectedGenres] = useState(new Set())
-  const galleryRef = useRef(null)
-
-  const scrollToGallery = () => {
-    if (galleryRef.current) {
-      galleryRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    } else {
-      setQuery('')
-    }
-  }
-  const showHeroTrailer = () => {
-    // Matches standalone hero "Voir la vidéo" - in full premium standalone it plays cinematic trailer
-    alert('🎬 Bande-annonce Bramsq Community (ouvrez la Version Premium Standalone pour la vidéo complète)')
-  }
 
   // Favorites synced with standalone premium hub (bramsq_favs) for hearts on cards
   const [favs, setFavs] = useState(() => {
@@ -1205,55 +972,15 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
   }, [selectedGenres, query, sortedAnimes])
 
   // Enriched for visible cards only (perf: compute progress once for what's rendered in grid)
-  // Updated for new premium sections: attach _score (for sorting/ranks), _isNew (for NOUVEAU), synopsis for overlay etc.
   const visibleAnimesWithProgress = useMemo(() => {
     return visibleAnimes.map(anime => {
       const ns = anime.id
       const video = computeVideo(ns, rawProgress)
       const hasCh = HAS_CHAPTERS.has(ns)
       const chapter = hasCh ? computeChapter(ns, rawProgress) : { read: 0, total: 0, pct: 0 }
-      const _score = ANIME_SCORES[ns] || 8.5
-      const _isNew = (anime.badge || '').toUpperCase().includes('NOUVEAU') || (anime.badge || '').toUpperCase().includes('NEW')
-      const synopsis = anime.description || ''
-      return { ...anime, _video: video, _chapter: chapter, _hasChapters: hasCh, _score, _isNew, _synopsis: synopsis }
+      return { ...anime, _video: video, _chapter: chapter, _hasChapters: hasCh }
     })
   }, [visibleAnimes, rawProgress])
-
-  // Base enriched for sections (from all, not just visible) - used by top-week / most-loved / new-season
-  const allAnimesWithProgress = useMemo(() => {
-    return sortedAnimes.map(anime => {
-      const ns = anime.id
-      const video = computeVideo(ns, rawProgress)
-      const hasCh = HAS_CHAPTERS.has(ns)
-      const chapter = hasCh ? computeChapter(ns, rawProgress) : { read: 0, total: 0, pct: 0 }
-      const _score = ANIME_SCORES[ns] || 8.5
-      const _isNew = (anime.badge || '').toUpperCase().includes('NOUVEAU') || (anime.badge || '').toUpperCase().includes('NEW')
-      const synopsis = anime.description || ''
-      return { ...anime, _video: video, _chapter: chapter, _hasChapters: hasCh, _score, _isNew, _synopsis: synopsis }
-    })
-  }, [sortedAnimes, rawProgress])
-
-  const topWeekAnimes = useMemo(() => {
-    return [...allAnimesWithProgress]
-      .sort((a, b) => (b._score || 0) - (a._score || 0))
-      .slice(0, 8)
-      .map((a, i) => ({ ...a, _rank: i + 1 }))
-  }, [allAnimesWithProgress])
-
-  const mostLovedAnimes = useMemo(() => {
-    return [...allAnimesWithProgress]
-      .sort((a, b) => {
-        const pa = (a._video?.pct || 0) + (a._chapter?.pct || 0)
-        const pb = (b._video?.pct || 0) + (b._chapter?.pct || 0)
-        return pb - pa
-      })
-      .slice(0, 8)
-  }, [allAnimesWithProgress])
-
-  const newSeasonAnimes = useMemo(() => {
-    const news = allAnimesWithProgress.filter(a => a._isNew || (a.badge || '').includes('NOUVEAU'))
-    return (news.length ? news : allAnimesWithProgress.slice(0, 8)).slice(0, 8)
-  }, [allAnimesWithProgress])
 
   const isFiltering = query.trim() !== '' || selectedGenres.size > 0
   const marqueeAnimesWithProgress = useMemo(() => {
@@ -1297,15 +1024,15 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
   }
 
   return (
-    <div style={{ position:'fixed', inset:0, zIndex:500, background:'#0a0a0f', display:'flex', flexDirection:'column' }}>
+    <div style={{ position:'fixed', inset:0, zIndex:500, background:'#07090e', display:'flex', flexDirection:'column' }}>
       <style>{AH_CSS}</style>
 
       {/* ── Header ── */}
       <div style={{
         flexShrink:0, padding:'0 24px', height:72,
         display:'flex', alignItems:'center', justifyContent:'space-between',
-        background:'rgba(10,10,15,0.96)', backdropFilter:'blur(20px)',
-        borderBottom:'1px solid rgba(255,255,255,0.10)', zIndex:10,
+        background:'rgba(7,9,14,0.96)', backdropFilter:'blur(20px)',
+        borderBottom:'1px solid rgba(255,255,255,0.07)', zIndex:10,
         position:'relative',
       }}>
         <div style={{ display:'flex', alignItems:'center', gap:14 }}>
@@ -1326,16 +1053,14 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
           >
             🌌 MON UNIVERS
           </button>
-          <a
-            href="/bramsq-premium-hub.html"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ display:'flex', alignItems:'center', gap:6, background:'rgba(167,139,250,0.18)', border:'1px solid #a78bfa', borderRadius:10, color:'#a78bfa', cursor:'pointer', padding:'8px 16px', fontSize:12, fontWeight:800, transition:'all .18s cubic-bezier(0.23,1,0.32,1)', letterSpacing:'.01em', textDecoration:'none' }}
-            onMouseEnter={e => { e.currentTarget.style.background='#a78bfa'; e.currentTarget.style.color='#0a0a0f' }}
-            onMouseLeave={e => { e.currentTarget.style.background='rgba(167,139,250,0.18)'; e.currentTarget.style.color='#a78bfa' }}
+          <button
+            onClick={() => window.open('/bramsq-premium-hub.html', '_blank')}
+            style={{ display:'flex', alignItems:'center', gap:6, background:'rgba(167,139,250,0.12)', border:'1px solid rgba(167,139,250,0.35)', borderRadius:10, color:'#a78bfa', cursor:'pointer', padding:'8px 14px', fontSize:12, fontWeight:800, transition:'all .18s', letterSpacing:'.02em' }}
+            onMouseEnter={e => { e.currentTarget.style.background='rgba(167,139,250,0.22)'; e.currentTarget.style.color='#fff' }}
+            onMouseLeave={e => { e.currentTarget.style.background='rgba(167,139,250,0.12)'; e.currentTarget.style.color='#a78bfa' }}
           >
-            ✨ Version Premium Standalone
-          </a>
+            ✨ HUB PREMIUM
+          </button>
           <button
             onClick={onClose}
             style={{ display:'flex', alignItems:'center', gap:7, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.10)', borderRadius:10, color:'rgba(255,255,255,0.75)', cursor:'pointer', padding:'9px 18px', fontSize:13, fontWeight:700, transition:'all .18s' }}
@@ -1354,83 +1079,53 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
         <AHStars />
         <AHScanLine />
 
-        <div style={{ position:'relative', zIndex:2, padding:'0 0 80px' }}>
+        <div style={{ position:'relative', zIndex:2, padding:'52px 0 80px' }}>
           <div style={{ maxWidth:1080, margin:'0 auto', padding:'0 24px' }}>
 
-            {/* Exact 460px cinematic hero with overlay text "Bienvenue sur Bramsq" + percutant subtitle + buttons (from public/bramsq-premium-hub.html) */}
-            <div
-              className="cinematic-hero"
-              style={{
-                height: 460,
-                position: 'relative',
-                display: 'flex',
-                alignItems: 'flex-end',
-                padding: '0 32px 36px',
-                backgroundImage: "url('https://picsum.photos/id/1016/2000/1200')",
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-              }}
-            >
-              <div style={{ position:'absolute', inset:0, background:'linear-gradient(to bottom, rgba(10,10,15,0.10) 0%, rgba(10,10,15,0.72) 100%)' }} />
-              <div style={{ position:'absolute', inset:0, background:'linear-gradient(to right, rgba(10,10,15,0.60) 0%, transparent 48%)' }} />
-
-              <div style={{ position:'relative', zIndex:10, maxWidth:520 }}>
-                <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:16 }}>
-                  <div style={{ padding:'5px 14px', borderRadius:999, background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.12)', fontSize:10, fontWeight:700, letterSpacing:'.18em', color:'#a78bfa', display:'flex', alignItems:'center', gap:6 }}>
-                    <div style={{ width:6, height:6, background:'#a78bfa', borderRadius:'50%', animation:'ahPulse 2.2s infinite' }} />
-                    SAISON 2026
-                  </div>
-                </div>
-
-                <h1 className="premium-font" style={{ fontSize:'clamp(34px, 5.8vw, 58px)', fontWeight:800, lineHeight:0.94, letterSpacing:'-0.03em', marginBottom:12, color:'#fff' }}>
-                  Bienvenue sur<br />Bramsq
-                </h1>
-                <p style={{ color:'rgba(255,255,255,0.72)', fontSize:17, maxWidth:380, marginBottom:22, lineHeight:1.4 }}>
-                  La communauté anime &amp; manga d'exception. Curatée pour les vrais passionnés.
-                </p>
-
-                <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-                  <button
-                    onClick={scrollToGallery}
-                    style={{ padding:'13px 28px', borderRadius:999, background:'#fff', color:'#111114', fontWeight:800, fontSize:13, border:'none', cursor:'pointer', transition:'all .2s cubic-bezier(0.23,1,0.32,1)' }}
-                    onMouseEnter={e => e.currentTarget.style.transform='translateY(-1px)'}
-                    onMouseLeave={e => e.currentTarget.style.transform='none'}
-                  >
-                    Explorer maintenant
-                  </button>
-                  <button
-                    onClick={showHeroTrailer}
-                    className="glass"
-                    style={{ padding:'13px 22px', borderRadius:999, border:'1px solid rgba(255,255,255,0.22)', color:'#fff', fontWeight:700, fontSize:13, cursor:'pointer', display:'flex', alignItems:'center', gap:8, transition:'all .2s cubic-bezier(0.23,1,0.32,1)' }}
-                  >
-                    <span>▶</span> <span>Voir la vidéo</span>
-                  </button>
-                </div>
+            {/* Intro */}
+            <div style={{ textAlign:'center', marginBottom:52 }}>
+              <div style={{
+                display:'inline-flex', alignItems:'center', gap:8,
+                padding:'5px 18px', borderRadius:100,
+                background:'rgba(224,82,74,0.10)', border:'1px solid rgba(224,82,74,0.25)',
+                fontSize:10, fontWeight:800, letterSpacing:'.22em', color:'#e0524a', textTransform:'uppercase',
+                marginBottom:20,
+              }}>
+                ✦ Espace Manga & Anime
               </div>
-
-              <div style={{ position:'absolute', bottom:22, right:28, zIndex:10, fontSize:11, padding:'5px 12px', borderRadius:999, background:'rgba(0,0,0,0.4)', border:'1px solid rgba(255,255,255,0.12)', color:'rgba(255,255,255,0.65)', backdropFilter:'blur(8px)' }}>
-                <span style={{ marginRight:6, opacity:0.7 }}>🌍</span> 248 392 membres
-              </div>
+              <h2 style={{ fontFamily:"'Pirata One', cursive", fontWeight:900, fontSize:'clamp(28px,5vw,52px)', color:'#fff', marginBottom:14, lineHeight:1, letterSpacing:'-.02em' }}>
+                Ton univers, ton rythme
+              </h2>
+              <p style={{ fontSize:15, color:'rgba(255,255,255,0.38)', maxWidth:480, margin:'0 auto', lineHeight:1.75 }}>
+                Scans, épisodes, suivis — tout au même endroit pour la communauté Brams.
+              </p>
             </div>
 
-            {/* Stats bar (exact from standalone) */}
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', margin:'14px 0 22px', fontSize:14, padding:'0 8px' }}>
-              <div style={{ display:'flex', alignItems:'center', gap:28 }}>
-                <div>
-                  <span style={{ fontWeight:700, fontSize:17 }}>248 392</span>
-                  <span style={{ color:'rgba(255,255,255,0.4)', marginLeft:5 }}>membres</span>
+            {/* Cinematic premium hero banner - inspired 1:1 from standalone bramsq-premium-hub.html (460px luxury, glass, #a78bfa) */}
+            <div style={{
+              height: 320, position:'relative', borderRadius:20, overflow:'hidden', margin:'0 0 32px', display:'flex', alignItems:'flex-end',
+              backgroundImage: "url('https://picsum.photos/id/1016/1400/900')", backgroundSize:'cover', backgroundPosition:'center',
+              boxShadow: '0 20px 60px -15px rgba(0,0,0,0.6)'
+            }}>
+              <div style={{ position:'absolute', inset:0, background:'linear-gradient(to bottom, rgba(10,10,15,0.1) 10%, rgba(10,10,15,0.75) 55%, #07090e 92%)' }} />
+              <div style={{ position:'absolute', inset:0, background:'linear-gradient(to right, rgba(10,10,15,0.55) 0%, transparent 45%)' }} />
+              <div style={{ position:'relative', zIndex:2, padding:'28px 32px', maxWidth:520 }}>
+                <div style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'4px 14px', borderRadius:999, background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.12)', fontSize:10, fontWeight:700, letterSpacing:'.18em', color:'#a78bfa', marginBottom:12 }}>
+                  <div style={{ width:5, height:5, background:'#a78bfa', borderRadius:'50%', animation:'ahPulse 2s infinite' }} /> SAISON 2026
                 </div>
-                <div>
-                  <span style={{ fontWeight:700, fontSize:17 }}>1.4M</span>
-                  <span style={{ color:'rgba(255,255,255,0.4)', marginLeft:5 }}>discussions</span>
-                </div>
-                <div>
-                  <span style={{ fontWeight:700, fontSize:17 }}>87 412</span>
-                  <span style={{ color:'rgba(255,255,255,0.4)', marginLeft:5 }}>œuvres notées</span>
+                <h1 style={{ fontFamily:"'Playfair Display', Georgia, serif", fontSize: 'clamp(28px, 4.2vw, 42px)', fontWeight:800, lineHeight:0.96, letterSpacing:'-0.025em', marginBottom:10, color:'#fff' }}>
+                  Bienvenue sur<br />Bramsq
+                </h1>
+                <p style={{ color:'rgba(255,255,255,0.7)', fontSize:14, maxWidth:340, marginBottom:16, lineHeight:1.45 }}>
+                  La communauté anime &amp; manga d'exception. Curatée pour les vrais passionnés.
+                </p>
+                <div style={{ display:'flex', gap:10 }}>
+                  <button onClick={() => { const el = document.querySelector('.ah-gallery'); if (el) el.scrollIntoView({behavior:'smooth', block:'start'}) }} style={{ padding:'10px 22px', borderRadius:999, background:'#fff', color:'#111', fontWeight:700, fontSize:12, border:'none', cursor:'pointer' }}>Explorer la galerie</button>
+                  <button onClick={() => window.open('/bramsq-premium-hub.html', '_blank')} style={{ padding:'10px 18px', borderRadius:999, background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.2)', color:'#fff', fontWeight:600, fontSize:12, cursor:'pointer', display:'flex', alignItems:'center', gap:6 }}>Version standalone premium →</button>
                 </div>
               </div>
-              <div className="premium-stat" style={{ fontSize:12, padding:'6px 14px', borderRadius:999, color:'rgba(255,255,255,0.65)', display:'flex', alignItems:'center' }}>
-                <span style={{ marginRight:6 }}>🌍</span> 87 pays représentés
+              <div style={{ position:'absolute', bottom:14, right:18, zIndex:2, fontSize:10, padding:'4px 10px', borderRadius:999, background:'rgba(0,0,0,0.45)', border:'1px solid rgba(255,255,255,0.1)', color:'rgba(255,255,255,0.6)' }}>
+                248k membres · 87 pays
               </div>
             </div>
 
@@ -1520,115 +1215,48 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
 
           </div>
 
-          {/* 3 horizontal snap-scroll sections #top-week #most-loved #new-season (with rank #1, NOUVEAU, mini dual ProgressRing + glass-overlay title/score/synopsis/heart using bramsq_favs) + full responsive 4-6 col #gallery-grid */}
-          <div style={{ maxWidth:1280, margin:'0 auto', padding:'0 24px' }}>
-
-            {/* Top de la semaine */}
-            <div style={{ marginBottom:32 }}>
-              <div style={{ display:'flex', alignItems:'baseline', justifyContent:'space-between', marginBottom:8, padding:'0 4px' }}>
-                <div>
-                  <span className="section-header">Top de la semaine</span>
-                  <span style={{ marginLeft:10, fontSize:10, padding:'2px 8px', background:'rgba(255,255,255,0.06)', color:'rgba(255,255,255,0.5)', borderRadius:999 }}>Semaine 6</span>
+          {/* Marquee gallery (default) or filtered grid — outside maxWidth container for true full-bleed */}
+          {isFiltering ? (
+            <div style={{ maxWidth:1080, margin:'0 auto', padding:'0 24px' }} className="ah-gallery">
+              {visibleAnimes.length > 0 ? (
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(300px, 1fr))', gap:20 }}>
+                  {visibleAnimesWithProgress.map((anime, i) => (
+                    <AnimeCard key={anime.id} anime={anime} index={i} onClick={() => handleClick(anime.id)} onOpenMonUnivers={onOpenMonUnivers} isFav={favs.has(anime.id)} toggleFav={toggleFav} />
+                  ))}
                 </div>
-                <button onClick={scrollToGallery} style={{ fontSize:11, color:'rgba(255,255,255,0.5)', background:'none', border:'none', cursor:'pointer' }}>Voir tout →</button>
-              </div>
-              <div id="top-week" className="horizontal-scroll elegant-scrollbar" style={{ display:'flex', gap:14, overflowX:'auto', paddingBottom:8, scrollSnapType:'x mandatory' }}>
-                {topWeekAnimes.map((anime) => (
-                  <div key={anime.id} style={{ scrollSnapAlign:'start' }}>
-                    <BramsqHubCard
-                      anime={anime}
-                      isHorizontal={true}
-                      rank={anime._rank}
-                      onClick={() => handleClick(anime.id)}
-                      onOpenMonUnivers={onOpenMonUnivers}
-                      isFav={favs.has(anime.id)}
-                      toggleFav={toggleFav}
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Les plus aimés */}
-            <div style={{ marginBottom:32 }}>
-              <div style={{ display:'flex', alignItems:'baseline', justifyContent:'space-between', marginBottom:8, padding:'0 4px' }}>
-                <span className="section-header">Les plus aimés</span>
-                <button onClick={scrollToGallery} style={{ fontSize:11, color:'rgba(255,255,255,0.5)', background:'none', border:'none', cursor:'pointer' }}>Voir tout →</button>
-              </div>
-              <div id="most-loved" className="horizontal-scroll elegant-scrollbar" style={{ display:'flex', gap:14, overflowX:'auto', paddingBottom:8, scrollSnapType:'x mandatory' }}>
-                {mostLovedAnimes.map((anime) => (
-                  <div key={anime.id} style={{ scrollSnapAlign:'start' }}>
-                    <BramsqHubCard
-                      anime={anime}
-                      isHorizontal={true}
-                      onClick={() => handleClick(anime.id)}
-                      onOpenMonUnivers={onOpenMonUnivers}
-                      isFav={favs.has(anime.id)}
-                      toggleFav={toggleFav}
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Nouveautés de la saison */}
-            <div style={{ marginBottom:32 }}>
-              <div style={{ display:'flex', alignItems:'baseline', justifyContent:'space-between', marginBottom:8, padding:'0 4px' }}>
-                <span className="section-header">Nouveautés de la saison</span>
-                <button onClick={scrollToGallery} style={{ fontSize:11, color:'rgba(255,255,255,0.5)', background:'none', border:'none', cursor:'pointer' }}>Voir tout →</button>
-              </div>
-              <div id="new-season" className="horizontal-scroll elegant-scrollbar" style={{ display:'flex', gap:14, overflowX:'auto', paddingBottom:8, scrollSnapType:'x mandatory' }}>
-                {newSeasonAnimes.map((anime) => (
-                  <div key={anime.id} style={{ scrollSnapAlign:'start' }}>
-                    <BramsqHubCard
-                      anime={anime}
-                      isHorizontal={true}
-                      onClick={() => handleClick(anime.id)}
-                      onOpenMonUnivers={onOpenMonUnivers}
-                      isFav={favs.has(anime.id)}
-                      toggleFav={toggleFav}
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Galerie complète - responsive 4-6 col #gallery-grid with luxury hover scale+glass */}
-            <div ref={galleryRef}>
-              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8, padding:'0 4px' }}>
-                <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                  <span className="section-header">Galerie complète</span>
-                  <span style={{ fontSize:11, padding:'3px 10px', background:'rgba(255,255,255,0.06)', color:'rgba(255,255,255,0.55)', borderRadius:999 }}>{visibleAnimesWithProgress.length} œuvres</span>
+              ) : (
+                <div style={{
+                  border:'1px dashed rgba(255,255,255,0.10)',
+                  background:'rgba(255,255,255,0.025)',
+                  borderRadius:14,
+                  padding:'44px 20px',
+                  textAlign:'center',
+                  color:'rgba(255,255,255,0.42)',
+                  fontWeight:750,
+                }}>
+                  Aucun anime trouvé
                 </div>
-              </div>
-              <div id="gallery-grid" className="ah-gallery" style={{ display:'grid', gridTemplateColumns:'repeat(2, 1fr)', gap:14 }}>
-                {visibleAnimesWithProgress.length > 0 ? (
-                  visibleAnimesWithProgress.map((anime) => (
-                    <BramsqHubCard
-                      key={anime.id}
-                      anime={anime}
-                      isHorizontal={false}
-                      onClick={() => handleClick(anime.id)}
-                      onOpenMonUnivers={onOpenMonUnivers}
-                      isFav={favs.has(anime.id)}
-                      toggleFav={toggleFav}
-                    />
-                  ))
-                ) : (
-                  <div style={{ gridColumn:'1 / -1', textAlign:'center', padding:40, color:'rgba(255,255,255,0.4)', border:'1px dashed rgba(255,255,255,0.1)', borderRadius:16 }}>
-                    Aucun résultat pour ces filtres.
-                  </div>
-                )}
-              </div>
-              <style>{`
-                @media (min-width: 640px) { #gallery-grid { grid-template-columns: repeat(3, 1fr); } }
-                @media (min-width: 768px) { #gallery-grid { grid-template-columns: repeat(4, 1fr); } }
-                @media (min-width: 1024px) { #gallery-grid { grid-template-columns: repeat(5, 1fr); } }
-                @media (min-width: 1280px) { #gallery-grid { grid-template-columns: repeat(6, 1fr); } }
-              `}</style>
+              )}
             </div>
-
-          </div>
+          ) : (
+            <div>
+              <div style={{ textAlign:'center', marginBottom:18, padding:'0 24px', fontSize:10.5, color:'rgba(255,255,255,0.18)', fontWeight:700, letterSpacing:'.12em', textTransform:'uppercase' }}>
+                Galerie cinématique · survole pour pause · clique pour accéder
+              </div>
+              {marqueeRows.map((row, i) => (
+                <AnimeMarqueeRow
+                  key={i}
+                  animes={row.animes}
+                  direction={row.direction}
+                  speed={row.speed}
+                  onCardClick={handleClick}
+                  onOpenMonUnivers={onOpenMonUnivers}
+                  favs={favs}
+                  toggleFav={toggleFav}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
