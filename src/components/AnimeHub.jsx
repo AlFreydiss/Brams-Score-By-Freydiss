@@ -1093,6 +1093,14 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
     map[id]?.()
   }
 
+  // Fun anime-style "Surprise me" – picks random and opens the page. Stylé pour le mode exploration !
+  const surpriseMe = () => {
+    if (!sortedAnimes.length) return
+    const randomIndex = Math.floor(Math.random() * sortedAnimes.length)
+    const randomAnime = sortedAnimes[randomIndex]
+    handleClick(randomAnime.id)
+  }
+
   return (
     <div style={{ position:'fixed', inset:0, zIndex:500, background:'#07090e', display:'flex', flexDirection:'column' }}>
       <style>{AH_CSS}</style>
@@ -1285,8 +1293,26 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
             </div>
           ) : (
             <div>
-              <div className="cinema-label" style={{ textAlign:'center', marginBottom:18, padding:'0 24px', fontSize:10.5, color:'rgba(255,255,255,0.22)', fontWeight:800, letterSpacing:'.18em', textTransform:'uppercase', textShadow:'0 1px 4px rgba(0,0,0,0.4)' }}>
-                Galerie cinématique · survole pour pause · clique pour accéder
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:12, marginBottom:18 }}>
+                <div className="cinema-label" style={{ fontSize:10.5, color:'rgba(255,255,255,0.22)', fontWeight:800, letterSpacing:'.18em', textTransform:'uppercase', textShadow:'0 1px 4px rgba(0,0,0,0.4)' }}>
+                  Galerie cinématique · survole pour pause · clique pour accéder
+                </div>
+                <button
+                  onClick={surpriseMe}
+                  style={{
+                    fontSize:10, fontWeight:800, letterSpacing:'.08em',
+                    padding:'4px 10px', borderRadius:999,
+                    background:'rgba(167,139,250,0.12)', border:'1px solid rgba(167,139,250,0.35)',
+                    color:'#a78bfa', cursor:'pointer',
+                    transition:'all .15s cubic-bezier(0.23,1,0.32,1)',
+                    display:'flex', alignItems:'center', gap:4
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(167,139,250,0.25)'; e.currentTarget.style.color = '#fff'; e.currentTarget.style.transform = 'scale(1.05)' }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(167,139,250,0.12)'; e.currentTarget.style.color = '#a78bfa'; e.currentTarget.style.transform = 'scale(1)' }}
+                  title="Laisse le hasard choisir ton prochain anime !"
+                >
+                  🎲 SURPRISE
+                </button>
               </div>
               {marqueeRows.map((row, i) => (
                 <AnimeMarqueeRow
