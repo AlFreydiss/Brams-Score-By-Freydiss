@@ -32,3 +32,8 @@ public/scans/
 
 # Claude Code local config
 CLAUDE.local.md
+
+# Ruflo / Claude Flow generated skills and scripts (runtime)
+.agents/skills/*/
+.agents/skills/*/*/
+.agents/skills/*/*/*
