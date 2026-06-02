@@ -10,6 +10,7 @@ import CAROLE_TUESDAY_VIDEOS from '../data/carole-tuesday-videos.json'
 import JJK_VIDEOS from '../data/jjk-videos.json'
 import LOVE_PRISM_VIDEOS from '../data/love-prism-videos.json'
 import RENT_VIDEOS from '../data/rent-girlfriend-videos.json'
+import { getAnimeRatings, rateAnime, unrateAnime } from '../lib/ratings.js'
 
 function videoCountLabel(count, target) {
   if (!count) return 'Upload requis'
@@ -627,7 +628,7 @@ function AmbientOrbs() {
   )
 }
 
-function AnimeMarqueeCard({ anime, onClick, onOpenMonUnivers, isFav = false, toggleFav }) {
+function AnimeMarqueeCard({ anime, onClick, onOpenMonUnivers, isFav = false, toggleFav, onRate }) {
   const [hov, setHov] = useState(false)
   const [heartAnim, setHeartAnim] = useState(false)
   const c = anime.color
@@ -712,6 +713,19 @@ function AnimeMarqueeCard({ anime, onClick, onOpenMonUnivers, isFav = false, tog
             <span key={g} style={{ fontSize:9, fontWeight:700, background:'rgba(255,255,255,0.07)', color:'rgba(255,255,255,0.60)', border:'1px solid rgba(255,255,255,0.05)', borderRadius:100, padding:'2px 7px', whiteSpace:'nowrap' }}>{g}</span>
           ))}
         </div>
+        {onRate && (
+          <div onClick={e => e.stopPropagation()} style={{ display:'flex', alignItems:'center', gap:1, marginTop:6 }}>
+            {[1,2,3,4,5].map(n => {
+              const r = anime._rating
+              const active = r?.mine ? n <= r.mine : (r?.avg ? n <= Math.round(r.avg) : false)
+              return (
+                <span key={n} onClick={() => onRate(anime.id, n)} title={`Noter ${n}/5`}
+                  style={{ cursor:'pointer', fontSize:12, lineHeight:1, color: active ? '#fbbf24' : 'rgba(255,255,255,0.28)', transition:'color .12s', textShadow:'0 1px 4px rgba(0,0,0,0.8)' }}>★</span>
+              )
+            })}
+            {anime._rating?.count > 0 && <span style={{ fontSize:9, fontWeight:700, color:'rgba(255,255,255,0.55)', marginLeft:4 }}>{anime._rating.avg} · {anime._rating.count}</span>}
+          </div>
+        )}
       </div>
 
       {/* Stylish dual ProgressRing mini (poster minia + rings) - anime glow on hover */}
@@ -1228,7 +1242,23 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
   const [searchFocus, setSearchFocus] = useState(false)
   const [activeCat, setActiveCat] = useState('top-du-moment')
   const [showAllCount, setShowAllCount] = useState(14)
-  const [statusFilter, setStatusFilter] = useState('all') // all | fav | encours | nouveautes
+  const [statusFilter, setStatusFilter] = useState('all') // all | fav | encours | termine | avoir | nouveautes
+  const [sortBy, setSortBy] = useState('populaire')        // populaire | recent | az | note
+  const [ratings, setRatings] = useState({})               // { id: { avg, count, mine } }
+
+  useEffect(() => { getAnimeRatings().then(setRatings) }, [])
+
+  // Note un anime (optimiste) puis resynchronise depuis le serveur.
+  const rate = useCallback((id, value) => {
+    setRatings(prev => {
+      const cur = prev[id] || { avg: 0, count: 0, mine: null }
+      const same = cur.mine === value
+      return { ...prev, [id]: { ...cur, mine: same ? null : value } }
+    })
+    const cur = ratings[id]
+    const promise = (cur && cur.mine === value) ? unrateAnime(id) : rateAnime(id, value)
+    promise.then(() => getAnimeRatings().then(setRatings))
+  }, [ratings])
 
   // Favorites synced with standalone premium hub (bramsq_favs) for hearts on cards
   const [favs, setFavs] = useState(() => {
@@ -1298,6 +1328,14 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
         const v = computeVideo(anime.id, rawProgress)
         statusMatch = v && v.pct > 0 && v.pct < 100
       }
+      else if (statusFilter === 'termine') {
+        const v = computeVideo(anime.id, rawProgress)
+        statusMatch = v && v.pct >= 100
+      }
+      else if (statusFilter === 'avoir') {
+        const v = computeVideo(anime.id, rawProgress)
+        statusMatch = !v || v.pct === 0
+      }
       return genreMatch && textMatch && statusMatch
     })
   }, [selectedGenres, query, sortedAnimes, statusFilter, favs, rawProgress])
@@ -1309,11 +1347,20 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
       const video = computeVideo(ns, rawProgress)
       const hasCh = HAS_CHAPTERS.has(ns)
       const chapter = hasCh ? computeChapter(ns, rawProgress) : { read: 0, total: 0, pct: 0 }
-      return { ...anime, _video: video, _chapter: chapter, _hasChapters: hasCh }
+      return { ...anime, _video: video, _chapter: chapter, _hasChapters: hasCh, _rating: ratings[ns] }
     })
-  }, [visibleAnimes, rawProgress])
+  }, [visibleAnimes, rawProgress, ratings])
 
-  const isFiltering = query.trim() !== '' || selectedGenres.size > 0
+  const isFiltering = query.trim() !== '' || selectedGenres.size > 0 || statusFilter !== 'all'
+
+  // Tri appliqué aux grilles (populaire = ordre priorité par défaut)
+  const applySort = useCallback((list) => {
+    const arr = [...list]
+    if (sortBy === 'az') arr.sort((a, b) => a.title.localeCompare(b.title, 'fr'))
+    else if (sortBy === 'recent') arr.sort((a, b) => (b._isNew ? 1 : 0) - (a._isNew ? 1 : 0))
+    else if (sortBy === 'note') arr.sort((a, b) => ((b._rating?.avg) || 0) - ((a._rating?.avg) || 0) || ((b._rating?.count) || 0) - ((a._rating?.count) || 0))
+    return arr
+  }, [sortBy])
   const marqueeAnimesWithProgress = useMemo(() => {
     return sortedAnimes.map(anime => {
       const ns = anime.id
@@ -1386,10 +1433,11 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
         _hasChapters: hasCh,
         _score: score,
         _isNew: isNew,
-        _synopsis: synopsis
+        _synopsis: synopsis,
+        _rating: ratings[ns]
       };
     });
-  }, [sortedAnimes, rawProgress]);
+  }, [sortedAnimes, rawProgress, ratings]);
 
   const topWeekAnimes = useMemo(() => {
     return [...allAnimesWithExtras]
@@ -1601,6 +1649,40 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
               )}
             </div>
 
+            {/* ── Statut (chips) + Tri ── */}
+            <div style={{ display:'flex', flexWrap:'wrap', alignItems:'center', gap:8, marginTop:10 }}>
+              <div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>
+                {[
+                  { id:'all',     label:'Tous' },
+                  { id:'encours', label:'▶ En cours' },
+                  { id:'avoir',   label:'＋ À voir' },
+                  { id:'termine', label:'✓ Terminé' },
+                  { id:'fav',     label:'♥ Favoris' },
+                ].map(s => {
+                  const on = statusFilter === s.id
+                  return (
+                    <button key={s.id} type="button" onClick={() => setStatusFilter(s.id)}
+                      style={{ borderRadius:999, padding:'6px 13px', fontSize:11.5, fontWeight:800, letterSpacing:'.02em', cursor:'pointer', transition:'all .16s',
+                        color: on ? '#fff' : '#9ca3af',
+                        background: on ? 'rgba(139,92,246,0.22)' : 'rgba(255,255,255,0.04)',
+                        border: `1px solid ${on ? 'rgba(139,92,246,0.5)' : 'rgba(255,255,255,0.10)'}` }}>
+                      {s.label}
+                    </button>
+                  )
+                })}
+              </div>
+              <div style={{ marginLeft:'auto', display:'flex', alignItems:'center', gap:7 }}>
+                <span style={{ fontSize:10.5, fontWeight:700, color:'#6b7280', letterSpacing:'.04em', textTransform:'uppercase' }}>Trier</span>
+                <select value={sortBy} onChange={e => setSortBy(e.target.value)}
+                  style={{ borderRadius:9, padding:'6px 10px', fontSize:12, fontWeight:700, color:'#f4f4f5', background:'#10131a', border:'1px solid rgba(255,255,255,0.12)', cursor:'pointer', outline:'none', fontFamily:'var(--body)' }}>
+                  <option value="populaire">Populaire</option>
+                  <option value="recent">Récent</option>
+                  <option value="az">A → Z</option>
+                  <option value="note">Mieux notés</option>
+                </select>
+              </div>
+            </div>
+
           </div>
 
           {/* ── Bloc principal : sidebar + sections, ou grille filtrée ── */}
@@ -1624,8 +1706,8 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
                 <>
                   <SectionHeader icon="🔎" title="Résultats" count={visibleAnimesWithProgress.length} />
                   <div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>
-                    {visibleAnimesWithProgress.map(anime => (
-                      <AnimeMarqueeCard key={anime.id} anime={anime} onClick={() => handleClick(anime.id)} onOpenMonUnivers={onOpenMonUnivers} isFav={favs.has(anime.id)} toggleFav={toggleFav} />
+                    {applySort(visibleAnimesWithProgress).map(anime => (
+                      <AnimeMarqueeCard key={anime.id} anime={anime} onClick={() => handleClick(anime.id)} onOpenMonUnivers={onOpenMonUnivers} isFav={favs.has(anime.id)} toggleFav={toggleFav} onRate={rate} />
                     ))}
                   </div>
                 </>
@@ -1671,7 +1753,7 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
                       {topWeekAnimes.slice(0, 8).map((anime, i) => (
                         <div key={anime.id} style={{ display:'flex', alignItems:'flex-end', scrollSnapAlign:'start' }}>
                           <span style={{ fontFamily:"'Pirata One', cursive", fontSize:62, fontWeight:900, lineHeight:0.74, color:'transparent', WebkitTextStroke:`2px ${i < 3 ? 'rgba(220,38,38,0.5)' : 'rgba(255,255,255,0.16)'}`, marginRight:-14, marginBottom:8, flexShrink:0, userSelect:'none' }}>{i + 1}</span>
-                          <AnimeMarqueeCard anime={anime} onClick={() => handleClick(anime.id)} onOpenMonUnivers={onOpenMonUnivers} isFav={favs.has(anime.id)} toggleFav={toggleFav} />
+                          <AnimeMarqueeCard anime={anime} onClick={() => handleClick(anime.id)} onOpenMonUnivers={onOpenMonUnivers} isFav={favs.has(anime.id)} toggleFav={toggleFav} onRate={rate} />
                         </div>
                       ))}
                     </Carousel>
@@ -1684,7 +1766,7 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
                       <Carousel>
                         {continueWatching.map(anime => (
                           <div key={anime.id} style={{ scrollSnapAlign:'start' }}>
-                            <AnimeMarqueeCard anime={anime} onClick={() => handleClick(anime.id)} onOpenMonUnivers={onOpenMonUnivers} isFav={favs.has(anime.id)} toggleFav={toggleFav} />
+                            <AnimeMarqueeCard anime={anime} onClick={() => handleClick(anime.id)} onOpenMonUnivers={onOpenMonUnivers} isFav={favs.has(anime.id)} toggleFav={toggleFav} onRate={rate} />
                           </div>
                         ))}
                       </Carousel>
@@ -1698,7 +1780,7 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
                       <Carousel>
                         {newSeasonAnimes.map(anime => (
                           <div key={anime.id} style={{ scrollSnapAlign:'start' }}>
-                            <AnimeMarqueeCard anime={anime} onClick={() => handleClick(anime.id)} onOpenMonUnivers={onOpenMonUnivers} isFav={favs.has(anime.id)} toggleFav={toggleFav} />
+                            <AnimeMarqueeCard anime={anime} onClick={() => handleClick(anime.id)} onOpenMonUnivers={onOpenMonUnivers} isFav={favs.has(anime.id)} toggleFav={toggleFav} onRate={rate} />
                           </div>
                         ))}
                       </Carousel>
@@ -1712,7 +1794,7 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
                       <Carousel>
                         {section.items.map(anime => (
                           <div key={anime.id} style={{ scrollSnapAlign:'start' }}>
-                            <AnimeMarqueeCard anime={anime} onClick={() => handleClick(anime.id)} onOpenMonUnivers={onOpenMonUnivers} isFav={favs.has(anime.id)} toggleFav={toggleFav} />
+                            <AnimeMarqueeCard anime={anime} onClick={() => handleClick(anime.id)} onOpenMonUnivers={onOpenMonUnivers} isFav={favs.has(anime.id)} toggleFav={toggleFav} onRate={rate} />
                           </div>
                         ))}
                       </Carousel>
@@ -1723,8 +1805,8 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
                   <section id="tous" style={{ marginBottom:0, scrollMarginTop:16 }}>
                     <SectionHeader icon="📚" title="Tous les animés" count={sortedAnimes.length} />
                     <div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>
-                      {allAnimesWithExtras.slice(0, showAllCount).map(anime => (
-                        <AnimeMarqueeCard key={anime.id} anime={anime} onClick={() => handleClick(anime.id)} onOpenMonUnivers={onOpenMonUnivers} isFav={favs.has(anime.id)} toggleFav={toggleFav} />
+                      {applySort(allAnimesWithExtras).slice(0, showAllCount).map(anime => (
+                        <AnimeMarqueeCard key={anime.id} anime={anime} onClick={() => handleClick(anime.id)} onOpenMonUnivers={onOpenMonUnivers} isFav={favs.has(anime.id)} toggleFav={toggleFav} onRate={rate} />
                       ))}
                     </div>
                     {showAllCount < allAnimesWithExtras.length && (
