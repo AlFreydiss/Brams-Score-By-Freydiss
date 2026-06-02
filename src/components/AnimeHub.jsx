@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { ProgressRing } from './ProgressRing.jsx'
 import AOT_VIDEOS from '../data/aot-videos.json'
 import BUNNY_VIDEOS from '../data/bunny-girl-videos.json'
@@ -510,6 +510,30 @@ function computeChapter(ns, all) {
   return { read, total, pct }
 }
 
+// Scores for premium hub sections/ranks (sourced/adapted to match standalone design + current data)
+const ANIME_SCORES = {
+  onepiece: 9.2,
+  tpn: 8.7,
+  drstone: 8.8,
+  jjk: 9.1,
+  kingdom: 8.9,
+  aot: 9.6,
+  kny: 9.0,
+  nnt: 8.1,
+  sl: 9.4,
+  dbs: 8.2,
+  'violet-evergarden': 9.2,
+  vivy: 8.6,
+  'love-prism': 8.0,
+  'bunny-girl': 8.4,
+  'rent-girlfriend': 7.8,
+  'carole-tuesday': 8.3,
+  bc: 8.5,
+  mha: 8.6,
+  fireforce: 8.2,
+  bluelock: 8.8,
+}
+
 const AH_CSS = `
   @keyframes ahFadeUp  { from { opacity:0; transform:translateY(24px) } to { opacity:1; transform:none } }
   @keyframes ahTwinkle { 0%,100% { opacity:.12 } 50% { opacity:.65 } }
@@ -523,6 +547,75 @@ const AH_CSS = `
   @media (prefers-reduced-motion: reduce) {
     .ah-mq-l, .ah-mq-r { animation: none !important; }
   }
+
+  /* Bramsq Premium Standalone Hub styles - exact match glassmorphism #0a0a0f/#111114/#a78bfa, Playfair, cubic-bezier */
+  .premium-font {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+  }
+  .glass {
+    background: rgba(255,255,255,0.04);
+    backdrop-filter: blur(24px);
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .luxury-shadow {
+    box-shadow: 0 10px 30px -15px rgb(0 0 0 / 0.3),
+                0 4px 6px -1px rgb(0 0 0 / 0.1);
+  }
+  .section-header {
+    font-size: 1.35rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: #f1f1f3;
+  }
+  .anime-card {
+    transition: transform 0.4s cubic-bezier(0.23, 1.0, 0.32, 1), 
+                box-shadow 0.4s cubic-bezier(0.23, 1.0, 0.32, 1),
+                border-color 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .anime-card:hover {
+    transform: translateY(-8px) scale(1.015);
+    box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.4);
+    border-color: rgba(167, 139, 250, 0.15);
+  }
+  .anime-card .cover {
+    transition: transform 0.6s cubic-bezier(0.23, 1.0, 0.32, 1);
+  }
+  .anime-card:hover .cover {
+    transform: scale(1.08);
+  }
+  .glass-overlay {
+    background: linear-gradient(to top, rgba(17, 17, 20, 0.92) 15%, transparent 55%);
+    opacity: 0;
+    transition: opacity 0.35s cubic-bezier(0.23, 1.0, 0.32, 1);
+    pointer-events: none;
+  }
+  .anime-card:hover .glass-overlay {
+    opacity: 1;
+  }
+  .horizontal-scroll {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .horizontal-scroll::-webkit-scrollbar {
+    display: none;
+  }
+  .cinematic-hero {
+    background: linear-gradient(to bottom, rgba(10,10,15,0.15) 0%, rgba(10,10,15,0.65) 100%);
+  }
+  .premium-stat {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+  .bramsq-accent { color: #a78bfa; }
+  .mini-progress {
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.1);
+  }
+  .elegant-scrollbar::-webkit-scrollbar { height: 5px; }
+  .elegant-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 20px; }
 `
 
 // Ambient colored orbs drift in background
@@ -902,9 +995,149 @@ function ComingSoonCard({ index }) {
   )
 }
 
+// Bramsq Premium standalone matching card for horiz snap sections + gallery
+// Uses dual mini ProgressRing (video+chapter) + poster minia capable, glass-overlay on hover with title/score/synopsis/heart (bramsq_favs), rank/NOUVEAU, luxury cubic hover scale+glass, #111114 glassmorphism
+function BramsqHubCard({ anime, isHorizontal = true, rank = null, onClick, onOpenMonUnivers, isFav = false, toggleFav }) {
+  const [hov, setHov] = useState(false)
+  const c = anime.color || '#a78bfa'
+  const w = isHorizontal ? 178 : '100%'
+  const progress = Math.round( ((anime._video?.pct || 0) + (anime._chapter?.pct || 0)) / 2 ) || Math.floor((anime._score || 8.5) * 10)
+  const synopsis = anime._synopsis || anime.description || 'Chef-d\'œuvre de la communauté Bramsq.'
+  const displayTitle = anime.title || anime.titre
+  const year = anime.année || (anime.subtitle ? '2024' : '2024')
+  const score = anime._score || 8.5
+  const isNouveau = anime._isNew || (anime.badge || '').toUpperCase().includes('NOUVEAU')
+
+  return (
+    <div
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      onClick={onClick}
+      className="anime-card bg-[#111114] border border-white/10 rounded-3xl overflow-hidden flex-shrink-0 cursor-pointer group"
+      style={{ width: w, borderColor: hov ? 'rgba(167,139,250,0.15)' : 'rgba(255,255,255,0.10)' }}
+    >
+      <div className="relative">
+        {/* Cover */}
+        <div className="relative aspect-[3/4] overflow-hidden bg-[#0a0a0f]">
+          {anime.coverImage ? (
+            <img
+              src={anime.coverImage}
+              alt={displayTitle}
+              className="cover w-full h-full object-cover"
+              onError={e => { e.currentTarget.style.display = 'none' }}
+              style={{ transform: hov ? 'scale(1.07)' : 'scale(1)' }}
+            />
+          ) : (
+            <div style={{ height: '100%', background: `linear-gradient(135deg, ${c}33, #111114)`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:42, color: c }}>{anime.emoji || '🎌'}</div>
+          )}
+          <div style={{ position:'absolute', inset:0, background:'linear-gradient(to bottom, rgba(0,0,0,0.08) 20%, rgba(0,0,0,0.65) 70%)' }} />
+
+          {/* Rank badge #1 etc for top-week */}
+          {rank && (
+            <div className="absolute top-3 left-3 z-20 w-6 h-6 flex items-center justify-center">
+              <div style={{ width:24, height:24, background:'linear-gradient(135deg, #a78bfa, #7c3aed)', color:'#fff', fontSize:10, fontWeight:800, display:'flex', alignItems:'center', justifyContent:'center', borderRadius:'50%', boxShadow:'0 2px 6px rgba(0,0,0,0.5)' }}>
+                #{rank}
+              </div>
+            </div>
+          )}
+
+          {/* NOUVEAU pill */}
+          {isNouveau && (
+            <div className="absolute top-3 right-3 z-20 px-2 py-0.5 text-[9px] font-bold tracking-wider bg-white/90 text-black rounded-full flex items-center justify-center" style={{ fontSize: '8.5px', paddingTop:1 }}>
+              NOUVEAU
+            </div>
+          )}
+
+          {/* Mini dual ProgressRing (video+chapter) using shared component + poster minia support */}
+          {anime._video && (
+            <div
+              onClick={(e) => { e.stopPropagation(); if (onOpenMonUnivers) onOpenMonUnivers() }}
+              title="Progression détaillée — Mon Univers"
+              style={{ position:'absolute', bottom:10, right:10, zIndex:30, borderRadius:'50%', cursor:'pointer' }}
+            >
+              <ProgressRing
+                videoPct={anime._video.pct}
+                chapterPct={anime._chapter ? anime._chapter.pct : 0}
+                size={isHorizontal ? 28 : 34}
+                color={c}
+                posterSrc={anime.coverImage || null}
+              />
+            </div>
+          )}
+
+          {/* Hover glass-overlay showing title/score/synopsis/heart fav (exact per task, using bramsq_favs) */}
+          <div className="glass-overlay absolute inset-0 z-10 flex flex-col justify-end p-3 text-[11px]">
+            <div style={{ color:'#fff', fontWeight:700, fontSize:13, lineHeight:1.15, marginBottom:2 }}>{displayTitle}</div>
+            <div style={{ display:'flex', alignItems:'center', gap:4, marginBottom:4 }}>
+              <span style={{ color:'#facc15', fontSize:10 }}>★</span>
+              <span style={{ fontWeight:600 }}>{score}</span>
+              <span style={{ color:'rgba(255,255,255,0.5)', fontSize:9 }}>· {year}</span>
+            </div>
+            <div style={{ color:'rgba(255,255,255,0.85)', fontSize:9.5, lineHeight:1.25, marginBottom:6, display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical', overflow:'hidden' }}>
+              {synopsis}
+            </div>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+              <button
+                onClick={(e) => { if (typeof toggleFav === 'function') toggleFav(anime.id, e) }}
+                style={{ background: isFav ? 'rgba(167,139,250,0.9)' : 'rgba(255,255,255,0.1)', color: isFav ? '#fff' : '#ddd', border:'1px solid rgba(255,255,255,0.2)', borderRadius:999, padding:'1px 7px', fontSize:10, display:'flex', alignItems:'center', gap:3 }}
+                title={isFav ? 'Retirer des favoris Bramsq' : 'Ajouter aux favoris'}
+              >
+                <span>♥</span> <span style={{ fontSize:9 }}>{isFav ? 'FAV' : 'fav'}</span>
+              </button>
+              <span style={{ color:'rgba(255,255,255,0.45)', fontSize:9 }}>{anime.stats?.[0]?.value || (anime.episodes || 12)} ép.</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom info bar (non-overlay) */}
+        <div className="p-3" style={{ background:'#111114' }}>
+          <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:6 }}>
+            <div style={{ flex:1, minWidth:0 }}>
+              <div style={{ fontWeight:700, fontSize:13, lineHeight:1.1, color:'#f1f1f3', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{displayTitle}</div>
+              <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)', marginTop:1 }}>{year}</div>
+            </div>
+            <div style={{ display:'flex', alignItems:'center', gap:3, fontSize:12, flexShrink:0 }}>
+              <span style={{ color:'#facc15' }}>★</span>
+              <span style={{ fontWeight:600, color:'#f1f1f3' }}>{score}</span>
+            </div>
+          </div>
+          <div style={{ display:'flex', gap:4, marginTop:5, flexWrap:'wrap' }}>
+            {(anime.genres || []).slice(0,2).map(g => (
+              <span key={g} style={{ fontSize:9, padding:'0 5px', background:'rgba(255,255,255,0.06)', color:'rgba(255,255,255,0.7)', borderRadius:999 }}>{g}</span>
+            ))}
+          </div>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginTop:6 }}>
+            <button
+              onClick={(e) => { if (typeof toggleFav === 'function') toggleFav(anime.id, e) }}
+              style={{ fontSize:10, color: isFav ? '#a78bfa' : 'rgba(255,255,255,0.55)', display:'flex', alignItems:'center', gap:3 }}
+              title={isFav ? 'Retirer' : 'Favori Bramsq (bramsq_favs)'}
+            >
+              ♥
+            </button>
+            <span style={{ fontSize:9, color:'rgba(255,255,255,0.4)' }}>{(anime.episodes || anime.stats?.find(s=>s.label.toLowerCase().includes('ép'))?.value || '12')} ép.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrstone, onOpenJjk, onOpenKingdom, onOpenAot, onOpenKny, onOpenNnt, onOpenSl, onOpenDbs, onOpenViolet, onOpenVivy, onOpenLovePrism, onOpenCaroleTuesday, onOpenBunnyGirl, onOpenRentGirlfriend, onOpenBc, onOpenMha, onOpenFireforce, onOpenBluelock, onOpenMonUnivers }) {
   const [query, setQuery] = useState('')
   const [selectedGenres, setSelectedGenres] = useState(new Set())
+  const galleryRef = useRef(null)
+
+  const scrollToGallery = () => {
+    if (galleryRef.current) {
+      galleryRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    } else {
+      setQuery('')
+    }
+  }
+  const showHeroTrailer = () => {
+    // Matches standalone hero "Voir la vidéo" - in full premium standalone it plays cinematic trailer
+    alert('🎬 Bande-annonce Bramsq Community (ouvrez la Version Premium Standalone pour la vidéo complète)')
+  }
 
   // Favorites synced with standalone premium hub (bramsq_favs) for hearts on cards
   const [favs, setFavs] = useState(() => {
@@ -972,15 +1205,55 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
   }, [selectedGenres, query, sortedAnimes])
 
   // Enriched for visible cards only (perf: compute progress once for what's rendered in grid)
+  // Updated for new premium sections: attach _score (for sorting/ranks), _isNew (for NOUVEAU), synopsis for overlay etc.
   const visibleAnimesWithProgress = useMemo(() => {
     return visibleAnimes.map(anime => {
       const ns = anime.id
       const video = computeVideo(ns, rawProgress)
       const hasCh = HAS_CHAPTERS.has(ns)
       const chapter = hasCh ? computeChapter(ns, rawProgress) : { read: 0, total: 0, pct: 0 }
-      return { ...anime, _video: video, _chapter: chapter, _hasChapters: hasCh }
+      const _score = ANIME_SCORES[ns] || 8.5
+      const _isNew = (anime.badge || '').toUpperCase().includes('NOUVEAU') || (anime.badge || '').toUpperCase().includes('NEW')
+      const synopsis = anime.description || ''
+      return { ...anime, _video: video, _chapter: chapter, _hasChapters: hasCh, _score, _isNew, _synopsis: synopsis }
     })
   }, [visibleAnimes, rawProgress])
+
+  // Base enriched for sections (from all, not just visible) - used by top-week / most-loved / new-season
+  const allAnimesWithProgress = useMemo(() => {
+    return sortedAnimes.map(anime => {
+      const ns = anime.id
+      const video = computeVideo(ns, rawProgress)
+      const hasCh = HAS_CHAPTERS.has(ns)
+      const chapter = hasCh ? computeChapter(ns, rawProgress) : { read: 0, total: 0, pct: 0 }
+      const _score = ANIME_SCORES[ns] || 8.5
+      const _isNew = (anime.badge || '').toUpperCase().includes('NOUVEAU') || (anime.badge || '').toUpperCase().includes('NEW')
+      const synopsis = anime.description || ''
+      return { ...anime, _video: video, _chapter: chapter, _hasChapters: hasCh, _score, _isNew, _synopsis: synopsis }
+    })
+  }, [sortedAnimes, rawProgress])
+
+  const topWeekAnimes = useMemo(() => {
+    return [...allAnimesWithProgress]
+      .sort((a, b) => (b._score || 0) - (a._score || 0))
+      .slice(0, 8)
+      .map((a, i) => ({ ...a, _rank: i + 1 }))
+  }, [allAnimesWithProgress])
+
+  const mostLovedAnimes = useMemo(() => {
+    return [...allAnimesWithProgress]
+      .sort((a, b) => {
+        const pa = (a._video?.pct || 0) + (a._chapter?.pct || 0)
+        const pb = (b._video?.pct || 0) + (b._chapter?.pct || 0)
+        return pb - pa
+      })
+      .slice(0, 8)
+  }, [allAnimesWithProgress])
+
+  const newSeasonAnimes = useMemo(() => {
+    const news = allAnimesWithProgress.filter(a => a._isNew || (a.badge || '').includes('NOUVEAU'))
+    return (news.length ? news : allAnimesWithProgress.slice(0, 8)).slice(0, 8)
+  }, [allAnimesWithProgress])
 
   const isFiltering = query.trim() !== '' || selectedGenres.size > 0
   const marqueeAnimesWithProgress = useMemo(() => {
@@ -1053,13 +1326,15 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
           >
             🌌 MON UNIVERS
           </button>
-          <button
-            onClick={() => window.open('/bramsq-premium-hub.html', '_blank')}
-            style={{ display:'flex', alignItems:'center', gap:6, background:'rgba(167,139,250,0.12)', border:'1px solid rgba(167,139,250,0.35)', borderRadius:10, color:'#a78bfa', cursor:'pointer', padding:'8px 14px', fontSize:12, fontWeight:800, transition:'all .18s', letterSpacing:'.02em' }}
+          <a
+            href="/bramsq-premium-hub.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ display:'flex', alignItems:'center', gap:6, background:'rgba(167,139,250,0.18)', border:'1px solid #a78bfa', borderRadius:10, color:'#a78bfa', cursor:'pointer', padding:'8px 16px', fontSize:12, fontWeight:800, transition:'all .18s cubic-bezier(0.23,1,0.32,1)', letterSpacing:'.01em', textDecoration:'none' }}
             onMouseEnter={e => { e.currentTarget.style.background='rgba(167,139,250,0.22)'; e.currentTarget.style.color='#fff' }}
             onMouseLeave={e => { e.currentTarget.style.background='rgba(167,139,250,0.12)'; e.currentTarget.style.color='#a78bfa' }}
           >
-            ✨ HUB PREMIUM
+            ✨ Version Premium Standalone
           </button>
           <button
             onClick={onClose}
