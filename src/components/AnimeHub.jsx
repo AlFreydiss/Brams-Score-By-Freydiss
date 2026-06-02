@@ -550,6 +550,11 @@ const AH_CSS = `
     background: linear-gradient(to right, transparent, #a78bfa, transparent);
     opacity: .35;
   }
+  .ah-main-grid { display:grid; grid-template-columns:220px 1fr; gap:32px; align-items:start; }
+  @media (max-width:1024px) {
+    .ah-main-grid { grid-template-columns:1fr; gap:0; }
+    .ah-sidebar { display:none !important; }
+  }
   @media (prefers-reduced-motion: reduce) {
     .ah-mq-l, .ah-mq-r { animation: none !important; }
   }
@@ -1184,11 +1189,41 @@ function RailItem({ label, icon, count, active, onClick }) {
   )
 }
 
+// ── En-tête de section premium (icône + titre + compteur + action optionnelle) ──
+function SectionHeader({ icon, title, count, accent = 'rgba(139,92,246,0.22)', action }) {
+  return (
+    <div style={{ display:'flex', alignItems:'center', gap:11, marginBottom:14 }}>
+      <span style={{ fontSize:17 }}>{icon}</span>
+      <h3 style={{ margin:0, fontSize:16.5, fontWeight:800, color:'#f4f4f5', letterSpacing:'-.01em' }}>{title}</h3>
+      {count != null && (
+        <span style={{ fontSize:11, fontWeight:800, color:'rgba(255,255,255,0.34)', background:'rgba(255,255,255,0.05)', borderRadius:999, padding:'2px 9px' }}>{count}</span>
+      )}
+      <div style={{ flex:1, height:1, background:`linear-gradient(to right, ${accent}, transparent)`, marginLeft:6 }} />
+      {action}
+    </div>
+  )
+}
+
+// ── Carrousel horizontal (scroll-snap + masque de bord) ──
+function Carousel({ children }) {
+  return (
+    <div className="elegant-scrollbar" style={{
+      display:'flex', gap:4, overflowX:'auto', overflowY:'hidden', paddingBottom:8,
+      scrollSnapType:'x proximity',
+      WebkitMaskImage:'linear-gradient(to right, black calc(100% - 48px), transparent)',
+      maskImage:'linear-gradient(to right, black calc(100% - 48px), transparent)',
+    }}>
+      {children}
+    </div>
+  )
+}
+
 export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrstone, onOpenJjk, onOpenKingdom, onOpenAot, onOpenKny, onOpenNnt, onOpenSl, onOpenDbs, onOpenViolet, onOpenVivy, onOpenLovePrism, onOpenCaroleTuesday, onOpenBunnyGirl, onOpenRentGirlfriend, onOpenBc, onOpenMha, onOpenFireforce, onOpenBluelock, onOpenMonUnivers }) {
   const [query, setQuery] = useState('')
   const [selectedGenres, setSelectedGenres] = useState(new Set())
   const [searchFocus, setSearchFocus] = useState(false)
   const [activeCat, setActiveCat] = useState('top-du-moment')
+  const [showAllCount, setShowAllCount] = useState(14)
 
   // Favorites synced with standalone premium hub (bramsq_favs) for hearts on cards
   const [favs, setFavs] = useState(() => {
@@ -1361,20 +1396,38 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
     return allAnimesWithExtras.filter(a => a._isNew).slice(0, 8);
   }, [allAnimesWithExtras]);
 
-  // Sections classées (data-driven, évite la duplication) pour le rail + les rangées
+  // Sections classées (data-driven) pour le rail + les rangées
   const byGenre = useCallback(
     (key) => allAnimesWithExtras.filter(a => (a.genres || []).some(g => normalizeText(g).includes(key))),
     [allAnimesWithExtras]
   );
-  const categorySections = useMemo(() => [
-    { id:'top-du-moment',    label:'Top du moment',   icon:'🔥', items: topWeekAnimes },
+
+  // "Continuer à regarder" — séries entamées (style Crunchyroll/Netflix)
+  const continueWatching = useMemo(() =>
+    allAnimesWithExtras
+      .filter(a => a._video && a._video.pct > 0 && a._video.pct < 100)
+      .sort((a, b) => b._video.pct - a._video.pct)
+      .slice(0, 10),
+    [allAnimesWithExtras]
+  );
+
+  const genreSections = useMemo(() => [
     { id:'romance',          label:'Romance',          icon:'💗', items: byGenre('romance') },
     { id:'action',           label:'Action',           icon:'⚔️', items: byGenre('action') },
     { id:'fantasy',          label:'Fantasy',          icon:'✨', items: byGenre('fantasy') },
     { id:'aventure',         label:'Aventure',         icon:'🧭', items: byGenre('aventure') },
     { id:'science-fiction',  label:'Science-fiction',  icon:'🛰️', items: byGenre('science') },
     { id:'drame',            label:'Drame',            icon:'🎭', items: byGenre('drame') },
-  ], [topWeekAnimes, byGenre]);
+  ].filter(s => s.items.length > 0), [byGenre]);
+
+  // Items de navigation du rail (uniquement les sections réellement présentes)
+  const navItems = useMemo(() => [
+    { id:'top-du-moment', label:'Top du moment', icon:'🔥', count: topWeekAnimes.length },
+    ...(continueWatching.length ? [{ id:'continuer', label:'Continuer', icon:'▶', count: continueWatching.length }] : []),
+    ...(newSeasonAnimes.length ? [{ id:'nouveautes', label:'Nouveautés', icon:'🆕', count: newSeasonAnimes.length }] : []),
+    ...genreSections.map(s => ({ id:s.id, label:s.label, icon:s.icon, count:s.items.length })),
+    { id:'tous', label:'Tous les animés', icon:'📚', count: sortedAnimes.length },
+  ], [topWeekAnimes, continueWatching, newSeasonAnimes, genreSections, sortedAnimes]);
 
   const scrollToCat = (id) => {
     setActiveCat(id);
@@ -1383,43 +1436,40 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
   };
 
   return (
-    <div style={{ position:'fixed', inset:0, zIndex:500, background:'#07090e', display:'flex', flexDirection:'column' }}>
+    <div style={{ position:'fixed', inset:0, zIndex:500, background:'#0b0d12', display:'flex', flexDirection:'column' }}>
       <style>{AH_CSS}</style>
 
-      {/* ── Header ── (barre anime stylée gauche + boutons premium) */}
+      {/* ── Header compact sticky ── */}
       <div style={{
-        flexShrink:0, padding:'0 24px', height:72,
+        flexShrink:0, padding:'0 24px', height:60,
         display:'flex', alignItems:'center', justifyContent:'space-between',
-        background:'linear-gradient(90deg, rgba(167,139,250,0.03) 0%, rgba(7,9,14,0.96) 12%, rgba(7,9,14,0.96) 100%)',
-        backdropFilter:'blur(24px)',
-        borderBottom:'1px solid rgba(255,255,255,0.07)', zIndex:10,
-        position:'relative',
+        background:'rgba(11,13,18,0.82)', backdropFilter:'blur(20px)',
+        borderBottom:'1px solid rgba(255,255,255,0.07)', zIndex:10, position:'relative',
       }}>
-        {/* Left accent anime bar + logo */}
-        <div style={{ display:'flex', alignItems:'center', gap:14 }}>
-          <div style={{ width:3, height:38, borderRadius:2, background:'linear-gradient(to bottom, #a78bfa, #e0524a)', boxShadow:'0 0 8px rgba(167,139,250,0.6)', marginRight:4 }} />
-          <div style={{ fontSize:28, filter:'drop-shadow(0 0 14px rgba(224,82,74,0.6))', animation:'ahDrift 5s ease-in-out infinite' }}>🎌</div>
+        <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+          <div style={{ width:3, height:30, borderRadius:2, background:'linear-gradient(to bottom, #8b5cf6, #dc2626)' }} />
+          <div style={{ fontSize:22, animation:'ahDrift 6s ease-in-out infinite' }}>🎌</div>
           <div>
-            <div style={{ fontFamily:"'Pirata One', cursive", fontWeight:900, fontSize:22, color:'#fff', letterSpacing:'-.01em', lineHeight:1, textShadow:'0 2px 12px rgba(0,0,0,0.6)' }}>Hub des Animés</div>
-            <div style={{ fontSize:11, color:'rgba(255,255,255,0.32)', marginTop:3, fontWeight:600, letterSpacing:'.04em' }}>
-              {visibleAnimes.length} séries disponibles <span style={{ color:'#a78bfa', fontWeight:700 }}>•</span> <span style={{ color:'rgba(167,139,250,0.85)' }}>🔴 12.8k en ligne</span>
+            <div style={{ fontFamily:"'Pirata One', cursive", fontWeight:900, fontSize:19, color:'#f4f4f5', letterSpacing:'-.01em', lineHeight:1 }}>Hub des Animés</div>
+            <div style={{ fontSize:10.5, color:'#9ca3af', marginTop:2, fontWeight:600, letterSpacing:'.03em' }}>
+              {sortedAnimes.length} séries disponibles <span style={{ color:'rgba(255,255,255,0.25)' }}>•</span> <span style={{ color:'#dc2626' }}>●</span> 12.8k en ligne
             </div>
           </div>
         </div>
         <div style={{ display:'flex', gap:8, alignItems:'center' }}>
           <button
             onClick={() => onOpenMonUnivers && onOpenMonUnivers()}
-            style={{ display:'flex', alignItems:'center', gap:6, background:'linear-gradient(90deg, rgba(224,82,74,0.18), rgba(224,82,74,0.08))', border:'1px solid rgba(224,82,74,0.35)', borderRadius:10, color:'#e0524a', cursor:'pointer', padding:'8px 14px', fontSize:12, fontWeight:800, transition:'all .18s', letterSpacing:'.02em' }}
-            onMouseEnter={e => { e.currentTarget.style.background='linear-gradient(90deg, rgba(224,82,74,0.28), rgba(224,82,74,0.14))'; e.currentTarget.style.color='#fff' }}
-            onMouseLeave={e => { e.currentTarget.style.background='linear-gradient(90deg, rgba(224,82,74,0.18), rgba(224,82,74,0.08))'; e.currentTarget.style.color='#e0524a' }}
+            style={{ display:'flex', alignItems:'center', gap:6, background:'rgba(220,38,38,0.12)', border:'1px solid rgba(220,38,38,0.30)', borderRadius:9, color:'#f87171', cursor:'pointer', padding:'7px 13px', fontSize:12, fontWeight:800, transition:'all .18s', letterSpacing:'.01em' }}
+            onMouseEnter={e => { e.currentTarget.style.background='rgba(220,38,38,0.22)'; e.currentTarget.style.color='#fff' }}
+            onMouseLeave={e => { e.currentTarget.style.background='rgba(220,38,38,0.12)'; e.currentTarget.style.color='#f87171' }}
           >
-            🌌 MON UNIVERS
+            🌌 Mon univers
           </button>
           <button
             onClick={onClose}
-            style={{ display:'flex', alignItems:'center', gap:7, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.10)', borderRadius:10, color:'rgba(255,255,255,0.75)', cursor:'pointer', padding:'9px 18px', fontSize:13, fontWeight:700, transition:'all .18s' }}
-            onMouseEnter={e => { e.currentTarget.style.background='rgba(255,255,255,0.10)'; e.currentTarget.style.color='#fff' }}
-            onMouseLeave={e => { e.currentTarget.style.background='rgba(255,255,255,0.05)'; e.currentTarget.style.color='rgba(255,255,255,0.75)' }}
+            style={{ display:'flex', alignItems:'center', gap:7, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.10)', borderRadius:9, color:'#9ca3af', cursor:'pointer', padding:'7px 15px', fontSize:12.5, fontWeight:700, transition:'all .18s' }}
+            onMouseEnter={e => { e.currentTarget.style.background='rgba(255,255,255,0.10)'; e.currentTarget.style.color='#f4f4f5' }}
+            onMouseLeave={e => { e.currentTarget.style.background='rgba(255,255,255,0.05)'; e.currentTarget.style.color='#9ca3af' }}
           >
             ← Retour
           </button>
@@ -1433,171 +1483,238 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
         <AHStars />
         <AHScanLine />
 
-        <div style={{ position:'relative', zIndex:2, padding:'52px 0 80px' }}>
-          <div style={{ maxWidth:1080, margin:'0 auto', padding:'0 24px' }}>
+        <div style={{ position:'relative', zIndex:2, padding:'20px 0 64px' }}>
+          <div style={{ maxWidth:1360, margin:'0 auto', padding:'0 32px' }}>
 
-            {/* Intro */}
-            <div style={{ textAlign:'center', marginBottom:24 }}>
-              <div style={{
-                display:'inline-flex', alignItems:'center', gap:8,
-                padding:'5px 18px', borderRadius:100,
-                background:'rgba(224,82,74,0.10)', border:'1px solid rgba(224,82,74,0.25)',
-                fontSize:10, fontWeight:800, letterSpacing:'.22em', color:'#e0524a', textTransform:'uppercase',
-                marginBottom:16,
-              }}>
-                ✦ Espace Manga & Anime
+            {/* ── Hero compact horizontal (titre à gauche, stats à droite) ── */}
+            <div style={{ display:'flex', alignItems:'flex-end', justifyContent:'space-between', gap:24, flexWrap:'wrap', marginBottom:20 }}>
+              <div style={{ minWidth:0 }}>
+                <div style={{
+                  display:'inline-flex', alignItems:'center', gap:7,
+                  padding:'4px 13px', borderRadius:100,
+                  background:'rgba(139,92,246,0.10)', border:'1px solid rgba(139,92,246,0.22)',
+                  fontSize:9.5, fontWeight:800, letterSpacing:'.20em', color:'#a78bfa', textTransform:'uppercase',
+                  marginBottom:11,
+                }}>
+                  ✦ Espace manga & anime
+                </div>
+                <h2 style={{ fontFamily:"'Pirata One', cursive", fontWeight:900, fontSize:'clamp(26px,3.4vw,40px)', color:'#f4f4f5', margin:'0 0 6px', lineHeight:1.02, letterSpacing:'-.02em' }}>
+                  Ton univers, ton rythme
+                </h2>
+                <p style={{ fontSize:13.5, color:'#9ca3af', margin:0, lineHeight:1.5, maxWidth:520 }}>
+                  Scans, épisodes et suivis — tout au même endroit pour la communauté Brams.
+                </p>
               </div>
-              <h2 style={{ fontFamily:"'Pirata One', cursive", fontWeight:900, fontSize:'clamp(28px,5vw,52px)', color:'#fff', marginBottom:10, lineHeight:1, letterSpacing:'-.02em' }}>
-                Ton univers, ton rythme
-              </h2>
-              <p style={{ fontSize:15, color:'rgba(255,255,255,0.38)', maxWidth:480, margin:'0 auto 24px', lineHeight:1.75 }}>
-                Scans, épisodes, suivis — tout au même endroit pour la communauté Brams.
-              </p>
+              {/* Stats strip */}
+              <div style={{ display:'flex', gap:10, flexShrink:0 }}>
+                {[
+                  { value: sortedAnimes.length,      icon:'🎬', label:'séries' },
+                  { value: continueWatching.length,  icon:'▶',  label:'en cours' },
+                  { value: newSeasonAnimes.length,   icon:'🆕', label:'nouveautés' },
+                  { value: favs.size,                icon:'❤',  label:'favoris' },
+                ].map((s, i) => (
+                  <div key={i} style={{ minWidth:80, padding:'10px 14px', borderRadius:13, background:'rgba(255,255,255,0.035)', border:'1px solid rgba(255,255,255,0.08)', textAlign:'center' }}>
+                    <div style={{ fontSize:19, fontWeight:900, color:'#f4f4f5', lineHeight:1 }}>{s.value}</div>
+                    <div style={{ fontSize:9.5, fontWeight:700, color:'#9ca3af', marginTop:5, letterSpacing:'.03em' }}>{s.icon} {s.label}</div>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            {/* ── Recherche + filtres genres (inline premium, accent violet) ── */}
-            <div style={{ maxWidth:880, margin:'0 auto 36px' }}>
-              {/* Recherche */}
-              <div style={{ position:'relative', marginBottom:18 }}>
-                <span style={{ position:'absolute', left:18, top:'50%', transform:'translateY(-50%)', fontSize:18, color:'rgba(167,139,250,0.55)', pointerEvents:'none' }}>⌕</span>
-                <input
-                  value={query}
-                  onChange={event => setQuery(event.target.value)}
-                  onFocus={() => setSearchFocus(true)}
-                  onBlur={() => setSearchFocus(false)}
-                  placeholder="Rechercher un titre, personnage, studio ou genre…"
-                  style={{
-                    width:'100%', boxSizing:'border-box',
-                    borderRadius:16, padding:'15px 48px 15px 46px',
-                    fontSize:15, fontWeight:500, color:'#fff',
-                    background:'#0b0d14', outline:'none',
-                    border:`1px solid ${searchFocus ? 'rgba(167,139,250,0.5)' : 'rgba(255,255,255,0.10)'}`,
-                    boxShadow: searchFocus ? '0 0 0 1px rgba(167,139,250,0.25), 0 16px 40px -14px rgba(0,0,0,0.6)' : '0 8px 24px -16px rgba(0,0,0,0.6)',
-                    transition:'border-color .2s, box-shadow .2s',
-                    fontFamily:'var(--body)',
-                  }}
-                />
-                {query && (
-                  <button
-                    type="button"
-                    onClick={() => setQuery('')}
-                    aria-label="Effacer la recherche"
-                    style={{ position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', width:26, height:26, borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.5)', fontSize:12, cursor:'pointer', transition:'all .18s' }}
-                    onMouseEnter={e => { e.currentTarget.style.background='rgba(255,255,255,0.12)'; e.currentTarget.style.color='#fff' }}
-                    onMouseLeave={e => { e.currentTarget.style.background='rgba(255,255,255,0.06)'; e.currentTarget.style.color='rgba(255,255,255,0.5)' }}
-                  >
-                    ✕
-                  </button>
-                )}
-              </div>
+            {/* ── Recherche ── */}
+            <div style={{ maxWidth:740, margin:'0 auto 12px', position:'relative' }}>
+              <span style={{ position:'absolute', left:16, top:'50%', transform:'translateY(-50%)', fontSize:17, color:'rgba(139,92,246,0.55)', pointerEvents:'none' }}>⌕</span>
+              <input
+                value={query}
+                onChange={event => setQuery(event.target.value)}
+                onFocus={() => setSearchFocus(true)}
+                onBlur={() => setSearchFocus(false)}
+                placeholder="Rechercher un titre, personnage, studio ou genre…"
+                style={{
+                  width:'100%', boxSizing:'border-box',
+                  borderRadius:13, padding:'12px 44px 12px 42px',
+                  fontSize:14, fontWeight:500, color:'#f4f4f5',
+                  background:'#10131a', outline:'none',
+                  border:`1px solid ${searchFocus ? 'rgba(139,92,246,0.5)' : 'rgba(255,255,255,0.08)'}`,
+                  boxShadow: searchFocus ? '0 0 0 1px rgba(139,92,246,0.25), 0 14px 36px -16px rgba(0,0,0,0.7)' : 'none',
+                  transition:'border-color .2s, box-shadow .2s',
+                  fontFamily:'var(--body)',
+                }}
+              />
+              {query && (
+                <button
+                  type="button"
+                  onClick={() => setQuery('')}
+                  aria-label="Effacer la recherche"
+                  style={{ position:'absolute', right:10, top:'50%', transform:'translateY(-50%)', width:24, height:24, borderRadius:7, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.08)', color:'#9ca3af', fontSize:11, cursor:'pointer', transition:'all .18s' }}
+                  onMouseEnter={e => { e.currentTarget.style.background='rgba(255,255,255,0.12)'; e.currentTarget.style.color='#fff' }}
+                  onMouseLeave={e => { e.currentTarget.style.background='rgba(255,255,255,0.06)'; e.currentTarget.style.color='#9ca3af' }}
+                >
+                  ✕
+                </button>
+              )}
+            </div>
 
-              {/* Pills de genres */}
-              <div style={{ display:'flex', flexWrap:'wrap', alignItems:'center', justifyContent:'center', gap:8 }}>
-                <FilterPill label="Tous" active={selectedGenres.size === 0} onClick={() => setSelectedGenres(new Set())} />
-                {displayGenres.map(genre => (
-                  <FilterPill key={genre} label={genre} active={selectedGenres.has(genre)} onClick={() => toggleGenre(genre)} />
-                ))}
-                {selectedGenres.size > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setSelectedGenres(new Set())}
-                    title="Effacer la sélection"
-                    style={{ borderRadius:999, padding:'7px 13px', fontSize:11, fontWeight:900, letterSpacing:'.06em', color:'rgba(255,255,255,0.45)', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.10)', cursor:'pointer', transition:'all .18s' }}
-                    onMouseEnter={e => { e.currentTarget.style.color='#d9ccff'; e.currentTarget.style.borderColor='rgba(167,139,250,0.4)' }}
-                    onMouseLeave={e => { e.currentTarget.style.color='rgba(255,255,255,0.45)'; e.currentTarget.style.borderColor='rgba(255,255,255,0.10)' }}
-                  >
-                    ↺ RESET
-                  </button>
-                )}
-              </div>
-
-              {/* Compteur de résultats */}
-              <div style={{ marginTop:16, textAlign:'center', fontSize:11, fontWeight:800, letterSpacing:'.10em', color:'rgba(255,255,255,0.3)' }}>
-                {isFiltering
-                  ? `${visibleAnimes.length} RÉSULTAT${visibleAnimes.length > 1 ? 'S' : ''}`
-                  : `${sortedAnimes.length} ANIMÉS DISPONIBLES`}
-              </div>
+            {/* ── Filtres (compacts) ── */}
+            <div style={{ display:'flex', flexWrap:'wrap', alignItems:'center', justifyContent:'center', gap:7, maxWidth:940, margin:'0 auto' }}>
+              <FilterPill label="Tous" active={selectedGenres.size === 0} onClick={() => setSelectedGenres(new Set())} />
+              {displayGenres.map(genre => (
+                <FilterPill key={genre} label={genre} active={selectedGenres.has(genre)} onClick={() => toggleGenre(genre)} />
+              ))}
+              {selectedGenres.size > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedGenres(new Set())}
+                  title="Effacer la sélection"
+                  style={{ borderRadius:999, padding:'7px 13px', fontSize:11, fontWeight:900, letterSpacing:'.06em', color:'#9ca3af', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.10)', cursor:'pointer', transition:'all .18s' }}
+                  onMouseEnter={e => { e.currentTarget.style.color='#a78bfa'; e.currentTarget.style.borderColor='rgba(139,92,246,0.4)' }}
+                  onMouseLeave={e => { e.currentTarget.style.color='#9ca3af'; e.currentTarget.style.borderColor='rgba(255,255,255,0.10)' }}
+                >
+                  ↺ RESET
+                </button>
+              )}
             </div>
 
           </div>
 
-          {/* ── Layout : rail catégories + sections classées, ou grille filtrée ── */}
-          <div style={{ maxWidth:1280, margin:'0 auto', padding:'0 24px' }}>
+          {/* ── Bloc principal : sidebar + sections, ou grille filtrée ── */}
+          <div style={{ maxWidth:1360, margin:'26px auto 0', padding:'0 32px' }}>
             {isFiltering ? (
-              /* Résultats de recherche/filtre — grille */
               visibleAnimesWithProgress.length === 0 ? (
-                <div style={{ textAlign:'center', padding:'72px 20px' }}>
-                  <div style={{ fontSize:40, marginBottom:14, opacity:0.45 }}>🔍</div>
-                  <div style={{ fontSize:18, fontWeight:800, color:'#fff', marginBottom:6 }}>Aucun anime trouvé</div>
-                  <div style={{ fontSize:13.5, color:'rgba(255,255,255,0.4)', marginBottom:22 }}>Essaie un autre titre ou retire des filtres.</div>
+                <div style={{ textAlign:'center', padding:'64px 20px' }}>
+                  <div style={{ fontSize:38, marginBottom:14, opacity:0.4 }}>🔍</div>
+                  <div style={{ fontSize:18, fontWeight:800, color:'#f4f4f5', marginBottom:6 }}>Aucun anime trouvé</div>
+                  <div style={{ fontSize:13.5, color:'#9ca3af', marginBottom:22 }}>Essaie un autre titre ou retire des filtres.</div>
                   <button
                     onClick={() => { setQuery(''); setSelectedGenres(new Set()) }}
-                    style={{ borderRadius:12, padding:'10px 22px', fontSize:13, fontWeight:800, color:'#d9ccff', background:'rgba(167,139,250,0.14)', border:'1px solid rgba(167,139,250,0.4)', cursor:'pointer', transition:'all .18s' }}
-                    onMouseEnter={e => { e.currentTarget.style.background='rgba(167,139,250,0.24)'; e.currentTarget.style.color='#fff' }}
-                    onMouseLeave={e => { e.currentTarget.style.background='rgba(167,139,250,0.14)'; e.currentTarget.style.color='#d9ccff' }}
+                    style={{ borderRadius:12, padding:'10px 22px', fontSize:13, fontWeight:800, color:'#a78bfa', background:'rgba(139,92,246,0.14)', border:'1px solid rgba(139,92,246,0.4)', cursor:'pointer', transition:'all .18s' }}
+                    onMouseEnter={e => { e.currentTarget.style.background='rgba(139,92,246,0.24)'; e.currentTarget.style.color='#fff' }}
+                    onMouseLeave={e => { e.currentTarget.style.background='rgba(139,92,246,0.14)'; e.currentTarget.style.color='#a78bfa' }}
                   >
                     Réinitialiser les filtres
                   </button>
                 </div>
               ) : (
-                <div style={{ display:'flex', flexWrap:'wrap', gap:6, justifyContent:'center' }}>
-                  {visibleAnimesWithProgress.map(anime => (
-                    <AnimeMarqueeCard key={anime.id} anime={anime} onClick={() => handleClick(anime.id)} onOpenMonUnivers={onOpenMonUnivers} isFav={favs.has(anime.id)} toggleFav={toggleFav} />
-                  ))}
-                </div>
+                <>
+                  <SectionHeader icon="🔎" title="Résultats" count={visibleAnimesWithProgress.length} />
+                  <div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>
+                    {visibleAnimesWithProgress.map(anime => (
+                      <AnimeMarqueeCard key={anime.id} anime={anime} onClick={() => handleClick(anime.id)} onOpenMonUnivers={onOpenMonUnivers} isFav={favs.has(anime.id)} toggleFav={toggleFav} />
+                    ))}
+                  </div>
+                </>
               )
             ) : (
-              <div style={{ display:'flex', gap:32 }}>
-                {/* Rail de catégories */}
-                <nav style={{ width:184, flexShrink:0, position:'sticky', top:24, alignSelf:'flex-start' }}>
-                  <div style={{ fontSize:10, fontWeight:900, color:'rgba(255,255,255,0.32)', letterSpacing:'.18em', textTransform:'uppercase', padding:'0 12px', marginBottom:12 }}>Catégories</div>
-                  {categorySections.map(section => (
-                    <RailItem
-                      key={section.id}
-                      label={section.label}
-                      icon={section.icon}
-                      count={section.items.length}
-                      active={activeCat === section.id}
-                      onClick={() => scrollToCat(section.id)}
-                    />
-                  ))}
-                  <div style={{ marginTop:20, padding:'14px 12px', borderRadius:12, background:'rgba(167,139,250,0.06)', border:'1px solid rgba(167,139,250,0.14)' }}>
-                    <div style={{ fontSize:12, fontWeight:800, color:'#d9ccff', marginBottom:4 }}>🎲 Au hasard</div>
-                    <div style={{ fontSize:11, color:'rgba(255,255,255,0.4)', lineHeight:1.5, marginBottom:10 }}>Laisse le destin choisir ton prochain anime.</div>
-                    <button
-                      onClick={surpriseMe}
-                      style={{ width:'100%', borderRadius:9, padding:'8px 0', fontSize:12, fontWeight:800, color:'#fff', background:'rgba(167,139,250,0.18)', border:'1px solid rgba(167,139,250,0.35)', cursor:'pointer', transition:'all .18s' }}
-                      onMouseEnter={e => { e.currentTarget.style.background='rgba(167,139,250,0.30)' }}
-                      onMouseLeave={e => { e.currentTarget.style.background='rgba(167,139,250,0.18)' }}
-                    >
-                      Surprends-moi
-                    </button>
+              <div className="ah-main-grid">
+                {/* ── Sidebar ── */}
+                <nav className="ah-sidebar" style={{ position:'sticky', top:16, alignSelf:'start' }}>
+                  <div style={{ background:'rgba(16,19,26,0.6)', border:'1px solid rgba(255,255,255,0.07)', borderRadius:16, padding:'12px 8px', backdropFilter:'blur(8px)' }}>
+                    <div style={{ fontSize:10, fontWeight:900, color:'#9ca3af', letterSpacing:'.18em', textTransform:'uppercase', padding:'2px 12px 10px' }}>Catégories</div>
+                    {navItems.map(item => (
+                      <RailItem
+                        key={item.id}
+                        label={item.label}
+                        icon={item.icon}
+                        count={item.count}
+                        active={activeCat === item.id}
+                        onClick={() => scrollToCat(item.id)}
+                      />
+                    ))}
+                    <div style={{ height:1, background:'rgba(255,255,255,0.07)', margin:'10px 8px' }} />
+                    <div style={{ padding:'2px 6px 4px' }}>
+                      <div style={{ fontSize:11.5, fontWeight:800, color:'#a78bfa', marginBottom:8 }}>🎲 Au hasard</div>
+                      <button
+                        onClick={surpriseMe}
+                        style={{ width:'100%', borderRadius:9, padding:'9px 0', fontSize:12, fontWeight:800, color:'#f4f4f5', background:'rgba(139,92,246,0.16)', border:'1px solid rgba(139,92,246,0.32)', cursor:'pointer', transition:'all .18s' }}
+                        onMouseEnter={e => { e.currentTarget.style.background='rgba(139,92,246,0.28)' }}
+                        onMouseLeave={e => { e.currentTarget.style.background='rgba(139,92,246,0.16)' }}
+                      >
+                        Surprends-moi
+                      </button>
+                    </div>
                   </div>
                 </nav>
 
-                {/* Sections classées */}
-                <div style={{ flex:1, minWidth:0 }}>
-                  {categorySections.map(section => (
-                    <section key={section.id} id={section.id} style={{ marginBottom:40, scrollMarginTop:24 }}>
-                      <div style={{ display:'flex', alignItems:'center', gap:11, marginBottom:16 }}>
-                        <span style={{ fontSize:18 }}>{section.icon}</span>
-                        <h3 style={{ margin:0, fontSize:17, fontWeight:800, color:'#f1f1f3', letterSpacing:'-.01em' }}>{section.label}</h3>
-                        <span style={{ fontSize:11, fontWeight:800, color:'rgba(255,255,255,0.32)', background:'rgba(255,255,255,0.05)', borderRadius:999, padding:'2px 9px' }}>{section.items.length}</span>
-                        <div style={{ flex:1, height:1, background:'linear-gradient(to right, rgba(167,139,250,0.18), transparent)', marginLeft:6 }} />
-                      </div>
-                      {section.items.length === 0 ? (
-                        <div style={{ fontSize:13, color:'rgba(255,255,255,0.3)', padding:'4px 0 8px' }}>Bientôt disponible…</div>
-                      ) : (
-                        <div className="elegant-scrollbar" style={{ display:'flex', gap:4, overflowX:'auto', paddingBottom:10, scrollSnapType:'x proximity' }}>
-                          {section.items.map(anime => (
-                            <div key={anime.id} style={{ scrollSnapAlign:'start' }}>
-                              <AnimeMarqueeCard anime={anime} onClick={() => handleClick(anime.id)} onOpenMonUnivers={onOpenMonUnivers} isFav={favs.has(anime.id)} toggleFav={toggleFav} />
-                            </div>
-                          ))}
+                {/* ── Sections ── */}
+                <div style={{ minWidth:0 }}>
+
+                  {/* Top du moment — numéroté */}
+                  <section id="top-du-moment" style={{ marginBottom:34, scrollMarginTop:16 }}>
+                    <SectionHeader icon="🔥" title="Top du moment" count={topWeekAnimes.length} accent="rgba(220,38,38,0.30)" />
+                    <Carousel>
+                      {topWeekAnimes.slice(0, 8).map((anime, i) => (
+                        <div key={anime.id} style={{ display:'flex', alignItems:'flex-end', scrollSnapAlign:'start' }}>
+                          <span style={{ fontFamily:"'Pirata One', cursive", fontSize:62, fontWeight:900, lineHeight:0.74, color:'transparent', WebkitTextStroke:`2px ${i < 3 ? 'rgba(220,38,38,0.5)' : 'rgba(255,255,255,0.16)'}`, marginRight:-14, marginBottom:8, flexShrink:0, userSelect:'none' }}>{i + 1}</span>
+                          <AnimeMarqueeCard anime={anime} onClick={() => handleClick(anime.id)} onOpenMonUnivers={onOpenMonUnivers} isFav={favs.has(anime.id)} toggleFav={toggleFav} />
                         </div>
-                      )}
+                      ))}
+                    </Carousel>
+                  </section>
+
+                  {/* Continuer à regarder */}
+                  {continueWatching.length > 0 && (
+                    <section id="continuer" style={{ marginBottom:34, scrollMarginTop:16 }}>
+                      <SectionHeader icon="▶" title="Continuer à regarder" count={continueWatching.length} />
+                      <Carousel>
+                        {continueWatching.map(anime => (
+                          <div key={anime.id} style={{ scrollSnapAlign:'start' }}>
+                            <AnimeMarqueeCard anime={anime} onClick={() => handleClick(anime.id)} onOpenMonUnivers={onOpenMonUnivers} isFav={favs.has(anime.id)} toggleFav={toggleFav} />
+                          </div>
+                        ))}
+                      </Carousel>
+                    </section>
+                  )}
+
+                  {/* Nouveautés de la saison */}
+                  {newSeasonAnimes.length > 0 && (
+                    <section id="nouveautes" style={{ marginBottom:34, scrollMarginTop:16 }}>
+                      <SectionHeader icon="🆕" title="Nouveautés de la saison" count={newSeasonAnimes.length} accent="rgba(139,92,246,0.30)" />
+                      <Carousel>
+                        {newSeasonAnimes.map(anime => (
+                          <div key={anime.id} style={{ scrollSnapAlign:'start' }}>
+                            <AnimeMarqueeCard anime={anime} onClick={() => handleClick(anime.id)} onOpenMonUnivers={onOpenMonUnivers} isFav={favs.has(anime.id)} toggleFav={toggleFav} />
+                          </div>
+                        ))}
+                      </Carousel>
+                    </section>
+                  )}
+
+                  {/* Sections par genre */}
+                  {genreSections.map(section => (
+                    <section key={section.id} id={section.id} style={{ marginBottom:34, scrollMarginTop:16 }}>
+                      <SectionHeader icon={section.icon} title={section.label} count={section.items.length} />
+                      <Carousel>
+                        {section.items.map(anime => (
+                          <div key={anime.id} style={{ scrollSnapAlign:'start' }}>
+                            <AnimeMarqueeCard anime={anime} onClick={() => handleClick(anime.id)} onOpenMonUnivers={onOpenMonUnivers} isFav={favs.has(anime.id)} toggleFav={toggleFav} />
+                          </div>
+                        ))}
+                      </Carousel>
                     </section>
                   ))}
+
+                  {/* Tous les animés — grille + voir plus */}
+                  <section id="tous" style={{ marginBottom:0, scrollMarginTop:16 }}>
+                    <SectionHeader icon="📚" title="Tous les animés" count={sortedAnimes.length} />
+                    <div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>
+                      {allAnimesWithExtras.slice(0, showAllCount).map(anime => (
+                        <AnimeMarqueeCard key={anime.id} anime={anime} onClick={() => handleClick(anime.id)} onOpenMonUnivers={onOpenMonUnivers} isFav={favs.has(anime.id)} toggleFav={toggleFav} />
+                      ))}
+                    </div>
+                    {showAllCount < allAnimesWithExtras.length && (
+                      <div style={{ textAlign:'center', marginTop:20 }}>
+                        <button
+                          onClick={() => setShowAllCount(c => c + 14)}
+                          style={{ borderRadius:11, padding:'10px 26px', fontSize:13, fontWeight:800, color:'#f4f4f5', background:'rgba(255,255,255,0.045)', border:'1px solid rgba(255,255,255,0.10)', cursor:'pointer', transition:'all .18s' }}
+                          onMouseEnter={e => { e.currentTarget.style.background='rgba(255,255,255,0.09)'; e.currentTarget.style.borderColor='rgba(139,92,246,0.35)' }}
+                          onMouseLeave={e => { e.currentTarget.style.background='rgba(255,255,255,0.045)'; e.currentTarget.style.borderColor='rgba(255,255,255,0.10)' }}
+                        >
+                          Voir plus ({allAnimesWithExtras.length - showAllCount})
+                        </button>
+                      </div>
+                    )}
+                  </section>
+
                 </div>
               </div>
             )}
