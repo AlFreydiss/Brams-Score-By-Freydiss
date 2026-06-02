@@ -1,1 +1,650 @@
-[]
+[
+  {
+    "episode": 1,
+    "title": "Episode 1",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E001/master-ja.m3u8",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E001",
+    "episodeLabel": "S01E001",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E001/thumb.jpg",
+    "duration": "22:52",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E001/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E001/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 2,
+    "title": "Episode 2",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E002/master-ja.m3u8",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E002",
+    "episodeLabel": "S01E002",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E002/thumb.jpg",
+    "duration": "22:52",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E002/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E002/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 3,
+    "title": "Episode 3",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E003/master-ja.m3u8",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E003",
+    "episodeLabel": "S01E003",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E003/thumb.jpg",
+    "duration": "22:52",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E003/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E003/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 4,
+    "title": "Episode 4",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E004/master-ja.m3u8",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E004",
+    "episodeLabel": "S01E004",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E004/thumb.jpg",
+    "duration": "22:52",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E004/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E004/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 5,
+    "title": "Episode 5",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E005/master-ja.m3u8",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E005",
+    "episodeLabel": "S01E005",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E005/thumb.jpg",
+    "duration": "22:52",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E005/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E005/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 6,
+    "title": "Episode 6",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E006/master-ja.m3u8",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E006",
+    "episodeLabel": "S01E006",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E006/thumb.jpg",
+    "duration": "22:52",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E006/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E006/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 7,
+    "title": "Episode 7",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E007/master-ja.m3u8",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E007",
+    "episodeLabel": "S01E007",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E007/thumb.jpg",
+    "duration": "22:52",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E007/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E007/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 8,
+    "title": "Episode 8",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E008/master-ja.m3u8",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E008",
+    "episodeLabel": "S01E008",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E008/thumb.jpg",
+    "duration": "22:52",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E008/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E008/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 9,
+    "title": "Episode 9",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E009/master-ja.m3u8",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E009",
+    "episodeLabel": "S01E009",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E009/thumb.jpg",
+    "duration": "22:52",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E009/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E009/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 10,
+    "title": "Episode 10",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E010/master-ja.m3u8",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E010",
+    "episodeLabel": "S01E010",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E010/thumb.jpg",
+    "duration": "22:52",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E010/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E010/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 11,
+    "title": "Episode 11",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E011/master-ja.m3u8",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E011",
+    "episodeLabel": "S01E011",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E011/thumb.jpg",
+    "duration": "22:52",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E011/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E011/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 12,
+    "title": "Episode 12",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E012/master-ja.m3u8",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E012",
+    "episodeLabel": "S01E012",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E012/thumb.jpg",
+    "duration": "22:52",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E012/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E012/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 13,
+    "title": "Episode 13",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E013/master-ja.m3u8",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E013",
+    "episodeLabel": "S01E013",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E013/thumb.jpg",
+    "duration": "22:52",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E013/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E013/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 14,
+    "title": "Episode 14",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E014/master-ja.m3u8",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E014",
+    "episodeLabel": "S01E014",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E014/thumb.jpg",
+    "duration": "22:52",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E014/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E014/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 15,
+    "title": "Episode 15",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E015/master-ja.m3u8",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E015",
+    "episodeLabel": "S01E015",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E015/thumb.jpg",
+    "duration": "22:52",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E015/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E015/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 16,
+    "title": "Episode 16",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E016/master-ja.m3u8",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E016",
+    "episodeLabel": "S01E016",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E016/thumb.jpg",
+    "duration": "22:52",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E016/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E016/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 17,
+    "title": "Episode 17",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E017/master-ja.m3u8",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E017",
+    "episodeLabel": "S01E017",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E017/thumb.jpg",
+    "duration": "22:52",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E017/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E017/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 18,
+    "title": "Episode 18",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E018/master-ja.m3u8",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E018",
+    "episodeLabel": "S01E018",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E018/thumb.jpg",
+    "duration": "22:52",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E018/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E018/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 19,
+    "title": "Episode 19",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E019/master-ja.m3u8",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E019",
+    "episodeLabel": "S01E019",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E019/thumb.jpg",
+    "duration": "22:52",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E019/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E019/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 20,
+    "title": "Episode 20",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E020/master-ja.m3u8",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E020",
+    "episodeLabel": "S01E020",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E020/thumb.jpg",
+    "duration": "22:52",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E020/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E020/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 21,
+    "title": "Episode 21",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E021/master-ja.m3u8",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E021",
+    "episodeLabel": "S01E021",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E021/thumb.jpg",
+    "duration": "22:52",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E021/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E021/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 22,
+    "title": "Episode 22",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E022/master-ja.m3u8",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E022",
+    "episodeLabel": "S01E022",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E022/thumb.jpg",
+    "duration": "22:52",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E022/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E022/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 23,
+    "title": "Episode 23",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E023/master-ja.m3u8",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E023",
+    "episodeLabel": "S01E023",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E023/thumb.jpg",
+    "duration": "22:52",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E023/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E023/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 24,
+    "title": "Episode 24",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E024/master-ja.m3u8",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E024",
+    "episodeLabel": "S01E024",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E024/thumb.jpg",
+    "duration": "22:52",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E024/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E024/sub-fr.vtt"
+      }
+    ]
+  }
+]

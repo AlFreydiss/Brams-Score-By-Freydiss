@@ -33,6 +33,7 @@ const {
   ANIME_ONLY = '',
   ITEM_ONLY = '',
   FORCE = '',
+  SKIP_MISSING_PUBLIC = '',
 } = E
 
 if (!CF_ACCOUNT_ID || !R2_BUCKET_NAME || !R2_ACCESS_KEY_ID || !R2_SECRET_ACCESS_KEY) {
@@ -97,9 +98,12 @@ async function exists(key) {
   try {
     await client.send(new HeadObjectCommand({ Bucket: R2_BUCKET_NAME, Key: key }))
     return true
-  } catch {
-    return false
-  }
+  } catch {}
+  try {
+    const res = await fetch(urlFor(key), { method: 'HEAD' })
+    return res.ok
+  } catch {}
+  return false
 }
 
 async function uploadDir(dir, prefix) {
@@ -154,6 +158,21 @@ function listFiles(dir, regex) {
     .map(name => path.join(dir, name))
 }
 
+function listFilesDeep(dir, regex) {
+  if (!fs.existsSync(dir)) return []
+  const out = []
+  const walk = current => {
+    for (const name of fs.readdirSync(current)) {
+      const full = path.join(current, name)
+      const stat = fs.statSync(full)
+      if (stat.isDirectory()) walk(full)
+      else if (regex.test(name)) out.push(full)
+    }
+  }
+  walk(dir)
+  return out.sort((a, b) => a.localeCompare(b, 'fr', { numeric: true }))
+}
+
 function normLang(value = '') {
   const v = String(value || '').toLowerCase()
   if (['ja', 'jpn', 'jap', 'jp'].includes(v) || v.includes('japanese') || v.includes('japonais')) return 'ja'
@@ -194,6 +213,10 @@ function pickAudioTracks(probe, order) {
   for (const lang of order) {
     const stream = audioStreams.find(s => streamLang(s) === lang)
     if (stream) picked.push({ lang, label: labelForAudio(lang), index: stream.index })
+  }
+  if (!picked.length && audioStreams.length) {
+    const lang = order[0] || streamLang(audioStreams[0]) || 'ja'
+    picked.push({ lang, label: labelForAudio(lang), index: audioStreams[0].index })
   }
   return picked
 }
@@ -416,6 +439,10 @@ async function processSource(catalog, source) {
     console.log('  Already on R2, skip encode.')
     return entryFor(catalog, source)
   }
+  if (SKIP_MISSING_PUBLIC === '1') {
+    console.log('  Missing on public R2, skip encode.')
+    return null
+  }
 
   const outDir = path.join(TEMP_ROOT, catalog.id, source.key)
   if (fs.existsSync(path.join(outDir, `master-${defaultTrack.lang}.m3u8`))) {
@@ -449,9 +476,9 @@ function jjkSources() {
     badge: 'FILM',
   })
   for (const season of ['S01', 'S02']) {
-    const dir = path.join(base, `Jujutsu Kaisen ${season}`)
     const offset = season === 'S01' ? 0 : 24
-    for (const file of listFiles(dir, /\.mkv$/i)) {
+    const files = listFilesDeep(base, new RegExp(`${season}E\\d+.*\\.mkv$`, 'i'))
+    for (const file of files) {
       const ep = Number(path.basename(file).match(/S\d+E(\d+)/i)?.[1] || 0)
       if (!ep) continue
       out.push({
@@ -467,6 +494,55 @@ function jjkSources() {
     }
   }
   return out
+}
+
+function bunnyGirlSources() {
+  const s1 = path.join(MEDIA_BASE, 'Seishun Buta Yarou wa Bunny Girl Senpai no Yume wo Minai S01 (2018) VOSTFR 1080p 10bits BluRay x265 AAC -Punisher694')
+  const s2 = path.join(MEDIA_BASE, 'Rascal.Does.Not.Dream.of.Bunny.Girl.Senpai.S02.MULTi.1080p.WEBRiP.x265-T3KASHi')
+  const sources = [
+    ...listFilesDeep(s1, /\.mkv$/i),
+    ...listFilesDeep(s2, /\.mkv$/i),
+  ]
+  return sources.map(file => {
+    const match = path.basename(file).match(/S(\d{2})E(\d{2})/i)
+    if (!match) return null
+    const seasonNumber = Number(match[1])
+    const ep = Number(match[2])
+    const season = `S${pad(seasonNumber, 2)}`
+    const globalEp = (seasonNumber - 1) * 13 + ep
+    return {
+      path: file,
+      key: `${season}E${pad(ep)}`,
+      episode: globalEp,
+      episodeLabel: `${season}E${pad(ep)}`,
+      title: `Saison ${seasonNumber} - Episode ${ep}`,
+      season,
+      arc: `Saison ${seasonNumber}`,
+      progressKey: `${season}E${pad(ep)}`,
+    }
+  }).filter(Boolean)
+}
+
+function rentGirlfriendSources() {
+  const dir = path.join(MEDIA_BASE, 'Kanojo, Okarishimasu')
+  return listFilesDeep(dir, /\.mkv$/i).map(file => {
+    const match = path.basename(file).match(/S(\d{2})E(\d{2})/i)
+    if (!match) return null
+    const seasonNumber = Number(match[1])
+    const ep = Number(match[2])
+    const season = `S${pad(seasonNumber, 2)}`
+    const globalEp = (seasonNumber - 1) * 12 + ep
+    return {
+      path: file,
+      key: `${season}E${pad(ep)}`,
+      episode: globalEp,
+      episodeLabel: `${season}E${pad(ep)}`,
+      title: `Saison ${seasonNumber} - Episode ${ep}`,
+      season,
+      arc: `Saison ${seasonNumber}`,
+      progressKey: `${season}E${pad(ep)}`,
+    }
+  }).filter(Boolean)
 }
 
 function aotSources() {
@@ -554,12 +630,37 @@ function violetOvaSources() {
   }] : []
 }
 
+function violetSideStorySources() {
+  const file = 'F:\\Brams-Score-By-Freydiss-new\\public\\Violet Evergarden\\[Erai-raws] Violet Evergarden - 01 ~ 14 (Plus Specials) [1080p][Multiple Subtitle]\\[Erai-raws] Violet Evergarden - Eien to Jidou Shuki Ningyou [1080p][Multiple Subtitle][22647129].mkv'
+  return fs.existsSync(file) ? [{
+    path: file,
+    key: 'SIDE_STORY',
+    episode: 100,
+    episodeLabel: 'Film 1',
+    title: 'Violet Evergarden: Eternity and the Auto Memory Doll',
+    season: 'Film',
+    arc: 'Film',
+    kind: 'film',
+    progressKey: 'film-eternity-auto-memory-doll',
+    badge: 'VOSTFR',
+  }] : []
+}
+
 function writeCatalogJson(catalog, entries) {
   const jsonPath = path.join(root, 'src', 'data', catalog.json)
   if (catalog.id === 'violet-ova') {
     const current = fs.existsSync(jsonPath) ? JSON.parse(fs.readFileSync(jsonPath, 'utf8')) : []
     const clean = current.filter(v => v.kind !== 'ova' && v.progressKey !== 'ova-14')
     const filmIndex = clean.findIndex(v => v.kind === 'film')
+    const insertAt = filmIndex >= 0 ? filmIndex : clean.length
+    clean.splice(insertAt, 0, ...entries)
+    fs.writeFileSync(jsonPath, JSON.stringify(clean, null, 2) + '\n')
+    return
+  }
+  if (catalog.id === 'violet-side-story') {
+    const current = fs.existsSync(jsonPath) ? JSON.parse(fs.readFileSync(jsonPath, 'utf8')) : []
+    const clean = current.filter(v => v.progressKey !== 'film-eternity-auto-memory-doll')
+    const filmIndex = clean.findIndex(v => v.kind === 'film' && v.progressKey !== 'film-eternity-auto-memory-doll')
     const insertAt = filmIndex >= 0 ? filmIndex : clean.length
     clean.splice(insertAt, 0, ...entries)
     fs.writeFileSync(jsonPath, JSON.stringify(clean, null, 2) + '\n')
@@ -597,12 +698,30 @@ const catalogs = [
     sources: lovePrismSources,
   },
   {
+    id: 'bunny-girl',
+    json: 'bunny-girl-videos.json',
+    keyPrefix: 'anime/bunny-girl-hls',
+    preferredAudio: 'ja',
+    audioOrder: ['ja', 'fr'],
+    subtitles: [{ lang: 'fr' }],
+    sources: bunnyGirlSources,
+  },
+  {
+    id: 'rent-girlfriend',
+    json: 'rent-girlfriend-videos.json',
+    keyPrefix: 'anime/rent-girlfriend-hls',
+    preferredAudio: 'ja',
+    audioOrder: ['ja', 'fr'],
+    subtitles: [{ lang: 'fr' }],
+    sources: rentGirlfriendSources,
+  },
+  {
     id: 'carole-tuesday',
     json: 'carole-tuesday-videos.json',
     keyPrefix: 'anime/carole-tuesday-hls',
     preferredAudio: 'ja',
     audioOrder: ['ja'],
-    subtitles: [{ lang: 'fr' }, { lang: 'en' }],
+    subtitles: [{ lang: 'fr' }],
     sources: caroleTuesdaySources,
   },
   {
@@ -613,6 +732,15 @@ const catalogs = [
     audioOrder: ['ja', 'fr'],
     subtitles: [{ lang: 'fr' }],
     sources: violetOvaSources,
+  },
+  {
+    id: 'violet-side-story',
+    json: 'violet-evergarden-videos.json',
+    keyPrefix: 'anime/violet-evergarden-hls',
+    preferredAudio: 'ja',
+    audioOrder: ['ja'],
+    subtitles: [{ lang: 'fr' }],
+    sources: violetSideStorySources,
   },
 ]
 

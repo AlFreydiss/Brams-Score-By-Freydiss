@@ -1,4 +1,19 @@
 import { useState, useEffect, useMemo } from 'react'
+import AOT_VIDEOS from '../data/aot-videos.json'
+import BUNNY_VIDEOS from '../data/bunny-girl-videos.json'
+import CAROLE_TUESDAY_VIDEOS from '../data/carole-tuesday-videos.json'
+import JJK_VIDEOS from '../data/jjk-videos.json'
+import LOVE_PRISM_VIDEOS from '../data/love-prism-videos.json'
+import RENT_VIDEOS from '../data/rent-girlfriend-videos.json'
+
+function videoCountLabel(count, target) {
+  if (!count) return 'Upload requis'
+  return count >= target ? String(count) : `${count}/${target}`
+}
+
+function availabilityLabel(count) {
+  return count ? 'Disponible' : 'Upload requis'
+}
 
 const ANIMES = [
   {
@@ -70,8 +85,8 @@ const ANIMES = [
     description: "Yuji Itadori avale un doigt de Ryomen Sukuna, le roi des Fléaux. Condamné à mort, il rejoint l'École de sorcellerie de Jujutsu pour trouver les doigts restants.",
     stats: [
       { label: 'Chapitres', value: '263' },
-      { label: 'Épisodes', value: '47 + film' },
-      { label: 'Statut', value: 'Disponible' },
+      { label: 'Vidéos', value: videoCountLabel(JJK_VIDEOS.length, 48) },
+      { label: 'Statut', value: availabilityLabel(JJK_VIDEOS.length) },
     ],
     action: '▶ Accéder',
     badge: 'NOUVEAU',
@@ -108,8 +123,8 @@ const ANIMES = [
     description: "Eren Yeager découvre que les murs qui protègent l'humanité cachent un secret bien plus sombre que les Titans eux-mêmes.",
     stats: [
       { label: 'Chapitres', value: '81' },
-      { label: 'Épisodes', value: '38' },
-      { label: 'Statut', value: 'Disponible' },
+      { label: 'Vidéos', value: videoCountLabel(AOT_VIDEOS.length, 38) },
+      { label: 'Statut', value: availabilityLabel(AOT_VIDEOS.length) },
     ],
     action: '▶ Accéder',
     badge: 'NOUVEAU',
@@ -239,18 +254,58 @@ const ANIMES = [
     emoji: '♪',
     color: '#ec4899',
     colorDark: '#5b1038',
-    coverImage: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism-hls/S01E001/thumb.jpg',
+    coverImage: LOVE_PRISM_VIDEOS[0]?.thumbnail || 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism-hls/S01E001/thumb.jpg',
     coverPosition: 'center center',
     genres: ['Romance', 'Musique', 'Drame'],
     description: 'Saison 1 en VF et japonais, avec sous-titres selon les pistes disponibles.',
     stats: [
-      { label: 'Episodes', value: '20' },
+      { label: 'Episodes', value: videoCountLabel(LOVE_PRISM_VIDEOS.length, 20) },
       { label: 'Audio', value: 'VF + VO' },
-      { label: 'Statut', value: 'Disponible' },
+      { label: 'Statut', value: availabilityLabel(LOVE_PRISM_VIDEOS.length) },
     ],
     action: '▶ Regarder',
     badge: 'NOUVEAU',
     badgeColor: '#ec4899',
+  },
+  {
+    id: 'bunny-girl',
+    title: 'Bunny Girl Senpai',
+    subtitle: 'Saisons 1-2 · VO + sous-titres',
+    emoji: '◆',
+    color: '#8b7cff',
+    colorDark: '#30255f',
+    coverImage: BUNNY_VIDEOS[0]?.thumbnail || null,
+    coverPosition: 'center center',
+    genres: ['Romance', 'Surnaturel', 'Drame'],
+    description: "Sakuta rencontre Mai, une lycéenne que plus personne ne semble voir, et plonge dans les mystères du syndrome de l'adolescence.",
+    stats: [
+      { label: 'Episodes', value: videoCountLabel(BUNNY_VIDEOS.length, 26) },
+      { label: 'Audio', value: 'VO + VF S2' },
+      { label: 'Sous-titres', value: 'FR' },
+    ],
+    action: '▶ Regarder',
+    badge: 'NOUVEAU',
+    badgeColor: '#8b7cff',
+  },
+  {
+    id: 'rent-girlfriend',
+    title: 'Rent-a-Girlfriend',
+    subtitle: 'Kanojo, Okarishimasu · S1-S4',
+    emoji: '◇',
+    color: '#14b8a6',
+    colorDark: '#064e46',
+    coverImage: RENT_VIDEOS[0]?.thumbnail || null,
+    coverPosition: 'center center',
+    genres: ['Romance', 'Comédie', 'Slice of Life'],
+    description: "Kazuya loue une petite amie après une rupture, mais sa rencontre avec Chizuru va vite rendre la situation impossible à contrôler.",
+    stats: [
+      { label: 'Episodes', value: videoCountLabel(RENT_VIDEOS.length, 48) },
+      { label: 'Saisons', value: '4' },
+      { label: 'Sous-titres', value: 'FR' },
+    ],
+    action: '▶ Regarder',
+    badge: 'NOUVEAU',
+    badgeColor: '#14b8a6',
   },
   {
     id: 'carole-tuesday',
@@ -259,14 +314,14 @@ const ANIMES = [
     emoji: '♫',
     color: '#14b8a6',
     colorDark: '#064e46',
-    coverImage: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/carole-tuesday-hls/S01E001/thumb.jpg',
+    coverImage: CAROLE_TUESDAY_VIDEOS[0]?.thumbnail || null,
     coverPosition: 'center center',
     genres: ['Musique', 'Drame', 'Science-fiction'],
-    description: 'Carole et Tuesday poursuivent leur reve musical sur Mars. Lecture en japonais avec sous-titres francais et anglais.',
+    description: 'Carole et Tuesday poursuivent leur reve musical sur Mars. Lecture en japonais avec sous-titres francais.',
     stats: [
-      { label: 'Episodes', value: '24' },
+      { label: 'Episodes', value: videoCountLabel(CAROLE_TUESDAY_VIDEOS.length, 24) },
       { label: 'Audio', value: 'Japonais' },
-      { label: 'Sous-titres', value: 'FR + EN' },
+      { label: 'Sous-titres', value: 'FR' },
     ],
     action: '▶ Regarder',
     badge: 'NOUVEAU',
@@ -367,6 +422,8 @@ const SEARCH_ALIASES = {
   'violet-evergarden': ['violet', 'violet evergarden', 'vostfr', 'vf', 'auto memory doll', 'doll'],
   vivy: ['vivy', 'fluorite', "fluorite eye's song", 'ia', 'matsumoto', 'wit studio'],
   'love-prism': ['love through a prism', 'prism', 'romance', 'musique'],
+  'bunny-girl': ['bunny girl senpai', 'rascal does not dream', 'seishun buta yarou', 'mai sakurajima', 'sakuta'],
+  'rent-girlfriend': ['rent a girlfriend', 'rent-a-girlfriend', 'kanojo okarishimasu', 'kanojo, okarishimasu', 'chizuru', 'kazuya'],
   'carole-tuesday': ['carole', 'tuesday', 'carole and tuesday', 'carole & tuesday', 'ct', 'music'],
   bc: ['black clover', 'asta', 'yuno', 'trefle', 'magie'],
   mha: ['mha', 'my hero academia', 'boku no hero academia', 'bnha', 'deku', 'izuku'],
@@ -703,7 +760,7 @@ function ComingSoonCard({ index }) {
   )
 }
 
-export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrstone, onOpenJjk, onOpenKingdom, onOpenAot, onOpenKny, onOpenNnt, onOpenSl, onOpenDbs, onOpenViolet, onOpenVivy, onOpenLovePrism, onOpenCaroleTuesday, onOpenBc, onOpenMha, onOpenFireforce, onOpenBluelock }) {
+export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrstone, onOpenJjk, onOpenKingdom, onOpenAot, onOpenKny, onOpenNnt, onOpenSl, onOpenDbs, onOpenViolet, onOpenVivy, onOpenLovePrism, onOpenCaroleTuesday, onOpenBunnyGirl, onOpenRentGirlfriend, onOpenBc, onOpenMha, onOpenFireforce, onOpenBluelock }) {
   const [query, setQuery] = useState('')
   const [selectedGenres, setSelectedGenres] = useState(new Set())
 
@@ -761,6 +818,8 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
       vivy: onOpenVivy,
       'love-prism': onOpenLovePrism,
       'carole-tuesday': onOpenCaroleTuesday,
+      'bunny-girl': onOpenBunnyGirl,
+      'rent-girlfriend': onOpenRentGirlfriend,
       bc: onOpenBc, mha: onOpenMha, fireforce: onOpenFireforce, bluelock: onOpenBluelock,
     }
     map[id]?.()
