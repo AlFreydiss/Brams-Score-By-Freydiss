@@ -106,6 +106,33 @@
 
     /* Scrollbar */
     ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: #08090D; } ::-webkit-scrollbar-thumb { background: rgba(191,164,106,.3); border-radius: 3px; }
+
+    /* === Premium Anime Cards (3/4, 20px radius, glassmorphism, per spec) === */
+    .anime-card {
+      transition: transform 220ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 220ms ease;
+      will-change: transform;
+    }
+    .anime-card:hover {
+      /* Tailwind also applies scale + lift; this adds luxury depth */
+      box-shadow: 0 30px 80px -15px rgba(0,0,0,0.68), 0 18px 32px -10px rgba(0,0,0,0.5);
+    }
+    .anime-glass {
+      background: rgba(12,13,18,0.78);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-top: 1px solid rgba(255,255,255,0.10);
+    }
+    .anime-genre {
+      font-size: 9px; line-height: 1; padding: 1px 7px; border-radius: 999px;
+      background: rgba(255,255,255,0.13); color: #fff; font-weight: 700; letter-spacing: -0.2px;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .nouveau-badge {
+      font-size: 8.5px; font-weight: 900; letter-spacing: 1.8px; line-height:1;
+      background: #fff; color: #0a0b0f; padding: 2px 10px 1px; border-radius: 999px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.45); text-transform: uppercase;
+    }
+    .score-star { color: #facc15; font-size: 12px; font-weight: 900; }
   </style>
 </head>
 <body>
@@ -175,6 +202,66 @@
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5" id="cards-grid"></div>
 
 </main>
+
+<!-- ── Premium Interactive Anime Cards & Gallery (Tailwind + JS, per spec) ──── -->
+<section class="max-w-[1380px] mx-auto px-6 pb-16">
+  <div class="flex items-end justify-between mb-5">
+    <div>
+      <div class="uppercase tracking-[2.5px] text-[10px] font-black text-[#BFA46A]/60">DÉMO FRONTEND</div>
+      <h2 class="text-[28px] font-black tracking-[-1.2px] leading-none">Cartes Anime Premium</h2>
+      <p class="text-[12px] text-white/40 mt-1">Ratio 3:4 · Rayon 20px · Ombre luxe · Hover scale(1.015)+lift · Glassmorphism · localStorage ♥</p>
+    </div>
+    <div class="text-right text-[11px] text-white/30 font-medium hidden sm:block">
+      Grille responsive 4–6 colonnes<br>
+      <span id="anime-fav-count" class="font-mono text-[#BFA46A]">0</span> favoris persistés
+    </div>
+  </div>
+
+  <!-- Responsive grid: 2 (mobile) → 3 → 4 → 5 → 6 cols -->
+  <div id="anime-gallery"
+       class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5 sm:gap-6">
+    <!-- Populated by JS below -->
+  </div>
+
+  <!-- Example static card template (for reference / copy-paste) -->
+  <details class="mt-8 group">
+    <summary class="cursor-pointer text-[10px] font-bold tracking-widest text-white/30 hover:text-white/60 select-none">AFFICHER LE TEMPLATE HTML DE CARTE (standalone)</summary>
+    <div class="mt-3 p-4 rounded-2xl bg-black/60 border border-white/10 text-[10px] font-mono overflow-auto text-white/70">
+&lt;div class="anime-card group relative w-full rounded-[20px] overflow-hidden shadow-[0_25px_60px_-12px_rgb(0,0,0),0_10px_20px_-6px_rgb(0,0,0)] hover:scale-[1.015] hover:-translate-y-1 transition-all duration-200 cursor-pointer" data-anime-id="101"&gt;
+  &lt;div class="relative aspect-[3/4] bg-zinc-950"&gt;
+    &lt;img src="https://picsum.photos/seed/one-piece-luffy/600/800" class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" alt="One Piece"&gt;
+
+    &lt;!-- NOUVEAU badge --&gt;
+    &lt;div class="nouveau-badge absolute top-3 left-3 z-30"&gt;NOUVEAU&lt;/div&gt;
+
+    &lt;!-- Score + star --&gt;
+    &lt;div class="absolute top-3 right-3 z-30 flex items-center gap-1 rounded-full bg-black/70 px-2 py-0.5 text-xs font-extrabold backdrop-blur"&gt;
+      9.4 &lt;span class="score-star"&gt;★&lt;/span&gt;
+    &lt;/div&gt;
+
+    &lt;!-- Glassmorphism overlay --&gt;
+    &lt;div class="anime-glass absolute inset-x-0 bottom-0 z-20 p-3.5 flex flex-col justify-end"&gt;
+      &lt;div class="text-white"&gt;
+        &lt;div class="font-black text-[14.5px] tracking-[-0.3px] leading-[1.05] mb-1.5 pr-8"&gt;One Piece&lt;/div&gt;
+        &lt;div class="flex items-center gap-2 mb-2"&gt;
+          &lt;div class="text-[#facc15] text-[10px] font-extrabold tracking-tight"&gt;9.4 ★&lt;/div&gt;
+          &lt;div class="flex gap-1"&gt;
+            &lt;span class="anime-genre"&gt;Aventure&lt;/span&gt;
+            &lt;span class="anime-genre"&gt;Action&lt;/span&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+        &lt;p class="text-[10px] text-white/65 leading-snug line-clamp-2 mb-3"&gt;Luffy et son équipage sillonnent les mers à la recherche du légendaire trésor « One Piece ».&lt;/p&gt;
+        &lt;div class="flex gap-2"&gt;
+          &lt;button onclick="event.stopPropagation();alert('Ouvrir fiche détaillée (stub)');" class="flex-1 rounded-[10px] bg-white py-[5px] text-[10px] font-extrabold tracking-[0.5px] text-black active:scale-[0.985]"&gt;Voir la fiche&lt;/button&gt;
+          &lt;button onclick="event.stopPropagation(); /* toggleFav stub */" class="w-9 rounded-[10px] border border-white/20 text-lg leading-none pb-0.5 hover:bg-white/10 active:bg-white/15"&gt;♥&lt;/button&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+    </div>
+  </details>
+</section>
 
 <!-- ── Preview modal ───────────────────────────────────────────────────────── -->
 <div id="modal" class="fixed inset-0 z-[999] hidden items-center justify-center p-4" style="background:rgba(0,0,0,.85); backdrop-filter:blur(12px);">
@@ -370,6 +457,201 @@ document.getElementById('modal').addEventListener('click', e => {
   if (e.target === e.currentTarget) closeModal()
 })
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal() })
+
+// ═════════════════════════════════════════════════════════════════════════════
+// PREMIUM ANIME CARDS GALLERY — Tailwind + JS implementation (exact spec)
+// 3/4 ratio, 20px radius, luxury shadow, picsum seeds, NOUVEAU badge, score★
+// Hover: scale 1.015 + lift (via Tailwind + .anime-card)
+// Glassmorphism overlay (title, score, 2-3 genres, short synopsis)
+// Buttons: "Voir la fiche" + heart (favorites via localStorage stub)
+// Gallery grid: responsive 2→3→4→5→6 cols
+// ═════════════════════════════════════════════════════════════════════════════
+
+const ANIME_CARDS_DATA = [
+  { id: 101, title: "One Piece", score: "9.4", genres: ["Aventure", "Action"], synopsis: "Luffy et son équipage sillonnent les mers à la recherche du légendaire trésor « One Piece ».", seed: "luffy-onepiece", isNew: false },
+  { id: 102, title: "Violet Evergarden", score: "9.1", genres: ["Drame", "Fantastique"], synopsis: "Une auto-dictée découvre les émotions humaines à travers l'art des lettres.", seed: "violet-evergarden", isNew: true },
+  { id: 103, title: "Jujutsu Kaisen", score: "8.8", genres: ["Action", "Surnaturel"], synopsis: "Des sorciers combattent les fléaux dans un Japon moderne hanté.", seed: "gojo-jjk", isNew: false },
+  { id: 104, title: "Demon Slayer", score: "8.7", genres: ["Action", "Historique"], synopsis: "Tanjiro parcourt le Japon pour venger sa famille et guérir sa sœur.", seed: "tanjiro-demon", isNew: false },
+  { id: 105, title: "L'Attaque des Titans", score: "9.0", genres: ["Action", "Drame"], synopsis: "L'humanité lutte désespérément contre les Titans géants.", seed: "aot-eren", isNew: false },
+  { id: 106, title: "Fullmetal Alchemist", score: "9.3", genres: ["Aventure", "Drame"], synopsis: "Les frères Elric traquent la Pierre Philosophale au prix de leur humanité.", seed: "edward-fma", isNew: true },
+  { id: 107, title: "Vivy: Fluorite Eye's Song", score: "8.6", genres: ["Sci-Fi", "Musical"], synopsis: "Une IA chanteuse réécrit l'histoire pour sauver l'humanité.", seed: "vivy-fluo", isNew: false },
+  { id: 108, title: "My Hero Academia", score: "8.4", genres: ["Action", "Super-héros"], synopsis: "Izuku Midoriya, sans Quirk, rêve de devenir le plus grand héros.", seed: "deku-mha", isNew: false },
+]
+
+const FAVS_LS_KEY = 'brams-anime-favs'
+
+function getFavs() {
+  try { return JSON.parse(localStorage.getItem(FAVS_LS_KEY) || '[]') } catch { return [] }
+}
+function setFavs(favs) {
+  localStorage.setItem(FAVS_LS_KEY, JSON.stringify(favs))
+  updateFavCount(favs.length)
+}
+
+function updateFavCount(n) {
+  const el = document.getElementById('anime-fav-count')
+  if (el) el.textContent = n
+}
+
+function createAnimeCardHTML(anime, isFav) {
+  const img = `https://picsum.photos/seed/${anime.seed}/600/800`
+  const genresHTML = anime.genres.slice(0, 3).map(g =>
+    `<span class="anime-genre">${g}</span>`
+  ).join('')
+
+  const heartClass = isFav ? 'text-red-500' : 'text-white/70 hover:text-white/90'
+  const heartIcon = isFav ? '♥' : '♡'
+
+  return `
+  <div class="anime-card group relative rounded-[20px] overflow-hidden shadow-[0_25px_60px_-12px_rgb(0,0,0),0_10px_20px_-6px_rgb(0,0,0)] hover:scale-[1.015] hover:-translate-y-1 transition-all duration-200 cursor-pointer bg-zinc-950"
+       data-anime-id="${anime.id}"
+       onclick="viewAnimeFiche(${anime.id})">
+    <div class="relative aspect-[3/4]">
+      <!-- Poster via picsum seed (spec) -->
+      <img
+        src="${img}"
+        alt="${anime.title}"
+        class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+        loading="lazy"
+      />
+
+      <!-- NOUVEAU badge (spec) -->
+      ${anime.isNew ? `<div class="nouveau-badge absolute top-3 left-3 z-30">NOUVEAU</div>` : ''}
+
+      <!-- Score with star (spec) -->
+      <div class="absolute top-3 right-3 z-30 flex items-center gap-1 rounded-full bg-black/70 px-2 py-[1px] text-xs font-extrabold backdrop-blur">
+        ${anime.score} <span class="score-star">★</span>
+      </div>
+
+      <!-- Glassmorphism overlay (spec) -->
+      <div class="anime-glass absolute inset-x-0 bottom-0 z-20 p-3.5 flex flex-col justify-end min-h-[54%]">
+        <div class="text-white">
+          <div class="font-black text-[14.2px] tracking-[-0.35px] leading-[1.02] mb-1.5 pr-6 drop-shadow">
+            ${anime.title}
+          </div>
+
+          <div class="flex items-center gap-2 mb-1.5">
+            <div class="text-[#facc15] text-[10px] font-extrabold tracking-[-0.1px]">${anime.score} ★</div>
+            <div class="flex gap-1">${genresHTML}</div>
+          </div>
+
+          <p class="text-[9.5px] text-white/70 leading-[1.32] line-clamp-2 mb-3">
+            ${anime.synopsis}
+          </p>
+
+          <div class="flex items-center gap-2">
+            <!-- Voir la fiche button -->
+            <button
+              onclick="event.stopPropagation(); viewAnimeFiche(${anime.id});"
+              class="flex-1 rounded-[10px] bg-white/95 active:bg-white py-[5.5px] text-[10px] font-extrabold tracking-[0.6px] text-black shadow-sm active:scale-[0.985] transition">
+              Voir la fiche
+            </button>
+
+            <!-- Heart favorite (localStorage stub) -->
+            <button
+              onclick="event.stopPropagation(); toggleAnimeFav(${anime.id}, this);"
+              class="w-9 h-8 flex items-center justify-center text-xl leading-none rounded-[10px] border border-white/20 ${heartClass} active:bg-white/10 transition"
+              aria-label="Favori">
+              ${heartIcon}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>`
+}
+
+function renderAnimeGallery() {
+  const container = document.getElementById('anime-gallery')
+  if (!container) return
+
+  const favs = getFavs()
+  container.innerHTML = ANIME_CARDS_DATA.map(a => createAnimeCardHTML(a, favs.includes(a.id))).join('')
+
+  updateFavCount(favs.length)
+}
+
+window.toggleAnimeFav = function(id, btn) {
+  let favs = getFavs()
+  const idx = favs.indexOf(id)
+  const isNowFav = idx === -1
+
+  if (isNowFav) {
+    favs.push(id)
+    btn.classList.remove('text-white/70', 'hover:text-white/90')
+    btn.classList.add('text-red-500')
+    btn.innerHTML = '♥'
+  } else {
+    favs.splice(idx, 1)
+    btn.classList.remove('text-red-500')
+    btn.classList.add('text-white/70', 'hover:text-white/90')
+    btn.innerHTML = '♡'
+  }
+
+  setFavs(favs)
+
+  // Optional: subtle pulse on the card
+  const card = btn.closest('.anime-card')
+  if (card) {
+    card.style.transitionDuration = '60ms'
+    card.style.transform = isNowFav ? 'scale(1.03)' : 'scale(0.985)'
+    setTimeout(() => {
+      card.style.transform = ''
+      card.style.transitionDuration = ''
+    }, 160)
+  }
+}
+
+window.viewAnimeFiche = function(id) {
+  const anime = ANIME_CARDS_DATA.find(a => a.id === id)
+  if (!anime) return
+
+  // Stub: scale-pop the card + console + visual toast
+  const card = document.querySelector(`.anime-card[data-anime-id="${id}"]`)
+  if (card) {
+    const orig = card.style.boxShadow
+    card.style.transitionDuration = '90ms'
+    card.style.transform = 'scale(0.975)'
+    card.style.boxShadow = '0 0 0 1px rgba(191,164,106,0.6), 0 30px 70px -10px rgba(0,0,0,0.8)'
+    setTimeout(() => {
+      card.style.transform = ''
+      card.style.boxShadow = orig || ''
+      card.style.transitionDuration = ''
+    }, 220)
+  }
+
+  // Simple non-intrusive feedback (could be replaced by real modal)
+  const toast = document.createElement('div')
+  toast.className = 'fixed bottom-4 left-1/2 -translate-x-1/2 z-[9999] px-5 py-2 rounded-2xl text-xs font-bold bg-white/95 text-black shadow-xl flex items-center gap-2'
+  toast.innerHTML = `📖 <span>${anime.title}</span> <span class="opacity-50">— fiche ouverte (stub)</span>`
+  document.body.appendChild(toast)
+  setTimeout(() => {
+    toast.style.transition = 'opacity 180ms ease'
+    toast.style.opacity = '0'
+    setTimeout(() => toast.remove(), 180)
+  }, 1350)
+
+  // For integration: window.dispatchEvent(new CustomEvent('open-anime-fiche', {detail: anime}))
+}
+
+function initAnimeGallery() {
+  // Seed initial favs for demo if none (only once)
+  if (!localStorage.getItem(FAVS_LS_KEY)) {
+    localStorage.setItem(FAVS_LS_KEY, JSON.stringify([101, 106]))
+  }
+  renderAnimeGallery()
+
+  // Re-render on storage change (multi-tab)
+  window.addEventListener('storage', (e) => {
+    if (e.key === FAVS_LS_KEY) renderAnimeGallery()
+  })
+
+  // Keyboard hint (dev)
+  // console.log('%c[AnimeCards] Premium gallery ready. Hearts use localStorage.', 'color:#555')
+}
+
+// Auto-init
+initAnimeGallery()
 </script>
 </body>
 </html>

@@ -910,6 +910,15 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
     return Array.from(genres).sort((a, b) => a.localeCompare(b, 'fr'))
   }, [sortedAnimes])
 
+  // Curated ~10-12 primary genre pills for the beautiful line (per task spec: Action, Fantasy, Drame, Romance, Surnaturel, Aventure, Science-Fiction etc.)
+  // All genres still participate in filtering logic; only display is limited for a clean single/multi-line presentation.
+  const displayGenres = useMemo(() => {
+    const preferred = ['Action', 'Fantasy', 'Drame', 'Romance', 'Surnaturel', 'Aventure', 'Science-fiction', 'Shōnen', 'Mystère', 'Thriller', 'Historique', 'Super-héros']
+    const sortedPreferred = preferred.filter(g => genreOptions.includes(g))
+    const others = genreOptions.filter(g => !preferred.includes(g))
+    return [...sortedPreferred, ...others].slice(0, 12)
+  }, [genreOptions])
+
   const toggleGenre = (genre) => {
     setSelectedGenres(prev => {
       const next = new Set(prev)
@@ -1050,88 +1059,83 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
               </p>
             </div>
 
-            <div style={{ margin:'0 auto 30px', maxWidth:820 }}>
-              <div style={{
-                display:'flex', alignItems:'center', gap:10,
-                background:'rgba(255,255,255,0.055)',
-                border:'1px solid rgba(255,255,255,0.10)',
-                borderRadius:12,
-                padding:'10px 12px',
-                boxShadow:'0 18px 45px rgba(0,0,0,0.22)',
-              }}>
-                <span style={{ color:'rgba(255,255,255,0.42)', fontSize:15, flexShrink:0 }}>⌕</span>
-                <input
-                  value={query}
-                  onChange={event => setQuery(event.target.value)}
-                  placeholder="Rechercher : attaque des titans, snk, aot, violet, dbs..."
-                  style={{
-                    width:'100%',
-                    background:'transparent',
-                    border:'none',
-                    outline:'none',
-                    color:'#fff',
-                    fontSize:14,
-                    fontWeight:650,
-                    fontFamily:'var(--body)',
-                  }}
-                />
-                {(query || selectedGenres.size > 0) && (
-                  <button
-                    type="button"
-                    onClick={() => { setQuery(''); setSelectedGenres(new Set()) }}
-                    style={{
-                      flexShrink:0,
-                      border:'1px solid rgba(255,255,255,0.10)',
-                      background:'rgba(255,255,255,0.06)',
-                      color:'rgba(255,255,255,0.72)',
-                      borderRadius:8,
-                      padding:'7px 10px',
-                      cursor:'pointer',
-                      fontSize:12,
-                      fontWeight:800,
-                    }}
-                  >
-                    Reset
-                  </button>
-                )}
+            {/* ── Filters Section: large secondary search + premium multi-select genre pills (violet accent) ── */}
+            <div className="mx-auto max-w-[860px] px-5" style={{ margin: '0 auto 32px' }}>
+              {/* Large search input (prominent here for gallery filtering; combines with top-level nav if present) */}
+              <div className="mb-4">
+                <div className="relative">
+                  <div className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-[17px] text-violet-400/60">⌕</div>
+                  <input
+                    value={query}
+                    onChange={event => setQuery(event.target.value)}
+                    placeholder="Rechercher un titre, personnage, studio ou genre (ex: violet, luffy, action...)"
+                    className="w-full rounded-2xl border border-white/10 bg-[#0b0d14] py-3.5 pl-12 pr-5 text-[15px] font-medium text-white placeholder:text-white/35 outline-none transition-all focus:border-violet-500/50 focus:shadow-[0_0_0_1px_rgba(124,58,237,0.25),0_12px_36px_-12px_rgba(0,0,0,0.55)]"
+                    style={{ fontFamily: 'var(--body)' }}
+                  />
+                  {query && (
+                    <button
+                      type="button"
+                      onClick={() => setQuery('')}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 rounded-lg bg-white/5 px-2 py-0.5 text-[10px] font-extrabold text-white/45 transition hover:bg-white/10 hover:text-white/70"
+                      aria-label="Effacer la recherche"
+                    >
+                      CLEAR
+                    </button>
+                  )}
+                </div>
               </div>
 
-              <div style={{ display:'flex', flexWrap:'wrap', gap:7, marginTop:12, justifyContent:'center', alignItems:'center' }}>
+              {/* Beautiful line(s) of clickable premium genre pills — multi-select with violet accent, hover lift, selected glow */}
+              <div className="mb-2 flex flex-wrap items-center justify-center gap-2">
+                {/* All / Clear genres */}
                 <button
                   type="button"
                   onClick={() => setSelectedGenres(new Set())}
-                  style={{
-                    border:`1px solid ${selectedGenres.size === 0 ? 'rgba(224,82,74,0.65)' : 'rgba(255,255,255,0.10)'}`,
-                    background: selectedGenres.size === 0 ? 'rgba(224,82,74,0.18)' : 'rgba(255,255,255,0.045)',
-                    color: selectedGenres.size === 0 ? '#fff' : 'rgba(255,255,255,0.58)',
-                    borderRadius:999, padding:'7px 14px', cursor:'pointer', fontSize:12, fontWeight:800, transition:'all .18s',
-                  }}
+                  className={`rounded-full border px-4 py-1.5 text-xs font-extrabold tracking-[0.025em] transition-all duration-200 active:scale-[0.985] ${
+                    selectedGenres.size === 0
+                      ? 'border-violet-400/60 bg-violet-500/15 text-violet-100 shadow-[0_0_0_1px_rgba(124,58,237,0.35)]'
+                      : 'border-white/10 bg-white/4 text-white/55 hover:border-white/20 hover:bg-white/8 hover:text-white/85'
+                  }`}
                 >
                   Tous
                 </button>
-                {genreOptions.map(genre => {
+
+                {/* Genre pills — beautiful curated line (~12 max) using Tailwind. Matches requested: Action, Fantasy, Drame, Romance, Surnaturel, Aventure, Science-Fiction + key others. */}
+                {displayGenres.map(genre => {
                   const active = selectedGenres.has(genre)
                   return (
                     <button
                       key={genre}
                       type="button"
                       onClick={() => toggleGenre(genre)}
-                      style={{
-                        border:`1px solid ${active ? 'rgba(224,82,74,0.55)' : 'rgba(255,255,255,0.10)'}`,
-                        background: active ? 'rgba(224,82,74,0.16)' : 'rgba(255,255,255,0.045)',
-                        color: active ? '#fff' : 'rgba(255,255,255,0.58)',
-                        borderRadius:999, padding:'6px 12px', cursor:'pointer', fontSize:11.5, fontWeight:800,
-                        transition:'all .18s', display:'flex', alignItems:'center', gap:5,
-                      }}
+                      className={`rounded-full border px-3.5 py-1.5 text-xs font-extrabold tracking-[0.02em] transition-all duration-200 flex items-center gap-1.5 active:scale-[0.985] ${
+                        active
+                          ? 'border-violet-400/70 bg-violet-600/25 text-violet-100 shadow-[0_0_14px_rgba(124,58,237,0.42)] ring-1 ring-inset ring-violet-400/25'
+                          : 'border-white/10 bg-white/[0.035] text-white/60 hover:border-white/25 hover:bg-white/[0.075] hover:text-white/90 hover:-translate-y-px'
+                      }`}
+                      aria-pressed={active}
                     >
-                      {active && <span style={{ fontSize:9, color:'rgba(224,82,74,0.9)' }}>✓</span>}
+                      {active && <span className="text-[8px] text-violet-300/90">●</span>}
                       {genre}
                     </button>
                   )
                 })}
+
+                {/* Dedicated premium Reset button (appears when genres selected) */}
+                {selectedGenres.size > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedGenres(new Set())}
+                    className="ml-0.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] font-black tracking-wider text-white/45 transition hover:border-violet-400/40 hover:bg-violet-500/10 hover:text-violet-200/90 active:scale-[0.97]"
+                    title="Effacer la sélection de genres"
+                  >
+                    ↺ RESET
+                  </button>
+                )}
               </div>
 
-              <div style={{ marginTop:12, textAlign:'center', fontSize:12, color:'rgba(255,255,255,0.32)', fontWeight:700 }}>
+              {/* Results count */}
+              <div className="mt-1 text-center text-[11px] font-extrabold tracking-[0.09em] text-white/28">
                 {isFiltering
                   ? `${visibleAnimes.length} résultat${visibleAnimes.length > 1 ? 's' : ''}`
                   : `${sortedAnimes.length} animés disponibles`
