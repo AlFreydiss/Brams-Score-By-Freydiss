@@ -44,6 +44,7 @@ const BcPage          = lazy(() => import('./components/BcPage.jsx'))
 const MhaPage         = lazy(() => import('./components/MhaPage.jsx'))
 const FireForcePage   = lazy(() => import('./components/FireForcePage.jsx'))
 const BlueLockPage    = lazy(() => import('./components/BlueLockPage.jsx'))
+const MonUniversPage  = lazy(() => import('./components/MonUniversPage.jsx'))
 const OnePiecePage    = lazy(() => import('./components/OnePiecePage.jsx'))
 const FamilyTree3D    = lazy(() => import('./components/FamilyTree3D.jsx'))
 const BlobUploadPage  = lazy(() => import('./components/BlobUploadPage.jsx'))
@@ -242,8 +243,32 @@ export default function App() {
   const [mhaOpen,          setMhaOpen]           = useState(false)
   const [fireforcOpen,     setFireforcOpen]      = useState(false)
   const [bluelockOpen,     setBluelockOpen]      = useState(false)
+  const [monUniversOpen,   setMonUniversOpen]    = useState(false)
+  const [returnToMon,      setReturnToMon]       = useState(false)
   const [treeOpen,         setTreeOpen]          = useState(false)
   const [uploadOpen,       setUploadOpen]        = useState(false)
+
+  // Handlers for opening pages from Mon Univers (set return flag so page close goes back to dashboard)
+  const onOpenAotFromMon = () => { setMonUniversOpen(false); setReturnToMon(true); setAotOpen(true) }
+  const onOpenFireforceFromMon = () => { setMonUniversOpen(false); setReturnToMon(true); setFireforcOpen(true) }
+  const onOpenBluelockFromMon = () => { setMonUniversOpen(false); setReturnToMon(true); setBluelockOpen(true) }
+  const onOpenBunnyGirlFromMon = () => { setMonUniversOpen(false); setReturnToMon(true); setBunnyGirlOpen(true) }
+  const onOpenRentGirlfriendFromMon = () => { setMonUniversOpen(false); setReturnToMon(true); setRentGirlOpen(true) }
+  const onOpenTpnFromMon = () => { setMonUniversOpen(false); setReturnToMon(true); setTpnOpen(true) }
+  const onOpenDrstoneFromMon = () => { setMonUniversOpen(false); setReturnToMon(true); setDrstoneOpen(true) }
+  const onOpenJjkFromMon = () => { setMonUniversOpen(false); setReturnToMon(true); setJjkOpen(true) }
+  const onOpenKingdomFromMon = () => { setMonUniversOpen(false); setReturnToMon(true); setKingdomOpen(true) }
+  const onOpenKnyFromMon = () => { setMonUniversOpen(false); setReturnToMon(true); setKnyOpen(true) }
+  const onOpenNntFromMon = () => { setMonUniversOpen(false); setReturnToMon(true); setNntOpen(true) }
+  const onOpenSlFromMon = () => { setMonUniversOpen(false); setReturnToMon(true); setSlOpen(true) }
+  const onOpenDbsFromMon = () => { setMonUniversOpen(false); setReturnToMon(true); setDbsOpen(true) }
+  const onOpenVioletFromMon = () => { setMonUniversOpen(false); setReturnToMon(true); setVioletOpen(true) }
+  const onOpenVivyFromMon = () => { setMonUniversOpen(false); setReturnToMon(true); setVivyOpen(true) }
+  const onOpenLovePrismFromMon = () => { setMonUniversOpen(false); setReturnToMon(true); setLovePrismOpen(true) }
+  const onOpenCaroleTuesdayFromMon = () => { setMonUniversOpen(false); setReturnToMon(true); setCaroleTuesdayOpen(true) }
+  const onOpenBcFromMon = () => { setMonUniversOpen(false); setReturnToMon(true); setBcOpen(true) }
+  const onOpenMhaFromMon = () => { setMonUniversOpen(false); setReturnToMon(true); setMhaOpen(true) }
+  const onOpenOnepieceFromMon = () => { setMonUniversOpen(false); setReturnToMon(true); setOnepieceOpen(true) }
 
   // Ferme tous les overlays anime/média quand on change de page (sinon un overlay
   // ouvert reste affiché par-dessus la nouvelle route — ex. DBS par-dessus Messages —
@@ -254,7 +279,7 @@ export default function App() {
     setTpnOpen(false); setDrstoneOpen(false); setJjkOpen(false); setKingdomOpen(false)
     setAotOpen(false); setKnyOpen(false); setNntOpen(false); setSlOpen(false); setDbsOpen(false)
     setVioletOpen(false); setVivyOpen(false); setLovePrismOpen(false); setCaroleTuesdayOpen(false); setBunnyGirlOpen(false); setRentGirlOpen(false); setBcOpen(false); setMhaOpen(false)
-    setFireforcOpen(false); setBluelockOpen(false); setTreeOpen(false); setUploadOpen(false)
+    setFireforcOpen(false); setBluelockOpen(false); setMonUniversOpen(false); setTreeOpen(false); setUploadOpen(false)
   }, [location.pathname])
 
   useEffect(() => {
@@ -280,6 +305,7 @@ export default function App() {
     const fnMha        = () => setMhaOpen(true)
     const fnFireforce  = () => setFireforcOpen(true)
     const fnBluelock   = () => setBluelockOpen(true)
+    const fnMonUnivers = () => setMonUniversOpen(true)
     const fnTree       = () => setTreeOpen(true)
     const fnUpload     = () => setUploadOpen(true)
     document.addEventListener('open-scans',        fnScans)
@@ -304,6 +330,7 @@ export default function App() {
     document.addEventListener('open-mha',          fnMha)
     document.addEventListener('open-fireforce',    fnFireforce)
     document.addEventListener('open-bluelock',     fnBluelock)
+    document.addEventListener('open-mon-univers',  fnMonUnivers)
     document.addEventListener('open-tree',         fnTree)
     document.addEventListener('open-upload',       fnUpload)
     return () => {
@@ -329,12 +356,13 @@ export default function App() {
       document.removeEventListener('open-mha',          fnMha)
       document.removeEventListener('open-fireforce',    fnFireforce)
       document.removeEventListener('open-bluelock',     fnBluelock)
+      document.removeEventListener('open-mon-univers',  fnMonUnivers)
       document.removeEventListener('open-tree',         fnTree)
       document.removeEventListener('open-upload',       fnUpload)
     }
   }, [])
 
-  const mediaOverlayOpen = scansOpen || animeHubOpen || tpnOpen || drstoneOpen || jjkOpen || kingdomOpen || aotOpen || knyOpen || nntOpen || slOpen || dbsOpen || violetOpen || vivyOpen || lovePrismOpen || caroleTuesdayOpen || bunnyGirlOpen || rentGirlOpen || bcOpen || mhaOpen || fireforcOpen || bluelockOpen
+  const mediaOverlayOpen = scansOpen || animeHubOpen || tpnOpen || drstoneOpen || jjkOpen || kingdomOpen || aotOpen || knyOpen || nntOpen || slOpen || dbsOpen || violetOpen || vivyOpen || lovePrismOpen || caroleTuesdayOpen || bunnyGirlOpen || rentGirlOpen || bcOpen || mhaOpen || fireforcOpen || bluelockOpen || monUniversOpen
   const immersiveOverlayOpen = mediaOverlayOpen || encyclopedieOpen || treeOpen || uploadOpen
 
   const mainContent = (
@@ -484,6 +512,7 @@ export default function App() {
             onOpenMha={() => { setAnimeHubOpen(false); setMhaOpen(true) }}
             onOpenFireforce={() => { setAnimeHubOpen(false); setFireforcOpen(true) }}
             onOpenBluelock={() => { setAnimeHubOpen(false); setBluelockOpen(true) }}
+            onOpenMonUnivers={() => { setAnimeHubOpen(false); setMonUniversOpen(true) }}
           />
         ) : (
           <AuthGuard onClose={() => setAnimeHubOpen(false)} feature="les animés & scans" />
@@ -507,8 +536,20 @@ export default function App() {
       {rentGirlOpen && <RentAGirlfriendPage onClose={() => { setRentGirlOpen(false); setAnimeHubOpen(true) }} />}
       {bcOpen        && <BcPage        onClose={() => { setBcOpen(false);       setAnimeHubOpen(true) }} />}
       {mhaOpen       && <MhaPage       onClose={() => { setMhaOpen(false);      setAnimeHubOpen(true) }} />}
-      {fireforcOpen  && <FireForcePage onClose={() => { setFireforcOpen(false); setAnimeHubOpen(true) }} />}
-      {bluelockOpen  && <BlueLockPage  onClose={() => { setBluelockOpen(false); setAnimeHubOpen(true) }} />}
+      {fireforcOpen  && <FireForcePage onClose={() => { setFireforcOpen(false); if (returnToMon) { setReturnToMon(false); setMonUniversOpen(true) } else setAnimeHubOpen(true) }} />}
+      {bluelockOpen  && <BlueLockPage  onClose={() => { setBluelockOpen(false); if (returnToMon) { setReturnToMon(false); setMonUniversOpen(true) } else setAnimeHubOpen(true) }} />}
+      {monUniversOpen && (
+        <MonUniversPage 
+          onClose={() => setMonUniversOpen(false)}
+          onOpenAot={onOpenAotFromMon} onOpenFireforce={onOpenFireforceFromMon} onOpenBluelock={onOpenBluelockFromMon}
+          onOpenBunnyGirl={onOpenBunnyGirlFromMon} onOpenRentGirlfriend={onOpenRentGirlfriendFromMon}
+          onOpenTpn={onOpenTpnFromMon} onOpenDrstone={onOpenDrstoneFromMon} onOpenJjk={onOpenJjkFromMon}
+          onOpenKingdom={onOpenKingdomFromMon} onOpenKny={onOpenKnyFromMon} onOpenNnt={onOpenNntFromMon}
+          onOpenSl={onOpenSlFromMon} onOpenDbs={onOpenDbsFromMon} onOpenViolet={onOpenVioletFromMon}
+          onOpenVivy={onOpenVivyFromMon} onOpenLovePrism={onOpenLovePrismFromMon} onOpenCaroleTuesday={onOpenCaroleTuesdayFromMon}
+          onOpenBc={onOpenBcFromMon} onOpenMha={onOpenMhaFromMon} onOpenOnepiece={onOpenOnepieceFromMon}
+        />
+      )}
       {treeOpen      && <FamilyTree3D  onClose={() => setTreeOpen(false)} />}
       {scansOpen && (
         isAuthenticated

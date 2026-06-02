@@ -7,14 +7,21 @@ import { memo } from 'react'
  */
 export const ProgressRing = memo(function ProgressRing({ 
   pct = 0, 
+  videoPct,
+  chapterPct = 0,
   size = 72, 
   stroke = 6, 
   color = '#f43f5e', 
   posterSrc = null 
 }) {
+  const videoP = (videoPct != null ? videoPct : pct) || 0
   const r = (size - stroke * 2) / 2
   const circ = 2 * Math.PI * r
-  const offset = circ - Math.max(0, Math.min(100, pct)) / 100 * circ
+  const offset = circ - Math.max(0, Math.min(100, videoP)) / 100 * circ
+  const chR = r * 0.72
+  const chCirc = 2 * Math.PI * chR
+  const chOffset = chCirc - Math.max(0, Math.min(100, chapterPct)) / 100 * chCirc
+  const chStroke = Math.max(3, stroke * 0.65)
 
   return (
     <div 
@@ -57,7 +64,7 @@ export const ProgressRing = memo(function ProgressRing({
         zIndex: 1
       }} />
 
-      {/* The actual progress ring (drawn on top) */}
+      {/* The actual progress rings (drawn on top) */}
       <svg 
         width={size} 
         height={size} 
@@ -70,7 +77,7 @@ export const ProgressRing = memo(function ProgressRing({
           pointerEvents: 'none'
         }}
       >
-        {/* subtle track */}
+        {/* subtle track outer */}
         <circle 
           cx={size/2} 
           cy={size/2} 
@@ -79,7 +86,7 @@ export const ProgressRing = memo(function ProgressRing({
           stroke="rgba(255,255,255,.15)" 
           strokeWidth={stroke} 
         />
-        {/* colored progress arc */}
+        {/* colored video progress arc (outer) */}
         <circle 
           cx={size/2} 
           cy={size/2} 
@@ -95,6 +102,34 @@ export const ProgressRing = memo(function ProgressRing({
             filter: 'drop-shadow(0 0 3px ' + color + '44)'
           }}
         />
+        {/* inner chapter track + arc (green) */}
+        {chapterPct > 0 && (
+          <>
+            <circle 
+              cx={size/2} 
+              cy={size/2} 
+              r={chR} 
+              fill="none" 
+              stroke="rgba(255,255,255,.12)" 
+              strokeWidth={chStroke} 
+            />
+            <circle 
+              cx={size/2} 
+              cy={size/2} 
+              r={chR} 
+              fill="none" 
+              stroke="#34d399" 
+              strokeWidth={chStroke}
+              strokeDasharray={chCirc} 
+              strokeDashoffset={chOffset} 
+              strokeLinecap="round"
+              style={{ 
+                transition: 'stroke-dashoffset .55s cubic-bezier(0.23, 1.0, 0.32, 1)',
+                filter: 'drop-shadow(0 0 2px #34d39944)'
+              }}
+            />
+          </>
+        )}
       </svg>
 
       {/* Centered percentage label */}
@@ -113,11 +148,11 @@ export const ProgressRing = memo(function ProgressRing({
         <span style={{ 
           fontFamily: "var(--display)", 
           fontWeight: 900, 
-          fontSize: pct >= 100 ? 12 : 15, 
+          fontSize: videoP >= 100 ? 12 : 15, 
           lineHeight: 1,
           letterSpacing: '-0.02em'
         }}>
-          {pct}%
+          {videoP}%
         </span>
         <span style={{ 
           fontSize: 7, 

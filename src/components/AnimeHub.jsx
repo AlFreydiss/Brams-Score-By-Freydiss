@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
+import { ProgressRing } from './ProgressRing.jsx'
 import AOT_VIDEOS from '../data/aot-videos.json'
 import BUNNY_VIDEOS from '../data/bunny-girl-videos.json'
 import CAROLE_TUESDAY_VIDEOS from '../data/carole-tuesday-videos.json'
@@ -449,6 +450,66 @@ function searchableText(anime) {
   ].join(' '))
 }
 
+// --- Progress helpers (adapted from MonUniversPage for hub cards; uses common LS keys) ---
+const NS_LIST = ANIMES.map(a => a.id)
+const HAS_CHAPTERS = new Set([
+  'aot','fireforce','bluelock','tpn','drstone','jjk','kingdom','kny','nnt','sl','dbs','bc','mha','onepiece'
+])
+
+function loadAllProgress() {
+  const out = {}
+  try {
+    // video _vp flat
+    NS_LIST.forEach(ns => {
+      const vp = JSON.parse(localStorage.getItem(`${ns}_vp`) || '{}')
+      out[`${ns}_vp`] = vp
+    })
+    // structured video progress
+    NS_LIST.forEach(ns => {
+      const vprog = JSON.parse(localStorage.getItem(`${ns}_video_progress`) || 'null')
+      if (vprog) out[`${ns}_video_progress`] = vprog
+    })
+    // chapter _progress
+    NS_LIST.forEach(ns => {
+      const cprog = JSON.parse(localStorage.getItem(`${ns}_progress`) || '{}')
+      out[`${ns}_progress`] = cprog
+    })
+    // generic fallbacks
+    const generic = JSON.parse(localStorage.getItem('manga_progress') || '{}')
+    if (Object.keys(generic).length) out.manga_progress = generic
+  } catch {}
+  return out
+}
+
+function computeVideo(ns, all) {
+  const flat = all[`${ns}_vp`] || {}
+  const structured = all[`${ns}_video_progress`]
+  let watched = 0
+  let total = 0
+  if (structured && structured.episodes) {
+    const eps = structured.episodes
+    total = Object.keys(eps).length || 12
+    watched = Object.values(eps).filter(e => e?.completed).length
+  } else {
+    const keys = Object.keys(flat)
+    total = keys.length || 12
+    watched = keys.filter(k => flat[k]?.completed).length
+  }
+  const pct = total > 0 ? Math.round((watched / total) * 100) : 0
+  return { watched, total, pct }
+}
+
+function computeChapter(ns, all) {
+  const prog = all[`${ns}_progress`] || {}
+  const keys = Object.keys(prog)
+  const read = keys.filter(k => prog[k] === 'read').length
+  // fallback count from known or default (synced with MonUniversPage)
+  const known = { aot: 81, fireforce: 235, bluelock: 341, kingdom: 874, kny: 206, nnt: 342, sl: 202, bc: 280, tpn: 184, dbs: 101, jjk: 263, mha: 0, onepiece: 56 }
+  const total = known[ns] || Math.max(50, keys.length)
+  const pct = total > 0 ? Math.round((read / total) * 100) : 0
+  return { read, total, pct }
+}
+
 const AH_CSS = `
   @keyframes ahFadeUp  { from { opacity:0; transform:translateY(24px) } to { opacity:1; transform:none } }
   @keyframes ahTwinkle { 0%,100% { opacity:.12 } 50% { opacity:.65 } }
@@ -527,7 +588,7 @@ function AmbientOrbs() {
   )
 }
 
-function AnimeMarqueeCard({ anime, onClick }) {
+function AnimeMarqueeCard({ anime, onClick, onOpenMonUnivers }) {
   const [hov, setHov] = useState(false)
   const c = anime.color
   return (
@@ -585,11 +646,41 @@ function AnimeMarqueeCard({ anime, onClick }) {
           ))}
         </div>
       </div>
+
+      {/* Small dual ProgressRing (video + chapter) on poster/cover, bottom-right. Clickable to Mon Univers. Perf: data precomputed for visible. */}
+      {anime._video && (
+        <div
+          onClick={(e) => {
+            e.stopPropagation()
+            if (onOpenMonUnivers) onOpenMonUnivers()
+          }}
+          title="Voir la progression complète dans Mon Univers"
+          style={{
+            position: 'absolute',
+            bottom: 48,
+            right: 8,
+            zIndex: 6,
+            cursor: 'pointer',
+            borderRadius: '50%',
+            boxShadow: '0 3px 10px rgba(0,0,0,0.55)',
+            transition: 'transform .18s ease, box-shadow .18s',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.08)' }}
+          onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)' }}
+        >
+          <ProgressRing
+            videoPct={anime._video.pct}
+            chapterPct={anime._chapter ? anime._chapter.pct : 0}
+            size={34}
+            color={c}
+          />
+        </div>
+      )}
     </div>
   )
 }
 
-function AnimeMarqueeRow({ animes, direction, speed, onCardClick }) {
+function AnimeMarqueeRow({ animes, direction, speed, onCardClick, onOpenMonUnivers }) {
   const [paused, setPaused] = useState(false)
   const items = [...animes, ...animes]
   const cls = direction === 'rtl' ? 'ah-mq-l' : 'ah-mq-r'
@@ -614,14 +705,14 @@ function AnimeMarqueeRow({ animes, direction, speed, onCardClick }) {
         }}
       >
         {items.map((anime, i) => (
-          <AnimeMarqueeCard key={`${anime.id}-${i}`} anime={anime} onClick={() => onCardClick(anime.id)} />
+          <AnimeMarqueeCard key={`${anime.id}-${i}`} anime={anime} onClick={() => onCardClick(anime.id)} onOpenMonUnivers={onOpenMonUnivers} />
         ))}
       </div>
     </div>
   )
 }
 
-function AnimeCard({ anime, index, onClick }) {
+function AnimeCard({ anime, index, onClick, onOpenMonUnivers }) {
   const [hov, setHov] = useState(false)
   const c = anime.color
   const fallbackCover = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
@@ -700,6 +791,38 @@ function AnimeCard({ anime, index, onClick }) {
             <div style={{ fontSize:11, fontWeight:800, color:c, letterSpacing:'.06em', textShadow:'0 1px 10px rgba(0,0,0,0.9)' }}>{anime.subtitle}</div>
           </div>
         )}
+
+        {/* Small stylish dual ProgressRing mini (video + optional chapter) directly on cover/poster bottom-right.
+            Uses shared ProgressRing, real LS progress (_vp, _video_progress, _progress), computed once upstream for visible cards.
+            Click opens Mon Univers dashboard. Subtle hint via title + scale on hover. Matches card color. */}
+        {anime._video && (
+          <div
+            onClick={(e) => {
+              e.stopPropagation()
+              if (onOpenMonUnivers) onOpenMonUnivers()
+            }}
+            title="Voir la progression complète dans Mon Univers"
+            style={{
+              position: 'absolute',
+              bottom: 12,
+              right: 12,
+              zIndex: 5,
+              cursor: 'pointer',
+              borderRadius: '50%',
+              boxShadow: '0 4px 14px rgba(0,0,0,0.5)',
+              transition: 'transform .2s cubic-bezier(.23,1,.32,1), box-shadow .2s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.1)'; e.currentTarget.style.boxShadow = '0 6px 18px rgba(0,0,0,0.6)' }}
+            onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 4px 14px rgba(0,0,0,0.5)' }}
+          >
+            <ProgressRing
+              videoPct={anime._video.pct}
+              chapterPct={anime._chapter ? anime._chapter.pct : 0}
+              size={40}
+              color={c}
+            />
+          </div>
+        )}
       </div>
 
       {/* Info body */}
@@ -760,9 +883,21 @@ function ComingSoonCard({ index }) {
   )
 }
 
-export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrstone, onOpenJjk, onOpenKingdom, onOpenAot, onOpenKny, onOpenNnt, onOpenSl, onOpenDbs, onOpenViolet, onOpenVivy, onOpenLovePrism, onOpenCaroleTuesday, onOpenBunnyGirl, onOpenRentGirlfriend, onOpenBc, onOpenMha, onOpenFireforce, onOpenBluelock }) {
+export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrstone, onOpenJjk, onOpenKingdom, onOpenAot, onOpenKny, onOpenNnt, onOpenSl, onOpenDbs, onOpenViolet, onOpenVivy, onOpenLovePrism, onOpenCaroleTuesday, onOpenBunnyGirl, onOpenRentGirlfriend, onOpenBc, onOpenMha, onOpenFireforce, onOpenBluelock, onOpenMonUnivers }) {
   const [query, setQuery] = useState('')
   const [selectedGenres, setSelectedGenres] = useState(new Set())
+
+  // Progress state: load once, refresh on interval/storage like MonUniversPage. Compute derived only for visible.
+  const [rawProgress, setRawProgress] = useState(() => loadAllProgress())
+  const refreshProgress = useCallback(() => {
+    setRawProgress(loadAllProgress())
+  }, [])
+  useEffect(() => {
+    const id = setInterval(refreshProgress, 8000)
+    const onStorage = () => refreshProgress()
+    window.addEventListener('storage', onStorage)
+    return () => { clearInterval(id); window.removeEventListener('storage', onStorage) }
+  }, [refreshProgress])
 
   const sortedAnimes = useMemo(() => {
     const priority = { onepiece: 0, 'violet-evergarden': 1, vivy: 2 }
@@ -793,16 +928,36 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
     })
   }, [selectedGenres, query, sortedAnimes])
 
+  // Enriched for visible cards only (perf: compute progress once for what's rendered in grid)
+  const visibleAnimesWithProgress = useMemo(() => {
+    return visibleAnimes.map(anime => {
+      const ns = anime.id
+      const video = computeVideo(ns, rawProgress)
+      const hasCh = HAS_CHAPTERS.has(ns)
+      const chapter = hasCh ? computeChapter(ns, rawProgress) : { read: 0, total: 0, pct: 0 }
+      return { ...anime, _video: video, _chapter: chapter, _hasChapters: hasCh }
+    })
+  }, [visibleAnimes, rawProgress])
+
   const isFiltering = query.trim() !== '' || selectedGenres.size > 0
+  const marqueeAnimesWithProgress = useMemo(() => {
+    return sortedAnimes.map(anime => {
+      const ns = anime.id
+      const video = computeVideo(ns, rawProgress)
+      const hasCh = HAS_CHAPTERS.has(ns)
+      const chapter = hasCh ? computeChapter(ns, rawProgress) : { read: 0, total: 0, pct: 0 }
+      return { ...anime, _video: video, _chapter: chapter, _hasChapters: hasCh }
+    })
+  }, [sortedAnimes, rawProgress])
   const marqueeRows = useMemo(() => {
-    const a = sortedAnimes
+    const a = marqueeAnimesWithProgress
     const half = Math.ceil(a.length / 2)
     return [
       { animes: a,                    direction: 'rtl', speed: 66 },
       { animes: [...a].reverse(),     direction: 'ltr', speed: 70 },
       { animes: a.slice(half).concat(a.slice(0, half)), direction: 'rtl', speed: 64 },
     ]
-  }, [sortedAnimes])
+  }, [marqueeAnimesWithProgress])
 
   useEffect(() => {
     document.body.style.overflow = 'hidden'
@@ -846,14 +1001,24 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
             </div>
           </div>
         </div>
-        <button
-          onClick={onClose}
-          style={{ display:'flex', alignItems:'center', gap:7, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.10)', borderRadius:10, color:'rgba(255,255,255,0.75)', cursor:'pointer', padding:'9px 18px', fontSize:13, fontWeight:700, transition:'all .18s' }}
-          onMouseEnter={e => { e.currentTarget.style.background='rgba(255,255,255,0.10)'; e.currentTarget.style.color='#fff' }}
-          onMouseLeave={e => { e.currentTarget.style.background='rgba(255,255,255,0.05)'; e.currentTarget.style.color='rgba(255,255,255,0.75)' }}
-        >
-          ← Retour
-        </button>
+        <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+          <button
+            onClick={() => onOpenMonUnivers && onOpenMonUnivers()}
+            style={{ display:'flex', alignItems:'center', gap:6, background:'linear-gradient(90deg, rgba(224,82,74,0.18), rgba(224,82,74,0.08))', border:'1px solid rgba(224,82,74,0.35)', borderRadius:10, color:'#e0524a', cursor:'pointer', padding:'8px 14px', fontSize:12, fontWeight:800, transition:'all .18s', letterSpacing:'.02em' }}
+            onMouseEnter={e => { e.currentTarget.style.background='linear-gradient(90deg, rgba(224,82,74,0.28), rgba(224,82,74,0.14))'; e.currentTarget.style.color='#fff' }}
+            onMouseLeave={e => { e.currentTarget.style.background='linear-gradient(90deg, rgba(224,82,74,0.18), rgba(224,82,74,0.08))'; e.currentTarget.style.color='#e0524a' }}
+          >
+            🌌 MON UNIVERS
+          </button>
+          <button
+            onClick={onClose}
+            style={{ display:'flex', alignItems:'center', gap:7, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.10)', borderRadius:10, color:'rgba(255,255,255,0.75)', cursor:'pointer', padding:'9px 18px', fontSize:13, fontWeight:700, transition:'all .18s' }}
+            onMouseEnter={e => { e.currentTarget.style.background='rgba(255,255,255,0.10)'; e.currentTarget.style.color='#fff' }}
+            onMouseLeave={e => { e.currentTarget.style.background='rgba(255,255,255,0.05)'; e.currentTarget.style.color='rgba(255,255,255,0.75)' }}
+          >
+            ← Retour
+          </button>
+        </div>
       </div>
 
       {/* ── Content ── */}
@@ -981,8 +1146,8 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
             <div style={{ maxWidth:1080, margin:'0 auto', padding:'0 24px' }}>
               {visibleAnimes.length > 0 ? (
                 <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(300px, 1fr))', gap:20 }}>
-                  {visibleAnimes.map((anime, i) => (
-                    <AnimeCard key={anime.id} anime={anime} index={i} onClick={() => handleClick(anime.id)} />
+                  {visibleAnimesWithProgress.map((anime, i) => (
+                    <AnimeCard key={anime.id} anime={anime} index={i} onClick={() => handleClick(anime.id)} onOpenMonUnivers={onOpenMonUnivers} />
                   ))}
                 </div>
               ) : (
@@ -1011,6 +1176,7 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
                   direction={row.direction}
                   speed={row.speed}
                   onCardClick={handleClick}
+                  onOpenMonUnivers={onOpenMonUnivers}
                 />
               ))}
             </div>
