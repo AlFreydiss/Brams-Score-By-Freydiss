@@ -163,8 +163,13 @@ export default function TournamentRoomPage() {
   useEffect(() => {
     if (!code) return
     let stop = false, timer
+    lastRealtimeRef.current = Date.now()
+    // Le canal realtime Supabase meurt silencieusement sur les longues sessions
+    // (socket coupé, onglet en veille, wifi) → sans ça il fallait F5 pour revoir
+    // le live. On garde l'unsub dans un ref pour pouvoir se ré-abonner à chaud.
+    const subscribe = () => subscribeTournamentRoom(code, () => { lastRealtimeRef.current = Date.now(); refresh(code) })
+    let unsub = subscribe()
     refresh(code)
-    const unsub = subscribeTournamentRoom(code, () => { lastRealtimeRef.current = Date.now(); refresh(code) })
     // Polling de secours ADAPTATIF : pause en arrière-plan, ralentit quand le
     // realtime délivre, rapide sinon → live sans recharger, coût réseau maîtrisé.
     const tick = () => {
@@ -174,14 +179,25 @@ export default function TournamentRoomPage() {
       timer = setTimeout(async () => { await refresh(code); tick() }, delay)
     }
     tick()
-    const syncOnFocus = () => { if (!document.hidden) refresh(code) }
+    const syncOnFocus = () => { if (!document.hidden) { resubscribe(); refresh(code) } }
+    // Watchdog : si aucun event realtime depuis 45s (page active), le canal est
+    // probablement mort → on le recrée. Évite le "faut actualiser" sur le long.
+    const resubscribe = () => {
+      try { unsub?.() } catch {}
+      unsub = subscribe()
+      lastRealtimeRef.current = Date.now()
+    }
+    const watchdog = setInterval(() => {
+      if (!document.hidden && Date.now() - lastRealtimeRef.current > 45000) resubscribe()
+    }, 20000)
     window.addEventListener('focus', syncOnFocus)
     document.addEventListener('visibilitychange', syncOnFocus)
     const ping = setInterval(() => touchTournamentPlayer(code, ident.userId), 25000)
     return () => {
       stop = true
       clearTimeout(timer)
-      unsub()
+      try { unsub?.() } catch {}
+      clearInterval(watchdog)
       clearInterval(ping)
       window.removeEventListener('focus', syncOnFocus)
       document.removeEventListener('visibilitychange', syncOnFocus)
