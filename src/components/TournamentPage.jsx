@@ -15,6 +15,8 @@ import {
 } from '../lib/tournament.js'
 import { TOURNAMENT_CONFIGS } from '../data/tournament-data.js'
 import DuelArena         from './tournament/DuelArena.jsx'
+import DuelAmbient       from './tournament/DuelAmbient.jsx'
+import BracketPanel      from './tournament/BracketPanel.jsx'
 import TournamentBracket from './tournament/TournamentBracket.jsx'
 import TournamentResults from './tournament/TournamentResults.jsx'
 
@@ -570,25 +572,41 @@ export default function TournamentPage({ tournamentId = 'ost' }) {
               <>
                 {winner ? (
                   <WinnerSection winner={winner} onReset={handleReset} />
+                ) : current ? (
+                  <>
+                    {/* Fond d'ambiance + suivi de progression + duel vertical + bracket
+                        en sidebar : même présentation premium que le tournoi multi. */}
+                    <DuelAmbient left={current.match.left} right={current.match.right} />
+                    <style>{`@keyframes tsolo-pulse{0%,100%{opacity:.5}50%{opacity:1}}`}</style>
+                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '7px 16px', borderRadius: 999, background: 'rgba(157,23,77,.12)', border: '1px solid rgba(157,23,77,.45)' }}>
+                        <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#f9a8d4', boxShadow: '0 0 8px #f9a8d4', animation: 'tsolo-pulse 2s ease-in-out infinite' }} />
+                        <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.12em', textTransform: 'uppercase', color: '#f9a8d4' }}>{roundLabel}</span>
+                        <span style={{ width: 1, height: 14, background: 'rgba(255,255,255,.15)' }} />
+                        <span style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,.55)' }}>Duel {matchLabel}/{totalMatchesInRound}</span>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 18, alignItems: 'flex-start', justifyContent: 'center', flexDirection: isMobile ? 'column' : 'row' }}>
+                      <div style={{ flex: '1 1 0', minWidth: 0, maxWidth: 900, width: '100%' }}>
+                        <DuelArena
+                          key={current.match.id}
+                          round={current.round}
+                          match={current.match}
+                          totalMatchesInRound={totalMatchesInRound}
+                          voteCounts={voteCounts}
+                          personalVotes={personalVotes}
+                          onVote={handleVote}
+                          onNext={handleNext}
+                          isLastMatch={isLastMatch}
+                          isMobile={isMobile}
+                          vertical
+                        />
+                      </div>
+                      <BracketPanel rounds={rounds} currentId={current.match.id} isMobile={isMobile} />
+                    </div>
+                  </>
                 ) : (
-                  <AnimatePresence mode="wait">
-                    {current ? (
-                      <DuelArena
-                        key={current.match.id}
-                        round={current.round}
-                        match={current.match}
-                        totalMatchesInRound={totalMatchesInRound}
-                        voteCounts={voteCounts}
-                        personalVotes={personalVotes}
-                        onVote={handleVote}
-                        onNext={handleNext}
-                        isLastMatch={isLastMatch}
-                        isMobile={isMobile}
-                      />
-                    ) : (
-                      <NoMatchReady key="no-match" onReset={handleReset} />
-                    )}
-                  </AnimatePresence>
+                  <NoMatchReady onReset={handleReset} />
                 )}
               </>
             )}

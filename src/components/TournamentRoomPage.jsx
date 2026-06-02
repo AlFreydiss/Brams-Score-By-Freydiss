@@ -6,6 +6,8 @@ import { useAuth } from '../contexts/AuthContext.jsx'
 import { TOURNAMENT_CONFIGS } from '../data/tournament-data.js'
 import { generateBracket, getCurrentMatch, advanceWinner, getWinner, getTournamentProgress } from '../lib/tournament.js'
 import DuelArena from './tournament/DuelArena.jsx'
+import DuelAmbient from './tournament/DuelAmbient.jsx'
+import BracketPanel from './tournament/BracketPanel.jsx'
 import {
   createTournamentRoom, fetchTournamentRoom, joinTournamentRoom,
   fetchTournamentRoomPlayers, fetchTournamentRoomVotes, castTournamentVote,
@@ -747,74 +749,7 @@ function WinnerReveal({ winner }) {
 }
 
 // ── Ambiance de fond : collage flouté des 2 openings (quand aucun ne joue) ────
-function DuelAmbient({ left, right }) {
-  const leftColor = left?.color || PINK
-  const rightColor = right?.color || PINK
-  const tile = (p, pos) => p?.ytId ? (
-    <img src={`https://img.youtube.com/vi/${p.ytId}/hqdefault.jpg`} alt="" style={{
-      position: 'absolute', left: 0, width: '100%', height: '52%', objectFit: 'cover',
-      maxWidth: 'none', maxHeight: 'none',
-      transform: 'scale(1.16)',
-      filter: 'blur(26px) saturate(1.3) brightness(.74)', opacity: 0.62, ...pos,
-    }} />
-  ) : null
-  return (
-    <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
-      {tile(left, { top: 0 })}
-      {tile(right, { bottom: 0 })}
-      <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(72% 44% at 50% 0%, ${hexA(leftColor, 0.2)}, transparent 70%), radial-gradient(72% 44% at 50% 100%, ${hexA(rightColor, 0.2)}, transparent 70%), radial-gradient(58% 90% at 100% 52%, ${hexA(rightColor, 0.26)}, transparent 74%), radial-gradient(46% 90% at 0% 52%, ${hexA(leftColor, 0.2)}, transparent 72%), linear-gradient(180deg, rgba(8,7,11,.48), rgba(8,7,11,.42) 50%, rgba(8,7,11,.62)), radial-gradient(60% 50% at 50% 50%, rgba(8,7,11,.28), transparent 75%)` }} />
-    </div>
-  )
-}
-
-// ── Mini-bracket du tournoi (parcours vers la finale) ─────────────────────────
-function BracketPanel({ rounds, currentId, isMobile }) {
-  if (!rounds?.length) return null
-  return (
-    <aside style={{
-      width: isMobile ? '100%' : 248, flexShrink: 0,
-      background: 'rgba(12,13,20,0.55)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)',
-      border: '1px solid rgba(255,255,255,.10)', borderRadius: 16, padding: 16,
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-        <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.12em', color: PINK_L, textTransform: 'uppercase' }}>🏆 Bracket</span>
-        <span style={{ fontSize: 11, color: 'rgba(255,255,255,.4)' }}>vers la finale</span>
-      </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        {rounds.map(r => {
-          const playable = r.matches.filter(m => m.left && m.right)
-          const total = playable.length
-          const done = playable.filter(m => m.status === 'closed').length
-          const isCurrent = r.matches.some(m => m.id === currentId)
-          const allDone = total > 0 && done === total
-          const isFinal = r.size === 2
-          const pct = total ? Math.round((done / total) * 100) : 0
-          const accent = isFinal ? '#d4a017' : PINK
-          return (
-            <div key={r.id} style={{
-              display: 'flex', alignItems: 'center', gap: 10, padding: '8px 11px', borderRadius: 10,
-              border: `1px solid ${isCurrent ? accent : 'rgba(255,255,255,.06)'}`,
-              background: isCurrent ? hexA(accent, 0.14) : 'rgba(255,255,255,.02)',
-              boxShadow: isCurrent ? `0 0 16px ${hexA(accent, 0.22)}` : 'none',
-              animation: isCurrent ? 'troom-pulse 2.4s ease-in-out infinite' : 'none',
-            }}>
-              <span style={{ fontSize: 13, width: 16, textAlign: 'center' }}>{isFinal ? '👑' : allDone ? '✓' : isCurrent ? '⚔️' : '•'}</span>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5 }}>
-                  <strong style={{ color: isCurrent ? '#fff' : allDone ? 'rgba(255,255,255,.6)' : 'rgba(255,255,255,.45)', fontWeight: 700 }}>{r.short}</strong>
-                  <span style={{ color: allDone ? '#34d399' : 'rgba(255,255,255,.35)', fontWeight: 700 }}>{done}/{total}</span>
-                </div>
-                <div style={{ height: 3, borderRadius: 99, background: 'rgba(255,255,255,.08)', overflow: 'hidden', marginTop: 4 }}>
-                  <div style={{ width: `${pct}%`, height: '100%', background: allDone ? '#34d399' : accent, transition: 'width .5s' }} />
-                </div>
-              </div>
-            </div>
-          )
-        })}
-      </div>
-    </aside>
-  )
-}
+// DuelAmbient + BracketPanel extraits dans ./tournament/ (partagés solo + multi).
 
 // ── Panneau des votants (qui a voté quoi, en temps réel) ───────────────────────
 function VotersPanel({ players, votes, match, isMobile, voteStatus }) {
