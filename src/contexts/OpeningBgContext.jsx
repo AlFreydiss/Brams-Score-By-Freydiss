@@ -15,9 +15,9 @@ export function OpeningBgProvider({ children }) {
   // ambientStill : quand true, le fond GLOBAL n'anime plus la vidéo et affiche une
   // image figée (la page profil l'active car son hero joue déjà la vidéo → évite
   // un double décodage du même mp4).
-  // Par défaut le fond global est figé (perf : pas de décodage vidéo plein écran
-  // sur chaque page). Le profil l'active en mode animé (setAmbientStill(false)).
-  const [ambientStill, setAmbientStill] = useState(true)
+  // Fond global ANIMÉ par défaut (le fond d'opening équipé s'anime sur toutes les
+  // pages — homepage incluse). Mettre true repasserait en image figée (perf).
+  const [ambientStill, setAmbientStill] = useState(false)
   // hideAmbient : le profil masque le fond global et rend le sien (fiable).
   const [hideAmbient, setHideAmbient] = useState(false)
   const previewTimer = useRef(null)
