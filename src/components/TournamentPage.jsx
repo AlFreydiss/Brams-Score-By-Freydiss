@@ -17,6 +17,7 @@ import { TOURNAMENT_CONFIGS } from '../data/tournament-data.js'
 import DuelArena         from './tournament/DuelArena.jsx'
 import DuelAmbient       from './tournament/DuelAmbient.jsx'
 import BracketPanel      from './tournament/BracketPanel.jsx'
+import WinnerCard        from './tournament/WinnerCard.jsx'
 import TournamentBracket from './tournament/TournamentBracket.jsx'
 import TournamentResults from './tournament/TournamentResults.jsx'
 
@@ -571,7 +572,7 @@ export default function TournamentPage({ tournamentId = 'ost' }) {
             {tab === 'duel' && (
               <>
                 {winner ? (
-                  <WinnerSection winner={winner} onReset={handleReset} />
+                  <WinnerCard winner={winner} onReset={handleReset} />
                 ) : current ? (
                   <>
                     {/* Fond d'ambiance + suivi de progression + duel vertical + bracket

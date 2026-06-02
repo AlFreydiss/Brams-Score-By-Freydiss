@@ -8,6 +8,7 @@ import { generateBracket, getCurrentMatch, advanceWinner, getWinner, getTourname
 import DuelArena from './tournament/DuelArena.jsx'
 import DuelAmbient from './tournament/DuelAmbient.jsx'
 import BracketPanel from './tournament/BracketPanel.jsx'
+import WinnerCard from './tournament/WinnerCard.jsx'
 import {
   createTournamentRoom, fetchTournamentRoom, joinTournamentRoom,
   fetchTournamentRoomPlayers, fetchTournamentRoomVotes, castTournamentVote,
@@ -718,13 +719,7 @@ export default function TournamentRoomPage() {
 
         {/* FIN */}
         {room.status === 'done' && winner && (
-          <div style={{ textAlign: 'center', background: CARD, border: `1px solid ${PINK}55`, borderRadius: 20, padding: '40px 24px' }}>
-            <div style={{ fontSize: 13, letterSpacing: '.2em', color: PINK_L, fontWeight: 800, marginBottom: 14 }}>🏆 VAINQUEUR DU SALON</div>
-            <img src={`https://img.youtube.com/vi/${winner.ytId}/hqdefault.jpg`} alt="" style={{ width: 220, borderRadius: 14, border: `2px solid ${winner.color || PINK}`, marginBottom: 16 }} />
-            <h2 style={{ margin: '0 0 4px', fontSize: 26, fontWeight: 900 }}>{winner.title}</h2>
-            <div style={{ color: 'rgba(255,255,255,.6)' }}>{winner.anime} · {winner.artist}</div>
-            <button onClick={leave} style={{ ...btn(), marginTop: 24 }}>Nouveau salon</button>
-          </div>
+          <WinnerCard winner={winner} onReset={leave} resetLabel="Nouveau salon" subtitle="Salon terminé — la communauté a tranché." />
         )}
       </div>
     </div>
