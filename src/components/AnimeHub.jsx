@@ -1471,73 +1471,148 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
 
           </div>
 
-          {/* Premium + base blend: 3 horizontal curated sections (premium style: rank/NOUVEAU, mini dual rings with poster minia, glass hover overlay with title/score/synopsis/heart) */}
-          <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 24px 20px' }}>
-            {/* Top de la semaine */}
-            <div style={{ marginBottom: 28 }}>
-              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 6, padding: '0 4px' }}>
-                <span style={{ fontSize: '1.25rem', fontWeight: 600, color: '#f1f1f3', letterSpacing: '-0.01em' }}>Top de la semaine</span>
-                <span style={{ fontSize: 9, padding: '1px 6px', background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)', borderRadius: 999 }}>Semaine 6</span>
-              </div>
-              <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 6, scrollSnapType: 'x mandatory' }} className="elegant-scrollbar">
-                {topWeekAnimes.map(anime => (
-                  <BramsqHubCard
-                    key={anime.id}
-                    anime={anime}
-                    rank={anime._rank}
-                    onClick={() => handleClick(anime.id)}
-                    onOpenMonUnivers={onOpenMonUnivers}
-                    isFav={favs.has(anime.id)}
-                    toggleFav={toggleFav}
-                    isHorizontal={true}
-                  />
-                ))}
-              </div>
+          {/* Layout with left bar + classified sections (truc d'avant with left bar + sections top du moment, romance etc as requested) */}
+          <div style={{ display: 'flex', gap: 20, maxWidth: 1280, margin: '0 auto', padding: '0 24px' }}>
+            {/* Barre à gauche (left bar as requested, with categories for classified sections) */}
+            <div style={{
+              width: 180,
+              flexShrink: 0,
+              borderRight: '1px solid rgba(255,255,255,0.06)',
+              paddingRight: 12,
+              position: 'sticky',
+              top: 0,
+              alignSelf: 'flex-start',
+              paddingTop: 8
+            }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.5)', marginBottom: 8, letterSpacing: '.08em' }}>CATÉGORIES</div>
+              {[
+                { id: 'top-du-moment', label: 'Top du moment' },
+                { id: 'romance', label: 'Romance' },
+                { id: 'action', label: 'Action' },
+                { id: 'fantasy', label: 'Fantasy' },
+                { id: 'aventure', label: 'Aventure' },
+                { id: 'science-fiction', label: 'Science-fiction' },
+                { id: 'drame', label: 'Drame' }
+              ].map(cat => (
+                <div
+                  key={cat.id}
+                  onClick={() => {
+                    const el = document.getElementById(cat.id);
+                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }}
+                  style={{
+                    padding: '6px 8px',
+                    fontSize: 11,
+                    color: 'rgba(255,255,255,0.7)',
+                    cursor: 'pointer',
+                    borderRadius: 6,
+                    marginBottom: 2,
+                    transition: 'background .15s, color .15s'
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = '#fff'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.7)'; }}
+                >
+                  {cat.label}
+                </div>
+              ))}
+              <div style={{ marginTop: 16, fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>Barre gauche • Classé</div>
             </div>
 
-            {/* Les plus aimés */}
-            <div style={{ marginBottom: 28 }}>
-              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 6, padding: '0 4px' }}>
-                <span style={{ fontSize: '1.25rem', fontWeight: 600, color: '#f1f1f3', letterSpacing: '-0.01em' }}>Les plus aimés</span>
+            {/* Main content with classified sections + the cinematic from before */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              {/* Top du moment (featured row like in your image) */}
+              <div id="top-du-moment" style={{ marginBottom: 24 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#f1f1f3', marginBottom: 8, letterSpacing: '.06em' }}>Top du moment</div>
+                <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 8, scrollSnapType: 'x mandatory' }} className="elegant-scrollbar">
+                  {topWeekAnimes.slice(0, 8).map(anime => (
+                    <AnimeMarqueeCard
+                      key={anime.id}
+                      anime={anime}
+                      onClick={() => handleClick(anime.id)}
+                      onOpenMonUnivers={onOpenMonUnivers}
+                      isFav={favs.has(anime.id)}
+                      toggleFav={toggleFav}
+                    />
+                  ))}
+                </div>
               </div>
-              <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 6, scrollSnapType: 'x mandatory' }} className="elegant-scrollbar">
-                {mostLovedAnimes.map(anime => (
-                  <BramsqHubCard
-                    key={anime.id}
-                    anime={anime}
-                    onClick={() => handleClick(anime.id)}
-                    onOpenMonUnivers={onOpenMonUnivers}
-                    isFav={favs.has(anime.id)}
-                    toggleFav={toggleFav}
-                    isHorizontal={true}
-                  />
-                ))}
-              </div>
-            </div>
 
-            {/* Nouveautés de la saison */}
-            <div style={{ marginBottom: 20 }}>
-              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 6, padding: '0 4px' }}>
-                <span style={{ fontSize: '1.25rem', fontWeight: 600, color: '#f1f1f3', letterSpacing: '-0.01em' }}>Nouveautés de la saison</span>
-                <span style={{ fontSize: 9, padding: '1px 6px', background: 'rgba(167,139,250,0.15)', color: '#a78bfa', borderRadius: 999 }}>Saison 2026</span>
+              {/* Romance */}
+              <div id="romance" style={{ marginBottom: 24 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#f1f1f3', marginBottom: 8, letterSpacing: '.06em' }}>Romance</div>
+                <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 8, scrollSnapType: 'x mandatory' }} className="elegant-scrollbar">
+                  {allAnimesWithExtras.filter(a => (a.genres || []).some(g => g.toLowerCase().includes('romance') || g === 'Romance')).slice(0, 8).map(anime => (
+                    <AnimeMarqueeCard key={anime.id} anime={anime} onClick={() => handleClick(anime.id)} onOpenMonUnivers={onOpenMonUnivers} isFav={favs.has(anime.id)} toggleFav={toggleFav} />
+                  ))}
+                </div>
               </div>
-              <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 6, scrollSnapType: 'x mandatory' }} className="elegant-scrollbar">
-                {newSeasonAnimes.map(anime => (
-                  <BramsqHubCard
-                    key={anime.id}
-                    anime={anime}
-                    onClick={() => handleClick(anime.id)}
+
+              {/* Action */}
+              <div id="action" style={{ marginBottom: 24 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#f1f1f3', marginBottom: 8, letterSpacing: '.06em' }}>Action</div>
+                <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 8, scrollSnapType: 'x mandatory' }} className="elegant-scrollbar">
+                  {allAnimesWithExtras.filter(a => (a.genres || []).some(g => g.toLowerCase().includes('action') || g === 'Action')).slice(0, 8).map(anime => (
+                    <AnimeMarqueeCard key={anime.id} anime={anime} onClick={() => handleClick(anime.id)} onOpenMonUnivers={onOpenMonUnivers} isFav={favs.has(anime.id)} toggleFav={toggleFav} />
+                  ))}
+                </div>
+              </div>
+
+              {/* Fantasy */}
+              <div id="fantasy" style={{ marginBottom: 24 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#f1f1f3', marginBottom: 8, letterSpacing: '.06em' }}>Fantasy</div>
+                <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 8, scrollSnapType: 'x mandatory' }} className="elegant-scrollbar">
+                  {allAnimesWithExtras.filter(a => (a.genres || []).some(g => g.toLowerCase().includes('fantasy') || g === 'Fantasy')).slice(0, 8).map(anime => (
+                    <AnimeMarqueeCard key={anime.id} anime={anime} onClick={() => handleClick(anime.id)} onOpenMonUnivers={onOpenMonUnivers} isFav={favs.has(anime.id)} toggleFav={toggleFav} />
+                  ))}
+                </div>
+              </div>
+
+              {/* Aventure */}
+              <div id="aventure" style={{ marginBottom: 24 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#f1f1f3', marginBottom: 8, letterSpacing: '.06em' }}>Aventure</div>
+                <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 8, scrollSnapType: 'x mandatory' }} className="elegant-scrollbar">
+                  {allAnimesWithExtras.filter(a => (a.genres || []).some(g => g.toLowerCase().includes('aventure') || g === 'Aventure')).slice(0, 8).map(anime => (
+                    <AnimeMarqueeCard key={anime.id} anime={anime} onClick={() => handleClick(anime.id)} onOpenMonUnivers={onOpenMonUnivers} isFav={favs.has(anime.id)} toggleFav={toggleFav} />
+                  ))}
+                </div>
+              </div>
+
+              {/* The cinematic from before (le truc d'avant) */}
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginBottom: 18 }}>
+                  <div className="cinema-label" style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.22)', fontWeight: 800, letterSpacing: '.18em', textTransform: 'uppercase', textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}>
+                    Galerie cinématique · survole pour pause · clique pour accéder
+                  </div>
+                  <button
+                    onClick={surpriseMe}
+                    style={{
+                      fontSize: 10, fontWeight: 800, letterSpacing: '.08em',
+                      padding: '4px 10px', borderRadius: 999,
+                      background: 'rgba(167,139,250,0.12)', border: '1px solid rgba(167,139,250,0.35)',
+                      color: '#a78bfa', cursor: 'pointer'
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(167,139,250,0.25)'; e.currentTarget.style.color = '#fff'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(167,139,250,0.12)'; e.currentTarget.style.color = '#a78bfa'; }}
+                  >
+                    🎲 SURPRISE
+                  </button>
+                </div>
+                {marqueeRows.map((row, i) => (
+                  <AnimeMarqueeRow
+                    key={i}
+                    animes={row.animes}
+                    direction={row.direction}
+                    speed={row.speed}
+                    onCardClick={handleClick}
                     onOpenMonUnivers={onOpenMonUnivers}
-                    isFav={favs.has(anime.id)}
+                    favs={favs}
                     toggleFav={toggleFav}
-                    isHorizontal={true}
                   />
                 ))}
               </div>
             </div>
           </div>
-
-          {/* Marquee gallery (base cinematic) or filtered grid — full-bleed for the "base" feel blended with premium above */}
+          {/* Marquee gallery (default) or filtered grid — outside maxWidth container for true full-bleed */}
           {isFiltering ? (
             <div style={{ maxWidth:1080, margin:'0 auto', padding:'0 24px' }} className="ah-gallery">
               {visibleAnimes.length > 0 ? (
