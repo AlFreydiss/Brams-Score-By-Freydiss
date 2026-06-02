@@ -1579,66 +1579,6 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
 
             </div>
           </div>
-          {/* Marquee gallery (default) or filtered grid — outside maxWidth container for true full-bleed */}
-          {isFiltering ? (
-            <div style={{ maxWidth:1080, margin:'0 auto', padding:'0 24px' }} className="ah-gallery">
-              {visibleAnimes.length > 0 ? (
-                <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(300px, 1fr))', gap:20 }}>
-                  {visibleAnimesWithProgress.map((anime, i) => (
-                    <AnimeCard key={anime.id} anime={anime} index={i} onClick={() => handleClick(anime.id)} onOpenMonUnivers={onOpenMonUnivers} isFav={favs.has(anime.id)} toggleFav={toggleFav} />
-                  ))}
-                </div>
-              ) : (
-                <div style={{
-                  border:'1px dashed rgba(255,255,255,0.10)',
-                  background:'rgba(255,255,255,0.025)',
-                  borderRadius:14,
-                  padding:'44px 20px',
-                  textAlign:'center',
-                  color:'rgba(255,255,255,0.42)',
-                  fontWeight:750,
-                }}>
-                  Aucun anime trouvé
-                </div>
-              )}
-            </div>
-          ) : (
-            <div>
-              <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:12, marginBottom:18 }}>
-                <div className="cinema-label" style={{ fontSize:10.5, color:'rgba(255,255,255,0.22)', fontWeight:800, letterSpacing:'.18em', textTransform:'uppercase', textShadow:'0 1px 4px rgba(0,0,0,0.4)' }}>
-                  Galerie cinématique · survole pour pause · clique pour accéder
-                </div>
-                <button
-                  onClick={surpriseMe}
-                  style={{
-                    fontSize:10, fontWeight:800, letterSpacing:'.08em',
-                    padding:'4px 10px', borderRadius:999,
-                    background:'rgba(167,139,250,0.12)', border:'1px solid rgba(167,139,250,0.35)',
-                    color:'#a78bfa', cursor:'pointer',
-                    transition:'all .15s cubic-bezier(0.23,1,0.32,1)',
-                    display:'flex', alignItems:'center', gap:4
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(167,139,250,0.25)'; e.currentTarget.style.color = '#fff'; e.currentTarget.style.transform = 'scale(1.05)' }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(167,139,250,0.12)'; e.currentTarget.style.color = '#a78bfa'; e.currentTarget.style.transform = 'scale(1)' }}
-                  title="Laisse le hasard choisir ton prochain anime !"
-                >
-                  🎲 SURPRISE
-                </button>
-              </div>
-              {marqueeRows.map((row, i) => (
-                <AnimeMarqueeRow
-                  key={i}
-                  animes={row.animes}
-                  direction={row.direction}
-                  speed={row.speed}
-                  onCardClick={handleClick}
-                  onOpenMonUnivers={onOpenMonUnivers}
-                  favs={favs}
-                  toggleFav={toggleFav}
-                />
-              ))}
-            </div>
-          )}
         </div>
       </div>
     </div>
