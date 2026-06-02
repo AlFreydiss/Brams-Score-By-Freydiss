@@ -81,8 +81,17 @@ const animePlugin = {
 const pruneHeavyPublicAssets = {
   name: 'prune-heavy-public-assets',
   closeBundle() {
-    const heavyDir = path.join(__dirname, 'dist', 'Violet Evergarden')
-    fs.rmSync(heavyDir, { recursive: true, force: true })
+    // Prune legacy large dirs that may be copied from public/ (or stale in dist/)
+    // Scans are now in Supabase; anime/Violet for dev only. This keeps final dist/ (and thus
+    // prebuilt .vercel/output or hosted static) small, avoiding high file counts on Vercel.
+    const heavyDirs = [
+      path.join(__dirname, 'dist', 'Violet Evergarden'),
+      path.join(__dirname, 'dist', 'scans'),
+      path.join(__dirname, 'dist', 'anime'),
+    ]
+    for (const dir of heavyDirs) {
+      fs.rmSync(dir, { recursive: true, force: true })
+    }
   },
 }
 

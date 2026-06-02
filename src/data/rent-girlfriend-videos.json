@@ -322,5 +322,977 @@
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S01E012/sub-fr.vtt"
       }
     ]
+  },
+  {
+    "episode": 13,
+    "title": "Saison 2 - Episode 1",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S02E001/master-ja.m3u8",
+    "season": "S02",
+    "arc": "Saison 2",
+    "preferredAudioLang": "ja",
+    "progressKey": "S02E001",
+    "episodeLabel": "S02E001",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S02E001/thumb.jpg",
+    "duration": "24:27",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S02E001/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S02E001/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 14,
+    "title": "Saison 2 - Episode 2",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S02E002/master-ja.m3u8",
+    "season": "S02",
+    "arc": "Saison 2",
+    "preferredAudioLang": "ja",
+    "progressKey": "S02E002",
+    "episodeLabel": "S02E002",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S02E002/thumb.jpg",
+    "duration": "24:27",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S02E002/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S02E002/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 15,
+    "title": "Saison 2 - Episode 3",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S02E003/master-ja.m3u8",
+    "season": "S02",
+    "arc": "Saison 2",
+    "preferredAudioLang": "ja",
+    "progressKey": "S02E003",
+    "episodeLabel": "S02E003",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S02E003/thumb.jpg",
+    "duration": "24:27",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S02E003/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S02E003/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 16,
+    "title": "Saison 2 - Episode 4",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S02E004/master-ja.m3u8",
+    "season": "S02",
+    "arc": "Saison 2",
+    "preferredAudioLang": "ja",
+    "progressKey": "S02E004",
+    "episodeLabel": "S02E004",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S02E004/thumb.jpg",
+    "duration": "24:27",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S02E004/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S02E004/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 17,
+    "title": "Saison 2 - Episode 5",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S02E005/master-ja.m3u8",
+    "season": "S02",
+    "arc": "Saison 2",
+    "preferredAudioLang": "ja",
+    "progressKey": "S02E005",
+    "episodeLabel": "S02E005",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S02E005/thumb.jpg",
+    "duration": "24:27",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S02E005/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S02E005/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 18,
+    "title": "Saison 2 - Episode 6",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S02E006/master-ja.m3u8",
+    "season": "S02",
+    "arc": "Saison 2",
+    "preferredAudioLang": "ja",
+    "progressKey": "S02E006",
+    "episodeLabel": "S02E006",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S02E006/thumb.jpg",
+    "duration": "24:27",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S02E006/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S02E006/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 19,
+    "title": "Saison 2 - Episode 7",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S02E007/master-ja.m3u8",
+    "season": "S02",
+    "arc": "Saison 2",
+    "preferredAudioLang": "ja",
+    "progressKey": "S02E007",
+    "episodeLabel": "S02E007",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S02E007/thumb.jpg",
+    "duration": "24:27",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S02E007/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S02E007/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 20,
+    "title": "Saison 2 - Episode 8",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S02E008/master-ja.m3u8",
+    "season": "S02",
+    "arc": "Saison 2",
+    "preferredAudioLang": "ja",
+    "progressKey": "S02E008",
+    "episodeLabel": "S02E008",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S02E008/thumb.jpg",
+    "duration": "24:27",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S02E008/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S02E008/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 21,
+    "title": "Saison 2 - Episode 9",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S02E009/master-ja.m3u8",
+    "season": "S02",
+    "arc": "Saison 2",
+    "preferredAudioLang": "ja",
+    "progressKey": "S02E009",
+    "episodeLabel": "S02E009",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S02E009/thumb.jpg",
+    "duration": "24:27",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S02E009/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S02E009/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 22,
+    "title": "Saison 2 - Episode 10",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S02E010/master-ja.m3u8",
+    "season": "S02",
+    "arc": "Saison 2",
+    "preferredAudioLang": "ja",
+    "progressKey": "S02E010",
+    "episodeLabel": "S02E010",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S02E010/thumb.jpg",
+    "duration": "24:27",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S02E010/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S02E010/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 23,
+    "title": "Saison 2 - Episode 11",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S02E011/master-ja.m3u8",
+    "season": "S02",
+    "arc": "Saison 2",
+    "preferredAudioLang": "ja",
+    "progressKey": "S02E011",
+    "episodeLabel": "S02E011",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S02E011/thumb.jpg",
+    "duration": "24:27",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S02E011/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S02E011/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 24,
+    "title": "Saison 2 - Episode 12",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S02E012/master-ja.m3u8",
+    "season": "S02",
+    "arc": "Saison 2",
+    "preferredAudioLang": "ja",
+    "progressKey": "S02E012",
+    "episodeLabel": "S02E012",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S02E012/thumb.jpg",
+    "duration": "23:57",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S02E012/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S02E012/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 25,
+    "title": "Saison 3 - Episode 1",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S03E001/master-ja.m3u8",
+    "season": "S03",
+    "arc": "Saison 3",
+    "preferredAudioLang": "ja",
+    "progressKey": "S03E001",
+    "episodeLabel": "S03E001",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S03E001/thumb.jpg",
+    "duration": "23:50",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S03E001/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S03E001/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 26,
+    "title": "Saison 3 - Episode 2",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S03E002/master-ja.m3u8",
+    "season": "S03",
+    "arc": "Saison 3",
+    "preferredAudioLang": "ja",
+    "progressKey": "S03E002",
+    "episodeLabel": "S03E002",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S03E002/thumb.jpg",
+    "duration": "23:50",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S03E002/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S03E002/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 27,
+    "title": "Saison 3 - Episode 3",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S03E003/master-ja.m3u8",
+    "season": "S03",
+    "arc": "Saison 3",
+    "preferredAudioLang": "ja",
+    "progressKey": "S03E003",
+    "episodeLabel": "S03E003",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S03E003/thumb.jpg",
+    "duration": "23:50",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S03E003/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S03E003/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 28,
+    "title": "Saison 3 - Episode 4",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S03E004/master-ja.m3u8",
+    "season": "S03",
+    "arc": "Saison 3",
+    "preferredAudioLang": "ja",
+    "progressKey": "S03E004",
+    "episodeLabel": "S03E004",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S03E004/thumb.jpg",
+    "duration": "23:50",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S03E004/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S03E004/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 29,
+    "title": "Saison 3 - Episode 5",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S03E005/master-ja.m3u8",
+    "season": "S03",
+    "arc": "Saison 3",
+    "preferredAudioLang": "ja",
+    "progressKey": "S03E005",
+    "episodeLabel": "S03E005",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S03E005/thumb.jpg",
+    "duration": "23:50",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S03E005/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S03E005/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 30,
+    "title": "Saison 3 - Episode 6",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S03E006/master-ja.m3u8",
+    "season": "S03",
+    "arc": "Saison 3",
+    "preferredAudioLang": "ja",
+    "progressKey": "S03E006",
+    "episodeLabel": "S03E006",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S03E006/thumb.jpg",
+    "duration": "23:50",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S03E006/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S03E006/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 31,
+    "title": "Saison 3 - Episode 7",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S03E007/master-ja.m3u8",
+    "season": "S03",
+    "arc": "Saison 3",
+    "preferredAudioLang": "ja",
+    "progressKey": "S03E007",
+    "episodeLabel": "S03E007",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S03E007/thumb.jpg",
+    "duration": "23:50",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S03E007/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S03E007/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 32,
+    "title": "Saison 3 - Episode 8",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S03E008/master-ja.m3u8",
+    "season": "S03",
+    "arc": "Saison 3",
+    "preferredAudioLang": "ja",
+    "progressKey": "S03E008",
+    "episodeLabel": "S03E008",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S03E008/thumb.jpg",
+    "duration": "23:35",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S03E008/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S03E008/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 33,
+    "title": "Saison 3 - Episode 9",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S03E009/master-ja.m3u8",
+    "season": "S03",
+    "arc": "Saison 3",
+    "preferredAudioLang": "ja",
+    "progressKey": "S03E009",
+    "episodeLabel": "S03E009",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S03E009/thumb.jpg",
+    "duration": "23:35",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S03E009/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S03E009/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 34,
+    "title": "Saison 3 - Episode 10",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S03E010/master-ja.m3u8",
+    "season": "S03",
+    "arc": "Saison 3",
+    "preferredAudioLang": "ja",
+    "progressKey": "S03E010",
+    "episodeLabel": "S03E010",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S03E010/thumb.jpg",
+    "duration": "23:35",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S03E010/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S03E010/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 35,
+    "title": "Saison 3 - Episode 11",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S03E011/master-ja.m3u8",
+    "season": "S03",
+    "arc": "Saison 3",
+    "preferredAudioLang": "ja",
+    "progressKey": "S03E011",
+    "episodeLabel": "S03E011",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S03E011/thumb.jpg",
+    "duration": "23:35",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S03E011/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S03E011/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 36,
+    "title": "Saison 3 - Episode 12",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S03E012/master-ja.m3u8",
+    "season": "S03",
+    "arc": "Saison 3",
+    "preferredAudioLang": "ja",
+    "progressKey": "S03E012",
+    "episodeLabel": "S03E012",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S03E012/thumb.jpg",
+    "duration": "23:35",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S03E012/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S03E012/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 37,
+    "title": "Saison 4 - Episode 1",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S04E001/master-ja.m3u8",
+    "season": "S04",
+    "arc": "Saison 4",
+    "preferredAudioLang": "ja",
+    "progressKey": "S04E001",
+    "episodeLabel": "S04E001",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S04E001/thumb.jpg",
+    "duration": "24:30",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S04E001/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S04E001/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 38,
+    "title": "Saison 4 - Episode 2",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S04E002/master-ja.m3u8",
+    "season": "S04",
+    "arc": "Saison 4",
+    "preferredAudioLang": "ja",
+    "progressKey": "S04E002",
+    "episodeLabel": "S04E002",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S04E002/thumb.jpg",
+    "duration": "24:27",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S04E002/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S04E002/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 39,
+    "title": "Saison 4 - Episode 3",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S04E003/master-ja.m3u8",
+    "season": "S04",
+    "arc": "Saison 4",
+    "preferredAudioLang": "ja",
+    "progressKey": "S04E003",
+    "episodeLabel": "S04E003",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S04E003/thumb.jpg",
+    "duration": "24:27",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S04E003/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S04E003/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 40,
+    "title": "Saison 4 - Episode 4",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S04E004/master-ja.m3u8",
+    "season": "S04",
+    "arc": "Saison 4",
+    "preferredAudioLang": "ja",
+    "progressKey": "S04E004",
+    "episodeLabel": "S04E004",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S04E004/thumb.jpg",
+    "duration": "24:27",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S04E004/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S04E004/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 41,
+    "title": "Saison 4 - Episode 5",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S04E005/master-ja.m3u8",
+    "season": "S04",
+    "arc": "Saison 4",
+    "preferredAudioLang": "ja",
+    "progressKey": "S04E005",
+    "episodeLabel": "S04E005",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S04E005/thumb.jpg",
+    "duration": "24:27",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S04E005/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S04E005/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 42,
+    "title": "Saison 4 - Episode 6",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S04E006/master-ja.m3u8",
+    "season": "S04",
+    "arc": "Saison 4",
+    "preferredAudioLang": "ja",
+    "progressKey": "S04E006",
+    "episodeLabel": "S04E006",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S04E006/thumb.jpg",
+    "duration": "24:27",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S04E006/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S04E006/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 43,
+    "title": "Saison 4 - Episode 7",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S04E007/master-ja.m3u8",
+    "season": "S04",
+    "arc": "Saison 4",
+    "preferredAudioLang": "ja",
+    "progressKey": "S04E007",
+    "episodeLabel": "S04E007",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S04E007/thumb.jpg",
+    "duration": "24:27",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S04E007/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S04E007/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 44,
+    "title": "Saison 4 - Episode 8",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S04E008/master-ja.m3u8",
+    "season": "S04",
+    "arc": "Saison 4",
+    "preferredAudioLang": "ja",
+    "progressKey": "S04E008",
+    "episodeLabel": "S04E008",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S04E008/thumb.jpg",
+    "duration": "24:27",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S04E008/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S04E008/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 45,
+    "title": "Saison 4 - Episode 9",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S04E009/master-ja.m3u8",
+    "season": "S04",
+    "arc": "Saison 4",
+    "preferredAudioLang": "ja",
+    "progressKey": "S04E009",
+    "episodeLabel": "S04E009",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S04E009/thumb.jpg",
+    "duration": "24:27",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S04E009/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S04E009/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 46,
+    "title": "Saison 4 - Episode 10",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S04E010/master-ja.m3u8",
+    "season": "S04",
+    "arc": "Saison 4",
+    "preferredAudioLang": "ja",
+    "progressKey": "S04E010",
+    "episodeLabel": "S04E010",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S04E010/thumb.jpg",
+    "duration": "24:27",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S04E010/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S04E010/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 47,
+    "title": "Saison 4 - Episode 11",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S04E011/master-ja.m3u8",
+    "season": "S04",
+    "arc": "Saison 4",
+    "preferredAudioLang": "ja",
+    "progressKey": "S04E011",
+    "episodeLabel": "S04E011",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S04E011/thumb.jpg",
+    "duration": "24:27",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S04E011/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S04E011/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 48,
+    "title": "Saison 4 - Episode 12",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S04E012/master-ja.m3u8",
+    "season": "S04",
+    "arc": "Saison 4",
+    "preferredAudioLang": "ja",
+    "progressKey": "S04E012",
+    "episodeLabel": "S04E012",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S04E012/thumb.jpg",
+    "duration": "23:57",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S04E012/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/rent-girlfriend-hls/S04E012/sub-fr.vtt"
+      }
+    ]
   }
 ]
