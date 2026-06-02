@@ -1020,7 +1020,7 @@ export default function MessagesPage() {
   const showChat = !isMobile || !!conversationId
 
   return (
-    <div style={{ minHeight: '100vh', background: T.bg }}>
+    <div style={{ minHeight: '100vh', background: T.bg, position: 'relative', zIndex: 1 }}>
       <Navbar />
       <style>{`@keyframes pulse { 0%,100%{opacity:.4} 50%{opacity:.8} } @keyframes typingDot { 0%,60%,100%{transform:translateY(0);opacity:.4} 30%{transform:translateY(-4px);opacity:1} }`}</style>
       <div style={{ maxWidth: 1320, margin: '0 auto', padding: isMobile ? '64px 0 0' : '76px 16px 20px', height: isMobile ? '100vh' : 'calc(100vh - 16px)' }}>
