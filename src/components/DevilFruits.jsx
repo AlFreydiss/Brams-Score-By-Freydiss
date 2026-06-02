@@ -18,9 +18,16 @@ const FRUITS = [
 function useInView(ref) {
   const [visible, setVisible] = useState(false)
   useEffect(() => {
-    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setVisible(true) }, { threshold: 0.1 })
-    if (ref.current) obs.observe(ref.current)
-    return () => obs.disconnect()
+    const el = ref.current
+    if (!el) { setVisible(true); return }
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) { setVisible(true); return }
+    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setVisible(true); obs.disconnect() } }, { threshold: 0, rootMargin: '0px 0px -10% 0px' })
+    obs.observe(el)
+    const rect = el.getBoundingClientRect()
+    const vh = window.innerHeight || document.documentElement.clientHeight
+    if (rect.top < vh && rect.bottom > 0) { setVisible(true); obs.disconnect() }
+    const fallback = setTimeout(() => { setVisible(true); obs.disconnect() }, 1500)
+    return () => { obs.disconnect(); clearTimeout(fallback) }
   }, [ref])
   return visible
 }

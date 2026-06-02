@@ -39,13 +39,17 @@ function StatBlock({ value, label, icon, live = false, liveVal = null, sub = nul
 
   useEffect(() => {
     const el = ref.current
-    if (!el) return
+    if (!el) { setActive(true); return }
     const obs = new IntersectionObserver(
       ([e]) => { if (e.isIntersecting) { setActive(true); obs.disconnect() } },
       { threshold: 0.4 }
     )
     obs.observe(el)
-    return () => obs.disconnect()
+    const rect = el.getBoundingClientRect()
+    const vh = window.innerHeight || document.documentElement.clientHeight
+    if (rect.top < vh && rect.bottom > 0) { setActive(true); obs.disconnect() }
+    const fallback = setTimeout(() => { setActive(true); obs.disconnect() }, 1500)
+    return () => { obs.disconnect(); clearTimeout(fallback) }
   }, [])
 
   useEffect(() => {
