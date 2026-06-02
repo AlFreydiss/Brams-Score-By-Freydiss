@@ -6,7 +6,7 @@ const INTERNAL = [
 ]
 
 const SOCIAL = [
-  { label: 'Discord', href: 'https://discord.gg/v3Ddhtbz' },
+  { label: 'Discord', href: 'https://discord.gg/8uzU3eatMr' },
   { label: 'Twitch',  href: 'https://www.twitch.tv/bouledog_' },
   { label: 'YouTube', href: 'https://www.youtube.com/@BouleDogg/featured' },
   { label: 'TikTok',  href: 'https://www.tiktok.com/@bouledogg' },

@@ -266,7 +266,7 @@ export default function Hero() {
             <div className="fade-up-3" style={{ marginBottom: 32 }}>
               <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 11, alignItems: 'center' }}>
               <a
-                href="https://discord.gg/v3Ddhtbz"
+                href="https://discord.gg/8uzU3eatMr"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn"

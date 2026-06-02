@@ -55,7 +55,7 @@ export default function AboutModal({ onClose }) {
         </div>
 
         <div style={{ display: 'flex', gap: 8 }}>
-          <a href="https://discord.gg/v3Ddhtbz" target="_blank" rel="noopener noreferrer"
+          <a href="https://discord.gg/8uzU3eatMr" target="_blank" rel="noopener noreferrer"
             className="btn btn-discord" style={{ flex: 1, justifyContent: 'center', padding: '11px 16px', fontSize: 14 }}>
             Rejoindre Discord
           </a>

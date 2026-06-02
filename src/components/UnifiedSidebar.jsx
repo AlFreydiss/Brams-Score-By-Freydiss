@@ -706,7 +706,7 @@ export default function UnifiedSidebar() {
           display:'flex', alignItems:'center', justifyContent:'space-between',
           background:'rgba(0,0,0,.2)',
         }}>
-          <a href="https://discord.gg/v3Ddhtbz" target="_blank" rel="noopener noreferrer"
+          <a href="https://discord.gg/8uzU3eatMr" target="_blank" rel="noopener noreferrer"
             className="hub-bt-cta primary" style={{ width:'auto', padding:'8px 20px', fontSize:11 }}>
             🏴‍☠️ Rejoindre le Discord
           </a>
