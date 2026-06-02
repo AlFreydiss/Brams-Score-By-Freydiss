@@ -1129,9 +1129,66 @@ function BramsqHubCard({ anime, rank = null, onClick, onOpenMonUnivers, isFav = 
   )
 }
 
+// ── Pill de filtre genre (inline premium, accent violet) ──
+function FilterPill({ label, active, onClick }) {
+  const [hov, setHov] = useState(false)
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      aria-pressed={active}
+      style={{
+        display:'inline-flex', alignItems:'center', gap:6,
+        borderRadius:999, padding:'7px 15px',
+        fontSize:12, fontWeight:800, letterSpacing:'.015em',
+        cursor:'pointer', whiteSpace:'nowrap',
+        transition:'all .22s cubic-bezier(0.23,1,0.32,1)',
+        transform: hov && !active ? 'translateY(-1px)' : 'none',
+        border: active ? '1px solid rgba(167,139,250,0.6)' : `1px solid ${hov ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.10)'}`,
+        background: active ? 'rgba(167,139,250,0.16)' : (hov ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.035)'),
+        color: active ? '#d9ccff' : (hov ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.55)'),
+        boxShadow: active ? '0 0 0 1px rgba(167,139,250,0.30), 0 4px 18px -6px rgba(167,139,250,0.45)' : 'none',
+      }}
+    >
+      {active && <span style={{ width:5, height:5, borderRadius:'50%', background:'#a78bfa', boxShadow:'0 0 6px #a78bfa' }} />}
+      {label}
+    </button>
+  )
+}
+
+// ── Item du rail de catégories (inline premium, accent latéral) ──
+function RailItem({ label, icon, count, active, onClick }) {
+  const [hov, setHov] = useState(false)
+  return (
+    <button
+      onClick={onClick}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      style={{
+        display:'flex', alignItems:'center', gap:10, width:'100%',
+        padding:'9px 12px 9px 14px', borderRadius:10, marginBottom:3,
+        border:'none', cursor:'pointer', textAlign:'left', position:'relative',
+        background: active ? 'rgba(167,139,250,0.10)' : (hov ? 'rgba(255,255,255,0.045)' : 'transparent'),
+        color: active ? '#d9ccff' : (hov ? '#fff' : 'rgba(255,255,255,0.58)'),
+        fontSize:13, fontWeight: active ? 800 : 600, letterSpacing:'.01em',
+        transition:'all .18s',
+      }}
+    >
+      <span style={{ position:'absolute', left:0, top:'50%', transform:'translateY(-50%)', width:3, height: active ? 18 : (hov ? 10 : 0), borderRadius:2, background:'#a78bfa', transition:'height .2s', boxShadow: active ? '0 0 8px rgba(167,139,250,0.7)' : 'none' }} />
+      <span style={{ fontSize:14, opacity: active ? 1 : 0.75 }}>{icon}</span>
+      <span style={{ flex:1 }}>{label}</span>
+      <span style={{ fontSize:10, fontWeight:800, color: active ? 'rgba(217,204,255,0.7)' : 'rgba(255,255,255,0.28)' }}>{count}</span>
+    </button>
+  )
+}
+
 export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrstone, onOpenJjk, onOpenKingdom, onOpenAot, onOpenKny, onOpenNnt, onOpenSl, onOpenDbs, onOpenViolet, onOpenVivy, onOpenLovePrism, onOpenCaroleTuesday, onOpenBunnyGirl, onOpenRentGirlfriend, onOpenBc, onOpenMha, onOpenFireforce, onOpenBluelock, onOpenMonUnivers }) {
   const [query, setQuery] = useState('')
   const [selectedGenres, setSelectedGenres] = useState(new Set())
+  const [searchFocus, setSearchFocus] = useState(false)
+  const [activeCat, setActiveCat] = useState('top-du-moment')
 
   // Favorites synced with standalone premium hub (bramsq_favs) for hearts on cards
   const [favs, setFavs] = useState(() => {
@@ -1304,6 +1361,27 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
     return allAnimesWithExtras.filter(a => a._isNew).slice(0, 8);
   }, [allAnimesWithExtras]);
 
+  // Sections classées (data-driven, évite la duplication) pour le rail + les rangées
+  const byGenre = useCallback(
+    (key) => allAnimesWithExtras.filter(a => (a.genres || []).some(g => normalizeText(g).includes(key))),
+    [allAnimesWithExtras]
+  );
+  const categorySections = useMemo(() => [
+    { id:'top-du-moment',    label:'Top du moment',   icon:'🔥', items: topWeekAnimes },
+    { id:'romance',          label:'Romance',          icon:'💗', items: byGenre('romance') },
+    { id:'action',           label:'Action',           icon:'⚔️', items: byGenre('action') },
+    { id:'fantasy',          label:'Fantasy',          icon:'✨', items: byGenre('fantasy') },
+    { id:'aventure',         label:'Aventure',         icon:'🧭', items: byGenre('aventure') },
+    { id:'science-fiction',  label:'Science-fiction',  icon:'🛰️', items: byGenre('science') },
+    { id:'drame',            label:'Drame',            icon:'🎭', items: byGenre('drame') },
+  ], [topWeekAnimes, byGenre]);
+
+  const scrollToCat = (id) => {
+    setActiveCat(id);
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior:'smooth', block:'start' });
+  };
+
   return (
     <div style={{ position:'fixed', inset:0, zIndex:500, background:'#07090e', display:'flex', flexDirection:'column' }}>
       <style>{AH_CSS}</style>
@@ -1385,199 +1463,152 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
               </p>
             </div>
 
-            {/* ── Filters Section: large secondary search + premium multi-select genre pills (violet accent) ── */}
-            <div className="mx-auto max-w-[860px] px-5" style={{ margin: '0 auto 32px' }}>
-              {/* Large search input (prominent here for gallery filtering; combines with top-level nav if present) */}
-              <div className="mb-4">
-                <div className="relative">
-                  <div className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-[17px] text-violet-400/60">⌕</div>
-                  <input
-                    value={query}
-                    onChange={event => setQuery(event.target.value)}
-                    placeholder="Rechercher un titre, personnage, studio ou genre (ex: violet, luffy, action...)"
-                    className="w-full rounded-2xl border border-white/10 bg-[#0b0d14] py-3.5 pl-12 pr-5 text-[15px] font-medium text-white placeholder:text-white/35 outline-none transition-all focus:border-violet-500/50 focus:shadow-[0_0_0_1px_rgba(124,58,237,0.25),0_12px_36px_-12px_rgba(0,0,0,0.55)]"
-                    style={{ fontFamily: 'var(--body)' }}
-                  />
-                  {query && (
-                    <button
-                      type="button"
-                      onClick={() => setQuery('')}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 rounded-lg bg-white/5 px-2 py-0.5 text-[10px] font-extrabold text-white/45 transition hover:bg-white/10 hover:text-white/70"
-                      aria-label="Effacer la recherche"
-                    >
-                      CLEAR
-                    </button>
-                  )}
-                </div>
+            {/* ── Recherche + filtres genres (inline premium, accent violet) ── */}
+            <div style={{ maxWidth:880, margin:'0 auto 36px' }}>
+              {/* Recherche */}
+              <div style={{ position:'relative', marginBottom:18 }}>
+                <span style={{ position:'absolute', left:18, top:'50%', transform:'translateY(-50%)', fontSize:18, color:'rgba(167,139,250,0.55)', pointerEvents:'none' }}>⌕</span>
+                <input
+                  value={query}
+                  onChange={event => setQuery(event.target.value)}
+                  onFocus={() => setSearchFocus(true)}
+                  onBlur={() => setSearchFocus(false)}
+                  placeholder="Rechercher un titre, personnage, studio ou genre…"
+                  style={{
+                    width:'100%', boxSizing:'border-box',
+                    borderRadius:16, padding:'15px 48px 15px 46px',
+                    fontSize:15, fontWeight:500, color:'#fff',
+                    background:'#0b0d14', outline:'none',
+                    border:`1px solid ${searchFocus ? 'rgba(167,139,250,0.5)' : 'rgba(255,255,255,0.10)'}`,
+                    boxShadow: searchFocus ? '0 0 0 1px rgba(167,139,250,0.25), 0 16px 40px -14px rgba(0,0,0,0.6)' : '0 8px 24px -16px rgba(0,0,0,0.6)',
+                    transition:'border-color .2s, box-shadow .2s',
+                    fontFamily:'var(--body)',
+                  }}
+                />
+                {query && (
+                  <button
+                    type="button"
+                    onClick={() => setQuery('')}
+                    aria-label="Effacer la recherche"
+                    style={{ position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', width:26, height:26, borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.5)', fontSize:12, cursor:'pointer', transition:'all .18s' }}
+                    onMouseEnter={e => { e.currentTarget.style.background='rgba(255,255,255,0.12)'; e.currentTarget.style.color='#fff' }}
+                    onMouseLeave={e => { e.currentTarget.style.background='rgba(255,255,255,0.06)'; e.currentTarget.style.color='rgba(255,255,255,0.5)' }}
+                  >
+                    ✕
+                  </button>
+                )}
               </div>
 
-              {/* Beautiful line(s) of clickable premium genre pills — multi-select with violet accent, hover lift, selected glow */}
-              <div className="mb-2 flex flex-wrap items-center justify-center gap-2">
-                {/* All / Clear genres */}
-                <button
-                  type="button"
-                  onClick={() => setSelectedGenres(new Set())}
-                  className={`rounded-full border px-4 py-1.5 text-xs font-extrabold tracking-[0.025em] transition-all duration-200 active:scale-[0.985] ${
-                    selectedGenres.size === 0
-                      ? 'border-violet-400/60 bg-violet-500/15 text-violet-100 shadow-[0_0_0_1px_rgba(124,58,237,0.35)]'
-                      : 'border-white/10 bg-white/4 text-white/55 hover:border-white/20 hover:bg-white/8 hover:text-white/85'
-                  }`}
-                >
-                  Tous
-                </button>
-
-                {/* Genre pills — beautiful curated line (~12 max) using Tailwind. Matches requested: Action, Fantasy, Drame, Romance, Surnaturel, Aventure, Science-Fiction + key others. */}
-                {displayGenres.map(genre => {
-                  const active = selectedGenres.has(genre)
-                  return (
-                    <button
-                      key={genre}
-                      type="button"
-                      onClick={() => toggleGenre(genre)}
-                      className={`rounded-full border px-3.5 py-1.5 text-xs font-extrabold tracking-[0.02em] transition-all duration-200 flex items-center gap-1.5 active:scale-[0.985] ${
-                        active
-                          ? 'border-violet-400/70 bg-violet-600/25 text-violet-100 shadow-[0_0_14px_rgba(124,58,237,0.42)] ring-1 ring-inset ring-violet-400/25'
-                          : 'border-white/10 bg-white/[0.035] text-white/60 hover:border-white/25 hover:bg-white/[0.075] hover:text-white/90 hover:-translate-y-px'
-                      }`}
-                      aria-pressed={active}
-                    >
-                      {active && <span className="text-[8px] text-violet-300/90">●</span>}
-                      {genre}
-                    </button>
-                  )
-                })}
-
-                {/* Dedicated premium Reset button (appears when genres selected) */}
+              {/* Pills de genres */}
+              <div style={{ display:'flex', flexWrap:'wrap', alignItems:'center', justifyContent:'center', gap:8 }}>
+                <FilterPill label="Tous" active={selectedGenres.size === 0} onClick={() => setSelectedGenres(new Set())} />
+                {displayGenres.map(genre => (
+                  <FilterPill key={genre} label={genre} active={selectedGenres.has(genre)} onClick={() => toggleGenre(genre)} />
+                ))}
                 {selectedGenres.size > 0 && (
                   <button
                     type="button"
                     onClick={() => setSelectedGenres(new Set())}
-                    className="ml-0.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] font-black tracking-wider text-white/45 transition hover:border-violet-400/40 hover:bg-violet-500/10 hover:text-violet-200/90 active:scale-[0.97]"
-                    title="Effacer la sélection de genres"
+                    title="Effacer la sélection"
+                    style={{ borderRadius:999, padding:'7px 13px', fontSize:11, fontWeight:900, letterSpacing:'.06em', color:'rgba(255,255,255,0.45)', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.10)', cursor:'pointer', transition:'all .18s' }}
+                    onMouseEnter={e => { e.currentTarget.style.color='#d9ccff'; e.currentTarget.style.borderColor='rgba(167,139,250,0.4)' }}
+                    onMouseLeave={e => { e.currentTarget.style.color='rgba(255,255,255,0.45)'; e.currentTarget.style.borderColor='rgba(255,255,255,0.10)' }}
                   >
                     ↺ RESET
                   </button>
                 )}
               </div>
 
-              {/* Results count */}
-              <div className="mt-1 text-center text-[11px] font-extrabold tracking-[0.09em] text-white/28">
+              {/* Compteur de résultats */}
+              <div style={{ marginTop:16, textAlign:'center', fontSize:11, fontWeight:800, letterSpacing:'.10em', color:'rgba(255,255,255,0.3)' }}>
                 {isFiltering
-                  ? `${visibleAnimes.length} résultat${visibleAnimes.length > 1 ? 's' : ''}`
-                  : `${sortedAnimes.length} animés disponibles`
-                }
+                  ? `${visibleAnimes.length} RÉSULTAT${visibleAnimes.length > 1 ? 'S' : ''}`
+                  : `${sortedAnimes.length} ANIMÉS DISPONIBLES`}
               </div>
             </div>
 
           </div>
 
-          {/* Layout with left bar + classified sections (truc d'avant with left bar + sections top du moment, romance etc as requested) */}
-          <div style={{ display: 'flex', gap: 20, maxWidth: 1280, margin: '0 auto', padding: '0 24px' }}>
-            {/* Barre à gauche (left bar as requested, with categories for classified sections) */}
-            <div style={{
-              width: 180,
-              flexShrink: 0,
-              borderRight: '1px solid rgba(255,255,255,0.06)',
-              paddingRight: 12,
-              position: 'sticky',
-              top: 0,
-              alignSelf: 'flex-start',
-              paddingTop: 8
-            }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.5)', marginBottom: 8, letterSpacing: '.08em' }}>CATÉGORIES</div>
-              {[
-                { id: 'top-du-moment', label: 'Top du moment' },
-                { id: 'romance', label: 'Romance' },
-                { id: 'action', label: 'Action' },
-                { id: 'fantasy', label: 'Fantasy' },
-                { id: 'aventure', label: 'Aventure' },
-                { id: 'science-fiction', label: 'Science-fiction' },
-                { id: 'drame', label: 'Drame' }
-              ].map(cat => (
-                <div
-                  key={cat.id}
-                  onClick={() => {
-                    const el = document.getElementById(cat.id);
-                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                  }}
-                  style={{
-                    padding: '6px 8px',
-                    fontSize: 11,
-                    color: 'rgba(255,255,255,0.7)',
-                    cursor: 'pointer',
-                    borderRadius: 6,
-                    marginBottom: 2,
-                    transition: 'background .15s, color .15s'
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = '#fff'; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.7)'; }}
-                >
-                  {cat.label}
+          {/* ── Layout : rail catégories + sections classées, ou grille filtrée ── */}
+          <div style={{ maxWidth:1280, margin:'0 auto', padding:'0 24px' }}>
+            {isFiltering ? (
+              /* Résultats de recherche/filtre — grille */
+              visibleAnimesWithProgress.length === 0 ? (
+                <div style={{ textAlign:'center', padding:'72px 20px' }}>
+                  <div style={{ fontSize:40, marginBottom:14, opacity:0.45 }}>🔍</div>
+                  <div style={{ fontSize:18, fontWeight:800, color:'#fff', marginBottom:6 }}>Aucun anime trouvé</div>
+                  <div style={{ fontSize:13.5, color:'rgba(255,255,255,0.4)', marginBottom:22 }}>Essaie un autre titre ou retire des filtres.</div>
+                  <button
+                    onClick={() => { setQuery(''); setSelectedGenres(new Set()) }}
+                    style={{ borderRadius:12, padding:'10px 22px', fontSize:13, fontWeight:800, color:'#d9ccff', background:'rgba(167,139,250,0.14)', border:'1px solid rgba(167,139,250,0.4)', cursor:'pointer', transition:'all .18s' }}
+                    onMouseEnter={e => { e.currentTarget.style.background='rgba(167,139,250,0.24)'; e.currentTarget.style.color='#fff' }}
+                    onMouseLeave={e => { e.currentTarget.style.background='rgba(167,139,250,0.14)'; e.currentTarget.style.color='#d9ccff' }}
+                  >
+                    Réinitialiser les filtres
+                  </button>
                 </div>
-              ))}
-              <div style={{ marginTop: 16, fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>Barre gauche • Classé</div>
-            </div>
-
-            {/* Main content with classified sections + the cinematic from before */}
-            <div style={{ flex: 1, minWidth: 0 }}>
-              {/* Top du moment (featured row like in your image) */}
-              <div id="top-du-moment" style={{ marginBottom: 24 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#f1f1f3', marginBottom: 8, letterSpacing: '.06em' }}>Top du moment</div>
-                <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 8, scrollSnapType: 'x mandatory' }} className="elegant-scrollbar">
-                  {topWeekAnimes.slice(0, 8).map(anime => (
-                    <AnimeMarqueeCard
-                      key={anime.id}
-                      anime={anime}
-                      onClick={() => handleClick(anime.id)}
-                      onOpenMonUnivers={onOpenMonUnivers}
-                      isFav={favs.has(anime.id)}
-                      toggleFav={toggleFav}
+              ) : (
+                <div style={{ display:'flex', flexWrap:'wrap', gap:6, justifyContent:'center' }}>
+                  {visibleAnimesWithProgress.map(anime => (
+                    <AnimeMarqueeCard key={anime.id} anime={anime} onClick={() => handleClick(anime.id)} onOpenMonUnivers={onOpenMonUnivers} isFav={favs.has(anime.id)} toggleFav={toggleFav} />
+                  ))}
+                </div>
+              )
+            ) : (
+              <div style={{ display:'flex', gap:32 }}>
+                {/* Rail de catégories */}
+                <nav style={{ width:184, flexShrink:0, position:'sticky', top:24, alignSelf:'flex-start' }}>
+                  <div style={{ fontSize:10, fontWeight:900, color:'rgba(255,255,255,0.32)', letterSpacing:'.18em', textTransform:'uppercase', padding:'0 12px', marginBottom:12 }}>Catégories</div>
+                  {categorySections.map(section => (
+                    <RailItem
+                      key={section.id}
+                      label={section.label}
+                      icon={section.icon}
+                      count={section.items.length}
+                      active={activeCat === section.id}
+                      onClick={() => scrollToCat(section.id)}
                     />
                   ))}
-                </div>
-              </div>
+                  <div style={{ marginTop:20, padding:'14px 12px', borderRadius:12, background:'rgba(167,139,250,0.06)', border:'1px solid rgba(167,139,250,0.14)' }}>
+                    <div style={{ fontSize:12, fontWeight:800, color:'#d9ccff', marginBottom:4 }}>🎲 Au hasard</div>
+                    <div style={{ fontSize:11, color:'rgba(255,255,255,0.4)', lineHeight:1.5, marginBottom:10 }}>Laisse le destin choisir ton prochain anime.</div>
+                    <button
+                      onClick={surpriseMe}
+                      style={{ width:'100%', borderRadius:9, padding:'8px 0', fontSize:12, fontWeight:800, color:'#fff', background:'rgba(167,139,250,0.18)', border:'1px solid rgba(167,139,250,0.35)', cursor:'pointer', transition:'all .18s' }}
+                      onMouseEnter={e => { e.currentTarget.style.background='rgba(167,139,250,0.30)' }}
+                      onMouseLeave={e => { e.currentTarget.style.background='rgba(167,139,250,0.18)' }}
+                    >
+                      Surprends-moi
+                    </button>
+                  </div>
+                </nav>
 
-              {/* Romance */}
-              <div id="romance" style={{ marginBottom: 24 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#f1f1f3', marginBottom: 8, letterSpacing: '.06em' }}>Romance</div>
-                <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 8, scrollSnapType: 'x mandatory' }} className="elegant-scrollbar">
-                  {allAnimesWithExtras.filter(a => (a.genres || []).some(g => g.toLowerCase().includes('romance') || g === 'Romance')).slice(0, 8).map(anime => (
-                    <AnimeMarqueeCard key={anime.id} anime={anime} onClick={() => handleClick(anime.id)} onOpenMonUnivers={onOpenMonUnivers} isFav={favs.has(anime.id)} toggleFav={toggleFav} />
+                {/* Sections classées */}
+                <div style={{ flex:1, minWidth:0 }}>
+                  {categorySections.map(section => (
+                    <section key={section.id} id={section.id} style={{ marginBottom:40, scrollMarginTop:24 }}>
+                      <div style={{ display:'flex', alignItems:'center', gap:11, marginBottom:16 }}>
+                        <span style={{ fontSize:18 }}>{section.icon}</span>
+                        <h3 style={{ margin:0, fontSize:17, fontWeight:800, color:'#f1f1f3', letterSpacing:'-.01em' }}>{section.label}</h3>
+                        <span style={{ fontSize:11, fontWeight:800, color:'rgba(255,255,255,0.32)', background:'rgba(255,255,255,0.05)', borderRadius:999, padding:'2px 9px' }}>{section.items.length}</span>
+                        <div style={{ flex:1, height:1, background:'linear-gradient(to right, rgba(167,139,250,0.18), transparent)', marginLeft:6 }} />
+                      </div>
+                      {section.items.length === 0 ? (
+                        <div style={{ fontSize:13, color:'rgba(255,255,255,0.3)', padding:'4px 0 8px' }}>Bientôt disponible…</div>
+                      ) : (
+                        <div className="elegant-scrollbar" style={{ display:'flex', gap:4, overflowX:'auto', paddingBottom:10, scrollSnapType:'x proximity' }}>
+                          {section.items.map(anime => (
+                            <div key={anime.id} style={{ scrollSnapAlign:'start' }}>
+                              <AnimeMarqueeCard anime={anime} onClick={() => handleClick(anime.id)} onOpenMonUnivers={onOpenMonUnivers} isFav={favs.has(anime.id)} toggleFav={toggleFav} />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </section>
                   ))}
                 </div>
               </div>
-
-              {/* Action */}
-              <div id="action" style={{ marginBottom: 24 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#f1f1f3', marginBottom: 8, letterSpacing: '.06em' }}>Action</div>
-                <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 8, scrollSnapType: 'x mandatory' }} className="elegant-scrollbar">
-                  {allAnimesWithExtras.filter(a => (a.genres || []).some(g => g.toLowerCase().includes('action') || g === 'Action')).slice(0, 8).map(anime => (
-                    <AnimeMarqueeCard key={anime.id} anime={anime} onClick={() => handleClick(anime.id)} onOpenMonUnivers={onOpenMonUnivers} isFav={favs.has(anime.id)} toggleFav={toggleFav} />
-                  ))}
-                </div>
-              </div>
-
-              {/* Fantasy */}
-              <div id="fantasy" style={{ marginBottom: 24 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#f1f1f3', marginBottom: 8, letterSpacing: '.06em' }}>Fantasy</div>
-                <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 8, scrollSnapType: 'x mandatory' }} className="elegant-scrollbar">
-                  {allAnimesWithExtras.filter(a => (a.genres || []).some(g => g.toLowerCase().includes('fantasy') || g === 'Fantasy')).slice(0, 8).map(anime => (
-                    <AnimeMarqueeCard key={anime.id} anime={anime} onClick={() => handleClick(anime.id)} onOpenMonUnivers={onOpenMonUnivers} isFav={favs.has(anime.id)} toggleFav={toggleFav} />
-                  ))}
-                </div>
-              </div>
-
-              {/* Aventure */}
-              <div id="aventure" style={{ marginBottom: 24 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#f1f1f3', marginBottom: 8, letterSpacing: '.06em' }}>Aventure</div>
-                <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 8, scrollSnapType: 'x mandatory' }} className="elegant-scrollbar">
-                  {allAnimesWithExtras.filter(a => (a.genres || []).some(g => g.toLowerCase().includes('aventure') || g === 'Aventure')).slice(0, 8).map(anime => (
-                    <AnimeMarqueeCard key={anime.id} anime={anime} onClick={() => handleClick(anime.id)} onOpenMonUnivers={onOpenMonUnivers} isFav={favs.has(anime.id)} toggleFav={toggleFav} />
-                  ))}
-                </div>
-              </div>
-
-            </div>
+            )}
           </div>
         </div>
       </div>
