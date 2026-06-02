@@ -1,10 +1,18 @@
 import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react'
 import VideoPlayer from './VideoPlayer.jsx'
+import { Reader } from './MangaReader.jsx'
 import AnimeBackdrop, { ANIME_MOTIFS } from './AnimeBackdrop.jsx'
 import VIDEOS_RAW from '../data/bluelock-videos.json'
-import CHAPTERS from '../data/bluelock-chapters.json'
+import CHAPTERS_RAW from '../data/bluelock-chapters.json'
 
 const VIDEOS = VIDEOS_RAW
+
+const CHAPTERS = (CHAPTERS_RAW || []).map((ch, i) => ({
+  num: String(ch.num || (i+1)),
+  title: ch.title || `Chapitre ${ch.num || (i+1)}`,
+  emoji: '⚽',
+  pages: ch.pages || [],
+}))
 
 const COLOR  = '#1565c0'
 const COLOR2 = '#60a5fa'
@@ -27,6 +35,13 @@ function loadProgress() {
 }
 function saveProgress(p) {
   try { localStorage.setItem(`${NS}_vp`, JSON.stringify(p)) } catch {}
+}
+
+function loadScanProgress() {
+  try { return JSON.parse(localStorage.getItem(`${NS}_progress`) || '{}') } catch { return {} }
+}
+function saveScanProgress(p) {
+  try { localStorage.setItem(`${NS}_progress`, JSON.stringify(p)) } catch {}
 }
 
 const CSS = `
@@ -140,14 +155,14 @@ function InfoPanel({ watchedCount, total, lastWatchedIdx, onResume, chapterCount
 
         <button className="bl-cta" onClick={onResume} style={{ width:'100%',padding:'11px 0',borderRadius:12, background:`rgba(21,101,192,.14)`,border:`1px solid rgba(21,101,192,.32)`, color:'#fff',cursor:'pointer',fontSize:13,fontWeight:800, display:'flex',alignItems:'center',justifyContent:'center',gap:8, fontFamily:'var(--body)' }}>
           <span style={{ fontSize:16 }}>▶</span>
-          {pct === 0 ? 'Commencer' : pct === 100 ? 'Revoir depuis le début' : `Reprendre — ${nextVideo?.title || `Ép. ${nextVideo?.episode}`}`}
+          {chapterCount > 0 ? (readCount === 0 ? `Commencer scans (${chapterCount} ch.)` : readCount === chapterCount ? 'Scans terminés — relire' : `Reprendre lecture scans`) : (pct === 0 ? 'Commencer' : pct === 100 ? 'Revoir depuis le début' : `Reprendre — ${nextVideo?.title || `Ép. ${nextVideo?.episode}`}`)}
         </button>
 
         <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:8 }}>
           {[
-            { label:'Épisodes', value:'0', dot:COLOR2 },
-            { label:'Chapitres', value:'0', dot:'#fbbf24' },
-            { label:'OAV', value:'0', dot:'#34d399' },
+            { label:'Épisodes', value: String(VIDEOS.length || '—'), dot:COLOR2 },
+            { label:'Chapitres', value: String(chapterCount || 0), dot:'#fbbf24' },
+            { label:'Lus', value: `${readCount}/${chapterCount||0}`, dot:'#34d399' },
             { label:'Audio', value:'VF + VO', dot:'#f97316' },
             { label:'Note', value:'★ 8.5', dot:'#f97316' },
           ].map(s => (
@@ -188,14 +203,16 @@ function InfoPanel({ watchedCount, total, lastWatchedIdx, onResume, chapterCount
 export default function BlueLockPage({ onClose }) {
   const [playerIdx, setPlayerIdx] = useState(null)
   const [progress, setProgress]   = useState(loadProgress)
+  const [scanProg, setScanProg]   = useState(loadScanProgress)
+  const [reading, setReading]     = useState(null)
   const scrollRef = useRef(null)
 
   useEffect(() => { document.body.style.overflow = 'hidden'; return () => { document.body.style.overflow = '' } }, [])
   useEffect(() => {
-    const fn = e => { if (e.key === 'Escape' && playerIdx === null) onClose?.() }
+    const fn = e => { if (e.key === 'Escape' && playerIdx === null && reading === null) onClose?.() }
     window.addEventListener('keydown', fn)
     return () => window.removeEventListener('keydown', fn)
-  }, [playerIdx, onClose])
+  }, [playerIdx, reading, onClose])
 
   const keyOf = (v) => v.progressKey || v.id || (v.kind === 'film' ? `film-${v.episode}` : v.kind === 'ova' ? `ova-${v.episode}` : v.episode)
   const markWatched = useCallback((idx) => {
@@ -215,6 +232,29 @@ export default function BlueLockPage({ onClose }) {
   const ovas = VIDEOS.map((v, i) => ({ v, i })).filter(x => x.v.kind === 'ova')
   const films = VIDEOS.map((v, i) => ({ v, i })).filter(x => x.v.kind === 'film')
   const chapterCount = CHAPTERS.length || 0
+
+  const markScan = useCallback((chNum, status) => {
+    setScanProg(prev => {
+      const next = { ...prev, [chNum]: status }
+      saveScanProgress(next)
+      return next
+    })
+  }, [])
+
+  const openChapter = useCallback((idx) => {
+    const ch = CHAPTERS[idx]
+    if (!ch) return
+    setReading(idx)
+    if (scanProg[ch.num] !== 'read') markScan(ch.num, 'reading')
+  }, [CHAPTERS, scanProg, markScan])
+
+  const finishChapter = useCallback(() => {
+    if (reading === null) return
+    markScan(CHAPTERS[reading].num, 'read')
+  }, [reading, CHAPTERS, markScan])
+
+  const readCount = useMemo(() =>
+    CHAPTERS.filter(c => scanProg[c.num] === 'read').length, [CHAPTERS, scanProg])
 
   return (
     <>
@@ -236,7 +276,7 @@ export default function BlueLockPage({ onClose }) {
             </span>
           </div>
           <div style={{ display:'flex',alignItems:'center',gap:8 }}>
-            <div style={{ fontSize:10.5,color:'rgba(255,255,255,.28)',fontWeight:700 }}>{watchedCount}/{VIDEOS.length} vus</div>
+            <div style={{ fontSize:10.5,color:'rgba(255,255,255,.28)',fontWeight:700 }}>{watchedCount}/{VIDEOS.length} vus · {readCount}/{chapterCount} lus</div>
             <div style={{ width:56,height:5,borderRadius:999,background:'rgba(255,255,255,.07)',overflow:'hidden' }}>
               <div style={{ width:`${Math.round(watchedCount/VIDEOS.length*100)}%`,height:'100%',background:`linear-gradient(90deg,${COLOR},${COLOR2})`,borderRadius:999,transition:'width .4s' }} />
             </div>
@@ -259,25 +299,50 @@ export default function BlueLockPage({ onClose }) {
               <div>
                 <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20 }}>
                   <div>
-                    <h3 style={{ margin:'0 0 3px',fontSize:18,fontWeight:900,color:'#fff',letterSpacing:'-.01em' }}>Épisodes</h3>
-                    <div style={{ fontSize:11,color:'rgba(255,255,255,.32)',fontWeight:600 }}>Bientôt disponible</div>
+                    <h3 style={{ margin:'0 0 3px',fontSize:18,fontWeight:900,color:'#fff',letterSpacing:'-.01em' }}>Chapitres Manga</h3>
+                    <div style={{ fontSize:11,color:'rgba(255,255,255,.32)',fontWeight:600 }}>{chapterCount} chapitres • Scans disponibles</div>
                   </div>
                   <div style={{ display:'flex',alignItems:'center',gap:6,padding:'6px 14px',borderRadius:999,background:'rgba(21,101,192,.08)',border:'1px solid rgba(21,101,192,.18)' }}>
-                    <div style={{ width:6,height:6,borderRadius:'50%',background:COLOR }} />
-                    <span style={{ fontSize:11,fontWeight:800,color:COLOR2 }}>En préparation</span>
+                    <div style={{ width:6,height:6,borderRadius:'50%',background:'#fbbf24' }} />
+                    <span style={{ fontSize:11,fontWeight:800,color:COLOR2 }}>Scans actifs</span>
                   </div>
                 </div>
 
-                <div style={{ padding: '24px', borderRadius: 16, background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.06)', textAlign: 'center' }}>
-                  <div style={{ fontSize: 48, marginBottom: 12 }}>⚽</div>
-                  <div style={{ fontSize: 20, fontWeight: 900, color: '#fff', marginBottom: 8 }}>Blue Lock — Ego Project</div>
-                  <div style={{ color: 'rgba(255,255,255,.5)', marginBottom: 16 }}>Le projet révolutionnaire pour créer le buteur ultime arrive bientôt avec une expérience dédiée.</div>
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(155px,1fr))', gap:10 }}>
+                  {CHAPTERS.map((ch, i) => {
+                    const status = scanProg[ch.num] || null
+                    const isRead = status === 'read'
+                    const isReading = status === 'reading'
+                    return (
+                      <button
+                        key={ch.num}
+                        onClick={() => openChapter(i)}
+                        style={{
+                          position:'relative',
+                          background: isRead ? 'rgba(10,14,24,.5)' : 'rgba(10,14,24,.85)',
+                          border: isReading ? `2px solid ${COLOR}` : `1px solid ${isRead ? 'rgba(21,101,192,.15)' : 'rgba(255,255,255,.07)'}`,
+                          borderRadius:14, padding:'14px', cursor:'pointer', textAlign:'left', fontFamily:'var(--body)',
+                          opacity: isRead ? 0.7 : 1,
+                          transition: 'all .15s ease'
+                        }}
+                        onMouseEnter={e => { if (!isRead) e.currentTarget.style.borderColor = COLOR + '55' }}
+                        onMouseLeave={e => { if (!isRead && !isReading) e.currentTarget.style.borderColor = 'rgba(255,255,255,.07)' }}
+                      >
+                        {isRead && <div style={{ position:'absolute',top:8,right:8,width:18,height:18,borderRadius:'50%',background:'rgba(52,211,153,.2)',border:'1px solid rgba(52,211,153,.5)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,color:'#34d399',fontWeight:700 }}>✓</div>}
+                        {isReading && <div style={{ position:'absolute',top:8,right:8,fontSize:9,fontWeight:700,background:`${COLOR}22`,color:COLOR,border:`1px solid ${COLOR}55`,borderRadius:100,padding:'1px 6px' }}>En cours</div>}
+                        <div style={{ fontSize:18,marginBottom:6 }}>{ch.emoji}</div>
+                        <div style={{ fontSize:9,fontWeight:800,color:COLOR2,letterSpacing:'.08em',marginBottom:3 }}>CHAPITRE {ch.num}</div>
+                        <div style={{ fontSize:12,fontWeight:700,color: isRead ? 'rgba(255,255,255,.5)' : '#fff', lineHeight:1.3, marginBottom:6 }}>{ch.title}</div>
+                        <div style={{ fontSize:10,fontWeight:700,color: isRead ? 'rgba(255,255,255,.3)' : COLOR2 }}>📖 {isRead ? 'Relire' : isReading ? 'Continuer' : 'Lire'}</div>
+                      </button>
+                    )
+                  })}
                 </div>
 
                 <div style={{ marginTop:28,padding:'14px 18px',borderRadius:12,background:'rgba(255,255,255,.03)',border:'1px solid rgba(255,255,255,.05)',display:'flex',alignItems:'center',gap:10 }}>
                   <span style={{ fontSize:16 }}>⚽</span>
                   <span style={{ fontSize:12,color:'rgba(255,255,255,.38)',fontWeight:600,lineHeight:1.5 }}>
-                    Blue Lock — l'anime de football le plus intense, où l'ego fait la différence.
+                    Blue Lock — l'anime de football le plus intense, où l'ego fait la différence. {chapterCount} chapitres de scans disponibles.
                   </span>
                 </div>
               </div>
@@ -285,6 +350,21 @@ export default function BlueLockPage({ onClose }) {
           </div>
         )}
       </div>
+
+      {reading !== null && CHAPTERS[reading] && (
+        <Reader
+          chapter={CHAPTERS[reading]}
+          chapterIndex={reading}
+          totalChapters={CHAPTERS.length}
+          onClose={() => setReading(null)}
+          onPrevChapter={() => setReading(i => Math.max(0, i - 1))}
+          onNextChapter={() => setReading(i => Math.min(CHAPTERS.length - 1, i + 1))}
+          onFinish={finishChapter}
+          isRead={scanProg[CHAPTERS[reading]?.num] === 'read'}
+          namespace={NS}
+          themeColor={COLOR}
+        />
+      )}
     </>
   )
 }

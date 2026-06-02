@@ -1,5 +1,6 @@
 ﻿import { createClient } from '@supabase/supabase-js';
-import fs from 'fs/promises';
+import fsPromises from 'fs/promises';
+import * as nodeFs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -8,21 +9,35 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // Load env from .env.local (clone) or .env.upload (sibling Brams-Score repo)
 function loadEnv() {
   const candidates = [
+    path.join(process.cwd(), '.env.local'),
     path.join(__dirname, '..', '.env.local'),
+    'F:\\Brams-Score-By-Freydiss\\.env.upload',
+    path.join(process.cwd(), '..', '..', 'Brams-Score-By-Freydiss', '.env.upload'),
     path.join(__dirname, '..', '..', 'Brams-Score-By-Freydiss', '.env.upload'),
-    path.join(__dirname, '..', '..', 'Brams-Score-By-Freydiss', '.env'),
+    path.join(process.cwd(), '..', 'Brams-Score-By-Freydiss', '.env.upload'),
     '.env.upload',
     '.env'
   ];
   const env = {};
+  let loadedFrom = null;
   for (const p of candidates) {
+    const full = path.resolve(p);
     try {
-      const content = require('fs').readFileSync(p, 'utf8');
+      const content = nodeFs.readFileSync(full, 'utf8');
       for (const line of content.split(/\r?\n/)) {
         const m = line.match(/^([^#=]+)=(.*)$/);
         if (m) env[m[1].trim()] = m[2].trim().replace(/^["']|["']$/g, '');
       }
+      if (env.SUPABASE_SERVICE_KEY || env.SERVICE_KEY) {
+        loadedFrom = full;
+        break;
+      }
     } catch {}
+  }
+  if (loadedFrom) {
+    console.log('Loaded env from:', loadedFrom);
+  } else {
+    console.log('No .env with SERVICE_KEY found in candidates');
   }
   return env;
 }
@@ -53,7 +68,8 @@ const SLUG_TO_LOCAL = {
   sl: 'Solo Leveling',
   mha: 'My Hero Academia',
   drstone: 'Dr. Stone',
-  tpn: 'The Promised Neverland'
+  tpn: 'The Promised Neverland',
+  // Add more here if needed, matching the folder names on F:\Manga\TPN\
 };
 
 async function ensureBucket() {
@@ -72,9 +88,9 @@ async function uploadAnime(slug) {
 
   // Prefer local public/scans copy, fallback to F: raw
   let root = path.join(__dirname, '..', 'public', 'scans', slug);
-  try { await fs.access(root); } catch {
+  try { await fsPromises.access(root); } catch {
     root = path.join('F:\\Manga\\TPN', localName);
-    try { await fs.access(root); } catch {
+    try { await fsPromises.access(root); } catch {
       console.error('No local data for', slug);
       return;
     }
@@ -83,21 +99,21 @@ async function uploadAnime(slug) {
   console.log(`\n=== ${slug} (${localName}) from ${root} ===`);
   await ensureBucket();
 
-  const chDirs = (await fs.readdir(root, { withFileTypes: true })).filter(d => d.isDirectory());
+  const chDirs = (await fsPromises.readdir(root, { withFileTypes: true })).filter(d => d.isDirectory());
   const chapters = [];
 
   for (const d of chDirs.sort((a, b) => parseInt(a.name) - parseInt(b.name))) {
     const num = parseInt(d.name);
     if (isNaN(num)) continue;
     const chPath = path.join(root, d.name);
-    const files = (await fs.readdir(chPath)).filter(f => /\.(jpe?g|png|webp)$/i.test(f))
+    const files = (await fsPromises.readdir(chPath)).filter(f => /\.(jpe?g|png|webp)$/i.test(f))
       .sort((a,b) => a.localeCompare(b, undefined, { numeric: true }));
 
     const pages = [];
     for (const img of files) {
       const full = path.join(chPath, img);
       const objPath = `scans/${slug}/ch${num}/${img}`;
-      const buf = await fs.readFile(full);
+      const buf = await fsPromises.readFile(full);
       const ct = img.endsWith('.png') ? 'image/png' : img.endsWith('.webp') ? 'image/webp' : 'image/jpeg';
 
       const { error } = await supabase.storage.from(BUCKET).upload(objPath, buf, { contentType: ct, upsert: true });
@@ -116,15 +132,15 @@ async function uploadAnime(slug) {
   chapters.sort((a,b) => +a.num - +b.num);
 
   const jsonPath = `src/data/${slug}-chapters.json`;
-  await fs.mkdir(path.dirname(jsonPath), { recursive: true });
-  await fs.writeFile(jsonPath, JSON.stringify(chapters, null, 2));
+  await fsPromises.mkdir(path.dirname(jsonPath), { recursive: true });
+  await fsPromises.writeFile(jsonPath, JSON.stringify(chapters, null, 2));
   console.log(`✅ ${chapters.length} chapters → ${jsonPath}`);
 }
 
 async function main() {
   const args = process.argv.slice(2);
   if (args.length === 0) {
-    console.log('Usage: node scripts/upload-pc-scans.mjs <slug> [slug2 ...] | all');
+    console.log('Usage: node scripts/upload-fireforce-scans.mjs <slug> [slug2 ...] | all');
     console.log('Available slugs:', Object.keys(SLUG_TO_LOCAL).join(', '));
     return;
   }

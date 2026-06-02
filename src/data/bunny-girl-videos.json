@@ -1,1 +1,782 @@
-[]
+[
+  {
+    "episode": 1,
+    "title": "Saison 1 - Episode 1",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S01E001/master-ja.m3u8",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E001",
+    "episodeLabel": "S01E001",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S01E001/thumb.jpg",
+    "duration": "25:01",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S01E001/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S01E001/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 2,
+    "title": "Saison 1 - Episode 2",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S01E002/master-ja.m3u8",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E002",
+    "episodeLabel": "S01E002",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S01E002/thumb.jpg",
+    "duration": "25:01",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S01E002/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S01E002/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 3,
+    "title": "Saison 1 - Episode 3",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S01E003/master-ja.m3u8",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E003",
+    "episodeLabel": "S01E003",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S01E003/thumb.jpg",
+    "duration": "25:01",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S01E003/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S01E003/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 4,
+    "title": "Saison 1 - Episode 4",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S01E004/master-ja.m3u8",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E004",
+    "episodeLabel": "S01E004",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S01E004/thumb.jpg",
+    "duration": "25:01",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S01E004/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S01E004/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 5,
+    "title": "Saison 1 - Episode 5",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S01E005/master-ja.m3u8",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E005",
+    "episodeLabel": "S01E005",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S01E005/thumb.jpg",
+    "duration": "25:01",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S01E005/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S01E005/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 6,
+    "title": "Saison 1 - Episode 6",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S01E006/master-ja.m3u8",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E006",
+    "episodeLabel": "S01E006",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S01E006/thumb.jpg",
+    "duration": "25:01",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S01E006/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S01E006/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 7,
+    "title": "Saison 1 - Episode 7",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S01E007/master-ja.m3u8",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E007",
+    "episodeLabel": "S01E007",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S01E007/thumb.jpg",
+    "duration": "25:01",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S01E007/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S01E007/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 8,
+    "title": "Saison 1 - Episode 8",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S01E008/master-fr.m3u8",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "fr",
+    "progressKey": "S01E008",
+    "episodeLabel": "S01E008",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S01E008/thumb.jpg",
+    "duration": "25:01",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S01E008/master-fr.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S01E008/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 9,
+    "title": "Saison 1 - Episode 9",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S01E009/master-ja.m3u8",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E009",
+    "episodeLabel": "S01E009",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S01E009/thumb.jpg",
+    "duration": "25:01",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S01E009/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S01E009/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 10,
+    "title": "Saison 1 - Episode 10",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S01E010/master-ja.m3u8",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E010",
+    "episodeLabel": "S01E010",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S01E010/thumb.jpg",
+    "duration": "25:01",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S01E010/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S01E010/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 11,
+    "title": "Saison 1 - Episode 11",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S01E011/master-ja.m3u8",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E011",
+    "episodeLabel": "S01E011",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S01E011/thumb.jpg",
+    "duration": "25:01",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S01E011/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S01E011/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 12,
+    "title": "Saison 1 - Episode 12",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S01E012/master-ja.m3u8",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E012",
+    "episodeLabel": "S01E012",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S01E012/thumb.jpg",
+    "duration": "25:01",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S01E012/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S01E012/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 13,
+    "title": "Saison 1 - Episode 13",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S01E013/master-ja.m3u8",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E013",
+    "episodeLabel": "S01E013",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S01E013/thumb.jpg",
+    "duration": "25:01",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S01E013/master-ja.m3u8",
+        "default": true
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S01E013/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 14,
+    "title": "Saison 2 - Episode 1",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E001/master-ja.m3u8",
+    "season": "S02",
+    "arc": "Saison 2",
+    "preferredAudioLang": "ja",
+    "progressKey": "S02E001",
+    "episodeLabel": "S02E001",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E001/thumb.jpg",
+    "duration": "24:00",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E001/master-ja.m3u8",
+        "default": true
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E001/master-fr.m3u8",
+        "default": false
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E001/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 15,
+    "title": "Saison 2 - Episode 2",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E002/master-ja.m3u8",
+    "season": "S02",
+    "arc": "Saison 2",
+    "preferredAudioLang": "ja",
+    "progressKey": "S02E002",
+    "episodeLabel": "S02E002",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E002/thumb.jpg",
+    "duration": "24:00",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E002/master-ja.m3u8",
+        "default": true
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E002/master-fr.m3u8",
+        "default": false
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E002/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 16,
+    "title": "Saison 2 - Episode 3",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E003/master-ja.m3u8",
+    "season": "S02",
+    "arc": "Saison 2",
+    "preferredAudioLang": "ja",
+    "progressKey": "S02E003",
+    "episodeLabel": "S02E003",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E003/thumb.jpg",
+    "duration": "24:00",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E003/master-ja.m3u8",
+        "default": true
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E003/master-fr.m3u8",
+        "default": false
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E003/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 17,
+    "title": "Saison 2 - Episode 4",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E004/master-ja.m3u8",
+    "season": "S02",
+    "arc": "Saison 2",
+    "preferredAudioLang": "ja",
+    "progressKey": "S02E004",
+    "episodeLabel": "S02E004",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E004/thumb.jpg",
+    "duration": "24:00",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E004/master-ja.m3u8",
+        "default": true
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E004/master-fr.m3u8",
+        "default": false
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E004/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 18,
+    "title": "Saison 2 - Episode 5",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E005/master-ja.m3u8",
+    "season": "S02",
+    "arc": "Saison 2",
+    "preferredAudioLang": "ja",
+    "progressKey": "S02E005",
+    "episodeLabel": "S02E005",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E005/thumb.jpg",
+    "duration": "24:00",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E005/master-ja.m3u8",
+        "default": true
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E005/master-fr.m3u8",
+        "default": false
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E005/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 19,
+    "title": "Saison 2 - Episode 6",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E006/master-ja.m3u8",
+    "season": "S02",
+    "arc": "Saison 2",
+    "preferredAudioLang": "ja",
+    "progressKey": "S02E006",
+    "episodeLabel": "S02E006",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E006/thumb.jpg",
+    "duration": "24:00",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E006/master-ja.m3u8",
+        "default": true
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E006/master-fr.m3u8",
+        "default": false
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E006/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 20,
+    "title": "Saison 2 - Episode 7",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E007/master-ja.m3u8",
+    "season": "S02",
+    "arc": "Saison 2",
+    "preferredAudioLang": "ja",
+    "progressKey": "S02E007",
+    "episodeLabel": "S02E007",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E007/thumb.jpg",
+    "duration": "24:00",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E007/master-ja.m3u8",
+        "default": true
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E007/master-fr.m3u8",
+        "default": false
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E007/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 21,
+    "title": "Saison 2 - Episode 8",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E008/master-ja.m3u8",
+    "season": "S02",
+    "arc": "Saison 2",
+    "preferredAudioLang": "ja",
+    "progressKey": "S02E008",
+    "episodeLabel": "S02E008",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E008/thumb.jpg",
+    "duration": "24:00",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E008/master-ja.m3u8",
+        "default": true
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E008/master-fr.m3u8",
+        "default": false
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E008/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 22,
+    "title": "Saison 2 - Episode 9",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E009/master-ja.m3u8",
+    "season": "S02",
+    "arc": "Saison 2",
+    "preferredAudioLang": "ja",
+    "progressKey": "S02E009",
+    "episodeLabel": "S02E009",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E009/thumb.jpg",
+    "duration": "24:00",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E009/master-ja.m3u8",
+        "default": true
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E009/master-fr.m3u8",
+        "default": false
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E009/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 23,
+    "title": "Saison 2 - Episode 10",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E010/master-ja.m3u8",
+    "season": "S02",
+    "arc": "Saison 2",
+    "preferredAudioLang": "ja",
+    "progressKey": "S02E010",
+    "episodeLabel": "S02E010",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E010/thumb.jpg",
+    "duration": "24:00",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E010/master-ja.m3u8",
+        "default": true
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E010/master-fr.m3u8",
+        "default": false
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E010/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 24,
+    "title": "Saison 2 - Episode 11",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E011/master-ja.m3u8",
+    "season": "S02",
+    "arc": "Saison 2",
+    "preferredAudioLang": "ja",
+    "progressKey": "S02E011",
+    "episodeLabel": "S02E011",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E011/thumb.jpg",
+    "duration": "24:00",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E011/master-ja.m3u8",
+        "default": true
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E011/master-fr.m3u8",
+        "default": false
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E011/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 25,
+    "title": "Saison 2 - Episode 12",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E012/master-ja.m3u8",
+    "season": "S02",
+    "arc": "Saison 2",
+    "preferredAudioLang": "ja",
+    "progressKey": "S02E012",
+    "episodeLabel": "S02E012",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E012/thumb.jpg",
+    "duration": "24:00",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E012/master-ja.m3u8",
+        "default": true
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E012/master-fr.m3u8",
+        "default": false
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E012/sub-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 26,
+    "title": "Saison 2 - Episode 13",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E013/master-ja.m3u8",
+    "season": "S02",
+    "arc": "Saison 2",
+    "preferredAudioLang": "ja",
+    "progressKey": "S02E013",
+    "episodeLabel": "S02E013",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E013/thumb.jpg",
+    "duration": "24:00",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E013/master-ja.m3u8",
+        "default": true
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E013/master-fr.m3u8",
+        "default": false
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bunny-girl-hls/S02E013/sub-fr.vtt"
+      }
+    ]
+  }
+]

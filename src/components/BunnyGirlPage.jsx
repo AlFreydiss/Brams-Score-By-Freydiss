@@ -260,19 +260,40 @@ export default function BunnyGirlPage({ onClose }) {
                 <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20 }}>
                   <div>
                     <h3 style={{ margin:'0 0 3px',fontSize:18,fontWeight:900,color:'#fff',letterSpacing:'-.01em' }}>Épisodes</h3>
-                    <div style={{ fontSize:11,color:'rgba(255,255,255,.32)',fontWeight:600 }}>Bientôt disponible</div>
+                    <div style={{ fontSize:11,color:'rgba(255,255,255,.32)',fontWeight:600 }}>Saison 1-2 · {episodes.length} épisodes · VF + VO</div>
                   </div>
                   <div style={{ display:'flex',alignItems:'center',gap:6,padding:'6px 14px',borderRadius:999,background:'rgba(139,92,246,.08)',border:'1px solid rgba(139,92,246,.18)' }}>
-                    <div style={{ width:6,height:6,borderRadius:'50%',background:COLOR }} />
-                    <span style={{ fontSize:11,fontWeight:800,color:COLOR2 }}>En préparation</span>
+                    <div style={{ width:6,height:6,borderRadius:'50%',background: watchedCount===VIDEOS.length ? '#34d399' : COLOR, animation: watchedCount<VIDEOS.length && watchedCount>0 ? 'bgPulse 2s infinite' : 'none' }} />
+                    <span style={{ fontSize:11,fontWeight:800,color:COLOR2 }}>{watchedCount === VIDEOS.length ? '✓ Terminé' : watchedCount === 0 ? 'Pas commencé' : `${watchedCount}/${VIDEOS.length} vus`}</span>
                   </div>
                 </div>
-
-                <div style={{ padding: '24px', borderRadius: 16, background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.06)', textAlign: 'center' }}>
-                  <div style={{ fontSize: 48, marginBottom: 12 }}>🐰</div>
-                  <div style={{ fontSize: 20, fontWeight: 900, color: '#fff', marginBottom: 8 }}>Rascal Does Not Dream</div>
-                  <div style={{ color: 'rgba(255,255,255,.5)', marginBottom: 16 }}>L'histoire émouvante de Sakuta et Mai arrive avec une expérience dédiée bientôt.</div>
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))', gap:14 }}>
+                  {episodes.map(({ v, i }) => (
+                    <EpCard key={keyOf(v)} video={v} index={i} watched={!!progress[keyOf(v)]?.completed} onPlay={playHandlers[i]} />
+                  ))}
                 </div>
+
+                {ovas.length > 0 && (
+                  <>
+                    <h3 style={{ margin:'34px 0 16px',fontSize:18,fontWeight:900,color:'#fff',letterSpacing:'-.01em' }}>OAV</h3>
+                    <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(240px,1fr))', gap:14 }}>
+                      {ovas.map(({ v, i }) => (
+                        <EpCard key={keyOf(v)} video={v} index={i} watched={!!progress[keyOf(v)]?.completed} onPlay={playHandlers[i]} />
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {films.length > 0 && (
+                  <>
+                    <h3 style={{ margin:'34px 0 16px',fontSize:18,fontWeight:900,color:'#fff',letterSpacing:'-.01em' }}>Films 🎬</h3>
+                    <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(240px,1fr))', gap:14 }}>
+                      {films.map(({ v, i }) => (
+                        <EpCard key={keyOf(v)} video={v} index={i} watched={!!progress[keyOf(v)]?.completed} onPlay={playHandlers[i]} />
+                      ))}
+                    </div>
+                  </>
+                )}
 
                 <div style={{ marginTop:28,padding:'14px 18px',borderRadius:12,background:'rgba(255,255,255,.03)',border:'1px solid rgba(255,255,255,.05)',display:'flex',alignItems:'center',gap:10 }}>
                   <span style={{ fontSize:16 }}>🐰</span>
