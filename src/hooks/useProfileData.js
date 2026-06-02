@@ -46,6 +46,12 @@ export function useProfileData(discordId) {
 
   useEffect(() => load(), [load])
 
+  // Rafraîchit UNIQUEMENT l'état de suivi (sans recharger tout le profil) — pour
+  // l'optimistic follow/unfollow depuis le header ou la modale.
+  const refreshFollow = useCallback(() => {
+    getFollowState(discordId).then(f => { if (f?.ok !== false) setFollowStats(f) }).catch(() => {})
+  }, [discordId])
+
   useEffect(() => {
     const onFocus = () => {
       if (refreshTimer.current) clearTimeout(refreshTimer.current)
@@ -107,7 +113,7 @@ export function useProfileData(discordId) {
 
   return {
     // état
-    member, shopData, settings, setSettings, postsCount, followStats, loading, error, reload: load,
+    member, shopData, settings, setSettings, postsCount, followStats, setFollowStats, refreshFollow, loading, error, reload: load,
     // dérivés
     hours, rank, nextRank, remaining, pct, wallet,
     aura, auraTier, auraFactors, achievements, equippedBg,

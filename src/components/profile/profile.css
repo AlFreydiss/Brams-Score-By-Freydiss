@@ -539,3 +539,294 @@
 }
 .pfx-input:focus, .pfx-textarea:focus { outline: none; border-color: rgba(212,160,23,0.45); background: rgba(255,255,255,0.06); }
 .pfx-modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PROFIL SOCIAL PREMIUM — layout type Instagram (préfixe .pfx-ig-)
+   Container 935px, header avatar+identité, stories, tabs, grille de posts.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.pfx-wrap-ig { width: min(935px, calc(100% - 32px)); padding-top: 18px; }
+
+/* ── Header ── */
+.pfx-ig-hero {
+  position: relative; border-radius: 22px; overflow: hidden;
+  border: 1px solid var(--line); border-top-color: rgba(255,255,255,0.12);
+  box-shadow: 0 30px 90px rgba(0,0,0,0.5);
+  isolation: isolate; animation: pfxRise .5s cubic-bezier(.22,1,.36,1) both;
+}
+.pfx-ig-backdrop { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+.pfx-ig-backdrop-fallback {
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(120% 140% at 12% 0%, color-mix(in srgb, var(--rank) 18%, transparent), transparent 60%),
+    linear-gradient(165deg, #12141b 0%, #0b0d12 100%);
+}
+.pfx-ig-backdrop-media {
+  position: absolute; inset: -6%; width: 112%; height: 112%;
+  object-fit: cover; filter: saturate(0.95) brightness(0.34) blur(2px); transform: scale(1.04);
+}
+.pfx-ig-backdrop-veil {
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(10,12,16,0.62), rgba(10,12,16,0.88));
+}
+.pfx-ig-inner {
+  position: relative; z-index: 1;
+  display: flex; align-items: center; gap: clamp(24px, 6vw, 72px);
+  padding: clamp(26px, 4vw, 40px) clamp(22px, 4vw, 40px);
+}
+
+/* Avatar */
+.pfx-ig-avatar { position: relative; flex-shrink: 0; border: none; background: none; padding: 0; cursor: pointer; }
+.pfx-ig-avatar-ring {
+  display: block; width: clamp(96px, 14vw, 158px); aspect-ratio: 1; border-radius: 50%; padding: 4px;
+  background: conic-gradient(from 135deg, var(--rank), color-mix(in srgb, var(--rank) 40%, #fff) 40%, var(--rank) 70%, color-mix(in srgb, var(--rank) 55%, #000));
+  box-shadow: 0 0 0 1px rgba(0,0,0,.5), 0 14px 40px color-mix(in srgb, var(--rank) 22%, transparent);
+  transition: transform .2s;
+}
+.pfx-ig-avatar:hover .pfx-ig-avatar-ring { transform: scale(1.02); }
+.pfx-ig-avatar-inner {
+  width: 100%; height: 100%; border-radius: 50%; overflow: hidden; background: #0c0e13;
+  border: 4px solid #0a0c10; display: flex; align-items: center; justify-content: center;
+}
+.pfx-ig-avatar-inner img { width: 100%; height: 100%; object-fit: cover; }
+.pfx-ig-avatar-inner em { font-size: clamp(34px, 6vw, 60px); font-style: normal; }
+.pfx-ig-avatar-dot {
+  position: absolute; right: 8%; bottom: 8%; width: 18px; height: 18px; border-radius: 50%;
+  background: var(--green); border: 3px solid #0a0c10;
+}
+
+/* Colonne identité */
+.pfx-ig-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 15px; }
+.pfx-ig-top { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.pfx-ig-namewrap { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.pfx-ig-name {
+  margin: 0; font-family: var(--display, 'Syne', system-ui, sans-serif);
+  font-size: clamp(22px, 3vw, 30px); font-weight: 800; letter-spacing: -.02em; color: #fff;
+  line-height: 1.05; word-break: break-word;
+}
+.pfx-ig-verified {
+  flex-shrink: 0; width: 21px; height: 21px; border-radius: 50%;
+  background: var(--gold); color: #12090a; font-size: 12px; font-weight: 900;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.pfx-ig-badges { display: flex; flex-wrap: wrap; gap: 7px; }
+
+/* Ligne stats (inline desktop, blocs bordés en mobile) */
+.pfx-ig-stats { display: flex; gap: clamp(20px, 4vw, 42px); flex-wrap: wrap; }
+.pfx-ig-stat {
+  display: inline-flex; align-items: baseline; gap: 6px;
+  border: none; background: none; padding: 0; font-family: inherit; font-size: 14px;
+}
+.pfx-ig-stat strong { color: #fff; font-weight: 800; }
+.pfx-ig-stat span { color: var(--txt-dim); }
+.pfx-ig-stat-btn { cursor: pointer; transition: opacity .15s; }
+.pfx-ig-stat-btn:hover { opacity: .72; }
+
+/* Bio */
+.pfx-ig-bio { font-size: 13.5px; line-height: 1.55; color: var(--txt-dim); max-width: 620px; }
+.pfx-ig-bio-name { color: #fff; font-weight: 800; font-size: 14px; }
+.pfx-ig-bio-name em { font-style: normal; font-weight: 600; color: var(--txt-faint); font-size: 11.5px; letter-spacing: .04em; }
+.pfx-ig-quote { margin: 7px 0 0; font-style: italic; color: rgba(255,255,255,0.78); }
+.pfx-ig-biotext { margin: 6px 0 0; color: var(--txt-dim); white-space: pre-wrap; }
+.pfx-ig-meta { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 9px; font-size: 12.5px; font-weight: 600; }
+.pfx-ig-meta > span { color: var(--gold-soft); }
+.pfx-ig-link { color: var(--violet); text-decoration: none; font-weight: 700; }
+.pfx-ig-link:hover { text-decoration: underline; }
+
+/* Relation tag + menu (dans .pfx-actions) */
+.pfx-rel-tag {
+  font-size: 10.5px; font-weight: 800; letter-spacing: .04em; padding: 6px 11px; border-radius: 999px;
+  background: rgba(255,255,255,0.06); border: 1px solid var(--line-2); color: var(--txt-dim);
+}
+.pfx-rel-tag.friend { color: #8ff0c4; border-color: rgba(52,211,153,0.32); background: rgba(52,211,153,0.10); }
+.pfx-btn-icon { padding: 0 14px; font-size: 18px; line-height: 1; }
+.pfx-menu-wrap { position: relative; }
+.pfx-menu {
+  position: absolute; right: 0; top: calc(100% + 8px); z-index: 20; min-width: 190px;
+  display: flex; flex-direction: column; padding: 6px; border-radius: 13px;
+  background: linear-gradient(160deg, var(--s3), var(--s1)); border: 1px solid var(--line-2);
+  box-shadow: 0 24px 60px rgba(0,0,0,0.55); animation: pfxFade .15s ease-out both;
+}
+.pfx-menu button {
+  display: flex; align-items: center; gap: 9px; padding: 10px 12px; border-radius: 9px;
+  border: none; background: none; color: var(--txt-dim); font-family: inherit; font-size: 13px;
+  font-weight: 600; cursor: pointer; text-align: left; transition: background .15s, color .15s;
+}
+.pfx-menu button:hover { background: rgba(255,255,255,0.06); color: #fff; }
+.pfx-act-err { width: 100%; font-size: 12px; color: #ff8b7a; }
+
+/* ── Stories / highlights ── */
+.pfx-stories {
+  display: flex; gap: 18px; overflow-x: auto; scrollbar-width: none;
+  padding: 20px 6px 8px; margin-top: 4px;
+}
+.pfx-stories::-webkit-scrollbar { display: none; }
+.pfx-story {
+  display: flex; flex-direction: column; align-items: center; gap: 8px; flex-shrink: 0; width: 74px;
+  border: none; background: none; cursor: pointer; font-family: inherit;
+}
+.pfx-story:disabled { opacity: .55; cursor: default; }
+.pfx-story-ring {
+  position: relative; width: 66px; height: 66px; border-radius: 50%; padding: 2.5px;
+  background: rgba(255,255,255,0.14);
+}
+.pfx-story-ring.active { background: linear-gradient(135deg, var(--gold), var(--violet)); }
+.pfx-story-ring.add { background: rgba(255,255,255,0.16); }
+.pfx-story-ring.highlight { background: rgba(255,255,255,0.10); }
+.pfx-story-cover {
+  width: 100%; height: 100%; border-radius: 50%; overflow: hidden; background: var(--s2);
+  border: 2px solid #0a0c10; display: flex; align-items: center; justify-content: center;
+}
+.pfx-story-cover img { width: 100%; height: 100%; object-fit: cover; }
+.pfx-story-cover em { font-size: 22px; font-style: normal; color: var(--gold-soft); font-weight: 800; }
+.pfx-story-cover-hl em { font-size: 24px; }
+.pfx-story-plus {
+  position: absolute; right: -2px; bottom: -2px; width: 22px; height: 22px; border-radius: 50%;
+  background: var(--gold); color: #12090a; font-size: 16px; font-weight: 900;
+  display: flex; align-items: center; justify-content: center; border: 2px solid #0a0c10;
+}
+.pfx-story-label {
+  font-size: 11px; font-weight: 650; color: var(--txt-dim);
+  max-width: 74px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* ── Tabs IG ── */
+.pfx-igtabs {
+  display: flex; gap: 4px; margin: 6px 0 18px; padding: 5px;
+  border-radius: 14px; background: rgba(16,18,23,0.7); border: 1px solid var(--line);
+  overflow-x: auto; scrollbar-width: none;
+  position: sticky; top: 10px; z-index: 6; backdrop-filter: blur(14px);
+}
+.pfx-igtabs::-webkit-scrollbar { display: none; }
+.pfx-igtab {
+  flex: 1; min-width: max-content; display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  padding: 10px 14px; border-radius: 10px; border: 1px solid transparent; background: none;
+  color: var(--txt-faint); font-family: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer;
+  transition: color .18s, background .18s, border-color .18s;
+}
+.pfx-igtab:hover { color: #fff; }
+.pfx-igtab.active { color: #fff; background: rgba(255,255,255,0.05); border-color: var(--line-2); }
+.pfx-igtab.active svg { color: var(--gold); }
+.pfx-tabpanel-anim { animation: pfxFade .25s ease-out both; }
+
+/* ── Grille de posts ── */
+.pfx-postgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.pfx-cell {
+  position: relative; aspect-ratio: 1 / 1; overflow: hidden; border-radius: 8px; border: 1px solid var(--line);
+  background: var(--s2); cursor: pointer; padding: 0; font-family: inherit;
+  transition: transform .18s, border-color .18s;
+}
+.pfx-cell:hover { transform: translateY(-2px); border-color: var(--line-2); }
+.pfx-cell-media { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pfx-cell-text {
+  width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; padding: 16px;
+  background: linear-gradient(160deg, var(--s2), var(--s1)); box-sizing: border-box;
+}
+.pfx-cell-text span {
+  font-size: 13px; line-height: 1.45; color: var(--txt-dim); text-align: center;
+  display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden;
+}
+.pfx-cell-repost {
+  position: absolute; top: 8px; right: 8px; width: 26px; height: 26px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center; color: #fff;
+  background: rgba(10,12,16,0.6); backdrop-filter: blur(6px);
+}
+.pfx-cell-overlay {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 22px;
+  background: rgba(8,9,13,0.55); opacity: 0; transition: opacity .18s; color: #fff; font-weight: 800; font-size: 14px;
+}
+.pfx-cell-overlay span { display: inline-flex; align-items: center; gap: 6px; }
+.pfx-cell:hover .pfx-cell-overlay { opacity: 1; }
+.pfx-grid-loading { padding: 40px 0; text-align: center; color: var(--txt-faint); font-size: 13px; }
+.pfx-grid-empty {
+  text-align: center; padding: 60px 24px; border: 1px dashed var(--line-2); border-radius: 18px;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+}
+.pfx-grid-empty-ic {
+  font-size: 32px; width: 72px; height: 72px; border-radius: 50%; border: 2px solid var(--line-2);
+  display: flex; align-items: center; justify-content: center; margin-bottom: 6px;
+}
+.pfx-grid-empty strong { font-size: 17px; color: #fff; font-weight: 800; }
+.pfx-grid-empty p { font-size: 13px; color: var(--txt-dim); margin: 0 0 8px; }
+
+/* ── Modale Abonnés / Suivis ── */
+.pfx-follow-modal { max-width: 440px; }
+.pfx-follow-list .pfx-input { margin: 0; }
+.pfx-follow-list > div:hover { background: rgba(255,255,255,0.04); }
+
+/* ── Modale d'édition enrichie ── */
+.pfx-edit-modal { width: min(720px, 100%); }
+.pfx-edit-grid { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 22px; align-items: start; }
+.pfx-edit-form { min-width: 0; }
+.pfx-banner-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.pfx-vis-row { display: flex; gap: 8px; }
+.pfx-vis {
+  flex: 1; padding: 9px 8px; border-radius: 10px; border: 1px solid var(--line-2);
+  background: rgba(255,255,255,0.03); color: var(--txt-dim); font-family: inherit;
+  font-size: 12.5px; font-weight: 700; cursor: pointer; transition: all .15s;
+}
+.pfx-vis:hover { color: #fff; }
+.pfx-vis.active { background: rgba(212,160,23,0.14); border-color: rgba(212,160,23,0.4); color: #ffe08a; }
+.pfx-bg-picker { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; max-height: 168px; overflow-y: auto; }
+.pfx-bg-opt {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 9px 12px; border-radius: 10px; border: 1px solid var(--line-2);
+  background: rgba(255,255,255,0.03); color: var(--txt-dim); font-family: inherit;
+  font-size: 12px; font-weight: 650; cursor: pointer; transition: all .15s; text-align: left;
+}
+.pfx-bg-opt:hover { color: #fff; border-color: var(--line-2); }
+.pfx-bg-opt.active { background: rgba(52,211,153,0.12); border-color: rgba(52,211,153,0.4); color: #8ff0c4; }
+.pfx-bg-opt span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pfx-bg-opt em { font-style: normal; }
+.pfx-edit-preview { position: sticky; top: 0; }
+.pfx-edit-preview-lbl { font-size: 10.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--txt-faint); }
+.pfx-preview-card {
+  margin-top: 8px; border-radius: 14px; overflow: hidden; border: 1px solid var(--line);
+  background: linear-gradient(160deg, var(--s2), var(--s1));
+}
+.pfx-preview-banner { width: 100%; height: 84px; object-fit: cover; display: block; }
+.pfx-preview-body { padding: 14px; }
+.pfx-preview-body strong { color: #fff; font-size: 14.5px; font-weight: 800; }
+.pfx-preview-quote { margin: 7px 0 0; font-style: italic; font-size: 12.5px; color: rgba(255,255,255,0.78); }
+.pfx-preview-bio { margin: 6px 0 0; font-size: 12.5px; color: var(--txt-dim); line-height: 1.5; white-space: pre-wrap; }
+.pfx-preview-link { display: inline-block; margin-top: 8px; font-size: 12px; font-weight: 700; color: var(--violet); }
+.pfx-edit-err { color: #ff8b7a; font-size: 12.5px; margin: 14px 0 0; }
+
+/* ── Aperçu avatar ── */
+.pfx-avatar-overlay { flex-direction: column; }
+.pfx-avatar-preview {
+  width: min(78vmin, 460px); aspect-ratio: 1; border-radius: 50%; overflow: hidden;
+  padding: 5px; background: conic-gradient(from 135deg, var(--ring), color-mix(in srgb, var(--ring) 40%, #fff) 45%, var(--ring));
+  box-shadow: 0 30px 80px rgba(0,0,0,0.6); animation: pfxPop .3s cubic-bezier(.34,1.4,.5,1) both;
+}
+.pfx-avatar-preview img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; border: 4px solid #0a0c10; }
+.pfx-avatar-preview-close {
+  margin-top: 22px; width: 44px; height: 44px; border-radius: 50%; cursor: pointer;
+  border: 1px solid var(--line-2); background: rgba(255,255,255,0.06); color: #fff; font-size: 18px;
+}
+.pfx-avatar-preview-close:hover { background: rgba(255,255,255,0.12); }
+
+/* ── Responsive ── */
+@media (max-width: 860px) {
+  .pfx-edit-grid { grid-template-columns: 1fr; }
+  .pfx-edit-preview { position: static; }
+  .pfx-postgrid { grid-template-columns: repeat(3, 1fr); gap: 5px; }
+}
+@media (max-width: 620px) {
+  .pfx-ig-inner { flex-direction: column; text-align: center; gap: 18px; }
+  .pfx-ig-main { align-items: center; width: 100%; }
+  .pfx-ig-top { flex-direction: column; gap: 12px; }
+  .pfx-ig-badges, .pfx-actions { justify-content: center; }
+  .pfx-ig-stats {
+    width: 100%; justify-content: space-around; gap: 0;
+    border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 12px 0; margin-top: 4px;
+  }
+  .pfx-ig-stat { flex-direction: column; align-items: center; gap: 2px; }
+  .pfx-ig-bio { text-align: center; }
+  .pfx-ig-meta { justify-content: center; }
+  .pfx-postgrid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pfx-ig-hero, .pfx-tabpanel-anim, .pfx-menu, .pfx-avatar-preview { animation: none !important; }
+  .pfx-cell, .pfx-cell-overlay, .pfx-ig-avatar-ring, .pfx-ig-stat-btn { transition: none !important; }
+}

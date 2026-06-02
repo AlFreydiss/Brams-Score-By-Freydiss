@@ -11,7 +11,8 @@ export async function getProfileSettings(discordId) {
   } catch { return null }
 }
 
-// patch : { bio, quote, featured_badge, featured_achievement, pinned_post, theme }
+// patch : { bio, quote, featured_badge, featured_achievement, pinned_post, theme,
+//           banner_url, link, visibility, social_links }
 // Les champs absents (undefined) ne sont pas modifiés. Toujours sur SON profil
 // (le discord_id est résolu côté serveur — impossible de viser un autre membre).
 export async function updateProfileSettings(patch = {}) {
@@ -23,6 +24,10 @@ export async function updateProfileSettings(patch = {}) {
     p_featured_achievement: patch.featured_achievement ?? null,
     p_pinned_post:          patch.pinned_post ?? null,
     p_theme:                patch.theme ?? null,
+    p_banner_url:           patch.banner_url ?? null,
+    p_link:                 patch.link ?? null,
+    p_visibility:           patch.visibility ?? null,
+    p_social_links:         patch.social_links ?? null,
   })
   return { data, error }
 }

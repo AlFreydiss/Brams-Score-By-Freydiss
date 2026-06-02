@@ -1,146 +1,103 @@
-// ── Hero du profil : avatar, identité, badges, stats, progression de rang ────
-import { useState, useEffect } from 'react'
-import { RANK_QUOTES, fmtB } from '../../lib/profileTokens.js'
+// ── Header profil style Instagram premium ───────────────────────────────────
+// Avatar (clic = preview) + identité + ligne stats cliquable (publications /
+// abonnés / suivis / aura) + bio. Le fond d'opening équipé sert de backdrop
+// discret (overlay sombre fort) ; une bannière custom le remplace si définie.
+import { fmtB, fmtNum } from '../../lib/profileTokens.js'
 import { CountUp } from './shared.jsx'
-import RelationshipActions from '../social/RelationshipActions.jsx'
+import ProfileActions from './ProfileActions.jsx'
 import OpeningBgMedia from '../social/OpeningBgMedia.jsx'
 import { getBgById } from '../../data/opening-backgrounds.js'
 
-export default function ProfileHero({ data, copied, onShare, onEdit }) {
+export default function ProfileHero({ data, copied, onShare, onEdit, onAvatar, onShowFollowers, onShowFollowing }) {
   const {
-    member, rank, nextRank, remaining, pct, hours, wallet, aura,
-    achievements, postsCount, followStats, shopData, settings, equippedBg,
-    isOwnProfile, profileIsCreator, profileIsStaff, myId,
+    member, rank, aura, auraTier, postsCount, followStats, settings, equippedBg,
+    isOwnProfile, profileIsCreator, profileIsStaff,
   } = data
 
   const heroBg = getBgById(equippedBg)
-
-  // Remplissage cinématique de la barre de rang : part de 0 puis rejoint pct
-  // (la transition CSS .pfx-prog-fill fait le reste).
-  const [fillW, setFillW] = useState(0)
-  useEffect(() => {
-    const t = setTimeout(() => setFillW(pct), 280)
-    return () => clearTimeout(t)
-  }, [pct])
-
+  const bannerUrl = settings?.banner_url || null
   const displayName = member?.username || `Pirate #${String(member?.uid || '').slice(-4)}`
-  const quote = settings?.quote || RANK_QUOTES[rank.rang] || ''
-  const unlocked = achievements.filter(a => a.unlocked).length
-  const invCount = shopData?.inventory?.length || 0
-  const txCount  = shopData?.transactions?.length || 0
+  const link = settings?.link || null
+  const linkLabel = link ? link.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '') : null
 
   const stats = [
-    { ic: '🎙', val: hours.toFixed(1) + 'h',              lbl: 'Vocal' },
-    { ic: '฿',  val: fmtB(wallet),                        lbl: 'Berries', cls: 'pfx-stat-gold' },
-    { ic: '✦',  val: <CountUp value={aura} />,            lbl: 'Aura',    cls: 'pfx-stat-violet' },
-    { ic: '🏆', val: '#' + (member?.rank ?? '—'),         lbl: 'Classement' },
-    { ic: '🗃', val: invCount,                            lbl: 'Objets' },
-    { ic: '🎯', val: unlocked,                            lbl: 'Succès' },
-    { ic: '📝', val: postsCount == null ? '…' : postsCount, lbl: 'Posts' },
-    { ic: '👥', val: followStats?.followers_count ?? '…', lbl: 'Abonnés' },
-    { ic: '➜',  val: followStats?.following_count ?? '…', lbl: 'Suivis' },
-    { ic: '🛒', val: txCount,                             lbl: 'Achats' },
+    { key: 'posts',     val: postsCount == null ? '—' : fmtNum(postsCount),                 lbl: 'publications' },
+    { key: 'followers', val: fmtNum(followStats?.followers_count ?? 0),                     lbl: 'abonnés',  onClick: onShowFollowers },
+    { key: 'following', val: fmtNum(followStats?.following_count ?? 0),                      lbl: 'suivis',   onClick: onShowFollowing },
+    { key: 'aura',      val: <CountUp value={aura} />,                                       lbl: 'aura' },
   ]
 
   return (
-    <>
-      {/* ═══ HERO ═══ */}
-      <section className="pfx-hero">
-        <div className="pfx-hero-bg" aria-hidden>
-          {/* Fallback (dégradé teinté rang) toujours dessous, visible si pas de média ou échec. */}
-          <div className="pfx-hero-bg-fallback" />
-          {heroBg && <OpeningBgMedia bg={heroBg} className="pfx-hero-bg-media" />}
-        </div>
-        <div className="pfx-hero-overlay" aria-hidden />
-        <div className="pfx-hero-grain" aria-hidden />
+    <section className="pfx-ig-hero" style={{ '--rank': rank.color }}>
+      {/* Backdrop : bannière custom ou fond d'opening, fortement assombri */}
+      <div className="pfx-ig-backdrop" aria-hidden>
+        <div className="pfx-ig-backdrop-fallback" />
+        {bannerUrl
+          ? <img src={bannerUrl} alt="" className="pfx-ig-backdrop-media" />
+          : heroBg && <OpeningBgMedia bg={heroBg} className="pfx-ig-backdrop-media" />}
+        <div className="pfx-ig-backdrop-veil" />
+      </div>
 
-        <div className="pfx-hero-inner">
-          {/* Avatar */}
-          <div className="pfx-avatar-ring">
-            <div className="pfx-avatar-inner">
+      <div className="pfx-ig-inner">
+        {/* Avatar */}
+        <button type="button" className="pfx-ig-avatar" onClick={onAvatar} aria-label="Voir l'avatar">
+          <span className="pfx-ig-avatar-ring">
+            <span className="pfx-ig-avatar-inner">
               {member?.avatar_url
-                ? <img src={member.avatar_url} alt={displayName} className="pfx-avatar-img" />
-                : <span className="pfx-avatar-emoji">{rank.emoji}</span>}
+                ? <img src={member.avatar_url} alt={displayName} />
+                : <em>{rank.emoji}</em>}
+            </span>
+          </span>
+          <span className="pfx-ig-avatar-dot" />
+        </button>
+
+        {/* Colonne identité */}
+        <div className="pfx-ig-main">
+          {/* Ligne 1 : pseudo + badges + actions */}
+          <div className="pfx-ig-top">
+            <div className="pfx-ig-namewrap">
+              <h1 className="pfx-ig-name">{displayName}</h1>
+              {(profileIsCreator || profileIsStaff) && <span className="pfx-ig-verified" title="Compte vérifié">✓</span>}
             </div>
-            <div className="pfx-avatar-dot" />
+            <ProfileActions data={data} onShare={onShare} copied={copied} onEdit={onEdit} />
           </div>
 
-          {/* Identité */}
-          <div className="pfx-hero-main">
-            <div className="pfx-eyebrow">
-              Brams Community · #{member?.rank} / {member?.total} Nakamas
+          {/* Badges rang / rôle */}
+          <div className="pfx-ig-badges">
+            <span className="pfx-badge pfx-badge-rank" style={{ '--rank': rank.color }}>{rank.emoji} {rank.rang}</span>
+            {profileIsCreator && <span className="pfx-badge pfx-badge-creator">👑 Créateur</span>}
+            {profileIsStaff   && <span className="pfx-badge pfx-badge-staff">🛡 Staff</span>}
+            <span className="pfx-badge" style={{ color: auraTier.color }}>✦ {auraTier.label}</span>
+          </div>
+
+          {/* Ligne stats */}
+          <div className="pfx-ig-stats">
+            {stats.map(s => (
+              s.onClick
+                ? <button key={s.key} type="button" className="pfx-ig-stat pfx-ig-stat-btn" onClick={s.onClick}>
+                    <strong>{s.val}</strong><span>{s.lbl}</span>
+                  </button>
+                : <div key={s.key} className="pfx-ig-stat">
+                    <strong>{s.val}</strong><span>{s.lbl}</span>
+                  </div>
+            ))}
+          </div>
+
+          {/* Bio */}
+          <div className="pfx-ig-bio">
+            <div className="pfx-ig-bio-name">
+              {displayName}
+              <em> · #{member?.rank ?? '—'} / {member?.total ?? '—'} Nakamas</em>
             </div>
-            <h1 className="pfx-name">{displayName}</h1>
-
-            <div className="pfx-badges">
-              <span className="pfx-badge pfx-badge-rank" style={{ '--rank': rank.color }}>{rank.emoji} {rank.rang}</span>
-              {profileIsCreator && <span className="pfx-badge pfx-badge-creator">👑 Créateur</span>}
-              {profileIsStaff   && <span className="pfx-badge pfx-badge-staff">🛡 Staff</span>}
-              {isOwnProfile     && <span className="pfx-badge">Mon profil</span>}
-            </div>
-
-            {quote && <p className="pfx-quote">« {quote} »</p>}
-            {settings?.bio && (
-              <p className="pfx-quote" style={{ fontStyle: 'normal', opacity: 0.85 }}>{settings.bio}</p>
-            )}
-
-            <div className="pfx-actions">
-              <button className="pfx-btn pfx-btn-gold" type="button" onClick={onShare}>
-                {copied ? '✓ Copié' : '⎘ Partager'}
-              </button>
-              {isOwnProfile && (
-                <button className="pfx-btn pfx-btn-ghost" type="button" onClick={onEdit}>✎ Modifier</button>
-              )}
-              <a className="pfx-btn pfx-btn-discord" href="https://discord.gg/v3Ddhtbz" target="_blank" rel="noopener noreferrer">Discord</a>
-              {!isOwnProfile && myId && (
-                <span style={{ display: 'inline-flex', alignItems: 'center' }}>
-                  <RelationshipActions targetId={member?.uid} />
-                </span>
-              )}
+            {settings?.quote && <p className="pfx-ig-quote">« {settings.quote} »</p>}
+            {settings?.bio   && <p className="pfx-ig-biotext">{settings.bio}</p>}
+            <div className="pfx-ig-meta">
+              <span>฿ {fmtB(member?.berrys || 0)} de prime</span>
+              {link && <a href={link} target="_blank" rel="noopener noreferrer nofollow" className="pfx-ig-link">🔗 {linkLabel}</a>}
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* ═══ STATS ═══ */}
-      <div className="pfx-stats">
-        {stats.map(s => (
-          <div key={s.lbl} className={`pfx-stat ${s.cls || ''}`}>
-            <div className="pfx-stat-ic">{s.ic}</div>
-            <div className="pfx-stat-val">{s.val}</div>
-            <div className="pfx-stat-lbl">{s.lbl}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* ═══ PROGRESSION DE RANG ═══ */}
-      <div className="pfx-prog">
-        <div className="pfx-prog-hd">
-          <div className="pfx-prog-side">
-            <em>{rank.emoji}</em>
-            <strong>{rank.rang}</strong>
-            <small>{rank.min}h requis</small>
-          </div>
-          {nextRank ? (
-            <div className="pfx-prog-center">
-              <strong>{remaining.toFixed(1)}h</strong>
-              avant {nextRank.rang}
-            </div>
-          ) : (
-            <div className="pfx-prog-maxed">👑 Rang maximum atteint</div>
-          )}
-          {nextRank && (
-            <div className="pfx-prog-side r">
-              <em>{nextRank.emoji}</em>
-              <strong>{nextRank.rang}</strong>
-              <small>{nextRank.min}h requis</small>
-            </div>
-          )}
-        </div>
-        <div className="pfx-prog-track">
-          <div className="pfx-prog-fill" style={{ width: `${fillW}%`, '--ac': nextRank?.color || rank.color }} />
         </div>
       </div>
-    </>
+    </section>
   )
 }

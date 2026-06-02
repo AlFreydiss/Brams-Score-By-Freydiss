@@ -40,8 +40,8 @@ export const followUser           = (target)        => rpc('follow_user', { p_ta
 export const unfollowUser         = (target)        => rpc('unfollow_user', { p_target: String(target) })
 export const getFollowState       = (target)        => rpc('get_follow_state', { p_target: String(target) })
 
-export async function listFollowing() {
-  const r = await rpc('list_following')
+export async function listFollowing(userId = null) {
+  const r = await rpc('list_following', { p_user: userId ? String(userId) : null })
   return Array.isArray(r) ? r : []
 }
 
