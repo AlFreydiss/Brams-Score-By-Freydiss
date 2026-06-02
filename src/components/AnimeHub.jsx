@@ -1525,14 +1525,13 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
                 <div style={{ fontSize: 13, fontWeight: 700, color: '#f1f1f3', marginBottom: 8, letterSpacing: '.06em' }}>Top du moment</div>
                 <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 8, scrollSnapType: 'x mandatory' }} className="elegant-scrollbar">
                   {topWeekAnimes.slice(0, 8).map(anime => (
-                    <BramsqHubCard
+                    <AnimeMarqueeCard
                       key={anime.id}
                       anime={anime}
                       onClick={() => handleClick(anime.id)}
                       onOpenMonUnivers={onOpenMonUnivers}
                       isFav={favs.has(anime.id)}
                       toggleFav={toggleFav}
-                      isHorizontal={true}
                     />
                   ))}
                 </div>
@@ -1543,7 +1542,7 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
                 <div style={{ fontSize: 13, fontWeight: 700, color: '#f1f1f3', marginBottom: 8, letterSpacing: '.06em' }}>Romance</div>
                 <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 8, scrollSnapType: 'x mandatory' }} className="elegant-scrollbar">
                   {allAnimesWithExtras.filter(a => (a.genres || []).some(g => g.toLowerCase().includes('romance') || g === 'Romance')).slice(0, 8).map(anime => (
-                    <BramsqHubCard key={anime.id} anime={anime} onClick={() => handleClick(anime.id)} onOpenMonUnivers={onOpenMonUnivers} isFav={favs.has(anime.id)} toggleFav={toggleFav} isHorizontal={true} />
+                    <AnimeMarqueeCard key={anime.id} anime={anime} onClick={() => handleClick(anime.id)} onOpenMonUnivers={onOpenMonUnivers} isFav={favs.has(anime.id)} toggleFav={toggleFav} />
                   ))}
                 </div>
               </div>
@@ -1553,7 +1552,7 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
                 <div style={{ fontSize: 13, fontWeight: 700, color: '#f1f1f3', marginBottom: 8, letterSpacing: '.06em' }}>Action</div>
                 <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 8, scrollSnapType: 'x mandatory' }} className="elegant-scrollbar">
                   {allAnimesWithExtras.filter(a => (a.genres || []).some(g => g.toLowerCase().includes('action') || g === 'Action')).slice(0, 8).map(anime => (
-                    <BramsqHubCard key={anime.id} anime={anime} onClick={() => handleClick(anime.id)} onOpenMonUnivers={onOpenMonUnivers} isFav={favs.has(anime.id)} toggleFav={toggleFav} isHorizontal={true} />
+                    <AnimeMarqueeCard key={anime.id} anime={anime} onClick={() => handleClick(anime.id)} onOpenMonUnivers={onOpenMonUnivers} isFav={favs.has(anime.id)} toggleFav={toggleFav} />
                   ))}
                 </div>
               </div>
@@ -1563,7 +1562,7 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
                 <div style={{ fontSize: 13, fontWeight: 700, color: '#f1f1f3', marginBottom: 8, letterSpacing: '.06em' }}>Fantasy</div>
                 <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 8, scrollSnapType: 'x mandatory' }} className="elegant-scrollbar">
                   {allAnimesWithExtras.filter(a => (a.genres || []).some(g => g.toLowerCase().includes('fantasy') || g === 'Fantasy')).slice(0, 8).map(anime => (
-                    <BramsqHubCard key={anime.id} anime={anime} onClick={() => handleClick(anime.id)} onOpenMonUnivers={onOpenMonUnivers} isFav={favs.has(anime.id)} toggleFav={toggleFav} isHorizontal={true} />
+                    <AnimeMarqueeCard key={anime.id} anime={anime} onClick={() => handleClick(anime.id)} onOpenMonUnivers={onOpenMonUnivers} isFav={favs.has(anime.id)} toggleFav={toggleFav} />
                   ))}
                 </div>
               </div>
@@ -1573,7 +1572,7 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
                 <div style={{ fontSize: 13, fontWeight: 700, color: '#f1f1f3', marginBottom: 8, letterSpacing: '.06em' }}>Aventure</div>
                 <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 8, scrollSnapType: 'x mandatory' }} className="elegant-scrollbar">
                   {allAnimesWithExtras.filter(a => (a.genres || []).some(g => g.toLowerCase().includes('aventure') || g === 'Aventure')).slice(0, 8).map(anime => (
-                    <BramsqHubCard key={anime.id} anime={anime} onClick={() => handleClick(anime.id)} onOpenMonUnivers={onOpenMonUnivers} isFav={favs.has(anime.id)} toggleFav={toggleFav} isHorizontal={true} />
+                    <AnimeMarqueeCard key={anime.id} anime={anime} onClick={() => handleClick(anime.id)} onOpenMonUnivers={onOpenMonUnivers} isFav={favs.has(anime.id)} toggleFav={toggleFav} />
                   ))}
                 </div>
               </div>
@@ -1598,16 +1597,15 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
                     🎲 SURPRISE
                   </button>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: 16 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: 12 }}>
                   {visibleAnimesWithProgress.slice(0, 24).map((anime, i) => (
-                    <BramsqHubCard
+                    <AnimeMarqueeCard
                       key={anime.id}
                       anime={anime}
                       onClick={() => handleClick(anime.id)}
                       onOpenMonUnivers={onOpenMonUnivers}
                       isFav={favs.has(anime.id)}
                       toggleFav={toggleFav}
-                      isHorizontal={false}
                     />
                   ))}
                 </div>
