@@ -1525,13 +1525,14 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
                 <div style={{ fontSize: 13, fontWeight: 700, color: '#f1f1f3', marginBottom: 8, letterSpacing: '.06em' }}>Top du moment</div>
                 <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 8, scrollSnapType: 'x mandatory' }} className="elegant-scrollbar">
                   {topWeekAnimes.slice(0, 8).map(anime => (
-                    <AnimeMarqueeCard
+                    <BramsqHubCard
                       key={anime.id}
                       anime={anime}
                       onClick={() => handleClick(anime.id)}
                       onOpenMonUnivers={onOpenMonUnivers}
                       isFav={favs.has(anime.id)}
                       toggleFav={toggleFav}
+                      isHorizontal={true}
                     />
                   ))}
                 </div>
@@ -1542,7 +1543,7 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
                 <div style={{ fontSize: 13, fontWeight: 700, color: '#f1f1f3', marginBottom: 8, letterSpacing: '.06em' }}>Romance</div>
                 <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 8, scrollSnapType: 'x mandatory' }} className="elegant-scrollbar">
                   {allAnimesWithExtras.filter(a => (a.genres || []).some(g => g.toLowerCase().includes('romance') || g === 'Romance')).slice(0, 8).map(anime => (
-                    <AnimeMarqueeCard key={anime.id} anime={anime} onClick={() => handleClick(anime.id)} onOpenMonUnivers={onOpenMonUnivers} isFav={favs.has(anime.id)} toggleFav={toggleFav} />
+                    <BramsqHubCard key={anime.id} anime={anime} onClick={() => handleClick(anime.id)} onOpenMonUnivers={onOpenMonUnivers} isFav={favs.has(anime.id)} toggleFav={toggleFav} isHorizontal={true} />
                   ))}
                 </div>
               </div>
@@ -1552,7 +1553,7 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
                 <div style={{ fontSize: 13, fontWeight: 700, color: '#f1f1f3', marginBottom: 8, letterSpacing: '.06em' }}>Action</div>
                 <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 8, scrollSnapType: 'x mandatory' }} className="elegant-scrollbar">
                   {allAnimesWithExtras.filter(a => (a.genres || []).some(g => g.toLowerCase().includes('action') || g === 'Action')).slice(0, 8).map(anime => (
-                    <AnimeMarqueeCard key={anime.id} anime={anime} onClick={() => handleClick(anime.id)} onOpenMonUnivers={onOpenMonUnivers} isFav={favs.has(anime.id)} toggleFav={toggleFav} />
+                    <BramsqHubCard key={anime.id} anime={anime} onClick={() => handleClick(anime.id)} onOpenMonUnivers={onOpenMonUnivers} isFav={favs.has(anime.id)} toggleFav={toggleFav} isHorizontal={true} />
                   ))}
                 </div>
               </div>
@@ -1562,7 +1563,7 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
                 <div style={{ fontSize: 13, fontWeight: 700, color: '#f1f1f3', marginBottom: 8, letterSpacing: '.06em' }}>Fantasy</div>
                 <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 8, scrollSnapType: 'x mandatory' }} className="elegant-scrollbar">
                   {allAnimesWithExtras.filter(a => (a.genres || []).some(g => g.toLowerCase().includes('fantasy') || g === 'Fantasy')).slice(0, 8).map(anime => (
-                    <AnimeMarqueeCard key={anime.id} anime={anime} onClick={() => handleClick(anime.id)} onOpenMonUnivers={onOpenMonUnivers} isFav={favs.has(anime.id)} toggleFav={toggleFav} />
+                    <BramsqHubCard key={anime.id} anime={anime} onClick={() => handleClick(anime.id)} onOpenMonUnivers={onOpenMonUnivers} isFav={favs.has(anime.id)} toggleFav={toggleFav} isHorizontal={true} />
                   ))}
                 </div>
               </div>
@@ -1572,43 +1573,63 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
                 <div style={{ fontSize: 13, fontWeight: 700, color: '#f1f1f3', marginBottom: 8, letterSpacing: '.06em' }}>Aventure</div>
                 <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 8, scrollSnapType: 'x mandatory' }} className="elegant-scrollbar">
                   {allAnimesWithExtras.filter(a => (a.genres || []).some(g => g.toLowerCase().includes('aventure') || g === 'Aventure')).slice(0, 8).map(anime => (
-                    <AnimeMarqueeCard key={anime.id} anime={anime} onClick={() => handleClick(anime.id)} onOpenMonUnivers={onOpenMonUnivers} isFav={favs.has(anime.id)} toggleFav={toggleFav} />
+                    <BramsqHubCard key={anime.id} anime={anime} onClick={() => handleClick(anime.id)} onOpenMonUnivers={onOpenMonUnivers} isFav={favs.has(anime.id)} toggleFav={toggleFav} isHorizontal={true} />
                   ))}
                 </div>
               </div>
 
-              {/* The cinematic from before (le truc d'avant) */}
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginBottom: 18 }}>
-                  <div className="cinema-label" style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.22)', fontWeight: 800, letterSpacing: '.18em', textTransform: 'uppercase', textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}>
-                    Galerie cinématique · survole pour pause · clique pour accéder
-                  </div>
+              {/* Tous les animés - clean responsive grid, limited to 24 for readability and to avoid the previous mess of too many cards and overflowing carousels. The "Galerie cinématique" label and SURPRISE are integrated here. */}
+              <div id="tous-les-animes" style={{ marginBottom: 32 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#f1f1f3', letterSpacing: '.06em' }}>Tous les animés · Galerie cinématique</div>
                   <button
                     onClick={surpriseMe}
                     style={{
                       fontSize: 10, fontWeight: 800, letterSpacing: '.08em',
                       padding: '4px 10px', borderRadius: 999,
                       background: 'rgba(167,139,250,0.12)', border: '1px solid rgba(167,139,250,0.35)',
-                      color: '#a78bfa', cursor: 'pointer'
+                      color: '#a78bfa', cursor: 'pointer',
+                      transition: 'all .15s cubic-bezier(0.23,1,0.32,1)'
                     }}
-                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(167,139,250,0.25)'; e.currentTarget.style.color = '#fff'; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(167,139,250,0.12)'; e.currentTarget.style.color = '#a78bfa'; }}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(167,139,250,0.25)'; e.currentTarget.style.color = '#fff'; e.currentTarget.style.transform = 'scale(1.05)' }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(167,139,250,0.12)'; e.currentTarget.style.color = '#a78bfa'; e.currentTarget.style.transform = 'scale(1)' }}
+                    title="Laisse le hasard choisir ton prochain anime !"
                   >
                     🎲 SURPRISE
                   </button>
                 </div>
-                {marqueeRows.map((row, i) => (
-                  <AnimeMarqueeRow
-                    key={i}
-                    animes={row.animes}
-                    direction={row.direction}
-                    speed={row.speed}
-                    onCardClick={handleClick}
-                    onOpenMonUnivers={onOpenMonUnivers}
-                    favs={favs}
-                    toggleFav={toggleFav}
-                  />
-                ))}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: 16 }}>
+                  {visibleAnimesWithProgress.slice(0, 24).map((anime, i) => (
+                    <BramsqHubCard
+                      key={anime.id}
+                      anime={anime}
+                      onClick={() => handleClick(anime.id)}
+                      onOpenMonUnivers={onOpenMonUnivers}
+                      isFav={favs.has(anime.id)}
+                      toggleFav={toggleFav}
+                      isHorizontal={false}
+                    />
+                  ))}
+                </div>
+                {visibleAnimesWithProgress.length > 24 && (
+                  <div style={{ textAlign: 'center', marginTop: 16 }}>
+                    <button
+                      onClick={() => alert('Pour garder la page propre, lisible et sans bordel (hiérarchie claire, pas de 50 cards d\'un coup), on limite à 24 visibles. "Voir plus" peut être étendu avec state pour charger le reste ou pagination.')}
+                      style={{
+                        padding: '8px 20px',
+                        borderRadius: 8,
+                        background: 'rgba(255,255,255,0.05)',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        color: '#fff',
+                        fontSize: 12,
+                        fontWeight: 600,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Voir plus d'animés
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
