@@ -78,7 +78,7 @@ export default function PostThreadPage() {
   const onPosted = () => scheduleLoad(120)   // recharge le thread (nouvelle réponse)
 
   return (
-    <div style={{ height: 'calc(100vh - 72px)', marginTop: 72, overflowY: 'auto', background: T.bg }}>
+    <div style={{ height: 'calc(100dvh - 72px)', marginTop: 72, overflowY: 'auto', background: T.bg }}>
       <div>
         <div style={COL}>
           <div style={{ position: 'sticky', top: 0, zIndex: 5, display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', background: 'rgba(8,9,13,0.82)', backdropFilter: 'blur(12px)', borderBottom: `1px solid ${T.border}` }}>
