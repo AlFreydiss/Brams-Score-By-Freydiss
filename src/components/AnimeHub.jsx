@@ -68,7 +68,7 @@ const ANIMES = [
     emoji: '⚔️',
     color: '#c8a44d',
     colorDark: '#4a3a14',
-    coverImage: '',
+    coverImage: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fate-zero/cover.png',
     genres: ['Action', 'Surnaturel', 'Drame', 'Seinen'],
     description: "Sept mages, sept Servants, une guerre à mort pour le Saint-Graal qui exauce tous les vœux. Préquelle de Fate/stay night, signée ufotable.",
     stats: [
@@ -87,7 +87,7 @@ const ANIMES = [
     emoji: '☄️',
     color: '#7cc4e0',
     colorDark: '#1d3a4a',
-    coverImage: '',
+    coverImage: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-name/the-movie-thumb.jpg',
     genres: ['Romance', 'Drame', 'Surnaturel'],
     description: "Mitsuha et Taki échangent leurs corps au gré de rêves étranges. Quand une comète menace tout, un lien défiant le temps les unit. Le chef-d'œuvre de Makoto Shinkai.",
     stats: [
@@ -595,7 +595,7 @@ const AH_CSS = `
     background: linear-gradient(to right, transparent, #a78bfa, transparent);
     opacity: .35;
   }
-  .ah-main-grid { display:grid; grid-template-columns:220px 1fr; gap:32px; align-items:start; }
+  .ah-main-grid { display:grid; grid-template-columns:264px 1fr; gap:34px; align-items:start; }
   @media (max-width:1024px) {
     .ah-main-grid { grid-template-columns:1fr; gap:0; }
     .ah-sidebar { display:none !important; }
@@ -1218,19 +1218,19 @@ function RailItem({ label, icon, count, active, onClick }) {
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
       style={{
-        display:'flex', alignItems:'center', gap:10, width:'100%',
-        padding:'9px 12px 9px 14px', borderRadius:10, marginBottom:3,
+        display:'flex', alignItems:'center', gap:12, width:'100%',
+        padding:'11px 14px 11px 17px', borderRadius:11, marginBottom:4,
         border:'none', cursor:'pointer', textAlign:'left', position:'relative',
         background: active ? 'rgba(167,139,250,0.10)' : (hov ? 'rgba(255,255,255,0.045)' : 'transparent'),
-        color: active ? '#d9ccff' : (hov ? '#fff' : 'rgba(255,255,255,0.58)'),
-        fontSize:13, fontWeight: active ? 800 : 600, letterSpacing:'.01em',
+        color: active ? '#d9ccff' : (hov ? '#fff' : 'rgba(255,255,255,0.62)'),
+        fontSize:14.5, fontWeight: active ? 800 : 600, letterSpacing:'.01em',
         transition:'all .18s',
       }}
     >
-      <span style={{ position:'absolute', left:0, top:'50%', transform:'translateY(-50%)', width:3, height: active ? 18 : (hov ? 10 : 0), borderRadius:2, background:'#a78bfa', transition:'height .2s', boxShadow: active ? '0 0 8px rgba(167,139,250,0.7)' : 'none' }} />
-      <span style={{ fontSize:14, opacity: active ? 1 : 0.75 }}>{icon}</span>
+      <span style={{ position:'absolute', left:0, top:'50%', transform:'translateY(-50%)', width:3, height: active ? 20 : (hov ? 12 : 0), borderRadius:2, background:'#a78bfa', transition:'height .2s', boxShadow: active ? '0 0 8px rgba(167,139,250,0.7)' : 'none' }} />
+      <span style={{ fontSize:16, opacity: active ? 1 : 0.75 }}>{icon}</span>
       <span style={{ flex:1 }}>{label}</span>
-      <span style={{ fontSize:10, fontWeight:800, color: active ? 'rgba(217,204,255,0.7)' : 'rgba(255,255,255,0.28)' }}>{count}</span>
+      <span style={{ fontSize:11, fontWeight:800, color: active ? 'rgba(217,204,255,0.7)' : 'rgba(255,255,255,0.30)' }}>{count}</span>
     </button>
   )
 }
