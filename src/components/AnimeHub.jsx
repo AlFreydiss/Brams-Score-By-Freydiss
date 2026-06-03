@@ -1513,12 +1513,13 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
   // Items de navigation du rail (uniquement les sections réellement présentes)
   const navItems = useMemo(() => [
     { id:'top-du-moment', label:'Top du moment', icon:'🔥', count: topWeekAnimes.length },
-    ...(continueWatching.length ? [{ id:'continuer', label:'Continuer', icon:'▶', count: continueWatching.length }] : []),
     { id:'pour-toi', label:'Pour toi', icon:'✨' },
+    ...(continueWatching.length ? [{ id:'continuer', label:'Continuer', icon:'▶', count: continueWatching.length }] : []),
+    { id:'ma-liste', label:'Ma liste', icon:'❤️', count: favs.size },
     ...(newSeasonAnimes.length ? [{ id:'nouveautes', label:'Nouveautés', icon:'🆕', count: newSeasonAnimes.length }] : []),
     ...genreSections.map(s => ({ id:s.id, label:s.label, icon:s.icon, count:s.items.length })),
     { id:'tous', label:'Tous les animés', icon:'📚', count: sortedAnimes.length },
-  ], [topWeekAnimes, continueWatching, newSeasonAnimes, genreSections, sortedAnimes]);
+  ], [topWeekAnimes, continueWatching, newSeasonAnimes, genreSections, sortedAnimes, favs]);
 
   const scrollToCat = (id) => {
     setActiveCat(id);
@@ -1790,6 +1791,16 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
                     </Carousel>
                   </section>
 
+                  {/* Recommandé par l'IA pour toi */}
+                  <section id="pour-toi" style={{ marginBottom:10, scrollMarginTop:16 }}>
+                    <AIRecommendations
+                      animes={sortedAnimes}
+                      ratings={ratings}
+                      favorites={favs}
+                      onOpen={handleClick}
+                    />
+                  </section>
+
                   {/* Continuer à regarder */}
                   {continueWatching.length > 0 && (
                     <section id="continuer" style={{ marginBottom:10, scrollMarginTop:16 }}>
@@ -1804,14 +1815,35 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
                     </section>
                   )}
 
-                  {/* Recommandé par l'IA pour toi */}
-                  <section id="pour-toi" style={{ marginBottom:10, scrollMarginTop:16 }}>
-                    <AIRecommendations
-                      animes={sortedAnimes}
-                      ratings={ratings}
-                      favorites={favs}
-                      onOpen={handleClick}
-                    />
+                  {/* Ma liste (watchlist) */}
+                  <section id="ma-liste" style={{ marginBottom:10, scrollMarginTop:16 }}>
+                    <SectionHeader icon="❤️" title="Ma liste" count={favs.size} accent="rgba(167,139,250,0.30)" />
+                    {(() => {
+                      const watchlist = sortedAnimes.filter(a => favs.has(a.id))
+                      return watchlist.length > 0 ? (
+                        <Carousel>
+                          {watchlist.map(anime => (
+                            <div key={anime.id} style={{ scrollSnapAlign:'start' }}>
+                              <AnimeMarqueeCard anime={anime} onClick={() => handleClick(anime.id)} onOpenMonUnivers={onOpenMonUnivers} isFav={favs.has(anime.id)} toggleFav={toggleFav} onRate={rate} />
+                            </div>
+                          ))}
+                        </Carousel>
+                      ) : (
+                        <div style={{ display:'flex', alignItems:'center', gap:16, padding:'22px 24px', borderRadius:16, background:'rgba(167,139,250,0.06)', border:'1px dashed rgba(167,139,250,0.30)' }}>
+                          <div style={{ fontSize:34, opacity:0.8 }}>❤️</div>
+                          <div style={{ flex:1, minWidth:0 }}>
+                            <div style={{ fontSize:15, fontWeight:800, color:'#f4f4f5', marginBottom:3 }}>Ta liste est vide</div>
+                            <div style={{ fontSize:13, color:'rgba(255,255,255,0.5)' }}>Clique le ❤ sur n'importe quel anime pour l'ajouter ici et le retrouver en un clic.</div>
+                          </div>
+                          <button onClick={surpriseMe}
+                            style={{ flexShrink:0, borderRadius:11, padding:'10px 18px', fontSize:13, fontWeight:800, color:'#fff', background:'rgba(139,92,246,0.22)', border:'1px solid rgba(139,92,246,0.45)', cursor:'pointer', transition:'all .18s' }}
+                            onMouseEnter={e => e.currentTarget.style.background='rgba(139,92,246,0.34)'}
+                            onMouseLeave={e => e.currentTarget.style.background='rgba(139,92,246,0.22)'}>
+                            🎲 Découvrir un anime
+                          </button>
+                        </div>
+                      )
+                    })()}
                   </section>
 
                   {/* Nouveautés de la saison */}
