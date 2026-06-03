@@ -1589,7 +1589,7 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
         <AHStars />
 
         <div style={{ position:'relative', zIndex:2, padding:'12px 0 40px' }}>
-          <div style={{ maxWidth:1360, margin:'0 auto', padding:'0 32px' }}>
+          <div style={{ maxWidth:1680, margin:'0 auto', padding:'0 32px' }}>
 
             {/* ── Hero compact horizontal (titre à gauche, stats à droite) ── */}
             <div style={{ display:'flex', alignItems:'flex-end', justifyContent:'space-between', gap:24, flexWrap:'wrap', marginBottom:20 }}>
@@ -1717,7 +1717,7 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
           </div>
 
           {/* ── Bloc principal : sidebar + sections, ou grille filtrée ── */}
-          <div style={{ maxWidth:1360, margin:'10px auto 0', padding:'0 32px' }}>
+          <div style={{ maxWidth:1680, margin:'10px auto 0', padding:'0 32px' }}>
             {isFiltering ? (
               visibleAnimesWithProgress.length === 0 ? (
                 <div style={{ textAlign:'center', padding:'64px 20px' }}>
