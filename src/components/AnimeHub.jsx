@@ -717,12 +717,6 @@ function AnimeMarqueeCard({ anime, onClick, onOpenMonUnivers, isFav = false, tog
         zIndex:2, opacity: hov ? 1 : 0, transition:'opacity 0.3s cubic-bezier(0.23,1,0.32,1)',
       }} />
 
-      {/* Anime play hint on hover center */}
-      {hov && (
-        <div style={{ position:'absolute', top:'42%', left:'50%', transform:'translate(-50%,-50%)', zIndex:4, width:42, height:42, borderRadius:'50%', background:'rgba(0,0,0,0.45)', border:'1px solid rgba(255,255,255,0.35)', display:'flex', alignItems:'center', justifyContent:'center', backdropFilter:'blur(6px)' }}>
-          <div style={{ width:0, height:0, borderTop:'7px solid transparent', borderBottom:'7px solid transparent', borderLeft:'11px solid #fff', marginLeft:2 }} />
-        </div>
-      )}
 
       <div style={{
         position:'absolute', top:10, right:10, zIndex:4,
@@ -915,12 +909,6 @@ function AnimeCard({ anime, index, onClick, onOpenMonUnivers, isFav = false, tog
           {anime.badge}
         </div>
 
-        {/* Anime play hint center on hover (mode anime stylé) */}
-        {hov && (
-          <div style={{ position:'absolute', top:'46%', left:'50%', transform:'translate(-50%,-50%)', zIndex:4, width:54, height:54, borderRadius:'50%', background:'rgba(0,0,0,0.42)', border:'1.5px solid rgba(255,255,255,0.4)', display:'flex', alignItems:'center', justifyContent:'center', backdropFilter:'blur(8px)' }}>
-            <div style={{ width:0, height:0, borderTop:'9px solid transparent', borderBottom:'9px solid transparent', borderLeft:'14px solid #fff', marginLeft:3 }} />
-          </div>
-        )}
 
         {/* Heart fav - anime pop + premium standalone sync */}
         <button
