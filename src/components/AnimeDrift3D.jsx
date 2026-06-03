@@ -21,7 +21,7 @@ export default function AnimeDrift3D({ images = [] }) {
       {picks.map((url, i) => {
         const r = (n) => (Math.sin((i + 1) * 999.7 + n * 37.3) * 0.5 + 0.5)
         const depth = r(6) // 0 (loin) → 1 (proche)
-        const w = 104 + depth * 104
+        const w = 88 + depth * 92
         return (
           <img
             key={url}
@@ -39,9 +39,9 @@ export default function AnimeDrift3D({ images = [] }) {
               height: w * 1.45,
               objectFit: 'cover',
               borderRadius: 12,
-              opacity: 0.16 + depth * 0.28,
-              filter: `blur(${(1 - depth) * 1.4}px) saturate(0.95) brightness(0.92)`,
-              boxShadow: '0 30px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04)',
+              opacity: 0.06 + depth * 0.10,
+              filter: `blur(${(1 - depth) * 1.8}px) saturate(0.8) brightness(0.85)`,
+              boxShadow: '0 26px 70px rgba(0,0,0,0.5)',
               transformStyle: 'preserve-3d',
               animation: `${i % 2 ? 'ahFloatB' : 'ahFloatA'} ${11 + r(4) * 9}s ease-in-out ${(-r(5) * 18).toFixed(1)}s infinite`,
               willChange: 'transform',

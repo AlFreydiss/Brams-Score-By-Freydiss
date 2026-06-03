@@ -1590,6 +1590,44 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
         <AHStars />
 
         <div style={{ position:'relative', zIndex:2, padding:'12px 0 40px' }}>
+
+          {/* ── Hero « À la une » façon Netflix (backdrop + synopsis + CTA) ── */}
+          {(() => {
+            const feat = topWeekAnimes[0] || sortedAnimes[0]
+            if (!feat) return null
+            const fc = feat.color || '#a78bfa'
+            return (
+              <div style={{ maxWidth:1680, margin:'0 auto 18px', padding:'0 32px' }}>
+                <div style={{ position:'relative', borderRadius:24, overflow:'hidden', minHeight:330, display:'flex', alignItems:'stretch', border:'1px solid rgba(255,255,255,0.08)', boxShadow:'0 24px 70px rgba(0,0,0,0.5)' }}>
+                  {feat.coverImage && <img src={feat.coverImage} alt="" style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', objectPosition:'center 22%', filter:'brightness(0.5) saturate(1.05)', transform:'scale(1.08)' }} />}
+                  <div style={{ position:'absolute', inset:0, background:`linear-gradient(90deg, rgba(8,9,14,0.97) 26%, rgba(8,9,14,0.55) 58%, rgba(8,9,14,0.82) 100%)` }} />
+                  <div style={{ position:'absolute', inset:0, background:`radial-gradient(700px 300px at 12% 50%, ${fc}1f, transparent 70%)` }} />
+                  <div style={{ position:'relative', zIndex:2, padding:'40px 46px', maxWidth:640, display:'flex', flexDirection:'column', justifyContent:'center' }}>
+                    <div style={{ display:'inline-flex', alignItems:'center', gap:7, alignSelf:'flex-start', background:'rgba(255,255,255,0.06)', border:`1px solid ${fc}55`, borderRadius:999, padding:'4px 12px', fontSize:11, fontWeight:800, color:fc, marginBottom:16, letterSpacing:'.04em' }}>🔥 À LA UNE</div>
+                    <h1 style={{ fontFamily:"'Pirata One', cursive", margin:0, fontSize:46, fontWeight:900, color:'#fff', lineHeight:1.02, letterSpacing:'-.01em', textShadow:'0 3px 24px rgba(0,0,0,0.7)' }}>{feat.title}</h1>
+                    <div style={{ display:'flex', alignItems:'center', gap:14, margin:'12px 0 14px', fontSize:13, color:'rgba(255,255,255,0.7)', fontWeight:700 }}>
+                      <span style={{ color:'#ffd86b' }}>★ {(ratings[feat.id]?.avg || 8.5).toFixed(1)}</span>
+                      {feat.genres.slice(0,3).map(g => <span key={g} style={{ fontSize:11, color:fc, background:`${fc}1c`, border:`1px solid ${fc}33`, borderRadius:999, padding:'2px 10px' }}>{g}</span>)}
+                    </div>
+                    <p style={{ margin:0, fontSize:14, color:'rgba(255,255,255,0.62)', lineHeight:1.65, maxWidth:540, display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical', overflow:'hidden' }}>{feat.description}</p>
+                    <div style={{ display:'flex', gap:12, marginTop:22 }}>
+                      <button onClick={() => handleClick(feat.id)}
+                        style={{ display:'flex', alignItems:'center', gap:9, padding:'13px 26px', borderRadius:13, border:'none', cursor:'pointer', fontFamily:'var(--body)', fontSize:14.5, fontWeight:800, color:'#0a0a0f', background:'#fff', boxShadow:'0 8px 24px rgba(255,255,255,0.18)', transition:'transform .25s cubic-bezier(.23,1,.32,1)' }}
+                        onMouseEnter={e => e.currentTarget.style.transform='translateY(-2px)'} onMouseLeave={e => e.currentTarget.style.transform='none'}>
+                        <span style={{ fontSize:15 }}>▶</span> Regarder
+                      </button>
+                      <button onClick={(e) => toggleFav(feat.id, e)}
+                        style={{ display:'flex', alignItems:'center', gap:9, padding:'13px 24px', borderRadius:13, cursor:'pointer', fontFamily:'var(--body)', fontSize:14.5, fontWeight:800, color:'#fff', background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.18)', backdropFilter:'blur(8px)', transition:'background .2s' }}
+                        onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,0.15)'} onMouseLeave={e => e.currentTarget.style.background='rgba(255,255,255,0.08)'}>
+                        {favs.has(feat.id) ? '✓ Dans ma liste' : '+ Ma liste'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )
+          })()}
+
           <div style={{ maxWidth:1680, margin:'0 auto', padding:'0 32px' }}>
 
             {/* ── Hero compact horizontal (titre à gauche, stats à droite) ── */}
