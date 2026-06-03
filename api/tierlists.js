@@ -163,6 +163,33 @@ export default async function handler(req, res) {
     const viewer = await resolveUser(req, body)
     const voterId = viewer.id
 
+    // ── Recommandations IA : feedback 👍/👎 (bridge durable vers Ruflo) ──
+    if (action === 'reco_feedback') {
+      if (req.method === 'POST') {
+        const animeId = String(body.anime_id || '').slice(0, 80)
+        const act = body.action === 'like' || body.action === 'dislike' ? body.action : null
+        if (!animeId || !act) return json(res, 400, { error: 'anime_id + action requis' })
+        await db('recommendation_feedback', {
+          method: 'POST',
+          headers: { Prefer: 'return=minimal' },
+          body: JSON.stringify({
+            user_id: voterId || null,
+            anime_id: animeId,
+            action: act,
+            reason_given: String(body.reason || '').slice(0, 200),
+          }),
+        })
+        return json(res, 200, { ok: true })
+      }
+      if (req.method === 'GET') {   // drain pour la synchro Ruflo (scripts/sync-reco-feedback-ruflo.mjs)
+        const since = String(req.query.since || '')
+        const flt = since ? `&created_at=gt.${encodeURIComponent(since)}` : ''
+        const rows = await db(`recommendation_feedback?select=*&order=created_at.desc&limit=500${flt}`)
+        return json(res, 200, rows || [])
+      }
+      return json(res, 405, { error: 'Method not allowed' })
+    }
+
     // ── Undercover : assign/resolve (secrets gérés côté serveur, hôte vérifié) ──
     if (action === 'uc_assign' || action === 'uc_resolve') {
       if (req.method !== 'POST') return json(res, 405, { error: 'Method not allowed' })

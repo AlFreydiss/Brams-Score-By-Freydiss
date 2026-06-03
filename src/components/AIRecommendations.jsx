@@ -180,14 +180,24 @@ export default function AIRecommendations({ animes = [], ratings = {}, favorites
   )
 
   const vote = useCallback((id, action, reason) => {
+    let removed = false
     setFeedback(prev => {
       const next = { ...prev }
-      if (next[id] === action) delete next[id]   // re-clic = annule
+      if (next[id] === action) { delete next[id]; removed = true }   // re-clic = annule
       else next[id] = action
       return next
     })
     queueRufloFeedback({ anime_id: id, action, reason_given: reason })
     onFeedback?.(id, action, reason)
+    if (!removed) {
+      // persistance durable best-effort (Supabase via API → drainée vers Ruflo). Ne bloque pas l'UI.
+      try {
+        fetch('/api/tierlists?action=reco_feedback', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ anime_id: id, action, reason }),
+        }).catch(() => {})
+      } catch {}
+    }
   }, [onFeedback])
 
   const refresh = useCallback(() => setSeed(s => s + 1), [])
