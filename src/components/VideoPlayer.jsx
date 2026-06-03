@@ -293,8 +293,11 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   // Trio lecteur : autoplay (compte à rebours), skip intro, toast de reprise.
   const [autoplayNext, setAutoplayNext] = useState(() => loadVideoPreferences(userId).autoplayNext)
   const [endOverlay,   setEndOverlay]   = useState(false)
+  const [endReason,    setEndReason]    = useState('ended') // 'ended' (fin réelle) | 'ed' (générique détecté)
   const [countdown,    setCountdown]    = useState(null)   // secondes restantes, ou null
+  const [cdMax,        setCdMax]        = useState(8)       // valeur initiale du décompte (pour la barre)
   const [resumeToast,  setResumeToast]  = useState(null)   // "MM:SS" affiché brièvement
+  const edPromptedRef = useRef(false)                      // le prompt « générique » ne se déclenche qu'une fois
 
   const video   = videos[idx]
   const isLocal = Boolean(video?.src)
@@ -523,7 +526,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
     const nextAudioIdx = findTrackIndex(audioOptions, preferredAudioLang, 0)
 
     setCurrentTime(0); setDuration(0); setBuffered(0); setPlaying(false); setCueText('')
-    setEndOverlay(false); setCountdown(null)
+    setEndOverlay(false); setCountdown(null); setEndReason('ended'); edPromptedRef.current = false
     setSubIdx(nextSubIdx)
     setSubsOff(hasSubs ? Boolean(prefs.subtitlesOff) : true)
     setAudioIdx(nextAudioIdx)
@@ -661,6 +664,14 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
     const v = videoRef.current; if (!v) return
     setCurrentTime(v.currentTime)
     if (v.buffered.length) setBuffered(v.buffered.end(v.buffered.length - 1))
+    // Générique détecté (marqueur ed) → prompt « Netflix » : décompte 5s qui passe à
+    // l'épisode suivant, sauf si l'utilisateur clique « Laisser le générique ».
+    if (edMark && autoplayNext && !edPromptedRef.current && !endOverlay
+        && idx < videos.length - 1
+        && v.currentTime >= edMark[0] && v.currentTime < edMark[1]) {
+      edPromptedRef.current = true
+      setEndReason('ed'); setCdMax(5); setCountdown(5); setEndOverlay(true)
+    }
     if (storageKey && performance.now() - lastSaveRef.current > 1200) {
       lastSaveRef.current = performance.now()
       persistProgress({
@@ -783,6 +794,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                 if (audioRef.current) audioRef.current.pause()
                 persistProgress({ time: videoRef.current?.duration || duration || 0, duration: videoRef.current?.duration || duration || 0, completed: true })
                 if (idx < videos.length - 1) {
+                  setEndReason('ended'); setCdMax(8)
                   setEndOverlay(true)
                   setCountdown(autoplayNext ? 8 : null)   // null = pas d'avance auto, carte manuelle
                 }
@@ -837,14 +849,11 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
               </div>
             )}
 
-            {/* ── Smart Skip : opening / ending (uniquement si marqueurs présents) ── */}
+            {/* ── Smart Skip : opening (bouton). L'ending passe par le décompte Netflix. ── */}
             {!endOverlay && (() => {
               const inOp = opMark && currentTime >= opMark[0] - 1 && currentTime < opMark[1] - 0.5
-              const inEd = edMark && currentTime >= edMark[0] && currentTime < edMark[1] - 0.5
-              const skip = inOp ? { label: "Passer l'intro", to: opMark[1] }
-                         : inEd ? { label: 'Passer le générique', to: edMark[1] }
-                         : null
-              if (!skip) return null
+              if (!inOp) return null
+              const skip = { label: "Passer l'intro", to: opMark[1] }
               return (
                 <button onClick={(e) => { e.stopPropagation(); skipTo(skip.to) }}
                   style={{ position:'absolute', right:24, bottom: showCtrl ? 118 : 40, zIndex:20, display:'flex', alignItems:'center', gap:8, padding:'10px 18px', borderRadius:12, cursor:'pointer', fontFamily:'var(--body)', fontSize:13, fontWeight:800, color:'#fff', background:'rgba(10,8,16,0.82)', backdropFilter:'blur(10px)', border:`1px solid ${color}66`, boxShadow:'0 8px 28px rgba(0,0,0,0.45)', transition:'transform .15s, background .15s' }}
@@ -866,7 +875,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                 </div>
                 {countdown != null && (
                   <div style={{ height:4, borderRadius:999, background:'rgba(255,255,255,0.12)', overflow:'hidden', marginBottom:13 }}>
-                    <div style={{ height:'100%', borderRadius:999, background:color, width:`${(1 - countdown / 8) * 100}%`, transition:'width 1s linear' }} />
+                    <div style={{ height:'100%', borderRadius:999, background:color, width:`${(1 - countdown / cdMax) * 100}%`, transition:'width 1s linear' }} />
                   </div>
                 )}
                 <div style={{ display:'flex', gap:8 }}>
@@ -876,7 +885,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                   </button>
                   <button onClick={(e) => { e.stopPropagation(); setEndOverlay(false); setCountdown(null) }}
                     style={{ padding:'9px 14px', borderRadius:10, cursor:'pointer', fontFamily:'var(--body)', fontSize:12.5, fontWeight:700, color:'rgba(255,255,255,0.7)', background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)' }}>
-                    Annuler
+                    {endReason === 'ed' ? 'Laisser le générique' : 'Annuler'}
                   </button>
                 </div>
                 <button
