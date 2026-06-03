@@ -128,7 +128,7 @@ const AIRecoCard = memo(function AIRecoCard({ rec, onOpen, onVote, vote }) {
         transform: hover ? 'translateY(-4px)' : 'none', transition: 'transform .22s ease, box-shadow .22s ease, border-color .18s ease',
       }}>
       {/* Visuel */}
-      <div style={{ position: 'relative', paddingTop: '128%', overflow: 'hidden', background: `radial-gradient(ellipse at 50% 28%, ${accent}33, #0a0810 74%)` }}>
+      <div style={{ position: 'relative', height: 236, overflow: 'hidden', background: `radial-gradient(ellipse at 50% 28%, ${accent}33, #0a0810 74%)` }}>
         {a.coverImage
           ? <img src={a.coverImage} alt={a.title} loading="lazy" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: hover ? 0.5 : 0.82, transition: 'opacity .25s, transform .4s', transform: hover ? 'scale(1.06)' : 'none' }} />
           : <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 54, opacity: 0.55 }}>{a.emoji || '🎬'}</div>}
@@ -224,7 +224,7 @@ export default function AIRecommendations({ animes = [], ratings = {}, favorites
 
       {/* Carrousel 6 cartes */}
       <div className="elegant-scrollbar" style={{
-        display: 'flex', gap: 14, overflowX: 'auto', overflowY: 'hidden', paddingBottom: 6,
+        display: 'flex', alignItems: 'flex-start', gap: 14, overflowX: 'auto', overflowY: 'hidden', paddingBottom: 6,
         scrollSnapType: 'x proximity',
         WebkitMaskImage: 'linear-gradient(to right, black calc(100% - 40px), transparent)',
         maskImage: 'linear-gradient(to right, black calc(100% - 40px), transparent)',

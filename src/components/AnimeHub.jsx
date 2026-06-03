@@ -1254,7 +1254,7 @@ function SectionHeader({ icon, title, count, accent = 'rgba(139,92,246,0.22)', a
 function Carousel({ children }) {
   return (
     <div className="elegant-scrollbar" style={{
-      display:'flex', gap:4, overflowX:'auto', overflowY:'hidden', paddingBottom:4,
+      display:'flex', alignItems:'flex-start', gap:4, overflowX:'auto', overflowY:'hidden', paddingBottom:4,
       scrollSnapType:'x proximity',
       WebkitMaskImage:'linear-gradient(to right, black calc(100% - 48px), transparent)',
       maskImage:'linear-gradient(to right, black calc(100% - 48px), transparent)',
