@@ -1029,7 +1029,7 @@ export const LOCAL_TRACKS = [
   { id:'koiame-ed1', anime:'After the Rain', title:'Ref:rain', artist:'Aimer', type:'ED', episode:'Ending', url:'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/blind-test/koiame-ed1.mp4', difficulty:'difficile', color:'#4a6b8a', emoji:'🌧️', aliases:['after the rain','koi wa ameagari no you ni','koi wa ameagari','refrain','ref rain'] },
   { id:'mugen-ed1', anime:'Demon Slayer: Mugen Train', title:'Homura', artist:'LiSA', type:'ED', episode:'Thème (film)', url:'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/blind-test/mugen-ed1.mp4', difficulty:'facile', color:'#dc2626', emoji:'🔥', aliases:['demon slayer','kimetsu no yaiba','mugen train','le train de l\'infini','homura'] },
   { id:'violet-ed1', anime:'Violet Evergarden', title:'Michishirube', artist:'Minori Chihara', type:'ED', episode:'Ending', url:'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/blind-test/violet-ed1.mp4', difficulty:'moyen', color:'#1e3a5f', emoji:'✉️', aliases:['violet evergarden','michishirube'] },
-  { id:'dear-sunrise', anime:'Gungrave', title:'Dear Sunrise', artist:'', type:'ED', episode:'Ending', url:'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/blind-test/dear-sunrise.mp4', difficulty:'difficile', color:'#6b7280', emoji:'🌅', aliases:['dear sunrise'] },
+  { id:'dear-sunrise', anime:'One Piece', title:'Dear Sunrise', artist:'', type:'ED', episode:'Ending 20', url:'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/blind-test/dear-sunrise.mp4', difficulty:'moyen', color:'#d97706', emoji:'🌅', aliases:['one piece','dear sunrise','op'] },
 ]
 
 // ── Answer matching ────────────────────────────────────────────────────────
