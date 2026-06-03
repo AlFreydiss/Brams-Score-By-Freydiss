@@ -80,6 +80,25 @@ const ANIMES = [
     badgeColor: '#c8a44d',
   },
   {
+    id: 'your-name',
+    title: 'Your Name',
+    subtitle: 'Kimi no Na wa',
+    emoji: '☄️',
+    color: '#7cc4e0',
+    colorDark: '#1d3a4a',
+    coverImage: '',
+    genres: ['Romance', 'Drame', 'Surnaturel'],
+    description: "Mitsuha et Taki échangent leurs corps au gré de rêves étranges. Quand une comète menace tout, un lien défiant le temps les unit. Le chef-d'œuvre de Makoto Shinkai.",
+    stats: [
+      { label: 'Type', value: 'Film' },
+      { label: 'Durée', value: '1h47' },
+      { label: 'Statut', value: 'Disponible' },
+    ],
+    action: '▶ Regarder',
+    badge: 'NOUVEAU',
+    badgeColor: '#7cc4e0',
+  },
+  {
     id: 'drstone',
     title: 'Dr. Stone',
     subtitle: 'Science & Survie',
@@ -445,6 +464,7 @@ const SEARCH_ALIASES = {
   sl: ['solo leveling', 'sung jinwoo', 'jinwoo', 'manhwa'],
   dbs: ['dbs', 'dragon ball', 'dragon ball super', 'goku', 'vegeta'],
   'violet-evergarden': ['violet', 'violet evergarden', 'vostfr', 'vf', 'auto memory doll', 'doll'],
+  'your-name': ['your name', 'kimi no na wa', 'makoto shinkai', 'shinkai', 'mitsuha', 'taki', 'comète', 'comete', 'film'],
   vivy: ['vivy', 'fluorite', "fluorite eye's song", 'ia', 'matsumoto', 'wit studio'],
   'love-prism': ['love through a prism', 'prism', 'romance', 'musique'],
   'bunny-girl': ['bunny girl senpai', 'rascal does not dream', 'seishun buta yarou', 'mai sakurajima', 'sakuta'],
@@ -1255,7 +1275,7 @@ function Carousel({ children }) {
   )
 }
 
-export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrstone, onOpenJjk, onOpenKingdom, onOpenAot, onOpenKny, onOpenNnt, onOpenSl, onOpenDbs, onOpenViolet, onOpenVivy, onOpenLovePrism, onOpenCaroleTuesday, onOpenBunnyGirl, onOpenRentGirlfriend, onOpenBc, onOpenMha, onOpenFireforce, onOpenBluelock, onOpenFateZero, onOpenMonUnivers }) {
+export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrstone, onOpenJjk, onOpenKingdom, onOpenAot, onOpenKny, onOpenNnt, onOpenSl, onOpenDbs, onOpenViolet, onOpenVivy, onOpenLovePrism, onOpenCaroleTuesday, onOpenBunnyGirl, onOpenRentGirlfriend, onOpenBc, onOpenMha, onOpenFireforce, onOpenBluelock, onOpenFateZero, onOpenYourName, onOpenMonUnivers }) {
   const [query, setQuery] = useState('')
   const [selectedGenres, setSelectedGenres] = useState(new Set())
   const [searchFocus, setSearchFocus] = useState(false)
@@ -1417,6 +1437,7 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
       'rent-girlfriend': onOpenRentGirlfriend,
       bc: onOpenBc, mha: onOpenMha, fireforce: onOpenFireforce, bluelock: onOpenBluelock,
       'fate-zero': onOpenFateZero,
+      'your-name': onOpenYourName,
     }
     map[id]?.()
   }
@@ -1434,7 +1455,7 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
     onepiece: 9.2, aot: 9.6, sl: 9.4, jjk: 9.1, fireforce: 8.8, bluelock: 8.9,
     'bunny-girl': 8.7, 'rent-girlfriend': 7.8, tpn: 8.5, drstone: 8.6, kingdom: 8.3,
     kny: 9.0, nnt: 7.9, dbs: 8.0, 'violet-evergarden': 9.3, vivy: 8.4,
-    'love-prism': 7.5, 'carole-tuesday': 8.1, bc: 8.2, mha: 8.0
+    'love-prism': 7.5, 'carole-tuesday': 8.1, bc: 8.2, mha: 8.0, 'your-name': 8.8
   };
 
   const allAnimesWithExtras = useMemo(() => {

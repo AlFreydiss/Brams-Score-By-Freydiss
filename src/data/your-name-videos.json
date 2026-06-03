@@ -1,0 +1,34 @@
+[
+  {
+    "episode": 1,
+    "title": "Your Name (Kimi no Na wa)",
+    "kind": "film",
+    "badge": "VF/VOSTFR",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-name/the-movie.mp4",
+    "season": "Film",
+    "arc": "Film",
+    "preferredAudioLang": "ja",
+    "progressKey": "yourname-movie",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-name/the-movie-thumb.jpg",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-name/the-movie.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-name/the-movie.vf.mp4"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-name/the-movie.fr.vtt"
+      }
+    ]
+  }
+]
