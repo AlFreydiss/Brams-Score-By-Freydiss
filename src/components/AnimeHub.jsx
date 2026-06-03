@@ -596,11 +596,9 @@ const AH_CSS = `
     background: linear-gradient(to right, transparent, #a78bfa, transparent);
     opacity: .35;
   }
-  .ah-main-grid { display:grid; grid-template-columns:264px 1fr; gap:34px; align-items:start; }
-  @media (max-width:1024px) {
-    .ah-main-grid { grid-template-columns:1fr; gap:0; }
-    .ah-sidebar { display:none !important; }
-  }
+  .ah-main-grid { display:block; }
+  .ah-catbar { scrollbar-width:none; -ms-overflow-style:none; }
+  .ah-catbar::-webkit-scrollbar { display:none; }
   @media (prefers-reduced-motion: reduce) {
     .ah-mq-l, .ah-mq-r { animation: none !important; }
   }
@@ -1797,36 +1795,31 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
               )
             ) : (
               <div className="ah-main-grid">
-                {/* ── Sidebar ── */}
-                <nav className="ah-sidebar" style={{ position:'sticky', top:16, alignSelf:'start' }}>
-                  <div style={{ background:'rgba(16,19,26,0.6)', border:'1px solid rgba(255,255,255,0.07)', borderRadius:16, padding:'12px 8px', backdropFilter:'blur(8px)' }}>
-                    <div style={{ fontSize:10, fontWeight:900, color:'#9ca3af', letterSpacing:'.18em', textTransform:'uppercase', padding:'2px 12px 10px' }}>Catégories</div>
-                    {navItems.map(item => (
-                      <RailItem
-                        key={item.id}
-                        label={item.label}
-                        icon={item.icon}
-                        count={item.count}
-                        active={activeCat === item.id}
-                        onClick={() => scrollToCat(item.id)}
-                      />
-                    ))}
-                    <div style={{ height:1, background:'rgba(255,255,255,0.07)', margin:'10px 8px' }} />
-                    <div style={{ padding:'2px 6px 4px' }}>
-                      <div style={{ fontSize:11.5, fontWeight:800, color:'#a78bfa', marginBottom:8 }}>🎲 Au hasard</div>
-                      <button
-                        onClick={surpriseMe}
-                        style={{ width:'100%', borderRadius:9, padding:'9px 0', fontSize:12, fontWeight:800, color:'#f4f4f5', background:'rgba(139,92,246,0.16)', border:'1px solid rgba(139,92,246,0.32)', cursor:'pointer', transition:'all .18s' }}
-                        onMouseEnter={e => { e.currentTarget.style.background='rgba(139,92,246,0.28)' }}
-                        onMouseLeave={e => { e.currentTarget.style.background='rgba(139,92,246,0.16)' }}
-                      >
-                        Surprends-moi
+                {/* ── Barre de catégories horizontale (Netflix-style) ── */}
+                <div className="ah-catbar" style={{ position:'sticky', top:0, zIndex:6, display:'flex', alignItems:'center', gap:8, overflowX:'auto', padding:'6px 0 16px', marginBottom:6 }}>
+                  {navItems.map(item => {
+                    const on = activeCat === item.id
+                    return (
+                      <button key={item.id} onClick={() => scrollToCat(item.id)}
+                        style={{ flexShrink:0, display:'flex', alignItems:'center', gap:7, borderRadius:999, padding:'8px 15px', cursor:'pointer', fontFamily:'var(--body)', fontSize:13, fontWeight:800, letterSpacing:'.01em', transition:'all .2s cubic-bezier(.23,1,.32,1)',
+                          color: on ? '#fff' : 'rgba(255,255,255,0.62)',
+                          background: on ? 'rgba(167,139,250,0.18)' : 'rgba(255,255,255,0.05)',
+                          border: `1px solid ${on ? 'rgba(167,139,250,0.5)' : 'rgba(255,255,255,0.09)'}`,
+                          boxShadow: on ? '0 0 14px rgba(167,139,250,0.22)' : 'none' }}>
+                        <span style={{ fontSize:15 }}>{item.icon}</span>
+                        <span>{item.label}</span>
+                        {item.count != null && <span style={{ fontSize:10.5, fontWeight:800, opacity:0.6 }}>{item.count}</span>}
                       </button>
-                    </div>
-                  </div>
-                </nav>
+                    )
+                  })}
+                  <button onClick={surpriseMe}
+                    style={{ flexShrink:0, marginLeft:6, display:'flex', alignItems:'center', gap:7, borderRadius:999, padding:'8px 16px', cursor:'pointer', fontFamily:'var(--body)', fontSize:13, fontWeight:800, color:'#fff', background:'linear-gradient(135deg, rgba(139,92,246,0.3), rgba(124,196,224,0.2))', border:'1px solid rgba(139,92,246,0.45)', transition:'all .18s' }}
+                    onMouseEnter={e => e.currentTarget.style.filter='brightness(1.2)'} onMouseLeave={e => e.currentTarget.style.filter='none'}>
+                    🎲 Surprends-moi
+                  </button>
+                </div>
 
-                {/* ── Sections ── */}
+                {/* ── Sections (pleine largeur) ── */}
                 <div style={{ minWidth:0 }}>
 
                   {/* Top du moment — numéroté */}
