@@ -1,0 +1,70 @@
+/* ════════════════════════════════════════════════════════════════════════
+   FILET DE SÉCURITÉ RESPONSIVE & CROSS-BROWSER — global
+   ────────────────────────────────────────────────────────────────────────
+   Chargé APRÈS index.css. Tous les sélecteurs sont en :where() →
+   spécificité 0 : ce sont des DÉFAUTS de secours, jamais des overrides.
+   N'importe quelle règle de page (classe, id, style inline) gagne toujours.
+   Objectif : zéro chevauchement + rendu cohérent Chrome / Edge / Firefox /
+   Safari, desktop comme mobile. Volontairement conservateur : on ne touche
+   QUE ce qui ne peut pas casser une page existante (revue par Codex).
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. Cohérence cross-browser ──────────────────────────────────────────
+   Firefox/Safari/Edge gèrent le texte mobile et le tap différemment. */
+:where(html) {
+  -webkit-text-size-adjust: 100%;       /* iOS Safari : pas de gonflage du texte en paysage */
+  text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent; /* mobile : pas de flash bleu au tap */
+}
+
+/* Champs de formulaire : police/couleur héritées (Firefox & Safari forcent les leurs).
+   PAS de reset d'apparence ici : ça casserait checkbox/radio/select/date natifs. */
+:where(input, textarea, select, button) {
+  font-family: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+}
+/* Safari iOS : empêche le zoom auto au focus d'un champ texte < 16px
+   (le zoom décale la mise en page et provoque des débordements). */
+@media (max-width: 768px) {
+  :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+         textarea, select) {
+    font-size: max(16px, 1em);
+  }
+}
+
+/* ── 2. Médias : jamais plus larges que leur conteneur ────────────────────
+   Une image/iframe trop large = scroll horizontal + chevauchement.
+   height:auto UNIQUEMENT sur img (préserve le ratio). Pas sur canvas/video :
+   les canvas three.js/r3f dépendent de leur hauteur réelle. */
+:where(img) { max-width: 100%; height: auto; }
+:where(svg, video, canvas, iframe, embed, object) { max-width: 100%; }
+
+/* ── 3. Texte long : casse au lieu de déborder ────────────────────────────
+   Un mot/URL/pseudo très long sur mobile pousse la largeur de toute la page.
+   C'est LA cause n°1 de chevauchement horizontal. overflow-wrap seul :
+   sûr et standard (pas de word-break:break-word, trop agressif en flex/grid). */
+:where(p, h1, h2, h3, h4, h5, h6, li, a, span, label, dd, dt,
+       blockquote, figcaption, td, th) {
+  overflow-wrap: break-word;
+}
+
+/* ── 4. Contenu naturellement large : scroll interne, pas débordement page ─ */
+:where(pre) { max-width: 100%; overflow-x: auto; }
+:where(table) { max-width: 100%; }
+
+/* ── 5. Garde-fou anti scroll-horizontal (renforce index.css) ───────────── */
+:where(body) { overflow-x: clip; }
+
+/* ── 6. Ajustements mobile : densité verticale & marges latérales ─────────
+   Sur desktop les sections respirent (110px). Sur mobile ce padding géant
+   serre le contenu. On réduit — en :where(), donc une page le surcharge
+   librement (ex : le hero a déjà sa propre media query). */
+@media (max-width: 768px) {
+  :where(section) { padding-top: 64px; padding-bottom: 64px; }
+  :where(.container) { padding-left: 18px; padding-right: 18px; }
+}
+@media (max-width: 480px) {
+  :where(section) { padding-top: 48px; padding-bottom: 48px; }
+  :where(.container) { padding-left: 14px; padding-right: 14px; }
+}
