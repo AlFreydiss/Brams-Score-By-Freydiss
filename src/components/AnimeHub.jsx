@@ -1521,9 +1521,8 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
     ...(continueWatching.length ? [{ id:'continuer', label:'Continuer', icon:'▶', count: continueWatching.length }] : []),
     { id:'ma-liste', label:'Ma liste', icon:'❤️', count: favs.size },
     ...(newSeasonAnimes.length ? [{ id:'nouveautes', label:'Nouveautés', icon:'🆕', count: newSeasonAnimes.length }] : []),
-    ...genreSections.map(s => ({ id:s.id, label:s.label, icon:s.icon, count:s.items.length })),
     { id:'tous', label:'Tous les animés', icon:'📚', count: sortedAnimes.length },
-  ], [topWeekAnimes, continueWatching, newSeasonAnimes, genreSections, sortedAnimes, favs]);
+  ], [topWeekAnimes, continueWatching, newSeasonAnimes, sortedAnimes, favs]);
 
   const scrollToCat = (id) => {
     setActiveCat(id);
