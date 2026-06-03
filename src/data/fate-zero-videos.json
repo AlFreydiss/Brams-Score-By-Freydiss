@@ -1,1 +1,427 @@
-[]
+[
+  {
+    "episode": 1,
+    "title": "Saison 1 — Épisode 1",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fate-zero/S01E01.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "badge": "VOSTFR",
+    "preferredAudioLang": "ja",
+    "progressKey": "fz-s1-1",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fate-zero/S01E01-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 2,
+    "title": "Saison 1 — Épisode 2",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fate-zero/S01E02.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "badge": "VOSTFR",
+    "preferredAudioLang": "ja",
+    "progressKey": "fz-s1-2",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fate-zero/S01E02-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 3,
+    "title": "Saison 1 — Épisode 3",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fate-zero/S01E03.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "badge": "VOSTFR",
+    "preferredAudioLang": "ja",
+    "progressKey": "fz-s1-3",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fate-zero/S01E03-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 4,
+    "title": "Saison 1 — Épisode 4",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fate-zero/S01E04.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "badge": "VOSTFR",
+    "preferredAudioLang": "ja",
+    "progressKey": "fz-s1-4",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fate-zero/S01E04-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 5,
+    "title": "Saison 1 — Épisode 5",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fate-zero/S01E05.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "badge": "VOSTFR",
+    "preferredAudioLang": "ja",
+    "progressKey": "fz-s1-5",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fate-zero/S01E05-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 6,
+    "title": "Saison 1 — Épisode 6",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fate-zero/S01E06.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "badge": "VOSTFR",
+    "preferredAudioLang": "ja",
+    "progressKey": "fz-s1-6",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fate-zero/S01E06-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 7,
+    "title": "Saison 1 — Épisode 7",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fate-zero/S01E07.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "badge": "VOSTFR",
+    "preferredAudioLang": "ja",
+    "progressKey": "fz-s1-7",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fate-zero/S01E07-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 8,
+    "title": "Saison 1 — Épisode 8",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fate-zero/S01E08.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "badge": "VOSTFR",
+    "preferredAudioLang": "ja",
+    "progressKey": "fz-s1-8",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fate-zero/S01E08-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 9,
+    "title": "Saison 1 — Épisode 9",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fate-zero/S01E09.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "badge": "VOSTFR",
+    "preferredAudioLang": "ja",
+    "progressKey": "fz-s1-9",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fate-zero/S01E09-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 10,
+    "title": "Saison 1 — Épisode 10",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fate-zero/S01E10.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "badge": "VOSTFR",
+    "preferredAudioLang": "ja",
+    "progressKey": "fz-s1-10",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fate-zero/S01E10-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 11,
+    "title": "Saison 1 — Épisode 11",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fate-zero/S01E11.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "badge": "VOSTFR",
+    "preferredAudioLang": "ja",
+    "progressKey": "fz-s1-11",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fate-zero/S01E11-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 12,
+    "title": "Saison 1 — Épisode 12",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fate-zero/S01E12.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "badge": "VOSTFR",
+    "preferredAudioLang": "ja",
+    "progressKey": "fz-s1-12",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fate-zero/S01E12-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 13,
+    "title": "Saison 1 — Épisode 13",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fate-zero/S01E13.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "badge": "VOSTFR",
+    "preferredAudioLang": "ja",
+    "progressKey": "fz-s1-13",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fate-zero/S01E13-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 1,
+    "title": "Saison 2 — Épisode 1",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fate-zero/S02E01.mp4",
+    "season": "S02",
+    "arc": "Saison 2",
+    "badge": "VOSTFR",
+    "preferredAudioLang": "ja",
+    "progressKey": "fz-s2-1",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fate-zero/S02E01-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 2,
+    "title": "Saison 2 — Épisode 2",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fate-zero/S02E02.mp4",
+    "season": "S02",
+    "arc": "Saison 2",
+    "badge": "VOSTFR",
+    "preferredAudioLang": "ja",
+    "progressKey": "fz-s2-2",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fate-zero/S02E02-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 3,
+    "title": "Saison 2 — Épisode 3",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fate-zero/S02E03.mp4",
+    "season": "S02",
+    "arc": "Saison 2",
+    "badge": "VOSTFR",
+    "preferredAudioLang": "ja",
+    "progressKey": "fz-s2-3",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fate-zero/S02E03-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 4,
+    "title": "Saison 2 — Épisode 4",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fate-zero/S02E04.mp4",
+    "season": "S02",
+    "arc": "Saison 2",
+    "badge": "VOSTFR",
+    "preferredAudioLang": "ja",
+    "progressKey": "fz-s2-4",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fate-zero/S02E04-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 5,
+    "title": "Saison 2 — Épisode 5",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fate-zero/S02E05.mp4",
+    "season": "S02",
+    "arc": "Saison 2",
+    "badge": "VOSTFR",
+    "preferredAudioLang": "ja",
+    "progressKey": "fz-s2-5",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fate-zero/S02E05-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 6,
+    "title": "Saison 2 — Épisode 6",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fate-zero/S02E06.mp4",
+    "season": "S02",
+    "arc": "Saison 2",
+    "badge": "VOSTFR",
+    "preferredAudioLang": "ja",
+    "progressKey": "fz-s2-6",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fate-zero/S02E06-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 7,
+    "title": "Saison 2 — Épisode 7",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fate-zero/S02E07.mp4",
+    "season": "S02",
+    "arc": "Saison 2",
+    "badge": "VOSTFR",
+    "preferredAudioLang": "ja",
+    "progressKey": "fz-s2-7",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fate-zero/S02E07-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 8,
+    "title": "Saison 2 — Épisode 8",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fate-zero/S02E08.mp4",
+    "season": "S02",
+    "arc": "Saison 2",
+    "badge": "VOSTFR",
+    "preferredAudioLang": "ja",
+    "progressKey": "fz-s2-8",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fate-zero/S02E08-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 9,
+    "title": "Saison 2 — Épisode 9",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fate-zero/S02E09.mp4",
+    "season": "S02",
+    "arc": "Saison 2",
+    "badge": "VOSTFR",
+    "preferredAudioLang": "ja",
+    "progressKey": "fz-s2-9",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fate-zero/S02E09-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 10,
+    "title": "Saison 2 — Épisode 10",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fate-zero/S02E10.mp4",
+    "season": "S02",
+    "arc": "Saison 2",
+    "badge": "VOSTFR",
+    "preferredAudioLang": "ja",
+    "progressKey": "fz-s2-10",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fate-zero/S02E10-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 11,
+    "title": "Saison 2 — Épisode 11",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fate-zero/S02E11.mp4",
+    "season": "S02",
+    "arc": "Saison 2",
+    "badge": "VOSTFR",
+    "preferredAudioLang": "ja",
+    "progressKey": "fz-s2-11",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fate-zero/S02E11-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 12,
+    "title": "Saison 2 — Épisode 12",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fate-zero/S02E12.mp4",
+    "season": "S02",
+    "arc": "Saison 2",
+    "badge": "VOSTFR",
+    "preferredAudioLang": "ja",
+    "progressKey": "fz-s2-12",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fate-zero/S02E12-fr.vtt"
+      }
+    ]
+  }
+]
