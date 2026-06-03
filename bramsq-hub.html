@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Bramsq — La communauté anime & manga d'exception</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  // Design system Bramsq (tokens premium)
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          base: '#0a0a0f',
+          surface: '#111114',
+          accent: '#a78bfa',
+          'accent-2': '#7cc4e0',
+        },
+        fontFamily: { sans: ['system-ui', '-apple-system', 'Segoe UI', 'sans-serif'] },
+        transitionTimingFunction: { lux: 'cubic-bezier(0.23, 1.0, 0.32, 1)' },
+      },
+    },
+  }
+</script>
+<style>
+  :root { --accent: #a78bfa; }
+  * { -webkit-tap-highlight-color: transparent; }
+  body { background: #0a0a0f; color: #e7e7ea; font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; }
+
+  /* Scrollbar discrète */
+  ::-webkit-scrollbar { width: 9px; height: 9px; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 99px; border: 2px solid transparent; background-clip: content-box; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(167,139,250,0.3); background-clip: content-box; }
+  ::-webkit-scrollbar-track { background: transparent; }
+
+  /* Rangées scrollables : pas de scrollbar visible + snap */
+  .row-scroll { scroll-snap-type: x proximity; scrollbar-width: none; -ms-overflow-style: none; }
+  .row-scroll::-webkit-scrollbar { display: none; }
+  .row-scroll > * { scroll-snap-align: start; }
+
+  .glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.10); }
+  .glow { box-shadow: 0 0 12px rgba(167,139,250,0.25); }
+  .glow-strong { box-shadow: 0 0 0 1px rgba(167,139,250,0.4), 0 0 26px rgba(167,139,250,0.35); }
+
+  /* Apparition au scroll */
+  .reveal { opacity: 0; transform: translateY(18px); transition: opacity .6s cubic-bezier(0.23,1,0.32,1), transform .6s cubic-bezier(0.23,1,0.32,1); }
+  .reveal.in { opacity: 1; transform: none; }
+
+  /* Carte anime */
+  .card { transition: transform .35s cubic-bezier(0.23,1,0.32,1), box-shadow .35s cubic-bezier(0.23,1,0.32,1); will-change: transform; }
+  .card:hover { transform: translateY(-8px) scale(1.015); box-shadow: 0 28px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(167,139,250,0.25); }
+  .card:hover .card-overlay { opacity: 1; }
+  .card:hover img { transform: scale(1.06); }
+  .card img { transition: transform .5s cubic-bezier(0.23,1,0.32,1); }
+  .card-overlay { opacity: 0; transition: opacity .35s cubic-bezier(0.23,1,0.32,1); }
+
+  /* Boutons premium */
+  .btn-lux { transition: transform .3s cubic-bezier(0.23,1,0.32,1), background .3s, box-shadow .3s; }
+  .btn-lux:hover { transform: translateY(-2px); }
+
+  .pill { transition: all .3s cubic-bezier(0.23,1,0.32,1); }
+
+  @keyframes toastIn { from { opacity: 0; transform: translateY(14px) scale(.96); } to { opacity: 1; transform: none; } }
+  @keyframes modalIn { from { opacity: 0; transform: scale(.94); } to { opacity: 1; transform: scale(1); } }
+  @keyframes pulseDot { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+  .live-dot { animation: pulseDot 1.8s ease-in-out infinite; }
+
+  .nav-item.active { background: rgba(167,139,250,0.12); color: #fff; box-shadow: inset 0 0 0 1px rgba(167,139,250,0.25); }
+  .nav-item.active svg { color: var(--accent); }
+
+  /* Drawer mobile */
+  @media (max-width: 1023px) {
+    #sidebar { transform: translateX(-100%); transition: transform .4s cubic-bezier(0.23,1,0.32,1); }
+    #sidebar.open { transform: none; }
+    #main { margin-left: 0 !important; }
+  }
+</style>
+</head>
+<body class="min-h-screen antialiased selection:bg-accent/30">
+
+<!-- ░░ SIDEBAR ░░ -->
+<aside id="sidebar" class="fixed top-0 left-0 z-50 h-screen w-[280px] glass border-r border-white/10 flex flex-col px-5 py-6">
+  <!-- Logo -->
+  <div class="flex items-center gap-3 px-2 mb-9">
+    <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-accent to-accent-2 glow flex items-center justify-center font-black text-base text-black">B</div>
+    <div>
+      <div class="text-lg font-bold tracking-tight leading-none">Bramsq</div>
+      <div class="text-[10px] text-white/40 mt-0.5">Anime & Manga · 2026</div>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <nav class="flex flex-col gap-1" id="nav">
+    <!-- items injectés -->
+  </nav>
+
+  <!-- Communauté en direct -->
+  <div class="glass rounded-2xl p-4 mt-7">
+    <div class="flex items-center gap-2 mb-2">
+      <span class="w-2 h-2 rounded-full bg-emerald-400 live-dot"></span>
+      <span class="text-[11px] font-semibold text-white/55 uppercase tracking-wider">Communauté en direct</span>
+    </div>
+    <div class="text-2xl font-bold tracking-tight"><span id="liveCount">12 847</span></div>
+    <div class="text-xs text-white/40">membres en ligne</div>
+  </div>
+
+  <div class="mt-auto"></div>
+
+  <!-- Utilisateur -->
+  <div class="glass rounded-2xl p-3 flex items-center gap-3 mt-6 cursor-pointer hover:bg-white/[0.07] transition-colors duration-300">
+    <img src="https://picsum.photos/seed/user-freydiss/80/80" class="w-10 h-10 rounded-full object-cover ring-1 ring-white/10" alt="" />
+    <div class="min-w-0">
+      <div class="text-sm font-semibold truncate">Al Freydiss</div>
+      <div class="text-[11px] text-accent flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-accent"></span> Capitaine</div>
+    </div>
+  </div>
+</aside>
+
+<!-- Backdrop mobile -->
+<div id="drawerBackdrop" class="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm hidden lg:hidden"></div>
+
+<!-- ░░ MAIN ░░ -->
+<div id="main" class="ml-[280px] min-h-screen">
+
+  <!-- Topbar -->
+  <header class="sticky top-0 z-30 glass border-b border-white/10 px-5 lg:px-9 h-[68px] flex items-center gap-4">
+    <button id="burger" class="lg:hidden p-2 rounded-lg hover:bg-white/10 transition-colors" aria-label="Menu">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </button>
+
+    <!-- Recherche -->
+    <div class="relative flex-1 max-w-xl">
+      <svg class="absolute left-4 top-1/2 -translate-y-1/2 text-white/35" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      <input id="topSearch" type="text" placeholder="Rechercher un anime…  (appuie sur /)"
+        class="w-full bg-white/[0.05] border border-white/10 rounded-xl pl-11 pr-4 py-2.5 text-sm outline-none focus:border-accent/50 focus:glow transition-all duration-300 placeholder:text-white/30" />
+      <div id="suggestions" class="absolute top-full mt-2 left-0 right-0 glass rounded-xl overflow-hidden hidden shadow-2xl"></div>
+    </div>
+
+    <div class="flex items-center gap-2 ml-auto">
+      <!-- Notifications -->
+      <button class="relative p-2.5 rounded-xl hover:bg-white/10 transition-colors duration-300" onclick="toast('Aucune nouvelle notification ✦')">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+        <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-accent glow"></span>
+      </button>
+      <!-- Avatar menu -->
+      <div class="relative">
+        <button id="avatarBtn" class="block"><img src="https://picsum.photos/seed/user-freydiss/80/80" class="w-9 h-9 rounded-full object-cover ring-1 ring-white/10 hover:ring-accent/50 transition-all duration-300" alt="" /></button>
+        <div id="avatarMenu" class="absolute right-0 top-full mt-2 w-52 glass rounded-xl p-1.5 hidden shadow-2xl">
+          <div class="px-3 py-2 text-xs text-white/40">Connecté en tant que</div>
+          <div class="px-3 pb-2 text-sm font-semibold border-b border-white/10 mb-1">Al Freydiss</div>
+          <a class="block px-3 py-2 rounded-lg text-sm hover:bg-white/[0.07] transition-colors cursor-pointer" onclick="toast('Profil ✦')">Mon profil</a>
+          <a class="block px-3 py-2 rounded-lg text-sm hover:bg-white/[0.07] transition-colors cursor-pointer" onclick="toast('Ma liste ✦')">Ma liste</a>
+          <a class="block px-3 py-2 rounded-lg text-sm hover:bg-white/[0.07] transition-colors cursor-pointer" onclick="toast('Paramètres ✦')">Paramètres</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero cinématique -->
+  <section class="relative h-[460px] overflow-hidden">
+    <img src="https://picsum.photos/id/1016/1600/900" class="absolute inset-0 w-full h-full object-cover opacity-70" alt="" />
+    <div class="absolute inset-0" style="background:linear-gradient(90deg,#0a0a0f 8%,rgba(10,10,15,.55) 55%,rgba(10,10,15,.2) 100%)"></div>
+    <div class="absolute inset-0" style="background:linear-gradient(0deg,#0a0a0f 2%,transparent 60%)"></div>
+    <div class="relative h-full max-w-[1280px] mx-auto px-6 lg:px-10 flex flex-col justify-center">
+      <div class="inline-flex items-center gap-2 self-start glass rounded-full px-3 py-1 mb-5 text-xs text-accent"><span class="w-1.5 h-1.5 rounded-full bg-accent live-dot"></span> La communauté anime & manga d'exception</div>
+      <h1 class="text-4xl lg:text-6xl font-black tracking-tight max-w-2xl leading-[1.05]">Bienvenue sur <span class="bg-gradient-to-r from-accent to-accent-2 bg-clip-text text-transparent">Bramsq</span></h1>
+      <p class="text-white/55 text-lg mt-4 max-w-xl">Ton univers, ton rythme. Des milliers d'œuvres, une communauté vivante, et une expérience pensée comme un vrai produit premium.</p>
+      <div class="flex flex-wrap gap-3 mt-7">
+        <button onclick="openModalById(1)" class="btn-lux bg-accent text-black font-semibold px-6 py-3 rounded-xl glow hover:glow-strong flex items-center gap-2">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg> Commencer à regarder
+        </button>
+        <button onclick="document.getElementById('galerie').scrollIntoView({behavior:'smooth'})" class="btn-lux glass px-6 py-3 rounded-xl font-semibold hover:bg-white/[0.09]">Explorer le catalogue</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contenu -->
+  <main class="max-w-[1280px] mx-auto px-6 lg:px-10 pb-24">
+
+    <!-- Stats premium -->
+    <div class="reveal grid grid-cols-2 lg:grid-cols-4 gap-3 -mt-10 relative z-10">
+      <div class="glass rounded-2xl p-4"><div class="text-2xl font-bold tracking-tight">248 392</div><div class="text-xs text-white/40 mt-0.5">membres</div></div>
+      <div class="glass rounded-2xl p-4"><div class="text-2xl font-bold tracking-tight">1.4M</div><div class="text-xs text-white/40 mt-0.5">discussions</div></div>
+      <div class="glass rounded-2xl p-4"><div class="text-2xl font-bold tracking-tight">87 412</div><div class="text-xs text-white/40 mt-0.5">œuvres notées</div></div>
+      <div class="glass rounded-2xl p-4 flex items-center justify-between">
+        <div><div class="text-2xl font-bold tracking-tight flex items-center gap-1">🔥 5</div><div class="text-xs text-white/40 mt-0.5">jours d'affilée</div></div>
+      </div>
+    </div>
+
+    <!-- Recherche + filtres genres -->
+    <div class="reveal mt-12">
+      <div class="relative max-w-2xl mb-5">
+        <svg class="absolute left-4 top-1/2 -translate-y-1/2 text-white/35" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input id="mainSearch" type="text" placeholder="Filtrer la galerie…"
+          class="w-full bg-white/[0.05] border border-white/10 rounded-2xl pl-12 pr-4 py-3.5 text-sm outline-none focus:border-accent/50 focus:glow transition-all duration-300 placeholder:text-white/30" />
+      </div>
+      <div id="genrePills" class="flex flex-wrap gap-2"></div>
+    </div>
+
+    <!-- Continuer à regarder -->
+    <section class="reveal mt-14" id="sec-continue">
+      <div class="flex items-center gap-3 mb-5"><h2 class="text-xl font-bold tracking-tight">Reprends où tu t'es arrêté</h2><div class="flex-1 h-px bg-gradient-to-r from-white/10 to-transparent"></div></div>
+      <div class="row-scroll flex gap-4 overflow-x-auto pb-2" id="rowContinue"></div>
+    </section>
+
+    <!-- Recommandé par l'IA -->
+    <section class="reveal mt-14">
+      <div class="flex items-center gap-3 mb-5">
+        <h2 class="text-xl font-bold tracking-tight">Recommandé par l'IA pour toi</h2>
+        <span class="text-[10px] font-black tracking-wider text-black bg-gradient-to-r from-accent to-accent-2 rounded-full px-2.5 py-1 glow">IA</span>
+        <div class="flex-1 h-px bg-gradient-to-r from-accent/30 to-transparent"></div>
+        <button onclick="refreshReco()" class="btn-lux text-xs font-semibold text-accent glass rounded-full px-3.5 py-1.5 hover:bg-accent/10">↻ Rafraîchir</button>
+      </div>
+      <div class="row-scroll flex gap-4 overflow-x-auto pb-2" id="rowReco"></div>
+    </section>
+
+    <!-- Top de la semaine -->
+    <section class="reveal mt-14">
+      <div class="flex items-center gap-3 mb-5"><h2 class="text-xl font-bold tracking-tight">🔥 Top de la semaine</h2><div class="flex-1 h-px bg-gradient-to-r from-white/10 to-transparent"></div></div>
+      <div class="row-scroll flex gap-4 overflow-x-auto pb-2" id="rowTop"></div>
+    </section>
+
+    <!-- Les plus aimés -->
+    <section class="reveal mt-14">
+      <div class="flex items-center gap-3 mb-5"><h2 class="text-xl font-bold tracking-tight">❤️ Les plus aimés</h2><div class="flex-1 h-px bg-gradient-to-r from-white/10 to-transparent"></div></div>
+      <div class="row-scroll flex gap-4 overflow-x-auto pb-2" id="rowLoved"></div>
+    </section>
+
+    <!-- Nouveautés -->
+    <section class="reveal mt-14">
+      <div class="flex items-center gap-3 mb-5"><h2 class="text-xl font-bold tracking-tight">✦ Nouveautés de la saison</h2><div class="flex-1 h-px bg-gradient-to-r from-white/10 to-transparent"></div></div>
+      <div class="row-scroll flex gap-4 overflow-x-auto pb-2" id="rowNew"></div>
+    </section>
+
+    <!-- Galerie complète -->
+    <section class="reveal mt-16" id="galerie">
+      <div class="flex items-center gap-3 mb-6"><h2 class="text-xl font-bold tracking-tight">Galerie complète</h2><span id="galCount" class="text-xs text-white/40 glass rounded-full px-2.5 py-1"></span><div class="flex-1 h-px bg-gradient-to-r from-white/10 to-transparent"></div></div>
+      <div id="grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4"></div>
+      <div id="emptyState" class="hidden text-center py-20 text-white/35">Aucun résultat. Essaie un autre genre ou terme.</div>
+    </section>
+  </main>
+</div>
+
+<!-- ░░ MODAL ░░ -->
+<div id="modal" class="fixed inset-0 z-[60] hidden items-center justify-center p-4">
+  <div id="modalBackdrop" class="absolute inset-0 bg-black/70 backdrop-blur-md"></div>
+  <div id="modalCard" class="relative glass rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col lg:flex-row shadow-2xl" style="animation:modalIn .35s cubic-bezier(0.23,1,0.32,1)">
+    <button onclick="closeModal()" class="absolute top-4 right-4 z-10 w-9 h-9 rounded-full glass flex items-center justify-center hover:bg-white/15 transition-colors" aria-label="Fermer">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+    <div class="lg:w-[320px] shrink-0 relative">
+      <img id="mPoster" src="" class="w-full h-56 lg:h-full object-cover" alt="" />
+      <div class="absolute inset-0 lg:hidden" style="background:linear-gradient(0deg,#111114,transparent 60%)"></div>
+    </div>
+    <div class="p-7 overflow-y-auto">
+      <h3 id="mTitle" class="text-2xl font-bold tracking-tight"></h3>
+      <div id="mOriginal" class="text-sm text-white/40 mt-1"></div>
+      <div id="mMeta" class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-4 text-sm text-white/60"></div>
+      <div id="mGenres" class="flex flex-wrap gap-2 mt-4"></div>
+      <p id="mSynopsis" class="text-sm text-white/65 leading-relaxed mt-5"></p>
+      <div class="flex flex-wrap gap-3 mt-6">
+        <button onclick="toast('Lecture de la bande-annonce… ✦')" class="btn-lux bg-accent text-black font-semibold px-5 py-2.5 rounded-xl glow hover:glow-strong flex items-center gap-2"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg> Bande-annonce</button>
+        <button id="mFav" class="btn-lux glass px-5 py-2.5 rounded-xl font-semibold hover:bg-white/[0.09] flex items-center gap-2"></button>
+        <button onclick="toast('Note enregistrée ★ ✦')" class="btn-lux glass px-5 py-2.5 rounded-xl font-semibold hover:bg-white/[0.09]">Noter ★</button>
+      </div>
+      <!-- Avis communauté -->
+      <div class="mt-8">
+        <div class="text-sm font-semibold text-white/70 mb-3">Avis de la communauté</div>
+        <div id="mReviews" class="space-y-3"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ░░ TOASTS ░░ -->
+<div id="toasts" class="fixed bottom-5 right-5 z-[70] flex flex-col gap-2 items-end"></div>
+
+<script>
+/* ══════════════════════ DONNÉES ══════════════════════ */
+const ANIMES = [
+  { id:1, titre:"Solo Leveling", titreOriginal:"Ore dake Level Up na Ken", poster:"https://picsum.photos/seed/sololeveling-bq/300/400", score:8.7, genres:["Action","Fantasy","Aventure"], annee:2024, type:"Série", episodes:12, statut:"En cours", isNew:true, synopsisCourt:"Le chasseur le plus faible du monde gagne le pouvoir de monter en niveau sans limite.", synopsisLong:"Dans un monde où des portails relient le réel à des donjons mortels, Sung Jinwoo, chasseur de rang E méprisé, survit à un donjon mortel et obtient un don unique : il peut monter en niveau. Sa lente ascension vers le sommet va bouleverser l'ordre établi." },
+  { id:2, titre:"Jujutsu Kaisen", titreOriginal:"Jujutsu Kaisen", poster:"https://picsum.photos/seed/jjk-bq/300/400", score:8.6, genres:["Action","Surnaturel"], annee:2020, type:"Série", episodes:47, statut:"En cours", isNew:false, synopsisCourt:"Un lycéen avale un fléau légendaire et entre dans la guerre des exorcistes.", synopsisLong:"Yuji Itadori avale un doigt de Sukuna, le Roi des Fléaux, pour sauver ses amis. Devenu son réceptacle, il rejoint les exorcistes de Tokyo pour récupérer les fragments du fléau et apprendre à maîtriser l'énergie occulte." },
+  { id:3, titre:"L'Attaque des Titans", titreOriginal:"Shingeki no Kyojin", poster:"https://picsum.photos/seed/aot-bq/300/400", score:9.0, genres:["Action","Drame","Mystère"], annee:2013, type:"Série", episodes:88, statut:"Terminé", isNew:false, synopsisCourt:"L'humanité survit derrière d'immenses murs face à des titans dévoreurs d'hommes.", synopsisLong:"Eren Yeager jure d'exterminer les Titans après la chute du mur Maria. Une épopée de liberté, de sacrifice et de révélations bouleversantes sur la véritable histoire du monde." },
+  { id:4, titre:"Demon Slayer", titreOriginal:"Kimetsu no Yaiba", poster:"https://picsum.photos/seed/demonslayer-bq/300/400", score:8.5, genres:["Action","Surnaturel","Aventure"], annee:2019, type:"Série", episodes:55, statut:"En cours", isNew:false, synopsisCourt:"Un garçon devient pourfendeur de démons pour sauver sa sœur transformée.", synopsisLong:"Après le massacre de sa famille, Tanjiro Kamado rejoint les pourfendeurs de démons pour trouver un remède à sa sœur Nezuko, devenue démon, et traquer celui qui a tout déclenché." },
+  { id:5, titre:"Frieren", titreOriginal:"Sousou no Frieren", poster:"https://picsum.photos/seed/frieren-bq/300/400", score:9.1, genres:["Aventure","Fantasy","Drame"], annee:2023, type:"Série", episodes:28, statut:"Terminé", isNew:true, synopsisCourt:"Une elfe immortelle redécouvre le sens des liens humains après la mort de ses compagnons.", synopsisLong:"Frieren, mage elfe quasi immortelle, a vaincu le Roi-Démon avec ses compagnons. Des décennies plus tard, elle entreprend un voyage pour comprendre ce que signifiaient vraiment ces êtres éphémères qu'elle a côtoyés." },
+  { id:6, titre:"Spy x Family", titreOriginal:"Spy x Family", poster:"https://picsum.photos/seed/spyfamily-bq/300/400", score:8.4, genres:["Comédie","Action","Slice of Life"], annee:2022, type:"Série", episodes:37, statut:"En cours", isNew:false, synopsisCourt:"Un espion, une tueuse et une télépathe forment une fausse famille parfaite.", synopsisLong:"Pour sa mission, l'agent Twilight doit fonder une famille. Il adopte Anya (qui lit les pensées) et épouse Yor (une tueuse à gages). Chacun cache son secret aux autres, pour le meilleur et le plus drôle." },
+  { id:7, titre:"Chainsaw Man", titreOriginal:"Chainsaw Man", poster:"https://picsum.photos/seed/csm-bq/300/400", score:8.5, genres:["Action","Horreur","Surnaturel"], annee:2022, type:"Série", episodes:12, statut:"En cours", isNew:false, synopsisCourt:"Un jeune endetté fusionne avec son démon-tronçonneuse pour survivre.", synopsisLong:"Denji, criblé de dettes, vit avec Pochita, un démon-tronçonneuse. Trahi et tué, il fusionne avec Pochita et devient Chainsaw Man, recruté par une organisation de chasseurs de démons." },
+  { id:8, titre:"Violet Evergarden", titreOriginal:"Violet Evergarden", poster:"https://picsum.photos/seed/violet-bq/300/400", score:8.9, genres:["Drame","Slice of Life","Fantasy"], annee:2018, type:"Série", episodes:13, statut:"Terminé", isNew:false, synopsisCourt:"Une ancienne soldate apprend le sens des sentiments en écrivant pour les autres.", synopsisLong:"Violet, enfant-soldat traumatisée, devient Auto Memory Doll : elle rédige les lettres des autres. À travers ces mots, elle apprend peu à peu à comprendre les émotions humaines et le sens d'un « je t'aime »." },
+  { id:9, titre:"Kaiju No. 8", titreOriginal:"Kaijuu 8-gou", poster:"https://picsum.photos/seed/kaiju8-bq/300/400", score:8.0, genres:["Action","Science-Fiction"], annee:2024, type:"Série", episodes:12, statut:"En cours", isNew:true, synopsisCourt:"Un nettoyeur de kaijus devient lui-même le monstre le plus recherché.", synopsisLong:"Kafka Hibino rêve depuis l'enfance de rejoindre les Forces de Défense. À 32 ans, il nettoie encore les cadavres de kaijus — jusqu'au jour où il acquiert le pouvoir de se transformer en kaiju surpuissant." },
+  { id:10, titre:"Les Carnets de l'Apothicaire", titreOriginal:"Kusuriya no Hitorigoto", poster:"https://picsum.photos/seed/apothecary-bq/300/400", score:8.8, genres:["Mystère","Drame","Historique"], annee:2023, type:"Série", episodes:24, statut:"En cours", isNew:true, synopsisCourt:"Une apothicaire futée résout les intrigues mortelles de la cour impériale.", synopsisLong:"Maomao, apprentie apothicaire enlevée et vendue au palais impérial, dissimule son intelligence — jusqu'à ce que ses talents de pharmacienne la propulsent au cœur des complots de la cour intérieure." },
+  { id:11, titre:"Fate/Zero", titreOriginal:"Fate/Zero", poster:"https://picsum.photos/seed/fatezero-bq/300/400", score:8.3, genres:["Action","Surnaturel","Drame"], annee:2011, type:"Série", episodes:25, statut:"Terminé", isNew:false, synopsisCourt:"Sept mages invoquent sept Servants pour une guerre à mort autour du Saint-Graal.", synopsisLong:"Dix ans avant Fate/stay night, la 4e Guerre du Saint-Graal oppose sept mages et leurs héros légendaires. Kiritsugu Emiya, le « tueur de mages », et Saber s'allient dans une guerre de l'ombre faite d'idéaux brisés." },
+  { id:12, titre:"Vivy", titreOriginal:"Vivy: Fluorite Eye's Song", poster:"https://picsum.photos/seed/vivy-bq/300/400", score:8.4, genres:["Science-Fiction","Drame","Musique"], annee:2021, type:"Série", episodes:13, statut:"Terminé", isNew:false, synopsisCourt:"Une IA chanteuse traverse un siècle pour empêcher la guerre des machines.", synopsisLong:"Vivy, première IA autonome conçue pour « rendre les gens heureux par son chant », reçoit la mission d'altérer l'histoire sur 100 ans afin d'éviter le soulèvement des IA contre l'humanité." },
+  { id:13, titre:"One Piece", titreOriginal:"One Piece", poster:"https://picsum.photos/seed/onepiece-bq/300/400", score:8.7, genres:["Aventure","Action","Comédie"], annee:1999, type:"Série", episodes:1100, statut:"En cours", isNew:false, synopsisCourt:"Un pirate élastique part en quête du trésor ultime pour devenir Roi des Pirates.", synopsisLong:"Monkey D. Luffy, au corps élastique, réunit un équipage haut en couleur pour trouver le légendaire One Piece et devenir le Roi des Pirates, à travers une aventure-monde épique." },
+  { id:14, titre:"Bleach: TYBW", titreOriginal:"Bleach: Sennen Kessen-hen", poster:"https://picsum.photos/seed/bleach-bq/300/400", score:8.6, genres:["Action","Surnaturel","Aventure"], annee:2022, type:"Série", episodes:39, statut:"En cours", isNew:false, synopsisCourt:"Ichigo affronte la guerre finale contre les Quincy et le roi des âmes.", synopsisLong:"La Soul Society est attaquée par les Wandenreich, une armée de Quincy menée par Yhwach. Ichigo Kurosaki et les capitaines livrent la guerre millénaire qui décidera du sort des trois mondes." },
+  { id:15, titre:"Mob Psycho 100", titreOriginal:"Mob Psycho 100", poster:"https://picsum.photos/seed/mob-bq/300/400", score:8.5, genres:["Action","Comédie","Surnaturel"], annee:2016, type:"Série", episodes:37, statut:"Terminé", isNew:false, synopsisCourt:"Un collégien surpuissant veut surtout être normal et plaire à son béguin.", synopsisLong:"Shigeo « Mob » Kageyama possède des pouvoirs psychiques colossaux mais ne rêve que d'une vie ordinaire. Son maître escroc et ses émotions contenues le poussent vers une explosion intérieure inévitable." },
+  { id:16, titre:"Hunter x Hunter", titreOriginal:"Hunter x Hunter (2011)", poster:"https://picsum.photos/seed/hxh-bq/300/400", score:9.0, genres:["Aventure","Action","Fantasy"], annee:2011, type:"Série", episodes:148, statut:"Terminé", isNew:false, synopsisCourt:"Un garçon devient Hunter pour retrouver son père légendaire.", synopsisLong:"Gon Freecss passe l'examen de Hunter pour marcher sur les traces de son père. Il y rencontre Killua, Kurapika et Leorio, et plonge dans un monde d'aventures, de pouvoirs (Nen) et de dangers extrêmes." },
+  { id:17, titre:"Vinland Saga", titreOriginal:"Vinland Saga", poster:"https://picsum.photos/seed/vinland-bq/300/400", score:8.8, genres:["Action","Drame","Historique"], annee:2019, type:"Série", episodes:48, statut:"En cours", isNew:false, synopsisCourt:"Un jeune viking assoiffé de vengeance cherche un sens au-delà de la guerre.", synopsisLong:"Thorfinn grandit parmi les mercenaires vikings, obsédé par la vengeance du meurtre de son père. Son parcours le mène de la haine à une quête de paix et de rédemption dans un monde de violence." },
+  { id:18, titre:"Oshi no Ko", titreOriginal:"Oshi no Ko", poster:"https://picsum.photos/seed/oshinoko-bq/300/400", score:8.6, genres:["Drame","Mystère","Surnaturel"], annee:2023, type:"Série", episodes:24, statut:"En cours", isNew:true, synopsisCourt:"Renaître en enfant d'une idole pour percer les secrets cruels du showbiz.", synopsisLong:"Un médecin et sa patiente décédée renaissent comme les jumeaux d'une idole adulée. Derrière les paillettes du divertissement se cachent mensonges, ambition et un meurtre à élucider." },
+  { id:19, titre:"Cyberpunk: Edgerunners", titreOriginal:"Cyberpunk: Edgerunners", poster:"https://picsum.photos/seed/edgerunners-bq/300/400", score:8.6, genres:["Science-Fiction","Action","Drame"], annee:2022, type:"Série", episodes:10, statut:"Terminé", isNew:false, synopsisCourt:"Un gamin des rues devient mercenaire augmenté dans une mégapole impitoyable.", synopsisLong:"À Night City, David Martinez perd tout et plonge dans le monde des edgerunners — mercenaires cybernétiques. Une descente fulgurante et tragique au cœur d'un futur où la technologie dévore l'humain." },
+  { id:20, titre:"Made in Abyss", titreOriginal:"Made in Abyss", poster:"https://picsum.photos/seed/abyss-bq/300/400", score:8.7, genres:["Aventure","Drame","Horreur"], annee:2017, type:"Série", episodes:25, statut:"En cours", isNew:false, synopsisCourt:"Deux enfants descendent dans un gouffre fascinant et terrifiant.", synopsisLong:"Riko et le robot Reg s'enfoncent dans l'Abysse, un gouffre colossal regorgeant de merveilles et d'horreurs, pour retrouver la mère de Riko. Plus ils descendent, plus la remontée devient mortelle." },
+  { id:21, titre:"Mushoku Tensei", titreOriginal:"Mushoku Tensei", poster:"https://picsum.photos/seed/mushoku-bq/300/400", score:8.3, genres:["Fantasy","Aventure","Drame"], annee:2021, type:"Série", episodes:23, statut:"En cours", isNew:false, synopsisCourt:"Un homme renaît dans un monde de magie et décide de vivre pleinement.", synopsisLong:"Mort sans avoir rien accompli, un reclus renaît bébé dans un monde médiéval-fantastique en gardant ses souvenirs. Doué pour la magie, Rudeus jure cette fois de ne plus rien regretter." },
+  { id:22, titre:"Dr. Stone", titreOriginal:"Dr. Stone", poster:"https://picsum.photos/seed/drstone-bq/300/400", score:8.2, genres:["Science-Fiction","Aventure","Comédie"], annee:2019, type:"Série", episodes:35, statut:"En cours", isNew:false, synopsisCourt:"Un génie reconstruit la civilisation après que l'humanité a été pétrifiée.", synopsisLong:"Des millénaires après une catastrophe pétrifiant toute l'humanité, Senku Ishigami se réveille et entreprend de rebâtir la civilisation grâce à la science, de l'âge de pierre à l'ère moderne." },
+  { id:23, titre:"Blue Lock", titreOriginal:"Blue Lock", poster:"https://picsum.photos/seed/bluelock-bq/300/400", score:8.1, genres:["Sport","Drame","Action"], annee:2022, type:"Série", episodes:24, statut:"En cours", isNew:true, synopsisCourt:"300 attaquants s'affrontent pour devenir le meilleur buteur égoïste du monde.", synopsisLong:"Pour créer l'attaquant ultime, le Japon enferme 300 jeunes buteurs dans le programme Blue Lock. Yoichi Isagi doit y réveiller son ego de prédateur pour survivre à une compétition impitoyable." },
+  { id:24, titre:"Dandadan", titreOriginal:"Dandadan", poster:"https://picsum.photos/seed/dandadan-bq/300/400", score:8.7, genres:["Action","Surnaturel","Comédie"], annee:2024, type:"Série", episodes:12, statut:"En cours", isNew:true, synopsisCourt:"Spectres et extraterrestres s'invitent dans une romance lycéenne déjantée.", synopsisLong:"Momo croit aux fantômes, Okarun aux aliens. En voulant se prouver mutuellement tort, ils déclenchent une avalanche de phénomènes surnaturels — et une histoire d'amour aussi explosive qu'absurde." },
+];
+
+/* Raisons IA (fake mais crédibles) + progression « continue » */
+const RECO_REASONS = {
+  1:"Parce que tu aimes l'action et la montée en puissance",
+  5:"Pour les amoureux de fantasy mélancolique",
+  18:"Parce que tu as aimé les drames à twist",
+  17:"Dans la lignée des récits historiques intenses",
+  10:"Tu apprécies les intrigues de cour bien ficelées",
+  24:"Coup de cœur de la commu cette semaine",
+};
+const CONTINUE = { 2:62, 3:18, 8:91, 11:40, 16:7 }; // id → % vu
+
+const GENRES = ["Action","Fantasy","Drame","Romance","Surnaturel","Aventure","Science-Fiction","Comédie","Mystère","Slice of Life","Horreur","Sport","Historique","Musique"];
+
+const REVIEWS = [
+  { n:"Kaito", a:"kaito", t:"Une claque visuelle, la communauté ne ment pas. Coup de cœur absolu." },
+  { n:"Mira", a:"mira", t:"L'écriture des personnages est incroyable. Je l'ai fini en une nuit." },
+  { n:"Sora", a:"sora", t:"Bande-son sublime, rythme parfait. Du premium." },
+  { n:"Yuki", a:"yuki", t:"Pas parfait mais l'ambiance est unique. Recommandé." },
+];
+
+/* ══════════════════════ ÉTAT ══════════════════════ */
+const FAV_KEY = 'bramsq_favs';
+let favs = new Set(JSON.parse(localStorage.getItem(FAV_KEY) || '[]'));
+let activeGenres = new Set();
+let recoSeed = 0;
+const $ = s => document.querySelector(s);
+const star = '<svg width="13" height="13" viewBox="0 0 24 24" fill="#f0c14b"><path d="M12 2l3 6.3 6.9 1-5 4.8 1.2 6.9L12 17.8 5.9 21l1.2-6.9-5-4.8 6.9-1z"/></svg>';
+
+function saveFavs(){ localStorage.setItem(FAV_KEY, JSON.stringify([...favs])); }
+function isFav(id){ return favs.has(id); }
+
+/* ══════════════════════ CARTE ══════════════════════ */
+function cardHTML(a){
+  const fav = isFav(a.id);
+  return `<div class="card relative rounded-[20px] overflow-hidden bg-surface cursor-pointer" onclick="openModalById(${a.id})" data-id="${a.id}">
+    <div class="relative" style="aspect-ratio:3/4">
+      <img src="${a.poster}" loading="lazy" alt="${a.titre}" class="w-full h-full object-cover" />
+      ${a.isNew ? `<span class="absolute top-2.5 left-2.5 text-[10px] font-bold tracking-wide bg-accent text-black px-2 py-0.5 rounded-md glow">NOUVEAU</span>` : ``}
+      <span class="absolute top-2.5 right-2.5 flex items-center gap-1 text-[11px] font-semibold bg-black/55 backdrop-blur px-1.5 py-0.5 rounded-md">${star}${a.score.toFixed(1)}</span>
+      <!-- overlay hover -->
+      <div class="card-overlay absolute inset-0 flex flex-col justify-end p-3.5" style="background:linear-gradient(0deg,rgba(8,8,12,.96) 12%,rgba(8,8,12,.5) 48%,transparent)">
+        <div class="text-sm font-bold leading-tight">${a.titre}</div>
+        <div class="flex flex-wrap gap-1 mt-1.5">${a.genres.slice(0,3).map(g=>`<span class="text-[9px] text-accent bg-accent/10 border border-accent/20 rounded px-1.5 py-0.5">${g}</span>`).join('')}</div>
+        <p class="text-[11px] text-white/55 leading-snug mt-2 line-clamp-2">${a.synopsisCourt}</p>
+        <div class="flex gap-1.5 mt-2.5">
+          <button onclick="event.stopPropagation();openModalById(${a.id})" class="flex-1 bg-accent text-black text-[11px] font-semibold py-1.5 rounded-lg btn-lux">Voir la fiche</button>
+          <button onclick="event.stopPropagation();toggleFav(${a.id},this)" class="favbtn w-8 grid place-items-center rounded-lg glass btn-lux" title="Ajouter à ma liste">${heartSVG(fav)}</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+function heartSVG(active){
+  return `<svg width="15" height="15" viewBox="0 0 24 24" fill="${active?'#a78bfa':'none'}" stroke="${active?'#a78bfa':'currentColor'}" stroke-width="2"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 1 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>`;
+}
+
+/* mini-carte pour les rangées (largeur fixe) */
+function rowCard(a, extra=''){
+  return `<div class="shrink-0 w-[150px] sm:w-[168px]">${cardHTML(a).replace('class="card ','class="card ')}${extra}</div>`;
+}
+
+/* ══════════════════════ RENDU ══════════════════════ */
+function renderRow(id, list, builder){
+  $(id).innerHTML = list.map(builder).join('');
+}
+function buildPlain(a){ return `<div class="shrink-0 w-[150px] sm:w-[168px]">${cardHTML(a)}</div>`; }
+
+function buildContinue(a){
+  const pct = CONTINUE[a.id] || 0;
+  return `<div class="shrink-0 w-[230px]">
+    <div class="card relative rounded-[18px] overflow-hidden bg-surface cursor-pointer" onclick="openModalById(${a.id})">
+      <div class="relative" style="aspect-ratio:16/9">
+        <img src="${a.poster}" class="w-full h-full object-cover" alt=""/>
+        <div class="absolute inset-0" style="background:linear-gradient(0deg,rgba(8,8,12,.9),transparent 55%)"></div>
+        <div class="absolute bottom-0 left-0 right-0 p-3">
+          <div class="text-sm font-semibold truncate">${a.titre}</div>
+          <div class="text-[11px] text-white/50 mb-1.5">Il te reste ${Math.max(1,Math.round(a.episodes*(1-pct/100)))} ép.</div>
+          <div class="h-1 rounded-full bg-white/15 overflow-hidden"><div class="h-full bg-accent glow" style="width:${pct}%"></div></div>
+        </div>
+        <div class="absolute top-2 right-2 w-8 h-8 rounded-full bg-accent/90 text-black grid place-items-center glow"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function buildReco(a){
+  const reason = RECO_REASONS[a.id] || "Sélection de l'IA pour ton profil";
+  return `<div class="shrink-0 w-[168px]">
+    <div class="card relative rounded-[20px] overflow-hidden bg-surface">
+      <div class="relative cursor-pointer" style="aspect-ratio:3/4" onclick="openModalById(${a.id})">
+        <img src="${a.poster}" class="w-full h-full object-cover" alt=""/>
+        <span class="absolute top-2.5 right-2.5 flex items-center gap-1 text-[11px] font-semibold bg-black/55 backdrop-blur px-1.5 py-0.5 rounded-md">${star}${a.score.toFixed(1)}</span>
+        <span class="absolute top-2.5 left-2.5 text-[9px] font-black text-black bg-gradient-to-r from-accent to-accent-2 rounded px-1.5 py-0.5">IA ✦</span>
+        <div class="absolute inset-x-0 bottom-0 p-2.5" style="background:linear-gradient(0deg,rgba(8,8,12,.95),transparent)"><div class="text-xs font-bold truncate">${a.titre}</div></div>
+      </div>
+      <div class="p-2.5">
+        <div class="text-[11px] text-accent leading-snug mb-2" style="min-height:30px">✦ ${reason}</div>
+        <div class="flex gap-1.5">
+          <button onclick="recoVote(${a.id},'up',this)" class="flex-1 py-1 rounded-lg glass btn-lux text-xs">👍</button>
+          <button onclick="recoVote(${a.id},'down',this)" class="flex-1 py-1 rounded-lg glass btn-lux text-xs">👎</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderRows(){
+  const byScore = [...ANIMES].sort((a,b)=>b.score-a.score);
+  renderRow('#rowTop', [...ANIMES].sort((a,b)=>b.score-a.score).slice(0,12), buildPlain);
+  renderRow('#rowLoved', byScore.slice(0,12), buildPlain);
+  renderRow('#rowNew', ANIMES.filter(a=>a.isNew), buildPlain);
+  renderRow('#rowContinue', ANIMES.filter(a=>CONTINUE[a.id]!=null).sort((a,b)=>CONTINUE[b.id]-CONTINUE[a.id]), buildContinue);
+  renderReco();
+}
+function renderReco(){
+  const pool = Object.keys(RECO_REASONS).map(Number);
+  const extra = ANIMES.filter(a=>!pool.includes(a.id)).map(a=>a.id);
+  const rotated = [...pool, ...extra];
+  const pick = [];
+  for(let i=0;i<6;i++){ pick.push(rotated[(i+recoSeed)%rotated.length]); }
+  renderRow('#rowReco', pick.map(id=>ANIMES.find(a=>a.id===id)), buildReco);
+}
+function refreshReco(){ recoSeed++; renderReco(); toast("Recommandations rafraîchies ✦"); revealAll(); }
+function recoVote(id, dir, btn){
+  btn.style.background = dir==='up' ? 'rgba(124,196,224,.22)' : 'rgba(244,63,94,.18)';
+  toast(dir==='up' ? "Merci ! L'IA affine tes goûts 👍" : "Noté, on évite ce style 👎");
+}
+
+/* ══════════════════════ GALERIE + FILTRES ══════════════════════ */
+function filteredAnimes(){
+  const q = ($('#mainSearch').value || '').trim().toLowerCase();
+  return ANIMES.filter(a=>{
+    const okQ = !q || a.titre.toLowerCase().includes(q) || a.titreOriginal.toLowerCase().includes(q) || a.genres.some(g=>g.toLowerCase().includes(q));
+    const okG = activeGenres.size===0 || a.genres.some(g=>activeGenres.has(g));
+    return okQ && okG;
+  });
+}
+function renderGrid(){
+  const list = filteredAnimes();
+  $('#grid').innerHTML = list.map(cardHTML).join('');
+  $('#galCount').textContent = list.length + ' œuvres';
+  $('#emptyState').classList.toggle('hidden', list.length>0);
+  revealAll();
+}
+function renderGenres(){
+  $('#genrePills').innerHTML = GENRES.map(g=>`<button class="pill genre text-xs font-medium px-3.5 py-1.5 rounded-full glass hover:bg-white/[0.09]" data-g="${g}">${g}</button>`).join('');
+  document.querySelectorAll('.genre').forEach(b=>b.onclick=()=>{
+    const g=b.dataset.g;
+    if(activeGenres.has(g)){ activeGenres.delete(g); b.classList.remove('bg-accent','text-black'); b.classList.add('glass'); b.style.boxShadow=''; }
+    else { activeGenres.add(g); b.classList.add('bg-accent','text-black'); b.classList.remove('glass'); b.style.boxShadow='0 0 12px rgba(167,139,250,.25)'; }
+    renderGrid();
+  });
+}
+
+/* ══════════════════════ FAVORIS ══════════════════════ */
+function toggleFav(id, btn){
+  if(favs.has(id)){ favs.delete(id); toast('Retiré de ta liste'); }
+  else { favs.add(id); toast('Ajouté à ta liste ❤️'); }
+  saveFavs();
+  // maj tous les cœurs visibles de cette œuvre
+  document.querySelectorAll(`[data-id="${id}"] .favbtn`).forEach(b=>b.innerHTML=heartSVG(isFav(id)));
+  if($('#modal').dataset.id==id) syncModalFav(id);
+}
+
+/* ══════════════════════ MODAL ══════════════════════ */
+function openModalById(id){
+  const a = ANIMES.find(x=>x.id===id); if(!a) return;
+  $('#mPoster').src = a.poster.replace('/300/400','/500/700');
+  $('#mTitle').textContent = a.titre;
+  $('#mOriginal').textContent = a.titreOriginal;
+  $('#mMeta').innerHTML = `<span class="flex items-center gap-1">${star}<b class="text-white">${a.score.toFixed(1)}</b></span>
+    <span>${a.annee}</span><span>${a.type}</span><span>${a.episodes} ép.</span>
+    <span class="text-accent">${a.statut}</span>`;
+  $('#mGenres').innerHTML = a.genres.map(g=>`<span class="text-[11px] text-accent bg-accent/10 border border-accent/20 rounded-full px-2.5 py-1">${g}</span>`).join('');
+  $('#mSynopsis').textContent = a.synopsisLong;
+  $('#mReviews').innerHTML = REVIEWS.slice(0, 3 + (a.id%2)).map(r=>`<div class="flex gap-3">
+      <img src="https://picsum.photos/seed/rev-${r.a}/60/60" class="w-8 h-8 rounded-full object-cover shrink-0" alt=""/>
+      <div class="glass rounded-xl px-3 py-2 text-sm"><b class="text-white/85">${r.n}</b> <span class="text-white/60">${r.t}</span></div>
+    </div>`).join('');
+  $('#modal').dataset.id = id;
+  syncModalFav(id);
+  const m = $('#modal'); m.classList.remove('hidden'); m.classList.add('flex');
+  document.body.style.overflow='hidden';
+}
+function syncModalFav(id){
+  const f = isFav(id);
+  $('#mFav').innerHTML = `${heartSVG(f)} ${f?'Dans ma liste':'Ajouter à ma liste'}`;
+  $('#mFav').onclick = ()=>toggleFav(id, $('#mFav'));
+}
+function closeModal(){ const m=$('#modal'); m.classList.add('hidden'); m.classList.remove('flex'); m.dataset.id=''; document.body.style.overflow=''; }
+$('#modalBackdrop').onclick = closeModal;
+
+/* ══════════════════════ RECHERCHE TOPBAR (suggestions live) ══════════════════════ */
+$('#topSearch').addEventListener('input', e=>{
+  const q = e.target.value.trim().toLowerCase();
+  const box = $('#suggestions');
+  if(!q){ box.classList.add('hidden'); return; }
+  const res = ANIMES.filter(a=>a.titre.toLowerCase().includes(q)||a.titreOriginal.toLowerCase().includes(q)).slice(0,6);
+  if(!res.length){ box.classList.add('hidden'); return; }
+  box.innerHTML = res.map(a=>`<div class="flex items-center gap-3 px-3 py-2 hover:bg-white/[0.07] cursor-pointer transition-colors" onclick="openModalById(${a.id});$('#suggestions').classList.add('hidden')">
+    <img src="${a.poster}" class="w-8 h-10 rounded object-cover" alt=""/>
+    <div><div class="text-sm font-medium">${a.titre}</div><div class="text-[11px] text-white/40">${a.genres.slice(0,2).join(' · ')} · ${a.annee}</div></div>
+    <span class="ml-auto flex items-center gap-1 text-xs text-white/50">${star}${a.score.toFixed(1)}</span>
+  </div>`).join('');
+  box.classList.remove('hidden');
+});
+document.addEventListener('click', e=>{ if(!e.target.closest('#topSearch')&&!e.target.closest('#suggestions')) $('#suggestions').classList.add('hidden'); });
+
+/* recherche galerie */
+$('#mainSearch').addEventListener('input', renderGrid);
+
+/* ══════════════════════ TOASTS ══════════════════════ */
+function toast(msg){
+  const t = document.createElement('div');
+  t.className = 'glass rounded-xl px-4 py-3 text-sm shadow-2xl flex items-center gap-2';
+  t.style.animation = 'toastIn .4s cubic-bezier(0.23,1,0.32,1)';
+  t.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-accent glow"></span>${msg}`;
+  $('#toasts').appendChild(t);
+  setTimeout(()=>{ t.style.transition='opacity .4s, transform .4s'; t.style.opacity='0'; t.style.transform='translateY(8px)'; setTimeout(()=>t.remove(),400); }, 2600);
+}
+
+/* ══════════════════════ NAV + DRAWER ══════════════════════ */
+const NAV = [
+  ['Accueil','M3 11l9-8 9 8M5 10v10h14V10', true],
+  ['Découvrir','M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM8 16l2-6 6-2-2 6z', false],
+  ['Top Charts','M3 3v18h18M7 14l3-3 3 3 5-6', false],
+  ['Ma Bibliothèque','M4 19V5a2 2 0 0 1 2-2h12v18H6a2 2 0 0 1-2-2zM8 3v18', false],
+  ['Communauté','M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8', false],
+  ['Forums','M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z', false],
+];
+$('#nav').innerHTML = NAV.map(([label,d,active])=>`
+  <a class="nav-item ${active?'active':''} flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white/65 hover:text-white hover:bg-white/[0.06] transition-all duration-300 cursor-pointer" onclick="setNav(this,'${label}')">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="text-white/45"><path d="${d}"/></svg>${label}
+  </a>`).join('');
+function setNav(el,label){ document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active')); el.classList.add('active'); if(label!=='Accueil') toast(label+' ✦'); closeDrawer(); }
+
+function openDrawer(){ $('#sidebar').classList.add('open'); $('#drawerBackdrop').classList.remove('hidden'); }
+function closeDrawer(){ $('#sidebar').classList.remove('open'); $('#drawerBackdrop').classList.add('hidden'); }
+$('#burger').onclick = openDrawer;
+$('#drawerBackdrop').onclick = closeDrawer;
+$('#avatarBtn').onclick = e=>{ e.stopPropagation(); $('#avatarMenu').classList.toggle('hidden'); };
+document.addEventListener('click', e=>{ if(!e.target.closest('#avatarBtn')&&!e.target.closest('#avatarMenu')) $('#avatarMenu').classList.add('hidden'); });
+
+/* ══════════════════════ RACCOURCIS CLAVIER ══════════════════════ */
+document.addEventListener('keydown', e=>{
+  if(e.key==='/' && document.activeElement.tagName!=='INPUT'){ e.preventDefault(); $('#topSearch').focus(); }
+  if(e.key==='Escape'){ if(!$('#modal').classList.contains('hidden')) closeModal(); else closeDrawer(); }
+});
+
+/* ══════════════════════ APPARITION AU SCROLL ══════════════════════ */
+const io = new IntersectionObserver(entries=>{
+  entries.forEach(en=>{ if(en.isIntersecting){ en.target.classList.add('in'); io.unobserve(en.target); } });
+}, { threshold:.08 });
+function revealAll(){ document.querySelectorAll('.reveal:not(.in)').forEach(el=>io.observe(el)); }
+
+/* compteur live qui « respire » */
+setInterval(()=>{ const base=12847+Math.floor(Math.random()*40-15); $('#liveCount').textContent = base.toLocaleString('fr-FR'); }, 4000);
+
+/* ══════════════════════ INIT ══════════════════════ */
+renderGenres();
+renderRows();
+renderGrid();
+revealAll();
+</script>
+</body>
+</html>
