@@ -569,10 +569,8 @@ const AH_CSS = `
   @keyframes ahScanSlow { 0% { top:-4px } 100% { top:110% } }
   .ah-mq-l { animation: ahMarqueeL var(--mq-dur, 60s) linear infinite; will-change:transform; }
   .ah-mq-r { animation: ahMarqueeR var(--mq-dur, 66s) linear infinite; will-change:transform; }
-  .ah-debug > * { outline: 3px solid #ff0040 !important; outline-offset: -2px; position: relative; }
-  .ah-debug > *::before { content: attr(id); position: absolute; top: 0; left: 0; z-index: 99; background: #ff0040; color: #fff; font-size: 11px; font-weight: 800; padding: 2px 8px; }
-  .ah-debug section > * { outline: 2px solid #00e5ff !important; }
-  .ah-debug section > * > * { outline: 1px solid #ffe600 !important; }
+  /* Annule le padding global section{110px 0} (style landing) qui créait d'énormes trous. */
+  .ah-main-grid section { padding: 0; }
   .ah-shimmer { position: relative; overflow: hidden; }
   .ah-shimmer::after {
     content: '';
@@ -1825,7 +1823,7 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
                 </div>
 
                 {/* ── Sections (pleine largeur) ── */}
-                <div className="ah-debug" style={{ minWidth:0, display:'flex', flexDirection:'column', gap:4 }}>
+                <div style={{ minWidth:0, display:'flex', flexDirection:'column', gap:14 }}>
 
                   {/* Top du moment — numéroté */}
                   <section id="top-du-moment" style={{ marginBottom:10, scrollMarginTop:16 }}>
