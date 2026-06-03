@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react'
 import { ProgressRing } from './ProgressRing.jsx'
+import AIRecommendations from './AIRecommendations.jsx'
 
 // Fond 3D (posters d'animés qui vagabondent) — chargé à part pour ne pas
 // alourdir le chunk, et silencieux si WebGL indisponible.
@@ -1525,6 +1526,7 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
   const navItems = useMemo(() => [
     { id:'top-du-moment', label:'Top du moment', icon:'🔥', count: topWeekAnimes.length },
     ...(continueWatching.length ? [{ id:'continuer', label:'Continuer', icon:'▶', count: continueWatching.length }] : []),
+    { id:'pour-toi', label:'Pour toi', icon:'✨' },
     ...(newSeasonAnimes.length ? [{ id:'nouveautes', label:'Nouveautés', icon:'🆕', count: newSeasonAnimes.length }] : []),
     ...genreSections.map(s => ({ id:s.id, label:s.label, icon:s.icon, count:s.items.length })),
     { id:'tous', label:'Tous les animés', icon:'📚', count: sortedAnimes.length },
@@ -1813,6 +1815,16 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
                       </Carousel>
                     </section>
                   )}
+
+                  {/* Recommandé par l'IA pour toi */}
+                  <section id="pour-toi" style={{ marginBottom:10, scrollMarginTop:16 }}>
+                    <AIRecommendations
+                      animes={sortedAnimes}
+                      ratings={ratings}
+                      favorites={favs}
+                      onOpen={handleClick}
+                    />
+                  </section>
 
                   {/* Nouveautés de la saison */}
                   {newSeasonAnimes.length > 0 && (
