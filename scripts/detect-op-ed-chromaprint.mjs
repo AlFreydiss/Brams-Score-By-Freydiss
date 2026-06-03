@@ -43,6 +43,23 @@ const JOBS = {
     match: v => { const m = /vivy\/Ep(\d+)\.mp4/.exec(v.src || ''); return m ? epnum(m[1]) : null },
     sources: () => localSources(SRC_VIVY, /-\s*(\d{1,2})\s*\[/),
   },
+  fate: {
+    json: path.join(root, 'src', 'data', 'fate-zero-videos.json'),
+    match: v => /S\d+E\d+/i.exec(v.src || '')?.[0]?.toUpperCase(),   // clé = SxxExx (anti-collision S1/S2)
+    sources: () => {
+      const base = 'F:\\Brams-Score-By-Freydiss-new\\public\\anime\\Fate⁄Zero - iNTEGRALE (2011) VOSTFR 1080p 10bits BluRay x265 AAC v2 -Punisher694'
+      const out = []
+      for (const sub of fs.readdirSync(base)) {
+        const dir = path.join(base, sub)
+        if (!fs.statSync(dir).isDirectory()) continue
+        for (const f of fs.readdirSync(dir)) {
+          const m = /S\d+E\d+/i.exec(f)
+          if (m && /\.(mkv|mp4)$/i.test(f)) out.push({ ep: m[0].toUpperCase(), file: path.join(dir, f) })
+        }
+      }
+      return out
+    },
+  },
   // Violet : sources supprimées en local → on empreinte depuis les URLs R2 (épisodes TV only).
   violet: {
     json: path.join(root, 'src', 'data', 'violet-evergarden-videos.json'),
@@ -117,7 +134,7 @@ function main() {
   const sources = (job.fromJson
     ? JSON.parse(fs.readFileSync(job.json, 'utf8')).filter(job.pick).map(v => ({ ep: job.match(v), file: v.src })).filter(x => x.ep)
     : job.sources()
-  ).sort((a, b) => Number(a.ep) - Number(b.ep))
+  ).sort((a, b) => String(a.ep).localeCompare(String(b.ep), undefined, { numeric: true }))
   console.log(`${sources.length} épisodes — empreinte...`)
   const fps = {}
   for (const s of sources) { process.stdout.write(`  Ep${s.ep}...`); fps[s.ep] = fingerprint(s.file); process.stdout.write(` ${fps[s.ep].fp.length} items (${fps[s.ep].dur | 0}s)\n`) }
