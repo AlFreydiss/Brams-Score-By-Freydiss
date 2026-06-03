@@ -120,7 +120,7 @@ const AIRecoCard = memo(function AIRecoCard({ rec, onOpen, onVote, vote }) {
       onClick={() => onOpen?.(a.id)}
       role="button" tabIndex={0} onKeyDown={e => e.key === 'Enter' && onOpen?.(a.id)}
       style={{
-        position: 'relative', flex: '0 0 208px', width: 208, scrollSnapAlign: 'start',
+        position: 'relative', flex: '0 0 184px', width: 184, scrollSnapAlign: 'start',
         borderRadius: 16, overflow: 'hidden', cursor: 'pointer',
         background: 'rgba(18,16,26,0.92)',
         border: `1px solid ${hover ? accent + '66' : 'rgba(255,255,255,0.07)'}`,
@@ -207,7 +207,7 @@ export default function AIRecommendations({ animes = [], ratings = {}, favorites
   if (!animes.length) return null
 
   return (
-    <section style={{ marginBottom: 30 }}>
+    <section style={{ marginBottom: 14 }}>
       {/* En-tête */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 11, marginBottom: 12 }}>
         <span style={{ fontSize: 17 }}>✨</span>
