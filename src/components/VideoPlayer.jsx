@@ -87,10 +87,11 @@ function loadVideoPreferences(userId) {
       audioLang: prefs.audioLang || 'ja',
       subtitlesOff: Boolean(prefs.subtitlesOff),
       subtitleLang: prefs.subtitleLang || 'fr',
+      autoplayNext: prefs.autoplayNext !== false,   // défaut ON (opt-out)
       subtitleStyle: loadSubStyle(userId), // par membre
     }
   } catch {
-    return { audioLang: 'ja', subtitlesOff: false, subtitleLang: 'fr', subtitleStyle: DEFAULT_SUBTITLE_STYLE }
+    return { audioLang: 'ja', subtitlesOff: false, subtitleLang: 'fr', autoplayNext: true, subtitleStyle: DEFAULT_SUBTITLE_STYLE }
   }
 }
 
@@ -288,6 +289,11 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   const [audioTrackState, setAudioTrackState] = useState('pending')
   const [subtitleStyle, setSubtitleStyle] = useState(() => loadVideoPreferences(userId).subtitleStyle)
   const [mediaSrc, setMediaSrc] = useState(videos[startIdx]?.src || '')
+  // Trio lecteur : autoplay (compte à rebours), skip intro, toast de reprise.
+  const [autoplayNext, setAutoplayNext] = useState(() => loadVideoPreferences(userId).autoplayNext)
+  const [endOverlay,   setEndOverlay]   = useState(false)
+  const [countdown,    setCountdown]    = useState(null)   // secondes restantes, ou null
+  const [resumeToast,  setResumeToast]  = useState(null)   // "MM:SS" affiché brièvement
 
   const video   = videos[idx]
   const isLocal = Boolean(video?.src)
@@ -513,6 +519,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
     const nextAudioIdx = findTrackIndex(audioOptions, preferredAudioLang, 0)
 
     setCurrentTime(0); setDuration(0); setBuffered(0); setPlaying(false); setCueText('')
+    setEndOverlay(false); setCountdown(null)
     setSubIdx(nextSubIdx)
     setSubsOff(hasSubs ? Boolean(prefs.subtitlesOff) : true)
     setAudioIdx(nextAudioIdx)
@@ -531,12 +538,34 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
     const resume = () => {
       if (Number.isFinite(savedEpisode.time) && savedEpisode.time > 3) {
         v.currentTime = Math.max(0, savedEpisode.time - 2)
+        if (savedEpisode.time > 60) {                       // toast "Reprise à MM:SS"
+          setResumeToast(fmt(savedEpisode.time - 2))
+          setTimeout(() => setResumeToast(null), 4500)
+        }
       }
     }
     if (v.readyState >= 1) resume()
     else v.addEventListener('loadedmetadata', resume, { once: true })
     return () => v.removeEventListener('loadedmetadata', resume)
   }, [idx, storageKey, video])
+
+  // ── Trio lecteur : avance épisode + compte à rebours autoplay ────────────
+  const goNext = useCallback(() => {
+    setEndOverlay(false); setCountdown(null)
+    setIdx(i => Math.min(videos.length - 1, i + 1))
+  }, [videos.length])
+
+  const skipIntro = useCallback(() => {
+    const v = videoRef.current; if (!v) return
+    v.currentTime = Math.min((v.duration || Infinity), v.currentTime + 85)   // saut ~intro
+  }, [])
+
+  useEffect(() => {
+    if (countdown == null) return
+    if (countdown <= 0) { goNext(); return }
+    const t = setTimeout(() => setCountdown(c => (c == null ? null : c - 1)), 1000)
+    return () => clearTimeout(t)
+  }, [countdown, goNext])
 
   // ── Appliquer la vitesse ─────────────────────────────────────────────────
   useEffect(() => {
@@ -740,7 +769,10 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
               onEnded={() => {
                 if (audioRef.current) audioRef.current.pause()
                 persistProgress({ time: videoRef.current?.duration || duration || 0, duration: videoRef.current?.duration || duration || 0, completed: true })
-                if (idx < videos.length - 1) setIdx(i => i + 1)
+                if (idx < videos.length - 1) {
+                  setEndOverlay(true)
+                  setCountdown(autoplayNext ? 8 : null)   // null = pas d'avance auto, carte manuelle
+                }
               }}
             >
               {/* Source native seulement si hls.js ne pilote pas (mp4, ou HLS sur Safari).
@@ -781,6 +813,60 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                   a.muted = muted
                 }}
               />
+            )}
+
+            <style>{`@keyframes fadeIn { from { opacity:0 } to { opacity:1 } }`}</style>
+
+            {/* ── Toast « Reprise à MM:SS » ── */}
+            {resumeToast && !endOverlay && (
+              <div style={{ position:'absolute', top:18, left:'50%', transform:'translateX(-50%)', zIndex:20, display:'flex', alignItems:'center', gap:8, padding:'8px 16px', borderRadius:999, background:'rgba(10,8,16,0.86)', backdropFilter:'blur(10px)', border:`1px solid ${color}55`, color:'#fff', fontSize:12.5, fontWeight:700, boxShadow:'0 8px 28px rgba(0,0,0,0.4)', animation:'fadeIn .25s ease' }}>
+                <span style={{ color }}>⏮</span> Reprise à <span style={{ color, fontWeight:800 }}>{resumeToast}</span>
+              </div>
+            )}
+
+            {/* ── Skip intro (manuel) ── */}
+            {video?.kind !== 'film' && playing && !endOverlay && currentTime >= 5 && currentTime <= 88 && (
+              <button onClick={skipIntro}
+                style={{ position:'absolute', right:24, bottom: showCtrl ? 118 : 40, zIndex:20, display:'flex', alignItems:'center', gap:8, padding:'10px 18px', borderRadius:12, cursor:'pointer', fontFamily:'var(--body)', fontSize:13, fontWeight:800, color:'#fff', background:'rgba(10,8,16,0.82)', backdropFilter:'blur(10px)', border:`1px solid ${color}66`, boxShadow:'0 8px 28px rgba(0,0,0,0.45)', transition:'transform .15s, background .15s' }}
+                onMouseEnter={e => { e.currentTarget.style.background = `${color}cc`; e.currentTarget.style.transform = 'scale(1.04)' }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(10,8,16,0.82)'; e.currentTarget.style.transform = 'none' }}>
+                Passer l'intro <span style={{ fontSize:15 }}>⏭</span>
+              </button>
+            )}
+
+            {/* ── Fin d'épisode : autoplay (compte à rebours) ou carte manuelle ── */}
+            {endOverlay && videos[idx + 1] && (
+              <div style={{ position:'absolute', right:24, bottom: showCtrl ? 118 : 40, zIndex:25, width:308, padding:18, borderRadius:16, background:'rgba(10,8,16,0.93)', backdropFilter:'blur(16px)', border:`1px solid ${color}55`, boxShadow:'0 18px 50px rgba(0,0,0,0.6)', animation:'fadeIn .3s ease' }}>
+                <div style={{ fontSize:10, fontWeight:800, letterSpacing:'.1em', textTransform:'uppercase', color, marginBottom:6 }}>
+                  {countdown != null ? `Épisode suivant dans ${countdown}s` : 'Épisode suivant'}
+                </div>
+                <div style={{ fontSize:15, fontWeight:800, color:'#fff', lineHeight:1.3, marginBottom:13 }}>
+                  {videos[idx + 1].title || `Épisode ${videos[idx + 1].episode}`}
+                </div>
+                {countdown != null && (
+                  <div style={{ height:4, borderRadius:999, background:'rgba(255,255,255,0.12)', overflow:'hidden', marginBottom:13 }}>
+                    <div style={{ height:'100%', borderRadius:999, background:color, width:`${(1 - countdown / 8) * 100}%`, transition:'width 1s linear' }} />
+                  </div>
+                )}
+                <div style={{ display:'flex', gap:8 }}>
+                  <button onClick={goNext}
+                    style={{ flex:1, padding:'9px 0', borderRadius:10, cursor:'pointer', fontFamily:'var(--body)', fontSize:12.5, fontWeight:800, color:'#fff', background:color, border:'none' }}>
+                    ▶ Lire {countdown != null ? 'maintenant' : ''}
+                  </button>
+                  <button onClick={() => { setEndOverlay(false); setCountdown(null) }}
+                    style={{ padding:'9px 14px', borderRadius:10, cursor:'pointer', fontFamily:'var(--body)', fontSize:12.5, fontWeight:700, color:'rgba(255,255,255,0.7)', background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)' }}>
+                    Annuler
+                  </button>
+                </div>
+                <button
+                  onClick={() => { const n = !autoplayNext; setAutoplayNext(n); updatePreferences({ autoplayNext: n }); if (!n) setCountdown(null) }}
+                  style={{ marginTop:11, display:'flex', alignItems:'center', gap:7, width:'100%', background:'none', border:'none', cursor:'pointer', color:'rgba(255,255,255,0.55)', fontSize:11, fontWeight:600, fontFamily:'var(--body)' }}>
+                  <span style={{ width:30, height:17, borderRadius:999, background: autoplayNext ? color : 'rgba(255,255,255,0.15)', position:'relative', transition:'background .2s', flexShrink:0 }}>
+                    <span style={{ position:'absolute', top:2, left: autoplayNext ? 15 : 2, width:13, height:13, borderRadius:'50%', background:'#fff', transition:'left .2s' }} />
+                  </span>
+                  Lecture automatique
+                </button>
+              </div>
             )}
 
             {/* ── Sous-titres overlay ── */}
