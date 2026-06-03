@@ -571,6 +571,8 @@ const AH_CSS = `
   .ah-mq-r { animation: ahMarqueeR var(--mq-dur, 66s) linear infinite; will-change:transform; }
   .ah-debug > * { outline: 3px solid #ff0040 !important; outline-offset: -2px; position: relative; }
   .ah-debug > *::before { content: attr(id); position: absolute; top: 0; left: 0; z-index: 99; background: #ff0040; color: #fff; font-size: 11px; font-weight: 800; padding: 2px 8px; }
+  .ah-debug section > * { outline: 2px solid #00e5ff !important; }
+  .ah-debug section > * > * { outline: 1px solid #ffe600 !important; }
   .ah-shimmer { position: relative; overflow: hidden; }
   .ah-shimmer::after {
     content: '';
