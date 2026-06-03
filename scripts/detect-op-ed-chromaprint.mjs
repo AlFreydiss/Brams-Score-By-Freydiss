@@ -23,15 +23,32 @@ fs.mkdirSync(TEMP, { recursive: true })
 
 // ── Jobs : où sont les sources et comment mapper vers le JSON ──
 const SRC_AOT = 'F:\\Brams-Score-By-Freydiss-new\\public\\anime\\[Tsundere-Raws] Shingeki no Kyojin S4 - BATCH VOSTFR (WKN) [1080p]'
+const SRC_VIVY = 'F:\\Brams-Score-By-Freydiss-new\\public\\anime\\[sekkusu&ok] Vivy -Fluorite Eye\'s Song- - [Multi-Subs + VOSTFR] [1080p]'
+const epnum = s => String(parseInt(s, 10))   // "01"→"1", normalise les clés d'appariement
+
+// Construit {ep,file} depuis un dossier local (file=chemin) ; `re` extrait le n° d'épisode du nom.
+const localSources = (dir, re) => fs.readdirSync(dir)
+  .filter(f => /\.(mp4|mkv)$/i.test(f))
+  .map(f => { const m = re.exec(f); return m ? { ep: epnum(m[1]), file: path.join(dir, f) } : null })
+  .filter(Boolean)
+
 const JOBS = {
   aot: {
     json: path.join(root, 'src', 'data', 'aot-videos.json'),
-    // épisodes ciblés = saison S04 ; clé d'appariement source→entrée = numéro d'épisode
-    match: v => /S04E(\d+)/.exec(v.src || '')?.[1],
-    sources: () => fs.readdirSync(SRC_AOT)
-      .filter(f => /\.mp4$/i.test(f))
-      .map(f => ({ ep: String(parseInt(/S4\s*-\s*(\d{1,2})/i.exec(f)?.[1], 10)).padStart(2, '0'), file: path.join(SRC_AOT, f) }))
-      .filter(x => x.ep !== 'NaN'),
+    match: v => { const m = /S04E(\d+)/.exec(v.src || ''); return m ? epnum(m[1]) : null },
+    sources: () => localSources(SRC_AOT, /S4\s*-\s*(\d{1,2})/i),
+  },
+  vivy: {
+    json: path.join(root, 'src', 'data', 'vivy-videos.json'),
+    match: v => { const m = /vivy\/Ep(\d+)\.mp4/.exec(v.src || ''); return m ? epnum(m[1]) : null },
+    sources: () => localSources(SRC_VIVY, /-\s*(\d{1,2})\s*\[/),
+  },
+  // Violet : sources supprimées en local → on empreinte depuis les URLs R2 (épisodes TV only).
+  violet: {
+    json: path.join(root, 'src', 'data', 'violet-evergarden-videos.json'),
+    fromJson: true,
+    pick: v => /violet-evergarden-jp\/Ep\d+\.mp4/.test(v.src || '') && !v.kind,
+    match: v => { const m = /Ep0*(\d+)\.mp4/.exec(v.src || ''); return m ? epnum(m[1]) : null },
   },
 }
 
@@ -97,7 +114,10 @@ function main() {
   const job = JOBS[jobKey]
   if (!job) { console.log('Job inconnu. Dispo :', Object.keys(JOBS).join(', ')); process.exit(1) }
 
-  const sources = job.sources().sort((a, b) => a.ep.localeCompare(b.ep))
+  const sources = (job.fromJson
+    ? JSON.parse(fs.readFileSync(job.json, 'utf8')).filter(job.pick).map(v => ({ ep: job.match(v), file: v.src })).filter(x => x.ep)
+    : job.sources()
+  ).sort((a, b) => Number(a.ep) - Number(b.ep))
   console.log(`${sources.length} épisodes — empreinte...`)
   const fps = {}
   for (const s of sources) { process.stdout.write(`  Ep${s.ep}...`); fps[s.ep] = fingerprint(s.file); process.stdout.write(` ${fps[s.ep].fp.length} items (${fps[s.ep].dur | 0}s)\n`) }
@@ -106,9 +126,19 @@ function main() {
   const result = {}
   for (let k = 0; k < eps.length; k++) {
     const ep = eps[k]
-    const ref = fps[eps[(k + 1) % eps.length]]      // référence = épisode voisin
     const { fp, itemDur, dur } = fps[ep]
-    const runs = sharedRuns(ref.fp, fp, itemDur)
+    // On compare à PLUSIEURS références (épisodes voisins) et on fusionne : robuste
+    // même si un épisode donné n'a pas le même OP/ED qu'un voisin précis.
+    const refIdx = [k + 1, k + 2, k - 1, k + 3].map(i => ((i % eps.length) + eps.length) % eps.length).filter(i => i !== k)
+    let allRuns = []
+    for (const ri of [...new Set(refIdx)]) allRuns.push(...sharedRuns(fps[eps[ri]].fp, fp, itemDur))
+    allRuns.sort((a, b) => a[0] - b[0])
+    const runs = []
+    for (const r of allRuns) {            // fusion des recouvrements
+      const last = runs[runs.length - 1]
+      if (last && r[0] <= last[1] + 8) last[1] = Math.max(last[1], r[1])
+      else runs.push([...r])
+    }
     // classe : opening = segment dont le milieu est dans les 45 premiers %, ending = dans les 45 derniers %
     let op = null, ed = null
     for (const [s, e] of runs) {

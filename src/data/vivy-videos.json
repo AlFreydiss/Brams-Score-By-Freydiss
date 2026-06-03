@@ -19,7 +19,11 @@
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-subtitles-fr/Ep01.fr.vtt"
       }
     ],
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-thumbnails/Ep01.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-thumbnails/Ep01.jpg",
+    "ed": [
+      1474,
+      1563
+    ]
   },
   {
     "episode": 2,
@@ -41,7 +45,11 @@
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-subtitles-fr/Ep02.fr.vtt"
       }
     ],
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-thumbnails/Ep02.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-thumbnails/Ep02.jpg",
+    "ed": [
+      1267,
+      1357
+    ]
   },
   {
     "episode": 3,
@@ -85,7 +93,11 @@
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-subtitles-fr/Ep04.fr.vtt"
       }
     ],
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-thumbnails/Ep04.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-thumbnails/Ep04.jpg",
+    "op": [
+      59,
+      149
+    ]
   },
   {
     "episode": 5,
@@ -107,7 +119,15 @@
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-subtitles-fr/Ep05.fr.vtt"
       }
     ],
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-thumbnails/Ep05.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-thumbnails/Ep05.jpg",
+    "op": [
+      83,
+      173
+    ],
+    "ed": [
+      1323,
+      1413
+    ]
   },
   {
     "episode": 6,
@@ -129,7 +149,11 @@
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-subtitles-fr/Ep06.fr.vtt"
       }
     ],
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-thumbnails/Ep06.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-thumbnails/Ep06.jpg",
+    "op": [
+      119,
+      209
+    ]
   },
   {
     "episode": 7,
@@ -151,7 +175,11 @@
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-subtitles-fr/Ep07.fr.vtt"
       }
     ],
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-thumbnails/Ep07.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-thumbnails/Ep07.jpg",
+    "ed": [
+      1322,
+      1413
+    ]
   },
   {
     "episode": 8,
@@ -173,7 +201,15 @@
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-subtitles-fr/Ep08.fr.vtt"
       }
     ],
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-thumbnails/Ep08.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-thumbnails/Ep08.jpg",
+    "op": [
+      123,
+      213
+    ],
+    "ed": [
+      1203,
+      1293
+    ]
   },
   {
     "episode": 9,
@@ -195,7 +231,15 @@
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-subtitles-fr/Ep09.fr.vtt"
       }
     ],
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-thumbnails/Ep09.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-thumbnails/Ep09.jpg",
+    "op": [
+      15,
+      105
+    ],
+    "ed": [
+      1322,
+      1413
+    ]
   },
   {
     "episode": 10,
@@ -217,7 +261,15 @@
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-subtitles-fr/Ep10.fr.vtt"
       }
     ],
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-thumbnails/Ep10.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-thumbnails/Ep10.jpg",
+    "op": [
+      127,
+      218
+    ],
+    "ed": [
+      1273,
+      1364
+    ]
   },
   {
     "episode": 11,
@@ -239,7 +291,15 @@
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-subtitles-fr/Ep11.fr.vtt"
       }
     ],
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-thumbnails/Ep11.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-thumbnails/Ep11.jpg",
+    "op": [
+      182,
+      272
+    ],
+    "ed": [
+      1322,
+      1413
+    ]
   },
   {
     "episode": 12,
@@ -261,7 +321,15 @@
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-subtitles-fr/Ep12.fr.vtt"
       }
     ],
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-thumbnails/Ep12.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-thumbnails/Ep12.jpg",
+    "op": [
+      31,
+      122
+    ],
+    "ed": [
+      1322,
+      1413
+    ]
   },
   {
     "episode": 13,
@@ -283,6 +351,10 @@
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-subtitles-fr/Ep13.fr.vtt"
       }
     ],
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-thumbnails/Ep13.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy-thumbnails/Ep13.jpg",
+    "op": [
+      89,
+      179
+    ]
   }
 ]
