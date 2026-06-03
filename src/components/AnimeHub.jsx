@@ -1269,6 +1269,7 @@ function Carousel({ children }) {
 export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrstone, onOpenJjk, onOpenKingdom, onOpenAot, onOpenKny, onOpenNnt, onOpenSl, onOpenDbs, onOpenViolet, onOpenVivy, onOpenLovePrism, onOpenCaroleTuesday, onOpenBunnyGirl, onOpenRentGirlfriend, onOpenBc, onOpenMha, onOpenFireforce, onOpenBluelock, onOpenFateZero, onOpenYourName, onOpenMonUnivers }) {
   const [query, setQuery] = useState('')
   const [selectedGenres, setSelectedGenres] = useState(new Set())
+  const [genreMenuOpen, setGenreMenuOpen] = useState(false)
   const [searchFocus, setSearchFocus] = useState(false)
   const [activeCat, setActiveCat] = useState('top-du-moment')
   const [showAllCount, setShowAllCount] = useState(14)
@@ -1712,23 +1713,31 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
               )}
             </div>
 
-            {/* ── Filtres (compacts) ── */}
-            <div style={{ display:'flex', flexWrap:'wrap', alignItems:'center', justifyContent:'flex-start', gap:7, maxWidth:940, margin:0 }}>
-              <FilterPill label="Tous" active={selectedGenres.size === 0} onClick={() => setSelectedGenres(new Set())} />
-              {displayGenres.map(genre => (
-                <FilterPill key={genre} label={genre} active={selectedGenres.has(genre)} onClick={() => toggleGenre(genre)} />
-              ))}
+            {/* ── Genres (dropdown compact — clic = panneau de tous les genres) ── */}
+            <div style={{ display:'flex', alignItems:'center', gap:8, position:'relative' }}>
+              <button type="button" onClick={() => setGenreMenuOpen(o => !o)}
+                style={{ display:'flex', alignItems:'center', gap:9, borderRadius:999, padding:'9px 17px', cursor:'pointer', fontFamily:'var(--body)', fontSize:13.5, fontWeight:800, transition:'all .18s',
+                  color: selectedGenres.size ? '#fff' : 'rgba(255,255,255,0.78)',
+                  background: selectedGenres.size ? 'rgba(167,139,250,0.18)' : 'rgba(255,255,255,0.05)',
+                  border: `1px solid ${selectedGenres.size || genreMenuOpen ? 'rgba(167,139,250,0.5)' : 'rgba(255,255,255,0.10)'}` }}>
+                <span style={{ fontSize:15 }}>🎭</span> Genres
+                {selectedGenres.size > 0 && <span style={{ fontSize:11, background:'#a78bfa', color:'#0a0a0f', borderRadius:999, padding:'1px 8px', fontWeight:900 }}>{selectedGenres.size}</span>}
+                <span style={{ fontSize:9, opacity:.65, transform: genreMenuOpen ? 'rotate(180deg)' : 'none', transition:'transform .25s cubic-bezier(.23,1,.32,1)' }}>▼</span>
+              </button>
               {selectedGenres.size > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setSelectedGenres(new Set())}
-                  title="Effacer la sélection"
-                  style={{ borderRadius:999, padding:'7px 13px', fontSize:11, fontWeight:900, letterSpacing:'.06em', color:'#9ca3af', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.10)', cursor:'pointer', transition:'all .18s' }}
-                  onMouseEnter={e => { e.currentTarget.style.color='#a78bfa'; e.currentTarget.style.borderColor='rgba(139,92,246,0.4)' }}
-                  onMouseLeave={e => { e.currentTarget.style.color='#9ca3af'; e.currentTarget.style.borderColor='rgba(255,255,255,0.10)' }}
-                >
-                  ↺ RESET
-                </button>
+                <button type="button" onClick={() => setSelectedGenres(new Set())} title="Effacer"
+                  style={{ borderRadius:999, padding:'8px 13px', fontSize:11, fontWeight:800, color:'#9ca3af', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.10)', cursor:'pointer' }}>↺</button>
+              )}
+              {genreMenuOpen && (
+                <>
+                  <div onClick={() => setGenreMenuOpen(false)} style={{ position:'fixed', inset:0, zIndex:40 }} />
+                  <div style={{ position:'absolute', top:'calc(100% + 9px)', left:0, zIndex:50, width:380, maxWidth:'92vw', padding:'14px', borderRadius:16, background:'rgba(13,15,23,0.98)', backdropFilter:'blur(22px)', border:'1px solid rgba(255,255,255,0.10)', boxShadow:'0 24px 64px rgba(0,0,0,0.65)', display:'flex', flexWrap:'wrap', gap:8, animation:'ahHeroFade .22s ease' }}>
+                    <FilterPill label="Tous" active={selectedGenres.size === 0} onClick={() => setSelectedGenres(new Set())} />
+                    {displayGenres.map(genre => (
+                      <FilterPill key={genre} label={genre} active={selectedGenres.has(genre)} onClick={() => toggleGenre(genre)} />
+                    ))}
+                  </div>
+                </>
               )}
             </div>
 
