@@ -266,6 +266,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   const lastSaveRef  = useRef(0)
   const pendingSourceRef = useRef(null)
   const hlsRef = useRef(null)
+  const autoplayPendingRef = useRef(false)   // relancer la lecture après avance auto
 
   const [idx,          setIdx]         = useState(startIdx)
   const [playing,      setPlaying]     = useState(false)
@@ -298,6 +299,9 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   const video   = videos[idx]
   const isLocal = Boolean(video?.src)
   const hasSubs = Array.isArray(video?.subtitles) && video.subtitles.length > 0
+  // Marqueurs opening/ending par épisode : [début, fin] en secondes (extraits des chapitres).
+  const opMark  = Array.isArray(video?.op) && video.op.length === 2 ? video.op : null
+  const edMark  = Array.isArray(video?.ed) && video.ed.length === 2 ? video.ed : null
   const audioOptions = useMemo(() => (
     Array.isArray(video?.audio) && video.audio.length > 0 ? video.audio : []
   ), [video])
@@ -551,13 +555,16 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
 
   // ── Trio lecteur : avance épisode + compte à rebours autoplay ────────────
   const goNext = useCallback(() => {
+    autoplayPendingRef.current = true          // jouer dès que le prochain épisode est prêt
     setEndOverlay(false); setCountdown(null)
     setIdx(i => Math.min(videos.length - 1, i + 1))
   }, [videos.length])
 
-  const skipIntro = useCallback(() => {
-    const v = videoRef.current; if (!v) return
-    v.currentTime = Math.min((v.duration || Infinity), v.currentTime + 85)   // saut ~intro
+  // Smart skip : on saute à une position précise (fin d'OP/ED), jamais un offset fixe.
+  const skipTo = useCallback((t) => {
+    const v = videoRef.current
+    if (!v || !Number.isFinite(t)) return
+    v.currentTime = Math.min(v.duration || t, t)
   }, [])
 
   useEffect(() => {
@@ -766,6 +773,12 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
               onDurationChange={onDurChg}
               onVolumeChange={onVolChg}
               onLoadedMetadata={onMetaChg}
+              onCanPlay={() => {
+                if (autoplayPendingRef.current) {
+                  autoplayPendingRef.current = false
+                  videoRef.current?.play().catch(() => {})
+                }
+              }}
               onEnded={() => {
                 if (audioRef.current) audioRef.current.pause()
                 persistProgress({ time: videoRef.current?.duration || duration || 0, duration: videoRef.current?.duration || duration || 0, completed: true })
@@ -824,15 +837,23 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
               </div>
             )}
 
-            {/* ── Skip intro (manuel) ── */}
-            {video?.kind !== 'film' && playing && !endOverlay && currentTime >= 5 && currentTime <= 88 && (
-              <button onClick={skipIntro}
-                style={{ position:'absolute', right:24, bottom: showCtrl ? 118 : 40, zIndex:20, display:'flex', alignItems:'center', gap:8, padding:'10px 18px', borderRadius:12, cursor:'pointer', fontFamily:'var(--body)', fontSize:13, fontWeight:800, color:'#fff', background:'rgba(10,8,16,0.82)', backdropFilter:'blur(10px)', border:`1px solid ${color}66`, boxShadow:'0 8px 28px rgba(0,0,0,0.45)', transition:'transform .15s, background .15s' }}
-                onMouseEnter={e => { e.currentTarget.style.background = `${color}cc`; e.currentTarget.style.transform = 'scale(1.04)' }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(10,8,16,0.82)'; e.currentTarget.style.transform = 'none' }}>
-                Passer l'intro <span style={{ fontSize:15 }}>⏭</span>
-              </button>
-            )}
+            {/* ── Smart Skip : opening / ending (uniquement si marqueurs présents) ── */}
+            {!endOverlay && (() => {
+              const inOp = opMark && currentTime >= opMark[0] - 1 && currentTime < opMark[1] - 0.5
+              const inEd = edMark && currentTime >= edMark[0] && currentTime < edMark[1] - 0.5
+              const skip = inOp ? { label: "Passer l'intro", to: opMark[1] }
+                         : inEd ? { label: 'Passer le générique', to: edMark[1] }
+                         : null
+              if (!skip) return null
+              return (
+                <button onClick={(e) => { e.stopPropagation(); skipTo(skip.to) }}
+                  style={{ position:'absolute', right:24, bottom: showCtrl ? 118 : 40, zIndex:20, display:'flex', alignItems:'center', gap:8, padding:'10px 18px', borderRadius:12, cursor:'pointer', fontFamily:'var(--body)', fontSize:13, fontWeight:800, color:'#fff', background:'rgba(10,8,16,0.82)', backdropFilter:'blur(10px)', border:`1px solid ${color}66`, boxShadow:'0 8px 28px rgba(0,0,0,0.45)', transition:'transform .15s, background .15s' }}
+                  onMouseEnter={e => { e.currentTarget.style.background = `${color}cc`; e.currentTarget.style.transform = 'scale(1.04)' }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(10,8,16,0.82)'; e.currentTarget.style.transform = 'none' }}>
+                  {skip.label} <span style={{ fontSize:15 }}>⏭</span>
+                </button>
+              )
+            })()}
 
             {/* ── Fin d'épisode : autoplay (compte à rebours) ou carte manuelle ── */}
             {endOverlay && videos[idx + 1] && (
@@ -849,17 +870,17 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                   </div>
                 )}
                 <div style={{ display:'flex', gap:8 }}>
-                  <button onClick={goNext}
+                  <button onClick={(e) => { e.stopPropagation(); goNext() }}
                     style={{ flex:1, padding:'9px 0', borderRadius:10, cursor:'pointer', fontFamily:'var(--body)', fontSize:12.5, fontWeight:800, color:'#fff', background:color, border:'none' }}>
                     ▶ Lire {countdown != null ? 'maintenant' : ''}
                   </button>
-                  <button onClick={() => { setEndOverlay(false); setCountdown(null) }}
+                  <button onClick={(e) => { e.stopPropagation(); setEndOverlay(false); setCountdown(null) }}
                     style={{ padding:'9px 14px', borderRadius:10, cursor:'pointer', fontFamily:'var(--body)', fontSize:12.5, fontWeight:700, color:'rgba(255,255,255,0.7)', background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)' }}>
                     Annuler
                   </button>
                 </div>
                 <button
-                  onClick={() => { const n = !autoplayNext; setAutoplayNext(n); updatePreferences({ autoplayNext: n }); if (!n) setCountdown(null) }}
+                  onClick={(e) => { e.stopPropagation(); const n = !autoplayNext; setAutoplayNext(n); updatePreferences({ autoplayNext: n }); if (!n) setCountdown(null) }}
                   style={{ marginTop:11, display:'flex', alignItems:'center', gap:7, width:'100%', background:'none', border:'none', cursor:'pointer', color:'rgba(255,255,255,0.55)', fontSize:11, fontWeight:600, fontFamily:'var(--body)' }}>
                   <span style={{ width:30, height:17, borderRadius:999, background: autoplayNext ? color : 'rgba(255,255,255,0.15)', position:'relative', transition:'background .2s', flexShrink:0 }}>
                     <span style={{ position:'absolute', top:2, left: autoplayNext ? 15 : 2, width:13, height:13, borderRadius:'50%', background:'#fff', transition:'left .2s' }} />
