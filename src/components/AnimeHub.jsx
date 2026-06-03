@@ -867,12 +867,12 @@ function AnimeCard({ anime, index, onClick, onOpenMonUnivers, isFav = false, tog
       style={{
         position:'relative',
         borderRadius:20, overflow:'hidden',
-        background:`linear-gradient(175deg, ${c}14 0%, rgba(14,14,18,0.97) 100%)`,
-        border:`1px solid ${hov ? c+'55' : c+'1e'}`,
-        borderTop:`3px solid ${hov ? c : c+'aa'}`,
+        // Bramsq : surface neutre premium, l'accent couleur ne ressort qu'au hover (glow subtil).
+        background:'#111114',
+        border:`1px solid ${hov ? c+'4d' : 'rgba(255,255,255,0.08)'}`,
         transition:'all 0.42s cubic-bezier(0.23,1,0.32,1)',
-        transform: hov ? 'translateY(-12px) scale(1.01)' : 'translateY(0)',
-        boxShadow: hov ? `0 32px 80px ${c}33, 0 0 0 1px ${c}22, 0 0 28px ${c}11` : `0 4px 18px ${c}0a`,
+        transform: hov ? 'translateY(-10px) scale(1.012)' : 'translateY(0)',
+        boxShadow: hov ? `0 28px 64px rgba(0,0,0,0.55), 0 0 0 1px ${c}33, 0 0 22px ${c}1f` : '0 4px 20px rgba(0,0,0,0.35)',
         cursor:'pointer',
         animation:`ahFadeUp 0.55s ${index * 0.07}s ease-out both`,
       }}
