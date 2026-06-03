@@ -28,7 +28,7 @@ const TRACKS = [
   { id: 'arslan-ed1',     file: path.join(DL, 'Arslan senki ending 1.mp4') },
   { id: 'magi-ed1',       file: path.join(DL, 'Magi Labyrinth of magic ending 1 with english sub.mp4') },
   { id: 'sao-wou-ed1',    file: path.join(DL, '[4K60] SAO Alicization —  War of Underworld ED  Lisa — Unlasting (Creditless).mp4') },
-  { id: 'ds-ed1',         file: path.join(DL, 'Ending 1 - Creditless  Demon Slayer  From The Edge  4K 60FPS (1).mp4') },
+  { id: 'ds-ed1',         file: path.join(DL, 'Ending 1 - Creditless  Demon Slayer  From The Edge  4K 60FPS.mp4') },
   { id: 'tpn-ed1',        file: path.join(DL, 'The Promised Neverland - Ending 1 【Zettai Zetsumei】 4K 60FPS Creditless  CC.mp4') },
   { id: 'champloo-ed1',   file: path.join(DL, 'Samurai Champloo - Ending [4K 60FPS  Creditless  CC].mp4') },
   { id: 'ds-ed2',         file: path.join(DL, 'Ending 2 - Creditless  Demon Slayer  Shirogane  4K 60FPS.mp4') },
