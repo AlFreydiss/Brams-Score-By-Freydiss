@@ -575,9 +575,10 @@ const AH_CSS = `
     position: absolute; top: 0; left: 0; width: 40%; height: 100%;
     background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent);
     background-size: 200% 100%;
-    animation: ahShimmer 2.2s infinite;
+    opacity: 0;
     pointer-events: none;
   }
+  .ah-shimmer:hover::after { opacity: 1; animation: ahShimmer 2.2s infinite; }
   .heart-pop { animation: ahHeartPop 0.45s cubic-bezier(0.23,1,0.32,1) both; }
   .anime-glass {
     background: rgba(17,17,20,0.88);
@@ -1796,7 +1797,7 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
             ) : (
               <div className="ah-main-grid">
                 {/* ── Barre de catégories horizontale (Netflix-style) ── */}
-                <div className="ah-catbar" style={{ position:'sticky', top:0, zIndex:6, display:'flex', alignItems:'center', gap:8, overflowX:'auto', padding:'6px 0 16px', marginBottom:6 }}>
+                <div className="ah-catbar" style={{ position:'sticky', top:0, zIndex:6, display:'flex', alignItems:'center', gap:8, overflowX:'auto', padding:'12px 32px', margin:'0 -32px 10px', background:'rgba(8,10,18,0.85)', backdropFilter:'blur(16px)', borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
                   {navItems.map(item => {
                     const on = activeCat === item.id
                     return (

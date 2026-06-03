@@ -6,7 +6,7 @@ import { useMemo } from 'react'
 // Un <img> affiche une image cross-origin sans souci. Sobre : faible opacité, teinte bleue.
 export default function AnimeDrift3D({ images = [] }) {
   const picks = useMemo(
-    () => Array.from(new Set(images.filter(Boolean))).slice(0, 12),
+    () => Array.from(new Set(images.filter(Boolean))).slice(0, 6),
     [images]
   )
   if (!picks.length) return null
@@ -39,8 +39,8 @@ export default function AnimeDrift3D({ images = [] }) {
               height: w * 1.45,
               objectFit: 'cover',
               borderRadius: 12,
-              opacity: 0.06 + depth * 0.10,
-              filter: `blur(${(1 - depth) * 1.8}px) saturate(0.8) brightness(0.85)`,
+              opacity: 0.07 + depth * 0.09,
+              filter: 'saturate(0.8) brightness(0.85)',
               boxShadow: '0 26px 70px rgba(0,0,0,0.5)',
               transformStyle: 'preserve-3d',
               animation: `${i % 2 ? 'ahFloatB' : 'ahFloatA'} ${11 + r(4) * 9}s ease-in-out ${(-r(5) * 18).toFixed(1)}s infinite`,
