@@ -41,6 +41,21 @@ const TEMP = path.join(os.tmpdir(), 'brams-thumbs-mid')
 
 // id = jeton stable pour nommer le fichier ; on réutilise le SxxExxx de l'URL HLS
 // quand il existe (DBS), sinon EpNN basé sur le numéro d'épisode.
+//
+// uid : jeton universel dérivé de l'URL, garanti unique par épisode quel que
+// soit le format (mp4 SxxExx, mp4 EpNNN, HLS SxxExxx/master.m3u8, HLS MOVIE/...).
+// On évite l'id par numéro d'épisode car plusieurs saisons réutilisent les mêmes
+// numéros (collision). Fallback final sur kind+episode si l'URL est exotique.
+const uid = v => {
+  const se = v.src.match(/S\d+E\d+/i)
+  if (se) return se[0]
+  const hls = v.src.match(/\/([^/]+)\/master[^/]*\.m3u8$/i)   // dossier HLS (MOVIE, OVA1…)
+  if (hls) return hls[1]
+  const file = v.src.match(/\/([^/]+)\.mp4$/i)                // EpNNN.mp4 → EpNNN
+  if (file) return file[1]
+  return v.kind ? `${v.kind}-${v.episode}` : `Ep${String(v.episode).padStart(3, '0')}`
+}
+
 const JOBS = {
   tpn: {
     name: 'The Promised Neverland',
@@ -54,6 +69,23 @@ const JOBS = {
     prefix: 'anime/dbs-thumbnails',
     id: v => (v.src.match(/S\d+E\d+/i)?.[0]) || `Ep${String(v.episode).padStart(3, '0')}`,
   },
+  fate: {
+    name: 'Fate/Zero',
+    jsonPath: path.join(root, 'src', 'data', 'fate-zero-videos.json'),
+    prefix: 'anime/fate-zero-thumbnails',
+    // SxxExx requis : S01E01 et S02E01 partagent episode=1, l'id par numéro collisionnerait.
+    id: v => (v.src.match(/S\d+E\d+/i)?.[0]) || `Ep${String(v.episode).padStart(2, '0')}`,
+  },
+  aot:    { name: 'Attack on Titan',     jsonPath: path.join(root, 'src', 'data', 'aot-videos.json'),               prefix: 'anime/aot-thumbnails',                id: uid },
+  vivy:   { name: "Vivy: Fluorite Eye's Song", jsonPath: path.join(root, 'src', 'data', 'vivy-videos.json'),       prefix: 'anime/vivy-thumbnails',               id: uid },
+  violet: { name: 'Violet Evergarden',   jsonPath: path.join(root, 'src', 'data', 'violet-evergarden-videos.json'), prefix: 'anime/violet-evergarden-thumbnails',  id: uid },
+  kaiju:  { name: 'Kaiju No. 8',         jsonPath: path.join(root, 'src', 'data', 'kaiju-videos.json'),             prefix: 'anime/kaiju-no-8-thumbnails',         id: uid },
+  jjk:    { name: 'Jujutsu Kaisen',      jsonPath: path.join(root, 'src', 'data', 'jjk-videos.json'),               prefix: 'anime/jjk-thumbnails',                id: uid },
+  carole: { name: 'Carole & Tuesday',    jsonPath: path.join(root, 'src', 'data', 'carole-tuesday-videos.json'),    prefix: 'anime/carole-tuesday-thumbnails',     id: uid },
+  bunny:  { name: 'Bunny Girl Senpai',   jsonPath: path.join(root, 'src', 'data', 'bunny-girl-videos.json'),        prefix: 'anime/bunny-girl-thumbnails',         id: uid },
+  rent:   { name: 'Rent-a-Girlfriend',   jsonPath: path.join(root, 'src', 'data', 'rent-girlfriend-videos.json'),   prefix: 'anime/rent-girlfriend-thumbnails',    id: uid },
+  mha:    { name: 'My Hero Academia',    jsonPath: path.join(root, 'src', 'data', 'mha-videos.json'),               prefix: 'anime/mha-thumbnails',                id: uid },
+  love:   { name: 'Love Prism',          jsonPath: path.join(root, 'src', 'data', 'love-prism-videos.json'),        prefix: 'anime/love-prism-thumbnails',         id: uid },
 }
 
 const client = new S3Client({
