@@ -1821,7 +1821,7 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
                 </div>
 
                 {/* ── Sections (pleine largeur) ── */}
-                <div style={{ minWidth:0 }}>
+                <div style={{ minWidth:0, display:'flex', flexDirection:'column', gap:4 }}>
 
                   {/* Top du moment — numéroté */}
                   <section id="top-du-moment" style={{ marginBottom:10, scrollMarginTop:16 }}>
