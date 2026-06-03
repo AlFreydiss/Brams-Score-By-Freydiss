@@ -26,7 +26,11 @@
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S03E01-fr.vtt"
       }
     ],
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S03E01.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S03E01.jpg",
+    "op": [
+      34,
+      129
+    ]
   },
   {
     "episode": 2,
@@ -55,7 +59,15 @@
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S03E02-fr.vtt"
       }
     ],
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S03E02.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S03E02.jpg",
+    "op": [
+      32,
+      127
+    ],
+    "ed": [
+      1332,
+      1422
+    ]
   },
   {
     "episode": 3,
@@ -84,7 +96,15 @@
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S03E03-fr.vtt"
       }
     ],
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S03E03.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S03E03.jpg",
+    "op": [
+      0,
+      95
+    ],
+    "ed": [
+      1333,
+      1422
+    ]
   },
   {
     "episode": 4,
@@ -113,7 +133,15 @@
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S03E04-fr.vtt"
       }
     ],
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S03E04.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S03E04.jpg",
+    "op": [
+      113,
+      208
+    ],
+    "ed": [
+      1332,
+      1422
+    ]
   },
   {
     "episode": 5,
@@ -142,7 +170,15 @@
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S03E05-fr.vtt"
       }
     ],
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S03E05.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S03E05.jpg",
+    "op": [
+      33,
+      129
+    ],
+    "ed": [
+      1332,
+      1422
+    ]
   },
   {
     "episode": 6,
@@ -171,7 +207,15 @@
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S03E06-fr.vtt"
       }
     ],
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S03E06.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S03E06.jpg",
+    "op": [
+      192,
+      288
+    ],
+    "ed": [
+      1333,
+      1422
+    ]
   },
   {
     "episode": 7,
@@ -200,7 +244,15 @@
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S03E07-fr.vtt"
       }
     ],
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S03E07.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S03E07.jpg",
+    "op": [
+      0,
+      96
+    ],
+    "ed": [
+      1332,
+      1422
+    ]
   },
   {
     "episode": 8,
@@ -229,7 +281,15 @@
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S03E08-fr.vtt"
       }
     ],
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S03E08.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S03E08.jpg",
+    "op": [
+      64,
+      160
+    ],
+    "ed": [
+      1332,
+      1422
+    ]
   },
   {
     "episode": 9,
@@ -258,7 +318,15 @@
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S03E09-fr.vtt"
       }
     ],
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S03E09.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S03E09.jpg",
+    "op": [
+      94,
+      189
+    ],
+    "ed": [
+      1331,
+      1422
+    ]
   },
   {
     "episode": 10,
@@ -287,7 +355,15 @@
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S03E10-fr.vtt"
       }
     ],
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S03E10.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S03E10.jpg",
+    "op": [
+      45,
+      140
+    ],
+    "ed": [
+      1331,
+      1422
+    ]
   },
   {
     "episode": 11,
@@ -316,7 +392,11 @@
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S03E11-fr.vtt"
       }
     ],
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S03E11.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S03E11.jpg",
+    "op": [
+      1,
+      95
+    ]
   },
   {
     "episode": 12,
@@ -345,7 +425,11 @@
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S03E12-fr.vtt"
       }
     ],
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S03E12.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S03E12.jpg",
+    "op": [
+      180,
+      274
+    ]
   },
   {
     "episode": 13,
@@ -374,7 +458,15 @@
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S03E13-fr.vtt"
       }
     ],
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S03E13.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S03E13.jpg",
+    "op": [
+      100,
+      194
+    ],
+    "ed": [
+      1331,
+      1423
+    ]
   },
   {
     "episode": 14,
@@ -403,7 +495,15 @@
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S03E14-fr.vtt"
       }
     ],
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S03E14.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S03E14.jpg",
+    "op": [
+      0,
+      94
+    ],
+    "ed": [
+      1331,
+      1423
+    ]
   },
   {
     "episode": 15,
@@ -432,7 +532,15 @@
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S03E15-fr.vtt"
       }
     ],
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S03E15.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S03E15.jpg",
+    "op": [
+      0,
+      93
+    ],
+    "ed": [
+      1329,
+      1424
+    ]
   },
   {
     "episode": 16,
@@ -461,7 +569,15 @@
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S03E16-fr.vtt"
       }
     ],
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S03E16.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S03E16.jpg",
+    "op": [
+      130,
+      225
+    ],
+    "ed": [
+      1331,
+      1422
+    ]
   },
   {
     "episode": 17,
@@ -490,7 +606,15 @@
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S03E17-fr.vtt"
       }
     ],
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S03E17.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S03E17.jpg",
+    "op": [
+      40,
+      129
+    ],
+    "ed": [
+      1330,
+      1422
+    ]
   },
   {
     "episode": 18,
@@ -519,7 +643,11 @@
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S03E18-fr.vtt"
       }
     ],
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S03E18.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S03E18.jpg",
+    "ed": [
+      1330,
+      1422
+    ]
   },
   {
     "episode": 19,
@@ -548,7 +676,15 @@
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S03E19-fr.vtt"
       }
     ],
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S03E19.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S03E19.jpg",
+    "op": [
+      0,
+      89
+    ],
+    "ed": [
+      1220,
+      1299
+    ]
   },
   {
     "episode": 20,
@@ -577,7 +713,11 @@
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S03E20-fr.vtt"
       }
     ],
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S03E20.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S03E20.jpg",
+    "ed": [
+      1343,
+      1423
+    ]
   },
   {
     "episode": 21,
@@ -606,7 +746,15 @@
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S03E21-fr.vtt"
       }
     ],
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S03E21.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S03E21.jpg",
+    "op": [
+      36,
+      130
+    ],
+    "ed": [
+      1366,
+      1423
+    ]
   },
   {
     "episode": 22,
@@ -635,7 +783,11 @@
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S03E22-fr.vtt"
       }
     ],
-    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S03E22.jpg"
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S03E22.jpg",
+    "op": [
+      101,
+      196
+    ]
   },
   {
     "episode": 1,

@@ -32,6 +32,27 @@ const localSources = (dir, re) => fs.readdirSync(dir)
   .map(f => { const m = re.exec(f); return m ? { ep: epnum(m[1]), file: path.join(dir, f) } : null })
   .filter(Boolean)
 
+// Scan récursif de plusieurs racines → {ep, file}. keyFn(cheminComplet) renvoie la clé (ou null).
+function scanVideos(roots, keyFn) {
+  const out = []
+  const walk = p => {
+    let st; try { st = fs.statSync(p) } catch { return }
+    if (st.isDirectory()) { for (const c of fs.readdirSync(p)) walk(path.join(p, c)); return }
+    if (!/\.(mp4|mkv)$/i.test(p)) return
+    const ep = keyFn(p); if (ep) out.push({ ep, file: p })
+  }
+  for (const r of roots) walk(r)
+  // si plusieurs fichiers pour une même clé, garde le plus gros (évite les bonus/NC)
+  const best = {}
+  for (const o of out) { if (!best[o.ep] || fs.statSync(o.file).size > fs.statSync(best[o.ep].file).size) best[o.ep] = o }
+  return Object.values(best)
+}
+// clé S{saison}E{ep} depuis un chemin contenant SxxExx (filename ou dossier parent)
+const seKeyFromPath = p => { const m = /S(\d+)E(\d+)/i.exec(p); return m ? `S${+m[1]}E${+m[2]}` : null }
+// match JSON HLS (src .../SxxExxx/master...) → même clé S{s}E{e}
+const seMatch = v => { const m = /S(\d+)E(\d+)/i.exec(v.src || ''); return m ? `S${+m[1]}E${+m[2]}` : null }
+const AA = 'F:\\Brams-Score-By-Freydiss-new\\public\\anime'
+
 const JOBS = {
   aot: {
     json: path.join(root, 'src', 'data', 'aot-videos.json'),
@@ -59,6 +80,42 @@ const JOBS = {
       }
       return out
     },
+  },
+  rent: {
+    json: path.join(root, 'src', 'data', 'rent-girlfriend-videos.json'),
+    match: seMatch,
+    sources: () => scanVideos([path.join(AA, 'Kanojo, Okarishimasu')], seKeyFromPath),
+  },
+  love: {
+    json: path.join(root, 'src', 'data', 'love-prism-videos.json'),
+    match: seMatch,
+    sources: () => scanVideos([path.join(AA, 'Love Through A Prism S01 MULTi 1080p WEB AV1 E-AC-3 -Tsundere-Raws (NF)')], seKeyFromPath),
+  },
+  jjk: {
+    json: path.join(root, 'src', 'data', 'jjk-videos.json'),
+    match: seMatch,
+    sources: () => scanVideos([path.join(AA, 'Jujutsu Kaisen')], seKeyFromPath),
+  },
+  bunny: {
+    json: path.join(root, 'src', 'data', 'bunny-girl-videos.json'),
+    match: seMatch,
+    sources: () => scanVideos([
+      path.join(AA, 'Seishun Buta Yarou wa Bunny Girl Senpai no Yume wo Minai S01 (2018) VOSTFR 1080p 10bits BluRay x265 AAC -Punisher694'),
+      path.join(AA, 'Rascal.Does.Not.Dream.of.Bunny.Girl.Senpai.S02.MULTi.1080p.WEBRiP.x265-T3KASHi'),
+    ], seKeyFromPath),
+  },
+  mha: {
+    json: path.join(root, 'src', 'data', 'mha-videos.json'),
+    match: seMatch,
+    sources: () => scanVideos(
+      [1, 2, 3, 4, 5, 6].map(s => path.join(AA, `My Hero Academia S0${s} (${[null,2016,2017,2018,2019,2021,2022][s]}) MULTi 1080p 10bits BluRay x265 AAC${s <= 2 ? ' v2' : ''} -Punisher694`)),
+      seKeyFromPath),
+  },
+  aots3: {
+    json: path.join(root, 'src', 'data', 'aot-videos.json'),
+    match: v => { const m = /S03E(\d+)/i.exec(v.src || ''); return m ? `S3E${+m[1]}` : null },
+    sources: () => scanVideos([path.join(AA, "[sekkusu&ok] L'Attaque des titans S3 (Shingeki no Kyojin) - VOSTFR-VF [Multi] [1080p WEB-DL]")],
+      p => { const m = /-\s*(\d{1,2})\s/.exec(path.basename(p)); return m ? `S3E${+m[1]}` : null }),
   },
   // Violet : sources supprimées en local → on empreinte depuis les URLs R2 (épisodes TV only).
   violet: {
