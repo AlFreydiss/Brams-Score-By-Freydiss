@@ -645,7 +645,8 @@
     "arc": "Saison 4",
     "badge": "VOSTFR",
     "preferredAudioLang": "ja",
-    "progressKey": "s4-1"
+    "progressKey": "s4-1",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S04E01.jpg"
   },
   {
     "episode": 2,
@@ -655,7 +656,8 @@
     "arc": "Saison 4",
     "badge": "VOSTFR",
     "preferredAudioLang": "ja",
-    "progressKey": "s4-2"
+    "progressKey": "s4-2",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S04E02.jpg"
   },
   {
     "episode": 3,
@@ -665,7 +667,8 @@
     "arc": "Saison 4",
     "badge": "VOSTFR",
     "preferredAudioLang": "ja",
-    "progressKey": "s4-3"
+    "progressKey": "s4-3",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S04E03.jpg"
   },
   {
     "episode": 4,
@@ -675,7 +678,19 @@
     "arc": "Saison 4",
     "badge": "VOSTFR",
     "preferredAudioLang": "ja",
-    "progressKey": "s4-4"
+    "progressKey": "s4-4",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S04E04.jpg"
+  },
+  {
+    "episode": 5,
+    "title": "Saison 4 — Épisode 5",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S04E05.mp4",
+    "season": "S04",
+    "arc": "Saison 4",
+    "badge": "VOSTFR",
+    "preferredAudioLang": "ja",
+    "progressKey": "s4-5",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S04E05.jpg"
   },
   {
     "episode": 6,
@@ -685,7 +700,8 @@
     "arc": "Saison 4",
     "badge": "VOSTFR",
     "preferredAudioLang": "ja",
-    "progressKey": "s4-6"
+    "progressKey": "s4-6",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S04E06.jpg"
   },
   {
     "episode": 7,
@@ -695,7 +711,8 @@
     "arc": "Saison 4",
     "badge": "VOSTFR",
     "preferredAudioLang": "ja",
-    "progressKey": "s4-7"
+    "progressKey": "s4-7",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S04E07.jpg"
   },
   {
     "episode": 8,
@@ -705,7 +722,8 @@
     "arc": "Saison 4",
     "badge": "VOSTFR",
     "preferredAudioLang": "ja",
-    "progressKey": "s4-8"
+    "progressKey": "s4-8",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S04E08.jpg"
   },
   {
     "episode": 9,
@@ -715,7 +733,8 @@
     "arc": "Saison 4",
     "badge": "VOSTFR",
     "preferredAudioLang": "ja",
-    "progressKey": "s4-9"
+    "progressKey": "s4-9",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S04E09.jpg"
   },
   {
     "episode": 10,
@@ -725,7 +744,8 @@
     "arc": "Saison 4",
     "badge": "VOSTFR",
     "preferredAudioLang": "ja",
-    "progressKey": "s4-10"
+    "progressKey": "s4-10",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S04E10.jpg"
   },
   {
     "episode": 11,
@@ -735,7 +755,8 @@
     "arc": "Saison 4",
     "badge": "VOSTFR",
     "preferredAudioLang": "ja",
-    "progressKey": "s4-11"
+    "progressKey": "s4-11",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S04E11.jpg"
   },
   {
     "episode": 12,
@@ -745,7 +766,8 @@
     "arc": "Saison 4",
     "badge": "VOSTFR",
     "preferredAudioLang": "ja",
-    "progressKey": "s4-12"
+    "progressKey": "s4-12",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S04E12.jpg"
   },
   {
     "episode": 13,
@@ -755,7 +777,8 @@
     "arc": "Saison 4",
     "badge": "VOSTFR",
     "preferredAudioLang": "ja",
-    "progressKey": "s4-13"
+    "progressKey": "s4-13",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S04E13.jpg"
   },
   {
     "episode": 14,
@@ -765,7 +788,8 @@
     "arc": "Saison 4",
     "badge": "VOSTFR",
     "preferredAudioLang": "ja",
-    "progressKey": "s4-14"
+    "progressKey": "s4-14",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S04E14.jpg"
   },
   {
     "episode": 15,
@@ -775,7 +799,8 @@
     "arc": "Saison 4",
     "badge": "VOSTFR",
     "preferredAudioLang": "ja",
-    "progressKey": "s4-15"
+    "progressKey": "s4-15",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S04E15.jpg"
   },
   {
     "episode": 16,
@@ -785,6 +810,7 @@
     "arc": "Saison 4",
     "badge": "VOSTFR",
     "preferredAudioLang": "ja",
-    "progressKey": "s4-16"
+    "progressKey": "s4-16",
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot-thumbnails/S04E16.jpg"
   }
 ]
