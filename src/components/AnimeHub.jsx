@@ -557,6 +557,7 @@ function computeChapter(ns, all) {
 
 const AH_CSS = `
   @keyframes ahFadeUp  { from { opacity:0; transform:translateY(24px) } to { opacity:1; transform:none } }
+  @keyframes ahHeroFade { from { opacity:0; transform:scale(1.01) } to { opacity:1; transform:none } }
   @keyframes ahTwinkle { 0%,100% { opacity:.12 } 50% { opacity:.65 } }
   @keyframes ahScan    { 0% { top:-2px } 100% { top:100% } }
   @keyframes ahDrift   { 0%,100% { transform:translateY(0) } 50% { transform:translateY(-12px) } }
@@ -1273,8 +1274,10 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
   const [statusFilter, setStatusFilter] = useState('all') // all | fav | encours | termine | avoir | nouveautes
   const [sortBy, setSortBy] = useState('populaire')        // populaire | recent | az | note
   const [ratings, setRatings] = useState({})               // { id: { avg, count, mine } }
+  const [heroIdx, setHeroIdx] = useState(0)                // Hero "À la une" en rotation auto
 
   useEffect(() => { getAnimeRatings().then(setRatings) }, [])
+  useEffect(() => { const t = setInterval(() => setHeroIdx(i => i + 1), 6000); return () => clearInterval(t) }, [])
 
   // Note un anime (optimiste) puis resynchronise depuis le serveur.
   const rate = useCallback((id, value) => {
@@ -1593,12 +1596,13 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
 
           {/* ── Hero « À la une » façon Netflix (backdrop + synopsis + CTA) ── */}
           {(() => {
-            const feat = topWeekAnimes[0] || sortedAnimes[0]
+            const heroPicks = (topWeekAnimes.length ? topWeekAnimes : sortedAnimes).filter(a => a.coverImage).slice(0, 5)
+            const feat = heroPicks.length ? heroPicks[heroIdx % heroPicks.length] : (topWeekAnimes[0] || sortedAnimes[0])
             if (!feat) return null
             const fc = feat.color || '#a78bfa'
             return (
               <div style={{ maxWidth:1680, margin:'0 auto 18px', padding:'0 32px' }}>
-                <div style={{ position:'relative', borderRadius:24, overflow:'hidden', minHeight:330, display:'flex', alignItems:'stretch', border:'1px solid rgba(255,255,255,0.08)', boxShadow:'0 24px 70px rgba(0,0,0,0.5)' }}>
+                <div key={feat.id} style={{ position:'relative', borderRadius:24, overflow:'hidden', minHeight:330, display:'flex', alignItems:'stretch', border:'1px solid rgba(255,255,255,0.08)', boxShadow:'0 24px 70px rgba(0,0,0,0.5)', animation:'ahHeroFade .6s cubic-bezier(.23,1,.32,1)' }}>
                   {feat.coverImage && <img src={feat.coverImage} alt="" style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', objectPosition:'center 22%', filter:'brightness(0.5) saturate(1.05)', transform:'scale(1.08)' }} />}
                   <div style={{ position:'absolute', inset:0, background:`linear-gradient(90deg, rgba(8,9,14,0.97) 26%, rgba(8,9,14,0.55) 58%, rgba(8,9,14,0.82) 100%)` }} />
                   <div style={{ position:'absolute', inset:0, background:`radial-gradient(700px 300px at 12% 50%, ${fc}1f, transparent 70%)` }} />
@@ -1623,6 +1627,15 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
                       </button>
                     </div>
                   </div>
+                  {/* Pastilles de rotation */}
+                  {heroPicks.length > 1 && (
+                    <div style={{ position:'absolute', bottom:18, right:24, zIndex:3, display:'flex', gap:7 }}>
+                      {heroPicks.map((_, i) => (
+                        <button key={i} onClick={() => setHeroIdx(i)} aria-label={`À la une ${i + 1}`}
+                          style={{ width: (heroIdx % heroPicks.length) === i ? 24 : 8, height:8, borderRadius:999, border:'none', cursor:'pointer', padding:0, background: (heroIdx % heroPicks.length) === i ? fc : 'rgba(255,255,255,0.30)', transition:'all .3s cubic-bezier(.23,1,.32,1)' }} />
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             )
