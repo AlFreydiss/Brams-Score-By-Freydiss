@@ -134,11 +134,22 @@ function audioDuration(file) {
 }
 
 function fingerprint(file) {
+  // Sources R2 (URL) : on télécharge d'abord l'audio en local (reconnexion auto), car
+  // le streaming direct vers chromaprint casse sur les hoquets réseau (durée=0, flux coupé).
+  let local = file, tmpAudio = null
+  if (/^https?:\/\//i.test(file)) {
+    tmpAudio = path.join(TEMP, 'dl_' + Buffer.from(file).toString('hex').slice(-16) + '.m4a')
+    spawnSync('ffmpeg', ['-y', '-hide_banner', '-loglevel', 'error',
+      '-reconnect', '1', '-reconnect_streamed', '1', '-reconnect_delay_max', '5',
+      '-i', file, '-vn', '-ac', '1', '-c:a', 'aac', '-b:a', '64k', tmpAudio])
+    local = tmpAudio
+  }
   const out = path.join(TEMP, 'fp_' + Buffer.from(file).toString('hex').slice(-16) + '.bin')
-  spawnSync('ffmpeg', ['-y', '-hide_banner', '-loglevel', 'error', '-i', file, '-ac', '1', '-f', 'chromaprint', '-fp_format', 'raw', out])
+  spawnSync('ffmpeg', ['-y', '-hide_banner', '-loglevel', 'error', '-i', local, '-ac', '1', '-f', 'chromaprint', '-fp_format', 'raw', out])
   const buf = fs.readFileSync(out)
   const fp = new Int32Array(buf.buffer, buf.byteOffset, Math.floor(buf.length / 4))
-  const dur = audioDuration(file)
+  const dur = audioDuration(local)
+  if (tmpAudio) { try { fs.unlinkSync(tmpAudio) } catch {} }
   return { fp, itemDur: dur / fp.length, dur }
 }
 
