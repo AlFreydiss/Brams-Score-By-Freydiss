@@ -91,12 +91,14 @@ function buildRecommendations({ animes, ratings, favorites, feedback, seed }) {
   }
   const picks = head.slice(0, 6)
 
-  return picks.map(p => {
+  return picks.map((p, i) => {
     const g = p.shared[0] || (p.anime.genres || [])[0]
     let short, detailed
-    if (p.source) {
+    // On varie les raisons : par genre (varie selon chaque carte) en priorité,
+    // mention du titre-source en alternance pour éviter la répétition.
+    if (p.source && g && i % 2 === 1) {
       short = `Parce que tu as aimé ${p.source.title}`
-      detailed = `Partage ${p.shared.length > 1 ? 'les genres ' + p.shared.slice(0, 3).join(', ') : 'le genre ' + (p.shared[0] || g)} avec ${p.source.title}.` + (p.note ? ` Note communauté ${p.note.toFixed(1)}/10.` : '')
+      detailed = `Partage ${p.shared.length > 1 ? 'les genres ' + p.shared.slice(0, 3).join(', ') : 'le genre ' + g} avec ${p.source.title}.` + (p.note ? ` Note communauté ${p.note.toFixed(1)}/10.` : '')
     } else if (hasTaste && g) {
       short = `Pour les fans de ${g}`
       detailed = `Correspond à ton goût pour le ${g}.` + (p.note ? ` Plébiscité ${p.note.toFixed(1)}/10 par la commu.` : '')
