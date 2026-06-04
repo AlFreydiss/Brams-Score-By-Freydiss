@@ -65,6 +65,10 @@ export async function listFriendRequests() {
 
 // ── Conversations / messages ──────────────────────────────────────────────────
 export const getOrCreateDm     = (target)            => rpc('get_or_create_dm', { p_target: String(target) })
+export const createGroupConversation = (title, members) => rpc('create_group_conversation', { p_title: title, p_members: (members || []).map(String) })
+export const renameConversation = (conversationId, title) => rpc('rename_conversation', { p_conversation: conversationId, p_title: title })
+export const addGroupMembers   = (conversationId, members) => rpc('add_group_members', { p_conversation: conversationId, p_members: (members || []).map(String) })
+export const leaveConversation = (conversationId)    => rpc('leave_conversation', { p_conversation: conversationId })
 export const markConversationRead = (conversationId) => rpc('mark_conversation_read', { p_conversation: conversationId })
 export const sendMessageRpc    = (args)              => rpc('send_message', args)
 export const editMessage       = (messageId, content)=> rpc('edit_message', { p_message: messageId, p_content: content })

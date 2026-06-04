@@ -12,6 +12,7 @@ import {
   getOrCreateDm, blockUser, uploadAttachment, sendImageMessage,
   sendGifMessage, sendVoiceMessage, joinTyping,
   pinMessage, unpinMessage, listPinnedMessages, searchMessages,
+  createGroupConversation, leaveConversation,
 } from '../lib/social.js'
 import { btn, avatar, T } from './social/socialStyles.js'
 import GifPicker from './social/GifPicker.jsx'
@@ -105,12 +106,40 @@ function HeaderAction({ label, onClick, disabled, danger }) {
 }
 
 // ── Sidebar : liste conversations / amis / demandes ──────────────────────────
-function ConversationList({ conversations, friends, requests, activeId, tab, setTab, search, setSearch, loading, onSelect, onOpenFriend, onRespond, navigate, isMobile }) {
+function GroupAvatar({ members = [], size = 44 }) {
+  const pics = members.filter(m => m.avatar_url).slice(0, 2)
+  if (pics.length === 0) {
+    return <div style={{ width: size, height: size, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(155,108,255,0.18)', border: `1px solid ${T.border}`, fontSize: size * 0.42 }}>👥</div>
+  }
+  const s = size * 0.66
+  return (
+    <div style={{ width: size, height: size, position: 'relative', flexShrink: 0 }}>
+      {pics.map((m, i) => (
+        <img key={i} src={m.avatar_url} alt="" style={{ width: s, height: s, borderRadius: '50%', objectFit: 'cover', position: 'absolute', border: `2px solid ${T.bg || '#0b0c0e'}`,
+          top: i === 0 ? 0 : 'auto', left: i === 0 ? 0 : 'auto', bottom: i === 1 ? 0 : 'auto', right: i === 1 ? 0 : 'auto' }} />
+      ))}
+    </div>
+  )
+}
+
+function ConversationList({ conversations, friends, requests, activeId, tab, setTab, search, setSearch, loading, onSelect, onOpenFriend, onRespond, onCreateGroup, navigate, isMobile }) {
   const { isOnline } = useSocial()
+  const [groupMode, setGroupMode] = useState(false)
+  const [groupName, setGroupName] = useState('')
+  const [groupSel, setGroupSel]   = useState(() => new Set())
+  const [groupBusy, setGroupBusy] = useState(false)
+  const toggleSel = (id) => setGroupSel(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
+  const submitGroup = async () => {
+    if (groupSel.size < 1 || groupBusy) return
+    setGroupBusy(true)
+    await onCreateGroup(groupName, [...groupSel])
+    setGroupBusy(false); setGroupMode(false); setGroupName(''); setGroupSel(new Set())
+  }
+  const convName = (c) => c.is_group ? (c.title || 'Groupe') : (c.other_username || `Pirate #${String(c.other_id || '').slice(-5)}`)
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
     if (!q) return conversations
-    return conversations.filter(c => (c.other_username || '').toLowerCase().includes(q))
+    return conversations.filter(c => convName(c).toLowerCase().includes(q))
   }, [conversations, search])
 
   const unreadN = useMemo(() => conversations.filter(c => Number(c.unread) > 0).length, [conversations])
@@ -129,8 +158,12 @@ function ConversationList({ conversations, friends, requests, activeId, tab, set
       <div style={{ padding: '16px 16px 10px', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
           <span style={{ fontSize: 19, fontWeight: 800, color: T.text }}>Messages</span>
-          <button onClick={() => setTab('friends')} title="Nouveau DM"
-            style={{ ...btn('gold'), padding: '6px 12px', fontSize: 12 }}>＋ Nouveau</button>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <button onClick={() => { setTab('friends'); setGroupMode(true) }} title="Nouveau groupe"
+              style={{ ...btn('ghost'), background: T.violetSoft, border: `1px solid ${T.violet}55`, color: T.violet, padding: '6px 12px', fontSize: 12 }}>👥 Groupe</button>
+            <button onClick={() => { setTab('friends'); setGroupMode(false) }} title="Nouveau DM"
+              style={{ ...btn('gold'), padding: '6px 12px', fontSize: 12 }}>＋ Nouveau</button>
+          </div>
         </div>
         <input
           value={search} onChange={e => setSearch(e.target.value)}
@@ -169,11 +202,15 @@ function ConversationList({ conversations, friends, requests, activeId, tab, set
           const active = c.conversation_id === activeId
           return (
             <button key={c.conversation_id} onClick={() => onSelect(c.conversation_id)} style={convItemStyle(active)}>
-              <Avatar url={c.other_avatar} name={c.other_username} size={44} online={isOnline(c.other_id)} />
+              {c.is_group
+                ? <GroupAvatar members={c.members} size={44} />
+                : <Avatar url={c.other_avatar} name={c.other_username} size={44} online={isOnline(c.other_id)} />}
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center' }}>
-                  <span style={{ fontSize: 14, fontWeight: 700, color: T.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {c.other_username || `Pirate #${String(c.other_id || '').slice(-5)}`}
+                  <span style={{ fontSize: 14, fontWeight: 700, color: T.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    {c.is_group && <span style={{ fontSize: 11 }}>👥</span>}
+                    {convName(c)}
+                    {c.is_group && <span style={{ fontSize: 11, fontWeight: 600, color: T.textFaint }}>· {c.member_count}</span>}
                   </span>
                   <span style={{ fontSize: 10, color: T.textFaint, flexShrink: 0 }}>{c.last_message_at ? timeLabel(c.last_message_at) : ''}</span>
                 </div>
@@ -189,18 +226,47 @@ function ConversationList({ conversations, friends, requests, activeId, tab, set
         }))}
 
         {/* ── Amis ── */}
-        {!loading && tab === 'friends' && (friends.length === 0 ? (
-          <Empty icon="👥">Aucun ami pour l'instant.<br /><Link to="/amis" style={{ color: T.gold, textDecoration: 'none' }}>Trouver des membres</Link></Empty>
-        ) : friends.map(f => (
-          <button key={f.user_id} onClick={() => onOpenFriend(f.user_id)} style={convItemStyle(false)}>
-            <Avatar url={f.avatar_url} name={f.username} size={44} online={isOnline(f.user_id)} />
-            <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: T.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.username || `Pirate #${String(f.user_id).slice(-5)}`}</div>
-              <div style={{ fontSize: 12, color: T.textFaint }}>Envoyer un message</div>
+        {!loading && tab === 'friends' && (
+          <>
+            {/* Barre de bascule DM / Groupe */}
+            <div style={{ display: 'flex', gap: 6, padding: '2px 6px 8px' }}>
+              <button onClick={() => setGroupMode(false)} style={{ flex: 1, padding: '7px', borderRadius: 8, border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 700, background: !groupMode ? T.violetSoft : 'transparent', color: !groupMode ? T.violet : T.textDim }}>💬 Message</button>
+              <button onClick={() => setGroupMode(true)} style={{ flex: 1, padding: '7px', borderRadius: 8, border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 700, background: groupMode ? T.violetSoft : 'transparent', color: groupMode ? T.violet : T.textDim }}>👥 Nouveau groupe</button>
             </div>
-            <span style={{ color: T.gold, fontSize: 16 }}>💬</span>
-          </button>
-        )))}
+
+            {groupMode && (
+              <div style={{ padding: '0 6px 8px' }}>
+                <input value={groupName} onChange={e => setGroupName(e.target.value)} placeholder="Nom du groupe…" maxLength={60}
+                  style={{ width: '100%', boxSizing: 'border-box', padding: '9px 12px', borderRadius: 10, fontSize: 13, background: T.surface, border: `1px solid ${T.border}`, color: T.text, outline: 'none', fontFamily: 'inherit', marginBottom: 8 }} />
+                <button onClick={submitGroup} disabled={groupSel.size < 1 || groupBusy}
+                  style={{ ...btn('gold'), width: '100%', padding: '9px', fontSize: 13, opacity: (groupSel.size < 1 || groupBusy) ? 0.5 : 1, cursor: (groupSel.size < 1 || groupBusy) ? 'default' : 'pointer' }}>
+                  {groupBusy ? 'Création…' : `Créer le groupe${groupSel.size ? ` (${groupSel.size})` : ''}`}
+                </button>
+                <div style={{ fontSize: 11, color: T.textFaint, padding: '8px 4px 2px' }}>Sélectionne les membres :</div>
+              </div>
+            )}
+
+            {friends.length === 0 ? (
+              <Empty icon="👥">Aucun ami pour l'instant.<br /><Link to="/amis" style={{ color: T.gold, textDecoration: 'none' }}>Trouver des membres</Link></Empty>
+            ) : friends.map(f => {
+              const sel = groupSel.has(f.user_id)
+              return (
+                <button key={f.user_id}
+                  onClick={() => groupMode ? toggleSel(f.user_id) : onOpenFriend(f.user_id)}
+                  style={{ ...convItemStyle(sel) }}>
+                  <Avatar url={f.avatar_url} name={f.username} size={44} online={isOnline(f.user_id)} />
+                  <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: T.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.username || `Pirate #${String(f.user_id).slice(-5)}`}</div>
+                    <div style={{ fontSize: 12, color: T.textFaint }}>{groupMode ? (sel ? 'Sélectionné' : 'Toucher pour ajouter') : 'Envoyer un message'}</div>
+                  </div>
+                  {groupMode
+                    ? <span style={{ width: 22, height: 22, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, background: sel ? T.violet : 'transparent', color: sel ? '#fff' : 'transparent', border: `1.5px solid ${sel ? T.violet : T.border}` }}>✓</span>
+                    : <span style={{ color: T.gold, fontSize: 16 }}>💬</span>}
+                </button>
+              )
+            })}
+          </>
+        )}
 
         {/* ── Demandes ── */}
         {!loading && tab === 'requests' && (
@@ -257,7 +323,7 @@ function Empty({ icon, children }) {
 }
 
 // ── Bulle de message ─────────────────────────────────────────────────────────
-function MessageBubble({ msg, mine, grouped, onReact, onReply, onEdit, onDelete, onPin, onUnpin }) {
+function MessageBubble({ msg, mine, grouped, isGroup, onReact, onReply, onEdit, onDelete, onPin, onUnpin }) {
   const [menu, setMenu] = useState(false)
   const deleted = !!msg.deleted_at
   const pinned = !!msg.pinned_at
@@ -267,9 +333,26 @@ function MessageBubble({ msg, mine, grouped, onReact, onReply, onEdit, onDelete,
     return Object.entries(map)
   }, [msg.reactions])
 
+  // Message système (création/renommage/départ de groupe) → ligne centrée discrète
+  if (msg.type === 'system') {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', margin: '10px 0' }}>
+        <span style={{ fontSize: 11.5, color: T.textFaint, background: T.surface, border: `1px solid ${T.border}`, borderRadius: 999, padding: '4px 12px' }}>
+          {msg.sender_username ? `${msg.sender_username} ` : ''}{msg.content}
+        </span>
+      </div>
+    )
+  }
+
   return (
     <div id={`msg-${msg.id}`} style={{ display: 'flex', flexDirection: 'column', alignItems: mine ? 'flex-end' : 'flex-start', marginTop: grouped ? 2 : 12, scrollMarginTop: 80, borderRadius: 12 }}
       onMouseLeave={() => setMenu(false)}>
+      {/* Nom de l'expéditeur dans un groupe (messages des autres, en tête de bloc) */}
+      {isGroup && !mine && !grouped && (
+        <span style={{ fontSize: 11, fontWeight: 700, color: T.violet, padding: '0 6px 3px' }}>
+          {msg.sender_username || `Pirate #${String(msg.sender_id || '').slice(-5)}`}
+        </span>
+      )}
       {pinned && !deleted && <span style={{ fontSize: 10, color: T.gold, fontWeight: 700, padding: '0 6px 2px', display: 'flex', alignItems: 'center', gap: 3 }}>📌 Épinglé</span>}
       <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, maxWidth: '80%', flexDirection: mine ? 'row-reverse' : 'row' }}>
         <div style={{ position: 'relative' }} onMouseEnter={() => setMenu(true)}>
@@ -718,6 +801,10 @@ function ChatView({ conversationId, meta, onBack, isMobile, refreshList }) {
     if (!window.confirm(`Bloquer ${meta.other_username || 'cet utilisateur'} ?`)) return
     await blockUser(meta.other_id); setMenuOpen(false); navigate('/messages'); refreshList()
   }
+  async function handleLeaveGroup() {
+    if (!window.confirm('Quitter ce groupe ?')) return
+    await leaveConversation(conversationId); setMenuOpen(false); navigate('/messages'); refreshList()
+  }
 
   const rendered = useMemo(() => {
     const out = []; let lastDay = null, lastSender = null, lastTime = 0
@@ -736,30 +823,44 @@ function ChatView({ conversationId, meta, onBack, isMobile, refreshList }) {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderBottom: `1px solid ${T.border}`, flexShrink: 0, background: T.panel, backdropFilter: 'blur(8px)' }}>
         {isMobile && <button onClick={onBack} style={{ ...iconBtn, fontSize: 22 }}>‹</button>}
-        <Avatar url={meta?.other_avatar} name={meta?.other_username} size={40} online={isOnline(meta?.other_id)} />
+        {meta?.is_group
+          ? <GroupAvatar members={meta?.members} size={40} />
+          : <Avatar url={meta?.other_avatar} name={meta?.other_username} size={40} online={isOnline(meta?.other_id)} />}
         <div style={{ minWidth: 0, flex: 1 }}>
-          <Link to={meta?.other_id ? `/u/${meta.other_id}` : '#'} style={{ fontSize: 15, fontWeight: 700, color: T.text, textDecoration: 'none', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {meta?.other_username || 'Conversation'}
-          </Link>
-          <span style={{ fontSize: 11, color: typingName ? T.violet : (isOnline(meta?.other_id) ? T.online : T.textFaint) }}>
-            {typingName ? 'écrit…' : (isOnline(meta?.other_id) ? 'En ligne' : 'Hors ligne')}
+          {meta?.is_group ? (
+            <div style={{ fontSize: 15, fontWeight: 700, color: T.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              👥 {meta?.title || 'Groupe'}
+            </div>
+          ) : (
+            <Link to={meta?.other_id ? `/u/${meta.other_id}` : '#'} style={{ fontSize: 15, fontWeight: 700, color: T.text, textDecoration: 'none', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {meta?.other_username || 'Conversation'}
+            </Link>
+          )}
+          <span style={{ fontSize: 11, color: typingName ? T.violet : (meta?.is_group ? T.textFaint : (isOnline(meta?.other_id) ? T.online : T.textFaint)) }}>
+            {typingName ? 'écrit…' : meta?.is_group
+              ? `${meta?.member_count || (meta?.members?.length || 0)} membres${meta?.members?.length ? ' · ' + meta.members.map(m => m.username).filter(Boolean).slice(0, 3).join(', ') : ''}`
+              : (isOnline(meta?.other_id) ? 'En ligne' : 'Hors ligne')}
           </span>
         </div>
         <div style={{ display: 'flex', gap: 6, position: 'relative' }}>
           <HeaderAction label="🔍" onClick={() => setSearchOpen(o => !o)} />
-          <HeaderAction label="📞" onClick={() => meta?.other_id && startCall({ id: meta.other_id, name: meta.other_username, avatar: meta.other_avatar, conversationId }, 'audio')} />
-          <HeaderAction label="🎥" onClick={() => meta?.other_id && startCall({ id: meta.other_id, name: meta.other_username, avatar: meta.other_avatar, conversationId }, 'video')} />
+          {!meta?.is_group && <HeaderAction label="📞" onClick={() => meta?.other_id && startCall({ id: meta.other_id, name: meta.other_username, avatar: meta.other_avatar, conversationId }, 'audio')} />}
+          {!meta?.is_group && <HeaderAction label="🎥" onClick={() => meta?.other_id && startCall({ id: meta.other_id, name: meta.other_username, avatar: meta.other_avatar, conversationId }, 'video')} />}
           <span style={{ position: 'relative', display: 'inline-flex' }}>
             <HeaderAction label="📌" onClick={() => setPinnedOpen(o => !o)} />
             {pinned.length > 0 && <span style={{ position: 'absolute', top: -3, right: -3, minWidth: 15, height: 15, padding: '0 3px', borderRadius: 8, background: T.gold, color: '#0b0c0e', fontSize: 9.5, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>{pinned.length}</span>}
             {pinnedOpen && <PinnedPanel pinned={pinned} onJump={jumpToMessage} onUnpin={handleUnpin} onClose={() => setPinnedOpen(false)} />}
           </span>
-          {meta?.other_id && <HeaderAction label="👤" onClick={() => navigate(`/u/${meta.other_id}`)} />}
+          {!meta?.is_group && meta?.other_id && <HeaderAction label="👤" onClick={() => navigate(`/u/${meta.other_id}`)} />}
           <HeaderAction label="⋯" onClick={() => setMenuOpen(o => !o)} />
           {menuOpen && (
             <div style={{ position: 'absolute', top: 42, right: 0, zIndex: 20, background: '#16171d', border: `1px solid ${T.border}`, borderRadius: 10, padding: 4, minWidth: 160, boxShadow: '0 10px 30px rgba(0,0,0,.5)' }}>
-              {meta?.other_id && <button onClick={() => { navigate(`/u/${meta.other_id}`); setMenuOpen(false) }} style={menuItemStyle}>Voir le profil</button>}
-              <button onClick={handleBlock} style={{ ...menuItemStyle, color: T.red }}>Bloquer</button>
+              {meta?.is_group ? (
+                <button onClick={handleLeaveGroup} style={{ ...menuItemStyle, color: T.red }}>Quitter le groupe</button>
+              ) : (<>
+                {meta?.other_id && <button onClick={() => { navigate(`/u/${meta.other_id}`); setMenuOpen(false) }} style={menuItemStyle}>Voir le profil</button>}
+                <button onClick={handleBlock} style={{ ...menuItemStyle, color: T.red }}>Bloquer</button>
+              </>)}
             </div>
           )}
         </div>
@@ -818,7 +919,7 @@ function ChatView({ conversationId, meta, onBack, isMobile, refreshList }) {
             {hasMore && <div style={{ textAlign: 'center', padding: 8 }}><button onClick={loadOlder} style={{ ...btn('ghost'), fontSize: 12, padding: '5px 12px' }}>Charger plus</button></div>}
             {rendered.map(item => item.sep
               ? <div key={item.id} style={{ textAlign: 'center', margin: '16px 0 8px' }}><span style={{ fontSize: 11, color: T.textFaint, background: T.surface, padding: '4px 14px', borderRadius: 12, border: `1px solid ${T.border}` }}>{item.sep}</span></div>
-              : <MessageBubble key={item.id} msg={item.msg} mine={item.msg.sender_id === discordId} grouped={item.grouped} onReact={handleReact} onReply={setReplyTo} onEdit={(m) => { setEditing(m); setInput(m.content || '') }} onDelete={handleDelete} onPin={handlePin} onUnpin={handleUnpin} />)}
+              : <MessageBubble key={item.id} msg={item.msg} mine={item.msg.sender_id === discordId} grouped={item.grouped} isGroup={meta?.is_group} onReact={handleReact} onReply={setReplyTo} onEdit={(m) => { setEditing(m); setInput(m.content || '') }} onDelete={handleDelete} onPin={handlePin} onUnpin={handleUnpin} />)}
             {seenByPeer && messages.length > 0 && messages[messages.length - 1].sender_id === discordId && (
               <div style={{ textAlign: 'right', fontSize: 10, color: T.textFaint, padding: '3px 6px 0' }}>Vu ✓✓</div>
             )}
@@ -1008,6 +1109,11 @@ export default function MessagesPage() {
     const res = await getOrCreateDm(userId)
     if (res?.ok) { navigate(`/messages/${res.conversation_id}`); load() }
   }
+  async function createGroup(title, memberIds) {
+    const res = await createGroupConversation(title, memberIds)
+    if (res?.ok) { navigate(`/messages/${res.conversation_id}`); load() }
+    else if (res?.error) alert(res.error)
+  }
   async function respond(reqId, accept) { await respondFriendRequest(reqId, accept); await load(); refreshCounts() }
 
   const activeMeta = conversations.find(c => c.conversation_id === conversationId)
@@ -1031,7 +1137,7 @@ export default function MessagesPage() {
                 conversations={conversations} friends={friends} requests={requests}
                 activeId={conversationId} tab={tab} setTab={setTab} search={search} setSearch={setSearch}
                 loading={loading} onSelect={(id) => navigate(`/messages/${id}`)} onOpenFriend={openFriend}
-                onRespond={respond} navigate={navigate} isMobile={isMobile}
+                onRespond={respond} onCreateGroup={createGroup} navigate={navigate} isMobile={isMobile}
               />
             </div>
           )}
