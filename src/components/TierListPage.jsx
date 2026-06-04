@@ -972,8 +972,15 @@ export default function TierListPage() {
     loadSavedListsIDB().then(lists => setSavedLists(lists))
   }, [])
 
+  // Loading affiché UNIQUEMENT au 1er chargement. Les refresh suivants (changement
+  // d'onglet, publication, like…) sont silencieux : la liste reste à l'écran et se
+  // met à jour en place → plus de "Chargement…" clignotant ni de liste qui disparaît.
+  const tierLoadedOnce = useRef(false)
+  const refreshInflight = useRef(false)
   const refreshCommunity = useCallback(async () => {
-    setCommunityLoading(true)
+    if (refreshInflight.current) return
+    refreshInflight.current = true
+    if (!tierLoadedOnce.current) setCommunityLoading(true)
     try {
       const [community, mine] = await Promise.all([
         fetchCommunityTierLists(),
@@ -984,6 +991,8 @@ export default function TierListPage() {
     } catch (err) {
       setToast(err?.message || 'Communauté indisponible')
     } finally {
+      tierLoadedOnce.current = true
+      refreshInflight.current = false
       setCommunityLoading(false)
     }
   }, [])
