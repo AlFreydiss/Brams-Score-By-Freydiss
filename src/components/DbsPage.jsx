@@ -24,7 +24,7 @@ const TAGS = ['Action', 'Super-héros', 'Shōnen', 'Toei Animation', 'Tournoi du
 const AWARDS = [
   { icon: '🐉', label: 'Dragon Ball depuis 1986' },
   { icon: '🏆', label: 'Tournoi du Pouvoir' },
-  { icon: '⚡', label: '131 épisodes · VF + VO' },
+  { icon: '⚡', label: '131 épisodes · VF (Japonais ép. 1-59)' },
 ]
 
 function loadProgress() {
@@ -163,7 +163,7 @@ function InfoPanel({ watchedCount, total, lastWatchedIdx, onResume }) {
           <h2 style={{ margin:0, fontFamily:"'Pirata One',cursive", fontSize:24,fontWeight:900,color:'#fff',lineHeight:1.0,textShadow:'0 2px 20px rgba(0,0,0,.9)' }}>
             Dragon Ball Super
           </h2>
-          <div style={{ fontSize:11,color:'rgba(255,255,255,.4)',fontWeight:600,marginTop:3 }}>131 épisodes · VF + VO</div>
+          <div style={{ fontSize:11,color:'rgba(255,255,255,.4)',fontWeight:600,marginTop:3 }}>131 épisodes · VF (Japonais ép. 1-59)</div>
         </div>
       </div>
 
@@ -391,7 +391,7 @@ export default function DbsPage({ onClose }) {
                   <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:18,gap:12 }}>
                     <div>
                       <h3 style={{ margin:0,fontFamily:"'Pirata One',cursive",fontSize:22,fontWeight:900,color:'#fff',letterSpacing:'-.01em' }}>Épisodes · Dragon Ball Super</h3>
-                      <div style={{ fontSize:11,color:'rgba(255,255,255,.35)',fontWeight:600,marginTop:3 }}>131 épisodes · VF + Japonais · Sous-titres FR</div>
+                      <div style={{ fontSize:11,color:'rgba(255,255,255,.35)',fontWeight:600,marginTop:3 }}>131 épisodes · VF (Japonais ép. 1-59) · Sous-titres FR</div>
                     </div>
                   </div>
                   <div style={{ display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(190px,1fr))',gap:13 }}>
