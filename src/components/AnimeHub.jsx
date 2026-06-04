@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from 'react'
 import { ProgressRing } from './ProgressRing.jsx'
 import AIRecommendations from './AIRecommendations.jsx'
 
@@ -1277,6 +1277,7 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
   const [sortBy, setSortBy] = useState('populaire')        // populaire | recent | az | note
   const [ratings, setRatings] = useState({})               // { id: { avg, count, mine } }
   const [heroIdx, setHeroIdx] = useState(0)                // Hero "À la une" en rotation auto
+  const searchRef = useRef(null)                           // focus recherche via "/" ou Ctrl+K
 
   useEffect(() => { getAnimeRatings().then(setRatings) }, [])
   useEffect(() => { const t = setInterval(() => setHeroIdx(i => i + 1), 6000); return () => clearInterval(t) }, [])
@@ -1537,6 +1538,41 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
     [sortedAnimes]
   );
 
+  // Cible "Reprendre" — la série la plus avancée encore en cours
+  const resumeTarget = continueWatching[0] || null
+  const handleResume = useCallback(() => {
+    if (resumeTarget) handleClick(resumeTarget.id)
+  }, [resumeTarget])
+
+  // Stats live réelles (remplacent le faux "12.8k en ligne")
+  const watchedCount = useMemo(
+    () => allAnimesWithExtras.filter(a => a._video?.pct >= 100).length,
+    [allAnimesWithExtras]
+  )
+
+  // Raccourcis clavier cohérents avec la page Scans : Échap, "/" + Ctrl+K (recherche), r (reprendre)
+  useEffect(() => {
+    const fn = e => {
+      const tag = e.target.tagName
+      const inInput = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT'
+      if (e.key === 'Escape') {
+        if (inInput) { e.target.blur(); return }
+        if (genreMenuOpen) { setGenreMenuOpen(false); return }
+        if (query || selectedGenres.size || statusFilter !== 'all') { setQuery(''); setSelectedGenres(new Set()); setStatusFilter('all'); return }
+        onClose && onClose()
+        return
+      }
+      if ((e.key === 'k' || e.key === 'K') && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault(); searchRef.current?.focus(); return
+      }
+      if (inInput) return
+      if (e.key === '/') { e.preventDefault(); searchRef.current?.focus(); return }
+      if (e.key === 'r' || e.key === 'R') { handleResume(); return }
+    }
+    window.addEventListener('keydown', fn)
+    return () => window.removeEventListener('keydown', fn)
+  }, [genreMenuOpen, query, selectedGenres, statusFilter, onClose, handleResume])
+
   return (
     <div style={{
       position:'fixed', inset:0, zIndex:500, display:'flex', flexDirection:'column',
@@ -1551,29 +1587,56 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
         </Suspense>
       </div>
 
-      {/* ── Header compact sticky ── */}
+      {/* ── Header compact sticky — premium sobre (gold/violet, zéro rouge) ── */}
       <div style={{
-        flexShrink:0, padding:'0 24px', height:60,
-        display:'flex', alignItems:'center', justifyContent:'space-between',
-        background:'rgba(9,14,26,0.78)', backdropFilter:'blur(20px)',
-        borderBottom:'1px solid rgba(120,150,230,0.10)', zIndex:10, position:'relative',
+        flexShrink:0, padding:'0 24px', height:62,
+        display:'flex', alignItems:'center', justifyContent:'space-between', gap:16,
+        background:'linear-gradient(180deg, rgba(10,12,18,0.92), rgba(8,9,13,0.82))', backdropFilter:'blur(22px)',
+        borderBottom:'1px solid rgba(191,164,106,0.16)', zIndex:10, position:'relative',
       }}>
-        <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-          <div style={{ width:3, height:30, borderRadius:2, background:'linear-gradient(to bottom, #8b5cf6, #dc2626)' }} />
+        {/* Liseré or→violet ultra-fin en bas du header */}
+        <div style={{ position:'absolute', left:0, right:0, bottom:0, height:1, background:'linear-gradient(90deg, transparent, rgba(191,164,106,0.55), rgba(167,139,250,0.45), transparent)', pointerEvents:'none' }} />
+
+        <div style={{ display:'flex', alignItems:'center', gap:13, minWidth:0 }}>
+          <div style={{ width:3, height:32, borderRadius:2, background:'linear-gradient(to bottom, #BFA46A, #a78bfa)', boxShadow:'0 0 12px rgba(191,164,106,0.35)' }} />
           <div style={{ fontSize:22, animation:'ahDrift 6s ease-in-out infinite' }}>🎌</div>
-          <div>
+          <div style={{ minWidth:0 }}>
             <div style={{ fontFamily:"'Pirata One', cursive", fontWeight:900, fontSize:19, color:'#f4f4f5', letterSpacing:'-.01em', lineHeight:1 }}>Hub des Animés</div>
-            <div style={{ fontSize:10.5, color:'#9ca3af', marginTop:2, fontWeight:600, letterSpacing:'.03em' }}>
-              {sortedAnimes.length} séries disponibles <span style={{ color:'rgba(255,255,255,0.25)' }}>•</span> <span style={{ color:'#dc2626' }}>●</span> 12.8k en ligne
+            {/* Stats live réelles (premium) */}
+            <div style={{ display:'flex', alignItems:'center', gap:9, marginTop:3, fontSize:10.5, color:'#9ca3af', fontWeight:700, letterSpacing:'.02em', flexWrap:'wrap' }}>
+              <span><span style={{ color:'#BFA46A' }}>{sortedAnimes.length}</span> séries</span>
+              <span style={{ color:'rgba(255,255,255,0.18)' }}>•</span>
+              <span style={{ display:'inline-flex', alignItems:'center', gap:5 }}>
+                <span style={{ width:6, height:6, borderRadius:'50%', background:'#a78bfa', boxShadow:'0 0 8px #a78bfa', display:'inline-block', animation:'ahPulse 2.2s ease-in-out infinite' }} />
+                <span style={{ color:'#c4b5fd' }}>{continueWatching.length}</span> en cours
+              </span>
+              <span style={{ color:'rgba(255,255,255,0.18)' }}>•</span>
+              <span><span style={{ color:'#34d399' }}>{watchedCount}</span> vus</span>
+              <span style={{ color:'rgba(255,255,255,0.18)' }}>•</span>
+              <span><span style={{ color:'#f0abfc' }}>{favs.size}</span> favoris</span>
             </div>
           </div>
         </div>
-        <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+
+        <div style={{ display:'flex', gap:8, alignItems:'center', flexShrink:0 }}>
+          {/* Reprendre — n'apparaît que s'il y a une série en cours */}
+          {resumeTarget && (
+            <button
+              onClick={handleResume}
+              title={`Reprendre ${resumeTarget.title} (${resumeTarget._video.pct}%) · touche R`}
+              style={{ display:'flex', alignItems:'center', gap:7, background:'linear-gradient(135deg, rgba(191,164,106,0.18), rgba(167,139,250,0.16))', border:'1px solid rgba(191,164,106,0.40)', borderRadius:9, color:'#f4f0e6', cursor:'pointer', padding:'7px 13px', fontSize:12, fontWeight:800, transition:'all .18s', letterSpacing:'.01em', maxWidth:220 }}
+              onMouseEnter={e => { e.currentTarget.style.filter='brightness(1.18)'; e.currentTarget.style.borderColor='rgba(191,164,106,0.7)' }}
+              onMouseLeave={e => { e.currentTarget.style.filter='none'; e.currentTarget.style.borderColor='rgba(191,164,106,0.40)' }}
+            >
+              <span style={{ fontSize:11 }}>▶</span>
+              <span style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>Reprendre · {resumeTarget.title}</span>
+            </button>
+          )}
           <button
             onClick={() => onOpenMonUnivers && onOpenMonUnivers()}
-            style={{ display:'flex', alignItems:'center', gap:6, background:'rgba(220,38,38,0.12)', border:'1px solid rgba(220,38,38,0.30)', borderRadius:9, color:'#f87171', cursor:'pointer', padding:'7px 13px', fontSize:12, fontWeight:800, transition:'all .18s', letterSpacing:'.01em' }}
-            onMouseEnter={e => { e.currentTarget.style.background='rgba(220,38,38,0.22)'; e.currentTarget.style.color='#fff' }}
-            onMouseLeave={e => { e.currentTarget.style.background='rgba(220,38,38,0.12)'; e.currentTarget.style.color='#f87171' }}
+            style={{ display:'flex', alignItems:'center', gap:6, background:'rgba(167,139,250,0.10)', border:'1px solid rgba(167,139,250,0.30)', borderRadius:9, color:'#c4b5fd', cursor:'pointer', padding:'7px 13px', fontSize:12, fontWeight:800, transition:'all .18s', letterSpacing:'.01em' }}
+            onMouseEnter={e => { e.currentTarget.style.background='rgba(167,139,250,0.22)'; e.currentTarget.style.color='#fff' }}
+            onMouseLeave={e => { e.currentTarget.style.background='rgba(167,139,250,0.10)'; e.currentTarget.style.color='#c4b5fd' }}
           >
             🌌 Mon univers
           </button>
@@ -1683,11 +1746,12 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
             <div style={{ maxWidth:740, margin:'0 0 10px', position:'relative' }}>
               <span style={{ position:'absolute', left:16, top:'50%', transform:'translateY(-50%)', fontSize:17, color:'rgba(139,92,246,0.55)', pointerEvents:'none' }}>⌕</span>
               <input
+                ref={searchRef}
                 value={query}
                 onChange={event => setQuery(event.target.value)}
                 onFocus={() => setSearchFocus(true)}
                 onBlur={() => setSearchFocus(false)}
-                placeholder="Rechercher un titre, personnage, studio ou genre…"
+                placeholder="Rechercher un titre, personnage, studio ou genre…  ( / ou Ctrl+K )"
                 style={{
                   width:'100%', boxSizing:'border-box',
                   borderRadius:13, padding:'12px 44px 12px 42px',

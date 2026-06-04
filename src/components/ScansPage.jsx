@@ -152,7 +152,7 @@ function Sidebar({ open, onClose, progress, onJumpArc, chapters }) {
 
 // ── Card de chapitre ──────────────────────────────────────────────────────────
 
-function ChapterCard({ ch, hovered, onHover, onOpen, status, highlight, cardRef }) {
+function ChapterCard({ ch, hovered, onHover, onOpen, status, highlight, cardRef, onToggleRead }) {
   const isRead    = status === 'read'
   const isReading = status === 'reading'
 
@@ -175,12 +175,20 @@ function ChapterCard({ ch, hovered, onHover, onOpen, status, highlight, cardRef 
         animation: isReading ? 'readingPulse 2s ease-in-out infinite' : 'none',
       }}
     >
-      {/* Status badge */}
-      {isRead && (
-        <div style={{ position:'absolute', top:10, right:10, width:20, height:20, borderRadius:'50%', background:'rgba(52,211,153,0.2)', border:'1px solid rgba(52,211,153,0.5)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, color:'#34d399', fontWeight:700 }}>✓</div>
-      )}
+      {/* Toggle lu / non-lu sans ouvrir le chapitre */}
+      <span
+        role="button"
+        title={isRead ? 'Marquer comme non lu' : 'Marquer comme lu'}
+        onClick={e => { e.stopPropagation(); onToggleRead && onToggleRead() }}
+        style={{ position:'absolute', top:10, right:10, width:22, height:22, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:12, fontWeight:800, cursor:'pointer', zIndex:3,
+          background: isRead ? 'rgba(52,211,153,0.22)' : 'rgba(255,255,255,0.06)',
+          border: `1px solid ${isRead ? 'rgba(52,211,153,0.6)' : 'rgba(255,255,255,0.18)'}`,
+          color: isRead ? '#34d399' : 'rgba(255,255,255,0.45)', transition:'all 0.15s' }}
+        onMouseEnter={e => { if (!isRead) { e.currentTarget.style.background='rgba(52,211,153,0.12)'; e.currentTarget.style.borderColor='rgba(52,211,153,0.45)'; e.currentTarget.style.color='#34d399' } }}
+        onMouseLeave={e => { if (!isRead) { e.currentTarget.style.background='rgba(255,255,255,0.06)'; e.currentTarget.style.borderColor='rgba(255,255,255,0.18)'; e.currentTarget.style.color='rgba(255,255,255,0.45)' } }}
+      >{isRead ? '✓' : '+'}</span>
       {isReading && (
-        <div style={{ position:'absolute', top:10, right:10, fontSize:10, fontWeight:700, background:'rgba(224,82,74,0.15)', color:'var(--accent)', border:'1px solid rgba(224,82,74,0.4)', borderRadius:100, padding:'2px 8px' }}>En cours</div>
+        <div style={{ position:'absolute', top:10, left:10, fontSize:10, fontWeight:700, background:'rgba(224,82,74,0.15)', color:'var(--accent)', border:'1px solid rgba(224,82,74,0.4)', borderRadius:100, padding:'2px 8px' }}>En cours</div>
       )}
 
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
@@ -197,7 +205,7 @@ function ChapterCard({ ch, hovered, onHover, onOpen, status, highlight, cardRef 
 
 // ── Vue liste compacte ────────────────────────────────────────────────────────
 
-function ListRow({ ch, onOpen, status, highlight, cardRef }) {
+function ListRow({ ch, onOpen, status, highlight, cardRef, onToggleRead }) {
   const [hovered, setHovered] = useState(false)
   const isRead    = status === 'read'
   const isReading = status === 'reading'
@@ -224,8 +232,15 @@ function ListRow({ ch, onOpen, status, highlight, cardRef }) {
         </span>
         <span style={{ fontSize:12, color:'var(--muted)', marginLeft:10 }}>{ch.title}</span>
       </div>
-      {isRead    && <span style={{ fontSize:11, color:'#34d399', fontWeight:700, flexShrink:0 }}>✓ Lu</span>}
       {isReading && <span style={{ fontSize:11, color:'var(--accent)', fontWeight:700, flexShrink:0 }}>En cours</span>}
+      <button
+        onClick={e => { e.stopPropagation(); onToggleRead && onToggleRead() }}
+        title={isRead ? 'Marquer comme non lu' : 'Marquer comme lu'}
+        style={{ flexShrink:0, width:28, height:28, borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, fontWeight:800, cursor:'pointer', transition:'all 0.15s',
+          background: isRead ? 'rgba(52,211,153,0.18)' : 'rgba(255,255,255,0.05)',
+          border: `1px solid ${isRead ? 'rgba(52,211,153,0.5)' : 'rgba(255,255,255,0.12)'}`,
+          color: isRead ? '#34d399' : 'rgba(255,255,255,0.4)' }}
+      >{isRead ? '✓' : '+'}</button>
       <button
         onClick={e => { e.stopPropagation(); onOpen() }}
         style={{ flexShrink:0, padding:'5px 14px', borderRadius:8, border:'1px solid rgba(224,82,74,0.3)', background: hovered ? 'rgba(224,82,74,0.15)' : 'transparent', color:'var(--accent)', fontSize:12, fontWeight:700, cursor:'pointer', transition:'background 0.15s' }}
@@ -249,6 +264,7 @@ export default function ScansPage({ onClose }) {
   const [hovered,   setHovered]   = useState(null)
   const [reading,   setReading]   = useState(null)
   const [sidebar,   setSidebar]   = useState(false)
+  const [hideRead,  setHideRead]  = useState(false)
   const [progress,  setProgress]  = useState(loadProgress)
 
 
@@ -260,6 +276,17 @@ export default function ScansPage({ onClose }) {
   const markProgress = useCallback((chNum, status) => {
     setProgress(prev => {
       const next = { ...prev, [chNum]: status }
+      saveProgressLS(next)
+      return next
+    })
+  }, [])
+
+  // Basculer lu / non-lu sans ouvrir le chapitre (supprime la clé pour "non lu")
+  const toggleRead = useCallback((chNum) => {
+    setProgress(prev => {
+      const next = { ...prev }
+      if (next[chNum] === 'read') delete next[chNum]
+      else next[chNum] = 'read'
       saveProgressLS(next)
       return next
     })
@@ -280,6 +307,15 @@ export default function ScansPage({ onClose }) {
     markProgress(CHAPTERS[reading].num, 'read')
   }, [reading, markProgress])
 
+  // Chapitre aléatoire (parmi les non lus en priorité, sinon tous)
+  const handleRandom = useCallback(() => {
+    const unread = CHAPTERS.filter(c => progress[c.num] !== 'read')
+    const pool = unread.length ? unread : CHAPTERS
+    const ch = pool[Math.floor(Math.random() * pool.length)]
+    const idx = CHAPTERS.indexOf(ch)
+    if (idx !== -1) openChapter(idx)
+  }, [progress, openChapter])
+
   // Chapitres filtrés + triés
   const filtered = useMemo(() => {
     let result = CHAPTERS
@@ -287,8 +323,9 @@ export default function ScansPage({ onClose }) {
       const q = search.trim().toLowerCase()
       result = result.filter(c => String(c.num).includes(q) || (c.title || '').toLowerCase().includes(q))
     }
+    if (hideRead) result = result.filter(c => progress[c.num] !== 'read')
     return sort === 'desc' ? [...result].reverse() : result
-  }, [search, sort])
+  }, [search, sort, hideRead, progress])
 
   // Pagination
   const totalPages = perPage === Infinity ? 1 : Math.max(1, Math.ceil(filtered.length / perPage))
@@ -297,7 +334,7 @@ export default function ScansPage({ onClose }) {
     ? filtered
     : filtered.slice((safePage - 1) * perPage, safePage * perPage)
 
-  useEffect(() => { setPage(1) }, [search, sort, perPage])
+  useEffect(() => { setPage(1) }, [search, sort, perPage, hideRead])
 
 
   // Scroll vers un chapitre + highlight
@@ -345,15 +382,18 @@ export default function ScansPage({ onClose }) {
         if (reading === null) onClose()
         return
       }
+      if ((e.key === 'k' || e.key === 'K') && (e.ctrlKey || e.metaKey)) { e.preventDefault(); searchRef.current?.focus(); return }
       if (inInput) return
 
       if (e.key === '/') { e.preventDefault(); searchRef.current?.focus(); return }
+      if ((e.key === 'a' || e.key === 'A') && reading === null) { handleRandom(); return }
+      if ((e.key === 'h' || e.key === 'H') && reading === null) { setHideRead(v => !v); return }
       if (e.key === 'ArrowLeft'  && reading === null) { setPage(p => Math.max(1, p - 1)); return }
       if (e.key === 'ArrowRight' && reading === null) { setPage(p => Math.min(totalPages, p + 1)); return }
     }
     window.addEventListener('keydown', fn)
     return () => window.removeEventListener('keydown', fn)
-  }, [reading, sidebar, totalPages, onClose])
+  }, [reading, sidebar, totalPages, onClose, handleRandom])
 
   // Lock scroll
   useEffect(() => {
@@ -363,6 +403,7 @@ export default function ScansPage({ onClose }) {
 
   const readCount = useMemo(() =>
     CHAPTERS.filter(c => progress[c.num] === 'read').length, [progress])
+  const globalPct = CHAPTERS.length ? Math.round((readCount / CHAPTERS.length) * 100) : 0
 
   return (
     <>
@@ -405,6 +446,14 @@ export default function ScansPage({ onClose }) {
               <span style={{ width:6, height:6, borderRadius:'50%', background:'#34d399', display:'inline-block', animation:'pulse 2s infinite' }} />
               Arc en cours
             </span>
+          </div>
+
+          {/* Barre de progression globale de lecture */}
+          <div style={{ padding:'0 20px 10px', display:'flex', alignItems:'center', gap:10 }}>
+            <div style={{ flex:1, height:6, background:'rgba(255,255,255,0.07)', borderRadius:99, overflow:'hidden' }}>
+              <div style={{ height:'100%', width:`${globalPct}%`, borderRadius:99, background:'linear-gradient(90deg, #34d399, #6ee7b7)', boxShadow:'0 0 10px rgba(52,211,153,0.4)', transition:'width 0.4s cubic-bezier(.23,1,.32,1)' }} />
+            </div>
+            <span style={{ fontSize:11, fontWeight:800, color:'#34d399', flexShrink:0, minWidth:84, textAlign:'right' }}>{globalPct}% · {readCount}/{CHAPTERS.length}</span>
           </div>
 
           {/* Ligne 2 : barre sticky de contrôles */}
@@ -451,6 +500,19 @@ export default function ScansPage({ onClose }) {
                 title={`Reprendre au chapitre ${lastRead}`}
               >▶ Reprendre Ch.{lastRead}</button>
             )}
+
+            {/* Chapitre aléatoire */}
+            <button onClick={handleRandom} title="Ouvrir un chapitre au hasard (touche A)" style={{ height:36, padding:'0 12px', borderRadius:9, border:'1px solid rgba(167,139,250,0.35)', background:'rgba(167,139,250,0.10)', color:'#c4b5fd', fontSize:12, fontWeight:700, cursor:'pointer', flexShrink:0, transition:'background 0.15s', whiteSpace:'nowrap' }}
+              onMouseEnter={e => e.currentTarget.style.background='rgba(167,139,250,0.20)'}
+              onMouseLeave={e => e.currentTarget.style.background='rgba(167,139,250,0.10)'}
+            >🎲 Aléatoire</button>
+
+            {/* Masquer les chapitres lus */}
+            <button onClick={() => setHideRead(v => !v)} title="Masquer / afficher les chapitres déjà lus (touche H)" style={{ height:36, padding:'0 12px', borderRadius:9, fontSize:12, fontWeight:700, cursor:'pointer', flexShrink:0, transition:'all 0.15s', whiteSpace:'nowrap',
+                border:`1px solid ${hideRead ? 'rgba(52,211,153,0.5)' : 'var(--border)'}`,
+                background: hideRead ? 'rgba(52,211,153,0.15)' : 'rgba(255,255,255,0.06)',
+                color: hideRead ? '#34d399' : 'var(--muted)' }}
+            >{hideRead ? '🙈 Lus masqués' : '👁 Masquer lus'}</button>
 
             {/* Vue grille/liste */}
             <div style={{ display:'flex', background:'rgba(255,255,255,0.06)', borderRadius:9, overflow:'hidden', border:'1px solid var(--border)', flexShrink:0 }}>
@@ -511,6 +573,7 @@ export default function ScansPage({ onClose }) {
                     hovered={hovered === ch.num}
                     onHover={v => setHovered(v ? ch.num : null)}
                     onOpen={() => { const idx = CHAPTERS.indexOf(ch); openChapter(idx) }}
+                    onToggleRead={() => toggleRead(ch.num)}
                     status={progress[ch.num] || null}
                     highlight={highlight === ch.num}
                     cardRef={el => { cardRefs.current[ch.num] = el }}
@@ -524,6 +587,7 @@ export default function ScansPage({ onClose }) {
                     key={ch.num}
                     ch={ch}
                     onOpen={() => { const idx = CHAPTERS.indexOf(ch); openChapter(idx) }}
+                    onToggleRead={() => toggleRead(ch.num)}
                     status={progress[ch.num] || null}
                     highlight={highlight === ch.num}
                     cardRef={el => { cardRefs.current[ch.num] = el }}
@@ -546,7 +610,7 @@ export default function ScansPage({ onClose }) {
 
         {/* ── Raccourcis clavier hint ── */}
         <div style={{ flexShrink:0, borderTop:'1px solid var(--border)', padding:'8px 20px', background:'rgba(17,18,20,0.9)', display:'flex', gap:20, justifyContent:'center', flexWrap:'wrap' }}>
-          {[['/', 'Rechercher'], ['←→', 'Pages'], ['+/-', 'Zoom'], ['0', 'Reset zoom'], ['Échap', 'Retour']].map(([k, label]) => (
+          {[['/', 'Rechercher'], ['A', 'Aléatoire'], ['H', 'Masquer lus'], ['←→', 'Pages'], ['+/-', 'Zoom'], ['Échap', 'Retour']].map(([k, label]) => (
             <span key={k} style={{ fontSize:11, color:'var(--muted)' }}>
               <kbd style={{ background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.12)', borderRadius:4, padding:'1px 6px', fontSize:10, fontFamily:'monospace', color:'rgba(255,255,255,0.6)', marginRight:5 }}>{k}</kbd>
               {label}
