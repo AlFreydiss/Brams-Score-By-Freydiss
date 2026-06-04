@@ -221,69 +221,98 @@ export default function MonUniversPage({
   }
 
   return (
-    <div style={{ position:'fixed', inset:0, zIndex:600, background:'#07090e', display:'flex', flexDirection:'column', overflow:'hidden' }}>
+    <div style={{
+      position:'fixed', inset:0, zIndex:600, display:'flex', flexDirection:'column', overflow:'hidden',
+      background:'radial-gradient(900px 600px at 78% -8%, rgba(167,139,250,0.10), transparent 60%), radial-gradient(800px 560px at 12% 108%, rgba(191,164,106,0.09), transparent 60%), linear-gradient(180deg, #0a0b10 0%, #07080d 60%, #050609 100%)',
+    }}>
       <style>{`
         @keyframes muFadeUp { from {opacity:0; transform:translateY(18px)} to {opacity:1; transform:none} }
-        @keyframes muGlow { 0%,100%{text-shadow:0 0 12px rgba(224,82,74,.35)} 50%{text-shadow:0 0 28px rgba(224,82,74,.65)} }
+        @keyframes muGlow { 0%,100%{text-shadow:0 0 12px rgba(191,164,106,.30)} 50%{text-shadow:0 0 26px rgba(167,139,250,.55)} }
         @keyframes muDrift { 0%,100%{transform:translateY(0) rotate(-2deg)} 50%{transform:translateY(-6px) rotate(2deg)} }
-        .mu-card { transition: transform .18s cubic-bezier(.23,1,.32,1), box-shadow .18s, border-color .18s; }
-        .mu-card:hover { transform: translateY(-4px) scale(1.01); box-shadow: 0 18px 48px rgba(0,0,0,.45); }
-        .mu-stat { transition: transform .2s; }
-        .mu-stat:hover { transform: scale(1.02); }
+        @keyframes muShimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+        .mu-card { transition: transform .2s cubic-bezier(.23,1,.32,1), box-shadow .2s, border-color .2s; }
+        .mu-card:hover { transform: translateY(-5px) scale(1.012); box-shadow: 0 22px 56px rgba(0,0,0,.55); }
+        .mu-stat { transition: transform .2s, border-color .2s; }
+        .mu-stat:hover { transform: translateY(-2px); border-color: rgba(191,164,106,0.35) !important; }
       `}</style>
 
-      {/* Header */}
-      <div style={{ flexShrink:0, height:68, padding:'0 24px', display:'flex', alignItems:'center', justifyContent:'space-between', background:'rgba(7,9,14,0.96)', backdropFilter:'blur(20px)', borderBottom:'1px solid rgba(255,255,255,0.07)', zIndex:10 }}>
-        <div style={{ display:'flex', alignItems:'center', gap:14 }}>
+      {/* Header premium (gold/violet) */}
+      <div style={{ flexShrink:0, height:70, padding:'0 24px', display:'flex', alignItems:'center', justifyContent:'space-between', background:'linear-gradient(180deg, rgba(10,12,18,0.92), rgba(7,8,13,0.80))', backdropFilter:'blur(22px)', borderBottom:'1px solid rgba(191,164,106,0.16)', zIndex:10, position:'relative' }}>
+        <div style={{ position:'absolute', left:0, right:0, bottom:0, height:1, background:'linear-gradient(90deg, transparent, rgba(191,164,106,0.5), rgba(167,139,250,0.4), transparent)', pointerEvents:'none' }} />
+        <div style={{ display:'flex', alignItems:'center', gap:13 }}>
+          <div style={{ width:3, height:34, borderRadius:2, background:'linear-gradient(to bottom, #BFA46A, #a78bfa)', boxShadow:'0 0 12px rgba(191,164,106,0.35)' }} />
           <div style={{ fontSize:26, animation:'muDrift 5.5s ease-in-out infinite' }}>🌌</div>
           <div>
-            <div style={{ fontFamily:"'Pirata One', cursive", fontWeight:900, fontSize:22, color:'#fff', letterSpacing:'-.01em', lineHeight:1 }}>TON UNIVERS</div>
-            <div style={{ fontSize:11, color:'rgba(255,255,255,0.32)', fontWeight:600, letterSpacing:'.04em' }}>Suivi global • Power • Légende vivante</div>
+            <div style={{ fontFamily:"'Pirata One', cursive", fontWeight:900, fontSize:23, color:'#f4f1ea', letterSpacing:'-.01em', lineHeight:1, animation:'muGlow 6s ease-in-out infinite' }}>TON UNIVERS</div>
+            <div style={{ fontSize:10.5, color:'#9ca3af', fontWeight:700, letterSpacing:'.06em', marginTop:3, textTransform:'uppercase' }}>Suivi global · Power · Légende vivante</div>
           </div>
         </div>
         <div style={{ display:'flex', gap:10, alignItems:'center' }}>
-          <button onClick={onClose} style={{ padding:'8px 18px', borderRadius:10, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', color:'rgba(255,255,255,0.8)', fontWeight:700, fontSize:13, cursor:'pointer' }}>← Retour</button>
+          {/* Power moyen — badge premium */}
+          <div style={{ display:'flex', alignItems:'center', gap:9, padding:'7px 15px', borderRadius:12, background:'linear-gradient(135deg, rgba(191,164,106,0.12), rgba(167,139,250,0.10))', border:'1px solid rgba(191,164,106,0.28)' }}>
+            <span style={{ fontSize:9.5, fontWeight:800, letterSpacing:'.12em', color:'#BFA46A', textTransform:'uppercase' }}>Power moyen</span>
+            <span style={{ fontFamily:"'Pirata One', cursive", fontSize:20, fontWeight:900, color:'#fff', lineHeight:1 }}>{totals.avg}<span style={{ fontSize:11, color:'rgba(255,255,255,0.45)' }}>%</span></span>
+          </div>
+          <button onClick={onClose}
+            style={{ padding:'8px 18px', borderRadius:10, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', color:'#9ca3af', fontWeight:700, fontSize:13, cursor:'pointer', transition:'all .18s' }}
+            onMouseEnter={e => { e.currentTarget.style.background='rgba(255,255,255,0.1)'; e.currentTarget.style.color='#f4f4f5' }}
+            onMouseLeave={e => { e.currentTarget.style.background='rgba(255,255,255,0.05)'; e.currentTarget.style.color='#9ca3af' }}
+          >← Retour</button>
         </div>
       </div>
 
-      {/* Stats bar */}
-      <div style={{ flexShrink:0, padding:'14px 24px', background:'rgba(255,255,255,0.015)', borderBottom:'1px solid rgba(255,255,255,0.04)', display:'flex', gap:24, alignItems:'center', justifyContent:'center', flexWrap:'wrap' }}>
-        <div className="mu-stat" style={{ background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.06)', padding:'8px 16px', borderRadius:12, textAlign:'center', minWidth:92 }}>
-          <div style={{ fontSize:11, color:'rgba(255,255,255,0.35)', fontWeight:700 }}>ANIMES</div>
-          <div style={{ fontSize:22, fontWeight:900, color:'#fff' }}>{totals.animes}</div>
+      {/* Stats bar premium + barre de complétion globale */}
+      <div style={{ flexShrink:0, padding:'16px 24px 14px', borderBottom:'1px solid rgba(255,255,255,0.05)' }}>
+        <div style={{ maxWidth:1280, margin:'0 auto', display:'flex', gap:14, alignItems:'stretch', justifyContent:'center', flexWrap:'wrap' }}>
+          {[
+            { label:'Animes',        icon:'🎬', value:totals.animes,    sub:null,                       accent:'#BFA46A' },
+            { label:'Épisodes vus',  icon:'📺', value:totals.vWatched,  sub:`/ ${totals.vTotal}`,        accent:'#a78bfa' },
+            { label:'Chapitres lus', icon:'📖', value:totals.cRead,     sub:`/ ${totals.cTotal}`,        accent:'#7cc4e0' },
+            { label:'Complétion',    icon:'⚡', value:`${totals.avg}%`, sub:null,                        accent:'#34d399' },
+          ].map((s, i) => (
+            <div key={i} className="mu-stat" style={{ flex:'1 1 150px', maxWidth:220, background:'rgba(255,255,255,0.035)', border:'1px solid rgba(255,255,255,0.07)', padding:'12px 16px', borderRadius:14, display:'flex', alignItems:'center', gap:12 }}>
+              <div style={{ width:38, height:38, borderRadius:11, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, background:`${s.accent}1a`, border:`1px solid ${s.accent}33` }}>{s.icon}</div>
+              <div style={{ minWidth:0 }}>
+                <div style={{ fontSize:9.5, color:'rgba(255,255,255,0.42)', fontWeight:800, letterSpacing:'.08em', textTransform:'uppercase' }}>{s.label}</div>
+                <div style={{ fontSize:22, fontWeight:900, color:'#fff', lineHeight:1.1 }}>{s.value} {s.sub && <span style={{ fontSize:12, color:'rgba(255,255,255,0.4)', fontWeight:700 }}>{s.sub}</span>}</div>
+              </div>
+            </div>
+          ))}
         </div>
-        <div className="mu-stat" style={{ background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.06)', padding:'8px 16px', borderRadius:12, textAlign:'center', minWidth:92 }}>
-          <div style={{ fontSize:11, color:'rgba(255,255,255,0.35)', fontWeight:700 }}>ÉPISODES VUS</div>
-          <div style={{ fontSize:22, fontWeight:900, color:'#fff' }}>{totals.vWatched} <span style={{fontSize:12,opacity:.5}}>/ {totals.vTotal}</span></div>
-        </div>
-        <div className="mu-stat" style={{ background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.06)', padding:'8px 16px', borderRadius:12, textAlign:'center', minWidth:92 }}>
-          <div style={{ fontSize:11, color:'rgba(255,255,255,0.35)', fontWeight:700 }}>CHAPITRES LUS</div>
-          <div style={{ fontSize:22, fontWeight:900, color:'#fff' }}>{totals.cRead} <span style={{fontSize:12,opacity:.5}}>/ {totals.cTotal}</span></div>
-        </div>
-        <div className="mu-stat" style={{ background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.06)', padding:'8px 16px', borderRadius:12, textAlign:'center', minWidth:92 }}>
-          <div style={{ fontSize:11, color:'rgba(255,255,255,0.35)', fontWeight:700 }}>MOYENNE</div>
-          <div style={{ fontSize:22, fontWeight:900, color:'#fff' }}>{totals.avg}<span style={{fontSize:12,opacity:.5}}>%</span></div>
-        </div>
-        <div style={{ fontSize:12, color:'rgba(255,255,255,0.4)', maxWidth:260, lineHeight:1.4 }}>
-          Ton univers n’est pas une collection.<br />C’est une légende vivante que tu écris épisode après chapitre.
+        {/* Barre de complétion globale */}
+        <div style={{ maxWidth:1280, margin:'14px auto 0', display:'flex', alignItems:'center', gap:12 }}>
+          <span style={{ fontSize:10, fontWeight:800, letterSpacing:'.08em', color:'rgba(255,255,255,0.35)', textTransform:'uppercase', flexShrink:0 }}>Légende</span>
+          <div style={{ flex:1, height:7, borderRadius:99, background:'rgba(255,255,255,0.06)', overflow:'hidden' }}>
+            <div style={{ height:'100%', width:`${totals.avg}%`, borderRadius:99, background:'linear-gradient(90deg, #BFA46A, #a78bfa)', boxShadow:'0 0 12px rgba(167,139,250,0.4)', transition:'width .5s cubic-bezier(.23,1,.32,1)' }} />
+          </div>
+          <span style={{ fontSize:11, fontWeight:800, color:'#BFA46A', flexShrink:0, minWidth:38, textAlign:'right' }}>{totals.avg}%</span>
         </div>
       </div>
 
       {/* Controls */}
-      <div style={{ flexShrink:0, padding:'12px 24px 8px', display:'flex', gap:12, alignItems:'center', flexWrap:'wrap', background:'rgba(7,9,14,0.8)' }}>
-        <input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Rechercher un anime..." style={{ flex:1, minWidth:220, background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.08)', color:'#fff', padding:'9px 14px', borderRadius:10, fontSize:14 }} />
-        <select value={sort} onChange={e=>setSort(e.target.value)} style={{ background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.08)', color:'#fff', padding:'9px 12px', borderRadius:10, fontSize:13 }}>
-          <option value="power">Trier par Power Level</option>
-          <option value="video">Trier par % Vidéos</option>
-          <option value="chapter">Trier par % Chapitres</option>
-          <option value="name">Trier par Nom</option>
-        </select>
-        <div style={{ display:'flex', gap:4, background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:10, padding:3 }}>
-          {['all','done','low'].map(f => (
-            <button key={f} onClick={()=>setFilter(f)} style={{ padding:'6px 14px', borderRadius:8, fontSize:12, fontWeight:700, background: filter===f ? 'rgba(224,82,74,0.2)' : 'transparent', color: filter===f ? '#e0524a' : 'rgba(255,255,255,0.6)', border:'none', cursor:'pointer' }}>
-              {f==='all'?'Tous':f==='done'?'Terminés':'En retard'}
-            </button>
-          ))}
+      <div style={{ flexShrink:0, padding:'14px 24px 10px' }}>
+        <div style={{ maxWidth:1280, margin:'0 auto', display:'flex', gap:12, alignItems:'center', flexWrap:'wrap' }}>
+          <div style={{ position:'relative', flex:1, minWidth:220 }}>
+            <span style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', fontSize:15, color:'rgba(167,139,250,0.55)', pointerEvents:'none' }}>⌕</span>
+            <input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Rechercher un anime…" style={{ width:'100%', boxSizing:'border-box', background:'#10121a', border:'1px solid rgba(255,255,255,0.08)', color:'#fff', padding:'10px 14px 10px 38px', borderRadius:11, fontSize:14, outline:'none' }}
+              onFocus={e=>e.currentTarget.style.borderColor='rgba(167,139,250,0.45)'} onBlur={e=>e.currentTarget.style.borderColor='rgba(255,255,255,0.08)'} />
+          </div>
+          <select value={sort} onChange={e=>setSort(e.target.value)} style={{ background:'#10121a', border:'1px solid rgba(255,255,255,0.10)', color:'#fff', padding:'10px 12px', borderRadius:11, fontSize:13, cursor:'pointer', outline:'none' }}>
+            <option value="power">Trier par Power Level</option>
+            <option value="video">Trier par % Vidéos</option>
+            <option value="chapter">Trier par % Chapitres</option>
+            <option value="name">Trier par Nom</option>
+          </select>
+          <div style={{ display:'flex', gap:4, background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:11, padding:3 }}>
+            {['all','done','low'].map(f => {
+              const on = filter===f
+              return (
+                <button key={f} onClick={()=>setFilter(f)} style={{ padding:'7px 15px', borderRadius:8, fontSize:12, fontWeight:800, background: on ? 'rgba(167,139,250,0.2)' : 'transparent', color: on ? '#c4b5fd' : 'rgba(255,255,255,0.6)', border: on ? '1px solid rgba(167,139,250,0.45)' : '1px solid transparent', cursor:'pointer', transition:'all .15s' }}>
+                  {f==='all'?'Tous':f==='done'?'✓ Terminés':'⏳ En retard'}
+                </button>
+              )
+            })}
+          </div>
         </div>
       </div>
 
