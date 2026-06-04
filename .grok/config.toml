@@ -1,0 +1,9 @@
+[mcp_servers.ruflo]
+command = "ruflo"
+args = []
+enabled = true
+
+[mcp_servers.codex]
+command = "codex"
+args = ["mcp-server"]
+enabled = true
