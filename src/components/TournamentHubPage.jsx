@@ -29,8 +29,22 @@ const HUB_CSS = `
   /* Pétales de sakura qui tombent (chute + balancement + rotation) */
   @keyframes htFall { 0%{transform:translateY(-10vh) rotate(0deg);opacity:0} 8%{opacity:.95} 90%{opacity:.85} 100%{transform:translateY(110vh) rotate(420deg);opacity:0} }
   @keyframes htSway { 0%,100%{margin-left:-18px} 50%{margin-left:18px} }
+  @keyframes htBreathe { 0%,100%{opacity:.05} 50%{opacity:.10} }
   @media (prefers-reduced-motion: reduce){ [data-fx]{animation:none!important} }
 `
+
+// Motif de fleurs de sakura (data-URI SVG) — texture de fond discrète façon Undercover.
+const SAKURA_URI = `data:image/svg+xml,${encodeURIComponent(`
+<svg xmlns='http://www.w3.org/2000/svg' width='90' height='90' viewBox='0 0 80 80'>
+  <g fill='#f472b6' opacity='0.9'>
+    <ellipse cx='40' cy='22' rx='8' ry='15' transform='rotate(0 40 40)'/>
+    <ellipse cx='40' cy='22' rx='8' ry='15' transform='rotate(72 40 40)'/>
+    <ellipse cx='40' cy='22' rx='8' ry='15' transform='rotate(144 40 40)'/>
+    <ellipse cx='40' cy='22' rx='8' ry='15' transform='rotate(216 40 40)'/>
+    <ellipse cx='40' cy='22' rx='8' ry='15' transform='rotate(288 40 40)'/>
+    <circle cx='40' cy='40' r='5' fill='#fbcfe8'/>
+  </g>
+</svg>`)}`
 
 // ── Pétales de sakura / roses (fond façon Undercover) ──────────────────────
 function HTSakura() {
@@ -660,11 +674,14 @@ export default function TournamentHubPage() {
 
       {/* Fixed bg layers */}
       <div style={{ position: 'fixed', inset: 0, background: BG, zIndex: 0 }} />
-      {/* Halos roses/violets diffus (ambiance sakura) */}
+      {/* Halos roses/violets diffus (ambiance sakura) — plus présents */}
       <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', background: `
-        radial-gradient(1100px 620px at 82% -8%, rgba(236,72,153,.14), transparent 60%),
-        radial-gradient(900px 520px at 8% 6%, rgba(76,29,149,.12), transparent 62%),
-        radial-gradient(760px 760px at 50% 120%, rgba(219,39,119,.08), transparent 60%)` }} />
+        radial-gradient(1200px 700px at 80% -10%, rgba(236,72,153,.22), transparent 58%),
+        radial-gradient(1000px 600px at 6% 4%, rgba(124,58,237,.18), transparent 60%),
+        radial-gradient(820px 820px at 50% 122%, rgba(219,39,119,.14), transparent 60%),
+        linear-gradient(180deg, #120710 0%, #0a0a0b 62%, #110714 100%)` }} />
+      {/* Texture motif sakura discrète (respire) */}
+      <div data-fx aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', opacity: .07, backgroundImage: `url("${SAKURA_URI}")`, backgroundSize: '120px', animation: 'htBreathe 9s ease-in-out infinite' }} />
       <HTStars />
       <HTSakura />
       <HTScanLine />
