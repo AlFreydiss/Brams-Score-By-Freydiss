@@ -1082,7 +1082,7 @@ export default function MessagesPage() {
   const { conversationId } = useParams()
   const navigate = useNavigate()
   const { isAuthenticated } = useAuth()
-  const { refreshCounts } = useSocial()
+  const { refreshCounts, counts } = useSocial()
   const isMobile = useMediaQuery('(max-width: 768px)')
   const [conversations, setConversations] = useState([])
   const [friends, setFriends] = useState([])
@@ -1104,6 +1104,27 @@ export default function MessagesPage() {
     listFriendRequests().then(r => setRequests(r && typeof r === 'object' ? r : { incoming: [], outgoing: [] })).catch(() => {})
   }, [isAuthenticated])
   useEffect(() => { load() }, [load])
+
+  // ── Liste des conversations EN LIVE (plus besoin d'actualiser) ──
+  // Recharge juste les conversations (léger) sur : nouvelle notif (compteurs),
+  // retour sur l'onglet (focus/visibilité) et poll de secours toutes les 8s.
+  const refreshConversations = useCallback(() => {
+    if (!isAuthenticated || document.hidden) return
+    listConversations().then(c => setConversations(Array.isArray(c) ? c : [])).catch(() => {})
+  }, [isAuthenticated])
+  const countsSig = `${counts.messages}|${counts.notifications}`
+  useEffect(() => { refreshConversations() }, [countsSig, refreshConversations])
+  useEffect(() => {
+    const onVis = () => { if (!document.hidden) refreshConversations() }
+    window.addEventListener('focus', refreshConversations)
+    document.addEventListener('visibilitychange', onVis)
+    const id = setInterval(refreshConversations, 8000)
+    return () => {
+      window.removeEventListener('focus', refreshConversations)
+      document.removeEventListener('visibilitychange', onVis)
+      clearInterval(id)
+    }
+  }, [refreshConversations])
 
   async function openFriend(userId) {
     const res = await getOrCreateDm(userId)
