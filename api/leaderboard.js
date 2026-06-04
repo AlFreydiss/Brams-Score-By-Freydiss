@@ -22,7 +22,9 @@ function secondsInPeriod(sessions = [], days, joinTime, now) {
     const start = Number(session?.start || 0)
     const end = Number(session?.end || 0)
     if (!start || !end || end < cutoff) continue
-    total += Math.max(0, Math.min(end, now) - Math.max(start, cutoff))
+    // Même plafond anti-fantôme que le bot (16h/session) → le site reflète /top.
+    const dur = Math.min(end, now) - Math.max(start, cutoff)
+    total += Math.min(Math.max(0, dur), MAX_LIVE_SESSION)
   }
 
   // Session live en cours (join_time sans end). On plafonne à MAX_LIVE_SESSION :
