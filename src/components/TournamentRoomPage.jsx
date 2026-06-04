@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { ArrowRight, ClipboardList, Film, LockKeyhole, LogIn, Music2, Radio, Trophy, Users } from 'lucide-react'
+import { ArrowRight, ClipboardList, Film, LockKeyhole, LogIn, Music2, Radio, Trophy, Trash2, Users } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { TOURNAMENT_CONFIGS } from '../data/tournament-data.js'
 import { generateBracket, getCurrentMatch, advanceWinner, getWinner, getTournamentProgress } from '../lib/tournament.js'
@@ -13,6 +13,7 @@ import {
   createTournamentRoom, fetchTournamentRoom, joinTournamentRoom,
   fetchTournamentRoomPlayers, fetchTournamentRoomVotes, castTournamentVote,
   updateTournamentRoom, subscribeTournamentRoom, touchTournamentPlayer,
+  deleteTournamentRoom,
   fetchRecentTournamentRooms,
 } from '../lib/tournamentRooms.js'
 
@@ -627,7 +628,36 @@ export default function TournamentRoomPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(157,23,77,.15)', border: `1px solid ${PINK}55`, borderRadius: 10, padding: '8px 14px' }}>
             <span style={{ fontSize: 11, color: 'rgba(255,255,255,.5)' }}>CODE</span>
             <strong style={{ fontSize: 18, letterSpacing: '.2em', color: PINK_L }}>{code}</strong>
-            <button onClick={() => navigator.clipboard?.writeText(`${window.location.origin}/tournoi/salon?code=${code}`)}
+              {isHost && (
+                <button
+                  onClick={() => requestCloseTournamentRoom({
+                    isHost,
+                    code,
+                    hostUserId: ident.userId,
+                    setErr,
+                    setBusy,
+                    onClosed: leave,
+                  })}
+                  disabled={busy}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 7,
+                    padding: '9px 12px',
+                    borderRadius: 10,
+                    fontSize: 12,
+                    fontWeight: 800,
+                    cursor: busy ? 'wait' : 'pointer',
+                    color: 'rgba(255,190,190,.9)',
+                    border: '1px solid rgba(255,120,120,.26)',
+                    background: 'rgba(80,20,20,.22)',
+                    opacity: busy ? 0.6 : 1,
+                  }}
+                >
+                  <Trash2 size={14} /> Fermer
+                </button>
+              )}
+              <button onClick={() => navigator.clipboard?.writeText(`${window.location.origin}/tournoi/salon?code=${code}`)}
               style={{ ...btn('rgba(255,255,255,.08)'), padding: '4px 10px', fontSize: 11 }}>Copier le lien</button>
           </div>
           <div style={{ marginLeft: 'auto', fontSize: 13, color: 'rgba(255,255,255,.55)' }}>
@@ -1039,3 +1069,20 @@ function RoomSkeleton() {
   )
 }
 
+async function requestCloseTournamentRoom({ isHost, code, hostUserId, setErr, setBusy, onClosed }) {
+  if (!isHost || !code) return
+  const confirmed = window.confirm('Fermer ce salon ? Le tournoi, les votes et les joueurs seront supprimes pour tout le monde.')
+  if (!confirmed) return
+
+  setErr('')
+  setBusy(true)
+  const { error } = await deleteTournamentRoom(code, hostUserId)
+  setBusy(false)
+
+  if (error) {
+    setErr(`Fermeture impossible : ${error}`)
+    return
+  }
+
+  onClosed?.()
+}

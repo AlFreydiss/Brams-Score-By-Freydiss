@@ -119,3 +119,18 @@ export function subscribeTournamentRoom(code, onChange) {
     .subscribe()
   return () => { try { supabase.removeChannel(channel) } catch {} }
 }
+export async function deleteTournamentRoom(code, hostUserId) {
+  if (!supabase) return { error: 'Supabase non configure' }
+  if (!code || !hostUserId) return { error: 'Code ou hote manquant' }
+
+  const { data, error } = await supabase
+    .from('tournament_rooms')
+    .delete()
+    .eq('code', String(code).trim().toUpperCase())
+    .eq('host_user_id', String(hostUserId))
+    .select('code')
+
+  if (error) return { error: error.message }
+  if (!data?.length) return { error: 'Salon introuvable ou reserve a son hote' }
+  return { error: null }
+}
