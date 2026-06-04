@@ -729,10 +729,38 @@ function ItemPool({ items, allById, customItems, onAddCustom, onNotify, favorite
               </>}
               {addMode === 'file' && <>
                 <input ref={fileRef} type="file" accept="image/*" multiple onChange={handleFile} style={{ display:'none' }}/>
-                <button onClick={() => !uploading && fileRef.current?.click()} disabled={uploading}
-                  style={{ ...actionBtn, opacity: uploading ? 0.6 : 1, cursor: uploading ? 'wait' : 'pointer' }}>
-                  <Upload size={10}/> {uploading ? 'Upload…' : 'Choisir (plusieurs)'}
-                </button>
+                <div style={{
+                  width: '100%',
+                  display: 'flex',
+                  justifyContent: 'flex-end',
+                  paddingTop: 6,
+                  marginTop: 2,
+                  borderTop: `1px solid ${G.border}`,
+                }}>
+                  <button
+                    onClick={() => !uploading && fileRef.current?.click()}
+                    disabled={uploading}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6,
+                      minHeight: 30,
+                      padding: '0 12px',
+                      borderRadius: 8,
+                      border: '1px solid rgba(255,255,255,.10)',
+                      background: 'rgba(255,255,255,.035)',
+                      color: 'rgba(232,228,222,.62)',
+                      fontSize: 11.5,
+                      fontWeight: 750,
+                      letterSpacing: 0,
+                      opacity: uploading ? 0.55 : 1,
+                      cursor: uploading ? 'wait' : 'pointer',
+                    }}
+                  >
+                    <Upload size={10}/> {uploading ? 'Upload en cours...' : 'Choisir des images'}
+                  </button>
+                </div>
               </>}
             </div>
           </motion.div>
