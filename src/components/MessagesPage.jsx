@@ -1091,40 +1091,44 @@ export default function MessagesPage() {
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
 
+  const loadedOnce = useRef(false)   // le skeleton ne s'affiche qu'au 1er chargement
+  const convInflight = useRef(false) // évite les fetchs qui se chevauchent (anti-boucle)
+
+  // Récupère les conversations sans toucher au skeleton (refresh silencieux).
+  const refreshConversations = useCallback(async () => {
+    if (!isAuthenticated || convInflight.current) return
+    convInflight.current = true
+    try {
+      const c = await listConversations()
+      setConversations(Array.isArray(c) ? c : [])
+    } catch { /* rpc gère déjà timeout/erreur */ }
+    finally { convInflight.current = false; loadedOnce.current = true; setLoading(false) }
+  }, [isAuthenticated])
+
   const load = useCallback(async () => {
     if (!isAuthenticated) { setLoading(false); return }
-    setLoading(true)
-    // Conversations en priorité (contenu principal) → la sidebar s'affiche vite.
-    listConversations()
-      .then(c => setConversations(Array.isArray(c) ? c : []))
-      .catch(e => console.error('[messages] conversations', e))
-      .finally(() => setLoading(false))
+    if (!loadedOnce.current) setLoading(true)   // skeleton uniquement la 1re fois
+    refreshConversations()
     // Amis + demandes en arrière-plan (alimentent les autres onglets, non bloquant).
     listFriends().then(f => setFriends(Array.isArray(f) ? f : [])).catch(() => {})
     listFriendRequests().then(r => setRequests(r && typeof r === 'object' ? r : { incoming: [], outgoing: [] })).catch(() => {})
-  }, [isAuthenticated])
+  }, [isAuthenticated, refreshConversations])
   useEffect(() => { load() }, [load])
 
-  // ── Liste des conversations EN LIVE (plus besoin d'actualiser) ──
-  // Recharge juste les conversations (léger) sur : nouvelle notif (compteurs),
-  // retour sur l'onglet (focus/visibilité) et poll de secours toutes les 8s.
-  const refreshConversations = useCallback(() => {
-    if (!isAuthenticated || document.hidden) return
-    listConversations().then(c => setConversations(Array.isArray(c) ? c : [])).catch(() => {})
-  }, [isAuthenticated])
+  // ── Liste EN LIVE : refresh silencieux sur nouvelle notif, focus, et poll 10s ──
+  const onlyVisible = useCallback(() => { if (!document.hidden) refreshConversations() }, [refreshConversations])
   const countsSig = `${counts.messages}|${counts.notifications}`
-  useEffect(() => { refreshConversations() }, [countsSig, refreshConversations])
+  useEffect(() => { if (loadedOnce.current) refreshConversations() }, [countsSig, refreshConversations])
   useEffect(() => {
-    const onVis = () => { if (!document.hidden) refreshConversations() }
-    window.addEventListener('focus', refreshConversations)
-    document.addEventListener('visibilitychange', onVis)
-    const id = setInterval(refreshConversations, 8000)
+    window.addEventListener('focus', onlyVisible)
+    document.addEventListener('visibilitychange', onlyVisible)
+    const id = setInterval(onlyVisible, 10000)
     return () => {
-      window.removeEventListener('focus', refreshConversations)
-      document.removeEventListener('visibilitychange', onVis)
+      window.removeEventListener('focus', onlyVisible)
+      document.removeEventListener('visibilitychange', onlyVisible)
       clearInterval(id)
     }
-  }, [refreshConversations])
+  }, [onlyVisible])
 
   async function openFriend(userId) {
     const res = await getOrCreateDm(userId)

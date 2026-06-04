@@ -8,6 +8,8 @@ import { lazy } from 'react'
 // chunk échoue encore — propagation CDN — on n'entre pas en boucle infinie).
 
 const KEY = '__brams_chunk_reload_ts__'
+const CNT = '__brams_chunk_reload_count__'
+const MAX_RELOADS = 3   // au-delà, on arrête de recharger (deploy cassé) → l'erreur s'affiche
 
 export function shouldReloadForChunkError(err) {
   const msg = String(err?.message || err || '')
@@ -17,8 +19,11 @@ export function shouldReloadForChunkError(err) {
 export function tryChunkReload() {
   try {
     const last = Number(sessionStorage.getItem(KEY) || 0)
-    if (Date.now() - last > 10000) {
+    const count = Number(sessionStorage.getItem(CNT) || 0)
+    // Anti-boucle : pas plus d'un reload / 10s, et max MAX_RELOADS par session.
+    if (Date.now() - last > 10000 && count < MAX_RELOADS) {
       sessionStorage.setItem(KEY, String(Date.now()))
+      sessionStorage.setItem(CNT, String(count + 1))
       window.location.reload()
       return true
     }
