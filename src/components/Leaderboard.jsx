@@ -41,12 +41,14 @@ export default function Leaderboard() {
   useEffect(() => {
     let ignore = false
     let timer = null
-    const load = async () => {
-      setLoading(true)
+    // silent=true : refresh en arrière-plan → on NE remet PAS le loading (sinon la
+    // liste clignote/disparaît toutes les 15s) et on n'écrase pas avec un retour vide.
+    const load = async (silent = false) => {
+      if (!silent) setLoading(true)
       try {
         const data = await fetchLeaderboard(100, PERIOD_CONFIG[period]?.rpc || 'week')
         if (!ignore) {
-          setAllRows(data || [])
+          if (!silent || (data && data.length)) setAllRows(data || [])
           setLoading(false)
         }
       } catch {
@@ -56,13 +58,13 @@ export default function Leaderboard() {
     const loop = () => {
       clearTimeout(timer)
       timer = setTimeout(async () => {
-        await load()
+        await load(true)
         loop()
       }, document.hidden ? 30000 : 15000)
     }
     load()
     loop()
-    const onFocus = () => { if (!document.hidden) load() }
+    const onFocus = () => { if (!document.hidden) load(true) }
     window.addEventListener('focus', onFocus)
     document.addEventListener('visibilitychange', onFocus)
     return () => {
