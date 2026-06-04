@@ -1651,7 +1651,7 @@ option { background: #100a04; }
   top: 0;
   left: 0;
   right: 0;
-  z-index: 200;
+  z-index: 900;
   pointer-events: none;
 }
 .nav-shell-premium {

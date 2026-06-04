@@ -95,9 +95,9 @@ function Sidebar({ open, onClose, progress, onJumpArc, chapters }) {
 
   return (
     <>
-      {open && <div onClick={onClose} style={{ position:'fixed', inset:0, zIndex:510, background:'rgba(0,0,0,0.5)' }} />}
+      {open && <div onClick={onClose} style={{ position:'fixed', left:0, right:0, top:76, bottom:0, zIndex:130, background:'rgba(0,0,0,0.5)' }} />}
       <div style={{
-        position:'fixed', left:0, top:0, bottom:0, width:260, zIndex:520,
+        position:'fixed', left:0, top:76, bottom:0, width:260, zIndex:140,
         background:'rgba(14,14,16,0.98)', backdropFilter:'blur(20px)',
         borderRight:'1px solid var(--border)',
         display:'flex', flexDirection:'column',
@@ -421,7 +421,7 @@ export default function ScansPage({ onClose }) {
         }
       `}</style>
 
-      <div style={{ position:'fixed', inset:0, zIndex:500, background:'var(--bg)', display:'flex', flexDirection:'column', animation:'fadeIn 0.18s ease-out' }}>
+      <div style={{ position:'fixed', left:0, right:0, top:76, bottom:0, zIndex:100, background:'var(--bg)', display:'flex', flexDirection:'column', animation:'fadeIn 0.18s ease-out' }}>
 
         {/* ── Sidebar ── */}
         <Sidebar open={sidebar} onClose={() => setSidebar(false)} progress={progress} onJumpArc={handleJumpArc} chapters={CHAPTERS} />

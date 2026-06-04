@@ -1581,7 +1581,7 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
 
   return (
     <div style={{
-      position:'fixed', inset:0, zIndex:500, display:'flex', flexDirection:'column',
+      position:'fixed', left:0, right:0, top:76, bottom:0, zIndex:100, display:'flex', flexDirection:'column',
       background:'radial-gradient(1100px 820px at 72% 82%, rgba(46,96,179,0.22), transparent 60%), radial-gradient(820px 620px at 28% -5%, rgba(34,54,120,0.20), transparent 55%), linear-gradient(180deg, #0a0f1c 0%, #070a13 60%, #05070f 100%)',
     }}>
       <style>{AH_CSS}</style>
@@ -1604,6 +1604,14 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
         <div style={{ position:'absolute', left:0, right:0, bottom:0, height:1, background:'linear-gradient(90deg, transparent, rgba(191,164,106,0.55), rgba(167,139,250,0.45), transparent)', pointerEvents:'none' }} />
 
         <div style={{ display:'flex', alignItems:'center', gap:13, minWidth:0 }}>
+          <button
+            onClick={onClose}
+            style={{ display:'flex', alignItems:'center', gap:7, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.10)', borderRadius:9, color:'#9ca3af', cursor:'pointer', padding:'7px 15px', fontSize:12.5, fontWeight:700, transition:'all .18s', flexShrink:0 }}
+            onMouseEnter={e => { e.currentTarget.style.background='rgba(255,255,255,0.10)'; e.currentTarget.style.color='#f4f4f5' }}
+            onMouseLeave={e => { e.currentTarget.style.background='rgba(255,255,255,0.05)'; e.currentTarget.style.color='#9ca3af' }}
+          >
+            ← Retour
+          </button>
           <div style={{ width:3, height:32, borderRadius:2, background:'linear-gradient(to bottom, #BFA46A, #a78bfa)', boxShadow:'0 0 12px rgba(191,164,106,0.35)' }} />
           <div style={{ fontSize:22, animation:'ahDrift 6s ease-in-out infinite' }}>🎌</div>
           <div style={{ minWidth:0 }}>
@@ -1645,14 +1653,6 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
             onMouseLeave={e => { e.currentTarget.style.background='rgba(167,139,250,0.10)'; e.currentTarget.style.color='#c4b5fd' }}
           >
             🌌 Mon univers
-          </button>
-          <button
-            onClick={onClose}
-            style={{ display:'flex', alignItems:'center', gap:7, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.10)', borderRadius:9, color:'#9ca3af', cursor:'pointer', padding:'7px 15px', fontSize:12.5, fontWeight:700, transition:'all .18s' }}
-            onMouseEnter={e => { e.currentTarget.style.background='rgba(255,255,255,0.10)'; e.currentTarget.style.color='#f4f4f5' }}
-            onMouseLeave={e => { e.currentTarget.style.background='rgba(255,255,255,0.05)'; e.currentTarget.style.color='#9ca3af' }}
-          >
-            ← Retour
           </button>
         </div>
       </div>

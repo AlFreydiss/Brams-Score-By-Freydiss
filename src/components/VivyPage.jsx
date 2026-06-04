@@ -261,7 +261,7 @@ export default function VivyPage({ onClose }) {
     <>
       <style>{CSS}</style>
       <div style={{
-        position:'fixed',inset:0,zIndex:500,
+        position:'fixed',left:0,right:0,top:76,bottom:0,zIndex:500,
         background:'radial-gradient(circle at 18% 12%,rgba(0,180,220,.10),transparent 32rem),radial-gradient(circle at 84% 80%,rgba(0,120,160,.08),transparent 28rem),linear-gradient(135deg,#060e1a 0%,#0a1118 55%,#060c14 100%)',
         display:'flex',flexDirection:'column',
       }}>

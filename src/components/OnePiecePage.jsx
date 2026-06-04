@@ -263,7 +263,7 @@ export default function OnePiecePage({ onClose }) {
   return (
     <>
       <style>{CSS}</style>
-      <div style={{ position:'fixed',inset:0,zIndex:500,background:'radial-gradient(circle at 18% 12%,rgba(224,82,74,.10),transparent 32rem),radial-gradient(circle at 84% 80%,rgba(180,40,30,.07),transparent 28rem),linear-gradient(135deg,#100604 0%,#0e0a08 55%,#0a0604 100%)',display:'flex',flexDirection:'column' }}>
+      <div style={{ position:'fixed',left:0,right:0,top:76,bottom:0,zIndex:500,background:'radial-gradient(circle at 18% 12%,rgba(224,82,74,.10),transparent 32rem),radial-gradient(circle at 84% 80%,rgba(180,40,30,.07),transparent 28rem),linear-gradient(135deg,#100604 0%,#0e0a08 55%,#0a0604 100%)',display:'flex',flexDirection:'column' }}>
         <AnimeBackdrop motifs={ANIME_MOTIFS.onepiece} color={COLOR} color2={COLOR2} />
         {/* Navbar */}
         <div className="op-header" style={{ flexShrink:0,height:62,padding:'0 24px',display:'flex',alignItems:'center',justifyContent:'space-between',background:'rgba(16,6,4,.96)',backdropFilter:'blur(24px)',borderBottom:'1px solid rgba(224,82,74,.10)',zIndex:10,position:'relative' }}>

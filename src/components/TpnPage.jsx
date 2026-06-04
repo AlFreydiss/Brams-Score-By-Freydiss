@@ -169,7 +169,7 @@ export default function TpnPage({ onClose }) {
   return (
     <>
       <style>{CSS}</style>
-      <div style={{ position: 'fixed', inset: 0, zIndex: 500, background: 'radial-gradient(circle at 18% 12%,rgba(108,92,231,.10),transparent 32rem),radial-gradient(circle at 84% 80%,rgba(80,60,170,.08),transparent 28rem),linear-gradient(135deg,#0e0a1a 0%,#100c1c 55%,#0a0814 100%)', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ position: 'fixed', left: 0, right: 0, top: 76, bottom: 0, zIndex: 500, background: 'radial-gradient(circle at 18% 12%,rgba(108,92,231,.10),transparent 32rem),radial-gradient(circle at 84% 80%,rgba(80,60,170,.08),transparent 28rem),linear-gradient(135deg,#0e0a1a 0%,#100c1c 55%,#0a0814 100%)', display: 'flex', flexDirection: 'column' }}>
         <AnimeBackdrop motifs={ANIME_MOTIFS.tpn} color={COLOR} color2={COLOR2} />
         <div style={{ flexShrink: 0, height: 62, padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(14,10,26,.96)', backdropFilter: 'blur(24px)', borderBottom: '1px solid rgba(108,92,231,.10)', zIndex: 10, position: 'relative' }}>
           <button onClick={playerIdx !== null ? () => setPlayerIdx(null) : onClose} style={{ display: 'flex', alignItems: 'center', gap: 7, background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.09)', borderRadius: 10, color: 'rgba(255,255,255,.72)', cursor: 'pointer', padding: '8px 16px', fontSize: 12.5, fontWeight: 800, fontFamily: 'var(--body)' }}>← {playerIdx !== null ? 'Épisodes' : 'Retour'}</button>

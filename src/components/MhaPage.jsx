@@ -297,7 +297,7 @@ export default function MhaPage({ onClose }) {
     <>
       <style>{CSS}</style>
       <div style={{
-        position:'fixed',inset:0,zIndex:500,
+        position:'fixed',left:0,right:0,top:76,bottom:0,zIndex:500,
         background:'radial-gradient(circle at 16% 12%,rgba(20,80,180,.10),transparent 30rem),radial-gradient(circle at 84% 82%,rgba(10,50,140,.08),transparent 26rem),linear-gradient(135deg,#06080e 0%,#080b12 55%,#040610 100%)',
         display:'flex',flexDirection:'column',
       }}>

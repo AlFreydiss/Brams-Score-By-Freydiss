@@ -702,7 +702,10 @@ export default function GenericMangaPage({ chaptersData, videosData, color, name
       )}
       <div style={{
         position: 'fixed',
-        inset: 0,
+        left: 0,
+        right: 0,
+        top: 76,
+        bottom: 0,
         zIndex: 500,
         background: usesEpisodeLayout
           ? 'radial-gradient(circle at 18% 8%, rgba(108,92,231,0.18), transparent 34rem), radial-gradient(circle at 86% 22%, rgba(20,83,45,0.16), transparent 30rem), linear-gradient(135deg, #111315 0%, #17191d 48%, #111214 100%)'

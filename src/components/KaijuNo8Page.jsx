@@ -268,7 +268,7 @@ export default function KaijuNo8Page({ onClose }) {
     <>
       <style>{CSS}</style>
       <div style={{
-        position:'fixed',inset:0,zIndex:500,
+        position:'fixed',left:0,right:0,top:76,bottom:0,zIndex:500,
         background:'radial-gradient(circle at 15% 10%,rgba(0,150,180,.10),transparent 30rem),radial-gradient(circle at 85% 82%,rgba(0,100,130,.08),transparent 26rem),linear-gradient(135deg,#050e14 0%,#080f14 55%,#040b10 100%)',
         display:'flex',flexDirection:'column',
       }}>

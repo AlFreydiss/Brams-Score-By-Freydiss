@@ -17,7 +17,7 @@ const NAV_LINKS = [
   { label: '🕵️ Undercover',   href: '/undercover',  action: null,           gated: false, isRoute: true  },
   { label: '🔮 Akinator',    href: '/akinator',    action: null,           gated: false, isRoute: true  },
   { label: 'Encyclopédie',    href: '#',            action: 'encyclopedie', gated: false, isRoute: false },
-  { label: 'Animés & Scans',  href: '#',           action: 'anime-hub',    gated: true,  isRoute: false },
+  { label: '🍣 Animés & Scans', href: '#',          action: 'anime-hub',    gated: true,  isRoute: false },
 ]
 
 function openAnimeHub(event) {
@@ -202,7 +202,6 @@ function UserMenu({ displayName, avatarUrl, discordId, berryCount, onSignOut }) 
             { label: '⚔ Mon Profil',  path: discordId ? `/u/${discordId}` : null },
             { label: '💬 Messages',    path: '/messages', badge: counts.messages },
             { label: '👥 Amis',        path: '/amis',     badge: counts.friend_requests },
-            { label: 'Boutique',      path: '/boutique'  },
             { label: 'Staff Panel',   path: '/staff'     },
           ].filter(item => item.path || item.action).map((item) => (
             <button

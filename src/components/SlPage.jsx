@@ -211,7 +211,7 @@ export default function SlPage({ onClose }) {
   return (
     <>
       <style>{CSS}</style>
-      <div style={{ position:'fixed',inset:0,zIndex:500, background:'radial-gradient(circle at 18% 12%,rgba(25,118,210,.09),transparent 32rem),radial-gradient(circle at 84% 80%,rgba(96,165,250,.07),transparent 28rem),linear-gradient(135deg,#0e0a1a 0%,#100c1c 55%,#0a0814 100%)', display:'flex',flexDirection:'column' }}>
+      <div style={{ position:'fixed',left:0,right:0,top:76,bottom:0,zIndex:500, background:'radial-gradient(circle at 18% 12%,rgba(25,118,210,.09),transparent 32rem),radial-gradient(circle at 84% 80%,rgba(96,165,250,.07),transparent 28rem),linear-gradient(135deg,#0e0a1a 0%,#100c1c 55%,#0a0814 100%)', display:'flex',flexDirection:'column' }}>
         <AnimeBackdrop motifs={ANIME_MOTIFS.sl} color={COLOR} color2={COLOR2} />
         {/* Navbar */}
         <div style={{ flexShrink:0,height:62,padding:'0 24px', display:'flex',alignItems:'center',justifyContent:'space-between', background:'rgba(14,10,26,.96)',backdropFilter:'blur(24px)', borderBottom:'1px solid rgba(25,118,210,.10)',zIndex:10, position:'relative' }}>
