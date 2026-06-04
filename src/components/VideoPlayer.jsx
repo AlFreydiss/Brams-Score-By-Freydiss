@@ -925,7 +925,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
               </div>
             )}
 
-            {/* Indicateur de qualité */}
+            {/* Indicateur de qualité — suit les contrôles (plus de superposition permanente) */}
             <div style={{
               position: 'absolute',
               top: 12,
@@ -941,6 +941,8 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
               backdropFilter: 'blur(14px)',
               zIndex: 5,
               pointerEvents: 'none',
+              opacity: showCtrl ? 1 : 0,
+              transition: 'opacity .25s ease',
             }}>
               <span style={{
                 width: 8,
