@@ -1,7 +1,7 @@
 [
   {
     "episode": 1,
-    "title": "Episode 1",
+    "title": "« Je t'aime » et la Poupée de souvenirs automatiques",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-jp/Ep001.mp4",
     "season": "S01",
     "arc": "Violet Evergarden",
@@ -29,7 +29,7 @@
   },
   {
     "episode": 2,
-    "title": "Episode 2",
+    "title": "Il ne reviendra jamais",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-jp/Ep002.mp4",
     "season": "S01",
     "arc": "Violet Evergarden",
@@ -57,7 +57,7 @@
   },
   {
     "episode": 3,
-    "title": "Episode 3",
+    "title": "Puissiez-vous être une poupée de souvenirs automatique exemplaire",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-jp/Ep003.mp4",
     "season": "S01",
     "arc": "Violet Evergarden",
@@ -93,7 +93,7 @@
   },
   {
     "episode": 4,
-    "title": "Episode 4",
+    "title": "Ne sois pas un outil, deviens ce que représente ton prénom",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-jp/Ep004.mp4",
     "season": "S01",
     "arc": "Violet Evergarden",
@@ -129,7 +129,7 @@
   },
   {
     "episode": 5,
-    "title": "Episode 5",
+    "title": "Tu écris des lettres qui rassemblent les gens ?",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-jp/Ep005.mp4",
     "season": "S01",
     "arc": "Violet Evergarden",
@@ -157,7 +157,7 @@
   },
   {
     "episode": 6,
-    "title": "Episode 6",
+    "title": "Quelque part sous un ciel étoilé",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-jp/Ep006.mp4",
     "season": "S01",
     "arc": "Violet Evergarden",
@@ -265,7 +265,7 @@
   },
   {
     "episode": 9,
-    "title": "Episode 9",
+    "title": "Violet Evergarden",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-jp/Ep009.mp4",
     "season": "S01",
     "arc": "Violet Evergarden",
@@ -293,7 +293,7 @@
   },
   {
     "episode": 10,
-    "title": "Episode 10",
+    "title": "Un être cher veillera toujours sur vous",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-jp/Ep010.mp4",
     "season": "S01",
     "arc": "Violet Evergarden",
@@ -321,7 +321,7 @@
   },
   {
     "episode": 11,
-    "title": "Episode 11",
+    "title": "Plus personne ne doit mourir",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-jp/Ep011.mp4",
     "season": "S01",
     "arc": "Violet Evergarden",
@@ -393,7 +393,7 @@
   },
   {
     "episode": 13,
-    "title": "Episode 13",
+    "title": "La Poupée de souvenirs automatiques et « Je t'aime »",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-jp/Ep013.mp4",
     "season": "S01",
     "arc": "Violet Evergarden",
@@ -421,7 +421,7 @@
   },
   {
     "episode": 100,
-    "title": "Violet Evergarden: Eternity and the Auto Memory Doll",
+    "title": "Violet Evergarden : Éternité et la Poupée de souvenirs automatiques",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-hls/SIDE_STORY/master-ja.m3u8",
     "season": "Film",
     "arc": "Film",
@@ -450,7 +450,7 @@
   },
   {
     "episode": 101,
-    "title": "Violet Evergarden: The Movie",
+    "title": "Violet Evergarden, le film",
     "kind": "film",
     "badge": "VF/VOSTFR",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden/the-movie.mp4",
