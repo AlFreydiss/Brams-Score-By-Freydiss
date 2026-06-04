@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import CHAPTERS_DATA from '../data/chapters-data.json'
 import { Reader } from './MangaReader.jsx'
+import { onLiveProgress } from '../lib/liveSync.js'
 
 // ── Données ───────────────────────────────────────────────────────────────────
 
@@ -399,6 +400,12 @@ export default function ScansPage({ onClose }) {
   useEffect(() => {
     document.body.style.overflow = 'hidden'
     return () => { document.body.style.overflow = '' }
+  }, [])
+
+  // Synchro live : reflète la progression modifiée ailleurs (Mon Univers, autre onglet…)
+  useEffect(() => {
+    const off = onLiveProgress(() => setProgress(loadProgress()), { keys: 'manga_progress' })
+    return off
   }, [])
 
   const readCount = useMemo(() =>

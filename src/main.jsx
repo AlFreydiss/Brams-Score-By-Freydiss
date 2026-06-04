@@ -6,6 +6,10 @@ import './responsive-safety.css'
 import App from './App.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
 import { AuthProvider } from './contexts/AuthContext.jsx'
+import { installLiveSync } from './lib/liveSync.js'
+
+// Synchro live de la progression (anime/scans/univers) sans rechargement manuel.
+installLiveSync()
 
 // Après un déploiement, les anciens chunks JS n'existent plus. Si l'onglet ouvert
 // avant le déploiement navigue vers une page lazy → 404 du chunk → page bloquée

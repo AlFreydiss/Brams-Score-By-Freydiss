@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { ProgressRing } from './ProgressRing.jsx'
+import { onLiveProgress } from '../lib/liveSync.js'
 
 // Comprehensive list matching the hub + data we have (NS, keys for LS, covers, colors from pages/hub)
 const HUB_ANIMES = [
@@ -145,11 +146,11 @@ export default function MonUniversPage({
   }, [])
 
   useEffect(() => {
-    const id = setInterval(refresh, 8000)
-    const onStorage = () => refresh()
-    window.addEventListener('storage', onStorage)
+    // Live : reflète instantanément tout épisode/chapitre marqué ailleurs.
+    const off = onLiveProgress(refresh)
+    const id = setInterval(refresh, 15000)
     document.body.style.overflow = 'hidden'
-    return () => { clearInterval(id); window.removeEventListener('storage', onStorage); document.body.style.overflow = '' }
+    return () => { off(); clearInterval(id); document.body.style.overflow = '' }
   }, [refresh])
 
   const onOpenMap = {

@@ -12,6 +12,7 @@ import JJK_VIDEOS from '../data/jjk-videos.json'
 import LOVE_PRISM_VIDEOS from '../data/love-prism-videos.json'
 import RENT_VIDEOS from '../data/rent-girlfriend-videos.json'
 import { getAnimeRatings, rateAnime, unrateAnime } from '../lib/ratings.js'
+import { onLiveProgress } from '../lib/liveSync.js'
 
 function videoCountLabel(count, target) {
   if (!count) return 'Upload requis'
@@ -1315,10 +1316,11 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
     setRawProgress(loadAllProgress())
   }, [])
   useEffect(() => {
-    const id = setInterval(refreshProgress, 8000)
-    const onStorage = () => refreshProgress()
-    window.addEventListener('storage', onStorage)
-    return () => { clearInterval(id); window.removeEventListener('storage', onStorage) }
+    // Live : se met à jour dès qu'un épisode/chapitre est marqué (même onglet), plus
+    // un poll lent en filet de sécurité. Fini le "faut actualiser".
+    const off = onLiveProgress(refreshProgress)
+    const id = setInterval(refreshProgress, 15000)
+    return () => { off(); clearInterval(id) }
   }, [refreshProgress])
 
   const sortedAnimes = useMemo(() => {
