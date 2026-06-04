@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useAuth } from '../contexts/AuthContext.jsx'
+import EpisodeDetailOverlay from './EpisodeDetailOverlay.jsx'
+import { getAnimeMeta } from '../data/anime-meta.js'
 
 function fmt(sec) {
   const t = Math.max(0, Math.floor(sec || 0))
@@ -277,6 +279,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   const [speed,        setSpeed]       = useState(1)
   const [fullscreen,   setFullscreen]  = useState(false)
   const [showCtrl,     setShowCtrl]    = useState(true)
+  const [started,      setStarted]     = useState(false)  // false = interface "détail épisode" (pré-lecture)
   const [subIdx,       setSubIdx]      = useState(0)
   const [subsOff,      setSubsOff]     = useState(false)
   const [cueText,      setCueText]     = useState('')
@@ -526,6 +529,9 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
     const nextAudioIdx = findTrackIndex(audioOptions, preferredAudioLang, 0)
 
     setCurrentTime(0); setDuration(0); setBuffered(0); setPlaying(false); setCueText('')
+    // Interface "détail épisode" au changement d'épisode — sauf si on enchaîne en
+    // autoplay (épisode suivant) : là on va direct en lecture.
+    setStarted(Boolean(autoplayPendingRef.current))
     setEndOverlay(false); setCountdown(null); setEndReason('ended'); edPromptedRef.current = false
     setSubIdx(nextSubIdx)
     setSubsOff(hasSubs ? Boolean(prefs.subtitlesOff) : true)
@@ -656,6 +662,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   // ── Handlers vidéo ───────────────────────────────────────────────────────
   const onPlay     = () => {
     setPlaying(true)
+    setStarted(true)   // dès qu'on lance → on quitte l'interface détail
   }
   const onPause    = () => {
     setPlaying(false); setShowCtrl(true); clearTimeout(hideTimer.current)
@@ -753,7 +760,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
 
         <div style={{ flex: 1, textAlign: 'center', overflow: 'hidden' }}>
           <span style={{ fontWeight: 700, color: '#fff', fontSize: 14 }}>{episodeLabel}</span>
-          {video?.title && <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: 13, marginLeft: 8 }}>— {video.title}</span>}
+          {video?.title && !/^episode\s/i.test(String(video.title)) && <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: 13, marginLeft: 8 }}>— {video.title}</span>}
         </div>
 
         <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
@@ -956,6 +963,21 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                 <span style={{ fontSize: 14, fontWeight: 900, color: '#fff' }}>{qualityHint}</span>
               </div>
             </div>
+
+            {/* ── Interface "détail épisode" (pré-lecture) : titre + note + synopsis IA + trailer ── */}
+            {!started && video && (() => {
+              const meta = getAnimeMeta(storageKey)
+              return (
+                <EpisodeDetailOverlay
+                  animeId={storageKey}
+                  animeTitle={meta.title || video.anime || episodeLabel}
+                  video={video}
+                  note={meta.note}
+                  youtube={meta.youtube}
+                  color={color}
+                />
+              )
+            })()}
 
             {/* ── Big play icon au centre ── */}
             {!playing && (
