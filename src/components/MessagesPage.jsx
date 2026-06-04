@@ -1115,6 +1115,13 @@ export default function MessagesPage() {
   }, [isAuthenticated, refreshConversations])
   useEffect(() => { load() }, [load])
 
+  // Filet de sécurité : le skeleton ne doit JAMAIS rester affiché indéfiniment,
+  // même si un fetch part en vrille. Au pire, on coupe le chargement après 4s.
+  useEffect(() => {
+    const t = setTimeout(() => { loadedOnce.current = true; setLoading(false) }, 4000)
+    return () => clearTimeout(t)
+  }, [])
+
   // ── Liste EN LIVE : refresh silencieux sur nouvelle notif, focus, et poll 10s ──
   const onlyVisible = useCallback(() => { if (!document.hidden) refreshConversations() }, [refreshConversations])
   const countsSig = `${counts.messages}|${counts.notifications}`
