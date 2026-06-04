@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, Suspense } from 'react'
+import { useState, useEffect, useRef, useCallback, Suspense } from 'react'
 import { Routes, Route, useNavigate, Navigate, useLocation } from 'react-router-dom'
 import { lazyWithReload } from './lib/lazyWithReload.js'
 import GlobalStyles from './components/GlobalStyles.jsx'
@@ -289,13 +289,17 @@ export default function App() {
   // ouvert reste affiché par-dessus la nouvelle route — ex. DBS par-dessus Messages —
   // et donne l'impression qu'il faut actualiser).
   const location = useLocation()
-  useEffect(() => {
+  const closeAllOverlays = useCallback(() => {
     setScansOpen(false); setOnepieceOpen(false); setEncyclopedieOpen(false); setAnimeHubOpen(false)
     setTpnOpen(false); setDrstoneOpen(false); setJjkOpen(false); setKingdomOpen(false)
     setAotOpen(false); setKnyOpen(false); setNntOpen(false); setSlOpen(false); setDbsOpen(false)
     setVioletOpen(false); setVivyOpen(false); setLovePrismOpen(false); setCaroleTuesdayOpen(false); setBunnyGirlOpen(false); setRentGirlOpen(false); setBcOpen(false); setMhaOpen(false)
     setFireforcOpen(false); setBluelockOpen(false); setFateZeroOpen(false); setYourNameOpen(false); setMonUniversOpen(false); setTreeOpen(false); setUploadOpen(false)
-  }, [location.pathname])
+  }, [])
+  const closeAllAnimePages = useCallback(() => {
+    setOnepieceOpen(false); setTpnOpen(false); setDrstoneOpen(false); setJjkOpen(false); setKingdomOpen(false); setAotOpen(false); setKnyOpen(false); setNntOpen(false); setSlOpen(false); setDbsOpen(false); setVioletOpen(false); setVivyOpen(false); setLovePrismOpen(false); setCaroleTuesdayOpen(false); setBunnyGirlOpen(false); setRentGirlOpen(false); setBcOpen(false); setMhaOpen(false); setFireforcOpen(false); setBluelockOpen(false); setFateZeroOpen(false); setYourNameOpen(false)
+  }, [])
+  useEffect(() => { closeAllOverlays() }, [location.pathname, closeAllOverlays])
 
   useEffect(() => {
     const fnScans    = () => setScansOpen(true)
@@ -379,6 +383,36 @@ export default function App() {
 
   const mediaOverlayOpen = scansOpen || animeHubOpen || tpnOpen || drstoneOpen || jjkOpen || kingdomOpen || aotOpen || knyOpen || nntOpen || slOpen || dbsOpen || violetOpen || vivyOpen || lovePrismOpen || caroleTuesdayOpen || bunnyGirlOpen || rentGirlOpen || bcOpen || mhaOpen || fireforcOpen || bluelockOpen || fateZeroOpen || yourNameOpen || monUniversOpen
   const immersiveOverlayOpen = mediaOverlayOpen || encyclopedieOpen || treeOpen || uploadOpen
+
+  // Une page anime est ouverte (≠ Hub / Mon Univers / Scans / Encyclopédie)
+  const animePageOpen = onepieceOpen || tpnOpen || drstoneOpen || jjkOpen || kingdomOpen || aotOpen || knyOpen || nntOpen || slOpen || dbsOpen || violetOpen || vivyOpen || lovePrismOpen || caroleTuesdayOpen || bunnyGirlOpen || rentGirlOpen || bcOpen || mhaOpen || fireforcOpen || bluelockOpen || fateZeroOpen || yourNameOpen
+
+  // ── Bouton "retour" du navigateur sur les overlays anime/scan ──
+  // Les overlays n'ont pas d'URL : sans ça, le bouton retour quitte vers le hero
+  // d'accueil. On empile une entrée d'historique à l'ouverture (même URL → pas de
+  // changement de pathname, donc l'effet de fermeture ci-dessus ne se déclenche pas).
+  // Retour navigateur : page anime → Hub ; Hub/overlay → accueil.
+  const animePageOpenRef = useRef(false); animePageOpenRef.current = animePageOpen
+  const immersiveRef = useRef(false); immersiveRef.current = immersiveOverlayOpen
+  const prevImmersiveRef = useRef(false)
+  useEffect(() => {
+    if (immersiveOverlayOpen && !prevImmersiveRef.current) {
+      window.history.pushState({ bramsOverlay: true }, '')
+    }
+    prevImmersiveRef.current = immersiveOverlayOpen
+  }, [immersiveOverlayOpen])
+  useEffect(() => {
+    const onPop = () => {
+      if (animePageOpenRef.current) {
+        closeAllAnimePages(); setAnimeHubOpen(true)
+        window.history.pushState({ bramsOverlay: true }, '') // garde le Hub capturable
+      } else if (immersiveRef.current) {
+        closeAllOverlays()
+      }
+    }
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+  }, [closeAllAnimePages, closeAllOverlays])
 
   const mainContent = (
     <>
