@@ -26,7 +26,44 @@ const HUB_CSS = `
   @keyframes htTwinkle { 0%,100%{opacity:.07} 50%{opacity:.50} }
   @keyframes htScan    { 0%{top:-2px} 100%{top:100%} }
   @keyframes htPulse   { 0%,100%{opacity:.5} 50%{opacity:.85} }
+  /* Pétales de sakura qui tombent (chute + balancement + rotation) */
+  @keyframes htFall { 0%{transform:translateY(-10vh) rotate(0deg);opacity:0} 8%{opacity:.95} 90%{opacity:.85} 100%{transform:translateY(110vh) rotate(420deg);opacity:0} }
+  @keyframes htSway { 0%,100%{margin-left:-18px} 50%{margin-left:18px} }
+  @media (prefers-reduced-motion: reduce){ [data-fx]{animation:none!important} }
 `
+
+// ── Pétales de sakura / roses (fond façon Undercover) ──────────────────────
+function HTSakura() {
+  const petals = useMemo(() => Array.from({ length: 22 }, (_, i) => ({
+    x:    (i * 41.7 + 5) % 99,
+    size: 9 + (i % 4) * 4,                 // 9–21 px
+    dur:  9 + (i % 6) * 2.5,               // 9–22 s
+    del:  -(i * 1.3) % 14,                 // démarrage étalé (négatif = déjà en cours)
+    sway: 5.5 + (i % 4) * 1.6,
+    col:  ['#f9a8d4', '#f472b6', '#ec4899', '#fbcfe8'][i % 4],
+  })), [])
+  return (
+    <div aria-hidden style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 1, overflow: 'hidden' }}>
+      {petals.map((p, i) => (
+        <div key={i} data-fx style={{
+          position: 'absolute', left: `${p.x}%`, top: 0,
+          animation: `htFall ${p.dur}s ${p.del}s linear infinite`,
+          willChange: 'transform',
+        }}>
+          <div data-fx style={{
+            width: p.size, height: p.size * 0.82,
+            background: `radial-gradient(circle at 30% 30%, ${p.col}, ${p.col}99)`,
+            borderRadius: '150% 0 150% 0',
+            transform: 'rotate(35deg)',
+            boxShadow: `0 0 6px ${p.col}55`,
+            opacity: 0.85,
+            animation: `htSway ${p.sway}s ease-in-out infinite`,
+          }} />
+        </div>
+      ))}
+    </div>
+  )
+}
 
 // ── Ambient background ─────────────────────────────────────────────────────
 function HTStars() {
@@ -623,7 +660,13 @@ export default function TournamentHubPage() {
 
       {/* Fixed bg layers */}
       <div style={{ position: 'fixed', inset: 0, background: BG, zIndex: 0 }} />
+      {/* Halos roses/violets diffus (ambiance sakura) */}
+      <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', background: `
+        radial-gradient(1100px 620px at 82% -8%, rgba(236,72,153,.14), transparent 60%),
+        radial-gradient(900px 520px at 8% 6%, rgba(76,29,149,.12), transparent 62%),
+        radial-gradient(760px 760px at 50% 120%, rgba(219,39,119,.08), transparent 60%)` }} />
       <HTStars />
+      <HTSakura />
       <HTScanLine />
 
       {/* Content */}
