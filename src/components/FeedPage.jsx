@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { motion } from 'framer-motion'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   Anchor, BarChart3, Bookmark, Compass, Flame, Home,
@@ -56,6 +57,16 @@ function hasMedia(post) {
 function score(post) {
   const main = post?.original && post?.repost_of && !post?.content ? post.original : post
   return Number(main?.like_count || 0) * 3 + Number(main?.reply_count || 0) * 4 + Number(main?.repost_count || 0) * 5
+}
+
+// Score "à chaud" pour l'onglet Pour toi : mélange popularité + récence (style HN).
+// Les posts récents très likés remontent ; l'effet des likes décroît avec l'âge,
+// donc le feed reste vivant (pas figé sur d'anciens posts viraux).
+function hotScore(post) {
+  const main = post?.original && post?.repost_of && !post?.content ? post.original : post
+  const pts = Number(main?.like_count || 0) * 3 + Number(main?.reply_count || 0) * 2 + Number(main?.repost_count || 0) * 4 + 1
+  const ageH = Math.max(0, (Date.now() - new Date(post.created_at).getTime()) / 3600000)
+  return pts / Math.pow(ageH + 2, 1.3)
 }
 
 function getPostText(post) {
@@ -263,7 +274,8 @@ export default function FeedPage() {
     if (activeTab === 'trending') return [...posts].sort((a, b) => score(b) - score(a))
     if (activeTab === 'media') return posts.filter(hasMedia)
     if (activeTab === 'mine') return posts.filter(p => String(p.author_id) === String(discordId))
-    return posts
+    // Pour toi : tri mixte récence + likes (les plus likés récents remontent en haut).
+    return [...posts].sort((a, b) => hotScore(b) - hotScore(a))
   }, [activeTab, discordId, followingIds, posts])
 
   useEffect(() => {
@@ -489,7 +501,11 @@ export default function FeedPage() {
             </div>
           ) : (
             <>
-              {visiblePosts.map(p => <PostCard key={p.id} post={p} onChange={onChange} onDeleted={onDeleted} onQuote={setQuoteTarget} />)}
+              {visiblePosts.map(p => (
+                <motion.div key={p.id} layout="position" transition={{ type: 'spring', stiffness: 600, damping: 45 }}>
+                  <PostCard post={p} onChange={onChange} onDeleted={onDeleted} onQuote={setQuoteTarget} />
+                </motion.div>
+              ))}
               {hasMore && activeTab === 'for-you' && <div style={{ padding: 20, textAlign: 'center', color: T.textFaint, fontSize: 13 }}>Chargement...</div>}
               {!hasMore && <div style={{ padding: 28, textAlign: 'center', color: T.textFaint, fontSize: 12 }}>Tu as tout vu</div>}
             </>
