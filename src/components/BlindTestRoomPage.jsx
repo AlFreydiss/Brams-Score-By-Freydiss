@@ -196,7 +196,7 @@ export default function BlindTestRoomPage() {
   const navigate = useNavigate()
   const auth = useAuth()
   const audioRef = useRef(null)
-  const userId = auth.user?.id || guestId()
+  const userId = auth.discordId || auth.user?.id || guestId()
   const displayName = auth.displayName || `Invité ${userId.slice(-4)}`
   const avatarUrl = auth.avatarUrl || null
 

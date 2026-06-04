@@ -1,6 +1,11 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { fetchBlindTestLeaderboard, LOCAL_TRACKS } from '../lib/blindTest.js'
+import {
+  fetchBlindTestLeaderboard,
+  getBlindTestProfileId,
+  isBlindTestGuestId,
+  LOCAL_TRACKS,
+} from '../lib/blindTest.js'
 import { useAuth } from '../contexts/AuthContext.jsx'
 
 const GOLD = '#d4a017'
@@ -27,9 +32,13 @@ function BTStars() {
 
 const MEDAL = ['🥇', '🥈', '🥉']
 
+function fallbackAvatar(seed) {
+  return `https://api.dicebear.com/8.x/thumbs/svg?seed=${encodeURIComponent(seed || 'Pirate')}`
+}
+
 export default function BlindTestLeaderboard() {
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { user, discordId } = useAuth()
   const [rows, setRows]   = useState(null)
 
   useEffect(() => {
@@ -85,10 +94,13 @@ export default function BlindTestLeaderboard() {
         ) : (
           <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
             {rows.map((row, i) => {
-              const isMe = user && row.user_id === user.id
+              const rowUserId = String(row.user_id || '')
+              const profileId = getBlindTestProfileId(row.user_id)
+              const profileHref = profileId ? `/u/${profileId}` : null
+              const isGuest = isBlindTestGuestId(row.user_id)
+              const isMe = Boolean(user && (rowUserId === String(user.id || '') || rowUserId === String(discordId || '')))
               const medal = MEDAL[i]
               const topGold = i === 0 ? GOLD : i === 1 ? '#9ca3af' : i === 2 ? '#cd7f32' : null
-              const profileHref = row.user_id ? `/u/${row.user_id}` : null
               return (
                 <div key={row.user_id} style={{
                   display:'flex', alignItems:'center', gap:14, padding:'14px 18px',
@@ -102,15 +114,16 @@ export default function BlindTestLeaderboard() {
                   <div style={{ width:32, textAlign:'center', fontSize: medal ? 20 : 14, fontWeight:800, color:topGold || 'rgba(255,255,255,0.35)', flexShrink:0 }}>
                     {medal || `#${i + 1}`}
                   </div>
-                  {row.avatar_url ? (
-                    <img src={row.avatar_url} alt="" style={{ width:36, height:36, borderRadius:'50%', objectFit:'cover', border:`1px solid ${topGold || 'rgba(255,255,255,0.12)'}`, flexShrink:0 }} />
-                  ) : (
-                    <div style={{ width:36, height:36, borderRadius:'50%', background:'rgba(212,160,23,0.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:14, flexShrink:0 }}>🏴‍☠️</div>
-                  )}
+                  <img
+                    src={row.avatar_url || fallbackAvatar(row.display_name || row.user_id)}
+                    alt=""
+                    onError={e => { e.currentTarget.onerror = null; e.currentTarget.src = fallbackAvatar(row.display_name || row.user_id) }}
+                    style={{ width:36, height:36, borderRadius:'50%', objectFit:'cover', border:`1px solid ${topGold || 'rgba(255,255,255,0.12)'}`, flexShrink:0, background:'rgba(212,160,23,0.10)' }}
+                  />
                   <button
                     onClick={() => profileHref && navigate(profileHref)}
                     disabled={!profileHref}
-                    title={profileHref ? 'Ouvrir le profil' : 'Profil indisponible'}
+                    title={profileHref ? 'Ouvrir le profil' : isGuest ? 'Score invité' : 'Profil indisponible'}
                     style={{
                       flex:1, minWidth:0, textAlign:'left',
                       background:'none', border:'none', padding:0,
@@ -123,11 +136,9 @@ export default function BlindTestLeaderboard() {
                     <div style={{ fontSize:11, color:'rgba(255,255,255,0.35)' }}>
                       {row.games_played} partie{row.games_played > 1 ? 's' : ''} · Streak max {row.streak_max}
                     </div>
-                    {profileHref && (
-                      <div style={{ fontSize:10, marginTop:4, color:'rgba(255,211,145,0.58)', fontWeight:700 }}>
-                        Voir le profil
-                      </div>
-                    )}
+                    <div style={{ fontSize:10, marginTop:4, color:profileHref ? 'rgba(255,211,145,0.58)' : 'rgba(255,255,255,0.24)', fontWeight:700 }}>
+                      {profileHref ? 'Voir le profil' : isGuest ? 'Invité' : 'Profil indisponible'}
+                    </div>
                   </button>
                   <div style={{ textAlign:'right', flexShrink:0 }}>
                     <div style={{ fontFamily:"'Pirata One',cursive", fontSize:20, fontWeight:900, color:topGold || GOLD }}>

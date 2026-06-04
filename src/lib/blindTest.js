@@ -1128,6 +1128,20 @@ export function getTrackById(trackId) {
   return LOCAL_TRACKS.find(t => t.id === trackId) || null
 }
 
+export function isBlindTestGuestId(userId) {
+  return String(userId || '').startsWith('guest_')
+}
+
+export function isLegacySupabaseAuthId(userId) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(userId || ''))
+}
+
+export function getBlindTestProfileId(userId) {
+  const id = String(userId || '')
+  if (!id || isBlindTestGuestId(id) || isLegacySupabaseAuthId(id)) return null
+  return id
+}
+
 function makeRoomCode() {
   const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
   return Array.from({ length: 6 }, () => alphabet[Math.floor(Math.random() * alphabet.length)]).join('')

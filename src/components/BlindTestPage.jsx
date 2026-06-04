@@ -495,7 +495,7 @@ function ConfettiBurst({ active }) {
 // ─── Main component ────────────────────────────────────────────────────────
 export default function BlindTestPage() {
   const navigate = useNavigate()
-  const { isAuthenticated, user, displayName, avatarUrl } = useAuth()
+  const { isAuthenticated, user, discordId, displayName, avatarUrl } = useAuth()
   const videoRef       = useRef(null)
   const roomChannelRef = useRef(null)
   const roomSignatureRef = useRef('')
@@ -540,7 +540,7 @@ export default function BlindTestPage() {
   const [roomPlayers, setRoomPlayers] = useState([])
 
   const roomLink  = roomCode ? roomUrl(roomCode) : ''
-  const roomUserId = useMemo(() => user?.id || getBlindGuestId(), [user?.id])
+  const roomUserId = useMemo(() => discordId || user?.id || getBlindGuestId(), [discordId, user?.id])
   const roomDisplayName = displayName || `Invite ${String(roomUserId).slice(-4)}`
   const isPlaying = phase === 'playing' || phase === 'countdown' || phase === 'reveal'
   const activeTrack = track || LOCAL_TRACKS[0]
@@ -924,14 +924,14 @@ export default function BlindTestPage() {
       setShowConfetti(true)
       setTimeout(() => setShowConfetti(false), 1200)
     }
-    if (user) logSession({ userId: user.id, trackId: track.id, correct: res.animeOk || res.titleOk, timeMs: ms })
+    if (user) logSession({ userId: roomUserId, trackId: track.id, correct: res.animeOk || res.titleOk, timeMs: ms })
   }
 
   function nextRound() { if (roomCode && roomRole !== 'host') return; startGame() }
 
   function endGame() {
     setPhase('end')
-    if (user && round > 0) upsertBlindTestScore({ userId: user.id, displayName, avatarUrl, score: totalScore, streakMax: maxStreak, gamesPlayed: 1 })
+    if (user && round > 0) upsertBlindTestScore({ userId: roomUserId, displayName, avatarUrl, score: totalScore, streakMax: maxStreak, gamesPlayed: 1 })
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
