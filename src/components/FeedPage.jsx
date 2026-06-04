@@ -15,6 +15,13 @@ import StoriesBar from './feed/StoriesBar.jsx'
 import { T } from './social/socialStyles.js'
 import './feed/feedPremium.css'
 
+// Simple in-memory cache so that navigating away from /fil and coming back
+// instantly restores the previous posts list (no empty flash, no skeletons on every return).
+// The mount reload will then soft-merge any updates/new posts on top.
+// This is per browser tab / session (resets on hard refresh).
+let cachedPosts = []
+let cachedHasMore = true
+
 const TAB_ITEMS = [
   { id: 'for-you', label: 'Pour toi', icon: Home },
   { id: 'following', label: 'Suivis', icon: Users },
@@ -132,35 +139,62 @@ export default function FeedPage() {
   const [search, setSearch] = useState('')
   const [activeTab, setActiveTab] = useState('for-you')
   const [followingIds, setFollowingIds] = useState(() => new Set())
-  const [posts, setPosts] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [posts, setPosts] = useState(() => (cachedPosts.length > 0 ? cachedPosts : []))
+  const [loading, setLoading] = useState(() => cachedPosts.length === 0)
   const [error, setError] = useState(null)
-  const [hasMore, setHasMore] = useState(true)
+  const [hasMore, setHasMore] = useState(() => (cachedPosts.length > 0 ? cachedHasMore : true))
   const [newCount, setNewCount] = useState(0)
   const [quoteTarget, setQuoteTarget] = useState(null)
   const [stats, setStats] = useState({ posts: 0 })
   const loadingMore = useRef(false)
-  const seen = useRef(new Set())
+  const seen = useRef(cachedPosts.length > 0 ? new Set(cachedPosts.map(p => p.id)) : new Set())
   const refreshTimer = useRef(null)
+  const postsRef = useRef([])
 
-  const reload = useCallback(async () => {
-    setLoading(true)
-    setError(null)
+  const reload = useCallback(async (retry = 0, opts = {}) => {
+    const soft = opts.soft === true
+    // Only force the skeleton loading state for a true first load (no cache, posts started empty on this mount).
+    // On "change page → reviens", useState lazy init + seen ref give us the previous list instantly;
+    // we skip setLoading(true) so no jarring skeletons replace the content, then we merge latest smoothly.
+    if (!soft && posts.length === 0) {
+      setLoading(true)
+      setError(null)
+    }
     const { posts: list, error: err } = await getFeed(null)
-    if (err) { setError(err); setLoading(false); return }
-    seen.current = new Set(list.map(p => p.id))
-    setPosts(list)
+    if (err) {
+      // Auto-retry once on timeout (common on cold DB or slow enrich)
+      if (err === 'timeout' && retry === 0) {
+        setTimeout(() => reload(1, opts), 800)
+        return
+      }
+      if (!soft && posts.length === 0) { setError(err); setLoading(false); return }
+      return
+    }
+    setPosts(prev => {
+      const freshMap = new Map(list.map(p => [p.id, p]))
+      let merged
+      if (prev.length === 0) {
+        merged = list
+      } else {
+        const tail = prev.filter(p => !freshMap.has(p.id))
+        merged = [...list, ...tail]
+      }
+      seen.current = new Set(merged.map(p => p.id))
+      cachedPosts = merged
+      cachedHasMore = list.length >= 20
+      return merged
+    })
     setHasMore(list.length >= 20)
     setNewCount(0)
-    setLoading(false)
+    if (!soft && posts.length === 0) setLoading(false)
     getFeedStats().then(setStats)
   }, [])
 
-  const scheduleReload = useCallback((delay = 150) => {
+  const scheduleReload = useCallback((delay = 150, soft = true) => {
     if (refreshTimer.current) clearTimeout(refreshTimer.current)
     refreshTimer.current = setTimeout(() => {
       refreshTimer.current = null
-      reload()
+      reload(0, { soft })
     }, delay)
   }, [reload])
 
@@ -168,6 +202,25 @@ export default function FeedPage() {
     const next = await getFeedStats()
     setStats(next)
   }, [])
+
+  // Light check used on mount return (after page change) and on focus/visible:
+  // only bumps newCount (shows banner) for missed posts. No merge, no loading,
+  // no auto list mutation. Prevents "truc de fou" on "je reviens y j'actualise".
+  // Explicit click on banner uses the calm loadNewPosts (pure prepend of news).
+  const checkMissedNew = useCallback(async () => {
+    const currentList = postsRef.current.length > 0 ? postsRef.current : cachedPosts
+    if (!currentList.length) return
+    try {
+      const { posts: latest = [] } = await getFeed(null, 20)
+      const ids = new Set(currentList.map(p => p.id))
+      let n = 0
+      for (const p of latest) {
+        if (ids.has(p.id)) break
+        if (!p.reply_to && !p.repost_of && p.author_id !== discordId) n++
+      }
+      if (n > 0) setNewCount(c => Math.max(c, n))
+    } catch {}
+  }, [discordId])
 
   useEffect(() => {
     if (!isAuthenticated) { setFollowingIds(new Set()); return }
@@ -180,6 +233,8 @@ export default function FeedPage() {
     })
     return () => { alive = false }
   }, [isAuthenticated])
+
+  useEffect(() => { postsRef.current = posts }, [posts])
 
   const feedMeta = useMemo(() => {
     const today = new Date().toLocaleDateString('fr-FR')
@@ -211,18 +266,34 @@ export default function FeedPage() {
     return posts
   }, [activeTab, discordId, followingIds, posts])
 
-  useEffect(() => { if (!authLoading) reload() }, [authLoading, discordId, reload])
+  useEffect(() => {
+    if (!authLoading) {
+      const currentList = posts.length > 0 ? posts : cachedPosts
+      if (currentList.length > 0) {
+        // Return visit after changing page: restore from cache happened instantly via lazy useState.
+        // Do a *light* background check for posts created while we were away.
+        // If any, just bump newCount to show the "Voir N nouveaux" banner.
+        // User clicks the banner to calmly prepend via loadNewPosts (no auto visual chaos).
+        // No full merge/reload here → prevents the "truc de fou" on "je reviens y j'actualise".
+        // Live updates after landing come from the subscribeFeed listener + poll.
+        checkMissedNew()
+      } else {
+        // True first load for the feed in this session/tab: do the full reload (skeletons ok).
+        reload()
+      }
+    }
+  }, [authLoading, discordId, reload, checkMissedNew])
 
   useEffect(() => {
-    const onFocus = () => scheduleReload(80)
-    const onVisible = () => { if (!document.hidden) scheduleReload(80) }
+    const onFocus = () => checkMissedNew()
+    const onVisible = () => { if (!document.hidden) checkMissedNew() }
     window.addEventListener('focus', onFocus)
     document.addEventListener('visibilitychange', onVisible)
     return () => {
       window.removeEventListener('focus', onFocus)
       document.removeEventListener('visibilitychange', onVisible)
     }
-  }, [scheduleReload])
+  }, [checkMissedNew])
 
   useEffect(() => {
     const unsub = subscribeFeed(({ type, row, old }) => {
@@ -231,11 +302,12 @@ export default function FeedPage() {
       if (type === 'INSERT' && !target.reply_to && !target.repost_of && target.author_id !== discordId && !seen.current.has(target.id)) {
         seen.current.add(target.id)
         setNewCount(n => n + 1)
-        scheduleReload(1200)
+        // Do NOT auto-schedule on new posts: show the "N nouveaux" banner instead.
+        // User explicitly clicks to actualise (soft merge, no skeletons, no dups, keeps loaded tail).
         return
       }
       if (type === 'UPDATE' || type === 'DELETE') {
-        scheduleReload(120)
+        scheduleReload(120, true)
         refreshStats()
       }
     })
@@ -265,9 +337,16 @@ export default function FeedPage() {
   async function loadMore() {
     if (activeTab !== 'for-you' || loadingMore.current || !hasMore || !posts.length) return
     loadingMore.current = true
-    const { posts: older } = await getFeed(posts[posts.length - 1].created_at)
-    older.forEach(p => seen.current.add(p.id))
-    setPosts(prev => [...prev, ...older.filter(o => !prev.some(p => p.id === o.id))])
+    const last = posts[posts.length - 1]
+    const { posts: older = [] } = await getFeed(last?.created_at)
+    setPosts(prev => {
+      const prevIds = new Set(prev.map(p => p.id))
+      const toAdd = older.filter(o => !prevIds.has(o.id))
+      toAdd.forEach(o => seen.current.add(o.id))
+      const merged = [...prev, ...toAdd]
+      cachedPosts = merged
+      return merged
+    })
     setHasMore(older.length >= 20)
     loadingMore.current = false
   }
@@ -278,15 +357,51 @@ export default function FeedPage() {
   }
 
   const onChange = (id, partial) => setPosts(prev => patch(prev, id, partial))
-  const onDeleted = (rowId) => setPosts(prev => prev.filter(p => p.id !== rowId))
+  const onDeleted = (rowId) => setPosts(prev => {
+    const next = prev.filter(p => p.id !== rowId)
+    cachedPosts = next
+    return next
+  })
 
   async function onPosted(newId) {
     const r = await getPost(newId)
     if (r?.post) {
       seen.current.add(r.post.id)
-      setPosts(prev => [r.post, ...prev.filter(p => p.id !== r.post.id)])
+      setPosts(prev => {
+        const merged = [r.post, ...prev.filter(p => p.id !== r.post.id)]
+        cachedPosts = merged
+        return merged
+      })
       refreshStats()
     }
+  }
+
+  // Dedicated actualise for the "Voir N nouveaux" banner.
+  // Only prepends *truly new* unseen root posts (fetched from latest).
+  // Keeps the previous posts array (and object references) intact for everything else.
+  // This avoids full top-N replacement, minimizes re-renders/shifts/reconciliations
+  // of already-loaded cards, and prevents the "truc de fou" especially after
+  // navigating away (unmount) and coming back (fresh mount + then actualise).
+  async function loadNewPosts() {
+    const { posts: latest = [], error: err } = await getFeed(null, 30)
+    if (err || !latest.length) return
+    setPosts(prev => {
+      const prevIds = new Set(prev.map(p => p.id))
+      const toPrepend = []
+      for (const p of latest) {
+        if (prevIds.has(p.id)) break
+        toPrepend.push(p)
+        seen.current.add(p.id)
+      }
+      if (toPrepend.length === 0) {
+        return prev
+      }
+      const merged = [...toPrepend, ...prev]
+      cachedPosts = merged
+      return merged
+    })
+    setNewCount(0)
+    refreshStats()
   }
 
   const activeLabel = TAB_ITEMS.find(t => t.id === activeTab)?.label || 'Pour toi'
@@ -301,14 +416,6 @@ export default function FeedPage() {
           <header className="feed-header">
             <div className="feed-title-row">
               <h1 className="feed-title">Le Fil</h1>
-              <span className="feed-live-badge"><LiveDot /> En direct</span>
-            </div>
-
-            <div className="feed-summary-row" aria-label="Résumé du fil">
-              <span className="feed-stat-pill"><MessageCircle size={14} /><strong>{feedMeta.todayPosts}</strong> aujourd'hui</span>
-              <span className="feed-stat-pill"><Users size={14} /><strong>{feedMeta.activeMembers}</strong> actifs</span>
-              <span className="feed-stat-pill"><ImageIcon size={14} /><strong>{mediaCount}</strong> médias</span>
-              <span className="feed-stat-pill"><Radio size={14} /><strong>{(stats?.posts ?? 0).toLocaleString('fr-FR')}</strong> total</span>
             </div>
 
             <form className="feed-search-row" onSubmit={e => { e.preventDefault(); const q = search.trim(); if (q.length >= 2) navigate(`/fil/recherche?q=${encodeURIComponent(q)}`) }}>
@@ -351,7 +458,7 @@ export default function FeedPage() {
           )}
 
           {newCount > 0 && (
-            <button type="button" onClick={reload} className="feed-new-button">
+            <button type="button" onClick={loadNewPosts} className="feed-new-button">
               Voir {newCount} nouveau{newCount > 1 ? 'x' : ''} post{newCount > 1 ? 's' : ''}
             </button>
           )}
@@ -365,7 +472,7 @@ export default function FeedPage() {
               Le fil n'a pas pu se charger.<br />
               <span style={{ fontSize: 12, color: T.textFaint }}>{error}</span>
               <div>
-                <button type="button" onClick={reload} className="feed-chip" style={{ marginTop: 18 }}>
+                <button type="button" onClick={() => reload(0, { soft: false })} className="feed-chip" style={{ marginTop: 18 }}>
                   Réessayer
                 </button>
               </div>

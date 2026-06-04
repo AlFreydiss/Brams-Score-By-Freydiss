@@ -72,28 +72,6 @@ export default function FeedRail({ stats, meta, trends = [], activeAuthors = [] 
         )}
       </section>
 
-      <section className="feed-card">
-        <div className="feed-kicker">Explorer</div>
-        <div className="feed-nav-list">
-          {QUICK_LINKS.map(item => {
-            const Icon = item.icon
-            return (
-              <Link key={item.to} to={item.to} className="feed-nav-link">
-                <Icon size={16} />
-                <span>{item.label}</span>
-              </Link>
-            )
-          })}
-        </div>
-      </section>
-
-      <section className="feed-card">
-        <div className="feed-kicker">Signal live</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'rgba(255,255,255,0.58)', fontSize: 13 }}>
-          <Flame size={16} color="#d4a017" />
-          Les mises à jour arrivent en realtime avec polling de secours.
-        </div>
-      </section>
     </>
   )
 }
