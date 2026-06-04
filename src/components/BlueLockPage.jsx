@@ -103,13 +103,13 @@ const EpCard = memo(function EpCard({ video, index, watched, onPlay }) {
       </div>
       <div style={{ padding:'10px 13px 13px' }}>
         <div style={{ fontSize:9.5,fontWeight:800,color:COLOR2,letterSpacing:'.1em',marginBottom:4 }}>{cardLabel}</div>
-        <div style={{ fontSize:13.5,fontWeight:700,color:watched?'rgba(255,255,255,.45)':'#EDEBE3',lineHeight:1.28 }}>{video.title}</div>
+        <div style={{ fontSize:13.5,fontWeight:700,color:'#fff',lineHeight:1.28 }}>{video.title}</div>
       </div>
     </div>
   )
 })
 
-function InfoPanel({ watchedCount, total, lastWatchedIdx, onResume, chapterCount }) {
+function InfoPanel({ watchedCount, total, lastWatchedIdx, onResume, chapterCount, readCount = 0 }) {
   const pct = total > 0 ? Math.round((watchedCount / total) * 100) : 0
   const nextVideo = VIDEOS[lastWatchedIdx] || VIDEOS[0]
   return (
@@ -255,7 +255,7 @@ export default function BlueLockPage({ onClose }) {
           <div style={{ position:'absolute',left:'50%',transform:'translateX(-50%)',display:'flex',alignItems:'center',gap:10 }}>
             <span style={{ fontSize:17,animation:'blFloat 6s ease-in-out infinite' }}>⚽</span>
             <span style={{ fontFamily:"'Pirata One',cursive",fontSize:17,fontWeight:900,color:'#fff',letterSpacing:'-.01em' }}>
-              {playerIdx !== null ? (VIDEOS[playerIdx]?.kind === 'film' || VIDEOS[playerIdx]?.kind === 'ova' ? VIDEOS[playerIdx]?.title : `Épisode ${VIDEOS[playerIdx]?.episode}`) : 'Blue Lock'}
+              {playerIdx !== null ? (VIDEOS[playerIdx]?.title || `Épisode ${VIDEOS[playerIdx]?.episode}`) : 'Blue Lock'}
             </span>
           </div>
           <div style={{ display:'flex',alignItems:'center',gap:8 }}>
@@ -278,7 +278,7 @@ export default function BlueLockPage({ onClose }) {
               @media (max-width: 900px) { .bl-layout { grid-template-columns: 1fr; } }
             `}</style>
             <div className="bl-layout">
-              <InfoPanel watchedCount={watchedCount} total={VIDEOS.length} lastWatchedIdx={resumeIdx} onResume={() => openPlayer(resumeIdx)} chapterCount={chapterCount} />
+              <InfoPanel watchedCount={watchedCount} total={VIDEOS.length} lastWatchedIdx={resumeIdx} onResume={() => openPlayer(resumeIdx)} chapterCount={chapterCount} readCount={readCount} />
               <div>
                 <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20 }}>
                   <div>
