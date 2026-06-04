@@ -99,7 +99,7 @@ function DeferredSection({ children, minHeight = 420, style = {}, threshold = 0.
     </div>
   )
 }
-function AMVBackground() {
+function AMVBackground({ hidden = false }) {
   const { activeBg } = useOpeningBg()
   const videoRef = useRef(null)
   const [muted, setMuted]     = useState(true)
@@ -120,6 +120,11 @@ function AMVBackground() {
   // Si un fond d'opening est équipé, on laisse la place au fond global équipé
   // (EquippedOpeningBackground) au lieu de la vidéo AMV.
   if (activeBg) return null
+
+  // Overlay anime/média ouvert → on démonte la vidéo AMV (sinon elle continue de
+  // jouer EN DESSOUS et le navigateur affiche ses contrôles média par-dessus le
+  // lecteur d'anime : -10s, pochette… = la superposition signalée).
+  if (hidden) return <div style={{ position: 'fixed', inset: 0, zIndex: 0, background: '#05070a', pointerEvents: 'none' }} />
 
   if (!enabled) {
     return <div style={{ position: 'fixed', inset: 0, zIndex: 0, background: '#05070a', pointerEvents: 'none' }} />
@@ -368,7 +373,7 @@ export default function App() {
   const mainContent = (
     <>
       <WelcomeAnimation />
-      <AMVBackground />
+      <AMVBackground hidden={mediaOverlayOpen || encyclopedieOpen || treeOpen || uploadOpen} />
       <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1, background: 'rgba(4,7,10,0.58)', pointerEvents: 'none' }} />
 
       {/* Hero transparent → l'AMV en fond reste visible. Le reste des sections
