@@ -254,35 +254,36 @@ export default function App() {
   const [treeOpen,         setTreeOpen]          = useState(false)
   const [uploadOpen,       setUploadOpen]        = useState(false)
 
-  // Handlers for opening pages from Mon Univers (set return flag so page close goes back to dashboard)
-  const onOpenAotFromMon = () => { setMonUniversOpen(false); setReturnToMon(true); setAotOpen(true) }
-  const onOpenFireforceFromMon = () => { setMonUniversOpen(false); setReturnToMon(true); setFireforcOpen(true) }
-  const onOpenBluelockFromMon = () => { setMonUniversOpen(false); setReturnToMon(true); setBluelockOpen(true) }
-  const onOpenFateZeroFromMon = () => { setMonUniversOpen(false); setReturnToMon(true); setFateZeroOpen(true) }
-  const onOpenBunnyGirlFromMon = () => { setMonUniversOpen(false); setReturnToMon(true); setBunnyGirlOpen(true) }
-  const onOpenRentGirlfriendFromMon = () => { setMonUniversOpen(false); setReturnToMon(true); setRentGirlOpen(true) }
-  const onOpenTpnFromMon = () => { setMonUniversOpen(false); setReturnToMon(true); setTpnOpen(true) }
-  const onOpenDrstoneFromMon = () => { setMonUniversOpen(false); setReturnToMon(true); setDrstoneOpen(true) }
-  const onOpenJjkFromMon = () => { setMonUniversOpen(false); setReturnToMon(true); setJjkOpen(true) }
-  const onOpenKingdomFromMon = () => { setMonUniversOpen(false); setReturnToMon(true); setKingdomOpen(true) }
-  const onOpenKnyFromMon = () => { setMonUniversOpen(false); setReturnToMon(true); setKnyOpen(true) }
-  const onOpenNntFromMon = () => { setMonUniversOpen(false); setReturnToMon(true); setNntOpen(true) }
-  const onOpenSlFromMon = () => { setMonUniversOpen(false); setReturnToMon(true); setSlOpen(true) }
-  const onOpenDbsFromMon = () => { setMonUniversOpen(false); setReturnToMon(true); setDbsOpen(true) }
-  const onOpenVioletFromMon = () => { setMonUniversOpen(false); setReturnToMon(true); setVioletOpen(true) }
-  const onOpenVivyFromMon = () => { setMonUniversOpen(false); setReturnToMon(true); setVivyOpen(true) }
-  const onOpenLovePrismFromMon = () => { setMonUniversOpen(false); setReturnToMon(true); setLovePrismOpen(true) }
-  const onOpenCaroleTuesdayFromMon = () => { setMonUniversOpen(false); setReturnToMon(true); setCaroleTuesdayOpen(true) }
-  const onOpenBcFromMon = () => { setMonUniversOpen(false); setReturnToMon(true); setBcOpen(true) }
-  const onOpenMhaFromMon = () => { setMonUniversOpen(false); setReturnToMon(true); setMhaOpen(true) }
-  const onOpenOnepieceFromMon = () => { setMonUniversOpen(false); setReturnToMon(true); setOnepieceOpen(true) }
+  // Ouverture d'une page depuis Mon Univers : on mémorise le retour vers le dashboard
+  // puis on navigue vers l'URL de l'anime (l'effet URL→overlay ouvre la page).
+  const openFromMon = (slug) => () => { setReturnToMon(true); navigate(`/animes-scan/${slug}`) }
+  const onOpenAotFromMon = openFromMon('aot')
+  const onOpenFireforceFromMon = openFromMon('fireforce')
+  const onOpenBluelockFromMon = openFromMon('bluelock')
+  const onOpenFateZeroFromMon = openFromMon('fate-zero')
+  const onOpenBunnyGirlFromMon = openFromMon('bunny-girl')
+  const onOpenRentGirlfriendFromMon = openFromMon('rent-girlfriend')
+  const onOpenTpnFromMon = openFromMon('tpn')
+  const onOpenDrstoneFromMon = openFromMon('drstone')
+  const onOpenJjkFromMon = openFromMon('jjk')
+  const onOpenKingdomFromMon = openFromMon('kingdom')
+  const onOpenKnyFromMon = openFromMon('kny')
+  const onOpenNntFromMon = openFromMon('nnt')
+  const onOpenSlFromMon = openFromMon('sl')
+  const onOpenDbsFromMon = openFromMon('dbs')
+  const onOpenVioletFromMon = openFromMon('violet-evergarden')
+  const onOpenVivyFromMon = openFromMon('vivy')
+  const onOpenLovePrismFromMon = openFromMon('love-prism')
+  const onOpenCaroleTuesdayFromMon = openFromMon('carole-tuesday')
+  const onOpenBcFromMon = openFromMon('bc')
+  const onOpenMhaFromMon = openFromMon('mha')
+  const onOpenOnepieceFromMon = openFromMon('onepiece')
 
   // Fermeture d'une page média : si on y est arrivé depuis Mon Univers, on y retourne ;
-  // sinon on retombe sur AnimeHub (et jamais sur le hero/home).
-  const closeMedia = (setter) => () => {
-    setter(false)
-    if (returnToMon) { setReturnToMon(false); setMonUniversOpen(true) }
-    else setAnimeHubOpen(true)
+  // sinon on retombe sur le Hub Animé (jamais sur le hero/home). Tout passe par l'URL.
+  const closeMedia = () => {
+    if (returnToMon) { setReturnToMon(false); navigate('/animes-scan/mon-univers') }
+    else navigate('/animes-scan')
   }
 
   // Ferme tous les overlays anime/média quand on change de page (sinon un overlay
@@ -296,123 +297,73 @@ export default function App() {
     setVioletOpen(false); setVivyOpen(false); setLovePrismOpen(false); setCaroleTuesdayOpen(false); setBunnyGirlOpen(false); setRentGirlOpen(false); setBcOpen(false); setMhaOpen(false)
     setFireforcOpen(false); setBluelockOpen(false); setFateZeroOpen(false); setYourNameOpen(false); setMonUniversOpen(false); setTreeOpen(false); setUploadOpen(false)
   }, [])
-  const closeAllAnimePages = useCallback(() => {
-    setOnepieceOpen(false); setTpnOpen(false); setDrstoneOpen(false); setJjkOpen(false); setKingdomOpen(false); setAotOpen(false); setKnyOpen(false); setNntOpen(false); setSlOpen(false); setDbsOpen(false); setVioletOpen(false); setVivyOpen(false); setLovePrismOpen(false); setCaroleTuesdayOpen(false); setBunnyGirlOpen(false); setRentGirlOpen(false); setBcOpen(false); setMhaOpen(false); setFireforcOpen(false); setBluelockOpen(false); setFateZeroOpen(false); setYourNameOpen(false)
-  }, [])
-  useEffect(() => { closeAllOverlays() }, [location.pathname, closeAllOverlays])
 
+  // Slug d'URL d'un anime → setter d'overlay correspondant
+  const ANIME_SETTERS = {
+    onepiece: setOnepieceOpen, tpn: setTpnOpen, drstone: setDrstoneOpen, jjk: setJjkOpen,
+    kingdom: setKingdomOpen, aot: setAotOpen, kny: setKnyOpen, nnt: setNntOpen, sl: setSlOpen,
+    dbs: setDbsOpen, 'violet-evergarden': setVioletOpen, vivy: setVivyOpen, 'love-prism': setLovePrismOpen,
+    'carole-tuesday': setCaroleTuesdayOpen, 'bunny-girl': setBunnyGirlOpen, 'rent-girlfriend': setRentGirlOpen,
+    bc: setBcOpen, mha: setMhaOpen, fireforce: setFireforcOpen, bluelock: setBluelockOpen,
+    'fate-zero': setFateZeroOpen, 'your-name': setYourNameOpen,
+  }
+
+  // ── URL = source de vérité des overlays anime/scan ──
+  // /animes-scan → Hub · /animes-scan/<id> → page anime · /animes-scan/mon-univers
+  // · /scans → lecteur de scans. Reload, partage de lien et bouton retour marchent.
   useEffect(() => {
-    const fnScans    = () => setScansOpen(true)
-    const fnEncy     = () => setEncyclopedieOpen(true)
-    const fnAnimeHub = () => setAnimeHubOpen(true)
-    const fnTpn      = () => setTpnOpen(true)
-    const fnDrstone  = () => setDrstoneOpen(true)
-    const fnJjk      = () => setJjkOpen(true)
-    const fnKingdom  = () => setKingdomOpen(true)
-    const fnAot      = () => setAotOpen(true)
-    const fnKny      = () => setKnyOpen(true)
-    const fnNnt      = () => setNntOpen(true)
-    const fnSl       = () => setSlOpen(true)
-    const fnDbs      = () => setDbsOpen(true)
-    const fnViolet   = () => setVioletOpen(true)
-    const fnVivy     = () => setVivyOpen(true)
-    const fnLovePrism = () => setLovePrismOpen(true)
-    const fnCaroleTuesday = () => setCaroleTuesdayOpen(true)
-    const fnBunnyGirl = () => setBunnyGirlOpen(true)
-    const fnRentGirl  = () => setRentGirlOpen(true)
-    const fnBc         = () => setBcOpen(true)
-    const fnMha        = () => setMhaOpen(true)
-    const fnFireforce  = () => setFireforcOpen(true)
-    const fnBluelock   = () => setBluelockOpen(true)
-    const fnMonUnivers = () => setMonUniversOpen(true)
-    const fnTree       = () => setTreeOpen(true)
-    const fnUpload     = () => setUploadOpen(true)
-    document.addEventListener('open-scans',        fnScans)
-    document.addEventListener('open-encyclopedie', fnEncy)
-    document.addEventListener('open-anime-hub',    fnAnimeHub)
-    document.addEventListener('open-tpn',          fnTpn)
-    document.addEventListener('open-drstone',      fnDrstone)
-    document.addEventListener('open-jjk',          fnJjk)
-    document.addEventListener('open-kingdom',      fnKingdom)
-    document.addEventListener('open-aot',          fnAot)
-    document.addEventListener('open-kny',          fnKny)
-    document.addEventListener('open-nnt',          fnNnt)
-    document.addEventListener('open-sl',           fnSl)
-    document.addEventListener('open-dbs',          fnDbs)
-    document.addEventListener('open-violet-evergarden', fnViolet)
-    document.addEventListener('open-vivy',              fnVivy)
-    document.addEventListener('open-love-prism',         fnLovePrism)
-    document.addEventListener('open-carole-tuesday',     fnCaroleTuesday)
-    document.addEventListener('open-bunny-girl',         fnBunnyGirl)
-    document.addEventListener('open-rent-girlfriend',    fnRentGirl)
-    document.addEventListener('open-bc',           fnBc)
-    document.addEventListener('open-mha',          fnMha)
-    document.addEventListener('open-fireforce',    fnFireforce)
-    document.addEventListener('open-bluelock',     fnBluelock)
-    document.addEventListener('open-mon-univers',  fnMonUnivers)
-    document.addEventListener('open-tree',         fnTree)
-    document.addEventListener('open-upload',       fnUpload)
-    return () => {
-      document.removeEventListener('open-scans',        fnScans)
-      document.removeEventListener('open-encyclopedie', fnEncy)
-      document.removeEventListener('open-anime-hub',    fnAnimeHub)
-      document.removeEventListener('open-tpn',          fnTpn)
-      document.removeEventListener('open-drstone',      fnDrstone)
-      document.removeEventListener('open-jjk',          fnJjk)
-      document.removeEventListener('open-kingdom',      fnKingdom)
-      document.removeEventListener('open-aot',          fnAot)
-      document.removeEventListener('open-kny',          fnKny)
-      document.removeEventListener('open-nnt',          fnNnt)
-      document.removeEventListener('open-sl',           fnSl)
-      document.removeEventListener('open-dbs',          fnDbs)
-      document.removeEventListener('open-violet-evergarden', fnViolet)
-      document.removeEventListener('open-vivy',              fnVivy)
-      document.removeEventListener('open-love-prism',         fnLovePrism)
-      document.removeEventListener('open-carole-tuesday',     fnCaroleTuesday)
-      document.removeEventListener('open-bunny-girl',         fnBunnyGirl)
-      document.removeEventListener('open-rent-girlfriend',    fnRentGirl)
-      document.removeEventListener('open-bc',           fnBc)
-      document.removeEventListener('open-mha',          fnMha)
-      document.removeEventListener('open-fireforce',    fnFireforce)
-      document.removeEventListener('open-bluelock',     fnBluelock)
-      document.removeEventListener('open-mon-univers',  fnMonUnivers)
-      document.removeEventListener('open-tree',         fnTree)
-      document.removeEventListener('open-upload',       fnUpload)
+    const path = location.pathname
+    if (path === '/scans') { closeAllOverlays(); setScansOpen(true); return }
+    if (path === '/animes-scan' || path.startsWith('/animes-scan/')) {
+      const sub = decodeURIComponent(path.replace(/^\/animes-scan\/?/, '')).replace(/\/+$/, '')
+      closeAllOverlays()
+      if (!sub) { setAnimeHubOpen(true); setReturnToMon(false) }
+      else if (sub === 'mon-univers') setMonUniversOpen(true)
+      else if (ANIME_SETTERS[sub]) ANIME_SETTERS[sub](true)
+      else { setAnimeHubOpen(true); setReturnToMon(false) }
+      return
     }
-  }, [])
+    closeAllOverlays()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname])
+
+  // Les événements "open-*" (Navbar, cartes…) naviguent désormais vers l'URL dédiée
+  // (sauf encyclopédie/arbre/upload qui restent de simples overlays sans URL).
+  useEffect(() => {
+    const go = (to) => () => navigate(to)
+    const handlers = {
+      'open-scans':            go('/scans'),
+      'open-anime-hub':        go('/animes-scan'),
+      'open-mon-univers':      go('/animes-scan/mon-univers'),
+      'open-tpn':              go('/animes-scan/tpn'),
+      'open-drstone':          go('/animes-scan/drstone'),
+      'open-jjk':              go('/animes-scan/jjk'),
+      'open-kingdom':          go('/animes-scan/kingdom'),
+      'open-aot':              go('/animes-scan/aot'),
+      'open-kny':              go('/animes-scan/kny'),
+      'open-nnt':              go('/animes-scan/nnt'),
+      'open-sl':               go('/animes-scan/sl'),
+      'open-dbs':              go('/animes-scan/dbs'),
+      'open-violet-evergarden':go('/animes-scan/violet-evergarden'),
+      'open-vivy':             go('/animes-scan/vivy'),
+      'open-love-prism':       go('/animes-scan/love-prism'),
+      'open-carole-tuesday':   go('/animes-scan/carole-tuesday'),
+      'open-bunny-girl':       go('/animes-scan/bunny-girl'),
+      'open-rent-girlfriend':  go('/animes-scan/rent-girlfriend'),
+      'open-bc':               go('/animes-scan/bc'),
+      'open-mha':              go('/animes-scan/mha'),
+      'open-fireforce':        go('/animes-scan/fireforce'),
+      'open-bluelock':         go('/animes-scan/bluelock'),
+      'open-encyclopedie':     () => setEncyclopedieOpen(true),
+      'open-tree':             () => setTreeOpen(true),
+      'open-upload':           () => setUploadOpen(true),
+    }
+    const entries = Object.entries(handlers)
+    entries.forEach(([ev, fn]) => document.addEventListener(ev, fn))
+    return () => entries.forEach(([ev, fn]) => document.removeEventListener(ev, fn))
+  }, [navigate])
 
   const mediaOverlayOpen = scansOpen || animeHubOpen || tpnOpen || drstoneOpen || jjkOpen || kingdomOpen || aotOpen || knyOpen || nntOpen || slOpen || dbsOpen || violetOpen || vivyOpen || lovePrismOpen || caroleTuesdayOpen || bunnyGirlOpen || rentGirlOpen || bcOpen || mhaOpen || fireforcOpen || bluelockOpen || fateZeroOpen || yourNameOpen || monUniversOpen
-  const immersiveOverlayOpen = mediaOverlayOpen || encyclopedieOpen || treeOpen || uploadOpen
-
-  // Une page anime est ouverte (≠ Hub / Mon Univers / Scans / Encyclopédie)
-  const animePageOpen = onepieceOpen || tpnOpen || drstoneOpen || jjkOpen || kingdomOpen || aotOpen || knyOpen || nntOpen || slOpen || dbsOpen || violetOpen || vivyOpen || lovePrismOpen || caroleTuesdayOpen || bunnyGirlOpen || rentGirlOpen || bcOpen || mhaOpen || fireforcOpen || bluelockOpen || fateZeroOpen || yourNameOpen
-
-  // ── Bouton "retour" du navigateur sur les overlays anime/scan ──
-  // Les overlays n'ont pas d'URL : sans ça, le bouton retour quitte vers le hero
-  // d'accueil. On empile une entrée d'historique à l'ouverture (même URL → pas de
-  // changement de pathname, donc l'effet de fermeture ci-dessus ne se déclenche pas).
-  // Retour navigateur : page anime → Hub ; Hub/overlay → accueil.
-  const animePageOpenRef = useRef(false); animePageOpenRef.current = animePageOpen
-  const immersiveRef = useRef(false); immersiveRef.current = immersiveOverlayOpen
-  const prevImmersiveRef = useRef(false)
-  useEffect(() => {
-    if (immersiveOverlayOpen && !prevImmersiveRef.current) {
-      window.history.pushState({ bramsOverlay: true }, '')
-    }
-    prevImmersiveRef.current = immersiveOverlayOpen
-  }, [immersiveOverlayOpen])
-  useEffect(() => {
-    const onPop = () => {
-      if (animePageOpenRef.current) {
-        closeAllAnimePages(); setAnimeHubOpen(true)
-        window.history.pushState({ bramsOverlay: true }, '') // garde le Hub capturable
-      } else if (immersiveRef.current) {
-        closeAllOverlays()
-      }
-    }
-    window.addEventListener('popstate', onPop)
-    return () => window.removeEventListener('popstate', onPop)
-  }, [closeAllAnimePages, closeAllOverlays])
 
   const mainContent = (
     <>
@@ -540,60 +491,60 @@ export default function App() {
       {animeHubOpen && (
         isAuthenticated ? (
           <AnimeHub
-            onClose={() => { setAnimeHubOpen(false); navigate('/') }}
-            onOpenOnepiece={() => { setAnimeHubOpen(false); setOnepieceOpen(true) }}
-            onOpenTpn={() => { setAnimeHubOpen(false); setTpnOpen(true) }}
-            onOpenDrstone={() => { setAnimeHubOpen(false); setDrstoneOpen(true) }}
-            onOpenJjk={() => { setAnimeHubOpen(false); setJjkOpen(true) }}
-            onOpenKingdom={() => { setAnimeHubOpen(false); setKingdomOpen(true) }}
-            onOpenAot={() => { setAnimeHubOpen(false); setAotOpen(true) }}
-            onOpenKny={() => { setAnimeHubOpen(false); setKnyOpen(true) }}
-            onOpenNnt={() => { setAnimeHubOpen(false); setNntOpen(true) }}
-            onOpenSl={() => { setAnimeHubOpen(false); setSlOpen(true) }}
-            onOpenDbs={() => { setAnimeHubOpen(false); setDbsOpen(true) }}
-            onOpenViolet={() => { setAnimeHubOpen(false); setVioletOpen(true) }}
-            onOpenVivy={() => { setAnimeHubOpen(false); setVivyOpen(true) }}
-            onOpenLovePrism={() => { setAnimeHubOpen(false); setLovePrismOpen(true) }}
-            onOpenCaroleTuesday={() => { setAnimeHubOpen(false); setCaroleTuesdayOpen(true) }}
-            onOpenBunnyGirl={() => { setAnimeHubOpen(false); setBunnyGirlOpen(true) }}
-            onOpenRentGirlfriend={() => { setAnimeHubOpen(false); setRentGirlOpen(true) }}
-            onOpenBc={() => { setAnimeHubOpen(false); setBcOpen(true) }}
-            onOpenMha={() => { setAnimeHubOpen(false); setMhaOpen(true) }}
-            onOpenFireforce={() => { setAnimeHubOpen(false); setFireforcOpen(true) }}
-            onOpenBluelock={() => { setAnimeHubOpen(false); setBluelockOpen(true) }}
-            onOpenFateZero={() => { setAnimeHubOpen(false); setFateZeroOpen(true) }}
-            onOpenYourName={() => { setAnimeHubOpen(false); setYourNameOpen(true) }}
-            onOpenMonUnivers={() => { setAnimeHubOpen(false); setMonUniversOpen(true) }}
+            onClose={() => navigate('/')}
+            onOpenOnepiece={() => navigate('/animes-scan/onepiece')}
+            onOpenTpn={() => navigate('/animes-scan/tpn')}
+            onOpenDrstone={() => navigate('/animes-scan/drstone')}
+            onOpenJjk={() => navigate('/animes-scan/jjk')}
+            onOpenKingdom={() => navigate('/animes-scan/kingdom')}
+            onOpenAot={() => navigate('/animes-scan/aot')}
+            onOpenKny={() => navigate('/animes-scan/kny')}
+            onOpenNnt={() => navigate('/animes-scan/nnt')}
+            onOpenSl={() => navigate('/animes-scan/sl')}
+            onOpenDbs={() => navigate('/animes-scan/dbs')}
+            onOpenViolet={() => navigate('/animes-scan/violet-evergarden')}
+            onOpenVivy={() => navigate('/animes-scan/vivy')}
+            onOpenLovePrism={() => navigate('/animes-scan/love-prism')}
+            onOpenCaroleTuesday={() => navigate('/animes-scan/carole-tuesday')}
+            onOpenBunnyGirl={() => navigate('/animes-scan/bunny-girl')}
+            onOpenRentGirlfriend={() => navigate('/animes-scan/rent-girlfriend')}
+            onOpenBc={() => navigate('/animes-scan/bc')}
+            onOpenMha={() => navigate('/animes-scan/mha')}
+            onOpenFireforce={() => navigate('/animes-scan/fireforce')}
+            onOpenBluelock={() => navigate('/animes-scan/bluelock')}
+            onOpenFateZero={() => navigate('/animes-scan/fate-zero')}
+            onOpenYourName={() => navigate('/animes-scan/your-name')}
+            onOpenMonUnivers={() => navigate('/animes-scan/mon-univers')}
           />
         ) : (
-          <AuthGuard onClose={() => setAnimeHubOpen(false)} feature="les animés & scans" />
+          <AuthGuard onClose={() => navigate('/')} feature="les animés & scans" />
         )
       )}
-      {onepieceOpen && <OnePiecePage onClose={closeMedia(setOnepieceOpen)} />}
-      {tpnOpen     && <TpnPage     onClose={closeMedia(setTpnOpen)} />}
-      {drstoneOpen && <DrStonePage onClose={closeMedia(setDrstoneOpen)} />}
-      {jjkOpen     && <JjkPage     onClose={closeMedia(setJjkOpen)} />}
-      {kingdomOpen && <KingdomPage onClose={closeMedia(setKingdomOpen)} />}
-      {aotOpen     && <AotPage     onClose={closeMedia(setAotOpen)} />}
-      {knyOpen     && <KnyPage     onClose={closeMedia(setKnyOpen)} />}
-      {nntOpen     && <NntPage     onClose={closeMedia(setNntOpen)} />}
-      {slOpen      && <SlPage      onClose={closeMedia(setSlOpen)} />}
-      {dbsOpen     && <DbsPage     onClose={closeMedia(setDbsOpen)} />}
-      {violetOpen  && <VioletEvergardenPage onClose={closeMedia(setVioletOpen)} />}
-      {vivyOpen    && <VivyPage             onClose={closeMedia(setVivyOpen)} />}
-      {lovePrismOpen && <LovePrismPage      onClose={closeMedia(setLovePrismOpen)} />}
-      {caroleTuesdayOpen && <CaroleTuesdayPage onClose={closeMedia(setCaroleTuesdayOpen)} />}
-      {bunnyGirlOpen && <BunnyGirlPage onClose={closeMedia(setBunnyGirlOpen)} />}
-      {rentGirlOpen && <RentAGirlfriendPage onClose={closeMedia(setRentGirlOpen)} />}
-      {bcOpen        && <BcPage        onClose={closeMedia(setBcOpen)} />}
-      {mhaOpen       && <MhaPage       onClose={closeMedia(setMhaOpen)} />}
-      {fireforcOpen  && <FireForcePage onClose={closeMedia(setFireforcOpen)} />}
-      {bluelockOpen  && <BlueLockPage  onClose={closeMedia(setBluelockOpen)} />}
-      {fateZeroOpen  && <FateZeroPage  onClose={closeMedia(setFateZeroOpen)} />}
-      {yourNameOpen  && <YourNamePage  onClose={closeMedia(setYourNameOpen)} />}
+      {onepieceOpen && <OnePiecePage onClose={closeMedia} />}
+      {tpnOpen     && <TpnPage     onClose={closeMedia} />}
+      {drstoneOpen && <DrStonePage onClose={closeMedia} />}
+      {jjkOpen     && <JjkPage     onClose={closeMedia} />}
+      {kingdomOpen && <KingdomPage onClose={closeMedia} />}
+      {aotOpen     && <AotPage     onClose={closeMedia} />}
+      {knyOpen     && <KnyPage     onClose={closeMedia} />}
+      {nntOpen     && <NntPage     onClose={closeMedia} />}
+      {slOpen      && <SlPage      onClose={closeMedia} />}
+      {dbsOpen     && <DbsPage     onClose={closeMedia} />}
+      {violetOpen  && <VioletEvergardenPage onClose={closeMedia} />}
+      {vivyOpen    && <VivyPage             onClose={closeMedia} />}
+      {lovePrismOpen && <LovePrismPage      onClose={closeMedia} />}
+      {caroleTuesdayOpen && <CaroleTuesdayPage onClose={closeMedia} />}
+      {bunnyGirlOpen && <BunnyGirlPage onClose={closeMedia} />}
+      {rentGirlOpen && <RentAGirlfriendPage onClose={closeMedia} />}
+      {bcOpen        && <BcPage        onClose={closeMedia} />}
+      {mhaOpen       && <MhaPage       onClose={closeMedia} />}
+      {fireforcOpen  && <FireForcePage onClose={closeMedia} />}
+      {bluelockOpen  && <BlueLockPage  onClose={closeMedia} />}
+      {fateZeroOpen  && <FateZeroPage  onClose={closeMedia} />}
+      {yourNameOpen  && <YourNamePage  onClose={closeMedia} />}
       {monUniversOpen && (
-        <MonUniversPage 
-          onClose={() => setMonUniversOpen(false)}
+        <MonUniversPage
+          onClose={() => navigate('/animes-scan')}
           onOpenAot={onOpenAotFromMon} onOpenFireforce={onOpenFireforceFromMon} onOpenBluelock={onOpenBluelockFromMon} onOpenFateZero={onOpenFateZeroFromMon}
           onOpenBunnyGirl={onOpenBunnyGirlFromMon} onOpenRentGirlfriend={onOpenRentGirlfriendFromMon}
           onOpenTpn={onOpenTpnFromMon} onOpenDrstone={onOpenDrstoneFromMon} onOpenJjk={onOpenJjkFromMon}
@@ -606,8 +557,8 @@ export default function App() {
       {treeOpen      && <FamilyTree3D  onClose={() => setTreeOpen(false)} />}
       {scansOpen && (
         isAuthenticated
-          ? <ScansPage onClose={() => setScansOpen(false)} />
-          : <AuthGuard onClose={() => setScansOpen(false)} feature="les scans One Piece" />
+          ? <ScansPage onClose={() => navigate('/')} />
+          : <AuthGuard onClose={() => navigate('/')} feature="les scans One Piece" />
       )}
       {encyclopedieOpen && <ComingSoon title="Encyclopédie" onClose={() => setEncyclopedieOpen(false)} />}
       {uploadOpen && (
