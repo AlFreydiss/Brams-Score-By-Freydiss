@@ -10,9 +10,11 @@ const PERIOD_DAYS = {
   '30d': 30,
 }
 
-// Durée max d'une session vocale "live" extrapolée (16h). Au-delà, c'est
+// Durée max d'une session vocale "live" extrapolée (24h). Au-delà, c'est
 // quasi sûrement un join_time fantôme (session jamais fermée) → on ne compte pas.
-const MAX_LIVE_SESSION = 16 * 3600
+// 24h (vs 16h) : un farmer h24 d'une journée n'est plus rogné. Les fantômes sont
+// de toute façon évités à la source côté bot (heartbeat voice_seen 2 min).
+const MAX_LIVE_SESSION = 24 * 3600
 
 function secondsInPeriod(sessions = [], days, joinTime, now) {
   const cutoff = now - days * 86400

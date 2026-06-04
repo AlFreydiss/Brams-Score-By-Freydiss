@@ -42,14 +42,14 @@ AS $$
         ELSE
           coalesce((
             SELECT SUM(
-              -- plafond anti-fantôme 16h/session (= bot seconds_since / api leaderboard)
+              -- plafond anti-fantôme 24h/session (= bot seconds_since / api leaderboard)
               LEAST(
                 GREATEST(
                   0,
                   LEAST((s->>'end')::float8, params.now_ts)
                   - GREATEST((s->>'start')::float8, params.now_ts - params.days * 86400)
                 ),
-                57600
+                86400
               )
             )
             FROM jsonb_array_elements(coalesce(u.data->'vocal_sessions', '[]'::jsonb)) s
@@ -59,7 +59,7 @@ AS $$
           ), 0)
           + CASE
               WHEN coalesce((u.data->>'join_time')::float8, 0) > 0
-              THEN LEAST(GREATEST(0, params.now_ts - GREATEST((u.data->>'join_time')::float8, params.now_ts - params.days * 86400)), 57600)
+              THEN LEAST(GREATEST(0, params.now_ts - GREATEST((u.data->>'join_time')::float8, params.now_ts - params.days * 86400)), 86400)
               ELSE 0
             END
       END
