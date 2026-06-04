@@ -99,8 +99,8 @@ const EpCard = memo(function EpCard({ video, index, watched, onPlay }) {
         <div style={{ position:'absolute',bottom:8,left:8, fontSize:9,fontWeight:800,background:'rgba(0,180,220,.18)',color:COLOR2,border:`1px solid rgba(0,212,255,.28)`,borderRadius:100,padding:'2px 7px' }}>VOSTFR</div>
       </div>
       <div style={{ padding:'10px 13px 13px' }}>
-        <div style={{ fontSize:9.5,fontWeight:800,color:COLOR2,letterSpacing:'.1em',marginBottom:4 }}>ÉPISODE {video.episode}</div>
-        <div style={{ fontSize:13.5,fontWeight:700,color:watched?'rgba(255,255,255,.45)':'#EDEBE3',lineHeight:1.28 }}>{video.title}</div>
+        <div style={{ fontSize:9.5,fontWeight:800,color:COLOR2,letterSpacing:'.1em',marginBottom:4 }}>{video.episodeLabel || `EP ${video.episode}`}</div>
+        <div style={{ fontSize:13.5,fontWeight:700,color:'#fff',lineHeight:1.28 }}>{video.title}</div>
       </div>
     </div>
   )
@@ -286,7 +286,7 @@ export default function VivyPage({ onClose }) {
           <div style={{ position:'absolute',left:'50%',transform:'translateX(-50%)',display:'flex',alignItems:'center',gap:10 }}>
             <span style={{ fontSize:17,animation:'vyFloat 6s ease-in-out infinite' }}>🎵</span>
             <span style={{ fontFamily:"'Pirata One',cursive",fontSize:17,fontWeight:900,color:'#fff',letterSpacing:'-.01em' }}>
-              {playerIdx !== null ? `Épisode ${VIDEOS[playerIdx]?.episode}` : "Vivy: Fluorite Eye's Song"}
+              {playerIdx !== null ? (VIDEOS[playerIdx]?.title || `Épisode ${VIDEOS[playerIdx]?.episode}`) : "Vivy: Fluorite Eye's Song"}
             </span>
           </div>
 

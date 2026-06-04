@@ -495,6 +495,42 @@ export default function ConstellationPage() {
     load()
   }, [uid])
 
+  // Realtime pour que les nouveaux équipages / mises à jour (bounty etc) apparaissent sans F5
+  useEffect(() => {
+    if (!supabase) return
+    const ch = supabase
+      .channel('crews-live')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'crews' }, () => {
+        // reload crews list live
+        fetchCrews().then(data => {
+          if (data && data.length > 0) setCrews(data)
+        }).catch(() => {})
+      })
+      .subscribe()
+    return () => { try { supabase.removeChannel(ch) } catch {} }
+  }, [])
+
+  // Realtime membership: si tu rejoins un équipage (ou changes), la sidebar "mon équipage" s'update sans refresh
+  useEffect(() => {
+    if (!supabase || !uid) return
+    const ch = supabase
+      .channel(`crew-membership-${uid}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'crew_members', filter: `user_id=eq.${uid}` }, async () => {
+        try {
+          const mem = await getUserCrewMembership(uid)
+          setMembership(mem)
+          if (mem?.crew_id) {
+            const cd = await fetchCrewById(mem.crew_id)
+            setMemberCrew(cd)
+          } else {
+            setMemberCrew(null)
+          }
+        } catch {}
+      })
+      .subscribe()
+    return () => { try { supabase.removeChannel(ch) } catch {} }
+  }, [uid])
+
   const filtered = useMemo(() => {
     let r = [...crews]
     if (filter === 'Recrute') r = r.filter(c => c.recruiting)

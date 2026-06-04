@@ -274,7 +274,7 @@ function ArcFilter({ arcs, active, onChange, color }) {
 function TpnInfoPanel({ color, tab, readCount, chapterCount, watchedCount, episodeCount, videoProgress, onResume }) {
   const lastIdx = Number.isInteger(videoProgress?.lastIdx) ? videoProgress.lastIdx : 0
   const nextLabel = videoProgress?.lastEpisode
-    ? `Episode ${videoProgress.lastEpisode} - ${videoProgress.lastTitle || 'reprise'}`
+    ? `${videoProgress.lastTitle || `Episode ${videoProgress.lastEpisode}`} - reprise`
     : 'Episode 1 - Grace Field House'
   const modeLine = tab === 'videos'
     ? `${watchedCount}/${episodeCount} episodes termines`
@@ -389,7 +389,7 @@ function SeriesInfoPanel({ color, title, headerEmoji, videos, watchedCount, vide
           {[
             ['Arc', latest?.season || 'Egghead'],
             ['Audio', 'VOSTFR'],
-            ['Dernier', latest ? `Épisode ${latest.episode}` : '-'],
+            ['Dernier', latest ? (latest.title || `Épisode ${latest.episode}`) : '-'],
           ].map(([label, value]) => (
             <div key={label} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, padding: '9px 0', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
               <span style={{ color: 'rgba(255,255,255,0.34)', fontSize: 11, fontWeight: 850, textTransform: 'uppercase', letterSpacing: '.09em' }}>{label}</span>
@@ -480,7 +480,7 @@ function VideoCard({ video, onPlay, color, premium = false }) {
   const [hovered, setHovered] = useState(false)
   const thumb = video.thumbnail || (video.id ? `https://img.youtube.com/vi/${video.id}/mqdefault.jpg` : null)
   const episodeLabel = video.episodeLabel || (video.kind === 'film' ? 'Film' : video.kind === 'ova' ? 'OAV' : video.episode)
-  const typeLabel = video.kind === 'film' || video.kind === 'ova' ? String(episodeLabel).toUpperCase() : `EPISODE ${episodeLabel}`
+  const typeLabel = video.kind === 'film' || video.kind === 'ova' ? String(episodeLabel).toUpperCase() : `EP ${episodeLabel}`
   return (
     <div onClick={onPlay} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
       style={{
@@ -686,6 +686,18 @@ export default function GenericMangaPage({ chaptersData, videosData, color, name
             .tpn-content-grid { grid-template-columns: 1fr; }
             .tpn-info-panel { position: relative !important; top: auto !important; }
           }
+          @media (max-width: 700px) {
+            .tpn-content-grid { gap: 12px; }
+            .gm-header { padding: 0 10px !important; min-height: 52px; }
+            .gm-header > div { gap: 6px !important; }
+            .gm-header button { font-size: 11px !important; padding: 5px 9px !important; }
+          }
+          @media (max-width: 480px) {
+            .gm-header { padding: 0 6px !important; }
+            .tpn-info-panel, .SeriesInfoPanel { margin-bottom: 12px; }
+            .gm-episode-scroll { padding: 12px 8px 20px !important; }
+            .gm-main-scroll { padding: 10px 6px 16px !important; }
+          }
         `}</style>
       )}
       <div style={{
@@ -713,7 +725,7 @@ export default function GenericMangaPage({ chaptersData, videosData, color, name
           </video>
         )}
         {usesEpisodeLayout && <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: 'radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.22) 72%, rgba(0,0,0,0.42) 100%)' }} />}
-        <div style={{ flexShrink: 0, background: usesEpisodeLayout ? 'rgba(18,19,22,0.88)' : 'rgba(17,18,20,0.97)', backdropFilter: 'blur(20px)', borderBottom: '1px solid var(--border)', zIndex: 10 }}>
+        <div className="gm-header" style={{ flexShrink: 0, background: usesEpisodeLayout ? 'rgba(18,19,22,0.88)' : 'rgba(17,18,20,0.97)', backdropFilter: 'blur(20px)', borderBottom: '1px solid var(--border)', zIndex: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '0 20px', minHeight: 64, flexWrap: 'wrap' }}>
             <button onClick={onClose}
               style={{ display: 'flex', alignItems: 'center', gap: 6, background: usesEpisodeLayout ? 'rgba(255,255,255,0.075)' : 'rgba(255,255,255,0.06)', border: '1px solid var(--border)', borderRadius: 10, color: '#fff', cursor: 'pointer', padding: '8px 14px', fontSize: 13, fontWeight: 800, flexShrink: 0, transition: 'background 0.15s' }}
@@ -741,7 +753,7 @@ export default function GenericMangaPage({ chaptersData, videosData, color, name
           </div>
         </div>
 
-        <div ref={scrollRef} style={{ position: 'relative', zIndex: 1, flex: 1, overflowY: 'auto', padding: usesEpisodeLayout ? '24px 24px 30px' : '28px 20px' }}>
+        <div ref={scrollRef} style={{ position: 'relative', zIndex: 1, flex: 1, overflowY: 'auto', padding: usesEpisodeLayout ? '24px 24px 30px' : '28px 20px' }} className={usesEpisodeLayout ? 'gm-episode-scroll' : 'gm-main-scroll'}>
           <div style={{ maxWidth: usesEpisodeLayout ? 1760 : tab === 'videos' ? 1280 : 1120, margin: '0 auto' }}>
             <div className={usesEpisodeLayout ? 'tpn-content-grid' : undefined} style={{ display: usesEpisodeLayout ? undefined : 'block' }}>
               {isTpn && (

@@ -228,6 +228,9 @@ export default function BlindTestRoomPage() {
   const canAnswer = room?.status === 'playing' && elapsed >= answerDelay && !myAnswer
   const inviteLink = code ? `${window.location.origin}/blind-test/room/${code}` : ''
 
+  const currentRoundRef = useRef(0)
+  useEffect(() => { currentRoundRef.current = room?.round || 0 }, [room?.round])
+
   const animeOptions = useMemo(() => {
     if (!track) return []
     const byAnime = new Map()
@@ -273,18 +276,18 @@ export default function BlindTestRoomPage() {
         setRoom(payload.new)
         setAnimeGuess('')
         setTitleGuess('')
-        fetchBlindTestRoomAnswers(code, payload.new?.round).then(setAnswers)
+        fetchBlindTestRoomAnswers(code, payload.new?.round || currentRoundRef.current).then(setAnswers)
       })
       .on('postgres_changes', { event:'*', schema:'public', table:'blind_test_room_players', filter:`room_code=eq.${code}` }, () => {
         fetchBlindTestRoomPlayers(code).then(setPlayers)
       })
       .on('postgres_changes', { event:'*', schema:'public', table:'blind_test_room_answers', filter:`room_code=eq.${code}` }, () => {
-        fetchBlindTestRoomAnswers(code, room?.round).then(setAnswers)
+        fetchBlindTestRoomAnswers(code, currentRoundRef.current).then(setAnswers)
         fetchBlindTestRoomPlayers(code).then(setPlayers)
       })
       .subscribe()
     return () => { supabase.removeChannel(channel) }
-  }, [code, room?.round])
+  }, [code]) // round via ref to avoid resub loops / stale
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 250)

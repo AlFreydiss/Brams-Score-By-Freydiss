@@ -87,14 +87,21 @@ export async function fetchMemberProfile(discordId) {
   if (!supabase) { console.warn('[profile] supabase null — env vars manquantes'); return null }
   const id = String(discordId)
 
-  // ── 1. Leaderboard RPC (gives vocal_h + rank) ──────────────────────────────
+  // ── 1. Leaderboard via the SAME source as /classement (API first, then RPC) ──
+  // This ensures consistency with the public leaderboard and may be faster/cached.
   let board = null
-  const rpc1 = await withTimeout(supabase.rpc('top_classement', { p_limit: 500, p_period: 'week' }))
-  if (!rpc1.error && rpc1.data?.length) {
-    board = rpc1.data
-  } else {
-    const rpc2 = await withTimeout(supabase.rpc('top_classement', { p_limit: 500 }))
-    if (!rpc2.error && rpc2.data?.length) board = rpc2.data
+  try {
+    const boardRes = await withTimeout( callTopClassement(500, 'week') )
+    if (!boardRes?.error && Array.isArray(boardRes?.data) && boardRes.data.length) {
+      board = boardRes.data
+    } else {
+      const boardRes2 = await withTimeout( callTopClassement(500) )
+      if (!boardRes2?.error && Array.isArray(boardRes2?.data) && boardRes2.data.length) {
+        board = boardRes2.data
+      }
+    }
+  } catch (e) {
+    console.warn('[profile] leaderboard fetch failed', e?.message || e)
   }
 
   if (board) {
@@ -106,7 +113,7 @@ export async function fetchMemberProfile(discordId) {
     if (idx !== -1) return { ...board[idx], uid: id, rank: idx + 1, total: board.length }
   }
 
-  // ── 2. Direct users table lookup ────────────────────────────────────────────
+  // ── 2. Direct users table lookup (fallback) ─────────────────────────────────
   const { data: user } = await withTimeout(
     supabase.from('users').select('uid, data').eq('uid', id).maybeSingle()
   )

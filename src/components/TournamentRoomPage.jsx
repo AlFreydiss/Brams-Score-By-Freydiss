@@ -101,14 +101,31 @@ export default function TournamentRoomPage() {
       .finally(() => setRoomsLoading(false))
   }, [])
 
-  // Liste "Salons en direct" : chargée à l'arrivée PUIS rafraîchie en continu
-  // (sinon un salon créé/fermé n'apparaît/disparaît jamais sans recharger la page).
+  // Liste "Salons en direct" : chargée à l'arrivée + realtime pour apparition instantanée des nouveaux salons
+  // (plus besoin d'actualiser ou d'attendre le polling). Polling de secours conservé pour robustesse.
   useEffect(() => {
     if (code) return
     let ignore = false
     const tick = () => { if (!ignore) loadRooms() }
     tick()
-    const iv = setInterval(() => { if (!document.hidden) tick() }, 6000)
+
+    // Realtime: quand un salon est créé/modifié/supprimé, on recharge la liste live
+    // (filtre soft côté handler pour n'affecter que les salons "publics" type ost/opening/ending)
+    let roomSub = null
+    if (supabase) {
+      const relevant = new Set(['ost', 'opening', 'ending'])
+      roomSub = supabase
+        .channel('public-trooms-list')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'tournament_rooms' }, payload => {
+          const tid = (payload.new || payload.old)?.tournament_id
+          if (!tid || relevant.has(tid)) {
+            if (!ignore) tick()
+          }
+        })
+        .subscribe()
+    }
+
+    const iv = setInterval(() => { if (!document.hidden) tick() }, 8000)
     const onFocus = () => { if (!document.hidden) tick() }
     document.addEventListener('visibilitychange', onFocus)
     window.addEventListener('focus', onFocus)
@@ -117,6 +134,7 @@ export default function TournamentRoomPage() {
       clearInterval(iv)
       document.removeEventListener('visibilitychange', onFocus)
       window.removeEventListener('focus', onFocus)
+      if (roomSub) supabase.removeChannel(roomSub)
     }
   }, [code, loadRooms])
 

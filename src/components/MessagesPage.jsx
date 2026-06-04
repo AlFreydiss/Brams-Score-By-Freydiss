@@ -347,14 +347,21 @@ function MessageBubble({ msg, mine, grouped, isGroup, onReact, onReply, onEdit, 
   return (
     <div id={`msg-${msg.id}`} style={{ display: 'flex', flexDirection: 'column', alignItems: mine ? 'flex-end' : 'flex-start', marginTop: grouped ? 2 : 12, scrollMarginTop: 80, borderRadius: 12 }}
       onMouseLeave={() => setMenu(false)}>
-      {/* Nom de l'expéditeur dans un groupe (messages des autres, en tête de bloc) */}
-      {isGroup && !mine && !grouped && (
-        <span style={{ fontSize: 11, fontWeight: 700, color: T.violet, padding: '0 6px 3px' }}>
-          {msg.sender_username || `Pirate #${String(msg.sender_id || '').slice(-5)}`}
-        </span>
-      )}
       {pinned && !deleted && <span style={{ fontSize: 10, color: T.gold, fontWeight: 700, padding: '0 6px 2px', display: 'flex', alignItems: 'center', gap: 3 }}>📌 Épinglé</span>}
-      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, maxWidth: '80%', flexDirection: mine ? 'row-reverse' : 'row' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, maxWidth: mine ? '80%' : 'calc(80% - 36px)', flexDirection: mine ? 'row-reverse' : 'row' }}>
+        {!mine && (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2, flexShrink: 0 }}>
+            {isGroup && !grouped && (
+              <span style={{ fontSize: 11, fontWeight: 700, color: T.violet, padding: '0 0 2px 0', whiteSpace: 'nowrap' }}>
+                {msg.sender_username || `Pirate #${String(msg.sender_id || '').slice(-5)}`}
+              </span>
+            )}
+            {grouped
+              ? <div style={{ width: 28, height: 28, flexShrink: 0 }} />
+              : <Avatar url={msg.sender_avatar} name={msg.sender_username || `Pirate #${String(msg.sender_id || '').slice(-5)}`} size={28} />
+            }
+          </div>
+        )}
         <div style={{ position: 'relative' }} onMouseEnter={() => setMenu(true)}>
           <div style={{
             padding: msg.type === 'gif' || msg.type === 'image' ? 4 : (msg.type === 'voice' ? 6 : '9px 13px'),
@@ -636,7 +643,24 @@ function ChatView({ conversationId, meta, onBack, isMobile, refreshList }) {
 
   useEffect(() => {
     const unsub = subscribeToConversation(conversationId, {
-      onInsert: (m) => { setMessages(prev => dedupeById([...prev, m])); scrollToBottom(true); if (m.sender_id !== discordId) markRead() },
+      onInsert: (m) => {
+        let enriched = { ...m };
+        if (!enriched.sender_avatar && m.sender_id !== discordId) {
+          if (meta?.is_group && meta.members?.length) {
+            const mem = meta.members.find(mm => String(mm.user_id || mm.id) === String(m.sender_id));
+            if (mem) {
+              enriched.sender_avatar = mem.avatar_url;
+              enriched.sender_username = mem.username || mem.display_name;
+            }
+          } else if (meta?.other_avatar) {
+            enriched.sender_avatar = meta.other_avatar;
+            enriched.sender_username = meta.other_username;
+          }
+        }
+        setMessages(prev => dedupeById([...prev, enriched]));
+        scrollToBottom(true);
+        if (m.sender_id !== discordId) markRead();
+      },
       onUpdate: (m) => setMessages(prev => prev.map(x => x.id === m.id ? { ...x, ...m } : x)),
       onReaction: () => {
         clearTimeout(reactionTimer.current)
@@ -659,8 +683,15 @@ function ChatView({ conversationId, meta, onBack, isMobile, refreshList }) {
         const known = new Map(prev.map(m => [m.id, m])); let changed = false
         for (const m of recent) {
           const ex = known.get(m.id)
-          if (!ex) { known.set(m.id, m); changed = true }
-          else if (JSON.stringify(ex.reactions) !== JSON.stringify(m.reactions) || ex.content !== m.content || ex.deleted_at !== m.deleted_at || ex.pinned_at !== m.pinned_at) { known.set(m.id, { ...ex, ...m }); changed = true }
+          if (!ex) {
+            known.set(m.id, m); changed = true
+          } else {
+            // merge, especially to pick up sender_avatar / username from enriched RPC data
+            const merged = { ...ex, ...m, sender_avatar: m.sender_avatar || ex.sender_avatar, sender_username: m.sender_username || ex.sender_username }
+            if (JSON.stringify(ex) !== JSON.stringify(merged)) {
+              known.set(m.id, merged); changed = true
+            }
+          }
         }
         return changed ? Array.from(known.values()).sort((a, b) => new Date(a.created_at) - new Date(b.created_at)) : prev
       })

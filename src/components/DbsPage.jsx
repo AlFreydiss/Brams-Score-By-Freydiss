@@ -126,8 +126,8 @@ const EpCard = memo(function EpCard({ video, index, watched, onPlay }) {
         </div>
       </div>
       <div style={{ padding:'10px 13px 13px' }}>
-        <div style={{ fontSize:9.5,fontWeight:800,color:COLOR2,letterSpacing:'.1em',marginBottom:4 }}>ÉPISODE {video.episode}</div>
-        <div style={{ fontSize:13,fontWeight:700,color:watched?'rgba(255,255,255,.45)':'#EDEBE3',lineHeight:1.28 }}>{video.title}</div>
+        <div style={{ fontSize:9.5,fontWeight:800,color:COLOR2,letterSpacing:'.1em',marginBottom:4 }}>{video.episodeLabel || `EP ${video.episode}`}</div>
+        <div style={{ fontSize:13,fontWeight:700,color:'#fff',lineHeight:1.28 }}>{video.title}</div>
       </div>
     </div>
   )

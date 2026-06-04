@@ -8,7 +8,7 @@ async function rpc(fn, args = {}) {
   try {
     const { data, error } = await Promise.race([
       supabase.rpc(fn, args),
-      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 12000)),
+      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 15000)),
     ])
     if (error) { console.error(`[feed] ${fn}`, error.message); return { ok: false, error: error.message } }
     return data

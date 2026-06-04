@@ -55,6 +55,15 @@ export function useProfileData(discordId) {
 
   useEffect(() => load(false), [load])
 
+  // Filet de sécurité absolu : même si le load() interne et son safety ont un problème
+  // (re-render qui nettoie les timers, closure stale, etc.), on force la sortie du
+  // loading après 10s max pour ce discordId. Évite le "skeleton à l'infini" / "faut actualiser".
+  // Si les données arrivent plus tard via le .then, tant mieux (setMember mettra à jour).
+  useEffect(() => {
+    const t = setTimeout(() => setLoading(false), 10000)
+    return () => clearTimeout(t)
+  }, [discordId])
+
   // Rafraîchit UNIQUEMENT l'état de suivi (sans recharger tout le profil) — pour
   // l'optimistic follow/unfollow depuis le header ou la modale.
   const refreshFollow = useCallback(() => {

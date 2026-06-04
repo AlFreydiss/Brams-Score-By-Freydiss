@@ -50,9 +50,38 @@ const CSS = `
   .op-ep-card:hover .op-play-btn { transform: scale(1.15) !important; opacity: 1 !important; }
   .op-cta { transition: background .18s, transform .14s, box-shadow .18s; }
   .op-cta:hover { background: rgba(224,82,74,.22) !important; transform: translateY(-1px); box-shadow: 0 8px 28px rgba(224,82,74,.28); }
-  .op-scroll { scrollbar-width: thin; scrollbar-color: rgba(224,82,74,.2) transparent; }
+  .op-scroll { scrollbar-width: thin; scrollbar-color: rgba(224,82,74,.2) transparent; padding: 24px 28px 48px; }
   .op-scroll::-webkit-scrollbar { width: 4px; }
   .op-scroll::-webkit-scrollbar-thumb { background: rgba(224,82,74,.2); border-radius: 4px; }
+  @media (max-width: 600px) { .op-scroll { padding: 12px 10px 30px !important; } }
+
+  /* Mobile / Tablet optimizations */
+  @media (max-width: 900px) {
+    .op-header { height: auto !important; min-height: 52px; padding: 6px 12px !important; flex-wrap: wrap; gap: 6px; }
+    .op-header > button { font-size: 11px !important; padding: 6px 10px !important; }
+    .op-header-title { position: static !important; transform: none !important; flex: 1 1 100%; text-align: center; font-size: 15px !important; margin: 2px 0 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .op-header-right { font-size: 9px !important; }
+    .op-header-right > div:last-child { width: 42px !important; height: 4px !important; }
+  }
+  @media (max-width: 600px) {
+    .op-header { padding: 4px 10px !important; }
+    .op-header > button { font-size: 10px !important; padding: 5px 8px !important; }
+    .op-header-title { font-size: 14px !important; }
+    .op-ep-card { border-radius: 10px !important; }
+    .op-ep-card > div:first-child { padding-top: 52% !important; }
+    .op-ep-card > div:last-child { padding: 6px 9px 9px !important; }
+    .op-ep-card > div:last-child > div:first-child { font-size: 7.5px !important; }
+    .op-ep-card > div:last-child > div:last-child { font-size: 11px !important; }
+  }
+
+  .op-layout { display: grid; grid-template-columns: 310px minmax(0,1fr); gap: 28px; max-width: 1480px; margin: 0 auto; align-items: start; }
+  @media (max-width: 900px) { .op-layout { grid-template-columns: 1fr; } }
+  @media (max-width: 600px) { .op-layout { gap: 16px; } }
+
+  @media (max-width: 600px) {
+    .op-info-hero { height: 160px !important; }
+    .op-info-hero > div:last-child { padding: '0 12px 12px' !important; }
+  }
 `
 
 const EpCard = memo(function EpCard({ video, index, watched, onPlay }) {
@@ -74,13 +103,13 @@ const EpCard = memo(function EpCard({ video, index, watched, onPlay }) {
           ? <img src={video.thumbnail} alt={video.title} loading="lazy" onError={() => setImgErr(true)}
               style={{ position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',opacity:watched?0.5:0.82 }} />
           : <div style={{ position:'absolute',inset:0,background:'linear-gradient(135deg,rgba(224,82,74,.12),rgba(0,0,0,.9))',display:'flex',alignItems:'center',justifyContent:'center' }}>
-              <span style={{ fontFamily:"'Pirata One',cursive",fontSize:36,fontWeight:900,color:'rgba(224,82,74,.28)' }}>{video.episode}</span>
+              <span style={{ fontFamily:"'Pirata One',cursive",fontSize:36,fontWeight:900,color:'rgba(224,82,74,.55)' }}>{video.episode}</span>
             </div>
         }
         <div style={{ position:'absolute',inset:'40% 0 0',background:'linear-gradient(180deg,transparent,rgba(0,0,0,.7))',pointerEvents:'none' }} />
         {canPlay && (
           <div className="op-play-btn" style={{ position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',opacity:watched?0.5:0.8 }}>
-            <div style={{ width:36,height:36,borderRadius:'50%',background:'rgba(200,60,40,.85)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,backdropFilter:'blur(6px)',boxShadow:'0 4px 18px rgba(224,82,74,.5)' }}>▶</div>
+            <div style={{ width:40,height:40,borderRadius:'50%',background:'rgba(200,60,40,.85)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,backdropFilter:'blur(6px)',boxShadow:'0 4px 18px rgba(224,82,74,.5)' }}>▶</div>
           </div>
         )}
         {!canPlay && (
@@ -93,7 +122,7 @@ const EpCard = memo(function EpCard({ video, index, watched, onPlay }) {
       </div>
       <div style={{ padding:'8px 11px 11px' }}>
         <div style={{ fontSize:8.5,fontWeight:800,color:COLOR2,letterSpacing:'.1em',marginBottom:2 }}>ÉP. {video.episode}</div>
-        <div style={{ fontSize:12,fontWeight:700,color:watched?'rgba(255,255,255,.42)':'#EDEBE3',lineHeight:1.28 }}>{video.title}</div>
+        <div style={{ fontSize:12,fontWeight:700,color:'#fff',lineHeight:1.28 }}>{video.title}</div>
       </div>
     </div>
   )
@@ -111,7 +140,7 @@ function InfoPanel({ watchedCount, availableCount, resumeIdx, onResume }) {
       boxShadow:'0 24px 70px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.04)',
       backdropFilter:'blur(20px)',
     }}>
-      <div style={{ position:'relative',height:268,overflow:'hidden',flexShrink:0 }}>
+      <div className="op-info-hero" style={{ position:'relative',height:268,overflow:'hidden',flexShrink:0 }}>
         <img src={COVER} alt="One Piece" style={{ width:'100%',height:'100%',objectFit:'cover',objectPosition:'center 15%',opacity:.72,filter:'saturate(1.1) brightness(.88)' }} />
         <div style={{ position:'absolute',inset:0,background:'linear-gradient(180deg,rgba(0,0,0,.1) 0%,rgba(20,8,6,.98) 100%)' }} />
         <div style={{ position:'absolute',bottom:0,left:0,right:0,padding:'0 18px 20px' }}>
@@ -237,7 +266,7 @@ export default function OnePiecePage({ onClose }) {
       <div style={{ position:'fixed',inset:0,zIndex:500,background:'radial-gradient(circle at 18% 12%,rgba(224,82,74,.10),transparent 32rem),radial-gradient(circle at 84% 80%,rgba(180,40,30,.07),transparent 28rem),linear-gradient(135deg,#100604 0%,#0e0a08 55%,#0a0604 100%)',display:'flex',flexDirection:'column' }}>
         <AnimeBackdrop motifs={ANIME_MOTIFS.onepiece} color={COLOR} color2={COLOR2} />
         {/* Navbar */}
-        <div style={{ flexShrink:0,height:62,padding:'0 24px',display:'flex',alignItems:'center',justifyContent:'space-between',background:'rgba(16,6,4,.96)',backdropFilter:'blur(24px)',borderBottom:'1px solid rgba(224,82,74,.10)',zIndex:10,position:'relative' }}>
+        <div className="op-header" style={{ flexShrink:0,height:62,padding:'0 24px',display:'flex',alignItems:'center',justifyContent:'space-between',background:'rgba(16,6,4,.96)',backdropFilter:'blur(24px)',borderBottom:'1px solid rgba(224,82,74,.10)',zIndex:10,position:'relative' }}>
           <button onClick={playerIdx !== null ? () => setPlayerIdx(null) : onClose}
             style={{ display:'flex',alignItems:'center',gap:7,background:'rgba(255,255,255,.06)',border:'1px solid rgba(255,255,255,.09)',borderRadius:10,color:'rgba(255,255,255,.72)',cursor:'pointer',padding:'8px 16px',fontSize:12.5,fontWeight:800,transition:'background .15s',fontFamily:'var(--body)' }}
             onMouseEnter={e=>e.currentTarget.style.background='rgba(255,255,255,.11)'}
@@ -245,14 +274,14 @@ export default function OnePiecePage({ onClose }) {
             ← {playerIdx !== null ? 'Épisodes' : 'Retour hub'}
           </button>
 
-          <div style={{ position:'absolute',left:'50%',transform:'translateX(-50%)',display:'flex',alignItems:'center',gap:10 }}>
+          <div className="op-header-title" style={{ position:'absolute',left:'50%',transform:'translateX(-50%)',display:'flex',alignItems:'center',gap:10 }}>
             <span style={{ fontSize:18,animation:'opFloat 6s ease-in-out infinite' }}>🏴‍☠️</span>
             <span style={{ fontFamily:"'Pirata One',cursive",fontSize:18,fontWeight:900,color:'#fff' }}>
-              {playerIdx !== null ? `Épisode ${VIDEOS[playerIdx]?.episode}` : 'One Piece'}
+              {playerIdx !== null ? (VIDEOS[playerIdx]?.title || `Épisode ${VIDEOS[playerIdx]?.episode}`) : 'One Piece'}
             </span>
           </div>
 
-          <div style={{ display:'flex',alignItems:'center',gap:8 }}>
+          <div className="op-header-right" style={{ display:'flex',alignItems:'center',gap:8 }}>
             <div style={{ fontSize:10.5,color:'rgba(255,255,255,.28)',fontWeight:700 }}>{watchedCount}/{availableCount} vus</div>
             <div style={{ width:56,height:5,borderRadius:999,background:'rgba(255,255,255,.07)',overflow:'hidden' }}>
               <div style={{ width:`${availableCount>0?Math.round(watchedCount/availableCount*100):0}%`,height:'100%',background:`linear-gradient(90deg,${COLOR},${COLOR2})`,borderRadius:999,transition:'width .4s' }} />
@@ -266,8 +295,7 @@ export default function OnePiecePage({ onClose }) {
             <VideoPlayer videos={VIDEOS} startIdx={playerIdx} onClose={() => setPlayerIdx(null)} color={COLOR} storageKey={NS} />
           </div>
         ) : (
-          <div ref={scrollRef} className="op-scroll" style={{ flex:1,overflowY:'auto',padding:'24px 28px 48px' }}>
-            <style>{`.op-layout{display:grid;grid-template-columns:310px minmax(0,1fr);gap:28px;max-width:1480px;margin:0 auto;align-items:start}@media(max-width:900px){.op-layout{grid-template-columns:1fr}}`}</style>
+          <div ref={scrollRef} className="op-scroll" style={{ flex:1,overflowY:'auto' }}>
             <div className="op-layout">
               <InfoPanel watchedCount={watchedCount} availableCount={availableCount} resumeIdx={resumeIdx} onResume={() => openPlayer(resumeIdx)} />
 

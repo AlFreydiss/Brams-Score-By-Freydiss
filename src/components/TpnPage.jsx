@@ -87,7 +87,7 @@ const EpCard = memo(function EpCard({ video, index, watched, onPlay }) {
         {video.arc && <div style={{ position: 'absolute', bottom: 8, left: 8, fontSize: 9, fontWeight: 800, background: 'rgba(108,92,231,.2)', color: COLOR2, border: `1px solid rgba(108,92,231,.3)`, borderRadius: 100, padding: '2px 7px' }}>{video.arc}</div>}
       </div>
       <div style={{ padding: '10px 13px 13px' }}>
-        <div style={{ fontSize: 9.5, fontWeight: 800, color: COLOR2, letterSpacing: '.1em', marginBottom: 4 }}>ÉPISODE {video.episode}</div>
+        <div style={{ fontSize: 9.5, fontWeight: 800, color: COLOR2, letterSpacing: '.1em', marginBottom: 4 }}>{video.episodeLabel || `EP ${video.episode}`}</div>
         <div style={{ fontSize: 13.5, fontWeight: 700, color: watched ? 'rgba(255,255,255,.45)' : '#EDEBE3', lineHeight: 1.28 }}>{video.title}</div>
       </div>
     </div>
@@ -175,7 +175,7 @@ export default function TpnPage({ onClose }) {
           <button onClick={playerIdx !== null ? () => setPlayerIdx(null) : onClose} style={{ display: 'flex', alignItems: 'center', gap: 7, background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.09)', borderRadius: 10, color: 'rgba(255,255,255,.72)', cursor: 'pointer', padding: '8px 16px', fontSize: 12.5, fontWeight: 800, fontFamily: 'var(--body)' }}>← {playerIdx !== null ? 'Épisodes' : 'Retour'}</button>
           <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', gap: 10 }}>
             <span style={{ fontSize: 17, animation: 'tpFloat 6s ease-in-out infinite' }}>🌿</span>
-            <span style={{ fontFamily: "'Pirata One',cursive", fontSize: 17, fontWeight: 900, color: '#fff' }}>{playerIdx !== null ? `Épisode ${VIDEOS[playerIdx]?.episode}` : 'The Promised Neverland'}</span>
+            <span style={{ fontFamily: "'Pirata One',cursive", fontSize: 17, fontWeight: 900, color: '#fff' }}>{playerIdx !== null ? (VIDEOS[playerIdx]?.title || `Épisode ${VIDEOS[playerIdx]?.episode}`) : 'The Promised Neverland'}</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,.28)', fontWeight: 700 }}>{watchedCount}/{VIDEOS.length} vus</div>

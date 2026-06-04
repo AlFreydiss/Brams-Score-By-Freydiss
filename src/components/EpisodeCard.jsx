@@ -27,6 +27,7 @@ function EpisodePreview({ video, accent, episode }) {
 export default function EpisodeCard({ video, onPlay, accent = '#f97316', index = 0 }) {
   const episode = String(video.episode ?? index + 1).padStart(2, '0')
   const arc = video.arc || 'Arc'
+  const numLabel = video.episodeLabel || `EP ${episode}`
 
   return (
     <button
@@ -55,7 +56,7 @@ export default function EpisodeCard({ video, onPlay, accent = '#f97316', index =
         </div>
 
         <div className="episode-card__meta">
-          <span className="episode-card__number">EP {episode}</span>
+          <span className="episode-card__number">{numLabel}</span>
           <h3>{video.title || `Episode ${episode}`}</h3>
         </div>
       </div>
