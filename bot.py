@@ -1228,17 +1228,26 @@ def reset_berrys(uid: str, track: str = "lost") -> int:
 
 
 
+# Plafond anti-fantôme : aucune session vocale réelle ne dure plus de 16h en continu.
+# Une session jamais fermée (bot redémarré, départ manqué) ou une session corrompue
+# comptait sinon jusqu'à 168h sur 7j → tout le monde "Roi des pirates" (bug des 90).
+MAX_SESSION_SECONDS = 16 * 3600
+
 def seconds_since(sessions, cutoff, join_time=None, _now=None):
-    """Secondes vocales accumulées depuis un timestamp `cutoff` (borne basse)."""
+    """Secondes vocales accumulées depuis un timestamp `cutoff` (borne basse).
+    Chaque session est plafonnée à 16h (anti-session fantôme) et `end` ne peut pas
+    être dans le futur."""
     _now = _now or now_ts()
     total = 0
     for s in sessions:
-        end = s["end"]
+        end = min(s["end"], _now)            # pas de fin dans le futur
         if end < cutoff:
             continue
-        total += end - max(s["start"], cutoff)
+        dur = end - max(s["start"], cutoff)
+        total += min(max(0, dur), MAX_SESSION_SECONDS)
     if join_time:
-        total += _now - max(join_time, cutoff)
+        live = _now - max(join_time, cutoff)
+        total += min(max(0, live), MAX_SESSION_SECONDS)
     return total
 
 def seconds_in_period(sessions, days, join_time=None, _now=None):
