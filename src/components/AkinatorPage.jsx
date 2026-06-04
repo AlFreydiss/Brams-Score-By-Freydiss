@@ -2,24 +2,24 @@ import { useState, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 
-// ── Design tokens — DA "forêt secrète" (vert/végétal premium, comme Undercover) ──
-const BG     = '#0B0F0C'
-const PINK   = '#4C9A5F'   // (noms conservés pour limiter le diff) = vert émeraude
-const PURPLE = '#2f6b40'   // = vert forêt profond
-const PINK_L = '#7BAA6D'   // = sauge clair (accent texte)
-const PINK_M = '#5BAE72'   // = émeraude clair
+// ── Design tokens — DA aqua premium : bleu nuit + cyan goutte d'eau. ──────────
+const BG     = '#06111b'
+const PINK   = '#0891b2'   // (noms conservés pour limiter le diff) = cyan profond
+const PURPLE = '#0e7490'   // = bleu eau sombre
+const PINK_L = '#67e8f9'   // = cyan clair
+const PINK_M = '#22d3ee'   // = aqua
 const GRAD   = `linear-gradient(135deg, ${PINK_M} 0%, ${PURPLE} 100%)`
-const GLASS  = 'rgba(21,28,24,0.86)'
-const TEXT   = '#e9efe9'
-const MUTED  = 'rgba(233,239,233,0.50)'
+const GLASS  = 'rgba(8,28,42,0.86)'
+const TEXT   = '#ecfeff'
+const MUTED  = 'rgba(236,254,255,0.55)'
 const hexA = (hex, a) => { const n = parseInt(hex.slice(1), 16); return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})` }
-const LEAF_URI = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cg fill='none' stroke='%237BAA6D' stroke-width='1.2' opacity='0.5'%3E%3Cpath d='M20 60 Q40 20 60 60 Q40 100 20 60 Z'/%3E%3Cpath d='M40 60 Q60 40 60 60'/%3E%3Cpath d='M70 30 Q95 5 115 30 Q95 60 70 30 Z'/%3E%3Cpath d='M85 30 Q100 18 100 30'/%3E%3C/g%3E%3C/svg%3E"
+const LEAF_URI = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cg fill='none' stroke='%2367e8f9' stroke-width='1.25' opacity='0.55'%3E%3Cpath d='M60 14 C42 38 30 54 30 72 a30 30 0 0 0 60 0 C90 54 78 38 60 14 Z'/%3E%3Cpath d='M50 70 C52 82 62 90 74 86'/%3E%3Cpath d='M18 88 C30 78 42 78 54 88 C66 98 78 98 90 88 C98 82 106 82 114 88'/%3E%3C/g%3E%3C/svg%3E"
 const AKI_FX = `@keyframes aki-float{0%{transform:translateY(8px);opacity:0}12%{opacity:.5}88%{opacity:.4}100%{transform:translateY(-90px);opacity:0}}@keyframes aki-breathe{0%,100%{opacity:.5}50%{opacity:.85}}@media (prefers-reduced-motion:reduce){[data-fx]{animation:none!important}}`
 const AkiAmbient = () => (
   <>
     <style>{AKI_FX}</style>
-    <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', background: `radial-gradient(1000px 580px at 80% -10%, ${hexA(PINK, .16)}, transparent 60%), radial-gradient(820px 500px at 8% 6%, ${hexA(PINK_L, .09)}, transparent 62%), radial-gradient(700px 700px at 50% 122%, ${hexA(PINK, .06)}, transparent 60%), linear-gradient(180deg, ${BG}, #0E1511 70%, ${BG})` }} />
-    <div data-fx aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', opacity: .035, backgroundImage: `url("${LEAF_URI}")`, backgroundSize: '160px', animation: 'aki-breathe 9s ease-in-out infinite' }} />
+    <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', background: `radial-gradient(980px 560px at 82% -8%, ${hexA(PINK_M, .18)}, transparent 62%), radial-gradient(800px 520px at 8% 4%, ${hexA(PINK_L, .12)}, transparent 64%), radial-gradient(760px 680px at 50% 118%, ${hexA(PINK, .10)}, transparent 66%), linear-gradient(180deg, ${BG}, #071b28 66%, #050b13 100%)` }} />
+    <div data-fx aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', opacity: .045, backgroundImage: `url("${LEAF_URI}")`, backgroundSize: '170px', animation: 'aki-breathe 9s ease-in-out infinite' }} />
     <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
       {[...Array(8)].map((_, i) => <span key={i} data-fx style={{ position: 'absolute', left: `${10 + i * 11}%`, bottom: -10, width: 4 + (i % 3), height: 4 + (i % 3), borderRadius: '50%', background: hexA(PINK_L, .5), filter: 'blur(.5px)', animation: `aki-float ${11 + (i % 5) * 2}s linear ${i * 1.3}s infinite` }} />)}
     </div>
@@ -228,7 +228,7 @@ const ANSWERS = [
   { key:'yes',   label:'✅  OUI',         color:'#4ade80', bg:'rgba(34,197,94,.12)',   border:'rgba(34,197,94,.4)'   },
   { key:'no',    label:'❌  NON',          color:'#f87171', bg:'rgba(239,68,68,.12)',   border:'rgba(239,68,68,.4)'   },
   { key:'maybe', label:'🤔  PEUT-ÊTRE',   color:'#fbbf24', bg:'rgba(245,158,11,.12)',  border:'rgba(245,158,11,.4)'  },
-  { key:'dunno', label:"❓  JE SAIS PAS", color:'#94a3b8', bg:'rgba(148,163,184,.08)', border:'rgba(148,163,184,.25)' },
+  { key:'dunno', label:"❓  PAS SUR", color:'#94a3b8', bg:'rgba(148,163,184,.08)', border:'rgba(148,163,184,.25)' },
 ]
 
 // ── Sub-components ─────────────────────────────────────────────────────────
@@ -242,10 +242,10 @@ function FreydissMascot({ size = 100, pulse = true, mood = 'idle' }) {
     <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:6, flexShrink:0 }}>
       <div style={{
         width: size, height: size, borderRadius: '50%', position: 'relative',
-        background: `linear-gradient(135deg, #4C9A5F 0%, #2f6b40 100%)`,
+        background: `linear-gradient(135deg, ${PINK_M} 0%, ${PURPLE} 100%)`,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         animation: pulse ? 'akPulse 2.8s ease-in-out infinite' : 'none',
-        boxShadow: `0 0 ${size*.35}px rgba(76,154,95,.55), 0 0 ${size*.7}px rgba(47,107,64,.28), inset 0 1px 0 rgba(255,255,255,.15)`,
+        boxShadow: `0 0 ${size*.35}px rgba(34,211,238,.42), 0 0 ${size*.7}px rgba(14,116,144,.24), inset 0 1px 0 rgba(255,255,255,.15)`,
       }}>
         {moodEmoji ? (
           <span style={{ fontSize: size * 0.55, lineHeight:1 }}>{moodEmoji}</span>
@@ -305,7 +305,7 @@ function FreydissMascot({ size = 100, pulse = true, mood = 'idle' }) {
       </div>
       <div style={{
         fontSize: size * 0.115, fontWeight:800, letterSpacing:'.08em',
-        color:'rgba(123,170,109,.7)', textTransform:'uppercase',
+        color:'rgba(103,232,249,.72)', textTransform:'uppercase',
         fontFamily:'var(--display)',
       }}>Freydiss</div>
     </div>
@@ -337,15 +337,15 @@ function IdleScreen({ onStart }) {
         padding:'16px 52px', borderRadius:100,
         background: GRAD, border:'none', cursor:'pointer',
         fontSize:18, fontWeight:800, color:'#fff',
-        boxShadow:`0 8px 32px rgba(76,154,95,.45)`,
+        boxShadow:`0 8px 32px rgba(34,211,238,.34)`,
         transition:'all .2s', fontFamily:'var(--body)',
       }}
-      onMouseEnter={e => { e.currentTarget.style.transform='scale(1.05)'; e.currentTarget.style.boxShadow=`0 14px 44px rgba(76,154,95,.65)` }}
-      onMouseLeave={e => { e.currentTarget.style.transform='scale(1)'; e.currentTarget.style.boxShadow=`0 8px 32px rgba(76,154,95,.45)` }}
+      onMouseEnter={e => { e.currentTarget.style.transform='scale(1.05)'; e.currentTarget.style.boxShadow=`0 14px 44px rgba(34,211,238,.46)` }}
+      onMouseLeave={e => { e.currentTarget.style.transform='scale(1)'; e.currentTarget.style.boxShadow=`0 8px 32px rgba(34,211,238,.34)` }}
       >✨ Je suis prêt !</button>
 
       <p style={{ fontSize:12, color:'rgba(240,232,248,.25)', marginTop:20 }}>
-        Propulsé par l'IA · tous les domaines · questions illimitées
+        Devinettes One Piece · questions illimitées
       </p>
     </motion.div>
   )
@@ -381,10 +381,10 @@ function AskingScreen({ question, qCount, loading, onAnswer }) {
 
         <div style={{
           background: GLASS,
-          border:`1px solid rgba(76,154,95,.22)`,
+          border:`1px solid rgba(34,211,238,.22)`,
           borderRadius:22, padding:'30px 36px',
           backdropFilter:'blur(24px)',
-          boxShadow:`0 24px 64px rgba(0,0,0,.45), inset 0 1px 0 rgba(123,170,109,.07)`,
+          boxShadow:`0 24px 64px rgba(0,0,0,.45), inset 0 1px 0 rgba(103,232,249,.08)`,
         }}>
           <p style={{
             fontSize:'clamp(17px,3vw,22px)', fontWeight:700,
@@ -425,10 +425,10 @@ function GuessingScreen({ guess, qCount, onRight, onWrong }) {
       {/* Character card */}
       <div style={{
         width:200, height:240, borderRadius:22, margin:'0 auto 28px',
-        background:`linear-gradient(145deg, rgba(76,154,95,.28) 0%, rgba(47,107,64,.38) 100%)`,
-        border:`2px solid rgba(76,154,95,.45)`,
+        background:`linear-gradient(145deg, rgba(34,211,238,.20) 0%, rgba(14,116,144,.34) 100%)`,
+        border:`2px solid rgba(34,211,238,.34)`,
         display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
-        boxShadow:`0 24px 70px rgba(76,154,95,.3), 0 0 120px rgba(47,107,64,.18)`,
+        boxShadow:`0 24px 70px rgba(34,211,238,.22), 0 0 110px rgba(14,116,144,.16)`,
         animation:'akPulse 2.5s ease-in-out infinite',
         backdropFilter:'blur(10px)',
         padding:'20px 16px',
@@ -506,7 +506,7 @@ function WinScreen({ guess, qCount, onReplay }) {
         padding:'14px 44px', borderRadius:100,
         background: GRAD, border:'none', cursor:'pointer',
         fontSize:16, fontWeight:800, color:'#fff',
-        boxShadow:`0 8px 32px rgba(76,154,95,.45)`,
+        boxShadow:`0 8px 32px rgba(34,211,238,.34)`,
         transition:'all .2s', fontFamily:'var(--body)',
       }}
       onMouseEnter={e => e.currentTarget.style.transform='scale(1.05)'}
@@ -541,7 +541,7 @@ function LostScreen({ onReplay }) {
         padding:'14px 44px', borderRadius:100,
         background: GRAD, border:'none', cursor:'pointer',
         fontSize:16, fontWeight:800, color:'#fff',
-        boxShadow:`0 8px 32px rgba(76,154,95,.45)`,
+        boxShadow:`0 8px 32px rgba(34,211,238,.34)`,
         transition:'all .2s', fontFamily:'var(--body)',
       }}
       onMouseEnter={e => e.currentTarget.style.transform='scale(1.05)'}
@@ -598,8 +598,8 @@ export default function AkinatorPage() {
     size:0.5+(i%4)*0.4, dur:2+(i%5), del:(i*.3)%4,
   })), [])
 
-  // Appelle le génie IA : pose la prochaine question ou propose une devinette.
-  const askAI = useCallback(async (nextHistory, nextRejected) => {
+  // Pose la prochaine question ou propose une devinette.
+  const askNextQuestion = useCallback(async (nextHistory, nextRejected) => {
     setLoading(true); setError(null)
     try {
       const res = await fetch('/api/akinator', {
@@ -629,8 +629,8 @@ export default function AkinatorPage() {
   const startGame = useCallback(() => {
     setHistory([]); setRejected([]); setQCount(0); setGuess(null); setCurrentQ(null); setError(null)
     setPhase(PHASE.ASKING)
-    askAI([], [])
-  }, [askAI])
+    askNextQuestion([], [])
+  }, [askNextQuestion])
 
   const handleAnswer = useCallback((answerKey) => {
     if (!currentQ || loading) return
@@ -639,8 +639,8 @@ export default function AkinatorPage() {
     setHistory(nextHistory)
     setQCount(c => c + 1)
     setCurrentQ(null)
-    askAI(nextHistory, rejected)
-  }, [currentQ, loading, history, rejected, askAI])
+    askNextQuestion(nextHistory, rejected)
+  }, [currentQ, loading, history, rejected, askNextQuestion])
 
   const handleGuessRight = useCallback(() => setPhase(PHASE.WIN), [])
 
@@ -653,8 +653,8 @@ export default function AkinatorPage() {
     setGuess(null)
     if (qCount >= MAX_QUESTIONS) { setPhase(PHASE.LOST); return }
     setPhase(PHASE.ASKING)
-    askAI(nextHistory, nextRejected)
-  }, [loading, guess, rejected, history, qCount, askAI])
+    askNextQuestion(nextHistory, nextRejected)
+  }, [loading, guess, rejected, history, qCount, askNextQuestion])
 
   const reset = useCallback(() => {
     setPhase(PHASE.IDLE)
@@ -662,10 +662,10 @@ export default function AkinatorPage() {
   }, [])
 
   return (
-    <div style={{ position:'fixed', inset:0, zIndex:500, background:BG, display:'flex', flexDirection:'column', overflow:'hidden' }}>
+    <div style={{ position:'fixed', left:0, right:0, top:76, bottom:0, zIndex:100, background:BG, display:'flex', flexDirection:'column', overflow:'hidden' }}>
       <style>{`
         @keyframes akStar   { 0%,100%{opacity:.25;transform:scale(1)} 50%{opacity:.9;transform:scale(1.6)} }
-        @keyframes akPulse  { 0%,100%{box-shadow:0 0 30px rgba(76,154,95,.4),0 0 60px rgba(47,107,64,.2)} 50%{box-shadow:0 0 55px rgba(76,154,95,.7),0 0 110px rgba(47,107,64,.4)} }
+        @keyframes akPulse  { 0%,100%{box-shadow:0 0 30px rgba(34,211,238,.32),0 0 60px rgba(14,116,144,.18)} 50%{box-shadow:0 0 52px rgba(34,211,238,.52),0 0 100px rgba(14,116,144,.28)} }
         @keyframes akFloat  { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-9px)} }
       `}</style>
 
@@ -675,7 +675,7 @@ export default function AkinatorPage() {
           <div key={s.id} style={{
             position:'absolute', left:`${s.x}%`, top:`${s.y}%`,
             width:s.size, height:s.size, borderRadius:'50%',
-            background:'rgba(123,170,109,.55)',
+            background:'rgba(103,232,249,.42)',
             animation:`akStar ${s.dur}s ${s.del}s ease-in-out infinite`,
           }}/>
         ))}
@@ -684,29 +684,29 @@ export default function AkinatorPage() {
       {/* Gradient ambiance */}
       <div style={{
         position:'absolute', inset:0, pointerEvents:'none',
-        background:`radial-gradient(ellipse at 50% 0%, rgba(76,154,95,.14) 0%, transparent 55%),
-                   radial-gradient(ellipse at 80% 100%, rgba(47,107,64,.1) 0%, transparent 50%)`,
+        background:`radial-gradient(ellipse at 50% 0%, rgba(34,211,238,.16) 0%, transparent 55%),
+                   radial-gradient(ellipse at 80% 100%, rgba(14,116,144,.16) 0%, transparent 50%)`,
       }}/>
-      {/* Texture feuilles très discrète (DA forêt) */}
+      {/* Texture gouttes très discrète */}
       <div aria-hidden style={{ position:'absolute', inset:0, pointerEvents:'none', opacity:.04, backgroundImage:`url("${LEAF_URI}")`, backgroundSize:'150px' }}/>
 
       {/* Navbar */}
       <div style={{
         flexShrink:0, height:62, display:'flex', alignItems:'center',
         padding:'0 24px', gap:16,
-        borderBottom:`1px solid rgba(76,154,95,.18)`,
-        background:'rgba(11,15,12,.92)', backdropFilter:'blur(22px)',
+        borderBottom:`1px solid rgba(34,211,238,.18)`,
+        background:'rgba(6,17,27,.92)', backdropFilter:'blur(22px)',
         position:'relative', zIndex:10,
       }}>
         <button onClick={() => navigate('/')} style={{
           display:'flex', alignItems:'center', gap:7,
-          background:'rgba(76,154,95,.1)', border:`1px solid rgba(76,154,95,.28)`,
+          background:'rgba(34,211,238,.10)', border:`1px solid rgba(34,211,238,.28)`,
           borderRadius:10, color:PINK_L, cursor:'pointer',
           padding:'7px 14px', fontSize:13, fontWeight:700,
           transition:'all .16s',
         }}
-        onMouseEnter={e => e.currentTarget.style.background='rgba(76,154,95,.22)'}
-        onMouseLeave={e => e.currentTarget.style.background='rgba(76,154,95,.1)'}
+        onMouseEnter={e => e.currentTarget.style.background='rgba(34,211,238,.18)'}
+        onMouseLeave={e => e.currentTarget.style.background='rgba(34,211,238,.10)'}
         >← Retour</button>
 
         <div style={{ flex:1, textAlign:'center' }}>
@@ -714,18 +714,18 @@ export default function AkinatorPage() {
             fontFamily:'var(--display)', fontWeight:900, fontSize:18,
             background:`linear-gradient(135deg, ${PINK_L} 0%, ${PINK_M} 50%, #c084fc 100%)`,
             WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent',
-          }}>🔮 Akinator IA</span>
+          }}>🔮 Akinator</span>
         </div>
 
         <div style={{ minWidth:88, display:'flex', justifyContent:'flex-end' }}>
           {phase !== PHASE.IDLE && (
             <button onClick={reset} style={{
-              background:'transparent', border:`1px solid rgba(76,154,95,.22)`,
+              background:'transparent', border:`1px solid rgba(34,211,238,.22)`,
               borderRadius:8, color:MUTED, cursor:'pointer',
               padding:'6px 12px', fontSize:12, fontWeight:600, transition:'all .14s',
             }}
-            onMouseEnter={e => { e.currentTarget.style.color=PINK_L; e.currentTarget.style.borderColor='rgba(76,154,95,.5)' }}
-            onMouseLeave={e => { e.currentTarget.style.color=MUTED; e.currentTarget.style.borderColor='rgba(76,154,95,.22)' }}
+            onMouseEnter={e => { e.currentTarget.style.color=PINK_L; e.currentTarget.style.borderColor='rgba(34,211,238,.48)' }}
+            onMouseLeave={e => { e.currentTarget.style.color=MUTED; e.currentTarget.style.borderColor='rgba(34,211,238,.22)' }}
             >↺ Rejouer</button>
           )}
         </div>

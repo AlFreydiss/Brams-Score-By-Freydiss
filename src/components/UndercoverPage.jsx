@@ -8,14 +8,14 @@ import {
   submitClue, castElimVote, updateRoom, touchPlayer, subscribeRoom,
 } from '../lib/undercoverRooms.js'
 
-// ── DA "forêt secrète" : noir profond + verts désaturés + bronze végétal. ──────
+// ── DA dark premium : noir profond + accents sauge/or désaturés. ───────────────
 const C = {
-  bg: '#0B0F0C', bg2: '#0E1511',
-  surface: '#151C18', surfaceFlat: '#18211C', surfaceUp: '#1B241F',
-  hair: 'rgba(120,170,120,.14)', hairTop: 'rgba(120,170,120,.24)',
-  emerald: '#4C9A5F', emeraldL: '#5BAE72', sage: '#7BAA6D', sageD: '#6F8F5E',
-  bronze: '#B89B63',
-  txt: '#e9efe9', muted: 'rgba(233,239,233,.60)', faint: 'rgba(233,239,233,.46)',
+  bg: '#07090e', bg2: '#08090D',
+  surface: '#10141a', surfaceFlat: '#121821', surfaceUp: '#151d25',
+  hair: 'rgba(212,160,23,.14)', hairTop: 'rgba(212,160,23,.24)',
+  emerald: '#6f8f7a', emeraldL: '#9fb69a', sage: '#788b76', sageD: '#6e7d69',
+  bronze: '#d4a017',
+  txt: '#f0eee8', muted: 'rgba(240,238,232,.62)', faint: 'rgba(240,238,232,.46)',
 }
 const hexA = (hex, a) => { const n = parseInt(hex.slice(1), 16); return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})` }
 const CTA_BG = `linear-gradient(135deg, ${C.emeraldL}, #2f6b40)`
@@ -33,7 +33,7 @@ const UC_FX = `
 @keyframes uc-pulse { 0%,100%{transform:scale(1);opacity:.85} 50%{transform:scale(1.3);opacity:1} }
 @keyframes uc-ring { 0%{transform:scale(.7);opacity:.5} 100%{transform:scale(2.6);opacity:0} }
 @keyframes uc-breathe { 0%,100%{opacity:.5} 50%{opacity:.85} }
-.uc-page button:focus-visible, .uc-page input:focus-visible { outline: 2px solid #5BAE72; outline-offset: 3px; }
+.uc-page button:focus-visible, .uc-page input:focus-visible { outline: 2px solid #d4a017; outline-offset: 3px; }
 @media (prefers-reduced-motion: reduce){ [data-fx]{animation:none!important} }
 `
 
@@ -342,16 +342,22 @@ export default function UndercoverPage() {
   const field = { width: '100%', boxSizing: 'border-box', padding: '12px 14px', borderRadius: 11, background: C.surfaceFlat, border: `1px solid ${C.hair}`, color: C.txt, fontSize: 14, fontFamily: 'inherit', outline: 'none' }
   const kicker = t => <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.14em', textTransform: 'uppercase', color: C.faint, marginBottom: 14 }}>{t}</div>
 
-  // Fond nature : halos verts diffus + motif feuilles + particules flottantes.
+  // Fond premium : halos doux, grain géométrique discret et particules lentes.
   const ambient = (
     <>
       <style>{UC_FX}</style>
       <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', background: `
-        radial-gradient(1100px 620px at 80% -10%, ${hexA(C.emerald, .16)}, transparent 60%),
-        radial-gradient(900px 520px at 6% 8%, ${hexA(C.sage, .09)}, transparent 62%),
-        radial-gradient(760px 760px at 50% 122%, ${hexA(C.emerald, .07)}, transparent 60%),
-        linear-gradient(180deg, ${C.bg} 0%, ${C.bg2} 70%, ${C.bg} 100%)` }} />
-      <div data-fx aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', opacity: .035, backgroundImage: `url("${LEAF_URI}")`, backgroundSize: '160px', animation: 'uc-breathe 9s ease-in-out infinite' }} />
+        radial-gradient(900px 520px at 16% -8%, ${hexA(C.bronze, .12)}, transparent 62%),
+        radial-gradient(760px 520px at 88% 12%, ${hexA(C.emerald, .10)}, transparent 64%),
+        radial-gradient(780px 680px at 48% 116%, ${hexA(C.sage, .08)}, transparent 66%),
+        linear-gradient(180deg, ${C.bg} 0%, ${C.bg2} 58%, ${C.bg} 100%)` }} />
+      <div aria-hidden style={{
+        position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', opacity: .055,
+        backgroundImage: 'linear-gradient(rgba(212,160,23,.12) 1px, transparent 1px), linear-gradient(90deg, rgba(212,160,23,.10) 1px, transparent 1px)',
+        backgroundSize: '56px 56px',
+        maskImage: 'linear-gradient(180deg, transparent, black 16%, black 76%, transparent)',
+      }} />
+      <div data-fx aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', opacity: .025, backgroundImage: `url("${LEAF_URI}")`, backgroundSize: '180px', animation: 'uc-breathe 11s ease-in-out infinite' }} />
       <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
         {[...Array(9)].map((_, i) => (
           <span key={i} data-fx style={{ position: 'absolute', left: `${8 + i * 10}%`, bottom: '-10px', width: 4 + (i % 3), height: 4 + (i % 3), borderRadius: '50%', background: hexA(C.sage, .5), filter: 'blur(.5px)', animation: `uc-float ${11 + (i % 5) * 2}s linear ${i * 1.3}s infinite` }} />
