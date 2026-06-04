@@ -117,6 +117,17 @@ function AMVBackground({ hidden = false }) {
     return () => window.clearTimeout(timer)
   }, [])
 
+  const bgLayerStyle = {
+    position: 'fixed',
+    inset: 0,
+    zIndex: 0,
+    pointerEvents: 'none',
+    overflow: 'hidden',
+    background: '#05070a',
+    contain: 'layout paint size',
+    isolation: 'isolate',
+  }
+
   // Si un fond d'opening est équipé, on laisse la place au fond global équipé
   // (EquippedOpeningBackground) au lieu de la vidéo AMV.
   if (activeBg) return null
@@ -124,10 +135,10 @@ function AMVBackground({ hidden = false }) {
   // Overlay anime/média ouvert → on démonte la vidéo AMV (sinon elle continue de
   // jouer EN DESSOUS et le navigateur affiche ses contrôles média par-dessus le
   // lecteur d'anime : -10s, pochette… = la superposition signalée).
-  if (hidden) return <div style={{ position: 'fixed', inset: 0, zIndex: 0, background: '#05070a', pointerEvents: 'none' }} />
+  if (hidden) return <div aria-hidden style={bgLayerStyle} />
 
   if (!enabled) {
-    return <div style={{ position: 'fixed', inset: 0, zIndex: 0, background: '#05070a', pointerEvents: 'none' }} />
+    return <div aria-hidden style={bgLayerStyle} />
   }
 
   const toggle = () => {
@@ -151,15 +162,17 @@ function AMVBackground({ hidden = false }) {
 
   return (
     <>
-      <video
-        ref={videoRef}
-        autoPlay muted loop playsInline
-        preload="metadata"
-        onLoadedMetadata={e => { e.target.currentTime = 25 }}
-        style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 0, pointerEvents: 'none', opacity: 0.35 }}
-      >
-        <source src="/bg-video.mp4" type="video/mp4" />
-      </video>
+      <div aria-hidden style={bgLayerStyle}>
+        <video
+          ref={videoRef}
+          autoPlay muted loop playsInline
+          preload="metadata"
+          onLoadedMetadata={e => { e.target.currentTime = 25 }}
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', maxWidth: 'none', objectFit: 'cover', pointerEvents: 'none', opacity: 0.35 }}
+        >
+          <source src="/bg-video.mp4" type="video/mp4" />
+        </video>
+      </div>
 
       {/* Contrôle audio AMV */}
       <div
@@ -211,7 +224,7 @@ function AMVBackground({ hidden = false }) {
 // Wrapper pour les pages Wiki/Théories (Navbar + fond sombre + WelcomeAnimation)
 function PageLayout({ children }) {
   return (
-    <div style={{ minHeight: '100vh', background: '#0b0c0e', position: 'relative' }}>
+    <div style={{ minHeight: '100vh', background: '#0b0c0e', position: 'relative', isolation: 'isolate', overflowX: 'hidden' }}>
       <WelcomeAnimation />
       <Navbar />
       {children}

@@ -38,6 +38,7 @@ export default function OpeningBgMedia({ bg, className, style, stillOnly = false
   // Poster = image d'attente : si l'autoplay est bloqué, on voit ça au lieu d'un
   // cadre noir.
   const poster = bg.imageUrl || (bg.ytId ? `https://img.youtube.com/vi/${bg.ytId}/hqdefault.jpg` : undefined)
+  const mediaStyle = { pointerEvents: 'none', maxWidth: 'none', ...style }
 
   return useVideo ? (
     <video
@@ -54,7 +55,7 @@ export default function OpeningBgMedia({ bg, className, style, stillOnly = false
       autoPlay muted={muted} loop playsInline preload="auto"
       onLoadedData={e => { e.currentTarget.muted = muted; const p = e.currentTarget.play?.(); if (p?.catch) p.catch(() => {}) }}
       onError={() => setVideoFailed(true)}
-      style={style}
+      style={mediaStyle}
     />
   ) : (
     <img
@@ -65,7 +66,7 @@ export default function OpeningBgMedia({ bg, className, style, stillOnly = false
         // fallback hqdefault si maxresdefault n'existe pas
         if (bg.ytId && !fallback) { setFallback(true); setImgSrc(`https://img.youtube.com/vi/${bg.ytId}/hqdefault.jpg`) }
       }}
-      style={style}
+      style={mediaStyle}
     />
   )
 }

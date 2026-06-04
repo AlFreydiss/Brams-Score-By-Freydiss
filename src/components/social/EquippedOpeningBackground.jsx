@@ -19,6 +19,7 @@ import OpeningBgMedia from './OpeningBgMedia.jsx'
 const STILL_STYLE = {
   position: 'absolute', top: 0, left: 0,
   width: '30%', height: '30%',
+  maxWidth: 'none',
   transformOrigin: 'top left', transform: 'scale(3.5)',
   objectFit: 'cover',
   filter: 'blur(3px) saturate(1.12) brightness(0.72)',
@@ -28,6 +29,7 @@ const STILL_STYLE = {
 const VIDEO_STYLE = {
   position: 'absolute', inset: 0,
   width: '100%', height: '100%',
+  maxWidth: 'none',
   objectFit: 'cover',
   filter: 'saturate(1.08) brightness(0.7) blur(1px)',
 }
@@ -40,7 +42,7 @@ export default function EquippedOpeningBackground() {
   const end   = activeBg.overlayEnd   || 'rgba(6,7,11,0.94)'
 
   return (
-    <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden', background: activeBg.dominantColor || '#06070b' }}>
+    <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden', contain: 'layout paint size', isolation: 'isolate', background: activeBg.dominantColor || '#06070b' }}>
       <OpeningBgMedia bg={activeBg} style={ambientStill ? STILL_STYLE : VIDEO_STYLE} stillOnly={ambientStill} />
       {/* Gradient premium */}
       <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(180deg, ${start} 0%, ${end} 100%)` }} />
