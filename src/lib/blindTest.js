@@ -1099,6 +1099,7 @@ export function calcBerries({ animeOk, titleOk, timeMs, streak }) {
 }
 
 // ── Pick random track ────────────────────────────────────────────────────
+// options.type : 'OP' (openings), 'ED' (endings) ou 'all'/undefined (mélangé).
 export function pickTrack(excludeIds = [], options = {}) {
   const excluded = new Set(Array.isArray(excludeIds) ? excludeIds : [excludeIds])
   const excludedAnime = new Set(
@@ -1106,10 +1107,21 @@ export function pickTrack(excludeIds = [], options = {}) {
       .map(anime => animeFamilyKey(anime))
       .filter(Boolean)
   )
-  let pool = LOCAL_TRACKS.filter(t => !excluded.has(t.id) && !excludedAnime.has(animeFamilyKey(t.anime)))
-  if (pool.length === 0) pool = LOCAL_TRACKS.filter(t => !excluded.has(t.id))
-  if (pool.length === 0) pool = LOCAL_TRACKS  // tous joués → reset
+  const type = options.type && options.type !== 'all' ? options.type : null
+  const byType = t => !type || t.type === type
+  let pool = LOCAL_TRACKS.filter(t => byType(t) && !excluded.has(t.id) && !excludedAnime.has(animeFamilyKey(t.anime)))
+  if (pool.length === 0) pool = LOCAL_TRACKS.filter(t => byType(t) && !excluded.has(t.id))
+  if (pool.length === 0) pool = LOCAL_TRACKS.filter(byType)  // tous joués → reset (en gardant le type)
+  if (pool.length === 0) pool = LOCAL_TRACKS
   return pool[Math.floor(Math.random() * pool.length)]
+}
+
+// Compte de pistes par type — pratique pour l'UI (afficher le nb d'OP / ED).
+export function countTracksByType() {
+  return LOCAL_TRACKS.reduce((acc, t) => {
+    acc[t.type] = (acc[t.type] || 0) + 1
+    return acc
+  }, {})
 }
 
 export function getTrackById(trackId) {

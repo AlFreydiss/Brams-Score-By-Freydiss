@@ -7,7 +7,7 @@ import {
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { supabase } from '../lib/supabase.js'
 import {
-  LOCAL_TRACKS, pickTrack, checkAnswer, calcBerries,
+  LOCAL_TRACKS, pickTrack, checkAnswer, calcBerries, countTracksByType,
   createBlindTestRoom, fetchBlindTestRoom, fetchBlindTestRoomPlayers,
   joinBlindTestRoom, updateBlindTestRoom,
   upsertBlindTestScore, logSession,
@@ -506,6 +506,7 @@ export default function BlindTestPage() {
   const titleRef       = useRef(null)
 
   const [phase,        setPhase]        = useState('intro')
+  const [btMode,       setBtMode]       = useState('OP') // 'OP' openings | 'ED' endings | 'all' mélangé
   const [track,        setTrack]        = useState(null)
   const [lastTrackId,  setLastTrackId]  = useState(null)
   const [elapsed,      setElapsed]      = useState(0)
@@ -882,7 +883,7 @@ export default function BlindTestPage() {
 
   function startGame() {
     if (roomCode && roomRole !== 'host') { setRoomStatus('Attends le host pour lancer'); return }
-    const t = pickTrack(playedIds, { excludeAnime: playedAnimes })
+    const t = pickTrack(playedIds, { excludeAnime: playedAnimes, type: btMode })
     const newPlayed = [...playedIds, t.id]
     const newPlayedAnimes = [...playedAnimes, t.anime]
     const nextRoomRound = roomCode ? (roomRoundRef.current || round) + 1 : round + 1
@@ -1080,9 +1081,49 @@ export default function BlindTestPage() {
               <h1 style={{ fontFamily: "'Pirata One',cursive", fontSize: 'clamp(52px,10vw,96px)', color: '#fff', margin: '0 0 14px', lineHeight: 1, letterSpacing: '-0.01em' }}>
                 Blind Test
               </h1>
-              <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.40)', maxWidth: 460, margin: '0 auto 36px', lineHeight: 1.75 }}>
-                Un opening se lance en fond. Choisis parmi 4 propositions et tape le titre pour le bonus.
+              <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.40)', maxWidth: 460, margin: '0 auto 28px', lineHeight: 1.75 }}>
+                {btMode === 'ED'
+                  ? 'Un ending se lance en fond. Choisis parmi 4 propositions et tape le titre pour le bonus.'
+                  : btMode === 'OP'
+                  ? 'Un opening se lance en fond. Choisis parmi 4 propositions et tape le titre pour le bonus.'
+                  : 'Openings ET endings mélangés. Choisis parmi 4 propositions et tape le titre pour le bonus.'}
               </p>
+
+              {/* Sélecteur de mode : Openings / Endings / Mélangé (pas mélangés par défaut) */}
+              {(() => {
+                const counts = countTracksByType()
+                const modes = [
+                  { id: 'OP',  label: 'Openings', icon: '🎬', n: counts.OP || 0 },
+                  { id: 'ED',  label: 'Endings',  icon: '🎼', n: counts.ED || 0 },
+                  { id: 'all', label: 'Mélangé',  icon: '🔀', n: (counts.OP || 0) + (counts.ED || 0) },
+                ]
+                return (
+                  <div style={{ display: 'inline-flex', gap: 6, padding: 5, marginBottom: 32, borderRadius: 100, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)' }}>
+                    {modes.map(m => {
+                      const on = btMode === m.id
+                      return (
+                        <motion.button
+                          key={m.id}
+                          onClick={() => { setBtMode(m.id); setPlayedIds([]); setPlayedAnimes([]) }}
+                          whileTap={{ scale: 0.96 }}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px', borderRadius: 100,
+                            border: on ? `1px solid ${GOLD}` : '1px solid transparent', cursor: 'pointer',
+                            background: on ? `linear-gradient(135deg, ${GOLD}, #e5b83a)` : 'transparent',
+                            color: on ? '#1a1200' : 'rgba(255,255,255,0.62)',
+                            fontFamily: "'Pirata One',cursive", fontSize: 16, fontWeight: 800, letterSpacing: '.02em',
+                            transition: 'background .2s, color .2s, border-color .2s',
+                          }}
+                        >
+                          <span style={{ fontSize: 15 }}>{m.icon}</span>
+                          {m.label}
+                          <span style={{ fontSize: 11, fontWeight: 800, opacity: on ? 0.7 : 0.45, fontFamily: 'var(--body)' }}>{m.n}</span>
+                        </motion.button>
+                      )
+                    })}
+                  </div>
+                )
+              })()}
 
               {/* Track grid */}
               <motion.div
@@ -1101,7 +1142,7 @@ export default function BlindTestPage() {
                   scrollbarColor: 'rgba(212,160,23,0.3) transparent',
                 }}
               >
-                {LOCAL_TRACKS.map((t) => (
+                {LOCAL_TRACKS.filter(t => btMode === 'all' || t.type === btMode).map((t) => (
                   <motion.div
                     key={t.id}
                     variants={{ hidden: { opacity: 0, y: 12 }, visible: { opacity: 1, y: 0, transition: { duration: 0.3 } } }}
