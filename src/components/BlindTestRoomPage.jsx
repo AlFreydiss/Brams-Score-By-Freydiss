@@ -12,6 +12,7 @@ import {
   getTrackById,
   joinBlindTestRoom,
   pickTrack,
+  countTracksByType,
   submitBlindTestRoomAnswer,
   updateBlindTestRoom,
 } from '../lib/blindTest.js'
@@ -209,6 +210,7 @@ export default function BlindTestRoomPage() {
   const [audioBlocked, setAudioBlocked] = useState(false)
   const [now, setNow] = useState(Date.now())
   const [volume, setVolume] = useState(0.65)
+  const [roomMode, setRoomMode] = useState('OP') // 'OP' | 'ED' | 'all' — host pioche selon ce mode
 
   const code = normalizeCode(routeCode)
   const difficulty = DIFFICULTIES[room?.difficulty_id] || DIFFICULTIES.easy
@@ -335,7 +337,7 @@ export default function BlindTestRoomPage() {
       ...playedTrackIds.map(id => getTrackById(id)?.anime),
       track?.anime,
     ].filter(Boolean)
-    const nextTrack = pickTrack(excludedTrackIds, { excludeAnime: excludedAnime })
+    const nextTrack = pickTrack(excludedTrackIds, { excludeAnime: excludedAnime, type: roomMode })
     await updateBlindTestRoom(code, {
       status: 'playing',
       round: (room?.round || 0) + 1,
@@ -404,10 +406,22 @@ export default function BlindTestRoomPage() {
             <div style={{ textAlign:'center', padding:'30px 0' }}>
               <div style={{ fontSize:13, color:'rgba(255,255,255,.46)', marginBottom:18 }}>Partage le code ou le lien aux joueurs.</div>
               <div style={{ display:'inline-flex', gap:8, padding:'10px 18px', borderRadius:14, background:'rgba(212,160,23,.10)', border:'1px solid rgba(212,160,23,.28)', color:GOLD, fontSize:28, fontWeight:950, letterSpacing:'.16em', marginBottom:22 }}>{code}</div>
-              <div style={{ display:'flex', justifyContent:'center', gap:8, flexWrap:'wrap', marginBottom:22 }}>
+              <div style={{ display:'flex', justifyContent:'center', gap:8, flexWrap:'wrap', marginBottom:14 }}>
                 {Object.values(DIFFICULTIES).map(item => (
                   <Btn key={item.id} muted={room.difficulty_id !== item.id} disabled={!isHost} onClick={() => updateBlindTestRoom(code, { difficulty_id:item.id })}>
                     {item.label} · {item.seconds}s
+                  </Btn>
+                ))}
+              </div>
+              {/* Mode Openings / Endings / Mélangé (host) */}
+              <div style={{ display:'flex', justifyContent:'center', gap:8, flexWrap:'wrap', marginBottom:22 }}>
+                {(() => { const c = countTracksByType(); return [
+                  { id:'OP',  label:'🎬 Openings', n:c.OP || 0 },
+                  { id:'ED',  label:'🎼 Endings',  n:c.ED || 0 },
+                  { id:'all', label:'🔀 Mélangé',  n:(c.OP||0)+(c.ED||0) },
+                ]})().map(m => (
+                  <Btn key={m.id} muted={roomMode !== m.id} disabled={!isHost} onClick={() => setRoomMode(m.id)}>
+                    {m.label} · {m.n}
                   </Btn>
                 ))}
               </div>

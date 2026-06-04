@@ -70,7 +70,10 @@ function computeVideo(ns, all) {
 }
 
 function computeChapter(ns, all) {
-  const prog = all[`${ns}_progress`] || {}
+  // One Piece : scans stockés sous la clé générique `manga_progress` (ScansPage).
+  const prog = (ns === 'onepiece' && all.manga_progress && Object.keys(all.manga_progress).length)
+    ? all.manga_progress
+    : (all[`${ns}_progress`] || {})
   const keys = Object.keys(prog)
   const read = keys.filter(k => prog[k] === 'read').length
   // fallback count from known or default

@@ -546,7 +546,11 @@ function computeVideo(ns, all) {
 }
 
 function computeChapter(ns, all) {
-  const prog = all[`${ns}_progress`] || {}
+  // One Piece : les scans (ScansPage) sont stockés sous la clé générique
+  // `manga_progress`, pas `onepiece_progress` — sinon le ring restait à 0%.
+  const prog = (ns === 'onepiece' && all.manga_progress && Object.keys(all.manga_progress).length)
+    ? all.manga_progress
+    : (all[`${ns}_progress`] || {})
   const keys = Object.keys(prog)
   const read = keys.filter(k => prog[k] === 'read').length
   // fallback count from known or default (synced with MonUniversPage)
