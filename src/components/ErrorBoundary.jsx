@@ -1,4 +1,5 @@
 import { Component } from 'react'
+import { shouldReloadForChunkError, tryChunkReload } from '../lib/lazyWithReload.js'
 
 // Empêche qu'une erreur runtime dans un composant fasse un écran blanc total
 // ("full bug"). Affiche l'erreur + un bouton recharger au lieu de tout casser.
@@ -9,6 +10,11 @@ export default class ErrorBoundary extends Component {
   }
 
   static getDerivedStateFromError(error) {
+    // Chunk périmé (après déploiement) qui remonte jusqu'ici → reload auto au lieu
+    // d'afficher l'écran d'erreur (sinon "faut actualiser à la main").
+    if (shouldReloadForChunkError(error?.message || error) && tryChunkReload()) {
+      return { error: null }
+    }
     return { error }
   }
 
