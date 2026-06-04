@@ -1228,14 +1228,16 @@ def reset_berrys(uid: str, track: str = "lost") -> int:
 
 
 
-# Plafond anti-fantôme : aucune session vocale réelle ne dure plus de 16h en continu.
-# Une session jamais fermée (bot redémarré, départ manqué) ou une session corrompue
-# comptait sinon jusqu'à 168h sur 7j → tout le monde "Roi des pirates" (bug des 90).
-MAX_SESSION_SECONDS = 16 * 3600
+# Filet de sécurité anti-fantôme : aucune session vocale ne compte plus de 24h en continu.
+# Les vraies sessions sont déjà protégées en amont par le heartbeat voice_seen (2 min,
+# vocal_rank_loop) + la clôture au redémarrage (on_ready) → un crash ne crée plus de
+# fantôme. Ce plafond ne couvre que les vieilles sessions corrompues résiduelles.
+# 24h (vs 16h avant) pour ne pas pénaliser un membre qui farm une journée non-stop.
+MAX_SESSION_SECONDS = 24 * 3600
 
 def seconds_since(sessions, cutoff, join_time=None, _now=None):
     """Secondes vocales accumulées depuis un timestamp `cutoff` (borne basse).
-    Chaque session est plafonnée à 16h (anti-session fantôme) et `end` ne peut pas
+    Chaque session est plafonnée à 24h (anti-session fantôme) et `end` ne peut pas
     être dans le futur."""
     _now = _now or now_ts()
     total = 0
