@@ -258,6 +258,10 @@ section {
   display: block;
   font-weight: 900;
   letter-spacing: -.02em;
+  /* line-height + padding-bottom : sinon le jambage du "y" dépasse la boîte de
+     ligne (1.0 du titre) et le background-clip:text ne le peint pas = "y" rogné. */
+  line-height: 1.16;
+  padding-bottom: .08em;
   /* Dégradé or avec une bande de lumière centrale, élargi pour le shimmer animé */
   background: linear-gradient(100deg, #d89222 0%, #f4b942 22%, #fff0c5 40%, #fff7e2 48%, #fff0c5 56%, #f4b942 74%, #d89222 100%);
   background-size: 220% auto;
