@@ -157,6 +157,7 @@ export default function PostCard({ post, embedded = false, disableNav = false, o
   const [reportOpen, setReportOpen] = useState(false)
   const [reportReason, setReportReason] = useState('')
   const [reportState, setReportState] = useState(null)  // null | 'sending' | 'done' | error string
+  const [likePop, setLikePop] = useState(false)         // anim "pop" au like
   const mineRow = post.author_id === discordId
   const canEdit = !post.repost_of && mineRow && !post.deleted_at
   const deleted = !!main?.deleted_at
@@ -181,6 +182,7 @@ export default function PostCard({ post, embedded = false, disableNav = false, o
     e.stopPropagation()
     if (!discordId) { navigate('/messages'); return }
     const liked = !main.liked
+    if (liked) { setLikePop(true); setTimeout(() => setLikePop(false), 450) }   // anim "pop"
     onChange?.(main.id, { liked, like_count: Math.max(0, (main.like_count || 0) + (liked ? 1 : -1)) })
     const res = await toggleLike(main.id)
     if (res?.ok === false) onChange?.(main.id, { liked: main.liked, like_count: main.like_count })
@@ -261,7 +263,7 @@ export default function PostCard({ post, embedded = false, disableNav = false, o
 
   return (
     <>
-      <article onClick={goThread} className={`feed-post-card ${disableNav || deleted ? 'is-disabled' : ''}`}>
+      <article onClick={goThread} className={`feed-post-card ${disableNav || deleted ? 'is-disabled' : ''} ${(main.like_count || 0) >= 50 ? 'is-fire' : (main.like_count || 0) >= 15 ? 'is-hot' : ''}`}>
         <div style={{ flexShrink: 0 }}>
           <Link to={`/u/${main.author_id}`} onClick={e => e.stopPropagation()}><Avatar url={main.author_avatar} name={main.author_username} /></Link>
         </div>
@@ -347,7 +349,7 @@ export default function PostCard({ post, embedded = false, disableNav = false, o
                       </div>
                     )}
                   </div>
-                  <Counter onClick={like} active={main.liked} className="is-liked"><Heart size={17} fill={main.liked ? 'currentColor' : 'none'} /> {main.like_count || 0}</Counter>
+                  <Counter onClick={like} active={main.liked} className={`is-liked ${likePop ? 'like-pop' : ''}`}><Heart size={17} fill={main.liked ? 'currentColor' : 'none'} /> {main.like_count || 0}</Counter>
                   <Counter onClick={bookmark} active={main.bookmarked} className="is-bookmarked" style={{ marginLeft: 'auto' }}><Bookmark size={17} fill={main.bookmarked ? 'currentColor' : 'none'} /></Counter>
                 </div>
               )}

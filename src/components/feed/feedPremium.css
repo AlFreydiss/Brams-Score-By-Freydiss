@@ -887,3 +887,32 @@
     transition: none !important;
   }
 }
+
+/* ── Point 8 : likes live — animation + mise en valeur "le plus liké = le plus beau" ── */
+@keyframes feedLikePop {
+  0%   { transform: scale(1); }
+  35%  { transform: scale(1.42); }
+  60%  { transform: scale(0.92); }
+  100% { transform: scale(1); }
+}
+.feed-counter.like-pop svg,
+.like-pop svg { animation: feedLikePop .45s cubic-bezier(.23,1,.32,1); transform-origin: center; }
+
+/* Posts populaires mis en avant (paliers de likes) — bordure/ombre dorée + léger zoom */
+.feed-post-card.is-hot {
+  border-color: rgba(212,160,23,0.38) !important;
+  box-shadow: 0 8px 30px rgba(212,160,23,0.10);
+}
+.feed-post-card.is-fire {
+  border-color: rgba(212,160,23,0.6) !important;
+  box-shadow: 0 12px 44px rgba(212,160,23,0.18), inset 0 1px 0 rgba(255,216,107,0.12);
+  background: linear-gradient(180deg, rgba(212,160,23,0.05), transparent 40%);
+}
+.feed-post-card.is-fire::before {
+  content: '🔥 Populaire';
+  position: absolute; top: 10px; right: 12px;
+  font-size: 10px; font-weight: 800; letter-spacing: .04em;
+  color: #ffd86b; background: rgba(212,160,23,0.14);
+  border: 1px solid rgba(212,160,23,0.4); border-radius: 999px;
+  padding: 2px 9px; pointer-events: none; z-index: 2;
+}
