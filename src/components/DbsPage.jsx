@@ -12,8 +12,8 @@ const COLOR  = '#f57f17'
 const COLOR2 = '#ffb74d'
 const NS     = 'dbs'
 
-const COVER = 'https://static.wikia.nocookie.net/dragonball/images/d/d0/Dragon_Ball_Super_key_visual.png/revision/latest?cb=20150615001556'
-const COVER_FALLBACK = 'https://www.nautiljon.com/images/anime/00/16/dragon_ball_super_8216.jpg'
+const COVER = 'https://resizing.flixster.com/rkYW70Qo4tqbX8akxnoNX0Yf5z0=/ems.cHJkLWVtcy1hc3NldHMvbW92aWVzLzllY2IwZjMyLWVjYjMtNDAzMC1hYWViLTBjZjcxMmFmNDU1MC5wbmc='
+const COVER_FALLBACK = 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-thumbnails/S01E001.jpg'
 
 const EMOJIS = ['🐉','⚡','🌟','💥','👊','🌀','🔥','🌊','🌙','💀','🗡️','🔮','🏹','🦁','🌑','🧿','⚔️','🦂','💎','🌸','🌪️','🔱','🎭','💧','🌒','⛓️','🩸']
 
