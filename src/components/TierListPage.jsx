@@ -14,6 +14,7 @@ import {
   Upload, Link as LinkIcon, BookOpen, Layers, Heart, Users,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext.jsx'
+import { useMediaQuery } from '../hooks/useMediaQuery.js'
 import {
   autosaveTierList,
   fetchCloudDraft,
@@ -579,7 +580,7 @@ function iconBtn(color) {
 }
 
 // ── Pool ──────────────────────────────────────────────────────────────────────
-function ItemPool({ items, allById, customItems, onAddCustom, onNotify, favorites, onToggleFav, search, onSearch, genre, onGenre, currentType }) {
+function ItemPool({ items, allById, customItems, onAddCustom, onNotify, favorites, onToggleFav, search, onSearch, genre, onGenre, currentType, sidePanel = false }) {
   const { isOver, setNodeRef } = useDroppable({ id:'pool' })
   const [poolTab, setPoolTab] = useState('all')
   const [addMode, setAddMode] = useState(null)
@@ -645,10 +646,30 @@ function ItemPool({ items, allById, customItems, onAddCustom, onNotify, favorite
   }
 
   return (
-    <div style={{ background:'rgba(6,7,12,.85)', backdropFilter:'blur(20px)', borderTop:`1px solid ${G.border}`, flexShrink:0 }}>
+    <div style={{
+      background:'rgba(6,7,12,.85)',
+      backdropFilter:'blur(20px)',
+      flexShrink:0,
+      ...(sidePanel ? {
+        position:'sticky',
+        top:150,
+        alignSelf:'start',
+        height:'calc(100vh - 170px)',
+        minHeight:520,
+        minWidth:360,
+        border:`1px solid ${G.border}`,
+        borderRadius:14,
+        overflow:'hidden',
+        display:'flex',
+        flexDirection:'column',
+        boxShadow:'0 22px 60px rgba(0,0,0,.26)',
+      } : {
+        borderTop:`1px solid ${G.border}`,
+      }),
+    }}>
 
       {/* Pool header */}
-      <div style={{ display:'flex', alignItems:'center', gap:8, padding:'8px 12px', borderBottom:`1px solid ${G.border}`, flexWrap:'wrap' }}>
+      <div style={{ display:'flex', alignItems:'center', gap:8, padding:sidePanel ? '12px' : '8px 12px', borderBottom:`1px solid ${G.border}`, flexWrap:'wrap', flexShrink:0 }}>
         {['all','favs','custom'].map(t => (
           <button key={t} onClick={() => setPoolTab(t)} style={{
             padding:'3px 10px', borderRadius:100, border:'none', cursor:'pointer', fontSize:10, fontWeight:700,
@@ -660,7 +681,7 @@ function ItemPool({ items, allById, customItems, onAddCustom, onNotify, favorite
           </button>
         ))}
 
-        <div style={{ flex:1, minWidth:100, position:'relative' }}>
+        <div style={{ flex:1, minWidth:sidePanel ? 180 : 100, position:'relative' }}>
           <Search size={11} style={{ position:'absolute', left:8, top:'50%', transform:'translateY(-50%)', color:G.muted }}/>
           <input value={search} onChange={e => onSearch(e.target.value)} placeholder="Rechercher…"
             style={{ width:'100%', height:28, paddingLeft:26, paddingRight:10, background:'rgba(255,255,255,.05)',
@@ -692,7 +713,7 @@ function ItemPool({ items, allById, customItems, onAddCustom, onNotify, favorite
         {addMode && (
           <motion.div initial={{ height:0, opacity:0 }} animate={{ height:'auto', opacity:1 }} exit={{ height:0, opacity:0 }}
             style={{ overflow:'hidden', borderBottom:`1px solid ${G.border}` }}>
-            <div style={{ padding:'10px 12px', display:'flex', gap:8, alignItems:'center', flexWrap:'wrap' }}>
+            <div style={{ padding:'10px 12px', display:'flex', gap:8, alignItems:'center', flexWrap:'wrap', flexShrink:0 }}>
               <div style={{ display:'flex', gap:4 }}>
                 <button onClick={() => setAddMode('url')} style={{ ...tabBtn(addMode==='url') }}><LinkIcon size={10}/> URL</button>
                 <button onClick={() => setAddMode('file')} style={{ ...tabBtn(addMode==='file') }}><Upload size={10}/> Fichier</button>
@@ -721,7 +742,10 @@ function ItemPool({ items, allById, customItems, onAddCustom, onNotify, favorite
       {/* Items grid */}
       <div ref={setNodeRef} style={{
         display:'flex', flexWrap:'wrap', gap:6, padding:'9px 12px',
-        overflowY:'auto', maxHeight:220,
+        overflowY:'auto', maxHeight:sidePanel ? 'none' : 220,
+        minHeight:0,
+        flex:sidePanel ? '1 1 auto' : '0 1 auto',
+        alignContent:'flex-start',
         outline: isOver ? `2px dashed ${G.gold}55` : '2px dashed transparent',
         outlineOffset:-4, borderRadius:6,
         scrollbarWidth:'thin', scrollbarColor:`rgba(191,164,106,.15) transparent`,
@@ -910,6 +934,7 @@ const CSS = `
 // ── Main Export ───────────────────────────────────────────────────────────────
 export default function TierListPage() {
   const { userId, discordId, displayName } = useAuth()
+  const editorWide = useMediaQuery('(min-width: 1180px)')
   const initialDraftRef = useRef(null)
 
   // ── Tab
@@ -1739,7 +1764,7 @@ export default function TierListPage() {
                 }}>
                   <span style={{ fontSize:16 }}>👇</span>
                   <span style={{ flex:1, lineHeight:1.4 }}>
-                    <strong style={{ color:G.gold }}>Comment faire :</strong> glisse les éléments depuis la zone du bas
+                    <strong style={{ color:G.gold }}>Comment faire :</strong> glisse les éléments depuis la zone des items
                     vers une ligne de tier (S, A, B…). Tu peux renommer/colorer chaque tier, et tout est
                     <strong> sauvegardé automatiquement</strong>. Plus d'options dans le menu <strong>⋯</strong>.
                   </span>
@@ -1754,62 +1779,78 @@ export default function TierListPage() {
               <DndContext sensors={sensors} collisionDetection={collisionStrategy}
                 onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
 
-                {/* Board */}
-                <div ref={boardRef} style={{
-                  background:'rgba(10,11,18,.6)', backdropFilter:'blur(12px)',
-                  borderBottom:`1px solid ${G.border}`,
+                <div style={{
+                  maxWidth:1600,
+                  margin:'0 auto',
+                  width:'100%',
+                  padding:editorWide ? '18px 20px 24px' : 0,
+                  display:editorWide ? 'grid' : 'block',
+                  gridTemplateColumns:'minmax(0,1fr) minmax(360px,400px)',
+                  gap:16,
+                  alignItems:'start',
                 }}>
-                  {board && tiers.map(tier => (
-                    <TierRow
-                      key={tier.id} tier={tier}
-                      items={board[tier.id]||[]}
+                  {/* Board */}
+                  <div ref={boardRef} style={{
+                    minWidth:0,
+                    background:'rgba(10,11,18,.6)', backdropFilter:'blur(12px)',
+                    border:editorWide ? `1px solid ${G.border}` : 'none',
+                    borderBottom:editorWide ? `1px solid ${G.border}` : `1px solid ${G.border}`,
+                    borderRadius:editorWide ? 14 : 0,
+                    overflow:'hidden',
+                  }}>
+                    {board && tiers.map(tier => (
+                      <TierRow
+                        key={tier.id} tier={tier}
+                        items={board[tier.id]||[]}
+                        allById={allById}
+                        onRename={handleRename}
+                        onColorChange={handleColorChange}
+                        onDelete={handleDeleteRow}
+                        onAddAbove={handleAddRowAbove}
+                        onAddBelow={(id) => {
+                          const idx = tiers.findIndex(t => t.id === id)
+                          const newId = uid()
+                          const newRow = { id:newId, label:'NEW', color:'#7b6aa8', bg:'linear-gradient(135deg,#1c1728,#31284b)' }
+                          setTiers(ts => [...ts.slice(0,idx+1), newRow, ...ts.slice(idx+1)])
+                          setBoard(prev => prev ? { ...prev, [newId]: [] } : prev)
+                        }}
+                      />
+                    ))}
+
+                    {/* Add row button */}
+                    <button onClick={() => {
+                      const id = uid()
+                      setTiers(ts => [...ts, { id, label:'NEW', color:'#7b6aa8', bg:'linear-gradient(135deg,#1c1728,#31284b)' }])
+                      setBoard(prev => prev ? { ...prev, [id]: [] } : prev)
+                    }} style={{
+                      width:'100%', padding:'8px', background:'none', border:'none',
+                      cursor:'pointer', color:'rgba(255,255,255,.18)', fontSize:11, fontWeight:700,
+                      display:'flex', alignItems:'center', justifyContent:'center', gap:6,
+                      transition:'color .15s',
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.color=G.gold}
+                    onMouseLeave={e => e.currentTarget.style.color='rgba(255,255,255,.18)'}>
+                      <Plus size={12}/> Ajouter un rang
+                    </button>
+                  </div>
+
+                  {/* Pool */}
+                  {board && (
+                    <ItemPool
+                      items={board.pool||[]}
                       allById={allById}
-                      onRename={handleRename}
-                      onColorChange={handleColorChange}
-                      onDelete={handleDeleteRow}
-                      onAddAbove={handleAddRowAbove}
-                      onAddBelow={(id) => {
-                        const idx = tiers.findIndex(t => t.id === id)
-                        const newId = uid()
-                        const newRow = { id:newId, label:'NEW', color:'#7b6aa8', bg:'linear-gradient(135deg,#1c1728,#31284b)' }
-                        setTiers(ts => [...ts.slice(0,idx+1), newRow, ...ts.slice(idx+1)])
-                        setBoard(prev => prev ? { ...prev, [newId]: [] } : prev)
-                      }}
+                      customItems={customItems}
+                      onAddCustom={handleAddCustom}
+                      onNotify={setToast}
+                      favorites={favorites}
+                      onToggleFav={id => setFavorites(p => p.includes(id) ? p.filter(f => f !== id) : [...p, id])}
+                      search={search} onSearch={setSearch}
+                      genre={genre} onGenre={setGenre}
+                      currentType={selectedType}
+                      sidePanel={editorWide}
                     />
-                  ))}
-
-                  {/* Add row button */}
-                  <button onClick={() => {
-                    const id = uid()
-                    setTiers(ts => [...ts, { id, label:'NEW', color:'#7b6aa8', bg:'linear-gradient(135deg,#1c1728,#31284b)' }])
-                    setBoard(prev => prev ? { ...prev, [id]: [] } : prev)
-                  }} style={{
-                    width:'100%', padding:'8px', background:'none', border:'none',
-                    cursor:'pointer', color:'rgba(255,255,255,.18)', fontSize:11, fontWeight:700,
-                    display:'flex', alignItems:'center', justifyContent:'center', gap:6,
-                    transition:'color .15s',
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.color=G.gold}
-                  onMouseLeave={e => e.currentTarget.style.color='rgba(255,255,255,.18)'}>
-                    <Plus size={12}/> Ajouter un rang
-                  </button>
+                  )}
                 </div>
-
-                {/* Pool */}
-                {board && (
-                  <ItemPool
-                    items={board.pool||[]}
-                    allById={allById}
-                    customItems={customItems}
-                    onAddCustom={handleAddCustom}
-                    onNotify={setToast}
-                    favorites={favorites}
-                    onToggleFav={id => setFavorites(p => p.includes(id) ? p.filter(f => f !== id) : [...p, id])}
-                    search={search} onSearch={setSearch}
-                    genre={genre} onGenre={setGenre}
-                    currentType={selectedType}
-                  />
-                )}
 
                 <DragOverlay>
                   {activeId ? <ItemCard itemId={activeId} allById={allById} isDragOverlay/> : null}
