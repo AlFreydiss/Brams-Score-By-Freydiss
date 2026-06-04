@@ -224,6 +224,14 @@ def release_db(conn):
 _CACHE: dict = {}
 _DIRTY: set  = set()   # UIDs modifiés depuis le dernier flush
 _CACHE_READY = False   # True dès que le cache est chargé
+
+# ── Berries = monnaie : persistées en DELTAS atomiques, jamais via le bloc JSON ──
+# Le flush écrivait tout le bloc _CACHE[uid] (dont berrys) → une instance périmée
+# (redéploiement Railway) pouvait écraser un /addberries. Désormais les berries sont
+# appliquées en UPDATE atomique (berrys = berrys + delta) côté DB, donc concurrence-safe,
+# et le flush du bloc NE touche PLUS berrys.
+_BERRY_DELTA: dict = {}   # uid -> somme des +/- non encore persistés en DB
+_BERRY_ZERO:  set  = set() # uid -> remise à zéro en attente (reset admin, autoritaire)
 _HTTP: aiohttp.ClientSession | None = None  # session aiohttp globale réutilisée
 
 # Cooldowns pour éviter le spam d'avertissements
@@ -903,8 +911,13 @@ def _load_all_from_db() -> dict:
 
 
 def _flush_uids_to_db(uids: set) -> None:
-    """Sauvegarde les UIDs dirty en un seul batch UPSERT (O(1) aller-retour DB)."""
-    values = [(uid, json.dumps(_CACHE[uid])) for uid in uids if _CACHE.get(uid) is not None]
+    """Sauvegarde les UIDs dirty en un batch UPSERT, SANS toucher berrys (préservé en
+    DB), puis applique les deltas berries de façon atomique (concurrence-safe)."""
+    # Bloc JSON sans la clé berrys : la monnaie est gérée séparément en atomique.
+    values = [
+        (uid, json.dumps({k: v for k, v in _CACHE[uid].items() if k != "berrys"}))
+        for uid in uids if _CACHE.get(uid) is not None
+    ]
     if not values:
         return
     conn = get_db()
@@ -912,12 +925,35 @@ def _flush_uids_to_db(uids: set) -> None:
         conn.autocommit = False
         cur = conn.cursor()
         cur.execute("SET LOCAL statement_timeout = '60000'")
+        # ON CONFLICT : on garde le berrys DÉJÀ en DB (autoritaire), on écrase le reste.
         _pg_execute_values(
             cur,
             "INSERT INTO users (uid, data) VALUES %s "
-            "ON CONFLICT (uid) DO UPDATE SET data = EXCLUDED.data",
+            "ON CONFLICT (uid) DO UPDATE SET data = "
+            "EXCLUDED.data || jsonb_build_object('berrys', COALESCE(users.data->'berrys', '0'::jsonb))",
             values,
         )
+        # ── Berries : appliquer les deltas atomiquement (berrys = berrys + delta) ──
+        for uid in list(uids):
+            if uid in _BERRY_ZERO:
+                cur.execute(
+                    "UPDATE users SET data = jsonb_set(COALESCE(data,'{}'::jsonb),'{berrys}', to_jsonb(0::bigint)) "
+                    "WHERE uid = %s", (uid,))
+                _BERRY_ZERO.discard(uid)
+                _BERRY_DELTA.pop(uid, None)
+                if uid in _CACHE:
+                    _CACHE[uid]["berrys"] = 0
+                continue
+            delta = _BERRY_DELTA.pop(uid, 0)
+            if delta:
+                cur.execute(
+                    "UPDATE users SET data = jsonb_set(COALESCE(data,'{}'::jsonb),'{berrys}', "
+                    "to_jsonb(GREATEST(0, COALESCE((data->>'berrys')::bigint,0) + %s)::bigint)) "
+                    "WHERE uid = %s RETURNING (data->>'berrys')::bigint",
+                    (delta, uid))
+                row = cur.fetchone()
+                if row and uid in _CACHE:
+                    _CACHE[uid]["berrys"] = int(row[0])   # resynchronise le cache sur la DB
         conn.commit()
         cur.close()
     except Exception as e:
@@ -985,13 +1021,16 @@ def _apply_berry_sync_for_uids(uids: set) -> None:
         rows = cur.fetchall()
         if not rows:
             return
-        ids_to_mark = []
-        for sync_id, discord_id, deduction in rows:
-            uid = str(discord_id)
-            if uid in _CACHE:
-                current = int(_CACHE[uid].get("berrys", 0) or 0)
-                _CACHE[uid]["berrys"] = max(0, current - int(deduction))
-                ids_to_mark.append(sync_id)
+        # La boutique web a DÉJÀ déduit users.data.berrys en DB (atomique). Le bot ne
+        # re-soustrait donc PAS (sinon double) : il resynchronise juste son cache sur la
+        # DB et marque les lignes appliquées.
+        ids_to_mark = [sync_id for sync_id, _, _ in rows]
+        touched = {str(discord_id) for _, discord_id, _ in rows}
+        for uid in touched:
+            cur.execute("SELECT (data->>'berrys')::bigint FROM users WHERE uid = %s", (uid,))
+            r = cur.fetchone()
+            if r and r[0] is not None and uid in _CACHE:
+                _CACHE[uid]["berrys"] = int(r[0])
         if ids_to_mark:
             # berry_sync.id est de type uuid → cast explicite (sinon "operator does not exist: uuid = text")
             cur.execute(
@@ -999,7 +1038,7 @@ def _apply_berry_sync_for_uids(uids: set) -> None:
                 ([str(i) for i in ids_to_mark],)
             )
             conn.commit()
-            print(f"[BERRY_SYNC] {len(ids_to_mark)} déduction(s) web appliquée(s)")
+            print(f"[BERRY_SYNC] {len(ids_to_mark)} déduction(s) web resynchronisée(s)")
     except Exception as e:
         print(f"[BERRY_SYNC] {e}")
         try:
@@ -1158,6 +1197,7 @@ def add_berrys(uid: str, amount: int, track: str = "earned") -> int:
     user["berrys"] = max(0, user.get("berrys", 0) + amount)
     if track:
         _track_berry(user, track, amount)
+    _BERRY_DELTA[uid] = _BERRY_DELTA.get(uid, 0) + amount   # delta atomique (DB-safe)
     _DIRTY.add(uid)
     return user["berrys"]
 
@@ -1169,6 +1209,7 @@ def spend_berrys(uid: str, amount: int, track: str = "spent") -> bool:
     user["berrys"] = bal - amount
     if track:
         _track_berry(user, track, amount)
+    _BERRY_DELTA[uid] = _BERRY_DELTA.get(uid, 0) - amount   # delta négatif
     _DIRTY.add(uid)
     return True
 
@@ -1179,6 +1220,9 @@ def reset_berrys(uid: str, track: str = "lost") -> int:
     user["berrys"] = 0
     if track and old_balance > 0:
         _track_berry(user, track, old_balance)
+    # Remise à zéro autoritaire : on annule les deltas en attente et on marque le zero.
+    _BERRY_DELTA.pop(uid, None)
+    _BERRY_ZERO.add(uid)
     _DIRTY.add(uid)
     return old_balance
 
