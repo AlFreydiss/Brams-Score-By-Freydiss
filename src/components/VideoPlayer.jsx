@@ -470,7 +470,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
     const v = videoRef.current
     if (!v) return
     let boundTrack = null
-    let rvfcId = null
+    let rafId = null
     let cancelled = false
 
     const paint = () => {
@@ -485,13 +485,15 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
       }
     }
 
-    // Boucle image-par-image : se ré-enregistre tant que la vidéo joue.
+    // Boucle requestAnimationFrame : elle FORCE le pipeline de rendu du document
+    // à tourner à chaque frame (contrairement à rVFC qui ne réveille que la vidéo).
+    // Combinée à l'écriture DOM directe (pas de setState), la nouvelle cue est
+    // peinte immédiatement, souris immobile ou non. (rVFC seul ne repeignait pas
+    // la couche overlay ; setState seul était différé par React concurrent.)
     const frameLoop = () => {
       if (cancelled) return
       paint()
-      if (typeof v.requestVideoFrameCallback === 'function') {
-        rvfcId = v.requestVideoFrameCallback(frameLoop)
-      }
+      rafId = requestAnimationFrame(frameLoop)
     }
 
     const setupTrack = () => {
@@ -524,20 +526,17 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
     v.textTracks.addEventListener('addtrack', setupTrack)
     const retry = setTimeout(setupTrack, 400)
     const retry2 = setTimeout(setupTrack, 1200)
-    // rVFC (Chrome/Edge) — synchro image. Fallbacks pour pause/seek + autres.
-    if (typeof v.requestVideoFrameCallback === 'function') rvfcId = v.requestVideoFrameCallback(frameLoop)
-    const poll = setInterval(paint, 200)
-    v.addEventListener('timeupdate', paint)
-    v.addEventListener('seeking', paint)
+    // Boucle rAF continue (force la peinture du document chaque frame).
+    rafId = requestAnimationFrame(frameLoop)
+    v.addEventListener('cuechange', paint)
     v.addEventListener('seeked', paint)
 
     return () => {
       cancelled = true
-      clearTimeout(retry); clearTimeout(retry2); clearInterval(poll)
-      if (rvfcId != null && typeof v.cancelVideoFrameCallback === 'function') { try { v.cancelVideoFrameCallback(rvfcId) } catch {} }
+      clearTimeout(retry); clearTimeout(retry2)
+      if (rafId != null) cancelAnimationFrame(rafId)
       v.textTracks.removeEventListener('addtrack', setupTrack)
-      v.removeEventListener('timeupdate', paint)
-      v.removeEventListener('seeking', paint)
+      v.removeEventListener('cuechange', paint)
       v.removeEventListener('seeked', paint)
       if (boundTrack) boundTrack.removeEventListener('cuechange', paint)
     }
@@ -947,8 +946,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
               <div ref={cueRef} style={{
                 position: 'absolute',
                 bottom: Math.min(180, Math.max(36, Number(subtitleStyle.bottom) || 110)),
-                left: '50%', transform: 'translateX(-50%) translateZ(0)',
-                willChange: 'contents, transform',
+                left: '50%', transform: 'translateX(-50%)',
                 maxWidth: '82%', textAlign: 'center',
                 padding: '5px 16px',
                 background: `rgba(0,0,0,${subtitleStyle.background})`,
