@@ -517,6 +517,20 @@ export default function TournamentPage({ tournamentId = 'ost' }) {
     if (getWinner(newRounds)) setTab('results')
   }
 
+  // Passer le duel sans se prononcer : on avance selon les votes déjà comptés
+  // (égalité ou aucun vote → tirage au sort) pour enchaîner rapidement.
+  function handleSkip() {
+    if (!current) return
+    const matchId  = current.match.id
+    const percents = getVotePercents(voteCounts, matchId)
+    const winnerId = percents.leftN === percents.rightN
+      ? (Math.random() < 0.5 ? current.match.left?.id : current.match.right?.id)
+      : (percents.leftN > percents.rightN ? current.match.left?.id : current.match.right?.id)
+    const newRounds = advanceWinner(rounds, matchId, winnerId)
+    setRounds(newRounds)
+    if (getWinner(newRounds)) setTab('results')
+  }
+
   function handleReset() {
     resetTournament(config.id)
     const { rounds: fresh } = generateBracket(config.participants, config.id)
@@ -603,7 +617,28 @@ export default function TournamentPage({ tournamentId = 'ost' }) {
                           vertical
                         />
                       </div>
-                      <BracketPanel rounds={rounds} currentId={current.match.id} isMobile={isMobile} />
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 14, width: isMobile ? '100%' : 'auto' }}>
+                        <BracketPanel rounds={rounds} currentId={current.match.id} isMobile={isMobile} />
+                        {!isLastMatch && (
+                          <button
+                            onClick={handleSkip}
+                            title="Avancer au duel suivant sans voter"
+                            style={{
+                              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                              padding: '13px 18px', borderRadius: 14,
+                              border: '1px solid rgba(255,255,255,.1)',
+                              background: 'rgba(255,255,255,.035)',
+                              color: 'rgba(255,255,255,.62)', fontSize: 13, fontWeight: 800,
+                              cursor: 'pointer', letterSpacing: '.02em', fontFamily: 'inherit',
+                              transition: 'background .18s, border-color .18s, color .18s',
+                            }}
+                            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(157,23,77,.16)'; e.currentTarget.style.borderColor = 'rgba(219,39,119,.5)'; e.currentTarget.style.color = '#f9a8d4' }}
+                            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,.035)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,.1)'; e.currentTarget.style.color = 'rgba(255,255,255,.62)' }}
+                          >
+                            Passer ce duel →
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </>
                 ) : (
