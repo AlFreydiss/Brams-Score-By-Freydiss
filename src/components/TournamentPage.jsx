@@ -678,21 +678,22 @@ export default function TournamentPage({ tournamentId = 'ost' }) {
                               style={{
                                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                                 padding: '12px 16px', borderRadius: 13,
-                                border: `1px solid ${can ? 'rgba(255,255,255,.1)' : 'rgba(255,255,255,.05)'}`,
-                                background: can ? 'rgba(255,255,255,.035)' : 'rgba(255,255,255,.015)',
-                                color: can ? 'rgba(255,255,255,.62)' : 'rgba(255,255,255,.22)',
+                                border: `1px solid ${can ? 'rgba(219,39,119,.42)' : 'rgba(255,255,255,.05)'}`,
+                                background: can ? 'rgba(157,23,77,.12)' : 'rgba(255,255,255,.015)',
+                                color: can ? 'rgba(255,255,255,.92)' : 'rgba(255,255,255,.22)',
                                 fontSize: 13, fontWeight: 800, fontFamily: 'inherit',
                                 cursor: can ? 'pointer' : 'not-allowed', letterSpacing: '.02em',
-                                transition: 'background .18s, border-color .18s, color .18s',
+                                boxShadow: can ? '0 4px 18px rgba(157,23,77,.18)' : 'none',
+                                transition: 'background .18s, border-color .18s, color .18s, box-shadow .18s',
                               }}
-                              onMouseEnter={e => { if (can) { e.currentTarget.style.background = 'rgba(157,23,77,.16)'; e.currentTarget.style.borderColor = 'rgba(219,39,119,.5)'; e.currentTarget.style.color = '#f9a8d4' } }}
-                              onMouseLeave={e => { if (can) { e.currentTarget.style.background = 'rgba(255,255,255,.035)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,.1)'; e.currentTarget.style.color = 'rgba(255,255,255,.62)' } }}
+                              onMouseEnter={e => { if (can) { e.currentTarget.style.background = 'rgba(157,23,77,.24)'; e.currentTarget.style.borderColor = '#db2777'; e.currentTarget.style.color = '#fff' } }}
+                              onMouseLeave={e => { if (can) { e.currentTarget.style.background = 'rgba(157,23,77,.12)'; e.currentTarget.style.borderColor = 'rgba(219,39,119,.42)'; e.currentTarget.style.color = 'rgba(255,255,255,.92)' } }}
                             >
                               <span>Passer ce duel →</span>
                               <span style={{
                                 fontSize: 11, fontWeight: 900, padding: '1px 7px', borderRadius: 999,
-                                background: can ? 'rgba(219,39,119,.22)' : 'rgba(255,255,255,.05)',
-                                color: can ? '#f9a8d4' : 'rgba(255,255,255,.3)',
+                                background: can ? 'rgba(219,39,119,.32)' : 'rgba(255,255,255,.05)',
+                                color: can ? '#ffd9ea' : 'rgba(255,255,255,.3)',
                               }}>🃏 {skipTokens}</span>
                             </button>
                           )
