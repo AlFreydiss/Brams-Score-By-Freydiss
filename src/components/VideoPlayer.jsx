@@ -944,7 +944,9 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
             {!subsOff && hasSubs && (
               <div ref={cueRef} style={{
                 position: 'absolute',
-                bottom: Math.max(20, (subtitleStyle.bottom ?? 110) - (showCtrl ? 0 : 70)),
+                // Position fixe (indépendante de showCtrl) : aucune dépendance à la
+                // souris → aucun re-rendu corrélé aux contrôles.
+                bottom: subtitleStyle.bottom ?? 110,
                 left: '50%', transform: 'translateX(-50%)',
                 maxWidth: '82%', textAlign: 'center',
                 padding: '5px 16px',
