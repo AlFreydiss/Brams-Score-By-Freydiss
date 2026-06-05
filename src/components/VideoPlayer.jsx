@@ -918,8 +918,8 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
             {/* Filet anti-figement : micro-animation qui force le navigateur à
                 repeindre le document en continu (sinon, en plein écran, Chrome
                 "endort" la peinture quand la souris est immobile). */}
-            <style>{`@keyframes vpRepaint{0%{background:rgba(255,255,255,0.01)}50%{background:rgba(255,255,255,0.02)}100%{background:rgba(255,255,255,0.01)}}`}</style>
-            <div aria-hidden style={{ position: 'absolute', left: 0, bottom: 0, width: 2, height: 2, pointerEvents: 'none', zIndex: 0, animation: 'vpRepaint 0.5s linear infinite' }} />
+            <style>{`@keyframes vpRepaint{0%{width:2px}50%{width:4px}100%{width:2px}}`}</style>
+            <div aria-hidden style={{ position: 'absolute', left: 0, bottom: 0, height: 2, pointerEvents: 'none', zIndex: 0, background: 'rgba(255,255,255,0.01)', animation: 'vpRepaint 0.4s linear infinite' }} />
 
             {/* ── Sous-titres overlay — texte via ÉTAT REACT (repaint garanti). ── */}
             {cueText && !subsOff && hasSubs && (
