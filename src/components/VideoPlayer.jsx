@@ -283,7 +283,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   const [started,      setStarted]     = useState(false)  // false = interface "détail épisode" (pré-lecture)
   const [subIdx,       setSubIdx]      = useState(0)
   const [subsOff,      setSubsOff]     = useState(false)
-  const [cueText,      setCueText]     = useState('')
+  const cueRef = useRef(null)          // sous-titres écrits en DOM direct (hors cycle React)
   const [buffered,     setBuffered]    = useState(0)
   const [showSubMenu,  setShowSubMenu] = useState(false)
   const [showAudioMenu, setShowAudioMenu] = useState(false)
@@ -458,22 +458,30 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
     setSubtitleStyle(loadVideoPreferences(userId).subtitleStyle)
   }, [userId])
 
-  // ── Sous-titres — événement natif `cuechange` (+ poll léger de secours) ──
-  // PAS de boucle requestAnimationFrame : à 60 setState/s, React 18 (concurrent)
-  // reportait sans cesse le commit basse priorité, et seul un événement discret
-  // (mouvement de souris → contrôles) le forçait → "les sous-titres n'apparaissent
-  // qu'en bougeant la souris". `cuechange` se déclenche exactement aux frontières
-  // de cue ; le poll 300ms est un filet pour les navigateurs capricieux.
+  // ── Sous-titres — écriture DOM DIRECTE via ref (hors cycle de rendu React) ──
+  // L'ancien polling rAF faisait 60 setState/s : React 18 (concurrent) reportait
+  // sans cesse le commit, et seul un événement discret (souris) le forçait →
+  // "les sous-titres n'apparaissent qu'en bougeant la souris". On écrit donc le
+  // texte directement dans le DOM (textContent), sans aucun setState : l'affichage
+  // ne dépend plus du tout du rendu React. `cuechange` (frontières de cue) + poll
+  // léger de secours pour les navigateurs capricieux.
   useEffect(() => {
     const v = videoRef.current
-    if (!v || !hasSubs) { setCueText(''); return }
+    const paint = (text) => {
+      const el = cueRef.current
+      if (!el) return
+      if (el.getAttribute('data-cue') === text) return
+      el.setAttribute('data-cue', text)
+      el.textContent = text
+      el.style.display = text ? '' : 'none'
+    }
+    if (!v || !hasSubs) { paint(''); return }
 
     let boundTrack = null
 
     const render = () => {
       const cues = boundTrack?.activeCues
-      const text = cues && cues.length ? cleanCueText(Array.from(cues).map(c => c.text).join('\n')) : ''
-      setCueText(prev => prev === text ? prev : text)
+      paint(cues && cues.length ? cleanCueText(Array.from(cues).map(c => c.text).join('\n')) : '')
     }
 
     const setupTrack = () => {
@@ -483,10 +491,10 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
         tracks[i].mode = 'disabled'
       }
       if (boundTrack) { boundTrack.removeEventListener('cuechange', render); boundTrack = null }
-      if (subsOff || !hasSubs) { setCueText(''); return }
+      if (subsOff || !hasSubs) { paint(''); return }
 
       const targetSub = video?.subtitles?.[subIdx]
-      if (!targetSub) { setCueText(''); return }
+      if (!targetSub) { paint(''); return }
 
       // Find the external VTT track — prefer LAST match because
       // embedded MKV tracks appear first, React-injected <track> elements last.
@@ -511,7 +519,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
         boundTrack.addEventListener('cuechange', render)
         render()
       } else {
-        setCueText('')
+        paint('')
       }
     }
 
@@ -519,15 +527,15 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
     v.textTracks.addEventListener('addtrack', setupTrack)
     // Certains navigateurs peuplent les pistes après coup : on retente le câblage.
     const retry = setTimeout(setupTrack, 400)
-    // Filet de secours : poll basse fréquence (pas de rAF → React commite bien).
-    const poll = setInterval(render, 300)
+    // Filet de secours : poll basse fréquence.
+    const poll = setInterval(render, 250)
 
     return () => {
       clearTimeout(retry)
       clearInterval(poll)
       v.textTracks.removeEventListener('addtrack', setupTrack)
       if (boundTrack) boundTrack.removeEventListener('cuechange', render)
-      setCueText('')
+      paint('')
     }
     // mediaSrc : le <video> est keyé par la source (variantes audio VF/JP des
     // films) → il se remonte ; sans cette dépendance, on resterait branché sur
@@ -541,7 +549,8 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
     const preferredAudioLang = video?.preferredAudioLang || prefs.audioLang || 'ja'
     const nextAudioIdx = findTrackIndex(audioOptions, preferredAudioLang, 0)
 
-    setCurrentTime(0); setDuration(0); setBuffered(0); setPlaying(false); setCueText('')
+    setCurrentTime(0); setDuration(0); setBuffered(0); setPlaying(false)
+    if (cueRef.current) { cueRef.current.textContent = ''; cueRef.current.style.display = 'none'; cueRef.current.removeAttribute('data-cue') }
     // Interface "détail épisode" au changement d'épisode — sauf si on enchaîne en
     // autoplay (épisode suivant) : là on va direct en lecture.
     setStarted(Boolean(autoplayPendingRef.current))
@@ -927,12 +936,14 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
               </div>
             )}
 
-            {/* ── Sous-titres overlay ── */}
-            {cueText && !subsOff && (
-              <div style={{
+            {/* ── Sous-titres overlay (texte écrit en DOM direct via cueRef) ──
+                Toujours monté quand les sous-titres sont actifs ; le texte et la
+                visibilité (display) sont gérés hors React. IMPORTANT : ne PAS
+                mettre `display` dans ce style, sinon React l'écraserait au re-rendu
+                (changement de taille/position) et masquerait les sous-titres. */}
+            {!subsOff && hasSubs && (
+              <div ref={cueRef} style={{
                 position: 'absolute',
-                // Position verticale réglable (subtitleStyle.bottom). Quand les
-                // contrôles sont masqués, on descend de 70px (place libérée).
                 bottom: Math.max(20, (subtitleStyle.bottom ?? 110) - (showCtrl ? 0 : 70)),
                 left: '50%', transform: 'translateX(-50%)',
                 maxWidth: '82%', textAlign: 'center',
@@ -950,9 +961,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                 transition: 'bottom .2s ease',
                 pointerEvents: 'none',
                 zIndex: 5,
-              }}>
-                {cueText}
-              </div>
+              }} />
             )}
 
             {/* Indicateur de qualité — suit les contrôles (plus de superposition permanente) */}
