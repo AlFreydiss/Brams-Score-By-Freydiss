@@ -513,14 +513,20 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
 
     setupTrack()
     v.textTracks.addEventListener('addtrack', setupTrack)
+    // Certains navigateurs peuplent les pistes après coup : on retente le câblage.
+    const retry = setTimeout(setupTrack, 400)
     rafId = requestAnimationFrame(tick)
 
     return () => {
       cancelAnimationFrame(rafId)
+      clearTimeout(retry)
       v.textTracks.removeEventListener('addtrack', setupTrack)
       setCueText('')
     }
-  }, [subIdx, subsOff, hasSubs, idx])
+    // mediaSrc : le <video> est keyé par la source (variantes audio VF/JP des
+    // films) → il se remonte ; sans cette dépendance, on resterait branché sur
+    // l'ancien élément et les sous-titres se figeraient.
+  }, [subIdx, subsOff, hasSubs, idx, mediaSrc])
 
   // ── Réinitialiser état au changement d'épisode ───────────────────────────
   useEffect(() => {
