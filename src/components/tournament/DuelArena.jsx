@@ -5,7 +5,6 @@ import confetti from 'canvas-confetti'
 import { getVotePercents } from '../../lib/tournament.js'
 import OSTDuelCard from './OSTDuelCard.jsx'
 import VSPanel     from './VSPanel.jsx'
-import { boostElement } from '../../lib/audioBoost.js'
 const VideoPlayer = lazy(() => import('../VideoPlayer.jsx'))
 
 const PINK   = '#9d174d'
@@ -127,8 +126,6 @@ function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop, onSeek, me
     if (!media) return
     media.volume = volume / 100
     if (audioUrl && mediaRef?.current) media.muted = false
-    // Boost de loudness : 100% natif est trop faible sur les extraits.
-    if (audioUrl) boostElement(media, 1.7)
   }, [volume, audioUrl, mediaRef])
 
   useEffect(() => {
