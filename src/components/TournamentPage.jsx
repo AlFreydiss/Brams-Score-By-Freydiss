@@ -757,15 +757,29 @@ export default function TournamentPage({ tournamentId = 'ost' }) {
           <button
             onClick={() => { if (confirm('Réinitialiser le tournoi ? Tous les votes seront perdus.')) handleReset() }}
             style={{
-              padding: '7px 16px', borderRadius: 8,
-              border: '1px solid rgba(255,255,255,.1)',
-              background: 'rgba(255,255,255,.025)',
-              color: 'rgba(255,255,255,.25)', fontSize: 11, cursor: 'pointer',
-              transition: 'all 0.2s',
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              padding: '11px 22px', borderRadius: 10,
+              border: '1px solid rgba(220,72,72,.45)',
+              background: 'rgba(220,72,72,.10)',
+              color: '#f1a3a3', fontSize: 13, fontWeight: 600,
+              letterSpacing: .2, cursor: 'pointer',
+              transition: 'all 0.18s',
             }}
-            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,.06)'}
-            onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,.025)'}
+            onMouseEnter={e => {
+              e.currentTarget.style.background = 'rgba(220,72,72,.20)'
+              e.currentTarget.style.borderColor = 'rgba(220,72,72,.75)'
+              e.currentTarget.style.color = '#ffd7d7'
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.background = 'rgba(220,72,72,.10)'
+              e.currentTarget.style.borderColor = 'rgba(220,72,72,.45)'
+              e.currentTarget.style.color = '#f1a3a3'
+            }}
           >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 12a9 9 0 1 0 9-9 9 9 0 0 0-6.4 2.6L3 8" />
+              <path d="M3 3v5h5" />
+            </svg>
             Réinitialiser le tournoi
           </button>
         </div>
