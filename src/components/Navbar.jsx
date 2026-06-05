@@ -202,7 +202,6 @@ function UserMenu({ displayName, avatarUrl, discordId, berryCount, onSignOut }) 
             { label: '⚔ Mon Profil',  path: discordId ? `/u/${discordId}` : null },
             { label: '💬 Messages',    path: '/messages', badge: counts.messages },
             { label: '👥 Amis',        path: '/amis',     badge: counts.friend_requests },
-            { label: 'Staff Panel',   path: '/staff'     },
           ].filter(item => item.path || item.action).map((item) => (
             <button
               key={item.label}

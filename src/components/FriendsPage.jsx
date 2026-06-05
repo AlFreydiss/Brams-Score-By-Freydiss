@@ -42,7 +42,7 @@ function Empty({ children }) {
 }
 
 export default function FriendsPage() {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, loading: authLoading } = useAuth()
   const { refreshCounts } = useSocial()
   const navigate = useNavigate()
   const [tab, setTab]         = useState('friends')
@@ -67,6 +67,16 @@ export default function FriendsPage() {
   async function openDm(userId) {
     const res = await getOrCreateDm(userId)
     if (res?.ok) navigate(`/messages/${res.conversation_id}`)
+  }
+
+  // Pendant que l'auth se charge, on n'affiche pas l'écran "connecte-toi" (sinon page = fond seul au 1er rendu)
+  if (authLoading) {
+    return (
+      <div style={{ minHeight: '100vh', background: T.bg }}>
+        <Navbar />
+        <Empty>Chargement…</Empty>
+      </div>
+    )
   }
 
   if (!isAuthenticated) {
