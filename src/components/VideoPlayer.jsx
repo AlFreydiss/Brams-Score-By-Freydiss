@@ -529,11 +529,20 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
     const retry = setTimeout(setupTrack, 400)
     // Filet de secours : poll basse fréquence.
     const poll = setInterval(render, 250)
+    // Signal le PLUS fiable pendant la lecture : timeupdate se déclenche en
+    // continu tant que la vidéo joue → le sous-titre suit la lecture même si
+    // cuechange ou l'intervalle flanchent. + seeking/seeked pour les sauts.
+    v.addEventListener('timeupdate', render)
+    v.addEventListener('seeking', render)
+    v.addEventListener('seeked', render)
 
     return () => {
       clearTimeout(retry)
       clearInterval(poll)
       v.textTracks.removeEventListener('addtrack', setupTrack)
+      v.removeEventListener('timeupdate', render)
+      v.removeEventListener('seeking', render)
+      v.removeEventListener('seeked', render)
       if (boundTrack) boundTrack.removeEventListener('cuechange', render)
       paint('')
     }
@@ -944,9 +953,10 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
             {!subsOff && hasSubs && (
               <div ref={cueRef} style={{
                 position: 'absolute',
-                // Position fixe (indépendante de showCtrl) : aucune dépendance à la
-                // souris → aucun re-rendu corrélé aux contrôles.
-                bottom: subtitleStyle.bottom ?? 110,
+                // Position bornée à une bande TOUJOURS visible (40–180px du bas) :
+                // une valeur sauvegardée extrême ne peut plus envoyer le sous-titre
+                // hors de l'image. Indépendant de showCtrl (aucun lien à la souris).
+                bottom: Math.min(180, Math.max(40, Number(subtitleStyle.bottom) || 110)),
                 left: '50%', transform: 'translateX(-50%)',
                 maxWidth: '82%', textAlign: 'center',
                 padding: '5px 16px',
@@ -1120,8 +1130,8 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                       {[
                         ['A−', () => updateSubtitleStyle({ size: Math.max(14, subtitleStyle.size - 4) })],
                         ['A+', () => updateSubtitleStyle({ size: Math.min(64, subtitleStyle.size + 4) })],
-                        ['↑ Monter', () => updateSubtitleStyle({ bottom: Math.min(380, (subtitleStyle.bottom ?? 110) + 30) })],
-                        ['↓ Baisser', () => updateSubtitleStyle({ bottom: Math.max(20, (subtitleStyle.bottom ?? 110) - 30) })],
+                        ['↑ Monter', () => updateSubtitleStyle({ bottom: Math.min(180, (Number(subtitleStyle.bottom) || 110) + 24) })],
+                        ['↓ Baisser', () => updateSubtitleStyle({ bottom: Math.max(40, (Number(subtitleStyle.bottom) || 110) - 24) })],
                         ['Fond −', () => updateSubtitleStyle({ background: Math.max(0, Number((subtitleStyle.background - 0.15).toFixed(2))) })],
                         ['Fond +', () => updateSubtitleStyle({ background: Math.min(0.95, Number((subtitleStyle.background + 0.15).toFixed(2))) })],
                         [subtitleStyle.outline ? 'Contour ON' : 'Contour OFF', () => updateSubtitleStyle({ outline: !subtitleStyle.outline })],
