@@ -5,6 +5,7 @@ import confetti from 'canvas-confetti'
 import { getVotePercents } from '../../lib/tournament.js'
 import OSTDuelCard from './OSTDuelCard.jsx'
 import VSPanel     from './VSPanel.jsx'
+import { boostElement } from '../../lib/audioBoost.js'
 const VideoPlayer = lazy(() => import('../VideoPlayer.jsx'))
 
 const PINK   = '#9d174d'
@@ -96,7 +97,7 @@ function fmt(s) {
 }
 
 // ── Compact audio strip ────────────────────────────────────────────────────
-function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop, onSeek, mediaRef }) {
+function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop, onSeek, mediaRef, boost = 1 }) {
   const iframeRef = useRef(null)
   const videoRef  = useRef(null)
   const timerRef  = useRef(null)
@@ -126,7 +127,10 @@ function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop, onSeek, me
     if (!media) return
     media.volume = volume / 100
     if (audioUrl && mediaRef?.current) media.muted = false
-  }, [volume, audioUrl, mediaRef])
+    // Boost de loudness (openings only) : 100% natif trop faible. Nécessite
+    // crossOrigin sur la vidéo de la carte (déjà posé) + CORS R2 (OK).
+    if (audioUrl && boost > 1) boostElement(media, boost)
+  }, [volume, audioUrl, mediaRef, boost])
 
   useEffect(() => {
     if (!audioUrl || !mediaRef) return
@@ -408,6 +412,7 @@ export default function DuelArena({
       color:    p.color || GOLD,
       title:    p.title,
       anime:    p.anime,
+      type:     p.type || null,   // 'OP' → boost de loudness dans le player compact
     })
   }
 
@@ -565,6 +570,7 @@ export default function DuelArena({
             onStop={() => setPlaying(null)}
             onSeek={handleCardBgSeek}
             mediaRef={playing.audioUrl ? cardBgVideoRef : null}
+            boost={playing.type === 'OP' ? 1.7 : 1}
           />
         )}
       </AnimatePresence>

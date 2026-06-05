@@ -128,6 +128,7 @@ export default function OSTDuelCard({
               if (videoSyncRef) videoSyncRef.current = el
             }}
             key={participant.audioUrl}
+            crossOrigin="anonymous"
             src={participant.audioUrl}
             autoPlay
             muted={!isPlaying}
