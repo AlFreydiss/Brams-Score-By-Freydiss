@@ -264,6 +264,12 @@ export function savePersonalVote(tournamentId, matchId, side) {
   } catch {}
 }
 
+// Réécrit l'historique complet des votes perso (utilisé par le bouton Retour pour
+// annuler proprement un vote en restaurant un état antérieur).
+export function savePersonalVotes(tournamentId, votes) {
+  try { localStorage.setItem(voteKey(tournamentId), JSON.stringify(votes || {})) } catch {}
+}
+
 // voteCounts: { [matchId]: { left: N, right: N } } — aggregate (client-side)
 export function loadVoteCounts(tournamentId) {
   try { return JSON.parse(localStorage.getItem(`brams_t_vc_${tournamentId}`) || '{}') }
@@ -278,6 +284,12 @@ export function addVoteCount(tournamentId, matchId, side) {
     localStorage.setItem(`brams_t_vc_${tournamentId}`, JSON.stringify(vc))
     return vc
   } catch { return {} }
+}
+
+// Réécrit le compteur agrégé complet (utilisé par le bouton Retour pour décrémenter
+// proprement le vote annulé).
+export function saveVoteCounts(tournamentId, vc) {
+  try { localStorage.setItem(`brams_t_vc_${tournamentId}`, JSON.stringify(vc || {})) } catch {}
 }
 
 export function getVotePercents(voteCounts, matchId) {

@@ -8,8 +8,8 @@ import {
   getTournamentProgress,
   getWinner,
   loadState, saveState,
-  loadPersonalVotes, savePersonalVote,
-  loadVoteCounts, addVoteCount,
+  loadPersonalVotes, savePersonalVote, savePersonalVotes,
+  loadVoteCounts, addVoteCount, saveVoteCounts,
   getVotePercents,
   resetTournament,
 } from '../lib/tournament.js'
@@ -464,6 +464,13 @@ export default function TournamentPage({ tournamentId = 'ost' }) {
   const [voteCounts,    setVoteCounts]    = useState(() => loadVoteCounts(config.id))
   const [isMobile,      setIsMobile]      = useState(() => window.innerWidth < 768)
 
+  // Joker "Passer ce duel" : 1 dispo, se recharge dès qu'on vote pour un autre duel.
+  const [skipTokens,    setSkipTokens]    = useState(1)
+  // Pile d'annulation (en mémoire) + tours où le bouton Retour a déjà été utilisé
+  // (Retour limité à une fois par bracket/tour).
+  const [history,       setHistory]       = useState([])
+  const [backUsedRounds, setBackUsedRounds] = useState({})
+
   useEffect(() => {
     const h = () => setIsMobile(window.innerWidth < 768)
     window.addEventListener('resize', h)
@@ -474,6 +481,9 @@ export default function TournamentPage({ tournamentId = 'ost' }) {
     setRounds(loadRoundsWithVersionCheck(config))
     setPersonalVotes(loadPersonalVotes(config.id))
     setVoteCounts(loadVoteCounts(config.id))
+    setSkipTokens(1)
+    setHistory([])
+    setBackUsedRounds({})
     setTab('duel')
   }, [config.id])
 
@@ -502,6 +512,13 @@ export default function TournamentPage({ tournamentId = 'ost' }) {
     savePersonalVote(config.id, matchId, side)
     const newVC = addVoteCount(config.id, matchId, side)
     setVoteCounts({ ...newVC })
+    // Voter pour un duel recharge le joker "Passer" (plafonné à 1).
+    setSkipTokens(1)
+  }
+
+  // Mémorise l'état AVANT d'avancer pour pouvoir revenir en arrière proprement.
+  function pushHistory(matchId, votedSide) {
+    setHistory(h => [...h, { rounds, matchId, votedSide: votedSide || null, roundId: current?.round.id }])
   }
 
   function handleNext() {
@@ -512,23 +529,50 @@ export default function TournamentPage({ tournamentId = 'ost' }) {
     const winnerId  = percents.leftN >= percents.rightN
       ? current.match.left?.id
       : current.match.right?.id
+    pushHistory(matchId, personalVotes[matchId])
     const newRounds = advanceWinner(rounds, matchId, winnerId)
     setRounds(newRounds)
     if (getWinner(newRounds)) setTab('results')
   }
 
-  // Passer le duel sans se prononcer : on avance selon les votes déjà comptés
-  // (égalité ou aucun vote → tirage au sort) pour enchaîner rapidement.
+  // Passer le duel sans se prononcer : consomme le joker, avance selon les votes
+  // déjà comptés (égalité ou aucun vote → tirage au sort).
   function handleSkip() {
-    if (!current) return
+    if (!current || skipTokens <= 0) return
     const matchId  = current.match.id
     const percents = getVotePercents(voteCounts, matchId)
     const winnerId = percents.leftN === percents.rightN
       ? (Math.random() < 0.5 ? current.match.left?.id : current.match.right?.id)
       : (percents.leftN > percents.rightN ? current.match.left?.id : current.match.right?.id)
+    pushHistory(matchId, personalVotes[matchId])
+    setSkipTokens(t => t - 1)
     const newRounds = advanceWinner(rounds, matchId, winnerId)
     setRounds(newRounds)
     if (getWinner(newRounds)) setTab('results')
+  }
+
+  // Retour : annule le dernier duel (1 fois par tour). On restaure le bracket et on
+  // efface le vote concerné pour pouvoir re-choisir librement.
+  const canBack = history.length > 0 && current && !backUsedRounds[current.round.id]
+  function handleBack() {
+    if (!canBack) return
+    const entry = history[history.length - 1]
+    setHistory(h => h.slice(0, -1))
+    setBackUsedRounds(b => ({ ...b, [current.round.id]: true }))
+    setRounds(entry.rounds)
+    if (entry.votedSide) {
+      const newPV = { ...personalVotes }; delete newPV[entry.matchId]
+      setPersonalVotes(newPV); savePersonalVotes(config.id, newPV)
+      const newVC = { ...voteCounts }
+      if (newVC[entry.matchId]) {
+        newVC[entry.matchId] = { ...newVC[entry.matchId], [entry.votedSide]: Math.max(0, (newVC[entry.matchId][entry.votedSide] || 0) - 1) }
+        setVoteCounts(newVC); saveVoteCounts(config.id, newVC)
+      }
+    } else {
+      // L'entrée annulée était un "Passer" → on rembourse le joker.
+      setSkipTokens(1)
+    }
+    setTab('duel')
   }
 
   function handleReset() {
@@ -537,6 +581,9 @@ export default function TournamentPage({ tournamentId = 'ost' }) {
     setRounds(fresh)
     setPersonalVotes({})
     setVoteCounts({})
+    setSkipTokens(1)
+    setHistory([])
+    setBackUsedRounds({})
     setTab('duel')
   }
 
@@ -617,27 +664,60 @@ export default function TournamentPage({ tournamentId = 'ost' }) {
                           vertical
                         />
                       </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 14, width: isMobile ? '100%' : 'auto' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: isMobile ? '100%' : 248 }}>
                         <BracketPanel rounds={rounds} currentId={current.match.id} isMobile={isMobile} />
-                        {!isLastMatch && (
-                          <button
-                            onClick={handleSkip}
-                            title="Avancer au duel suivant sans voter"
-                            style={{
-                              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                              padding: '13px 18px', borderRadius: 14,
-                              border: '1px solid rgba(255,255,255,.1)',
-                              background: 'rgba(255,255,255,.035)',
-                              color: 'rgba(255,255,255,.62)', fontSize: 13, fontWeight: 800,
-                              cursor: 'pointer', letterSpacing: '.02em', fontFamily: 'inherit',
-                              transition: 'background .18s, border-color .18s, color .18s',
-                            }}
-                            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(157,23,77,.16)'; e.currentTarget.style.borderColor = 'rgba(219,39,119,.5)'; e.currentTarget.style.color = '#f9a8d4' }}
-                            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,.035)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,.1)'; e.currentTarget.style.color = 'rgba(255,255,255,.62)' }}
-                          >
-                            Passer ce duel →
-                          </button>
-                        )}
+
+                        {/* Joker "Passer ce duel" : 1 dispo, rechargé en votant ailleurs */}
+                        {!isLastMatch && (() => {
+                          const can = skipTokens > 0
+                          return (
+                            <button
+                              onClick={handleSkip}
+                              disabled={!can}
+                              title={can ? 'Passer ce duel sans voter (joker)' : 'Joker épuisé — vote un duel pour le recharger'}
+                              style={{
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                                padding: '12px 16px', borderRadius: 13,
+                                border: `1px solid ${can ? 'rgba(255,255,255,.1)' : 'rgba(255,255,255,.05)'}`,
+                                background: can ? 'rgba(255,255,255,.035)' : 'rgba(255,255,255,.015)',
+                                color: can ? 'rgba(255,255,255,.62)' : 'rgba(255,255,255,.22)',
+                                fontSize: 13, fontWeight: 800, fontFamily: 'inherit',
+                                cursor: can ? 'pointer' : 'not-allowed', letterSpacing: '.02em',
+                                transition: 'background .18s, border-color .18s, color .18s',
+                              }}
+                              onMouseEnter={e => { if (can) { e.currentTarget.style.background = 'rgba(157,23,77,.16)'; e.currentTarget.style.borderColor = 'rgba(219,39,119,.5)'; e.currentTarget.style.color = '#f9a8d4' } }}
+                              onMouseLeave={e => { if (can) { e.currentTarget.style.background = 'rgba(255,255,255,.035)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,.1)'; e.currentTarget.style.color = 'rgba(255,255,255,.62)' } }}
+                            >
+                              <span>Passer ce duel →</span>
+                              <span style={{
+                                fontSize: 11, fontWeight: 900, padding: '1px 7px', borderRadius: 999,
+                                background: can ? 'rgba(219,39,119,.22)' : 'rgba(255,255,255,.05)',
+                                color: can ? '#f9a8d4' : 'rgba(255,255,255,.3)',
+                              }}>🃏 {skipTokens}</span>
+                            </button>
+                          )
+                        })()}
+
+                        {/* Retour : annule le dernier duel, 1 fois par tour */}
+                        <button
+                          onClick={handleBack}
+                          disabled={!canBack}
+                          title={canBack ? 'Revenir au duel précédent (1 fois par tour)' : 'Retour déjà utilisé ce tour — ou rien à annuler'}
+                          style={{
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+                            padding: '10px 16px', borderRadius: 13,
+                            border: '1px solid rgba(255,255,255,.06)',
+                            background: 'transparent',
+                            color: canBack ? 'rgba(255,255,255,.5)' : 'rgba(255,255,255,.2)',
+                            fontSize: 12.5, fontWeight: 700, fontFamily: 'inherit',
+                            cursor: canBack ? 'pointer' : 'not-allowed', letterSpacing: '.02em',
+                            transition: 'background .18s, color .18s',
+                          }}
+                          onMouseEnter={e => { if (canBack) { e.currentTarget.style.background = 'rgba(255,255,255,.05)'; e.currentTarget.style.color = 'rgba(255,255,255,.85)' } }}
+                          onMouseLeave={e => { if (canBack) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,.5)' } }}
+                        >
+                          ← Retour
+                        </button>
                       </div>
                     </div>
                   </>
