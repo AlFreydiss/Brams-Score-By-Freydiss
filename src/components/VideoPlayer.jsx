@@ -500,6 +500,23 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
     // remonte ; sans cette dépendance on resterait branché sur l'ancien élément.
   }, [subIdx, subsOff, hasSubs, idx, mediaSrc])
 
+  // ── DIAGNOSTIC TEMPORAIRE : état réel des pistes (à lire à l'écran) ───────────
+  const [dbg, setDbg] = useState('init…')
+  useEffect(() => {
+    const id = setInterval(() => {
+      const v = videoRef.current
+      if (!v) { setDbg('no video el'); return }
+      const tt = v.textTracks
+      const parts = []
+      for (let i = 0; i < tt.length; i++) {
+        const t = tt[i]
+        parts.push(`#${i} ${t.kind}/${t.language || '?'} mode=${t.mode} cues=${t.cues ? t.cues.length : 'null'} act=${t.activeCues ? t.activeCues.length : 0}`)
+      }
+      setDbg(`subsOff=${subsOff} subIdx=${subIdx} hasSubs=${hasSubs} tracks=${tt.length}\n` + (parts.join('\n') || '(aucune piste)'))
+    }, 500)
+    return () => clearInterval(id)
+  }, [subsOff, subIdx, hasSubs])
+
   // ── Réinitialiser état au changement d'épisode ───────────────────────────
   useEffect(() => {
     const prefs = loadVideoPreferences(userId)
@@ -737,6 +754,11 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 1200, background: '#000', display: 'flex', flexDirection: 'column' }}>
+
+      {/* DIAGNOSTIC TEMPORAIRE — à retirer ensuite */}
+      <div style={{ position: 'fixed', top: 54, left: 8, zIndex: 99999, background: 'rgba(0,0,0,0.82)', color: '#0f0', font: '11px/1.4 monospace', padding: '6px 8px', borderRadius: 6, whiteSpace: 'pre', pointerEvents: 'none', maxWidth: '90vw' }}>
+        {dbg}
+      </div>
 
       {/* ── Barre haute ── */}
       <div style={{ flexShrink: 0, height: 48, display: 'flex', alignItems: 'center', gap: 10, padding: '0 14px', background: 'rgba(8,9,11,0.84)', backdropFilter: 'blur(18px)', borderBottom: `1px solid ${color}22`, zIndex: 10 }}>
