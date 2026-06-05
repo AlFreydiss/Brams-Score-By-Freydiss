@@ -571,7 +571,7 @@ export default function DuelArena({
             onStop={() => setPlaying(null)}
             onSeek={handleCardBgSeek}
             mediaRef={playing.audioUrl ? cardBgVideoRef : null}
-            boost={playing.gain || (playing.type === 'OP' ? 1.7 : 1)}
+            boost={playing.gain || (playing.audioUrl ? 2.2 : 1)}
           />
         )}
       </AnimatePresence>
