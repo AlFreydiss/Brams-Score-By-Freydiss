@@ -6,7 +6,7 @@ import {
 } from 'framer-motion'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { supabase } from '../lib/supabase.js'
-import { setBoost } from '../lib/audioBoost.js'
+import { setBoost, corsUrl } from '../lib/audioBoost.js'
 import {
   LOCAL_TRACKS, pickTrack, checkAnswer, calcBerries, countTracksByType,
   createBlindTestRoom, fetchBlindTestRoom, fetchBlindTestRoomPlayers,
@@ -661,7 +661,7 @@ export default function BlindTestPage() {
     // crossOrigin AVANT le src : nécessaire pour router la piste dans Web Audio
     // (boost de gain) sans rendre le média muet (R2 renvoie ACAO:*).
     if (!v.crossOrigin) v.crossOrigin = 'anonymous'
-    v.pause(); v.src = url; v.currentTime = 0; v.volume = volume; v.load()
+    v.pause(); v.src = corsUrl(url); v.currentTime = 0; v.volume = volume; v.load()
     setVideoFailed(false)
     v.play().then(() => v.pause()).catch(() => {})
   }

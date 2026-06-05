@@ -10,6 +10,15 @@
 let _ctx = null
 const _wired = new WeakMap() // element -> { gain }
 
+// URL dédiée CORS : évite la "pollution de cache" où une réponse R2 mise en
+// cache SANS en-tête Origin (aperçu non-cors) est réutilisée par une requête
+// crossOrigin → échec CORS → la vidéo ne charge plus. Le paramètre force une
+// entrée de cache distincte toujours récupérée avec Origin (donc ACAO:*).
+export function corsUrl(u) {
+  if (!u) return u
+  return u + (u.includes('?') ? '&' : '?') + 'cors=1'
+}
+
 function getCtx() {
   if (typeof window === 'undefined') return null
   if (!_ctx) {

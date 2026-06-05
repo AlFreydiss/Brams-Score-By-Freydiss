@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
+import { corsUrl } from '../../lib/audioBoost.js'
 
 const GOLD   = '#d4a017'
 const GOLD_L = '#f0c040'
@@ -129,7 +130,7 @@ export default function OSTDuelCard({
             }}
             key={participant.audioUrl}
             crossOrigin="anonymous"
-            src={participant.audioUrl}
+            src={corsUrl(participant.audioUrl)}
             autoPlay
             muted={!isPlaying}
             loop={!isPlaying}
