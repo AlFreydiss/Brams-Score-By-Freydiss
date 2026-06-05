@@ -72,7 +72,7 @@ export default function FriendsPage() {
   // Pendant que l'auth se charge, on n'affiche pas l'écran "connecte-toi" (sinon page = fond seul au 1er rendu)
   if (authLoading) {
     return (
-      <div style={{ minHeight: '100vh', background: T.bg }}>
+      <div style={{ minHeight: '100vh', background: T.bg, position: 'relative', isolation: 'isolate', overflowX: 'hidden' }}>
         <Navbar />
         <Empty>Chargement…</Empty>
       </div>
@@ -81,7 +81,7 @@ export default function FriendsPage() {
 
   if (!isAuthenticated) {
     return (
-      <div style={{ minHeight: '100vh', background: T.bg }}>
+      <div style={{ minHeight: '100vh', background: T.bg, position: 'relative', isolation: 'isolate', overflowX: 'hidden' }}>
         <Navbar />
         <Empty>Connecte-toi pour voir tes amis.</Empty>
       </div>
@@ -95,7 +95,7 @@ export default function FriendsPage() {
   ]
 
   return (
-    <div style={{ minHeight: '100vh', background: T.bg }}>
+    <div style={{ minHeight: '100vh', background: T.bg, position: 'relative', isolation: 'isolate', overflowX: 'hidden' }}>
       <Navbar />
       <div style={{ maxWidth: 720, margin: '0 auto', padding: '90px 16px 60px' }}>
         <h1 style={{ fontSize: 26, fontWeight: 800, color: T.text, marginBottom: 20 }}>Mes amis</h1>
