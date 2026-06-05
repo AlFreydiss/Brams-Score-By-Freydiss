@@ -283,7 +283,6 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   const [started,      setStarted]     = useState(false)  // false = interface "détail épisode" (pré-lecture)
   const [subIdx,       setSubIdx]      = useState(0)
   const [subsOff,      setSubsOff]     = useState(false)
-  const cueRef = useRef(null)          // sous-titres écrits en DOM direct (hors cycle React)
   const [buffered,     setBuffered]    = useState(0)
   const [showSubMenu,  setShowSubMenu] = useState(false)
   const [showAudioMenu, setShowAudioMenu] = useState(false)
@@ -458,93 +457,51 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
     setSubtitleStyle(loadVideoPreferences(userId).subtitleStyle)
   }, [userId])
 
-  // ── Sous-titres — écriture DOM DIRECTE via ref (hors cycle de rendu React) ──
-  // L'ancien polling rAF faisait 60 setState/s : React 18 (concurrent) reportait
-  // sans cesse le commit, et seul un événement discret (souris) le forçait →
-  // "les sous-titres n'apparaissent qu'en bougeant la souris". On écrit donc le
-  // texte directement dans le DOM (textContent), sans aucun setState : l'affichage
-  // ne dépend plus du tout du rendu React. `cuechange` (frontières de cue) + poll
-  // léger de secours pour les navigateurs capricieux.
+  // ── Sous-titres — RENDU NATIF du navigateur (mode 'showing') ─────────────────
+  // On a tout essayé côté React (state, rAF, ref+DOM direct, timeupdate) et le
+  // symptôme "n'apparaît qu'au mouvement de souris" persistait. On délègue donc
+  // entièrement l'affichage au navigateur : il synchronise et dessine les cues
+  // lui-même, sans AUCUNE dépendance au cycle de rendu React. Le style (taille,
+  // couleur, fond, contour) est appliqué via `::cue` (voir <style> plus bas).
   useEffect(() => {
     const v = videoRef.current
-    const paint = (text) => {
-      const el = cueRef.current
-      if (!el) return
-      if (el.getAttribute('data-cue') === text) return
-      el.setAttribute('data-cue', text)
-      el.textContent = text
-      el.style.display = text ? '' : 'none'
-    }
-    if (!v || !hasSubs) { paint(''); return }
-
-    let boundTrack = null
-
-    const render = () => {
-      const cues = boundTrack?.activeCues
-      paint(cues && cues.length ? cleanCueText(Array.from(cues).map(c => c.text).join('\n')) : '')
-    }
+    if (!v) return
 
     const setupTrack = () => {
       const tracks = v.textTracks
-      // Disable ALL tracks first (embedded MKV tracks included)
-      for (let i = 0; i < tracks.length; i++) {
-        tracks[i].mode = 'disabled'
-      }
-      if (boundTrack) { boundTrack.removeEventListener('cuechange', render); boundTrack = null }
-      if (subsOff || !hasSubs) { paint(''); return }
+      // Tout désactiver d'abord (pistes MKV embarquées incluses).
+      for (let i = 0; i < tracks.length; i++) tracks[i].mode = 'disabled'
+      if (subsOff || !hasSubs) return
 
       const targetSub = video?.subtitles?.[subIdx]
-      if (!targetSub) { paint(''); return }
+      if (!targetSub) return
 
-      // Find the external VTT track — prefer LAST match because
-      // embedded MKV tracks appear first, React-injected <track> elements last.
-      let bestIdx = -1
-      let exactIdx = -1
+      // Piste VTT externe — on préfère la DERNIÈRE correspondance (les pistes
+      // embarquées arrivent en premier, les <track> injectés par React ensuite).
+      let bestIdx = -1, exactIdx = -1
       for (let i = 0; i < tracks.length; i++) {
         const t = tracks[i]
         const labelMatch = t.label && targetSub.label && t.label === targetSub.label
         const langMatch  = t.language && targetSub.srclang && (
-          t.language === targetSub.srclang ||
-          t.language.startsWith(targetSub.srclang + '-')
+          t.language === targetSub.srclang || t.language.startsWith(targetSub.srclang + '-')
         )
         if (labelMatch) exactIdx = i
         else if (langMatch) bestIdx = i
       }
       if (exactIdx >= 0) bestIdx = exactIdx
-
-      if (bestIdx >= 0) {
-        // 'hidden' charge bien les cues et peuple activeCues, sans rendu natif.
-        tracks[bestIdx].mode = 'hidden'
-        boundTrack = tracks[bestIdx]
-        boundTrack.addEventListener('cuechange', render)
-        render()
-      } else {
-        paint('')
-      }
+      if (bestIdx >= 0) tracks[bestIdx].mode = 'showing'  // ← rendu natif
     }
 
     setupTrack()
     v.textTracks.addEventListener('addtrack', setupTrack)
     // Certains navigateurs peuplent les pistes après coup : on retente le câblage.
     const retry = setTimeout(setupTrack, 400)
-    // Filet de secours : poll basse fréquence.
-    const poll = setInterval(render, 250)
-    // Signal le PLUS fiable pendant la lecture : timeupdate se déclenche en
-    // continu tant que la vidéo joue → le sous-titre suit la lecture même si
-    // cuechange ou l'intervalle flanchent. + seeking/seeked pour les sauts.
-    v.addEventListener('timeupdate', render)
-    v.addEventListener('seeking', render)
-    v.addEventListener('seeked', render)
+    const retry2 = setTimeout(setupTrack, 1200)
 
     return () => {
       clearTimeout(retry)
-      clearInterval(poll)
+      clearTimeout(retry2)
       v.textTracks.removeEventListener('addtrack', setupTrack)
-      v.removeEventListener('timeupdate', render)
-      v.removeEventListener('seeking', render)
-      v.removeEventListener('seeked', render)
-      if (boundTrack) boundTrack.removeEventListener('cuechange', render)
-      paint('')
     }
     // mediaSrc : le <video> est keyé par la source (variantes audio VF/JP des
     // films) → il se remonte ; sans cette dépendance, on resterait branché sur
@@ -559,7 +516,6 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
     const nextAudioIdx = findTrackIndex(audioOptions, preferredAudioLang, 0)
 
     setCurrentTime(0); setDuration(0); setBuffered(0); setPlaying(false)
-    if (cueRef.current) { cueRef.current.textContent = ''; cueRef.current.style.display = 'none'; cueRef.current.removeAttribute('data-cue') }
     // Interface "détail épisode" au changement d'épisode — sauf si on enchaîne en
     // autoplay (épisode suivant) : là on va direct en lecture.
     setStarted(Boolean(autoplayPendingRef.current))
@@ -822,6 +778,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
             <video
               ref={videoRef}
               key={mediaSrc}
+              className="vp-cue"
               crossOrigin={hasSubs ? 'anonymous' : undefined}
               style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
               onPlay={onPlay}
@@ -945,35 +902,21 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
               </div>
             )}
 
-            {/* ── Sous-titres overlay (texte écrit en DOM direct via cueRef) ──
-                Toujours monté quand les sous-titres sont actifs ; le texte et la
-                visibilité (display) sont gérés hors React. IMPORTANT : ne PAS
-                mettre `display` dans ce style, sinon React l'écraserait au re-rendu
-                (changement de taille/position) et masquerait les sous-titres. */}
+            {/* ── Style des sous-titres natifs (::cue) ── Le navigateur dessine
+                les cues ; on applique juste taille/couleur/fond/contour. */}
             {!subsOff && hasSubs && (
-              <div ref={cueRef} style={{
-                position: 'absolute',
-                // Position bornée à une bande TOUJOURS visible (40–180px du bas) :
-                // une valeur sauvegardée extrême ne peut plus envoyer le sous-titre
-                // hors de l'image. Indépendant de showCtrl (aucun lien à la souris).
-                bottom: Math.min(180, Math.max(40, Number(subtitleStyle.bottom) || 110)),
-                left: '50%', transform: 'translateX(-50%)',
-                maxWidth: '82%', textAlign: 'center',
-                padding: '5px 16px',
-                background: `rgba(0,0,0,${subtitleStyle.background})`,
-                borderRadius: 6,
-                color: subtitleStyle.color,
-                fontSize: subtitleStyle.size,
-                fontWeight: subtitleStyle.weight,
-                lineHeight: 1.55,
-                textShadow: subtitleStyle.outline
-                  ? '-1.5px -1.5px 0 #000, 1.5px -1.5px 0 #000, -1.5px 1.5px 0 #000, 1.5px 1.5px 0 #000, 0 2px 10px rgba(0,0,0,0.95)'
-                  : '0 1px 4px rgba(0,0,0,0.85)',
-                whiteSpace: 'pre-line',
-                transition: 'bottom .2s ease',
-                pointerEvents: 'none',
-                zIndex: 5,
-              }} />
+              <style>{`
+                video.vp-cue::cue {
+                  font-size: ${subtitleStyle.size}px;
+                  color: ${subtitleStyle.color};
+                  background: rgba(0,0,0,${subtitleStyle.background});
+                  font-weight: ${subtitleStyle.weight};
+                  line-height: 1.4;
+                  text-shadow: ${subtitleStyle.outline
+                    ? '-1.5px -1.5px 0 #000, 1.5px -1.5px 0 #000, -1.5px 1.5px 0 #000, 1.5px 1.5px 0 #000, 0 2px 10px rgba(0,0,0,.95)'
+                    : '0 1px 4px rgba(0,0,0,.85)'};
+                }
+              `}</style>
             )}
 
             {/* Indicateur de qualité — suit les contrôles (plus de superposition permanente) */}
