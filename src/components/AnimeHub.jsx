@@ -1639,6 +1639,35 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
           </div>
         </div>
 
+        {/* Recherche intégrée au header — comble le vide central (déplacée depuis le contenu) */}
+        <div style={{ flex:'1 1 auto', minWidth:0, maxWidth:540, margin:'0 20px', position:'relative' }}>
+          <span style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', fontSize:15, color:'rgba(139,92,246,0.6)', pointerEvents:'none' }}>⌕</span>
+          <input
+            ref={searchRef}
+            value={query}
+            onChange={event => setQuery(event.target.value)}
+            onFocus={() => setSearchFocus(true)}
+            onBlur={() => setSearchFocus(false)}
+            placeholder="Rechercher un anime, personnage, studio, genre…  ( / )"
+            style={{
+              width:'100%', boxSizing:'border-box', height:38,
+              borderRadius:11, padding:'0 36px',
+              fontSize:13, fontWeight:500, color:'#f4f4f5',
+              background:'rgba(255,255,255,0.05)', outline:'none',
+              border:`1px solid ${searchFocus ? 'rgba(139,92,246,0.55)' : 'rgba(255,255,255,0.10)'}`,
+              boxShadow: searchFocus ? '0 0 0 1px rgba(139,92,246,0.25)' : 'none',
+              transition:'border-color .2s, box-shadow .2s', fontFamily:'var(--body)',
+            }}
+          />
+          {query && (
+            <button type="button" onClick={() => setQuery('')} aria-label="Effacer la recherche"
+              style={{ position:'absolute', right:8, top:'50%', transform:'translateY(-50%)', width:22, height:22, borderRadius:6, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.08)', color:'#9ca3af', fontSize:10, cursor:'pointer', transition:'all .18s' }}
+              onMouseEnter={e => { e.currentTarget.style.background='rgba(255,255,255,0.12)'; e.currentTarget.style.color='#fff' }}
+              onMouseLeave={e => { e.currentTarget.style.background='rgba(255,255,255,0.06)'; e.currentTarget.style.color='#9ca3af' }}
+            >✕</button>
+          )}
+        </div>
+
         <div style={{ display:'flex', gap:8, alignItems:'center', flexShrink:0 }}>
           {/* Reprendre — n'apparaît que s'il y a une série en cours */}
           {resumeTarget && (
@@ -1755,40 +1784,7 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
               </div>
             </div>
 
-            {/* ── Recherche ── */}
-            <div style={{ maxWidth:740, margin:'0 0 10px', position:'relative' }}>
-              <span style={{ position:'absolute', left:16, top:'50%', transform:'translateY(-50%)', fontSize:17, color:'rgba(139,92,246,0.55)', pointerEvents:'none' }}>⌕</span>
-              <input
-                ref={searchRef}
-                value={query}
-                onChange={event => setQuery(event.target.value)}
-                onFocus={() => setSearchFocus(true)}
-                onBlur={() => setSearchFocus(false)}
-                placeholder="Rechercher un titre, personnage, studio ou genre…  ( / ou Ctrl+K )"
-                style={{
-                  width:'100%', boxSizing:'border-box',
-                  borderRadius:13, padding:'12px 44px 12px 42px',
-                  fontSize:14, fontWeight:500, color:'#f4f4f5',
-                  background:'#10131a', outline:'none',
-                  border:`1px solid ${searchFocus ? 'rgba(139,92,246,0.5)' : 'rgba(255,255,255,0.08)'}`,
-                  boxShadow: searchFocus ? '0 0 0 1px rgba(139,92,246,0.25), 0 14px 36px -16px rgba(0,0,0,0.7)' : 'none',
-                  transition:'border-color .2s, box-shadow .2s',
-                  fontFamily:'var(--body)',
-                }}
-              />
-              {query && (
-                <button
-                  type="button"
-                  onClick={() => setQuery('')}
-                  aria-label="Effacer la recherche"
-                  style={{ position:'absolute', right:10, top:'50%', transform:'translateY(-50%)', width:24, height:24, borderRadius:7, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.08)', color:'#9ca3af', fontSize:11, cursor:'pointer', transition:'all .18s' }}
-                  onMouseEnter={e => { e.currentTarget.style.background='rgba(255,255,255,0.12)'; e.currentTarget.style.color='#fff' }}
-                  onMouseLeave={e => { e.currentTarget.style.background='rgba(255,255,255,0.06)'; e.currentTarget.style.color='#9ca3af' }}
-                >
-                  ✕
-                </button>
-              )}
-            </div>
+            {/* Recherche déplacée dans le header du Hub (comble le vide central). */}
 
             {/* ── Genres (dropdown compact — clic = panneau de tous les genres) ── */}
             <div style={{ display:'flex', alignItems:'center', gap:8, position:'relative' }}>
