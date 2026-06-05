@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import EpisodeDetailOverlay from './EpisodeDetailOverlay.jsx'
 import { getAnimeMeta } from '../data/anime-meta.js'
-import { setBoost } from '../lib/audioBoost.js'
+import { setBoost, corsUrl } from '../lib/audioBoost.js'
 
 function fmt(sec) {
   const t = Math.max(0, Math.floor(sec || 0))
@@ -803,9 +803,11 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                   type={sourceType(mediaSrc)}
                 />
               )}
-              {/* Pistes de sous-titres (lues via TextTrack API, mode hidden) */}
+              {/* Pistes de sous-titres. corsUrl(?cors=1) : entrée de cache dédiée
+                  toujours récupérée AVEC Origin → évite la pollution de cache CORS
+                  qui empêchait la piste de charger (sous-titres intermittents). */}
               {hasSubs && video.subtitles.map((sub, i) => (
-                <track key={i} kind="subtitles" src={sub.src} srcLang={sub.srclang || 'fr'} label={sub.label} />
+                <track key={i} kind="subtitles" src={corsUrl(sub.src)} srcLang={sub.srclang || 'fr'} label={sub.label} default={i === subIdx} />
               ))}
             </video>
             {selectedAudio?.src && !selectedAudio?.mediaSrc && (
