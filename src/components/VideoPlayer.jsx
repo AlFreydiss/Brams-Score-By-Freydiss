@@ -919,7 +919,9 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
             {cueText && !subsOff && (
               <div style={{
                 position: 'absolute',
-                bottom: showCtrl ? 110 : 40,
+                // Position verticale réglable (subtitleStyle.bottom). Quand les
+                // contrôles sont masqués, on descend de 70px (place libérée).
+                bottom: Math.max(20, (subtitleStyle.bottom ?? 110) - (showCtrl ? 0 : 70)),
                 left: '50%', transform: 'translateX(-50%)',
                 maxWidth: '82%', textAlign: 'center',
                 padding: '5px 16px',
@@ -1094,7 +1096,9 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                       </div>
                       {[
                         ['A−', () => updateSubtitleStyle({ size: Math.max(14, subtitleStyle.size - 4) })],
-                        ['A+', () => updateSubtitleStyle({ size: Math.min(44, subtitleStyle.size + 4) })],
+                        ['A+', () => updateSubtitleStyle({ size: Math.min(64, subtitleStyle.size + 4) })],
+                        ['↑ Monter', () => updateSubtitleStyle({ bottom: Math.min(380, (subtitleStyle.bottom ?? 110) + 30) })],
+                        ['↓ Baisser', () => updateSubtitleStyle({ bottom: Math.max(20, (subtitleStyle.bottom ?? 110) - 30) })],
                         ['Fond −', () => updateSubtitleStyle({ background: Math.max(0, Number((subtitleStyle.background - 0.15).toFixed(2))) })],
                         ['Fond +', () => updateSubtitleStyle({ background: Math.min(0.95, Number((subtitleStyle.background + 0.15).toFixed(2))) })],
                         [subtitleStyle.outline ? 'Contour ON' : 'Contour OFF', () => updateSubtitleStyle({ outline: !subtitleStyle.outline })],
