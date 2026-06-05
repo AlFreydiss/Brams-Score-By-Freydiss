@@ -79,49 +79,53 @@ export default function ProfileActions({ data, onShare, copied, onEdit }) {
     else setError(res?.error || 'Impossible d\'ouvrir la conversation')
   }, [isAuthenticated, targetId, isOwnProfile, navigate, signInWithDiscord])
 
-  const relLabel = rel?.state === 'friends' ? 'Ami'
-    : followStats?.follows_me ? 'Vous suit'
-    : null
+  const isFriend = rel?.state === 'friends'
+  const followsMe = !!followStats?.follows_me   // pour "suivre en retour"
 
   // ── Mon profil ──────────────────────────────────────────────────────────────
   if (isOwnProfile) {
     return (
       <div className="pfx-actions">
-        <button className="pfx-btn pfx-btn-gold" type="button" onClick={onEdit}>✎ Modifier le profil</button>
-        <button className="pfx-btn pfx-btn-ghost" type="button" onClick={() => navigate('/fil')}>＋ Nouveau post</button>
-        <button className="pfx-btn pfx-btn-ghost" type="button" onClick={onShare}>{copied ? '✓ Copié' : '⎘ Partager'}</button>
-        <div className="pfx-menu-wrap" ref={menuRef}>
-          <button className="pfx-btn pfx-btn-ghost pfx-btn-icon" type="button" aria-label="Plus" onClick={() => setMenu(m => !m)}>⋯</button>
-          {menu && (
-            <div className="pfx-menu">
-              <button type="button" onClick={() => { setMenu(false); navigate(`/u/${targetId}?tab=inventaire`) }}>🗃 Inventaire</button>
-              <button type="button" onClick={() => { setMenu(false); navigate('/boutique') }}>🛒 Boutique</button>
-              <button type="button" onClick={() => { setMenu(false); navigate(`/u/${targetId}?tab=historique`) }}>🕓 Historique</button>
-            </div>
-          )}
+        <div className="pfx-actions-row">
+          <button className="pfx-btn pfx-btn-gold" type="button" onClick={onEdit}>✎ Modifier le profil</button>
+          <button className="pfx-btn pfx-btn-ghost" type="button" onClick={() => navigate('/fil')}>＋ Nouveau post</button>
+          <button className="pfx-btn pfx-btn-ghost" type="button" onClick={onShare}>{copied ? '✓ Copié' : '⎘ Partager'}</button>
+          <div className="pfx-menu-wrap" ref={menuRef}>
+            <button className="pfx-btn pfx-btn-ghost pfx-btn-icon" type="button" aria-label="Plus" onClick={() => setMenu(m => !m)}>⋯</button>
+            {menu && (
+              <div className="pfx-menu">
+                <button type="button" onClick={() => { setMenu(false); navigate(`/u/${targetId}?tab=inventaire`) }}>🗃 Inventaire</button>
+                <button type="button" onClick={() => { setMenu(false); navigate(`/u/${targetId}?tab=historique`) }}>🕓 Historique</button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     )
   }
 
   // ── Profil d'un autre membre ──────────────────────────────────────────────────
+  // Bouton jaune : "Suivre" ou "Suivre en retour" si la personne nous suit déjà.
+  const followLabel = following ? '✓ Suivi' : followsMe ? '↩ Suivre en retour' : '＋ Suivre'
   return (
     <div className="pfx-actions">
-      {relLabel && <span className={`pfx-rel-tag${relLabel === 'Ami' ? ' friend' : ''}`}>{relLabel}</span>}
-      <button className={`pfx-btn ${following ? 'pfx-btn-ghost' : 'pfx-btn-gold'}`} type="button" onClick={toggleFollow} disabled={busy}>
-        {following ? '✓ Suivi' : '＋ Suivre'}
-      </button>
-      <button className="pfx-btn pfx-btn-ghost" type="button" onClick={openDm} disabled={busy}>💬 Message</button>
-      <button className="pfx-btn pfx-btn-ghost" type="button" onClick={onShare}>{copied ? '✓ Copié' : '⎘ Partager'}</button>
-      <div className="pfx-menu-wrap" ref={menuRef}>
-        <button className="pfx-btn pfx-btn-ghost pfx-btn-icon" type="button" aria-label="Plus" onClick={() => setMenu(m => !m)}>⋯</button>
-        {menu && (
-          <div className="pfx-menu">
-            <button type="button" onClick={() => { setMenu(false); onShare() }}>⎘ Copier le lien</button>
-            <button type="button" onClick={() => { setMenu(false); window.open('https://discord.gg/8uzU3eatMr', '_blank', 'noopener') }}>🚩 Signaler (Discord)</button>
-          </div>
-        )}
+      <div className="pfx-actions-row">
+        <button className={`pfx-btn ${following ? 'pfx-btn-ghost' : 'pfx-btn-gold'}`} type="button" onClick={toggleFollow} disabled={busy}>
+          {followLabel}
+        </button>
+        <button className="pfx-btn pfx-btn-ghost" type="button" onClick={openDm} disabled={busy}>💬 Message</button>
+        <button className="pfx-btn pfx-btn-ghost" type="button" onClick={onShare}>{copied ? '✓ Copié' : '⎘ Partager'}</button>
+        <div className="pfx-menu-wrap" ref={menuRef}>
+          <button className="pfx-btn pfx-btn-ghost pfx-btn-icon" type="button" aria-label="Plus" onClick={() => setMenu(m => !m)}>⋯</button>
+          {menu && (
+            <div className="pfx-menu">
+              <button type="button" onClick={() => { setMenu(false); onShare() }}>⎘ Copier le lien</button>
+              <button type="button" onClick={() => { setMenu(false); window.open('https://discord.gg/8uzU3eatMr', '_blank', 'noopener') }}>🚩 Signaler (Discord)</button>
+            </div>
+          )}
+        </div>
       </div>
+      {isFriend && <span className="pfx-rel-tag friend">Ami</span>}
       {error && <span className="pfx-act-err">{error}</span>}
     </div>
   )

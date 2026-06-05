@@ -93,11 +93,6 @@ export default function ProfileEditModal({ data, settings, onClose, onSaved }) {
                 onChange={e => setBio(e.target.value)} placeholder="Présente-toi à l'équipage…" />
             </div>
 
-            <div className="pfx-field">
-              <label>Lien externe</label>
-              <input className="pfx-input" value={link} onChange={e => setLink(e.target.value)}
-                placeholder="https://…" inputMode="url" />
-            </div>
 
             <div className="pfx-field">
               <label>Bannière</label>
@@ -169,7 +164,6 @@ export default function ProfileEditModal({ data, settings, onClose, onSaved }) {
                 <strong>{data?.member?.username || 'Pirate'}</strong>
                 {quote && <p className="pfx-preview-quote">« {quote} »</p>}
                 {bio && <p className="pfx-preview-bio">{bio}</p>}
-                {link && <span className="pfx-preview-link">🔗 {link.replace(/^https?:\/\/(www\.)?/, '')}</span>}
               </div>
             </div>
           </div>

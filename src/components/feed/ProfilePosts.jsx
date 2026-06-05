@@ -74,7 +74,7 @@ export default function ProfilePosts({ userId }) {
 
   return (
     <div style={{ border: `1px solid ${T.border}`, borderRadius: 14, overflow: 'hidden', background: 'rgba(255,255,255,0.012)' }}>
-      {posts.map(p => <PostCard key={p.id} post={p} onChange={onChange} onDeleted={onDeleted} onQuote={setQuoteTarget} />)}
+      {posts.map(p => <PostCard key={p.id} post={p} onChange={onChange} onDeleted={onDeleted} onQuote={setQuoteTarget} hideRepostSave />)}
       {hasMore && (
         <button onClick={loadMore} style={{ width: '100%', padding: 14, border: 'none', background: 'transparent', color: T.gold, cursor: 'pointer', fontSize: 13, fontWeight: 700, fontFamily: 'inherit' }}>
           Charger plus

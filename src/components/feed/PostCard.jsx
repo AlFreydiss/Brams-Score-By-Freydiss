@@ -139,7 +139,7 @@ function Counter({ children, active, className = '', ...props }) {
   )
 }
 
-export default function PostCard({ post, embedded = false, disableNav = false, onChange, onDeleted, onQuote }) {
+export default function PostCard({ post, embedded = false, disableNav = false, onChange, onDeleted, onQuote, hideRepostSave = false }) {
   const { discordId } = useAuth()
   const navigate = useNavigate()
   const isRepost = !!post.repost_of && !!post.original
@@ -340,17 +340,21 @@ export default function PostCard({ post, embedded = false, disableNav = false, o
                       </div>
                     )}
                   </div>
-                  <div style={{ position: 'relative' }}>
-                    <Counter onClick={() => setRepostMenu(o => !o)} disabled={busy}><Repeat2 size={17} /> {main.repost_count || 0}</Counter>
-                    {repostMenu && (
-                      <div className="feed-repost-menu">
-                        <button type="button" onClick={doRepost} className="feed-post-menu-item"><Repeat2 size={15} /> Reposter</button>
-                        {onQuote && <button type="button" onClick={() => { setRepostMenu(false); onQuote(main) }} className="feed-post-menu-item"><Pencil size={15} /> Citer</button>}
-                      </div>
-                    )}
-                  </div>
+                  {!hideRepostSave && (
+                    <div style={{ position: 'relative' }}>
+                      <Counter onClick={() => setRepostMenu(o => !o)} disabled={busy}><Repeat2 size={17} /> {main.repost_count || 0}</Counter>
+                      {repostMenu && (
+                        <div className="feed-repost-menu">
+                          <button type="button" onClick={doRepost} className="feed-post-menu-item"><Repeat2 size={15} /> Reposter</button>
+                          {onQuote && <button type="button" onClick={() => { setRepostMenu(false); onQuote(main) }} className="feed-post-menu-item"><Pencil size={15} /> Citer</button>}
+                        </div>
+                      )}
+                    </div>
+                  )}
                   <Counter onClick={like} active={main.liked} className={`is-liked ${likePop ? 'like-pop' : ''}`}><Heart size={17} fill={main.liked ? 'currentColor' : 'none'} /> {main.like_count || 0}</Counter>
-                  <Counter onClick={bookmark} active={main.bookmarked} className="is-bookmarked" style={{ marginLeft: 'auto' }}><Bookmark size={17} fill={main.bookmarked ? 'currentColor' : 'none'} /></Counter>
+                  {!hideRepostSave && (
+                    <Counter onClick={bookmark} active={main.bookmarked} className="is-bookmarked" style={{ marginLeft: 'auto' }}><Bookmark size={17} fill={main.bookmarked ? 'currentColor' : 'none'} /></Counter>
+                  )}
                 </div>
               )}
             </>

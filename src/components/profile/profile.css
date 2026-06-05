@@ -162,7 +162,11 @@
 }
 .pfx-bio { font-size: 13.5px; color: var(--txt-dim); margin: 11px 0 0; max-width: 540px; line-height: 1.6; }
 
-.pfx-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; align-items: center; }
+.pfx-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; align-items: flex-start; }
+/* Tous les boutons d'action sur UNE seule ligne (le tag/erreur passe dessous).
+   Pas d'overflow ici : le menu déroulant des 3 points doit pouvoir s'échapper. */
+.pfx-actions-row { display: flex; flex-wrap: nowrap; gap: 10px; align-items: center; }
+.pfx-actions-row .pfx-btn { flex-shrink: 0; white-space: nowrap; }
 .pfx-btn {
   height: 44px; padding: 0 20px; border-radius: 12px; font-size: 13px; font-weight: 800;
   cursor: pointer; border: 1px solid transparent; font-family: inherit; text-decoration: none;
