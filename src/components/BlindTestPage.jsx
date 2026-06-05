@@ -931,6 +931,11 @@ export default function BlindTestPage() {
     setMaxStreak(prev => Math.max(prev, newStreak))
     setTotalScore(prev => prev + earned)
     setRound(prev => prev + 1)
+    // Persistance progressive : le score est enregistré dès qu'on marque des points,
+    // pas seulement au clic "Terminer" (sinon une partie quittée en cours ne comptait pas).
+    if (user && earned > 0) {
+      upsertBlindTestScore({ userId: roomUserId, displayName, avatarUrl, score: totalScore + earned, streakMax: Math.max(maxStreak, newStreak), gamesPlayed: 0 })
+    }
     setHistory(prev => [...prev, { track, result: res, earned }])
     setPhase('reveal')
     if (res.animeOk || res.titleOk) {

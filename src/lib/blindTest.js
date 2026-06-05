@@ -1317,37 +1317,44 @@ export async function fetchBlindTestLeaderboard(limit = 20) {
 }
 
 export async function upsertBlindTestScore({ userId, displayName, avatarUrl, score, streakMax, gamesPlayed }) {
-  if (!supabase || !userId) return
+  if (!supabase || !userId) return { error: 'no-client-or-user' }
   try {
     const { data: existing } = await supabase
       .from('blind_test_scores')
       .select('score, streak_max, games_played')
       .eq('user_id', userId)
-      .single()
+      .maybeSingle()
 
-    await supabase.from('blind_test_scores').upsert({
+    const { error } = await supabase.from('blind_test_scores').upsert({
       user_id:     userId,
       display_name: displayName,
       avatar_url:  avatarUrl,
       score:       Math.max(score, existing?.score ?? 0),
       streak_max:  Math.max(streakMax, existing?.streak_max ?? 0),
-      games_played:(existing?.games_played ?? 0) + gamesPlayed,
+      games_played:(existing?.games_played ?? 0) + (gamesPlayed || 0),
       updated_at:  new Date().toISOString(),
     }, { onConflict: 'user_id' })
-  } catch { /* table may not exist yet */ }
+    // Ne plus avaler l'erreur en silence : une RLS manquante bloquait toutes les écritures.
+    if (error) console.warn('[blindTest] upsertBlindTestScore échec:', error.code, error.message)
+    return { error }
+  } catch (e) {
+    console.warn('[blindTest] upsertBlindTestScore exception:', e?.message ?? e)
+    return { error: e }
+  }
 }
 
 export async function logSession({ userId, trackId, correct, timeMs }) {
   if (!supabase || !userId) return
   try {
-    await supabase.from('blind_test_sessions').insert({
+    const { error } = await supabase.from('blind_test_sessions').insert({
       user_id:   userId,
       track_id:  trackId,
       guessed_at: new Date().toISOString(),
       correct,
       time_ms:   timeMs,
     })
-  } catch { /* table may not exist yet */ }
+    if (error) console.warn('[blindTest] logSession échec:', error.code, error.message)
+  } catch (e) { console.warn('[blindTest] logSession exception:', e?.message ?? e) }
 }
 
 // ── SQL to create tables (for admin/setup reference) ──────────────────────
