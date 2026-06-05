@@ -439,7 +439,7 @@
       }
     ],
     "kind": "film",
-    "gain": 1.4,
+    "gain": 1.9,
     "badge": "VOSTFR",
     "subtitles": [
       {
@@ -453,7 +453,7 @@
     "episode": 101,
     "title": "Violet Evergarden, le film",
     "kind": "film",
-    "gain": 1.4,
+    "gain": 1.9,
     "badge": "VF/VOSTFR",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden/the-movie.mp4",
     "season": "Film",
