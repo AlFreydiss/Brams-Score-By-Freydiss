@@ -61,6 +61,11 @@ export default function OSTDuelCard({
   const showInlineYoutube = isPlaying && ytOk && !participant?.audioUrl
   const accent   = participant?.color || GOLD
   const myVote   = voted === side
+  // Badge type : ED → ENDING, OP → OPENING, sinon OST (catalogue sans type).
+  const typeBadge = participant?.type === 'ED' ? 'ENDING'
+    : participant?.type === 'OP' ? 'OPENING'
+    : participant?.type ? String(participant.type).toUpperCase()
+    : 'OST'
 
   function hexToRgba(hex, alpha) {
     const r = parseInt(hex.slice(1, 3), 16)
@@ -223,7 +228,7 @@ export default function OSTDuelCard({
             letterSpacing: '0.12em', fontWeight: 700, textTransform: 'uppercase',
             border: `1px solid ${isPlaying ? accent + '60' : 'transparent'}`,
             transition: 'all 0.3s',
-          }}>OPENING</span>
+          }}>{typeBadge}</span>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             {/* Bouton Lecteur vidéo complet */}
