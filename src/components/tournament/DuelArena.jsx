@@ -5,6 +5,7 @@ import confetti from 'canvas-confetti'
 import { getVotePercents } from '../../lib/tournament.js'
 import OSTDuelCard from './OSTDuelCard.jsx'
 import VSPanel     from './VSPanel.jsx'
+import { boostElement } from '../../lib/audioBoost.js'
 const VideoPlayer = lazy(() => import('../VideoPlayer.jsx'))
 
 const PINK   = '#9d174d'
@@ -126,6 +127,8 @@ function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop, onSeek, me
     if (!media) return
     media.volume = volume / 100
     if (audioUrl && mediaRef?.current) media.muted = false
+    // Boost de loudness : 100% natif est trop faible sur les extraits.
+    if (audioUrl) boostElement(media, 1.7)
   }, [volume, audioUrl, mediaRef])
 
   useEffect(() => {
@@ -168,7 +171,9 @@ function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop, onSeek, me
     }
   }, [volume, audioUrl])
 
-  const pct    = (elapsed / (duration || LIMIT)) * 100
+  // Échelle de la barre = toujours 1m43 (LIMIT), pas la durée du clip source :
+  // un extrait court ne doit pas remplir la barre comme s'il faisait 1m43.
+  const pct    = (Math.min(elapsed, LIMIT) / LIMIT) * 100
   const volPct = volume + '%'
 
   function handleSeek(rawValue) {
@@ -238,7 +243,7 @@ function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop, onSeek, me
       {/* Timeline — barre épaisse cliquable partout (clic = saut à la position) */}
       <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center' }}>
         <input
-          type="range" min="0" max={duration || LIMIT} step="0.1" value={elapsed}
+          type="range" min="0" max={LIMIT} step="0.1" value={Math.min(elapsed, LIMIT)}
           onChange={e => handleSeek(e.target.value)}
           aria-label="Position dans l'opening"
           style={{

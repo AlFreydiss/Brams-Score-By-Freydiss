@@ -6,6 +6,7 @@ import {
 } from 'framer-motion'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { supabase } from '../lib/supabase.js'
+import { boostElement } from '../lib/audioBoost.js'
 import {
   LOCAL_TRACKS, pickTrack, checkAnswer, calcBerries, countTracksByType,
   createBlindTestRoom, fetchBlindTestRoom, fetchBlindTestRoomPlayers,
@@ -526,7 +527,7 @@ export default function BlindTestPage() {
   const [playedAnimes, setPlayedAnimes] = useState([])
   const [countdown,    setCountdown]    = useState(3)
   const [guessEnabled, setGuessEnabled] = useState(false)
-  const [volume,       setVolume]       = useState(0.7)
+  const [volume,       setVolume]       = useState(1)
   const [videoFailed,  setVideoFailed]  = useState(false)
   const [showConfetti, setShowConfetti] = useState(false)
   const [videoSnap,    setVideoSnap]    = useState(false)
@@ -553,7 +554,11 @@ export default function BlindTestPage() {
   const barPct   = phase === 'playing' ? Math.max(0, 100 - (elapsed / ROUND_SECS) * 100) : 0
   const barColor = barPct > 50 ? GREEN : barPct > 25 ? ORANGE : RED2
 
-  useEffect(() => { if (videoRef.current) videoRef.current.volume = volume }, [volume])
+  useEffect(() => {
+    if (!videoRef.current) return
+    videoRef.current.volume = volume
+    boostElement(videoRef.current, 1.7)   // 100% natif trop faible → boost de loudness
+  }, [volume])
 
   useEffect(() => {
     const initialRoom = getRoomFromUrl()
