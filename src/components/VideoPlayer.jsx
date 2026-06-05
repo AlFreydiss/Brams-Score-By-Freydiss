@@ -283,7 +283,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   const [started,      setStarted]     = useState(false)  // false = interface "détail épisode" (pré-lecture)
   const [subIdx,       setSubIdx]      = useState(0)
   const [subsOff,      setSubsOff]     = useState(false)
-  const cueRef = useRef(null)          // overlay sous-titres mis à jour en DOM direct
+  const [cueText,      setCueText]     = useState('')   // texte sous-titre courant (état React → repaint)
   const [buffered,     setBuffered]    = useState(0)
   const [showSubMenu,  setShowSubMenu] = useState(false)
   const [showAudioMenu, setShowAudioMenu] = useState(false)
@@ -458,51 +458,31 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
     setSubtitleStyle(loadVideoPreferences(userId).subtitleStyle)
   }, [userId])
 
-  // ── Sous-titres — overlay DOM synchronisé sur requestVideoFrameCallback ──────
-  // Cause racine (confirmée grok+codex) : en plein écran, la couche des sous-titres
-  // (native OU DOM) n'est repeinte qu'à l'invalidation du compositeur (mouvement
-  // souris). rVFC est appelé par le navigateur À CHAQUE IMAGE VIDÉO présentée :
-  // écrire le sous-titre dans ce callback garantit qu'il est peint dans le MÊME
-  // cycle de compositing que l'image → plus de figement quand la souris est
-  // immobile. Fallbacks (cuechange/timeupdate/interval) pour pause/seek et
-  // navigateurs sans rVFC.
+  // ── Sous-titres — pilotés par ÉTAT REACT (même chemin que le mouvement souris) ──
+  // Tout ce qui contournait React (rAF/ref-DOM/rVFC/natif) restait figé tant que la
+  // souris ne bougeait pas, car SEUL un re-rendu React (mutation DOM réconciliée)
+  // force le repaint dans ce lecteur plein écran. On met donc à jour un state à
+  // BASSE fréquence (événement `cuechange` + intervalle 120ms), pas en rAF 60fps
+  // (qui était différé par React concurrent). Le re-rendu React peint la nouvelle
+  // cue exactement comme le fait un mouvement de souris.
   useEffect(() => {
     const v = videoRef.current
     if (!v) return
     let boundTrack = null
-    let rafId = null
-    let cancelled = false
 
-    const paint = () => {
-      const el = cueRef.current
-      if (!el) return
+    const refresh = () => {
       const cues = (!subsOff && boundTrack) ? boundTrack.activeCues : null
       const text = cues && cues.length ? cleanCueText(Array.from(cues).map(c => c.text).join('\n')) : ''
-      if (el.getAttribute('data-cue') !== text) {
-        el.setAttribute('data-cue', text)
-        el.textContent = text
-        el.style.display = text ? '' : 'none'
-      }
-    }
-
-    // Boucle requestAnimationFrame : elle FORCE le pipeline de rendu du document
-    // à tourner à chaque frame (contrairement à rVFC qui ne réveille que la vidéo).
-    // Combinée à l'écriture DOM directe (pas de setState), la nouvelle cue est
-    // peinte immédiatement, souris immobile ou non. (rVFC seul ne repeignait pas
-    // la couche overlay ; setState seul était différé par React concurrent.)
-    const frameLoop = () => {
-      if (cancelled) return
-      paint()
-      rafId = requestAnimationFrame(frameLoop)
+      setCueText(prev => prev === text ? prev : text)
     }
 
     const setupTrack = () => {
       const tracks = v.textTracks
       for (let i = 0; i < tracks.length; i++) tracks[i].mode = 'disabled'
-      if (boundTrack) { boundTrack.removeEventListener('cuechange', paint); boundTrack = null }
-      if (subsOff || !hasSubs) { paint(); return }
+      if (boundTrack) { boundTrack.removeEventListener('cuechange', refresh); boundTrack = null }
+      if (subsOff || !hasSubs) { refresh(); return }
       const targetSub = video?.subtitles?.[subIdx]
-      if (!targetSub) { paint(); return }
+      if (!targetSub) { refresh(); return }
       let bestIdx = -1, exactIdx = -1
       for (let i = 0; i < tracks.length; i++) {
         const t = tracks[i]
@@ -517,28 +497,26 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
       if (bestIdx >= 0) {
         tracks[bestIdx].mode = 'hidden'   // on dessine nous-mêmes l'overlay
         boundTrack = tracks[bestIdx]
-        boundTrack.addEventListener('cuechange', paint)
+        boundTrack.addEventListener('cuechange', refresh)
       }
-      paint()
+      refresh()
     }
 
     setupTrack()
     v.textTracks.addEventListener('addtrack', setupTrack)
     const retry = setTimeout(setupTrack, 400)
     const retry2 = setTimeout(setupTrack, 1200)
-    // Boucle rAF continue (force la peinture du document chaque frame).
-    rafId = requestAnimationFrame(frameLoop)
-    v.addEventListener('cuechange', paint)
-    v.addEventListener('seeked', paint)
+    // Intervalle 120ms : 8 setState/s → React commite chacun (≠ rAF 60fps différé).
+    const poll = setInterval(refresh, 120)
+    v.addEventListener('cuechange', refresh)
+    v.addEventListener('seeked', refresh)
 
     return () => {
-      cancelled = true
-      clearTimeout(retry); clearTimeout(retry2)
-      if (rafId != null) cancelAnimationFrame(rafId)
+      clearTimeout(retry); clearTimeout(retry2); clearInterval(poll)
       v.textTracks.removeEventListener('addtrack', setupTrack)
-      v.removeEventListener('cuechange', paint)
-      v.removeEventListener('seeked', paint)
-      if (boundTrack) boundTrack.removeEventListener('cuechange', paint)
+      v.removeEventListener('cuechange', refresh)
+      v.removeEventListener('seeked', refresh)
+      if (boundTrack) boundTrack.removeEventListener('cuechange', refresh)
     }
     // mediaSrc : le <video> est keyé par la source (variantes audio VF/JP) → il se
     // remonte ; sans cette dépendance on resterait branché sur l'ancien élément.
@@ -937,13 +915,15 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
               </div>
             )}
 
-            {/* ── Sous-titres overlay (texte écrit en DOM direct via cueRef,
-                mis à jour par requestVideoFrameCallback → repeint à chaque image).
-                will-change/translateZ : couche de compositing propre qui se
-                rafraîchit avec la vidéo. Pas de `display` dans ce style (géré par
-                la ref, sinon React l'écraserait au re-rendu). */}
-            {!subsOff && hasSubs && (
-              <div ref={cueRef} style={{
+            {/* Filet anti-figement : micro-animation qui force le navigateur à
+                repeindre le document en continu (sinon, en plein écran, Chrome
+                "endort" la peinture quand la souris est immobile). */}
+            <style>{`@keyframes vpRepaint{0%{background:rgba(255,255,255,0.01)}50%{background:rgba(255,255,255,0.02)}100%{background:rgba(255,255,255,0.01)}}`}</style>
+            <div aria-hidden style={{ position: 'absolute', left: 0, bottom: 0, width: 2, height: 2, pointerEvents: 'none', zIndex: 0, animation: 'vpRepaint 0.5s linear infinite' }} />
+
+            {/* ── Sous-titres overlay — texte via ÉTAT REACT (repaint garanti). ── */}
+            {cueText && !subsOff && hasSubs && (
+              <div style={{
                 position: 'absolute',
                 bottom: Math.min(180, Math.max(36, Number(subtitleStyle.bottom) || 110)),
                 left: '50%', transform: 'translateX(-50%)',
@@ -962,7 +942,9 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                 whiteSpace: 'pre-line',
                 pointerEvents: 'none',
                 zIndex: 5,
-              }} />
+              }}>
+                {cueText}
+              </div>
             )}
 
             {/* Indicateur de qualité — suit les contrôles (plus de superposition permanente) */}
