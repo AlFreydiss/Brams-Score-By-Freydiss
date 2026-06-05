@@ -460,6 +460,57 @@ function ActiveTournamentCard({ config, progress, currentRound, winner }) {
   )
 }
 
+// ── Archive card — tournoi terminé : champion + accès à la page de victoire ──
+function ArchiveCard({ config, winner, index }) {
+  const navigate = useNavigate()
+  const route = config.route || '/tournoi/ost'
+  const ytOk  = winner?.ytId && !String(winner.ytId).startsWith('similar')
+  const thumb = ytOk ? `https://img.youtube.com/vi/${winner.ytId}/hqdefault.jpg` : null
+  const accent = winner?.color || GOLD
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.06, duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
+      onClick={() => navigate(route)}
+      whileHover={{ y: -3, transition: { duration: 0.18 } }}
+      style={{
+        background: `linear-gradient(145deg, ${accent}14 0%, rgba(10,10,11,0.97) 100%)`,
+        border: `1px solid ${accent}28`,
+        borderTop: `2px solid ${GOLD}99`,
+        borderRadius: 14, padding: '18px 20px 16px',
+        cursor: 'pointer', position: 'relative', overflow: 'hidden',
+        display: 'flex', flexDirection: 'column', gap: 12,
+      }}
+    >
+      <div style={{ position: 'absolute', top: -24, left: -24, right: -24, height: 70, pointerEvents: 'none', background: `radial-gradient(ellipse 80% 100% at 50% 0%, ${accent}1c 0%, transparent 70%)` }} />
+      <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        <StatusBadge status="soon" />
+        <span style={{ fontSize: 8, color: 'rgba(255,255,255,.28)', background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)', borderRadius: 5, padding: '3px 9px', letterSpacing: '0.10em', textTransform: 'uppercase', fontWeight: 800 }}>
+          {config.categoryLabel || 'Tournoi'}
+        </span>
+      </div>
+      <h3 style={{ position: 'relative', zIndex: 1, fontFamily: "'Pirata One',cursive", fontSize: 20, fontWeight: 900, margin: 0, color: 'rgba(255,255,255,.92)', lineHeight: 1.1 }}>
+        {config.title}
+      </h3>
+      <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', borderRadius: 12, background: 'rgba(255,255,255,.03)', border: `1px solid ${GOLD}22` }}>
+        {thumb
+          ? <img src={thumb} alt="" style={{ width: 48, height: 48, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />
+          : <div style={{ width: 48, height: 48, borderRadius: 8, flexShrink: 0, display: 'grid', placeItems: 'center', fontSize: 22, background: `${accent}22` }}>👑</div>}
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: 8, fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: GOLD, marginBottom: 3 }}>Champion 👑</div>
+          <div style={{ fontSize: 14, fontWeight: 800, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{winner.title}</div>
+          {winner.anime && <div style={{ fontSize: 11, color: 'rgba(255,255,255,.4)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{winner.anime}</div>}
+        </div>
+      </div>
+      <button onClick={(e) => { e.stopPropagation(); navigate(route) }}
+        style={{ position: 'relative', zIndex: 1, width: '100%', padding: '10px 0', borderRadius: 10, border: '1px solid rgba(255,255,255,.12)', background: 'rgba(255,255,255,.04)', color: 'rgba(255,255,255,.6)', fontWeight: 700, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit' }}>
+        Voir le vainqueur →
+      </button>
+    </motion.div>
+  )
+}
+
 // ── Upcoming card ──────────────────────────────────────────────────────────
 function UpcomingCard({ item, index }) {
   const cat = TOURNAMENT_CATEGORIES.find(c => c.id === item.categoryId)
@@ -668,6 +719,15 @@ export default function TournamentHubPage() {
   const activeRef     = useRef(null)
   const categoriesRef = useRef(null)
 
+  // Archives = tournois réellement terminés (un vainqueur existe). Le clic mène
+  // à la route du tournoi, qui n'affiche que la page de victoire quand il y a un
+  // gagnant. Concaténé aux archives statiques éventuelles.
+  const archivedTournaments = [
+    { config: OPENING_TOURNAMENT_CONFIG, winner: opening.winner },
+    { config: ENDING_TOURNAMENT_CONFIG,  winner: ending.winner },
+    { config: TOURNAMENT_CONFIG,         winner: ost.winner },
+  ].filter(t => t.winner)
+
   return (
     <div style={{ minHeight: '100vh', background: BG, fontFamily: 'inherit', position: 'relative' }}>
       <style>{HUB_CSS}</style>
@@ -759,7 +819,7 @@ export default function TournamentHubPage() {
           {/* ── Archives ── */}
           <div style={{ marginBottom: 40 }}>
             <SectionHeading title="Archives" />
-            {COMPLETED_TOURNAMENTS.length === 0 ? (
+            {archivedTournaments.length === 0 ? (
               <div style={{
                 textAlign: 'center', padding: '44px 20px',
                 border: '1px solid rgba(255,255,255,.06)',
@@ -774,7 +834,13 @@ export default function TournamentHubPage() {
                   Les tournois terminés apparaîtront ici avec leurs résultats.
                 </div>
               </div>
-            ) : null}
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 12 }}>
+                {archivedTournaments.map((t, i) => (
+                  <ArchiveCard key={t.config.id} config={t.config} winner={t.winner} index={i} />
+                ))}
+              </div>
+            )}
           </div>
 
         </div>
