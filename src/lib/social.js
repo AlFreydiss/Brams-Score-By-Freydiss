@@ -39,19 +39,32 @@ export const removeFriend         = (target)        => rpc('remove_friend', { p_
 export const blockUser            = (target)        => rpc('block_user', { p_target: String(target) })
 export const unblockUser          = (target)        => rpc('unblock_user', { p_target: String(target) })
 export const getRelationship      = (target)        => rpc('get_relationship', { p_target: String(target) })
-export const followUser           = (target)        => rpc('follow_user', { p_target: String(target) })
-export const unfollowUser         = (target)        => rpc('unfollow_user', { p_target: String(target) })
 export const getFollowState       = (target)        => rpc('get_follow_state', { p_target: String(target) })
 
-export async function listFollowing(userId = null) {
-  const r = await rpc('list_following', { p_user: userId ? String(userId) : null })
-  return Array.isArray(r) ? r : []
+// Cache court des listes abonnés/suivis : l'aperçu du profil (FollowersPreview)
+// charge déjà la liste ; la modale réutilise le cache → ouverture instantanée
+// au lieu de re-télécharger. TTL court pour rester frais ; invalidé au
+// follow/unfollow. Évite aussi les doubles requêtes lors d'un même rendu.
+const _followCache = new Map()  // key -> { t, data }
+const FOLLOW_TTL = 20000
+const _fkey = (kind, userId) => `${kind}:${userId || 'me'}`
+function _invalidateFollowCache() { _followCache.clear() }
+
+export const followUser   = (target) => { _invalidateFollowCache(); return rpc('follow_user', { p_target: String(target) }) }
+export const unfollowUser = (target) => { _invalidateFollowCache(); return rpc('unfollow_user', { p_target: String(target) }) }
+
+async function _listFollow(kind, userId) {
+  const key = _fkey(kind, userId)
+  const cached = _followCache.get(key)
+  if (cached && Date.now() - cached.t < FOLLOW_TTL) return cached.data
+  const r = await rpc(kind === 'following' ? 'list_following' : 'list_followers', { p_user: userId ? String(userId) : null })
+  const data = Array.isArray(r) ? r : []
+  _followCache.set(key, { t: Date.now(), data })
+  return data
 }
 
-export async function listFollowers(userId = null) {
-  const r = await rpc('list_followers', { p_user: userId ? String(userId) : null })
-  return Array.isArray(r) ? r : []
-}
+export function listFollowing(userId = null) { return _listFollow('following', userId) }
+export function listFollowers(userId = null) { return _listFollow('followers', userId) }
 
 export async function listFriends() {
   const r = await rpc('list_friends')
