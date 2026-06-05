@@ -398,11 +398,12 @@ export default function App() {
         <div style={{ background: 'rgba(8,9,13,0.82)' }}>
           <QuoteSection />
           <Ranks />
+          {/* Classement vocal remonté juste sous 'Grimpe les rangs' (était trop bas, après Equipage/Soutenir) */}
+          <DeferredSection id="classement" minHeight={540}><Leaderboard /></DeferredSection>
           <DeferredSection minHeight={760}><BotFeatures /></DeferredSection>
           <DeferredSection minHeight={520}><HallOfFame /></DeferredSection>
           <DeferredSection minHeight={520}><EquipageSection /></DeferredSection>
           <DeferredSection minHeight={480}><NousSoutenir /></DeferredSection>
-          <DeferredSection id="classement" minHeight={540}><Leaderboard /></DeferredSection>
           <DeferredSection minHeight={460}><Contact /></DeferredSection>
           <DeferredSection minHeight={420}><JoinCTA /></DeferredSection>
           <Footer />

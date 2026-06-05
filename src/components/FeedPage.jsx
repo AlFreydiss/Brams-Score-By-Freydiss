@@ -73,15 +73,6 @@ function getPostText(post) {
   return [post?.content, post?.original?.content].filter(Boolean).join(' ')
 }
 
-function LiveDot() {
-  return (
-    <span style={{ position: 'relative', width: 7, height: 7, display: 'inline-block', flexShrink: 0 }}>
-      <span data-fx style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: T.gold, animation: 'feed-ring 2.4s ease-out infinite' }} />
-      <span data-fx style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: '#ffd84d', animation: 'feed-pulse 2.4s ease-in-out infinite' }} />
-    </span>
-  )
-}
-
 function SkeletonPost() {
   const sh = {
     background: 'linear-gradient(90deg, rgba(255,255,255,.04) 25%, rgba(255,255,255,.09) 37%, rgba(255,255,255,.04) 63%)',

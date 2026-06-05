@@ -10,16 +10,7 @@ const QUICK_LINKS = [
   { to: '/undercover', icon: Compass, label: 'Undercover' },
 ]
 
-function Stat({ value, label }) {
-  return (
-    <div>
-      <div style={{ color: '#d4a017', fontSize: 24, fontWeight: 900, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{value}</div>
-      <div style={{ marginTop: 5, color: 'rgba(255,255,255,0.48)', fontSize: 11, fontWeight: 700 }}>{label}</div>
-    </div>
-  )
-}
-
-export default function FeedRail({ stats, meta, trends = [], activeAuthors = [] }) {
+export default function FeedRail({ trends = [], activeAuthors = [] }) {
   return (
     <>
       <section className="feed-card">
@@ -27,15 +18,6 @@ export default function FeedRail({ stats, meta, trends = [], activeAuthors = [] 
         <p style={{ margin: 0, color: 'rgba(255,255,255,0.58)', fontSize: 13, lineHeight: 1.65 }}>
           Le fil centralise les théories, fan arts, débats, reposts et réactions de la communauté.
         </p>
-      </section>
-
-      <section className="feed-card">
-        <div className="feed-kicker">Aujourd'hui</div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 12 }}>
-          <Stat value={meta?.todayPosts ?? 0} label="posts" />
-          <Stat value={meta?.activeMembers ?? 0} label="actifs" />
-          <Stat value={(stats?.posts ?? 0).toLocaleString('fr-FR')} label="total" />
-        </div>
       </section>
 
       <section className="feed-card">

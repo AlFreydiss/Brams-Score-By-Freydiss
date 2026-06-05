@@ -5,19 +5,26 @@ function fmt(n) { return n >= 1000000 ? `${(n/1000000).toFixed(1)}M` : n >= 1000
 
 const PER_PAGE = 20
 
+// Cache module-level par rang → réouverture instantanée (pas de skeleton tant qu'on a déjà chargé une fois)
+const _rankCache = new Map()
+const _cacheKey = rank => `${rank.minH}-${rank.maxH}`
+
 export default function RankModal({ rank, onClose }) {
-  const [members, setMembers] = useState(null)
+  const [members, setMembers] = useState(() => _rankCache.get(_cacheKey(rank)) ?? null)
   const [page, setPage] = useState(0)
 
   useEffect(() => {
     let ignore = false
     let timer = null
+    const key = _cacheKey(rank)
     const load = () => {
       fetchMembersByRank(rank.minH, rank.maxH).then(data => {
+        _rankCache.set(key, data)
         if (!ignore) setMembers(data)
       })
     }
-    setMembers(null)
+    // Affiche le cache immédiatement si dispo, sinon skeleton, puis rafraîchit en fond
+    setMembers(_rankCache.get(key) ?? null)
     setPage(0)
     load()
     const loop = () => {
