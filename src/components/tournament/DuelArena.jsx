@@ -45,7 +45,7 @@ function PlayingBgOverlay({ ytId, audioUrl, color }) {
       exit={{ opacity: 0 }}
       transition={{ duration: 1.4 }}
       style={{
-        position: 'fixed', inset: 0, zIndex: 1, pointerEvents: 'none', overflow: 'hidden',
+        position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden',
         background: `radial-gradient(90% 100% at 50% 45%, ${c}30, rgba(8,9,14,.72) 56%, rgba(8,9,14,.92) 100%)`,
       }}
     >
@@ -428,13 +428,15 @@ export default function DuelArena({
       <style>{ARENA_CSS}</style>
       <MatchFlash />
 
-      {/* Background overlay page */}
-      {typeof document !== 'undefined' && createPortal(
-        <AnimatePresence>
-          {playing && <PlayingBgOverlay key={playing.ytId || playing.audioUrl} ytId={playing.ytId} audioUrl={playing.audioUrl} color={playing.color} />}
-        </AnimatePresence>,
-        document.body
-      )}
+      {/* Fond plein écran de l'opening en lecture — rendu INLINE (et NON portalé sur
+          document.body). Portalé en z-index 1 dans le body, il passait au-dessus de
+          la PageLayout (isolation:isolate → stacking context en z-auto) et recouvrait
+          toute la page, navbar comprise (gros flou/assombrissement). Inline, il vit
+          dans le contexte de la page comme DuelAmbient : son z-index 0 le garde
+          derrière les cartes (grid z1) et la navbar reste au-dessus. */}
+      <AnimatePresence>
+        {playing && <PlayingBgOverlay key={playing.ytId || playing.audioUrl} ytId={playing.ytId} audioUrl={playing.audioUrl} color={playing.color} />}
+      </AnimatePresence>
 
       {/* Ambient glow subtil */}
       <div style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>

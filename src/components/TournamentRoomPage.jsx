@@ -358,8 +358,8 @@ export default function TournamentRoomPage() {
 
   // ── Vues ─────────────────────────────────────────────────────────────────
   const wrap = { position: 'relative', minHeight: '100vh', background: BG, color: '#fff', paddingTop: 84, paddingBottom: 60, fontFamily: "'Inter',system-ui,sans-serif", overflowX: 'hidden' }
-  // zIndex:2 → le contenu reste AU-DESSUS du fond plein écran (PlayingBgOverlay,
-  // portail fixe en z1 dans le body) quand on écoute un opening.
+  // zIndex:2 → le contenu reste AU-DESSUS des fonds plein écran rendus dans la page
+  // (DuelAmbient + PlayingBgOverlay de DuelArena, tous deux fixed en z0) pendant la lecture.
   const inner = { position: 'relative', zIndex: 2, width: 'min(1180px, calc(100% - 32px))', margin: '0 auto' }
   const btn = (bg = GRAD) => ({ padding: '12px 22px', borderRadius: 12, border: 'none', background: bg, color: '#fff', fontWeight: 800, fontSize: 14, cursor: 'pointer' })
   const field = { width: '100%', boxSizing: 'border-box', padding: '12px 14px', borderRadius: 11, background: 'rgba(255,255,255,.05)', border: `1px solid ${BORDER}`, color: '#fff', fontSize: 14, fontFamily: 'inherit' }

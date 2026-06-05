@@ -447,7 +447,7 @@ function RevealCard({ track, result, berries }) {
           transition={{ delay: 0.35, duration: 0.3 }}
           style={{ fontSize: 15, fontWeight: 800, color: GOLD2, letterSpacing: '.02em' }}
         >
-          +{berries.toLocaleString('fr-FR')} 🪙
+          +{berries.toLocaleString('fr-FR')} pts
         </motion.div>
       )}
     </motion.div>
@@ -1440,7 +1440,7 @@ export default function BlindTestPage() {
               {/* Stats */}
               <div style={{ display: 'flex', gap: 0, justifyContent: 'center', marginBottom: 36, ...glassPanel({}), padding: '24px 32px', borderRadius: 20 }}>
                 {[
-                  { val: totalScore.toLocaleString('fr-FR'), label: 'Berries', color: GOLD2 },
+                  { val: totalScore.toLocaleString('fr-FR'), label: 'Points', color: GOLD2 },
                   { val: maxStreak,                          label: 'Streak max', color: ORANGE },
                   { val: round,                              label: 'Rounds',    color: 'rgba(255,255,255,0.80)' },
                 ].map((s, i, arr) => (
@@ -1491,7 +1491,7 @@ export default function BlindTestPage() {
                         <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>{h.track.anime}</div>
                       </div>
                       <div style={{ fontSize: 13, fontWeight: 800, color: h.earned > 0 ? GOLD : 'rgba(255,255,255,0.25)', flexShrink: 0 }}>
-                        {h.earned > 0 ? `+${h.earned.toLocaleString('fr-FR')} 🪙` : '✗'}
+                        {h.earned > 0 ? `+${h.earned.toLocaleString('fr-FR')} pts` : '✗'}
                       </div>
                     </motion.div>
                   ))}
