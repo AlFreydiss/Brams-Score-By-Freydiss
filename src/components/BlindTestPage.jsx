@@ -6,6 +6,7 @@ import {
 } from 'framer-motion'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { supabase } from '../lib/supabase.js'
+import { setBoost } from '../lib/audioBoost.js'
 import {
   LOCAL_TRACKS, pickTrack, checkAnswer, calcBerries, countTracksByType,
   createBlindTestRoom, fetchBlindTestRoom, fetchBlindTestRoomPlayers,
@@ -555,6 +556,12 @@ export default function BlindTestPage() {
 
   useEffect(() => { if (videoRef.current) videoRef.current.volume = volume }, [volume])
 
+  // Boost de loudness par piste (ex. Michishirube mastérisée trop bas). Les
+  // pistes sans gain ne sont jamais routées dans Web Audio → zéro risque.
+  useEffect(() => {
+    if (videoRef.current) setBoost(videoRef.current, activeTrack?.gain || 1)
+  }, [activeTrack?.id, activeTrack?.gain])
+
   useEffect(() => {
     const initialRoom = getRoomFromUrl()
     if (initialRoom) void joinRoom(initialRoom)
@@ -651,6 +658,9 @@ export default function BlindTestPage() {
   function loadVideo(url) {
     const v = videoRef.current
     if (!v) return
+    // crossOrigin AVANT le src : nécessaire pour router la piste dans Web Audio
+    // (boost de gain) sans rendre le média muet (R2 renvoie ACAO:*).
+    if (!v.crossOrigin) v.crossOrigin = 'anonymous'
     v.pause(); v.src = url; v.currentTime = 0; v.volume = volume; v.load()
     setVideoFailed(false)
     v.play().then(() => v.pause()).catch(() => {})

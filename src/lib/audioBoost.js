@@ -55,3 +55,11 @@ export function boostElement(el, boost = 1.7) {
   node.gain.gain.value = boost
   if (ctx.state === 'suspended') ctx.resume().catch(() => {})
 }
+
+// Ajuste le gain d'un élément SANS le router inutilement : si l'élément n'a
+// jamais été boosté et que boost<=1, on ne touche à rien (zéro risque pour les
+// pistes normales). Sinon on route/ajuste. Prérequis identiques (crossOrigin+CORS).
+export function setBoost(el, boost = 1) {
+  if (!el) return
+  if (_wired.has(el) || boost > 1) boostElement(el, boost)
+}

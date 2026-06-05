@@ -50,6 +50,7 @@ const toBlindTestParticipant = (track) => ({
   ytId: track.ytId || null,
   color: track.color || '#6366f1',
   emoji: track.emoji || null,
+  gain: track.gain || null,   // boost de loudness par piste (ex. Michishirube trop bas)
 })
 
 export const BLIND_TEST_OPENING_CATALOG = LOCAL_TRACKS

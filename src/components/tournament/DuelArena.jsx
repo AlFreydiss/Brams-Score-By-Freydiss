@@ -413,6 +413,7 @@ export default function DuelArena({
       title:    p.title,
       anime:    p.anime,
       type:     p.type || null,   // 'OP' → boost de loudness dans le player compact
+      gain:     p.gain || null,   // boost spécifique à la piste (prioritaire)
     })
   }
 
@@ -570,7 +571,7 @@ export default function DuelArena({
             onStop={() => setPlaying(null)}
             onSeek={handleCardBgSeek}
             mediaRef={playing.audioUrl ? cardBgVideoRef : null}
-            boost={playing.type === 'OP' ? 1.7 : 1}
+            boost={playing.gain || (playing.type === 'OP' ? 1.7 : 1)}
           />
         )}
       </AnimatePresence>
