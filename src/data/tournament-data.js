@@ -91,7 +91,7 @@ export const OPENING_TOURNAMENT_CONFIG = {
 
 export const ENDING_TOURNAMENT_CONFIG = {
   id:          'best-anime-ending-2026',
-  title:       'Best Anime Ending 2026',
+  title:       'Best Anime Ending',
   description: `${BLIND_TEST_ENDING_CATALOG.length} endings du Blind Test. Ambiance, nostalgie, emotion: fais avancer le meilleur ending.`,
   status:      'active',
   format:      'single_elimination',

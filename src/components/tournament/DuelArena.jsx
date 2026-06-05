@@ -108,7 +108,7 @@ function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop, onSeek, me
   const getMedia = () => (audioUrl && mediaRef?.current) ? mediaRef.current : videoRef.current
 
   useEffect(() => { stopRef.current = onStop }, [onStop])
-  const LIMIT = 600   // openings jouables en entier (plus de coupure à 1m30)
+  const LIMIT = 103   // lecteur tournoi plafonné à 1m43 de vidéo
 
   useEffect(() => {
     timerRef.current = setTimeout(onStop, LIMIT * 1000)
