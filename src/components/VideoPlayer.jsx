@@ -458,13 +458,23 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
     setSubtitleStyle(loadVideoPreferences(userId).subtitleStyle)
   }, [userId])
 
-  // ── Sous-titres — polling RAF sur activeCues ────────────────────────────
+  // ── Sous-titres — événement natif `cuechange` (+ poll léger de secours) ──
+  // PAS de boucle requestAnimationFrame : à 60 setState/s, React 18 (concurrent)
+  // reportait sans cesse le commit basse priorité, et seul un événement discret
+  // (mouvement de souris → contrôles) le forçait → "les sous-titres n'apparaissent
+  // qu'en bougeant la souris". `cuechange` se déclenche exactement aux frontières
+  // de cue ; le poll 300ms est un filet pour les navigateurs capricieux.
   useEffect(() => {
     const v = videoRef.current
     if (!v || !hasSubs) { setCueText(''); return }
 
-    let rafId = null
-    let activeTrack = null
+    let boundTrack = null
+
+    const render = () => {
+      const cues = boundTrack?.activeCues
+      const text = cues && cues.length ? cleanCueText(Array.from(cues).map(c => c.text).join('\n')) : ''
+      setCueText(prev => prev === text ? prev : text)
+    }
 
     const setupTrack = () => {
       const tracks = v.textTracks
@@ -472,10 +482,11 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
       for (let i = 0; i < tracks.length; i++) {
         tracks[i].mode = 'disabled'
       }
-      if (subsOff || !hasSubs) { activeTrack = null; setCueText(''); return }
+      if (boundTrack) { boundTrack.removeEventListener('cuechange', render); boundTrack = null }
+      if (subsOff || !hasSubs) { setCueText(''); return }
 
       const targetSub = video?.subtitles?.[subIdx]
-      if (!targetSub) { activeTrack = null; setCueText(''); return }
+      if (!targetSub) { setCueText(''); return }
 
       // Find the external VTT track — prefer LAST match because
       // embedded MKV tracks appear first, React-injected <track> elements last.
@@ -494,33 +505,28 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
       if (exactIdx >= 0) bestIdx = exactIdx
 
       if (bestIdx >= 0) {
+        // 'hidden' charge bien les cues et peuple activeCues, sans rendu natif.
         tracks[bestIdx].mode = 'hidden'
-        activeTrack = tracks[bestIdx]
+        boundTrack = tracks[bestIdx]
+        boundTrack.addEventListener('cuechange', render)
+        render()
       } else {
-        activeTrack = null
         setCueText('')
       }
-    }
-
-    const tick = () => {
-      if (activeTrack) {
-        const cues = activeTrack.activeCues
-        const text = cues && cues.length ? cleanCueText(Array.from(cues).map(c => c.text).join('\n')) : ''
-        setCueText(prev => prev === text ? prev : text)
-      }
-      rafId = requestAnimationFrame(tick)
     }
 
     setupTrack()
     v.textTracks.addEventListener('addtrack', setupTrack)
     // Certains navigateurs peuplent les pistes après coup : on retente le câblage.
     const retry = setTimeout(setupTrack, 400)
-    rafId = requestAnimationFrame(tick)
+    // Filet de secours : poll basse fréquence (pas de rAF → React commite bien).
+    const poll = setInterval(render, 300)
 
     return () => {
-      cancelAnimationFrame(rafId)
       clearTimeout(retry)
+      clearInterval(poll)
       v.textTracks.removeEventListener('addtrack', setupTrack)
+      if (boundTrack) boundTrack.removeEventListener('cuechange', render)
       setCueText('')
     }
     // mediaSrc : le <video> est keyé par la source (variantes audio VF/JP des
