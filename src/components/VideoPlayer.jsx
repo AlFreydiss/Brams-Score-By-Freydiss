@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import EpisodeDetailOverlay from './EpisodeDetailOverlay.jsx'
 import { getAnimeMeta } from '../data/anime-meta.js'
+import { setBoost } from '../lib/audioBoost.js'
 
 function fmt(sec) {
   const t = Math.max(0, Math.floor(sec || 0))
@@ -587,6 +588,14 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   useEffect(() => {
     if (videoRef.current) videoRef.current.playbackRate = speed
   }, [speed])
+
+  // ── Boost de loudness par vidéo (ex. films Violet trop bas) ───────────────
+  // Ne route dans Web Audio que les vidéos avec gain>1 → zéro risque ailleurs.
+  // Le lecteur a déjà crossOrigin='anonymous' quand il y a des sous-titres, et
+  // l'HLS passe par MSE (blob same-origin) → pas de souci de "tainted".
+  useEffect(() => {
+    if (videoRef.current) setBoost(videoRef.current, video?.gain || 1)
+  }, [mediaSrc, video?.gain])
 
   // ── Lecture HLS via hls.js (Chrome/Edge/Firefox — pas de HLS natif) ───────
   useEffect(() => {
