@@ -283,7 +283,6 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   const [started,      setStarted]     = useState(false)  // false = interface "détail épisode" (pré-lecture)
   const [subIdx,       setSubIdx]      = useState(0)
   const [subsOff,      setSubsOff]     = useState(false)
-  const [cueText,      setCueText]     = useState('')   // texte sous-titre courant (état React → repaint)
   const [buffered,     setBuffered]    = useState(0)
   const [showSubMenu,  setShowSubMenu] = useState(false)
   const [showAudioMenu, setShowAudioMenu] = useState(false)
@@ -458,31 +457,22 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
     setSubtitleStyle(loadVideoPreferences(userId).subtitleStyle)
   }, [userId])
 
-  // ── Sous-titres — pilotés par ÉTAT REACT (même chemin que le mouvement souris) ──
-  // Tout ce qui contournait React (rAF/ref-DOM/rVFC/natif) restait figé tant que la
-  // souris ne bougeait pas, car SEUL un re-rendu React (mutation DOM réconciliée)
-  // force le repaint dans ce lecteur plein écran. On met donc à jour un state à
-  // BASSE fréquence (événement `cuechange` + intervalle 120ms), pas en rAF 60fps
-  // (qui était différé par React concurrent). Le re-rendu React peint la nouvelle
-  // cue exactement comme le fait un mouvement de souris.
+  // ── Sous-titres — RENDU NATIF du navigateur (mode 'showing'), comme YouTube ──
+  // Confirmé : le bug touche aussi d'autres PC. C'est le throttle de repeinture des
+  // overlays DOM en plein écran (le navigateur ne repeint plus quand la souris est
+  // immobile). YouTube/Netflix n'y sont pas sensibles car leurs sous-titres sont
+  // dessinés dans le PIPELINE VIDÉO natif. On fait pareil : le navigateur dessine
+  // et synchronise les cues lui-même (mode 'showing'), style via `::cue`.
   useEffect(() => {
     const v = videoRef.current
     if (!v) return
-    let boundTrack = null
-
-    const refresh = () => {
-      const cues = (!subsOff && boundTrack) ? boundTrack.activeCues : null
-      const text = cues && cues.length ? cleanCueText(Array.from(cues).map(c => c.text).join('\n')) : ''
-      setCueText(prev => prev === text ? prev : text)
-    }
 
     const setupTrack = () => {
       const tracks = v.textTracks
       for (let i = 0; i < tracks.length; i++) tracks[i].mode = 'disabled'
-      if (boundTrack) { boundTrack.removeEventListener('cuechange', refresh); boundTrack = null }
-      if (subsOff || !hasSubs) { refresh(); return }
+      if (subsOff || !hasSubs) return
       const targetSub = video?.subtitles?.[subIdx]
-      if (!targetSub) { refresh(); return }
+      if (!targetSub) return
       let bestIdx = -1, exactIdx = -1
       for (let i = 0; i < tracks.length; i++) {
         const t = tracks[i]
@@ -494,29 +484,17 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
         else if (langMatch) bestIdx = i
       }
       if (exactIdx >= 0) bestIdx = exactIdx
-      if (bestIdx >= 0) {
-        tracks[bestIdx].mode = 'hidden'   // on dessine nous-mêmes l'overlay
-        boundTrack = tracks[bestIdx]
-        boundTrack.addEventListener('cuechange', refresh)
-      }
-      refresh()
+      if (bestIdx >= 0) tracks[bestIdx].mode = 'showing'  // ← rendu natif
     }
 
     setupTrack()
     v.textTracks.addEventListener('addtrack', setupTrack)
     const retry = setTimeout(setupTrack, 400)
     const retry2 = setTimeout(setupTrack, 1200)
-    // Intervalle 120ms : 8 setState/s → React commite chacun (≠ rAF 60fps différé).
-    const poll = setInterval(refresh, 120)
-    v.addEventListener('cuechange', refresh)
-    v.addEventListener('seeked', refresh)
 
     return () => {
-      clearTimeout(retry); clearTimeout(retry2); clearInterval(poll)
+      clearTimeout(retry); clearTimeout(retry2)
       v.textTracks.removeEventListener('addtrack', setupTrack)
-      v.removeEventListener('cuechange', refresh)
-      v.removeEventListener('seeked', refresh)
-      if (boundTrack) boundTrack.removeEventListener('cuechange', refresh)
     }
     // mediaSrc : le <video> est keyé par la source (variantes audio VF/JP) → il se
     // remonte ; sans cette dépendance on resterait branché sur l'ancien élément.
@@ -792,6 +770,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
             <video
               ref={videoRef}
               key={mediaSrc}
+              className="vp-cue"
               crossOrigin={hasSubs ? 'anonymous' : undefined}
               style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
               onPlay={onPlay}
@@ -915,36 +894,23 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
               </div>
             )}
 
-            {/* Filet anti-figement : micro-animation qui force le navigateur à
-                repeindre le document en continu (sinon, en plein écran, Chrome
-                "endort" la peinture quand la souris est immobile). */}
-            <style>{`@keyframes vpRepaint{0%{width:2px}50%{width:4px}100%{width:2px}}`}</style>
-            <div aria-hidden style={{ position: 'absolute', left: 0, bottom: 0, height: 2, pointerEvents: 'none', zIndex: 0, background: 'rgba(255,255,255,0.01)', animation: 'vpRepaint 0.4s linear infinite' }} />
-
-            {/* ── Sous-titres overlay — texte via ÉTAT REACT (repaint garanti). ── */}
-            {cueText && !subsOff && hasSubs && (
-              <div style={{
-                position: 'absolute',
-                bottom: Math.min(180, Math.max(36, Number(subtitleStyle.bottom) || 110)),
-                left: '50%', transform: 'translateX(-50%)',
-                maxWidth: '82%', textAlign: 'center',
-                padding: '5px 16px',
-                background: `rgba(0,0,0,${subtitleStyle.background})`,
-                borderRadius: 6,
-                fontFamily: "'Inter', system-ui, sans-serif",
-                color: subtitleStyle.color,
-                fontSize: subtitleStyle.size,
-                fontWeight: subtitleStyle.weight,
-                lineHeight: 1.4,
-                textShadow: subtitleStyle.outline
-                  ? '-1.5px -1.5px 0 #000, 1.5px -1.5px 0 #000, -1.5px 1.5px 0 #000, 1.5px 1.5px 0 #000, 0 2px 10px rgba(0,0,0,0.95)'
-                  : '0 1px 4px rgba(0,0,0,0.85)',
-                whiteSpace: 'pre-line',
-                pointerEvents: 'none',
-                zIndex: 5,
-              }}>
-                {cueText}
-              </div>
+            {/* ── Style des sous-titres NATIFS (::cue) — le navigateur les dessine
+                dans le pipeline vidéo (immunisé au throttle de repeinture). On garde
+                la police Inter + taille/couleur/fond/contour. */}
+            {!subsOff && hasSubs && (
+              <style>{`
+                video.vp-cue::cue {
+                  font-family: 'Inter', system-ui, sans-serif;
+                  font-size: ${subtitleStyle.size}px;
+                  color: ${subtitleStyle.color};
+                  background: rgba(0,0,0,${subtitleStyle.background});
+                  font-weight: ${subtitleStyle.weight};
+                  line-height: 1.4;
+                  text-shadow: ${subtitleStyle.outline
+                    ? '-1.5px -1.5px 0 #000, 1.5px -1.5px 0 #000, -1.5px 1.5px 0 #000, 1.5px 1.5px 0 #000, 0 2px 10px rgba(0,0,0,.95)'
+                    : '0 1px 4px rgba(0,0,0,.85)'};
+                }
+              `}</style>
             )}
 
             {/* Indicateur de qualité — suit les contrôles (plus de superposition permanente) */}
