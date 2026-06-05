@@ -421,7 +421,7 @@ export default function ScansPage({ onClose }) {
         }
       `}</style>
 
-      <div style={{ position:'fixed', left:0, right:0, top:76, bottom:0, zIndex:100, background:'var(--bg)', display:'flex', flexDirection:'column', animation:'fadeIn 0.18s ease-out' }}>
+      <div style={{ position:'fixed', left:0, right:0, top:0, bottom:0, zIndex:100, paddingTop:76, background:'var(--bg)', display:'flex', flexDirection:'column', animation:'fadeIn 0.18s ease-out' }}>
 
         {/* ── Sidebar ── */}
         <Sidebar open={sidebar} onClose={() => setSidebar(false)} progress={progress} onJumpArc={handleJumpArc} chapters={CHAPTERS} />

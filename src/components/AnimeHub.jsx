@@ -1581,7 +1581,8 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
 
   return (
     <div style={{
-      position:'fixed', left:0, right:0, top:76, bottom:0, zIndex:100, display:'flex', flexDirection:'column',
+      // top:0 + paddingTop navbar → le fond opaque couvre la bande sous la navbar (sinon la home transparait a travers la navbar en verre)
+      position:'fixed', left:0, right:0, top:0, bottom:0, zIndex:100, display:'flex', flexDirection:'column', paddingTop:76,
       background:'radial-gradient(1100px 820px at 72% 82%, rgba(46,96,179,0.22), transparent 60%), radial-gradient(820px 620px at 28% -5%, rgba(34,54,120,0.20), transparent 55%), linear-gradient(180deg, #0a0f1c 0%, #070a13 60%, #05070f 100%)',
     }}>
       <style>{AH_CSS}</style>
