@@ -264,6 +264,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   const { userId } = useAuth()
   const videoRef     = useRef(null)
   const audioRef     = useRef(null)
+  const canvasRef    = useRef(null)   // sous-titres dessinés (immunisé au throttle)
   const containerRef = useRef(null)
   const hideTimer    = useRef(null)
   const lastSaveRef  = useRef(0)
@@ -457,19 +458,23 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
     setSubtitleStyle(loadVideoPreferences(userId).subtitleStyle)
   }, [userId])
 
-  // ── Sous-titres — RENDU NATIF du navigateur (mode 'showing'), comme YouTube ──
-  // Confirmé : le bug touche aussi d'autres PC. C'est le throttle de repeinture des
-  // overlays DOM en plein écran (le navigateur ne repeint plus quand la souris est
-  // immobile). YouTube/Netflix n'y sont pas sensibles car leurs sous-titres sont
-  // dessinés dans le PIPELINE VIDÉO natif. On fait pareil : le navigateur dessine
-  // et synchronise les cues lui-même (mode 'showing'), style via `::cue`.
+  // ── Sous-titres — DESSINÉS SUR CANVAS (immunisé au throttle de repeinture) ──
+  // Diagnostic prouvé : cues chargées + activeCues=1, mais ni l'overlay DOM ni le
+  // rendu natif ne s'affichent (le navigateur "endort" la peinture des couches
+  // quand la souris est immobile, sur plusieurs PC). On dessine donc nous-mêmes les
+  // cues sur un <canvas> via requestAnimationFrame : le canvas est recomposité à
+  // chaque frame par le GPU → toujours visible. Contrôle total taille/couleur/pos.
   useEffect(() => {
     const v = videoRef.current
     if (!v) return
+    let boundTrack = null
+    let rafId = null
+    let cancelled = false
 
     const setupTrack = () => {
       const tracks = v.textTracks
       for (let i = 0; i < tracks.length; i++) tracks[i].mode = 'disabled'
+      boundTrack = null
       if (subsOff || !hasSubs) return
       const targetSub = video?.subtitles?.[subIdx]
       if (!targetSub) return
@@ -484,21 +489,80 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
         else if (langMatch) bestIdx = i
       }
       if (exactIdx >= 0) bestIdx = exactIdx
-      if (bestIdx >= 0) tracks[bestIdx].mode = 'showing'  // ← rendu natif
+      // 'hidden' : cues parsées + activeCues alimentées, sans rendu natif (on dessine).
+      if (bestIdx >= 0) { tracks[bestIdx].mode = 'hidden'; boundTrack = tracks[bestIdx] }
+    }
+
+    const draw = () => {
+      const cv = canvasRef.current
+      if (cv) {
+        const dpr = window.devicePixelRatio || 1
+        const cw = cv.clientWidth, ch = cv.clientHeight
+        if (cv.width !== Math.round(cw * dpr) || cv.height !== Math.round(ch * dpr)) {
+          cv.width = Math.round(cw * dpr); cv.height = Math.round(ch * dpr)
+        }
+        const ctx = cv.getContext('2d')
+        ctx.clearRect(0, 0, cv.width, cv.height)
+        const cues = (!subsOff && boundTrack) ? boundTrack.activeCues : null
+        const text = cues && cues.length ? cleanCueText(Array.from(cues).map(c => c.text).join('\n')) : ''
+        if (text) {
+          const st = subtitleStyle
+          const size = (st.size || 30) * dpr
+          ctx.font = `${st.weight || 700} ${size}px Inter, system-ui, sans-serif`
+          ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'
+          const maxW = cv.width * 0.84
+          const lines = []
+          text.split('\n').forEach(para => {
+            const words = para.split(' '); let line = ''
+            for (const w0 of words) {
+              const test = line ? line + ' ' + w0 : w0
+              if (ctx.measureText(test).width > maxW && line) { lines.push(line); line = w0 }
+              else line = test
+            }
+            if (line) lines.push(line)
+          })
+          const lineH = size * 1.35
+          const bottom = Math.min(180, Math.max(36, Number(st.bottom) || 110)) * dpr
+          const baseY = cv.height - bottom
+          const startY = baseY - (lines.length - 1) * lineH
+          const cx = cv.width / 2
+          lines.forEach((ln, i) => {
+            const ly = startY + i * lineH
+            const tw = ctx.measureText(ln).width
+            if (st.background > 0) {
+              ctx.fillStyle = `rgba(0,0,0,${st.background})`
+              ctx.fillRect(cx - tw / 2 - 12 * dpr, ly - size, tw + 24 * dpr, lineH)
+            }
+            if (st.outline) {
+              ctx.lineWidth = Math.max(2, size * 0.14); ctx.lineJoin = 'round'
+              ctx.strokeStyle = '#000'; ctx.strokeText(ln, cx, ly)
+            } else {
+              ctx.shadowColor = 'rgba(0,0,0,0.85)'; ctx.shadowBlur = 4 * dpr; ctx.shadowOffsetY = dpr
+            }
+            ctx.fillStyle = st.color || '#fff'
+            ctx.fillText(ln, cx, ly)
+            ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0
+          })
+        }
+      }
+      if (!cancelled) rafId = requestAnimationFrame(draw)
     }
 
     setupTrack()
     v.textTracks.addEventListener('addtrack', setupTrack)
     const retry = setTimeout(setupTrack, 400)
     const retry2 = setTimeout(setupTrack, 1200)
+    rafId = requestAnimationFrame(draw)
 
     return () => {
+      cancelled = true
       clearTimeout(retry); clearTimeout(retry2)
+      if (rafId != null) cancelAnimationFrame(rafId)
       v.textTracks.removeEventListener('addtrack', setupTrack)
     }
     // mediaSrc : le <video> est keyé par la source (variantes audio VF/JP) → il se
     // remonte ; sans cette dépendance on resterait branché sur l'ancien élément.
-  }, [subIdx, subsOff, hasSubs, idx, mediaSrc])
+  }, [subIdx, subsOff, hasSubs, idx, mediaSrc, subtitleStyle])
 
   // ── DIAGNOSTIC TEMPORAIRE : état réel des pistes (à lire à l'écran) ───────────
   const [dbg, setDbg] = useState('init…')
@@ -792,7 +856,6 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
             <video
               ref={videoRef}
               key={mediaSrc}
-              className="vp-cue"
               crossOrigin={hasSubs ? 'anonymous' : undefined}
               style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
               onPlay={onPlay}
@@ -918,23 +981,9 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
               </div>
             )}
 
-            {/* ── Style des sous-titres NATIFS (::cue) — le navigateur les dessine
-                dans le pipeline vidéo (immunisé au throttle de repeinture). On garde
-                la police Inter + taille/couleur/fond/contour. */}
+            {/* ── Sous-titres dessinés sur canvas (rAF → immunisé au throttle) ── */}
             {!subsOff && hasSubs && (
-              <style>{`
-                video.vp-cue::cue {
-                  font-family: 'Inter', system-ui, sans-serif;
-                  font-size: ${subtitleStyle.size}px;
-                  color: ${subtitleStyle.color};
-                  background: rgba(0,0,0,${subtitleStyle.background});
-                  font-weight: ${subtitleStyle.weight};
-                  line-height: 1.4;
-                  text-shadow: ${subtitleStyle.outline
-                    ? '-1.5px -1.5px 0 #000, 1.5px -1.5px 0 #000, -1.5px 1.5px 0 #000, 1.5px 1.5px 0 #000, 0 2px 10px rgba(0,0,0,.95)'
-                    : '0 1px 4px rgba(0,0,0,.85)'};
-                }
-              `}</style>
+              <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 5 }} />
             )}
 
             {/* Indicateur de qualité — suit les contrôles (plus de superposition permanente) */}
