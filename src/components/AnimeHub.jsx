@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from 'react'
 import { ProgressRing } from './ProgressRing.jsx'
 import AIRecommendations from './AIRecommendations.jsx'
+import Navbar from './Navbar.jsx'
 
 // Fond 3D (posters d'animés qui vagabondent) — chargé à part pour ne pas
 // alourdir le chunk, et silencieux si WebGL indisponible.
@@ -1586,6 +1587,10 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
       background:'radial-gradient(1100px 820px at 72% 82%, rgba(46,96,179,0.22), transparent 60%), radial-gradient(820px 620px at 28% -5%, rgba(34,54,120,0.20), transparent 55%), linear-gradient(180deg, #0a0f1c 0%, #070a13 60%, #05070f 100%)',
     }}>
       <style>{AH_CSS}</style>
+
+      {/* Navbar globale du site — l'overlay réserve déjà 76px en haut (paddingTop).
+          Rendue ici car le bloc home (isolation:isolate, zIndex:2) la confinait sous cet overlay. */}
+      <Navbar />
 
       {/* Fond 3D : posters d'animés qui vagabondent (derrière tout, non cliquable) */}
       <div style={{ position:'absolute', inset:0, zIndex:0, pointerEvents:'none' }}>
