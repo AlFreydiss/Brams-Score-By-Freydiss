@@ -24,8 +24,6 @@ export default function EpisodeDetailOverlay({ animeId, animeTitle, video, note,
     return () => { alive = false }
   }, [animeId, animeTitle, ep])
 
-  const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent((animeTitle || '') + ' trailer')}`
-
   return (
     <div style={{ position: 'absolute', inset: 0, zIndex: 7, pointerEvents: 'none', display: 'flex', justifyContent: 'flex-end' }}>
       {/* Dégradé pour lisibilité du panneau, n'empêche pas le clic central */}
@@ -42,7 +40,7 @@ export default function EpisodeDetailOverlay({ animeId, animeTitle, video, note,
         }}
       >
         <div>
-          <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: '.18em', textTransform: 'uppercase', color, marginBottom: 6 }}>
+          <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: '.18em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.6)', marginBottom: 6 }}>
             {video?.season ? `Saison ${String(video.season).replace(/^S/i, '')} · ` : ''}Épisode {ep}
           </div>
           <h2 style={{ margin: 0, fontFamily: "'Pirata One', cursive", fontWeight: 900, fontSize: 'clamp(24px,3vw,38px)', color: '#fff', lineHeight: 1.05, textShadow: '0 2px 14px rgba(0,0,0,0.7)' }}>
@@ -66,27 +64,6 @@ export default function EpisodeDetailOverlay({ animeId, animeTitle, video, note,
           </p>
         </div>
 
-        {/* Trailer */}
-        <div style={{ marginTop: 'auto' }}>
-          <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.42)', marginBottom: 6 }}>Trailer</div>
-          {youtube ? (
-            <div style={{ position: 'relative', width: '100%', aspectRatio: '16 / 9', borderRadius: 12, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
-              <iframe
-                src={`https://www.youtube.com/embed/${youtube}?rel=0`}
-                loading="lazy"
-                title={`Trailer ${animeTitle}`}
-                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }}
-                allow="encrypted-media; picture-in-picture"
-                allowFullScreen
-              />
-            </div>
-          ) : (
-            <a href={searchUrl} target="_blank" rel="noopener noreferrer"
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, width: '100%', aspectRatio: '16 / 9', borderRadius: 12, textDecoration: 'none', background: 'rgba(255,255,255,0.04)', border: '1px dashed rgba(255,255,255,0.18)', color: 'rgba(255,255,255,0.7)', fontSize: 13, fontWeight: 800 }}>
-              <span style={{ fontSize: 22, color: '#ff3b3b' }}>▶</span> Voir le trailer sur YouTube
-            </a>
-          )}
-        </div>
       </div>
     </div>
   )
