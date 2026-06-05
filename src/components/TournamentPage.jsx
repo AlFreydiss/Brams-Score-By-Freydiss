@@ -640,7 +640,7 @@ export default function TournamentPage({ tournamentId = 'ost' }) {
                         en sidebar : même présentation premium que le tournoi multi. */}
                     <DuelAmbient left={current.match.left} right={current.match.right} />
                     <style>{`@keyframes tsolo-pulse{0%,100%{opacity:.5}50%{opacity:1}}`}</style>
-                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16, position: 'relative', zIndex: 1 }}>
                       <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '7px 16px', borderRadius: 999, background: 'rgba(157,23,77,.12)', border: '1px solid rgba(157,23,77,.45)' }}>
                         <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#f9a8d4', boxShadow: '0 0 8px #f9a8d4', animation: 'tsolo-pulse 2s ease-in-out infinite' }} />
                         <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.12em', textTransform: 'uppercase', color: '#f9a8d4' }}>{roundLabel}</span>
@@ -664,7 +664,7 @@ export default function TournamentPage({ tournamentId = 'ost' }) {
                           vertical
                         />
                       </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: isMobile ? '100%' : 248 }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: isMobile ? '100%' : 248, position: 'relative', zIndex: 1 }}>
                         <BracketPanel rounds={rounds} currentId={current.match.id} isMobile={isMobile} />
 
                         {/* Joker "Passer ce duel" : 1 dispo, rechargé en votant ailleurs */}

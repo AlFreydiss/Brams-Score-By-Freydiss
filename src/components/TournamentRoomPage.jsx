@@ -726,7 +726,7 @@ export default function TournamentRoomPage() {
                 la page (fini la zone noire à droite), même quand aucun ne joue. */}
             <DuelAmbient left={current.match.left} right={current.match.right} />
             {/* Petit header joli : round + numéro de duel */}
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16, position: 'relative', zIndex: 1 }}>
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '7px 16px', borderRadius: 999, background: 'rgba(157,23,77,.12)', border: `1px solid ${PINK}44` }}>
                 <span style={{ width: 7, height: 7, borderRadius: '50%', background: PINK_L, boxShadow: `0 0 8px ${PINK_L}`, animation: 'troom-pulse 2s ease-in-out infinite' }} />
                 <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.12em', textTransform: 'uppercase', color: PINK_L }}>{current.round.label}</span>
@@ -756,7 +756,7 @@ export default function TournamentRoomPage() {
                 />
               </div>
               {/* Sidebar : votes + mini-bracket */}
-              <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'column', gap: 14, width: isMobile ? '100%' : 'auto' }}>
+              <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'column', gap: 14, width: isMobile ? '100%' : 'auto', position: 'relative', zIndex: 1 }}>
                 <VotersPanel players={players} votes={votes} match={current.match} isMobile={isMobile}
                   voteStatus={`${totalV}/${players.length} ont voté · ${myVote ? 'en attente des autres…' : 'à toi de voter !'}`} />
                 <BracketPanel rounds={rounds} currentId={current.match.id} isMobile={isMobile} />
