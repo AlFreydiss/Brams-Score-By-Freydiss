@@ -232,7 +232,7 @@ function DesktopNavLink({ link, active, locked, onClick }) {
   return <a href={link.href} onClick={onClick} className="nav-link-premium">{content}</a>
 }
 
-export default function Navbar() {
+export default function Navbar({ forceScrolled = false }) {
   const [scrolled, setScrolled] = useState(false)
   const [about, setAbout] = useState(false)
   const [authOpen, setAuthOpen] = useState(false)
@@ -298,7 +298,7 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className={scrolled ? 'navbar-premium navbar-premium-scrolled' : 'navbar-premium'}>
+      <nav className={(scrolled || forceScrolled) ? 'navbar-premium navbar-premium-scrolled' : 'navbar-premium'}>
         <div className="nav-shell-premium">
           <div className="nav-zone-brand">
             <BrandMark onClick={goHome} />

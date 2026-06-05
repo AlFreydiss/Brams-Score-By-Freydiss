@@ -1589,8 +1589,9 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
       <style>{AH_CSS}</style>
 
       {/* Navbar globale du site — l'overlay réserve déjà 76px en haut (paddingTop).
-          Rendue ici car le bloc home (isolation:isolate, zIndex:2) la confinait sous cet overlay. */}
-      <Navbar />
+          Rendue ici car le bloc home (isolation:isolate, zIndex:2) la confinait sous cet overlay.
+          forceScrolled : le Hub scrolle dans un conteneur interne (pas window), donc on force le style « solide ». */}
+      <Navbar forceScrolled />
 
       {/* Fond 3D : posters d'animés qui vagabondent (derrière tout, non cliquable) */}
       <div style={{ position:'absolute', inset:0, zIndex:0, pointerEvents:'none' }}>
