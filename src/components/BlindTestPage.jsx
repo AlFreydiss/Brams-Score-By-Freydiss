@@ -1002,6 +1002,22 @@ export default function BlindTestPage() {
         transition: 'background 1.4s ease', pointerEvents: 'none',
       }} />
 
+      {/* ── Thème jaune + citrons flottants (style undercover) sur l'accueil ── */}
+      {!isPlaying && (
+        <>
+          <style>{`@keyframes btLemon{0%{transform:translateY(24px) rotate(-10deg);opacity:0}12%{opacity:.6}86%{opacity:.45}100%{transform:translateY(-130px) rotate(12deg);opacity:0}}`}</style>
+          <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 3, pointerEvents: 'none', background: `
+            radial-gradient(900px 520px at 16% -6%, rgba(255,215,0,0.16), transparent 60%),
+            radial-gradient(760px 520px at 86% 10%, rgba(245,158,11,0.13), transparent 62%),
+            radial-gradient(820px 700px at 50% 118%, rgba(212,160,23,0.12), transparent 66%)` }} />
+          <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 3, pointerEvents: 'none', overflow: 'hidden' }}>
+            {Array.from({ length: 16 }).map((_, i) => (
+              <span key={i} style={{ position: 'absolute', left: `${3 + i * 6.2}%`, bottom: '-40px', fontSize: 16 + (i % 4) * 10, opacity: 0.5, filter: 'drop-shadow(0 3px 10px rgba(255,215,0,0.35))', animation: `btLemon ${13 + (i % 6) * 2}s linear ${i * 0.9}s infinite` }}>🍋</span>
+            ))}
+          </div>
+        </>
+      )}
+
       <BTStars />
       <BTScanLine />
       <VolumeWidget volume={volume} onChange={v => { setVolume(v); if (videoRef.current) videoRef.current.volume = v }} track={activeTrack} phase={phase} videoRef={videoRef} />
