@@ -1272,6 +1272,89 @@ function Carousel({ children }) {
   )
 }
 
+// ── Chat IA de recommandation (panneau gauche du Hub) ───────────────────────
+// Discute, suggère des animés du catalogue ; les titres cités deviennent
+// cliquables (« ▶ Ouvrir ») pour lancer la fiche directement.
+function HubAiChat({ animes, onOpen }) {
+  const [history, setHistory] = useState([
+    { role: 'model', text: "Salut ! Dis-moi ce que tu as aimé et je te conseille quoi regarder ensuite. 🍿" },
+  ])
+  const [input, setInput] = useState('')
+  const [loading, setLoading] = useState(false)
+  const bottomRef = useRef(null)
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [history, loading])
+
+  const catalog = useMemo(() => (animes || []).map(a => a.title).filter(Boolean).join(', '), [animes])
+  const matchAnimes = useCallback((text) => {
+    const t = (text || '').toLowerCase()
+    return (animes || []).filter(a => a.title && t.includes(a.title.toLowerCase())).slice(0, 4)
+  }, [animes])
+
+  const send = useCallback(async (raw) => {
+    const msg = (raw ?? input).trim()
+    if (!msg || loading) return
+    setInput('')
+    const h = [...history, { role: 'user', text: msg }]
+    setHistory(h); setLoading(true)
+    try {
+      const primed = `[Tu es l'assistant animé de Brams Community. Animés DISPONIBLES sur le site : ${catalog}. Recommande EN PRIORITÉ parmi ceux-là, sois bref et chaleureux, propose 1 à 3 titres max avec une phrase pour chacun.] ${msg}`
+      const res = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: primed, history: history.map(m => ({ role: m.role, text: m.text })) }) })
+      const data = await res.json()
+      setHistory(p => [...p, { role: 'model', text: data.reply || data.error || 'Erreur.' }])
+    } catch {
+      setHistory(p => [...p, { role: 'model', text: 'Connexion impossible, réessaie.' }])
+    } finally { setLoading(false) }
+  }, [input, loading, history, catalog])
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', borderRadius: 16, overflow: 'hidden', background: 'linear-gradient(180deg, rgba(16,14,26,0.92), rgba(10,9,15,0.96))', border: '1px solid rgba(167,139,250,0.28)', boxShadow: '0 18px 50px rgba(0,0,0,.45)' }}>
+      <div style={{ flexShrink: 0, padding: '12px 14px', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', gap: 9, background: 'linear-gradient(135deg, rgba(191,164,106,0.14), rgba(167,139,250,0.12))' }}>
+        <div style={{ width: 28, height: 28, borderRadius: 9, background: 'linear-gradient(135deg,#BFA46A,#a78bfa)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15 }}>✨</div>
+        <div style={{ lineHeight: 1.1 }}>
+          <div style={{ fontSize: 13, fontWeight: 900, color: '#f4f0e6' }}>Assistant Animé</div>
+          <div style={{ fontSize: 9.5, color: 'rgba(255,255,255,0.45)' }}>Reco IA · dis ce que t'as aimé</div>
+        </div>
+      </div>
+
+      <div style={{ flex: 1, overflowY: 'auto', padding: '12px 12px 4px', minHeight: 0 }}>
+        {history.map((m, i) => {
+          const mine = m.role === 'user'
+          const hits = !mine ? matchAnimes(m.text) : []
+          return (
+            <div key={i} style={{ marginBottom: 10 }}>
+              <div style={{ display: 'flex', justifyContent: mine ? 'flex-end' : 'flex-start' }}>
+                <div style={{ maxWidth: '88%', padding: '8px 11px', borderRadius: mine ? '12px 12px 4px 12px' : '12px 12px 12px 4px', background: mine ? 'rgba(167,139,250,0.28)' : 'rgba(255,255,255,0.05)', border: mine ? '1px solid rgba(167,139,250,0.4)' : '1px solid rgba(255,255,255,0.08)', fontSize: 12.5, lineHeight: 1.5, color: '#fff', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{m.text}</div>
+              </div>
+              {hits.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
+                  {hits.map(a => (
+                    <button key={a.id} onClick={() => onOpen(a.id)} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 9px', borderRadius: 999, cursor: 'pointer', background: 'rgba(191,164,106,0.16)', border: '1px solid rgba(191,164,106,0.4)', color: '#f4f0e6', fontSize: 10.5, fontWeight: 700 }}>▶ {a.title}</button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )
+        })}
+        {loading && <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.4)', fontStyle: 'italic', padding: '2px 4px' }}>L'IA réfléchit…</div>}
+        <div ref={bottomRef} />
+      </div>
+
+      {history.length <= 1 && (
+        <div style={{ flexShrink: 0, display: 'flex', flexWrap: 'wrap', gap: 6, padding: '0 12px 8px' }}>
+          {['Recommande-moi un animé', 'Un truc court à voir ?', 'Comme Violet Evergarden'].map(s => (
+            <button key={s} onClick={() => send(s)} style={{ padding: '5px 9px', borderRadius: 999, cursor: 'pointer', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.7)', fontSize: 10, fontWeight: 600 }}>{s}</button>
+          ))}
+        </div>
+      )}
+
+      <div style={{ flexShrink: 0, display: 'flex', gap: 7, padding: '10px 12px', borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+        <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') send() }} placeholder="J'ai aimé… propose-moi" style={{ flex: 1, minWidth: 0, padding: '9px 11px', borderRadius: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', color: '#fff', fontSize: 12, outline: 'none' }} />
+        <button onClick={() => send()} disabled={loading} style={{ flexShrink: 0, width: 38, borderRadius: 10, cursor: 'pointer', background: 'linear-gradient(135deg,#BFA46A,#a78bfa)', border: 'none', color: '#fff', fontSize: 15, fontWeight: 900 }}>↑</button>
+      </div>
+    </div>
+  )
+}
+
 export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrstone, onOpenJjk, onOpenKingdom, onOpenAot, onOpenKny, onOpenNnt, onOpenSl, onOpenDbs, onOpenViolet, onOpenVivy, onOpenLovePrism, onOpenCaroleTuesday, onOpenBunnyGirl, onOpenRentGirlfriend, onOpenBc, onOpenMha, onOpenFireforce, onOpenBluelock, onOpenFateZero, onOpenYourName, onOpenMonUnivers }) {
   const [query, setQuery] = useState('')
   const [selectedGenres, setSelectedGenres] = useState(new Set())
@@ -1605,67 +1688,11 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
           forceScrolled : le Hub scrolle dans un conteneur interne (pas window), donc on force le style « solide ». */}
       <Navbar forceScrolled />
 
-      {/* ── Panneau latéral gauche « Brams Score » (carte blanche) — comble le vide
-           à gauche sur grands écrans, masqué en dessous de 1740px pour ne pas chevaucher. ── */}
-      <aside className="ah-side-rail" style={{ position:'fixed', left:14, top:150, width:236, zIndex:90, display:'flex', flexDirection:'column', gap:13, maxHeight:'calc(100vh - 172px)', overflowY:'auto' }}>
-        <style>{`@media (max-width:1740px){ .ah-side-rail{ display:none !important } } .ah-side-rail::-webkit-scrollbar{ width:0 }`}</style>
-
-        {/* Marque */}
-        <div style={{ borderRadius:16, padding:'16px 16px 15px', background:'linear-gradient(160deg, rgba(191,164,106,0.14), rgba(167,139,250,0.10), rgba(10,12,18,0.7))', border:'1px solid rgba(191,164,106,0.28)', boxShadow:'0 14px 40px rgba(0,0,0,.4)' }}>
-          <div style={{ display:'flex', alignItems:'center', gap:9 }}>
-            <div style={{ width:30, height:30, borderRadius:9, background:'linear-gradient(135deg,#BFA46A,#a78bfa)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16 }}>🏴‍☠️</div>
-            <div style={{ fontFamily:"'Pirata One', cursive", fontWeight:900, fontSize:18, color:'#f4f0e6', lineHeight:1 }}>Brams Score</div>
-          </div>
-          <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)', marginTop:7, lineHeight:1.5 }}>Ton univers anime & scan, rien que pour toi.</div>
-        </div>
-
-        {/* Stats */}
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8 }}>
-          {[['Séries', sortedAnimes.length, '#BFA46A'], ['Vus', watchedCount, '#34d399'], ['En cours', continueWatching.length, '#a78bfa']].map(([k,v,c]) => (
-            <div key={k} style={{ padding:'10px 6px', borderRadius:12, background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.07)', textAlign:'center' }}>
-              <div style={{ fontSize:18, fontWeight:900, color:c, lineHeight:1 }}>{v}</div>
-              <div style={{ fontSize:8.5, fontWeight:800, letterSpacing:'.06em', textTransform:'uppercase', color:'rgba(255,255,255,0.4)', marginTop:4 }}>{k}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* Reprendre */}
-        {resumeTarget && (
-          <button onClick={() => handleClick(resumeTarget.id)} style={{ display:'flex', alignItems:'center', gap:10, padding:'11px 13px', borderRadius:13, cursor:'pointer', textAlign:'left', background:'linear-gradient(135deg, rgba(167,139,250,0.25), rgba(124,196,224,0.16))', border:'1px solid rgba(167,139,250,0.4)', color:'#fff' }}>
-            <span style={{ fontSize:18 }}>▶</span>
-            <span style={{ minWidth:0 }}>
-              <span style={{ display:'block', fontSize:8.5, fontWeight:800, letterSpacing:'.1em', textTransform:'uppercase', color:'rgba(255,255,255,0.55)' }}>Reprendre</span>
-              <span style={{ display:'block', fontSize:12.5, fontWeight:800, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{resumeTarget.title}</span>
-            </span>
-          </button>
-        )}
-
-        {/* Suggestion du jour */}
-        {sortedAnimes.length > 0 && (() => {
-          const sug = sortedAnimes[(new Date().getDate() * 7) % sortedAnimes.length]
-          if (!sug) return null
-          return (
-            <div style={{ borderRadius:14, overflow:'hidden', background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.08)' }}>
-              <button onClick={() => handleClick(sug.id)} style={{ display:'block', width:'100%', padding:0, border:'none', cursor:'pointer', background:'transparent', textAlign:'left' }}>
-                <div style={{ position:'relative', aspectRatio:'16/10', background:'#0a0f1c' }}>
-                  {sug.coverImage && <img src={sug.coverImage} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} />}
-                  <div style={{ position:'absolute', inset:0, background:'linear-gradient(180deg,transparent 45%,rgba(0,0,0,.82))' }} />
-                  <div style={{ position:'absolute', top:8, left:8, fontSize:8, fontWeight:900, letterSpacing:'.12em', textTransform:'uppercase', color:'#BFA46A', background:'rgba(0,0,0,.5)', borderRadius:100, padding:'3px 9px' }}>✦ Suggestion du jour</div>
-                  <div style={{ position:'absolute', bottom:8, left:10, right:10 }}>
-                    <div style={{ fontSize:13, fontWeight:800, color:'#fff', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{sug.title}</div>
-                    <div style={{ fontSize:10, color:'rgba(255,255,255,0.6)' }}>{(sug.genres || []).slice(0,2).join(' · ')}</div>
-                  </div>
-                </div>
-              </button>
-            </div>
-          )
-        })()}
-
-        {/* Surprends-moi */}
-        <button onClick={() => { const r = sortedAnimes[Math.floor(Math.random() * sortedAnimes.length)]; if (r) handleClick(r.id) }}
-          style={{ padding:'10px 0', borderRadius:12, cursor:'pointer', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.12)', color:'rgba(255,255,255,0.85)', fontSize:12.5, fontWeight:800 }}>
-          🎲 Surprends-moi
-        </button>
+      {/* ── Chat IA de recommandation (panneau gauche) — comble le vide à gauche
+           sur grands écrans, masqué en dessous de 1740px pour ne pas chevaucher. ── */}
+      <aside className="ah-side-rail" style={{ position:'fixed', left:14, top:150, width:300, height:'calc(100vh - 188px)', zIndex:90, display:'flex', flexDirection:'column' }}>
+        <style>{`@media (max-width:1740px){ .ah-side-rail{ display:none !important } }`}</style>
+        <HubAiChat animes={sortedAnimes} onOpen={handleClick} />
       </aside>
 
       {/* Fond 3D : posters d'animés qui vagabondent (derrière tout, non cliquable) */}
