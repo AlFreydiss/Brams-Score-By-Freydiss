@@ -571,6 +571,7 @@ export const LOCAL_TRACKS = [
     type:       'OP',
     episode:    'Opening 1',
     url:        'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/blind-test/ve-op1.mp4',
+    gain:       1.4, // masterisé fort → on baisse sous le boost x2.2 par défaut (sortait trop fort dans le tournoi)
     difficulty: 'difficile',
     color:      '#7dd3fc',
     emoji:      '💌',
