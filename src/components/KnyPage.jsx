@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react'
 import VideoPlayer from './VideoPlayer.jsx'
 import EpisodeDetailInline from './EpisodeDetailInline.jsx'
+import EpisodeWatch from './EpisodeWatch.jsx'
 import { ProgressRing } from './ProgressRing.jsx'
 import AnimeBackdrop, { ANIME_MOTIFS } from './AnimeBackdrop.jsx'
 import { Reader } from './MangaReader.jsx'
@@ -186,10 +187,10 @@ export default function KnyPage({ onClose }) {
 
   useEffect(() => { document.body.style.overflow = 'hidden'; return () => { document.body.style.overflow = '' } }, [])
   useEffect(() => {
-    const fn = e => { if (e.key === 'Escape' && playerIdx === null) onClose?.() }
+    const fn = e => { if (e.key === 'Escape' && detailIdx === null) onClose?.() }
     window.addEventListener('keydown', fn)
     return () => window.removeEventListener('keydown', fn)
-  }, [playerIdx, onClose])
+  }, [detailIdx, onClose])
 
   const keyOf = (v) => v.progressKey || v.id || (v.kind === 'film' ? `film-${v.episode}` : v.kind === 'ova' ? `ova-${v.episode}` : v.episode)
   const markWatched = useCallback((idx) => {
@@ -205,8 +206,9 @@ export default function KnyPage({ onClose }) {
   const openPlayer = useCallback((idx) => { setPlayerIdx(idx); markWatched(idx) }, [markWatched])
   const openDetail = useCallback((idx) => {
     setDetailIdx(idx)
+    markWatched(idx)
     requestAnimationFrame(() => scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' }))
-  }, [])
+  }, [markWatched])
   const playHandlers = useMemo(() => VIDEOS.map((_, i) => () => openDetail(i)), [openDetail])
 
   const episodes = VIDEOS.map((v, i) => ({ v, i })).filter(x => !x.v.kind)
@@ -221,16 +223,16 @@ export default function KnyPage({ onClose }) {
         <AnimeBackdrop motifs={ANIME_MOTIFS.kny} color={COLOR} color2={COLOR2} />
         {/* Navbar */}
         <div style={{ flexShrink:0,height:62,padding:'0 24px', display:'flex',alignItems:'center',justifyContent:'space-between', background:'rgba(14,10,26,.96)',backdropFilter:'blur(24px)', borderBottom:'1px solid rgba(232,93,39,.10)',zIndex:10, position:'relative' }}>
-          <button onClick={playerIdx !== null ? () => setPlayerIdx(null) : onClose}
+          <button onClick={detailIdx !== null ? () => setDetailIdx(null) : onClose}
             style={{ display:'flex',alignItems:'center',gap:7,background:'rgba(255,255,255,.06)',border:'1px solid rgba(255,255,255,.09)',borderRadius:10,color:'rgba(255,255,255,.72)',cursor:'pointer',padding:'8px 16px',fontSize:12.5,fontWeight:800,transition:'background .15s',fontFamily:'var(--body)' }}
             onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,.11)'}
             onMouseLeave={e => e.currentTarget.style.background='rgba(255,255,255,.06)'}>
-            ← {playerIdx !== null ? 'Épisodes' : 'Retour'}
+            ← {detailIdx !== null ? 'Épisodes' : 'Retour'}
           </button>
           <div style={{ position:'absolute',left:'50%',transform:'translateX(-50%)',display:'flex',alignItems:'center',gap:10 }}>
             <span style={{ fontSize:17,animation:'knyFloat 6s ease-in-out infinite' }}>🔥</span>
             <span style={{ fontFamily:"'Pirata One',cursive",fontSize:17,fontWeight:900,color:'#fff',letterSpacing:'-.01em' }}>
-              {playerIdx !== null ? (VIDEOS[playerIdx]?.title || `Épisode ${VIDEOS[playerIdx]?.episode}`) : 'Kimetsu no Yaiba'}
+              {detailIdx !== null ? (VIDEOS[detailIdx]?.title || `Épisode ${VIDEOS[detailIdx]?.episode}`) : 'Kimetsu no Yaiba'}
             </span>
           </div>
           <div style={{ display:'flex',alignItems:'center',gap:8 }}>
@@ -242,9 +244,11 @@ export default function KnyPage({ onClose }) {
         </div>
 
         {/* Content */}
-        {playerIdx !== null ? (
-          <div style={{ flex:1,display:'flex',flexDirection:'column',overflow:'hidden' }}>
-            <VideoPlayer videos={VIDEOS} startIdx={playerIdx} onClose={() => setPlayerIdx(null)} color={COLOR} storageKey={NS} autoStart />
+        {detailIdx !== null ? (
+          <div ref={scrollRef} style={{ flex:1, overflowY:'auto', padding:'24px 28px 48px' }}>
+            <div style={{ maxWidth: 1760, margin: '0 auto' }}>
+              <EpisodeWatch videos={VIDEOS} startIdx={detailIdx} ns={NS} storageKey={NS} color={COLOR} color2={COLOR2} onSelect={openDetail} onClose={() => setDetailIdx(null)} />
+            </div>
           </div>
         ) : (
           <div ref={scrollRef} className="kny-scroll" style={{ flex:1,overflowY:'auto',padding:'24px 28px 48px' }}>
@@ -253,11 +257,8 @@ export default function KnyPage({ onClose }) {
               @media (max-width: 900px) { .kny-layout { grid-template-columns: 1fr; } }
             `}</style>
             <div className="kny-layout">
-              <InfoPanel watchedCount={watchedCount} total={VIDEOS.length} lastWatchedIdx={resumeIdx} onResume={() => openPlayer(resumeIdx)} chapterCount={chapterCount} />
+              <InfoPanel watchedCount={watchedCount} total={VIDEOS.length} lastWatchedIdx={resumeIdx} onResume={() => openDetail(resumeIdx)} chapterCount={chapterCount} />
               <div>
-                {detailIdx !== null && (
-                  <EpisodeDetailInline video={VIDEOS[detailIdx]} ns={NS} color={COLOR} color2={COLOR2} onPlay={() => openPlayer(detailIdx)} onClose={() => setDetailIdx(null)} />
-                )}
                 <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20 }}>
                   <div>
                     <h3 style={{ margin:'0 0 3px',fontSize:18,fontWeight:900,color:'#fff',letterSpacing:'-.01em' }}>Épisodes</h3>

@@ -4,6 +4,7 @@ import { ProgressRing } from './ProgressRing.jsx'
 import AnimeBackdrop, { ANIME_MOTIFS } from './AnimeBackdrop.jsx'
 import VIDEOS_RAW from '../data/koi-ameagari-videos.json'
 import EpisodeDetailInline from './EpisodeDetailInline.jsx'
+import EpisodeWatch from './EpisodeWatch.jsx'
 import RecommendedBanner from './RecommendedBanner.jsx'
 
 const VIDEOS = VIDEOS_RAW
@@ -229,10 +230,10 @@ export default function KoiAmeagariPage({ onClose }) {
   }, [])
 
   useEffect(() => {
-    const fn = e => { if (e.key === 'Escape' && playerIdx === null) onClose() }
+    const fn = e => { if (e.key === 'Escape' && detailIdx === null) onClose() }
     window.addEventListener('keydown', fn)
     return () => window.removeEventListener('keydown', fn)
-  }, [playerIdx, onClose])
+  }, [detailIdx, onClose])
 
   const markWatched = useCallback((idx) => {
     setProgress(prev => {
@@ -260,8 +261,9 @@ export default function KoiAmeagariPage({ onClose }) {
 
   const openDetail = useCallback((idx) => {
     setDetailIdx(idx)
+    markWatched(idx)
     requestAnimationFrame(() => scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' }))
-  }, [])
+  }, [markWatched])
 
   const playHandlers = useMemo(() => VIDEOS.map((_, i) => () => openDetail(i)), [openDetail])
 
@@ -283,18 +285,18 @@ export default function KoiAmeagariPage({ onClose }) {
           position:'relative',
         }}>
           <button
-            onClick={playerIdx !== null ? () => setPlayerIdx(null) : onClose}
+            onClick={detailIdx !== null ? () => setDetailIdx(null) : onClose}
             style={{ display:'flex',alignItems:'center',gap:7,background:'rgba(255,255,255,.06)',border:'1px solid rgba(255,255,255,.09)',borderRadius:10,color:'rgba(255,255,255,.72)',cursor:'pointer',padding:'8px 16px',fontSize:12.5,fontWeight:800,transition:'background .15s',fontFamily:'var(--body)' }}
             onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,.11)'}
             onMouseLeave={e => e.currentTarget.style.background='rgba(255,255,255,.06)'}
           >
-            ← {playerIdx !== null ? 'Épisodes' : 'Retour'}
+            ← {detailIdx !== null ? 'Épisodes' : 'Retour'}
           </button>
 
           <div style={{ position:'absolute',left:'50%',transform:'translateX(-50%)',display:'flex',alignItems:'center',gap:10 }}>
             <span style={{ fontSize:17,animation:'vyFloat 6s ease-in-out infinite' }}>🎵</span>
             <span style={{ fontFamily:"'Pirata One',cursive",fontSize:17,fontWeight:900,color:'#fff',letterSpacing:'-.01em' }}>
-              {playerIdx !== null ? (VIDEOS[playerIdx]?.title || `Épisode ${VIDEOS[playerIdx]?.episode}`) : "Koi wa Ameagari no You ni"}
+              {detailIdx !== null ? (VIDEOS[detailIdx]?.title || `Épisode ${VIDEOS[detailIdx]?.episode}`) : "Koi wa Ameagari no You ni"}
             </span>
           </div>
 
@@ -309,16 +311,11 @@ export default function KoiAmeagariPage({ onClose }) {
         </div>
 
         {/* Content */}
-        {playerIdx !== null ? (
-          <div style={{ flex:1,display:'flex',flexDirection:'column',overflow:'hidden' }}>
-            <VideoPlayer
-              videos={VIDEOS}
-              startIdx={playerIdx}
-              onClose={() => setPlayerIdx(null)}
-              color={COLOR}
-              storageKey={NS}
-              autoStart
-            />
+        {detailIdx !== null ? (
+          <div ref={scrollRef} style={{ flex:1, overflowY:'auto', padding:'24px 28px 48px' }}>
+            <div style={{ maxWidth: 1760, margin: '0 auto' }}>
+              <EpisodeWatch videos={VIDEOS} startIdx={detailIdx} ns={NS} storageKey={NS} color={COLOR} color2={COLOR2} onSelect={openDetail} onClose={() => setDetailIdx(null)} />
+            </div>
           </div>
         ) : (
           <div ref={scrollRef} className="vy-scroll" style={{ flex:1,overflowY:'auto',padding:'24px 28px 48px' }}>
@@ -341,13 +338,10 @@ export default function KoiAmeagariPage({ onClose }) {
                 watchedCount={watchedCount}
                 total={VIDEOS.length}
                 lastWatchedIdx={resumeIdx}
-                onResume={() => openPlayer(resumeIdx)}
+                onResume={() => openDetail(resumeIdx)}
               />
 
               <div>
-                {detailIdx !== null && (
-                  <EpisodeDetailInline video={VIDEOS[detailIdx]} ns={NS} animeTitle="Koi wa Ameagari no You ni" color={COLOR} color2={COLOR2} onPlay={() => openPlayer(detailIdx)} onClose={() => setDetailIdx(null)} />
-                )}
                 <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20 }}>
                   <div>
                     <h3 style={{ margin:'0 0 3px',fontSize:18,fontWeight:900,color:'#fff',letterSpacing:'-.01em' }}>
