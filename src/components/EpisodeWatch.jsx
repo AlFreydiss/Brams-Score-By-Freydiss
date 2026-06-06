@@ -4,9 +4,15 @@
 //  - bande-annonce de l'anime + épisodes suivants en bas
 // Partagée par toutes les pages d'animés.
 import { useState, useEffect, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import VideoPlayer from './VideoPlayer.jsx'
 import { getCachedSynopsis, fetchEpisodeSynopsis } from '../lib/episodeSynopsis.js'
 import { getAnimeMeta } from '../data/anime-meta.js'
+
+// ns (id animé) -> slug du manga ; le bouton "Lire le scan" n'apparaît que si le
+// fichier de scans existe réellement (glob), donc auto au fur et à mesure des uploads.
+const MANGA_FILES = import.meta.glob('../data/manga/*.json')
+const NS_TO_MANGA = { aot:'aot', sl:'solo-leveling', jjk:'jjk', kny:'kny', bluelock:'blue-lock', bc:'black-clover', fireforce:'fire-force', drstone:'dr-stone', kingdom:'kingdom', mha:'mha', nnt:'nnt', dbs:'dbs', tpn:'tpn' }
 
 export default function EpisodeWatch({
   videos, startIdx, ns, storageKey,
@@ -14,6 +20,9 @@ export default function EpisodeWatch({
   tags = [], animeSynopsis = '',
   onSelect, onClose,
 }) {
+  const navigate = useNavigate()
+  const mangaSlug = NS_TO_MANGA[ns]
+  const hasScan = mangaSlug && MANGA_FILES[`../data/manga/${mangaSlug}.json`]
   const video = videos[startIdx]
   const meta = getAnimeMeta(ns) || {}
   const animeTitle = meta.title || 'cet animé'
@@ -108,6 +117,9 @@ export default function EpisodeWatch({
           }}>
             <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 9, width: '100%', padding: '12px 0', borderRadius: 12, background: `linear-gradient(135deg, ${color}, ${color2})`, border: `1px solid ${color}`, color: '#fff', fontSize: 13.5, fontWeight: 800, letterSpacing: '.2px', boxShadow: `0 10px 30px ${color}44` }}>▶ Trailer de l'anime</span>
           </a>
+          {hasScan && (
+            <button onClick={() => navigate(`/manga/${mangaSlug}`)} style={{ marginTop: 10, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 9, width: '100%', padding: '11px 0', borderRadius: 12, cursor: 'pointer', background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.14)', color: 'rgba(255,255,255,.85)', fontSize: 13, fontWeight: 800 }}>📖 Lire le scan (manga)</button>
+          )}
         </div>
       </div>
 
