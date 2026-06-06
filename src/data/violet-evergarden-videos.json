@@ -453,11 +453,13 @@
     "episode": 101,
     "title": "Violet Evergarden, le film",
     "kind": "film",
-    "gain": 2.3,
+    "episodeLabel": "Film",
     "badge": "VF/VOSTFR",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden/the-movie.mp4",
     "season": "Film",
     "arc": "Film",
+    "synopsis": "Alors que le monde avance après la guerre, Violet continue d'écrire des lettres qui rapprochent les cœurs. Un nouvel indice ravive son espoir de revoir celui qui lui a appris les mots les plus importants. Un voyage émouvant sur l'amour, le deuil et le sens des mots.",
+    "note": 9.2,
     "audio": [
       {
         "label": "Japonais",

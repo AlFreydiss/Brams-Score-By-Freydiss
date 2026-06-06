@@ -178,12 +178,13 @@ function Btn({ onClick, title, children, disabled = false, active = false, color
 }
 
 // ── Barre de progression ──────────────────────────────────────────────────────
-function ProgressBar({ currentTime, duration, buffered, onSeek, color }) {
+function ProgressBar({ currentTime, duration, buffered, onSeek, color, previewSrc, previewTitle }) {
   const barRef = useRef(null)
   const [dragging, setDragging] = useState(false)
   const [hoverPct, setHoverPct] = useState(null)
   const pct = duration ? Math.min(1, currentTime / duration) : 0
   const bufPct = duration ? Math.min(1, buffered / duration) : 0
+  const hoverTime = hoverPct !== null && duration ? hoverPct * duration : 0
 
   const getPos = useCallback((e) => {
     const rect = barRef.current?.getBoundingClientRect()
@@ -212,10 +213,16 @@ function ProgressBar({ currentTime, duration, buffered, onSeek, color }) {
       onMouseLeave={() => setHoverPct(null)}
       style={{ width: '100%', height: 20, display: 'flex', alignItems: 'center', cursor: 'pointer', position: 'relative' }}
     >
-      {/* Tooltip temps */}
+      {/* Tooltip temps + preview thumbnail (comme les boxes du screenshot) */}
       {hoverPct !== null && (
-        <div style={{ position: 'absolute', bottom: 20, left: `${hoverPct * 100}%`, transform: 'translateX(-50%)', background: 'rgba(0,0,0,0.85)', color: '#fff', fontSize: 11, fontWeight: 700, padding: '2px 7px', borderRadius: 5, pointerEvents: 'none', whiteSpace: 'nowrap' }}>
-          {fmt((hoverPct) * duration)}
+        <div style={{ position: 'absolute', bottom: 24, left: `${hoverPct * 100}%`, transform: 'translateX(-50%)', width: previewSrc ? 160 : 'auto', overflow: 'hidden', background: 'rgba(8,9,12,0.94)', color: '#fff', fontSize: 11, fontWeight: 700, border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, pointerEvents: 'none', whiteSpace: 'nowrap', boxShadow: '0 16px 50px rgba(0,0,0,0.6)', backdropFilter: 'blur(16px)' }}>
+          {previewSrc && (
+            <img src={previewSrc} alt="" style={{ width: '100%', aspectRatio: '16 / 9', objectFit: 'cover', display: 'block', filter: 'brightness(1.06) saturate(1.1)' }} />
+          )}
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, padding: previewSrc ? '6px 9px' : '4px 9px', fontSize: 11 }}>
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 110 }}>{previewTitle || 'Aperçu'}</span>
+            <span style={{ color, fontVariantNumeric: 'tabular-nums' }}>{fmt(hoverTime)}</span>
+          </div>
         </div>
       )}
       <div style={{ width: '100%', height: 4, background: 'rgba(255,255,255,0.15)', borderRadius: 4, position: 'relative', overflow: 'visible' }}>
@@ -1042,6 +1049,8 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                 buffered={buffered}
                 onSeek={seek}
                 color={color}
+                previewSrc={video?.thumbnail}
+                previewTitle={displayTitle || epLabel}
               />
 
               {/* Ligne de contrôles */}
