@@ -331,6 +331,18 @@ export async function fetchBerryShopState(discordId) {
   }
 }
 
+// Fond d'opening équipé d'un membre, lisible PUBLIQUEMENT (RPC SECURITY DEFINER
+// 20260606_member_opening_bg.sql) — sert à afficher le fond payé/équipé d'autrui
+// sur son profil, même pour un visiteur qui ne possède pas ce fond.
+export async function getMemberOpeningBg(discordId) {
+  if (!supabase || !discordId) return null
+  try {
+    const { data, error } = await supabase.rpc('get_member_opening_bg', { p_discord_id: String(discordId) })
+    if (error) return null
+    return data || null
+  } catch { return null }
+}
+
 export async function purchaseShopItem(itemId) {
   if (!supabase) return { error: { message: 'Supabase non configuré.' } }
 

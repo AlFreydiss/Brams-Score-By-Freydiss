@@ -3,7 +3,7 @@
 // Réutilise les fetchers existants — ne touche pas à la logique berries/Discord.
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react'
 import { fetchMemberProfile } from '../lib/supabase.js'
-import { fetchBerryShopState } from '../lib/berryShop.js'
+import { fetchBerryShopState, getMemberOpeningBg } from '../lib/berryShop.js'
 import { getProfileSettings } from '../lib/profile.js'
 import { getUserPosts } from '../lib/feed.js'
 import { getFollowState } from '../lib/social.js'
@@ -18,6 +18,7 @@ export function useProfileData(discordId) {
 
   const [member,     setMember]     = useState(null)
   const [shopData,   setShopData]   = useState(null)
+  const [publicBg,   setPublicBg]   = useState(null) // fond équipé de la cible (lecture publique)
   const [settings,   setSettings]   = useState(null)
   const [postsCount, setPostsCount] = useState(null)
   const [followStats,setFollowStats]= useState(null)
@@ -36,7 +37,7 @@ export function useProfileData(discordId) {
     setError(null)
     if (!silent) {
       setLoading(true)
-      setMember(null); setShopData(null); setSettings(null); setPostsCount(null); setFollowStats(null)
+      setMember(null); setShopData(null); setPublicBg(null); setSettings(null); setPostsCount(null); setFollowStats(null)
     }
 
     // member = source de vérité affichage (bloque le rendu principal au 1er chargement)
@@ -46,6 +47,9 @@ export function useProfileData(discordId) {
 
     // boutique + perso + posts en parallèle, sans bloquer l'affichage
     fetchBerryShopState(discordId).then(s => { if (!ignore && s) setShopData(s) }).catch(() => {})
+    // Fond équipé de la cible via RPC public (la RLS empêche de lire l'inventaire
+    // d'autrui → sans ça le fond payé n'était visible que par son propriétaire).
+    getMemberOpeningBg(discordId).then(bg => { if (!ignore) setPublicBg(bg || null) }).catch(() => {})
     getProfileSettings(discordId).then(s => { if (!ignore) setSettings(s) }).catch(() => {})
     getUserPosts(discordId).then(p => { if (!ignore) setPostsCount(Array.isArray(p) ? p.length : 0) }).catch(() => {})
     getFollowState(discordId).then(f => { if (!ignore && f?.ok !== false) setFollowStats(f) }).catch(() => {})
@@ -123,8 +127,11 @@ export function useProfileData(discordId) {
 
   const equippedBg = useMemo(() => {
     const eq = shopData?.inventory?.find(i => i?.equipped && i?.shop_items?.reward_type === 'opening_background')
-    return eq?.item_id || null
-  }, [shopData])
+    // Priorité à l'inventaire (instantané sur SON profil) ; sinon le fond public
+    // de la cible (profil d'autrui, où la RLS masque l'inventaire). → fond payé
+    // visible par tout le monde, même sans posséder le fond.
+    return eq?.item_id || publicBg || null
+  }, [shopData, publicBg])
 
   const isOwnProfile    = String(myId) === String(discordId)
   const profileIsCreator = isCreator(discordId)
