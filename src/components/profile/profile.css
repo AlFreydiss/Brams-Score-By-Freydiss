@@ -364,12 +364,19 @@
   transition: transform .2s, border-color .2s, background .2s; opacity: .5;
   animation: pfxFade .4s ease-out both;
 }
-.pfx-ach.on { opacity: 1; }
-.pfx-ach.on:hover { transform: translateY(-3px); border-color: rgba(212,160,23,0.3); }
+/* Succès débloqué : mis en valeur en or chaud (demande Freydiss "en beau jaune"). */
+.pfx-ach.on {
+  opacity: 1;
+  background: linear-gradient(135deg, rgba(212,160,23,0.16), rgba(212,160,23,0.05));
+  border-color: rgba(212,160,23,0.42);
+  box-shadow: inset 0 1px 0 rgba(255,221,128,0.12), 0 4px 18px rgba(212,160,23,0.10);
+}
+.pfx-ach.on:hover { transform: translateY(-3px); border-color: rgba(212,160,23,0.6); }
 .pfx-ach-icon { font-size: 27px; flex-shrink: 0; filter: grayscale(1) opacity(.5); }
-.pfx-ach.on .pfx-ach-icon { filter: none; }
+.pfx-ach.on .pfx-ach-icon { filter: drop-shadow(0 0 6px rgba(212,160,23,0.5)); }
 .pfx-ach-body { flex: 1; min-width: 0; }
 .pfx-ach-body strong { display: block; font-size: 13.5px; color: #fff; font-weight: 750; }
+.pfx-ach.on .pfx-ach-body strong { color: #ffd970; }
 .pfx-ach-body span { font-size: 11px; color: var(--txt-faint); }
 .pfx-ach-check { font-size: 16px; color: var(--gold); flex-shrink: 0; }
 .pfx-ach:not(.on) .pfx-ach-check { color: rgba(255,255,255,0.18); }

@@ -21,7 +21,13 @@ async function authHeaders() {
     'X-Client-Id': getTierListClientId(),
   }
   try {
-    const { data } = supabase ? await supabase.auth.getSession() : { data:null }
+    // getSession() peut rester bloqué indéfiniment selon l'état d'auth Supabase.
+    // Comme cet await précède le timeout du fetch, un hang ici laissait la
+    // Communauté en "Chargement…" à l'infini. On le borne à 4s : à défaut on
+    // part en invité (X-Client-Id couvre déjà l'autosave/lecture publique).
+    const sessionP = supabase ? supabase.auth.getSession() : Promise.resolve({ data: null })
+    const timeoutP = new Promise(resolve => setTimeout(() => resolve({ data: null }), 4000))
+    const { data } = await Promise.race([sessionP, timeoutP])
     if (data?.session?.access_token) headers.Authorization = `Bearer ${data.session.access_token}`
   } catch {
     // Guest autosave still works through X-Client-Id.
