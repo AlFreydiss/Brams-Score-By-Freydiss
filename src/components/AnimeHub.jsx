@@ -1595,6 +1595,69 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
           forceScrolled : le Hub scrolle dans un conteneur interne (pas window), donc on force le style « solide ». */}
       <Navbar forceScrolled />
 
+      {/* ── Panneau latéral gauche « Brams Score » (carte blanche) — comble le vide
+           à gauche sur grands écrans, masqué en dessous de 1740px pour ne pas chevaucher. ── */}
+      <aside className="ah-side-rail" style={{ position:'fixed', left:14, top:150, width:236, zIndex:90, display:'flex', flexDirection:'column', gap:13, maxHeight:'calc(100vh - 172px)', overflowY:'auto' }}>
+        <style>{`@media (max-width:1740px){ .ah-side-rail{ display:none !important } } .ah-side-rail::-webkit-scrollbar{ width:0 }`}</style>
+
+        {/* Marque */}
+        <div style={{ borderRadius:16, padding:'16px 16px 15px', background:'linear-gradient(160deg, rgba(191,164,106,0.14), rgba(167,139,250,0.10), rgba(10,12,18,0.7))', border:'1px solid rgba(191,164,106,0.28)', boxShadow:'0 14px 40px rgba(0,0,0,.4)' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:9 }}>
+            <div style={{ width:30, height:30, borderRadius:9, background:'linear-gradient(135deg,#BFA46A,#a78bfa)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16 }}>🏴‍☠️</div>
+            <div style={{ fontFamily:"'Pirata One', cursive", fontWeight:900, fontSize:18, color:'#f4f0e6', lineHeight:1 }}>Brams Score</div>
+          </div>
+          <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)', marginTop:7, lineHeight:1.5 }}>Ton univers anime & scan, rien que pour toi.</div>
+        </div>
+
+        {/* Stats */}
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8 }}>
+          {[['Séries', sortedAnimes.length, '#BFA46A'], ['Vus', watchedCount, '#34d399'], ['En cours', continueWatching.length, '#a78bfa']].map(([k,v,c]) => (
+            <div key={k} style={{ padding:'10px 6px', borderRadius:12, background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.07)', textAlign:'center' }}>
+              <div style={{ fontSize:18, fontWeight:900, color:c, lineHeight:1 }}>{v}</div>
+              <div style={{ fontSize:8.5, fontWeight:800, letterSpacing:'.06em', textTransform:'uppercase', color:'rgba(255,255,255,0.4)', marginTop:4 }}>{k}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Reprendre */}
+        {resumeTarget && (
+          <button onClick={() => handleClick(resumeTarget.id)} style={{ display:'flex', alignItems:'center', gap:10, padding:'11px 13px', borderRadius:13, cursor:'pointer', textAlign:'left', background:'linear-gradient(135deg, rgba(167,139,250,0.25), rgba(124,196,224,0.16))', border:'1px solid rgba(167,139,250,0.4)', color:'#fff' }}>
+            <span style={{ fontSize:18 }}>▶</span>
+            <span style={{ minWidth:0 }}>
+              <span style={{ display:'block', fontSize:8.5, fontWeight:800, letterSpacing:'.1em', textTransform:'uppercase', color:'rgba(255,255,255,0.55)' }}>Reprendre</span>
+              <span style={{ display:'block', fontSize:12.5, fontWeight:800, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{resumeTarget.title}</span>
+            </span>
+          </button>
+        )}
+
+        {/* Suggestion du jour */}
+        {sortedAnimes.length > 0 && (() => {
+          const sug = sortedAnimes[(new Date().getDate() * 7) % sortedAnimes.length]
+          if (!sug) return null
+          return (
+            <div style={{ borderRadius:14, overflow:'hidden', background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.08)' }}>
+              <button onClick={() => handleClick(sug.id)} style={{ display:'block', width:'100%', padding:0, border:'none', cursor:'pointer', background:'transparent', textAlign:'left' }}>
+                <div style={{ position:'relative', aspectRatio:'16/10', background:'#0a0f1c' }}>
+                  {sug.coverImage && <img src={sug.coverImage} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} />}
+                  <div style={{ position:'absolute', inset:0, background:'linear-gradient(180deg,transparent 45%,rgba(0,0,0,.82))' }} />
+                  <div style={{ position:'absolute', top:8, left:8, fontSize:8, fontWeight:900, letterSpacing:'.12em', textTransform:'uppercase', color:'#BFA46A', background:'rgba(0,0,0,.5)', borderRadius:100, padding:'3px 9px' }}>✦ Suggestion du jour</div>
+                  <div style={{ position:'absolute', bottom:8, left:10, right:10 }}>
+                    <div style={{ fontSize:13, fontWeight:800, color:'#fff', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{sug.title}</div>
+                    <div style={{ fontSize:10, color:'rgba(255,255,255,0.6)' }}>{(sug.genres || []).slice(0,2).join(' · ')}</div>
+                  </div>
+                </div>
+              </button>
+            </div>
+          )
+        })()}
+
+        {/* Surprends-moi */}
+        <button onClick={() => { const r = sortedAnimes[Math.floor(Math.random() * sortedAnimes.length)]; if (r) handleClick(r.id) }}
+          style={{ padding:'10px 0', borderRadius:12, cursor:'pointer', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.12)', color:'rgba(255,255,255,0.85)', fontSize:12.5, fontWeight:800 }}>
+          🎲 Surprends-moi
+        </button>
+      </aside>
+
       {/* Fond 3D : posters d'animés qui vagabondent (derrière tout, non cliquable) */}
       <div style={{ position:'absolute', inset:0, zIndex:0, pointerEvents:'none' }}>
         <Suspense fallback={null}>
