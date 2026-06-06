@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react'
 import VideoPlayer from './VideoPlayer.jsx'
+import EpisodeDetailInline from './EpisodeDetailInline.jsx'
 import { ProgressRing } from './ProgressRing.jsx'
 import AnimeBackdrop, { ANIME_MOTIFS } from './AnimeBackdrop.jsx'
 import VIDEOS_RAW from '../data/mha-videos.json'
@@ -236,6 +237,7 @@ function InfoPanel({ watchedCount, total, seasonKey, onResume, resumeEp }) {
 
 export default function MhaPage({ onClose }) {
   const [playerIdx,  setPlayerIdx]  = useState(null)
+  const [detailIdx, setDetailIdx] = useState(null)
   const [progress,   setProgress]   = useState(loadProgress)
   const [activeSeason, setActiveSeason] = useState('S01')
   const scrollRef = useRef(null)
@@ -289,7 +291,11 @@ export default function MhaPage({ onClose }) {
     markWatched(globalIdx)
   }, [markWatched])
 
-  const playHandlers = useMemo(() => VIDEOS.map((_, i) => () => openPlayer(i)), [openPlayer])
+  const openDetail = useCallback((idx) => {
+    setDetailIdx(idx)
+    requestAnimationFrame(() => scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' }))
+  }, [])
+  const playHandlers = useMemo(() => VIDEOS.map((_, i) => () => openDetail(i)), [openDetail])
 
   const seasonInfo = SEASONS.find(s => s.key === activeSeason)
 
@@ -345,6 +351,7 @@ export default function MhaPage({ onClose }) {
               onClose={() => setPlayerIdx(null)}
               color={COLOR}
               storageKey={NS}
+              autoStart
             />
           </div>
         ) : (
@@ -401,6 +408,9 @@ export default function MhaPage({ onClose }) {
                   })}
                 </div>
 
+                {detailIdx !== null && (
+                  <EpisodeDetailInline video={VIDEOS[detailIdx]} ns={NS} color={COLOR} color2={COLOR2} onPlay={() => openPlayer(detailIdx)} onClose={() => setDetailIdx(null)} />
+                )}
                 {/* Season header */}
                 <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20 }}>
                   <div>

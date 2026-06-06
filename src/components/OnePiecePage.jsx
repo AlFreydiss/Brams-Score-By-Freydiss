@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react'
 import VideoPlayer from './VideoPlayer.jsx'
+import EpisodeDetailInline from './EpisodeDetailInline.jsx'
 import { ProgressRing } from './ProgressRing.jsx'
 import AnimeBackdrop, { ANIME_MOTIFS } from './AnimeBackdrop.jsx'
 import VIDEOS_RAW from '../data/onepiece-videos.js'
@@ -213,6 +214,7 @@ function InfoPanel({ watchedCount, availableCount, resumeIdx, onResume }) {
 
 export default function OnePiecePage({ onClose }) {
   const [playerIdx, setPlayerIdx] = useState(null)
+  const [detailIdx, setDetailIdx] = useState(null)
   const [progress,  setProgress]  = useState(loadProgress)
   const [arcFilter, setArcFilter] = useState('Tous')
   const scrollRef = useRef(null)
@@ -252,7 +254,11 @@ export default function OnePiecePage({ onClose }) {
     markWatched(idx)
   }, [markWatched])
 
-  const playHandlers = useMemo(() => VIDEOS.map((_, i) => () => openPlayer(i)), [openPlayer])
+  const openDetail = useCallback((idx) => {
+    setDetailIdx(idx)
+    requestAnimationFrame(() => scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' }))
+  }, [])
+  const playHandlers = useMemo(() => VIDEOS.map((_, i) => () => openDetail(i)), [openDetail])
 
   const arcs = useMemo(() => ['Tous', ...new Set(VIDEOS.map(v => v.arc).filter(Boolean))], [])
 
@@ -292,7 +298,7 @@ export default function OnePiecePage({ onClose }) {
         {/* Content */}
         {playerIdx !== null ? (
           <div style={{ flex:1,display:'flex',flexDirection:'column',overflow:'hidden' }}>
-            <VideoPlayer videos={VIDEOS} startIdx={playerIdx} onClose={() => setPlayerIdx(null)} color={COLOR} storageKey={NS} />
+            <VideoPlayer videos={VIDEOS} startIdx={playerIdx} onClose={() => setPlayerIdx(null)} color={COLOR} storageKey={NS} autoStart />
           </div>
         ) : (
           <div ref={scrollRef} className="op-scroll" style={{ flex:1,overflowY:'auto' }}>
@@ -300,6 +306,9 @@ export default function OnePiecePage({ onClose }) {
               <InfoPanel watchedCount={watchedCount} availableCount={availableCount} resumeIdx={resumeIdx} onResume={() => openPlayer(resumeIdx)} />
 
               <div>
+                {detailIdx !== null && (
+                  <EpisodeDetailInline video={VIDEOS[detailIdx]} ns={NS} color={COLOR} color2={COLOR2} onPlay={() => openPlayer(detailIdx)} onClose={() => setDetailIdx(null)} />
+                )}
                 <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16,flexWrap:'wrap',gap:10 }}>
                   <div>
                     <h3 style={{ margin:'0 0 3px',fontSize:18,fontWeight:900,color:'#fff' }}>Épisodes</h3>

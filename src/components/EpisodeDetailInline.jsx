@@ -3,12 +3,20 @@
 // s'affiche en haut de la liste ; le plein écran n'arrive qu'au bouton Lecture.
 import { useState, useEffect } from 'react'
 import { getCachedSynopsis, fetchEpisodeSynopsis } from '../lib/episodeSynopsis.js'
+import { getAnimeMeta } from '../data/anime-meta.js'
 
 export default function EpisodeDetailInline({
-  video, ns, animeTitle, note = 8.5,
+  video, ns, animeTitle, note,
   color = '#8b7cff', color2 = '#b8a8ff',
   onPlay, onClose,
 }) {
+  // Titre + note dérivés de anime-meta si non fournis → l'insertion par page reste
+  // une chaîne constante (mêmes props partout), sans avoir à écrire le titre à la main.
+  const meta = getAnimeMeta(ns) || {}
+  const title0 = animeTitle || meta.title || 'cet animé'
+  const noteVal = Number.isFinite(note) ? note : (Number.isFinite(meta.note) ? meta.note : 8.5)
+  animeTitle = title0
+  note = noteVal
   const isFilm = video?.kind === 'film'
   const ep = video?.episode
   const seasonLabel = video?.season ? `Saison ${String(video.season).replace(/^S/i, '')}` : 'Saison 1'

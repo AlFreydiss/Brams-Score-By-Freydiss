@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react'
 import VideoPlayer from './VideoPlayer.jsx'
+import EpisodeDetailInline from './EpisodeDetailInline.jsx'
 import { Reader } from './MangaReader.jsx'
 import { ProgressRing } from './ProgressRing.jsx'
 import AnimeBackdrop, { ANIME_MOTIFS } from './AnimeBackdrop.jsx'
@@ -185,6 +186,7 @@ function InfoPanel({ watchedCount, total, lastWatchedIdx, onResume, chapterCount
 
 export default function FireForcePage({ onClose }) {
   const [playerIdx, setPlayerIdx] = useState(null)
+  const [detailIdx, setDetailIdx] = useState(null)
   const [progress, setProgress]   = useState(loadProgress)
   const [scanProg, setScanProg]   = useState(loadScanProgress)
   const [reading, setReading]     = useState(null)
@@ -209,7 +211,11 @@ export default function FireForcePage({ onClose }) {
   const watchedCount = useMemo(() => VIDEOS.filter(v => progress[keyOf(v)]?.completed).length, [progress])
   const resumeIdx = useMemo(() => { const i = VIDEOS.findIndex(v => !progress[keyOf(v)]?.completed); return i >= 0 ? i : 0 }, [progress])
   const openPlayer = useCallback((idx) => { setPlayerIdx(idx); markWatched(idx) }, [markWatched])
-  const playHandlers = useMemo(() => VIDEOS.map((_, i) => () => openPlayer(i)), [openPlayer])
+  const openDetail = useCallback((idx) => {
+    setDetailIdx(idx)
+    requestAnimationFrame(() => scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' }))
+  }, [])
+  const playHandlers = useMemo(() => VIDEOS.map((_, i) => () => openDetail(i)), [openDetail])
 
   const episodes = VIDEOS.map((v, i) => ({ v, i })).filter(x => !x.v.kind)
   const ovas = VIDEOS.map((v, i) => ({ v, i })).filter(x => x.v.kind === 'ova')
@@ -269,7 +275,7 @@ export default function FireForcePage({ onClose }) {
         {/* Content */}
         {playerIdx !== null ? (
           <div style={{ flex:1,display:'flex',flexDirection:'column',overflow:'hidden' }}>
-            <VideoPlayer videos={VIDEOS} startIdx={playerIdx} onClose={() => setPlayerIdx(null)} color={COLOR} storageKey={NS} />
+            <VideoPlayer videos={VIDEOS} startIdx={playerIdx} onClose={() => setPlayerIdx(null)} color={COLOR} storageKey={NS} autoStart />
           </div>
         ) : (
           <div ref={scrollRef} className="ff-scroll" style={{ flex:1,overflowY:'auto',padding:'24px 28px 48px' }}>
@@ -280,6 +286,9 @@ export default function FireForcePage({ onClose }) {
             <div className="ff-layout">
               <InfoPanel watchedCount={watchedCount} total={VIDEOS.length} lastWatchedIdx={resumeIdx} onResume={() => openPlayer(resumeIdx)} chapterCount={chapterCount} readCount={readCount} />
               <div>
+                {detailIdx !== null && (
+                  <EpisodeDetailInline video={VIDEOS[detailIdx]} ns={NS} color={COLOR} color2={COLOR2} onPlay={() => openPlayer(detailIdx)} onClose={() => setDetailIdx(null)} />
+                )}
                 <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20 }}>
                   <div>
                     <h3 style={{ margin:'0 0 3px',fontSize:18,fontWeight:900,color:'#fff',letterSpacing:'-.01em' }}>Chapitres Manga</h3>

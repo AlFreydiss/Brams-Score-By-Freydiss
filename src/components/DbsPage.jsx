@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react'
 import VideoPlayer from './VideoPlayer.jsx'
+import EpisodeDetailInline from './EpisodeDetailInline.jsx'
 import { ProgressRing } from './ProgressRing.jsx'
 import AnimeBackdrop, { ANIME_MOTIFS } from './AnimeBackdrop.jsx'
 import { Reader } from './MangaReader.jsx'
@@ -255,6 +256,7 @@ function ScanInfoPanel({ readCount, total }) {
 export default function DbsPage({ onClose }) {
   const [tab,        setTab]        = useState('videos')
   const [playerIdx,  setPlayerIdx]  = useState(null)
+  const [detailIdx, setDetailIdx] = useState(null)
   const [progress,   setProgress]   = useState(loadProgress)
   const [scanProg,   setScanProg]   = useState(loadScanProgress)
   const [reading,    setReading]    = useState(null)
@@ -294,7 +296,8 @@ export default function DbsPage({ onClose }) {
     markWatched(idx)
   }, [markWatched])
 
-  const playHandlers = useMemo(() => VIDEOS.map((_, i) => () => openPlayer(i)), [openPlayer])
+  const openDetail = useCallback((idx) => setDetailIdx(idx), [])
+  const playHandlers = useMemo(() => VIDEOS.map((_, i) => () => openDetail(i)), [openDetail])
 
   const watchedCount = useMemo(() =>
     Object.values(progress).filter(v => v?.completed).length, [progress])
@@ -388,6 +391,9 @@ export default function DbsPage({ onClose }) {
                   onResume={() => openPlayer(resumeIdx)}
                 />
                 <div>
+                  {detailIdx !== null && (
+                    <EpisodeDetailInline video={VIDEOS[detailIdx]} ns={NS} color={COLOR} color2={COLOR2} onPlay={() => openPlayer(detailIdx)} onClose={() => setDetailIdx(null)} />
+                  )}
                   <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:18,gap:12 }}>
                     <div>
                       <h3 style={{ margin:0,fontFamily:"'Pirata One',cursive",fontSize:22,fontWeight:900,color:'#fff',letterSpacing:'-.01em' }}>Épisodes · Dragon Ball Super</h3>
@@ -496,6 +502,7 @@ export default function DbsPage({ onClose }) {
           onClose={() => setPlayerIdx(null)}
           color={COLOR}
           storageKey={`${NS}_vp`}
+          autoStart
         />
       )}
     </>
