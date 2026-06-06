@@ -46,11 +46,12 @@ function saveVideoProgress(storageKey, progress) {
 const VIDEO_PREFS_KEY = 'brams_video_preferences'
 // Défaut voulu : gros texte, sans fond, contour + ombre (lisible sur l'image).
 const DEFAULT_SUBTITLE_STYLE = {
-  size: 30,
+  size: 34,
   background: 0,
   color: '#ffffff',
   outline: true,
-  weight: 700,
+  outlineColor: '#000000', // couleur du contour, personnalisable
+  weight: 800,
   bottom: 110,
 }
 
@@ -534,8 +535,12 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
               ctx.fillRect(cx - tw / 2 - 12 * dpr, ly - size, tw + 24 * dpr, lineH)
             }
             if (st.outline) {
-              ctx.lineWidth = Math.max(2, size * 0.14); ctx.lineJoin = 'round'
-              ctx.strokeStyle = '#000'; ctx.strokeText(ln, cx, ly)
+              // Contour plus épais + arrondi + ombre portée légère sous le tracé →
+              // lisibilité maximale sur n'importe quelle image. Couleur au choix.
+              ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 3 * dpr; ctx.shadowOffsetY = dpr
+              ctx.lineWidth = Math.max(3, size * 0.18); ctx.lineJoin = 'round'; ctx.miterLimit = 2
+              ctx.strokeStyle = st.outlineColor || '#000'; ctx.strokeText(ln, cx, ly)
+              ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0
             } else {
               ctx.shadowColor = 'rgba(0,0,0,0.85)'; ctx.shadowBlur = 4 * dpr; ctx.shadowOffsetY = dpr
             }
@@ -1131,11 +1136,21 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                           onMouseLeave={e => e.currentTarget.style.background = 'none'}
                         >{label}</button>
                       ))}
-                      <div style={{ display: 'flex', gap: 5, padding: '6px 10px 8px' }}>
-                        {['#ffffff', '#ffe66d', '#8be9ff'].map(c => (
+                      <div style={{ padding: '2px 14px 3px', color: 'rgba(255,255,255,0.42)', fontSize: 9.5, fontWeight: 800, letterSpacing: '.1em', textTransform: 'uppercase' }}>Couleur du texte</div>
+                      <div style={{ display: 'flex', gap: 5, padding: '4px 10px 6px' }}>
+                        {['#ffffff', '#ffe66d', '#8be9ff', '#ff8fab', '#9dff8f'].map(c => (
                           <button key={c} onClick={() => updateSubtitleStyle({ color: c })}
                             title={c}
                             style={{ flex: 1, height: 22, borderRadius: 5, border: `1px solid ${subtitleStyle.color === c ? color : 'rgba(255,255,255,0.2)'}`, background: c, cursor: 'pointer' }}
+                          />
+                        ))}
+                      </div>
+                      <div style={{ padding: '2px 14px 3px', color: 'rgba(255,255,255,0.42)', fontSize: 9.5, fontWeight: 800, letterSpacing: '.1em', textTransform: 'uppercase' }}>Couleur du contour</div>
+                      <div style={{ display: 'flex', gap: 5, padding: '4px 10px 8px' }}>
+                        {['#000000', '#3a2d6d', '#7a1020', '#0a3a2a', '#ffffff'].map(c => (
+                          <button key={c} onClick={() => updateSubtitleStyle({ outline: true, outlineColor: c })}
+                            title={c}
+                            style={{ flex: 1, height: 22, borderRadius: 5, border: `1px solid ${(subtitleStyle.outlineColor || '#000000') === c ? color : 'rgba(255,255,255,0.2)'}`, background: c, cursor: 'pointer' }}
                           />
                         ))}
                       </div>
