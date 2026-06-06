@@ -1063,19 +1063,16 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                   note={meta.note}
                   youtube={meta.youtube}
                   color={color}
+                  onPlay={togglePlay}
                 />
               )
             })()}
 
-            {/* ── Big play icon au centre ── */}
-            {!playing && (
-              <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, pointerEvents: 'none', zIndex: 4 }}>
-                <div style={{ width: 84, height: 84, borderRadius: '50%', background: `${color}e6`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, color: '#fff', backdropFilter: 'blur(4px)', border: '1px solid rgba(255,255,255,0.22)', animation: !started ? 'vpPlayPulse 2.4s ease-in-out infinite' : 'none', boxShadow: `0 10px 40px rgba(0,0,0,.5)` }}>▶</div>
-                {!started && (
-                  <div style={{ fontSize: 12.5, fontWeight: 800, letterSpacing: '.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.82)', textShadow: '0 2px 12px rgba(0,0,0,0.8)' }}>
-                    Lancer la lecture
-                  </div>
-                )}
+            {/* ── Icône play centrale : seulement en pause PENDANT la lecture ──
+                 (en pré-lecture, c'est la carte centrale qui porte le bouton Lecture) */}
+            {started && !playing && (
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', zIndex: 4 }}>
+                <div style={{ width: 80, height: 80, borderRadius: '50%', background: `${color}e6`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 30, color: '#fff', backdropFilter: 'blur(4px)', border: '1px solid rgba(255,255,255,0.22)', boxShadow: `0 10px 40px rgba(0,0,0,.5)` }}>▶</div>
               </div>
             )}
 
