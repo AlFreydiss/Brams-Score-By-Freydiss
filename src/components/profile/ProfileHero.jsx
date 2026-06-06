@@ -15,8 +15,6 @@ export default function ProfileHero({ data, copied, onShare, onEdit, onAvatar, o
 
   const bannerUrl = settings?.banner_url || null
   const displayName = member?.username || `Pirate #${String(member?.uid || '').slice(-4)}`
-  const link = settings?.link || null
-  const linkLabel = link ? link.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '') : null
 
   const stats = [
     { key: 'posts',     val: postsCount == null ? '—' : fmtNum(postsCount),                 lbl: 'publications' },
@@ -94,7 +92,6 @@ export default function ProfileHero({ data, copied, onShare, onEdit, onAvatar, o
             {settings?.bio   && <p className="pfx-ig-biotext">{settings.bio}</p>}
             <div className="pfx-ig-meta">
               <span>฿ {fmtB(member?.berrys || 0)} de prime</span>
-              {link && <a href={link} target="_blank" rel="noopener noreferrer nofollow" className="pfx-ig-link">🔗 {linkLabel}</a>}
             </div>
           </div>
         </div>
