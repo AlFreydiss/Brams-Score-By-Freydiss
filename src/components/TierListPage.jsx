@@ -957,12 +957,14 @@ const CSS = `
   .saved-list-card:hover { border-color:rgba(191,164,106,.28) !important; }
   ::-webkit-scrollbar { width:4px; height:4px; }
   ::-webkit-scrollbar-thumb { background:rgba(191,164,106,.18); border-radius:4px; }
+  .tl-tabs::-webkit-scrollbar { display:none; }
 `
 
 // ── Main Export ───────────────────────────────────────────────────────────────
 export default function TierListPage() {
   const { userId, discordId, displayName } = useAuth()
   const editorWide = useMediaQuery('(min-width: 1180px)')
+  const isMobile = useMediaQuery('(max-width: 720px)')
   const initialDraftRef = useRef(null)
 
   // ── Tab
@@ -1555,9 +1557,11 @@ export default function TierListPage() {
         position:'sticky', top:72, zIndex:50,
         background:'rgba(8,9,13,.95)', backdropFilter:'blur(24px)',
         borderBottom:`1px solid ${G.border}`,
-        padding:'0 20px',
+        padding: isMobile ? '0 12px' : '0 20px',
       }}>
-        <div style={{ maxWidth:1600, margin:'0 auto', display:'flex', alignItems:'center', gap:14, height:60 }}>
+        <div style={{ maxWidth:1600, margin:'0 auto', display:'flex', alignItems:'center', gap: isMobile ? 10 : 14,
+          minWidth:0, flexWrap: isMobile ? 'wrap' : 'nowrap', rowGap:8,
+          ...(isMobile ? { height:'auto', minHeight:60, paddingTop:8, paddingBottom:8 } : { height:60 }) }}>
 
           {/* Brand */}
           <div style={{ display:'flex', alignItems:'center', gap:10, flexShrink:0 }}>
@@ -1581,9 +1585,11 @@ export default function TierListPage() {
           </div>
 
           {/* Tabs */}
-          <div style={{ display:'flex', gap:2, background:'rgba(255,255,255,.04)', borderRadius:10, padding:3 }}>
+          <div className="tl-tabs" style={{ display:'flex', gap:2, background:'rgba(255,255,255,.04)', borderRadius:10, padding:3,
+            minWidth:0, maxWidth:'100%', overflowX:'auto', scrollbarWidth:'none' }}>
             {TABS.map(t => (
               <button key={t.id} onClick={() => setTab(t.id)} style={{
+                flexShrink:0, whiteSpace:'nowrap',
                 display:'flex', alignItems:'center', gap:5, padding:'5px 12px', borderRadius:7,
                 background: tab === t.id ? `rgba(191,164,106,.14)` : 'transparent',
                 border: tab === t.id ? `1px solid ${G.gold}33` : '1px solid transparent',
@@ -1599,7 +1605,8 @@ export default function TierListPage() {
 
           {/* Studio actions */}
           {tab === 'studio' && selectedType && (
-            <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:6, minWidth:0,
+              flexWrap: isMobile ? 'wrap' : 'nowrap', rowGap:6 }}>
               {/* Title edit */}
               {editTitle ? (
                 <div style={{ display:'flex', alignItems:'center', gap:5 }}>

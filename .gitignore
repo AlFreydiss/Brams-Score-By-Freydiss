@@ -30,6 +30,9 @@ ruvector.db
 # Local scans (large, uploaded to Supabase)
 public/scans/
 
+# Captures d'audit mobile (local, jetables)
+.mobile-audit/
+
 # Claude Code local config
 CLAUDE.local.md
 
