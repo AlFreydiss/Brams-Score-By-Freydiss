@@ -1084,8 +1084,20 @@ export default function BerryShop() {
     return () => document.getElementById(id)?.remove()
   }, [])
 
+  // Refetch au montage ET au retour sur l'onglet : le solde berries change côté
+  // Discord (gains serveur, /addberries) → sans ça il fallait actualiser la page
+  // pour voir le bon « Solde disponible ».
   useEffect(() => {
-    if (isAuthenticated) fetchBerryShopState(discordId).then(setState)
+    if (!isAuthenticated) return
+    const refetch = () => fetchBerryShopState(discordId).then(setState)
+    refetch()
+    const onFocus = () => { if (!document.hidden) refetch() }
+    window.addEventListener('focus', onFocus)
+    document.addEventListener('visibilitychange', onFocus)
+    return () => {
+      window.removeEventListener('focus', onFocus)
+      document.removeEventListener('visibilitychange', onFocus)
+    }
   }, [isAuthenticated, discordId])
 
   const featuredItems = useMemo(() =>
@@ -1372,119 +1384,16 @@ export default function BerryShop() {
         </div>
       </div>
 
-      {/* ═══ COFFRE MYSTÈRE + OBJET DU JOUR + COLLECTION ════════════════════ */}
-      <MysteryBoxCard balance={state.balance} busy={boxBusy} onOpen={openBox} />
-      <ItemOfDay inventory={state.inventory} balance={state.balance} onBuy={item => setSelectedItem(item)} />
-      <CollectionProgress inventory={state.inventory} />
-
-      {/* ═══ CATEGORY TABS ══════════════════════════════════════════════════ */}
-      <div style={{ maxWidth: 1120, margin: '0 auto 28px', padding: '0 20px', overflowX: 'auto', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
-        <div style={{ display: 'flex', gap: 6, padding: '2px 0', width: 'max-content' }}>
-          {DISPLAY_CATS.map(cat => (
-            <button
-              key={cat.key}
-              onClick={() => setCategory(cat.key)}
-              style={{
-                padding: '8px 16px', borderRadius: 10, border: 'none', cursor: 'pointer',
-                background: category === cat.key ? 'rgba(212,160,23,0.12)' : 'rgba(255,255,255,0.04)',
-                color: category === cat.key ? GOLD : 'rgba(255,255,255,0.42)',
-                outline: category === cat.key ? '1px solid rgba(212,160,23,0.28)' : 'none',
-                fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap',
-                display: 'flex', alignItems: 'center', gap: 6,
-                transition: 'all 0.16s',
-              }}
-            >
-              <span>{cat.icon}</span>
-              <span>{cat.label}</span>
-              {cat.key === 'Fonds' && (
-                <span style={{
-                  fontSize: 8, fontWeight: 900, letterSpacing: '.10em',
-                  padding: '1px 5px', borderRadius: 4,
-                  background: '#ec4899', color: '#fff',
-                  textTransform: 'uppercase', lineHeight: 1.4,
-                  animation: 'bsGlow 2s ease-in-out infinite',
-                }}>NEW</span>
-              )}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* ═══ FONDS D'OPENINGS SECTION ═══════════════════════════════════════ */}
-      {category === 'Fonds' && (
-        <OpeningBgSection
-          inventory={state.inventory}
-          balance={state.balance}
-          onPurchase={item => { setSelectedItem(item) }}
-          busy={busy}
-        />
-      )}
-
-      {/* ═══ COMING SOON BANNER ═════════════════════════════════════════════ */}
-      {category !== 'Fonds' && <div style={{ maxWidth:1120, margin:'0 auto 60px', padding:'0 20px' }}>
-        <div style={{
-          padding:'36px 32px', borderRadius:18, textAlign:'center',
-          background:'linear-gradient(145deg, rgba(212,160,23,0.06) 0%, rgba(8,9,13,0.97) 100%)',
-          border:'1px solid rgba(212,160,23,0.18)',
-          borderTop:'3px solid rgba(212,160,23,0.50)',
-          position:'relative', overflow:'hidden',
-          animation:'bsFadeUp .5s ease',
-        }}>
-          <div style={{ position:'absolute', top:-60, left:'50%', transform:'translateX(-50%)', width:320, height:200, background:'radial-gradient(circle, rgba(212,160,23,0.09) 0%, transparent 65%)', pointerEvents:'none' }} />
-          <div style={{ fontSize:48, marginBottom:14, filter:`drop-shadow(0 0 18px rgba(212,160,23,0.55))`, animation:'bsDrift 5s ease-in-out infinite' }}>🏴‍☠️</div>
-          <div style={{ fontSize:11, fontWeight:800, letterSpacing:'.22em', color:GOLD, textTransform:'uppercase', marginBottom:10 }}>Boutique en préparation</div>
-          <h2 style={{ fontFamily:"'Pirata One', cursive", fontSize:'clamp(26px,4vw,42px)', color:'#fff', margin:'0 0 12px', lineHeight:1.1 }}>
-            Les récompenses arrivent
-          </h2>
-          <p style={{ fontSize:14, color:'rgba(255,255,255,0.42)', lineHeight:1.75, maxWidth:520, margin:'0 auto', fontStyle:'italic' }}>
-            Les objets seront ajoutés progressivement. Accumule tes berries sur le Discord — les nakamas les plus investis seront récompensés en premier.
-          </p>
-          <div style={{ display:'flex', gap:8, justifyContent:'center', flexWrap:'wrap', marginTop:22 }}>
-            {Object.entries(RARITY).map(([k, r]) => (
-              <span key={k} style={{ fontSize:9, fontWeight:800, letterSpacing:'.10em', textTransform:'uppercase', color:r.color, background:`${r.color}12`, border:`1px solid ${r.color}30`, borderRadius:100, padding:'4px 13px' }}>
-                {r.label}
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>}
-
-      {/* ═══ PRESTIGE MILESTONES ═════════════════════════════════════════════ */}
-      {category !== 'Fonds' && <PrestigeMilestones balance={state.balance} />}
-
-      {/* ═══ BERRY EARNING GUIDE ════════════════════════════════════════════ */}
-      {category !== 'Fonds' && (
-        <div ref={earnRef}>
-          <BerryEarningGuide />
-        </div>
-      )}
-
-      {/* ═══ INVENTORY + HISTORY ════════════════════════════════════════════ */}
-      {(state.inventory.length > 0 || state.transactions.length > 0) && (
-        <div style={{ maxWidth:1120, margin:'0 auto 60px', padding:'0 20px', display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(340px, 1fr))', gap:16 }}>
-          {[
-            { label:'INVENTAIRE', title:'Objets possédés', items:state.inventory, renderItem: e => ({ name:e.shop_items?.name||e.item_id, sub:`×${e.quantity}${e.equipped?' · équipé':''}` }) },
-            { label:'HISTORIQUE', title:'Derniers achats',  items:state.transactions.slice(0,10), renderItem: tx => ({ name:tx.shop_items?.name||tx.item_id, sub:`${fmt(tx.price)} berries · ${tx.status}` }) },
-          ].map(section => (
-            <div key={section.label} style={{ background:'rgba(255,255,255,0.02)', border:'1px solid rgba(255,255,255,0.07)', borderRadius:14, padding:18 }}>
-              <div style={{ fontSize:8.5, fontWeight:800, letterSpacing:'.14em', color:'rgba(255,255,255,0.30)', textTransform:'uppercase', marginBottom:6 }}>{section.label}</div>
-              <div style={{ fontSize:18, fontWeight:800, color:'#fff', marginBottom:14 }}>{section.title}</div>
-              {section.items.length === 0
-                ? <div style={{ fontSize:12, color:'rgba(255,255,255,0.25)' }}>Aucun élément pour le moment.</div>
-                : section.items.map((item, i) => {
-                    const { name, sub } = section.renderItem(item)
-                    return (
-                      <div key={i} style={{ display:'flex', justifyContent:'space-between', padding:'7px 0', borderBottom:'1px solid rgba(255,255,255,0.05)', gap:8 }}>
-                        <span style={{ fontSize:12, fontWeight:600, color:'rgba(255,255,255,0.75)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{name}</span>
-                        <span style={{ fontSize:11, color:'rgba(255,255,255,0.30)', whiteSpace:'nowrap', flexShrink:0 }}>{sub}</span>
-                      </div>
-                    )
-                  })
-              }
-            </div>
-          ))}
-        </div>
-      )}
+      {/* ═══ FONDS D'OPENING — seule catégorie de la boutique ═══════════════ */}
+      {/* Demande Freydiss : « moins le bordel », garder uniquement les fonds   */}
+      {/* d'opening. Coffre mystère, objet du jour, collection, paliers de      */}
+      {/* prestige, bannière « les récompenses arrivent » et inventaire retirés. */}
+      <OpeningBgSection
+        inventory={state.inventory}
+        balance={state.balance}
+        onPurchase={item => { setSelectedItem(item) }}
+        busy={busy}
+      />
 
       {/* ═══ MODAL ══════════════════════════════════════════════════════════ */}
       {selectedItem && (
