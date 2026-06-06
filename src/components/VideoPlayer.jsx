@@ -51,6 +51,7 @@ const DEFAULT_SUBTITLE_STYLE = {
   color: '#ffffff',
   outline: true,
   outlineColor: '#000000', // couleur du contour, personnalisable
+  shadow: true,            // ombre portée derrière le texte
   weight: 800,
   bottom: 110,
 }
@@ -550,6 +551,18 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
         }
         const ctx = cv.getContext('2d')
         ctx.clearRect(0, 0, cv.width, cv.height)
+        // Anti « sous-titres farfelu » : aucune piste ne doit passer en 'showing'
+        // (sinon le navigateur rend les cues brutes, parfois la mauvaise piste →
+        // d'où le besoin de couper/remettre). On ré-affirme les modes en continu et
+        // on relie la bonne piste si elle s'est chargée tardivement → auto-réparé.
+        if (!subsOff && hasSubs) {
+          if (!boundTrack) setupTrack()
+          const tt = v.textTracks
+          for (let i = 0; i < tt.length; i++) {
+            if (tt[i] === boundTrack) { if (tt[i].mode !== 'hidden') tt[i].mode = 'hidden' }
+            else if (tt[i].mode !== 'disabled') tt[i].mode = 'disabled'
+          }
+        }
         const cues = (!subsOff && boundTrack) ? boundTrack.activeCues : null
         const text = cues && cues.length ? cleanCueText(Array.from(cues).map(c => c.text).join('\n')) : ''
         if (text) {
@@ -591,8 +604,13 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
               ctx.shadowColor = 'rgba(0,0,0,0.85)'; ctx.shadowBlur = 4 * dpr; ctx.shadowOffsetY = dpr
             }
             ctx.fillStyle = st.color || '#fff'
+            // Ombre portée derrière le texte (option) → relief net sur fond clair.
+            if (st.shadow) {
+              ctx.shadowColor = 'rgba(0,0,0,0.92)'; ctx.shadowBlur = 5 * dpr
+              ctx.shadowOffsetX = 2 * dpr; ctx.shadowOffsetY = 2 * dpr
+            }
             ctx.fillText(ln, cx, ly)
-            ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0
+            ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0
           })
         }
       }
@@ -1217,6 +1235,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                         ['Fond −', () => updateSubtitleStyle({ background: Math.max(0, Number((subtitleStyle.background - 0.15).toFixed(2))) })],
                         ['Fond +', () => updateSubtitleStyle({ background: Math.min(0.95, Number((subtitleStyle.background + 0.15).toFixed(2))) })],
                         [subtitleStyle.outline ? 'Contour ON' : 'Contour OFF', () => updateSubtitleStyle({ outline: !subtitleStyle.outline })],
+                        [subtitleStyle.shadow ? 'Ombre ON' : 'Ombre OFF', () => updateSubtitleStyle({ shadow: !subtitleStyle.shadow })],
                         [subtitleStyle.weight >= 800 ? 'Texte normal' : 'Texte gras', () => updateSubtitleStyle({ weight: subtitleStyle.weight >= 800 ? 600 : 800 })],
                       ].map(([label, action]) => (
                         <button key={label} onClick={action}
