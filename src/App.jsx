@@ -19,7 +19,6 @@ import Ranks from './components/Ranks.jsx'
 import AIChatWidget from './components/AIChatWidget.jsx'
 import Footer from './components/Footer.jsx'
 import QuoteSection from './components/QuoteSection.jsx'
-import ThemeToggle from './components/ThemeToggle.jsx'
 import { useInView } from './hooks/useInView.js'
 
 // Lazy — chargés uniquement quand ouverts
@@ -411,7 +410,6 @@ export default function App() {
         </div>
       </div>
 
-      <ThemeToggle />
       <AIChatWidget hidden={mediaOverlayOpen || encyclopedieOpen} />
 
     </>
