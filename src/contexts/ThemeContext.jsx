@@ -27,7 +27,10 @@ const THEMES = {
 const ThemeContext = createContext(null)
 
 export function ThemeProvider({ children }) {
-  const [theme, setTheme] = useState(() => localStorage.getItem('brams_theme') || 'dark')
+  // Le sélecteur de thème a été retiré → on force le thème de base (sombre) pour
+  // TOUT LE MONDE, en ignorant toute préférence 'light'/'colorful' restée en
+  // localStorage (sinon des membres restaient bloqués en clair sans pouvoir changer).
+  const [theme, setTheme] = useState('dark')
 
   useEffect(() => {
     const vars = THEMES[theme] || THEMES.dark
