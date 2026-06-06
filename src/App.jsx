@@ -392,21 +392,25 @@ export default function App() {
           a un fond opaque #08090D (corrige le débordement footer sans masquer l'AMV). */}
       <div style={{ position: 'relative', zIndex: 2, isolation: 'isolate' }}>
         <Navbar />
-        <Hero />
-        {/* Semi-transparent → l'AMV en fond reste visible pendant tout le scroll de la home */}
-        <div style={{ background: 'rgba(8,9,13,0.82)' }}>
-          <QuoteSection />
-          <Ranks />
-          {/* Classement vocal remonté juste sous 'Grimpe les rangs' (était trop bas, après Equipage/Soutenir) */}
-          <DeferredSection id="classement" minHeight={540}><Leaderboard /></DeferredSection>
-          <DeferredSection minHeight={760}><BotFeatures /></DeferredSection>
-          <DeferredSection minHeight={520}><HallOfFame /></DeferredSection>
-          <DeferredSection minHeight={520}><EquipageSection /></DeferredSection>
-          <DeferredSection minHeight={480}><NousSoutenir /></DeferredSection>
-          <DeferredSection minHeight={460}><Contact /></DeferredSection>
-          <DeferredSection minHeight={420}><JoinCTA /></DeferredSection>
-          <Footer />
-          <DeferredSection minHeight={0}><AkainuGame /></DeferredSection>
+        {/* Home masquée quand un overlay média (animé/scan/…) est ouvert : sinon le
+            Hero translucide transparaissait derrière la barre du haut ("hero derrière"). */}
+        <div style={{ display: mediaOverlayOpen ? 'none' : 'block' }}>
+          <Hero />
+          {/* Semi-transparent → l'AMV en fond reste visible pendant tout le scroll de la home */}
+          <div style={{ background: 'rgba(8,9,13,0.82)' }}>
+            <QuoteSection />
+            <Ranks />
+            {/* Classement vocal remonté juste sous 'Grimpe les rangs' (était trop bas, après Equipage/Soutenir) */}
+            <DeferredSection id="classement" minHeight={540}><Leaderboard /></DeferredSection>
+            <DeferredSection minHeight={760}><BotFeatures /></DeferredSection>
+            <DeferredSection minHeight={520}><HallOfFame /></DeferredSection>
+            <DeferredSection minHeight={520}><EquipageSection /></DeferredSection>
+            <DeferredSection minHeight={480}><NousSoutenir /></DeferredSection>
+            <DeferredSection minHeight={460}><Contact /></DeferredSection>
+            <DeferredSection minHeight={420}><JoinCTA /></DeferredSection>
+            <Footer />
+            <DeferredSection minHeight={0}><AkainuGame /></DeferredSection>
+          </div>
         </div>
       </div>
 
