@@ -47,9 +47,9 @@ export default function EquippedOpeningBackground() {
       {/* Gradient premium */}
       <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(180deg, ${start} 0%, ${end} 100%)` }} />
       {/* Teinte subtile */}
-      <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse 90% 70% at 50% 30%, rgba(120,90,200,0.10), transparent 60%)' }} />
-      {/* Vignette */}
-      <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse 80% 75% at 50% 45%, transparent 35%, rgba(0,0,0,0.6) 100%)' }} />
+      <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse 90% 70% at 50% 30%, rgba(120,90,200,0.08), transparent 60%)' }} />
+      {/* Vignette radiale retirée : elle créait une bande sombre elliptique visible
+          (la "barre" horizontale). Le voile global uniforme suffit. */}
     </div>
   )
 }
