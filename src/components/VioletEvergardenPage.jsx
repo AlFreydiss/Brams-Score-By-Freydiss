@@ -368,7 +368,7 @@ export default function VioletEvergardenPage({ onClose }) {
                   </span>
                 </div>
 
-                <RecommendedBanner color2={COLOR2} />
+                <RecommendedBanner color2={COLOR2} withHakuji />
               </div>
             </div>
           </div>
