@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import Navbar from './Navbar.jsx'
 
 // ── Design tokens — DA aqua premium : bleu nuit + cyan goutte d'eau. ──────────
 const BG     = '#06111b'
@@ -663,6 +664,8 @@ export default function AkinatorPage() {
 
   return (
     <div style={{ position:'fixed', left:0, right:0, top:76, bottom:0, zIndex:100, background:BG, display:'flex', flexDirection:'column', overflow:'hidden' }}>
+      {/* Navbar globale solide (la page est fixe → pas de scroll fenêtre → forceScrolled). L'overlay réserve déjà 76px (top:76). */}
+      <Navbar forceScrolled />
       <style>{`
         @keyframes akStar   { 0%,100%{opacity:.25;transform:scale(1)} 50%{opacity:.9;transform:scale(1.6)} }
         @keyframes akPulse  { 0%,100%{box-shadow:0 0 30px rgba(34,211,238,.32),0 0 60px rgba(14,116,144,.18)} 50%{box-shadow:0 0 52px rgba(34,211,238,.52),0 0 100px rgba(14,116,144,.28)} }

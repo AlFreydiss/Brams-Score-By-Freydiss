@@ -497,7 +497,7 @@ export default function App() {
         <Route path="/tournoi/opening" element={<PageLayout><TournamentPage tournamentId="opening" /></PageLayout>} />
         <Route path="/tournoi/endings" element={<PageLayout><TournamentPage tournamentId="ending" /></PageLayout>} />
         <Route path="/tournoi/ending" element={<PageLayout><TournamentPage tournamentId="ending" /></PageLayout>} />
-        <Route path="/akinator"    element={<PageLayout><AkinatorPage      /></PageLayout>} />
+        <Route path="/akinator"    element={<AkinatorPage      />} />
 
         {/* Profil Yonkou — Next-Gen 3D */}
         <Route path="/profil-yonkou" element={<ProfilePageYonkou />} />
