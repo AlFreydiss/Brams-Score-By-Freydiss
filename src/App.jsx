@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, Suspense } from 'react'
-import { Routes, Route, useNavigate, Navigate, useLocation } from 'react-router-dom'
+import { Routes, Route, useNavigate, Navigate, useLocation, useParams } from 'react-router-dom'
 import { lazyWithReload } from './lib/lazyWithReload.js'
 import GlobalStyles from './components/GlobalStyles.jsx'
 import { ThemeProvider } from './contexts/ThemeContext.jsx'
@@ -71,6 +71,30 @@ const TournamentPage     = lazyWithReload(() => import('./components/TournamentP
 const TournamentRoomPage = lazyWithReload(() => import('./components/TournamentRoomPage.jsx'))
 const UndercoverPage     = lazyWithReload(() => import('./components/UndercoverPage.jsx'))
 const AkinatorPage       = lazyWithReload(() => import('./components/AkinatorPage.jsx'))
+const MangaReaderPage    = lazyWithReload(() => import('./components/MangaReaderPage.jsx'))
+
+// Registre des scans manga (hors One Piece qui a sa propre page ScansPage).
+const MANGA_REGISTRY = {
+  aot:             { title: "L'Attaque des Titans",     color: '#7f1d1d' },
+  'solo-leveling': { title: 'Solo Leveling',            color: '#1976d2' },
+  jjk:             { title: 'Jujutsu Kaisen',           color: '#9b59b6' },
+  kny:             { title: 'Demon Slayer',             color: '#16a34a' },
+  'blue-lock':     { title: 'Blue Lock',                color: '#1565c0' },
+  'black-clover':  { title: 'Black Clover',             color: '#d97706' },
+  'fire-force':    { title: 'Fire Force',               color: '#ea580c' },
+  'dr-stone':      { title: 'Dr. Stone',                color: '#16a34a' },
+  kingdom:         { title: 'Kingdom',                  color: '#b45309' },
+  mha:             { title: 'My Hero Academia',         color: '#1e88e5' },
+  nnt:             { title: 'Nanatsu no Taizai',        color: '#dc2626' },
+  dbs:             { title: 'Dragon Ball Super',        color: '#f97316' },
+  tpn:             { title: 'The Promised Neverland',   color: '#6c5ce7' },
+}
+function MangaRoute() {
+  const { slug } = useParams()
+  const navigate = useNavigate()
+  const m = MANGA_REGISTRY[slug] || { title: slug, color: '#8b5cf6' }
+  return <MangaReaderPage slug={slug} title={m.title} color={m.color} onClose={() => navigate('/')} />
+}
 const ProfilePageYonkou  = lazyWithReload(() => import('./components/ProfilePageYonkou.jsx'))
 const FriendsPage        = lazyWithReload(() => import('./components/FriendsPage.jsx'))
 const MessagesPage       = lazyWithReload(() => import('./components/MessagesPage.jsx'))
@@ -455,6 +479,7 @@ export default function App() {
         </div>
       }>
       <Routes>
+        <Route path="/manga/:slug" element={<MangaRoute />} />
         {/* Profil utilisateur */}
         <Route path="/u/:discordId" element={<ProfilePage />} />
 
