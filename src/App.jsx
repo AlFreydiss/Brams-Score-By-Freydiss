@@ -394,7 +394,7 @@ export default function App() {
     <>
       <WelcomeAnimation />
       <AMVBackground hidden={mediaOverlayOpen || encyclopedieOpen || treeOpen || uploadOpen} />
-      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1, background: 'rgba(4,7,10,0.58)', pointerEvents: 'none' }} />
+      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1, background: 'rgba(4,7,10,0.82)', pointerEvents: 'none' }} />
 
       {/* Hero transparent → l'AMV en fond reste visible. Le reste des sections
           a un fond opaque #08090D (corrige le débordement footer sans masquer l'AMV). */}
@@ -404,12 +404,10 @@ export default function App() {
             Hero translucide transparaissait derrière la barre du haut ("hero derrière"). */}
         <div style={{ display: mediaOverlayOpen ? 'none' : 'block' }}>
           <Hero />
-          {/* Le fond remonte sous le Hero avec un fondu long, sans rupture d'opacité. */}
-          <div style={{
-            marginTop: -280,
-            paddingTop: 280,
-            background: 'linear-gradient(180deg, rgba(8,9,13,0) 0px, rgba(8,9,13,0.45) 120px, rgba(8,9,13,0.78) 240px)',
-          }}>
+          {/* Plus de dégradé par-section : un SEUL voile uniforme couvre toute la page
+              (voir l'overlay fixe rgba(4,7,10) plus haut) → aucune coupure, l'AMV reste
+              visible partout de façon homogène. Le bloc sections est transparent. */}
+          <div style={{ background: 'transparent' }}>
             <QuoteSection />
             <Ranks />
             {/* Classement vocal remonté juste sous 'Grimpe les rangs' (était trop bas, après Equipage/Soutenir) */}
