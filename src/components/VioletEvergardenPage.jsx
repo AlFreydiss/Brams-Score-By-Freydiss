@@ -5,6 +5,7 @@ import AnimeBackdrop, { ANIME_MOTIFS } from './AnimeBackdrop.jsx'
 import VIDEOS_RAW from '../data/violet-evergarden-videos.json'
 import { getCachedSynopsis, fetchEpisodeSynopsis } from '../lib/episodeSynopsis.js'
 import RecommendedBanner from './RecommendedBanner.jsx'
+import EpisodeWatch from './EpisodeWatch.jsx'
 
 // VOSTFR par défaut : on ne force RIEN ici. Le player applique la préférence
 // sauvegardée du membre (par compte), et à défaut son défaut 'ja' (audio) +
@@ -318,10 +319,10 @@ export default function VioletEvergardenPage({ onClose }) {
               @media (max-width: 900px) { .ve-layout { grid-template-columns: 1fr; } }
             `}</style>
             <div className="ve-layout">
-              <InfoPanel watchedCount={watchedCount} total={VIDEOS.length} lastWatchedIdx={resumeIdx} onResume={() => openPlayer(resumeIdx)} />
+              <InfoPanel watchedCount={watchedCount} total={VIDEOS.length} lastWatchedIdx={resumeIdx} onResume={() => openDetail(resumeIdx)} />
               <div>
                 {detailIdx !== null && (
-                  <EpisodeDetailInline idx={detailIdx} onPlay={() => openPlayer(detailIdx)} onClose={() => setDetailIdx(null)} />
+                  <EpisodeWatch videos={VIDEOS} startIdx={detailIdx} ns={NS} storageKey={NS} color={COLOR} color2={COLOR2} onSelect={openDetail} onClose={() => setDetailIdx(null)} />
                 )}
                 <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20 }}>
                   <div>

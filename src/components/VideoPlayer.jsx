@@ -299,7 +299,7 @@ function EpisodeMiniThumb({ video, color }) {
 }
 
 // ── Composant principal ───────────────────────────────────────────────────────
-export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce7', storageKey = null, onProgressUpdate = null, autoStart = false }) {
+export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce7', storageKey = null, onProgressUpdate = null, autoStart = false, embedded = false, hideDetail = false }) {
   const { userId } = useAuth()
   const videoRef     = useRef(null)
   const audioRef     = useRef(null)
@@ -888,10 +888,12 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   // sur son tableau de deps — ne pas le redéclarer ici.
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 1200, background: '#000', display: 'flex', flexDirection: 'column' }}>
+    <div style={embedded
+      ? { position: 'relative', width: '100%', height: '100%', background: '#000', display: 'flex', flexDirection: 'column', borderRadius: 16, overflow: 'hidden' }
+      : { position: 'fixed', inset: 0, zIndex: 1200, background: '#000', display: 'flex', flexDirection: 'column' }}>
 
-      {/* ── Barre haute ── */}
-      <div style={{ flexShrink: 0, height: 48, display: 'flex', alignItems: 'center', gap: 10, padding: '0 14px', background: 'rgba(8,9,11,0.84)', backdropFilter: 'blur(18px)', borderBottom: `1px solid ${color}22`, zIndex: 10 }}>
+      {/* ── Barre haute (masquée en mode embarqué : la page fournit la navigation) ── */}
+      {!embedded && <div style={{ flexShrink: 0, height: 48, display: 'flex', alignItems: 'center', gap: 10, padding: '0 14px', background: 'rgba(8,9,11,0.84)', backdropFilter: 'blur(18px)', borderBottom: `1px solid ${color}22`, zIndex: 10 }}>
         <button onClick={onClose} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 9, color: '#fff', cursor: 'pointer', padding: '6px 13px', fontSize: 13, fontWeight: 700, flexShrink: 0, transition: 'background .15s' }}
           onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.13)'}
           onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.07)'}
@@ -906,7 +908,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
           <button onClick={() => setIdx(i => i - 1)} disabled={idx === 0} style={{ padding: '5px 13px', borderRadius: 9, border: `1px solid ${idx === 0 ? 'rgba(255,255,255,0.1)' : color + '44'}`, background: idx === 0 ? 'transparent' : `${color}18`, color: idx === 0 ? 'rgba(255,255,255,0.2)' : color, cursor: idx === 0 ? 'default' : 'pointer', fontSize: 12, fontWeight: 700, transition: 'background .15s' }}>← Préc.</button>
           <button onClick={() => setIdx(i => i + 1)} disabled={idx === videos.length - 1} style={{ padding: '5px 13px', borderRadius: 9, border: `1px solid ${idx === videos.length - 1 ? 'rgba(255,255,255,0.1)' : color + '44'}`, background: idx === videos.length - 1 ? 'transparent' : `${color}18`, color: idx === videos.length - 1 ? 'rgba(255,255,255,0.2)' : color, cursor: idx === videos.length - 1 ? 'default' : 'pointer', fontSize: 12, fontWeight: 700, transition: 'background .15s' }}>Suiv. →</button>
         </div>
-      </div>
+      </div>}
 
       {/* ── Zone vidéo ── */}
       <div
@@ -1107,7 +1109,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
             </div>
 
             {/* ── Interface "détail épisode" (pré-lecture) : titre + note + synopsis IA + trailer ── */}
-            {!started && video && (() => {
+            {!started && !hideDetail && video && (() => {
               const meta = getAnimeMeta(storageKey)
               return (
                 <EpisodeDetailOverlay
