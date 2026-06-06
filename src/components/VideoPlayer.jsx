@@ -652,24 +652,25 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   }, [mediaSrc, video?.gain])
 
   // ── Lecture HLS via hls.js (Chrome/Edge/Firefox — pas de HLS natif) ───────
+  // We only initialize HLS once the user has started playback (effectiveMediaSrc).
+  // This avoids downloading the manifest + first segments while the user is still in the
+  // rich episode info panel.
   useEffect(() => {
     const v = videoRef.current
-    if (!isLocal || !v || !mediaSrc || !isHlsSrc(mediaSrc) || NATIVE_HLS) return
+    if (!isLocal || !v || !effectiveMediaSrc || !isHlsSrc(effectiveMediaSrc) || NATIVE_HLS) return
     let hls = null, cancelled = false
     import('hls.js').then(({ default: Hls }) => {
       if (cancelled || !Hls.isSupported()) return
       hls = new Hls({ enableWorker: true, maxBufferLength: 30, backBufferLength: 30, startLevel: -1 })
       hlsRef.current = hls
       hls.attachMedia(v)
-      hls.on(Hls.Events.MEDIA_ATTACHED, () => hls.loadSource(encSrc(mediaSrc)))
+      hls.on(Hls.Events.MEDIA_ATTACHED, () => hls.loadSource(encSrc(effectiveMediaSrc)))
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         applyAudioPreference(audioIdx)
         const p = pendingSourceRef.current
         if (p && Number.isFinite(p.time)) { try { v.currentTime = p.time } catch {} }
         if (p?.play) v.play().catch(() => {})
       })
-      // Les pistes audio (VF/JP) peuvent arriver après le manifest → on réapplique
-      // dès qu'elles sont connues (sinon l'UI restait sur "non supporté").
       hls.on(Hls.Events.AUDIO_TRACKS_UPDATED, () => applyAudioPreference(audioIdx))
       hls.on(Hls.Events.ERROR, (_e, data) => {
         if (!data?.fatal) return
@@ -684,7 +685,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
       if (hlsRef.current === hls) hlsRef.current = null
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mediaSrc, isLocal])
+  }, [effectiveMediaSrc, isLocal])
 
   // ── Fullscreen ───────────────────────────────────────────────────────────
   useEffect(() => {
@@ -781,6 +782,18 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   }
 
   const togglePlay = () => {
+    if (!started) {
+      // First click from the detail overlay → commit the media and start loading + playing
+      setStarted(true)
+      // The video element will mount on next render with effectiveMediaSrc.
+      // We schedule a play once the element exists and can play.
+      // The onCanPlay handler already handles autoplayPendingRef for other cases.
+      setTimeout(() => {
+        const v = videoRef.current
+        if (v) v.play().catch(() => {})
+      }, 50)
+      return
+    }
     const v = videoRef.current; if (!v) return
     v.paused ? v.play() : v.pause()
   }
@@ -810,6 +823,11 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   const subLabel = subsOff ? 'OFF' : hasSubs ? (video.subtitles[subIdx]?.label ?? 'CC') : 'N/A'
   const qualityHint = isLocal ? qualityLabel : 'AUTO'
   const episodeLabel = videoDisplayLabel(video)
+
+  // Only commit the media source to the actual player once the user has decided to start playback.
+  // This prevents HLS / heavy video files from buffering while the user is just reading the
+  // episode detail panel (synopsis, note, trailer). This was the main cause of "ça prend sa vie à charger".
+  const effectiveMediaSrc = started ? mediaSrc : null
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 1200, background: '#000', display: 'flex', flexDirection: 'column' }}>
@@ -845,9 +863,10 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
           <>
             <video
               ref={videoRef}
-              key={mediaSrc}
+              key={effectiveMediaSrc || 'no-src'}
               crossOrigin={hasSubs ? 'anonymous' : undefined}
               style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
+              preload={started ? 'metadata' : 'none'}
               onPlay={onPlay}
               onPause={onPause}
               onTimeUpdate={onTimeUpd}
@@ -870,12 +889,13 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                 }
               }}
             >
-              {/* Source native seulement si hls.js ne pilote pas (mp4, ou HLS sur Safari).
-                  Sinon hls.js attache la vidéo via MSE et un <source> .m3u8 ferait planter. */}
-              {!(isHlsSrc(mediaSrc) && !NATIVE_HLS) && (
+              {/* Only attach the actual source once the user has started playback.
+                  This stops the video (especially HLS) from downloading while the user
+                  is still in the rich episode info panel. */}
+              {effectiveMediaSrc && !(isHlsSrc(effectiveMediaSrc) && !NATIVE_HLS) && (
                 <source
-                  src={encSrc(mediaSrc)}
-                  type={sourceType(mediaSrc)}
+                  src={encSrc(effectiveMediaSrc)}
+                  type={sourceType(effectiveMediaSrc)}
                 />
               )}
               {/* Pistes de sous-titres. corsUrl(?cors=1) : entrée de cache dédiée
@@ -885,12 +905,13 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                 <track key={i} kind="subtitles" src={corsUrl(sub.src)} srcLang={sub.srclang || 'fr'} label={sub.label} default={i === subIdx} />
               ))}
             </video>
-            {selectedAudio?.src && !selectedAudio?.mediaSrc && (
+            {/* External audio (e.g. separate VF track) — also only loaded when playback has started. */}
+            {effectiveMediaSrc && selectedAudio?.src && !selectedAudio?.mediaSrc && (
               <audio
                 ref={audioRef}
                 key={selectedAudio.src}
                 src={selectedAudio.src}
-                preload="auto"
+                preload={started ? 'auto' : 'none'}
                 crossOrigin="anonymous"
                 onCanPlay={() => {
                   const v = videoRef.current
