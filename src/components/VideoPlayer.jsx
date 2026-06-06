@@ -1050,7 +1050,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                 onSeek={seek}
                 color={color}
                 previewSrc={video?.thumbnail}
-                previewTitle={displayTitle || epLabel}
+                previewTitle={video?.title || episodeLabel}
               />
 
               {/* Ligne de contrôles */}
