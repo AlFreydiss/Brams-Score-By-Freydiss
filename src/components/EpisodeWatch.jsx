@@ -54,13 +54,13 @@ export default function EpisodeWatch({
   ]
 
   return (
-    // Fond OPAQUE plein cadre → plus rien ne transparaît derrière (fini le "hero derrière").
-    <div style={{ position: 'relative', marginBottom: 10, animation: 'ewFade .3s ease-out both', background: 'linear-gradient(180deg, rgba(10,9,16,.96), rgba(8,7,12,.99))', borderRadius: 20, padding: 20, border: `1px solid ${color}22` }}>
+    // Plein cadre, pas de "carte flottante" : le contenu vit dans la page et prend tout l'espace.
+    <div style={{ position: 'relative', marginBottom: 10, animation: 'ewFade .3s ease-out both' }}>
       <style>{`
         @keyframes ewFade { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
-        .ew-grid { display:grid; grid-template-columns:minmax(0,2fr) minmax(0,1fr); gap:18; align-items:stretch; }
+        .ew-grid { display:grid; grid-template-columns:minmax(0,2.4fr) minmax(0,1fr); gap:22; align-items:stretch; }
         @media (max-width:920px){ .ew-grid{ grid-template-columns:1fr } }
-        .ew-eps { display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:14; }
+        .ew-eps { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:16; }
       `}</style>
 
       <div className="ew-grid">
