@@ -1,0 +1,206 @@
+[
+  {
+    "episode": 1,
+    "title": "Épisode 1",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/koi-ameagari/S01E01.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "badge": "VOSTFR",
+    "preferredAudioLang": "ja",
+    "progressKey": "koi-ameagari-1",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/koi-ameagari/S01E01-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 2,
+    "title": "Épisode 2",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/koi-ameagari/S01E02.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "badge": "VOSTFR",
+    "preferredAudioLang": "ja",
+    "progressKey": "koi-ameagari-2",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/koi-ameagari/S01E02-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 3,
+    "title": "Épisode 3",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/koi-ameagari/S01E03.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "badge": "VOSTFR",
+    "preferredAudioLang": "ja",
+    "progressKey": "koi-ameagari-3",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/koi-ameagari/S01E03-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 4,
+    "title": "Épisode 4",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/koi-ameagari/S01E04.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "badge": "VOSTFR",
+    "preferredAudioLang": "ja",
+    "progressKey": "koi-ameagari-4",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/koi-ameagari/S01E04-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 5,
+    "title": "Épisode 5",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/koi-ameagari/S01E05.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "badge": "VOSTFR",
+    "preferredAudioLang": "ja",
+    "progressKey": "koi-ameagari-5",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/koi-ameagari/S01E05-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 6,
+    "title": "Épisode 6",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/koi-ameagari/S01E06.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "badge": "VOSTFR",
+    "preferredAudioLang": "ja",
+    "progressKey": "koi-ameagari-6",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/koi-ameagari/S01E06-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 7,
+    "title": "Épisode 7",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/koi-ameagari/S01E07.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "badge": "VOSTFR",
+    "preferredAudioLang": "ja",
+    "progressKey": "koi-ameagari-7",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/koi-ameagari/S01E07-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 8,
+    "title": "Épisode 8",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/koi-ameagari/S01E08.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "badge": "VOSTFR",
+    "preferredAudioLang": "ja",
+    "progressKey": "koi-ameagari-8",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/koi-ameagari/S01E08-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 9,
+    "title": "Épisode 9",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/koi-ameagari/S01E09.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "badge": "VOSTFR",
+    "preferredAudioLang": "ja",
+    "progressKey": "koi-ameagari-9",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/koi-ameagari/S01E09-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 10,
+    "title": "Épisode 10",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/koi-ameagari/S01E10.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "badge": "VOSTFR",
+    "preferredAudioLang": "ja",
+    "progressKey": "koi-ameagari-10",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/koi-ameagari/S01E10-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 11,
+    "title": "Épisode 11",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/koi-ameagari/S01E11.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "badge": "VOSTFR",
+    "preferredAudioLang": "ja",
+    "progressKey": "koi-ameagari-11",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/koi-ameagari/S01E11-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 12,
+    "title": "Épisode 12",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/koi-ameagari/S01E12.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "badge": "VOSTFR",
+    "preferredAudioLang": "ja",
+    "progressKey": "koi-ameagari-12",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/koi-ameagari/S01E12-fr.vtt"
+      }
+    ]
+  }
+]
