@@ -220,5 +220,355 @@
       2282,
       2427
     ]
+  },
+  {
+    "episode": 7,
+    "title": "Episode 7",
+    "episodeLabel": "S01E007",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism/S01E007-vostfr.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E007",
+    "badge": "MULTI",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism/S01E007-vostfr.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism/S01E007-vf.mp4"
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism/S01E007.jpg"
+  },
+  {
+    "episode": 8,
+    "title": "Episode 8",
+    "episodeLabel": "S01E008",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism/S01E008-vostfr.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E008",
+    "badge": "MULTI",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism/S01E008-vostfr.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism/S01E008-vf.mp4"
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism/S01E008.jpg"
+  },
+  {
+    "episode": 9,
+    "title": "Episode 9",
+    "episodeLabel": "S01E009",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism/S01E009-vostfr.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E009",
+    "badge": "MULTI",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism/S01E009-vostfr.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism/S01E009-vf.mp4"
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism/S01E009.jpg"
+  },
+  {
+    "episode": 10,
+    "title": "Episode 10",
+    "episodeLabel": "S01E010",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism/S01E010-vostfr.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E010",
+    "badge": "MULTI",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism/S01E010-vostfr.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism/S01E010-vf.mp4"
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism/S01E010.jpg"
+  },
+  {
+    "episode": 11,
+    "title": "Episode 11",
+    "episodeLabel": "S01E011",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism/S01E011-vostfr.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E011",
+    "badge": "MULTI",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism/S01E011-vostfr.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism/S01E011-vf.mp4"
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism/S01E011.jpg"
+  },
+  {
+    "episode": 12,
+    "title": "Episode 12",
+    "episodeLabel": "S01E012",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism/S01E012-vostfr.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E012",
+    "badge": "MULTI",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism/S01E012-vostfr.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism/S01E012-vf.mp4"
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism/S01E012.jpg"
+  },
+  {
+    "episode": 13,
+    "title": "Episode 13",
+    "episodeLabel": "S01E013",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism/S01E013-vostfr.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E013",
+    "badge": "MULTI",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism/S01E013-vostfr.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism/S01E013-vf.mp4"
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism/S01E013.jpg"
+  },
+  {
+    "episode": 14,
+    "title": "Episode 14",
+    "episodeLabel": "S01E014",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism/S01E014-vostfr.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E014",
+    "badge": "MULTI",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism/S01E014-vostfr.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism/S01E014-vf.mp4"
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism/S01E014.jpg"
+  },
+  {
+    "episode": 15,
+    "title": "Episode 15",
+    "episodeLabel": "S01E015",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism/S01E015-vostfr.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E015",
+    "badge": "MULTI",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism/S01E015-vostfr.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism/S01E015-vf.mp4"
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism/S01E015.jpg"
+  },
+  {
+    "episode": 16,
+    "title": "Episode 16",
+    "episodeLabel": "S01E016",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism/S01E016-vostfr.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E016",
+    "badge": "MULTI",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism/S01E016-vostfr.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism/S01E016-vf.mp4"
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism/S01E016.jpg"
+  },
+  {
+    "episode": 17,
+    "title": "Episode 17",
+    "episodeLabel": "S01E017",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism/S01E017-vostfr.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E017",
+    "badge": "MULTI",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism/S01E017-vostfr.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism/S01E017-vf.mp4"
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism/S01E017.jpg"
+  },
+  {
+    "episode": 18,
+    "title": "Episode 18",
+    "episodeLabel": "S01E018",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism/S01E018-vostfr.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E018",
+    "badge": "MULTI",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism/S01E018-vostfr.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism/S01E018-vf.mp4"
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism/S01E018.jpg"
+  },
+  {
+    "episode": 19,
+    "title": "Episode 19",
+    "episodeLabel": "S01E019",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism/S01E019-vostfr.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E019",
+    "badge": "MULTI",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism/S01E019-vostfr.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism/S01E019-vf.mp4"
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism/S01E019.jpg"
+  },
+  {
+    "episode": 20,
+    "title": "Episode 20",
+    "episodeLabel": "S01E020",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism/S01E020-vostfr.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E020",
+    "badge": "MULTI",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism/S01E020-vostfr.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism/S01E020-vf.mp4"
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism/S01E020.jpg"
   }
 ]
