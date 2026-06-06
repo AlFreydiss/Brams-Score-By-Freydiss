@@ -68,11 +68,18 @@ export function AuthProvider({ children }) {
       }
 
       // Lecture session APRÈS échange (ou directement si pas de code).
-      // try/finally : setLoading(false) DOIT toujours s'exécuter — si getSession()
-      // throw, l'app restait bloquée en "chargement" (le Fil ne chargeait jamais).
+      // ⚠️ getSession() peut non seulement throw mais surtout HANGER (refresh de
+      // token réseau coincé, client Supabase bloqué) : le `await` ne finit jamais →
+      // `finally` jamais atteint → `loading` reste true POUR TOUJOURS → rien ne
+      // charge nulle part (profil, Fil, boutique…) → "faut actualiser sur tout le
+      // site". On le borne donc à 5s. Si la vraie session arrive plus tard,
+      // onAuthStateChange (ci-dessous) la propage → l'UI se répare seule, sans F5.
       try {
-        const { data, error } = await supabase.auth.getSession()
-        if (error) console.error('[auth] getSession erreur:', error.message)
+        const { data, error } = await Promise.race([
+          supabase.auth.getSession(),
+          new Promise(resolve => setTimeout(() => resolve({ data: { session: null }, error: { message: 'getSession timeout (5s)' } }), 5000)),
+        ])
+        if (error) console.warn('[auth] getSession:', error.message)
         console.log('[auth] getSession →', data?.session?.user?.id ?? 'null')
         if (mounted) {
           setSession(data.session ?? null)
