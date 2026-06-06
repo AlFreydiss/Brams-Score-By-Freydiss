@@ -408,7 +408,7 @@ export default function App() {
           <div style={{
             marginTop: -280,
             paddingTop: 280,
-            background: 'linear-gradient(180deg, rgba(8,9,13,0) 0px, rgba(8,9,13,0.10) 80px, rgba(8,9,13,0.42) 190px, rgba(8,9,13,0.82) 360px, #08090D 620px)',
+            background: 'linear-gradient(180deg, rgba(8,9,13,0) 0px, rgba(8,9,13,0.45) 130px, rgba(8,9,13,0.85) 230px, #08090D 290px)',
           }}>
             <QuoteSection />
             <Ranks />
