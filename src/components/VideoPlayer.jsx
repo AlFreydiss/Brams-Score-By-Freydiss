@@ -268,7 +268,7 @@ function EpisodeMiniThumb({ video, color }) {
 }
 
 // ── Composant principal ───────────────────────────────────────────────────────
-export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce7', storageKey = null, onProgressUpdate = null }) {
+export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce7', storageKey = null, onProgressUpdate = null, autoStart = false }) {
   const { userId } = useAuth()
   const videoRef     = useRef(null)
   const audioRef     = useRef(null)
@@ -278,7 +278,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   const lastSaveRef  = useRef(0)
   const pendingSourceRef = useRef(null)
   const hlsRef = useRef(null)
-  const autoplayPendingRef = useRef(false)   // relancer la lecture après avance auto
+  const autoplayPendingRef = useRef(autoStart)   // relancer la lecture après avance auto (ou démarrage direct via autoStart)
 
   const [idx,          setIdx]         = useState(startIdx)
   const [playing,      setPlaying]     = useState(false)
@@ -289,7 +289,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   const [speed,        setSpeed]       = useState(1)
   const [fullscreen,   setFullscreen]  = useState(false)
   const [showCtrl,     setShowCtrl]    = useState(true)
-  const [started,      setStarted]     = useState(false)  // false = interface "détail épisode" (pré-lecture)
+  const [started,      setStarted]     = useState(autoStart)  // false = interface "détail épisode" (pré-lecture) ; autoStart saute directement en lecture
   const [subIdx,       setSubIdx]      = useState(0)
   const [subsOff,      setSubsOff]     = useState(false)
   const [buffered,     setBuffered]    = useState(0)

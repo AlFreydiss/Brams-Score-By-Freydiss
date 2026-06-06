@@ -3,6 +3,7 @@ import VideoPlayer from './VideoPlayer.jsx'
 import { ProgressRing } from './ProgressRing.jsx'
 import AnimeBackdrop, { ANIME_MOTIFS } from './AnimeBackdrop.jsx'
 import VIDEOS_RAW from '../data/violet-evergarden-videos.json'
+import { getCachedSynopsis, fetchEpisodeSynopsis } from '../lib/episodeSynopsis.js'
 
 // VOSTFR par défaut : on ne force RIEN ici. Le player applique la préférence
 // sauvegardée du membre (par compte), et à défaut son défaut 'ja' (audio) +
@@ -171,8 +172,113 @@ function InfoPanel({ watchedCount, total, lastWatchedIdx, onResume }) {
   )
 }
 
+// Détail d'un épisode AFFICHÉ DANS LA PAGE (pas en plein écran) : visuel + infos +
+// bouton Lecture. Le plein écran n'arrive qu'au clic sur Lecture.
+const EP_NOTE = 8.7
+function EpisodeDetailInline({ idx, onPlay, onClose }) {
+  const video = VIDEOS[idx]
+  const isFilm = video?.kind === 'film'
+  const ep = video?.episode
+  const label = isFilm ? (video?.episodeLabel || 'Film') : `Saison 1 · Épisode ${ep}`
+  const title = video?.title && !/^episode\s/i.test(String(video.title)) ? video.title : (isFilm ? 'Violet Evergarden' : `Épisode ${ep}`)
+  const [synopsis, setSynopsis] = useState(() => getCachedSynopsis(NS, ep) || video?.synopsis || '')
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (video?.synopsis) { setSynopsis(video.synopsis); setLoading(false); return }
+    const cached = getCachedSynopsis(NS, ep)
+    if (cached) { setSynopsis(cached); setLoading(false); return }
+    let alive = true; setSynopsis(''); setLoading(true)
+    fetchEpisodeSynopsis(NS, 'Violet Evergarden', ep).then(txt => { if (alive) { setSynopsis(txt || video?.synopsis || ''); setLoading(false) } })
+    return () => { alive = false }
+  }, [idx])
+
+  return (
+    <div className="ve-detail-inline" style={{
+      display: 'grid', gridTemplateColumns: 'minmax(0,300px) minmax(0,1fr)', gap: 22, marginBottom: 26,
+      borderRadius: 20, overflow: 'hidden', padding: 18,
+      background: 'linear-gradient(135deg, rgba(139,124,255,.12), rgba(14,12,24,.82))',
+      border: `1px solid rgba(139,124,255,.30)`,
+      boxShadow: '0 20px 60px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.06)',
+      animation: 'veFadeUp .3s ease-out both', position: 'relative',
+    }}>
+      <style>{`@media (max-width:720px){ .ve-detail-inline { grid-template-columns: 1fr !important } }`}</style>
+      {/* Visuel */}
+      <div style={{ position: 'relative', borderRadius: 14, overflow: 'hidden', background: '#0a0814', aspectRatio: '16/9' }}>
+        {video?.thumbnail
+          ? <img src={video.thumbnail} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          : <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg,rgba(139,124,255,.18),rgba(0,0,0,.9))' }} />}
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg,transparent 55%,rgba(0,0,0,.55))' }} />
+        <div style={{ position: 'absolute', bottom: 8, left: 10, fontSize: 9, fontWeight: 800, background: 'rgba(139,124,255,.22)', color: COLOR2, border: `1px solid rgba(139,124,255,.3)`, borderRadius: 100, padding: '2px 8px' }}>{video?.badge || 'VOSTFR'}</div>
+      </div>
+
+      {/* Infos */}
+      <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+          <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: '1.6px', textTransform: 'uppercase', color: COLOR2 }}>{isFilm ? 'Film' : 'Épisode'}</div>
+          <button onClick={onClose} aria-label="Fermer le détail"
+            style={{ flexShrink: 0, width: 26, height: 26, borderRadius: 8, border: '1px solid rgba(255,255,255,.12)', background: 'rgba(255,255,255,.05)', color: 'rgba(255,255,255,.6)', cursor: 'pointer', fontSize: 13, lineHeight: 1 }}>✕</button>
+        </div>
+        <h3 style={{ margin: '6px 0 2px', fontFamily: "'Pirata One',cursive", fontSize: 'clamp(22px,2.6vw,32px)', fontWeight: 900, color: '#fff', lineHeight: 1.05 }}>{title}</h3>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 12, color: 'rgba(255,255,255,.55)', fontWeight: 700, marginBottom: 10 }}>
+          <span>{label}</span>
+          <span style={{ width: 4, height: 4, borderRadius: '50%', background: 'rgba(255,255,255,.3)' }} />
+          <span style={{ color: '#fbbf24' }}>★ <span style={{ color: '#fff' }}>{EP_NOTE}</span><span style={{ color: 'rgba(255,255,255,.4)' }}>/10</span></span>
+        </div>
+        <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.6, color: 'rgba(255,255,255,.8)', flex: 1 }}>
+          {synopsis || (loading ? 'Génération du synopsis…' : 'Synopsis indisponible pour le moment.')}
+        </p>
+        {synopsis && !video?.synopsis && <div style={{ marginTop: 5, fontSize: 9.5, color: 'rgba(255,255,255,.3)', fontWeight: 600 }}>✦ résumé généré par IA</div>}
+        <button onClick={onPlay} className="ve-cta" style={{
+          marginTop: 14, alignSelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: 9,
+          padding: '11px 24px', borderRadius: 13, cursor: 'pointer',
+          background: `linear-gradient(135deg, ${COLOR}, ${COLOR2})`, border: `1px solid ${COLOR}`,
+          color: '#fff', fontSize: 14, fontWeight: 900, letterSpacing: '.3px', boxShadow: `0 12px 34px rgba(139,124,255,.4)`,
+        }}><span style={{ fontSize: 16 }}>▶</span> Lecture</button>
+      </div>
+    </div>
+  )
+}
+
+// Bandeau d'endossement premium en bas de page.
+function RecommendedBanner() {
+  const People = ({ icon, name, sub, c }) => (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      <div style={{ width: 46, height: 46, borderRadius: '50%', background: `radial-gradient(circle at 30% 30%, ${c}, rgba(0,0,0,.4))`, border: `2px solid ${c}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, boxShadow: `0 6px 20px ${c}55`, flexShrink: 0 }}>{icon}</div>
+      <div style={{ lineHeight: 1.15 }}>
+        <div style={{ fontSize: 14, fontWeight: 900, color: '#fff' }}>{name}</div>
+        <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,.45)', fontWeight: 600 }}>{sub}</div>
+      </div>
+    </div>
+  )
+  return (
+    <div style={{
+      marginTop: 30, borderRadius: 20, padding: '24px 28px', position: 'relative', overflow: 'hidden',
+      background: 'linear-gradient(120deg, rgba(229,86,74,.14), rgba(139,124,255,.16) 60%, rgba(14,12,24,.7))',
+      border: '1px solid rgba(139,124,255,.32)',
+      boxShadow: '0 18px 50px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.06)',
+    }}>
+      <div style={{ position: 'absolute', top: -40, right: -20, width: 220, height: 160, background: 'radial-gradient(circle, rgba(139,124,255,.18), transparent 70%)', pointerEvents: 'none' }} />
+      <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20, flexWrap: 'wrap' }}>
+        <div style={{ minWidth: 220 }}>
+          <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: '2px', textTransform: 'uppercase', color: COLOR2, marginBottom: 6 }}>★ Coup de cœur</div>
+          <div style={{ fontFamily: "'Pirata One',cursive", fontSize: 26, fontWeight: 900, color: '#fff', lineHeight: 1.05 }}>
+            Recommandé par <span style={{ color: '#ff7a6b' }}>Hakuji</span> &amp; <span style={{ color: COLOR2 }}>Freydiss</span>
+          </div>
+          <div style={{ fontSize: 12, color: 'rgba(255,255,255,.5)', marginTop: 6, fontStyle: 'italic' }}>« Une œuvre qui marque à jamais — à voir absolument. »</div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 22, flexWrap: 'wrap' }}>
+          <People icon="🔥" name="Hakuji" sub="Lune Supérieure" c="#ff7a6b" />
+          <People icon="👑" name="Al Freydiss" sub="Capitaine" c={COLOR2} />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function VioletEvergardenPage({ onClose }) {
   const [playerIdx, setPlayerIdx] = useState(null)
+  const [detailIdx, setDetailIdx] = useState(null)   // épisode dont la fiche est affichée DANS la page
   const [progress, setProgress]   = useState(loadProgress)
   const scrollRef = useRef(null)
 
@@ -196,7 +302,14 @@ export default function VioletEvergardenPage({ onClose }) {
   const watchedCount = useMemo(() => VIDEOS.filter(v => progress[keyOf(v)]?.completed).length, [progress])
   const resumeIdx = useMemo(() => { const i = VIDEOS.findIndex(v => !progress[keyOf(v)]?.completed); return i >= 0 ? i : 0 }, [progress])
   const openPlayer = useCallback((idx) => { setPlayerIdx(idx); markWatched(idx) }, [markWatched])
-  const playHandlers = useMemo(() => VIDEOS.map((_, i) => () => openPlayer(i)), [openPlayer])
+  // Clic sur un épisode → on affiche sa fiche DANS la page (pas en plein écran),
+  // et on remonte en haut pour la voir. La lecture plein écran n'arrive qu'au
+  // bouton « Lecture » de la fiche.
+  const openDetail = useCallback((idx) => {
+    setDetailIdx(idx)
+    requestAnimationFrame(() => scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' }))
+  }, [])
+  const playHandlers = useMemo(() => VIDEOS.map((_, i) => () => openDetail(i)), [openDetail])
 
   const episodes = VIDEOS.map((v, i) => ({ v, i })).filter(x => !x.v.kind)
   const ovas = VIDEOS.map((v, i) => ({ v, i })).filter(x => x.v.kind === 'ova')
@@ -232,7 +345,7 @@ export default function VioletEvergardenPage({ onClose }) {
         {/* Content */}
         {playerIdx !== null ? (
           <div style={{ flex:1,display:'flex',flexDirection:'column',overflow:'hidden' }}>
-            <VideoPlayer videos={VIDEOS} startIdx={playerIdx} onClose={() => setPlayerIdx(null)} color={COLOR} storageKey={NS} />
+            <VideoPlayer videos={VIDEOS} startIdx={playerIdx} onClose={() => setPlayerIdx(null)} color={COLOR} storageKey={NS} autoStart />
           </div>
         ) : (
           <div ref={scrollRef} className="ve-scroll" style={{ flex:1,overflowY:'auto',padding:'24px 28px 48px' }}>
@@ -243,6 +356,9 @@ export default function VioletEvergardenPage({ onClose }) {
             <div className="ve-layout">
               <InfoPanel watchedCount={watchedCount} total={VIDEOS.length} lastWatchedIdx={resumeIdx} onResume={() => openPlayer(resumeIdx)} />
               <div>
+                {detailIdx !== null && (
+                  <EpisodeDetailInline idx={detailIdx} onPlay={() => openPlayer(detailIdx)} onClose={() => setDetailIdx(null)} />
+                )}
                 <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20 }}>
                   <div>
                     <h3 style={{ margin:'0 0 3px',fontSize:18,fontWeight:900,color:'#fff',letterSpacing:'-.01em' }}>Épisodes</h3>
@@ -287,6 +403,8 @@ export default function VioletEvergardenPage({ onClose }) {
                     Violet Evergarden est une production Kyoto Animation (2018), réputée pour son animation d'une beauté rare et son émotion bouleversante.
                   </span>
                 </div>
+
+                <RecommendedBanner />
               </div>
             </div>
           </div>
