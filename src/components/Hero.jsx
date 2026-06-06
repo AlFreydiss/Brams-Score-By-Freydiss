@@ -202,11 +202,9 @@ export default function Hero() {
         position: 'absolute', top: 0, left: 0, right: 0, height: '22%', zIndex: 0, pointerEvents: 'none',
         background: 'linear-gradient(180deg, rgba(8,9,13,0.70) 0%, transparent 100%)',
       }} />
-      {/* Vignette bottom — plein Hero pour éviter une frontière horizontale visible */}
-      <div style={{
-        position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
-        background: 'linear-gradient(180deg, transparent 0%, transparent 68%, rgba(8,9,13,0.10) 86%, rgba(8,9,13,0.30) 100%)',
-      }} />
+      {/* Vignette bottom retirée : le bas du Hero reste transparent comme le haut des
+          sections (qui ont leur propre fondu) → plus de marche sombre/claire = plus de
+          séparation visible entre le Hero et la suite. */}
       {/* Vignette côtés — masque les bords du personnage */}
       <div style={{
         position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
