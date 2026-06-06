@@ -312,7 +312,7 @@ export default function VioletEvergardenPage({ onClose }) {
         {detailIdx !== null ? (
           <div ref={scrollRef} className="ve-scroll" style={{ flex:1,overflowY:'auto',padding:'24px 28px 48px' }}>
             <div style={{ maxWidth: 1480, margin: '0 auto' }}>
-              <EpisodeWatch videos={VIDEOS} startIdx={detailIdx} ns={NS} storageKey={NS} color={COLOR} color2={COLOR2} onSelect={openDetail} onClose={() => setDetailIdx(null)} />
+              <EpisodeWatch videos={VIDEOS} startIdx={detailIdx} ns={NS} storageKey={NS} color={COLOR} color2={COLOR2} tags={TAGS} animeSynopsis={SYNOPSIS} onSelect={openDetail} onClose={() => setDetailIdx(null)} />
             </div>
           </div>
         ) : (
