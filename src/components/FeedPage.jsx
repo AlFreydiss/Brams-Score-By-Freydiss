@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { motion } from 'framer-motion'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import {
-  Anchor, BarChart3, Bookmark, Compass, Flame, Home,
-  Image as ImageIcon, MessageCircle, Radio, Search, Swords, Trophy, Users,
+  BarChart3, Bookmark, Flame, Home,
+  Image as ImageIcon, MessageCircle, Radio, Search, Users,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { getFeed, getPost, getFeedStats, subscribeFeed } from '../lib/feed.js'
@@ -30,15 +30,6 @@ const TAB_ITEMS = [
   { id: 'media', label: 'Médias', icon: ImageIcon },
   { id: 'polls', label: 'Sondages', icon: BarChart3, disabled: true },
   { id: 'mine', label: 'Mes posts', icon: Bookmark },
-]
-
-const QUICK_LINKS = [
-  { to: '/fil/signets', label: 'Mes signets', icon: Bookmark },
-  { to: '/', label: 'Classement', icon: Trophy },
-  { to: '/equipage', label: 'Équipages', icon: Anchor },
-  { to: '/tier-list', label: 'Tier List', icon: BarChart3 },
-  { to: '/tournoi', label: 'Tournoi', icon: Swords },
-  { to: '/undercover', label: 'Undercover', icon: Compass },
 ]
 
 function patch(posts, id, partial) {
@@ -89,49 +80,6 @@ function SkeletonPost() {
         <div data-fx style={{ ...sh, width: '56%', height: 104, borderRadius: 8, marginTop: 4 }} />
       </div>
     </div>
-  )
-}
-
-function FeedNav({ activeTab, onTab }) {
-  return (
-    <aside className="feed-left">
-      <div className="feed-card">
-        <div className="feed-kicker">Navigation</div>
-        <div className="feed-nav-list">
-          {TAB_ITEMS.map(item => {
-            const Icon = item.icon
-            return (
-              <button
-                key={item.id}
-                type="button"
-                disabled={item.disabled}
-                title={item.disabled ? 'Sondages: backend à ajouter avant activation' : item.label}
-                onClick={() => !item.disabled && onTab(item.id)}
-                className={`feed-nav-button ${activeTab === item.id ? 'is-active' : ''}`}
-              >
-                <Icon size={17} />
-                <span>{item.label}</span>
-              </button>
-            )
-          })}
-        </div>
-      </div>
-
-      <div className="feed-card">
-        <div className="feed-kicker">Accès rapides</div>
-        <div className="feed-nav-list">
-          {QUICK_LINKS.map(item => {
-            const Icon = item.icon
-            return (
-              <Link key={item.to} to={item.to} className="feed-nav-link">
-                <Icon size={17} />
-                <span>{item.label}</span>
-              </Link>
-            )
-          })}
-        </div>
-      </div>
-    </aside>
   )
 }
 
@@ -413,8 +361,6 @@ export default function FeedPage() {
   return (
     <div onScroll={onScroll} className="feed-shell">
       <div className="feed-layout">
-        <FeedNav activeTab={activeTab} onTab={setActiveTab} />
-
         <main className="feed-main" aria-label="Fil de la communauté Brams">
           <header className="feed-header">
             <div className="feed-title-row">

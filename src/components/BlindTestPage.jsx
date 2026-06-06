@@ -23,9 +23,6 @@ const ORANGE = '#f57c00'
 const GREEN  = '#22c55e'
 const BG     = '#0a0a0b'
 
-// Texture citron ultra discrète (data-URI), façon undercover (LEAF_URI).
-const LEMON_URI = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150'%3E%3Cg fill='none' stroke='%23ffd24a' stroke-width='1.3' opacity='0.6'%3E%3Cellipse cx='42' cy='48' rx='20' ry='13' transform='rotate(-22 42 48)'/%3E%3Cpath d='M59 35 l8 -6'/%3E%3Cellipse cx='108' cy='106' rx='18' ry='12' transform='rotate(18 108 106)'/%3E%3Cpath d='M123 97 l7 -5'/%3E%3C/g%3E%3C/svg%3E"
-
 const ROOM_QUERY = 'room'
 const ROUND_SECS = 30
 const GUESS_DELAY = 5
@@ -1010,46 +1007,29 @@ export default function BlindTestPage() {
         transition: 'background 1.4s ease', pointerEvents: 'none',
       }} />
 
-      {/* ── Ambiance citron façon Undercover (accueil) : dégradés + grille +
-            texture + particules montantes + citrons flottants ── */}
+      {/* ── Ambiance façon Undercover (accueil) : halos citron + grille + particules lentes ── */}
       {!isPlaying && (
         <>
           <style>{`
-            @keyframes btLemFloat{0%{transform:translateY(10px) translateX(0);opacity:0}12%{opacity:.55}88%{opacity:.4}100%{transform:translateY(-130px) translateX(16px);opacity:0}}
-            @keyframes btBreathe{0%,100%{opacity:.45}50%{opacity:.8}}
-            @keyframes btLemonBob{0%,100%{transform:translateY(0) rotate(-7deg)}50%{transform:translateY(-20px) rotate(9deg)}}
+            @keyframes btLemFloat{0%{transform:translateY(8px) translateX(0);opacity:0}12%{opacity:.48}88%{opacity:.34}100%{transform:translateY(-90px) translateX(14px);opacity:0}}
             @media (prefers-reduced-motion: reduce){ [data-btfx]{animation:none!important} }
           `}</style>
-          {/* Dégradés teintés jaune/or */}
           <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 3, pointerEvents: 'none', background: `
-            radial-gradient(920px 540px at 16% -8%, rgba(255,215,0,0.17), transparent 60%),
-            radial-gradient(780px 540px at 86% 10%, rgba(245,158,11,0.14), transparent 62%),
-            radial-gradient(840px 720px at 50% 118%, rgba(212,160,23,0.14), transparent 66%),
-            linear-gradient(180deg, rgba(18,15,4,0) 0%, rgba(15,12,3,0.34) 58%, rgba(12,10,3,0) 100%)` }} />
-          {/* Grille fine masquée */}
+            radial-gradient(900px 520px at 16% -8%, rgba(212,160,23,.12), transparent 62%),
+            radial-gradient(760px 520px at 88% 12%, rgba(245,158,11,.08), transparent 64%),
+            radial-gradient(780px 680px at 48% 116%, rgba(255,215,0,.06), transparent 66%),
+            linear-gradient(180deg, rgba(10,10,11,0) 0%, rgba(12,10,6,.28) 58%, rgba(10,10,11,0) 100%)` }} />
           <div aria-hidden style={{
             position: 'fixed', inset: 0, zIndex: 3, pointerEvents: 'none', opacity: 0.06,
-            backgroundImage: 'linear-gradient(rgba(255,215,0,.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,215,0,.4) 1px, transparent 1px)',
+            backgroundImage: 'linear-gradient(rgba(212,160,23,.12) 1px, transparent 1px), linear-gradient(90deg, rgba(212,160,23,.10) 1px, transparent 1px)',
             backgroundSize: '56px 56px',
             WebkitMaskImage: 'linear-gradient(180deg, transparent, black 16%, black 78%, transparent)',
             maskImage: 'linear-gradient(180deg, transparent, black 16%, black 78%, transparent)',
           }} />
-          {/* Texture citron tilée qui respire — discrète, même traitement que la texture
-              feuille d'Undercover (motif fin en line-art, faible opacité). */}
-          <div data-btfx aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 3, pointerEvents: 'none', opacity: 0.05, backgroundImage: `url("${LEMON_URI}")`, backgroundSize: '170px', animation: 'btBreathe 11s ease-in-out infinite' }} />
-          {/* Particules montantes + citrons flottants */}
           <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 3, pointerEvents: 'none', overflow: 'hidden' }}>
-            {Array.from({ length: 16 }).map((_, i) => (
-              <span key={`p${i}`} data-btfx style={{ position: 'absolute', left: `${5 + i * 6}%`, bottom: '-14px', width: 4 + (i % 3), height: 4 + (i % 3), borderRadius: '50%', background: 'rgba(255,215,0,.55)', filter: 'blur(.5px)', animation: `btLemFloat ${12 + (i % 5) * 2}s linear ${i * 1.1}s infinite` }} />
+            {Array.from({ length: 7 }).map((_, i) => (
+              <span key={`p${i}`} data-btfx style={{ position: 'absolute', left: `${12 + i * 12}%`, bottom: '-10px', width: 4 + (i % 3), height: 4 + (i % 3), borderRadius: '50%', background: 'rgba(212,160,23,.42)', filter: 'blur(.5px)', animation: `btLemFloat ${12 + (i % 5) * 2}s linear ${i * 1.45}s infinite` }} />
             ))}
-            {Array.from({ length: 16 }).map((_, i) => {
-              const top  = (i * 47) % 92
-              const left = (i * 71 + (i % 3) * 13) % 94
-              const size = 18 + (i % 5) * 9
-              return (
-                <span key={`l${i}`} data-btfx style={{ position: 'absolute', top: `${top}%`, left: `${left}%`, fontSize: size, opacity: 0.1 + (i % 4) * 0.04, filter: 'drop-shadow(0 3px 10px rgba(255,215,0,0.28))', animation: `btLemonBob ${6 + (i % 6)}s ease-in-out ${i * 0.4}s infinite` }}>🍋</span>
-              )
-            })}
           </div>
         </>
       )}

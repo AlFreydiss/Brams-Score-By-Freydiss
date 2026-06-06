@@ -1,5 +1,4 @@
-import { useState, useMemo, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Navbar from './Navbar.jsx'
 
@@ -15,15 +14,71 @@ const TEXT   = '#ecfeff'
 const MUTED  = 'rgba(236,254,255,0.55)'
 const hexA = (hex, a) => { const n = parseInt(hex.slice(1), 16); return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})` }
 const LEAF_URI = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cg fill='none' stroke='%2367e8f9' stroke-width='1.25' opacity='0.55'%3E%3Cpath d='M60 14 C42 38 30 54 30 72 a30 30 0 0 0 60 0 C90 54 78 38 60 14 Z'/%3E%3Cpath d='M50 70 C52 82 62 90 74 86'/%3E%3Cpath d='M18 88 C30 78 42 78 54 88 C66 98 78 98 90 88 C98 82 106 82 114 88'/%3E%3C/g%3E%3C/svg%3E"
-const AKI_FX = `@keyframes aki-float{0%{transform:translateY(8px);opacity:0}12%{opacity:.5}88%{opacity:.4}100%{transform:translateY(-90px);opacity:0}}@keyframes aki-breathe{0%,100%{opacity:.5}50%{opacity:.85}}@media (prefers-reduced-motion:reduce){[data-fx]{animation:none!important}}`
+const AKI_FX = `
+@keyframes aki-float{0%{transform:translateY(8px) translateX(0);opacity:0}12%{opacity:.48}88%{opacity:.34}100%{transform:translateY(-90px) translateX(14px);opacity:0}}
+@keyframes aki-breathe{0%,100%{opacity:.020}50%{opacity:.035}}
+@keyframes aki-drop-fall{0%{transform:translateY(-12vh);opacity:0}10%{opacity:.70}88%{opacity:.45}100%{transform:translateY(112vh);opacity:0}}
+@keyframes aki-drop-sway{0%,100%{margin-left:-12px}50%{margin-left:12px}}
+@media (prefers-reduced-motion:reduce){[data-fx]{animation:none!important}}
+`
+const AKI_DROPS = Array.from({ length: 20 }, (_, i) => ({
+  x: (i * 37.3 + 6) % 98,
+  size: 8 + (i % 4) * 3,
+  dur: 8.5 + (i % 6) * 2.2,
+  del: -(i * 1.1) % 13,
+  sway: 4.8 + (i % 5) * .7,
+}))
+
+const AkiDrops = () => (
+  <div aria-hidden style={{ position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none', overflow: 'hidden' }}>
+    {AKI_DROPS.map((d, i) => (
+      <span key={i} data-fx style={{
+        position: 'absolute',
+        left: `${d.x}%`,
+        top: 0,
+        width: d.size,
+        height: d.size * 1.32,
+        animation: `aki-drop-fall ${d.dur}s ${d.del}s linear infinite`,
+        willChange: 'transform',
+      }}>
+        <span data-fx style={{
+          display: 'block',
+          width: '100%',
+          height: '100%',
+          borderRadius: '70% 0 70% 70%',
+          transform: 'rotate(-45deg)',
+          background: 'radial-gradient(circle at 33% 30%, rgba(236,254,255,.90), rgba(103,232,249,.44) 35%, rgba(34,211,238,.18) 72%)',
+          border: '1px solid rgba(103,232,249,.38)',
+          boxShadow: '0 0 12px rgba(34,211,238,.24)',
+          animation: `aki-drop-sway ${d.sway}s ease-in-out infinite`,
+        }} />
+      </span>
+    ))}
+  </div>
+)
+
 const AkiAmbient = () => (
   <>
     <style>{AKI_FX}</style>
-    {/* Fond sobre/mystique (demande Freydiss) : dégradé profond, sans texture, halos discrets. */}
-    <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', background: `radial-gradient(1100px 620px at 78% -10%, ${hexA(PINK_M, .10)}, transparent 60%), radial-gradient(900px 560px at 10% 110%, rgba(124,92,246,.10), transparent 64%), linear-gradient(180deg, #070d14 0%, #060a12 60%, #04070c 100%)` }} />
-    <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
-      {[...Array(5)].map((_, i) => <span key={i} data-fx style={{ position: 'absolute', left: `${15 + i * 18}%`, bottom: -10, width: 3 + (i % 2), height: 3 + (i % 2), borderRadius: '50%', background: hexA(PINK_L, .35), filter: 'blur(.6px)', animation: `aki-float ${13 + (i % 4) * 2}s linear ${i * 1.6}s infinite` }} />)}
+    <div aria-hidden style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none', background: `
+      radial-gradient(900px 520px at 16% -8%, ${hexA(PINK_M, .12)}, transparent 62%),
+      radial-gradient(760px 520px at 88% 12%, rgba(124,92,246,.10), transparent 64%),
+      radial-gradient(780px 680px at 48% 116%, ${hexA(PINK, .08)}, transparent 66%),
+      linear-gradient(180deg, #06111b 0%, #050b12 58%, #04070c 100%)` }} />
+    <div aria-hidden style={{
+      position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none', opacity: .055,
+      backgroundImage: 'linear-gradient(rgba(103,232,249,.12) 1px, transparent 1px), linear-gradient(90deg, rgba(103,232,249,.10) 1px, transparent 1px)',
+      backgroundSize: '56px 56px',
+      WebkitMaskImage: 'linear-gradient(180deg, transparent, black 16%, black 76%, transparent)',
+      maskImage: 'linear-gradient(180deg, transparent, black 16%, black 76%, transparent)',
+    }} />
+    <div data-fx aria-hidden style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none', backgroundImage: `url("${LEAF_URI}")`, backgroundSize: '180px', animation: 'aki-breathe 11s ease-in-out infinite' }} />
+    <div aria-hidden style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+      {Array.from({ length: 9 }).map((_, i) => (
+        <span key={i} data-fx style={{ position: 'absolute', left: `${8 + i * 10}%`, bottom: '-10px', width: 4 + (i % 3), height: 4 + (i % 3), borderRadius: '50%', background: hexA(PINK_L, .50), filter: 'blur(.5px)', animation: `aki-float ${11 + (i % 5) * 2}s linear ${i * 1.3}s infinite` }} />
+      ))}
     </div>
+    <AkiDrops />
   </>
 )
 
@@ -584,7 +639,6 @@ const ANSWER_MAP = { yes:'oui', no:'non', maybe:'peut-être / probablement', dun
 const MAX_QUESTIONS = 30
 
 export default function AkinatorPage() {
-  const navigate = useNavigate()
   const [phase,     setPhase]     = useState(PHASE.IDLE)
   const [history,   setHistory]   = useState([])    // [{question, answer}]
   const [rejected,  setRejected]  = useState([])    // noms déjà proposés et rejetés
@@ -593,11 +647,6 @@ export default function AkinatorPage() {
   const [guess,     setGuess]     = useState(null)  // {name, emoji, domain}
   const [loading,   setLoading]   = useState(false)
   const [error,     setError]     = useState(null)
-
-  const stars = useMemo(() => Array.from({ length:45 }, (_, i) => ({
-    id:i, x:(i*13.7+7)%100, y:(i*23.1+3)%100,
-    size:0.5+(i%4)*0.4, dur:2+(i%5), del:(i*.3)%4,
-  })), [])
 
   // Pose la prochaine question ou propose une devinette.
   const askNextQuestion = useCallback(async (nextHistory, nextRejected) => {
@@ -663,76 +712,15 @@ export default function AkinatorPage() {
   }, [])
 
   return (
-    <div style={{ position:'fixed', left:0, right:0, top:76, bottom:0, zIndex:100, background:BG, display:'flex', flexDirection:'column', overflow:'hidden' }}>
-      {/* Navbar globale solide (la page est fixe → pas de scroll fenêtre → forceScrolled). L'overlay réserve déjà 76px (top:76). */}
+    <div style={{ position:'fixed', left:0, right:0, top:0, bottom:0, zIndex:100, background:BG, display:'flex', flexDirection:'column', overflow:'hidden' }}>
+      {/* Navbar globale solide (la page est fixe → pas de scroll fenêtre → forceScrolled). L'overlay démarre juste sous la navbar. */}
       <Navbar forceScrolled />
       <style>{`
         @keyframes akStar   { 0%,100%{opacity:.25;transform:scale(1)} 50%{opacity:.9;transform:scale(1.6)} }
         @keyframes akPulse  { 0%,100%{box-shadow:0 0 30px rgba(34,211,238,.32),0 0 60px rgba(14,116,144,.18)} 50%{box-shadow:0 0 52px rgba(34,211,238,.52),0 0 100px rgba(14,116,144,.28)} }
         @keyframes akFloat  { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-9px)} }
       `}</style>
-
-      {/* Stars */}
-      <div style={{ position:'absolute', inset:0, pointerEvents:'none' }}>
-        {stars.map(s => (
-          <div key={s.id} style={{
-            position:'absolute', left:`${s.x}%`, top:`${s.y}%`,
-            width:s.size, height:s.size, borderRadius:'50%',
-            background:'rgba(103,232,249,.42)',
-            animation:`akStar ${s.dur}s ${s.del}s ease-in-out infinite`,
-          }}/>
-        ))}
-      </div>
-
-      {/* Gradient ambiance */}
-      <div style={{
-        position:'absolute', inset:0, pointerEvents:'none',
-        background:`radial-gradient(ellipse at 50% 0%, rgba(34,211,238,.16) 0%, transparent 55%),
-                   radial-gradient(ellipse at 80% 100%, rgba(14,116,144,.16) 0%, transparent 50%)`,
-      }}/>
-      {/* Texture gouttes très discrète */}
-      <div aria-hidden style={{ position:'absolute', inset:0, pointerEvents:'none', opacity:.04, backgroundImage:`url("${LEAF_URI}")`, backgroundSize:'150px' }}/>
-
-      {/* Navbar */}
-      <div style={{
-        flexShrink:0, height:62, display:'flex', alignItems:'center',
-        padding:'0 24px', gap:16,
-        borderBottom:`1px solid rgba(34,211,238,.18)`,
-        background:'rgba(6,17,27,.92)', backdropFilter:'blur(22px)',
-        position:'relative', zIndex:10,
-      }}>
-        <button onClick={() => navigate('/')} style={{
-          display:'flex', alignItems:'center', gap:7,
-          background:'rgba(34,211,238,.10)', border:`1px solid rgba(34,211,238,.28)`,
-          borderRadius:10, color:PINK_L, cursor:'pointer',
-          padding:'7px 14px', fontSize:13, fontWeight:700,
-          transition:'all .16s',
-        }}
-        onMouseEnter={e => e.currentTarget.style.background='rgba(34,211,238,.18)'}
-        onMouseLeave={e => e.currentTarget.style.background='rgba(34,211,238,.10)'}
-        >← Retour</button>
-
-        <div style={{ flex:1, textAlign:'center' }}>
-          <span style={{
-            fontFamily:'var(--display)', fontWeight:900, fontSize:18,
-            background:`linear-gradient(135deg, ${PINK_L} 0%, ${PINK_M} 50%, #c084fc 100%)`,
-            WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent',
-          }}>🔮 Akinator</span>
-        </div>
-
-        <div style={{ minWidth:88, display:'flex', justifyContent:'flex-end' }}>
-          {phase !== PHASE.IDLE && (
-            <button onClick={reset} style={{
-              background:'transparent', border:`1px solid rgba(34,211,238,.22)`,
-              borderRadius:8, color:MUTED, cursor:'pointer',
-              padding:'6px 12px', fontSize:12, fontWeight:600, transition:'all .14s',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.color=PINK_L; e.currentTarget.style.borderColor='rgba(34,211,238,.48)' }}
-            onMouseLeave={e => { e.currentTarget.style.color=MUTED; e.currentTarget.style.borderColor='rgba(34,211,238,.22)' }}
-            >↺ Rejouer</button>
-          )}
-        </div>
-      </div>
+      <AkiAmbient />
 
       {/* Content */}
       <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', padding:24, position:'relative', zIndex:2 }}>

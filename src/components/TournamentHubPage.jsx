@@ -9,7 +9,6 @@ import { TOURNAMENT_CONFIG, OPENING_TOURNAMENT_CONFIG, ENDING_TOURNAMENT_CONFIG 
 import {
   TOURNAMENT_CATEGORIES,
   UPCOMING_TOURNAMENTS,
-  COMPLETED_TOURNAMENTS,
 } from '../data/tournament-hub-data.js'
 
 const BG      = '#0a0a0b'
@@ -26,58 +25,9 @@ const HUB_CSS = `
   @keyframes htTwinkle { 0%,100%{opacity:.07} 50%{opacity:.50} }
   @keyframes htScan    { 0%{top:-2px} 100%{top:100%} }
   @keyframes htPulse   { 0%,100%{opacity:.5} 50%{opacity:.85} }
-  /* Pétales de sakura qui tombent (chute + balancement + rotation) */
-  @keyframes htFall { 0%{transform:translateY(-10vh) rotate(0deg);opacity:0} 8%{opacity:.95} 90%{opacity:.85} 100%{transform:translateY(110vh) rotate(420deg);opacity:0} }
-  @keyframes htSway { 0%,100%{margin-left:-18px} 50%{margin-left:18px} }
-  @keyframes htBreathe { 0%,100%{opacity:.05} 50%{opacity:.10} }
+  @keyframes htFloat   { 0%{transform:translateY(8px) translateX(0);opacity:0} 12%{opacity:.45} 88%{opacity:.32} 100%{transform:translateY(-90px) translateX(14px);opacity:0} }
   @media (prefers-reduced-motion: reduce){ [data-fx]{animation:none!important} }
 `
-
-// Motif de fleurs de sakura (data-URI SVG) — texture de fond discrète façon Undercover.
-const SAKURA_URI = `data:image/svg+xml,${encodeURIComponent(`
-<svg xmlns='http://www.w3.org/2000/svg' width='90' height='90' viewBox='0 0 80 80'>
-  <g fill='#f472b6' opacity='0.9'>
-    <ellipse cx='40' cy='22' rx='8' ry='15' transform='rotate(0 40 40)'/>
-    <ellipse cx='40' cy='22' rx='8' ry='15' transform='rotate(72 40 40)'/>
-    <ellipse cx='40' cy='22' rx='8' ry='15' transform='rotate(144 40 40)'/>
-    <ellipse cx='40' cy='22' rx='8' ry='15' transform='rotate(216 40 40)'/>
-    <ellipse cx='40' cy='22' rx='8' ry='15' transform='rotate(288 40 40)'/>
-    <circle cx='40' cy='40' r='5' fill='#fbcfe8'/>
-  </g>
-</svg>`)}`
-
-// ── Pétales de sakura / roses (fond façon Undercover) ──────────────────────
-function HTSakura() {
-  const petals = useMemo(() => Array.from({ length: 22 }, (_, i) => ({
-    x:    (i * 41.7 + 5) % 99,
-    size: 9 + (i % 4) * 4,                 // 9–21 px
-    dur:  9 + (i % 6) * 2.5,               // 9–22 s
-    del:  -(i * 1.3) % 14,                 // démarrage étalé (négatif = déjà en cours)
-    sway: 5.5 + (i % 4) * 1.6,
-    col:  ['#f9a8d4', '#f472b6', '#ec4899', '#fbcfe8'][i % 4],
-  })), [])
-  return (
-    <div aria-hidden style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 1, overflow: 'hidden' }}>
-      {petals.map((p, i) => (
-        <div key={i} data-fx style={{
-          position: 'absolute', left: `${p.x}%`, top: 0,
-          animation: `htFall ${p.dur}s ${p.del}s linear infinite`,
-          willChange: 'transform',
-        }}>
-          <div data-fx style={{
-            width: p.size, height: p.size * 0.82,
-            background: `radial-gradient(circle at 30% 30%, ${p.col}, ${p.col}99)`,
-            borderRadius: '150% 0 150% 0',
-            transform: 'rotate(35deg)',
-            boxShadow: `0 0 6px ${p.col}55`,
-            opacity: 0.85,
-            animation: `htSway ${p.sway}s ease-in-out infinite`,
-          }} />
-        </div>
-      ))}
-    </div>
-  )
-}
 
 // ── Ambient background ─────────────────────────────────────────────────────
 function HTStars() {
@@ -460,57 +410,6 @@ function ActiveTournamentCard({ config, progress, currentRound, winner }) {
   )
 }
 
-// ── Archive card — tournoi terminé : champion + accès à la page de victoire ──
-function ArchiveCard({ config, winner, index }) {
-  const navigate = useNavigate()
-  const route = config.route || '/tournoi/ost'
-  const ytOk  = winner?.ytId && !String(winner.ytId).startsWith('similar')
-  const thumb = ytOk ? `https://img.youtube.com/vi/${winner.ytId}/hqdefault.jpg` : null
-  const accent = winner?.color || GOLD
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.06, duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
-      onClick={() => navigate(route)}
-      whileHover={{ y: -3, transition: { duration: 0.18 } }}
-      style={{
-        background: `linear-gradient(145deg, ${accent}14 0%, rgba(10,10,11,0.97) 100%)`,
-        border: `1px solid ${accent}28`,
-        borderTop: `2px solid ${GOLD}99`,
-        borderRadius: 14, padding: '18px 20px 16px',
-        cursor: 'pointer', position: 'relative', overflow: 'hidden',
-        display: 'flex', flexDirection: 'column', gap: 12,
-      }}
-    >
-      <div style={{ position: 'absolute', top: -24, left: -24, right: -24, height: 70, pointerEvents: 'none', background: `radial-gradient(ellipse 80% 100% at 50% 0%, ${accent}1c 0%, transparent 70%)` }} />
-      <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-        <StatusBadge status="soon" />
-        <span style={{ fontSize: 8, color: 'rgba(255,255,255,.28)', background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)', borderRadius: 5, padding: '3px 9px', letterSpacing: '0.10em', textTransform: 'uppercase', fontWeight: 800 }}>
-          {config.categoryLabel || 'Tournoi'}
-        </span>
-      </div>
-      <h3 style={{ position: 'relative', zIndex: 1, fontFamily: "'Pirata One',cursive", fontSize: 20, fontWeight: 900, margin: 0, color: 'rgba(255,255,255,.92)', lineHeight: 1.1 }}>
-        {config.title}
-      </h3>
-      <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', borderRadius: 12, background: 'rgba(255,255,255,.03)', border: `1px solid ${GOLD}22` }}>
-        {thumb
-          ? <img src={thumb} alt="" style={{ width: 48, height: 48, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />
-          : <div style={{ width: 48, height: 48, borderRadius: 8, flexShrink: 0, display: 'grid', placeItems: 'center', fontSize: 22, background: `${accent}22` }}>👑</div>}
-        <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: 8, fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: GOLD, marginBottom: 3 }}>Champion 👑</div>
-          <div style={{ fontSize: 14, fontWeight: 800, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{winner.title}</div>
-          {winner.anime && <div style={{ fontSize: 11, color: 'rgba(255,255,255,.4)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{winner.anime}</div>}
-        </div>
-      </div>
-      <button onClick={(e) => { e.stopPropagation(); navigate(route) }}
-        style={{ position: 'relative', zIndex: 1, width: '100%', padding: '10px 0', borderRadius: 10, border: '1px solid rgba(255,255,255,.12)', background: 'rgba(255,255,255,.04)', color: 'rgba(255,255,255,.6)', fontWeight: 700, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit' }}>
-        Voir le vainqueur →
-      </button>
-    </motion.div>
-  )
-}
-
 // ── Upcoming card ──────────────────────────────────────────────────────────
 function UpcomingCard({ item, index }) {
   const cat = TOURNAMENT_CATEGORIES.find(c => c.id === item.categoryId)
@@ -719,30 +618,39 @@ export default function TournamentHubPage() {
   const activeRef     = useRef(null)
   const categoriesRef = useRef(null)
 
-  // Archives = tournois réellement terminés (un vainqueur existe). Le clic mène
-  // à la route du tournoi, qui n'affiche que la page de victoire quand il y a un
-  // gagnant. Concaténé aux archives statiques éventuelles.
-  const archivedTournaments = [
-    { config: OPENING_TOURNAMENT_CONFIG, winner: opening.winner },
-    { config: ENDING_TOURNAMENT_CONFIG,  winner: ending.winner },
-    { config: TOURNAMENT_CONFIG,         winner: ost.winner },
-  ].filter(t => t.winner)
-
   return (
-    <div style={{ minHeight: '100vh', background: BG, fontFamily: 'inherit', position: 'relative' }}>
+    <div style={{ minHeight: '100vh', background: BG, fontFamily: 'inherit', position: 'relative', overflowX: 'hidden' }}>
       <style>{HUB_CSS}</style>
 
       {/* Fixed bg layers */}
-      <div style={{ position: 'fixed', inset: 0, background: BG, zIndex: 0 }} />
-      {/* Halos roses/violets diffus (ambiance sakura) — plus présents */}
-      <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', background: `
-        radial-gradient(1200px 700px at 80% -10%, rgba(236,72,153,.22), transparent 58%),
-        radial-gradient(1000px 600px at 6% 4%, rgba(124,58,237,.18), transparent 60%),
-        radial-gradient(820px 820px at 50% 122%, rgba(219,39,119,.14), transparent 60%),
-        linear-gradient(180deg, #120710 0%, #0a0a0b 62%, #110714 100%)` }} />
-      {/* Pétales de sakura retirés (demande Freydiss) — on garde juste étoiles + scanline. */}
-      <HTStars />
-      <HTScanLine />
+      <div aria-hidden style={{ position: 'fixed', inset: 0, background: `
+        radial-gradient(900px 520px at 16% -8%, rgba(212,160,23,.10), transparent 62%),
+        radial-gradient(760px 520px at 88% 12%, rgba(157,23,77,.10), transparent 64%),
+        radial-gradient(780px 680px at 48% 116%, rgba(120,139,118,.07), transparent 66%),
+        linear-gradient(180deg, #07090e 0%, #08090d 58%, #07090e 100%)`, zIndex: 0 }} />
+      <div aria-hidden style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 0,
+        pointerEvents: 'none',
+        opacity: .055,
+        backgroundImage: 'linear-gradient(rgba(212,160,23,.12) 1px, transparent 1px), linear-gradient(90deg, rgba(212,160,23,.10) 1px, transparent 1px)',
+        backgroundSize: '56px 56px',
+        maskImage: 'linear-gradient(180deg, transparent, black 16%, black 76%, transparent)',
+        WebkitMaskImage: 'linear-gradient(180deg, transparent, black 16%, black 76%, transparent)',
+      }} />
+      <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+        {Array.from({ length: 9 }).map((_, i) => (
+          <span key={i} data-fx style={{ position: 'absolute', left: `${8 + i * 10}%`, bottom: '-10px', width: 4 + (i % 3), height: 4 + (i % 3), borderRadius: '50%', background: i % 3 === 0 ? 'rgba(212,160,23,.42)' : 'rgba(157,23,77,.36)', filter: 'blur(.5px)', animation: `htFloat ${11 + (i % 5) * 2}s linear ${i * 1.3}s infinite` }} />
+        ))}
+      </div>
+      <div aria-hidden style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 1,
+        pointerEvents: 'none',
+        background: 'radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,.12) 54%, rgba(0,0,0,.52) 100%)',
+      }} />
 
       {/* Content */}
       <div style={{ position: 'relative', zIndex: 2 }}>
@@ -812,33 +720,6 @@ export default function TournamentHubPage() {
                 <UpcomingCard key={item.id} item={item} index={i} />
               ))}
             </div>
-          </div>
-
-          {/* ── Archives ── */}
-          <div style={{ marginBottom: 40 }}>
-            <SectionHeading title="Archives" />
-            {archivedTournaments.length === 0 ? (
-              <div style={{
-                textAlign: 'center', padding: '44px 20px',
-                border: '1px solid rgba(255,255,255,.06)',
-                borderRadius: 14,
-                background: 'rgba(255,255,255,.015)',
-              }}>
-                <div style={{ fontSize: 30, marginBottom: 12, opacity: 0.18 }}>◎</div>
-                <div style={{ fontSize: 13, color: 'rgba(255,255,255,.22)' }}>
-                  Aucun tournoi archivé pour l'instant.
-                </div>
-                <div style={{ fontSize: 11, color: 'rgba(255,255,255,.14)', marginTop: 6 }}>
-                  Les tournois terminés apparaîtront ici avec leurs résultats.
-                </div>
-              </div>
-            ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 12 }}>
-                {archivedTournaments.map((t, i) => (
-                  <ArchiveCard key={t.config.id} config={t.config} winner={t.winner} index={i} />
-                ))}
-              </div>
-            )}
           </div>
 
         </div>
