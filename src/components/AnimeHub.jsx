@@ -1397,9 +1397,11 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
   // Tri appliqué aux grilles (populaire = ordre priorité par défaut)
   const applySort = useCallback((list) => {
     const arr = [...list]
-    if (sortBy === 'az') arr.sort((a, b) => a.title.localeCompare(b.title, 'fr'))
-    else if (sortBy === 'recent') arr.sort((a, b) => (b._isNew ? 1 : 0) - (a._isNew ? 1 : 0))
+    const pop = a => (a._rating?.count || 0) * 10 + (a._rating?.avg || 0) + (a.priority || 0)
+    if (sortBy === 'az') arr.sort((a, b) => (a.title || '').localeCompare(b.title || '', 'fr'))
+    else if (sortBy === 'recent') arr.sort((a, b) => (b._isNew ? 1 : 0) - (a._isNew ? 1 : 0) || (b.year || 0) - (a.year || 0))
     else if (sortBy === 'note') arr.sort((a, b) => ((b._rating?.avg) || 0) - ((a._rating?.avg) || 0) || ((b._rating?.count) || 0) - ((a._rating?.count) || 0))
+    else arr.sort((a, b) => pop(b) - pop(a)) // 'populaire' : note + nb d'avis + priorité
     return arr
   }, [sortBy])
   const marqueeAnimesWithProgress = useMemo(() => {

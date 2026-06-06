@@ -420,6 +420,36 @@
     "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-thumbnails/Ep013.jpg"
   },
   {
+    "episode": 14,
+    "title": "OAV — Violet Evergarden",
+    "kind": "ova",
+    "episodeLabel": "OAV",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden/oav.mp4",
+    "season": "OAV",
+    "arc": "OAV",
+    "badge": "VF/VOSTFR",
+    "preferredAudioLang": "fr",
+    "progressKey": "violet-oav",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr"
+      },
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden/oav-vostfr.mp4"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden/oav-fr.vtt"
+      }
+    ]
+  },
+  {
     "episode": 100,
     "title": "Violet Evergarden : Éternité et la Poupée de souvenirs automatiques",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/violet-evergarden-hls/SIDE_STORY/master-ja.m3u8",
