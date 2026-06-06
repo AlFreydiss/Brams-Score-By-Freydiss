@@ -1,1 +1,21 @@
-[]
+[
+  {
+    "episode": 1,
+    "title": "Le Train de l'Infini (Mugen Train)",
+    "kind": "film",
+    "episodeLabel": "Film",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/movie-mugen-train.mp4",
+    "season": "Film",
+    "arc": "Film",
+    "badge": "VOSTFR",
+    "preferredAudioLang": "ja",
+    "progressKey": "kny-movie-mugen",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/movie-mugen-train-fr.vtt"
+      }
+    ]
+  }
+]
