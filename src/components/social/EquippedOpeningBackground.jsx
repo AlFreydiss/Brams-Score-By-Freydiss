@@ -44,8 +44,9 @@ export default function EquippedOpeningBackground() {
   return (
     <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden', contain: 'layout paint size', isolation: 'isolate', background: activeBg.dominantColor || '#06070b' }}>
       <OpeningBgMedia bg={activeBg} style={ambientStill ? STILL_STYLE : VIDEO_STYLE} stillOnly={ambientStill} />
-      {/* Gradient premium */}
-      <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(180deg, ${start} 0%, ${end} 100%)` }} />
+      {/* Voile UNIFORME (plus de dégradé vertical haut→bas qui rendait l'accueil
+          non homogène) — le voile global de la page assombrit déjà uniformément. */}
+      <div style={{ position: 'absolute', inset: 0, background: end }} />
       {/* Teinte subtile */}
       <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse 90% 70% at 50% 30%, rgba(120,90,200,0.08), transparent 60%)' }} />
       {/* Vignette radiale retirée : elle créait une bande sombre elliptique visible
