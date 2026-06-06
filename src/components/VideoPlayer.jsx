@@ -937,7 +937,26 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
               />
             )}
 
-            <style>{`@keyframes fadeIn { from { opacity:0 } to { opacity:1 } }`}</style>
+            <style>{`@keyframes fadeIn { from { opacity:0 } to { opacity:1 } }
+              @keyframes vpKenBurns { from { transform: scale(1.04) } to { transform: scale(1.12) } }
+              @keyframes vpPlayPulse { 0%,100% { box-shadow: 0 0 0 0 ${color}55, 0 10px 40px rgba(0,0,0,.5) } 50% { box-shadow: 0 0 0 16px ${color}00, 0 10px 40px rgba(0,0,0,.5) } }`}</style>
+
+            {/* ── Fond cinématique en pré-lecture (au lieu d'un grand vide noir) ── */}
+            {!started && (
+              <div aria-hidden style={{ position: 'absolute', inset: 0, zIndex: 1, overflow: 'hidden', background: '#06070b' }}>
+                {video?.thumbnail && (
+                  <img
+                    src={video.thumbnail}
+                    alt=""
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'blur(3px) brightness(0.46) saturate(1.12)', transform: 'scale(1.06)', animation: 'vpKenBurns 18s ease-in-out infinite alternate' }}
+                  />
+                )}
+                {/* Voile dégradé : assombrit vers le panneau droit + vignette douce */}
+                <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(ellipse 70% 80% at 40% 45%, rgba(6,7,11,0) 0%, rgba(6,7,11,0.55) 70%, rgba(6,7,11,0.9) 100%), linear-gradient(90deg, rgba(6,7,11,0.35) 0%, rgba(6,7,11,0) 30%)` }} />
+                {/* Liseré couleur de l'anime, fin, en haut */}
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, transparent, ${color}, transparent)`, opacity: 0.5 }} />
+              </div>
+            )}
 
             {/* ── Toast « Reprise à MM:SS » ── */}
             {resumeToast && !endOverlay && (
@@ -1050,8 +1069,13 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
 
             {/* ── Big play icon au centre ── */}
             {!playing && (
-              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', zIndex: 4 }}>
-                <div style={{ width: 72, height: 72, borderRadius: '50%', background: `${color}cc`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, boxShadow: `0 4px 24px ${color}66`, backdropFilter: 'blur(4px)' }}>▶</div>
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, pointerEvents: 'none', zIndex: 4 }}>
+                <div style={{ width: 84, height: 84, borderRadius: '50%', background: `${color}e6`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, color: '#fff', backdropFilter: 'blur(4px)', border: '1px solid rgba(255,255,255,0.22)', animation: !started ? 'vpPlayPulse 2.4s ease-in-out infinite' : 'none', boxShadow: `0 10px 40px rgba(0,0,0,.5)` }}>▶</div>
+                {!started && (
+                  <div style={{ fontSize: 12.5, fontWeight: 800, letterSpacing: '.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.82)', textShadow: '0 2px 12px rgba(0,0,0,0.8)' }}>
+                    Lancer la lecture
+                  </div>
+                )}
               </div>
             )}
 
