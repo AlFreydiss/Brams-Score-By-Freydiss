@@ -3,6 +3,7 @@ import VideoPlayer from './VideoPlayer.jsx'
 import { ProgressRing } from './ProgressRing.jsx'
 import AnimeBackdrop, { ANIME_MOTIFS } from './AnimeBackdrop.jsx'
 import VIDEOS_RAW from '../data/vivy-videos.json'
+import EpisodeDetailInline from './EpisodeDetailInline.jsx'
 
 const VIDEOS = VIDEOS_RAW
 
@@ -217,6 +218,7 @@ function InfoPanel({ watchedCount, total, lastWatchedIdx, onResume }) {
 
 export default function VivyPage({ onClose }) {
   const [playerIdx,  setPlayerIdx]  = useState(null)
+  const [detailIdx,  setDetailIdx]  = useState(null)
   const [progress,   setProgress]   = useState(loadProgress)
   const scrollRef = useRef(null)
 
@@ -255,7 +257,12 @@ export default function VivyPage({ onClose }) {
     markWatched(idx)
   }, [markWatched])
 
-  const playHandlers = useMemo(() => VIDEOS.map((_, i) => () => openPlayer(i)), [openPlayer])
+  const openDetail = useCallback((idx) => {
+    setDetailIdx(idx)
+    requestAnimationFrame(() => scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' }))
+  }, [])
+
+  const playHandlers = useMemo(() => VIDEOS.map((_, i) => () => openDetail(i)), [openDetail])
 
   return (
     <>
@@ -309,6 +316,7 @@ export default function VivyPage({ onClose }) {
               onClose={() => setPlayerIdx(null)}
               color={COLOR}
               storageKey={NS}
+              autoStart
             />
           </div>
         ) : (
@@ -336,6 +344,9 @@ export default function VivyPage({ onClose }) {
               />
 
               <div>
+                {detailIdx !== null && (
+                  <EpisodeDetailInline video={VIDEOS[detailIdx]} ns={NS} animeTitle="Vivy: Fluorite Eye's Song" color={COLOR} color2={COLOR2} onPlay={() => openPlayer(detailIdx)} onClose={() => setDetailIdx(null)} />
+                )}
                 <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20 }}>
                   <div>
                     <h3 style={{ margin:'0 0 3px',fontSize:18,fontWeight:900,color:'#fff',letterSpacing:'-.01em' }}>
