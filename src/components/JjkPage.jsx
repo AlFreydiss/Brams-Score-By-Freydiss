@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react'
 import VideoPlayer from './VideoPlayer.jsx'
 import EpisodeDetailInline from './EpisodeDetailInline.jsx'
+import SeasonDivider from './SeasonDivider.jsx'
 import { ProgressRing } from './ProgressRing.jsx'
 import AnimeBackdrop, { ANIME_MOTIFS } from './AnimeBackdrop.jsx'
 import VIDEOS_RAW from '../data/jjk-videos.json'
@@ -88,7 +89,9 @@ const EpCard = memo(function EpCard({ video, index, watched, onPlay }) {
       </div>
       <div style={{ padding:'10px 13px 13px' }}>
         <div style={{ fontSize:9.5,fontWeight:800,color:COLOR2,letterSpacing:'.1em',marginBottom:4 }}>{cardLabel}</div>
-        <div style={{ fontSize:13.5,fontWeight:700,color:'#fff',lineHeight:1.28 }}>{video.title}</div>
+        {video.title && !/^s?\d{0,2}\s*[-·]?\s*[ée]pisode\s*\d+$/i.test(String(video.title).trim()) && (
+          <div style={{ fontSize:13.5,fontWeight:700,color:'#fff',lineHeight:1.28 }}>{video.title}</div>
+        )}
       </div>
     </div>
   )
@@ -258,9 +261,20 @@ export default function JjkPage({ onClose }) {
                   </div>
                 </div>
                 <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))', gap:14 }}>
-                  {episodes.map(({ v, i }) => (
-                    <EpCard key={keyOf(v)} video={v} index={i} watched={!!progress[keyOf(v)]?.completed} onPlay={playHandlers[i]} />
-                  ))}
+                  {(() => {
+                    const seasons = [...new Set(episodes.map(e => e.v.season || 'S01'))]
+                    const multi = seasons.length > 1
+                    let last = null; const out = []
+                    episodes.forEach(({ v, i }) => {
+                      const s = v.season || 'S01'
+                      if (multi && s !== last) {
+                        last = s
+                        out.push(<SeasonDivider key={`sd-${s}`} label={`Saison ${String(s).replace(/^S0?/i,'')}`} color={COLOR} />)
+                      }
+                      out.push(<EpCard key={keyOf(v)} video={v} index={i} watched={!!progress[keyOf(v)]?.completed} onPlay={playHandlers[i]} />)
+                    })
+                    return out
+                  })()}
                 </div>
 
                 {ovas.length > 0 && (
