@@ -453,6 +453,44 @@ const ANIMES = [
     badge: 'NOUVEAU',
     badgeColor: '#1565c0',
   },
+  {
+    id: 'domestic-na-kanojo',
+    title: 'Domestic na Kanojo',
+    subtitle: 'Romance sous le même toit',
+    emoji: '💔',
+    color: '#ec4899',
+    colorDark: '#831843',
+    coverImage: 'https://cdn.myanimelist.net/images/anime/1418/96042.jpg',
+    genres: ['Romance', 'Drame', 'Tranche de vie'],
+    description: "Natsuo, amoureux de sa professeure, voit sa vie bouleversée quand le remariage de son père fait de Hina et Rui ses belles-sœurs. Une romance compliquée et intense.",
+    stats: [
+      { label: 'Épisodes', value: '12' },
+      { label: 'Statut', value: 'Terminé' },
+      { label: 'Audio', value: 'VOSTFR' },
+    ],
+    action: '▶ Accéder',
+    badge: 'NOUVEAU',
+    badgeColor: '#ec4899',
+  },
+  {
+    id: 'koi-ameagari',
+    title: 'Koi wa Ameagari no You ni',
+    subtitle: 'After the Rain',
+    emoji: '☔',
+    color: '#60a5fa',
+    colorDark: '#1e3a8a',
+    coverImage: 'https://cdn.myanimelist.net/images/anime/1851/90757.jpg',
+    genres: ['Romance', 'Drame', 'Tranche de vie'],
+    description: "Akira, lycéenne dont le rêve d'athlétisme s'est brisé, tombe amoureuse du gérant quadragénaire de son restaurant. Un drame doux-amer sur les rêves et le temps.",
+    stats: [
+      { label: 'Épisodes', value: '12' },
+      { label: 'Statut', value: 'Terminé' },
+      { label: 'Audio', value: 'VOSTFR' },
+    ],
+    action: '▶ Accéder',
+    badge: 'NOUVEAU',
+    badgeColor: '#60a5fa',
+  },
 ]
 
 const SEARCH_ALIASES = {
@@ -1358,7 +1396,7 @@ function HubAiChat({ animes, onOpen }) {
   )
 }
 
-export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrstone, onOpenJjk, onOpenKingdom, onOpenAot, onOpenKny, onOpenNnt, onOpenSl, onOpenDbs, onOpenViolet, onOpenVivy, onOpenLovePrism, onOpenCaroleTuesday, onOpenBunnyGirl, onOpenRentGirlfriend, onOpenBc, onOpenMha, onOpenFireforce, onOpenBluelock, onOpenFateZero, onOpenYourName, onOpenMonUnivers }) {
+export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrstone, onOpenJjk, onOpenKingdom, onOpenAot, onOpenKny, onOpenNnt, onOpenSl, onOpenDbs, onOpenViolet, onOpenVivy, onOpenLovePrism, onOpenCaroleTuesday, onOpenBunnyGirl, onOpenRentGirlfriend, onOpenBc, onOpenMha, onOpenFireforce, onOpenBluelock, onOpenFateZero, onOpenYourName, onOpenDomestic, onOpenKoi, onOpenMonUnivers }) {
   const [query, setQuery] = useState('')
   const [selectedGenres, setSelectedGenres] = useState(new Set())
   const [genreMenuOpen, setGenreMenuOpen] = useState(false)
@@ -1528,6 +1566,8 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
       bc: onOpenBc, mha: onOpenMha, fireforce: onOpenFireforce, bluelock: onOpenBluelock,
       'fate-zero': onOpenFateZero,
       'your-name': onOpenYourName,
+      'domestic-na-kanojo': onOpenDomestic,
+      'koi-ameagari': onOpenKoi,
     }
     map[id]?.()
   }

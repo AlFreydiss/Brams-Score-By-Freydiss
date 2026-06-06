@@ -37,6 +37,8 @@ const SlPage          = lazyWithReload(() => import('./components/SlPage.jsx'))
 const DbsPage         = lazyWithReload(() => import('./components/DbsPage.jsx'))
 const VioletEvergardenPage = lazyWithReload(() => import('./components/VioletEvergardenPage.jsx'))
 const VivyPage             = lazyWithReload(() => import('./components/VivyPage.jsx'))
+const DomesticNaKanojoPage = lazyWithReload(() => import('./components/DomesticNaKanojoPage.jsx'))
+const KoiAmeagariPage      = lazyWithReload(() => import('./components/KoiAmeagariPage.jsx'))
 const LovePrismPage        = lazyWithReload(() => import('./components/LovePrismPage.jsx'))
 const CaroleTuesdayPage    = lazyWithReload(() => import('./components/CaroleTuesdayPage.jsx'))
 const BunnyGirlPage        = lazyWithReload(() => import('./components/BunnyGirlPage.jsx'))
@@ -256,6 +258,8 @@ export default function App() {
   const [dbsOpen,          setDbsOpen]           = useState(false)
   const [violetOpen,       setVioletOpen]        = useState(false)
   const [vivyOpen,         setVivyOpen]          = useState(false)
+  const [domesticOpen,     setDomesticOpen]      = useState(false)
+  const [koiOpen,          setKoiOpen]           = useState(false)
   const [lovePrismOpen,    setLovePrismOpen]     = useState(false)
   const [caroleTuesdayOpen,setCaroleTuesdayOpen] = useState(false)
   const [bunnyGirlOpen,    setBunnyGirlOpen]     = useState(false)
@@ -290,6 +294,8 @@ export default function App() {
   const onOpenDbsFromMon = openFromMon('dbs')
   const onOpenVioletFromMon = openFromMon('violet-evergarden')
   const onOpenVivyFromMon = openFromMon('vivy')
+  const onOpenDomesticFromMon = openFromMon('domestic-na-kanojo')
+  const onOpenKoiFromMon = openFromMon('koi-ameagari')
   const onOpenLovePrismFromMon = openFromMon('love-prism')
   const onOpenCaroleTuesdayFromMon = openFromMon('carole-tuesday')
   const onOpenBcFromMon = openFromMon('bc')
@@ -311,7 +317,7 @@ export default function App() {
     setScansOpen(false); setOnepieceOpen(false); setEncyclopedieOpen(false); setAnimeHubOpen(false)
     setTpnOpen(false); setDrstoneOpen(false); setJjkOpen(false); setKingdomOpen(false)
     setAotOpen(false); setKnyOpen(false); setNntOpen(false); setSlOpen(false); setDbsOpen(false)
-    setVioletOpen(false); setVivyOpen(false); setLovePrismOpen(false); setCaroleTuesdayOpen(false); setBunnyGirlOpen(false); setRentGirlOpen(false); setBcOpen(false); setMhaOpen(false)
+    setVioletOpen(false); setVivyOpen(false); setDomesticOpen(false); setKoiOpen(false); setLovePrismOpen(false); setCaroleTuesdayOpen(false); setBunnyGirlOpen(false); setRentGirlOpen(false); setBcOpen(false); setMhaOpen(false)
     setFireforcOpen(false); setBluelockOpen(false); setFateZeroOpen(false); setYourNameOpen(false); setMonUniversOpen(false); setTreeOpen(false); setUploadOpen(false)
   }, [])
 
@@ -319,7 +325,7 @@ export default function App() {
   const ANIME_SETTERS = {
     onepiece: setOnepieceOpen, tpn: setTpnOpen, drstone: setDrstoneOpen, jjk: setJjkOpen,
     kingdom: setKingdomOpen, aot: setAotOpen, kny: setKnyOpen, nnt: setNntOpen, sl: setSlOpen,
-    dbs: setDbsOpen, 'violet-evergarden': setVioletOpen, vivy: setVivyOpen, 'love-prism': setLovePrismOpen,
+    dbs: setDbsOpen, 'violet-evergarden': setVioletOpen, vivy: setVivyOpen, 'domestic-na-kanojo': setDomesticOpen, 'koi-ameagari': setKoiOpen, 'love-prism': setLovePrismOpen,
     'carole-tuesday': setCaroleTuesdayOpen, 'bunny-girl': setBunnyGirlOpen, 'rent-girlfriend': setRentGirlOpen,
     bc: setBcOpen, mha: setMhaOpen, fireforce: setFireforcOpen, bluelock: setBluelockOpen,
     'fate-zero': setFateZeroOpen, 'your-name': setYourNameOpen,
@@ -363,6 +369,8 @@ export default function App() {
       'open-dbs':              go('/animes-scan/dbs'),
       'open-violet-evergarden':go('/animes-scan/violet-evergarden'),
       'open-vivy':             go('/animes-scan/vivy'),
+      'open-domestic-na-kanojo': go('/animes-scan/domestic-na-kanojo'),
+      'open-koi-ameagari':     go('/animes-scan/koi-ameagari'),
       'open-love-prism':       go('/animes-scan/love-prism'),
       'open-carole-tuesday':   go('/animes-scan/carole-tuesday'),
       'open-bunny-girl':       go('/animes-scan/bunny-girl'),
@@ -380,7 +388,7 @@ export default function App() {
     return () => entries.forEach(([ev, fn]) => document.removeEventListener(ev, fn))
   }, [navigate])
 
-  const mediaOverlayOpen = scansOpen || animeHubOpen || tpnOpen || drstoneOpen || jjkOpen || kingdomOpen || aotOpen || knyOpen || nntOpen || slOpen || dbsOpen || violetOpen || vivyOpen || lovePrismOpen || caroleTuesdayOpen || bunnyGirlOpen || rentGirlOpen || bcOpen || mhaOpen || fireforcOpen || bluelockOpen || fateZeroOpen || yourNameOpen || monUniversOpen
+  const mediaOverlayOpen = scansOpen || animeHubOpen || tpnOpen || drstoneOpen || jjkOpen || kingdomOpen || aotOpen || knyOpen || nntOpen || slOpen || dbsOpen || violetOpen || vivyOpen || domesticOpen || koiOpen || lovePrismOpen || caroleTuesdayOpen || bunnyGirlOpen || rentGirlOpen || bcOpen || mhaOpen || fireforcOpen || bluelockOpen || fateZeroOpen || yourNameOpen || monUniversOpen
 
   const mainContent = (
     <>
@@ -396,8 +404,12 @@ export default function App() {
             Hero translucide transparaissait derrière la barre du haut ("hero derrière"). */}
         <div style={{ display: mediaOverlayOpen ? 'none' : 'block' }}>
           <Hero />
-          {/* Semi-transparent → l'AMV en fond reste visible pendant tout le scroll de la home */}
-          <div style={{ background: 'rgba(8,9,13,0.82)' }}>
+          {/* Le fond remonte sous le Hero avec un fondu long, sans rupture d'opacité. */}
+          <div style={{
+            marginTop: -280,
+            paddingTop: 280,
+            background: 'linear-gradient(180deg, rgba(8,9,13,0) 0px, rgba(8,9,13,0.10) 80px, rgba(8,9,13,0.42) 190px, rgba(8,9,13,0.82) 360px, #08090D 620px)',
+          }}>
             <QuoteSection />
             <Ranks />
             {/* Classement vocal remonté juste sous 'Grimpe les rangs' (était trop bas, après Equipage/Soutenir) */}
@@ -525,6 +537,8 @@ export default function App() {
             onOpenDbs={() => navigate('/animes-scan/dbs')}
             onOpenViolet={() => navigate('/animes-scan/violet-evergarden')}
             onOpenVivy={() => navigate('/animes-scan/vivy')}
+            onOpenDomestic={() => navigate('/animes-scan/domestic-na-kanojo')}
+            onOpenKoi={() => navigate('/animes-scan/koi-ameagari')}
             onOpenLovePrism={() => navigate('/animes-scan/love-prism')}
             onOpenCaroleTuesday={() => navigate('/animes-scan/carole-tuesday')}
             onOpenBunnyGirl={() => navigate('/animes-scan/bunny-girl')}
@@ -553,6 +567,8 @@ export default function App() {
       {dbsOpen     && <DbsPage     onClose={closeMedia} />}
       {violetOpen  && <VioletEvergardenPage onClose={closeMedia} />}
       {vivyOpen    && <VivyPage             onClose={closeMedia} />}
+      {domesticOpen && <DomesticNaKanojoPage onClose={closeMedia} />}
+      {koiOpen     && <KoiAmeagariPage      onClose={closeMedia} />}
       {lovePrismOpen && <LovePrismPage      onClose={closeMedia} />}
       {caroleTuesdayOpen && <CaroleTuesdayPage onClose={closeMedia} />}
       {bunnyGirlOpen && <BunnyGirlPage onClose={closeMedia} />}
