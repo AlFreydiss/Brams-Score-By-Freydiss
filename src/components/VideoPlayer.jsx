@@ -178,8 +178,11 @@ function Btn({ onClick, title, children, disabled = false, active = false, color
 }
 
 // ── Barre de progression ──────────────────────────────────────────────────────
-function ProgressBar({ currentTime, duration, buffered, onSeek, color, previewSrc, previewTitle }) {
+function ProgressBar({ currentTime, duration, buffered, onSeek, color, previewSrc, previewTitle, scrubSrc }) {
   const barRef = useRef(null)
+  const pvRef = useRef(null)          // <video> d'aperçu : on le cale sur le temps survolé
+  const seekingRef = useRef(false)
+  const pendingRef = useRef(0)
   const [dragging, setDragging] = useState(false)
   const [hoverPct, setHoverPct] = useState(null)
   const pct = duration ? Math.min(1, currentTime / duration) : 0
@@ -190,6 +193,25 @@ function ProgressBar({ currentTime, duration, buffered, onSeek, color, previewSr
     const rect = barRef.current?.getBoundingClientRect()
     if (!rect) return 0
     return Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width))
+  }, [])
+
+  // Aperçu de frame réelle : on déplace le currentTime de la <video> d'aperçu vers
+  // le temps survolé. Throttlé via l'event 'seeked' (on ne relance que la dernière
+  // position demandée) → fluide sans saturer le décodeur.
+  const requestPreview = useCallback((t) => {
+    pendingRef.current = t
+    const v = pvRef.current
+    if (!v || !scrubSrc || !Number.isFinite(t) || seekingRef.current) return
+    seekingRef.current = true
+    try { v.currentTime = t } catch {}
+  }, [scrubSrc])
+  const onPvSeeked = useCallback(() => {
+    seekingRef.current = false
+    const v = pvRef.current
+    if (v && Math.abs((v.currentTime || 0) - pendingRef.current) > 0.4) {
+      seekingRef.current = true
+      try { v.currentTime = pendingRef.current } catch {}
+    }
   }, [])
 
   const handleDown = (e) => {
@@ -206,21 +228,29 @@ function ProgressBar({ currentTime, duration, buffered, onSeek, color, previewSr
     return () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp) }
   }, [dragging, duration, getPos, onSeek])
 
+  const hasThumb = Boolean(scrubSrc || previewSrc)
+
   return (
     <div ref={barRef}
       onMouseDown={handleDown}
-      onMouseMove={e => setHoverPct(getPos(e))}
+      onMouseMove={e => { const p = getPos(e); setHoverPct(p); if (duration) requestPreview(p * duration) }}
       onMouseLeave={() => setHoverPct(null)}
       style={{ width: '100%', height: 20, display: 'flex', alignItems: 'center', cursor: 'pointer', position: 'relative' }}
     >
-      {/* Tooltip temps + preview thumbnail (comme les boxes du screenshot) */}
-      {hoverPct !== null && (
-        <div style={{ position: 'absolute', bottom: 24, left: `${hoverPct * 100}%`, transform: 'translateX(-50%)', width: previewSrc ? 160 : 'auto', overflow: 'hidden', background: 'rgba(8,9,12,0.94)', color: '#fff', fontSize: 11, fontWeight: 700, border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, pointerEvents: 'none', whiteSpace: 'nowrap', boxShadow: '0 16px 50px rgba(0,0,0,0.6)', backdropFilter: 'blur(16px)' }}>
-          {previewSrc && (
+      {/* Tooltip : image RÉELLE du moment survolé (video d'aperçu calée sur le temps),
+          repli sur la vignette statique si la source n'est pas seekable (HLS).
+          Toujours monté quand il y a un aperçu → la video reste chargée (pas de
+          rechargement à chaque survol), on ne fait que varier opacité + position. */}
+      {hasThumb && (
+        <div style={{ position: 'absolute', bottom: 24, left: `${(hoverPct ?? 0) * 100}%`, transform: 'translateX(-50%)', width: 168, overflow: 'hidden', background: 'rgba(8,9,12,0.94)', color: '#fff', fontWeight: 700, border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, pointerEvents: 'none', boxShadow: '0 16px 50px rgba(0,0,0,0.6)', backdropFilter: 'blur(16px)', opacity: hoverPct !== null ? 1 : 0, transition: 'opacity .12s', zIndex: 30 }}>
+          {scrubSrc ? (
+            <video ref={pvRef} src={scrubSrc} muted playsInline preload="metadata" onSeeked={onPvSeeked}
+              style={{ width: '100%', aspectRatio: '16 / 9', objectFit: 'cover', display: 'block', background: '#000' }} />
+          ) : (
             <img src={previewSrc} alt="" style={{ width: '100%', aspectRatio: '16 / 9', objectFit: 'cover', display: 'block', filter: 'brightness(1.06) saturate(1.1)' }} />
           )}
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, padding: previewSrc ? '6px 9px' : '4px 9px', fontSize: 11 }}>
-            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 110 }}>{previewTitle || 'Aperçu'}</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, padding: '6px 9px', fontSize: 11 }}>
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 110 }}>{previewTitle || 'Aperçu'}</span>
             <span style={{ color, fontVariantNumeric: 'tabular-nums' }}>{fmt(hoverTime)}</span>
           </div>
         </div>
@@ -319,6 +349,9 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   // évalué pendant le render → s'il était déclaré après, c'était un TDZ
   // ("Cannot access … before initialization") qui crashait TOUT le lecteur.
   const effectiveMediaSrc = started ? mediaSrc : null
+  // Source pour l'aperçu de frame au survol de la barre : seekable seulement si MP4
+  // (le HLS ne se cale pas dans une <video> simple) → sinon repli vignette statique.
+  const scrubSrc = (effectiveMediaSrc && !isHlsSrc(effectiveMediaSrc)) ? effectiveMediaSrc : null
   const hasSubs = Array.isArray(video?.subtitles) && video.subtitles.length > 0
   // Marqueurs opening/ending par épisode : [début, fin] en secondes (extraits des chapitres).
   const opMark  = Array.isArray(video?.op) && video.op.length === 2 ? video.op : null
@@ -1097,6 +1130,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                 color={color}
                 previewSrc={video?.thumbnail}
                 previewTitle={video?.title || episodeLabel}
+                scrubSrc={scrubSrc}
               />
 
               {/* Ligne de contrôles */}
