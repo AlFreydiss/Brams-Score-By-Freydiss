@@ -115,11 +115,6 @@ export default function EpisodeDetailOverlay({ animeId, animeTitle, video, note,
         <p style={{ margin: 0, fontSize: 14, lineHeight: 1.62, color: 'rgba(255,255,255,0.82)', maxWidth: 460 }}>
           {synopsis || (loading ? 'Génération du synopsis…' : 'Synopsis indisponible pour le moment.')}
         </p>
-        {synopsis && !video?.synopsis && (
-          <div style={{ marginTop: -8, fontSize: 10, color: 'rgba(255,255,255,0.3)', fontWeight: 600 }}>
-            ✦ résumé généré par IA
-          </div>
-        )}
 
         {/* Actions : Lecture (primaire) + Bande-annonce (secondaire) */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%', maxWidth: 360, marginTop: 4 }}>

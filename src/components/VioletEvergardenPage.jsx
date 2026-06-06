@@ -228,7 +228,6 @@ function EpisodeDetailInline({ idx, onPlay, onClose }) {
         <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.6, color: 'rgba(255,255,255,.8)', flex: 1 }}>
           {synopsis || (loading ? 'Génération du synopsis…' : 'Synopsis indisponible pour le moment.')}
         </p>
-        {synopsis && !video?.synopsis && <div style={{ marginTop: 5, fontSize: 9.5, color: 'rgba(255,255,255,.3)', fontWeight: 600 }}>✦ résumé généré par IA</div>}
         <button onClick={onPlay} className="ve-cta" style={{
           marginTop: 14, alignSelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: 9,
           padding: '11px 24px', borderRadius: 13, cursor: 'pointer',
