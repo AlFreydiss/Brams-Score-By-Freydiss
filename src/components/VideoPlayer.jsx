@@ -313,6 +313,12 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
 
   const video   = videos[idx]
   const isLocal = Boolean(video?.src)
+  // Source réellement engagée seulement quand l'utilisateur a lancé la lecture
+  // (évite de buffer HLS/gros mp4 pendant la fiche détail). DÉCLARÉE ICI, avant
+  // l'effet HLS plus bas : ce const est lu dans le tableau de deps de cet effet,
+  // évalué pendant le render → s'il était déclaré après, c'était un TDZ
+  // ("Cannot access … before initialization") qui crashait TOUT le lecteur.
+  const effectiveMediaSrc = started ? mediaSrc : null
   const hasSubs = Array.isArray(video?.subtitles) && video.subtitles.length > 0
   // Marqueurs opening/ending par épisode : [début, fin] en secondes (extraits des chapitres).
   const opMark  = Array.isArray(video?.op) && video.op.length === 2 ? video.op : null
@@ -824,10 +830,8 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   const qualityHint = isLocal ? qualityLabel : 'AUTO'
   const episodeLabel = videoDisplayLabel(video)
 
-  // Only commit the media source to the actual player once the user has decided to start playback.
-  // This prevents HLS / heavy video files from buffering while the user is just reading the
-  // episode detail panel (synopsis, note, trailer). This was the main cause of "ça prend sa vie à charger".
-  const effectiveMediaSrc = started ? mediaSrc : null
+  // effectiveMediaSrc est déclaré plus haut (avant l'effet HLS) pour éviter un TDZ
+  // sur son tableau de deps — ne pas le redéclarer ici.
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 1200, background: '#000', display: 'flex', flexDirection: 'column' }}>
