@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react'
 import VideoPlayer from './VideoPlayer.jsx'
 import EpisodeDetailInline from './EpisodeDetailInline.jsx'
+import EpisodeWatch from './EpisodeWatch.jsx'
 import { ProgressRing } from './ProgressRing.jsx'
 import AnimeBackdrop, { ANIME_MOTIFS } from './AnimeBackdrop.jsx'
 import VIDEOS_RAW from '../data/onepiece-videos.js'
@@ -225,10 +226,10 @@ export default function OnePiecePage({ onClose }) {
   }, [])
 
   useEffect(() => {
-    const fn = e => { if (e.key === 'Escape' && playerIdx === null) onClose() }
+    const fn = e => { if (e.key === 'Escape' && detailIdx === null) onClose() }
     window.addEventListener('keydown', fn)
     return () => window.removeEventListener('keydown', fn)
-  }, [playerIdx, onClose])
+  }, [detailIdx, onClose])
 
   const markWatched = useCallback((idx) => {
     setProgress(prev => {
@@ -256,8 +257,9 @@ export default function OnePiecePage({ onClose }) {
 
   const openDetail = useCallback((idx) => {
     setDetailIdx(idx)
+    markWatched(idx)
     requestAnimationFrame(() => scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' }))
-  }, [])
+  }, [markWatched])
   const playHandlers = useMemo(() => VIDEOS.map((_, i) => () => openDetail(i)), [openDetail])
 
   const arcs = useMemo(() => ['Tous', ...new Set(VIDEOS.map(v => v.arc).filter(Boolean))], [])
@@ -273,17 +275,17 @@ export default function OnePiecePage({ onClose }) {
         <AnimeBackdrop motifs={ANIME_MOTIFS.onepiece} color={COLOR} color2={COLOR2} />
         {/* Navbar */}
         <div className="op-header" style={{ flexShrink:0,height:62,padding:'0 24px',display:'flex',alignItems:'center',justifyContent:'space-between',background:'rgba(16,6,4,.96)',backdropFilter:'blur(24px)',borderBottom:'1px solid rgba(224,82,74,.10)',zIndex:10,position:'relative' }}>
-          <button onClick={playerIdx !== null ? () => setPlayerIdx(null) : onClose}
+          <button onClick={detailIdx !== null ? () => setDetailIdx(null) : onClose}
             style={{ display:'flex',alignItems:'center',gap:7,background:'rgba(255,255,255,.06)',border:'1px solid rgba(255,255,255,.09)',borderRadius:10,color:'rgba(255,255,255,.72)',cursor:'pointer',padding:'8px 16px',fontSize:12.5,fontWeight:800,transition:'background .15s',fontFamily:'var(--body)' }}
             onMouseEnter={e=>e.currentTarget.style.background='rgba(255,255,255,.11)'}
             onMouseLeave={e=>e.currentTarget.style.background='rgba(255,255,255,.06)'}>
-            ← {playerIdx !== null ? 'Épisodes' : 'Retour hub'}
+            ← {detailIdx !== null ? 'Épisodes' : 'Retour hub'}
           </button>
 
           <div className="op-header-title" style={{ position:'absolute',left:'50%',transform:'translateX(-50%)',display:'flex',alignItems:'center',gap:10 }}>
             <span style={{ fontSize:18,animation:'opFloat 6s ease-in-out infinite' }}>🏴‍☠️</span>
             <span style={{ fontFamily:"'Pirata One',cursive",fontSize:18,fontWeight:900,color:'#fff' }}>
-              {playerIdx !== null ? (VIDEOS[playerIdx]?.title || `Épisode ${VIDEOS[playerIdx]?.episode}`) : 'One Piece'}
+              {detailIdx !== null ? (VIDEOS[detailIdx]?.title || `Épisode ${VIDEOS[detailIdx]?.episode}`) : 'One Piece'}
             </span>
           </div>
 
@@ -295,20 +297,19 @@ export default function OnePiecePage({ onClose }) {
           </div>
         </div>
 
-        {/* Content */}
-        {playerIdx !== null ? (
-          <div style={{ flex:1,display:'flex',flexDirection:'column',overflow:'hidden' }}>
-            <VideoPlayer videos={VIDEOS} startIdx={playerIdx} onClose={() => setPlayerIdx(null)} color={COLOR} storageKey={NS} autoStart />
+        {/* Content : page de visionnage dediee OU liste */}
+        {detailIdx !== null ? (
+          <div ref={scrollRef} style={{ flex:1, overflowY:'auto', padding:'24px 28px 48px' }}>
+            <div style={{ maxWidth: 1760, margin: '0 auto' }}>
+              <EpisodeWatch videos={VIDEOS} startIdx={detailIdx} ns={NS} storageKey={NS} color={COLOR} color2={COLOR2} onSelect={openDetail} onClose={() => setDetailIdx(null)} />
+            </div>
           </div>
         ) : (
           <div ref={scrollRef} className="op-scroll" style={{ flex:1,overflowY:'auto' }}>
             <div className="op-layout">
-              <InfoPanel watchedCount={watchedCount} availableCount={availableCount} resumeIdx={resumeIdx} onResume={() => openPlayer(resumeIdx)} />
+              <InfoPanel watchedCount={watchedCount} availableCount={availableCount} resumeIdx={resumeIdx} onResume={() => openDetail(resumeIdx)} />
 
               <div>
-                {detailIdx !== null && (
-                  <EpisodeDetailInline video={VIDEOS[detailIdx]} ns={NS} color={COLOR} color2={COLOR2} onPlay={() => openPlayer(detailIdx)} onClose={() => setDetailIdx(null)} />
-                )}
                 <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16,flexWrap:'wrap',gap:10 }}>
                   <div>
                     <h3 style={{ margin:'0 0 3px',fontSize:18,fontWeight:900,color:'#fff' }}>Épisodes</h3>

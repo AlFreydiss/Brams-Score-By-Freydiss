@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react'
 import VideoPlayer from './VideoPlayer.jsx'
 import EpisodeDetailInline from './EpisodeDetailInline.jsx'
+import EpisodeWatch from './EpisodeWatch.jsx'
 import { ProgressRing } from './ProgressRing.jsx'
 import AnimeBackdrop, { ANIME_MOTIFS } from './AnimeBackdrop.jsx'
 import { Reader } from './MangaReader.jsx'
@@ -296,7 +297,7 @@ export default function DbsPage({ onClose }) {
     markWatched(idx)
   }, [markWatched])
 
-  const openDetail = useCallback((idx) => setDetailIdx(idx), [])
+  const openDetail = useCallback((idx) => { setDetailIdx(idx); markWatched(idx) }, [markWatched])
   const playHandlers = useMemo(() => VIDEOS.map((_, i) => () => openDetail(i)), [openDetail])
 
   const watchedCount = useMemo(() =>
@@ -362,7 +363,7 @@ export default function DbsPage({ onClose }) {
         <div style={{ flexShrink:0, background:'rgba(14,9,2,.95)', backdropFilter:'blur(20px)', borderBottom:'1px solid rgba(245,127,23,.12)', zIndex:10 }}>
           <div style={{ display:'flex',alignItems:'center',gap:12,padding:'0 20px',minHeight:64,flexWrap:'wrap' }}>
             <button
-              onClick={playerIdx !== null ? () => setPlayerIdx(null) : onClose}
+              onClick={detailIdx !== null ? () => setDetailIdx(null) : onClose}
               style={{ display:'flex',alignItems:'center',gap:7,background:'rgba(255,255,255,.06)',border:'1px solid rgba(255,255,255,.09)',borderRadius:10,color:'rgba(255,255,255,.72)',cursor:'pointer',padding:'8px 16px',fontSize:12.5,fontWeight:800,transition:'background .15s',fontFamily:'var(--body)' }}
             >← Retour</button>
             <div style={{ width:3,height:32,borderRadius:2,background:`linear-gradient(180deg,${COLOR},${COLOR2})`,flexShrink:0 }} />
@@ -388,12 +389,9 @@ export default function DbsPage({ onClose }) {
                   watchedCount={watchedCount}
                   total={VIDEOS.length}
                   lastWatchedIdx={resumeIdx}
-                  onResume={() => openPlayer(resumeIdx)}
+                  onResume={() => openDetail(resumeIdx)}
                 />
                 <div>
-                  {detailIdx !== null && (
-                    <EpisodeDetailInline video={VIDEOS[detailIdx]} ns={NS} color={COLOR} color2={COLOR2} onPlay={() => openPlayer(detailIdx)} onClose={() => setDetailIdx(null)} />
-                  )}
                   <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:18,gap:12 }}>
                     <div>
                       <h3 style={{ margin:0,fontFamily:"'Pirata One',cursive",fontSize:22,fontWeight:900,color:'#fff',letterSpacing:'-.01em' }}>Épisodes · Dragon Ball Super</h3>
@@ -504,6 +502,15 @@ export default function DbsPage({ onClose }) {
           storageKey={`${NS}_vp`}
           autoStart
         />
+      )}
+
+      {/* Page de visionnage dediee (clic sur un episode) en overlay plein cadre */}
+      {detailIdx !== null && VIDEOS[detailIdx] && (
+        <div style={{ position:'fixed', left:0, right:0, top:76, bottom:0, zIndex:1100, background:'#06070b', overflowY:'auto', padding:'24px 28px 48px' }}>
+          <div style={{ maxWidth: 1760, margin: '0 auto' }}>
+            <EpisodeWatch videos={VIDEOS} startIdx={detailIdx} ns={NS} storageKey={`${NS}_vp`} color={COLOR} color2={COLOR2} onSelect={openDetail} onClose={() => setDetailIdx(null)} />
+          </div>
+        </div>
       )}
     </>
   )
