@@ -24,6 +24,9 @@ export default function EpisodeDetailInline({
   const title = video?.title && !/^episode\s/i.test(String(video.title))
     ? video.title
     : (isFilm ? animeTitle : `Épisode ${ep}`)
+  const trailerHref = meta.youtube
+    ? `https://www.youtube.com/watch?v=${meta.youtube}`
+    : `https://www.youtube.com/results?search_query=${encodeURIComponent(`${animeTitle} ${isFilm ? 'film' : 'anime'} trailer bande annonce`)}`
 
   const [synopsis, setSynopsis] = useState(() => getCachedSynopsis(ns, ep) || video?.synopsis || '')
   const [loading, setLoading] = useState(false)
@@ -76,16 +79,30 @@ export default function EpisodeDetailInline({
         <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.6, color: 'rgba(255,255,255,.8)', flex: 1 }}>
           {synopsis || (loading ? 'Génération du synopsis…' : 'Synopsis indisponible pour le moment.')}
         </p>
-        <button onClick={onPlay} style={{
-          marginTop: 14, alignSelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: 9,
-          padding: '11px 24px', borderRadius: 13, cursor: 'pointer',
-          background: `linear-gradient(135deg, ${color}, ${color2})`, border: `1px solid ${color}`,
-          color: '#fff', fontSize: 14, fontWeight: 900, letterSpacing: '.3px', boxShadow: `0 12px 34px ${color}66`,
-          transition: 'transform .12s ease, filter .12s ease',
-        }}
-          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.filter = 'brightness(1.08)' }}
-          onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.filter = 'none' }}
-        ><span style={{ fontSize: 16 }}>▶</span> Lecture</button>
+        {/* Lecture (gauche) + Bande-annonce (bas-droite) */}
+        <div style={{ marginTop: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+          <button onClick={onPlay} style={{
+            display: 'inline-flex', alignItems: 'center', gap: 9,
+            padding: '11px 24px', borderRadius: 13, cursor: 'pointer',
+            background: `linear-gradient(135deg, ${color}, ${color2})`, border: `1px solid ${color}`,
+            color: '#fff', fontSize: 14, fontWeight: 900, letterSpacing: '.3px', boxShadow: `0 12px 34px ${color}66`,
+            transition: 'transform .12s ease, filter .12s ease',
+          }}
+            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.filter = 'brightness(1.08)' }}
+            onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.filter = 'none' }}
+          ><span style={{ fontSize: 16 }}>▶</span> Lecture</button>
+
+          <a href={trailerHref} target="_blank" rel="noreferrer" style={{
+            display: 'inline-flex', alignItems: 'center', gap: 8,
+            padding: '10px 18px', borderRadius: 12, textDecoration: 'none',
+            background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.14)',
+            color: 'rgba(255,255,255,.82)', fontSize: 12.5, fontWeight: 700,
+            transition: 'background .15s ease, border-color .15s ease',
+          }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,.11)'; e.currentTarget.style.borderColor = `${color}66` }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,.06)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,.14)' }}
+          ><span style={{ fontSize: 14 }}>▶</span> {isFilm ? 'Bande-annonce' : "Trailer de l'anime"}</a>
+        </div>
       </div>
     </div>
   )

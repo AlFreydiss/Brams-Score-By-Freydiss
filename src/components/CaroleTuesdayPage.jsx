@@ -4,6 +4,7 @@ import { ProgressRing } from './ProgressRing.jsx'
 import AnimeBackdrop, { ANIME_MOTIFS } from './AnimeBackdrop.jsx'
 import VIDEOS_RAW from '../data/carole-tuesday-videos.json'
 import EpisodeDetailInline from './EpisodeDetailInline.jsx'
+import RecommendedBanner from './RecommendedBanner.jsx'
 
 const VIDEOS = VIDEOS_RAW
 
@@ -289,6 +290,8 @@ export default function CaroleTuesdayPage({ onClose }) {
                     Carole & Tuesday est une création de Shinichirō Watanabe (2019), une ode à la musique authentique dans un futur dominé par l'IA.
                   </span>
                 </div>
+
+                <RecommendedBanner color2={COLOR2} />
               </div>
             </div>
           </div>

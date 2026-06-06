@@ -4,6 +4,7 @@ import { ProgressRing } from './ProgressRing.jsx'
 import AnimeBackdrop, { ANIME_MOTIFS } from './AnimeBackdrop.jsx'
 import VIDEOS_RAW from '../data/vivy-videos.json'
 import EpisodeDetailInline from './EpisodeDetailInline.jsx'
+import RecommendedBanner from './RecommendedBanner.jsx'
 
 const VIDEOS = VIDEOS_RAW
 
@@ -386,6 +387,8 @@ export default function VivyPage({ onClose }) {
                     Vivy est une œuvre originale de WIT Studio scénarisée par Eiji Umehara et Tappei Nagatsuki (auteur de Re:Zero). Une exploration poétique de l'âme des IA.
                   </span>
                 </div>
+
+                <RecommendedBanner color2={COLOR2} />
               </div>
             </div>
           </div>

@@ -4,6 +4,7 @@ import { ProgressRing } from './ProgressRing.jsx'
 import AnimeBackdrop, { ANIME_MOTIFS } from './AnimeBackdrop.jsx'
 import VIDEOS_RAW from '../data/violet-evergarden-videos.json'
 import { getCachedSynopsis, fetchEpisodeSynopsis } from '../lib/episodeSynopsis.js'
+import RecommendedBanner from './RecommendedBanner.jsx'
 
 // VOSTFR par défaut : on ne force RIEN ici. Le player applique la préférence
 // sauvegardée du membre (par compte), et à défaut son défaut 'ja' (audio) +
@@ -239,30 +240,6 @@ function EpisodeDetailInline({ idx, onPlay, onClose }) {
   )
 }
 
-// Bandeau d'endossement compact en bas de page.
-function RecommendedBanner() {
-  const Av = ({ icon, c }) => (
-    <div style={{ width: 30, height: 30, borderRadius: '50%', background: `radial-gradient(circle at 30% 30%, ${c}, rgba(0,0,0,.4))`, border: `1.5px solid ${c}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, boxShadow: `0 3px 10px ${c}55`, flexShrink: 0 }}>{icon}</div>
-  )
-  return (
-    <div style={{
-      marginTop: 22, borderRadius: 14, padding: '12px 18px', position: 'relative', overflow: 'hidden',
-      display: 'inline-flex', alignItems: 'center', gap: 14, maxWidth: '100%',
-      background: 'linear-gradient(120deg, rgba(229,86,74,.12), rgba(139,124,255,.14) 70%, rgba(14,12,24,.6))',
-      border: '1px solid rgba(139,124,255,.28)',
-    }}>
-      <span style={{ fontSize: 9, fontWeight: 900, letterSpacing: '1.4px', textTransform: 'uppercase', color: COLOR2, flexShrink: 0 }}>★ Coup de cœur</span>
-      <span style={{ fontSize: 13.5, fontWeight: 800, color: 'rgba(255,255,255,.9)' }}>
-        Recommandé par <span style={{ color: COLOR2 }}>Freydiss</span> &amp; <span style={{ color: '#ff7a6b' }}>Hakuji</span>
-      </span>
-      <div style={{ display: 'flex', alignItems: 'center', marginLeft: 2 }}>
-        <Av icon="👑" c={COLOR2} />
-        <div style={{ marginLeft: -8 }}><Av icon="🔥" c="#ff7a6b" /></div>
-      </div>
-    </div>
-  )
-}
-
 export default function VioletEvergardenPage({ onClose }) {
   const [playerIdx, setPlayerIdx] = useState(null)
   const [detailIdx, setDetailIdx] = useState(null)   // épisode dont la fiche est affichée DANS la page
@@ -391,7 +368,7 @@ export default function VioletEvergardenPage({ onClose }) {
                   </span>
                 </div>
 
-                <RecommendedBanner />
+                <RecommendedBanner color2={COLOR2} />
               </div>
             </div>
           </div>

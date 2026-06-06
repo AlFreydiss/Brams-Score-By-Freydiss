@@ -524,21 +524,24 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
       for (let i = 0; i < tracks.length; i++) tracks[i].mode = 'disabled'
       boundTrack = null
       if (subsOff || !hasSubs) return
-      const targetSub = video?.subtitles?.[subIdx]
-      if (!targetSub) return
-      let bestIdx = -1, exactIdx = -1
-      for (let i = 0; i < tracks.length; i++) {
-        const t = tracks[i]
-        const labelMatch = t.label && targetSub.label && t.label === targetSub.label
-        const langMatch  = t.language && targetSub.srclang && (
-          t.language === targetSub.srclang || t.language.startsWith(targetSub.srclang + '-')
-        )
-        if (labelMatch) exactIdx = i
-        else if (langMatch) bestIdx = i
+      // Les <track> sont rendus DANS L'ORDRE de video.subtitles → textTracks[subIdx]
+      // EST exactement la piste choisie. On la relie par index (l'ancien matching
+      // par label/langue se trompait de piste → sous-titres "farfelu" tant qu'on
+      // n'avait pas coupé/remis). On garde un repli par label/langue si l'index
+      // n'existe pas encore (pistes chargées dans le désordre).
+      let target = (subIdx >= 0 && subIdx < tracks.length) ? tracks[subIdx] : null
+      const wanted = video?.subtitles?.[subIdx]
+      if (!target && wanted) {
+        for (let i = 0; i < tracks.length; i++) {
+          const t = tracks[i]
+          const labelMatch = t.label && wanted.label && t.label === wanted.label
+          const langMatch  = t.language && wanted.srclang && (t.language === wanted.srclang || t.language.startsWith(wanted.srclang + '-'))
+          if (labelMatch) { target = t; break }
+          if (langMatch && !target) target = t
+        }
       }
-      if (exactIdx >= 0) bestIdx = exactIdx
       // 'hidden' : cues parsées + activeCues alimentées, sans rendu natif (on dessine).
-      if (bestIdx >= 0) { tracks[bestIdx].mode = 'hidden'; boundTrack = tracks[bestIdx] }
+      if (target) { target.mode = 'hidden'; boundTrack = target }
     }
 
     const draw = () => {
