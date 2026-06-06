@@ -1034,8 +1034,9 @@ export default function BlindTestPage() {
             WebkitMaskImage: 'linear-gradient(180deg, transparent, black 16%, black 78%, transparent)',
             maskImage: 'linear-gradient(180deg, transparent, black 16%, black 78%, transparent)',
           }} />
-          {/* Texture citron tilée qui respire — visible (demande Freydiss "des citrons en fond") */}
-          <div data-btfx aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 3, pointerEvents: 'none', opacity: 0.16, backgroundImage: `url("${LEMON_URI}")`, backgroundSize: '150px', animation: 'btBreathe 12s ease-in-out infinite' }} />
+          {/* Texture citron tilée qui respire — discrète, même traitement que la texture
+              feuille d'Undercover (motif fin en line-art, faible opacité). */}
+          <div data-btfx aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 3, pointerEvents: 'none', opacity: 0.05, backgroundImage: `url("${LEMON_URI}")`, backgroundSize: '170px', animation: 'btBreathe 11s ease-in-out infinite' }} />
           {/* Particules montantes + citrons flottants */}
           <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 3, pointerEvents: 'none', overflow: 'hidden' }}>
             {Array.from({ length: 16 }).map((_, i) => (

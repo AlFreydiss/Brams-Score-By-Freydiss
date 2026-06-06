@@ -740,10 +740,8 @@ export default function TournamentHubPage() {
         radial-gradient(1000px 600px at 6% 4%, rgba(124,58,237,.18), transparent 60%),
         radial-gradient(820px 820px at 50% 122%, rgba(219,39,119,.14), transparent 60%),
         linear-gradient(180deg, #120710 0%, #0a0a0b 62%, #110714 100%)` }} />
-      {/* Texture motif sakura discrète (respire) */}
-      <div data-fx aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', opacity: .07, backgroundImage: `url("${SAKURA_URI}")`, backgroundSize: '120px', animation: 'htBreathe 9s ease-in-out infinite' }} />
+      {/* Pétales de sakura retirés (demande Freydiss) — on garde juste étoiles + scanline. */}
       <HTStars />
-      <HTSakura />
       <HTScanLine />
 
       {/* Content */}

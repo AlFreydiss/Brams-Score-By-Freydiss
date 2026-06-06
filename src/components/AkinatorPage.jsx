@@ -19,10 +19,10 @@ const AKI_FX = `@keyframes aki-float{0%{transform:translateY(8px);opacity:0}12%{
 const AkiAmbient = () => (
   <>
     <style>{AKI_FX}</style>
-    <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', background: `radial-gradient(980px 560px at 82% -8%, ${hexA(PINK_M, .18)}, transparent 62%), radial-gradient(800px 520px at 8% 4%, ${hexA(PINK_L, .12)}, transparent 64%), radial-gradient(760px 680px at 50% 118%, ${hexA(PINK, .10)}, transparent 66%), linear-gradient(180deg, ${BG}, #071b28 66%, #050b13 100%)` }} />
-    <div data-fx aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', opacity: .045, backgroundImage: `url("${LEAF_URI}")`, backgroundSize: '170px', animation: 'aki-breathe 9s ease-in-out infinite' }} />
+    {/* Fond sobre/mystique (demande Freydiss) : dégradé profond, sans texture, halos discrets. */}
+    <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', background: `radial-gradient(1100px 620px at 78% -10%, ${hexA(PINK_M, .10)}, transparent 60%), radial-gradient(900px 560px at 10% 110%, rgba(124,92,246,.10), transparent 64%), linear-gradient(180deg, #070d14 0%, #060a12 60%, #04070c 100%)` }} />
     <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
-      {[...Array(8)].map((_, i) => <span key={i} data-fx style={{ position: 'absolute', left: `${10 + i * 11}%`, bottom: -10, width: 4 + (i % 3), height: 4 + (i % 3), borderRadius: '50%', background: hexA(PINK_L, .5), filter: 'blur(.5px)', animation: `aki-float ${11 + (i % 5) * 2}s linear ${i * 1.3}s infinite` }} />)}
+      {[...Array(5)].map((_, i) => <span key={i} data-fx style={{ position: 'absolute', left: `${15 + i * 18}%`, bottom: -10, width: 3 + (i % 2), height: 3 + (i % 2), borderRadius: '50%', background: hexA(PINK_L, .35), filter: 'blur(.6px)', animation: `aki-float ${13 + (i % 4) * 2}s linear ${i * 1.6}s infinite` }} />)}
     </div>
   </>
 )
