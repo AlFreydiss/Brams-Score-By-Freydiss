@@ -1516,6 +1516,15 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
     [allAnimesWithExtras]
   );
 
+  // "Déjà vu" — séries terminées à 100% (sorties de "Continuer à regarder")
+  const dejaVu = useMemo(() =>
+    allAnimesWithExtras
+      .filter(a => a._video && a._video.pct >= 100)
+      .sort((a, b) => (a.title || '').localeCompare(b.title || '', 'fr'))
+      .slice(0, 14),
+    [allAnimesWithExtras]
+  );
+
   const genreSections = useMemo(() => [
     { id:'romance',          label:'Romance',          icon:'💗', items: byGenre('romance') },
     { id:'action',           label:'Action',           icon:'⚔️', items: byGenre('action') },
@@ -1530,10 +1539,11 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
     { id:'top-du-moment', label:'Top du moment', icon:'🔥', count: topWeekAnimes.length },
     { id:'pour-toi', label:'Pour toi', icon:'✨' },
     ...(continueWatching.length ? [{ id:'continuer', label:'Continuer', icon:'▶', count: continueWatching.length }] : []),
+    ...(dejaVu.length ? [{ id:'deja-vu', label:'Déjà vu', icon:'✓', count: dejaVu.length }] : []),
     { id:'ma-liste', label:'Ma liste', icon:'❤️', count: favs.size },
     ...(newSeasonAnimes.length ? [{ id:'nouveautes', label:'Nouveautés', icon:'🆕', count: newSeasonAnimes.length }] : []),
     { id:'tous', label:'Tous les animés', icon:'📚', count: sortedAnimes.length },
-  ], [topWeekAnimes, continueWatching, newSeasonAnimes, sortedAnimes, favs]);
+  ], [topWeekAnimes, continueWatching, dejaVu, newSeasonAnimes, sortedAnimes, favs]);
 
   const scrollToCat = (id) => {
     setActiveCat(id);
@@ -2000,6 +2010,20 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
                       <SectionHeader icon="▶" title="Continuer à regarder" count={continueWatching.length} />
                       <Carousel>
                         {continueWatching.map(anime => (
+                          <div key={anime.id} style={{ scrollSnapAlign:'start' }}>
+                            <AnimeMarqueeCard anime={anime} onClick={() => handleClick(anime.id)} onOpenMonUnivers={onOpenMonUnivers} isFav={favs.has(anime.id)} toggleFav={toggleFav} onRate={rate} />
+                          </div>
+                        ))}
+                      </Carousel>
+                    </section>
+                  )}
+
+                  {/* Déjà vu — séries terminées (100%) */}
+                  {dejaVu.length > 0 && (
+                    <section id="deja-vu" style={{ marginBottom:10, scrollMarginTop:16 }}>
+                      <SectionHeader icon="✓" title="Déjà vu" count={dejaVu.length} accent="rgba(52,211,153,0.30)" />
+                      <Carousel>
+                        {dejaVu.map(anime => (
                           <div key={anime.id} style={{ scrollSnapAlign:'start' }}>
                             <AnimeMarqueeCard anime={anime} onClick={() => handleClick(anime.id)} onOpenMonUnivers={onOpenMonUnivers} isFav={favs.has(anime.id)} toggleFav={toggleFav} onRate={rate} />
                           </div>
