@@ -52,7 +52,7 @@ def main():
         print('\nEp',ep)
         vid=TMP/f'{base}-vid.mp4'; vo=TMP/f'{base}-vostfr.mp4'; vf=TMP/f'{base}-vf.mp4'; vtt=TMP/f'{base}-fr.vtt'
         if not vid.exists():
-            ff(['-i',str(f),'-map','0:v:0','-an','-c:v','copy','-movflags','+faststart',str(vid)])
+            ff(['-i',str(f),'-map','0:v:0','-an','-c:v','h264_nvenc','-preset','p5','-cq','23','-pix_fmt','yuv420p','-movflags','+faststart',str(vid)])
         if not vf.exists():
             ff(['-i',str(vid),'-i',str(f),'-map','0:v:0','-map','1:a:m:language:fre','-c:v','copy','-c:a','aac','-b:a','192k','-movflags','+faststart',str(vf)])
         if not vo.exists():
