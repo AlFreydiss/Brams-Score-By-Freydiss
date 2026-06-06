@@ -925,5 +925,377 @@
       1331,
       1422
     ]
+  },
+  {
+    "episode": 1,
+    "title": "S03 - Episode 1",
+    "episodeLabel": "S03E01",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E01-vostfr.mp4",
+    "season": "S03",
+    "arc": "Saison 3",
+    "preferredAudioLang": "ja",
+    "progressKey": "S03E01",
+    "badge": "MULTI",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E01-vostfr.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E01-vf.mp4"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E01-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 2,
+    "title": "S03 - Episode 2",
+    "episodeLabel": "S03E02",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E02-vostfr.mp4",
+    "season": "S03",
+    "arc": "Saison 3",
+    "preferredAudioLang": "ja",
+    "progressKey": "S03E02",
+    "badge": "MULTI",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E02-vostfr.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E02-vf.mp4"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E02-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 3,
+    "title": "S03 - Episode 3",
+    "episodeLabel": "S03E03",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E03-vostfr.mp4",
+    "season": "S03",
+    "arc": "Saison 3",
+    "preferredAudioLang": "ja",
+    "progressKey": "S03E03",
+    "badge": "MULTI",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E03-vostfr.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E03-vf.mp4"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E03-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 4,
+    "title": "S03 - Episode 4",
+    "episodeLabel": "S03E04",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E04-vostfr.mp4",
+    "season": "S03",
+    "arc": "Saison 3",
+    "preferredAudioLang": "ja",
+    "progressKey": "S03E04",
+    "badge": "MULTI",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E04-vostfr.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E04-vf.mp4"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E04-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 5,
+    "title": "S03 - Episode 5",
+    "episodeLabel": "S03E05",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E05-vostfr.mp4",
+    "season": "S03",
+    "arc": "Saison 3",
+    "preferredAudioLang": "ja",
+    "progressKey": "S03E05",
+    "badge": "MULTI",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E05-vostfr.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E05-vf.mp4"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E05-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 6,
+    "title": "S03 - Episode 6",
+    "episodeLabel": "S03E06",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E06-vostfr.mp4",
+    "season": "S03",
+    "arc": "Saison 3",
+    "preferredAudioLang": "ja",
+    "progressKey": "S03E06",
+    "badge": "MULTI",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E06-vostfr.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E06-vf.mp4"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E06-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 7,
+    "title": "S03 - Episode 7",
+    "episodeLabel": "S03E07",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E07-vostfr.mp4",
+    "season": "S03",
+    "arc": "Saison 3",
+    "preferredAudioLang": "ja",
+    "progressKey": "S03E07",
+    "badge": "MULTI",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E07-vostfr.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E07-vf.mp4"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E07-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 8,
+    "title": "S03 - Episode 8",
+    "episodeLabel": "S03E08",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E08-vostfr.mp4",
+    "season": "S03",
+    "arc": "Saison 3",
+    "preferredAudioLang": "ja",
+    "progressKey": "S03E08",
+    "badge": "MULTI",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E08-vostfr.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E08-vf.mp4"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E08-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 9,
+    "title": "S03 - Episode 9",
+    "episodeLabel": "S03E09",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E09-vostfr.mp4",
+    "season": "S03",
+    "arc": "Saison 3",
+    "preferredAudioLang": "ja",
+    "progressKey": "S03E09",
+    "badge": "MULTI",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E09-vostfr.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E09-vf.mp4"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E09-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 10,
+    "title": "S03 - Episode 10",
+    "episodeLabel": "S03E10",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E10-vostfr.mp4",
+    "season": "S03",
+    "arc": "Saison 3",
+    "preferredAudioLang": "ja",
+    "progressKey": "S03E10",
+    "badge": "MULTI",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E10-vostfr.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E10-vf.mp4"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E10-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 11,
+    "title": "S03 - Episode 11",
+    "episodeLabel": "S03E11",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E11-vostfr.mp4",
+    "season": "S03",
+    "arc": "Saison 3",
+    "preferredAudioLang": "ja",
+    "progressKey": "S03E11",
+    "badge": "MULTI",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E11-vostfr.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E11-vf.mp4"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E11-fr.vtt"
+      }
+    ]
+  },
+  {
+    "episode": 12,
+    "title": "S03 - Episode 12",
+    "episodeLabel": "S03E12",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E12-vostfr.mp4",
+    "season": "S03",
+    "arc": "Saison 3",
+    "preferredAudioLang": "ja",
+    "progressKey": "S03E12",
+    "badge": "MULTI",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E12-vostfr.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E12-vf.mp4"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E12-fr.vtt"
+      }
+    ]
   }
 ]
