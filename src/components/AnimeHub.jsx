@@ -222,7 +222,7 @@ const ANIMES = [
     emoji: '💎',
     color: '#1976d2',
     colorDark: '#0a2e5c',
-    coverImage: 'https://i.pinimg.com/736x/e3/9c/56/e39c564360a91e48edcd430355ee68ce.jpg',
+    coverImage: 'https://www.manga-news.com/public/images/dvd/solo-levelling-S2-visual-1.webp',
     genres: ['Action', 'Fantasy', 'Manhwa'],
     description: "Sung Jinwoo, le chasseur le plus faible du monde, se retrouve piégé dans un donjon mortel et reçoit un mystérieux système qui lui permet de monter de rang à l'infini.",
     stats: [
@@ -361,7 +361,7 @@ const ANIMES = [
     emoji: '♫',
     color: '#14b8a6',
     colorDark: '#064e46',
-    coverImage: CAROLE_TUESDAY_VIDEOS[0]?.thumbnail || null,
+    coverImage: 'https://static.wikia.nocookie.net/netflix/images/1/14/Carole_and_Tuesday.jpg/revision/latest?cb=20200802164507',
     coverPosition: 'center center',
     genres: ['Musique', 'Drame', 'Science-fiction'],
     description: 'Carole et Tuesday poursuivent leur reve musical sur Mars. Lecture en japonais avec sous-titres francais.',
@@ -421,7 +421,7 @@ const ANIMES = [
     emoji: '🔥',
     color: '#f4511e',
     colorDark: '#5c1208',
-    coverImage: '/anime-covers/fire-force.avif',
+    coverImage: 'https://m.media-amazon.com/images/M/MV5BNDRhMDMzYzktYmI3My00YzBlLTkxOTMtMTUxNjZjN2NkOWQ4XkEyXkFqcGc@._V1_.jpg',
     genres: ['Action', 'Surnaturel', 'Shōnen'],
     description: "Dans un monde où des humains s'enflamment spontanément, Shinra Kusakabe intègre la 8ème Brigade pour comprendre les mystères de la combustion spontanée.",
     stats: [
@@ -440,7 +440,7 @@ const ANIMES = [
     emoji: '⚽',
     color: '#1565c0',
     colorDark: '#071b3a',
-    coverImage: '/anime-covers/blue-lock-isagi.webp',
+    coverImage: 'https://bluelock-anime-en.com/wp-content/themes/anime/assets/images/mv241103_sp.jpg',
     coverPosition: 'center center',
     genres: ['Sport', 'Compétition', 'Shōnen'],
     description: "La Fédération japonaise de football engage Ego Jinpachi pour former le meilleur attaquant du monde via un programme radical : Blue Lock.",
@@ -1297,8 +1297,11 @@ function HubAiChat({ animes, onOpen }) {
     const h = [...history, { role: 'user', text: msg }]
     setHistory(h); setLoading(true)
     try {
-      const primed = `[Tu es l'assistant animé de Brams Community. Animés DISPONIBLES sur le site : ${catalog}. Recommande EN PRIORITÉ parmi ceux-là, sois bref et chaleureux, propose 1 à 3 titres max avec une phrase pour chacun.] ${msg}`
-      const res = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: primed, history: history.map(m => ({ role: m.role, text: m.text })) }) })
+      // Le contexte (catalogue) va dans l'HISTORIQUE, pas dans `message` (limité à
+      // 500 caractères côté API → sinon "Message trop long"). Le message reste court.
+      const ctx = { role: 'model', text: `Je suis l'assistant animé de Brams. Animés dispo sur le site : ${catalog}. Je recommande en priorité parmi eux, brièvement (1 à 3 titres, une phrase chacun).` }
+      const sendHist = [ctx, ...history].map(m => ({ role: m.role, text: m.text }))
+      const res = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: msg, history: sendHist }) })
       const data = await res.json()
       setHistory(p => [...p, { role: 'model', text: data.reply || data.error || 'Erreur.' }])
     } catch {
@@ -1646,12 +1649,6 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
     if (resumeTarget) handleClick(resumeTarget.id)
   }, [resumeTarget])
 
-  // Stats live réelles (remplacent le faux "12.8k en ligne")
-  const watchedCount = useMemo(
-    () => allAnimesWithExtras.filter(a => a._video?.pct >= 100).length,
-    [allAnimesWithExtras]
-  )
-
   // Raccourcis clavier cohérents avec la page Scans : Échap, "/" + Ctrl+K (recherche), r (reprendre)
   useEffect(() => {
     const fn = e => {
@@ -1678,7 +1675,7 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
   return (
     <div style={{
       // top:0 + paddingTop navbar → le fond opaque couvre la bande sous la navbar (sinon la home transparait a travers la navbar en verre)
-      position:'fixed', left:0, right:0, top:0, bottom:0, zIndex:100, display:'flex', flexDirection:'column', paddingTop:76,
+      position:'fixed', left:0, right:0, top:0, bottom:0, zIndex:100, display:'flex', flexDirection:'column', paddingTop:64,
       background:'radial-gradient(1100px 820px at 72% 82%, rgba(46,96,179,0.22), transparent 60%), radial-gradient(820px 620px at 28% -5%, rgba(34,54,120,0.20), transparent 55%), linear-gradient(180deg, #0a0f1c 0%, #070a13 60%, #05070f 100%)',
     }}>
       <style>{AH_CSS}</style>
@@ -1690,8 +1687,8 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
 
       {/* ── Chat IA de recommandation (panneau gauche) — comble le vide à gauche
            sur grands écrans, masqué en dessous de 1740px pour ne pas chevaucher. ── */}
-      <aside className="ah-side-rail" style={{ position:'fixed', left:14, top:150, width:300, height:'calc(100vh - 188px)', zIndex:90, display:'flex', flexDirection:'column' }}>
-        <style>{`@media (max-width:1740px){ .ah-side-rail{ display:none !important } }`}</style>
+      <aside className="ah-side-rail" style={{ position:'fixed', left:24, top:116, width:430, height:318, zIndex:90, display:'flex', flexDirection:'column' }}>
+        <style>{`@media (max-width:1880px){ .ah-side-rail{ display:none !important } }`}</style>
         <HubAiChat animes={sortedAnimes} onOpen={handleClick} />
       </aside>
 
@@ -1700,99 +1697,6 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
         <Suspense fallback={null}>
           <AnimeDrift3D images={driftImages} />
         </Suspense>
-      </div>
-
-      {/* ── Header compact sticky — premium sobre (gold/violet, zéro rouge) ── */}
-      <div style={{
-        flexShrink:0, padding:'0 24px', height:62,
-        display:'flex', alignItems:'center', justifyContent:'space-between', gap:16,
-        background:'linear-gradient(180deg, rgba(10,12,18,0.92), rgba(8,9,13,0.82))', backdropFilter:'blur(22px)',
-        borderBottom:'1px solid rgba(191,164,106,0.16)', zIndex:10, position:'relative',
-      }}>
-        {/* Liseré or→violet ultra-fin en bas du header */}
-        <div style={{ position:'absolute', left:0, right:0, bottom:0, height:1, background:'linear-gradient(90deg, transparent, rgba(191,164,106,0.55), rgba(167,139,250,0.45), transparent)', pointerEvents:'none' }} />
-
-        <div style={{ display:'flex', alignItems:'center', gap:13, minWidth:0 }}>
-          <button
-            onClick={onClose}
-            style={{ display:'flex', alignItems:'center', gap:7, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.10)', borderRadius:9, color:'#9ca3af', cursor:'pointer', padding:'7px 15px', fontSize:12.5, fontWeight:700, transition:'all .18s', flexShrink:0 }}
-            onMouseEnter={e => { e.currentTarget.style.background='rgba(255,255,255,0.10)'; e.currentTarget.style.color='#f4f4f5' }}
-            onMouseLeave={e => { e.currentTarget.style.background='rgba(255,255,255,0.05)'; e.currentTarget.style.color='#9ca3af' }}
-          >
-            ← Retour
-          </button>
-          <div style={{ width:3, height:32, borderRadius:2, background:'linear-gradient(to bottom, #BFA46A, #a78bfa)', boxShadow:'0 0 12px rgba(191,164,106,0.35)' }} />
-          <div style={{ fontSize:22, animation:'ahDrift 6s ease-in-out infinite' }}>🎌</div>
-          <div style={{ minWidth:0 }}>
-            <div style={{ fontFamily:"'Pirata One', cursive", fontWeight:900, fontSize:19, color:'#f4f4f5', letterSpacing:'-.01em', lineHeight:1 }}>Hub des Animés</div>
-            {/* Stats live réelles (premium) */}
-            <div style={{ display:'flex', alignItems:'center', gap:9, marginTop:3, fontSize:10.5, color:'#9ca3af', fontWeight:700, letterSpacing:'.02em', flexWrap:'wrap' }}>
-              <span><span style={{ color:'#BFA46A' }}>{sortedAnimes.length}</span> séries</span>
-              <span style={{ color:'rgba(255,255,255,0.18)' }}>•</span>
-              <span style={{ display:'inline-flex', alignItems:'center', gap:5 }}>
-                <span style={{ width:6, height:6, borderRadius:'50%', background:'#a78bfa', boxShadow:'0 0 8px #a78bfa', display:'inline-block', animation:'ahPulse 2.2s ease-in-out infinite' }} />
-                <span style={{ color:'#c4b5fd' }}>{continueWatching.length}</span> en cours
-              </span>
-              <span style={{ color:'rgba(255,255,255,0.18)' }}>•</span>
-              <span><span style={{ color:'#34d399' }}>{watchedCount}</span> vus</span>
-              <span style={{ color:'rgba(255,255,255,0.18)' }}>•</span>
-              <span><span style={{ color:'#f0abfc' }}>{favs.size}</span> favoris</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Recherche intégrée au header — comble le vide central (déplacée depuis le contenu) */}
-        <div style={{ flex:'1 1 auto', minWidth:0, maxWidth:540, margin:'0 20px', position:'relative' }}>
-          <span style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', fontSize:15, color:'rgba(139,92,246,0.6)', pointerEvents:'none' }}>⌕</span>
-          <input
-            ref={searchRef}
-            value={query}
-            onChange={event => setQuery(event.target.value)}
-            onFocus={() => setSearchFocus(true)}
-            onBlur={() => setSearchFocus(false)}
-            placeholder="Rechercher un anime, personnage, studio, genre…  ( / )"
-            style={{
-              width:'100%', boxSizing:'border-box', height:38,
-              borderRadius:11, padding:'0 36px',
-              fontSize:13, fontWeight:500, color:'#f4f4f5',
-              background:'rgba(255,255,255,0.05)', outline:'none',
-              border:`1px solid ${searchFocus ? 'rgba(139,92,246,0.55)' : 'rgba(255,255,255,0.10)'}`,
-              boxShadow: searchFocus ? '0 0 0 1px rgba(139,92,246,0.25)' : 'none',
-              transition:'border-color .2s, box-shadow .2s', fontFamily:'var(--body)',
-            }}
-          />
-          {query && (
-            <button type="button" onClick={() => setQuery('')} aria-label="Effacer la recherche"
-              style={{ position:'absolute', right:8, top:'50%', transform:'translateY(-50%)', width:22, height:22, borderRadius:6, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.08)', color:'#9ca3af', fontSize:10, cursor:'pointer', transition:'all .18s' }}
-              onMouseEnter={e => { e.currentTarget.style.background='rgba(255,255,255,0.12)'; e.currentTarget.style.color='#fff' }}
-              onMouseLeave={e => { e.currentTarget.style.background='rgba(255,255,255,0.06)'; e.currentTarget.style.color='#9ca3af' }}
-            >✕</button>
-          )}
-        </div>
-
-        <div style={{ display:'flex', gap:8, alignItems:'center', flexShrink:0 }}>
-          {/* Reprendre — n'apparaît que s'il y a une série en cours */}
-          {resumeTarget && (
-            <button
-              onClick={handleResume}
-              title={`Reprendre ${resumeTarget.title} (${resumeTarget._video.pct}%) · touche R`}
-              style={{ display:'flex', alignItems:'center', gap:7, background:'linear-gradient(135deg, rgba(191,164,106,0.18), rgba(167,139,250,0.16))', border:'1px solid rgba(191,164,106,0.40)', borderRadius:9, color:'#f4f0e6', cursor:'pointer', padding:'7px 13px', fontSize:12, fontWeight:800, transition:'all .18s', letterSpacing:'.01em', maxWidth:220 }}
-              onMouseEnter={e => { e.currentTarget.style.filter='brightness(1.18)'; e.currentTarget.style.borderColor='rgba(191,164,106,0.7)' }}
-              onMouseLeave={e => { e.currentTarget.style.filter='none'; e.currentTarget.style.borderColor='rgba(191,164,106,0.40)' }}
-            >
-              <span style={{ fontSize:11 }}>▶</span>
-              <span style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>Reprendre · {resumeTarget.title}</span>
-            </button>
-          )}
-          <button
-            onClick={() => onOpenMonUnivers && onOpenMonUnivers()}
-            style={{ display:'flex', alignItems:'center', gap:6, background:'rgba(167,139,250,0.10)', border:'1px solid rgba(167,139,250,0.30)', borderRadius:9, color:'#c4b5fd', cursor:'pointer', padding:'7px 13px', fontSize:12, fontWeight:800, transition:'all .18s', letterSpacing:'.01em' }}
-            onMouseEnter={e => { e.currentTarget.style.background='rgba(167,139,250,0.22)'; e.currentTarget.style.color='#fff' }}
-            onMouseLeave={e => { e.currentTarget.style.background='rgba(167,139,250,0.10)'; e.currentTarget.style.color='#c4b5fd' }}
-          >
-            🌌 Mon univers
-          </button>
-        </div>
       </div>
 
       {/* ── Content ── */}
@@ -1886,7 +1790,58 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
               </div>
             </div>
 
-            {/* Recherche déplacée dans le header du Hub (comble le vide central). */}
+            <div style={{ display:'flex', alignItems:'center', gap:12, flexWrap:'wrap', margin:'0 0 14px' }}>
+              <div style={{ flex:'1 1 420px', minWidth:260, maxWidth:640, position:'relative' }}>
+                <span style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', fontSize:15, color:'rgba(167,139,250,0.62)', pointerEvents:'none' }}>⌕</span>
+                <input
+                  ref={searchRef}
+                  value={query}
+                  onChange={event => setQuery(event.target.value)}
+                  onFocus={() => setSearchFocus(true)}
+                  onBlur={() => setSearchFocus(false)}
+                  placeholder="Rechercher un anime, personnage, studio, genre…"
+                  style={{
+                    width:'100%', boxSizing:'border-box', height:42,
+                    borderRadius:12, padding:'0 38px',
+                    fontSize:13.5, fontWeight:600, color:'#f4f4f5',
+                    background:'rgba(255,255,255,0.045)', outline:'none',
+                    border:`1px solid ${searchFocus ? 'rgba(167,139,250,0.56)' : 'rgba(255,255,255,0.10)'}`,
+                    boxShadow: searchFocus ? '0 0 0 1px rgba(167,139,250,0.20), 0 14px 34px rgba(0,0,0,0.22)' : 'none',
+                    transition:'border-color .2s, box-shadow .2s', fontFamily:'var(--body)',
+                  }}
+                />
+                {query && (
+                  <button type="button" onClick={() => setQuery('')} aria-label="Effacer la recherche"
+                    style={{ position:'absolute', right:8, top:'50%', transform:'translateY(-50%)', width:24, height:24, borderRadius:7, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.08)', color:'#9ca3af', fontSize:10, cursor:'pointer', transition:'all .18s' }}
+                    onMouseEnter={e => { e.currentTarget.style.background='rgba(255,255,255,0.12)'; e.currentTarget.style.color='#fff' }}
+                    onMouseLeave={e => { e.currentTarget.style.background='rgba(255,255,255,0.06)'; e.currentTarget.style.color='#9ca3af' }}
+                  >✕</button>
+                )}
+              </div>
+
+              <div style={{ display:'flex', gap:8, alignItems:'center', flexShrink:0, flexWrap:'wrap' }}>
+                {resumeTarget && (
+                  <button
+                    onClick={handleResume}
+                    title={`Reprendre ${resumeTarget.title} (${resumeTarget._video.pct}%) · touche R`}
+                    style={{ display:'flex', alignItems:'center', gap:7, background:'linear-gradient(135deg, rgba(191,164,106,0.18), rgba(167,139,250,0.16))', border:'1px solid rgba(191,164,106,0.38)', borderRadius:10, color:'#f4f0e6', cursor:'pointer', padding:'9px 13px', fontSize:12, fontWeight:800, transition:'all .18s', letterSpacing:'.01em', maxWidth:230 }}
+                    onMouseEnter={e => { e.currentTarget.style.filter='brightness(1.18)'; e.currentTarget.style.borderColor='rgba(191,164,106,0.68)' }}
+                    onMouseLeave={e => { e.currentTarget.style.filter='none'; e.currentTarget.style.borderColor='rgba(191,164,106,0.38)' }}
+                  >
+                    <span style={{ fontSize:11 }}>▶</span>
+                    <span style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>Reprendre · {resumeTarget.title}</span>
+                  </button>
+                )}
+                <button
+                  onClick={() => onOpenMonUnivers && onOpenMonUnivers()}
+                  style={{ display:'flex', alignItems:'center', gap:6, background:'rgba(167,139,250,0.10)', border:'1px solid rgba(167,139,250,0.30)', borderRadius:10, color:'#c4b5fd', cursor:'pointer', padding:'9px 13px', fontSize:12, fontWeight:800, transition:'all .18s', letterSpacing:'.01em' }}
+                  onMouseEnter={e => { e.currentTarget.style.background='rgba(167,139,250,0.22)'; e.currentTarget.style.color='#fff' }}
+                  onMouseLeave={e => { e.currentTarget.style.background='rgba(167,139,250,0.10)'; e.currentTarget.style.color='#c4b5fd' }}
+                >
+                  🌌 Mon univers
+                </button>
+              </div>
+            </div>
 
             {/* ── Genres (dropdown compact — clic = panneau de tous les genres) ── */}
             <div style={{ display:'flex', alignItems:'center', gap:8, position:'relative' }}>
