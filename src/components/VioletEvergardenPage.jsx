@@ -6,6 +6,7 @@ import VIDEOS_RAW from '../data/violet-evergarden-videos.json'
 import { getCachedSynopsis, fetchEpisodeSynopsis } from '../lib/episodeSynopsis.js'
 import RecommendedBanner from './RecommendedBanner.jsx'
 import EpisodeWatch from './EpisodeWatch.jsx'
+import SeasonDivider from './SeasonDivider.jsx'
 
 // VOSTFR par défaut : on ne force RIEN ici. Le player applique la préférence
 // sauvegardée du membre (par compte), et à défaut son défaut 'ja' (audio) +
@@ -342,7 +343,7 @@ export default function VioletEvergardenPage({ onClose }) {
 
                 {ovas.length > 0 && (
                   <>
-                    <h3 style={{ margin:'34px 0 16px',fontSize:18,fontWeight:900,color:'#fff',letterSpacing:'-.01em' }}>OAV</h3>
+                    <div style={{ margin:'34px 0 16px' }}><SeasonDivider label="OAV" color={COLOR} /></div>
                     <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(240px,1fr))', gap:14 }}>
                       {ovas.map(({ v, i }) => (
                         <EpCard key={keyOf(v)} video={v} index={i} watched={!!progress[keyOf(v)]?.completed} onPlay={playHandlers[i]} />
@@ -353,7 +354,7 @@ export default function VioletEvergardenPage({ onClose }) {
 
                 {films.length > 0 && (
                   <>
-                    <h3 style={{ margin:'34px 0 16px',fontSize:18,fontWeight:900,color:'#fff',letterSpacing:'-.01em' }}>Films 🎬</h3>
+                    <div style={{ margin:'34px 0 16px' }}><SeasonDivider label="Films 🎬" color={COLOR} /></div>
                     <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(240px,1fr))', gap:14 }}>
                       {films.map(({ v, i }) => (
                         <EpCard key={keyOf(v)} video={v} index={i} watched={!!progress[keyOf(v)]?.completed} onPlay={playHandlers[i]} />
