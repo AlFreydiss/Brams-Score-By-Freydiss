@@ -107,36 +107,42 @@ def main():
 
     entries = []
 
-    print('\n🗡️  Saison 3 (MKV → MP4 lisible navigateur : VF par défaut + VOSTFR .m4a + sous-titres .vtt)…')
+    # FIX DÉSYNC S3 : la VOSTFR était servie comme piste audio .m4a SÉPARÉE, jouée par
+    # un <audio> distinct synchronisé au <video> en JS (sans correction de dérive
+    # continue) → voix japonaise décalée sur toute la saison. On produit désormais un
+    # MP4 VOSTFR COMPLET (même vidéo + audio japonais muxés). Le lecteur bascule
+    # VF↔VOSTFR en échangeant tout le fichier (variante `mediaSrc`) → audio muxé dans
+    # la vidéo = synchro parfaite, zéro élément audio séparé, zéro dérive.
+    print('\n🗡️  Saison 3 (MKV → MP4 : VF par défaut + MP4 VOSTFR complet synchro + sous-titres .vtt)…')
     for ep, f in collect(S3_DIR, '.mkv'):
-        mp4 = TMP / f'S03E{ep:02d}.mp4'      # vidéo H264 + audio VF (fre) par défaut → lit partout
-        m4a = TMP / f'S03E{ep:02d}-ja.m4a'   # piste audio VO japonaise séparée (VOSTFR)
-        vtt = TMP / f'S03E{ep:02d}-fr.vtt'   # sous-titres FR "Complets" (1er flux sub)
-        if not mp4.exists():
-            ff(['-i', str(f), '-map', '0:v:0', '-map', '0:a:m:language:fre', '-c', 'copy', '-movflags', '+faststart', str(mp4)])
-        if not m4a.exists():
-            ff(['-i', str(f), '-map', '0:a:m:language:jpn', '-c', 'copy', str(m4a)])
+        mp4_vf = TMP / f'S03E{ep:02d}.mp4'         # vidéo H264 + audio VF (fre) par défaut → lit partout
+        mp4_vo = TMP / f'S03E{ep:02d}-vostfr.mp4'  # MÊME vidéo + audio japonais → VOSTFR sans désync
+        vtt    = TMP / f'S03E{ep:02d}-fr.vtt'      # sous-titres FR "Complets" (1er flux sub)
+        if not mp4_vf.exists():
+            ff(['-i', str(f), '-map', '0:v:0', '-map', '0:a:m:language:fre', '-c', 'copy', '-movflags', '+faststart', str(mp4_vf)])
+        if not mp4_vo.exists():
+            ff(['-i', str(f), '-map', '0:v:0', '-map', '0:a:m:language:jpn', '-c', 'copy', '-movflags', '+faststart', str(mp4_vo)])
         if not vtt.exists():
             ff(['-i', str(f), '-map', '0:s:0', '-c:s', 'webvtt', str(vtt)])
-        url_mp4 = upload(mp4, f'anime/aot/S03E{ep:02d}.mp4')
-        url_m4a = upload(m4a, f'anime/aot/S03E{ep:02d}-ja.m4a')
-        url_vtt = upload(vtt, f'anime/aot/S03E{ep:02d}-fr.vtt')
-        # libère le disque temp (13 Go sinon)
-        for tmpf in (mp4, m4a):
+        url_vf  = upload(mp4_vf, f'anime/aot/S03E{ep:02d}.mp4')          # inchangé → déjà sur R2, sauté
+        url_vo  = upload(mp4_vo, f'anime/aot/S03E{ep:02d}-vostfr.mp4')   # NOUVEAU (l'ancien -ja.m4a devient orphelin, inoffensif)
+        url_vtt = upload(vtt,    f'anime/aot/S03E{ep:02d}-fr.vtt')
+        # libère le disque temp (C: est juste → on supprime au fil de l'eau)
+        for tmpf in (mp4_vf, mp4_vo):
             try: tmpf.unlink()
             except OSError: pass
         entries.append({
             'episode': ep,
             'title': f'Saison 3 — Épisode {ep}',
-            'src': url_mp4,
+            'src': url_vf,
             'season': 'S03',
             'arc': 'Saison 3',
             'badge': 'MULTI',
             'preferredAudioLang': 'fr',
             'progressKey': f's3-{ep}',   # unique inter-saisons (sinon S03E01/S04E01 partagent la clé)
             'audio': [
-                {'label': 'VF', 'srclang': 'fr'},                       # piste native du MP4 (défaut)
-                {'label': 'VOSTFR', 'srclang': 'ja', 'src': url_m4a},   # piste séparée (pattern Kaiju)
+                {'label': 'VF', 'srclang': 'fr'},                          # piste native du MP4 (défaut)
+                {'label': 'VOSTFR', 'srclang': 'ja', 'mediaSrc': url_vo},  # MP4 complet → bascule sans désync
             ],
             'subtitles': [
                 {'label': 'Français', 'srclang': 'fr', 'src': url_vtt},
@@ -161,7 +167,8 @@ def main():
     OUT_JSON.parent.mkdir(parents=True, exist_ok=True)
     OUT_JSON.write_text(json.dumps(entries, ensure_ascii=False, indent=2), encoding='utf-8')
     print(f'\n✅ {len(entries)} épisodes écrits → {OUT_JSON}')
-    print('   Ensuite, dans brams-web-clone :  git add src/data/aot-videos.json && git commit -m "feat: SNK S3+S4" && git push origin main')
+    print('   Les VF S03 déjà sur R2 sont sautées ; seuls les 22 MP4 VOSTFR (~8 Go) sont encodés/uploadés.')
+    print('   Ensuite, dans brams-web-clone :  git add src/data/aot-videos.json && git commit -m "fix(snk): VOSTFR S3 en MP4 complet (fin du decalage voix)" && git push origin main')
 
 if __name__ == '__main__':
     main()
