@@ -1391,8 +1391,9 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
         )}
       </div>
 
-      {/* ── Bande épisodes ── */}
-      {videos.length > 1 && (() => {
+      {/* ── Bande épisodes ── (masquée en mode intégré : la page d'EpisodeWatch
+           affiche déjà "Épisodes suivants" → évite le doublon) */}
+      {!embedded && videos.length > 1 && (() => {
         const hasThumbs = videos.some(v => v.thumbnail || v.src)
         return (
           <div style={{ flexShrink: 0, display: 'flex', gap: 6, padding: hasThumbs ? '8px 14px' : '7px 14px', background: 'rgba(8,9,11,0.84)', backdropFilter: 'blur(18px)', borderTop: '1px solid rgba(255,255,255,0.05)', overflowX: 'auto', scrollbarWidth: 'thin', alignItems: 'flex-start' }}>
