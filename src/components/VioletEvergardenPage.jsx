@@ -240,37 +240,25 @@ function EpisodeDetailInline({ idx, onPlay, onClose }) {
   )
 }
 
-// Bandeau d'endossement premium en bas de page.
+// Bandeau d'endossement compact en bas de page.
 function RecommendedBanner() {
-  const People = ({ icon, name, sub, c }) => (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-      <div style={{ width: 46, height: 46, borderRadius: '50%', background: `radial-gradient(circle at 30% 30%, ${c}, rgba(0,0,0,.4))`, border: `2px solid ${c}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, boxShadow: `0 6px 20px ${c}55`, flexShrink: 0 }}>{icon}</div>
-      <div style={{ lineHeight: 1.15 }}>
-        <div style={{ fontSize: 14, fontWeight: 900, color: '#fff' }}>{name}</div>
-        <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,.45)', fontWeight: 600 }}>{sub}</div>
-      </div>
-    </div>
+  const Av = ({ icon, c }) => (
+    <div style={{ width: 30, height: 30, borderRadius: '50%', background: `radial-gradient(circle at 30% 30%, ${c}, rgba(0,0,0,.4))`, border: `1.5px solid ${c}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, boxShadow: `0 3px 10px ${c}55`, flexShrink: 0 }}>{icon}</div>
   )
   return (
     <div style={{
-      marginTop: 30, borderRadius: 20, padding: '24px 28px', position: 'relative', overflow: 'hidden',
-      background: 'linear-gradient(120deg, rgba(229,86,74,.14), rgba(139,124,255,.16) 60%, rgba(14,12,24,.7))',
-      border: '1px solid rgba(139,124,255,.32)',
-      boxShadow: '0 18px 50px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.06)',
+      marginTop: 22, borderRadius: 14, padding: '12px 18px', position: 'relative', overflow: 'hidden',
+      display: 'inline-flex', alignItems: 'center', gap: 14, maxWidth: '100%',
+      background: 'linear-gradient(120deg, rgba(229,86,74,.12), rgba(139,124,255,.14) 70%, rgba(14,12,24,.6))',
+      border: '1px solid rgba(139,124,255,.28)',
     }}>
-      <div style={{ position: 'absolute', top: -40, right: -20, width: 220, height: 160, background: 'radial-gradient(circle, rgba(139,124,255,.18), transparent 70%)', pointerEvents: 'none' }} />
-      <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20, flexWrap: 'wrap' }}>
-        <div style={{ minWidth: 220 }}>
-          <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: '2px', textTransform: 'uppercase', color: COLOR2, marginBottom: 6 }}>★ Coup de cœur</div>
-          <div style={{ fontFamily: "'Pirata One',cursive", fontSize: 26, fontWeight: 900, color: '#fff', lineHeight: 1.05 }}>
-            Recommandé par <span style={{ color: '#ff7a6b' }}>Hakuji</span> &amp; <span style={{ color: COLOR2 }}>Freydiss</span>
-          </div>
-          <div style={{ fontSize: 12, color: 'rgba(255,255,255,.5)', marginTop: 6, fontStyle: 'italic' }}>« Une œuvre qui marque à jamais — à voir absolument. »</div>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 22, flexWrap: 'wrap' }}>
-          <People icon="🔥" name="Hakuji" sub="Lune Supérieure" c="#ff7a6b" />
-          <People icon="👑" name="Al Freydiss" sub="Capitaine" c={COLOR2} />
-        </div>
+      <span style={{ fontSize: 9, fontWeight: 900, letterSpacing: '1.4px', textTransform: 'uppercase', color: COLOR2, flexShrink: 0 }}>★ Coup de cœur</span>
+      <span style={{ fontSize: 13.5, fontWeight: 800, color: 'rgba(255,255,255,.9)' }}>
+        Recommandé par <span style={{ color: COLOR2 }}>Freydiss</span> &amp; <span style={{ color: '#ff7a6b' }}>Hakuji</span>
+      </span>
+      <div style={{ display: 'flex', alignItems: 'center', marginLeft: 2 }}>
+        <Av icon="👑" c={COLOR2} />
+        <div style={{ marginLeft: -8 }}><Av icon="🔥" c="#ff7a6b" /></div>
       </div>
     </div>
   )
