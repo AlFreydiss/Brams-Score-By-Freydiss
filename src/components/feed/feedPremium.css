@@ -4,22 +4,40 @@
   margin-top: 72px;
   overflow-y: auto;
   background:
-    linear-gradient(180deg, rgba(13, 15, 19, 0.96), rgba(8, 9, 13, 1)),
-    radial-gradient(900px 520px at 78% 0%, rgba(24, 42, 68, 0.24), transparent 64%),
-    radial-gradient(760px 420px at 18% 8%, rgba(130, 94, 24, 0.13), transparent 62%);
+    linear-gradient(180deg, rgba(13, 12, 9, 0.96), rgba(8, 8, 6, 1)),
+    radial-gradient(940px 560px at 80% -6%, rgba(212, 175, 90, 0.14), transparent 62%),
+    radial-gradient(760px 460px at 14% 6%, rgba(160, 120, 40, 0.11), transparent 62%),
+    radial-gradient(700px 600px at 50% 116%, rgba(120, 90, 30, 0.08), transparent 66%);
 }
 
+/* Grille fine dorée */
 .feed-shell::before {
   content: "";
   position: fixed;
   inset: 72px 0 0;
   pointer-events: none;
-  opacity: 0.26;
+  opacity: 0.4;
   background-image:
-    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
-  background-size: 44px 44px;
+    linear-gradient(rgba(212, 175, 90, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(212, 175, 90, 0.04) 1px, transparent 1px);
+  background-size: 48px 48px;
   mask-image: linear-gradient(to bottom, #000, transparent 82%);
+}
+
+/* Voile lumineux oblique très lent (effet premium discret) */
+.feed-shell::after {
+  content: "";
+  position: fixed;
+  inset: 72px 0 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(255, 210, 120, 0.04), transparent);
+  width: 45%;
+  animation: feed-gold-sheen 18s ease-in-out infinite;
+}
+@keyframes feed-gold-sheen {
+  0% { transform: translateX(-40%); opacity: 0; }
+  50% { opacity: 1; }
+  100% { transform: translateX(240%); opacity: 0; }
 }
 
 .feed-layout {

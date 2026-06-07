@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import SakuraBackdrop from './SakuraBackdrop.jsx'
+import GoldBackdrop from './GoldBackdrop.jsx'
 import {
   motion, AnimatePresence,
   useMotionValue, useSpring, useTransform,
@@ -540,6 +540,7 @@ export default function BlindTestPage() {
   const [roomSync,    setRoomSync]    = useState('idle')
   const [roomNotice,  setRoomNotice]  = useState('')
   const [roomPlayers, setRoomPlayers] = useState([])
+  const [showMulti,   setShowMulti]   = useState(false) // contrôles multi (déplacés en bas, près de Lancer)
 
   const roomLink  = roomCode ? roomUrl(roomCode) : ''
   const roomUserId = useMemo(() => discordId || user?.id || getBlindGuestId(), [discordId, user?.id])
@@ -958,8 +959,8 @@ export default function BlindTestPage() {
       {/* Dark base */}
       <div style={{ position: 'fixed', inset: 0, background: BG, zIndex: 0 }} />
 
-      {/* Fond sakura (hors-jeu : intro / menu / résultats) */}
-      {!isPlaying && <SakuraBackdrop zIndex={1} />}
+      {/* Fond doré style Undercover (hors-jeu : intro / menu / résultats) */}
+      {!isPlaying && <GoldBackdrop zIndex={1} particlesZIndex={2} />}
 
       {/* Video background */}
       <video
@@ -1044,30 +1045,6 @@ export default function BlindTestPage() {
 
       {/* Main content */}
       <div style={{ position: 'relative', zIndex: 5, maxWidth: 680, margin: '0 auto', padding: '64px 18px 120px' }}>
-
-        {/* Room bar */}
-        {!isPlaying && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-            style={glassPanel({ marginBottom: 12 })}
-          >
-            <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-              <div style={{ fontSize: 12, fontWeight: 800, color: 'rgba(255,255,255,0.72)', flex: 1 }}>
-                {roomStatus}{roomCode ? ` · ${roomRole === 'host' ? 'host' : 'guest'}` : ''}
-              </div>
-              <input
-                value={roomInput}
-                onChange={e => setRoomInput(e.target.value.toUpperCase())}
-                placeholder="Code salle"
-                style={inputStyle({ width: 114, textTransform: 'uppercase' })}
-              />
-              <button onClick={() => joinRoom(roomInput)} style={smallBtn(false)}>Rejoindre</button>
-              <button onClick={createRoom}               style={smallBtn(true)}>Créer</button>
-              <button onClick={leaveRoom}                style={smallBtn(false)} disabled={!roomCode}>Quitter</button>
-            </div>
-          </motion.div>
-        )}
 
         {/* Room link */}
         {roomLink && !isPlaying && (
@@ -1247,19 +1224,43 @@ export default function BlindTestPage() {
                 ))}
               </div>
 
-              <motion.button
-                onClick={startGame}
-                whileHover={{ scale: 1.04, boxShadow: `0 12px 40px rgba(212,160,23,0.45)` }}
-                whileTap={{ scale: 0.97 }}
-                style={{
-                  padding: '16px 52px', borderRadius: 100, border: 'none', fontSize: 17, fontWeight: 800,
-                  background: `linear-gradient(135deg, ${GOLD}, #e5b83a)`, color: '#1a1200', cursor: 'pointer',
-                  letterSpacing: '.04em', boxShadow: `0 8px 32px rgba(212,160,23,0.32)`,
-                  fontFamily: "'Pirata One',cursive",
-                }}
-              >
-                {roomCode && roomRole !== 'host' ? 'Attendre le host' : 'Lancer le jeu'}
-              </motion.button>
+              <div style={{ display: 'flex', gap: 12, alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap' }}>
+                <motion.button
+                  onClick={startGame}
+                  whileHover={{ scale: 1.04, boxShadow: `0 12px 40px rgba(212,160,23,0.45)` }}
+                  whileTap={{ scale: 0.97 }}
+                  style={{
+                    padding: '16px 52px', borderRadius: 100, border: 'none', fontSize: 17, fontWeight: 800,
+                    background: `linear-gradient(135deg, ${GOLD}, #e5b83a)`, color: '#1a1200', cursor: 'pointer',
+                    letterSpacing: '.04em', boxShadow: `0 8px 32px rgba(212,160,23,0.32)`,
+                    fontFamily: "'Pirata One',cursive",
+                  }}
+                >
+                  {roomCode && roomRole !== 'host' ? 'Attendre le host' : 'Lancer le jeu'}
+                </motion.button>
+                <button onClick={() => setShowMulti(s => !s)} style={{
+                  padding: '15px 26px', borderRadius: 100, cursor: 'pointer', fontSize: 14, fontWeight: 800, fontFamily: 'var(--body)',
+                  color: '#e7c878', background: showMulti ? 'rgba(212,160,23,0.18)' : 'rgba(255,255,255,0.05)',
+                  border: `1px solid rgba(212,160,23,${showMulti ? '0.5' : '0.3'})`,
+                }}>👥 Multijoueur</button>
+              </div>
+
+              {/* Contrôles multijoueur (déplacés ici depuis le haut) */}
+              {showMulti && (
+                <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                  style={{ margin: '16px auto 0', maxWidth: 540, padding: '14px 16px', borderRadius: 14, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(212,160,23,0.22)' }}>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: 'rgba(255,255,255,0.72)', marginBottom: 10 }}>
+                    {roomStatus}{roomCode ? ` · ${roomRole === 'host' ? 'host' : 'guest'}` : ''}
+                  </div>
+                  <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
+                    <input value={roomInput} onChange={e => setRoomInput(e.target.value.toUpperCase())} placeholder="Code salle"
+                      style={inputStyle({ width: 130, textTransform: 'uppercase' })} />
+                    <button onClick={() => joinRoom(roomInput)} style={smallBtn(false)}>Rejoindre</button>
+                    <button onClick={createRoom}               style={smallBtn(true)}>Créer une salle</button>
+                    <button onClick={leaveRoom}                style={smallBtn(false)} disabled={!roomCode}>Quitter</button>
+                  </div>
+                </motion.div>
+              )}
 
               <div style={{ marginTop: 18 }}>
                 <button onClick={() => navigate('/blind-test/leaderboard')} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.32)', cursor: 'pointer', fontSize: 13, fontWeight: 600, textDecoration: 'underline' }}>
