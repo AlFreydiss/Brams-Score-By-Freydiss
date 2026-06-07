@@ -369,6 +369,13 @@ export async function fetchOwnedBackgrounds() {
   return list.filter(i => i?.reward_type === 'opening_background')
 }
 
+// Social proof : { item_id: nb de membres qui l'ont équipé }. Public, sans PII.
+// Renvoie {} si la RPC n'est pas (encore) déployée → la boutique n'affiche rien.
+export async function fetchOpeningBgEquipCounts() {
+  const r = await sbRpc('get_opening_bg_equip_counts', {}, { tag: 'shop' })
+  return r && typeof r === 'object' && r.ok !== false ? r : {}
+}
+
 export const MYSTERY_BOX_COST = 1200000
 export async function openMysteryBox() {
   if (!supabase) return { error: { message: 'Supabase non configuré.' } }

@@ -6,7 +6,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import confetti from 'canvas-confetti'
 import { useAuth } from '../contexts/AuthContext.jsx'
-import { fetchShopBalance, fetchOwnedBackgrounds, purchaseShopItem } from '../lib/berryShop.js'
+import { fetchShopBalance, fetchOwnedBackgrounds, purchaseShopItem, fetchOpeningBgEquipCounts } from '../lib/berryShop.js'
 import { useOpeningBg } from '../contexts/OpeningBgContext.jsx'
 import { OPENING_BACKGROUNDS } from '../data/opening-backgrounds.js'
 import OpeningBgMedia from './social/OpeningBgMedia.jsx'
@@ -115,7 +115,7 @@ function CardMedia({ bg, videoRef }) {
   )
 }
 
-function ItemCard({ bg, owned, equipped, busy, affordable, onSelect, onPreview, onBuy, onEquip }) {
+function ItemCard({ bg, owned, equipped, busy, affordable, equipCount = 0, onSelect, onPreview, onBuy, onEquip }) {
   const r = rar(bg.rarity)
   const videoRef = useRef(null)
   const enter = () => { try { videoRef.current?.play?.()?.catch?.(() => {}) } catch {} }
@@ -142,6 +142,7 @@ function ItemCard({ bg, owned, equipped, busy, affordable, onSelect, onPreview, 
       <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: 2, padding: '13px 13px 14px' }}>
         <div style={{ fontSize: 15, fontWeight: 800, color: '#fff', lineHeight: 1.15, textShadow: '0 2px 10px rgba(0,0,0,.7)' }}>{bg.opTitle}</div>
         <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.62)', marginTop: 1, textShadow: '0 1px 8px rgba(0,0,0,.8)' }}>{bg.anime}</div>
+        {equipCount > 0 && <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.5)', marginTop: 4, textShadow: '0 1px 6px rgba(0,0,0,.85)' }}>Équipé par {equipCount} membre{equipCount > 1 ? 's' : ''}</div>}
 
         <div className="bsx-foot" style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 11, opacity: 0.92, transform: 'translateY(2px)' }}>
           {equipped ? (
@@ -163,7 +164,7 @@ function ItemCard({ bg, owned, equipped, busy, affordable, onSelect, onPreview, 
   )
 }
 
-function ShopHero({ bg, owned, equipped, busy, affordable, balance, onBuy, onEquip, onPreview }) {
+function ShopHero({ bg, owned, equipped, busy, affordable, balance, equipCount = 0, onBuy, onEquip, onPreview }) {
   if (!bg) return null
   const r = rar(bg.rarity)
   return (
@@ -185,6 +186,7 @@ function ShopHero({ bg, owned, equipped, busy, affordable, balance, onBuy, onEqu
           <HeroMeta label="Rareté" value={r.label} color={r.c} />
           <HeroMeta label="Exclusivité" value={r.rank >= 6 ? 'Extrême' : r.rank >= 4 ? 'Élevée' : 'Standard'} />
           <HeroMeta label="Statut" value={equipped ? 'Équipé' : owned ? 'Dans ta collection' : 'À débloquer'} color={equipped ? '#7fd6a0' : owned ? GOLD : undefined} />
+          {equipCount > 0 && <HeroMeta label="Communauté" value={`${equipCount} ${equipCount > 1 ? 'membres' : 'membre'}`} color={GOLD} />}
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
@@ -254,7 +256,7 @@ function CollectionStats({ catalog, ownedSet, equippedBg }) {
   )
 }
 
-function PreviewModal({ list, index, ownedSet, equippedId, busyId, balance, onClose, onNav, onBuy, onEquip }) {
+function PreviewModal({ list, index, ownedSet, equippedId, busyId, balance, counts = {}, onClose, onNav, onBuy, onEquip }) {
   const bg = list[index]
   useEffect(() => {
     const onKey = (e) => {
@@ -285,6 +287,7 @@ function PreviewModal({ list, index, ownedSet, equippedId, busyId, balance, onCl
             <div style={{ marginBottom: 9 }}><RarityBadge rarity={bg.rarity} /></div>
             <div style={{ fontSize: 'clamp(22px,3vw,32px)', fontWeight: 900, color: '#fff', lineHeight: 1.05 }}>{bg.opTitle}</div>
             <div style={{ fontSize: 13.5, color: 'rgba(255,255,255,0.6)', marginTop: 3 }}>{bg.anime}{bg.artist ? ` · ${bg.artist}` : ''}</div>
+            {(() => { const eqc = Number(counts[bg.id] ?? counts[bg.shopItemId] ?? 0) || 0; return eqc > 0 ? <div style={{ fontSize: 12, fontWeight: 700, color: GOLD, marginTop: 5 }}>Équipé par {eqc} membre{eqc > 1 ? 's' : ''}</div> : null })()}
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, padding: '16px 22px', flexWrap: 'wrap' }}>
@@ -335,6 +338,7 @@ export default function BerryShop() {
   const catalog = useMemo(() => OPENING_BACKGROUNDS, [])
   const [balance, setBalance] = useState(0)
   const [owned, setOwned] = useState(() => new Set())
+  const [equipCounts, setEquipCounts] = useState({}) // social proof : { item_id: nb membres }
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState(false)
   const [selected, setSelected] = useState(catalog[0] || null)
@@ -362,6 +366,11 @@ export default function BerryShop() {
   }, [isAuthenticated])
 
   useEffect(() => { refresh() }, [refresh])
+
+  // Compteurs « équipé par X » : publics → chargés même sans connexion.
+  const refreshCounts = useCallback(() => { fetchOpeningBgEquipCounts().then(setEquipCounts).catch(() => {}) }, [])
+  useEffect(() => { refreshCounts() }, [refreshCounts])
+  const equipCountOf = useCallback((bg) => Number(equipCounts[bg?.id] ?? equipCounts[bg?.shopItemId] ?? 0) || 0, [equipCounts])
 
   const isOwned = useCallback((bg) => owned.has(bg.id) || owned.has(bg.shopItemId), [owned])
   // « Équipé » seulement si réellement possédé : protège d'un equippedId stale
@@ -423,7 +432,8 @@ export default function BerryShop() {
     if (!isOwned(bg)) return
     await equip(bg.id)
     flash(`« ${bg.opTitle} » équipé sur ton profil.`, 'success')
-  }, [isOwned, equip, flash])
+    refreshCounts()
+  }, [isOwned, equip, flash, refreshCounts])
 
   const sel = selected && catalog.find(b => b.id === selected.id) ? selected : catalog[0]
   const selOwned = sel && isOwned(sel)
@@ -462,7 +472,7 @@ export default function BerryShop() {
         </header>
 
         {/* Hero */}
-        <ShopHero bg={sel} owned={selOwned} equipped={selEquipped} busy={busyId === sel?.id} affordable={balance >= (sel?.price || 0)} balance={balance} onBuy={buy} onEquip={doEquip} onPreview={openPreview} />
+        <ShopHero bg={sel} owned={selOwned} equipped={selEquipped} busy={busyId === sel?.id} affordable={balance >= (sel?.price || 0)} balance={balance} equipCount={equipCountOf(sel)} onBuy={buy} onEquip={doEquip} onPreview={openPreview} />
 
         {/* Collection */}
         {isAuthenticated && <CollectionStats catalog={catalog} ownedSet={owned} equippedBg={equippedBg} />}
@@ -510,8 +520,8 @@ export default function BerryShop() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: 16 }}>
               {visible.map(bg => (
                 <ItemCard key={bg.id} bg={bg}
-                  owned={isOwned(bg)} equipped={equippedId === bg.id}
-                  busy={busyId === bg.id} affordable={balance >= bg.price}
+                  owned={isOwned(bg)} equipped={isEquipped(bg)}
+                  busy={busyId === bg.id} affordable={balance >= bg.price} equipCount={equipCountOf(bg)}
                   onSelect={setSelected} onPreview={openPreview} onBuy={buy} onEquip={doEquip} />
               ))}
             </div>
@@ -520,7 +530,7 @@ export default function BerryShop() {
 
       {/* Aperçu plein écran */}
       {preview && (
-        <PreviewModal list={preview.list} index={preview.idx} ownedSet={owned} equippedId={equippedId} busyId={busyId} balance={balance}
+        <PreviewModal list={preview.list} index={preview.idx} ownedSet={owned} equippedId={equippedId} busyId={busyId} balance={balance} counts={equipCounts}
           onClose={closePreview} onNav={navPreview} onBuy={buy} onEquip={doEquip} />
       )}
 
