@@ -25,6 +25,18 @@
       "destination": "/api/bot-tools?tool=og"
     },
     {
+      "source": "/api/stripe-checkout",
+      "destination": "/api/bot-tools?tool=stripe-checkout"
+    },
+    {
+      "source": "/api/stripe-complete",
+      "destination": "/api/bot-tools?tool=stripe-complete"
+    },
+    {
+      "source": "/api/stripe-webhook",
+      "destination": "/api/bot-tools?tool=stripe-webhook"
+    },
+    {
       "source": "/api/subtitles/onepiece",
       "destination": "/api/subtitles?kind=onepiece"
     },

@@ -5,9 +5,15 @@
 //   ?tool=akinator               (POST, public — devine IA)
 //   ?tool=r2-presign             (POST, x-upload-secret — URL présignée R2)
 //   ?tool=turn-credentials       (GET, public — ICE/TURN sans exposer les secrets)
+//   ?tool=stripe-checkout        (POST, auth — crée une session Checkout)
+//   ?tool=stripe-complete        (POST, auth — finalise un retour Checkout)
+//   ?tool=stripe-webhook         (POST, Stripe — débloque après paiement)
+import { createHmac, timingSafeEqual } from 'node:crypto'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
+import { OPENING_BACKGROUNDS } from '../src/data/opening-backgrounds.js'
+import { openingBgPriceCents } from '../src/lib/openingBgPricing.js'
 
 const SUPABASE_URL = 'https://zeqetrmulqndxugfbojd.supabase.co'
 
@@ -96,26 +102,109 @@ async function syncBot(req, res) {
 }
 
 // ── Akinator IA (devine tous domaines) ────────────────────────────────────────
-const AK_SYSTEM = `Tu es un génie devin, façon Akinator, mais BEAUCOUP plus perspicace.
-L'utilisateur pense à quelque chose ou quelqu'un — N'IMPORTE QUEL DOMAINE :
-personnage d'anime/manga, film, série, jeu vidéo, célébrité réelle, sportif, musicien,
-personnage historique, animal, objet, lieu, concept… Tu ne te limites pas à One Piece.
-Règles :
-- Pose UNE seule question fermée (oui/non) à la fois, en français, courte et naturelle.
-- Sois STRATÉGIQUE : chaque question élimine ~la moitié des possibilités. Commence large puis affine.
-- Tiens compte des réponses, ne te répète pas, ne re-pose pas une question tranchée.
-- Réponses possibles : "oui", "non", "je ne sais pas", "probablement", "probablement pas".
-- Quand tu es raisonnablement sûr (ou après ~20 questions), DEVINE un nom précis.
-- Si une proposition est rejetée, affine puis re-devine.
+const AK_SYSTEM = `Tu es un génie devin, façon Akinator, mais beaucoup plus perspicace.
+L'utilisateur pense à quelque chose ou quelqu'un dans n'importe quel domaine :
+anime/manga, film, série, jeu vidéo, célébrité réelle, sportif, musicien,
+personnage historique, animal, objet, lieu, concept, marque, événement, etc.
+
+Méthode obligatoire :
+- Maintiens mentalement une liste d'hypothèses probables avec poids de confiance.
+- Pose UNE seule question fermée oui/non à la fois, en français, courte et naturelle.
+- Chaque question doit avoir un vrai gain d'information : elle doit couper l'espace des possibilités ou départager 2-5 candidats proches.
+- Commence par le domaine et la nature de la cible, puis affine : univers, époque, rôle, apparence/capacité, détail distinctif.
+- Interprète les réponses nuancées : "probablement oui" = indice positif faible, "probablement non" = indice négatif faible, "je ne sais pas" = information neutre.
+- Ne répète jamais une question déjà posée, ni une reformulation de la même idée.
+- N'utilise pas de questions trop vagues si une question discriminante existe ("est-ce connu/populaire" est faible).
+- Avant 7 questions, ne devine que si une identité est quasi certaine.
+- Après 12 questions, privilégie les questions qui séparent les meilleurs candidats restants.
+- Après 18 questions, devine dès qu'un candidat domine nettement.
+- Si une proposition est rejetée, ne la repropose pas : cherche le candidat voisin le plus compatible.
+- Calibre confidence : 0.35-0.65 pour une question exploratoire, 0.70+ pour une question très discriminante, 0.82+ pour un guess solide.
+
 Réponds UNIQUEMENT par un objet JSON valide, sans texte autour, sans balises :
 {"action":"question","text":"<question>","confidence":<0..1>}
 ou {"action":"guess","text":"<nom précis>","domain":"<domaine>","confidence":<0..1>}`
 
+function akNorm(s) {
+  return String(s || '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+}
+function akClean(s, max = 500) {
+  return String(s || '').replace(/\s+/g, ' ').trim().slice(0, max)
+}
+function akSafeHistory(history) {
+  return (Array.isArray(history) ? history : [])
+    .map(h => ({ question: akClean(h?.question, 220), answer: akClean(h?.answer, 80) }))
+    .filter(h => h.question && h.answer)
+    .slice(-36)
+}
+function akSafeRejected(rejected) {
+  const seen = new Set()
+  return (Array.isArray(rejected) ? rejected : [])
+    .map(x => akClean(x, 120))
+    .filter(Boolean)
+    .filter(x => { const n = akNorm(x); if (!n || seen.has(n)) return false; seen.add(n); return true })
+    .slice(-24)
+}
+function akAskedSame(text, history) {
+  const n = akNorm(text)
+  if (!n) return false
+  return history.some(h => {
+    const q = akNorm(h.question)
+    return q === n || (q.length > 18 && n.length > 18 && (q.includes(n) || n.includes(q)))
+  })
+}
+function akRejectedGuess(text, rejected) {
+  const n = akNorm(text)
+  if (!n) return false
+  return rejected.some(r => {
+    const x = akNorm(r)
+    return x === n || (x.length > 4 && n.length > 4 && (x.includes(n) || n.includes(x)))
+  })
+}
+const AK_FALLBACK_QUESTIONS = [
+  'Ce à quoi tu penses est-il une personne ou un personnage ?',
+  'Est-ce un personnage de fiction ?',
+  'Cela vient-il principalement d’un anime ou d’un manga ?',
+  'Est-ce lié à un jeu vidéo ?',
+  'Est-ce lié à un film ou une série occidentale ?',
+  'Le personnage est-il plutôt un héros ou protagoniste ?',
+  'Le personnage est-il plutôt un antagoniste ?',
+  'Est-ce un homme ?',
+  'Possède-t-il des pouvoirs ou capacités surnaturelles ?',
+  'Est-il connu pour se battre ?',
+  'Appartient-il à un groupe ou une équipe célèbre ?',
+  'Son apparence est-elle très reconnaissable ?',
+  'Est-il encore vivant dans son histoire ?',
+  'Est-ce une personne réelle ?',
+  'Cette personne est-elle surtout connue sur internet ou les réseaux ?',
+]
+function akFallbackQuestion(history) {
+  return AK_FALLBACK_QUESTIONS.find(q => !akAskedSame(q, history)) || null
+}
+function akMode(historyLength) {
+  if (historyLength < 3) return 'Phase 1 : découpe le domaine très large (fiction/réel, personne/objet, anime/jeu/film/sport).'
+  if (historyLength < 8) return 'Phase 2 : identifie l’univers ou la catégorie précise sans deviner trop tôt.'
+  if (historyLength < 14) return 'Phase 3 : sépare les candidats probables par rôle, faction, époque, pouvoir, apparence ou relation.'
+  if (historyLength < 20) return 'Phase 4 : question chirurgicale pour départager 2-5 candidats, puis devine si un candidat domine.'
+  return 'Phase 5 : fais une proposition précise, sauf contradiction majeure.'
+}
 function akBuildPrompt(history, rejected) {
   const lines = history.map((h, i) => `Q${i + 1}: ${h.question}\nR${i + 1}: ${h.answer}`).join('\n')
-  let p = history.length ? `Historique :\n${lines}\n\n` : `Aucune question encore. Pose ta toute première question (la plus discriminante).\n\n`
-  if (rejected?.length) p += `Propositions DÉJÀ rejetées (ne pas re-proposer) : ${rejected.join(', ')}.\n\n`
-  return p + `Donne le prochain coup (question ou guess) en JSON strict.`
+  const asked = history.map((h, i) => `${i + 1}. ${h.question}`).join('\n')
+  const last = history[history.length - 1]
+  let p = `Tour ${history.length + 1}. ${akMode(history.length)}\n\n`
+  p += history.length ? `Historique complet :\n${lines}\n\n` : `Aucune question encore.\n\n`
+  if (asked) p += `Questions déjà posées ou équivalentes à éviter :\n${asked}\n\n`
+  if (last) p += `Dernier indice reçu : "${last.answer}" à "${last.question}". Utilise-le explicitement dans ton raisonnement interne.\n\n`
+  if (rejected?.length) p += `Propositions DÉJÀ rejetées, interdites à reproposer : ${rejected.join(', ')}.\n\n`
+  return p + `Choisis maintenant le meilleur coup.
+Si une question peut éliminer beaucoup de candidats, pose-la.
+Si tu as un candidat dominant et non rejeté, devine.
+JSON strict uniquement.`
 }
 function akValidKey(k) { return typeof k === 'string' && /^AIzaSy[A-Za-z0-9_-]{30,}$/.test(k.trim()) }
 function akGeminiKeys() {
@@ -139,7 +228,7 @@ async function akGemini(prompt) {
     try {
       const model = new GoogleGenerativeAI(key).getGenerativeModel({
         model: 'gemini-2.0-flash', systemInstruction: AK_SYSTEM,
-        generationConfig: { responseMimeType: 'application/json', temperature: 0.6 },
+        generationConfig: { responseMimeType: 'application/json', temperature: 0.35 },
       })
       return (await model.generateContent(prompt)).response.text()
     } catch (err) {
@@ -153,7 +242,7 @@ async function akOpenAICompat(url, key, model, prompt) {
   if (!key) throw new Error('no_key')
   const r = await fetch(url, {
     method: 'POST', headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model, messages: [{ role: 'system', content: AK_SYSTEM }, { role: 'user', content: prompt }], max_tokens: 300, temperature: 0.6, response_format: { type: 'json_object' } }),
+    body: JSON.stringify({ model, messages: [{ role: 'system', content: AK_SYSTEM }, { role: 'user', content: prompt }], max_tokens: 280, temperature: 0.35, response_format: { type: 'json_object' } }),
   })
   if (!r.ok) throw new Error(`${r.status}: ${await r.text()}`)
   return (await r.json()).choices?.[0]?.message?.content
@@ -162,8 +251,10 @@ async function akinator(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
   res.setHeader('Cache-Control', 'no-store')
   const { history = [], rejected = [] } = req.body || {}
-  if (!Array.isArray(history) || history.length > 40) return res.status(400).json({ error: 'Historique invalide' })
-  const prompt = akBuildPrompt(history.slice(-30), Array.isArray(rejected) ? rejected.slice(-20) : [])
+  if (!Array.isArray(history) || history.length > 44) return res.status(400).json({ error: 'Historique invalide' })
+  const safeHistory = akSafeHistory(history)
+  const safeRejected = akSafeRejected(rejected)
+  const prompt = akBuildPrompt(safeHistory.slice(-32), safeRejected.slice(-20))
   const providers = [
     () => akGemini(prompt),
     () => akOpenAICompat('https://api.groq.com/openai/v1/chat/completions', process.env.GROQ_API_KEY, process.env.GROQ_MODEL || 'llama-3.3-70b-versatile', prompt),
@@ -173,14 +264,22 @@ async function akinator(req, res) {
     try {
       const parsed = akParse(await fn())
       if (parsed && (parsed.action === 'question' || parsed.action === 'guess') && typeof parsed.text === 'string' && parsed.text.trim()) {
+        let text = akClean(parsed.text, 200)
+        if (parsed.action === 'guess' && akRejectedGuess(text, safeRejected)) continue
+        if (parsed.action === 'question') {
+          if (akAskedSame(text, safeHistory)) continue
+          if (!/[?？]\s*$/.test(text)) text += ' ?'
+        }
         return res.status(200).json({
-          action: parsed.action, text: parsed.text.trim().slice(0, 200),
+          action: parsed.action, text,
           domain: typeof parsed.domain === 'string' ? parsed.domain.slice(0, 60) : null,
           confidence: typeof parsed.confidence === 'number' ? Math.max(0, Math.min(1, parsed.confidence)) : null,
         })
       }
     } catch (err) { console.error('[akinator]', err?.message || err) }
   }
+  const fallback = akFallbackQuestion(safeHistory)
+  if (fallback) return res.status(200).json({ action: 'question', text: fallback, domain: null, confidence: 0.35 })
   return res.status(503).json({ error: "L'IA est indisponible (clé manquante ou quota).", code: 'ai_unavailable' })
 }
 
@@ -320,6 +419,336 @@ function turnCredentials(req, res) {
   return res.status(200).json({ ok: true, iceServers })
 }
 
+// ── Stripe Checkout : fonds d'opening payés en euros ─────────────────────────
+const STRIPE_MIN_EUR_CHARGE_CENTS = 50
+const SUPABASE_ANON_ENV = () => process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || ''
+
+function setStripeCors(res) {
+  res.setHeader('Access-Control-Allow-Origin', '*')
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
+  res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type, Stripe-Signature')
+}
+
+function getBearerToken(req) {
+  const h = String(req.headers.authorization || req.headers.Authorization || '')
+  return h.toLowerCase().startsWith('bearer ') ? h.slice(7).trim() : ''
+}
+
+function getSiteOrigin(req) {
+  const configured = process.env.SITE_URL || process.env.PUBLIC_SITE_URL || process.env.VITE_SITE_URL || ''
+  if (configured) return configured.replace(/\/+$/, '')
+  const host = String(req.headers['x-forwarded-host'] || req.headers.host || 'brams.community')
+  const proto = String(req.headers['x-forwarded-proto'] || 'https').split(',')[0]
+  return `${proto}://${host}`.replace(/\/+$/, '')
+}
+
+function readJsonBody(req) {
+  if (!req.body) return {}
+  if (typeof req.body === 'object') return req.body
+  if (typeof req.body === 'string') {
+    try { return JSON.parse(req.body) } catch { return {} }
+  }
+  return {}
+}
+
+async function readRawBody(req) {
+  if (Buffer.isBuffer(req.body)) return req.body.toString('utf8')
+  if (typeof req.body === 'string') return req.body
+  if (req.body && typeof req.body === 'object') return JSON.stringify(req.body)
+  return await new Promise((resolve, reject) => {
+    let raw = ''
+    req.setEncoding('utf8')
+    req.on('data', chunk => { raw += chunk })
+    req.on('end', () => resolve(raw))
+    req.on('error', reject)
+  })
+}
+
+function resolveDiscordIdFromUser(user) {
+  const discordIdentity = user?.identities?.find(identity => identity.provider === 'discord')
+  return user?.user_metadata?.provider_id
+    ?? user?.user_metadata?.custom_claims?.provider_id
+    ?? discordIdentity?.identity_data?.provider_id
+    ?? discordIdentity?.identity_data?.sub
+    ?? discordIdentity?.id
+    ?? user?.user_metadata?.sub
+    ?? null
+}
+
+async function getAuthedSupabaseUser(req) {
+  const anon = SUPABASE_ANON_ENV()
+  if (!anon) throw new Error('SUPABASE_ANON_KEY manquant')
+  const token = getBearerToken(req)
+  if (!token) {
+    const e = new Error('Connexion requise')
+    e.status = 401
+    throw e
+  }
+  const r = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+    headers: { apikey: anon, Authorization: `Bearer ${token}` },
+  })
+  if (!r.ok) {
+    const e = new Error('Session invalide')
+    e.status = 401
+    throw e
+  }
+  const user = await r.json()
+  const discordId = resolveDiscordIdFromUser(user)
+  if (!discordId) {
+    const e = new Error('Connexion Discord requise pour acheter un fond.')
+    e.status = 403
+    throw e
+  }
+  return { user, discordId }
+}
+
+function serviceRestHeaders(prefer = 'return=representation') {
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!key) throw new Error('SUPABASE_SERVICE_ROLE_KEY manquant')
+  return {
+    apikey: key,
+    Authorization: `Bearer ${key}`,
+    'Content-Type': 'application/json',
+    Prefer: prefer,
+  }
+}
+
+async function supabaseRest(path, { method = 'GET', body, prefer } = {}) {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    method,
+    headers: serviceRestHeaders(prefer),
+    body: body === undefined ? undefined : JSON.stringify(body),
+  })
+  const text = await r.text()
+  if (!r.ok) {
+    const e = new Error(`Supabase ${r.status}: ${text.slice(0, 180)}`)
+    e.status = 502
+    throw e
+  }
+  return text ? JSON.parse(text) : null
+}
+
+function findOpeningBg(itemId) {
+  const id = String(itemId || '').trim()
+  return OPENING_BACKGROUNDS.find(bg => bg.id === id || bg.shopItemId === id) || null
+}
+
+async function hasOwnedOpeningBg(discordId, itemId) {
+  const rows = await supabaseRest(
+    `user_inventory?discord_id=eq.${encodeURIComponent(discordId)}&item_id=eq.${encodeURIComponent(itemId)}&select=item_id&limit=1`
+  )
+  return Array.isArray(rows) && rows.length > 0
+}
+
+async function ensureOpeningBgShopItem(bg) {
+  const itemId = bg.shopItemId || bg.id
+  await supabaseRest('shop_items?on_conflict=id', {
+    method: 'POST',
+    prefer: 'resolution=merge-duplicates,return=minimal',
+    body: [{
+      id: itemId,
+      name: `Fond : ${bg.opTitle}`,
+      description: bg.description || '',
+      category: 'Fonds',
+      price: openingBgPriceCents(bg),
+      rarity: bg.rarity || 'Commun',
+      stock: null,
+      limited: false,
+      active: true,
+      reward_type: 'opening_background',
+      reward_data: { opTitle: bg.opTitle, anime: bg.anime },
+    }],
+  })
+}
+
+async function grantOpeningBg({ bg, discordId, amountCents, status = 'stripe_paid' }) {
+  const itemId = bg.shopItemId || bg.id
+  await ensureOpeningBgShopItem(bg)
+  if (await hasOwnedOpeningBg(discordId, itemId)) {
+    return { alreadyOwned: true, item: { id: itemId, opTitle: bg.opTitle } }
+  }
+
+  const inserted = await supabaseRest('user_inventory?on_conflict=discord_id,item_id', {
+    method: 'POST',
+    prefer: 'resolution=ignore-duplicates,return=representation',
+    body: [{ discord_id: discordId, item_id: itemId, quantity: 1, equipped: false }],
+  })
+  const created = Array.isArray(inserted) && inserted.length > 0
+  if (created) {
+    await supabaseRest('shop_transactions', {
+      method: 'POST',
+      prefer: 'return=minimal',
+      body: [{ discord_id: discordId, item_id: itemId, price: amountCents, status }],
+    })
+  }
+  return { alreadyOwned: !created, item: { id: itemId, opTitle: bg.opTitle } }
+}
+
+async function stripeApi(path, { method = 'GET', params } = {}) {
+  const secret = process.env.STRIPE_SECRET_KEY || ''
+  if (!secret) {
+    const e = new Error('STRIPE_SECRET_KEY manquant dans Vercel')
+    e.status = 503
+    throw e
+  }
+  const r = await fetch(`https://api.stripe.com${path}`, {
+    method,
+    headers: {
+      Authorization: `Bearer ${secret}`,
+      ...(params ? { 'Content-Type': 'application/x-www-form-urlencoded' } : {}),
+    },
+    body: params ? params.toString() : undefined,
+  })
+  const data = await r.json().catch(() => ({}))
+  if (!r.ok) {
+    const e = new Error(data?.error?.message || `Stripe ${r.status}`)
+    e.status = 502
+    throw e
+  }
+  return data
+}
+
+function stripeSessionParams({ req, user, discordId, bg, amountCents }) {
+  const origin = getSiteOrigin(req)
+  const itemId = bg.shopItemId || bg.id
+  const params = new URLSearchParams()
+  params.set('mode', 'payment')
+  params.set('success_url', `${origin}/boutique?stripe=success&session_id={CHECKOUT_SESSION_ID}`)
+  params.set('cancel_url', `${origin}/boutique?stripe=cancel`)
+  params.set('client_reference_id', `${discordId}:${itemId}`)
+  params.set('line_items[0][quantity]', '1')
+  params.set('line_items[0][price_data][currency]', 'eur')
+  params.set('line_items[0][price_data][unit_amount]', String(amountCents))
+  params.set('line_items[0][price_data][product_data][name]', `Fond : ${bg.opTitle}`)
+  params.set('line_items[0][price_data][product_data][description]', `${bg.anime} · ${bg.rarity}`)
+  params.set('metadata[item_id]', itemId)
+  params.set('metadata[discord_id]', String(discordId))
+  params.set('metadata[user_id]', String(user?.id || ''))
+  params.set('metadata[rarity]', String(bg.rarity || 'Commun'))
+  params.set('payment_intent_data[metadata][item_id]', itemId)
+  params.set('payment_intent_data[metadata][discord_id]', String(discordId))
+  if (user?.email) params.set('customer_email', user.email)
+  return params
+}
+
+async function stripeCheckout(req, res) {
+  setStripeCors(res)
+  if (req.method === 'OPTIONS') return res.status(204).end()
+  if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' })
+
+  try {
+    const { user, discordId } = await getAuthedSupabaseUser(req)
+    const { itemId } = readJsonBody(req)
+    const bg = findOpeningBg(itemId)
+    if (!bg) return res.status(404).json({ error: 'Fond introuvable.' })
+
+    const amountCents = openingBgPriceCents(bg)
+    if (amountCents < STRIPE_MIN_EUR_CHARGE_CENTS) {
+      return res.status(400).json({ error: 'Stripe refuse les paiements carte sous 0,50 €. Mets ce fond dans un pack ou augmente son prix.' })
+    }
+    if (await hasOwnedOpeningBg(discordId, bg.shopItemId || bg.id)) {
+      return res.status(409).json({ error: 'Tu possèdes déjà ce fond.' })
+    }
+
+    await ensureOpeningBgShopItem(bg)
+    const session = await stripeApi('/v1/checkout/sessions', {
+      method: 'POST',
+      params: stripeSessionParams({ req, user, discordId, bg, amountCents }),
+    })
+    return res.status(200).json({ ok: true, id: session.id, url: session.url })
+  } catch (e) {
+    return res.status(e.status || 500).json({ error: e?.message || 'Erreur Checkout' })
+  }
+}
+
+function extractPaidSessionBg(session) {
+  if (!session || session.payment_status !== 'paid') return null
+  const itemId = session.metadata?.item_id
+  const bg = findOpeningBg(itemId)
+  if (!bg) return null
+  const expected = openingBgPriceCents(bg)
+  if (Number(session.amount_total) !== expected) return null
+  return bg
+}
+
+async function stripeComplete(req, res) {
+  setStripeCors(res)
+  if (req.method === 'OPTIONS') return res.status(204).end()
+  if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' })
+
+  try {
+    const { discordId } = await getAuthedSupabaseUser(req)
+    const { sessionId } = readJsonBody(req)
+    if (!sessionId) return res.status(400).json({ error: 'sessionId manquant' })
+
+    const session = await stripeApi(`/v1/checkout/sessions/${encodeURIComponent(sessionId)}`)
+    if (String(session.metadata?.discord_id || '') !== String(discordId)) {
+      return res.status(403).json({ error: 'Ce paiement ne correspond pas à ton compte.' })
+    }
+    const bg = extractPaidSessionBg(session)
+    if (!bg) return res.status(400).json({ error: 'Paiement non validé ou montant invalide.' })
+
+    const result = await grantOpeningBg({
+      bg,
+      discordId,
+      amountCents: Number(session.amount_total),
+      status: 'stripe_paid',
+    })
+    return res.status(200).json({ ok: true, ...result })
+  } catch (e) {
+    return res.status(e.status || 500).json({ error: e?.message || 'Erreur finalisation paiement' })
+  }
+}
+
+function verifyStripeSignature(rawBody, signatureHeader, secret) {
+  const parts = String(signatureHeader || '').split(',').map(p => p.trim())
+  const timestamp = parts.find(p => p.startsWith('t='))?.slice(2)
+  const signatures = parts.filter(p => p.startsWith('v1=')).map(p => p.slice(3))
+  if (!timestamp || signatures.length === 0) return false
+  if (Math.abs(Date.now() / 1000 - Number(timestamp)) > 300) return false
+  const expected = createHmac('sha256', secret).update(`${timestamp}.${rawBody}`, 'utf8').digest('hex')
+  const expectedBuf = Buffer.from(expected, 'hex')
+  return signatures.some(sig => {
+    const got = Buffer.from(sig, 'hex')
+    return got.length === expectedBuf.length && timingSafeEqual(got, expectedBuf)
+  })
+}
+
+async function stripeWebhook(req, res) {
+  setStripeCors(res)
+  if (req.method === 'OPTIONS') return res.status(204).end()
+  if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' })
+
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || ''
+  if (!webhookSecret) return res.status(503).json({ error: 'STRIPE_WEBHOOK_SECRET manquant' })
+
+  try {
+    const rawBody = await readRawBody(req)
+    const signature = req.headers['stripe-signature']
+    if (!verifyStripeSignature(rawBody, signature, webhookSecret)) {
+      return res.status(400).json({ error: 'Signature Stripe invalide' })
+    }
+    const event = JSON.parse(rawBody)
+    if (!['checkout.session.completed', 'checkout.session.async_payment_succeeded'].includes(event?.type)) {
+      return res.status(200).json({ ok: true, ignored: true })
+    }
+    const session = event.data?.object
+    const bg = extractPaidSessionBg(session)
+    const discordId = session?.metadata?.discord_id
+    if (!bg || !discordId) return res.status(200).json({ ok: true, ignored: true })
+
+    const result = await grantOpeningBg({
+      bg,
+      discordId,
+      amountCents: Number(session.amount_total),
+      status: 'stripe_paid',
+    })
+    return res.status(200).json({ ok: true, ...result })
+  } catch (e) {
+    return res.status(e.status || 500).json({ error: e?.message || 'Erreur webhook Stripe' })
+  }
+}
+
 export default async function handler(req, res) {
   const tool = String(req.query.tool || '')
   if (tool === 'seed-shop-backgrounds') return seedShopBackgrounds(req, res)
@@ -328,5 +757,8 @@ export default async function handler(req, res) {
   if (tool === 'r2-presign')            return r2Presign(req, res)
   if (tool === 'og')                    return ogPreview(req, res)
   if (tool === 'turn-credentials')      return turnCredentials(req, res)
+  if (tool === 'stripe-checkout')       return stripeCheckout(req, res)
+  if (tool === 'stripe-complete')       return stripeComplete(req, res)
+  if (tool === 'stripe-webhook')        return stripeWebhook(req, res)
   return res.status(404).json({ error: 'Unknown bot tool' })
 }
