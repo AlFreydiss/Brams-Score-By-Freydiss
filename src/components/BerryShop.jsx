@@ -110,8 +110,10 @@ function CardMedia({ bg, videoRef }) {
     <>
       <div className="bsx-media" style={{ position: 'absolute', inset: 0, background: `linear-gradient(160deg, ${bg.overlayStart || '#1a1320'}, ${bg.overlayEnd || '#0a0810'})` }} />
       {bg.videoUrl && !failed && (
-        // #t=1 → le navigateur affiche la frame à 1s comme miniature (sinon cadre noir).
-        <video ref={videoRef} className="bsx-media" src={`${bg.videoUrl}#t=1`} muted loop playsInline preload="metadata"
+        // On force un SEEK à 1s au chargement → rend une vraie miniature (le simple
+        // #t=1 laissait souvent un cadre noir selon le navigateur).
+        <video ref={videoRef} className="bsx-media" src={bg.videoUrl} muted loop playsInline preload="metadata"
+          onLoadedMetadata={e => { try { if (e.currentTarget.currentTime < 0.1) e.currentTarget.currentTime = 1 } catch {} }}
           onError={() => setFailed(true)}
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
       )}
@@ -124,7 +126,7 @@ function ItemCard({ bg, owned, equipped, busy, affordable, equipCount = 0, onSel
   const r = rar(bg.rarity)
   const videoRef = useRef(null)
   const enter = () => { try { videoRef.current?.play?.()?.catch?.(() => {}) } catch {} }
-  const leave = () => { const v = videoRef.current; if (v) { try { v.pause(); v.currentTime = 0 } catch {} } }
+  const leave = () => { const v = videoRef.current; if (v) { try { v.pause(); v.currentTime = 1 } catch {} } }
   return (
     <div
       className="bsx-card"
@@ -158,7 +160,7 @@ function ItemCard({ bg, owned, equipped, busy, affordable, equipCount = 0, onSel
           ) : (
             <button className="bsx-btn" onClick={e => { e.stopPropagation(); onBuy(bg) }} disabled={busy}
               style={{ flex: 1, fontSize: 12.5, fontWeight: 800, color: affordable ? '#0b0c0e' : 'rgba(236,232,223,0.5)', background: affordable ? GOLD : 'rgba(255,255,255,0.06)', border: affordable ? 'none' : `1px solid ${HAIR}`, borderRadius: 9, padding: '8px 0', cursor: busy ? 'wait' : 'pointer' }}>
-              {busy ? 'Achat…' : <PriceTag bg={bg} affordable={affordable} size={12.5} />}
+              {busy ? 'Achat…' : priceLabel(bg)}
             </button>
           )}
           <button className="bsx-btn" aria-label="Aperçu plein écran" onClick={e => { e.stopPropagation(); onPreview(bg) }}
