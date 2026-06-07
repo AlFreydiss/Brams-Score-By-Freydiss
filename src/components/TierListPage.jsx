@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toPng } from 'html-to-image'
 import confetti from 'canvas-confetti'
+import { getAccessToken } from '../lib/supabaseRest.js'
 import {
   DndContext, DragOverlay, closestCenter, pointerWithin, rectIntersection,
   PointerSensor, TouchSensor, useSensor, useSensors,
@@ -303,11 +304,9 @@ function compressImageToBlob(file) {
 // font un JSON de plusieurs Mo qui dépasse la limite de body Vercel (413) et fait
 // échouer l'écriture Postgres. Stocker l'URL garde le payload minuscule.
 async function uploadBlobToR2(blob, baseName = 'image') {
-  let token = null
-  try {
-    const { data } = supabase ? await supabase.auth.getSession() : { data: null }
-    token = data?.session?.access_token || null
-  } catch {}
+  // Token via REST (getAccessToken) au lieu de supabase.auth.getSession() qui
+  // pouvait HANGER → upload en spinner infini. Rafraîchit aussi le JWT si expiré.
+  const token = await getAccessToken()
   // L'endpoint r2-presign exige un compte connecté : les invités collent une URL.
   if (!token) { const e = new Error('login_required'); e.code = 'login_required'; throw e }
 
@@ -435,7 +434,7 @@ const ItemCard = memo(function ItemCard({ itemId, allById, compact=false, isDrag
           draggable={false}
         />
       )}
-      <div style={{ position:'absolute', inset:0, background:'linear-gradient(to top,rgba(0,0,0,.82) 38%,transparent 100%)' }}>
+      <div style={{ position:'absolute', inset:0, background:'linear-gradient(to top, rgba(0,0,0,.8) 0%, rgba(0,0,0,.3) 22%, transparent 46%)' }}>
         <div style={{ position:'absolute', bottom:0, left:0, right:0, padding:'4px 5px' }}>
           <div style={{ fontSize:8.5, fontWeight:700, color:'#fff', lineHeight:1.25,
             overflow:'hidden', textOverflow:'ellipsis',
