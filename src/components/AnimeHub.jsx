@@ -1357,7 +1357,7 @@ function HubAiChat({ animes, onOpen }) {
     try {
       // Le contexte (catalogue) va dans l'HISTORIQUE, pas dans `message` (limité à
       // 500 caractères côté API → sinon "Message trop long"). Le message reste court.
-      const ctx = { role: 'model', text: `Je suis l'assistant animé de Brams. Animés dispo sur le site : ${catalog}. Je recommande en priorité parmi eux, brièvement (1 à 3 titres, une phrase chacun).` }
+      const ctx = { role: 'model', text: `Tu es « Brams Score l'IA », l'assistant animé du site Brams Community. Animés disponibles SUR LE SITE : ${catalog}. RÈGLES STRICTES : tu parles uniquement du site Brams. Quand un membre veut regarder un animé : s'il est dans la liste, dis qu'il est dispo ICI sur le site (rubrique Animés & Scans) et qu'il peut cliquer pour l'ouvrir ; s'il n'y est pas, dis-le simplement. Ne mentionne JAMAIS Netflix, Crunchyroll, Wakanim ni aucune plateforme externe. Reste bref (1 à 3 titres, une phrase chacun).` }
       const sendHist = [ctx, ...history].map(m => ({ role: m.role, text: m.text }))
       const res = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: msg, history: sendHist }) })
       const data = await res.json()
@@ -1370,9 +1370,12 @@ function HubAiChat({ animes, onOpen }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', borderRadius: 16, overflow: 'hidden', background: 'linear-gradient(180deg, rgba(16,14,26,0.92), rgba(10,9,15,0.96))', border: '1px solid rgba(167,139,250,0.28)', boxShadow: '0 18px 50px rgba(0,0,0,.45)' }}>
       <div style={{ flexShrink: 0, padding: '12px 14px', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', gap: 9, background: 'linear-gradient(135deg, rgba(191,164,106,0.14), rgba(167,139,250,0.12))' }}>
-        <div style={{ width: 28, height: 28, borderRadius: 9, background: 'linear-gradient(135deg,#BFA46A,#a78bfa)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15 }}>✨</div>
+        <div style={{ position: 'relative', width: 28, height: 28, borderRadius: 9, overflow: 'hidden', background: 'linear-gradient(135deg,#b3322f,#7a1f1c)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, flexShrink: 0 }}>
+          👒
+          <img src="https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/avatars/shanks.png" alt="" onError={e => { e.currentTarget.style.display = 'none' }} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+        </div>
         <div style={{ lineHeight: 1.1 }}>
-          <div style={{ fontSize: 13, fontWeight: 900, color: '#f4f0e6' }}>Assistant Animé</div>
+          <div style={{ fontSize: 13, fontWeight: 900, color: '#f4f0e6' }}>Brams Score l'IA</div>
           <div style={{ fontSize: 9.5, color: 'rgba(255,255,255,0.45)' }}>Reco IA · dis ce que t'as aimé</div>
         </div>
       </div>

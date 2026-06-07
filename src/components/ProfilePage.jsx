@@ -27,11 +27,13 @@ export default function ProfilePage() {
   const [params, setParams] = useSearchParams()
   const data = useProfileData(discordId)
   const { member, settings, setSettings, loading, error, isOwnProfile, equippedBg } = data
-  const { setHideAmbient } = useOpeningBg()
+  const { setHideAmbient, equippedId } = useOpeningBg()
 
   // Fond d'opening du profil affiché (animé, plein écran). On le rend NOUS-MÊMES
   // (fiable) et on masque le fond global le temps qu'on est sur le profil.
-  const heroBg = getBgById(equippedBg)
+  // Sur SON profil : on prend le fond équipé live du contexte (mis à jour
+  // instantanément à l'équipement boutique) → plus besoin d'actualiser pour le voir.
+  const heroBg = getBgById((isOwnProfile && equippedId) ? equippedId : equippedBg)
 
   // Onglets — Sauvegardés réservé à mon profil (signets privés).
   const tabs = useMemo(() => [
