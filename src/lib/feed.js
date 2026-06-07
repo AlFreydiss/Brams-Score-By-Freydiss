@@ -3,18 +3,57 @@
 import { supabase } from './supabase.js'
 export { uploadAttachment } from './social.js'   // réutilise l'upload R2 de la messagerie
 
-async function rpc(fn, args = {}) {
-  if (!supabase) return { ok: false, error: 'Supabase non configuré' }
+// On appelle PostgREST en fetch direct au lieu de supabase.rpc(...).
+// Pourquoi : le client supabase-js attend la résolution de la session auth
+// (getSession / navigator.locks) avant d'émettre la requête ; quand ce verrou
+// se bloque, TOUTES les RPC du fil hangent → "timeout" 15s alors que la même
+// RPC en REST direct répond en <0.5s. Le fetch direct contourne ce point de
+// blocage (et reste authentifié en lisant le JWT depuis le storage supabase).
+const SB_URL = import.meta.env.VITE_SUPABASE_URL || ''
+const SB_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
+const SB_REF = (SB_URL.match(/https?:\/\/([^.]+)\./) || [])[1] || ''
+
+// JWT de la session courante lu directement dans le storage supabase-js
+// (clé sb-<ref>-auth-token) — évite getSession() qui pouvait hanger.
+function accessToken() {
+  if (!SB_REF) return null
   try {
-    const { data, error } = await Promise.race([
-      supabase.rpc(fn, args),
-      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 15000)),
-    ])
-    if (error) { console.error(`[feed] ${fn}`, error.message); return { ok: false, error: error.message } }
-    return data
+    const raw = localStorage.getItem(`sb-${SB_REF}-auth-token`)
+    if (!raw) return null
+    const p = JSON.parse(raw)
+    return p?.access_token || p?.currentSession?.access_token || null
+  } catch { return null }
+}
+
+async function rpc(fn, args = {}) {
+  if (!SB_URL || !SB_KEY) return { ok: false, error: 'Supabase non configuré' }
+  const ctrl = new AbortController()
+  const timer = setTimeout(() => ctrl.abort(), 15000)
+  try {
+    const token = accessToken()
+    const res = await fetch(`${SB_URL}/rest/v1/rpc/${fn}`, {
+      method: 'POST',
+      signal: ctrl.signal,
+      headers: {
+        apikey: SB_KEY,
+        Authorization: `Bearer ${token || SB_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(args),
+    })
+    clearTimeout(timer)
+    if (!res.ok) {
+      let msg = `http_${res.status}`
+      try { const j = await res.json(); msg = j?.message || j?.error || msg } catch {}
+      console.error(`[feed] ${fn}`, msg)
+      return { ok: false, error: msg }
+    }
+    return await res.json()
   } catch (e) {
-    console.error(`[feed] ${fn} (throw)`, e?.message || e)
-    return { ok: false, error: e?.message || 'rpc_failed' }
+    clearTimeout(timer)
+    const msg = e?.name === 'AbortError' ? 'timeout' : (e?.message || 'rpc_failed')
+    console.error(`[feed] ${fn} (throw)`, msg)
+    return { ok: false, error: msg }
   }
 }
 
@@ -82,14 +121,19 @@ export async function searchUsers(query, limit = 6) {
   return Array.isArray(r) ? r : []
 }
 
-// Stats publiques du fil (nombre de posts racines) — count direct, sans RPC.
+// Stats publiques du fil (nombre de posts racines) — count via REST direct
+// (PostgREST Prefer: count=exact → header Content-Range). On évite supabase.from()
+// pour la même raison que rpc() ci-dessus (client qui peut hanger sur l'auth).
 export async function getFeedStats() {
-  if (!supabase) return { posts: 0 }
+  if (!SB_URL || !SB_KEY) return { posts: 0 }
   try {
-    const { count } = await supabase.from('posts')
-      .select('id', { count: 'exact', head: true })
-      .is('deleted_at', null).is('reply_to', null)
-    return { posts: count || 0 }
+    const res = await fetch(
+      `${SB_URL}/rest/v1/posts?select=id&deleted_at=is.null&reply_to=is.null`,
+      { headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, Prefer: 'count=exact', Range: '0-0' } }
+    )
+    const range = res.headers.get('content-range') || ''
+    const total = parseInt(range.split('/')[1], 10)
+    return { posts: Number.isFinite(total) ? total : 0 }
   } catch { return { posts: 0 } }
 }
 
