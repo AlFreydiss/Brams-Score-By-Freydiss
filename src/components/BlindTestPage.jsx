@@ -6,6 +6,7 @@ import {
   useMotionValue, useSpring, useTransform,
 } from 'framer-motion'
 import { useAuth } from '../contexts/AuthContext.jsx'
+import { useMediaQuery } from '../hooks/useMediaQuery.js'
 import { supabase } from '../lib/supabase.js'
 import { setBoost, corsUrl } from '../lib/audioBoost.js'
 import {
@@ -498,6 +499,7 @@ function ConfettiBurst({ active }) {
 export default function BlindTestPage() {
   const navigate = useNavigate()
   const { isAuthenticated, user, discordId, displayName, avatarUrl } = useAuth()
+  const isMobile = useMediaQuery('(max-width: 560px)')
   const videoRef       = useRef(null)
   const roomChannelRef = useRef(null)
   const roomSignatureRef = useRef('')
@@ -953,7 +955,7 @@ export default function BlindTestPage() {
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div style={{ minHeight: '100vh', position: 'relative', overflowX: 'hidden', background: BG }}>
+    <div style={{ width: '100%', maxWidth: '100vw', minHeight: '100vh', position: 'relative', overflowX: 'hidden', background: BG }}>
       <style>{BT_CSS}</style>
 
       {/* Dark base */}
@@ -1043,8 +1045,10 @@ export default function BlindTestPage() {
       <BTScanLine />
       <VolumeWidget volume={volume} onChange={v => { setVolume(v); if (videoRef.current) videoRef.current.volume = v }} track={activeTrack} phase={phase} videoRef={videoRef} />
 
-      {/* Main content */}
-      <div style={{ position: 'relative', zIndex: 5, maxWidth: 680, margin: '0 auto', padding: '64px 18px 120px' }}>
+      {/* Main content — centré verticalement, dégagé de la navbar fixe */}
+      <div style={{ position: 'relative', zIndex: 5, width: '100%', maxWidth: 680, margin: '0 auto',
+        padding: isMobile ? '92px 14px 120px' : '104px 18px 130px',
+        minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
 
         {/* Room link */}
         {roomLink && !isPlaying && (
@@ -1121,7 +1125,18 @@ export default function BlindTestPage() {
                   { id: 'all', label: 'Mélangé',  icon: '🔀', n: (counts.OP || 0) + (counts.ED || 0) },
                 ]
                 return (
-                  <div style={{ display: 'inline-flex', gap: 6, padding: 5, marginBottom: 32, borderRadius: 100, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)' }}>
+                  <div style={{
+                    display: isMobile ? 'grid' : 'inline-flex',
+                    gridTemplateColumns: isMobile ? 'repeat(3,minmax(0,1fr))' : undefined,
+                    width: isMobile ? '100%' : undefined,
+                    maxWidth: '100%',
+                    gap: isMobile ? 5 : 6,
+                    padding: 5,
+                    marginBottom: 32,
+                    borderRadius: 100,
+                    background: 'rgba(255,255,255,0.04)',
+                    border: '1px solid rgba(255,255,255,0.09)',
+                  }}>
                     {modes.map(m => {
                       const on = btMode === m.id
                       return (
@@ -1130,17 +1145,20 @@ export default function BlindTestPage() {
                           onClick={() => { setBtMode(m.id); setPlayedIds([]); setPlayedAnimes([]) }}
                           whileTap={{ scale: 0.96 }}
                           style={{
-                            display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px', borderRadius: 100,
+                            minWidth: 0,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            gap: isMobile ? 4 : 8,
+                            padding: isMobile ? '9px 6px' : '10px 20px', borderRadius: 100,
                             border: on ? `1px solid ${GOLD}` : '1px solid transparent', cursor: 'pointer',
                             background: on ? `linear-gradient(135deg, ${GOLD}, #e5b83a)` : 'transparent',
                             color: on ? '#1a1200' : 'rgba(255,255,255,0.62)',
-                            fontFamily: "'Pirata One',cursive", fontSize: 16, fontWeight: 800, letterSpacing: '.02em',
+                            fontFamily: "'Pirata One',cursive", fontSize: isMobile ? 13.5 : 16, fontWeight: 800, letterSpacing: '.02em',
                             transition: 'background .2s, color .2s, border-color .2s',
                           }}
                         >
-                          <span style={{ fontSize: 15 }}>{m.icon}</span>
-                          {m.label}
-                          <span style={{ fontSize: 11, fontWeight: 800, opacity: on ? 0.7 : 0.45, fontFamily: 'var(--body)' }}>{m.n}</span>
+                          <span style={{ fontSize: isMobile ? 13 : 15, flexShrink: 0 }}>{m.icon}</span>
+                          <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.label}</span>
+                          <span style={{ fontSize: isMobile ? 10 : 11, fontWeight: 800, opacity: on ? 0.7 : 0.45, fontFamily: 'var(--body)', flexShrink: 0 }}>{m.n}</span>
                         </motion.button>
                       )
                     })}
@@ -1154,13 +1172,13 @@ export default function BlindTestPage() {
                 initial="hidden" animate="visible"
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill,minmax(140px,1fr))',
-                  gap: 10,
+                  gridTemplateColumns: isMobile ? 'repeat(2,minmax(0,1fr))' : 'repeat(auto-fill,minmax(140px,1fr))',
+                  gap: isMobile ? 8 : 10,
                   marginBottom: 36,
                   textAlign: 'left',
                   maxHeight: 340,
                   overflowY: 'auto',
-                  paddingRight: 6,
+                  paddingRight: isMobile ? 0 : 6,
                   scrollbarWidth: 'thin',
                   scrollbarColor: 'rgba(212,160,23,0.3) transparent',
                 }}
@@ -1230,7 +1248,7 @@ export default function BlindTestPage() {
                   whileHover={{ scale: 1.04, boxShadow: `0 12px 40px rgba(212,160,23,0.45)` }}
                   whileTap={{ scale: 0.97 }}
                   style={{
-                    padding: '16px 52px', borderRadius: 100, border: 'none', fontSize: 17, fontWeight: 800,
+                    padding: isMobile ? '14px 34px' : '16px 52px', borderRadius: 100, border: 'none', fontSize: isMobile ? 15 : 17, fontWeight: 800,
                     background: `linear-gradient(135deg, ${GOLD}, #e5b83a)`, color: '#1a1200', cursor: 'pointer',
                     letterSpacing: '.04em', boxShadow: `0 8px 32px rgba(212,160,23,0.32)`,
                     fontFamily: "'Pirata One',cursive",
