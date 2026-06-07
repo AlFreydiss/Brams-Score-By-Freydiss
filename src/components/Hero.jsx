@@ -199,11 +199,13 @@ export default function Hero() {
             {/* Titre — serif premium, sobre, accent or sur "Community" */}
             <h1 className="fade-up" style={{
               margin: '0 0 18px', fontFamily: "'Cormorant Garamond', Georgia, 'Times New Roman', serif",
-              fontSize: 'clamp(52px, 8vw, 104px)', lineHeight: 0.94, letterSpacing: '-0.01em', fontWeight: 600,
+              fontSize: 'clamp(52px, 8vw, 104px)', lineHeight: 1.0, letterSpacing: '-0.005em', fontWeight: 600,
             }}>
-              <span style={{ display: 'block', color: '#f4f0e6' }}>Brams</span>
-              <span style={{ display: 'block', fontStyle: 'italic', fontWeight: 500,
-                background: 'linear-gradient(100deg, #d8bd7e, #bfa46a 60%, #9c844f)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+              <span style={{ display: 'block', color: '#f4f0e6', textShadow: '0 2px 24px rgba(0,0,0,0.4)' }}>Brams</span>
+              {/* lineHeight + paddingBottom : laisse respirer la descendante du « y » (sinon coupée) */}
+              <span style={{ display: 'block', fontStyle: 'italic', fontWeight: 500, lineHeight: 1.18, paddingBottom: '0.14em',
+                background: 'linear-gradient(96deg, #e6cf94 0%, #d8bd7e 45%, #b89a5a 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+                filter: 'drop-shadow(0 3px 22px rgba(191,164,106,0.18))' }}>
                 Community
               </span>
             </h1>
