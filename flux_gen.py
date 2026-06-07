@@ -62,7 +62,7 @@ def generate(prompt: str, model: str, n: int, ratio: str, fmt: str, api_key: str
         method="POST",
     )
     try:
-        with urllib.request.urlopen(req, timeout=180) as resp:
+        with urllib.request.urlopen(req, timeout=300) as resp:
             return json.loads(resp.read().decode("utf-8"))
     except urllib.error.HTTPError as e:
         detail = e.read().decode("utf-8", errors="replace")
@@ -78,6 +78,7 @@ def main():
     parser.add_argument("--model", default="bfl/flux-2-pro", help="Modele (defaut bfl/flux-2-pro)")
     parser.add_argument("--ratio", default="1:1", help="Aspect ratio: 1:1, 16:9, 4:3, 9:16... (defaut 1:1)")
     parser.add_argument("--format", dest="fmt", default="png", choices=["png", "jpeg"], help="Format (defaut png)")
+    parser.add_argument("--out", default=None, help="Nom de fichier de sortie (sans extension). Defaut = horodatage.")
     args = parser.parse_args()
 
     api_key = load_api_key()
@@ -100,7 +101,11 @@ def main():
             if url:
                 print(f"Image {i}: {url}")
             continue
-        out = OUTPUT_DIR / f"flux_{stamp}_{i}.{args.fmt}"
+        if args.out:
+            stem = args.out if len(data) == 1 else f"{args.out}_{i}"
+            out = OUTPUT_DIR / f"{stem}.{args.fmt}"
+        else:
+            out = OUTPUT_DIR / f"flux_{stamp}_{i}.{args.fmt}"
         out.write_bytes(base64.b64decode(b64))
         saved.append(out)
         print(f"  -> {out}  ({out.stat().st_size // 1024} Ko)")

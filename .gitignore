@@ -43,3 +43,6 @@ __pycache__/
 
 # Images generees par Flux (AI Gateway) - locales, pas versionnees
 flux_output/
+
+# Playwright MCP (screenshots/snapshots de test)
+.playwright-mcp/
