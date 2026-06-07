@@ -1830,6 +1830,29 @@ export default function TierListPage() {
                     </button>
                   </div>
                 )}
+
+                {/* Aperçu communauté — remplit le hub + invite à explorer */}
+                {communityLists.length > 0 && (
+                  <div style={{ marginTop:46 }}>
+                    <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
+                      <h3 style={{ margin:0, fontSize:15, fontWeight:800, color:G.text }}>🔥 Populaires dans la communauté</h3>
+                      <button onClick={() => setTab('community')} style={{ ...actionBtn, padding:'6px 14px', fontSize:11.5 }}>Voir tout →</button>
+                    </div>
+                    <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(240px,1fr))', gap:12 }}>
+                      {[...communityLists].sort((a, b) => (b.likes || 0) - (a.likes || 0)).slice(0, 6).map(list => (
+                        <button key={list.id} onClick={() => loadList(list)} style={{ textAlign:'left', cursor:'pointer', padding:'12px 14px', borderRadius:12, background:G.card, border:`1px solid ${G.border}`, color:G.text, fontFamily:'inherit', transition:'border-color .15s, transform .12s' }}
+                          onMouseEnter={e => { e.currentTarget.style.borderColor = G.gold + '66'; e.currentTarget.style.transform = 'translateY(-2px)' }}
+                          onMouseLeave={e => { e.currentTarget.style.borderColor = G.border; e.currentTarget.style.transform = 'none' }}>
+                          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:8 }}>
+                            <span style={{ fontSize:13, fontWeight:800, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{list.emoji || '📋'} {list.title}</span>
+                            <span style={{ flexShrink:0, fontSize:11, fontWeight:700, color:G.gold }}>❤ {list.likes || 0}</span>
+                          </div>
+                          <div style={{ fontSize:10.5, color:G.muted, marginTop:3 }}>par {list.authorName || 'Pirate Brams'}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </motion.div>
           ) : (
