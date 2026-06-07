@@ -232,12 +232,9 @@ export default function Hero() {
         <div style={{ position: 'absolute', top: '-25%', left: 0, width: '42%', height: '150%',
           background: 'linear-gradient(90deg, transparent, rgba(232,184,74,0.07), transparent)',
           animation: 'heroSweep 16s ease-in-out 2.5s infinite' }} />
-        {/* fondu haut (sous la navbar) */}
-        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '24%',
-          background: 'linear-gradient(180deg, rgba(8,9,13,0.82) 0%, transparent 100%)' }} />
-        {/* vignette de focalisation */}
-        <div style={{ position: 'absolute', inset: 0,
-          background: 'radial-gradient(125% 95% at 50% 34%, transparent 54%, rgba(6,7,11,0.55) 100%)' }} />
+        {/* fondu haut léger (juste pour la lisibilité de la navbar) — n'écrase plus l'AMV */}
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '18%',
+          background: 'linear-gradient(180deg, rgba(8,9,13,0.55) 0%, transparent 100%)' }} />
         {/* grain fin premium */}
         <div style={{ position: 'absolute', inset: 0, opacity: 0.045, mixBlendMode: 'overlay',
           backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
@@ -269,12 +266,12 @@ export default function Hero() {
 
             {/* Titre — serif premium, sobre, accent or sur "Community" */}
             <h1 className="fade-up" style={{
-              margin: '0 0 18px', fontFamily: "'Cormorant Garamond', Georgia, 'Times New Roman', serif",
-              fontSize: 'clamp(52px, 8vw, 104px)', lineHeight: 1.0, letterSpacing: '-0.005em', fontWeight: 600,
+              margin: '0 0 18px', fontFamily: "'Clash Display', 'Syne', 'Inter', system-ui, sans-serif",
+              fontSize: 'clamp(54px, 8.2vw, 108px)', lineHeight: 0.98, letterSpacing: '-0.03em', fontWeight: 700,
             }}>
-              <span style={{ display: 'block', color: '#f4f0e6', textShadow: '0 2px 24px rgba(0,0,0,0.4)' }}>Brams</span>
-              {/* lineHeight + paddingBottom : laisse respirer la descendante du « y » (sinon coupée) */}
-              <span style={{ display: 'block', fontStyle: 'italic', fontWeight: 500, lineHeight: 1.18, paddingBottom: '0.14em',
+              <span style={{ display: 'block', color: '#f4f0e6', textShadow: '0 2px 28px rgba(0,0,0,0.45)' }}>Brams</span>
+              {/* paddingBottom : laisse respirer la descendante du « y » (sinon coupée) */}
+              <span style={{ display: 'block', fontWeight: 700, lineHeight: 1.05, paddingBottom: '0.08em',
                 background: 'linear-gradient(96deg, #e6cf94 0%, #d8bd7e 45%, #b89a5a 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
                 filter: 'drop-shadow(0 3px 22px rgba(191,164,106,0.18))' }}>
                 Community

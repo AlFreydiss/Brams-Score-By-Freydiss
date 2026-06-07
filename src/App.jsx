@@ -319,6 +319,7 @@ export default function App() {
   const onOpenSlFromMon = openFromMon('sl')
   const onOpenDbsFromMon = openFromMon('dbs')
   const onOpenVioletFromMon = openFromMon('violet-evergarden')
+  const onOpenYourLieFromMon = openFromMon('your-lie')
   const onOpenVivyFromMon = openFromMon('vivy')
   const onOpenDomesticFromMon = openFromMon('domestic-na-kanojo')
   const onOpenKoiFromMon = openFromMon('koi-ameagari')
@@ -421,7 +422,7 @@ export default function App() {
     <>
       <WelcomeAnimation />
       <AMVBackground hidden={mediaOverlayOpen || encyclopedieOpen || treeOpen || uploadOpen} />
-      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1, background: 'rgba(4,7,10,0.82)', pointerEvents: 'none' }} />
+      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1, background: 'rgba(4,7,10,0.42)', pointerEvents: 'none' }} />
 
       {/* Hero transparent → l'AMV en fond reste visible. Le reste des sections
           a un fond opaque #08090D (corrige le débordement footer sans masquer l'AMV). */}
@@ -431,10 +432,10 @@ export default function App() {
             Hero translucide transparaissait derrière la barre du haut ("hero derrière"). */}
         <div style={{ display: mediaOverlayOpen ? 'none' : 'block' }}>
           <Hero />
-          {/* Plus de dégradé par-section : un SEUL voile uniforme couvre toute la page
-              (voir l'overlay fixe rgba(4,7,10) plus haut) → aucune coupure, l'AMV reste
-              visible partout de façon homogène. Le bloc sections est transparent. */}
-          <div style={{ background: 'transparent' }}>
+          {/* Voile global allégé (0.42) → l'AMV reste BIEN visible derrière le Hero.
+              Pour garder les sections du bas lisibles sans re-masquer le Hero, c'est
+              le bloc sections lui-même qui porte un fond sombre (il scrolle avec). */}
+          <div style={{ background: 'rgba(6,7,11,0.78)' }}>
             <QuoteSection />
             <Ranks />
             {/* Classement vocal remonté juste sous 'Grimpe les rangs' (était trop bas, après Equipage/Soutenir) */}
@@ -575,6 +576,7 @@ export default function App() {
             onOpenBluelock={() => navigate('/animes-scan/bluelock')}
             onOpenFateZero={() => navigate('/animes-scan/fate-zero')}
             onOpenYourName={() => navigate('/animes-scan/your-name')}
+            onOpenYourLie={() => navigate('/animes-scan/your-lie')}
             onOpenMonUnivers={() => navigate('/animes-scan/mon-univers')}
           />
         ) : (
@@ -614,6 +616,7 @@ export default function App() {
           onOpenTpn={onOpenTpnFromMon} onOpenDrstone={onOpenDrstoneFromMon} onOpenJjk={onOpenJjkFromMon}
           onOpenKingdom={onOpenKingdomFromMon} onOpenKny={onOpenKnyFromMon} onOpenNnt={onOpenNntFromMon}
           onOpenSl={onOpenSlFromMon} onOpenDbs={onOpenDbsFromMon} onOpenViolet={onOpenVioletFromMon}
+          onOpenYourLie={onOpenYourLieFromMon}
           onOpenVivy={onOpenVivyFromMon} onOpenLovePrism={onOpenLovePrismFromMon} onOpenCaroleTuesday={onOpenCaroleTuesdayFromMon}
           onOpenBc={onOpenBcFromMon} onOpenMha={onOpenMhaFromMon} onOpenOnepiece={onOpenOnepieceFromMon}
         />
