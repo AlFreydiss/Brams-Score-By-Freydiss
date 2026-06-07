@@ -40,3 +40,6 @@ commande
 __pycache__/
 **/__pycache__/
 *.pyc
+
+# Images generees par Flux (AI Gateway) - locales, pas versionnees
+flux_output/
