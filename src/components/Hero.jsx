@@ -252,8 +252,18 @@ export default function Hero() {
         </div>
       )}
 
-      <div style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: 1560, margin: '0 auto', padding: isMobile ? '0 20px' : '0 clamp(32px, 4vw, 72px)' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: isNarrow ? '1fr' : '1fr minmax(340px, 420px)', alignItems: 'center', gap: isNarrow ? 40 : 'clamp(56px, 6vw, 120px)' }}>
+      <div style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: 1560, margin: '0 auto', padding: isMobile ? '0 14px' : '0 clamp(20px, 3vw, 48px)' }}>
+        {/* Panneau encadré du hero (verre dépoli léger) → cadre le contenu sur
+            l'AMV sans le masquer. Texte à gauche + Hub à droite vivent dedans. */}
+        <div style={{
+          border: '1px solid rgba(255,255,255,0.10)', borderTop: '1px solid rgba(255,255,255,0.17)',
+          borderRadius: isMobile ? 22 : 30,
+          background: 'linear-gradient(165deg, rgba(12,14,20,0.34) 0%, rgba(8,10,16,0.20) 100%)',
+          backdropFilter: 'blur(7px) saturate(1.15)', WebkitBackdropFilter: 'blur(7px) saturate(1.15)',
+          boxShadow: '0 40px 120px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.06) inset',
+          padding: isMobile ? '26px 18px' : 'clamp(34px, 3.6vw, 60px)',
+        }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isNarrow ? '1fr' : '1fr minmax(340px, 420px)', alignItems: 'center', gap: isNarrow ? 40 : 'clamp(48px, 5vw, 96px)' }}>
 
           {/* ── Colonne gauche ── */}
           <div>
@@ -323,6 +333,7 @@ export default function Hero() {
           <div style={isNarrow ? { marginTop: isMobile ? 48 : 40, maxWidth: 480 } : { position: 'sticky', top: 112 }}>
             <UnifiedSidebar />
           </div>
+        </div>
         </div>
       </div>
     </section>
