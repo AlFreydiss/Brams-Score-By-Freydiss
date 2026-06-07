@@ -9,14 +9,12 @@ import NotificationBell from './social/NotificationBell.jsx'
 const NAV_LINKS = [
   { label: 'Rangs',           href: '#rangs',      action: null,           gated: false, isRoute: false },
   { label: 'Classement',      href: '#classement', action: null,           gated: false, isRoute: false },
-  { label: 'Équipages',       href: '/equipage',   action: null,           gated: false, isRoute: true  },
   { label: 'Le Fil',          href: '/fil',        action: null,           gated: false, isRoute: true  },
   { label: 'Blind Test',      href: '/blind-test', action: null,           gated: false, isRoute: true  },
   { label: 'Tier List',       href: '/tier-list',   action: null,           gated: false, isRoute: true  },
   { label: 'Tournoi',         href: '/tournoi',     action: null,           gated: false, isRoute: true  },
   { label: '🕵️ Undercover',   href: '/undercover',  action: null,           gated: false, isRoute: true  },
   { label: '🔮 Akinator',    href: '/akinator',    action: null,           gated: false, isRoute: true  },
-  { label: 'Encyclopédie',    href: '#',            action: 'encyclopedie', gated: false, isRoute: false },
   { label: '🍥 Animés & Scans', href: '#',          action: 'anime-hub',    gated: true,  isRoute: false },
 ]
 
@@ -255,7 +253,7 @@ function DesktopNavLink({ link, active, locked, onClick }) {
     return <Link to={link.href} className={active ? 'nav-link-premium active' : 'nav-link-premium'}>{content}</Link>
   }
 
-  return <a href={link.href} onClick={onClick} className="nav-link-premium">{content}</a>
+  return <a href={link.href} onClick={onClick} className={active ? 'nav-link-premium active' : 'nav-link-premium'}>{content}</a>
 }
 
 export default function Navbar({ forceScrolled = false }) {
@@ -322,6 +320,11 @@ export default function Navbar({ forceScrolled = false }) {
     requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' }))
   }
 
+  function isNavActive(link) {
+    if (link.action === 'anime-hub') return pathname === '/scans' || pathname === '/animes-scan' || pathname.startsWith('/animes-scan/')
+    return pathname === link.href
+  }
+
   return (
     <>
       <nav className={(scrolled || forceScrolled) ? 'navbar-premium navbar-premium-scrolled' : 'navbar-premium'}>
@@ -335,7 +338,7 @@ export default function Navbar({ forceScrolled = false }) {
               <DesktopNavLink
                 key={link.label}
                 link={link}
-                active={pathname === link.href}
+                active={isNavActive(link)}
                 locked={link.gated && !isAuthenticated}
                 onClick={(event) => handleNavClick(link, event)}
               />
