@@ -628,6 +628,12 @@ function stripeSessionParams({ req, user, discordId, bg, amountCents }) {
   params.set('payment_intent_data[metadata][item_id]', itemId)
   params.set('payment_intent_data[metadata][discord_id]', String(discordId))
   if (user?.email) params.set('customer_email', user.email)
+  // Génère une FACTURE Stripe (PDF) automatiquement envoyée par mail à l'acheteur
+  // → sert de confirmation d'achat + facture téléchargeable.
+  params.set('invoice_creation[enabled]', 'true')
+  params.set('invoice_creation[invoice_data][description]', `Fond d'opening « ${bg.opTitle} » — Brams Community`)
+  params.set('invoice_creation[invoice_data][metadata][item_id]', itemId)
+  params.set('invoice_creation[invoice_data][footer]', 'Merci pour ton achat sur Brams Community 🏴‍☠️')
   return params
 }
 
