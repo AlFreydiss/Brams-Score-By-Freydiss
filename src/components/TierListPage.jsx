@@ -1275,6 +1275,21 @@ export default function TierListPage() {
     }).then(ok => setDraftSaved(ok))
   }
 
+  // Démarre une tier list VIERGE : grille S→F par défaut + pool ENTIÈREMENT vide.
+  // On repart aussi de zéro sur les items custom, sinon les anciennes images
+  // uploadées (persistées dans le draft) réapparaissaient dans le pool à droite.
+  const startBlank = () => {
+    const type = TIER_TYPES.find(t => t.id === 'custom')
+    setCustomItems([])
+    setTiers(DEFAULT_TIERS)
+    setSelectedType(type)
+    const newBoard = initBoard(DEFAULT_TIERS, [])
+    setBoard(newBoard)
+    setTitle('Ma Tier List ✨ Vierge')
+    setFavorites([]); setSearch(''); setGenre('Tous'); setSaved(false)
+    saveDraft({ title: 'Ma Tier List ✨ Vierge', typeId: type.id, tiers: DEFAULT_TIERS, board: newBoard, customItems: [], favorites: [], updatedAt: Date.now() }).then(ok => setDraftSaved(ok))
+  }
+
   // ── Tier row operations
   const handleRename = (tierId, label) => {
     setTiers(ts => ts.map(t => t.id === tierId ? { ...t, label } : t))
@@ -1775,7 +1790,7 @@ export default function TierListPage() {
 
                 {/* Démarrage rapide depuis une grille S→F totalement vide. */}
                 <div style={{ marginTop:22, textAlign:'center' }}>
-                  <button onClick={() => handleTypeSelect(TIER_TYPES.find(t => t.id === 'custom'))} style={{
+                  <button onClick={startBlank} style={{
                     display:'inline-flex', alignItems:'center', gap:8, margin:'0 auto',
                     padding:'13px 28px', borderRadius:12, border:'none', cursor:'pointer',
                     background:'linear-gradient(135deg,#ffd84d,#f0a500)', color:'#1a1200',
