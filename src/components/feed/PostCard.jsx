@@ -9,6 +9,7 @@ import { useAuth } from '../../contexts/AuthContext.jsx'
 import { toggleLike, deletePost, createPost, editPost, toggleBookmark, fetchLinkPreview, togglePostReaction, reportPost } from '../../lib/feed.js'
 import { isCreator, isStaff } from '../../lib/roles.js'
 import { btn, avatar, T } from '../social/socialStyles.js'
+import './feedPremium.css'   // styles des cartes/actions — sinon non stylé hors du Fil (profil, thread → boutons en carrés)
 
 const QUICK_REACTIONS = ['❤️', '🔥', '😂', '😮', '😢', '👏', '💯', '🙌']
 const TOKEN_RE = /(https?:\/\/[^\s]+|#[\p{L}0-9_]+|@[A-Za-z0-9_.]{2,32}|\|\|[^|]+\|\|)/gu
