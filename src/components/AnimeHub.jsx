@@ -1339,8 +1339,9 @@ function HubAiChat({ animes, onOpen }) {
   ])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
+  const [open, setOpen] = useState(false)   // bulle fermée par défaut
   const bottomRef = useRef(null)
-  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [history, loading])
+  useEffect(() => { if (open) bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [history, loading, open])
 
   const catalog = useMemo(() => (animes || []).map(a => a.title).filter(Boolean).join(', '), [animes])
   const matchAnimes = useCallback((text) => {
@@ -1367,17 +1368,31 @@ function HubAiChat({ animes, onOpen }) {
     } finally { setLoading(false) }
   }, [input, loading, history, catalog])
 
+  // Bulle fermée : petit rond flottant (bas-gauche) qu'on clique pour ouvrir.
+  if (!open) {
+    return (
+      <button onClick={() => setOpen(true)} aria-label="Ouvrir Brams Score l'IA (reco animés)"
+        style={{ position: 'fixed', left: 24, bottom: 24, zIndex: 880, width: 58, height: 58, borderRadius: '50%', cursor: 'pointer', overflow: 'hidden', border: '2px solid rgba(167,139,250,0.45)', background: 'linear-gradient(135deg,#b3322f,#7a1f1c)', boxShadow: '0 8px 30px rgba(0,0,0,.55)', display: 'grid', placeItems: 'center', fontSize: 24 }}
+        onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.08)' }} onMouseLeave={e => { e.currentTarget.style.transform = 'none' }}>
+        👒
+        <img src="https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/avatars/shanks.png" alt="" onError={e => { e.currentTarget.style.display = 'none' }} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+        <span style={{ position: 'absolute', bottom: -3, right: -3, width: 22, height: 22, borderRadius: '50%', background: 'linear-gradient(135deg,#BFA46A,#a78bfa)', border: '2px solid #0b0a0f', display: 'grid', placeItems: 'center', fontSize: 11 }}>✨</span>
+      </button>
+    )
+  }
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', borderRadius: 16, overflow: 'hidden', background: 'linear-gradient(180deg, rgba(16,14,26,0.92), rgba(10,9,15,0.96))', border: '1px solid rgba(167,139,250,0.28)', boxShadow: '0 18px 50px rgba(0,0,0,.45)' }}>
+    <div style={{ position: 'fixed', left: 24, bottom: 24, zIndex: 881, width: 'min(370px, calc(100vw - 48px))', height: 'min(520px, calc(100vh - 130px))', display: 'flex', flexDirection: 'column', borderRadius: 16, overflow: 'hidden', background: 'linear-gradient(180deg, rgba(16,14,26,0.96), rgba(10,9,15,0.98))', backdropFilter: 'blur(18px)', border: '1px solid rgba(167,139,250,0.28)', boxShadow: '0 24px 60px rgba(0,0,0,.6)' }}>
       <div style={{ flexShrink: 0, padding: '12px 14px', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', gap: 9, background: 'linear-gradient(135deg, rgba(191,164,106,0.14), rgba(167,139,250,0.12))' }}>
         <div style={{ position: 'relative', width: 28, height: 28, borderRadius: 9, overflow: 'hidden', background: 'linear-gradient(135deg,#b3322f,#7a1f1c)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, flexShrink: 0 }}>
           👒
           <img src="https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/avatars/shanks.png" alt="" onError={e => { e.currentTarget.style.display = 'none' }} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
         </div>
-        <div style={{ lineHeight: 1.1 }}>
+        <div style={{ lineHeight: 1.1, flex: 1 }}>
           <div style={{ fontSize: 13, fontWeight: 900, color: '#f4f0e6' }}>Brams Score l'IA</div>
           <div style={{ fontSize: 9.5, color: 'rgba(255,255,255,0.45)' }}>Reco IA · dis ce que t'as aimé</div>
         </div>
+        <button onClick={() => setOpen(false)} aria-label="Fermer" style={{ flexShrink: 0, width: 28, height: 28, borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', fontSize: 14 }}>✕</button>
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '12px 12px 4px', minHeight: 0 }}>
@@ -1750,10 +1765,8 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
 
       {/* ── Chat IA de recommandation (panneau gauche) — comble le vide à gauche
            sur grands écrans, masqué en dessous de 1740px pour ne pas chevaucher. ── */}
-      <aside className="ah-side-rail" style={{ position:'fixed', left:24, top:116, width:430, height:318, zIndex:90, display:'flex', flexDirection:'column' }}>
-        <style>{`@media (max-width:1880px){ .ah-side-rail{ display:none !important } }`}</style>
-        <HubAiChat animes={sortedAnimes} onOpen={handleClick} />
-      </aside>
+      {/* Bulle IA reco (flottante bas-gauche, s'ouvre au clic) */}
+      <HubAiChat animes={sortedAnimes} onOpen={handleClick} />
 
       {/* Fond 3D : posters d'animés qui vagabondent (derrière tout, non cliquable) */}
       <div style={{ position:'absolute', inset:0, zIndex:0, pointerEvents:'none' }}>
