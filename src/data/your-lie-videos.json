@@ -106,5 +106,491 @@
         "default": true
       }
     ]
+  },
+  {
+    "episode": 5,
+    "title": "Épisode 5",
+    "episodeLabel": "S01E05",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/S01E05-vostfr.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E05",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/thumbnails/S01E05.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/S01E05-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 6,
+    "title": "Épisode 6",
+    "episodeLabel": "S01E06",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/S01E06-vostfr.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E06",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/thumbnails/S01E06.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/S01E06-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 7,
+    "title": "Épisode 7",
+    "episodeLabel": "S01E07",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/S01E07-vostfr.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E07",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/thumbnails/S01E07.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/S01E07-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 8,
+    "title": "Épisode 8",
+    "episodeLabel": "S01E08",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/S01E08-vostfr.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E08",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/thumbnails/S01E08.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/S01E08-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 9,
+    "title": "Épisode 9",
+    "episodeLabel": "S01E09",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/S01E09-vostfr.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E09",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/thumbnails/S01E09.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/S01E09-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 10,
+    "title": "Épisode 10",
+    "episodeLabel": "S01E10",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/S01E10-vostfr.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E10",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/thumbnails/S01E10.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/S01E10-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 11,
+    "title": "Épisode 11",
+    "episodeLabel": "S01E11",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/S01E11-vostfr.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E11",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/thumbnails/S01E11.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/S01E11-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 12,
+    "title": "Épisode 12",
+    "episodeLabel": "S01E12",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/S01E12-vostfr.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E12",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/thumbnails/S01E12.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/S01E12-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 13,
+    "title": "Épisode 13",
+    "episodeLabel": "S01E13",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/S01E13-vostfr.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E13",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/thumbnails/S01E13.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/S01E13-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 14,
+    "title": "Épisode 14",
+    "episodeLabel": "S01E14",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/S01E14-vostfr.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E14",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/thumbnails/S01E14.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/S01E14-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 15,
+    "title": "Épisode 15",
+    "episodeLabel": "S01E15",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/S01E15-vostfr.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E15",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/thumbnails/S01E15.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/S01E15-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 16,
+    "title": "Épisode 16",
+    "episodeLabel": "S01E16",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/S01E16-vostfr.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E16",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/thumbnails/S01E16.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/S01E16-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 17,
+    "title": "Épisode 17",
+    "episodeLabel": "S01E17",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/S01E17-vostfr.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E17",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/thumbnails/S01E17.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/S01E17-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 18,
+    "title": "Épisode 18",
+    "episodeLabel": "S01E18",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/S01E18-vostfr.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E18",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/thumbnails/S01E18.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/S01E18-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 19,
+    "title": "Épisode 19",
+    "episodeLabel": "S01E19",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/S01E19-vostfr.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E19",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/thumbnails/S01E19.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/S01E19-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 20,
+    "title": "Épisode 20",
+    "episodeLabel": "S01E20",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/S01E20-vostfr.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E20",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/thumbnails/S01E20.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/S01E20-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 21,
+    "title": "Épisode 21",
+    "episodeLabel": "S01E21",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/S01E21-vostfr.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E21",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/thumbnails/S01E21.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/S01E21-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 22,
+    "title": "Épisode 22",
+    "episodeLabel": "S01E22",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/S01E22-vostfr.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E22",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/thumbnails/S01E22.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/S01E22-fr.vtt",
+        "default": true
+      }
+    ]
   }
 ]
