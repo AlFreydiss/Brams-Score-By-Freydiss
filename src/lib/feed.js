@@ -21,7 +21,14 @@ function accessToken() {
     const raw = localStorage.getItem(`sb-${SB_REF}-auth-token`)
     if (!raw) return null
     const p = JSON.parse(raw)
-    return p?.access_token || p?.currentSession?.access_token || null
+    const tok = p?.access_token || p?.currentSession?.access_token || null
+    if (!tok) return null
+    // On n'envoie pas un JWT périmé (sinon PostgREST → 401 "JWT expired" sur les
+    // écritures). Si expiré, on retombe sur l'anon : les reads marchent, les
+    // écritures échouent proprement (auth requise) au lieu d'un 401 cryptique.
+    const exp = p?.expires_at ?? p?.currentSession?.expires_at
+    if (exp && Date.now() / 1000 > Number(exp)) return null
+    return tok
   } catch { return null }
 }
 
@@ -38,22 +45,26 @@ async function rpc(fn, args = {}) {
         apikey: SB_KEY,
         Authorization: `Bearer ${token || SB_KEY}`,
         'Content-Type': 'application/json',
+        Accept: 'application/json',
       },
       body: JSON.stringify(args),
     })
-    clearTimeout(timer)
+    // On lit tout le body AVANT de couper le timer (sinon un body qui traîne
+    // ne serait plus protégé par le timeout). text() gère aussi les 204/void.
+    const text = await res.text()
     if (!res.ok) {
       let msg = `http_${res.status}`
-      try { const j = await res.json(); msg = j?.message || j?.error || msg } catch {}
+      try { const j = JSON.parse(text); msg = j?.message || j?.error || msg } catch {}
       console.error(`[feed] ${fn}`, msg)
       return { ok: false, error: msg }
     }
-    return await res.json()
+    return text ? JSON.parse(text) : { ok: true }
   } catch (e) {
-    clearTimeout(timer)
     const msg = e?.name === 'AbortError' ? 'timeout' : (e?.message || 'rpc_failed')
     console.error(`[feed] ${fn} (throw)`, msg)
     return { ok: false, error: msg }
+  } finally {
+    clearTimeout(timer)
   }
 }
 
@@ -129,10 +140,10 @@ export async function getFeedStats() {
   try {
     const res = await fetch(
       `${SB_URL}/rest/v1/posts?select=id&deleted_at=is.null&reply_to=is.null`,
-      { headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, Prefer: 'count=exact', Range: '0-0' } }
+      { headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, Prefer: 'count=exact', Range: '0-0' }, signal: AbortSignal.timeout(15000) }
     )
-    const range = res.headers.get('content-range') || ''
-    const total = parseInt(range.split('/')[1], 10)
+    if (!res.ok) return { posts: 0 }
+    const total = parseInt((res.headers.get('content-range') || '').split('/')[1], 10)
     return { posts: Number.isFinite(total) ? total : 0 }
   } catch { return { posts: 0 } }
 }
