@@ -2,34 +2,13 @@
 // Tout passe par des RPC Supabase SECURITY DEFINER (voir migration
 // 20260529_social_system.sql). Aucune écriture directe en table côté client.
 import { supabase } from './supabase.js'
+import { sbRpc, sbAccessToken } from './supabaseRest.js'
 
-function noClient() {
-  return { ok: false, error: 'Supabase non configuré' }
-}
-
-async function rpc(fn, args = {}) {
-  if (!supabase) return noClient()
-  try {
-    // Timeout : si le RPC ne répond pas en 12s (client supabase coincé), on
-    // abandonne au lieu de laisser l'UI bloquée sur les skeletons à vie.
-    const { data, error } = await Promise.race([
-      supabase.rpc(fn, args),
-      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 12000)),
-    ])
-    if (error) {
-      console.error(`[social] ${fn}`, error.message)
-      return { ok: false, error: error.message }
-    }
-    return data
-  } catch (e) {
-    // Ne JAMAIS propager : sinon un Promise.all parent rejette et l'UI reste bloquée.
-    // Un timeout réseau est transitoire et déjà géré par le fallback → simple warn,
-    // pas une erreur rouge qui pollue la console.
-    if (e?.message === 'timeout') console.warn(`[social] ${fn} : réseau lent, ignoré (fallback utilisé)`)
-    else console.error(`[social] ${fn} (throw)`, e?.message || e)
-    return { ok: false, error: e?.message || 'rpc_failed' }
-  }
-}
+// RPC social via fetch REST direct (voir supabaseRest.js). Indispensable : le
+// client supabase-js pouvait hanger sur l'auth et faire timeout messages, notifs,
+// amis et follows (même bug que le Fil). Renvoie toujours un objet (jamais throw),
+// les consommateurs ci-dessous gardent leurs fallbacks (Array.isArray / r?.ok).
+const rpc = (fn, args = {}) => sbRpc(fn, args, { tag: 'social' })
 
 // ── Amis / blocage ──────────────────────────────────────────────────────────
 export const sendFriendRequest    = (target)        => rpc('send_friend_request', { p_target: String(target) })
@@ -150,15 +129,14 @@ export function logCallEvent(conversationId, status, durationSec = 0, callId = n
 // Upload d'une pièce jointe vers R2 via /api/r2-presign (autorisé par le JWT
 // Supabase de l'utilisateur). Renvoie { url } (publique R2) ou { error }.
 export async function uploadAttachment(file, onProgress) {
-  if (!supabase) return { error: 'Supabase non configuré' }
   if (!file) return { error: 'Fichier manquant' }
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session?.access_token) return { error: 'Connexion requise pour envoyer un fichier' }
+  const token = sbAccessToken()
+  if (!token) return { error: 'Connexion requise pour envoyer un fichier' }
   let presign
   try {
     const res = await fetch('/api/r2-presign', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ filename: file.name || 'fichier', contentType: file.type || 'application/octet-stream', size: file.size }),
     })
     presign = await res.json()

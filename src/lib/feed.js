@@ -1,72 +1,12 @@
 // ── Couche client du Fil (réseau social type Twitter) ──────────────────────
 // Tout passe par des RPC Supabase SECURITY DEFINER (migration 20260530_feed.sql).
 import { supabase } from './supabase.js'
+import { sbRpc, SB_URL, SB_KEY } from './supabaseRest.js'
 export { uploadAttachment } from './social.js'   // réutilise l'upload R2 de la messagerie
 
-// On appelle PostgREST en fetch direct au lieu de supabase.rpc(...).
-// Pourquoi : le client supabase-js attend la résolution de la session auth
-// (getSession / navigator.locks) avant d'émettre la requête ; quand ce verrou
-// se bloque, TOUTES les RPC du fil hangent → "timeout" 15s alors que la même
-// RPC en REST direct répond en <0.5s. Le fetch direct contourne ce point de
-// blocage (et reste authentifié en lisant le JWT depuis le storage supabase).
-const SB_URL = import.meta.env.VITE_SUPABASE_URL || ''
-const SB_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
-const SB_REF = (SB_URL.match(/https?:\/\/([^.]+)\./) || [])[1] || ''
-
-// JWT de la session courante lu directement dans le storage supabase-js
-// (clé sb-<ref>-auth-token) — évite getSession() qui pouvait hanger.
-function accessToken() {
-  if (!SB_REF) return null
-  try {
-    const raw = localStorage.getItem(`sb-${SB_REF}-auth-token`)
-    if (!raw) return null
-    const p = JSON.parse(raw)
-    const tok = p?.access_token || p?.currentSession?.access_token || null
-    if (!tok) return null
-    // On n'envoie pas un JWT périmé (sinon PostgREST → 401 "JWT expired" sur les
-    // écritures). Si expiré, on retombe sur l'anon : les reads marchent, les
-    // écritures échouent proprement (auth requise) au lieu d'un 401 cryptique.
-    const exp = p?.expires_at ?? p?.currentSession?.expires_at
-    if (exp && Date.now() / 1000 > Number(exp)) return null
-    return tok
-  } catch { return null }
-}
-
-async function rpc(fn, args = {}) {
-  if (!SB_URL || !SB_KEY) return { ok: false, error: 'Supabase non configuré' }
-  const ctrl = new AbortController()
-  const timer = setTimeout(() => ctrl.abort(), 15000)
-  try {
-    const token = accessToken()
-    const res = await fetch(`${SB_URL}/rest/v1/rpc/${fn}`, {
-      method: 'POST',
-      signal: ctrl.signal,
-      headers: {
-        apikey: SB_KEY,
-        Authorization: `Bearer ${token || SB_KEY}`,
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
-      body: JSON.stringify(args),
-    })
-    // On lit tout le body AVANT de couper le timer (sinon un body qui traîne
-    // ne serait plus protégé par le timeout). text() gère aussi les 204/void.
-    const text = await res.text()
-    if (!res.ok) {
-      let msg = `http_${res.status}`
-      try { const j = JSON.parse(text); msg = j?.message || j?.error || msg } catch {}
-      console.error(`[feed] ${fn}`, msg)
-      return { ok: false, error: msg }
-    }
-    return text ? JSON.parse(text) : { ok: true }
-  } catch (e) {
-    const msg = e?.name === 'AbortError' ? 'timeout' : (e?.message || 'rpc_failed')
-    console.error(`[feed] ${fn} (throw)`, msg)
-    return { ok: false, error: msg }
-  } finally {
-    clearTimeout(timer)
-  }
-}
+// RPC du Fil via fetch REST direct (voir supabaseRest.js — contourne le client
+// supabase-js qui pouvait hanger sur l'auth et faire timeout tout le fil).
+const rpc = (fn, args = {}) => sbRpc(fn, args, { tag: 'feed' })
 
 export const createPost = ({ content = null, mediaUrl = null, mediaUrls = null, replyTo = null, repostOf = null } = {}) =>
   rpc('create_post', { p_content: content, p_media_url: mediaUrl, p_media_urls: mediaUrls, p_reply_to: replyTo, p_repost_of: repostOf })
