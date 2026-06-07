@@ -60,9 +60,9 @@ const CURATED_BACKGROUNDS = [
   {
     id:             'bg-we-are',
     shopItemId:     'bg-we-are',
-    opTitle:        'We Are!',
+    opTitle:        'Share the World',
     anime:          'One Piece',
-    artist:         'Hiroshi Kitadani',
+    artist:         'TVXQ',
     rarity:         'Legendaire',
     price:          1500000,
     ytId:           'qvKAApHaHnw',
@@ -70,7 +70,7 @@ const CURATED_BACKGROUNDS = [
     dominantColor:  '#0a2a5a',
     overlayStart:   'rgba(10,42,90,0.70)',
     overlayEnd:     'rgba(4,14,38,0.82)',
-    description:    "Le grand voyage des nakamas. Fond culte pour les vrais fans de One Piece.",
+    description:    "L'opening 11 de One Piece. Énergie et nakamas à fond.",
     label:          'Fond premium',
   },
   {
