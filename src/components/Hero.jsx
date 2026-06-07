@@ -28,6 +28,41 @@ function StarField() {
   )
 }
 
+// Braises dorées qui flottent lentement vers le haut — donne vie au fond sombre
+// du hero (sobre : or uniquement, faible opacité). Positions déterministes.
+const EMBERS = Array.from({ length: 30 }, (_, i) => ({
+  id: i,
+  x: (i * 41.7 + 5) % 100,
+  size: ((i * 7) % 3) + 2,
+  delay: (i * 0.53) % 9,
+  dur: ((i * 0.91) % 7) + 9,
+  drift: (((i * 13) % 40) - 20),
+  opacity: ((i * 0.07) % 0.3) + 0.12,
+}))
+
+function EmberField() {
+  return (
+    <div aria-hidden style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+      <style>{`@keyframes emberRise {
+        0%   { transform: translateY(0) translateX(0); opacity: 0 }
+        12%  { opacity: var(--o) }
+        85%  { opacity: var(--o) }
+        100% { transform: translateY(-92vh) translateX(var(--dx)); opacity: 0 }
+      }`}</style>
+      {EMBERS.map(e => (
+        <div key={e.id} style={{
+          position: 'absolute', left: `${e.x}%`, bottom: '-2%',
+          width: e.size, height: e.size, borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(232,200,120,0.95), rgba(191,164,106,0.4) 60%, transparent 75%)',
+          boxShadow: '0 0 6px rgba(212,176,110,0.5)',
+          '--o': e.opacity, '--dx': `${e.drift}px`,
+          animation: `emberRise ${e.dur}s ${e.delay}s ease-in-out infinite`,
+        }} />
+      ))}
+    </div>
+  )
+}
+
 function StatBlock({ value, label, icon, live = false, liveVal = null, sub = null }) {
   const ref = useRef(null)
   const [active, setActive] = useState(false)
@@ -175,14 +210,50 @@ export default function Hero() {
       minHeight: '100vh', display: 'flex', alignItems: 'center', position: 'relative', overflow: 'visible',
       paddingTop: isMobile ? 92 : 110, paddingBottom: isMobile ? 64 : 80,
     }}>
-      {/* Lueurs sobres (or à gauche, ambiance froide à droite) */}
-      <div style={{ position: 'absolute', top: '4%', left: '-6%', width: '55%', height: '80%', zIndex: 0, pointerEvents: 'none',
-        background: 'radial-gradient(ellipse 70% 60% at 30% 40%, rgba(191,164,106,0.10) 0%, rgba(191,164,106,0.03) 50%, transparent 80%)', filter: 'blur(24px)' }} />
-      <div style={{ position: 'absolute', top: 0, right: '-8%', width: '50%', height: '90%', zIndex: 0, pointerEvents: 'none',
-        background: 'radial-gradient(ellipse 70% 65% at 70% 35%, rgba(120,110,150,0.10) 0%, transparent 75%)', filter: 'blur(34px)' }} />
-      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '22%', zIndex: 0, pointerEvents: 'none',
-        background: 'linear-gradient(180deg, rgba(8,9,13,0.7) 0%, transparent 100%)' }} />
+      {/* Atmosphère premium animée (CSS pur, aucun asset) : deux aurores qui
+          dérivent lentement (or + violet sobre), un balayage de lumière, une
+          vignette qui focalise et un grain fin → remplit le vide, donne de la vie. */}
+      <style>{`
+        @keyframes heroAuroraA { 0%,100%{transform:translate(0,0) scale(1)}       50%{transform:translate(5%,3%) scale(1.14)} }
+        @keyframes heroAuroraB { 0%,100%{transform:translate(0,0) scale(1.12)}    50%{transform:translate(-4%,-3%) scale(1)} }
+        @keyframes heroSweep   { 0%{transform:translateX(-40%) rotate(9deg);opacity:0} 30%{opacity:.55} 65%{opacity:0} 100%{transform:translateX(120%) rotate(9deg);opacity:0} }
+        @keyframes scrollCueDot{ 0%{transform:translateY(0);opacity:0} 25%{opacity:1} 75%{opacity:1} 100%{transform:translateY(12px);opacity:0} }
+      `}</style>
+      <div aria-hidden style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+        {/* aurore dorée (gauche) */}
+        <div style={{ position: 'absolute', top: '-12%', left: '-10%', width: '64%', height: '90%',
+          background: 'radial-gradient(ellipse 58% 55% at 35% 42%, rgba(191,164,106,0.17) 0%, rgba(191,164,106,0.045) 45%, transparent 72%)',
+          filter: 'blur(44px)', animation: 'heroAuroraA 19s ease-in-out infinite', willChange: 'transform' }} />
+        {/* aurore violette sobre (droite) */}
+        <div style={{ position: 'absolute', top: '-6%', right: '-12%', width: '60%', height: '100%',
+          background: 'radial-gradient(ellipse 58% 55% at 66% 36%, rgba(120,108,170,0.15) 0%, transparent 70%)',
+          filter: 'blur(54px)', animation: 'heroAuroraB 24s ease-in-out infinite', willChange: 'transform' }} />
+        {/* balayage de lumière doré */}
+        <div style={{ position: 'absolute', top: '-25%', left: 0, width: '42%', height: '150%',
+          background: 'linear-gradient(90deg, transparent, rgba(232,184,74,0.07), transparent)',
+          animation: 'heroSweep 16s ease-in-out 2.5s infinite' }} />
+        {/* fondu haut (sous la navbar) */}
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '24%',
+          background: 'linear-gradient(180deg, rgba(8,9,13,0.82) 0%, transparent 100%)' }} />
+        {/* vignette de focalisation */}
+        <div style={{ position: 'absolute', inset: 0,
+          background: 'radial-gradient(125% 95% at 50% 34%, transparent 54%, rgba(6,7,11,0.55) 100%)' }} />
+        {/* grain fin premium */}
+        <div style={{ position: 'absolute', inset: 0, opacity: 0.045, mixBlendMode: 'overlay',
+          backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
+          backgroundSize: '170px 170px' }} />
+      </div>
       <StarField />
+      <EmberField />
+
+      {/* Indice de scroll (souris) — invite à descendre, discret et doré */}
+      {!isMobile && (
+        <div aria-hidden style={{ position: 'absolute', bottom: 24, left: '50%', transform: 'translateX(-50%)', zIndex: 1, pointerEvents: 'none' }}>
+          <div style={{ width: 23, height: 36, borderRadius: 13, border: '1.5px solid rgba(191,164,106,0.34)', display: 'flex', justifyContent: 'center', paddingTop: 6 }}>
+            <div style={{ width: 3, height: 7, borderRadius: 2, background: 'rgba(212,176,110,0.9)', animation: 'scrollCueDot 1.8s ease-in-out infinite' }} />
+          </div>
+        </div>
+      )}
 
       <div style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: 1560, margin: '0 auto', padding: isMobile ? '0 20px' : '0 clamp(32px, 4vw, 72px)' }}>
         <div style={{ display: 'grid', gridTemplateColumns: isNarrow ? '1fr' : '1fr minmax(340px, 420px)', alignItems: 'center', gap: isNarrow ? 40 : 'clamp(56px, 6vw, 120px)' }}>
