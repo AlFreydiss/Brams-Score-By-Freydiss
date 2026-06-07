@@ -1,0 +1,29 @@
+[
+  {
+    "episode": 1,
+    "title": "Épisode 1",
+    "episodeLabel": "S01E01",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/S01E01-vostfr.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E01",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/thumbnails/S01E01.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/S01E01-fr.vtt",
+        "default": true
+      }
+    ]
+  }
+]

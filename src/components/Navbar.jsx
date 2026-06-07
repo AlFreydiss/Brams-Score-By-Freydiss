@@ -17,7 +17,7 @@ const NAV_LINKS = [
   { label: '🕵️ Undercover',   href: '/undercover',  action: null,           gated: false, isRoute: true  },
   { label: '🔮 Akinator',    href: '/akinator',    action: null,           gated: false, isRoute: true  },
   { label: 'Encyclopédie',    href: '#',            action: 'encyclopedie', gated: false, isRoute: false },
-  { label: '🍣 Animés & Scans', href: '#',          action: 'anime-hub',    gated: true,  isRoute: false },
+  { label: '🍥 Animés & Scans', href: '#',          action: 'anime-hub',    gated: true,  isRoute: false },
 ]
 
 function openAnimeHub(event) {

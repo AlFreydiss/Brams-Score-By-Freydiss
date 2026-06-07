@@ -36,6 +36,7 @@ const NntPage         = lazyWithReload(() => import('./components/NntPage.jsx'))
 const SlPage          = lazyWithReload(() => import('./components/SlPage.jsx'))
 const DbsPage         = lazyWithReload(() => import('./components/DbsPage.jsx'))
 const VioletEvergardenPage = lazyWithReload(() => import('./components/VioletEvergardenPage.jsx'))
+const YourLiePage     = lazyWithReload(() => import('./components/YourLiePage.jsx'))
 const VivyPage             = lazyWithReload(() => import('./components/VivyPage.jsx'))
 const DomesticNaKanojoPage = lazyWithReload(() => import('./components/DomesticNaKanojoPage.jsx'))
 const KoiAmeagariPage      = lazyWithReload(() => import('./components/KoiAmeagariPage.jsx'))
@@ -281,6 +282,7 @@ export default function App() {
   const [slOpen,           setSlOpen]            = useState(false)
   const [dbsOpen,          setDbsOpen]           = useState(false)
   const [violetOpen,       setVioletOpen]        = useState(false)
+  const [yourLieOpen,      setYourLieOpen]       = useState(false)
   const [vivyOpen,         setVivyOpen]          = useState(false)
   const [domesticOpen,     setDomesticOpen]      = useState(false)
   const [koiOpen,          setKoiOpen]           = useState(false)
@@ -342,7 +344,7 @@ export default function App() {
     setTpnOpen(false); setDrstoneOpen(false); setJjkOpen(false); setKingdomOpen(false)
     setAotOpen(false); setKnyOpen(false); setNntOpen(false); setSlOpen(false); setDbsOpen(false)
     setVioletOpen(false); setVivyOpen(false); setDomesticOpen(false); setKoiOpen(false); setLovePrismOpen(false); setCaroleTuesdayOpen(false); setBunnyGirlOpen(false); setRentGirlOpen(false); setBcOpen(false); setMhaOpen(false)
-    setFireforcOpen(false); setBluelockOpen(false); setFateZeroOpen(false); setYourNameOpen(false); setMonUniversOpen(false); setTreeOpen(false); setUploadOpen(false)
+    setFireforcOpen(false); setBluelockOpen(false); setFateZeroOpen(false); setYourNameOpen(false); setYourLieOpen(false); setMonUniversOpen(false); setTreeOpen(false); setUploadOpen(false)
   }, [])
 
   // Slug d'URL d'un anime → setter d'overlay correspondant
@@ -352,7 +354,7 @@ export default function App() {
     dbs: setDbsOpen, 'violet-evergarden': setVioletOpen, vivy: setVivyOpen, 'domestic-na-kanojo': setDomesticOpen, 'koi-ameagari': setKoiOpen, 'love-prism': setLovePrismOpen,
     'carole-tuesday': setCaroleTuesdayOpen, 'bunny-girl': setBunnyGirlOpen, 'rent-girlfriend': setRentGirlOpen,
     bc: setBcOpen, mha: setMhaOpen, fireforce: setFireforcOpen, bluelock: setBluelockOpen,
-    'fate-zero': setFateZeroOpen, 'your-name': setYourNameOpen,
+    'fate-zero': setFateZeroOpen, 'your-name': setYourNameOpen, 'your-lie': setYourLieOpen,
   }
 
   // ── URL = source de vérité des overlays anime/scan ──
@@ -403,6 +405,7 @@ export default function App() {
       'open-mha':              go('/animes-scan/mha'),
       'open-fireforce':        go('/animes-scan/fireforce'),
       'open-bluelock':         go('/animes-scan/bluelock'),
+      'open-your-lie':         go('/animes-scan/your-lie'),
       'open-encyclopedie':     () => setEncyclopedieOpen(true),
       'open-tree':             () => setTreeOpen(true),
       'open-upload':           () => setUploadOpen(true),
@@ -412,7 +415,7 @@ export default function App() {
     return () => entries.forEach(([ev, fn]) => document.removeEventListener(ev, fn))
   }, [navigate])
 
-  const mediaOverlayOpen = scansOpen || animeHubOpen || tpnOpen || drstoneOpen || jjkOpen || kingdomOpen || aotOpen || knyOpen || nntOpen || slOpen || dbsOpen || violetOpen || vivyOpen || domesticOpen || koiOpen || lovePrismOpen || caroleTuesdayOpen || bunnyGirlOpen || rentGirlOpen || bcOpen || mhaOpen || fireforcOpen || bluelockOpen || fateZeroOpen || yourNameOpen || monUniversOpen
+  const mediaOverlayOpen = scansOpen || animeHubOpen || tpnOpen || drstoneOpen || jjkOpen || kingdomOpen || aotOpen || knyOpen || nntOpen || slOpen || dbsOpen || violetOpen || vivyOpen || domesticOpen || koiOpen || lovePrismOpen || caroleTuesdayOpen || bunnyGirlOpen || rentGirlOpen || bcOpen || mhaOpen || fireforcOpen || bluelockOpen || fateZeroOpen || yourNameOpen || yourLieOpen || monUniversOpen
 
   const mainContent = (
     <>
@@ -589,6 +592,7 @@ export default function App() {
       {slOpen      && <SlPage      onClose={closeMedia} />}
       {dbsOpen     && <DbsPage     onClose={closeMedia} />}
       {violetOpen  && <VioletEvergardenPage onClose={closeMedia} />}
+      {yourLieOpen && <YourLiePage onClose={closeMedia} />}
       {vivyOpen    && <VivyPage             onClose={closeMedia} />}
       {domesticOpen && <DomesticNaKanojoPage onClose={closeMedia} />}
       {koiOpen     && <KoiAmeagariPage      onClose={closeMedia} />}
