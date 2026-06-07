@@ -2,7 +2,7 @@
 // Tout passe par des RPC Supabase SECURITY DEFINER (voir migration
 // 20260529_social_system.sql). Aucune écriture directe en table côté client.
 import { supabase } from './supabase.js'
-import { sbRpc, sbAccessToken } from './supabaseRest.js'
+import { sbRpc, getAccessToken } from './supabaseRest.js'
 
 // RPC social via fetch REST direct (voir supabaseRest.js). Indispensable : le
 // client supabase-js pouvait hanger sur l'auth et faire timeout messages, notifs,
@@ -130,7 +130,7 @@ export function logCallEvent(conversationId, status, durationSec = 0, callId = n
 // Supabase de l'utilisateur). Renvoie { url } (publique R2) ou { error }.
 export async function uploadAttachment(file, onProgress) {
   if (!file) return { error: 'Fichier manquant' }
-  const token = sbAccessToken()
+  const token = await getAccessToken()
   if (!token) return { error: 'Connexion requise pour envoyer un fichier' }
   let presign
   try {
