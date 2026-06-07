@@ -623,12 +623,8 @@ export default function TournamentHubPage() {
     <div style={{ minHeight: '100vh', background: BG, fontFamily: 'inherit', position: 'relative', overflowX: 'hidden' }}>
       <style>{HUB_CSS}</style>
 
-      {/* Fond sakura (style Undercover + pétales roses) */}
-      <SakuraBackdrop />
-      <div aria-hidden style={{
-        position: 'fixed', inset: 0, zIndex: 1, pointerEvents: 'none',
-        background: 'radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,.12) 54%, rgba(0,0,0,.52) 100%)',
-      }} />
+      {/* Fond sakura (style Undercover + pétales roses qui tombent DEVANT le contenu) */}
+      <SakuraBackdrop count={26} />
 
       {/* Content */}
       <div style={{ position: 'relative', zIndex: 2 }}>

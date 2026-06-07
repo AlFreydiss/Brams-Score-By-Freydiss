@@ -25,7 +25,7 @@ const CSS = `
   @media (prefers-reduced-motion: reduce) { .sakura-petal { display: none !important; } }
 `
 
-export default function SakuraBackdrop({ count = 18, zIndex = 0 }) {
+export default function SakuraBackdrop({ count = 18, zIndex = 0, petalsZIndex = 40 }) {
   const petals = useMemo(() => Array.from({ length: count }, (_, i) => {
     const r = (n) => ((Math.sin(i * 99.7 + n * 12.9) + 1) / 2) // pseudo-aléatoire déterministe
     const size = 12 + Math.round(r(1) * 14)
@@ -40,33 +40,35 @@ export default function SakuraBackdrop({ count = 18, zIndex = 0 }) {
   }), [count])
 
   return (
-    <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex, pointerEvents: 'none', overflow: 'hidden' }}>
+    <>
       <style>{CSS}</style>
 
-      {/* Couches de couleur (style Undercover) */}
-      <div style={{ position: 'absolute', inset: 0, background: `
-        radial-gradient(900px 540px at 14% -8%, rgba(255,126,176,0.14), transparent 62%),
-        radial-gradient(780px 540px at 88% 10%, rgba(167,139,250,0.10), transparent 64%),
-        radial-gradient(820px 700px at 50% 118%, rgba(255,170,203,0.08), transparent 66%),
-        linear-gradient(180deg, #110810 0%, #160a14 58%, #100711 100%)` }} />
+      {/* Couche d'ambiance (DERRIÈRE le contenu) : couleur + grille */}
+      <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex, pointerEvents: 'none', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', inset: 0, background: `
+          radial-gradient(900px 540px at 14% -8%, rgba(255,126,176,0.16), transparent 62%),
+          radial-gradient(780px 540px at 88% 10%, rgba(167,139,250,0.11), transparent 64%),
+          radial-gradient(820px 700px at 50% 118%, rgba(255,170,203,0.09), transparent 66%),
+          linear-gradient(180deg, #140913 0%, #190b16 58%, #120813 100%)` }} />
+        <div style={{ position: 'absolute', inset: 0, opacity: 0.5, animation: 'sakura-breathe 11s ease-in-out infinite',
+          backgroundImage: 'linear-gradient(rgba(255,126,176,.07) 1px, transparent 1px), linear-gradient(90deg, rgba(255,126,176,.06) 1px, transparent 1px)',
+          backgroundSize: '54px 54px',
+          maskImage: 'linear-gradient(180deg, transparent, black 16%, black 76%, transparent)',
+          WebkitMaskImage: 'linear-gradient(180deg, transparent, black 16%, black 76%, transparent)' }} />
+      </div>
 
-      {/* Grille fine masquée en fondu */}
-      <div style={{ position: 'absolute', inset: 0, opacity: 0.5, animation: 'sakura-breathe 11s ease-in-out infinite',
-        backgroundImage: 'linear-gradient(rgba(255,126,176,.07) 1px, transparent 1px), linear-gradient(90deg, rgba(255,126,176,.06) 1px, transparent 1px)',
-        backgroundSize: '54px 54px',
-        maskImage: 'linear-gradient(180deg, transparent, black 16%, black 76%, transparent)',
-        WebkitMaskImage: 'linear-gradient(180deg, transparent, black 16%, black 76%, transparent)' }} />
-
-      {/* Pétales qui tombent */}
-      {petals.map((p, i) => (
-        <span key={i} className="sakura-petal" style={{
-          position: 'absolute', top: 0, left: `${p.left}%`, width: p.size, height: p.size,
-          backgroundImage: `url("${PETAL_URI}")`, backgroundSize: 'contain', backgroundRepeat: 'no-repeat',
-          opacity: p.opacity, filter: 'drop-shadow(0 2px 4px rgba(255,126,176,.25))',
-          '--drift': `${p.drift}px`,
-          animation: `sakura-fall ${p.dur}s linear ${p.delay}s infinite`,
-        }} />
-      ))}
-    </div>
+      {/* Pétales qui tombent (DEVANT le contenu, décoratifs, sans interaction) */}
+      <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: petalsZIndex, pointerEvents: 'none', overflow: 'hidden' }}>
+        {petals.map((p, i) => (
+          <span key={i} className="sakura-petal" style={{
+            position: 'absolute', top: 0, left: `${p.left}%`, width: p.size, height: p.size,
+            backgroundImage: `url("${PETAL_URI}")`, backgroundSize: 'contain', backgroundRepeat: 'no-repeat',
+            opacity: p.opacity, filter: 'drop-shadow(0 2px 5px rgba(255,126,176,.3))',
+            '--drift': `${p.drift}px`,
+            animation: `sakura-fall ${p.dur}s linear ${p.delay}s infinite`,
+          }} />
+        ))}
+      </div>
+    </>
   )
 }
