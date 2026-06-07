@@ -355,6 +355,36 @@ export async function purchaseShopItem(itemId) {
   return { data: r, error: null }
 }
 
+async function stripeShopPost(path, payload) {
+  const token = await getAccessToken()
+  if (!token) return { data: null, error: { message: 'Connexion requise pour acheter.' } }
+  try {
+    const res = await fetch(path, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload || {}),
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok || data?.error) {
+      return { data: null, error: { message: data?.error || `Erreur paiement (${res.status})` } }
+    }
+    return { data, error: null }
+  } catch (e) {
+    return { data: null, error: { message: e?.message || 'Paiement indisponible.' } }
+  }
+}
+
+export function createOpeningBgCheckout(itemId) {
+  return stripeShopPost('/api/stripe-checkout', { itemId })
+}
+
+export function completeOpeningBgCheckout(sessionId) {
+  return stripeShopPost('/api/stripe-complete', { sessionId })
+}
+
 // Solde berries (RPC get_berry_balance → bigint). REST direct (anti-hang).
 export async function fetchShopBalance() {
   const r = await sbRpc('get_berry_balance', {}, { tag: 'shop' })
