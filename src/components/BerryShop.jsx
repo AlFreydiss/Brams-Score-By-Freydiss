@@ -1,14 +1,14 @@
 // ── Brams Shop — boutique premium de fonds d'opening rares ───────────────────
 // DA : noir profond, or discret, verre sombre, bordures fines, raretés élégantes,
 // animations subtiles. Vibe « archive anime haut de gamme / coffre rare ».
-// Logique préservée : achat (purchaseShopItem), équipement (OpeningBgContext.equip),
-// solde (fetchShopBalance), possédés (fetchOwnedBackgrounds). Catalogue statique.
+// Fonds d'opening premium : prix en euros par rareté, équipement via OpeningBgContext,
+// possédés depuis l'inventaire Supabase. Catalogue statique.
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
-import confetti from 'canvas-confetti'
 import { useAuth } from '../contexts/AuthContext.jsx'
-import { fetchShopBalance, fetchOwnedBackgrounds, purchaseShopItem, fetchOpeningBgEquipCounts } from '../lib/berryShop.js'
+import { createOpeningBgCheckout, completeOpeningBgCheckout, fetchOwnedBackgrounds, fetchOpeningBgEquipCounts } from '../lib/berryShop.js'
 import { useOpeningBg } from '../contexts/OpeningBgContext.jsx'
 import { OPENING_BACKGROUNDS } from '../data/opening-backgrounds.js'
+import { formatEuroCents, openingBgPriceCents, openingBgPriceLabel } from '../lib/openingBgPricing.js'
 import OpeningBgMedia from './social/OpeningBgMedia.jsx'
 
 // ── Tokens ───────────────────────────────────────────────────────────────────
@@ -32,7 +32,8 @@ const RARITY = {
   Interdit:   { label: 'Interdit',   c: '#b1413d', rank: 7 },
 }
 const rar = (r) => RARITY[r] || RARITY.Commun
-const fmt = (n) => new Intl.NumberFormat('fr-FR').format(Number(n || 0))
+const priceCentsOf = (bg) => openingBgPriceCents(bg)
+const priceLabel = (bg) => openingBgPriceLabel(bg)
 
 const FILTERS = [
   { id: 'all',     label: 'Tous' },
@@ -65,6 +66,9 @@ const CSS = `
   @keyframes bsx-shimmer { 0%{background-position:-360px 0} 100%{background-position:360px 0} }
   @keyframes bsx-fade { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
   @keyframes bsx-toast { from{opacity:0;transform:translate(-50%,10px)} to{opacity:1;transform:translate(-50%,0)} }
+  @keyframes bsx-breathe { 0%,100%{opacity:.4} 50%{opacity:.72} }
+  @keyframes bsx-dust { 0%{transform:translateY(0);opacity:0} 12%{opacity:.55} 88%{opacity:.55} 100%{transform:translateY(-104vh);opacity:0} }
+  @media (prefers-reduced-motion: reduce) { .bsx-dust { display:none !important } }
   .bsx-scroll::-webkit-scrollbar{height:6px;width:6px}
   .bsx-scroll::-webkit-scrollbar-thumb{background:rgba(191,164,106,.25);border-radius:6px}
 `
@@ -85,10 +89,10 @@ function RarityBadge({ rarity, small }) {
   )
 }
 
-function PriceTag({ price, affordable = true, size = 13 }) {
+function PriceTag({ bg, affordable = true, size = 13 }) {
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: size, fontWeight: 800, color: affordable ? GOLD_HI : 'rgba(236,232,223,0.4)' }}>
-      <span style={{ fontSize: size - 1 }}>฿</span>{fmt(price)}
+      {priceLabel(bg)}
     </span>
   )
 }
@@ -106,7 +110,8 @@ function CardMedia({ bg, videoRef }) {
     <>
       <div className="bsx-media" style={{ position: 'absolute', inset: 0, background: `linear-gradient(160deg, ${bg.overlayStart || '#1a1320'}, ${bg.overlayEnd || '#0a0810'})` }} />
       {bg.videoUrl && !failed && (
-        <video ref={videoRef} className="bsx-media" src={bg.videoUrl} muted loop playsInline preload="metadata"
+        // #t=1 → le navigateur affiche la frame à 1s comme miniature (sinon cadre noir).
+        <video ref={videoRef} className="bsx-media" src={`${bg.videoUrl}#t=1`} muted loop playsInline preload="metadata"
           onError={() => setFailed(true)}
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
       )}
@@ -153,7 +158,7 @@ function ItemCard({ bg, owned, equipped, busy, affordable, equipCount = 0, onSel
           ) : (
             <button className="bsx-btn" onClick={e => { e.stopPropagation(); onBuy(bg) }} disabled={busy}
               style={{ flex: 1, fontSize: 12.5, fontWeight: 800, color: affordable ? '#0b0c0e' : 'rgba(236,232,223,0.5)', background: affordable ? GOLD : 'rgba(255,255,255,0.06)', border: affordable ? 'none' : `1px solid ${HAIR}`, borderRadius: 9, padding: '8px 0', cursor: busy ? 'wait' : 'pointer' }}>
-              {busy ? 'Achat…' : <PriceTag price={bg.price} affordable={affordable} size={12.5} />}
+              {busy ? 'Achat…' : <PriceTag bg={bg} affordable={affordable} size={12.5} />}
             </button>
           )}
           <button className="bsx-btn" aria-label="Aperçu plein écran" onClick={e => { e.stopPropagation(); onPreview(bg) }}
@@ -164,7 +169,7 @@ function ItemCard({ bg, owned, equipped, busy, affordable, equipCount = 0, onSel
   )
 }
 
-function ShopHero({ bg, owned, equipped, busy, affordable, balance, equipCount = 0, onBuy, onEquip, onPreview }) {
+function ShopHero({ bg, owned, equipped, busy, affordable, equipCount = 0, onBuy, onEquip, onPreview }) {
   if (!bg) return null
   const r = rar(bg.rarity)
   return (
@@ -177,13 +182,14 @@ function ShopHero({ bg, owned, equipped, busy, affordable, balance, equipCount =
 
       <div style={{ position: 'relative', minHeight: 360, padding: '34px 38px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', maxWidth: 640 }}>
         <div style={{ marginBottom: 14 }}><RarityBadge rarity={bg.rarity} /></div>
-        <h2 style={{ margin: 0, fontSize: 'clamp(30px,4vw,44px)', fontWeight: 900, letterSpacing: '-0.02em', lineHeight: 1.02, color: '#fff' }}>{bg.opTitle}</h2>
+        <h2 style={{ margin: 0, fontFamily: "'Pirata One', serif", fontSize: 'clamp(34px,5vw,52px)', fontWeight: 400, letterSpacing: '.01em', lineHeight: 1.04, color: '#fff' }}>{bg.opTitle}</h2>
         <div style={{ fontSize: 14.5, color: 'rgba(255,255,255,0.6)', marginTop: 7 }}>{bg.anime}{bg.artist ? <span style={{ color: FAINT }}> · {bg.artist}</span> : null}</div>
         <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.74)', lineHeight: 1.55, margin: '14px 0 18px', maxWidth: 520 }}>{bg.description}</p>
 
         {/* Micro-infos */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 18, marginBottom: 20 }}>
           <HeroMeta label="Rareté" value={r.label} color={r.c} />
+          <HeroMeta label="Prix" value={priceLabel(bg)} color={GOLD_HI} />
           <HeroMeta label="Exclusivité" value={r.rank >= 6 ? 'Extrême' : r.rank >= 4 ? 'Élevée' : 'Standard'} />
           <HeroMeta label="Statut" value={equipped ? 'Équipé' : owned ? 'Dans ta collection' : 'À débloquer'} color={equipped ? '#7fd6a0' : owned ? GOLD : undefined} />
           {equipCount > 0 && <HeroMeta label="Communauté" value={`${equipCount} ${equipCount > 1 ? 'membres' : 'membre'}`} color={GOLD} />}
@@ -197,7 +203,7 @@ function ShopHero({ bg, owned, equipped, busy, affordable, balance, equipCount =
           ) : (
             <button className="bsx-btn" onClick={() => onBuy(bg)} disabled={busy}
               style={{ padding: '12px 28px', borderRadius: 12, border: affordable ? 'none' : `1px solid ${HAIR}`, background: affordable ? GOLD : 'rgba(255,255,255,0.06)', color: affordable ? '#0b0c0e' : DIM, fontWeight: 900, fontSize: 14.5, cursor: busy ? 'wait' : 'pointer' }}>
-              {busy ? 'Achat…' : `Acheter · ${fmt(bg.price)} ฿`}
+              {busy ? 'Achat…' : `Acheter · ${priceLabel(bg)}`}
             </button>
           )}
           <button className="bsx-btn" onClick={() => onPreview(bg)} style={{ padding: '12px 20px', borderRadius: 12, border: `1px solid ${HAIR}`, background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.82)', fontWeight: 700, fontSize: 13.5, cursor: 'pointer' }}>⛶ Aperçu plein écran</button>
@@ -256,8 +262,16 @@ function CollectionStats({ catalog, ownedSet, equippedBg }) {
   )
 }
 
-function PreviewModal({ list, index, ownedSet, equippedId, busyId, balance, counts = {}, onClose, onNav, onBuy, onEquip }) {
+// Aperçu IMMERSIF plein écran (mode test) : le fond joue en grand AVEC le son de
+// l'opening + un contrôle de volume. Le son démarre au clic sur « Aperçu » (geste
+// utilisateur) ; si le navigateur bloque l'autoplay sonore, on retombe en muet et
+// l'utilisateur réactive via le bouton 🔊.
+function PreviewModal({ list, index, ownedSet, equippedId, busyId, counts = {}, onClose, onNav, onBuy, onEquip }) {
   const bg = list[index]
+  const videoRef = useRef(null)
+  const [volume, setVolume] = useState(0.5)
+  const [muted, setMuted] = useState(false)
+
   useEffect(() => {
     const onKey = (e) => {
       if (e.key === 'Escape') onClose()
@@ -267,49 +281,71 @@ function PreviewModal({ list, index, ownedSet, equippedId, busyId, balance, coun
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose, onNav])
+
+  useEffect(() => {
+    const v = videoRef.current
+    if (!v) return
+    v.volume = volume
+    v.muted = muted
+    const p = v.play?.()
+    if (p?.catch) p.catch(() => { try { v.muted = true; setMuted(true); v.play?.() } catch {} })
+  }, [volume, muted, index])
+
   if (!bg) return null
-  const r = rar(bg.rarity)
   const owned = ownedSet.has(bg.id) || ownedSet.has(bg.shopItemId)
   const equipped = equippedId === bg.id && owned
-  const affordable = balance >= bg.price
-  return (
-    <div role="dialog" aria-modal="true" aria-label={`Aperçu ${bg.opTitle}`} onClick={onClose}
-      style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(4,5,8,0.86)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'clamp(12px,4vw,40px)', animation: 'bsx-fade .2s ease' }}>
-      <button onClick={onClose} aria-label="Fermer" style={{ position: 'fixed', top: 18, right: 20, width: 40, height: 40, borderRadius: 12, background: 'rgba(0,0,0,0.5)', border: `1px solid ${HAIR}`, color: '#fff', fontSize: 18, cursor: 'pointer', zIndex: 2 }}>✕</button>
-      <button onClick={e => { e.stopPropagation(); onNav(-1) }} aria-label="Précédent" style={navBtn('left')}>‹</button>
-      <button onClick={e => { e.stopPropagation(); onNav(1) }} aria-label="Suivant" style={navBtn('right')}>›</button>
+  const affordable = true
+  const eqc = Number(counts[bg.id] ?? counts[bg.shopItemId] ?? 0) || 0
 
-      <div onClick={e => e.stopPropagation()} style={{ width: 'min(1000px, 100%)', maxHeight: '90vh', overflowY: 'auto', borderRadius: 20, border: `1px solid ${r.c}40`, background: BG, boxShadow: '0 30px 90px rgba(0,0,0,.6)' }}>
-        <div style={{ position: 'relative', aspectRatio: '16 / 9', background: '#000' }}>
-          <OpeningBgMedia key={bg.id} bg={bg} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(0deg, rgba(8,9,13,0.85), transparent 45%)' }} />
-          <div style={{ position: 'absolute', left: 22, right: 22, bottom: 18 }}>
-            <div style={{ marginBottom: 9 }}><RarityBadge rarity={bg.rarity} /></div>
-            <div style={{ fontSize: 'clamp(22px,3vw,32px)', fontWeight: 900, color: '#fff', lineHeight: 1.05 }}>{bg.opTitle}</div>
-            <div style={{ fontSize: 13.5, color: 'rgba(255,255,255,0.6)', marginTop: 3 }}>{bg.anime}{bg.artist ? ` · ${bg.artist}` : ''}</div>
-            {(() => { const eqc = Number(counts[bg.id] ?? counts[bg.shopItemId] ?? 0) || 0; return eqc > 0 ? <div style={{ fontSize: 12, fontWeight: 700, color: GOLD, marginTop: 5 }}>Équipé par {eqc} membre{eqc > 1 ? 's' : ''}</div> : null })()}
-          </div>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, padding: '16px 22px', flexWrap: 'wrap' }}>
-          <p style={{ margin: 0, fontSize: 13.5, color: DIM, lineHeight: 1.55, flex: '1 1 280px' }}>{bg.description}</p>
-          <div style={{ display: 'flex', gap: 10, flexShrink: 0 }}>
+  return (
+    <div role="dialog" aria-modal="true" aria-label={`Aperçu ${bg.opTitle}`}
+      style={{ position: 'fixed', inset: 0, zIndex: 1000, background: '#000', animation: 'bsx-fade .25s ease' }}>
+      <video key={bg.id} ref={videoRef} src={bg.videoUrl} autoPlay loop playsInline
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: 'linear-gradient(0deg, rgba(4,5,8,0.92) 0%, rgba(4,5,8,0.18) 40%, rgba(4,5,8,0.5) 100%)' }} />
+
+      {/* Top : badge mode test + fermer */}
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 22px' }}>
+        <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.14em', textTransform: 'uppercase', color: GOLD, background: 'rgba(0,0,0,0.45)', border: `1px solid ${GOLD}33`, padding: '6px 13px', borderRadius: 999 }}>● Mode test · aperçu en direct</span>
+        <button onClick={onClose} aria-label="Fermer" style={{ width: 42, height: 42, borderRadius: 12, background: 'rgba(0,0,0,0.5)', border: `1px solid ${HAIR}`, color: '#fff', fontSize: 18, cursor: 'pointer' }}>✕</button>
+      </div>
+
+      <button onClick={() => onNav(-1)} aria-label="Précédent" style={navBtn('left')}>‹</button>
+      <button onClick={() => onNav(1)} aria-label="Suivant" style={navBtn('right')}>›</button>
+
+      {/* Bas : infos + actions + son */}
+      <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: 'clamp(20px,4vw,40px)', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 20, flexWrap: 'wrap' }}>
+        <div style={{ maxWidth: 620 }}>
+          <div style={{ marginBottom: 10 }}><RarityBadge rarity={bg.rarity} /></div>
+          <h2 style={{ margin: 0, fontSize: 'clamp(26px,4vw,42px)', fontWeight: 900, color: '#fff', lineHeight: 1.02 }}>{bg.opTitle}</h2>
+          <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.62)', marginTop: 5 }}>{bg.anime}{bg.artist ? ` · ${bg.artist}` : ''}{eqc > 0 ? <span style={{ color: GOLD }}> · Équipé par {eqc} membre{eqc > 1 ? 's' : ''}</span> : null}</div>
+          <p style={{ fontSize: 13.5, color: 'rgba(255,255,255,0.72)', lineHeight: 1.5, margin: '12px 0 16px', maxWidth: 540 }}>{bg.description}</p>
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
             {equipped ? (
-              <span style={{ padding: '11px 22px', borderRadius: 12, background: 'rgba(127,214,160,0.12)', border: '1px solid rgba(127,214,160,0.38)', color: '#7fd6a0', fontWeight: 800, fontSize: 14 }}>✓ Équipé</span>
+              <span style={{ padding: '12px 24px', borderRadius: 12, background: 'rgba(127,214,160,0.14)', border: '1px solid rgba(127,214,160,0.4)', color: '#7fd6a0', fontWeight: 800, fontSize: 14 }}>✓ Équipé</span>
             ) : owned ? (
-              <button className="bsx-btn" onClick={() => onEquip(bg)} style={{ padding: '11px 26px', borderRadius: 12, border: 'none', background: GOLD, color: '#0b0c0e', fontWeight: 900, fontSize: 14, cursor: 'pointer' }}>Équiper</button>
+              <button className="bsx-btn" onClick={() => onEquip(bg)} style={{ padding: '12px 28px', borderRadius: 12, border: 'none', background: GOLD, color: '#0b0c0e', fontWeight: 900, fontSize: 14.5, cursor: 'pointer' }}>Équiper</button>
             ) : (
               <button className="bsx-btn" onClick={() => onBuy(bg)} disabled={busyId === bg.id}
-                style={{ padding: '11px 26px', borderRadius: 12, border: affordable ? 'none' : `1px solid ${HAIR}`, background: affordable ? GOLD : 'rgba(255,255,255,0.06)', color: affordable ? '#0b0c0e' : DIM, fontWeight: 900, fontSize: 14, cursor: busyId === bg.id ? 'wait' : 'pointer' }}>
-                {busyId === bg.id ? 'Achat…' : `Acheter · ${fmt(bg.price)} ฿`}
+                style={{ padding: '12px 28px', borderRadius: 12, border: affordable ? 'none' : `1px solid ${HAIR}`, background: affordable ? GOLD : 'rgba(255,255,255,0.06)', color: affordable ? '#0b0c0e' : DIM, fontWeight: 900, fontSize: 14.5, cursor: busyId === bg.id ? 'wait' : 'pointer' }}>
+                {busyId === bg.id ? 'Achat…' : `Acheter · ${priceLabel(bg)}`}
               </button>
             )}
           </div>
+        </div>
+
+        {/* Contrôle son / volume */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 12, background: 'rgba(0,0,0,0.5)', border: `1px solid ${HAIR}`, backdropFilter: 'blur(6px)' }}>
+          <button onClick={() => setMuted(m => !m)} aria-label={muted ? 'Activer le son' : 'Couper le son'} style={{ background: 'none', border: 'none', color: '#fff', fontSize: 18, cursor: 'pointer' }}>{muted || volume === 0 ? '🔇' : '🔊'}</button>
+          <input type="range" min="0" max="1" step="0.05" value={muted ? 0 : volume}
+            onChange={e => { const val = Number(e.target.value); setVolume(val); setMuted(val === 0) }}
+            aria-label="Volume du fond" style={{ width: 110, accentColor: GOLD }} />
         </div>
       </div>
     </div>
   )
 }
-const navBtn = (side) => ({ position: 'fixed', top: '50%', [side]: 'clamp(8px,2vw,24px)', transform: 'translateY(-50%)', width: 46, height: 46, borderRadius: '50%', background: 'rgba(0,0,0,0.5)', border: `1px solid ${HAIR}`, color: '#fff', fontSize: 26, lineHeight: 1, cursor: 'pointer', zIndex: 2 })
+const navBtn = (side) => ({ position: 'fixed', top: '50%', [side]: 'clamp(8px,2vw,24px)', transform: 'translateY(-50%)', width: 46, height: 46, borderRadius: '50%', background: 'rgba(0,0,0,0.5)', border: `1px solid ${HAIR}`, color: '#fff', fontSize: 26, lineHeight: 1, cursor: 'pointer', zIndex: 3 })
 
 function Skeleton() {
   const sh = { background: 'linear-gradient(90deg, rgba(255,255,255,.03) 25%, rgba(255,255,255,.07) 50%, rgba(255,255,255,.03) 75%)', backgroundSize: '720px 100%', animation: 'bsx-shimmer 1.4s linear infinite' }
@@ -330,13 +366,34 @@ function EmptyState({ icon = '🗝️', title, sub }) {
   )
 }
 
+// Fond décoratif de la boutique (style Undercover, teinté or) : couches de
+// lumière, grille fine, poussière dorée qui monte. Donne de la profondeur sans glow.
+function ShopBackdrop() {
+  return (
+    <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+      <div style={{ position: 'absolute', inset: 0, background: `
+        radial-gradient(840px 500px at 12% -6%, rgba(191,164,106,0.11), transparent 60%),
+        radial-gradient(720px 480px at 90% 8%, rgba(191,164,106,0.06), transparent 62%),
+        radial-gradient(760px 640px at 50% 118%, rgba(120,90,40,0.06), transparent 64%),
+        linear-gradient(180deg, #08090d 0%, #0b0a0e 58%, #08090d 100%)` }} />
+      <div style={{ position: 'absolute', inset: 0, opacity: 0.5, animation: 'bsx-breathe 12s ease-in-out infinite',
+        backgroundImage: 'linear-gradient(rgba(191,164,106,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(191,164,106,.045) 1px, transparent 1px)',
+        backgroundSize: '58px 58px',
+        maskImage: 'linear-gradient(180deg, transparent, black 14%, black 78%, transparent)',
+        WebkitMaskImage: 'linear-gradient(180deg, transparent, black 14%, black 78%, transparent)' }} />
+      {Array.from({ length: 14 }).map((_, i) => (
+        <span key={i} className="bsx-dust" style={{ position: 'absolute', left: `${(i * 7 + 5) % 100}%`, bottom: '-12px', width: 3 + (i % 3), height: 3 + (i % 3), borderRadius: '50%', background: 'rgba(191,164,106,.42)', filter: 'blur(.4px)', animation: `bsx-dust ${13 + (i % 5) * 2}s linear ${i * 1.2}s infinite` }} />
+      ))}
+    </div>
+  )
+}
+
 // ── Page ─────────────────────────────────────────────────────────────────────
 export default function BerryShop() {
   const { isAuthenticated } = useAuth()
   const { equippedId, equip } = useOpeningBg()
 
   const catalog = useMemo(() => OPENING_BACKGROUNDS, [])
-  const [balance, setBalance] = useState(0)
   const [owned, setOwned] = useState(() => new Set())
   const [equipCounts, setEquipCounts] = useState({}) // social proof : { item_id: nb membres }
   const [loading, setLoading] = useState(true)
@@ -348,6 +405,7 @@ export default function BerryShop() {
   const [filter, setFilter] = useState('all')
   const [sort, setSort] = useState('rarity')
   const [preview, setPreview] = useState(null) // { list, idx } figé à l'ouverture
+  const checkoutReturnHandledRef = useRef(false)
 
   const flash = useCallback((msg, kind = 'info') => {
     setToast({ msg, kind, t: Date.now() })
@@ -355,17 +413,49 @@ export default function BerryShop() {
   }, [])
 
   const refresh = useCallback(async () => {
-    if (!isAuthenticated) { setBalance(0); setOwned(new Set()); setLoading(false); return }
+    if (!isAuthenticated) { setOwned(new Set()); setLoading(false); return }
     setLoading(true); setErr(false)
     try {
-      const [bal, bgs] = await Promise.all([fetchShopBalance(), fetchOwnedBackgrounds()])
-      setBalance(bal)
+      const bgs = await fetchOwnedBackgrounds()
       setOwned(new Set(bgs.map(b => b.item_id)))
     } catch { setErr(true) }
     finally { setLoading(false) }
   }, [isAuthenticated])
 
   useEffect(() => { refresh() }, [refresh])
+
+  useEffect(() => {
+    if (checkoutReturnHandledRef.current) return
+    const params = new URLSearchParams(window.location.search)
+    const stripeState = params.get('stripe')
+    const sessionId = params.get('session_id')
+    if (!stripeState) return
+    checkoutReturnHandledRef.current = true
+
+    const cleanUrl = () => window.history.replaceState({}, document.title, window.location.pathname)
+    if (stripeState === 'cancel') {
+      flash('Paiement annulé.', 'info')
+      cleanUrl()
+      return
+    }
+    if (stripeState !== 'success' || !sessionId) {
+      cleanUrl()
+      return
+    }
+
+    setBusyId('stripe-return')
+    completeOpeningBgCheckout(sessionId).then(({ data, error }) => {
+      if (error) {
+        flash(error.message || 'Paiement validé, mais déblocage impossible.', 'error')
+        return
+      }
+      flash(data?.alreadyOwned ? 'Ce fond est déjà dans ta collection.' : `« ${data?.item?.opTitle || 'Fond'} » débloqué.`, 'success')
+      refresh()
+    }).finally(() => {
+      setBusyId(null)
+      cleanUrl()
+    })
+  }, [flash, refresh])
 
   // Compteurs « équipé par X » : publics → chargés même sans connexion.
   const refreshCounts = useCallback(() => { fetchOpeningBgEquipCounts().then(setEquipCounts).catch(() => {}) }, [])
@@ -399,11 +489,11 @@ export default function BerryShop() {
         default:         return true
       }
     })
-    const byRarity = (a, b) => rar(b.rarity).rank - rar(a.rarity).rank || b.price - a.price
+    const byRarity = (a, b) => rar(b.rarity).rank - rar(a.rarity).rank || priceCentsOf(b) - priceCentsOf(a)
     list = [...list].sort((a, b) => {
       switch (sort) {
-        case 'price-asc':  return a.price - b.price
-        case 'price-desc': return b.price - a.price
+        case 'price-asc':  return priceCentsOf(a) - priceCentsOf(b)
+        case 'price-desc': return priceCentsOf(b) - priceCentsOf(a)
         case 'new':        return (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0) || byRarity(a, b)
         case 'owned':      return (isOwned(b) ? 1 : 0) - (isOwned(a) ? 1 : 0) || byRarity(a, b)
         default:           return byRarity(a, b)
@@ -415,18 +505,15 @@ export default function BerryShop() {
   const buy = useCallback(async (bg) => {
     if (!isAuthenticated) { flash('Connecte-toi pour acheter.', 'error'); return }
     if (isOwned(bg) || busyId) return
-    if (balance < bg.price) { flash(`Il te manque ${fmt(bg.price - balance)} ฿`, 'error'); return }
     setBusyId(bg.id)
-    const { error } = await purchaseShopItem(bg.shopItemId)
-    if (error) { setBusyId(null); flash(error.message || 'Achat impossible', 'error'); return }
-    // Optimiste : solde + possédé instantanés, puis resync serveur.
-    setBalance(b => Math.max(0, b - bg.price))
-    setOwned(s => new Set(s).add(bg.id))
-    setBusyId(null)
-    confetti({ particleCount: 110, spread: 72, origin: { y: 0.7 }, colors: [rar(bg.rarity).c, GOLD_HI, '#fff'] })
-    flash(`« ${bg.opTitle} » débloqué — équipe-le quand tu veux.`, 'success')
-    await refresh()   // resync solde/possédés depuis le serveur (vérité finale)
-  }, [isAuthenticated, isOwned, busyId, balance, flash, refresh])
+    const { data, error } = await createOpeningBgCheckout(bg.id)
+    if (error || !data?.url) {
+      setBusyId(null)
+      flash(error?.message || 'Paiement indisponible pour le moment.', 'error')
+      return
+    }
+    window.location.assign(data.url)
+  }, [isAuthenticated, isOwned, busyId, flash])
 
   const doEquip = useCallback(async (bg) => {
     if (!isOwned(bg)) return
@@ -453,29 +540,27 @@ export default function BerryShop() {
   return (
     <div style={{ minHeight: '100vh', background: BG, color: TXT, paddingTop: 88 }}>
       <style>{CSS}</style>
-      <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 clamp(16px,3vw,28px) 90px' }}>
+      <ShopBackdrop />
+      <div style={{ position: 'relative', zIndex: 1, maxWidth: 1240, margin: '0 auto', padding: '0 clamp(16px,3vw,28px) 90px' }}>
 
-        {/* En-tête + solde */}
+        {/* En-tête */}
         <header style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, margin: '6px 0 22px' }}>
           <div>
             <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.2em', textTransform: 'uppercase', color: GOLD, marginBottom: 7 }}>Brams Shop · Archive rare</div>
-            <h1 style={{ margin: 0, fontSize: 'clamp(28px,4vw,38px)', fontWeight: 900, letterSpacing: '-0.02em' }}>Boutique</h1>
-            <p style={{ margin: '7px 0 0', fontSize: 14, color: DIM, maxWidth: 560 }}>Fonds d'opening animés rares pour ton profil. Collectionne, équipe, brille.</p>
+            <h1 style={{ margin: 0, fontFamily: "'Pirata One', serif", fontSize: 'clamp(34px,5vw,52px)', fontWeight: 400, letterSpacing: '.01em', color: '#f4ecd8', textShadow: '0 2px 30px rgba(191,164,106,0.18)' }}>Boutique</h1>
+            <p style={{ margin: '7px 0 0', fontSize: 14, color: DIM, maxWidth: 560 }}>Fonds d'opening animés rares pour ton profil. Achat en euros selon la rareté.</p>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 20px', borderRadius: 14, background: GLASS, border: `1px solid ${GOLD}33` }}>
-            <span style={{ fontSize: 20 }}>💰</span>
+            <span style={{ fontSize: 20 }}>💳</span>
             <div style={{ lineHeight: 1.1 }}>
-              <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.1em', textTransform: 'uppercase', color: FAINT }}>Ton solde</div>
-              <strong style={{ fontSize: 19, color: GOLD_HI }}>{fmt(balance)} ฿</strong>
+              <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.1em', textTransform: 'uppercase', color: FAINT }}>Prix des fonds</div>
+              <strong style={{ fontSize: 19, color: GOLD_HI }}>{formatEuroCents(29)} à {formatEuroCents(150)}</strong>
             </div>
           </div>
         </header>
 
         {/* Hero */}
-        <ShopHero bg={sel} owned={selOwned} equipped={selEquipped} busy={busyId === sel?.id} affordable={balance >= (sel?.price || 0)} balance={balance} equipCount={equipCountOf(sel)} onBuy={buy} onEquip={doEquip} onPreview={openPreview} />
-
-        {/* Collection */}
-        {isAuthenticated && <CollectionStats catalog={catalog} ownedSet={owned} equippedBg={equippedBg} />}
+        <ShopHero bg={sel} owned={selOwned} equipped={selEquipped} busy={busyId === sel?.id} affordable={true} equipCount={equipCountOf(sel)} onBuy={buy} onEquip={doEquip} onPreview={openPreview} />
 
         {/* Barre : recherche + filtres + tri + compteurs */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 18 }}>
@@ -509,7 +594,7 @@ export default function BerryShop() {
 
         {/* Grille */}
         {loading ? <Skeleton />
-          : err ? <EmptyState icon="⚠️" title="Boutique indisponible" sub="Impossible de charger ton solde. Réessaie dans un instant." />
+          : err ? <EmptyState icon="⚠️" title="Boutique indisponible" sub="Impossible de charger ta collection. Réessaie dans un instant." />
           : visible.length === 0 ? (
             <EmptyState
               icon={filter === 'owned' ? '📦' : '🔍'}
@@ -521,7 +606,7 @@ export default function BerryShop() {
               {visible.map(bg => (
                 <ItemCard key={bg.id} bg={bg}
                   owned={isOwned(bg)} equipped={isEquipped(bg)}
-                  busy={busyId === bg.id} affordable={balance >= bg.price} equipCount={equipCountOf(bg)}
+                  busy={busyId === bg.id} affordable={true} equipCount={equipCountOf(bg)}
                   onSelect={setSelected} onPreview={openPreview} onBuy={buy} onEquip={doEquip} />
               ))}
             </div>
@@ -530,7 +615,7 @@ export default function BerryShop() {
 
       {/* Aperçu plein écran */}
       {preview && (
-        <PreviewModal list={preview.list} index={preview.idx} ownedSet={owned} equippedId={equippedId} busyId={busyId} balance={balance} counts={equipCounts}
+        <PreviewModal list={preview.list} index={preview.idx} ownedSet={owned} equippedId={equippedId} busyId={busyId} counts={equipCounts}
           onClose={closePreview} onNav={navPreview} onBuy={buy} onEquip={doEquip} />
       )}
 
