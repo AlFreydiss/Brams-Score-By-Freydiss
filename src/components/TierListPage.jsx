@@ -1258,10 +1258,9 @@ export default function TierListPage() {
   // ── Type select
   const handleTypeSelect = (type) => {
     setForkOrigin(null)   // nouvelle liste depuis une catégorie → créateur = toi
+    setCustomItems([])    // repart propre : les uploads de la liste précédente ne fuient plus
     setSelectedType(type)
     const newBoard = initBoard(tiers, type.items)
-    // add custom items to pool too
-    customItems.forEach(c => { if (!newBoard.pool.includes(c.id)) newBoard.pool.push(c.id) })
     setBoard(newBoard)
     setTitle(`Ma Tier List ${type.icon} ${type.label}`)
     setFavorites([])
@@ -1273,7 +1272,7 @@ export default function TierListPage() {
       typeId:type.id,
       tiers,
       board:newBoard,
-      customItems,
+      customItems:[],
       favorites:[],
       updatedAt:Date.now(),
     }).then(ok => setDraftSaved(ok))
