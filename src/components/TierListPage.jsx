@@ -699,7 +699,7 @@ function ItemPool({ items, allById, customItems, onAddCustom, onNotify, favorite
           ))}
         </div>
 
-        <button onClick={() => setAddMode(addMode ? null : 'url')}
+        <button onClick={() => setAddMode(addMode ? null : 'file')}
           style={{ display:'flex', alignItems:'center', gap:5, padding:'4px 10px', borderRadius:8,
             background:`rgba(191,164,106,.10)`, border:`1px solid ${G.gold}33`,
             color:G.gold, cursor:'pointer', fontSize:10.5, fontWeight:700, flexShrink:0 }}>
@@ -1573,7 +1573,8 @@ export default function TierListPage() {
   ]
 
   return (
-    <div style={{ position:'relative', minHeight:'100vh', background:G.bg, color:G.text, fontFamily:"'Inter',system-ui,sans-serif", paddingTop:72 }}>
+    <div style={{ position:'relative', minHeight:'100vh', color:G.text, fontFamily:"'Inter',system-ui,sans-serif", paddingTop:72,
+      background:`radial-gradient(940px 560px at 80% -6%, rgba(212,175,90,0.13), transparent 62%), radial-gradient(780px 480px at 14% 8%, rgba(160,120,40,0.10), transparent 62%), radial-gradient(700px 600px at 50% 118%, rgba(120,90,30,0.08), transparent 66%), linear-gradient(180deg, #0b0a07 0%, #0a0906 60%, #080705 100%)` }}>
       <style>{CSS}</style>
 
       {/* ── Studio Header ── */}
@@ -1775,7 +1776,7 @@ export default function TierListPage() {
                 </div>
 
                 <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(220px,1fr))', gap:14 }}>
-                  {TIER_TYPES.map((type, i) => (
+                  {TIER_TYPES.filter(t => t.id !== 'custom').map((type, i) => (
                     <motion.button key={type.id}
                       initial={{ y:24, opacity:0 }} animate={{ y:0, opacity:1 }}
                       transition={{ delay:i*.08, type:'spring', stiffness:280, damping:24 }}
@@ -1827,6 +1828,17 @@ export default function TierListPage() {
             // Tier editor
             <motion.div key="editor" initial={{ opacity:0 }} animate={{ opacity:1 }}
               style={{ display:'flex', flexDirection:'column' }}>
+
+              {/* Retour au hub des tier lists (choix de catégorie) */}
+              <div style={{ maxWidth:1600, margin:'0 auto', width:'100%', padding:'12px 18px 0' }}>
+                <button onClick={() => setSelectedType(null)} style={{
+                  display:'inline-flex', alignItems:'center', gap:7, padding:'7px 14px', borderRadius:9,
+                  background:'rgba(255,255,255,.05)', border:`1px solid ${G.border}`, color:G.text,
+                  cursor:'pointer', fontSize:12.5, fontWeight:700, fontFamily:'inherit',
+                }}>
+                  <ArrowLeft size={14}/> Hub des tier lists
+                </button>
+              </div>
 
               {/* Bannière d'aide — explique le principe en une phrase (masquable) */}
               {!hideHint && (
