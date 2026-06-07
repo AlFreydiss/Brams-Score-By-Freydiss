@@ -27,8 +27,6 @@ const WEEKDAYS    = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim']
 const TABS = [
   { id:'calendrier', label:'Calendrier', icon:'📅' },
   { id:'programme',  label:'Programme',  icon:'📋' },
-  { id:'blind-test', label:'Blind Test', icon:'🎵' },
-  { id:'annonces',   label:'Annonces',   icon:'📢' },
 ]
 
 const BLIND_TEST_STATS = [
