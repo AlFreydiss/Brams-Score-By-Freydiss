@@ -1773,8 +1773,23 @@ export default function TierListPage() {
                   ))}
                 </div>
 
+                {/* Démarrage rapide depuis une grille S→F totalement vide. */}
+                <div style={{ marginTop:22, textAlign:'center' }}>
+                  <button onClick={() => handleTypeSelect(TIER_TYPES.find(t => t.id === 'custom'))} style={{
+                    display:'inline-flex', alignItems:'center', gap:8, margin:'0 auto',
+                    padding:'13px 28px', borderRadius:12, border:'none', cursor:'pointer',
+                    background:'linear-gradient(135deg,#ffd84d,#f0a500)', color:'#1a1200',
+                    fontSize:14, fontWeight:900, boxShadow:'0 6px 20px rgba(240,165,0,.35)',
+                  }}>
+                    <Plus size={15}/> Créer une tier list vierge
+                  </button>
+                  <div style={{ fontSize:11.5, color:G.muted, marginTop:9 }}>
+                    Pars d'une grille S→F vide et ajoute tes propres éléments (images, persos…).
+                  </div>
+                </div>
+
                 {savedLists.length > 0 && (
-                  <div style={{ marginTop:28, textAlign:'center' }}>
+                  <div style={{ marginTop:18, textAlign:'center' }}>
                     <button onClick={() => setTab('mylists')} style={{
                       ...actionBtn, margin:'0 auto', padding:'8px 20px', fontSize:12,
                     }}>
@@ -1940,7 +1955,8 @@ export default function TierListPage() {
             </div>
           ) : (
             <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))', gap:14 }}>
-              {communityLists.map(list => (
+              {/* Les plus likées en premier (tri au rendu → reste correct après like/publication). */}
+              {[...communityLists].sort((a, b) => (b.likes || 0) - (a.likes || 0)).map(list => (
                 <CommunityListCard
                   key={list.id}
                   list={list}
