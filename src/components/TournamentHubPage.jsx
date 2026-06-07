@@ -1,6 +1,7 @@
 import { useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import SakuraBackdrop from './SakuraBackdrop.jsx'
 import {
   loadState, getTournamentProgress, getCurrentMatch,
   generateBracket, getWinner,
@@ -622,33 +623,10 @@ export default function TournamentHubPage() {
     <div style={{ minHeight: '100vh', background: BG, fontFamily: 'inherit', position: 'relative', overflowX: 'hidden' }}>
       <style>{HUB_CSS}</style>
 
-      {/* Fixed bg layers */}
-      <div aria-hidden style={{ position: 'fixed', inset: 0, background: `
-        radial-gradient(900px 520px at 16% -8%, rgba(212,160,23,.10), transparent 62%),
-        radial-gradient(760px 520px at 88% 12%, rgba(157,23,77,.10), transparent 64%),
-        radial-gradient(780px 680px at 48% 116%, rgba(120,139,118,.07), transparent 66%),
-        linear-gradient(180deg, #07090e 0%, #08090d 58%, #07090e 100%)`, zIndex: 0 }} />
+      {/* Fond sakura (style Undercover + pétales roses) */}
+      <SakuraBackdrop />
       <div aria-hidden style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 0,
-        pointerEvents: 'none',
-        opacity: .055,
-        backgroundImage: 'linear-gradient(rgba(212,160,23,.12) 1px, transparent 1px), linear-gradient(90deg, rgba(212,160,23,.10) 1px, transparent 1px)',
-        backgroundSize: '56px 56px',
-        maskImage: 'linear-gradient(180deg, transparent, black 16%, black 76%, transparent)',
-        WebkitMaskImage: 'linear-gradient(180deg, transparent, black 16%, black 76%, transparent)',
-      }} />
-      <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
-        {Array.from({ length: 9 }).map((_, i) => (
-          <span key={i} data-fx style={{ position: 'absolute', left: `${8 + i * 10}%`, bottom: '-10px', width: 4 + (i % 3), height: 4 + (i % 3), borderRadius: '50%', background: i % 3 === 0 ? 'rgba(212,160,23,.42)' : 'rgba(157,23,77,.36)', filter: 'blur(.5px)', animation: `htFloat ${11 + (i % 5) * 2}s linear ${i * 1.3}s infinite` }} />
-        ))}
-      </div>
-      <div aria-hidden style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 1,
-        pointerEvents: 'none',
+        position: 'fixed', inset: 0, zIndex: 1, pointerEvents: 'none',
         background: 'radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,.12) 54%, rgba(0,0,0,.52) 100%)',
       }} />
 

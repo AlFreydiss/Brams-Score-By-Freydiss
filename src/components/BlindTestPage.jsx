@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import SakuraBackdrop from './SakuraBackdrop.jsx'
 import {
   motion, AnimatePresence,
   useMotionValue, useSpring, useTransform,
@@ -956,6 +957,9 @@ export default function BlindTestPage() {
 
       {/* Dark base */}
       <div style={{ position: 'fixed', inset: 0, background: BG, zIndex: 0 }} />
+
+      {/* Fond sakura (hors-jeu : intro / menu / résultats) */}
+      {!isPlaying && <SakuraBackdrop zIndex={1} />}
 
       {/* Video background */}
       <video
