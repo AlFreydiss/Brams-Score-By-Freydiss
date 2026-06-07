@@ -12,7 +12,6 @@ import { useOpeningBg } from '../contexts/OpeningBgContext.jsx'
 import OpeningBgMedia from './social/OpeningBgMedia.jsx'
 import { getBgById } from '../data/opening-backgrounds.js'
 import ProfileHero from './profile/ProfileHero.jsx'
-import ProfileAura from './profile/ProfileAura.jsx'
 import ProfileOverview from './profile/ProfileOverview.jsx'
 import ProfileInventory from './profile/ProfileInventory.jsx'
 import ProfileAchievements from './profile/ProfileAchievements.jsx'
@@ -117,12 +116,7 @@ export default function ProfilePage() {
               {tab === 'posts'        && <ProfilePosts userId={member.uid} mode="all" />}
               {tab === 'reposts'      && <ProfilePosts userId={member.uid} mode="reposts" />}
               {tab === 'saved'        && <ProfilePosts userId={member.uid} mode="saved" />}
-              {tab === 'apercu'       && (
-                <div className="pfx-tabpanel">
-                  <ProfileAura data={data} />
-                  <ProfileOverview data={data} onSeeAchievements={() => setTab('achievements')} />
-                </div>
-              )}
+              {tab === 'apercu'       && <ProfileOverview data={data} onSeeAchievements={() => setTab('achievements')} />}
               {tab === 'inventaire'   && <ProfileInventory data={data} />}
               {tab === 'achievements' && <ProfileAchievements data={data} />}
             </div>
