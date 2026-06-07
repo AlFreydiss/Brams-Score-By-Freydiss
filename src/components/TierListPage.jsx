@@ -1002,6 +1002,7 @@ export default function TierListPage() {
   const [savedLists, setSavedLists] = useState([])
   const [editingListId, setEditingListId] = useState(null) // liste locale en cours d'édition (null = nouvelle)
   const [communityLists, setCommunityLists] = useState([])
+  const [communityTab, setCommunityTab] = useState('popular') // 'popular' | 'recent'
   const [cloudLists, setCloudLists] = useState([])
   const [communityLoading, setCommunityLoading] = useState(false)
   const [cloudSaved, setCloudSaved] = useState(false)
@@ -1968,9 +1969,24 @@ export default function TierListPage() {
               </button>
             </div>
           ) : (
+            <>
+            {/* Onglets : Populaire (plus likées) / Récent (plus récentes) */}
+            <div style={{ display:'flex', gap:8, marginBottom:16 }}>
+              {[{ id:'popular', label:'🔥 Populaire' }, { id:'recent', label:'🆕 Récent' }].map(t => (
+                <button key={t.id} onClick={() => setCommunityTab(t.id)} style={{
+                  padding:'7px 16px', borderRadius:999, fontSize:12.5, fontWeight:800, cursor:'pointer', fontFamily:'inherit',
+                  color: communityTab === t.id ? '#1a1200' : G.muted,
+                  background: communityTab === t.id ? 'linear-gradient(135deg,#ffd84d,#f0a500)' : 'rgba(255,255,255,0.04)',
+                  border: `1px solid ${communityTab === t.id ? '#ffe27a' : G.border}`,
+                }}>{t.label}</button>
+              ))}
+            </div>
             <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))', gap:14 }}>
-              {/* Les plus likées en premier (tri au rendu → reste correct après like/publication). */}
-              {[...communityLists].sort((a, b) => (b.likes || 0) - (a.likes || 0)).map(list => (
+              {/* Tri au rendu : Populaire = likes ↓ ; Récent = date ↓ (reste correct après like/publication). */}
+              {[...communityLists].sort((a, b) => communityTab === 'recent'
+                ? (new Date(b.savedAt || b.createdAt || b.updatedAt || 0) - new Date(a.savedAt || a.createdAt || a.updatedAt || 0))
+                : ((b.likes || 0) - (a.likes || 0))
+              ).map(list => (
                 <CommunityListCard
                   key={list.id}
                   list={list}
@@ -1981,6 +1997,7 @@ export default function TierListPage() {
                 />
               ))}
             </div>
+            </>
           )}
         </div>
       )}
