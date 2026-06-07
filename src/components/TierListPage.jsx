@@ -655,7 +655,7 @@ function ItemPool({ items, allById, customItems, onAddCustom, onNotify, favorite
         alignSelf:'start',
         height:'calc(100vh - 170px)',
         minHeight:520,
-        minWidth:360,
+        minWidth:420,
         border:`1px solid ${G.border}`,
         borderRadius:14,
         overflow:'hidden',
@@ -1524,13 +1524,22 @@ export default function TierListPage() {
   const exportPng = async () => {
     if (!boardRef.current) return
     setToast('⏳ Export…')
+    // 1x1 transparent : remplace une image qui refuse le CORS au lieu de tout planter.
+    const PLACEHOLDER = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='
+    const opts = { backgroundColor: '#08090D', pixelRatio: 2, cacheBust: true, skipFonts: true, imagePlaceholder: PLACEHOLDER }
     try {
-      const url = await toPng(boardRef.current, { backgroundColor:'#08090D', pixelRatio:2 })
+      // html-to-image échoue souvent au 1er passage (images pas encore inline) → on
+      // le lance une fois pour chauffer le cache, puis pour de vrai.
+      await toPng(boardRef.current, opts).catch(() => {})
+      const url = await toPng(boardRef.current, opts)
       const a = document.createElement('a')
-      a.download = `${title.replace(/[^a-z0-9]/gi,'_')}.png`
+      a.download = `${title.replace(/[^a-z0-9]/gi, '_')}.png`
       a.href = url; a.click()
       setToast('🖼️ PNG exporté !')
-    } catch { setToast('❌ Export échoué') }
+    } catch (e) {
+      console.error('[tierlist export]', e)
+      setToast('❌ Export échoué — réessaie')
+    }
   }
 
   // ── Reset
@@ -1866,13 +1875,13 @@ export default function TierListPage() {
                 onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
 
                 <div style={{
-                  maxWidth:1600,
+                  maxWidth:'100%',
                   margin:'0 auto',
                   width:'100%',
-                  padding:editorWide ? '18px 20px 24px' : 0,
+                  padding:editorWide ? '18px 26px 28px' : 0,
                   display:editorWide ? 'grid' : 'block',
-                  gridTemplateColumns:'minmax(0,1fr) minmax(360px,400px)',
-                  gap:16,
+                  gridTemplateColumns:'minmax(0,1fr) minmax(420px,500px)',
+                  gap:18,
                   alignItems:'start',
                 }}>
                   {/* Board */}
