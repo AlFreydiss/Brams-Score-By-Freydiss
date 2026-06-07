@@ -123,6 +123,7 @@ function mapRow(row, likesById = {}, likedIds = new Set()) {
     authorName: row.author_name || 'Pirate Brams',
     authorAvatar: row.author_avatar || null,
     authorDiscordId: row.owner_discord_id || null,
+    editorName: row.editor_name || null,
     published: Boolean(row.published),
     visibility: row.visibility || 'private',
     likes: likesById[row.id] || 0,
@@ -251,7 +252,7 @@ export default async function handler(req, res) {
     // Vues de liste allégées : on EXCLUT les champs lourds (tiers/board/custom_items/
     // favorites, qui contiennent les images) — les cartes n'en ont pas besoin et
     // ça évitait de transférer plusieurs Mo. Le détail est chargé via action=get.
-    const LIST_COLS = 'id,title,emoji,category,type_id,tier_count,tier_labels,tier_colors,author_name,author_avatar,owner_id,owner_discord_id,published,visibility,created_at,updated_at'
+    const LIST_COLS = 'id,title,emoji,category,type_id,tier_count,tier_labels,tier_colors,author_name,author_avatar,editor_name,owner_id,owner_discord_id,published,visibility,created_at,updated_at'
 
     if (req.method === 'GET' && action === 'public') {
       const rows = await db(`tier_lists?select=${LIST_COLS}&published=eq.true&visibility=eq.public&order=updated_at.desc&limit=80`)
@@ -319,10 +320,19 @@ export default async function handler(req, res) {
         return json(res, 200, { saved: true, list: mapRow(rows[0]) })
       }
 
+      // Attribution : si on republie la tier list d'un AUTRE membre (fork), on
+      // crédite le créateur ORIGINAL et on s'inscrit comme modificateur.
+      // Liste créée de zéro → auteur = soi, pas de modificateur.
+      const origName = typeof body.originalAuthorName === 'string' ? body.originalAuthorName.trim().slice(0, 120) : ''
+      const isFork = origName && origName !== viewer.name
+      const pubRow = isFork
+        ? { ...row, author_name: origName, author_avatar: (typeof body.originalAuthorAvatar === 'string' ? body.originalAuthorAvatar.slice(0, 400) : null), editor_name: viewer.name }
+        : { ...row, editor_name: null }
+
       const rows = await db('tier_lists', {
         method: 'POST',
         headers: { Prefer: 'return=representation' },
-        body: JSON.stringify({ ...row, created_at: now }),
+        body: JSON.stringify({ ...pubRow, created_at: now }),
       })
       return json(res, 200, { published: true, list: mapRow(rows[0]) })
     }

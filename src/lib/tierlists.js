@@ -98,10 +98,10 @@ export async function autosaveTierList(list) {
   })
 }
 
-export async function publishTierList(list) {
+export async function publishTierList(list, extra = {}) {
   return request('/api/tierlists?action=publish', {
     method: 'POST',
-    body: JSON.stringify({ clientId: getTierListClientId(), list }),
+    body: JSON.stringify({ clientId: getTierListClientId(), list, ...extra }),
   })
 }
 

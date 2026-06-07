@@ -894,7 +894,9 @@ function CommunityListCard({ list, onLoad, onLike, isOwner, onDelete }) {
             <div>
               <div style={{ fontSize:13.5, fontWeight:800, color:G.text }}>{list.title}</div>
               <div style={{ fontSize:10.5, color:G.muted }}>
-                par {list.authorName || 'Pirate Brams'} · {list.category || 'Custom'}
+                {list.editorName
+                  ? <>créé par {list.authorName || 'Pirate Brams'} · modifié par {list.editorName}</>
+                  : <>par {list.authorName || 'Pirate Brams'}</>} · {list.category || 'Custom'}
               </div>
             </div>
           </div>
@@ -1003,6 +1005,7 @@ export default function TierListPage() {
   const [editingListId, setEditingListId] = useState(null) // liste locale en cours d'édition (null = nouvelle)
   const [communityLists, setCommunityLists] = useState([])
   const [communityTab, setCommunityTab] = useState('popular') // 'popular' | 'recent'
+  const [forkOrigin, setForkOrigin] = useState(null) // { name, avatar } si on reprend la liste d'un autre
   const [cloudLists, setCloudLists] = useState([])
   const [communityLoading, setCommunityLoading] = useState(false)
   const [cloudSaved, setCloudSaved] = useState(false)
@@ -1254,6 +1257,7 @@ export default function TierListPage() {
 
   // ── Type select
   const handleTypeSelect = (type) => {
+    setForkOrigin(null)   // nouvelle liste depuis une catégorie → créateur = toi
     setSelectedType(type)
     const newBoard = initBoard(tiers, type.items)
     // add custom items to pool too
@@ -1280,6 +1284,7 @@ export default function TierListPage() {
   // uploadées (persistées dans le draft) réapparaissaient dans le pool à droite.
   const startBlank = () => {
     const type = TIER_TYPES.find(t => t.id === 'custom')
+    setForkOrigin(null)   // liste neuve → c'est toi le créateur
     setCustomItems([])
     setTiers(DEFAULT_TIERS)
     setSelectedType(type)
@@ -1419,7 +1424,7 @@ export default function TierListPage() {
       const list = buildShareList({ customItems: items })
       if (!list) { setToast('Crée une tier list avant de partager'); return }
       await autosaveTierList(list)
-      const result = await publishTierList(list)
+      const result = await publishTierList(list, forkOrigin ? { originalAuthorName: forkOrigin.name, originalAuthorAvatar: forkOrigin.avatar } : {})
       setCommunityLists(prev => [result.list, ...prev.filter(item => item.id !== result.list.id)])
       setCloudSaved(true)
       setTab('community')
@@ -1458,6 +1463,10 @@ export default function TierListPage() {
     setFavorites(full.favorites || [])
     setTitle(full.title)
     setEditingListId(full.id || null) // édite cette liste → la sauvegarde la met à jour
+    // Reprise de la liste d'un AUTRE membre → on garde le créateur original, on
+    // se mettra en « modifié par » à la publication. Sa propre liste → pas de fork.
+    setForkOrigin(full.authorDiscordId && String(full.authorDiscordId) !== String(discordId)
+      ? { name: full.authorName, avatar: full.authorAvatar } : null)
     setSaved(true)
     setTab('studio')
     latestDraftRef.current = {
