@@ -8,7 +8,8 @@ const CSS = `
   @keyframes gbx-breathe { 0%,100%{opacity:.45} 50%{opacity:.8} }
   @keyframes gbx-dust { 0%{transform:translateY(0);opacity:0} 12%{opacity:.6} 88%{opacity:.6} 100%{transform:translateY(-106vh);opacity:0} }
   @keyframes gbx-sheen { 0%{transform:translateX(-30%) rotate(8deg);opacity:0} 50%{opacity:.5} 100%{transform:translateX(130%) rotate(8deg);opacity:0} }
-  @media (prefers-reduced-motion: reduce){ .gbx-dust,.gbx-sheen{ display:none !important } }
+  @keyframes gbx-eq { 0%,100%{transform:scaleY(.22)} 50%{transform:scaleY(1)} }
+  @media (prefers-reduced-motion: reduce){ .gbx-dust,.gbx-sheen,.gbx-eqbar{ animation:none !important } }
 `
 
 export default function GoldBackdrop({ count = 20, zIndex = 0, particlesZIndex = 1 }) {
@@ -22,6 +23,12 @@ export default function GoldBackdrop({ count = 20, zIndex = 0, particlesZIndex =
       opacity: 0.35 + r(5) * 0.45,
     }
   }), [count])
+
+  // Motif équaliseur (thème musique) : barres dorées qui pulsent en bas.
+  const bars = useMemo(() => Array.from({ length: 48 }, (_, i) => {
+    const r = (n) => ((Math.sin(i * 41.7 + n * 7.3) + 1) / 2)
+    return { dur: 0.7 + r(1) * 1.4, delay: -r(2) * 2, h: 26 + Math.round(r(3) * 70) }
+  }), [])
 
   return (
     <>
@@ -44,6 +51,18 @@ export default function GoldBackdrop({ count = 20, zIndex = 0, particlesZIndex =
         <div style={{ position: 'absolute', top: '-20%', left: 0, width: '40%', height: '140%',
           background: 'linear-gradient(90deg, transparent, rgba(255,210,120,0.05), transparent)',
           filter: 'blur(40px)', animation: 'gbx-sheen 16s ease-in-out infinite' }} />
+
+        {/* Motif équaliseur animé (thème musique du blind test) — barres dorées en bas */}
+        <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 220, display: 'flex', alignItems: 'flex-end', gap: 3, padding: '0 8px',
+          opacity: 0.5, maskImage: 'linear-gradient(180deg, transparent, black 70%)', WebkitMaskImage: 'linear-gradient(180deg, transparent, black 70%)' }}>
+          {bars.map((b, i) => (
+            <span key={i} className="gbx-eqbar" style={{
+              flex: 1, height: `${b.h}%`, transformOrigin: 'bottom', borderRadius: '3px 3px 0 0',
+              background: 'linear-gradient(180deg, rgba(226,190,110,.55), rgba(160,120,40,.08))',
+              animation: `gbx-eq ${b.dur}s ease-in-out ${b.delay}s infinite`,
+            }} />
+          ))}
+        </div>
       </div>
 
       {/* Poussière dorée qui monte (devant le contenu, décorative) */}

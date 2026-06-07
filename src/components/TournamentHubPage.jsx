@@ -648,7 +648,7 @@ export default function TournamentHubPage() {
               gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
               gap: 12,
             }}>
-              {TOURNAMENT_CATEGORIES.filter(c => c.status === 'active').map((cat, i) => (
+              {TOURNAMENT_CATEGORIES.filter(c => c.status === 'active' && c.id !== 'ost').map((cat, i) => (
                 <CategoryCard key={cat.id} cat={cat} index={i} />
               ))}
             </div>
@@ -676,23 +676,6 @@ export default function TournamentHubPage() {
                 currentRound={ost.currentRound}
                 winner={ost.winner}
               />
-            </div>
-          </div>
-
-          {/* ── À venir ── */}
-          <div style={{ marginBottom: 76 }}>
-            <SectionHeading
-              title="À venir"
-              subtitle="Les prochains tournois sont en préparation. Suis les annonces sur Brams."
-            />
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(255px, 1fr))',
-              gap: 12,
-            }}>
-              {UPCOMING_TOURNAMENTS.map((item, i) => (
-                <UpcomingCard key={item.id} item={item} index={i} />
-              ))}
             </div>
           </div>
 
