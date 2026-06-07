@@ -28,7 +28,7 @@ const RARITY = {
   Epique:     { label: 'Épique',     c: '#9170c8', rank: 3 },
   Legendaire: { label: 'Légendaire', c: '#c9a227', rank: 4 },
   Mythique:   { label: 'Mythique',   c: '#c77dc4', rank: 5 },
-  Secret:     { label: 'Secret',     c: '#e6d6a8', rank: 6 },
+  Secret:     { label: 'Secret',     c: '#c8313b', rank: 6 },
   Interdit:   { label: 'Interdit',   c: '#b1413d', rank: 7 },
 }
 const rar = (r) => RARITY[r] || RARITY.Commun

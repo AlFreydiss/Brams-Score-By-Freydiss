@@ -2,8 +2,11 @@
 // Ces items alimentent la section "Fonds d'Openings" de la boutique Berry.
 // ytId : utilisé pour la thumbnail YouTube (blurred) en fond.
 // dominantColor : teinte de l'overlay — identité visuelle de l'opening.
+import { GENERATED_BACKGROUNDS } from './openingBgGenerated.js'
 
-export const OPENING_BACKGROUNDS = [
+// Fonds « curated » (descriptions soignées, raretés premium dont Secret).
+// On les garde en tête + leurs ids historiques (inventaire déjà possédé).
+const CURATED_BACKGROUNDS = [
   {
     id:             'bg-unravel',
     shopItemId:     'bg-unravel',
@@ -198,6 +201,14 @@ export const OPENING_BACKGROUNDS = [
     description:    "L'ouverture qui a lancé une génération. Simple, efficace, mémorable.",
     label:          'Fond',
   },
+]
+
+// Tous les openings/endings du Tournoi (générés depuis le blind test) ajoutés au
+// catalogue. On déduplique par id (les curated priment sur un éventuel doublon).
+const _curatedIds = new Set(CURATED_BACKGROUNDS.map(b => b.id))
+export const OPENING_BACKGROUNDS = [
+  ...CURATED_BACKGROUNDS,
+  ...GENERATED_BACKGROUNDS.filter(b => !_curatedIds.has(b.id)),
 ]
 
 // ── LocalStorage helpers ─────────────────────────────────────────────────
