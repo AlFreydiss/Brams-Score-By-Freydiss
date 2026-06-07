@@ -336,12 +336,12 @@ export async function fetchBerryShopState(discordId) {
 // 20260606_member_opening_bg.sql) — sert à afficher le fond payé/équipé d'autrui
 // sur son profil, même pour un visiteur qui ne possède pas ce fond.
 export async function getMemberOpeningBg(discordId) {
-  if (!supabase || !discordId) return null
-  try {
-    const { data, error } = await supabase.rpc('get_member_opening_bg', { p_discord_id: String(discordId) })
-    if (error) return null
-    return data || null
-  } catch { return null }
+  if (!discordId) return null
+  // REST direct (anti-hang) : avant, supabase.rpc pouvait ne jamais résoudre →
+  // publicBg null → pas de fond sur le profil d'un autre membre (via classement).
+  const r = await sbRpc('get_member_opening_bg', { p_discord_id: String(discordId) }, { tag: 'shop' })
+  if (r && typeof r === 'object') return null   // { ok:false } (erreur) ou forme inattendue
+  return r || null                              // id du fond (string) ou null
 }
 
 export async function purchaseShopItem(itemId) {
