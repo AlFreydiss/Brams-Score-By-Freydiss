@@ -11,6 +11,7 @@ import Navbar from './Navbar.jsx'
 import { useOpeningBg } from '../contexts/OpeningBgContext.jsx'
 import OpeningBgMedia from './social/OpeningBgMedia.jsx'
 import { getBgById } from '../data/opening-backgrounds.js'
+import { getRankBg } from '../data/rank-backgrounds.js'
 import ProfileHero from './profile/ProfileHero.jsx'
 import ProfileOverview from './profile/ProfileOverview.jsx'
 import ProfileInventory from './profile/ProfileInventory.jsx'
@@ -34,6 +35,11 @@ export default function ProfilePage() {
   // Sur SON profil : on prend le fond équipé live du contexte (mis à jour
   // instantanément à l'équipement boutique) → plus besoin d'actualiser pour le voir.
   const heroBg = getBgById((isOwnProfile && equippedId) ? equippedId : equippedBg)
+
+  // Fond de profil PAR DÉFAUT selon le rang (décor premium débloqué dès Pirate).
+  // Le fond d'opening payé en boutique (heroBg) reste prioritaire = le vrai flex.
+  const rankBg = getRankBg(data.rank?.rang)
+  const showRankBg = !heroBg && !!rankBg
 
   // Onglets — Sauvegardés réservé à mon profil (signets privés).
   const tabs = useMemo(() => [
@@ -67,7 +73,15 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className={`pfx-shell${heroBg ? ' pfx-transparent' : ''}`} style={{ '--rank': data.rank.color }}>
+    <div className={`pfx-shell${(heroBg || showRankBg) ? ' pfx-transparent' : ''}`} style={{ '--rank': data.rank.color }}>
+      {/* Fond de rang (image fixe premium) : décor par défaut du profil selon le
+          grade. Masqué dès qu'un fond d'opening payé est équipé (lui passe devant). */}
+      {showRankBg && (
+        <div className="pfx-page-bg" aria-hidden>
+          <img src={rankBg} alt="" className="pfx-page-bg-media" loading="lazy" decoding="async" />
+          <div className="pfx-page-bg-veil" />
+        </div>
+      )}
       {/* Fond d'opening du profil : vidéo animée plein écran (poster si autoplay
           bloqué). Rendu par le profil lui-même → fiable, indépendant du global. */}
       {heroBg && (
