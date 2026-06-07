@@ -1,7 +1,8 @@
+// Tous >= 50 cents : Stripe refuse les paiements carte sous 0,50 €.
 export const OPENING_BG_EURO_PRICE_CENTS = {
-  Commun: 29,
-  Rare: 39,
-  Epique: 69,
+  Commun: 50,
+  Rare: 60,
+  Epique: 79,
   Legendaire: 99,
   Mythique: 109,
   Secret: 150,
