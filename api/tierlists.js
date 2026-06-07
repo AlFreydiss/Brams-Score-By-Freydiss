@@ -100,6 +100,7 @@ function safePayload(input = {}) {
     board: input.board && typeof input.board === 'object' ? input.board : {},
     custom_items: Array.isArray(input.customItems) ? input.customItems.slice(0, 120) : [],
     favorites: Array.isArray(input.favorites) ? input.favorites.slice(0, 240) : [],
+    cover_url: typeof input.coverUrl === 'string' ? input.coverUrl.slice(0, 600) : null,
   }
 }
 
@@ -124,6 +125,7 @@ function mapRow(row, likesById = {}, likedIds = new Set()) {
     authorAvatar: row.author_avatar || null,
     authorDiscordId: row.owner_discord_id || null,
     editorName: row.editor_name || null,
+    coverUrl: row.cover_url || null,
     published: Boolean(row.published),
     visibility: row.visibility || 'private',
     likes: likesById[row.id] || 0,
@@ -252,7 +254,7 @@ export default async function handler(req, res) {
     // Vues de liste allégées : on EXCLUT les champs lourds (tiers/board/custom_items/
     // favorites, qui contiennent les images) — les cartes n'en ont pas besoin et
     // ça évitait de transférer plusieurs Mo. Le détail est chargé via action=get.
-    const LIST_COLS = 'id,title,emoji,category,type_id,tier_count,tier_labels,tier_colors,author_name,author_avatar,editor_name,owner_id,owner_discord_id,published,visibility,created_at,updated_at'
+    const LIST_COLS = 'id,title,emoji,category,type_id,tier_count,tier_labels,tier_colors,author_name,author_avatar,editor_name,cover_url,owner_id,owner_discord_id,published,visibility,created_at,updated_at'
 
     if (req.method === 'GET' && action === 'public') {
       const rows = await db(`tier_lists?select=${LIST_COLS}&published=eq.true&visibility=eq.public&order=updated_at.desc&limit=80`)

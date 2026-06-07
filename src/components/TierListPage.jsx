@@ -887,6 +887,12 @@ function CommunityListCard({ list, onLoad, onLike, isOwner, onDelete }) {
       }}
       className="saved-list-card"
     >
+      {list.coverUrl && (
+        <div style={{ position:'relative', height:120, overflow:'hidden', flexShrink:0 }}>
+          <img src={list.coverUrl} alt="" loading="lazy" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+          <div style={{ position:'absolute', inset:0, background:'linear-gradient(180deg, transparent 45%, rgba(10,11,18,.88))' }} />
+        </div>
+      )}
       <div style={{ padding:'14px 16px 10px', flex:1 }}>
         <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:10, marginBottom:8 }}>
           <div style={{ display:'flex', alignItems:'center', gap:8 }}>
@@ -1006,6 +1012,8 @@ export default function TierListPage() {
   const [communityLists, setCommunityLists] = useState([])
   const [communityTab, setCommunityTab] = useState('popular') // 'popular' | 'recent'
   const [forkOrigin, setForkOrigin] = useState(null) // { name, avatar } si on reprend la liste d'un autre
+  const [coverUrl, setCoverUrl] = useState(null)      // image de présentation (couverture) à la publication
+  const [coverUploading, setCoverUploading] = useState(false)
   const [cloudLists, setCloudLists] = useState([])
   const [communityLoading, setCommunityLoading] = useState(false)
   const [cloudSaved, setCloudSaved] = useState(false)
@@ -1101,9 +1109,10 @@ export default function TierListPage() {
     if (!selectedType || !board) return null
     return {
       ...toSharePayload({ title, selectedType, tiers, board, customItems, favorites }),
+      coverUrl,
       ...overrides,
     }
-  }, [selectedType, tiers, board, customItems, favorites, title])
+  }, [selectedType, tiers, board, customItems, favorites, title, coverUrl])
 
   const flushDraftNow = useCallback((overrides = {}) => {
     if (draftTimerRef.current) {
@@ -1258,6 +1267,7 @@ export default function TierListPage() {
   // ── Type select
   const handleTypeSelect = (type) => {
     setForkOrigin(null)   // nouvelle liste depuis une catégorie → créateur = toi
+    setCoverUrl(null)
     setCustomItems([])    // repart propre : les uploads de la liste précédente ne fuient plus
     setSelectedType(type)
     const newBoard = initBoard(tiers, type.items)
@@ -1284,6 +1294,7 @@ export default function TierListPage() {
   const startBlank = () => {
     const type = TIER_TYPES.find(t => t.id === 'custom')
     setForkOrigin(null)   // liste neuve → c'est toi le créateur
+    setCoverUrl(null)
     setCustomItems([])
     setTiers(DEFAULT_TIERS)
     setSelectedType(type)
@@ -1466,6 +1477,7 @@ export default function TierListPage() {
     // se mettra en « modifié par » à la publication. Sa propre liste → pas de fork.
     setForkOrigin(full.authorDiscordId && String(full.authorDiscordId) !== String(discordId)
       ? { name: full.authorName, avatar: full.authorAvatar } : null)
+    setCoverUrl(full.coverUrl || null)
     setSaved(true)
     setTab('studio')
     latestDraftRef.current = {
@@ -1539,6 +1551,17 @@ export default function TierListPage() {
       console.error('[tierlist export]', e)
       setToast('❌ Export échoué — réessaie')
     }
+  }
+
+  // ── Image de présentation (couverture) — uploadée sur R2, jointe à la publication
+  const handleCoverUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (e.target) e.target.value = ''
+    if (!file) return
+    setCoverUploading(true)
+    try { const url = await uploadCustomImage(file); setCoverUrl(url); setToast('🖼️ Couverture ajoutée') }
+    catch (err) { setToast(err?.code === 'login_required' ? '🔒 Connecte-toi pour uploader' : '❌ Upload couverture échoué') }
+    finally { setCoverUploading(false) }
   }
 
   // ── Reset
@@ -1677,6 +1700,15 @@ export default function TierListPage() {
                   {b.icon} {b.label}
                 </button>
               ))}
+
+              {/* Image de présentation (couverture) — optionnelle, jointe à la publication */}
+              <label style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 12px', borderRadius:9, cursor: coverUploading ? 'wait' : 'pointer',
+                background: coverUrl ? 'rgba(52,211,153,.12)' : 'rgba(255,255,255,.04)', border:`1px solid ${coverUrl ? 'rgba(52,211,153,.4)' : G.border}`,
+                color: coverUrl ? '#34d399' : G.muted, fontSize:11.5, fontWeight:700, whiteSpace:'nowrap' }}>
+                <input type="file" accept="image/*" onChange={handleCoverUpload} style={{ display:'none' }} disabled={coverUploading} />
+                🖼️ {coverUploading ? '…' : coverUrl ? 'Couverture ✓' : 'Couverture'}
+              </label>
+              {coverUrl && <button onClick={() => setCoverUrl(null)} title="Retirer la couverture" style={{ ...actionBtn, padding:'8px 10px' }}><X size={12}/></button>}
 
               {/* CTA principal — Partager avec la communauté : jaune brillant, en évidence */}
               <button onClick={shareList} disabled={publishing}
