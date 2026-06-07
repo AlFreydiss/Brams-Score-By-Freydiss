@@ -4,7 +4,7 @@
 // Orchestrée par useProfileData. UI découpée dans components/profile/* (.pfx-).
 import { useEffect, useState, useMemo } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { Grid3x3, Repeat2, Bookmark, Gauge, Package, Clock3, Award } from 'lucide-react'
+import { Grid3x3, Repeat2, Bookmark, Gauge, Package, Award } from 'lucide-react'
 import './profile/profile.css'
 import { useProfileData } from '../hooks/useProfileData.js'
 import Navbar from './Navbar.jsx'
@@ -12,14 +12,12 @@ import { useOpeningBg } from '../contexts/OpeningBgContext.jsx'
 import OpeningBgMedia from './social/OpeningBgMedia.jsx'
 import { getBgById } from '../data/opening-backgrounds.js'
 import ProfileHero from './profile/ProfileHero.jsx'
-import ProfileStories from './profile/ProfileStories.jsx'
 import ProfileAura from './profile/ProfileAura.jsx'
 import ProfileOverview from './profile/ProfileOverview.jsx'
 import ProfileInventory from './profile/ProfileInventory.jsx'
-import ProfileHistory from './profile/ProfileHistory.jsx'
 import ProfileAchievements from './profile/ProfileAchievements.jsx'
 import ProfileEditModal from './profile/ProfileEditModal.jsx'
-import PostsGrid from './profile/PostsGrid.jsx'
+import ProfilePosts from './feed/ProfilePosts.jsx'
 import FollowListModal from './profile/FollowListModal.jsx'
 import AvatarPreviewModal from './profile/AvatarPreviewModal.jsx'
 import { ErrorState, ProfileSkeleton } from './profile/shared.jsx'
@@ -43,7 +41,6 @@ export default function ProfilePage() {
     ...(isOwnProfile ? [{ key: 'saved', label: 'Sauvegardés', Icon: Bookmark }] : []),
     { key: 'apercu',       label: "Vue d'ensemble", Icon: Gauge },
     { key: 'inventaire',   label: 'Inventaire',   Icon: Package },
-    { key: 'historique',   label: 'Historique',   Icon: Clock3 },
     { key: 'achievements', label: 'Succès',       Icon: Award },
   ], [isOwnProfile])
 
@@ -107,8 +104,6 @@ export default function ProfilePage() {
               onShowFollowing={() => setFollowModal('following')}
             />
 
-            <ProfileStories discordId={discordId} isOwnProfile={isOwnProfile} member={member} />
-
             <nav className="pfx-igtabs" aria-label="Navigation profil">
               {tabs.map(({ key, label, Icon }) => (
                 <button key={key} type="button" className={`pfx-igtab${tab === key ? ' active' : ''}`} onClick={() => setTab(key)}>
@@ -119,9 +114,9 @@ export default function ProfilePage() {
             </nav>
 
             <div key={tab} className="pfx-tabpanel-anim">
-              {tab === 'posts'        && <PostsGrid userId={member.uid} isOwnProfile={isOwnProfile} mode="posts" />}
-              {tab === 'reposts'      && <PostsGrid userId={member.uid} isOwnProfile={isOwnProfile} mode="reposts" />}
-              {tab === 'saved'        && <PostsGrid userId={member.uid} isOwnProfile={isOwnProfile} mode="saved" />}
+              {tab === 'posts'        && <ProfilePosts userId={member.uid} mode="all" />}
+              {tab === 'reposts'      && <ProfilePosts userId={member.uid} mode="reposts" />}
+              {tab === 'saved'        && <ProfilePosts userId={member.uid} mode="saved" />}
               {tab === 'apercu'       && (
                 <div className="pfx-tabpanel">
                   <ProfileAura data={data} />
@@ -129,7 +124,6 @@ export default function ProfilePage() {
                 </div>
               )}
               {tab === 'inventaire'   && <ProfileInventory data={data} />}
-              {tab === 'historique'   && <ProfileHistory data={data} />}
               {tab === 'achievements' && <ProfileAchievements data={data} />}
             </div>
           </>
