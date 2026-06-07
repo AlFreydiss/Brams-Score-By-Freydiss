@@ -1,4 +1,5 @@
 import { supabase } from './supabase.js'
+import { sbRpc, getAccessToken } from './supabaseRest.js'
 
 export const SHOP_CATEGORIES = [
   'Cosmetique',
@@ -344,18 +345,28 @@ export async function getMemberOpeningBg(discordId) {
 }
 
 export async function purchaseShopItem(itemId) {
-  if (!supabase) return { error: { message: 'Supabase non configuré.' } }
-
-  // Vérification auth côté client avant d'envoyer la requête
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: { message: 'Connexion requise pour acheter.' } }
+  // Auth via le JWT stocké (sans getUser/getSession qui pouvaient hanger).
+  const token = await getAccessToken()
+  if (!token) return { error: { message: 'Connexion requise pour acheter.' } }
 
   const idempotencyKey = `${itemId}-${crypto.randomUUID()}`
-  const { data, error } = await supabase.rpc('purchase_shop_item', {
-    p_item_id: itemId,
-    p_idempotency_key: idempotencyKey,
-  })
-  return { data, error }
+  const r = await sbRpc('purchase_shop_item', { p_item_id: itemId, p_idempotency_key: idempotencyKey }, { tag: 'shop' })
+  if (r?.ok === false || r?.error) return { data: null, error: { message: r?.error || 'Achat impossible' } }
+  return { data: r, error: null }
+}
+
+// Solde berries (RPC get_berry_balance → bigint). REST direct (anti-hang).
+export async function fetchShopBalance() {
+  const r = await sbRpc('get_berry_balance', {}, { tag: 'shop' })
+  const n = Number(r)
+  return Number.isFinite(n) ? n : 0
+}
+
+// Fonds d'opening possédés par l'utilisateur (depuis l'inventaire).
+export async function fetchOwnedBackgrounds() {
+  const r = await sbRpc('get_my_inventory', {}, { tag: 'shop' })
+  const list = Array.isArray(r) ? r : []
+  return list.filter(i => i?.reward_type === 'opening_background')
 }
 
 export const MYSTERY_BOX_COST = 1200000
@@ -377,9 +388,9 @@ export async function fetchAdminShopData() {
 }
 
 export async function equipShopItem(itemId) {
-  if (!supabase) return { error: { message: 'Supabase non configuré.' } }
-  const { data, error } = await supabase.rpc('equip_shop_item', { p_item_id: itemId })
-  return { data, error }
+  const r = await sbRpc('equip_shop_item', { p_item_id: itemId }, { tag: 'shop' })
+  if (r?.ok === false || r?.error) return { data: null, error: { message: r?.error || 'Équipement impossible' } }
+  return { data: r, error: null }
 }
 
 export async function fetchMyInventory() {
