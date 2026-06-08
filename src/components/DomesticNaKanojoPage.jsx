@@ -15,15 +15,15 @@ const NS     = 'domestic-na-kanojo'
 
 const SYNOPSIS = "Natsuo est secrètement amoureux de sa professeure Hina. Sa vie bascule quand son père se remarie : ses deux nouvelles belles-sœurs ne sont autres que Hina et Rui, la fille avec qui il a passé une nuit. Une romance compliquée sous le même toit."
 
-const TAGS = ['Science-fiction', 'Action', 'IA', 'Drame', 'WIT Studio']
+const TAGS = ['Romance', 'Drame', 'School Life', 'Famille recomposée', 'Diomedéa']
 
 const AWARDS = [
-  { icon: '🎵', label: 'OST exceptionnelle' },
-  { icon: '🤖', label: 'Meilleure IA protagoniste' },
-  { icon: '✨', label: 'Anime de l\'année 2021' },
+  { icon: '💔', label: 'Romance dramatique' },
+  { icon: '📚', label: 'Adapté du manga de Kei Sasuga' },
+  { icon: '✨', label: 'Série complète en 12 épisodes' },
 ]
 
-const COVER = 'https://cdn.myanimelist.net/images/anime/1418/96042.jpg'
+const COVER = '/anime-covers/domestic-na-kanojo.jpg'
 
 function loadProgress() {
   try { return JSON.parse(localStorage.getItem(`${NS}_vp`) || '{}') } catch { return {} }
@@ -131,12 +131,12 @@ function InfoPanel({ watchedCount, total, lastWatchedIdx, onResume }) {
         <div style={{ position:'absolute',inset:0,background:'linear-gradient(180deg,rgba(0,0,0,.1) 0%,rgba(6,14,26,.98) 100%)' }} />
         <div style={{ position:'absolute',bottom:0,left:0,right:0,padding:'0 18px 20px' }}>
           <div style={{ fontSize:9.5,fontWeight:800,letterSpacing:'.18em',color:COLOR2,textTransform:'uppercase',marginBottom:6 }}>
-            🎵 IA · CHANTEUSE · 100 ANS
+            💔 ROMANCE · DRAME · SCHOOL LIFE
           </div>
           <h2 style={{ margin:0, fontFamily:"'Pirata One',cursive", fontSize:22,fontWeight:900,color:'#fff',lineHeight:1.0,letterSpacing:'-.01em',textShadow:'0 2px 20px rgba(0,0,0,.9)' }}>
             Domestic na Kanojo
           </h2>
-          <div style={{ fontSize:11,color:'rgba(255,255,255,.4)',fontWeight:600,marginTop:3 }}>WIT Studio · 2021</div>
+          <div style={{ fontSize:11,color:'rgba(255,255,255,.4)',fontWeight:600,marginTop:3 }}>Diomedéa · 2019</div>
         </div>
       </div>
 
@@ -174,7 +174,7 @@ function InfoPanel({ watchedCount, total, lastWatchedIdx, onResume }) {
 
         <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:8 }}>
           {[
-            { label:'Épisodes', value:'13', dot:COLOR2 },
+            { label:'Épisodes', value:String(total), dot:COLOR2 },
             { label:'Statut', value:'Terminé', dot:'#34d399' },
             { label:'Audio', value:'VOSTFR', dot:'#fbbf24' },
             { label:'Note', value:'★ 8.7', dot:'#f97316' },
@@ -294,7 +294,7 @@ export default function DomesticNaKanojoPage({ onClose }) {
           </button>
 
           <div style={{ position:'absolute',left:'50%',transform:'translateX(-50%)',display:'flex',alignItems:'center',gap:10 }}>
-            <span style={{ fontSize:17,animation:'vyFloat 6s ease-in-out infinite' }}>🎵</span>
+            <span style={{ fontSize:17,animation:'vyFloat 6s ease-in-out infinite' }}>💔</span>
             <span style={{ fontFamily:"'Pirata One',cursive",fontSize:17,fontWeight:900,color:'#fff',letterSpacing:'-.01em' }}>
               {detailIdx !== null ? (VIDEOS[detailIdx]?.title || `Épisode ${VIDEOS[detailIdx]?.episode}`) : "Domestic na Kanojo"}
             </span>
@@ -348,7 +348,7 @@ export default function DomesticNaKanojoPage({ onClose }) {
                       Épisodes
                     </h3>
                     <div style={{ fontSize:11,color:'rgba(255,255,255,.32)',fontWeight:600 }}>
-                      Saison 1 · 13 épisodes · VOSTFR
+                      Saison 1 · {VIDEOS.length} épisodes · VOSTFR
                     </div>
                   </div>
                   <div style={{ display:'flex',alignItems:'center',gap:6,padding:'6px 14px',borderRadius:999,background:'rgba(0,180,220,.08)',border:'1px solid rgba(0,212,255,.18)' }}>
@@ -376,7 +376,7 @@ export default function DomesticNaKanojoPage({ onClose }) {
                 </div>
 
                 <div style={{ marginTop:28,padding:'14px 18px',borderRadius:12,background:'rgba(255,255,255,.03)',border:'1px solid rgba(255,255,255,.05)',display:'flex',alignItems:'center',gap:10 }}>
-                  <span style={{ fontSize:16 }}>🤖</span>
+                  <span style={{ fontSize:16 }}>💔</span>
                   <span style={{ fontSize:12,color:'rgba(255,255,255,.38)',fontWeight:600,lineHeight:1.5 }}>
                     Domestic na Kanojo (2019) — une romance dramatique adaptée du manga de Kei Sasuga.</span>
                 </div>
