@@ -1,10 +1,52 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
+
+const MOUSE_CODE = ['up', 'up', 'down', 'down', 'left', 'right']
+const GESTURE_STEP = 54
+const GESTURE_AXIS_BIAS = 1.35
+const GESTURE_MAX_GAP = 2500
+
+function getStoredCheatMode() {
+  if (typeof window === 'undefined') return false
+  try {
+    return window.localStorage.getItem('brams_cursor_cheat') === 'on'
+  } catch {
+    return false
+  }
+}
+
+function advanceMouseCode(seq, dir) {
+  const next = [...seq, dir].slice(-MOUSE_CODE.length)
+  for (let size = Math.min(MOUSE_CODE.length, next.length); size > 0; size--) {
+    const suffix = next.slice(-size)
+    if (suffix.every((value, index) => value === MOUSE_CODE[index])) return suffix
+  }
+  return []
+}
 
 // Traînée dorée premium qui suit le curseur (sparkles qui s'estompent).
 // Canvas pour la perf, particules plafonnées, fondu "lighter" pour le glow.
 // Désactivé sur tactile (pas de curseur) et si l'utilisateur réduit les animations.
 export default function CursorTrail() {
   const canvasRef = useRef(null)
+  const [cheatMode, setCheatMode] = useState(getStoredCheatMode)
+  const [notice, setNotice] = useState(null)
+
+  useEffect(() => {
+    const fine = window.matchMedia?.('(pointer: fine)')?.matches
+    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches
+    const active = cheatMode && fine && !reduce
+    document.documentElement.classList.toggle('brams-cursor-cheat', active)
+    try {
+      window.localStorage.setItem('brams_cursor_cheat', cheatMode ? 'on' : 'off')
+    } catch {}
+    return () => document.documentElement.classList.remove('brams-cursor-cheat')
+  }, [cheatMode])
+
+  useEffect(() => {
+    if (!notice) return undefined
+    const timer = window.setTimeout(() => setNotice(null), 1900)
+    return () => window.clearTimeout(timer)
+  }, [notice])
 
   useEffect(() => {
     const fine = window.matchMedia?.('(pointer: fine)')?.matches
@@ -24,33 +66,112 @@ export default function CursorTrail() {
     resize()
     window.addEventListener('resize', resize)
 
-    const COLORS = ['#e8c878', '#d4a017', '#bfa46a', '#ffe9a8']
+    const COLORS = cheatMode
+      ? ['#00e7ff', '#ff4fd8', '#ffd84d', '#8cfffb']
+      : ['#e8c878', '#d4a017', '#bfa46a', '#ffe9a8']
     const parts = []
+    const gesture = { seq: [], x: null, y: null, lastAt: 0 }
     let lastX = null, lastY = null, raf = 0
 
+    const acceptGestureDirection = (dir, x, y) => {
+      const now = performance.now()
+      if (now - gesture.lastAt > GESTURE_MAX_GAP) gesture.seq = []
+      gesture.seq = advanceMouseCode(gesture.seq, dir)
+      gesture.lastAt = now
+      gesture.x = x
+      gesture.y = y
+
+      if (gesture.seq.length === MOUSE_CODE.length) {
+        gesture.seq = []
+        setCheatMode(active => {
+          const next = !active
+          setNotice(next ? 'MODE TRAINEE ACTIVE' : 'MODE TRAINEE OFF')
+          return next
+        })
+      }
+    }
+
+    const trackMouseCode = (x, y) => {
+      if (gesture.x == null || gesture.y == null) {
+        gesture.x = x
+        gesture.y = y
+        return
+      }
+
+      const dx = x - gesture.x
+      const dy = y - gesture.y
+      if (Math.hypot(dx, dy) < GESTURE_STEP) return
+
+      const ax = Math.abs(dx)
+      const ay = Math.abs(dy)
+      if (ay > ax * GESTURE_AXIS_BIAS) {
+        acceptGestureDirection(dy < 0 ? 'up' : 'down', x, y)
+      } else if (ax > ay * GESTURE_AXIS_BIAS) {
+        acceptGestureDirection(dx < 0 ? 'left' : 'right', x, y)
+      } else {
+        gesture.x = x
+        gesture.y = y
+      }
+    }
+
     const onMove = (e) => {
+      trackMouseCode(e.clientX, e.clientY)
+
       const x = e.clientX * dpr, y = e.clientY * dpr
       if (lastX != null) {
         const dx = x - lastX, dy = y - lastY
         const dist = Math.hypot(dx, dy)
         // densité proportionnelle à la vitesse (sans spammer)
-        const n = Math.min(6, Math.max(1, Math.round(dist / (7 * dpr))))
+        const n = cheatMode
+          ? Math.min(12, Math.max(2, Math.round(dist / (5 * dpr))))
+          : Math.min(6, Math.max(1, Math.round(dist / (7 * dpr))))
         for (let i = 0; i < n; i++) {
           const t = i / n
           parts.push({
             x: lastX + dx * t, y: lastY + dy * t,
-            vx: (Math.random() - 0.5) * 0.4 * dpr,
-            vy: ((Math.random() - 0.5) * 0.4 + 0.18) * dpr,
+            vx: (Math.random() - 0.5) * (cheatMode ? 1.2 : 0.4) * dpr,
+            vy: ((Math.random() - 0.5) * (cheatMode ? 0.9 : 0.4) + 0.18) * dpr,
             life: 1,
-            size: (Math.random() * 2 + 1.6) * dpr,
+            size: (Math.random() * (cheatMode ? 3.8 : 2) + (cheatMode ? 2.2 : 1.6)) * dpr,
             color: COLORS[(Math.random() * COLORS.length) | 0],
           })
         }
       }
       lastX = x; lastY = y
-      if (parts.length > 260) parts.splice(0, parts.length - 260)
+      const maxParts = cheatMode ? 460 : 260
+      if (parts.length > maxParts) parts.splice(0, parts.length - maxParts)
     }
     window.addEventListener('pointermove', onMove, { passive: true })
+
+    const drawCheatCursor = () => {
+      if (!cheatMode || lastX == null || lastY == null) return
+      ctx.save()
+      ctx.translate(lastX, lastY)
+      ctx.globalCompositeOperation = 'lighter'
+      ctx.shadowBlur = 18 * dpr
+      ctx.shadowColor = '#00e7ff'
+      ctx.lineWidth = 2 * dpr
+      ctx.fillStyle = 'rgba(6, 18, 28, 0.72)'
+      ctx.strokeStyle = '#ffd84d'
+      ctx.beginPath()
+      ctx.moveTo(0, 0)
+      ctx.lineTo(20 * dpr, 8 * dpr)
+      ctx.lineTo(9 * dpr, 12 * dpr)
+      ctx.lineTo(5 * dpr, 23 * dpr)
+      ctx.lineTo(-1 * dpr, 21 * dpr)
+      ctx.lineTo(2 * dpr, 12 * dpr)
+      ctx.lineTo(-8 * dpr, 16 * dpr)
+      ctx.closePath()
+      ctx.fill()
+      ctx.stroke()
+      ctx.beginPath()
+      ctx.strokeStyle = '#00e7ff'
+      ctx.globalAlpha = 0.38
+      ctx.arc(5 * dpr, 5 * dpr, 18 * dpr, 0, Math.PI * 2)
+      ctx.stroke()
+      ctx.restore()
+      ctx.globalAlpha = 1
+    }
 
     const tick = () => {
       ctx.clearRect(0, 0, w, h)
@@ -59,10 +180,10 @@ export default function CursorTrail() {
         const p = parts[i]
         p.x += p.vx; p.y += p.vy
         p.vy += 0.02 * dpr
-        p.life -= 0.03
+        p.life -= cheatMode ? 0.022 : 0.03
         if (p.life <= 0) { parts.splice(i, 1); continue }
         ctx.beginPath()
-        ctx.shadowBlur = 9 * dpr
+        ctx.shadowBlur = (cheatMode ? 15 : 9) * dpr
         ctx.shadowColor = p.color
         ctx.fillStyle = p.color
         ctx.globalAlpha = p.life * 0.85
@@ -72,6 +193,7 @@ export default function CursorTrail() {
       ctx.globalAlpha = 1
       ctx.shadowBlur = 0
       ctx.globalCompositeOperation = 'source-over'
+      drawCheatCursor()
       raf = requestAnimationFrame(tick)
     }
     raf = requestAnimationFrame(tick)
@@ -81,9 +203,45 @@ export default function CursorTrail() {
       window.removeEventListener('resize', resize)
       window.removeEventListener('pointermove', onMove)
     }
-  }, [])
+  }, [cheatMode])
 
-  return <canvas ref={canvasRef} aria-hidden style={{
-    position: 'fixed', inset: 0, zIndex: 9998, pointerEvents: 'none',
-  }} />
+  return (
+    <>
+      <style>{`
+        html.brams-cursor-cheat,
+        html.brams-cursor-cheat * {
+          cursor: none !important;
+        }
+        .brams-cursor-toast {
+          position: fixed;
+          left: 50%;
+          bottom: 28px;
+          z-index: 10000;
+          transform: translateX(-50%);
+          pointer-events: none;
+          padding: 10px 16px;
+          border-radius: 8px;
+          border: 1px solid rgba(255, 216, 77, 0.48);
+          background: rgba(7, 12, 20, 0.88);
+          color: #ffe9a8;
+          box-shadow: 0 12px 36px rgba(0, 0, 0, 0.36), 0 0 24px rgba(0, 231, 255, 0.18);
+          font-size: 12px;
+          font-weight: 900;
+          letter-spacing: .08em;
+          white-space: nowrap;
+          animation: brams-cursor-toast 1.9s ease forwards;
+        }
+        @keyframes brams-cursor-toast {
+          0% { opacity: 0; transform: translateX(-50%) translateY(10px) scale(.96); }
+          16% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+          78% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+          100% { opacity: 0; transform: translateX(-50%) translateY(8px) scale(.98); }
+        }
+      `}</style>
+      <canvas ref={canvasRef} aria-hidden style={{
+        position: 'fixed', inset: 0, zIndex: 9998, pointerEvents: 'none',
+      }} />
+      {notice && <div className="brams-cursor-toast">{notice}</div>}
+    </>
+  )
 }
