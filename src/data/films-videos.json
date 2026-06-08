@@ -1,0 +1,70 @@
+[
+  {
+    "episode": 1,
+    "title": "Bubble",
+    "kind": "film",
+    "episodeLabel": "Film",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/films/bubble/bubble-vf.mp4",
+    "season": "Film",
+    "arc": "Film",
+    "badge": "MULTI",
+    "preferredAudioLang": "fr",
+    "progressKey": "film-bubble",
+    "year": 2022,
+    "synopsis": "Tokyo coupee du monde par des bulles defiant la gravite. Hibiki, jeune parkouriste, rencontre la mysterieuse Uta. Un conte SF signe Wit Studio / Tetsuro Araki (AOT) sur un scenario de Gen Urobuchi.",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/films/bubble/bubble-vostfr.mp4"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/films/bubble/bubble-fr.vtt"
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/films/bubble/bubble.jpg"
+  },
+  {
+    "episode": 1,
+    "title": "Chainsaw Man - The Movie : Reze Arc",
+    "kind": "film",
+    "episodeLabel": "Film",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/films/reze/reze-vf.mp4",
+    "season": "Film",
+    "arc": "Film",
+    "badge": "MULTI",
+    "preferredAudioLang": "fr",
+    "progressKey": "film-reze",
+    "year": 2025,
+    "synopsis": "Denji rencontre Reze, une fille enigmatique, au cafe sous la pluie. Mais la douceur cache un demon. L'arc Reze adapte au cinema par MAPPA.",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/films/reze/reze-vostfr.mp4"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/films/reze/reze-fr.vtt"
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/films/reze/reze.jpg"
+  }
+]

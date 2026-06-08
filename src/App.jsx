@@ -51,6 +51,7 @@ const FireForcePage   = lazyWithReload(() => import('./components/FireForcePage.
 const BlueLockPage    = lazyWithReload(() => import('./components/BlueLockPage.jsx'))
 const FateZeroPage    = lazyWithReload(() => import('./components/FateZeroPage.jsx'))
 const YourNamePage    = lazyWithReload(() => import('./components/YourNamePage.jsx'))
+const FilmPage        = lazyWithReload(() => import('./components/FilmPage.jsx'))
 const MonUniversPage  = lazyWithReload(() => import('./components/MonUniversPage.jsx'))
 const OnePiecePage    = lazyWithReload(() => import('./components/OnePiecePage.jsx'))
 const FamilyTree3D    = lazyWithReload(() => import('./components/FamilyTree3D.jsx'))
@@ -297,6 +298,8 @@ export default function App() {
   const [bluelockOpen,     setBluelockOpen]      = useState(false)
   const [fateZeroOpen,     setFateZeroOpen]      = useState(false)
   const [yourNameOpen,     setYourNameOpen]      = useState(false)
+  const [bubbleOpen,       setBubbleOpen]        = useState(false)
+  const [rezeOpen,         setRezeOpen]          = useState(false)
   const [monUniversOpen,   setMonUniversOpen]    = useState(false)
   const [returnToMon,      setReturnToMon]       = useState(false)
   const [treeOpen,         setTreeOpen]          = useState(false)
@@ -346,7 +349,7 @@ export default function App() {
     setTpnOpen(false); setDrstoneOpen(false); setJjkOpen(false); setKingdomOpen(false)
     setAotOpen(false); setKnyOpen(false); setNntOpen(false); setSlOpen(false); setDbsOpen(false)
     setVioletOpen(false); setVivyOpen(false); setDomesticOpen(false); setKoiOpen(false); setLovePrismOpen(false); setCaroleTuesdayOpen(false); setBunnyGirlOpen(false); setRentGirlOpen(false); setBcOpen(false); setMhaOpen(false)
-    setFireforcOpen(false); setBluelockOpen(false); setFateZeroOpen(false); setYourNameOpen(false); setYourLieOpen(false); setMonUniversOpen(false); setTreeOpen(false); setUploadOpen(false)
+    setFireforcOpen(false); setBluelockOpen(false); setFateZeroOpen(false); setYourNameOpen(false); setBubbleOpen(false); setRezeOpen(false); setYourLieOpen(false); setMonUniversOpen(false); setTreeOpen(false); setUploadOpen(false)
   }, [])
 
   // Slug d'URL d'un anime → setter d'overlay correspondant
@@ -357,6 +360,7 @@ export default function App() {
     'carole-tuesday': setCaroleTuesdayOpen, 'bunny-girl': setBunnyGirlOpen, 'rent-girlfriend': setRentGirlOpen,
     bc: setBcOpen, mha: setMhaOpen, fireforce: setFireforcOpen, bluelock: setBluelockOpen,
     'fate-zero': setFateZeroOpen, 'your-name': setYourNameOpen, 'your-lie': setYourLieOpen,
+    bubble: setBubbleOpen, reze: setRezeOpen,
   }
 
   // ── URL = source de vérité des overlays anime/scan ──
@@ -417,7 +421,7 @@ export default function App() {
     return () => entries.forEach(([ev, fn]) => document.removeEventListener(ev, fn))
   }, [navigate])
 
-  const mediaOverlayOpen = scansOpen || animeHubOpen || tpnOpen || drstoneOpen || jjkOpen || kingdomOpen || aotOpen || knyOpen || nntOpen || slOpen || dbsOpen || violetOpen || vivyOpen || domesticOpen || koiOpen || lovePrismOpen || caroleTuesdayOpen || bunnyGirlOpen || rentGirlOpen || bcOpen || mhaOpen || fireforcOpen || bluelockOpen || fateZeroOpen || yourNameOpen || yourLieOpen || monUniversOpen
+  const mediaOverlayOpen = scansOpen || animeHubOpen || tpnOpen || drstoneOpen || jjkOpen || kingdomOpen || aotOpen || knyOpen || nntOpen || slOpen || dbsOpen || violetOpen || vivyOpen || domesticOpen || koiOpen || lovePrismOpen || caroleTuesdayOpen || bunnyGirlOpen || rentGirlOpen || bcOpen || mhaOpen || fireforcOpen || bluelockOpen || fateZeroOpen || yourNameOpen || bubbleOpen || rezeOpen || yourLieOpen || monUniversOpen
 
   const mainContent = (
     <>
@@ -579,6 +583,8 @@ export default function App() {
             onOpenFateZero={() => navigate('/animes-scan/fate-zero')}
             onOpenYourName={() => navigate('/animes-scan/your-name')}
             onOpenYourLie={() => navigate('/animes-scan/your-lie')}
+            onOpenBubble={() => navigate('/animes-scan/bubble')}
+            onOpenReze={() => navigate('/animes-scan/reze')}
             onOpenMonUnivers={() => navigate('/animes-scan/mon-univers')}
           />
         ) : (
@@ -610,6 +616,8 @@ export default function App() {
       {bluelockOpen  && <BlueLockPage  onClose={closeMedia} />}
       {fateZeroOpen  && <FateZeroPage  onClose={closeMedia} />}
       {yourNameOpen  && <YourNamePage  onClose={closeMedia} />}
+      {bubbleOpen    && <FilmPage slug="bubble" onClose={closeMedia} />}
+      {rezeOpen      && <FilmPage slug="reze"   onClose={closeMedia} />}
       {monUniversOpen && (
         <MonUniversPage
           onClose={() => navigate('/animes-scan')}

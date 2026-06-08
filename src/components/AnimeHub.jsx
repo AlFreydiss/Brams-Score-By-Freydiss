@@ -7,11 +7,19 @@ import Navbar from './Navbar.jsx'
 // alourdir le chunk, et silencieux si WebGL indisponible.
 const AnimeDrift3D = lazy(() => import('./AnimeDrift3D.jsx'))
 import AOT_VIDEOS from '../data/aot-videos.json'
+import BC_VIDEOS from '../data/bc-videos.json'
+import BLUELOCK_VIDEOS from '../data/bluelock-videos.json'
 import BUNNY_VIDEOS from '../data/bunny-girl-videos.json'
 import CAROLE_TUESDAY_VIDEOS from '../data/carole-tuesday-videos.json'
+import DRSTONE_VIDEOS from '../data/drstone-videos.json'
+import FIREFORCE_VIDEOS from '../data/fireforce-videos.json'
 import JJK_VIDEOS from '../data/jjk-videos.json'
+import KINGDOM_VIDEOS from '../data/kingdom-videos.json'
+import KNY_VIDEOS from '../data/kny-videos.json'
 import LOVE_PRISM_VIDEOS from '../data/love-prism-videos.json'
+import NNT_VIDEOS from '../data/nnt-videos.json'
 import RENT_VIDEOS from '../data/rent-girlfriend-videos.json'
+import SL_VIDEOS from '../data/sl-videos.json'
 import { getAnimeRatings, rateAnime, unrateAnime } from '../lib/ratings.js'
 import { onLiveProgress } from '../lib/liveSync.js'
 
@@ -32,7 +40,8 @@ const ANIMES = [
     emoji: '🏴‍☠️',
     color: '#e0524a',
     colorDark: '#7a1f1a',
-    coverImage: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/op-egghead-thumbnails/E1086.jpg',
+    coverImage: '/anime-covers/one-piece.jpg',
+    coverPosition: 'center center',
     genres: ['Aventure', 'Action', 'Shōnen'],
     description: "Monkey D. Luffy et son équipage sillonnent les mers à la recherche du légendaire trésor « One Piece » pour devenir Roi des Pirates.",
     stats: [
@@ -102,19 +111,58 @@ const ANIMES = [
     badgeColor: '#7cc4e0',
   },
   {
+    id: 'bubble',
+    title: 'Bubble',
+    subtitle: 'Film · Wit Studio',
+    emoji: '🫧',
+    color: '#5ec8e0',
+    colorDark: '#16384a',
+    coverImage: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/films/bubble/bubble.jpg',
+    genres: ['Science-fiction', 'Romance', 'Aventure'],
+    description: "Tokyo coupée du monde par des bulles défiant la gravité. Hibiki, jeune parkouriste, rencontre la mystérieuse Uta. Un conte SF signé Wit Studio (Tetsuro Araki / Gen Urobuchi).",
+    stats: [
+      { label: 'Type', value: 'Film' },
+      { label: 'Audio', value: 'VF + VOSTFR' },
+      { label: 'Statut', value: 'Disponible' },
+    ],
+    action: '▶ Regarder',
+    badge: 'NOUVEAU',
+    badgeColor: '#5ec8e0',
+  },
+  {
+    id: 'reze',
+    title: 'Chainsaw Man — Reze Arc',
+    subtitle: 'Film · MAPPA',
+    emoji: '🔪',
+    color: '#e0524a',
+    colorDark: '#4a1714',
+    coverImage: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/films/reze/reze.jpg',
+    genres: ['Action', 'Démons', 'Romance'],
+    description: "Denji rencontre Reze, une fille énigmatique, au café sous la pluie. Mais la douceur cache un démon. L'arc Reze adapté au cinéma par MAPPA.",
+    stats: [
+      { label: 'Type', value: 'Film' },
+      { label: 'Audio', value: 'VF + VOSTFR' },
+      { label: 'Statut', value: 'Disponible' },
+    ],
+    action: '▶ Regarder',
+    badge: 'NOUVEAU',
+    badgeColor: '#e0524a',
+  },
+  {
     id: 'drstone',
     title: 'Dr. Stone',
     subtitle: 'Science & Survie',
     emoji: '⚗️',
     color: '#00b894',
     colorDark: '#005c45',
-    coverImage: 'https://images.squarespace-cdn.com/content/v1/5e90e8679180dd053f86571c/1607648759877-XA0OOQUYTHR5DPVRJY0K/keyvisual_notext.jpg',
+    coverImage: '/drstone-poster.jpg',
+    coverPosition: 'center top',
     genres: ['Science-fiction', 'Aventure', 'Shōnen'],
     description: "Toute l'humanité est pétrifiée. Des millénaires plus tard, le génie Senku se réveille et décide de reconstruire la civilisation grâce à la science.",
     stats: [
       { label: 'Chapitres', value: '174' },
-      { label: 'Épisodes', value: '35' },
-      { label: 'Statut', value: 'Disponible' },
+      { label: 'Vidéos', value: videoCountLabel(DRSTONE_VIDEOS.length, 35) },
+      { label: 'Statut', value: availabilityLabel(DRSTONE_VIDEOS.length) },
     ],
     action: '▶ Accéder',
     badge: 'NOUVEAU',
@@ -127,7 +175,8 @@ const ANIMES = [
     emoji: '⚡',
     color: '#c62828',
     colorDark: '#5a0a0a',
-    coverImage: 'https://d28hgpri8am2if.cloudfront.net/book_images/onix/cvr9781974740819/jujutsu-kaisen-the-official-anime-guide-season-1-9781974740819_lg.jpg',
+    coverImage: '/jjk-poster.jpg',
+    coverPosition: 'center top',
     genres: ['Action', 'Surnaturel', 'Shōnen'],
     description: "Yuji Itadori avale un doigt de Ryomen Sukuna, le roi des Fléaux. Condamné à mort, il rejoint l'École de sorcellerie de Jujutsu pour trouver les doigts restants.",
     stats: [
@@ -146,13 +195,14 @@ const ANIMES = [
     emoji: '⚔️',
     color: '#c9a227',
     colorDark: '#4a3205',
-    coverImage: 'https://www.manga-news.com/public/images/dvd/Kingdom-anime-saison-3-visual-1.webp',
+    coverImage: '/kingdom-poster.jpg',
+    coverPosition: 'center top',
     genres: ['Action', 'Historique', 'Seinen'],
     description: "Dans la Chine des Royaumes Combattants, Shin, un orphelin de guerre, rêve de devenir le plus grand général sous les cieux aux côtés du futur roi Ying Zheng.",
     stats: [
       { label: 'Chapitres', value: '874' },
-      { label: 'Épisodes', value: '0' },
-      { label: 'Statut', value: 'Disponible' },
+      { label: 'Vidéos', value: videoCountLabel(KINGDOM_VIDEOS.length, 1) },
+      { label: 'Statut', value: availabilityLabel(KINGDOM_VIDEOS.length) },
     ],
     action: '▶ Accéder',
     badge: 'NOUVEAU',
@@ -165,7 +215,8 @@ const ANIMES = [
     emoji: '🗡️',
     color: '#546e7a',
     colorDark: '#1c313a',
-    coverImage: 'https://www.manga-news.com/public/images/dvd/Attaque-des-Titans-s4-anime-visual.jpg',
+    coverImage: '/aot-poster.jpg',
+    coverPosition: 'center top',
     genres: ['Action', 'Drame', 'Shōnen'],
     description: "Eren Yeager découvre que les murs qui protègent l'humanité cachent un secret bien plus sombre que les Titans eux-mêmes.",
     stats: [
@@ -184,13 +235,14 @@ const ANIMES = [
     emoji: '🔥',
     color: '#e85d27',
     colorDark: '#6b1f05',
-    coverImage: 'https://storage.ghost.io/c/2b/7f/2b7f69fc-a243-4d2f-ae8e-db8312c6653a/content/images/size/w1200/2025/10/Demon-Slayer-en-421-c-1.png',
+    coverImage: '/kny-poster.jpg',
+    coverPosition: 'center top',
     genres: ['Action', 'Surnaturel', 'Shōnen'],
     description: "Tanjiro Kamado devient chasseur de démons après que sa famille est massacrée et sa sœur Nezuko transformée en démon.",
     stats: [
       { label: 'Chapitres', value: '206' },
-      { label: 'Épisodes', value: '44' },
-      { label: 'Statut', value: 'Disponible' },
+      { label: 'Vidéos', value: videoCountLabel(KNY_VIDEOS.length, 44) },
+      { label: 'Statut', value: availabilityLabel(KNY_VIDEOS.length) },
     ],
     action: '▶ Accéder',
     badge: 'NOUVEAU',
@@ -203,13 +255,14 @@ const ANIMES = [
     emoji: '🐗',
     color: '#8e44ad',
     colorDark: '#3d0f5a',
-    coverImage: 'https://static.wikia.nocookie.net/nanatsu-no-taizai/images/2/25/Nanatsu_no_Taizai_Anime_Fourth_Season_Poster.png/revision/latest?cb=20200805045531',
+    coverImage: '/nnt-poster.jpg',
+    coverPosition: 'center top',
     genres: ['Action', 'Fantasy', 'Shōnen'],
     description: "La princesse Elizabeth part à la recherche des Sept Péchés Capitaux, des chevaliers légendaires bannis du royaume, pour sauver Britannia.",
     stats: [
       { label: 'Chapitres', value: '342' },
-      { label: 'Épisodes', value: '100' },
-      { label: 'Statut', value: 'Disponible' },
+      { label: 'Vidéos', value: videoCountLabel(NNT_VIDEOS.length, 100) },
+      { label: 'Statut', value: availabilityLabel(NNT_VIDEOS.length) },
     ],
     action: '▶ Accéder',
     badge: 'NOUVEAU',
@@ -222,13 +275,14 @@ const ANIMES = [
     emoji: '💎',
     color: '#1976d2',
     colorDark: '#0a2e5c',
-    coverImage: 'https://www.manga-news.com/public/images/dvd/solo-levelling-S2-visual-1.webp',
+    coverImage: '/sl-poster.jpg',
+    coverPosition: 'center top',
     genres: ['Action', 'Fantasy', 'Manhwa'],
     description: "Sung Jinwoo, le chasseur le plus faible du monde, se retrouve piégé dans un donjon mortel et reçoit un mystérieux système qui lui permet de monter de rang à l'infini.",
     stats: [
       { label: 'Chapitres', value: '202' },
-      { label: 'Épisodes', value: '12' },
-      { label: 'Statut', value: 'Disponible' },
+      { label: 'Vidéos', value: videoCountLabel(SL_VIDEOS.length, 12) },
+      { label: 'Statut', value: availabilityLabel(SL_VIDEOS.length) },
     ],
     action: '▶ Accéder',
     badge: 'NOUVEAU',
@@ -341,8 +395,8 @@ const ANIMES = [
     emoji: '◆',
     color: '#8b7cff',
     colorDark: '#30255f',
-    coverImage: BUNNY_VIDEOS[0]?.thumbnail || null,
-    coverPosition: 'center center',
+    coverImage: '/bunny-girl-poster.jpg',
+    coverPosition: 'center top',
     genres: ['Romance', 'Surnaturel', 'Drame'],
     description: "Sakuta rencontre Mai, une lycéenne que plus personne ne semble voir, et plonge dans les mystères du syndrome de l'adolescence.",
     stats: [
@@ -361,8 +415,8 @@ const ANIMES = [
     emoji: '◇',
     color: '#14b8a6',
     colorDark: '#064e46',
-    coverImage: RENT_VIDEOS[0]?.thumbnail || null,
-    coverPosition: 'center center',
+    coverImage: '/rent-girlfriend-poster.jpg',
+    coverPosition: 'center top',
     genres: ['Romance', 'Comédie', 'Slice of Life'],
     description: "Kazuya loue une petite amie après une rupture, mais sa rencontre avec Chizuru va vite rendre la situation impossible à contrôler.",
     stats: [
@@ -381,8 +435,8 @@ const ANIMES = [
     emoji: '♫',
     color: '#14b8a6',
     colorDark: '#064e46',
-    coverImage: 'https://static.wikia.nocookie.net/netflix/images/1/14/Carole_and_Tuesday.jpg/revision/latest?cb=20200802164507',
-    coverPosition: 'center center',
+    coverImage: '/carole-tuesday-poster.jpg',
+    coverPosition: 'center top',
     genres: ['Musique', 'Drame', 'Science-fiction'],
     description: 'Carole et Tuesday poursuivent leur reve musical sur Mars. Lecture en japonais avec sous-titres francais.',
     stats: [
@@ -401,14 +455,14 @@ const ANIMES = [
     emoji: '🍀',
     color: '#388e3c',
     colorDark: '#0a3d0c',
-    coverImage: 'https://img2.hulu.com/user/v3/artwork/f6451467-97a8-4ddf-9ae8-e9e4cbb53fc8?base_image_bucket_name=image_manager&base_image=bc1a1c50-6786-4cf7-ae75-75de958b64e1&size=458x687&format=webp',
-    coverPosition: 'center center',
+    coverImage: '/bc-poster.jpg',
+    coverPosition: 'center top',
     genres: ['Action', 'Fantasy', 'Shōnen'],
     description: "Asta, né sans magie dans un monde où tout le monde en a, rêve de devenir Sorcier Empereur grâce à sa ténacité et à son grimoire à cinq feuilles.",
     stats: [
       { label: 'Chapitres', value: '280' },
-      { label: 'Épisodes', value: '170' },
-      { label: 'Statut', value: 'Disponible' },
+      { label: 'Vidéos', value: videoCountLabel(BC_VIDEOS.length, 170) },
+      { label: 'Statut', value: availabilityLabel(BC_VIDEOS.length) },
     ],
     action: '▶ Accéder',
     badge: 'NOUVEAU',
@@ -441,13 +495,14 @@ const ANIMES = [
     emoji: '🔥',
     color: '#f4511e',
     colorDark: '#5c1208',
-    coverImage: 'https://m.media-amazon.com/images/M/MV5BNDRhMDMzYzktYmI3My00YzBlLTkxOTMtMTUxNjZjN2NkOWQ4XkEyXkFqcGc@._V1_.jpg',
+    coverImage: '/fireforce-poster.jpg',
+    coverPosition: 'center top',
     genres: ['Action', 'Surnaturel', 'Shōnen'],
     description: "Dans un monde où des humains s'enflamment spontanément, Shinra Kusakabe intègre la 8ème Brigade pour comprendre les mystères de la combustion spontanée.",
     stats: [
       { label: 'Chapitres', value: '304' },
-      { label: 'Épisodes', value: '48' },
-      { label: 'Statut', value: 'Terminé' },
+      { label: 'Vidéos', value: videoCountLabel(FIREFORCE_VIDEOS.length, 48) },
+      { label: 'Statut', value: availabilityLabel(FIREFORCE_VIDEOS.length) },
     ],
     action: '▶ Accéder',
     badge: 'NOUVEAU',
@@ -460,14 +515,14 @@ const ANIMES = [
     emoji: '⚽',
     color: '#1565c0',
     colorDark: '#071b3a',
-    coverImage: 'https://bluelock-anime-en.com/wp-content/themes/anime/assets/images/mv241103_sp.jpg',
+    coverImage: '/bluelock-poster.jpg',
     coverPosition: 'center center',
     genres: ['Sport', 'Compétition', 'Shōnen'],
     description: "La Fédération japonaise de football engage Ego Jinpachi pour former le meilleur attaquant du monde via un programme radical : Blue Lock.",
     stats: [
       { label: 'Chapitres', value: '280+' },
-      { label: 'Épisodes', value: '24' },
-      { label: 'Statut', value: 'En cours' },
+      { label: 'Vidéos', value: videoCountLabel(BLUELOCK_VIDEOS.length, 24) },
+      { label: 'Statut', value: availabilityLabel(BLUELOCK_VIDEOS.length) },
     ],
     action: '▶ Accéder',
     badge: 'NOUVEAU',
@@ -480,7 +535,8 @@ const ANIMES = [
     emoji: '💔',
     color: '#ec4899',
     colorDark: '#831843',
-    coverImage: 'https://cdn.myanimelist.net/images/anime/1418/96042.jpg',
+    coverImage: '/anime-covers/domestic-na-kanojo.jpg',
+    coverPosition: 'center center',
     genres: ['Romance', 'Drame', 'Tranche de vie'],
     description: "Natsuo, amoureux de sa professeure, voit sa vie bouleversée quand le remariage de son père fait de Hina et Rui ses belles-sœurs. Une romance compliquée et intense.",
     stats: [
@@ -499,7 +555,8 @@ const ANIMES = [
     emoji: '☔',
     color: '#60a5fa',
     colorDark: '#1e3a8a',
-    coverImage: 'https://cdn.myanimelist.net/images/anime/1851/90757.jpg',
+    coverImage: '/anime-covers/koi-ameagari.jpg',
+    coverPosition: 'center center',
     genres: ['Romance', 'Drame', 'Tranche de vie'],
     description: "Akira, lycéenne dont le rêve d'athlétisme s'est brisé, tombe amoureuse du gérant quadragénaire de son restaurant. Un drame doux-amer sur les rêves et le temps.",
     stats: [
@@ -526,6 +583,7 @@ const SEARCH_ALIASES = {
   dbs: ['dbs', 'dragon ball', 'dragon ball super', 'goku', 'vegeta'],
   'violet-evergarden': ['violet', 'violet evergarden', 'vostfr', 'vf', 'auto memory doll', 'doll'],
   'your-name': ['your name', 'kimi no na wa', 'makoto shinkai', 'shinkai', 'mitsuha', 'taki', 'comète', 'comete', 'film'],
+  'your-lie': ['your lie in april', 'shigatsu wa kimi no uso', 'kimi no uso', 'kaori', 'kousei', 'arima', 'piano', 'violon', 'musique'],
   vivy: ['vivy', 'fluorite', "fluorite eye's song", 'ia', 'matsumoto', 'wit studio'],
   'love-prism': ['love through a prism', 'prism', 'romance', 'musique'],
   'bunny-girl': ['bunny girl senpai', 'rascal does not dream', 'seishun buta yarou', 'mai sakurajima', 'sakuta'],
@@ -1134,7 +1192,7 @@ function BramsqHubCard({ anime, rank = null, onClick, onOpenMonUnivers, isFav = 
           onError={e => { e.currentTarget.style.display = 'none' }}
           style={{
             position: 'absolute', inset: 0, width: '100%', height: '100%',
-            objectFit: 'cover', objectPosition: 'center top',
+            objectFit: 'cover', objectPosition: anime.coverPosition || 'center top',
             transform: hov ? 'scale(1.06)' : 'scale(1)',
             transition: 'transform 0.4s cubic-bezier(0.23,1,0.32,1)'
           }}
@@ -1434,7 +1492,7 @@ function HubAiChat({ animes, onOpen }) {
   )
 }
 
-export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrstone, onOpenJjk, onOpenKingdom, onOpenAot, onOpenKny, onOpenNnt, onOpenSl, onOpenDbs, onOpenViolet, onOpenVivy, onOpenLovePrism, onOpenCaroleTuesday, onOpenBunnyGirl, onOpenRentGirlfriend, onOpenBc, onOpenMha, onOpenFireforce, onOpenBluelock, onOpenFateZero, onOpenYourName, onOpenDomestic, onOpenKoi, onOpenMonUnivers }) {
+export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrstone, onOpenJjk, onOpenKingdom, onOpenAot, onOpenKny, onOpenNnt, onOpenSl, onOpenDbs, onOpenViolet, onOpenVivy, onOpenLovePrism, onOpenCaroleTuesday, onOpenBunnyGirl, onOpenRentGirlfriend, onOpenBc, onOpenMha, onOpenFireforce, onOpenBluelock, onOpenFateZero, onOpenYourName, onOpenYourLie, onOpenDomestic, onOpenKoi, onOpenBubble, onOpenReze, onOpenMonUnivers }) {
   const [query, setQuery] = useState('')
   const [selectedGenres, setSelectedGenres] = useState(new Set())
   const [genreMenuOpen, setGenreMenuOpen] = useState(false)
@@ -1604,8 +1662,10 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
       bc: onOpenBc, mha: onOpenMha, fireforce: onOpenFireforce, bluelock: onOpenBluelock,
       'fate-zero': onOpenFateZero,
       'your-name': onOpenYourName,
+      'your-lie': onOpenYourLie,
       'domestic-na-kanojo': onOpenDomestic,
       'koi-ameagari': onOpenKoi,
+      bubble: onOpenBubble, reze: onOpenReze,
     }
     map[id]?.()
   }
