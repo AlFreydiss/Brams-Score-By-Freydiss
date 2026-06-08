@@ -4,6 +4,7 @@ import { lazyWithReload } from './lib/lazyWithReload.js'
 import GlobalStyles from './components/GlobalStyles.jsx'
 import CursorTrail from './components/CursorTrail.jsx'
 import GestureHearts from './components/GestureHearts.jsx'
+import FunFX from './components/FunFX.jsx'
 import { ThemeProvider } from './contexts/ThemeContext.jsx'
 import { OpeningBgProvider, useOpeningBg } from './contexts/OpeningBgContext.jsx'
 import EquippedOpeningBackground from './components/social/EquippedOpeningBackground.jsx'
@@ -422,7 +423,7 @@ export default function App() {
     return () => entries.forEach(([ev, fn]) => document.removeEventListener(ev, fn))
   }, [navigate])
 
-  const mediaOverlayOpen = scansOpen || animeHubOpen || tpnOpen || drstoneOpen || jjkOpen || kingdomOpen || aotOpen || knyOpen || nntOpen || slOpen || dbsOpen || violetOpen || vivyOpen || domesticOpen || koiOpen || lovePrismOpen || caroleTuesdayOpen || bunnyGirlOpen || rentGirlOpen || bcOpen || mhaOpen || fireforcOpen || bluelockOpen || fateZeroOpen || yourNameOpen || bubbleOpen || rezeOpen || yourLieOpen || monUniversOpen
+  const mediaOverlayOpen = scansOpen || onepieceOpen || animeHubOpen || tpnOpen || drstoneOpen || jjkOpen || kingdomOpen || aotOpen || knyOpen || nntOpen || slOpen || dbsOpen || violetOpen || vivyOpen || domesticOpen || koiOpen || lovePrismOpen || caroleTuesdayOpen || bunnyGirlOpen || rentGirlOpen || bcOpen || mhaOpen || fireforcOpen || bluelockOpen || fateZeroOpen || yourNameOpen || bubbleOpen || rezeOpen || yourLieOpen || monUniversOpen
 
   const mainContent = (
     <>
