@@ -54,15 +54,37 @@
 :where(table) { max-width: 100%; }
 
 /* ── 5. Garde-fou anti scroll-horizontal (renforce index.css) ───────────── */
-:where(body) { overflow-x: clip; }
+:where(html, body, #root) {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+@supports (overflow: clip) {
+  :where(html, body, #root) { overflow-x: clip; }
+}
 
 /* ── 6. Ajustements mobile : densité verticale & marges latérales ─────────
    Sur desktop les sections respirent (110px). Sur mobile ce padding géant
    serre le contenu. On réduit — en :where(), donc une page le surcharge
    librement (ex : le hero a déjà sa propre media query). */
 @media (max-width: 768px) {
-  :where(section) { padding-top: 64px; padding-bottom: 64px; }
-  :where(.container) { padding-left: 18px; padding-right: 18px; }
+  :where(section) {
+    max-width: 100vw;
+    overflow-x: clip;
+    padding-top: 64px;
+    padding-bottom: 64px;
+  }
+  :where(.container) {
+    width: 100%;
+    max-width: 100%;
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+  :where(button, a, input, textarea, select) { max-width: 100%; }
+  :where([style*="display: flex"], [style*="display:flex"],
+         [style*="display: grid"], [style*="display:grid"]) {
+    min-width: 0;
+  }
 }
 @media (max-width: 480px) {
   :where(section) { padding-top: 48px; padding-bottom: 48px; }

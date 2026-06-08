@@ -44,6 +44,16 @@ async function db(path, options = {}) {
 async function resolveUser(req, body = {}) {
   const auth = req.headers.authorization || ''
   const token = auth.startsWith('Bearer ') ? auth.slice(7) : null
+  const fallbackName = typeof body.displayName === 'string'
+    ? body.displayName.trim().slice(0, 120)
+    : typeof body.authorName === 'string'
+    ? body.authorName.trim().slice(0, 120)
+    : ''
+  const fallbackAvatar = typeof body.avatarUrl === 'string'
+    ? body.avatarUrl.slice(0, 400)
+    : typeof body.authorAvatar === 'string'
+    ? body.authorAvatar.slice(0, 400)
+    : null
   if (token && ANON_KEY) {
     try {
       const response = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
@@ -52,10 +62,11 @@ async function resolveUser(req, body = {}) {
       if (response.ok) {
         const user = await response.json()
         const identity = user.identities?.find(i => i.provider === 'discord')
+        const identityData = identity?.identity_data || {}
         const discordId = user.user_metadata?.provider_id
           || user.user_metadata?.custom_claims?.provider_id
-          || identity?.identity_data?.provider_id
-          || identity?.identity_data?.sub
+          || identityData?.provider_id
+          || identityData?.sub
           || identity?.id
           || user.user_metadata?.sub
           || null
@@ -63,12 +74,21 @@ async function resolveUser(req, body = {}) {
           id: user.id,
           discordId,
           name: user.user_metadata?.global_name
+            || identityData?.global_name
+            || fallbackName
             || user.user_metadata?.full_name
+            || identityData?.full_name
             || user.user_metadata?.name
+            || identityData?.name
             || user.user_metadata?.display_name
+            || identityData?.display_name
+            || user.user_metadata?.preferred_username
+            || identityData?.preferred_username
+            || user.user_metadata?.user_name
+            || identityData?.user_name
             || user.email?.split('@')[0]
             || 'Pirate',
-          avatar: user.user_metadata?.avatar_url || user.user_metadata?.picture || null,
+          avatar: user.user_metadata?.avatar_url || identityData?.avatar_url || user.user_metadata?.picture || identityData?.picture || fallbackAvatar,
           authenticated: true,
         }
       }
@@ -81,8 +101,8 @@ async function resolveUser(req, body = {}) {
   return {
     id: clientId ? `guest:${clientId}` : null,
     discordId: null,
-    name: 'Pirate Brams',
-    avatar: null,
+    name: fallbackName || 'Pirate Brams',
+    avatar: fallbackAvatar,
     authenticated: false,
   }
 }
@@ -130,6 +150,86 @@ function mapRow(row, likesById = {}, likedIds = new Set()) {
     visibility: row.visibility || 'private',
     likes: likesById[row.id] || 0,
     liked: likedIds.has(row.id),
+  }
+}
+
+function isFallbackAuthor(row) {
+  return !row.owner_discord_id && (!row.author_name || row.author_name === 'Pirate Brams')
+}
+
+function publicDedupeKey(row) {
+  const title = String(row.title || '').trim().toLowerCase()
+  const category = String(row.category || '').trim().toLowerCase()
+  const typeId = String(row.type_id || '').trim().toLowerCase()
+  const tierCount = Number(row.tier_count || 0)
+  if (!title || ['ma tier list', 'tier list', 'test'].includes(title)) return ''
+  return `${title}::${category}::${typeId}::${tierCount}`
+}
+
+function hideFallbackDuplicates(rows) {
+  const namedByKey = new Map()
+  for (const row of rows || []) {
+    if (isFallbackAuthor(row)) continue
+    const key = publicDedupeKey(row)
+    if (!key) continue
+    const bucket = namedByKey.get(key) || []
+    bucket.push(row)
+    namedByKey.set(key, bucket)
+  }
+
+  return (rows || []).filter(row => {
+    if (!isFallbackAuthor(row)) return true
+    const key = publicDedupeKey(row)
+    if (!key) return true
+    const named = namedByKey.get(key) || []
+    if (!named.length) return true
+    const rowTime = new Date(row.updated_at || row.created_at || 0).getTime()
+    return !named.some(other => {
+      const otherTime = new Date(other.updated_at || other.created_at || 0).getTime()
+      return Number.isFinite(rowTime) && Number.isFinite(otherTime) && Math.abs(otherTime - rowTime) <= 20 * 60 * 1000
+    })
+  })
+}
+
+function profileDisplayName(profile) {
+  const d = profile?.data || {}
+  return String(
+    d.display_name
+    || d.global_name
+    || d.nick
+    || d.nickname
+    || d.name
+    || d.username
+    || ''
+  ).trim()
+}
+
+function profileAvatar(profile) {
+  const d = profile?.data || {}
+  return d.avatar_url || d.avatar || null
+}
+
+async function hydrateAuthorProfiles(rows) {
+  const ids = [...new Set((rows || []).map(row => row.owner_discord_id).filter(Boolean).map(String))]
+  if (!ids.length) return rows || []
+
+  try {
+    const encoded = ids.map(id => encodeURIComponent(id)).join(',')
+    const profiles = await db(`users?select=uid,data&uid=in.(${encoded})`)
+    const byId = Object.fromEntries((profiles || []).map(profile => [String(profile.uid), profile]))
+    return (rows || []).map(row => {
+      const profile = byId[String(row.owner_discord_id || '')]
+      if (!profile) return row
+      const name = profileDisplayName(profile)
+      const avatar = profileAvatar(profile)
+      return {
+        ...row,
+        author_name: name || row.author_name,
+        author_avatar: avatar || row.author_avatar,
+      }
+    })
+  } catch {
+    return rows || []
   }
 }
 
@@ -258,13 +358,14 @@ export default async function handler(req, res) {
 
     if (req.method === 'GET' && action === 'public') {
       const rows = await db(`tier_lists?select=${LIST_COLS}&published=eq.true&visibility=eq.public&order=updated_at.desc&limit=80`)
-      return json(res, 200, { lists: await attachLikes(Array.isArray(rows) ? rows : [], voterId) })
+      const hydrated = await hydrateAuthorProfiles(Array.isArray(rows) ? rows : [])
+      return json(res, 200, { lists: await attachLikes(hideFallbackDuplicates(hydrated), voterId) })
     }
 
     if (req.method === 'GET' && action === 'mine') {
       if (!viewer.id) return json(res, 401, { error: 'Connexion requise' })
       const rows = await db(`tier_lists?select=${LIST_COLS}&owner_id=eq.${encodeURIComponent(viewer.id)}&order=updated_at.desc&limit=80`)
-      return json(res, 200, { lists: await attachLikes(Array.isArray(rows) ? rows : [], voterId) })
+      return json(res, 200, { lists: await attachLikes(await hydrateAuthorProfiles(Array.isArray(rows) ? rows : []), voterId) })
     }
 
     if (req.method === 'GET' && action === 'get') {
@@ -272,19 +373,21 @@ export default async function handler(req, res) {
       if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) return json(res, 400, { error: 'ID invalide' })
       const rows = await db(`tier_lists?select=*&id=eq.${encodeURIComponent(id)}&limit=1`)
       if (!rows?.length) return json(res, 404, { error: 'Liste introuvable' })
-      const row = rows[0]
+      let row = rows[0]
       // Sécurité : on ne sert le détail que d'une liste publique OU possédée par le
       // demandeur (sinon un UUID connu donnerait accès à un draft/liste privée d'autrui).
       const isPublic = row.published === true && row.visibility === 'public'
       if (!isPublic && row.owner_id !== viewer.id) return json(res, 403, { error: 'Accès non autorisé' })
       // Détail complet (board/tiers/custom_items/favorites) pour l'ouverture en studio.
+      row = (await hydrateAuthorProfiles([row]))[0] || row
       return json(res, 200, { list: mapRow(row) })
     }
 
     if (req.method === 'GET' && action === 'draft') {
       if (!viewer.id) return json(res, 401, { error: 'Connexion requise' })
       const rows = await db(`tier_lists?select=*&owner_id=eq.${encodeURIComponent(viewer.id)}&published=eq.false&visibility=eq.private&order=updated_at.desc&limit=1`)
-      return json(res, 200, { draft: rows?.[0] ? mapRow(rows[0]) : null })
+      const hydrated = await hydrateAuthorProfiles(rows || [])
+      return json(res, 200, { draft: hydrated?.[0] ? mapRow(hydrated[0]) : null })
     }
 
     if (req.method !== 'POST') return json(res, 405, { error: 'Method not allowed' })
@@ -336,7 +439,8 @@ export default async function handler(req, res) {
         headers: { Prefer: 'return=representation' },
         body: JSON.stringify({ ...pubRow, created_at: now }),
       })
-      return json(res, 200, { published: true, list: mapRow(rows[0]) })
+      const hydrated = await hydrateAuthorProfiles(rows || [])
+      return json(res, 200, { published: true, list: mapRow(hydrated[0] || rows[0]) })
     }
 
     if (action === 'delete') {

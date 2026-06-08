@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useInView } from '../hooks/useInView.js'
+import { useMediaQuery } from '../hooks/useMediaQuery.js'
 import { fetchLeaderboard } from '../lib/supabase.js'
 
 const MEDALS = { 1:'🥇', 2:'🥈', 3:'🥉' }
@@ -37,6 +38,8 @@ export default function Leaderboard() {
   const [rangFilter, setRangFilter] = useState('Tous')
   const [showRangs,  setShowRangs]  = useState(false)
   const [ref, inView] = useInView()
+  const isMobile = useMediaQuery('(max-width: 560px)')
+  const rowGrid = isMobile ? '32px minmax(0,1fr) minmax(72px,auto)' : '52px minmax(0,1fr) 110px 130px'
 
   useEffect(() => {
     let ignore = false
@@ -111,16 +114,17 @@ export default function Leaderboard() {
           </div>
         </div>
 
-        <div style={{ maxWidth:780, margin:'0 auto' }}>
+        <div style={{ width:'100%', maxWidth:780, margin:'0 auto', overflow:'hidden' }}>
 
           {/* Controls */}
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:12, marginBottom:24 }}>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:isMobile ? 'stretch' : 'space-between', flexWrap:'wrap', gap:12, marginBottom:24 }}>
 
             {/* Period toggle */}
-            <div style={{ display:'flex', gap:6 }}>
+            <div style={{ display:'flex', gap:6, flexWrap:'wrap', width:isMobile ? '100%' : undefined }}>
               {PERIODS.map(p => (
                 <button key={p} onClick={() => handlePeriod(p)} style={{
-                  padding:'7px 16px', borderRadius:20, fontSize:12, fontWeight:700, letterSpacing:'.04em',
+                  flex:isMobile ? '1 1 0' : undefined,
+                  padding:isMobile ? '7px 10px' : '7px 16px', borderRadius:20, fontSize:12, fontWeight:700, letterSpacing:'.04em',
                   border: p===period ? 'none' : '1px solid rgba(255,255,255,.12)',
                   background: p===period ? 'var(--accent)' : 'transparent',
                   color: p===period ? '#fff' : 'var(--muted)',
@@ -132,9 +136,11 @@ export default function Leaderboard() {
             </div>
 
             {/* Rang filter dropdown */}
-            <div style={{ position:'relative' }}>
+            <div style={{ position:'relative', width:isMobile ? '100%' : undefined }}>
               <button onClick={() => setShowRangs(v => !v)} style={{
                 display:'flex', alignItems:'center', gap:8,
+                justifyContent:isMobile ? 'space-between' : undefined,
+                width:isMobile ? '100%' : undefined,
                 padding:'7px 14px', borderRadius:20, fontSize:12, fontWeight:700, letterSpacing:'.04em',
                 border:'1px solid rgba(255,255,255,.12)', background:'rgba(255,255,255,.04)',
                 color:'#fff', cursor:'pointer', transition:'all .15s',
@@ -144,9 +150,9 @@ export default function Leaderboard() {
               </button>
               {showRangs && (
                 <div style={{
-                  position:'absolute', top:'calc(100% + 6px)', right:0, zIndex:20,
+                  position:'absolute', top:'calc(100% + 6px)', right:isMobile ? 'auto' : 0, left:isMobile ? 0 : undefined, zIndex:20,
                   background:'#1a1b1f', border:'1px solid rgba(255,255,255,.1)', borderRadius:12,
-                  padding:'6px', minWidth:200, boxShadow:'0 8px 32px rgba(0,0,0,.5)',
+                  padding:'6px', minWidth:isMobile ? '100%' : 200, width:isMobile ? '100%' : undefined, boxShadow:'0 8px 32px rgba(0,0,0,.5)',
                 }}>
                   {RANG_OPTS.map(opt => {
                     const info = RANK_MAP.find(r => r.rang === opt)
@@ -169,20 +175,21 @@ export default function Leaderboard() {
           </div>
 
           {/* Header */}
-          <div style={{ display:'grid', gridTemplateColumns:'52px 1fr 110px 130px', padding:'0 20px 10px', fontSize:11, fontWeight:700, letterSpacing:'.1em', textTransform:'uppercase', color:'var(--muted)' }}>
-            <span>#</span><span>Membre</span><span style={{ textAlign:'right' }}>Heures</span><span style={{ textAlign:'right' }}>Berrys</span>
+          <div style={{ display:'grid', gridTemplateColumns:rowGrid, padding:isMobile ? '0 10px 8px' : '0 20px 10px', fontSize:11, fontWeight:700, letterSpacing:'.1em', textTransform:'uppercase', color:'var(--muted)' }}>
+            <span>#</span><span>Membre</span><span style={{ textAlign:'right' }}>{isMobile ? 'Stats' : 'Heures'}</span>{!isMobile && <span style={{ textAlign:'right' }}>Berrys</span>}
           </div>
 
           {/* Rows */}
           <div style={{ display:'flex', flexDirection:'column', gap:4 }}>
             {loading
               ? Array.from({length:10}).map((_,i) => (
-                  <div key={i} style={{ height:64, borderRadius:12, background:'rgba(255,255,255,.03)', animation:'pulse 1.5s ease-in-out infinite', animationDelay:`${i*0.07}s` }} />
+                  <div key={i} style={{ height:isMobile ? 56 : 64, borderRadius:12, background:'rgba(255,255,255,.03)', animation:'pulse 1.5s ease-in-out infinite', animationDelay:`${i*0.07}s` }} />
                 ))
               : display.map((m, i) => {
                   const rk = getRank(m.vocal_h)
                   const isTop3 = m.pos <= 3
                   const showSep = m.pos === 4 && rangFilter === 'Tous'
+                  const avatarSize = isMobile ? 32 : 36
                   return (
                     <div key={m.uid}>
                     {showSep && (
@@ -195,8 +202,11 @@ export default function Leaderboard() {
                     <div className={`reveal reveal-${Math.min(i+1,4)} ${inView?'visible':''}`}
                       onClick={() => navigate(`/u/${m.uid}`)}
                       style={{
-                        display:'grid', gridTemplateColumns:'52px 1fr 110px 130px',
-                        alignItems:'center', borderRadius:12, padding:'14px 20px',
+                        display:'grid', gridTemplateColumns:rowGrid,
+                        alignItems:'center', borderRadius:12, padding:isMobile ? '10px 10px' : '14px 20px',
+                        gap:isMobile ? 8 : 0,
+                        minWidth:0,
+                        overflow:'hidden',
                         background: isTop3
                           ? `linear-gradient(90deg, ${rk.color}15 0%, rgba(17,18,20,0.6) 100%)`
                           : 'rgba(17,18,20,0.5)',
@@ -205,34 +215,37 @@ export default function Leaderboard() {
                         cursor:'pointer',
                         transition:'transform .15s, box-shadow .15s',
                       }}
-                      onMouseEnter={e=>{e.currentTarget.style.transform='translateX(4px)';e.currentTarget.style.boxShadow=`0 4px 20px ${rk.color}15`}}
+                      onMouseEnter={e=>{ if (isMobile) return; e.currentTarget.style.transform='translateX(4px)';e.currentTarget.style.boxShadow=`0 4px 20px ${rk.color}15`}}
                       onMouseLeave={e=>{e.currentTarget.style.transform='translateX(0)';e.currentTarget.style.boxShadow='none'}}
                     >
-                      <span style={{ fontSize:isTop3?22:14, fontWeight:700, color:isTop3?rk.color:'var(--muted)' }}>
+                      <span style={{ fontSize:isTop3 ? (isMobile ? 17 : 22) : 14, fontWeight:700, color:isTop3?rk.color:'var(--muted)' }}>
                         {MEDALS[m.pos] ?? m.pos}
                       </span>
 
-                      <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+                      <div style={{ display:'flex', alignItems:'center', gap:isMobile ? 8 : 12, minWidth:0, overflow:'hidden' }}>
                         <div style={{
-                          width:36, height:36, borderRadius:'50%', flexShrink:0,
+                          width:avatarSize, height:avatarSize, borderRadius:'50%', flexShrink:0,
                           background:`${rk.color}18`, border:`1px solid ${rk.color}40`,
                           overflow:'hidden',
                           display:'flex', alignItems:'center', justifyContent:'center', fontSize:16,
                           boxShadow: isTop3 ? `0 0 12px ${rk.color}40` : 'none',
                         }}>
                           {m.avatar_url
-                            ? <img src={m.avatar_url} alt="" width={36} height={36} loading="lazy" decoding="async" style={{ objectFit:'cover', borderRadius:'50%' }} onError={e=>{e.currentTarget.style.display='none';e.currentTarget.nextSibling.style.display='flex'}} />
+                            ? <img src={m.avatar_url} alt="" width={avatarSize} height={avatarSize} loading="lazy" decoding="async" style={{ width:avatarSize, height:avatarSize, objectFit:'cover', borderRadius:'50%' }} onError={e=>{e.currentTarget.style.display='none';e.currentTarget.nextSibling.style.display='flex'}} />
                             : null}
                           <span style={{ display:m.avatar_url?'none':'flex' }}>{rk.emoji}</span>
                         </div>
-                        <div>
-                          <div style={{ fontWeight:600, fontSize:14, color:'#fff' }}>{m.username || `Pirate #${m.uid.slice(-5)}`}</div>
-                          <div style={{ fontSize:11, color:rk.color, fontWeight:600 }}>{rk.emoji} {rk.rang}</div>
+                        <div style={{ minWidth:0, overflow:'hidden' }}>
+                          <div style={{ fontWeight:600, fontSize:isMobile ? 13 : 14, color:'#fff', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{m.username || `Pirate #${m.uid.slice(-5)}`}</div>
+                          <div style={{ fontSize:isMobile ? 10.5 : 11, color:rk.color, fontWeight:600, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{rk.emoji} {rk.rang}</div>
                         </div>
                       </div>
 
-                      <div style={{ textAlign:'right', fontWeight:700, fontSize:15, color:rk.color }}>{m.vocal_h}h</div>
-                      <div style={{ textAlign:'right', fontWeight:600, fontSize:14, color:'var(--gold)' }}>{fmt(m.berrys)} ฿</div>
+                      <div style={{ textAlign:'right', minWidth:0 }}>
+                        <div style={{ fontWeight:700, fontSize:isMobile ? 13 : 15, color:rk.color, whiteSpace:'nowrap' }}>{m.vocal_h}h</div>
+                        {isMobile && <div style={{ fontWeight:600, fontSize:11.5, color:'var(--gold)', whiteSpace:'nowrap', marginTop:1 }}>{fmt(m.berrys)} ฿</div>}
+                      </div>
+                      {!isMobile && <div style={{ textAlign:'right', fontWeight:600, fontSize:14, color:'var(--gold)' }}>{fmt(m.berrys)} ฿</div>}
                     </div>
                     </div>
                   )
@@ -242,7 +255,7 @@ export default function Leaderboard() {
 
           {/* Pagination */}
           {!loading && totalPages > 1 && (
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8, marginTop:28 }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8, marginTop:28, flexWrap:'wrap', maxWidth:'100%' }}>
               <button
                 onClick={() => setPage(p => Math.max(0, p-1))}
                 disabled={page === 0}
@@ -254,7 +267,7 @@ export default function Leaderboard() {
                 }}
               >← Préc</button>
 
-              <div style={{ display:'flex', gap:4 }}>
+              <div style={{ display:'flex', gap:4, maxWidth:'100%', overflowX:'auto', padding:'2px 0' }}>
                 {Array.from({length:totalPages}).map((_,i) => (
                   <button key={i} onClick={() => setPage(i)} style={{
                     width:32, height:32, borderRadius:8, border:'1px solid',

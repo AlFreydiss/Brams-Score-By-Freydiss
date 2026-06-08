@@ -955,7 +955,8 @@
         "srclang": "fr",
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E01-fr.vtt"
       }
-    ]
+    ],
+    "thumbnail": "/jjk-poster.jpg"
   },
   {
     "episode": 2,
@@ -986,7 +987,8 @@
         "srclang": "fr",
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E02-fr.vtt"
       }
-    ]
+    ],
+    "thumbnail": "/jjk-poster.jpg"
   },
   {
     "episode": 3,
@@ -1017,7 +1019,8 @@
         "srclang": "fr",
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E03-fr.vtt"
       }
-    ]
+    ],
+    "thumbnail": "/jjk-poster.jpg"
   },
   {
     "episode": 4,
@@ -1048,7 +1051,8 @@
         "srclang": "fr",
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E04-fr.vtt"
       }
-    ]
+    ],
+    "thumbnail": "/jjk-poster.jpg"
   },
   {
     "episode": 5,
@@ -1079,7 +1083,8 @@
         "srclang": "fr",
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E05-fr.vtt"
       }
-    ]
+    ],
+    "thumbnail": "/jjk-poster.jpg"
   },
   {
     "episode": 6,
@@ -1110,7 +1115,8 @@
         "srclang": "fr",
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E06-fr.vtt"
       }
-    ]
+    ],
+    "thumbnail": "/jjk-poster.jpg"
   },
   {
     "episode": 7,
@@ -1141,7 +1147,8 @@
         "srclang": "fr",
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E07-fr.vtt"
       }
-    ]
+    ],
+    "thumbnail": "/jjk-poster.jpg"
   },
   {
     "episode": 8,
@@ -1172,7 +1179,8 @@
         "srclang": "fr",
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E08-fr.vtt"
       }
-    ]
+    ],
+    "thumbnail": "/jjk-poster.jpg"
   },
   {
     "episode": 9,
@@ -1203,7 +1211,8 @@
         "srclang": "fr",
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E09-fr.vtt"
       }
-    ]
+    ],
+    "thumbnail": "/jjk-poster.jpg"
   },
   {
     "episode": 10,
@@ -1234,7 +1243,8 @@
         "srclang": "fr",
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E10-fr.vtt"
       }
-    ]
+    ],
+    "thumbnail": "/jjk-poster.jpg"
   },
   {
     "episode": 11,
@@ -1265,7 +1275,8 @@
         "srclang": "fr",
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E11-fr.vtt"
       }
-    ]
+    ],
+    "thumbnail": "/jjk-poster.jpg"
   },
   {
     "episode": 12,
@@ -1296,6 +1307,7 @@
         "srclang": "fr",
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/jjk/S03E12-fr.vtt"
       }
-    ]
+    ],
+    "thumbnail": "/jjk-poster.jpg"
   }
 ]

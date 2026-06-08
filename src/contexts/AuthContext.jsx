@@ -153,6 +153,8 @@ export function AuthProvider({ children }) {
   }, [])
 
   const discordId = resolveDiscordId(user)
+  const discordIdentity = getDiscordIdentity(user)
+  const identityData = discordIdentity?.identity_data || {}
 
   useEffect(() => {
     let active = true
@@ -186,15 +188,21 @@ export function AuthProvider({ children }) {
     signUp,
     signOut,
     isAuthenticated: !!user,
-    displayName: memberProfile?.username
-      || user?.user_metadata?.full_name
-      || user?.user_metadata?.display_name
-      || user?.user_metadata?.name
+    displayName: memberProfile?.display_name
+      || memberProfile?.global_name
       || user?.user_metadata?.global_name
       || user?.user_metadata?.custom_claims?.global_name
+      || identityData?.global_name
+      || user?.user_metadata?.full_name
+      || identityData?.full_name
+      || user?.user_metadata?.display_name
+      || identityData?.display_name
+      || user?.user_metadata?.name
+      || identityData?.name
+      || memberProfile?.username
       || user?.email?.split('@')[0]
       || 'Pirate',
-    avatarUrl: memberProfile?.avatar_url || user?.user_metadata?.avatar_url || user?.user_metadata?.picture || null,
+    avatarUrl: memberProfile?.avatar_url || user?.user_metadata?.avatar_url || identityData?.avatar_url || user?.user_metadata?.picture || identityData?.picture || null,
     discordId,
     memberProfile,
     berryCount: memberProfile?.berrys ?? null,
