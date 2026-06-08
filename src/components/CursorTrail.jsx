@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 
 const MOUSE_CODE = ['up', 'up', 'down', 'down', 'left', 'right']
-const GESTURE_STEP = 54
-const GESTURE_AXIS_BIAS = 1.35
-const GESTURE_MAX_GAP = 2500
+const GESTURE_STEP = 34
+const GESTURE_MAX_GAP = 5000
 
 function getStoredCheatMode() {
   if (typeof window === 'undefined') return false
@@ -15,12 +14,10 @@ function getStoredCheatMode() {
 }
 
 function advanceMouseCode(seq, dir) {
-  const next = [...seq, dir].slice(-MOUSE_CODE.length)
-  for (let size = Math.min(MOUSE_CODE.length, next.length); size > 0; size--) {
-    const suffix = next.slice(-size)
-    if (suffix.every((value, index) => value === MOUSE_CODE[index])) return suffix
-  }
-  return []
+  const expected = MOUSE_CODE[seq.length]
+  if (dir === expected) return [...seq, dir]
+  if (dir === seq[seq.length - 1]) return seq
+  return dir === MOUSE_CODE[0] ? [dir] : []
 }
 
 // Traînée dorée premium qui suit le curseur (sparkles qui s'estompent).
@@ -104,14 +101,10 @@ export default function CursorTrail() {
 
       const ax = Math.abs(dx)
       const ay = Math.abs(dy)
-      if (ay > ax * GESTURE_AXIS_BIAS) {
-        acceptGestureDirection(dy < 0 ? 'up' : 'down', x, y)
-      } else if (ax > ay * GESTURE_AXIS_BIAS) {
-        acceptGestureDirection(dx < 0 ? 'left' : 'right', x, y)
-      } else {
-        gesture.x = x
-        gesture.y = y
-      }
+      const dir = ay >= ax
+        ? (dy < 0 ? 'up' : 'down')
+        : (dx < 0 ? 'left' : 'right')
+      acceptGestureDirection(dir, x, y)
     }
 
     const onMove = (e) => {
