@@ -9,11 +9,27 @@ export const supabase = url && key ? createClient(url, key, {
     persistSession:     true,
     autoRefreshToken:   true,
     flowType:           'implicit',
-    // Verrou no-op : court-circuite navigator.locks qui pouvait se bloquer et
-    // faire hanger TOUS les appels client (getSession jamais résolu → blind test,
-    // théories, boutique, classement figés). Trade-off accepté : pas de
-    // coordination du refresh token entre onglets (sans impact réel ici).
-    lock: (_name, _acquireTimeout, fn) => fn(),
+    // Verrou BORNÉ : on garde navigator.locks (coordination du refresh token entre
+    // onglets — sans ça, 2 onglets rafraîchissent en même temps, la rotation du
+    // refresh token en invalide un → session morte → "faut se reconnecter sans
+    // arrêt"). Mais on borne l'attente à 3s via AbortSignal : si le verrou ne se
+    // libère jamais (le bug d'origine qui faisait hanger getSession et figeait
+    // blind test / boutique / classement), on abandonne et on exécute quand même.
+    lock: async (name, acquireTimeout, fn) => {
+      if (typeof navigator === 'undefined' || !navigator.locks?.request) return fn()
+      const ctrl = new AbortController()
+      const ms = acquireTimeout && acquireTimeout > 0 ? acquireTimeout : 3000
+      const timer = setTimeout(() => ctrl.abort(), ms)
+      try {
+        return await navigator.locks.request(name, { signal: ctrl.signal }, () => fn())
+      } catch {
+        // Verrou avorté (timeout) ou indisponible → on exécute sans coordination
+        // plutôt que de bloquer pour toujours.
+        return await fn()
+      } finally {
+        clearTimeout(timer)
+      }
+    },
   },
 }) : null
 
@@ -87,6 +103,27 @@ export async function fetchMemberProfile(discordId) {
   if (!supabase) { console.warn('[profile] supabase null — env vars manquantes'); return null }
   const id = String(discordId)
 
+  let directProfile = null
+  try {
+    const { data: user } = await withTimeout(
+      supabase.from('users').select('uid, data').eq('uid', id).maybeSingle()
+    )
+    if (user) {
+      const d = user.data || {}
+      directProfile = {
+        uid: id,
+        username: d.username || d.display_name || `Pirate #${id.slice(-5)}`,
+        display_name: d.display_name || d.global_name || d.nick || d.nickname || null,
+        global_name: d.global_name || null,
+        avatar_url: d.avatar_url || d.avatar || null,
+        vocal_h: parseFloat(d.vocal_h || d.total_vocal_h || 0),
+        berrys: parseInt(d.berrys || d.balance || 0) || 0,
+      }
+    }
+  } catch (e) {
+    console.warn('[profile] direct profile fetch failed', e?.message || e)
+  }
+
   // ── 1. Leaderboard via the SAME source as /classement (API first, then RPC) ──
   // This ensures consistency with the public leaderboard and may be faster/cached.
   let board = null
@@ -110,25 +147,25 @@ export async function fetchMemberProfile(discordId) {
       String(m.uid ?? m.user_id ?? m.discord_id ?? '') === id
     )
     console.log('[profile] board match idx', idx, 'for id', id, 'sample uid', board[0]?.uid ?? board[0]?.user_id)
-    if (idx !== -1) return { ...board[idx], uid: id, rank: idx + 1, total: board.length }
+    if (idx !== -1) {
+      const fromBoard = { ...board[idx], uid: id, rank: idx + 1, total: board.length }
+      return {
+        ...fromBoard,
+        username: directProfile?.username || fromBoard.username,
+        display_name: directProfile?.display_name || directProfile?.global_name || null,
+        global_name: directProfile?.global_name || null,
+        avatar_url: directProfile?.avatar_url || fromBoard.avatar_url,
+      }
+    }
   }
 
   // ── 2. Direct users table lookup (fallback) ─────────────────────────────────
-  const { data: user } = await withTimeout(
-    supabase.from('users').select('uid, data').eq('uid', id).maybeSingle()
-  )
-
-  if (!user) return null
-  const d = user.data || {}
-  return {
-    uid: id,
-    username: d.username || d.display_name || `Pirate #${id.slice(-5)}`,
-    avatar_url: d.avatar_url || d.avatar || null,
-    vocal_h: parseFloat(d.vocal_h || d.total_vocal_h || 0),
-    berrys: parseInt(d.berrys || d.balance || 0) || 0,
+  if (directProfile) return {
+    ...directProfile,
     rank: board ? board.length + 1 : '?',
     total: board ? board.length : '?',
   }
+  return null
 }
 
 export async function signInWithDiscord() {
