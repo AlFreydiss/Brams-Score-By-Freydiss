@@ -8,17 +8,17 @@ export const supabase = url && key ? createClient(url, key, {
     detectSessionInUrl: true,
     persistSession:     true,
     autoRefreshToken:   true,
-    flowType:           'implicit',
-    // Verrou BORNÉ : on garde navigator.locks (coordination du refresh token entre
+    flowType:           'pkce',
+    // Verrou borne : on garde navigator.locks (coordination du refresh token entre
     // onglets — sans ça, 2 onglets rafraîchissent en même temps, la rotation du
     // refresh token en invalide un → session morte → "faut se reconnecter sans
-    // arrêt"). Mais on borne l'attente à 3s via AbortSignal : si le verrou ne se
+    // arrêt"). Mais on borne l'attente via AbortSignal : si le verrou ne se
     // libère jamais (le bug d'origine qui faisait hanger getSession et figeait
     // blind test / boutique / classement), on abandonne et on exécute quand même.
     lock: async (name, acquireTimeout, fn) => {
       if (typeof navigator === 'undefined' || !navigator.locks?.request) return fn()
       const ctrl = new AbortController()
-      const ms = acquireTimeout && acquireTimeout > 0 ? acquireTimeout : 3000
+      const ms = Math.max(acquireTimeout || 0, 8000)
       const timer = setTimeout(() => ctrl.abort(), ms)
       try {
         return await navigator.locks.request(name, { signal: ctrl.signal }, () => fn())

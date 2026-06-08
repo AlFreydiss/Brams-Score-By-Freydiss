@@ -45,6 +45,24 @@ export function AuthProvider({ children }) {
 
     let mounted = true
 
+    const applySession = (nextSession, { clear = false } = {}) => {
+      if (!mounted) return
+      if (nextSession?.user) {
+        setSession(nextSession)
+        setUser(nextSession.user)
+        userRef.current = nextSession.user
+        return
+      }
+      if (clear) {
+        setSession(null)
+        setUser(null)
+        userRef.current = null
+      }
+    }
+
+    const authTimeout = (message, ms = 5000) =>
+      new Promise(resolve => setTimeout(() => resolve({ data: { session: null }, error: { message } }), ms))
+
     const init = async () => {
       const search = window.location.search
       const hash   = window.location.hash
@@ -61,10 +79,25 @@ export function AuthProvider({ children }) {
         }
       }
 
-      // Implicit flow : Supabase détecte le token depuis l'URL automatiquement
-      // On nettoie juste les params d'erreur si présents
-      if (params.get('code') && mounted) {
-        window.history.replaceState({}, document.title, window.location.pathname)
+      // PKCE : on echange le code Discord avant de nettoyer l'URL.
+      const code = params.get('code')
+      let exchangedSession = null
+      if (code) {
+        try {
+          const { data, error } = await Promise.race([
+            supabase.auth.exchangeCodeForSession(code),
+            authTimeout('exchangeCodeForSession timeout (7s)', 7000),
+          ])
+          if (error) console.warn('[auth] exchangeCodeForSession:', error.message)
+          exchangedSession = data?.session ?? null
+          if (exchangedSession) applySession(exchangedSession)
+        } catch (e) {
+          console.error('[auth] exchangeCodeForSession throw:', e?.message || e)
+        } finally {
+          if (mounted) {
+            window.history.replaceState({}, document.title, window.location.pathname)
+          }
+        }
       }
 
       // Lecture session APRÈS échange (ou directement si pas de code).
@@ -75,17 +108,15 @@ export function AuthProvider({ children }) {
       // site". On le borne donc à 5s. Si la vraie session arrive plus tard,
       // onAuthStateChange (ci-dessous) la propage → l'UI se répare seule, sans F5.
       try {
-        const { data, error } = await Promise.race([
-          supabase.auth.getSession(),
-          new Promise(resolve => setTimeout(() => resolve({ data: { session: null }, error: { message: 'getSession timeout (5s)' } }), 5000)),
-        ])
+        const { data, error } = exchangedSession
+          ? { data: { session: exchangedSession }, error: null }
+          : await Promise.race([
+              supabase.auth.getSession(),
+              authTimeout('getSession timeout (5s)'),
+            ])
         if (error) console.warn('[auth] getSession:', error.message)
         console.log('[auth] getSession →', data?.session?.user?.id ?? 'null')
-        if (mounted) {
-          setSession(data.session ?? null)
-          setUser(data.session?.user ?? null)
-          userRef.current = data.session?.user ?? null
-        }
+        applySession(data?.session ?? null, { clear: true })
       } catch (e) {
         console.error('[auth] getSession throw:', e?.message || e)
       } finally {
@@ -98,18 +129,15 @@ export function AuthProvider({ children }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, sess) => {
       console.log('[auth] onAuthStateChange:', event, '| user:', sess?.user?.id ?? 'null')
       if (!mounted) return
-      setSession(sess ?? null)
-      setUser(sess?.user ?? null)
-      userRef.current = sess?.user ?? null
 
       if (event === 'SIGNED_IN' && !hasSeenWelcome(sess?.user)) {
         setShowWelcome(true)
       }
       if (event === 'SIGNED_OUT') {
-        setUser(null)
-        setSession(null)
-        userRef.current = null
+        applySession(null, { clear: true })
+        return
       }
+      applySession(sess)
     })
 
     return () => {
