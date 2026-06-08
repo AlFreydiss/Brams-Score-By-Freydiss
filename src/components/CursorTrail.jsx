@@ -1,8 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 
-const MOUSE_CODE = ['up', 'up', 'down', 'down', 'left', 'right']
+const MOUSE_CODES = [
+  ['up', 'up', 'down', 'down', 'left', 'right'],
+  ['up', 'up', 'down', 'down', 'right', 'left'],
+]
+const MAX_MOUSE_CODE_LENGTH = Math.max(...MOUSE_CODES.map(code => code.length))
 const GESTURE_STEP = 34
 const GESTURE_MAX_GAP = 5000
+const NORMAL_MAX_PARTS = 120
+const CHEAT_MAX_PARTS = 210
 
 function getStoredCheatMode() {
   if (typeof window === 'undefined') return false
@@ -14,10 +20,15 @@ function getStoredCheatMode() {
 }
 
 function advanceMouseCode(seq, dir) {
-  const expected = MOUSE_CODE[seq.length]
-  if (dir === expected) return [...seq, dir]
+  if (MOUSE_CODES.some(code => seq.every((value, index) => value === code[index]) && dir === code[seq.length])) {
+    return [...seq, dir].slice(-MAX_MOUSE_CODE_LENGTH)
+  }
   if (dir === seq[seq.length - 1]) return seq
-  return dir === MOUSE_CODE[0] ? [dir] : []
+  return MOUSE_CODES.some(code => dir === code[0]) ? [dir] : []
+}
+
+function isCompleteMouseCode(seq) {
+  return MOUSE_CODES.some(code => seq.length === code.length && seq.every((value, index) => value === code[index]))
 }
 
 // Traînée dorée premium qui suit le curseur (sparkles qui s'estompent).
@@ -52,7 +63,7 @@ export default function CursorTrail() {
 
     const canvas = canvasRef.current
     const ctx = canvas.getContext('2d')
-    const dpr = Math.min(window.devicePixelRatio || 1, 2)
+    const dpr = Math.min(window.devicePixelRatio || 1, cheatMode ? 1.5 : 1.25)
     let w = 0, h = 0
     const resize = () => {
       w = canvas.width = window.innerWidth * dpr
@@ -68,7 +79,7 @@ export default function CursorTrail() {
       : ['#e8c878', '#d4a017', '#bfa46a', '#ffe9a8']
     const parts = []
     const gesture = { seq: [], x: null, y: null, lastAt: 0 }
-    let lastX = null, lastY = null, raf = 0
+    let pointerX = null, pointerY = null, emitX = null, emitY = null, raf = 0
 
     const acceptGestureDirection = (dir, x, y) => {
       const now = performance.now()
@@ -78,7 +89,7 @@ export default function CursorTrail() {
       gesture.x = x
       gesture.y = y
 
-      if (gesture.seq.length === MOUSE_CODE.length) {
+      if (isCompleteMouseCode(gesture.seq)) {
         gesture.seq = []
         setCheatMode(active => {
           const next = !active
@@ -111,37 +122,42 @@ export default function CursorTrail() {
       trackMouseCode(e.clientX, e.clientY)
 
       const x = e.clientX * dpr, y = e.clientY * dpr
-      if (lastX != null) {
-        const dx = x - lastX, dy = y - lastY
+      pointerX = x; pointerY = y
+      if (!raf) raf = requestAnimationFrame(tick)
+
+      if (emitX != null) {
+        const dx = x - emitX, dy = y - emitY
         const dist = Math.hypot(dx, dy)
+        const minDist = (cheatMode ? 8 : 12) * dpr
+        if (dist < minDist) return
         // densité proportionnelle à la vitesse (sans spammer)
         const n = cheatMode
-          ? Math.min(12, Math.max(2, Math.round(dist / (5 * dpr))))
-          : Math.min(6, Math.max(1, Math.round(dist / (7 * dpr))))
+          ? Math.min(6, Math.max(1, Math.round(dist / (11 * dpr))))
+          : Math.min(3, Math.max(1, Math.round(dist / (16 * dpr))))
         for (let i = 0; i < n; i++) {
           const t = i / n
           parts.push({
-            x: lastX + dx * t, y: lastY + dy * t,
-            vx: (Math.random() - 0.5) * (cheatMode ? 1.2 : 0.4) * dpr,
-            vy: ((Math.random() - 0.5) * (cheatMode ? 0.9 : 0.4) + 0.18) * dpr,
+            x: emitX + dx * t, y: emitY + dy * t,
+            vx: (Math.random() - 0.5) * (cheatMode ? 0.75 : 0.25) * dpr,
+            vy: ((Math.random() - 0.5) * (cheatMode ? 0.55 : 0.25) + 0.12) * dpr,
             life: 1,
-            size: (Math.random() * (cheatMode ? 3.8 : 2) + (cheatMode ? 2.2 : 1.6)) * dpr,
+            size: (Math.random() * (cheatMode ? 2.7 : 1.35) + (cheatMode ? 1.8 : 1.25)) * dpr,
             color: COLORS[(Math.random() * COLORS.length) | 0],
           })
         }
       }
-      lastX = x; lastY = y
-      const maxParts = cheatMode ? 460 : 260
+      emitX = x; emitY = y
+      const maxParts = cheatMode ? CHEAT_MAX_PARTS : NORMAL_MAX_PARTS
       if (parts.length > maxParts) parts.splice(0, parts.length - maxParts)
     }
     window.addEventListener('pointermove', onMove, { passive: true })
 
     const drawCheatCursor = () => {
-      if (!cheatMode || lastX == null || lastY == null) return
+      if (!cheatMode || pointerX == null || pointerY == null) return
       ctx.save()
-      ctx.translate(lastX, lastY)
+      ctx.translate(pointerX, pointerY)
       ctx.globalCompositeOperation = 'lighter'
-      ctx.shadowBlur = 18 * dpr
+      ctx.shadowBlur = 10 * dpr
       ctx.shadowColor = '#00e7ff'
       ctx.lineWidth = 2 * dpr
       ctx.fillStyle = 'rgba(6, 18, 28, 0.72)'
@@ -160,7 +176,7 @@ export default function CursorTrail() {
       ctx.beginPath()
       ctx.strokeStyle = '#00e7ff'
       ctx.globalAlpha = 0.38
-      ctx.arc(5 * dpr, 5 * dpr, 18 * dpr, 0, Math.PI * 2)
+      ctx.arc(5 * dpr, 5 * dpr, 14 * dpr, 0, Math.PI * 2)
       ctx.stroke()
       ctx.restore()
       ctx.globalAlpha = 1
@@ -173,13 +189,13 @@ export default function CursorTrail() {
         const p = parts[i]
         p.x += p.vx; p.y += p.vy
         p.vy += 0.02 * dpr
-        p.life -= cheatMode ? 0.022 : 0.03
+        p.life -= cheatMode ? 0.035 : 0.045
         if (p.life <= 0) { parts.splice(i, 1); continue }
         ctx.beginPath()
-        ctx.shadowBlur = (cheatMode ? 15 : 9) * dpr
+        ctx.shadowBlur = (cheatMode ? 10 : 5) * dpr
         ctx.shadowColor = p.color
         ctx.fillStyle = p.color
-        ctx.globalAlpha = p.life * 0.85
+        ctx.globalAlpha = p.life * (cheatMode ? 0.78 : 0.65)
         ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2)
         ctx.fill()
       }
@@ -187,9 +203,8 @@ export default function CursorTrail() {
       ctx.shadowBlur = 0
       ctx.globalCompositeOperation = 'source-over'
       drawCheatCursor()
-      raf = requestAnimationFrame(tick)
+      raf = parts.length ? requestAnimationFrame(tick) : 0
     }
-    raf = requestAnimationFrame(tick)
 
     return () => {
       cancelAnimationFrame(raf)
@@ -202,7 +217,14 @@ export default function CursorTrail() {
     <>
       <style>{`
         html.brams-cursor-cheat,
-        html.brams-cursor-cheat * {
+        html.brams-cursor-cheat body,
+        html.brams-cursor-cheat a,
+        html.brams-cursor-cheat button,
+        html.brams-cursor-cheat input,
+        html.brams-cursor-cheat textarea,
+        html.brams-cursor-cheat select,
+        html.brams-cursor-cheat [role="button"],
+        html.brams-cursor-cheat [style*="cursor"] {
           cursor: none !important;
         }
         .brams-cursor-toast {
