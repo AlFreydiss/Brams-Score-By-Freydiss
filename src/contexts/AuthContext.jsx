@@ -116,7 +116,8 @@ export function AuthProvider({ children }) {
             ])
         if (error) console.warn('[auth] getSession:', error.message)
         console.log('[auth] getSession →', data?.session?.user?.id ?? 'null')
-        applySession(data?.session ?? null, { clear: true })
+        const timedOut = error?.message?.includes('timeout')
+        applySession(data?.session ?? null, { clear: !timedOut })
       } catch (e) {
         console.error('[auth] getSession throw:', e?.message || e)
       } finally {
