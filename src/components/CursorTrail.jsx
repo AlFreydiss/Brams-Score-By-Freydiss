@@ -1,34 +1,82 @@
 import { useEffect, useRef, useState } from 'react'
 
+const TRAIL_MODES = {
+  normal: {
+    colors: ['#e8c878', '#d4a017', '#bfa46a'],
+    maxParts: 70,
+    maxEmit: 2,
+    emitDivisor: 19,
+    minDist: 14,
+    dpr: 1.1,
+    speed: 0.2,
+    drift: 0.1,
+    sizeBase: 1.05,
+    sizeRand: 1.1,
+    decay: 0.06,
+    shadow: 3,
+    alpha: 0.55,
+  },
+  neon: {
+    colors: ['#00e7ff', '#ff4fd8', '#ffd84d', '#8cfffb'],
+    maxParts: 130,
+    maxEmit: 4,
+    emitDivisor: 14,
+    minDist: 10,
+    dpr: 1.25,
+    speed: 0.52,
+    drift: 0.26,
+    sizeBase: 1.55,
+    sizeRand: 2.25,
+    decay: 0.044,
+    shadow: 7,
+    alpha: 0.72,
+  },
+  rift: {
+    colors: ['#a855f7', '#22d3ee', '#fb7185', '#c4ff47'],
+    maxParts: 140,
+    maxEmit: 4,
+    emitDivisor: 13,
+    minDist: 9,
+    dpr: 1.25,
+    speed: 0.6,
+    drift: 0.18,
+    sizeBase: 1.7,
+    sizeRand: 2.15,
+    decay: 0.048,
+    shadow: 6,
+    alpha: 0.74,
+  },
+}
+
 const MOUSE_CODES = [
-  ['up', 'up', 'down', 'down', 'left', 'right'],
-  ['up', 'up', 'down', 'down', 'right', 'left'],
+  { mode: 'neon', dirs: ['up', 'up', 'down', 'down', 'left', 'right'] },
+  { mode: 'rift', dirs: ['up', 'up', 'down', 'down', 'right', 'left'] },
 ]
-const MAX_MOUSE_CODE_LENGTH = Math.max(...MOUSE_CODES.map(code => code.length))
+const MAX_MOUSE_CODE_LENGTH = Math.max(...MOUSE_CODES.map(code => code.dirs.length))
 const GESTURE_STEP = 34
 const GESTURE_MAX_GAP = 5000
-const NORMAL_MAX_PARTS = 120
-const CHEAT_MAX_PARTS = 210
 
-function getStoredCheatMode() {
-  if (typeof window === 'undefined') return false
+function getStoredTrailMode() {
+  if (typeof window === 'undefined') return 'normal'
   try {
-    return window.localStorage.getItem('brams_cursor_cheat') === 'on'
+    const stored = window.localStorage.getItem('brams_cursor_mode')
+    if (stored && TRAIL_MODES[stored]) return stored
+    return window.localStorage.getItem('brams_cursor_cheat') === 'on' ? 'neon' : 'normal'
   } catch {
-    return false
+    return 'normal'
   }
 }
 
 function advanceMouseCode(seq, dir) {
-  if (MOUSE_CODES.some(code => seq.every((value, index) => value === code[index]) && dir === code[seq.length])) {
+  if (MOUSE_CODES.some(code => seq.every((value, index) => value === code.dirs[index]) && dir === code.dirs[seq.length])) {
     return [...seq, dir].slice(-MAX_MOUSE_CODE_LENGTH)
   }
   if (dir === seq[seq.length - 1]) return seq
-  return MOUSE_CODES.some(code => dir === code[0]) ? [dir] : []
+  return MOUSE_CODES.some(code => dir === code.dirs[0]) ? [dir] : []
 }
 
-function isCompleteMouseCode(seq) {
-  return MOUSE_CODES.some(code => seq.length === code.length && seq.every((value, index) => value === code[index]))
+function completeMouseCodeMode(seq) {
+  return MOUSE_CODES.find(code => seq.length === code.dirs.length && seq.every((value, index) => value === code.dirs[index]))?.mode || null
 }
 
 // Traînée dorée premium qui suit le curseur (sparkles qui s'estompent).
@@ -36,19 +84,20 @@ function isCompleteMouseCode(seq) {
 // Désactivé sur tactile (pas de curseur) et si l'utilisateur réduit les animations.
 export default function CursorTrail() {
   const canvasRef = useRef(null)
-  const [cheatMode, setCheatMode] = useState(getStoredCheatMode)
+  const [trailMode, setTrailMode] = useState(getStoredTrailMode)
   const [notice, setNotice] = useState(null)
 
   useEffect(() => {
     const fine = window.matchMedia?.('(pointer: fine)')?.matches
     const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches
-    const active = cheatMode && fine && !reduce
+    const active = trailMode !== 'normal' && fine && !reduce
     document.documentElement.classList.toggle('brams-cursor-cheat', active)
     try {
-      window.localStorage.setItem('brams_cursor_cheat', cheatMode ? 'on' : 'off')
+      window.localStorage.setItem('brams_cursor_mode', trailMode)
+      window.localStorage.setItem('brams_cursor_cheat', trailMode === 'normal' ? 'off' : 'on')
     } catch {}
     return () => document.documentElement.classList.remove('brams-cursor-cheat')
-  }, [cheatMode])
+  }, [trailMode])
 
   useEffect(() => {
     if (!notice) return undefined
@@ -60,10 +109,12 @@ export default function CursorTrail() {
     const fine = window.matchMedia?.('(pointer: fine)')?.matches
     const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches
     if (!fine || reduce) return
+    const modeConfig = TRAIL_MODES[trailMode] || TRAIL_MODES.normal
+    const customCursor = trailMode !== 'normal'
 
     const canvas = canvasRef.current
     const ctx = canvas.getContext('2d')
-    const dpr = Math.min(window.devicePixelRatio || 1, cheatMode ? 1.5 : 1.25)
+    const dpr = Math.min(window.devicePixelRatio || 1, modeConfig.dpr)
     let w = 0, h = 0
     const resize = () => {
       w = canvas.width = window.innerWidth * dpr
@@ -74,26 +125,34 @@ export default function CursorTrail() {
     resize()
     window.addEventListener('resize', resize)
 
-    const COLORS = cheatMode
-      ? ['#00e7ff', '#ff4fd8', '#ffd84d', '#8cfffb']
-      : ['#e8c878', '#d4a017', '#bfa46a', '#ffe9a8']
+    const COLORS = modeConfig.colors
     const parts = []
     const gesture = { seq: [], x: null, y: null, lastAt: 0 }
     let pointerX = null, pointerY = null, emitX = null, emitY = null, raf = 0
 
-    const acceptGestureDirection = (dir, x, y) => {
+    const acceptGestureDirections = (dirs, x, y) => {
       const now = performance.now()
       if (now - gesture.lastAt > GESTURE_MAX_GAP) gesture.seq = []
-      gesture.seq = advanceMouseCode(gesture.seq, dir)
+
+      let nextSeq = gesture.seq
+      for (const dir of dirs) {
+        const candidate = advanceMouseCode(gesture.seq, dir)
+        if (candidate.length > nextSeq.length || completeMouseCodeMode(candidate)) {
+          nextSeq = candidate
+        }
+      }
+      gesture.seq = nextSeq
       gesture.lastAt = now
       gesture.x = x
       gesture.y = y
 
-      if (isCompleteMouseCode(gesture.seq)) {
+      const completedMode = completeMouseCodeMode(gesture.seq)
+      if (completedMode) {
         gesture.seq = []
-        setCheatMode(active => {
-          const next = !active
-          setNotice(next ? 'MODE TRAINEE ACTIVE' : 'MODE TRAINEE OFF')
+        setTrailMode(active => {
+          const next = active === completedMode ? 'normal' : completedMode
+          const label = completedMode === 'rift' ? 'MODE RIFT ACTIVE' : 'MODE TRAINEE ACTIVE'
+          setNotice(next === 'normal' ? 'MODE TRAINEE OFF' : label)
           return next
         })
       }
@@ -112,10 +171,11 @@ export default function CursorTrail() {
 
       const ax = Math.abs(dx)
       const ay = Math.abs(dy)
-      const dir = ay >= ax
-        ? (dy < 0 ? 'up' : 'down')
-        : (dx < 0 ? 'left' : 'right')
-      acceptGestureDirection(dir, x, y)
+      const horizontal = dx < 0 ? 'left' : 'right'
+      const vertical = dy < 0 ? 'up' : 'down'
+      const dirs = ay >= ax ? [vertical, horizontal] : [horizontal, vertical]
+      if (Math.min(ax, ay) < GESTURE_STEP * 0.35) dirs.length = 1
+      acceptGestureDirections(dirs, x, y)
     }
 
     const onMove = (e) => {
@@ -128,56 +188,70 @@ export default function CursorTrail() {
       if (emitX != null) {
         const dx = x - emitX, dy = y - emitY
         const dist = Math.hypot(dx, dy)
-        const minDist = (cheatMode ? 8 : 12) * dpr
+        const minDist = modeConfig.minDist * dpr
         if (dist < minDist) return
         // densité proportionnelle à la vitesse (sans spammer)
-        const n = cheatMode
-          ? Math.min(6, Math.max(1, Math.round(dist / (11 * dpr))))
-          : Math.min(3, Math.max(1, Math.round(dist / (16 * dpr))))
+        const n = Math.min(modeConfig.maxEmit, Math.max(1, Math.round(dist / (modeConfig.emitDivisor * dpr))))
         for (let i = 0; i < n; i++) {
           const t = i / n
           parts.push({
             x: emitX + dx * t, y: emitY + dy * t,
-            vx: (Math.random() - 0.5) * (cheatMode ? 0.75 : 0.25) * dpr,
-            vy: ((Math.random() - 0.5) * (cheatMode ? 0.55 : 0.25) + 0.12) * dpr,
+            vx: (Math.random() - 0.5) * modeConfig.speed * dpr,
+            vy: ((Math.random() - 0.5) * modeConfig.drift + 0.1) * dpr,
             life: 1,
-            size: (Math.random() * (cheatMode ? 2.7 : 1.35) + (cheatMode ? 1.8 : 1.25)) * dpr,
+            size: (Math.random() * modeConfig.sizeRand + modeConfig.sizeBase) * dpr,
             color: COLORS[(Math.random() * COLORS.length) | 0],
+            rot: Math.random() * Math.PI,
+            spin: (Math.random() - 0.5) * 0.08,
           })
         }
       }
       emitX = x; emitY = y
-      const maxParts = cheatMode ? CHEAT_MAX_PARTS : NORMAL_MAX_PARTS
-      if (parts.length > maxParts) parts.splice(0, parts.length - maxParts)
+      if (parts.length > modeConfig.maxParts) parts.splice(0, parts.length - modeConfig.maxParts)
     }
     window.addEventListener('pointermove', onMove, { passive: true })
 
-    const drawCheatCursor = () => {
-      if (!cheatMode || pointerX == null || pointerY == null) return
+    const drawCustomCursor = () => {
+      if (!customCursor || pointerX == null || pointerY == null) return
       ctx.save()
       ctx.translate(pointerX, pointerY)
       ctx.globalCompositeOperation = 'lighter'
-      ctx.shadowBlur = 10 * dpr
-      ctx.shadowColor = '#00e7ff'
       ctx.lineWidth = 2 * dpr
-      ctx.fillStyle = 'rgba(6, 18, 28, 0.72)'
-      ctx.strokeStyle = '#ffd84d'
-      ctx.beginPath()
-      ctx.moveTo(0, 0)
-      ctx.lineTo(20 * dpr, 8 * dpr)
-      ctx.lineTo(9 * dpr, 12 * dpr)
-      ctx.lineTo(5 * dpr, 23 * dpr)
-      ctx.lineTo(-1 * dpr, 21 * dpr)
-      ctx.lineTo(2 * dpr, 12 * dpr)
-      ctx.lineTo(-8 * dpr, 16 * dpr)
-      ctx.closePath()
-      ctx.fill()
-      ctx.stroke()
-      ctx.beginPath()
-      ctx.strokeStyle = '#00e7ff'
-      ctx.globalAlpha = 0.38
-      ctx.arc(5 * dpr, 5 * dpr, 14 * dpr, 0, Math.PI * 2)
-      ctx.stroke()
+
+      if (trailMode === 'rift') {
+        ctx.shadowBlur = 9 * dpr
+        ctx.shadowColor = '#a855f7'
+        ctx.strokeStyle = '#c4ff47'
+        ctx.fillStyle = 'rgba(32, 10, 48, 0.78)'
+        ctx.rotate(Math.PI / 4)
+        ctx.fillRect(-6 * dpr, -6 * dpr, 12 * dpr, 12 * dpr)
+        ctx.strokeRect(-6 * dpr, -6 * dpr, 12 * dpr, 12 * dpr)
+        ctx.rotate(-Math.PI / 4)
+        ctx.globalAlpha = 0.58
+        ctx.beginPath()
+        ctx.moveTo(-17 * dpr, 0)
+        ctx.lineTo(17 * dpr, 0)
+        ctx.moveTo(0, -17 * dpr)
+        ctx.lineTo(0, 17 * dpr)
+        ctx.strokeStyle = '#22d3ee'
+        ctx.stroke()
+      } else {
+        ctx.shadowBlur = 8 * dpr
+        ctx.shadowColor = '#00e7ff'
+        ctx.fillStyle = 'rgba(6, 18, 28, 0.72)'
+        ctx.strokeStyle = '#ffd84d'
+        ctx.beginPath()
+        ctx.moveTo(0, 0)
+        ctx.lineTo(18 * dpr, 7 * dpr)
+        ctx.lineTo(8 * dpr, 11 * dpr)
+        ctx.lineTo(5 * dpr, 21 * dpr)
+        ctx.lineTo(-1 * dpr, 19 * dpr)
+        ctx.lineTo(2 * dpr, 11 * dpr)
+        ctx.lineTo(-7 * dpr, 15 * dpr)
+        ctx.closePath()
+        ctx.fill()
+        ctx.stroke()
+      }
       ctx.restore()
       ctx.globalAlpha = 1
     }
@@ -189,20 +263,30 @@ export default function CursorTrail() {
         const p = parts[i]
         p.x += p.vx; p.y += p.vy
         p.vy += 0.02 * dpr
-        p.life -= cheatMode ? 0.035 : 0.045
+        p.rot += p.spin
+        p.life -= modeConfig.decay
         if (p.life <= 0) { parts.splice(i, 1); continue }
-        ctx.beginPath()
-        ctx.shadowBlur = (cheatMode ? 10 : 5) * dpr
+        ctx.shadowBlur = modeConfig.shadow * dpr
         ctx.shadowColor = p.color
         ctx.fillStyle = p.color
-        ctx.globalAlpha = p.life * (cheatMode ? 0.78 : 0.65)
-        ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2)
-        ctx.fill()
+        ctx.globalAlpha = p.life * modeConfig.alpha
+        if (trailMode === 'rift') {
+          const size = p.size * p.life
+          ctx.save()
+          ctx.translate(p.x, p.y)
+          ctx.rotate(p.rot)
+          ctx.fillRect(-size, -size, size * 2, size * 2)
+          ctx.restore()
+        } else {
+          ctx.beginPath()
+          ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2)
+          ctx.fill()
+        }
       }
       ctx.globalAlpha = 1
       ctx.shadowBlur = 0
       ctx.globalCompositeOperation = 'source-over'
-      drawCheatCursor()
+      drawCustomCursor()
       raf = parts.length ? requestAnimationFrame(tick) : 0
     }
 
@@ -211,7 +295,7 @@ export default function CursorTrail() {
       window.removeEventListener('resize', resize)
       window.removeEventListener('pointermove', onMove)
     }
-  }, [cheatMode])
+  }, [trailMode])
 
   return (
     <>
@@ -223,8 +307,7 @@ export default function CursorTrail() {
         html.brams-cursor-cheat input,
         html.brams-cursor-cheat textarea,
         html.brams-cursor-cheat select,
-        html.brams-cursor-cheat [role="button"],
-        html.brams-cursor-cheat [style*="cursor"] {
+        html.brams-cursor-cheat [role="button"] {
           cursor: none !important;
         }
         .brams-cursor-toast {
