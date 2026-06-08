@@ -220,25 +220,11 @@ export default function Hero() {
         @keyframes scrollCueDot{ 0%{transform:translateY(0);opacity:0} 25%{opacity:1} 75%{opacity:1} 100%{transform:translateY(12px);opacity:0} }
       `}</style>
       <div aria-hidden style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
-        {/* aurore dorée (gauche) */}
-        <div style={{ position: 'absolute', top: '-12%', left: '-10%', width: '64%', height: '90%',
-          background: 'radial-gradient(ellipse 58% 55% at 35% 42%, rgba(191,164,106,0.17) 0%, rgba(191,164,106,0.045) 45%, transparent 72%)',
-          filter: 'blur(44px)', animation: 'heroAuroraA 19s ease-in-out infinite', willChange: 'transform' }} />
-        {/* aurore violette sobre (droite) */}
-        <div style={{ position: 'absolute', top: '-6%', right: '-12%', width: '60%', height: '100%',
-          background: 'radial-gradient(ellipse 58% 55% at 66% 36%, rgba(120,108,170,0.15) 0%, transparent 70%)',
-          filter: 'blur(54px)', animation: 'heroAuroraB 24s ease-in-out infinite', willChange: 'transform' }} />
-        {/* balayage de lumière doré */}
-        <div style={{ position: 'absolute', top: '-25%', left: 0, width: '42%', height: '150%',
-          background: 'linear-gradient(90deg, transparent, rgba(232,184,74,0.07), transparent)',
-          animation: 'heroSweep 16s ease-in-out 2.5s infinite' }} />
+        {/* Aurores/balayage retirés → le hero a le MÊME fond (AMV + voile uniforme)
+            que le reste de la page : plus aucune coupure hero/sections. */}
         {/* fondu haut léger (juste pour la lisibilité de la navbar) — n'écrase plus l'AMV */}
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '18%',
           background: 'linear-gradient(180deg, rgba(8,9,13,0.55) 0%, transparent 100%)' }} />
-        {/* grain fin premium */}
-        <div style={{ position: 'absolute', inset: 0, opacity: 0.045, mixBlendMode: 'overlay',
-          backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
-          backgroundSize: '170px 170px' }} />
       </div>
       <StarField />
       <EmberField />
