@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback, Suspense } from 'react'
 import { Routes, Route, useNavigate, Navigate, useLocation, useParams } from 'react-router-dom'
 import { lazyWithReload } from './lib/lazyWithReload.js'
 import GlobalStyles from './components/GlobalStyles.jsx'
+import CursorTrail from './components/CursorTrail.jsx'
 import { ThemeProvider } from './contexts/ThemeContext.jsx'
 import { OpeningBgProvider, useOpeningBg } from './contexts/OpeningBgContext.jsx'
 import EquippedOpeningBackground from './components/social/EquippedOpeningBackground.jsx'
@@ -463,6 +464,7 @@ export default function App() {
       <SocialProvider>
       <CallProvider>
       <GlobalStyles />
+      <CursorTrail />
       <EquippedOpeningBackground />
       <NotificationToast />
       <CallOverlay />
