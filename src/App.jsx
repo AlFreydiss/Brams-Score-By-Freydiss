@@ -94,10 +94,35 @@ const MANGA_REGISTRY = {
   dbs:             { title: 'Dragon Ball Super',        color: '#f97316' },
   tpn:             { title: 'The Promised Neverland',   color: '#6c5ce7' },
 }
+
+function AuthLoadingScreen({ zIndex = 500 }) {
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex,
+      background: '#0b0c0e',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+    }}>
+      <div style={{
+        width: 36, height: 36,
+        border: '3px solid rgba(212,160,23,0.2)',
+        borderTopColor: '#d4a017',
+        borderRadius: '50%',
+        animation: 'authSpin 0.75s linear infinite',
+      }} />
+      <style>{`@keyframes authSpin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  )
+}
+
 function MangaRoute() {
   const { slug } = useParams()
   const navigate = useNavigate()
+  const { isAuthenticated, loading } = useAuth()
   const m = MANGA_REGISTRY[slug] || { title: slug, color: '#8b5cf6' }
+
+  if (loading) return <AuthLoadingScreen />
+  if (!isAuthenticated) return <AuthGuard onClose={() => navigate('/')} feature="les scans manga" />
+
   return <MangaReaderPage slug={slug} title={m.title} color={m.color} onClose={() => navigate('/')} />
 }
 const ProfilePageYonkou  = lazyWithReload(() => import('./components/ProfilePageYonkou.jsx'))
@@ -263,7 +288,7 @@ function PageLayout({ children }) {
 }
 
 export default function App() {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, loading } = useAuth()
   const navigate = useNavigate()
   const [scansOpen,        setScansOpen]        = useState(false)
   const [onepieceOpen,     setOnepieceOpen]     = useState(false)
@@ -425,6 +450,12 @@ export default function App() {
 
   const mediaOverlayOpen = scansOpen || onepieceOpen || animeHubOpen || tpnOpen || drstoneOpen || jjkOpen || kingdomOpen || aotOpen || knyOpen || nntOpen || slOpen || dbsOpen || violetOpen || vivyOpen || domesticOpen || koiOpen || lovePrismOpen || caroleTuesdayOpen || bunnyGirlOpen || rentGirlOpen || bcOpen || mhaOpen || fireforcOpen || bluelockOpen || fateZeroOpen || yourNameOpen || bubbleOpen || rezeOpen || yourLieOpen || monUniversOpen
 
+  // Pages animé/film individuelles ouvertes par URL directe (/animes-scan/<slug>).
+  // Le Hub et les Scans sont déjà derrière AuthGuard, mais ces overlays-là étaient
+  // rendus sans contrôle → un visiteur non connecté accédait au catalogue via le
+  // lien direct. On les passe donc aussi derrière AuthGuard (gating Discord).
+  const animeIndividualOpen = onepieceOpen || tpnOpen || drstoneOpen || jjkOpen || kingdomOpen || aotOpen || knyOpen || nntOpen || slOpen || dbsOpen || violetOpen || vivyOpen || domesticOpen || koiOpen || lovePrismOpen || caroleTuesdayOpen || bunnyGirlOpen || rentGirlOpen || bcOpen || mhaOpen || fireforcOpen || bluelockOpen || fateZeroOpen || yourNameOpen || bubbleOpen || rezeOpen || yourLieOpen || monUniversOpen
+
   const mainContent = (
     <>
       <WelcomeAnimation />
@@ -558,7 +589,9 @@ export default function App() {
 
       {/* ── Overlays globaux — disponibles sur toutes les routes ── */}
       {animeHubOpen && (
-        isAuthenticated ? (
+        loading ? (
+          <AuthLoadingScreen />
+        ) : isAuthenticated ? (
           <AnimeHub
             onClose={() => navigate('/')}
             onOpenOnepiece={() => navigate('/animes-scan/onepiece')}
@@ -594,51 +627,65 @@ export default function App() {
           <AuthGuard onClose={() => navigate('/')} feature="les animés & scans" />
         )
       )}
-      {onepieceOpen && <OnePiecePage onClose={closeMedia} />}
-      {tpnOpen     && <TpnPage     onClose={closeMedia} />}
-      {drstoneOpen && <DrStonePage onClose={closeMedia} />}
-      {jjkOpen     && <JjkPage     onClose={closeMedia} />}
-      {kingdomOpen && <KingdomPage onClose={closeMedia} />}
-      {aotOpen     && <AotPage     onClose={closeMedia} />}
-      {knyOpen     && <KnyPage     onClose={closeMedia} />}
-      {nntOpen     && <NntPage     onClose={closeMedia} />}
-      {slOpen      && <SlPage      onClose={closeMedia} />}
-      {dbsOpen     && <DbsPage     onClose={closeMedia} />}
-      {violetOpen  && <VioletEvergardenPage onClose={closeMedia} />}
-      {yourLieOpen && <YourLiePage onClose={closeMedia} />}
-      {vivyOpen    && <VivyPage             onClose={closeMedia} />}
-      {domesticOpen && <DomesticNaKanojoPage onClose={closeMedia} />}
-      {koiOpen     && <KoiAmeagariPage      onClose={closeMedia} />}
-      {lovePrismOpen && <LovePrismPage      onClose={closeMedia} />}
-      {caroleTuesdayOpen && <CaroleTuesdayPage onClose={closeMedia} />}
-      {bunnyGirlOpen && <BunnyGirlPage onClose={closeMedia} />}
-      {rentGirlOpen && <RentAGirlfriendPage onClose={closeMedia} />}
-      {bcOpen        && <BcPage        onClose={closeMedia} />}
-      {mhaOpen       && <MhaPage       onClose={closeMedia} />}
-      {fireforcOpen  && <FireForcePage onClose={closeMedia} />}
-      {bluelockOpen  && <BlueLockPage  onClose={closeMedia} />}
-      {fateZeroOpen  && <FateZeroPage  onClose={closeMedia} />}
-      {yourNameOpen  && <YourNamePage  onClose={closeMedia} />}
-      {bubbleOpen    && <FilmPage slug="bubble" onClose={closeMedia} />}
-      {rezeOpen      && <FilmPage slug="reze"   onClose={closeMedia} />}
-      {monUniversOpen && (
-        <MonUniversPage
-          onClose={() => navigate('/animes-scan')}
-          onOpenAot={onOpenAotFromMon} onOpenFireforce={onOpenFireforceFromMon} onOpenBluelock={onOpenBluelockFromMon} onOpenFateZero={onOpenFateZeroFromMon}
-          onOpenBunnyGirl={onOpenBunnyGirlFromMon} onOpenRentGirlfriend={onOpenRentGirlfriendFromMon}
-          onOpenTpn={onOpenTpnFromMon} onOpenDrstone={onOpenDrstoneFromMon} onOpenJjk={onOpenJjkFromMon}
-          onOpenKingdom={onOpenKingdomFromMon} onOpenKny={onOpenKnyFromMon} onOpenNnt={onOpenNntFromMon}
-          onOpenSl={onOpenSlFromMon} onOpenDbs={onOpenDbsFromMon} onOpenViolet={onOpenVioletFromMon}
-          onOpenYourLie={onOpenYourLieFromMon}
-          onOpenVivy={onOpenVivyFromMon} onOpenLovePrism={onOpenLovePrismFromMon} onOpenCaroleTuesday={onOpenCaroleTuesdayFromMon}
-          onOpenBc={onOpenBcFromMon} onOpenMha={onOpenMhaFromMon} onOpenOnepiece={onOpenOnepieceFromMon}
-        />
+      {animeIndividualOpen && (
+        loading ? (
+          <AuthLoadingScreen />
+        ) : isAuthenticated ? (
+          <>
+            {onepieceOpen && <OnePiecePage onClose={closeMedia} />}
+            {tpnOpen     && <TpnPage     onClose={closeMedia} />}
+            {drstoneOpen && <DrStonePage onClose={closeMedia} />}
+            {jjkOpen     && <JjkPage     onClose={closeMedia} />}
+            {kingdomOpen && <KingdomPage onClose={closeMedia} />}
+            {aotOpen     && <AotPage     onClose={closeMedia} />}
+            {knyOpen     && <KnyPage     onClose={closeMedia} />}
+            {nntOpen     && <NntPage     onClose={closeMedia} />}
+            {slOpen      && <SlPage      onClose={closeMedia} />}
+            {dbsOpen     && <DbsPage     onClose={closeMedia} />}
+            {violetOpen  && <VioletEvergardenPage onClose={closeMedia} />}
+            {yourLieOpen && <YourLiePage onClose={closeMedia} />}
+            {vivyOpen    && <VivyPage             onClose={closeMedia} />}
+            {domesticOpen && <DomesticNaKanojoPage onClose={closeMedia} />}
+            {koiOpen     && <KoiAmeagariPage      onClose={closeMedia} />}
+            {lovePrismOpen && <LovePrismPage      onClose={closeMedia} />}
+            {caroleTuesdayOpen && <CaroleTuesdayPage onClose={closeMedia} />}
+            {bunnyGirlOpen && <BunnyGirlPage onClose={closeMedia} />}
+            {rentGirlOpen && <RentAGirlfriendPage onClose={closeMedia} />}
+            {bcOpen        && <BcPage        onClose={closeMedia} />}
+            {mhaOpen       && <MhaPage       onClose={closeMedia} />}
+            {fireforcOpen  && <FireForcePage onClose={closeMedia} />}
+            {bluelockOpen  && <BlueLockPage  onClose={closeMedia} />}
+            {fateZeroOpen  && <FateZeroPage  onClose={closeMedia} />}
+            {yourNameOpen  && <YourNamePage  onClose={closeMedia} />}
+            {bubbleOpen    && <FilmPage slug="bubble" onClose={closeMedia} />}
+            {rezeOpen      && <FilmPage slug="reze"   onClose={closeMedia} />}
+            {monUniversOpen && (
+              <MonUniversPage
+                onClose={() => navigate('/animes-scan')}
+                onOpenAot={onOpenAotFromMon} onOpenFireforce={onOpenFireforceFromMon} onOpenBluelock={onOpenBluelockFromMon} onOpenFateZero={onOpenFateZeroFromMon}
+                onOpenBunnyGirl={onOpenBunnyGirlFromMon} onOpenRentGirlfriend={onOpenRentGirlfriendFromMon}
+                onOpenTpn={onOpenTpnFromMon} onOpenDrstone={onOpenDrstoneFromMon} onOpenJjk={onOpenJjkFromMon}
+                onOpenKingdom={onOpenKingdomFromMon} onOpenKny={onOpenKnyFromMon} onOpenNnt={onOpenNntFromMon}
+                onOpenSl={onOpenSlFromMon} onOpenDbs={onOpenDbsFromMon} onOpenViolet={onOpenVioletFromMon}
+                onOpenYourLie={onOpenYourLieFromMon}
+                onOpenVivy={onOpenVivyFromMon} onOpenLovePrism={onOpenLovePrismFromMon} onOpenCaroleTuesday={onOpenCaroleTuesdayFromMon}
+                onOpenBc={onOpenBcFromMon} onOpenMha={onOpenMhaFromMon} onOpenOnepiece={onOpenOnepieceFromMon}
+              />
+            )}
+          </>
+        ) : (
+          <AuthGuard onClose={() => navigate('/')} feature="les animés & scans" />
+        )
       )}
       {treeOpen      && <FamilyTree3D  onClose={() => setTreeOpen(false)} />}
       {scansOpen && (
-        isAuthenticated
-          ? <ScansPage onClose={() => navigate('/')} />
-          : <AuthGuard onClose={() => navigate('/')} feature="les scans One Piece" />
+        loading ? (
+          <AuthLoadingScreen />
+        ) : isAuthenticated ? (
+          <ScansPage onClose={() => navigate('/')} />
+        ) : (
+          <AuthGuard onClose={() => navigate('/')} feature="les scans One Piece" />
+        )
       )}
       {encyclopedieOpen && <ComingSoon title="Encyclopédie" onClose={() => setEncyclopedieOpen(false)} />}
       {uploadOpen && (
