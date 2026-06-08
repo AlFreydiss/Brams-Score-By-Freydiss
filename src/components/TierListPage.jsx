@@ -392,12 +392,36 @@ function fireConfetti() {
 }
 
 // ── Draggable Item Card ────────────────────────────────────────────────────────
-const ItemCard = memo(function ItemCard({ itemId, allById, compact=false, isDragOverlay=false }) {
+const ItemCard = memo(function ItemCard({ itemId, allById, compact=false, isDragOverlay=false, onRenameCustom, onDeleteCustom }) {
   const item = allById[itemId]
   const [err, setErr] = useState(false)
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: itemId })
+  const [editingName, setEditingName] = useState(false)
+  const [tmpName, setTmpName] = useState(item?.name || '')
+  const nameInputRef = useRef(null)
+  const { attributes, listeners, setNodeRef: setDraggableRef, isDragging } = useDraggable({ id: itemId, disabled:isDragOverlay })
+  const { setNodeRef: setDroppableRef, isOver:itemIsOver } = useDroppable({ id: itemId, disabled:isDragOverlay, data:{ type:'item' } })
+  const setNodeRef = useCallback((node) => {
+    setDraggableRef(node)
+    setDroppableRef(node)
+  }, [setDraggableRef, setDroppableRef])
   const W = compact ? 72 : 84
   const H = compact ? 102 : 118
+  const isCustom = item?.id?.startsWith('custom_') || (item?.genres || []).includes('Custom')
+  const canEditCustom = isCustom && !isDragOverlay && (onRenameCustom || onDeleteCustom)
+
+  useEffect(() => {
+    if (!editingName) setTmpName(item?.name || '')
+  }, [editingName, item?.name])
+
+  useEffect(() => {
+    if (editingName) setTimeout(() => nameInputRef.current?.select(), 20)
+  }, [editingName])
+
+  const confirmName = () => {
+    const nextName = tmpName.trim()
+    if (nextName && nextName !== item?.name) onRenameCustom?.(itemId, nextName)
+    setEditingName(false)
+  }
 
   return (
     <div
@@ -408,7 +432,9 @@ const ItemCard = memo(function ItemCard({ itemId, allById, compact=false, isDrag
         cursor: isDragging ? 'grabbing' : 'grab',
         position:'relative',
         opacity: isDragging && !isDragOverlay ? 0.25 : 1,
-        boxShadow: isDragOverlay
+        boxShadow: itemIsOver && !isDragging
+          ? `0 0 0 2px ${G.gold}, 0 6px 24px rgba(0,0,0,.72)`
+          : isDragOverlay
           ? '0 12px 40px rgba(0,0,0,.8), 0 0 0 2px rgba(191,164,106,.4)'
           : '0 2px 8px rgba(0,0,0,.55)',
         userSelect:'none',
@@ -420,6 +446,35 @@ const ItemCard = memo(function ItemCard({ itemId, allById, compact=false, isDrag
       }}
       className="tier-item-card"
     >
+      {canEditCustom && (
+        <div className="custom-item-actions" style={{
+          position:'absolute', top:3, right:3, zIndex:5,
+          display:'flex', gap:2, opacity:0, pointerEvents:'none', transition:'opacity .15s',
+        }}>
+          {onRenameCustom && (
+            <button
+              type="button"
+              title="Renommer"
+              onPointerDown={e => e.stopPropagation()}
+              onClick={e => { e.stopPropagation(); setEditingName(true) }}
+              style={cardActionBtn('#BFA46A')}
+            >
+              <Edit3 size={8}/>
+            </button>
+          )}
+          {onDeleteCustom && (
+            <button
+              type="button"
+              title="Supprimer"
+              onPointerDown={e => e.stopPropagation()}
+              onClick={e => { e.stopPropagation(); onDeleteCustom(itemId) }}
+              style={cardActionBtn('#ff6f91')}
+            >
+              <Trash2 size={8}/>
+            </button>
+          )}
+        </div>
+      )}
       {err ? (
         <div style={{ width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center',
           background:'linear-gradient(135deg,#1a1a2e,#16213e)', padding:6, textAlign:'center' }}>
@@ -436,11 +491,42 @@ const ItemCard = memo(function ItemCard({ itemId, allById, compact=false, isDrag
       )}
       <div style={{ position:'absolute', inset:0, background:'linear-gradient(to top, rgba(0,0,0,.8) 0%, rgba(0,0,0,.3) 22%, transparent 46%)' }}>
         <div style={{ position:'absolute', bottom:0, left:0, right:0, padding:'4px 5px' }}>
-          <div style={{ fontSize:8.5, fontWeight:700, color:'#fff', lineHeight:1.25,
-            overflow:'hidden', textOverflow:'ellipsis',
-            display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical' }}>
-            {item?.name}
-          </div>
+          {editingName ? (
+            <input
+              ref={nameInputRef}
+              value={tmpName}
+              onChange={e => setTmpName(e.target.value)}
+              onBlur={confirmName}
+              onKeyDown={e => {
+                if (e.key === 'Enter') { e.preventDefault(); confirmName() }
+                if (e.key === 'Escape') setEditingName(false)
+              }}
+              onPointerDown={e => e.stopPropagation()}
+              onClick={e => e.stopPropagation()}
+              maxLength={40}
+              style={{
+                width:'100%', height:19, borderRadius:5,
+                border:`1px solid ${G.gold}88`, background:'rgba(0,0,0,.72)',
+                color:'#fff', fontSize:8.5, fontWeight:800, outline:'none',
+                padding:'0 4px', textAlign:'center',
+              }}
+            />
+          ) : (
+            <div
+              onDoubleClick={e => {
+                if (!canEditCustom || !onRenameCustom) return
+                e.stopPropagation()
+                setEditingName(true)
+              }}
+              style={{ fontSize:8.5, fontWeight:700, color:'#fff', lineHeight:1.25,
+                overflow:'hidden', textOverflow:'ellipsis',
+                display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical',
+                cursor: canEditCustom && onRenameCustom ? 'text' : undefined }}
+              title={canEditCustom ? 'Double-clic pour renommer' : item?.name}
+            >
+              {item?.name}
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -448,22 +534,20 @@ const ItemCard = memo(function ItemCard({ itemId, allById, compact=false, isDrag
 })
 
 // ── Droppable Tier Row ────────────────────────────────────────────────────────
-function TierRow({ tier, items, allById, onRename, onColorChange, onDelete, onAddAbove, onAddBelow }) {
-  const { isOver, setNodeRef } = useDroppable({ id: tier.id })
-  const [editing, setEditing] = useState(false)
+function TierRow({ tier, items, allById, onRename, onColorChange, onDelete, onAddAbove, onAddBelow, onRenameCustom, onDeleteCustom }) {
+  const { isOver, setNodeRef } = useDroppable({ id: tier.id, data:{ type:'container' } })
   const [tmpLabel, setTmpLabel] = useState(tier.label)
   const [showColorPicker, setShowColorPicker] = useState(false)
   const inputRef = useRef(null)
 
-  const confirmRename = () => {
-    const v = tmpLabel.trim()
-    if (v) onRename(tier.id, v)
-    setEditing(false)
-  }
-
   useEffect(() => {
-    if (editing) setTimeout(() => inputRef.current?.focus(), 30)
-  }, [editing])
+    setTmpLabel(tier.label)
+  }, [tier.label])
+
+  const renameDirect = (value) => {
+    setTmpLabel(value)
+    onRename(tier.id, value)
+  }
 
   return (
     <div style={{
@@ -483,39 +567,59 @@ function TierRow({ tier, items, allById, onRename, onColorChange, onDelete, onAd
         borderRight:`2px solid ${tier.color}44`,
         boxShadow: isOver ? `0 0 20px ${tier.color}44` : 'none',
         transition:'box-shadow .25s',
-        cursor:'pointer', position:'relative',
+        position:'relative',
       }}>
-        {editing ? (
-          <input
-            ref={inputRef}
-            value={tmpLabel}
-            onChange={e => setTmpLabel(e.target.value.toUpperCase())}
-            onBlur={confirmRename}
-            onKeyDown={e => { if (e.key === 'Enter') confirmRename(); if (e.key === 'Escape') setEditing(false) }}
-            maxLength={24}
-            style={{
-              width:70, textAlign:'center', background:'rgba(0,0,0,.6)',
-              border:`1px solid ${tier.color}`, borderRadius:6,
-              color:'#fff', fontSize:12, fontWeight:900, outline:'none', padding:'3px 4px',
-            }}
-          />
-        ) : (
-          <span
-            onDoubleClick={() => { setTmpLabel(tier.label); setEditing(true) }}
-            title="Double-clic pour renommer"
-            style={{
-              fontSize: tier.label.length <= 2 ? 20 : tier.label.length <= 5 ? 14 : tier.label.length <= 10 ? 11 : 9,
-              fontWeight:900, color:'#fff', lineHeight:1.1,
-              fontFamily:'serif', letterSpacing: tier.label.length > 3 ? '.02em' : '-.01em',
-              textShadow:`0 0 20px ${tier.color}88`,
-              cursor:'text', padding:'2px 5px', textAlign:'center',
-              whiteSpace:'normal', wordBreak:'break-word', overflowWrap:'anywhere',
-              maxWidth:'100%',
-            }}
-          >
-            {tier.label}
-          </span>
-        )}
+        <textarea
+          ref={inputRef}
+          value={tmpLabel}
+          onChange={e => renameDirect(e.target.value)}
+          placeholder="Rang"
+          maxLength={28}
+          title="Écris directement le nom du rang"
+          style={{
+            width:'calc(100% - 10px)',
+            minHeight:38,
+            maxHeight:72,
+            minWidth:0,
+            resize:'none',
+            textAlign:'center',
+            background:'transparent',
+            border:'none',
+            outline:'none',
+            color:'#fff',
+            fontSize: tmpLabel.length <= 2 ? 20 : tmpLabel.length <= 5 ? 14 : tmpLabel.length <= 10 ? 11 : 9.5,
+            fontWeight:900,
+            lineHeight:1.1,
+            fontFamily:'serif',
+            letterSpacing:0,
+            textShadow:`0 0 20px ${tier.color}88`,
+            padding:'2px 5px',
+            overflow:'hidden',
+            whiteSpace:'pre-wrap',
+            overflowWrap:'anywhere',
+            wordBreak:'break-word',
+          }}
+        />
+        <button
+          type="button"
+          className="tier-rank-delete"
+          onClick={() => onDelete(tier.id)}
+          title="Supprimer ce rang"
+          style={{
+            position:'absolute', top:4, right:4,
+            width:20, height:20, borderRadius:6,
+            display:'flex', alignItems:'center', justifyContent:'center',
+            background:'rgba(0,0,0,.34)',
+            border:'1px solid rgba(255,255,255,.12)',
+            color:'#fff',
+            cursor:'pointer',
+            opacity:0,
+            pointerEvents:'none',
+            transition:'opacity .15s, background .15s',
+          }}
+        >
+          <Trash2 size={9}/>
+        </button>
 
       </div>
 
@@ -535,7 +639,7 @@ function TierRow({ tier, items, allById, onRename, onColorChange, onDelete, onAd
             Glisse ici
           </div>
         )}
-        {items.map(id => <ItemCard key={id} itemId={id} allById={allById} compact/>)}
+        {items.map(id => <ItemCard key={id} itemId={id} allById={allById} compact onRenameCustom={onRenameCustom} onDeleteCustom={onDeleteCustom}/>)}
       </div>
 
       {/* Actions de la ligne — colonne dédiée à droite, révélée au survol.
@@ -546,7 +650,7 @@ function TierRow({ tier, items, allById, onRename, onColorChange, onDelete, onAd
         opacity:0, pointerEvents:'none', transition:'opacity .15s',
         borderLeft:'1px solid rgba(255,255,255,.05)',
       }}>
-        <button onClick={() => { setTmpLabel(tier.label); setEditing(true) }} title="Renommer" style={iconBtn('#BFA46A')}><Edit3 size={10}/></button>
+        <button onClick={() => inputRef.current?.focus()} title="Renommer" style={iconBtn('#BFA46A')}><Edit3 size={10}/></button>
         <button onClick={() => setShowColorPicker(v => !v)} title="Couleur" style={iconBtn(tier.color)}><Palette size={10}/></button>
         <button onClick={() => onAddAbove(tier.id)} title="Ajouter au-dessus" style={iconBtn('#4a86b8')}><Plus size={10}/></button>
         <button onClick={() => onDelete(tier.id)} title="Supprimer" style={iconBtn('#a0445c')}><Trash2 size={10}/></button>
@@ -578,9 +682,17 @@ function iconBtn(color) {
   }
 }
 
+function cardActionBtn(color) {
+  return {
+    width:17, height:17, borderRadius:5, display:'flex', alignItems:'center', justifyContent:'center',
+    background:'rgba(0,0,0,.66)', border:`1px solid ${color}80`, color, cursor:'pointer', padding:0,
+    backdropFilter:'blur(6px)',
+  }
+}
+
 // ── Pool ──────────────────────────────────────────────────────────────────────
-function ItemPool({ items, allById, customItems, onAddCustom, onNotify, favorites, onToggleFav, search, onSearch, genre, onGenre, currentType, sidePanel = false }) {
-  const { isOver, setNodeRef } = useDroppable({ id:'pool' })
+function ItemPool({ items, allById, customItems, onAddCustom, onRenameCustom, onDeleteCustom, onNotify, favorites, onToggleFav, search, onSearch, genre, onGenre, currentType, sidePanel = false }) {
+  const { isOver, setNodeRef } = useDroppable({ id:'pool', data:{ type:'container' } })
   const [poolTab, setPoolTab] = useState('all')
   const [addMode, setAddMode] = useState(null)
   const [urlInput, setUrlInput] = useState('')
@@ -777,18 +889,21 @@ function ItemPool({ items, allById, customItems, onAddCustom, onNotify, favorite
         outlineOffset:-4, borderRadius:6,
         scrollbarWidth:'thin', scrollbarColor:`rgba(191,164,106,.15) transparent`,
       }}>
-        {filtered.map(item => (
+        {filtered.map(item => {
+          const isCustomItem = customItems.some(custom => custom.id === item.id)
+          return (
           <div key={item.id} style={{ position:'relative' }}>
-            <ItemCard itemId={item.id} allById={allById}/>
+            <ItemCard itemId={item.id} allById={allById} onRenameCustom={onRenameCustom} onDeleteCustom={onDeleteCustom}/>
             <button onClick={() => onToggleFav(item.id)} style={{
-              position:'absolute', top:3, right:3, width:18, height:18, borderRadius:'50%',
+              position:'absolute', top:3, [isCustomItem ? 'left' : 'right']:3, width:18, height:18, borderRadius:'50%',
               background: favorites.includes(item.id) ? 'rgba(191,164,106,.9)' : 'rgba(0,0,0,.6)',
               border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
+              zIndex:4,
             }}>
               <Star size={9} fill={favorites.includes(item.id)?'#fff':'none'} color="#fff"/>
             </button>
           </div>
-        ))}
+        )})}
         {!filtered.length && (
           <div style={{ color:G.muted, fontSize:12, padding:'16px 0', width:'100%', textAlign:'center' }}>
             {poolTab === 'custom' ? 'Aucun upload — clique sur Ajouter' : 'Aucun résultat'}
@@ -958,7 +1073,56 @@ const listAction = {
 
 // ── CSS inject ────────────────────────────────────────────────────────────────
 const CSS = `
-  .tier-row:hover .tier-row-actions { opacity:1 !important; pointer-events:all !important; }
+  .tl-page-premium {
+    isolation:isolate;
+    overflow-x:hidden;
+  }
+  .tl-page-premium > * {
+    position:relative;
+    z-index:1;
+  }
+  .tl-page-premium::before,
+  .tl-page-premium::after {
+    content:"";
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+  }
+  .tl-page-premium::before {
+    z-index:0;
+    background:
+      linear-gradient(110deg, rgba(255,255,255,.035) 0 1px, transparent 1px 90px),
+      linear-gradient(180deg, rgba(255,255,255,.026) 0 1px, transparent 1px 76px),
+      linear-gradient(145deg, transparent 0%, rgba(191,164,106,.055) 42%, transparent 70%);
+    background-size:180px 180px, 156px 156px, 180% 180%;
+    opacity:.72;
+    mask-image:linear-gradient(180deg, rgba(0,0,0,.82), rgba(0,0,0,.50) 42%, rgba(0,0,0,.20));
+    animation:tlAmbientGrid 22s linear infinite;
+  }
+  .tl-page-premium::after {
+    z-index:0;
+    background:
+      linear-gradient(90deg, transparent 0%, rgba(191,164,106,.06) 48%, transparent 68%),
+      linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.34) 100%);
+    opacity:.48;
+    transform:translateX(-35%);
+    animation:tlSoftSheen 14s ease-in-out infinite;
+  }
+  @keyframes tlAmbientGrid {
+    0% { background-position:0 0, 0 0, 0% 50%; }
+    100% { background-position:180px 180px, -156px 156px, 100% 50%; }
+  }
+  @keyframes tlSoftSheen {
+    0%, 100% { transform:translateX(-42%); opacity:.28; }
+    50% { transform:translateX(18%); opacity:.54; }
+  }
+  .tier-row:hover .tier-row-actions,
+  .tier-row:focus-within .tier-row-actions { opacity:1 !important; pointer-events:all !important; }
+  .tier-row:hover .tier-rank-delete,
+  .tier-row:focus-within .tier-rank-delete,
+  .tier-rank-delete:hover { opacity:1 !important; pointer-events:all !important; }
+  .tier-item-card:hover .custom-item-actions,
+  .tier-item-card:focus-within .custom-item-actions { opacity:1 !important; pointer-events:all !important; }
   .tier-item-card:hover { box-shadow:0 6px 24px rgba(0,0,0,.7),0 0 0 1.5px rgba(191,164,106,.3) !important; transform:translateY(-2px) scale(1.03); }
   .tier-item-card { transition:transform .18s,box-shadow .18s; }
   .saved-list-card:hover { border-color:rgba(191,164,106,.28) !important; }
@@ -969,9 +1133,12 @@ const CSS = `
 
 // ── Main Export ───────────────────────────────────────────────────────────────
 export default function TierListPage() {
-  const { userId, discordId, displayName } = useAuth()
+  const { userId, discordId, displayName, avatarUrl } = useAuth()
   const editorWide = useMediaQuery('(min-width: 1180px)')
   const isMobile = useMediaQuery('(max-width: 720px)')
+  // Tablette/petit écran : le bandeau d'outils doit passer à la ligne (sinon il
+  // s'entasse et le titre s'écrase verticalement). Seuil plus haut que isMobile.
+  const isNarrowBar = useMediaQuery('(max-width: 1100px)')
   const initialDraftRef = useRef(null)
 
   // ── Tab
@@ -1249,15 +1416,33 @@ export default function TierListPage() {
   const handleDragEnd = ({ active, over }) => {
     setActiveId(null)
     if (!over || !board) return
-    const dest = over.id
+    const activeItemId = active.id
+    const overId = over.id
+    if (activeItemId === overId) return
     const validContainers = [...tiers.map(t => t.id), 'pool']
-    if (!validContainers.includes(dest)) return
-    const src = findContainer(active.id)
-    if (!src || src === dest) return
+    const src = findContainer(activeItemId)
+    const dest = validContainers.includes(overId) ? overId : findContainer(overId)
+    if (!src || !dest) return
+
     const next = {}
-    for (const k of Object.keys(board))
-      next[k] = k === src ? board[k].filter(id => id !== active.id)
-        : k === dest ? [...board[k], active.id] : [...board[k]]
+    for (const k of Object.keys(board)) next[k] = board[k].filter(id => id !== activeItemId)
+
+    let insertIndex = next[dest].length
+    if (!validContainers.includes(overId)) {
+      const overIndex = next[dest].indexOf(overId)
+      if (overIndex >= 0) {
+        const activeCenter = active.rect.current.translated
+          ? active.rect.current.translated.left + active.rect.current.translated.width / 2
+          : null
+        const overCenter = over.rect
+          ? over.rect.left + over.rect.width / 2
+          : null
+        insertIndex = overIndex + (activeCenter !== null && overCenter !== null && activeCenter > overCenter ? 1 : 0)
+      }
+    }
+
+    next[dest].splice(insertIndex, 0, activeItemId)
+    if (src === dest && next[dest].join('|') === (board[dest] || []).join('|')) return
     setBoard(next)
     queueDraftSave({ board:next })
     if (tiers.find(t => t.id === dest)?.label === 'GOD' || tiers.find(t => t.id === dest)?.id === 'god') fireConfetti()
@@ -1342,6 +1527,24 @@ export default function TierListPage() {
     const newItem = { id, name, sub, img, year: new Date().getFullYear(), genres:['Custom'] }
     setCustomItems(prev => [...prev, newItem])
     setBoard(prev => prev ? { ...prev, pool: [...(prev.pool||[]), id] } : prev)
+    setSaved(false)
+  }
+
+  const handleRenameCustom = (itemId, name) => {
+    setCustomItems(prev => prev.map(item => item.id === itemId ? { ...item, name } : item))
+    setSaved(false)
+  }
+
+  const handleDeleteCustom = (itemId) => {
+    setCustomItems(prev => prev.filter(item => item.id !== itemId))
+    setBoard(prev => {
+      if (!prev) return prev
+      const next = {}
+      for (const [key, ids] of Object.entries(prev)) next[key] = ids.filter(id => id !== itemId)
+      return next
+    })
+    setFavorites(prev => prev.filter(id => id !== itemId))
+    setToast('Image supprimée')
     setSaved(false)
   }
 
@@ -1433,8 +1636,11 @@ export default function TierListPage() {
       }
       const list = buildShareList({ customItems: items })
       if (!list) { setToast('Crée une tier list avant de partager'); return }
+      const identity = { displayName, authorName: displayName, avatarUrl, authorAvatar: avatarUrl }
       await autosaveTierList(list)
-      const result = await publishTierList(list, forkOrigin ? { originalAuthorName: forkOrigin.name, originalAuthorAvatar: forkOrigin.avatar } : {})
+      const result = await publishTierList(list, forkOrigin
+        ? { ...identity, originalAuthorName: forkOrigin.name, originalAuthorAvatar: forkOrigin.avatar }
+        : identity)
       setCommunityLists(prev => [result.list, ...prev.filter(item => item.id !== result.list.id)])
       setCloudSaved(true)
       setTab('community')
@@ -1604,8 +1810,8 @@ export default function TierListPage() {
   ]
 
   return (
-    <div style={{ position:'relative', minHeight:'100vh', color:G.text, fontFamily:"'Inter',system-ui,sans-serif", paddingTop:72,
-      background:`radial-gradient(940px 560px at 80% -6%, rgba(212,175,90,0.13), transparent 62%), radial-gradient(780px 480px at 14% 8%, rgba(160,120,40,0.10), transparent 62%), radial-gradient(700px 600px at 50% 118%, rgba(120,90,30,0.08), transparent 66%), linear-gradient(180deg, #0b0a07 0%, #0a0906 60%, #080705 100%)` }}>
+    <div className="tl-page-premium" style={{ position:'relative', minHeight:'100vh', color:G.text, fontFamily:"'Inter',system-ui,sans-serif", paddingTop:72,
+      background:'linear-gradient(180deg, #07080c 0%, #0a0b10 42%, #070709 100%)' }}>
       <style>{CSS}</style>
 
       {/* ── Studio Header ── */}
@@ -1615,9 +1821,9 @@ export default function TierListPage() {
         borderBottom:`1px solid ${G.border}`,
         padding: isMobile ? '0 12px' : '0 20px',
       }}>
-        <div style={{ maxWidth:1600, margin:'0 auto', display:'flex', alignItems:'center', gap: isMobile ? 10 : 14,
-          minWidth:0, flexWrap: isMobile ? 'wrap' : 'nowrap', rowGap:8,
-          ...(isMobile ? { height:'auto', minHeight:60, paddingTop:8, paddingBottom:8 } : { height:60 }) }}>
+        <div style={{ maxWidth:1600, margin:'0 auto', display:'flex', alignItems:'center', gap: isNarrowBar ? 10 : 14,
+          minWidth:0, flexWrap: isNarrowBar ? 'wrap' : 'nowrap', rowGap:8,
+          ...(isNarrowBar ? { height:'auto', minHeight:60, paddingTop:8, paddingBottom:8 } : { height:60 }) }}>
 
           {/* Brand */}
           <div style={{ display:'flex', alignItems:'center', gap:10, flexShrink:0 }}>
@@ -1662,7 +1868,7 @@ export default function TierListPage() {
           {/* Studio actions */}
           {tab === 'studio' && selectedType && (
             <div style={{ display:'flex', alignItems:'center', gap:6, minWidth:0,
-              flexWrap: isMobile ? 'wrap' : 'nowrap', rowGap:6 }}>
+              flexWrap: isNarrowBar ? 'wrap' : 'nowrap', rowGap:6 }}>
               {/* Title edit */}
               {editTitle ? (
                 <div style={{ display:'flex', alignItems:'center', gap:5 }}>
@@ -1675,7 +1881,7 @@ export default function TierListPage() {
               ) : (
                 <button onClick={() => { setTmpTitle(title); setEditTitle(true); setTimeout(() => titleRef.current?.focus(), 30) }}
                   style={{ display:'flex', alignItems:'center', gap:5, background:'none', border:'none', cursor:'pointer',
-                    color:G.text, fontSize:13, fontWeight:800, padding:'4px 8px',
+                    color:G.text, fontSize:13, fontWeight:800, padding:'4px 8px', whiteSpace:'nowrap', flexShrink:0,
                     borderRadius:8, transition:'background .15s' }}>
                   {title.slice(0,24)}{title.length > 24 && '…'} <Edit3 size={11} style={{ color:G.muted }}/>
                 </button>
@@ -1942,9 +2148,8 @@ export default function TierListPage() {
                   <div ref={boardRef} style={{
                     minWidth:0,
                     background:'rgba(10,11,18,.6)', backdropFilter:'blur(12px)',
-                    border:editorWide ? `1px solid ${G.border}` : 'none',
-                    borderBottom:editorWide ? `1px solid ${G.border}` : `1px solid ${G.border}`,
-                    borderRadius:editorWide ? 14 : 0,
+                    border:`1px solid ${G.border}`,
+                    borderRadius:editorWide ? 14 : 10,
                     overflow:'hidden',
                   }}>
                     {board && tiers.map(tier => (
@@ -1956,6 +2161,8 @@ export default function TierListPage() {
                         onColorChange={handleColorChange}
                         onDelete={handleDeleteRow}
                         onAddAbove={handleAddRowAbove}
+                        onRenameCustom={handleRenameCustom}
+                        onDeleteCustom={handleDeleteCustom}
                         onAddBelow={(id) => {
                           const idx = tiers.findIndex(t => t.id === id)
                           const newId = uid()
@@ -1990,6 +2197,8 @@ export default function TierListPage() {
                       allById={allById}
                       customItems={customItems}
                       onAddCustom={handleAddCustom}
+                      onRenameCustom={handleRenameCustom}
+                      onDeleteCustom={handleDeleteCustom}
                       onNotify={setToast}
                       favorites={favorites}
                       onToggleFav={id => setFavorites(p => p.includes(id) ? p.filter(f => f !== id) : [...p, id])}
