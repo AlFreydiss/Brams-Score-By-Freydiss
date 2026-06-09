@@ -69,6 +69,7 @@ export default function SupportPage() {
 
   const goal = data?.goal || 200, total = data?.total || 0
   const donors = data?.donors || []
+  const topDonors = [...donors].sort((a, b) => (Number(b.amount) || 0) - (Number(a.amount) || 0)).slice(0, 3)
   const pct = goal > 0 ? Math.min(100, Math.round((total / goal) * 100)) : 0
 
   return (
@@ -103,6 +104,28 @@ export default function SupportPage() {
           <div style={{ marginTop: 7, fontSize: 13, fontWeight: 800, color: pct >= 100 ? '#7fe6a8' : GOLD_SOFT, fontFamily: "'Cinzel', serif" }}>
             {pct >= 100 ? '🎉 Objectif atteint, merci les nakamas !' : `${pct}% de l'objectif`}
           </div>
+
+          {/* Podium — Top 3 soutiens par montant */}
+          {topDonors.length >= 2 && (
+            <>
+              <div style={{ marginTop: 22, fontSize: 10.5, fontWeight: 800, letterSpacing: '.16em', textTransform: 'uppercase', color: 'rgba(205,189,151,0.5)', marginBottom: 11 }}>🏆 Top soutiens</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {topDonors.map((d, i) => {
+                  const first = i === 0
+                  return (
+                    <div key={`top-${d.id}`} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '9px 12px', borderRadius: 12,
+                      background: first ? 'linear-gradient(135deg, rgba(245,181,10,0.16), rgba(245,181,10,0.03))' : 'rgba(255,255,255,0.03)',
+                      border: `1px solid ${first ? 'rgba(245,181,10,0.4)' : 'rgba(255,255,255,0.06)'}` }}>
+                      <span style={{ fontSize: 18, width: 22, textAlign: 'center', flexShrink: 0 }}>{['🥇', '🥈', '🥉'][i]}</span>
+                      <span style={{ flexShrink: 0, width: 32, height: 32, borderRadius: '50%', display: 'grid', placeItems: 'center', fontWeight: 900, color: '#fff', fontSize: 13, background: `linear-gradient(135deg,${hueFor(d.name)},${hueFor(d.name)}aa)` }}>{initial(d.name)}</span>
+                      <span style={{ flex: 1, minWidth: 0, fontSize: 14, fontWeight: 700, color: '#f4ecd8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{d.name}</span>
+                      <span style={{ flexShrink: 0, fontSize: 14.5, fontWeight: 900, color: GOLD, fontFamily: "'Cinzel', serif" }}>{euro(d.amount)}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            </>
+          )}
 
           <div style={{ marginTop: 22, fontSize: 10.5, fontWeight: 800, letterSpacing: '.16em', textTransform: 'uppercase', color: 'rgba(205,189,151,0.5)', marginBottom: 12 }}>Ils ont soutenu · {donors.length}</div>
           <div className="sp-feed" style={{ display: 'flex', flexDirection: 'column', gap: 12, maxHeight: 440, overflowY: 'auto', paddingRight: 4 }}>
