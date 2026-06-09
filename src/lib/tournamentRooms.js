@@ -1,8 +1,10 @@
-// ── Tournoi multijoueur : salons en ligne (Supabase realtime) ──────────────
-// Même approche que les salons blind-test. L'hôte génère le bracket et le stocke
-// dans la room (champ `rounds`). Tous les joueurs lisent le même bracket, votent
-// (left/right) sur le duel courant, et l'HÔTE résout à la majorité puis avance.
-import { supabase } from './supabase.js'
+// ── Tournoi multijoueur : salons en ligne ──────────────────────────────────
+// Couche DONNÉES en REST DIRECT (PostgREST) — PAS le client supabase-js : ses
+// .from()/.rpc() pouvaient HANG (getSession bloque le client → "Création..." à
+// l'infini). Le realtime (subscribe) reste sur le client (ça, ça marche).
+// L'hôte génère le bracket (rounds), tous lisent le même, votent, l'hôte résout.
+import { supabase } from './supabase.js'            // realtime uniquement
+import { SB_URL, SB_KEY, getAccessToken } from './supabaseRest.js'
 
 const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789' // sans I/O/0/1 (lisible)
 
@@ -12,102 +14,113 @@ export function genRoomCode(len = 4) {
   return s
 }
 
+// Helper REST : renvoie { ok, status, data }. Token via getAccessToken (rafraîchi),
+// fallback anon key. Ne hang jamais (fetch standard).
+async function rest(path, { method = 'GET', body, prefer, headers } = {}) {
+  if (!SB_URL || !SB_KEY) return { ok: false, status: 0, data: null }
+  const token = await getAccessToken().catch(() => null)
+  let res
+  try {
+    res = await fetch(`${SB_URL}/rest/v1/${path}`, {
+      method,
+      headers: {
+        apikey: SB_KEY,
+        Authorization: `Bearer ${token || SB_KEY}`,
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        ...(prefer ? { Prefer: prefer } : {}),
+        ...headers,
+      },
+      body: body != null ? JSON.stringify(body) : undefined,
+    })
+  } catch (e) {
+    return { ok: false, status: 0, data: null, error: e?.message }
+  }
+  let data = null
+  try { data = await res.json() } catch {}
+  return { ok: res.ok, status: res.status, data }
+}
+
+const UPSERT = 'resolution=merge-duplicates,return=minimal'
+const nowIso = () => new Date().toISOString()
+
 export async function createTournamentRoom({ hostUserId, displayName, avatarUrl, tournamentId, rounds }) {
-  if (!supabase) return { error: 'supabase' }
+  if (!SB_URL) return { error: 'supabase' }
   // Quelques tentatives pour éviter une collision de code (PK).
   for (let attempt = 0; attempt < 5; attempt++) {
     const code = genRoomCode()
-    const { error } = await supabase.from('tournament_rooms').insert({
-      code, host_user_id: String(hostUserId), tournament_id: tournamentId,
-      status: 'lobby', rounds, current_match: null,
+    const r = await rest('tournament_rooms', {
+      method: 'POST', prefer: 'return=minimal',
+      body: { code, host_user_id: String(hostUserId), tournament_id: tournamentId, status: 'lobby', rounds, current_match: null },
     })
-    if (!error) {
-      await supabase.from('tournament_room_players').upsert({
-        room_code: code, user_id: String(hostUserId),
-        display_name: displayName, avatar_url: avatarUrl, is_host: true,
-        last_seen: new Date().toISOString(),
-      }, { onConflict: 'room_code,user_id' })
+    if (r.ok) {
+      await rest('tournament_room_players?on_conflict=room_code,user_id', {
+        method: 'POST', prefer: UPSERT,
+        body: { room_code: code, user_id: String(hostUserId), display_name: displayName, avatar_url: avatarUrl, is_host: true, last_seen: nowIso() },
+      })
       return { code, error: null }
     }
-    if (!String(error.message || '').includes('duplicate')) return { error: error.message }
+    if (r.status === 409) continue            // code en doublon → on retente
+    return { error: `create_failed_${r.status}` }
   }
   return { error: 'code_collision' }
 }
 
 export async function fetchTournamentRoom(code) {
-  if (!supabase) return null
-  const { data } = await supabase
-    .from('tournament_rooms').select('*').eq('code', code.toUpperCase()).maybeSingle()
-  return data || null
+  const r = await rest(`tournament_rooms?code=eq.${code.toUpperCase()}&select=*&limit=1`)
+  return (r.data && r.data[0]) || null
 }
 
 export async function joinTournamentRoom({ code, userId, displayName, avatarUrl }) {
-  if (!supabase) return { error: 'supabase' }
   const room = await fetchTournamentRoom(code)
   if (!room) return { error: 'introuvable' }
-  const { error } = await supabase.from('tournament_room_players').upsert({
-    room_code: code.toUpperCase(), user_id: String(userId),
-    display_name: displayName, avatar_url: avatarUrl,
-    last_seen: new Date().toISOString(),
-  }, { onConflict: 'room_code,user_id' })
-  return { error: error?.message || null, room }
+  const r = await rest('tournament_room_players?on_conflict=room_code,user_id', {
+    method: 'POST', prefer: UPSERT,
+    body: { room_code: code.toUpperCase(), user_id: String(userId), display_name: displayName, avatar_url: avatarUrl, last_seen: nowIso() },
+  })
+  return { error: r.ok ? null : `join_${r.status}`, room }
 }
 
-// Salons récents (pour la section "Salons en direct" de l'accueil du salon).
-// Throw sur erreur Supabase pour que l'UI distingue "vide" (ok) de "erreur".
+// Salons récents ("Salons en direct"). Throw sur erreur → l'UI distingue vide/erreur.
 export async function fetchRecentTournamentRooms(limit = 6) {
-  if (!supabase) return []
-  const { data, error } = await supabase
-    .from('tournament_rooms')
-    .select('code, tournament_id, status, created_at')
-    .in('tournament_id', ['ost', 'opening', 'ending'])  // exclut les salons Undercover (mêmes tables)
-    .order('created_at', { ascending: false })
-    .limit(limit)
-  if (error) throw new Error(error.message || 'fetch_rooms_failed')
-  return data || []
+  const r = await rest(`tournament_rooms?select=code,tournament_id,status,created_at&tournament_id=in.(ost,opening,ending)&order=created_at.desc&limit=${limit}`)
+  if (!r.ok) throw new Error(`fetch_rooms_failed_${r.status}`)
+  return r.data || []
 }
 
 export async function fetchTournamentRoomPlayers(code) {
-  if (!supabase) return []
-  const { data } = await supabase
-    .from('tournament_room_players').select('*')
-    .eq('room_code', code.toUpperCase()).order('joined_at', { ascending: true })
-  return data || []
+  const r = await rest(`tournament_room_players?room_code=eq.${code.toUpperCase()}&select=*&order=joined_at.asc`)
+  return r.data || []
 }
 
 export async function fetchTournamentRoomVotes(code, matchId) {
-  if (!supabase) return []
-  const { data } = await supabase
-    .from('tournament_room_votes').select('user_id, side')
-    .eq('room_code', code.toUpperCase()).eq('match_id', matchId)
-  return data || []
+  const r = await rest(`tournament_room_votes?room_code=eq.${code.toUpperCase()}&match_id=eq.${encodeURIComponent(matchId)}&select=user_id,side`)
+  return r.data || []
 }
 
 export async function castTournamentVote({ code, matchId, userId, side }) {
-  if (!supabase) return { error: 'supabase' }
-  const { error } = await supabase.from('tournament_room_votes').upsert({
-    room_code: code.toUpperCase(), match_id: matchId, user_id: String(userId), side,
-  }, { onConflict: 'room_code,match_id,user_id' })
-  return { error: error?.message || null }
+  const r = await rest('tournament_room_votes?on_conflict=room_code,match_id,user_id', {
+    method: 'POST', prefer: UPSERT,
+    body: { room_code: code.toUpperCase(), match_id: matchId, user_id: String(userId), side },
+  })
+  return { error: r.ok ? null : `vote_${r.status}` }
 }
 
 export async function updateTournamentRoom(code, patch) {
-  if (!supabase) return { error: 'supabase' }
-  const { error } = await supabase.from('tournament_rooms')
-    .update({ ...patch, updated_at: new Date().toISOString() })
-    .eq('code', code.toUpperCase())
-  return { error: error?.message || null }
+  const r = await rest(`tournament_rooms?code=eq.${code.toUpperCase()}`, {
+    method: 'PATCH', prefer: 'return=minimal',
+    body: { ...patch, updated_at: nowIso() },
+  })
+  return { error: r.ok ? null : `update_${r.status}` }
 }
 
 export async function touchTournamentPlayer(code, userId) {
-  if (!supabase) return
-  await supabase.from('tournament_room_players')
-    .update({ last_seen: new Date().toISOString() })
-    .eq('room_code', code.toUpperCase()).eq('user_id', String(userId))
+  await rest(`tournament_room_players?room_code=eq.${code.toUpperCase()}&user_id=eq.${String(userId)}`, {
+    method: 'PATCH', prefer: 'return=minimal', body: { last_seen: nowIso() },
+  })
 }
 
-// Abonnement realtime à la room (rounds/status), aux joueurs et aux votes.
-// onChange est appelé sans argument à chaque évènement — la page refetch.
+// Abonnement realtime (rounds/status/joueurs/votes) — reste sur le client supabase.
 export function subscribeTournamentRoom(code, onChange) {
   if (!supabase) return () => {}
   const c = code.toUpperCase()
@@ -119,18 +132,13 @@ export function subscribeTournamentRoom(code, onChange) {
     .subscribe()
   return () => { try { supabase.removeChannel(channel) } catch {} }
 }
+
 export async function deleteTournamentRoom(code, hostUserId) {
-  if (!supabase) return { error: 'Supabase non configure' }
   if (!code || !hostUserId) return { error: 'Code ou hote manquant' }
-
-  const { data, error } = await supabase
-    .from('tournament_rooms')
-    .delete()
-    .eq('code', String(code).trim().toUpperCase())
-    .eq('host_user_id', String(hostUserId))
-    .select('code')
-
-  if (error) return { error: error.message }
-  if (!data?.length) return { error: 'Salon introuvable ou reserve a son hote' }
+  const r = await rest(`tournament_rooms?code=eq.${String(code).trim().toUpperCase()}&host_user_id=eq.${String(hostUserId)}`, {
+    method: 'DELETE', prefer: 'return=representation',
+  })
+  if (!r.ok) return { error: `delete_${r.status}` }
+  if (!Array.isArray(r.data) || !r.data.length) return { error: 'Salon introuvable ou reserve a son hote' }
   return { error: null }
 }
