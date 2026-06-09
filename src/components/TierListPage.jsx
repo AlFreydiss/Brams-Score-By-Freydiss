@@ -2233,17 +2233,6 @@ export default function TierListPage() {
               <button onClick={refreshCommunity} style={{ ...actionBtn }}>
                 <RotateCcw size={12}/> Actualiser
               </button>
-              <button onClick={shareList} disabled={publishing || !selectedType}
-                title={!selectedType ? 'Ouvre/crée une tier list dans Créer d’abord' : 'Publier ta tier list'}
-                style={{
-                  display:'flex', alignItems:'center', gap:6, padding:'8px 16px', borderRadius:9,
-                  background:'linear-gradient(135deg,#ffd84d,#f0a500)', border:'1px solid #ffe27a',
-                  color:'#1a1200', cursor: (publishing || !selectedType) ? 'default' : 'pointer',
-                  fontSize:12, fontWeight:900, boxShadow:'0 6px 20px rgba(240,165,0,.4)',
-                  opacity:(publishing || !selectedType) ? .5 : 1, whiteSpace:'nowrap',
-                }}>
-                <Users size={13}/> {publishing ? 'Publication…' : 'Partager avec la communauté'}
-              </button>
             </div>
           </div>
 
