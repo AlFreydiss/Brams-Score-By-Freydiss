@@ -1,5 +1,5 @@
 from flask import Flask
-from threading import Thread
+from threading import Thread, Lock
 import os
 import asyncio
 import yt_dlp
@@ -232,6 +232,7 @@ _CACHE_READY = False   # True dès que le cache est chargé
 # et le flush du bloc NE touche PLUS berrys.
 _BERRY_DELTA: dict = {}   # uid -> somme des +/- non encore persistés en DB
 _BERRY_ZERO:  set  = set() # uid -> remise à zéro en attente (reset admin, autoritaire)
+_DB_WRITE_LOCK = Lock()
 _HTTP: aiohttp.ClientSession | None = None  # session aiohttp globale réutilisée
 
 # Cooldowns pour éviter le spam d'avertissements
@@ -910,60 +911,63 @@ def _load_all_from_db() -> dict:
         release_db(conn)
 
 
-def _flush_uids_to_db(uids: set) -> None:
+def _flush_uids_to_db(uids: set) -> bool:
     """Sauvegarde les UIDs dirty en un batch UPSERT, SANS toucher berrys (préservé en
     DB), puis applique les deltas berries de façon atomique (concurrence-safe)."""
-    # Bloc JSON sans la clé berrys : la monnaie est gérée séparément en atomique.
-    values = [
-        (uid, json.dumps({k: v for k, v in _CACHE[uid].items() if k != "berrys"}))
-        for uid in uids if _CACHE.get(uid) is not None
-    ]
-    if not values:
-        return
-    conn = get_db()
-    try:
-        conn.autocommit = False
-        cur = conn.cursor()
-        cur.execute("SET LOCAL statement_timeout = '60000'")
-        # ON CONFLICT : on garde le berrys DÉJÀ en DB (autoritaire), on écrase le reste.
-        _pg_execute_values(
-            cur,
-            "INSERT INTO users (uid, data) VALUES %s "
-            "ON CONFLICT (uid) DO UPDATE SET data = "
-            "EXCLUDED.data || jsonb_build_object('berrys', COALESCE(users.data->'berrys', '0'::jsonb))",
-            values,
-        )
-        # ── Berries : appliquer les deltas atomiquement (berrys = berrys + delta) ──
-        for uid in list(uids):
-            if uid in _BERRY_ZERO:
-                cur.execute(
-                    "UPDATE users SET data = jsonb_set(COALESCE(data,'{}'::jsonb),'{berrys}', to_jsonb(0::bigint)) "
-                    "WHERE uid = %s", (uid,))
-                _BERRY_ZERO.discard(uid)
-                _BERRY_DELTA.pop(uid, None)
-                if uid in _CACHE:
-                    _CACHE[uid]["berrys"] = 0
-                continue
-            delta = _BERRY_DELTA.pop(uid, 0)
-            if delta:
-                cur.execute(
-                    "UPDATE users SET data = jsonb_set(COALESCE(data,'{}'::jsonb),'{berrys}', "
-                    "to_jsonb(GREATEST(0, COALESCE((data->>'berrys')::bigint,0) + %s)::bigint)) "
-                    "WHERE uid = %s RETURNING (data->>'berrys')::bigint",
-                    (delta, uid))
-                row = cur.fetchone()
-                if row and uid in _CACHE:
-                    _CACHE[uid]["berrys"] = int(row[0])   # resynchronise le cache sur la DB
-        conn.commit()
-        cur.close()
-    except Exception as e:
-        print(f"❌ flush_uids_to_db: {e}")
+    with _DB_WRITE_LOCK:
+        # Bloc JSON sans la clé berrys : la monnaie est gérée séparément en atomique.
+        values = [
+            (uid, json.dumps({k: v for k, v in _CACHE[uid].items() if k != "berrys"}))
+            for uid in uids if _CACHE.get(uid) is not None
+        ]
+        if not values:
+            return True
+        conn = get_db()
         try:
-            conn.rollback()
-        except Exception:
-            pass
-    finally:
-        release_db(conn)
+            conn.autocommit = False
+            cur = conn.cursor()
+            cur.execute("SET LOCAL statement_timeout = '60000'")
+            # ON CONFLICT : on garde le berrys DÉJÀ en DB (autoritaire), on écrase le reste.
+            _pg_execute_values(
+                cur,
+                "INSERT INTO users (uid, data) VALUES %s "
+                "ON CONFLICT (uid) DO UPDATE SET data = "
+                "EXCLUDED.data || jsonb_build_object('berrys', COALESCE(users.data->'berrys', '0'::jsonb))",
+                values,
+            )
+            # ── Berries : appliquer les deltas atomiquement (berrys = berrys + delta) ──
+            for uid in list(uids):
+                if uid in _BERRY_ZERO:
+                    cur.execute(
+                        "UPDATE users SET data = jsonb_set(COALESCE(data,'{}'::jsonb),'{berrys}', to_jsonb(0::bigint)) "
+                        "WHERE uid = %s", (uid,))
+                    _BERRY_ZERO.discard(uid)
+                    _BERRY_DELTA.pop(uid, None)
+                    if uid in _CACHE:
+                        _CACHE[uid]["berrys"] = 0
+                    continue
+                delta = _BERRY_DELTA.pop(uid, 0)
+                if delta:
+                    cur.execute(
+                        "UPDATE users SET data = jsonb_set(COALESCE(data,'{}'::jsonb),'{berrys}', "
+                        "to_jsonb(GREATEST(0, COALESCE((data->>'berrys')::bigint,0) + %s)::bigint)) "
+                        "WHERE uid = %s RETURNING (data->>'berrys')::bigint",
+                        (delta, uid))
+                    row = cur.fetchone()
+                    if row and uid in _CACHE:
+                        _CACHE[uid]["berrys"] = int(row[0])   # resynchronise le cache sur la DB
+            conn.commit()
+            cur.close()
+            return True
+        except Exception as e:
+            print(f"❌ flush_uids_to_db: {e}")
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+            return False
+        finally:
+            release_db(conn)
 
 
 # ── API publique (remplace les anciennes fonctions) ───────────────
@@ -1167,6 +1171,10 @@ def _sync_flush_dirty() -> int:
     return len(to_flush)
 
 
+def _force_flush_uid_to_db(uid: str) -> bool:
+    return _flush_uids_to_db({str(uid)})
+
+
 def get_user(data, uid: str):
     if uid not in data:
         data[uid] = {
@@ -1291,6 +1299,45 @@ def total_seconds(sessions, join_time=None, extra=0, _now=None):
     if join_time:
         total += (_now or now_ts()) - join_time
     return total + extra
+
+def _is_counted_voice_channel(guild, channel) -> bool:
+    if channel is None:
+        return False
+    afk_channel = getattr(guild, "afk_channel", None)
+    if afk_channel is not None and channel.id == afk_channel.id:
+        return False
+    return True
+
+def _is_counted_voice_member(member: discord.Member) -> bool:
+    voice = getattr(member, "voice", None)
+    return _is_counted_voice_channel(getattr(member, "guild", None), getattr(voice, "channel", None))
+
+def _is_user_counted_voice_anywhere(user_id: int) -> bool:
+    for guild in bot.guilds:
+        if guild.id not in GUILD_IDS:
+            continue
+        member = guild.get_member(user_id)
+        if member is not None and _is_counted_voice_member(member):
+            return True
+    return False
+
+def _counted_join_time(uid: str, user: dict, member: discord.Member, *, recover: bool = False, _now: float | None = None):
+    if user.get("join_time") and not _is_counted_voice_member(member):
+        if _is_user_counted_voice_anywhere(member.id):
+            return None
+        user["join_time"] = None
+        user.pop("last_berry_ts", None)
+        _DIRTY.add(uid)
+        return None
+
+    jt = user.get("join_time")
+    if not jt and recover and _is_counted_voice_member(member):
+        user["join_time"] = _now or now_ts()
+        user.pop("last_berry_ts", None)
+        _DIRTY.add(uid)
+        return user["join_time"]
+
+    return jt if _is_counted_voice_member(member) else None
 
 def total_messages(messages, extra=0):
     return len(messages) + extra
@@ -1587,6 +1634,8 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True, da
     if member.id in RANK_EXCLUDED_IDS:
         return
     guild = member.guild
+    if not any(guild.get_role(role_id) for role_id in RANK_ROLES.values()):
+        return
     # Toujours utiliser le cache mémoire (data passé en argument ou _CACHE global)
     if data is None:
         data = _CACHE
@@ -1598,26 +1647,36 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True, da
 
     ranks_to_add    = deserved_ranks - current_rank_names
     ranks_to_remove = current_rank_names - deserved_ranks
+    rank_order = {r: i for i, (_, r) in enumerate(reversed(RANKS))}
+    added_ranks: set[str] = set()
+    removed_ranks: set[str] = set()
 
-    for rank_name in ranks_to_add:
+    for rank_name in sorted(ranks_to_add, key=lambda r: rank_order.get(r, -1)):
         role = guild.get_role(RANK_ROLES[rank_name])
-        if role:
-            try:
-                await member.add_roles(role)
-            except discord.Forbidden:
-                print(f"⚠️ Permission refusée add_roles {member.display_name} ({rank_name})")
-            except discord.HTTPException as e:
-                print(f"⚠️ add_roles {member.display_name} ({rank_name}): {e}")
+        if role is None:
+            print(f"[RANK] Role introuvable dans {guild.name}: {rank_name} ({RANK_ROLES[rank_name]})")
+            continue
+        try:
+            await member.add_roles(role)
+            added_ranks.add(rank_name)
+        except discord.Forbidden:
+            print(f"⚠️ Permission refusée add_roles {member.display_name} ({rank_name})")
+        except discord.HTTPException as e:
+            print(f"⚠️ add_roles {member.display_name} ({rank_name}): {e}")
 
-    for rank_name in ranks_to_remove:
+    for rank_name in sorted(ranks_to_remove, key=lambda r: rank_order.get(r, -1), reverse=True):
         role = guild.get_role(RANK_ROLES[rank_name])
-        if role:
-            try:
-                await member.remove_roles(role)
-            except discord.Forbidden:
-                print(f"⚠️ Permission refusée remove_roles {member.display_name} ({rank_name})")
-            except discord.HTTPException as e:
-                print(f"⚠️ remove_roles {member.display_name} ({rank_name}): {e}")
+        if role is None:
+            continue
+        try:
+            await member.remove_roles(role)
+            removed_ranks.add(rank_name)
+        except discord.Forbidden:
+            print(f"⚠️ Permission refusée remove_roles {member.display_name} ({rank_name})")
+            continue
+        except discord.HTTPException as e:
+            print(f"⚠️ remove_roles {member.display_name} ({rank_name}): {e}")
+            continue
         # Pas de DM de derank lors d'un resync silencieux (announce=False) — évite
         # de spammer tout le serveur en DM pendant une réconciliation en masse.
         if not announce:
@@ -1642,9 +1701,8 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True, da
         except discord.Forbidden:
             pass
 
-    if announce and (ranks_to_add or ranks_to_remove):
+    if announce and (added_ranks or removed_ranks):
         rank_threshold_map = {name: threshold for threshold, name in RANKS}
-        rank_order = {r: i for i, (_, r) in enumerate(reversed(RANKS))}
         known = set(user.get("known_ranks", []))
 
         # Rang le plus haut que le membre AVAIT déjà sur Discord avant les ajouts
@@ -1654,14 +1712,14 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True, da
         )
 
         # Retire les rangs perdus du known pour qu'ils puissent être ré-annoncés si regagnés
-        for rn in ranks_to_remove:
+        for rn in removed_ranks:
             known.discard(rn)
 
         # Mise à jour known_ranks AVANT tout await pour éviter la race condition :
         # si deux appels update_rank s'exécutent en parallèle (vocal_loop + on_voice_state),
         # le second voit déjà le rang dans known_ranks et ne réannonce pas.
         to_announce = []
-        for rank_name in sorted(ranks_to_add, key=lambda r: rank_order.get(r, -1)):
+        for rank_name in sorted(added_ranks, key=lambda r: rank_order.get(r, -1)):
             already_known = rank_name in known
             known.add(rank_name)
             if not already_known and rank_threshold_map.get(rank_name, 0) > highest_current:
@@ -1705,8 +1763,8 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True, da
         user["last_rank"] = new_highest_rank
         _DIRTY.add(uid)
 
-    if ranks_to_add or ranks_to_remove:
-        print(f"[RANK] {member.display_name} : +{ranks_to_add} -{ranks_to_remove} | {hours_7d:.1f}h")
+    if added_ranks or removed_ranks:
+        print(f"[RANK] {member.display_name} : +{added_ranks} -{removed_ranks} | {hours_7d:.1f}h")
 
 def _load_font(path: str, size: int):
     try:
@@ -2360,9 +2418,13 @@ async def on_ready():
 
     in_voice_uids = set()
     for guild in bot.guilds:
+        if guild.id not in GUILD_IDS:
+            continue
         for channel in list(guild.voice_channels) + list(guild.stage_channels):
+            if not _is_counted_voice_channel(guild, channel):
+                continue
             for member in channel.members:
-                if not member.bot:
+                if not member.bot and _is_counted_voice_member(member):
                     in_voice_uids.add(str(member.id))
 
     kept = closed = opened = 0
@@ -2390,7 +2452,11 @@ async def on_ready():
 
     # Membres en vocal qui n'ont PAS de session ouverte → on en ouvre une maintenant.
     for guild in bot.guilds:
+        if guild.id not in GUILD_IDS:
+            continue
         for channel in list(guild.voice_channels) + list(guild.stage_channels):
+            if not _is_counted_voice_channel(guild, channel):
+                continue
             for member in channel.members:
                 if member.bot:
                     continue
@@ -3294,30 +3360,38 @@ async def _play_entry_sound(member: discord.Member, channel: discord.VoiceChanne
 async def on_voice_state_update(member, before, after):
     if member.bot:
         return
+    if member.guild.id not in GUILD_IDS:
+        return
 
     # Lecture/écriture directement dans le cache - 0 réseau
     uid  = str(member.id)
     user = get_user(_CACHE, uid)
+    event_now = now_ts()
+    before_counted = _is_counted_voice_channel(member.guild, before.channel)
+    after_counted = _is_counted_voice_channel(member.guild, after.channel)
 
     if before.channel is None and after.channel is not None:
         user["username"] = member.display_name
         user["avatar_url"] = str(member.display_avatar.with_size(128).url)
-        user["join_time"] = now_ts()
-        user["voice_seen"] = user["join_time"]
+        if after_counted:
+            user["join_time"] = event_now
+            user["voice_seen"] = user["join_time"]
+        else:
+            user["join_time"] = None
+            user.pop("last_berry_ts", None)
         _DIRTY.add(uid)
         entry_url = user.get("entry_sound")
         if entry_url:
             afk = getattr(after.channel.guild, "afk_channel", None)
-            if after.channel != afk:
+            if after.channel != afk and after_counted:
                 asyncio.create_task(_play_entry_sound(member, after.channel, entry_url))
-        if _is_boost_active(user):
+        if after_counted and _is_boost_active(user):
             asyncio.create_task(_apply_boost_role(member, True))
 
     elif before.channel is not None and after.channel is None:
-        if user["join_time"]:
+        if user["join_time"] and before_counted:
             start = user["join_time"]
-            end = now_ts()
-            session_seconds = end - start
+            end = event_now
             user["vocal_sessions"].append({
                 "start": start,
                 "end": end,
@@ -3338,12 +3412,16 @@ async def on_voice_state_update(member, before, after):
             seconds_7d = seconds_in_period(user["vocal_sessions"], 7)
             hours_7d = seconds_7d / 3600
             await update_rank(member, hours_7d, announce=True)
+        elif user.get("join_time"):
+            user["join_time"] = None
+            user.pop("last_berry_ts", None)
+            _DIRTY.add(uid)
         asyncio.create_task(_apply_boost_role(member, False))
 
     elif before.channel is not None and after.channel is not None and before.channel != after.channel:
-        if user["join_time"]:
+        if user["join_time"] and before_counted:
             start = user["join_time"]
-            end = now_ts()
+            end = event_now
             last_ts = user.pop("last_berry_ts", start)
             remaining_sec = max(0, end - last_ts)
             earned = int(remaining_sec / 3600 * 100_000)
@@ -3354,11 +3432,16 @@ async def on_voice_state_update(member, before, after):
                 "end": end,
                 "channel": str(before.channel.id)
             })
-        user["join_time"] = now_ts()
-        user["voice_seen"] = user["join_time"]
+        elif user.get("join_time"):
+            user["join_time"] = None
+            user.pop("last_berry_ts", None)
+
+        user["join_time"] = event_now if after_counted else None
+        if after_counted:
+            user["voice_seen"] = user["join_time"]
         clean_old_data(user)
         _DIRTY.add(uid)
-        seconds_7d = seconds_in_period(user["vocal_sessions"], 7, join_time=user["join_time"])
+        seconds_7d = seconds_in_period(user["vocal_sessions"], 7, join_time=user["join_time"] if after_counted else None)
         hours_7d = seconds_7d / 3600
         await update_rank(member, hours_7d, announce=True)
 
@@ -3430,13 +3513,17 @@ async def vocal_rank_loop():
     rank_coros = []
     now = now_ts()
     for guild in bot.guilds:
+        if guild.id not in GUILD_IDS:
+            continue
         for vc in list(guild.voice_channels) + list(guild.stage_channels):
+            if not _is_counted_voice_channel(guild, vc):
+                continue
             for member in vc.members:
                 if member.bot:
                     continue
                 uid = str(member.id)
                 user = get_user(_CACHE, uid)
-                jt = user.get("join_time")
+                jt = _counted_join_time(uid, user, member, recover=True, _now=now)
                 # Heartbeat : dernière présence vocale confirmée. Sert à créditer
                 # proprement la session en cours si le bot redémarre (cf. on_ready).
                 user["voice_seen"] = now
@@ -3475,6 +3562,8 @@ async def check_ranks_loop():
     total_members = 0
 
     for guild in bot.guilds:
+        if guild.id not in GUILD_IDS:
+            continue
         if not guild.chunked:
             try:
                 await guild.chunk()
@@ -3489,7 +3578,7 @@ async def check_ranks_loop():
             user = get_user(_CACHE, uid)
             old_snapshot = (user.get("last_rank"), user.get("alerted"))
             clean_old_data(user)
-            jt = user.get("join_time")
+            jt = _counted_join_time(uid, user, member, recover=_is_counted_voice_member(member))
 
             hours_7d = seconds_in_period(user["vocal_sessions"], 7, join_time=jt) / 3600
 
@@ -3537,7 +3626,7 @@ def make_progress_bar(current, target, length=10):
 RANK_EMOJIS = {"Pirate": "🏴‍☠️", "Shichibukai": "⚔️", "Amiral": "🪖", "Yonkou": "👑", "Roi des pirates": "🤴"}
 _MEDALS_ALL = ["🥇", "🥈", "🥉"] + [f"{i}." for i in range(4, 101)]
 
-def build_vocal_by_day(user):
+def build_vocal_by_day(user, join_time=None):
     vocal_by_day = defaultdict(float)
     msg_by_day = defaultdict(int)
     _now_val = now_ts()
@@ -3554,7 +3643,7 @@ def build_vocal_by_day(user):
             if overlap > 0:
                 vocal_by_day[label] += overlap
 
-    jt = user.get("join_time")
+    jt = join_time
     if jt:
         _distribute(jt, _now_val)
     for s in user["vocal_sessions"]:
@@ -3579,7 +3668,7 @@ async def stats(interaction: discord.Interaction):
     user = get_user(data, uid)
     me = interaction.user
 
-    jt = user.get("join_time")
+    jt = _counted_join_time(uid, user, me)
     s1d  = seconds_since(user["vocal_sessions"], start_of_today_ts(), join_time=jt)
     s7d  = seconds_in_period(user["vocal_sessions"], 7, join_time=jt)
     s14d = seconds_in_period(user["vocal_sessions"], 14, join_time=jt)
@@ -3637,7 +3726,7 @@ async def stats(interaction: discord.Interaction):
     )
     embed.set_thumbnail(url=me.display_avatar.url)
 
-    vocal_by_day, msg_by_day = build_vocal_by_day(user)
+    vocal_by_day, msg_by_day = build_vocal_by_day(user, jt)
     graph_buf = make_activity_graph(vocal_by_day, msg_by_day, f"Activite de {me.display_name}")
 
     embed.set_image(url="attachment://graph.png")
@@ -3689,7 +3778,7 @@ async def top(interaction: discord.Interaction, periode: app_commands.Choice[str
             member = guild.get_member(int(uid))
             if not member or member.bot:
                 continue
-            ujt      = udata.get("join_time")
+            ujt      = _counted_join_time(uid, udata, member)
             sessions = udata.get("vocal_sessions", [])
             messages = udata.get("messages", [])
             if all_time:
@@ -3715,7 +3804,14 @@ async def top(interaction: discord.Interaction, periode: app_commands.Choice[str
     msg_list.sort(key=lambda x: x[2], reverse=True)
     prime_list.sort(key=lambda x: x[2], reverse=True)
 
-    vocal_now = {str(m.id) for g in bot.guilds for vc in g.voice_channels for m in vc.members}
+    vocal_now = {
+        str(m.id)
+        for g in bot.guilds if g.id in GUILD_IDS
+        for vc in list(g.voice_channels) + list(g.stage_channels)
+        if _is_counted_voice_channel(g, vc)
+        for m in vc.members
+        if not m.bot
+    }
 
     def _build_top_embed(page: int) -> discord.Embed:
         start = (page - 1) * 10
@@ -3831,7 +3927,7 @@ async def serveur(interaction: discord.Interaction):
         member = guild.get_member(int(uid))
         if not member or member.bot:
             continue
-        ujt = udata.get("join_time")
+        ujt = _counted_join_time(uid, udata, member)
         if ujt:
             en_vocal_now += 1
         sessions = udata.get("vocal_sessions", [])
@@ -3963,7 +4059,7 @@ async def tout(interaction: discord.Interaction):
     user = get_user(data, uid)
     me = interaction.user
 
-    jt = user.get("join_time")
+    jt = _counted_join_time(uid, user, me)
     s1d  = seconds_since(user["vocal_sessions"], start_of_today_ts(), join_time=jt)
     s7d  = seconds_in_period(user["vocal_sessions"], 7, join_time=jt)
     s14d = seconds_in_period(user["vocal_sessions"], 14, join_time=jt)
@@ -4030,7 +4126,7 @@ async def tout(interaction: discord.Interaction):
         member = guild.get_member(int(u_id))
         if not member or member.bot:
             continue
-        ujt = udata.get("join_time")
+        ujt = _counted_join_time(u_id, udata, member)
         sec  = seconds_in_period(udata.get("vocal_sessions", []), 7, join_time=ujt)
         msgs = messages_in_period(udata.get("messages", []), 7)
         total_vocal_srv += sec
@@ -4071,7 +4167,7 @@ async def tout(interaction: discord.Interaction):
     )
     embed2.add_field(name="\u200b", value="\u200b", inline=True)
 
-    vocal_by_day, msg_by_day = build_vocal_by_day(user)
+    vocal_by_day, msg_by_day = build_vocal_by_day(user, jt)
     graph_buf = make_activity_graph(vocal_by_day, msg_by_day, f"Activite - {me.display_name}")
 
     embed3 = discord.Embed(color=discord.Color.from_rgb(85, 50, 18))
@@ -4166,7 +4262,7 @@ async def chercher(interaction: discord.Interaction, membre: discord.Member):
         inline=True
     )
 
-    vocal_by_day, msg_by_day = build_vocal_by_day(user)
+    vocal_by_day, msg_by_day = build_vocal_by_day(user, jt)
     graph_buf = make_activity_graph(vocal_by_day, msg_by_day, f"Activite de {membre.display_name}")
 
     embed.set_image(url="attachment://graph.png")
@@ -7652,10 +7748,15 @@ async def sync_berries_cmd(interaction: discord.Interaction):
     skipped = 0
     total_added = 0
     lines   = []
+    guild = interaction.guild
 
     for uid, udata in list(_CACHE.items()):
+        member = guild.get_member(int(uid)) if guild else None
+        if not member or member.bot:
+            skipped += 1
+            continue
         sessions = udata.get("vocal_sessions", [])
-        jt       = udata.get("join_time")
+        jt       = _counted_join_time(uid, udata, member)
         extra    = udata.get("extra_seconds", 0)
         total_sec   = total_seconds(sessions, join_time=jt, extra=extra, _now=_now)
         total_hours = total_sec / 3600
@@ -8327,8 +8428,15 @@ async def resync_vocal_cmd(interaction: discord.Interaction):
                 if m.bot:
                     continue
                 u = get_user(_CACHE, str(m.id))
+                if not _is_counted_voice_channel(guild, vc):
+                    if u.get("join_time"):
+                        u["join_time"] = None
+                        u.pop("last_berry_ts", None)
+                        _DIRTY.add(str(m.id))
+                    continue
                 if not u.get("join_time"):
                     u["join_time"] = _now
+                    u["voice_seen"] = _now
                     _DIRTY.add(str(m.id))
                     voice_fixed += 1
 
@@ -8340,7 +8448,7 @@ async def resync_vocal_cmd(interaction: discord.Interaction):
             user = get_user(_CACHE, uid)
             user["username"] = member.display_name
             user["avatar_url"] = str(member.display_avatar.with_size(128).url)
-            jt = user.get("join_time")
+            jt = _counted_join_time(uid, user, member, recover=_is_counted_voice_member(member), _now=_now)
             hours_7d = seconds_in_period(user.get("vocal_sessions", []), 7, join_time=jt, _now=_now) / 3600
             try:
                 await update_rank(member, hours_7d, announce=False)
