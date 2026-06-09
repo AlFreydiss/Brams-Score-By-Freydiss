@@ -238,15 +238,18 @@ export async function signInWithEmail(email, password) {
 }
 
 export async function signOutUser() {
-  if (!supabase) return
-  // scope 'local' : pas de round-trip serveur (qui pouvait hang/échouer avec les
-  // tokens ES256 et laisser l'utilisateur "connecté"). On purge tout localement.
-  try { await supabase.auth.signOut({ scope: 'local' }) } catch {}
+  // ⚠️ On purge le storage EN PREMIER : c'est la source de vérité de la session
+  // (lue par le fetch REST + au boot). La déconnexion est donc effective tout de
+  // suite, même si le client supabase-js hang. Avant, `await signOut()` pouvait
+  // ne jamais résoudre (verrou client bloqué) → le reload ne partait pas → "se
+  // déconnecter ne marche pas".
   try {
     Object.keys(localStorage)
       .filter(k => k.includes('supabase') || k.startsWith('sb-'))
       .forEach(k => localStorage.removeItem(k))
   } catch {}
+  // Best-effort, NON bloquant : invalide la session côté client sans l'attendre.
+  try { supabase?.auth?.signOut({ scope: 'local' })?.catch?.(() => {}) } catch {}
 }
 
 export async function getSession() {
