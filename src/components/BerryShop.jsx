@@ -8,6 +8,7 @@ import { useAuth } from '../contexts/AuthContext.jsx'
 import { createOpeningBgCheckout, completeOpeningBgCheckout, fetchOwnedBackgrounds, fetchOpeningBgEquipCounts } from '../lib/berryShop.js'
 import { useOpeningBg } from '../contexts/OpeningBgContext.jsx'
 import { OPENING_BACKGROUNDS } from '../data/opening-backgrounds.js'
+import CursorShop from './CursorShop.jsx'
 import { formatEuroCents, openingBgPriceCents, openingBgPriceLabel } from '../lib/openingBgPricing.js'
 import OpeningBgMedia from './social/OpeningBgMedia.jsx'
 
@@ -613,6 +614,9 @@ export default function BerryShop() {
               ))}
             </div>
           )}
+
+        {/* ─── Catalogue de curseurs custom One Piece ─── */}
+        <CursorShop />
       </div>
 
       {/* Aperçu plein écran */}

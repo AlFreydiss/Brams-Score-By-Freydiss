@@ -3,6 +3,7 @@ import { Routes, Route, useNavigate, Navigate, useLocation, useParams } from 're
 import { lazyWithReload } from './lib/lazyWithReload.js'
 import GlobalStyles from './components/GlobalStyles.jsx'
 import CursorTrail from './components/CursorTrail.jsx'
+import { GlobalCursorLayer } from './components/CursorShop.jsx'
 import FunFX from './components/FunFX.jsx'
 import { ThemeProvider } from './contexts/ThemeContext.jsx'
 import { OpeningBgProvider, useOpeningBg } from './contexts/OpeningBgContext.jsx'
@@ -501,6 +502,7 @@ export default function App() {
       <CallProvider>
       <GlobalStyles />
       <CursorTrail />
+<GlobalCursorLayer />
       <EquippedOpeningBackground />
       <NotificationToast />
       <CallOverlay />
