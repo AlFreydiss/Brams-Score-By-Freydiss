@@ -14,9 +14,10 @@ const RANK_MAP = [
   { min:0,   rang:'Moussaillon',     emoji:'⚓', color:'#7c7f8a' },
 ]
 
-const PERIODS    = ['Semaine', 'Mois', 'All-time']
+const PERIODS    = ['Jour', 'Semaine', 'Mois', 'All-time']
 const RANG_OPTS  = ['Tous', ...RANK_MAP.map(r => r.rang)]
 const PERIOD_CONFIG = {
+  Jour: { rpc: 'day', label: "aujourd'hui" },
   Semaine: { rpc: 'week', label: 'cette semaine' },
   Mois: { rpc: 'month', label: 'sur 30 jours' },
   'All-time': { rpc: 'all', label: 'depuis le debut' },
