@@ -49,6 +49,20 @@ export default function ProfilePage() {
   const data = useProfileData(profileId)
   const { member, settings, setSettings, loading: dataLoading, error, isOwnProfile, equippedBg } = data
   const loading = resolving || dataLoading
+
+  // Embellit l'URL : si on est arrivé par un ID numérique et que le pseudo est
+  // "propre" (sans espace/caractère spécial → URL jolie et ré-résolvable), on
+  // réécrit l'adresse en /u/pseudo (sans recharger). Les pseudos avec espaces ou
+  // ambigus restent en ID (pour ne pas casser le partage).
+  useEffect(() => {
+    const uname = member?.username
+    if (!uname || !/^\d+$/.test(routeParam || '')) return
+    if (!/^[a-zA-Z0-9_.\-]{2,40}$/.test(uname)) return
+    const pretty = `/u/${uname}`
+    if (window.location.pathname !== pretty) {
+      window.history.replaceState({}, '', pretty + window.location.search)
+    }
+  }, [member?.username, routeParam])
   const { setHideAmbient, equippedId } = useOpeningBg()
 
   // Fond d'opening du profil affiché (animé, plein écran). On le rend NOUS-MÊMES

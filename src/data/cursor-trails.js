@@ -41,9 +41,19 @@ export const TRAILS = [
   { id: 'trail-thunder', nom: 'Goro Goro', rarete: 'MYTHIQUE', emoji: '🌩️',
     config: { colors: ['#fff7a8', '#ffe23b', '#fffbe0', '#bda400'], speed: 0.8, sizeBase: 1.4, sizeRand: 1.6, decay: 0.08, shadow: 14, alpha: 0.95 } },
 
+  // ── MYTHIQUE (suite) ──
+  { id: 'trail-cloud', nom: 'Nuage Magique', rarete: 'MYTHIQUE', emoji: '☁️',
+    // Kinto'un : gros flocons blancs/dorés qui flottent doucement vers le haut.
+    config: { colors: ['#fffdf3', '#fff0c2', '#ffe49a', '#f7f7ff'], composite: 'source-over', gravity: -0.05, speed: 0.22, drift: 0.5, sizeBase: 3.2, sizeRand: 3.4, decay: 0.022, shadow: 8, alpha: 0.42 } },
+  { id: 'trail-star', nom: 'Poussière d\'Étoiles', rarete: 'MYTHIQUE', emoji: '⭐',
+    config: { colors: ['#fff7c2', '#ffe066', '#fffefb', '#bfa46a'], gravity: 0.01, speed: 0.4, drift: 0.6, sizeBase: 1.2, sizeRand: 2.0, decay: 0.045, shadow: 12, alpha: 0.9 } },
+
   // ── INTERDIT ──
   { id: 'trail-void', nom: 'Œil du Néant', rarete: 'INTERDIT', emoji: '👁️',
     config: { colors: ['#c0392b', '#7a0f12', '#ff5a4d', '#2a0608'], speed: 0.4, gravity: 0, drift: 0.4, sizeBase: 2.0, sizeRand: 2.8, decay: 0.04, shadow: 16, alpha: 0.9 } },
+  { id: 'trail-dragon', nom: 'Aura de Combat', rarete: 'INTERDIT', emoji: '🐉',
+    // Aura Dragon Ball : flammes bleu-blanc électriques qui montent.
+    config: { colors: ['#bfe9ff', '#5ad1ff', '#ffffff', '#2f8fff'], gravity: -0.08, speed: 0.7, drift: 0.25, sizeBase: 1.8, sizeRand: 2.6, decay: 0.055, shadow: 16, alpha: 0.95 } },
 ]
 
 export function findTrail(id) { return TRAILS.find(t => t.id === id) || null }

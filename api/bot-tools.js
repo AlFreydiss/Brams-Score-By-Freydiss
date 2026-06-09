@@ -638,7 +638,10 @@ const TRAILS = [
   { id:'trail-sakura',  nom:'Pétales de Sakura',   rarete:'EPIQUE'   },
   { id:'trail-rainbow', nom:'Prisme',              rarete:'MYTHIQUE' },
   { id:'trail-thunder', nom:'Goro Goro',           rarete:'MYTHIQUE' },
+  { id:'trail-cloud',   nom:'Nuage Magique',       rarete:'MYTHIQUE' },
+  { id:'trail-star',    nom:'Poussière d\'Étoiles',rarete:'MYTHIQUE' },
   { id:'trail-void',    nom:'Œil du Néant',        rarete:'INTERDIT' },
+  { id:'trail-dragon',  nom:'Aura de Combat',      rarete:'INTERDIT' },
 ]
 function findTrail(itemId) { const id = String(itemId || '').trim(); return TRAILS.find(t => t.id === id) || null }
 function trailPriceCents(t) { return TRAIL_PRICE_CENTS[t.rarete] || 50 }
