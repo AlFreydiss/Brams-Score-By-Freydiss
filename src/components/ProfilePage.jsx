@@ -4,6 +4,7 @@
 // Orchestrée par useProfileData. UI découpée dans components/profile/* (.pfx-).
 import { useEffect, useState, useMemo } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { resolveProfileId } from '../lib/supabase.js'
 import { Grid3x3, Repeat2, Bookmark, Gauge, Package, Award } from 'lucide-react'
 import './profile/profile.css'
 import { useProfileData } from '../hooks/useProfileData.js'
@@ -23,11 +24,31 @@ import AvatarPreviewModal from './profile/AvatarPreviewModal.jsx'
 import { ErrorState, ProfileSkeleton } from './profile/shared.jsx'
 
 export default function ProfilePage() {
-  const { discordId } = useParams()
+  const { discordId: routeParam } = useParams()
   const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
-  const data = useProfileData(discordId)
-  const { member, settings, setSettings, loading, error, isOwnProfile, equippedBg } = data
+
+  // Le paramètre d'URL peut être un id Discord (numérique) OU un pseudo (vanity).
+  // Numérique → on l'utilise direct. Pseudo → lookup async ; introuvable/ambigu →
+  // redirection vers la recherche du Fil avec le terme pré-rempli.
+  const [profileId, setProfileId] = useState(() => /^\d+$/.test(routeParam || '') ? routeParam : null)
+  const [resolving, setResolving] = useState(() => !/^\d+$/.test(routeParam || ''))
+
+  useEffect(() => {
+    if (/^\d+$/.test(routeParam || '')) { setProfileId(routeParam); setResolving(false); return }
+    let ignore = false
+    setResolving(true); setProfileId(null)
+    resolveProfileId(routeParam).then(id => {
+      if (ignore) return
+      if (id) { setProfileId(id); setResolving(false) }
+      else navigate(`/fil/recherche?q=${encodeURIComponent(routeParam || '')}`, { replace: true })
+    })
+    return () => { ignore = true }
+  }, [routeParam, navigate])
+
+  const data = useProfileData(profileId)
+  const { member, settings, setSettings, loading: dataLoading, error, isOwnProfile, equippedBg } = data
+  const loading = resolving || dataLoading
   const { setHideAmbient, equippedId } = useOpeningBg()
 
   // Fond d'opening du profil affiché (animé, plein écran). On le rend NOUS-MÊMES
@@ -154,7 +175,7 @@ export default function ProfilePage() {
       )}
 
       {followModal && (
-        <FollowListModal targetId={discordId} initialTab={followModal} onClose={() => setFollowModal(null)} onMutated={data.refreshFollow} />
+        <FollowListModal targetId={profileId} initialTab={followModal} onClose={() => setFollowModal(null)} onMutated={data.refreshFollow} />
       )}
     </div>
   )

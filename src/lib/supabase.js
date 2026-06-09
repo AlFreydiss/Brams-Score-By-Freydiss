@@ -133,6 +133,29 @@ async function fetchBoardForProfile() {
   return null
 }
 
+// Résout un paramètre d'URL profil (id Discord OU pseudo) vers un uid Discord.
+// Numérique = déjà un id (chemin rapide, zéro requête). Sinon lookup case-insensitive
+// sur users.data->>username. null = introuvable ou ambigu (>1) → l'appelant redirige.
+export async function resolveProfileId(param) {
+  const raw = String(param || '').trim()
+  if (/^\d+$/.test(raw)) return raw
+  if (!url || !key || !raw) return null
+  try {
+    const ctrl = new AbortController()
+    const timer = setTimeout(() => ctrl.abort(), 5000)
+    const token = await getAccessToken().catch(() => null)
+    // limit=2 : on veut détecter l'ambiguïté (deux pseudos identiques) sans tout charger.
+    const r = await fetch(
+      `${url}/rest/v1/users?select=uid&data->>username=ilike.${encodeURIComponent(raw)}&limit=2`,
+      { signal: ctrl.signal, headers: { apikey: key, Authorization: `Bearer ${token || key}`, Accept: 'application/json' } }
+    )
+    clearTimeout(timer)
+    if (!r.ok) return null
+    const rows = await r.json()
+    return Array.isArray(rows) && rows.length === 1 ? String(rows[0].uid) : null
+  } catch { return null }
+}
+
 export async function fetchMemberProfile(discordId) {
   const id = String(discordId)
 

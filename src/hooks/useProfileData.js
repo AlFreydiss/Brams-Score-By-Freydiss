@@ -30,6 +30,9 @@ export function useProfileData(discordId) {
   // l'écran de chargement (pas de setLoading/clear) → plus de skeleton qui
   // clignote toutes les 60s ou à chaque retour d'onglet. silent=false = 1er rendu.
   const load = useCallback((silent = false) => {
+    // discordId pas encore résolu (pseudo en cours de lookup) → on attend, pas de
+    // fetch sur "null" ni d'erreur not_found parasite. Le parent affiche le skeleton.
+    if (!discordId) { setLoading(false); return () => {} }
     let ignore = false
     // Filet de sécurité : le skeleton ne doit JAMAIS rester bloqué (bug "faut
     // réactualiser"). Si rien n'a résolu en 9s, on sort de l'écran de chargement.
