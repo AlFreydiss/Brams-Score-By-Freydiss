@@ -235,6 +235,9 @@
   overflow-x: auto;
   padding-bottom: 2px;
   scrollbar-width: none;
+  /* Fondu à droite : indique qu'on peut scroller les onglets (ne paraît plus "coupé"). */
+  -webkit-mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 26px), transparent 100%);
+  mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 26px), transparent 100%);
 }
 
 .feed-tabs::-webkit-scrollbar {

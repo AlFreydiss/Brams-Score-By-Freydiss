@@ -156,6 +156,7 @@ function HeroFeatureCard({ icon, title, desc, accent = 'rgba(191,164,106' }) {
 
 // ── Top soutiens de la cagnotte Leetchi (liste éditable à la main) ────────────
 const TOP_DONORS = [
+  { name: 'Nour', amount: 10 },
   { name: 'Hakuji', amount: 10 },
   { name: 'Ayoub', amount: 7 },
   { name: 'Lamar', amount: 1 },
