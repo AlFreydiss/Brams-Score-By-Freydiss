@@ -13,7 +13,7 @@ const CURATED_BACKGROUNDS = [
     opTitle:        'Pokémon — Indigo League',
     anime:          'Pokémon',
     artist:         'Générique',
-    rarity:         'Legendaire',
+    rarity:         'Secret',
     isNew:          true,
     euroCents:      149,
     videoUrl:       'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/opening-bg/pokemon.mp4',

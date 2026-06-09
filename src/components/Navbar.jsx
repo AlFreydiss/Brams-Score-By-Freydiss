@@ -124,11 +124,11 @@ function BoutiqueButton() {
       style={{
         position: 'relative', display: 'inline-flex', alignItems: 'center', gap: 8, height: 38, padding: '0 15px',
         borderRadius: 10, cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 800, letterSpacing: '.01em',
-        color: '#e7c878', background: 'linear-gradient(135deg, rgba(212,160,23,0.15), rgba(212,160,23,0.05))',
-        border: '1px solid rgba(212,160,23,0.32)', transition: 'box-shadow .2s, transform .15s, background .2s, border-color .2s',
+        color: '#7fe6a8', background: 'linear-gradient(135deg, rgba(52,211,153,0.15), rgba(52,211,153,0.05))',
+        border: '1px solid rgba(52,211,153,0.32)', transition: 'box-shadow .2s, transform .15s, background .2s, border-color .2s',
       }}
-      onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 6px 22px rgba(212,160,23,0.22)'; e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.background = 'linear-gradient(135deg, rgba(212,160,23,0.26), rgba(212,160,23,0.10))'; e.currentTarget.style.borderColor = 'rgba(212,160,23,0.5)' }}
-      onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'none'; e.currentTarget.style.background = 'linear-gradient(135deg, rgba(212,160,23,0.15), rgba(212,160,23,0.05))'; e.currentTarget.style.borderColor = 'rgba(212,160,23,0.32)' }}
+      onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 6px 22px rgba(52,211,153,0.22)'; e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.background = 'linear-gradient(135deg, rgba(52,211,153,0.26), rgba(52,211,153,0.10))'; e.currentTarget.style.borderColor = 'rgba(52,211,153,0.5)' }}
+      onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'none'; e.currentTarget.style.background = 'linear-gradient(135deg, rgba(52,211,153,0.15), rgba(52,211,153,0.05))'; e.currentTarget.style.borderColor = 'rgba(52,211,153,0.32)' }}
     >
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
         <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" />
