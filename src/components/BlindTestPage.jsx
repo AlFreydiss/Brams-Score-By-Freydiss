@@ -1114,7 +1114,7 @@ export default function BlindTestPage() {
                 🎵 Blind Test Anime
               </motion.div>
 
-              <div style={{ position: 'relative', display: 'inline-block' }}>
+              <div style={{ position: 'relative', width: 'fit-content', margin: '0 auto' }}>
                 <div aria-hidden style={{ position: 'absolute', inset: '-40% -25%', zIndex: 0, pointerEvents: 'none',
                   background: 'radial-gradient(ellipse 60% 70% at 50% 50%, rgba(212,160,23,0.20), transparent 70%)', filter: 'blur(14px)' }} />
                 <h1 style={{ position: 'relative', zIndex: 1, fontFamily: "'Pirata One',cursive", fontSize: 'clamp(52px,10vw,96px)', margin: '0 0 14px', lineHeight: 1, letterSpacing: '-0.01em',

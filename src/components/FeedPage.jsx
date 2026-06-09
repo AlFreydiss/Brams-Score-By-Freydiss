@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import FilBackground from './feed/FilBackground.jsx'
+import BerriesCanvas from './ui/BerriesCanvas.jsx'
 import { getFeed, getPost, getFeedStats, subscribeFeed } from '../lib/feed.js'
 import { listFollowing } from '../lib/social.js'
 import PostComposer from './feed/PostComposer.jsx'
@@ -362,6 +363,7 @@ export default function FeedPage() {
   return (
     <div onScroll={onScroll} className="feed-shell">
       <FilBackground />
+      <BerriesCanvas />
       <div className="feed-layout" style={{ position: 'relative', zIndex: 1 }}>
         <main className="feed-main" aria-label="Fil de la communauté Brams">
           <header className="feed-header">

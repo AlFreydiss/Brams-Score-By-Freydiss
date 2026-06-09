@@ -130,7 +130,7 @@ function ArenaBackdrop() {
       {/* Vignette pour la profondeur */}
       <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse 96% 86% at 50% 38%, transparent 47%, rgba(0,0,0,.62) 100%)' }} />
       {/* Grain fin */}
-      <div className="arena-grain" style={{ position: 'absolute', inset: 0, opacity: 0.045, mixBlendMode: 'overlay' }} />
+      <div className="arena-grain" style={{ position: 'absolute', inset: 0, opacity: 0.075, mixBlendMode: 'overlay' }} />
     </div>
   )
 }
@@ -696,6 +696,8 @@ export default function TournamentHubPage() {
 
       {/* Fond arène épique (auras + balayage + sol perspective + horizon + embers + grain) */}
       <ArenaBackdrop />
+      {/* Pétales sakura par-dessus (remis à la demande) — touche communautaire */}
+      <SakuraBackdrop count={22} />
 
       {/* Content */}
       <div style={{ position: 'relative', zIndex: 2 }}>
