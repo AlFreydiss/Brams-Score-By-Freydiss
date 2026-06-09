@@ -1663,6 +1663,12 @@ html[data-cinema="1"] .navbar-premium {
   pointer-events: none;
   transition: opacity 1.2s cubic-bezier(.22,1,.36,1);
 }
+/* En mode cinéma, les voiles sombres sur l'opening s'effacent → AMV en plein. */
+.cinema-veil { transition: opacity 1.3s cubic-bezier(.22,1,.36,1); }
+html[data-cinema="1"] .cinema-veil { opacity: 0 !important; }
+/* La vidéo AMV (dimmée à 0.35) passe en plein éclat en mode AFK. */
+.cinema-amv { transition: opacity 1.3s cubic-bezier(.22,1,.36,1); }
+html[data-cinema="1"] .cinema-amv { opacity: 1 !important; }
 .nav-shell-premium {
   position: relative;
   width: 100%;

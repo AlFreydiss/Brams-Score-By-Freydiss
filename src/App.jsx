@@ -224,6 +224,7 @@ function AMVBackground({ hidden = false }) {
       <div aria-hidden style={bgLayerStyle}>
         <video
           ref={videoRef}
+          className="cinema-amv"
           autoPlay muted loop playsInline
           preload="metadata"
           onLoadedMetadata={e => { e.target.currentTime = 25 }}

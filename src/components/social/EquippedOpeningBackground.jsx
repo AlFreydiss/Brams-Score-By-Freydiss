@@ -45,10 +45,11 @@ export default function EquippedOpeningBackground() {
     <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden', contain: 'layout paint size', isolation: 'isolate', background: activeBg.dominantColor || '#06070b' }}>
       <OpeningBgMedia bg={activeBg} style={ambientStill ? STILL_STYLE : VIDEO_STYLE} stillOnly={ambientStill} />
       {/* Voile UNIFORME (plus de dégradé vertical haut→bas qui rendait l'accueil
-          non homogène) — le voile global de la page assombrit déjà uniformément. */}
-      <div style={{ position: 'absolute', inset: 0, background: end }} />
+          non homogène) — le voile global de la page assombrit déjà uniformément.
+          .cinema-veil → s'efface en mode AFK pour voir l'opening en plein. */}
+      <div className="cinema-veil" style={{ position: 'absolute', inset: 0, background: end }} />
       {/* Teinte subtile */}
-      <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse 90% 70% at 50% 30%, rgba(120,90,200,0.08), transparent 60%)' }} />
+      <div className="cinema-veil" style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse 90% 70% at 50% 30%, rgba(120,90,200,0.08), transparent 60%)' }} />
       {/* Vignette radiale retirée : elle créait une bande sombre elliptique visible
           (la "barre" horizontale). Le voile global uniforme suffit. */}
     </div>
