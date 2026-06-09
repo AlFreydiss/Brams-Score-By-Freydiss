@@ -2171,10 +2171,22 @@ option { background: #100a04; }
   font-weight: 820;
 }
 
+/* Largeurs intermédiaires (laptop, fenêtre non plein écran, console ouverte) :
+   les 8 liens de nav débordaient leur colonne et percutaient « Boutique »
+   (« Animés & Scans » + « Boutique » se télescopaient). On libère de la place
+   AVANT que ça se chevauche : réseaux sociaux masqués + liens/boutons condensés. */
+@media (max-width: 1480px) {
+  .nav-socials-premium { display: none !important; }
+  .nav-shell-premium { gap: 10px; }
+  .nav-link-premium { padding: 0 8px; font-size: 11px; }
+  .nav-user-button { width: 132px; }
+  .nav-user-name { max-width: 70px; }
+}
+
 @media (max-width: 1180px) {
   .nav-shell-premium {
     grid-template-columns: minmax(168px, 188px) minmax(0, 1fr) auto auto;
-    gap: 12px;
+    gap: 10px;
     padding: 0 14px;
   }
   .nav-link-premium {
@@ -2197,7 +2209,7 @@ option { background: #100a04; }
   }
 }
 
-@media (max-width: 1060px) {
+@media (max-width: 1200px) {
   .nav-zone-center,
   .nav-zone-status,
   .nav-zone-user > .hide-mobile {
