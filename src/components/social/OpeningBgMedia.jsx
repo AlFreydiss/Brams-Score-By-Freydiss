@@ -41,6 +41,9 @@ export default function OpeningBgMedia({ bg, className, style, stillOnly = false
   // Sans poster, la carte (fond sombre) reste propre le temps que la vidéo charge.
   const poster = bg.imageUrl || undefined
   const mediaStyle = { pointerEvents: 'none', maxWidth: 'none', ...style }
+  // Les openings ont souvent une PUB à la fin → on boucle sur les premières 90s
+  // (1m30) et on ne l'atteint jamais. Surchargeable par bg.maxLoop si besoin.
+  const maxLoop = bg.maxLoop > 0 ? bg.maxLoop : 90
 
   return useVideo ? (
     <video
@@ -56,6 +59,7 @@ export default function OpeningBgMedia({ bg, className, style, stillOnly = false
       src={bg.videoUrl}
       autoPlay muted={muted} loop playsInline preload="auto"
       onLoadedData={e => { e.currentTarget.muted = muted; const p = e.currentTarget.play?.(); if (p?.catch) p.catch(() => {}) }}
+      onTimeUpdate={e => { if (e.currentTarget.currentTime >= maxLoop) e.currentTarget.currentTime = 0 }}
       onError={() => setVideoFailed(true)}
       style={mediaStyle}
     />
