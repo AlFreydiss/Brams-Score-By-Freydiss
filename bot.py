@@ -8411,6 +8411,7 @@ async def resync_vocal_cmd(interaction: discord.Interaction):
     réécrit tout le monde dans Supabase — pour que le classement du site corresponde
     exactement à Discord (corrige les données périmées). Silencieux (aucune annonce/DM)."""
     await interaction.response.defer(ephemeral=True)
+    print(f"[RESYNC] start guild={interaction.guild_id} by={interaction.user.id}")
     _now = now_ts()
     checked = 0
     voice_fixed = 0
@@ -8462,6 +8463,10 @@ async def resync_vocal_cmd(interaction: discord.Interaction):
 
     # 3) Flush immédiat vers Supabase → le site reflète l'état réel tout de suite.
     flushed = await asyncio.get_running_loop().run_in_executor(db_executor, _sync_flush_dirty)
+    print(
+        f"[RESYNC] done guild={interaction.guild_id} checked={checked} "
+        f"voice_fixed={voice_fixed} flushed={flushed} role_errors={role_errors}"
+    )
 
     await interaction.followup.send(
         embed=discord.Embed(
