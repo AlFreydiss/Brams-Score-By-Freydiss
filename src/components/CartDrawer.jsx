@@ -30,7 +30,11 @@ export default function CartDrawer() {
   // Retour de paiement : ?stripe=success + un panier en attente → reçu + vide le panier.
   useEffect(() => {
     const p = new URLSearchParams(window.location.search)
-    if (p.get('stripe') !== 'success') return
+    const mode = p.get('stripe')
+    // Annulation → on purge le panier en attente, sinon un achat unitaire ultérieur
+    // (?stripe=success) afficherait un faux reçu de panier périmé.
+    if (mode && mode !== 'success') { try { localStorage.removeItem('brams_cart_pending') } catch {}; return }
+    if (mode !== 'success') return
     let pend = null
     try { pend = JSON.parse(localStorage.getItem('brams_cart_pending') || 'null') } catch {}
     if (pend && pend.count) {

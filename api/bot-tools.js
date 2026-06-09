@@ -1009,14 +1009,13 @@ async function settleCartOrGift(session) {
     const gifter = session.metadata?.gifter_id
     if (!item || !recipient) return { ok: false, error: 'Cadeau invalide.' }
     if (Number(session.amount_total) !== item.amountCents) return { ok: false, error: 'Montant cadeau invalide.' }
-    // Doublon (course) → remboursement automatique, pas d'attribution.
-    if (await hasOwnedOpeningBg(recipient, item.itemId)) {
-      await stripeRefund(session.payment_intent)
-      return { ok: true, kind, refunded: true, item: { id: item.itemId, label: item.label } }
-    }
-    await grantItem({ item, discordId: recipient, amountCents: item.amountCents, status: 'stripe_gift' })
-    // Enregistre le cadeau (→ popup à la reconnexion du destinataire).
-    await supabaseRest('gifts', {
+    // grantItem est idempotent (ignore-duplicates) → alreadyOwned=true au 2e passage.
+    // On n'enregistre le cadeau (popup) QUE si l'attribution est nouvelle : évite la
+    // double popup quand webhook ET complete traitent la même session, ET évite de
+    // rembourser à tort un cadeau valide au 2e passage (le doublon réel est déjà
+    // bloqué en amont au checkout, 409).
+    const granted = await grantItem({ item, discordId: recipient, amountCents: item.amountCents, status: 'stripe_gift' })
+    if (!granted.alreadyOwned) await supabaseRest('gifts', {
       method: 'POST', prefer: 'return=minimal',
       body: [{ from_id: gifter, to_id: recipient, item_id: item.itemId, item_label: item.label,
                message: session.metadata?.gift_message || null, gifter_name: session.metadata?.gifter_name || null, seen: false }],
