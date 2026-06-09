@@ -41,6 +41,7 @@ const BT_CSS = `
   @keyframes btCountShake { 0%,100%{transform:rotate(0)} 20%{transform:rotate(-4deg) scale(1.07)} 50%{transform:rotate(4deg) scale(1.05)} 80%{transform:rotate(-2deg) scale(1.03)} }
   @keyframes btCountFlash { 0%,100%{opacity:1} 30%{opacity:.25} 60%{opacity:.85} }
   @keyframes btGradPulse { 0%,100%{opacity:.55} 50%{opacity:.85} }
+  @keyframes bt-shine    { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
   @keyframes btFlashGreen { 0%{opacity:.32} 40%{opacity:.18} 100%{opacity:0} }
   @keyframes btFlashRed   { 0%{opacity:.28} 40%{opacity:.15} 100%{opacity:0} }
   @keyframes btConfetti   { 0%{opacity:1;transform:translateY(0) rotate(0deg) scale(1)} 100%{opacity:0;transform:translateY(-90px) rotate(520deg) scale(.4)} }
@@ -1113,9 +1114,16 @@ export default function BlindTestPage() {
                 🎵 Blind Test Anime
               </motion.div>
 
-              <h1 style={{ fontFamily: "'Pirata One',cursive", fontSize: 'clamp(52px,10vw,96px)', color: '#fff', margin: '0 0 14px', lineHeight: 1, letterSpacing: '-0.01em' }}>
-                Blind Test
-              </h1>
+              <div style={{ position: 'relative', display: 'inline-block' }}>
+                <div aria-hidden style={{ position: 'absolute', inset: '-40% -25%', zIndex: 0, pointerEvents: 'none',
+                  background: 'radial-gradient(ellipse 60% 70% at 50% 50%, rgba(212,160,23,0.20), transparent 70%)', filter: 'blur(14px)' }} />
+                <h1 style={{ position: 'relative', zIndex: 1, fontFamily: "'Pirata One',cursive", fontSize: 'clamp(52px,10vw,96px)', margin: '0 0 14px', lineHeight: 1, letterSpacing: '-0.01em',
+                  background: 'linear-gradient(95deg, #f8e0a0 0%, #f6d98a 35%, #d4a017 60%, #f6d98a 100%)', backgroundSize: '200% 100%',
+                  WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+                  filter: 'drop-shadow(0 0 46px rgba(212,160,23,0.42)) drop-shadow(0 3px 14px rgba(0,0,0,0.55))', animation: 'bt-shine 5.5s linear infinite' }}>
+                  Blind Test
+                </h1>
+              </div>
               <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.40)', maxWidth: 460, margin: '0 auto 28px', lineHeight: 1.75 }}>
                 {btMode === 'ED'
                   ? 'Un ending se lance en fond. Choisis parmi 4 propositions et tape le titre pour le bonus.'
