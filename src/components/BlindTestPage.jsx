@@ -1055,7 +1055,7 @@ export default function BlindTestPage() {
       <VolumeWidget volume={volume} onChange={v => { setVolume(v); if (videoRef.current) videoRef.current.volume = v }} track={activeTrack} phase={phase} videoRef={videoRef} />
 
       {/* Main content — centré verticalement, dégagé de la navbar fixe */}
-      <div style={{ position: 'relative', zIndex: 5, width: '100%', maxWidth: 680, margin: '0 auto',
+      <div style={{ position: 'relative', zIndex: 5, width: '100%', maxWidth: phase === 'intro' ? 1040 : 680, margin: '0 auto',
         padding: isMobile ? '92px 14px 120px' : '104px 18px 130px',
         minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
 
