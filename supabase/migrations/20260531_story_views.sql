@@ -52,7 +52,7 @@ BEGIN
 END;
 $$;
 
--- ── list_active_stories : + seen (par story) / all_seen (par auteur) / views ──
+-- ── list_active_stories : + seen / all_seen / views + audio/musique (rep) ──
 CREATE OR REPLACE FUNCTION list_active_stories()
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER STABLE SET search_path = public, pg_temp AS $$
 DECLARE v_me text := _resolve_discord_id(); v_result jsonb;
@@ -66,7 +66,12 @@ BEGIN
       max(s.created_at) AS last_at,
       bool_and(v_me IS NOT NULL AND EXISTS (SELECT 1 FROM story_views sv WHERE sv.story_id = s.id AND sv.viewer_id = v_me)) AS all_seen,
       jsonb_agg(jsonb_build_object(
-        'id', s.id, 'media_url', s.media_url, 'created_at', s.created_at,
+        'id', s.id,
+        'media_url', s.media_url,
+        'audio_url', s.audio_url,
+        'music_title', s.music_title,
+        'music_artist', s.music_artist,
+        'created_at', s.created_at,
         'views', (SELECT count(*) FROM story_views WHERE story_id = s.id),
         'seen', (v_me IS NOT NULL AND EXISTS (SELECT 1 FROM story_views sv WHERE sv.story_id = s.id AND sv.viewer_id = v_me))
       ) ORDER BY s.created_at ASC) AS stories

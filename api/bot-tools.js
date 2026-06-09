@@ -1063,6 +1063,35 @@ async function stripeDonateComplete(req, res) {
   }
 }
 
+// Revenus Stripe (temps réel) — réservé aux ADMINS (créateur + Brams + Berat).
+const REVENUE_ADMINS = ['1094070545248694342', '1079054995917381672', '999607813334638692']
+async function stripeRevenue(req, res) {
+  setStripeCors(res)
+  if (req.method === 'OPTIONS') return res.status(204).end()
+  try {
+    const { discordId } = await getAuthedSupabaseUser(req)
+    if (!REVENUE_ADMINS.includes(String(discordId))) return res.status(403).json({ error: 'Réservé aux admins.' })
+    const [balance, charges] = await Promise.all([
+      stripeApi('/v1/balance'),
+      stripeApi('/v1/charges?limit=15'),
+    ])
+    const sum = (arr) => (arr || []).reduce((s, b) => s + (b.amount || 0), 0)
+    const recent = (charges.data || []).map(c => ({
+      amount: c.amount, currency: c.currency, paid: c.paid, refunded: c.refunded, status: c.status,
+      created: c.created, desc: c.description || c.calculated_statement_descriptor || '',
+      email: c.billing_details?.email || c.receipt_email || null,
+    }))
+    const totalPaid = recent.filter(c => c.paid && !c.refunded).reduce((s, c) => s + c.amount, 0)
+    return res.status(200).json({
+      ok: true, currency: 'eur',
+      available: sum(balance.available), pending: sum(balance.pending),
+      recentTotal: totalPaid, recentCount: recent.filter(c => c.paid).length, recent,
+    })
+  } catch (e) {
+    return res.status(e.status || 500).json({ error: e?.message || 'Erreur revenus' })
+  }
+}
+
 async function stripeRefund(paymentIntentId) {
   if (!paymentIntentId) return
   try { await stripeApi('/v1/refunds', { method: 'POST', params: new URLSearchParams({ payment_intent: String(paymentIntentId) }) }) } catch {}
@@ -1131,5 +1160,6 @@ export default async function handler(req, res) {
   if (tool === 'stripe-gift')           return stripeGift(req, res)
   if (tool === 'stripe-donate')         return stripeDonate(req, res)
   if (tool === 'stripe-donate-complete') return stripeDonateComplete(req, res)
+  if (tool === 'stripe-revenue')        return stripeRevenue(req, res)
   return res.status(404).json({ error: 'Unknown bot tool' })
 }

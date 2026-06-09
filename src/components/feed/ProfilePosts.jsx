@@ -29,7 +29,15 @@ export default function ProfilePosts({ userId, mode = 'all' }) {
 
   const load = useCallback(async () => {
     setLoading(true)
-    let list = await fetchPage()
+    let list
+    try {
+      // Garde-fou timeout pour éviter "chargement à mort" sur certains profils
+      const p = fetchPage()
+      const timeout = new Promise(resolve => setTimeout(() => resolve([]), 9500))
+      list = await Promise.race([p, timeout])
+    } catch {
+      list = []
+    }
     list = Array.isArray(list) ? list : []
     if (mode === 'reposts') list = list.filter(p => p.repost_of)
     setPosts(list); setHasMore(list.length >= 20); setLoading(false)

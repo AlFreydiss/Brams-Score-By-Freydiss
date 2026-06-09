@@ -23,7 +23,7 @@ const AWARDS = [
   { icon: '👑', label: 'Arc Elbaf en cours — Egghead complet' },
 ]
 
-const COVER = 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/op-egghead-thumbnails/E1086.jpg'
+const COVER = '/anime-covers/one-piece.jpg'
 
 function loadProgress() {
   try { return JSON.parse(localStorage.getItem(`${NS}_vp`) || '{}') } catch { return {} }

@@ -53,6 +53,10 @@
       "destination": "/api/bot-tools?tool=stripe-donate-complete"
     },
     {
+      "source": "/api/stripe-revenue",
+      "destination": "/api/bot-tools?tool=stripe-revenue"
+    },
+    {
       "source": "/api/subtitles/onepiece",
       "destination": "/api/subtitles?kind=onepiece"
     },

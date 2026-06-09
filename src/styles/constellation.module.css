@@ -17,7 +17,6 @@
 .canvasWrap {
   position: relative;
   overflow: hidden;
-  cursor: grab;
   user-select: none;
   border-radius: 12px;
   /* Subtle inner border */
@@ -26,8 +25,6 @@
     inset 0 0 60px rgba(90, 60, 20, 0.08),
     0 8px 40px rgba(31, 20, 10, 0.20);
 }
-
-.canvasWrap:active { cursor: grabbing; }
 
 /* ── Pin (punaise) ────────────────────────────────────────────────────────── */
 

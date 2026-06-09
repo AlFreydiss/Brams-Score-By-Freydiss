@@ -23,7 +23,7 @@ const AWARDS = [
   { icon: '✨', label: 'Anime de l\'année 2021' },
 ]
 
-const COVER = 'https://cdn.myanimelist.net/images/anime/1851/90757.jpg'
+const COVER = '/anime-covers/koi-ameagari.jpg'
 
 function loadProgress() {
   try { return JSON.parse(localStorage.getItem(`${NS}_vp`) || '{}') } catch { return {} }

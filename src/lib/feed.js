@@ -88,8 +88,16 @@ export async function getFeedStats() {
   } catch { return { posts: 0 } }
 }
 
-// ── Stories (éphémères 24h) ───────────────────────────────────────────────────
-export const createStory = (mediaUrl) => rpc('create_story', { p_media_url: mediaUrl })
+// ── Stories (éphémères 24h) — support musique/son comme Insta -----------------
+// mediaUrl: image ou vidéo de la story
+// audioUrl + musicTitle/musicArtist: son de fond / musique de rep qui joue pendant la story
+export const createStory = ({ mediaUrl, audioUrl = null, musicTitle = null, musicArtist = null } = {}) =>
+  rpc('create_story', {
+    p_media_url: mediaUrl,
+    p_audio_url: audioUrl,
+    p_music_title: musicTitle,
+    p_music_artist: musicArtist,
+  })
 export const deleteStory = (storyId)  => rpc('delete_story', { p_story: storyId })
 export const markStorySeen = (storyId) => rpc('mark_story_seen', { p_story: storyId })
 export async function listStoryViewers(storyId) {

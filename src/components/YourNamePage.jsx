@@ -22,7 +22,7 @@ const AWARDS = [
   { icon: '🏆', label: 'Chef-d\'œuvre de Makoto Shinkai' },
 ]
 
-const COVER = ''
+const COVER = 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-name/the-movie-thumb.jpg'
 
 function loadProgress() {
   try { return JSON.parse(localStorage.getItem(`${NS}_vp`) || '{}') } catch { return {} }

@@ -1121,7 +1121,7 @@ export default function ProfilePageYonkou() {
       {/* ═══ Global styles ═══ */}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Bebas+Neue&display=swap');
-        * { cursor: none !important; box-sizing: border-box; }
+        * { box-sizing: border-box; }
         [data-anim] { opacity: 0; }
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.25} }
       `}</style>

@@ -1,10 +1,107 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { isStaff, isCreator } from '../lib/roles.js'
 import { listPostReports, resolvePostReport } from '../lib/feed.js'
+import { getAccessToken } from '../lib/supabaseRest.js'
 import { T } from './social/socialStyles.js'
 import Navbar from './Navbar.jsx'
 import StaffChat from './social/StaffChat.jsx'
+
+// Revenus Stripe : réservé aux admins (créateur Al Freydiss + Brams + Berat).
+const REVENUE_ADMIN_IDS = ['1094070545248694342', '1079054995917381672', '999607813334638692']
+const eur = (cents) => (cents / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €'
+
+function RevenuePanel() {
+  const [data, setData]       = useState(null)
+  const [error, setError]     = useState(null)
+  const [loading, setLoading] = useState(true)
+  const timer = useRef(null)
+
+  const load = useCallback(async () => {
+    try {
+      const token = await getAccessToken().catch(() => null)
+      const res = await fetch('/api/stripe-revenue', { headers: { Authorization: `Bearer ${token || ''}` } })
+      const j = await res.json()
+      if (!res.ok) throw new Error(j.error || 'Erreur')
+      setData(j); setError(null)
+    } catch (e) { setError(e.message) }
+    finally { setLoading(false) }
+  }, [])
+
+  // Temps réel : refresh toutes les 12s tant que l'onglet est visible.
+  useEffect(() => {
+    load()
+    const tick = () => { if (!document.hidden) load() }
+    timer.current = setInterval(tick, 12000)
+    return () => clearInterval(timer.current)
+  }, [load])
+
+  const Stat = ({ label, value, accent }) => (
+    <div style={{ background: 'rgba(0,0,0,0.25)', border: `1px solid ${T.border}`, borderRadius: 12, padding: '14px 16px', flex: 1, minWidth: 120 }}>
+      <div style={{ fontSize: 10.5, letterSpacing: '.08em', textTransform: 'uppercase', color: T.textFaint, marginBottom: 6 }}>{label}</div>
+      <div style={{ fontSize: 22, fontWeight: 800, color: accent || '#fff', lineHeight: 1 }}>{value}</div>
+    </div>
+  )
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: 'min(620px, 70vh)', borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(99,231,150,0.18)', background: T.panel }}>
+      <div style={{ padding: '14px 18px', borderBottom: `1px solid ${T.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontSize: 18 }}>💶</span>
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 800, color: T.text }}>Revenus Stripe</div>
+            <div style={{ fontSize: 11, color: '#63e796' }}>
+              {loading && !data ? 'Chargement…' : (<><span style={{ display: 'inline-block', width: 7, height: 7, borderRadius: '50%', background: '#63e796', marginRight: 6, boxShadow: '0 0 8px #63e796' }} />temps réel · MAJ 12s</>)}
+            </div>
+          </div>
+        </div>
+        <button onClick={load} title="Rafraîchir"
+          style={{ border: `1px solid ${T.border}`, background: 'transparent', color: T.textFaint, borderRadius: 9, padding: '6px 10px', fontSize: 12, cursor: 'pointer' }}>↻</button>
+      </div>
+
+      <div style={{ flex: 1, overflowY: 'auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
+        {error ? (
+          <div style={{ padding: 30, textAlign: 'center', color: '#e0524a', fontSize: 13 }}>✕ {error}</div>
+        ) : !data ? (
+          <div style={{ padding: 30, textAlign: 'center', color: T.textFaint, fontSize: 13 }}>Chargement…</div>
+        ) : (
+          <>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <Stat label="Solde dispo" value={eur(data.available)} accent="#63e796" />
+              <Stat label="En attente" value={eur(data.pending)} accent="#e8b84a" />
+              <Stat label={`Volume récent (${data.recentCount})`} value={eur(data.recentTotal)} />
+            </div>
+
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: T.textFaint, marginTop: 4 }}>
+              Derniers paiements
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {data.recent.length === 0 ? (
+                <div style={{ padding: '24px 12px', textAlign: 'center', color: T.textFaint, fontSize: 13 }}>Aucun paiement.</div>
+              ) : data.recent.map((c, i) => {
+                const ok = c.paid && !c.refunded
+                return (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, background: 'rgba(0,0,0,0.25)', border: `1px solid ${T.border}`, borderRadius: 10, padding: '9px 12px' }}>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: 13, color: T.text, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.email || c.desc || 'Paiement'}</div>
+                      <div style={{ fontSize: 11, color: T.textFaint }}>{timeAgo(new Date(c.created * 1000).toISOString())}</div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                      <span style={{ fontSize: 14, fontWeight: 800, color: c.refunded ? T.textFaint : ok ? '#63e796' : '#e0524a', textDecoration: c.refunded ? 'line-through' : 'none' }}>{eur(c.amount)}</span>
+                      <span style={{ fontSize: 9.5, fontWeight: 800, padding: '2px 7px', borderRadius: 6, color: c.refunded ? T.textFaint : ok ? '#63e796' : '#e0524a', background: c.refunded ? 'rgba(255,255,255,0.05)' : ok ? 'rgba(99,231,150,0.12)' : 'rgba(224,82,74,0.12)' }}>
+                        {c.refunded ? 'REMBOURSÉ' : ok ? 'RÉUSSI' : c.status?.toUpperCase()}
+                      </span>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
 
 function timeAgo(iso) {
   const m = Math.floor((Date.now() - new Date(iso)) / 60000)
@@ -105,6 +202,7 @@ export default function StaffPanel() {
   const { isAuthenticated, discordId, displayName, userId } = useAuth()
   const userIsStaff   = isAuthenticated && isStaff(discordId, userId)
   const userIsCreator = isAuthenticated && isCreator(discordId)
+  const userIsRevenueAdmin = isAuthenticated && (REVENUE_ADMIN_IDS.includes(String(discordId)) || userIsCreator)
 
   useEffect(() => {
     document.title = 'Staff Panel — Brams Community'
@@ -165,6 +263,7 @@ export default function StaffPanel() {
         {/* Contenu staff — 2 colonnes desktop, empilé mobile */}
         {isAuthenticated && userIsStaff && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: 20, alignItems: 'start' }}>
+            {userIsRevenueAdmin && <RevenuePanel />}
             <ReportsPanel />
             <StaffChat />
           </div>

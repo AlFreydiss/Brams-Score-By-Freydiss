@@ -6,7 +6,8 @@ import { getUserStories } from '../../lib/profile.js'
 import { createStory, uploadAttachment } from '../../lib/feed.js'
 import StoryViewer from '../feed/StoryViewer.jsx'
 
-const ALLOWED_IMG = ['image/png', 'image/jpeg', 'image/webp', 'image/gif']
+const ALLOWED_IMG = ['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'video/mp4', 'video/webm']
+const ALLOWED_AUDIO = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/webm']
 
 // Highlights : raccourcis premium vers les espaces Brams (mini-cover figée).
 const HIGHLIGHTS = [
@@ -33,19 +34,51 @@ export default function ProfileStories({ discordId, isOwnProfile, member }) {
   }, [discordId])
   useEffect(() => { load() }, [load])
 
+  const [pendingAudio, setPendingAudio] = useState(null)
+  const [musicTitle, setMusicTitle] = useState('')
+  const audioFileRef = useRef(null)
+
   async function onPick(e) {
     const f = e.target.files?.[0]; e.target.value = ''
     if (!f) return
-    if (!ALLOWED_IMG.includes(f.type)) { alert('Format image non supporté'); return }
-    if (f.size > 30 * 1024 * 1024) { alert('Image trop lourde (max 30 Mo)'); return }
+    if (!ALLOWED_IMG.includes(f.type) && !f.type.startsWith('video/')) {
+      alert('Format image ou vidéo non supporté')
+      return
+    }
+    if (f.size > 40 * 1024 * 1024) { alert('Fichier trop lourd'); return }
     setUploading(true)
     try {
       const up = await uploadAttachment(f)
       if (up.error) { alert(up.error); return }
-      const res = await createStory(up.url)
-      if (res?.ok) load()
-      else if (res?.error) alert(res.error)
+
+      let audioUrl = null
+      const mTitle = musicTitle || null
+      if (pendingAudio?.file) {
+        const aup = await uploadAttachment(pendingAudio.file)
+        if (!aup.error) audioUrl = aup.url
+      }
+
+      const res = await createStory({ mediaUrl: up.url, audioUrl, musicTitle: mTitle })
+      if (res?.ok) {
+        setPendingAudio(null)
+        setMusicTitle('')
+        load()
+      } else if (res?.error) {
+        alert(res.error)
+      }
     } finally { setUploading(false) }
+  }
+
+  function onPickAudio(e) {
+    const f = e.target.files?.[0]; e.target.value = ''
+    if (!f) return
+    if (!ALLOWED_AUDIO.includes(f.type) && !f.type.startsWith('audio/')) {
+      alert('Format audio non supporté')
+      return
+    }
+    setPendingAudio({ file: f })
+    const t = window.prompt('Titre du son / musique (optionnel)', '')
+    if (t != null) setMusicTitle(t.trim())
   }
 
   const hasStories = stories.length > 0
@@ -103,7 +136,25 @@ export default function ProfileStories({ discordId, isOwnProfile, member }) {
         </button>
       ))}
 
-      <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={onPick} style={{ display: 'none' }} />
+      <input ref={fileRef} type="file" accept="image/*,video/mp4,video/webm" onChange={onPick} style={{ display: 'none' }} />
+      <input ref={audioFileRef} type="file" accept="audio/*" onChange={onPickAudio} style={{ display: 'none' }} />
+
+      {/* Bouton son optionnel sur le profil */}
+      {isOwnProfile && (
+        <button
+          type="button"
+          className="pfx-story"
+          onClick={() => audioFileRef.current?.click()}
+          disabled={uploading}
+          style={{ opacity: pendingAudio ? 1 : 0.85 }}
+          title="Ajouter un son / musique de rep à ta story"
+        >
+          <span className="pfx-story-ring highlight">
+            <span className="pfx-story-cover pfx-story-cover-hl"><em>♫</em></span>
+          </span>
+          <span className="pfx-story-label" style={{ fontSize: 10 }}>{pendingAudio ? 'Son OK' : 'Son'}</span>
+        </button>
+      )}
 
       {open && hasStories && (
         <StoryViewer authors={viewerAuthors} startIndex={0} onClose={() => setOpen(false)} onDeleted={load} onSeen={() => {}} />
