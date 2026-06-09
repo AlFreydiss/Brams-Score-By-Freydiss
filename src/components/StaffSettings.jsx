@@ -91,6 +91,17 @@ const maskWebhook = (url) => {
   return m ? `…/${m[1].slice(0, 4)}••••/${'•'.repeat(6)}` : '•••••••• · configuré'
 }
 const stripSecrets = (st) => ({ ...st, notifications: { ...st.notifications, ...Object.fromEntries(WEBHOOK_KEYS.map(k => [k, ''])) } })
+// Merge PROFOND par section : une config sauvegardée par une version antérieure
+// ne doit pas perdre les clés ajoutées depuis (sinon inputs uncontrolled).
+const mergeSettings = (parsed) => {
+  const out = { ...DEFAULT_SETTINGS }
+  for (const k of Object.keys(DEFAULT_SETTINGS)) {
+    const dv = DEFAULT_SETTINGS[k], pv = parsed?.[k]
+    if (pv && typeof pv === 'object' && !Array.isArray(pv) && typeof dv === 'object') out[k] = { ...dv, ...pv }
+    else if (pv !== undefined) out[k] = pv
+  }
+  return out
+}
 
 // ── Primitives ─────────────────────────────────────────────────────────────
 function Toggle({ on, onChange, disabled, accent = C.gold }) {
@@ -331,7 +342,7 @@ function DangerPanel({ isAdmin, onAction }) {
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 export default function StaffSettings({ isAdmin = false }) {
-  const [saved, setSaved] = useState(() => { try { return { ...DEFAULT_SETTINGS, ...JSON.parse(localStorage.getItem(LS_KEY) || '{}') } } catch { return DEFAULT_SETTINGS } })
+  const [saved, setSaved] = useState(() => { try { return mergeSettings(JSON.parse(localStorage.getItem(LS_KEY) || '{}')) } catch { return DEFAULT_SETTINGS } })
   const [draft, setDraft] = useState(saved)
   const [active, setActive] = useState('general')
   const [reveal, setReveal] = useState(null)
