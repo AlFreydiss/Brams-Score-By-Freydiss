@@ -57,7 +57,7 @@ def main():
         print('\nEp',ep)
         vo=TMP/f'{base}-vostfr.mp4'; vtt=TMP/f'{base}-fr.vtt'; thumb=TMP/f'{base}.jpg'
         if not vo.exists():
-            ff(['-i',str(f),'-map','0:v:0','-map','0:a:0','-c:v','h264_nvenc','-preset','p5','-cq','23',
+            ff(['-i',str(f),'-map','0:v:0','-map','0:a:0','-c:v','h264_nvenc','-preset','p4','-cq','23',
                 '-pix_fmt','yuv420p','-c:a','aac','-b:a','192k','-movflags','+faststart',str(vo)])
         has_sub=False
         if not vtt.exists():
