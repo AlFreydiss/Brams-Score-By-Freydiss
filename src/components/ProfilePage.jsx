@@ -55,11 +55,14 @@ export default function ProfilePage() {
   // réécrit l'adresse en /u/pseudo (sans recharger). Les pseudos avec espaces ou
   // ambigus restent en ID (pour ne pas casser le partage).
   useEffect(() => {
-    const uname = member?.username
+    const uname = (member?.username || '').trim()
     if (!uname || !/^\d+$/.test(routeParam || '')) return
-    if (!/^[a-zA-Z0-9_.\-]{2,40}$/.test(uname)) return
-    const pretty = `/u/${uname}`
-    if (window.location.pathname !== pretty) {
+    // On accepte espaces/unicode (le navigateur affiche l'URL décodée → jolie),
+    // on exclut juste les pseudos vides, trop longs, ou avec un / qui casserait
+    // le chemin. resolveProfileId sait re-résoudre (ilike) ; si ambigu → recherche.
+    if (uname.length < 2 || uname.length > 40 || uname.includes('/')) return
+    const pretty = `/u/${encodeURIComponent(uname)}`
+    if (decodeURIComponent(window.location.pathname) !== decodeURIComponent(pretty)) {
       window.history.replaceState({}, '', pretty + window.location.search)
     }
   }, [member?.username, routeParam])
