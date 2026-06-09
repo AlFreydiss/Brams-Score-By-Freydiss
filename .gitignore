@@ -46,3 +46,8 @@ flux_output/
 
 # Playwright MCP (screenshots/snapshots de test)
 .playwright-mcp/
+
+# Screenshots de test (Playwright) sauvés a la racine — ne PAS committer (sinon rebuild Railway inutile)
+/tournoi*.png
+/*-bg.png
+/*-live.jpeg
