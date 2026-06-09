@@ -584,6 +584,72 @@ async function grantOpeningBg({ bg, discordId, amountCents, status = 'stripe_pai
   return { alreadyOwned: !created, item: { id: itemId, opTitle: bg.opTitle } }
 }
 
+// ── Curseurs custom payants en € (0,50–2,00 selon rareté) ─────────────────────
+const CURSOR_PRICE_CENTS = { COMMUN: 50, RARE: 79, EPIQUE: 119, MYTHIQUE: 159, INTERDIT: 200 }
+const CURSORS = [
+  { id:'cur-berry',       nom:'Pièce de Berry',     rarete:'COMMUN',   emoji:'🪙',  animated:false },
+  { id:'cur-logpose',     nom:'Log Pose',           rarete:'COMMUN',   emoji:'🧭',  animated:false },
+  { id:'cur-sake',        nom:'Coupe de Saké',      rarete:'COMMUN',   emoji:'🍶',  animated:false },
+  { id:'cur-map',         nom:'Carte au Trésor',    rarete:'COMMUN',   emoji:'🗺️',  animated:false },
+  { id:'cur-strawhat',    nom:'Chapeau de Paille',  rarete:'RARE',     emoji:'👒',  animated:false },
+  { id:'cur-dendenmushi', nom:'Den Den Mushi',      rarete:'RARE',     emoji:'🐌',  animated:false },
+  { id:'cur-marine',      nom:'Casquette Marine',   rarete:'RARE',     emoji:'🧢',  animated:false },
+  { id:'cur-anchor',      nom:'Ancre du Navire',    rarete:'RARE',     emoji:'⚓',  animated:false },
+  { id:'cur-devilfruit',  nom:'Fruit du Démon',     rarete:'EPIQUE',   emoji:'🍈',  animated:false },
+  { id:'cur-sunny',       nom:'Thousand Sunny',     rarete:'EPIQUE',   emoji:'⛵',  animated:false },
+  { id:'cur-wanted',      nom:'Avis de Recherche',  rarete:'EPIQUE',   emoji:'📜',  animated:false },
+  { id:'cur-sword',       nom:'Sandai Kitetsu',     rarete:'EPIQUE',   emoji:'⚔️',  animated:false },
+  { id:'cur-mera',        nom:'Mera Mera no Mi',    rarete:'MYTHIQUE', emoji:'🔥',  animated:true  },
+  { id:'cur-gomu',        nom:'Gomu Gomu no Pistol',rarete:'MYTHIQUE', emoji:'🥊',  animated:true  },
+  { id:'cur-yonko',       nom:'Couronne de Yonko',  rarete:'MYTHIQUE', emoji:'👑',  animated:true  },
+  { id:'cur-onepiece',    nom:'Pavillon One Piece', rarete:'MYTHIQUE', emoji:'🏴‍☠️', animated:true },
+  { id:'cur-gear5',       nom:'Gear 5 — Nika',      rarete:'INTERDIT', emoji:'☀️',  animated:true  },
+  { id:'cur-haki',        nom:'Haoshoku Haki',      rarete:'INTERDIT', emoji:'⚡',  animated:true  },
+  { id:'cur-akuma',       nom:'Akuma no Mi Interdit',rarete:'INTERDIT',emoji:'😈',  animated:true  },
+  { id:'cur-im',          nom:"Œil d'Im-sama",      rarete:'INTERDIT', emoji:'👁️',  animated:true  },
+]
+function findCursor(itemId) { const id = String(itemId || '').trim(); return CURSORS.find(c => c.id === id) || null }
+function cursorPriceCents(cur) { return CURSOR_PRICE_CENTS[cur.rarete] || 50 }
+async function ensureCursorShopItem(cur) {
+  // merge-duplicates : ne touche QUE les colonnes fournies (garde le stock/prix Berry existant).
+  await supabaseRest('shop_items?on_conflict=id', {
+    method: 'POST', prefer: 'resolution=merge-duplicates,return=minimal',
+    body: [{ id: cur.id, name: `Curseur : ${cur.nom}`, category: 'Curseurs', rarity: cur.rarete, active: true, reward_type: 'cursor', reward_data: { emoji: cur.emoji, animated: cur.animated } }],
+  })
+}
+
+// Résout un article payant (fond d'opening OU curseur) en forme normalisée.
+function resolvePaidItem(itemId) {
+  const bg = findOpeningBg(itemId)
+  if (bg) return {
+    kind: 'bg', itemId: bg.shopItemId || bg.id, amountCents: openingBgPriceCents(bg), rarity: bg.rarity || 'Commun',
+    productName: `Fond : ${bg.opTitle}`, productDesc: `${bg.anime} · ${bg.rarity}`,
+    invoiceDesc: `Fond d'opening « ${bg.opTitle} » — Brams Community`, label: bg.opTitle, ensure: () => ensureOpeningBgShopItem(bg),
+  }
+  const cur = findCursor(itemId)
+  if (cur) return {
+    kind: 'cursor', itemId: cur.id, amountCents: cursorPriceCents(cur), rarity: cur.rarete,
+    productName: `Curseur : ${cur.nom}`, productDesc: `Curseur custom · ${cur.rarete}`,
+    invoiceDesc: `Curseur « ${cur.nom} » — Brams Community`, label: cur.nom, ensure: () => ensureCursorShopItem(cur),
+  }
+  return null
+}
+
+async function grantItem({ item, discordId, amountCents, status = 'stripe_paid' }) {
+  const itemId = item.itemId
+  await item.ensure()
+  if (await hasOwnedOpeningBg(discordId, itemId)) return { alreadyOwned: true, item: { id: itemId, label: item.label } }
+  const inserted = await supabaseRest('user_inventory?on_conflict=discord_id,item_id', {
+    method: 'POST', prefer: 'resolution=ignore-duplicates,return=representation',
+    body: [{ discord_id: discordId, item_id: itemId, quantity: 1, equipped: false }],
+  })
+  const created = Array.isArray(inserted) && inserted.length > 0
+  if (created) {
+    await supabaseRest('shop_transactions', { method: 'POST', prefer: 'return=minimal', body: [{ discord_id: discordId, item_id: itemId, price: amountCents, status }] })
+  }
+  return { alreadyOwned: !created, item: { id: itemId, label: item.label } }
+}
+
 async function stripeApi(path, { method = 'GET', params } = {}) {
   const secret = process.env.STRIPE_SECRET_KEY || ''
   if (!secret) {
@@ -608,9 +674,9 @@ async function stripeApi(path, { method = 'GET', params } = {}) {
   return data
 }
 
-function stripeSessionParams({ req, user, discordId, bg, amountCents }) {
+function stripeSessionParams({ req, user, discordId, item, amountCents }) {
   const origin = getSiteOrigin(req)
-  const itemId = bg.shopItemId || bg.id
+  const itemId = item.itemId
   const params = new URLSearchParams()
   params.set('mode', 'payment')
   params.set('success_url', `${origin}/boutique?stripe=success&session_id={CHECKOUT_SESSION_ID}`)
@@ -619,19 +685,19 @@ function stripeSessionParams({ req, user, discordId, bg, amountCents }) {
   params.set('line_items[0][quantity]', '1')
   params.set('line_items[0][price_data][currency]', 'eur')
   params.set('line_items[0][price_data][unit_amount]', String(amountCents))
-  params.set('line_items[0][price_data][product_data][name]', `Fond : ${bg.opTitle}`)
-  params.set('line_items[0][price_data][product_data][description]', `${bg.anime} · ${bg.rarity}`)
+  params.set('line_items[0][price_data][product_data][name]', item.productName)
+  params.set('line_items[0][price_data][product_data][description]', item.productDesc)
   params.set('metadata[item_id]', itemId)
   params.set('metadata[discord_id]', String(discordId))
   params.set('metadata[user_id]', String(user?.id || ''))
-  params.set('metadata[rarity]', String(bg.rarity || 'Commun'))
+  params.set('metadata[rarity]', String(item.rarity))
   params.set('payment_intent_data[metadata][item_id]', itemId)
   params.set('payment_intent_data[metadata][discord_id]', String(discordId))
   if (user?.email) params.set('customer_email', user.email)
   // Génère une FACTURE Stripe (PDF) automatiquement envoyée par mail à l'acheteur
   // → sert de confirmation d'achat + facture téléchargeable.
   params.set('invoice_creation[enabled]', 'true')
-  params.set('invoice_creation[invoice_data][description]', `Fond d'opening « ${bg.opTitle} » — Brams Community`)
+  params.set('invoice_creation[invoice_data][description]', item.invoiceDesc)
   params.set('invoice_creation[invoice_data][metadata][item_id]', itemId)
   params.set('invoice_creation[invoice_data][footer]', 'Merci pour ton achat sur Brams Community 🏴‍☠️')
   return params
@@ -645,21 +711,21 @@ async function stripeCheckout(req, res) {
   try {
     const { user, discordId } = await getAuthedSupabaseUser(req)
     const { itemId } = readJsonBody(req)
-    const bg = findOpeningBg(itemId)
-    if (!bg) return res.status(404).json({ error: 'Fond introuvable.' })
+    const item = resolvePaidItem(itemId)
+    if (!item) return res.status(404).json({ error: 'Article introuvable.' })
 
-    const amountCents = openingBgPriceCents(bg)
+    const amountCents = item.amountCents
     if (amountCents < STRIPE_MIN_EUR_CHARGE_CENTS) {
-      return res.status(400).json({ error: 'Stripe refuse les paiements carte sous 0,50 €. Mets ce fond dans un pack ou augmente son prix.' })
+      return res.status(400).json({ error: 'Stripe refuse les paiements carte sous 0,50 €.' })
     }
-    if (await hasOwnedOpeningBg(discordId, bg.shopItemId || bg.id)) {
-      return res.status(409).json({ error: 'Tu possèdes déjà ce fond.' })
+    if (await hasOwnedOpeningBg(discordId, item.itemId)) {
+      return res.status(409).json({ error: 'Tu possèdes déjà cet article.' })
     }
 
-    await ensureOpeningBgShopItem(bg)
+    await item.ensure()
     const session = await stripeApi('/v1/checkout/sessions', {
       method: 'POST',
-      params: stripeSessionParams({ req, user, discordId, bg, amountCents }),
+      params: stripeSessionParams({ req, user, discordId, item, amountCents }),
     })
     return res.status(200).json({ ok: true, id: session.id, url: session.url })
   } catch (e) {
@@ -667,14 +733,12 @@ async function stripeCheckout(req, res) {
   }
 }
 
-function extractPaidSessionBg(session) {
+function extractPaidItem(session) {
   if (!session || session.payment_status !== 'paid') return null
-  const itemId = session.metadata?.item_id
-  const bg = findOpeningBg(itemId)
-  if (!bg) return null
-  const expected = openingBgPriceCents(bg)
-  if (Number(session.amount_total) !== expected) return null
-  return bg
+  const item = resolvePaidItem(session.metadata?.item_id)
+  if (!item) return null
+  if (Number(session.amount_total) !== item.amountCents) return null
+  return item
 }
 
 async function stripeComplete(req, res) {
@@ -691,11 +755,11 @@ async function stripeComplete(req, res) {
     if (String(session.metadata?.discord_id || '') !== String(discordId)) {
       return res.status(403).json({ error: 'Ce paiement ne correspond pas à ton compte.' })
     }
-    const bg = extractPaidSessionBg(session)
-    if (!bg) return res.status(400).json({ error: 'Paiement non validé ou montant invalide.' })
+    const item = extractPaidItem(session)
+    if (!item) return res.status(400).json({ error: 'Paiement non validé ou montant invalide.' })
 
-    const result = await grantOpeningBg({
-      bg,
+    const result = await grantItem({
+      item,
       discordId,
       amountCents: Number(session.amount_total),
       status: 'stripe_paid',
@@ -739,12 +803,12 @@ async function stripeWebhook(req, res) {
       return res.status(200).json({ ok: true, ignored: true })
     }
     const session = event.data?.object
-    const bg = extractPaidSessionBg(session)
+    const item = extractPaidItem(session)
     const discordId = session?.metadata?.discord_id
-    if (!bg || !discordId) return res.status(200).json({ ok: true, ignored: true })
+    if (!item || !discordId) return res.status(200).json({ ok: true, ignored: true })
 
-    const result = await grantOpeningBg({
-      bg,
+    const result = await grantItem({
+      item,
       discordId,
       amountCents: Number(session.amount_total),
       status: 'stripe_paid',

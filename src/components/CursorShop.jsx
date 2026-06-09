@@ -13,13 +13,20 @@
 // ─────────────────────────────────────────────────────────────────────────────
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useAuth } from '../contexts/AuthContext.jsx'
-import { fetchShopBalance, fetchMyInventory, purchaseShopItem, equipShopItem } from '../lib/berryShop.js'
+import { fetchMyInventory, equipShopItem, createOpeningBgCheckout, completeOpeningBgCheckout } from '../lib/berryShop.js'
 
 // ── Constantes configurables ────────────────────────────────────────────────
 const R2_BASE = 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/cursors'
 const BERRY_SYMBOL = '฿'
 const CURSOR_KEY = 'brams_cursor'           // localStorage : curseur équipé (apply instantané cross-page)
 const CURSOR_EVENT = 'brams-cursor-change'  // event interne pour resync le GlobalCursorLayer
+
+// Prix réels en € (centimes) par rareté — DOIT matcher CURSOR_PRICE_CENTS côté
+// api/bot-tools.js (le serveur revalide le montant, c'est lui la source de vérité).
+const CURSOR_PRICE_CENTS = { COMMUN: 50, RARE: 79, EPIQUE: 119, MYTHIQUE: 159, INTERDIT: 200 }
+const euroFmt = new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+function priceCents(cur) { return CURSOR_PRICE_CENTS[cur.rarete] || 50 }
+function formatEuro(cents) { return euroFmt.format((cents || 0) / 100) + ' €' }
 
 const RARITY_CONFIG = {
   COMMUN:   { label: 'Commun',   color: '#8a8a8a', glow: 'rgba(138,138,138,0.45)', borderColor: '#8a8a8a', order: 1, prixMin: 5000 },
@@ -184,16 +191,10 @@ function CursorCard({ cur, owned, equipped, affordable, busy, onBuy, onEquip }) 
     action = <button onClick={() => onEquip(cur)} disabled={busy} style={{ ...btnBase, color: '#0b0c0e', background: r.color, border: `1px solid ${r.color}`, cursor: 'pointer', opacity: busy ? .6 : 1 }}>Équiper</button>
   } else if (soldOut) {
     action = <div style={{ ...btnBase, color: '#caa', background: 'rgba(120,40,38,0.25)', border: '1px solid rgba(192,57,43,0.5)', cursor: 'not-allowed' }}>Épuisé</div>
-  } else if (!affordable) {
-    action = (
-      <div title="Berry insuffisants" style={{ ...btnBase, color: '#9aa', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', cursor: 'not-allowed' }}>
-        {BERRY_SYMBOL}{formatBerry(cur.prix)}
-      </div>
-    )
   } else {
     action = (
       <button onClick={() => onBuy(cur)} disabled={busy} style={{ ...btnBase, color: '#0b0c0e', background: `linear-gradient(180deg, ${r.color}, ${r.color}cc)`, border: `1px solid ${r.color}`, cursor: 'pointer', opacity: busy ? .6 : 1 }}>
-        {busy ? '…' : <>Acheter · {BERRY_SYMBOL}{formatBerry(cur.prix)}</>}
+        {busy ? '…' : <>Acheter · {formatEuro(priceCents(cur))}</>}
       </button>
     )
   }
@@ -256,16 +257,29 @@ export default function CursorShop() {
 
   const refresh = useCallback(async () => {
     if (!isAuthenticated) { setLoading(false); return }
-    const [bal, inv] = await Promise.all([
-      fetchShopBalance().catch(() => null),
-      fetchMyInventory().catch(() => []),
-    ])
-    if (bal != null) setBalance(bal)
+    const inv = await fetchMyInventory().catch(() => [])
     setInventory(Array.isArray(inv) ? inv : [])
     setLoading(false)
   }, [isAuthenticated])
 
   useEffect(() => { refresh() }, [refresh, discordId])
+
+  // Retour de Stripe Checkout (?stripe=success&session_id=...) → finalise l'achat
+  // côté serveur, flash de succès, nettoie l'URL, refetch l'inventaire.
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search)
+    if (p.get('stripe') !== 'success') return
+    const sid = p.get('session_id')
+    ;(async () => {
+      if (sid) {
+        const { data } = await completeOpeningBgCheckout(sid)
+        if (data?.item?.id) { setFlashId(data.item.id); setTimeout(() => setFlashId(null), 900) }
+        showToast('✦ Curseur débloqué ! Équipe-le.', 'success')
+      }
+      window.history.replaceState({}, document.title, '/boutique')
+      refresh()
+    })()
+  }, [refresh])
 
   // Au montage : applique le curseur déjà équipé (si l'inventaire en a un) →
   // synchro la source de vérité serveur vers le localStorage/site.
@@ -279,29 +293,22 @@ export default function CursorShop() {
 
   const ownedSet = useMemo(() => new Set(inventory.filter(i => i.reward_type === 'cursor').map(i => i.item_id)), [inventory])
   const equippedId = useMemo(() => inventory.find(i => i.reward_type === 'cursor' && i.equipped)?.item_id || null, [inventory])
-  const effectiveBalance = balance != null ? balance : (berryCount || 0)
 
   const showToast = (msg, kind = 'info') => { setToast({ msg, kind }); setTimeout(() => setToast(null), 3200) }
 
+  // Achat en € via Stripe Checkout (redirection). Le serveur revalide le prix.
   const buy = useCallback(async (cur) => {
     if (busyId) return
-    if (effectiveBalance < cur.prix) { showToast('Berry insuffisants pour ce curseur.', 'error'); return }
+    if (!isAuthenticated) { showToast('Connecte-toi pour acheter.', 'error'); return }
     setBusyId(cur.id)
-    const prev = balance
-    setBalance(b => (b != null ? b - cur.prix : b)) // optimistic
-    const { data, error } = await purchaseShopItem(cur.id)
-    if (error) {
-      setBalance(prev) // rollback
-      showToast(error.message || 'Achat impossible.', 'error')
+    const { data, error } = await createOpeningBgCheckout(cur.id)
+    if (error || !data?.url) {
+      showToast(error?.message || 'Paiement indisponible.', 'error')
       setBusyId(null)
       return
     }
-    if (data?.balance != null) setBalance(Number(data.balance))
-    setFlashId(cur.id); setTimeout(() => setFlashId(null), 850)
-    showToast(`✦ ${cur.nom} débloqué !`, 'success')
-    await refresh()
-    setBusyId(null)
-  }, [busyId, balance, effectiveBalance, refresh])
+    window.location.assign(data.url)
+  }, [busyId, isAuthenticated])
 
   const equip = useCallback(async (cur) => {
     if (busyId) return
@@ -334,16 +341,14 @@ export default function CursorShop() {
             textShadow: '0 1px 0 #7a5a1e, 0 2px 0 #5e4416, 0 3px 0 #432f0e, 0 4px 14px rgba(0,0,0,0.6), 0 0 34px rgba(245,181,10,0.25)',
           }}>Curseurs Légendaires</h2>
           <p style={{ margin: '8px 0 0', fontSize: 14, color: 'rgba(205,189,151,0.7)', maxWidth: 560, fontFamily: "'Cinzel', serif" }}>
-            Personnalise ton curseur sur tout le site. Paye en Berry, équipe, et navigue avec classe de pirate.
+            Personnalise ton curseur sur tout le site. Paye en quelques clics, équipe, et navigue avec classe de pirate.
           </p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '12px 20px', borderRadius: 14, background: 'rgba(28,24,18,0.7)', border: '1px solid rgba(245,181,10,0.3)', boxShadow: '0 0 26px rgba(245,181,10,0.12)' }}>
-          <span style={{ fontSize: 22 }}>💰</span>
+          <span style={{ fontSize: 22 }}>💳</span>
           <div style={{ lineHeight: 1.15 }}>
-            <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.1em', textTransform: 'uppercase', color: 'rgba(205,189,151,0.55)', fontFamily: "'Cinzel', serif" }}>Ton trésor</div>
-            {isAuthenticated
-              ? <BerryDisplay amount={effectiveBalance} size={20} color="#f5b50a" />
-              : <strong style={{ fontSize: 14, color: '#cdbd97', fontFamily: "'Cinzel', serif" }}>Connecte-toi</strong>}
+            <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.1em', textTransform: 'uppercase', color: 'rgba(205,189,151,0.55)', fontFamily: "'Cinzel', serif" }}>Prix des curseurs</div>
+            <strong style={{ fontSize: 19, color: '#f5b50a', fontFamily: "'Cinzel', serif" }}>0,50 € à 2,00 €</strong>
           </div>
         </div>
       </header>
@@ -380,7 +385,7 @@ export default function CursorShop() {
                 cur={cur}
                 owned={ownedSet.has(cur.id)}
                 equipped={equippedId === cur.id}
-                affordable={effectiveBalance >= cur.prix}
+                affordable={true}
                 busy={busyId === cur.id}
                 onBuy={buy} onEquip={equip}
               />
