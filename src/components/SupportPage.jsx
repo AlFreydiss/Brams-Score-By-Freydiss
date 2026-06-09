@@ -19,7 +19,7 @@ function amountBadgeStyle(amount) {
 }
 
 const GOLD = '#f5b50a', GOLD_SOFT = '#d8bd7e'
-const PRESETS = [3, 5, 10, 20]
+const PRESETS = [5, 10, 30, 50]
 const euro = (n) => `${(Math.round((Number(n) || 0) * 100) / 100).toLocaleString('fr-FR')} €`
 const HUES = ['#e0524a', '#a855f7', '#3b82f6', '#16a34a', '#f59e0b', '#ec4899']
 const hueFor = (s) => HUES[[...(s || '')].reduce((a, c) => a + c.charCodeAt(0), 0) % HUES.length]
