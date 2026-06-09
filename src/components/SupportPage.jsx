@@ -2,7 +2,8 @@
 // dark/or One Piece). Objectif + feed des soutiens + formulaire de don Stripe
 // (paiement réel, montant libre). Le don alimente la cagnotte automatiquement.
 import { useState, useEffect } from 'react'
-import { fetchCagnotte, createDonateCheckout, completeDonate } from '../lib/berryShop.js'
+import { fetchCagnotte } from '../lib/supabase.js'
+import { createDonateCheckout, completeDonate } from '../lib/berryShop.js'
 import { useAuth } from '../contexts/AuthContext.jsx'
 
 const GOLD = '#f5b50a', GOLD_SOFT = '#d8bd7e'
