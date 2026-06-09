@@ -12,7 +12,13 @@ import CursorShop from './CursorShop.jsx'
 import TrailShop from './TrailShop.jsx'
 import { CartProvider, useCart } from '../contexts/CartContext.jsx'
 import CartDrawer from './CartDrawer.jsx'
-import { formatEuroCents, openingBgPriceCents, openingBgPriceLabel } from '../lib/openingBgPricing.js'
+import { formatEuroCents, openingBgPriceCents, openingBgPriceLabel, OPENING_BG_EURO_PRICE_CENTS } from '../lib/openingBgPricing.js'
+
+// Vraie fourchette de prix des fonds (min/max de la table par rareté).
+const BG_PRICE_RANGE = (() => {
+  const vals = Object.values(OPENING_BG_EURO_PRICE_CENTS)
+  return { min: Math.min(...vals), max: Math.max(...vals) }
+})()
 import OpeningBgMedia from './social/OpeningBgMedia.jsx'
 
 // ── Tokens ───────────────────────────────────────────────────────────────────
@@ -566,7 +572,7 @@ function BerryShopInner() {
             <span style={{ fontSize: 20 }}>💳</span>
             <div style={{ lineHeight: 1.1 }}>
               <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.1em', textTransform: 'uppercase', color: FAINT }}>Prix des fonds</div>
-              <strong style={{ fontSize: 19, color: GOLD_HI }}>{formatEuroCents(29)} à {formatEuroCents(150)}</strong>
+              <strong style={{ fontSize: 19, color: GOLD_HI }}>{formatEuroCents(BG_PRICE_RANGE.min)} à {formatEuroCents(BG_PRICE_RANGE.max)}</strong>
             </div>
           </div>
         </header>
