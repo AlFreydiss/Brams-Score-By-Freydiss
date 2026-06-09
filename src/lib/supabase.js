@@ -133,30 +133,37 @@ async function fetchBoardForProfile() {
   return null
 }
 
-// Résout un paramètre d'URL profil (id Discord OU pseudo) vers un uid Discord.
-// Numérique = déjà un id (chemin rapide, zéro requête). Sinon lookup case-insensitive
-// sur users.data->>username. null = introuvable ou ambigu (>1) → l'appelant redirige.
+// Slug d'un pseudo (doit matcher la colonne générée `users.slug` : NFKD + minuscule
+// + non-alphanumériques → '-'). Ex : "𝗔𝗹 𝗙𝗿𝗲𝘆𝗱𝗶𝘀𝘀 ツ" → "al-freydiss".
+export function slugifyName(s) {
+  return String(s || '').normalize('NFKD').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+}
+
+// Résout un paramètre d'URL profil (id Discord OU slug/pseudo) vers un uid.
+// Numérique = déjà un id. Sinon : 1) match exact sur le slug (URL propre),
+// 2) repli sur le username (ilike). null = introuvable/ambigu → l'appelant redirige.
 export async function resolveProfileId(param) {
   const raw = String(param || '').trim()
   if (/^\d+$/.test(raw)) return raw
   if (!url || !key || !raw) return null
-  // ILIKE traite `_` `%` (et `\`) comme des jokers → on les échappe pour un match
-  // EXACT case-insensitive. Sans ça, "al_freydiss" matcherait "alxfreydiss".
+  const token = await getAccessToken().catch(() => null)
+  const hdr = { apikey: key, Authorization: `Bearer ${token || key}`, Accept: 'application/json' }
+  const get = async (qs) => {
+    try {
+      const ctrl = new AbortController(); const timer = setTimeout(() => ctrl.abort(), 5000)
+      const r = await fetch(`${url}/rest/v1/users?${qs}`, { signal: ctrl.signal, headers: hdr })
+      clearTimeout(timer)
+      if (!r.ok) return null
+      const rows = await r.json()
+      return Array.isArray(rows) && rows.length === 1 ? String(rows[0].uid) : null
+    } catch { return null }
+  }
+  // 1) slug (URL jolie /u/al-freydiss)
+  const slug = slugifyName(raw)
+  if (slug) { const bySlug = await get(`select=uid&slug=eq.${encodeURIComponent(slug)}&limit=2`); if (bySlug) return bySlug }
+  // 2) repli : username exact (jokers ILIKE échappés)
   const pattern = raw.replace(/[\\%_]/g, '\\$&')
-  try {
-    const ctrl = new AbortController()
-    const timer = setTimeout(() => ctrl.abort(), 5000)
-    const token = await getAccessToken().catch(() => null)
-    // limit=2 : on veut détecter l'ambiguïté (deux pseudos identiques) sans tout charger.
-    const r = await fetch(
-      `${url}/rest/v1/users?select=uid&data->>username=ilike.${encodeURIComponent(pattern)}&limit=2`,
-      { signal: ctrl.signal, headers: { apikey: key, Authorization: `Bearer ${token || key}`, Accept: 'application/json' } }
-    )
-    clearTimeout(timer)
-    if (!r.ok) return null
-    const rows = await r.json()
-    return Array.isArray(rows) && rows.length === 1 ? String(rows[0].uid) : null
-  } catch { return null }
+  return get(`select=uid&data->>username=ilike.${encodeURIComponent(pattern)}&limit=2`)
 }
 
 // Recherche de membres pour l'autocomplétion (cadeaux, mentions…). Cherche dans

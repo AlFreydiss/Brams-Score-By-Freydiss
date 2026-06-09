@@ -4,7 +4,7 @@
 // Orchestrée par useProfileData. UI découpée dans components/profile/* (.pfx-).
 import { useEffect, useState, useMemo } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { resolveProfileId } from '../lib/supabase.js'
+import { resolveProfileId, slugifyName } from '../lib/supabase.js'
 import { Grid3x3, Repeat2, Bookmark, Gauge, Package, Award } from 'lucide-react'
 import './profile/profile.css'
 import { useProfileData } from '../hooks/useProfileData.js'
@@ -55,14 +55,13 @@ export default function ProfilePage() {
   // réécrit l'adresse en /u/pseudo (sans recharger). Les pseudos avec espaces ou
   // ambigus restent en ID (pour ne pas casser le partage).
   useEffect(() => {
-    const uname = (member?.username || '').trim()
-    if (!uname || !/^\d+$/.test(routeParam || '')) return
-    // On accepte espaces/unicode (le navigateur affiche l'URL décodée → jolie),
-    // on exclut juste les pseudos vides, trop longs, ou avec un / qui casserait
-    // le chemin. resolveProfileId sait re-résoudre (ilike) ; si ambigu → recherche.
-    if (uname.length < 2 || uname.length > 40 || uname.includes('/')) return
-    const pretty = `/u/${encodeURIComponent(uname)}`
-    if (decodeURIComponent(window.location.pathname) !== decodeURIComponent(pretty)) {
+    if (!/^\d+$/.test(routeParam || '')) return
+    // URL propre : /u/<slug> (ex : al-freydiss). resolveProfileId re-résout via la
+    // colonne `slug` ; pseudos homonymes → partage retombe sur la recherche.
+    const slug = slugifyName(member?.username)
+    if (!slug || slug.length < 2 || slug.length > 60) return
+    const pretty = `/u/${slug}`
+    if (window.location.pathname !== pretty) {
       window.history.replaceState({}, '', pretty + window.location.search)
     }
   }, [member?.username, routeParam])
