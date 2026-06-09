@@ -210,7 +210,7 @@ export default function StaffPanel() {
   }, [])
 
   return (
-    <div style={{ minHeight: '100vh', background: '#08090D', position: 'relative', isolation: 'isolate', overflowX: 'hidden' }}>
+    <div style={{ minHeight: '100vh', background: '#08090D', position: 'relative', zIndex: 3, isolation: 'isolate', overflowX: 'hidden' }}>
       <Navbar />
 
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '100px 24px 60px' }}>
