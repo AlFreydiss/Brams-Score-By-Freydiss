@@ -45,6 +45,14 @@
       "destination": "/api/bot-tools?tool=stripe-gift"
     },
     {
+      "source": "/api/stripe-donate",
+      "destination": "/api/bot-tools?tool=stripe-donate"
+    },
+    {
+      "source": "/api/stripe-donate-complete",
+      "destination": "/api/bot-tools?tool=stripe-donate-complete"
+    },
+    {
       "source": "/api/subtitles/onepiece",
       "destination": "/api/subtitles?kind=onepiece"
     },

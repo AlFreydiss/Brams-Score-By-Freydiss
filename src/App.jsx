@@ -68,6 +68,7 @@ const ConstellationPage  = lazyWithReload(() => import('./components/Constellati
 const CrewHQPage         = lazyWithReload(() => import('./components/crew-hq/CrewHQPage.jsx'))
 const DevilFruitPage     = lazyWithReload(() => import('./components/devil-fruit/DevilFruitPage.jsx'))
 const BerryShop          = lazyWithReload(() => import('./components/BerryShop.jsx'))
+const SupportPage        = lazyWithReload(() => import('./components/SupportPage.jsx'))
 const BramsTraitorPage   = lazyWithReload(() => import('./components/BramsTraitorPage.jsx'))
 const StaffPanel         = lazyWithReload(() => import('./components/StaffPanel.jsx'))
 const BlindTestPage      = lazyWithReload(() => import('./components/BlindTestPage.jsx'))
@@ -551,6 +552,7 @@ export default function App() {
 
         {/* Boutique Berry connectee Discord */}
         <Route path="/boutique" element={<PageLayout><BerryShop /></PageLayout>} />
+        <Route path="/soutenir" element={<PageLayout><SupportPage /></PageLayout>} />
         <Route path="/shop" element={<PageLayout><BerryShop /></PageLayout>} />
 
         {/* Systeme social — amis & messagerie */}

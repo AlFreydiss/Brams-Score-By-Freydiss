@@ -395,6 +395,28 @@ export function createCartCheckout(itemIds) {
   return stripeShopPost('/api/stripe-cart', { itemIds })
 }
 
+// Don libre à la cagnotte (PUBLIC, pas besoin d'être connecté) → Stripe Checkout.
+export async function createDonateCheckout(amount, name, message) {
+  try {
+    const res = await fetch('/api/stripe-donate', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amount, name, message }),
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok || data?.error) return { error: { message: data?.error || `Erreur (${res.status})` } }
+    return { data }
+  } catch (e) { return { error: { message: e?.message || 'Paiement indisponible.' } } }
+}
+// Finalise un don au retour Stripe (enregistre dans la cagnotte). Idempotent.
+export async function completeDonate(sessionId) {
+  try {
+    const res = await fetch('/api/stripe-donate-complete', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionId }),
+    })
+    return res.ok
+  } catch { return false }
+}
+
 // Cadeaux reçus non vus (REST direct, anti-hang). RLS → renvoie les miens.
 export async function fetchUnseenGifts() {
   if (!SB_URL || !SB_KEY) return []

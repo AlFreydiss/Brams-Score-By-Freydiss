@@ -3,6 +3,7 @@
 // message, date). Lecture publique ; le staff édite l'objectif et ajoute des
 // soutiens en live (table donors + cagnotte, RLS). Aucun Leetchi.
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { isStaff } from '../lib/roles.js'
 import { fetchCagnotte, addDonor, deleteDonor, updateCagnotte } from '../lib/supabase.js'
@@ -82,10 +83,10 @@ export default function CagnotteSection({ compact }) {
             {pct >= 100 ? '🎉 Objectif atteint, merci les nakamas !' : `${pct}% de l'objectif`}
           </div>
 
-          <a href={DISCORD_URL} target="_blank" rel="noopener noreferrer" style={{
+          <Link to="/soutenir" style={{
             display: 'inline-flex', alignItems: 'center', gap: 8, marginTop: 14, padding: '10px 20px', borderRadius: 11, textDecoration: 'none',
             background: `linear-gradient(180deg, ${GOLD_HI}, #d4920a)`, color: '#1a1206', fontWeight: 900, fontSize: 13.5, fontFamily: "'Cinzel', serif", boxShadow: `0 10px 28px ${GOLD_HI}33`,
-          }}>💛 Soutenir le projet</a>
+          }}>💛 Soutenir le projet</Link>
         </div>
 
         {/* Feed des soutiens */}

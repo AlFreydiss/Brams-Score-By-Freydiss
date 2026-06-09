@@ -93,16 +93,14 @@ const LEETCHI_URL = 'https://www.leetchi.com/fr/c/brams-score-by-freydiss-107381
 
 function SoutenirButton() {
   return (
-    <a
-      href={LEETCHI_URL}
-      target="_blank"
-      rel="noopener noreferrer"
+    <Link
+      to="/soutenir"
       className="nav-soutenir-btn"
       aria-label="Soutenir le projet"
     >
       <span style={{ fontSize: 13 }}>💛</span>
       Soutenir
-    </a>
+    </Link>
   )
 }
 

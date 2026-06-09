@@ -998,6 +998,60 @@ async function stripeGift(req, res) {
   }
 }
 
+// Don libre (cagnotte) — PUBLIC, montant choisi. Alimente la table donors → la
+// cagnotte + le feed se mettent à jour tout seuls après paiement.
+async function stripeDonate(req, res) {
+  setStripeCors(res)
+  if (req.method === 'OPTIONS') return res.status(204).end()
+  if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' })
+  try {
+    const { amount, name, message } = readJsonBody(req)
+    const cents = Math.round((Number(amount) || 0) * 100)
+    if (!Number.isFinite(cents) || cents < STRIPE_MIN_EUR_CHARGE_CENTS) return res.status(400).json({ error: 'Montant minimum 0,50 €.' })
+    if (cents > 100000) return res.status(400).json({ error: 'Montant maximum 1000 €.' })
+    const donorName = String(name || '').trim().slice(0, 40) || 'Anonyme'
+    const donorMsg = String(message || '').trim().slice(0, 200)
+    const origin = getSiteOrigin(req)
+    const params = new URLSearchParams()
+    params.set('mode', 'payment')
+    params.set('success_url', `${origin}/soutenir?stripe=donated&session_id={CHECKOUT_SESSION_ID}`)
+    params.set('cancel_url', `${origin}/soutenir?stripe=cancel`)
+    params.set('line_items[0][quantity]', '1')
+    params.set('line_items[0][price_data][currency]', 'eur')
+    params.set('line_items[0][price_data][unit_amount]', String(cents))
+    params.set('line_items[0][price_data][product_data][name]', '💛 Soutien à Brams Community')
+    params.set('line_items[0][price_data][product_data][description]', 'Merci de soutenir le projet 🏴‍☠️')
+    params.set('metadata[kind]', 'donation')
+    params.set('metadata[donor_name]', donorName)
+    params.set('metadata[donor_message]', donorMsg)
+    params.set('invoice_creation[enabled]', 'true')
+    params.set('invoice_creation[invoice_data][description]', 'Soutien à Brams Community')
+    params.set('invoice_creation[invoice_data][footer]', 'Merci pour ton soutien 💛 — Brams Community')
+    const session = await stripeApi('/v1/checkout/sessions', { method: 'POST', params })
+    return res.status(200).json({ ok: true, url: session.url })
+  } catch (e) {
+    return res.status(e.status || 500).json({ error: e?.message || 'Erreur don' })
+  }
+}
+
+// Finalisation PUBLIQUE d'un don au retour Stripe (pas d'auth — un don peut être
+// anonyme). Idempotent via stripe_session. Filet en plus du webhook.
+async function stripeDonateComplete(req, res) {
+  setStripeCors(res)
+  if (req.method === 'OPTIONS') return res.status(204).end()
+  if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' })
+  try {
+    const { sessionId } = readJsonBody(req)
+    if (!sessionId) return res.status(400).json({ error: 'sessionId manquant' })
+    const session = await stripeApi(`/v1/checkout/sessions/${encodeURIComponent(sessionId)}`)
+    if (session.metadata?.kind !== 'donation') return res.status(400).json({ error: 'Session non-don.' })
+    const r = await settleCartOrGift(session)
+    return res.status(r?.ok ? 200 : 400).json(r || { ok: false })
+  } catch (e) {
+    return res.status(e.status || 500).json({ error: e?.message || 'Erreur' })
+  }
+}
+
 async function stripeRefund(paymentIntentId) {
   if (!paymentIntentId) return
   try { await stripeApi('/v1/refunds', { method: 'POST', params: new URLSearchParams({ payment_intent: String(paymentIntentId) }) }) } catch {}
@@ -1037,6 +1091,17 @@ async function settleCartOrGift(session) {
     })
     return { ok: true, kind, item: { id: item.itemId, label: item.label } }
   }
+  if (kind === 'donation') {
+    const cents = Number(session.amount_total)
+    if (!Number.isFinite(cents) || cents < STRIPE_MIN_EUR_CHARGE_CENTS) return { ok: false, error: 'Montant don invalide.' }
+    // on_conflict sur stripe_session → idempotent (webhook + complete ne créent qu'1 ligne).
+    await supabaseRest('donors?on_conflict=stripe_session', {
+      method: 'POST', prefer: 'resolution=ignore-duplicates,return=minimal',
+      body: [{ name: session.metadata?.donor_name || 'Anonyme', amount: cents / 100,
+               message: session.metadata?.donor_message || null, stripe_session: session.id }],
+    })
+    return { ok: true, kind, amount: cents }
+  }
   return null
 }
 
@@ -1053,5 +1118,7 @@ export default async function handler(req, res) {
   if (tool === 'stripe-webhook')        return stripeWebhook(req, res)
   if (tool === 'stripe-cart')           return stripeCart(req, res)
   if (tool === 'stripe-gift')           return stripeGift(req, res)
+  if (tool === 'stripe-donate')         return stripeDonate(req, res)
+  if (tool === 'stripe-donate-complete') return stripeDonateComplete(req, res)
   return res.status(404).json({ error: 'Unknown bot tool' })
 }
