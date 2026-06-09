@@ -64,6 +64,7 @@ export default function EquippedOpeningBackground() {
       {/* Contrôle son global du fond d'opening (accueil & pages au fond animé). */}
       {canSound && (
         <div
+          className="cinema-hide"
           onMouseEnter={() => setHovered(true)}
           onMouseLeave={() => setHovered(false)}
           style={{

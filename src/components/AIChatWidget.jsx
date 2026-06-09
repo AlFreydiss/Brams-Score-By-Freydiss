@@ -130,7 +130,7 @@ export default function AIChatWidget({ hidden = false }) {
   return (
     <>
       {/* Panel */}
-      <div style={{
+      <div className="cinema-hide" style={{
         position:'fixed', bottom:90, right:24, zIndex:900,
         width:360, maxWidth:'calc(100vw - 48px)',
         background:'rgba(10,11,14,.96)', backdropFilter:'blur(22px)',
@@ -244,6 +244,7 @@ export default function AIChatWidget({ hidden = false }) {
 
       {/* Bubble button */}
       <button
+        className="cinema-hide"
         onClick={() => setOpen(o => !o)}
         style={{
           position:'fixed', bottom:24, right:24, zIndex:901,
