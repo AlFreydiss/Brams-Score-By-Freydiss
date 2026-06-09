@@ -37,6 +37,14 @@
       "destination": "/api/bot-tools?tool=stripe-webhook"
     },
     {
+      "source": "/api/stripe-cart",
+      "destination": "/api/bot-tools?tool=stripe-cart"
+    },
+    {
+      "source": "/api/stripe-gift",
+      "destination": "/api/bot-tools?tool=stripe-gift"
+    },
+    {
       "source": "/api/subtitles/onepiece",
       "destination": "/api/subtitles?kind=onepiece"
     },

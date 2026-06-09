@@ -783,6 +783,9 @@ async function stripeComplete(req, res) {
     if (String(session.metadata?.discord_id || '') !== String(discordId)) {
       return res.status(403).json({ error: 'Ce paiement ne correspond pas à ton compte.' })
     }
+    // Panier ou cadeau ? (flux multi/destinataire). Sinon → item simple ci-dessous.
+    const multi = await settleCartOrGift(session)
+    if (multi) return res.status(multi.ok ? 200 : 400).json(multi)
     const item = extractPaidItem(session)
     if (!item) return res.status(400).json({ error: 'Paiement non validé ou montant invalide.' })
 
@@ -831,6 +834,9 @@ async function stripeWebhook(req, res) {
       return res.status(200).json({ ok: true, ignored: true })
     }
     const session = event.data?.object
+    // Panier ou cadeau ? (grant multi / au destinataire). Sinon → item simple.
+    const multi = await settleCartOrGift(session)
+    if (multi) return res.status(200).json(multi)
     const item = extractPaidItem(session)
     const discordId = session?.metadata?.discord_id
     if (!item || !discordId) return res.status(200).json({ ok: true, ignored: true })
@@ -847,6 +853,176 @@ async function stripeWebhook(req, res) {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// PANIER (multi-items + promo BOGO) & CADEAUX (item offert à un membre)
+// Promo "1 acheté = 1 offert" calculée 100% serveur (jamais le client) : sur le
+// panier trié par prix décroissant, 1 item sur 2 (le moins cher de chaque paire)
+// est offert. Le total est revalidé à la finalisation.
+// ─────────────────────────────────────────────────────────────────────────────
+function cartPricing(items) {
+  // items = [{ itemId, amountCents, label }] (déjà filtrés des possédés)
+  const sorted = [...items].sort((a, b) => b.amountCents - a.amountCents)
+  const freeIds = new Set()
+  for (let i = 1; i < sorted.length; i += 2) freeIds.add(sorted[i].itemId) // 1 sur 2 = offert
+  const paidTotal = sorted.reduce((s, it) => s + (freeIds.has(it.itemId) ? 0 : it.amountCents), 0)
+  return { freeIds, paidTotal, sorted }
+}
+
+async function resolveCartItems(itemIds, discordId, { skipOwned = true } = {}) {
+  const seen = new Set(); const items = []
+  for (const raw of (Array.isArray(itemIds) ? itemIds : [])) {
+    const it = resolvePaidItem(raw)
+    if (!it || seen.has(it.itemId)) continue
+    seen.add(it.itemId)
+    if (skipOwned && await hasOwnedOpeningBg(discordId, it.itemId)) continue
+    items.push(it)
+  }
+  return items
+}
+
+async function grantMany(items, discordId, status = 'stripe_paid') {
+  const granted = []
+  for (const item of items) {
+    const r = await grantItem({ item, discordId, amountCents: item.amountCents, status })
+    granted.push({ id: item.itemId, label: item.label, alreadyOwned: r.alreadyOwned })
+  }
+  return granted
+}
+
+async function stripeCart(req, res) {
+  setStripeCors(res)
+  if (req.method === 'OPTIONS') return res.status(204).end()
+  if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' })
+  try {
+    const { user, discordId } = await getAuthedSupabaseUser(req)
+    const { itemIds } = readJsonBody(req)
+    const items = await resolveCartItems(itemIds, discordId)
+    if (!items.length) return res.status(400).json({ error: 'Panier vide (ou tu possèdes déjà tout).' })
+    const { freeIds, paidTotal } = cartPricing(items)
+    if (paidTotal < STRIPE_MIN_EUR_CHARGE_CENTS) return res.status(400).json({ error: 'Total trop bas (min 0,50 €).' })
+
+    await Promise.all(items.map(it => it.ensure()))
+    const origin = getSiteOrigin(req)
+    const params = new URLSearchParams()
+    params.set('mode', 'payment')
+    params.set('success_url', `${origin}/boutique?stripe=success&session_id={CHECKOUT_SESSION_ID}`)
+    params.set('cancel_url', `${origin}/boutique?stripe=cancel`)
+    params.set('client_reference_id', `${discordId}:cart`)
+    items.forEach((it, i) => {
+      const free = freeIds.has(it.itemId)
+      params.set(`line_items[${i}][quantity]`, '1')
+      params.set(`line_items[${i}][price_data][currency]`, 'eur')
+      params.set(`line_items[${i}][price_data][unit_amount]`, String(free ? 0 : it.amountCents))
+      params.set(`line_items[${i}][price_data][product_data][name]`, free ? `${it.productName} (OFFERT 🎁)` : it.productName)
+      params.set(`line_items[${i}][price_data][product_data][description]`, it.productDesc)
+    })
+    params.set('metadata[kind]', 'cart')
+    params.set('metadata[cart_items]', items.map(it => it.itemId).join(','))
+    params.set('metadata[discord_id]', String(discordId))
+    if (user?.email) params.set('customer_email', user.email)
+    params.set('invoice_creation[enabled]', 'true')
+    params.set('invoice_creation[invoice_data][description]', `Panier Brams (${items.length} articles, 1 offert sur 2) — Brams Community`)
+    params.set('invoice_creation[invoice_data][footer]', 'Merci pour ton achat sur Brams Community 🏴‍☠️')
+
+    const session = await stripeApi('/v1/checkout/sessions', { method: 'POST', params })
+    return res.status(200).json({ ok: true, id: session.id, url: session.url, paidTotal, freeCount: freeIds.size })
+  } catch (e) {
+    return res.status(e.status || 500).json({ error: e?.message || 'Erreur panier' })
+  }
+}
+
+async function stripeGift(req, res) {
+  setStripeCors(res)
+  if (req.method === 'OPTIONS') return res.status(204).end()
+  if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' })
+  try {
+    const { user, discordId } = await getAuthedSupabaseUser(req)
+    const { itemId, recipientId, message } = readJsonBody(req)
+    const item = resolvePaidItem(itemId)
+    if (!item) return res.status(404).json({ error: 'Article introuvable.' })
+    const recipient = String(recipientId || '').trim()
+    if (!recipient || !/^\d+$/.test(recipient)) return res.status(400).json({ error: 'Destinataire invalide.' })
+    if (recipient === String(discordId)) return res.status(400).json({ error: 'Tu ne peux pas t\'offrir un cadeau à toi-même.' })
+    if (item.amountCents < STRIPE_MIN_EUR_CHARGE_CENTS) return res.status(400).json({ error: 'Stripe refuse les paiements sous 0,50 €.' })
+    // Bloque le doublon en amont (pas de paiement inutile) ; un filet de sécurité
+    // rembourse aussi à la finalisation en cas de course.
+    if (await hasOwnedOpeningBg(recipient, item.itemId)) return res.status(409).json({ error: 'Ce membre possède déjà cet article.' })
+
+    await item.ensure()
+    const origin = getSiteOrigin(req)
+    const msg = String(message || '').slice(0, 280)
+    const params = new URLSearchParams()
+    params.set('mode', 'payment')
+    params.set('success_url', `${origin}/boutique?stripe=gift_sent&session_id={CHECKOUT_SESSION_ID}`)
+    params.set('cancel_url', `${origin}/boutique?stripe=cancel`)
+    params.set('client_reference_id', `${discordId}:gift:${recipient}`)
+    params.set('line_items[0][quantity]', '1')
+    params.set('line_items[0][price_data][currency]', 'eur')
+    params.set('line_items[0][price_data][unit_amount]', String(item.amountCents))
+    params.set('line_items[0][price_data][product_data][name]', `🎁 Cadeau : ${item.productName}`)
+    params.set('line_items[0][price_data][product_data][description]', `Offert à un nakama · ${item.rarity}`)
+    params.set('metadata[kind]', 'gift')
+    params.set('metadata[item_id]', item.itemId)
+    params.set('metadata[discord_id]', String(discordId))       // acheteur (pour la vérif de propriété de session)
+    params.set('metadata[gifter_id]', String(discordId))
+    params.set('metadata[recipient_id]', recipient)
+    params.set('metadata[gift_message]', msg)
+    params.set('metadata[gifter_name]', String(user?.user_metadata?.full_name || user?.user_metadata?.name || '').slice(0, 80))
+    if (user?.email) params.set('customer_email', user.email)
+    params.set('invoice_creation[enabled]', 'true')
+    params.set('invoice_creation[invoice_data][description]', `Cadeau « ${item.label} » offert — Brams Community`)
+    params.set('invoice_creation[invoice_data][footer]', 'Merci pour ton cadeau sur Brams Community 🎁')
+
+    const session = await stripeApi('/v1/checkout/sessions', { method: 'POST', params })
+    return res.status(200).json({ ok: true, id: session.id, url: session.url })
+  } catch (e) {
+    return res.status(e.status || 500).json({ error: e?.message || 'Erreur cadeau' })
+  }
+}
+
+async function stripeRefund(paymentIntentId) {
+  if (!paymentIntentId) return
+  try { await stripeApi('/v1/refunds', { method: 'POST', params: new URLSearchParams({ payment_intent: String(paymentIntentId) }) }) } catch {}
+}
+
+// Finalise une session panier OU cadeau (appelée par complete ET webhook).
+// Retourne null si la session n'est pas un panier/cadeau (→ flux item simple).
+async function settleCartOrGift(session) {
+  if (!session || session.payment_status !== 'paid') return null
+  const kind = session.metadata?.kind
+  if (kind === 'cart') {
+    const ids = String(session.metadata?.cart_items || '').split(',').map(s => s.trim()).filter(Boolean)
+    const items = ids.map(resolvePaidItem).filter(Boolean)
+    if (!items.length) return { ok: true, kind, granted: [] }
+    const { paidTotal } = cartPricing(items)
+    if (Number(session.amount_total) !== paidTotal) return { ok: false, error: 'Montant panier invalide.' }
+    const gifter = session.metadata?.discord_id
+    const granted = await grantMany(items, gifter)
+    return { ok: true, kind, granted }
+  }
+  if (kind === 'gift') {
+    const item = resolvePaidItem(session.metadata?.item_id)
+    const recipient = session.metadata?.recipient_id
+    const gifter = session.metadata?.gifter_id
+    if (!item || !recipient) return { ok: false, error: 'Cadeau invalide.' }
+    if (Number(session.amount_total) !== item.amountCents) return { ok: false, error: 'Montant cadeau invalide.' }
+    // Doublon (course) → remboursement automatique, pas d'attribution.
+    if (await hasOwnedOpeningBg(recipient, item.itemId)) {
+      await stripeRefund(session.payment_intent)
+      return { ok: true, kind, refunded: true, item: { id: item.itemId, label: item.label } }
+    }
+    await grantItem({ item, discordId: recipient, amountCents: item.amountCents, status: 'stripe_gift' })
+    // Enregistre le cadeau (→ popup à la reconnexion du destinataire).
+    await supabaseRest('gifts', {
+      method: 'POST', prefer: 'return=minimal',
+      body: [{ from_id: gifter, to_id: recipient, item_id: item.itemId, item_label: item.label,
+               message: session.metadata?.gift_message || null, gifter_name: session.metadata?.gifter_name || null, seen: false }],
+    })
+    return { ok: true, kind, item: { id: item.itemId, label: item.label } }
+  }
+  return null
+}
+
 export default async function handler(req, res) {
   const tool = String(req.query.tool || '')
   if (tool === 'seed-shop-backgrounds') return seedShopBackgrounds(req, res)
@@ -858,5 +1034,7 @@ export default async function handler(req, res) {
   if (tool === 'stripe-checkout')       return stripeCheckout(req, res)
   if (tool === 'stripe-complete')       return stripeComplete(req, res)
   if (tool === 'stripe-webhook')        return stripeWebhook(req, res)
+  if (tool === 'stripe-cart')           return stripeCart(req, res)
+  if (tool === 'stripe-gift')           return stripeGift(req, res)
   return res.status(404).json({ error: 'Unknown bot tool' })
 }
