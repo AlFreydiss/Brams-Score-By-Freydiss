@@ -80,11 +80,13 @@ function SocialLinks({ mobile = false }) {
 }
 
 function BrandMark({ onClick }) {
+  // Vrai lien <a href="/"> (et plus un <button>) → glissable vers un nouvel onglet,
+  // clic-molette, "ouvrir dans un nouvel onglet". onClick garde la nav SPA + ferme les menus.
   return (
-    <button onClick={onClick} className="nav-brand-premium" aria-label="Accueil Brams Community" style={{ gap: 0 }}>
+    <Link to="/" onClick={onClick} className="nav-brand-premium" aria-label="Accueil Brams Community" style={{ gap: 0, textDecoration: 'none' }}>
       <span style={{ fontSize: 22, marginRight: 8, opacity: 0.9 }}>☠</span>
       <span className="nav-brand-title" style={{ fontSize: 18, letterSpacing: '.01em', fontWeight: 800 }}>Brams</span>
-    </button>
+    </Link>
   )
 }
 

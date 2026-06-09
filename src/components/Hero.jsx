@@ -356,8 +356,6 @@ export default function Hero() {
               <HeroFeatureCard icon="🎉" title="Événements" desc="Soirées, tournois, défis." accent="rgba(234,179,8" />
             </div>
 
-            {/* Cagnotte premium : objectif + feed des soutiens (éditable staff) */}
-            <CagnotteSection compact />
 
           </div>
 
