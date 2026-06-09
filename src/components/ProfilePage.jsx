@@ -114,7 +114,7 @@ export default function ProfilePage() {
       {/* Fond de rang (image fixe premium) : décor par défaut du profil selon le
           grade. Masqué dès qu'un fond d'opening payé est équipé (lui passe devant). */}
       {showRankBg && (
-        <div className="pfx-page-bg" aria-hidden>
+        <div className="pfx-page-bg pfx-page-bg--rank" aria-hidden>
           <img src={rankBg} alt="" className="pfx-page-bg-media" loading="lazy" decoding="async" />
           <div className="pfx-page-bg-veil" />
         </div>

@@ -574,6 +574,15 @@
     linear-gradient(180deg, rgba(8,9,13,0.55) 0%, rgba(8,9,13,0.72) 55%, rgba(8,9,13,0.92) 100%),
     radial-gradient(120% 80% at 50% 0%, transparent 40%, rgba(0,0,0,0.45) 100%);
 }
+/* Fond de RANG (décor par défaut, image statique intense) : plus sobre que le
+   fond d'opening payé → on l'assombrit + le floute davantage et on renforce le
+   voile pour qu'il ne « prenne pas le dessus » et laisse lire le contenu. */
+.pfx-page-bg--rank .pfx-page-bg-media { filter: saturate(0.92) brightness(0.42) blur(2.5px); }
+.pfx-page-bg--rank .pfx-page-bg-veil {
+  background:
+    linear-gradient(180deg, rgba(8,9,13,0.72) 0%, rgba(8,9,13,0.84) 55%, rgba(8,9,13,0.96) 100%),
+    radial-gradient(120% 80% at 50% 0%, transparent 30%, rgba(0,0,0,0.6) 100%);
+}
 
 /* ── Header (transparent : le fond animé plein écran se voit derrière) ── */
 .pfx-ig-hero {
