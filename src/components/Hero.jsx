@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { Link } from 'react-router-dom'
 import UnifiedSidebar from './UnifiedSidebar.jsx'
 import { useMobile, useNarrow } from '../hooks/useMediaQuery.js'
 import { fetchStats, fetchDonors, addDonor, deleteDonor } from '../lib/supabase.js'
@@ -356,12 +357,29 @@ export default function Hero() {
               <HeroFeatureCard icon="🎉" title="Événements" desc="Soirées, tournois, défis." accent="rgba(234,179,8" />
             </div>
 
+            {/* Top soutiens — bandeau défilant (re-ajouté) */}
+            <DonorsMarquee />
 
           </div>
 
           {/* ── Colonne droite — Hub (comme avant) ── */}
           <div style={isNarrow ? { marginTop: isMobile ? 48 : 40, maxWidth: 480 } : { position: 'sticky', top: 112 }}>
             <UnifiedSidebar />
+            {/* Bloc Nous soutenir — premium or, sous le hub */}
+            <Link to="/soutenir" className="hero-soutenir"
+              style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 14, textDecoration: 'none',
+                borderRadius: 18, padding: '16px 20px', border: '1px solid rgba(191,164,106,0.30)',
+                background: 'linear-gradient(135deg, rgba(191,164,106,0.16) 0%, rgba(191,164,106,0.04) 100%)',
+                boxShadow: '0 10px 30px rgba(0,0,0,0.28)', transition: 'transform .2s, box-shadow .2s, border-color .2s' }}
+              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 14px 38px rgba(191,164,106,0.22)'; e.currentTarget.style.borderColor = 'rgba(191,164,106,0.5)' }}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 10px 30px rgba(0,0,0,0.28)'; e.currentTarget.style.borderColor = 'rgba(191,164,106,0.30)' }}>
+              <span style={{ fontSize: 30, lineHeight: 1, filter: 'drop-shadow(0 2px 10px rgba(191,164,106,0.4))' }}>💛</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontFamily: "'Clash Display','Syne','Inter',system-ui,sans-serif", fontSize: 18, fontWeight: 800, color: '#f4ecd8', letterSpacing: '-.01em' }}>Nous soutenir</div>
+                <div style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.62)', marginTop: 2, lineHeight: 1.45 }}>Aide Brams Community à grandir — chaque soutien compte.</div>
+              </div>
+              <span style={{ flexShrink: 0, color: '#d8bd7e', fontSize: 20, fontWeight: 700 }}>→</span>
+            </Link>
           </div>
         </div>
       </div>
