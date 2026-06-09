@@ -288,7 +288,6 @@ export async function fetchMemberProfile(discordId) {
     const idx = board.findIndex(m =>
       String(m.uid ?? m.user_id ?? m.discord_id ?? '') === id
     )
-    console.log('[profile] board match idx', idx, 'for id', id, 'sample uid', board[0]?.uid ?? board[0]?.user_id)
     if (idx !== -1) {
       const fromBoard = { ...board[idx], uid: id, rank: idx + 1, total: board.length }
       return {

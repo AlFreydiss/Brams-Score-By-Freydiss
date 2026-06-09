@@ -10,6 +10,7 @@ export const STAFF_DISCORD_IDS = [
   '670668161540161559',  // BenActief
   '1095386277169340426', // Mowgli
   '239486561366835201',  // Yoonae
+  '662012021684043787',  // Modo (certif bleu + modération)
 ]
 
 export const STAFF_SUPABASE_UUIDS = [
