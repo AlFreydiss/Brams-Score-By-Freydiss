@@ -916,5 +916,86 @@
         "default": true
       }
     ]
+  },
+  {
+    "episode": 35,
+    "title": "Épisode 35",
+    "episodeLabel": "S01E035",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bleach/S01E035-vostfr.mp4",
+    "season": "S01",
+    "arc": "Bleach",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E035",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bleach/thumbnails/S01E035.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bleach/S01E035-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 36,
+    "title": "Épisode 36",
+    "episodeLabel": "S01E036",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bleach/S01E036-vostfr.mp4",
+    "season": "S01",
+    "arc": "Bleach",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E036",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bleach/thumbnails/S01E036.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bleach/S01E036-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 37,
+    "title": "Épisode 37",
+    "episodeLabel": "S01E037",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bleach/S01E037-vostfr.mp4",
+    "season": "S01",
+    "arc": "Bleach",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E037",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bleach/thumbnails/S01E037.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bleach/S01E037-fr.vtt",
+        "default": true
+      }
+    ]
   }
 ]
