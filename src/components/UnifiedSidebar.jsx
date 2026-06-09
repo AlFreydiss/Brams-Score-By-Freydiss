@@ -6,11 +6,12 @@ import { getRank } from '../lib/profileTokens.js'
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 const EVENTS = [
-  { id:1, date:'2026-05-25', title:'Watch Party Dr. Stone',    color:'#34d399', icon:'🎬' },
-  { id:2, date:'2026-05-30', title:'Grand Tournoi Nakamas',    color:'#e0524a', icon:'⚔️' },
-  { id:3, date:'2026-06-05', title:'Nuit des Encyclopédistes', color:'#a29bfe', icon:'📚' },
-  { id:4, date:'2026-06-14', title:'Blind Test Mensuel',       color:'#d4a017', icon:'🎵' },
-  { id:5, date:'2026-06-20', title:'Tournoi Vocal Elite',      color:'#5865f2', icon:'🎙️' },
+  { id:1, date:'2026-05-25',          title:'Watch Party Dr. Stone',      color:'#34d399', icon:'🎬' },
+  { id:2, date:'2026-05-30',          title:'Grand Tournoi Nakamas',      color:'#e0524a', icon:'⚔️' },
+  { id:3, date:'2026-06-05',          title:'Nuit des Encyclopédistes',   color:'#a29bfe', icon:'📚' },
+  { id:6, date:'2026-06-09T23:00:00', title:'Al Freydiss offre 10 Nitro', color:'#b388ff', icon:'🎁' },
+  { id:4, date:'2026-06-14',          title:'Blind Test Mensuel',         color:'#d4a017', icon:'🎵' },
+  { id:5, date:'2026-06-20',          title:'Tournoi Vocal Elite',        color:'#5865f2', icon:'🎙️' },
 ]
 
 const SCHEDULE = [
