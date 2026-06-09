@@ -63,6 +63,13 @@ export function AuthProvider({ children }) {
     const authTimeout = (message, ms = 5000) =>
       new Promise(resolve => setTimeout(() => resolve({ data: { session: null }, error: { message } }), ms))
 
+    // loading se débloque dès qu'on CONNAÎT l'état auth : soit via getSession, soit
+    // (souvent bien plus tôt) au 1er événement onAuthStateChange — INITIAL_SESSION /
+    // TOKEN_REFRESHED arrivent depuis le storage local sans attendre le réseau. Sans
+    // ça, quand getSession hang, l'UI restait figée en skeleton 5s sur tout le site.
+    let settled = false
+    const settle = () => { if (!settled && mounted) { settled = true; setLoading(false) } }
+
     const init = async () => {
       const search = window.location.search
       const hash   = window.location.hash
@@ -121,7 +128,7 @@ export function AuthProvider({ children }) {
       } catch (e) {
         console.error('[auth] getSession throw:', e?.message || e)
       } finally {
-        if (mounted) setLoading(false)
+        settle()
       }
     }
 
@@ -130,6 +137,7 @@ export function AuthProvider({ children }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, sess) => {
       console.log('[auth] onAuthStateChange:', event, '| user:', sess?.user?.id ?? 'null')
       if (!mounted) return
+      settle()
 
       if (event === 'SIGNED_IN' && !hasSeenWelcome(sess?.user)) {
         setShowWelcome(true)
