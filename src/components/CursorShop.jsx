@@ -15,6 +15,9 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { fetchMyInventory, equipShopItem, createOpeningBgCheckout, completeOpeningBgCheckout } from '../lib/berryShop.js'
 import GiftModal from './GiftModal.jsx'
+import SpotlightCard from './SpotlightCard.jsx'
+
+const HUE = { COMMUN: 42, RARE: 220, EPIQUE: 280, MYTHIQUE: 42, INTERDIT: 0 }
 
 // ── Constantes configurables ────────────────────────────────────────────────
 const R2_BASE = 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/cursors'
@@ -391,14 +394,16 @@ export default function CursorShop() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16 }}>
           {visible.map(cur => (
             <div key={cur.id} style={{ position: 'relative' }}>
-              <CursorCard
-                cur={cur}
-                owned={ownedSet.has(cur.id)}
-                equipped={equippedId === cur.id}
-                affordable={true}
-                busy={busyId === cur.id}
-                onBuy={buy} onEquip={equip} onGift={setGiftItem}
-              />
+              <SpotlightCard hue={HUE[cur.rarete] ?? 42} radius={16}>
+                <CursorCard
+                  cur={cur}
+                  owned={ownedSet.has(cur.id)}
+                  equipped={equippedId === cur.id}
+                  affordable={true}
+                  busy={busyId === cur.id}
+                  onBuy={buy} onEquip={equip} onGift={setGiftItem}
+                />
+              </SpotlightCard>
               {flashId === cur.id && (
                 <div aria-hidden style={{ position: 'absolute', inset: 0, borderRadius: 16, pointerEvents: 'none', background: 'radial-gradient(circle at 50% 45%, rgba(245,181,10,0.55), transparent 65%)', animation: 'crc-flash .85s ease-out forwards' }}>
                   <span style={{ position: 'absolute', top: 14, left: '50%', transform: 'translateX(-50%)', fontFamily: "'Pirata One', serif", fontSize: 30, color: '#fff6d8', textShadow: '0 0 12px rgba(245,181,10,0.9)', animation: 'crc-plus .85s ease-out forwards' }}>+1</span>

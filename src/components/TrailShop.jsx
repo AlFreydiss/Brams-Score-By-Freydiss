@@ -10,6 +10,10 @@ import { fetchMyInventory, equipShopItem, createOpeningBgCheckout, completeOpeni
 import { TRAILS, TRAIL_PRICE_CENTS, trailSkin } from '../data/cursor-trails.js'
 import CursorTrail from './CursorTrail.jsx'
 import GiftModal from './GiftModal.jsx'
+import SpotlightCard from './SpotlightCard.jsx'
+
+// Teinte de la lueur spotlight par rareté.
+const HUE = { COMMUN: 42, RARE: 220, EPIQUE: 280, MYTHIQUE: 42, INTERDIT: 0 }
 
 const TRAIL_KEY = 'brams_trail'
 const TRAIL_EVENT = 'brams-trail-change'
@@ -169,7 +173,9 @@ export default function TrailShop() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16 }}>
         {visible.map(trail => (
           <div key={trail.id} onMouseEnter={() => setPreviewId(trail.id)} onMouseLeave={() => setPreviewId(null)}>
-            <TrailCard trail={trail} owned={owned.has(trail.id)} equipped={equippedId === trail.id} busy={busyId === trail.id} onBuy={buy} onEquip={equip} onGift={setGiftItem} />
+            <SpotlightCard hue={HUE[trail.rarete] ?? 42} radius={16}>
+              <TrailCard trail={trail} owned={owned.has(trail.id)} equipped={equippedId === trail.id} busy={busyId === trail.id} onBuy={buy} onEquip={equip} onGift={setGiftItem} />
+            </SpotlightCard>
           </div>
         ))}
       </div>
