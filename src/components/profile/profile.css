@@ -52,9 +52,12 @@
 
 /* ════════════════════════════════ HERO ════════════════════════════════════ */
 .pfx-hero {
-  position: relative; border-radius: 26px; overflow: hidden;
-  border: 1px solid var(--line); border-top-color: rgba(255,255,255,0.14);
-  box-shadow: 0 50px 130px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05);
+  position: relative; overflow: hidden;
+  /* Full-bleed : le hero s'étend bord à bord (plus de carte/rectangle flottant
+     avec une arête d'opacité à gauche). Le fond couvre toute la largeur, le
+     contenu reste centré via .pfx-hero-inner. Rendu cinématique « pro/swag ». */
+  margin-left: calc(50% - 50vw); margin-right: calc(50% - 50vw); width: 100vw;
+  border: none; border-bottom: 1px solid rgba(255,255,255,0.06);
   isolation: isolate;
   animation: pfxRise .6s cubic-bezier(.22,1,.36,1) both;
 }
@@ -87,8 +90,10 @@
   position: relative; z-index: 1;
   display: grid; grid-template-columns: auto 1fr auto;
   align-items: flex-end; gap: 30px;
-  padding: 38px 38px 30px;
-  min-height: 340px;
+  /* Hero full-bleed → on recentre le contenu sur la largeur du reste de la page. */
+  max-width: 1480px; margin: 0 auto;
+  padding: 44px clamp(20px, 4vw, 56px) 34px;
+  min-height: 360px;
 }
 
 /* Colonne avatar */
