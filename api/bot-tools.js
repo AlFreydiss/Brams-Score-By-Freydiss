@@ -540,6 +540,15 @@ async function hasOwnedOpeningBg(discordId, itemId) {
   return Array.isArray(rows) && rows.length > 0
 }
 
+// Le destinataire d'un cadeau doit être un membre RÉEL (sinon : argent encaissé,
+// cadeau perdu dans le vide). On valide côté serveur, pas seulement côté client.
+async function memberExists(discordId) {
+  try {
+    const rows = await supabaseRest(`users?uid=eq.${encodeURIComponent(discordId)}&select=uid&limit=1`)
+    return Array.isArray(rows) && rows.length > 0
+  } catch { return false }
+}
+
 async function ensureOpeningBgShopItem(bg) {
   const itemId = bg.shopItemId || bg.id
   await supabaseRest('shop_items?on_conflict=id', {
@@ -880,10 +889,12 @@ async function resolveCartItems(itemIds, discordId, { skipOwned = true } = {}) {
   return items
 }
 
-async function grantMany(items, discordId, status = 'stripe_paid') {
+async function grantMany(items, discordId, status = 'stripe_paid', freeIds = new Set()) {
   const granted = []
   for (const item of items) {
-    const r = await grantItem({ item, discordId, amountCents: item.amountCents, status })
+    // Item offert (BOGO) → enregistré à 0 € dans shop_transactions (compta correcte).
+    const amountCents = freeIds.has(item.itemId) ? 0 : item.amountCents
+    const r = await grantItem({ item, discordId, amountCents, status })
     granted.push({ id: item.itemId, label: item.label, alreadyOwned: r.alreadyOwned })
   }
   return granted
@@ -943,6 +954,7 @@ async function stripeGift(req, res) {
     const recipient = String(recipientId || '').trim()
     if (!recipient || !/^\d+$/.test(recipient)) return res.status(400).json({ error: 'Destinataire invalide.' })
     if (recipient === String(discordId)) return res.status(400).json({ error: 'Tu ne peux pas t\'offrir un cadeau à toi-même.' })
+    if (!(await memberExists(recipient))) return res.status(404).json({ error: 'Destinataire introuvable — vérifie le pseudo.' })
     if (item.amountCents < STRIPE_MIN_EUR_CHARGE_CENTS) return res.status(400).json({ error: 'Stripe refuse les paiements sous 0,50 €.' })
     // Bloque le doublon en amont (pas de paiement inutile) ; un filet de sécurité
     // rembourse aussi à la finalisation en cas de course.
@@ -997,10 +1009,10 @@ async function settleCartOrGift(session) {
     const ids = String(session.metadata?.cart_items || '').split(',').map(s => s.trim()).filter(Boolean)
     const items = ids.map(resolvePaidItem).filter(Boolean)
     if (!items.length) return { ok: true, kind, granted: [] }
-    const { paidTotal } = cartPricing(items)
+    const { paidTotal, freeIds } = cartPricing(items)
     if (Number(session.amount_total) !== paidTotal) return { ok: false, error: 'Montant panier invalide.' }
     const gifter = session.metadata?.discord_id
-    const granted = await grantMany(items, gifter)
+    const granted = await grantMany(items, gifter, 'stripe_paid', freeIds)
     return { ok: true, kind, granted }
   }
   if (kind === 'gift') {
