@@ -209,13 +209,33 @@ export async function fetchCagnotte() {
       fetch(`${url}/rest/v1/donors?select=id,name,amount,message,created_at&order=created_at.desc`, { headers: _hdr() }),
     ])
     const cfg = cR.ok ? (await cR.json())[0] : null
-    const donors = dR.ok ? await dR.json() : []
-    const total = (Array.isArray(donors) ? donors : []).reduce((s, d) => s + (Number(d.amount) || 0), 0)
+    let donors = dR.ok ? await dR.json() : []
+    if (!Array.isArray(donors)) donors = []
+    const total = donors.reduce((s, d) => s + (Number(d.amount) || 0), 0)
+
+    // Résout la photo de profil des donateurs qui sont des membres (match username,
+    // insensible à la casse). Fallback sur l'initiale colorée côté UI si introuvable.
+    try {
+      const names = [...new Set(donors.map(d => (d.name || '').trim()).filter(Boolean))]
+      if (names.length) {
+        const inList = names.map(n => `"${n.replace(/[\\"]/g, '')}"`).join(',')
+        const uR = await fetch(`${url}/rest/v1/users?select=data&data->>username=in.(${encodeURIComponent(inList)})`, { headers: _hdr() })
+        if (uR.ok) {
+          const map = {}
+          for (const u of await uR.json()) {
+            const un = u?.data?.username, av = u?.data?.avatar_url
+            if (un && av) map[un.toLowerCase()] = av
+          }
+          donors = donors.map(d => ({ ...d, avatar_url: d.avatar_url || map[(d.name || '').trim().toLowerCase()] || null }))
+        }
+      }
+    } catch { /* avatars best-effort */ }
+
     return {
       goal: Number(cfg?.goal) || 200,
       title: cfg?.title || 'Cagnotte Brams',
       subtitle: cfg?.subtitle || '',
-      donors: Array.isArray(donors) ? donors : [],
+      donors,
       total,
     }
   } catch { return { goal: 200, title: 'Cagnotte Brams', subtitle: '', donors: [], total: 0 } }

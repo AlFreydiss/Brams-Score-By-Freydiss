@@ -12,6 +12,17 @@ const euro = (n) => `${(Math.round((Number(n) || 0) * 100) / 100).toLocaleString
 const HUES = ['#e0524a', '#a855f7', '#3b82f6', '#16a34a', '#f59e0b', '#ec4899']
 const hueFor = (s) => HUES[[...(s || '')].reduce((a, c) => a + c.charCodeAt(0), 0) % HUES.length]
 const initial = (n) => (n || '?').trim().slice(0, 1).toUpperCase()
+
+// Avatar d'un donateur : photo de profil si le donateur est un membre (avatar_url
+// résolu côté fetchCagnotte), sinon initiale colorée. Fallback initiale si l'image casse.
+function DonorAvatar({ d, size = 38 }) {
+  const [broken, setBroken] = useState(false)
+  const base = { flexShrink: 0, width: size, height: size, borderRadius: '50%', display: 'grid', placeItems: 'center', fontWeight: 900, color: '#fff', fontSize: Math.round(size * 0.4), overflow: 'hidden', background: `linear-gradient(135deg,${hueFor(d.name)},${hueFor(d.name)}aa)` }
+  if (d.avatar_url && !broken) {
+    return <span style={base}><img src={d.avatar_url} alt="" onError={() => setBroken(true)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /></span>
+  }
+  return <span style={base}>{initial(d.name)}</span>
+}
 function timeAgo(iso) {
   const s = Math.max(1, Math.floor((Date.now() - new Date(iso).getTime()) / 1000))
   if (s < 60) return "à l'instant"; const m = Math.floor(s / 60); if (m < 60) return `il y a ${m} min`
@@ -117,7 +128,7 @@ export default function SupportPage() {
                       background: first ? 'linear-gradient(135deg, rgba(245,181,10,0.16), rgba(245,181,10,0.03))' : 'rgba(255,255,255,0.03)',
                       border: `1px solid ${first ? 'rgba(245,181,10,0.4)' : 'rgba(255,255,255,0.06)'}` }}>
                       <span style={{ fontSize: 18, width: 22, textAlign: 'center', flexShrink: 0 }}>{['🥇', '🥈', '🥉'][i]}</span>
-                      <span style={{ flexShrink: 0, width: 32, height: 32, borderRadius: '50%', display: 'grid', placeItems: 'center', fontWeight: 900, color: '#fff', fontSize: 13, background: `linear-gradient(135deg,${hueFor(d.name)},${hueFor(d.name)}aa)` }}>{initial(d.name)}</span>
+                      <DonorAvatar d={d} size={32} />
                       <span style={{ flex: 1, minWidth: 0, fontSize: 14, fontWeight: 700, color: '#f4ecd8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{d.name}</span>
                       <span style={{ flexShrink: 0, fontSize: 14.5, fontWeight: 900, color: GOLD, fontFamily: "'Cinzel', serif" }}>{euro(d.amount)}</span>
                     </div>
@@ -132,7 +143,7 @@ export default function SupportPage() {
             {!donors.length && <span style={{ fontSize: 13, color: 'rgba(205,189,151,0.5)' }}>Sois le premier à soutenir 🏴‍☠️</span>}
             {donors.map(d => (
               <div key={d.id} style={{ display: 'flex', gap: 11, alignItems: 'flex-start' }}>
-                <span style={{ flexShrink: 0, width: 38, height: 38, borderRadius: '50%', display: 'grid', placeItems: 'center', fontWeight: 900, color: '#fff', fontSize: 15, background: `linear-gradient(135deg,${hueFor(d.name)},${hueFor(d.name)}aa)` }}>{initial(d.name)}</span>
+                <DonorAvatar d={d} size={38} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                     <strong style={{ fontSize: 14 }}>{d.name}</strong>
