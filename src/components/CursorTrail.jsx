@@ -4,7 +4,7 @@ import { TRAIL_DEFAULTS } from '../data/cursor-trails.js'
 // Moteur de traînée de curseur piloté par un skin (cf. data/cursor-trails.js).
 // skin = config fusionnée sur TRAIL_DEFAULTS. Rendu uniquement si skin fourni
 // (la traînée n'apparaît que quand une est équipée en boutique).
-export default function CursorTrail({ skin }) {
+export default function CursorTrail({ skin, isGlobal = false }) {
   const canvasRef = useRef(null)
   // Ref vivante : permet de changer de skin sans recréer la boucle/les listeners.
   const cfgRef = useRef(null)
@@ -77,6 +77,9 @@ export default function CursorTrail({ skin }) {
     const onMove = (event) => {
       const C = cfgRef.current
       if (!C) return // aucune traînée équipée → on n'émet rien
+      // En boutique, quand on survole une traînée pour l'essayer, on masque la
+      // traînée GLOBALE équipée → on voit uniquement l'aperçu de celle qu'on regarde.
+      if (isGlobal && document.body.dataset.trailPreview === '1') return
       const x = event.clientX * dpr
       const y = event.clientY * dpr
       // Ne pas saigner sur le viewer de story (plein écran)

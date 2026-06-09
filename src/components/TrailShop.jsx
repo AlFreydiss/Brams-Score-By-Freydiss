@@ -48,7 +48,7 @@ export function GlobalTrailLayer() {
   }, [])
   const skin = id ? trailSkin(id) : null
   if (!skin) return null
-  return <CursorTrail skin={skin} />
+  return <CursorTrail skin={skin} isGlobal />
 }
 
 // Aperçu : un dégradé des couleurs de la traînée + emoji (pas de canvas par carte).
@@ -121,6 +121,12 @@ export default function TrailShop() {
     setInventory(Array.isArray(inv) ? inv : [])
   }, [isAuthenticated])
   useEffect(() => { refresh() }, [refresh, discordId])
+
+  // Survol d'une traînée → masque la traînée globale équipée pour voir l'aperçu seul.
+  useEffect(() => {
+    document.body.dataset.trailPreview = previewId ? '1' : ''
+    return () => { document.body.dataset.trailPreview = '' }
+  }, [previewId])
 
   // Synchro serveur → site au montage : applique la traînée déjà équipée.
   useEffect(() => {
