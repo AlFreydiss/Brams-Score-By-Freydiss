@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom'
 import AboutModal from './AboutModal.jsx'
 import AuthModal from './AuthModal.jsx'
 import { useAuth } from '../contexts/AuthContext.jsx'
+import { isStaff } from '../lib/roles.js'
 import { useSocial } from '../contexts/SocialContext.jsx'
 import NotificationBell from './social/NotificationBell.jsx'
 
@@ -174,7 +175,7 @@ function MessagesButton() {
   )
 }
 
-function UserMenu({ displayName, avatarUrl, discordId, berryCount, onSignOut }) {
+function UserMenu({ displayName, avatarUrl, discordId, berryCount, staff, onSignOut }) {
   const navigate = useNavigate()
   const { counts } = useSocial()
   const [open, setOpen] = useState(false)
@@ -232,6 +233,16 @@ function UserMenu({ displayName, avatarUrl, discordId, berryCount, onSignOut }) 
               )}
             </button>
           ))}
+          {staff && (
+            <button
+              onClick={() => { setOpen(false); navigate('/staff') }}
+              className="nav-user-row"
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: '#e7c878' }}
+            >
+              <span>🛡 Staff Panel</span>
+              <span style={{ background: 'rgba(212,160,23,0.15)', color: '#e7c878', border: '1px solid rgba(212,160,23,0.35)', fontSize: 9.5, fontWeight: 800, borderRadius: 6, padding: '1px 6px', letterSpacing: '.04em' }}>ADMIN</span>
+            </button>
+          )}
           <button onClick={() => { setOpen(false); onSignOut() }} className="nav-user-row danger">
             Déconnexion
           </button>
@@ -261,7 +272,8 @@ export default function Navbar({ forceScrolled = false }) {
   const [about, setAbout] = useState(false)
   const [authOpen, setAuthOpen] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
-  const { isAuthenticated, signOut, displayName, avatarUrl, discordId, berryCount } = useAuth()
+  const { isAuthenticated, signOut, displayName, avatarUrl, discordId, berryCount, userId } = useAuth()
+  const isStaffUser = isAuthenticated && isStaff(discordId, userId)
   const { pathname } = useLocation()
   const navigate = useNavigate()
 
@@ -356,13 +368,13 @@ export default function Navbar({ forceScrolled = false }) {
           <div className="nav-zone-user">
             <div className="hide-mobile">
               {isAuthenticated
-                ? <UserMenu displayName={displayName} avatarUrl={avatarUrl} discordId={discordId} berryCount={berryCount} onSignOut={signOut} />
+                ? <UserMenu displayName={displayName} avatarUrl={avatarUrl} discordId={discordId} berryCount={berryCount} staff={isStaffUser} onSignOut={signOut} />
                 : <LoginButton onClick={() => setAuthOpen(true)} />
               }
             </div>
             {isAuthenticated && (
               <div className="nav-mobile-account">
-                <UserMenu displayName={displayName} avatarUrl={avatarUrl} discordId={discordId} berryCount={berryCount} onSignOut={signOut} />
+                <UserMenu displayName={displayName} avatarUrl={avatarUrl} discordId={discordId} berryCount={berryCount} staff={isStaffUser} onSignOut={signOut} />
               </div>
             )}
             <button className={menuOpen ? 'nav-menu-button show-mobile open' : 'nav-menu-button show-mobile'} onClick={() => setMenuOpen((value) => !value)} aria-label="Menu">
@@ -396,6 +408,12 @@ export default function Navbar({ forceScrolled = false }) {
             <div className="nav-mobile-footer">
               <SocialLinks mobile />
               <span className="nav-mobile-spacer" />
+              {isStaffUser && (
+                <button onClick={() => { setMenuOpen(false); navigate('/staff') }}
+                  style={{ width: '100%', padding: '11px 14px', borderRadius: 10, background: 'rgba(212,160,23,0.10)', border: '1px solid rgba(212,160,23,0.30)', color: '#e7c878', fontWeight: 800, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>
+                  🛡 Staff Panel
+                </button>
+              )}
               {isAuthenticated
                 ? <button onClick={() => { setMenuOpen(false); signOut() }} className="nav-mobile-logout">Déconnexion</button>
                 : <LoginButton onClick={() => { setMenuOpen(false); setAuthOpen(true) }} />
