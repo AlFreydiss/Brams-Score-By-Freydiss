@@ -10,7 +10,7 @@ import { useOpeningBg } from '../contexts/OpeningBgContext.jsx'
 import { OPENING_BACKGROUNDS } from '../data/opening-backgrounds.js'
 import CursorShop from './CursorShop.jsx'
 import TrailShop from './TrailShop.jsx'
-import { CartProvider } from '../contexts/CartContext.jsx'
+import { CartProvider, useCart } from '../contexts/CartContext.jsx'
 import CartDrawer from './CartDrawer.jsx'
 import { formatEuroCents, openingBgPriceCents, openingBgPriceLabel } from '../lib/openingBgPricing.js'
 import OpeningBgMedia from './social/OpeningBgMedia.jsx'
@@ -129,12 +129,18 @@ function CardMedia({ bg, videoRef }) {
 function ItemCard({ bg, owned, equipped, busy, affordable, equipCount = 0, onSelect, onPreview, onBuy, onEquip }) {
   const r = rar(bg.rarity)
   const videoRef = useRef(null)
+  const cart = useCart()
+  const inCart = cart.has(bg.id)
+  const cartItem = { id: bg.id, label: bg.opTitle, emoji: '🎞️', priceCents: priceCentsOf(bg), rarity: bg.rarity }
   const enter = () => { try { videoRef.current?.play?.()?.catch?.(() => {}) } catch {} }
   const leave = () => { const v = videoRef.current; if (v) { try { v.pause(); v.currentTime = 1 } catch {} } }
+  // Clic sur la carte : possédé → aperçu dans le hero ; sinon → ajout au panier
+  // (le tiroir s'ouvre tout seul). Plus besoin du bouton caddie séparé.
+  const onCard = () => { if (owned || equipped) onSelect(bg); else if (!inCart) cart.add(cartItem); else cart.setOpen(true) }
   return (
     <div
       className="bsx-card"
-      onClick={() => onSelect(bg)}
+      onClick={onCard}
       onMouseEnter={enter} onMouseLeave={leave}
       style={{
         position: 'relative', aspectRatio: '3 / 4', borderRadius: 16, overflow: 'hidden', cursor: 'pointer',
@@ -162,9 +168,9 @@ function ItemCard({ bg, owned, equipped, busy, affordable, equipCount = 0, onSel
             <button className="bsx-btn" onClick={e => { e.stopPropagation(); onEquip(bg) }}
               style={{ flex: 1, fontSize: 12.5, fontWeight: 800, color: '#0b0c0e', background: GOLD, border: 'none', borderRadius: 9, padding: '8px 0', cursor: 'pointer' }}>Équiper</button>
           ) : (
-            <button className="bsx-btn" onClick={e => { e.stopPropagation(); onBuy(bg) }} disabled={busy}
-              style={{ flex: 1, fontSize: 12.5, fontWeight: 800, color: affordable ? '#0b0c0e' : 'rgba(236,232,223,0.5)', background: affordable ? GOLD : 'rgba(255,255,255,0.06)', border: affordable ? 'none' : `1px solid ${HAIR}`, borderRadius: 9, padding: '8px 0', cursor: busy ? 'wait' : 'pointer' }}>
-              {busy ? 'Achat…' : priceLabel(bg)}
+            <button className="bsx-btn" onClick={e => { e.stopPropagation(); inCart ? cart.setOpen(true) : cart.add(cartItem) }}
+              style={{ flex: 1, fontSize: 12.5, fontWeight: 800, color: '#0b0c0e', background: inCart ? '#7fd6a0' : GOLD, border: 'none', borderRadius: 9, padding: '8px 0', cursor: 'pointer' }}>
+              {inCart ? '✓ Au panier' : `+ Panier · ${priceLabel(bg)}`}
             </button>
           )}
           <button className="bsx-btn" aria-label="Aperçu plein écran" onClick={e => { e.stopPropagation(); onPreview(bg) }}
