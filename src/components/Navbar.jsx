@@ -405,6 +405,18 @@ export default function Navbar({ forceScrolled = false }) {
                 )
               ))}
             </div>
+            {/* Boutique + Soutenir : accessibles sur mobile MÊME sans être connecté
+                (la nav-zone-status desktop est cachée en mobile). */}
+            <div style={{ display: 'flex', gap: 8, padding: '12px 16px 0' }}>
+              <button onClick={() => { setMenuOpen(false); navigate('/boutique') }}
+                style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '12px 8px', borderRadius: 10, cursor: 'pointer', fontFamily: 'inherit', fontSize: 13.5, fontWeight: 800, color: '#7fe6a8', background: 'linear-gradient(135deg, rgba(52,211,153,0.16), rgba(52,211,153,0.05))', border: '1px solid rgba(52,211,153,0.32)' }}>
+                🛒 Boutique
+              </button>
+              <button onClick={() => { setMenuOpen(false); navigate('/soutenir') }}
+                style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '12px 8px', borderRadius: 10, cursor: 'pointer', fontFamily: 'inherit', fontSize: 13.5, fontWeight: 800, color: '#e7c878', background: 'linear-gradient(135deg, rgba(212,160,23,0.16), rgba(212,160,23,0.05))', border: '1px solid rgba(212,160,23,0.32)' }}>
+                💛 Soutenir
+              </button>
+            </div>
             <div className="nav-mobile-footer">
               <SocialLinks mobile />
               <span className="nav-mobile-spacer" />
