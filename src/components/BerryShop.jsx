@@ -12,6 +12,7 @@ import CursorShop from './CursorShop.jsx'
 import TrailShop from './TrailShop.jsx'
 import { CartProvider, useCart } from '../contexts/CartContext.jsx'
 import CartDrawer from './CartDrawer.jsx'
+import PromoBanner from './PromoBanner.jsx'
 import { formatEuroCents, openingBgPriceCents, openingBgPriceLabel, OPENING_BG_EURO_PRICE_CENTS } from '../lib/openingBgPricing.js'
 
 // Vraie fourchette de prix des fonds (min/max de la table par rareté).
@@ -560,6 +561,9 @@ function BerryShopInner() {
       <style>{CSS}</style>
       <ShopBackdrop />
       <div style={{ position: 'relative', zIndex: 1, maxWidth: 1240, margin: '0 auto', padding: '0 clamp(16px,3vw,28px) 90px' }}>
+
+        {/* Bannière promo 1 acheté = 1 offert avec décompte */}
+        <PromoBanner />
 
         {/* En-tête */}
         <header style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, margin: '6px 0 22px' }}>
