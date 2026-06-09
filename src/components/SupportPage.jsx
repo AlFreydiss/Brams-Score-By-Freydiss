@@ -31,7 +31,17 @@ export default function SupportPage() {
   const [thanks, setThanks] = useState(false)
 
   const load = () => fetchCagnotte().then(setData)
-  useEffect(() => { load() }, [])
+  // Actualisation EN LIVE : recharge la cagnotte + les soutiens toutes les 12s
+  // (tant que l'onglet est visible) et au retour de focus → un nouveau don
+  // apparaît tout seul, sans recharger la page.
+  useEffect(() => {
+    load()
+    const tick = () => { if (!document.hidden) load() }
+    const id = setInterval(tick, 12000)
+    window.addEventListener('focus', tick)
+    document.addEventListener('visibilitychange', tick)
+    return () => { clearInterval(id); window.removeEventListener('focus', tick); document.removeEventListener('visibilitychange', tick) }
+  }, [])
   useEffect(() => { if (displayName && !name) setName(displayName) }, [displayName]) // pré-rempli
 
   // Retour de paiement
