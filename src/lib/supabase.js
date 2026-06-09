@@ -1,4 +1,5 @@
 ﻿import { createClient } from '@supabase/supabase-js'
+import { getAccessToken } from './supabaseRest.js'
 
 const url = import.meta.env.VITE_SUPABASE_URL || ''
 const key = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
@@ -99,46 +100,61 @@ export async function fetchStats() {
 
 // â”€â”€ Auth helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-export async function fetchMemberProfile(discordId) {
-  if (!supabase) { console.warn('[profile] supabase null — env vars manquantes'); return null }
-  const id = String(discordId)
-
-  let directProfile = null
+// Lecture de la ligne users en REST DIRECT (PostgREST) plutôt que
+// supabase.from(), qui pouvait hang ~7s et faisait tourner la page profil en
+// chargement. Token utilisateur si dispo, sinon clé anon (lecture publique).
+async function fetchUserRowREST(id) {
+  if (!url || !key) return null
   try {
-    const { data: user } = await withTimeout(
-      supabase.from('users').select('uid, data').eq('uid', id).maybeSingle()
+    const ctrl = new AbortController()
+    const timer = setTimeout(() => ctrl.abort(), 5000)
+    const token = await getAccessToken().catch(() => null)
+    const r = await fetch(
+      `${url}/rest/v1/users?uid=eq.${encodeURIComponent(id)}&select=uid,data&limit=1`,
+      { signal: ctrl.signal, headers: { apikey: key, Authorization: `Bearer ${token || key}`, Accept: 'application/json' } }
     )
-    if (user) {
-      const d = user.data || {}
-      directProfile = {
-        uid: id,
-        username: d.username || d.display_name || `Pirate #${id.slice(-5)}`,
-        display_name: d.display_name || d.global_name || d.nick || d.nickname || null,
-        global_name: d.global_name || null,
-        avatar_url: d.avatar_url || d.avatar || null,
-        vocal_h: parseFloat(d.vocal_h || d.total_vocal_h || 0),
-        berrys: parseInt(d.berrys || d.balance || 0) || 0,
-      }
-    }
-  } catch (e) {
-    console.warn('[profile] direct profile fetch failed', e?.message || e)
-  }
+    clearTimeout(timer)
+    if (!r.ok) return null
+    const rows = await r.json()
+    return Array.isArray(rows) && rows[0] ? rows[0] : null
+  } catch { return null }
+}
 
-  // ── 1. Leaderboard via the SAME source as /classement (API first, then RPC) ──
-  // This ensures consistency with the public leaderboard and may be faster/cached.
-  let board = null
+// Classement (même source que /classement) avec repli sur l'ancienne signature.
+async function fetchBoardForProfile() {
   try {
     const boardRes = await withTimeout( callTopClassement(500, 'week') )
-    if (!boardRes?.error && Array.isArray(boardRes?.data) && boardRes.data.length) {
-      board = boardRes.data
-    } else {
-      const boardRes2 = await withTimeout( callTopClassement(500) )
-      if (!boardRes2?.error && Array.isArray(boardRes2?.data) && boardRes2.data.length) {
-        board = boardRes2.data
-      }
-    }
+    if (!boardRes?.error && Array.isArray(boardRes?.data) && boardRes.data.length) return boardRes.data
+    const boardRes2 = await withTimeout( callTopClassement(500) )
+    if (!boardRes2?.error && Array.isArray(boardRes2?.data) && boardRes2.data.length) return boardRes2.data
   } catch (e) {
     console.warn('[profile] leaderboard fetch failed', e?.message || e)
+  }
+  return null
+}
+
+export async function fetchMemberProfile(discordId) {
+  const id = String(discordId)
+
+  // Profil (table users) + classement EN PARALLÈLE → la page profil ne traîne
+  // plus : avant, le fetch users hangait avant même de lancer le classement.
+  const [userRow, board] = await Promise.all([
+    fetchUserRowREST(id),
+    fetchBoardForProfile(),
+  ])
+
+  let directProfile = null
+  if (userRow) {
+    const d = userRow.data || {}
+    directProfile = {
+      uid: id,
+      username: d.username || d.display_name || `Pirate #${id.slice(-5)}`,
+      display_name: d.display_name || d.global_name || d.nick || d.nickname || null,
+      global_name: d.global_name || null,
+      avatar_url: d.avatar_url || d.avatar || null,
+      vocal_h: parseFloat(d.vocal_h || d.total_vocal_h || 0),
+      berrys: parseInt(d.berrys || d.balance || 0) || 0,
+    }
   }
 
   if (board) {

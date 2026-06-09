@@ -1,4 +1,4 @@
-import { supabase } from './supabase.js'
+import { getAccessToken } from './supabaseRest.js'
 
 const CLIENT_KEY = 'brams_tierlist_client_id'
 
@@ -21,16 +21,14 @@ async function authHeaders() {
     'X-Client-Id': getTierListClientId(),
   }
   try {
-    // getSession() peut rester bloqué indéfiniment selon l'état d'auth Supabase.
-    // Comme cet await précède le timeout du fetch, un hang ici laissait la
-    // Communauté en "Chargement…" à l'infini. On le borne à 4s : à défaut on
-    // part en invité (X-Client-Id couvre déjà l'autosave/lecture publique).
-    const sessionP = supabase ? supabase.auth.getSession() : Promise.resolve({ data: null })
-    const timeoutP = new Promise(resolve => setTimeout(() => resolve({ data: null }), 4000))
-    const { data } = await Promise.race([sessionP, timeoutP])
-    if (data?.session?.access_token) headers.Authorization = `Bearer ${data.session.access_token}`
+    // getAccessToken() lit le JWT directement depuis le localStorage (et le
+    // rafraîchit via REST s'il est expiré) SANS appeler supabase.auth.getSession(),
+    // qui pouvait hang plusieurs secondes avant CHAQUE requête → Communauté
+    // "longue à mourir" à charger. Lecture instantanée maintenant.
+    const token = await getAccessToken()
+    if (token) headers.Authorization = `Bearer ${token}`
   } catch {
-    // Guest autosave still works through X-Client-Id.
+    // Lecture publique / autosave invité couvertes par X-Client-Id.
   }
   return headers
 }
