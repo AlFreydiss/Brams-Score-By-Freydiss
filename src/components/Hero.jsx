@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import UnifiedSidebar from './UnifiedSidebar.jsx'
 import { useMobile, useNarrow } from '../hooks/useMediaQuery.js'
 import { fetchStats } from '../lib/supabase.js'
+import { toggleParchment, isParchmentOn } from './ParchmentMode.jsx'
 
 const STARS = Array.from({ length: 26 }, (_, i) => ({
   id: i,
@@ -164,6 +165,18 @@ const TOP_DONORS = [
 const LEETCHI_URL = 'https://www.leetchi.com/fr/c/brams-score-by-freydiss-1073815?utm_source=copylink&utm_medium=social_sharing'
 const DISCORD_URL = 'https://discord.gg/4FgezPpnGU'
 
+function ParchmentToggle() {
+  const [on, setOn] = useState(isParchmentOn())
+  return (
+    <button onClick={() => setOn(toggleParchment())} style={{
+      marginTop: 18, display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 16px', borderRadius: 999, cursor: 'pointer',
+      fontFamily: "'Cinzel', serif", fontSize: 12.5, fontWeight: 800, letterSpacing: '.03em',
+      color: on ? '#1a1206' : '#d8bd7e', background: on ? 'linear-gradient(180deg,#e8c878,#c49a4a)' : 'rgba(191,164,106,0.08)',
+      border: `1px solid ${on ? '#c49a4a' : 'rgba(191,164,106,0.3)'}`, transition: 'all .2s',
+    }}>📜 Mode Parchemin {on ? '· activé' : ''}</button>
+  )
+}
+
 function DonorsMarquee() {
   if (!TOP_DONORS.length) return null
   const loop = [...TOP_DONORS, ...TOP_DONORS, ...TOP_DONORS]
@@ -306,6 +319,9 @@ export default function Hero() {
 
             {/* Top soutiens Leetchi (défile sobrement) */}
             <DonorsMarquee />
+
+            {/* Bascule Mode Parchemin (applique un voile sépia/papier à tout le site) */}
+            <ParchmentToggle />
           </div>
 
           {/* ── Colonne droite — Hub (comme avant) ── */}
