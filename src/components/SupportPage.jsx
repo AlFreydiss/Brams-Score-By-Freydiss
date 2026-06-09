@@ -70,7 +70,7 @@ export default function SupportPage() {
         <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse 70% 60% at 50% 0%, rgba(245,181,10,0.14), transparent 70%)', pointerEvents: 'none' }} />
         <div style={{ position: 'relative' }}>
           <div style={{ fontSize: 52, marginBottom: 8 }}>💛</div>
-          <h1 style={{ margin: 0, fontFamily: "'Pirata One', serif", fontSize: 'clamp(36px,6vw,64px)', lineHeight: 1, background: `linear-gradient(90deg,#f6d98a,${GOLD},#f6d98a)`, backgroundSize: '200% 100%', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', animation: 'sp-shine 4s linear infinite' }}>Soutiens Brams Community</h1>
+          <h1 style={{ margin: 0, fontFamily: "'Pirata One', serif", fontSize: 'clamp(2.8rem,6vw,5rem)', lineHeight: 1, background: `linear-gradient(90deg,#f6d98a,${GOLD},#f6d98a)`, backgroundSize: '200% 100%', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', animation: 'sp-shine 4s linear infinite', filter: 'drop-shadow(0 0 40px rgba(212,160,23,0.3))' }}>Soutiens Brams Community</h1>
           <p style={{ margin: '14px auto 0', maxWidth: 600, fontSize: 15.5, color: 'rgba(205,189,151,0.8)', fontFamily: "'Cinzel', serif", lineHeight: 1.6 }}>
             {data?.subtitle || "Le serveur, les événements, l'hébergement du site et les animes — tout ça tourne grâce à toi. Chaque don compte 🏴‍☠️"}
           </p>
@@ -146,6 +146,6 @@ export default function SupportPage() {
   )
 }
 
-const card = () => ({ borderRadius: 18, padding: 'clamp(20px,3vw,28px)', border: '1px solid rgba(191,164,106,0.2)', background: 'linear-gradient(180deg, rgba(26,22,15,0.7), rgba(14,12,9,0.85))', boxShadow: '0 20px 60px rgba(0,0,0,0.4)' })
+const card = () => ({ borderRadius: 18, padding: 'clamp(20px,3vw,28px)', border: '1px solid rgba(212,160,23,0.15)', background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', boxShadow: '0 20px 60px rgba(0,0,0,0.4)' })
 const lbl = { display: 'block', fontSize: 11, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', color: 'rgba(205,189,151,0.7)', margin: '14px 0 6px', fontFamily: "'Cinzel', serif" }
 const inp = { width: '100%', boxSizing: 'border-box', padding: '12px 13px', borderRadius: 10, border: '1px solid rgba(191,164,106,0.28)', background: 'rgba(255,255,255,0.04)', color: '#f4ecd8', fontSize: 14, fontFamily: 'inherit', outline: 'none' }
