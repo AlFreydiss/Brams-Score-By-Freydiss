@@ -161,7 +161,7 @@ const TOP_DONORS = [
   { name: 'Lamar', amount: 1 },
 ]
 const LEETCHI_URL = 'https://www.leetchi.com/fr/c/brams-score-by-freydiss-1073815?utm_source=copylink&utm_medium=social_sharing'
-const DISCORD_URL = 'https://discord.gg/8uzU3eatMr'
+const DISCORD_URL = 'https://discord.gg/4FgezPpnGU'
 
 function DonorsMarquee() {
   if (!TOP_DONORS.length) return null

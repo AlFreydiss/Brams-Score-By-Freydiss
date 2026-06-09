@@ -120,7 +120,7 @@ export default function ProfileActions({ data, onShare, copied, onEdit }) {
           {menu && (
             <div className="pfx-menu">
               <button type="button" onClick={() => { setMenu(false); onShare() }}>⎘ Copier le lien</button>
-              <button type="button" onClick={() => { setMenu(false); window.open('https://discord.gg/8uzU3eatMr', '_blank', 'noopener') }}>🚩 Signaler (Discord)</button>
+              <button type="button" onClick={() => { setMenu(false); window.open('https://discord.gg/4FgezPpnGU', '_blank', 'noopener') }}>🚩 Signaler (Discord)</button>
             </div>
           )}
         </div>

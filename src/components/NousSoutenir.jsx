@@ -18,7 +18,7 @@ const SUPPORTS = [
     title: 'Booster le serveur',
     desc: 'Un boost Discord débloque des perks exclusifs pour toute la communauté : meilleure qualité audio, plus d\'emojis, bannière animée.',
     cta: 'Booster sur Discord',
-    href: 'https://discord.gg/8uzU3eatMr',
+    href: 'https://discord.gg/4FgezPpnGU',
     color: '#9b59b6',
     badge: 'Impactant',
   },
@@ -45,7 +45,7 @@ const SUPPORTS = [
     title: 'Recruter des nakamas',
     desc: 'Invite tes amis sur le serveur. Plus on est nombreux, plus l\'aventure est épique. La Brams Community grandit grâce à toi.',
     cta: 'Inviter des amis',
-    href: 'https://discord.gg/8uzU3eatMr',
+    href: 'https://discord.gg/4FgezPpnGU',
     color: '#e0524a',
     badge: 'Communauté',
   },
@@ -131,7 +131,7 @@ export default function NousSoutenir() {
             Ce serveur et ce bot sont développés bénévolement par <strong style={{ color: '#00C2FF' }}>Freydiss</strong>.
             Chaque soutien — boost, sub, like — fait une vraie différence. Merci à tous !
           </p>
-          <a href="https://discord.gg/8uzU3eatMr" target="_blank" rel="noopener noreferrer"
+          <a href="https://discord.gg/4FgezPpnGU" target="_blank" rel="noopener noreferrer"
             className="btn btn-primary" style={{ fontSize: 14 }}
             onMouseEnter={() => play('hover')} onClick={() => play('click')}>
             Rejoindre l'aventure →

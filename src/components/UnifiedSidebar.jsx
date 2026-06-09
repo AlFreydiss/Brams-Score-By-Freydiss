@@ -317,9 +317,17 @@ function VoiceLiveBlock({ voice, navigate }) {
         </span>
       </div>
       {count === 0 ? (
-        <div style={{ padding:'14px', textAlign:'center', fontSize:11.5, color:'rgba(255,255,255,.42)',
-          background:'rgba(255,255,255,.03)', border:'1px dashed rgba(255,255,255,.1)', borderRadius:12 }}>
-          Personne en vocal… <span style={{ color:'#2ECC71', fontWeight:700 }}>lance le premier salon !</span>
+        <div style={{ padding:'16px 14px', textAlign:'center', borderRadius:14, background:'rgba(255,255,255,.025)', border:'1px solid rgba(255,255,255,.06)' }}>
+          <div style={{ fontSize:13, color:'rgba(255,255,255,.55)', marginBottom:8 }}>Aucun nakama en vocal pour l’instant</div>
+          <button
+            onClick={() => window.open('https://discord.gg/4FgezPpnGU', '_blank')}
+            style={{
+              background:'#2ECC71', color:'#111', border:'none', borderRadius:999, padding:'6px 16px',
+              fontWeight:800, fontSize:12, cursor:'pointer'
+            }}
+          >
+            Rejoindre le Discord & lancer un salon
+          </button>
         </div>
       ) : (
         <div style={{ display:'flex', alignItems:'center' }}>
@@ -912,7 +920,7 @@ export default function UnifiedSidebar() {
           display:'flex', alignItems:'center', justifyContent:'space-between',
           background:'rgba(0,0,0,.2)',
         }}>
-          <a href="https://discord.gg/8uzU3eatMr" target="_blank" rel="noopener noreferrer"
+          <a href="https://discord.gg/4FgezPpnGU" target="_blank" rel="noopener noreferrer"
             className="hub-bt-cta primary" style={{ width:'auto', padding:'8px 20px', fontSize:11 }}>
             🏴‍☠️ Rejoindre le Discord
           </a>

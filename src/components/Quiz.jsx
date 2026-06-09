@@ -65,7 +65,7 @@ export default function Quiz() {
   }, [started, current, done, selected, next])
 
   const share = () => {
-    const text = `J'ai eu ${score}/5 au Quiz One Piece sur Brams Community ! 🏴‍☠️ Rejoins le serveur sur discord.gg/8uzU3eatMr`
+    const text = `J'ai eu ${score}/5 au Quiz One Piece sur Brams Community ! 🏴‍☠️ Rejoins le serveur sur discord.gg/4FgezPpnGU`
     navigator.clipboard?.writeText(text)
     alert('Score copié ! Partage-le sur Discord 🏴‍☠️')
   }

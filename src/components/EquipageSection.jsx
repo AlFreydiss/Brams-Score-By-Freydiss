@@ -147,7 +147,7 @@ export default function EquipageSection() {
               ⚔️ Explorer les équipages
             </a>
             <a
-              href="https://discord.gg/8uzU3eatMr"
+              href="https://discord.gg/4FgezPpnGU"
               target="_blank"
               rel="noopener noreferrer"
               className="btn btn-discord"
