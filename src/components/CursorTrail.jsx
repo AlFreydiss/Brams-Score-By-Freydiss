@@ -30,6 +30,25 @@ export default function CursorTrail({ skin }) {
       canvas.style.height = `${window.innerHeight}px`
     }
 
+    // PERF : au lieu d'un shadowBlur par particule À CHAQUE frame (très coûteux en
+    // canvas), on pré-rend UN sprite de glow par couleur (radial gradient) une seule
+    // fois, puis on fait drawImage (bon marché). Même rendu glowy, sans le coût du
+    // shadowBlur. Cache borné (couleurs fixes du skin + teintes arrondies pour l'arc-en-ciel).
+    const SPR = 64
+    const spriteCache = new Map()
+    const getSprite = (color) => {
+      let c = spriteCache.get(color)
+      if (c) return c
+      c = document.createElement('canvas'); c.width = c.height = SPR
+      const g = c.getContext('2d')
+      const grd = g.createRadialGradient(SPR / 2, SPR / 2, 0, SPR / 2, SPR / 2, SPR / 2)
+      grd.addColorStop(0, color); grd.addColorStop(0.32, color); grd.addColorStop(1, 'transparent')
+      g.fillStyle = grd; g.beginPath(); g.arc(SPR / 2, SPR / 2, SPR / 2, 0, Math.PI * 2); g.fill()
+      if (spriteCache.size > 400) spriteCache.clear()
+      spriteCache.set(color, c)
+      return c
+    }
+
     const tick = () => {
       const C = cfgRef.current
       ctx.clearRect(0, 0, w, h)
@@ -44,17 +63,13 @@ export default function CursorTrail({ skin }) {
 
         if (p.life <= 0) { parts.splice(i, 1); continue }
 
-        ctx.shadowBlur = p.shadow * dpr
-        ctx.shadowColor = p.color
-        ctx.fillStyle = p.color
+        // rayon visuel = cœur + halo (équivalent de l'ancien shadowBlur), via le sprite
+        const r = p.size * p.life + p.shadow * dpr * 0.6
         ctx.globalAlpha = p.life * p.alpha
-        ctx.beginPath()
-        ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2)
-        ctx.fill()
+        ctx.drawImage(getSprite(p.color), p.x - r, p.y - r, r * 2, r * 2)
       }
 
       ctx.globalAlpha = 1
-      ctx.shadowBlur = 0
       ctx.globalCompositeOperation = 'source-over'
       raf = parts.length ? requestAnimationFrame(tick) : 0
     }
@@ -82,7 +97,7 @@ export default function CursorTrail({ skin }) {
               vy: ((Math.random() - 0.5) * C.drift + 0.1) * dpr,
               life: 1,
               size: (Math.random() * C.sizeRand + C.sizeBase) * dpr,
-              color: C.hueCycle ? `hsl(${hue}, 95%, 62%)` : C.colors[(Math.random() * C.colors.length) | 0],
+              color: C.hueCycle ? `hsl(${Math.round(hue)}, 95%, 62%)` : C.colors[(Math.random() * C.colors.length) | 0],
               gravity: C.gravity, decay: C.decay, shadow: C.shadow, alpha: C.alpha,
             })
           }
