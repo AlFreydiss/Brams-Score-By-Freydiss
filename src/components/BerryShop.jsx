@@ -116,12 +116,16 @@ function StatusPill({ kind }) {
 }
 
 // Média d'une carte : vidéo (frame réelle, lecture au survol) + fallback dégradé.
-function CardMedia({ bg, videoRef }) {
+// PERF : la vidéo n'est montée QUE si la carte est visible (`inView`). Avec 30+
+// openings, monter toutes les vidéos d'un coup décodait 30+ flux en parallèle →
+// la boutique ramait à mort. L'IntersectionObserver (dans ItemCard) plafonne à
+// ~10 vidéos (visibles + marge). Hors écran : dégradé seul, zéro décodage.
+function CardMedia({ bg, videoRef, inView }) {
   const [failed, setFailed] = useState(false)
   return (
     <>
       <div className="bsx-media" style={{ position: 'absolute', inset: 0, background: `linear-gradient(160deg, ${bg.overlayStart || '#1a1320'}, ${bg.overlayEnd || '#0a0810'})` }} />
-      {bg.videoUrl && !failed && (
+      {bg.videoUrl && !failed && inView && (
         // On force un SEEK à 1s au chargement → rend une vraie miniature (le simple
         // #t=1 laissait souvent un cadre noir selon le navigateur).
         <video ref={videoRef} className="bsx-media" src={bg.videoUrl} muted loop playsInline preload="metadata"
@@ -137,6 +141,16 @@ function CardMedia({ bg, videoRef }) {
 function ItemCard({ bg, owned, equipped, busy, affordable, equipCount = 0, onSelect, onPreview, onBuy, onEquip, onGift }) {
   const r = rar(bg.rarity)
   const videoRef = useRef(null)
+  const cardRef = useRef(null)
+  // Vidéo montée seulement quand la carte est visible (±400px) → cap les décodages.
+  const [inView, setInView] = useState(false)
+  useEffect(() => {
+    const el = cardRef.current
+    if (!el || typeof IntersectionObserver === 'undefined') { setInView(true); return }
+    const io = new IntersectionObserver(([e]) => setInView(e.isIntersecting), { rootMargin: '400px 0px' })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [])
   const cart = useCart()
   const inCart = cart.has(bg.id)
   const cartItem = { id: bg.id, label: bg.opTitle, emoji: '🎞️', priceCents: priceCentsOf(bg), rarity: bg.rarity }
@@ -147,6 +161,7 @@ function ItemCard({ bg, owned, equipped, busy, affordable, equipCount = 0, onSel
   const onCard = () => { if (owned || equipped) onSelect(bg); else if (!inCart) cart.add(cartItem); else cart.setOpen(true) }
   return (
     <div
+      ref={cardRef}
       className="bsx-card"
       onClick={onCard}
       onMouseEnter={enter} onMouseLeave={leave}
@@ -157,7 +172,7 @@ function ItemCard({ bg, owned, equipped, busy, affordable, equipCount = 0, onSel
         animation: 'bsx-fade .3s ease both',
       }}
     >
-      <CardMedia bg={bg} videoRef={videoRef} />
+      <CardMedia bg={bg} videoRef={videoRef} inView={inView} />
 
       {/* Badges */}
       <div style={{ position: 'absolute', top: 10, left: 10, zIndex: 2 }}><RarityBadge rarity={bg.rarity} small /></div>

@@ -835,5 +835,59 @@
         "default": true
       }
     ]
+  },
+  {
+    "episode": 32,
+    "title": "Épisode 32",
+    "episodeLabel": "S01E032",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bleach/S01E032-vostfr.mp4",
+    "season": "S01",
+    "arc": "Bleach",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E032",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bleach/thumbnails/S01E032.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bleach/S01E032-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 33,
+    "title": "Épisode 33",
+    "episodeLabel": "S01E033",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bleach/S01E033-vostfr.mp4",
+    "season": "S01",
+    "arc": "Bleach",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E033",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bleach/thumbnails/S01E033.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bleach/S01E033-fr.vtt",
+        "default": true
+      }
+    ]
   }
 ]
