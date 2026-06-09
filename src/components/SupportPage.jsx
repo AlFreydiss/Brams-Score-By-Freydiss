@@ -5,6 +5,18 @@ import { useState, useEffect } from 'react'
 import { fetchCagnotte } from '../lib/supabase.js'
 import { createDonateCheckout, completeDonate } from '../lib/berryShop.js'
 import { useAuth } from '../contexts/AuthContext.jsx'
+import BerriesCanvas from './ui/BerriesCanvas.jsx'
+import { useCountUp } from '../hooks/useCountUp.js'
+
+// Couleur du badge montant selon la valeur (feed "Ils ont soutenu").
+const AURAS = ['auraOr', 'auraArgent', 'auraBronze']
+function amountBadgeStyle(amount) {
+  const a = Number(amount) || 0
+  if (a > 50) return { background: 'linear-gradient(135deg,#e63946,#ff6b35)', color: '#fff', boxShadow: '0 0 12px rgba(230,57,70,.5)' }
+  if (a > 20) return { background: '#f5a623', color: '#1a1206' }
+  if (a >= 5) return { background: '#4e7cff', color: '#fff' }
+  return { background: '#6c757d', color: '#fff' }
+}
 
 const GOLD = '#f5b50a', GOLD_SOFT = '#d8bd7e'
 const PRESETS = [3, 5, 10, 20]
@@ -40,6 +52,7 @@ export default function SupportPage() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
   const [thanks, setThanks] = useState(false)
+  const [ripples, setRipples] = useState([])
 
   const load = () => fetchCagnotte({ withAvatars: true }).then(setData)
   // Actualisation EN LIVE : recharge la cagnotte + les soutiens toutes les 12s
@@ -78,17 +91,28 @@ export default function SupportPage() {
     window.location.assign(d.url)
   }
 
+  // Effet ripple sur le bouton Donner (au point cliqué) puis lance le don.
+  const fireDonate = (e) => {
+    const r = e.currentTarget.getBoundingClientRect()
+    const id = Date.now() + Math.random()
+    setRipples(rs => [...rs, { id, x: e.clientX - r.left, y: e.clientY - r.top }])
+    setTimeout(() => setRipples(rs => rs.filter(rp => rp.id !== id)), 500)
+    donate()
+  }
+
   const goal = data?.goal || 200, total = data?.total || 0
   const donors = data?.donors || []
   const topDonors = [...donors].sort((a, b) => (Number(b.amount) || 0) - (Number(a.amount) || 0)).slice(0, 3)
   const pct = goal > 0 ? Math.min(100, Math.round((total / goal) * 100)) : 0
+  const animatedTotal = useCountUp(total, 2000)   // 0 → total (ease-out)
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(180deg,#0a0b0e,#08090c 60%,#070809)', color: '#f4ecd8', paddingTop: 72 }}>
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(180deg,#0a0b0e,#08090c 60%,#070809)', color: '#f4ecd8', paddingTop: 72, position: 'relative' }}>
+      <BerriesCanvas />
       <style>{`@keyframes sp-grow{from{width:0}} @keyframes sp-shine{0%{background-position:200% 0}100%{background-position:-200% 0}} .sp-feed::-webkit-scrollbar{width:6px}.sp-feed::-webkit-scrollbar-thumb{background:rgba(212,176,110,.25);border-radius:3px}`}</style>
 
       {/* Hero */}
-      <div style={{ position: 'relative', overflow: 'hidden', padding: 'clamp(40px,6vw,72px) 24px clamp(32px,4vw,48px)', textAlign: 'center' }}>
+      <div style={{ position: 'relative', zIndex: 1, overflow: 'hidden', padding: 'clamp(40px,6vw,72px) 24px clamp(32px,4vw,48px)', textAlign: 'center' }}>
         <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse 70% 60% at 50% 0%, rgba(245,181,10,0.14), transparent 70%)', pointerEvents: 'none' }} />
         <div style={{ position: 'relative' }}>
           <div style={{ fontSize: 52, marginBottom: 8 }}>💛</div>
@@ -100,20 +124,28 @@ export default function SupportPage() {
       </div>
 
       {/* 2 colonnes */}
-      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 20px 100px', display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: 24, alignItems: 'start' }} className="sp-grid">
+      <div style={{ position: 'relative', zIndex: 1, maxWidth: 1100, margin: '0 auto', padding: '0 20px 100px', display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: 24, alignItems: 'start' }} className="sp-grid">
         <style>{`@media(max-width:820px){.sp-grid{grid-template-columns:1fr !important}}`}</style>
 
         {/* Gauche : objectif + feed */}
         <div style={card()}>
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 8 }}>
-            <span style={{ fontSize: 30, fontWeight: 900, color: GOLD, fontFamily: "'Cinzel', serif" }}>{euro(total)}</span>
+            <span style={{ fontSize: 34, fontWeight: 900, color: GOLD, fontFamily: "'Cinzel', serif", fontVariantNumeric: 'tabular-nums', filter: 'drop-shadow(0 0 18px rgba(245,181,10,.35))' }}>
+              {animatedTotal.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+            </span>
             <span style={{ fontSize: 13, color: 'rgba(205,189,151,0.6)' }}>objectif {euro(goal)}</span>
           </div>
-          <div style={{ height: 14, borderRadius: 99, background: 'rgba(255,255,255,0.06)', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.06)' }}>
-            <div style={{ width: `${pct}%`, height: '100%', borderRadius: 99, animation: 'sp-grow 1.1s cubic-bezier(.22,1,.36,1)', background: `linear-gradient(90deg,${GOLD_SOFT},${GOLD},#ffe9a8,${GOLD})`, backgroundSize: '200% 100%', boxShadow: `0 0 16px ${GOLD}66` }} />
+          {/* Barre ÉPIQUE : remplissage animé + shimmer doré + reflet blanc qui glisse */}
+          <div style={{ position: 'relative', height: 16, borderRadius: 99, background: 'rgba(255,255,255,0.06)', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.06)' }}>
+            <div className="fou-bar" style={{ width: `${pct}%`, height: '100%', borderRadius: 99, transition: 'width 1.8s cubic-bezier(.22,1,.36,1)',
+              background: 'linear-gradient(90deg,#f5a623,#f7c948,#f5a623)', backgroundSize: '200% 100%', animation: 'shimmer 2s linear infinite', boxShadow: `0 0 18px ${GOLD}77` }}>
+              <div className="fou-reflet" style={{ position: 'absolute', top: 0, left: 0, width: '40%', height: '100%', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.32), transparent)', animation: 'barReflet 2.5s ease-in-out infinite' }} />
+            </div>
           </div>
-          <div style={{ marginTop: 7, fontSize: 13, fontWeight: 800, color: pct >= 100 ? '#7fe6a8' : GOLD_SOFT, fontFamily: "'Cinzel', serif" }}>
-            {pct >= 100 ? '🎉 Objectif atteint, merci les nakamas !' : `${pct}% de l'objectif`}
+          <div className="fou-badge" style={{ marginTop: 8, fontSize: 13.5, fontWeight: 900, letterSpacing: '.04em',
+            color: pct >= 100 ? '#7fe6a8' : '#f7c948', textShadow: pct >= 100 ? 'none' : '0 0 12px rgba(247,201,72,0.7)',
+            fontFamily: "'Cinzel', serif", animation: pct >= 100 ? 'none' : 'badgePulse 3s ease-in-out infinite' }}>
+            {pct >= 100 ? '🎉 Objectif atteint, merci les nakamas !' : `${pct}% DE L'OBJECTIF`}
           </div>
 
           {/* Podium — Top 3 soutiens par montant */}
@@ -124,9 +156,13 @@ export default function SupportPage() {
                 {topDonors.map((d, i) => {
                   const first = i === 0
                   return (
-                    <div key={`top-${d.id}`} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '9px 12px', borderRadius: 12,
-                      background: first ? 'linear-gradient(135deg, rgba(245,181,10,0.16), rgba(245,181,10,0.03))' : 'rgba(255,255,255,0.03)',
-                      border: `1px solid ${first ? 'rgba(245,181,10,0.4)' : 'rgba(255,255,255,0.06)'}` }}>
+                    <div key={`top-${d.id}`} className={`fou-podium fou-${AURAS[i]}`}
+                      onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.025) translateY(-2px)' }}
+                      onMouseLeave={e => { e.currentTarget.style.transform = 'none' }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '9px 12px', borderRadius: 12, transition: 'transform .2s ease',
+                        background: first ? 'linear-gradient(135deg, rgba(245,181,10,0.16), rgba(245,181,10,0.03))' : 'rgba(255,255,255,0.03)',
+                        border: `1px solid ${first ? 'rgba(245,181,10,0.4)' : 'rgba(255,255,255,0.06)'}`,
+                        animation: `${AURAS[i]} 2s ease-in-out infinite` }}>
                       <span style={{ fontSize: 18, width: 22, textAlign: 'center', flexShrink: 0 }}>{['🥇', '🥈', '🥉'][i]}</span>
                       <DonorAvatar d={d} size={32} />
                       <span style={{ flex: 1, minWidth: 0, fontSize: 14, fontWeight: 700, color: '#f4ecd8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{d.name}</span>
@@ -141,13 +177,13 @@ export default function SupportPage() {
           <div style={{ marginTop: 22, fontSize: 10.5, fontWeight: 800, letterSpacing: '.16em', textTransform: 'uppercase', color: 'rgba(205,189,151,0.5)', marginBottom: 12 }}>Ils ont soutenu · {donors.length}</div>
           <div className="sp-feed" style={{ display: 'flex', flexDirection: 'column', gap: 12, maxHeight: 440, overflowY: 'auto', paddingRight: 4 }}>
             {!donors.length && <span style={{ fontSize: 13, color: 'rgba(205,189,151,0.5)' }}>Sois le premier à soutenir 🏴‍☠️</span>}
-            {donors.map(d => (
-              <div key={d.id} style={{ display: 'flex', gap: 11, alignItems: 'flex-start' }}>
+            {donors.map((d, i) => (
+              <div key={d.id} className="fou-feed-item" style={{ display: 'flex', gap: 11, alignItems: 'flex-start', opacity: 0, animation: 'slideInLeft 0.45s ease forwards', animationDelay: `${Math.min(i, 12) * 80}ms` }}>
                 <DonorAvatar d={d} size={38} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                     <strong style={{ fontSize: 14 }}>{d.name}</strong>
-                    <span style={{ fontSize: 11.5, fontWeight: 800, color: '#1a1206', background: GOLD, borderRadius: 999, padding: '1px 8px' }}>{euro(d.amount)}</span>
+                    <span style={{ fontSize: 11.5, fontWeight: 800, borderRadius: 999, padding: '1px 8px', ...amountBadgeStyle(d.amount) }}>{euro(d.amount)}</span>
                     <span style={{ fontSize: 11, color: 'rgba(205,189,151,0.45)' }}>{timeAgo(d.created_at)}</span>
                   </div>
                   {d.message && <div style={{ marginTop: 4, fontSize: 12.5, color: 'rgba(244,236,216,0.82)', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 9, padding: '7px 10px' }}>{d.message}</div>}
@@ -166,7 +202,12 @@ export default function SupportPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8, marginBottom: 10 }}>
             {PRESETS.map(v => {
               const active = !custom && amount === v
-              return <button key={v} onClick={() => { setCustom(''); setAmount(v) }} style={{ padding: '13px 0', borderRadius: 11, cursor: 'pointer', fontFamily: "'Cinzel', serif", fontWeight: 900, fontSize: 15, color: active ? '#1a1206' : GOLD_SOFT, background: active ? `linear-gradient(180deg,#f6d98a,${GOLD})` : 'rgba(255,255,255,0.04)', border: `1px solid ${active ? GOLD : 'rgba(191,164,106,0.25)'}` }}>{v} €</button>
+              return <button key={v} onClick={() => { setCustom(''); setAmount(v) }} className={active ? 'fou-amount' : undefined}
+                onMouseEnter={e => { if (!active) e.currentTarget.style.borderColor = GOLD }}
+                onMouseLeave={e => { if (!active) e.currentTarget.style.borderColor = 'rgba(191,164,106,0.25)' }}
+                style={{ padding: '13px 0', borderRadius: 11, cursor: 'pointer', fontFamily: "'Cinzel', serif", fontWeight: 900, fontSize: 15, transition: 'border-color .18s, transform .12s',
+                  color: active ? '#1a1206' : GOLD_SOFT, background: active ? `linear-gradient(180deg,#f6d98a,${GOLD})` : 'rgba(255,255,255,0.04)',
+                  border: `1px solid ${active ? GOLD : 'rgba(191,164,106,0.25)'}`, animation: active ? 'activeAmount 1.5s ease-in-out infinite' : 'none' }}>{v} €</button>
             })}
           </div>
           <input value={custom} onChange={e => setCustom(e.target.value)} placeholder="ou un autre montant (€)" inputMode="decimal" style={inp} />
@@ -178,11 +219,19 @@ export default function SupportPage() {
 
           {error && <div style={{ marginTop: 8, fontSize: 12.5, color: '#ffb3ab', fontWeight: 700 }}>{error}</div>}
 
-          <button onClick={donate} disabled={busy || !valid} style={{
-            marginTop: 16, width: '100%', padding: 15, borderRadius: 13, border: 'none', cursor: busy || !valid ? 'default' : 'pointer',
-            fontFamily: "'Cinzel', serif", fontWeight: 900, fontSize: 16, color: '#1a1206', opacity: busy || !valid ? 0.6 : 1,
-            background: `linear-gradient(180deg,#f6d98a,${GOLD},#d4920a)`, boxShadow: `0 14px 38px ${GOLD}40`,
-          }}>{busy ? 'Redirection…' : `💛 Donner ${valid ? euro(finalAmount) : ''}`}</button>
+          <button onClick={fireDonate} disabled={busy || !valid}
+            onMouseEnter={e => { if (!(busy || !valid)) { e.currentTarget.style.transform = 'scale(1.03) translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 32px rgba(245,166,35,0.55)' } }}
+            onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = `0 14px 38px ${GOLD}40` }}
+            style={{
+              position: 'relative', overflow: 'hidden', marginTop: 16, width: '100%', padding: 15, borderRadius: 13, border: 'none', cursor: busy || !valid ? 'default' : 'pointer',
+              fontFamily: "'Cinzel', serif", fontWeight: 900, fontSize: 16, color: '#1a1206', opacity: busy || !valid ? 0.6 : 1, transition: 'transform .2s ease, box-shadow .2s ease',
+              background: 'linear-gradient(135deg,#f5a623,#f7c948,#f5a623)', backgroundSize: '200% 100%', animation: 'shimmerBtn 2.5s linear infinite', boxShadow: `0 14px 38px ${GOLD}40`,
+            }}>
+            <span style={{ position: 'relative', zIndex: 1 }}>{busy ? 'Redirection…' : `💛 Donner ${valid ? euro(finalAmount) : ''}`}</span>
+            {ripples.map(rp => (
+              <span key={rp.id} aria-hidden style={{ position: 'absolute', left: rp.x, top: rp.y, transform: 'translate(-50%,-50%)', borderRadius: '50%', background: 'rgba(255,255,255,0.5)', pointerEvents: 'none', animation: 'rippleExpand 0.5s ease forwards' }} />
+            ))}
+          </button>
           <p style={{ margin: '12px 0 0', fontSize: 11, color: 'rgba(205,189,151,0.45)', textAlign: 'center' }}>Tu recevras une facture par mail. Merci 🏴‍☠️</p>
         </div>
       </div>

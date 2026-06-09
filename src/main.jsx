@@ -6,6 +6,7 @@ import './responsive-safety.css'
 import './components/ui/ui.css'
 import App from './App.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
+import GlobalAnimations from './components/ui/GlobalAnimations.jsx'
 import { AuthProvider } from './contexts/AuthContext.jsx'
 import { installLiveSync } from './lib/liveSync.js'
 import { tryChunkReload, shouldReloadForChunkError } from './lib/lazyWithReload.js'
@@ -36,6 +37,7 @@ window.addEventListener('error', (e) => {
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <ErrorBoundary>
+      <GlobalAnimations />
       <BrowserRouter>
         <AuthProvider>
           <App />
