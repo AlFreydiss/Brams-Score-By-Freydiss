@@ -2,6 +2,12 @@ export default {
   content: [
     './src/tierlist/**/*.{ts,tsx}',
     './src/components/TierListPage.jsx',
+    // shadcn/ui cloisonné : on scanne UNIQUEMENT le dossier ui/. Les composants
+    // portent toutes leurs classes → ils s'affichent complets. On NE charge
+    // JAMAIS @tailwind base (preflight) → aucun reset global, les pages en
+    // styles inline restent intactes. (Élargir à ./src/** ferait regénérer
+    // toutes les utilities dans tierlist.css aussi → bundle gonflé.)
+    './src/components/ui/**/*.{js,jsx}',
   ],
   theme: {
     extend: {

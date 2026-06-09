@@ -1,0 +1,61 @@
+/* shadcn/ui — feuille CLOISONNÉE.
+   On NE met JAMAIS `@import "tailwindcss"` ni `@tailwind base` ici : ça
+   injecterait le preflight (reset global) et casserait toutes les pages en
+   styles inline du site (cf. AnimeHub). On charge uniquement components +
+   utilities, comme tierlist.css. Le reset minimal (box-sizing, margin) est
+   déjà global dans index.css, donc les composants s'affichent correctement. */
+@import "tw-animate-css";
+
+@tailwind components;
+@tailwind utilities;
+
+@custom-variant dark (&:is(.dark *));
+
+/* :root EST déjà en dark (le site est dark premium) → les composants sont
+   sombres par défaut sans avoir besoin d'une classe .dark sur <html>. */
+:root {
+  --radius: 0.625rem;
+  --background: oklch(0.13 0.005 270);
+  --foreground: oklch(0.97 0 0);
+  --card: oklch(0.18 0.006 270);
+  --card-foreground: oklch(0.97 0 0);
+  --popover: oklch(0.17 0.006 270);
+  --popover-foreground: oklch(0.97 0 0);
+  --primary: oklch(0.78 0.07 88);
+  --primary-foreground: oklch(0.2 0.01 270);
+  --secondary: oklch(0.27 0.006 270);
+  --secondary-foreground: oklch(0.97 0 0);
+  --muted: oklch(0.27 0.006 270);
+  --muted-foreground: oklch(0.7 0.01 270);
+  --accent: oklch(0.3 0.008 270);
+  --accent-foreground: oklch(0.97 0 0);
+  --destructive: oklch(0.62 0.21 25);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 14%);
+  --ring: oklch(0.78 0.07 88);
+}
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+}

@@ -97,6 +97,11 @@ const pruneHeavyPublicAssets = {
 
 export default defineConfig({
   plugins: [react(), animePlugin, pruneHeavyPublicAssets],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, 'src'),
+    },
+  },
   build: {
     emptyOutDir: false,
     target:               'es2020',
