@@ -88,10 +88,12 @@ const SETTINGS_INDEX = [
   ['Journal d\'audit', 'logs'],
 ]
 
+// Ne JAMAIS révéler le contenu : si ce n'est pas une URL de webhook Discord
+// reconnue, on masque totalement (aucun caractère du secret affiché).
 const maskWebhook = (url) => {
   if (!url) return ''
-  const m = url.match(/^https:\/\/discord\.com\/api\/webhooks\/(\d+)\/(.+)$/)
-  if (!m) return url.length > 18 ? url.slice(0, 14) + '••••' : url
+  const m = url.match(/^https:\/\/discord\.com\/api\/webhooks\/(\d+)\/.+$/)
+  if (!m) return '•••••••• · configuré'
   return `https://discord.com/api/webhooks/${m[1].slice(0, 4)}••••/${'•'.repeat(8)}`
 }
 
