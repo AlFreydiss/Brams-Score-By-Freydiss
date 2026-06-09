@@ -27,6 +27,21 @@ function resolveDiscordId(user) {
     ?? null
 }
 
+// Lit la session supabase directement depuis le localStorage (sans getSession()
+// qui peut hang 5s → flash "déconnecté" et features Discord qui buguent).
+function readStoredSession() {
+  try {
+    const url = import.meta.env.VITE_SUPABASE_URL || ''
+    const ref = (url.match(/https?:\/\/([^.]+)\./) || [])[1]
+    if (!ref) return null
+    const raw = localStorage.getItem(`sb-${ref}-auth-token`)
+    if (!raw) return null
+    const w = JSON.parse(raw)
+    const s = w?.currentSession || w
+    return (s?.access_token && s?.user) ? s : null
+  } catch { return null }
+}
+
 export function AuthProvider({ children }) {
   const [user,        setUser]        = useState(null)
   const [session,     setSession]     = useState(null)
@@ -69,6 +84,11 @@ export function AuthProvider({ children }) {
     // ça, quand getSession hang, l'UI restait figée en skeleton 5s sur tout le site.
     let settled = false
     const settle = () => { if (!settled && mounted) { settled = true; setLoading(false) } }
+
+    // Seed instantané depuis le storage → connecté tout de suite, sans attendre
+    // getSession() (qui peut hang 5s et faire buguer la co Discord).
+    const seeded = readStoredSession()
+    if (seeded) { applySession(seeded); settle() }
 
     const init = async () => {
       const search = window.location.search
