@@ -5,7 +5,7 @@ import { supabase } from './supabase.js'
 export const LOCAL_TRACKS = [
   {
     id: 'pokemon-fr-op1', anime: 'Pokémon', title: 'Générique français (Saison 1)', artist: 'Pokémon', type: 'OP', episode: 'Opening FR',
-    url: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/blind-test/pokemon-fr-op1.mp3',
+    url: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/blind-test/pokemon-fr-op1.mp4',
     difficulty: 'facile', color: '#f5b50a', emoji: '⚡',
     aliases: ['pokemon', 'pokémon', 'attrapez les tous', 'sacha', 'pikachu', 'generique pokemon'],
   },

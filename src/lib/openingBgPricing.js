@@ -12,6 +12,8 @@ export const OPENING_BG_EURO_PRICE_CENTS = {
 const euroFmt = new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
 export function openingBgPriceCents(bgOrRarity) {
+  // Override prix par fond (euroCents) → permet un prix custom (ex : 1,49 €).
+  if (bgOrRarity && typeof bgOrRarity === 'object' && bgOrRarity.euroCents > 0) return bgOrRarity.euroCents
   const rarity = typeof bgOrRarity === 'string' ? bgOrRarity : bgOrRarity?.rarity
   return OPENING_BG_EURO_PRICE_CENTS[rarity] ?? OPENING_BG_EURO_PRICE_CENTS.Commun
 }

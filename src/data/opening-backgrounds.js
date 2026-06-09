@@ -8,6 +8,22 @@ import { GENERATED_BACKGROUNDS } from './openingBgGenerated.js'
 // On les garde en tête + leurs ids historiques (inventaire déjà possédé).
 const CURATED_BACKGROUNDS = [
   {
+    id:             'bg-pokemon',
+    shopItemId:     'bg-pokemon',
+    opTitle:        'Pokémon — Indigo League',
+    anime:          'Pokémon',
+    artist:         'Générique',
+    rarity:         'Legendaire',
+    isNew:          true,
+    euroCents:      149,
+    videoUrl:       'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/opening-bg/pokemon.mp4',
+    dominantColor:  '#c79a18',
+    overlayStart:   'rgba(48,36,8,0.70)',
+    overlayEnd:     'rgba(10,8,2,0.86)',
+    description:    "Attrape-les tous. Le générique culte qui a bercé toute une génération.",
+    label:          'Fond animé',
+  },
+  {
     id:             'bg-unravel',
     shopItemId:     'bg-unravel',
     opTitle:        'Unravel',
