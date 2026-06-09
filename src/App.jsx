@@ -2,7 +2,6 @@ import { useState, useEffect, useRef, useCallback, Suspense } from 'react'
 import { Routes, Route, useNavigate, Navigate, useLocation, useParams } from 'react-router-dom'
 import { lazyWithReload } from './lib/lazyWithReload.js'
 import GlobalStyles from './components/GlobalStyles.jsx'
-import CursorTrail from './components/CursorTrail.jsx'
 import { GlobalCursorLayer } from './components/CursorShop.jsx'
 import FunFX from './components/FunFX.jsx'
 import { ThemeProvider } from './contexts/ThemeContext.jsx'
@@ -501,7 +500,6 @@ export default function App() {
       <SocialProvider>
       <CallProvider>
       <GlobalStyles />
-      <CursorTrail />
 <GlobalCursorLayer />
       <EquippedOpeningBackground />
       <NotificationToast />

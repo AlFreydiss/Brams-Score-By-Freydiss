@@ -7,6 +7,13 @@ import { CountUp } from './shared.jsx'
 import ProfileActions from './ProfileActions.jsx'
 import FollowersPreview from './FollowersPreview.jsx'
 
+// Certifications spéciales par Discord ID : couleur + rôle affiché au survol.
+const CERTIFS = {
+  '1079054995917381672': { color: '#f5b50a', glow: 'rgba(245,181,10,.55)', title: 'Capitaine / Fondateur' },     // Brams — or
+  '999607813334638692':  { color: '#e0524a', glow: 'rgba(224,82,74,.5)',   title: 'Directeur / Vice Capitaine' }, // Berat — rouge
+  '1094070545248694342': { color: '#a855f7', glow: 'rgba(168,85,247,.55)', title: 'Navigateur / Développeur' },   // Al Freydiss — violet
+}
+
 export default function ProfileHero({ data, copied, onShare, onEdit, onAvatar, onShowFollowers, onShowFollowing }) {
   const {
     member, rank, aura, auraTier, postsCount, followStats, settings,
@@ -56,7 +63,15 @@ export default function ProfileHero({ data, copied, onShare, onEdit, onAvatar, o
           <div className="pfx-ig-top">
             <div className="pfx-ig-namewrap">
               <h1 className="pfx-ig-name">{displayName}</h1>
-              {(profileIsCreator || profileIsStaff) && <span className="pfx-ig-verified" title="Compte vérifié">✓</span>}
+              {(() => {
+                const certif = CERTIFS[String(member?.uid || '')]
+                if (certif) return (
+                  <span className="pfx-ig-verified pfx-ig-certif" data-title={certif.title}
+                    style={{ background: certif.color, boxShadow: `0 0 0 1px ${certif.color}66, 0 0 14px ${certif.glow}`, '--cc': certif.color }}>✓</span>
+                )
+                if (profileIsCreator || profileIsStaff) return <span className="pfx-ig-verified" title="Compte vérifié">✓</span>
+                return null
+              })()}
             </div>
             <ProfileActions data={data} onShare={onShare} copied={copied} onEdit={onEdit} />
           </div>

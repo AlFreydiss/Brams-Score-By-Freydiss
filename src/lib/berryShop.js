@@ -431,10 +431,10 @@ export async function equipShopItem(itemId) {
 }
 
 export async function fetchMyInventory() {
-  if (!supabase) return []
-  const { data, error } = await supabase.rpc('get_my_inventory')
-  if (error) return []
-  return Array.isArray(data) ? data : []
+  // REST direct (anti-hang) : supabase.rpc() pouvait ne jamais résoudre → la
+  // grille des curseurs restait bloquée en skeleton à l'infini.
+  const r = await sbRpc('get_my_inventory', {}, { tag: 'shop' })
+  return Array.isArray(r) ? r : []
 }
 
 export async function upsertShopItem(item) {
