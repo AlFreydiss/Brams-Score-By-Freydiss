@@ -5,6 +5,7 @@ import { useOpeningBg } from '../contexts/OpeningBgContext.jsx'
 import { isStaff, isCreator } from '../lib/roles.js'
 import { listPostReports } from '../lib/feed.js'
 import { getAccessToken } from '../lib/supabaseRest.js'
+import StaffSettings from './StaffSettings.jsx'
 
 // ── Design tokens — dark premium sobre (aligné au site : #08090D / or, zéro RGB) ─
 const C = {
@@ -347,7 +348,7 @@ export default function StaffPanel() {
           {active === 'reports'   && <ReportsCard count={reportCount} />}
           {active === 'members'   && <Placeholder label="Membres" />}
           {active === 'bot'       && <BotCard />}
-          {active === 'settings'  && <Placeholder label="Paramètres" />}
+          {active === 'settings'  && <StaffSettings isAdmin={isRevenueAdmin} />}
         </main>
       </div>
     </div>
