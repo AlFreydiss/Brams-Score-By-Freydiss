@@ -7,7 +7,8 @@
 //       match_id = `clue:<round>:<pass>`  side = texte de l'indice
 //       match_id = `elim:<round>`         side = uid de la cible
 // Seul l'HÔTE écrit `rounds` (pas de course) ; les joueurs n'écrivent que des votes.
-import { supabase } from './supabase.js'
+import { supabase } from './supabase.js'   // gardé UNIQUEMENT pour le realtime (subscribeRoom)
+import { SB_URL, SB_KEY, getAccessToken } from './supabaseRest.js'
 
 const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 export function genRoomCode(len = 4) {
@@ -16,88 +17,91 @@ export function genRoomCode(len = 4) {
   return s
 }
 
-// Garde-fou anti-hang : une requête Supabase peut rester bloquée (refresh de token
-// d'auth, réseau) et figer l'UI ("Création…" à l'infini). On borne à 10s.
-function withTimeout(promise, ms = 10000) {
-  return Promise.race([promise, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))])
+// ⚠️ REST DIRECT (anti-hang). Avant, supabase.from() pouvait rester bloqué sur le
+// verrou d'auth → "Création…/chargement à l'infini". Le fetch direct lit le JWT
+// du storage sans le client supabase-js. Borné à 10s.
+async function rest(path, { method = 'GET', body, prefer } = {}) {
+  if (!SB_URL || !SB_KEY) return { data: null, error: 'supabase' }
+  const ctrl = new AbortController()
+  const timer = setTimeout(() => ctrl.abort(), 10000)
+  try {
+    const token = await getAccessToken().catch(() => null)
+    const res = await fetch(`${SB_URL}/rest/v1/${path}`, {
+      method, signal: ctrl.signal,
+      headers: {
+        apikey: SB_KEY, Authorization: `Bearer ${token || SB_KEY}`,
+        'Content-Type': 'application/json', Accept: 'application/json',
+        ...(prefer ? { Prefer: prefer } : {}),
+      },
+      body: body != null ? JSON.stringify(body) : undefined,
+    })
+    const text = await res.text()
+    if (!res.ok) {
+      let msg = `http_${res.status}`
+      try { const j = JSON.parse(text); msg = j.message || j.error || msg } catch {}
+      return { data: null, error: msg }
+    }
+    return { data: text ? JSON.parse(text) : null, error: null }
+  } catch (e) {
+    return { data: null, error: e?.name === 'AbortError' ? 'timeout' : (e?.message || 'fail') }
+  } finally { clearTimeout(timer) }
 }
+const enc = encodeURIComponent
 
 export async function createUndercoverRoom({ hostUserId, displayName, avatarUrl }) {
-  if (!supabase) return { error: 'supabase' }
-  if (!hostUserId) return { error: 'non connecté' }   // sinon salon sans hôte → ingérable
-  try {
-    for (let attempt = 0; attempt < 5; attempt++) {
-      const code = genRoomCode()
-      const { error } = await withTimeout(supabase.from('tournament_rooms').insert({
-        code, host_user_id: String(hostUserId), tournament_id: 'undercover',
-        status: 'lobby', rounds: { phase: 'lobby' }, current_match: null,
-      }))
-      if (!error) {
-        // L'ajout du joueur ne doit pas bloquer la création : on tente, sans figer.
-        try {
-          await withTimeout(supabase.from('tournament_room_players').upsert({
-            room_code: code, user_id: String(hostUserId),
-            display_name: displayName, avatar_url: avatarUrl, is_host: true,
-            last_seen: new Date().toISOString(),
-          }, { onConflict: 'room_code,user_id' }))
-        } catch {}
-        return { code, error: null }
-      }
-      if (!String(error.message || '').includes('duplicate')) return { error: error.message }
+  if (!hostUserId) return { error: 'non connecté' }
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const code = genRoomCode()
+    const { error } = await rest('tournament_rooms', {
+      method: 'POST', prefer: 'return=minimal',
+      body: { code, host_user_id: String(hostUserId), tournament_id: 'undercover', status: 'lobby', rounds: { phase: 'lobby' }, current_match: null },
+    })
+    if (!error) {
+      // L'ajout du joueur ne doit pas bloquer la création.
+      await rest('tournament_room_players?on_conflict=room_code,user_id', {
+        method: 'POST', prefer: 'resolution=merge-duplicates,return=minimal',
+        body: { room_code: code, user_id: String(hostUserId), display_name: displayName, avatar_url: avatarUrl, is_host: true, last_seen: new Date().toISOString() },
+      }).catch(() => {})
+      return { code, error: null }
     }
-    return { error: 'code_collision' }
-  } catch (e) {
-    return { error: e?.message === 'timeout' ? 'Délai dépassé, réessaie' : (e?.message || 'erreur') }
+    if (error === 'timeout') return { error: 'Délai dépassé, réessaie' }
+    if (!/duplicate|conflict|23505/i.test(error)) return { error }
   }
+  return { error: 'code_collision' }
 }
 
 export async function fetchRoom(code) {
-  if (!supabase) return null
-  // withTimeout : si la requête se bloque (refresh de token, réseau), on REJETTE
-  // au lieu de pendre indéfiniment. Crucial — un fetch qui ne se résout jamais
-  // laissait le verrou `refreshing` à true → realtime + polling devenaient des
-  // no-op → page figée jusqu'au rechargement manuel.
-  const { data } = await withTimeout(supabase.from('tournament_rooms').select('*')
-    .eq('code', code.toUpperCase()).maybeSingle())
-  // Garde-fou : un code peut exister côté Tournoi — on ne sert que les salons undercover.
-  return data && data.tournament_id === 'undercover' ? data : (data ? { ...data, _wrongType: true } : null)
+  const { data } = await rest(`tournament_rooms?code=eq.${enc(code.toUpperCase())}&select=*&limit=1`)
+  const room = Array.isArray(data) && data[0] ? data[0] : null
+  return room && room.tournament_id === 'undercover' ? room : (room ? { ...room, _wrongType: true } : null)
 }
 
 export async function joinRoom({ code, userId, displayName, avatarUrl }) {
-  if (!supabase) return { error: 'supabase' }
-  try {
-    const room = await fetchRoom(code)
-    if (!room || room._wrongType) return { error: 'introuvable' }
-    const { error } = await withTimeout(supabase.from('tournament_room_players').upsert({
-      room_code: code.toUpperCase(), user_id: String(userId),
-      display_name: displayName, avatar_url: avatarUrl, last_seen: new Date().toISOString(),
-    }, { onConflict: 'room_code,user_id' }))
-    return { error: error?.message || null, room }
-  } catch (e) {
-    return { error: e?.message === 'timeout' ? 'Délai dépassé, réessaie' : (e?.message || 'erreur') }
-  }
+  const room = await fetchRoom(code)
+  if (!room || room._wrongType) return { error: 'introuvable' }
+  const { error } = await rest('tournament_room_players?on_conflict=room_code,user_id', {
+    method: 'POST', prefer: 'resolution=merge-duplicates,return=minimal',
+    body: { room_code: code.toUpperCase(), user_id: String(userId), display_name: displayName, avatar_url: avatarUrl, last_seen: new Date().toISOString() },
+  })
+  return { error: error === 'timeout' ? 'Délai dépassé, réessaie' : (error || null), room }
 }
 
 export async function fetchPlayers(code) {
-  if (!supabase) return []
-  const { data } = await withTimeout(supabase.from('tournament_room_players').select('*')
-    .eq('room_code', code.toUpperCase()).order('joined_at', { ascending: true }))
-  return data || []
+  const { data } = await rest(`tournament_room_players?room_code=eq.${enc(code.toUpperCase())}&select=*&order=joined_at.asc`)
+  return Array.isArray(data) ? data : []
 }
 
 export async function fetchAllVotes(code) {
-  if (!supabase) return []
-  const { data } = await withTimeout(supabase.from('tournament_room_votes')
-    .select('match_id, user_id, side').eq('room_code', code.toUpperCase()))
-  return data || []
+  const { data } = await rest(`tournament_room_votes?room_code=eq.${enc(code.toUpperCase())}&select=match_id,user_id,side`)
+  return Array.isArray(data) ? data : []
 }
 
 export async function castVote({ code, matchId, userId, side }) {
-  if (!supabase) return { error: 'supabase' }
-  const { error } = await supabase.from('tournament_room_votes').upsert({
-    room_code: code.toUpperCase(), match_id: matchId, user_id: String(userId), side: String(side),
-  }, { onConflict: 'room_code,match_id,user_id' })
-  return { error: error?.message || null }
+  const { error } = await rest('tournament_room_votes?on_conflict=room_code,match_id,user_id', {
+    method: 'POST', prefer: 'resolution=merge-duplicates,return=minimal',
+    body: { room_code: code.toUpperCase(), match_id: matchId, user_id: String(userId), side: String(side) },
+  })
+  return { error: error || null }
 }
 
 export const submitClue = ({ code, round, pass, userId, clue }) =>
@@ -106,22 +110,17 @@ export const castElimVote = ({ code, round, userId, targetUid }) =>
   castVote({ code, matchId: `elim:${round}`, userId, side: targetUid })
 
 export async function updateRoom(code, patch) {
-  if (!supabase) return { error: 'supabase' }
-  try {
-    const { error } = await withTimeout(supabase.from('tournament_rooms')
-      .update({ ...patch, updated_at: new Date().toISOString() })
-      .eq('code', code.toUpperCase()))
-    return { error: error?.message || null }
-  } catch (e) {
-    return { error: e?.message || 'timeout' }   // l'appelant peut relancer
-  }
+  const { error } = await rest(`tournament_rooms?code=eq.${enc(code.toUpperCase())}`, {
+    method: 'PATCH', prefer: 'return=minimal',
+    body: { ...patch, updated_at: new Date().toISOString() },
+  })
+  return { error: error || null }
 }
 
 export async function touchPlayer(code, userId) {
-  if (!supabase) return
-  await supabase.from('tournament_room_players')
-    .update({ last_seen: new Date().toISOString() })
-    .eq('room_code', code.toUpperCase()).eq('user_id', String(userId))
+  await rest(`tournament_room_players?room_code=eq.${enc(code.toUpperCase())}&user_id=eq.${enc(String(userId))}`, {
+    method: 'PATCH', prefer: 'return=minimal', body: { last_seen: new Date().toISOString() },
+  }).catch(() => {})
 }
 
 export function subscribeRoom(code, onChange) {
