@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { supabase } from '../lib/supabase.js'
+import { getAccessToken } from '../lib/supabaseRest.js'
 import {
   createUndercoverRoom, fetchRoom, joinRoom, fetchPlayers, fetchAllVotes,
   submitClue, castElimVote, updateRoom, touchPlayer, subscribeRoom,
@@ -204,8 +205,10 @@ export default function UndercoverPage() {
 
   const callApi = useCallback(async (action, extra = {}) => {
     try {
-      const { data } = await supabase.auth.getSession()
-      const token = data?.session?.access_token
+      // getAccessToken (REST) au lieu de supabase.auth.getSession() qui pouvait
+      // HANGER (verrou client) → le salon « chargeait à l'infini » et aucune
+      // action ne partait. Lecture du JWT depuis le storage, sans le client.
+      const token = await getAccessToken().catch(() => null)
       const r = await fetch(`/api/tierlists?action=${action}`, {
         method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ code, ...extra }),
       })
