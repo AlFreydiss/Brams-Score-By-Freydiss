@@ -11,6 +11,7 @@ import { TRAILS, TRAIL_PRICE_CENTS, trailSkin } from '../data/cursor-trails.js'
 import CursorTrail from './CursorTrail.jsx'
 import GiftModal from './GiftModal.jsx'
 import SpotlightCard from './SpotlightCard.jsx'
+import { useCart } from '../contexts/CartContext.jsx'
 
 // Teinte de la lueur spotlight par rareté.
 const HUE = { COMMUN: 42, RARE: 220, EPIQUE: 280, MYTHIQUE: 42, INTERDIT: 0 }
@@ -68,6 +69,8 @@ function TrailSwatch({ trail, size = 56 }) {
 function TrailCard({ trail, owned, equipped, busy, onBuy, onEquip, onGift }) {
   const r = RARITY[trail.rarete]
   const [hover, setHover] = useState(false)
+  const cart = useCart()
+  const inCart = cart.has(trail.id)
   let action
   if (equipped) action = <div style={{ ...btn, color: r.color, background: `${r.color}1a`, border: `1px solid ${r.color}`, cursor: 'default' }}>✓ Équipée</div>
   else if (owned) action = <button onClick={() => onEquip(trail)} disabled={busy} style={{ ...btn, color: '#0b0c0e', background: r.color, border: `1px solid ${r.color}`, cursor: 'pointer', opacity: busy ? .6 : 1 }}>Équiper</button>
@@ -91,6 +94,11 @@ function TrailCard({ trail, owned, equipped, busy, onBuy, onEquip, onGift }) {
       <div style={{ fontSize: 11.5, color: 'rgba(205,189,151,0.6)', fontFamily: "'Cinzel', serif" }}>Bouge la souris pour la voir danser ✦</div>
       <div style={{ display: 'flex', gap: 8 }}>
         <div style={{ flex: 1 }}>{action}</div>
+        {!owned && (
+          <button onClick={() => cart.add({ id: trail.id, label: trail.nom, emoji: trail.emoji, priceCents: priceCents(trail), rarity: trail.rarete })}
+            title={inCart ? 'Déjà au panier' : 'Ajouter au panier'} disabled={inCart}
+            style={{ flexShrink: 0, width: 44, borderRadius: 10, border: `1px solid ${r.color}55`, background: inCart ? `${r.color}22` : 'rgba(255,255,255,0.04)', color: r.color, cursor: inCart ? 'default' : 'pointer', fontSize: 16 }}>{inCart ? '✓' : '🛒'}</button>
+        )}
         <button onClick={() => onGift(trail)} title="Offrir à un membre" style={{ flexShrink: 0, width: 44, borderRadius: 10, border: `1px solid ${r.color}55`, background: 'rgba(255,255,255,0.04)', color: r.color, cursor: 'pointer', fontSize: 17 }}>🎁</button>
       </div>
     </div>

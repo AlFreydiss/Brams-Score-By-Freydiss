@@ -10,6 +10,8 @@ import { useOpeningBg } from '../contexts/OpeningBgContext.jsx'
 import { OPENING_BACKGROUNDS } from '../data/opening-backgrounds.js'
 import CursorShop from './CursorShop.jsx'
 import TrailShop from './TrailShop.jsx'
+import { CartProvider } from '../contexts/CartContext.jsx'
+import CartDrawer from './CartDrawer.jsx'
 import { formatEuroCents, openingBgPriceCents, openingBgPriceLabel } from '../lib/openingBgPricing.js'
 import OpeningBgMedia from './social/OpeningBgMedia.jsx'
 
@@ -393,7 +395,7 @@ function ShopBackdrop() {
 }
 
 // ── Page ─────────────────────────────────────────────────────────────────────
-export default function BerryShop() {
+function BerryShopInner() {
   const { isAuthenticated } = useAuth()
   const { equippedId, equip } = useOpeningBg()
 
@@ -639,5 +641,15 @@ export default function BerryShop() {
         </div>
       )}
     </div>
+  )
+}
+
+// Wrapper : fournit le panier (CartProvider) à toute la boutique + monte le tiroir.
+export default function BerryShop() {
+  return (
+    <CartProvider>
+      <BerryShopInner />
+      <CartDrawer />
+    </CartProvider>
   )
 }

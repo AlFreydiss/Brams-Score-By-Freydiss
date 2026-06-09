@@ -16,6 +16,7 @@ import { useAuth } from '../contexts/AuthContext.jsx'
 import { fetchMyInventory, equipShopItem, createOpeningBgCheckout, completeOpeningBgCheckout } from '../lib/berryShop.js'
 import GiftModal from './GiftModal.jsx'
 import SpotlightCard from './SpotlightCard.jsx'
+import { useCart } from '../contexts/CartContext.jsx'
 
 const HUE = { COMMUN: 42, RARE: 220, EPIQUE: 280, MYTHIQUE: 42, INTERDIT: 0 }
 
@@ -185,6 +186,8 @@ export function GlobalCursorLayer() {
 function CursorCard({ cur, owned, equipped, affordable, busy, onBuy, onEquip, onGift }) {
   const r = RARITY_CONFIG[cur.rarete]
   const [hover, setHover] = useState(false)
+  const cart = useCart()
+  const inCart = cart.has(cur.id)
   const soldOut = cur.limite && cur.stock != null && cur.stock <= 0
   const cardCursor = (!owned && !affordable) || soldOut ? 'not-allowed' : cursorCss(cur)
 
@@ -237,6 +240,11 @@ function CursorCard({ cur, owned, equipped, affordable, busy, onBuy, onEquip, on
 
       <div style={{ display: 'flex', gap: 8 }}>
         <div style={{ flex: 1 }}>{action}</div>
+        {!owned && (
+          <button onClick={() => cart.add({ id: cur.id, label: cur.nom, emoji: cur.emoji, priceCents: priceCents(cur), rarity: cur.rarete })}
+            title={inCart ? 'Déjà au panier' : 'Ajouter au panier'} disabled={inCart}
+            style={{ flexShrink: 0, width: 44, borderRadius: 10, border: `1px solid ${r.color}55`, background: inCart ? `${r.color}22` : 'rgba(255,255,255,0.04)', color: r.color, cursor: inCart ? 'default' : 'pointer', fontSize: 16 }}>{inCart ? '✓' : '🛒'}</button>
+        )}
         <button onClick={() => onGift(cur)} title="Offrir à un membre" style={{ flexShrink: 0, width: 44, borderRadius: 10, border: `1px solid ${r.color}55`, background: 'rgba(255,255,255,0.04)', color: r.color, cursor: 'pointer', fontSize: 17 }}>🎁</button>
       </div>
     </div>
