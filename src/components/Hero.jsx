@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import UnifiedSidebar from './UnifiedSidebar.jsx'
 import { useMobile, useNarrow } from '../hooks/useMediaQuery.js'
-import { fetchStats } from '../lib/supabase.js'
+import { fetchStats, fetchDonors, addDonor, deleteDonor } from '../lib/supabase.js'
 import { toggleParchment, isParchmentOn } from './ParchmentMode.jsx'
+import { useAuth } from '../contexts/AuthContext.jsx'
+import { isStaff } from '../lib/roles.js'
 
 const STARS = Array.from({ length: 26 }, (_, i) => ({
   id: i,
@@ -178,28 +180,77 @@ function ParchmentToggle() {
 }
 
 function DonorsMarquee() {
-  if (!TOP_DONORS.length) return null
-  const loop = [...TOP_DONORS, ...TOP_DONORS, ...TOP_DONORS]
+  const { discordId, userId } = useAuth()
+  const staff = isStaff(discordId, userId)
+  const [donors, setDonors] = useState(null)   // null = chargement ; sinon liste live
+  const [name, setName] = useState('')
+  const [amount, setAmount] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  const load = () => fetchDonors().then(d => setDonors(d))
+  useEffect(() => { load() }, [])
+
+  // Liste affichée : table live si dispo, sinon repli sur la liste codée (résilience).
+  const list = (donors && donors.length) ? donors : (donors === null ? TOP_DONORS : [])
+  const loop = list.length ? [...list, ...list, ...list] : []
+
+  const add = async () => {
+    const n = name.trim()
+    if (!n || busy) return
+    setBusy(true)
+    await addDonor(n, parseFloat(String(amount).replace(',', '.')) || 0)
+    setName(''); setAmount('')
+    await load()
+    setBusy(false)
+  }
+  const remove = async (id) => { await deleteDonor(id); load() }
+
   return (
-    <a href={LEETCHI_URL} target="_blank" rel="noopener noreferrer"
-      style={{ display: 'block', textDecoration: 'none', maxWidth: 500, marginTop: 24,
-        border: '1px solid rgba(191,164,106,0.18)', borderRadius: 12, background: 'rgba(191,164,106,0.04)', overflow: 'hidden' }}>
-      <style>{`@keyframes donors-scroll{from{transform:translateX(0)}to{transform:translateX(-33.333%)}} .donors-track:hover{animation-play-state:paused}`}</style>
-      <div style={{ display: 'flex', alignItems: 'center' }}>
-        <span style={{ flexShrink: 0, padding: '9px 13px', fontSize: 10, fontWeight: 800, letterSpacing: '.12em', textTransform: 'uppercase', color: '#d8bd7e', borderRight: '1px solid rgba(191,164,106,0.18)', whiteSpace: 'nowrap' }}>💛 Top soutiens</span>
-        <div style={{ overflow: 'hidden', flex: 1 }}>
-          <div className="donors-track" style={{ display: 'inline-flex', whiteSpace: 'nowrap', animation: 'donors-scroll 22s linear infinite' }}>
-            {loop.map((d, i) => (
-              <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 16px', fontSize: 12.5, color: 'rgba(255,255,255,0.6)' }}>
-                <span style={{ fontWeight: 700, color: 'rgba(255,255,255,0.9)' }}>{d.name}</span>
-                <span style={{ fontWeight: 800, color: '#d8bd7e' }}>{d.amount} €</span>
-                <span style={{ color: 'rgba(191,164,106,0.35)' }}>•</span>
-              </span>
-            ))}
+    <div style={{ maxWidth: 500, marginTop: 24 }}>
+      <a href={LEETCHI_URL} target="_blank" rel="noopener noreferrer"
+        style={{ display: list.length ? 'block' : 'none', textDecoration: 'none',
+          border: '1px solid rgba(191,164,106,0.18)', borderRadius: 12, background: 'rgba(191,164,106,0.04)', overflow: 'hidden' }}>
+        <style>{`@keyframes donors-scroll{from{transform:translateX(0)}to{transform:translateX(-33.333%)}} .donors-track:hover{animation-play-state:paused}`}</style>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <span style={{ flexShrink: 0, padding: '9px 13px', fontSize: 10, fontWeight: 800, letterSpacing: '.12em', textTransform: 'uppercase', color: '#d8bd7e', borderRight: '1px solid rgba(191,164,106,0.18)', whiteSpace: 'nowrap' }}>💛 Top soutiens</span>
+          <div style={{ overflow: 'hidden', flex: 1 }}>
+            <div className="donors-track" style={{ display: 'inline-flex', whiteSpace: 'nowrap', animation: 'donors-scroll 22s linear infinite' }}>
+              {loop.map((d, i) => (
+                <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 16px', fontSize: 12.5, color: 'rgba(255,255,255,0.6)' }}>
+                  <span style={{ fontWeight: 700, color: 'rgba(255,255,255,0.9)' }}>{d.name}</span>
+                  <span style={{ fontWeight: 800, color: '#d8bd7e' }}>{d.amount} €</span>
+                  <span style={{ color: 'rgba(191,164,106,0.35)' }}>•</span>
+                </span>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
-    </a>
+      </a>
+
+      {/* Formulaire staff : ajoute un soutien → live pour tous, sans redéploiement */}
+      {staff && (
+        <div style={{ marginTop: 8 }}>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            <input value={name} onChange={e => setName(e.target.value)} placeholder="Nom du soutien"
+              style={{ flex: '1 1 130px', minWidth: 0, padding: '8px 11px', borderRadius: 9, border: '1px solid rgba(191,164,106,0.3)', background: 'rgba(255,255,255,0.04)', color: '#f4ecd8', fontSize: 13, fontFamily: 'inherit', outline: 'none' }} />
+            <input value={amount} onChange={e => setAmount(e.target.value)} placeholder="€" inputMode="decimal"
+              style={{ width: 64, padding: '8px 11px', borderRadius: 9, border: '1px solid rgba(191,164,106,0.3)', background: 'rgba(255,255,255,0.04)', color: '#f4ecd8', fontSize: 13, fontFamily: 'inherit', outline: 'none' }}
+              onKeyDown={e => e.key === 'Enter' && add()} />
+            <button onClick={add} disabled={busy} style={{ padding: '8px 14px', borderRadius: 9, border: 'none', cursor: 'pointer', background: 'linear-gradient(180deg,#e8c878,#c49a4a)', color: '#1a1206', fontWeight: 800, fontSize: 13, fontFamily: 'inherit', opacity: busy ? 0.6 : 1 }}>{busy ? '…' : '+ Soutien'}</button>
+          </div>
+          {donors && donors.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 7 }}>
+              {donors.map(d => (
+                <span key={d.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 7px 3px 10px', borderRadius: 999, fontSize: 11, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.7)' }}>
+                  {d.name} · {d.amount}€
+                  <button onClick={() => remove(d.id)} title="Retirer" style={{ background: 'none', border: 'none', color: '#caa', cursor: 'pointer', fontSize: 12, lineHeight: 1, padding: 0 }}>✕</button>
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   )
 }
 

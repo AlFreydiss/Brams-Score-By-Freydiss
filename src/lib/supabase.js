@@ -190,6 +190,44 @@ export async function searchMembers(term) {
   } catch { return [] }
 }
 
+// ── Top soutiens (cagnotte) — table `donors`, éditable en live par le staff ───
+export async function fetchDonors() {
+  if (!url || !key) return []
+  try {
+    const r = await fetch(`${url}/rest/v1/donors?select=id,name,amount&order=amount.desc,created_at.desc`, {
+      headers: { apikey: key, Authorization: `Bearer ${key}`, Accept: 'application/json' },
+    })
+    if (!r.ok) return []
+    const rows = await r.json()
+    return Array.isArray(rows) ? rows : []
+  } catch { return [] }
+}
+export async function addDonor(name, amount) {
+  if (!url || !key) return { error: 'config' }
+  const token = await getAccessToken().catch(() => null)
+  if (!token) return { error: 'auth' }
+  try {
+    const r = await fetch(`${url}/rest/v1/donors`, {
+      method: 'POST',
+      headers: { apikey: key, Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', Prefer: 'return=representation' },
+      body: JSON.stringify([{ name: String(name).slice(0, 40), amount: Number(amount) || 0 }]),
+    })
+    if (!r.ok) return { error: `http_${r.status}` }
+    const rows = await r.json()
+    return { data: Array.isArray(rows) ? rows[0] : null }
+  } catch (e) { return { error: e?.message || 'fail' } }
+}
+export async function deleteDonor(id) {
+  if (!url || !key) return
+  const token = await getAccessToken().catch(() => null)
+  if (!token) return
+  try {
+    await fetch(`${url}/rest/v1/donors?id=eq.${encodeURIComponent(id)}`, {
+      method: 'DELETE', headers: { apikey: key, Authorization: `Bearer ${token}`, Prefer: 'return=minimal' },
+    })
+  } catch {}
+}
+
 export async function fetchMemberProfile(discordId) {
   const id = String(discordId)
 
