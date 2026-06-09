@@ -236,7 +236,7 @@ function AMVBackground({ hidden = false }) {
 
       {/* Contrôle audio AMV */}
       <div
-        className="cinema-hide"
+        className="cinema-hide ambient-sound-ctl"
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         style={{

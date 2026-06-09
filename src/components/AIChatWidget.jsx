@@ -32,6 +32,13 @@ function TypingDots() {
 
 export default function AIChatWidget({ hidden = false }) {
   const [open, setOpen] = useState(false)
+  // Quand le chat est ouvert, on masque les contrôles son ambiants (sinon ils se
+  // superposent au panneau sur les vues étroites / overlay anime).
+  useEffect(() => {
+    const r = document.documentElement
+    if (open) r.dataset.chatopen = '1'; else delete r.dataset.chatopen
+    return () => { delete document.documentElement.dataset.chatopen }
+  }, [open])
   const [history, setHistory] = useState([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
