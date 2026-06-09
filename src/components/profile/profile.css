@@ -34,7 +34,7 @@
 
 .pfx-wrap {
   position: relative; z-index: 1;
-  width: min(1180px, calc(100% - 44px));
+  width: min(1480px, calc(100% - 56px));
   margin: 0 auto;
   padding: 26px 0 130px;
 }
@@ -146,8 +146,8 @@
 }
 .pfx-badges { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 0; }
 .pfx-badge {
-  display: inline-flex; align-items: center; gap: 6px;
-  font-size: 11px; font-weight: 800; padding: 6px 12px; border-radius: 999px;
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: 13px; font-weight: 800; padding: 8px 16px; border-radius: 999px;
   border: 1px solid var(--line-2); background: rgba(255,255,255,0.05);
   color: rgba(255,255,255,0.84); backdrop-filter: blur(10px);
 }
@@ -643,8 +643,8 @@
   line-height: 1.05; word-break: break-word;
 }
 .pfx-ig-verified {
-  flex-shrink: 0; width: 21px; height: 21px; border-radius: 50%;
-  background: #1d9bf0; color: #fff; font-size: 12px; font-weight: 900;
+  flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%;
+  background: #1d9bf0; color: #fff; font-size: 16px; font-weight: 900;
   display: inline-flex; align-items: center; justify-content: center;
   box-shadow: 0 0 0 1px rgba(29,155,240,0.35);
 }

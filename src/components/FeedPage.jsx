@@ -6,6 +6,7 @@ import {
   Image as ImageIcon, MessageCircle, Radio, Search, Users,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext.jsx'
+import FilBackground from './feed/FilBackground.jsx'
 import { getFeed, getPost, getFeedStats, subscribeFeed } from '../lib/feed.js'
 import { listFollowing } from '../lib/social.js'
 import PostComposer from './feed/PostComposer.jsx'
@@ -360,7 +361,8 @@ export default function FeedPage() {
 
   return (
     <div onScroll={onScroll} className="feed-shell">
-      <div className="feed-layout">
+      <FilBackground />
+      <div className="feed-layout" style={{ position: 'relative', zIndex: 1 }}>
         <main className="feed-main" aria-label="Fil de la communauté Brams">
           <header className="feed-header">
             <div className="feed-title-row">
