@@ -53,6 +53,7 @@ const RentAGirlfriendPage  = lazyWithReload(() => import('./components/RentAGirl
 const BcPage          = lazyWithReload(() => import('./components/BcPage.jsx'))
 const MhaPage         = lazyWithReload(() => import('./components/MhaPage.jsx'))
 const FireForcePage   = lazyWithReload(() => import('./components/FireForcePage.jsx'))
+const BleachPage      = lazyWithReload(() => import('./components/BleachPage.jsx'))
 const BlueLockPage    = lazyWithReload(() => import('./components/BlueLockPage.jsx'))
 const FateZeroPage    = lazyWithReload(() => import('./components/FateZeroPage.jsx'))
 const YourNamePage    = lazyWithReload(() => import('./components/YourNamePage.jsx'))
@@ -91,6 +92,7 @@ const MANGA_REGISTRY = {
   'blue-lock':     { title: 'Blue Lock',                color: '#1565c0' },
   'black-clover':  { title: 'Black Clover',             color: '#d97706' },
   'fire-force':    { title: 'Fire Force',               color: '#ea580c' },
+  'bleach':        { title: 'Bleach',                   color: '#f4511e' },
   'dr-stone':      { title: 'Dr. Stone',                color: '#16a34a' },
   kingdom:         { title: 'Kingdom',                  color: '#b45309' },
   mha:             { title: 'My Hero Academia',         color: '#1e88e5' },
@@ -328,6 +330,7 @@ export default function App() {
   const [bcOpen,           setBcOpen]            = useState(false)
   const [mhaOpen,          setMhaOpen]           = useState(false)
   const [fireforcOpen,     setFireforcOpen]      = useState(false)
+  const [bleachOpen,       setBleachOpen]        = useState(false)
   const [bluelockOpen,     setBluelockOpen]      = useState(false)
   const [fateZeroOpen,     setFateZeroOpen]      = useState(false)
   const [yourNameOpen,     setYourNameOpen]      = useState(false)
@@ -343,6 +346,7 @@ export default function App() {
   const openFromMon = (slug) => () => { setReturnToMon(true); navigate(`/animes-scan/${slug}`) }
   const onOpenAotFromMon = openFromMon('aot')
   const onOpenFireforceFromMon = openFromMon('fireforce')
+  const onOpenBleachFromMon = openFromMon('bleach')
   const onOpenBluelockFromMon = openFromMon('bluelock')
   const onOpenFateZeroFromMon = openFromMon('fate-zero')
   const onOpenBunnyGirlFromMon = openFromMon('bunny-girl')
@@ -382,7 +386,7 @@ export default function App() {
     setTpnOpen(false); setDrstoneOpen(false); setJjkOpen(false); setKingdomOpen(false)
     setAotOpen(false); setKnyOpen(false); setNntOpen(false); setSlOpen(false); setDbsOpen(false)
     setVioletOpen(false); setVivyOpen(false); setDomesticOpen(false); setKoiOpen(false); setLovePrismOpen(false); setCaroleTuesdayOpen(false); setBunnyGirlOpen(false); setRentGirlOpen(false); setBcOpen(false); setMhaOpen(false)
-    setFireforcOpen(false); setBluelockOpen(false); setFateZeroOpen(false); setYourNameOpen(false); setBubbleOpen(false); setRezeOpen(false); setYourLieOpen(false); setMonUniversOpen(false); setTreeOpen(false); setUploadOpen(false)
+    setFireforcOpen(false); setBleachOpen(false); setBluelockOpen(false); setFateZeroOpen(false); setYourNameOpen(false); setBubbleOpen(false); setRezeOpen(false); setYourLieOpen(false); setMonUniversOpen(false); setTreeOpen(false); setUploadOpen(false)
   }, [])
 
   // Slug d'URL d'un anime → setter d'overlay correspondant
@@ -391,7 +395,7 @@ export default function App() {
     kingdom: setKingdomOpen, aot: setAotOpen, kny: setKnyOpen, nnt: setNntOpen, sl: setSlOpen,
     dbs: setDbsOpen, 'violet-evergarden': setVioletOpen, vivy: setVivyOpen, 'domestic-na-kanojo': setDomesticOpen, 'koi-ameagari': setKoiOpen, 'love-prism': setLovePrismOpen,
     'carole-tuesday': setCaroleTuesdayOpen, 'bunny-girl': setBunnyGirlOpen, 'rent-girlfriend': setRentGirlOpen,
-    bc: setBcOpen, mha: setMhaOpen, fireforce: setFireforcOpen, bluelock: setBluelockOpen,
+    bc: setBcOpen, mha: setMhaOpen, fireforce: setFireforcOpen, bleach: setBleachOpen, bluelock: setBluelockOpen,
     'fate-zero': setFateZeroOpen, 'your-name': setYourNameOpen, 'your-lie': setYourLieOpen,
     bubble: setBubbleOpen, reze: setRezeOpen,
   }
@@ -443,6 +447,7 @@ export default function App() {
       'open-bc':               go('/animes-scan/bc'),
       'open-mha':              go('/animes-scan/mha'),
       'open-fireforce':        go('/animes-scan/fireforce'),
+      'open-bleach':           go('/animes-scan/bleach'),
       'open-bluelock':         go('/animes-scan/bluelock'),
       'open-your-lie':         go('/animes-scan/your-lie'),
       'open-encyclopedie':     () => setEncyclopedieOpen(true),
@@ -454,13 +459,13 @@ export default function App() {
     return () => entries.forEach(([ev, fn]) => document.removeEventListener(ev, fn))
   }, [navigate])
 
-  const mediaOverlayOpen = scansOpen || onepieceOpen || animeHubOpen || tpnOpen || drstoneOpen || jjkOpen || kingdomOpen || aotOpen || knyOpen || nntOpen || slOpen || dbsOpen || violetOpen || vivyOpen || domesticOpen || koiOpen || lovePrismOpen || caroleTuesdayOpen || bunnyGirlOpen || rentGirlOpen || bcOpen || mhaOpen || fireforcOpen || bluelockOpen || fateZeroOpen || yourNameOpen || bubbleOpen || rezeOpen || yourLieOpen || monUniversOpen
+  const mediaOverlayOpen = scansOpen || onepieceOpen || animeHubOpen || tpnOpen || drstoneOpen || jjkOpen || kingdomOpen || aotOpen || knyOpen || nntOpen || slOpen || dbsOpen || violetOpen || vivyOpen || domesticOpen || koiOpen || lovePrismOpen || caroleTuesdayOpen || bunnyGirlOpen || rentGirlOpen || bcOpen || mhaOpen || fireforcOpen || bleachOpen || bluelockOpen || fateZeroOpen || yourNameOpen || bubbleOpen || rezeOpen || yourLieOpen || monUniversOpen
 
   // Pages animé/film individuelles ouvertes par URL directe (/animes-scan/<slug>).
   // Le Hub et les Scans sont déjà derrière AuthGuard, mais ces overlays-là étaient
   // rendus sans contrôle → un visiteur non connecté accédait au catalogue via le
   // lien direct. On les passe donc aussi derrière AuthGuard (gating Discord).
-  const animeIndividualOpen = onepieceOpen || tpnOpen || drstoneOpen || jjkOpen || kingdomOpen || aotOpen || knyOpen || nntOpen || slOpen || dbsOpen || violetOpen || vivyOpen || domesticOpen || koiOpen || lovePrismOpen || caroleTuesdayOpen || bunnyGirlOpen || rentGirlOpen || bcOpen || mhaOpen || fireforcOpen || bluelockOpen || fateZeroOpen || yourNameOpen || bubbleOpen || rezeOpen || yourLieOpen || monUniversOpen
+  const animeIndividualOpen = onepieceOpen || tpnOpen || drstoneOpen || jjkOpen || kingdomOpen || aotOpen || knyOpen || nntOpen || slOpen || dbsOpen || violetOpen || vivyOpen || domesticOpen || koiOpen || lovePrismOpen || caroleTuesdayOpen || bunnyGirlOpen || rentGirlOpen || bcOpen || mhaOpen || fireforcOpen || bleachOpen || bluelockOpen || fateZeroOpen || yourNameOpen || bubbleOpen || rezeOpen || yourLieOpen || monUniversOpen
 
   const mainContent = (
     <>
@@ -625,6 +630,7 @@ export default function App() {
             onOpenBc={() => navigate('/animes-scan/bc')}
             onOpenMha={() => navigate('/animes-scan/mha')}
             onOpenFireforce={() => navigate('/animes-scan/fireforce')}
+            onOpenBleach={() => navigate('/animes-scan/bleach')}
             onOpenBluelock={() => navigate('/animes-scan/bluelock')}
             onOpenFateZero={() => navigate('/animes-scan/fate-zero')}
             onOpenYourName={() => navigate('/animes-scan/your-name')}
@@ -664,6 +670,7 @@ export default function App() {
             {bcOpen        && <BcPage        onClose={closeMedia} />}
             {mhaOpen       && <MhaPage       onClose={closeMedia} />}
             {fireforcOpen  && <FireForcePage onClose={closeMedia} />}
+            {bleachOpen    && <BleachPage onClose={closeMedia} />}
             {bluelockOpen  && <BlueLockPage  onClose={closeMedia} />}
             {fateZeroOpen  && <FateZeroPage  onClose={closeMedia} />}
             {yourNameOpen  && <YourNamePage  onClose={closeMedia} />}
@@ -672,7 +679,7 @@ export default function App() {
             {monUniversOpen && (
               <MonUniversPage
                 onClose={() => navigate('/animes-scan')}
-                onOpenAot={onOpenAotFromMon} onOpenFireforce={onOpenFireforceFromMon} onOpenBluelock={onOpenBluelockFromMon} onOpenFateZero={onOpenFateZeroFromMon}
+                onOpenAot={onOpenAotFromMon} onOpenFireforce={onOpenFireforceFromMon} onOpenBleach={onOpenBleachFromMon} onOpenBluelock={onOpenBluelockFromMon} onOpenFateZero={onOpenFateZeroFromMon}
                 onOpenBunnyGirl={onOpenBunnyGirlFromMon} onOpenRentGirlfriend={onOpenRentGirlfriendFromMon}
                 onOpenTpn={onOpenTpnFromMon} onOpenDrstone={onOpenDrstoneFromMon} onOpenJjk={onOpenJjkFromMon}
                 onOpenKingdom={onOpenKingdomFromMon} onOpenKny={onOpenKnyFromMon} onOpenNnt={onOpenNntFromMon}

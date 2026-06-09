@@ -13,6 +13,7 @@ import BUNNY_VIDEOS from '../data/bunny-girl-videos.json'
 import CAROLE_TUESDAY_VIDEOS from '../data/carole-tuesday-videos.json'
 import DRSTONE_VIDEOS from '../data/drstone-videos.json'
 import FIREFORCE_VIDEOS from '../data/fireforce-videos.json'
+import BLEACH_VIDEOS from '../data/bleach-videos.json'
 import JJK_VIDEOS from '../data/jjk-videos.json'
 import KINGDOM_VIDEOS from '../data/kingdom-videos.json'
 import KNY_VIDEOS from '../data/kny-videos.json'
@@ -503,6 +504,26 @@ const ANIMES = [
       { label: 'Chapitres', value: '304' },
       { label: 'Vidéos', value: videoCountLabel(FIREFORCE_VIDEOS.length, 48) },
       { label: 'Statut', value: availabilityLabel(FIREFORCE_VIDEOS.length) },
+    ],
+    action: '▶ Accéder',
+    badge: 'NOUVEAU',
+    badgeColor: '#f4511e',
+  },
+  {
+    id: 'bleach',
+    title: 'Bleach',
+    subtitle: 'Shinigami',
+    emoji: '⚔️',
+    color: '#f4511e',
+    colorDark: '#3a0f06',
+    coverImage: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bleach/thumbnails/S01E001.jpg',
+    coverPosition: 'center top',
+    genres: ['Action', 'Surnaturel', 'Shōnen'],
+    description: "Ichigo Kurosaki devient Shinigami et protège les vivants des Hollows tout en guidant les âmes vers la Soul Society.",
+    stats: [
+      { label: 'Chapitres', value: '686' },
+      { label: 'Vidéos', value: videoCountLabel(BLEACH_VIDEOS.length, 366) },
+      { label: 'Statut', value: availabilityLabel(BLEACH_VIDEOS.length) },
     ],
     action: '▶ Accéder',
     badge: 'NOUVEAU',
@@ -1492,7 +1513,7 @@ function HubAiChat({ animes, onOpen }) {
   )
 }
 
-export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrstone, onOpenJjk, onOpenKingdom, onOpenAot, onOpenKny, onOpenNnt, onOpenSl, onOpenDbs, onOpenViolet, onOpenVivy, onOpenLovePrism, onOpenCaroleTuesday, onOpenBunnyGirl, onOpenRentGirlfriend, onOpenBc, onOpenMha, onOpenFireforce, onOpenBluelock, onOpenFateZero, onOpenYourName, onOpenYourLie, onOpenDomestic, onOpenKoi, onOpenBubble, onOpenReze, onOpenMonUnivers }) {
+export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrstone, onOpenJjk, onOpenKingdom, onOpenAot, onOpenKny, onOpenNnt, onOpenSl, onOpenDbs, onOpenViolet, onOpenVivy, onOpenLovePrism, onOpenCaroleTuesday, onOpenBunnyGirl, onOpenRentGirlfriend, onOpenBc, onOpenMha, onOpenFireforce, onOpenBleach, onOpenBluelock, onOpenFateZero, onOpenYourName, onOpenYourLie, onOpenDomestic, onOpenKoi, onOpenBubble, onOpenReze, onOpenMonUnivers }) {
   const [query, setQuery] = useState('')
   const [selectedGenres, setSelectedGenres] = useState(new Set())
   const [genreMenuOpen, setGenreMenuOpen] = useState(false)
@@ -1659,7 +1680,7 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
       'carole-tuesday': onOpenCaroleTuesday,
       'bunny-girl': onOpenBunnyGirl,
       'rent-girlfriend': onOpenRentGirlfriend,
-      bc: onOpenBc, mha: onOpenMha, fireforce: onOpenFireforce, bluelock: onOpenBluelock,
+      bc: onOpenBc, mha: onOpenMha, fireforce: onOpenFireforce, bleach: onOpenBleach, bluelock: onOpenBluelock,
       'fate-zero': onOpenFateZero,
       'your-name': onOpenYourName,
       'your-lie': onOpenYourLie,
