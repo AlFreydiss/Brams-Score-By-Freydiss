@@ -159,6 +159,37 @@ export async function resolveProfileId(param) {
   } catch { return null }
 }
 
+// Recherche de membres pour l'autocomplétion (cadeaux, mentions…). Cherche dans
+// username / display_name / global_name (préfixe + contient), insensible casse.
+// Renvoie [{ id, name, username, avatar }]. REST direct (anti-hang).
+export async function searchMembers(term) {
+  const t = String(term || '').replace(/[(),*%\\]/g, '').trim()
+  if (t.length < 2 || !url || !key) return []
+  try {
+    const ctrl = new AbortController()
+    const timer = setTimeout(() => ctrl.abort(), 5000)
+    const token = await getAccessToken().catch(() => null)
+    const et = encodeURIComponent(t)
+    const or = `or=(data->>username.ilike.*${et}*,data->>display_name.ilike.*${et}*,data->>global_name.ilike.*${et}*)`
+    const r = await fetch(`${url}/rest/v1/users?${or}&select=uid,data&limit=8`, {
+      signal: ctrl.signal, headers: { apikey: key, Authorization: `Bearer ${token || key}`, Accept: 'application/json' },
+    })
+    clearTimeout(timer)
+    if (!r.ok) return []
+    const rows = await r.json()
+    if (!Array.isArray(rows)) return []
+    return rows.map(row => {
+      const d = row.data || {}
+      return {
+        id: String(row.uid),
+        name: d.display_name || d.global_name || d.nick || d.username || `Pirate #${String(row.uid).slice(-5)}`,
+        username: d.username || null,
+        avatar: d.avatar_url || d.avatar || null,
+      }
+    })
+  } catch { return [] }
+}
+
 export async function fetchMemberProfile(discordId) {
   const id = String(discordId)
 
