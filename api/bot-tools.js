@@ -618,7 +618,29 @@ async function ensureCursorShopItem(cur) {
   })
 }
 
-// Résout un article payant (fond d'opening OU curseur) en forme normalisée.
+// ── Traînées de curseur payantes en € (mêmes paliers que les curseurs) ────────
+const TRAIL_PRICE_CENTS = { COMMUN: 50, RARE: 79, EPIQUE: 119, MYTHIQUE: 159, INTERDIT: 200 }
+const TRAILS = [
+  { id:'trail-gold',    nom:"Poussière d'Or",     rarete:'COMMUN'   },
+  { id:'trail-bubble',  nom:'Bulles de Saké',      rarete:'COMMUN'   },
+  { id:'trail-ember',   nom:'Mera Mera',           rarete:'RARE'     },
+  { id:'trail-aqua',    nom:'Vague Azur',          rarete:'RARE'     },
+  { id:'trail-haki',    nom:'Haki des Rois',       rarete:'EPIQUE'   },
+  { id:'trail-sakura',  nom:'Pétales de Sakura',   rarete:'EPIQUE'   },
+  { id:'trail-rainbow', nom:'Prisme',              rarete:'MYTHIQUE' },
+  { id:'trail-thunder', nom:'Goro Goro',           rarete:'MYTHIQUE' },
+  { id:'trail-void',    nom:'Œil du Néant',        rarete:'INTERDIT' },
+]
+function findTrail(itemId) { const id = String(itemId || '').trim(); return TRAILS.find(t => t.id === id) || null }
+function trailPriceCents(t) { return TRAIL_PRICE_CENTS[t.rarete] || 50 }
+async function ensureTrailShopItem(t) {
+  await supabaseRest('shop_items?on_conflict=id', {
+    method: 'POST', prefer: 'resolution=merge-duplicates,return=minimal',
+    body: [{ id: t.id, name: `Traînée : ${t.nom}`, category: 'Traînées', rarity: t.rarete, active: true, reward_type: 'cursor_trail' }],
+  })
+}
+
+// Résout un article payant (fond d'opening OU curseur OU traînée) en forme normalisée.
 function resolvePaidItem(itemId) {
   const bg = findOpeningBg(itemId)
   if (bg) return {
@@ -631,6 +653,12 @@ function resolvePaidItem(itemId) {
     kind: 'cursor', itemId: cur.id, amountCents: cursorPriceCents(cur), rarity: cur.rarete,
     productName: `Curseur : ${cur.nom}`, productDesc: `Curseur custom · ${cur.rarete}`,
     invoiceDesc: `Curseur « ${cur.nom} » — Brams Community`, label: cur.nom, ensure: () => ensureCursorShopItem(cur),
+  }
+  const tr = findTrail(itemId)
+  if (tr) return {
+    kind: 'cursor_trail', itemId: tr.id, amountCents: trailPriceCents(tr), rarity: tr.rarete,
+    productName: `Traînée : ${tr.nom}`, productDesc: `Traînée de curseur · ${tr.rarete}`,
+    invoiceDesc: `Traînée « ${tr.nom} » — Brams Community`, label: tr.nom, ensure: () => ensureTrailShopItem(tr),
   }
   return null
 }

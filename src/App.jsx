@@ -3,6 +3,7 @@ import { Routes, Route, useNavigate, Navigate, useLocation, useParams } from 're
 import { lazyWithReload } from './lib/lazyWithReload.js'
 import GlobalStyles from './components/GlobalStyles.jsx'
 import { GlobalCursorLayer } from './components/CursorShop.jsx'
+import { GlobalTrailLayer } from './components/TrailShop.jsx'
 import RouteSEO from './components/RouteSEO.jsx'
 import FunFX from './components/FunFX.jsx'
 import { ThemeProvider } from './contexts/ThemeContext.jsx'
@@ -77,6 +78,7 @@ const TournamentRoomPage = lazyWithReload(() => import('./components/TournamentR
 const UndercoverPage     = lazyWithReload(() => import('./components/UndercoverPage.jsx'))
 const AkinatorPage       = lazyWithReload(() => import('./components/AkinatorPage.jsx'))
 const MangaReaderPage    = lazyWithReload(() => import('./components/MangaReaderPage.jsx'))
+const BramsBeatPage      = lazyWithReload(() => import('./components/BramsBeatPage.jsx'))
 
 // Registre des scans manga (hors One Piece qui a sa propre page ScansPage).
 const MANGA_REGISTRY = {
@@ -501,8 +503,9 @@ export default function App() {
       <SocialProvider>
       <CallProvider>
       <GlobalStyles />
-<GlobalCursorLayer />
-<RouteSEO />
+      <GlobalCursorLayer />
+      <GlobalTrailLayer />
+      <RouteSEO />
       <EquippedOpeningBackground />
       <NotificationToast />
       <CallOverlay />
@@ -579,6 +582,7 @@ export default function App() {
         <Route path="/tournoi/endings" element={<PageLayout><TournamentPage tournamentId="ending" /></PageLayout>} />
         <Route path="/tournoi/ending" element={<PageLayout><TournamentPage tournamentId="ending" /></PageLayout>} />
         <Route path="/akinator"    element={<AkinatorPage      />} />
+<Route path="/brams-beat"  element={<BramsBeatPage />} />
 
         {/* Profil Yonkou — Next-Gen 3D */}
         <Route path="/profil-yonkou" element={<ProfilePageYonkou />} />
