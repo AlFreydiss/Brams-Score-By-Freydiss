@@ -20,6 +20,16 @@ export function OpeningBgProvider({ children }) {
   const [ambientStill, setAmbientStill] = useState(false)
   // hideAmbient : le profil masque le fond global et rend le sien (fiable).
   const [hideAmbient, setHideAmbient] = useState(false)
+  // Son du fond d'opening équipé (accueil + pages au fond animé). Muet par défaut
+  // (autoplay), l'utilisateur active via le contrôle son global. Persisté en LS.
+  const [ambientMuted, setAmbientMutedState] = useState(() => {
+    try { return localStorage.getItem('brams_bg_muted_v1') !== '0' } catch { return true }
+  })
+  const [ambientVolume, setAmbientVolumeState] = useState(() => {
+    try { return Number(localStorage.getItem('brams_bg_volume_v1')) || 45 } catch { return 45 }
+  })
+  const setAmbientMuted  = useCallback((m) => { setAmbientMutedState(m); try { localStorage.setItem('brams_bg_muted_v1', m ? '1' : '0') } catch {} }, [])
+  const setAmbientVolume = useCallback((v) => { setAmbientVolumeState(v); try { localStorage.setItem('brams_bg_volume_v1', String(v)) } catch {} }, [])
   const previewTimer = useRef(null)
 
   // Charger le fond équipé depuis Supabase au login
@@ -82,7 +92,7 @@ export function OpeningBgProvider({ children }) {
   const activeBg = getBgById(effectiveId)
 
   return (
-    <Ctx.Provider value={{ equippedId, previewId, activeBg, equip, unequip, preview, cancelPreview, setOverride, clearOverride, ambientStill, setAmbientStill, hideAmbient, setHideAmbient }}>
+    <Ctx.Provider value={{ equippedId, previewId, activeBg, equip, unequip, preview, cancelPreview, setOverride, clearOverride, ambientStill, setAmbientStill, hideAmbient, setHideAmbient, ambientMuted, setAmbientMuted, ambientVolume, setAmbientVolume }}>
       {children}
     </Ctx.Provider>
   )

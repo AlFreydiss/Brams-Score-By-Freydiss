@@ -8,7 +8,7 @@ import { useState, useEffect, useRef } from 'react'
 // flou) que pour la bannière du hero (net). Rend `null` si aucun média valide.
 // stillOnly : ignore videoUrl et affiche une image figée (évite un 2e décodage
 // vidéo quand un autre élément joue déjà la même vidéo).
-export default function OpeningBgMedia({ bg, className, style, stillOnly = false, muted = true }) {
+export default function OpeningBgMedia({ bg, className, style, stillOnly = false, muted = true, volume = 1 }) {
   const [imgSrc, setImgSrc] = useState(null)
   const [fallback, setFallback] = useState(false)
   const [videoFailed, setVideoFailed] = useState(false)
@@ -28,8 +28,9 @@ export default function OpeningBgMedia({ bg, className, style, stillOnly = false
     const el = videoRef.current
     if (!el) return
     el.muted = muted
+    el.volume = Math.max(0, Math.min(1, volume))
     if (!muted) { const p = el.play?.(); if (p?.catch) p.catch(() => {}) }
-  }, [muted])
+  }, [muted, volume])
 
   if (!bg) return null
   const useVideo = Boolean(bg.videoUrl) && !videoFailed && !stillOnly

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useOpeningBg } from '../../contexts/OpeningBgContext.jsx'
 import OpeningBgMedia from './OpeningBgMedia.jsx'
 
@@ -35,23 +36,67 @@ const VIDEO_STYLE = {
 }
 
 export default function EquippedOpeningBackground() {
-  const { activeBg, ambientStill, hideAmbient } = useOpeningBg()
+  const { activeBg, ambientStill, hideAmbient, ambientMuted, setAmbientMuted, ambientVolume, setAmbientVolume } = useOpeningBg()
+  const [hovered, setHovered] = useState(false)
   if (!activeBg || hideAmbient) return null
 
-  const start = activeBg.overlayStart || 'rgba(8,9,13,0.74)'
-  const end   = activeBg.overlayEnd   || 'rgba(6,7,11,0.94)'
+  const end = activeBg.overlayEnd || 'rgba(6,7,11,0.94)'
+  // Le son n'est possible que sur un fond ANIMÉ (vidéo) — pas une image figée.
+  const canSound = !ambientStill && Boolean(activeBg.videoUrl)
 
   return (
-    <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden', contain: 'layout paint size', isolation: 'isolate', background: activeBg.dominantColor || '#06070b' }}>
-      <OpeningBgMedia bg={activeBg} style={ambientStill ? STILL_STYLE : VIDEO_STYLE} stillOnly={ambientStill} />
-      {/* Voile UNIFORME (plus de dégradé vertical haut→bas qui rendait l'accueil
-          non homogène) — le voile global de la page assombrit déjà uniformément.
-          .cinema-veil → s'efface en mode AFK pour voir l'opening en plein. */}
-      <div className="cinema-veil" style={{ position: 'absolute', inset: 0, background: end }} />
-      {/* Teinte subtile */}
-      <div className="cinema-veil" style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse 90% 70% at 50% 30%, rgba(120,90,200,0.08), transparent 60%)' }} />
-      {/* Vignette radiale retirée : elle créait une bande sombre elliptique visible
-          (la "barre" horizontale). Le voile global uniforme suffit. */}
-    </div>
+    <>
+      <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden', contain: 'layout paint size', isolation: 'isolate', background: activeBg.dominantColor || '#06070b' }}>
+        <OpeningBgMedia
+          bg={activeBg}
+          style={ambientStill ? STILL_STYLE : VIDEO_STYLE}
+          stillOnly={ambientStill}
+          muted={ambientMuted}
+          volume={(ambientVolume ?? 45) / 100}
+        />
+        {/* Voile allégé : on baisse l'opacité du voile (≈0.68 effectif au lieu de
+            0.94) pour que l'opening respire sur l'accueil. .cinema-veil → s'efface
+            en mode AFK pour voir l'opening en plein. */}
+        <div className="cinema-veil" style={{ position: 'absolute', inset: 0, background: end, opacity: 0.72 }} />
+        <div className="cinema-veil" style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse 90% 70% at 50% 30%, rgba(120,90,200,0.08), transparent 60%)' }} />
+      </div>
+
+      {/* Contrôle son global du fond d'opening (accueil & pages au fond animé). */}
+      {canSound && (
+        <div
+          onMouseEnter={() => setHovered(true)}
+          onMouseLeave={() => setHovered(false)}
+          style={{
+            position: 'fixed', bottom: 90, left: 16, zIndex: 850,
+            display: 'flex', alignItems: 'center', gap: 8,
+            background: hovered ? 'rgba(14,14,16,0.85)' : 'transparent',
+            border: `1px solid ${hovered ? 'rgba(255,255,255,0.08)' : 'transparent'}`,
+            borderRadius: 12, padding: hovered ? '6px 10px' : '6px 6px',
+            backdropFilter: hovered ? 'blur(12px)' : 'none', transition: 'all .2s',
+          }}
+        >
+          <button
+            onClick={() => setAmbientMuted(!ambientMuted)}
+            title={ambientMuted ? "Activer le son de l'opening" : "Couper le son de l'opening"}
+            aria-label="Son du fond d'opening"
+            style={{
+              width: 30, height: 30, borderRadius: 8, flexShrink: 0, background: 'transparent', border: 'none',
+              color: ambientMuted ? 'rgba(255,255,255,0.32)' : '#e8c878', cursor: 'pointer', fontSize: 16,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'color .2s',
+            }}
+          >
+            {ambientMuted ? '🔇' : '🔊'}
+          </button>
+          {hovered && (
+            <input
+              type="range" min="0" max="100" value={ambientVolume ?? 45}
+              onChange={e => { const v = parseInt(e.target.value); setAmbientVolume(v); if (v === 0) setAmbientMuted(true); else if (ambientMuted) setAmbientMuted(false) }}
+              aria-label="Volume du fond d'opening"
+              style={{ width: 90, accentColor: '#e8c878', cursor: 'pointer' }}
+            />
+          )}
+        </div>
+      )}
+    </>
   )
 }

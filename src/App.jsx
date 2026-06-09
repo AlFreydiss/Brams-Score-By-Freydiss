@@ -465,7 +465,7 @@ export default function App() {
     <>
       <WelcomeAnimation />
       <AMVBackground hidden={mediaOverlayOpen || encyclopedieOpen || treeOpen || uploadOpen} />
-      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1, background: 'rgba(4,7,10,0.5)', pointerEvents: 'none' }} />
+      <div className="cinema-veil" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1, background: 'rgba(4,7,10,0.30)', pointerEvents: 'none' }} />
 
       {/* Hero transparent → l'AMV en fond reste visible. Le reste des sections
           a un fond opaque #08090D (corrige le débordement footer sans masquer l'AMV). */}
