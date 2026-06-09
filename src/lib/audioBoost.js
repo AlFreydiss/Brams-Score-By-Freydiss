@@ -72,3 +72,32 @@ export function setBoost(el, boost = 1) {
   if (!el) return
   if (_wired.has(el) || boost > 1) boostElement(el, boost)
 }
+
+// ── Analyse fréquentielle (pour les visualizers réactifs) ───────────────────
+// Branche un AnalyserNode en TAP sur le gain de l'élément (gain → analyser, sans
+// re-router vers la sortie : l'audio passe toujours par gain → comp → destination).
+// Route l'élément si besoin (crossOrigin requis sur le média, déjà posé côté lecteur).
+export function ensureAnalyser(el) {
+  if (!el) return null
+  const ctx = getCtx()
+  if (!ctx) return null
+  let node = _wired.get(el)
+  if (!node) { boostElement(el, 1); node = _wired.get(el) }
+  if (!node) return null
+  if (!node.analyser) {
+    try {
+      const an = ctx.createAnalyser()
+      an.fftSize = 1024
+      an.smoothingTimeConstant = 0.82
+      node.gain.connect(an)
+      node.analyser = an
+    } catch { return null }
+  }
+  if (ctx.state === 'suspended') ctx.resume().catch(() => {})
+  return node.analyser
+}
+
+export function getAnalyser(el) {
+  const node = el && _wired.get(el)
+  return node?.analyser || null
+}

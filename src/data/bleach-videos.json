@@ -1348,5 +1348,32 @@
         "default": true
       }
     ]
+  },
+  {
+    "episode": 51,
+    "title": "Épisode 51",
+    "episodeLabel": "S01E051",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bleach/S01E051-vostfr.mp4",
+    "season": "S01",
+    "arc": "Bleach",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E051",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bleach/thumbnails/S01E051.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bleach/S01E051-fr.vtt",
+        "default": true
+      }
+    ]
   }
 ]
