@@ -35,9 +35,11 @@ export default function OpeningBgMedia({ bg, className, style, stillOnly = false
   const useVideo = Boolean(bg.videoUrl) && !videoFailed && !stillOnly
   if (!useVideo && !imgSrc) return null
 
-  // Poster = image d'attente : si l'autoplay est bloqué, on voit ça au lieu d'un
-  // cadre noir.
-  const poster = bg.imageUrl || (bg.ytId ? `https://img.youtube.com/vi/${bg.ytId}/hqdefault.jpg` : undefined)
+  // Poster = image d'attente. On N'UTILISE PLUS la miniature YouTube : pour les
+  // vidéos privées/indispo, hqdefault.jpg = l'image grise « vidéo indisponible »
+  // (gros bouton play) qui flashait dégueu avant le chargement de la vidéo R2.
+  // Sans poster, la carte (fond sombre) reste propre le temps que la vidéo charge.
+  const poster = bg.imageUrl || undefined
   const mediaStyle = { pointerEvents: 'none', maxWidth: 'none', ...style }
 
   return useVideo ? (
