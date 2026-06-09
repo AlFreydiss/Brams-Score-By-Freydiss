@@ -242,7 +242,9 @@ export default function Hero() {
         <div style={{ display: 'grid', gridTemplateColumns: isNarrow ? '1fr' : '1fr minmax(380px, 480px)', alignItems: 'center', gap: isNarrow ? 40 : 'clamp(56px, 7vw, 140px)' }}>
 
           {/* ── Colonne gauche ── */}
-          <div>
+          {/* minWidth:0 → la piste 1fr peut rétrécir sous la largeur du titre (sinon
+              "Community" en grande police force ~500px et déborde le mobile). */}
+          <div style={{ minWidth: 0 }}>
             <div className="fade-up" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(46,204,113,0.07)', border: '1px solid rgba(46,204,113,0.2)', borderRadius: 100, padding: '6px 15px', marginBottom: 30 }}>
               <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#2ECC71', boxShadow: '0 0 10px #2ECC71', animation: 'pulse 2s infinite' }} />
               <span style={{ fontSize: 11, color: 'rgba(255,255,255,.62)', fontWeight: 600, letterSpacing: '.07em', textTransform: 'uppercase' }}>
@@ -253,7 +255,7 @@ export default function Hero() {
             {/* Titre — serif premium, sobre, accent or sur "Community" */}
             <h1 className="fade-up" style={{
               margin: '0 0 18px', fontFamily: "'Clash Display', 'Syne', 'Inter', system-ui, sans-serif",
-              fontSize: 'clamp(54px, 8.2vw, 108px)', lineHeight: 0.98, letterSpacing: '-0.03em', fontWeight: 700,
+              fontSize: 'clamp(34px, 8.2vw, 108px)', lineHeight: 0.98, letterSpacing: '-0.03em', fontWeight: 700,
             }}>
               <span style={{ display: 'block', color: '#f4f0e6', textShadow: '0 2px 28px rgba(0,0,0,0.45)' }}>Brams</span>
               {/* paddingBottom : laisse respirer la descendante du « y » (sinon coupée) */}
