@@ -1,1 +1,1325 @@
-[]
+[
+  {
+    "episode": 1,
+    "title": "Épisode 1",
+    "episodeLabel": "S02E01",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S02E01-vostfr.mp4",
+    "season": "S02",
+    "arc": "Fire Force S02",
+    "preferredAudioLang": "ja",
+    "progressKey": "S02E01",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/thumbnails/S02E01.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S02E01-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 2,
+    "title": "Épisode 2",
+    "episodeLabel": "S02E02",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S02E02-vostfr.mp4",
+    "season": "S02",
+    "arc": "Fire Force S02",
+    "preferredAudioLang": "ja",
+    "progressKey": "S02E02",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/thumbnails/S02E02.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S02E02-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 3,
+    "title": "Épisode 3",
+    "episodeLabel": "S02E03",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S02E03-vostfr.mp4",
+    "season": "S02",
+    "arc": "Fire Force S02",
+    "preferredAudioLang": "ja",
+    "progressKey": "S02E03",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/thumbnails/S02E03.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S02E03-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 4,
+    "title": "Épisode 4",
+    "episodeLabel": "S02E04",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S02E04-vostfr.mp4",
+    "season": "S02",
+    "arc": "Fire Force S02",
+    "preferredAudioLang": "ja",
+    "progressKey": "S02E04",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/thumbnails/S02E04.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S02E04-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 5,
+    "title": "Épisode 5",
+    "episodeLabel": "S02E05",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S02E05-vostfr.mp4",
+    "season": "S02",
+    "arc": "Fire Force S02",
+    "preferredAudioLang": "ja",
+    "progressKey": "S02E05",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/thumbnails/S02E05.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S02E05-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 6,
+    "title": "Épisode 6",
+    "episodeLabel": "S02E06",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S02E06-vostfr.mp4",
+    "season": "S02",
+    "arc": "Fire Force S02",
+    "preferredAudioLang": "ja",
+    "progressKey": "S02E06",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/thumbnails/S02E06.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S02E06-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 7,
+    "title": "Épisode 7",
+    "episodeLabel": "S02E07",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S02E07-vostfr.mp4",
+    "season": "S02",
+    "arc": "Fire Force S02",
+    "preferredAudioLang": "ja",
+    "progressKey": "S02E07",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/thumbnails/S02E07.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S02E07-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 8,
+    "title": "Épisode 8",
+    "episodeLabel": "S02E08",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S02E08-vostfr.mp4",
+    "season": "S02",
+    "arc": "Fire Force S02",
+    "preferredAudioLang": "ja",
+    "progressKey": "S02E08",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/thumbnails/S02E08.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S02E08-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 9,
+    "title": "Épisode 9",
+    "episodeLabel": "S02E09",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S02E09-vostfr.mp4",
+    "season": "S02",
+    "arc": "Fire Force S02",
+    "preferredAudioLang": "ja",
+    "progressKey": "S02E09",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/thumbnails/S02E09.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S02E09-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 10,
+    "title": "Épisode 10",
+    "episodeLabel": "S02E10",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S02E10-vostfr.mp4",
+    "season": "S02",
+    "arc": "Fire Force S02",
+    "preferredAudioLang": "ja",
+    "progressKey": "S02E10",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/thumbnails/S02E10.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S02E10-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 11,
+    "title": "Épisode 11",
+    "episodeLabel": "S02E11",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S02E11-vostfr.mp4",
+    "season": "S02",
+    "arc": "Fire Force S02",
+    "preferredAudioLang": "ja",
+    "progressKey": "S02E11",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/thumbnails/S02E11.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S02E11-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 12,
+    "title": "Épisode 12",
+    "episodeLabel": "S02E12",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S02E12-vostfr.mp4",
+    "season": "S02",
+    "arc": "Fire Force S02",
+    "preferredAudioLang": "ja",
+    "progressKey": "S02E12",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/thumbnails/S02E12.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S02E12-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 13,
+    "title": "Épisode 13",
+    "episodeLabel": "S02E13",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S02E13-vostfr.mp4",
+    "season": "S02",
+    "arc": "Fire Force S02",
+    "preferredAudioLang": "ja",
+    "progressKey": "S02E13",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/thumbnails/S02E13.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S02E13-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 14,
+    "title": "Épisode 14",
+    "episodeLabel": "S02E14",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S02E14-vostfr.mp4",
+    "season": "S02",
+    "arc": "Fire Force S02",
+    "preferredAudioLang": "ja",
+    "progressKey": "S02E14",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/thumbnails/S02E14.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S02E14-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 15,
+    "title": "Épisode 15",
+    "episodeLabel": "S02E15",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S02E15-vostfr.mp4",
+    "season": "S02",
+    "arc": "Fire Force S02",
+    "preferredAudioLang": "ja",
+    "progressKey": "S02E15",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/thumbnails/S02E15.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S02E15-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 16,
+    "title": "Épisode 16",
+    "episodeLabel": "S02E16",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S02E16-vostfr.mp4",
+    "season": "S02",
+    "arc": "Fire Force S02",
+    "preferredAudioLang": "ja",
+    "progressKey": "S02E16",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/thumbnails/S02E16.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S02E16-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 17,
+    "title": "Épisode 17",
+    "episodeLabel": "S02E17",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S02E17-vostfr.mp4",
+    "season": "S02",
+    "arc": "Fire Force S02",
+    "preferredAudioLang": "ja",
+    "progressKey": "S02E17",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/thumbnails/S02E17.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S02E17-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 18,
+    "title": "Épisode 18",
+    "episodeLabel": "S02E18",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S02E18-vostfr.mp4",
+    "season": "S02",
+    "arc": "Fire Force S02",
+    "preferredAudioLang": "ja",
+    "progressKey": "S02E18",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/thumbnails/S02E18.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S02E18-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 19,
+    "title": "Épisode 19",
+    "episodeLabel": "S02E19",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S02E19-vostfr.mp4",
+    "season": "S02",
+    "arc": "Fire Force S02",
+    "preferredAudioLang": "ja",
+    "progressKey": "S02E19",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/thumbnails/S02E19.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S02E19-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 20,
+    "title": "Épisode 20",
+    "episodeLabel": "S02E20",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S02E20-vostfr.mp4",
+    "season": "S02",
+    "arc": "Fire Force S02",
+    "preferredAudioLang": "ja",
+    "progressKey": "S02E20",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/thumbnails/S02E20.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S02E20-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 21,
+    "title": "Épisode 21",
+    "episodeLabel": "S02E21",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S02E21-vostfr.mp4",
+    "season": "S02",
+    "arc": "Fire Force S02",
+    "preferredAudioLang": "ja",
+    "progressKey": "S02E21",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/thumbnails/S02E21.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S02E21-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 22,
+    "title": "Épisode 22",
+    "episodeLabel": "S02E22",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S02E22-vostfr.mp4",
+    "season": "S02",
+    "arc": "Fire Force S02",
+    "preferredAudioLang": "ja",
+    "progressKey": "S02E22",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/thumbnails/S02E22.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S02E22-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 23,
+    "title": "Épisode 23",
+    "episodeLabel": "S02E23",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S02E23-vostfr.mp4",
+    "season": "S02",
+    "arc": "Fire Force S02",
+    "preferredAudioLang": "ja",
+    "progressKey": "S02E23",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/thumbnails/S02E23.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S02E23-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 24,
+    "title": "Épisode 24",
+    "episodeLabel": "S02E24",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S02E24-vostfr.mp4",
+    "season": "S02",
+    "arc": "Fire Force S02",
+    "preferredAudioLang": "ja",
+    "progressKey": "S02E24",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/thumbnails/S02E24.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S02E24-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 1,
+    "title": "Épisode 1",
+    "episodeLabel": "S03E01",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S03E01-vostfr.mp4",
+    "season": "S03",
+    "arc": "Fire Force S03",
+    "preferredAudioLang": "ja",
+    "progressKey": "S03E01",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/thumbnails/S03E01.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S03E01-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 2,
+    "title": "Épisode 2",
+    "episodeLabel": "S03E02",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S03E02-vostfr.mp4",
+    "season": "S03",
+    "arc": "Fire Force S03",
+    "preferredAudioLang": "ja",
+    "progressKey": "S03E02",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/thumbnails/S03E02.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S03E02-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 3,
+    "title": "Épisode 3",
+    "episodeLabel": "S03E03",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S03E03-vostfr.mp4",
+    "season": "S03",
+    "arc": "Fire Force S03",
+    "preferredAudioLang": "ja",
+    "progressKey": "S03E03",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/thumbnails/S03E03.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S03E03-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 4,
+    "title": "Épisode 4",
+    "episodeLabel": "S03E04",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S03E04-vostfr.mp4",
+    "season": "S03",
+    "arc": "Fire Force S03",
+    "preferredAudioLang": "ja",
+    "progressKey": "S03E04",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/thumbnails/S03E04.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S03E04-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 5,
+    "title": "Épisode 5",
+    "episodeLabel": "S03E05",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S03E05-vostfr.mp4",
+    "season": "S03",
+    "arc": "Fire Force S03",
+    "preferredAudioLang": "ja",
+    "progressKey": "S03E05",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/thumbnails/S03E05.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S03E05-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 6,
+    "title": "Épisode 6",
+    "episodeLabel": "S03E06",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S03E06-vostfr.mp4",
+    "season": "S03",
+    "arc": "Fire Force S03",
+    "preferredAudioLang": "ja",
+    "progressKey": "S03E06",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/thumbnails/S03E06.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S03E06-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 7,
+    "title": "Épisode 7",
+    "episodeLabel": "S03E07",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S03E07-vostfr.mp4",
+    "season": "S03",
+    "arc": "Fire Force S03",
+    "preferredAudioLang": "ja",
+    "progressKey": "S03E07",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/thumbnails/S03E07.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S03E07-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 8,
+    "title": "Épisode 8",
+    "episodeLabel": "S03E08",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S03E08-vostfr.mp4",
+    "season": "S03",
+    "arc": "Fire Force S03",
+    "preferredAudioLang": "ja",
+    "progressKey": "S03E08",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/thumbnails/S03E08.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S03E08-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 9,
+    "title": "Épisode 9",
+    "episodeLabel": "S03E09",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S03E09-vostfr.mp4",
+    "season": "S03",
+    "arc": "Fire Force S03",
+    "preferredAudioLang": "ja",
+    "progressKey": "S03E09",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/thumbnails/S03E09.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S03E09-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 10,
+    "title": "Épisode 10",
+    "episodeLabel": "S03E10",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S03E10-vostfr.mp4",
+    "season": "S03",
+    "arc": "Fire Force S03",
+    "preferredAudioLang": "ja",
+    "progressKey": "S03E10",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/thumbnails/S03E10.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S03E10-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 11,
+    "title": "Épisode 11",
+    "episodeLabel": "S03E11",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S03E11-vostfr.mp4",
+    "season": "S03",
+    "arc": "Fire Force S03",
+    "preferredAudioLang": "ja",
+    "progressKey": "S03E11",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/thumbnails/S03E11.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S03E11-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 12,
+    "title": "Épisode 12",
+    "episodeLabel": "S03E12",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S03E12-vostfr.mp4",
+    "season": "S03",
+    "arc": "Fire Force S03",
+    "preferredAudioLang": "ja",
+    "progressKey": "S03E12",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/thumbnails/S03E12.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S03E12-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 13,
+    "title": "Épisode 13",
+    "episodeLabel": "S03E13",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S03E13-vostfr.mp4",
+    "season": "S03",
+    "arc": "Fire Force S03",
+    "preferredAudioLang": "ja",
+    "progressKey": "S03E13",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/thumbnails/S03E13.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S03E13-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 14,
+    "title": "Épisode 14",
+    "episodeLabel": "S03E14",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S03E14-vostfr.mp4",
+    "season": "S03",
+    "arc": "Fire Force S03",
+    "preferredAudioLang": "ja",
+    "progressKey": "S03E14",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/thumbnails/S03E14.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S03E14-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 15,
+    "title": "Épisode 15",
+    "episodeLabel": "S03E15",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S03E15-vostfr.mp4",
+    "season": "S03",
+    "arc": "Fire Force S03",
+    "preferredAudioLang": "ja",
+    "progressKey": "S03E15",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/thumbnails/S03E15.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S03E15-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 16,
+    "title": "Épisode 16",
+    "episodeLabel": "S03E16",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S03E16-vostfr.mp4",
+    "season": "S03",
+    "arc": "Fire Force S03",
+    "preferredAudioLang": "ja",
+    "progressKey": "S03E16",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/thumbnails/S03E16.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S03E16-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 17,
+    "title": "Épisode 17",
+    "episodeLabel": "S03E17",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S03E17-vostfr.mp4",
+    "season": "S03",
+    "arc": "Fire Force S03",
+    "preferredAudioLang": "ja",
+    "progressKey": "S03E17",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/thumbnails/S03E17.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S03E17-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 18,
+    "title": "Épisode 18",
+    "episodeLabel": "S03E18",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S03E18-vostfr.mp4",
+    "season": "S03",
+    "arc": "Fire Force S03",
+    "preferredAudioLang": "ja",
+    "progressKey": "S03E18",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/thumbnails/S03E18.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S03E18-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 19,
+    "title": "Épisode 19",
+    "episodeLabel": "S03E19",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S03E19-vostfr.mp4",
+    "season": "S03",
+    "arc": "Fire Force S03",
+    "preferredAudioLang": "ja",
+    "progressKey": "S03E19",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/thumbnails/S03E19.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S03E19-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 20,
+    "title": "Épisode 20",
+    "episodeLabel": "S03E20",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S03E20-vostfr.mp4",
+    "season": "S03",
+    "arc": "Fire Force S03",
+    "preferredAudioLang": "ja",
+    "progressKey": "S03E20",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/thumbnails/S03E20.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S03E20-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 21,
+    "title": "Épisode 21",
+    "episodeLabel": "S03E21",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S03E21-vostfr.mp4",
+    "season": "S03",
+    "arc": "Fire Force S03",
+    "preferredAudioLang": "ja",
+    "progressKey": "S03E21",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/thumbnails/S03E21.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S03E21-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 22,
+    "title": "Épisode 22",
+    "episodeLabel": "S03E22",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S03E22-vostfr.mp4",
+    "season": "S03",
+    "arc": "Fire Force S03",
+    "preferredAudioLang": "ja",
+    "progressKey": "S03E22",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/thumbnails/S03E22.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S03E22-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 23,
+    "title": "Épisode 23",
+    "episodeLabel": "S03E23",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S03E23-vostfr.mp4",
+    "season": "S03",
+    "arc": "Fire Force S03",
+    "preferredAudioLang": "ja",
+    "progressKey": "S03E23",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/thumbnails/S03E23.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S03E23-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 24,
+    "title": "Épisode 24",
+    "episodeLabel": "S03E24",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S03E24-vostfr.mp4",
+    "season": "S03",
+    "arc": "Fire Force S03",
+    "preferredAudioLang": "ja",
+    "progressKey": "S03E24",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/thumbnails/S03E24.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S03E24-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 25,
+    "title": "Épisode 25",
+    "episodeLabel": "S03E25",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S03E25-vostfr.mp4",
+    "season": "S03",
+    "arc": "Fire Force S03",
+    "preferredAudioLang": "ja",
+    "progressKey": "S03E25",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/thumbnails/S03E25.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fireforce/S03E25-fr.vtt",
+        "default": true
+      }
+    ]
+  }
+]
