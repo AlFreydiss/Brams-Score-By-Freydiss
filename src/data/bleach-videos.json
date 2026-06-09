@@ -889,5 +889,32 @@
         "default": true
       }
     ]
+  },
+  {
+    "episode": 34,
+    "title": "Épisode 34",
+    "episodeLabel": "S01E034",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bleach/S01E034-vostfr.mp4",
+    "season": "S01",
+    "arc": "Bleach",
+    "preferredAudioLang": "ja",
+    "progressKey": "S01E034",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bleach/thumbnails/S01E034.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bleach/S01E034-fr.vtt",
+        "default": true
+      }
+    ]
   }
 ]

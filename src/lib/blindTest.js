@@ -1,4 +1,5 @@
 import { supabase } from './supabase.js'
+import { SB_URL, SB_KEY, getAccessToken } from './supabaseRest.js'
 
 // ── Local tracks (always available, no DB needed) ──────────────────────────
 // type: 'OP' (opening) ou 'ED' (ending) — sert à séparer Blind Test / Tournois.
@@ -1471,14 +1472,17 @@ export async function submitBlindTestRoomAnswer({ code, userId, round, track, an
 
 // ── Supabase score persistence ─────────────────────────────────────────────
 export async function fetchBlindTestLeaderboard(limit = 20) {
-  if (!supabase) return null
+  // REST direct (PAS le client supabase-js) : .from().select() pouvait hang sur le
+  // lock d'auth (getSession timeout 5s) → le classement ne chargeait jamais.
+  if (!SB_URL || !SB_KEY) return null
   try {
-    const { data } = await supabase
-      .from('blind_test_scores')
-      .select('*')
-      .order('score', { ascending: false })
-      .limit(limit)
-    return data ?? null
+    const token = await getAccessToken().catch(() => null)
+    const res = await fetch(
+      `${SB_URL}/rest/v1/blind_test_scores?select=*&order=score.desc&limit=${limit}`,
+      { headers: { apikey: SB_KEY, Authorization: `Bearer ${token || SB_KEY}`, Accept: 'application/json' } },
+    )
+    if (!res.ok) return []
+    return await res.json()
   } catch {
     return []
   }
