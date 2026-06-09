@@ -27,7 +27,24 @@ const HUB_CSS = `
   @keyframes htScan    { 0%{top:-2px} 100%{top:100%} }
   @keyframes htPulse   { 0%,100%{opacity:.5} 50%{opacity:.85} }
   @keyframes htFloat   { 0%{transform:translateY(8px) translateX(0);opacity:0} 12%{opacity:.45} 88%{opacity:.32} 100%{transform:translateY(-90px) translateX(14px);opacity:0} }
-  @media (prefers-reduced-motion: reduce){ [data-fx]{animation:none!important} }
+  @keyframes arenaGridMove { from{background-position:0 0} to{background-position:0 64px} }
+  @keyframes arenaAura     { 0%,100%{opacity:.85; transform:scale(1)} 50%{opacity:1; transform:scale(1.04)} }
+  @keyframes arenaEmber    { 0%{transform:translateY(0) translateX(0);opacity:0} 10%{opacity:.65} 85%{opacity:.4} 100%{transform:translateY(-96vh) translateX(22px);opacity:0} }
+  .arena-grid {
+    position:absolute; left:-30%; right:-30%; bottom:-12%; height:60%;
+    background-image:
+      linear-gradient(rgba(157,23,77,.22) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(124,58,237,.16) 1px, transparent 1px);
+    background-size:64px 64px;
+    transform:perspective(460px) rotateX(64deg); transform-origin:bottom center;
+    -webkit-mask-image:linear-gradient(to top,#000 0%, transparent 80%);
+    mask-image:linear-gradient(to top,#000 0%, transparent 80%);
+    animation:arenaGridMove 7s linear infinite;
+  }
+  .arena-grain {
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  @media (prefers-reduced-motion: reduce){ [data-fx]{animation:none!important} .arena-grid{animation:none!important} }
 `
 
 // ── Ambient background ─────────────────────────────────────────────────────
@@ -60,6 +77,43 @@ function HTScanLine() {
         background: 'linear-gradient(90deg,transparent,rgba(157,23,77,.10),rgba(76,29,149,.14),rgba(157,23,77,.10),transparent)',
         animation: 'htScan 18s linear infinite',
       }} />
+    </div>
+  )
+}
+
+// ── Fond « arène » épique mais sobre : auras maîtrisées + sol en perspective
+// (grille qui défile) + embers + vignette + grain. Glow contrôlé (pas de RGB abusé).
+function ArenaBackdrop() {
+  const embers = useMemo(() => Array.from({ length: 16 }, (_, i) => ({
+    x: (i * 53.3 + 9) % 96, dur: 9 + (i * 0.73) % 7, del: (i * 1.31) % 9,
+    size: i % 3 === 0 ? 3 : 2, gold: i % 4 === 0,
+  })), [])
+  return (
+    <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+      {/* Base + auras maîtrisées (magenta au sommet, violet sur les flancs) */}
+      <div data-fx style={{
+        position: 'absolute', inset: 0, animation: 'arenaAura 11s ease-in-out infinite',
+        background:
+          'radial-gradient(ellipse 64% 50% at 50% -8%, rgba(157,23,77,.28) 0%, transparent 60%),' +
+          'radial-gradient(ellipse 55% 55% at 100% 20%, rgba(124,58,237,.17) 0%, transparent 62%),' +
+          'radial-gradient(ellipse 58% 62% at 0% 80%, rgba(157,23,77,.13) 0%, transparent 60%),' +
+          'linear-gradient(180deg, #0a0710 0%, #08070c 55%, #050409 100%)',
+      }} />
+      {/* Sol en perspective = arène */}
+      <div data-fx className="arena-grid" />
+      {/* Embers montants raffinés */}
+      {embers.map((e, i) => (
+        <div key={i} data-fx style={{
+          position: 'absolute', left: `${e.x}%`, bottom: -12, width: e.size, height: e.size, borderRadius: '50%',
+          background: e.gold ? 'rgba(249,168,212,.7)' : 'rgba(157,23,77,.6)',
+          boxShadow: `0 0 6px ${e.gold ? 'rgba(249,168,212,.5)' : 'rgba(157,23,77,.45)'}`,
+          animation: `arenaEmber ${e.dur}s ${e.del}s linear infinite`,
+        }} />
+      ))}
+      {/* Vignette pour la profondeur */}
+      <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse 96% 86% at 50% 38%, transparent 47%, rgba(0,0,0,.62) 100%)' }} />
+      {/* Grain fin */}
+      <div className="arena-grain" style={{ position: 'absolute', inset: 0, opacity: 0.045, mixBlendMode: 'overlay' }} />
     </div>
   )
 }
@@ -623,8 +677,10 @@ export default function TournamentHubPage() {
     <div style={{ minHeight: '100vh', background: BG, fontFamily: 'inherit', position: 'relative', overflowX: 'hidden' }}>
       <style>{HUB_CSS}</style>
 
-      {/* Fond sakura (style Undercover + pétales roses qui tombent DEVANT le contenu) */}
-      <SakuraBackdrop count={26} />
+      {/* Fond arène épique (auras + sol perspective + embers + grain) */}
+      <ArenaBackdrop />
+      {/* Pétales sakura par-dessus pour la touche communautaire (réduits) */}
+      <SakuraBackdrop count={16} />
 
       {/* Content */}
       <div style={{ position: 'relative', zIndex: 2 }}>
