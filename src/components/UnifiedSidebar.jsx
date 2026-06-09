@@ -306,8 +306,8 @@ function VoiceLiveBlock({ voice, navigate }) {
   const shown = members.slice(0, 9)
   const extra = count - shown.length
   return (
-    <div style={{ padding:'16px 18px 6px' }}>
-      <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:12 }}>
+    <div style={{ padding:'12px 18px 4px' }}>
+      <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:9 }}>
         <span style={{ fontSize:14 }}>🎙️</span>
         <span style={{ fontSize:12, fontWeight:800, color:'rgba(255,255,255,.9)', letterSpacing:'.03em' }}>En vocal maintenant</span>
         <span style={{ marginLeft:'auto', display:'inline-flex', alignItems:'center', gap:6,
@@ -354,8 +354,8 @@ function VoiceLiveBlock({ voice, navigate }) {
 function PodiumBlock({ board, newMembers, navigate }) {
   const top = (board || []).slice(0, 3)
   return (
-    <div style={{ padding:'8px 18px 6px' }}>
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
+    <div style={{ padding:'4px 18px 4px' }}>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:7 }}>
         <span style={{ fontSize:9, fontWeight:800, color:'rgba(255,255,255,.4)', letterSpacing:'.14em' }}>TOP DE LA SEMAINE</span>
         {newMembers != null && newMembers > 0 && (
           <span style={{ fontSize:10, fontWeight:700, color:'#d4a017' }}>🆕 {newMembers} nouveaux</span>
@@ -364,10 +364,10 @@ function PodiumBlock({ board, newMembers, navigate }) {
       {top.length === 0 ? (
         <div style={{ fontSize:11, color:'rgba(255,255,255,.3)', padding:'6px 0' }}>Chargement…</div>
       ) : (
-        <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+        <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
           {top.map((m, i) => (
             <div key={m.uid} onClick={() => navigate(`/u/${m.uid}`)}
-              style={{ display:'flex', alignItems:'center', gap:10, padding:'7px 10px', borderRadius:10, cursor:'pointer',
+              style={{ display:'flex', alignItems:'center', gap:10, padding:'6px 10px', borderRadius:10, cursor:'pointer',
                 background:'rgba(255,255,255,.03)', border:'1px solid rgba(255,255,255,.06)', transition:'background .15s' }}
               onMouseEnter={e => e.currentTarget.style.background = 'rgba(212,160,23,.08)'}
               onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,.03)'}>
@@ -390,20 +390,20 @@ function SpotlightBlock({ member, navigate }) {
   const rank = getRank(hours)
   const quote = SPOTLIGHT_QUOTES[rank.rang] || ''
   return (
-    <div style={{ padding:'8px 18px 6px' }}>
-      <div style={{ fontSize:9, fontWeight:800, color:'rgba(255,255,255,.4)', letterSpacing:'.14em', marginBottom:10 }}>⭐ MEMBRE DE LA SEMAINE</div>
+    <div style={{ padding:'6px 18px 4px' }}>
+      <div style={{ fontSize:9, fontWeight:800, color:'rgba(255,255,255,.4)', letterSpacing:'.14em', marginBottom:7 }}>⭐ MEMBRE DE LA SEMAINE</div>
       <div onClick={() => navigate(`/u/${member.uid}`)}
-        style={{ display:'flex', alignItems:'center', gap:13, padding:'13px', borderRadius:14, cursor:'pointer',
+        style={{ display:'flex', alignItems:'center', gap:11, padding:'10px 11px', borderRadius:13, cursor:'pointer',
           background:`linear-gradient(135deg, ${rank.color}1f, transparent)`, border:`1px solid ${rank.color}38`,
           transition:'transform .18s, box-shadow .18s' }}
         onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = `0 10px 26px ${rank.color}22` }}
         onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none' }}>
-        <LiveAvatar src={member.avatar_url} name={member.username} size={52} ring={rank.color} />
+        <LiveAvatar src={member.avatar_url} name={member.username} size={44} ring={rank.color} />
         <div style={{ flex:1, minWidth:0 }}>
           <div style={{ fontSize:14, fontWeight:800, color:'#fff', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{member.username}</div>
-          <div style={{ display:'inline-flex', alignItems:'center', gap:5, marginTop:4, fontSize:10, fontWeight:800, color:rank.color,
+          <div style={{ display:'inline-flex', alignItems:'center', gap:5, marginTop:3, fontSize:10, fontWeight:800, color:rank.color,
             background:`${rank.color}1f`, border:`1px solid ${rank.color}3a`, borderRadius:999, padding:'2px 8px' }}>{rank.emoji} {rank.rang}</div>
-          {quote && <div style={{ fontSize:10.5, fontStyle:'italic', color:'rgba(255,255,255,.5)', marginTop:7, lineHeight:1.4 }}>« {quote} »</div>}
+          {quote && <div style={{ fontSize:10, fontStyle:'italic', color:'rgba(255,255,255,.45)', marginTop:4, lineHeight:1.35, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>« {quote} »</div>}
         </div>
       </div>
     </div>
@@ -425,16 +425,16 @@ function CountdownBig({ event }) {
   const [t, setT] = useState(calc)
   useEffect(() => { const id = setInterval(() => setT(calc()), 1000); return () => clearInterval(id) }, [event.date])
   const cell = (val, lbl) => (
-    <div style={{ flex:1, textAlign:'center', background:'rgba(255,255,255,.04)', border:'1px solid rgba(255,255,255,.08)', borderRadius:10, padding:'9px 4px' }}>
-      <div style={{ fontSize:22, fontWeight:900, color:'#fff', letterSpacing:'-.02em', lineHeight:1, fontVariantNumeric:'tabular-nums' }}>{String(val).padStart(2, '0')}</div>
-      <div style={{ fontSize:8, fontWeight:700, color:'rgba(255,255,255,.4)', letterSpacing:'.1em', marginTop:5, textTransform:'uppercase' }}>{lbl}</div>
+    <div style={{ flex:1, textAlign:'center', background:'rgba(255,255,255,.04)', border:'1px solid rgba(255,255,255,.08)', borderRadius:9, padding:'6px 4px' }}>
+      <div style={{ fontSize:18, fontWeight:900, color:'#fff', letterSpacing:'-.02em', lineHeight:1, fontVariantNumeric:'tabular-nums' }}>{String(val).padStart(2, '0')}</div>
+      <div style={{ fontSize:8, fontWeight:700, color:'rgba(255,255,255,.4)', letterSpacing:'.1em', marginTop:3, textTransform:'uppercase' }}>{lbl}</div>
     </div>
   )
   return (
-    <div style={{ padding:'8px 18px 18px' }}>
-      <div style={{ fontSize:9, fontWeight:800, color:'rgba(255,255,255,.4)', letterSpacing:'.14em', marginBottom:10 }}>⏳ PROCHAIN ÉVÉNEMENT</div>
-      <div style={{ display:'flex', alignItems:'center', gap:9, marginBottom:11 }}>
-        <span style={{ fontSize:18 }}>{event.icon}</span>
+    <div style={{ padding:'4px 18px 14px' }}>
+      <div style={{ fontSize:9, fontWeight:800, color:'rgba(255,255,255,.4)', letterSpacing:'.14em', marginBottom:7 }}>⏳ PROCHAIN ÉVÉNEMENT</div>
+      <div style={{ display:'flex', alignItems:'center', gap:9, marginBottom:8 }}>
+        <span style={{ fontSize:16 }}>{event.icon}</span>
         <span style={{ fontSize:13, fontWeight:700, color:'#fff' }}>{event.title}</span>
       </div>
       {t ? (
@@ -699,7 +699,7 @@ export default function UnifiedSidebar() {
           {tab === 'live' && (
             <div style={{ animation:'hubIn .2s ease-out both' }}>
               <VoiceLiveBlock voice={voice} navigate={navigate} />
-              <div style={{ height:1, background:'rgba(255,255,255,.06)', margin:'10px 18px 4px' }} />
+              <div style={{ height:1, background:'rgba(255,255,255,.06)', margin:'6px 18px 2px' }} />
               <SpotlightBlock member={rankedBoard[0]} navigate={navigate} />
               <PodiumBlock board={rankedBoard} newMembers={newMembers} navigate={navigate} />
               {nextEvent && <CountdownBig event={nextEvent} />}
