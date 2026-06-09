@@ -387,8 +387,8 @@ export function completeOpeningBgCheckout(sessionId) {
 
 // ── Cadeaux & panier ──────────────────────────────────────────────────────────
 // Offrir un article (vrai argent) à un membre → Stripe Checkout.
-export function createGiftCheckout(itemId, recipientId, message) {
-  return stripeShopPost('/api/stripe-gift', { itemId, recipientId, message })
+export function createGiftCheckout(itemId, recipientId, message, gifterName) {
+  return stripeShopPost('/api/stripe-gift', { itemId, recipientId, message, gifterName })
 }
 // Panier multi-articles (promo 1 offert sur 2, calcul serveur) → Stripe Checkout.
 export function createCartCheckout(itemIds) {

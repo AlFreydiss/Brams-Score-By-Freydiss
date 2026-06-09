@@ -937,7 +937,7 @@ async function stripeGift(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' })
   try {
     const { user, discordId } = await getAuthedSupabaseUser(req)
-    const { itemId, recipientId, message } = readJsonBody(req)
+    const { itemId, recipientId, message, gifterName } = readJsonBody(req)
     const item = resolvePaidItem(itemId)
     if (!item) return res.status(404).json({ error: 'Article introuvable.' })
     const recipient = String(recipientId || '').trim()
@@ -967,7 +967,10 @@ async function stripeGift(req, res) {
     params.set('metadata[gifter_id]', String(discordId))
     params.set('metadata[recipient_id]', recipient)
     params.set('metadata[gift_message]', msg)
-    params.set('metadata[gifter_name]', String(user?.user_metadata?.full_name || user?.user_metadata?.name || '').slice(0, 80))
+    // Nom affiché fourni par le client (display_name/global_name « Al Freydiss »),
+    // sinon repli sur les métadonnées Discord. Jamais le username brut en priorité.
+    const gName = String(gifterName || user?.user_metadata?.global_name || user?.user_metadata?.custom_claims?.global_name || user?.user_metadata?.full_name || user?.user_metadata?.name || '').slice(0, 80)
+    params.set('metadata[gifter_name]', gName)
     if (user?.email) params.set('customer_email', user.email)
     params.set('invoice_creation[enabled]', 'true')
     params.set('invoice_creation[invoice_data][description]', `Cadeau « ${item.label} » offert — Brams Community`)

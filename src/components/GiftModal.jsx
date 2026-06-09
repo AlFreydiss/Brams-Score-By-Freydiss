@@ -3,8 +3,10 @@
 import { useState } from 'react'
 import { createGiftCheckout } from '../lib/berryShop.js'
 import { resolveProfileId } from '../lib/supabase.js'
+import { useAuth } from '../contexts/AuthContext.jsx'
 
 export default function GiftModal({ item, onClose }) {
+  const { displayName } = useAuth()
   const [pseudo, setPseudo] = useState('')
   const [message, setMessage] = useState('')
   const [busy, setBusy] = useState(false)
@@ -17,7 +19,7 @@ export default function GiftModal({ item, onClose }) {
     setBusy(true); setError(null)
     const recipientId = await resolveProfileId(p)
     if (!recipientId) { setError(`Membre « ${p} » introuvable.`); setBusy(false); return }
-    const { data, error: err } = await createGiftCheckout(item.id, recipientId, message.trim())
+    const { data, error: err } = await createGiftCheckout(item.id, recipientId, message.trim(), displayName)
     if (err || !data?.url) { setError(err?.message || 'Paiement indisponible.'); setBusy(false); return }
     window.location.assign(data.url)
   }
