@@ -5,6 +5,7 @@ import GlobalStyles from './components/GlobalStyles.jsx'
 import { GlobalCursorLayer } from './components/CursorShop.jsx'
 import { GlobalTrailLayer } from './components/TrailShop.jsx'
 import GiftInbox from './components/GiftInbox.jsx'
+import IdleCinema from './components/IdleCinema.jsx'
 import RouteSEO from './components/RouteSEO.jsx'
 import FunFX from './components/FunFX.jsx'
 import { ThemeProvider } from './contexts/ThemeContext.jsx'
@@ -507,6 +508,7 @@ export default function App() {
       <GlobalCursorLayer />
       <GlobalTrailLayer />
       <GiftInbox />
+      <IdleCinema />
       <RouteSEO />
       <EquippedOpeningBackground />
       <NotificationToast />

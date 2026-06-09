@@ -1653,6 +1653,16 @@ option { background: #100a04; }
   z-index: 900;
   pointer-events: none;
 }
+
+/* Mode cinéma AFK (accueil) : après 1 min d'inactivité, l'UI s'efface en fondu et
+   il ne reste que l'opening en fond. Au moindre mouvement, tout revient. */
+.cinema-hide { transition: opacity 1.1s cubic-bezier(.22,1,.36,1); }
+html[data-cinema="1"] .cinema-hide,
+html[data-cinema="1"] .navbar-premium {
+  opacity: 0 !important;
+  pointer-events: none;
+  transition: opacity 1.2s cubic-bezier(.22,1,.36,1);
+}
 .nav-shell-premium {
   position: relative;
   width: 100%;

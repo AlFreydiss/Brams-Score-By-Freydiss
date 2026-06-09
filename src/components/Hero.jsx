@@ -291,7 +291,7 @@ export default function Hero() {
         </div>
       )}
 
-      <div style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: 1920, margin: '0 auto', padding: isMobile ? '0 20px' : '0 clamp(36px, 5vw, 96px)' }}>
+      <div className="cinema-hide" style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: 1920, margin: '0 auto', padding: isMobile ? '0 20px' : '0 clamp(36px, 5vw, 96px)' }}>
         <div style={{ display: 'grid', gridTemplateColumns: isNarrow ? '1fr' : '1fr minmax(380px, 480px)', alignItems: 'center', gap: isNarrow ? 40 : 'clamp(56px, 7vw, 140px)' }}>
 
           {/* ── Colonne gauche ── */}
