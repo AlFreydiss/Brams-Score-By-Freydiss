@@ -45,6 +45,7 @@ def _load_role_map(guild_id: int) -> dict[str, int]:
 class Onboarding(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
+        self._missing_responses_table = False
         if SUPABASE_URL and SUPABASE_SERVICE_KEY:
             self.enabled = True
             self.poll_responses.start()
@@ -55,6 +56,15 @@ class Onboarding(commands.Cog):
     def cog_unload(self):
         if self.enabled:
             self.poll_responses.cancel()
+
+    def _disable_polling_missing_table(self) -> None:
+        if self._missing_responses_table:
+            return
+        self._missing_responses_table = True
+        self.enabled = False
+        if self.poll_responses.is_running():
+            self.poll_responses.cancel()
+        print("[onboarding] table 'onboarding_responses' absente -> polling desactive")
 
     async def _rest(self, method: str, table: str, *, params: dict | None = None, json_body=None):
         if not self.enabled:
@@ -172,6 +182,10 @@ class Onboarding(commands.Cog):
                 "limit": "20",
             })
         except Exception as e:
+            msg = str(e)
+            if "onboarding_responses" in msg and ("Could not find the table" in msg or "schema cache" in msg):
+                self._disable_polling_missing_table()
+                return
             print(f"[onboarding] erreur de polling: {e}")
             return
 
