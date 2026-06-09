@@ -9,6 +9,7 @@ import { useAuth } from '../contexts/AuthContext.jsx'
 import { useMediaQuery } from '../hooks/useMediaQuery.js'
 import { supabase } from '../lib/supabase.js'
 import { setBoost, corsUrl } from '../lib/audioBoost.js'
+import OpeningVisualizer from './social/OpeningVisualizer.jsx'
 import {
   LOCAL_TRACKS, pickTrack, checkAnswer, calcBerries, countTracksByType,
   createBlindTestRoom, fetchBlindTestRoom, fetchBlindTestRoomPlayers,
@@ -980,6 +981,13 @@ export default function BlindTestPage() {
           transform: 'scale(1.06)',
         }}
       />
+
+      {/* Visualizer audio-réactif — par-dessus la vidéo floutée pendant le jeu */}
+      {isPlaying && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 2, pointerEvents: 'none' }}>
+          <OpeningVisualizer mediaRef={videoRef} active={isPlaying} accent={activeTrack?.color || '#BFA46A'} accent2="#9b59b6" />
+        </div>
+      )}
 
       {/* Gradient fallback */}
       {isPlaying && videoFailed && (
