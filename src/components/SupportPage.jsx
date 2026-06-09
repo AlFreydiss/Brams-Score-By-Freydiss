@@ -41,7 +41,7 @@ export default function SupportPage() {
   const [error, setError] = useState(null)
   const [thanks, setThanks] = useState(false)
 
-  const load = () => fetchCagnotte().then(setData)
+  const load = () => fetchCagnotte({ withAvatars: true }).then(setData)
   // Actualisation EN LIVE : recharge la cagnotte + les soutiens toutes les 12s
   // (tant que l'onglet est visible) et au retour de focus → un nouveau don
   // apparaît tout seul, sans recharger la page.

@@ -46,9 +46,11 @@ function withTimeout(promise, ms = 7000) {
 
 async function callTopClassement(limit, period = 'week') {
   try {
+    // Pas de cache-bust ni no-store : on LAISSE le CDN Vercel servir le classement
+    // mis en cache 20s (cf. api/leaderboard) → évite de re-scanner toute la table
+    // users à chaque vue (cause des 502 / lenteurs quand il y a du monde).
     const response = await fetch(
-      `/api/leaderboard?limit=${encodeURIComponent(limit)}&period=${encodeURIComponent(period)}&_=${Date.now()}`,
-      { cache: 'no-store' }
+      `/api/leaderboard?limit=${encodeURIComponent(limit)}&period=${encodeURIComponent(period)}`
     )
     if (response.ok) {
       return { data: await response.json(), error: null }
@@ -201,7 +203,7 @@ export async function searchMembers(term) {
 const _hdr = (token) => ({ apikey: key, Authorization: `Bearer ${token || key}`, Accept: 'application/json' })
 
 // Tout en un : config cagnotte + liste des dons + total collecté.
-export async function fetchCagnotte() {
+export async function fetchCagnotte(opts = {}) {
   if (!url || !key) return { goal: 200, title: 'Cagnotte Brams', subtitle: '', donors: [], total: 0 }
   try {
     const [cR, dR] = await Promise.all([
@@ -213,23 +215,26 @@ export async function fetchCagnotte() {
     if (!Array.isArray(donors)) donors = []
     const total = donors.reduce((s, d) => s + (Number(d.amount) || 0), 0)
 
-    // Résout la photo de profil des donateurs qui sont des membres (match username,
-    // insensible à la casse). Fallback sur l'initiale colorée côté UI si introuvable.
-    try {
-      const names = [...new Set(donors.map(d => (d.name || '').trim()).filter(Boolean))]
-      if (names.length) {
-        const inList = names.map(n => `"${n.replace(/[\\"]/g, '')}"`).join(',')
-        const uR = await fetch(`${url}/rest/v1/users?select=data&data->>username=in.(${encodeURIComponent(inList)})`, { headers: _hdr() })
-        if (uR.ok) {
-          const map = {}
-          for (const u of await uR.json()) {
-            const un = u?.data?.username, av = u?.data?.avatar_url
-            if (un && av) map[un.toLowerCase()] = av
+    // Résout la photo de profil des donateurs (match username) UNIQUEMENT si demandé
+    // (page /soutenir). Hors de là (marquee accueil = gros trafic) on n'interroge PAS
+    // la table users → évite un scan inutile qui surchargeait la DB.
+    if (opts.withAvatars) {
+      try {
+        const names = [...new Set(donors.map(d => (d.name || '').trim()).filter(Boolean))]
+        if (names.length) {
+          const inList = names.map(n => `"${n.replace(/[\\"]/g, '')}"`).join(',')
+          const uR = await fetch(`${url}/rest/v1/users?select=data&data->>username=in.(${encodeURIComponent(inList)})`, { headers: _hdr() })
+          if (uR.ok) {
+            const map = {}
+            for (const u of await uR.json()) {
+              const un = u?.data?.username, av = u?.data?.avatar_url
+              if (un && av) map[un.toLowerCase()] = av
+            }
+            donors = donors.map(d => ({ ...d, avatar_url: d.avatar_url || map[(d.name || '').trim().toLowerCase()] || null }))
           }
-          donors = donors.map(d => ({ ...d, avatar_url: d.avatar_url || map[(d.name || '').trim().toLowerCase()] || null }))
         }
-      }
-    } catch { /* avatars best-effort */ }
+      } catch { /* avatars best-effort */ }
+    }
 
     return {
       goal: Number(cfg?.goal) || 200,

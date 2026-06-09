@@ -112,7 +112,10 @@ export default async function handler(req, res) {
       .sort((a, b) => (b.vocal_h - a.vocal_h) || (b.berrys - a.berrys))
       .slice(0, limit)
 
-    res.setHeader('Cache-Control', 'no-store')
+    // Cache CDN court : le classement ne bouge qu'à l'heure → on évite de re-scanner
+    // TOUTE la table users à chaque vue (la cause n°1 de surcharge / 502). 20s de
+    // cache edge + stale-while-revalidate = quasi-temps-réel sans matraquer la DB.
+    res.setHeader('Cache-Control', 'public, s-maxage=20, stale-while-revalidate=60')
     res.status(200).json(rows)
   } catch (error) {
     res.setHeader('Cache-Control', 'no-store')
