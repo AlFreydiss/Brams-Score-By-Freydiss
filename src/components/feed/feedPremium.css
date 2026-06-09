@@ -151,10 +151,25 @@
 
 .feed-title {
   margin: 0;
-  color: #f4f1e8;
-  font-size: 25px;
+  font-size: 27px;
   font-weight: 900;
-  letter-spacing: 0;
+  letter-spacing: -0.01em;
+  background: linear-gradient(96deg, #f8ecc6 0%, #e6cf94 38%, #d4a017 62%, #f3e3b4 100%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 1px 10px rgba(212, 160, 23, 0.22));
+  animation: feedTitleShine 6s linear infinite;
+}
+@keyframes feedTitleShine { 0% { background-position: 200% 0 } 100% { background-position: -200% 0 } }
+/* Petit liseré doré sous le titre pour ancrer le header premium */
+.feed-title-row { position: relative; }
+.feed-title-row::after {
+  content: '';
+  position: absolute; left: 1px; bottom: -5px;
+  width: 34px; height: 2px; border-radius: 2px;
+  background: linear-gradient(90deg, #d4a017, transparent);
 }
 
 .feed-live-badge {
