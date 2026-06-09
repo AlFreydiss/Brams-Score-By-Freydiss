@@ -190,31 +190,62 @@ export async function searchMembers(term) {
   } catch { return [] }
 }
 
-// ── Top soutiens (cagnotte) — table `donors`, éditable en live par le staff ───
-export async function fetchDonors() {
-  if (!url || !key) return []
+// ── Cagnotte — config (goal) + dons (donors), éditable en live par le staff ───
+const _hdr = (token) => ({ apikey: key, Authorization: `Bearer ${token || key}`, Accept: 'application/json' })
+
+// Tout en un : config cagnotte + liste des dons + total collecté.
+export async function fetchCagnotte() {
+  if (!url || !key) return { goal: 200, title: 'Cagnotte Brams', subtitle: '', donors: [], total: 0 }
   try {
-    const r = await fetch(`${url}/rest/v1/donors?select=id,name,amount&order=amount.desc,created_at.desc`, {
-      headers: { apikey: key, Authorization: `Bearer ${key}`, Accept: 'application/json' },
-    })
-    if (!r.ok) return []
-    const rows = await r.json()
-    return Array.isArray(rows) ? rows : []
-  } catch { return [] }
+    const [cR, dR] = await Promise.all([
+      fetch(`${url}/rest/v1/cagnotte?id=eq.1&select=goal,title,subtitle&limit=1`, { headers: _hdr() }),
+      fetch(`${url}/rest/v1/donors?select=id,name,amount,message,created_at&order=created_at.desc`, { headers: _hdr() }),
+    ])
+    const cfg = cR.ok ? (await cR.json())[0] : null
+    const donors = dR.ok ? await dR.json() : []
+    const total = (Array.isArray(donors) ? donors : []).reduce((s, d) => s + (Number(d.amount) || 0), 0)
+    return {
+      goal: Number(cfg?.goal) || 200,
+      title: cfg?.title || 'Cagnotte Brams',
+      subtitle: cfg?.subtitle || '',
+      donors: Array.isArray(donors) ? donors : [],
+      total,
+    }
+  } catch { return { goal: 200, title: 'Cagnotte Brams', subtitle: '', donors: [], total: 0 } }
 }
-export async function addDonor(name, amount) {
+
+export async function fetchDonors() {
+  return (await fetchCagnotte()).donors
+}
+
+export async function addDonor(name, amount, message) {
   if (!url || !key) return { error: 'config' }
   const token = await getAccessToken().catch(() => null)
   if (!token) return { error: 'auth' }
   try {
     const r = await fetch(`${url}/rest/v1/donors`, {
       method: 'POST',
-      headers: { apikey: key, Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', Prefer: 'return=representation' },
-      body: JSON.stringify([{ name: String(name).slice(0, 40), amount: Number(amount) || 0 }]),
+      headers: { ..._hdr(token), 'Content-Type': 'application/json', Prefer: 'return=representation' },
+      body: JSON.stringify([{ name: String(name).slice(0, 40), amount: Number(amount) || 0, message: message ? String(message).slice(0, 200) : null }]),
     })
     if (!r.ok) return { error: `http_${r.status}` }
     const rows = await r.json()
     return { data: Array.isArray(rows) ? rows[0] : null }
+  } catch (e) { return { error: e?.message || 'fail' } }
+}
+
+// Met à jour l'objectif / titre de la cagnotte (staff).
+export async function updateCagnotte(patch) {
+  if (!url || !key) return { error: 'config' }
+  const token = await getAccessToken().catch(() => null)
+  if (!token) return { error: 'auth' }
+  try {
+    const r = await fetch(`${url}/rest/v1/cagnotte?id=eq.1`, {
+      method: 'PATCH',
+      headers: { ..._hdr(token), 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+      body: JSON.stringify(patch),
+    })
+    return r.ok ? { ok: true } : { error: `http_${r.status}` }
   } catch (e) { return { error: e?.message || 'fail' } }
 }
 export async function deleteDonor(id) {
