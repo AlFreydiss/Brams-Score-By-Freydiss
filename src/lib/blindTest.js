@@ -3,6 +3,12 @@ import { supabase } from './supabase.js'
 // ── Local tracks (always available, no DB needed) ──────────────────────────
 // type: 'OP' (opening) ou 'ED' (ending) — sert à séparer Blind Test / Tournois.
 export const LOCAL_TRACKS = [
+  {
+    id: 'pokemon-fr-op1', anime: 'Pokémon', title: 'Générique français (Saison 1)', artist: 'Pokémon', type: 'OP', episode: 'Opening FR',
+    url: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/blind-test/pokemon-fr-op1.mp3',
+    difficulty: 'facile', color: '#f5b50a', emoji: '⚡',
+    aliases: ['pokemon', 'pokémon', 'attrapez les tous', 'sacha', 'pikachu', 'generique pokemon'],
+  },
   // ═══ ENDINGS ═══
   {
     id: 'fz-ed1', anime: 'Fate/Zero', title: 'Memoria', artist: 'Kalafina', type: 'ED', episode: 'Ending 1',
