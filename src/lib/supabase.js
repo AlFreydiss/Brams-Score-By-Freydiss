@@ -140,13 +140,16 @@ export async function resolveProfileId(param) {
   const raw = String(param || '').trim()
   if (/^\d+$/.test(raw)) return raw
   if (!url || !key || !raw) return null
+  // ILIKE traite `_` `%` (et `\`) comme des jokers → on les échappe pour un match
+  // EXACT case-insensitive. Sans ça, "al_freydiss" matcherait "alxfreydiss".
+  const pattern = raw.replace(/[\\%_]/g, '\\$&')
   try {
     const ctrl = new AbortController()
     const timer = setTimeout(() => ctrl.abort(), 5000)
     const token = await getAccessToken().catch(() => null)
     // limit=2 : on veut détecter l'ambiguïté (deux pseudos identiques) sans tout charger.
     const r = await fetch(
-      `${url}/rest/v1/users?select=uid&data->>username=ilike.${encodeURIComponent(raw)}&limit=2`,
+      `${url}/rest/v1/users?select=uid&data->>username=ilike.${encodeURIComponent(pattern)}&limit=2`,
       { signal: ctrl.signal, headers: { apikey: key, Authorization: `Bearer ${token || key}`, Accept: 'application/json' } }
     )
     clearTimeout(timer)
