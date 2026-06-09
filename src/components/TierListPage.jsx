@@ -180,9 +180,6 @@ const DRAFT_BACKUP_INTERVAL = 30000
 const DRAFT_HISTORY_LIMIT = 3
 const CUSTOM_IMAGE_MAX_SIDE = 520
 const CUSTOM_IMAGE_QUALITY = 0.72
-// Au-delà de 120 images custom, la tier list devient ingérable (poids du draft +
-// limite de body au partage → 413). On plafonne proprement avec un message clair.
-const MAX_CUSTOM_IMAGES = 120
 let lastDraftBackupAt = 0
 function normalizeDraft(draft) {
   if (!draft?.typeId || !draft?.board || !Array.isArray(draft?.tiers)) return null
@@ -731,12 +728,9 @@ function ItemPool({ items, allById, customItems, onAddCustom, onRenameCustom, on
 
   const [uploading, setUploading] = useState(false)
   const handleFile = async (e) => {
-    let files = Array.from(e.target.files || [])
+    const files = Array.from(e.target.files || [])
     if (fileRef.current) fileRef.current.value = ''
     if (!files.length) return
-    const remaining = MAX_CUSTOM_IMAGES - customItems.length
-    if (remaining <= 0) { onNotify?.(`⚠️ Limite de ${MAX_CUSTOM_IMAGES} images atteinte — supprime des uploads pour en ajouter`); return }
-    if (files.length > remaining) { onNotify?.(`⚠️ Limite ${MAX_CUSTOM_IMAGES} images : seules les ${remaining} premières seront ajoutées`); files = files.slice(0, remaining) }
     setUploading(true)
     let added = 0
     for (const file of files) {
@@ -758,7 +752,6 @@ function ItemPool({ items, allById, customItems, onAddCustom, onRenameCustom, on
 
   const handleUrl = () => {
     if (!urlInput.trim()) return
-    if (customItems.length >= MAX_CUSTOM_IMAGES) { onNotify?.(`⚠️ Limite de ${MAX_CUSTOM_IMAGES} images atteinte`); return }
     onAddCustom({ img: urlInput.trim(), name: nameInput || 'Custom', sub: subInput || 'Custom' })
     setUrlInput(''); setNameInput(''); setSubInput(''); setAddMode(null)
   }
@@ -795,7 +788,7 @@ function ItemPool({ items, allById, customItems, onAddCustom, onRenameCustom, on
             color: poolTab === t ? G.gold : G.muted,
             borderColor: poolTab === t ? `${G.gold}44` : 'transparent',
           }}>
-            {t === 'all' ? `Tous (${allItemsInPool.length})` : t === 'favs' ? `Favoris (${favorites.length})` : `Uploads (${customItems.length}/${MAX_CUSTOM_IMAGES})`}
+            {t === 'all' ? `Tous (${allItemsInPool.length})` : t === 'favs' ? `Favoris (${favorites.length})` : `Uploads (${customItems.length})`}
           </button>
         ))}
 
