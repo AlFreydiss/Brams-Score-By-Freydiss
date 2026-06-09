@@ -1291,7 +1291,6 @@ option { background: #100a04; }
   width: 100%;
   height: 100%;
   display: block;
-  cursor: crosshair;
 }
 .traitor-vignette {
   position: absolute;
@@ -2010,6 +2009,7 @@ option { background: #100a04; }
   position: absolute;
   top: calc(100% + 12px);
   right: 0;
+  z-index: 200; /* au-dessus du contenu de page dans le contexte navbar (sinon il passe dessous) */
   min-width: 224px;
   padding: 10px;
   border: 1px solid rgba(255,255,255,.11);

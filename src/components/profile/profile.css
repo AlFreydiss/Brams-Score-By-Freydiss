@@ -502,6 +502,9 @@
   .pfx-avatar-ring { width: 132px; height: 132px; }
   .pfx-hero-main { align-self: auto; }
   .pfx-badges, .pfx-actions { justify-content: center; }
+  /* Mobile : les boutons d'action passent à la ligne centrés au lieu de déborder
+     l'écran (Suivre/… coupés aux bords). Pas d'overflow:hidden → le menu "…" sort. */
+  .pfx-actions-row { flex-wrap: wrap; justify-content: center; }
   .pfx-quote { border-left: none; padding-left: 0; }
   .pfx-hero-summary { flex-direction: column; }
   .pfx-hero-summary .pfx-sum-row { border-left: none; border-top: 1px solid var(--line); }
