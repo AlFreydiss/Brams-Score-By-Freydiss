@@ -631,7 +631,9 @@ export default function UnifiedSidebar() {
         borderRadius:22, overflow:'hidden',
         animation:'hubIn .5s .1s cubic-bezier(.22,1,.36,1) both',
         boxShadow:'0 40px 100px rgba(0,0,0,.7), 0 0 90px rgba(191,164,106,.10), 0 0 0 1px rgba(255,255,255,.05) inset, 0 1px 0 rgba(212,176,110,.18) inset',
-        maxHeight:780,
+        // Hauteur STABLE (le contenu scrolle à l'intérieur) → fini le saut petit→gros
+        // au chargement des données async (vocal, top, countdown).
+        height:'min(720px, calc(100vh - 130px))',
       }}>
 
         {/* ── Header ────────────────────────────────────────────────────────── */}
