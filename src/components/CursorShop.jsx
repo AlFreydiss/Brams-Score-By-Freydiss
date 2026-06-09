@@ -14,6 +14,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { fetchMyInventory, equipShopItem, createOpeningBgCheckout, completeOpeningBgCheckout } from '../lib/berryShop.js'
+import GiftModal from './GiftModal.jsx'
 
 // ── Constantes configurables ────────────────────────────────────────────────
 const R2_BASE = 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/cursors'
@@ -178,7 +179,7 @@ export function GlobalCursorLayer() {
 }
 
 // ── Carte curseur ─────────────────────────────────────────────────────────────
-function CursorCard({ cur, owned, equipped, affordable, busy, onBuy, onEquip }) {
+function CursorCard({ cur, owned, equipped, affordable, busy, onBuy, onEquip, onGift }) {
   const r = RARITY_CONFIG[cur.rarete]
   const [hover, setHover] = useState(false)
   const soldOut = cur.limite && cur.stock != null && cur.stock <= 0
@@ -231,7 +232,10 @@ function CursorCard({ cur, owned, equipped, affordable, busy, onBuy, onEquip }) 
         {cur.animated && <span style={{ fontSize: 10, fontWeight: 800, color: r.color, fontFamily: "'Cinzel', serif" }}>✦ ANIMÉ</span>}
       </div>
 
-      {action}
+      <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ flex: 1 }}>{action}</div>
+        <button onClick={() => onGift(cur)} title="Offrir à un membre" style={{ flexShrink: 0, width: 44, borderRadius: 10, border: `1px solid ${r.color}55`, background: 'rgba(255,255,255,0.04)', color: r.color, cursor: 'pointer', fontSize: 17 }}>🎁</button>
+      </div>
     </div>
   )
 }
@@ -254,6 +258,7 @@ export default function CursorShop() {
   const [filter, setFilter] = useState('TOUS')
   const [toast, setToast] = useState(null)
   const [flashId, setFlashId] = useState(null)
+  const [giftItem, setGiftItem] = useState(null)
 
   const refresh = useCallback(async () => {
     if (!isAuthenticated) { setLoading(false); return }
@@ -268,13 +273,18 @@ export default function CursorShop() {
   // côté serveur, flash de succès, nettoie l'URL, refetch l'inventaire.
   useEffect(() => {
     const p = new URLSearchParams(window.location.search)
-    if (p.get('stripe') !== 'success') return
+    const mode = p.get('stripe')
+    if (mode !== 'success' && mode !== 'gift_sent') return
     const sid = p.get('session_id')
     ;(async () => {
       if (sid) {
         const { data } = await completeOpeningBgCheckout(sid)
-        if (data?.item?.id) { setFlashId(data.item.id); setTimeout(() => setFlashId(null), 900) }
-        showToast('✦ Curseur débloqué ! Équipe-le.', 'success')
+        if (mode === 'gift_sent') {
+          showToast(data?.refunded ? 'Ce membre possédait déjà l\'article — tu as été remboursé.' : '🎁 Cadeau envoyé ! Ton nakama le verra à sa connexion.', 'success')
+        } else {
+          if (data?.item?.id) { setFlashId(data.item.id); setTimeout(() => setFlashId(null), 900) }
+          showToast('✦ Article débloqué ! Équipe-le.', 'success')
+        }
       }
       window.history.replaceState({}, document.title, '/boutique')
       refresh()
@@ -387,7 +397,7 @@ export default function CursorShop() {
                 equipped={equippedId === cur.id}
                 affordable={true}
                 busy={busyId === cur.id}
-                onBuy={buy} onEquip={equip}
+                onBuy={buy} onEquip={equip} onGift={setGiftItem}
               />
               {flashId === cur.id && (
                 <div aria-hidden style={{ position: 'absolute', inset: 0, borderRadius: 16, pointerEvents: 'none', background: 'radial-gradient(circle at 50% 45%, rgba(245,181,10,0.55), transparent 65%)', animation: 'crc-flash .85s ease-out forwards' }}>
@@ -415,6 +425,8 @@ export default function CursorShop() {
           boxShadow: '0 14px 44px rgba(0,0,0,.55)',
         }}>{toast.msg}</div>
       )}
+
+      {giftItem && <GiftModal item={{ id: giftItem.id, nom: giftItem.nom, emoji: giftItem.emoji }} onClose={() => setGiftItem(null)} />}
     </section>
   )
 }

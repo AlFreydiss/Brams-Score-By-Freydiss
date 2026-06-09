@@ -1,5 +1,5 @@
 import { supabase } from './supabase.js'
-import { sbRpc, getAccessToken } from './supabaseRest.js'
+import { sbRpc, getAccessToken, SB_URL, SB_KEY } from './supabaseRest.js'
 
 export const SHOP_CATEGORIES = [
   'Cosmetique',
@@ -383,6 +383,46 @@ export function createOpeningBgCheckout(itemId) {
 
 export function completeOpeningBgCheckout(sessionId) {
   return stripeShopPost('/api/stripe-complete', { sessionId })
+}
+
+// ── Cadeaux & panier ──────────────────────────────────────────────────────────
+// Offrir un article (vrai argent) à un membre → Stripe Checkout.
+export function createGiftCheckout(itemId, recipientId, message) {
+  return stripeShopPost('/api/stripe-gift', { itemId, recipientId, message })
+}
+// Panier multi-articles (promo 1 offert sur 2, calcul serveur) → Stripe Checkout.
+export function createCartCheckout(itemIds) {
+  return stripeShopPost('/api/stripe-cart', { itemIds })
+}
+
+// Cadeaux reçus non vus (REST direct, anti-hang). RLS → renvoie les miens.
+export async function fetchUnseenGifts() {
+  if (!SB_URL || !SB_KEY) return []
+  try {
+    const token = await getAccessToken().catch(() => null)
+    if (!token) return [] // les cadeaux sont privés (RLS) → besoin du JWT
+    const r = await fetch(`${SB_URL}/rest/v1/gifts?seen=eq.false&order=created_at.desc&select=id,from_id,item_id,item_label,message,gifter_name,created_at`, {
+      headers: { apikey: SB_KEY, Authorization: `Bearer ${token}`, Accept: 'application/json' },
+    })
+    if (!r.ok) return []
+    const rows = await r.json()
+    return Array.isArray(rows) ? rows : []
+  } catch { return [] }
+}
+
+// Marque des cadeaux comme vus (après affichage de la popup).
+export async function markGiftsSeen(ids) {
+  if (!SB_URL || !SB_KEY || !ids?.length) return
+  try {
+    const token = await getAccessToken().catch(() => null)
+    if (!token) return
+    const list = ids.map(encodeURIComponent).join(',')
+    await fetch(`${SB_URL}/rest/v1/gifts?id=in.(${list})`, {
+      method: 'PATCH',
+      headers: { apikey: SB_KEY, Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+      body: JSON.stringify({ seen: true }),
+    })
+  } catch {}
 }
 
 // Solde berries (RPC get_berry_balance → bigint). REST direct (anti-hang).

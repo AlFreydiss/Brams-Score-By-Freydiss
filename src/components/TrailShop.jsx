@@ -9,6 +9,7 @@ import { useAuth } from '../contexts/AuthContext.jsx'
 import { fetchMyInventory, equipShopItem, createOpeningBgCheckout, completeOpeningBgCheckout } from '../lib/berryShop.js'
 import { TRAILS, TRAIL_PRICE_CENTS, trailSkin } from '../data/cursor-trails.js'
 import CursorTrail from './CursorTrail.jsx'
+import GiftModal from './GiftModal.jsx'
 
 const TRAIL_KEY = 'brams_trail'
 const TRAIL_EVENT = 'brams-trail-change'
@@ -60,7 +61,7 @@ function TrailSwatch({ trail, size = 56 }) {
   )
 }
 
-function TrailCard({ trail, owned, equipped, busy, onBuy, onEquip }) {
+function TrailCard({ trail, owned, equipped, busy, onBuy, onEquip, onGift }) {
   const r = RARITY[trail.rarete]
   const [hover, setHover] = useState(false)
   let action
@@ -84,7 +85,10 @@ function TrailCard({ trail, owned, equipped, busy, onBuy, onEquip }) {
         </div>
       </div>
       <div style={{ fontSize: 11.5, color: 'rgba(205,189,151,0.6)', fontFamily: "'Cinzel', serif" }}>Bouge la souris pour la voir danser ✦</div>
-      {action}
+      <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ flex: 1 }}>{action}</div>
+        <button onClick={() => onGift(trail)} title="Offrir à un membre" style={{ flexShrink: 0, width: 44, borderRadius: 10, border: `1px solid ${r.color}55`, background: 'rgba(255,255,255,0.04)', color: r.color, cursor: 'pointer', fontSize: 17 }}>🎁</button>
+      </div>
     </div>
   )
 }
@@ -97,6 +101,7 @@ export default function TrailShop() {
   const [busyId, setBusyId] = useState(null)
   const [toast, setToast] = useState(null)
   const [previewId, setPreviewId] = useState(null) // aperçu live de la traînée survolée
+  const [giftItem, setGiftItem] = useState(null)    // traînée à offrir (modale cadeau)
 
   const refresh = useCallback(async () => {
     if (!isAuthenticated) return
@@ -164,7 +169,7 @@ export default function TrailShop() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16 }}>
         {visible.map(trail => (
           <div key={trail.id} onMouseEnter={() => setPreviewId(trail.id)} onMouseLeave={() => setPreviewId(null)}>
-            <TrailCard trail={trail} owned={owned.has(trail.id)} equipped={equippedId === trail.id} busy={busyId === trail.id} onBuy={buy} onEquip={equip} />
+            <TrailCard trail={trail} owned={owned.has(trail.id)} equipped={equippedId === trail.id} busy={busyId === trail.id} onBuy={buy} onEquip={equip} onGift={setGiftItem} />
           </div>
         ))}
       </div>
@@ -183,6 +188,8 @@ export default function TrailShop() {
           border: `1px solid ${toast.kind === 'error' ? 'rgba(255,120,110,0.4)' : 'rgba(245,181,10,0.3)'}`, boxShadow: '0 14px 44px rgba(0,0,0,.55)',
         }}>{toast.msg}</div>
       )}
+
+      {giftItem && <GiftModal item={{ id: giftItem.id, nom: giftItem.nom, emoji: giftItem.emoji }} onClose={() => setGiftItem(null)} />}
     </section>
   )
 }
