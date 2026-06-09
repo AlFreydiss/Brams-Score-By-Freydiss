@@ -175,6 +175,7 @@ function DonorsMarquee() {
   const [name, setName] = useState('')
   const [amount, setAmount] = useState('')
   const [busy, setBusy] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)  // gestion staff cachée derrière l'engrenage
 
   const load = () => fetchDonors().then(d => setDonors(d))
   useEffect(() => { load() }, [])
@@ -216,8 +217,17 @@ function DonorsMarquee() {
         </div>
       </a>
 
-      {/* Formulaire staff : ajoute un soutien → live pour tous, sans redéploiement */}
+      {/* Gestion staff : cachée derrière un engrenage (pas affichée direct). */}
       {staff && (
+        <button onClick={() => setEditOpen(o => !o)} title="Gérer les soutiens"
+          style={{ marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 11px', borderRadius: 8,
+            border: `1px solid ${editOpen ? 'rgba(191,164,106,0.4)' : 'rgba(255,255,255,0.1)'}`, background: editOpen ? 'rgba(191,164,106,0.1)' : 'rgba(255,255,255,0.03)',
+            color: editOpen ? '#d8bd7e' : 'rgba(255,255,255,0.5)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+          <span style={{ display: 'inline-block', transition: 'transform .3s', transform: editOpen ? 'rotate(90deg)' : 'none' }}>⚙️</span>
+          {editOpen ? 'Fermer' : 'Gérer les soutiens'}
+        </button>
+      )}
+      {staff && editOpen && (
         <div style={{ marginTop: 8 }}>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
             <input value={name} onChange={e => setName(e.target.value)} placeholder="Nom du soutien"
