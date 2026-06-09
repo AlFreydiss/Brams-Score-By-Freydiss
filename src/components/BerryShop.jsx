@@ -13,6 +13,7 @@ import TrailShop from './TrailShop.jsx'
 import { CartProvider, useCart } from '../contexts/CartContext.jsx'
 import CartDrawer from './CartDrawer.jsx'
 import PromoBanner from './PromoBanner.jsx'
+import GiftModal from './GiftModal.jsx'
 import { formatEuroCents, openingBgPriceCents, openingBgPriceLabel, OPENING_BG_EURO_PRICE_CENTS } from '../lib/openingBgPricing.js'
 
 // Vraie fourchette de prix des fonds (min/max de la table par rareté).
@@ -133,7 +134,7 @@ function CardMedia({ bg, videoRef }) {
   )
 }
 
-function ItemCard({ bg, owned, equipped, busy, affordable, equipCount = 0, onSelect, onPreview, onBuy, onEquip }) {
+function ItemCard({ bg, owned, equipped, busy, affordable, equipCount = 0, onSelect, onPreview, onBuy, onEquip, onGift }) {
   const r = rar(bg.rarity)
   const videoRef = useRef(null)
   const cart = useCart()
@@ -179,6 +180,10 @@ function ItemCard({ bg, owned, equipped, busy, affordable, equipCount = 0, onSel
               style={{ flex: 1, fontSize: 12.5, fontWeight: 800, color: '#0b0c0e', background: inCart ? '#7fd6a0' : GOLD, border: 'none', borderRadius: 9, padding: '8px 0', cursor: 'pointer' }}>
               {inCart ? '✓ Au panier' : `+ Panier · ${priceLabel(bg)}`}
             </button>
+          )}
+          {!owned && onGift && (
+            <button className="bsx-btn" aria-label="Offrir à un membre" title="Offrir à un membre" onClick={e => { e.stopPropagation(); onGift(bg) }}
+              style={{ flexShrink: 0, width: 34, height: 34, display: 'grid', placeItems: 'center', borderRadius: 9, background: 'rgba(0,0,0,0.4)', border: `1px solid ${HAIR}`, color: GOLD, cursor: 'pointer', fontSize: 15 }}>🎁</button>
           )}
           <button className="bsx-btn" aria-label="Aperçu plein écran" onClick={e => { e.stopPropagation(); onPreview(bg) }}
             style={{ flexShrink: 0, width: 34, height: 34, display: 'grid', placeItems: 'center', borderRadius: 9, background: 'rgba(0,0,0,0.4)', border: `1px solid ${HAIR}`, color: 'rgba(255,255,255,0.78)', cursor: 'pointer', fontSize: 14 }}>⛶</button>
@@ -424,6 +429,7 @@ function BerryShopInner() {
   const [filter, setFilter] = useState('all')
   const [sort, setSort] = useState('rarity')
   const [preview, setPreview] = useState(null) // { list, idx } figé à l'ouverture
+  const [giftItem, setGiftItem] = useState(null) // fond à offrir (modale cadeau)
   const checkoutReturnHandledRef = useRef(false)
 
   const flash = useCallback((msg, kind = 'info') => {
@@ -629,7 +635,8 @@ function BerryShopInner() {
                 <ItemCard key={bg.id} bg={bg}
                   owned={isOwned(bg)} equipped={isEquipped(bg)}
                   busy={busyId === bg.id} affordable={true} equipCount={equipCountOf(bg)}
-                  onSelect={setSelected} onPreview={openPreview} onBuy={buy} onEquip={doEquip} />
+                  onSelect={setSelected} onPreview={openPreview} onBuy={buy} onEquip={doEquip}
+                  onGift={b => setGiftItem({ id: b.id, nom: b.opTitle, emoji: '🎞️' })} />
               ))}
             </div>
           )}
@@ -642,6 +649,8 @@ function BerryShopInner() {
       </div>
 
       {/* Aperçu plein écran */}
+      {giftItem && <GiftModal item={giftItem} onClose={() => setGiftItem(null)} />}
+
       {preview && (
         <PreviewModal list={preview.list} index={preview.idx} ownedSet={owned} equippedId={equippedId} busyId={busyId} counts={equipCounts}
           onClose={closePreview} onNav={navPreview} onBuy={buy} onEquip={doEquip} />

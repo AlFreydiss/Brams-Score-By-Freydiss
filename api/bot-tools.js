@@ -963,9 +963,20 @@ async function stripeGift(req, res) {
     // rembourse aussi à la finalisation en cas de course.
     if (await hasOwnedOpeningBg(recipient, item.itemId)) return res.status(409).json({ error: 'Ce membre possède déjà cet article.' })
 
+    const msg = String(message || '').slice(0, 280)
+    // Le CRÉATEUR offre gratuitement (pas de Stripe) : grant direct + notif.
+    if (String(discordId) === '1094070545248694342') {
+      await grantItem({ item, discordId: recipient, amountCents: 0, status: 'admin_gift' })
+      await supabaseRest('gifts', {
+        method: 'POST', prefer: 'return=minimal',
+        body: [{ from_id: discordId, to_id: recipient, item_id: item.itemId, item_label: item.label,
+                 message: msg || null, gifter_name: gifterName || 'Al Freydiss' }],
+      })
+      return res.status(200).json({ ok: true, free: true, item: { id: item.itemId, label: item.label } })
+    }
+
     await item.ensure()
     const origin = getSiteOrigin(req)
-    const msg = String(message || '').slice(0, 280)
     const params = new URLSearchParams()
     params.set('mode', 'payment')
     params.set('success_url', `${origin}/boutique?stripe=gift_sent&session_id={CHECKOUT_SESSION_ID}`)

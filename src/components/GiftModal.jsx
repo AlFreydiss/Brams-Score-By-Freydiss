@@ -15,6 +15,7 @@ export default function GiftModal({ item, onClose }) {
   const [message, setMessage] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
+  const [sent, setSent] = useState(null)   // nom du destinataire si cadeau créateur offert
   const boxRef = useRef(null)
 
   // Recherche débouncée à chaque frappe (sauf si un membre est déjà choisi).
@@ -42,7 +43,9 @@ export default function GiftModal({ item, onClose }) {
     if (!selected) { setError('Choisis un membre dans la liste.'); return }
     setBusy(true); setError(null)
     const { data, error: err } = await createGiftCheckout(item.id, selected.id, message.trim(), displayName)
-    if (err || !data?.url) { setError(err?.message || 'Paiement indisponible.'); setBusy(false); return }
+    if (err) { setError(err.message || 'Indisponible.'); setBusy(false); return }
+    if (data?.free) { setSent(selected.name); setBusy(false); return }   // créateur : offert gratuitement
+    if (!data?.url) { setError('Paiement indisponible.'); setBusy(false); return }
     window.location.assign(data.url)
   }
 
@@ -59,6 +62,16 @@ export default function GiftModal({ item, onClose }) {
       }}>
         <button onClick={onClose} aria-label="Fermer" style={{ position: 'absolute', top: 14, right: 14, width: 32, height: 32, borderRadius: 9, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.04)', color: '#cdbd97', cursor: 'pointer', fontSize: 16 }}>✕</button>
 
+        {sent ? (
+          <div style={{ textAlign: 'center', padding: '8px 0' }}>
+            <div style={{ fontSize: 52, marginBottom: 8 }}>🎁</div>
+            <h3 style={{ margin: '0 0 8px', fontFamily: "'Pirata One', serif", fontSize: 26, color: '#f4ecd8' }}>Cadeau offert ! 💛</h3>
+            <p style={{ fontSize: 14, color: 'rgba(205,189,151,0.8)', fontFamily: "'Cinzel', serif", lineHeight: 1.6 }}>
+              <strong style={{ color: '#f5b50a' }}>{item.emoji} {item.nom}</strong> envoyé gratuitement à <strong>{sent}</strong>. Il le verra à sa prochaine connexion ✦
+            </p>
+            <button onClick={onClose} style={{ marginTop: 18, width: '100%', padding: 13, borderRadius: 11, border: 'none', cursor: 'pointer', fontFamily: "'Cinzel', serif", fontWeight: 900, fontSize: 14.5, color: '#0b0c0e', background: 'linear-gradient(180deg,#f5b50a,#d4920a)' }}>Parfait ✓</button>
+          </div>
+        ) : (<>
         <div style={{ fontSize: 40, marginBottom: 6 }}>🎁</div>
         <h3 style={{ margin: '0 0 4px', fontFamily: "'Pirata One', serif", fontSize: 28, color: '#f4ecd8' }}>Offrir ce cadeau</h3>
         <p style={{ margin: '0 0 20px', fontSize: 13.5, color: 'rgba(205,189,151,0.7)', fontFamily: "'Cinzel', serif" }}>
@@ -103,6 +116,7 @@ export default function GiftModal({ item, onClose }) {
           fontFamily: "'Cinzel', serif", fontWeight: 900, fontSize: 14.5, color: '#0b0c0e', opacity: busy ? 0.6 : 1,
           background: 'linear-gradient(180deg, #f5b50a, #d4920a)', boxShadow: '0 10px 30px rgba(245,181,10,0.3)',
         }}>{busy ? 'Redirection vers le paiement…' : 'Offrir et payer →'}</button>
+        </>)}
       </div>
     </div>
   )
