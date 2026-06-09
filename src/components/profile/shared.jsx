@@ -59,13 +59,11 @@ export function ErrorState({ title = 'Pirate introuvable', sub = "Ce membre n'es
 
 // Squelette pendant le chargement (hero + barres).
 export function ProfileSkeleton() {
+  // Spinner sobre au lieu des gros blocs gris (jugés "horribles" sur le profil).
   return (
-    <>
-      <div className="pfx-sk" style={{ height: 300 }} />
-      <div className="pfx-stats" style={{ marginTop: 16 }}>
-        {Array.from({ length: 8 }).map((_, i) => <div key={i} className="pfx-sk" style={{ height: 78 }} />)}
-      </div>
-      <div className="pfx-sk" style={{ height: 132, marginTop: 14 }} />
-    </>
+    <div style={{ minHeight: '46vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '70px 0' }}>
+      <div style={{ width: 34, height: 34, border: '3px solid rgba(212,160,23,0.18)', borderTopColor: '#d4a017', borderRadius: '50%', animation: 'pfx-spin 0.75s linear infinite' }} />
+      <style>{`@keyframes pfx-spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
   )
 }

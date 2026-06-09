@@ -8,12 +8,10 @@ export default function ProfileInventory({ data }) {
   const [filter, setFilter] = useState('Tous')
   const inventory = data.shopData?.inventory || []
 
-  const rarities = useMemo(
-    () => [...new Set(inventory.map(i => i?.shop_items?.rarity || 'Commun'))],
-    [inventory],
-  )
+  const rarOf = (i) => i?.shop_items?.rarity || i?.rarity || 'Commun'
+  const rarities = useMemo(() => [...new Set(inventory.map(rarOf))], [inventory])
   const filtered = useMemo(
-    () => filter === 'Tous' ? inventory : inventory.filter(i => (i?.shop_items?.rarity || 'Commun') === filter),
+    () => filter === 'Tous' ? inventory : inventory.filter(i => rarOf(i) === filter),
     [inventory, filter],
   )
 

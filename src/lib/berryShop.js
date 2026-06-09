@@ -437,6 +437,14 @@ export async function fetchMyInventory() {
   return Array.isArray(r) ? r : []
 }
 
+// Inventaire PUBLIC d'un membre (ce qu'il a acheté, visible par tous sur son
+// profil). RPC SECURITY DEFINER → contourne la RLS + REST direct (anti-hang).
+export async function fetchMemberInventory(discordId) {
+  if (!discordId) return []
+  const r = await sbRpc('get_member_inventory', { p_discord_id: String(discordId) }, { tag: 'shop' })
+  return Array.isArray(r) ? r : []
+}
+
 export async function upsertShopItem(item) {
   if (!supabase) return { error: { message: 'Supabase non configuré.' } }
 

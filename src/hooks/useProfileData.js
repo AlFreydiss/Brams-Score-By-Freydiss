@@ -46,7 +46,14 @@ export function useProfileData(discordId) {
       .catch(() => { if (!ignore && !silent) { setError('error'); setLoading(false) } })
 
     // boutique + perso + posts en parallèle, sans bloquer l'affichage
-    fetchBerryShopState(discordId).then(s => { if (!ignore && s) setShopData(s) }).catch(() => {})
+    fetchBerryShopState(discordId).then(s => {
+      if (ignore || !s) return
+      // Inventaire PUBLIC (RPC dédiée) → visible sur le profil de n'importe qui,
+      // contrairement à la lecture directe RLS-gatée de fetchBerryShopState.
+      fetchMemberInventory(discordId)
+        .then(inv => { if (!ignore) setShopData(inv.length ? { ...s, inventory: inv } : s) })
+        .catch(() => { if (!ignore) setShopData(s) })
+    }).catch(() => {})
     // Fond équipé de la cible via RPC public (la RLS empêche de lire l'inventaire
     // d'autrui → sans ça le fond payé n'était visible que par son propriétaire).
     getMemberOpeningBg(discordId).then(bg => { if (!ignore) setPublicBg(bg || null) }).catch(() => {})
