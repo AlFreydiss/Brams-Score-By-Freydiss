@@ -17,6 +17,7 @@ import { fetchMyInventory, equipShopItem, createOpeningBgCheckout, completeOpeni
 import GiftModal from './GiftModal.jsx'
 import SpotlightCard from './SpotlightCard.jsx'
 import { useCart } from '../contexts/CartContext.jsx'
+import RarityRow from './boutique/RarityRow.jsx'
 
 const HUE = { COMMUN: 42, RARE: 220, EPIQUE: 280, MYTHIQUE: 42, INTERDIT: 0 }
 
@@ -399,27 +400,35 @@ export default function CursorShop() {
           ))}
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16 }}>
-          {visible.map(cur => (
-            <div key={cur.id} style={{ position: 'relative' }}>
-              <SpotlightCard hue={HUE[cur.rarete] ?? 42} radius={16}>
-                <CursorCard
-                  cur={cur}
-                  owned={ownedSet.has(cur.id)}
-                  equipped={equippedId === cur.id}
-                  affordable={true}
-                  busy={busyId === cur.id}
-                  onBuy={buy} onEquip={equip} onGift={setGiftItem}
-                />
-              </SpotlightCard>
-              {flashId === cur.id && (
-                <div aria-hidden style={{ position: 'absolute', inset: 0, borderRadius: 16, pointerEvents: 'none', background: 'radial-gradient(circle at 50% 45%, rgba(245,181,10,0.55), transparent 65%)', animation: 'crc-flash .85s ease-out forwards' }}>
-                  <span style={{ position: 'absolute', top: 14, left: '50%', transform: 'translateX(-50%)', fontFamily: "'Pirata One', serif", fontSize: 30, color: '#fff6d8', textShadow: '0 0 12px rgba(245,181,10,0.9)', animation: 'crc-plus .85s ease-out forwards' }}>+1</span>
+        // Rangées « Netflix » par rareté (INTERDIT → COMMUN). Une rangée vide disparaît.
+        [...Object.keys(RARITY_CONFIG)].sort((a, b) => RARITY_CONFIG[b].order - RARITY_CONFIG[a].order).map(rk => {
+          const rows = visible.filter(c => c.rarete === rk)
+          if (!rows.length) return null
+          const rc = RARITY_CONFIG[rk]
+          return (
+            <RarityRow key={rk} label={rc.label} color={rc.color} count={rows.length} countLabel={`curseur${rows.length > 1 ? 's' : ''}`}>
+              {rows.map(cur => (
+                <div key={cur.id} style={{ position: 'relative', flex: '0 0 260px', width: 260 }}>
+                  <SpotlightCard hue={HUE[cur.rarete] ?? 42} radius={16}>
+                    <CursorCard
+                      cur={cur}
+                      owned={ownedSet.has(cur.id)}
+                      equipped={equippedId === cur.id}
+                      affordable={true}
+                      busy={busyId === cur.id}
+                      onBuy={buy} onEquip={equip} onGift={setGiftItem}
+                    />
+                  </SpotlightCard>
+                  {flashId === cur.id && (
+                    <div aria-hidden style={{ position: 'absolute', inset: 0, borderRadius: 16, pointerEvents: 'none', background: 'radial-gradient(circle at 50% 45%, rgba(245,181,10,0.55), transparent 65%)', animation: 'crc-flash .85s ease-out forwards' }}>
+                      <span style={{ position: 'absolute', top: 14, left: '50%', transform: 'translateX(-50%)', fontFamily: "'Pirata One', serif", fontSize: 30, color: '#fff6d8', textShadow: '0 0 12px rgba(245,181,10,0.9)', animation: 'crc-plus .85s ease-out forwards' }}>+1</span>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          ))}
-        </div>
+              ))}
+            </RarityRow>
+          )
+        })
       )}
 
       {!isAuthenticated && (

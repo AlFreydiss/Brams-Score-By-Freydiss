@@ -12,6 +12,7 @@ import CursorTrail from './CursorTrail.jsx'
 import GiftModal from './GiftModal.jsx'
 import SpotlightCard from './SpotlightCard.jsx'
 import { useCart } from '../contexts/CartContext.jsx'
+import RarityRow from './boutique/RarityRow.jsx'
 
 // Teinte de la lueur spotlight par rareté.
 const HUE = { COMMUN: 42, RARE: 220, EPIQUE: 280, MYTHIQUE: 42, INTERDIT: 0 }
@@ -184,15 +185,23 @@ export default function TrailShop() {
         </p>
       </header>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16 }}>
-        {visible.map(trail => (
-          <div key={trail.id} onMouseEnter={() => setPreviewId(trail.id)} onMouseLeave={() => setPreviewId(null)}>
-            <SpotlightCard hue={HUE[trail.rarete] ?? 42} radius={16}>
-              <TrailCard trail={trail} owned={owned.has(trail.id)} equipped={equippedId === trail.id} busy={busyId === trail.id} onBuy={buy} onEquip={equip} onGift={setGiftItem} />
-            </SpotlightCard>
-          </div>
-        ))}
-      </div>
+      {/* Rangées « Netflix » par rareté (INTERDIT → COMMUN). */}
+      {[...Object.keys(RARITY)].sort((a, b) => RARITY[b].order - RARITY[a].order).map(rk => {
+        const rows = visible.filter(t => t.rarete === rk)
+        if (!rows.length) return null
+        const rc = RARITY[rk]
+        return (
+          <RarityRow key={rk} label={rc.label} color={rc.color} count={rows.length} countLabel={`traînée${rows.length > 1 ? 's' : ''}`}>
+            {rows.map(trail => (
+              <div key={trail.id} onMouseEnter={() => setPreviewId(trail.id)} onMouseLeave={() => setPreviewId(null)} style={{ flex: '0 0 260px', width: 260 }}>
+                <SpotlightCard hue={HUE[trail.rarete] ?? 42} radius={16}>
+                  <TrailCard trail={trail} owned={owned.has(trail.id)} equipped={equippedId === trail.id} busy={busyId === trail.id} onBuy={buy} onEquip={equip} onGift={setGiftItem} />
+                </SpotlightCard>
+              </div>
+            ))}
+          </RarityRow>
+        )
+      })}
 
       {!isAuthenticated && (
         <p style={{ marginTop: 18, fontSize: 13, color: 'rgba(205,189,151,0.6)', fontFamily: "'Cinzel', serif", textAlign: 'center' }}>

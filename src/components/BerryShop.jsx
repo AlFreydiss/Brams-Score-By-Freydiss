@@ -22,6 +22,11 @@ const BG_PRICE_RANGE = (() => {
   return { min: Math.min(...vals), max: Math.max(...vals) }
 })()
 import OpeningBgMedia from './social/OpeningBgMedia.jsx'
+import RarityRow from './boutique/RarityRow.jsx'
+import FondCard from './boutique/FondCard.jsx'
+
+// Ordre des rangées « Netflix » (les plus rares en premier).
+const RARITY_ORDER = ['Secret', 'Interdit', 'Mythique', 'Legendaire', 'Epique', 'Rare', 'Commun']
 
 // ── Tokens ───────────────────────────────────────────────────────────────────
 const GOLD = '#bfa46a'        // or discret
@@ -635,7 +640,7 @@ function BerryShopInner() {
           })}
         </div>
 
-        {/* Grille */}
+        {/* Catalogue : rangées Netflix par rareté — grille classique en mode recherche. */}
         {loading ? <Skeleton />
           : err ? <EmptyState icon="⚠️" title="Boutique indisponible" sub="Impossible de charger ta collection. Réessaie dans un instant." />
           : visible.length === 0 ? (
@@ -644,7 +649,7 @@ function BerryShopInner() {
               title={filter === 'owned' ? "Tu ne possèdes encore aucun fond ici" : 'Aucun fond ne correspond'}
               sub={filter === 'owned' ? 'Débloque ton premier fond rare pour démarrer ta collection.' : 'Change de filtre ou de recherche.'}
             />
-          ) : (
+          ) : search.trim() ? (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: 16 }}>
               {visible.map(bg => (
                 <ItemCard key={bg.id} bg={bg}
@@ -654,6 +659,22 @@ function BerryShopInner() {
                   onGift={b => setGiftItem({ id: b.id, nom: b.opTitle, emoji: '🎞️' })} />
               ))}
             </div>
+          ) : (
+            RARITY_ORDER.map(rk => {
+              const rows = visible.filter(b => (b.rarity || 'Commun') === rk)
+              if (!rows.length) return null
+              const r = rar(rk)
+              return (
+                <RarityRow key={rk} label={r.label} color={r.c} count={rows.length} countLabel={`fond${rows.length > 1 ? 's' : ''}`}>
+                  {rows.map(bg => (
+                    <FondCard key={bg.id} bg={bg}
+                      owned={isOwned(bg)} equipped={isEquipped(bg)} equipCount={equipCountOf(bg)}
+                      onSelect={setSelected} onPreview={openPreview} onEquip={doEquip}
+                      onGift={b => setGiftItem({ id: b.id, nom: b.opTitle, emoji: '🎞️' })} />
+                  ))}
+                </RarityRow>
+              )
+            })
           )}
 
         {/* ─── Catalogue de curseurs custom One Piece ─── */}
