@@ -10,6 +10,12 @@ export const LOCAL_TRACKS = [
     difficulty: 'facile', color: '#f5b50a', emoji: '⚡',
     aliases: ['pokemon', 'pokémon', 'attrapez les tous', 'sacha', 'pikachu', 'generique pokemon'],
   },
+  {
+    id: 'dbs-op2', anime: 'Dragon Ball Super', title: 'Genkai Toppa × Survivor', artist: 'Kiyoshi Hikawa', type: 'OP', episode: 'Opening 2',
+    url: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/blind-test/dbs-op2.mp4',
+    difficulty: 'facile', color: '#f97316', emoji: '🐉',
+    aliases: ['dragon ball super', 'dbs', 'dragon ball', 'genkai toppa', 'survivor', 'limit break', 'limit break x survivor', 'goku'],
+  },
   // ═══ ENDINGS ═══
   {
     id: 'fz-ed1', anime: 'Fate/Zero', title: 'Memoria', artist: 'Kalafina', type: 'ED', episode: 'Ending 1',

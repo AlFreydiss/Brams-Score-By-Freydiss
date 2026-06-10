@@ -8,6 +8,22 @@ import { GENERATED_BACKGROUNDS } from './openingBgGenerated.js'
 // On les garde en tête + leurs ids historiques (inventaire déjà possédé).
 const CURATED_BACKGROUNDS = [
   {
+    id:             'bg-dbs-genkai',
+    shopItemId:     'bg-dbs-genkai',
+    opTitle:        'Genkai Toppa × Survivor',
+    anime:          'Dragon Ball Super',
+    artist:         'Kiyoshi Hikawa',
+    rarity:         'Secret',
+    isNew:          true,
+    euroCents:      299,
+    videoUrl:       'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/blind-test/dbs-op2.mp4',
+    dominantColor:  '#f97316',
+    overlayStart:   'rgba(74,32,6,0.72)',
+    overlayEnd:     'rgba(16,8,2,0.86)',
+    description:    "Dépasse tes limites. L'opening 2 de Super en 4K, réservé à ceux qui brisent leurs plafonds.",
+    label:          'Fond animé',
+  },
+  {
     id:             'bg-pokemon',
     shopItemId:     'bg-pokemon',
     opTitle:        'Pokémon — Indigo League',
