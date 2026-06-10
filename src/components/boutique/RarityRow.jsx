@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import useEmblaCarousel from 'embla-carousel-react'
+import { CARD_WIDTH, CARD_GAP } from './FondCard.jsx'
 
 // Rangée « Netflix » par rareté : titre (pastille + nom + compteur + flèches)
 // + carousel embla drag avec inertie. Générique (fonds, curseurs, traînées).
 // ⚠ PAS de balise <header> ici : une règle CSS globale du site la gonfle à 260px.
 
-const CARD_GAP = 12
 const ROW_GAP = 26
-const SLIDE_STRIDE = 212 // largeur carte 200 + gap
+const SLIDE_STRIDE = CARD_WIDTH + CARD_GAP // pas d'une carte (px)
 
 const reduced = () =>
   typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches

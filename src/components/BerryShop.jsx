@@ -23,7 +23,7 @@ const BG_PRICE_RANGE = (() => {
 })()
 import OpeningBgMedia from './social/OpeningBgMedia.jsx'
 import RarityRow from './boutique/RarityRow.jsx'
-import FondCard from './boutique/FondCard.jsx'
+import FondCard, { CARD_MIN_WIDTH, CARD_GAP } from './boutique/FondCard.jsx'
 
 // Ordre des rangées « Netflix » (les plus rares en premier).
 const RARITY_ORDER = ['Secret', 'Interdit', 'Mythique', 'Legendaire', 'Epique', 'Rare', 'Commun']
@@ -650,12 +650,11 @@ function BerryShopInner() {
               sub={filter === 'owned' ? 'Débloque ton premier fond rare pour démarrer ta collection.' : 'Change de filtre ou de recherche.'}
             />
           ) : search.trim() ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: 16 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fill, minmax(${CARD_MIN_WIDTH}px, 1fr))`, gap: CARD_GAP }}>
               {visible.map(bg => (
-                <ItemCard key={bg.id} bg={bg}
-                  owned={isOwned(bg)} equipped={isEquipped(bg)}
-                  busy={busyId === bg.id} affordable={true} equipCount={equipCountOf(bg)}
-                  onSelect={setSelected} onPreview={openPreview} onBuy={buy} onEquip={doEquip}
+                <FondCard key={bg.id} bg={bg} fluid
+                  owned={isOwned(bg)} equipped={isEquipped(bg)} equipCount={equipCountOf(bg)}
+                  onSelect={setSelected} onPreview={openPreview} onEquip={doEquip}
                   onGift={b => setGiftItem({ id: b.id, nom: b.opTitle, emoji: '🎞️' })} />
               ))}
             </div>

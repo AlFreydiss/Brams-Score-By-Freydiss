@@ -84,7 +84,7 @@ function emojiCursorURI(emoji, size = 40) {
 }
 // Curseur natif : SVG vectoriel dessiné main (cursor-svgs.js) en priorité,
 // fallback emoji si un id n'a pas encore son design.
-function cursorCss(cur) { return `url("${cursorSvgURI(cur.id) || emojiCursorURI(cur.emoji)}") 6 4, auto` }
+function cursorCss(cur) { return `url("${cursorSvgURI(cur.id, 32) || emojiCursorURI(cur.emoji)}") 5 3, auto` }
 
 // Persiste le curseur équipé en localStorage + prévient le GlobalCursorLayer.
 // (La persistance serveur passe par equip_shop_item ; ceci = apply instantané.)
@@ -148,22 +148,27 @@ function CustomCursorOverlay({ id, emoji, glow }) {
   useEffect(() => {
     const el = ref.current
     if (!el) return
+    // Déplacement via transform (compositor GPU) : zéro layout/paint par frame,
+    // contrairement à left/top. translate3d isole la couche composite.
     let raf = 0, x = -100, y = -100
     const onMove = (e) => { x = e.clientX; y = e.clientY; if (!raf) raf = requestAnimationFrame(apply) }
-    const apply = () => { raf = 0; if (el) { el.style.left = x + 'px'; el.style.top = y + 'px' } }
+    const apply = () => { raf = 0; if (el) el.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%,-50%)` }
     window.addEventListener('mousemove', onMove, { passive: true })
     return () => { window.removeEventListener('mousemove', onMove); if (raf) cancelAnimationFrame(raf) }
   }, [])
   return (
     <div ref={ref} aria-hidden style={{
-      position: 'fixed', left: -100, top: -100, zIndex: 2147483647, pointerEvents: 'none',
-      transform: 'translate(-50%,-50%)', fontSize: 30, lineHeight: 1,
+      position: 'fixed', left: 0, top: 0, zIndex: 2147483647, pointerEvents: 'none',
+      transform: 'translate3d(-100px,-100px,0) translate(-50%,-50%)',
+      willChange: 'transform', fontSize: 30, lineHeight: 1,
       filter: `drop-shadow(0 0 7px ${glow || 'rgba(245,181,10,0.7)'})`,
-      animation: 'crc-pulse 1.1s ease-in-out infinite',
     }}>
-      {cursorSvgURI(id)
-        ? <img src={cursorSvgURI(id)} alt="" style={{ width: 34, height: 34, display: 'block' }} />
-        : emoji}
+      {/* Le pulse vit sur l'enfant : il ne se bat plus avec le transform de position. */}
+      <span style={{ display: 'block', animation: 'crc-pulse 1.1s ease-in-out infinite' }}>
+        {cursorSvgURI(id)
+          ? <img src={cursorSvgURI(id)} alt="" style={{ width: 34, height: 34, display: 'block' }} />
+          : emoji}
+      </span>
     </div>
   )
 }
@@ -182,7 +187,7 @@ export function GlobalCursorLayer() {
       // Curseur natif (non animé) appliqué via le body ; animé → body none + overlay.
       if (!payload) document.body.style.cursor = ''
       else if (payload.animated) document.body.style.cursor = 'none'
-      else document.body.style.cursor = `url("${cursorSvgURI(payload.id) || emojiCursorURI(payload.emoji)}") 6 4, auto`
+      else document.body.style.cursor = `url("${cursorSvgURI(payload.id, 32) || emojiCursorURI(payload.emoji)}") 5 3, auto`
     }
     read()
     window.addEventListener(CURSOR_EVENT, read)

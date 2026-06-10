@@ -1,15 +1,23 @@
 import { useEffect, useRef, useState } from 'react'
 import { useCart } from '../../contexts/CartContext.jsx'
-import { useHoverVideo, startTimeOf } from '../../hooks/useHoverVideo.js'
+import { startTimeOf } from '../../hooks/useHoverVideo.js'
 import { openingBgPriceCents, openingBgPriceLabel } from '../../lib/openingBgPricing.js'
 
-// Carte « fond d'opening » pour les rangées Netflix. 200px, ratio 3:4.
-// PERF (134 vidéos) : src monté seulement quand la carte est visible, retiré
-// quand elle sort largement du viewport ; lecture au survol uniquement (desktop),
-// 1 seule vidéo en lecture à la fois (useHoverVideo). Mobile : poster, tap = aperçu.
+// Carte « fond d'opening » format VITRINE : grand aperçu vidéo en haut,
+// infos + actions en dessous. Toutes les dimensions viennent des constantes
+// ci-dessous (aucune taille en dur dans le JSX).
+// PERF (134 vidéos) : src monté seulement près du viewport, retiré quand la
+// carte s'éloigne ; autoplay muet à l'écran ; mobile = poster, tap = aperçu.
 
-const CARD_W = 200
-const CARD_RATIO = 3 / 4 // largeur / hauteur
+export const CARD_WIDTH = 280 // largeur cible d'une carte (px)
+export const CARD_MIN_WIDTH = 260 // largeur mini pour le grid responsive (px)
+export const CARD_IMG_HEIGHT = 200 // hauteur de l'aperçu du fond (px)
+export const CARD_GAP = 20 // espace entre les cartes (px)
+export const CARD_RADIUS = 14 // arrondi des cartes (px)
+export const CARD_TITLE_SIZE = 16 // taille du titre (px)
+export const CARD_SUB_SIZE = 13 // taille du sous-titre / anime (px)
+
+const ICON_BTN = 38 // boutons cadeau / agrandir (px)
 
 const RARITY_COLORS = {
   Commun: '#8a93a6', Rare: '#5481d6', Epique: '#9170c8', Legendaire: '#c9a227',
@@ -26,13 +34,13 @@ const HAIR = 'rgba(255,255,255,0.08)'
 const coarse = () => typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches
 const reduced = () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
-export default function FondCard({ bg, owned, equipped, equipCount = 0, onSelect, onPreview, onEquip, onGift }) {
+export default function FondCard({ bg, owned, equipped, equipCount = 0, onSelect, onPreview, onEquip, onGift, fluid = false }) {
   const color = RARITY_COLORS[bg.rarity] || RARITY_COLORS.Commun
   const cardRef = useRef(null)
+  const videoRef = useRef(null)
   const [inView, setInView] = useState(false)
   const [hover, setHover] = useState(false)
   const [failed, setFailed] = useState(false)
-  const hv = useHoverVideo()
   const isCoarse = coarse()
   const noMotion = reduced()
 
@@ -59,100 +67,92 @@ export default function FondCard({ bg, owned, equipped, equipCount = 0, onSelect
     else cart.setOpen(true)
   }
 
-  const enter = () => setHover(true)
-  const leave = () => setHover(false)
-
-  // Les cartes VIVENT : autoplay muet dès qu'elles sont à l'écran (desktop).
-  // Le lazy mount/unmount (IntersectionObserver) borne le nombre de décodages.
   const showVideo = Boolean(bg.videoUrl) && !failed && inView && !isCoarse && !noMotion
   const t0 = startTimeOf(bg.videoUrl || '')
+
+  const badge = (text, c, extra = {}) => (
+    <span style={{
+      fontSize: 10, fontWeight: 800, letterSpacing: '.1em', textTransform: 'uppercase',
+      color: c, background: 'rgba(8,9,13,0.62)', border: `1px solid ${c}55`,
+      padding: '3px 9px', borderRadius: 999, backdropFilter: 'blur(4px)', ...extra,
+    }}>{text}</span>
+  )
 
   return (
     <div
       ref={cardRef}
       onClick={onCard}
-      onMouseEnter={enter}
-      onMouseLeave={leave}
-      onFocus={() => !isCoarse && hv.onFocus()}
-      onBlur={() => !isCoarse && hv.onBlur()}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
       tabIndex={0}
       role="button"
       aria-label={`${bg.opTitle} — ${bg.anime}`}
       style={{
-        position: 'relative',
-        flex: `0 0 ${CARD_W}px`,
-        width: CARD_W,
-        aspectRatio: `${CARD_RATIO}`,
-        borderRadius: 12,
+        // fluid = grille responsive (la colonne dicte la largeur) ; sinon slide fixe.
+        width: fluid ? '100%' : CARD_WIDTH,
+        flex: fluid ? undefined : `0 0 ${CARD_WIDTH}px`,
+        flexShrink: fluid ? undefined : 0,
+        borderRadius: CARD_RADIUS,
         overflow: 'hidden',
         cursor: 'pointer',
+        background: 'linear-gradient(180deg, rgba(20,22,30,0.92), rgba(12,13,18,0.95))',
         border: `1px solid ${equipped ? `${color}66` : HAIR}`,
-        transform: hover && !noMotion ? 'scale(1.04)' : 'none',
-        boxShadow: hover ? `0 12px 32px -8px ${color}59` : '0 8px 22px rgba(0,0,0,.4)',
+        transform: hover && !noMotion ? 'translateY(-4px)' : 'none',
+        boxShadow: hover ? `0 14px 36px -10px ${color}55` : '0 8px 22px rgba(0,0,0,.4)',
         transition: noMotion ? 'none' : 'transform .25s cubic-bezier(.2,.7,.3,1), box-shadow .25s ease, border-color .25s ease',
-        background: `linear-gradient(160deg, ${bg.overlayStart || '#1a1320'}, ${bg.overlayEnd || '#0a0810'})`,
       }}
     >
-      {/* Média */}
-      {showVideo && (
-        <video
-          ref={hv.videoRef}
-          src={bg.videoUrl}
-          muted
-          loop
-          playsInline
-          preload="metadata"
-          onLoadedMetadata={e => { try { if (e.currentTarget.currentTime < 0.1) e.currentTarget.currentTime = t0 } catch {} }}
-          onError={() => setFailed(true)}
-          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
-        />
-      )}
-      {/* Dégradé bas pour la lisibilité */}
-      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, transparent 42%, rgba(0,0,0,.4) 68%, rgba(0,0,0,.78) 100%)' }} />
+      {/* Aperçu — pleine largeur, hauteur fixe, arrondi en haut (hérité du overflow). */}
+      <div style={{ position: 'relative', width: '100%', height: CARD_IMG_HEIGHT, background: `linear-gradient(160deg, ${bg.overlayStart || '#1a1320'}, ${bg.overlayEnd || '#0a0810'})` }}>
+        {showVideo && (
+          <video
+            ref={videoRef}
+            src={bg.videoUrl}
+            muted
+            loop
+            autoPlay
+            playsInline
+            preload="metadata"
+            onLoadedMetadata={e => { try { if (e.currentTarget.currentTime < 0.1) e.currentTarget.currentTime = t0 } catch {} }}
+            onError={() => setFailed(true)}
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+          />
+        )}
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, transparent 60%, rgba(0,0,0,.42) 100%)' }} />
+        {/* Badge rareté (haut-gauche) + statut (haut-droite) */}
+        <div style={{ position: 'absolute', top: 10, left: 10 }}>{badge(RARITY_LABELS[bg.rarity] || bg.rarity, color)}</div>
+        {(equipped || owned) && (
+          <div style={{ position: 'absolute', top: 10, right: 10 }}>
+            {badge(equipped ? '✓ Équipé' : 'Possédé', equipped ? '#7fd6a0' : GOLD)}
+          </div>
+        )}
+      </div>
 
-      {/* Badge rareté */}
-      <span style={{
-        position: 'absolute', top: 8, left: 8, zIndex: 2,
-        fontSize: 9, fontWeight: 800, letterSpacing: '.1em', textTransform: 'uppercase',
-        color, background: 'rgba(8,9,13,0.6)', border: `1px solid ${color}55`,
-        padding: '2px 7px', borderRadius: 999, backdropFilter: 'blur(4px)',
-      }}>{RARITY_LABELS[bg.rarity] || bg.rarity}</span>
+      {/* Corps : titre, anime, actions. */}
+      <div style={{ padding: '12px 14px 14px' }}>
+        <div style={{ fontSize: CARD_TITLE_SIZE, fontWeight: 800, color: '#fff', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{bg.opTitle}</div>
+        <div style={{ fontSize: CARD_SUB_SIZE, color: 'rgba(255,255,255,0.58)', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {bg.anime}{equipCount > 0 ? ` · ${equipCount} équipé${equipCount > 1 ? 's' : ''}` : ''}
+        </div>
 
-      {/* Badge possédé / équipé */}
-      {(equipped || owned) && (
-        <span style={{
-          position: 'absolute', top: 8, right: 8, zIndex: 2,
-          fontSize: 9, fontWeight: 800, padding: '2px 7px', borderRadius: 999,
-          color: equipped ? '#7fd6a0' : GOLD,
-          background: 'rgba(8,9,13,0.6)',
-          border: `1px solid ${equipped ? 'rgba(127,214,160,0.4)' : `${GOLD}44`}`,
-          backdropFilter: 'blur(4px)',
-        }}>{equipped ? '✓ Équipé' : 'Possédé'}</span>
-      )}
-
-      {/* Pied : titre + anime + bouton */}
-      <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: 2, padding: '10px 10px 11px' }}>
-        <div style={{ fontSize: 13.5, fontWeight: 800, color: '#fff', lineHeight: 1.15, textShadow: '0 2px 8px rgba(0,0,0,.8)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{bg.opTitle}</div>
-        <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.6)', marginTop: 1, textShadow: '0 1px 6px rgba(0,0,0,.85)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{bg.anime}{equipCount > 0 ? ` · ${equipCount} équipé${equipCount > 1 ? 's' : ''}` : ''}</div>
-
-        <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+        <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
           {equipped ? (
-            <span style={{ flex: 1, textAlign: 'center', fontSize: 11.5, fontWeight: 800, color: '#7fd6a0', padding: '7px 0' }}>Équipé</span>
+            <span style={{ flex: 1, textAlign: 'center', fontSize: 13, fontWeight: 800, color: '#7fd6a0', padding: '9px 0' }}>Équipé</span>
           ) : owned ? (
             <button onClick={e => { e.stopPropagation(); onEquip(bg) }}
-              style={{ flex: 1, fontSize: 11.5, fontWeight: 800, color: '#0b0c0e', background: GOLD, border: 'none', borderRadius: 8, padding: '7px 0', cursor: 'pointer' }}>Équiper</button>
+              style={{ flex: 1, fontSize: 13, fontWeight: 800, color: '#0b0c0e', background: GOLD, border: 'none', borderRadius: 10, padding: '9px 0', cursor: 'pointer' }}>Équiper</button>
           ) : (
             <button onClick={e => { e.stopPropagation(); inCart ? cart.setOpen(true) : cart.add(cartItem) }}
-              style={{ flex: 1, fontSize: 11.5, fontWeight: 800, color: '#0b0c0e', background: inCart ? '#7fd6a0' : GOLD, border: 'none', borderRadius: 8, padding: '7px 0', cursor: 'pointer', whiteSpace: 'nowrap', overflow: 'hidden' }}>
+              style={{ flex: 1, fontSize: 13, fontWeight: 800, color: '#0b0c0e', background: inCart ? '#7fd6a0' : GOLD, border: 'none', borderRadius: 10, padding: '9px 0', cursor: 'pointer', whiteSpace: 'nowrap', overflow: 'hidden' }}>
               {inCart ? '✓ Panier' : `+ ${priceLabel}`}
             </button>
           )}
           {!owned && onGift && (
             <button aria-label="Offrir" title="Offrir à un membre" onClick={e => { e.stopPropagation(); onGift(bg) }}
-              style={{ flexShrink: 0, width: 30, height: 30, display: 'grid', placeItems: 'center', borderRadius: 8, background: 'rgba(0,0,0,0.45)', border: `1px solid ${HAIR}`, color: GOLD, cursor: 'pointer', fontSize: 13 }}>🎁</button>
+              style={{ flexShrink: 0, width: ICON_BTN, height: ICON_BTN, display: 'grid', placeItems: 'center', borderRadius: 10, background: 'rgba(255,255,255,0.05)', border: `1px solid ${HAIR}`, color: GOLD, cursor: 'pointer', fontSize: 16 }}>🎁</button>
           )}
           <button aria-label="Aperçu plein écran" onClick={e => { e.stopPropagation(); onPreview(bg) }}
-            style={{ flexShrink: 0, width: 30, height: 30, display: 'grid', placeItems: 'center', borderRadius: 8, background: 'rgba(0,0,0,0.45)', border: `1px solid ${HAIR}`, color: 'rgba(255,255,255,0.78)', cursor: 'pointer', fontSize: 12 }}>⛶</button>
+            style={{ flexShrink: 0, width: ICON_BTN, height: ICON_BTN, display: 'grid', placeItems: 'center', borderRadius: 10, background: 'rgba(255,255,255,0.05)', border: `1px solid ${HAIR}`, color: 'rgba(255,255,255,0.78)', cursor: 'pointer', fontSize: 15 }}>⛶</button>
         </div>
       </div>
     </div>

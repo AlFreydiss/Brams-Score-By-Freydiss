@@ -5,7 +5,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 const S = (inner) =>
-  `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40">${inner}</svg>`
+  `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40" shape-rendering="geometricPrecision">${inner}</svg>`
 
 export const CURSOR_SVGS = {
   // ── COMMUN ─────────────────────────────────────────────────────────────────
@@ -191,7 +191,13 @@ export const CURSOR_SVGS = {
 }
 
 // Data-URI prêt pour `cursor: url(...)` ou <img src>.
-export function cursorSvgURI(id) {
+// `size` redimensionne le rendu (vectoriel → net à toutes tailles) : 32px pour le
+// curseur natif (taille standard OS, pas de clipping), 40+ pour les aperçus.
+export function cursorSvgURI(id, size) {
   const svg = CURSOR_SVGS[id]
-  return svg ? `data:image/svg+xml,${encodeURIComponent(svg)}` : null
+  if (!svg) return null
+  const out = size
+    ? svg.replace('width="40" height="40"', `width="${size}" height="${size}"`)
+    : svg
+  return `data:image/svg+xml,${encodeURIComponent(out)}`
 }
