@@ -102,8 +102,17 @@ export default function FondCard({ bg, owned, equipped, equipCount = 0, onSelect
         transition: noMotion ? 'none' : 'transform .25s cubic-bezier(.2,.7,.3,1), box-shadow .25s ease, border-color .25s ease',
       }}
     >
-      {/* Aperçu — pleine largeur, hauteur fixe, arrondi en haut (hérité du overflow). */}
+      {/* Aperçu — pleine largeur, hauteur fixe, arrondi en haut (hérité du overflow).
+          VIGNETTE JPG (R2 bg-thumbs/) affichée instantanément ; la vidéo se charge
+          par-dessus → plus d'attente sur le flux mp4 pour voir le fond. */}
       <div style={{ position: 'relative', width: '100%', height: CARD_IMG_HEIGHT, background: `linear-gradient(160deg, ${bg.overlayStart || '#1a1320'}, ${bg.overlayEnd || '#0a0810'})` }}>
+        <img
+          src={`https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/bg-thumbs/${bg.id}.jpg`}
+          alt=""
+          loading="lazy"
+          onError={e => { e.currentTarget.style.display = 'none' }}
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+        />
         {showVideo && (
           <video
             ref={videoRef}

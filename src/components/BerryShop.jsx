@@ -23,6 +23,7 @@ const BG_PRICE_RANGE = (() => {
 })()
 import OpeningBgMedia from './social/OpeningBgMedia.jsx'
 import RarityRow from './boutique/RarityRow.jsx'
+import ShopRail from './boutique/ShopRail.jsx'
 import FondCard, { CARD_MIN_WIDTH, CARD_GAP } from './boutique/FondCard.jsx'
 
 // Ordre des rangées « Netflix » (les plus rares en premier).
@@ -586,6 +587,7 @@ function BerryShopInner() {
     <div style={{ minHeight: '100vh', background: BG, color: TXT, paddingTop: 88 }}>
       <style>{CSS}</style>
       <ShopBackdrop />
+      <ShopRail />
       <div style={{ position: 'relative', zIndex: 1, maxWidth: 1240, margin: '0 auto', padding: '0 clamp(16px,3vw,28px) 90px' }}>
 
         {/* Bannière promo 1 acheté = 1 offert avec décompte */}
@@ -608,6 +610,7 @@ function BerryShopInner() {
         </header>
 
         {/* Hero */}
+        <div id="shop-fonds" style={{ scrollMarginTop: 90 }} />
         <ShopHero bg={sel} owned={selOwned} equipped={selEquipped} busy={busyId === sel?.id} affordable={true} equipCount={equipCountOf(sel)} onBuy={buy} onEquip={doEquip} onPreview={openPreview} />
 
         {/* Barre : recherche + filtres + tri + compteurs */}
@@ -677,10 +680,14 @@ function BerryShopInner() {
           )}
 
         {/* ─── Catalogue de curseurs custom One Piece ─── */}
-        <CursorShop />
+        <div id="shop-curseurs" style={{ scrollMarginTop: 90 }}>
+          <CursorShop />
+        </div>
 
         {/* ─── Traînées de curseur (skins de particules) ─── */}
-        <TrailShop />
+        <div id="shop-trainees" style={{ scrollMarginTop: 90 }}>
+          <TrailShop />
+        </div>
       </div>
 
       {/* Aperçu plein écran */}
