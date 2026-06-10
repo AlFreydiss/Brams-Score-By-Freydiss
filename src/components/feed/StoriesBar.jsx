@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { useAuth } from '../../contexts/AuthContext.jsx'
 import { listActiveStories, createStory, uploadAttachment, getUserPosts } from '../../lib/feed.js'
 import StoryViewer from './StoryViewer.jsx'
@@ -201,12 +202,16 @@ export default function StoriesBar() {
         </button>
       ))}
 
-      {viewerIdx !== null && (
-        <StoryViewer authors={authors} startIndex={viewerIdx} onClose={() => setViewerIdx(null)} onDeleted={load} onSeen={load} />
+      {/* Portals sur document.body : .feed-main a un backdrop-filter qui ferait
+          du position:fixed un fixed RELATIF à la colonne (containing block) —
+          le viewer resterait piégé/invisible dans la barre. */}
+      {viewerIdx !== null && createPortal(
+        <StoryViewer authors={authors} startIndex={viewerIdx} onClose={() => setViewerIdx(null)} onDeleted={load} onSeen={load} />,
+        document.body
       )}
 
       {/* ===== STORY COMPOSER MODAL (upload pendant la création + importer) ===== */}
-      {showComposer && (
+      {showComposer && createPortal(
         <div style={{ position:'fixed', inset:0, zIndex:9999, background:'rgba(0,0,0,.85)', display:'flex', alignItems:'center', justifyContent:'center', padding:20 }} onClick={closeComposer}>
           <div
             onClick={e => e.stopPropagation()}
@@ -331,7 +336,8 @@ export default function StoriesBar() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )
