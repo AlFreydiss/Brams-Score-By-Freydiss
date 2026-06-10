@@ -16,7 +16,7 @@ const NAV_LINKS = [
   { label: 'Tournoi',         href: '/tournoi',     action: null,           gated: false, isRoute: true  },
   { label: '🕵️ Undercover',   href: '/undercover',  action: null,           gated: false, isRoute: true  },
   { label: '🔮 Akinator',    href: '/akinator',    action: null,           gated: false, isRoute: true  },
-  { label: '🍥 Animés & Scans', href: '#',          action: 'anime-hub',    gated: true,  isRoute: false },
+  { label: '🍥 Animés & Scans', href: '#',          action: 'anime-hub',    gated: false, isRoute: false },
 ]
 
 function openAnimeHub(event) {

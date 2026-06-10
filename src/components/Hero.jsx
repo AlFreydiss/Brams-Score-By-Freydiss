@@ -197,7 +197,8 @@ function DonorsMarquee() {
 
   return (
     <div style={{ maxWidth: 500, marginTop: 24 }}>
-      <a href={LEETCHI_URL} target="_blank" rel="noopener noreferrer"
+      {/* → page Soutenir du site (plus de lien externe Leetchi ici). */}
+      <Link to="/soutenir"
         style={{ display: list.length ? 'block' : 'none', textDecoration: 'none',
           border: '1px solid rgba(191,164,106,0.18)', borderRadius: 12, background: 'rgba(191,164,106,0.04)', overflow: 'hidden' }}>
         <style>{`@keyframes donors-scroll{from{transform:translateX(0)}to{transform:translateX(-33.333%)}} .donors-track:hover{animation-play-state:paused}`}</style>
@@ -215,7 +216,7 @@ function DonorsMarquee() {
             </div>
           </div>
         </div>
-      </a>
+      </Link>
 
       {/* Gestion staff : cachée derrière un engrenage (pas affichée direct). */}
       {staff && (

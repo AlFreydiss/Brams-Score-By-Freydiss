@@ -123,12 +123,9 @@ function AuthLoadingScreen({ zIndex = 500 }) {
 function MangaRoute() {
   const { slug } = useParams()
   const navigate = useNavigate()
-  const { isAuthenticated, loading } = useAuth()
   const m = MANGA_REGISTRY[slug] || { title: slug, color: '#8b5cf6' }
 
-  if (loading) return <AuthLoadingScreen />
-  if (!isAuthenticated) return <AuthGuard onClose={() => navigate('/')} feature="les scans manga" />
-
+  // Accès libre : plus de connexion requise pour lire les scans.
   return <MangaReaderPage slug={slug} title={m.title} color={m.color} onClose={() => navigate('/')} />
 }
 const ProfilePageYonkou  = lazyWithReload(() => import('./components/ProfilePageYonkou.jsx'))
@@ -137,7 +134,6 @@ const MessagesPage       = lazyWithReload(() => import('./components/MessagesPag
 const BotFeatures        = lazyWithReload(() => import('./components/BotFeatures.jsx'))
 const Quiz               = lazyWithReload(() => import('./components/Quiz.jsx'))
 const HallOfFame         = lazyWithReload(() => import('./components/HallOfFame.jsx'))
-const EquipageSection    = lazyWithReload(() => import('./components/EquipageSection.jsx'))
 const NousSoutenir       = lazyWithReload(() => import('./components/NousSoutenir.jsx'))
 const Leaderboard        = lazyWithReload(() => import('./components/Leaderboard.jsx'))
 const Contact            = lazyWithReload(() => import('./components/Contact.jsx'))
@@ -491,7 +487,6 @@ export default function App() {
             <DeferredSection id="classement" minHeight={540}><Leaderboard /></DeferredSection>
             <DeferredSection minHeight={760}><BotFeatures /></DeferredSection>
             <DeferredSection minHeight={520}><HallOfFame /></DeferredSection>
-            <DeferredSection minHeight={520}><EquipageSection /></DeferredSection>
             <DeferredSection minHeight={480}><NousSoutenir /></DeferredSection>
             <DeferredSection minHeight={460}><Contact /></DeferredSection>
             <DeferredSection minHeight={420}><JoinCTA /></DeferredSection>
@@ -603,10 +598,8 @@ export default function App() {
       </Routes>
 
       {/* ── Overlays globaux — disponibles sur toutes les routes ── */}
+      {/* Accès libre : les animés & scans ne demandent plus de connexion. */}
       {animeHubOpen && (
-        loading ? (
-          <AuthLoadingScreen />
-        ) : isAuthenticated ? (
           <AnimeHub
             onClose={() => navigate('/')}
             onOpenOnepiece={() => navigate('/animes-scan/onepiece')}
@@ -639,14 +632,8 @@ export default function App() {
             onOpenReze={() => navigate('/animes-scan/reze')}
             onOpenMonUnivers={() => navigate('/animes-scan/mon-univers')}
           />
-        ) : (
-          <AuthGuard onClose={() => navigate('/')} feature="les animés & scans" />
-        )
       )}
       {animeIndividualOpen && (
-        loading ? (
-          <AuthLoadingScreen />
-        ) : isAuthenticated ? (
           <>
             {onepieceOpen && <OnePiecePage onClose={closeMedia} />}
             {tpnOpen     && <TpnPage     onClose={closeMedia} />}
@@ -690,20 +677,9 @@ export default function App() {
               />
             )}
           </>
-        ) : (
-          <AuthGuard onClose={() => navigate('/')} feature="les animés & scans" />
-        )
       )}
       {treeOpen      && <FamilyTree3D  onClose={() => setTreeOpen(false)} />}
-      {scansOpen && (
-        loading ? (
-          <AuthLoadingScreen />
-        ) : isAuthenticated ? (
-          <ScansPage onClose={() => navigate('/')} />
-        ) : (
-          <AuthGuard onClose={() => navigate('/')} feature="les scans One Piece" />
-        )
-      )}
+      {scansOpen && <ScansPage onClose={() => navigate('/')} />}
       {encyclopedieOpen && <ComingSoon title="Encyclopédie" onClose={() => setEncyclopedieOpen(false)} />}
       {uploadOpen && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: '#0b0c0e', overflowY: 'auto' }}>
