@@ -1,6 +1,8 @@
 // Fond dédié à la section « Le Fil » — sobre, premium, identité propre (bleu-nuit
-// légèrement violacé + lueur dorée discrète + texture scanlines + vignette + fondus).
-// Inline styles uniquement. Fixe sous la navbar, derrière le contenu (z-index 0).
+// légèrement violacé + lueur dorée discrète + particules or + texture scanlines +
+// vignette + fondus). Inline styles uniquement. Fixe sous la navbar (z-index 0).
+import ParticleField from './ParticleField.jsx'
+
 const NAV_H = 72
 
 // COUCHE 1 — base profonde (bleu-nuit violacé, distinct du noir pur du reste du site)
@@ -21,6 +23,8 @@ export default function FilBackground() {
     <div aria-hidden style={{ position: 'fixed', top: NAV_H, left: 0, right: 0, bottom: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
       <div style={{ ...layer, background: BASE }} />
       <div style={{ ...layer, background: GOLD_GLOW }} />
+      {/* Particules or dérivantes — l'ambiance, pas le sujet */}
+      <ParticleField style={{ ...layer, opacity: 0.5 }} />
       <div style={{ ...layer, backgroundImage: `url("${SCANLINE_SVG}")`, backgroundSize: '100% 3px', opacity: 1 }} />
       <div style={{ ...layer, background: SIDE_VIGNETTE }} />
       {/* COUCHE 5 — fondus haut/bas pour fondre la section dans la page */}
