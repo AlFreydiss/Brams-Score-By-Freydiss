@@ -31,7 +31,26 @@ const AWARDS = [
   { icon: '🌙', label: 'Soul Society' },
 ]
 
-const COVER = 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bleach/thumbnails/S01E001.jpg'
+const COVER = 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bleach/poster.jpg'
+
+// Saisons officielles Bleach (plages d'épisodes — les vidéos sont toutes labellisées S01)
+const SEASONS = [
+  { key:'1',  label:'S1',  title:'Shinigami Remplaçant',   from:1,   to:20  },
+  { key:'2',  label:'S2',  title:"L'Infiltration",         from:21,  to:41  },
+  { key:'3',  label:'S3',  title:'Le Sauvetage',           from:42,  to:63  },
+  { key:'4',  label:'S4',  title:'Les Bounts',             from:64,  to:91  },
+  { key:'5',  label:'S5',  title:"L'Assaut",               from:92,  to:109 },
+  { key:'6',  label:'S6',  title:'Les Arrancars',          from:110, to:131 },
+  { key:'7',  label:'S7',  title:'Hueco Mundo',            from:132, to:151 },
+  { key:'8',  label:'S8',  title:'Le Capitaine Amagai',    from:152, to:167 },
+  { key:'9',  label:'S9',  title:'Le Passé',               from:168, to:189 },
+  { key:'10', label:'S10', title:'La Chute des Arrancars', from:190, to:205 },
+  { key:'11', label:'S11', title:'Zanpakutō',              from:206, to:229 },
+  { key:'12', label:'S12', title:'Zanpakutō II',           from:230, to:265 },
+  { key:'13', label:'S13', title:"L'Armée d'Invasion",     from:266, to:316 },
+  { key:'14', label:'S14', title:'Le Shinigami Perdu',     from:317, to:342 },
+  { key:'15', label:'S15', title:'Fullbring',              from:343, to:366 },
+]
 
 function loadProgress() {
   try { return JSON.parse(localStorage.getItem(`${NS}_vp`) || '{}') } catch { return {} }
@@ -218,6 +237,12 @@ export default function BleachPage({ onClose }) {
   }, [markWatched])
   const playHandlers = useMemo(() => VIDEOS.map((_, i) => () => openDetail(i)), [openDetail])
 
+  const availableSeasons = useMemo(() => SEASONS.filter(s => VIDEOS.some(v => v.episode >= s.from && v.episode <= s.to)), [])
+  const [activeSeason, setActiveSeason] = useState(() => availableSeasons[0]?.key || '1')
+  const seasonInfo = SEASONS.find(s => s.key === activeSeason) || SEASONS[0]
+  const seasonVideos = useMemo(() => VIDEOS.map((v, gi) => ({ v, gi })).filter(({ v }) => v.episode >= seasonInfo.from && v.episode <= seasonInfo.to), [seasonInfo])
+  const seasonWatched = useMemo(() => seasonVideos.filter(({ v }) => progress[keyOf(v)]?.completed).length, [seasonVideos, progress])
+
   const episodes = VIDEOS.map((v, i) => ({ v, i })).filter(x => !x.v.kind)
   const ovas = VIDEOS.map((v, i) => ({ v, i })).filter(x => x.v.kind === 'ova')
   const films = VIDEOS.map((v, i) => ({ v, i })).filter(x => x.v.kind === 'film')
@@ -289,19 +314,49 @@ export default function BleachPage({ onClose }) {
             <div className="ff-layout">
               <InfoPanel watchedCount={watchedCount} total={VIDEOS.length} lastWatchedIdx={resumeIdx} onResume={() => openDetail(resumeIdx)} chapterCount={chapterCount} readCount={readCount} />
               <div>
+                {/* Onglets saison */}
+                <div className="ff-scroll" style={{ display:'flex',gap:8,marginBottom:18,flexWrap:'wrap' }}>
+                  {availableSeasons.map(s => {
+                    const active = s.key === activeSeason
+                    const inSeason = VIDEOS.filter(v => v.episode >= s.from && v.episode <= s.to)
+                    const sWatched = inSeason.filter(v => progress[keyOf(v)]?.completed).length
+                    const sDone = sWatched === inSeason.length && inSeason.length > 0
+                    return (
+                      <button
+                        key={s.key}
+                        className="ff-cta"
+                        onClick={() => { setActiveSeason(s.key); scrollRef.current?.scrollTo({ top:0, behavior:'smooth' }) }}
+                        style={{
+                          padding:'8px 15px',borderRadius:12,border:`1px solid ${active ? COLOR : 'rgba(255,255,255,.10)'}`,
+                          background: active ? `rgba(244,81,30,.18)` : 'rgba(255,255,255,.04)',
+                          color: active ? '#fff' : 'rgba(255,255,255,.45)',
+                          cursor:'pointer',fontSize:12.5,fontWeight:800,fontFamily:'var(--body)',
+                          display:'flex',alignItems:'center',gap:7,whiteSpace:'nowrap',
+                          boxShadow: active ? `0 0 18px ${COLOR}33` : 'none',
+                        }}
+                      >
+                        <span>{s.label}</span>
+                        {sDone && <span style={{ fontSize:10,color:'#34d399' }}>✓</span>}
+                        {!sDone && sWatched > 0 && <span style={{ fontSize:9,color:COLOR2,background:`${COLOR}22`,borderRadius:100,padding:'1px 6px' }}>{sWatched}/{inSeason.length}</span>}
+                      </button>
+                    )
+                  })}
+                </div>
+
                 <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20 }}>
                   <div>
-                    <h3 style={{ margin:'0 0 3px',fontSize:18,fontWeight:900,color:'#fff',letterSpacing:'-.01em' }}>Épisodes</h3>
-                    <div style={{ fontSize:11,color:'rgba(255,255,255,.32)',fontWeight:600 }}>{VIDEOS.length} épisodes • VOSTFR</div>
+                    <h3 style={{ margin:'0 0 3px',fontSize:18,fontWeight:900,color:'#fff',letterSpacing:'-.01em' }}>Saison {seasonInfo.key} — {seasonInfo.title}</h3>
+                    <div style={{ fontSize:11,color:'rgba(255,255,255,.32)',fontWeight:600 }}>{seasonVideos.length} épisodes • VOSTFR</div>
                   </div>
                   <div style={{ display:'flex',alignItems:'center',gap:6,padding:'6px 14px',borderRadius:999,background:'rgba(244,81,30,.08)',border:'1px solid rgba(244,81,30,.18)' }}>
-                    <div style={{ width:6,height:6,borderRadius:'50%',background:'#fbbf24' }} />
-                    <span style={{ fontSize:11,fontWeight:800,color:COLOR2 }}>{watchedCount}/{VIDEOS.length} vus</span>
+                    <div style={{ width:6,height:6,borderRadius:'50%',background: seasonWatched===seasonVideos.length && seasonVideos.length>0 ?'#34d399':'#fbbf24' }} />
+                    <span style={{ fontSize:11,fontWeight:800,color:COLOR2 }}>{seasonWatched}/{seasonVideos.length} vus</span>
                   </div>
                 </div>
 
                 <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(212px,1fr))', gap:14 }}>
-                  {VIDEOS.map((v, i) => {
+                  {seasonVideos.map(({ v, gi }) => {
+                    const i = gi
                     const watched = progress[keyOf(v)]?.completed
                     const isNext = i === resumeIdx
                     const kindLabel = v.kind === 'film' ? 'FILM' : v.kind === 'ova' ? 'OVA' : `ÉP ${v.episode}`

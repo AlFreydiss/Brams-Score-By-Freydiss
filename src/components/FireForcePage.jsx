@@ -33,6 +33,11 @@ const AWARDS = [
 
 const COVER = '/fireforce-poster.jpg'
 
+const SEASONS = [
+  { key:'S02', label:'Saison 2', title:'Asakusa & Holy Sol' },
+  { key:'S03', label:'Saison 3', title:'La Grande Catastrophe' },
+]
+
 function loadProgress() {
   try { return JSON.parse(localStorage.getItem(`${NS}_vp`) || '{}') } catch { return {} }
 }
@@ -218,6 +223,12 @@ export default function FireForcePage({ onClose }) {
   }, [markWatched])
   const playHandlers = useMemo(() => VIDEOS.map((_, i) => () => openDetail(i)), [openDetail])
 
+  const availableSeasons = useMemo(() => SEASONS.filter(s => VIDEOS.some(v => v.season === s.key)), [])
+  const [activeSeason, setActiveSeason] = useState(() => availableSeasons[0]?.key || 'S02')
+  const seasonInfo = SEASONS.find(s => s.key === activeSeason) || SEASONS[0]
+  const seasonVideos = useMemo(() => VIDEOS.map((v, gi) => ({ v, gi })).filter(({ v }) => v.season === seasonInfo.key), [seasonInfo])
+  const seasonWatched = useMemo(() => seasonVideos.filter(({ v }) => progress[keyOf(v)]?.completed).length, [seasonVideos, progress])
+
   const episodes = VIDEOS.map((v, i) => ({ v, i })).filter(x => !x.v.kind)
   const ovas = VIDEOS.map((v, i) => ({ v, i })).filter(x => x.v.kind === 'ova')
   const films = VIDEOS.map((v, i) => ({ v, i })).filter(x => x.v.kind === 'film')
@@ -289,19 +300,49 @@ export default function FireForcePage({ onClose }) {
             <div className="ff-layout">
               <InfoPanel watchedCount={watchedCount} total={VIDEOS.length} lastWatchedIdx={resumeIdx} onResume={() => openDetail(resumeIdx)} chapterCount={chapterCount} readCount={readCount} />
               <div>
+                {/* Onglets saison */}
+                <div style={{ display:'flex',gap:8,marginBottom:18,flexWrap:'wrap' }}>
+                  {availableSeasons.map(s => {
+                    const active = s.key === activeSeason
+                    const inSeason = VIDEOS.filter(v => v.season === s.key)
+                    const sWatched = inSeason.filter(v => progress[keyOf(v)]?.completed).length
+                    const sDone = sWatched === inSeason.length && inSeason.length > 0
+                    return (
+                      <button
+                        key={s.key}
+                        className="ff-cta"
+                        onClick={() => { setActiveSeason(s.key); scrollRef.current?.scrollTo({ top:0, behavior:'smooth' }) }}
+                        style={{
+                          padding:'8px 16px',borderRadius:12,border:`1px solid ${active ? COLOR : 'rgba(255,255,255,.10)'}`,
+                          background: active ? `rgba(244,81,30,.18)` : 'rgba(255,255,255,.04)',
+                          color: active ? '#fff' : 'rgba(255,255,255,.45)',
+                          cursor:'pointer',fontSize:12.5,fontWeight:800,fontFamily:'var(--body)',
+                          display:'flex',alignItems:'center',gap:7,whiteSpace:'nowrap',
+                          boxShadow: active ? `0 0 18px ${COLOR}33` : 'none',
+                        }}
+                      >
+                        <span>{s.label}</span>
+                        {sDone && <span style={{ fontSize:10,color:'#34d399' }}>✓</span>}
+                        {!sDone && sWatched > 0 && <span style={{ fontSize:9,color:COLOR2,background:`${COLOR}22`,borderRadius:100,padding:'1px 6px' }}>{sWatched}/{inSeason.length}</span>}
+                      </button>
+                    )
+                  })}
+                </div>
+
                 <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20 }}>
                   <div>
-                    <h3 style={{ margin:'0 0 3px',fontSize:18,fontWeight:900,color:'#fff',letterSpacing:'-.01em' }}>Épisodes</h3>
-                    <div style={{ fontSize:11,color:'rgba(255,255,255,.32)',fontWeight:600 }}>{VIDEOS.length} épisodes • VOSTFR</div>
+                    <h3 style={{ margin:'0 0 3px',fontSize:18,fontWeight:900,color:'#fff',letterSpacing:'-.01em' }}>{seasonInfo.label} — {seasonInfo.title}</h3>
+                    <div style={{ fontSize:11,color:'rgba(255,255,255,.32)',fontWeight:600 }}>{seasonVideos.length} épisodes • VOSTFR</div>
                   </div>
                   <div style={{ display:'flex',alignItems:'center',gap:6,padding:'6px 14px',borderRadius:999,background:'rgba(244,81,30,.08)',border:'1px solid rgba(244,81,30,.18)' }}>
-                    <div style={{ width:6,height:6,borderRadius:'50%',background:'#fbbf24' }} />
-                    <span style={{ fontSize:11,fontWeight:800,color:COLOR2 }}>{watchedCount}/{VIDEOS.length} vus</span>
+                    <div style={{ width:6,height:6,borderRadius:'50%',background: seasonWatched===seasonVideos.length && seasonVideos.length>0 ?'#34d399':'#fbbf24' }} />
+                    <span style={{ fontSize:11,fontWeight:800,color:COLOR2 }}>{seasonWatched}/{seasonVideos.length} vus</span>
                   </div>
                 </div>
 
                 <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(212px,1fr))', gap:14 }}>
-                  {VIDEOS.map((v, i) => {
+                  {seasonVideos.map(({ v, gi }) => {
+                    const i = gi
                     const watched = progress[keyOf(v)]?.completed
                     const isNext = i === resumeIdx
                     const kindLabel = v.kind === 'film' ? 'FILM' : v.kind === 'ova' ? 'OVA' : `ÉP ${v.episode}`
