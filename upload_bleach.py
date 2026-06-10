@@ -52,8 +52,14 @@ def main():
         try: entries=json.loads(JSON.read_text(encoding='utf-8'))
         except Exception: entries=[]
     by_ep={e['episode']:e for e in entries}
+    def on_r2(k):
+        try: s3.head_object(Bucket=BUCKET,Key=k); return True
+        except ClientError: return False
     for ep in sorted(files):
         f=files[ep]; base=f'S01E{ep:03d}'
+        # deja encode+uploade lors d'un run precedent (temp local supprime) -> ne pas re-encoder
+        if ep in by_ep and on_r2(f'{KEY_PREFIX}/{base}-vostfr.mp4'):
+            print('skip ep',ep,'(deja sur R2)'); continue
         print('\nEp',ep)
         vo=TMP/f'{base}-vostfr.mp4'; vtt=TMP/f'{base}-fr.vtt'; thumb=TMP/f'{base}.jpg'
         if not vo.exists():
