@@ -156,10 +156,11 @@ export default function StoryViewer({ authors, startIndex = 0, onClose, onDelete
   }
 
   const mediaStyle = {
+    position: 'relative',
+    zIndex: 1,
     width: '100%',
     height: '100%',
-    objectFit: 'cover',           // vrai feel Insta story (remplit l'écran)
-    background: '#111',
+    objectFit: 'contain',  // jamais de crop/zoom — le backdrop flouté remplit derrière
   }
 
   return (
@@ -168,9 +169,10 @@ export default function StoryViewer({ authors, startIndex = 0, onClose, onDelete
         position: 'fixed',
         inset: 0,
         zIndex: 10050,   // au dessus du CursorTrail (9998) et tout le reste
-        background: '#000',
+        background: 'rgba(0,0,0,0.92)',
         display: 'flex',
-        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
       }}
       onClick={next} // tap droit = next (les zones précises sont au-dessus)
     >
@@ -178,6 +180,9 @@ export default function StoryViewer({ authors, startIndex = 0, onClose, onDelete
         @keyframes storyFill { from { width: 0% } to { width: 100% } }
         .story-media { transition: opacity .15s ease; }
       `}</style>
+
+      {/* Cadre portrait type Insta : 9/16 centré sur desktop, plein écran mobile */}
+      <div style={{ position: 'relative', height: '100dvh', width: 'min(100vw, calc(100dvh * 0.5625))', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#000' }}>
 
       {/* Progress bars tout en haut (IG style) */}
       <div style={{ display: 'flex', gap: 5, padding: '10px 14px 6px', zIndex: 10, background: 'linear-gradient(to bottom, rgba(0,0,0,.65), transparent)' }}>
@@ -221,8 +226,12 @@ export default function StoryViewer({ authors, startIndex = 0, onClose, onDelete
 
       {/* MEDIA AREA — prend vraiment tout l'écran restant */}
       <div style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', background: '#000' }} onClick={e => e.stopPropagation()}>
+        {/* Backdrop : le média lui-même, flouté et assombri, remplit les bandes vides */}
+        {!isVideo(mediaUrl) && (
+          <img src={mediaUrl} alt="" aria-hidden style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'blur(42px) brightness(0.5)', transform: 'scale(1.18)', zIndex: 0 }} />
+        )}
         {/* Vignette sombre pour que le texte (header, progress, music bar) reste lisible même sur médias très clairs / surexposés */}
-        <div style={{ position:'absolute', inset:0, background:'radial-gradient(circle at center, rgba(0,0,0,0.15) 40%, rgba(0,0,0,0.55) 75%)', zIndex:1, pointerEvents:'none' }} />
+        <div style={{ position:'absolute', inset:0, background:'radial-gradient(circle at center, rgba(0,0,0,0.12) 40%, rgba(0,0,0,0.5) 78%)', zIndex:1, pointerEvents:'none' }} />
 
         {isVideo(mediaUrl) ? (
           <video
@@ -315,6 +324,7 @@ export default function StoryViewer({ authors, startIndex = 0, onClose, onDelete
           </div>
         </div>
       )}
+      </div>
     </div>
   )
 }
