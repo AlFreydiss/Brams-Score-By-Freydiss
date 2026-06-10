@@ -140,15 +140,14 @@ function InfoPanel({ watchedCount, total, lastWatchedIdx, onResume, chapterCount
 
         <button className="ff-cta" onClick={onResume} style={{ width:'100%',padding:'11px 0',borderRadius:12, background:`rgba(244,81,30,.14)`,border:`1px solid rgba(244,81,30,.32)`, color:'#fff',cursor:'pointer',fontSize:13,fontWeight:800, display:'flex',alignItems:'center',justifyContent:'center',gap:8, fontFamily:'var(--body)' }}>
           <span style={{ fontSize:16 }}>▶</span>
-          {chapterCount > 0 ? (readCount === 0 ? `Commencer scans (${chapterCount} ch.)` : readCount === chapterCount ? 'Scans terminés — relire' : `Reprendre lecture scans`) : (pct === 0 ? 'Commencer' : pct === 100 ? 'Revoir depuis le début' : `Reprendre — ${nextVideo?.title || `Ép. ${nextVideo?.episode}`}`)}
+          {pct === 0 ? 'Commencer' : pct === 100 ? 'Revoir depuis le début' : `Reprendre — ${nextVideo?.title || `Ép. ${nextVideo?.episode}`}`}
         </button>
 
         <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:8 }}>
           {[
             { label:'Épisodes', value: String(VIDEOS.length || '—'), dot:COLOR2 },
-            { label:'Chapitres', value: String(chapterCount || 0), dot:'#fbbf24' },
-            { label:'Lus', value: `${readCount}/${chapterCount||0}`, dot:'#34d399' },
-            { label:'Audio', value:'VF + VO', dot:'#f97316' },
+            { label:'Saisons', value:'S2 + S3', dot:'#fbbf24' },
+            { label:'Audio', value:'VOSTFR', dot:'#f97316' },
             { label:'Note', value:'★ 8.1', dot:'#f97316' },
           ].map(s => (
             <div key={s.label} style={{ padding:'10px 12px',borderRadius:12,background:'rgba(255,255,255,.04)',border:'1px solid rgba(255,255,255,.06)' }}>
@@ -292,51 +291,52 @@ export default function FireForcePage({ onClose }) {
               <div>
                 <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20 }}>
                   <div>
-                    <h3 style={{ margin:'0 0 3px',fontSize:18,fontWeight:900,color:'#fff',letterSpacing:'-.01em' }}>Chapitres Manga</h3>
-                    <div style={{ fontSize:11,color:'rgba(255,255,255,.32)',fontWeight:600 }}>{chapterCount} chapitres • Scans disponibles</div>
+                    <h3 style={{ margin:'0 0 3px',fontSize:18,fontWeight:900,color:'#fff',letterSpacing:'-.01em' }}>Épisodes</h3>
+                    <div style={{ fontSize:11,color:'rgba(255,255,255,.32)',fontWeight:600 }}>{VIDEOS.length} épisodes • VOSTFR</div>
                   </div>
                   <div style={{ display:'flex',alignItems:'center',gap:6,padding:'6px 14px',borderRadius:999,background:'rgba(244,81,30,.08)',border:'1px solid rgba(244,81,30,.18)' }}>
                     <div style={{ width:6,height:6,borderRadius:'50%',background:'#fbbf24' }} />
-                    <span style={{ fontSize:11,fontWeight:800,color:COLOR2 }}>Scans actifs</span>
+                    <span style={{ fontSize:11,fontWeight:800,color:COLOR2 }}>{watchedCount}/{VIDEOS.length} vus</span>
                   </div>
                 </div>
 
-                <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(155px,1fr))', gap:10 }}>
-                  {CHAPTERS.map((ch, i) => {
-                    const status = scanProg[ch.num] || null
-                    const isRead = status === 'read'
-                    const isReading = status === 'reading'
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(212px,1fr))', gap:14 }}>
+                  {VIDEOS.map((v, i) => {
+                    const watched = progress[keyOf(v)]?.completed
+                    const isNext = i === resumeIdx
+                    const kindLabel = v.kind === 'film' ? 'FILM' : v.kind === 'ova' ? 'OVA' : `ÉP ${v.episode}`
                     return (
                       <button
-                        key={ch.num}
-                        onClick={() => openChapter(i)}
+                        key={v.progressKey || v.id || i}
+                        className="ff-ep-card"
+                        onClick={() => openDetail(i)}
                         style={{
-                          position:'relative',
-                          background: isRead ? 'rgba(20,12,8,.5)' : 'rgba(20,12,8,.85)',
-                          border: isReading ? `2px solid ${COLOR}` : `1px solid ${isRead ? 'rgba(244,81,30,.15)' : 'rgba(255,255,255,.07)'}`,
-                          borderRadius:14, padding:'14px', cursor:'pointer', textAlign:'left', fontFamily:'var(--body)',
-                          opacity: isRead ? 0.7 : 1,
-                          transition: 'all .15s ease'
+                          position:'relative', padding:0, textAlign:'left', fontFamily:'var(--body)',
+                          background:'rgba(20,12,8,.7)',
+                          border: isNext ? `2px solid ${COLOR}` : `1px solid rgba(255,255,255,.07)`,
+                          borderRadius:14, overflow:'hidden', cursor:'pointer',
                         }}
-                        onMouseEnter={e => { if (!isRead) e.currentTarget.style.borderColor = COLOR + '55' }}
-                        onMouseLeave={e => { if (!isRead && !isReading) e.currentTarget.style.borderColor = 'rgba(255,255,255,.07)' }}
                       >
-                        {isRead && <div style={{ position:'absolute',top:8,right:8,width:18,height:18,borderRadius:'50%',background:'rgba(52,211,153,.2)',border:'1px solid rgba(52,211,153,.5)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,color:'#34d399',fontWeight:700 }}>✓</div>}
-                        {isReading && <div style={{ position:'absolute',top:8,right:8,fontSize:9,fontWeight:700,background:`${COLOR}22`,color:COLOR,border:`1px solid ${COLOR}55`,borderRadius:100,padding:'1px 6px' }}>En cours</div>}
-                        <div style={{ fontSize:18,marginBottom:6 }}>{ch.emoji}</div>
-                        <div style={{ fontSize:9,fontWeight:800,color:COLOR2,letterSpacing:'.08em',marginBottom:3 }}>CHAPITRE {ch.num}</div>
-                        <div style={{ fontSize:12,fontWeight:700,color: isRead ? 'rgba(255,255,255,.5)' : '#fff', lineHeight:1.3, marginBottom:6 }}>{ch.title}</div>
-                        <div style={{ fontSize:10,fontWeight:700,color: isRead ? 'rgba(255,255,255,.3)' : COLOR2 }}>📖 {isRead ? 'Relire' : isReading ? 'Continuer' : 'Lire'}</div>
+                        <div style={{ position:'relative', aspectRatio:'16/9', background:`linear-gradient(135deg,${COLOR}22,#0a0608)`, overflow:'hidden' }}>
+                          {v.thumbnail && (
+                            <img src={v.thumbnail} alt="" loading="lazy"
+                              onError={e => { e.currentTarget.style.display='none' }}
+                              style={{ width:'100%',height:'100%',objectFit:'cover', opacity: watched ? .55 : .92, transition:'opacity .2s, transform .3s' }} />
+                          )}
+                          <div style={{ position:'absolute',inset:0,background:'linear-gradient(180deg,transparent 45%,rgba(8,5,4,.85) 100%)' }} />
+                          <div className="ff-play-btn" style={{ position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)', width:40,height:40,borderRadius:'50%', background:`${COLOR}e0`, display:'flex',alignItems:'center',justifyContent:'center', opacity:.85, boxShadow:`0 4px 18px ${COLOR}66`, fontSize:15,color:'#fff' }}>▶</div>
+                          {watched && <div style={{ position:'absolute',top:8,right:8,width:20,height:20,borderRadius:'50%',background:'rgba(52,211,153,.25)',border:'1px solid rgba(52,211,153,.6)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,color:'#34d399',fontWeight:800 }}>✓</div>}
+                          {isNext && !watched && <div style={{ position:'absolute',top:8,right:8,fontSize:9,fontWeight:800,background:`${COLOR}`,color:'#fff',borderRadius:100,padding:'2px 8px' }}>REPRENDRE</div>}
+                          <div style={{ position:'absolute',bottom:8,left:8,fontSize:9.5,fontWeight:900,color:'#fff',letterSpacing:'.06em',padding:'3px 8px',borderRadius:7,background:'rgba(0,0,0,.6)',backdropFilter:'blur(4px)' }}>{kindLabel}</div>
+                          {v.badge && <div style={{ position:'absolute',bottom:8,right:8,fontSize:8.5,fontWeight:900,color:COLOR2,letterSpacing:'.06em',padding:'3px 7px',borderRadius:7,background:'rgba(0,0,0,.55)' }}>{v.badge}</div>}
+                        </div>
+                        <div style={{ padding:'9px 11px 11px' }}>
+                          <div style={{ fontSize:12.5,fontWeight:800,color: watched ? 'rgba(255,255,255,.55)' : '#fff', lineHeight:1.25, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{v.title || `Épisode ${v.episode}`}</div>
+                          {v.arc && <div style={{ fontSize:9.5,fontWeight:700,color:'rgba(255,255,255,.3)',marginTop:3,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' }}>{v.arc}</div>}
+                        </div>
                       </button>
                     )
                   })}
-                </div>
-
-                <div style={{ marginTop:28,padding:'14px 18px',borderRadius:12,background:'rgba(255,255,255,.03)',border:'1px solid rgba(255,255,255,.05)',display:'flex',alignItems:'center',gap:10 }}>
-                  <span style={{ fontSize:16 }}>🔥</span>
-                  <span style={{ fontSize:12,color:'rgba(255,255,255,.38)',fontWeight:600,lineHeight:1.5 }}>
-                    Fire Force — une histoire d'action et de mystère sur le feu et les âmes. {chapterCount} chapitres de scans disponibles.
-                  </span>
                 </div>
               </div>
             </div>
