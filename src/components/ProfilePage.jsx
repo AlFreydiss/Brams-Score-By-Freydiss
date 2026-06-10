@@ -97,6 +97,18 @@ export default function ProfilePage() {
   const [avatarOpen,  setAvatarOpen]  = useState(false)
   const [followModal, setFollowModal] = useState(null) // 'followers' | 'following' | null
   const [soundOn,     setSoundOn]     = useState(false) // son du fond d'opening
+  // Volume du fond (0..1), mémorisé entre les visites. Le défaut reste coupé
+  // (autoplay non muet bloqué par les navigateurs) mais le niveau choisi persiste.
+  const [bgVolume,    setBgVolume]    = useState(() => {
+    const v = parseFloat(localStorage.getItem('pfx_bg_volume'))
+    return Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : 0.6
+  })
+  const changeVolume = (v) => {
+    setBgVolume(v)
+    localStorage.setItem('pfx_bg_volume', String(v))
+    if (v > 0 && !soundOn) setSoundOn(true)
+    if (v === 0 && soundOn) setSoundOn(false)
+  }
 
   // Masque le fond global (le profil rend le sien) tant qu'on est sur la page.
   useEffect(() => {
@@ -123,15 +135,41 @@ export default function ProfilePage() {
           bloqué). Rendu par le profil lui-même → fiable, indépendant du global. */}
       {heroBg && (
         <div className="pfx-page-bg" aria-hidden>
-          <OpeningBgMedia bg={heroBg} className="pfx-page-bg-media" muted={!soundOn} />
+          <OpeningBgMedia bg={heroBg} className="pfx-page-bg-media" muted={!soundOn || bgVolume === 0} volume={bgVolume} />
           <div className="pfx-page-bg-veil" />
         </div>
       )}
+      {/* Contrôle son du fond : mute + VOLUME réglable (mémorisé). */}
       {heroBg && (
-        <button type="button" className="pfx-sound-toggle" onClick={() => setSoundOn(s => !s)}
-          title={soundOn ? 'Couper le son' : 'Activer le son'} aria-label="Son du fond">
-          {soundOn ? '🔊' : '🔇'}
-        </button>
+        <div
+          style={{
+            position: 'fixed', right: 18, bottom: 18, zIndex: 30,
+            display: 'flex', alignItems: 'center', gap: 10,
+            padding: '9px 14px', borderRadius: 999,
+            border: '1px solid rgba(255,255,255,0.12)',
+            background: 'rgba(10,12,16,0.75)', backdropFilter: 'blur(10px)',
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => setSoundOn(s => !s)}
+            title={soundOn ? 'Couper le son' : 'Activer le son'}
+            aria-label="Son du fond"
+            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, lineHeight: 1, padding: 0 }}
+          >
+            {!soundOn || bgVolume === 0 ? '🔇' : bgVolume < 0.5 ? '🔉' : '🔊'}
+          </button>
+          <input
+            type="range"
+            min={0}
+            max={100}
+            value={Math.round((soundOn ? bgVolume : 0) * 100)}
+            onChange={e => changeVolume(Number(e.target.value) / 100)}
+            aria-label="Volume du fond d'opening"
+            title={`Volume : ${Math.round((soundOn ? bgVolume : 0) * 100)}%`}
+            style={{ width: 96, accentColor: '#f5b50a', cursor: 'pointer' }}
+          />
+        </div>
       )}
 
       <Navbar />
