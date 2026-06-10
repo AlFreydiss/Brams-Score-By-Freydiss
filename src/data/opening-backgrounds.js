@@ -4,6 +4,19 @@
 // dominantColor : teinte de l'overlay — identité visuelle de l'opening.
 import { GENERATED_BACKGROUNDS } from './openingBgGenerated.js'
 
+// Promotions manuelles de rareté (le fichier généré est écrasé par gen_bg.cjs,
+// donc on patche ICI) : openings iconiques élevés en Mythique — prix suit la rareté.
+const RARITY_OVERRIDES = {
+  'dbz-op1':      'Mythique', // CHA-LA HEAD-CHA-LA — Dragon Ball Z
+  'hxh-op1':      'Mythique', // Departure! — Hunter x Hunter
+  'dandadan-op1': 'Mythique', // Otonoke — Dandadan
+  'chainsaw-op1': 'Mythique', // KICK BACK — Chainsaw Man
+  'aot-op7':      'Mythique', // The Rumbling — Attack on Titan
+}
+const PATCHED_GENERATED = GENERATED_BACKGROUNDS.map(b =>
+  RARITY_OVERRIDES[b.id] ? { ...b, rarity: RARITY_OVERRIDES[b.id] } : b
+)
+
 // Fonds « curated » (descriptions soignées, raretés premium dont Secret).
 // On les garde en tête + leurs ids historiques (inventaire déjà possédé).
 const CURATED_BACKGROUNDS = [
@@ -240,7 +253,7 @@ const CURATED_BACKGROUNDS = [
 const _curatedIds = new Set(CURATED_BACKGROUNDS.map(b => b.id))
 export const OPENING_BACKGROUNDS = [
   ...CURATED_BACKGROUNDS,
-  ...GENERATED_BACKGROUNDS.filter(b => !_curatedIds.has(b.id)),
+  ...PATCHED_GENERATED.filter(b => !_curatedIds.has(b.id)),
 ]
 
 // ── LocalStorage helpers ─────────────────────────────────────────────────

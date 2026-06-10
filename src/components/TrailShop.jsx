@@ -193,7 +193,7 @@ export default function TrailShop() {
         return (
           <RarityRow key={rk} label={rc.label} color={rc.color} count={rows.length} countLabel={`traînée${rows.length > 1 ? 's' : ''}`}>
             {rows.map(trail => (
-              <div key={trail.id} onMouseEnter={() => setPreviewId(trail.id)} onMouseLeave={() => setPreviewId(null)} style={{ flex: '0 0 260px', width: 260 }}>
+              <div key={trail.id} onMouseEnter={() => setPreviewId(trail.id)} onMouseLeave={() => setPreviewId(null)} style={{ flex: '0 0 300px', width: 300 }}>
                 <SpotlightCard hue={HUE[trail.rarete] ?? 42} radius={16}>
                   <TrailCard trail={trail} owned={owned.has(trail.id)} equipped={equippedId === trail.id} busy={busyId === trail.id} onBuy={buy} onEquip={equip} onGift={setGiftItem} />
                 </SpotlightCard>

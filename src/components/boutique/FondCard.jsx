@@ -59,10 +59,12 @@ export default function FondCard({ bg, owned, equipped, equipCount = 0, onSelect
     else cart.setOpen(true)
   }
 
-  const enter = () => { setHover(true); if (!isCoarse) hv.onMouseEnter() }
-  const leave = () => { setHover(false); if (!isCoarse) hv.onMouseLeave() }
+  const enter = () => setHover(true)
+  const leave = () => setHover(false)
 
-  const showVideo = Boolean(bg.videoUrl) && !failed && inView && !isCoarse
+  // Les cartes VIVENT : autoplay muet dès qu'elles sont à l'écran (desktop).
+  // Le lazy mount/unmount (IntersectionObserver) borne le nombre de décodages.
+  const showVideo = Boolean(bg.videoUrl) && !failed && inView && !isCoarse && !noMotion
   const t0 = startTimeOf(bg.videoUrl || '')
 
   return (

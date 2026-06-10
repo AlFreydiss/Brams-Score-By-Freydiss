@@ -93,6 +93,17 @@ export default function CartDrawer() {
 
             {items.length > 0 && (
               <div style={{ padding: '18px 22px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                {/* Rappel BOGO : nombre impair d'articles = un article OFFERT pas encore choisi */}
+                {items.length % 2 === 1 && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 13px', borderRadius: 11, marginBottom: 12, background: 'rgba(245,181,10,0.1)', border: `1px dashed ${GOLD}66` }}>
+                    <span style={{ fontSize: 18 }}>🎁</span>
+                    <div style={{ fontSize: 12.5, lineHeight: 1.45, color: '#f4ecd8', fontWeight: 700 }}>
+                      Attention, tu as peut-être oublié quelque chose !<br />
+                      <span style={{ color: 'rgba(245,181,10,0.95)', fontWeight: 900 }}>1 acheté = 1 OFFERT</span>
+                      <span style={{ color: 'rgba(205,189,151,0.75)', fontWeight: 600 }}> — ajoute un 2ᵉ article, il est gratuit.</span>
+                    </div>
+                  </div>
+                )}
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'rgba(205,189,151,0.7)', marginBottom: 4 }}><span>Sous-total</span><span>{euro(pricing.subtotal)}</span></div>
                 {pricing.saved > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#7fe6a8', fontWeight: 800, marginBottom: 4 }}><span>🎁 1 offert sur 2</span><span>−{euro(pricing.saved)}</span></div>}
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 18, color: '#f4ecd8', fontWeight: 900, fontFamily: "'Cinzel', serif", margin: '8px 0 14px' }}><span>Total</span><span style={{ color: GOLD }}>{euro(pricing.total)}</span></div>

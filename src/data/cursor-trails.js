@@ -23,7 +23,18 @@ export const TRAILS = [
   { id: 'trail-bubble', nom: 'Bulles de Saké', rarete: 'COMMUN', emoji: '🫧',
     config: { colors: ['#bfe3ff', '#9cc8f0', '#e6f4ff'], composite: 'source-over', gravity: -0.03, alpha: 0.5, sizeBase: 2.2, sizeRand: 2.6, decay: 0.035, shadow: 3 } },
 
+  { id: 'trail-corbeau', nom: 'Plumes du Corbeau', rarete: 'COMMUN', emoji: '🪶',
+    // Genjutsu d'Itachi : plumes sombres qui tombent en tourbillonnant.
+    config: { colors: ['#3a3f55', '#1c1f2e', '#6a7090', '#11131f'], composite: 'source-over', gravity: 0.06, speed: 0.2, drift: 0.8, sizeBase: 2.8, sizeRand: 2.6, decay: 0.026, shadow: 5, alpha: 0.6 } },
+
   // ── RARE ──
+  { id: 'trail-konoha', nom: 'Feuilles de Konoha', rarete: 'RARE', emoji: '🍃',
+    // Tourbillon de feuilles vertes façon shunshin de ninja.
+    config: { colors: ['#7ad17a', '#3f9d4b', '#bfe8a8', '#1f5e2c'], composite: 'source-over', gravity: 0.03, speed: 0.34, drift: 0.85, sizeBase: 2.5, sizeRand: 2.4, decay: 0.032, shadow: 5, alpha: 0.72 } },
+  { id: 'trail-lucioles', nom: "Lucioles d'Esprit", rarete: 'RARE', emoji: '🌿',
+    // Forêt de Mononoké : lucioles pâles qui montent lentement, presque irréelles.
+    config: { colors: ['#d8ffe8', '#9af2c0', '#f4fff8', '#5fd49a'], gravity: -0.045, speed: 0.18, drift: 0.4, sizeBase: 1.5, sizeRand: 1.8, decay: 0.024, shadow: 10, alpha: 0.85 } },
+
   { id: 'trail-ember', nom: 'Mera Mera', rarete: 'RARE', emoji: '🔥',
     config: { colors: ['#ffd24a', '#ff7a18', '#ff3b1f', '#ffae3b'], gravity: -0.06, speed: 0.5, sizeBase: 1.8, sizeRand: 2.4, decay: 0.052, shadow: 10 } },
   { id: 'trail-aqua', nom: 'Vague Azur', rarete: 'RARE', emoji: '🌊',
@@ -34,6 +45,13 @@ export const TRAILS = [
     config: { colors: ['#b06cff', '#7a2dff', '#d8b4ff', '#3b1f6e'], speed: 0.6, sizeBase: 1.6, sizeRand: 2.2, decay: 0.06, shadow: 12 } },
   { id: 'trail-sakura', nom: 'Pétales de Sakura', rarete: 'EPIQUE', emoji: '🌸',
     config: { colors: ['#ffd3e6', '#ff9ec4', '#ffc1dd', '#ff7fb3'], composite: 'source-over', gravity: 0.05, speed: 0.28, drift: 0.45, sizeBase: 2.4, sizeRand: 2.2, decay: 0.03, shadow: 4, alpha: 0.7 } },
+
+  { id: 'trail-domaine', nom: 'Énergie Occulte', rarete: 'EPIQUE', emoji: '🩸',
+    // Extension du domaine : énergie maudite cramoisie striée de noir.
+    config: { colors: ['#ff2e63', '#8a0f2e', '#2b0610', '#ff7a9e'], speed: 0.66, drift: 0.3, sizeBase: 1.7, sizeRand: 2.3, decay: 0.058, shadow: 14, alpha: 0.92 } },
+  { id: 'trail-getsuga', nom: 'Croissant Noir', rarete: 'EPIQUE', emoji: '🌙',
+    // Getsuga : lame d'énergie noire ourlée de rouge qui fend l'écran.
+    config: { colors: ['#d22b4a', '#5a0f1f', '#ff4d6d', '#15060c'], speed: 0.78, drift: 0.18, gravity: -0.02, sizeBase: 1.5, sizeRand: 2.0, decay: 0.07, shadow: 13, alpha: 0.95 } },
 
   // ── MYTHIQUE ──
   { id: 'trail-rainbow', nom: 'Prisme', rarete: 'MYTHIQUE', emoji: '🌈',
@@ -54,6 +72,9 @@ export const TRAILS = [
   { id: 'trail-dragon', nom: 'Aura de Combat', rarete: 'INTERDIT', emoji: '🐉',
     // Aura Dragon Ball : flammes bleu-blanc électriques qui montent.
     config: { colors: ['#bfe9ff', '#5ad1ff', '#ffffff', '#2f8fff'], gravity: -0.08, speed: 0.7, drift: 0.25, sizeBase: 1.8, sizeRand: 2.6, decay: 0.055, shadow: 16, alpha: 0.95 } },
+  { id: 'trail-soleil', nom: 'Tambours de la Libération', rarete: 'INTERDIT', emoji: '☀️',
+    // Gear 5 : éclats blanc-chauds, cartoon, qui pulsent comme un rire.
+    config: { colors: ['#ffffff', '#ffe9b0', '#ffd24a', '#fff7e6'], gravity: -0.04, speed: 0.5, drift: 0.55, sizeBase: 2.6, sizeRand: 3.0, decay: 0.045, shadow: 18, alpha: 0.96 } },
 ]
 
 export function findTrail(id) { return TRAILS.find(t => t.id === id) || null }

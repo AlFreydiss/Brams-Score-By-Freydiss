@@ -632,16 +632,22 @@ const TRAIL_PRICE_CENTS = { COMMUN: 50, RARE: 79, EPIQUE: 119, MYTHIQUE: 159, IN
 const TRAILS = [
   { id:'trail-gold',    nom:"Poussière d'Or",     rarete:'COMMUN'   },
   { id:'trail-bubble',  nom:'Bulles de Saké',      rarete:'COMMUN'   },
+  { id:'trail-corbeau', nom:'Plumes du Corbeau',   rarete:'COMMUN'   },
   { id:'trail-ember',   nom:'Mera Mera',           rarete:'RARE'     },
   { id:'trail-aqua',    nom:'Vague Azur',          rarete:'RARE'     },
+  { id:'trail-konoha',  nom:'Feuilles de Konoha',  rarete:'RARE'     },
+  { id:'trail-lucioles',nom:"Lucioles d'Esprit",   rarete:'RARE'     },
   { id:'trail-haki',    nom:'Haki des Rois',       rarete:'EPIQUE'   },
   { id:'trail-sakura',  nom:'Pétales de Sakura',   rarete:'EPIQUE'   },
+  { id:'trail-domaine', nom:'Énergie Occulte',     rarete:'EPIQUE'   },
+  { id:'trail-getsuga', nom:'Croissant Noir',      rarete:'EPIQUE'   },
   { id:'trail-rainbow', nom:'Prisme',              rarete:'MYTHIQUE' },
   { id:'trail-thunder', nom:'Goro Goro',           rarete:'MYTHIQUE' },
   { id:'trail-cloud',   nom:'Nuage Magique',       rarete:'MYTHIQUE' },
   { id:'trail-star',    nom:'Poussière d\'Étoiles',rarete:'MYTHIQUE' },
   { id:'trail-void',    nom:'Œil du Néant',        rarete:'INTERDIT' },
   { id:'trail-dragon',  nom:'Aura de Combat',      rarete:'INTERDIT' },
+  { id:'trail-soleil',  nom:'Tambours de la Libération', rarete:'INTERDIT' },
 ]
 function findTrail(itemId) { const id = String(itemId || '').trim(); return TRAILS.find(t => t.id === id) || null }
 function trailPriceCents(t) { return TRAIL_PRICE_CENTS[t.rarete] || 50 }

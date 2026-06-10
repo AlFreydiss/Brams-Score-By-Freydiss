@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { useOpeningBg } from '../../contexts/OpeningBgContext.jsx'
 import OpeningBgMedia from './OpeningBgMedia.jsx'
 
@@ -38,11 +39,14 @@ const VIDEO_STYLE = {
 export default function EquippedOpeningBackground() {
   const { activeBg, ambientStill, hideAmbient, ambientMuted, setAmbientMuted, ambientVolume, setAmbientVolume } = useOpeningBg()
   const [hovered, setHovered] = useState(false)
+  const { pathname } = useLocation()
   if (!activeBg || hideAmbient) return null
 
   const end = activeBg.overlayEnd || 'rgba(6,7,11,0.94)'
   // Le son n'est possible que sur un fond ANIMÉ (vidéo) — pas une image figée.
-  const canSound = !ambientStill && Boolean(activeBg.videoUrl)
+  // Sur la boutique, la pastille flottante gênait la lecture du hero → masquée
+  // (l'aperçu plein écran boutique a déjà son propre contrôle de volume).
+  const canSound = !ambientStill && Boolean(activeBg.videoUrl) && !pathname.startsWith('/boutique')
 
   return (
     <>

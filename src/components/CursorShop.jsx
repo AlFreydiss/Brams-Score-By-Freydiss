@@ -18,6 +18,7 @@ import GiftModal from './GiftModal.jsx'
 import SpotlightCard from './SpotlightCard.jsx'
 import { useCart } from '../contexts/CartContext.jsx'
 import RarityRow from './boutique/RarityRow.jsx'
+import { cursorSvgURI } from '../data/cursor-svgs.js'
 
 const HUE = { COMMUN: 42, RARE: 220, EPIQUE: 280, MYTHIQUE: 42, INTERDIT: 0 }
 
@@ -81,7 +82,9 @@ function emojiCursorURI(emoji, size = 40) {
     `<text x="50%" y="52%" font-size="${Math.round(size * 0.82)}" text-anchor="middle" dominant-baseline="central">${emoji}</text></svg>`
   return `data:image/svg+xml,${encodeURIComponent(svg)}`
 }
-function cursorCss(cur) { return `url("${emojiCursorURI(cur.emoji)}") 6 4, auto` }
+// Curseur natif : SVG vectoriel dessiné main (cursor-svgs.js) en priorité,
+// fallback emoji si un id n'a pas encore son design.
+function cursorCss(cur) { return `url("${cursorSvgURI(cur.id) || emojiCursorURI(cur.emoji)}") 6 4, auto` }
 
 // Persiste le curseur équipé en localStorage + prévient le GlobalCursorLayer.
 // (La persistance serveur passe par equip_shop_item ; ceci = apply instantané.)
@@ -124,8 +127,11 @@ function CursorPreview({ cur, size = 56 }) {
       background: `radial-gradient(circle at 50% 40%, ${r.color}22, rgba(0,0,0,0.18))`,
       border: `1px solid ${r.color}44`, boxShadow: `inset 0 0 18px ${r.glow}`,
     }}>
-      {/* Tente le PNG R2 ; si absent → emoji (toujours fonctionnel) */}
-      {r2Failed ? (
+      {/* Priorité : SVG vectoriel custom (designs maison) → PNG R2 → emoji */}
+      {cursorSvgURI(cur.id) ? (
+        <img src={cursorSvgURI(cur.id)} alt=""
+          style={{ width: Math.round(size * 0.8), height: Math.round(size * 0.8), animation: cur.animated ? 'crc-float 1.6s ease-in-out infinite' : 'none', filter: `drop-shadow(0 2px 6px ${r.glow})` }} />
+      ) : r2Failed ? (
         <span style={{ fontSize: Math.round(size * 0.56), lineHeight: 1, animation: cur.animated ? 'crc-float 1.6s ease-in-out infinite' : 'none', filter: `drop-shadow(0 2px 6px ${r.glow})` }}>{cur.emoji}</span>
       ) : (
         <img src={r2Url} alt="" onError={() => setR2Failed(true)}
@@ -137,7 +143,7 @@ function CursorPreview({ cur, size = 56 }) {
 
 // Overlay animé qui suit la souris (curseurs MYTHIQUE/INTERDIT = pas faisable en
 // curseur natif animé). Position fixed, pointer-events none, au-dessus de tout.
-function CustomCursorOverlay({ emoji, glow }) {
+function CustomCursorOverlay({ id, emoji, glow }) {
   const ref = useRef(null)
   useEffect(() => {
     const el = ref.current
@@ -154,7 +160,11 @@ function CustomCursorOverlay({ emoji, glow }) {
       transform: 'translate(-50%,-50%)', fontSize: 30, lineHeight: 1,
       filter: `drop-shadow(0 0 7px ${glow || 'rgba(245,181,10,0.7)'})`,
       animation: 'crc-pulse 1.1s ease-in-out infinite',
-    }}>{emoji}</div>
+    }}>
+      {cursorSvgURI(id)
+        ? <img src={cursorSvgURI(id)} alt="" style={{ width: 34, height: 34, display: 'block' }} />
+        : emoji}
+    </div>
   )
 }
 
@@ -172,7 +182,7 @@ export function GlobalCursorLayer() {
       // Curseur natif (non animé) appliqué via le body ; animé → body none + overlay.
       if (!payload) document.body.style.cursor = ''
       else if (payload.animated) document.body.style.cursor = 'none'
-      else document.body.style.cursor = `url("${emojiCursorURI(payload.emoji)}") 6 4, auto`
+      else document.body.style.cursor = `url("${cursorSvgURI(payload.id) || emojiCursorURI(payload.emoji)}") 6 4, auto`
     }
     read()
     window.addEventListener(CURSOR_EVENT, read)
@@ -180,7 +190,7 @@ export function GlobalCursorLayer() {
     return () => { window.removeEventListener(CURSOR_EVENT, read); window.removeEventListener('storage', read) }
   }, [])
   if (!equipped || !equipped.animated) return null
-  return <CustomCursorOverlay emoji={equipped.emoji} glow={equipped.glow} />
+  return <CustomCursorOverlay id={equipped.id} emoji={equipped.emoji} glow={equipped.glow} />
 }
 
 // ── Carte curseur ─────────────────────────────────────────────────────────────
@@ -227,7 +237,8 @@ function CursorCard({ cur, owned, equipped, affordable, busy, onBuy, onEquip, on
       <div style={{ display: 'flex', alignItems: 'center', gap: 13 }}>
         <CursorPreview cur={cur} />
         <div style={{ minWidth: 0 }}>
-          <div style={{ fontFamily: "'Pirata One', serif", fontSize: 21, color: '#f4ecd8', lineHeight: 1.05, marginBottom: 5 }}>{cur.nom}</div>
+          {/* paddingRight quand "ÉDITION LIMITÉE" est affiché → le titre ne passe plus dessous */}
+          <div style={{ fontFamily: "'Pirata One', serif", fontSize: 21, color: '#f4ecd8', lineHeight: 1.05, marginBottom: 5, paddingRight: cur.limite ? 86 : 0 }}>{cur.nom}</div>
           <RarityBadge rarete={cur.rarete} small />
         </div>
       </div>
@@ -408,7 +419,7 @@ export default function CursorShop() {
           return (
             <RarityRow key={rk} label={rc.label} color={rc.color} count={rows.length} countLabel={`curseur${rows.length > 1 ? 's' : ''}`}>
               {rows.map(cur => (
-                <div key={cur.id} style={{ position: 'relative', flex: '0 0 260px', width: 260 }}>
+                <div key={cur.id} style={{ position: 'relative', flex: '0 0 300px', width: 300 }}>
                   <SpotlightCard hue={HUE[cur.rarete] ?? 42} radius={16}>
                     <CursorCard
                       cur={cur}
