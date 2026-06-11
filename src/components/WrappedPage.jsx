@@ -6,6 +6,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { sbRpc } from '../lib/supabaseRest.js'
+import { generateShareCard, shareCanvas } from '../lib/shareCardGenerator.js'
 
 const GOLD = '#F5D97B'
 const GOLD_DEEP = '#BFA46A'
@@ -101,7 +102,24 @@ export default function WrappedPage() {
   const [err, setErr] = useState(null)
   const [idx, setIdx] = useState(0)
   const [held, setHeld] = useState(false)
+  const [copied, setCopied] = useState(false)
   const holdTimer = useRef(null)
+
+  const trackShare = useCallback(() => {
+    if (!isMock) sbRpc('wrapped_share', { p_token: token }, { tag: 'wrapped' }).catch(() => {})
+  }, [token, isMock])
+  const doShare = useCallback(async (format) => {
+    try {
+      const canvas = await generateShareCard(data, format, 'wrapped')
+      await shareCanvas(canvas, `brams-wrapped-${format === '916' ? 'story' : 'carre'}.png`)
+      trackShare()
+    } catch (e) { console.error('[wrapped share]', e) }
+  }, [data, trackShare])
+  const copyLink = useCallback(() => {
+    navigator.clipboard?.writeText(window.location.href.split('?')[0])
+    setCopied(true); setTimeout(() => setCopied(false), 1800)
+    trackShare()
+  }, [trackShare])
   const reduced = useMemo(() => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches, [])
 
   useEffect(() => {
@@ -247,13 +265,28 @@ export default function WrappedPage() {
             </div>
           ))}
         </div>
-        <div style={{ marginTop: 22, fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,.55)', animation: 'wrFadeUp .5s .4s both' }}>
-          🏴‍☠️ brams.community
+        {/* Partage : carte PNG (canvas) 9:16 ou 1:1 — chaque action incrémente
+            share_count (fire-and-forget) pour mesurer la viralité */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center', marginTop: 22, animation: 'wrFadeUp .5s .4s both', position: 'relative', zIndex: 6 }}>
+          {[
+            ['⬇️ Story 9:16', () => doShare('916')],
+            ['⬇️ Carré 1:1', () => doShare('11')],
+            ['🔗 Copier le lien', copyLink],
+          ].map(([label, fn]) => (
+            <button key={label} onClick={(e) => { e.stopPropagation(); fn() }} style={{
+              padding: '11px 16px', borderRadius: 12, cursor: 'pointer', fontFamily: DISPLAY,
+              background: 'rgba(245,217,123,.14)', border: '1.5px solid rgba(245,217,123,.5)',
+              color: GOLD, fontWeight: 800, fontSize: 13.5,
+            }}>{label}</button>
+          ))}
+        </div>
+        <div style={{ marginTop: 16, fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,.55)', animation: 'wrFadeUp .5s .5s both' }}>
+          {copied ? '✓ Lien copié !' : '🏴‍☠️ brams.community'}
         </div>
       </Slide>
     ) })
     return s
-  }, [d])
+  }, [d, copied])
 
   // Auto-advance 6 s (pause au hold), reset au changement de slide
   useEffect(() => {
