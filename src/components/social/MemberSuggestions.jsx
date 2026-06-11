@@ -66,6 +66,8 @@ export default function MemberSuggestions({ layout = 'list', limit = 5, excludeI
   if (layout === 'strip') {
     return (
       <section aria-label={title} style={{ margin: '18px 0 4px', position: 'relative' }}>
+        {/* scrollbar native masquée (barre blanche Windows) — les flèches ‹ › défilent */}
+        <style>{'.ms-strip::-webkit-scrollbar{display:none}'}</style>
         <div style={{ display: 'flex', alignItems: 'center', marginBottom: 10 }}>
           <span style={{ flex: 1, fontSize: 11, fontWeight: 800, letterSpacing: '.12em', textTransform: 'uppercase', color: T.textFaint }}>
             {title}
@@ -81,7 +83,7 @@ export default function MemberSuggestions({ layout = 'list', limit = 5, excludeI
             </button>
           ))}
         </div>
-        <div ref={stripRef} style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 6, scrollbarWidth: 'thin' }}>
+        <div ref={stripRef} className="ms-strip" style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 6, scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
           {members.map(m => (
             <div key={m.user_id} style={{
               flex: '0 0 auto', width: 138, padding: '14px 12px 12px',
