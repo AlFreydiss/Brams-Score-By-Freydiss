@@ -22,7 +22,12 @@ async def update_rank(
 
     roles_to_remove = [r for r in member.roles if r.name in rank_names]
     if roles_to_remove:
-        await member.remove_roles(*roles_to_remove)
+        try:
+            await member.remove_roles(*roles_to_remove)
+        except discord.Forbidden:
+            print(f"[RANK legacy] ECHEC remove_roles {member.display_name} -> permission refusee (role au-dessus du bot ou Manage Roles manquant)")
+        except discord.HTTPException as e:
+            print(f"[RANK legacy] ECHEC remove_roles {member.display_name} -> HTTP {e}")
 
     new_rank = get_rank_for_hours(hours_7d)
     old_rank = user.get("last_rank")
@@ -30,7 +35,14 @@ async def update_rank(
     if new_rank:
         role = discord.utils.get(guild.roles, name=new_rank)
         if role:
-            await member.add_roles(role)
+            try:
+                await member.add_roles(role)
+            except discord.Forbidden:
+                print(f"[RANK legacy] ECHEC add_roles {member.display_name} ({new_rank}) -> permission refusee (role au-dessus du bot ou Manage Roles manquant)")
+            except discord.HTTPException as e:
+                print(f"[RANK legacy] ECHEC add_roles {member.display_name} ({new_rank}) -> HTTP {e}")
+        else:
+            print(f"[RANK legacy] role introuvable: {new_rank}")
 
     if announce and new_rank and new_rank != old_rank:
         rank_order = {r: i for i, (_, r) in enumerate(reversed(RANKS))}

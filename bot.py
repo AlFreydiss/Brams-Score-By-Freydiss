@@ -1698,10 +1698,15 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True, da
         try:
             await member.add_roles(role, reason=f"Rank vocal Brams: {hours_7d:.1f}h/7j")
             added_ranks.add(rank_name)
+            print(f"[RANK] OK +{rank_name} -> {member.display_name}")
         except discord.Forbidden:
-            print(f"[RANK] Permission refusee add_roles {member.display_name} ({rank_name})")
+            # _can_manage venait de passer : si Discord refuse quand meme, on
+            # re-evalue pour donner la raison probable dans le log Railway
+            _, fb_reason = _can_manage_rank_role(guild, role)
+            fb_reason = fb_reason or "role gere par une integration ou hierarchie modifiee a l'instant"
+            print(f"[RANK] ECHEC add_roles {member.display_name} ({rank_name}) -> permission refusee ({fb_reason})")
         except discord.HTTPException as e:
-            print(f"[RANK] add_roles {member.display_name} ({rank_name}): {e}")
+            print(f"[RANK] ECHEC add_roles {member.display_name} ({rank_name}) -> HTTP {e}")
 
     for rank_name in sorted(ranks_to_remove, key=lambda r: rank_order.get(r, -1), reverse=True):
         role = guild.get_role(RANK_ROLES[rank_name])
@@ -1714,11 +1719,14 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True, da
         try:
             await member.remove_roles(role, reason=f"Derank vocal Brams: {hours_7d:.1f}h/7j")
             removed_ranks.add(rank_name)
+            print(f"[RANK] OK -{rank_name} -> {member.display_name}")
         except discord.Forbidden:
-            print(f"[RANK] Permission refusee remove_roles {member.display_name} ({rank_name})")
+            _, fb_reason = _can_manage_rank_role(guild, role)
+            fb_reason = fb_reason or "role gere par une integration ou hierarchie modifiee a l'instant"
+            print(f"[RANK] ECHEC remove_roles {member.display_name} ({rank_name}) -> permission refusee ({fb_reason})")
             continue
         except discord.HTTPException as e:
-            print(f"[RANK] remove_roles {member.display_name} ({rank_name}): {e}")
+            print(f"[RANK] ECHEC remove_roles {member.display_name} ({rank_name}) -> HTTP {e}")
             continue
         # Pas de DM de derank lors d'un resync silencieux (announce=False) — évite
         # de spammer tout le serveur en DM pendant une réconciliation en masse.

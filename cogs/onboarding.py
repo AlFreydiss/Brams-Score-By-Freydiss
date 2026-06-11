@@ -30,6 +30,11 @@ def _rest_base(raw: str) -> str:
 SUPABASE_URL = _rest_base(os.environ.get("SUPABASE_REST_URL") or os.environ.get("SUPABASE_URL", ""))
 SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "")
 ONBOARDING_URL = os.environ.get("ONBOARDING_URL", "https://example.netlify.app")
+# Kill-switch sans redeploy de code : ONBOARDING_ENABLED=false sur Railway
+ONBOARDING_ENABLED = os.environ.get("ONBOARDING_ENABLED", "true").strip().lower() not in {"0", "false", "no", "off"}
+
+# Signatures d'une table absente côté PostgREST (PGRST205, 404, schema cache…)
+_MISSING_TABLE_HINTS = ("could not find the table", "schema cache", "does not exist", "pgrst205", "http 404")
 
 
 def _load_role_map(guild_id: int) -> dict[str, int]:
@@ -46,7 +51,12 @@ class Onboarding(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self._missing_responses_table = False
-        if SUPABASE_URL and SUPABASE_SERVICE_KEY:
+        self._last_poll_error = None   # anti-spam : une erreur identique n'est logguée qu'une fois
+        self._suppressed_errors = 0
+        if not ONBOARDING_ENABLED:
+            self.enabled = False
+            print("[onboarding] desactive via ONBOARDING_ENABLED=false — aucun polling")
+        elif SUPABASE_URL and SUPABASE_SERVICE_KEY:
             self.enabled = True
             self.poll_responses.start()
         else:
@@ -64,7 +74,10 @@ class Onboarding(commands.Cog):
         self.enabled = False
         if self.poll_responses.is_running():
             self.poll_responses.cancel()
-        print("[onboarding] table 'onboarding_responses' absente -> polling desactive")
+        # Warning UNIQUE (le flag ci-dessus garantit zero repetition dans les logs)
+        print("[onboarding] WARNING: table 'onboarding_responses' absente sur Supabase "
+              "-> polling desactive pour toute la session. Cree la table "
+              "(brams-onboarding/supabase/schema.sql) ou mets ONBOARDING_ENABLED=false.")
 
     async def _rest(self, method: str, table: str, *, params: dict | None = None, json_body=None):
         if not self.enabled:
@@ -183,11 +196,27 @@ class Onboarding(commands.Cog):
             })
         except Exception as e:
             msg = str(e)
-            if "onboarding_responses" in msg and ("Could not find the table" in msg or "schema cache" in msg):
+            low = msg.lower()
+            if any(h in low for h in _MISSING_TABLE_HINTS):
                 self._disable_polling_missing_table()
                 return
+            # Anti-spam : la meme erreur en boucle (10s) n'est logguee qu'une fois,
+            # avec un resume du nombre d'occurrences quand elle change/revient.
+            if msg == self._last_poll_error:
+                self._suppressed_errors += 1
+                return
+            if self._suppressed_errors:
+                print(f"[onboarding] (erreur precedente repetee {self._suppressed_errors}x, non logguee)")
+            self._last_poll_error = msg
+            self._suppressed_errors = 0
             print(f"[onboarding] erreur de polling: {e}")
             return
+
+        if self._last_poll_error is not None:
+            if self._suppressed_errors:
+                print(f"[onboarding] polling retabli (erreur repetee {self._suppressed_errors}x entre-temps)")
+            self._last_poll_error = None
+            self._suppressed_errors = 0
 
         for row in rows or []:
             await self._handle_response(row)
