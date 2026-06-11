@@ -289,7 +289,7 @@ function r2SanitizeKey(name) {
   return String(name).replace(/\\/g, '/').split('/').map(s => s.replace(/[^a-zA-Z0-9._-]/g, '_')).filter(Boolean).join('/')
 }
 // Types autorisés pour les pièces jointes DM (uploads par utilisateur connecté)
-const R2_DM_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'audio/webm', 'audio/mpeg', 'audio/ogg', 'audio/mp4', 'video/webm', 'application/pdf']
+const R2_DM_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'audio/webm', 'audio/mpeg', 'audio/ogg', 'audio/mp4', 'video/webm', 'video/mp4', 'video/quicktime', 'application/pdf']
 const R2_ANON = process.env.SUPABASE_ANON_KEY
   || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InplcWV0cm11bHFuZHh1Z2Zib2pkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzNzUxNzksImV4cCI6MjA5MTk1MTE3OX0.HQbMRJnT_FAFfA8kYi-DYgjOuPnGpQU5zkeRAGb8Qso'
 function r2ResolveDiscord(user) {
