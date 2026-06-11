@@ -3,7 +3,6 @@
 // abonnés / suivis / aura) + bio. Le fond d'opening équipé sert de backdrop
 // discret (overlay sombre fort) ; une bannière custom le remplace si définie.
 import { fmtB, fmtNum } from '../../lib/profileTokens.js'
-import { CountUp } from './shared.jsx'
 import ProfileActions from './ProfileActions.jsx'
 import FollowersPreview from './FollowersPreview.jsx'
 
@@ -16,7 +15,7 @@ const CERTIFS = {
 
 export default function ProfileHero({ data, copied, onShare, onEdit, onAvatar, onShowFollowers, onShowFollowing }) {
   const {
-    member, rank, aura, auraTier, postsCount, followStats, settings,
+    member, rank, postsCount, followStats, settings,
     isOwnProfile, profileIsCreator, profileIsStaff,
   } = data
 
@@ -27,7 +26,6 @@ export default function ProfileHero({ data, copied, onShare, onEdit, onAvatar, o
     { key: 'posts',     val: postsCount == null ? '—' : fmtNum(postsCount),                 lbl: 'publications' },
     { key: 'followers', val: fmtNum(followStats?.followers_count ?? 0),                     lbl: 'abonnés',  onClick: onShowFollowers },
     { key: 'following', val: fmtNum(followStats?.following_count ?? 0),                      lbl: 'suivis',   onClick: onShowFollowing },
-    { key: 'aura',      val: <CountUp value={aura} />,                                       lbl: 'aura' },
   ]
 
   return (
@@ -81,7 +79,6 @@ export default function ProfileHero({ data, copied, onShare, onEdit, onAvatar, o
             <span className="pfx-badge pfx-badge-rank" style={{ '--rank': rank.color }}>{rank.emoji} {rank.rang}</span>
             {profileIsCreator && <span className="pfx-badge pfx-badge-creator">👑 Créateur</span>}
             {profileIsStaff   && <span className="pfx-badge pfx-badge-staff">🛡 Staff</span>}
-            <span className="pfx-badge" style={{ color: auraTier.color }}>✦ {auraTier.label}</span>
           </div>
 
           {/* Ligne stats */}
