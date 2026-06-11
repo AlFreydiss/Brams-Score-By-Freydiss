@@ -8461,6 +8461,52 @@ async def addheures_cmd(interaction: discord.Interaction, membre: discord.Member
     )
 
 
+@bot.tree.command(name="resetheures", description="[ADMIN] Remet à zéro les heures vocales d'un membre (retire ses rangs)")
+@app_commands.default_permissions(administrator=True)
+@app_commands.checks.has_permissions(administrator=True)
+@app_commands.describe(membre="Membre dont les heures vocales seront remises à zéro")
+async def resetheures_cmd(interaction: discord.Interaction, membre: discord.Member):
+    await interaction.response.defer(ephemeral=True)
+    if membre.bot:
+        await interaction.followup.send("❌ Les bots n'ont pas de stats.", ephemeral=True); return
+
+    uid = str(membre.id)
+    user = get_user(_CACHE, uid)
+    now = now_ts()
+    old_hours = seconds_in_period(user.get("vocal_sessions", []), 7, join_time=user.get("join_time")) / 3600
+
+    # Zéro vocal : sessions vidées, secondes purgées remises à 0, et si le membre
+    # est EN vocal, son live repart de maintenant (sinon il ré-accumulerait l'ancien temps).
+    user["vocal_sessions"] = []
+    user["extra_seconds"] = 0
+    if user.get("join_time"):
+        user["join_time"] = now
+    user["alerted"] = False
+    _DIRTY.add(uid)
+
+    loop = asyncio.get_running_loop()
+    await loop.run_in_executor(db_executor, _sync_flush_dirty)
+
+    # 0h/7j → update_rank retire tous les rangs (logs [RANK] OK -rang)
+    try:
+        await update_rank(membre, 0.0, announce=False, data=_CACHE)
+    except Exception as e:
+        print(f"[resetheures] update_rank: {e}")
+
+    print(f"[RESET HEURES] {membre.display_name} ({uid}) : {old_hours:.1f}h/7j -> 0h par {interaction.user.display_name}")
+    await interaction.followup.send(
+        embed=discord.Embed(
+            title="🔄 Heures remises à zéro",
+            description=(
+                f"⏱️ {membre.mention} : `{old_hours:.1f}h` → `0h` (7 jours)\n"
+                f"🎖️ Rangs vocaux retirés (les berries ne sont pas touchés)"
+            ),
+            color=0xE67E22,
+        ).set_footer(text=f"Admin : {interaction.user.display_name}"),
+        ephemeral=True,
+    )
+
+
 # ─────────────────────────────────────────
 #  /resync_vocal  (ADMIN)  — réaligne site ↔ Discord
 # ─────────────────────────────────────────
