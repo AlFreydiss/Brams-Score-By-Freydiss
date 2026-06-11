@@ -1,5 +1,9 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+// Plugin Vite officiel Tailwind v4 : indispensable — via @tailwindcss/postcss,
+// Vite inlinait les @import AVANT le plugin et le scan @source/content était
+// silencieusement désactivé (utilities jamais générées pour les nouveaux .tsx).
+import tailwindcss from '@tailwindcss/vite'
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -96,7 +100,7 @@ const pruneHeavyPublicAssets = {
 }
 
 export default defineConfig({
-  plugins: [react(), animePlugin, pruneHeavyPublicAssets],
+  plugins: [react(), tailwindcss(), animePlugin, pruneHeavyPublicAssets],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'src'),
