@@ -40,3 +40,5 @@ CLAUDE.local.md
 .agents/skills/*/
 .agents/skills/*/*/
 .agents/skills/*/*/*
+
+*.tmp.*
