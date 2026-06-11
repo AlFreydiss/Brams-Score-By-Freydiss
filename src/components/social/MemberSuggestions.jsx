@@ -49,6 +49,17 @@ export default function MemberSuggestions({ layout = 'list', limit = 5, excludeI
   const { isAuthenticated } = useAuth()
   const [members, setMembers] = useState(null) // null = loading
   const stripRef = useRef(null)
+  // Fondus latéraux : la bande ne se coupe plus net au bord du conteneur,
+  // le masque suit le scroll (fondu à droite tant qu'il reste du contenu).
+  const [fade, setFade] = useState({ left: false, right: true })
+  const refreshFade = () => {
+    const el = stripRef.current
+    if (!el) return
+    setFade({
+      left: el.scrollLeft > 4,
+      right: el.scrollLeft + el.clientWidth < el.scrollWidth - 4,
+    })
+  }
 
   useEffect(() => {
     if (!isAuthenticated) return
@@ -83,7 +94,12 @@ export default function MemberSuggestions({ layout = 'list', limit = 5, excludeI
             </button>
           ))}
         </div>
-        <div ref={stripRef} className="ms-strip" style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 6, scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+        <div ref={stripRef} className="ms-strip" onScroll={refreshFade} style={{
+          display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 6,
+          scrollbarWidth: 'none', msOverflowStyle: 'none',
+          maskImage: `linear-gradient(90deg, ${fade.left ? 'transparent, black 6%' : 'black'}, black 94%, ${fade.right ? 'transparent' : 'black'})`,
+          WebkitMaskImage: `linear-gradient(90deg, ${fade.left ? 'transparent, black 6%' : 'black'}, black 94%, ${fade.right ? 'transparent' : 'black'})`,
+        }}>
           {members.map(m => (
             <div key={m.user_id} style={{
               flex: '0 0 auto', width: 138, padding: '14px 12px 12px',
