@@ -268,5 +268,869 @@
         "default": true
       }
     ]
+  },
+  {
+    "episode": 11,
+    "title": "Épisode 11",
+    "episodeLabel": "S01E11",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/S01E11-vostfr.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "kaguya-S01E11",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/thumbnails/S01E11.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/S01E11-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 12,
+    "title": "Épisode 12",
+    "episodeLabel": "S01E12",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/S01E12-vostfr.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "kaguya-S01E12",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/thumbnails/S01E12.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/S01E12-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 13,
+    "title": "Épisode 1",
+    "episodeLabel": "S02E01",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/S02E01-vostfr.mp4",
+    "season": "S02",
+    "arc": "Saison 2",
+    "preferredAudioLang": "ja",
+    "progressKey": "kaguya-S02E01",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/thumbnails/S02E01.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/S02E01-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 14,
+    "title": "Épisode 2",
+    "episodeLabel": "S02E02",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/S02E02-vostfr.mp4",
+    "season": "S02",
+    "arc": "Saison 2",
+    "preferredAudioLang": "ja",
+    "progressKey": "kaguya-S02E02",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/thumbnails/S02E02.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/S02E02-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 15,
+    "title": "Épisode 3",
+    "episodeLabel": "S02E03",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/S02E03-vostfr.mp4",
+    "season": "S02",
+    "arc": "Saison 2",
+    "preferredAudioLang": "ja",
+    "progressKey": "kaguya-S02E03",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/thumbnails/S02E03.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/S02E03-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 16,
+    "title": "Épisode 4",
+    "episodeLabel": "S02E04",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/S02E04-vostfr.mp4",
+    "season": "S02",
+    "arc": "Saison 2",
+    "preferredAudioLang": "ja",
+    "progressKey": "kaguya-S02E04",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/thumbnails/S02E04.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/S02E04-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 17,
+    "title": "Épisode 5",
+    "episodeLabel": "S02E05",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/S02E05-vostfr.mp4",
+    "season": "S02",
+    "arc": "Saison 2",
+    "preferredAudioLang": "ja",
+    "progressKey": "kaguya-S02E05",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/thumbnails/S02E05.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/S02E05-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 18,
+    "title": "Épisode 6",
+    "episodeLabel": "S02E06",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/S02E06-vostfr.mp4",
+    "season": "S02",
+    "arc": "Saison 2",
+    "preferredAudioLang": "ja",
+    "progressKey": "kaguya-S02E06",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/thumbnails/S02E06.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/S02E06-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 19,
+    "title": "Épisode 7",
+    "episodeLabel": "S02E07",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/S02E07-vostfr.mp4",
+    "season": "S02",
+    "arc": "Saison 2",
+    "preferredAudioLang": "ja",
+    "progressKey": "kaguya-S02E07",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/thumbnails/S02E07.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/S02E07-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 20,
+    "title": "Épisode 8",
+    "episodeLabel": "S02E08",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/S02E08-vostfr.mp4",
+    "season": "S02",
+    "arc": "Saison 2",
+    "preferredAudioLang": "ja",
+    "progressKey": "kaguya-S02E08",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/thumbnails/S02E08.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/S02E08-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 21,
+    "title": "Épisode 9",
+    "episodeLabel": "S02E09",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/S02E09-vostfr.mp4",
+    "season": "S02",
+    "arc": "Saison 2",
+    "preferredAudioLang": "ja",
+    "progressKey": "kaguya-S02E09",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/thumbnails/S02E09.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/S02E09-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 22,
+    "title": "Épisode 10",
+    "episodeLabel": "S02E10",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/S02E10-vostfr.mp4",
+    "season": "S02",
+    "arc": "Saison 2",
+    "preferredAudioLang": "ja",
+    "progressKey": "kaguya-S02E10",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/thumbnails/S02E10.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/S02E10-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 23,
+    "title": "Épisode 11",
+    "episodeLabel": "S02E11",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/S02E11-vostfr.mp4",
+    "season": "S02",
+    "arc": "Saison 2",
+    "preferredAudioLang": "ja",
+    "progressKey": "kaguya-S02E11",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/thumbnails/S02E11.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/S02E11-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 24,
+    "title": "Épisode 12",
+    "episodeLabel": "S02E12",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/S02E12-vostfr.mp4",
+    "season": "S02",
+    "arc": "Saison 2",
+    "preferredAudioLang": "ja",
+    "progressKey": "kaguya-S02E12",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/thumbnails/S02E12.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/S02E12-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 25,
+    "title": "Épisode 1",
+    "episodeLabel": "S03E01",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/S03E01-vostfr.mp4",
+    "season": "S03",
+    "arc": "Saison 3 : Ultra Romantic",
+    "preferredAudioLang": "ja",
+    "progressKey": "kaguya-S03E01",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/thumbnails/S03E01.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/S03E01-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 26,
+    "title": "Épisode 2",
+    "episodeLabel": "S03E02",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/S03E02-vostfr.mp4",
+    "season": "S03",
+    "arc": "Saison 3 : Ultra Romantic",
+    "preferredAudioLang": "ja",
+    "progressKey": "kaguya-S03E02",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/thumbnails/S03E02.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/S03E02-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 27,
+    "title": "Épisode 3",
+    "episodeLabel": "S03E03",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/S03E03-vostfr.mp4",
+    "season": "S03",
+    "arc": "Saison 3 : Ultra Romantic",
+    "preferredAudioLang": "ja",
+    "progressKey": "kaguya-S03E03",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/thumbnails/S03E03.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/S03E03-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 28,
+    "title": "Épisode 4",
+    "episodeLabel": "S03E04",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/S03E04-vostfr.mp4",
+    "season": "S03",
+    "arc": "Saison 3 : Ultra Romantic",
+    "preferredAudioLang": "ja",
+    "progressKey": "kaguya-S03E04",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/thumbnails/S03E04.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/S03E04-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 29,
+    "title": "Épisode 5",
+    "episodeLabel": "S03E05",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/S03E05-vostfr.mp4",
+    "season": "S03",
+    "arc": "Saison 3 : Ultra Romantic",
+    "preferredAudioLang": "ja",
+    "progressKey": "kaguya-S03E05",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/thumbnails/S03E05.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/S03E05-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 30,
+    "title": "Épisode 6",
+    "episodeLabel": "S03E06",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/S03E06-vostfr.mp4",
+    "season": "S03",
+    "arc": "Saison 3 : Ultra Romantic",
+    "preferredAudioLang": "ja",
+    "progressKey": "kaguya-S03E06",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/thumbnails/S03E06.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/S03E06-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 31,
+    "title": "Épisode 7",
+    "episodeLabel": "S03E07",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/S03E07-vostfr.mp4",
+    "season": "S03",
+    "arc": "Saison 3 : Ultra Romantic",
+    "preferredAudioLang": "ja",
+    "progressKey": "kaguya-S03E07",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/thumbnails/S03E07.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/S03E07-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 32,
+    "title": "Épisode 8",
+    "episodeLabel": "S03E08",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/S03E08-vostfr.mp4",
+    "season": "S03",
+    "arc": "Saison 3 : Ultra Romantic",
+    "preferredAudioLang": "ja",
+    "progressKey": "kaguya-S03E08",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/thumbnails/S03E08.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/S03E08-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 33,
+    "title": "Épisode 9",
+    "episodeLabel": "S03E09",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/S03E09-vostfr.mp4",
+    "season": "S03",
+    "arc": "Saison 3 : Ultra Romantic",
+    "preferredAudioLang": "ja",
+    "progressKey": "kaguya-S03E09",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/thumbnails/S03E09.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/S03E09-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 34,
+    "title": "Épisode 10",
+    "episodeLabel": "S03E10",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/S03E10-vostfr.mp4",
+    "season": "S03",
+    "arc": "Saison 3 : Ultra Romantic",
+    "preferredAudioLang": "ja",
+    "progressKey": "kaguya-S03E10",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/thumbnails/S03E10.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/S03E10-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 35,
+    "title": "Épisode 11",
+    "episodeLabel": "S03E11",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/S03E11-vostfr.mp4",
+    "season": "S03",
+    "arc": "Saison 3 : Ultra Romantic",
+    "preferredAudioLang": "ja",
+    "progressKey": "kaguya-S03E11",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/thumbnails/S03E11.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/S03E11-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 36,
+    "title": "Épisode 12",
+    "episodeLabel": "S03E12",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/S03E12-vostfr.mp4",
+    "season": "S03",
+    "arc": "Saison 3 : Ultra Romantic",
+    "preferredAudioLang": "ja",
+    "progressKey": "kaguya-S03E12",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/thumbnails/S03E12.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/S03E12-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 37,
+    "title": "Épisode 13",
+    "episodeLabel": "S03E13",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/S03E13-vostfr.mp4",
+    "season": "S03",
+    "arc": "Saison 3 : Ultra Romantic",
+    "preferredAudioLang": "ja",
+    "progressKey": "kaguya-S03E13",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/thumbnails/S03E13.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/S03E13-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 38,
+    "title": "Film : First Kiss — Partie 1",
+    "episodeLabel": "FILM-P1",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/FILM-P1-vostfr.mp4",
+    "season": "Film",
+    "arc": "Film : First Kiss",
+    "preferredAudioLang": "ja",
+    "progressKey": "kaguya-FILM-P1",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/thumbnails/FILM-P1.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/FILM-P1-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 39,
+    "title": "Film : First Kiss — Partie 2",
+    "episodeLabel": "FILM-P2",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/FILM-P2-vostfr.mp4",
+    "season": "Film",
+    "arc": "Film : First Kiss",
+    "preferredAudioLang": "ja",
+    "progressKey": "kaguya-FILM-P2",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/thumbnails/FILM-P2.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/FILM-P2-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 40,
+    "title": "Film : First Kiss — Partie 3",
+    "episodeLabel": "FILM-P3",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/FILM-P3-vostfr.mp4",
+    "season": "Film",
+    "arc": "Film : First Kiss",
+    "preferredAudioLang": "ja",
+    "progressKey": "kaguya-FILM-P3",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/thumbnails/FILM-P3.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/FILM-P3-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 41,
+    "title": "Film : First Kiss — Partie 4",
+    "episodeLabel": "FILM-P4",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/FILM-P4-vostfr.mp4",
+    "season": "Film",
+    "arc": "Film : First Kiss",
+    "preferredAudioLang": "ja",
+    "progressKey": "kaguya-FILM-P4",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/thumbnails/FILM-P4.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/FILM-P4-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 42,
+    "title": "OVA",
+    "episodeLabel": "OVA01",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/OVA01-vostfr.mp4",
+    "season": "OVA",
+    "arc": "OVA",
+    "preferredAudioLang": "ja",
+    "progressKey": "kaguya-OVA01",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/thumbnails/OVA01.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/OVA01-fr.vtt",
+        "default": true
+      }
+    ]
   }
 ]

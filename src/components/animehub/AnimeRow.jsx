@@ -60,9 +60,9 @@ export default function AnimeRow({ title, count = null, onSeeAll, children }) {
       <div style={{ position: 'relative' }}>
         <div ref={emblaRef} style={{
           overflow: 'hidden',
-          // masques latéraux : suggèrent la continuation sans bord dur
-          maskImage: `linear-gradient(90deg, ${canPrev ? 'transparent, black 4%' : 'black'}, black 96%, ${canNext ? 'transparent' : 'black'})`,
-          WebkitMaskImage: `linear-gradient(90deg, ${canPrev ? 'transparent, black 4%' : 'black'}, black 96%, ${canNext ? 'transparent' : 'black'})`,
+          // fondu de bord : les cartes coupées fondent au lieu d'être tranchées
+          maskImage: `linear-gradient(90deg, ${canPrev ? 'transparent, black 80px' : 'black'}, black calc(100% - 80px), ${canNext ? 'transparent' : 'black'})`,
+          WebkitMaskImage: `linear-gradient(90deg, ${canPrev ? 'transparent, black 80px' : 'black'}, black calc(100% - 80px), ${canNext ? 'transparent' : 'black'})`,
         }}>
           <div style={{ display: 'flex', gap: 14 }}>
             {children}

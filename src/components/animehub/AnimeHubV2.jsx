@@ -253,7 +253,7 @@ export default function AnimeHubV2(props) {
             </div>
           ))}
           {/* Indicateurs segments — au-dessus de la zone de chevauchement */}
-          <div style={{ position: 'absolute', bottom: 132, left: 'max(24px, calc((100vw - 1320px) / 2 + 24px))', zIndex: 3, display: 'flex', gap: 6 }}>
+          <div style={{ position: 'absolute', bottom: 140, left: 'max(24px, calc((100vw - 1320px) / 2 + 24px))', zIndex: 3, display: 'flex', gap: 6 }}>
             {slides.map((s, i) => (
               <button key={s.id} aria-label={`Slide ${i + 1}`} onClick={() => setSlide(i)} style={{
                 width: 34, height: 3, borderRadius: 2, border: 'none', cursor: 'pointer', padding: 0,
@@ -395,21 +395,7 @@ export default function AnimeHubV2(props) {
             )}
 
             <AnimeRow title="Top du moment" count={10}>
-              {top10.map((a, i) => (
-                // Chaque chiffre appartient à SA carte : absolute à gauche du
-                // wrapper, bottom-aligned, l'affiche chevauche (Netflix Top 10).
-                <div key={a.id} style={{ position: 'relative', flexShrink: 0, paddingLeft: i === 9 ? 110 : 62 }}>
-                  {/* bottom:49 = hauteur du bloc titre sous l'affiche → bas du
-                      chiffre calé pile sur le bas de l'affiche (réf. Netflix) */}
-                  <span aria-hidden style={{
-                    position: 'absolute', left: 0, bottom: 49,
-                    fontFamily: FONT_DISPLAY, fontWeight: 700, fontSize: 150, lineHeight: 0.72,
-                    color: 'transparent', WebkitTextStroke: '2.5px rgba(255,255,255,.4)',
-                    letterSpacing: '-0.06em', userSelect: 'none', zIndex: 0,
-                  }}>{i + 1}</span>
-                  <div style={{ position: 'relative', zIndex: 1, marginLeft: -14 }}>{card(a, 158)}</div>
-                </div>
-              ))}
+              {top10.map(a => card(a, 158))}
             </AnimeRow>
 
             {news.length > 0 && (

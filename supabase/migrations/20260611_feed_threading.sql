@@ -11,6 +11,10 @@
 --  (user_follows), 20260530_feed_mentions (mentions).
 -- ═══════════════════════════════════════════════════════════════════════════
 
+-- Index d'ordre complet : le feed inclut désormais des réponses, l'index
+-- partiel posts_feed_idx (reply_to IS NULL) ne couvre plus le scan principal.
+CREATE INDEX IF NOT EXISTS posts_created_idx ON posts(created_at DESC) WHERE deleted_at IS NULL;
+
 -- ── get_feed v3 ───────────────────────────────────────────────────────────────
 CREATE OR REPLACE FUNCTION get_feed(p_before timestamptz DEFAULT NULL, p_limit int DEFAULT 20)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER STABLE SET search_path = public, pg_temp AS $$
@@ -78,10 +82,15 @@ BEGIN
       AND (p_before IS NULL OR created_at < p_before)
       AND (
         reply_to IS NULL
-        -- + réponses des gens que je suis (règle 5, comportement X)
-        OR (v_me IS NOT NULL AND EXISTS (
-          SELECT 1 FROM user_follows f
-          WHERE f.follower_id = v_me AND f.following_id = posts.author_id))
+        -- réponses visibles dans le feed = les miennes + celles des gens
+        -- que je suis + celles faites à MES posts non supprimés (comportement X)
+        OR (v_me IS NOT NULL AND (
+          posts.author_id = v_me
+          OR EXISTS (SELECT 1 FROM user_follows f
+                     WHERE f.follower_id = v_me AND f.following_id = posts.author_id)
+          OR EXISTS (SELECT 1 FROM posts pr
+                     WHERE pr.id = posts.reply_to AND pr.author_id = v_me AND pr.deleted_at IS NULL)
+        ))
       )
     ORDER BY created_at DESC LIMIT v_lim
   ) p

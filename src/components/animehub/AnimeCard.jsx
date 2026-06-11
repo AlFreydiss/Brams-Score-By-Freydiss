@@ -10,8 +10,7 @@ const KEYART_R2 = 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/key
 
 // ── BackdropCard — carte PAYSAGE 16:9 des rows (réf. Netflix web) ────────────
 // Image backdrop (convention R2 anime/keyart/<id>.jpg, fallback affiche),
-// title-art ou titre en bas-gauche, badge « NOUVEL ÉPISODE » laiton si à jour,
-// mark Brams ⚔ 12px en haut-gauche.
+// title-art ou titre en bas-gauche, badge « NOUVEL ÉPISODE » laiton si à jour.
 export function BackdropCard({ anime, progressPct = 0, width = 300, onOpen }) {
   const [hover, setHover] = useState(false)
   const [bdBroken, setBdBroken] = useState(false)
@@ -37,10 +36,8 @@ export function BackdropCard({ anime, progressPct = 0, width = 300, onOpen }) {
           onError={() => setBdBroken(true)}
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 25%' }}
         />
-        {/* Scrim bas pour le title-art */}
-        <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, transparent 42%, rgba(11,14,20,.88) 100%)' }} />
-        {/* Mark Brams haut-gauche */}
-        <span aria-hidden style={{ position: 'absolute', top: 8, left: 8, color: C.brass, fontSize: 12, lineHeight: 1, filter: 'drop-shadow(0 1px 3px rgba(0,0,0,.8))' }}>⚔</span>
+        {/* Scrim bas : titre lisible même sur backdrop clair (Your Name) */}
+        <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, transparent 55%, rgba(11,14,20,.8))' }} />
         {/* Bas-gauche : title-art (fallback titre) + badge épisode */}
         <div style={{ position: 'absolute', left: 10, right: 10, bottom: 10 }}>
           <TitleArt anime={anime} maxWidth={width * 0.62} maxHeight={44} fallback={

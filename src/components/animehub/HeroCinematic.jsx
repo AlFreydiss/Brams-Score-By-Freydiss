@@ -97,10 +97,12 @@ export default function HeroCinematic({ anime, rating = null, topRank = null, on
           maxWidth: nat.w, maxHeight: '100%', width: 'auto', height: 'auto', filter: 'saturate(1.05)',
         } : { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: anime.keyartPosition || 'center 20%', filter: 'saturate(1.05)' }}
       />
-      {/* Exactement DEUX dégradés, aucun overlay uniforme : l'image reste vive
-          et contrastée sur sa moitié droite. */}
-      <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, rgba(11,14,20,.92) 0%, rgba(11,14,20,.55) 35%, transparent 65%)' }} />
-      <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, transparent 50%, #0B0E14 100%)' }} />
+      {/* Exactement DEUX dégradés : scrim gauche garanti (.45 au point médian —
+          à .35 le synopsis passait sous le seuil de lisibilité sur les keyarts
+          très lumineux type Gear 5, image vive à droite) + fondu de sortie sur
+          les 240 derniers px (toolbar/indicateurs jamais sur l'image brute). */}
+      <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, rgba(11,14,20,.78), rgba(11,14,20,.45) 38%, transparent 62%)' }} />
+      <div aria-hidden style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 240, background: 'linear-gradient(180deg, transparent, #0B0E14 95%)' }} />
 
       {/* Contenu aligné gauche */}
       <div style={{
@@ -122,6 +124,7 @@ export default function HeroCinematic({ anime, rating = null, topRank = null, on
           <h1 style={{
             margin: 0, fontFamily: FONT_BODY, fontWeight: 800,
             fontSize: 'clamp(30px, 4vw, 52px)', lineHeight: 1.04, letterSpacing: '-0.02em', color: C.text,
+            textShadow: '0 2px 18px rgba(0,0,0,.65)',
           }}>{anime.title}</h1>
         } />
 
@@ -155,6 +158,7 @@ export default function HeroCinematic({ anime, rating = null, topRank = null, on
           <p style={{
             margin: '14px 0 0', fontSize: 15, lineHeight: 1.55, color: C.dim, maxWidth: 520,
             display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+            textShadow: '0 1px 10px rgba(0,0,0,.7)',
           }}>{anime.description}</p>
         )}
 
