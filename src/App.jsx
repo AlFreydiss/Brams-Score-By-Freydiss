@@ -646,6 +646,7 @@ export default function App() {
             onOpenFateZero={() => navigate('/animes-scan/fate-zero')}
             onOpenYourName={() => navigate('/animes-scan/your-name')}
             onOpenYourLie={() => navigate('/animes-scan/your-lie')}
+            onOpenKaguya={() => navigate('/animes-scan/kaguya')}
             onOpenBubble={() => navigate('/animes-scan/bubble')}
             onOpenReze={() => navigate('/animes-scan/reze')}
             onOpenMonUnivers={() => navigate('/animes-scan/mon-univers')}
@@ -691,7 +692,7 @@ export default function App() {
                 onOpenTpn={onOpenTpnFromMon} onOpenDrstone={onOpenDrstoneFromMon} onOpenJjk={onOpenJjkFromMon}
                 onOpenKingdom={onOpenKingdomFromMon} onOpenKny={onOpenKnyFromMon} onOpenNnt={onOpenNntFromMon}
                 onOpenSl={onOpenSlFromMon} onOpenDbs={onOpenDbsFromMon} onOpenViolet={onOpenVioletFromMon}
-                onOpenYourLie={onOpenYourLieFromMon}
+                onOpenYourLie={onOpenYourLieFromMon} onOpenKaguya={onOpenKaguyaFromMon}
                 onOpenVivy={onOpenVivyFromMon} onOpenLovePrism={onOpenLovePrismFromMon} onOpenCaroleTuesday={onOpenCaroleTuesdayFromMon}
                 onOpenBc={onOpenBcFromMon} onOpenMha={onOpenMhaFromMon} onOpenOnepiece={onOpenOnepieceFromMon}
               />

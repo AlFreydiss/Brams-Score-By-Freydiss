@@ -112,6 +112,7 @@ export default function AnimeHubV2(props) {
     'kaiju-no-8': props.onOpenKaiju, bluelock: props.onOpenBluelock, 'fate-zero': props.onOpenFateZero,
     'your-name': props.onOpenYourName, 'your-lie': props.onOpenYourLie, 'domestic-na-kanojo': props.onOpenDomestic,
     'koi-ameagari': props.onOpenKoi, bubble: props.onOpenBubble, reze: props.onOpenReze,
+    kaguya: props.onOpenKaguya,
   })[id]
   const openAnime = (a) => open(a.id)?.()
 
