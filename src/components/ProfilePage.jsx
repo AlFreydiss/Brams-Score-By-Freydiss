@@ -23,6 +23,8 @@ import FollowListModal from './profile/FollowListModal.jsx'
 import AvatarPreviewModal from './profile/AvatarPreviewModal.jsx'
 import { ErrorState, ProfileSkeleton } from './profile/shared.jsx'
 import MemberSuggestions from './social/MemberSuggestions.jsx'
+import ProfileViews from './profile/ProfileViews.jsx'
+import { recordProfileView } from '../lib/profile.js'
 
 export default function ProfilePage() {
   const { discordId: routeParam } = useParams()
@@ -117,6 +119,12 @@ export default function ProfilePage() {
     return () => setHideAmbient(false)
   }, [setHideAmbient])
 
+  // Vue de profil (TikTok-like) : enregistre la visite quand on regarde le
+  // profil d'un AUTRE membre (le serveur ignore les visites de soi-même/anon).
+  useEffect(() => {
+    if (profileId && member?.uid && !isOwnProfile) recordProfileView(profileId)
+  }, [profileId, member?.uid, isOwnProfile])
+
   const share = () => {
     navigator.clipboard?.writeText(window.location.href)
     setCopied(true); window.setTimeout(() => setCopied(false), 1800)
@@ -194,6 +202,9 @@ export default function ProfilePage() {
               onShowFollowers={() => setFollowModal('followers')}
               onShowFollowing={() => setFollowModal('following')}
             />
+
+            {/* Vues du profil (TikTok-like) — proprio uniquement */}
+            {isOwnProfile && <ProfileViews />}
 
             {/* Reco de membres façon IG : amis en commun + actifs, exclut le
                 profil affiché. Rend null si non connecté ou sans résultat. */}

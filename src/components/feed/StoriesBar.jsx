@@ -12,7 +12,7 @@ const ALLOWED_AUDIO = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'aud
 export default function StoriesBar() {
   const { isAuthenticated, displayName, avatarUrl, discordId } = useAuth()
   const [authors, setAuthors] = useState([])
-  const [viewerIdx, setViewerIdx] = useState(null)
+  const [viewer, setViewer] = useState(null) // { authors: snapshot figé, idx }
   const [uploading, setUploading] = useState(false)
   const [showComposer, setShowComposer] = useState(false)
 
@@ -198,7 +198,7 @@ export default function StoriesBar() {
       )}
 
       {authors.map((a, i) => (
-        <button key={a.author_id} onClick={() => setViewerIdx(i)}
+        <button key={a.author_id} onClick={() => setViewer({ authors, idx: i })}
           style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, border: 'none', background: 'transparent', cursor: 'pointer', flexShrink: 0, width: 64 }}>
           <Ring seen={a.all_seen}><span style={avatar(54)}>{a.avatar ? <img src={a.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (a.username || '?').slice(0, 2).toUpperCase()}</span></Ring>
           <span style={{ fontSize: 11, color: T.text, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 64 }}>{a.username || `#${String(a.author_id).slice(-4)}`}</span>
@@ -208,8 +208,12 @@ export default function StoriesBar() {
       {/* Portals sur document.body : .feed-main a un backdrop-filter qui ferait
           du position:fixed un fixed RELATIF à la colonne (containing block) —
           le viewer resterait piégé/invisible dans la barre. */}
-      {viewerIdx !== null && createPortal(
-        <StoryViewer authors={authors} startIndex={viewerIdx} onClose={() => setViewerIdx(null)} onDeleted={load} onSeen={load} />,
+      {/* La liste est FIGÉE à l'ouverture (snapshot) : recharger les stories
+          pendant le visionnage (onSeen → load) re-triait les auteurs et faisait
+          sauter/couper la story en cours (~1 s, le temps du mark-seen).
+          Les anneaux "vu" se rafraîchissent à la fermeture. */}
+      {viewer !== null && createPortal(
+        <StoryViewer authors={viewer.authors} startIndex={viewer.idx} onClose={() => { setViewer(null); load() }} onDeleted={() => { setViewer(null); load() }} />,
         document.body
       )}
 

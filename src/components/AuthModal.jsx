@@ -284,9 +284,11 @@ export default function AuthModal({ onClose }) {
 
       {/* spirale */}
       <div aria-hidden style={{ position: 'absolute', inset: 0 }}><SpiralAnimation /></div>
-      {/* assombrissement central renforcé : centre lisible, étoiles visibles autour */}
+      {/* assombrissement central renforcé : pendant la phase DENSE de la spirale,
+          les étoiles passaient encore devant le texte → noyau quasi opaque plus
+          large + halo, les étoiles restent pleinement visibles en périphérie. */}
       <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none',
-        background: 'radial-gradient(600px 480px at 50% 42%, rgba(0,0,0,0.82), rgba(0,0,0,0.3) 55%, transparent 80%)' }} />
+        background: 'radial-gradient(720px 560px at 50% 42%, rgba(0,0,0,0.95), rgba(0,0,0,0.8) 38%, rgba(0,0,0,0.35) 62%, transparent 82%)' }} />
 
       <div className="bl-root" style={{ position: 'absolute', inset: 0, zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 0 }}>
 
