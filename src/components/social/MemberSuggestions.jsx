@@ -3,7 +3,7 @@
 // Deux layouts : 'strip' (profil, cartes horizontales façon IG) et 'list'
 // (rail du Fil, lignes compactes). Styles inline (convention projet).
 // Invisible si non connecté, en erreur ou sans résultat.
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext.jsx'
 import { recommendMembers, followUser } from '../../lib/social.js'
@@ -48,6 +48,7 @@ function FollowBtn({ userId, small }) {
 export default function MemberSuggestions({ layout = 'list', limit = 5, excludeId = null, title = 'Suggestions pour toi' }) {
   const { isAuthenticated } = useAuth()
   const [members, setMembers] = useState(null) // null = loading
+  const stripRef = useRef(null)
 
   useEffect(() => {
     if (!isAuthenticated) return
@@ -62,11 +63,23 @@ export default function MemberSuggestions({ layout = 'list', limit = 5, excludeI
 
   if (layout === 'strip') {
     return (
-      <section aria-label={title} style={{ margin: '18px 0 4px' }}>
-        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.12em', textTransform: 'uppercase', color: T.textFaint, marginBottom: 10 }}>
-          {title}
+      <section aria-label={title} style={{ margin: '18px 0 4px', position: 'relative' }}>
+        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 10 }}>
+          <span style={{ flex: 1, fontSize: 11, fontWeight: 800, letterSpacing: '.12em', textTransform: 'uppercase', color: T.textFaint }}>
+            {title}
+          </span>
+          {/* Flèches de défilement de la bande */}
+          {[['‹', -1], ['›', 1]].map(([sym, dir]) => (
+            <button key={sym} aria-label={dir < 0 ? 'Précédent' : 'Suivant'}
+              onClick={() => stripRef.current?.scrollBy({ left: dir * 320, behavior: 'smooth' })}
+              style={{ width: 28, height: 28, marginLeft: 6, borderRadius: 8, cursor: 'pointer',
+                background: T.surface2, border: `1px solid ${T.border}`, color: T.textDim,
+                fontSize: 16, lineHeight: 1, display: 'grid', placeItems: 'center' }}>
+              {sym}
+            </button>
+          ))}
         </div>
-        <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 6, scrollbarWidth: 'thin' }}>
+        <div ref={stripRef} style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 6, scrollbarWidth: 'thin' }}>
           {members.map(m => (
             <div key={m.user_id} style={{
               flex: '0 0 auto', width: 138, padding: '14px 12px 12px',
