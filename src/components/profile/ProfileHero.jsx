@@ -11,6 +11,7 @@ const CERTIFS = {
   '1079054995917381672': { color: '#f5b50a', glow: 'rgba(245,181,10,.55)', title: 'Capitaine / Fondateur' },     // Brams — or
   '999607813334638692':  { color: '#e0524a', glow: 'rgba(224,82,74,.5)',   title: 'Directeur / Vice Capitaine' }, // Berat — rouge
   '1094070545248694342': { color: '#a855f7', glow: 'rgba(168,85,247,.55)', title: 'Navigateur / Développeur' },   // Al Freydiss — violet
+  '1000000000000000001': { color: '#E60012', glow: 'rgba(230,0,18,.6)',    title: 'Bot officiel · IA de la Brams Community' }, // BramsScore — rouge
 }
 
 export default function ProfileHero({ data, copied, onShare, onEdit, onAvatar, onShowFollowers, onShowFollowing }) {

@@ -1294,11 +1294,12 @@ async function bramsScore(req, res) {
     const username = author?.data?.username || 'nakama'
 
     const text = await generateBramsReply(username, post.content, replyToBot ? parent?.content : null)
-    const ins = await fetch(`${SUPABASE_URL}/rest/v1/posts`, {
+    // RPC dédiée : insère la réponse ET notifie l'auteur (insert direct = pas de notif)
+    const ins = await fetch(`${SUPABASE_URL}/rest/v1/rpc/brams_bot_reply`, {
       method: 'POST', headers: getServiceHeaders(),
-      body: JSON.stringify({ author_id: BRAMS_BOT_UID, content: text, reply_to: post.id }),
+      body: JSON.stringify({ p_post: post.id, p_content: text }),
     })
-    if (!ins.ok) return res.status(502).json({ error: `insert: ${ins.status} ${await ins.text()}` })
+    if (!ins.ok) return res.status(502).json({ error: `rpc: ${ins.status} ${await ins.text()}` })
     return res.status(200).json({ ok: true })
   } catch (e) {
     return res.status(500).json({ error: e?.message || 'brams_score_failed' })
