@@ -258,7 +258,24 @@ export default function StoryViewer({ authors, startIndex = 0, onClose, onDelete
             playsInline
             muted={false}
             style={mediaStyle}
-            onLoadedMetadata={e => { const d = e.currentTarget.duration; if (isFinite(d) && d > 0) setVideoDur(d) }}
+            onLoadedMetadata={e => {
+              const v = e.currentTarget
+              const d = v.duration
+              if (isFinite(d) && d > 0) { setVideoDur(d); return }
+              // Clips rognés (MediaRecorder webm) : durée absente des métadonnées
+              // (bug Chrome) → hack standard : seek très loin force le navigateur
+              // à calculer la vraie durée, puis on revient au début.
+              const fix = () => {
+                if (isFinite(v.duration) && v.duration > 0) {
+                  v.removeEventListener('timeupdate', fix)
+                  setVideoDur(v.duration)
+                  v.currentTime = 0
+                  v.play?.()?.catch?.(() => {})
+                }
+              }
+              v.addEventListener('timeupdate', fix)
+              try { v.currentTime = 1e7 } catch {}
+            }}
             onEnded={next}
             onError={next}
           />
