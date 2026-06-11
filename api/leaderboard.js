@@ -80,23 +80,32 @@ export default async function handler(req, res) {
   const now = Date.now() / 1000
 
   try {
-    const usersUrl = new URL('/rest/v1/users', SUPABASE_URL)
-    usersUrl.searchParams.set('select', 'uid,data')
-    usersUrl.searchParams.set('limit', '1000')
+    // TOUTE la table users, paginée par 1000 (PostgREST plafonne chaque page).
+    // Avant : une seule page de 1000 sans ordre → ~la moitié des 2000+ membres
+    // absente du classement selon l'ordre physique de la table.
+    const users = []
+    const PAGE = 1000
+    for (let offset = 0; offset < 10000; offset += PAGE) {
+      const usersUrl = new URL('/rest/v1/users', SUPABASE_URL)
+      usersUrl.searchParams.set('select', 'uid,data')
+      usersUrl.searchParams.set('order', 'uid.asc')
+      usersUrl.searchParams.set('limit', String(PAGE))
+      usersUrl.searchParams.set('offset', String(offset))
 
-    const response = await fetch(usersUrl, {
-      headers: {
-        apikey: API_KEY,
-        Authorization: `Bearer ${API_KEY}`,
-      },
-    })
-
-    if (!response.ok) {
-      res.status(response.status).json({ error: await response.text() })
-      return
+      const response = await fetch(usersUrl, {
+        headers: {
+          apikey: API_KEY,
+          Authorization: `Bearer ${API_KEY}`,
+        },
+      })
+      if (!response.ok) {
+        res.status(response.status).json({ error: await response.text() })
+        return
+      }
+      const page = await response.json()
+      users.push(...page)
+      if (page.length < PAGE) break
     }
-
-    const users = await response.json()
     const rows = users
       .filter((user) => user?.data)
       .map((user) => {
