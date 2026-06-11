@@ -4,6 +4,64 @@
 // progression n'apparaît QUE si > 0 (barre laiton fine en bas de l'affiche).
 import { useState } from 'react'
 import { C, FONT_BODY, RADIUS_CARD, SHADOW_CARD } from './tokens.js'
+import { TitleArt } from './HeroCinematic.jsx'
+
+const KEYART_R2 = 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/keyart'
+
+// ── BackdropCard — carte PAYSAGE 16:9 des rows (réf. Netflix web) ────────────
+// Image backdrop (convention R2 anime/keyart/<id>.jpg, fallback affiche),
+// title-art ou titre en bas-gauche, badge « NOUVEL ÉPISODE » laiton si à jour,
+// mark Brams ⚔ 12px en haut-gauche.
+export function BackdropCard({ anime, progressPct = 0, width = 300, onOpen }) {
+  const [hover, setHover] = useState(false)
+  const [bdBroken, setBdBroken] = useState(false)
+  const backdrop = bdBroken ? (anime.coverImage) : (anime.backdropUrl || `${KEYART_R2}/${anime.id}.jpg`)
+  const fresh = anime.badge === 'À JOUR' || anime.badge === 'NOUVEAU'
+  return (
+    <div
+      role="button" tabIndex={0} aria-label={anime.title} className="ah2-card"
+      onClick={() => onOpen?.(anime)}
+      onKeyDown={e => { if (e.key === 'Enter') onOpen?.(anime) }}
+      onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
+      style={{ width, flexShrink: 0, cursor: 'pointer', fontFamily: FONT_BODY, outline: 'none' }}
+    >
+      <div style={{
+        position: 'relative', aspectRatio: '16 / 9', borderRadius: RADIUS_CARD, overflow: 'hidden',
+        background: 'rgba(255,255,255,0.04)',
+        transform: hover ? 'scale(1.04)' : 'scale(1)',
+        boxShadow: hover ? SHADOW_CARD : 'none',
+        transition: 'transform 180ms ease, box-shadow 180ms ease',
+      }}>
+        <img
+          src={backdrop} alt="" loading="lazy" decoding="async"
+          onError={() => setBdBroken(true)}
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 25%' }}
+        />
+        {/* Scrim bas pour le title-art */}
+        <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, transparent 42%, rgba(11,14,20,.88) 100%)' }} />
+        {/* Mark Brams haut-gauche */}
+        <span aria-hidden style={{ position: 'absolute', top: 8, left: 8, color: C.brass, fontSize: 12, lineHeight: 1, filter: 'drop-shadow(0 1px 3px rgba(0,0,0,.8))' }}>⚔</span>
+        {/* Bas-gauche : title-art (fallback titre) + badge épisode */}
+        <div style={{ position: 'absolute', left: 10, right: 10, bottom: 10 }}>
+          <TitleArt anime={anime} maxWidth={width * 0.62} maxHeight={44} fallback={
+            <span style={{ fontSize: 14, fontWeight: 700, color: C.text, textShadow: '0 1px 6px rgba(0,0,0,.7)', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{anime.title}</span>
+          } />
+          {fresh && (
+            <span style={{
+              display: 'inline-block', marginTop: 7, padding: '3px 8px', borderRadius: 4,
+              background: C.brass, color: '#14110A', fontSize: 10, fontWeight: 800, letterSpacing: '0.02em',
+            }}>NOUVEL ÉPISODE</span>
+          )}
+        </div>
+        {progressPct > 0 && (
+          <div aria-hidden style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 3, background: 'rgba(255,255,255,0.15)' }}>
+            <div style={{ width: `${Math.min(100, progressPct)}%`, height: '100%', background: C.brass }} />
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
 
 export default function AnimeCard({
   anime,            // { id, title, coverImage, coverPosition, genres, year, type, badge }

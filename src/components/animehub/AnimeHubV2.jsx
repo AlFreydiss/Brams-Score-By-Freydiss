@@ -6,10 +6,11 @@
 // App.jsx sur AnimeHub.
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ANIMES, SEARCH_ALIASES } from '../AnimeHub.jsx'
+import Navbar from '../Navbar.jsx'
 import { C, FONT_BODY, FONT_DISPLAY, RADIUS_PANEL } from './tokens.js'
 import HeroCinematic from './HeroCinematic.jsx'
 import AnimeRow from './AnimeRow.jsx'
-import AnimeCard from './AnimeCard.jsx'
+import AnimeCard, { BackdropCard } from './AnimeCard.jsx'
 
 const HERO_IDS = ['onepiece', 'kaiju-no-8', 'bleach', 'aot', 'jjk'] // 5 à la une
 // Bannières PAYSAGE officielles (AniList, hébergées R2) pour le hero — les
@@ -137,6 +138,7 @@ export default function AnimeHubV2(props) {
     .map(a => ({ ...a, keyart: HERO_KEYART[a.id] || a.coverImage, keyartPosition: 'center 30%' })), [])
   const [slide, setSlide] = useState(0)
   const [paused, setPaused] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
   const reduced = useMemo(() => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches, [])
   useEffect(() => {
     if (reduced || paused || slides.length < 2) return
@@ -205,24 +207,30 @@ export default function AnimeHubV2(props) {
   )
 
   return (
-    <div style={{
-      position: 'fixed', inset: 0, zIndex: 60, overflowY: 'auto', overflowX: 'hidden',
-      background: LEGACY_BG, fontFamily: FONT_BODY, color: C.text,
-    }}>
+    <div
+      className="ah2-root"
+      onScroll={e => setScrolled(e.currentTarget.scrollTop > 24)}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 60, overflowY: 'auto', overflowX: 'hidden',
+        background: LEGACY_BG, fontFamily: FONT_BODY, color: C.text,
+      }}
+    >
       <AmbientLegacy />
+      {/* Navbar du site PAR-DESSUS le hero : transparente en haut de page,
+          reprend son fond solide dès qu'on scrolle (réf. Netflix). */}
+      <Navbar forceScrolled={scrolled} />
       <style>{`
         @keyframes ah2-shimmer { to { background-position: -200% 0 } }
         .ah2-seeall:hover { color: ${C.text} !important }
         .ah2-card:focus-visible { outline: 2px solid ${C.brass}; outline-offset: 3px; border-radius: 12px }
         @media (prefers-reduced-motion: reduce) { .ah2-fade { transition: none !important } }
+        /* Scrollbar sombre (la scrollbar Windows par défaut faisait une barre blanche) */
+        .ah2-root { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.22) transparent; }
+        .ah2-root::-webkit-scrollbar { width: 10px }
+        .ah2-root::-webkit-scrollbar-track { background: transparent }
+        .ah2-root::-webkit-scrollbar-thumb { background: rgba(255,255,255,.18); border-radius: 5px; border: 2px solid transparent; background-clip: content-box }
+        .ah2-root::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.3); background-clip: content-box }
       `}</style>
-
-      {/* Fermer (retour) — discret en haut à droite, au-dessus du hero */}
-      <button onClick={props.onClose} aria-label="Fermer" style={{
-        position: 'fixed', top: 84, right: 18, zIndex: 5, width: 38, height: 38, borderRadius: '50%',
-        background: 'rgba(13,17,26,0.7)', border: `1px solid ${C.hair2}`, color: C.text,
-        cursor: 'pointer', fontSize: 16, display: 'grid', placeItems: 'center', backdropFilter: 'blur(6px)',
-      }}>✕</button>
 
       {/* ── HERO rotatif (masqué pendant une recherche) ── */}
       {!searching && (
@@ -232,11 +240,12 @@ export default function AnimeHubV2(props) {
               transition: 'opacity 600ms ease', opacity: i === slide ? 1 : 0,
               position: i === slide ? 'relative' : 'absolute', inset: 0, pointerEvents: i === slide ? 'auto' : 'none',
             }}>
-              <HeroCinematic anime={a} onWatch={openAnime} onMyList={toggleFav} inList={favs.has(a.id)} onInfo={openAnime} />
+              <HeroCinematic anime={a} topRank={top10.findIndex(t => t.id === a.id) + 1 || null}
+                onWatch={openAnime} onMyList={toggleFav} inList={favs.has(a.id)} onInfo={openAnime} />
             </div>
           ))}
-          {/* Indicateurs segments — celui actif se remplit en laiton */}
-          <div style={{ position: 'absolute', bottom: 14, left: 'max(24px, calc((100vw - 1320px) / 2 + 24px))', display: 'flex', gap: 6 }}>
+          {/* Indicateurs segments — au-dessus de la zone de chevauchement */}
+          <div style={{ position: 'absolute', bottom: 132, left: 'max(24px, calc((100vw - 1320px) / 2 + 24px))', zIndex: 3, display: 'flex', gap: 6 }}>
             {slides.map((s, i) => (
               <button key={s.id} aria-label={`Slide ${i + 1}`} onClick={() => setSlide(i)} style={{
                 width: 34, height: 3, borderRadius: 2, border: 'none', cursor: 'pointer', padding: 0,
@@ -247,10 +256,12 @@ export default function AnimeHubV2(props) {
         </div>
       )}
 
-      {/* ── TOOLBAR sticky ── */}
+      {/* ── BLOC CONTENU : chevauche le bas fondu du hero (réf. Netflix) ── */}
+      <div style={{ position: 'relative', zIndex: 2, marginTop: searching ? 84 : -120 }}>
+      {/* ── TOOLBAR sticky (sous la navbar) ── */}
       <div style={{
-        position: 'sticky', top: 0, zIndex: 4,
-        background: C.panel, backdropFilter: 'blur(8px)', borderBottom: `1px solid ${C.hair}`,
+        position: 'sticky', top: 64, zIndex: 4,
+        background: C.panel, backdropFilter: 'blur(8px)', borderBottom: `1px solid ${C.hair}`, borderRadius: '12px 12px 0 0',
       }}>
         <div style={{ maxWidth: 1320, margin: '0 auto', padding: '10px 24px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
           {/* Recherche */}
@@ -373,23 +384,28 @@ export default function AnimeHubV2(props) {
 
             <AnimeRow title="Top du moment" count={10}>
               {top10.map((a, i) => (
-                // Chiffre DERRIÈRE-gauche, aligné en bas, la carte MORD dessus (Netflix Top 10).
-                <div key={a.id} style={{ display: 'flex', alignItems: 'flex-end', flexShrink: 0 }}>
+                // Chaque chiffre appartient à SA carte : absolute à gauche du
+                // wrapper, bottom-aligned, l'affiche chevauche (Netflix Top 10).
+                <div key={a.id} style={{ position: 'relative', flexShrink: 0, paddingLeft: i === 9 ? 110 : 62 }}>
+                  {/* bottom:49 = hauteur du bloc titre sous l'affiche → bas du
+                      chiffre calé pile sur le bas de l'affiche (réf. Netflix) */}
                   <span aria-hidden style={{
-                    fontFamily: FONT_DISPLAY, fontWeight: 700, fontSize: 140, lineHeight: 0.75,
-                    color: 'transparent', WebkitTextStroke: '2px rgba(255,255,255,.35)',
-                    letterSpacing: '-0.06em',
-                    // la carte ne mord que le bord droit du chiffre (Netflix Top 10)
-                    marginRight: -16, marginBottom: 46, position: 'relative', zIndex: 0, userSelect: 'none',
+                    position: 'absolute', left: 0, bottom: 49,
+                    fontFamily: FONT_DISPLAY, fontWeight: 700, fontSize: 150, lineHeight: 0.72,
+                    color: 'transparent', WebkitTextStroke: '2.5px rgba(255,255,255,.4)',
+                    letterSpacing: '-0.06em', userSelect: 'none', zIndex: 0,
                   }}>{i + 1}</span>
-                  <div style={{ position: 'relative', zIndex: 1 }}>{card(a, 158)}</div>
+                  <div style={{ position: 'relative', zIndex: 1, marginLeft: -14 }}>{card(a, 158)}</div>
                 </div>
               ))}
             </AnimeRow>
 
             {news.length > 0 && (
               <AnimeRow title="Nouveautés" count={news.length}>
-                {news.map(a => card(a))}
+                {news.map(a => (
+                  <BackdropCard key={a.id} anime={{ ...a, badge: displayBadge(a) }} width={300}
+                    progressPct={progress[a.id]?.pct || 0} onOpen={openAnime} />
+                ))}
               </AnimeRow>
             )}
 
@@ -398,7 +414,10 @@ export default function AnimeHubV2(props) {
               if (list.length < 3) return null
               return (
                 <AnimeRow key={g} title={g} count={list.length} onSeeAll={() => setGenreSel(new Set([g]))}>
-                  {list.map(a => card(a))}
+                  {list.map(a => (
+                    <BackdropCard key={a.id} anime={{ ...a, badge: displayBadge(a) }} width={300}
+                      progressPct={progress[a.id]?.pct || 0} onOpen={openAnime} />
+                  ))}
                 </AnimeRow>
               )
             })}
@@ -423,6 +442,7 @@ export default function AnimeHubV2(props) {
           </>
         )}
       </div>
+      </div>{/* fin bloc contenu chevauchant */}
     </div>
   )
 }
