@@ -14,6 +14,7 @@ import CAROLE_TUESDAY_VIDEOS from '../data/carole-tuesday-videos.json'
 import DRSTONE_VIDEOS from '../data/drstone-videos.json'
 import FIREFORCE_VIDEOS from '../data/fireforce-videos.json'
 import BLEACH_VIDEOS from '../data/bleach-videos.json'
+import KAIJU_VIDEOS from '../data/kaiju-videos.json'
 import JJK_VIDEOS from '../data/jjk-videos.json'
 import KINGDOM_VIDEOS from '../data/kingdom-videos.json'
 import KNY_VIDEOS from '../data/kny-videos.json'
@@ -516,8 +517,8 @@ const ANIMES = [
     emoji: '⚔️',
     color: '#f4511e',
     colorDark: '#3a0f06',
-    coverImage: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bleach/thumbnails/S01E001.jpg',
-    coverPosition: 'center top',
+    coverImage: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bleach/cover.png',
+    coverPosition: 'center center',
     genres: ['Action', 'Surnaturel', 'Shōnen'],
     description: "Ichigo Kurosaki devient Shinigami et protège les vivants des Hollows tout en guidant les âmes vers la Soul Society.",
     stats: [
@@ -528,6 +529,26 @@ const ANIMES = [
     action: '▶ Accéder',
     badge: 'NOUVEAU',
     badgeColor: '#f4511e',
+  },
+  {
+    id: 'kaiju-no-8',
+    title: 'Kaiju No. 8',
+    subtitle: 'Kaijuu 8-gou',
+    emoji: '👾',
+    color: '#00bcd4',
+    colorDark: '#062e33',
+    coverImage: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaiju/cover.jpg',
+    coverPosition: 'center center',
+    genres: ['Action', 'Monstres', 'Shōnen'],
+    description: "Kafka Hibino rêve d'intégrer les Forces de Défense quand il avale accidentellement un petit kaiju et devient le redoutable Kaiju n°8 — l'arme qu'il voulait combattre.",
+    stats: [
+      { label: 'Épisodes', value: '12' },
+      { label: 'Vidéos', value: videoCountLabel(KAIJU_VIDEOS.length, 12) },
+      { label: 'Audio', value: 'MULTI (VF + VOSTFR)' },
+    ],
+    action: '▶ Accéder',
+    badge: 'NOUVEAU',
+    badgeColor: '#00bcd4',
   },
   {
     id: 'bluelock',
@@ -1513,7 +1534,7 @@ function HubAiChat({ animes, onOpen }) {
   )
 }
 
-export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrstone, onOpenJjk, onOpenKingdom, onOpenAot, onOpenKny, onOpenNnt, onOpenSl, onOpenDbs, onOpenViolet, onOpenVivy, onOpenLovePrism, onOpenCaroleTuesday, onOpenBunnyGirl, onOpenRentGirlfriend, onOpenBc, onOpenMha, onOpenFireforce, onOpenBleach, onOpenBluelock, onOpenFateZero, onOpenYourName, onOpenYourLie, onOpenDomestic, onOpenKoi, onOpenBubble, onOpenReze, onOpenMonUnivers }) {
+export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrstone, onOpenJjk, onOpenKingdom, onOpenAot, onOpenKny, onOpenNnt, onOpenSl, onOpenDbs, onOpenViolet, onOpenVivy, onOpenLovePrism, onOpenCaroleTuesday, onOpenBunnyGirl, onOpenRentGirlfriend, onOpenBc, onOpenMha, onOpenFireforce, onOpenBleach, onOpenBluelock, onOpenKaiju, onOpenFateZero, onOpenYourName, onOpenYourLie, onOpenDomestic, onOpenKoi, onOpenBubble, onOpenReze, onOpenMonUnivers }) {
   const [query, setQuery] = useState('')
   const [selectedGenres, setSelectedGenres] = useState(new Set())
   const [genreMenuOpen, setGenreMenuOpen] = useState(false)
@@ -1570,7 +1591,8 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
   }, [refreshProgress])
 
   const sortedAnimes = useMemo(() => {
-    const priority = { onepiece: 0, 'violet-evergarden': 1, vivy: 2 }
+    // Nouveautés en tête de hub (kaiju + bleach), puis les piliers.
+    const priority = { 'kaiju-no-8': 0, bleach: 1, onepiece: 2, 'violet-evergarden': 3, vivy: 4 }
     return [...ANIMES].sort((a, b) => (priority[a.id] ?? 10) - (priority[b.id] ?? 10))
   }, [])
 
@@ -1681,6 +1703,7 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
       'bunny-girl': onOpenBunnyGirl,
       'rent-girlfriend': onOpenRentGirlfriend,
       bc: onOpenBc, mha: onOpenMha, fireforce: onOpenFireforce, bleach: onOpenBleach, bluelock: onOpenBluelock,
+      'kaiju-no-8': onOpenKaiju,
       'fate-zero': onOpenFateZero,
       'your-name': onOpenYourName,
       'your-lie': onOpenYourLie,
@@ -1704,7 +1727,8 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
     onepiece: 9.2, aot: 9.6, sl: 9.4, jjk: 9.1, fireforce: 8.8, bluelock: 8.9,
     'bunny-girl': 8.7, 'rent-girlfriend': 7.8, tpn: 8.5, drstone: 8.6, kingdom: 8.3,
     kny: 9.0, nnt: 7.9, dbs: 8.0, 'violet-evergarden': 9.3, vivy: 8.4,
-    'love-prism': 7.5, 'carole-tuesday': 8.1, bc: 8.2, mha: 8.0, 'your-name': 8.8
+    'love-prism': 7.5, 'carole-tuesday': 8.1, bc: 8.2, mha: 8.0, 'your-name': 8.8,
+    'kaiju-no-8': 8.9, bleach: 9.0
   };
 
   const allAnimesWithExtras = useMemo(() => {

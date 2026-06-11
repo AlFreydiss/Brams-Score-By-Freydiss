@@ -10,7 +10,9 @@ const VIDEOS = VIDEOS_RAW
 
 const COLOR  = '#00bcd4'
 const COLOR2 = '#4dd0e1'
-const NS     = 'kaiju8'
+// NS aligné sur l'id de carte AnimeHub ('kaiju-no-8') pour que le ring de
+// progression du hub lise les mêmes clés localStorage que la page.
+const NS     = 'kaiju-no-8'
 
 const SYNOPSIS = "Dans un monde ravagé par des créatures géantes appelées Kaiju, Kafka Hibino travaille dans le nettoyage post-combat tout en rêvant d'intégrer les Forces de Défense pour protéger Mina Ashiro. Un jour, il avale accidentellement un petit Kaiju et se transforme en monstre de classe dix — le redoutable Kaiju n°8."
 
@@ -22,7 +24,7 @@ const AWARDS = [
   { icon: '🏆', label: 'Manga en pleine explosion' },
 ]
 
-const COVER = 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaiju-no-8-thumbnails/S01E01.jpg'
+const COVER = 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaiju/cover.jpg'
 
 function loadProgress() {
   try { return JSON.parse(localStorage.getItem(`${NS}_vp`) || '{}') } catch { return {} }
