@@ -194,7 +194,7 @@ export default function KaguyaPage({ onClose }) {
     <>
       <style>{CSS}</style>
       <div style={{ position:'fixed',left:0,right:0,top:76,bottom:0,zIndex:500, background:'radial-gradient(circle at 18% 12%,rgba(239,69,101,.10),transparent 32rem),radial-gradient(circle at 84% 80%,rgba(255,179,193,.06),transparent 28rem),linear-gradient(135deg,#180a10 0%,#1a0c12 55%,#12080c 100%)', display:'flex',flexDirection:'column' }}>
-        <AnimeBackdrop motifs={ANIME_MOTIFS.violet} color={COLOR} color2={COLOR2} />
+        <AnimeBackdrop motifs={ANIME_MOTIFS.kaguya} color={COLOR} color2={COLOR2} />
         {/* Navbar */}
         <div style={{ flexShrink:0,height:62,padding:'0 24px', display:'flex',alignItems:'center',justifyContent:'space-between', background:'rgba(24,10,16,.96)',backdropFilter:'blur(24px)', borderBottom:'1px solid rgba(239,69,101,.10)',zIndex:10, position:'relative' }}>
           <button onClick={detailIdx !== null ? () => setDetailIdx(null) : onClose}
@@ -240,12 +240,19 @@ export default function KaguyaPage({ onClose }) {
             <div className="kg-layout">
               <InfoPanel watchedCount={watchedCount} total={total} lastWatchedIdx={resumeIdx} onResume={() => openDetail(resumeIdx)} />
               <div>
-                {groups.map(g => (
+                {groups.map((g, gi) => (
                   <div key={g.arc} style={{ marginBottom: 30 }}>
+                    {/* Liseré de séparation entre les saisons */}
+                    {gi > 0 && (
+                      <div aria-hidden style={{ height:1, margin:'0 0 26px', background:`linear-gradient(90deg, ${COLOR}66, rgba(255,255,255,.08) 45%, transparent 90%)` }} />
+                    )}
                     <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16 }}>
-                      <div>
-                        <h3 style={{ margin:'0 0 3px',fontSize:18,fontWeight:900,color:'#fff',letterSpacing:'-.01em' }}>{g.arc}</h3>
-                        <div style={{ fontSize:11,color:'rgba(255,255,255,.32)',fontWeight:600 }}>{g.items.length} épisode{g.items.length > 1 ? 's' : ''} · VOSTFR</div>
+                      <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+                        <div aria-hidden style={{ width:4, height:34, borderRadius:2, background:`linear-gradient(180deg, ${COLOR}, ${COLOR2})`, boxShadow:`0 0 12px ${COLOR}55` }} />
+                        <div>
+                          <h3 style={{ margin:'0 0 3px',fontSize:18,fontWeight:900,color:'#fff',letterSpacing:'-.01em' }}>{g.arc}</h3>
+                          <div style={{ fontSize:11,color:'rgba(255,255,255,.32)',fontWeight:600 }}>{g.items.length} épisode{g.items.length > 1 ? 's' : ''} · VOSTFR</div>
+                        </div>
                       </div>
                     </div>
                     <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))', gap:14 }}>
