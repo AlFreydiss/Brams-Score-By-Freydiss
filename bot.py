@@ -1,3 +1,13 @@
+import sys
+# Railway : stdout non-TTY = bufferise par blocs -> les print() courts
+# ([RANK SETUP], [RANK] OK...) restent invisibles dans les Deploy Logs
+# jusqu'a remplissage du buffer. On force le line-buffering.
+try:
+    sys.stdout.reconfigure(line_buffering=True)
+    sys.stderr.reconfigure(line_buffering=True)
+except Exception:
+    pass
+
 from flask import Flask
 from threading import Thread, Lock
 import os
