@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import GoldBackdrop from './GoldBackdrop.jsx'
 import {
@@ -150,14 +151,16 @@ function VolumeWidget({ volume, onChange, track, phase, videoRef }) {
   const seekPct = duration > 0 ? (currentTime / duration) * 100 : 0
   const volPct  = muted ? 0 : volume * 100
 
-  return (
+  // Portail vers document.body : echappe au stacking context isolation:isolate
+  // de PageLayout pour passer au-dessus de tout (z 9999 > notes 9990).
+  return createPortal(
     <div
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       style={{
         position: 'fixed', bottom: 22, left: '50%',
         transform: 'translateX(-50%)',
-        zIndex: 800,
+        zIndex: 9999,
         display: 'flex', flexDirection: 'column', alignItems: 'stretch',
         gap: hover ? 10 : 0,
         background: hover ? 'rgba(5,6,9,0.88)' : 'rgba(5,6,9,0.72)',
@@ -245,7 +248,8 @@ function VolumeWidget({ volume, onChange, track, phase, videoRef }) {
           </span>
         </div>
       )}
-    </div>
+    </div>,
+    document.body
   )
 }
 
@@ -964,7 +968,7 @@ export default function BlindTestPage() {
       <div style={{ position: 'fixed', inset: 0, background: BG, zIndex: 0 }} />
 
       {/* Fond doré style Undercover (hors-jeu : intro / menu / résultats) */}
-      {!isPlaying && <GoldBackdrop zIndex={1} particlesZIndex={2} />}
+      {!isPlaying && <GoldBackdrop zIndex={1} particlesZIndex={9990} portalNotes />}
 
       {/* Video background */}
       <video

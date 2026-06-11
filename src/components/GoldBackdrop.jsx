@@ -4,6 +4,7 @@
 // Réutilisé sur Blind Test, Le Fil… Layer fixe plein écran.
 // base = derrière le contenu (zIndex), notes devant (particlesZIndex).
 import { useMemo } from 'react'
+import { createPortal } from 'react-dom'
 
 const NOTE_GLYPHS = ['♪', '♫', '♩', '♬', '𝄞']
 
@@ -16,7 +17,7 @@ const CSS = `
   @media (prefers-reduced-motion: reduce){ .gbx-note,.gbx-sheen,.gbx-eqbar{ animation:none !important } }
 `
 
-export default function GoldBackdrop({ count = 16, zIndex = 0, particlesZIndex = 1 }) {
+export default function GoldBackdrop({ count = 16, zIndex = 0, particlesZIndex = 1, portalNotes = false }) {
   // Notes de musique qui tombent du haut, sobrement (thème blind test).
   const notes = useMemo(() => Array.from({ length: count }, (_, i) => {
     const r = (n) => ((Math.sin(i * 73.13 + n * 19.7) + 1) / 2)
@@ -72,19 +73,26 @@ export default function GoldBackdrop({ count = 16, zIndex = 0, particlesZIndex =
         </div>
       </div>
 
-      {/* Notes de musique dorées qui tombent du haut (devant le contenu, décoratives) */}
-      <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: particlesZIndex, pointerEvents: 'none', overflow: 'hidden' }}>
-        {notes.map((n, i) => (
-          <span key={i} className="gbx-note" style={{
-            position: 'absolute', top: '-12vh', left: `${n.left}%`,
-            fontSize: n.size, lineHeight: 1, color: 'rgba(226,190,110,1)', opacity: n.opacity,
-            textShadow: '0 0 10px rgba(226,190,110,.35)',
-            animation: `gbx-fall ${n.dur}s linear ${n.delay}s infinite`,
-          }}>
-            <span style={{ display: 'inline-block', animation: `gbx-sway ${n.sway}s ease-in-out infinite` }}>{n.glyph}</span>
-          </span>
-        ))}
-      </div>
+      {/* Notes de musique dorées qui tombent du haut (devant le contenu, décoratives).
+          portalNotes : rendues dans document.body pour echapper aux stacking contexts
+          parents (ex. isolation:isolate de PageLayout) et passer au-dessus de tout. */}
+      {(() => {
+        const layer = (
+          <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: particlesZIndex, pointerEvents: 'none', overflow: 'hidden' }}>
+            {notes.map((n, i) => (
+              <span key={i} className="gbx-note" style={{
+                position: 'absolute', top: '-12vh', left: `${n.left}%`,
+                fontSize: n.size, lineHeight: 1, color: 'rgba(226,190,110,1)', opacity: n.opacity,
+                textShadow: '0 0 10px rgba(226,190,110,.35)',
+                animation: `gbx-fall ${n.dur}s linear ${n.delay}s infinite`,
+              }}>
+                <span style={{ display: 'inline-block', animation: `gbx-sway ${n.sway}s ease-in-out infinite` }}>{n.glyph}</span>
+              </span>
+            ))}
+          </div>
+        )
+        return portalNotes ? createPortal(layer, document.body) : layer
+      })()}
     </>
   )
 }
