@@ -174,13 +174,19 @@ function AMVBackground({ hidden = false }) {
     return () => window.clearTimeout(timer)
   }, [])
 
+  // Poster (frame 25s de l'AMV) toujours en fond : si la vidéo ne joue pas
+  // (mobile/tablette < 900px, iOS en mode éco d'énergie qui bloque l'autoplay,
+  // saveData, reduced-motion), on garde une image vivante au lieu d'un noir mort.
   const bgLayerStyle = {
     position: 'fixed',
     inset: 0,
     zIndex: 0,
     pointerEvents: 'none',
     overflow: 'hidden',
-    background: '#05070a',
+    backgroundColor: '#05070a',
+    backgroundImage: 'linear-gradient(rgba(5,7,10,0.65), rgba(5,7,10,0.65)), url(/bg-poster.jpg)',
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
     contain: 'layout paint size',
     isolation: 'isolate',
   }
@@ -224,6 +230,7 @@ function AMVBackground({ hidden = false }) {
           ref={videoRef}
           className="cinema-amv"
           autoPlay muted loop playsInline
+          poster="/bg-poster.jpg"
           preload="metadata"
           onLoadedMetadata={e => { e.target.currentTime = 25 }}
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', maxWidth: 'none', objectFit: 'cover', pointerEvents: 'none', opacity: 0.35 }}
