@@ -96,14 +96,25 @@ export default function ProfileHero({ data, copied, onShare, onEdit, onAvatar, o
 
           {/* Bio */}
           <div className="pfx-ig-bio">
-            <div className="pfx-ig-bio-name">
-              {displayName}
-              <em> · #{member?.rank ?? '—'} / {member?.total ?? '—'} Nakamas</em>
-            </div>
+            <div className="pfx-ig-bio-name">{displayName}</div>
             {settings?.quote && <p className="pfx-ig-quote">« {settings.quote} »</p>}
             {settings?.bio   && <p className="pfx-ig-biotext">{settings.bio}</p>}
-            <div className="pfx-ig-meta">
-              <span>฿ {fmtB(member?.berrys || 0)} de prime</span>
+            {/* Prime + classement : chips hairline sobres (or de la DA, zéro glow) */}
+            <div className="pfx-ig-meta" style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+              <span style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 999,
+                background: 'rgba(191,164,106,0.08)', border: '1px solid rgba(191,164,106,0.35)',
+                color: '#d9bd80', fontWeight: 700, fontSize: 12.5, letterSpacing: '.01em',
+              }}>
+                ฿ {fmtB(member?.berrys || 0)} <span style={{ color: 'rgba(217,189,128,0.6)', fontWeight: 600 }}>de prime</span>
+              </span>
+              <span style={{
+                display: 'inline-flex', alignItems: 'center', padding: '4px 12px', borderRadius: 999,
+                background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)',
+                color: 'rgba(255,255,255,0.75)', fontWeight: 700, fontSize: 12.5,
+              }}>
+                #{member?.rank ?? '—'} <span style={{ color: 'rgba(255,255,255,0.45)', fontWeight: 600, marginLeft: 4 }}>/ {member?.total ?? '—'} Nakamas</span>
+              </span>
             </div>
           </div>
         </div>
