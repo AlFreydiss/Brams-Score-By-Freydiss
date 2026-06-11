@@ -1,7 +1,7 @@
 [
   {
     "episode": 1,
-    "title": "Episode 1",
+    "title": "Izuku Midoriya: Origin",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E001/master-fr.m3u8",
     "season": "S01",
     "arc": "Entree a U.A.",
@@ -38,7 +38,7 @@
   },
   {
     "episode": 2,
-    "title": "Episode 2",
+    "title": "What It Takes to Be a Hero",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E002/master-fr.m3u8",
     "season": "S01",
     "arc": "Entree a U.A.",
@@ -75,7 +75,7 @@
   },
   {
     "episode": 3,
-    "title": "Episode 3",
+    "title": "Roaring Muscles",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E003/master-fr.m3u8",
     "season": "S01",
     "arc": "Entree a U.A.",
@@ -112,7 +112,7 @@
   },
   {
     "episode": 4,
-    "title": "Episode 4",
+    "title": "Start Line",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E004/master-fr.m3u8",
     "season": "S01",
     "arc": "Entree a U.A.",
@@ -149,7 +149,7 @@
   },
   {
     "episode": 5,
-    "title": "Episode 5",
+    "title": "What I Can Do For Now",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E005/master-fr.m3u8",
     "season": "S01",
     "arc": "Entree a U.A.",
@@ -186,7 +186,7 @@
   },
   {
     "episode": 6,
-    "title": "Episode 6",
+    "title": "Rage, You Damn Nerd",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E006/master-fr.m3u8",
     "season": "S01",
     "arc": "Entree a U.A.",
@@ -223,7 +223,7 @@
   },
   {
     "episode": 7,
-    "title": "Episode 7",
+    "title": "Deku vs. Kacchan",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E007/master-fr.m3u8",
     "season": "S01",
     "arc": "Entree a U.A.",
@@ -260,7 +260,7 @@
   },
   {
     "episode": 8,
-    "title": "Episode 8",
+    "title": "Bakugo's Start Line",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E008/master-fr.m3u8",
     "season": "S01",
     "arc": "Entree a U.A.",
@@ -297,7 +297,7 @@
   },
   {
     "episode": 9,
-    "title": "Episode 9",
+    "title": "Yeah, Just Do Your Best, Iida!",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E009/master-fr.m3u8",
     "season": "S01",
     "arc": "Entree a U.A.",
@@ -334,7 +334,7 @@
   },
   {
     "episode": 10,
-    "title": "Episode 10",
+    "title": "Encounter with the Unknown",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E010/master-fr.m3u8",
     "season": "S01",
     "arc": "Entree a U.A.",
@@ -371,7 +371,7 @@
   },
   {
     "episode": 11,
-    "title": "Episode 11",
+    "title": "Game Over",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E011/master-fr.m3u8",
     "season": "S01",
     "arc": "Entree a U.A.",
@@ -408,7 +408,7 @@
   },
   {
     "episode": 12,
-    "title": "Episode 12",
+    "title": "All Might",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E012/master-fr.m3u8",
     "season": "S01",
     "arc": "Entree a U.A.",
@@ -445,7 +445,7 @@
   },
   {
     "episode": 13,
-    "title": "Episode 13",
+    "title": "In Each of Our Hearts",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S01E013/master-fr.m3u8",
     "season": "S01",
     "arc": "Entree a U.A.",
@@ -482,7 +482,7 @@
   },
   {
     "episode": 1,
-    "title": "Episode 1",
+    "title": "That's the Idea, Ochako",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E001/master-fr.m3u8",
     "season": "S02",
     "arc": "Tournoi Sports Festival",
@@ -519,7 +519,7 @@
   },
   {
     "episode": 2,
-    "title": "Episode 2",
+    "title": "Roaring Sports Festival",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E002/master-fr.m3u8",
     "season": "S02",
     "arc": "Tournoi Sports Festival",
@@ -556,7 +556,7 @@
   },
   {
     "episode": 3,
-    "title": "Episode 3",
+    "title": "In Their Own Quirky Ways",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E003/master-fr.m3u8",
     "season": "S02",
     "arc": "Tournoi Sports Festival",
@@ -593,7 +593,7 @@
   },
   {
     "episode": 4,
-    "title": "Episode 4",
+    "title": "Strategy, Strategy, Strategy",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E004/master-fr.m3u8",
     "season": "S02",
     "arc": "Tournoi Sports Festival",
@@ -630,7 +630,7 @@
   },
   {
     "episode": 5,
-    "title": "Episode 5",
+    "title": "Cavalry Battle Finale",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E005/master-fr.m3u8",
     "season": "S02",
     "arc": "Tournoi Sports Festival",
@@ -667,7 +667,7 @@
   },
   {
     "episode": 6,
-    "title": "Episode 6",
+    "title": "The Boy Born with Everything",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E006/master-fr.m3u8",
     "season": "S02",
     "arc": "Tournoi Sports Festival",
@@ -704,7 +704,7 @@
   },
   {
     "episode": 7,
-    "title": "Episode 7",
+    "title": "Victory or Defeat",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E007/master-fr.m3u8",
     "season": "S02",
     "arc": "Tournoi Sports Festival",
@@ -741,7 +741,7 @@
   },
   {
     "episode": 8,
-    "title": "Episode 8",
+    "title": "Battle on, Challengers!",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E008/master-fr.m3u8",
     "season": "S02",
     "arc": "Tournoi Sports Festival",
@@ -778,7 +778,7 @@
   },
   {
     "episode": 9,
-    "title": "Episode 9",
+    "title": "Bakugo VS Uraraka",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E009/master-fr.m3u8",
     "season": "S02",
     "arc": "Tournoi Sports Festival",
@@ -815,7 +815,7 @@
   },
   {
     "episode": 10,
-    "title": "Episode 10",
+    "title": "Shouto Todoroki: Origin",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E010/master-fr.m3u8",
     "season": "S02",
     "arc": "Tournoi Sports Festival",
@@ -852,7 +852,7 @@
   },
   {
     "episode": 11,
-    "title": "Episode 11",
+    "title": "Fight on, Iida",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E011/master-fr.m3u8",
     "season": "S02",
     "arc": "Tournoi Sports Festival",
@@ -889,7 +889,7 @@
   },
   {
     "episode": 12,
-    "title": "Episode 12",
+    "title": "Todoroki VS Bakugou",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E012/master-fr.m3u8",
     "season": "S02",
     "arc": "Tournoi Sports Festival",
@@ -926,7 +926,7 @@
   },
   {
     "episode": 13,
-    "title": "Episode 13",
+    "title": "Time to Pick Some Names",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E013/master-fr.m3u8",
     "season": "S02",
     "arc": "Tournoi Sports Festival",
@@ -963,7 +963,7 @@
   },
   {
     "episode": 14,
-    "title": "Episode 14",
+    "title": "Bizarre! Gran Torino Appears",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E014/master-fr.m3u8",
     "season": "S02",
     "arc": "Tournoi Sports Festival",
@@ -1000,7 +1000,7 @@
   },
   {
     "episode": 15,
-    "title": "Episode 15",
+    "title": "Midoriya and Shigaraki",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E015/master-fr.m3u8",
     "season": "S02",
     "arc": "Tournoi Sports Festival",
@@ -1037,7 +1037,7 @@
   },
   {
     "episode": 16,
-    "title": "Episode 16",
+    "title": "Hero Killer: Stain vs U.A. Students",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E016/master-fr.m3u8",
     "season": "S02",
     "arc": "Tournoi Sports Festival",
@@ -1074,7 +1074,7 @@
   },
   {
     "episode": 17,
-    "title": "Episode 17",
+    "title": "Climax",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E017/master-fr.m3u8",
     "season": "S02",
     "arc": "Tournoi Sports Festival",
@@ -1111,7 +1111,7 @@
   },
   {
     "episode": 18,
-    "title": "Episode 18",
+    "title": "The Aftermath of Hero Killer Stain",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E018/master-fr.m3u8",
     "season": "S02",
     "arc": "Tournoi Sports Festival",
@@ -1148,7 +1148,7 @@
   },
   {
     "episode": 19,
-    "title": "Episode 19",
+    "title": "Everyone's Internships",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E019/master-fr.m3u8",
     "season": "S02",
     "arc": "Tournoi Sports Festival",
@@ -1185,7 +1185,7 @@
   },
   {
     "episode": 20,
-    "title": "Episode 20",
+    "title": "Listen Up!! A Tale from the Past",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E020/master-fr.m3u8",
     "season": "S02",
     "arc": "Tournoi Sports Festival",
@@ -1222,7 +1222,7 @@
   },
   {
     "episode": 21,
-    "title": "Episode 21",
+    "title": "Gear up for Final Exams",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E021/master-fr.m3u8",
     "season": "S02",
     "arc": "Tournoi Sports Festival",
@@ -1259,7 +1259,7 @@
   },
   {
     "episode": 22,
-    "title": "Episode 22",
+    "title": "Yaoyorozu: Rising",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E022/master-fr.m3u8",
     "season": "S02",
     "arc": "Tournoi Sports Festival",
@@ -1296,7 +1296,7 @@
   },
   {
     "episode": 23,
-    "title": "Episode 23",
+    "title": "Stripping the Varnish",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E023/master-fr.m3u8",
     "season": "S02",
     "arc": "Tournoi Sports Festival",
@@ -1333,7 +1333,7 @@
   },
   {
     "episode": 24,
-    "title": "Episode 24",
+    "title": "Katsuki Bakugou: Origin",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E024/master-fr.m3u8",
     "season": "S02",
     "arc": "Tournoi Sports Festival",
@@ -1370,7 +1370,7 @@
   },
   {
     "episode": 25,
-    "title": "Episode 25",
+    "title": "Encounter",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S02E025/master-fr.m3u8",
     "season": "S02",
     "arc": "Tournoi Sports Festival",
@@ -1403,7 +1403,7 @@
   },
   {
     "episode": 1,
-    "title": "Episode 1",
+    "title": "Game Start",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E001/master-fr.m3u8",
     "season": "S03",
     "arc": "Licence Hero",
@@ -1440,7 +1440,7 @@
   },
   {
     "episode": 2,
-    "title": "Episode 2",
+    "title": "Wild, Wild Pussycats",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E002/master-fr.m3u8",
     "season": "S03",
     "arc": "Licence Hero",
@@ -1477,7 +1477,7 @@
   },
   {
     "episode": 3,
-    "title": "Episode 3",
+    "title": "Kota",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E003/master-fr.m3u8",
     "season": "S03",
     "arc": "Licence Hero",
@@ -1514,7 +1514,7 @@
   },
   {
     "episode": 4,
-    "title": "Episode 4",
+    "title": "My Hero",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E004/master-fr.m3u8",
     "season": "S03",
     "arc": "Licence Hero",
@@ -1551,7 +1551,7 @@
   },
   {
     "episode": 5,
-    "title": "Episode 5",
+    "title": "Drive it Home, Iron Fist!!!",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E005/master-fr.m3u8",
     "season": "S03",
     "arc": "Licence Hero",
@@ -1588,7 +1588,7 @@
   },
   {
     "episode": 6,
-    "title": "Episode 6",
+    "title": "Roaring Upheaval",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E006/master-fr.m3u8",
     "season": "S03",
     "arc": "Licence Hero",
@@ -1625,7 +1625,7 @@
   },
   {
     "episode": 7,
-    "title": "Episode 7",
+    "title": "What a Twist!",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E007/master-fr.m3u8",
     "season": "S03",
     "arc": "Licence Hero",
@@ -1662,7 +1662,7 @@
   },
   {
     "episode": 8,
-    "title": "Episode 8",
+    "title": "From Iida to Midoriya",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E008/master-fr.m3u8",
     "season": "S03",
     "arc": "Licence Hero",
@@ -1699,7 +1699,7 @@
   },
   {
     "episode": 9,
-    "title": "Episode 9",
+    "title": "All For One",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E009/master-fr.m3u8",
     "season": "S03",
     "arc": "Licence Hero",
@@ -1736,7 +1736,7 @@
   },
   {
     "episode": 10,
-    "title": "Episode 10",
+    "title": "Symbol of Peace",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E010/master-fr.m3u8",
     "season": "S03",
     "arc": "Licence Hero",
@@ -1773,7 +1773,7 @@
   },
   {
     "episode": 11,
-    "title": "Episode 11",
+    "title": "One For All",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E011/master-fr.m3u8",
     "season": "S03",
     "arc": "Licence Hero",
@@ -1810,7 +1810,7 @@
   },
   {
     "episode": 12,
-    "title": "Episode 12",
+    "title": "End of the Beginning, Beginning of the End",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E012/master-fr.m3u8",
     "season": "S03",
     "arc": "Licence Hero",
@@ -1847,7 +1847,7 @@
   },
   {
     "episode": 13,
-    "title": "Episode 13",
+    "title": "Moving into Dorms",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E013/master-fr.m3u8",
     "season": "S03",
     "arc": "Licence Hero",
@@ -1884,7 +1884,7 @@
   },
   {
     "episode": 14,
-    "title": "Episode 14",
+    "title": "Create Those Ultimate Moves",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E014/master-fr.m3u8",
     "season": "S03",
     "arc": "Licence Hero",
@@ -1921,7 +1921,7 @@
   },
   {
     "episode": 15,
-    "title": "Episode 15",
+    "title": "The Test",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E015/master-fr.m3u8",
     "season": "S03",
     "arc": "Licence Hero",
@@ -1958,7 +1958,7 @@
   },
   {
     "episode": 16,
-    "title": "Episode 16",
+    "title": "Shiketsu High Lurking",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E016/master-fr.m3u8",
     "season": "S03",
     "arc": "Licence Hero",
@@ -1995,7 +1995,7 @@
   },
   {
     "episode": 17,
-    "title": "Episode 17",
+    "title": "Class 1-A",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E017/master-fr.m3u8",
     "season": "S03",
     "arc": "Licence Hero",
@@ -2032,7 +2032,7 @@
   },
   {
     "episode": 18,
-    "title": "Episode 18",
+    "title": "Rush!",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E018/master-fr.m3u8",
     "season": "S03",
     "arc": "Licence Hero",
@@ -2069,7 +2069,7 @@
   },
   {
     "episode": 19,
-    "title": "Episode 19",
+    "title": "Rescue Exercises",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E019/master-fr.m3u8",
     "season": "S03",
     "arc": "Licence Hero",
@@ -2106,7 +2106,7 @@
   },
   {
     "episode": 20,
-    "title": "Episode 20",
+    "title": "Save the World with Love!",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E020/master-fr.m3u8",
     "season": "S03",
     "arc": "Licence Hero",
@@ -2143,7 +2143,7 @@
   },
   {
     "episode": 21,
-    "title": "Episode 21",
+    "title": "What's the Big Idea?",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E021/master-fr.m3u8",
     "season": "S03",
     "arc": "Licence Hero",
@@ -2180,7 +2180,7 @@
   },
   {
     "episode": 22,
-    "title": "Episode 22",
+    "title": "A Talk about Your Quirk",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E022/master-fr.m3u8",
     "season": "S03",
     "arc": "Licence Hero",
@@ -2217,7 +2217,7 @@
   },
   {
     "episode": 23,
-    "title": "Episode 23",
+    "title": "Deku vs. Kacchan, Part 2",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E023/master-fr.m3u8",
     "season": "S03",
     "arc": "Licence Hero",
@@ -2254,7 +2254,7 @@
   },
   {
     "episode": 24,
-    "title": "Episode 24",
+    "title": "A Season for Encounters",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E024/master-fr.m3u8",
     "season": "S03",
     "arc": "Licence Hero",
@@ -2291,7 +2291,7 @@
   },
   {
     "episode": 25,
-    "title": "Episode 25",
+    "title": "Unrivaled",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S03E025/master-fr.m3u8",
     "season": "S03",
     "arc": "Licence Hero",
@@ -2328,7 +2328,7 @@
   },
   {
     "episode": 1,
-    "title": "Episode 1",
+    "title": "The Scoop on U.A. Class 1-A",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E001/master-fr.m3u8",
     "season": "S04",
     "arc": "Overhaul",
@@ -2365,7 +2365,7 @@
   },
   {
     "episode": 2,
-    "title": "Episode 2",
+    "title": "Overhaul",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E002/master-fr.m3u8",
     "season": "S04",
     "arc": "Overhaul",
@@ -2402,7 +2402,7 @@
   },
   {
     "episode": 3,
-    "title": "Episode 3",
+    "title": "Boy Meets...",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E003/master-fr.m3u8",
     "season": "S04",
     "arc": "Overhaul",
@@ -2439,7 +2439,7 @@
   },
   {
     "episode": 4,
-    "title": "Episode 4",
+    "title": "Fighting Fate",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E004/master-fr.m3u8",
     "season": "S04",
     "arc": "Overhaul",
@@ -2476,7 +2476,7 @@
   },
   {
     "episode": 5,
-    "title": "Episode 5",
+    "title": "Let's Go, Gutsy Red Riot",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E005/master-fr.m3u8",
     "season": "S04",
     "arc": "Overhaul",
@@ -2513,7 +2513,7 @@
   },
   {
     "episode": 6,
-    "title": "Episode 6",
+    "title": "An Unpleasant Talk",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E006/master-fr.m3u8",
     "season": "S04",
     "arc": "Overhaul",
@@ -2550,7 +2550,7 @@
   },
   {
     "episode": 7,
-    "title": "Episode 7",
+    "title": "GO!!",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E007/master-fr.m3u8",
     "season": "S04",
     "arc": "Overhaul",
@@ -2587,7 +2587,7 @@
   },
   {
     "episode": 8,
-    "title": "Episode 8",
+    "title": "Suneater of the Big Three",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E008/master-fr.m3u8",
     "season": "S04",
     "arc": "Overhaul",
@@ -2624,7 +2624,7 @@
   },
   {
     "episode": 9,
-    "title": "Episode 9",
+    "title": "Red Riot",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E009/master-fr.m3u8",
     "season": "S04",
     "arc": "Overhaul",
@@ -2661,7 +2661,7 @@
   },
   {
     "episode": 10,
-    "title": "Episode 10",
+    "title": "Temp Squad",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E010/master-fr.m3u8",
     "season": "S04",
     "arc": "Overhaul",
@@ -2698,7 +2698,7 @@
   },
   {
     "episode": 11,
-    "title": "Episode 11",
+    "title": "Lemillion",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E011/master-fr.m3u8",
     "season": "S04",
     "arc": "Overhaul",
@@ -2735,7 +2735,7 @@
   },
   {
     "episode": 12,
-    "title": "Episode 12",
+    "title": "Unforeseen Hope",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E012/master-fr.m3u8",
     "season": "S04",
     "arc": "Overhaul",
@@ -2772,7 +2772,7 @@
   },
   {
     "episode": 13,
-    "title": "Episode 13",
+    "title": "Infinite 100%",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E013/master-fr.m3u8",
     "season": "S04",
     "arc": "Overhaul",
@@ -2809,7 +2809,7 @@
   },
   {
     "episode": 14,
-    "title": "Episode 14",
+    "title": "Bright Future",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E014/master-fr.m3u8",
     "season": "S04",
     "arc": "Overhaul",
@@ -2846,7 +2846,7 @@
   },
   {
     "episode": 15,
-    "title": "Episode 15",
+    "title": "Smoldering Flames",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E015/master-fr.m3u8",
     "season": "S04",
     "arc": "Overhaul",
@@ -2883,7 +2883,7 @@
   },
   {
     "episode": 16,
-    "title": "Episode 16",
+    "title": "Win Those Kids' Hearts",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E016/master-fr.m3u8",
     "season": "S04",
     "arc": "Overhaul",
@@ -2920,7 +2920,7 @@
   },
   {
     "episode": 17,
-    "title": "Episode 17",
+    "title": "Relief for License Trainees",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E017/master-fr.m3u8",
     "season": "S04",
     "arc": "Overhaul",
@@ -2957,7 +2957,7 @@
   },
   {
     "episode": 18,
-    "title": "Episode 18",
+    "title": "School Festival",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E018/master-fr.m3u8",
     "season": "S04",
     "arc": "Overhaul",
@@ -2994,7 +2994,7 @@
   },
   {
     "episode": 19,
-    "title": "Episode 19",
+    "title": "Prepping for the School Festival Is the Funnest Part",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E019/master-fr.m3u8",
     "season": "S04",
     "arc": "Overhaul",
@@ -3031,7 +3031,7 @@
   },
   {
     "episode": 20,
-    "title": "Episode 20",
+    "title": "Gold Tips Imperial",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E020/master-fr.m3u8",
     "season": "S04",
     "arc": "Overhaul",
@@ -3068,7 +3068,7 @@
   },
   {
     "episode": 21,
-    "title": "Episode 21",
+    "title": "Deku vs. Gentle Criminal",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E021/master-fr.m3u8",
     "season": "S04",
     "arc": "Overhaul",
@@ -3105,7 +3105,7 @@
   },
   {
     "episode": 22,
-    "title": "Episode 22",
+    "title": "School Festival Start!!",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E022/master-fr.m3u8",
     "season": "S04",
     "arc": "Overhaul",
@@ -3142,7 +3142,7 @@
   },
   {
     "episode": 23,
-    "title": "Episode 23",
+    "title": "Let It Flow! School Festival!",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E023/master-fr.m3u8",
     "season": "S04",
     "arc": "Overhaul",
@@ -3179,7 +3179,7 @@
   },
   {
     "episode": 24,
-    "title": "Episode 24",
+    "title": "Japanese Hero Billboard Chart",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E024/master-fr.m3u8",
     "season": "S04",
     "arc": "Overhaul",
@@ -3216,7 +3216,7 @@
   },
   {
     "episode": 25,
-    "title": "Episode 25",
+    "title": "His Start",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S04E025/master-fr.m3u8",
     "season": "S04",
     "arc": "Overhaul",
@@ -3253,7 +3253,7 @@
   },
   {
     "episode": 1,
-    "title": "Episode 1",
+    "title": "All Hands on Deck! Class 1-A",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E001/master-fr.m3u8",
     "season": "S05",
     "arc": "Liberation Paranormale",
@@ -3290,7 +3290,7 @@
   },
   {
     "episode": 2,
-    "title": "Episode 2",
+    "title": "Vestiges",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E002/master-fr.m3u8",
     "season": "S05",
     "arc": "Liberation Paranormale",
@@ -3327,7 +3327,7 @@
   },
   {
     "episode": 3,
-    "title": "Episode 3",
+    "title": "Clash! Class A vs. Class B!",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E003/master-fr.m3u8",
     "season": "S05",
     "arc": "Liberation Paranormale",
@@ -3364,7 +3364,7 @@
   },
   {
     "episode": 4,
-    "title": "Episode 4",
+    "title": "Make It Happen, Shinso!",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E004/master-fr.m3u8",
     "season": "S05",
     "arc": "Liberation Paranormale",
@@ -3401,7 +3401,7 @@
   },
   {
     "episode": 5,
-    "title": "Episode 5",
+    "title": "Operation New Improv Moves",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E005/master-fr.m3u8",
     "season": "S05",
     "arc": "Liberation Paranormale",
@@ -3438,7 +3438,7 @@
   },
   {
     "episode": 6,
-    "title": "Episode 6",
+    "title": "Foresight",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E006/master-fr.m3u8",
     "season": "S05",
     "arc": "Liberation Paranormale",
@@ -3475,7 +3475,7 @@
   },
   {
     "episode": 7,
-    "title": "Episode 7",
+    "title": "Match 3",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E007/master-fr.m3u8",
     "season": "S05",
     "arc": "Liberation Paranormale",
@@ -3512,7 +3512,7 @@
   },
   {
     "episode": 8,
-    "title": "Episode 8",
+    "title": "Match 3 Conclusion",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E008/master-fr.m3u8",
     "season": "S05",
     "arc": "Liberation Paranormale",
@@ -3549,7 +3549,7 @@
   },
   {
     "episode": 9,
-    "title": "Episode 9",
+    "title": "Early Bird!",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E009/master-fr.m3u8",
     "season": "S05",
     "arc": "Liberation Paranormale",
@@ -3586,7 +3586,7 @@
   },
   {
     "episode": 10,
-    "title": "Episode 10",
+    "title": "That Which Is Inherited",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E010/master-fr.m3u8",
     "season": "S05",
     "arc": "Liberation Paranormale",
@@ -3623,7 +3623,7 @@
   },
   {
     "episode": 11,
-    "title": "Episode 11",
+    "title": "Our Brawl",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E011/master-fr.m3u8",
     "season": "S05",
     "arc": "Liberation Paranormale",
@@ -3660,7 +3660,7 @@
   },
   {
     "episode": 12,
-    "title": "Episode 12",
+    "title": "The New Power and All For One",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E012/master-fr.m3u8",
     "season": "S05",
     "arc": "Liberation Paranormale",
@@ -3697,7 +3697,7 @@
   },
   {
     "episode": 13,
-    "title": "Episode 13",
+    "title": "Have a Merry Christmas!",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E013/master-fr.m3u8",
     "season": "S05",
     "arc": "Liberation Paranormale",
@@ -3734,7 +3734,7 @@
   },
   {
     "episode": 14,
-    "title": "Episode 14",
+    "title": "Off to Endeavor's Agency!",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E014/master-fr.m3u8",
     "season": "S05",
     "arc": "Liberation Paranormale",
@@ -3771,7 +3771,7 @@
   },
   {
     "episode": 15,
-    "title": "Episode 15",
+    "title": "One Thing at a Time",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E015/master-fr.m3u8",
     "season": "S05",
     "arc": "Liberation Paranormale",
@@ -3808,7 +3808,7 @@
   },
   {
     "episode": 16,
-    "title": "Episode 16",
+    "title": "Long Time No See, Selkie!",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E016/master-fr.m3u8",
     "season": "S05",
     "arc": "Liberation Paranormale",
@@ -3845,7 +3845,7 @@
   },
   {
     "episode": 17,
-    "title": "Episode 17",
+    "title": "The Hellish Todoroki Family",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E017/master-fr.m3u8",
     "season": "S05",
     "arc": "Liberation Paranormale",
@@ -3882,7 +3882,7 @@
   },
   {
     "episode": 18,
-    "title": "Episode 18",
+    "title": "The Unforgiven",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E018/master-fr.m3u8",
     "season": "S05",
     "arc": "Liberation Paranormale",
@@ -3919,7 +3919,7 @@
   },
   {
     "episode": 19,
-    "title": "Episode 19",
+    "title": "More of a Hero Than Anyone",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E019/master-fr.m3u8",
     "season": "S05",
     "arc": "Liberation Paranormale",
@@ -3956,7 +3956,7 @@
   },
   {
     "episode": 20,
-    "title": "Episode 20",
+    "title": "My Villain Academia",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E020/master-fr.m3u8",
     "season": "S05",
     "arc": "Liberation Paranormale",
@@ -3993,7 +3993,7 @@
   },
   {
     "episode": 21,
-    "title": "Episode 21",
+    "title": "Revival Party",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E021/master-fr.m3u8",
     "season": "S05",
     "arc": "Liberation Paranormale",
@@ -4030,7 +4030,7 @@
   },
   {
     "episode": 22,
-    "title": "Episode 22",
+    "title": "Sad Man's Parade",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E022/master-fr.m3u8",
     "season": "S05",
     "arc": "Liberation Paranormale",
@@ -4067,7 +4067,7 @@
   },
   {
     "episode": 23,
-    "title": "Episode 23",
+    "title": "Tenko Shimura: Origin",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E023/master-fr.m3u8",
     "season": "S05",
     "arc": "Liberation Paranormale",
@@ -4104,7 +4104,7 @@
   },
   {
     "episode": 24,
-    "title": "Episode 24",
+    "title": "Tomura Shigaraki: Origin",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E024/master-fr.m3u8",
     "season": "S05",
     "arc": "Liberation Paranormale",
@@ -4141,7 +4141,7 @@
   },
   {
     "episode": 25,
-    "title": "Episode 25",
+    "title": "The High, Deep Blue Sky",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S05E025/master-fr.m3u8",
     "season": "S05",
     "arc": "Liberation Paranormale",
@@ -4178,7 +4178,7 @@
   },
   {
     "episode": 1,
-    "title": "Episode 1",
+    "title": "Sound Hashira Tengen Uzui",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E001/master-fr.m3u8",
     "season": "S06",
     "arc": "War Arc",
@@ -4215,7 +4215,7 @@
   },
   {
     "episode": 2,
-    "title": "Episode 2",
+    "title": "Infiltrating the Entertainment District",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E002/master-fr.m3u8",
     "season": "S06",
     "arc": "War Arc",
@@ -4252,7 +4252,7 @@
   },
   {
     "episode": 3,
-    "title": "Episode 3",
+    "title": "What Are You?",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E003/master-fr.m3u8",
     "season": "S06",
     "arc": "War Arc",
@@ -4289,7 +4289,7 @@
   },
   {
     "episode": 4,
-    "title": "Episode 4",
+    "title": "Tonight",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E004/master-fr.m3u8",
     "season": "S06",
     "arc": "War Arc",
@@ -4326,7 +4326,7 @@
   },
   {
     "episode": 5,
-    "title": "Episode 5",
+    "title": "Things Are Gonna Get Real Flashy!!",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E005/master-fr.m3u8",
     "season": "S06",
     "arc": "War Arc",
@@ -4363,7 +4363,7 @@
   },
   {
     "episode": 6,
-    "title": "Episode 6",
+    "title": "Layered Memories",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E006/master-fr.m3u8",
     "season": "S06",
     "arc": "War Arc",
@@ -4400,7 +4400,7 @@
   },
   {
     "episode": 7,
-    "title": "Episode 7",
+    "title": "Transformation",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E007/master-fr.m3u8",
     "season": "S06",
     "arc": "War Arc",
@@ -4437,7 +4437,7 @@
   },
   {
     "episode": 8,
-    "title": "Episode 8",
+    "title": "Gathering",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E008/master-fr.m3u8",
     "season": "S06",
     "arc": "War Arc",
@@ -4474,7 +4474,7 @@
   },
   {
     "episode": 9,
-    "title": "Episode 9",
+    "title": "Defeating an Upper Rank Demon",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E009/master-fr.m3u8",
     "season": "S06",
     "arc": "War Arc",
@@ -4511,7 +4511,7 @@
   },
   {
     "episode": 10,
-    "title": "Episode 10",
+    "title": "Never Give Up",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E010/master-fr.m3u8",
     "season": "S06",
     "arc": "War Arc",
@@ -4548,7 +4548,7 @@
   },
   {
     "episode": 11,
-    "title": "Episode 11",
+    "title": "No Matter How Many Lives",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/mha-hls/S06E011/master-fr.m3u8",
     "season": "S06",
     "arc": "War Arc",
