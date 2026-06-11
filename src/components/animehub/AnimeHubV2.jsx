@@ -12,6 +12,10 @@ import AnimeRow from './AnimeRow.jsx'
 import AnimeCard from './AnimeCard.jsx'
 
 const HERO_IDS = ['onepiece', 'kaiju-no-8', 'bleach', 'aot', 'jjk'] // 5 à la une
+// Vraies nouveautés : dans les données historiques presque TOUT portait le badge
+// « NOUVEAU » (27/29) — on le réserve aux derniers ajouts réels du catalogue.
+const NEW_IDS = new Set(['kaiju-no-8', 'bleach', 'fireforce', 'bluelock', 'domestic-na-kanojo'])
+const displayBadge = (a) => (a.badge === 'NOUVEAU' ? (NEW_IDS.has(a.id) ? 'NOUVEAU' : null) : a.badge)
 const FAVS_KEY = 'animehub_favs'
 const NORM = s => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
 
@@ -110,18 +114,18 @@ export default function AnimeHubV2(props) {
   const stats = useMemo(() => ({
     total: ANIMES.length,
     encours: ANIMES.filter(a => { const p = progress[a.id]?.pct || 0; return p > 0 && p < 100 }).length,
-    nouveautes: ANIMES.filter(a => a.badge === 'NOUVEAU').length,
+    nouveautes: ANIMES.filter(a => displayBadge(a) === 'NOUVEAU').length,
     favoris: favs.size,
   }), [progress, favs])
 
   // Rows
   const resume = ANIMES.filter(a => { const p = progress[a.id]?.pct || 0; return p > 0 && p < 100 })
   const top10 = ANIMES.slice(0, 10)
-  const news = ANIMES.filter(a => a.badge === 'NOUVEAU').slice(0, 14)
+  const news = ANIMES.filter(a => displayBadge(a) === 'NOUVEAU')
   const rowGenres = ['Action', 'Romance', 'Drame', 'Science-fiction']
 
   const card = (a, w = 180) => (
-    <AnimeCard key={a.id} anime={a} width={w}
+    <AnimeCard key={a.id} anime={{ ...a, badge: displayBadge(a) }} width={w}
       progressPct={progress[a.id]?.pct || 0}
       onOpen={openAnime} onPlay={openAnime}
       onToggleList={toggleFav} inList={favs.has(a.id)} />

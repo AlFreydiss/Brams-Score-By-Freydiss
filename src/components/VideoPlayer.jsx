@@ -1367,15 +1367,18 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                 </Btn>
               </div>
 
-              {/* Légende raccourcis */}
-              <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 8, flexWrap: 'wrap', opacity: 0.55 }}>
-                {[['Espace', 'Play/Pause'], ['←→', '±5s'], ['↑↓', 'Volume'], ['M', 'Muet'], ['F', 'Plein écran']].map(([k, v]) => (
-                  <span key={k} style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)' }}>
-                    <kbd style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 3, padding: '1px 5px', fontFamily: 'monospace', color: 'rgba(255,255,255,0.4)', marginRight: 4 }}>{k}</kbd>
-                    {v}
-                  </span>
-                ))}
-              </div>
+              {/* Légende raccourcis — CLAVIER uniquement : masquée sur tactile
+                  (sur téléphone elle encombrait l'overlay et gênait le play). */}
+              {!(typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches) && (
+                <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 8, flexWrap: 'wrap', opacity: 0.55 }}>
+                  {[['Espace', 'Play/Pause'], ['←→', '±5s'], ['↑↓', 'Volume'], ['M', 'Muet'], ['F', 'Plein écran']].map(([k, v]) => (
+                    <span key={k} style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)' }}>
+                      <kbd style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 3, padding: '1px 5px', fontFamily: 'monospace', color: 'rgba(255,255,255,0.4)', marginRight: 4 }}>{k}</kbd>
+                      {v}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           </>
         ) : (
