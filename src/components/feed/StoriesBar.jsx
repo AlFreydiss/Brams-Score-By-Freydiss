@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { useAuth } from '../../contexts/AuthContext.jsx'
 import { listActiveStories, createStory, uploadAttachment, getUserPosts } from '../../lib/feed.js'
 import StoryViewer from './StoryViewer.jsx'
+import VideoTrimmer from './VideoTrimmer.jsx'
 import { avatar, T } from '../social/socialStyles.js'
 
 const ALLOWED_VISUAL = ['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'video/mp4', 'video/webm']
@@ -25,6 +26,7 @@ export default function StoriesBar() {
   const [importMedia, setImportMedia] = useState([]) // recent post media for import
   const [loadingImport, setLoadingImport] = useState(false)
   const [selectedImportUrl, setSelectedImportUrl] = useState(null)
+  const [trimming, setTrimming] = useState(false) // modale de rognage vidéo
 
   const visualInputRef = useRef(null)
   const audioInputRef = useRef(null)
@@ -257,6 +259,16 @@ export default function StoriesBar() {
                   )}
                   <input ref={visualInputRef} type="file" accept="image/*,video/mp4,video/webm" style={{ display:'none' }} onChange={e => onVisualSelected(e.target.files?.[0])} />
                 </div>
+                {/* Rognage : uniquement pour un fichier vidéo local (pas un import d'URL) */}
+                {visualIsVideo && visualFile && (
+                  <button onClick={() => setTrimming(true)} style={{
+                    marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 7,
+                    padding: '8px 14px', borderRadius: 10, fontSize: 12.5, fontWeight: 800, cursor: 'pointer',
+                    background: 'rgba(212,160,23,.12)', border: '1px solid rgba(212,160,23,.35)', color: T.gold,
+                  }}>
+                    ✂️ Rogner la vidéo
+                  </button>
+                )}
               </div>
 
               {/* AUDIO + IMPORT */}
@@ -339,6 +351,21 @@ export default function StoriesBar() {
           </div>
         </div>,
         document.body
+      )}
+
+      {/* Modale de rognage : remplace le fichier vidéo sélectionné par le segment */}
+      {trimming && visualFile && (
+        <VideoTrimmer
+          file={visualFile}
+          onCancel={() => setTrimming(false)}
+          onDone={(clip) => {
+            setTrimming(false)
+            if (visualPreview) URL.revokeObjectURL(visualPreview)
+            setVisualFile(clip)
+            setVisualPreview(URL.createObjectURL(clip))
+            setVisualIsVideo(true)
+          }}
+        />
       )}
     </div>
   )

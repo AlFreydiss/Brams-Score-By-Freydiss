@@ -100,15 +100,25 @@ function RichText({ text, mentions }) {
   )
 }
 
+const isVideoUrl = (u = '') => /\.(mp4|webm|mov)(\?|$)/i.test(u)
+
 function MediaGallery({ urls, compact, onOpen }) {
   const list = (urls || []).slice(0, 4)
   if (list.length === 0) return null
   return (
     <div className={`feed-media-grid count-${list.length}`} style={compact ? { maxWidth: 320 } : null}>
       {list.map((u, i) => (
-        <button key={`${u}-${i}`} type="button" onClick={e => { e.stopPropagation(); onOpen?.(u) }} className="feed-media-button" aria-label="Ouvrir le média">
-          <img src={u} alt="" loading="lazy" className="feed-media-image" style={compact ? { maxHeight: 220 } : null} />
-        </button>
+        isVideoUrl(u) ? (
+          // Vidéo lue en place (controls natifs) — pas de lightbox, pas de re-encode.
+          <div key={`${u}-${i}`} onClick={e => e.stopPropagation()} className="feed-media-button" style={{ cursor: 'default' }}>
+            <video src={u} controls playsInline preload="metadata"
+              style={{ width: '100%', display: 'block', maxHeight: compact ? 220 : 420, background: '#000' }} />
+          </div>
+        ) : (
+          <button key={`${u}-${i}`} type="button" onClick={e => { e.stopPropagation(); onOpen?.(u) }} className="feed-media-button" aria-label="Ouvrir le média">
+            <img src={u} alt="" loading="lazy" className="feed-media-image" style={compact ? { maxHeight: 220 } : null} />
+          </button>
+        )
       ))}
     </div>
   )

@@ -4,9 +4,11 @@ import { useAuth } from '../../contexts/AuthContext.jsx'
 import { createPost, uploadAttachment, searchUsers } from '../../lib/feed.js'
 import { avatar, T } from '../social/socialStyles.js'
 import GifPicker from '../social/GifPicker.jsx'
+import VideoTrimmer from './VideoTrimmer.jsx'
 
 const MAX = 500
 const ALLOWED_IMG = ['image/png', 'image/jpeg', 'image/webp', 'image/gif']
+const ALLOWED_VIDEO = ['video/mp4', 'video/webm', 'video/quicktime']
 const PLACEHOLDERS = [
   'Partage une théorie...',
   'Balance ton hot take...',
@@ -33,6 +35,7 @@ export default function PostComposer({ replyTo = null, quote = null, onPosted, p
   const [focused, setFocused] = useState(false)
   const [dragging, setDragging] = useState(false)
   const [showGif, setShowGif] = useState(false)
+  const [trimIdx, setTrimIdx] = useState(null) // index de la vidéo en cours de rognage
   const [mention, setMention] = useState(null)
   const [suggestions, setSuggestions] = useState([])
   const [activeIdx, setActiveIdx] = useState(0)
@@ -102,10 +105,13 @@ export default function PostComposer({ replyTo = null, quote = null, onPosted, p
     setAttachments(prev => {
       const next = [...prev]
       for (const f of files) {
-        if (next.length >= 4) { setAttachErr('4 images maximum'); break }
-        if (!ALLOWED_IMG.includes(f.type)) { setAttachErr('Format image non supporté'); continue }
-        if (f.size > 30 * 1024 * 1024) { setAttachErr('Image trop lourde (max 30 Mo)'); continue }
-        next.push({ file: f, preview: URL.createObjectURL(f), objectUrl: true })
+        const isVideo = ALLOWED_VIDEO.includes(f.type)
+        if (next.length >= 4) { setAttachErr('4 médias maximum'); break }
+        if (!ALLOWED_IMG.includes(f.type) && !isVideo) { setAttachErr('Format non supporté (image, GIF ou vidéo)'); continue }
+        if (isVideo && next.some(a => a.isVideo)) { setAttachErr('1 vidéo maximum par post'); continue }
+        if (isVideo && f.size > 200 * 1024 * 1024) { setAttachErr('Vidéo trop lourde (max 200 Mo)'); continue }
+        if (!isVideo && f.size > 30 * 1024 * 1024) { setAttachErr('Image trop lourde (max 30 Mo)'); continue }
+        next.push({ file: f, preview: URL.createObjectURL(f), objectUrl: true, isVideo })
       }
       return next
     })
@@ -270,11 +276,35 @@ export default function PostComposer({ replyTo = null, quote = null, onPosted, p
           <div className="feed-attachments">
             {attachments.map((a, i) => (
               <div key={`${a.preview}-${i}`} className="feed-attachment">
-                <img src={a.preview} alt="" loading="lazy" />
+                {a.isVideo
+                  ? <video src={a.preview} controls playsInline style={{ width: '100%', display: 'block', maxHeight: 240, background: '#000' }} />
+                  : <img src={a.preview} alt="" loading="lazy" />}
+                {a.isVideo && a.file && (
+                  <button type="button" onClick={() => setTrimIdx(i)} aria-label="Rogner la vidéo" title="Rogner la vidéo" style={{
+                    position: 'absolute', left: 8, top: 8, display: 'inline-flex', alignItems: 'center', gap: 5,
+                    padding: '5px 10px', borderRadius: 8, fontSize: 11.5, fontWeight: 800, cursor: 'pointer',
+                    background: 'rgba(0,0,0,.65)', border: '1px solid rgba(212,160,23,.45)', color: T.gold,
+                  }}>✂️ Rogner</button>
+                )}
                 <button type="button" onClick={() => removeAttachment(i)} className="feed-attachment-remove" aria-label="Supprimer le média"><X size={14} /></button>
               </div>
             ))}
           </div>
+        )}
+
+        {trimIdx != null && attachments[trimIdx]?.file && (
+          <VideoTrimmer
+            file={attachments[trimIdx].file}
+            onCancel={() => setTrimIdx(null)}
+            onDone={(clip) => {
+              setAttachments(prev => prev.map((a, i) => {
+                if (i !== trimIdx) return a
+                if (a.objectUrl) URL.revokeObjectURL(a.preview)
+                return { file: clip, preview: URL.createObjectURL(clip), objectUrl: true, isVideo: true }
+              }))
+              setTrimIdx(null)
+            }}
+          />
         )}
 
         {attachErr && <div className="feed-status is-error">{attachErr}</div>}
@@ -282,7 +312,7 @@ export default function PostComposer({ replyTo = null, quote = null, onPosted, p
 
         <div className="feed-composer-toolbar">
           <div className="feed-composer-tools" style={{ position: 'relative' }}>
-            <input ref={fileRef} type="file" multiple accept="image/png,image/jpeg,image/webp,image/gif" onChange={pickFile} style={{ display: 'none' }} />
+            <input ref={fileRef} type="file" multiple accept="image/png,image/jpeg,image/webp,image/gif,video/mp4,video/webm,video/quicktime" onChange={pickFile} style={{ display: 'none' }} />
             <button type="button" onClick={() => fileRef.current?.click()} title="Images" className="feed-tool-button" aria-label="Ajouter une image"><ImagePlus size={18} /></button>
             <button type="button" onClick={() => setShowGif(v => !v)} title="GIF" className="feed-tool-button" aria-label="Ajouter un GIF"><Film size={18} /></button>
             <button type="button" onClick={() => insertText('🔥')} title="Emoji" className="feed-tool-button" aria-label="Ajouter un emoji"><Smile size={18} /></button>
