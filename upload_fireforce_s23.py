@@ -45,6 +45,19 @@ def upload(local,key):
 
 EP=re.compile(r'S0(\d)E(\d{2})',re.I)
 
+def full_sub_map(mkv):
+    out=subprocess.run(['ffprobe','-v','error','-select_streams','s',
+        '-show_entries','stream=index:stream_tags=language,title','-of','json',str(mkv)],
+        capture_output=True,text=True,check=True).stdout
+    streams=json.loads(out).get('streams',[])
+    if not streams: return None
+    fre=[s for s in streams if s.get('tags',{}).get('language','').startswith('fr')] or streams
+    for s in fre:
+        if 'full' in s.get('tags',{}).get('title','').lower(): return f"0:{s['index']}"
+    if 'forced' in fre[0].get('tags',{}).get('title','').lower() and len(fre)>1:
+        return f"0:{fre[-1]['index']}"
+    return f"0:{fre[0]['index']}"
+
 def encode_vostfr(src, out):
     # Tente la piste JAP explicitement (fichiers MULTI), repli sur 1re/2e piste.
     for amap in ('0:a:m:language:jpn','0:a:m:language:jap','0:a:1','0:a:0'):
@@ -79,9 +92,11 @@ def main():
                     print('  !! encode echoue, skip',base); continue
             has_sub=False
             if not vtt.exists():
-                for smap in ('0:s:m:language:fre','0:s:m:language:fra','0:s:0'):
-                    try: ff(['-i',str(f),'-map',smap,'-c:s','webvtt',str(vtt)]); has_sub=vtt.exists(); break
-                    except subprocess.CalledProcessError: continue
+                # rips MULTI : 2 pistes fre (Forced puis Full) -> viser la "Full", pas la 1re qui matche
+                smap=full_sub_map(f)
+                if smap:
+                    try: ff(['-i',str(f),'-map',smap,'-c:s','webvtt',str(vtt)]); has_sub=vtt.exists()
+                    except subprocess.CalledProcessError: pass
             else: has_sub=True
             if not thumb.exists():
                 try: ff(['-ss','00:03:00','-i',str(f),'-frames:v','1','-q:v','3','-vf','scale=640:-1',str(thumb)])
