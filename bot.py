@@ -1605,6 +1605,19 @@ _ANNOUNCE_RANK_EMOJIS = {
 _RANK_ROLE_IDS   = set(RANK_ROLES.values())
 _RANK_ID_TO_NAME = {v: k for k, v in RANK_ROLES.items()}
 
+def _can_manage_rank_role(guild: discord.Guild, role: discord.Role) -> tuple[bool, str]:
+    bot_member = guild.me
+    if bot_member is None:
+        return False, "membre bot introuvable dans le cache"
+    if not bot_member.guild_permissions.manage_roles:
+        return False, "permission Gerer les roles manquante"
+    if role >= bot_member.top_role:
+        return (
+            False,
+            f"hierarchie Discord: role bot '{bot_member.top_role.name}' sous/egal au role '{role.name}'",
+        )
+    return True, ""
+
 async def _get_announce_channel():
     """Récupère le canal d'annonce depuis le cache, sinon via fetch (après restart)."""
     ch = bot.get_channel(ANNOUNCE_CHANNEL_ID)
@@ -1656,26 +1669,34 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True, da
         if role is None:
             print(f"[RANK] Role introuvable dans {guild.name}: {rank_name} ({RANK_ROLES[rank_name]})")
             continue
+        can_manage, reason = _can_manage_rank_role(guild, role)
+        if not can_manage:
+            print(f"[RANK] Impossible add_roles {member.display_name} ({rank_name}) -> {reason}")
+            continue
         try:
-            await member.add_roles(role)
+            await member.add_roles(role, reason=f"Rank vocal Brams: {hours_7d:.1f}h/7j")
             added_ranks.add(rank_name)
         except discord.Forbidden:
-            print(f"⚠️ Permission refusée add_roles {member.display_name} ({rank_name})")
+            print(f"[RANK] Permission refusee add_roles {member.display_name} ({rank_name})")
         except discord.HTTPException as e:
-            print(f"⚠️ add_roles {member.display_name} ({rank_name}): {e}")
+            print(f"[RANK] add_roles {member.display_name} ({rank_name}): {e}")
 
     for rank_name in sorted(ranks_to_remove, key=lambda r: rank_order.get(r, -1), reverse=True):
         role = guild.get_role(RANK_ROLES[rank_name])
         if role is None:
             continue
+        can_manage, reason = _can_manage_rank_role(guild, role)
+        if not can_manage:
+            print(f"[RANK] Impossible remove_roles {member.display_name} ({rank_name}) -> {reason}")
+            continue
         try:
-            await member.remove_roles(role)
+            await member.remove_roles(role, reason=f"Derank vocal Brams: {hours_7d:.1f}h/7j")
             removed_ranks.add(rank_name)
         except discord.Forbidden:
-            print(f"⚠️ Permission refusée remove_roles {member.display_name} ({rank_name})")
+            print(f"[RANK] Permission refusee remove_roles {member.display_name} ({rank_name})")
             continue
         except discord.HTTPException as e:
-            print(f"⚠️ remove_roles {member.display_name} ({rank_name}): {e}")
+            print(f"[RANK] remove_roles {member.display_name} ({rank_name}): {e}")
             continue
         # Pas de DM de derank lors d'un resync silencieux (announce=False) — évite
         # de spammer tout le serveur en DM pendant une réconciliation en masse.
