@@ -13,6 +13,7 @@ import {
   Trash2, Crown, ArrowLeft, Plus, Shuffle, Save, Copy,
   Eye, EyeOff, ChevronDown, Palette, Grid, List,
   Upload, Link as LinkIcon, BookOpen, Layers, Heart, Users,
+  Sparkles, ArrowRight, ArrowUpRight, Flame, Compass, Wand2, Swords,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { useMediaQuery } from '../hooks/useMediaQuery.js'
@@ -1132,6 +1133,527 @@ const CSS = `
 `
 
 // ── Main Export ───────────────────────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════════════════
+// BRAMS TIER STUDIO — HUB (préfixe tlx-). Vue d'accueil de la page : ambiance
+// canvas (pluie de berrys), hero avec mini-board S→F animé, decks (catégories),
+// coffre "pars de zéro" et hall of fame communauté (vraies données Supabase).
+// L'éditeur, l'autosave et la publication restent inchangés plus bas.
+// ════════════════════════════════════════════════════════════════════════════
+const TLX = {
+  gold: '#f5c451', goldHi: '#ffdc84', goldDeep: '#caa23a',
+  crimson: '#ff5a62', teal: '#37d9c8',
+  text: '#f3f1ea', dim: '#9aa1b3', mute: '#5c6373',
+  line: 'rgba(255,255,255,0.08)', lineStrong: 'rgba(255,255,255,0.16)',
+}
+const TLX_HERO_ROWS = [
+  { label: 'S', color: '#ff5d5d', cards: 2, top: true },
+  { label: 'A', color: '#ff9f43', cards: 3 },
+  { label: 'B', color: '#ffd93d', cards: 2, slot: true },
+  { label: 'C', color: '#5fd97a', cards: 3 },
+  { label: 'D', color: '#4db8ff', cards: 2 },
+]
+const TLX_GRADS = [
+  'linear-gradient(150deg,#ffd874,#caa23a)',
+  'linear-gradient(150deg,#ff8a8e,#c83a52)',
+  'linear-gradient(150deg,#5ad1ff,#2b6fb8)',
+  'linear-gradient(150deg,#9b8cff,#5a3ec8)',
+  'linear-gradient(150deg,#5fd97a,#2b9a52)',
+  'linear-gradient(150deg,#37d9c8,#1c8a7e)',
+]
+const TLX_ACCENTS = ['#f5c451', '#5fd97a', '#9b8cff', '#4db8ff', '#ff7a7e', '#37d9c8']
+const TLX_TYPE_META = {
+  anime:  { accent: '#9b8cff', glow: 'rgba(155,140,255,0.30)', desc: 'Des shōnen cultes aux pépites de la saison — classe les séries de la Brams.', preview: ['#9b8cff', '#4db8ff', '#37d9c8'] },
+  persos: { accent: '#ff7a7e', glow: 'rgba(255,122,126,0.30)', desc: 'Les persos iconiques à ranger du trône au fond de la cale.', preview: ['#ff5d5d', '#ff9f43', '#ffd93d'] },
+}
+
+function tlxUseCountUp(target, duration = 1300) {
+  const [v, setV] = useState(0)
+  useEffect(() => {
+    let raf
+    const t0 = performance.now()
+    const tick = (now) => {
+      const p = Math.min(1, (now - t0) / duration)
+      setV(Math.round(target * (1 - Math.pow(1 - p, 3))))
+      if (p < 1) raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [target, duration])
+  return v
+}
+
+function TlxReveal({ children, delay = 0, style }) {
+  const ref = useRef(null)
+  const [seen, setSeen] = useState(false)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setSeen(true); obs.disconnect() } }, { threshold: 0.15 })
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [])
+  return (
+    <div ref={ref} style={{ ...style, opacity: seen ? 1 : 0, transform: seen ? 'none' : 'translateY(30px)',
+      transition: `opacity .75s cubic-bezier(.22,1,.36,1) ${delay}s, transform .75s cubic-bezier(.22,1,.36,1) ${delay}s` }}>
+      {children}
+    </div>
+  )
+}
+
+// Pluie de berrys sur canvas — 34 particules max, dpr cappé à 2, cleanup RAF +
+// resize, coupée si prefers-reduced-motion.
+function TlxBerryRain() {
+  const ref = useRef(null)
+  useEffect(() => {
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
+    const cv = ref.current
+    if (!cv) return
+    const ctx = cv.getContext('2d')
+    let w, h, raf
+    const dpr = Math.min(window.devicePixelRatio || 1, 2)
+    const berries = []
+    const resize = () => { w = cv.width = cv.offsetWidth * dpr; h = cv.height = cv.offsetHeight * dpr }
+    resize()
+    const mk = () => ({
+      x: Math.random() * w, y: Math.random() * h,
+      r: (Math.random() * 1.8 + 0.9) * dpr, s: (Math.random() * 0.45 + 0.18) * dpr,
+      d: (Math.random() - 0.5) * 0.25 * dpr, o: Math.random() * 0.4 + 0.12,
+      gold: Math.random() < 0.82,
+    })
+    for (let i = 0; i < 34; i++) berries.push(mk())
+    const draw = () => {
+      ctx.clearRect(0, 0, w, h)
+      for (const b of berries) {
+        b.y += b.s; b.x += b.d
+        if (b.y > h + 12) { b.y = -12; b.x = Math.random() * w }
+        ctx.beginPath()
+        ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2)
+        const col = b.gold ? `rgba(245,196,81,${b.o})` : `rgba(255,120,124,${b.o})`
+        ctx.fillStyle = col
+        ctx.shadowBlur = 7 * dpr
+        ctx.shadowColor = col
+        ctx.fill()
+      }
+      raf = requestAnimationFrame(draw)
+    }
+    draw()
+    window.addEventListener('resize', resize)
+    return () => { cancelAnimationFrame(raf); window.removeEventListener('resize', resize) }
+  }, [])
+  return <canvas ref={ref} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} />
+}
+
+function TlxAmbient() {
+  const grain = "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E\")"
+  return (
+    <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 0, overflow: 'hidden', pointerEvents: 'none' }}>
+      <div style={{ position: 'absolute', inset: 0, background:
+        `radial-gradient(1200px 700px at 78% -8%, rgba(245,196,81,0.10), transparent 60%),
+         radial-gradient(900px 600px at 10% 12%, rgba(255,90,98,0.07), transparent 60%),
+         radial-gradient(1000px 800px at 50% 110%, rgba(55,217,200,0.06), transparent 55%),
+         linear-gradient(180deg, #0a0c15, #06070d)` }} />
+      <div style={{ position: 'absolute', inset: '-40px', opacity: 0.05,
+        backgroundImage: 'linear-gradient(rgba(255,255,255,0.7) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.7) 1px, transparent 1px)',
+        backgroundSize: '78px 78px', animation: 'tlxGridPan 24s linear infinite',
+        maskImage: 'radial-gradient(70% 60% at 50% 40%, black, transparent 90%)',
+        WebkitMaskImage: 'radial-gradient(70% 60% at 50% 40%, black, transparent 90%)' }} />
+      <div style={{ position: 'absolute', top: -120, right: -80, width: 520, height: 520, borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(245,196,81,0.22), transparent 65%)', filter: 'blur(20px)', animation: 'tlxOrbA 16s ease-in-out infinite' }} />
+      <div style={{ position: 'absolute', bottom: -140, left: -100, width: 460, height: 460, borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(155,140,255,0.18), transparent 65%)', filter: 'blur(20px)', animation: 'tlxOrbB 19s ease-in-out infinite' }} />
+      <svg viewBox="0 0 100 100" style={{ position: 'absolute', top: 70, right: 60, width: 220, height: 220, opacity: 0.06, animation: 'tlxSpinSlow 80s linear infinite' }}>
+        <circle cx="50" cy="50" r="46" fill="none" stroke={TLX.gold} strokeWidth="0.6" />
+        <circle cx="50" cy="50" r="34" fill="none" stroke={TLX.gold} strokeWidth="0.4" strokeDasharray="2 3" />
+        <path d="M50 6 L56 50 L50 94 L44 50 Z" fill={TLX.gold} opacity="0.5" />
+        <path d="M6 50 L50 44 L94 50 L50 56 Z" fill={TLX.gold} opacity="0.3" />
+      </svg>
+      <div style={{ position: 'absolute', inset: 0 }}><TlxBerryRain /></div>
+      <div style={{ position: 'absolute', inset: 0, backgroundImage: grain, opacity: 0.035, mixBlendMode: 'overlay' }} />
+      <div style={{ position: 'absolute', inset: 0, boxShadow: 'inset 0 0 240px 60px rgba(0,0,0,0.65)' }} />
+    </div>
+  )
+}
+
+// L'élément signature : mini-éditeur S→F en perspective, cartes qui flottent.
+function TlxLadder() {
+  return (
+    <div style={{ perspective: '1400px', position: 'relative' }}>
+      <div style={{ position: 'absolute', inset: -30, background: 'radial-gradient(60% 60% at 60% 35%, rgba(245,196,81,0.16), transparent 70%)', filter: 'blur(30px)' }} />
+      <div style={{
+        position: 'relative', transform: 'rotateY(-9deg) rotateX(5deg)', transformStyle: 'preserve-3d',
+        background: 'linear-gradient(180deg, rgba(24,27,39,0.92), rgba(14,16,24,0.94))',
+        border: `1px solid ${TLX.lineStrong}`, borderRadius: 22, padding: 18,
+        boxShadow: '0 40px 90px -30px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.06)', overflow: 'hidden',
+      }}>
+        <div style={{ position: 'absolute', top: 0, bottom: 0, width: '45%', left: 0,
+          background: 'linear-gradient(105deg, transparent, rgba(255,255,255,0.10), transparent)',
+          transform: 'skewX(-18deg)', animation: 'tlxShimmer 7s ease-in-out infinite' }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+          <span style={{ width: 11, height: 11, borderRadius: 99, background: '#ff5f57' }} />
+          <span style={{ width: 11, height: 11, borderRadius: 99, background: '#febc2e' }} />
+          <span style={{ width: 11, height: 11, borderRadius: 99, background: '#28c840' }} />
+          <span style={{ flex: 1 }} />
+          <span style={{ fontFamily: 'monospace', fontSize: 11, letterSpacing: 1, color: TLX.dim }}>atelier • S→F</span>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+          {TLX_HERO_ROWS.map((row, ri) => (
+            <div key={row.label} style={{ display: 'flex', alignItems: 'center', gap: 9,
+              background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 12, padding: 7 }}>
+              <div style={{
+                width: 42, height: 50, borderRadius: 9, flexShrink: 0, display: 'grid', placeItems: 'center',
+                fontWeight: 800, fontSize: 22, color: '#1a1205',
+                background: `linear-gradient(160deg, ${row.color}, ${row.color}cc)`,
+                boxShadow: row.top ? undefined : 'inset 0 1px 0 rgba(255,255,255,0.4)',
+                animation: row.top ? 'tlxPulseS 2.4s ease-in-out infinite' : undefined,
+              }}>{row.label}</div>
+              <div style={{ display: 'flex', gap: 6, flex: 1, minWidth: 0 }}>
+                {Array.from({ length: row.cards }).map((_, ci) => {
+                  const d = ri * 0.12 + ci * 0.08 + 0.2
+                  return (
+                    <div key={ci} style={{
+                      width: 38, height: 50, borderRadius: 8, flexShrink: 0,
+                      background: TLX_GRADS[(ri + ci) % TLX_GRADS.length],
+                      border: '1px solid rgba(255,255,255,0.18)',
+                      boxShadow: '0 6px 14px -6px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.35)',
+                      position: 'relative',
+                      animation: `tlxCardIn .6s cubic-bezier(.22,1,.36,1) both, tlxFloaty ${4 + (ci % 3)}s ease-in-out infinite`,
+                      animationDelay: `${d}s, ${d + 0.6}s`,
+                    }}>
+                      <span style={{ position: 'absolute', top: 6, left: '50%', transform: 'translateX(-50%)',
+                        width: 14, height: 14, borderRadius: 99, background: 'rgba(255,255,255,0.55)',
+                        boxShadow: 'inset 0 -2px 3px rgba(0,0,0,0.2)' }} />
+                    </div>
+                  )
+                })}
+                {row.slot && (
+                  <div style={{ width: 38, height: 50, borderRadius: 8, flexShrink: 0,
+                    border: '1.5px dashed rgba(245,196,81,0.5)', display: 'grid', placeItems: 'center', color: 'rgba(245,196,81,0.7)' }}>
+                    <Plus size={14} />
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 8,
+          padding: '9px 11px', borderRadius: 12, background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.05)' }}>
+          <span style={{ fontFamily: 'monospace', fontSize: 10, color: TLX.mute, letterSpacing: 1 }}>POOL</span>
+          {[0, 1, 2, 3, 4].map(i => (
+            <div key={i} style={{ width: 30, height: 38, borderRadius: 7, background: TLX_GRADS[i % TLX_GRADS.length],
+              opacity: 0.55, border: '1px solid rgba(255,255,255,0.12)' }} />
+          ))}
+        </div>
+      </div>
+      <div style={{
+        position: 'absolute', top: -14, right: 18, zIndex: 3, display: 'flex', alignItems: 'center', gap: 6,
+        padding: '7px 12px', borderRadius: 99,
+        background: 'linear-gradient(180deg, rgba(245,196,81,0.95), rgba(202,162,58,0.95))',
+        color: '#1a1205', fontWeight: 700, fontSize: 12,
+        boxShadow: '0 12px 30px -8px rgba(245,196,81,0.6)', animation: 'tlxFloaty 5s ease-in-out infinite',
+      }}>
+        <Sparkles size={13} /> Glisse-dépose
+      </div>
+    </div>
+  )
+}
+
+function TlxCategoryCard({ type, index, onOpen }) {
+  const meta = TLX_TYPE_META[type.id] || { accent: type.color, glow: `${type.color}4d`, desc: 'Un deck prêt à classer.', preview: [type.color, '#4db8ff', '#37d9c8'] }
+  const [tilt, setTilt] = useState({ rx: 0, ry: 0 })
+  const [spot, setSpot] = useState({ x: 50, y: 0, on: false })
+  const count = tlxUseCountUp(type.items.length, 1400)
+  const onMove = (e) => {
+    const r = e.currentTarget.getBoundingClientRect()
+    const px = (e.clientX - r.left) / r.width
+    const py = (e.clientY - r.top) / r.height
+    setTilt({ rx: -(py - 0.5) * 7, ry: (px - 0.5) * 7 })
+    setSpot({ x: px * 100, y: py * 100, on: true })
+  }
+  const onLeave = () => { setTilt({ rx: 0, ry: 0 }); setSpot(s => ({ ...s, on: false })) }
+  return (
+    <TlxReveal delay={index * 0.08}>
+      <button onMouseMove={onMove} onMouseLeave={onLeave} onClick={onOpen} style={{
+        width: '100%', textAlign: 'left', cursor: 'pointer', appearance: 'none', fontFamily: 'inherit',
+        transform: `perspective(1100px) rotateX(${tilt.rx}deg) rotateY(${tilt.ry}deg)`,
+        transition: 'transform .2s cubic-bezier(.22,1,.36,1), box-shadow .3s, border-color .3s',
+        transformStyle: 'preserve-3d',
+        background: 'linear-gradient(180deg, rgba(22,25,36,0.85), rgba(13,15,23,0.9))',
+        border: `1px solid ${spot.on ? 'rgba(245,196,81,0.4)' : TLX.line}`,
+        borderRadius: 22, padding: 24, position: 'relative', overflow: 'hidden',
+        boxShadow: spot.on ? `0 30px 70px -28px rgba(0,0,0,0.75), 0 0 0 1px ${meta.glow}` : '0 18px 50px -30px rgba(0,0,0,0.6)',
+      }}>
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3,
+          background: `linear-gradient(90deg, transparent, ${meta.accent}, transparent)`, opacity: 0.8 }} />
+        <div style={{ position: 'absolute', inset: 0, opacity: spot.on ? 1 : 0, transition: 'opacity .3s',
+          background: `radial-gradient(420px 320px at ${spot.x}% ${spot.y}%, ${meta.glow}, transparent 60%)` }} />
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-start', gap: 16 }}>
+          <div style={{ width: 56, height: 56, borderRadius: 16, flexShrink: 0, display: 'grid', placeItems: 'center',
+            background: `linear-gradient(160deg, ${meta.accent}33, ${meta.accent}14)`,
+            border: `1px solid ${meta.accent}55`, fontSize: 26, boxShadow: `0 8px 24px -10px ${meta.glow}` }}>
+            {type.icon}
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
+              <h3 style={{ margin: 0, fontWeight: 800, fontSize: 24, color: TLX.text, letterSpacing: '-0.01em' }}>{type.label}</h3>
+              <span style={{ fontFamily: 'monospace', fontSize: 12, color: meta.accent,
+                padding: '3px 8px', borderRadius: 8, background: `${meta.accent}1a`, border: `1px solid ${meta.accent}33` }}>
+                {count} entrées
+              </span>
+            </div>
+            <p style={{ margin: '8px 0 0', fontSize: 14, lineHeight: 1.5, color: TLX.dim }}>{meta.desc}</p>
+          </div>
+        </div>
+        <div style={{ position: 'relative', marginTop: 18, display: 'flex', alignItems: 'center', gap: 8 }}>
+          {meta.preview.map((col, i) => (
+            <div key={i} style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
+              <span style={{ width: 26, height: 30, borderRadius: 7, background: `linear-gradient(160deg,${col},${col}bb)`, border: '1px solid rgba(255,255,255,0.15)' }} />
+              <span style={{ width: 22, height: 30, borderRadius: 7, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.07)' }} />
+            </div>
+          ))}
+          <span style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 600, fontSize: 14, color: TLX.text }}>
+            Ouvrir l'atelier <ArrowRight size={16} style={{ color: meta.accent }} />
+          </span>
+        </div>
+      </button>
+    </TlxReveal>
+  )
+}
+
+function TlxCommunityCard({ list, index, onOpen }) {
+  const accent = TLX_ACCENTS[index % TLX_ACCENTS.length]
+  return (
+    <TlxReveal delay={index * 0.05}>
+      <button className="tlx-comm" onClick={onOpen} style={{
+        width: '100%', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit',
+        display: 'flex', alignItems: 'center', gap: 14,
+        background: 'linear-gradient(180deg, rgba(20,23,33,0.7), rgba(12,14,21,0.78))',
+        border: `1px solid ${TLX.line}`, borderRadius: 16, padding: '14px 16px', position: 'relative', overflow: 'hidden',
+      }}>
+        <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, background: `linear-gradient(180deg, ${accent}, ${accent}44)` }} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginLeft: 6, flexShrink: 0 }}>
+          {[0, 1, 2].map(i => (
+            <span key={i} style={{ width: 18, height: 6, borderRadius: 3, background: i === 0 ? accent : `${accent}${i === 1 ? '77' : '33'}` }} />
+          ))}
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontWeight: 600, fontSize: 15, color: TLX.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {list.emoji ? `${list.emoji} ` : ''}{list.title}
+          </div>
+          <div style={{ fontSize: 12.5, color: TLX.mute, marginTop: 2 }}>par {list.authorName || 'Pirate Brams'}</div>
+        </div>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, flexShrink: 0,
+          padding: '5px 9px', borderRadius: 99, fontSize: 12.5, fontWeight: 600,
+          color: TLX.gold, background: 'rgba(245,196,81,0.1)', border: '1px solid rgba(245,196,81,0.22)' }}>
+          <Heart size={12} fill={TLX.gold} /> {list.likes || 0}
+        </span>
+      </button>
+    </TlxReveal>
+  )
+}
+
+function TlxStat({ value, label }) {
+  const v = tlxUseCountUp(value, 1500)
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column' }}>
+      <span style={{ fontWeight: 800, fontSize: 26, color: TLX.text, lineHeight: 1 }}>{v}</span>
+      <span style={{ fontFamily: 'monospace', fontSize: 11, letterSpacing: 0.5, color: TLX.mute, marginTop: 6 }}>{label}</span>
+    </div>
+  )
+}
+
+const TLX_CSS = `
+  .tlx-hub ::selection { background: rgba(245,196,81,0.3); }
+  .tlx-hero-grid { display:grid; grid-template-columns: 1.05fr 0.95fr; gap:56px; align-items:center; }
+  .tlx-cat-grid { display:grid; grid-template-columns: 1fr 1fr; gap:22px; }
+  .tlx-comm-grid { display:grid; grid-template-columns: repeat(3,1fr); gap:16px; }
+  @media (max-width: 1000px){ .tlx-hero-grid{ grid-template-columns:1fr; gap:48px; } .tlx-ladder-wrap{ max-width:520px; margin:0 auto; } }
+  @media (max-width: 760px){ .tlx-cat-grid{ grid-template-columns:1fr; } .tlx-comm-grid{ grid-template-columns:1fr 1fr; } }
+  @media (max-width: 520px){ .tlx-comm-grid{ grid-template-columns:1fr; } }
+  .tlx-comm{ transition:transform .3s cubic-bezier(.22,1,.36,1), border-color .3s, box-shadow .3s; }
+  .tlx-comm:hover{ transform:translateY(-4px); border-color:rgba(245,196,81,0.35) !important; box-shadow:0 16px 40px -18px rgba(0,0,0,0.7), 0 0 0 1px rgba(245,196,81,0.14); }
+  .tlx-ghost{ transition:all .25s ease; }
+  .tlx-ghost:hover{ border-color:rgba(245,196,81,0.4) !important; color:#fff !important; background:rgba(245,196,81,0.06) !important; }
+  .tlx-cta{ transition:transform .25s cubic-bezier(.22,1,.36,1), box-shadow .3s; }
+  .tlx-cta:hover{ transform:translateY(-2px); box-shadow:0 18px 44px -12px rgba(245,196,81,0.65) !important; }
+  .tlx-cta:active{ transform:translateY(0); }
+  .tlx-hub button:focus-visible { outline: 2px solid ${TLX.gold}; outline-offset: 2px; }
+  @keyframes tlxCardIn { from{opacity:0; transform:translateY(14px) scale(.9);} to{opacity:1; transform:translateY(0) scale(1);} }
+  @keyframes tlxFloaty { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-5px);} }
+  @keyframes tlxPulseS { 0%,100%{box-shadow:0 6px 18px rgba(255,93,93,0.4), inset 0 1px 0 rgba(255,255,255,0.4);} 50%{box-shadow:0 0 0 4px rgba(255,93,93,0.14), 0 10px 28px rgba(255,93,93,0.6), inset 0 1px 0 rgba(255,255,255,0.4);} }
+  @keyframes tlxShimmer { 0%{transform:translateX(-130%) skewX(-18deg);} 55%,100%{transform:translateX(360%) skewX(-18deg);} }
+  @keyframes tlxOrbA { 0%,100%{transform:translate(0,0) scale(1);} 50%{transform:translate(-40px,30px) scale(1.12);} }
+  @keyframes tlxOrbB { 0%,100%{transform:translate(0,0) scale(1);} 50%{transform:translate(50px,-30px) scale(1.1);} }
+  @keyframes tlxSpinSlow { to{ transform:rotate(360deg);} }
+  @keyframes tlxGridPan { to{ background-position:78px 78px;} }
+  @keyframes tlxFlameFlick { 0%,100%{transform:scale(1) rotate(0);} 50%{transform:scale(1.12) rotate(-4deg);} }
+  @media (prefers-reduced-motion: reduce){ .tlx-hub *, .tlx-hub *::before, .tlx-hub *::after { animation:none !important; } }
+`
+
+function TlxHub({ types, communityLists, loadedListsCount, onSelectType, onStartBlank, onLoadExisting, onSeeCommunity, onOpenList }) {
+  const ghostBtn = {
+    display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer',
+    fontFamily: 'inherit', fontWeight: 600, fontSize: 14, color: TLX.text,
+    padding: '12px 18px', borderRadius: 12, background: 'rgba(255,255,255,0.04)',
+    border: `1px solid ${TLX.line}`,
+  }
+  const topCommunity = useMemo(() => [...(communityLists || [])].sort((a, b) => (b.likes || 0) - (a.likes || 0)).slice(0, 6), [communityLists])
+  const deckTypes = types.filter(t => t.id !== 'custom')
+  const animeCount = types.find(t => t.id === 'anime')?.items.length || 0
+  const persoCount = types.find(t => t.id === 'persos')?.items.length || 0
+  return (
+    <div className="tlx-hub" style={{ position: 'relative' }}>
+      <style>{TLX_CSS}</style>
+      <TlxAmbient />
+      <main style={{ position: 'relative', zIndex: 2, maxWidth: 1240, margin: '0 auto', padding: '0 32px 140px' }}>
+        {/* ===== HERO ===== */}
+        <section style={{ padding: '64px 0 84px' }}>
+          <div className="tlx-hero-grid">
+            <div>
+              <TlxReveal>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8,
+                  fontFamily: 'monospace', fontSize: 12, letterSpacing: 1.5, color: TLX.gold,
+                  padding: '7px 13px', borderRadius: 99, background: 'rgba(245,196,81,0.08)', border: '1px solid rgba(245,196,81,0.22)' }}>
+                  <Compass size={14} /> ATELIER DE CLASSEMENT
+                </span>
+              </TlxReveal>
+              <TlxReveal delay={0.06}>
+                <h1 style={{ margin: '22px 0 0', fontWeight: 800,
+                  fontSize: 'clamp(38px, 5vw, 62px)', lineHeight: 1.02, letterSpacing: '-0.02em', color: TLX.text }}>
+                  Quelle <span style={{ background: `linear-gradient(120deg, ${TLX.goldHi}, ${TLX.gold} 60%, ${TLX.goldDeep})`,
+                    WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>tier list</span><br />tu veux créer ?
+                </h1>
+              </TlxReveal>
+              <TlxReveal delay={0.12}>
+                <p style={{ margin: '20px 0 0', maxWidth: 480, fontSize: 16.5, lineHeight: 1.6, color: TLX.dim }}>
+                  Classe tes persos, tes animes et tes débats les plus chauds. Choisis un deck
+                  prêt à l'emploi ou pars d'une grille S→F vierge — et fais entrer la Brams dans l'arène.
+                </p>
+              </TlxReveal>
+              <TlxReveal delay={0.18}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 28 }}>
+                  <button className="tlx-cta" onClick={onStartBlank} style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 9, cursor: 'pointer',
+                    fontFamily: 'inherit', fontWeight: 700, fontSize: 15, color: '#1a1205',
+                    padding: '14px 24px', borderRadius: 13, border: 'none',
+                    background: `linear-gradient(135deg, ${TLX.goldHi}, ${TLX.gold} 55%, ${TLX.goldDeep})`,
+                    boxShadow: '0 14px 36px -12px rgba(245,196,81,0.6)',
+                  }}>
+                    <Plus size={18} /> Créer une tier list vierge
+                  </button>
+                  {loadedListsCount > 0 && (
+                    <button className="tlx-ghost" onClick={onLoadExisting} style={ghostBtn}>
+                      <BookOpen size={16} /> Charger une liste <span style={{ color: TLX.gold }}>({loadedListsCount})</span>
+                    </button>
+                  )}
+                </div>
+              </TlxReveal>
+              <TlxReveal delay={0.24}>
+                <div style={{ display: 'flex', gap: 36, marginTop: 40, paddingTop: 28, borderTop: `1px solid ${TLX.line}`, flexWrap: 'wrap' }}>
+                  <TlxStat value={animeCount} label="ANIMES PRÊTS" />
+                  <TlxStat value={persoCount} label="PERSOS PRÊTS" />
+                  <TlxStat value={(communityLists || []).length} label="LISTES COMMU" />
+                </div>
+              </TlxReveal>
+            </div>
+            <TlxReveal delay={0.16}>
+              <div className="tlx-ladder-wrap"><TlxLadder /></div>
+            </TlxReveal>
+          </div>
+        </section>
+
+        {/* ===== DECKS ===== */}
+        <section style={{ paddingTop: 12 }}>
+          <TlxReveal>
+            <div style={{ marginBottom: 22 }}>
+              <span style={{ fontFamily: 'monospace', fontSize: 12, letterSpacing: 1.5, color: TLX.gold }}>POINT DE DÉPART</span>
+              <h2 style={{ margin: '6px 0 0', fontWeight: 800, fontSize: 30, color: TLX.text, letterSpacing: '-0.01em' }}>
+                Ouvre un deck prêt à classer
+              </h2>
+            </div>
+          </TlxReveal>
+          <div className="tlx-cat-grid">
+            {deckTypes.map((type, i) => (
+              <TlxCategoryCard key={type.id} type={type} index={i} onOpen={() => onSelectType(type)} />
+            ))}
+          </div>
+          {/* le coffre au trésor : départ de zéro */}
+          <TlxReveal delay={0.1}>
+            <div style={{ marginTop: 22, position: 'relative', borderRadius: 22, overflow: 'hidden',
+              background: 'linear-gradient(120deg, rgba(245,196,81,0.12), rgba(202,162,58,0.05) 60%, rgba(20,23,33,0.7))',
+              border: '1px solid rgba(245,196,81,0.28)',
+              boxShadow: '0 24px 60px -32px rgba(245,196,81,0.4)', padding: 24,
+              display: 'flex', alignItems: 'center', gap: 22, flexWrap: 'wrap' }}>
+              <div style={{ position: 'absolute', top: 0, bottom: 0, width: '40%', left: 0, pointerEvents: 'none',
+                background: 'linear-gradient(105deg, transparent, rgba(255,255,255,0.07), transparent)',
+                transform: 'skewX(-18deg)', animation: 'tlxShimmer 9s ease-in-out infinite' }} />
+              <div style={{ width: 62, height: 62, borderRadius: 18, flexShrink: 0, display: 'grid', placeItems: 'center',
+                background: `linear-gradient(160deg, ${TLX.goldHi}, ${TLX.goldDeep})`, color: '#1a1205',
+                boxShadow: '0 14px 34px -10px rgba(245,196,81,0.6)' }}>
+                <Wand2 size={28} />
+              </div>
+              <div style={{ flex: 1, minWidth: 240, position: 'relative' }}>
+                <h3 style={{ margin: 0, fontWeight: 800, fontSize: 22, color: TLX.text }}>Pars de zéro</h3>
+                <p style={{ margin: '6px 0 0', fontSize: 14.5, color: TLX.dim, lineHeight: 1.5 }}>
+                  Une grille S→F vide, et tes propres éléments : images, persos, memes, screens Discord…
+                </p>
+              </div>
+              <button className="tlx-cta" onClick={onStartBlank} style={{
+                display: 'inline-flex', alignItems: 'center', gap: 9, cursor: 'pointer',
+                fontFamily: 'inherit', fontWeight: 700, fontSize: 15, color: '#1a1205',
+                padding: '13px 22px', borderRadius: 13, border: 'none', flexShrink: 0,
+                background: `linear-gradient(135deg, ${TLX.goldHi}, ${TLX.gold} 55%, ${TLX.goldDeep})`,
+                boxShadow: '0 12px 30px -12px rgba(245,196,81,0.6)', position: 'relative' }}>
+                Commencer de zéro <ArrowRight size={17} />
+              </button>
+            </div>
+          </TlxReveal>
+        </section>
+
+        {/* ===== COMMUNAUTÉ ===== */}
+        {topCommunity.length > 0 && (
+          <section style={{ paddingTop: 64 }}>
+            <TlxReveal>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 20, flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <span style={{ display: 'grid', placeItems: 'center', width: 40, height: 40, borderRadius: 12,
+                    background: 'rgba(255,122,126,0.12)', border: '1px solid rgba(255,122,126,0.28)', color: TLX.crimson,
+                    animation: 'tlxFlameFlick 2.2s ease-in-out infinite' }}>
+                    <Flame size={20} />
+                  </span>
+                  <div>
+                    <span style={{ fontFamily: 'monospace', fontSize: 12, letterSpacing: 1.5, color: TLX.crimson }}>HALL OF FAME</span>
+                    <h2 style={{ margin: '4px 0 0', fontWeight: 800, fontSize: 28, color: TLX.text }}>
+                      Populaires dans la communauté
+                    </h2>
+                  </div>
+                </div>
+                <button className="tlx-ghost" onClick={onSeeCommunity} style={ghostBtn}>
+                  Voir tout <ArrowUpRight size={16} />
+                </button>
+              </div>
+            </TlxReveal>
+            <div className="tlx-comm-grid">
+              {topCommunity.map((list, i) => (
+                <TlxCommunityCard key={list.id} list={list} index={i} onOpen={() => onOpenList(list)} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        <TlxReveal delay={0.05}>
+          <div style={{ marginTop: 80, paddingTop: 26, borderTop: `1px solid ${TLX.line}`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+            fontFamily: 'monospace', fontSize: 12.5, color: TLX.mute, letterSpacing: 0.5, textAlign: 'center' }}>
+            <Swords size={14} style={{ color: TLX.gold }} />
+            BRAMS TIER STUDIO — fais ton classement, lance le débat
+            <Swords size={14} style={{ color: TLX.gold, transform: 'scaleX(-1)' }} />
+          </div>
+        </TlxReveal>
+      </main>
+    </div>
+  )
+}
+
 export default function TierListPage() {
   const { userId, discordId, displayName, avatarUrl } = useAuth()
   const editorWide = useMediaQuery('(min-width: 1180px)')
@@ -2002,96 +2524,19 @@ export default function TierListPage() {
       {tab === 'studio' && (
         <AnimatePresence mode="wait">
           {!selectedType ? (
-            // Type selector
-            <motion.div key="selector" initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
-              style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
-                minHeight:'calc(100vh - 132px)', padding:'24px 20px' }}>
-              <div style={{ maxWidth:900, width:'100%' }}>
-                <div style={{ textAlign:'center', marginBottom:36 }}>
-                  <div style={{ fontSize:11, fontWeight:800, letterSpacing:'.22em', color:G.gold,
-                    textTransform:'uppercase', marginBottom:12 }}>
-                    Brams Tier Studio
-                  </div>
-                  <h1 style={{ margin:0, fontSize:'clamp(26px,4vw,42px)', fontWeight:900,
-                    letterSpacing:'-.03em', color:G.text }}>
-                    Quelle tier list tu veux créer ?
-                  </h1>
-                  <p style={{ margin:'10px 0 0', fontSize:13.5, color:G.muted }}>
-                    Choisis une catégorie pour ouvrir l'atelier — ou charge une liste existante
-                  </p>
-                </div>
-
-                <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(220px,1fr))', gap:14 }}>
-                  {TIER_TYPES.filter(t => t.id !== 'custom').map((type, i) => (
-                    <motion.button key={type.id}
-                      initial={{ y:24, opacity:0 }} animate={{ y:0, opacity:1 }}
-                      transition={{ delay:i*.08, type:'spring', stiffness:280, damping:24 }}
-                      onClick={() => handleTypeSelect(type)}
-                      style={{
-                        position:'relative', overflow:'hidden', padding:'22px 20px',
-                        background:G.card, border:`1px solid ${G.border}`,
-                        borderRadius:16, cursor:'pointer', textAlign:'left', color:G.text,
-                        transition:'border-color .2s, box-shadow .2s',
-                      }}
-                      onMouseEnter={e => { e.currentTarget.style.borderColor=type.color+'55'; e.currentTarget.style.boxShadow=`0 8px 32px ${type.color}18` }}
-                      onMouseLeave={e => { e.currentTarget.style.borderColor=G.border; e.currentTarget.style.boxShadow='none' }}>
-                      <div style={{ position:'absolute', top:0, left:0, right:0, height:2,
-                        background:`linear-gradient(90deg,${type.color},${type.color}00)`, borderRadius:'14px 14px 0 0' }}/>
-                      <div style={{ fontSize:28, marginBottom:10 }}>{type.icon}</div>
-                      <div style={{ fontSize:15, fontWeight:800, marginBottom:4 }}>{type.label}</div>
-                      <div style={{ fontSize:11, color:G.muted }}>{type.items.length || '∞'} entrées</div>
-                    </motion.button>
-                  ))}
-                </div>
-
-                {/* Démarrage rapide depuis une grille S→F totalement vide. */}
-                <div style={{ marginTop:22, textAlign:'center' }}>
-                  <button onClick={startBlank} style={{
-                    display:'inline-flex', alignItems:'center', gap:8, margin:'0 auto',
-                    padding:'13px 28px', borderRadius:12, border:'none', cursor:'pointer',
-                    background:'linear-gradient(135deg,#ffd84d,#f0a500)', color:'#1a1200',
-                    fontSize:14, fontWeight:900, boxShadow:'0 6px 20px rgba(240,165,0,.35)',
-                  }}>
-                    <Plus size={15}/> Créer une tier list vierge
-                  </button>
-                  <div style={{ fontSize:11.5, color:G.muted, marginTop:9 }}>
-                    Pars d'une grille S→F vide et ajoute tes propres éléments (images, persos…).
-                  </div>
-                </div>
-
-                {savedLists.length > 0 && (
-                  <div style={{ marginTop:18, textAlign:'center' }}>
-                    <button onClick={() => setTab('mylists')} style={{
-                      ...actionBtn, margin:'0 auto', padding:'8px 20px', fontSize:12,
-                    }}>
-                      <BookOpen size={12}/> Charger une liste existante ({savedLists.length})
-                    </button>
-                  </div>
-                )}
-
-                {/* Aperçu communauté — remplit le hub + invite à explorer */}
-                {communityLists.length > 0 && (
-                  <div style={{ marginTop:46 }}>
-                    <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
-                      <h3 style={{ margin:0, fontSize:15, fontWeight:800, color:G.text }}>🔥 Populaires dans la communauté</h3>
-                      <button onClick={() => setTab('community')} style={{ ...actionBtn, padding:'6px 14px', fontSize:11.5 }}>Voir tout →</button>
-                    </div>
-                    <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(240px,1fr))', gap:12 }}>
-                      {[...communityLists].sort((a, b) => (b.likes || 0) - (a.likes || 0)).slice(0, 6).map(list => (
-                        <button key={list.id} onClick={() => loadList(list)} style={{ textAlign:'left', cursor:'pointer', padding:'12px 14px', borderRadius:12, background:G.card, border:`1px solid ${G.border}`, color:G.text, fontFamily:'inherit', transition:'border-color .15s, transform .12s' }}
-                          onMouseEnter={e => { e.currentTarget.style.borderColor = G.gold + '66'; e.currentTarget.style.transform = 'translateY(-2px)' }}
-                          onMouseLeave={e => { e.currentTarget.style.borderColor = G.border; e.currentTarget.style.transform = 'none' }}>
-                          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:8 }}>
-                            <span style={{ fontSize:13, fontWeight:800, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{list.emoji || '📋'} {list.title}</span>
-                            <span style={{ flexShrink:0, fontSize:11, fontWeight:700, color:G.gold }}>❤ {list.likes || 0}</span>
-                          </div>
-                          <div style={{ fontSize:10.5, color:G.muted, marginTop:3 }}>par {list.authorName || 'Pirate Brams'}</div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
+            // Hub "Brams Tier Studio" — vitrine immersive (TlxHub), branchée aux
+            // vraies données. L'éditeur ci-dessous est inchangé.
+            <motion.div key="selector" initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}>
+              <TlxHub
+                types={TIER_TYPES}
+                communityLists={communityLists}
+                loadedListsCount={savedLists.length + cloudLists.length}
+                onSelectType={handleTypeSelect}
+                onStartBlank={startBlank}
+                onLoadExisting={() => setTab('mylists')}
+                onSeeCommunity={() => setTab('community')}
+                onOpenList={loadList}
+              />
             </motion.div>
           ) : (
             // Tier editor
