@@ -69,6 +69,7 @@ const BlobUploadPage  = lazyWithReload(() => import('./components/BlobUploadPage
 const FeedPage        = lazyWithReload(() => import('./components/FeedPage.jsx'))
 const PostThreadPage  = lazyWithReload(() => import('./components/PostThreadPage.jsx'))
 const FeedSearchPage  = lazyWithReload(() => import('./components/FeedSearchPage.jsx'))
+const WrappedPage     = lazyWithReload(() => import('./components/WrappedPage.jsx'))
 const BookmarksPage   = lazyWithReload(() => import('./components/BookmarksPage.jsx'))
 const ConstellationPage  = lazyWithReload(() => import('./components/ConstellationPage.jsx'))
 const CrewHQPage         = lazyWithReload(() => import('./components/crew-hq/CrewHQPage.jsx'))
@@ -560,6 +561,8 @@ export default function App() {
         <Route path="/fil/recherche"  element={<PageLayout><FeedSearchPage /></PageLayout>} />
         <Route path="/fil/signets"    element={<PageLayout><BookmarksPage /></PageLayout>} />
         <Route path="/fil/:postId"    element={<PageLayout><PostThreadPage /></PageLayout>} />
+        {/* Wrapped : plein écran SANS PageLayout (stories 9:16, navbar masquée) */}
+        <Route path="/wrapped/:token" element={<WrappedPage />} />
         {/* Redirections des anciens liens Wiki/ThÃ©ories vers le Fil */}
         <Route path="/wiki"           element={<Navigate to="/fil" replace />} />
         <Route path="/wiki/*"         element={<Navigate to="/fil" replace />} />

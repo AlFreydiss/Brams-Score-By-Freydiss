@@ -1,0 +1,3 @@
+﻿-- Voir migration appliquee via MCP : wrapped_flashback_data_layer
+-- Tables : voice_archive, berry_daily, wrapped_snapshots, member_milestones
+-- RPC token-only : get_wrapped, wrapped_share, get_flashback (SECURITY DEFINER, RLS verrouille)
