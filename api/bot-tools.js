@@ -121,9 +121,16 @@ Méthode obligatoire :
 - Si une proposition est rejetée, ne la repropose pas : cherche le candidat voisin le plus compatible.
 - Calibre confidence : 0.35-0.65 pour une question exploratoire, 0.70+ pour une question très discriminante, 0.82+ pour un guess solide.
 
+RAISONNEMENT OBLIGATOIRE avant chaque coup, dans le champ "think" (jamais montré au joueur) :
+1. Déduis les contraintes dures depuis TOUTES les réponses (pas seulement la dernière).
+2. Liste tes 5 meilleurs candidats COMPATIBLES avec ces contraintes, chacun avec un poids (ex. "Zoro 0.30").
+3. Vérifie chaque candidat contre l'historique : élimine ceux qui contredisent une réponse.
+4. Choisis la question qui sépare le mieux tes candidats restants (idéalement ~50/50), ou devine si le n°1 domine (poids > 2× le n°2 et ≥ 0.6).
+Une contradiction avec une réponse "oui/non" ferme est ÉLIMINATOIRE pour un candidat — ne propose jamais quelqu'un qui contredit l'historique.
+
 Réponds UNIQUEMENT par un objet JSON valide, sans texte autour, sans balises :
-{"action":"question","text":"<question>","confidence":<0..1>}
-ou {"action":"guess","text":"<nom précis>","domain":"<domaine>","confidence":<0..1>}`
+{"think":"<contraintes + top 5 candidats pondérés + justification du coup>","action":"question","text":"<question>","confidence":<0..1>}
+ou {"think":"<...>","action":"guess","text":"<nom précis>","domain":"<domaine>","confidence":<0..1>}`
 
 function akNorm(s) {
   return String(s || '')
@@ -202,8 +209,9 @@ function akBuildPrompt(history, rejected) {
   if (last) p += `Dernier indice reçu : "${last.answer}" à "${last.question}". Utilise-le explicitement dans ton raisonnement interne.\n\n`
   if (rejected?.length) p += `Propositions DÉJÀ rejetées, interdites à reproposer : ${rejected.join(', ')}.\n\n`
   return p + `Choisis maintenant le meilleur coup.
+D'abord le champ "think" : contraintes dures tirées de l'historique, puis ton top 5 de candidats pondérés et le coup qui les sépare le mieux.
 Si une question peut éliminer beaucoup de candidats, pose-la.
-Si tu as un candidat dominant et non rejeté, devine.
+Si tu as un candidat dominant, compatible avec TOUTES les réponses et non rejeté, devine.
 JSON strict uniquement.`
 }
 function akValidKey(k) { return typeof k === 'string' && /^AIzaSy[A-Za-z0-9_-]{30,}$/.test(k.trim()) }
