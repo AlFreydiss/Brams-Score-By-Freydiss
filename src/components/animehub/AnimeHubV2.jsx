@@ -12,7 +12,7 @@ import HeroCinematic from './HeroCinematic.jsx'
 import AnimeRow from './AnimeRow.jsx'
 import AnimeCard, { BackdropCard } from './AnimeCard.jsx'
 
-const HERO_IDS = ['onepiece', 'kaiju-no-8', 'bleach', 'aot', 'jjk'] // 5 à la une
+const HERO_IDS = ['onepiece', 'kaguya', 'kaiju-no-8', 'bleach', 'violet-evergarden', 'aot', 'jjk', 'reze'] // 8 à la une
 // Bannières PAYSAGE officielles (AniList, hébergées R2) pour le hero — les
 // posters portrait étirés en pleine largeur rendaient l'image méconnaissable.
 const KEYART_R2 = 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/keyart'
@@ -22,6 +22,9 @@ const HERO_KEYART = {
   bleach: `${KEYART_R2}/bleach.jpg`,
   aot: `${KEYART_R2}/aot.jpg`,
   jjk: `${KEYART_R2}/jjk.jpg`,
+  kaguya: `${KEYART_R2}/kaguya.jpg`,
+  'violet-evergarden': `${KEYART_R2}/violet-evergarden.jpg`,
+  reze: `${KEYART_R2}/reze.jpg`,
 }
 // Vraies nouveautés : dans les données historiques presque TOUT portait le badge
 // « NOUVEAU » (27/29) — on le réserve aux derniers ajouts réels du catalogue.
@@ -181,7 +184,10 @@ export default function AnimeHubV2(props) {
     return list
   }, [debounced, seg, genreSel, sort, favs, progress])
 
-  const searching = debounced.trim().length > 0
+  // Mode "résultats" : recherche OU n'importe quel filtre actif (segment,
+  // genres, tri non défaut) — sinon cliquer « Terminé » ne changeait rien de
+  // visible (les rows masquaient la grille filtrée).
+  const searching = debounced.trim().length > 0 || seg !== 'tous' || genreSel.size > 0 || sort !== 'populaire'
   const stats = useMemo(() => ({
     total: ANIMES.length,
     encours: ANIMES.filter(a => { const p = progress[a.id]?.pct || 0; return p > 0 && p < 100 }).length,

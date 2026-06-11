@@ -12,7 +12,7 @@ const keyartLogged = new Set()
 // fallback automatique sur le titre texte si le logo n'existe pas (onError).
 export const LOGOS_R2 = 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/logos'
 
-export function TitleArt({ anime, maxWidth = 480, maxHeight = 180, fallback }) {
+export function TitleArt({ anime, maxWidth = 560, maxHeight = 210, fallback }) {
   const [broken, setBroken] = useState(false)
   const url = anime.logoUrl || `${LOGOS_R2}/${anime.id}.png`
   if (broken) return fallback
@@ -180,13 +180,6 @@ export default function HeroCinematic({ anime, rating = null, topRank = null, on
             <button style={btn(false)} onClick={() => onMyList(anime)} aria-pressed={inList}>
               {inList ? '✓ Dans ma liste' : '+ Ma liste'}
             </button>
-          )}
-          {onInfo && (
-            <button aria-label="Détails" onClick={() => onInfo(anime)} style={{
-              width: 44, height: 44, borderRadius: '50%', cursor: 'pointer',
-              background: 'rgba(255,255,255,0.08)', border: `1px solid ${C.hair2}`,
-              color: C.text, fontSize: 17, display: 'grid', placeItems: 'center', fontFamily: FONT_DISPLAY,
-            }}>ⓘ</button>
           )}
         </div>
       </div>

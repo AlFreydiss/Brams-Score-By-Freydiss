@@ -1203,12 +1203,14 @@ function getGeminiKeys() {
 }
 
 async function generateBramsReply(username, content, parentContent) {
-  const keys = getGeminiKeys()
-  if (keys.length === 0) throw new Error('no_gemini_keys')
   const prompt = parentContent
     ? `Contexte : tu avais posté « ${String(parentContent).slice(0, 400)} ». ${username} te répond : « ${String(content || '').slice(0, 400)} ». Réponds-lui.`
     : `${username} t'a mentionné dans ce post du Fil : « ${String(content || '').slice(0, 400)} ». Réponds-lui.`
-  const start = Math.floor(Math.random() * keys.length)
+
+  // 1) Gemini (rotation de clés), 2) Groq, 3) xAI — même chaîne que api/chat.js
+  // (en prod les clés Gemini peuvent être absentes : le quiz tourne déjà sur Groq).
+  const keys = getGeminiKeys()
+  const start = keys.length ? Math.floor(Math.random() * keys.length) : 0
   let lastErr
   for (let i = 0; i < keys.length; i++) {
     try {
@@ -1218,7 +1220,34 @@ async function generateBramsReply(username, content, parentContent) {
       if (out) return out.slice(0, 480)
     } catch (e) { lastErr = e }
   }
-  throw lastErr || new Error('gemini_failed')
+
+  const openaiLike = async (apiUrl, key, model) => {
+    const r = await fetch(apiUrl, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model,
+        messages: [{ role: 'system', content: BRAMS_PERSONA }, { role: 'user', content: prompt }],
+        max_tokens: 160, temperature: 0.8,
+      }),
+    })
+    if (!r.ok) throw new Error(`${apiUrl.includes('groq') ? 'groq' : 'xai'}_${r.status}`)
+    const d = await r.json()
+    return String(d.choices?.[0]?.message?.content || '').trim().slice(0, 480)
+  }
+  if (process.env.GROQ_API_KEY) {
+    try {
+      const out = await openaiLike('https://api.groq.com/openai/v1/chat/completions', process.env.GROQ_API_KEY, process.env.GROQ_MODEL || 'llama-3.3-70b-versatile')
+      if (out) return out
+    } catch (e) { lastErr = e }
+  }
+  if (process.env.XAI_API_KEY) {
+    try {
+      const out = await openaiLike('https://api.x.ai/v1/chat/completions', process.env.XAI_API_KEY, process.env.XAI_MODEL || 'grok-code-fast-1')
+      if (out) return out
+    } catch (e) { lastErr = e }
+  }
+  throw lastErr || new Error('no_ai_provider')
 }
 
 async function bramsScore(req, res) {

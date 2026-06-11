@@ -512,7 +512,9 @@ export default function App() {
         </div>
       </div>
 
-      <AIChatWidget hidden={mediaOverlayOpen || encyclopedieOpen} />
+      {/* visible sur le hub Animés (animeHubOpen) — masqué seulement dans les
+          pages anime/lecteur individuelles et l'encyclopédie */}
+      <AIChatWidget hidden={(mediaOverlayOpen && !animeHubOpen) || encyclopedieOpen} />
 
     </>
   )
