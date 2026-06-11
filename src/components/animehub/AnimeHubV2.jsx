@@ -1,0 +1,341 @@
+// ── Animés & Scans v2 — hub streaming premium (Netflix/Crunchyroll/Prime) ───
+// Orchestrateur : HeroCinematic rotatif → toolbar sticky (recherche, filtres,
+// tri) → rows embla (Reprendre, Top 10, Nouveautés, genres) → grille « Tous »
+// paginée par 21. Catalogue + navigation = l'existant (ANIMES d'AnimeHub,
+// progression localStorage, pages animes dédiées). Rollback : re-pointer
+// App.jsx sur AnimeHub.
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { ANIMES } from '../AnimeHub.jsx'
+import { C, FONT_BODY, FONT_DISPLAY, RADIUS_PANEL } from './tokens.js'
+import HeroCinematic from './HeroCinematic.jsx'
+import AnimeRow from './AnimeRow.jsx'
+import AnimeCard from './AnimeCard.jsx'
+
+const HERO_IDS = ['onepiece', 'kaiju-no-8', 'bleach', 'aot', 'jjk'] // 5 à la une
+const FAVS_KEY = 'animehub_favs'
+const NORM = s => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+
+// Progression localStorage (mêmes clés que les pages de lecture : <ns>_vp /
+// <ns>_video_progress) — réimplémentation compacte de computeVideo.
+function readProgress(ns) {
+  try {
+    const structured = JSON.parse(localStorage.getItem(`${ns}_video_progress`) || 'null')
+    if (structured?.episodes) {
+      const eps = Object.values(structured.episodes)
+      const total = eps.length || 12
+      const done = eps.filter(e => e?.completed).length
+      return { pct: Math.round((done / total) * 100), label: `${done}/${total} épisodes` }
+    }
+    const flat = JSON.parse(localStorage.getItem(`${ns}_vp`) || '{}')
+    const keys = Object.keys(flat)
+    if (!keys.length) return { pct: 0, label: '' }
+    const done = keys.filter(k => flat[k]?.completed).length
+    return { pct: Math.round((done / keys.length) * 100), label: `${done}/${keys.length} épisodes` }
+  } catch { return { pct: 0, label: '' } }
+}
+
+export default function AnimeHubV2(props) {
+  // Mapping id → handler de navigation (mêmes props qu'AnimeHub historique).
+  const open = (id) => ({
+    onepiece: props.onOpenOnepiece, tpn: props.onOpenTpn, drstone: props.onOpenDrstone, jjk: props.onOpenJjk,
+    kingdom: props.onOpenKingdom, aot: props.onOpenAot, kny: props.onOpenKny, nnt: props.onOpenNnt, sl: props.onOpenSl,
+    dbs: props.onOpenDbs, 'violet-evergarden': props.onOpenViolet, vivy: props.onOpenVivy,
+    'love-prism': props.onOpenLovePrism, 'carole-tuesday': props.onOpenCaroleTuesday,
+    'bunny-girl': props.onOpenBunnyGirl, 'rent-girlfriend': props.onOpenRentGirlfriend,
+    bc: props.onOpenBc, mha: props.onOpenMha, fireforce: props.onOpenFireforce, bleach: props.onOpenBleach,
+    'kaiju-no-8': props.onOpenKaiju, bluelock: props.onOpenBluelock, 'fate-zero': props.onOpenFateZero,
+    'your-name': props.onOpenYourName, 'your-lie': props.onOpenYourLie, 'domestic-na-kanojo': props.onOpenDomestic,
+    'koi-ameagari': props.onOpenKoi, bubble: props.onOpenBubble, reze: props.onOpenReze,
+  })[id]
+  const openAnime = (a) => open(a.id)?.()
+
+  // Progression (recalculée à l'affichage — léger, ~30 lectures localStorage)
+  const progress = useMemo(() => {
+    const out = {}
+    for (const a of ANIMES) out[a.id] = readProgress(a.id)
+    return out
+  }, [])
+
+  // Favoris locaux (cœur / ma liste)
+  const [favs, setFavs] = useState(() => { try { return new Set(JSON.parse(localStorage.getItem(FAVS_KEY) || '[]')) } catch { return new Set() } })
+  const toggleFav = (a) => setFavs(prev => {
+    const next = new Set(prev)
+    next.has(a.id) ? next.delete(a.id) : next.add(a.id)
+    try { localStorage.setItem(FAVS_KEY, JSON.stringify([...next])) } catch {}
+    return next
+  })
+
+  // ── Hero rotatif (8 s, pause hover, crossfade, reduced-motion = statique) ──
+  const slides = useMemo(() => HERO_IDS.map(id => ANIMES.find(a => a.id === id)).filter(Boolean), [])
+  const [slide, setSlide] = useState(0)
+  const [paused, setPaused] = useState(false)
+  const reduced = useMemo(() => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches, [])
+  useEffect(() => {
+    if (reduced || paused || slides.length < 2) return
+    const t = setInterval(() => setSlide(s => (s + 1) % slides.length), 8000)
+    return () => clearInterval(t)
+  }, [reduced, paused, slides.length])
+
+  // ── Toolbar : recherche / segmented / genres / tri ──
+  const [query, setQuery] = useState('')
+  const [debounced, setDebounced] = useState('')
+  useEffect(() => { const t = setTimeout(() => setDebounced(query), 250); return () => clearTimeout(t) }, [query])
+  const [seg, setSeg] = useState('tous') // tous | encours | avoir | termine | favoris
+  const [genreSel, setGenreSel] = useState(new Set())
+  const [genresOpen, setGenresOpen] = useState(false)
+  const [sort, setSort] = useState('populaire')
+  const [shown, setShown] = useState(21)
+
+  const allGenres = useMemo(() => {
+    const g = new Set(); ANIMES.forEach(a => (a.genres || []).forEach(x => g.add(x))); return [...g].sort((a, b) => a.localeCompare(b, 'fr'))
+  }, [])
+
+  const filtered = useMemo(() => {
+    let list = ANIMES.filter(a => {
+      if (genreSel.size && !(a.genres || []).some(g => genreSel.has(g))) return false
+      const p = progress[a.id]?.pct || 0
+      if (seg === 'encours' && !(p > 0 && p < 100)) return false
+      if (seg === 'termine' && p < 100) return false
+      if (seg === 'avoir' && p !== 0) return false
+      if (seg === 'favoris' && !favs.has(a.id)) return false
+      if (debounced && !NORM(`${a.title} ${a.subtitle} ${(a.genres || []).join(' ')}`).includes(NORM(debounced))) return false
+      return true
+    })
+    if (sort === 'az') list = [...list].sort((a, b) => a.title.localeCompare(b.title, 'fr'))
+    else if (sort === 'recent') list = [...list].sort((a, b) => (b.badge === 'NOUVEAU' ? 1 : 0) - (a.badge === 'NOUVEAU' ? 1 : 0))
+    return list
+  }, [debounced, seg, genreSel, sort, favs, progress])
+
+  const searching = debounced.trim().length > 0
+  const stats = useMemo(() => ({
+    total: ANIMES.length,
+    encours: ANIMES.filter(a => { const p = progress[a.id]?.pct || 0; return p > 0 && p < 100 }).length,
+    nouveautes: ANIMES.filter(a => a.badge === 'NOUVEAU').length,
+    favoris: favs.size,
+  }), [progress, favs])
+
+  // Rows
+  const resume = ANIMES.filter(a => { const p = progress[a.id]?.pct || 0; return p > 0 && p < 100 })
+  const top10 = ANIMES.slice(0, 10)
+  const news = ANIMES.filter(a => a.badge === 'NOUVEAU').slice(0, 14)
+  const rowGenres = ['Action', 'Romance', 'Drame', 'Science-fiction']
+
+  const card = (a, w = 180) => (
+    <AnimeCard key={a.id} anime={a} width={w}
+      progressPct={progress[a.id]?.pct || 0}
+      onOpen={openAnime} onPlay={openAnime}
+      onToggleList={toggleFav} inList={favs.has(a.id)} />
+  )
+
+  const segBtn = (id, label) => (
+    <button key={id} onClick={() => setSeg(id)} style={{
+      padding: '7px 14px', borderRadius: 8, cursor: 'pointer', fontFamily: FONT_BODY,
+      fontSize: 13, fontWeight: 500, border: 'none',
+      background: seg === id ? 'rgba(255,255,255,0.1)' : 'transparent',
+      color: seg === id ? C.brass : C.dim,
+    }}>{label}</button>
+  )
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 60, overflowY: 'auto', overflowX: 'hidden',
+      background: `linear-gradient(180deg, ${C.bg0}, ${C.bg1})`, fontFamily: FONT_BODY, color: C.text,
+    }}>
+      <style>{`
+        @keyframes ah2-shimmer { to { background-position: -200% 0 } }
+        .ah2-seeall:hover { color: ${C.text} !important }
+        .ah2-card:focus-visible { outline: 2px solid ${C.brass}; outline-offset: 3px; border-radius: 12px }
+        @media (prefers-reduced-motion: reduce) { .ah2-fade { transition: none !important } }
+      `}</style>
+
+      {/* Fermer (retour) — discret en haut à droite, au-dessus du hero */}
+      <button onClick={props.onClose} aria-label="Fermer" style={{
+        position: 'fixed', top: 84, right: 18, zIndex: 5, width: 38, height: 38, borderRadius: '50%',
+        background: 'rgba(13,17,26,0.7)', border: `1px solid ${C.hair2}`, color: C.text,
+        cursor: 'pointer', fontSize: 16, display: 'grid', placeItems: 'center', backdropFilter: 'blur(6px)',
+      }}>✕</button>
+
+      {/* ── HERO rotatif (masqué pendant une recherche) ── */}
+      {!searching && (
+        <div onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} style={{ position: 'relative' }}>
+          {slides.map((a, i) => (
+            <div key={a.id} className="ah2-fade" style={{
+              transition: 'opacity 600ms ease', opacity: i === slide ? 1 : 0,
+              position: i === slide ? 'relative' : 'absolute', inset: 0, pointerEvents: i === slide ? 'auto' : 'none',
+            }}>
+              <HeroCinematic anime={a} onWatch={openAnime} onMyList={toggleFav} inList={favs.has(a.id)} onInfo={openAnime} />
+            </div>
+          ))}
+          {/* Indicateurs segments — celui actif se remplit en laiton */}
+          <div style={{ position: 'absolute', bottom: 14, left: 'clamp(18px, 4vw, 56px)', display: 'flex', gap: 6 }}>
+            {slides.map((s, i) => (
+              <button key={s.id} aria-label={`Slide ${i + 1}`} onClick={() => setSlide(i)} style={{
+                width: 34, height: 3, borderRadius: 2, border: 'none', cursor: 'pointer', padding: 0,
+                background: i === slide ? C.brass : 'rgba(255,255,255,0.2)',
+              }} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── TOOLBAR sticky ── */}
+      <div style={{
+        position: 'sticky', top: 0, zIndex: 4,
+        background: C.panel, backdropFilter: 'blur(8px)', borderBottom: `1px solid ${C.hair}`,
+      }}>
+        <div style={{ maxWidth: 1480, margin: '0 auto', padding: '10px clamp(16px, 3vw, 40px)', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          {/* Recherche */}
+          <div style={{ position: 'relative', flex: '1 1 220px', maxWidth: 320 }}>
+            <span aria-hidden style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: C.faint, fontSize: 13 }}>⌕</span>
+            <input
+              value={query} onChange={e => setQuery(e.target.value)} placeholder="Rechercher un animé…"
+              aria-label="Rechercher"
+              style={{
+                width: '100%', boxSizing: 'border-box', padding: '9px 12px 9px 32px', borderRadius: 9,
+                background: 'rgba(255,255,255,0.05)', border: `1px solid ${C.hair}`, outline: 'none',
+                color: C.text, fontSize: 13.5, fontFamily: FONT_BODY,
+              }}
+              onFocus={e => { e.target.style.borderColor = C.brass }}
+              onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.07)' }}
+            />
+          </div>
+          {/* Segmented */}
+          <div style={{ display: 'flex', gap: 2, background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: 3 }}>
+            {segBtn('tous', 'Tous')}{segBtn('encours', 'En cours')}{segBtn('avoir', 'À voir')}{segBtn('termine', 'Terminé')}{segBtn('favoris', 'Favoris')}
+          </div>
+          {/* Genres multi-select */}
+          <div style={{ position: 'relative' }}>
+            <button onClick={() => setGenresOpen(v => !v)} style={{
+              padding: '8px 14px', borderRadius: 9, cursor: 'pointer', fontFamily: FONT_BODY, fontSize: 13,
+              background: 'rgba(255,255,255,0.05)', border: `1px solid ${genreSel.size ? C.brass : C.hair}`,
+              color: genreSel.size ? C.brass : C.dim,
+            }}>Genres{genreSel.size ? ` · ${genreSel.size}` : ''}</button>
+            {genresOpen && (
+              <>
+                <div onClick={() => setGenresOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 5 }} />
+                <div style={{
+                  position: 'absolute', top: 'calc(100% + 8px)', left: 0, zIndex: 6, width: 260, maxHeight: 300, overflowY: 'auto',
+                  background: '#11151F', border: `1px solid ${C.hair2}`, borderRadius: RADIUS_PANEL, padding: 8,
+                  boxShadow: '0 18px 40px -22px rgba(0,0,0,.8)',
+                }}>
+                  {allGenres.map(g => {
+                    const on = genreSel.has(g)
+                    return (
+                      <button key={g} onClick={() => setGenreSel(prev => { const n = new Set(prev); on ? n.delete(g) : n.add(g); return n })}
+                        style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left', padding: '7px 10px', borderRadius: 8, border: 'none', cursor: 'pointer', background: on ? 'rgba(255,255,255,0.06)' : 'transparent', color: on ? C.text : C.dim, fontSize: 13, fontFamily: FONT_BODY }}>
+                        <span style={{ width: 14, color: C.brass }}>{on ? '✓' : ''}</span>{g}
+                      </button>
+                    )
+                  })}
+                </div>
+              </>
+            )}
+          </div>
+          {/* Tri */}
+          <select value={sort} onChange={e => setSort(e.target.value)} aria-label="Trier" style={{
+            padding: '8px 10px', borderRadius: 9, background: 'rgba(255,255,255,0.05)', border: `1px solid ${C.hair}`,
+            color: C.dim, fontSize: 13, fontFamily: FONT_BODY, cursor: 'pointer',
+          }}>
+            <option value="populaire">Populaire</option>
+            <option value="recent">Récent</option>
+            <option value="az">A–Z</option>
+          </select>
+          <span style={{ flex: 1 }} />
+          {/* Stats inline */}
+          <span style={{ fontSize: 12.5, color: C.faint, whiteSpace: 'nowrap' }}>
+            {stats.total} séries · {stats.encours} en cours · {stats.nouveautes} nouveautés · {stats.favoris} favoris
+          </span>
+        </div>
+      </div>
+
+      {/* ── CONTENU ── */}
+      <div style={{ maxWidth: 1480, margin: '0 auto', padding: '28px clamp(16px, 3vw, 40px) 90px' }}>
+        {searching ? (
+          <>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 18 }}>
+              <h2 style={{ margin: 0, fontFamily: FONT_DISPLAY, fontWeight: 600, fontSize: 18 }}>
+                {filtered.length} résultat{filtered.length !== 1 ? 's' : ''} pour « {debounced.trim()} »
+              </h2>
+              <button onClick={() => setQuery('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.dim, fontSize: 13, fontFamily: FONT_BODY }}>Effacer</button>
+            </div>
+            {filtered.length === 0 ? (
+              <p style={{ color: C.faint, fontSize: 14 }}>Aucun résultat. Essaie de retirer des filtres ou de modifier la recherche.</p>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 18 }}>
+                {filtered.map(a => card(a, undefined))}
+              </div>
+            )}
+          </>
+        ) : (
+          <>
+            {resume.length > 0 && (
+              <AnimeRow title="Reprendre la lecture" count={resume.length}>
+                {resume.map(a => (
+                  <div key={a.id} style={{ width: 280, flexShrink: 0 }}>
+                    <div role="button" tabIndex={0} onClick={() => openAnime(a)} onKeyDown={e => { if (e.key === 'Enter') openAnime(a) }} style={{ position: 'relative', aspectRatio: '16/9', borderRadius: 12, overflow: 'hidden', cursor: 'pointer', background: 'rgba(255,255,255,0.04)' }} className="ah2-card">
+                      <img src={a.coverImage} alt="" loading="lazy" decoding="async" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: a.coverPosition || 'center' }} />
+                      <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, transparent 50%, rgba(11,14,20,0.9))' }} />
+                      <div style={{ position: 'absolute', left: 10, bottom: 10, right: 10 }}>
+                        <div style={{ fontSize: 13.5, fontWeight: 600 }}>{a.title}</div>
+                        <div style={{ fontSize: 11.5, color: C.dim, marginTop: 2 }}>{progress[a.id]?.label}</div>
+                      </div>
+                      <div aria-hidden style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 3, background: 'rgba(255,255,255,0.15)' }}>
+                        <div style={{ width: `${progress[a.id]?.pct || 0}%`, height: '100%', background: C.brass }} />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </AnimeRow>
+            )}
+
+            <AnimeRow title="Top du moment" count={10}>
+              {top10.map((a, i) => (
+                <div key={a.id} style={{ display: 'flex', alignItems: 'flex-end', flexShrink: 0 }}>
+                  <span aria-hidden style={{
+                    fontFamily: FONT_DISPLAY, fontWeight: 700, fontSize: 96, lineHeight: 0.78,
+                    color: 'transparent', WebkitTextStroke: `2px ${C.faint}`, marginRight: -14, userSelect: 'none',
+                  }}>{i + 1}</span>
+                  {card(a, 158)}
+                </div>
+              ))}
+            </AnimeRow>
+
+            {news.length > 0 && (
+              <AnimeRow title="Nouveautés" count={news.length}>
+                {news.map(a => card(a))}
+              </AnimeRow>
+            )}
+
+            {rowGenres.map(g => {
+              const list = ANIMES.filter(a => (a.genres || []).includes(g))
+              if (list.length < 3) return null
+              return (
+                <AnimeRow key={g} title={g} count={list.length} onSeeAll={() => setGenreSel(new Set([g]))}>
+                  {list.map(a => card(a))}
+                </AnimeRow>
+              )
+            })}
+
+            {/* Tous les animés — grille paginée par 21 */}
+            <section>
+              <h2 style={{ fontFamily: FONT_DISPLAY, fontWeight: 600, fontSize: 18, margin: '6px 0 16px' }}>
+                Tous les animés <span style={{ fontSize: 12.5, color: C.faint, fontWeight: 400 }}>{filtered.length}</span>
+              </h2>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 18 }}>
+                {filtered.slice(0, shown).map(a => card(a, undefined))}
+              </div>
+              {filtered.length > shown && (
+                <div style={{ textAlign: 'center', marginTop: 26 }}>
+                  <button onClick={() => setShown(s => s + 21)} style={{
+                    padding: '11px 28px', borderRadius: 10, cursor: 'pointer', fontFamily: FONT_BODY, fontSize: 14, fontWeight: 600,
+                    background: 'rgba(255,255,255,0.06)', border: `1px solid ${C.hair2}`, color: C.text,
+                  }}>Afficher plus</button>
+                </div>
+              )}
+            </section>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}

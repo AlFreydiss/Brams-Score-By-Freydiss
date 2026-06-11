@@ -34,7 +34,7 @@ function availabilityLabel(count) {
   return count ? 'Disponible' : 'Upload requis'
 }
 
-const ANIMES = [
+export const ANIMES = [
   {
     id: 'onepiece',
     title: 'One Piece',

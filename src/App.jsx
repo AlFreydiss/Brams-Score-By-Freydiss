@@ -32,7 +32,8 @@ import { useInView } from './hooks/useInView.js'
 const ProfilePage     = lazyWithReload(() => import('./components/ProfilePage.jsx'))
 const EncyclopediePage= lazyWithReload(() => import('./components/EncyclopediePage.jsx'))
 const ScansPage       = lazyWithReload(() => import('./components/ScansPage.jsx'))
-const AnimeHub        = lazyWithReload(() => import('./components/AnimeHub.jsx'))
+// Hub v2 (refonte streaming premium) — rollback : re-pointer sur ./components/AnimeHub.jsx
+const AnimeHub        = lazyWithReload(() => import('./components/animehub/AnimeHubV2.jsx'))
 const TpnPage         = lazyWithReload(() => import('./components/TpnPage.jsx'))
 const DrStonePage     = lazyWithReload(() => import('./components/DrStonePage.jsx'))
 const JjkPage         = lazyWithReload(() => import('./components/JjkPage.jsx'))
