@@ -1604,6 +1604,7 @@ _ANNOUNCE_RANK_EMOJIS = {
 
 _RANK_ROLE_IDS   = set(RANK_ROLES.values())
 _RANK_ID_TO_NAME = {v: k for k, v in RANK_ROLES.items()}
+_RANK_ROLE_SETUP_LOGGED = False
 
 def _can_manage_rank_role(guild: discord.Guild, role: discord.Role) -> tuple[bool, str]:
     bot_member = guild.me
@@ -1617,6 +1618,27 @@ def _can_manage_rank_role(guild: discord.Guild, role: discord.Role) -> tuple[boo
             f"hierarchie Discord: role bot '{bot_member.top_role.name}' sous/egal au role '{role.name}'",
         )
     return True, ""
+
+def _log_rank_role_setup() -> None:
+    global _RANK_ROLE_SETUP_LOGGED
+    if _RANK_ROLE_SETUP_LOGGED:
+        return
+    _RANK_ROLE_SETUP_LOGGED = True
+    for guild in bot.guilds:
+        if guild.id not in GUILD_IDS:
+            continue
+        bot_member = guild.me
+        top_role = bot_member.top_role.name if bot_member else "introuvable"
+        manage_roles = bool(bot_member and bot_member.guild_permissions.manage_roles)
+        print(f"[RANK SETUP] {guild.name} | bot top role='{top_role}' | manage_roles={manage_roles}")
+        for rank_name, role_id in RANK_ROLES.items():
+            role = guild.get_role(role_id)
+            if role is None:
+                print(f"[RANK SETUP] {rank_name} ({role_id}) -> role introuvable sur ce serveur")
+                continue
+            can_manage, reason = _can_manage_rank_role(guild, role)
+            status = "OK" if can_manage else f"BLOQUE: {reason}"
+            print(f"[RANK SETUP] {rank_name} ({role.name}, pos={role.position}) -> {status}")
 
 async def _get_announce_channel():
     """Récupère le canal d'annonce depuis le cache, sinon via fetch (après restart)."""
@@ -2411,6 +2433,7 @@ async def on_ready():
 
     # Charge le cache mémoire UNE SEULE FOIS
     await load_data_async()
+    _log_rank_role_setup()
 
     # Démarre les boucles de fond
     if not check_ranks_loop.is_running():
