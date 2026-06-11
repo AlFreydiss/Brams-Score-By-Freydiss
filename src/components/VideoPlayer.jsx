@@ -4,6 +4,9 @@ import EpisodeDetailOverlay from './EpisodeDetailOverlay.jsx'
 import { getAnimeMeta } from '../data/anime-meta.js'
 import { setBoost, corsUrl } from '../lib/audioBoost.js'
 
+// Écran tactile (téléphone/tablette) : active la couche de contrôles au doigt.
+const IS_COARSE = typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches
+
 function fmt(sec) {
   const t = Math.max(0, Math.floor(sec || 0))
   const h = Math.floor(t / 3600)
@@ -313,6 +316,9 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
 
   const [idx,          setIdx]         = useState(startIdx)
   const [playing,      setPlaying]     = useState(false)
+  // Tactile : double-tap ±10s + flash visuel (couche coarse dans la zone vidéo)
+  const touchTapRef = useRef(null)
+  const [skipFlash, setSkipFlash] = useState(null)
   const [currentTime,  setCurrentTime] = useState(0)
   const [duration,     setDuration]    = useState(0)
   const [volume,       setVolume]      = useState(1)
@@ -965,6 +971,52 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                 <track key={i} kind="subtitles" src={corsUrl(sub.src)} srcLang={sub.srclang || 'fr'} label={sub.label} default={i === subIdx} />
               ))}
             </video>
+
+            {/* ── Couche TACTILE (pointer: coarse) ──
+                tap = play/pause (différé 280ms) · double-tap tiers gauche/droit
+                = ±10s avec flash visuel · gros ▶ central quand en pause. */}
+            {IS_COARSE && started && (
+              <div
+                onClick={e => {
+                  e.stopPropagation()
+                  const r = e.currentTarget.getBoundingClientRect()
+                  const x = (e.clientX - r.left) / r.width
+                  const zone = x < 0.33 ? 'L' : x > 0.67 ? 'R' : 'C'
+                  const now = Date.now()
+                  const last = touchTapRef.current
+                  if (last && now - last.t < 300 && last.zone === zone && zone !== 'C') {
+                    clearTimeout(touchTapRef.current?.timer)
+                    touchTapRef.current = null
+                    const v = videoRef.current
+                    if (v) v.currentTime = Math.max(0, Math.min((v.duration || 1e9), v.currentTime + (zone === 'L' ? -10 : 10)))
+                    setSkipFlash({ side: zone, t: now })
+                    setTimeout(() => setSkipFlash(s => (s && s.t === now ? null : s)), 650)
+                    showControls()
+                    return
+                  }
+                  clearTimeout(last?.timer)
+                  const timer = setTimeout(() => { togglePlay(); touchTapRef.current = null }, 280)
+                  touchTapRef.current = { t: now, zone, timer }
+                }}
+                style={{ position: 'absolute', inset: 0, zIndex: 1 }}
+              >
+                {!playing && (
+                  <span aria-hidden style={{
+                    position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
+                    width: 78, height: 78, borderRadius: '50%', display: 'grid', placeItems: 'center',
+                    background: 'rgba(0,0,0,0.55)', border: '1px solid rgba(255,255,255,0.25)',
+                    color: '#fff', fontSize: 30, paddingLeft: 6, pointerEvents: 'none',
+                  }}>▶</span>
+                )}
+                {skipFlash && (
+                  <span aria-hidden style={{
+                    position: 'absolute', top: '50%', [skipFlash.side === 'L' ? 'left' : 'right']: '12%',
+                    transform: 'translateY(-50%)', padding: '10px 16px', borderRadius: 999,
+                    background: 'rgba(0,0,0,0.6)', color: '#fff', fontSize: 15, fontWeight: 800, pointerEvents: 'none',
+                  }}>{skipFlash.side === 'L' ? '« −10s' : '+10s »'}</span>
+                )}
+              </div>
+            )}
             {/* External audio (e.g. separate VF track) — also only loaded when playback has started. */}
             {effectiveMediaSrc && selectedAudio?.src && !selectedAudio?.mediaSrc && (
               <audio
