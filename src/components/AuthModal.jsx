@@ -1,90 +1,205 @@
-// ── Écran de connexion plein écran "l'équipage en orbite" ───────────────────
-// Présentation refondue (overlay fullscreen, avatars de membres en orbite sur
-// 2 anneaux, carte centrale) — la LOGIQUE AUTH est strictement identique à
+// ── Écran de connexion "Embarque" — spirale d'étoiles minimale ──────────────
+// Présentation : concept BramsLoginMinimal (spirale canvas pur rAF, typo fine
+// Jost, or discret, pas de carte). La LOGIQUE AUTH est strictement celle de
 // l'ancienne modale : signInWithDiscord / signIn / signUp via AuthContext,
 // erreur OAuth relue depuis localStorage, mêmes états et messages.
-// Avatars : RPC publique public_member_avatars (username + avatar_url only).
-import { useEffect, useMemo, useState } from 'react'
-import { motion } from 'framer-motion'
+import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../contexts/AuthContext.jsx'
-import { useMediaQuery } from '../hooks/useMediaQuery.js'
-import { sbRpc } from '../lib/supabaseRest.js'
 
-const DISCORD_BLUE = '#5865F2'
-const DISCORD_DARK = '#4752C4'
-const GOLD         = '#d4a017'
-const GOLD_SOFT    = '#f5c451'
+/* ---------- spirale d'étoiles (pur rAF, zéro dépendance) ---------- */
+function SpiralAnimation() {
+  const canvasRef = useRef(null)
 
-const DiscordIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="white" aria-hidden="true">
-    <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.032.054a19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z" />
-  </svg>
-)
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
 
-const inputStyle = {
-  width: '100%', padding: '11px 14px', borderRadius: 10,
-  background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
-  color: '#fff', fontSize: 14, fontFamily: 'var(--body)', outline: 'none',
-  boxSizing: 'border-box', transition: 'border .15s',
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const dpr = Math.min(window.devicePixelRatio || 1, 2)
+    let W = window.innerWidth, H = window.innerHeight
+    let raf
+
+    // Y_OFF = 0 : la spirale naît et s'étend depuis le CENTRE exact de l'écran.
+    const CHANGE = 0.32, CAM_Z = -400, TRAVEL = 3400, Y_OFF = 0, ZOOM = 100
+    const N_STARS = 4200, TRAIL = 80, DURATION = 15000
+
+    // Backing store aux dimensions RÉELLES de l'écran (pas un carré max(W,H)
+    // étiré en CSS — ça écrasait verticalement le rendu : cercles → ellipses).
+    const setup = () => {
+      W = window.innerWidth; H = window.innerHeight
+      canvas.width = W * dpr; canvas.height = H * dpr
+      canvas.style.width = `${W}px`; canvas.style.height = `${H}px`
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+    }
+    setup()
+
+    // PRNG déterministe (même spirale à chaque visite)
+    let seed = 1234
+    const rnd = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280 }
+    const rrange = (a, b) => a + rnd() * (b - a)
+
+    const ease = (p, g) => (p < 0.5 ? 0.5 * Math.pow(2 * p, g) : 1 - 0.5 * Math.pow(2 * (1 - p), g))
+    const easeOutElastic = (x) => {
+      const c4 = (2 * Math.PI) / 4.5
+      if (x <= 0) return 0; if (x >= 1) return 1
+      return Math.pow(2, -8 * x) * Math.sin((x * 8 - 0.75) * c4) + 1
+    }
+    const map = (v, a, b, c, d) => c + (d - c) * ((v - a) / (b - a))
+    const clamp = (v, a, b) => Math.min(Math.max(v, a), b)
+    const lerp = (a, b, t) => a * (1 - t) + b * t
+
+    const spiralPath = (p) => {
+      p = clamp(1.2 * p, 0, 1)
+      p = ease(p, 1.8)
+      const turns = 6
+      const theta = 2 * Math.PI * turns * Math.sqrt(p)
+      const r = 170 * Math.sqrt(p)
+      return { x: r * Math.cos(theta), y: r * Math.sin(theta) + Y_OFF }
+    }
+
+    const stars = []
+    for (let i = 0; i < N_STARS; i++) {
+      const angle = rnd() * Math.PI * 2
+      const distance = 30 * rnd() + 15
+      const dir = rnd() > 0.5 ? 1 : -1
+      const expansion = 1.2 + rnd() * 0.8
+      const finalScale = 0.7 + rnd() * 0.6
+      const spiralLocation = (1 - Math.pow(1 - rnd(), 3.0)) / 1.3
+      let z = rrange(0.5 * CAM_Z, TRAVEL + CAM_Z)
+      z = lerp(z, TRAVEL / 2, 0.3 * spiralLocation)
+      stars.push({
+        angle, distance, dir, expansion, finalScale, spiralLocation, z,
+        dx: distance * Math.cos(angle), dy: distance * Math.sin(angle),
+        swf: Math.pow(rnd(), 2.0),
+      })
+    }
+
+    let time = 0
+
+    const projectDot = (x3, y3, z3, sizeFactor) => {
+      const t2 = clamp(map(time, CHANGE, 1, 0, 1), 0, 1)
+      const camZ = CAM_Z + ease(Math.pow(t2, 1.2), 1.8) * TRAVEL
+      if (z3 > camZ) {
+        const depth = z3 - camZ
+        const x = (ZOOM * x3) / depth
+        const y = (ZOOM * y3) / depth
+        const sw = (400 * sizeFactor) / depth
+        ctx.lineWidth = sw
+        ctx.beginPath()
+        ctx.arc(x, y, Math.max(sw / 2, 0.5), 0, Math.PI * 2)
+        ctx.fill()
+      }
+    }
+
+    const renderStar = (s, p) => {
+      const sp = spiralPath(s.spiralLocation)
+      const q = p - s.spiralLocation
+      if (q <= 0) return
+      const dp = clamp(4 * q, 0, 1)
+
+      const linear = dp, elastic = easeOutElastic(dp), power = dp * dp
+      let easing
+      if (dp < 0.3) easing = lerp(linear, power, dp / 0.3)
+      else if (dp < 0.7) easing = lerp(power, elastic, (dp - 0.3) / 0.4)
+      else easing = elastic
+
+      let sx, sy
+      if (dp < 0.3) {
+        sx = lerp(sp.x, sp.x + s.dx * 0.3, easing / 0.3)
+        sy = lerp(sp.y, sp.y + s.dy * 0.3, easing / 0.3)
+      } else if (dp < 0.7) {
+        const mp = (dp - 0.3) / 0.4
+        const curve = Math.sin(mp * Math.PI) * s.dir * 1.5
+        const bx = sp.x + s.dx * 0.3, by = sp.y + s.dy * 0.3
+        const tx = sp.x + s.dx * 0.7, ty = sp.y + s.dy * 0.7
+        sx = lerp(bx, tx, mp) + (-s.dy * 0.4 * curve) * mp
+        sy = lerp(by, ty, mp) + (s.dx * 0.4 * curve) * mp
+      } else {
+        const fp = (dp - 0.7) / 0.3
+        const bx = sp.x + s.dx * 0.7, by = sp.y + s.dy * 0.7
+        const td = s.distance * s.expansion * 1.5
+        const sa = s.angle + 1.2 * s.dir * fp * Math.PI
+        sx = lerp(bx, sp.x + td * Math.cos(sa), fp)
+        sy = lerp(by, sp.y + td * Math.sin(sa), fp)
+      }
+
+      const vx = ((s.z - CAM_Z) * sx) / ZOOM
+      const vy = ((s.z - CAM_Z) * sy) / ZOOM
+
+      let mult = 1
+      if (dp < 0.6) mult = 1 + dp * 0.2
+      else { const t = (dp - 0.6) / 0.4; mult = 1.2 * (1 - t) + s.finalScale * t }
+
+      projectDot(vx, vy, s.z, 8.5 * s.swf * mult)
+    }
+
+    const render = () => {
+      ctx.fillStyle = 'black'
+      ctx.fillRect(0, 0, W, H)
+      ctx.save()
+      ctx.translate(W / 2, H / 2)
+
+      const t1 = clamp(map(time, 0, CHANGE + 0.25, 0, 1), 0, 1)
+      const t2 = clamp(map(time, CHANGE, 1, 0, 1), 0, 1)
+      ctx.rotate(-Math.PI * ease(t2, 2.7))
+
+      for (let i = 0; i < TRAIL; i++) {
+        const f = map(i, 0, TRAIL, 1.1, 0.1)
+        const sw = (1.3 * (1 - t1) + 3.0 * Math.sin(Math.PI * t1)) * f
+        ctx.fillStyle = 'white'
+        const pos = spiralPath(t1 - 0.00015 * i)
+        ctx.beginPath()
+        ctx.arc(pos.x, pos.y, Math.max(sw / 2, 0.1), 0, Math.PI * 2)
+        ctx.fill()
+      }
+
+      ctx.fillStyle = 'white'
+      for (const s of stars) renderStar(s, t1)
+
+      if (time > CHANGE) {
+        const dy = (CAM_Z * Y_OFF) / ZOOM
+        projectDot(0, dy, TRAVEL, 2.5)
+      }
+
+      ctx.restore()
+    }
+
+    if (reduced) { time = 0.22; render(); return }
+
+    let t0 = performance.now()
+    const loop = (now) => {
+      time = ((now - t0) % DURATION) / DURATION
+      render()
+      raf = requestAnimationFrame(loop)
+    }
+    raf = requestAnimationFrame(loop)
+
+    const onResize = () => setup()
+    window.addEventListener('resize', onResize)
+    return () => { cancelAnimationFrame(raf); window.removeEventListener('resize', onResize) }
+  }, [])
+
+  return <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0 }} />
 }
 
-// Un membre en orbite : l'anneau parent tourne, l'avatar contre-tourne (même
-// durée, sens inverse) pour rester droit.
-function OrbitAvatar({ member, angle, radius, size, ringDur, reverse, delay }) {
-  const [broken, setBroken] = useState(false)
+function DiscordIcon({ size = 17 }) {
   return (
-    <div style={{
-      position: 'absolute', top: 0, left: 0,
-      transform: `rotate(${angle}deg) translateX(${radius}px)`,
-    }}>
-      <motion.div
-        initial={{ opacity: 0, scale: 0.4 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-        style={{ animation: `bxCounter${reverse ? 'R' : ''} ${ringDur}s linear infinite` }}
-      >
-        <div className="bx-float" style={{
-          width: size, height: size, marginLeft: -size / 2, marginTop: -size / 2,
-          borderRadius: '50%', overflow: 'hidden', flexShrink: 0,
-          border: '2px solid rgba(245,196,81,0.45)',
-          boxShadow: '0 0 18px rgba(245,196,81,0.22), 0 6px 16px rgba(0,0,0,0.5)',
-          background: '#15161d', display: 'grid', placeItems: 'center',
-          animationDelay: `${(delay * 3).toFixed(2)}s`,
-        }}>
-          {!broken && member.avatar_url
-            ? <img src={member.avatar_url} alt="" loading="lazy" draggable={false}
-                onError={() => setBroken(true)}
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            : <span style={{ fontSize: size * 0.42 }}>🏴‍☠️</span>}
-        </div>
-      </motion.div>
-    </div>
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M20.317 4.369a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128c.126-.094.252-.192.372-.291a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.009c.12.099.246.198.373.292a.077.077 0 0 1-.006.127 12.3 12.3 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.84 19.84 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.331c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z" />
+    </svg>
   )
 }
 
-function OrbitRing({ members, radius, size, dur, reverse, baseDelay }) {
-  const n = members.length
-  if (!n) return null
-  return (
-    <div aria-hidden style={{
-      position: 'absolute', top: '50%', left: '50%', width: 0, height: 0,
-      animation: `bxSpin${reverse ? 'R' : ''} ${dur}s linear infinite`,
-    }}>
-      {members.map((m, i) => (
-        <OrbitAvatar key={`${m.username}-${i}`} member={m}
-          angle={(360 / n) * i} radius={radius} size={size}
-          ringDur={dur} reverse={reverse} delay={baseDelay + i * 0.06} />
-      ))}
-    </div>
-  )
-}
+const TEXT_SHADOW = '0 0 40px rgba(0,0,0,0.9), 0 2px 8px rgba(0,0,0,0.8)'
 
 export default function AuthModal({ onClose }) {
   const { signInWithDiscord, signIn, signUp } = useAuth()
-  const isMobile = useMediaQuery('(max-width: 640px)')
 
-  const [tab,     setTab]     = useState('discord') // 'discord' | 'email'
-  const [mode,    setMode]    = useState('login')   // 'login' | 'signup'
+  const [visible, setVisible] = useState(false)
+  const [mode,    setMode]    = useState('main')  // 'main' | 'email'
+  const [emode,   setEmode]   = useState('login') // 'login' | 'signup'
   const [loading, setLoading] = useState(false)
   const [error,   setError]   = useState('')
   const [success, setSuccess] = useState('')
@@ -93,14 +208,9 @@ export default function AuthModal({ onClose }) {
   const [password, setPassword] = useState('')
   const [name,     setName]     = useState('')
 
-  // L'équipage en orbite — fetch anonyme, jamais bloquant pour le rendu.
-  const [crew, setCrew] = useState([])
   useEffect(() => {
-    let alive = true
-    sbRpc('public_member_avatars', { p_limit: 18 }, { tag: 'auth' })
-      .then(r => { if (alive && Array.isArray(r)) setCrew(r) })
-      .catch(() => {})
-    return () => { alive = false }
+    const t = setTimeout(() => setVisible(true), 1200) // laisse la spirale s'installer
+    return () => clearTimeout(t)
   }, [])
 
   useEffect(() => {
@@ -118,6 +228,7 @@ export default function AuthModal({ onClose }) {
   }, [onClose])
 
   async function handleDiscord() {
+    if (loading) return
     setLoading(true); setError('')
     const { error } = await signInWithDiscord()
     if (error) { setError(error.message || 'Erreur Discord.'); setLoading(false) }
@@ -125,8 +236,9 @@ export default function AuthModal({ onClose }) {
 
   async function handleEmail(e) {
     e.preventDefault()
+    if (loading) return
     setLoading(true); setError(''); setSuccess('')
-    if (mode === 'login') {
+    if (emode === 'login') {
       const { error } = await signIn(email, password)
       if (error) { setError(error.message || 'Identifiants incorrects.'); setLoading(false) }
       else { onClose() }
@@ -140,241 +252,165 @@ export default function AuthModal({ onClose }) {
     }
   }
 
-  // Répartition : anneau extérieur + intérieur ; mobile = moins d'avatars.
-  const [outer, inner] = useMemo(() => {
-    const list = crew.slice(0, isMobile ? 12 : 18)
-    const cut = isMobile ? 8 : 12
-    return [list.slice(0, cut), list.slice(cut)]
-  }, [crew, isMobile])
+  const appear = (delay) => ({
+    opacity: visible ? 1 : 0,
+    transform: visible ? 'translateY(0)' : 'translateY(14px)',
+    transition: `opacity 1.4s cubic-bezier(.22,1,.36,1) ${delay}s, transform 1.4s cubic-bezier(.22,1,.36,1) ${delay}s`,
+  })
 
-  const R_OUT = isMobile ? 150 : 285
-  const R_IN  = isMobile ? 102 : 192
+  const inputStyle = {
+    width: 280, maxWidth: '78vw', padding: '13px 16px', borderRadius: 0, textAlign: 'center',
+    background: 'transparent', border: 'none', borderBottom: '1px solid rgba(255,255,255,0.18)',
+    color: '#f3f1ea', fontSize: 14, outline: 'none', letterSpacing: '0.06em',
+    fontFamily: "'Jost',sans-serif",
+  }
 
   return (
-    <div
-      style={{
-        position: 'fixed', inset: 0, zIndex: 9000, overflow: 'hidden',
-        background: `
-          radial-gradient(900px 600px at 50% -10%, rgba(245,196,81,0.07), transparent 60%),
-          radial-gradient(700px 500px at 85% 110%, rgba(88,101,242,0.06), transparent 60%),
-          linear-gradient(180deg, #07080c 0%, #0a0b10 55%, #070709 100%)`,
-        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
-      }}
-    >
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9000, background: '#000', overflow: 'hidden', fontFamily: "'Jost',sans-serif" }}>
       <style>{`
-        @keyframes authSpin { to { transform: rotate(360deg); } }
-        @keyframes bxSpin    { from { transform: rotate(0deg) }   to { transform: rotate(360deg) } }
-        @keyframes bxSpinR   { from { transform: rotate(0deg) }   to { transform: rotate(-360deg) } }
-        @keyframes bxCounter { from { transform: rotate(0deg) }   to { transform: rotate(-360deg) } }
-        @keyframes bxCounterR{ from { transform: rotate(0deg) }   to { transform: rotate(360deg) } }
-        @keyframes bxFloat   { 0%,100% { translate: 0 0 } 50% { translate: 0 -5px } }
-        .bx-float { animation: bxFloat 5s ease-in-out infinite; }
-        .bx-login button:focus-visible, .bx-login input:focus-visible { outline: 2px solid ${GOLD_SOFT}; outline-offset: 2px; }
-        @media (prefers-reduced-motion: reduce) {
-          .bx-login [aria-hidden], .bx-login [aria-hidden] * { animation: none !important; }
-          .bx-float { animation: none !important; }
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Jost:wght@200;300;400;500&display=swap');
+        .bl-in:focus { border-bottom-color: rgba(245,196,81,0.7) !important; }
+        .bl-in::placeholder { color: rgba(255,255,255,0.25); letter-spacing: 0.12em; }
+        .bl-discord { transition: letter-spacing .6s ease, border-color .6s ease, color .6s ease; }
+        .bl-discord:hover { letter-spacing: 0.32em !important; border-color: rgba(245,196,81,0.65) !important; color: #ffdc84 !important; }
+        .bl-link { transition: color .4s ease, letter-spacing .4s ease; }
+        .bl-link:hover { color: rgba(255,255,255,0.85) !important; letter-spacing: 0.22em !important; }
+        .bl-go { transition: letter-spacing .5s ease, color .5s ease; }
+        .bl-go:hover { letter-spacing: 0.34em !important; color: #ffdc84 !important; }
+        .bl-root button:focus-visible, .bl-root input:focus-visible { outline: 1px solid rgba(245,196,81,0.7); outline-offset: 4px; }
+        @keyframes blBreathe { 0%,100% { opacity: .55; } 50% { opacity: 1; } }
+        @media (prefers-reduced-motion: reduce) { .bl-root * { animation: none !important; transition: none !important; } }
       `}</style>
 
-      <div className="bx-login" style={{ position: 'relative', width: '100%', maxWidth: 720, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: isMobile ? 520 : 680 }}>
+      {/* spirale */}
+      <div aria-hidden style={{ position: 'absolute', inset: 0 }}><SpiralAnimation /></div>
+      {/* assombrissement central renforcé : centre lisible, étoiles visibles autour */}
+      <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none',
+        background: 'radial-gradient(600px 480px at 50% 42%, rgba(0,0,0,0.82), rgba(0,0,0,0.3) 55%, transparent 80%)' }} />
 
-        {/* Anneaux pointillés dorés */}
-        <motion.div
-          aria-hidden
-          initial={{ opacity: 0, rotate: -12 }} animate={{ opacity: 1, rotate: 0 }}
-          transition={{ duration: 1.1, ease: 'easeOut' }}
-          style={{ position: 'absolute', top: '50%', left: '50%', width: 0, height: 0, pointerEvents: 'none' }}
-        >
-          <svg width={R_OUT * 2 + 60} height={R_OUT * 2 + 60} viewBox={`0 0 ${R_OUT * 2 + 60} ${R_OUT * 2 + 60}`}
-            style={{ position: 'absolute', left: -(R_OUT + 30), top: -(R_OUT + 30) }}>
-            <circle cx={R_OUT + 30} cy={R_OUT + 30} r={R_OUT} fill="none"
-              stroke="rgba(245,196,81,0.34)" strokeWidth="1.2" strokeDasharray="3 8" />
-            <circle cx={R_OUT + 30} cy={R_OUT + 30} r={R_IN} fill="none"
-              stroke="rgba(245,196,81,0.26)" strokeWidth="1" strokeDasharray="2 7" />
-          </svg>
-        </motion.div>
+      <div className="bl-root" style={{ position: 'absolute', inset: 0, zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 0 }}>
 
-        {/* L'équipage en orbite */}
-        <OrbitRing members={outer} radius={R_OUT} size={isMobile ? 34 : 46} dur={70} reverse={false} baseDelay={0.35} />
-        <OrbitRing members={inner} radius={R_IN}  size={isMobile ? 28 : 38} dur={48} reverse={true}  baseDelay={0.55} />
+        {/* Fermer — discret, cohérent avec la typo */}
+        <button onClick={onClose} aria-label="Fermer" className="bl-link" style={{
+          position: 'absolute', top: 22, right: 26, background: 'none', border: 'none', cursor: 'pointer',
+          fontFamily: "'Jost',sans-serif", fontWeight: 300, fontSize: 13, letterSpacing: '0.18em',
+          textTransform: 'uppercase', color: 'rgba(255,255,255,0.35)', textShadow: TEXT_SHADOW,
+        }}>✕ fermer</button>
 
-        {/* Carte centrale — logique auth INCHANGÉE */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.92, y: 10 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          transition={{ delay: 0.15, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-          style={{
-            position: 'relative', zIndex: 2,
-            background: 'linear-gradient(145deg, rgba(19,21,26,0.96), rgba(26,29,38,0.96))',
-            backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)',
-            border: '1px solid rgba(255,215,0,0.18)',
-            borderRadius: 20, padding: isMobile ? '30px 22px 26px' : '40px 36px 36px',
-            width: '100%', maxWidth: isMobile ? 340 : 420,
-            boxShadow: '0 28px 80px rgba(0,0,0,0.75)',
-            textAlign: 'center',
-          }}
-        >
-          {/* Bande top */}
-          <div style={{
-            position: 'absolute', top: 0, left: 0, right: 0, height: 3,
-            background: `linear-gradient(90deg, #E0524A, ${DISCORD_BLUE}, #E0524A)`,
-            borderRadius: '20px 20px 0 0',
-          }} />
-
-          {/* Fermer */}
-          <button onClick={onClose} aria-label="Fermer" style={{
-            position: 'absolute', top: 14, right: 14,
-            background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)',
-            borderRadius: 8, color: 'rgba(255,255,255,0.45)', cursor: 'pointer',
-            width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 14, transition: 'all .15s',
-          }}
-            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.12)'; e.currentTarget.style.color = '#fff' }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = 'rgba(255,255,255,0.45)' }}
-          >✕</button>
-
-          {/* Header */}
-          <div style={{ marginBottom: 24 }}>
-            <div style={{ fontSize: 44, marginBottom: 8, filter: 'drop-shadow(0 0 18px rgba(245,196,81,0.35))' }}>🏴‍☠️</div>
-            <div style={{ fontFamily: 'var(--display)', fontWeight: 800, fontSize: 20, color: '#fff', marginBottom: 3 }}>
-              Brams Community
-            </div>
-            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.38)' }}>
-              Connecte-toi pour accéder au Grand Line
-            </div>
+        <div style={appear(0)}>
+          <div style={{ fontSize: 11, letterSpacing: '0.55em', textTransform: 'uppercase', color: 'rgba(245,196,81,0.75)', textAlign: 'center', paddingLeft: '0.55em',
+            textShadow: TEXT_SHADOW }}>
+            Brams Community
           </div>
+        </div>
 
-          {/* Tabs */}
-          <div style={{
-            display: 'flex', background: 'rgba(255,255,255,0.04)',
-            borderRadius: 10, padding: 4, marginBottom: 24, gap: 4,
-          }}>
-            {[['discord', 'Discord'], ['email', 'Email / Mot de passe']].map(([t, label]) => (
-              <button key={t} onClick={() => { setTab(t); setError(''); setSuccess('') }}
+        <div style={appear(0.15)}>
+          <h1 style={{ margin: '18px 0 0', fontWeight: 200, fontSize: 'clamp(26px,3.4vw,40px)', letterSpacing: '0.18em', textTransform: 'uppercase', color: '#f3f1ea', textAlign: 'center', paddingLeft: '0.18em',
+            textShadow: TEXT_SHADOW }}>
+            Embarque
+          </h1>
+        </div>
+
+        <div style={appear(0.3)}>
+          <p style={{ margin: '14px 0 0', fontWeight: 300, fontSize: 13, letterSpacing: '0.14em', color: 'rgba(255,255,255,0.4)', textAlign: 'center',
+            textShadow: TEXT_SHADOW }}>
+            Connecte-toi pour accéder au Grand Line
+          </p>
+        </div>
+
+        {mode === 'main' ? (
+          <>
+            <div style={{ ...appear(0.5), marginTop: 52 }}>
+              <button
+                className="bl-discord"
+                onClick={handleDiscord}
+                disabled={loading}
                 style={{
-                  flex: 1, padding: '8px 10px', borderRadius: 8, border: 'none', cursor: 'pointer',
-                  fontSize: 13, fontWeight: 600, fontFamily: 'var(--body)',
-                  transition: 'all .18s',
-                  background: tab === t ? 'rgba(255,255,255,0.1)' : 'transparent',
-                  color: tab === t ? '#fff' : 'rgba(255,255,255,0.4)',
-                  boxShadow: tab === t ? '0 1px 4px rgba(0,0,0,0.3)' : 'none',
+                  display: 'inline-flex', alignItems: 'center', gap: 12, cursor: loading ? 'wait' : 'pointer',
+                  background: 'transparent', color: '#f3f1ea',
+                  border: '1px solid rgba(255,255,255,0.28)', borderRadius: 999,
+                  padding: '15px 38px', fontFamily: "'Jost',sans-serif",
+                  fontWeight: 300, fontSize: 14, letterSpacing: '0.26em', textTransform: 'uppercase',
+                  textShadow: TEXT_SHADOW,
+                  animation: 'blBreathe 4s ease-in-out infinite',
+                  opacity: loading ? 0.55 : undefined,
                 }}
-              >{label}</button>
-            ))}
-          </div>
-
-          {/* ── TAB DISCORD ── */}
-          {tab === 'discord' && (
-            <>
-              <button onClick={handleDiscord} disabled={loading} style={{
-                width: '100%', padding: '15px 20px', borderRadius: 12, border: 'none',
-                background: loading ? `${DISCORD_DARK}99` : DISCORD_BLUE,
-                color: '#fff', fontSize: 15, fontWeight: 700,
-                cursor: loading ? 'not-allowed' : 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
-                transition: 'all .2s', letterSpacing: '.02em', fontFamily: 'var(--body)',
-                boxShadow: loading ? 'none' : `0 4px 24px ${DISCORD_BLUE}55`,
-              }}
-                onMouseEnter={e => { if (!loading) { e.currentTarget.style.background = DISCORD_DARK; e.currentTarget.style.transform = 'translateY(-2px)' } }}
-                onMouseLeave={e => { if (!loading) { e.currentTarget.style.background = DISCORD_BLUE; e.currentTarget.style.transform = 'translateY(0)' } }}
               >
-                {loading
-                  ? <><Spinner /> Connexion en cours…</>
-                  : <><DiscordIcon /> Se connecter avec Discord</>
-                }
+                <DiscordIcon /> {loading ? 'Connexion…' : 'Se connecter avec Discord'}
               </button>
-              <p style={{ marginTop: 16, fontSize: 11, color: 'rgba(255,255,255,0.2)', letterSpacing: '.03em', lineHeight: 1.6 }}>
-                Tu seras redirigé vers Discord pour autoriser l'accès.
-              </p>
-            </>
-          )}
+            </div>
 
-          {/* ── TAB EMAIL ── */}
-          {tab === 'email' && (
-            <>
-              {/* Toggle login/signup */}
-              <div style={{ display: 'flex', justifyContent: 'center', gap: 20, marginBottom: 20 }}>
-                {[['login', 'Connexion'], ['signup', 'Inscription']].map(([m, label]) => (
-                  <button key={m} onClick={() => { setMode(m); setError(''); setSuccess('') }} style={{
-                    background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--body)',
-                    fontSize: 13, fontWeight: 700, letterSpacing: '.04em', padding: '4px 0',
-                    color: mode === m ? GOLD : 'rgba(255,255,255,0.3)',
-                    borderBottom: mode === m ? `2px solid ${GOLD}` : '2px solid transparent',
-                    transition: 'all .15s',
-                  }}>{label}</button>
-                ))}
-              </div>
+            <div style={{ ...appear(0.7), marginTop: 26 }}>
+              <button
+                className="bl-link"
+                onClick={() => { setMode('email'); setError(''); setSuccess('') }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'Jost',sans-serif",
+                  fontWeight: 300, fontSize: 11.5, letterSpacing: '0.18em', textTransform: 'uppercase',
+                  color: 'rgba(255,255,255,0.35)', textShadow: TEXT_SHADOW }}
+              >
+                ou par email
+              </button>
+            </div>
+          </>
+        ) : (
+          <form onSubmit={handleEmail} style={{ marginTop: 44, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18 }}>
+            {emode === 'signup' && (
+              <input className="bl-in" style={inputStyle} type="text" placeholder="NOM D'AFFICHAGE" value={name} onChange={(e) => setName(e.target.value)} required />
+            )}
+            <input className="bl-in" style={inputStyle} type="email" placeholder="EMAIL" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <input className="bl-in" style={inputStyle} type="password" placeholder="MOT DE PASSE" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            <button
+              className="bl-go"
+              type="submit"
+              disabled={loading}
+              style={{ marginTop: 16, background: 'none', border: 'none', cursor: loading ? 'wait' : 'pointer',
+                fontFamily: "'Jost',sans-serif", fontWeight: 300, fontSize: 14,
+                letterSpacing: '0.28em', textTransform: 'uppercase', color: '#f3f1ea',
+                textShadow: TEXT_SHADOW,
+                animation: 'blBreathe 4s ease-in-out infinite', opacity: loading ? 0.55 : undefined }}
+            >
+              {loading
+                ? (emode === 'login' ? 'Connexion…' : 'Inscription…')
+                : (emode === 'login' ? 'Entrer →' : 'Créer mon compte →')}
+            </button>
+            <button
+              className="bl-link"
+              type="button"
+              onClick={() => { setEmode(m => m === 'login' ? 'signup' : 'login'); setError(''); setSuccess('') }}
+              style={{ marginTop: 2, background: 'none', border: 'none', cursor: 'pointer',
+                fontFamily: "'Jost',sans-serif", fontWeight: 300, fontSize: 11,
+                letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(245,196,81,0.55)', textShadow: TEXT_SHADOW }}
+            >
+              {emode === 'login' ? 'créer un compte' : 'j\'ai déjà un compte'}
+            </button>
+            <button
+              className="bl-link"
+              type="button"
+              onClick={() => { setMode('main'); setError(''); setSuccess('') }}
+              style={{ marginTop: 4, background: 'none', border: 'none', cursor: 'pointer',
+                fontFamily: "'Jost',sans-serif", fontWeight: 300, fontSize: 11,
+                letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', textShadow: TEXT_SHADOW }}
+            >
+              ← retour
+            </button>
+          </form>
+        )}
 
-              <form onSubmit={handleEmail} style={{ display: 'flex', flexDirection: 'column', gap: 12, textAlign: 'left' }}>
-                {mode === 'signup' && (
-                  <input
-                    type="text" placeholder="Nom d'affichage" value={name}
-                    onChange={e => setName(e.target.value)} required
-                    style={inputStyle}
-                    onFocus={e => e.target.style.borderColor = `${GOLD}66`}
-                    onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
-                  />
-                )}
-                <input
-                  type="email" placeholder="Adresse email" value={email}
-                  onChange={e => setEmail(e.target.value)} required
-                  style={inputStyle}
-                  onFocus={e => e.target.style.borderColor = `${GOLD}66`}
-                  onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
-                />
-                <input
-                  type="password" placeholder="Mot de passe" value={password}
-                  onChange={e => setPassword(e.target.value)} required
-                  style={inputStyle}
-                  onFocus={e => e.target.style.borderColor = `${GOLD}66`}
-                  onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
-                />
+        {/* Messages — sobres, même langage visuel */}
+        {success && (
+          <p role="status" style={{ margin: '22px 0 0', maxWidth: 420, textAlign: 'center', fontWeight: 300, fontSize: 12,
+            letterSpacing: '0.1em', color: 'rgba(110,231,160,0.85)', textShadow: TEXT_SHADOW, lineHeight: 1.7 }}>
+            {success}
+          </p>
+        )}
+        {error && (
+          <p role="alert" style={{ margin: '22px 0 0', maxWidth: 420, textAlign: 'center', fontWeight: 300, fontSize: 12,
+            letterSpacing: '0.1em', color: 'rgba(255,138,122,0.9)', textShadow: TEXT_SHADOW, lineHeight: 1.7 }}>
+            {error}
+          </p>
+        )}
 
-                <button type="submit" disabled={loading} style={{
-                  marginTop: 4, width: '100%', padding: '13px 20px', borderRadius: 12, border: 'none',
-                  background: loading ? 'rgba(212,160,23,0.3)' : `linear-gradient(135deg, ${GOLD}, #b8860b)`,
-                  color: '#0b0c0e', fontSize: 14, fontWeight: 800,
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-                  transition: 'all .2s', letterSpacing: '.04em', fontFamily: 'var(--body)',
-                  boxShadow: loading ? 'none' : '0 4px 20px rgba(212,160,23,0.3)',
-                }}
-                  onMouseEnter={e => { if (!loading) e.currentTarget.style.transform = 'translateY(-2px)' }}
-                  onMouseLeave={e => { if (!loading) e.currentTarget.style.transform = 'translateY(0)' }}
-                >
-                  {loading ? <><Spinner dark /> {mode === 'login' ? 'Connexion…' : 'Inscription…'}</>
-                    : mode === 'login' ? 'Se connecter' : 'Créer mon compte'}
-                </button>
-              </form>
-
-              {success && (
-                <div style={{
-                  marginTop: 14, background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)',
-                  borderRadius: 8, padding: '10px 14px', fontSize: 13, color: '#4ade80',
-                }}>{success}</div>
-              )}
-            </>
-          )}
-
-          {/* Erreur partagée */}
-          {error && (
-            <div style={{
-              marginTop: 14, background: 'rgba(224,82,74,0.1)', border: '1px solid rgba(224,82,74,0.3)',
-              borderRadius: 8, padding: '10px 14px', fontSize: 13, color: '#ff8a7a',
-            }}>{error}</div>
-          )}
-        </motion.div>
       </div>
     </div>
-  )
-}
-
-function Spinner({ dark }) {
-  return (
-    <span style={{
-      width: 16, height: 16, border: `2px solid ${dark ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.3)'}`,
-      borderTopColor: dark ? '#0b0c0e' : '#fff',
-      borderRadius: '50%', display: 'inline-block', animation: 'authSpin 0.7s linear infinite',
-    }} />
   )
 }
