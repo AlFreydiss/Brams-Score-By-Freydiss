@@ -86,7 +86,7 @@ export default function ProfileActions({ data, onShare, copied, onEdit }) {
   if (isOwnProfile) {
     return (
       <div className="pfx-actions">
-        <div className="pfx-actions-row">
+        <div className="pfx-actions-row" style={{ flexWrap: 'wrap', rowGap: 8 }}>
           <button className="pfx-btn pfx-btn-gold" type="button" onClick={onEdit}>✎ Modifier le profil</button>
           <button className="pfx-btn pfx-btn-ghost" type="button" onClick={() => navigate('/fil')}>＋ Nouveau post</button>
           <button className="pfx-btn pfx-btn-ghost" type="button" onClick={onShare}>{copied ? '✓ Copié' : '⎘ Partager'}</button>
