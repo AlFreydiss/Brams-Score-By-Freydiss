@@ -1178,8 +1178,99 @@ async function settleCartOrGift(session) {
   return null
 }
 
+// ── @BramsScore — mascotte IA du Fil ─────────────────────────────────────────
+// Déclenché par un trigger Supabase (pg_net) à chaque post qui mentionne
+// @BramsScore ou répond à un de ses posts. Pas de secret partagé : la requête
+// ne porte qu'un post_id, et TOUTES les conditions sont re-vérifiées depuis la
+// DB (post réel, récent, mention/réponse au bot, pas déjà répondu) — appeler
+// l'endpoint à la main ne produit rien de plus que ce que le trigger ferait.
+const BRAMS_BOT_UID = '1000000000000000001'
+const BRAMS_PERSONA = `Tu es BramsScore, la mascotte IA pirate du serveur Discord "Brams Community" (communauté d'anime et de One Piece, langue française).
+Ton style : chaleureux, taquin, direct, ambiance pirate (nakama, trésor, mer) sans en faire des tonnes. Tu tutoies tout le monde.
+Règles STRICTES :
+- Réponds en 1 à 3 phrases MAXIMUM (jamais plus de 280 caractères).
+- Français uniquement. Pas de hashtags, pas de liens, pas de listes.
+- 1 emoji max par réponse (🏴‍☠️ ⚓ 💥 😄 …), pas obligatoire.
+- Tu peux parler d'anime/manga avec de vraies connaissances, donner ton avis tranché, chambrer gentiment.
+- Jamais d'insultes, jamais de spoil majeur sans prévenir.`
+
+function getGeminiKeys() {
+  return Object.entries(process.env)
+    .filter(([k]) => k === 'GEMINI_API_KEY' || k === 'GOOGLE_GEMINI_API_KEY' || k === 'GEMINI_KEY'
+      || k === 'GOOGLE_API_KEY' || k.startsWith('GEMINI_API_KEY_') || k.startsWith('GOOGLE_GEMINI_API_KEY_') || k.startsWith('GEMINI_KEY_'))
+    .map(([, v]) => v?.trim())
+    .filter(v => typeof v === 'string' && v.length > 20)
+}
+
+async function generateBramsReply(username, content, parentContent) {
+  const keys = getGeminiKeys()
+  if (keys.length === 0) throw new Error('no_gemini_keys')
+  const prompt = parentContent
+    ? `Contexte : tu avais posté « ${String(parentContent).slice(0, 400)} ». ${username} te répond : « ${String(content || '').slice(0, 400)} ». Réponds-lui.`
+    : `${username} t'a mentionné dans ce post du Fil : « ${String(content || '').slice(0, 400)} ». Réponds-lui.`
+  const start = Math.floor(Math.random() * keys.length)
+  let lastErr
+  for (let i = 0; i < keys.length; i++) {
+    try {
+      const genAI = new GoogleGenerativeAI(keys[(start + i) % keys.length])
+      const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash', systemInstruction: BRAMS_PERSONA })
+      const out = (await model.generateContent(prompt)).response.text().trim()
+      if (out) return out.slice(0, 480)
+    } catch (e) { lastErr = e }
+  }
+  throw lastErr || new Error('gemini_failed')
+}
+
+async function bramsScore(req, res) {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' })
+  let postId = null
+  try { postId = String((req.body?.post_id) || '') } catch { /* body absent */ }
+  if (!postId || !/^[0-9a-f-]{36}$/i.test(postId)) return res.status(400).json({ error: 'post_id invalide' })
+
+  try {
+    const h = getServiceHeaders()
+    const get = async (path) => {
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, { headers: h })
+      if (!r.ok) throw new Error(`supabase ${r.status}`)
+      return r.json()
+    }
+
+    const [post] = await get(`posts?id=eq.${postId}&select=id,author_id,content,reply_to,created_at,deleted_at`)
+    if (!post || post.deleted_at) return res.status(200).json({ ok: true, skip: 'post absent/supprime' })
+    if (post.author_id === BRAMS_BOT_UID) return res.status(200).json({ ok: true, skip: 'post du bot' })
+    // Fenêtre courte : empêche de faire répondre le bot sur de vieux posts à la main
+    if (Date.now() - new Date(post.created_at).getTime() > 10 * 60 * 1000) {
+      return res.status(200).json({ ok: true, skip: 'post trop ancien' })
+    }
+
+    let parent = null
+    if (post.reply_to) [parent] = await get(`posts?id=eq.${post.reply_to}&select=id,author_id,content`)
+    const mentioned = /@bramsscore/i.test(post.content || '')
+    const replyToBot = parent?.author_id === BRAMS_BOT_UID
+    if (!mentioned && !replyToBot) return res.status(200).json({ ok: true, skip: 'ni mention ni reponse au bot' })
+
+    // Une seule réponse du bot par post (idempotent face aux retries pg_net)
+    const dupes = await get(`posts?reply_to=eq.${postId}&author_id=eq.${BRAMS_BOT_UID}&select=id&limit=1`)
+    if (dupes.length) return res.status(200).json({ ok: true, skip: 'deja repondu' })
+
+    const [author] = await get(`users?uid=eq.${post.author_id}&select=data`)
+    const username = author?.data?.username || 'nakama'
+
+    const text = await generateBramsReply(username, post.content, replyToBot ? parent?.content : null)
+    const ins = await fetch(`${SUPABASE_URL}/rest/v1/posts`, {
+      method: 'POST', headers: getServiceHeaders(),
+      body: JSON.stringify({ author_id: BRAMS_BOT_UID, content: text, reply_to: post.id }),
+    })
+    if (!ins.ok) return res.status(502).json({ error: `insert: ${ins.status} ${await ins.text()}` })
+    return res.status(200).json({ ok: true })
+  } catch (e) {
+    return res.status(500).json({ error: e?.message || 'brams_score_failed' })
+  }
+}
+
 export default async function handler(req, res) {
   const tool = String(req.query.tool || '')
+  if (tool === 'brams-score')           return bramsScore(req, res)
   if (tool === 'seed-shop-backgrounds') return seedShopBackgrounds(req, res)
   if (tool === 'sync-bot')              return syncBot(req, res)
   if (tool === 'akinator')              return akinator(req, res)

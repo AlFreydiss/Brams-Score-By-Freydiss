@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useSearchParams, useNavigate } from 'react-router-dom'
-import { searchPosts } from '../lib/feed.js'
+import { useSearchParams, useNavigate, Link } from 'react-router-dom'
+import { searchPosts, searchUsers } from '../lib/feed.js'
 import PostCard from './feed/PostCard.jsx'
 import QuoteModal from './feed/QuoteModal.jsx'
-import { T } from './social/socialStyles.js'
+import { T, avatar } from './social/socialStyles.js'
 
 const COL = { maxWidth: 600, margin: '0 auto', minHeight: '100vh', borderLeft: `1px solid ${T.border}`, borderRight: `1px solid ${T.border}` }
 
@@ -17,16 +17,23 @@ export default function FeedSearchPage() {
   const q = (params.get('q') || '').trim()
   const isTag = q.startsWith('#')
   const [posts, setPosts] = useState([])
+  const [members, setMembers] = useState([])
   const [loading, setLoading] = useState(true)
   const [quoteTarget, setQuoteTarget] = useState(null)
   const refreshTimer = useRef(null)
 
   const load = useCallback(async () => {
-    if (q.length < 2) { setPosts([]); setLoading(false); return }
+    if (q.length < 2) { setPosts([]); setMembers([]); setLoading(false); return }
     setLoading(true)
-    const list = await searchPosts(q)
-    setPosts(Array.isArray(list) ? list : []); setLoading(false)
-  }, [q])
+    // Posts + membres en parallèle (les # ne matchent pas des pseudos)
+    const [list, users] = await Promise.all([
+      searchPosts(q),
+      isTag ? Promise.resolve([]) : searchUsers(q.replace(/^@/, ''), 6).catch(() => []),
+    ])
+    setPosts(Array.isArray(list) ? list : [])
+    setMembers(Array.isArray(users) ? users : [])
+    setLoading(false)
+  }, [q, isTag])
 
   const scheduleLoad = useCallback((delay = 150) => {
     if (refreshTimer.current) clearTimeout(refreshTimer.current)
@@ -77,9 +84,29 @@ export default function FeedSearchPage() {
             </div>
           </div>
 
+          {/* Membres qui matchent le pseudo — au-dessus des posts */}
+          {!loading && members.length > 0 && (
+            <div style={{ padding: '12px 16px 4px', borderBottom: `1px solid ${T.border}` }}>
+              <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', color: T.textFaint, marginBottom: 8 }}>Membres</div>
+              {members.map(u => (
+                <Link key={u.uid || u.user_id} to={`/u/${u.uid || u.user_id}`} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '7px 0', textDecoration: 'none' }}>
+                  <span style={avatar(36)}>
+                    {u.avatar_url
+                      ? <img src={u.avatar_url} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      : (u.username || '?').slice(0, 2).toUpperCase()}
+                  </span>
+                  <span style={{ flex: 1, minWidth: 0, fontSize: 14, fontWeight: 700, color: T.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {u.username || `Pirate #${String(u.uid || u.user_id || '').slice(-5)}`}
+                  </span>
+                  <span style={{ fontSize: 12, color: T.textFaint }}>Voir le profil ›</span>
+                </Link>
+              ))}
+            </div>
+          )}
+
           {loading ? <div style={{ padding: '48px 16px', textAlign: 'center', color: T.textFaint }}>Recherche…</div>
             : q.length < 2 ? <div style={{ padding: '48px 24px', textAlign: 'center', color: T.textFaint, fontSize: 14 }}>Tape au moins 2 caractères.</div>
-            : posts.length === 0 ? (
+            : posts.length === 0 && members.length === 0 ? (
               <div style={{ padding: '60px 24px', textAlign: 'center', color: T.textFaint, fontSize: 14, lineHeight: 1.7 }}>
                 <div style={{ fontSize: 40, marginBottom: 12, opacity: 0.5 }}>🔍</div>
                 Aucun post pour {isTag ? <span style={{ color: T.violet }}>{q}</span> : `« ${q} »`}.<br />Sois le premier à en parler !
