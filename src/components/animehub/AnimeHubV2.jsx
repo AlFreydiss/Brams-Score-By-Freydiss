@@ -5,7 +5,7 @@
 // progression localStorage, pages animes dédiées). Rollback : re-pointer
 // App.jsx sur AnimeHub.
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ANIMES } from '../AnimeHub.jsx'
+import { ANIMES, SEARCH_ALIASES } from '../AnimeHub.jsx'
 import { C, FONT_BODY, FONT_DISPLAY, RADIUS_PANEL } from './tokens.js'
 import HeroCinematic from './HeroCinematic.jsx'
 import AnimeRow from './AnimeRow.jsx'
@@ -18,6 +18,57 @@ const NEW_IDS = new Set(['kaiju-no-8', 'bleach', 'fireforce', 'bluelock', 'domes
 const displayBadge = (a) => (a.badge === 'NOUVEAU' ? (NEW_IDS.has(a.id) ? 'NOUVEAU' : null) : a.badge)
 const FAVS_KEY = 'animehub_favs'
 const NORM = s => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+
+// ── Fond d'ambiance de l'ANCIEN hub, réincorporé tel quel : bleu nuit + deux
+// halos, étoiles scintillantes (certaines colorées), orbes dérivants, scanline.
+const LEGACY_BG = 'radial-gradient(1100px 820px at 72% 82%, rgba(46,96,179,0.22), transparent 60%), radial-gradient(820px 620px at 28% -5%, rgba(34,54,120,0.20), transparent 55%), linear-gradient(180deg, #0a0f1c 0%, #070a13 60%, #05070f 100%)'
+const ORB_COLORS = ['rgba(224,82,74,0.85)', 'rgba(108,92,231,0.85)', 'rgba(0,184,148,0.8)', 'rgba(201,162,39,0.85)']
+
+function AmbientLegacy() {
+  const stars = useMemo(() => Array.from({ length: 70 }, (_, i) => ({
+    x: (i * 37.3 + 11) % 99, y: (i * 53.7 + 7) % 97,
+    size: i % 9 === 0 ? 2.4 : i % 4 === 0 ? 1.6 : 1,
+    dur: 3.2 + (i * 0.27) % 4.8, del: (i * 0.23) % 7,
+    col: i % 5 === 0 ? ORB_COLORS[i % ORB_COLORS.length] : null,
+  })), [])
+  const orbs = useMemo(() => [
+    { x: 10, y: 20, size: 320, color: 'rgba(224,82,74,0.04)', dur: 18 },
+    { x: 75, y: 60, size: 280, color: 'rgba(108,92,231,0.04)', dur: 22 },
+    { x: 45, y: 80, size: 380, color: 'rgba(0,184,148,0.03)', dur: 26 },
+    { x: 88, y: 10, size: 240, color: 'rgba(201,162,39,0.04)', dur: 20 },
+  ], [])
+  return (
+    <div aria-hidden style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0, overflow: 'hidden' }}>
+      <style>{`
+        @keyframes ah2Twinkle { 0%,100% { opacity:.12 } 50% { opacity:.65 } }
+        @keyframes ah2Scan { 0% { top:-2px } 100% { top:100% } }
+        @keyframes ah2Drift { 0%,100% { transform:translate(-50%,-50%) } 50% { transform:translate(-50%,calc(-50% - 14px)) } }
+        @media (prefers-reduced-motion: reduce) { .ah2-amb * { animation: none !important } }
+      `}</style>
+      <div className="ah2-amb" style={{ position: 'absolute', inset: 0 }}>
+        {orbs.map((o, i) => (
+          <div key={`o${i}`} style={{
+            position: 'absolute', left: `${o.x}%`, top: `${o.y}%`, width: o.size, height: o.size, borderRadius: '50%',
+            background: `radial-gradient(circle, ${o.color}, transparent 70%)`,
+            transform: 'translate(-50%,-50%)', animation: `ah2Drift ${o.dur}s ease-in-out infinite`,
+          }} />
+        ))}
+        {stars.map((s, i) => (
+          <div key={`s${i}`} style={{
+            position: 'absolute', left: `${s.x}%`, top: `${s.y}%`, width: s.size, height: s.size, borderRadius: '50%',
+            background: s.col ?? 'rgba(255,255,255,0.55)',
+            animation: `ah2Twinkle ${s.dur}s ${s.del}s ease-in-out infinite`,
+          }} />
+        ))}
+        <div style={{
+          position: 'absolute', left: 0, right: 0, height: 2,
+          background: 'linear-gradient(90deg, transparent, rgba(224,82,74,.06), rgba(224,82,74,.14), rgba(224,82,74,.06), transparent)',
+          animation: 'ah2Scan 18s linear infinite',
+        }} />
+      </div>
+    </div>
+  )
+}
 
 // Progression localStorage (mêmes clés que les pages de lecture : <ns>_vp /
 // <ns>_video_progress) — réimplémentation compacte de computeVideo.
@@ -102,7 +153,7 @@ export default function AnimeHubV2(props) {
       if (seg === 'termine' && p < 100) return false
       if (seg === 'avoir' && p !== 0) return false
       if (seg === 'favoris' && !favs.has(a.id)) return false
-      if (debounced && !NORM(`${a.title} ${a.subtitle} ${(a.genres || []).join(' ')}`).includes(NORM(debounced))) return false
+      if (debounced && !NORM(`${a.title} ${a.subtitle} ${(a.genres || []).join(' ')} ${(SEARCH_ALIASES[a.id] || []).join(' ')}`).includes(NORM(debounced))) return false
       return true
     })
     if (sort === 'az') list = [...list].sort((a, b) => a.title.localeCompare(b.title, 'fr'))
@@ -143,8 +194,9 @@ export default function AnimeHubV2(props) {
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 60, overflowY: 'auto', overflowX: 'hidden',
-      background: `linear-gradient(180deg, ${C.bg0}, ${C.bg1})`, fontFamily: FONT_BODY, color: C.text,
+      background: LEGACY_BG, fontFamily: FONT_BODY, color: C.text,
     }}>
+      <AmbientLegacy />
       <style>{`
         @keyframes ah2-shimmer { to { background-position: -200% 0 } }
         .ah2-seeall:hover { color: ${C.text} !important }
@@ -244,6 +296,18 @@ export default function AnimeHubV2(props) {
             <option value="recent">Récent</option>
             <option value="az">A–Z</option>
           </select>
+          {/* Repris de l'ancien hub : anime au hasard + accès Mon Univers */}
+          <button onClick={() => { const a = ANIMES[Math.floor(Math.random() * ANIMES.length)]; openAnime(a) }}
+            title="Un animé au hasard" aria-label="Un animé au hasard" style={{
+              padding: '8px 12px', borderRadius: 9, cursor: 'pointer', fontFamily: FONT_BODY, fontSize: 13,
+              background: 'rgba(255,255,255,0.05)', border: `1px solid ${C.hair}`, color: C.dim,
+            }}>Surprends-moi</button>
+          {props.onOpenMonUnivers && (
+            <button onClick={props.onOpenMonUnivers} style={{
+              padding: '8px 14px', borderRadius: 9, cursor: 'pointer', fontFamily: FONT_BODY, fontSize: 13, fontWeight: 600,
+              background: 'rgba(215,164,74,0.12)', border: `1px solid ${C.brass}55`, color: C.brass,
+            }}>Mon Univers</button>
+          )}
           <span style={{ flex: 1 }} />
           {/* Stats inline */}
           <span style={{ fontSize: 12.5, color: C.faint, whiteSpace: 'nowrap' }}>

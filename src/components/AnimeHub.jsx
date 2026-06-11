@@ -612,7 +612,7 @@ export const ANIMES = [
   },
 ]
 
-const SEARCH_ALIASES = {
+export const SEARCH_ALIASES = {
   onepiece: ['op', 'one piece', 'luffy', 'mugiwara', 'elbaf', 'pirate'],
   tpn: ['promised neverland', 'the promised neverland', 'neverland', 'emma', 'norman', 'ray'],
   drstone: ['dr stone', 'dr. stone', 'doctor stone', 'senku', 'science'],
