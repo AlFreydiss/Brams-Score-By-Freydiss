@@ -12,6 +12,7 @@ import CursorTrail from './CursorTrail.jsx'
 import GiftModal from './GiftModal.jsx'
 import SpotlightCard from './SpotlightCard.jsx'
 import { useCart } from '../contexts/CartContext.jsx'
+import { vipFree } from '../lib/vip.js'
 import RarityRow from './boutique/RarityRow.jsx'
 
 // Teinte de la lueur spotlight par rareté.
@@ -67,7 +68,7 @@ function TrailSwatch({ trail, size = 56 }) {
   )
 }
 
-function TrailCard({ trail, owned, equipped, busy, onBuy, onEquip, onGift }) {
+function TrailCard({ trail, owned, equipped, busy, onBuy, onEquip, onGift, vip }) {
   const r = RARITY[trail.rarete]
   const [hover, setHover] = useState(false)
   const cart = useCart()
@@ -75,7 +76,7 @@ function TrailCard({ trail, owned, equipped, busy, onBuy, onEquip, onGift }) {
   let action
   if (equipped) action = <div style={{ ...btn, color: r.color, background: `${r.color}1a`, border: `1px solid ${r.color}`, cursor: 'default' }}>✓ Équipée</div>
   else if (owned) action = <button onClick={() => onEquip(trail)} disabled={busy} style={{ ...btn, color: '#0b0c0e', background: r.color, border: `1px solid ${r.color}`, cursor: 'pointer', opacity: busy ? .6 : 1 }}>Équiper</button>
-  else action = <button onClick={() => onBuy(trail)} disabled={busy} style={{ ...btn, color: '#0b0c0e', background: `linear-gradient(180deg, ${r.color}, ${r.color}cc)`, border: `1px solid ${r.color}`, cursor: 'pointer', opacity: busy ? .6 : 1 }}>{busy ? '…' : `Acheter · ${formatEuro(priceCents(trail))}`}</button>
+  else action = <button onClick={() => onBuy(trail)} disabled={busy} style={{ ...btn, color: '#0b0c0e', background: vip ? 'linear-gradient(135deg,#ffd84d,#ffb3c7)' : `linear-gradient(180deg, ${r.color}, ${r.color}cc)`, border: `1px solid ${vip ? '#ffd84d' : r.color}`, cursor: 'pointer', opacity: busy ? .6 : 1 }}>{busy ? '…' : vip ? vip.label : `Acheter · ${formatEuro(priceCents(trail))}`}</button>
 
   return (
     <div onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)} style={{
@@ -195,7 +196,7 @@ export default function TrailShop() {
             {rows.map(trail => (
               <div key={trail.id} onMouseEnter={() => setPreviewId(trail.id)} onMouseLeave={() => setPreviewId(null)} style={{ flex: '0 0 300px', width: 300 }}>
                 <SpotlightCard hue={HUE[trail.rarete] ?? 42} radius={16}>
-                  <TrailCard trail={trail} owned={owned.has(trail.id)} equipped={equippedId === trail.id} busy={busyId === trail.id} onBuy={buy} onEquip={equip} onGift={setGiftItem} />
+                  <TrailCard trail={trail} owned={owned.has(trail.id)} equipped={equippedId === trail.id} busy={busyId === trail.id} vip={vipFree(discordId)} onBuy={buy} onEquip={equip} onGift={setGiftItem} />
                 </SpotlightCard>
               </div>
             ))}

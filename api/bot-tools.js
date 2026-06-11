@@ -661,6 +661,14 @@ async function ensureTrailShopItem(t) {
   })
 }
 
+// ── Comptes VIP : TOUT est gratuit en boutique pour ces Discord IDs. ─────────
+// Le bypass est SERVEUR (pas seulement cosmétique) : l'item est accordé direct,
+// transaction tracée en status vip_free_*, aucun passage par Stripe.
+const VIP_FREE_ACCOUNTS = {
+  '1094070545248694342': { status: 'vip_free_capitaine' }, // Freydiss
+  '1495896013037113366': { status: 'vip_free_amel' },      // Amel 💛
+}
+
 // Résout un article payant (fond d'opening OU curseur OU traînée) en forme normalisée.
 function resolvePaidItem(itemId) {
   const bg = findOpeningBg(itemId)
@@ -764,11 +772,19 @@ async function stripeCheckout(req, res) {
     if (!item) return res.status(404).json({ error: 'Article introuvable.' })
 
     const amountCents = item.amountCents
-    if (amountCents < STRIPE_MIN_EUR_CHARGE_CENTS) {
-      return res.status(400).json({ error: 'Stripe refuse les paiements carte sous 0,50 €.' })
-    }
     if (await hasOwnedOpeningBg(discordId, item.itemId)) {
       return res.status(409).json({ error: 'Tu possèdes déjà cet article.' })
+    }
+
+    // VIP : article accordé immédiatement, gratuit, sans Stripe.
+    const vip = VIP_FREE_ACCOUNTS[String(discordId)]
+    if (vip) {
+      await grantItem({ item, discordId, amountCents: 0, status: vip.status })
+      return res.status(200).json({ ok: true, vip: true, url: `${getSiteOrigin(req)}/boutique?stripe=vip` })
+    }
+
+    if (amountCents < STRIPE_MIN_EUR_CHARGE_CENTS) {
+      return res.status(400).json({ error: 'Stripe refuse les paiements carte sous 0,50 €.' })
     }
 
     await item.ensure()
@@ -921,6 +937,14 @@ async function stripeCart(req, res) {
     const { itemIds } = readJsonBody(req)
     const items = await resolveCartItems(itemIds, discordId)
     if (!items.length) return res.status(400).json({ error: 'Panier vide (ou tu possèdes déjà tout).' })
+
+    // VIP : tout le panier est accordé immédiatement, gratuit, sans Stripe.
+    const cartVip = VIP_FREE_ACCOUNTS[String(discordId)]
+    if (cartVip) {
+      for (const it of items) await grantItem({ item: it, discordId, amountCents: 0, status: cartVip.status })
+      return res.status(200).json({ ok: true, vip: true, url: `${getSiteOrigin(req)}/boutique?stripe=vip` })
+    }
+
     const { freeIds, paidTotal } = cartPricing(items)
     if (paidTotal < STRIPE_MIN_EUR_CHARGE_CENTS) return res.status(400).json({ error: 'Total trop bas (min 0,50 €).' })
 

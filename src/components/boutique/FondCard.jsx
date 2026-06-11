@@ -34,7 +34,7 @@ const HAIR = 'rgba(255,255,255,0.08)'
 const coarse = () => typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches
 const reduced = () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
-export default function FondCard({ bg, owned, equipped, equipCount = 0, onSelect, onPreview, onEquip, onGift, fluid = false }) {
+export default function FondCard({ bg, owned, equipped, equipCount = 0, onSelect, onPreview, onEquip, onGift, onBuy, vip = null, fluid = false }) {
   const color = RARITY_COLORS[bg.rarity] || RARITY_COLORS.Commun
   const cardRef = useRef(null)
   const videoRef = useRef(null)
@@ -150,13 +150,19 @@ export default function FondCard({ bg, owned, equipped, equipCount = 0, onSelect
           ) : owned ? (
             <button onClick={e => { e.stopPropagation(); onEquip(bg) }}
               style={{ flex: 1, fontSize: 13, fontWeight: 800, color: '#0b0c0e', background: GOLD, border: 'none', borderRadius: 10, padding: '9px 0', cursor: 'pointer' }}>Équiper</button>
+          ) : vip && onBuy ? (
+            // Compte VIP (Capitaine / Amel) : achat direct GRATUIT, bypass serveur.
+            <button onClick={e => { e.stopPropagation(); onBuy(bg) }}
+              style={{ flex: 1, fontSize: 12, fontWeight: 800, color: '#0b0c0e', background: 'linear-gradient(135deg,#ffd84d,#ffb3c7)', border: 'none', borderRadius: 10, padding: '9px 0', cursor: 'pointer', whiteSpace: 'nowrap', overflow: 'hidden' }}>
+              {vip.label}
+            </button>
           ) : (
             <button onClick={e => { e.stopPropagation(); inCart ? cart.setOpen(true) : cart.add(cartItem) }}
               style={{ flex: 1, fontSize: 13, fontWeight: 800, color: '#0b0c0e', background: inCart ? '#7fd6a0' : GOLD, border: 'none', borderRadius: 10, padding: '9px 0', cursor: 'pointer', whiteSpace: 'nowrap', overflow: 'hidden' }}>
               {inCart ? '✓ Panier' : `+ ${priceLabel}`}
             </button>
           )}
-          {!owned && onGift && (
+          {onGift && (
             <button aria-label="Offrir" title="Offrir à un membre" onClick={e => { e.stopPropagation(); onGift(bg) }}
               style={{ flexShrink: 0, width: ICON_BTN, height: ICON_BTN, display: 'grid', placeItems: 'center', borderRadius: 10, background: 'rgba(255,255,255,0.05)', border: `1px solid ${HAIR}`, color: GOLD, cursor: 'pointer', fontSize: 16 }}>🎁</button>
           )}

@@ -15,6 +15,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { fetchMyInventory, equipShopItem, createOpeningBgCheckout, completeOpeningBgCheckout } from '../lib/berryShop.js'
 import GiftModal from './GiftModal.jsx'
+import { vipFree } from '../lib/vip.js'
 import SpotlightCard from './SpotlightCard.jsx'
 import { useCart } from '../contexts/CartContext.jsx'
 import RarityRow from './boutique/RarityRow.jsx'
@@ -199,7 +200,7 @@ export function GlobalCursorLayer() {
 }
 
 // ── Carte curseur ─────────────────────────────────────────────────────────────
-function CursorCard({ cur, owned, equipped, affordable, busy, onBuy, onEquip, onGift }) {
+function CursorCard({ cur, owned, equipped, affordable, busy, onBuy, onEquip, onGift, vip }) {
   const r = RARITY_CONFIG[cur.rarete]
   const [hover, setHover] = useState(false)
   const cart = useCart()
@@ -216,8 +217,8 @@ function CursorCard({ cur, owned, equipped, affordable, busy, onBuy, onEquip, on
     action = <div style={{ ...btnBase, color: '#caa', background: 'rgba(120,40,38,0.25)', border: '1px solid rgba(192,57,43,0.5)', cursor: 'not-allowed' }}>Épuisé</div>
   } else {
     action = (
-      <button onClick={() => onBuy(cur)} disabled={busy} style={{ ...btnBase, color: '#0b0c0e', background: `linear-gradient(180deg, ${r.color}, ${r.color}cc)`, border: `1px solid ${r.color}`, cursor: 'pointer', opacity: busy ? .6 : 1 }}>
-        {busy ? '…' : <>Acheter · {formatEuro(priceCents(cur))}</>}
+      <button onClick={() => onBuy(cur)} disabled={busy} style={{ ...btnBase, color: '#0b0c0e', background: vip ? 'linear-gradient(135deg,#ffd84d,#ffb3c7)' : `linear-gradient(180deg, ${r.color}, ${r.color}cc)`, border: `1px solid ${vip ? '#ffd84d' : r.color}`, cursor: 'pointer', opacity: busy ? .6 : 1 }}>
+        {busy ? '…' : vip ? vip.label : <>Acheter · {formatEuro(priceCents(cur))}</>}
       </button>
     )
   }
@@ -432,6 +433,7 @@ export default function CursorShop() {
                       equipped={equippedId === cur.id}
                       affordable={true}
                       busy={busyId === cur.id}
+                      vip={vipFree(discordId)}
                       onBuy={buy} onEquip={equip} onGift={setGiftItem}
                     />
                   </SpotlightCard>

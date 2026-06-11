@@ -17,6 +17,7 @@ import { useAuth } from './contexts/AuthContext.jsx'
 import NotificationToast from './components/social/NotificationToast.jsx'
 import CallOverlay from './components/social/CallOverlay.jsx'
 import WelcomeAnimation from './components/WelcomeAnimation.jsx'
+import AmelWelcome from './components/AmelWelcome.jsx'
 import AuthGuard from './components/AuthGuard.jsx'
 import ComingSoon from './components/ComingSoon.jsx'
 import Navbar from './components/Navbar.jsx'
@@ -524,6 +525,7 @@ export default function App() {
       <RouteSEO />
       <EquippedOpeningBackground />
       <NotificationToast />
+      <AmelWelcome />
       <CallOverlay />
       <Suspense fallback={
         <div style={{

@@ -14,6 +14,7 @@ import { CartProvider, useCart } from '../contexts/CartContext.jsx'
 import CartDrawer from './CartDrawer.jsx'
 import PromoBanner from './PromoBanner.jsx'
 import GiftModal from './GiftModal.jsx'
+import { vipFree, AMEL_ID, AMEL_MESSAGE } from '../lib/vip.js'
 import { formatEuroCents, openingBgPriceCents, openingBgPriceLabel, OPENING_BG_EURO_PRICE_CENTS } from '../lib/openingBgPricing.js'
 
 // Vraie fourchette de prix des fonds (min/max de la table par rareté).
@@ -144,7 +145,7 @@ function CardMedia({ bg, videoRef, inView }) {
   )
 }
 
-function ItemCard({ bg, owned, equipped, busy, affordable, equipCount = 0, onSelect, onPreview, onBuy, onEquip, onGift }) {
+function ItemCard({ bg, owned, equipped, busy, affordable, equipCount = 0, onSelect, onPreview, onBuy, onEquip, onGift, vip }) {
   const r = rar(bg.rarity)
   const videoRef = useRef(null)
   const cardRef = useRef(null)
@@ -196,13 +197,19 @@ function ItemCard({ bg, owned, equipped, busy, affordable, equipCount = 0, onSel
           ) : owned ? (
             <button className="bsx-btn" onClick={e => { e.stopPropagation(); onEquip(bg) }}
               style={{ flex: 1, fontSize: 12.5, fontWeight: 800, color: '#0b0c0e', background: GOLD, border: 'none', borderRadius: 9, padding: '8px 0', cursor: 'pointer' }}>Équiper</button>
+          ) : vip ? (
+            // Compte VIP : achat direct gratuit (bypass serveur), pas de panier.
+            <button className="bsx-btn" onClick={e => { e.stopPropagation(); onBuy(bg) }}
+              style={{ flex: 1, fontSize: 12, fontWeight: 800, color: '#0b0c0e', background: 'linear-gradient(135deg,#ffd84d,#ffb3c7)', border: 'none', borderRadius: 9, padding: '8px 0', cursor: 'pointer' }}>
+              {vip.label}
+            </button>
           ) : (
             <button className="bsx-btn" onClick={e => { e.stopPropagation(); inCart ? cart.setOpen(true) : cart.add(cartItem) }}
               style={{ flex: 1, fontSize: 12.5, fontWeight: 800, color: '#0b0c0e', background: inCart ? '#7fd6a0' : GOLD, border: 'none', borderRadius: 9, padding: '8px 0', cursor: 'pointer' }}>
               {inCart ? '✓ Au panier' : `+ Panier · ${priceLabel(bg)}`}
             </button>
           )}
-          {!owned && onGift && (
+          {onGift && (
             <button className="bsx-btn" aria-label="Offrir à un membre" title="Offrir à un membre" onClick={e => { e.stopPropagation(); onGift(bg) }}
               style={{ flexShrink: 0, width: 34, height: 34, display: 'grid', placeItems: 'center', borderRadius: 9, background: 'rgba(0,0,0,0.4)', border: `1px solid ${HAIR}`, color: GOLD, cursor: 'pointer', fontSize: 15 }}>🎁</button>
           )}
@@ -435,8 +442,11 @@ function ShopBackdrop() {
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 function BerryShopInner() {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, discordId } = useAuth()
   const { equippedId, equip } = useOpeningBg()
+  // Compte VIP (Capitaine / Amel) : tout est gratuit, libellé dédié sur les boutons.
+  const vip = vipFree(discordId)
+  const isAmel = String(discordId || '') === AMEL_ID
 
   const catalog = useMemo(() => OPENING_BACKGROUNDS, [])
   const [owned, setOwned] = useState(() => new Set())
@@ -481,6 +491,13 @@ function BerryShopInner() {
     const cleanUrl = () => window.history.replaceState({}, document.title, window.location.pathname)
     if (stripeState === 'cancel') {
       flash('Paiement annulé.', 'info')
+      cleanUrl()
+      return
+    }
+    // Retour d'un "achat" VIP : l'article a déjà été accordé côté serveur.
+    if (stripeState === 'vip') {
+      flash("C'est cadeau, offert par le Capitaine 💛", 'success')
+      refresh()
       cleanUrl()
       return
     }
@@ -590,6 +607,25 @@ function BerryShopInner() {
       <ShopRail />
       <div style={{ position: 'relative', zIndex: 1, maxWidth: 1240, margin: '0 auto', padding: '0 clamp(16px,3vw,28px) 90px' }}>
 
+        {/* Message perso d'Amel — tout est gratuit pour elle 💛 */}
+        {isAmel && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 14, margin: '6px 0 18px',
+            padding: '16px 22px', borderRadius: 16,
+            background: 'linear-gradient(120deg, rgba(255,179,199,0.12), rgba(255,216,77,0.08))',
+            border: '1px solid rgba(255,179,199,0.35)',
+            boxShadow: '0 10px 36px -14px rgba(255,179,199,0.35)',
+          }}>
+            <span style={{ fontSize: 28 }}>💛</span>
+            <div>
+              <div style={{ fontSize: 16, fontWeight: 900, color: '#ffd9e4' }}>{AMEL_MESSAGE}</div>
+              <div style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.55)', marginTop: 2 }}>
+                Toute la boutique est gratuite pour toi — sers-toi, c'est cadeau.
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Bannière promo 1 acheté = 1 offert avec décompte */}
         <PromoBanner />
 
@@ -655,7 +691,7 @@ function BerryShopInner() {
           ) : search.trim() ? (
             <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fill, minmax(${CARD_MIN_WIDTH}px, 1fr))`, gap: CARD_GAP }}>
               {visible.map(bg => (
-                <FondCard key={bg.id} bg={bg} fluid
+                <FondCard key={bg.id} bg={bg} fluid vip={vip} onBuy={buy}
                   owned={isOwned(bg)} equipped={isEquipped(bg)} equipCount={equipCountOf(bg)}
                   onSelect={setSelected} onPreview={openPreview} onEquip={doEquip}
                   onGift={b => setGiftItem({ id: b.id, nom: b.opTitle, emoji: '🎞️' })} />
@@ -669,7 +705,7 @@ function BerryShopInner() {
               return (
                 <RarityRow key={rk} label={r.label} color={r.c} count={rows.length} countLabel={`fond${rows.length > 1 ? 's' : ''}`}>
                   {rows.map(bg => (
-                    <FondCard key={bg.id} bg={bg}
+                    <FondCard key={bg.id} bg={bg} vip={vip} onBuy={buy}
                       owned={isOwned(bg)} equipped={isEquipped(bg)} equipCount={equipCountOf(bg)}
                       onSelect={setSelected} onPreview={openPreview} onEquip={doEquip}
                       onGift={b => setGiftItem({ id: b.id, nom: b.opTitle, emoji: '🎞️' })} />
