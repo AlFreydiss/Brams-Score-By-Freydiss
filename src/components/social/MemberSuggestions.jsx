@@ -53,7 +53,9 @@ export default function MemberSuggestions({ layout = 'list', limit = 5, excludeI
   useEffect(() => {
     if (!isAuthenticated) return
     let active = true
-    recommendMembers(layout === 'strip' ? Math.max(limit, 6) : limit)
+    // strip : on charge le max (12) — avec 6 cartes tout tenait à l'écran et
+    // les flèches de défilement n'avaient rien à faire défiler.
+    recommendMembers(layout === 'strip' ? 12 : limit)
       .then(r => { if (active) setMembers(r.filter(m => String(m.user_id) !== String(excludeId))) })
       .catch(() => { if (active) setMembers([]) })
     return () => { active = false }
