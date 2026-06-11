@@ -8692,6 +8692,91 @@ async def wrapped_lancer_cmd(interaction: discord.Interaction, dm: bool = True):
         f"Chacun peut récupérer son lien avec `/wrapped`.", ephemeral=True)
 
 
+# ── FLASHBACK : milestone + token + DM (page /flashback/:token) ───────────────
+FLASHBACK_URL = os.environ.get("FLASHBACK_URL", "https://brams.community/flashback")
+
+@bot.tree.command(name="flashback_membre", description="[ADMIN] Génère le Flashback d'un membre (page cinématique de son histoire) et lui DM le lien")
+@app_commands.guilds(*GUILD_IDS)
+@app_commands.default_permissions(administrator=True)
+@app_commands.checks.has_permissions(administrator=True)
+@app_commands.describe(membre="Le membre à célébrer", type_milestone="Type d'événement")
+@app_commands.choices(type_milestone=[
+    app_commands.Choice(name="Anniversaire 1 an", value="anniversaire-1an"),
+    app_commands.Choice(name="Rang Yonkou", value="rank-yonkou"),
+    app_commands.Choice(name="Rang Roi des pirates", value="rank-roi"),
+])
+async def flashback_membre_cmd(interaction: discord.Interaction, membre: discord.Member, type_milestone: str = "anniversaire-1an"):
+    import secrets as _secrets
+    import datetime as _dt
+    await interaction.response.defer(ephemeral=True)
+    uid = str(membre.id)
+    udata = get_user(_CACHE, uid)
+    now = now_ts()
+
+    # Payload depuis la data dispo : arrivée Discord, rangs connus, records 30 j,
+    # compagnons par chevauchement (réutilise les helpers Wrapped).
+    sess = _wr_sessions(udata, now - 30 * 86400, now)
+    companions = []
+    for ouid, oudata in list(_CACHE.items()):
+        if ouid == uid or not isinstance(oudata, dict) or "vocal_sessions" not in oudata:
+            continue
+        ov = _wr_overlap(sess, _wr_sessions(oudata, now - 30 * 86400, now))
+        if ov >= 1:
+            companions.append((ov, oudata.get("username") or f"Pirate #{str(ouid)[-4:]}"))
+    companions.sort(reverse=True)
+
+    days_map = {}
+    for st, en, _ch in sess:
+        d0 = _dt.datetime.fromtimestamp(st, _dt.timezone.utc).date()
+        days_map[d0] = days_map.get(d0, 0) + (en - st)
+    best = max(days_map.items(), key=lambda kv: kv[1]) if days_map else None
+
+    h7 = seconds_in_period(udata.get("vocal_sessions", []), 7, join_time=udata.get("join_time")) / 3600
+    payload = {
+        "username": membre.display_name,
+        "avatar_url": str(membre.display_avatar.url),
+        "joined_at": membre.joined_at.date().isoformat() if membre.joined_at else None,
+        "rank": next((nm for thr, nm in RANKS if h7 >= thr), udata.get("last_rank")),
+        "rankups": [{"rank": r, "date": None} for r in (udata.get("known_ranks") or [])],
+        "companions": [n for _, n in companions[:3]],
+        "best_day": {"date": best[0].isoformat(), "hours": round(best[1] / 3600, 1)} if best else None,
+        "prime": {"end": int(udata.get("berrys", 0))},
+    }
+    token = _secrets.token_urlsafe(16)
+    url = f"{_SUPA_REST}/rest/v1/member_milestones?on_conflict=member_id,type"
+    headers = {"apikey": _SUPA_KEY, "Authorization": f"Bearer {_SUPA_KEY}",
+               "Content-Type": "application/json", "Prefer": "resolution=merge-duplicates,return=minimal"}
+    body = {"member_id": uid, "type": type_milestone, "payload": payload,
+            "flashback_token": token, "generated": True}
+    try:
+        async with _HTTP.post(url, json=body, headers=headers, timeout=aiohttp.ClientTimeout(total=12)) as r:
+            if r.status >= 400:
+                await interaction.followup.send(f"❌ Supabase : HTTP {r.status} {(await r.text())[:160]}", ephemeral=True)
+                return
+    except Exception as e:
+        await interaction.followup.send(f"❌ {e}", ephemeral=True)
+        return
+
+    link = f"{FLASHBACK_URL}/{token}"
+    embed = discord.Embed(
+        title="📜 Ton histoire mérite d'être revue…",
+        description=(
+            f"{membre.display_name}, la mer n'oublie rien.\n\n"
+            f"**[📜 Revivre ton histoire →]({link})**\n\n"
+            "_…et c'est ainsi que la légende commença._ 🏴‍☠️"
+        ),
+        color=0xC9A227,
+    )
+    dm_ok = True
+    try:
+        await membre.send(embed=embed)
+    except discord.Forbidden:
+        dm_ok = False
+    await interaction.followup.send(
+        f"📜 Flashback généré pour {membre.mention} ({type_milestone}).\n"
+        f"{'✅ DM envoyé.' if dm_ok else '⚠️ DM fermés — lien : ' + link}", ephemeral=True)
+
+
 @bot.tree.command(name="addheures", description="[ADMIN] Ajouter des heures vocales à un membre (corrige les compteurs)")
 @app_commands.default_permissions(administrator=True)
 @app_commands.checks.has_permissions(administrator=True)
