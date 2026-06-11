@@ -2,8 +2,11 @@
 // Phase 1 : hero STATIQUE (un anime). La rotation auto 8s + segments arrive en
 // Phase 3 (l'API est déjà prête : passer plusieurs slides).
 // Full-bleed, double scrim (bas→haut + gauche→droite), le bas FOND dans la page.
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { C, FONT_BODY, FONT_DISPLAY } from './tokens.js'
+
+// Audit dev des keyarts : un log par fichier (largeur native + alerte < 1920px)
+const keyartLogged = new Set()
 
 // Title-art officiel (PNG transparent déposé sur R2 logos/<id>.png) avec
 // fallback automatique sur le titre texte si le logo n'existe pas (onError).
@@ -23,8 +26,37 @@ export function TitleArt({ anime, maxWidth = 480, maxHeight = 180, fallback }) {
 }
 
 export default function HeroCinematic({ anime, rating = null, topRank = null, onWatch, onMyList, inList = false, onInfo }) {
+  const keyart = anime ? (anime.keyart || anime.coverImage) : null
+  // Dimensions natives du keyart courant — pilote le fallback anti-étirement
+  const [nat, setNat] = useState(null)
+  useEffect(() => { setNat(null) }, [keyart])
+
+  // Preload du keyart du slide actif (le navigateur le charge en priorité)
+  useEffect(() => {
+    if (!keyart) return
+    const link = document.createElement('link')
+    link.rel = 'preload'
+    link.as = 'image'
+    link.href = keyart
+    document.head.appendChild(link)
+    return () => { try { document.head.removeChild(link) } catch {} }
+  }, [keyart])
+
   if (!anime) return null
-  const keyart = anime.keyart || anime.coverImage
+
+  const onKeyartLoad = (e) => {
+    const { naturalWidth: w, naturalHeight: h } = e.currentTarget
+    setNat({ w, h })
+    if (import.meta.env.DEV && !keyartLogged.has(keyart)) {
+      keyartLogged.add(keyart)
+      const warn = w < 1920 ? ` ⚠️ < 1920px — À REMPLACER sur R2` : ''
+      console.log(`[hero keyart] ${anime.title}: ${w}x${h}px${warn}`)
+    }
+  }
+  // Jamais d'étirement au-delà du natif : si le fichier est trop petit pour le
+  // hero (largeur < 1920 ou bandeau peu haut type bannière AniList 1900x400),
+  // fond flouté + image nette centrée à sa taille max en attendant le remplacement.
+  const lowRes = nat != null && (nat.w < 1920 || nat.h < 720)
 
   const meta = [
     rating != null ? `★ ${Number(rating).toFixed(1)}` : null,
@@ -47,12 +79,23 @@ export default function HeroCinematic({ anime, rating = null, topRank = null, on
       position: 'relative', width: '100%', height: '100vh', minHeight: 480,
       padding: 0, fontFamily: FONT_BODY, overflow: 'hidden',
     }}>
-      {/* Keyart plein cadre */}
+      {/* Keyart plein cadre — fichier R2 servi tel quel (aucun resize/compression
+          côté code, le seul filtre est un saturate CSS non destructif) */}
+      {lowRes && (
+        <img
+          src={keyart} alt="" aria-hidden decoding="async"
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'blur(30px) saturate(1.05)', transform: 'scale(1.1)' }}
+        />
+      )}
       <img
         src={keyart}
         alt=""
         decoding="async"
-        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: anime.keyartPosition || 'center 20%', filter: 'saturate(1.05)' }}
+        onLoad={onKeyartLoad}
+        style={lowRes ? {
+          position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+          maxWidth: nat.w, maxHeight: '100%', width: 'auto', height: 'auto', filter: 'saturate(1.05)',
+        } : { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: anime.keyartPosition || 'center 20%', filter: 'saturate(1.05)' }}
       />
       {/* Exactement DEUX dégradés, aucun overlay uniforme : l'image reste vive
           et contrastée sur sa moitié droite. */}
