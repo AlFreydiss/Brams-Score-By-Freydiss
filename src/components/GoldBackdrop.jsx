@@ -17,7 +17,10 @@ const CSS = `
   @media (prefers-reduced-motion: reduce){ .gbx-note,.gbx-sheen,.gbx-eqbar{ animation:none !important } }
 `
 
-export default function GoldBackdrop({ count = 16, zIndex = 0, particlesZIndex = 1, portalNotes = false }) {
+// notesOnly : ne rend QUE les notes qui tombent. Utilisé quand la page a déjà
+// son propre décor — les couches base (grille animée, sheen, équaliseur) sous
+// un overlay sombre créent du ghosting (formes/bandes qui transparaissent).
+export default function GoldBackdrop({ count = 16, zIndex = 0, particlesZIndex = 1, portalNotes = false, notesOnly = false }) {
   // Notes de musique qui tombent du haut, sobrement (thème blind test).
   const notes = useMemo(() => Array.from({ length: count }, (_, i) => {
     const r = (n) => ((Math.sin(i * 73.13 + n * 19.7) + 1) / 2)
@@ -43,6 +46,7 @@ export default function GoldBackdrop({ count = 16, zIndex = 0, particlesZIndex =
       <style>{CSS}</style>
 
       {/* Couches de couleur (or profond) */}
+      {!notesOnly && (
       <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex, pointerEvents: 'none', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0, background: `
           radial-gradient(900px 540px at 14% -8%, rgba(212,175,90,0.16), transparent 60%),
@@ -72,6 +76,7 @@ export default function GoldBackdrop({ count = 16, zIndex = 0, particlesZIndex =
           ))}
         </div>
       </div>
+      )}
 
       {/* Notes de musique dorées qui tombent du haut (devant le contenu, décoratives).
           portalNotes : rendues dans document.body pour echapper aux stacking contexts

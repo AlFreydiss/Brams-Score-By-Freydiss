@@ -968,7 +968,10 @@ export default function BlindTestPage() {
       <div style={{ position: 'fixed', inset: 0, background: BG, zIndex: 0 }} />
 
       {/* Fond doré style Undercover (hors-jeu : intro / menu / résultats) */}
-      {!isPlaying && <GoldBackdrop zIndex={1} particlesZIndex={9990} portalNotes />}
+      {/* notesOnly : les couches base du GoldBackdrop (grille animée, sheen,
+          équaliseur) passaient SOUS l'overlay sombre (z2) et transparaissaient
+          en formes/bandes fantômes — la page a déjà son propre décor (z3). */}
+      {!isPlaying && <GoldBackdrop particlesZIndex={9990} portalNotes notesOnly />}
 
       {/* Video background */}
       <video
