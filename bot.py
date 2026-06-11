@@ -1216,8 +1216,64 @@ def add_berrys(uid: str, amount: int, track: str = "earned") -> int:
     if track:
         _track_berry(user, track, amount)
     _BERRY_DELTA[uid] = _BERRY_DELTA.get(uid, 0) + amount   # delta atomique (DB-safe)
+    # Historique journalier (Brams Wrapped) : bufferisé, flushé par flush_dirty_loop
+    if track == "earned" and amount > 0:
+        import datetime as _dt
+        _WRAPPED_BERRY_BUF[(uid, _dt.date.today().isoformat())] = \
+            _WRAPPED_BERRY_BUF.get((uid, _dt.date.today().isoformat()), 0) + amount
     _DIRTY.add(uid)
     return user["berrys"]
+
+
+# ── BRAMS WRAPPED : archivage long terme (Supabase voice_archive / berry_daily) ─
+# Fire-and-forget : ne bloque jamais le bot, ne crashe jamais. Les sessions
+# vocales détaillées de users.data sont purgées à 32 j — cette archive permet
+# le Wrapped annuel (binôme, mois, streak, records).
+_WRAPPED_BERRY_BUF: dict = {}
+_SUPA_REST = (os.environ.get("SUPABASE_REST_URL") or "").rstrip("/")
+if not _SUPA_REST:
+    _raw = os.environ.get("SUPABASE_URL", "")
+    import re as _re
+    _m = _re.search(r"//postgres\.([a-z0-9]{16,})[:@]", _raw) or _re.search(r"(?:db|@)\.?([a-z0-9]{16,})\.supabase", _raw)
+    _SUPA_REST = f"https://{_m.group(1)}.supabase.co" if _m else (_raw if _raw.startswith("http") else "")
+_SUPA_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "")
+
+async def _supa_post(path: str, body, *, rpc: bool = False):
+    if not _SUPA_REST or not _SUPA_KEY or _HTTP is None or _HTTP.closed:
+        return
+    url = f"{_SUPA_REST}/rest/v1/{'rpc/' if rpc else ''}{path}"
+    headers = {"apikey": _SUPA_KEY, "Authorization": f"Bearer {_SUPA_KEY}",
+               "Content-Type": "application/json", "Prefer": "return=minimal"}
+    try:
+        async with _HTTP.post(url, json=body, headers=headers, timeout=aiohttp.ClientTimeout(total=10)) as r:
+            if r.status >= 400:
+                print(f"[WRAPPED] supa {path}: HTTP {r.status} {(await r.text())[:120]}")
+    except Exception as e:
+        print(f"[WRAPPED] supa {path}: {e}")
+
+def archive_voice_session(uid: str, start: float, end: float, channel: str | None):
+    """Archive une session vocale terminée (>= 60 s) dans voice_archive."""
+    try:
+        if end - start < 60:
+            return
+        import datetime as _dt
+        body = {"member_id": str(uid),
+                "channel_id": str(channel) if channel else None,
+                "started_at": _dt.datetime.fromtimestamp(start, _dt.timezone.utc).isoformat(),
+                "ended_at": _dt.datetime.fromtimestamp(end, _dt.timezone.utc).isoformat()}
+        loop = asyncio.get_running_loop()
+        loop.create_task(_supa_post("voice_archive", body))
+    except Exception as e:
+        print(f"[WRAPPED] archive: {e}")
+
+async def flush_wrapped_berries():
+    """Flushe le buffer des gains journaliers vers berry_daily (RPC incrémentale)."""
+    if not _WRAPPED_BERRY_BUF:
+        return
+    items, _WRAPPED_BERRY_BUF_COPY = list(_WRAPPED_BERRY_BUF.items()), None
+    _WRAPPED_BERRY_BUF.clear()
+    for (uid, day), amount in items:
+        await _supa_post("berry_daily_add", {"p_member": uid, "p_day": day, "p_amount": int(amount)}, rpc=True)
 
 def spend_berrys(uid: str, amount: int, track: str = "spent") -> bool:
     user = get_user(_CACHE, uid)
@@ -1531,6 +1587,11 @@ bot.set_ai_memory = _set_ai_memory
 # ── Flush dirty vers DB toutes les 30s ───────────────────────────
 @tasks.loop(seconds=30)
 async def flush_dirty_loop():
+    # Wrapped : pousse les gains berry journaliers bufferisés vers Supabase
+    try:
+        await flush_wrapped_berries()
+    except Exception as e:
+        print(f"[WRAPPED] flush berries: {e}")
     # Nettoyage des cooldowns expirés (prévient la fuite mémoire)
     _now_f = time.time()
     for d, delay in ((_WARN_COOLDOWN, _WARN_DELAY), (_MARINE_COOLDOWN, _MARINE_DELAY), (_WRONG_CHAN_COOLDOWN, _WRONG_CHAN_DELAY)):
@@ -2504,6 +2565,7 @@ async def on_ready():
         else:
             if seen > jt:
                 udata.setdefault("vocal_sessions", []).append({"start": jt, "end": seen})
+                archive_voice_session(uid, jt, seen, None)
                 closed += 1
             # Paie le reliquat Berry du temps réellement compté (last_berry_ts → seen),
             # comme au départ vocal, AVANT de purger le marqueur (sinon sous-paiement).
@@ -3461,6 +3523,7 @@ async def on_voice_state_update(member, before, after):
                 "end": end,
                 "channel": str(before.channel.id)
             })
+            archive_voice_session(uid, start, end, str(before.channel.id))
             user["join_time"] = None
             clean_old_data(user)
 
@@ -3496,6 +3559,7 @@ async def on_voice_state_update(member, before, after):
                 "end": end,
                 "channel": str(before.channel.id)
             })
+            archive_voice_session(uid, start, end, str(before.channel.id))
         elif user.get("join_time"):
             user["join_time"] = None
             user.pop("last_berry_ts", None)
