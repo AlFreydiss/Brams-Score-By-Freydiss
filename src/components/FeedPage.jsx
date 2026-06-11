@@ -211,12 +211,17 @@ export default function FeedPage() {
   }, [posts])
 
   const visiblePosts = useMemo(() => {
-    if (activeTab === 'following') return posts.filter(p => followingIds.has(String(p.author_id)) || String(p.author_id) === String(discordId))
-    if (activeTab === 'trending') return [...posts].sort((a, b) => score(b) - score(a))
-    if (activeTab === 'media') return posts.filter(hasMedia)
-    if (activeTab === 'mine') return posts.filter(p => String(p.author_id) === String(discordId))
+    // Threading : si le parent ET la réponse sont tous deux dans le feed, le
+    // parent n'apparaît qu'une fois — dans le bloc threadé au-dessus de la
+    // réponse. On masque donc sa carte isolée.
+    const threadedParents = new Set(posts.filter(p => p.reply_to && p.parent).map(p => p.parent.id))
+    const base = threadedParents.size > 0 ? posts.filter(p => !threadedParents.has(p.id)) : posts
+    if (activeTab === 'following') return base.filter(p => followingIds.has(String(p.author_id)) || String(p.author_id) === String(discordId))
+    if (activeTab === 'trending') return [...base].sort((a, b) => score(b) - score(a))
+    if (activeTab === 'media') return base.filter(hasMedia)
+    if (activeTab === 'mine') return base.filter(p => String(p.author_id) === String(discordId))
     // Pour toi : tri mixte récence + likes (les plus likés récents remontent en haut).
-    return [...posts].sort((a, b) => hotScore(b) - hotScore(a))
+    return [...base].sort((a, b) => hotScore(b) - hotScore(a))
   }, [activeTab, discordId, followingIds, posts])
 
   useEffect(() => {
@@ -444,7 +449,7 @@ export default function FeedPage() {
             <>
               {visiblePosts.map(p => (
                 <motion.div key={p.id} layout="position" transition={{ type: 'spring', stiffness: 600, damping: 45 }}>
-                  <PostCard post={p} onChange={onChange} onDeleted={onDeleted} onQuote={setQuoteTarget} />
+                  <PostCard post={p} showParent onChange={onChange} onDeleted={onDeleted} onQuote={setQuoteTarget} />
                 </motion.div>
               ))}
               {hasMore && activeTab === 'for-you' && <div style={{ padding: 20, textAlign: 'center', color: T.textFaint, fontSize: 13 }}>Chargement...</div>}

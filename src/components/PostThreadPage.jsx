@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext.jsx'
 import { getPost, subscribeFeed } from '../lib/feed.js'
 import PostComposer from './feed/PostComposer.jsx'
 import PostCard from './feed/PostCard.jsx'
@@ -14,6 +15,7 @@ function patch(list, id, partial) {
 
 export default function PostThreadPage() {
   const { postId } = useParams()
+  const { isAuthenticated } = useAuth()
   const navigate = useNavigate()
   const [post, setPost] = useState(null)
   const [replies, setReplies] = useState([])
@@ -89,8 +91,18 @@ export default function PostThreadPage() {
           {loading ? <div style={{ padding: '48px 16px', textAlign: 'center', color: T.textFaint }}>Chargement…</div>
             : notFound ? <div style={{ padding: '60px 24px', textAlign: 'center', color: T.textFaint }}>Ce post n'existe plus.</div>
             : <>
-              <PostCard post={post} disableNav onChange={changePost} onDeleted={() => navigate('/fil')} onQuote={setQuoteTarget} />
-              <PostComposer replyTo={post.repost_of && post.original ? post.original.id : post.id} onPosted={onPosted} autoFocus={false} />
+              {/* showParent : si le post ouvert est lui-même une réponse, son
+                  parent compact s'affiche au-dessus (contexte, comme X) */}
+              <PostCard post={post} disableNav showParent onChange={changePost} onDeleted={() => navigate('/fil')} onQuote={setQuoteTarget} />
+              {/* label gaté sur l'auth : PostComposer rend null si déconnecté */}
+              {isAuthenticated && (
+                <div style={{ padding: '12px 18px 0', fontSize: 12.5, color: T.textFaint }}>
+                  En réponse à <span style={{ color: T.gold, fontWeight: 700 }}>
+                    @{(post.repost_of && post.original ? post.original : post).author_username || `Pirate #${String((post.repost_of && post.original ? post.original : post).author_id || '').slice(-5)}`}
+                  </span>
+                </div>
+              )}
+              <PostComposer replyTo={post.repost_of && post.original ? post.original.id : post.id} onPosted={onPosted} autoFocus />
               {replies.length === 0
                 ? <div style={{ padding: '36px 16px', textAlign: 'center', color: T.textFaint, fontSize: 13 }}>Aucune réponse. Lance la discussion 🗣️</div>
                 : replies.map(r => <PostCard key={r.id} post={r} onChange={changeReply} onDeleted={(id) => setReplies(prev => prev.filter(x => x.id !== id))} onQuote={setQuoteTarget} />)}

@@ -151,7 +151,42 @@ function Counter({ children, active, className = '', ...props }) {
   )
 }
 
-export default function PostCard({ post, embedded = false, disableNav = false, onChange, onDeleted, onQuote, hideRepostSave = false }) {
+// Parent compact au-dessus d'une réponse (threading X) : avatar + pseudo + texte
+// + média éventuel, trait vertical 2px reliant son avatar à celui de la réponse.
+function ParentCompact({ p, onOpenMedia }) {
+  const navigate = useNavigate()
+  const deleted = !!p.deleted_at
+  return (
+    <div onClick={e => { e.stopPropagation(); navigate(`/fil/${p.id}`) }} style={{ display: 'flex', gap: 13, cursor: 'pointer' }}>
+      <div style={{ width: 44, flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <Avatar url={p.author_avatar} name={p.author_username} size={36} />
+        <div aria-hidden style={{ width: 2, flex: 1, minHeight: 10, background: 'rgba(255,255,255,.12)', marginTop: 4, borderRadius: 1 }} />
+      </div>
+      <div style={{ flex: 1, minWidth: 0, paddingBottom: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0 }}>
+          <Link to={`/u/${p.author_id}`} onClick={e => e.stopPropagation()} className="feed-post-author">
+            {p.author_username || `Pirate #${String(p.author_id || '').slice(-5)}`}
+          </Link>
+          <span className="feed-post-meta">· {timeAgo(p.created_at)}</span>
+        </div>
+        {deleted ? (
+          <div style={{ fontSize: 14, color: T.textFaint, fontStyle: 'italic', marginTop: 2 }}>Post supprimé</div>
+        ) : (
+          <>
+            {p.content && (
+              <div style={{ marginTop: 1, display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                <RichText text={p.content} mentions={p.mentions} />
+              </div>
+            )}
+            <MediaGallery urls={p.media_urls?.length ? p.media_urls : (p.media_url ? [p.media_url] : [])} compact onOpen={onOpenMedia} />
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
+export default function PostCard({ post, embedded = false, disableNav = false, showParent = false, onChange, onDeleted, onQuote, hideRepostSave = false }) {
   const { discordId } = useAuth()
   const navigate = useNavigate()
   const isRepost = !!post.repost_of && !!post.original
@@ -178,6 +213,9 @@ export default function PostCard({ post, embedded = false, disableNav = false, o
   const firstUrl = (!deleted && main.content) ? (main.content.match(/https?:\/\/[^\s]+/)?.[0] || null) : null
   const longText = (main.content || '').length > 360
   const visibleText = longText && !expanded ? `${main.content.slice(0, 360)}...` : main.content
+  // Bloc threadé (feed / haut de thread) : parent compact UNIQUEMENT si demandé
+  // (les réponses listées dans une vue thread n'affichent pas leur parent)
+  const parent = showParent && !isPureRepost && main.reply_to && post.parent ? post.parent : null
 
   useEffect(() => {
     if (!mediaModal) return
@@ -275,7 +313,11 @@ export default function PostCard({ post, embedded = false, disableNav = false, o
 
   return (
     <>
-      <article onClick={goThread} className={`feed-post-card ${disableNav || deleted ? 'is-disabled' : ''} ${(main.like_count || 0) >= 50 ? 'is-fire' : (main.like_count || 0) >= 15 ? 'is-hot' : ''}`}>
+      <article onClick={goThread} className={`feed-post-card ${disableNav || deleted ? 'is-disabled' : ''} ${(main.like_count || 0) >= 50 ? 'is-fire' : (main.like_count || 0) >= 15 ? 'is-hot' : ''}`}
+        style={parent ? { flexDirection: 'column', gap: 0 } : undefined}>
+        {parent && <ParentCompact p={parent} onOpenMedia={setMediaModal} />}
+        {/* display:contents quand pas de parent → layout d'origine strictement inchangé */}
+        <div style={parent ? { display: 'flex', gap: 13 } : { display: 'contents' }}>
         <div style={{ flexShrink: 0 }}>
           <Link to={`/u/${main.author_id}`} onClick={e => e.stopPropagation()}><Avatar url={main.author_avatar} name={main.author_username} /></Link>
         </div>
@@ -310,6 +352,14 @@ export default function PostCard({ post, embedded = false, disableNav = false, o
 
           {deleted ? <div style={{ fontSize: 15, color: T.textFaint, fontStyle: 'italic' }}>Post supprimé</div> : (
             <>
+              {parent && (
+                <div style={{ fontSize: 12.5, color: T.textFaint, marginBottom: 3 }}>
+                  En réponse à{' '}
+                  <Link to={`/u/${parent.author_id}`} onClick={e => e.stopPropagation()} style={{ color: T.gold, textDecoration: 'none' }}>
+                    @{parent.author_username || `Pirate #${String(parent.author_id || '').slice(-5)}`}
+                  </Link>
+                </div>
+              )}
               {editing ? (
                 <div onClick={e => e.stopPropagation()}>
                   <textarea value={editText} onChange={e => setEditText(e.target.value)} rows={3} autoFocus
@@ -372,6 +422,7 @@ export default function PostCard({ post, embedded = false, disableNav = false, o
             </>
           )}
         </div>
+        </div>{/* fin ligne avatar+contenu (wrapper threading) */}
       </article>
 
       {mediaModal && createPortal((
