@@ -326,7 +326,10 @@ async function r2Presign(req, res) {
       user = await r.json()
     } catch { return res.status(500).json({ error: 'Vérification auth impossible.' }) }
     if (contentType && !R2_DM_TYPES.includes(contentType)) return res.status(400).json({ error: 'Type de fichier non autorisé.' })
-    if (size && Number(size) > 30 * 1024 * 1024) return res.status(400).json({ error: 'Fichier trop volumineux (max 30 Mo).' })
+    // Vidéos (stories) : plafond plus haut — l'egress R2 est gratuit, seul le stockage compte.
+    const isVideoUpload = String(contentType || '').startsWith('video/')
+    const maxBytes = isVideoUpload ? 200 * 1024 * 1024 : 30 * 1024 * 1024
+    if (size && Number(size) > maxBytes) return res.status(400).json({ error: `Fichier trop volumineux (max ${isVideoUpload ? 200 : 30} Mo).` })
     keyPrefix = `dm/${r2SanitizeKey(String(r2ResolveDiscord(user)))}/`
   }
   const key = keyPrefix + Date.now() + '-' + r2SanitizeKey(filename)

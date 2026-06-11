@@ -25,6 +25,8 @@ export default function StoryViewer({ authors, startIndex = 0, onClose, onDelete
   const [viewers, setViewers] = useState(null)
   const [audioPlaying, setAudioPlaying] = useState(false)
   const [audioMuted, setAudioMuted] = useState(false)
+  // Durée réelle de la vidéo (loadedmetadata) : pilote la barre de progression.
+  const [videoDur, setVideoDur] = useState(null)
 
   const audioElRef = useRef(null)
   const videoElRef = useRef(null)
@@ -43,6 +45,7 @@ export default function StoryViewer({ authors, startIndex = 0, onClose, onDelete
   // Marque vue + gère audio pour la story courante
   useEffect(() => {
     setViewers(null)
+    setVideoDur(null)
     stopAudio()
 
     // Désactive la trail de curseur pendant l'affichage d'une story (évite les particules qui fuitent)
@@ -51,6 +54,11 @@ export default function StoryViewer({ authors, startIndex = 0, onClose, onDelete
     if (!story?.id) return
     let alive = true
     markStorySeen(story.id).then(() => { if (alive) onSeen?.(story.id) }).catch(() => {})
+
+    // Story VIDÉO : aucun timer — c'est la vidéo elle-même (onEnded) qui avance,
+    // quelle que soit sa durée (30s, 100s, 500s…). Le son éventuel joue en fond
+    // sans couper la lecture.
+    const storyIsVideo = isVideo(story.media_url || '')
 
     // Audio de la story (musique de rep / son)
     if (story.audio_url) {
@@ -63,17 +71,17 @@ export default function StoryViewer({ authors, startIndex = 0, onClose, onDelete
       const onEnded = () => {
         setAudioPlaying(false)
         // On laisse l'utilisateur avancer manuellement ou on next après un délai court
-        timerRef.current = setTimeout(next, 600)
+        if (!storyIsVideo) timerRef.current = setTimeout(next, 600)
       }
       a.addEventListener('ended', onEnded)
       a.play().then(() => setAudioPlaying(true)).catch(() => setAudioPlaying(false))
 
       // Auto-advance fallback si pas de durée connue (5-7s typique IG)
       const dur = (a.duration && isFinite(a.duration)) ? Math.min(Math.max(a.duration * 1000, 3500), 12000) : 6500
-      if (!timerRef.current) {
+      if (!storyIsVideo && !timerRef.current) {
         timerRef.current = setTimeout(next, dur)
       }
-    } else {
+    } else if (!storyIsVideo) {
       // Pas de son → timer fixe 5.5s (progress CSS gère aussi l'animation visuelle)
       timerRef.current = setTimeout(next, 5500)
     }
@@ -83,7 +91,7 @@ export default function StoryViewer({ authors, startIndex = 0, onClose, onDelete
       stopAudio()
       delete document.body.dataset.storyOpen
     }
-  }, [story?.id, story?.audio_url, onSeen, audioMuted, stopAudio])
+  }, [story?.id, story?.audio_url, story?.media_url, onSeen, audioMuted, stopAudio])
 
   // Toggle son de la story
   const toggleAudio = () => {
@@ -190,11 +198,20 @@ export default function StoryViewer({ authors, startIndex = 0, onClose, onDelete
           <div key={i} style={{ flex: 1, height: 3, borderRadius: 3, background: 'rgba(255,255,255,.28)', overflow: 'hidden' }}>
             {i < si && <div style={{ width: '100%', height: '100%', background: '#fff' }} />}
             {i === si && (
-              <div
-                key={`${ai}-${si}`}
-                onAnimationEnd={next}
-                style={{ height: '100%', background: '#fff', animation: hasAudio ? 'storyFill 6.5s linear forwards' : 'storyFill 5.2s linear forwards' }}
-              />
+              isVideo(mediaUrl) ? (
+                // Vidéo : la barre suit la durée réelle (next = onEnded de la vidéo,
+                // pas l'animation — sinon elle coupait la lecture à 5s).
+                <div
+                  key={`${ai}-${si}-${videoDur || 'wait'}`}
+                  style={{ height: '100%', background: '#fff', animation: videoDur ? `storyFill ${videoDur}s linear forwards` : 'none' }}
+                />
+              ) : (
+                <div
+                  key={`${ai}-${si}`}
+                  onAnimationEnd={next}
+                  style={{ height: '100%', background: '#fff', animation: hasAudio ? 'storyFill 6.5s linear forwards' : 'storyFill 5.2s linear forwards' }}
+                />
+              )
             )}
           </div>
         ))}
@@ -241,6 +258,7 @@ export default function StoryViewer({ authors, startIndex = 0, onClose, onDelete
             playsInline
             muted={false}
             style={mediaStyle}
+            onLoadedMetadata={e => { const d = e.currentTarget.duration; if (isFinite(d) && d > 0) setVideoDur(d) }}
             onEnded={next}
             onError={next}
           />
