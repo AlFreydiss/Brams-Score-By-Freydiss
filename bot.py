@@ -1283,7 +1283,9 @@ def messages_in_period(messages, days, _now=None):
 # Rétention des sessions vocales détaillées. DOIT rester > à la plus large fenêtre
 # affichée dans /stats (14 jours), sinon seconds_in_period(…, 14) ne voit plus les
 # jours 9→14 (purgés dans extra_seconds) et le "14 jours" est tronqué silencieusement.
-_CLEAN_CUTOFF_DAYS = 15
+# 32 jours (vs 15) : l'onglet « Mois » du classement du site lit les sessions des
+# 30 derniers jours — avec 15 jours de rétention il ne comptait que ~2 semaines.
+_CLEAN_CUTOFF_DAYS = 32
 
 def clean_old_data(user, _now=None):
     cutoff = (_now or now_ts()) - _CLEAN_CUTOFF_DAYS * 86400
