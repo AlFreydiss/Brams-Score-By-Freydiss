@@ -3,7 +3,7 @@
 // Réutilise les fetchers existants — ne touche pas à la logique berries/Discord.
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react'
 import { fetchMemberProfile } from '../lib/supabase.js'
-import { fetchBerryShopState, getMemberOpeningBg } from '../lib/berryShop.js'
+import { fetchBerryShopState, getMemberOpeningBg, fetchMemberInventory } from '../lib/berryShop.js'
 import { getProfileSettings } from '../lib/profile.js'
 import { getUserPosts } from '../lib/feed.js'
 import { getFollowState } from '../lib/social.js'
