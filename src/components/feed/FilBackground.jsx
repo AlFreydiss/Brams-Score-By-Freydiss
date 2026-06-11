@@ -6,16 +6,23 @@ import ParticleField from './ParticleField.jsx'
 
 const NAV_H = 72
 
-// Décors générés (Flux, dark + or trésor) sur R2 — un au hasard par visite,
-// fondu dans le haut du fond, très discret (l'ambiance, pas le sujet).
+// Décors générés (Flux + vidéos Grok de Freydiss) sur R2 — un au hasard par
+// visite, fondu dans le haut du fond, très discret (l'ambiance, pas le sujet).
+// Les .mp4 sont rendus en <video> muted/loop (2-3 Mo, egress R2 gratuit).
 const R2 = 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/fil-bg'
 const HERO_BGS = [
-  `${R2}/fil01.jpg`, // galion au clair de lune
-  `${R2}/fil02.jpg`, // carte au trésor
-  `${R2}/fil03.jpg`, // compas doré
-  `${R2}/fil04.jpg`, // kraken
-  `${R2}/fil05.jpg`, // chapeau de paille
+  `${R2}/fil01.jpg`,  // galion au clair de lune
+  `${R2}/fil02.jpg`,  // carte au trésor
+  `${R2}/fil03.jpg`,  // compas doré
+  `${R2}/fil04.jpg`,  // kraken
+  `${R2}/fil05.jpg`,  // chapeau de paille
+  `${R2}/vid01.mp4`,  // vidéos Grok Imagine
+  `${R2}/vid02.mp4`,
+  `${R2}/vid03.mp4`,
+  `${R2}/vid04.mp4`,
+  `${R2}/vid05.mp4`,
 ]
+const isVideoBg = (u) => /\.mp4$/i.test(u)
 
 // COUCHE 1 — base profonde (bleu-nuit violacé, distinct du noir pur du reste du site)
 const BASE = 'linear-gradient(180deg, #08080e 0%, #0d0b14 50%, #0a0a10 100%)'
@@ -38,12 +45,18 @@ export default function FilBackground() {
       {/* Décor illustré en haut, fondu vers le fond uni (masque) — reste sous les
           autres couches (vignette/scanlines) pour garder la sobriété du Fil. */}
       <div style={{
-        position: 'absolute', top: 0, left: 0, right: 0, height: '52vh',
-        backgroundImage: `url("${heroBg}")`, backgroundSize: 'cover', backgroundPosition: 'center 30%',
+        position: 'absolute', top: 0, left: 0, right: 0, height: '52vh', overflow: 'hidden',
         opacity: 0.34,
         maskImage: 'linear-gradient(180deg, black 0%, black 35%, transparent 100%)',
         WebkitMaskImage: 'linear-gradient(180deg, black 0%, black 35%, transparent 100%)',
-      }} />
+      }}>
+        {isVideoBg(heroBg) ? (
+          <video src={heroBg} muted loop autoPlay playsInline preload="metadata"
+            style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 30%' }} />
+        ) : (
+          <div style={{ position: 'absolute', inset: 0, backgroundImage: `url("${heroBg}")`, backgroundSize: 'cover', backgroundPosition: 'center 30%' }} />
+        )}
+      </div>
       <div style={{ ...layer, background: GOLD_GLOW }} />
       {/* Particules or dérivantes — l'ambiance, pas le sujet */}
       <ParticleField style={{ ...layer, opacity: 0.5 }} />

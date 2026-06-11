@@ -135,11 +135,36 @@ export default function VideoTrimmer({ file, onDone, onCancel }) {
           </button>
         </div>
 
-        <video
-          ref={videoRef} src={src} playsInline controls={!recording}
-          onLoadedMetadata={onMeta} onTimeUpdate={onTimeUpdate}
-          style={{ width: '100%', maxHeight: '46vh', borderRadius: 10, background: '#000' }}
-        />
+        <div style={{ position: 'relative' }}>
+          <video
+            ref={videoRef} src={src} playsInline controls={!recording}
+            onLoadedMetadata={onMeta} onTimeUpdate={onTimeUpdate}
+            style={{ width: '100%', maxHeight: '46vh', borderRadius: 10, background: '#000', display: 'block' }}
+          />
+          {/* Overlay de chargement EXPLICITE : le rognage rejoue le segment en
+              temps réel (5 s de clip = ~5 s d'attente) — on le dit clairement. */}
+          {recording && (
+            <div style={{
+              position: 'absolute', inset: 0, borderRadius: 10, display: 'flex',
+              flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10,
+              background: 'rgba(0,0,0,0.62)', backdropFilter: 'blur(2px)',
+            }}>
+              <span style={{
+                width: 34, height: 34, borderRadius: '50%', display: 'inline-block',
+                border: '3px solid rgba(255,255,255,0.18)', borderTopColor: T.gold,
+                animation: 'vtSpin 0.8s linear infinite',
+              }} />
+              <style>{`@keyframes vtSpin { to { transform: rotate(360deg) } }`}</style>
+              <span style={{ fontSize: 15, fontWeight: 900, color: '#fff' }}>
+                Rognage en cours… {Math.round(progress * 100)} %
+              </span>
+              <span style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.6)', textAlign: 'center', maxWidth: 320 }}>
+                Le clip est ré-enregistré en temps réel ({fmt(segDur)} ≈ {fmt(segDur)} d'attente).
+                Ne ferme pas cette fenêtre.
+              </span>
+            </div>
+          )}
+        </div>
 
         {duration > 0 && (
           <>
