@@ -8474,6 +8474,224 @@ async def addberries_cmd(
     )
 
 
+# ═════════════════════════════════════════════════════════════════════════════
+#  BRAMS WRAPPED — calcul des snapshots (30 j) + DM des liens
+#  Données : users.data.vocal_sessions (rétention 32 j) ; binôme = chevauchement
+#  de sessions entre membres éligibles ; lecture page via RPC get_wrapped(token).
+# ═════════════════════════════════════════════════════════════════════════════
+WRAPPED_URL = os.environ.get("WRAPPED_URL", "https://brams.community/wrapped")
+WRAPPED_MIN_HOURS = 5.0
+_FR_DAYS = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"]
+
+def _wr_sessions(udata, cutoff, now):
+    out = []
+    for s in udata.get("vocal_sessions", []):
+        try:
+            st, en = float(s["start"]), float(s["end"])
+        except Exception:
+            continue
+        if en <= cutoff or en <= st:
+            continue
+        out.append((max(st, cutoff), min(en, now), s.get("channel")))
+    jt = udata.get("join_time")
+    if jt and now > jt:
+        out.append((max(float(jt), cutoff), now, None))
+    out.sort()
+    return out
+
+def _wr_overlap(a, b):
+    """Heures de chevauchement entre deux listes de sessions triées (two-pointer)."""
+    i = j = 0
+    total = 0.0
+    while i < len(a) and j < len(b):
+        lo = max(a[i][0], b[j][0]); hi = min(a[i][1], b[j][1])
+        if hi > lo:
+            total += hi - lo
+        if a[i][1] < b[j][1]: i += 1
+        else: j += 1
+    return total / 3600
+
+def _wr_payload(uid, udata, sess, all_sessions, guild, hours_sorted):
+    import datetime as _dt
+    tz = _dt.timezone(_dt.timedelta(hours=2))  # Paris (été)
+    hours = sum(en - st for st, en, _ in sess) / 3600
+
+    # Par jour (best_day, streak, jour signature)
+    days, dow = {}, {}
+    longest = (0.0, None)
+    chans = {}
+    for st, en, ch in sess:
+        d0 = _dt.datetime.fromtimestamp(st, tz).date()
+        days[d0] = days.get(d0, 0) + (en - st)
+        dow[d0.weekday()] = dow.get(d0.weekday(), 0) + (en - st)
+        if en - st > longest[0]:
+            longest = (en - st, d0.isoformat())
+        if ch:
+            chans[ch] = chans.get(ch, 0) + (en - st)
+    best_day = max(days.items(), key=lambda kv: kv[1]) if days else None
+    streak = best = 0
+    prev = None
+    for d0 in sorted(days):
+        streak = streak + 1 if prev and (d0 - prev).days == 1 else 1
+        best = max(best, streak)
+        prev = d0
+    top_channels = []
+    for ch, secs in sorted(chans.items(), key=lambda kv: -kv[1])[:3]:
+        c = guild.get_channel(int(ch)) if guild and str(ch).isdigit() else None
+        top_channels.append({"name": (f"🎙️ {c.name}" if c else "Salon vocal"), "hours": round(secs / 3600, 1)})
+
+    # Binôme : meilleur chevauchement avec les autres éligibles
+    binome = None
+    best_ov = 0.0
+    for ouid, (osess, oname, oavatar) in all_sessions.items():
+        if ouid == uid:
+            continue
+        ov = _wr_overlap(sess, osess)
+        if ov > best_ov:
+            best_ov = ov
+            binome = {"username": oname, "avatar_url": oavatar, "hours": round(ov, 1)}
+    if binome and best_ov < 1:
+        binome = None
+
+    # Percentile parmi les éligibles
+    rankpos = next((i for i, (u, h) in enumerate(hours_sorted) if u == uid), len(hours_sorted) - 1)
+    percentile = max(1, round((rankpos + 1) / max(1, len(hours_sorted)) * 100))
+
+    h7 = seconds_in_period(udata.get("vocal_sessions", []), 7, join_time=udata.get("join_time")) / 3600
+    rank_name = next((nm for thr, nm in RANKS if h7 >= thr), None)
+
+    return {
+        "username": udata.get("username") or f"Pirate #{str(uid)[-4:]}",
+        "avatar_url": udata.get("avatar_url"),
+        "period_label": "30 derniers jours",
+        "hours": round(hours, 1),
+        "binome": binome,
+        "top_channels": top_channels,
+        "best_day": {"date": best_day[0].isoformat(), "hours": round(best_day[1] / 3600, 1)} if best_day else None,
+        "longest": {"date": longest[1], "hours": round(longest[0] / 3600, 1)} if longest[1] else None,
+        "prime": {"start": None, "end": int(udata.get("berrys", 0))},
+        "rank": rank_name,
+        "percentile": percentile,
+        "streak": best,
+        "signature_day": _FR_DAYS[max(dow.items(), key=lambda kv: kv[1])[0]] if dow else None,
+    }
+
+async def _wr_upsert_snapshot(uid, period, payload, token):
+    if not _SUPA_REST or not _SUPA_KEY:
+        return False
+    url = f"{_SUPA_REST}/rest/v1/wrapped_snapshots?on_conflict=member_id,period"
+    headers = {"apikey": _SUPA_KEY, "Authorization": f"Bearer {_SUPA_KEY}",
+               "Content-Type": "application/json", "Prefer": "resolution=merge-duplicates,return=minimal"}
+    body = {"member_id": str(uid), "period": period, "payload": payload, "token": token}
+    try:
+        async with _HTTP.post(url, json=body, headers=headers, timeout=aiohttp.ClientTimeout(total=12)) as r:
+            if r.status >= 400:
+                print(f"[WRAPPED] upsert {uid}: HTTP {r.status} {(await r.text())[:150]}")
+                return False
+            return True
+    except Exception as e:
+        print(f"[WRAPPED] upsert {uid}: {e}")
+        return False
+
+async def _wr_get_token(uid, period):
+    if not _SUPA_REST or not _SUPA_KEY:
+        return None
+    url = f"{_SUPA_REST}/rest/v1/wrapped_snapshots?member_id=eq.{uid}&period=eq.{period}&select=token"
+    headers = {"apikey": _SUPA_KEY, "Authorization": f"Bearer {_SUPA_KEY}"}
+    try:
+        async with _HTTP.get(url, headers=headers, timeout=aiohttp.ClientTimeout(total=10)) as r:
+            rows = await r.json()
+            return rows[0]["token"] if rows else None
+    except Exception:
+        return None
+
+def _wr_period():
+    import datetime as _dt
+    return f"30j-{_dt.date.today().isoformat()[:7]}"
+
+def _wr_embed(token):
+    e = discord.Embed(
+        title="🧭 Ton Log de Bord est prêt !",
+        description=(
+            "Tes 30 derniers jours sur Grand Line : heures en vocal, ton binôme, "
+            "ta place parmi les pirates de Brams… le tout mis en scène.\n\n"
+            f"**[🧭 Ouvrir mon Log de Bord →]({WRAPPED_URL}/{token})**\n\n"
+            "À la fin : ta carte à partager en story. Montre qui commande sur Grand Line. 🏴‍☠️"
+        ),
+        color=0xF5D97B,
+    )
+    return e
+
+@bot.tree.command(name="wrapped", description="Reçois le lien de TON Brams Wrapped (30 derniers jours)")
+@app_commands.guilds(*GUILD_IDS)
+async def wrapped_cmd(interaction: discord.Interaction):
+    await interaction.response.defer(ephemeral=True)
+    token = await _wr_get_token(str(interaction.user.id), _wr_period())
+    if not token:
+        await interaction.followup.send(
+            "🧭 Ton Wrapped n'a pas encore été généré (il faut au moins 5h de vocal sur 30 jours, "
+            "et qu'un admin ait lancé `/wrapped_lancer`).", ephemeral=True)
+        return
+    await interaction.followup.send(embed=_wr_embed(token), ephemeral=True)
+
+@bot.tree.command(name="wrapped_lancer", description="[ADMIN] Génère les Wrapped de tous les membres éligibles et les envoie en DM")
+@app_commands.guilds(*GUILD_IDS)
+@app_commands.default_permissions(administrator=True)
+@app_commands.checks.has_permissions(administrator=True)
+@app_commands.describe(dm="Envoyer les DM (false = générer les liens sans DM)")
+async def wrapped_lancer_cmd(interaction: discord.Interaction, dm: bool = True):
+    import secrets as _secrets
+    await interaction.response.defer(ephemeral=True)
+    guild = interaction.guild
+    now = now_ts()
+    cutoff = now - 30 * 86400
+    period = _wr_period()
+
+    # 1) sessions 30 j de tout le monde + éligibles (>= 5 h)
+    # _CACHE est un dict plat { uid: udata } (cf. get_user)
+    all_sessions = {}
+    hours_by_uid = []
+    for uid, udata in list(_CACHE.items()):
+        if not isinstance(udata, dict) or "vocal_sessions" not in udata:
+            continue
+        sess = _wr_sessions(udata, cutoff, now)
+        if not sess:
+            continue
+        h = sum(en - st for st, en, _ in sess) / 3600
+        if h >= WRAPPED_MIN_HOURS:
+            all_sessions[uid] = (sess, udata.get("username") or f"Pirate #{str(uid)[-4:]}", udata.get("avatar_url"))
+            hours_by_uid.append((uid, h))
+    hours_by_uid.sort(key=lambda kv: -kv[1])
+    if not hours_by_uid:
+        await interaction.followup.send("Aucun membre éligible (≥ 5h de vocal sur 30 j).", ephemeral=True)
+        return
+
+    print(f"[WRAPPED] lancement : {len(hours_by_uid)} membres eligibles")
+    ok = fail_dm = 0
+    for uid, _h in hours_by_uid:
+        udata = get_user(_CACHE, uid)
+        payload = _wr_payload(uid, udata, all_sessions[uid][0], all_sessions, guild, hours_by_uid)
+        token = await _wr_get_token(uid, period) or _secrets.token_urlsafe(16)
+        if not await _wr_upsert_snapshot(uid, period, payload, token):
+            continue
+        ok += 1
+        if dm:
+            member = guild.get_member(int(uid)) if uid.isdigit() else None
+            if member and not member.bot:
+                try:
+                    await member.send(embed=_wr_embed(token))
+                except discord.Forbidden:
+                    fail_dm += 1
+                except Exception as e:
+                    fail_dm += 1
+                    print(f"[WRAPPED] DM {uid}: {e}")
+                await asyncio.sleep(1.1)   # throttle anti rate-limit Discord
+    print(f"[WRAPPED] termine : {ok} snapshots, {fail_dm} DM fermes")
+    await interaction.followup.send(
+        f"🧭 **Wrapped généré !** {ok} membres éligibles · {fail_dm} DM fermés.\n"
+        f"Chacun peut récupérer son lien avec `/wrapped`.", ephemeral=True)
+
+
 @bot.tree.command(name="addheures", description="[ADMIN] Ajouter des heures vocales à un membre (corrige les compteurs)")
 @app_commands.default_permissions(administrator=True)
 @app_commands.checks.has_permissions(administrator=True)
