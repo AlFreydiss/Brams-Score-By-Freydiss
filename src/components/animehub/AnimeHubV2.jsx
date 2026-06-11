@@ -139,6 +139,10 @@ export default function AnimeHubV2(props) {
   const [slide, setSlide] = useState(0)
   const [paused, setPaused] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  // Toolbar : transparente posée sur le fondu du hero, fond + blur SEULEMENT
+  // une fois collée sous la navbar (sinon bande sombre qui tranche le hero)
+  const [toolbarStuck, setToolbarStuck] = useState(false)
+  const toolbarRef = useRef(null)
   const reduced = useMemo(() => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches, [])
   useEffect(() => {
     if (reduced || paused || slides.length < 2) return
@@ -209,7 +213,11 @@ export default function AnimeHubV2(props) {
   return (
     <div
       className="ah2-root"
-      onScroll={e => setScrolled(e.currentTarget.scrollTop > 24)}
+      onScroll={e => {
+        setScrolled(e.currentTarget.scrollTop > 24)
+        const r = toolbarRef.current?.getBoundingClientRect()
+        if (r) setToolbarStuck(r.top <= 65)
+      }}
       style={{
         position: 'fixed', inset: 0, zIndex: 60, overflowY: 'auto', overflowX: 'hidden',
         background: LEGACY_BG, fontFamily: FONT_BODY, color: C.text,
@@ -259,9 +267,13 @@ export default function AnimeHubV2(props) {
       {/* ── BLOC CONTENU : chevauche le bas fondu du hero (réf. Netflix) ── */}
       <div style={{ position: 'relative', zIndex: 2, marginTop: searching ? 84 : -120 }}>
       {/* ── TOOLBAR sticky (sous la navbar) ── */}
-      <div style={{
+      <div ref={toolbarRef} style={{
         position: 'sticky', top: 64, zIndex: 4,
-        background: C.panel, backdropFilter: 'blur(8px)', borderBottom: `1px solid ${C.hair}`, borderRadius: '12px 12px 0 0',
+        background: toolbarStuck ? C.panel : 'transparent',
+        backdropFilter: toolbarStuck ? 'blur(8px)' : 'none',
+        borderBottom: `1px solid ${toolbarStuck ? C.hair : 'transparent'}`,
+        borderRadius: '12px 12px 0 0',
+        transition: 'background 200ms ease, border-color 200ms ease',
       }}>
         <div style={{ maxWidth: 1320, margin: '0 auto', padding: '10px 24px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
           {/* Recherche */}
