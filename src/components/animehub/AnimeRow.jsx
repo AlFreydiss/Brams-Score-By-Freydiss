@@ -38,7 +38,9 @@ export default function AnimeRow({ title, count = null, onSeeAll, children }) {
     <section
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
-      style={{ marginBottom: 34, fontFamily: FONT_BODY }}
+      // padding:0 obligatoire : index.css applique un gros padding vertical
+      // global aux <section> (home) — c'était le « vide géant » sous la toolbar.
+      style={{ marginBottom: 34, padding: 0, fontFamily: FONT_BODY }}
     >
       {/* En-tête de row */}
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 14 }}>

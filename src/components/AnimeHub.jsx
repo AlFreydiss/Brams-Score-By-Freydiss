@@ -540,7 +540,7 @@ export const ANIMES = [
     coverImage: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaiju/cover.jpg',
     coverPosition: 'center center',
     genres: ['Action', 'Monstres', 'Shōnen'],
-    description: "Kafka Hibino rêve d'intégrer les Forces de Défense quand il avale accidentellement un petit kaiju et devient le redoutable Kaiju n°8 — l'arme qu'il voulait combattre.",
+    description: "Kafka Hibino rêve d'intégrer les Forces de Défense. Le jour où il avale un petit kaiju, il devient le redoutable Kaiju n°8, l'arme qu'il voulait combattre.",
     stats: [
       { label: 'Épisodes', value: '12' },
       { label: 'Vidéos', value: videoCountLabel(KAIJU_VIDEOS.length, 12) },

@@ -27,27 +27,29 @@ export default function HeroCinematic({ anime, rating = null, onWatch, onMyList,
   return (
     <section aria-label={`À la une : ${anime.title}`} style={{
       position: 'relative', width: '100%', height: 'min(72vh, 720px)', minHeight: 420,
-      fontFamily: FONT_BODY, overflow: 'hidden',
+      padding: 0, fontFamily: FONT_BODY, overflow: 'hidden',
     }}>
       {/* Keyart plein cadre */}
       <img
         src={keyart}
         alt=""
         decoding="async"
-        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: anime.keyartPosition || 'center 20%' }}
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: anime.keyartPosition || 'center 20%', filter: 'saturate(1.05)' }}
       />
-      {/* Double scrim : bas→haut (fond dans la page) + gauche→droite (lisibilité) */}
-      <div aria-hidden style={{ position: 'absolute', inset: 0, background: `linear-gradient(0deg, ${C.scrim} 0%, rgba(11,14,20,0.6) 28%, transparent 55%)` }} />
-      <div aria-hidden style={{ position: 'absolute', inset: 0, background: `linear-gradient(90deg, rgba(11,14,20,0.88) 0%, rgba(11,14,20,0.45) 38%, transparent 68%)` }} />
+      {/* Exactement DEUX dégradés, aucun overlay uniforme : l'image reste vive
+          et contrastée sur sa moitié droite. */}
+      <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, rgba(11,14,20,.92) 0%, rgba(11,14,20,.55) 35%, transparent 65%)' }} />
+      <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, transparent 50%, #0B0E14 100%)' }} />
 
       {/* Contenu aligné gauche */}
       <div style={{
-        position: 'absolute', left: 'clamp(18px, 4vw, 56px)', right: 18, bottom: 'clamp(28px, 7vh, 72px)',
+        // aligné sur le conteneur commun (1320px / 24px de padding latéral)
+        position: 'absolute', left: 'max(24px, calc((100vw - 1320px) / 2 + 24px))', right: 18, bottom: 'clamp(28px, 7vh, 72px)',
         maxWidth: 560,
       }}>
         <h1 style={{
           margin: 0, fontFamily: FONT_BODY, fontWeight: 800,
-          fontSize: 'clamp(30px, 4.2vw, 54px)', lineHeight: 1.04, letterSpacing: '-0.02em', color: C.text,
+          fontSize: 'clamp(30px, 4vw, 52px)', lineHeight: 1.04, letterSpacing: '-0.02em', color: C.text,
         }}>{anime.title}</h1>
 
         {/* Ligne méta : note · année · saisons · genres en pills outline grises */}
@@ -59,7 +61,7 @@ export default function HeroCinematic({ anime, rating = null, onWatch, onMyList,
             </span>
           ))}
           {(anime.genres || []).slice(0, 3).map(g => (
-            <span key={g} style={{ padding: '3px 10px', borderRadius: 999, border: `1px solid ${C.hair2}`, fontSize: 12, color: C.dim }}>{g}</span>
+            <span key={g} style={{ padding: '3px 10px', borderRadius: 999, border: '1px solid rgba(255,255,255,.25)', fontSize: 12, color: C.text }}>{g}</span>
           ))}
         </div>
 
@@ -68,7 +70,7 @@ export default function HeroCinematic({ anime, rating = null, onWatch, onMyList,
           <p style={{
             margin: '14px 0 0', fontSize: 15, lineHeight: 1.55, color: C.dim, maxWidth: 520,
             display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
-          }}>{anime.description}</p>
+          }}>{String(anime.description).replace(/\s*[—–-]\s*$/, '').trim()}</p>
         )}
 
         {/* Actions */}
