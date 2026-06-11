@@ -76,8 +76,17 @@ export default function VideoTrimmer({ file, onDone, onCancel }) {
     setProgress(0)
     try {
       v.pause()
-      v.currentTime = start
-      await new Promise(res => { const fn = () => { v.removeEventListener('seeked', fn); res() }; v.addEventListener('seeked', fn) })
+      // Seek vers le début du segment. PIÈGE : si currentTime est DÉJÀ à start
+      // (ex. rogner depuis 0 s), 'seeked' ne fire jamais → on attendait à
+      // l'infini et le bouton restait gelé. Skip si on y est, + timeout filet.
+      if (Math.abs(v.currentTime - start) > 0.05) {
+        v.currentTime = start
+        await new Promise(res => {
+          const fn = () => { clearTimeout(tmo); v.removeEventListener('seeked', fn); res() }
+          const tmo = setTimeout(fn, 1200)
+          v.addEventListener('seeked', fn)
+        })
+      }
       const stream = (v.captureStream || v.mozCaptureStream).call(v)
       const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 6_000_000, audioBitsPerSecond: 128_000 })
       recRef.current = rec
@@ -96,6 +105,10 @@ export default function VideoTrimmer({ file, onDone, onCancel }) {
       // sortie, donc la piste son reste présente dans l'enregistrement.
       v.muted = true
       await v.play()
+      // Filet d'arrêt : timeupdate ne fire que ~4x/s — sur un segment très court
+      // (1 s) il peut arriver en retard. On force l'arrêt à durée + marge.
+      const ms = Math.max(400, (end - start) * 1000 + 350)
+      setTimeout(() => { try { if (recRef.current?.state === 'recording') stopRecording() } catch {} }, ms)
     } catch (e) {
       setRecording(false)
       setErr(e?.message || 'Rognage impossible sur ce navigateur')
