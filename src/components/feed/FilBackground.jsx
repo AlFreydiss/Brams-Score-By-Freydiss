@@ -51,11 +51,16 @@ export default function FilBackground() {
         WebkitMaskImage: 'linear-gradient(180deg, black 0%, black 35%, transparent 100%)',
       }}>
         {isVideoBg(heroBg) ? (
+          // brightness baissée : les vidéos Grok claires (sépia/encre) délavaient
+          // le centre du Fil derrière la colonne de posts.
           <video src={heroBg} muted loop autoPlay playsInline preload="metadata"
-            style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 30%' }} />
+            style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 30%', filter: 'brightness(0.52) saturate(0.85)' }} />
         ) : (
           <div style={{ position: 'absolute', inset: 0, backgroundImage: `url("${heroBg}")`, backgroundSize: 'cover', backgroundPosition: 'center 30%' }} />
         )}
+        {/* Voile sombre supplémentaire concentré au centre (zone de lecture) */}
+        <div style={{ position: 'absolute', inset: 0,
+          background: 'radial-gradient(60% 100% at 50% 30%, rgba(8,8,14,0.55), rgba(8,8,14,0.2) 70%, transparent 100%)' }} />
       </div>
       <div style={{ ...layer, background: GOLD_GLOW }} />
       {/* Particules or dérivantes — l'ambiance, pas le sujet */}
