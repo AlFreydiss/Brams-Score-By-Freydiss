@@ -6,6 +6,15 @@
    déjà global dans index.css, donc les composants s'affichent correctement. */
 @import "tw-animate-css";
 
+/* Tailwind v4 ne lit PAS tailwind.config.js implicitement : @config le charge
+   explicitement (content paths cloisonnés + les .tsx de src pour la nouvelle
+   stack). Toujours AUCUN preflight. */
+@config "../../../tailwind.config.js";
+/* v4 natif : scanne les NOUVEAUX composants .tsx de src (le glob content legacy
+   du config ne suffit pas en v4). Chemin relatif à CE fichier css. Volontairement
+   limité aux .tsx : les .jsx inline-styles restent hors scan. */
+@source "../../../src/**/*.tsx";
+
 @tailwind components;
 @tailwind utilities;
 

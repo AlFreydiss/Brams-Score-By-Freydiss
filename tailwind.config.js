@@ -8,6 +8,10 @@ export default {
     // styles inline restent intactes. (Élargir à ./src/** ferait regénérer
     // toutes les utilities dans tierlist.css aussi → bundle gonflé.)
     './src/components/ui/**/*.{js,jsx}',
+    // Nouvelle stack : les NOUVEAUX composants .tsx (Tailwind+shadcn) partout
+    // dans src/ — n'inclut volontairement PAS les .jsx existants (inline
+    // styles) pour ne pas regénérer/gonfler les feuilles existantes.
+    './src/**/*.tsx',
   ],
   theme: {
     extend: {

@@ -83,6 +83,8 @@ const TournamentRoomPage = lazyWithReload(() => import('./components/TournamentR
 const UndercoverPage     = lazyWithReload(() => import('./components/UndercoverPage.jsx'))
 const AkinatorPage       = lazyWithReload(() => import('./components/AkinatorPage.jsx'))
 const MangaReaderPage    = lazyWithReload(() => import('./components/MangaReaderPage.jsx'))
+// TEMPORAIRE : page de validation de la stack Tailwind+TS+shadcn (à retirer)
+const TestStack          = lazyWithReload(() => import('./components/TestStack.tsx'))
 
 // Registre des scans manga (hors One Piece qui a sa propre page ScansPage).
 const MANGA_REGISTRY = {
@@ -599,6 +601,8 @@ export default function App() {
         <Route path="/tournoi/endings" element={<PageLayout><TournamentPage tournamentId="ending" /></PageLayout>} />
         <Route path="/tournoi/ending" element={<PageLayout><TournamentPage tournamentId="ending" /></PageLayout>} />
         <Route path="/akinator"    element={<AkinatorPage      />} />
+        {/* TEMPORAIRE : validation visuelle de la stack Tailwind+TS+shadcn */}
+        <Route path="/test-stack"  element={<TestStack         />} />
 
         {/* Profil Yonkou — Next-Gen 3D */}
         <Route path="/profil-yonkou" element={<ProfilePageYonkou />} />
