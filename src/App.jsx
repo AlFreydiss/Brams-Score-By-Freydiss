@@ -27,7 +27,7 @@ import Footer from './components/Footer.jsx'
 import QuoteSection from './components/QuoteSection.jsx'
 import { useInView } from './hooks/useInView.js'
 
-// Lazy — chargés uniquement quand ouverts
+// Lazy â€” chargÃ©s uniquement quand ouverts
 const ProfilePage     = lazyWithReload(() => import('./components/ProfilePage.jsx'))
 const EncyclopediePage= lazyWithReload(() => import('./components/EncyclopediePage.jsx'))
 const ScansPage       = lazyWithReload(() => import('./components/ScansPage.jsx'))
@@ -83,8 +83,6 @@ const TournamentRoomPage = lazyWithReload(() => import('./components/TournamentR
 const UndercoverPage     = lazyWithReload(() => import('./components/UndercoverPage.jsx'))
 const AkinatorPage       = lazyWithReload(() => import('./components/AkinatorPage.jsx'))
 const MangaReaderPage    = lazyWithReload(() => import('./components/MangaReaderPage.jsx'))
-// TEMPORAIRE : page de validation de la stack Tailwind+TS+shadcn (à retirer)
-const TestStack          = lazyWithReload(() => import('./components/TestStack.tsx'))
 
 // Registre des scans manga (hors One Piece qui a sa propre page ScansPage).
 const MANGA_REGISTRY = {
@@ -128,7 +126,7 @@ function MangaRoute() {
   const navigate = useNavigate()
   const m = MANGA_REGISTRY[slug] || { title: slug, color: '#8b5cf6' }
 
-  // Accès libre : plus de connexion requise pour lire les scans.
+  // AccÃ¨s libre : plus de connexion requise pour lire les scans.
   return <MangaReaderPage slug={slug} title={m.title} color={m.color} onClose={() => navigate('/')} />
 }
 const ProfilePageYonkou  = lazyWithReload(() => import('./components/ProfilePageYonkou.jsx'))
@@ -145,8 +143,8 @@ const AkainuGame         = lazyWithReload(() => import('./components/AkainuGame.
 
 function DeferredSection({ children, minHeight = 420, style = {}, threshold = 0.18, id }) {
   const [ref, inView] = useInView(threshold)
-  // id sur le wrapper (toujours présent) → les ancres de scroll (#classement…)
-  // fonctionnent même avant que la section deferred ne soit rendue.
+  // id sur le wrapper (toujours prÃ©sent) â†’ les ancres de scroll (#classementâ€¦)
+  // fonctionnent mÃªme avant que la section deferred ne soit rendue.
   return (
     <div ref={ref} id={id} style={{ minHeight, ...style }}>
       {inView ? (
@@ -177,8 +175,8 @@ function AMVBackground({ hidden = false }) {
     return () => window.clearTimeout(timer)
   }, [])
 
-  // Poster (frame 25s de l'AMV) toujours en fond : si la vidéo ne joue pas
-  // (mobile/tablette < 900px, iOS en mode éco d'énergie qui bloque l'autoplay,
+  // Poster (frame 25s de l'AMV) toujours en fond : si la vidÃ©o ne joue pas
+  // (mobile/tablette < 900px, iOS en mode Ã©co d'Ã©nergie qui bloque l'autoplay,
   // saveData, reduced-motion), on garde une image vivante au lieu d'un noir mort.
   const bgLayerStyle = {
     position: 'fixed',
@@ -194,13 +192,13 @@ function AMVBackground({ hidden = false }) {
     isolation: 'isolate',
   }
 
-  // Si un fond d'opening est équipé, on laisse la place au fond global équipé
-  // (EquippedOpeningBackground) au lieu de la vidéo AMV.
+  // Si un fond d'opening est Ã©quipÃ©, on laisse la place au fond global Ã©quipÃ©
+  // (EquippedOpeningBackground) au lieu de la vidÃ©o AMV.
   if (activeBg) return null
 
-  // Overlay anime/média ouvert → on démonte la vidéo AMV (sinon elle continue de
-  // jouer EN DESSOUS et le navigateur affiche ses contrôles média par-dessus le
-  // lecteur d'anime : -10s, pochette… = la superposition signalée).
+  // Overlay anime/mÃ©dia ouvert â†’ on dÃ©monte la vidÃ©o AMV (sinon elle continue de
+  // jouer EN DESSOUS et le navigateur affiche ses contrÃ´les mÃ©dia par-dessus le
+  // lecteur d'anime : -10s, pochetteâ€¦ = la superposition signalÃ©e).
   if (hidden) return <div aria-hidden style={bgLayerStyle} />
 
   if (!enabled) {
@@ -242,7 +240,7 @@ function AMVBackground({ hidden = false }) {
         </video>
       </div>
 
-      {/* Contrôle audio AMV */}
+      {/* ContrÃ´le audio AMV */}
       <div
         className="cinema-hide ambient-sound-ctl"
         onMouseEnter={() => setHovered(true)}
@@ -269,7 +267,7 @@ function AMVBackground({ hidden = false }) {
             transition: 'color .2s',
           }}
         >
-          {muted || volume === 0 ? '🔇' : volume < 40 ? '🔉' : '🔊'}
+          {muted || volume === 0 ? 'ðŸ”‡' : volume < 40 ? 'ðŸ”‰' : 'ðŸ”Š'}
         </button>
 
         {hovered && (
@@ -290,7 +288,7 @@ function AMVBackground({ hidden = false }) {
   )
 }
 
-// Wrapper pour les pages Wiki/Théories (Navbar + fond sombre + WelcomeAnimation)
+// Wrapper pour les pages Wiki/ThÃ©ories (Navbar + fond sombre + WelcomeAnimation)
 function PageLayout({ children }) {
   return (
     <div style={{ minHeight: '100vh', background: '#0b0c0e', position: 'relative', isolation: 'isolate', overflowX: 'hidden' }}>
@@ -348,8 +346,8 @@ export default function App() {
   const [treeOpen,         setTreeOpen]          = useState(false)
   const [uploadOpen,       setUploadOpen]        = useState(false)
 
-  // Ouverture d'une page depuis Mon Univers : on mémorise le retour vers le dashboard
-  // puis on navigue vers l'URL de l'anime (l'effet URL→overlay ouvre la page).
+  // Ouverture d'une page depuis Mon Univers : on mÃ©morise le retour vers le dashboard
+  // puis on navigue vers l'URL de l'anime (l'effet URLâ†’overlay ouvre la page).
   const openFromMon = (slug) => () => { setReturnToMon(true); navigate(`/animes-scan/${slug}`) }
   const onOpenAotFromMon = openFromMon('aot')
   const onOpenFireforceFromMon = openFromMon('fireforce')
@@ -377,15 +375,15 @@ export default function App() {
   const onOpenMhaFromMon = openFromMon('mha')
   const onOpenOnepieceFromMon = openFromMon('onepiece')
 
-  // Fermeture d'une page média : si on y est arrivé depuis Mon Univers, on y retourne ;
-  // sinon on retombe sur le Hub Animé (jamais sur le hero/home). Tout passe par l'URL.
+  // Fermeture d'une page mÃ©dia : si on y est arrivÃ© depuis Mon Univers, on y retourne ;
+  // sinon on retombe sur le Hub AnimÃ© (jamais sur le hero/home). Tout passe par l'URL.
   const closeMedia = () => {
     if (returnToMon) { setReturnToMon(false); navigate('/animes-scan/mon-univers') }
     else navigate('/animes-scan')
   }
 
-  // Ferme tous les overlays anime/média quand on change de page (sinon un overlay
-  // ouvert reste affiché par-dessus la nouvelle route — ex. DBS par-dessus Messages —
+  // Ferme tous les overlays anime/mÃ©dia quand on change de page (sinon un overlay
+  // ouvert reste affichÃ© par-dessus la nouvelle route â€” ex. DBS par-dessus Messages â€”
   // et donne l'impression qu'il faut actualiser).
   const location = useLocation()
   const closeAllOverlays = useCallback(() => {
@@ -396,7 +394,7 @@ export default function App() {
     setFireforcOpen(false); setBleachOpen(false); setKaijuOpen(false); setBluelockOpen(false); setFateZeroOpen(false); setYourNameOpen(false); setBubbleOpen(false); setRezeOpen(false); setYourLieOpen(false); setMonUniversOpen(false); setTreeOpen(false); setUploadOpen(false)
   }, [])
 
-  // Slug d'URL d'un anime → setter d'overlay correspondant
+  // Slug d'URL d'un anime â†’ setter d'overlay correspondant
   const ANIME_SETTERS = {
     onepiece: setOnepieceOpen, tpn: setTpnOpen, drstone: setDrstoneOpen, jjk: setJjkOpen,
     kingdom: setKingdomOpen, aot: setAotOpen, kny: setKnyOpen, nnt: setNntOpen, sl: setSlOpen,
@@ -407,9 +405,9 @@ export default function App() {
     bubble: setBubbleOpen, reze: setRezeOpen,
   }
 
-  // ── URL = source de vérité des overlays anime/scan ──
-  // /animes-scan → Hub · /animes-scan/<id> → page anime · /animes-scan/mon-univers
-  // · /scans → lecteur de scans. Reload, partage de lien et bouton retour marchent.
+  // â”€â”€ URL = source de vÃ©ritÃ© des overlays anime/scan â”€â”€
+  // /animes-scan â†’ Hub Â· /animes-scan/<id> â†’ page anime Â· /animes-scan/mon-univers
+  // Â· /scans â†’ lecteur de scans. Reload, partage de lien et bouton retour marchent.
   useEffect(() => {
     const path = location.pathname
     if (path === '/scans') { closeAllOverlays(); setScansOpen(true); return }
@@ -426,8 +424,8 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname])
 
-  // Les événements "open-*" (Navbar, cartes…) naviguent désormais vers l'URL dédiée
-  // (sauf encyclopédie/arbre/upload qui restent de simples overlays sans URL).
+  // Les Ã©vÃ©nements "open-*" (Navbar, cartesâ€¦) naviguent dÃ©sormais vers l'URL dÃ©diÃ©e
+  // (sauf encyclopÃ©die/arbre/upload qui restent de simples overlays sans URL).
   useEffect(() => {
     const go = (to) => () => navigate(to)
     const handlers = {
@@ -469,10 +467,10 @@ export default function App() {
 
   const mediaOverlayOpen = scansOpen || onepieceOpen || animeHubOpen || tpnOpen || drstoneOpen || jjkOpen || kingdomOpen || aotOpen || knyOpen || nntOpen || slOpen || dbsOpen || violetOpen || vivyOpen || domesticOpen || koiOpen || lovePrismOpen || caroleTuesdayOpen || bunnyGirlOpen || rentGirlOpen || bcOpen || mhaOpen || fireforcOpen || bleachOpen || kaijuOpen || bluelockOpen || fateZeroOpen || yourNameOpen || bubbleOpen || rezeOpen || yourLieOpen || monUniversOpen
 
-  // Pages animé/film individuelles ouvertes par URL directe (/animes-scan/<slug>).
-  // Le Hub et les Scans sont déjà derrière AuthGuard, mais ces overlays-là étaient
-  // rendus sans contrôle → un visiteur non connecté accédait au catalogue via le
-  // lien direct. On les passe donc aussi derrière AuthGuard (gating Discord).
+  // Pages animÃ©/film individuelles ouvertes par URL directe (/animes-scan/<slug>).
+  // Le Hub et les Scans sont dÃ©jÃ  derriÃ¨re AuthGuard, mais ces overlays-lÃ  Ã©taient
+  // rendus sans contrÃ´le â†’ un visiteur non connectÃ© accÃ©dait au catalogue via le
+  // lien direct. On les passe donc aussi derriÃ¨re AuthGuard (gating Discord).
   const animeIndividualOpen = onepieceOpen || tpnOpen || drstoneOpen || jjkOpen || kingdomOpen || aotOpen || knyOpen || nntOpen || slOpen || dbsOpen || violetOpen || vivyOpen || domesticOpen || koiOpen || lovePrismOpen || caroleTuesdayOpen || bunnyGirlOpen || rentGirlOpen || bcOpen || mhaOpen || fireforcOpen || bleachOpen || kaijuOpen || bluelockOpen || fateZeroOpen || yourNameOpen || bubbleOpen || rezeOpen || yourLieOpen || monUniversOpen
 
   const mainContent = (
@@ -481,21 +479,21 @@ export default function App() {
       <AMVBackground hidden={mediaOverlayOpen || encyclopedieOpen || treeOpen || uploadOpen} />
       <div className="cinema-veil" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1, background: 'rgba(4,7,10,0.30)', pointerEvents: 'none' }} />
 
-      {/* Hero transparent → l'AMV en fond reste visible. Le reste des sections
-          a un fond opaque #08090D (corrige le débordement footer sans masquer l'AMV). */}
+      {/* Hero transparent â†’ l'AMV en fond reste visible. Le reste des sections
+          a un fond opaque #08090D (corrige le dÃ©bordement footer sans masquer l'AMV). */}
       <div style={{ position: 'relative', zIndex: 2, isolation: 'isolate' }}>
         <Navbar />
-        {/* Home masquée quand un overlay média (animé/scan/…) est ouvert : sinon le
-            Hero translucide transparaissait derrière la barre du haut ("hero derrière"). */}
+        {/* Home masquÃ©e quand un overlay mÃ©dia (animÃ©/scan/â€¦) est ouvert : sinon le
+            Hero translucide transparaissait derriÃ¨re la barre du haut ("hero derriÃ¨re"). */}
         <div style={{ display: mediaOverlayOpen ? 'none' : 'block' }}>
           <Hero />
           {/* Voile UNIQUE et uniforme (0.5) sur toute la page (overlay fixe plus haut)
-              → l'AMV reste visible de façon homogène partout, AUCUNE coupure entre le
+              â†’ l'AMV reste visible de faÃ§on homogÃ¨ne partout, AUCUNE coupure entre le
               hero et les sections. Le bloc sections est donc transparent. */}
           <div style={{ background: 'transparent' }}>
             <QuoteSection />
             <Ranks />
-            {/* Classement vocal remonté juste sous 'Grimpe les rangs' (était trop bas, après Equipage/Soutenir) */}
+            {/* Classement vocal remontÃ© juste sous 'Grimpe les rangs' (Ã©tait trop bas, aprÃ¨s Equipage/Soutenir) */}
             <DeferredSection id="classement" minHeight={540}><Leaderboard /></DeferredSection>
             <DeferredSection minHeight={760}><BotFeatures /></DeferredSection>
             <DeferredSection minHeight={520}><HallOfFame /></DeferredSection>
@@ -548,22 +546,22 @@ export default function App() {
         {/* Profil utilisateur */}
         <Route path="/u/:discordId" element={<ProfilePage />} />
 
-        {/* Le Fil (réseau social) — remplace Wiki/Théories */}
+        {/* Le Fil (rÃ©seau social) â€” remplace Wiki/ThÃ©ories */}
         <Route path="/fil"            element={<PageLayout><FeedPage /></PageLayout>} />
         <Route path="/fil/recherche"  element={<PageLayout><FeedSearchPage /></PageLayout>} />
         <Route path="/fil/signets"    element={<PageLayout><BookmarksPage /></PageLayout>} />
         <Route path="/fil/:postId"    element={<PageLayout><PostThreadPage /></PageLayout>} />
-        {/* Redirections des anciens liens Wiki/Théories vers le Fil */}
+        {/* Redirections des anciens liens Wiki/ThÃ©ories vers le Fil */}
         <Route path="/wiki"           element={<Navigate to="/fil" replace />} />
         <Route path="/wiki/*"         element={<Navigate to="/fil" replace />} />
         <Route path="/theories"       element={<Navigate to="/fil" replace />} />
         <Route path="/theories/*"     element={<Navigate to="/fil" replace />} />
 
-        {/* Équipages — verrouillé "Bientôt" pour tout le monde */}
-        <Route path="/equipage" element={<PageLayout><ComingSoon title="Équipages" /></PageLayout>} />
-        <Route path="/equipage/:crewId" element={<PageLayout><ComingSoon title="Équipages" /></PageLayout>} />
+        {/* Ã‰quipages â€” verrouillÃ© "BientÃ´t" pour tout le monde */}
+        <Route path="/equipage" element={<PageLayout><ComingSoon title="Ã‰quipages" /></PageLayout>} />
+        <Route path="/equipage/:crewId" element={<PageLayout><ComingSoon title="Ã‰quipages" /></PageLayout>} />
 
-        {/* Encyclopédie Fruits du Démon */}
+        {/* EncyclopÃ©die Fruits du DÃ©mon */}
         <Route path="/fruits-du-demon" element={<PageLayout><DevilFruitPage /></PageLayout>} />
 
         {/* Boutique Berry connectee Discord */}
@@ -571,7 +569,7 @@ export default function App() {
         <Route path="/soutenir" element={<PageLayout><SupportPage /></PageLayout>} />
         <Route path="/shop" element={<PageLayout><BerryShop /></PageLayout>} />
 
-        {/* Systeme social — amis & messagerie */}
+        {/* Systeme social â€” amis & messagerie */}
         <Route path="/amis" element={<FriendsPage />} />
         <Route path="/messages" element={<MessagesPage />} />
         <Route path="/messages/:conversationId" element={<MessagesPage />} />
@@ -580,7 +578,7 @@ export default function App() {
         <Route path="/brams-traitor" element={<BramsTraitorPage />} />
         <Route path="/pirate-arena" element={<BramsTraitorPage />} />
 
-        {/* Panel staff modération */}
+        {/* Panel staff modÃ©ration */}
         <Route path="/staff" element={<StaffPanel />} />
 
         {/* Blind Test */}
@@ -601,18 +599,16 @@ export default function App() {
         <Route path="/tournoi/endings" element={<PageLayout><TournamentPage tournamentId="ending" /></PageLayout>} />
         <Route path="/tournoi/ending" element={<PageLayout><TournamentPage tournamentId="ending" /></PageLayout>} />
         <Route path="/akinator"    element={<AkinatorPage      />} />
-        {/* TEMPORAIRE : validation visuelle de la stack Tailwind+TS+shadcn */}
-        <Route path="/test-stack"  element={<TestStack         />} />
 
-        {/* Profil Yonkou — Next-Gen 3D */}
+        {/* Profil Yonkou â€” Next-Gen 3D */}
         <Route path="/profil-yonkou" element={<ProfilePageYonkou />} />
 
         {/* Homepage */}
         <Route path="/*" element={mainContent} />
       </Routes>
 
-      {/* ── Overlays globaux — disponibles sur toutes les routes ── */}
-      {/* Accès libre : les animés & scans ne demandent plus de connexion. */}
+      {/* â”€â”€ Overlays globaux â€” disponibles sur toutes les routes â”€â”€ */}
+      {/* AccÃ¨s libre : les animÃ©s & scans ne demandent plus de connexion. */}
       {animeHubOpen && (
           <AnimeHub
             onClose={() => navigate('/')}
@@ -696,10 +692,10 @@ export default function App() {
       )}
       {treeOpen      && <FamilyTree3D  onClose={() => setTreeOpen(false)} />}
       {scansOpen && <ScansPage onClose={() => navigate('/')} />}
-      {encyclopedieOpen && <ComingSoon title="Encyclopédie" onClose={() => setEncyclopedieOpen(false)} />}
+      {encyclopedieOpen && <ComingSoon title="EncyclopÃ©die" onClose={() => setEncyclopedieOpen(false)} />}
       {uploadOpen && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: '#0b0c0e', overflowY: 'auto' }}>
-          <button onClick={() => setUploadOpen(false)} style={{ position: 'fixed', top: 16, right: 16, zIndex: 10000, background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, color: '#fff', padding: '8px 16px', cursor: 'pointer', fontSize: 14 }}>✕ Fermer</button>
+          <button onClick={() => setUploadOpen(false)} style={{ position: 'fixed', top: 16, right: 16, zIndex: 10000, background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, color: '#fff', padding: '8px 16px', cursor: 'pointer', fontSize: 14 }}>âœ• Fermer</button>
           <BlobUploadPage />
         </div>
       )}
