@@ -147,7 +147,7 @@ export default function AnimeHubV2(props) {
   const reduced = useMemo(() => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches, [])
   useEffect(() => {
     if (reduced || paused || slides.length < 2) return
-    const t = setInterval(() => setSlide(s => (s + 1) % slides.length), 8000)
+    const t = setInterval(() => setSlide(s => (s + 1) % slides.length), 5000)
     return () => clearInterval(t)
   }, [reduced, paused, slides.length])
 
@@ -270,8 +270,10 @@ export default function AnimeHubV2(props) {
       {/* ── TOOLBAR sticky (sous la navbar) ── */}
       <div ref={toolbarRef} style={{
         position: 'sticky', top: 64, zIndex: 4,
-        background: toolbarStuck ? C.panel : 'transparent',
-        backdropFilter: toolbarStuck ? 'blur(8px)' : 'none',
+        // posée sur le hero : voile léger + blur (lisible sur keyart clair)
+        // sans la bande sombre pleine ; panel complet une fois sticky.
+        background: toolbarStuck ? C.panel : 'rgba(11,14,20,.38)',
+        backdropFilter: 'blur(8px)',
         borderBottom: `1px solid ${toolbarStuck ? C.hair : 'transparent'}`,
         borderRadius: '12px 12px 0 0',
         transition: 'background 200ms ease, border-color 200ms ease',
@@ -347,7 +349,7 @@ export default function AnimeHubV2(props) {
           )}
           <span style={{ flex: 1 }} />
           {/* Stats inline */}
-          <span style={{ fontSize: 12.5, color: C.faint, whiteSpace: 'nowrap' }}>
+          <span style={{ fontSize: 12.5, color: 'rgba(238,240,246,.78)', whiteSpace: 'nowrap', textShadow: '0 1px 8px rgba(0,0,0,.6)' }}>
             {stats.total} séries · {stats.encours} en cours · {stats.nouveautes} nouveautés · {stats.favoris} favoris
           </span>
         </div>

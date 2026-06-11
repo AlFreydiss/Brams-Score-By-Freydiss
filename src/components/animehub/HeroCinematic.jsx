@@ -102,7 +102,7 @@ export default function HeroCinematic({ anime, rating = null, topRank = null, on
           très lumineux type Gear 5, image vive à droite) + fondu de sortie sur
           les 240 derniers px (toolbar/indicateurs jamais sur l'image brute). */}
       <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, rgba(11,14,20,.78), rgba(11,14,20,.45) 38%, transparent 62%)' }} />
-      <div aria-hidden style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 240, background: 'linear-gradient(180deg, transparent, #0B0E14 95%)' }} />
+      <div aria-hidden style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 300, background: 'linear-gradient(180deg, transparent, rgba(11,14,20,.85) 62%, #0B0E14 90%)' }} />
 
       {/* Contenu aligné gauche */}
       <div style={{
@@ -122,8 +122,8 @@ export default function HeroCinematic({ anime, rating = null, topRank = null, on
         {/* Title-art officiel si dispo, sinon titre texte */}
         <TitleArt anime={anime} fallback={
           <h1 style={{
-            margin: 0, fontFamily: FONT_BODY, fontWeight: 800,
-            fontSize: 'clamp(30px, 4vw, 52px)', lineHeight: 1.04, letterSpacing: '-0.02em', color: C.text,
+            margin: 0, fontFamily: FONT_DISPLAY, fontWeight: 700,
+            fontSize: 'clamp(32px, 4.2vw, 56px)', lineHeight: 1.02, letterSpacing: '-0.015em', color: C.text,
             textShadow: '0 2px 18px rgba(0,0,0,.65)',
           }}>{anime.title}</h1>
         } />
@@ -156,9 +156,9 @@ export default function HeroCinematic({ anime, rating = null, topRank = null, on
         {/* Synopsis 2 lignes max (coupe 100% CSS) */}
         {anime.description && (
           <p style={{
-            margin: '14px 0 0', fontSize: 15, lineHeight: 1.55, color: C.dim, maxWidth: 520,
+            margin: '14px 0 0', fontSize: 15.5, lineHeight: 1.55, color: 'rgba(238,240,246,.92)', maxWidth: 520,
             display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
-            textShadow: '0 1px 10px rgba(0,0,0,.7)',
+            textShadow: '0 1px 10px rgba(0,0,0,.75)',
           }}>{anime.description}</p>
         )}
 
