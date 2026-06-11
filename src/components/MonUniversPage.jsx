@@ -1,4 +1,9 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+// ── TON UNIVERS — codex anime noir/rouge (réf. menus Persona 5) ──────────────
+// Refonte visuelle complète validée par Freydiss (option « noir et rouge »).
+// LA LOGIQUE ET LE SCHÉMA LOCALSTORAGE SONT INTACTS (voir MIGRATION.md) :
+// loadAllProgress / computeVideo / computeChapter / markNext / markMax /
+// power = vidéo×0.62 + chapitres×0.38 / live-sync / onOpenMap.
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { ProgressRing } from './ProgressRing.jsx'
 import { onLiveProgress } from '../lib/liveSync.js'
 
@@ -134,7 +139,46 @@ function markMax(ns, type) {
   } catch { return false }
 }
 
-export default function MonUniversPage({ 
+// ── Tokens « codex P5 » ───────────────────────────────────────────────────────
+const RED = '#E60012'
+const RED_HI = '#FF2A3C'
+const INK = '#0A0A0C'
+const PAPER = '#F4F4F0'
+const DISPLAY = "'Bricolage Grotesque', 'Space Grotesk', 'Inter', sans-serif"
+
+// Jauge de Légende gamifiée : paliers nommés sur les rangs du serveur.
+const PALIERS = [
+  { at: 0,  name: 'MOUSSAILLON' },
+  { at: 15, name: 'PIRATE' },
+  { at: 35, name: 'SHICHIBUKAI' },
+  { at: 55, name: 'AMIRAL' },
+  { at: 75, name: 'YONKOU' },
+  { at: 95, name: 'ROI DES PIRATES' },
+]
+function palierFor(avg) {
+  let cur = PALIERS[0], next = null
+  for (const p of PALIERS) { if (avg >= p.at) cur = p; else { next = p; break } }
+  return { cur, next }
+}
+
+const P5_CSS = `
+  @keyframes p5In { from { opacity: 0; transform: translateY(14px) skewX(-6deg) } to { opacity: 1; transform: skewX(-6deg) } }
+  @keyframes p5CardIn { from { opacity: 0; transform: translateY(16px) } to { opacity: 1; transform: none } }
+  @keyframes p5Pop { 0% { transform: scale(1) } 40% { transform: scale(1.35) } 100% { transform: scale(1) } }
+  .p5-card { transition: transform .18s cubic-bezier(.23,1,.32,1), box-shadow .18s; }
+  .p5-card:hover { transform: translateY(-5px); box-shadow: 0 18px 48px rgba(0,0,0,.65), 0 0 0 1.5px ${RED}; }
+  .p5-actions { opacity: 0; pointer-events: none; transition: opacity .16s ease; }
+  .p5-card:hover .p5-actions, .p5-card.is-open .p5-actions { opacity: 1; pointer-events: auto; }
+  .p5-btn { transition: transform .12s, background .12s, color .12s; cursor: pointer; font-family: ${DISPLAY}; }
+  .p5-btn:hover { transform: skewX(-6deg) scale(1.06); }
+  .p5-pop { display: inline-block; animation: p5Pop .35s ease; }
+  @media (prefers-reduced-motion: reduce) {
+    .p5-card, .p5-btn { transition: none !important }
+    * { animation-duration: 0.001s !important }
+  }
+`
+
+export default function MonUniversPage({
   onClose,
   onOpenAot, onOpenFireforce, onOpenBluelock, onOpenBunnyGirl, onOpenRentGirlfriend,
   onOpenTpn, onOpenDrstone, onOpenJjk, onOpenKingdom, onOpenKny, onOpenNnt, onOpenSl,
@@ -145,6 +189,9 @@ export default function MonUniversPage({
   const [query, setQuery] = useState('')
   const [sort, setSort] = useState('power') // power | video | chapter | name
   const [filter, setFilter] = useState('all') // all | done | low
+  const [openId, setOpenId] = useState(null)  // overlay d'actions au tap (mobile)
+  const [popKey, setPopKey] = useState(0)     // re-déclenche l'anim du +1
+  const searchRef = useRef(null)
 
   const refresh = useCallback(() => {
     setRawProgress(loadAllProgress())
@@ -157,6 +204,17 @@ export default function MonUniversPage({
     document.body.style.overflow = 'hidden'
     return () => { off(); clearInterval(id); document.body.style.overflow = '' }
   }, [refresh])
+
+  // Raccourci « / » : focus recherche
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === '/' && document.activeElement?.tagName !== 'INPUT') {
+        e.preventDefault(); searchRef.current?.focus()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
 
   const onOpenMap = {
     aot: onOpenAot, fireforce: onOpenFireforce, bluelock: onOpenBluelock,
@@ -178,6 +236,12 @@ export default function MonUniversPage({
       return { ...a, video, chapter, power, done, low }
     })
   }, [rawProgress])
+
+  const counts = useMemo(() => ({
+    all: processed.length,
+    done: processed.filter(a => a.done).length,
+    low: processed.filter(a => a.low).length,
+  }), [processed])
 
   const filtered = useMemo(() => {
     let list = processed
@@ -204,6 +268,8 @@ export default function MonUniversPage({
     return { animes, vWatched, vTotal, cRead, cTotal, avg }
   }, [processed])
 
+  const { cur: palier, next: nextPalier } = palierFor(totals.avg)
+
   const openAnime = (id) => {
     const fn = onOpenMap[id]
     if (fn) fn()
@@ -213,6 +279,7 @@ export default function MonUniversPage({
     const a = HUB_ANIMES.find(x => x.id === id)
     if (!a) return
     if (markNext(a.ns, type, rawProgress)) {
+      setPopKey(k => k + 1)
       setTimeout(refresh, 30)
     }
   }
@@ -225,95 +292,105 @@ export default function MonUniversPage({
     }
   }
 
+  // Bouton d'action overlay (style P5 : bloc skewé, rouge au hover)
+  const actBtn = (label, onClick, primary = false) => (
+    <button key={label} className="p5-btn" onClick={e => { e.stopPropagation(); onClick() }} style={{
+      padding: '8px 12px', border: 'none', transform: 'skewX(-6deg)',
+      background: primary ? RED : PAPER, color: primary ? '#fff' : INK,
+      fontWeight: 800, fontSize: 12, letterSpacing: '.03em', minHeight: 34,
+    }}>{label}</button>
+  )
+
   return (
     <div style={{
       position:'fixed', inset:0, zIndex:600, display:'flex', flexDirection:'column', overflow:'hidden',
-      background:'radial-gradient(900px 600px at 78% -8%, rgba(167,139,250,0.10), transparent 60%), radial-gradient(800px 560px at 12% 108%, rgba(191,164,106,0.09), transparent 60%), linear-gradient(180deg, #0a0b10 0%, #07080d 60%, #050609 100%)',
+      fontFamily: DISPLAY, color: PAPER,
+      background: `radial-gradient(1100px 700px at 85% -10%, rgba(230,0,18,0.13), transparent 55%), linear-gradient(168deg, #101013 0%, ${INK} 45%, #060607 100%)`,
     }}>
-      <style>{`
-        @keyframes muFadeUp { from {opacity:0; transform:translateY(18px)} to {opacity:1; transform:none} }
-        @keyframes muGlow { 0%,100%{text-shadow:0 0 12px rgba(191,164,106,.30)} 50%{text-shadow:0 0 26px rgba(167,139,250,.55)} }
-        @keyframes muDrift { 0%,100%{transform:translateY(0) rotate(-2deg)} 50%{transform:translateY(-6px) rotate(2deg)} }
-        @keyframes muShimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
-        .mu-card { transition: transform .2s cubic-bezier(.23,1,.32,1), box-shadow .2s, border-color .2s; }
-        .mu-card:hover { transform: translateY(-5px) scale(1.012); box-shadow: 0 22px 56px rgba(0,0,0,.55); }
-        .mu-stat { transition: transform .2s, border-color .2s; }
-        .mu-stat:hover { transform: translateY(-2px); border-color: rgba(191,164,106,0.35) !important; }
-      `}</style>
+      <style>{P5_CSS}</style>
 
-      {/* Header premium (gold/violet) */}
-      <div style={{ flexShrink:0, height:70, padding:'0 24px', display:'flex', alignItems:'center', justifyContent:'space-between', background:'linear-gradient(180deg, rgba(10,12,18,0.92), rgba(7,8,13,0.80))', backdropFilter:'blur(22px)', borderBottom:'1px solid rgba(191,164,106,0.16)', zIndex:10, position:'relative' }}>
-        <div style={{ position:'absolute', left:0, right:0, bottom:0, height:1, background:'linear-gradient(90deg, transparent, rgba(191,164,106,0.5), rgba(167,139,250,0.4), transparent)', pointerEvents:'none' }} />
-        <div style={{ display:'flex', alignItems:'center', gap:13 }}>
-          <div style={{ width:3, height:34, borderRadius:2, background:'linear-gradient(to bottom, #BFA46A, #a78bfa)', boxShadow:'0 0 12px rgba(191,164,106,0.35)' }} />
-          <div style={{ fontSize:26, animation:'muDrift 5.5s ease-in-out infinite' }}>🌌</div>
-          <div>
-            <div style={{ fontFamily:"'Pirata One', cursive", fontWeight:900, fontSize:23, color:'#f4f1ea', letterSpacing:'-.01em', lineHeight:1, animation:'muGlow 6s ease-in-out infinite' }}>TON UNIVERS</div>
-            <div style={{ fontSize:10.5, color:'#9ca3af', fontWeight:700, letterSpacing:'.06em', marginTop:3, textTransform:'uppercase' }}>Suivi global · Power · Légende vivante</div>
+      {/* HEADER — bandeau skewé rouge */}
+      <div style={{ flexShrink:0, height:66, padding:'0 22px', display:'flex', alignItems:'center', justifyContent:'space-between', background:'rgba(8,8,10,0.92)', backdropFilter:'blur(18px)', borderBottom:`2px solid ${RED}`, zIndex:10 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:14, minWidth:0 }}>
+          <div style={{ background:RED, padding:'7px 18px', transform:'skewX(-8deg)', boxShadow:`4px 4px 0 ${PAPER}22` }}>
+            <span style={{ display:'inline-block', transform:'skewX(8deg)', fontWeight:900, fontSize:20, letterSpacing:'.02em', color:'#fff', textTransform:'uppercase', fontStyle:'italic' }}>Ton Univers</span>
           </div>
+          <span style={{ fontSize:10.5, color:'rgba(244,244,240,.45)', fontWeight:700, letterSpacing:'.14em', textTransform:'uppercase', whiteSpace:'nowrap' }}>Codex anime · {totals.animes} titres</span>
         </div>
         <div style={{ display:'flex', gap:10, alignItems:'center' }}>
-          {/* Power moyen — badge premium */}
-          <div style={{ display:'flex', alignItems:'center', gap:9, padding:'7px 15px', borderRadius:12, background:'linear-gradient(135deg, rgba(191,164,106,0.12), rgba(167,139,250,0.10))', border:'1px solid rgba(191,164,106,0.28)' }}>
-            <span style={{ fontSize:9.5, fontWeight:800, letterSpacing:'.12em', color:'#BFA46A', textTransform:'uppercase' }}>Power moyen</span>
-            <span style={{ fontFamily:"'Pirata One', cursive", fontSize:20, fontWeight:900, color:'#fff', lineHeight:1 }}>{totals.avg}<span style={{ fontSize:11, color:'rgba(255,255,255,0.45)' }}>%</span></span>
+          <div style={{ transform:'skewX(-8deg)', border:`1.5px solid ${RED}`, padding:'6px 14px', background:'rgba(230,0,18,0.08)' }}>
+            <span style={{ display:'inline-block', transform:'skewX(8deg)', fontSize:10, fontWeight:800, letterSpacing:'.1em', color:RED_HI }}>POWER MOYEN </span>
+            <span style={{ display:'inline-block', transform:'skewX(8deg)', fontSize:18, fontWeight:900, color:'#fff', marginLeft:6 }}>{totals.avg}<span style={{ fontSize:11, opacity:.5 }}>%</span></span>
           </div>
-          <button onClick={onClose}
-            style={{ padding:'8px 18px', borderRadius:10, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', color:'#9ca3af', fontWeight:700, fontSize:13, cursor:'pointer', transition:'all .18s' }}
-            onMouseEnter={e => { e.currentTarget.style.background='rgba(255,255,255,0.1)'; e.currentTarget.style.color='#f4f4f5' }}
-            onMouseLeave={e => { e.currentTarget.style.background='rgba(255,255,255,0.05)'; e.currentTarget.style.color='#9ca3af' }}
-          >← Retour</button>
+          <button className="p5-btn" onClick={onClose} style={{ padding:'8px 16px', transform:'skewX(-8deg)', background:'transparent', border:'1.5px solid rgba(244,244,240,.25)', color:'rgba(244,244,240,.8)', fontWeight:800, fontSize:12.5 }}>
+            <span style={{ display:'inline-block', transform:'skewX(8deg)' }}>← RETOUR</span>
+          </button>
         </div>
       </div>
 
-      {/* Stats bar premium + barre de complétion globale */}
-      <div style={{ flexShrink:0, padding:'16px 24px 14px', borderBottom:'1px solid rgba(255,255,255,0.05)' }}>
-        <div style={{ maxWidth:1280, margin:'0 auto', display:'flex', gap:14, alignItems:'stretch', justifyContent:'center', flexWrap:'wrap' }}>
-          {[
-            { label:'Animes',        icon:'🎬', value:totals.animes,    sub:null,                       accent:'#BFA46A' },
-            { label:'Épisodes vus',  icon:'📺', value:totals.vWatched,  sub:`/ ${totals.vTotal}`,        accent:'#a78bfa' },
-            { label:'Chapitres lus', icon:'📖', value:totals.cRead,     sub:`/ ${totals.cTotal}`,        accent:'#7cc4e0' },
-            { label:'Complétion',    icon:'⚡', value:`${totals.avg}%`, sub:null,                        accent:'#34d399' },
-          ].map((s, i) => (
-            <div key={i} className="mu-stat" style={{ flex:'1 1 150px', maxWidth:220, background:'rgba(255,255,255,0.035)', border:'1px solid rgba(255,255,255,0.07)', padding:'12px 16px', borderRadius:14, display:'flex', alignItems:'center', gap:12 }}>
-              <div style={{ width:38, height:38, borderRadius:11, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, background:`${s.accent}1a`, border:`1px solid ${s.accent}33` }}>{s.icon}</div>
-              <div style={{ minWidth:0 }}>
-                <div style={{ fontSize:9.5, color:'rgba(255,255,255,0.42)', fontWeight:800, letterSpacing:'.08em', textTransform:'uppercase' }}>{s.label}</div>
-                <div style={{ fontSize:22, fontWeight:900, color:'#fff', lineHeight:1.1 }}>{s.value} {s.sub && <span style={{ fontSize:12, color:'rgba(255,255,255,0.4)', fontWeight:700 }}>{s.sub}</span>}</div>
+      {/* HERO — stats + jauge de Légende à paliers */}
+      <div style={{ flexShrink:0, padding:'18px 24px 14px', borderBottom:'1px solid rgba(244,244,240,0.07)' }}>
+        <div style={{ maxWidth:1280, margin:'0 auto' }}>
+          <div style={{ display:'flex', gap:0, alignItems:'stretch', flexWrap:'wrap' }}>
+            {[
+              { label:'ANIMES',        value: totals.animes,   sub: null },
+              { label:'ÉPISODES VUS',  value: totals.vWatched, sub: `/ ${totals.vTotal}` },
+              { label:'CHAPITRES LUS', value: totals.cRead,    sub: `/ ${totals.cTotal}` },
+              { label:'COMPLÉTION',    value: `${totals.avg}%`, sub: null },
+            ].map((s, i) => (
+              <div key={s.label} style={{ flex:'1 1 140px', padding:'10px 18px', borderLeft: i > 0 ? '1px solid rgba(244,244,240,.1)' : 'none', animation:`p5CardIn .4s ${i*0.06}s both` }}>
+                <div style={{ fontSize:9.5, fontWeight:800, letterSpacing:'.18em', color:RED_HI }}>{s.label}</div>
+                <div style={{ fontSize:30, fontWeight:900, fontStyle:'italic', lineHeight:1.1, color:PAPER }}>
+                  {s.value}{s.sub && <span style={{ fontSize:13, opacity:.4, fontStyle:'normal', fontWeight:700 }}> {s.sub}</span>}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-        {/* Barre de complétion globale */}
-        <div style={{ maxWidth:1280, margin:'14px auto 0', display:'flex', alignItems:'center', gap:12 }}>
-          <span style={{ fontSize:10, fontWeight:800, letterSpacing:'.08em', color:'rgba(255,255,255,0.35)', textTransform:'uppercase', flexShrink:0 }}>Légende</span>
-          <div style={{ flex:1, height:7, borderRadius:99, background:'rgba(255,255,255,0.06)', overflow:'hidden' }}>
-            <div style={{ height:'100%', width:`${totals.avg}%`, borderRadius:99, background:'linear-gradient(90deg, #BFA46A, #a78bfa)', boxShadow:'0 0 12px rgba(167,139,250,0.4)', transition:'width .5s cubic-bezier(.23,1,.32,1)' }} />
+            ))}
           </div>
-          <span style={{ fontSize:11, fontWeight:800, color:'#BFA46A', flexShrink:0, minWidth:38, textAlign:'right' }}>{totals.avg}%</span>
+
+          {/* Jauge Légende : palier actuel + prochain palier */}
+          <div style={{ marginTop:12, display:'flex', alignItems:'center', gap:14, flexWrap:'wrap' }}>
+            <div style={{ background:PAPER, color:INK, padding:'4px 13px', transform:'skewX(-8deg)', fontWeight:900, fontSize:12, fontStyle:'italic', whiteSpace:'nowrap' }}>
+              <span style={{ display:'inline-block', transform:'skewX(8deg)' }}>⚓ {palier.name}</span>
+            </div>
+            <div style={{ flex:1, minWidth:200, height:10, background:'rgba(244,244,240,.08)', transform:'skewX(-8deg)', position:'relative', overflow:'hidden' }}>
+              <div style={{ position:'absolute', inset:'0 auto 0 0', width:`${totals.avg}%`, background:`linear-gradient(90deg, ${RED}, ${RED_HI})`, transition:'width .6s cubic-bezier(.23,1,.32,1)' }} />
+              {PALIERS.slice(1).map(p => (
+                <div key={p.at} style={{ position:'absolute', left:`${p.at}%`, top:0, bottom:0, width:2, background:'rgba(10,10,12,.7)' }} />
+              ))}
+            </div>
+            <span style={{ fontSize:11.5, fontWeight:800, color:'rgba(244,244,240,.6)', whiteSpace:'nowrap' }}>
+              {nextPalier ? <>Encore <span style={{ color:RED_HI }}>{nextPalier.at - totals.avg}%</span> avant {nextPalier.name}</> : 'LÉGENDE ACCOMPLIE 👑'}
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* Controls */}
-      <div style={{ flexShrink:0, padding:'14px 24px 10px' }}>
-        <div style={{ maxWidth:1280, margin:'0 auto', display:'flex', gap:12, alignItems:'center', flexWrap:'wrap' }}>
-          <div style={{ position:'relative', flex:1, minWidth:220 }}>
-            <span style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', fontSize:15, color:'rgba(167,139,250,0.55)', pointerEvents:'none' }}>⌕</span>
-            <input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Rechercher un anime…" style={{ width:'100%', boxSizing:'border-box', background:'#10121a', border:'1px solid rgba(255,255,255,0.08)', color:'#fff', padding:'10px 14px 10px 38px', borderRadius:11, fontSize:14, outline:'none' }}
-              onFocus={e=>e.currentTarget.style.borderColor='rgba(167,139,250,0.45)'} onBlur={e=>e.currentTarget.style.borderColor='rgba(255,255,255,0.08)'} />
+      {/* TOOLBAR — recherche (/) + tri + filtres avec compteurs */}
+      <div style={{ flexShrink:0, padding:'12px 24px 10px' }}>
+        <div style={{ maxWidth:1280, margin:'0 auto', display:'flex', gap:10, alignItems:'center', flexWrap:'wrap' }}>
+          <div style={{ position:'relative', flex:1, minWidth:210 }}>
+            <span style={{ position:'absolute', left:13, top:'50%', transform:'translateY(-50%)', fontSize:14, color:RED_HI, pointerEvents:'none' }}>⌕</span>
+            <input ref={searchRef} value={query} onChange={e=>setQuery(e.target.value)} placeholder="Rechercher…  ( / )"
+              style={{ width:'100%', boxSizing:'border-box', background:'#101014', border:'1.5px solid rgba(244,244,240,.12)', color:PAPER, padding:'9px 13px 9px 36px', fontSize:13.5, outline:'none', fontFamily:DISPLAY, fontWeight:600 }}
+              onFocus={e=>e.currentTarget.style.borderColor=RED} onBlur={e=>e.currentTarget.style.borderColor='rgba(244,244,240,.12)'} />
           </div>
-          <select value={sort} onChange={e=>setSort(e.target.value)} style={{ background:'#10121a', border:'1px solid rgba(255,255,255,0.10)', color:'#fff', padding:'10px 12px', borderRadius:11, fontSize:13, cursor:'pointer', outline:'none' }}>
-            <option value="power">Trier par Power Level</option>
-            <option value="video">Trier par % Vidéos</option>
-            <option value="chapter">Trier par % Chapitres</option>
-            <option value="name">Trier par Nom</option>
+          <select value={sort} onChange={e=>setSort(e.target.value)} style={{ background:'#101014', border:'1.5px solid rgba(244,244,240,.12)', color:PAPER, padding:'9px 11px', fontSize:12.5, cursor:'pointer', outline:'none', fontFamily:DISPLAY, fontWeight:700 }}>
+            <option value="power">Tri : Power Level</option>
+            <option value="video">Tri : % Vidéos</option>
+            <option value="chapter">Tri : % Chapitres</option>
+            <option value="name">Tri : Nom</option>
           </select>
-          <div style={{ display:'flex', gap:4, background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:11, padding:3 }}>
-            {['all','done','low'].map(f => {
+          <div style={{ display:'flex', gap:6 }}>
+            {[['all',`TOUS (${counts.all})`],['done',`TERMINÉS (${counts.done})`],['low',`EN RETARD (${counts.low})`]].map(([f, label]) => {
               const on = filter===f
               return (
-                <button key={f} onClick={()=>setFilter(f)} style={{ padding:'7px 15px', borderRadius:8, fontSize:12, fontWeight:800, background: on ? 'rgba(167,139,250,0.2)' : 'transparent', color: on ? '#c4b5fd' : 'rgba(255,255,255,0.6)', border: on ? '1px solid rgba(167,139,250,0.45)' : '1px solid transparent', cursor:'pointer', transition:'all .15s' }}>
-                  {f==='all'?'Tous':f==='done'?'✓ Terminés':'⏳ En retard'}
+                <button key={f} className="p5-btn" onClick={()=>setFilter(f)} style={{
+                  padding:'8px 13px', transform:'skewX(-8deg)', border:'1.5px solid', minHeight:36,
+                  borderColor: on ? RED : 'rgba(244,244,240,.18)',
+                  background: on ? RED : 'transparent',
+                  color: on ? '#fff' : 'rgba(244,244,240,.7)', fontWeight:800, fontSize:11.5,
+                }}>
+                  <span style={{ display:'inline-block', transform:'skewX(8deg)' }}>{label}</span>
                 </button>
               )
             })}
@@ -321,67 +398,73 @@ export default function MonUniversPage({
         </div>
       </div>
 
-      {/* Grid */}
-      <div style={{ flex:1, overflow:'auto', padding:'24px' }}>
-        <div style={{ maxWidth:1280, margin:'0 auto', display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(178px, 1fr))', gap:16 }}>
+      {/* GRILLE — cover dominante, actions au hover/tap */}
+      <div style={{ flex:1, overflow:'auto', padding:'18px 24px 24px' }}>
+        <div style={{ maxWidth:1280, margin:'0 auto', display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(210px, 1fr))', gap:16 }}>
           {filtered.length === 0 && (
-            <div style={{ gridColumn:'1/-1', textAlign:'center', padding:60, color:'rgba(255,255,255,0.3)' }}>Aucun résultat. Essaie un autre filtre ou recherche.</div>
+            <div style={{ gridColumn:'1/-1', textAlign:'center', padding:60, color:'rgba(244,244,240,.35)', fontWeight:700 }}>Aucun résultat. Essaie un autre filtre.</div>
           )}
           {filtered.map((a, idx) => {
-            const c = a.color
-            const cd = a.colorDark
-            const isMax = a.video.pct >= 100 && (a.chapter.pct >= 100 || !a.hasChapters)
+            const started = a.video.pct > 0 || a.chapter.pct > 0
+            const isMax = a.done
+            const isOpen = openId === a.id
             return (
-              <div key={a.id} className="mu-card" style={{
-                background: `linear-gradient(168deg, ${cd} 0%, #0b0c0e 55%, #07090e 100%)`,
-                borderRadius:18, overflow:'hidden', border:`1px solid ${c}22`, borderTop:`3px solid ${c}`,
-                boxShadow:'0 10px 30px rgba(0,0,0,.4)', position:'relative', animation:`muFadeUp .4s ${idx*0.018}s both`
-              }}>
-                {/* cover */}
-                <div style={{ position:'relative', height:168, background:'#111' }}>
-                  <img src={a.cover} alt={a.title} style={{ width:'100%', height:'100%', objectFit:'cover', filter:'saturate(1.1) brightness(.86)' }} onError={e => { e.target.style.display='none' }} />
-                  <div style={{ position:'absolute', inset:0, background:'linear-gradient(180deg, transparent, rgba(0,0,0,.65))' }} />
-                  {/* badge */}
-                  <div style={{ position:'absolute', top:10, right:10, fontSize:9, fontWeight:800, letterSpacing:'.1em', padding:'1px 7px', borderRadius:999, background: isMax ? '#34d39922' : `${c}22`, color: isMax ? '#34d399' : c, border:`1px solid ${isMax ? '#34d39944' : c+'44'}` }}>
-                    {isMax ? 'MAX' : a.video.pct > 70 ? 'PWR' : 'NOUVEAU'}
-                  </div>
-                  <div style={{ position:'absolute', top:10, left:10, fontSize:18, filter:'drop-shadow(0 2px 6px rgba(0,0,0,.6))' }}>{a.emoji}</div>
+              <div key={a.id} className={`p5-card${isOpen ? ' is-open' : ''}`}
+                onClick={() => setOpenId(isOpen ? null : a.id)}
+                style={{
+                  position:'relative', aspectRatio:'3 / 4.2', overflow:'hidden', cursor:'pointer',
+                  background:'#101014', border:'1px solid rgba(244,244,240,.09)',
+                  animation:`p5CardIn .35s ${Math.min(idx, 14)*0.025}s both`, contain:'content',
+                }}>
+                {/* Cover pleine carte */}
+                <img src={a.cover} alt={a.title} loading="lazy" decoding="async"
+                  style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', filter: started ? 'saturate(1.05)' : 'saturate(.35) brightness(.7)' }}
+                  onError={e => { e.target.style.display='none' }} />
+                <div style={{ position:'absolute', inset:0, background:'linear-gradient(180deg, rgba(10,10,12,.1) 30%, rgba(10,10,12,.92) 88%)' }} />
+
+                {/* Badge état (UN seul) */}
+                <div style={{ position:'absolute', top:10, left:-4, transform:'skewX(-8deg)', padding:'3px 12px 3px 14px', fontSize:9.5, fontWeight:900, letterSpacing:'.12em',
+                  background: isMax ? PAPER : started ? RED : 'rgba(16,16,20,.85)',
+                  color: isMax ? INK : started ? '#fff' : 'rgba(244,244,240,.65)',
+                  border: started ? 'none' : '1px solid rgba(244,244,240,.2)' }}>
+                  <span style={{ display:'inline-block', transform:'skewX(8deg)' }}>{isMax ? '★ MAX' : started ? `PWR ${a.power}` : 'À COMMENCER'}</span>
                 </div>
 
-                {/* body */}
-                <div style={{ padding:12 }}>
-                  <div style={{ fontWeight:800, fontSize:14, color:'#fff', marginBottom:2, letterSpacing:'-.01em' }}>{a.title}</div>
-                  <div style={{ fontSize:10, color:c, fontWeight:700, marginBottom:8 }}>{a.id.toUpperCase().replace(/-/g,' ')}</div>
-
-                  {/* dual ring + power */}
-                  <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:10 }}>
-                    <ProgressRing videoPct={a.video.pct} chapterPct={a.chapter.pct} size={58} color={c} />
-                    <div>
-                      <div style={{ fontSize:11, color:'rgba(255,255,255,0.45)', fontWeight:700 }}>POWER LEVEL</div>
-                      <div style={{ fontSize:26, fontWeight:900, color:'#fff', lineHeight:1 }}>{a.power}</div>
+                {/* Bas : titre + anneau + compteurs (si commencé) */}
+                <div style={{ position:'absolute', left:12, right:12, bottom:12 }}>
+                  <div style={{ display:'flex', alignItems:'flex-end', justifyContent:'space-between', gap:8 }}>
+                    <div style={{ minWidth:0 }}>
+                      <div style={{ fontWeight:900, fontStyle:'italic', fontSize:16, lineHeight:1.12, color:PAPER, textTransform:'uppercase', letterSpacing:'.01em', textShadow:'0 2px 8px rgba(0,0,0,.8)' }}>{a.title}</div>
+                      {started ? (
+                        <div style={{ marginTop:5, fontSize:10.5, fontWeight:700, color:'rgba(244,244,240,.72)' }}>
+                          📺 <span className={popKey ? 'p5-pop' : ''} key={`${a.id}-${a.video.watched}`}>{a.video.watched}</span>/{a.video.total}
+                          {a.hasChapters && <> · 📖 {a.chapter.read}/{a.chapter.total}</>}
+                        </div>
+                      ) : (
+                        <div style={{ marginTop:5, fontSize:10.5, fontWeight:700, color:'rgba(244,244,240,.5)' }}>Pas encore commencé</div>
+                      )}
                     </div>
+                    {started && <div style={{ flexShrink:0 }}><ProgressRing videoPct={a.video.pct} chapterPct={a.chapter.pct} size={46} color={RED_HI} /></div>}
                   </div>
+                </div>
 
-                  {/* numbers */}
-                  <div style={{ display:'flex', gap:8, fontSize:11, marginBottom:10 }}>
-                    <div style={{ flex:1, background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.06)', padding:'5px 8px', borderRadius:8 }}>
-                      📺 {a.video.watched}/{a.video.total} <span style={{opacity:.5}}>({a.video.pct}%)</span>
-                    </div>
-                    {a.hasChapters && (
-                      <div style={{ flex:1, background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.06)', padding:'5px 8px', borderRadius:8 }}>
-                        📖 {a.chapter.read}/{a.chapter.total} <span style={{opacity:.5}}>({a.chapter.pct}%)</span>
+                {/* Overlay actions (hover desktop / tap mobile) */}
+                <div className="p5-actions" style={{ position:'absolute', inset:0, background:'rgba(8,8,10,.82)', backdropFilter:'blur(3px)', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:8, padding:16 }}>
+                  {started ? (
+                    <>
+                      {actBtn('▶ OUVRIR', () => openAnime(a.id), true)}
+                      <div style={{ display:'flex', gap:8, flexWrap:'wrap', justifyContent:'center' }}>
+                        {actBtn('+1 ÉP', () => bump(a.id, 'video'))}
+                        {a.hasChapters && actBtn('+1 CH', () => bump(a.id, 'chapter'))}
                       </div>
-                    )}
-                  </div>
-
-                  {/* actions */}
-                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:6 }}>
-                    <button onClick={() => openAnime(a.id)} style={{ padding:'7px 0', borderRadius:9, background:`${c}18`, color:c, fontWeight:800, fontSize:12, border:`1px solid ${c}33` }}>OUVRIR</button>
-                    <button onClick={() => bump(a.id, 'video')} style={{ padding:'7px 0', borderRadius:9, background:'rgba(255,255,255,0.04)', color:'#fff', fontWeight:700, fontSize:11, border:'1px solid rgba(255,255,255,0.08)' }}>+1 ÉP</button>
-                    {a.hasChapters && <button onClick={() => bump(a.id, 'chapter')} style={{ padding:'7px 0', borderRadius:9, background:'rgba(255,255,255,0.04)', color:'#fff', fontWeight:700, fontSize:11, border:'1px solid rgba(255,255,255,0.08)' }}>+1 CH</button>}
-                    <button onClick={() => maxOut(a.id, 'video')} style={{ padding:'7px 0', borderRadius:9, background:'#34d39911', color:'#34d399', fontWeight:700, fontSize:10, border:'1px solid #34d39933' }}>MAX VIDÉO</button>
-                    {a.hasChapters && <button onClick={() => maxOut(a.id, 'chapter')} style={{ padding:'7px 0', borderRadius:9, background:'#34d39911', color:'#34d399', fontWeight:700, fontSize:10, border:'1px solid #34d39933' }}>MAX CH</button>}
-                  </div>
+                      <div style={{ display:'flex', gap:8, flexWrap:'wrap', justifyContent:'center' }}>
+                        {actBtn('MAX VIDÉO', () => maxOut(a.id, 'video'))}
+                        {a.hasChapters && actBtn('MAX CH', () => maxOut(a.id, 'chapter'))}
+                      </div>
+                    </>
+                  ) : (
+                    actBtn('▶ COMMENCER', () => openAnime(a.id), true)
+                  )}
                 </div>
               </div>
             )
@@ -389,8 +472,8 @@ export default function MonUniversPage({
         </div>
       </div>
 
-      <div style={{ flexShrink:0, padding:12, textAlign:'center', fontSize:11, color:'rgba(255,255,255,0.25)' }}>
-        Progression en direct • LocalStorage • Compatible avec toutes tes pages
+      <div style={{ flexShrink:0, padding:'10px 12px', textAlign:'center', fontSize:10.5, fontWeight:700, letterSpacing:'.08em', color:'rgba(244,244,240,.3)', borderTop:'1px solid rgba(244,244,240,.06)' }}>
+        PROGRESSION EN DIRECT · LOCALSTORAGE · COMPATIBLE AVEC TOUTES TES PAGES
       </div>
     </div>
   )
