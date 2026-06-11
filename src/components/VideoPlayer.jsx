@@ -1263,7 +1263,9 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                       background: subsOff ? 'transparent' : `${color}22`,
                       border: `1px solid ${subsOff ? 'rgba(255,255,255,0.15)' : color + '55'}`,
                       borderRadius: 7, color: subsOff ? 'rgba(255,255,255,0.4)' : color,
-                      fontSize: 11, fontWeight: 800, padding: '4px 9px', cursor: hasSubs ? 'pointer' : 'default',
+                      // tactile : hit-zone élargie, le bouton CC était introuvable au doigt
+                      fontSize: IS_COARSE ? 13 : 11, fontWeight: 800,
+                      padding: IS_COARSE ? '9px 14px' : '4px 9px', cursor: hasSubs ? 'pointer' : 'default',
                       letterSpacing: '0.05em', transition: 'all .15s',
                     }}
                   >CC {subLabel}</button>
