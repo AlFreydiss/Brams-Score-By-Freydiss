@@ -15,8 +15,13 @@
    limité aux .tsx : les .jsx inline-styles restent hors scan. */
 @source "../../../src/**/*.tsx";
 
-@tailwind components;
-@tailwind utilities;
+/* Forme moderne v4 SANS preflight (pas de tailwindcss/preflight.css → aucun
+   reset global, les pages inline-styles restent intactes). Les directives
+   legacy `@tailwind components/utilities` sont à éviter : en v4.3 elles
+   désactivent silencieusement @source et le scan des content paths. */
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
 
 @custom-variant dark (&:is(.dark *));
 
