@@ -22,6 +22,7 @@ import ProfilePosts from './feed/ProfilePosts.jsx'
 import FollowListModal from './profile/FollowListModal.jsx'
 import AvatarPreviewModal from './profile/AvatarPreviewModal.jsx'
 import { ErrorState, ProfileSkeleton } from './profile/shared.jsx'
+import MemberSuggestions from './social/MemberSuggestions.jsx'
 
 export default function ProfilePage() {
   const { discordId: routeParam } = useParams()
@@ -193,6 +194,10 @@ export default function ProfilePage() {
               onShowFollowers={() => setFollowModal('followers')}
               onShowFollowing={() => setFollowModal('following')}
             />
+
+            {/* Reco de membres façon IG : amis en commun + actifs, exclut le
+                profil affiché. Rend null si non connecté ou sans résultat. */}
+            <MemberSuggestions layout="strip" excludeId={profileId} />
 
             <nav className="pfx-igtabs" aria-label="Navigation profil">
               {tabs.map(({ key, label, Icon }) => (

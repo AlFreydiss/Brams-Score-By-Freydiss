@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Anchor, BarChart3, Bookmark, Compass, Flame, Hash, Swords, Trophy, Users } from 'lucide-react'
+import MemberSuggestions from '../social/MemberSuggestions.jsx'
 
 const QUICK_LINKS = [
   { to: '/fil/signets', icon: Bookmark, label: 'Mes signets' },
@@ -35,6 +36,11 @@ export default function FeedRail({ trends = [], activeAuthors = [] }) {
             ))}
           </div>
         )}
+      </section>
+
+      <section className="feed-card">
+        <div className="feed-kicker">Suggestions pour toi</div>
+        <MemberSuggestions layout="list" limit={4} />
       </section>
 
       <section className="feed-card">

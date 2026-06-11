@@ -50,6 +50,13 @@ export async function listFriends() {
   return Array.isArray(r) ? r : []
 }
 
+// Reco de membres (RPC recommend_members) : amis en commun > actifs vocal 7j >
+// actifs messages. Exclut amis/follows/blocages côté SQL.
+export async function recommendMembers(limit = 5) {
+  const r = await rpc('recommend_members', { p_limit: limit })
+  return Array.isArray(r) ? r : []
+}
+
 export async function listFriendRequests() {
   const r = await rpc('list_friend_requests')
   return r && typeof r === 'object' ? r : { incoming: [], outgoing: [] }
