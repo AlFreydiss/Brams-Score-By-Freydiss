@@ -12,6 +12,16 @@ import AnimeRow from './AnimeRow.jsx'
 import AnimeCard from './AnimeCard.jsx'
 
 const HERO_IDS = ['onepiece', 'kaiju-no-8', 'bleach', 'aot', 'jjk'] // 5 à la une
+// Bannières PAYSAGE officielles (AniList, hébergées R2) pour le hero — les
+// posters portrait étirés en pleine largeur rendaient l'image méconnaissable.
+const KEYART_R2 = 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/keyart'
+const HERO_KEYART = {
+  onepiece: `${KEYART_R2}/onepiece.jpg`,
+  'kaiju-no-8': `${KEYART_R2}/kaiju-no-8.jpg`,
+  bleach: `${KEYART_R2}/bleach.jpg`,
+  aot: `${KEYART_R2}/aot.jpg`,
+  jjk: `${KEYART_R2}/jjk.jpg`,
+}
 // Vraies nouveautés : dans les données historiques presque TOUT portait le badge
 // « NOUVEAU » (27/29) — on le réserve aux derniers ajouts réels du catalogue.
 const NEW_IDS = new Set(['kaiju-no-8', 'bleach', 'fireforce', 'bluelock', 'domestic-na-kanojo'])
@@ -121,7 +131,10 @@ export default function AnimeHubV2(props) {
   })
 
   // ── Hero rotatif (8 s, pause hover, crossfade, reduced-motion = statique) ──
-  const slides = useMemo(() => HERO_IDS.map(id => ANIMES.find(a => a.id === id)).filter(Boolean), [])
+  const slides = useMemo(() => HERO_IDS
+    .map(id => ANIMES.find(a => a.id === id))
+    .filter(Boolean)
+    .map(a => ({ ...a, keyart: HERO_KEYART[a.id] || a.coverImage, keyartPosition: 'center 30%' })), [])
   const [slide, setSlide] = useState(0)
   const [paused, setPaused] = useState(false)
   const reduced = useMemo(() => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches, [])
