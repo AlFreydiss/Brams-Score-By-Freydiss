@@ -90,6 +90,7 @@ const TournamentPage     = lazyWithReload(() => import('./components/TournamentP
 const TournamentRoomPage = lazyWithReload(() => import('./components/TournamentRoomPage.jsx'))
 const UndercoverPage     = lazyWithReload(() => import('./components/UndercoverPage.jsx'))
 const AkinatorPage       = lazyWithReload(() => import('./components/AkinatorPage.jsx'))
+const EchecsPage         = lazyWithReload(() => import('./features/echecs/EchecsPage.jsx'))
 const MangaReaderPage    = lazyWithReload(() => import('./components/MangaReaderPage.jsx'))
 
 // Registre des scans manga (hors One Piece qui a sa propre page ScansPage).
@@ -646,6 +647,7 @@ export default function App() {
         <Route path="/tournoi/endings" element={<PageLayout><TournamentPage tournamentId="ending" /></PageLayout>} />
         <Route path="/tournoi/ending" element={<PageLayout><TournamentPage tournamentId="ending" /></PageLayout>} />
         <Route path="/akinator"    element={<AkinatorPage      />} />
+        <Route path="/echecs"      element={<PageLayout><EchecsPage /></PageLayout>} />
 
         {/* Profil Yonkou â€” Next-Gen 3D */}
         <Route path="/profil-yonkou" element={<ProfilePageYonkou />} />
