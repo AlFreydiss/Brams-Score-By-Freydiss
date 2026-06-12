@@ -13,7 +13,10 @@ const MAX_RELOADS = 3   // au-delà, on arrête de recharger (deploy cassé) →
 
 export function shouldReloadForChunkError(err) {
   const msg = String(err?.message || err || '')
-  return /dynamically imported module|Importing a module script failed|Failed to fetch dynamically|error loading dynamically imported module|ChunkLoadError|Loading chunk/i.test(msg)
+  // "X is not defined" : quasi toujours un bundle périmé (mix ancien chunk / nouveau
+  // code après deploy, ex. fetchMemberInventory). Le garde MAX_RELOADS fait que si
+  // c'est un VRAI bug du code déployé, l'écran d'erreur finit par s'afficher.
+  return /dynamically imported module|Importing a module script failed|Failed to fetch dynamically|error loading dynamically imported module|ChunkLoadError|Loading chunk|is not defined/i.test(msg)
 }
 
 export function tryChunkReload() {
