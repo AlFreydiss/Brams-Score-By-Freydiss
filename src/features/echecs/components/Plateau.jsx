@@ -11,16 +11,36 @@ import SelecteurPromotion from './SelecteurPromotion.jsx'
 import { THEME, ANIM_PIECE_MS, TILT_3D_DEG, EPAISSEUR_3D, PERSPECTIVE_3D, PIECE_SCALE_Y_3D, PIECE_LIFT_3D } from '../constants.js'
 
 // CSS de la scène 3D : pièces « debout » (compensation de l'inclinaison du plan,
-// transform-origin à la base + ombre portée) — aucune logique de jeu touchée,
-// le hit-testing des cases traverse les transforms 3D nativement.
+// transform-origin à la base + ombres doubles + REFLET sur le plateau), lift au
+// survol, entrée caméra. Aucune logique de jeu touchée — le hit-testing des
+// cases traverse les transforms 3D nativement.
 const CSS_3D = `
 .p3d-scene [data-piece]{
   transform: translateY(${PIECE_LIFT_3D}) scaleY(${PIECE_SCALE_Y_3D});
   transform-origin: 50% 94%;
-  filter: drop-shadow(0 ${Math.round(EPAISSEUR_3D * 0.45)}px 7px rgba(0,0,0,.42));
+  filter: drop-shadow(0 ${Math.round(EPAISSEUR_3D * 0.45)}px 7px rgba(0,0,0,.42))
+          drop-shadow(0 3px 2px rgba(0,0,0,.28));
+  -webkit-box-reflect: below -46% linear-gradient(transparent 60%, rgba(0,0,0,.20));
+  transition: transform .14s ease, filter .14s ease;
 }
-.p3d-scene [data-square]{ overflow: visible !important; }
+.p3d-scene [data-piece]:hover{
+  transform: translateY(calc(${PIECE_LIFT_3D} - 7px)) scaleY(${PIECE_SCALE_Y_3D});
+  filter: drop-shadow(0 ${Math.round(EPAISSEUR_3D * 0.7)}px 12px rgba(0,0,0,.5))
+          drop-shadow(0 4px 3px rgba(0,0,0,.28))
+          brightness(1.08);
+}
+.p3d-scene [data-square]{ overflow: visible !important; cursor: pointer; }
 .p3d-scene [data-piece] svg{ overflow: visible; }
+@keyframes p3dEntree{
+  from { transform: translateX(-50%) rotateX(58deg) scale(.9); opacity: 0; }
+  to   { transform: translateX(-50%) rotateX(${TILT_3D_DEG}deg) scale(1); opacity: 1; }
+}
+@keyframes p3dSol{
+  from { opacity: 0; } to { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce){
+  .p3d-scene [data-piece]{ transition: none; }
+}
 `
 
 export default function Plateau({
@@ -160,12 +180,13 @@ export default function Plateau({
         <div style={{
           position: 'absolute', left: '2%', right: '2%', bottom: -6, height: plaque * 0.12,
           background: 'radial-gradient(ellipse at 50% 50%, rgba(0,0,0,.55), transparent 70%)',
-          filter: 'blur(10px)',
+          filter: 'blur(10px)', animation: 'p3dSol .8s ease both',
         }} />
         <div style={{
           position: 'absolute', top: 0, left: '50%', width: plaque, height: plaque,
           transform: `translateX(-50%) rotateX(${TILT_3D_DEG}deg)`,
           transformOrigin: '50% 100%', transformStyle: 'preserve-3d',
+          animation: 'p3dEntree .7s cubic-bezier(.22,1,.36,1) both',
         }}>
           {/* plaque : cadre bois + échiquier */}
           <div style={{
@@ -174,14 +195,20 @@ export default function Plateau({
             boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.07), inset 0 0 26px rgba(0,0,0,.5)',
           }}>
             {echiquier}
+            {/* passe d'éclairage : lointain assombri, premier plan réchauffé */}
+            <div style={{
+              position: 'absolute', inset: cadre, borderRadius: 6, pointerEvents: 'none', zIndex: 6,
+              background: 'linear-gradient(180deg, rgba(0,0,0,.42), rgba(0,0,0,0) 36%, rgba(255,228,170,.12) 76%, rgba(255,228,170,.20))',
+              mixBlendMode: 'soft-light',
+            }} />
           </div>
           {/* tranche avant (épaisseur du plateau) */}
           <div style={{
             position: 'absolute', left: 0, right: 0, bottom: 0, height: EPAISSEUR_3D,
             transform: 'rotateX(-90deg)', transformOrigin: '50% 100%',
-            background: 'linear-gradient(#241a12, #15100b)',
+            background: 'linear-gradient(#2c2014 , #170f0a)',
             borderRadius: '0 0 10px 10px',
-            boxShadow: 'inset 0 2px 3px rgba(255,255,255,.06)',
+            boxShadow: 'inset 0 2px 3px rgba(255,255,255,.07), inset 0 -8px 14px rgba(0,0,0,.45)',
           }} />
         </div>
       </div>
