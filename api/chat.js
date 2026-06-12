@@ -171,6 +171,17 @@ function statsForPrompt(context) {
 
 const ADV_CHAPTERS = 5
 
+// Catalogue du site (mode reco) — titres affichés, à garder en phase avec ANIMES.
+const CATALOG = [
+  'One Piece', 'Hunter x Hunter', 'Bleach', 'Jujutsu Kaisen', 'Demon Slayer',
+  'Chainsaw Man — Reze Arc', "L'Attaque des Titans", 'My Hero Academia', 'Black Clover',
+  'Fire Force', 'Seven Deadly Sins', 'Solo Leveling', 'Blue Lock', 'Kingdom',
+  'Dragon Ball Super', 'Kaiju No. 8', 'Dr Stone', 'Fate/Zero', 'Vivy',
+  'The Promised Neverland', 'Violet Evergarden', 'Kaguya-sama: Love is War',
+  'Your Name', 'Your Lie in April', 'Bubble', 'Bunny Girl Senpai',
+  'Rent-a-Girlfriend', 'Domestic na Kanojo', 'After the Rain', 'Love Prism', 'Carole & Tuesday',
+]
+
 const MODES = {
   wanted: {
     json: true, maxTokens: 420, temperature: 0.95,
@@ -179,18 +190,25 @@ const MODES = {
       message: `Pirate recherché — ${statsForPrompt(context)}`,
     }),
   },
-  horoscope: {
-    json: true, maxTokens: 400, temperature: 0.95,
+  reco: {
+    json: true, maxTokens: 450, temperature: 0.95,
     build: ({ context, message }) => ({
-      system: 'Tu es l\'astrologue de Grand Line (univers One Piece). Tu écris des horoscopes pirates du jour : drôles, imagés, légèrement mystiques, personnalisés avec les stats fournies. En français, tutoiement. Réponds UNIQUEMENT en JSON : {"prediction": "prédiction du jour (40-60 mots)", "vocal": "présage sur sa semaine vocale (15-25 mots)", "conseil": "conseil de pirate (10-20 mots)"}',
-      message: `${statsForPrompt(context)} ${String(message || '').slice(0, 200)}`,
+      system: 'Tu es le conseiller anime de brams.community. Tu recommandes UNIQUEMENT des titres du catalogue du site (liste fournie — jamais autre chose). Choisis 2 titres VRAIMENT adaptés au profil et à l\'envie exprimée, en variant (pas toujours les mêmes évidences). En français, tutoiement. Réponds UNIQUEMENT en JSON : {"picks": [{"titre": "titre exact du catalogue", "pourquoi": "argument personnel et vendeur (15-25 mots)"}, {"titre": "...", "pourquoi": "..."}], "punchline": "phrase finale taquine (10-15 mots)"}',
+      message: `Catalogue du site : ${CATALOG.join(', ')}. ${statsForPrompt(context)} Envie exprimée : ${String(message || 'aucune, surprends-le').slice(0, 200)}.`,
     }),
   },
-  destin: {
-    json: false, maxTokens: 340, temperature: 0.95,
-    build: ({ context }) => ({
-      system: 'Tu es Madame Shyarly, la voyante sirène de l\'île des Hommes-Poissons (One Piece). Tu lis l\'avenir d\'un membre du site dans ta boule de cristal : une vision mystérieuse, poétique et légèrement inquiétante de 40-70 mots, qui s\'appuie sur ses vraies stats comme présages. Termine par une phrase ambiguë. En français, tutoiement, texte brut sans markdown.',
-      message: statsForPrompt(context),
+  quiz: {
+    json: true, maxTokens: 650, temperature: 0.95,
+    build: ({ message }) => ({
+      system: 'Tu écris des quiz éclair de culture anime (One Piece et grands shōnen/seinen connus) pour brams.community. Questions précises et vérifiables, difficulté moyenne-corsée, jamais bateau. En français. Réponds UNIQUEMENT en JSON : {"questions": [{"q": "question", "choices": ["choix 1", "choix 2", "choix 3"], "answer": 0, "explain": "explication courte (10-20 mots)"}, …]} — EXACTEMENT 3 questions, answer = index (0-2) du bon choix, position de la bonne réponse variée.',
+      message: `Génère un quiz éclair de 3 questions. Graine de variété : ${String(message || Math.random().toString(36).slice(2, 8)).slice(0, 60)}.`,
+    }),
+  },
+  theorie: {
+    json: false, maxTokens: 380, temperature: 1.0,
+    build: ({ message }) => ({
+      system: 'Tu es le théoricien fou de brams.community. Tu balances UNE théorie d\'anime originale et argumentée (One Piece en priorité, sinon un grand shōnen), sur un ton complotiste assumé mais avec de VRAIS éléments du canon comme indices. 60-90 mots, en français, texte brut sans markdown. Termine par une question qui sème le doute.',
+      message: `Sujet souhaité : ${String(message || 'surprends-moi').slice(0, 200)}.`,
     }),
   },
   clash: {
@@ -291,6 +309,19 @@ export default async function handler(req, res) {
 
       const data = parseJsonLoose(text)
       if (!data) return res.status(503).json({ error: "L'IA a répondu n'importe quoi, réessaie.", code: 'ai_bad_json' })
+      if (mode === 'quiz') {
+        const qs = (Array.isArray(data.questions) ? data.questions : []).filter(q =>
+          q && typeof q.q === 'string' && Array.isArray(q.choices)
+          && q.choices.filter(c => typeof c === 'string' && c.trim()).length === 3
+          && Number.isInteger(q.answer) && q.answer >= 0 && q.answer <= 2
+        ).slice(0, 3)
+        if (qs.length < 3) return res.status(503).json({ error: 'Le quiz est sorti bancal, réessaie.', code: 'ai_bad_json' })
+        data.questions = qs
+      }
+      if (mode === 'reco') {
+        data.picks = (Array.isArray(data.picks) ? data.picks : []).filter(p => p && typeof p.titre === 'string').slice(0, 3)
+        if (!data.picks.length) return res.status(503).json({ error: 'La reco est sortie vide, réessaie.', code: 'ai_bad_json' })
+      }
       if (mode === 'adventure') {
         if (typeof data.scene !== 'string' || !data.scene.trim()) {
           return res.status(503).json({ error: 'Le narrateur a perdu le fil, réessaie.', code: 'ai_bad_json' })

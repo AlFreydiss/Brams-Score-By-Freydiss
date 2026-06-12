@@ -89,8 +89,11 @@ export default function HeroCinematic({ anime, rating = null, topRank = null, on
           tranche entre l'image et le contenu — la transition est continue). */}
       <div aria-hidden style={{
         position: 'absolute', inset: 0,
-        WebkitMaskImage: 'linear-gradient(180deg, #000 52%, rgba(0,0,0,.72) 74%, rgba(0,0,0,.28) 90%, transparent 100%)',
-        maskImage: 'linear-gradient(180deg, #000 52%, rgba(0,0,0,.72) 74%, rgba(0,0,0,.28) 90%, transparent 100%)',
+        // L'image est complètement éteinte AVANT la fin du hero (94%) : le bas du
+        // hero et le haut du contenu montrent exactement le même fond de page →
+        // aucune couture possible.
+        WebkitMaskImage: 'linear-gradient(180deg, #000 45%, rgba(0,0,0,.85) 62%, rgba(0,0,0,.35) 80%, transparent 94%)',
+        maskImage: 'linear-gradient(180deg, #000 45%, rgba(0,0,0,.85) 62%, rgba(0,0,0,.35) 80%, transparent 94%)',
       }}>
         {lowRes && (
           <img
@@ -112,8 +115,10 @@ export default function HeroCinematic({ anime, rating = null, topRank = null, on
       {/* Scrim gauche (lisibilité du synopsis) + voile bas LÉGER (le masque fait
           le gros du fondu) + lueur d'accent au ras du contenu. */}
       <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, rgba(11,14,20,.78), rgba(11,14,20,.45) 38%, transparent 62%)' }} />
-      <div aria-hidden style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 260, background: 'linear-gradient(180deg, transparent, rgba(9,12,19,.42) 55%, rgba(9,12,19,.66) 100%)' }} />
-      <div aria-hidden style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 200, background: `radial-gradient(60% 130% at 18% 100%, ${rgba(theme.accent, 0.10)}, transparent 70%)` }} />
+      {/* Voile bas qui se RELÂCHE à 100% : il assombrit la zone texte/indicateurs
+          puis redevient transparent au ras du bord — pas de marche avec la page. */}
+      <div aria-hidden style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 300, background: 'linear-gradient(180deg, transparent 0%, rgba(9,12,19,.5) 42%, rgba(9,12,19,.52) 70%, transparent 100%)' }} />
+      <div aria-hidden style={{ position: 'absolute', left: 0, right: 0, bottom: 40, height: 220, background: `radial-gradient(55% 110% at 18% 80%, ${rgba(theme.accent, 0.08)}, transparent 70%)` }} />
 
       {/* Contenu aligné gauche */}
       <div style={{
@@ -133,17 +138,24 @@ export default function HeroCinematic({ anime, rating = null, topRank = null, on
         {/* Title-art officiel si dispo, sinon titre texte */}
         <TitleArt anime={anime} fallback={
           <h1 style={{
-            margin: 0, fontFamily: theme.font, fontWeight: theme.font === FONT_DISPLAY ? 700 : 400,
-            fontSize: theme.font === FONT_DISPLAY ? 'clamp(32px, 4.2vw, 56px)' : 'clamp(40px, 5.4vw, 74px)',
-            lineHeight: 1.02,
-            letterSpacing: /Bebas|Anton/.test(theme.font) ? '0.02em' : /Bungee|Audiowide/.test(theme.font) ? '0.01em' : '-0.015em',
-            // Titre façon logo : dégradé clair→accent DANS le texte + halo de la
-            // couleur de l'œuvre (drop-shadow, pas text-shadow — incompatible
-            // avec background-clip:text).
-            background: `linear-gradient(178deg, #FFFFFF 4%, ${theme.accent2} 38%, ${theme.accent} 96%)`,
+            margin: 0, fontFamily: theme.font,
+            fontWeight: theme.font === FONT_DISPLAY || theme.font.includes('Unbounded') ? 700 : 400,
+            // Tailles calibrées par famille : les condensées (Bebas/Anton) encaissent
+            // du très grand, les larges (Unbounded/Bungee) doivent rester contenues
+            // sinon « Kaguya-sama: Love is War » déborde et fait cheap.
+            fontSize: theme.font.includes('Unbounded') ? 'clamp(24px, 3vw, 42px)'
+              : theme.font.includes('Bungee') ? 'clamp(34px, 4.4vw, 60px)'
+              : /Russo|Audiowide|Special/.test(theme.font) ? 'clamp(30px, 3.8vw, 54px)'
+              : theme.font === FONT_DISPLAY ? 'clamp(32px, 4.2vw, 56px)'
+              : 'clamp(40px, 5.4vw, 74px)',
+            lineHeight: theme.font.includes('Unbounded') ? 1.14 : 1.02,
+            letterSpacing: /Bebas|Anton/.test(theme.font) ? '0.02em' : /Bungee|Audiowide/.test(theme.font) ? '0.01em' : '-0.01em',
+            // Titre façon logo : haut blanc pour le punch, la couleur de l'œuvre
+            // prend la moitié basse (rendu logo officiel, pas texte teinté).
+            background: `linear-gradient(180deg, #FFFFFF 0%, #FFFFFF 28%, ${theme.accent2} 55%, ${theme.accent} 100%)`,
             WebkitBackgroundClip: 'text', backgroundClip: 'text',
             WebkitTextFillColor: 'transparent', color: 'transparent',
-            filter: `drop-shadow(0 3px 10px rgba(0,0,0,.55)) drop-shadow(0 0 30px ${rgba(theme.accent, 0.42)})`,
+            filter: `drop-shadow(0 3px 10px rgba(0,0,0,.55)) drop-shadow(0 0 26px ${rgba(theme.accent, 0.38)})`,
             paddingBottom: '0.08em', // les descendantes (g, y) se font rogner par background-clip sinon
           }}>{anime.title}</h1>
         } />

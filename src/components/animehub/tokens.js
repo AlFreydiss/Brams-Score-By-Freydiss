@@ -33,14 +33,14 @@ export const SHADOW_CARD = '0 18px 40px -22px rgba(0,0,0,.8)'
 // Le titre du hero est rendu comme un logo : dégradé accent2→accent dans le
 // texte + halo. Fonts chargées à la volée par AnimeHubV2 (Pirata One est déjà
 // sur le site). Chacun des 31 animés du catalogue a son thème dédié.
-export const THEME_FONT_HREF = 'https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Russo+One&family=Quicksand:wght@600;700&family=Pirata+One&family=Anton&family=Bungee&family=Audiowide&family=Special+Elite&display=swap'
+export const THEME_FONT_HREF = 'https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Russo+One&family=Unbounded:wght@600;700&family=Pirata+One&family=Anton&family=Bungee&family=Audiowide&family=Special+Elite&display=swap'
 
-const F_BEBAS  = "'Bebas Neue', sans-serif"      // shōnen percutant
+const F_BEBAS  = "'Bebas Neue', sans-serif"       // shōnen percutant
 const F_ANTON  = "'Anton', sans-serif"            // épique massif
 const F_BUNGEE = "'Bungee', sans-serif"           // urbain blocky
 const F_RUSSO  = "'Russo One', sans-serif"        // mecha / SF
 const F_AUDIO  = "'Audiowide', sans-serif"        // tech / gaming
-const F_QUICK  = "'Quicksand', sans-serif"        // romance / douceur
+const F_QUICK  = "'Unbounded', sans-serif"        // romance — display moderne premium (Quicksand rendait cheap)
 const F_ELITE  = "'Special Elite', cursive"       // machine à écrire (thriller)
 const F_PIRATA = "'Pirata One', system-ui, sans-serif"
 
@@ -70,7 +70,7 @@ export const ANIME_THEMES = {
   // Thriller
   tpn:                 { accent: '#6FCFB6', accent2: '#D9F5EC', font: F_ELITE },
   // Romance / douceur
-  kaguya:              { accent: '#E8556D', accent2: '#F5B04A', font: F_QUICK },
+  kaguya:              { accent: '#E8556D', accent2: '#FFB3C2', font: F_QUICK },
   'violet-evergarden': { accent: '#8FB3E8', accent2: '#E8E0C9', font: F_QUICK },
   'your-name':         { accent: '#6FB7E8', accent2: '#F2788F', font: F_QUICK },
   'your-lie':          { accent: '#F2B5C4', accent2: '#8FD4F2', font: F_QUICK },

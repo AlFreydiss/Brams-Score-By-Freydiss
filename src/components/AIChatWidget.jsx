@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext.jsx'
 
 const GOLD = '#BFA46A'
 const GOLD_DIM = 'rgba(191,164,106,.22)'
-const HIST_KEY = 'brams_ia_chat_v2'
+const HIST_KEY = 'brams_ia_chat_v3' // v3 : horoscope/destin retirés (purge des vieilles cartes)
 const ADV_KEY = 'brams_ia_adv_v1'
 
 function normalizeIntent(text) {
@@ -27,36 +27,25 @@ const SUGGESTIONS = [
 
 const TOOLS = [
   { mode: 'adventure', icon: '🗺️', label: 'Aventure' },
+  { mode: 'quiz', icon: '⚡', label: 'Quiz éclair' },
+  { mode: 'reco', icon: '🎬', label: 'Reco du soir' },
   { mode: 'wanted', icon: '☠️', label: 'Wanted' },
-  { mode: 'horoscope', icon: '🔮', label: 'Horoscope' },
-  { mode: 'destin', icon: '🦈', label: 'Destin' },
   { mode: 'clash', icon: '🔥', label: 'Clash-moi' },
   { mode: 'eloge', icon: '👑', label: 'Éloge' },
+  { mode: 'theorie', icon: '🧠', label: 'Théorie' },
   { mode: 'journal', icon: '📰', label: 'Journal' },
   { mode: 'pirate', icon: '🏴‍☠️', label: 'Pirate' },
 ]
 
 const TOOL_USER_LINE = {
   adventure: '🗺️ Lance-moi une aventure !',
+  quiz: '⚡ Quiz éclair !',
+  reco: '🎬 Conseille-moi un truc à regarder',
   wanted: '☠️ Mon avis de recherche !',
-  horoscope: '🔮 Mon horoscope du jour',
-  destin: '🦈 Madame Shyarly, mon destin ?',
   clash: '🔥 Vas-y, clash-moi',
   eloge: '👑 Raconte ma légende',
+  theorie: '🧠 Balance une théorie',
   journal: '📰 Le journal du jour !',
-}
-
-const ASTRES = ['Luffy', 'Zoro', 'Nami', 'Usopp', 'Sanji', 'Chopper', 'Robin', 'Franky', 'Brook', 'Jinbe', 'Shanks', 'Mihawk', 'Ace', 'Sabo', 'Law', 'Katakuri', 'Yamato', 'Buggy', 'Garp', 'Doflamingo']
-const MERS = ['East Blue', 'West Blue', 'North Blue', 'South Blue', 'Grand Line', 'le Nouveau Monde']
-
-// Petit PRNG déterministe (même horoscope toute la journée pour un même membre)
-function seeded(str) {
-  let h = 2166136261
-  for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619) }
-  return () => {
-    h = Math.imul(h ^ (h >>> 15), 2246822507); h = Math.imul(h ^ (h >>> 13), 3266489909)
-    return ((h ^= h >>> 16) >>> 0) / 4294967296
-  }
 }
 
 function loadJSON(key, fallback) {
@@ -123,22 +112,71 @@ function WantedCard({ data, name, avatarUrl, berrys }) {
   )
 }
 
-function HoroscopeCard({ data }) {
+function RecoCard({ data, onOpenHub }) {
   return (
     <div style={CARD_BASE}>
-      <CardTitle>🔮 Horoscope pirate du jour</CardTitle>
-      <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 10, flexWrap: 'wrap' }}>
-        {[['⭐', data.astre], ['🌊', data.mer], ['🎲', data.chiffre]].map(([ic, v], i) => (
-          <span key={i} style={{ fontSize: 11.5, padding: '4px 10px', borderRadius: 100, border: `1px solid ${GOLD_DIM}`, color: 'rgba(255,255,255,.85)' }}>{ic} {v}</span>
+      <CardTitle>🎬 Reco du soir</CardTitle>
+      <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {(data.picks || []).map((p, i) => (
+          <div key={i}>
+            <div style={{ fontSize: 14, fontWeight: 800, color: GOLD }}>{p.titre}</div>
+            <div style={{ fontSize: 12.5, lineHeight: 1.6, color: 'rgba(255,255,255,.8)', marginTop: 2 }}>{p.pourquoi}</div>
+          </div>
         ))}
       </div>
-      <Sep />
-      <div style={{ fontSize: 13, lineHeight: 1.65, color: 'rgba(255,255,255,.88)' }}>{data.prediction}</div>
-      <Sep />
-      <div style={{ fontSize: 12.5, lineHeight: 1.6, color: 'rgba(255,255,255,.75)' }}>
-        <div>🎙️ <b style={{ color: GOLD }}>Vocal</b> — {data.vocal}</div>
-        <div style={{ marginTop: 5 }}>⚓ <b style={{ color: GOLD }}>Conseil</b> — <i>{data.conseil}</i></div>
+      {data.punchline && (<><Sep /><div style={{ fontSize: 12, fontStyle: 'italic', textAlign: 'center', color: 'rgba(255,255,255,.6)' }}>{data.punchline}</div></>)}
+      <button onClick={onOpenHub} style={{
+        marginTop: 12, width: '100%', padding: '8px 12px', borderRadius: 10, cursor: 'pointer',
+        border: `1px solid ${GOLD_DIM}`, background: 'rgba(191,164,106,.10)', color: '#fff', fontSize: 12.5, fontWeight: 600,
+      }}>▶ Ouvrir Animés & Scans</button>
+    </div>
+  )
+}
+
+const QUIZ_VERDICTS = ['Retourne regarder One Piece depuis l\'épisode 1 💀', 'Aïe… le mousse a encore du chemin ⚓', 'Solide, presque digne d\'un capitaine 👏', 'Sans faute. L\'érudit de l\'équipage 👑']
+
+function QuizCard({ data, onAnswer }) {
+  const total = data.questions.length
+  const done = data.current >= total
+  const q = done ? null : data.questions[data.current]
+  return (
+    <div style={{ ...CARD_BASE, maxWidth: '96%' }}>
+      <CardTitle>⚡ Quiz éclair {done ? '— terminé' : `— ${data.current + 1}/${total}`}</CardTitle>
+      <div style={{ display: 'flex', gap: 4, justifyContent: 'center', marginTop: 8 }}>
+        {data.questions.map((_, n) => (
+          <span key={n} style={{ width: 22, height: 3, borderRadius: 2, background: n < data.current ? GOLD : 'rgba(255,255,255,.12)' }} />
+        ))}
       </div>
+      {data.feedback && (
+        <div style={{ marginTop: 10, fontSize: 12, lineHeight: 1.5, color: data.feedback.correct ? '#7ec98f' : '#d98f8f' }}>
+          {data.feedback.correct ? '✓ Bonne réponse !' : `✗ Raté — c'était « ${data.feedback.answer} ».`} <span style={{ color: 'rgba(255,255,255,.55)' }}>{data.feedback.explain}</span>
+        </div>
+      )}
+      {done ? (
+        <>
+          <Sep />
+          <div style={{ textAlign: 'center', fontSize: 16, fontWeight: 800, color: GOLD }}>{data.score}/{total}</div>
+          <div style={{ textAlign: 'center', fontSize: 12.5, fontStyle: 'italic', color: 'rgba(255,255,255,.7)', marginTop: 4 }}>{QUIZ_VERDICTS[Math.min(data.score, 3)]}</div>
+        </>
+      ) : (
+        <>
+          <div style={{ fontSize: 13.5, fontWeight: 600, lineHeight: 1.55, marginTop: 10 }}>{q.q}</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 10 }}>
+            {q.choices.map((c, i) => (
+              <button key={i} onClick={() => onAnswer(i)} style={{
+                textAlign: 'left', fontSize: 12.5, lineHeight: 1.5, padding: '9px 12px', borderRadius: 10,
+                border: `1px solid ${GOLD_DIM}`, background: 'rgba(255,255,255,.03)', color: 'rgba(255,255,255,.85)',
+                cursor: 'pointer', transition: 'all .15s',
+              }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(191,164,106,.14)' }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,.03)' }}
+              >
+                <span style={{ color: GOLD, fontWeight: 700, marginRight: 6 }}>{['A', 'B', 'C'][i]}</span>{c}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   )
 }
@@ -393,27 +431,27 @@ export default function AIChatWidget({ hidden = false }) {
       saveJSON(ADV_KEY, [])
     }
 
-    pushUser(TOOL_USER_LINE[mode] || mode)
+    // Reco / Théorie : le texte déjà tapé sert d'envie / de sujet
+    let extraMsg
+    if (mode === 'reco' || mode === 'theorie') {
+      extraMsg = input.trim() || undefined
+      if (extraMsg) setInput('')
+    }
+
+    pushUser(TOOL_USER_LINE[mode] + (extraMsg ? ` — ${extraMsg}` : ''))
     setLoading(true)
     try {
       const ctx = await buildContext({ withServer: mode === 'journal' })
-
-      if (mode === 'horoscope') {
-        const today = new Date().toLocaleDateString('fr-CA')
-        const rng = seeded(`${discordId || displayName}-${today}`)
-        ctx.name = displayName
-        const astre = ASTRES[Math.floor(rng() * ASTRES.length)]
-        const mer = MERS[Math.floor(rng() * MERS.length)]
-        const chiffre = 1 + Math.floor(rng() * 99)
-        const data = await callAPI({ mode, context: ctx, message: `Astre gardien du jour : ${astre}. Mer dominante : ${mer}.` })
-        pushModel({ type: 'horoscope', data: { ...data.data, astre, mer, chiffre } })
-        return
-      }
-
-      const data = await callAPI({ mode, context: ctx, ...(mode === 'adventure' ? { adventure: { log: [] } } : {}) })
+      const data = await callAPI({
+        mode, context: ctx,
+        ...(extraMsg ? { message: extraMsg } : {}),
+        ...(mode === 'adventure' ? { adventure: { log: [] } } : {}),
+      })
 
       if (mode === 'wanted') pushModel({ type: 'wanted', data: data.data })
       else if (mode === 'journal') pushModel({ type: 'journal', data: data.data })
+      else if (mode === 'reco') pushModel({ type: 'reco', data: data.data })
+      else if (mode === 'quiz') pushModel({ type: 'quiz', data: { questions: data.data.questions, current: 0, score: 0, feedback: null } })
       else if (mode === 'adventure') pushModel({ type: 'adventure', data: { ...data.data, chapter: 1, chosen: null } })
       else pushModel({ type: 'text', text: data.reply })
     } catch (err) {
@@ -421,6 +459,30 @@ export default function AIChatWidget({ hidden = false }) {
     } finally {
       setLoading(false)
     }
+  }
+
+  // Quiz : réponse locale, aucune requête (les 3 questions sont déjà là)
+  function quizAnswer(item, idx) {
+    setHistory(h => h.map(x => {
+      if (x !== item) return x
+      const d = x.data
+      const q = d.questions[d.current]
+      const correct = idx === q.answer
+      return {
+        ...x,
+        data: {
+          ...d,
+          current: d.current + 1,
+          score: d.score + (correct ? 1 : 0),
+          feedback: { correct, answer: q.choices[q.answer], explain: q.explain },
+        },
+      }
+    }))
+  }
+
+  function openHubFromChat() {
+    setOpen(false)
+    setTimeout(() => { document.dispatchEvent(new CustomEvent('open-anime-hub')) }, 120)
   }
 
   // ── Aventure : choix d'un chapitre ──
@@ -571,8 +633,10 @@ export default function AIChatWidget({ hidden = false }) {
                   }}>{m.text}</div>
                 ) : m.type === 'wanted' ? (
                   <WantedCard data={m.data} name={displayName} avatarUrl={avatarUrl} berrys={berryCount} />
-                ) : m.type === 'horoscope' ? (
-                  <HoroscopeCard data={m.data} />
+                ) : m.type === 'reco' ? (
+                  <RecoCard data={m.data} onOpenHub={openHubFromChat} />
+                ) : m.type === 'quiz' ? (
+                  <QuizCard data={m.data} onAnswer={(idx) => quizAnswer(m, idx)} />
                 ) : m.type === 'journal' ? (
                   <JournalCard data={m.data} />
                 ) : m.type === 'adventure' ? (
