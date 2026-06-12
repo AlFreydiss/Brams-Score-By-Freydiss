@@ -133,5 +133,545 @@
         "default": true
       }
     ]
+  },
+  {
+    "episode": 6,
+    "title": "Épisode 6",
+    "episodeLabel": "S01E06",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/S01E06-vostfr.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "quintuplets-S01E06",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/thumbnails/S01E06.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/S01E06-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 7,
+    "title": "Épisode 7",
+    "episodeLabel": "S01E07",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/S01E07-vostfr.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "quintuplets-S01E07",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/thumbnails/S01E07.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/S01E07-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 8,
+    "title": "Épisode 8",
+    "episodeLabel": "S01E08",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/S01E08-vostfr.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "quintuplets-S01E08",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/thumbnails/S01E08.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/S01E08-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 9,
+    "title": "Épisode 9",
+    "episodeLabel": "S01E09",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/S01E09-vostfr.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "quintuplets-S01E09",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/thumbnails/S01E09.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/S01E09-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 10,
+    "title": "Épisode 10",
+    "episodeLabel": "S01E10",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/S01E10-vostfr.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "quintuplets-S01E10",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/thumbnails/S01E10.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/S01E10-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 11,
+    "title": "Épisode 11",
+    "episodeLabel": "S01E11",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/S01E11-vostfr.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "quintuplets-S01E11",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/thumbnails/S01E11.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/S01E11-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 12,
+    "title": "Épisode 12",
+    "episodeLabel": "S01E12",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/S01E12-vostfr.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "quintuplets-S01E12",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/thumbnails/S01E12.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/S01E12-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 13,
+    "title": "Épisode 1",
+    "episodeLabel": "S02E01",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/S02E01-vostfr.mp4",
+    "season": "S02",
+    "arc": "Saison 2",
+    "preferredAudioLang": "ja",
+    "progressKey": "quintuplets-S02E01",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/thumbnails/S02E01.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/S02E01-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 14,
+    "title": "Épisode 2",
+    "episodeLabel": "S02E02",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/S02E02-vostfr.mp4",
+    "season": "S02",
+    "arc": "Saison 2",
+    "preferredAudioLang": "ja",
+    "progressKey": "quintuplets-S02E02",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/thumbnails/S02E02.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/S02E02-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 15,
+    "title": "Épisode 3",
+    "episodeLabel": "S02E03",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/S02E03-vostfr.mp4",
+    "season": "S02",
+    "arc": "Saison 2",
+    "preferredAudioLang": "ja",
+    "progressKey": "quintuplets-S02E03",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/thumbnails/S02E03.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/S02E03-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 16,
+    "title": "Épisode 4",
+    "episodeLabel": "S02E04",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/S02E04-vostfr.mp4",
+    "season": "S02",
+    "arc": "Saison 2",
+    "preferredAudioLang": "ja",
+    "progressKey": "quintuplets-S02E04",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/thumbnails/S02E04.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/S02E04-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 17,
+    "title": "Épisode 5",
+    "episodeLabel": "S02E05",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/S02E05-vostfr.mp4",
+    "season": "S02",
+    "arc": "Saison 2",
+    "preferredAudioLang": "ja",
+    "progressKey": "quintuplets-S02E05",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/thumbnails/S02E05.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/S02E05-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 18,
+    "title": "Épisode 6",
+    "episodeLabel": "S02E06",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/S02E06-vostfr.mp4",
+    "season": "S02",
+    "arc": "Saison 2",
+    "preferredAudioLang": "ja",
+    "progressKey": "quintuplets-S02E06",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/thumbnails/S02E06.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/S02E06-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 19,
+    "title": "Épisode 7",
+    "episodeLabel": "S02E07",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/S02E07-vostfr.mp4",
+    "season": "S02",
+    "arc": "Saison 2",
+    "preferredAudioLang": "ja",
+    "progressKey": "quintuplets-S02E07",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/thumbnails/S02E07.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/S02E07-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 20,
+    "title": "Épisode 8",
+    "episodeLabel": "S02E08",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/S02E08-vostfr.mp4",
+    "season": "S02",
+    "arc": "Saison 2",
+    "preferredAudioLang": "ja",
+    "progressKey": "quintuplets-S02E08",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/thumbnails/S02E08.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/S02E08-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 21,
+    "title": "Épisode 9",
+    "episodeLabel": "S02E09",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/S02E09-vostfr.mp4",
+    "season": "S02",
+    "arc": "Saison 2",
+    "preferredAudioLang": "ja",
+    "progressKey": "quintuplets-S02E09",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/thumbnails/S02E09.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/S02E09-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 22,
+    "title": "Épisode 10",
+    "episodeLabel": "S02E10",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/S02E10-vostfr.mp4",
+    "season": "S02",
+    "arc": "Saison 2",
+    "preferredAudioLang": "ja",
+    "progressKey": "quintuplets-S02E10",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/thumbnails/S02E10.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/S02E10-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 23,
+    "title": "Épisode 11",
+    "episodeLabel": "S02E11",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/S02E11-vostfr.mp4",
+    "season": "S02",
+    "arc": "Saison 2",
+    "preferredAudioLang": "ja",
+    "progressKey": "quintuplets-S02E11",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/thumbnails/S02E11.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/S02E11-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 24,
+    "title": "Épisode 12",
+    "episodeLabel": "S02E12",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/S02E12-vostfr.mp4",
+    "season": "S02",
+    "arc": "Saison 2",
+    "preferredAudioLang": "ja",
+    "progressKey": "quintuplets-S02E12",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/thumbnails/S02E12.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/S02E12-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 25,
+    "title": "Le film : Cinq fiancées",
+    "episodeLabel": "MOVIE",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/MOVIE-vostfr.mp4",
+    "season": "Film",
+    "arc": "Film (2022)",
+    "preferredAudioLang": "ja",
+    "progressKey": "quintuplets-MOVIE",
+    "badge": "FILM",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/thumbnails/MOVIE.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/MOVIE-fr.vtt",
+        "default": true
+      }
+    ]
   }
 ]
