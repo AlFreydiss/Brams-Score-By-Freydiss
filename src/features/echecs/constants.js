@@ -38,6 +38,37 @@ export const PLATEAU_MAX_PX = 640
 export const PLATEAU_MIN_PX = 280
 export const ANIM_PIECE_MS  = 220
 
+// ── Rendu 3D (perspective CSS, façon chess.com) ──
+export const CLE_MODE_3D   = 'echecs_3d'   // '1' (défaut) | '0'
+export const TILT_3D_DEG   = 33            // inclinaison du plateau
+export const EPAISSEUR_3D  = 26            // tranche avant (px)
+export const PERSPECTIVE_3D = 1500         // distance caméra (px)
+// pièces « debout » : compensation de l'inclinaison (≈1/cos(33°)) + un peu de hauteur
+export const PIECE_SCALE_Y_3D = 1.38
+export const PIECE_LIFT_3D    = '-13%'
+
+export function modeTroisD() {
+  try { return localStorage.getItem(CLE_MODE_3D) !== '0' } catch { return true }
+}
+export function setModeTroisD(on) {
+  try { localStorage.setItem(CLE_MODE_3D, on ? '1' : '0') } catch {}
+}
+
+// Taille auto du plateau selon le mode (3D = plein écran, incliné donc plus large).
+// 3D : hauteur projetée ≈ taille × cos(tilt) + tranche → on inverse pour que la
+// scène tienne ENTIÈRE entre le header compact et le bas du viewport.
+export function taillePlateauAuto(troisD) {
+  const vw = typeof window !== 'undefined' ? window.innerWidth : 1200
+  const vh = typeof window !== 'undefined' ? window.innerHeight : 900
+  if (troisD) {
+    const railLarge = vw > 1040 ? 396 : 24   // place pour la colonne d'infos à droite
+    const dispoH = vh - 235                  // navbar + header compact + marges
+    const parHauteur = dispoH / Math.cos(TILT_3D_DEG * Math.PI / 180) - EPAISSEUR_3D - 90
+    return Math.max(300, Math.min(vw - railLarge, parHauteur, 920))
+  }
+  return Math.max(PLATEAU_MIN_PX, Math.min(560, vw - 32, vh - 260))
+}
+
 // Valeurs matérielles (avantage affiché +N)
 export const VALEURS_PIECES = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 }
 export const ORDRE_CAPTURES = ['q', 'r', 'b', 'n', 'p']

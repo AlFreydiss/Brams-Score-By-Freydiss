@@ -11,7 +11,7 @@ import HistoriqueCoups from '../components/HistoriqueCoups.jsx'
 import BarreActions from '../components/BarreActions.jsx'
 import FinPartieModal from '../components/FinPartieModal.jsx'
 import { getPartie, rpcJouerCoup, rpcTerminer, rpcAbandonner, rpcNulleAccord, rpcReclamerTemps, rpcRevanche, rpcFinaliser } from '../lib/api.js'
-import { THEME, DELAI_DECO_MS } from '../constants.js'
+import { THEME, DELAI_DECO_MS, taillePlateauAuto } from '../constants.js'
 import { sons } from '../lib/sons.js'
 
 function sonDuCoup(mv, enEchec) {
@@ -21,7 +21,7 @@ function sonDuCoup(mv, enEchec) {
   else sons.coup()
 }
 
-export default function MultiOnline({ partieId, monUid, onQuitter, onRejoindrePartie }) {
+export default function MultiOnline({ partieId, monUid, onQuitter, onRejoindrePartie, troisD = false }) {
   const partie = usePartie()
   const [row, setRow] = useState(null)             // ligne echecs_parties (vérité DB)
   const [chargement, setChargement] = useState(true)
@@ -218,11 +218,7 @@ export default function MultiOnline({ partieId, monUid, onQuitter, onRejoindrePa
     }
   }, [revancheRecue, revancheEnvoyee]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const taillePlateau = useMemo(() => {
-    const vw = typeof window !== 'undefined' ? window.innerWidth : 1200
-    const vh = typeof window !== 'undefined' ? window.innerHeight : 900
-    return Math.max(280, Math.min(560, vw - 32, vh - 280))
-  }, [])
+  const taillePlateau = useMemo(() => taillePlateauAuto(troisD), [troisD])
 
   if (chargement) {
     return <div style={{ textAlign: 'center', padding: 60, color: THEME.muted, fontFamily: THEME.fontBody }}>Chargement de la partie…</div>
@@ -246,7 +242,7 @@ export default function MultiOnline({ partieId, monUid, onQuitter, onRejoindrePa
   const decoLongue = decoDepuis && Date.now() - decoDepuis > DELAI_DECO_MS
 
   return (
-    <div style={{ display: 'flex', gap: 22, justifyContent: 'center', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+    <div style={{ display: 'flex', gap: 22, justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', minHeight: 'calc(100vh - 230px)' }}>
       <Plateau
         partie={partie}
         orientation={maCouleur === 'w' ? 'white' : 'black'}
@@ -254,6 +250,7 @@ export default function MultiOnline({ partieId, monUid, onQuitter, onRejoindrePa
         onCoup={onCoup}
         taille={taillePlateau}
         interactif={enCours}
+        troisD={troisD}
       />
 
       <div style={{ width: 'min(330px, 92vw)', display: 'flex', flexDirection: 'column', gap: 10 }}>

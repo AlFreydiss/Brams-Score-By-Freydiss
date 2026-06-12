@@ -10,11 +10,8 @@ def check(nom, cond, detail=""):
     print(("OK   " if cond else "ECHEC") + " " + nom + (f" -- {detail}" if detail and not cond else ""))
     if not cond: ok = False
 
-# Coordonnées d'une case (orientation blanche) dans le plateau
-FILES = "abcdefgh"
-def case_xy(box, case):
-    f = FILES.index(case[0]); r = int(case[1])
-    return box["x"] + (f + 0.5) * box["width"] / 8, box["y"] + (8 - r + 0.5) * box["height"] / 8
+# Clic direct sur la case via son attribut data-square (fonctionne aussi sous
+# transform 3D : le navigateur fait le hit-testing à travers la perspective).
 
 with sync_playwright() as p:
     b = p.chromium.launch(headless=True)
@@ -39,8 +36,7 @@ with sync_playwright() as p:
     check("plateau affiche", box is not None and box["width"] > 200)
 
     def clic(case):
-        x, y = case_xy(box, case)
-        pg.mouse.click(x, y)
+        pg.locator(f'[data-square="{case}"]').click(force=True)
         pg.wait_for_timeout(260)
 
     def etat(expr):

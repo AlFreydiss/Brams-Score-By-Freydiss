@@ -6,10 +6,10 @@ import HistoriqueCoups from '../components/HistoriqueCoups.jsx'
 import PiecesCapturees from '../components/PiecesCapturees.jsx'
 import BarreActions from '../components/BarreActions.jsx'
 import FinPartieModal from '../components/FinPartieModal.jsx'
-import { THEME } from '../constants.js'
+import { THEME, taillePlateauAuto } from '../constants.js'
 import { sons } from '../lib/sons.js'
 
-export default function DeuxJoueursLocal({ onQuitter }) {
+export default function DeuxJoueursLocal({ onQuitter, troisD = false }) {
   const partie = usePartie()
   const [finVisible, setFinVisible] = useState(false)
   const { trait, fin, captures, historique, enEchec } = partie
@@ -28,14 +28,10 @@ export default function DeuxJoueursLocal({ onQuitter }) {
     return () => clearTimeout(t)
   }, [fin.terminee])
 
-  const taillePlateau = useMemo(() => {
-    const vw = typeof window !== 'undefined' ? window.innerWidth : 1200
-    const vh = typeof window !== 'undefined' ? window.innerHeight : 900
-    return Math.max(280, Math.min(560, vw - 32, vh - 240))
-  }, [])
+  const taillePlateau = useMemo(() => taillePlateauAuto(troisD), [troisD])
 
   return (
-    <div style={{ display: 'flex', gap: 22, justifyContent: 'center', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+    <div style={{ display: 'flex', gap: 22, justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', minHeight: 'calc(100vh - 230px)' }}>
       <Plateau
         partie={partie}
         orientation="white"
@@ -43,6 +39,7 @@ export default function DeuxJoueursLocal({ onQuitter }) {
         onCoup={onCoup}
         taille={taillePlateau}
         interactif={!fin.terminee}
+        troisD={troisD}
       />
       <div style={{ width: 'min(330px, 92vw)', display: 'flex', flexDirection: 'column', gap: 10 }}>
         <div style={{ padding: '12px 14px', background: THEME.card, border: `1px solid ${THEME.cardBorder}`, borderRadius: 14 }}>

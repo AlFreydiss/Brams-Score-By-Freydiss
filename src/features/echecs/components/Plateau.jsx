@@ -8,7 +8,20 @@
 import { useState, useMemo, useCallback } from 'react'
 import { Chessboard } from 'react-chessboard'
 import SelecteurPromotion from './SelecteurPromotion.jsx'
-import { THEME, ANIM_PIECE_MS } from '../constants.js'
+import { THEME, ANIM_PIECE_MS, TILT_3D_DEG, EPAISSEUR_3D, PERSPECTIVE_3D, PIECE_SCALE_Y_3D, PIECE_LIFT_3D } from '../constants.js'
+
+// CSS de la scène 3D : pièces « debout » (compensation de l'inclinaison du plan,
+// transform-origin à la base + ombre portée) — aucune logique de jeu touchée,
+// le hit-testing des cases traverse les transforms 3D nativement.
+const CSS_3D = `
+.p3d-scene [data-piece]{
+  transform: translateY(${PIECE_LIFT_3D}) scaleY(${PIECE_SCALE_Y_3D});
+  transform-origin: 50% 94%;
+  filter: drop-shadow(0 ${Math.round(EPAISSEUR_3D * 0.45)}px 7px rgba(0,0,0,.42));
+}
+.p3d-scene [data-square]{ overflow: visible !important; }
+.p3d-scene [data-piece] svg{ overflow: visible; }
+`
 
 export default function Plateau({
   partie,                  // retour de usePartie()
@@ -17,6 +30,7 @@ export default function Plateau({
   onCoup,                  // (move chess.js) => void — coup légal joué
   taille = 480,
   interactif = true,
+  troisD = false,          // rendu 3D perspective (plateau incliné, pièces debout)
 }) {
   const [caseSelection, setCaseSelection] = useState(null)
   const [promo, setPromo] = useState(null)   // { from, to } en attente du choix
@@ -94,34 +108,85 @@ export default function Plateau({
     return s
   }, [dernierCoup, caseSelection, legauxDepuisSelection, caseRoiEnEchec])
 
+  const echiquier = (
+    <Chessboard
+      id="plateau-brams"
+      position={fen}
+      boardWidth={taille}
+      boardOrientation={orientation}
+      onPieceDrop={onPieceDrop}
+      onSquareClick={onSquareClick}
+      isDraggablePiece={isDraggablePiece}
+      arePiecesDraggable={interactif}
+      onPromotionCheck={() => false}
+      autoPromoteToQueen={false}
+      animationDuration={ANIM_PIECE_MS}
+      showBoardNotation
+      customSquareStyles={customSquareStyles}
+      customBoardStyle={troisD
+        ? { borderRadius: 6 }
+        : { borderRadius: 12, overflow: 'hidden', boxShadow: '0 30px 70px -28px rgba(0,0,0,.85), 0 0 0 1px rgba(255,255,255,.05)' }}
+      customDarkSquareStyle={{ backgroundColor: THEME.caseFoncee }}
+      customLightSquareStyle={{ backgroundColor: THEME.caseClaire }}
+      customNotationStyle={{ fontSize: Math.max(9, taille * 0.022), fontFamily: THEME.fontBody, fontWeight: 700 }}
+      customDropSquareStyle={{ boxShadow: `inset 0 0 0 3px ${THEME.gold}` }}
+    />
+  )
+
+  if (!troisD) {
+    return (
+      <div data-testid="plateau-wrap" style={{ position: 'relative', width: taille, height: taille }}>
+        {echiquier}
+        {promo && (
+          <SelecteurPromotion couleur={trait} onChoisir={choisirPromotion} onAnnuler={() => setPromo(null)} />
+        )}
+      </div>
+    )
+  }
+
+  // ── Scène 3D : perspective + plateau incliné, cadre bois épais, tranche avant,
+  // ombre au sol. La promotion reste À PLAT au-dessus de la scène (lisibilité).
+  const cadre = Math.round(taille * 0.028) + 8           // bordure bois autour des cases
+  const plaque = taille + cadre * 2
+  const hauteurScene = Math.round(plaque * Math.cos(TILT_3D_DEG * Math.PI / 180)) + EPAISSEUR_3D + 24
   return (
-    <div data-testid="plateau-wrap" style={{ position: 'relative', width: taille, height: taille }}>
-      <Chessboard
-        id="plateau-brams"
-        position={fen}
-        boardWidth={taille}
-        boardOrientation={orientation}
-        onPieceDrop={onPieceDrop}
-        onSquareClick={onSquareClick}
-        isDraggablePiece={isDraggablePiece}
-        arePiecesDraggable={interactif}
-        onPromotionCheck={() => false}
-        autoPromoteToQueen={false}
-        animationDuration={ANIM_PIECE_MS}
-        showBoardNotation
-        customSquareStyles={customSquareStyles}
-        customBoardStyle={{ borderRadius: 12, overflow: 'hidden', boxShadow: '0 30px 70px -28px rgba(0,0,0,.85), 0 0 0 1px rgba(255,255,255,.05)' }}
-        customDarkSquareStyle={{ backgroundColor: THEME.caseFoncee }}
-        customLightSquareStyle={{ backgroundColor: THEME.caseClaire }}
-        customNotationStyle={{ fontSize: Math.max(9, taille * 0.022), fontFamily: THEME.fontBody, fontWeight: 700 }}
-        customDropSquareStyle={{ boxShadow: `inset 0 0 0 3px ${THEME.gold}` }}
-      />
+    <div data-testid="plateau-wrap" style={{ position: 'relative', width: plaque, height: hauteurScene }}>
+      <style>{CSS_3D}</style>
+      <div className="p3d-scene" style={{
+        position: 'absolute', inset: 0,
+        perspective: PERSPECTIVE_3D, perspectiveOrigin: '50% 12%',
+      }}>
+        {/* ombre portée au sol */}
+        <div style={{
+          position: 'absolute', left: '2%', right: '2%', bottom: -6, height: plaque * 0.12,
+          background: 'radial-gradient(ellipse at 50% 50%, rgba(0,0,0,.55), transparent 70%)',
+          filter: 'blur(10px)',
+        }} />
+        <div style={{
+          position: 'absolute', top: 0, left: '50%', width: plaque, height: plaque,
+          transform: `translateX(-50%) rotateX(${TILT_3D_DEG}deg)`,
+          transformOrigin: '50% 100%', transformStyle: 'preserve-3d',
+        }}>
+          {/* plaque : cadre bois + échiquier */}
+          <div style={{
+            position: 'absolute', inset: 0, padding: cadre, borderRadius: 14,
+            background: 'linear-gradient(135deg, #4a3526, #2e2118 55%, #463224)',
+            boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.07), inset 0 0 26px rgba(0,0,0,.5)',
+          }}>
+            {echiquier}
+          </div>
+          {/* tranche avant (épaisseur du plateau) */}
+          <div style={{
+            position: 'absolute', left: 0, right: 0, bottom: 0, height: EPAISSEUR_3D,
+            transform: 'rotateX(-90deg)', transformOrigin: '50% 100%',
+            background: 'linear-gradient(#241a12, #15100b)',
+            borderRadius: '0 0 10px 10px',
+            boxShadow: 'inset 0 2px 3px rgba(255,255,255,.06)',
+          }} />
+        </div>
+      </div>
       {promo && (
-        <SelecteurPromotion
-          couleur={trait}
-          onChoisir={choisirPromotion}
-          onAnnuler={() => setPromo(null)}
-        />
+        <SelecteurPromotion couleur={trait} onChoisir={choisirPromotion} onAnnuler={() => setPromo(null)} />
       )}
     </div>
   )

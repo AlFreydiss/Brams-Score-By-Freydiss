@@ -8,7 +8,7 @@ import HistoriqueCoups from '../components/HistoriqueCoups.jsx'
 import BarreActions from '../components/BarreActions.jsx'
 import FinPartieModal from '../components/FinPartieModal.jsx'
 import { NIVEAUX_IA, NIVEAU_IA_DEFAUT, niveauParId } from '../lib/niveauxIA.js'
-import { THEME, CLE_NIVEAU_IA, CLE_COULEUR_IA } from '../constants.js'
+import { THEME, CLE_NIVEAU_IA, CLE_COULEUR_IA, taillePlateauAuto } from '../constants.js'
 import { sons } from '../lib/sons.js'
 
 function lireStockage(cle, defaut) {
@@ -91,7 +91,7 @@ function ConfigSolo({ onLancer }) {
 }
 
 // ── Partie en cours ──
-function PartieSolo({ niveau, maCouleur, profil, pseudo, avatar, onRejouer, onQuitter, taillePlateau }) {
+function PartieSolo({ niveau, maCouleur, profil, pseudo, avatar, onRejouer, onQuitter, taillePlateau, troisD }) {
   const partie = usePartie()
   const { pret, reflechit, chercherCoup, nouvellePartie } = useStockfish(niveau)
   const [finVisible, setFinVisible] = useState(false)
@@ -160,7 +160,7 @@ function PartieSolo({ niveau, maCouleur, profil, pseudo, avatar, onRejouer, onQu
   const avantageMoi = maCouleur === 'w' ? captures.avantage : -captures.avantage
 
   return (
-    <div style={{ display: 'flex', gap: 22, justifyContent: 'center', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+    <div style={{ display: 'flex', gap: 22, justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', minHeight: 'calc(100vh - 230px)' }}>
       <Plateau
         partie={partie}
         orientation={maCouleur === 'w' ? 'white' : 'black'}
@@ -168,6 +168,7 @@ function PartieSolo({ niveau, maCouleur, profil, pseudo, avatar, onRejouer, onQu
         onCoup={onCoup}
         taille={taillePlateau}
         interactif={!fin.terminee && !abandonnee}
+        troisD={troisD}
       />
 
       <div style={{ width: 'min(330px, 92vw)', display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -212,15 +213,11 @@ function PartieSolo({ niveau, maCouleur, profil, pseudo, avatar, onRejouer, onQu
   )
 }
 
-export default function SoloVsIA({ profil, pseudo, avatar, onQuitter }) {
+export default function SoloVsIA({ profil, pseudo, avatar, onQuitter, troisD = false }) {
   const [config, setConfig] = useState(null)   // { niveau, maCouleur } | null
   const [cle, setCle] = useState(0)            // re-mount pour « nouvelle partie »
 
-  const taillePlateau = useMemo(() => {
-    const vw = typeof window !== 'undefined' ? window.innerWidth : 1200
-    const vh = typeof window !== 'undefined' ? window.innerHeight : 900
-    return Math.max(280, Math.min(560, vw - 32, vh - 260))
-  }, [])
+  const taillePlateau = useMemo(() => taillePlateauAuto(troisD), [troisD])
 
   if (!config) return <ConfigSolo onLancer={setConfig} />
   return (
@@ -228,7 +225,7 @@ export default function SoloVsIA({ profil, pseudo, avatar, onQuitter }) {
       key={cle}
       {...config}
       profil={profil} pseudo={pseudo} avatar={avatar}
-      taillePlateau={taillePlateau}
+      taillePlateau={taillePlateau} troisD={troisD}
       onRejouer={() => setCle(k => k + 1)}
       onQuitter={onQuitter}
     />

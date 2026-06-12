@@ -7,7 +7,7 @@ import MultiOnline from './modes/MultiOnline.jsx'
 import DeuxJoueursLocal from './modes/DeuxJoueursLocal.jsx'
 import { assurerProfil, getProfil, getLeaderboard, getPartieEnCours } from './lib/api.js'
 import { rangPourElo } from './lib/elo.js'
-import { THEME } from './constants.js'
+import { THEME, modeTroisD, setModeTroisD } from './constants.js'
 import { sons, isMuted, setMuted } from './lib/sons.js'
 
 function CarteMode({ emoji, titre, texte, cta, onClick, accent, desactive, note }) {
@@ -105,6 +105,7 @@ export default function EchecsPage() {
   const [leaderboard, setLeaderboard] = useState([])
   const [partieEnCours, setPartieEnCours] = useState(null)
   const [mute, setMute] = useState(isMuted())
+  const [troisD, setTroisD] = useState(modeTroisD())
 
   const rechargerHub = useCallback(() => {
     if (!userId) return
@@ -123,27 +124,41 @@ export default function EchecsPage() {
 
   const ouvrirPartie = useCallback(id => setMode({ type: 'partie', id }), [])
 
-  return (
-    <div style={{ minHeight: '100vh', background: `radial-gradient(1100px 500px at 50% -8%, rgba(224,82,74,0.10), transparent 60%), radial-gradient(900px 420px at 85% 8%, rgba(255,215,0,0.05), transparent 55%), ${THEME.bg}`, paddingTop: 92, paddingBottom: 80 }}>
-      <div style={{ maxWidth: 1080, margin: '0 auto', padding: '0 18px', fontFamily: THEME.fontBody }}>
+  // en partie : header compact + page large pour laisser TOUTE la place au plateau
+  const enJeu = ['solo', 'local', 'partie'].includes(mode.type)
 
-        {/* En-tête */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 26 }}>
+  return (
+    <div style={{ minHeight: '100vh', background: `radial-gradient(1100px 500px at 50% -8%, rgba(224,82,74,0.10), transparent 60%), radial-gradient(900px 420px at 85% 8%, rgba(255,215,0,0.05), transparent 55%), ${THEME.bg}`, paddingTop: enJeu ? 78 : 92, paddingBottom: enJeu ? 24 : 80 }}>
+      <div style={{ maxWidth: enJeu ? 1640 : 1080, margin: '0 auto', padding: '0 18px', fontFamily: THEME.fontBody }}>
+
+        {/* En-tête (compact en partie) */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: enJeu ? 8 : 26 }}>
           <div>
-            <h1 style={{ margin: 0, fontFamily: THEME.fontDisplay, fontWeight: 800, fontSize: 'clamp(28px, 4.5vw, 44px)', letterSpacing: '-0.02em', color: THEME.text }}>
+            <h1 style={{ margin: 0, fontFamily: THEME.fontDisplay, fontWeight: 800, fontSize: enJeu ? 20 : 'clamp(28px, 4.5vw, 44px)', letterSpacing: '-0.02em', color: THEME.text }}>
               ♟ Échecs <span style={{ background: `linear-gradient(120deg, ${THEME.gold}, #ff9f43)`, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>Brams</span>
             </h1>
-            <p style={{ margin: '4px 0 0', color: THEME.muted, fontSize: 14 }}>
-              Défie Stockfish ou les membres de l'équipage — ELO et rangs One Piece à la clé.
-            </p>
+            {!enJeu && (
+              <p style={{ margin: '4px 0 0', color: THEME.muted, fontSize: 14 }}>
+                Défie Stockfish ou les membres de l'équipage — ELO et rangs One Piece à la clé.
+              </p>
+            )}
           </div>
-          <button
-            onClick={() => { const m = !mute; setMute(m); setMuted(m); sons.debloquer() }}
-            title={mute ? 'Activer les sons' : 'Couper les sons'}
-            style={{ width: 42, height: 42, borderRadius: 12, cursor: 'pointer', fontSize: 18, background: THEME.card, border: `1px solid ${THEME.cardBorder}`, color: THEME.text }}
-          >
-            {mute ? '🔇' : '🔊'}
-          </button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              onClick={() => { const v = !troisD; setTroisD(v); setModeTroisD(v) }}
+              title={troisD ? 'Passer en vue 2D classique' : 'Passer en vue 3D'}
+              style={{ height: 42, padding: '0 14px', borderRadius: 12, cursor: 'pointer', fontSize: 13.5, fontWeight: 800, fontFamily: THEME.fontBody, background: troisD ? 'rgba(255,215,0,0.10)' : THEME.card, border: `1px solid ${troisD ? 'rgba(255,215,0,0.45)' : THEME.cardBorder}`, color: troisD ? THEME.gold : THEME.text }}
+            >
+              {troisD ? '🧊 3D' : '▦ 2D'}
+            </button>
+            <button
+              onClick={() => { const m = !mute; setMute(m); setMuted(m); sons.debloquer() }}
+              title={mute ? 'Activer les sons' : 'Couper les sons'}
+              style={{ width: 42, height: 42, borderRadius: 12, cursor: 'pointer', fontSize: 18, background: THEME.card, border: `1px solid ${THEME.cardBorder}`, color: THEME.text }}
+            >
+              {mute ? '🔇' : '🔊'}
+            </button>
+          </div>
         </div>
 
         {mode.type === 'hub' && (
@@ -192,10 +207,10 @@ export default function EchecsPage() {
         )}
 
         {mode.type === 'solo' && (
-          <SoloVsIA profil={profil} pseudo={displayName || 'Moi'} avatar={avatarUrl} onQuitter={() => setMode({ type: 'hub' })} />
+          <SoloVsIA profil={profil} pseudo={displayName || 'Moi'} avatar={avatarUrl} troisD={troisD} onQuitter={() => setMode({ type: 'hub' })} />
         )}
         {mode.type === 'local' && (
-          <DeuxJoueursLocal onQuitter={() => setMode({ type: 'hub' })} />
+          <DeuxJoueursLocal troisD={troisD} onQuitter={() => setMode({ type: 'hub' })} />
         )}
         {mode.type === 'matchmaking' && (
           <Matchmaking
@@ -206,7 +221,7 @@ export default function EchecsPage() {
         )}
         {mode.type === 'partie' && (
           <MultiOnline
-            partieId={mode.id} monUid={userId}
+            partieId={mode.id} monUid={userId} troisD={troisD}
             onQuitter={() => setMode({ type: 'hub' })}
             onRejoindrePartie={ouvrirPartie}
           />
