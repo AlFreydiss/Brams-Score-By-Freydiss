@@ -121,6 +121,10 @@ def main():
         print(f'[E{num:03d}] {files[num].name[:70]}',flush=True)
         e=process(files[num],num)
         if not e: continue
+        # Un re-run ne doit pas écraser un titre Jikan/personnalisé déjà appliqué.
+        old=by_key.get(e['progressKey'])
+        if old and old.get('title') and not re.match(r'^épisode \d+$',old['title'].strip(),re.I):
+            e['title']=old['title']
         by_key[e['progressKey']]=e
         out=sorted(by_key.values(),key=lambda d:d.get('episode') or 0)
         JSON_OUT.write_text(json.dumps(out,ensure_ascii=False,indent=2),encoding='utf-8')
