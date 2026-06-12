@@ -180,6 +180,7 @@ const CATALOG = [
   'The Promised Neverland', 'Violet Evergarden', 'Kaguya-sama: Love is War',
   'Your Name', 'Your Lie in April', 'Bubble', 'Bunny Girl Senpai',
   'Rent-a-Girlfriend', 'Domestic na Kanojo', 'After the Rain', 'Love Prism', 'Carole & Tuesday',
+  'The Quintessential Quintuplets',
 ]
 
 const MODES = {

@@ -137,7 +137,7 @@ export default function AnimeHubV2(props) {
     'kaiju-no-8': props.onOpenKaiju, bluelock: props.onOpenBluelock, 'fate-zero': props.onOpenFateZero,
     'your-name': props.onOpenYourName, 'your-lie': props.onOpenYourLie, 'domestic-na-kanojo': props.onOpenDomestic,
     'koi-ameagari': props.onOpenKoi, bubble: props.onOpenBubble, reze: props.onOpenReze,
-    kaguya: props.onOpenKaguya, hxh: props.onOpenHxh,
+    kaguya: props.onOpenKaguya, hxh: props.onOpenHxh, quintuplets: props.onOpenQuintuplets,
   })[id]
   const openAnime = (a) => {
     logAnimeOpen(a.id, discordId) // alimente le « Top du moment » serveur (fire-and-forget)

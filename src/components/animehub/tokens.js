@@ -74,6 +74,7 @@ export const ANIME_THEMES = {
   'violet-evergarden': { accent: '#8FB3E8', accent2: '#E8E0C9', font: F_QUICK },
   'your-name':         { accent: '#6FB7E8', accent2: '#F2788F', font: F_QUICK },
   'your-lie':          { accent: '#F2B5C4', accent2: '#8FD4F2', font: F_QUICK },
+  quintuplets:         { accent: '#FF6F9C', accent2: '#FFD9E6', font: F_QUICK },
   bubble:              { accent: '#7FD4E8', accent2: '#F2A6C8', font: F_QUICK },
   'bunny-girl':        { accent: '#A98FE8', accent2: '#F2B5C4', font: F_QUICK },
   'rent-girlfriend':   { accent: '#F26D7E', accent2: '#FFC9D2', font: F_QUICK },
