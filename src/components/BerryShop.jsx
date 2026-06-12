@@ -10,6 +10,7 @@ import { useOpeningBg } from '../contexts/OpeningBgContext.jsx'
 import { OPENING_BACKGROUNDS } from '../data/opening-backgrounds.js'
 import CursorShop from './CursorShop.jsx'
 import TrailShop from './TrailShop.jsx'
+import { track } from '../lib/analytics.js'
 import { CartProvider, useCart } from '../contexts/CartContext.jsx'
 import CartDrawer from './CartDrawer.jsx'
 import PromoBanner from './PromoBanner.jsx'
@@ -592,6 +593,7 @@ function BerryShopInner() {
   // Aperçu : on FIGE la liste à l'ouverture (snapshot) → le filtre/recherche/achat
   // ne fait pas sauter l'aperçu, et on peut équiper le fond juste acheté.
   const openPreview = useCallback((bg) => {
+    track('boutique_view', { item: bg.name || bg.title || bg.id, rarity: bg.rarity })
     const i = visible.findIndex(b => b.id === bg.id)
     setPreview({ list: visible, idx: i >= 0 ? i : 0 })
   }, [visible])

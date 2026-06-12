@@ -6,6 +6,7 @@ import { isStaff, isCreator } from '../lib/roles.js'
 import { listPostReports } from '../lib/feed.js'
 import { getAccessToken } from '../lib/supabaseRest.js'
 import StaffSettings from './StaffSettings.jsx'
+import AnalyticsTab from './staff/AnalyticsTab.jsx'
 
 // ── Tokens (mêmes que StaffSettings — dark premium sobre) ───────────────────
 const C = {
@@ -111,6 +112,7 @@ function Kpi({ label, value, sub, subColor }) {
 // ── Sidebar ────────────────────────────────────────────────────────────────
 const NAV = [
   { id: 'overview', label: "Vue d'ensemble" }, { id: 'revenus', label: 'Revenus' },
+  { id: 'analytics', label: 'Analytics' },
   { id: 'reports', label: 'Signalements' }, { id: 'members', label: 'Membres' },
   { id: 'bot', label: 'Brams Score' }, { id: 'settings', label: 'Paramètres' },
 ]
@@ -317,6 +319,7 @@ export default function StaffPanel() {
           <div key={active} style={{ animation: 'fadeIn .3s ease both' }}>
             {active === 'overview' && <Overview revenue={revenue} revErr={revErr} reportCount={reportCount} />}
             {active === 'revenus' && <RevenusView revenue={revenue} revErr={revErr} />}
+            {active === 'analytics' && <AnalyticsTab />}
             {active === 'reports' && <ReportsView reportCount={reportCount} />}
             {active === 'members' && <PlaceholderView label="Membres" />}
             {active === 'bot' && <BotView />}

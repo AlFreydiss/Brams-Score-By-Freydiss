@@ -1,5 +1,6 @@
 ﻿import { useState, useEffect } from 'react'
 import { useInView } from '../hooks/useInView.js'
+import { track } from '../lib/analytics.js'
 
 const DISCORD = {
   label: 'Rejoindre le Discord',
@@ -81,6 +82,7 @@ export default function JoinCTA() {
             <div style={{ marginBottom:24 }}>
               <a href={DISCORD.href} target="_blank" rel="noopener noreferrer"
                 className="btn btn-primary"
+                onClick={() => track('embarquer_click')}
                 style={{ fontSize:17, padding:'16px 40px', display:'inline-flex', alignItems:'center', gap:10,
                   boxShadow:`0 8px 32px ${DISCORD.color}40` }}
                 onMouseEnter={e=>{ e.currentTarget.style.transform='translateY(-3px)'; e.currentTarget.style.boxShadow=`0 12px 40px ${DISCORD.color}60` }}

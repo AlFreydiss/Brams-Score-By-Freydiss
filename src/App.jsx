@@ -27,6 +27,7 @@ import AIChatWidget from './components/AIChatWidget.jsx'
 import Footer from './components/Footer.jsx'
 import QuoteSection from './components/QuoteSection.jsx'
 import { useInView } from './hooks/useInView.js'
+import { useAnalytics, setAnalyticsUser, track } from './lib/analytics.js'
 
 // Lazy â€” chargÃ©s uniquement quand ouverts
 const ProfilePage     = lazyWithReload(() => import('./components/ProfilePage.jsx'))
@@ -305,9 +306,30 @@ function PageLayout({ children }) {
   )
 }
 
+// Slug d'URL → titre lisible pour l'event analytics anime_view (le dashboard
+// affiche metadata.title ; le slug brut ferait des "kny" dans le top animes).
+const ANIME_TITLES = {
+  onepiece: 'One Piece', tpn: 'The Promised Neverland', drstone: 'Dr Stone', jjk: 'Jujutsu Kaisen',
+  kingdom: 'Kingdom', aot: "L'Attaque des Titans", kny: 'Demon Slayer', nnt: 'Seven Deadly Sins',
+  sl: 'Solo Leveling', dbs: 'Dragon Ball Super', 'violet-evergarden': 'Violet Evergarden', vivy: 'Vivy',
+  'domestic-na-kanojo': 'Domestic na Kanojo', 'koi-ameagari': 'After the Rain', 'love-prism': 'Love Prism',
+  'carole-tuesday': 'Carole & Tuesday', 'bunny-girl': 'Bunny Girl Senpai', 'rent-girlfriend': 'Rent-a-Girlfriend',
+  bc: 'Black Clover', mha: 'My Hero Academia', fireforce: 'Fire Force', bleach: 'Bleach',
+  'kaiju-no-8': 'Kaiju No. 8', bluelock: 'Blue Lock', 'fate-zero': 'Fate/Zero', 'your-name': 'Your Name',
+  'your-lie': 'Your Lie in April', kaguya: 'Kaguya-sama: Love is War', hxh: 'Hunter x Hunter',
+  bubble: 'Bubble', reze: 'Chainsaw Man — Reze Arc',
+}
+
 export default function App() {
-  const { isAuthenticated, loading } = useAuth()
+  const { isAuthenticated, loading, discordId, displayName } = useAuth()
   const navigate = useNavigate()
+
+  // Analytics : session + heartbeat + pageview auto (doit être sous le Router — ok,
+  // App est rendu dans <BrowserRouter> via main.jsx).
+  useAnalytics()
+  useEffect(() => {
+    if (discordId) setAnalyticsUser({ user_id: discordId, username: displayName })
+  }, [discordId, displayName])
   const [scansOpen,        setScansOpen]        = useState(false)
   const [onepieceOpen,     setOnepieceOpen]     = useState(false)
 
@@ -426,7 +448,10 @@ export default function App() {
       closeAllOverlays()
       if (!sub) { setAnimeHubOpen(true); setReturnToMon(false) }
       else if (sub === 'mon-univers') setMonUniversOpen(true)
-      else if (ANIME_SETTERS[sub]) ANIME_SETTERS[sub](true)
+      else if (ANIME_SETTERS[sub]) {
+        ANIME_SETTERS[sub](true)
+        track('anime_view', { title: ANIME_TITLES[sub] || sub }) // point central : couvre hub, URL directe et Mon Univers
+      }
       else { setAnimeHubOpen(true); setReturnToMon(false) }
       return
     }
