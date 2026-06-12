@@ -134,9 +134,17 @@ export default function HeroCinematic({ anime, rating = null, topRank = null, on
         <TitleArt anime={anime} fallback={
           <h1 style={{
             margin: 0, fontFamily: theme.font, fontWeight: theme.font === FONT_DISPLAY ? 700 : 400,
-            fontSize: theme.font === FONT_DISPLAY ? 'clamp(32px, 4.2vw, 56px)' : 'clamp(38px, 5vw, 68px)',
-            lineHeight: 1.02, letterSpacing: theme.font.includes('Bebas') ? '0.015em' : '-0.015em', color: C.text,
-            textShadow: `0 2px 18px rgba(0,0,0,.65), 0 0 44px ${rgba(theme.accent, 0.30)}`,
+            fontSize: theme.font === FONT_DISPLAY ? 'clamp(32px, 4.2vw, 56px)' : 'clamp(40px, 5.4vw, 74px)',
+            lineHeight: 1.02,
+            letterSpacing: /Bebas|Anton/.test(theme.font) ? '0.02em' : /Bungee|Audiowide/.test(theme.font) ? '0.01em' : '-0.015em',
+            // Titre façon logo : dégradé clair→accent DANS le texte + halo de la
+            // couleur de l'œuvre (drop-shadow, pas text-shadow — incompatible
+            // avec background-clip:text).
+            background: `linear-gradient(178deg, #FFFFFF 4%, ${theme.accent2} 38%, ${theme.accent} 96%)`,
+            WebkitBackgroundClip: 'text', backgroundClip: 'text',
+            WebkitTextFillColor: 'transparent', color: 'transparent',
+            filter: `drop-shadow(0 3px 10px rgba(0,0,0,.55)) drop-shadow(0 0 30px ${rgba(theme.accent, 0.42)})`,
+            paddingBottom: '0.08em', // les descendantes (g, y) se font rogner par background-clip sinon
           }}>{anime.title}</h1>
         } />
 
