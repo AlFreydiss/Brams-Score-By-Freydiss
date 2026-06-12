@@ -25,6 +25,7 @@ const HUB_ANIMES = [
   { id: 'violet-evergarden', title: 'Violet Evergarden', emoji: '✉', color: '#8b7cff', colorDark: '#30255f', cover: '/anime-covers/violet.jpg', ns: 'violet-evergarden', hasChapters: false, videoTarget: 13 },
   { id: 'your-lie', title: 'Your Lie in April', emoji: '🎹', color: '#ff6f9c', colorDark: '#5f2540', cover: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/thumbnails/S01E01.jpg', ns: 'your-lie', hasChapters: false, videoTarget: 22 },
   { id: 'kaguya', title: 'Kaguya-sama: Love is War', emoji: '🏹', color: '#ef4565', colorDark: '#5c1a28', cover: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kaguya/cover.jpg', ns: 'kaguya', hasChapters: false, videoTarget: 42 },
+  { id: 'hxh', title: 'Hunter x Hunter', emoji: '🎣', color: '#2dd181', colorDark: '#0c3b24', cover: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E001.jpg', ns: 'hxh', hasChapters: false, videoTarget: 148 },
   { id: 'vivy', title: "Vivy: Fluorite Eye's Song", emoji: '🎵', color: '#00d4ff', colorDark: '#003d52', cover: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy/key-visual.jpg', ns: 'vivy', hasChapters: false, videoTarget: 13 },
   { id: 'love-prism', title: 'Love Through A Prism', emoji: '🌈', color: '#e91e63', colorDark: '#4a0e2e', cover: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism-hls/S01E001/thumb.jpg', ns: 'love-prism', hasChapters: false, videoTarget: 20 },
   { id: 'carole-tuesday', title: 'Carole & Tuesday', emoji: '🎸', color: '#ff9800', colorDark: '#4a2a00', cover: '/carole-tuesday-poster.jpg', ns: 'carole-tuesday', hasChapters: false, videoTarget: 24 },
@@ -183,7 +184,7 @@ export default function MonUniversPage({
   onOpenAot, onOpenFireforce, onOpenBluelock, onOpenBunnyGirl, onOpenRentGirlfriend,
   onOpenTpn, onOpenDrstone, onOpenJjk, onOpenKingdom, onOpenKny, onOpenNnt, onOpenSl,
   onOpenDbs, onOpenViolet, onOpenVivy, onOpenLovePrism, onOpenCaroleTuesday,
-  onOpenBc, onOpenMha, onOpenOnepiece, onOpenYourLie, onOpenKaguya
+  onOpenBc, onOpenMha, onOpenOnepiece, onOpenYourLie, onOpenKaguya, onOpenHxh
 }) {
   const [rawProgress, setRawProgress] = useState(() => loadAllProgress())
   const [query, setQuery] = useState('')
@@ -221,7 +222,7 @@ export default function MonUniversPage({
     'bunny-girl': onOpenBunnyGirl, 'rent-girlfriend': onOpenRentGirlfriend,
     tpn: onOpenTpn, drstone: onOpenDrstone, jjk: onOpenJjk, kingdom: onOpenKingdom,
     kny: onOpenKny, nnt: onOpenNnt, sl: onOpenSl, dbs: onOpenDbs,
-    'violet-evergarden': onOpenViolet, 'your-lie': onOpenYourLie, kaguya: onOpenKaguya, vivy: onOpenVivy,
+    'violet-evergarden': onOpenViolet, 'your-lie': onOpenYourLie, kaguya: onOpenKaguya, hxh: onOpenHxh, vivy: onOpenVivy,
     'love-prism': onOpenLovePrism, 'carole-tuesday': onOpenCaroleTuesday,
     bc: onOpenBc, mha: onOpenMha, onepiece: onOpenOnepiece,
   }

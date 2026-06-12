@@ -28,7 +28,7 @@ const HERO_KEYART = {
 }
 // Vraies nouveautés : dans les données historiques presque TOUT portait le badge
 // « NOUVEAU » (27/29) — on le réserve aux derniers ajouts réels du catalogue.
-const NEW_IDS = new Set(['kaiju-no-8', 'bleach', 'fireforce', 'bluelock', 'domestic-na-kanojo', 'kaguya'])
+const NEW_IDS = new Set(['kaiju-no-8', 'bleach', 'fireforce', 'bluelock', 'domestic-na-kanojo', 'kaguya', 'hxh'])
 const displayBadge = (a) => (a.badge === 'NOUVEAU' ? (NEW_IDS.has(a.id) ? 'NOUVEAU' : null) : a.badge)
 const FAVS_KEY = 'animehub_favs'
 const NORM = s => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
@@ -115,7 +115,7 @@ export default function AnimeHubV2(props) {
     'kaiju-no-8': props.onOpenKaiju, bluelock: props.onOpenBluelock, 'fate-zero': props.onOpenFateZero,
     'your-name': props.onOpenYourName, 'your-lie': props.onOpenYourLie, 'domestic-na-kanojo': props.onOpenDomestic,
     'koi-ameagari': props.onOpenKoi, bubble: props.onOpenBubble, reze: props.onOpenReze,
-    kaguya: props.onOpenKaguya,
+    kaguya: props.onOpenKaguya, hxh: props.onOpenHxh,
   })[id]
   const openAnime = (a) => open(a.id)?.()
 

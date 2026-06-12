@@ -18,6 +18,7 @@ import KAIJU_VIDEOS from '../data/kaiju-videos.json'
 import JJK_VIDEOS from '../data/jjk-videos.json'
 import KINGDOM_VIDEOS from '../data/kingdom-videos.json'
 import KNY_VIDEOS from '../data/kny-videos.json'
+import HXH_VIDEOS from '../data/hxh-videos.json'
 import LOVE_PRISM_VIDEOS from '../data/love-prism-videos.json'
 import NNT_VIDEOS from '../data/nnt-videos.json'
 import RENT_VIDEOS from '../data/rent-girlfriend-videos.json'
@@ -369,6 +370,26 @@ export const ANIMES = [
     action: '▶ Regarder',
     badge: 'NOUVEAU',
     badgeColor: '#ef4565',
+  },
+  {
+    id: 'hxh',
+    title: 'Hunter x Hunter',
+    subtitle: 'Hunter x Hunter (2011)',
+    emoji: '🎣',
+    color: '#2dd181',
+    colorDark: '#0c3b24',
+    coverImage: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E001.jpg',
+    coverPosition: 'center top',
+    genres: ['Aventure', 'Action', 'Shōnen'],
+    description: "Gon Freecss passe l'Examen de Hunter pour retrouver son père légendaire. Avec Killua, Kurapika et Leorio, des arènes du Tour Céleste aux Fourmis-Chimères — le chef-d'œuvre de Togashi, animé par Madhouse.",
+    stats: [
+      { label: 'Épisodes', value: videoCountLabel(HXH_VIDEOS.length, 148) },
+      { label: 'Studio', value: 'Madhouse' },
+      { label: 'Statut', value: availabilityLabel(HXH_VIDEOS.length) },
+    ],
+    action: '▶ Regarder',
+    badge: 'NOUVEAU',
+    badgeColor: '#2dd181',
   },
   {
     id: 'vivy',
@@ -1555,7 +1576,7 @@ function HubAiChat({ animes, onOpen }) {
   )
 }
 
-export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrstone, onOpenJjk, onOpenKingdom, onOpenAot, onOpenKny, onOpenNnt, onOpenSl, onOpenDbs, onOpenViolet, onOpenVivy, onOpenLovePrism, onOpenCaroleTuesday, onOpenBunnyGirl, onOpenRentGirlfriend, onOpenBc, onOpenMha, onOpenFireforce, onOpenBleach, onOpenBluelock, onOpenKaiju, onOpenFateZero, onOpenYourName, onOpenYourLie, onOpenDomestic, onOpenKoi, onOpenBubble, onOpenReze, onOpenMonUnivers }) {
+export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrstone, onOpenJjk, onOpenKingdom, onOpenAot, onOpenKny, onOpenNnt, onOpenSl, onOpenDbs, onOpenViolet, onOpenVivy, onOpenLovePrism, onOpenCaroleTuesday, onOpenBunnyGirl, onOpenRentGirlfriend, onOpenBc, onOpenMha, onOpenFireforce, onOpenBleach, onOpenBluelock, onOpenKaiju, onOpenFateZero, onOpenYourName, onOpenYourLie, onOpenDomestic, onOpenKoi, onOpenBubble, onOpenReze, onOpenKaguya, onOpenHxh, onOpenMonUnivers }) {
   const [query, setQuery] = useState('')
   const [selectedGenres, setSelectedGenres] = useState(new Set())
   const [genreMenuOpen, setGenreMenuOpen] = useState(false)
@@ -1731,6 +1752,7 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
       'domestic-na-kanojo': onOpenDomestic,
       'koi-ameagari': onOpenKoi,
       bubble: onOpenBubble, reze: onOpenReze,
+      kaguya: onOpenKaguya, hxh: onOpenHxh,
     }
     map[id]?.()
   }

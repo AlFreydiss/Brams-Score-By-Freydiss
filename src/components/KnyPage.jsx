@@ -139,8 +139,8 @@ function InfoPanel({ watchedCount, total, lastWatchedIdx, onResume, chapterCount
           {[
             { label:'Épisodes', value:String(total), dot:COLOR2 },
             { label:'Chapitres', value:'206', dot:'#fbbf24' },
-            { label:'OAV', value:'0', dot:'#34d399' },
-            { label:'Audio', value:'VF + VO', dot:'#f97316' },
+            { label:'Saisons', value:'5 + Film', dot:'#34d399' },
+            { label:'Audio', value:'VOSTFR', dot:'#f97316' },
             { label:'Note', value:'★ 8.9', dot:'#f97316' },
           ].map(s => (
             <div key={s.label} style={{ padding:'10px 12px',borderRadius:12,background:'rgba(255,255,255,.04)',border:'1px solid rgba(255,255,255,.06)' }}>
@@ -211,9 +211,17 @@ export default function KnyPage({ onClose }) {
   }, [markWatched])
   const playHandlers = useMemo(() => VIDEOS.map((_, i) => () => openDetail(i)), [openDetail])
 
-  const episodes = VIDEOS.map((v, i) => ({ v, i })).filter(x => !x.v.kind)
-  const ovas = VIDEOS.map((v, i) => ({ v, i })).filter(x => x.v.kind === 'ova')
-  const films = VIDEOS.map((v, i) => ({ v, i })).filter(x => x.v.kind === 'film')
+  // Groupes consécutifs par arc (Saison 1, Film, Train de l'Infini, Quartier des
+  // Plaisirs…) — l'ordre du JSON est déjà chronologique.
+  const groups = useMemo(() => {
+    const out = []
+    VIDEOS.forEach((v, i) => {
+      const label = v.kind === 'film' ? 'Film' : (v.arc || v.season || 'Épisodes')
+      if (!out.length || out[out.length - 1].label !== label) out.push({ label, items: [] })
+      out[out.length - 1].items.push({ v, i })
+    })
+    return out
+  }, [])
   const chapterCount = CHAPTERS.length || 206
 
   return (
@@ -270,7 +278,22 @@ export default function KnyPage({ onClose }) {
                   </div>
                 </div>
 
-                <div style={{ marginBottom: 8, fontSize: 12, color: 'rgba(255,255,255,.45)', fontWeight: 600, letterSpacing: '.02em' }}>Scans manga — {chapterCount} chapitres • clique pour lire</div>
+                {groups.map(g => (
+                  <div key={g.label} style={{ marginBottom: 30 }}>
+                    <div style={{ display:'flex',alignItems:'center',gap:10,margin:'0 0 14px' }}>
+                      <div style={{ width:4,height:18,borderRadius:2,background:`linear-gradient(180deg,${COLOR},${COLOR2})` }} />
+                      <h4 style={{ margin:0,fontSize:14,fontWeight:900,color:'#fff',letterSpacing:'-.01em' }}>{g.label}</h4>
+                      <span style={{ fontSize:10.5,fontWeight:700,color:'rgba(255,255,255,.3)' }}>{g.items.length} {g.label === 'Film' ? '' : 'ép.'}</span>
+                    </div>
+                    <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))', gap:14 }}>
+                      {g.items.map(({ v, i }) => (
+                        <EpCard key={keyOf(v)} video={v} index={i} watched={!!progress[keyOf(v)]?.completed} onPlay={playHandlers[i]} />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+
+                <div style={{ marginBottom: 8, marginTop: 8, fontSize: 12, color: 'rgba(255,255,255,.45)', fontWeight: 600, letterSpacing: '.02em' }}>Scans manga — {chapterCount} chapitres • clique pour lire</div>
                 <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(68px,1fr))', gap:8, maxHeight:220, overflowY:'auto', paddingRight:4 }}>
                   {CHAPTERS.slice(0, Math.min(60, CHAPTERS.length)).map((ch, i) => {
                     const st = scanProg[ch.num] || (ch.read ? 'read' : null)
