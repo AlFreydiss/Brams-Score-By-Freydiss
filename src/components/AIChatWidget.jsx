@@ -215,6 +215,19 @@ function AdventureCard({ data, isActive, loading, onChoose }) {
   )
 }
 
+// Ancre dorée vectorielle — l'emoji 🏴‍☠️ rendait un drapeau violet baveux sous
+// Windows ; le SVG est net à toutes les tailles et suit la couleur demandée.
+function AnchorIcon({ size = 26, color = GOLD, strokeWidth = 2 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color}
+      strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <circle cx="12" cy="5" r="3" />
+      <line x1="12" y1="22" x2="12" y2="8" />
+      <path d="M5 12H2a10 10 0 0 0 20 0h-3" />
+    </svg>
+  )
+}
+
 function TypingDots() {
   return (
     <div style={{ display: 'flex', gap: 5, padding: '10px 14px', background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.07)', borderRadius: '14px 14px 14px 4px', width: 'fit-content' }}>
@@ -512,9 +525,8 @@ export default function AIChatWidget({ hidden = false }) {
           }} />
           <div aria-hidden style={{
             position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 150, opacity: .035, filter: 'grayscale(1)',
-          }}>🏴‍☠️</div>
+            display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: .05,
+          }}><AnchorIcon size={170} strokeWidth={1.2} /></div>
 
           <div style={{ position: 'relative', zIndex: 1 }}>
             {history.length === 0 && (
@@ -654,9 +666,9 @@ export default function AIChatWidget({ hidden = false }) {
         }} />
         <span style={{
           position: 'absolute', inset: 4, borderRadius: '50%', background: '#0b0b10',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, color: GOLD,
         }}>
-          {open ? '✕' : '🏴‍☠️'}
+          {open ? '✕' : <AnchorIcon size={26} />}
         </span>
         {!open && unread > 0 && (
           <span style={{ position: 'absolute', top: -2, right: -2, width: 20, height: 20, borderRadius: '50%', background: GOLD, border: '2px solid #0e0f11', fontSize: 11, fontWeight: 700, color: '#15120a', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>{unread}</span>
