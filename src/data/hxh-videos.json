@@ -1,7 +1,7 @@
 [
   {
     "episode": 1,
-    "title": "Épisode 1",
+    "title": "Departure × And × Friends",
     "episodeLabel": "E001",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E001-vostfr.mp4",
     "season": "S01",
@@ -28,7 +28,7 @@
   },
   {
     "episode": 2,
-    "title": "Épisode 2",
+    "title": "Test × of × Tests",
     "episodeLabel": "E002",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E002-vostfr.mp4",
     "season": "S01",
@@ -49,6 +49,87 @@
         "label": "Français",
         "srclang": "fr",
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E002-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 3,
+    "title": "Rivals x In x Survival",
+    "episodeLabel": "E003",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E003-vostfr.mp4",
+    "season": "S01",
+    "arc": "Arc de l’Examen de Hunter",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E003",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E003.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E003-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 4,
+    "title": "Hope × and × Ambition",
+    "episodeLabel": "E004",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E004-vostfr.mp4",
+    "season": "S01",
+    "arc": "Arc de l’Examen de Hunter",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E004",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E004.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E004-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 5,
+    "title": "Hisoka × is × Sneaky",
+    "episodeLabel": "E005",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E005-vostfr.mp4",
+    "season": "S01",
+    "arc": "Arc de l’Examen de Hunter",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E005",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E005.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E005-fr.vtt",
         "default": true
       }
     ]

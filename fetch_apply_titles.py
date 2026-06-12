@@ -3,10 +3,10 @@
 RÈGLE : ne remplace QUE les titres génériques (« Épisode N », « Saison X — Épisode N »).
 Réutilisable : relancer après tout re-run d'un upload_*.py.  py fetch_apply_titles.py
 """
-import json, re, time, urllib.request
+import json, re, sys, time, urllib.request
 from pathlib import Path
 
-DATA = Path(r'F:\brams-web-test\src\data')
+DATA = Path(__file__).parent / 'src' / 'data'
 # Tous les formats placeholder rencontrés : « Épisode 1 », « Saison 3 — Épisode 1 »,
 # « Saison 1 - Episode 1 », « S01 - Episode 1 », accents/tirets/casse variables.
 GENERIC = re.compile(r'^\s*(S\d+\s*[—-]\s*|Saison \d+\s*[—-]\s*)?(É|E|é|e)pisode\s+\d+\s*$', re.I)
@@ -27,6 +27,10 @@ CONFIG = {
     'koi-ameagari':       {'S01': [36882]},
     'your-lie':           {'S01': [23273]},
     'violet-evergarden':  {'S01': [33352]},
+    # '*' = un seul MAL id pour toute la série, indexé par numéro d'épisode global
+    # (hxh découpe ses 148 ép. en "saisons"-arcs S01..S07 dans le json).
+    'hxh':                {'*': [11061]},
+    'kny':                {'S01': [38000], 'S02': [49926], 'S03': [44511], 'S04': [51019], 'S05': [55701]},
 }
 
 def jikan_titles(mal_id):
@@ -43,7 +47,9 @@ def jikan_titles(mal_id):
     return titles
 
 def main():
+    only = set(sys.argv[1:])  # py fetch_apply_titles.py kny hxh -> ne traite que ceux-là
     for slug, seasons in CONFIG.items():
+        if only and slug not in only: continue
         path = DATA / f'{slug}-videos.json'
         if not path.exists():
             print(f'{slug}: json absent, skip'); continue
@@ -54,7 +60,8 @@ def main():
             for mid in mal_ids:
                 try: titles += jikan_titles(mid)
                 except Exception as e: print(f'  {slug}/{season} mal {mid}: {e}')
-            group = [e for e in data if e.get('season') == season]
+            group = ([e for e in data if not e.get('kind')] if season == '*'
+                     else [e for e in data if e.get('season') == season])
             for i, entry in enumerate(group):
                 if i < len(titles) and titles[i] and GENERIC.match(str(entry.get('title') or '')):
                     entry['title'] = titles[i]
