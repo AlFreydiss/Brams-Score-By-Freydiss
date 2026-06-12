@@ -1,7 +1,7 @@
 [
   {
     "episode": 1,
-    "title": "Cruelty",
+    "title": "Épisode 1",
     "episodeLabel": "S01E01",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S01E01-vostfr.mp4",
     "season": "S01",
@@ -28,7 +28,7 @@
   },
   {
     "episode": 2,
-    "title": "Trainer Sakonji Urokodaki",
+    "title": "Épisode 2",
     "episodeLabel": "S01E02",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S01E02-vostfr.mp4",
     "season": "S01",
@@ -55,7 +55,7 @@
   },
   {
     "episode": 3,
-    "title": "Sabito and Makomo",
+    "title": "Épisode 3",
     "episodeLabel": "S01E03",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S01E03-vostfr.mp4",
     "season": "S01",
@@ -82,7 +82,7 @@
   },
   {
     "episode": 4,
-    "title": "Final Selection",
+    "title": "Épisode 4",
     "episodeLabel": "S01E04",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S01E04-vostfr.mp4",
     "season": "S01",
@@ -109,7 +109,7 @@
   },
   {
     "episode": 5,
-    "title": "My Own Steel",
+    "title": "Épisode 5",
     "episodeLabel": "S01E05",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S01E05-vostfr.mp4",
     "season": "S01",
@@ -130,6 +130,87 @@
         "label": "Français",
         "srclang": "fr",
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S01E05-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 6,
+    "title": "Épisode 6",
+    "episodeLabel": "S01E06",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S01E06-vostfr.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "kny-S01E06",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/thumbnails/S01E06.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S01E06-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 7,
+    "title": "Épisode 7",
+    "episodeLabel": "S01E07",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S01E07-vostfr.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "kny-S01E07",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/thumbnails/S01E07.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S01E07-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 8,
+    "title": "Épisode 8",
+    "episodeLabel": "S01E08",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S01E08-vostfr.mp4",
+    "season": "S01",
+    "arc": "Saison 1",
+    "preferredAudioLang": "ja",
+    "progressKey": "kny-S01E08",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/thumbnails/S01E08.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S01E08-fr.vtt",
         "default": true
       }
     ]
