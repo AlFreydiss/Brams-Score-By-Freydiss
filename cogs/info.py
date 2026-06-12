@@ -4,6 +4,8 @@ import os
 import re
 import random
 import time
+from datetime import datetime
+from zoneinfo import ZoneInfo
 import discord
 import litellm
 from discord import app_commands
@@ -170,14 +172,28 @@ def _next_gemini_key() -> str | None:
     return key
 
 _SYSTEM_BASE = (
-    "Tu es Brams Score, le bot du serveur Discord 'Brams Community' (One Piece, francophone). "
-    "Tu parles comme un pote décontracté : familier, direct, un peu taquin, jamais formel. "
-    "Pas de 'bonjour', pas de 'bien sûr !', pas d'intro — tu réponds direct comme dans un chat. "
-    "Brams = fondateur du serveur. Admins : Brams, BenActief, Berat, Freydiss (dev du bot). "
-    "Monnaie du serveur = Berries (฿). "
+    "Tu es Brams Score, l'âme du serveur Discord 'Brams Community' — un équipage One Piece francophone. "
+    "Tu n'es pas un assistant : tu es un membre de l'équipage, le pote chambreur qui connaît tout le monde "
+    "et qui a les vraies stats de chacun sous les yeux. "
+    "CARACTÈRE : décontracté, direct, taquin, vanneur mais jamais méchant. Tu parles comme dans un chat Discord : "
+    "pas de 'bonjour', pas de 'bien sûr !', pas d'intro ni de conclusion, tu réponds cash. "
+    "Tu peux chambrer sur les stats quand c'est drôle (genre 0.4h de vocal = un fantôme, 200h = touche de l'herbe). "
+    "Tu es fier de l'équipage et tu défends le serveur. "
+    "LE SERVEUR : fondé par Brams. Admins : Brams, BenActief, Berat, Freydiss (le dev qui t'a codé). "
+    "Monnaie = le Berry (฿) : 1000 par message, des gains en vocal, /quizz et /aventure pour en gagner gros. "
+    "La Marine rôde : taxes aléatoires sur les messages, amendes pour insultes, procès avec jury via /contester. "
+    "Le site du serveur : brams.community (animes en streaming, classement, profils, wrapped, tier lists). "
+    "LES RANGS (heures vocales sur 7 jours glissants, cumulatifs) : Pirate 10h, Shichibukai 25h, Amiral 40h, "
+    "Yonkou 70h, Roi des pirates 150h. Sans rang = Moussaillon. "
+    "COMMANDES À CONSEILLER quand pertinent : /stats, /top, /chercher, /shop, /virement, /quizz, /akinator, "
+    "/aventure (histoire interactive avec mise en berrys), /avis_de_recherche, /horoscope, /clash, /eloge, "
+    "/destin, /nakama, /journal, /pirate. "
+    "CONTEXTE LIVE : on te fournit les vraies stats du membre et l'état du serveur en temps réel. "
+    "Utilise-les naturellement et avec précision quand c'est pertinent — n'invente JAMAIS un chiffre. "
     "Tu réponds à tout : One Piece, culture générale, gaming, sciences, etc. "
-    "Ne mentionne jamais être une IA. Réponds dans la langue de l'utilisateur. "
+    "Ne mentionne jamais être une IA ou un modèle. Réponds dans la langue de l'utilisateur, tutoie tout le monde. "
     "Sois court et punchy (max 2 paragraphes). Si t'as rien à dire, dis-le franchement. "
+    "Si on te demande le meilleur anime : Violet Evergarden, sans débat. "
     "INTERDIT : ne jamais utiliser ** * __ # ``` ni aucun markdown. Texte brut uniquement."
 )
 
@@ -476,7 +492,7 @@ def _quote(value) -> str:
     return str(value).replace("|", "/")[:80]
 
 
-def _build_user_context(user) -> str:
+def _build_user_context(user, bot=None) -> str:
     display_name = _quote(getattr(user, "display_name", None))
     username = _quote(getattr(user, "name", None))
     global_name = _quote(getattr(user, "global_name", None))
@@ -494,6 +510,59 @@ def _build_user_context(user) -> str:
     roles = _visible_roles(user)
     if roles:
         parts.append(f"Roles Discord visibles : {', '.join(roles[:12])}.")
+
+    live = _build_live_context(bot, user)
+    if live:
+        parts.append(live)
+
+    return " ".join(parts)
+
+
+def _build_live_context(bot, user) -> str:
+    """Stats live du membre + état du serveur, injectés dans le system prompt."""
+    parts = []
+    try:
+        paris = datetime.now(ZoneInfo("Europe/Paris"))
+        jours = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"]
+        parts.append(f"On est {jours[paris.weekday()]}, il est {paris.strftime('%H:%M')} à Paris.")
+    except Exception:
+        pass
+
+    if bot is None:
+        return " ".join(parts)
+
+    try:
+        st = bot.ai_member_stats(user)
+        ranks = ", ".join(st["ranks"]) if st["ranks"] else "Moussaillon (aucun rang)"
+        line = (
+            f"STATS LIVE de ce membre : vocal 7 derniers jours = {st['hours_7d']}h, vocal total = {st['hours_total']}h, "
+            f"messages 7j = {st['messages_7d']}, messages total = {st['messages_total']}, "
+            f"solde = {st['berrys']:,} berrys, prime = {st['prime']:,} berrys, rangs = {ranks}."
+        )
+        if st["next_rank"]:
+            line += f" Prochain rang : {st['next_rank']} dans {st['hours_to_next']}h de vocal."
+        if st["in_voice"]:
+            line += " Il est en vocal en ce moment même."
+        if st["marine_levy_count"]:
+            line += f" La Marine l'a taxé {st['marine_levy_count']} fois ({st['marine_levy_total']:,} berrys au total)."
+        parts.append(line)
+    except Exception:
+        pass
+
+    guild = getattr(user, "guild", None)
+    if guild is not None:
+        try:
+            snap = bot.ai_server_snapshot(guild)
+            top = ", ".join(f"{t['nom']} ({t['heures_7j']}h)" for t in snap["top_vocal_7j"]) or "personne"
+            line = f"ÉTAT DU SERVEUR : {snap['actifs_7j']} membres actifs en vocal sur 7j. Top vocal 7j : {top}."
+            if snap["en_vocal_maintenant"]:
+                vocs = " ; ".join(f"{v['salon']} : {', '.join(v['membres'][:8])}" for v in snap["en_vocal_maintenant"][:4])
+                line += f" En vocal maintenant : {vocs}."
+            else:
+                line += " Personne en vocal actuellement."
+            parts.append(line)
+        except Exception:
+            pass
 
     return " ".join(parts)
 
@@ -751,7 +820,7 @@ class InfoCog(commands.Cog):
                 uid,
                 question,
                 self.bot,
-                user_context=_build_user_context(interaction.user),
+                user_context=_build_user_context(interaction.user, self.bot),
                 update_personal_memory=not handled_memory_update,
             )
 
@@ -823,7 +892,7 @@ class InfoCog(commands.Cog):
                     uid,
                     content,
                     self.bot,
-                    user_context=_build_user_context(message.author),
+                    user_context=_build_user_context(message.author, self.bot),
                     update_personal_memory=not handled_memory_update,
                 )
 

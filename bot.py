@@ -1584,6 +1584,99 @@ def _set_ai_memory(uid: str, memory: str):
 bot.set_ai_memory = _set_ai_memory
 
 
+# ── Contexte live exposé aux cogs IA (cogs.info, cogs.ai_extra) ──
+# Tout est lu depuis _CACHE : zéro réseau, appelable en synchrone depuis les cogs.
+def _ai_member_stats(member) -> dict:
+    uid = str(member.id)
+    user = get_user(_CACHE, uid)
+    jt = user.get("join_time")
+    s7d   = seconds_in_period(user["vocal_sessions"], 7, join_time=jt)
+    s_tot = total_seconds(user["vocal_sessions"], join_time=jt, extra=user.get("extra_seconds", 0))
+    m7d   = messages_in_period(user["messages"], 7)
+    m_tot = total_messages(user["messages"], user.get("extra_messages", 0))
+    hours_7d = s7d / 3600
+    next_thresh, next_rank = get_next_rank(hours_7d)
+    return {
+        "hours_7d":          round(hours_7d, 1),
+        "hours_total":       round(s_tot / 3600, 1),
+        "messages_7d":       m7d,
+        "messages_total":    m_tot,
+        "berrys":            get_berrys(uid),
+        "rank":              get_rank_for_hours(hours_7d) or "Moussaillon",
+        "ranks":             get_all_ranks_for_hours(hours_7d),
+        "next_rank":         next_rank,
+        "hours_to_next":     round(next_thresh - hours_7d, 1) if next_rank else None,
+        "prime":             calculate_prime(s_tot / 3600, m_tot),
+        "in_voice":          bool(jt),
+        "marine_levy_total": user.get("marine_levy_total", 0),
+        "marine_levy_count": user.get("marine_levy_count", 0),
+    }
+bot.ai_member_stats = _ai_member_stats
+
+
+def _ai_server_snapshot(guild) -> dict:
+    now = now_ts()
+    actifs = []
+    for uid, user in _CACHE.items():
+        if not isinstance(user, dict):
+            continue
+        s7d = seconds_in_period(user.get("vocal_sessions", []), 7, join_time=user.get("join_time"), _now=now)
+        if s7d > 0:
+            actifs.append((uid, s7d))
+    actifs.sort(key=lambda x: x[1], reverse=True)
+    top = []
+    for uid, secs in actifs[:5]:
+        m = guild.get_member(int(uid))
+        if m:
+            top.append({"nom": m.display_name, "heures_7j": round(secs / 3600, 1)})
+    en_vocal = []
+    for vc in guild.voice_channels:
+        noms = [m.display_name for m in vc.members if not m.bot]
+        if noms and _is_counted_voice_channel(guild, vc):
+            en_vocal.append({"salon": vc.name, "membres": noms})
+    return {"actifs_7j": len(actifs), "top_vocal_7j": top, "en_vocal_maintenant": en_vocal}
+bot.ai_server_snapshot = _ai_server_snapshot
+
+
+def _ai_overlap_partner(member) -> tuple[str | None, float]:
+    """(uid, heures) du membre avec qui on a partagé le plus de vocal sur 7j (two-pointer)."""
+    uid = str(member.id)
+    now = now_ts()
+    cutoff = now - 7 * 86400
+
+    def _intervals(u):
+        iv = [(max(s["start"], cutoff), min(s["end"], now))
+              for s in u.get("vocal_sessions", []) if s["end"] > cutoff]
+        if u.get("join_time"):
+            iv.append((max(u["join_time"], cutoff), now))
+        return sorted((a, b) for a, b in iv if b > a)
+
+    mine = _intervals(get_user(_CACHE, uid))
+    if not mine:
+        return None, 0.0
+    best_uid, best = None, 0
+    for other_uid, other in _CACHE.items():
+        if other_uid == uid or not isinstance(other, dict):
+            continue
+        theirs = _intervals(other)
+        if not theirs:
+            continue
+        total, i, j = 0, 0, 0
+        while i < len(mine) and j < len(theirs):
+            a = max(mine[i][0], theirs[j][0])
+            b = min(mine[i][1], theirs[j][1])
+            if b > a:
+                total += b - a
+            if mine[i][1] < theirs[j][1]:
+                i += 1
+            else:
+                j += 1
+        if total > best:
+            best, best_uid = total, other_uid
+    return best_uid, best / 3600
+bot.ai_overlap_partner = _ai_overlap_partner
+
+
 # ── Flush dirty vers DB toutes les 30s ───────────────────────────
 @tasks.loop(seconds=30)
 async def flush_dirty_loop():
@@ -9113,7 +9206,7 @@ async def setup_hook():
         return
     _COMMANDS_SYNCED = True
     # Chargement des cogs
-    for ext in ("cogs.duel", "cogs.profiles", "cogs.crews", "cogs.banque", "cogs.bank", "cogs.jeux", "cogs.info", "cogs.onboarding_welcome", "cogs.onboarding", "cogs.support.tickets", "cogs.annonces", "cogs.piscine", "cogs.marketplace.marketplace"):
+    for ext in ("cogs.duel", "cogs.profiles", "cogs.crews", "cogs.banque", "cogs.bank", "cogs.jeux", "cogs.info", "cogs.ai_extra", "cogs.onboarding_welcome", "cogs.onboarding", "cogs.support.tickets", "cogs.annonces", "cogs.piscine", "cogs.marketplace.marketplace"):
         try:
             await bot.load_extension(ext)
             print(f"[COG] {ext} chargé ✅")
