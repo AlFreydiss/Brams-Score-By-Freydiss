@@ -4347,48 +4347,48 @@ async def chercher(interaction: discord.Interaction, membre: discord.Member):
     next_thresh, next_rank = get_next_rank(hours_7d)
     live_indicator = "  　🎙️ *EN VOCAL*" if jt else ""
 
+    # Même habillage que /stats : un seul bloc description, sections ━━━, valeurs en backticks.
+    live_line = "　🎙️ *- en vocal actuellement*\n" if jt else ""
+
     if next_rank:
         bar = make_progress_bar(hours_7d, next_thresh)
-        progress_str = f"{ranks_display}\n`{bar}` {hours_7d:.1f}h / {next_thresh}h\nProchain : **{next_rank}**"
+        hours_restantes = next_thresh - hours_7d
+        rank_section = (
+            f"━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"**Rangs** : {ranks_display}\n"
+            f"`{bar}` {hours_7d:.1f}h / {next_thresh}h\n"
+            f"**Prochain** : {next_rank} dans `{hours_restantes:.1f}h`"
+        )
     else:
-        progress_str = f"{ranks_display}\n`▰▰▰▰▰▰▰▰▰▰` 👑 **Rang maximum !**"
+        rank_section = (
+            f"━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"**Rangs** : {ranks_display}\n"
+            f"`▰▰▰▰▰▰▰▰▰▰` 👑 **Rang maximum atteint !**"
+        )
 
     embed = discord.Embed(
-        title=f"🔍 {membre.display_name.upper()}{live_indicator}",
+        title=f"🔍 {r_emoji} {membre.display_name.upper()}",
+        description=(
+            f"{live_line}"
+            f"{rank_section}\n\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"💰 **Prime** : **{format_prime(prime_val)}**\n\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"🎙️ **TEMPS VOCAL**\n"
+            f"**Aujourd'hui** : `{format_duration(s1d)}`\n"
+            f"7 jours : `{format_duration(s7d)}`\n"
+            f"14 jours : `{format_duration(s14d)}`\n"
+            f"Total : `{format_duration(s_tot)}`\n\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"💬 **MESSAGES**\n"
+            f"**Aujourd'hui** : `{m1d}`\n"
+            f"7 jours : `{m7d}`\n"
+            f"14 jours : `{m14d}`\n"
+            f"Total : `{m_tot}`"
+        ),
         color=discord.Color.from_rgb(212, 175, 55)
     )
     embed.set_thumbnail(url=membre.display_avatar.url)
-
-    embed.add_field(
-        name="Rangs",
-        value=progress_str,
-        inline=False
-    )
-    embed.add_field(
-        name="🎙️ Vocal",
-        value=(
-            f"Aujourd'hui : **{format_duration(s1d)}**\n"
-            f"7 jours : **{format_duration(s7d)}**\n"
-            f"14 jours : **{format_duration(s14d)}**\n"
-            f"Total : **{format_duration(s_tot)}**"
-        ),
-        inline=True
-    )
-    embed.add_field(
-        name="💬 Messages",
-        value=(
-            f"Aujourd'hui : **{m1d}**\n"
-            f"7 jours : **{m7d}**\n"
-            f"14 jours : **{m14d}**\n"
-            f"Total : **{m_tot}**"
-        ),
-        inline=True
-    )
-    embed.add_field(
-        name="💰 Prime",
-        value=f"**{format_prime(prime_val)}**",
-        inline=True
-    )
 
     vocal_by_day, msg_by_day = build_vocal_by_day(user, jt)
     graph_buf = make_activity_graph(vocal_by_day, msg_by_day, f"Activite de {membre.display_name}")
