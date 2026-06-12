@@ -7,10 +7,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ANIMES, SEARCH_ALIASES } from '../AnimeHub.jsx'
 import Navbar from '../Navbar.jsx'
-import { C, FONT_BODY, FONT_DISPLAY, RADIUS_PANEL } from './tokens.js'
+import { C, FONT_BODY, FONT_DISPLAY, RADIUS_PANEL, themeFor, THEME_FONT_HREF } from './tokens.js'
 import HeroCinematic from './HeroCinematic.jsx'
 import AnimeRow from './AnimeRow.jsx'
 import AnimeCard, { BackdropCard } from './AnimeCard.jsx'
+import { logAnimeOpen, fetchTopWatched } from '../../lib/watchStats.js'
+import { useAuth } from '../../contexts/AuthContext.jsx'
 
 const HERO_IDS = ['onepiece', 'kaguya', 'kaiju-no-8', 'bleach', 'violet-evergarden', 'aot', 'jjk', 'reze'] // 8 à la une
 // Bannières PAYSAGE officielles (AniList, hébergées R2) pour le hero — les
@@ -104,6 +106,26 @@ function readProgress(ns) {
 }
 
 export default function AnimeHubV2(props) {
+  const { discordId } = useAuth()
+
+  // Polices des thèmes par animé (Bebas Neue / Russo One / Quicksand) — un seul
+  // <link>, posé au premier montage du hub, jamais retiré (cache navigateur).
+  useEffect(() => {
+    if (document.querySelector('link[data-ah2-fonts]')) return
+    const l = document.createElement('link')
+    l.rel = 'stylesheet'
+    l.href = THEME_FONT_HREF
+    l.dataset.ah2Fonts = '1'
+    document.head.appendChild(l)
+  }, [])
+
+  // Animation d'entrée : fondu + très léger zoom-out du hub, contenu en cascade.
+  const [entered, setEntered] = useState(false)
+  useEffect(() => {
+    const id = requestAnimationFrame(() => requestAnimationFrame(() => setEntered(true)))
+    return () => cancelAnimationFrame(id)
+  }, [])
+
   // Mapping id → handler de navigation (mêmes props qu'AnimeHub historique).
   const open = (id) => ({
     onepiece: props.onOpenOnepiece, tpn: props.onOpenTpn, drstone: props.onOpenDrstone, jjk: props.onOpenJjk,
@@ -117,7 +139,10 @@ export default function AnimeHubV2(props) {
     'koi-ameagari': props.onOpenKoi, bubble: props.onOpenBubble, reze: props.onOpenReze,
     kaguya: props.onOpenKaguya, hxh: props.onOpenHxh,
   })[id]
-  const openAnime = (a) => open(a.id)?.()
+  const openAnime = (a) => {
+    logAnimeOpen(a.id, discordId) // alimente le « Top du moment » serveur (fire-and-forget)
+    open(a.id)?.()
+  }
 
   // Progression (recalculée à l'affichage — léger, ~30 lectures localStorage)
   const progress = useMemo(() => {
@@ -197,7 +222,19 @@ export default function AnimeHubV2(props) {
 
   // Rows
   const resume = ANIMES.filter(a => { const p = progress[a.id]?.pct || 0; return p > 0 && p < 100 })
-  const top10 = ANIMES.slice(0, 10)
+
+  // Top du moment = les plus REGARDÉS sur le serveur (7 jours glissants, table
+  // anime_watch_events). Indisponible → ordre statique du catalogue.
+  const [topCounts, setTopCounts] = useState(null)
+  useEffect(() => { let on = true; fetchTopWatched(7).then(r => { if (on) setTopCounts(r) }); return () => { on = false } }, [])
+  const top10 = useMemo(() => {
+    if (!topCounts?.length) return ANIMES.slice(0, 10)
+    const rank = new Map(topCounts.map((e, i) => [e.id, i]))
+    const watched = ANIMES.filter(a => rank.has(a.id)).sort((a, b) => rank.get(a.id) - rank.get(b.id))
+    const rest = ANIMES.filter(a => !rank.has(a.id))
+    return [...watched, ...rest].slice(0, 10)
+  }, [topCounts])
+
   const news = ANIMES.filter(a => displayBadge(a) === 'NOUVEAU')
   const rowGenres = ['Action', 'Romance', 'Drame', 'Science-fiction']
 
@@ -228,6 +265,10 @@ export default function AnimeHubV2(props) {
       style={{
         position: 'fixed', inset: 0, zIndex: 60, overflowY: 'auto', overflowX: 'hidden',
         background: LEGACY_BG, fontFamily: FONT_BODY, color: C.text,
+        // Entrée cinématique : fondu + zoom-out très léger (annulé si reduced-motion via CSS)
+        opacity: entered ? 1 : 0,
+        transform: entered ? 'none' : 'scale(1.018)',
+        transition: 'opacity 480ms ease, transform 720ms cubic-bezier(.22,1,.36,1)',
       }}
     >
       <AmbientLegacy />
@@ -236,9 +277,12 @@ export default function AnimeHubV2(props) {
       <Navbar forceScrolled={scrolled} />
       <style>{`
         @keyframes ah2-shimmer { to { background-position: -200% 0 } }
+        @keyframes ah2-enter { from { opacity: 0; transform: translateY(18px) } to { opacity: 1; transform: none } }
+        .ah2-enter-1 { animation: ah2-enter .65s .12s cubic-bezier(.22,1,.36,1) both }
+        .ah2-enter-2 { animation: ah2-enter .65s .28s cubic-bezier(.22,1,.36,1) both }
         .ah2-seeall:hover { color: ${C.text} !important }
         .ah2-card:focus-visible { outline: 2px solid ${C.brass}; outline-offset: 3px; border-radius: 12px }
-        @media (prefers-reduced-motion: reduce) { .ah2-fade { transition: none !important } }
+        @media (prefers-reduced-motion: reduce) { .ah2-fade { transition: none !important } .ah2-root { transition: none !important; transform: none !important; opacity: 1 !important } .ah2-enter-1, .ah2-enter-2 { animation: none !important } }
         /* Scrollbar sombre (la scrollbar Windows par défaut faisait une barre blanche) */
         .ah2-root { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.22) transparent; }
         .ah2-root::-webkit-scrollbar { width: 10px }
@@ -249,7 +293,7 @@ export default function AnimeHubV2(props) {
 
       {/* ── HERO rotatif (masqué pendant une recherche) ── */}
       {!searching && (
-        <div onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} style={{ position: 'relative' }}>
+        <div className="ah2-enter-1" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} style={{ position: 'relative' }}>
           {slides.map((a, i) => (
             <div key={a.id} className="ah2-fade" style={{
               transition: 'opacity 600ms ease', opacity: i === slide ? 1 : 0,
@@ -264,7 +308,8 @@ export default function AnimeHubV2(props) {
             {slides.map((s, i) => (
               <button key={s.id} aria-label={`Slide ${i + 1}`} onClick={() => setSlide(i)} style={{
                 width: 34, height: 3, borderRadius: 2, border: 'none', cursor: 'pointer', padding: 0,
-                background: i === slide ? C.brass : 'rgba(255,255,255,0.2)',
+                background: i === slide ? themeFor(s).accent : 'rgba(255,255,255,0.2)',
+                transition: 'background 300ms ease',
               }} />
             ))}
           </div>
@@ -272,7 +317,7 @@ export default function AnimeHubV2(props) {
       )}
 
       {/* ── BLOC CONTENU : chevauche le bas fondu du hero (réf. Netflix) ── */}
-      <div style={{ position: 'relative', zIndex: 2, marginTop: searching ? 84 : -120 }}>
+      <div className="ah2-enter-2" style={{ position: 'relative', zIndex: 2, marginTop: searching ? 84 : -120 }}>
       {/* ── TOOLBAR sticky (sous la navbar) ── */}
       <div ref={toolbarRef} style={{
         position: 'sticky', top: 64, zIndex: 4,
@@ -403,7 +448,7 @@ export default function AnimeHubV2(props) {
               </AnimeRow>
             )}
 
-            <AnimeRow title="Top du moment" count={10}>
+            <AnimeRow title={topCounts?.length ? 'Top du moment · les + regardés du serveur' : 'Top du moment'} count={10}>
               {top10.map(a => card(a, 158))}
             </AnimeRow>
 

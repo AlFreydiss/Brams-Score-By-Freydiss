@@ -3,7 +3,7 @@
 // Phase 3 (l'API est déjà prête : passer plusieurs slides).
 // Full-bleed, double scrim (bas→haut + gauche→droite), le bas FOND dans la page.
 import { useEffect, useState } from 'react'
-import { C, FONT_BODY, FONT_DISPLAY } from './tokens.js'
+import { C, FONT_BODY, FONT_DISPLAY, themeFor, onAccent, rgba } from './tokens.js'
 
 // Audit dev des keyarts : un log par fichier (largeur native + alerte < 1920px)
 const keyartLogged = new Set()
@@ -44,6 +44,10 @@ export default function HeroCinematic({ anime, rating = null, topRank = null, on
 
   if (!anime) return null
 
+  // Thème par animé : accent + police d'affichage (le chrome suit l'œuvre)
+  const theme = themeFor(anime)
+  const accentText = onAccent(theme.accent)
+
   const onKeyartLoad = (e) => {
     const { naturalWidth: w, naturalHeight: h } = e.currentTarget
     setNat({ w, h })
@@ -68,10 +72,10 @@ export default function HeroCinematic({ anime, rating = null, topRank = null, on
     display: 'inline-flex', alignItems: 'center', gap: 9,
     padding: '12px 22px', borderRadius: 10, cursor: 'pointer',
     fontFamily: FONT_BODY, fontSize: 14.5, fontWeight: 600,
-    background: filled ? C.brass : 'rgba(255,255,255,0.08)',
+    background: filled ? theme.accent : 'rgba(255,255,255,0.08)',
     border: filled ? 'none' : `1px solid ${C.hair2}`,
-    color: filled ? '#14110A' : C.text,
-    transition: 'background 160ms ease',
+    color: filled ? accentText : C.text,
+    transition: 'background 160ms ease, filter 160ms ease',
   })
 
   return (
@@ -81,28 +85,35 @@ export default function HeroCinematic({ anime, rating = null, topRank = null, on
     }}>
       {/* Keyart plein cadre — fichier R2 servi tel quel (aucun resize/compression
           côté code, le seul filtre est un saturate CSS non destructif) */}
-      {lowRes && (
+      {/* Le keyart FOND dans la page via un masque (plus de bande opaque qui
+          tranche entre l'image et le contenu — la transition est continue). */}
+      <div aria-hidden style={{
+        position: 'absolute', inset: 0,
+        WebkitMaskImage: 'linear-gradient(180deg, #000 52%, rgba(0,0,0,.72) 74%, rgba(0,0,0,.28) 90%, transparent 100%)',
+        maskImage: 'linear-gradient(180deg, #000 52%, rgba(0,0,0,.72) 74%, rgba(0,0,0,.28) 90%, transparent 100%)',
+      }}>
+        {lowRes && (
+          <img
+            src={keyart} alt="" aria-hidden decoding="async"
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'blur(30px) saturate(1.05)', transform: 'scale(1.1)' }}
+          />
+        )}
         <img
-          src={keyart} alt="" aria-hidden decoding="async"
-          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'blur(30px) saturate(1.05)', transform: 'scale(1.1)' }}
+          src={keyart}
+          alt=""
+          decoding="async"
+          onLoad={onKeyartLoad}
+          style={lowRes ? {
+            position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+            maxWidth: nat.w, maxHeight: '100%', width: 'auto', height: 'auto', filter: 'saturate(1.05)',
+          } : { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: anime.keyartPosition || 'center 20%', filter: 'saturate(1.05)' }}
         />
-      )}
-      <img
-        src={keyart}
-        alt=""
-        decoding="async"
-        onLoad={onKeyartLoad}
-        style={lowRes ? {
-          position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-          maxWidth: nat.w, maxHeight: '100%', width: 'auto', height: 'auto', filter: 'saturate(1.05)',
-        } : { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: anime.keyartPosition || 'center 20%', filter: 'saturate(1.05)' }}
-      />
-      {/* Exactement DEUX dégradés : scrim gauche garanti (.45 au point médian —
-          à .35 le synopsis passait sous le seuil de lisibilité sur les keyarts
-          très lumineux type Gear 5, image vive à droite) + fondu de sortie sur
-          les 240 derniers px (toolbar/indicateurs jamais sur l'image brute). */}
+      </div>
+      {/* Scrim gauche (lisibilité du synopsis) + voile bas LÉGER (le masque fait
+          le gros du fondu) + lueur d'accent au ras du contenu. */}
       <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, rgba(11,14,20,.78), rgba(11,14,20,.45) 38%, transparent 62%)' }} />
-      <div aria-hidden style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 300, background: 'linear-gradient(180deg, transparent, rgba(11,14,20,.85) 62%, #0B0E14 90%)' }} />
+      <div aria-hidden style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 260, background: 'linear-gradient(180deg, transparent, rgba(9,12,19,.42) 55%, rgba(9,12,19,.66) 100%)' }} />
+      <div aria-hidden style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 200, background: `radial-gradient(60% 130% at 18% 100%, ${rgba(theme.accent, 0.10)}, transparent 70%)` }} />
 
       {/* Contenu aligné gauche */}
       <div style={{
@@ -113,7 +124,7 @@ export default function HeroCinematic({ anime, rating = null, topRank = null, on
       }}>
         {/* Eyebrow de marque : mark épées laiton + type (seule exception capitales espacées) */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-          <span aria-hidden style={{ color: C.brass, fontSize: 16, lineHeight: 1 }}>⚔</span>
+          <span aria-hidden style={{ color: theme.accent, fontSize: 16, lineHeight: 1 }}>⚔</span>
           <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.22em', color: C.dim }}>
             {anime.type === 'Film' ? 'FILM' : 'SÉRIE'}
           </span>
@@ -122,9 +133,10 @@ export default function HeroCinematic({ anime, rating = null, topRank = null, on
         {/* Title-art officiel si dispo, sinon titre texte */}
         <TitleArt anime={anime} fallback={
           <h1 style={{
-            margin: 0, fontFamily: FONT_DISPLAY, fontWeight: 700,
-            fontSize: 'clamp(32px, 4.2vw, 56px)', lineHeight: 1.02, letterSpacing: '-0.015em', color: C.text,
-            textShadow: '0 2px 18px rgba(0,0,0,.65)',
+            margin: 0, fontFamily: theme.font, fontWeight: theme.font === FONT_DISPLAY ? 700 : 400,
+            fontSize: theme.font === FONT_DISPLAY ? 'clamp(32px, 4.2vw, 56px)' : 'clamp(38px, 5vw, 68px)',
+            lineHeight: 1.02, letterSpacing: theme.font.includes('Bebas') ? '0.015em' : '-0.015em', color: C.text,
+            textShadow: `0 2px 18px rgba(0,0,0,.65), 0 0 44px ${rgba(theme.accent, 0.30)}`,
           }}>{anime.title}</h1>
         } />
 
@@ -133,7 +145,7 @@ export default function HeroCinematic({ anime, rating = null, topRank = null, on
           <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginTop: 16 }}>
             <span style={{
               display: 'inline-grid', placeItems: 'center', padding: '4px 6px', borderRadius: 4,
-              background: C.brass, color: '#14110A', fontSize: 10, fontWeight: 800, lineHeight: 1.1, textAlign: 'center',
+              background: theme.accent, color: accentText, fontSize: 10, fontWeight: 800, lineHeight: 1.1, textAlign: 'center',
             }}>TOP<br />10</span>
             <span style={{ fontSize: 14, fontWeight: 600, color: C.text }}>
               N°{topRank} dans les animés aujourd'hui
@@ -147,7 +159,7 @@ export default function HeroCinematic({ anime, rating = null, topRank = null, on
             {meta.map((m, i) => (
               <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
                 {i > 0 && <span aria-hidden style={{ color: C.faint }}>·</span>}
-                <span style={m.startsWith('★') ? { color: C.brass, fontWeight: 600 } : null}>{m}</span>
+                <span style={m.startsWith('★') ? { color: theme.accent, fontWeight: 600 } : null}>{m}</span>
               </span>
             ))}
           </div>
@@ -165,15 +177,15 @@ export default function HeroCinematic({ anime, rating = null, topRank = null, on
         {/* Genres APRÈS le synopsis, discrets */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
           {(anime.genres || []).slice(0, 3).map(g => (
-            <span key={g} style={{ padding: '2px 9px', borderRadius: 999, border: '1px solid rgba(255,255,255,.15)', fontSize: 11, color: C.dim }}>{g}</span>
+            <span key={g} style={{ padding: '2px 9px', borderRadius: 999, border: `1px solid ${rgba(theme.accent, 0.38)}`, fontSize: 11, color: C.dim }}>{g}</span>
           ))}
         </div>
 
         {/* Actions */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 22, flexWrap: 'wrap' }}>
           <button style={btn(true)} onClick={() => onWatch?.(anime)}
-            onMouseEnter={e => { e.currentTarget.style.background = C.brassHi }}
-            onMouseLeave={e => { e.currentTarget.style.background = C.brass }}>
+            onMouseEnter={e => { e.currentTarget.style.filter = 'brightness(1.15)' }}
+            onMouseLeave={e => { e.currentTarget.style.filter = 'none' }}>
             <span aria-hidden style={{ fontSize: 12 }}>▶</span> Regarder
           </button>
           {onMyList && (
