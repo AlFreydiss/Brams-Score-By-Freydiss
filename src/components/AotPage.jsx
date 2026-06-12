@@ -131,7 +131,6 @@ function InfoPanel({ watchedCount, total, lastWatchedIdx, onResume, chapterCount
         <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:8 }}>
           {[
             { label:'Épisodes', value:String(episodeCount ?? 0), dot:COLOR2 },
-            { label:'Chapitres', value:'81', dot:'#fbbf24' },
             { label:'OAV', value:'0', dot:'#34d399' },
             { label:'Audio', value:'VF + VO', dot:'#f97316' },
             { label:'Note', value:'★ 9.0', dot:'#f97316' },
@@ -255,12 +254,12 @@ export default function AotPage({ onClose }) {
                   <div>
                     <h3 style={{ margin:'0 0 3px',fontSize:18,fontWeight:900,color:'#fff',letterSpacing:'-.01em' }}>Épisodes</h3>
                     <div style={{ fontSize:11,color:'rgba(255,255,255,.32)',fontWeight:600 }}>
-                      {episodes.length > 0 ? `${episodes.length} épisodes • VOSTFR / VF • Scans manga : ${chapterCount} ch.` : `Bientôt disponible • Scans manga : ${chapterCount} chapitres`}
+                      {episodes.length > 0 ? `${episodes.length} épisodes • VOSTFR / VF` : 'Bientôt disponible'}
                     </div>
                   </div>
                   <div style={{ display:'flex',alignItems:'center',gap:6,padding:'6px 14px',borderRadius:999,background:'rgba(244,63,94,.08)',border:'1px solid rgba(244,63,94,.18)' }}>
                     <div style={{ width:6,height:6,borderRadius:'50%',background:COLOR }} />
-                    <span style={{ fontSize:11,fontWeight:800,color:COLOR2 }}>{episodes.length > 0 ? 'En ligne' : 'Scans actifs'}</span>
+                    <span style={{ fontSize:11,fontWeight:800,color:COLOR2 }}>{episodes.length > 0 ? 'En ligne' : 'À venir'}</span>
                   </div>
                 </div>
 
@@ -293,17 +292,16 @@ export default function AotPage({ onClose }) {
                     <div style={{ marginTop:6,padding:'14px 18px',borderRadius:12,background:'rgba(255,255,255,.03)',border:'1px solid rgba(255,255,255,.05)',display:'flex',alignItems:'center',gap:10 }}>
                       <span style={{ fontSize:16 }}>🗡️</span>
                       <span style={{ fontSize:12,color:'rgba(255,255,255,.38)',fontWeight:600,lineHeight:1.5 }}>
-                        L'Attaque des Titans (Shingeki no Kyojin) — œuvre culte de Hajime Isayama. Scans manga complets via la section Scans.
+                        L'Attaque des Titans (Shingeki no Kyojin) — œuvre culte de Hajime Isayama.
                       </span>
                     </div>
                   </>
                 ) : (
                   <>
                     <div style={{ padding: '24px', borderRadius: 16, background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.06)', textAlign: 'center' }}>
-                      <div style={{ fontSize: 48, marginBottom: 12 }}>📖</div>
-                      <div style={{ fontSize: 20, fontWeight: 900, color: '#fff', marginBottom: 8 }}>81 chapitres de scans</div>
-                      <div style={{ color: 'rgba(255,255,255,.5)', marginBottom: 16 }}>L'Attaque des Titans - L'épopée complète est disponible via la section Scans du site.</div>
-                      <div style={{ fontSize: 13, color: 'rgba(244,63,94,.8)' }}>Bientôt : expérience dédiée avec grille de chapitres ici.</div>
+                      <div style={{ fontSize: 48, marginBottom: 12 }}>📺</div>
+                      <div style={{ fontSize: 20, fontWeight: 900, color: '#fff', marginBottom: 8 }}>Épisodes en préparation</div>
+                      <div style={{ color: 'rgba(255,255,255,.5)' }}>L'Attaque des Titans arrive en streaming — encodage et mise en ligne à venir.</div>
                     </div>
 
                     <div style={{ marginTop:28,padding:'14px 18px',borderRadius:12,background:'rgba(255,255,255,.03)',border:'1px solid rgba(255,255,255,.05)',display:'flex',alignItems:'center',gap:10 }}>

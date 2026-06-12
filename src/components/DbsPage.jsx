@@ -369,12 +369,7 @@ export default function DbsPage({ onClose }) {
             <div style={{ width:3,height:32,borderRadius:2,background:`linear-gradient(180deg,${COLOR},${COLOR2})`,flexShrink:0 }} />
             <div style={{ flex:1 }}>
               <div style={{ fontFamily:"'Pirata One',cursive",fontWeight:900,fontSize:17,color:'#fff',lineHeight:1.1 }}>🐉 Dragon Ball Super</div>
-              <div style={{ fontSize:11,color:COLOR2,fontWeight:800 }}>{watchedCount}/{VIDEOS.length} épisodes vus · {readCount}/{CHAPTERS.length} chapitres lus</div>
-            </div>
-            <div style={{ display:'flex',background:'rgba(255,255,255,.05)',borderRadius:10,overflow:'hidden',border:'1px solid rgba(245,127,23,.15)' }}>
-              {[['scans','📖 Scans'],['videos','🎬 Épisodes']].map(([t,label]) => (
-                <button key={t} onClick={() => setTab(t)} style={{ height:38,padding:'0 18px',border:'none',cursor:'pointer',fontSize:13,fontWeight:700,background:tab===t?`${COLOR}28`:'transparent',color:tab===t?COLOR:'rgba(255,255,255,.45)',borderRight:t==='scans'?'1px solid rgba(245,127,23,.1)':'none',transition:'all .15s' }}>{label}</button>
-              ))}
+              <div style={{ fontSize:11,color:COLOR2,fontWeight:800 }}>{watchedCount}/{VIDEOS.length} épisodes vus</div>
             </div>
           </div>
         </div>

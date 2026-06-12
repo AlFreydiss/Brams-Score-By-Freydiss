@@ -132,7 +132,6 @@ function InfoPanel({ watchedCount, total, lastWatchedIdx, onResume, chapterCount
         <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:8 }}>
           {[
             { label:'Épisodes', value:String(total), dot:COLOR2 },
-            { label:'Chapitres', value:'0', dot:'#fbbf24' },
             { label:'OAV', value:'0', dot:'#34d399' },
             { label:'Audio', value:'VF + VO', dot:'#f97316' },
             { label:'Note', value:'★ 7.8', dot:'#f97316' },

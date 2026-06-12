@@ -48,7 +48,6 @@ export const ANIMES = [
     genres: ['Aventure', 'Action', 'Shōnen'],
     description: "Monkey D. Luffy et son équipage sillonnent les mers à la recherche du légendaire trésor « One Piece » pour devenir Roi des Pirates.",
     stats: [
-      { label: 'Chapitres', value: '56' },
       { label: 'Arc actuel', value: 'Elbaf' },
       { label: 'Statut', value: 'En cours' },
     ],
@@ -67,7 +66,6 @@ export const ANIMES = [
     genres: ['Thriller', 'Mystère', 'Shōnen'],
     description: "Emma, Norman et Ray vivent dans un orphelinat idyllique… jusqu'au jour où ils découvrent une vérité qui brise tout.",
     stats: [
-      { label: 'Chapitres', value: '184' },
       { label: 'Épisodes', value: '12' },
       { label: 'Statut', value: 'Disponible' },
     ],
@@ -163,7 +161,6 @@ export const ANIMES = [
     genres: ['Science-fiction', 'Aventure', 'Shōnen'],
     description: "Toute l'humanité est pétrifiée. Des millénaires plus tard, le génie Senku se réveille et décide de reconstruire la civilisation grâce à la science.",
     stats: [
-      { label: 'Chapitres', value: '174' },
       { label: 'Vidéos', value: videoCountLabel(DRSTONE_VIDEOS.length, 35) },
       { label: 'Statut', value: availabilityLabel(DRSTONE_VIDEOS.length) },
     ],
@@ -183,7 +180,6 @@ export const ANIMES = [
     genres: ['Action', 'Surnaturel', 'Shōnen'],
     description: "Yuji Itadori avale un doigt de Ryomen Sukuna, le roi des Fléaux. Condamné à mort, il rejoint l'École de sorcellerie de Jujutsu pour trouver les doigts restants.",
     stats: [
-      { label: 'Chapitres', value: '263' },
       { label: 'Vidéos', value: videoCountLabel(JJK_VIDEOS.length, 48) },
       { label: 'Statut', value: availabilityLabel(JJK_VIDEOS.length) },
     ],
@@ -203,7 +199,6 @@ export const ANIMES = [
     genres: ['Action', 'Historique', 'Seinen'],
     description: "Dans la Chine des Royaumes Combattants, Shin, un orphelin de guerre, rêve de devenir le plus grand général sous les cieux aux côtés du futur roi Ying Zheng.",
     stats: [
-      { label: 'Chapitres', value: '874' },
       { label: 'Vidéos', value: videoCountLabel(KINGDOM_VIDEOS.length, 1) },
       { label: 'Statut', value: availabilityLabel(KINGDOM_VIDEOS.length) },
     ],
@@ -223,7 +218,6 @@ export const ANIMES = [
     genres: ['Action', 'Drame', 'Shōnen'],
     description: "Eren Yeager découvre que les murs qui protègent l'humanité cachent un secret bien plus sombre que les Titans eux-mêmes.",
     stats: [
-      { label: 'Chapitres', value: '81' },
       { label: 'Vidéos', value: videoCountLabel(AOT_VIDEOS.length, 38) },
       { label: 'Statut', value: availabilityLabel(AOT_VIDEOS.length) },
     ],
@@ -243,7 +237,6 @@ export const ANIMES = [
     genres: ['Action', 'Surnaturel', 'Shōnen'],
     description: "Tanjiro Kamado devient chasseur de démons après que sa famille est massacrée et sa sœur Nezuko transformée en démon.",
     stats: [
-      { label: 'Chapitres', value: '206' },
       { label: 'Vidéos', value: videoCountLabel(KNY_VIDEOS.length, 44) },
       { label: 'Statut', value: availabilityLabel(KNY_VIDEOS.length) },
     ],
@@ -263,7 +256,6 @@ export const ANIMES = [
     genres: ['Action', 'Fantasy', 'Shōnen'],
     description: "La princesse Elizabeth part à la recherche des Sept Péchés Capitaux, des chevaliers légendaires bannis du royaume, pour sauver Britannia.",
     stats: [
-      { label: 'Chapitres', value: '342' },
       { label: 'Vidéos', value: videoCountLabel(NNT_VIDEOS.length, 100) },
       { label: 'Statut', value: availabilityLabel(NNT_VIDEOS.length) },
     ],
@@ -283,7 +275,6 @@ export const ANIMES = [
     genres: ['Action', 'Fantasy', 'Manhwa'],
     description: "Sung Jinwoo, le chasseur le plus faible du monde, se retrouve piégé dans un donjon mortel et reçoit un mystérieux système qui lui permet de monter de rang à l'infini.",
     stats: [
-      { label: 'Chapitres', value: '202' },
       { label: 'Vidéos', value: videoCountLabel(SL_VIDEOS.length, 12) },
       { label: 'Statut', value: availabilityLabel(SL_VIDEOS.length) },
     ],
@@ -303,7 +294,6 @@ export const ANIMES = [
     genres: ['Action', 'Science-fiction', 'Shōnen'],
     description: "Après la défaite de Majin Buu, Goku continue à repousser ses limites en affrontant des adversaires venus d'autres univers.",
     stats: [
-      { label: 'Chapitres', value: '101' },
       { label: 'Épisodes', value: '131' },
       { label: 'Statut', value: 'Disponible' },
     ],
@@ -323,7 +313,6 @@ export const ANIMES = [
     genres: ['Drame', 'Slice of Life', 'Emotion'],
     description: "Violet, ancienne soldate, devient Auto Memory Doll pour comprendre les sentiments humains et le sens des mots qu'elle a recus.",
     stats: [
-      { label: 'Chapitres', value: '0' },
       { label: 'Episodes', value: '13 + OAV' },
       { label: 'Statut', value: 'Disponible' },
     ],
@@ -503,7 +492,6 @@ export const ANIMES = [
     genres: ['Action', 'Fantasy', 'Shōnen'],
     description: "Asta, né sans magie dans un monde où tout le monde en a, rêve de devenir Sorcier Empereur grâce à sa ténacité et à son grimoire à cinq feuilles.",
     stats: [
-      { label: 'Chapitres', value: '280' },
       { label: 'Vidéos', value: videoCountLabel(BC_VIDEOS.length, 170) },
       { label: 'Statut', value: availabilityLabel(BC_VIDEOS.length) },
     ],
@@ -523,7 +511,6 @@ export const ANIMES = [
     genres: ['Action', 'Super-héros', 'Shōnen'],
     description: "Dans un monde où 80% de la population a un Super Pouvoir, Izuku Midoriya naît sans capacité mais rêve de devenir le plus grand héros.",
     stats: [
-      { label: 'Chapitres', value: '430+' },
       { label: 'Épisodes', value: '138' },
       { label: 'Statut', value: 'Terminé' },
     ],
@@ -543,7 +530,6 @@ export const ANIMES = [
     genres: ['Action', 'Surnaturel', 'Shōnen'],
     description: "Dans un monde où des humains s'enflamment spontanément, Shinra Kusakabe intègre la 8ème Brigade pour comprendre les mystères de la combustion spontanée.",
     stats: [
-      { label: 'Chapitres', value: '304' },
       { label: 'Vidéos', value: videoCountLabel(FIREFORCE_VIDEOS.length, 48) },
       { label: 'Statut', value: availabilityLabel(FIREFORCE_VIDEOS.length) },
     ],
@@ -563,7 +549,6 @@ export const ANIMES = [
     genres: ['Action', 'Surnaturel', 'Shōnen'],
     description: "Ichigo Kurosaki devient Shinigami et protège les vivants des Hollows tout en guidant les âmes vers la Soul Society.",
     stats: [
-      { label: 'Chapitres', value: '686' },
       { label: 'Vidéos', value: videoCountLabel(BLEACH_VIDEOS.length, 366) },
       { label: 'Statut', value: availabilityLabel(BLEACH_VIDEOS.length) },
     ],
@@ -603,7 +588,6 @@ export const ANIMES = [
     genres: ['Sport', 'Compétition', 'Shōnen'],
     description: "La Fédération japonaise de football engage Ego Jinpachi pour former le meilleur attaquant du monde via un programme radical : Blue Lock.",
     stats: [
-      { label: 'Chapitres', value: '280+' },
       { label: 'Vidéos', value: videoCountLabel(BLUELOCK_VIDEOS.length, 24) },
       { label: 'Statut', value: availabilityLabel(BLUELOCK_VIDEOS.length) },
     ],

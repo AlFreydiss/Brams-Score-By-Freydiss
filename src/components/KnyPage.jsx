@@ -138,7 +138,6 @@ function InfoPanel({ watchedCount, total, lastWatchedIdx, onResume, chapterCount
         <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:8 }}>
           {[
             { label:'Épisodes', value:String(total), dot:COLOR2 },
-            { label:'Chapitres', value:'206', dot:'#fbbf24' },
             { label:'Saisons', value:'5 + Film', dot:'#34d399' },
             { label:'Audio', value:'VOSTFR', dot:'#f97316' },
             { label:'Note', value:'★ 8.9', dot:'#f97316' },
@@ -270,11 +269,11 @@ export default function KnyPage({ onClose }) {
                 <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20 }}>
                   <div>
                     <h3 style={{ margin:'0 0 3px',fontSize:18,fontWeight:900,color:'#fff',letterSpacing:'-.01em' }}>Épisodes</h3>
-                    <div style={{ fontSize:11,color:'rgba(255,255,255,.32)',fontWeight:600 }}>Scans manga : {chapterCount} chapitres • grille interactive ci-dessous</div>
+                    <div style={{ fontSize:11,color:'rgba(255,255,255,.32)',fontWeight:600 }}>5 saisons + film · VOSTFR</div>
                   </div>
                   <div style={{ display:'flex',alignItems:'center',gap:6,padding:'6px 14px',borderRadius:999,background:'rgba(232,93,39,.08)',border:'1px solid rgba(232,93,39,.18)' }}>
                     <div style={{ width:6,height:6,borderRadius:'50%',background:COLOR }} />
-                    <span style={{ fontSize:11,fontWeight:800,color:COLOR2 }}>Scans actifs</span>
+                    <span style={{ fontSize:11,fontWeight:800,color:COLOR2 }}>VOSTFR</span>
                   </div>
                 </div>
 
@@ -293,18 +292,6 @@ export default function KnyPage({ onClose }) {
                   </div>
                 ))}
 
-                <div style={{ marginBottom: 8, marginTop: 8, fontSize: 12, color: 'rgba(255,255,255,.45)', fontWeight: 600, letterSpacing: '.02em' }}>Scans manga — {chapterCount} chapitres • clique pour lire</div>
-                <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(68px,1fr))', gap:8, maxHeight:220, overflowY:'auto', paddingRight:4 }}>
-                  {CHAPTERS.slice(0, Math.min(60, CHAPTERS.length)).map((ch, i) => {
-                    const st = scanProg[ch.num] || (ch.read ? 'read' : null)
-                    const done = st === 'read'
-                    return (
-                      <button key={i} onClick={() => setReading(i)} style={{ fontSize:11, padding:'8px 6px', borderRadius:8, background: done ? 'rgba(52,211,153,0.15)' : 'rgba(255,255,255,0.04)', border: done ? '1px solid #34d399' : '1px solid rgba(255,255,255,0.1)', color: done ? '#34d399' : '#fff', cursor:'pointer' }}>
-                        #{ch.num || (i+1)} {done ? '✓' : ''}
-                      </button>
-                    )
-                  })}
-                </div>
                 {reading !== null && CHAPTERS[reading] && (
                   <div style={{ position:'fixed', inset:0, zIndex:9999, background:'#0a0814' }}>
                     <Reader

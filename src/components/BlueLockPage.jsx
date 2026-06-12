@@ -146,7 +146,6 @@ function InfoPanel({ watchedCount, total, lastWatchedIdx, onResume, chapterCount
         <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:8 }}>
           {[
             { label:'Épisodes', value: String(VIDEOS.length || '—'), dot:COLOR2 },
-            { label:'Chapitres', value: String(chapterCount || 0), dot:'#fbbf24' },
             { label:'Lus', value: `${readCount}/${chapterCount||0}`, dot:'#34d399' },
             { label:'Audio', value:'VF + VO', dot:'#f97316' },
             { label:'Note', value:'★ 8.5', dot:'#f97316' },
@@ -292,50 +291,24 @@ export default function BlueLockPage({ onClose }) {
               <div>
                 <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20 }}>
                   <div>
-                    <h3 style={{ margin:'0 0 3px',fontSize:18,fontWeight:900,color:'#fff',letterSpacing:'-.01em' }}>Chapitres Manga</h3>
-                    <div style={{ fontSize:11,color:'rgba(255,255,255,.32)',fontWeight:600 }}>{chapterCount} chapitres • Scans disponibles</div>
+                    <h3 style={{ margin:'0 0 3px',fontSize:18,fontWeight:900,color:'#fff',letterSpacing:'-.01em' }}>Épisodes</h3>
+                    <div style={{ fontSize:11,color:'rgba(255,255,255,.32)',fontWeight:600 }}>Bientôt disponible en streaming</div>
                   </div>
                   <div style={{ display:'flex',alignItems:'center',gap:6,padding:'6px 14px',borderRadius:999,background:'rgba(21,101,192,.08)',border:'1px solid rgba(21,101,192,.18)' }}>
                     <div style={{ width:6,height:6,borderRadius:'50%',background:'#fbbf24' }} />
-                    <span style={{ fontSize:11,fontWeight:800,color:COLOR2 }}>Scans actifs</span>
+                    <span style={{ fontSize:11,fontWeight:800,color:COLOR2 }}>À venir</span>
                   </div>
                 </div>
 
-                <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(155px,1fr))', gap:10 }}>
-                  {CHAPTERS.map((ch, i) => {
-                    const status = scanProg[ch.num] || null
-                    const isRead = status === 'read'
-                    const isReading = status === 'reading'
-                    return (
-                      <button
-                        key={ch.num}
-                        onClick={() => openChapter(i)}
-                        style={{
-                          position:'relative',
-                          background: isRead ? 'rgba(10,14,24,.5)' : 'rgba(10,14,24,.85)',
-                          border: isReading ? `2px solid ${COLOR}` : `1px solid ${isRead ? 'rgba(21,101,192,.15)' : 'rgba(255,255,255,.07)'}`,
-                          borderRadius:14, padding:'14px', cursor:'pointer', textAlign:'left', fontFamily:'var(--body)',
-                          opacity: isRead ? 0.7 : 1,
-                          transition: 'all .15s ease'
-                        }}
-                        onMouseEnter={e => { if (!isRead) e.currentTarget.style.borderColor = COLOR + '55' }}
-                        onMouseLeave={e => { if (!isRead && !isReading) e.currentTarget.style.borderColor = 'rgba(255,255,255,.07)' }}
-                      >
-                        {isRead && <div style={{ position:'absolute',top:8,right:8,width:18,height:18,borderRadius:'50%',background:'rgba(52,211,153,.2)',border:'1px solid rgba(52,211,153,.5)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,color:'#34d399',fontWeight:700 }}>✓</div>}
-                        {isReading && <div style={{ position:'absolute',top:8,right:8,fontSize:9,fontWeight:700,background:`${COLOR}22`,color:COLOR,border:`1px solid ${COLOR}55`,borderRadius:100,padding:'1px 6px' }}>En cours</div>}
-                        <div style={{ fontSize:18,marginBottom:6 }}>{ch.emoji}</div>
-                        <div style={{ fontSize:9,fontWeight:800,color:COLOR2,letterSpacing:'.08em',marginBottom:3 }}>CHAPITRE {ch.num}</div>
-                        <div style={{ fontSize:12,fontWeight:700,color: isRead ? 'rgba(255,255,255,.5)' : '#fff', lineHeight:1.3, marginBottom:6 }}>{ch.title}</div>
-                        <div style={{ fontSize:10,fontWeight:700,color: isRead ? 'rgba(255,255,255,.3)' : COLOR2 }}>📖 {isRead ? 'Relire' : isReading ? 'Continuer' : 'Lire'}</div>
-                      </button>
-                    )
-                  })}
+                <div style={{ padding:'42px 20px', borderRadius:14, background:'rgba(255,255,255,.03)', border:'1px dashed rgba(255,255,255,.1)', textAlign:'center', color:'rgba(255,255,255,.45)', fontSize:13, lineHeight:1.7 }}>
+                  <div style={{ fontSize:34, marginBottom:10 }}>⚽</div>
+                  Les épisodes arrivent bientôt — encodage et mise en ligne à venir.
                 </div>
 
                 <div style={{ marginTop:28,padding:'14px 18px',borderRadius:12,background:'rgba(255,255,255,.03)',border:'1px solid rgba(255,255,255,.05)',display:'flex',alignItems:'center',gap:10 }}>
                   <span style={{ fontSize:16 }}>⚽</span>
                   <span style={{ fontSize:12,color:'rgba(255,255,255,.38)',fontWeight:600,lineHeight:1.5 }}>
-                    Blue Lock — l'anime de football le plus intense, où l'ego fait la différence. {chapterCount} chapitres de scans disponibles.
+                    Blue Lock — l'anime de football le plus intense, où l'ego fait la différence.
                   </span>
                 </div>
               </div>
