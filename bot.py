@@ -4112,59 +4112,50 @@ async def serveur(interaction: discord.Interaction):
     for i, (ch_id, secs) in enumerate(top_channels):
         ch = guild.get_channel(int(ch_id))
         name = ch.name if ch else "Salon supprimé"
-        salon_lines.append(f"{medals[i]} **{name}** - {format_duration(secs)}")
+        salon_lines.append(f"{medals[i]} **{name}**\n     `{format_duration(secs)}`")
 
     peak_hour = max(hour_usage, key=hour_usage.get) if hour_usage else 0
 
-    rank_line = " · ".join(f"{RANK_EMOJIS.get(r, '🎖️')} {r}: **{c}**" for r, c in sorted(rank_counts.items(), key=lambda x: x[1], reverse=True)) or "*Aucun*"
+    rank_lines = "\n".join(
+        f"{RANK_EMOJIS.get(r, '🎖️')} {r} : `{c}`"
+        for r, c in sorted(rank_counts.items(), key=lambda x: x[1], reverse=True)
+    ) or "*Aucun*"
 
     graph_buf = make_peak_hours_graph(hour_usage)
 
-    embed1 = discord.Embed(
+    # Même habillage que /stats : un seul embed, sections ━━━, valeurs en backticks.
+    embed = discord.Embed(
         title=f"🌐 {guild.name.upper()}",
-        description=f"*Vue d'ensemble du serveur*",
+        description=(
+            f"\u3000⚓ *Vue d'ensemble du serveur*\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"👥 **Membres actifs (7j)** : `{membres_actifs}`\n"
+            f"🎙️ **En vocal maintenant** : `{en_vocal_now}`\n"
+            f"🕐 **Heure de pointe** : `{peak_hour}h - {peak_hour+1}h UTC`\n\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"🎙️ **TEMPS VOCAL**\n"
+            f"7 jours : `{format_duration(total_vocal_7d)}`\n"
+            f"Total : `{format_duration(total_vocal_all)}`\n\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"💬 **MESSAGES**\n"
+            f"7 jours : `{total_msg_7d}`\n"
+            f"Total : `{total_msg_all}`\n\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"🎖️ **RÉPARTITION DES RANGS**\n"
+            f"{rank_lines}\n\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"🔊 **TOP SALONS (7j)**\n"
+            + ("\n\n".join(salon_lines) if salon_lines else "*Aucune donnée*")
+        ),
         color=discord.Color.from_rgb(212, 175, 55)
     )
     if guild.icon:
-        embed1.set_thumbnail(url=guild.icon.url)
-
-    embed1.add_field(name="👥 Membres actifs (7j)", value=f"**{membres_actifs}**", inline=True)
-    embed1.add_field(name="🎙️ En vocal maintenant", value=f"**{en_vocal_now}**", inline=True)
-    embed1.add_field(name="🕐 Heure de pointe", value=f"**{peak_hour}h - {peak_hour+1}h UTC**", inline=True)
-
-    embed1.add_field(
-        name="🎙️ Vocal",
-        value=f"7 jours : **{format_duration(total_vocal_7d)}**\nTotal : **{format_duration(total_vocal_all)}**",
-        inline=True
-    )
-    embed1.add_field(
-        name="💬 Messages",
-        value=f"7 jours : **{total_msg_7d}**\nTotal : **{total_msg_all}**",
-        inline=True
-    )
-    embed1.add_field(name="\u200b", value="\u200b", inline=True)
-
-    embed1.add_field(
-        name="🎖️ Répartition des rangs",
-        value=rank_line,
-        inline=False
-    )
-
-    embed1.add_field(
-        name="🔊 Top Salons (7j)",
-        value="\n".join(salon_lines) if salon_lines else "*Aucune donnée*",
-        inline=False
-    )
-
-    embed2 = discord.Embed(color=discord.Color.from_rgb(85, 50, 18))
-    embed2.set_image(url="attachment://peaks.png")
-    embed2.set_footer(text=f"⚓ BRAMS SCORE BY FREYDISS • {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')} UTC")
+        embed.set_thumbnail(url=guild.icon.url)
+    embed.set_image(url="attachment://peaks.png")
+    embed.set_footer(text=f"⚓ BRAMS SCORE BY FREYDISS • {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')} UTC")
 
     try:
-        await interaction.followup.send(
-            embeds=[embed1, embed2],
-            file=discord.File(graph_buf, "peaks.png")
-        )
+        await interaction.followup.send(embed=embed, file=discord.File(graph_buf, "peaks.png"))
     except discord.NotFound:
         print("⚠️ /serveur : token expiré, impossible d'envoyer")
     except Exception as e:
