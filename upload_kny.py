@@ -102,6 +102,10 @@ def main():
         for ep in sorted(files):
             num=offset+ep  # offsets incluent déjà le film inséré en 27
             base=f'{season}E{ep:02d}'
+            # Entrée déjà dans le json = épisode encodé ET uploadé (l'entrée n'est
+            # écrite qu'après l'upload) → on saute sans ré-encoder (reprise rapide).
+            if by_key.get(f'kny-{base}'):
+                print(f'[{base}] deja complet — skip',flush=True); continue
             print(f'[{base}] {files[ep].name[:70]}',flush=True)
             e=process(files[ep],base,season,arc,num)
             if not e: continue

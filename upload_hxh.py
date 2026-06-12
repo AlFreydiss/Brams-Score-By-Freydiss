@@ -118,6 +118,10 @@ def main():
         if m: files[int(m.group(1))]=f
     print(f'=== Hunter x Hunter : {len(files)} fichiers ===',flush=True)
     for num in sorted(files):
+        # Entrée déjà dans le json = épisode encodé ET uploadé (l'entrée n'est
+        # écrite qu'après l'upload) → on saute sans ré-encoder (reprise rapide).
+        if by_key.get(f'hxh-E{num:03d}'):
+            print(f'[E{num:03d}] deja complet — skip',flush=True); continue
         print(f'[E{num:03d}] {files[num].name[:70]}',flush=True)
         e=process(files[num],num)
         if not e: continue
