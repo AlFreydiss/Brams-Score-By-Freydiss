@@ -13,6 +13,10 @@ export const createPost = ({ content = null, mediaUrl = null, mediaUrls = null, 
 export const deletePost = (postId)  => rpc('delete_post', { p_post: postId })
 export const editPost   = (postId, content) => rpc('edit_post', { p_post: postId, p_content: content })
 export const toggleLike = (postId)  => rpc('toggle_like', { p_post: postId })
+export async function listPostLikers(postId) {
+  const r = await rpc('list_post_likers', { p_post: postId })
+  return r?.ok ? (r.likers || []) : []
+}
 export const toggleBookmark = (postId) => rpc('toggle_bookmark', { p_post: postId })
 export const togglePostReaction = (postId, emoji) => rpc('toggle_post_reaction', { p_post: postId, p_emoji: emoji })
 

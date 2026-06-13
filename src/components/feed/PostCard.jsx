@@ -6,7 +6,7 @@ import {
   Repeat2, Share2, SmilePlus, Trash2, X,
 } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext.jsx'
-import { toggleLike, deletePost, createPost, editPost, toggleBookmark, fetchLinkPreview, togglePostReaction, reportPost } from '../../lib/feed.js'
+import { toggleLike, deletePost, createPost, editPost, toggleBookmark, fetchLinkPreview, togglePostReaction, reportPost, listPostLikers } from '../../lib/feed.js'
 import { isCreator, isStaff, roleBadge, certif } from '../../lib/roles.js'
 import { btn, avatar, T } from '../social/socialStyles.js'
 import './feedPremium.css'   // styles des cartes/actions — sinon non stylé hors du Fil (profil, thread → boutons en carrés)
@@ -251,6 +251,7 @@ export default function PostCard({ post, embedded = false, disableNav = false, s
   }, [mediaModal])
 
   const postUrl = useMemo(() => `${window.location.origin}/fil/${main.id}`, [main.id])
+  const [likers, setLikers] = useState(undefined) // undefined = fermé | 'loading' | tableau
 
   if (embedded) return <Embedded p={post} onOpenMedia={setMediaModal} />
 
@@ -262,6 +263,12 @@ export default function PostCard({ post, embedded = false, disableNav = false, s
     onChange?.(main.id, { liked, like_count: Math.max(0, (main.like_count || 0) + (liked ? 1 : -1)) })
     const res = await toggleLike(main.id)
     if (res?.ok === false) onChange?.(main.id, { liked: main.liked, like_count: main.like_count })
+  }
+
+  function openLikers(e) {
+    e?.stopPropagation?.()
+    setLikers('loading')
+    listPostLikers(main.id).then((l) => setLikers(Array.isArray(l) ? l : []))
   }
 
   async function react(emoji, e) {
@@ -440,7 +447,14 @@ export default function PostCard({ post, embedded = false, disableNav = false, s
                       )}
                     </div>
                   )}
-                  <Counter onClick={like} active={main.liked} className={`is-liked ${likePop ? 'like-pop' : ''}`}><Heart size={17} fill={main.liked ? 'currentColor' : 'none'} /> {main.like_count || 0}</Counter>
+                  <Counter onClick={like} active={main.liked} className={`is-liked ${likePop ? 'like-pop' : ''}`}><Heart size={17} fill={main.liked ? 'currentColor' : 'none'} />{' '}
+                    <span
+                      role={(main.like_count || 0) > 0 ? 'button' : undefined}
+                      title={(main.like_count || 0) > 0 ? 'Voir qui a aimé' : undefined}
+                      onClick={(main.like_count || 0) > 0 ? openLikers : undefined}
+                      style={{ cursor: (main.like_count || 0) > 0 ? 'pointer' : 'inherit' }}
+                    >{main.like_count || 0}</span>
+                  </Counter>
                   {!hideRepostSave && (
                     <Counter onClick={bookmark} active={main.bookmarked} className="is-bookmarked" style={{ marginLeft: 'auto' }}><Bookmark size={17} fill={main.bookmarked ? 'currentColor' : 'none'} /></Counter>
                   )}
@@ -456,6 +470,30 @@ export default function PostCard({ post, embedded = false, disableNav = false, s
         <div className="feed-modal-backdrop" onClick={() => setMediaModal(null)} role="dialog" aria-modal="true" aria-label="Aperçu du média">
           <button type="button" onClick={() => setMediaModal(null)} className="feed-icon-button" aria-label="Fermer" style={{ position: 'fixed', top: 18, right: 18, background: 'rgba(0,0,0,.45)' }}><X size={20} /></button>
           <img src={mediaModal} alt="" className="feed-modal-image" onClick={e => e.stopPropagation()} />
+        </div>
+      ), document.body)}
+
+      {likers !== undefined && createPortal((
+        <div className="feed-modal-backdrop" onClick={() => setLikers(undefined)} role="dialog" aria-modal="true" aria-label="J'aime"
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: 'min(420px, 100%)', maxHeight: '70vh', display: 'flex', flexDirection: 'column', background: '#111214', border: `1px solid ${T.border}`, borderRadius: 16, overflow: 'hidden' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: `1px solid ${T.border}` }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 15, fontWeight: 800, color: T.text }}>
+                <Heart size={16} fill="#e0524a" color="#e0524a" /> {Array.isArray(likers) ? `${likers.length} ` : ''}j'aime
+              </span>
+              <button type="button" onClick={() => setLikers(undefined)} className="feed-icon-button" aria-label="Fermer"><X size={18} /></button>
+            </div>
+            <div style={{ overflowY: 'auto', padding: 6 }}>
+              {likers === 'loading' ? <div style={{ padding: 26, textAlign: 'center', color: T.textFaint, fontSize: 13 }}>Chargement…</div>
+                : likers.length === 0 ? <div style={{ padding: 26, textAlign: 'center', color: T.textFaint, fontSize: 13 }}>Personne n'a encore aimé ce post.</div>
+                  : likers.map((u) => (
+                    <Link key={u.user_id} to={`/u/${u.user_id}`} onClick={() => setLikers(undefined)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', textDecoration: 'none', borderRadius: 10 }}>
+                      <Avatar url={u.avatar} name={u.username} size={36} />
+                      <span style={{ fontSize: 14, fontWeight: 700, color: T.text }}>{u.username}</span>
+                    </Link>
+                  ))}
+            </div>
+          </div>
         </div>
       ), document.body)}
 
