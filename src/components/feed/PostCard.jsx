@@ -7,7 +7,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext.jsx'
 import { toggleLike, deletePost, createPost, editPost, toggleBookmark, fetchLinkPreview, togglePostReaction, reportPost } from '../../lib/feed.js'
-import { isCreator, isStaff, roleBadge } from '../../lib/roles.js'
+import { isCreator, isStaff, roleBadge, certif } from '../../lib/roles.js'
 import { btn, avatar, T } from '../social/socialStyles.js'
 import './feedPremium.css'   // styles des cartes/actions — sinon non stylé hors du Fil (profil, thread → boutons en carrés)
 
@@ -72,6 +72,19 @@ function RoleBadge({ userId }) {
       style={{ color: b.color, borderColor: `${b.color}3a`, background: `${b.color}14` }}>
       {b.label}
     </span>
+  )
+}
+
+// Pastille certif (✓ coloré) visible à côté du pseudo dans le Fil — même source que le profil.
+function CertifBadge({ userId }) {
+  const c = certif(userId)
+  if (!c) return null
+  return (
+    <span title={c.title} aria-label={c.title} style={{
+      display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+      width: 15, height: 15, borderRadius: '50%', background: c.color, color: '#fff',
+      fontSize: 9, fontWeight: 900, lineHeight: 1, boxShadow: `0 0 0 1px ${c.color}55, 0 0 7px ${c.glow}`,
+    }}>✓</span>
   )
 }
 
@@ -172,6 +185,7 @@ function ParentCompact({ p, onOpenMedia }) {
           <Link to={`/u/${p.author_id}`} onClick={e => e.stopPropagation()} className="feed-post-author">
             {p.author_username || `Pirate #${String(p.author_id || '').slice(-5)}`}
           </Link>
+          <CertifBadge userId={p.author_id} />
           <span className="feed-post-meta">· {timeAgo(p.created_at)}</span>
         </div>
         {deleted ? (
@@ -338,6 +352,7 @@ export default function PostCard({ post, embedded = false, disableNav = false, s
             <Link to={`/u/${main.author_id}`} onClick={e => e.stopPropagation()} className="feed-post-author">
               {main.author_username || `Pirate #${String(main.author_id || '').slice(-5)}`}
             </Link>
+            <CertifBadge userId={main.author_id} />
             <RoleBadge userId={main.author_id} />
             <span className="feed-post-meta">· {timeAgo(main.created_at)}{main.edited_at ? ' · modifié' : ''}</span>
 

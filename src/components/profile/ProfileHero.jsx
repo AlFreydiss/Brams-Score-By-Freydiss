@@ -5,14 +5,7 @@
 import { fmtB, fmtNum } from '../../lib/profileTokens.js'
 import ProfileActions from './ProfileActions.jsx'
 import FollowersPreview from './FollowersPreview.jsx'
-
-// Certifications spéciales par Discord ID : couleur + rôle affiché au survol.
-const CERTIFS = {
-  '1079054995917381672': { color: '#f5b50a', glow: 'rgba(245,181,10,.55)', title: 'Capitaine / Fondateur' },     // Brams — or
-  '999607813334638692':  { color: '#e0524a', glow: 'rgba(224,82,74,.5)',   title: 'Directeur / Vice Capitaine' }, // Berat — rouge
-  '1094070545248694342': { color: '#a855f7', glow: 'rgba(168,85,247,.55)', title: 'Navigateur / Développeur' },   // Al Freydiss — violet
-  '1000000000000000001': { color: '#E60012', glow: 'rgba(230,0,18,.6)',    title: 'Bot officiel · IA de la Brams Community' }, // BramsScore — rouge
-}
+import { certif } from '../../lib/roles.js'
 
 export default function ProfileHero({ data, copied, onShare, onEdit, onAvatar, onShowFollowers, onShowFollowing }) {
   const {
@@ -22,6 +15,7 @@ export default function ProfileHero({ data, copied, onShare, onEdit, onAvatar, o
 
   const bannerUrl = settings?.banner_url || null
   const displayName = member?.username || `Pirate #${String(member?.uid || '').slice(-4)}`
+  const certifData = certif(member?.uid)
 
   const stats = [
     { key: 'posts',     val: postsCount == null ? '—' : fmtNum(postsCount),                 lbl: 'publications' },
@@ -62,15 +56,12 @@ export default function ProfileHero({ data, copied, onShare, onEdit, onAvatar, o
           <div className="pfx-ig-top">
             <div className="pfx-ig-namewrap">
               <h1 className="pfx-ig-name">{displayName}</h1>
-              {(() => {
-                const certif = CERTIFS[String(member?.uid || '')]
-                if (certif) return (
-                  <span className="pfx-ig-verified pfx-ig-certif" data-title={certif.title}
-                    style={{ background: certif.color, boxShadow: `0 0 0 1px ${certif.color}66, 0 0 14px ${certif.glow}`, '--cc': certif.color }}>✓</span>
-                )
-                if (profileIsCreator || profileIsStaff) return <span className="pfx-ig-verified" title="Compte vérifié">✓</span>
-                return null
-              })()}
+              {certifData ? (
+                <span className="pfx-ig-verified pfx-ig-certif" data-title={certifData.title}
+                  style={{ background: certifData.color, boxShadow: `0 0 0 1px ${certifData.color}66, 0 0 14px ${certifData.glow}`, '--cc': certifData.color }}>✓</span>
+              ) : (profileIsCreator || profileIsStaff) ? (
+                <span className="pfx-ig-verified" title="Compte vérifié">✓</span>
+              ) : null}
             </div>
             <ProfileActions data={data} onShare={onShare} copied={copied} onEdit={onEdit} />
           </div>
@@ -78,8 +69,8 @@ export default function ProfileHero({ data, copied, onShare, onEdit, onAvatar, o
           {/* Badges rang / rôle */}
           <div className="pfx-ig-badges">
             <span className="pfx-badge pfx-badge-rank" style={{ '--rank': rank.color }}>{rank.emoji} {rank.rang}</span>
-            {profileIsCreator && <span className="pfx-badge pfx-badge-creator">👑 Créateur</span>}
-            {profileIsStaff   && <span className="pfx-badge pfx-badge-staff">🛡 Staff</span>}
+            {!certifData && profileIsCreator && <span className="pfx-badge pfx-badge-creator">👑 Créateur</span>}
+            {!certifData && profileIsStaff   && <span className="pfx-badge pfx-badge-staff">🛡 Staff</span>}
           </div>
 
           {/* Ligne stats */}
