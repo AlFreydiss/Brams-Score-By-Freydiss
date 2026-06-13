@@ -143,39 +143,80 @@ export function evaluate(board) {
   }
   return s
 }
-function minimax(board, side, depth, alpha, beta) {
-  if (generateMoves(board, side).length === 0) return (side === P ? -1 : 1) * (100000 + depth)
-  if (depth === 0 || Date.now() > searchDeadline) return evaluate(board)
+// score du point de vue du camp `side` (negamax)
+const evalSide = (board, side) => (side === P ? 1 : -1) * evaluate(board)
+const sameMove = (a, b) => a && b && a.from[0] === b.from[0] && a.from[1] === b.from[1] && a.to[0] === b.to[0] && a.to[1] === b.to[1]
+// Hash compact du plateau (clé de la table de transposition, pour le move ordering).
+function hashBoard(board) {
+  let s = ''
+  for (let r = 0; r < SIZE; r++) for (let c = 0; c < SIZE; c++) { const p = board[r][c]; s += p ? (p.side === P ? (p.king ? 'A' : 'a') : (p.king ? 'B' : 'b')) : '.' }
+  return s
+}
+// Tri des coups : on évalue à 1 pli le résultat (meilleur d'abord) → l'élagage
+// alpha-bêta coupe bien plus. Le coup « ttMove » (meilleur de l'itération précédente) passe en tête.
+function orderMoves(board, side, moves, ttMove) {
+  const scored = moves.map(m => ({ m, s: evalSide(applyMove(board, m).board, side) }))
+  scored.sort((a, b) => b.s - a.s)
+  const arr = scored.map(x => x.m)
+  if (ttMove) { const i = arr.findIndex(m => sameMove(m, ttMove)); if (i > 0) arr.unshift(arr.splice(i, 1)[0]) }
+  return arr
+}
+let _tt
+// Negamax + alpha-bêta + table de transposition (ordering) + quiescence sur les rafles.
+function negamax(board, side, depth, alpha, beta) {
+  if (Date.now() > searchDeadline) return evalSide(board, side)
   const moves = generateMoves(board, side)
-  if (side === P) {
-    let best = -Infinity
-    for (const m of moves) { const nb = applyMove(board, m).board; best = Math.max(best, minimax(nb, M, depth - 1, alpha, beta)); alpha = Math.max(alpha, best); if (beta <= alpha) break }
-    return best
-  } else {
-    let best = Infinity
-    for (const m of moves) { const nb = applyMove(board, m).board; best = Math.min(best, minimax(nb, P, depth - 1, alpha, beta)); beta = Math.min(beta, best); if (beta <= alpha) break }
-    return best
+  if (moves.length === 0) return -(100000 + depth)            // camp au trait sans coup = perd
+  // Quiescence : à profondeur épuisée on s'arrête, SAUF si des rafles sont forcées
+  // (sinon effet d'horizon : on couperait au milieu d'une prise).
+  if (depth <= 0 && !moves[0].isCapture) return evalSide(board, side)
+  const key = hashBoard(board) + side
+  const ttMove = _tt.get(key)
+  const ordered = orderMoves(board, side, moves, ttMove)
+  let best = -Infinity, bestMove = null
+  for (const m of ordered) {
+    const nd = m.isCapture ? Math.max(depth - 1, 0) : depth - 1   // les rafles prolongent (quiescence)
+    const v = -negamax(applyMove(board, m).board, opp(side), nd, -beta, -alpha)
+    if (v > best) { best = v; bestMove = m }
+    if (v > alpha) alpha = v
+    if (alpha >= beta) break
   }
+  if (bestMove) _tt.set(key, bestMove)
+  return best
 }
-export function chooseAIMove(board, side, depth) {
+// Iterative deepening avec budget temps : on garde le meilleur coup de la dernière
+// profondeur complétée. Le meilleur coup courant amorce l'ordering de la profondeur suivante.
+export function chooseAIMove(board, side, maxDepth, budgetMs) {
   const moves = generateMoves(board, side); if (!moves.length) return null
-  for (let i = moves.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0;[moves[i], moves[j]] = [moves[j], moves[i]] }
-  searchDeadline = Date.now() + (depth >= 6 ? 1600 : depth >= 4 ? 900 : 400)
-  let bestM = moves[0], bestV = side === P ? -Infinity : Infinity
-  for (const m of moves) {
-    let v = minimax(applyMove(board, m).board, opp(side), depth - 1, -Infinity, Infinity)
-    v += (Math.random() - 0.5) * 0.02
-    if (side === P) { if (v > bestV) { bestV = v; bestM = m } } else { if (v < bestV) { bestV = v; bestM = m } }
+  if (moves.length === 1) return moves[0]
+  searchDeadline = Date.now() + (budgetMs || 900); _tt = new Map()
+  let best = moves[0]
+  for (let d = 1; d <= maxDepth; d++) {
+    let curBest = null, curV = -Infinity, alpha = -Infinity
+    const ordered = orderMoves(board, side, moves, best)
+    let completed = true
+    for (const m of ordered) {
+      if (Date.now() > searchDeadline) { completed = false; break }
+      const v = -negamax(applyMove(board, m).board, opp(side), d - 1, -Infinity, -alpha)
+      if (v > curV) { curV = v; curBest = m }
+      if (v > alpha) alpha = v
+    }
+    if (curBest && completed) best = curBest
+    if (!completed || Date.now() > searchDeadline) break
   }
-  return bestM
+  return best
 }
-export const AI_DEPTH = { mousse: 1, marin: 2, capitaine: 4, amiral: 6 }
+export const AI_DEPTH = { mousse: 1, marin: 3, capitaine: 6, amiral: 9, legende: 14 }
+export const AI_BUDGET = { mousse: 180, marin: 450, capitaine: 950, amiral: 1600, legende: 2800 }
 export function aiMove(board, side, diff) {
-  const depth = AI_DEPTH[diff] ?? 2
+  const moves = generateMoves(board, side)
+  if (!moves.length) return null
   if (diff === 'mousse') {
-    const mv = generateMoves(board, side)
-    if (mv.some(m => m.isCapture)) return mv[(Math.random() * mv.length) | 0]
-    return Math.random() < 0.6 ? mv[(Math.random() * mv.length) | 0] : chooseAIMove(board, side, 1)
+    // niveau débutant : capture au hasard si forcé, sinon souvent un coup aléatoire (variété d'ouverture)
+    if (moves[0].isCapture) return moves[(Math.random() * moves.length) | 0]
+    return Math.random() < 0.6 ? moves[(Math.random() * moves.length) | 0] : chooseAIMove(board, side, 1, 200)
   }
-  return chooseAIMove(board, side, depth)
+  return chooseAIMove(board, side, AI_DEPTH[diff] ?? 6, AI_BUDGET[diff] ?? 950)
 }
+// Meilleur coup pour l'humain (bouton Indice) — recherche moyenne, rapide.
+export function bestHint(board, side) { return chooseAIMove(board, side, 8, 700) }

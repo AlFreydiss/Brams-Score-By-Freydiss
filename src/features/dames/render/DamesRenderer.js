@@ -229,26 +229,33 @@ export default class DamesRenderer {
   }
 
   // ── marqueurs ───────────────────────────────────────────────────────────────
-  setMarkers({ selected = null, legalMoves = [], movableKeys = new Set(), interactive = true, gameOver = false } = {}) {
+  setMarkers({ selected = null, legalMoves = [], movableKeys = new Set(), interactive = true, gameOver = false, last = undefined } = {}) {
     this.selected = selected; this.legalMoves = legalMoves; this.movableKeys = movableKeys; this.interactive = interactive; this.gameOver = gameOver
+    if (last !== undefined) this._last = last
     this._buildMarkers()
   }
+  setHint(move) { this._hint = move; this._buildMarkers() }
   _clearMarkers() { while (this.markersGroup.children.length) this.markersGroup.remove(this.markersGroup.children[0]) }
   _ring(r, c, kind) {
-    const col = kind === 'cap' ? 0xe06a4a : kind === 'sel' ? 0xf4e2a6 : 0xd9b870
-    const inner = kind === 'move' || kind === 'cap' ? 0.30 : kind === 'sel' ? 0.36 : 0.17
-    const tube = kind === 'move' || kind === 'cap' ? 0.04 : kind === 'sel' ? 0.045 : 0.028
-    const m = new THREE.Mesh(this._geo(new THREE.TorusGeometry(inner, tube, 12, 40)), this._mat(new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: kind === 'dot' ? 0.5 : 0.92 })))
-    m.rotation.x = Math.PI / 2; const w = worldPos(r, c); m.position.set(w.x, MARK_Y, w.z); m.userData.pulse = (kind !== 'dot'); return m
+    const col = kind === 'cap' ? 0xe06a4a : kind === 'sel' ? 0xf4e2a6 : kind === 'hint' ? 0x6fe0ff : kind === 'last' ? 0xd9b870 : 0xd9b870
+    const inner = kind === 'move' || kind === 'cap' ? 0.30 : kind === 'sel' || kind === 'hint' ? 0.36 : kind === 'last' ? 0.40 : 0.17
+    const tube = kind === 'move' || kind === 'cap' ? 0.04 : kind === 'sel' || kind === 'hint' ? 0.045 : kind === 'last' ? 0.03 : 0.028
+    const op = kind === 'dot' ? 0.5 : kind === 'last' ? 0.4 : 0.92
+    const m = new THREE.Mesh(this._geo(new THREE.TorusGeometry(inner, tube, 12, 40)), this._mat(new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: op })))
+    m.rotation.x = Math.PI / 2; const w = worldPos(r, c); m.position.set(w.x, MARK_Y, w.z); m.userData.pulse = (kind === 'sel' || kind === 'cap' || kind === 'move' || kind === 'hint'); return m
   }
   _buildMarkers() {
     this._clearMarkers()
+    // Dernier coup joué : surbrillance discrète de from + chaîne de rafle + to.
+    if (this._last) { const L = this._last; this.markersGroup.add(this._ring(L.from[0], L.from[1], 'last')); for (const [pr, pc] of (L.path || [])) this.markersGroup.add(this._ring(pr, pc, 'last')) }
     if (this.selected) {
       this.markersGroup.add(this._ring(this.selected[0], this.selected[1], 'sel'))
       for (const mv of this.legalMoves) if (mv.from[0] === this.selected[0] && mv.from[1] === this.selected[1]) this.markersGroup.add(this._ring(mv.to[0], mv.to[1], mv.isCapture ? 'cap' : 'move'))
     } else if (this.interactive && !this.gameOver) {
       this.movableKeys.forEach(k => { const [r, c] = k.split('_').map(Number); this.markersGroup.add(this._ring(r, c, 'dot')) })
     }
+    // Indice (bouton) : from + to en cyan pulsé.
+    if (this._hint) { this.markersGroup.add(this._ring(this._hint.from[0], this._hint.from[1], 'hint')); this.markersGroup.add(this._ring(this._hint.to[0], this._hint.to[1], 'hint')) }
   }
 
   setInteractive(b) { this.interactive = b; this._buildMarkers() }
