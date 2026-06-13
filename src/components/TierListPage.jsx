@@ -1665,6 +1665,9 @@ export default function TierListPage() {
 
   // ── Tab
   const [tab, setTab] = useState('studio')
+  // Brouillon restauré : on NE saute PLUS direct à l'atelier (la landing reste
+  // l'écran par défaut) ; on propose « Reprendre » sur la landing.
+  const [resumable, setResumable] = useState(null)
 
   // ── Studio state
   const [selectedType, setSelectedType] = useState(null)
@@ -1712,17 +1715,13 @@ export default function TierListPage() {
     loadDraft().then(draft => {
       if (!draft) return
       initialDraftRef.current = draft
-      if (draft.typeId) {
-        const type = TIER_TYPES.find(t => t.id === draft.typeId)
-        if (type) setSelectedType(type)
-      }
+      if (draft.typeId && draft.board) setResumable({ typeId: draft.typeId, title: draft.title || 'Ma Tier List' })
       setTiers(draft.tiers || DEFAULT_TIERS)
       setBoard(draft.board || null)
       setCustomItems(draft.customItems || [])
       setFavorites(draft.favorites || [])
       setTitle(draft.title || 'Ma Tier List')
       setDraftSaved(true)
-      setToast(`Brouillon restauré : "${draft.title || 'Ma Tier List'}"`)
     })
     loadSavedListsIDB().then(lists => setSavedLists(lists))
   }, [])
@@ -1767,8 +1766,7 @@ export default function TierListPage() {
     cloudRestoreRef.current = true
     fetchCloudDraft().then(draft => {
       if (!draft) return
-      const type = TIER_TYPES.find(t => t.id === draft.typeId)
-      if (type) setSelectedType(type)
+      if (draft.typeId && draft.board) setResumable({ typeId: draft.typeId, title: draft.title || 'Ma Tier List' })
       setTiers(draft.tiers || DEFAULT_TIERS)
       setBoard(draft.board || null)
       setCustomItems(draft.customItems || [])
@@ -1776,7 +1774,6 @@ export default function TierListPage() {
       setTitle(draft.title || 'Ma Tier List')
       setDraftSaved(true)
       setCloudSaved(true)
-      setToast(`Brouillon cloud restauré : "${draft.title || 'Ma Tier List'}"`)
     }).catch(() => {})
   }, [userId, discordId])
 
@@ -2010,6 +2007,23 @@ export default function TierListPage() {
     setTitle('Ma Tier List ✨ Vierge')
     setFavorites([]); setSearch(''); setGenre('Tous'); setSaved(false)
     saveDraft({ title: 'Ma Tier List ✨ Vierge', typeId: type.id, tiers: DEFAULT_TIERS, board: newBoard, customItems: [], favorites: [], updatedAt: Date.now() }).then(ok => setDraftSaved(ok))
+  }
+
+  // Reprend le brouillon restauré → entre dans l'atelier (board déjà chargé).
+  const resumeDraft = () => {
+    if (!resumable) return
+    const type = TIER_TYPES.find(t => t.id === resumable.typeId)
+    if (type) { setSelectedType(type); setTab('studio') }
+  }
+
+  // Retour à la landing depuis l'atelier (3 chemins : wordmark, chevron, onglet Créer).
+  // Confirm léger si une sauvegarde locale est encore en attente.
+  const leaveAtelier = () => {
+    if (selectedType && board && !draftSaved &&
+        !window.confirm('Des modifications ne sont pas encore enregistrées. Revenir à l\'accueil quand même ?')) return
+    flushDraftNow()
+    setSelectedType(null)
+    setTab('studio')
   }
 
   // ── Tier row operations
@@ -2347,8 +2361,22 @@ export default function TierListPage() {
           minWidth:0, flexWrap: isNarrowBar ? 'wrap' : 'nowrap', rowGap:8,
           ...(isNarrowBar ? { height:'auto', minHeight:60, paddingTop:8, paddingBottom:8 } : { height:60 }) }}>
 
-          {/* Brand */}
-          <div style={{ display:'flex', alignItems:'center', gap:10, flexShrink:0 }}>
+          {/* Chevron retour (atelier uniquement) → landing */}
+          {tab === 'studio' && selectedType && (
+            <button onClick={leaveAtelier} title="Retour à l'accueil" aria-label="Retour à l'accueil" style={{
+              flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', gap:5,
+              height:34, padding:'0 11px', borderRadius:9,
+              background:'transparent', border:`1px solid ${G.border}`, color:G.text,
+              cursor:'pointer', fontSize:12.5, fontWeight:700, fontFamily:'inherit',
+            }}>
+              <ArrowLeft size={15}/> {!isNarrowBar && 'Retour'}
+            </button>
+          )}
+
+          {/* Brand — wordmark cliquable (retour landing) */}
+          <button onClick={leaveAtelier} title="Brams Tier Studio — accueil" style={{
+            display:'flex', alignItems:'center', gap:10, flexShrink:0,
+            background:'transparent', border:'none', padding:0, cursor:'pointer', fontFamily:'inherit', textAlign:'left' }}>
             <div style={{
               width:32, height:32, borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center',
               background:`linear-gradient(135deg,${G.rose}22,${G.gold}22)`,
@@ -2366,13 +2394,13 @@ export default function TierListPage() {
                 </div>
               )}
             </div>
-          </div>
+          </button>
 
           {/* Tabs */}
           <div className="tl-tabs" style={{ display:'flex', gap:2, background:'rgba(255,255,255,.04)', borderRadius:10, padding:3,
             minWidth:0, maxWidth:'100%', overflowX:'auto', scrollbarWidth:'none' }}>
             {TABS.map(t => (
-              <button key={t.id} onClick={() => setTab(t.id)} style={{
+              <button key={t.id} onClick={() => (t.id === 'studio' ? leaveAtelier() : setTab(t.id))} style={{
                 flexShrink:0, whiteSpace:'nowrap',
                 display:'flex', alignItems:'center', gap:5, padding:'5px 12px', borderRadius:7,
                 background: tab === t.id ? `rgba(191,164,106,.14)` : 'transparent',
@@ -2531,6 +2559,8 @@ export default function TierListPage() {
                 types={TIER_TYPES}
                 communityLists={communityLists}
                 loadedListsCount={savedLists.length + cloudLists.length}
+                resumable={resumable}
+                onResume={resumeDraft}
                 onSelectType={handleTypeSelect}
                 onStartBlank={startBlank}
                 onLoadExisting={() => setTab('mylists')}
