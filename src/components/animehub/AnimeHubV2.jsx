@@ -41,7 +41,7 @@ const LEGACY_BG = 'radial-gradient(1100px 820px at 72% 82%, rgba(46,96,179,0.22)
 const ORB_COLORS = ['rgba(224,82,74,0.85)', 'rgba(108,92,231,0.85)', 'rgba(0,184,148,0.8)', 'rgba(201,162,39,0.85)']
 
 function AmbientLegacy() {
-  const stars = useMemo(() => Array.from({ length: 70 }, (_, i) => ({
+  const stars = useMemo(() => Array.from({ length: 40 }, (_, i) => ({
     x: (i * 37.3 + 11) % 99, y: (i * 53.7 + 7) % 97,
     size: i % 9 === 0 ? 2.4 : i % 4 === 0 ? 1.6 : 1,
     dur: 3.2 + (i * 0.27) % 4.8, del: (i * 0.23) % 7,
@@ -172,6 +172,7 @@ export default function AnimeHubV2(props) {
   // une fois collée sous la navbar (sinon bande sombre qui tranche le hero)
   const [toolbarStuck, setToolbarStuck] = useState(false)
   const toolbarRef = useRef(null)
+  const scrollRaf = useRef(0)
   const reduced = useMemo(() => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches, [])
   useEffect(() => {
     if (reduced || paused || slides.length < 2) return
@@ -258,9 +259,16 @@ export default function AnimeHubV2(props) {
     <div
       className="ah2-root"
       onScroll={e => {
-        setScrolled(e.currentTarget.scrollTop > 24)
-        const r = toolbarRef.current?.getBoundingClientRect()
-        if (r) setToolbarStuck(r.top <= 65)
+        // throttle rAF : un seul recalcul par frame, evite le reflow (getBoundingClientRect)
+        // a chaque evenement de scroll qui faisait ramer toute la page.
+        const el = e.currentTarget
+        if (scrollRaf.current) return
+        scrollRaf.current = requestAnimationFrame(() => {
+          scrollRaf.current = 0
+          setScrolled(el.scrollTop > 24)
+          const r = toolbarRef.current?.getBoundingClientRect()
+          if (r) setToolbarStuck(r.top <= 65)
+        })
       }}
       style={{
         position: 'fixed', inset: 0, zIndex: 60, overflowY: 'auto', overflowX: 'hidden',
