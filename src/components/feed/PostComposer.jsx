@@ -109,7 +109,7 @@ export default function PostComposer({ replyTo = null, quote = null, onPosted, p
         if (next.length >= 4) { setAttachErr('4 médias maximum'); break }
         if (!ALLOWED_IMG.includes(f.type) && !isVideo) { setAttachErr('Format non supporté (image, GIF ou vidéo)'); continue }
         if (isVideo && next.some(a => a.isVideo)) { setAttachErr('1 vidéo maximum par post'); continue }
-        if (isVideo && f.size > 200 * 1024 * 1024) { setAttachErr('Vidéo trop lourde (max 200 Mo)'); continue }
+        if (isVideo && f.size > 5 * 1024 * 1024 * 1024) { setAttachErr('Vidéo trop lourde (max 5 Go)'); continue }
         if (!isVideo && f.size > 30 * 1024 * 1024) { setAttachErr('Image trop lourde (max 30 Mo)'); continue }
         next.push({ file: f, preview: URL.createObjectURL(f), objectUrl: true, isVideo })
       }

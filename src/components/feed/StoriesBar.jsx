@@ -97,8 +97,9 @@ export default function StoriesBar() {
       alert('Format image ou vidéo non supporté')
       return
     }
-    const maxMo = file.type.startsWith('video/') ? 200 : 45
-    if (file.size > maxMo * 1024 * 1024) { alert(`Visuel trop lourd (max ~${maxMo} Mo)`); return }
+    const isVid = file.type.startsWith('video/')
+    const maxMo = isVid ? 5120 : 45
+    if (file.size > maxMo * 1024 * 1024) { alert(isVid ? 'Vidéo trop lourde (max 5 Go)' : `Visuel trop lourd (max ~${maxMo} Mo)`); return }
 
     if (visualPreview) URL.revokeObjectURL(visualPreview)
     const url = URL.createObjectURL(file)
