@@ -1071,7 +1071,7 @@ function genMap(){
       continue;
     }
     const stream=gap<215;
-    const spc=d.spc*(kiai?1.4:1); // REFRAIN : jumps nettement plus larges
+    const spc=d.spc*(kiai?1.25:1); // REFRAIN : jumps plus larges (mais ça reste lisible)
     let dist,inPat=false;
     if(stream){
       dist=clamp(gap*.38*spc,26,72);
@@ -1080,15 +1080,15 @@ function genMap(){
     }else{
       sCurve=0;
       // espacement = temps × intensité × refrain (vélocité plus haute au refrain)
-      dist=clamp(gap*.5*spc*(.7+(b.s||1)*.22)*(b.b===2?1.18:b.b?1.08:1)*(kiai?1.32:1),70,kiai?470:360);
+      dist=clamp(gap*.5*spc*(.7+(b.s||1)*.22)*(b.b===2?1.18:b.b?1.08:1)*(kiai?1.18:1),70,kiai?360:300);
       if(patLeft>0){
         // au cœur d'un motif géométrique : angle ET distance fixes → forme nette
         inPat=true;ang+=patSign*patTurn;patLeft--;if(patDist)dist=patDist;
       }else{
         const strong=(b.s||1)>1.8||kiai;
-        if(rng()<(strong?.48:.2))ang+=Math.PI+(rng()-.5)*(kiai?1.1:.7); // aller-retour franc, + erratique en refrain
-        // virage fluide ; en refrain l'amplitude grimpe → ça part de partout
-        else{if(rng()<(kiai?.22:.12))flowSign=-flowSign;ang+=flowSign*(.5+rng()*.95+(kiai?rng()*.7:0));}
+        if(rng()<(strong?.46:.2))ang+=Math.PI+(rng()-.5)*(kiai?.7:.55); // aller-retour franc (back-and-forth musical)
+        // virage fluide ; en refrain l'amplitude monte un peu (mais ça garde un flow lisible)
+        else{if(rng()<(kiai?.2:.12))flowSign=-flowSign;ang+=flowSign*(.45+rng()*.72+(kiai?rng()*.4:0));}
         // amorce parfois un polygone régulier en kiai (carré 90°, triangle 120°, étoile 144°)
         if(kiai&&opt.diff>=1&&rng()<.2){
           patLeft=2+(rng()*4|0);patTurn=[Math.PI/2,2.094,2.513][rng()*3|0];
@@ -1101,10 +1101,10 @@ function genMap(){
       ang+=.9;sCurve=-sCurve;patLeft=0; // un rebond de bord casse le motif en cours
       tx=x+Math.cos(ang)*dist;ty=y+Math.sin(ang)*dist;}
     tx=clamp(tx,padS,W-padS);ty=clamp(ty,padT,H-padB);
-    // REFRAIN : jumps miroir nerveux (saute à l'opposé du terrain) — fréquents, tous niveaux
-    if(kiai&&!stream&&!inPat&&rng()<(opt.diff>=2?.46:.3)){
-      tx=clamp(W-tx+(rng()-.5)*90,padS,W-padS);
-      ty=clamp(H-ty+(rng()-.5)*70,padT,H-padB);
+    // REFRAIN : jumps miroir ponctuels (saute à l'opposé) — assez rares pour rester lisible
+    if(kiai&&!stream&&!inPat&&rng()<(opt.diff>=2?.22:.14)){
+      tx=clamp(W-tx+(rng()-.5)*60,padS,W-padS);
+      ty=clamp(H-ty+(rng()-.5)*45,padT,H-padB);
       ang=Math.atan2(ty-y,tx-x);
     }
     // anti-chevauchement : une note ne doit pas apparaître SUR une autre encore
@@ -1768,29 +1768,39 @@ function drawSpinnerObj(o,el){
   const Rm=Math.min(W,H)*.30,prog=clamp((el-o.t)/o.dur,0,1);
   const spins=o.rot/PI2,req=(o.req||1)/PI2,ratio=clamp(o.rot/(o.req||1),0,1);
   cx.save();cx.globalAlpha=alpha*.55;
-  cx.fillStyle='rgba(5,4,10,.8)';cx.fillRect(0,0,W,H); // lazer assombrit tout le terrain pendant le spinner
+  cx.fillStyle='rgba(8,6,3,.85)';cx.fillRect(0,0,W,H); // assombrit le terrain pendant le spinner
   cx.restore();
   cx.save();cx.globalAlpha=alpha;
-  // anneau extérieur fin + arc de progression épais arrondi
+  // halo doré derrière le spinner
+  const hg=cx.createRadialGradient(cxx,cyy,Rm*.3,cxx,cyy,Rm*1.5);
+  hg.addColorStop(0,'rgba(212,160,23,.18)');hg.addColorStop(1,'transparent');
+  cx.fillStyle=hg;cx.beginPath();cx.arc(cxx,cyy,Rm*1.5,0,PI2);cx.fill();
+  // anneau extérieur fin + arc de progression épais arrondi (OR)
   cx.beginPath();cx.arc(cxx,cyy,Rm,0,PI2);
-  cx.strokeStyle='rgba(255,255,255,.16)';cx.lineWidth=Math.max(3,Rm*.014);cx.stroke();
+  cx.strokeStyle='rgba(255,255,255,.14)';cx.lineWidth=Math.max(3,Rm*.014);cx.stroke();
+  const ag=cx.createLinearGradient(cxx-Rm,cyy,cxx+Rm,cyy);
+  ag.addColorStop(0,'#d4a017');ag.addColorStop(1,'#ffe9a8');
   cx.beginPath();cx.arc(cxx,cyy,Rm,-Math.PI/2,-Math.PI/2+PI2*ratio);
-  cx.strokeStyle=ratio>=1?'#ffee44':'#ff66aa';cx.lineWidth=Math.max(7,Rm*.04);cx.lineCap='round';cx.stroke();
-  // approche : cercle blanc qui rétrécit vers l'anneau
+  cx.strokeStyle=ratio>=1?'#ffe9a8':ag;cx.lineWidth=Math.max(7,Rm*.045);cx.lineCap='round';
+  if(ratio>=1){cx.shadowBlur=18;cx.shadowColor='rgba(255,233,168,.7)';}cx.stroke();cx.shadowBlur=0;
+  // approche : cercle qui rétrécit vers l'anneau
   if(el>=o.t&&!o.done){
     const ar2=Rm*1.4-(Rm*1.4-Rm)*prog;
     cx.beginPath();cx.arc(cxx,cyy,ar2,0,PI2);
-    cx.strokeStyle='rgba(255,255,255,.3)';cx.lineWidth=2;cx.stroke();
+    cx.strokeStyle='rgba(255,233,168,.32)';cx.lineWidth=2;cx.stroke();
   }
-  // disque central rotatif deux tons (à la Argon), gonfle légèrement avec le RPM
-  const dr=Rm*.40*(1+Math.min(.1,(o.rpm||0)/3500));
+  // disque central OR gravé + rayons (la rotation devient ultra lisible), gonfle avec le RPM
+  const dr=Rm*.42*(1+Math.min(.1,(o.rpm||0)/3500));
   cx.translate(cxx,cyy);cx.rotate(o.vr);
-  const gr=cx.createLinearGradient(-dr,0,dr,0);
-  gr.addColorStop(0,'#ff5b9e');gr.addColorStop(.5,'#7d3ee8');gr.addColorStop(1,'#ff5b9e');
+  const gr=cx.createRadialGradient(-dr*.3,-dr*.3,dr*.1,0,0,dr);
+  gr.addColorStop(0,'#fff3cf');gr.addColorStop(.45,'#d4a017');gr.addColorStop(1,'#7a5810');
   cx.beginPath();cx.arc(0,0,dr,0,PI2);cx.fillStyle=gr;cx.fill();
-  cx.beginPath();cx.arc(0,0,dr,0,PI2);cx.strokeStyle='rgba(255,255,255,.35)';cx.lineWidth=2.5;cx.stroke();
-  // encoche : on VOIT la rotation
-  cx.beginPath();cx.arc(0,-dr*.66,dr*.13,0,PI2);cx.fillStyle='rgba(255,255,255,.92)';cx.fill();
+  cx.beginPath();cx.arc(0,0,dr,0,PI2);cx.strokeStyle='rgba(26,20,7,.55)';cx.lineWidth=2.5;cx.stroke();
+  cx.strokeStyle='rgba(26,20,7,.32)';cx.lineWidth=2;
+  for(let i=0;i<8;i++){const a=i/8*PI2;cx.beginPath();cx.moveTo(Math.cos(a)*dr*.34,Math.sin(a)*dr*.34);cx.lineTo(Math.cos(a)*dr*.9,Math.sin(a)*dr*.9);cx.stroke();}
+  cx.beginPath();cx.arc(0,0,dr*.26,0,PI2);cx.fillStyle='#fff3cf';cx.fill();
+  // encoche claire : on VOIT la rotation
+  cx.beginPath();cx.arc(0,-dr*.66,dr*.12,0,PI2);cx.fillStyle='#fff';cx.fill();
   cx.restore();
   cx.save();cx.globalAlpha=alpha;cx.textAlign='center';
   if(el>=o.t&&!o.done){
@@ -1802,13 +1812,13 @@ function drawSpinnerObj(o,el){
       const bt=clamp((el-o.clearAt)/TIMING.SPIN_CLEAR_BOUNCE,0,1);
       const sc=1+.55*(1-bt)*Math.sin(bt*Math.PI*2.2)*Math.exp(-bt*2);
       cx.save();cx.translate(cxx,cyy-Rm-34);cx.scale(sc,sc);
-      cx.font='800 30px '+SKIN.FONT;cx.fillStyle='#ffee44';cx.shadowBlur=14;cx.shadowColor='#ffee44';
+      cx.font='800 30px '+SKIN.FONT;cx.fillStyle='#ffe9a8';cx.shadowBlur=16;cx.shadowColor='#d4a017';
       cx.fillText('CLEAR !',0,0);cx.restore();
     }else{
       const bms=analysis&&analysis.bpm?60000/analysis.bpm:600;
       const sc=1+.08*Math.max(0,1-(el%bms)/bms*2);
       cx.save();cx.translate(cxx,cyy-Rm-34);cx.scale(sc,sc);
-      cx.font='800 28px '+SKIN.FONT;cx.fillStyle='#fff';cx.shadowBlur=10;cx.shadowColor='#ff66aa';
+      cx.font='800 28px '+SKIN.FONT;cx.fillStyle='#fff3cf';cx.shadowBlur=12;cx.shadowColor='#d4a017';
       cx.fillText('SPIN !',0,0);cx.restore();
     }
     // pill RPM façon lazer : boîte sombre arrondie + valeur en segments
