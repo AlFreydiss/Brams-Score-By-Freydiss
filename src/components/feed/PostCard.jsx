@@ -7,7 +7,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext.jsx'
 import { toggleLike, deletePost, createPost, editPost, toggleBookmark, fetchLinkPreview, togglePostReaction, reportPost } from '../../lib/feed.js'
-import { isCreator, isStaff } from '../../lib/roles.js'
+import { isCreator, isStaff, roleBadge } from '../../lib/roles.js'
 import { btn, avatar, T } from '../social/socialStyles.js'
 import './feedPremium.css'   // styles des cartes/actions — sinon non stylé hors du Fil (profil, thread → boutons en carrés)
 
@@ -65,9 +65,14 @@ function Avatar({ url, name, size = 44 }) {
 }
 
 function RoleBadge({ userId }) {
-  if (isCreator(userId)) return <span className="feed-role-badge">Fondateur</span>
-  if (isStaff(userId)) return <span className="feed-role-badge">Staff</span>
-  return null
+  const b = roleBadge(userId)
+  if (!b) return null
+  return (
+    <span className="feed-role-badge"
+      style={{ color: b.color, borderColor: `${b.color}3a`, background: `${b.color}14` }}>
+      {b.label}
+    </span>
+  )
 }
 
 function Spoiler({ text }) {
