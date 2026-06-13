@@ -4,6 +4,7 @@ import { useState, useCallback, useMemo, useEffect } from 'react'
 import DamesBoard from './DamesBoard.jsx'
 import { getInitialBoard, applyMove, getOutcome, materialCount, DEFAULT_RULESET } from '../../lib/dames/damesEngine.js'
 import { DIFFICULTIES, getBestMove } from '../../lib/dames/damesAI.js'
+import { DamesRankCard, DamesLeaderboard } from './DamesLobby.jsx'
 
 const GOLD = '#d4a017'
 const SIDE = {
@@ -62,6 +63,8 @@ export default function DamesPage() {
         </p>
       </div>
 
+      <DamesRankCard />
+
       {/* Mode + difficulté */}
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
         {[['local', '👥 Local (2 joueurs)'], ['ai', '🤖 vs IA']].map(([id, lbl]) => (
@@ -119,6 +122,8 @@ export default function DamesPage() {
       <p style={{ fontSize: 12, color: 'rgba(243,234,216,.4)', maxWidth: 460, textAlign: 'center', marginTop: 4 }}>
         Local (2 joueurs) ou <strong style={{ color: 'rgba(243,234,216,.6)' }}>vs IA</strong> (4 difficultés). Le <strong style={{ color: 'rgba(243,234,216,.6)' }}>multijoueur en ligne classé (primes One Piece)</strong> arrive bientôt. 🏴‍☠️
       </p>
+
+      <DamesLeaderboard />
     </div>
   )
 }
