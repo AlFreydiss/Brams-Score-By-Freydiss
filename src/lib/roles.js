@@ -36,7 +36,8 @@ export const isAdmin = isStaff
 const ROLE_BADGES = {
   '1094070545248694342': { label: 'Développeur', color: '#A66CFF' }, // Al Freydiss — violet
   '1079054995917381672': { label: 'Fondateur',   color: '#E6B84D' }, // Brams — or
-  '999607813334638692':  { label: 'Directeur',   color: '#E0524A' }, // Berat — rouge (couleur de sa certif)
+  '999607813334638692':  { label: 'Directeur',   color: '#E0524A' }, // Berat — rouge
+  '1000000000000000001': { label: '✦ IA',        color: '#E60012' }, // BramsScore — bot IA officiel (couleur de sa certif)
 }
 export function roleBadge(discordId) {
   const b = ROLE_BADGES[String(discordId)]
