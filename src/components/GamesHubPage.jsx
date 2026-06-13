@@ -8,7 +8,7 @@ const GOLD_HI = '#f0d27a'
 const BG = '#08090d'
 
 const GAMES = [
-  { to: '/fredisu',    emoji: '🎯', title: "Fred'isu",   tag: 'Rythme',     accent: '#d4a017',
+  { to: '/fredisu.html', external: true, emoji: '🎯', title: "Fred'isu", tag: 'Rythme', accent: '#d4a017',
     desc: "Rhythm game façon osu! : importe un MP3/MP4, la map se génère par analyse du son calée sur le BPM. Cercles, sliders, spinners, mods HD/HR/DT/FL, leaderboard mondial.", featured: true },
   { to: '/dames',      emoji: '🔴', title: 'Dames',      tag: 'Classé · ELO', accent: '#e0524a',
     desc: "Dames internationales 10×10 (rafle maximale, dames volantes). Local, vs IA (4 niveaux) ou en ligne classé avec ELO et primes One Piece." },
@@ -36,17 +36,18 @@ const CSS = `
 `
 
 function GameCard({ g, i }) {
-  return (
-    <Link to={g.to} className="gh-card" style={{
-      position: 'relative', display: 'flex', flexDirection: 'column', gap: 12, textDecoration: 'none',
-      gridColumn: g.featured ? 'span 2' : 'span 1',
-      padding: g.featured ? '26px 26px 24px' : '22px 22px 20px', borderRadius: 18,
-      background: `linear-gradient(165deg, ${g.accent}14, rgba(255,255,255,0.012) 55%)`,
-      border: `1px solid ${g.accent}33`,
-      boxShadow: '0 14px 40px rgba(0,0,0,.4)',
-      animation: `gh-fade .5s ease ${0.05 * i}s both`,
-      minHeight: g.featured ? 200 : 168,
-    }}>
+  const cardStyle = {
+    position: 'relative', display: 'flex', flexDirection: 'column', gap: 12, textDecoration: 'none',
+    gridColumn: g.featured ? 'span 2' : 'span 1',
+    padding: g.featured ? '26px 26px 24px' : '22px 22px 20px', borderRadius: 18,
+    background: `linear-gradient(165deg, ${g.accent}14, rgba(255,255,255,0.012) 55%)`,
+    border: `1px solid ${g.accent}33`,
+    boxShadow: '0 14px 40px rgba(0,0,0,.4)',
+    animation: `gh-fade .5s ease ${0.05 * i}s both`,
+    minHeight: g.featured ? 200 : 168,
+  }
+  const inner = (
+    <>
       <span style={{ position: 'absolute', top: 16, right: 16, fontSize: 10, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', color: g.accent, background: `${g.accent}1a`, border: `1px solid ${g.accent}44`, padding: '4px 10px', borderRadius: 999 }}>{g.tag}</span>
       <span className="gh-emoji" style={{ fontSize: g.featured ? 52 : 40, lineHeight: 1, filter: `drop-shadow(0 6px 18px ${g.accent}55)` }}>{g.emoji}</span>
       <div style={{ fontSize: g.featured ? 26 : 21, fontWeight: 900, color: '#fff', letterSpacing: '-.01em' }}>{g.title}</div>
@@ -54,8 +55,13 @@ function GameCard({ g, i }) {
       <span className="gh-play" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: 13.5, fontWeight: 800, color: g.accent }}>
         Jouer <span style={{ fontSize: 16 }}>→</span>
       </span>
-    </Link>
+    </>
   )
+  // Jeu externe (Fred'isu = page statique autonome) → vraie navigation top-level,
+  // pas d'iframe SPA (audio/pointer/fullscreen marchent mal embarqués).
+  return g.external
+    ? <a href={g.to} className="gh-card" style={cardStyle}>{inner}</a>
+    : <Link to={g.to} className="gh-card" style={cardStyle}>{inner}</Link>
 }
 
 export default function GamesHubPage() {
