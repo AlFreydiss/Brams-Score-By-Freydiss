@@ -168,9 +168,9 @@ function Embedded({ p, onClick, onOpenMedia }) {
   )
 }
 
-function Counter({ children, active, className = '', ...props }) {
+function Counter({ children, active, kind = '', className = '', ...props }) {
   return (
-    <button type="button" className={`feed-post-action ${active ? className : ''}`} {...props}>
+    <button type="button" className={`feed-post-action ${kind} ${active ? className : ''}`} {...props}>
       {children}
     </button>
   )
@@ -427,9 +427,9 @@ export default function PostCard({ post, embedded = false, disableNav = false, s
 
               {!editing && (
                 <div className="feed-actions" onClick={e => e.stopPropagation()}>
-                  <Counter onClick={(e) => { e.stopPropagation(); navigate(`/fil/${main.id}`) }}><MessageCircle size={17} /> {main.reply_count || 0}</Counter>
+                  <Counter kind="act-reply" onClick={(e) => { e.stopPropagation(); navigate(`/fil/${main.id}`) }}><MessageCircle size={17} /> {main.reply_count || 0}</Counter>
                   <div style={{ position: 'relative' }}>
-                    <Counter onClick={() => setReactPicker(o => !o)}><SmilePlus size={17} /></Counter>
+                    <Counter kind="act-react" onClick={() => setReactPicker(o => !o)}><SmilePlus size={17} /></Counter>
                     {reactPicker && (
                       <div className="feed-react-menu">
                         {QUICK_REACTIONS.map(em => <button key={em} type="button" onClick={(e) => react(em, e)}>{em}</button>)}
@@ -438,7 +438,7 @@ export default function PostCard({ post, embedded = false, disableNav = false, s
                   </div>
                   {!hideRepostSave && (
                     <div style={{ position: 'relative' }}>
-                      <Counter onClick={() => setRepostMenu(o => !o)} disabled={busy}><Repeat2 size={17} /> {main.repost_count || 0}</Counter>
+                      <Counter kind="act-repost" onClick={() => setRepostMenu(o => !o)} disabled={busy}><Repeat2 size={17} /> {main.repost_count || 0}</Counter>
                       {repostMenu && (
                         <div className="feed-repost-menu">
                           <button type="button" onClick={doRepost} className="feed-post-menu-item"><Repeat2 size={15} /> Reposter</button>
@@ -447,7 +447,7 @@ export default function PostCard({ post, embedded = false, disableNav = false, s
                       )}
                     </div>
                   )}
-                  <Counter onClick={like} active={main.liked} className={`is-liked ${likePop ? 'like-pop' : ''}`}><Heart size={17} fill={main.liked ? 'currentColor' : 'none'} />{' '}
+                  <Counter kind="act-like" onClick={like} active={main.liked} className={`is-liked ${likePop ? 'like-pop' : ''}`}><Heart size={17} fill={main.liked ? 'currentColor' : 'none'} />{' '}
                     <span
                       role={(main.like_count || 0) > 0 ? 'button' : undefined}
                       title={(main.like_count || 0) > 0 ? 'Voir qui a aimé' : undefined}
@@ -456,7 +456,7 @@ export default function PostCard({ post, embedded = false, disableNav = false, s
                     >{main.like_count || 0}</span>
                   </Counter>
                   {!hideRepostSave && (
-                    <Counter onClick={bookmark} active={main.bookmarked} className="is-bookmarked" style={{ marginLeft: 'auto' }}><Bookmark size={17} fill={main.bookmarked ? 'currentColor' : 'none'} /></Counter>
+                    <Counter kind="act-bookmark" onClick={bookmark} active={main.bookmarked} className="is-bookmarked"><Bookmark size={17} fill={main.bookmarked ? 'currentColor' : 'none'} /></Counter>
                   )}
                 </div>
               )}

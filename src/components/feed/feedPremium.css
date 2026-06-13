@@ -410,13 +410,26 @@
   justify-content: center;
   gap: 7px;
   min-height: 36px;
-  padding: 0 16px;
-  border: 1px solid rgba(212, 160, 23, 0.32);
-  border-radius: 8px;
-  background: rgba(212, 160, 23, 0.14);
-  color: #d4a017;
+  padding: 0 20px;
+  border: 1px solid rgba(212, 160, 23, 0.55);
+  border-radius: 999px;
+  background: linear-gradient(180deg, #ecd79d 0%, #d4a017 100%);
+  color: #1b1407;
   font-weight: 900;
+  letter-spacing: 0.01em;
   cursor: pointer;
+  box-shadow: 0 4px 14px rgba(212, 160, 23, 0.22);
+  transition: transform 0.14s ease, box-shadow 0.14s ease, filter 0.14s ease;
+}
+
+.feed-post-button:not(:disabled):hover {
+  transform: translateY(-1px);
+  filter: brightness(1.04);
+  box-shadow: 0 8px 22px rgba(212, 160, 23, 0.32);
+}
+
+.feed-post-button:not(:disabled):active {
+  transform: translateY(0);
 }
 
 .feed-post-button:disabled {
@@ -731,32 +744,40 @@
   color: #d4a017;
 }
 
+/* Barre d'engagement façon X : actions réparties, pastille ronde au survol
+   avec teinte sémantique sobre (cohérent DA dark/or, jamais de néon). */
 .feed-actions {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-top: 12px;
+  justify-content: space-between;
+  max-width: 440px;
+  margin-top: 11px;
+  margin-left: -7px;
 }
 
 .feed-post-action {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-width: 42px;
   min-height: 32px;
-  padding: 5px 8px;
-  border: 1px solid transparent;
-  border-radius: 8px;
+  padding: 7px 9px;
+  border: 0;
+  border-radius: 999px;
   background: transparent;
-  color: rgba(255, 255, 255, 0.46);
+  color: rgba(255, 255, 255, 0.44);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
   cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
 }
 
-.feed-post-action:hover {
-  background: rgba(255, 255, 255, 0.045);
-  color: rgba(255, 255, 255, 0.84);
-}
+/* Teintes par action (visibles au survol + état actif) */
+.feed-post-action.act-reply:hover  { color: #74a7c4; background: rgba(116, 167, 196, 0.12); }
+.feed-post-action.act-react:hover  { color: #d4a017; background: rgba(212, 160, 23, 0.12); }
+.feed-post-action.act-repost:hover { color: #5fb88a; background: rgba(95, 184, 138, 0.12); }
+.feed-post-action.act-like:hover   { color: #e0524a; background: rgba(224, 82, 74, 0.12); }
+.feed-post-action.act-bookmark:hover { color: #d4a017; background: rgba(212, 160, 23, 0.12); }
 
 .feed-post-action.is-liked {
   color: #e0524a;
