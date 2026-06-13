@@ -279,16 +279,33 @@
   background: rgba(212, 160, 23, 0.10);
 }
 
+/* Pill flottant centré façon Twitter "Voir N nouveaux posts" — or Brams, sticky en haut. */
 .feed-new-button {
-  width: 100%;
-  min-height: 42px;
-  border: 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(212, 160, 23, 0.10);
-  color: #d4a017;
-  font-weight: 900;
+  display: block;
+  margin: 12px auto;
+  padding: 9px 22px;
+  border: 1px solid rgba(212, 160, 23, 0.45);
+  border-radius: 999px;
+  background: rgba(34, 28, 14, 0.82);
+  color: #f5cf6b;
+  font-weight: 800;
+  font-size: 13.5px;
+  letter-spacing: .01em;
   cursor: pointer;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(212, 160, 23, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  position: sticky;
+  top: 10px;
+  z-index: 20;
+  transition: transform .15s ease, background .15s ease, box-shadow .15s ease;
 }
+.feed-new-button:hover {
+  background: rgba(48, 39, 18, 0.92);
+  transform: translateY(-1px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(212, 160, 23, 0.22);
+}
+.feed-new-button:active { transform: translateY(0); }
 
 .feed-empty,
 .feed-error {
