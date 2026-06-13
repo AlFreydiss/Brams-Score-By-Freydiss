@@ -10,9 +10,11 @@ export const TRAIL_PRICE_CENTS = { COMMUN: 50, RARE: 79, EPIQUE: 119, MYTHIQUE: 
 
 // Réglages moteur par défaut (repris de l'ancien CursorTrail or). Chaque skin
 // surcharge ce qu'il veut. composite 'lighter' = glow additif ; 'source-over' = solide.
+// Densité calibrée : le sprite HQ (cœur lumineux + gros halo) porte le rendu, donc
+// MOINS de particules suffisent pour un trait riche → moins de drawImage/frame.
 export const TRAIL_DEFAULTS = {
-  maxParts: 560, maxEmit: 16, emitDivisor: 4.6, minDist: 2.6, dpr: 2,
-  speed: 0.32, drift: 0.19, gravity: 0.02, sizeBase: 1.35, sizeRand: 1.8,
+  maxParts: 420, maxEmit: 13, emitDivisor: 5.6, minDist: 3.4, dpr: 1.75,
+  speed: 0.32, drift: 0.19, gravity: 0.02, sizeBase: 1.45, sizeRand: 1.9,
   decay: 0.045, shadow: 7, alpha: 0.85, composite: 'lighter', hueCycle: 0, twinkle: 0,
 }
 

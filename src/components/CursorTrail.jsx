@@ -19,15 +19,21 @@ export default function CursorTrail({ skin, isGlobal = false }) {
     if (!canvas) return undefined
 
     const ctx = canvas.getContext('2d')
-    const dpr = Math.min(window.devicePixelRatio || 1, TRAIL_DEFAULTS.dpr)
-    let w = 0, h = 0, emitX = null, emitY = null, raf = 0, hue = 0
+    // Cap du nombre de pixels du backing : sur les grands écrans (4K/retina) on
+    // baisse le dpr effectif — invisible sur un glow flou, mais divise le coût de
+    // clearRect/drawImage par frame. Recalculé à chaque resize.
+    const PIXEL_CAP = 4_400_000
+    let dpr = 1, w = 0, h = 0, emitX = null, emitY = null, raf = 0, hue = 0
     const parts = []
 
     const resize = () => {
-      w = canvas.width = window.innerWidth * dpr
-      h = canvas.height = window.innerHeight * dpr
-      canvas.style.width = `${window.innerWidth}px`
-      canvas.style.height = `${window.innerHeight}px`
+      const iw = window.innerWidth, ih = window.innerHeight
+      const want = Math.min(window.devicePixelRatio || 1, TRAIL_DEFAULTS.dpr)
+      dpr = Math.max(0.85, Math.min(want, Math.sqrt(PIXEL_CAP / Math.max(1, iw * ih))))
+      w = canvas.width = Math.round(iw * dpr)
+      h = canvas.height = Math.round(ih * dpr)
+      canvas.style.width = `${iw}px`
+      canvas.style.height = `${ih}px`
     }
 
     // PERF : au lieu d'un shadowBlur par particule À CHAQUE frame (très coûteux en
@@ -74,6 +80,8 @@ export default function CursorTrail({ skin, isGlobal = false }) {
         // Taille : easing (reste pleine plus longtemps puis fond) + halo doux.
         const ease = Math.pow(p.life, 0.6)
         const r = p.size * ease + p.shadow * dpr * 0.6
+        // Cull hors écran : inutile de dessiner une particule qui a dérivé dehors.
+        if (p.x < -r || p.x > w + r || p.y < -r || p.y > h + r) continue
         // Scintillement optionnel (étoiles/cosmos) : modulation d'alpha par particule.
         let a = p.life * p.alpha
         if (tw) { p.tw += 0.28; a *= 0.62 + 0.38 * Math.sin(p.tw) }
@@ -112,7 +120,8 @@ export default function CursorTrail({ skin, isGlobal = false }) {
               vy: ((Math.random() - 0.5) * C.drift + 0.1) * dpr,
               life: 1,
               size: (Math.random() * C.sizeRand + C.sizeBase) * dpr,
-              color: C.hueCycle ? `hsl(${Math.round(hue)}, 95%, 62%)` : C.colors[(Math.random() * C.colors.length) | 0],
+              // hue arrondi par pas de 4° → ~90 sprites cachés max (au lieu de 360) sur l'arc-en-ciel.
+              color: C.hueCycle ? `hsl(${Math.round(hue / 4) * 4}, 95%, 62%)` : C.colors[(Math.random() * C.colors.length) | 0],
               gravity: C.gravity, decay: C.decay, shadow: C.shadow, alpha: C.alpha,
               tw: Math.random() * 6.283,
             })
