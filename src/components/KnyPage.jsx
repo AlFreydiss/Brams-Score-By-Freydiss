@@ -283,6 +283,7 @@ export default function KnyPage({ onClose }) {
                       <div style={{ width:4,height:18,borderRadius:2,background:`linear-gradient(180deg,${COLOR},${COLOR2})` }} />
                       <h4 style={{ margin:0,fontSize:14,fontWeight:900,color:'#fff',letterSpacing:'-.01em' }}>{g.label}</h4>
                       <span style={{ fontSize:10.5,fontWeight:700,color:'rgba(255,255,255,.3)' }}>{g.items.length} {g.label === 'Film' ? '' : 'ép.'}</span>
+                      <span aria-hidden style={{ flex:1,alignSelf:'center',height:1,borderRadius:1,background:`linear-gradient(90deg,${COLOR}55,${COLOR}14 45%,transparent)` }} />
                     </div>
                     <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))', gap:14 }}>
                       {g.items.map(({ v, i }) => (
