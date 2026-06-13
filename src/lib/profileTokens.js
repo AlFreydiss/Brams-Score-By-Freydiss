@@ -45,7 +45,9 @@ export const ACHIEVEMENTS = [
   { id: 'top_100',         label: 'Top 100',         desc: 'Entrer dans le classement',  icon: '🏆', rarity: 'Rare',       check: (m)      => Number(m?.rank) <= 100 },
   { id: 'top_10',          label: 'Élite Nakama',    desc: 'Top 10 du serveur',          icon: '⭐', rarity: 'Légendaire', check: (m)      => Number(m?.rank) <= 10 },
   { id: 'collector',       label: 'Collectionneur',  desc: '5 objets en inventaire',     icon: '🗃', rarity: 'Rare',       check: (m,s)   => (s?.inventory?.length || 0) >= 5 },
-  { id: 'shopper',         label: 'Grand Marchand',  desc: '3 achats effectués',         icon: '🛒', rarity: 'Commun',     check: (m,s)   => (s?.transactions?.length || 0) >= 3 },
+  // Transactions = lecture RLS fragile (vide pour autrui) ; l'inventaire vient d'une RPC
+  // publique fiable → on prend le max des deux pour que le succès se débloque vraiment.
+  { id: 'shopper',         label: 'Grand Marchand',  desc: '3 achats effectués',         icon: '🛒', rarity: 'Commun',     check: (m,s)   => Math.max(s?.transactions?.length || 0, s?.inventory?.length || 0) >= 3 },
   { id: 'yonkou',          label: 'Yonkou',          desc: 'Rang Yonkou atteint',        icon: '🌊', rarity: 'Épique',     check: (m,s,h) => h >= 70 },
   { id: 'roi',             label: 'Roi des Pirates', desc: 'Rang maximum atteint',       icon: '👑', rarity: 'Mythique',   check: (m,s,h) => h >= 150 },
 ]
