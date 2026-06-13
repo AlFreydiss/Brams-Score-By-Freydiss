@@ -13,7 +13,6 @@ import BUNNY_VIDEOS from '../data/bunny-girl-videos.json'
 import CAROLE_TUESDAY_VIDEOS from '../data/carole-tuesday-videos.json'
 import DRSTONE_VIDEOS from '../data/drstone-videos.json'
 import FIREFORCE_VIDEOS from '../data/fireforce-videos.json'
-import BLEACH_VIDEOS from '../data/bleach-videos.json'
 import KAIJU_VIDEOS from '../data/kaiju-videos.json'
 import JJK_VIDEOS from '../data/jjk-videos.json'
 import KINGDOM_VIDEOS from '../data/kingdom-videos.json'
@@ -557,25 +556,8 @@ export const ANIMES = [
     badge: 'NOUVEAU',
     badgeColor: '#f4511e',
   },
-  {
-    id: 'bleach',
-    title: 'Bleach',
-    subtitle: 'Shinigami',
-    emoji: '⚔️',
-    color: '#f4511e',
-    colorDark: '#3a0f06',
-    coverImage: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bleach/cover.png',
-    coverPosition: 'center center',
-    genres: ['Action', 'Surnaturel', 'Shōnen'],
-    description: "Ichigo Kurosaki devient Shinigami et protège les vivants des Hollows tout en guidant les âmes vers la Soul Society.",
-    stats: [
-      { label: 'Vidéos', value: videoCountLabel(BLEACH_VIDEOS.length, 366) },
-      { label: 'Statut', value: availabilityLabel(BLEACH_VIDEOS.length) },
-    ],
-    action: '▶ Accéder',
-    badge: 'NOUVEAU',
-    badgeColor: '#f4511e',
-  },
+  // Bleach masque le 2026-06-13 : R2 vide (re-encode max qualite a venir, source a re-telecharger).
+  // Page + routing conserves. Restaurer cette entree + l'import + 'bleach' dans NEW_IDS apres re-upload.
   {
     id: 'kaiju-no-8',
     title: 'Kaiju No. 8',
