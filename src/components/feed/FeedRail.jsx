@@ -1,15 +1,6 @@
 import { Link } from 'react-router-dom'
-import { Anchor, BarChart3, Bookmark, Compass, Flame, Hash, Swords, Trophy, Users } from 'lucide-react'
+import { Flame, Hash, Users } from 'lucide-react'
 import MemberSuggestions from '../social/MemberSuggestions.jsx'
-
-const QUICK_LINKS = [
-  { to: '/fil/signets', icon: Bookmark, label: 'Mes signets' },
-  { to: '/', icon: Trophy, label: 'Classement' },
-  { to: '/equipage', icon: Anchor, label: 'Équipages' },
-  { to: '/tier-list', icon: BarChart3, label: 'Tier List' },
-  { to: '/tournoi', icon: Swords, label: 'Tournoi' },
-  { to: '/undercover', icon: Compass, label: 'Undercover' },
-]
 
 // Petit en-tête de carte avec icône (façon "What's happening" de X).
 function Kicker({ icon: Icon, children }) {
@@ -47,23 +38,7 @@ export default function FeedRail({ trends = [], activeAuthors = [] }) {
         <MemberSuggestions layout="list" limit={4} />
       </section>
 
-      {/* 3. Explorer — accès rapide aux espaces de la communauté */}
-      <section className="feed-card">
-        <Kicker icon={Compass}>Explorer</Kicker>
-        <div className="feed-nav-list">
-          {QUICK_LINKS.map(l => {
-            const Icon = l.icon
-            return (
-              <Link key={l.to} to={l.to} className="feed-nav-link">
-                <Icon size={16} />
-                <span style={{ flex: 1 }}>{l.label}</span>
-              </Link>
-            )
-          })}
-        </div>
-      </section>
-
-      {/* 4. Membres actifs */}
+      {/* 3. Membres actifs */}
       <section className="feed-card">
         <Kicker icon={Flame}>Membres actifs</Kicker>
         {activeAuthors.length === 0 ? (
