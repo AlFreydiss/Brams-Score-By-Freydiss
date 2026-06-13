@@ -82,7 +82,7 @@ export default class DamesRenderer {
     const key = new THREE.DirectionalLight(0xfff3df, 1.15); key.position.set(7, 16, 9); key.castShadow = true
     key.shadow.mapSize.set(2048, 2048); const sc = key.shadow.camera; sc.left = -9; sc.right = 9; sc.top = 9; sc.bottom = -9; sc.near = 1; sc.far = 50; key.shadow.bias = -0.0004
     scene.add(key); this._keyLight = key
-    scene.add(Object.assign(new THREE.PointLight(0xffce8a, 0.55, 40), { position: new THREE.Vector3(-7, 7, -5) }))
+    const rimLight = new THREE.PointLight(0xffce8a, 0.55, 40); rimLight.position.set(-7, 7, -5); scene.add(rimLight)
     const fill = new THREE.DirectionalLight(0x9fb8e0, 0.25); fill.position.set(-6, 8, 6); scene.add(fill)
 
     this.piecesGroup = new THREE.Group(); this.markersGroup = new THREE.Group(); this.fxGroup = new THREE.Group()

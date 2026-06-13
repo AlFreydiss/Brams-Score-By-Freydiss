@@ -14,6 +14,7 @@ import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { OPENING_BACKGROUNDS } from '../src/data/opening-backgrounds.js'
 import { openingBgPriceCents } from '../src/lib/openingBgPricing.js'
+import { generateMoves as damesLegal, applyMove as damesApply, gameStatus as damesStatus, opp as damesOpp, P as DAMES_P, M as DAMES_M } from '../src/features/dames/engine/draughts-engine.js'
 
 const SUPABASE_URL = 'https://zeqetrmulqndxugfbojd.supabase.co'
 
@@ -1419,8 +1420,85 @@ async function bramsScore(req, res) {
   }
 }
 
+// ── Dames en ligne classé — SERVEUR AUTORITAIRE (coup rejoué avec le moteur) ──
+function damesExpected(a, b) { return 1 / (1 + Math.pow(10, (b - a) / 400)) }
+function damesNewElo(r, opR, score, games) { return Math.round(r + (games < 30 ? 32 : 24) * (score - damesExpected(r, opR))) }
+async function damesApplyRating(did, oppDid, score) {
+  const rows = await supabaseRest(`dames_ratings?discord_id=in.(${encodeURIComponent(did)},${encodeURIComponent(oppDid)})&select=*`)
+  const me = (rows || []).find(x => x.discord_id === did) || { rating: 1200, peak_rating: 1200, games: 0, wins: 0, losses: 0, draws: 0 }
+  const op = (rows || []).find(x => x.discord_id === oppDid) || { rating: 1200 }
+  const nr = damesNewElo(me.rating, op.rating, score, me.games)
+  await supabaseRest('dames_ratings?on_conflict=discord_id', {
+    method: 'POST', prefer: 'resolution=merge-duplicates,return=minimal',
+    body: [{ discord_id: did, rating: nr, peak_rating: Math.max(me.peak_rating || 1200, nr), games: me.games + 1, wins: me.wins + (score === 1 ? 1 : 0), losses: me.losses + (score === 0 ? 1 : 0), draws: me.draws + (score === 0.5 ? 1 : 0), updated_at: new Date().toISOString() }],
+  })
+  return nr - me.rating
+}
+async function damesMove(req, res) {
+  setStripeCors(res)
+  if (req.method === 'OPTIONS') return res.status(204).end()
+  if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' })
+  try {
+    const { discordId } = await getAuthedSupabaseUser(req)
+    const { matchId, move } = readJsonBody(req)
+    if (!matchId || !move) return res.status(400).json({ error: 'matchId + move requis' })
+    const rows = await supabaseRest(`dames_rmatches?id=eq.${encodeURIComponent(matchId)}&select=*`)
+    const m = rows && rows[0]
+    if (!m) return res.status(404).json({ error: 'Partie introuvable' })
+    if (m.status !== 'active') return res.status(409).json({ error: 'Partie terminée' })
+    const myColor = m.player_pirate === discordId ? DAMES_P : m.player_marine === discordId ? DAMES_M : null
+    if (!myColor) return res.status(403).json({ error: 'Pas ta partie' })
+    if (m.current_turn !== myColor) return res.status(409).json({ error: 'Pas ton tour' })
+    const legal = damesLegal(m.board_state, myColor)
+    const srv = legal.find(L => L.from[0] === move.from[0] && L.from[1] === move.from[1] && L.to[0] === move.to[0] && L.to[1] === move.to[1] && (L.caps?.length || 0) === (move.caps?.length || 0))
+    if (!srv) return res.status(422).json({ error: 'Coup illégal (rejeté par le serveur)' })
+    const { board: nb, promoted } = damesApply(m.board_state, srv)
+    const next = damesOpp(myColor)
+    const over = damesStatus(nb, next).over
+    const ply = (m.ply || 0) + 1
+    const patch = { board_state: nb, current_turn: over ? m.current_turn : next, ply, last_move_at: new Date().toISOString() }
+    let winner = null, eloChange = null
+    if (over) {
+      winner = myColor; patch.status = 'finished'; patch.winner = winner; patch.ended_at = new Date().toISOString()
+      if (m.rated) {
+        const opponent = myColor === DAMES_P ? m.player_marine : m.player_pirate
+        const dWin = await damesApplyRating(discordId, opponent, 1)
+        const dLose = await damesApplyRating(opponent, discordId, 0)
+        patch.elo_change_pirate = myColor === DAMES_P ? dWin : dLose
+        patch.elo_change_marine = myColor === DAMES_M ? dWin : dLose
+        eloChange = { pirate: patch.elo_change_pirate, marine: patch.elo_change_marine }
+      }
+    }
+    await supabaseRest('dames_rmoves', { method: 'POST', prefer: 'return=minimal', body: [{ match_id: matchId, ply, player: myColor, move: srv, board_after: nb }] })
+    await supabaseRest(`dames_rmatches?id=eq.${encodeURIComponent(matchId)}`, { method: 'PATCH', prefer: 'return=minimal', body: patch })
+    return res.status(200).json({ ok: true, board: nb, turn: patch.current_turn, status: patch.status || 'active', winner, promoted, eloChange })
+  } catch (e) { return res.status(e.status || 500).json({ error: e?.message || 'Erreur' }) }
+}
+async function damesResign(req, res) {
+  setStripeCors(res)
+  if (req.method === 'OPTIONS') return res.status(204).end()
+  if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' })
+  try {
+    const { discordId } = await getAuthedSupabaseUser(req)
+    const { matchId } = readJsonBody(req)
+    const rows = await supabaseRest(`dames_rmatches?id=eq.${encodeURIComponent(matchId)}&select=*`)
+    const m = rows && rows[0]
+    if (!m) return res.status(404).json({ error: 'Partie introuvable' })
+    if (m.status !== 'active') return res.status(200).json({ ok: true, already: true })
+    const myColor = m.player_pirate === discordId ? DAMES_P : m.player_marine === discordId ? DAMES_M : null
+    if (!myColor) return res.status(403).json({ error: 'Pas ta partie' })
+    const winner = damesOpp(myColor), opponent = myColor === DAMES_P ? m.player_marine : m.player_pirate
+    const patch = { status: 'finished', winner, ended_at: new Date().toISOString() }
+    if (m.rated) { const dW = await damesApplyRating(opponent, discordId, 1); const dL = await damesApplyRating(discordId, opponent, 0); patch.elo_change_pirate = myColor === DAMES_P ? dL : dW; patch.elo_change_marine = myColor === DAMES_M ? dL : dW }
+    await supabaseRest(`dames_rmatches?id=eq.${encodeURIComponent(matchId)}`, { method: 'PATCH', prefer: 'return=minimal', body: patch })
+    return res.status(200).json({ ok: true, winner })
+  } catch (e) { return res.status(e.status || 500).json({ error: e?.message || 'Erreur' }) }
+}
+
 export default async function handler(req, res) {
   const tool = String(req.query.tool || '')
+  if (tool === 'dames-move')   return damesMove(req, res)
+  if (tool === 'dames-resign') return damesResign(req, res)
   if (tool === 'brams-score')           return bramsScore(req, res)
   if (tool === 'seed-shop-backgrounds') return seedShopBackgrounds(req, res)
   if (tool === 'sync-bot')              return syncBot(req, res)

@@ -16,7 +16,7 @@ async function post(tool, body) {
   const token = await getAccessToken()
   if (!token) return { error: 'Connexion requise' }
   try {
-    const res = await fetch(`/api/dames?tool=${tool}`, { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) })
+    const res = await fetch(`/api/bot-tools?tool=dames-${tool}`, { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) })
     const data = await res.json().catch(() => ({}))
     if (!res.ok || data?.error) return { error: data?.error || `Erreur (${res.status})` }
     return data
