@@ -19,17 +19,12 @@ export const TRAIL_DEFAULTS = {
 }
 
 export const TRAILS = [
-  // ════ LÉGENDE — pièce maîtresse, prix fixe 9,99 € (mode orbit exclusif) ════
-  { id: 'trail-galaxie', nom: 'Galaxie de Freydiss', rarete: 'INTERDIT', emoji: '🌌',
-    nouveaute: true, legend: true, priceCents: 999,
-    // Mode galaxie : chaque étincelle SPIRALE autour du curseur en arc-en-ciel
-    // scintillant qui s'ouvre — rien à voir avec les traînées linéaires.
-    config: {
-      orbit: 0.17, orbitExpand: 0.55, hueCycle: 6, twinkle: 1, colors: ['#ffffff'],
-      speed: 0.1, drift: 0.22, gravity: -0.01,
-      sizeBase: 1.3, sizeRand: 2.2, decay: 0.016, shadow: 17, alpha: 0.96,
-      maxParts: 460, maxEmit: 11, emitDivisor: 4.2, minDist: 2.2,
-    } },
+  // ════ LÉGENDE — pièce maîtresse, prix fixe 9,99 € (effet INTERACTIF exclusif) ════
+  // Pas de particules : le curseur teinte d'or les éléments de l'interface qu'il
+  // survole, qui reviennent en douceur. Sobre, mais ça transforme le site en direct.
+  { id: 'trail-midas', nom: "Toucher d'Or", rarete: 'INTERDIT', emoji: '👑',
+    nouveaute: true, legend: true, priceCents: 999, interactive: true,
+    config: { effect: 'midas', film: 'rgba(201,168,106,0.28)', glow: 'rgba(212,180,131,0.6)', hold: 650, colors: ['#E8D5A8', '#C9A86A', '#D9BE85', '#8A6510'] } },
 
   // ── COMMUN ──
   { id: 'trail-gold', nom: 'Poussière d\'Or', rarete: 'COMMUN', emoji: '✨',

@@ -650,7 +650,7 @@ async function ensureCursorShopItem(cur) {
 // ── Traînées de curseur payantes en € (mêmes paliers que les curseurs) ────────
 const TRAIL_PRICE_CENTS = { COMMUN: 50, RARE: 79, EPIQUE: 119, MYTHIQUE: 159, INTERDIT: 200 }
 const TRAILS = [
-  { id:'trail-galaxie', nom:'Galaxie de Freydiss', rarete:'INTERDIT', priceCents:999 },
+  { id:'trail-midas',   nom:"Toucher d'Or",       rarete:'INTERDIT', priceCents:999 },
   { id:'trail-gold',    nom:"Poussière d'Or",     rarete:'COMMUN'   },
   { id:'trail-bubble',  nom:'Bulles de Saké',      rarete:'COMMUN'   },
   { id:'trail-corbeau', nom:'Plumes du Corbeau',   rarete:'COMMUN'   },

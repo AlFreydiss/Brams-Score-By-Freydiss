@@ -9,6 +9,7 @@ import { useAuth } from '../contexts/AuthContext.jsx'
 import { fetchMyInventory, equipShopItem, createOpeningBgCheckout, completeOpeningBgCheckout } from '../lib/berryShop.js'
 import { TRAILS, TRAIL_PRICE_CENTS, trailSkin } from '../data/cursor-trails.js'
 import CursorTrail from './CursorTrail.jsx'
+import InterfaceTrail from './InterfaceTrail.jsx'
 import GiftModal from './GiftModal.jsx'
 import SpotlightCard from './SpotlightCard.jsx'
 import { useCart } from '../contexts/CartContext.jsx'
@@ -50,6 +51,8 @@ export function GlobalTrailLayer() {
   }, [])
   const skin = id ? trailSkin(id) : null
   if (!skin) return null
+  // Traînée interactive (Toucher d'Or) → effet sur l'interface, pas de canvas.
+  if (skin.effect === 'midas') return <InterfaceTrail config={skin} isGlobal />
   return <CursorTrail skin={skin} isGlobal />
 }
 
@@ -194,7 +197,7 @@ export default function TrailShop() {
   return (
     <section style={{ marginTop: 64, position: 'relative' }}>
       {/* Aperçu live : la traînée survolée (ou équipée) suit la souris pendant qu'on est sur la section */}
-      {livePreview && <CursorTrail skin={livePreview} />}
+      {livePreview && (livePreview.effect === 'midas' ? <InterfaceTrail config={livePreview} /> : <CursorTrail skin={livePreview} />)}
 
       <header style={{ marginBottom: 22 }}>
         <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.2em', textTransform: 'uppercase', color: '#BFA46A', marginBottom: 6 }}>Brams Shop · Sillage</div>
