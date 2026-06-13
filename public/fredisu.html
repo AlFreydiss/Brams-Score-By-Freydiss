@@ -293,6 +293,9 @@ body.playing{cursor:none}
         <button class="diffcard chip sel" data-d="1"><span class="dc-top"><span class="dc-ico"></span>Normal<span class="dc-pill">★ –</span></span><span class="dc-sub">mappée par Freyd'isu</span><span class="dc-stars"></span></button>
         <button class="diffcard chip" data-d="2"><span class="dc-top"><span class="dc-ico"></span>Difficile<span class="dc-pill">★ –</span></span><span class="dc-sub">mappée par Freyd'isu</span><span class="dc-stars"></span></button>
         <button class="diffcard chip" data-d="3"><span class="dc-top"><span class="dc-ico"></span>Expert<span class="dc-pill">★ –</span></span><span class="dc-sub">mappée par Freyd'isu</span><span class="dc-stars"></span></button>
+        <button class="diffcard chip" data-d="4"><span class="dc-top"><span class="dc-ico"></span>Insane<span class="dc-pill">★ –</span></span><span class="dc-sub">mappée par Freyd'isu</span><span class="dc-stars"></span></button>
+        <button class="diffcard chip" data-d="5"><span class="dc-top"><span class="dc-ico"></span>Extrême<span class="dc-pill">★ –</span></span><span class="dc-sub">mappée par Freyd'isu</span><span class="dc-stars"></span></button>
+        <button class="diffcard chip" data-d="6"><span class="dc-top"><span class="dc-ico"></span>Cauchemar<span class="dc-pill">★ –</span></span><span class="dc-sub">mappée par Freyd'isu</span><span class="dc-stars"></span></button>
       </div>
       <p class="muted small" style="margin-top:6px">Mods</p>
       <div id="modRow">
@@ -587,7 +590,11 @@ const DIFFS=[
   {n:'Facile',   gap:480,spc:.72,sld:.42,ar:5.5,cs:3.4,od:5},
   {n:'Normal',   gap:320,spc:.95,sld:.44,ar:7.2,cs:3.9,od:6.5},
   {n:'Difficile',gap:215,spc:1.15,sld:.4,ar:8.6,cs:4.2,od:7.5},
-  {n:'Expert',   gap:150,spc:1.3,sld:.32,ar:9.4,cs:4.6,od:8.5}
+  {n:'Expert',   gap:150,spc:1.3,sld:.32,ar:9.4,cs:4.6,od:8.5},
+  // ── niveaux ultra (streams serrés, jumps larges, petits cercles, lecture rapide) ──
+  {n:'Insane',   gap:108,spc:1.5,sld:.30,ar:9.8,cs:5.1,od:9},
+  {n:'Extrême',  gap:78, spc:1.7,sld:.28,ar:10.3,cs:5.5,od:9.6},
+  {n:'Cauchemar',gap:55, spc:1.95,sld:.26,ar:10.8,cs:5.9,od:10}
 ];
 let PRE=750,FADE=400,W3=37.5,W1=83.5,W50=129.5,RPS=1.1,R=40,CS_EFF=4,RATE=1;
 function computeParams(){
@@ -2567,7 +2574,7 @@ function diffColor(st){
   return s[s.length-1][1];
 }
 function starsOf(d){
-  const base=[1.6,2.6,3.9,5.1][d];
+  const base=[1.6,2.6,3.9,5.1,6.4,7.7,9.1][d]??5.1;
   return Math.max(.5,base+(mods.hr?.55:0)+(mods.dt?.75:0));
 }
 const STAT_COLORS=['#4FC0FF','#88E55C','#FFD12B','#FF8068','#FF5E5E','#a06bff','#66CCFF'];
