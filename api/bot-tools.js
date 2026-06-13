@@ -650,6 +650,7 @@ async function ensureCursorShopItem(cur) {
 // ── Traînées de curseur payantes en € (mêmes paliers que les curseurs) ────────
 const TRAIL_PRICE_CENTS = { COMMUN: 50, RARE: 79, EPIQUE: 119, MYTHIQUE: 159, INTERDIT: 200 }
 const TRAILS = [
+  { id:'trail-galaxie', nom:'Galaxie de Freydiss', rarete:'INTERDIT', priceCents:999 },
   { id:'trail-gold',    nom:"Poussière d'Or",     rarete:'COMMUN'   },
   { id:'trail-bubble',  nom:'Bulles de Saké',      rarete:'COMMUN'   },
   { id:'trail-corbeau', nom:'Plumes du Corbeau',   rarete:'COMMUN'   },
@@ -696,7 +697,7 @@ const TRAILS = [
   { id:'trail-cosmos',        nom:'Poussière Cosmique', rarete:'INTERDIT' },
 ]
 function findTrail(itemId) { const id = String(itemId || '').trim(); return TRAILS.find(t => t.id === id) || null }
-function trailPriceCents(t) { return TRAIL_PRICE_CENTS[t.rarete] || 50 }
+function trailPriceCents(t) { return t.priceCents || TRAIL_PRICE_CENTS[t.rarete] || 50 }
 async function ensureTrailShopItem(t) {
   await supabaseRest('shop_items?on_conflict=id', {
     method: 'POST', prefer: 'resolution=merge-duplicates,return=minimal',

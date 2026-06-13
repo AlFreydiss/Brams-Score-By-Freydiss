@@ -30,7 +30,7 @@ const RARITY = {
   INTERDIT: { label: 'Interdit', color: '#c0392b', glow: 'rgba(192,57,43,0.7)',    order: 5 },
 }
 const euroFmt = new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-const priceCents = (t) => TRAIL_PRICE_CENTS[t.rarete] || 50
+const priceCents = (t) => t.priceCents || TRAIL_PRICE_CENTS[t.rarete] || 50
 const formatEuro = (c) => euroFmt.format((c || 0) / 100) + ' €'
 
 function persistTrail(id) {
@@ -86,7 +86,16 @@ function TrailCard({ trail, owned, equipped, busy, onBuy, onEquip, onGift, vip }
       boxShadow: equipped ? `0 0 0 1px ${r.color}, 0 14px 40px ${r.glow}` : hover ? `0 16px 38px ${r.glow}` : '0 6px 18px rgba(0,0,0,0.4)',
       transform: hover ? 'translateY(-5px)' : 'translateY(0)', transition: 'transform .22s cubic-bezier(.22,1,.36,1), box-shadow .22s, border-color .2s',
     }}>
-      {trail.nouveaute && (
+      {trail.legend ? (
+        <span style={{
+          position: 'absolute', top: 10, right: 10, zIndex: 3,
+          padding: '4px 11px', borderRadius: 999, fontSize: 10, fontWeight: 900, letterSpacing: '.12em', textTransform: 'uppercase',
+          fontFamily: "'Cinzel', serif", color: '#1a1205',
+          background: 'linear-gradient(110deg,#fff3c0,#ffd24a 35%,#ff9ec4 70%,#9ec5ff)',
+          border: '1px solid #fff3c0',
+          boxShadow: '0 4px 18px rgba(255,210,74,.55), 0 0 0 1px rgba(255,255,255,.25) inset',
+        }}>🌌 Légende</span>
+      ) : trail.nouveaute && (
         <span style={{
           position: 'absolute', top: 10, right: 10, zIndex: 3,
           padding: '3px 9px', borderRadius: 999, fontSize: 9.5, fontWeight: 900, letterSpacing: '.1em', textTransform: 'uppercase',

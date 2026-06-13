@@ -69,10 +69,18 @@ export default function CursorTrail({ skin, isGlobal = false }) {
       const tw = C?.twinkle || 0
       for (let i = parts.length - 1; i >= 0; i--) {
         const p = parts[i]
-        p.x += p.vx
-        p.y += p.vy
-        p.vy += (p.gravity ?? 0.02) * dpr
-        p.vx *= 0.985            // léger frottement → mouvement plus organique
+        if (p.orbit) {
+          // Spirale : le centre dérive (suit le curseur), l'angle tourne, le rayon s'ouvre.
+          p.cx += p.vx; p.cy += p.vy; p.vy += (p.gravity ?? 0) * dpr
+          p.ang += p.spin; p.rad += p.expand
+          p.x = p.cx + Math.cos(p.ang) * p.rad
+          p.y = p.cy + Math.sin(p.ang) * p.rad
+        } else {
+          p.x += p.vx
+          p.y += p.vy
+          p.vy += (p.gravity ?? 0.02) * dpr
+          p.vx *= 0.985            // léger frottement → mouvement plus organique
+        }
         p.life -= p.decay
 
         if (p.life <= 0) { parts.splice(i, 1); continue }
@@ -114,8 +122,9 @@ export default function CursorTrail({ skin, isGlobal = false }) {
           const count = Math.min(C.maxEmit, Math.max(1, Math.round(dist / (C.emitDivisor * dpr))))
           for (let i = 0; i < count; i++) {
             const t = i / count
-            parts.push({
-              x: emitX + dx * t, y: emitY + dy * t,
+            const px = emitX + dx * t, py = emitY + dy * t
+            const part = {
+              x: px, y: py,
               vx: (Math.random() - 0.5) * C.speed * dpr,
               vy: ((Math.random() - 0.5) * C.drift + 0.1) * dpr,
               life: 1,
@@ -124,7 +133,18 @@ export default function CursorTrail({ skin, isGlobal = false }) {
               color: C.hueCycle ? `hsl(${Math.round(hue / 4) * 4}, 95%, 62%)` : C.colors[(Math.random() * C.colors.length) | 0],
               gravity: C.gravity, decay: C.decay, shadow: C.shadow, alpha: C.alpha,
               tw: Math.random() * 6.283,
-            })
+            }
+            // Mode « orbit » (traînée GALAXIE) : la particule spirale autour de son
+            // point de naissance, qui dérive avec le curseur → vortex de fou.
+            if (C.orbit) {
+              part.orbit = true
+              part.cx = px; part.cy = py
+              part.ang = Math.random() * 6.283
+              part.rad = (2 + Math.random() * 6) * dpr
+              part.spin = C.orbit * (Math.random() < 0.5 ? -1 : 1) * (0.6 + Math.random() * 0.8)
+              part.expand = (C.orbitExpand || 0.4) * dpr
+            }
+            parts.push(part)
           }
         }
       }
