@@ -51,8 +51,9 @@ export function GlobalTrailLayer() {
   }, [])
   const skin = id ? trailSkin(id) : null
   if (!skin) return null
-  // Traînée interactive (Toucher d'Or) → effet sur l'interface, pas de canvas.
-  if (skin.effect === 'midas') return <InterfaceTrail config={skin} isGlobal />
+  // Toucher d'Or = particules dorées (CursorTrail, via les colors du skin) + recolor
+  // de l'interface au survol (InterfaceTrail). Les deux montés ensemble.
+  if (skin.effect === 'midas') return <><CursorTrail skin={skin} isGlobal /><InterfaceTrail config={skin} isGlobal /></>
   return <CursorTrail skin={skin} isGlobal />
 }
 
@@ -197,7 +198,9 @@ export default function TrailShop() {
   return (
     <section style={{ marginTop: 64, position: 'relative' }}>
       {/* Aperçu live : la traînée survolée (ou équipée) suit la souris pendant qu'on est sur la section */}
-      {livePreview && (livePreview.effect === 'midas' ? <InterfaceTrail config={livePreview} /> : <CursorTrail skin={livePreview} />)}
+      {livePreview && (livePreview.effect === 'midas'
+        ? <><CursorTrail skin={livePreview} /><InterfaceTrail config={livePreview} /></>
+        : <CursorTrail skin={livePreview} />)}
 
       <header style={{ marginBottom: 22 }}>
         <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.2em', textTransform: 'uppercase', color: '#BFA46A', marginBottom: 6 }}>Brams Shop · Sillage</div>

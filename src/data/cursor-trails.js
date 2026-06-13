@@ -24,7 +24,13 @@ export const TRAILS = [
   // survole, qui reviennent en douceur. Sobre, mais ça transforme le site en direct.
   { id: 'trail-midas', nom: "Toucher d'Or", rarete: 'INTERDIT', emoji: '👑',
     nouveaute: true, legend: true, priceCents: 999, interactive: true,
-    config: { effect: 'midas', film: 'rgba(201,168,106,0.28)', glow: 'rgba(212,180,131,0.6)', hold: 650, colors: ['#E8D5A8', '#C9A86A', '#D9BE85', '#8A6510'] } },
+    // effect/filter/hold → recolor de l'interface (InterfaceTrail) ;
+    // colors/shadow/… → traînée de particules d'or (CursorTrail).
+    config: {
+      effect: 'midas', filter: 'sepia(1) saturate(2.3) hue-rotate(-12deg) brightness(1.05)', hold: 520,
+      colors: ['#fff3cf', '#f6d98a', '#d4a017', '#e8c878'],
+      speed: 0.36, drift: 0.25, gravity: 0.03, sizeBase: 1.5, sizeRand: 2.1, decay: 0.05, shadow: 13, alpha: 0.92,
+    } },
 
   // ── COMMUN ──
   { id: 'trail-gold', nom: 'Poussière d\'Or', rarete: 'COMMUN', emoji: '✨',

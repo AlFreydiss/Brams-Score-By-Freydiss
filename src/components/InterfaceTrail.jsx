@@ -1,36 +1,32 @@
 import { useEffect } from 'react'
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Traînée INTERACTIVE « Toucher d'Or » : pas de particules. Le curseur laisse un
-// SILLAGE sur l'INTERFACE — chaque élément qu'il survole se teinte d'or (film
-// interne + liseré lumineux) puis revient en douceur. Sobre, premium, réversible.
+// « Toucher d'Or » — effet sur l'INTERFACE. Le curseur transforme en OR les
+// éléments qu'il survole (recolore le contenu via un filter doré, pas un cadre),
+// puis les laisse revenir en douceur. Couplé à une traînée de particules d'or
+// (rendue à part par CursorTrail). Sobre, premium — et ça change vraiment le site.
 //
-// Sûr par construction :
-//  • n'applique qu'un box-shadow inline (zéro impact layout, n'altère pas les vraies couleurs),
-//  • mémorise puis restaure le box-shadow/transition d'origine de chaque élément,
-//  • ignore <html>/<body>, le canvas, et les conteneurs pleine page,
-//  • nettoie tout au démontage.
+// Sûr : n'applique qu'un `filter` inline (réversible), mémorise/restaure l'état
+// d'origine, ignore <html>/<body>/canvas/svg + les conteneurs pleine page, et
+// nettoie tout au démontage.
 // ─────────────────────────────────────────────────────────────────────────────
 export default function InterfaceTrail({ config, isGlobal = false }) {
   useEffect(() => {
     const fine = window.matchMedia?.('(pointer: fine)')?.matches
     if (!fine) return undefined
 
-    const film = config?.film || 'rgba(201,168,106,0.26)'
-    const glow = config?.glow || 'rgba(212,180,131,0.55)'
-    const hold = config?.hold || 650
-    const lit = `inset 0 0 70px ${film}, 0 0 0 1px ${glow}, 0 4px 26px ${glow}`
+    // Recolore vraiment l'élément en or (sépia → teinte chaude, saturate → éclat).
+    const gold = config?.filter || 'sepia(1) saturate(2.2) hue-rotate(-12deg) brightness(1.04)'
+    const hold = config?.hold || 520
 
-    // el -> { box, trans, timer } (état d'origine + minuteur de restauration)
-    const touched = new Map()
-    let last = null
+    const touched = new Map() // el -> { filter, trans, timer }
 
     const restore = (el) => {
       const s = touched.get(el)
       if (!s) return
       touched.delete(el)
-      el.style.boxShadow = s.box        // transition encore active → fond en douceur
-      window.setTimeout(() => { if (!touched.has(el)) el.style.transition = s.trans }, 320)
+      el.style.filter = s.filter // transition encore active → fond en douceur
+      window.setTimeout(() => { if (!touched.has(el)) el.style.transition = s.trans }, 340)
     }
 
     const eligible = (el) => {
@@ -38,23 +34,23 @@ export default function InterfaceTrail({ config, isGlobal = false }) {
       const tag = el.tagName
       if (tag === 'HTML' || tag === 'CANVAS' || tag === 'SVG' || tag === 'PATH') return false
       const r = el.getBoundingClientRect()
-      if (r.width < 8 || r.height < 8) return false
-      // Conteneur pleine page → on saute (on veut éclairer des éléments, pas le fond)
-      if (r.width > window.innerWidth * 0.9 && r.height > window.innerHeight * 0.55) return false
+      if (r.width < 6 || r.height < 6) return false
+      // Conteneur quasi pleine page → on saute (on dore des éléments, pas tout l'écran d'un coup)
+      if (r.width > window.innerWidth * 0.88 && r.height > window.innerHeight * 0.5) return false
       return true
     }
 
+    let last = null
     const onMove = (e) => {
-      // En boutique : la traînée GLOBALE se masque pendant qu'on prévisualise une autre.
       if (isGlobal && document.body.dataset.trailPreview === '1') return
       const el = document.elementFromPoint(e.clientX, e.clientY)
       if (!el || el === last) return
       last = el
       if (!eligible(el)) return
-      if (!touched.has(el)) touched.set(el, { box: el.style.boxShadow, trans: el.style.transition, timer: 0 })
+      if (!touched.has(el)) touched.set(el, { filter: el.style.filter, trans: el.style.transition, timer: 0 })
       const s = touched.get(el)
-      el.style.transition = 'box-shadow .3s ease'
-      el.style.boxShadow = lit
+      el.style.transition = 'filter .3s ease'
+      el.style.filter = gold
       window.clearTimeout(s.timer)
       s.timer = window.setTimeout(() => restore(el), hold)
     }
@@ -65,7 +61,7 @@ export default function InterfaceTrail({ config, isGlobal = false }) {
       for (const el of [...touched.keys()]) {
         const s = touched.get(el)
         window.clearTimeout(s.timer)
-        el.style.boxShadow = s.box
+        el.style.filter = s.filter
         el.style.transition = s.trans
         touched.delete(el)
       }
