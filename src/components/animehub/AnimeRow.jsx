@@ -46,7 +46,8 @@ export default function AnimeRow({ title, count = null, onSeeAll, children }) {
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 14 }}>
         <h2 style={{ ...sectionTitleStyle, margin: 0 }}>{title}</h2>
         {count != null && <span style={{ fontSize: 12.5, color: C.faint }}>{count}</span>}
-        <span style={{ flex: 1 }} />
+        {/* Beau trait de séparation doré, prolonge le titre jusqu'au bord */}
+        <span aria-hidden style={{ flex: 1, alignSelf: 'center', height: 1, marginLeft: 6, borderRadius: 1, background: `linear-gradient(90deg, ${C.brass}59, ${C.brass}14 45%, transparent)` }} />
         {onSeeAll && (
           <button
             onClick={onSeeAll}

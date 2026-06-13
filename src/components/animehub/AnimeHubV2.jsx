@@ -476,9 +476,11 @@ export default function AnimeHubV2(props) {
 
             {/* Tous les animés — grille paginée par 21 (padding:0 vs section global) */}
             <section style={{ padding: 0 }}>
-              <h2 style={{ fontFamily: FONT_DISPLAY, fontWeight: 600, fontSize: 18, margin: '6px 0 16px' }}>
-                Tous les animés <span style={{ fontSize: 12.5, color: C.faint, fontWeight: 400 }}>{filtered.length}</span>
-              </h2>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, margin: '6px 0 16px' }}>
+                <h2 style={{ fontFamily: FONT_DISPLAY, fontWeight: 600, fontSize: 18, margin: 0 }}>Tous les animés</h2>
+                <span style={{ fontSize: 12.5, color: C.faint, fontWeight: 400 }}>{filtered.length}</span>
+                <span aria-hidden style={{ flex: 1, alignSelf: 'center', height: 1, marginLeft: 6, borderRadius: 1, background: `linear-gradient(90deg, ${C.brass}59, ${C.brass}14 45%, transparent)` }} />
+              </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 18 }}>
                 {filtered.slice(0, shown).map(a => card(a, undefined))}
               </div>
