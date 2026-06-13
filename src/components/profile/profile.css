@@ -654,7 +654,9 @@
 .pfx-ig-name {
   margin: 0; font-family: var(--display, 'Syne', system-ui, sans-serif);
   font-size: clamp(22px, 3vw, 30px); font-weight: 800; letter-spacing: -.02em; color: #fff;
-  line-height: 1.05; word-break: break-word;
+  line-height: 1.05; min-width: 0;
+  /* ne plus couper un pseudo en plein milieu ("BramsScor / e") : break standard, mot cassé en dernier recours */
+  word-break: normal; overflow-wrap: break-word;
 }
 .pfx-ig-verified {
   flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%;

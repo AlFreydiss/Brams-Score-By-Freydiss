@@ -62,6 +62,10 @@ export default function ProfileHero({ data, copied, onShare, onEdit, onAvatar, o
               ) : (profileIsCreator || profileIsStaff) ? (
                 <span className="pfx-ig-verified" title="Compte vérifié">✓</span>
               ) : null}
+              {/* Tag "IA" à côté de la certif du bot BramsScore */}
+              {String(member?.uid) === '1000000000000000001' && (
+                <span style={{ fontSize: 11, fontWeight: 800, padding: '3px 9px', borderRadius: 999, color: '#E60012', background: 'rgba(230,0,18,.12)', border: '1px solid rgba(230,0,18,.4)', letterSpacing: '.06em' }}>IA</span>
+              )}
             </div>
             <ProfileActions data={data} onShare={onShare} copied={copied} onEdit={onEdit} />
           </div>
