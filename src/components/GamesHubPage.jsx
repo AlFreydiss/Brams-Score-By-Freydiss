@@ -60,7 +60,7 @@ function GameCard({ g, i }) {
 
 export default function GamesHubPage() {
   return (
-    <div style={{ minHeight: '100vh', background: BG, color: '#ece8df', paddingTop: 92 }}>
+    <div style={{ minHeight: '100vh', background: BG, color: '#ece8df', paddingTop: 84 }}>
       <style>{CSS}</style>
       {/* Décor doré discret */}
       <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', background: `
@@ -70,7 +70,7 @@ export default function GamesHubPage() {
 
       <div style={{ position: 'relative', zIndex: 1, maxWidth: 1180, margin: '0 auto', padding: '0 clamp(16px,3vw,28px) 90px' }}>
         {/* Hero */}
-        <header style={{ textAlign: 'center', margin: '12px 0 36px' }}>
+        <header style={{ textAlign: 'center', margin: '0 0 28px' }}>
           <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.24em', textTransform: 'uppercase', color: GOLD, marginBottom: 12 }}>🏴‍☠️ Brams Arcade</div>
           <h1 style={{ margin: 0, fontFamily: "'Pirata One', serif", fontSize: 'clamp(38px,6vw,68px)', fontWeight: 400, lineHeight: 1.02, color: '#f4ecd8', textShadow: '0 2px 40px rgba(212,160,23,0.2)' }}>
             Les Jeux de la Communauté
