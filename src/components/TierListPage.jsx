@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { toPng } from 'html-to-image'
 import confetti from 'canvas-confetti'
 import { getAccessToken } from '../lib/supabaseRest.js'
+import { ink, fonts, MAT_ACCENTS, matAccent, plaque, engravedLabel } from '../theme/tierStudio.js'
 import {
   DndContext, DragOverlay, closestCenter, pointerWithin, rectIntersection,
   PointerSensor, TouchSensor, useSensor, useSensors,
@@ -1139,31 +1140,27 @@ const CSS = `
 // coffre "pars de zéro" et hall of fame communauté (vraies données Supabase).
 // L'éditeur, l'autosave et la publication restent inchangés plus bas.
 // ════════════════════════════════════════════════════════════════════════════
+// Tokens landing re-mappés sur la palette « atelier de gravure » (warm-ink +
+// champagne). Plus aucun bloc saturé : tout passe par l'encre chaude + l'or mat.
 const TLX = {
-  gold: '#f5c451', goldHi: '#ffdc84', goldDeep: '#caa23a',
-  crimson: '#ff5a62', teal: '#37d9c8',
-  text: '#f3f1ea', dim: '#9aa1b3', mute: '#5c6373',
-  line: 'rgba(255,255,255,0.08)', lineStrong: 'rgba(255,255,255,0.16)',
+  gold: ink.gold500, goldHi: ink.gold400, goldDeep: '#A8893F',
+  crimson: '#BE6A5A', teal: '#5E83A6',   // accents mats (brique / acier)
+  text: ink.textHi, dim: ink.text, mute: ink.textMute,
+  line: ink.line, lineStrong: 'rgba(212,180,131,0.16)',
 }
 const TLX_HERO_ROWS = [
-  { label: 'S', color: '#ff5d5d', cards: 2, top: true },
-  { label: 'A', color: '#ff9f43', cards: 3 },
-  { label: 'B', color: '#ffd93d', cards: 2, slot: true },
-  { label: 'C', color: '#5fd97a', cards: 3 },
-  { label: 'D', color: '#4db8ff', cards: 2 },
+  { label: 'S', color: MAT_ACCENTS[0], cards: 2, top: true },
+  { label: 'A', color: MAT_ACCENTS[2], cards: 3 },
+  { label: 'B', color: MAT_ACCENTS[3], cards: 2, slot: true },
+  { label: 'C', color: MAT_ACCENTS[5], cards: 3 },
+  { label: 'D', color: MAT_ACCENTS[7], cards: 2 },
 ]
-const TLX_GRADS = [
-  'linear-gradient(150deg,#ffd874,#caa23a)',
-  'linear-gradient(150deg,#ff8a8e,#c83a52)',
-  'linear-gradient(150deg,#5ad1ff,#2b6fb8)',
-  'linear-gradient(150deg,#9b8cff,#5a3ec8)',
-  'linear-gradient(150deg,#5fd97a,#2b9a52)',
-  'linear-gradient(150deg,#37d9c8,#1c8a7e)',
-]
-const TLX_ACCENTS = ['#f5c451', '#5fd97a', '#9b8cff', '#4db8ff', '#ff7a7e', '#37d9c8']
+// Cartes d'aperçu : laiton mat teinté de l'accent (jamais de dégradé criard).
+const TLX_GRADS = MAT_ACCENTS.map(c => `linear-gradient(160deg, ${c}59, ${c}24)`)
+const TLX_ACCENTS = MAT_ACCENTS
 const TLX_TYPE_META = {
-  anime:  { accent: '#9b8cff', glow: 'rgba(155,140,255,0.30)', desc: 'Des shōnen cultes aux pépites de la saison — classe les séries de la Brams.', preview: ['#9b8cff', '#4db8ff', '#37d9c8'] },
-  persos: { accent: '#ff7a7e', glow: 'rgba(255,122,126,0.30)', desc: 'Les persos iconiques à ranger du trône au fond de la cale.', preview: ['#ff5d5d', '#ff9f43', '#ffd93d'] },
+  anime:  { accent: MAT_ACCENTS[3], glow: 'rgba(94,131,166,0.22)', desc: 'Des shōnen cultes aux pépites de la saison — classe les séries de la Brams.', preview: [MAT_ACCENTS[0], MAT_ACCENTS[3], MAT_ACCENTS[5]] },
+  persos: { accent: MAT_ACCENTS[1], glow: 'rgba(190,106,90,0.22)', desc: 'Les persos iconiques à ranger du trône au fond de la cale.', preview: [MAT_ACCENTS[1], MAT_ACCENTS[2], MAT_ACCENTS[0]] },
 }
 
 function tlxUseCountUp(target, duration = 1300) {
@@ -1228,7 +1225,7 @@ function TlxBerryRain() {
         if (b.y > h + 12) { b.y = -12; b.x = Math.random() * w }
         ctx.beginPath()
         ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2)
-        const col = b.gold ? `rgba(245,196,81,${b.o})` : `rgba(255,120,124,${b.o})`
+        const col = b.gold ? `rgba(217,190,133,${b.o})` : `rgba(190,106,90,${b.o})`
         ctx.fillStyle = col
         ctx.shadowBlur = 7 * dpr
         ctx.shadowColor = col
@@ -1248,10 +1245,10 @@ function TlxAmbient() {
   return (
     <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 0, overflow: 'hidden', pointerEvents: 'none' }}>
       <div style={{ position: 'absolute', inset: 0, background:
-        `radial-gradient(1200px 700px at 78% -8%, rgba(245,196,81,0.10), transparent 60%),
-         radial-gradient(900px 600px at 10% 12%, rgba(255,90,98,0.07), transparent 60%),
-         radial-gradient(1000px 800px at 50% 110%, rgba(55,217,200,0.06), transparent 55%),
-         linear-gradient(180deg, #0a0c15, #06070d)` }} />
+        `radial-gradient(1200px 700px at 78% -8%, rgba(201,168,106,0.12), transparent 60%),
+         radial-gradient(900px 600px at 10% 12%, rgba(190,106,90,0.06), transparent 60%),
+         radial-gradient(1000px 800px at 50% 110%, rgba(168,137,63,0.06), transparent 55%),
+         linear-gradient(180deg, ${ink.ink800}, ${ink.ink900})` }} />
       <div style={{ position: 'absolute', inset: '-40px', opacity: 0.05,
         backgroundImage: 'linear-gradient(rgba(255,255,255,0.7) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.7) 1px, transparent 1px)',
         backgroundSize: '78px 78px', animation: 'tlxGridPan 24s linear infinite',
@@ -1260,7 +1257,7 @@ function TlxAmbient() {
       <div style={{ position: 'absolute', top: -120, right: -80, width: 520, height: 520, borderRadius: '50%',
         background: 'radial-gradient(circle, rgba(245,196,81,0.22), transparent 65%)', filter: 'blur(20px)', animation: 'tlxOrbA 16s ease-in-out infinite' }} />
       <div style={{ position: 'absolute', bottom: -140, left: -100, width: 460, height: 460, borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(155,140,255,0.18), transparent 65%)', filter: 'blur(20px)', animation: 'tlxOrbB 19s ease-in-out infinite' }} />
+        background: 'radial-gradient(circle, rgba(190,106,90,0.14), transparent 65%)', filter: 'blur(20px)', animation: 'tlxOrbB 19s ease-in-out infinite' }} />
       <svg viewBox="0 0 100 100" style={{ position: 'absolute', top: 70, right: 60, width: 220, height: 220, opacity: 0.06, animation: 'tlxSpinSlow 80s linear infinite' }}>
         <circle cx="50" cy="50" r="46" fill="none" stroke={TLX.gold} strokeWidth="0.6" />
         <circle cx="50" cy="50" r="34" fill="none" stroke={TLX.gold} strokeWidth="0.4" strokeDasharray="2 3" />
@@ -1281,7 +1278,7 @@ function TlxLadder() {
       <div style={{ position: 'absolute', inset: -30, background: 'radial-gradient(60% 60% at 60% 35%, rgba(245,196,81,0.16), transparent 70%)', filter: 'blur(30px)' }} />
       <div style={{
         position: 'relative', transform: 'rotateY(-9deg) rotateX(5deg)', transformStyle: 'preserve-3d',
-        background: 'linear-gradient(180deg, rgba(24,27,39,0.92), rgba(14,16,24,0.94))',
+        background: `linear-gradient(180deg, ${ink.ink700}, ${ink.ink900})`,
         border: `1px solid ${TLX.lineStrong}`, borderRadius: 22, padding: 18,
         boxShadow: '0 40px 90px -30px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.06)', overflow: 'hidden',
       }}>
@@ -1300,12 +1297,13 @@ function TlxLadder() {
             <div key={row.label} style={{ display: 'flex', alignItems: 'center', gap: 9,
               background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 12, padding: 7 }}>
               <div style={{
-                width: 42, height: 50, borderRadius: 9, flexShrink: 0, display: 'grid', placeItems: 'center',
-                fontWeight: 800, fontSize: 22, color: '#1a1205',
-                background: `linear-gradient(160deg, ${row.color}, ${row.color}cc)`,
-                boxShadow: row.top ? undefined : 'inset 0 1px 0 rgba(255,255,255,0.4)',
-                animation: row.top ? 'tlxPulseS 2.4s ease-in-out infinite' : undefined,
-              }}>{row.label}</div>
+                width: 46, height: 50, borderRadius: 8, flexShrink: 0, display: 'grid', placeItems: 'center',
+                position: 'relative', overflow: 'hidden', fontSize: 21,
+                ...plaque(), ...engravedLabel(row.color),
+              }}>
+                <span aria-hidden style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, background: row.color, opacity: 0.9 }} />
+                {row.label}
+              </div>
               <div style={{ display: 'flex', gap: 6, flex: 1, minWidth: 0 }}>
                 {Array.from({ length: row.cards }).map((_, ci) => {
                   const d = ri * 0.12 + ci * 0.08 + 0.2
@@ -1377,8 +1375,8 @@ function TlxCategoryCard({ type, index, onOpen }) {
         transform: `perspective(1100px) rotateX(${tilt.rx}deg) rotateY(${tilt.ry}deg)`,
         transition: 'transform .2s cubic-bezier(.22,1,.36,1), box-shadow .3s, border-color .3s',
         transformStyle: 'preserve-3d',
-        background: 'linear-gradient(180deg, rgba(22,25,36,0.85), rgba(13,15,23,0.9))',
-        border: `1px solid ${spot.on ? 'rgba(245,196,81,0.4)' : TLX.line}`,
+        background: `linear-gradient(180deg, ${ink.ink700}, ${ink.ink800})`,
+        border: `1px solid ${spot.on ? 'rgba(201,168,106,0.4)' : TLX.line}`,
         borderRadius: 22, padding: 24, position: 'relative', overflow: 'hidden',
         boxShadow: spot.on ? `0 30px 70px -28px rgba(0,0,0,0.75), 0 0 0 1px ${meta.glow}` : '0 18px 50px -30px rgba(0,0,0,0.6)',
       }}>
@@ -1394,8 +1392,8 @@ function TlxCategoryCard({ type, index, onOpen }) {
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
-              <h3 style={{ margin: 0, fontWeight: 800, fontSize: 24, color: TLX.text, letterSpacing: '-0.01em' }}>{type.label}</h3>
-              <span style={{ fontFamily: 'monospace', fontSize: 12, color: meta.accent,
+              <h3 style={{ margin: 0, fontFamily: fonts.display, fontWeight: 500, fontSize: '1.4rem', color: TLX.text, letterSpacing: '-0.005em' }}>{type.label}</h3>
+              <span style={{ fontFamily: fonts.ui, fontSize: 12, color: meta.accent,
                 padding: '3px 8px', borderRadius: 8, background: `${meta.accent}1a`, border: `1px solid ${meta.accent}33` }}>
                 {count} entrées
               </span>
@@ -1426,7 +1424,7 @@ function TlxCommunityCard({ list, index, onOpen }) {
       <button className="tlx-comm" onClick={onOpen} style={{
         width: '100%', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit',
         display: 'flex', alignItems: 'center', gap: 14,
-        background: 'linear-gradient(180deg, rgba(20,23,33,0.7), rgba(12,14,21,0.78))',
+        background: ink.ink700,
         border: `1px solid ${TLX.line}`, borderRadius: 16, padding: '14px 16px', position: 'relative', overflow: 'hidden',
       }}>
         <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, background: `linear-gradient(180deg, ${accent}, ${accent}44)` }} />
@@ -1455,8 +1453,8 @@ function TlxStat({ value, label }) {
   const v = tlxUseCountUp(value, 1500)
   return (
     <div style={{ display: 'flex', flexDirection: 'column' }}>
-      <span style={{ fontWeight: 800, fontSize: 26, color: TLX.text, lineHeight: 1 }}>{v}</span>
-      <span style={{ fontFamily: 'monospace', fontSize: 11, letterSpacing: 0.5, color: TLX.mute, marginTop: 6 }}>{label}</span>
+      <span style={{ fontFamily: fonts.display, fontWeight: 500, fontSize: '2rem', color: ink.gold300, lineHeight: 1 }}>{v}</span>
+      <span style={{ fontFamily: fonts.ui, fontSize: 11, letterSpacing: '.08em', textTransform: 'uppercase', color: TLX.mute, marginTop: 7 }}>{label}</span>
     </div>
   )
 }
@@ -1489,7 +1487,7 @@ const TLX_CSS = `
   @media (prefers-reduced-motion: reduce){ .tlx-hub *, .tlx-hub *::before, .tlx-hub *::after { animation:none !important; } }
 `
 
-function TlxHub({ types, communityLists, loadedListsCount, onSelectType, onStartBlank, onLoadExisting, onSeeCommunity, onOpenList }) {
+function TlxHub({ types, communityLists, loadedListsCount, resumable, onResume, onSelectType, onStartBlank, onLoadExisting, onSeeCommunity, onOpenList }) {
   const ghostBtn = {
     display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer',
     fontFamily: 'inherit', fontWeight: 600, fontSize: 14, color: TLX.text,
@@ -1501,10 +1499,30 @@ function TlxHub({ types, communityLists, loadedListsCount, onSelectType, onStart
   const animeCount = types.find(t => t.id === 'anime')?.items.length || 0
   const persoCount = types.find(t => t.id === 'persos')?.items.length || 0
   return (
-    <div className="tlx-hub" style={{ position: 'relative' }}>
+    <div className="tlx-hub" style={{ position: 'relative', fontFamily: fonts.ui }}>
       <style>{TLX_CSS}</style>
       <TlxAmbient />
       <main style={{ position: 'relative', zIndex: 2, maxWidth: 1240, margin: '0 auto', padding: '0 32px 140px' }}>
+        {/* Brouillon en cours → reprise (la landing reste l'écran par défaut) */}
+        {resumable && (
+          <TlxReveal>
+            <div style={{ marginTop: 26, display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap',
+              ...plaque({ borderRadius: 14, padding: '13px 18px' }) }}>
+              <span style={{ display: 'grid', placeItems: 'center', width: 34, height: 34, borderRadius: 9,
+                background: ink.goldGlow, border: `1px solid ${ink.line}`, color: ink.gold400 }}><BookOpen size={16} /></span>
+              <div style={{ flex: 1, minWidth: 180 }}>
+                <div style={{ fontFamily: fonts.ui, fontSize: 11, letterSpacing: '.08em', textTransform: 'uppercase', color: ink.textMute }}>Brouillon en cours</div>
+                <div style={{ fontFamily: fonts.display, fontWeight: 500, fontSize: '1.05rem', color: ink.textHi }}>{resumable.title}</div>
+              </div>
+              <button onClick={onResume} style={{
+                display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer', flexShrink: 0,
+                fontFamily: fonts.ui, fontWeight: 700, fontSize: 14, color: '#1A1410', padding: '10px 18px', borderRadius: 10, border: '1px solid rgba(232,213,168,0.5)',
+                background: `linear-gradient(180deg, ${ink.gold400}, ${ink.gold500})`, boxShadow: 'inset 0 1px 0 rgba(255,255,255,.25)' }}>
+                Reprendre <ArrowRight size={16} />
+              </button>
+            </div>
+          </TlxReveal>
+        )}
         {/* ===== HERO ===== */}
         <section style={{ padding: '64px 0 84px' }}>
           <div className="tlx-hero-grid">
@@ -1517,10 +1535,9 @@ function TlxHub({ types, communityLists, loadedListsCount, onSelectType, onStart
                 </span>
               </TlxReveal>
               <TlxReveal delay={0.06}>
-                <h1 style={{ margin: '22px 0 0', fontWeight: 800,
-                  fontSize: 'clamp(38px, 5vw, 62px)', lineHeight: 1.02, letterSpacing: '-0.02em', color: TLX.text }}>
-                  Quelle <span style={{ background: `linear-gradient(120deg, ${TLX.goldHi}, ${TLX.gold} 60%, ${TLX.goldDeep})`,
-                    WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>tier list</span><br />tu veux créer ?
+                <h1 style={{ margin: '22px 0 0', fontFamily: fonts.display, fontWeight: 500,
+                  fontSize: 'clamp(2.5rem, 5vw, 4rem)', lineHeight: 1.02, letterSpacing: '-0.01em', color: TLX.text }}>
+                  Quelle <span style={{ color: ink.gold300 }}>tier list</span><br />tu veux créer ?
                 </h1>
               </TlxReveal>
               <TlxReveal delay={0.12}>
@@ -1566,7 +1583,7 @@ function TlxHub({ types, communityLists, loadedListsCount, onSelectType, onStart
           <TlxReveal>
             <div style={{ marginBottom: 22 }}>
               <span style={{ fontFamily: 'monospace', fontSize: 12, letterSpacing: 1.5, color: TLX.gold }}>POINT DE DÉPART</span>
-              <h2 style={{ margin: '6px 0 0', fontWeight: 800, fontSize: 30, color: TLX.text, letterSpacing: '-0.01em' }}>
+              <h2 style={{ margin: '6px 0 0', fontFamily: fonts.display, fontWeight: 500, fontSize: '1.75rem', color: TLX.text, letterSpacing: '-0.005em' }}>
                 Ouvre un deck prêt à classer
               </h2>
             </div>
@@ -1592,7 +1609,7 @@ function TlxHub({ types, communityLists, loadedListsCount, onSelectType, onStart
                 <Wand2 size={28} />
               </div>
               <div style={{ flex: 1, minWidth: 240, position: 'relative' }}>
-                <h3 style={{ margin: 0, fontWeight: 800, fontSize: 22, color: TLX.text }}>Pars de zéro</h3>
+                <h3 style={{ margin: 0, fontFamily: fonts.display, fontWeight: 500, fontSize: '1.5rem', color: TLX.text }}>Pars de zéro</h3>
                 <p style={{ margin: '6px 0 0', fontSize: 14.5, color: TLX.dim, lineHeight: 1.5 }}>
                   Une grille S→F vide, et tes propres éléments : images, persos, memes, screens Discord…
                 </p>
@@ -1621,8 +1638,8 @@ function TlxHub({ types, communityLists, loadedListsCount, onSelectType, onStart
                     <Flame size={20} />
                   </span>
                   <div>
-                    <span style={{ fontFamily: 'monospace', fontSize: 12, letterSpacing: 1.5, color: TLX.crimson }}>HALL OF FAME</span>
-                    <h2 style={{ margin: '4px 0 0', fontWeight: 800, fontSize: 28, color: TLX.text }}>
+                    <span style={{ fontFamily: fonts.ui, fontSize: 11.5, letterSpacing: '.12em', textTransform: 'uppercase', color: TLX.crimson }}>Hall of Fame</span>
+                    <h2 style={{ margin: '4px 0 0', fontFamily: fonts.display, fontWeight: 500, fontSize: '1.6rem', color: TLX.text }}>
                       Populaires dans la communauté
                     </h2>
                   </div>
